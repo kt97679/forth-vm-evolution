@@ -42,7 +42,7 @@ WIDTH=${WIDTH:-32}
 
 IN=$ROOT/bench/fib.fth
 printf 'BYE\n' > "$O/.nul.fth"
-STAGES="s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec"
+STAGES="s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b"
 
 declare -A E I D
 for s in $STAGES; do E[$s]=$O/$s-$WIDTH; I[$s]=$O/$s-s$WIDTH.img; D[$s]=$W; done

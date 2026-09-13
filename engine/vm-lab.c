@@ -106,6 +106,15 @@ static char **g_argv;
  *  let code span 32 MB - an asymmetry that fails silently.  */
 #define VARSLOT 1
 #endif
+#ifndef DOESFAR
+/*  DOESFAR: CREATE reserves THREE bytes after the DOVAR opcode and
+ *  DOES> writes the three-byte far call, so the parameter field is at
+ *  align(body+4). Needed when the call scale is 0, where the two-byte
+ *  near form reaches only 16 KB and the cross-compiler's dictionary is
+ *  far larger. Without it CREATE reserves two and the field is at
+ *  align(body+3), which is what every other CV8 stage uses.  */
+#define DOESFAR 0
+#endif
 #ifndef VARCALL
 /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
  *  (14-bit payload), 11xxxxxx takes two (22-bit). Costs one extra test
@@ -334,10 +343,16 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
 #define F_VARSLOT 0x02   /* slot operands are 2 or 3 bytes              */
 #define F_SPEC    0x04   /* specialised opcodes present (locals header) */
 #define F_LIT64   0x08   /* LIT64 may appear                            */
+#define F_BYTEHDR 0x10   /* dictionary headers are byte-granular: a 1-3
+                            byte link with its tag last, unpadded names.
+                            The engine never reads a link in this
+                            encoding, so it accepts this unconditionally;
+                            the flag exists so an ENC=1 build, which does
+                            walk links, can refuse. */
 static const UNS8 IMAGE_MAGIC[8] = { 'C', 'V', '8', '0' + SCALE, CELL_BYTES,
     SPEC ? 'L' : 0, CV8_VERSION,
     (VARCALL ? F_VARCALL : 0) | (VARSLOT ? F_VARSLOT : 0)
-        | (SPEC ? F_SPEC : 0) | F_LIT64 };
+        | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR };
 #else
 static const UNS8 IMAGE_MAGIC[8] = { 'C', 'P', 'T', '0' + SCALE, CELL_BYTES, 0, 0, 0 };
 #endif
@@ -611,6 +626,19 @@ static void load_image(const char *name) {
         exit(2);
     }
 
+#if ENC != 1
+    /*  Only SOD16 names a call by word number, so only SOD16 needs the
+     *  table, and only SOD16 walks the link chain to build it. The
+     *  others compute a call target from the address and never read a
+     *  link - which is what lets the byte-header CV8 layout change the
+     *  link's encoding without the engine knowing.  */
+    (void)link; (void)nfa; (void)n;
+    return;
+#else
+    if (magic[7] & 0x10) {
+        write_str(2, "Byte-granular headers are not supported by this encoding.\n");
+        exit(2);
+    }
     /*  Collect every word from every thread, then sort by address.
      *
      *  A word NUMBER is its position in definition order, and the
@@ -666,6 +694,7 @@ static void load_image(const char *name) {
         }
         return;
     }
+#endif
     nwords = n;
     wordtab = malloc((n + ntails) * sizeof *wordtab);
     if (!wordtab) {
@@ -1123,7 +1152,18 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
 #endif
 #endif
 L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
+#if ENC == 3
+    /*  The PFA is align(body+3), not align(body+1), so that it is the
+     *  SAME address DODOES computes after overwriting the front of the
+     *  body with a 2-byte call. With bodies always cell-aligned the two
+     *  agreed by accident; the byte-header layout leaves bodies wherever
+     *  the name ends, and a DOES> word created at run time then found
+     *  its parameter field one cell away from where CREATE had put it.
+     *  cv8.4's CREATE8 reserves the two bytes.  */
+    PUSH((ip + (DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#else
     PUSH((ip + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#endif
     ip = RS; rp += CELL_BYTES; NEXT();
 L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
 #if ENC == 3

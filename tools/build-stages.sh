@@ -193,6 +193,7 @@ KERN_BOOT='S" dict-dump-addr.4" INCLUDED\nBYE\n'
 KSELF_BOOT='S" cv8.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KCPT_BOOT='S" cpt16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KS16_BOOT='S" sod16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+KCV8B_BOOT='S" cv8.4" INCLUDED\nS" cv8b.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 
 dump "$O/s0-cell-64" kernel.img   d64.txt      "$SHELL_BOOT"
 dump "$O/s0-cell-32" kernel32.img d32.txt      "$SHELL_BOOT"
@@ -206,6 +207,8 @@ dump "$O/s0-cell-64" kernel.img   k64-cpt.txt  "$KCPT_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32-cpt.txt  "$KCPT_BOOT"
 dump "$O/s0-cell-64" kernel.img   k64-s16.txt  "$KS16_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32-s16.txt  "$KS16_BOOT"
+dump "$O/s0-cell-64" kernel.img   k64-b.txt    "$KCV8B_BOOT"
+dump "$O/s0-cell-32" kernel32.img k32-b.txt    "$KCV8B_BOOT"
 echo "built  dictionary dumps"
 
 # ---- engines ----------------------------------------------------------
@@ -254,6 +257,13 @@ cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1 \
         -o "$O/s5-cv8spec-64" "$O/vm-lab-tos.c"
 cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCALL=1 \
         -o "$O/s5-cv8spec-32" "$O/vm-lab-tos.c"
+# s6: s5 with byte-aligned call targets (SCALE=0). The engine never reads
+# a dictionary link, so the byte-granular header is invisible to it; the
+# scale is the only difference in the binary.
+cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
+        -o "$O/s6-cv8b-64" "$O/vm-lab-tos.c"
+cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
+        -o "$O/s6-cv8b-32" "$O/vm-lab-tos.c"
 echo "built  stage engines"
 
 # ---- images -----------------------------------------------------------
@@ -317,6 +327,12 @@ img s4-cv8-k64     8 k64.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot
 img s4-cv8-k32     4 k32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
 img s5-cv8spec-k64 8 k64.txt --v8 --cpt 3 $CPTF --spec $SPECS
 img s5-cv8spec-k32 4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
+# s6 run-only: the same word set laid out with byte headers, for the size
+# column ONLY. It does not boot: the kernel's own SEARCH-WORDLIST assumes
+# a cell link and an aligned name, and only the cv8b.4 overlay replaces
+# it. The self-hosting image below is the one that runs.
+img s6-cv8b-k64    8 k64.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS
+img s6-cv8b-k32    4 k32.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS
 
 # Run from the flat work dir, like the translator: sod16.py reads
 # kernel.4 from the CWD.
@@ -346,6 +362,8 @@ img s4-cv8-s64     8 k64-self.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot -
 img s4-cv8-s32     4 k32-self.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot --cv8-compiler
 img s5-cv8spec-s64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
 img s5-cv8spec-s32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
+img s6-cv8b-s64    8 k64-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler
+img s6-cv8b-s32    4 k32-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler
 echo "built  stage images"
 
 # ---- stage 0 shell image ---------------------------------------------
@@ -373,7 +391,7 @@ echo "built  stage 0 images"
 {
   echo "stage,runonly_64,runonly_32,selfhost_64,selfhost_32"
   printf 'sod32,NA,NA,NA,%s\n' "$(stat -c%s "$SOD/forth.img")"
-  for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
+  for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b; do
       sz() { [ -r "$1" ] && stat -c%s "$1" || echo NA; }
       printf '%s,%s,%s,%s,%s\n' "$st" \
           "$(sz "$O/$st-k64.img")" "$(sz "$O/$st-k32.img")" \

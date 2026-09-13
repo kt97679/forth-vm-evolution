@@ -123,6 +123,7 @@ run s2-cpt16   "$O/s2-cpt16-64"   "$O/s2-cpt16-s64.img"
 run s3-cpt16f  "$O/s3-cpt16f-64"  "$O/s3-cpt16f-s64.img"
 run s4-cv8     "$O/s4-cv8-64"     "$O/s4-cv8-s64.img"
 run s5-cv8spec "$O/s5-cv8spec-64" "$O/s5-cv8spec-s64.img"
+run s6-cv8b    "$O/s6-cv8b-64"    "$O/s6-cv8b-s64.img"
 echo
 echo "32-bit cells:"
 run s0-cell    "$O/s0-cell-32"    "$O/s0-cell-s32.img"
@@ -133,6 +134,7 @@ run s2-cpt16   "$O/s2-cpt16-32"   "$O/s2-cpt16-s32.img"
 run s3-cpt16f  "$O/s3-cpt16f-32"  "$O/s3-cpt16f-s32.img"
 run s4-cv8     "$O/s4-cv8-32"     "$O/s4-cv8-s32.img"
 run s5-cv8spec "$O/s5-cv8spec-32" "$O/s5-cv8spec-s32.img"
+run s6-cv8b    "$O/s6-cv8b-32"    "$O/s6-cv8b-s32.img"
 
 if [ -x "$O/sod32/sod32" ]; then
     echo

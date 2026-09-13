@@ -89,6 +89,27 @@ V8 = '--v8' in ARGV
 if V8:
     G['V8'] = True
     G['V8_FOLDLIST'] = _opt('--fold-set', '').split(',')
+
+# --bytehdr: byte-granular dictionary headers. The link is 1-3 bytes with
+# its tag byte LAST (read backward from the nfa), names are not padded,
+# code bodies are not padded at the end, and the call scale is 0. Only
+# bodies that hold cell-sized things - data words, and code with inline
+# cell operands or a builtin tail - get their START aligned. This needs
+# the cv8b.4 overlay in the image, since the kernel's own SEARCH-WORDLIST
+# and NAME> assume a cell link and an aligned name.
+BYTEHDR = '--bytehdr' in ARGV
+if BYTEHDR and not (V8 and CPT == 0):
+    sys.exit("--bytehdr requires --v8 --cpt 0")
+
+
+def linklen(d):
+    return 1 if d < 128 else (2 if d < 16384 else 3)
+
+
+def linkbytes(d, n):
+    if n == 1: return bytes([d])
+    if n == 2: return bytes([d & 0xFF, 0x80 | (d >> 8)])
+    return bytes([d & 0xFF, (d >> 8) & 0xFF, 0xC0 | (d >> 16)])
 if '--spec' in ARGV: G['SPEC'].update(_opt('--spec').split(','))
 if '--escape' in ARGV:
     G['ESCAPE'] = True
@@ -211,8 +232,17 @@ def tail_bytes(w):
     if kind[w['s']] != 'code' or stub_ops(w) is not None: return 0
     return w['e'] - code_end(w)
 
+def body_needs_align(w):
+    """In bytehdr mode only these bodies start on a cell boundary."""
+    if kind[w['s']] != 'code': return True
+    if tail_bytes(w): return True
+    return any(k in ('OPD', 'XT', 'STR', 'ALN') for k, _ in (info[w['s']] or []))
+
+
 def new_body_bytes(w):
     if kind[w['s']] == 'code':
+        if BYTEHDR:
+            return len(tok[w['s']]) * UB + tail_bytes(w)
         return align_up(len(tok[w['s']]) * UB, CELL) + tail_bytes(w)
     if info[w['s']] is not None:
         # [pad][call token][parameter field, CELL aligned]
@@ -221,12 +251,50 @@ def new_body_bytes(w):
         return CELL + (w['e'] - w['s'] - CELL)
     return w['e'] - w['s']             # opaque: copied verbatim
 
-new_off, off = {}, PROLOGUE
+# The thread each word belongs to, needed BEFORE placement in bytehdr
+# mode: a link's length depends on its distance, and its distance is to
+# the previous word in the same thread. Hashing needs only the name and
+# the thread count, both known now.
+_FW = [w for w in order if w['n'] == 'FORTH-WORDLIST']
+if not _FW:
+    sys.exit("no FORTH-WORDLIST in the dump")
+_NTH = cells.get(_FW[0]['s'] + CELL, 0)
+if not (1 <= _NTH <= 4096):
+    sys.exit("FORTH-WORDLIST declares %r threads" % _NTH)
+
+
+def _wl_hash(name):
+    b = name.encode('latin-1')
+    v = len(b) ^ (b[0] << 1)
+    if len(b) > 1:
+        v ^= b[1] << 2
+    return v & (_NTH - 1)
+
+
+_prev_in_thread, _last = {}, {}
 for w in order:
-    new_off[w['s']] = {'link': off}
-    off += CELL
-    new_off[w['s']]['nfa']  = off; off += align_up(len(w['n']) + 1, CELL)
-    new_off[w['s']]['body'] = off; off += new_body_bytes(w)
+    h = _wl_hash(w['n'])
+    _prev_in_thread[w['s']] = _last.get(h)
+    _last[h] = w['s']
+
+new_off, off = {}, PROLOGUE
+LINKLEN = {}
+for w in order:
+    if BYTEHDR:
+        pv = _prev_in_thread[w['s']]
+        # Bound from above: the nfa lands at most 3 bytes past `off`, so
+        # a link sized for that distance always fits the real one.
+        ll = 1 if pv is None else linklen(off + 3 - new_off[pv]['nfa'])
+        LINKLEN[w['s']] = ll
+        new_off[w['s']] = {'link': off}; off += ll
+        new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
+        if body_needs_align(w): off = align_up(off, CELL)
+        new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
+    else:
+        new_off[w['s']] = {'link': off}
+        off += CELL
+        new_off[w['s']]['nfa']  = off; off += align_up(len(w['n']) + 1, CELL)
+        new_off[w['s']]['body'] = off; off += new_body_bytes(w)
 NEW_HERE = off
 OLD_HERE = order[-1]['e'] - START
 
@@ -264,6 +332,12 @@ for t in threads:
     for i, w in enumerate(t):
         if i == 0:
             linkval[w['s']] = 0                          # end of chain
+        elif BYTEHDR:
+            # a DISTANCE backward from this nfa, always positive
+            linkval[w['s']] = (new_off[w['s']]['nfa']
+                               - new_off[t[i - 1]['s']]['nfa'])
+            assert linkval[w['s']] < (1 << LINKLEN[w['s']] * 7 + (1 if LINKLEN[w['s']] > 1 else 0)), \
+                "link does not fit at %s" % w['n']
         else:
             linkval[w['s']] = (new_off[t[i - 1]['s']]['nfa']
                                - new_off[w['s']]['link'])
@@ -284,7 +358,8 @@ for t, head in zip(threads, HEADS):
         lv = linkval[cur['s']]
         if lv == 0:
             break
-        nxt = by_nfa.get(new_off[cur['s']]['link'] + lv)
+        nxt = by_nfa.get(new_off[cur['s']]['nfa'] - lv if BYTEHDR
+                         else new_off[cur['s']]['link'] + lv)
         if nxt is None:
             broken = True
             break
@@ -573,10 +648,13 @@ def emit(path):
     for w in order:
         s0 = w['s']
         assert len(img) == new_off[s0]['link'], "link drift at %s" % w['n']
-        img += cel(linkval[s0])
+        if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
+        else:       img += cel(linkval[s0])
         nm = w['n'].encode('latin-1')
         img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
-        while len(img) % CELL: img += b'\x00'
+        # pad to the body: a cell boundary in the classic layout, or only
+        # as far as body_needs_align() asked for in the byte layout
+        while len(img) < new_off[s0]['body']: img += b'\x00'
         assert len(img) == new_off[s0]['body'], "body drift at %s" % w['n']
 
         if kind[s0] == 'code':
@@ -592,7 +670,8 @@ def emit(path):
             if V8: img += bytes(to_tokens(ops2))
             else:
                 for t_ in to_tokens(ops2): img += tk(t_)
-            while len(img) % CELL: img += b'\x00'
+            if not BYTEHDR:
+                while len(img) % CELL: img += b'\x00'
             # Unheadered tail, with its builtin entries relocated.
             # Derived from tail_bytes, not from code_end directly, so a
             # PRIMITIVE stub - which code_end does not apply to - cannot
@@ -639,7 +718,7 @@ def emit(path):
     assert len(img) == NEW_HERE, "image %d, layout said %d" % (len(img), NEW_HERE)
 
     _flags = ((1 if G['VARCALL'] else 0) | (2 if G['VARSLOT'] else 0)
-              | (4 if G['SPEC'] else 0) | 8) if V8 else 0
+              | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0)) if V8 else 0
     hdr = (b'SOD1' if CPT is None else (b'CV8' if V8 else b'CPT') + bytes([48 + CPT]))
     hdr += bytes([CELL, ord('L') if G['SPEC'] else 0, 1 if V8 else 0, _flags])
     # The engine cannot derive the word table from one chain any more,
@@ -713,6 +792,8 @@ newcode = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'code')
 tails_kept = [(w['n'], tail_bytes(w)) for w in order if tail_bytes(w)]
 newdata = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'data')
 heads = sum(CELL + align_up(len(w['n']) + 1, CELL) for w in order)
+heads_new = (sum(LINKLEN[w['s']] + len(w['n']) + 1 for w in order)
+             if BYTEHDR else heads)
 
 EMIT = None
 for i, a in enumerate(ARGV):
@@ -731,7 +812,8 @@ print()
 print("%-22s %12s %12s %8s" % ("", "cell image", "token image", "ratio"))
 print("%-22s %12d %12d %8.3f" % ("code bodies", codeb, newcode, newcode/codeb))
 print("%-22s %12d %12d %8.3f" % ("data bodies", datab, newdata, newdata/datab))
-print("%-22s %12d %12d %8.3f" % ("headers + names", heads, heads, 1.0))
+print("%-22s %12d %12d %8.3f" % ("headers + names", heads, heads_new,
+                                     heads_new / heads))
 print("%-22s %12d %12d %8.3f"
       % ("whole image", OLD_HERE, NEW_HERE, NEW_HERE/OLD_HERE))
 print()
