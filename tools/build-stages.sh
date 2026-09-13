@@ -98,6 +98,8 @@ echo "built  dictionary dumps"
 cp engine/vm-lab.c "$O/"
 python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
 
+cc      -O2 -Wall -o "$O/p8-pack8-64" engine/pack8.c
+cc -m32 -O2 -Wall -o "$O/p8-pack8-32" engine/pack8.c
 cc      -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64" "$O/vm-lab.c"
 cc -m32 -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-32" "$O/vm-lab.c"
 cc      -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-64" "$O/vm-lab.c"
@@ -170,6 +172,15 @@ img s4-cv8-k32     4 k32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
 img s5-cv8spec-k64 8 k64.txt --v8 --cpt 3 $CPTF --spec $SPECS
 img s5-cv8spec-k32 4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
 
+# Run from the flat work dir, like the translator: sod16.py reads
+# kernel.4 from the CWD.
+( cd "$W" && python3 "$ROOT/tools/pack8.py" "$O/k64.txt" 8 kernel.img \
+    "$O/p8-pack8-k64.img" ) > "$O/p8-pack8-k64.log"
+( cd "$W" && python3 "$ROOT/tools/pack8.py" "$O/k32.txt" 4 kernel32.img \
+    "$O/p8-pack8-k32.img" ) > "$O/p8-pack8-k32.log"
+cp "$O/p8-pack8-k64.img" "$O/p8-pack8-s64.img"
+cp "$O/p8-pack8-k32.img" "$O/p8-pack8-s32.img"
+
 cp "$O/s0-cell-k64.img" "$O/s0-cell-s64.img"
 cp "$O/s0-cell-k32.img" "$O/s0-cell-s32.img"
 img s1-sod16-s64   8 k64-s16.txt --skip-pad --compiler-overlay 16
@@ -213,7 +224,7 @@ echo "built  stage 0 images"
 {
   echo "stage,runonly_64,runonly_32,selfhost_64,selfhost_32"
   printf 'sod32,NA,NA,NA,%s\n' "$(stat -c%s "$SOD/forth.img")"
-  for st in s0-cell s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
+  for st in s0-cell p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
       sz() { [ -r "$1" ] && stat -c%s "$1" || echo NA; }
       printf '%s,%s,%s,%s,%s\n' "$st" \
           "$(sz "$O/$st-k64.img")" "$(sz "$O/$st-k32.img")" \
