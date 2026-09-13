@@ -29,6 +29,47 @@ CV8_LIST=$(sed -n "/^CREATE FOLD-OPS/,/^ALIGN/p" forth/cv8.4 |
 
 SPECS=loc,var,tiny,small,imm
 
+# ---- preflight --------------------------------------------------------
+# Check the toolchain before building anything, because the failure
+# otherwise surfaces as a missing header three files deep and looks like
+# a bug in this repository rather than a missing package.
+command -v cc >/dev/null      || { echo "no C compiler on PATH"; exit 1; }
+command -v python3 >/dev/null || { echo "python3 is required"; exit 1; }
+
+# Every stage is built at BOTH cell widths, and the 4-byte column needs
+# a 32-bit libc as well as a compiler that accepts -m32. On a 64-bit
+# distribution that is a separate package and is usually absent.
+BUILD32=1
+_t=$(mktemp -d)
+printf 'int main(void){return 0;}\n' > "$_t/t.c"
+cc -m32 -o "$_t/t" "$_t/t.c" >/dev/null 2>&1 || BUILD32=0
+rm -rf "$_t"
+if [ "$BUILD32" = 0 ]; then
+    cat >&2 <<'WARN'
+-------------------------------------------------------------------
+ 32-bit builds DISABLED: this compiler cannot produce a 32-bit
+ binary. Building 8-byte cells only; every 4-byte figure will be
+ reported as "not built" rather than silently omitted.
+
+ To get the 4-byte column, install a 32-bit libc and headers:
+
+   Debian / Ubuntu   sudo apt install gcc-multilib
+   Fedora / RHEL     sudo dnf install glibc-devel.i686 libgcc.i686
+   Arch              sudo pacman -S lib32-glibc lib32-gcc-libs
+   openSUSE          sudo zypper install glibc-devel-32bit
+
+ Then re-run this script. Nothing else needs changing.
+-------------------------------------------------------------------
+WARN
+fi
+
+cc32() {
+    # A 32-bit compile, or nothing at all. Returns success either way so
+    # `set -e` does not abort a 64-bit-only build.
+    [ "$BUILD32" = 1 ] || return 0
+    cc -m32 "$@"
+}
+
 # ---- flat work directory ---------------------------------------------
 ln -sf "$ROOT"/forth/*.4        "$W"/ 2>/dev/null || true
 ln -sf "$ROOT"/tools/*.4        "$W"/ 2>/dev/null || true
@@ -54,8 +95,9 @@ echo "built  sod32 (forth.img $(stat -c%s "$SOD/forth.img") bytes)"
 # This is also the bootstrap host: every other stage's image is derived
 # from a dictionary dump taken by running this one.
 cc -O2 -Wall -o "$O/s0-cell-64" engine/relf.c
-cc -m32 -O2 -Wall -o "$O/s0-cell-32" engine/relf.c
-echo "built  s0-cell-64 s0-cell-32"
+cc32 -O2 -Wall -o "$O/s0-cell-32" engine/relf.c
+if [ "$BUILD32" = 1 ]; then echo "built  s0-cell-64 s0-cell-32"
+else echo "built  s0-cell-64"; fi
 
 # ---- dictionary dumps -------------------------------------------------
 # Three flavours, because the translator needs to know exactly which
@@ -63,7 +105,10 @@ echo "built  s0-cell-64 s0-cell-32"
 #   d*   full shell image      - what tests/shell and the size table use
 #   k*   bare kernel           - boots into the Forth interpreter
 #   *self  same, plus cv8.4    - the self-hosting compiler overlay
-dump() { # dump OUTFILE ENGINE IMAGE BOOTSCRIPT
+dump() { # dump ENGINE IMAGE OUTFILE BOOTSCRIPT
+    # Silently skipped when the engine was not built - that is how the
+    # 32-bit half disappears cleanly on a host without a 32-bit libc.
+    [ -x "$1" ] || return 0
     ( cd "$W" && printf "$4" | "$1" "$2" ) | tr -d '\r' > "$O/$3"
 }
 SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
@@ -105,37 +150,41 @@ python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
 rm -f "$O/pack4-alphabet.h"
 ( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k64.txt" 8 kernel.img \
     "$O/p4-pack4-k64.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k64.log"
+if [ "$BUILD32" = 1 ]; then
 ( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k32.txt" 4 kernel32.img \
     "$O/p4-pack4-k32.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k32.log"
+  cp "$O/p4-pack4-k32.img" "$O/p4-pack4-s32.img"
+fi
 cp "$O/p4-pack4-k64.img" "$O/p4-pack4-s64.img"
-cp "$O/p4-pack4-k32.img" "$O/p4-pack4-s32.img"
 cc      -O2 -Wall -I"$O" -o "$O/p4-pack4-64" engine/pack4.c
-cc -m32 -O2 -Wall -I"$O" -o "$O/p4-pack4-32" engine/pack4.c
+cc32 -O2 -Wall -I"$O" -o "$O/p4-pack4-32" engine/pack4.c
 cc      -O2 -Wall -o "$O/p8-pack8-64" engine/pack8.c
-cc -m32 -O2 -Wall -o "$O/p8-pack8-32" engine/pack8.c
+cc32 -O2 -Wall -o "$O/p8-pack8-32" engine/pack8.c
 cc      -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64" "$O/vm-lab.c"
-cc -m32 -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-32" "$O/vm-lab.c"
+cc32 -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-32" "$O/vm-lab.c"
 cc      -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-64" "$O/vm-lab.c"
-cc -m32 -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-32" "$O/vm-lab.c"
+cc32 -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-32" "$O/vm-lab.c"
 
 python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" > /dev/null
 cc      -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=3 -o "$O/s3-cpt16f-64" "$O/vm-lab.c"
-cc -m32 -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=2 -o "$O/s3-cpt16f-32" "$O/vm-lab.c"
+cc32 -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=2 -o "$O/s3-cpt16f-32" "$O/vm-lab.c"
 
 python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" v8 > /dev/null
 cc      -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-64" "$O/vm-lab.c"
-cc -m32 -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-32" "$O/vm-lab.c"
+cc32 -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-32" "$O/vm-lab.c"
 
 python3 tools/gen-fold.py "$O/vm-lab-tos.c" "$HOT" v8 > /dev/null
 cc      -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1 \
         -o "$O/s5-cv8spec-64" "$O/vm-lab-tos.c"
-cc -m32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCALL=1 \
+cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCALL=1 \
         -o "$O/s5-cv8spec-32" "$O/vm-lab-tos.c"
 echo "built  stage engines"
 
 # ---- images -----------------------------------------------------------
 img() { # img NAME CELL DUMP OPTIONS...
     local n=$1 c=$2 d=$3; shift 3
+    [ "$c" = 4 ] && [ "$BUILD32" = 0 ] && return 0
+    [ -r "$O/$d" ] || return 0
     # run from the flat work dir: sod16.py reads kernel.4 from the CWD
     ( cd "$W" && python3 "$ROOT/tools/layout.py" "$O/$d" "$c" "$@" \
         --emit-image "$O/$n.img" ) > "$O/$n.log" 2>&1 \
@@ -173,7 +222,7 @@ img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
 # two images are the same file, and the gap between the columns at every
 # other row is exactly what that stage pays to carry its own compiler.
 cp "$W/kernel.img"   "$O/s0-cell-k64.img"
-cp "$W/kernel32.img" "$O/s0-cell-k32.img"
+[ "$BUILD32" = 1 ] && cp "$W/kernel32.img" "$O/s0-cell-k32.img"
 img s1-sod16-k64   8 k64.txt --skip-pad
 img s1-sod16-k32   4 k32.txt --skip-pad
 img s2-cpt16-k64   8 k64.txt --cpt 1 --skip-pad
@@ -189,13 +238,15 @@ img s5-cv8spec-k32 4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
 # kernel.4 from the CWD.
 ( cd "$W" && python3 "$ROOT/tools/pack8.py" "$O/k64.txt" 8 kernel.img \
     "$O/p8-pack8-k64.img" ) > "$O/p8-pack8-k64.log"
+if [ "$BUILD32" = 1 ]; then
 ( cd "$W" && python3 "$ROOT/tools/pack8.py" "$O/k32.txt" 4 kernel32.img \
     "$O/p8-pack8-k32.img" ) > "$O/p8-pack8-k32.log"
+fi
 cp "$O/p8-pack8-k64.img" "$O/p8-pack8-s64.img"
-cp "$O/p8-pack8-k32.img" "$O/p8-pack8-s32.img"
+[ "$BUILD32" = 1 ] && cp "$O/p8-pack8-k32.img" "$O/p8-pack8-s32.img"
 
 cp "$O/s0-cell-k64.img" "$O/s0-cell-s64.img"
-cp "$O/s0-cell-k32.img" "$O/s0-cell-s32.img"
+[ "$BUILD32" = 1 ] && cp "$O/s0-cell-k32.img" "$O/s0-cell-s32.img"
 img s1-sod16-s64   8 k64-s16.txt --skip-pad --compiler-overlay 16
 img s1-sod16-s32   4 k32-s16.txt --skip-pad --compiler-overlay 16
 img s2-cpt16-s64   8 k64-cpt.txt --cpt 1 --skip-pad --compiler-overlay 16
@@ -218,6 +269,7 @@ echo "built  stage images"
 # be comparing a translated shell image against a bare kernel. SAVE-SYSTEM
 # writes the running system out; SET-BOOT makes it boot into MAIN.
 cellshell() { # cellshell ENGINE SEEDIMG OUTNAME
+    [ -x "$1" ] || return 0
     ( cd "$W" && printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\n'"'"' MAIN SET-BOOT\nS" %s" SAVE-SYSTEM\nBYE\n' "$3" \
         | "$1" "$2" >/dev/null 2>&1 )
     [ -s "$W/$3" ] || { echo "failed to save $3"; exit 1; }
@@ -249,9 +301,13 @@ echo "built  stage 0 images"
 {
   echo "stage,shell_bytes_64,shell_bytes_32"
   for s in s0-cell s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
-      printf '%s,%s,%s\n' "$s" "$(stat -c%s "$O/$s-64.img")" "$(stat -c%s "$O/$s-32.img")"
+      printf '%s,%s,%s\n' "$s" "$(stat -c%s "$O/$s-64.img" 2>/dev/null || echo NA)" "$(stat -c%s "$O/$s-32.img" 2>/dev/null || echo NA)"
   done
 } > "$O/sizes-shell.csv"
 awk -F, '{printf "%-12s %10s %10s %10s %10s\n", $1,$2,$3,$4,$5}' "$O/sizes.csv"
 echo
-echo "build complete: $O"
+if [ "$BUILD32" = 0 ]; then
+    echo "build complete (8-byte cells only - see the note above): $O"
+else
+    echo "build complete: $O"
+fi
