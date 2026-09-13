@@ -35,7 +35,7 @@ O=$ROOT/build
 R=$O/results
 mkdir -p "$R"
 
-BENCHES="kernel corpus loop parse"
+BENCHES="kernel corpus loop fib parse"
 # layout-noise is not a stage comparison; it measures the floor below
 # which stage comparisons are meaningless, and the report quotes it.
 WIDTHS="64 32"
@@ -45,6 +45,7 @@ script_for() {
         kernel) echo bench/kernel-compile.sh;;
         corpus) echo bench/corpus-run.sh;;
         loop)   echo bench/loop-bench.sh;;
+        fib)    echo bench/fib-bench.sh;;
         parse)  echo bench/parse-bench.sh;;
         *) echo "unknown benchmark: $1" >&2; exit 1;;
     esac
@@ -54,7 +55,7 @@ reps_for() {
     # Enough repetitions that the minimum settles, without spending
     # minutes on the slow workloads.
     case "$1" in
-        kernel) echo 6;; corpus) echo 5;; loop) echo 4;; parse) echo 4;;
+        kernel) echo 6;; corpus) echo 5;; loop) echo 4;; fib) echo 5;; parse) echo 4;;
     esac
 }
 
@@ -151,14 +152,14 @@ def read(bench, width):
 
 
 def table(width):
-    data = {b: read(b, width) for b in ('kernel', 'corpus', 'loop', 'parse')}
+    data = {b: read(b, width) for b in ('kernel', 'corpus', 'loop', 'fib', 'parse')}
     base = data['kernel'].get('s0-cell') and 's0-cell'
     lines = []
-    lines.append('| stage | kernel | corpus | loop | parse |')
-    lines.append('|---|---|---|---|---|')
+    lines.append('| stage | kernel | corpus | loop | fib | parse |')
+    lines.append('|---|---|---|---|---|---|')
     for s in STAGES:
         cells = []
-        for b in ('kernel', 'corpus', 'loop', 'parse'):
+        for b in ('kernel', 'corpus', 'loop', 'fib', 'parse'):
             d = data[b]
             if s not in d or 's0-cell' not in d:
                 cells.append('--')
@@ -171,12 +172,12 @@ def table(width):
 
 
 def abstable(width):
-    data = {b: read(b, width) for b in ('kernel', 'corpus', 'loop', 'parse')}
-    lines = ['| stage | kernel ms | corpus ms | loop ms | parse ms |',
-             '|---|---|---|---|---|']
+    data = {b: read(b, width) for b in ('kernel', 'corpus', 'loop', 'fib', 'parse')}
+    lines = ['| stage | kernel ms | corpus ms | loop ms | fib ms | parse ms |',
+             '|---|---|---|---|---|---|']
     for s in STAGES:
         cells = []
-        for b in ('kernel', 'corpus', 'loop', 'parse'):
+        for b in ('kernel', 'corpus', 'loop', 'fib', 'parse'):
             v = data[b].get(s)
             cells.append('--' if v is None else '%.2f' % v)
         if all(c == '--' for c in cells):
@@ -302,7 +303,7 @@ out.append('')
 
 missing = []
 for w in ('64', '32'):
-    have = [b for b in ('kernel', 'corpus', 'loop', 'parse') if read(b, w)]
+    have = [b for b in ('kernel', 'corpus', 'loop', 'fib', 'parse') if read(b, w)]
     if not have:
         missing.append(w)
         continue
