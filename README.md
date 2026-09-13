@@ -56,7 +56,10 @@ image from 11,088 bytes to 7,609, or 0.31x of cell threading.
     forth/          the Forth sources: kernel, cross-compiler, overlays
     tools/          build, test and measurement scripts
     bench/          the workloads and the shared measurement library
-    tests/corpus/   the shared test corpus every stage must pass
+    tests/corpus/   the shared test corpus every stage must pass,
+                    normalised from the RelF tree by tools/make-corpus.py
+                    (CRLF, CP1251, and multi-line `(` comments - only the
+                    last has semantic weight, and that header explains why)
     stages/         what the stages are and how they differ
     results/        measurements, one file per machine
     article/        the write-up
