@@ -87,8 +87,27 @@ esac
 if [ "$1" = run ]; then
     bl=${2:-$BENCHES}
     wl=${3:-$WIDTHS}
+    # Remove results for workloads no longer in the sweep. `report` used
+    # to read whatever .txt files were lying about, so a loop-32.txt from
+    # an older sweep - or from another machine - was printed as if it had
+    # just been measured.
+    for f in "$R"/*.txt; do
+        [ -e "$f" ] || continue
+        _n=$(basename "$f" .txt)
+        case "$_n" in
+            layout-noise-*) _b=${_n#layout-noise-} ;;
+            *-32|*-64)      _b=${_n%-*} ;;
+            *)              continue ;;
+        esac
+        case " $BENCHES " in
+            *" $_b "*) ;;
+            *) echo "  discarding stale $_n (workload not in the sweep)"
+               rm -f "$f" ;;
+        esac
+    done
     for b in $bl; do
         for w in $wl; do
+            rm -f "$R/$b-$w.txt"
             printf 'running %-7s at %s-bit cells ... ' "$b" "$w"
             WIDTH=$w bash "$(script_for "$b")" "$O" "$(reps_for "$b")" \
                 > "$R/$b-$w.txt" 2>/dev/null
@@ -133,11 +152,15 @@ fi
 SAVE=
 [ "${2:-}" = --save ] && SAVE=${3:?--save needs a path}
 
-python3 - "$ROOT" "$SAVE" <<'PY'
+python3 - "$ROOT" "$SAVE" "$BENCHES" <<'PY'
 import os, re, sys, csv
 
 root = sys.argv[1]
 save = sys.argv[2] if len(sys.argv) > 2 else ''
+# The columns are whatever the sweep measures. Hardcoding them here let a
+# dropped workload keep appearing from a stale file.
+WORK = (sys.argv[3].split() if len(sys.argv) > 3 and sys.argv[3].strip()
+        else ['kernel', 'corpus', 'fib', 'parse'])
 R = os.path.join(root, 'build', 'results')
 STAGES = ['sod32', 's0-cell', 'p4-pack4', 'p8-pack8', 's1-sod16',
           's2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec']
@@ -168,14 +191,14 @@ def read(bench, width):
 
 
 def table(width):
-    data = {b: read(b, width) for b in ('kernel', 'corpus', 'loop', 'fib', 'parse')}
+    data = {b: read(b, width) for b in WORK}
     base = data['kernel'].get('s0-cell') and 's0-cell'
     lines = []
-    lines.append('| stage | kernel | corpus | loop | fib | parse |')
-    lines.append('|---|---|---|---|---|---|')
+    lines.append('| stage | ' + ' | '.join(WORK) + ' |')
+    lines.append('|' + '---|' * (len(WORK) + 1))
     for s in STAGES:
         cells = []
-        for b in ('kernel', 'corpus', 'loop', 'fib', 'parse'):
+        for b in WORK:
             d = data[b]
             if s not in d or 's0-cell' not in d:
                 cells.append('--')
@@ -188,12 +211,12 @@ def table(width):
 
 
 def abstable(width):
-    data = {b: read(b, width) for b in ('kernel', 'corpus', 'loop', 'fib', 'parse')}
-    lines = ['| stage | kernel ms | corpus ms | loop ms | fib ms | parse ms |',
-             '|---|---|---|---|---|---|']
+    data = {b: read(b, width) for b in WORK}
+    lines = ['| stage | ' + ' | '.join(w + ' ms' for w in WORK) + ' |',
+             '|' + '---|' * (len(WORK) + 1)]
     for s in STAGES:
         cells = []
-        for b in ('kernel', 'corpus', 'loop', 'fib', 'parse'):
+        for b in WORK:
             v = data[b].get(s)
             cells.append('--' if v is None else '%.2f' % v)
         if all(c == '--' for c in cells):
@@ -234,7 +257,7 @@ out.append('restored (see `FINDINGS-OUTER-INTERPRETER.md`). Figures from')
 out.append('before that change are not comparable and are not reproduced.\n')
 
 floors = {}
-for wk in ('kernel', 'corpus', 'loop', 'fib', 'parse'):
+for wk in WORK:
     fp = os.path.join(R, 'layout-noise-%s.txt' % wk)
     if os.path.exists(fp):
         m = re.search(r'spread on \S+ across builds of the SAME engine: ([\d.]+)%',
@@ -255,7 +278,7 @@ if noise is not None:
     out.append('by up to 20.9% on the loop benchmark.\n')
     out.append('| workload | floor |')
     out.append('|---|---|')
-    for wk in ('kernel', 'corpus', 'loop', 'fib', 'parse'):
+    for wk in WORK:
         if wk in floors:
             out.append('| `%s` | %.1f%% |' % (wk, floors[wk]))
     out.append('')
@@ -327,7 +350,7 @@ out.append('')
 
 missing = []
 for w in ('64', '32'):
-    have = [b for b in ('kernel', 'corpus', 'loop', 'fib', 'parse') if read(b, w)]
+    have = [b for b in WORK if read(b, w)]
     if not have:
         missing.append(w)
         continue
