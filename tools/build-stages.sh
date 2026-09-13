@@ -127,6 +127,24 @@ ln -sf "$ROOT"/tests/core/*.fth "$W"/ 2>/dev/null || true
 cp -f "$ROOT/forth/kernel-seed.img"   "$W/kernel.img"
 cp -f "$ROOT/forth/kernel32-seed.img" "$W/kernel32.img"
 
+# ---- clear what a previous run built ---------------------------------
+# This script is not idempotent across a change of configuration, and
+# pretending otherwise cost a debugging session. A build on a machine
+# where the 8-byte column exists leaves engines and images behind; run
+# it again somewhere the 8-byte column does NOT exist - or after
+# installing multilib, or after a git pull that changes what is built -
+# and those files are still sitting in the output directory. The script
+# then skips building them, finds them anyway, and runs them. On a
+# 32-bit ARM host that produced six copies of "cannot execute binary
+# file: Exec format error" from a binary this run never created.
+#
+# Only what this script generates is removed. build/results/ and
+# build/work/ are left alone: the first is measurement output that takes
+# minutes to reproduce, the second is rebuilt below in place.
+rm -f "$O"/s[0-9]-* "$O"/p[48]-* "$O"/*.img "$O"/*.txt "$O"/*.log \
+      "$O"/sizes*.csv "$O"/vm-lab*.c "$O"/pack4-alphabet.h \
+      "$O"/vm-fold-*.h 2>/dev/null || true
+
 # ---- stage -1: SOD32, the ancestor ------------------------------------
 # Built out-of-tree so vendor/sod32 stays exactly as upstream shipped it.
 # The Makefile's own chain is kept: kernel.img + extend.4th -> forth.img,
@@ -145,8 +163,10 @@ echo "built  sod32 (forth.img $(stat -c%s "$SOD/forth.img") bytes)"
 # from a dictionary dump taken by running this one.
 cc64 -O2 -Wall -o "$O/s0-cell-64" engine/relf.c
 cc32 -O2 -Wall -o "$O/s0-cell-32" engine/relf.c
-if [ "$BUILD32" = 1 ]; then echo "built  s0-cell-64 s0-cell-32"
-else echo "built  s0-cell-64"; fi
+_b=""
+[ "$BUILD64" = 1 ] && _b="s0-cell-64"
+[ "$BUILD32" = 1 ] && _b="${_b:+$_b }s0-cell-32"
+echo "built  $_b"
 
 # ---- dictionary dumps -------------------------------------------------
 # Three flavours, because the translator needs to know exactly which
@@ -154,10 +174,17 @@ else echo "built  s0-cell-64"; fi
 #   d*   full shell image      - what tests/shell and the size table use
 #   k*   bare kernel           - boots into the Forth interpreter
 #   *self  same, plus cv8.4    - the self-hosting compiler overlay
+runnable() { # runnable ENGINE - exists, and this host can execute it
+    [ -x "$1" ] || return 1
+    "$1" /dev/null >/dev/null 2>&1
+    [ $? -ne 126 ] || return 1
+    return 0
+}
+
 dump() { # dump ENGINE IMAGE OUTFILE BOOTSCRIPT
-    # Silently skipped when the engine was not built - that is how the
-    # 32-bit half disappears cleanly on a host without a 32-bit libc.
-    [ -x "$1" ] || return 0
+    # Silently skipped when the engine was not built - that is how a
+    # cell width that does not exist on this host disappears cleanly.
+    runnable "$1" || return 0
     ( cd "$W" && printf "$4" | "$1" "$2" ) | tr -d '\r' > "$O/$3"
 }
 SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
@@ -319,7 +346,7 @@ echo "built  stage images"
 # be comparing a translated shell image against a bare kernel. SAVE-SYSTEM
 # writes the running system out; SET-BOOT makes it boot into MAIN.
 cellshell() { # cellshell ENGINE SEEDIMG OUTNAME
-    [ -x "$1" ] || return 0
+    runnable "$1" || return 0
     ( cd "$W" && printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\n'"'"' MAIN SET-BOOT\nS" %s" SAVE-SYSTEM\nBYE\n' "$3" \
         | "$1" "$2" >/dev/null 2>&1 )
     [ -s "$W/$3" ] || { echo "failed to save $3"; exit 1; }
