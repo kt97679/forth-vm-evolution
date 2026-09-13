@@ -52,39 +52,72 @@ SPECS=loc,var,tiny,small,imm
 command -v cc >/dev/null      || { echo "no C compiler on PATH"; exit 1; }
 command -v python3 >/dev/null || { echo "python3 is required"; exit 1; }
 
-# Every stage is built at BOTH cell widths, and the 4-byte column needs
-# a 32-bit libc as well as a compiler that accepts -m32. On a 64-bit
-# distribution that is a separate package and is usually absent.
-BUILD32=1
-_t=$(mktemp -d)
-printf 'int main(void){return 0;}\n' > "$_t/t.c"
-cc -m32 -o "$_t/t" "$_t/t.c" >/dev/null 2>&1 || BUILD32=0
-rm -rf "$_t"
-if [ "$BUILD32" = 0 ]; then
+# Every stage is built at both cell widths. Which compiler produces
+# which width is NOT a constant, and assuming it was is how this script
+# failed on a 32-bit ARM box: relf.c picks its cell width from the
+# host's own UINTPTR_MAX, so on armv7l the NATIVE compiler gives 4-byte
+# cells and `-m32` means nothing. The script built a 4-byte engine,
+# called it the 8-byte one, and handed it the 8-byte seed image, which
+# refused to load.
+#
+# So ask the compiler what it actually produces, rather than telling it.
+_t=$(mktemp -d) || { echo "cannot create a temporary directory"; exit 1; }
+trap 'rm -rf "$_t"' EXIT INT TERM
+printf '#include <stdio.h>\nint main(void){printf("%%d\\n",(int)sizeof(void*));return 0;}\n' \
+    > "$_t/w.c"
+cc -o "$_t/w" "$_t/w.c" >/dev/null 2>&1 || { echo "the C compiler cannot build a program"; exit 1; }
+NATIVE=$("$_t/w") || { echo "cannot run a freshly built program"; exit 1; }
+
+BUILD64=0; BUILD32=0
+CC64=""; CC32=""
+case "$NATIVE" in
+  8)  BUILD64=1; CC64="cc"
+      # 4-byte cells need a compiler that can target a 32-bit ABI AND a
+      # 32-bit libc to link against. On a 64-bit distribution that is a
+      # separate package and is usually absent.
+      printf 'int main(void){return 0;}\n' > "$_t/t.c"
+      if cc -m32 -o "$_t/t" "$_t/t.c" >/dev/null 2>&1; then
+          BUILD32=1; CC32="cc -m32"
+      fi ;;
+  4)  # A 32-bit host. Native IS the 4-byte build; there is no practical
+      # way to get 8-byte cells here, and nothing needs one.
+      BUILD32=1; CC32="cc" ;;
+  *)  echo "unsupported pointer width: $NATIVE bytes"; exit 1 ;;
+esac
+
+_w=""
+[ "$BUILD64" = 1 ] && _w="8-byte"
+[ "$BUILD32" = 1 ] && _w="${_w:+$_w and }4-byte"
+echo "host pointer width $NATIVE bytes; building $_w cells"
+if [ "$BUILD64" = 1 ] && [ "$BUILD32" = 0 ]; then
     cat >&2 <<'WARN'
 -------------------------------------------------------------------
- 32-bit builds DISABLED: this compiler cannot produce a 32-bit
- binary. Building 8-byte cells only; every 4-byte figure will be
- reported as "not built" rather than silently omitted.
-
- To get the 4-byte column, install a 32-bit libc and headers:
+ 4-byte cells DISABLED: this compiler cannot link a 32-bit binary.
+ Building 8-byte cells only; every 4-byte figure will be reported
+ as "not built" rather than silently omitted.
 
    Debian / Ubuntu   sudo apt install gcc-multilib
    Fedora / RHEL     sudo dnf install glibc-devel.i686 libgcc.i686
    Arch              sudo pacman -S lib32-glibc lib32-gcc-libs
    openSUSE          sudo zypper install glibc-devel-32bit
-
- Then re-run this script. Nothing else needs changing.
+-------------------------------------------------------------------
+WARN
+fi
+if [ "$BUILD32" = 1 ] && [ "$BUILD64" = 0 ]; then
+    cat >&2 <<'WARN'
+-------------------------------------------------------------------
+ 8-byte cells DISABLED: this is a 32-bit host, so the native build
+ IS the 4-byte one. Every 8-byte figure will be reported as "not
+ built". Nothing is wrong; the 8-byte column simply does not exist
+ on this machine.
 -------------------------------------------------------------------
 WARN
 fi
 
-cc32() {
-    # A 32-bit compile, or nothing at all. Returns success either way so
-    # `set -e` does not abort a 64-bit-only build.
-    [ "$BUILD32" = 1 ] || return 0
-    cc -m32 "$@"
-}
+# A compile at a given cell width, or nothing at all. Both return
+# success either way so `set -e` does not abort a single-width build.
+cc64() { [ "$BUILD64" = 1 ] || return 0; $CC64 "$@"; }
+cc32() { [ "$BUILD32" = 1 ] || return 0; $CC32 "$@"; }
 
 # ---- flat work directory ---------------------------------------------
 ln -sf "$ROOT"/forth/*.4        "$W"/ 2>/dev/null || true
@@ -110,7 +143,7 @@ echo "built  sod32 (forth.img $(stat -c%s "$SOD/forth.img") bytes)"
 # ---- stage 0: the cell engine ----------------------------------------
 # This is also the bootstrap host: every other stage's image is derived
 # from a dictionary dump taken by running this one.
-cc -O2 -Wall -o "$O/s0-cell-64" engine/relf.c
+cc64 -O2 -Wall -o "$O/s0-cell-64" engine/relf.c
 cc32 -O2 -Wall -o "$O/s0-cell-32" engine/relf.c
 if [ "$BUILD32" = 1 ]; then echo "built  s0-cell-64 s0-cell-32"
 else echo "built  s0-cell-64"; fi
@@ -164,33 +197,33 @@ python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
 # both the image and pack4-alphabet.h. The 64-bit run writes the header;
 # the 32-bit run reads it back, so one alphabet serves both widths.
 rm -f "$O/pack4-alphabet.h"
-( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k64.txt" 8 kernel.img \
+[ "$BUILD64" = 1 ] && ( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k64.txt" 8 kernel.img \
     "$O/p4-pack4-k64.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k64.log"
 if [ "$BUILD32" = 1 ]; then
 ( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k32.txt" 4 kernel32.img \
     "$O/p4-pack4-k32.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k32.log"
   cp "$O/p4-pack4-k32.img" "$O/p4-pack4-s32.img"
 fi
-cp "$O/p4-pack4-k64.img" "$O/p4-pack4-s64.img"
-cc      -O2 -Wall -I"$O" -o "$O/p4-pack4-64" engine/pack4.c
+[ "$BUILD64" = 1 ] && cp "$O/p4-pack4-k64.img" "$O/p4-pack4-s64.img"
+cc64    -O2 -Wall -I"$O" -o "$O/p4-pack4-64" engine/pack4.c
 cc32 -O2 -Wall -I"$O" -o "$O/p4-pack4-32" engine/pack4.c
-cc      -O2 -Wall -o "$O/p8-pack8-64" engine/pack8.c
+cc64    -O2 -Wall -o "$O/p8-pack8-64" engine/pack8.c
 cc32 -O2 -Wall -o "$O/p8-pack8-32" engine/pack8.c
-cc      -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64" "$O/vm-lab.c"
+cc64    -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64" "$O/vm-lab.c"
 cc32 -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-32" "$O/vm-lab.c"
-cc      -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-64" "$O/vm-lab.c"
+cc64    -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-64" "$O/vm-lab.c"
 cc32 -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-32" "$O/vm-lab.c"
 
 python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" > /dev/null
-cc      -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=3 -o "$O/s3-cpt16f-64" "$O/vm-lab.c"
+cc64    -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=3 -o "$O/s3-cpt16f-64" "$O/vm-lab.c"
 cc32 -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=2 -o "$O/s3-cpt16f-32" "$O/vm-lab.c"
 
 python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" v8 > /dev/null
-cc      -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-64" "$O/vm-lab.c"
+cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-64" "$O/vm-lab.c"
 cc32 -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-32" "$O/vm-lab.c"
 
 python3 tools/gen-fold.py "$O/vm-lab-tos.c" "$HOT" v8 > /dev/null
-cc      -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1 \
+cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1 \
         -o "$O/s5-cv8spec-64" "$O/vm-lab-tos.c"
 cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCALL=1 \
         -o "$O/s5-cv8spec-32" "$O/vm-lab-tos.c"
@@ -200,6 +233,7 @@ echo "built  stage engines"
 img() { # img NAME CELL DUMP OPTIONS...
     local n=$1 c=$2 d=$3; shift 3
     [ "$c" = 4 ] && [ "$BUILD32" = 0 ] && return 0
+    [ "$c" = 8 ] && [ "$BUILD64" = 0 ] && return 0
     [ -r "$O/$d" ] || return 0
     # run from the flat work dir: sod16.py reads kernel.4 from the CWD
     ( cd "$W" && python3 "$ROOT/tools/layout.py" "$O/$d" "$c" "$@" \
@@ -237,7 +271,7 @@ img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
 # s0-cell needs no overlay - its compiler already emits cells - so its
 # two images are the same file, and the gap between the columns at every
 # other row is exactly what that stage pays to carry its own compiler.
-cp "$W/kernel.img"   "$O/s0-cell-k64.img"
+[ "$BUILD64" = 1 ] && cp "$W/kernel.img"   "$O/s0-cell-k64.img"
 [ "$BUILD32" = 1 ] && cp "$W/kernel32.img" "$O/s0-cell-k32.img"
 img s1-sod16-k64   8 k64.txt --skip-pad
 img s1-sod16-k32   4 k32.txt --skip-pad
@@ -252,16 +286,16 @@ img s5-cv8spec-k32 4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
 
 # Run from the flat work dir, like the translator: sod16.py reads
 # kernel.4 from the CWD.
-( cd "$W" && python3 "$ROOT/tools/pack8.py" "$O/k64.txt" 8 kernel.img \
+[ "$BUILD64" = 1 ] && ( cd "$W" && python3 "$ROOT/tools/pack8.py" "$O/k64.txt" 8 kernel.img \
     "$O/p8-pack8-k64.img" ) > "$O/p8-pack8-k64.log"
 if [ "$BUILD32" = 1 ]; then
 ( cd "$W" && python3 "$ROOT/tools/pack8.py" "$O/k32.txt" 4 kernel32.img \
     "$O/p8-pack8-k32.img" ) > "$O/p8-pack8-k32.log"
 fi
-cp "$O/p8-pack8-k64.img" "$O/p8-pack8-s64.img"
+[ "$BUILD64" = 1 ] && cp "$O/p8-pack8-k64.img" "$O/p8-pack8-s64.img"
 [ "$BUILD32" = 1 ] && cp "$O/p8-pack8-k32.img" "$O/p8-pack8-s32.img"
 
-cp "$O/s0-cell-k64.img" "$O/s0-cell-s64.img"
+[ "$BUILD64" = 1 ] && cp "$O/s0-cell-k64.img" "$O/s0-cell-s64.img"
 [ "$BUILD32" = 1 ] && cp "$O/s0-cell-k32.img" "$O/s0-cell-s32.img"
 img s1-sod16-s64   8 k64-s16.txt --skip-pad --compiler-overlay 16
 img s1-sod16-s32   4 k32-s16.txt --skip-pad --compiler-overlay 16
@@ -323,7 +357,9 @@ echo "built  stage 0 images"
 awk -F, '{printf "%-12s %10s %10s %10s %10s\n", $1,$2,$3,$4,$5}' "$O/sizes.csv"
 echo
 if [ "$BUILD32" = 0 ]; then
-    echo "build complete (8-byte cells only - see the note above): $O"
+    echo "build complete (8-byte cells only): $O"
+elif [ "$BUILD64" = 0 ]; then
+    echo "build complete (4-byte cells only - 32-bit host): $O"
 else
     echo "build complete: $O"
 fi
