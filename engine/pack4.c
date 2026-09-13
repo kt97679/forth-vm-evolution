@@ -392,16 +392,77 @@ static int  t_ipos = 0, t_ilen = 0;
 static UNS8 t_obuf[TIOBUF];
 static int  t_olen = 0;
 
-static void t_flush(void) {
+
+/*
+ *  Buffered READ-LINE for FILES, the same problem as KEY and EMIT and a
+ *  larger one. Cross-compiling the kernel reads extend.4, cross.4 and
+ *  kernel.4 - about 62 KB of source - and READ-LINE was doing
+ *  read(fd, &c, 1) for every byte of it: 67,316 syscalls for one build.
+ *
+ *  The OS file offset has to stay honest, because REPOSITION-FILE,
+ *  FILE-POSITION and READ-FILE all depend on it and none of them know
+ *  about this buffer. So any of those drops the buffer first, seeking
+ *  back over whatever was read ahead and not yet consumed.
+ */
+/*  These MUST NOT be inlined into virtual_machine(). They are cold I/O
+ *  paths with loops and static state; inlined, they wreck register
+ *  allocation across the whole dispatch function and the VM registers
+ *  stop living in registers. Measured: the specialised CV8 engine went
+ *  from 9.5 ms to 17.6 ms on a workload that reads no files at all,
+ *  same image, same input - an 85% loss from adding a function nothing
+ *  in that run ever called. Iteration 189a found the same class of
+ *  problem from the other direction, when the VM registers were
+ *  file-scope statics.  */
+#define NOINLINE_IO __attribute__((noinline))
+#define FBUFN  8
+#define FBUFSZ 4096
+static struct fbuf { int fd, len, pos; UNS8 b[FBUFSZ]; } t_fb[FBUFN];
+
+NOINLINE_IO static struct fbuf *t_fslot(int fd) {
+    int i, free_ = -1;
+    for (i = 0; i < FBUFN; i++) {
+        if (t_fb[i].fd == fd) return &t_fb[i];
+        if (t_fb[i].fd == 0 && free_ < 0) free_ = i;   /* 0 marks unused */
+    }
+    if (free_ < 0) return 0;                           /* fall back to raw */
+    t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0;
+    return &t_fb[free_];
+}
+
+NOINLINE_IO static void t_fdrop(int fd) {
+    int i;
+    for (i = 0; i < FBUFN; i++) if (t_fb[i].fd == fd) {
+        int un = t_fb[i].len - t_fb[i].pos;
+        if (un > 0) lseek(fd, -(off_t)un, SEEK_CUR);
+        t_fb[i].fd = 0; t_fb[i].len = t_fb[i].pos = 0;
+    }
+}
+
+/*  Next byte of fd: >=0 a character, -1 end of file, -2 error.  */
+NOINLINE_IO static int t_fgetc(int fd) {
+    struct fbuf *f = t_fslot(fd);
+    long n;
+    if (!f) { UNS8 c; n = read(fd, &c, 1);
+              return n == 1 ? (int)c : (n == 0 ? -1 : -2); }
+    if (f->pos >= f->len) {
+        n = read(fd, f->b, FBUFSZ);
+        if (n < 0) return -2;
+        if (n == 0) return -1;
+        f->len = (int)n; f->pos = 0;
+    }
+    return f->b[f->pos++];
+}
+
+NOINLINE_IO static void t_flush(void) {
     if (t_olen) { full_write(1, t_obuf, (size_t)t_olen); t_olen = 0; }
 }
 
-static void t_put(UNS8 c) {
+NOINLINE_IO static void t_put(UNS8 c) {
     if (t_olen == TIOBUF) t_flush();
     t_obuf[t_olen++] = c;
 }
 
-static int t_getc(void) {
+NOINLINE_IO static int t_getc(void) {
     if (t_ipos >= t_ilen) {
         t_flush();                     /* prompt before blocking */
         t_ilen = (int)read(0, t_ibuf, TIOBUF);
@@ -546,9 +607,12 @@ L_openfile: { /* c-addr u fam --- fid ior */
     dsp += CELL_BYTES;
     NEXT();
 }
-L_closefile: /* fid --- ior */
+L_closefile: {/* fid --- ior */
+    t_fdrop((int)DS0);
+
     DS0 = (UNS64)close((int)DS0);
     NEXT();
+    }
 L_readline: { /* c-addr u1 fid --- u2 flag ior */
     int fd = (int)DS0;
     UNS64 addr = DS2, max = DS1, count = 0;
@@ -556,8 +620,9 @@ L_readline: { /* c-addr u1 fid --- u2 flag ior */
     UNS8 c;
 
     while (count < max) {
-        if (fd == 0) { int ch = t_getc(); n = (ch < 0) ? 0 : 1; c = (UNS8)ch; }
-        else           n = read(fd, &c, 1);
+        int ch = (fd == 0) ? t_getc() : t_fgetc(fd);
+        n = (ch == -2) ? -1 : (ch < 0 ? 0 : 1);
+        c = (UNS8)ch;
         if (n < 0) { err = 1; break; }
         if (n == 0) break;      /* EOF */
         got_any = 1;
@@ -590,6 +655,7 @@ L_writeline: { /* c-addr u fid --- ior */
     NEXT();
 }
 L_readfile: { /* c-addr u1 fid --- u2 ior */
+    t_fdrop((int)DS0);
     int fd = (int)DS0;
     UNS64 addr = DS2, maxlen = DS1;
     long n;
@@ -606,6 +672,7 @@ L_readfile: { /* c-addr u1 fid --- u2 ior */
     NEXT();
 }
 L_writefile: { /* c-addr u fid --- ior */
+    t_fdrop((int)DS0);
     t_flush();
     int fd = (int)DS0;
     UNS64 addr = DS2, len = DS1;
@@ -646,11 +713,16 @@ L_system: { t_flush(); /* c-addr u --- ior */
     dsp += CELL_BYTES;
     NEXT();
 }
-L_reposfile: /* offset fid --- ior */
+L_reposfile: {/* offset fid --- ior */
+    t_fdrop((int)DS0);
+
     DS1 = (UNS64)lseek((int)DS0, (long)DS1, SEEK_SET);
     dsp += CELL_BYTES;
     NEXT();
-L_filepos: /* fid --- u ior */
+    }
+L_filepos: {/* fid --- u ior */
+    t_fdrop((int)DS0);
+
     DS0 = (UNS64)lseek((int)DS0, 0, SEEK_CUR);
     dsp -= CELL_BYTES;
     if ((INT64)DS1 == -1) {
@@ -659,6 +731,7 @@ L_filepos: /* fid --- u ior */
         DS0 = 0;
     }
     NEXT();
+    }
 L_delfile: { /* c-addr u --- ior */
     t = BYTE(DS1 + DS0);
     BYTE(DS1 + DS0) = 0;
@@ -668,6 +741,7 @@ L_delfile: { /* c-addr u --- ior */
     NEXT();
 }
 L_filesize: { /* fid --- u ior */
+    t_fdrop((int)DS0);
     int fd = (int)DS0;
     long cur = lseek(fd, 0, SEEK_CUR);
     long size = lseek(fd, 0, SEEK_END);

@@ -14,7 +14,7 @@ absolute milliseconds do not.
 Measured on:
 
 ```
-date: 2026-09-13 04:33Z
+date: 2026-09-13 04:45Z
 uname: Linux 6.18.44-fc-v32 x86_64
 cpu: Intel(R) Xeon(R) Processor @ 2.10GHz
 cores: 1
@@ -24,6 +24,26 @@ cc: cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
 Every number here was taken AFTER the hashed word list was
 restored (see `FINDINGS-OUTER-INTERPRETER.md`). Figures from
 before that change are not comparable and are not reproduced.
+
+## How small a difference is real
+
+`tools/layout-noise.sh` builds the SAME engine five times,
+varying only flags that move code and change nothing about what
+it computes, checks that all five still produce a
+byte-identical kernel, and times them on the identical
+workload. The spread is **3.4%**.
+
+That is the resolution of every table below. A difference
+smaller than it is not a result, whichever direction it points,
+and the article should not read meaning into one. It is why the
+rows for CPT16 and the cell engine, or for folding and CV8, are
+reported as indistinguishable rather than ranked.
+
+Which of the five builds comes out fastest is not stable between
+runs, so this is a band and not a ranking of compiler flags. At
+six repetitions the script reported 5.3%% and then 11.2%% and
+disagreed with itself about the winner; it takes about forty
+before the number settles.
 
 ## The stages
 
@@ -83,52 +103,52 @@ demonstrate the number; it would not alter it.
 | stage | kernel | corpus | loop | parse |
 |---|---|---|---|---|
 | `s0-cell` | 1.000 | 1.000 | 1.000 | 1.000 |
-| `p4-pack4` | 1.068 | 1.143 | 1.125 | 1.203 |
-| `p8-pack8` | 1.047 | 1.073 | 1.046 | 1.147 |
-| `s1-sod16` | 1.207 | 1.424 | 1.518 | 1.038 |
-| `s2-cpt16` | 1.000 | 1.017 | 0.994 | 1.058 |
-| `s3-cpt16f` | 0.931 | 0.843 | 0.908 | 0.861 |
-| `s4-cv8` | 0.894 | 0.896 | 0.923 | 0.928 |
-| `s5-cv8spec` | 0.744 | 0.581 | 0.768 | 0.561 |
+| `p4-pack4` | 1.076 | 1.093 | 0.979 | 1.102 |
+| `p8-pack8` | 1.001 | 1.020 | 0.913 | 1.021 |
+| `s1-sod16` | 1.293 | 1.366 | 1.338 | 0.953 |
+| `s2-cpt16` | 0.970 | 0.966 | 0.973 | 0.954 |
+| `s3-cpt16f` | 0.845 | 0.843 | 0.855 | 0.821 |
+| `s4-cv8` | 0.849 | 0.863 | 0.793 | 0.844 |
+| `s5-cv8spec` | 0.545 | 0.536 | 0.628 | 0.506 |
 
 Absolute, for scale only:
 
 | stage | kernel ms | corpus ms | loop ms | parse ms |
 |---|---|---|---|---|
-| `s0-cell` | 33.67 | 15.83 | 14.52 | 70.57 |
-| `p4-pack4` | 35.96 | 18.10 | 16.33 | 84.91 |
-| `p8-pack8` | 35.25 | 16.99 | 15.19 | 80.91 |
-| `s1-sod16` | 40.65 | 22.54 | 22.04 | 73.22 |
-| `s2-cpt16` | 33.66 | 16.10 | 14.43 | 74.63 |
-| `s3-cpt16f` | 31.33 | 13.34 | 13.19 | 60.74 |
-| `s4-cv8` | 30.11 | 14.19 | 13.40 | 65.48 |
-| `s5-cv8spec` | 25.05 | 9.19 | 11.15 | 39.58 |
+| `s0-cell` | 22.18 | 17.16 | 16.84 | 80.75 |
+| `p4-pack4` | 23.86 | 18.75 | 16.49 | 89.00 |
+| `p8-pack8` | 22.21 | 17.50 | 15.38 | 82.46 |
+| `s1-sod16` | 28.67 | 23.44 | 22.54 | 76.95 |
+| `s2-cpt16` | 21.51 | 16.58 | 16.39 | 77.07 |
+| `s3-cpt16f` | 18.75 | 14.46 | 14.40 | 66.30 |
+| `s4-cv8` | 18.82 | 14.81 | 13.35 | 68.16 |
+| `s5-cv8spec` | 12.09 | 9.19 | 10.58 | 40.88 |
 
 ## Speed, 32-bit cells, relative to the cell engine
 
 | stage | kernel | corpus | loop | parse |
 |---|---|---|---|---|
-| `sod32` | -- | 1.606 | 1.410 | 1.662 |
+| `sod32` | -- | 1.727 | 1.464 | 1.737 |
 | `s0-cell` | 1.000 | 1.000 | 1.000 | 1.000 |
-| `p4-pack4` | 1.083 | 1.220 | 1.070 | 1.240 |
-| `p8-pack8` | 1.039 | 1.190 | 1.188 | 1.207 |
-| `s1-sod16` | 1.179 | 1.469 | 1.509 | 1.042 |
-| `s2-cpt16` | 1.003 | 1.051 | 1.085 | 1.044 |
-| `s3-cpt16f` | 0.906 | 0.884 | 0.888 | 0.887 |
-| `s4-cv8` | 0.939 | 0.915 | 0.988 | 0.937 |
-| `s5-cv8spec` | 0.770 | 0.585 | 0.807 | 0.564 |
+| `p4-pack4` | 1.212 | 1.232 | 1.099 | 1.270 |
+| `p8-pack8` | 1.186 | 1.199 | 1.158 | 1.246 |
+| `s1-sod16` | 1.411 | 1.441 | 1.401 | 1.021 |
+| `s2-cpt16` | 1.019 | 1.017 | 1.039 | 0.992 |
+| `s3-cpt16f` | 0.923 | 0.944 | 0.958 | 0.965 |
+| `s4-cv8` | 0.875 | 0.892 | 0.907 | 0.891 |
+| `s5-cv8spec` | 0.593 | 0.586 | 0.750 | 0.565 |
 
 Absolute, for scale only:
 
 | stage | kernel ms | corpus ms | loop ms | parse ms |
 |---|---|---|---|---|
-| `sod32` | -- | 23.72 | 18.97 | 116.26 |
-| `s0-cell` | 35.99 | 14.77 | 13.45 | 69.94 |
-| `p4-pack4` | 38.98 | 18.02 | 14.39 | 86.71 |
-| `p8-pack8` | 37.38 | 17.58 | 15.98 | 84.40 |
-| `s1-sod16` | 42.42 | 21.70 | 20.29 | 72.91 |
-| `s2-cpt16` | 36.11 | 15.52 | 14.59 | 73.04 |
-| `s3-cpt16f` | 32.60 | 13.06 | 11.94 | 62.01 |
-| `s4-cv8` | 33.80 | 13.52 | 13.29 | 65.53 |
-| `s5-cv8spec` | 27.70 | 8.64 | 10.86 | 39.47 |
+| `sod32` | -- | 25.64 | 20.01 | 117.03 |
+| `s0-cell` | 18.53 | 14.85 | 13.67 | 67.36 |
+| `p4-pack4` | 22.45 | 18.30 | 15.02 | 85.58 |
+| `p8-pack8` | 21.98 | 17.80 | 15.83 | 83.91 |
+| `s1-sod16` | 26.14 | 21.40 | 19.15 | 68.79 |
+| `s2-cpt16` | 18.88 | 15.10 | 14.20 | 66.80 |
+| `s3-cpt16f` | 17.11 | 14.02 | 13.10 | 64.98 |
+| `s4-cv8` | 16.22 | 13.25 | 12.40 | 60.02 |
+| `s5-cv8spec` | 10.99 | 8.70 | 10.25 | 38.06 |
 
