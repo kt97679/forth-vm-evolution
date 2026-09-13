@@ -142,6 +142,24 @@ LAYOUT_FLAGS_4="-falign-functions=16 -falign-loops=64"
 LV=0                  # which variant is being built right now
 LVSUF=""              # "" for variant 0, "-v1".. for the rest
 
+# Drop any flag set this compiler will not take. These options are
+# generic in GCC but not every target implements every one, and a
+# rejected flag would otherwise abort the whole build under `set -e`.
+if [ "$LAYOUTS" -gt 1 ]; then
+    printf 'int main(void){return 0;}\n' > "$_t/lf.c"
+    _keep=0
+    for _i in $(seq 1 $((LAYOUTS - 1))); do
+        eval "_f=\$LAYOUT_FLAGS_$_i"
+        if cc $_f -o "$_t/lf" "$_t/lf.c" >/dev/null 2>&1; then
+            _keep=$((_keep + 1))
+            eval "LAYOUT_FLAGS_$_keep=\"\$_f\""
+        else
+            echo "note: layout flags rejected by this compiler, skipping:$_f" >&2
+        fi
+    done
+    LAYOUTS=$((_keep + 1))
+fi
+
 cc64() { [ "$BUILD64" = 1 ] || return 0; $CC64 $LF "$@"; }
 cc32() { [ "$BUILD32" = 1 ] || return 0; $CC32 $LF "$@"; }
 
@@ -312,6 +330,37 @@ for LV in $(seq 0 $((LAYOUTS - 1))); do
 done
 LF=""; LVSUF=""
 echo "built  stage engines ($LAYOUTS layout(s) each)"
+
+# A layout variant is only worth timing if it IS a different binary. If
+# the target ignores the alignment flags, every variant comes out
+# identical - and then the benchmarks would average over copies of one
+# build and report an error bar near zero. That is worse than no error
+# bar at all: it would look like unusually good precision.
+if [ "$LAYOUTS" -gt 1 ]; then
+    _probe=""
+    for _w in 64 32; do
+        [ -x "$O/s0-cell-$_w" ] && _probe=$O/s0-cell-$_w && break
+    done
+    if [ -n "$_probe" ]; then
+        _n=$(for _v in "$_probe" "$_probe"-v*; do
+                 [ -x "$_v" ] && cksum < "$_v"; done | sort -u | wc -l)
+        if [ "$_n" -lt 2 ]; then
+            cat >&2 <<'WARN'
+-------------------------------------------------------------------
+ WARNING: every layout variant compiled to an IDENTICAL binary, so
+ this compiler is ignoring the alignment flags on this target.
+
+ The benchmarks would then average several copies of one build and
+ report an error bar near zero - precision that is not real. Treat
+ any +/- from this tree as meaningless and re-run with LAYOUTS=1,
+ which at least says "1 build" honestly.
+-------------------------------------------------------------------
+WARN
+        else
+            echo "       ($_n distinct binaries out of $LAYOUTS - layouts differ)"
+        fi
+    fi
+fi
 
 # ---- images -----------------------------------------------------------
 echo "translating images (pure Python; minutes on a slow machine) ..."
