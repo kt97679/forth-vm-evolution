@@ -91,3 +91,80 @@ regression introduced at the very first step, by leaving something out
 rather than by changing anything, was worth 6x on the same workload and
 was never looked for, because every benchmark the project used compared
 the system against ITSELF.
+
+---
+
+# The fix, and what it was worth
+
+The hashed word list is now in `kernel.4`, threaded by `cross.4`, with
+`extend.4`'s `WORDLIST` building the same shape and `COLD` relocating
+each thread head. 32 threads, SOD32's hash function unchanged.
+
+Dictionary entries visited on `bench/parse.fth`, by `tools/find-depth.sh`:
+
+    before       8,052,823
+    after           288,037      28x fewer
+    sod32           397,720
+
+RelF now examines fewer entries than SOD32 does, because its dictionary
+is smaller at the same thread count.
+
+Wall clock, minimum of interleaved repetitions in a single run, so the
+before and after figures are comparable to each other and to SOD32:
+
+    bench/parse.fth        4-byte    8-byte
+      before                611 ms    786 ms
+      after                 165 ms    179 ms
+      sod32                 225 ms       -
+
+    ANS CORE corpus        4-byte    8-byte
+      before                 93 ms    100 ms
+      after                  41 ms     43 ms
+      sod32                  50 ms       -
+
+3.7x on parsing at 4-byte cells, 4.4x at 8-byte. The system that was
+2.7x slower than its ancestor on interpreted text is now slightly faster
+than it, and the same change is worth 2.3x on the CORE corpus.
+
+For scale: the entire encoding ladder, from cell threading to CV8 with
+every specialisation, is worth between 0.72x and 0.81x on the same
+workloads. One omission, restored, is worth more than all of it.
+
+## What is not done
+
+The change is complete and tested for the stages whose images are CELL
+images - `s0-cell`, `p4-pack4`, `p8-pack8` - which pass the full corpus
+at both widths and cross-compile the kernel byte-identically.
+
+The TRANSLATED stages - SOD16 through CV8 - do not yet build.
+`tools/layout.py` rebuilds the dictionary's link fields when it moves
+every word to its new address, and it still writes ONE chain in dump
+order. It needs to write 32, and to relocate the thread heads held in
+`FORTH-WORDLIST`'s data body, which it currently copies verbatim
+because it has no way to know those cells are addresses.
+
+That is mechanical but it is not small, and it is the honest state of
+the branch: the finding is confirmed and measured, the fix is real, and
+half the ladder is waiting on the translator.
+
+## The port is complete
+
+All eight RelF stages now build, self-host, pass 616 CORE cases at both
+cell widths, and cross-compile the kernel byte-identically. SOD32 passes
+the same corpus. Every number in `bench/README.md` is taken from this
+baseline; nothing from before the fix should be quoted beside it.
+
+Kernel compilation, both widths, against the cell engine:
+
+    stage          8-byte    4-byte
+    s0-cell         1.000     1.000
+    p4-pack4        1.126     1.057
+    p8-pack8        1.031     1.100
+    s1-sod16        1.215     1.238
+    s2-cpt16        1.031     1.032
+    s3-cpt16f       0.959     0.962
+    s4-cv8          0.959     0.962
+    s5-cv8spec      0.749     0.802
+
+The ladder is worth 0.75x at 8-byte cells and 0.80x at 4-byte, on a
+baseline that is no longer carrying a 4x defect in its dictionary.

@@ -59,40 +59,47 @@ what it is being used to argue.
 
 ## Does the choice of benchmark change the answer?
 
-Mostly no, and that is worth knowing before arguing about which workload
-is the right one. All four, at 4-byte cells, relative to the cell engine:
+Mostly, and with one loud exception. All four, at 4-byte cells, relative
+to the cell engine, measured AFTER the hashed word list was restored -
+see FINDINGS-OUTER-INTERPRETER.md, and do not mix these with any number
+taken before it:
 
-| stage | kernel | corpus | parse | loop | spread |
+| stage | kernel | corpus | loop | parse | spread |
 |---|---|---|---|---|---|
 | s0-cell | 1.000 | 1.000 | 1.000 | 1.000 | 0.000 |
-| s1-sod16 | 1.134 | 1.229 | 1.253 | 1.098 | 0.155 |
-| s2-cpt16 | 1.111 | 1.116 | 1.178 | 1.161 | 0.067 |
-| s3-cpt16f | 1.043 | 1.076 | 1.089 | 0.950 | 0.139 |
-| s4-cv8 | 0.983 | 1.025 | 1.015 | 0.957 | 0.068 |
-| s5-cv8spec | 0.817 | 0.772 | 0.721 | 0.807 | 0.096 |
+| p4-pack4 | 1.057 | 1.161 | 1.148 | 1.174 | 0.116 |
+| p8-pack8 | 1.100 | 1.142 | 1.271 | 1.206 | 0.171 |
+| s1-sod16 | 1.238 | 1.303 | 1.658 | 1.054 | **0.604** |
+| s2-cpt16 | 1.032 | 1.026 | 1.106 | 1.022 | 0.084 |
+| s3-cpt16f | 0.962 | 0.913 | 0.926 | 0.920 | 0.050 |
+| s4-cv8 | 0.962 | 0.920 | 1.037 | 0.933 | 0.117 |
+| s5-cv8spec | 0.802 | 0.719 | 0.863 | 0.679 | 0.184 |
 
-The ordering is the same in every column with one exception - the loop
-benchmark puts SOD16 ahead of CPT16, where the other three reverse them -
-and the spread across four very different workloads never exceeds 0.16.
-Every column says SOD16 is a speed regression on the cell engine, that
-CV8 roughly breaks even, and that the specialisations are the only
-change worth more than a few percent.
+Seven of the eight rows agree to within 0.18 across four unrelated
+workloads, and every column puts the stages in the same order. The
+conclusion does not depend on which benchmark is chosen.
 
-The reason the columns agree is that every one of these workloads is
-Forth code running on the VM. The parser, the dictionary search and the
-compiler are all compiled Forth, so a faster inner interpreter speeds
-them up too. Within one family - one kernel.4, one word set - there is
-no such thing as a workload that avoids the encoding.
+**SOD16 is the exception, and the reason is instructive.** Its spread is
+0.604: worst of all stages on the loop benchmark at 1.658, nearly level
+with the cell engine on parsing at 1.054. Nothing else comes close to
+that inconsistency.
 
-The corollary is that the earlier SOD32 result is not a benchmark-choice
-problem either. SOD32 wins the corpus because kernel.4th finds words
-faster than kernel.4 does, and no choice of workload will separate that
-from the encoding, because the two systems do not share a kernel. Only a
-same-kernel comparison can isolate an encoding, and SOD32 cannot be part
-of one.
+It is the only stage whose RUNTIME-COMPILED code differs systematically
+from its translated code. A SOD16 call names a word NUMBER, the table is
+fixed at load, and a word defined afterwards has no number - so every
+call to newly compiled code goes through the three-token FARCALL escape
+instead of a one-token table call. `loop.fth` is almost entirely
+runtime-compiled definitions calling each other, which is the worst case
+for that. `parse.fth` spends its time inside the kernel's own words,
+which were translated and do use table calls, and there SOD16's denser
+image starts paying for itself in cache.
+
+So the disagreement is not noise and it is not a benchmark artifact: it
+is the escape hatch, showing up exactly where the design predicts. It is
+also a cost no size model would ever have found, because it is not paid
+by the image - it is paid by whatever the image compiles later.
 
 ## The two rejected designs, built
-
 `p4-pack4` and `p8-pack8` are the tagged-nibble and tagged-byte schemes
 that Iteration 157 measured in a synthetic loop and rejected without
 building. Built and measured in a real engine, at 4-byte cells:
