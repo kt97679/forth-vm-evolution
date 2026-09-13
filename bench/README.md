@@ -90,3 +90,43 @@ faster than kernel.4 does, and no choice of workload will separate that
 from the encoding, because the two systems do not share a kernel. Only a
 same-kernel comparison can isolate an encoding, and SOD32 cannot be part
 of one.
+
+## The two rejected designs, built
+
+`p4-pack4` and `p8-pack8` are the tagged-nibble and tagged-byte schemes
+that Iteration 157 measured in a synthetic loop and rejected without
+building. Built and measured in a real engine, at 4-byte cells:
+
+| | predicted dispatch | measured, kernel compile | measured, loop |
+|---|---|---|---|
+| tagged nibble | 2.05x | 1.19x | 1.15x |
+| tagged byte | 1.90x | 1.17x | 1.22x |
+
+| | modelled size | measured cells folded away |
+|---|---|---|
+| tagged nibble | 0.76x | 0.89x (347 of 931 primitive cells) |
+| tagged byte | 0.76x | 0.86x (409 of 930) |
+
+Three things follow, and only the first was known.
+
+**The decision was right.** Both packed schemes are slower than the cell
+engine they would replace and far behind CV8, which is 1.07 on the same
+workload while being less than half the size. Nothing here reopens it.
+
+**The reason recorded for it was wrong by about four times.** The
+synthetic benchmark predicted a 90-105% penalty; the real penalty is
+15-22%. `pack-bench.c`'s own header says why - its streams were sized to
+stay hot, so density earned no credit, and it calls that the pessimistic
+case. It was, by a factor nobody estimated.
+
+**The nibble scheme is worse than the byte scheme on SIZE, which the
+census said it was level on.** The census had them at 0.76x each. Built,
+the nibble scheme folds away FEWER cells - 347 against 409 - because a
+four-bit opcode only reaches sixteen primitives, and a primitive outside
+that alphabet does not merely fail to pack: it ENDS the run it sits in.
+With a mean run length near one, breaking runs costs more than the
+narrower field saves. The nibble scheme is the denser encoding of a
+sequence and the sparser encoding of this program.
+
+That is not a subtlety a size model was ever going to catch, because the
+model priced the fields and the program pays for the joins.

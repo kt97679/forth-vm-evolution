@@ -38,7 +38,7 @@ IN=$O/.bench-corpus.fth
 printf 'BYE\n' > "$O/.nul.fth"
 ERRS='INCORRECT RESULT: \{|WRONG NUMBER OF RESULTS: \{|Undefined word'
 
-STAGES="s0-cell p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec"
+STAGES="s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec"
 
 # name -> "engine image workdir"
 declare -A E I D

@@ -28,7 +28,7 @@ O=$(cd "$O" && pwd)
 W=$O/work
 REPS=${2:-15}
 
-STAGES="s0-cell p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec"
+STAGES="s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec"
 WIDTH=${WIDTH:-64}
 
 # The cross-compiler's TARGET cell width is a source constant in cross.4,

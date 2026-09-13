@@ -98,6 +98,19 @@ echo "built  dictionary dumps"
 cp engine/vm-lab.c "$O/"
 python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
 
+# PACK4's alphabet is derived from the image, and the engine needs it at
+# compile time, so the packer runs BEFORE the engine is built and emits
+# both the image and pack4-alphabet.h. The 64-bit run writes the header;
+# the 32-bit run reads it back, so one alphabet serves both widths.
+rm -f "$O/pack4-alphabet.h"
+( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k64.txt" 8 kernel.img \
+    "$O/p4-pack4-k64.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k64.log"
+( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k32.txt" 4 kernel32.img \
+    "$O/p4-pack4-k32.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k32.log"
+cp "$O/p4-pack4-k64.img" "$O/p4-pack4-s64.img"
+cp "$O/p4-pack4-k32.img" "$O/p4-pack4-s32.img"
+cc      -O2 -Wall -I"$O" -o "$O/p4-pack4-64" engine/pack4.c
+cc -m32 -O2 -Wall -I"$O" -o "$O/p4-pack4-32" engine/pack4.c
 cc      -O2 -Wall -o "$O/p8-pack8-64" engine/pack8.c
 cc -m32 -O2 -Wall -o "$O/p8-pack8-32" engine/pack8.c
 cc      -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64" "$O/vm-lab.c"
@@ -224,7 +237,7 @@ echo "built  stage 0 images"
 {
   echo "stage,runonly_64,runonly_32,selfhost_64,selfhost_32"
   printf 'sod32,NA,NA,NA,%s\n' "$(stat -c%s "$SOD/forth.img")"
-  for st in s0-cell p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
+  for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
       sz() { [ -r "$1" ] && stat -c%s "$1" || echo NA; }
       printf '%s,%s,%s,%s,%s\n' "$st" \
           "$(sz "$O/$st-k64.img")" "$(sz "$O/$st-k32.img")" \
