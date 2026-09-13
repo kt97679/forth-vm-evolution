@@ -1,94 +1,101 @@
-# Two machines
+# Three machines
 
-The whole point of a second machine is to find out which conclusions are
-about the encodings and which are about the box. Both runs are post
-I/O-buffering and use the same sources, images and corpus.
+The point of more than one machine is to find out which conclusions are
+about the encodings and which are about the box. All three runs are post
+I/O-buffering and share sources, images and corpus.
 
-    A  Intel Xeon @ 2.10GHz, 1 vCPU, Firecracker VM   floor 3.4%
-    B  AMD Ryzen 7 PRO 8840HS, 16 cores, bare metal   floor 4.3%
+    A  Intel Xeon @ 2.10GHz, 1 vCPU, Firecracker VM     floor 3.1%
+    B  AMD Ryzen 7 PRO 8840HS, 16 cores, bare metal     floor 4.3%
+    C  ARMv7 (NVIDIA Tegra), 4 cores, Gentoo            floor 1.3%
 
-## What reproduces
+C is roughly 20x slower than A and B in absolute terms and the quietest
+of the three to measure on. It is also a different architecture, and the
+images it runs are byte-for-byte the same files - which is the property
+SOD32's separated engine and image were designed to have, tested here by
+accident rather than on purpose.
 
-**The ordering, on three workloads out of four.** Kernel compile, corpus
-and parse rank the eight stages identically on both machines:
+## What reproduces on all three
+
+**The ordering.** Kernel compile, corpus and parse rank the stages the
+same way everywhere:
 
     s5-cv8spec < s4-cv8 < s3-cpt16f < s2-cpt16 < s0-cell < p8 < p4 < s1-sod16
 
-**The magnitudes, mostly.** Kernel compile at 4-byte cells:
+**The magnitudes, at 4-byte cells, kernel compile:**
 
-| stage | A | B |
-|---|---|---|
-| `p4-pack4` | 1.212 | 1.131 |
-| `p8-pack8` | 1.186 | 1.103 |
-| `s1-sod16` | 1.411 | 1.298 |
-| `s2-cpt16` | 1.019 | 1.022 |
-| `s3-cpt16f` | 0.923 | 0.918 |
-| `s4-cv8` | 0.875 | 0.878 |
-| `s5-cv8spec` | 0.593 | 0.738 |
-
-Five of seven agree to within the noise floor. SOD16 is a real
-regression on both. CV8 and folding are a real win on both.
-
-**That SOD16 is the worst stage, and that its parse column is the
-exception.** Both machines put SOD16 last everywhere except parsing,
-where it comes level with the cell engine (0.99 / 1.02). The far-call
-escape explains it: `parse.fth` runs inside translated kernel code,
-where SOD16's table calls survive.
-
-## What does not reproduce, and matters
-
-**The packed schemes are machine-dependent, and that reverses a
-conclusion.** At 8-byte cells on machine B:
-
-| stage | kernel | corpus | loop | parse |
-|---|---|---|---|---|
-| `p8-pack8` | 0.939 | 0.990 | 0.993 | 0.971 |
-
-The tagged-byte scheme costs **nothing** there - if anything it is
-slightly ahead - while on machine A it cost 15-25%. It is also 0.857x
-the size. So "packing buys density and costs speed" is true on a
-cache-poor VM and false on a laptop with a real cache hierarchy.
-
-This is precisely the effect `pack-bench.c` excluded by design in 2024:
-its streams were sized to stay hot, so density earned no credit, and its
-header called that the pessimistic case. It was pessimistic on machine
-A. On machine B it was wrong about the sign.
-
-CV8 still dominates both packed schemes on both axes on both machines -
-0.813 against 0.939 on speed, 0.47x against 0.86x on size - so the
-decision survives. The *reason* does not.
-
-**Machine B's 4-byte loop column disagrees with everything else.** Every
-stage comes out slower than the cell engine there, including the ones
-that are faster at 8-byte cells on the same machine and faster at 4-byte
-cells on machine A:
-
-| stage | B, loop 64 | B, loop 32 | A, loop 32 |
+| stage | A | B | C |
 |---|---|---|---|
-| `s2-cpt16` | 0.983 | 1.301 | 1.039 |
-| `s3-cpt16f` | 0.908 | 1.198 | 0.958 |
-| `s4-cv8` | 1.038 | 1.178 | 0.907 |
-| `s5-cv8spec` | 0.783 | 1.084 | 0.750 |
+| `p4-pack4` | 1.212 | 1.131 | 1.122 |
+| `p8-pack8` | 1.186 | 1.103 | 1.066 |
+| `s1-sod16` | 1.411 | 1.298 | 1.380 |
+| `s2-cpt16` | 1.019 | 1.022 | 0.997 |
+| `s3-cpt16f` | 0.923 | 0.918 | 0.909 |
+| `s4-cv8` | 0.875 | 0.878 | 0.899 |
+| `s5-cv8spec` | 0.593 | 0.738 | 0.790 |
 
-`loop.fth` is the narrowest workload - counted loops over stack
-arithmetic, no dictionary, no variables, no I/O - so it is the one most
-exposed to register allocation, and i386 has eight registers to x86-64's
-sixteen. A plausible story is that the token engines' decode state
-spills on the 32-bit build of machine B's compiler and not on machine
-A's, but the two machines run the *same compiler version*, so that story
-is incomplete. Unexplained.
+Six of seven agree within about 0.1 across three machines and two
+architectures. SOD16 is a real regression everywhere. Folding and CV8
+are a real win everywhere.
 
-**CV8 with specialisations is worth more on A than on B** - 0.593
-against 0.738 on kernel compile. Consistent with a denser image helping
-more when caches are smaller, but two machines cannot separate that from
-anything else.
+**SOD32 is slower than the cell engine on all three**, by 1.3x to 1.7x,
+on every workload it can run. Before the hashed word list was restored
+it was 2x faster. That is the size of what one omission was costing.
 
-## What this means for the article
+## What varies, and what actually explains it
 
-Quote the ordering, which reproduces. Quote the spread across machines
-for anything whose magnitude matters. Do not quote a single machine's
-number for the packed schemes at all - their cost is the thing that
-moved most, and it moved enough to change the conclusion's basis.
+**The packed schemes depend on CELL WIDTH, not on the machine.** I had
+this wrong: seeing the tagged-byte scheme cost 19% on A and nothing on B
+at 8-byte cells, I put it down to B's larger caches. Machine C settles
+it, because it has no 8-byte column and the numbers still line up by
+width rather than by box:
 
-And say plainly that two machines is not a study. It was enough to
-overturn one claim; a third would probably overturn another.
+| p8-pack8, kernel compile | 8-byte | 4-byte |
+|---|---|---|
+| A (Xeon VM) | 1.020 | 1.186 |
+| B (Ryzen) | 0.939 | 1.103 |
+| C (ARMv7) | -- | 1.066 |
+
+The two 8-byte figures are better than all three 4-byte figures. The
+reason is structural rather than architectural: a pack carries one
+opcode per remaining byte of the cell, so it folds up to **seven**
+operations on an 8-byte cell and only **three** on a 4-byte one. Wider
+cells mean fewer packs for the same code, and the per-pack decode is
+what the scheme pays for.
+
+So the honest statement is that the tagged-byte scheme is close to free
+where cells are wide and costs 7-19% where they are narrow - and CV8
+beats it on both axes at both widths on every machine anyway.
+
+**The loop benchmark does not reproduce and should carry no weight.**
+It is the only column that disagrees between machines, and it disagrees
+in different directions:
+
+| stage | A, 32 | B, 32 | C, 32 |
+|---|---|---|---|
+| `p8-pack8` | 1.158 | 1.133 | **0.952** |
+| `s2-cpt16` | 1.039 | 1.301 | **0.845** |
+| `s3-cpt16f` | 0.958 | 1.198 | **0.830** |
+| `s5-cv8spec` | 0.750 | 1.084 | 0.915 |
+
+On C every stage but SOD16 beats the cell engine, including both packed
+schemes; on B every stage loses to it; on A it is mixed. `loop.fth` is
+the narrowest workload - counted loops over stack arithmetic, no
+dictionary, no variables, no I/O - which makes it the most exposed to
+register allocation and branch prediction, and evidently the least
+portable thing measured here. Quote it as the outlier it is, or not at
+all.
+
+**CV8 with specialisations is worth most on the slowest machine's
+opposite.** 0.593 on A, 0.738 on B, 0.790 on C. The spread is real and
+unexplained; three machines is not enough to separate cache size from
+issue width from compiler version.
+
+## For the article
+
+State the ordering, which reproduces on three machines and two
+architectures. State kernel-compile magnitudes, which agree within 0.1.
+Explain the packed schemes by cell width, not by cache. Treat `loop.fth`
+as a cautionary tale about narrow benchmarks rather than as evidence.
+
+And note that three machines was enough to overturn an explanation that
+two machines had seemed to support.
