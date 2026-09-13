@@ -168,6 +168,8 @@ WARN
             # that does not exist on this host. Count data rows.
             if [ "$(grep -cE '^[a-z0-9-]+ +[0-9.]+ +[0-9.]+' \
                     "$R/$b-$w.txt")" -gt 0 ]; then echo ok
+            elif ! ls "$O"/s0-cell-"$w" >/dev/null 2>&1; then
+                echo "not built on this host"
             elif grep -q 'not built\|SKIP\|EXCLUDED' "$R/$b-$w.txt"; then
                 echo "no stages at this width"
             else echo "NO TABLE - see $R/$b-$w.txt"; fi

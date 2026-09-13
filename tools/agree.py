@@ -20,9 +20,25 @@ CELL = re.compile(r'^\|\s*`?([a-z0-9-]+)`?\s*\|(.+)\|\s*$')
 NUM = re.compile(r'([\d.]+)\s*(?:±|\+/-)\s*([\d.]+)|([\d.]+)|--')
 
 
+# Student's t at 95%, by degrees of freedom. A standard error computed
+# from N layout variants has N-1 df, and at N=3 that is 2 - where a
+# 2-sigma rule is more than twice too tight. Using 2.0 regardless made
+# an ARM run with LAYOUTS=3 report a disagreement that was nothing but
+# small-sample arithmetic.
+T95 = {1: 12.71, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447,
+       7: 2.365, 8: 2.306, 9: 2.262}
+
+
+def tmul(nvar):
+    if not nvar or nvar < 2:
+        return 2.0
+    return T95.get(nvar - 1, 2.0)
+
+
 def parse(path):
-    """(width, workload, stage) -> (ratio, se or None)."""
+    """((width, workload, stage) -> (ratio, se or None), variant count)."""
     out, width, cols = {}, None, None
+    nvar = None
     for line in open(path):
         m = re.match(r'^## Speed, (\d+)-bit cells', line)
         if m:
@@ -50,12 +66,18 @@ def parse(path):
                         out[(width, col, stage)] = (float(cell), None)
                     except ValueError:
                         pass
+        m = re.search(r'mean over (\d+) layout variant', line)
+        if m:
+            nvar = int(m.group(1))
         if line.startswith('## ') and 'Speed' not in line:
             width = None
-    return out
+    return out, nvar
 
 
-runs = [parse(p) for p in sys.argv[1:]]
+parsed = [parse(p) for p in sys.argv[1:]]
+runs = [r for r, _ in parsed]
+nvars = [n for _, n in parsed if n]
+TM = tmul(min(nvars)) if nvars else 2.0
 if len(runs) < 2:
     sys.exit(0)
 
@@ -72,16 +94,19 @@ for k in sorted(keys):
     lo = min(v for v, _ in vals)
     hi = max(v for v, _ in vals)
     span = hi - lo
-    # combined 2-sigma band of the two extreme runs
+    # combined band of the two extreme runs, at 95% for the number of
+    # layout variants actually built
     ses = sorted(vals, key=lambda t: t[0])
-    tol = 2.0 * ((ses[0][1] ** 2 + ses[-1][1] ** 2) ** 0.5)
+    tol = TM * ((ses[0][1] ** 2 + ses[-1][1] ** 2) ** 0.5)
     rel = 100.0 * span / lo if lo else 0.0
     if rel > worst[0]:
         worst = (rel, k)
     if span > tol:
         bad.append((k, lo, hi, span, tol))
 
-print("agreement across %d runs: %d comparisons" % (len(runs), checked))
+print("agreement across %d runs: %d comparisons (95%%, t=%.2f for %s"
+      " layout variants)"
+      % (len(runs), checked, TM, min(nvars) if nvars else '?'))
 if not checked:
     print("  nothing comparable - were the runs saved with error bars?")
     sys.exit(0)
