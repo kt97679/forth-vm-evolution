@@ -363,6 +363,54 @@ static void load_image(const char *name) {
  *  targets).
  */
 
+
+/*
+ *  Buffered terminal I/O.
+ *
+ *  KEY and EMIT used to do one read(2) or write(2) PER CHARACTER. On a
+ *  host where a syscall is cheap that is merely wasteful; on real
+ *  hardware with the usual mitigations it dominates every workload that
+ *  touches text. Running the 616-case CORE corpus made 26,950 one-byte
+ *  reads of stdin and 5,373 one-byte writes: 32,357 syscalls against
+ *  SOD32's 59 for the identical input, because SOD32 reads in blocks.
+ *
+ *  That is not a small constant. Measured on two machines, the same
+ *  build was 5x slower on the faster CPU, purely because its syscalls
+ *  cost more - and the constant is identical for every stage, so it also
+ *  compressed every ratio in the comparison towards 1.0 and hid the
+ *  differences the benchmarks exist to show.
+ *
+ *  Ordering is the thing to get right. Output is flushed before any
+ *  read of stdin, so a prompt appears before the input it asks for;
+ *  before any other write to fd 1, so interleaving is preserved; and
+ *  before exit, fork and exec, so nothing is lost or duplicated into a
+ *  child.
+ */
+#define TIOBUF 4096
+static UNS8 t_ibuf[TIOBUF];
+static int  t_ipos = 0, t_ilen = 0;
+static UNS8 t_obuf[TIOBUF];
+static int  t_olen = 0;
+
+static void t_flush(void) {
+    if (t_olen) { full_write(1, t_obuf, (size_t)t_olen); t_olen = 0; }
+}
+
+static void t_put(UNS8 c) {
+    if (t_olen == TIOBUF) t_flush();
+    t_obuf[t_olen++] = c;
+}
+
+static int t_getc(void) {
+    if (t_ipos >= t_ilen) {
+        t_flush();                     /* prompt before blocking */
+        t_ilen = (int)read(0, t_ibuf, TIOBUF);
+        t_ipos = 0;
+        if (t_ilen <= 0) { t_ilen = 0; return -1; }
+    }
+    return t_ibuf[t_ipos++];
+}
+
 static void virtual_machine(void) {
     UNS64 ip = g_ip, rp = g_rp, dsp = g_dsp, t;
     const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
@@ -464,22 +512,24 @@ L_dplus:   /* d+      */
 
 L_emit: { /* emit    */
     UNS8 c = (UNS8)DS0;
-    full_write(1, &c, 1);
+    t_put(c);
     dsp += CELL_BYTES;
     NEXT();
 }
 L_key: { /* key     */
-    UNS8 c;
-    long n = read(0, &c, 1);
+    int ch = t_getc();
+    UNS8 c = (UNS8)ch;
+    long n = (ch < 0) ? 0 : 1;
     if (n <= 0) {
         /* Clean exit on stdin EOF (or a read error) instead of spinning
          * forever re-reading EOF - see GOALS.md / PROGRESS.md, Bug 3. */
+        t_flush();
         exit(0);
     }
     PUSH((UNS64)c);
     NEXT();
 }
-L_bye:     /* bye     */ exit(0);
+L_bye:     /* bye     */ t_flush(); exit(0);
 L_spfetch: /* sp@     */ PUSH(dsp + CELL_BYTES); NEXT();
 L_spstore: /* sp!     */ dsp = DS0; NEXT();
 L_rpfetch: /* rp@     */ PUSH(rp); NEXT();
@@ -506,7 +556,8 @@ L_readline: { /* c-addr u1 fid --- u2 flag ior */
     UNS8 c;
 
     while (count < max) {
-        n = read(fd, &c, 1);
+        if (fd == 0) { int ch = t_getc(); n = (ch < 0) ? 0 : 1; c = (UNS8)ch; }
+        else           n = read(fd, &c, 1);
         if (n < 0) { err = 1; break; }
         if (n == 0) break;      /* EOF */
         got_any = 1;
@@ -523,6 +574,7 @@ L_readline: { /* c-addr u1 fid --- u2 flag ior */
     NEXT();
 }
 L_writeline: { /* c-addr u fid --- ior */
+    t_flush();
     int fd = (int)DS0;
     UNS64 addr = DS2, len = DS1;
     long n;
@@ -554,6 +606,7 @@ L_readfile: { /* c-addr u1 fid --- u2 ior */
     NEXT();
 }
 L_writefile: { /* c-addr u fid --- ior */
+    t_flush();
     int fd = (int)DS0;
     UNS64 addr = DS2, len = DS1;
     long n;
@@ -563,7 +616,7 @@ L_writefile: { /* c-addr u fid --- ior */
     dsp += 2 * CELL_BYTES;
     NEXT();
 }
-L_system: { /* c-addr u --- ior */
+L_system: { t_flush(); /* c-addr u --- ior */
     UNS64 addr = DS1, len = DS0;
     UNS8 saved;
     pid_t pid;
@@ -633,9 +686,9 @@ L_filesize: { /* fid --- u ior */
  *  live source text the way OPEN-FILE's c-addr/u pair typically is).
  */
 L_fork: /* --- pid */
-    PUSH((UNS64)(INT64)fork());
+     t_flush();PUSH((UNS64)(INT64)fork());
     NEXT();
-L_execve: { /* argv-addr path-addr --- ior */
+L_execve: { t_flush(); /* argv-addr path-addr --- ior */
     char *path = (char*)(uintptr_t)DS0;
     char **argv = (char**)(uintptr_t)DS1;
     execve(path, argv, environ);
@@ -679,7 +732,7 @@ L_setenv: /* value-addr name-addr --- ior */
     dsp += CELL_BYTES;
     NEXT();
 L_sysexit: /* n --- */
-    _exit((int)DS0);
+     t_flush();_exit((int)DS0);
 L_chdir: /* c-addr --- ior */
     DS0 = (UNS64)((chdir((char*)(uintptr_t)DS0) < 0) ? 200 : 0);
     NEXT();
