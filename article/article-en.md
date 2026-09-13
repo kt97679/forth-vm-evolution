@@ -12,6 +12,18 @@ Recently I came back to it, built it for 64-bit, and the deal changed.
 What follows is what I tried, in the order I tried it, including the two
 attempts that did not work and why.
 
+Two words are load-bearing throughout. The **engine** is the C program
+that fetches operations and runs them - a few thousand lines, compiled
+once. The **image** is the compiled Forth system it runs: the dictionary,
+every word body, the whole language. Only the image changes size between
+the systems below; the engine changes only in how it decodes what it
+reads. When I say "0.47x", I mean the image.
+
+The **dispatch loop** is the part of the engine that reads the next
+operation and jumps to the code for it. Every scheme here is a different
+answer to "what does one operation look like in memory", and every one
+is paid for in that loop.
+
 The systems have working names, used throughout:
 
 | name | what it is |
@@ -19,22 +31,38 @@ The systems have working names, used throughout:
 | SOD32 | the ancestor: six 5-bit subinstructions packed per 32-bit cell |
 | RelF | one host cell per operation, and the cell IS a relative offset |
 | PACK4, PACK8 | RelF with several opcodes packed into a cell, 4-bit or 8-bit |
-| SOD16 | the ancestor's idea with the unit halved: one 16-bit token per operation |
-| CPT16 | compressed-pointer threading: the same, but the target is computed, not looked up |
-| CV8 | the same again, narrowed to one byte per unit |
+| SOD16 | the ancestor's idea with the unit halved: one 16-bit token per operation, calls looked up in a table |
+| CPT16 | compressed-pointer threading: the same, but the call target is computed rather than looked up |
+| CV8 | the same idea again, in a byte stream |
 
-Every system named here builds,
-boots, compiles its own encoding and passes the same 616-case ANS CORE
-corpus; the tables come out of the repository, not out of a model.
+CV8 rather than "CPT8" because the step is not just a narrower unit.
+CPT16 is fixed-width - every operation is one 16-bit token, primitive or
+call. A byte cannot hold a call target, so CV8 gives that up: an opcode
+is one byte, a call is two or three. It is the first scheme here where
+operations are not all the same size.
+
+Every system named here builds, boots, compiles its own encoding and
+passes the same 616-case ANS CORE corpus; the tables come out of the
+repository, not out of a model.
 
     tools/build-stages.sh      # every engine and image, both cell widths
     tools/run-tests.sh         # the corpus on all of them
     tools/collect-results.sh   # every table below
 
-Ratios are against the cell engine, so smaller is better. They carry one
-standard error, measured across several differently-laid-out builds of
-each engine - see the last section, which is about measurement and is
-the part I would keep if I had to cut the rest.
+The headline benchmark is each system **cross-compiling the Forth
+kernel**: reading the kernel's Forth source and writing out a fresh
+image, which is the largest piece of real work any of them does. It
+exercises the text interpreter, the compiler and the dictionary at once,
+and it cannot favour an encoding, because the image every system writes
+is in the cell format regardless. It is also the correctness check - the
+image produced must be byte-identical to the reference before any timing
+is recorded, so a system that is fast because it is quietly wrong fails
+the comparison that times it.
+
+Ratios are against RelF, the cell engine, so smaller is better. They
+carry one standard error, measured across several differently-laid-out
+builds of each engine - see the last section, which is about measurement
+and is the part I would keep if I had to cut the rest.
 
 ---
 
@@ -88,7 +116,8 @@ recorded at 0.985, faster than cell dispatch, from a benchmark running a
 32 MB stream against a 2 MB L2. That was measuring memory traffic.
 
 The interesting failure is the other one, and only building it showed
-it. On a size census PACK4 and PACK8 were level, both at 0.76x - the
+it. Counting on paper, without building anything, PACK4 and PACK8 were
+level, both at 0.76x - the
 narrower field should pack twice as many operations per cell, which
 ought to offset having fewer of them to choose from. Built, PACK4 folds
 away *fewer* cells - 377 against 433 - and produces the **larger**
@@ -148,8 +177,9 @@ second dependent load, and the compiler's job becomes one line:
   START @ - CPT-SHIFT RSHIFT 256 + OP, ;
 ```
 
-Subtract the base, shift, add the opcode band. That is the entire call
-mechanism.
+Subtract the image base from the target, shift it down, and add 256
+because tokens below that are primitives. That is the entire call
+mechanism - and compare it with the page of code SOD16 needed.
 
     CPT16, kernel compile    1.024 ±0.021 (AMD)    1.007 ±0.016 (ARM)
 
@@ -163,9 +193,10 @@ like it costs.** That reads as obvious now. It did not read as obvious
 when the table seemed like free indirection and the measurement had not
 been taken.
 
-The second is a caveat. `s2` removes the table's dispatch cost and the
-compiler's inverse-map complexity in the same step, so the 37% cannot be
-split between them by these measurements. Only their sum is measured.
+The second is a caveat. CPT16 removes the table's dispatch cost and the
+compiler's number-to-address search in the same step, so the 37% that
+separates it from SOD16 cannot be split between the two by these
+measurements. Only the sum is measured.
 
 ## 5. Attempt three: narrow the unit itself
 
@@ -185,8 +216,8 @@ JVM encode theirs.
     CV8, kernel compile    0.919 ±0.026 (AMD)    0.896 ±0.011 (ARM)
     CV8, image             11,416 bytes - 0.469x of cell threading
 
-The first thing in the sequence that was better on both axes at once.
-Here is the same definition in each encoding, dumped from the real
+The first scheme in the sequence that beat the cell engine on both size
+and speed at once. Here is the same definition in each encoding, dumped from the real
 images at 4-byte cells by `tools/show-word.sh`:
 
 ```
@@ -197,30 +228,41 @@ token    6 2 1 23 7 10 1        7 tokens x 2 = 14 bytes
 CV8      6 120 1 7 79                          5 bytes
 ```
 
-In the CV8 line, `120` is an add-immediate opcode into which `LIT 1 +`
-collapsed, and `79` is a folded "`C@` then return".
+In the CV8 line, `120` is an add-immediate opcode into which three
+operations collapsed - push the literal 1, then add - and `79` is a folded "`C@` then return".
 
 ## 6. Then it compounds
 
-Folding is the first of those: a primitive followed by `EXIT` becomes one
-opcode, which removes a dispatch from the end of a great many
-definitions. Then specialisation - the CPython 3.11 idea of giving the
-common case its own opcode. Small integers, the hottest kernel words,
-and immediate operands each get one.
+Both of the tricks in that `COUNT` line are worth having on their own.
+
+**Folding**: a primitive immediately followed by `EXIT` becomes a single
+opcode, which removes one trip round the dispatch loop from the end of a
+great many definitions.
+
+**Specialisation**: give the common case its own opcode, the idea CPython
+3.11 uses. Small integers get one each, so do the hottest kernel words,
+and so does an operand small enough to travel inside the instruction
+rather than after it - `1 +` becoming a single add-immediate.
 
 | stage | kernel compile (AMD, 8-byte) | image | vs cell |
 |---|---|---|---|
 | cell | 1.000 ±0.037 | 24,320 | 1.000 |
 | CPT16 | 1.035 ±0.033 | 12,864 | 0.529 |
-| + folding | 0.897 ±0.027 | 12,696 | 0.522 |
+| CPT16 + folding | 0.897 ±0.027 | 12,696 | 0.522 |
 | CV8 | 0.919 ±0.026 | 11,416 | 0.469 |
-| + specialisation | 0.688 ±0.019 | 11,088 | 0.456 |
+| CV8 + specialisation | 0.688 ±0.019 | 11,088 | 0.456 |
 
-Worth saying plainly, because it is not the result I expected: **the
-specialisations are worth more than every encoding change put
-together.** CV8 alone is 0.92; the opcodes take it to 0.69. Measured by
-bytes saved in the image, the three that do anything are small integers
-(190), hot words (194) and immediate operands (111).
+One row in that table goes the wrong way and should not be glossed over:
+CV8 is *slower* than folded CPT16, 0.919 against 0.897, on both machines.
+Narrowing the unit to a byte does not come free - a call stops being one
+fixed token and becomes two bytes to assemble. What it buys is 10% of
+the image. That is a trade, not an improvement, and the sequence is only
+worth it because of the row underneath.
+
+Because the specialisations are where the speed actually is. **They are
+worth more than every encoding change put together**: CV8 alone is 0.92,
+the opcodes take it to 0.69. Measured by bytes saved in the image, small
+integers are worth 190, hot words 194 and immediate operands 111.
 
 ## 7. The last place cell width was still being paid
 
