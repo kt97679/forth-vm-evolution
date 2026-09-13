@@ -1,15 +1,29 @@
 # Making a Forth VM smaller: four attempts, two of which failed
 
-In 2004 I forked L.C. Benschop's SOD32, threw away its packed instruction
-format, and replaced it with one relative offset per cell. I called the
-result RelF and used it for twenty years. The point was speed: a cell
-you can jump through directly beats six 5-bit subinstructions you have
-to unpack.
+In 2004, out of curiosity rather than need, I forked L.C. Benschop's
+SOD32 - a 32-bit stack machine with a Forth on top - threw away its
+packed instruction format, and replaced it with one relative offset per
+cell. I called the result RelF, for Relative Forth. The point was speed:
+a cell you can jump through directly beats six 5-bit subinstructions you
+have to unpack first. It was 32-bit only, it worked, and it sat there.
 
-Then I built it for 64-bit, and the deal changed.
+Recently I came back to it, built it for 64-bit, and the deal changed.
 
 What follows is what I tried, in the order I tried it, including the two
-attempts that did not work and why. Every system named here builds,
+attempts that did not work and why.
+
+The systems have working names, used throughout:
+
+| name | what it is |
+|---|---|
+| SOD32 | the ancestor: six 5-bit subinstructions packed per 32-bit cell |
+| RelF | one host cell per operation, and the cell IS a relative offset |
+| PACK4, PACK8 | RelF with several opcodes packed into a cell, 4-bit or 8-bit |
+| SOD16 | the ancestor's idea with the unit halved: one 16-bit token per operation |
+| CPT16 | compressed-pointer threading: the same, but the target is computed, not looked up |
+| CV8 | the same again, narrowed to one byte per unit |
+
+Every system named here builds,
 boots, compiles its own encoding and passes the same 616-case ANS CORE
 corpus; the tables come out of the repository, not out of a model.
 
@@ -40,17 +54,30 @@ already solved it by packing. So that is where I started.
 
 ## 2. Attempt one: pack several operations into a cell
 
-Put several small opcodes in one cell behind a tag byte. Two variants:
-4-bit opcodes, sixteen of them, and 8-bit opcodes. I had costed both in
-2018 and rejected them on a synthetic dispatch benchmark that put them
-at 1.90x and 2.05x. This time I built them.
+SOD32's trick is that a cell holds six operations, not one. Nothing says
+a RelF cell has to hold one either.
 
-Measured on kernel compilation, across three machines:
+So: reserve the first byte of a cell as a tag saying which of the
+remaining bytes are packed opcodes, and fill the rest with them. At
+8-byte cells that is up to seven byte-sized opcodes in the space one
+operation used to take (PACK8), or up to fourteen if an opcode is only
+four bits (PACK4). A four-bit field reaches sixteen primitives, so PACK4
+gets an alphabet of the sixteen most common; anything else stays a plain
+cell.
+
+I had costed both earlier in this work and rejected them, on a synthetic
+benchmark that ran each dispatch loop over a stream of opcodes and
+compared the time to cell threading. It said the packed schemes would
+take 1.90 and 2.05 times as long - that is, 90% and 105% slower to run
+the same program. On that basis I did not build them. This time I did.
+
+Measured on real work - each system cross-compiling the Forth kernel -
+across three machines, as a ratio of time to the cell engine:
 
 | | predicted | 8-byte cells | 4-byte cells |
 |---|---|---|---|
-| tagged nibble | 2.05x | 1.13 | 1.14-1.18 |
-| tagged byte | 1.90x | 1.09 | 1.08-1.18 |
+| PACK4, 4-bit opcodes | 2.05x | 1.13 | 1.14-1.18 |
+| PACK8, 8-bit opcodes | 1.90x | 1.09 | 1.08-1.18 |
 
 So the rejection was right and the reason was wrong by a factor of four.
 The old benchmark's own header said why, in advance: its streams were
@@ -61,13 +88,15 @@ recorded at 0.985, faster than cell dispatch, from a benchmark running a
 32 MB stream against a 2 MB L2. That was measuring memory traffic.
 
 The interesting failure is the other one, and only building it showed
-it. On a size census the nibble and byte schemes were level, both at
-0.76x. Built, the nibble scheme folds away *fewer* cells - 377 against
-433 - and produces the **larger** image, 21,296 bytes against 20,848.
+it. On a size census PACK4 and PACK8 were level, both at 0.76x - the
+narrower field should pack twice as many operations per cell, which
+ought to offset having fewer of them to choose from. Built, PACK4 folds
+away *fewer* cells - 377 against 433 - and produces the **larger**
+image, 21,296 bytes against 20,848.
 
-A four-bit opcode reaches only sixteen primitives. A primitive outside
-that alphabet does not merely fail to pack: it **ends the run it is
-sitting in**, and both halves then need their own tag byte. Measured on
+The reason is the sixteen-opcode alphabet. A primitive outside it does
+not merely fail to pack: it **ends the run it is sitting in**, and both
+halves then need their own tag byte. Measured on
 real kernel code, the mean run of consecutive packable primitives is
 about 1.3.
 
@@ -81,10 +110,11 @@ Packing was out.
 ## 3. Attempt two: a 16-bit token through a word table
 
 If a cell is too wide, use a narrower unit. One 16-bit token per
-operation, values below 256 are primitives, values at or above index a
-table of word addresses built when the image loads. This is textbook
-token threading, and the table is the obvious way to turn a number into
-an address.
+operation: values below 256 are primitives, and 256+n means "the body of
+the n'th word", looked up in a table of addresses the engine builds when
+it loads the image. I called it SOD16, after the ancestor whose unit it
+halves. This is textbook token threading, and a table is the obvious way
+to turn a number into an address.
 
 The image halved, 24,320 to 12,864 at 8-byte cells. And it was the
 slowest system in the whole set:
@@ -108,8 +138,9 @@ Compare the whole of CPT16's call compiler, below, with a page of that.
 ## 4. Delete the table
 
 If the table is the problem, compute the address instead of looking it
-up. Lay the words out so that a target is `base + (value << shift)` -
-compressed pointers, as HotSpot does for object references. No table, no
+up. Lay the words out so that a target is `base + (value << shift)`,
+which is what HotSpot does for object references and why this one is
+called CPT16 - compressed-pointer threading, 16-bit unit. No table, no
 second dependent load, and the compiler's job becomes one line:
 
 ```forth
@@ -144,8 +175,9 @@ remaining lever is the size of the unit - not how many operations share
 a cell, and not how cleverly the target is computed, but how many bytes
 one operation takes.
 
-So: a byte stream. Values under 0x80 are opcodes; 0x80 and above begin a
-call whose remaining bits are an offset. No alignment, no tag bytes, no
+So: a byte stream - CV8, one byte per unit. Values under 0x80 are
+opcodes; 0x80 and above begin a call whose remaining bits are an
+offset. No alignment, no tag bytes, no
 runs required, nothing in the dispatch path but a compare and a shift.
 Two bytes for a near call, three for a far one, exactly as FCode and the
 JVM encode theirs.
@@ -244,8 +276,8 @@ One thing remained, and it is the part of this exercise I would most
 like other people to avoid repeating.
 
 RelF existed to be faster than SOD32. That was the entire reason for the
-2004 fork. So at the end I ran the two side by side - which, in twenty
-years, I had never once done.
+fork. So at the end I ran the two side by side - which I had never done:
+not in 2004, and not once in all the work above.
 
 SOD32 was twice as fast as RelF on the test corpus and 2.9 times as fast
 at interpreting text.
@@ -270,11 +302,16 @@ whole encoding sequence in this article is worth about 0.69. One
 omission, restored, was worth more than all of it.
 
 There is nothing clever here. Hashing a dictionary is the obvious thing
-and SOD32 already did it. What is worth reporting is *why it survived
-twenty years*: every benchmark I ever ran compared the system against
-itself - against last week's build, against the previous stage, never
-against the thing it was forked from to beat. The ancestor sat in a
-tarball the whole time.
+and SOD32 already did it. What is worth reporting is *why nobody
+noticed*: every benchmark in this project compared the system against
+itself - against the previous stage, against last week's build - never
+against the thing it was forked from to beat. The fault went in in 2004
+and sat there until this year, and the ancestor was in a tarball the
+whole time.
+
+It also means the eight encodings above were tuning a system that was
+carrying a 4x handicap in its outer interpreter throughout. All the
+ratios in this article were measured after the fix.
 
 If you have a project with a parent, go and run the parent.
 
