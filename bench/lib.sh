@@ -63,6 +63,12 @@ bench_init() {
     # shows up as a slow round.
     PIN=""
     command -v taskset >/dev/null 2>&1 && PIN="taskset -c 0"
+    # CPU time when the helper is available, wall clock otherwise. Both
+    # are recorded either way, so a machine can show which is steadier -
+    # on a quiet single-CPU box they have the same spread, but a loaded
+    # one should differ, and that is worth seeing rather than assuming.
+    CPUT=""
+    [ -x "$O/cputime" ] && CPUT="$O/cputime"
     INPUT=$O/.bench-in.fth
     OUTF=$O/.bench-out
     NULF=$O/.bench-nul.fth
@@ -89,6 +95,25 @@ bench_runners() {
 
 bench_one() {   # bench_one ENGINE IMAGE WORKDIR -> exit status, output in $OUTF
     ( cd "$3" && timeout 180 $PIN "$1" "$2" < "$INPUT" > "$OUTF" 2>&1 )
+}
+
+# bench_time ENGINE IMAGE WORKDIR -> "wall_ns cpu_ns" (cpu 0 if unknown)
+bench_time() {
+    local t0 t1 cpu=0 err
+    if [ -n "$CPUT" ]; then
+        err=$( { t0=$(date +%s%N)
+                 ( cd "$3" && $PIN "$CPUT" "$1" "$2" < "$INPUT" >/dev/null ) 2>&1
+                 t1=$(date +%s%N); } 2>&1
+               echo "WALL $((t1 - t0))" )
+        cpu=$(printf '%s' "$err" | awk '/^CPUNS/{print $2}')
+        t0=0; t1=$(printf '%s' "$err" | awk '/^WALL/{print $2}')
+        echo "${t1:-0} ${cpu:-0}"
+    else
+        t0=$(date +%s%N)
+        ( cd "$3" && $PIN "$1" "$2" < "$INPUT" >/dev/null 2>&1 )
+        t1=$(date +%s%N)
+        echo "$((t1 - t0)) 0"
+    fi
 }
 
 bench_run() {
@@ -125,12 +150,13 @@ bench_run() {
     : > "$O/.bench.over"
     while IFS=$'\t' read -r s e i d; do
         local t0 t1
-        t0=$(date +%s%N)
-        for _ in 1 2 3 4 5 6 7 8 9 10; do
-            ( cd "$d" && $PIN "$e" "$i" < "$NULF" >/dev/null 2>&1 )
+        local sw=0 sc=0 r
+        for _ in 1 2 3 4 5; do
+            r=$(SAVED_INPUT=$INPUT; INPUT=$NULF; bench_time "$e" "$i" "$d";
+                INPUT=$SAVED_INPUT)
+            sw=$((sw + ${r%% *})); sc=$((sc + ${r##* }))
         done
-        t1=$(date +%s%N)
-        echo "$(( (t1 - t0) / 10 ))" >> "$O/.bench.over"
+        echo "$((sw / 5)) $((sc / 5))" >> "$O/.bench.over"
         n=$((n + 1))
     done < "$O/.bench.ok"
 
@@ -141,13 +167,13 @@ bench_run() {
         local k=0
         while IFS=$'\t' read -r s e i d; do
             k=$((k + 1))
-            local ov t0 t1
+            local ov r ow oc
             ov=$(sed -n "${k}p" "$O/.bench.over")
-            t0=$(date +%s%N)
-            ( cd "$d" && $PIN "$e" "$i" < "$INPUT" >/dev/null 2>&1 )
-            t1=$(date +%s%N)
+            ow=${ov%% *}; oc=${ov##* }
+            r=$(bench_time "$e" "$i" "$d")
             [ "$BENCH_CHECK" = image ] && cp "$SAVE" "$W/kernel.img"
-            echo "$s $e $(( t1 - t0 - ov ))" >> "$O/.bench.dat"
+            echo "$s $e $(( ${r%% *} - ow )) $(( ${r##* } - oc ))" \
+                >> "$O/.bench.dat"
         done < "$O/.bench.ok"
     done
     echo

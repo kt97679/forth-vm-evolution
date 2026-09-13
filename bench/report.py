@@ -27,17 +27,33 @@ dat, width, reps, name = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 order = sys.argv[5:]
 base_stage = os.environ.get('BASE_STAGE', 's0-cell')
 
-best = {}                      # (stage, engine) -> min ns
+# Each line: stage engine wall_ns cpu_ns   (cpu 0 when unmeasured)
+wall, cpu, samples = {}, {}, collections.defaultdict(list)
 for line in open(dat):
-    st, eng, ns = line.rsplit(' ', 2)[0], line.split()[1], int(line.split()[2])
-    st = line.split()[0]
+    f = line.split()
+    st, eng, w, c = f[0], f[1], int(f[2]), int(f[3]) if len(f) > 3 else 0
     k = (st, eng)
-    if k not in best or ns < best[k]:
-        best[k] = ns
+    if k not in wall or w < wall[k]:
+        wall[k] = w
+    if c and (k not in cpu or c < cpu[k]):
+        cpu[k] = c
+    samples[k].append((w, c))
+
+USE_CPU = len(cpu) == len(wall) and all(v > 0 for v in cpu.values())
+best = cpu if USE_CPU else wall
 
 rows = collections.defaultdict(list)
 for (st, _eng), ns in best.items():
     rows[st].append(ns)
+
+
+def cv(vals):
+    vals = [v for v in vals if v]
+    if len(vals) < 2:
+        return None
+    m = sum(vals) / float(len(vals))
+    sd = (sum((x - m) ** 2 for x in vals) / (len(vals) - 1)) ** 0.5
+    return 100.0 * sd / m
 
 
 def stats(v):
@@ -71,7 +87,19 @@ for st in order:
 print()
 print("%s, cell width %s: mean over %d layout variant(s), each the"
       % (name, width, nv))
-print("minimum of %s rounds; startup subtracted per binary." % reps)
+print("minimum of %s rounds of %s; startup subtracted per binary."
+      % (reps, "CPU TIME" if USE_CPU else "wall clock"))
+
+# Which clock was steadier here, averaged over binaries. On a quiet
+# machine the two are alike; on a loaded one CPU time should win,
+# because it does not count the time a process spends descheduled.
+cvs = [(cv([w for w, _ in v]), cv([c for _, c in v])) for v in samples.values()]
+cvs = [(a, b) for a, b in cvs if a is not None and b is not None]
+if cvs:
+    aw = sum(a for a, _ in cvs) / len(cvs)
+    ac = sum(b for _, b in cvs) / len(cvs)
+    print("round-to-round spread per binary: wall %.1f%%, cpu %.1f%%."
+          % (aw, ac))
 if nv == 1:
     print()
     print("ONE build per stage. The per-build layout bias is larger than")

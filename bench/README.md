@@ -215,3 +215,24 @@ figure this project published from a single build should be read as
 same bias as one "floor" figure per workload; the error bar beside each
 ratio is a better version of that number, measured per stage. The script
 stays for standalone use.
+
+## Running it
+
+    LAYOUTS=5 tools/build-stages.sh     # five builds of each engine
+    tools/run-tests.sh
+    tools/collect-results.sh sweep 2    # measure twice, save, compare
+
+`sweep N` runs the whole measurement N times, saves each under a name
+taken from this machine's CPU, and finishes by checking whether the runs
+agree within their own error bars. That last check is the one worth
+having: every wrong number in this project was believed because it came
+from a single run.
+
+Timing uses CPU time where `tools/cputime.c` builds, wall clock
+otherwise, and each report says which it used and how the two compared.
+CPU time excludes the time a process spends descheduled, which is the
+dominant noise on a loaded machine. It does NOT remove cache contention
+from a neighbour - that makes us take more cycles, not fewer - and it
+does nothing about per-build layout bias, which is what LAYOUTS is for.
+On a quiet single-CPU box the two clocks have the same spread; the
+difference should show on a busy one.

@@ -245,6 +245,13 @@ dump "$O/s0-cell-64" kernel.img   k64-b.txt    "$KCV8B_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32-b.txt    "$KCV8B_BOOT"
 echo "built  dictionary dumps"
 
+# The timing helper. Reports a child's CPU time, which excludes the time
+# a process spends descheduled - the dominant noise term on a loaded
+# machine. Built with the plain compiler, not cc64/cc32: it is a tool,
+# not a measured subject.
+cc -O2 -Wall -o "$O/cputime" tools/cputime.c 2>/dev/null || \
+    echo "note: cputime helper did not build; harnesses will use wall clock"
+
 # ---- engines ----------------------------------------------------------
 for LV in $(seq 0 $((LAYOUTS - 1))); do
   eval "LF=\$LAYOUT_FLAGS_$LV"

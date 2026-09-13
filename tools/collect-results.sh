@@ -66,10 +66,11 @@ reps_for() {
 }
 
 case "${1:-}" in
-    run|report) ;;
+    run|report|sweep) ;;
     *)
         cat <<'USAGE'
-usage: collect-results.sh run [BENCH...] [WIDTH...]   take the measurements
+usage: collect-results.sh sweep [N]                    N full runs, saved
+       collect-results.sh run [BENCH...] [WIDTH...]   take the measurements
        collect-results.sh report [--save PATH]        assemble RESULTS.md
 
 Run the sweep first; it takes several minutes and writes build/results/.
@@ -78,11 +79,47 @@ produces a report with no timings in it.
 
   collect-results.sh run                 everything, both cell widths
   collect-results.sh run kernel 64       one benchmark, one width
+  collect-results.sh sweep 2             measure twice and compare
   collect-results.sh report
   collect-results.sh report --save results/my-laptop.md
+
+`sweep` is the one to use. It measures everything N times, saves each
+run under a name taken from this machine, and then reports how far the
+runs disagree - which is the check that has caught every bad number in
+this project. One run of anything is not evidence.
 USAGE
         exit 2;;
 esac
+
+if [ "$1" = sweep ]; then
+    N=${2:-2}
+    [ "$N" -ge 1 ] 2>/dev/null || { echo "sweep needs a count"; exit 2; }
+    bash "$0" run >/dev/null 2>&1 || true      # populates host.txt
+    # A readable machine name: drop the vendor noise a CPU model string
+    # carries, keep the part a person would recognise.
+    TAG=$(sed -n 's/^cpu: //p' "$R/host.txt" 2>/dev/null \
+          | sed 's/([A-Za-z]*)//g; s/ CPU//; s/ Processor//; s/ w\/.*//;
+                 s/ @.*//; s/^ *//; s/ *$//' \
+          | tr 'A-Z ' 'a-z-' | tr -s '-' | tr -cd 'a-z0-9-' | cut -c1-24)
+    TAG="${TAG}-$(uname -m)"
+    [ -n "$TAG" ] || TAG=$(uname -m)
+    echo
+    echo "sweeping $N times as '$TAG' ..."
+    i=1
+    while [ "$i" -le "$N" ]; do
+        echo
+        echo "===== run $i of $N ====="
+        bash "$0" run
+        bash "$0" report --save "results/$TAG-run$i.md" >/dev/null
+        echo "saved results/$TAG-run$i.md"
+        i=$((i + 1))
+    done
+    if [ "$N" -ge 2 ]; then
+        echo
+        python3 "$ROOT/tools/agree.py" $(seq 1 "$N" | sed "s|^|results/$TAG-run|; s|$|.md|")
+    fi
+    exit 0
+fi
 
 if [ "$1" = run ]; then
     if ! ls "$O"/s0-cell-*-v1 >/dev/null 2>&1; then
