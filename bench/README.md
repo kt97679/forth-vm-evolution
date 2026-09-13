@@ -56,3 +56,37 @@ The practical lesson for the article is that "the VM got faster" and
 benchmark cannot distinguish them. It is the same mistake as quoting the
 shell workloads: a number that is real, and about something other than
 what it is being used to argue.
+
+## Does the choice of benchmark change the answer?
+
+Mostly no, and that is worth knowing before arguing about which workload
+is the right one. All four, at 4-byte cells, relative to the cell engine:
+
+| stage | kernel | corpus | parse | loop | spread |
+|---|---|---|---|---|---|
+| s0-cell | 1.000 | 1.000 | 1.000 | 1.000 | 0.000 |
+| s1-sod16 | 1.134 | 1.229 | 1.253 | 1.098 | 0.155 |
+| s2-cpt16 | 1.111 | 1.116 | 1.178 | 1.161 | 0.067 |
+| s3-cpt16f | 1.043 | 1.076 | 1.089 | 0.950 | 0.139 |
+| s4-cv8 | 0.983 | 1.025 | 1.015 | 0.957 | 0.068 |
+| s5-cv8spec | 0.817 | 0.772 | 0.721 | 0.807 | 0.096 |
+
+The ordering is the same in every column with one exception - the loop
+benchmark puts SOD16 ahead of CPT16, where the other three reverse them -
+and the spread across four very different workloads never exceeds 0.16.
+Every column says SOD16 is a speed regression on the cell engine, that
+CV8 roughly breaks even, and that the specialisations are the only
+change worth more than a few percent.
+
+The reason the columns agree is that every one of these workloads is
+Forth code running on the VM. The parser, the dictionary search and the
+compiler are all compiled Forth, so a faster inner interpreter speeds
+them up too. Within one family - one , one word set - there is
+no such thing as a workload that avoids the encoding.
+
+The corollary is that the earlier SOD32 result is not a benchmark-choice
+problem either. SOD32 wins the corpus because  finds words
+faster than  does, and no choice of workload will separate that
+from the encoding, because the two systems do not share a kernel. Only a
+same-kernel comparison can isolate an encoding, and SOD32 cannot be part
+of one.

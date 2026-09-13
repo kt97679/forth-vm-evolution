@@ -31,9 +31,27 @@ REPS=${2:-15}
 STAGES="s0-cell s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec"
 WIDTH=${WIDTH:-64}
 
+# The cross-compiler's TARGET cell width is a source constant in cross.4,
+# not a runtime option - see the README, and cross.4's own comment for
+# why a top-level IF/THEN there corrupted the dictionary. So a 32-bit
+# run needs a retargeted copy. Either way the engine WRITES kernel.img,
+# so both committed images are saved and restored around the run.
+if [ "$WIDTH" = 32 ]; then
+    sed '22s/^8 TARGET-CELL-BYTES !/4 TARGET-CELL-BYTES !/' \
+        "$ROOT/forth/cross.4" > "$W/cross32.4"
+    XCSRC=cross32.4
+    REFSRC=$W/kernel32.img
+else
+    XCSRC=cross.4
+    REFSRC=$W/kernel.img
+fi
 REF=$O/.kernel-ref.img
-cp "$W/kernel.img" "$REF"
-printf 'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\n' > "$O/.xc.fth"
+cp "$REFSRC" "$REF"
+SAVE64=$O/.save-kernel64.img
+cp "$W/kernel.img" "$SAVE64"
+restore() { cp "$SAVE64" "$W/kernel.img"; }
+trap restore EXIT INT TERM
+printf 'S" extend.4" INCLUDED\nS" %s" INCLUDED\n' "$XCSRC" > "$O/.xc.fth"
 printf 'BYE\n' > "$O/.nul.fth"
 
 eng() { echo "$O/$1-$WIDTH"; }
@@ -56,7 +74,7 @@ for s in $STAGES; do
     else
         printf '  %-12s EXCLUDED: kernel image differs from reference\n' "$s"
     fi
-    cp "$REF" "$W/kernel.img"
+    cp "$SAVE64" "$W/kernel.img"
 done
 echo
 
@@ -82,7 +100,7 @@ for r in $(seq "$REPS"); do
         t0=$(date +%s%N)
         ( cd "$W" && "$e" "$i" < "$O/.xc.fth" >/dev/null 2>&1 )
         t1=$(date +%s%N)
-        cp "$REF" "$W/kernel.img"
+        cp "$SAVE64" "$W/kernel.img"
         d=$(( t1 - t0 ))
         if [ "${BEST[$s]}" -eq 0 ] || [ "$d" -lt "${BEST[$s]}" ]; then BEST[$s]=$d; fi
     done
