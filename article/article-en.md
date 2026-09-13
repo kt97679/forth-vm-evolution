@@ -4,18 +4,19 @@
 commands; nothing below is quoted from memory.*
 
 L.C. Benschop's SOD32 is a 32-bit stack machine with a Forth on top,
-published in the 1990s and still building today. Twenty years ago Kirill
-Timofeev took it apart, replaced its packed instruction format with
-one relative offset per cell, and called the result RelF. I have spent
-some months taking RelF apart in turn, trying to make its image smaller
-and its interpreter faster, and this is a report on what the encodings
-were actually worth.
+published in the 1990s and still building today. Twenty years ago I took
+it apart, replaced its packed instruction format with one relative
+offset per cell, and called the result RelF. Recently I went back to my
+own system and spent some months taking it apart in turn, trying to make
+the image smaller and the interpreter faster. This is a report on what
+the encodings were actually worth - including the part where I found
+something I had broken in 2004 and never noticed.
 
-The short version is that the encoding work was worth about 20%, that
-two designs the project rejected without building were rejected for a
-reason that turned out to be wrong by a factor of four, and that the
-largest single number in the whole exercise came from a hash table
-somebody forgot to copy across in 2004.
+The short version is that the encoding work was worth about 20%; that
+two designs I rejected without building were rejected for a reason that
+turned out to be wrong by a factor of four; and that the largest single
+number in the whole exercise came from a hash table I failed to carry
+across from SOD32 twenty years ago.
 
 Everything here builds:
 
@@ -27,9 +28,14 @@ Everything here builds:
 
 ## 1. Names, and how they map onto the real taxonomy
 
-Discussion #187 on this forum is the best short treatment of threaded
-code models I know of, and I am going to lean on its vocabulary rather
-than invent my own. Mitch Bradley's summary there:
+The best short treatment of threaded code models I know of is a 2024
+thread on the ForthHub discussion forum, "An elevator description for
+Forth's threaded code models?"
+(<https://github.com/ForthHub/discussion/discussions/187>), in which
+Mitch Bradley - the author of Open Firmware - ruv, Anthony Howe and
+others try to explain the family in the space of a lift ride. I am going
+to lean on its vocabulary rather than invent my own. Bradley's summary
+there:
 
 > Threaded code is a compact binary representation of a computer program
 > as a list of pointers. In direct threaded code, the pointers point
@@ -37,7 +43,7 @@ than invent my own. Mitch Bradley's summary there:
 > object structures, the first field of which is a pointer to machine
 > code.
 
-and, in the same thread, the variant this article lives in:
+and, from the same thread, the variant this article lives in:
 
 > There is also a "token threaded" variant where the pointers are not
 > full addresses, but instead some extra-compact representation like
@@ -60,11 +66,18 @@ and needed distinguishing. Here is what each one actually is:
 | CV8 | the same, narrowed to a byte stream - byte-coded |
 | +spec | CV8 plus specialised opcodes for locals, variables and hot words |
 
-Two properties are constant across all of them and are RelF's, not mine.
-Every reference in an image is *relative*, so an image is position
-independent and loads anywhere. And the engine and the image are
-separate artefacts, which is SOD32's idea - the image is machine
-independent, the engine is not.
+One property is shared by all nine and is SOD32's: the engine and the
+image are separate artefacts, and the image is machine independent while
+the engine is not. Everything here inherits that.
+
+The other is RelF's and is *not* true of SOD32. In RelF every reference
+inside an image is relative - a call cell holds the distance to its
+target, not its address - so an image is position independent and loads
+anywhere. SOD32 instead uses absolute addresses within its own simulated
+memory, which is position independent in a different and simpler way:
+the memory always starts at zero. That difference is why the eight
+RelF-descended systems here share one relocation story and SOD32 cannot
+join it.
 
 ---
 
@@ -124,8 +137,9 @@ it only becomes visible when the system has to compile for itself.
 
 ### Literals and control flow, since somebody will ask
 
-ruv's response to Bradley's summary in #187 was "what about literals and
-control-flow? ... The devil is in the details", and he is right, so:
+ruv's response to Bradley's summary in that thread was "what about
+literals and control-flow? ... The devil is in the details", and he is
+right, so:
 
 - **Literals.** CV8 picks the narrowest of five forms: three
   single-byte opcodes for 0, 1 and -1, then 8-bit, 16-bit, 32-bit and
@@ -198,6 +212,48 @@ and can change nothing else. And the 8-byte column is where the
 token encodings earn their keep - a cell scheme costs twice as much on a
 64-bit host, a token stream costs the same on both.
 
+### How the timings are produced
+
+Each figure below is one number out of a harness that does the same four
+things every time.
+
+*Check first, time second.* For the kernel-compile workload every stage
+must cross-compile `kernel.4` and produce an image byte-identical to the
+reference before it is timed at all; for the others it must reach an
+end-of-corpus sentinel with zero failing cases. A stage that fails is
+excluded from the table rather than reported as fast.
+
+*Interleave.* Repetitions run stage-by-stage in rotation, not all of one
+stage and then all of the next, so a machine that drifts perturbs
+everything alike.
+
+*Take the minimum, not the mean.* Every source of noise on a shared
+machine adds time. The fastest run is the least contaminated one; a mean
+would mostly measure the neighbours.
+
+*Subtract the fixed cost.* Each engine is also timed doing nothing -
+load the image and exit - and that is subtracted. It is about 1.5 ms
+against 20-100 ms of work, so leaving it in would compress every ratio.
+
+The raw output looks like this:
+
+    $ WIDTH=32 bench/kernel-compile.sh build 6
+    verifying every stage reproduces the reference kernel...
+      s0-cell      ok
+      p4-pack4     ok
+      ...
+    timing, 6 interleaved repetitions...
+
+    stage                ms     net ms  vs cell
+    s0-cell           34.51      32.95    1.000
+
+So for `s0-cell` the fastest of six cross-compiles took 34.51 ms wall
+clock, 32.95 ms after subtracting startup, and that 32.95 ms is the
+denominator for its column. **Every number in the table below is
+`net ms` for that stage divided by `net ms` for the cell engine on the
+same workload: below 1.000 is faster than the cell engine, above is
+slower.**
+
 ### Speed, 4-byte cells, against the cell engine
 
 | stage | kernel compile | CORE corpus | loop | parse |
@@ -242,7 +298,7 @@ This is the part I would keep if I had to cut the rest.
 
 ### 4.1 Two designs rejected on a measurement four times too harsh
 
-Before SOD16 the project considered packing several opcodes into a cell,
+Before SOD16 I considered packing several opcodes into a cell,
 in the SOD32 manner but with different field widths: a tagged nibble
 scheme (4-bit opcodes, 16 of them) and a tagged byte scheme (8-bit
 opcodes). Both were sized on a census, both were timed in a synthetic
@@ -281,7 +337,7 @@ Breaking runs costs more than the narrow field saves.
 
 A size model prices the fields. The program pays for the joins.
 
-### 4.2 A 4x regression, inherited by omission
+### 4.2 A 4x regression I introduced in 2004 and never noticed
 
 Before the fix described in this section, SOD32 was faster than every
 system in this repository on any workload that interprets text - 2x on
@@ -304,10 +360,12 @@ of the name to pick a thread:
 
     NAMEBUF COUNT 2 PICK @ HASH 1+ CELLS SWAP + @   \ get the right thread
 
-RelF's `FORTH-WORDLIST` is one cell, described in its own source as "a
+RelF's `FORTH-WORDLIST` is one cell, described in my own source as "a
 pointer to the last definition in the Forth word list", and the search
-walks it from the top. The hash was dropped when RelF was derived from
-SOD32. Nothing replaced it. Every lookup is a linear scan of the whole
+walks it from the top. I dropped the hash when I derived RelF from
+SOD32, and put nothing in its place. I do not remember deciding to; I
+think I simplified the structure while changing the link fields from
+absolute to relative, and never went back to look at what it cost. Every lookup is a linear scan of the whole
 dictionary - twice, because the default search order holds the wordlist
 in two slots - and it is worst for *numbers*, which are never found and
 so cost a complete traversal before the system gives up and converts
@@ -328,19 +386,20 @@ system that was 2.7x slower than its ancestor at interpreting text is
 now slightly faster than it.
 
 For scale: the entire encoding ladder is worth 0.75x. One omission,
-restored, was worth more than all of it - and it went unnoticed for two
-hundred iterations, because every benchmark the project used compared
-the system against *itself*.
+restored, was worth more than all of it. It survived twenty years and
+two hundred iterations of optimisation work, because every benchmark I
+ever ran compared the system against *itself* - against last week's
+build, never against the thing it came from. The ancestor was sitting
+in a tarball the whole time, and running it side by side was an
+afternoon's work I did not do until this year.
 
 All the numbers in section 3 are from after this fix. Anything measured
 before it is not comparable and is not reproduced.
 
 ### 4.3 A test suite that could not fail
 
-For several iterations the only suites being run were shell tests, which
-never compile anything, so they passed long before the Forth compiler
-was correct. I repeated the same class of mistake twice in one afternoon
-while building the new harness: a run that reported "0 failures" because
+I managed the same class of mistake twice in one afternoon while
+building the new harness: a run that reported "0 failures" because
 the engine had segfaulted on line 9 (`$?` after a pipeline is `tr`'s
 status, not the engine's), and a pattern that matched the *tester's own
 definition* of `ERROR` when an engine echoes its input, inventing two
@@ -366,7 +425,7 @@ thoroughly and never creates a vocabulary.
   ones most sensitive to that, and the packed schemes were originally
   rejected by a benchmark that held memory free.
 - **Relocation and portability**, two of the axes Bradley's fuller
-  answer in #187 lists. RelF's relative addressing has something to say
+  answer in that thread lists. RelF's relative addressing has something to say
   about both - the same image runs at any load address, and the same
   image file runs on any host agreeing on cell width and endianness -
   but I have not measured what that costs.
@@ -386,14 +445,40 @@ thoroughly and never creates a vocabulary.
   vendored here at a pinned revision, GPLv2
 - ForthHub discussion #187, "An elevator description for Forth's
   threaded code models?"
-- Borrowed, and named in the source where borrowed: JVM and Open
-  Firmware FCode for byte-granular tokens; HotSpot compressed oops for
+- IEEE Standard 1275-1994, *Standard for Boot Firmware*, which defines
+  FCode. The accessible description of the encoding is Oracle's
+  *Writing FCode 3.x Programs* -
+  <https://docs.oracle.com/cd/E19957-01/802-3239-10/fcprog.html> - and
+  there is a working tokenizer and detokenizer in
+  <https://github.com/openbios/fcode-utils>.
+- Borrowed, and named in the source where borrowed: JVM and FCode for
+  byte-granular tokens; HotSpot compressed oops for
   `base + (v << shift)`; JVM `iload`, CPython `LOAD_FAST` and
   Smalltalk-80's bytecodes 16-31 for locals as opcodes; CPython 3.11 /
   PEP 659 for specialise-the-common-case; Lua 5.4 for small immediate
   operands; Titzer's in-place Wasm interpreter for interpreting the
   compact form rather than expanding it at load.
 
-*The FCode attribution needs checking against IEEE 1275 before this is
-published: the general shape - byte tokens with an escape for two-byte
-codes - is remembered, the exact ranges are not.*
+### What CV8 actually took from FCode, and what it did not
+
+The project's own notes credited FCode for "byte tokens with an escape
+for two-byte codes" and admitted the exact ranges were remembered rather
+than checked. Checked, they are these. An FCode program is a byte
+stream. One-byte FCode numbers run from `0x10` to `0xFE`. A byte in
+`0x01`-`0x0F` is an escape: it and the byte after it form a two-byte
+FCode number, which yields 15 x 256 further codes. `0x00` and `0xFF`
+both mean end of program.
+
+CV8's layout is not that layout. CV8 splits on the top bit - `0x00`-`0x7F`
+is an opcode, `0x80`-`0xFF` begins a call whose remaining bits are part
+of a scaled offset to the target - and its escape is a single reserved
+opcode rather than a band of fifteen. FCode has no equivalent of the
+call band, because an FCode token *is* a dictionary reference; CV8 has
+no equivalent of FCode's fifteen escape values.
+
+So the honest statement of the debt is narrower than "we used FCode's
+encoding": what was taken is the demonstration that a byte-granular
+token stream with an escape hatch is a workable, compact and
+position-independent representation for a Forth, and IEEE 1275 is where
+that was demonstrated at scale a long time before this project. The
+specific band layout was arrived at here and is different.
