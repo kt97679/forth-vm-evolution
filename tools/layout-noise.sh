@@ -42,6 +42,7 @@ W=$O/work
 # fastest - the measurement was reading machine variance rather than
 # layout. At 40 it settles to about 5% and stays there.
 REPS=${2:-40}
+WORK=${3:-kernel}
 L=$O/layout-noise
 mkdir -p "$L"
 
@@ -76,6 +77,7 @@ variants() {
     echo "v-jumps -fno-align-jumps"
 }
 
+echo "workload: $WORK"
 echo "building variants of one engine, identical semantics ..."
 names=""
 while read -r nm flags; do
@@ -102,7 +104,24 @@ cp "$REFSRC" "$REF"
 SAVEK=$L/save-kernel.img
 cp "$W/kernel.img" "$SAVEK"
 trap 'cp "$SAVEK" "$W/kernel.img"' EXIT INT TERM
-printf 'S" extend.4" INCLUDED\nS" %s" INCLUDED\n' "$XCSRC" > "$L/xc.fth"
+# WHICH WORKLOAD. The floor is a property of the workload, not of the
+# machine, and quoting one figure for every table was wrong. Two runs of
+# the same ARM board, with a kernel-compile floor of 1.4%, moved by up
+# to 20.9% on the loop benchmark. So this is measurable per workload.
+case "$WORK" in
+    kernel)
+        printf 'S" extend.4" INCLUDED\nS" %s" INCLUDED\n' "$XCSRC" > "$L/xc.fth"
+        CHECK=kernel ;;
+    corpus)
+        { cat "$ROOT/tests/corpus/core.fth"
+          printf '\nS" CORPUS-REACHED-END" TYPE CR\nBYE\n'; } > "$L/xc.fth"
+        CHECK=marker; MARK=CORPUS-REACHED-END ;;
+    loop|fib|parse)
+        cp "$ROOT/bench/$WORK.fth" "$L/xc.fth"
+        CHECK=marker
+        MARK=$( [ "$WORK" = parse ] && echo PARSE-DONE || echo BENCH-DONE ) ;;
+    *)  echo "unknown workload: $WORK (kernel corpus loop fib parse)"; exit 1 ;;
+esac
 
 # Correctness first, exactly as the real harnesses do: every variant must
 # produce the reference kernel byte for byte.
@@ -113,11 +132,14 @@ for n in $names; do
     # to the reference and the comparison PASSES - which is how a broken
     # 32-bit configuration once reported a tidy 1.9% spread over five
     # builds that had each run for two milliseconds and done nothing.
-    ( cd "$W" && timeout 120 "$L/$n" "$IMG" < "$L/xc.fth" >/dev/null 2>&1 )
+    ( cd "$W" && timeout 180 "$L/$n" "$IMG" < "$L/xc.fth" > "$L/out" 2>&1 )
     st=$?
     if [ $st -ne 0 ]; then echo "  $n EXCLUDED: exited $st"
-    elif cmp -s "$W/kernel.img" "$REF"; then ok="$ok $n"
-    else echo "  $n EXCLUDED: output differs"; fi
+    elif [ "$CHECK" = kernel ] && ! cmp -s "$W/kernel.img" "$REF"; then
+        echo "  $n EXCLUDED: output differs"
+    elif [ "$CHECK" = marker ] && ! grep -aq "$MARK" "$L/out"; then
+        echo "  $n EXCLUDED: did not finish"
+    else ok="$ok $n"; fi
     cp "$SAVEK" "$W/kernel.img"
 done
 
@@ -149,7 +171,7 @@ for n in $ok; do
         "$(echo "${BEST[$n]}/$lo" | bc -l)"
 done
 echo
-echo "spread across builds of the SAME engine: $(echo "($hi-$lo)*100/$lo" | bc -l | cut -c1-5)%"
+echo "spread on $WORK across builds of the SAME engine: $(echo "($hi-$lo)*100/$lo" | bc -l | cut -c1-5)%"
 echo "no comparison in RESULTS.md smaller than this means anything."
 echo
 echo "Which variant wins is NOT stable between runs of this script; the"
