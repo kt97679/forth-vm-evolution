@@ -81,12 +81,12 @@ change worth more than a few percent.
 The reason the columns agree is that every one of these workloads is
 Forth code running on the VM. The parser, the dictionary search and the
 compiler are all compiled Forth, so a faster inner interpreter speeds
-them up too. Within one family - one , one word set - there is
+them up too. Within one family - one kernel.4, one word set - there is
 no such thing as a workload that avoids the encoding.
 
 The corollary is that the earlier SOD32 result is not a benchmark-choice
-problem either. SOD32 wins the corpus because  finds words
-faster than  does, and no choice of workload will separate that
+problem either. SOD32 wins the corpus because kernel.4th finds words
+faster than kernel.4 does, and no choice of workload will separate that
 from the encoding, because the two systems do not share a kernel. Only a
 same-kernel comparison can isolate an encoding, and SOD32 cannot be part
 of one.
