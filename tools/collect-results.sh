@@ -303,6 +303,25 @@ out.append('at 12.6%. Averaging runs cannot remove a constant; averaging')
 out.append('builds can, and the ± includes what is left.\n')
 out.append('Ratios travel between machines; absolute milliseconds do not.\n')
 
+# Carry the layout-variant count into the saved report. tools/agree.py
+# needs it: a standard error from N builds has N-1 degrees of freedom,
+# and without the count agree.py falls back to a 2-sigma rule that is
+# 2.2x too tight at N=3. It was reading '? layout variants' and doing
+# exactly that until this line existed.
+_nv = None
+for _b in WORK:
+    for _w in ('64', '32'):
+        _p = os.path.join(R, '%s-%s.txt' % (_b, _w))
+        if os.path.exists(_p):
+            _m = re.search(r'mean over (\d+) layout variant', open(_p).read())
+            if _m:
+                _nv = min(_nv, int(_m.group(1))) if _nv else int(_m.group(1))
+if _nv:
+    out.append('Figures below are the mean over %d layout variant(s) per'
+               % _nv)
+    out.append('engine. A single build gives a number that repeats to 1%%')
+    out.append('and can be wrong by 12%%.\n')
+
 hp = os.path.join(R, 'host.txt')
 if os.path.exists(hp):
     out.append('Measured on:\n')
