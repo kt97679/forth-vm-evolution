@@ -48,7 +48,17 @@ mkdir -p "$L"
 HOT='+,=,!,@,LSHIFT,RSHIFT,C@,C!,AND,OR,XOR,LIT,<,U<,OVER,DROP,DUP,SWAP,ROT,>R,R>,R@,NEGATE'
 python3 tools/gen-tos.py "$O/vm-lab.c" > "$L/vm-lab-tos.c"
 python3 tools/gen-fold.py "$L/vm-lab-tos.c" "$HOT" v8 > /dev/null
-BASE="-O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1"
+# Which cell width exists here is not a constant: a 32-bit host has no
+# 8-byte column at all. Pick the image that was actually built and the
+# call scale that goes with it.
+if [ -r "$O/s5-cv8spec-s64.img" ]; then
+    IMG=$O/s5-cv8spec-s64.img; SCALE=3; M=
+elif [ -r "$O/s5-cv8spec-s32.img" ]; then
+    IMG=$O/s5-cv8spec-s32.img; SCALE=2; M=$( [ "$(printf '%s' "$(getconf LONG_BIT 2>/dev/null)")" = 64 ] && echo "-m32 -fno-pie -no-pie" )
+else
+    echo "no s5-cv8spec self-hosting image in $O - run tools/build-stages.sh"; exit 1
+fi
+BASE="$M -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=$SCALE -DSPEC=1 -DSHAREDCALL=1"
 
 # Semantically neutral, layout-changing. Nothing here alters what the
 # engine computes; -falign-* only moves code, and the dead function is
@@ -76,19 +86,39 @@ while read -r nm flags; do
         "$(size "$L/$nm" 2>/dev/null | awk 'NR==2{print $1}')"
 done < <(variants)
 
-IMG=$O/s5-cv8spec-s64.img
+# The cross-compiler's TARGET cell width is a source constant, so a
+# 4-byte run needs a retargeted copy and a different reference image -
+# the same dance kernel-compile.sh does. Either way the engine WRITES
+# kernel.img, so the committed one is saved and restored around the run.
+if [ "$SCALE" = 2 ]; then
+    sed '22s/^8 TARGET-CELL-BYTES !/4 TARGET-CELL-BYTES !/' \
+        "$ROOT/forth/cross.4" > "$W/cross32.4"
+    XCSRC=cross32.4; REFSRC=$W/kernel32.img
+else
+    XCSRC=cross.4;   REFSRC=$W/kernel.img
+fi
 REF=$L/ref.img
-cp "$W/kernel.img" "$REF"
-printf 'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\n' > "$L/xc.fth"
+cp "$REFSRC" "$REF"
+SAVEK=$L/save-kernel.img
+cp "$W/kernel.img" "$SAVEK"
+trap 'cp "$SAVEK" "$W/kernel.img"' EXIT INT TERM
+printf 'S" extend.4" INCLUDED\nS" %s" INCLUDED\n' "$XCSRC" > "$L/xc.fth"
 
 # Correctness first, exactly as the real harnesses do: every variant must
 # produce the reference kernel byte for byte.
 ok=""
 for n in $names; do
+    # The exit status matters as much as the comparison. An engine that
+    # dies on startup leaves kernel.img untouched, so it is byte-identical
+    # to the reference and the comparison PASSES - which is how a broken
+    # 32-bit configuration once reported a tidy 1.9% spread over five
+    # builds that had each run for two milliseconds and done nothing.
     ( cd "$W" && timeout 120 "$L/$n" "$IMG" < "$L/xc.fth" >/dev/null 2>&1 )
-    if cmp -s "$W/kernel.img" "$REF"; then ok="$ok $n"
+    st=$?
+    if [ $st -ne 0 ]; then echo "  $n EXCLUDED: exited $st"
+    elif cmp -s "$W/kernel.img" "$REF"; then ok="$ok $n"
     else echo "  $n EXCLUDED: output differs"; fi
-    cp "$REF" "$W/kernel.img"
+    cp "$SAVEK" "$W/kernel.img"
 done
 
 declare -A BEST
@@ -99,7 +129,7 @@ for _ in $(seq "$REPS"); do
         t0=$(date +%s%N)
         ( cd "$W" && "$L/$n" "$IMG" < "$L/xc.fth" >/dev/null 2>&1 )
         t1=$(date +%s%N)
-        cp "$REF" "$W/kernel.img"
+        cp "$SAVEK" "$W/kernel.img"
         d=$(( t1 - t0 ))
         if [ "${BEST[$n]}" -eq 0 ] || [ "$d" -lt "${BEST[$n]}" ]; then BEST[$n]=$d; fi
     done
