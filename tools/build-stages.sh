@@ -257,15 +257,22 @@ cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCA
 echo "built  stage engines"
 
 # ---- images -----------------------------------------------------------
+echo "translating images (pure Python; minutes on a slow machine) ..."
 img() { # img NAME CELL DUMP OPTIONS...
     local n=$1 c=$2 d=$3; shift 3
     [ "$c" = 4 ] && [ "$BUILD32" = 0 ] && return 0
     [ "$c" = 8 ] && [ "$BUILD64" = 0 ] && return 0
     [ -r "$O/$d" ] || return 0
+    # One line per image. layout.py is pure Python and translates every
+    # word body in the dictionary; on a fast x86 box the whole set takes
+    # a few seconds, on an ARMv7 board it is minutes. Without this the
+    # script sits silent for long enough to look hung, and gets killed.
+    printf '  %-18s ' "$n"
     # run from the flat work dir: sod16.py reads kernel.4 from the CWD
     ( cd "$W" && python3 "$ROOT/tools/layout.py" "$O/$d" "$c" "$@" \
         --emit-image "$O/$n.img" ) > "$O/$n.log" 2>&1 \
-        || { echo "layout failed: $n"; tail -5 "$O/$n.log"; exit 1; }
+        || { echo "FAILED"; tail -5 "$O/$n.log"; exit 1; }
+    printf '%s bytes\n' "$(stat -c%s "$O/$n.img")"
 }
 CPTF="--dataprims --fold --fold-set $HOT"
 
