@@ -85,7 +85,13 @@ if [ "$1" = run ]; then
             printf 'running %-7s at %s-bit cells ... ' "$b" "$w"
             WIDTH=$w bash "$(script_for "$b")" "$O" "$(reps_for "$b")" \
                 > "$R/$b-$w.txt" 2>/dev/null
-            if grep -q 'vs cell\|vs first' "$R/$b-$w.txt"; then echo ok
+            # A table HEADER is printed even when every stage was
+            # excluded, so matching it reported "ok" for a cell width
+            # that does not exist on this host. Count data rows.
+            if [ "$(grep -cE '^[a-z0-9]+-[a-z0-9]+ +[0-9.]+ +[0-9.]+' \
+                    "$R/$b-$w.txt")" -gt 0 ]; then echo ok
+            elif grep -q 'not built\|SKIP\|EXCLUDED' "$R/$b-$w.txt"; then
+                echo "no stages at this width"
             else echo "NO TABLE - see $R/$b-$w.txt"; fi
         done
     done
@@ -272,11 +278,20 @@ for st in ('p4-pack4', 'p8-pack8'):
 if packed:
     out.append('| stage | packed 64 | packed 32 | vs stage 0, 64 | vs stage 0, 32 |')
     out.append('|---|---|---|---|---|')
+    def ratio(v, base):
+        try:
+            return '%.3f' % (v / int(base))
+        except (TypeError, ValueError):
+            return '--'
+
+    def num(v):
+        return '--' if v is None else str(v)
+
+    s0 = sizes.get('s0-cell', ['NA', 'NA', 'NA', 'NA'])
     for st in ('p4-pack4', 'p8-pack8'):
         a, b = packed.get((st, '64')), packed.get((st, '32'))
-        s0 = sizes.get('s0-cell')
-        out.append('| `%s` | %s | %s | %.3f | %.3f |'
-                   % (st, a, b, a / int(s0[0]), b / int(s0[1])))
+        out.append('| `%s` | %s | %s | %s | %s |'
+                   % (st, num(a), num(b), ratio(a, s0[0]), ratio(b, s0[1])))
     out.append('')
 out.append('| stage | run-only 64 | run-only 32 | self-hosting 64 | self-hosting 32 |')
 out.append('|---|---|---|---|---|')
