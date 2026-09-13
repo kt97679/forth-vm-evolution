@@ -1,9 +1,10 @@
-# Making a Forth VM smaller: four attempts, two of which failed
+# Making a Forth virtual machine smaller: four attempts, two of which failed
 
 In 2004, out of curiosity rather than need, I forked L.C. Benschop's
-SOD32 - a 32-bit stack machine with a Forth on top - threw away its
-packed instruction format, and replaced it with one relative offset per
-cell. I called the result RelF, for Relative Forth. The point was speed:
+SOD32 - the Stack Oriented Design, a 32-bit virtual machine with a Forth
+on top - threw away its packed instruction format, and replaced it with
+one relative offset per cell. I called the result RelF, for Relative
+Forth. The point was speed:
 a cell you can jump through directly beats six 5-bit subinstructions you
 have to unpack first. It was 32-bit only, it worked, and it sat there.
 
@@ -26,14 +27,14 @@ is paid for in that loop.
 
 The systems have working names, used throughout:
 
-| name | what it is |
-|---|---|
-| SOD32 | the ancestor: six 5-bit subinstructions packed per 32-bit cell |
-| RelF | one host cell per operation, and the cell IS a relative offset |
-| PACK4, PACK8 | RelF with several opcodes packed into a cell, 4-bit or 8-bit |
-| SOD16 | the ancestor's idea with the unit halved: one 16-bit token per operation, calls looked up in a table |
-| CPT16 | compressed-pointer threading: the same, but the call target is computed rather than looked up |
-| CV8 | the same idea again, in a byte stream |
+| name | expansion | what it is |
+|---|---|---|
+| SOD32 | Stack Oriented Design, 32-bit | the ancestor: six 5-bit subinstructions packed per 32-bit cell |
+| RelF | Relative Forth | one host cell per operation, and the cell IS a relative offset |
+| PACK4, PACK8 | packed, 4- or 8-bit opcodes | RelF with several opcodes packed into a cell |
+| SOD16 | the ancestor's name, unit halved | one 16-bit token per operation, calls looked up in a table |
+| CPT16 | Compressed-Pointer Threading, 16-bit | the same, but the call target is computed rather than looked up |
+| CV8 | Code Vector, 8-bit | the same idea again, in a byte stream |
 
 CV8 rather than "CPT8" because the step is not just a narrower unit.
 CPT16 is fixed-width - every operation is one 16-bit token, primitive or
@@ -42,8 +43,9 @@ is one byte, a call is two or three. It is the first scheme here where
 operations are not all the same size.
 
 Every system named here builds, boots, compiles its own encoding and
-passes the same 616-case ANS CORE corpus; the tables come out of the
-repository, not out of a model.
+passes the same 616-case test corpus - the CORE word set of the ANS
+Forth standard, 616 assertions about what each word must do. The tables
+come out of the repository, not out of a model.
 
     tools/build-stages.sh      # every engine and image, both cell widths
     tools/run-tests.sh         # the corpus on all of them
@@ -113,7 +115,8 @@ sized to run hot, so it measured decode cost with memory free, which it
 called the pessimistic case. Pessimistic by four times, as it turned
 out. The baseline it lost to was wrong too - token threading had been
 recorded at 0.985, faster than cell dispatch, from a benchmark running a
-32 MB stream against a 2 MB L2. That was measuring memory traffic.
+32-megabyte stream against a 2-megabyte level-2 cache. It was measuring
+memory traffic, not dispatch.
 
 The interesting failure is the other one, and only building it showed
 it. Counting on paper, without building anything, PACK4 and PACK8 were
@@ -210,8 +213,8 @@ So: a byte stream - CV8, one byte per unit. Values under 0x80 are
 opcodes; 0x80 and above begin a call whose remaining bits are an
 offset. No alignment, no tag bytes, no
 runs required, nothing in the dispatch path but a compare and a shift.
-Two bytes for a near call, three for a far one, exactly as FCode and the
-JVM encode theirs.
+Two bytes for a call to something nearby, three for one further away -
+the same trick FCode and the Java virtual machine use.
 
     CV8, kernel compile    0.919 ±0.026 (AMD)    0.896 ±0.011 (ARM)
     CV8, image             11,416 bytes - 0.469x of cell threading
@@ -359,8 +362,8 @@ If you have a project with a parent, go and run the parent.
 
 ## 10. How this was measured
 
-Three machines: a single-vCPU x86-64 VM, a 16-core x86-64 laptop, and a
-4-core ARMv7 board. Every stage cross-compiles the kernel and the output
+Three machines: a single-core x86-64 virtual machine, a 16-core x86-64
+laptop, and a 4-core ARMv7 board. Every stage cross-compiles the kernel and the output
 image must be byte-identical to the reference *before* the timing is
 recorded, so correctness and speed are the same run: a stage that is
 fast because it is quietly wrong fails the comparison that times it.
@@ -394,8 +397,9 @@ machines. Several earlier ones did not, and are not above.
 
 ## 11. Not measured
 
-- Three machines is not a study. Two x86-64 and one ARMv7; no RISC-V, no
-  big-endian, no bare metal.
+- Three machines is not a study. Two x86-64 and one ARMv7; nothing with
+  a different memory order, and nothing without an operating system
+  underneath.
 - Nothing here measures pure execution reliably, since both
   microbenchmarks failed reproducibility.
 - The locals and variable specialisations are inert in these images:
@@ -415,14 +419,15 @@ machines. Several earlier ones did not, and are not above.
 - ForthHub discussion #187, "An elevator description for Forth's
   threaded code models?", whose vocabulary this article uses -
   <https://github.com/ForthHub/discussion/discussions/187>
-- IEEE 1275-1994 (FCode): one-byte codes `0x10`-`0xFE`, escape band
+- IEEE 1275-1994, the Open Firmware standard, whose FCode is a byte-coded
+  Forth: one-byte codes `0x10`-`0xFE`, escape band
   `0x01`-`0x0F` for two-byte codes. CV8 took the idea of a byte stream
   with an escape, not the layout - it splits on the top bit and has a
   single escape opcode, and FCode has no call band because an FCode
   token *is* a dictionary reference.
-- Named in the source where borrowed: HotSpot compressed oops for
-  `base + (v << shift)`; CPython 3.11 / PEP 659 for specialising the
-  common case; Lua 5.4 for immediate operands; JVM `iload`, CPython
+- Named in the source where borrowed: HotSpot's compressed object
+  pointers for `base + (v << shift)`; CPython 3.11 (PEP 659, the
+  specialising interpreter) for giving the common case its own opcode; Lua 5.4 for immediate operands; the Java virtual machine's `iload`, CPython
   `LOAD_FAST` and Smalltalk-80's bytecodes 16-31 for locals as opcodes;
   Titzer's in-place Wasm interpreter for interpreting the compact form
   rather than expanding it at load.
