@@ -183,15 +183,12 @@ WARN
         echo "cc: $(cc --version 2>/dev/null | head -1)"
     } > "$R/host.txt"
 
-    if [ "${2:-}" = all ] || [ $# -le 1 ]; then
-        printf 'running %-7s ... ' layout-noise
     # layout-noise.sh is no longer run here. It existed to measure the
     # per-build bias as a single "floor" figure; every harness now
     # measures that bias per stage, as the error bar beside each ratio,
     # by timing all the layout variants. Keeping both would spend
     # minutes to produce a worse version of a number already in the
     # table. The script remains for anyone who wants it standalone.
-    fi
     exit 0
 fi
 
@@ -317,39 +314,14 @@ out.append('Every number here was taken AFTER the hashed word list was')
 out.append('restored (see `FINDINGS-OUTER-INTERPRETER.md`). Figures from')
 out.append('before that change are not comparable and are not reproduced.\n')
 
-floors = {}
-for wk in WORK:
-    fp = os.path.join(R, 'layout-noise-%s.txt' % wk)
-    if os.path.exists(fp):
-        m = re.search(r'spread on \S+ across builds of the SAME engine: ([\d.]+)%',
-                      open(fp).read())
-        if m:
-            floors[wk] = float(m.group(1))
-noise = max(floors.values()) if floors else None
-
-if noise is not None:
-    out.append('## How small a difference is real\n')
-    out.append('`tools/layout-noise.sh` builds the SAME engine five times,')
-    out.append('varying only flags that move code and change nothing about what')
-    out.append('it computes, checks that all five still produce a')
-    out.append('byte-identical result, and times them on one workload.\n')
-    out.append('The floor is a property of the WORKLOAD, not of the machine.')
-    out.append('Quoting a single figure for every table was wrong: two runs of')
-    out.append('the same ARM board, with a kernel-compile floor of 1.4%, moved')
-    out.append('by up to 20.9% on the loop benchmark.\n')
-    out.append('| workload | floor |')
-    out.append('|---|---|')
-    for wk in WORK:
-        if wk in floors:
-            out.append('| `%s` | %.1f%% |' % (wk, floors[wk]))
-    out.append('')
-    out.append('A difference smaller than its own column\'s floor is not a')
-    out.append('result, whichever direction it points.\n')
-    out.append('Which of the five builds comes out fastest is not stable between')
-    out.append('runs, so this is a band and not a ranking of compiler flags. At')
-    out.append('six repetitions the script reported 5.3%% and then 11.2%% and')
-    out.append('disagreed with itself about the winner; it takes about forty')
-    out.append('before the number settles.\n')
+# The old "How small a difference is real" section is gone. It read a
+# single floor per workload out of layout-noise-*.txt and printed it as
+# the resolution of every table - which, once the harnesses began timing
+# all the layout variants, was both redundant and WRONG: it kept showing
+# figures from whatever stale run had last written those files, beside
+# error bars that disagreed with them. The per-stage +/- is the same
+# measurement, made per stage and in the same run as the number it
+# qualifies.
 
 out.append('## The stages\n')
 for s in STAGES:
