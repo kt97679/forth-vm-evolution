@@ -9,22 +9,33 @@ by one identifiable change, and that the cost of each change can be
 measured in two dimensions at once: image bytes, and time to recompile
 the kernel.
 
-| id | name | one-line change from the previous row | self-hosts |
+| id | name | one-line change from the previous row | emits its own encoding |
 |----|------|----------------------------------------|------------|
 | `s0-cell` | RelF, cell threading | baseline: one host cell per operation | yes |
-| `s1-sod16` | SOD16 | one 16-bit token per operation; `>=256` indexes a word table built at load | not yet |
-| `s2-cpt16` | CPT16 | delete the table: a call target is `base + (v << S)` | not yet |
-| `s3-cpt16f` | CPT16 + folding | fold `prim;EXIT` into single opcodes; inline data prims | not yet |
-| `s4-cv8` | CV8 | narrow the unit from 16 bits to one byte; calls become 2-3 bytes | not yet |
+| `p4-pack4` | tagged nibble | pack 4-bit opcodes into a cell behind a tag byte; rejected by a 2024 design note, built here | no |
+| `p8-pack8` | tagged byte | the same with byte opcodes | no |
+| `s1-sod16` | SOD16 | one 16-bit token per operation; `>=256` indexes a word table built at load | yes |
+| `s2-cpt16` | CPT16 | delete the table: a call target is `base + (v << S)` | yes |
+| `s3-cpt16f` | CPT16 + folding | fold `prim;EXIT` into single opcodes; inline data prims | yes |
+| `s4-cv8` | CV8 | narrow the unit from 16 bits to one byte; calls become 2-3 bytes | yes |
 | `s5-cv8spec` | CV8 + specialisations | locals, variables, tiny kernel words and small ints as opcodes | yes |
+| `s6-cv8b` | CV8 + byte headers | dictionary link becomes a 1-3 byte backward-tagged distance; names and code bodies stop being padded; call scale drops to 0 | yes |
 
 ## Self-hosting
 
-A stage self-hosts when the image's own compiler emits that stage's
-encoding. Only `s0-cell` (the compiler that was always there) and
-`s5-cv8spec` (via `forth/cv8.4`) do so today. The intermediate images are
-*translated* from the cell image by `tools/layout.py`, which means they
-run every word that was compiled into them but cannot compile a new one.
+EVERY stage cross-compiles the kernel and produces an image byte-identical
+to the reference - that is the gate `bench/kernel-compile.sh` applies
+before it times anything, and all nine pass it at both cell widths.
+
+The last column above is a narrower question: does the image's own
+compiler EMIT that stage's encoding? For `s1` through `s6` it does, via
+the overlays in `forth/` - `sod16.4`, `cpt16.4`, `cv8.4`, `cv8b.4`.
+
+`p4-pack4` and `p8-pack8` are the exception. They rewrite a finished cell
+image in place, so the compiler they carry is the cell compiler and the
+code it compiles at run time is unpacked. They self-host in the sense
+that matters for the benchmark - same input, same output image - but a
+word defined after boot is not packed.
 
 This matters because it decides which benchmarks a stage can take part
 in. See `bench/README.md`.
