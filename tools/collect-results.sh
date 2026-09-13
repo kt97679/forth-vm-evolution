@@ -58,7 +58,25 @@ reps_for() {
     esac
 }
 
-if [ "${1:-report}" = run ]; then
+case "${1:-}" in
+    run|report) ;;
+    *)
+        cat <<'USAGE'
+usage: collect-results.sh run [BENCH...] [WIDTH...]   take the measurements
+       collect-results.sh report                      assemble RESULTS.md
+
+Run the sweep first; it takes several minutes and writes build/results/.
+`report` only assembles what is already there, so calling it on its own
+produces a report with no timings in it.
+
+  collect-results.sh run                 everything, both cell widths
+  collect-results.sh run kernel 64       one benchmark, one width
+  collect-results.sh report
+USAGE
+        exit 2;;
+esac
+
+if [ "$1" = run ]; then
     bl=${2:-$BENCHES}
     wl=${3:-$WIDTHS}
     for b in $bl; do
@@ -70,6 +88,16 @@ if [ "${1:-report}" = run ]; then
             else echo "NO TABLE - see $R/$b-$w.txt"; fi
         done
     done
+    # What ran this. RESULTS.md used to state the machine in prose, which
+    # was correct on exactly one machine and wrong everywhere else.
+    {
+        echo "date: $(date -u '+%Y-%m-%d %H:%MZ')"
+        echo "uname: $(uname -srm)"
+        echo "cpu: $(sed -n 's/^model name[ \t]*: //p' /proc/cpuinfo 2>/dev/null | head -1)"
+        echo "cores: $(nproc 2>/dev/null)"
+        echo "cc: $(cc --version 2>/dev/null | head -1)"
+    } > "$R/host.txt"
+
     if [ "${2:-}" = all ] || [ $# -le 1 ]; then
         printf 'running %-7s ... ' layout-noise
         bash tools/layout-noise.sh "$O" 40 > "$R/layout-noise.txt" 2>&1 \
@@ -161,8 +189,18 @@ out.append('stages whose output image is byte-identical to the reference, and')
 out.append('the rest only for runs that reach the end-of-corpus sentinel with')
 out.append('zero failing cases.\n')
 out.append('All timings are the MINIMUM of several interleaved repetitions,')
-out.append('net of process startup. Measured on one machine: a single-vCPU')
-out.append('x86-64 VM. Ratios travel; absolute milliseconds do not.\n')
+out.append('net of process startup. Ratios travel between machines;')
+out.append('absolute milliseconds do not.\n')
+
+hp = os.path.join(R, 'host.txt')
+if os.path.exists(hp):
+    out.append('Measured on:\n')
+    out.append('```')
+    out.append(open(hp).read().rstrip())
+    out.append('```\n')
+else:
+    out.append('**The machine was not recorded** - these results predate')
+    out.append('`build/results/host.txt`, or were assembled by hand.\n')
 out.append('Every number here was taken AFTER the hashed word list was')
 out.append('restored (see `FINDINGS-OUTER-INTERPRETER.md`). Figures from')
 out.append('before that change are not comparable and are not reproduced.\n')
@@ -242,14 +280,35 @@ for s in STAGES:
         out.append('| `%s` | %s |' % (s, ' | '.join(sizes[s])))
 out.append('')
 
+missing = []
 for w in ('64', '32'):
+    have = [b for b in ('kernel', 'corpus', 'loop', 'parse') if read(b, w)]
+    if not have:
+        missing.append(w)
+        continue
     out.append('## Speed, %s-bit cells, relative to the cell engine\n' % w)
+    if len(have) < 4:
+        out.append('Only %s measured at this width; run the rest with'
+                   ' `tools/collect-results.sh run`.\n' % ', '.join(have))
     out.append(table(w))
     out.append('')
     out.append('Absolute, for scale only:\n')
     out.append(abstable(w))
     out.append('')
 
+if missing:
+    out.append('## Speed: not measured\n')
+    out.append('No timings for %s-bit cells. `build/results/` has no harness'
+               % ' or '.join(missing))
+    out.append('output for them, so the tables are omitted rather than')
+    out.append('printed empty. Take the measurements with:\n')
+    out.append('    tools/collect-results.sh run\n')
+
 open(os.path.join(root, 'RESULTS.md'), 'w').write('\n'.join(out) + '\n')
-print('wrote RESULTS.md')
+if missing:
+    print('wrote RESULTS.md - WITHOUT timings for %s-bit cells.'
+          % ' or '.join(missing))
+    print('Run `tools/collect-results.sh run` first; it takes a few minutes.')
+else:
+    print('wrote RESULTS.md')
 PY
