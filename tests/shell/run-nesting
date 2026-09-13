@@ -1,0 +1,165 @@
+#!/bin/sh
+# tests/shell/run-nesting - a multi-line construct nested inside a
+# loop body or a function body (Iteration 42). Before replay became a
+# real input source, a nested if inside such a body silently ran its
+# own body unconditionally, because DO-IF's search for then/else/fi
+# read from the real process input rather than from the stored body.
+. "$(dirname "$0")/lib.sh"
+
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+
+cat > "$t/a.sh" <<'X'
+for x in a b c
+do
+  if test "$x" = b
+  then
+    echo "matched $x"
+  else
+    echo "other $x"
+  fi
+done
+X
+out=$("$THIS_SH" "$t/a.sh" 2>/dev/null)
+assert_output_contains "if inside for: else branch, first item"  "other a"   "$out"
+assert_output_contains "if inside for: then branch, middle item" "matched b" "$out"
+assert_output_contains "if inside for: else branch, last item"   "other c"   "$out"
+
+cat > "$t/b.sh" <<'X'
+f() {
+  if test "$1" = hi
+  then
+    echo "func saw hi"
+  else
+    echo "func saw $1"
+  fi
+}
+f hi
+f bye
+X
+out=$("$THIS_SH" "$t/b.sh" 2>/dev/null)
+assert_output_contains "if inside function: then branch" "func saw hi"  "$out"
+assert_output_contains "if inside function: else branch" "func saw bye" "$out"
+
+cat > "$t/c.sh" <<'X'
+i=0
+while test $i -lt 3
+do
+  if test $i -eq 1
+  then
+    echo "one"
+  fi
+  i=$((i+1))
+done
+echo done
+X
+out=$("$THIS_SH" "$t/c.sh" 2>/dev/null)
+assert_output_contains "if inside while: fires once"     "one"  "$out"
+assert_output_contains "if inside while: loop completes" "done" "$out"
+
+cat > "$t/d.sh" <<'X'
+g() {
+  for w in p q
+  do
+    echo "g $w"
+  done
+  return 0
+}
+g
+X
+out=$("$THIS_SH" "$t/d.sh" 2>/dev/null)
+assert_output_contains "for inside function: first"  "g p" "$out"
+assert_output_contains "for inside function: second" "g q" "$out"
+
+cat > "$t/e.sh" <<'X'
+for x in 1 2
+do
+  for y in a b
+  do
+    echo "$x$y"
+  done
+done
+X
+out=$("$THIS_SH" "$t/e.sh" 2>/dev/null)
+assert_output_contains "for inside for: 1a" "1a" "$out"
+assert_output_contains "for inside for: 1b" "1b" "$out"
+assert_output_contains "for inside for: 2a" "2a" "$out"
+assert_output_contains "for inside for: 2b" "2b" "$out"
+
+cat > "$t/f.sh" <<'X'
+i=0
+while test $i -lt 2
+do
+  for y in a b
+  do
+    if test "$y" = b
+    then
+      echo "$i-$y-hit"
+    else
+      echo "$i-$y"
+    fi
+  done
+  i=$((i+1))
+done
+echo end
+X
+out=$("$THIS_SH" "$t/f.sh" 2>/dev/null)
+assert_output_contains "while>for>if: first iteration else"  "0-a"     "$out"
+assert_output_contains "while>for>if: first iteration then"  "0-b-hit" "$out"
+assert_output_contains "while>for>if: second iteration then" "1-b-hit" "$out"
+assert_output_contains "while>for>if: outer loop terminates" "end"     "$out"
+
+cat > "$t/g.sh" <<'X'
+h() {
+  for z in p q
+  do
+    echo "h$z"
+  done
+}
+h
+h
+X
+out=$("$THIS_SH" "$t/g.sh" 2>/dev/null)
+assert_output_contains "for inside function, called twice" "hp" "$out"
+assert_output_contains "for inside function, second word" "hq" "$out"
+
+# The body arena must grow past what used to be a fixed 4096-byte cap,
+# and must stay correct across the RESIZE that growth performs (which
+# is allowed to relocate the block - hence offsets, not pointers).
+i=0
+{
+  echo "for a in 1 2"
+  echo "do"
+  while [ $i -lt 60 ]; do
+    echo "  for b in x y"
+    echo "  do"
+    echo "    echo n$i\$b"
+    echo "  done"
+    i=$((i+1))
+  done
+  echo "done"
+} > "$t/h.sh"
+out=$("$THIS_SH" "$t/h.sh" 2>/dev/null)
+want=$(bash "$t/h.sh" 2>/dev/null)
+TESTS_RUN=$((TESTS_RUN + 1))
+if [ "$out" != "$want" ]; then
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: large loop body (>4K) matches bash"
+fi
+assert_output_contains "large body: last inner loop ran" "n59y" "$out"
+
+# 8 levels of nesting: 2^8 lines out
+{
+  d=0
+  while [ $d -lt 8 ]; do echo "for v$d in 1 2"; echo "do"; d=$((d+1)); done
+  echo "echo deep"
+  d=0
+  while [ $d -lt 8 ]; do echo "done"; d=$((d+1)); done
+} > "$t/i.sh"
+n=$("$THIS_SH" "$t/i.sh" 2>/dev/null | grep -c deep)
+TESTS_RUN=$((TESTS_RUN + 1))
+if [ "$n" != "256" ]; then
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "FAIL: 8-deep nesting expected 256 lines, got $n"
+fi
+
+report

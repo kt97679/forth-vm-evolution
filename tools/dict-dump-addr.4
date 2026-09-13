@@ -1,0 +1,69 @@
+\ tools/dict-dump-addr.4 - dict-dump.4, but each line carries the
+\ ADDRESS as well as the value, so call targets can be resolved.
+\
+\ Emits, for every word in the dictionary:
+\     N <body-start> <body-end> <name>
+\     B <addr> <value>          (one per body cell)
+\
+\ tools/dict-dump.4 prints sizes only, which is enough to census
+\ opcode frequency but not enough to follow a call: a call cell holds
+\ a RELATIVE offset, so the target is addr + CELL + value and cannot
+\ be computed without knowing addr. Added in Iteration 156 for
+\ tools/encoding-census.py.
+\
+\ Usage (4-byte cells, with the shell loaded so the census covers it):
+\   printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" shell.4" INCLUDED\nS" tools/dict-dump-addr.4" INCLUDED\nBYE\n' \
+\     | ./relf32 kernel32.img | tr -d '\\r' > dump.txt
+
+BASE @ DECIMAL
+VARIABLE PREVLINK
+VARIABLE NFA
+VARIABLE LNK
+VARIABLE GO
+VARIABLE BP
+VARIABLE BE
+: CELLB 1 CELLS ;
+: DUMP
+  HERE PREVLINK !
+  FORTH-WORDLIST @ NFA !
+  -1 GO !
+  BEGIN GO @ WHILE
+    NFA @ DUP C@ 31 AND 1+ ALIGNED + BP !
+    PREVLINK @ BE !
+    \ The raw count byte carries flag bits above the length - bit 5 is
+    \ the MACRO flag cross.4's PRIMITIVE sets. TYPE below masks them
+    \ off, so without this line an image rebuilt from this dump would
+    \ silently lose every flag.
+    S" H " TYPE NFA @ . NFA @ C@ . CR
+    S" N " TYPE BP @ . BE @ . NFA @ 1+ NFA @ C@ 31 AND TYPE CR
+    BEGIN BP @ BE @ < WHILE
+      ." B " BP @ . BP @ @ . CR
+      BP @ CELLB + BP !
+    REPEAT
+    NFA @ CELLB - DUP PREVLINK ! @ LNK !
+    LNK @ 0= IF 0 GO ! ELSE PREVLINK @ LNK @ + NFA ! THEN
+  REPEAT ;
+\ The S line anchors every address above to an offset in the saved
+\ image, which runs from START to HERE. Without it the layout pass
+\ cannot tell where the pre-dictionary prologue begins. Printed before
+\ DUMP runs, so HERE is the value the dump itself will see.
+\ `."` is compile-only in this kernel and prints nothing at the
+\ interpreter, so the label goes through S" ... " TYPE instead. That
+\ cost a silent empty anchor line once.
+S" S " TYPE START @ . HERE . CR
+DUMP
+\ The prologue: the cells between START and the oldest word's link
+\ cell. ip = base starts executing at offset 0, so the first two are
+\ code and the image cannot be rebuilt without them. DUMP walks bodies
+\ only and never sees this region.
+\
+\ This MUST be a definition. A DO/+LOOP typed at the interpreter runs
+\ once and stops - the same interpret-mode hazard GOALS.md records for
+\ IF/THEN in this kernel. It printed one line and looked like a dump
+\ with a short prologue rather than like a broken loop.
+: PROLOGUE-DUMP
+  START @ DUP 6 CELLS + SWAP DO
+    S" P " TYPE I . I @ . CR
+  1 CELLS +LOOP ;
+PROLOGUE-DUMP
+BASE ! BYE

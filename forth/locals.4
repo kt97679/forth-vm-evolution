@@ -1,0 +1,283 @@
+\ locals.4 - named, per-invocation locals for RelF.
+\
+\ Why this exists: shell.4 currently has 181 global VARIABLEs, most of
+\ which are not really global state at all - they are per-word scratch
+\ cells, faked with a naming convention (GM-*, NORM-*, SCN-*, SAEK-*
+\ and so on) because this kernel has no locals facility. That
+\ convention costs real correctness, not just readability: a word whose
+\ scratch state lives in fixed globals cannot be re-entered, which is
+\ exactly why while/for/function bodies cannot contain another
+\ multi-line construct, and why DO-WHILE's own condition/body buffers
+\ cannot nest. See GOALS.md phase 8 and PROGRESS.md's Iteration 38
+\ entry.
+\
+\ Design, in one line: a local is an ORDINARY VARIABLE whose value is
+\ saved on entry to the declaring word and restored on exit.
+\
+\ That choice is deliberate and is what keeps this small. It means:
+\   - No new dictionary machinery. Local names are just the VARIABLEs
+\     that already exist, found by the ordinary FIND, so nothing has to
+\     hook name resolution or splice temporary headers into the middle
+\     of a definition being compiled.
+\   - Existing code converts mechanically. A word's body is UNCHANGED -
+\     `CA-SRC @` and `CA-N !` keep working exactly as before, because
+\     a local still is a variable. Converting a word means adding one
+\     {: ... :} line and deleting its argument-popping stores. The
+\     VARIABLE declarations themselves stay where they are.
+\   - The data stack and return stack are untouched, so this composes
+\     with shell.4's existing, load-bearing >R/R> use (DO-IF,
+\     RUN-FUNC-BODY) rather than competing with it.
+\
+\ The cost is that entry/exit copy N cells instead of moving a frame
+\ pointer. For this codebase that is not worth optimizing away.
+\
+\ Syntax (Forth-2012's, minus the parts not needed here):
+\
+\   : COPY-ARGV ( src-argv src-argc --- )  {: CA-SRC CA-N :}
+\     CA-N @ ARGC ! ...
+\
+\ Names before an optional | are initialized from the data stack, left
+\ to right = deepest to top of stack, matching the stack comment's own
+\ reading order. Names after the | are scratch: saved and restored the
+\ same way, but zeroed rather than taking a stack argument.
+\
+\   : GLOB-MATCH ( pat plen text tlen --- f )
+\     {: GM-PATTERN GM-PLEN GM-TEXT GM-TLEN | GM-P GM-S :}
+\
+\ Restrictions, all deliberate:
+\   - The whole {: ... :} must be on one physical line. WORD does not
+\     refill, and a multi-line construct here would be a close cousin
+\     of the multi-line ( ) comment hazard documented in GOALS.md.
+\   - Every name must already be a defined VARIABLE (or any word that
+\     returns an address). An undefined name is diagnosed, not
+\     silently accepted.
+\   - LDECL-MAX names per definition, LSAVE-MAX cells of live
+\     save-stack across all nested invocations. Both are checked.
+\
+\ EXIT and ; are wrapped below so the restore happens on EVERY exit
+\ path, including the early `IF EXIT THEN` that shell.4 uses
+\ pervasively. Both wrappers compile nothing at all when the
+\ definition being compiled declared no locals, so every existing
+\ definition compiles exactly as it did before.
+\
+\ This file forces DECIMAL for its own numeric literals and restores
+\ the caller's BASE at the end. That is not boilerplate: tester.fr
+\ leaves BASE at 16, and the first version of this file used a bare
+\ `32 WORD` to parse names, which in hex is 0x32 = the character "2" -
+\ so WORD delimited on "2" instead of on a space and swallowed whole
+\ lines. Character constants below are written as [CHAR] rather than
+\ as numbers for the same reason. See PROGRESS.md's Iteration 38 entry.
+
+BASE @  DECIMAL
+
+\ ------------------------------------------------------------------
+\ Storing an execution token so it survives being saved into an image
+\ ------------------------------------------------------------------
+\ An xt is an absolute address, so a stored one is stale the moment a
+\ saved image reloads at a different address - and, before that even
+\ bites, it makes two builds of identical sources differ. Store the
+\ offset from START instead and add START back on use. Defined here
+\ rather than in shell.4 because both files need it and shell.4
+\ already requires this one to be loaded first for {: itself.
+
+: !XT ( xt addr --- )  SWAP START @ - SWAP ! ;
+: @XT ( addr --- xt )  @ START @ + ;
+
+\ ------------------------------------------------------------------
+\ Forward declaration
+\ ------------------------------------------------------------------
+\ shell.4 is one linear definition order, and words genuinely need to
+\ call each other in both directions - RUN-TOKENIZED and DO-IF,
+\ EXPAND-BRACED-VAR and TRIM-PARAM, and a dozen more. Each has been
+\ broken by hand: a VARIABLE holding an offset xt, a one-line caller
+\ word, and a patch line after the real definition. Fourteen such
+\ sites, three pieces of boilerplate each - and Iteration 76 ran
+\ aground trying to add two more.
+\
+\     DEFER FOO          \ FOO is callable from here on
+\     ...
+\     : REAL-FOO ... ;
+\     ' REAL-FOO IS FOO  \ patch it
+\
+\ The stored value is an OFFSET from START, not an address - it is
+\ written into a saved image, and an absolute address there is stale
+\ the moment it reloads. Calling an unpatched DEFER is a no-op rather
+\ than a jump to address zero, so a forgotten patch shows up as
+\ "nothing happened" instead of a segfault.
+
+: DEFER ( "name" --- )
+  CREATE 0 ,
+  DOES> DUP @ 0= IF DROP EXIT THEN  @XT EXECUTE ;
+
+: IS ( xt "name" --- )  ' >BODY !XT ;
+
+\ ------------------------------------------------------------------
+\ Runtime: the save stack
+\ ------------------------------------------------------------------
+
+4096 CONSTANT LSAVE-MAX
+\ Raised from 256 in Iteration 90. Each nested shell construct
+\ declares several locals, so 256 cells ran out around fifteen levels
+\ of function recursion - shallower than shell.4's own
+\ MAX-POS-PARAM-DEPTH of 32, which meant the SHELL's "recursion too
+\ deep" diagnostic could never fire and the user got this file's
+\ ABORT instead, killing the shell. A limit that pre-empts a
+\ higher-level one is worse than a larger limit.
+LSAVE-MAX CELLS BUFFER: LSAVE-STACK
+VARIABLE LSAVE-SP
+
+\ Each of these takes the slot as an OFFSET from START, not as an
+\ absolute address, and adds START itself. That is what makes a
+\ locals-using word survive being saved into an image and reloaded at
+\ a different address (see save-system.4): the only thing compiled
+\ into the word's body is the offset, which is position-independent,
+\ exactly like kernel.4's BOOT hook and shell.4's deferred xts.
+\
+\ Doing the arithmetic HERE rather than in the generated code is not
+\ just tidier, it is what keeps this free. The first attempt compiled
+\ "LIT off | START | @ | + | call" inline instead, quadrupling the
+\ code emitted per local - which overflowed the engine's dictionary
+\ and corrupted compilation of shell.4. This version emits exactly
+\ the same two cells the original absolute-address version did.
+
+: LSAVE ( off --- )   \ push the slot's current value, so it can be
+                      \ put back when this invocation ends
+  LSAVE-SP @ LSAVE-MAX < 0= ABORT" locals: save stack overflow"
+  START @ + @ LSAVE-STACK LSAVE-SP @ CELLS + !
+  LSAVE-SP @ 1+ LSAVE-SP ! ;
+
+: LRESTORE ( off --- )   \ pop the most recently saved value back
+  LSAVE-SP @ 0 > 0= ABORT" locals: save stack underflow"
+  LSAVE-SP @ 1- LSAVE-SP !
+  LSAVE-STACK LSAVE-SP @ CELLS + @ SWAP START @ + ! ;
+
+: LZERO ( off --- )   \ initial value of a post-| scratch local
+  0 SWAP START @ + ! ;
+
+: L! ( x off --- )    \ store a data-stack argument into a slot
+  START @ + ! ;
+
+\ ------------------------------------------------------------------
+\ Compile time: the declaration currently being processed
+\ ------------------------------------------------------------------
+
+\ The xts of the four runtime words above, held as offsets rather than
+\ compiled into L-COMPILE-ENTRY/L-COMPILE-RESTORES as absolute
+\ literals via [']. Same reason as everything else here.
+VARIABLE L-LSAVE-XT     ' LSAVE    L-LSAVE-XT    !XT
+VARIABLE L-L!-XT        ' L!       L-L!-XT       !XT
+VARIABLE L-LZERO-XT     ' LZERO    L-LZERO-XT    !XT
+VARIABLE L-LRESTORE-XT  ' LRESTORE L-LRESTORE-XT !XT
+
+16 CONSTANT LDECL-MAX
+LDECL-MAX CELLS BUFFER: LDECL-ADDRS
+VARIABLE LDECL-N      \ total names declared by the definition being compiled
+VARIABLE LDECL-ARGS   \ how many of those take a data-stack argument
+
+0 LDECL-N !
+0 LDECL-ARGS !
+0 LSAVE-SP !
+
+: L-EMIT ( xt i --- )
+  \ Compile "LDECL-ADDRS[i]  <call to xt>" - the one place any code is
+  \ generated, shared by all four emit loops below.
+  \
+  \ The slot address is emitted as an OFFSET from START, with a
+  \ "START @ +" compiled after it to rebuild the real address at run
+  \ time, rather than as a plain absolute literal. That costs three
+  \ extra operations per local per entry/exit and buys
+  \ position-independence: a saved image (see save-system.4) reloads
+  \ at a different address every run, and an absolute literal baked
+  \ into a word's body is stale the moment it does. Found exactly that
+  \ way - the first turnkey shell image segfaulted inside
+  \ NORMALIZE-OPERATORS, the first locals-using word its startup path
+  \ reached.
+  \
+  \ Two cells: the offset as a literal, then a relative call to the
+  \ runtime word, which does the "+ START" itself. Both are
+  \ position-independent.
+  CELLS LDECL-ADDRS + @
+  POSTPONE LITERAL COMPILE, ;
+
+: L-COMPILE-ENTRY ( --- )
+  \ Saves come first and cover every declared name; only then are the
+  \ data-stack arguments consumed, in reverse (top of stack fills the
+  \ rightmost pre-| name). Each loop is guarded by an explicit
+  \ emptiness test rather than relying on DO with start = limit, which
+  \ in this kernel runs the whole unsigned range instead of zero
+  \ iterations - see PROGRESS.md's Iteration 15 entry.
+  LDECL-N @ 0 > IF
+    LDECL-N @ 0 DO L-LSAVE-XT @XT I L-EMIT LOOP
+  THEN
+  LDECL-ARGS @ 0 > IF
+    LDECL-ARGS @ 0 DO L-L!-XT @XT LDECL-ARGS @ 1- I - L-EMIT LOOP
+  THEN
+  LDECL-N @ LDECL-ARGS @ > IF
+    LDECL-N @ LDECL-ARGS @ DO L-LZERO-XT @XT I L-EMIT LOOP
+  THEN ;
+
+: L-COMPILE-RESTORES ( --- )
+  \ Reverse of the save order, since the save stack is a stack.
+  \ A no-op when nothing was declared, which is what makes the EXIT
+  \ and ; wrappers below transparent to every ordinary definition.
+  LDECL-N @ 0 > IF
+    LDECL-N @ 0 DO L-LRESTORE-XT @XT LDECL-N @ 1- I - L-EMIT LOOP
+  THEN ;
+
+\ ------------------------------------------------------------------
+\ Compile time: parsing {: ... | ... :}
+\ ------------------------------------------------------------------
+
+: L-END? ( c-addr --- f )   \ is this parsed word ":}" ?
+  DUP C@ 2 <> IF DROP 0 EXIT THEN
+  DUP 1+ C@ [CHAR] : = SWAP 2 + C@ [CHAR] } = AND ;
+
+: L-BAR? ( c-addr --- f )   \ is this parsed word "|" ?
+  DUP C@ 1 <> IF DROP 0 EXIT THEN
+  1+ C@ [CHAR] | = ;
+
+: L-ADD-NAME ( c-addr --- )
+  LDECL-N @ LDECL-MAX < 0= ABORT" locals: too many locals"
+  FIND 0= ABORT" locals: undefined local name"
+  EXECUTE START @ -   \ a VARIABLE's xt yields its address; keep the
+                      \ offset, so nothing absolute is ever recorded
+  LDECL-ADDRS LDECL-N @ CELLS + !
+  LDECL-N @ 1+ LDECL-N ! ;
+
+: {: ( --- )
+  0 LDECL-N !
+  -1 LDECL-ARGS !                       \ -1 = no "|" seen yet
+  BEGIN
+    BL WORD
+    DUP C@ 0= ABORT" locals: missing :} on this line"
+    DUP L-END? 0=
+  WHILE
+    DUP L-BAR? IF
+      DROP LDECL-N @ LDECL-ARGS !
+    ELSE
+      L-ADD-NAME
+    THEN
+  REPEAT
+  DROP
+  LDECL-ARGS @ -1 = IF LDECL-N @ LDECL-ARGS ! THEN
+  L-COMPILE-ENTRY ; IMMEDIATE
+
+\ ------------------------------------------------------------------
+\ Wrapping EXIT and ; so restores happen on every exit path
+\ ------------------------------------------------------------------
+\ Both capture the previous definition first and defer to it, so this
+\ adds behavior rather than reimplementing any of it. ; additionally
+\ clears LDECL-N, which is what stops one definition's declaration
+\ leaking into the next one - a definition with no {: therefore always
+\ sees a count of zero and compiles no extra code whatsoever.
+
+VARIABLE L-OLD-EXIT  ' EXIT L-OLD-EXIT !XT
+VARIABLE L-OLD-SEMI  ' ;    L-OLD-SEMI !XT
+
+: EXIT ( --- )
+  L-COMPILE-RESTORES L-OLD-EXIT @XT COMPILE, ; IMMEDIATE
+
+: ; ( --- )
+  L-COMPILE-RESTORES 0 LDECL-N ! 0 LDECL-ARGS ! L-OLD-SEMI @XT EXECUTE ; IMMEDIATE
+
+BASE !
