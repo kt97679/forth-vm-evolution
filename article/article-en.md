@@ -28,13 +28,12 @@ when a measurement I trusted turned out to be measuring something else.
 
 ## 1. Names, against the real taxonomy
 
-The best short treatment of threaded code models I know is a 2024 thread
-on the ForthHub discussion forum, "An elevator description for Forth's
-threaded code models?"
-(<https://github.com/ForthHub/discussion/discussions/187>), where Mitch
-Bradley - the author of Open Firmware - ruv, Anthony Howe and others try
-to explain the family in the space of a lift ride. I will use its
-vocabulary rather than invent my own. Bradley's summary:
+The best short treatment of threaded code models I know is a 2024
+ForthHub thread, "An elevator description for Forth's threaded code
+models?" (<https://github.com/ForthHub/discussion/discussions/187>).
+Mitch Bradley, who wrote Open Firmware, ruv, Anthony Howe and others try
+there to explain the family in the space of a lift ride. I will use
+their vocabulary rather than invent my own. Bradley's summary:
 
 > Threaded code is a compact binary representation of a computer program
 > as a list of pointers. In direct threaded code, the pointers point
@@ -78,31 +77,29 @@ runs are byte-for-byte the same files the x86 machines run.
 ## 2. Nine systems, and what "built" means
 
 All nine boot, run a Forth interpreter, compile new definitions at run
-time, and pass the same 616-case ANS CORE corpus at both 4-byte and
-8-byte cells. Eight of them cross-compile the kernel and produce an
-image byte-identical to the reference.
+time, and pass the same 616-case ANS CORE corpus at both cell widths.
+Eight of them cross-compile the kernel and produce an image
+byte-identical to the reference.
 
-That last property does more work than it looks. It means the
-correctness check and the benchmark are the same run: a stage that is
-fast because it is quietly wrong fails the comparison that times it.
+That makes the correctness check and the benchmark the same run. A stage
+that is fast because it is quietly wrong fails the comparison that times
+it.
 
-Getting SOD32 to read the same corpus needed three fixes to the file and
-none to SOD32: CRLF line endings, some CP1251 comments, and - the only
-one with weight - comments that opened on one line and closed on
-another. ANSI `(` skips to the next `)` *in the current parse area*.
-RelF extends that across lines; SOD32 does not. A corpus shared between
-two systems must not depend on an extension of one of them.
+Getting SOD32 to read the same corpus took three fixes to the file and
+none to SOD32: CRLF line endings, some CP1251 comments, and comments
+that opened on one line and closed on another. Only the last matters.
+ANSI `(` skips to the next `)` *in the current parse area*; RelF extends
+that across lines and SOD32 does not. A shared corpus must not depend on
+one system's extension.
 
 ### What self-hosting costs, per encoding
 
-This is the part that generalises, and the part a size model cannot see.
-
-A translated image runs everything compiled into it and compiles nothing
-new. Making each stage compile *its own* encoding meant writing an
-emitter overlay in Forth for each - a file replacing `;`, `IF`,
-`LITERAL`, `CREATE`, `DOES>` and the rest with versions that lay down
-that encoding. Those overlays are the honest measure of how complicated
-each design is, and they differ enormously.
+A translated image runs what was compiled into it and compiles nothing
+new. To make each stage compile *its own* encoding I wrote an emitter
+overlay in Forth for each - a file replacing `;`, `IF`, `LITERAL`,
+`CREATE`, `DOES>` and the rest with versions that lay down that
+encoding. The overlays measure how complicated each design really is,
+and they are not close.
 
 **CPT16's `CALL,` is one line:**
 
@@ -112,39 +109,39 @@ each design is, and they differ enormously.
 Subtract the base, shift, add the opcode band. That is the whole call
 mechanism.
 
-**SOD16's is a page.** A SOD16 call names a *word number*, and the
-compiler has an address. The engine's table is number-to-address and
-lives in the engine's `malloc`ed memory, unreachable from Forth. So the
-image rebuilds its own sorted copy on the heap and binary-searches it on
-every call it compiles. Worse: the table is sized at load and never
-grows, so a word defined afterwards has no number at all. That needed a
-new opcode - a far call naming an address directly - and a second one
-for `DOES>`, whose runtime pushes a mid-word address no word number can
-name.
+**SOD16's is a page.** A SOD16 call names a *word number*; the compiler
+has an address. The engine's table runs number-to-address and lives in
+the engine's `malloc`ed memory, unreachable from Forth, so the image
+builds its own sorted copy on the heap and binary-searches it on every
+call it compiles.
 
-Deleting the table is usually argued for on dispatch cost: one fewer
-dependent load. The argument that convinced me is this one, and it only
-appears when the system has to compile for itself.
+And the table is sized at load and never grows, so a word defined
+afterwards has no number at all. That needed a new opcode - a far call
+naming an address directly - plus a second for `DOES>`, whose runtime
+pushes a mid-word address no word number can name.
+
+Deleting the table is usually argued for on dispatch cost, one fewer
+dependent load. This is the argument that convinced me, and it is
+invisible until the system has to compile for itself.
 
 ### Literals and control flow, since somebody will ask
 
 ruv's reply to Bradley in that thread was "what about literals and
-control-flow? ... The devil is in the details", and he is right:
+control-flow? ... The devil is in the details". He is right:
 
 - **Literals.** CV8 picks the narrowest of five forms: single-byte
-  opcodes for 0, 1 and -1, then 8-, 16-, 32-bit and full-cell forms. The
+  opcodes for 0, 1 and -1, then 8-, 16-, 32-bit and full-cell. The
   16-bit encodings have a 16-bit `LIT`, a 32-bit form, and - added
   during this work - a 64-bit one. That gap is one of the bugs below.
-- **Branches.** A signed 16-bit offset from the operand itself, counted
-  in tokens for SOD16/CPT16 and in bytes for CV8. Zero branches in a
-  real image need more than 16 bits, which was checked, not assumed.
+- **Branches.** A signed 16-bit offset from the operand itself, in
+  tokens for SOD16 and CPT16, in bytes for CV8. No branch in a real
+  image needs more than 16 bits, checked rather than assumed.
 - **`DO ... LOOP`.** `(LOOP)` reads an inline *cell* operand holding a
-  byte offset - the one place CV8 keeps cell granularity - so the
-  compiler pads with NOOPs before the call to keep it aligned. The pad
-  executes, once per loop.
-- **`DOES>`.** A created word's body is `[DOVAR][pad][PFA]` and `DOES>`
+  byte offset, the one place CV8 keeps cell granularity, so the compiler
+  pads with NOOPs to keep it aligned. The pad executes, once per loop.
+- **`DOES>`.** A created word's body is `[DOVAR][pad][PFA]`, and `DOES>`
   overwrites the front with a call to the tail. There is exactly one
-  cell of room, which is why SOD16's far `DOES>` form uses a halved
+  cell of room. That is why SOD16's far `DOES>` form uses a halved
   16-bit offset: on a 4-byte build, 32 bits does not fit.
 
 ---
@@ -153,16 +150,15 @@ control-flow? ... The devil is in the details", and he is right:
 
 Three machines: a single-vCPU x86-64 VM, a 16-core x86-64 laptop, and a
 4-core ARMv7 board. Every timing is the minimum of interleaved
-repetitions, net of process startup, and every harness gates on
-correctness before it times anything.
+repetitions, net of process startup, and every harness checks
+correctness before it measures anything.
 
-**The resolution floor is a property of the WORKLOAD, not the machine.**
-`tools/layout-noise.sh` builds the same engine five times, varying only
-flags that move code and change nothing it computes, checks all five
-still produce a byte-identical kernel, and times them. Measured per
-workload on the ARM board: kernel compile 1.1%, corpus 1.3%, parse 1.4%,
-`fib` 6.0%. On the laptop the same measurement reads 5.3% one run and
-13.1% the next.
+**The resolution floor belongs to the WORKLOAD, not the machine.**
+`tools/layout-noise.sh` builds one engine five times, varying only flags
+that move code without changing what it computes, checks all five still
+produce a byte-identical kernel, and times them. On the ARM board:
+kernel compile 1.1%, corpus 1.3%, parse 1.4%, `fib` 6.0%. On the laptop
+the same measurement reads 5.3% in one run and 13.1% in the next.
 
 **The fastest machine is the worst instrument.** Two consecutive sweeps,
 largest change in any stage's ratio:
@@ -174,22 +170,22 @@ largest change in any stage's ratio:
 | corpus | 12.9% | 3.7% |
 | `fib` | 23.1% | 15.1% |
 
-Sixteen cores, boost clocks and a desktop session make a laptop useless
-for distinctions under about 13%. Four slow cores with nothing else
-running resolve to about 1%. The instinct is the opposite, and the
-instinct is wrong.
+Sixteen cores, boost clocks and a desktop session leave the laptop
+unable to resolve anything under about 13%. Four slow cores with nothing
+else running resolve to about 1%. Intuition says the opposite and
+intuition is wrong.
 
-**Two workloads had to be discarded.** `loop.fth` - nested counted loops
-over stack arithmetic - swings 21% between runs of the same binary on
-the same board. `fib.fth` - naive recursive Fibonacci, added late
-because nothing else isolated the *call* - swings 15-23%. Both are the
-short narrow ones; both reliable workloads run a large amount of varied
-code. A tight interpreter loop over a handful of opcodes is dominated by
-indirect-branch prediction and code placement, which is what varies
-between builds and between runs.
+**Two workloads had to be discarded.** `loop.fth`, nested counted loops
+over stack arithmetic, swings 21% between runs of the same binary on the
+same board. `fib.fth`, naive recursive Fibonacci, added late because
+nothing else isolated the *call*, swings 15-23%. Both are the short
+narrow ones; both surviving workloads run a lot of varied code. A tight
+interpreter loop over a handful of opcodes is dominated by
+indirect-branch prediction and code placement, which is exactly what
+moves between builds and between runs.
 
-So: **magnitudes come from the ARM board, on kernel compilation and
-parsing.** The ordering is quoted only where all three machines agree.
+So magnitudes come from the ARM board, on kernel compilation and
+parsing. Ordering is quoted only where all three machines agree.
 
 ---
 
@@ -313,10 +309,10 @@ A size model prices the fields. The program pays for the joins.
 
 ### 5.2 A 4x regression I introduced in 2004
 
-Before the fix below, SOD32 was faster than every system here on any
-workload that interprets text - 2x on the corpus, 2.9x on parsing -
-while being slower than almost all of them on a pure-execution loop. So
-it was not the VM.
+Before the fix below, SOD32 beat every system here on any workload that
+interprets text: 2x on the corpus, 2.9x on parsing. On a pure-execution
+loop it was slower than almost all of them. So the difference was not
+the VM.
 
 Counting executed VM operations on the same 4000 lines of input: SOD32
 44,539,357, RelF 266,555,732. Six times the work for the same result,
@@ -401,11 +397,11 @@ made it byte-identical to the reference, which passed the correctness
 gate.
 
 And the best one. After the hashed word list went in, the system passed
-all 616 CORE cases and then could not cross-compile itself, because
-`WORDLIST` still made a one-cell word list - so the cross compiler's
-vocabularies were one cell each and `SEARCH-WORDLIST` read a chain head
-as a thread count. A test suite that exercises the language thoroughly
-and never creates a vocabulary.
+all 616 CORE cases and then could not cross-compile itself. `WORDLIST`
+still made a one-cell word list, so the cross compiler's vocabularies
+were one cell each and `SEARCH-WORDLIST` read a chain head as a thread
+count. A test suite that exercises the language thoroughly and never
+creates a vocabulary.
 
 Every stage now runs a negative control: the corpus plus one
 deliberately wrong case, and a stage that does not notice is reported
@@ -476,8 +472,8 @@ a scaled offset - and its escape is a single reserved opcode rather than
 a band of fifteen. FCode has no call band, because an FCode token *is* a
 dictionary reference.
 
-So the debt is narrower than "we used FCode's encoding": what was taken
+So the debt is narrower than "we used FCode's encoding". What was taken
 is the demonstration that a byte-granular token stream with an escape
-hatch is a workable, compact and position-independent representation for
-a Forth, and IEEE 1275 is where that was demonstrated at scale long
-before this project.
+hatch works as a compact, position-independent representation for a
+Forth. IEEE 1275 is where that was shown at scale, long before this
+project.
