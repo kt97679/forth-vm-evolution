@@ -35,7 +35,13 @@ O=$ROOT/build
 R=$O/results
 mkdir -p "$R"
 
-BENCHES="kernel corpus loop fib parse"
+# loop is NOT in the default sweep. Its resolution floor is 17.5% here
+# and it swung 20.9% between two runs of the same ARM board - it cannot
+# support a claim, and anything printed in a table gets quoted. The
+# benchmark and its harness stay in the repository as the worked example
+# of a microbenchmark that does not reproduce; run it explicitly with
+#     tools/collect-results.sh run loop 32
+BENCHES="kernel corpus fib parse"
 # layout-noise is not a stage comparison; it measures the floor below
 # which stage comparisons are meaningless, and the report quotes it.
 WIDTHS="64 32"
@@ -111,7 +117,12 @@ if [ "$1" = run ]; then
         echo
         for _wk in $BENCHES; do
             printf '  floor on %-7s ... ' "$_wk"
-            bash tools/layout-noise.sh "$O" 25 "$_wk" \
+            case "$_wk" in
+                kernel|corpus) _fr=30 ;;
+                fib)           _fr=20 ;;
+                parse|loop)    _fr=15 ;;
+            esac
+            bash tools/layout-noise.sh "$O" "$_fr" "$_wk" \
                 > "$R/layout-noise-$_wk.txt" 2>&1 \
                 && echo ok || echo FAILED
         done
