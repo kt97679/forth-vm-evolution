@@ -305,15 +305,21 @@ opcodes). Both were sized on a census, both were timed in a synthetic
 dispatch loop, and both were rejected on the timing: 1.65x and 1.60x on
 x86-64, 2.05x and 1.90x on i386. Neither was ever built.
 
-I built them. Measured in a real engine, at 4-byte cells:
+I built them. Measured in a real engine, on two machines - a
+single-vCPU VM and a 16-core laptop - the tagged-byte scheme costs this
+much on kernel compilation:
 
-| | predicted | measured, kernel compile |
-|---|---|---|
-| tagged nibble | 2.05x | 1.158x |
-| tagged byte | 1.90x | 1.120x |
+| | predicted | VM, 4-byte | laptop, 4-byte | laptop, 8-byte |
+|---|---|---|---|---|
+| tagged byte | 1.90x | 1.186 | 1.103 | **0.939** |
 
-The rejection was right - CV8 beats both on size and speed at once - but
-the number it rested on was wrong by about four times. The benchmark's
+On the laptop at 8-byte cells it costs *nothing* - it is marginally
+ahead of the cell engine - while being 0.857x the size. The scheme
+rejected as too slow to be worth its density is, on that machine, free.
+
+The rejection still stands, because CV8 beats both packed schemes on
+both axes on both machines: 0.813 against 0.939 on speed, 0.47x against
+0.86x on size. But the reason recorded for it does not survive. The benchmark's
 own header says why, and says it in advance:
 
 > This benchmark's streams are sized to run hot, so it isolates decode
@@ -321,7 +327,9 @@ own header says why, and says it in advance:
 > it as "what does unpacking cost when memory is free", i.e. the
 > pessimistic case for the packed schemes.
 
-It was the pessimistic case by a factor nobody estimated. And the
+It was the pessimistic case by a factor nobody estimated - and on the
+second machine it was not pessimistic at all, it was wrong about the
+sign. And the
 baseline it lost to was itself wrong: token threading was recorded at
 0.985 - faster than cell dispatch - from a benchmark running a 32 MB
 stream against a 2 MB L2. It was measuring memory traffic. The real
@@ -420,10 +428,17 @@ thoroughly and never creates a vocabulary.
 
 ## 5. What is not measured
 
-- **One machine.** A single-vCPU x86-64 VM. No ARM, no RISC-V, no bare
-  metal, no cache-hierarchy variation. Density arguments are exactly the
-  ones most sensitive to that, and the packed schemes were originally
-  rejected by a benchmark that held memory free.
+- **Two machines, which is not a study.** A single-vCPU VM and one
+  laptop. No ARM, no RISC-V. Two was enough to overturn one claim - the
+  packed schemes' cost - and a third would probably overturn another.
+  `results/COMPARISON.md` says which conclusions reproduced and which
+  did not.
+- **One column that does not reproduce.** On the laptop at 4-byte cells
+  every stage comes out slower than the cell engine on the loop
+  benchmark, contradicting both its own 8-byte column and the VM's
+  4-byte column. `loop.fth` is the narrowest workload and i386 has half
+  the registers, but the two machines ran the same compiler version, so
+  that explanation is incomplete. It is recorded as unexplained.
 - **Relocation and portability**, two of the axes Bradley's fuller
   answer in that thread lists. RelF's relative addressing has something to say
   about both - the same image runs at any load address, and the same
