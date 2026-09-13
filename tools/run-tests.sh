@@ -50,7 +50,7 @@ BAD=$O/.corpus-bad.fth
 ERRS='INCORRECT RESULT: \{|WRONG NUMBER OF RESULTS: \{|Undefined word'
 
 # Stages whose image has no compiler for its own encoding yet.
-XFAIL=" s1-sod16 "
+XFAIL=" "
 
 rc=0
 one() { # one INFILE ENGINE IMAGE WORKDIR -> prints "status|detail"

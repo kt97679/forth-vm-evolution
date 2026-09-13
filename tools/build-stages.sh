@@ -71,6 +71,7 @@ SELF_BOOT='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" sa
 KERN_BOOT='S" dict-dump-addr.4" INCLUDED\nBYE\n'
 KSELF_BOOT='S" cv8.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KCPT_BOOT='S" cpt16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+KS16_BOOT='S" sod16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 
 dump "$O/s0-cell-64" kernel.img   d64.txt      "$SHELL_BOOT"
 dump "$O/s0-cell-32" kernel32.img d32.txt      "$SHELL_BOOT"
@@ -82,6 +83,8 @@ dump "$O/s0-cell-64" kernel.img   k64-self.txt "$KSELF_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32-self.txt "$KSELF_BOOT"
 dump "$O/s0-cell-64" kernel.img   k64-cpt.txt  "$KCPT_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32-cpt.txt  "$KCPT_BOOT"
+dump "$O/s0-cell-64" kernel.img   k64-s16.txt  "$KS16_BOOT"
+dump "$O/s0-cell-32" kernel32.img k32-s16.txt  "$KS16_BOOT"
 echo "built  dictionary dumps"
 
 # ---- engines ----------------------------------------------------------
@@ -169,6 +172,8 @@ img s5-cv8spec-k32 4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
 
 cp "$O/s0-cell-k64.img" "$O/s0-cell-s64.img"
 cp "$O/s0-cell-k32.img" "$O/s0-cell-s32.img"
+img s1-sod16-s64   8 k64-s16.txt --skip-pad --compiler-overlay 16
+img s1-sod16-s32   4 k32-s16.txt --skip-pad --compiler-overlay 16
 img s2-cpt16-s64   8 k64-cpt.txt --cpt 1 --skip-pad --compiler-overlay 16
 img s2-cpt16-s32   4 k32-cpt.txt --cpt 1 --skip-pad --compiler-overlay 16
 img s3-cpt16f-s64  8 k64-cpt.txt --cpt 3 $CPTF --compiler-overlay 16

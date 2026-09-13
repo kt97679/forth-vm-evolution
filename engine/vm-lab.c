@@ -705,6 +705,9 @@ static void virtual_machine(void) {
          *  free space in both 16-bit encodings.  */
         [71] = &&L_lit64t,
 #endif
+#if ENC == 1
+        [72] = &&L_farcall, [73] = &&L_dodoesf,
+#endif
 #if ENC == 3
         &&L_lit8, &&L_lit8x,
         [0x7C] = &&L_lit64, [0x7D] = &&L_esc,
@@ -836,6 +839,38 @@ L_lit64t:  /* lit64   */ { UNS64 v = 0; int k_;
                            for (k_ = 0; k_ < CELL_BYTES / 2; k_++)
                                v |= (UNS64)TOK(ip + 2 * k_) << (16 * k_);
                            PUSH(v); ip += CELL_BYTES; } NEXT();
+#endif
+#if ENC == 1
+/*  FARCALL: [72][low 16][high 16] - a call to an absolute byte offset
+ *  from the image base, bypassing the word table entirely.
+ *
+ *  SOD16 needs this to compile anything. Its table is derived at load
+ *  by walking the dictionary chain, sized to exactly the words that
+ *  were in the image, and malloc'd once; a word defined afterwards has
+ *  no entry and therefore no number that a call token could name. The
+ *  table is the whole point of the encoding and it is also the reason
+ *  the encoding cannot host its own compiler without an escape.
+ *
+ *  CPT16, one step later, needs nothing of the kind: it computes the
+ *  target from the address. That contrast is the argument for deleting
+ *  the table, and this opcode is what makes it measurable rather than
+ *  hypothetical.  */
+L_farcall: { UNS64 off = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 2) << 16);
+             RPUSH(ip + 4); ip = (UNS64)(uintptr_t)base + off; }
+           goto next;
+/*  DODOES with an address instead of a word number, for a DOES> word
+ *  created after load. Body is [DODOESF][offset/2][pad][PFA].
+ *
+ *  The operand is ONE token, not two, and that is forced by the layout
+ *  rather than chosen: CREATE reserves exactly one cell before the
+ *  parameter field, so on a 4-byte cell there are four bytes to
+ *  overwrite and a 32-bit offset does not fit. Bodies are 2-byte
+ *  aligned, so halving the offset costs nothing and reaches 128 KB.
+ *  Past that the compiler refuses rather than truncating.  */
+L_dodoesf: { UNS64 off = (UNS64)TOK(ip) << 1;
+             RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+             ip = (UNS64)(uintptr_t)base + off; }
+           goto next;
 #endif
 #if ENC == 3 && SPEC
 /*  Specialised opcodes, each borrowed from another VM (CV8.md 10).
