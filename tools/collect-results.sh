@@ -316,10 +316,23 @@ for w in ('64', '32'):
     out.append(abstable(w))
     out.append('')
 
-if missing:
-    out.append('## Speed: not measured\n')
-    out.append('No timings for %s-bit cells. `build/results/` has no harness'
-               % ' or '.join(missing))
+# "Not measured" and "cannot exist here" are different, and telling
+# someone on a 32-bit host to run the sweep again is bad advice: no
+# amount of running it will produce an 8-byte column on that machine.
+absent = [w for w in missing
+          if not os.path.exists(os.path.join(root, 'build', 's0-cell-%s' % w))]
+unmeasured = [w for w in missing if w not in absent]
+if absent:
+    out.append('## Speed, %s-bit cells: not built on this host\n'
+               % ' and '.join(absent))
+    out.append('This machine has no engines at that cell width, so there is')
+    out.append('nothing to time. On a 32-bit host the native build IS the')
+    out.append('4-byte one and an 8-byte column does not exist; on a 64-bit')
+    out.append('host the 4-byte column needs a 32-bit libc installed.\n')
+if unmeasured:
+    out.append('## Speed, %s-bit cells: not measured\n'
+               % ' and '.join(unmeasured))
+    out.append('The engines are built but `build/results/` has no harness')
     out.append('output for them, so the tables are omitted rather than')
     out.append('printed empty. Take the measurements with:\n')
     out.append('    tools/collect-results.sh run\n')
@@ -331,10 +344,13 @@ if save:
     os.makedirs(os.path.dirname(sp), exist_ok=True)
     open(sp, 'w').write(text)
     print('also wrote', save)
-if missing:
+if unmeasured:
     print('wrote RESULTS.md - WITHOUT timings for %s-bit cells.'
-          % ' or '.join(missing))
+          % ' or '.join(unmeasured))
     print('Run `tools/collect-results.sh run` first; it takes a few minutes.')
+elif absent:
+    print('wrote RESULTS.md (%s-bit cells are not built on this host)'
+          % ' and '.join(absent))
 else:
     print('wrote RESULTS.md')
 PY
