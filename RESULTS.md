@@ -15,6 +15,26 @@ Every number here was taken AFTER the hashed word list was
 restored (see `FINDINGS-OUTER-INTERPRETER.md`). Figures from
 before that change are not comparable and are not reproduced.
 
+## How small a difference is real
+
+`tools/layout-noise.sh` builds the SAME engine five times,
+varying only flags that move code and change nothing about what
+it computes, checks that all five still produce a
+byte-identical kernel, and times them on the identical
+workload. The spread is **5.3%**.
+
+That is the resolution of every table below. A difference
+smaller than it is not a result, whichever direction it points,
+and the article should not read meaning into one. It is why the
+rows for CPT16 and the cell engine, or for folding and CV8, are
+reported as indistinguishable rather than ranked.
+
+Which of the five builds comes out fastest is not stable between
+runs, so this is a band and not a ranking of compiler flags. At
+six repetitions the script reported 5.3%% and then 11.2%% and
+disagreed with itself about the winner; it takes about forty
+before the number settles.
+
 ## The stages
 
 - `sod32` - SOD32 (Benschop, 5-bit packed, 32-bit only)

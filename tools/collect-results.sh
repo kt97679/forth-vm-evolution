@@ -20,6 +20,8 @@ R=$O/results
 mkdir -p "$R"
 
 BENCHES="kernel corpus loop parse"
+# layout-noise is not a stage comparison; it measures the floor below
+# which stage comparisons are meaningless, and the report quotes it.
 WIDTHS="64 32"
 
 script_for() {
@@ -52,6 +54,11 @@ if [ "${1:-report}" = run ]; then
             else echo "NO TABLE - see $R/$b-$w.txt"; fi
         done
     done
+    if [ "${2:-}" = all ] || [ $# -le 1 ]; then
+        printf 'running %-7s ... ' layout-noise
+        bash tools/layout-noise.sh "$O" 40 > "$R/layout-noise.txt" 2>&1 \
+            && echo ok || echo FAILED
+    fi
     exit 0
 fi
 
@@ -143,6 +150,32 @@ out.append('x86-64 VM. Ratios travel; absolute milliseconds do not.\n')
 out.append('Every number here was taken AFTER the hashed word list was')
 out.append('restored (see `FINDINGS-OUTER-INTERPRETER.md`). Figures from')
 out.append('before that change are not comparable and are not reproduced.\n')
+
+noise = None
+np_ = os.path.join(R, 'layout-noise.txt')
+if os.path.exists(np_):
+    m = re.search(r'spread across builds of the SAME engine: ([\d.]+)%',
+                  open(np_).read())
+    if m:
+        noise = float(m.group(1))
+
+if noise is not None:
+    out.append('## How small a difference is real\n')
+    out.append('`tools/layout-noise.sh` builds the SAME engine five times,')
+    out.append('varying only flags that move code and change nothing about what')
+    out.append('it computes, checks that all five still produce a')
+    out.append('byte-identical kernel, and times them on the identical')
+    out.append('workload. The spread is **%.1f%%**.\n' % noise)
+    out.append('That is the resolution of every table below. A difference')
+    out.append('smaller than it is not a result, whichever direction it points,')
+    out.append('and the article should not read meaning into one. It is why the')
+    out.append('rows for CPT16 and the cell engine, or for folding and CV8, are')
+    out.append('reported as indistinguishable rather than ranked.\n')
+    out.append('Which of the five builds comes out fastest is not stable between')
+    out.append('runs, so this is a band and not a ranking of compiler flags. At')
+    out.append('six repetitions the script reported 5.3%% and then 11.2%% and')
+    out.append('disagreed with itself about the winner; it takes about forty')
+    out.append('before the number settles.\n')
 
 out.append('## The stages\n')
 for s in STAGES:
