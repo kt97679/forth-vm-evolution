@@ -8,7 +8,10 @@ Forth. The point was speed:
 a cell you can jump through directly beats six 5-bit subinstructions you
 have to unpack first. It was 32-bit only, it worked, and it sat there.
 
-Recently I came back to it, built it for 64-bit, and the deal changed.
+Recently I came back to it and built it for 64-bit. The deal changed:
+the same Forth, the same words, in an image that had gone from 13,380
+bytes to 24,320. One relative offset per cell means one *cell* per
+operation, and the cell had just doubled.
 
 What follows is what I tried, in the order I tried it, including the two
 attempts that did not work and why.
@@ -73,7 +76,8 @@ and is the part I would keep if I had to cut the rest.
 Cell threading pays one host cell per *operation*. Move to a 64-bit host
 and every operation costs eight bytes instead of four, while the program
 it encodes has not changed at all. The kernel image went from 13,380
-bytes to 24,320 for the same word set.
+bytes to 24,320 for the same word set - the number from the opening,
+and the reason for everything that follows.
 
 That is the whole motivation. Not "make it smaller" in the abstract, but
 "stop paying twice for the same program because the host got wider" -
@@ -408,6 +412,56 @@ machines. Several earlier ones did not, and are not above.
 - With token threading, `DOES>` is the only extension point - a new
   behaviour type cannot be added from Forth. That is the strongest
   architectural criticism this design has had and I have no answer.
+
+## 12. What came out of it
+
+Start and finish, same Forth, same 616 tests passing:
+
+| | image | kernel compile | parsing |
+|---|---|---|---|
+| RelF, where this began | 24,320 bytes | 1.000 | 1.000 |
+| CV8 + specialisation + byte headers | 7,609 bytes | 0.731 | 0.830 |
+
+0.31x the image and 0.73 the time on the compiler's own largest job, at
+the price of about 17% on text interpretation. At 4-byte cells, where
+RelF started life, the same sequence gives 0.50x and 0.73.
+
+And the thing that dwarfs all of it: restoring one hash table that had
+been missing since 2004 was worth 3.7 to 4.4x on parsing by itself. The
+encodings are a 30% story. The omission was a 300% one.
+
+Seven things I would tell someone starting the same work.
+
+**Packing needs runs, and Forth has not got them.** The mean run of
+consecutive packable primitives in real kernel code is about 1.3. Any
+scheme that pays a tag to amortise over a run will not amortise.
+
+**A narrower unit beats a fuller cell.** Both failed attempts here were
+ways of fitting more into a cell. What worked was making the unit
+smaller and giving up on fixed width entirely.
+
+**Logic in the dispatch loop costs about what it looks like it costs.**
+The word-number table looked like free indirection and was worth 37%.
+
+**Specialisation is worth more than encoding.** Every encoding change in
+this article, combined, is worth less than giving the common cases their
+own opcodes. If you only have time for one of the two, do that one.
+
+**Look outside the instruction stream.** The largest single size result
+here - 11,088 bytes to 7,609 - came from the dictionary header, which
+five rounds of encoding work had never touched. Metadata was the
+majority of what cell width was still costing.
+
+**Measure builds, not just runs.** Rebuilding the same source moves a
+result by five or ten percent, because code placement is worth that and
+is fixed for a given binary; repeating a run cannot see it. Build each
+thing several ways and quote the spread. On this project the widest such
+spread belonged to the *baseline*, which divides every ratio.
+
+**Run the parent.** If your project was forked from something, measure
+against that something, not only against your own last build. It is the
+one check here that found a problem larger than everything the project
+set out to do.
 
 ## References
 
