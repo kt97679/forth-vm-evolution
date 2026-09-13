@@ -17,6 +17,10 @@
 #     the harness cannot distinguish right from wrong on this stage and
 #     its "ok" would be worthless, so it is reported as BROKEN.
 #
+# The images tested are the SELF-HOSTING ones (-s*): the corpus
+# compiles hundreds of definitions at run time, so a run-only image
+# cannot take part.
+#
 # Stages with no self-hosting compiler cannot run a corpus that compiles
 # definitions at run time. Those are declared xfail below and reported
 # as such: expected, and not counted as a regression. Each one becomes a
@@ -46,7 +50,7 @@ BAD=$O/.corpus-bad.fth
 ERRS='INCORRECT RESULT: \{|WRONG NUMBER OF RESULTS: \{|Undefined word'
 
 # Stages whose image has no compiler for its own encoding yet.
-XFAIL=" s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 "
+XFAIL=" s1-sod16 "
 
 rc=0
 one() { # one INFILE ENGINE IMAGE WORKDIR -> prints "status|detail"
@@ -95,20 +99,20 @@ run() { # run LABEL ENGINE IMAGE [WORKDIR]
 echo "ANS CORE corpus: $CASES cases, plus a negative control per stage"
 echo
 echo "64-bit cells:"
-run s0-cell    "$O/s0-cell-64"    "$W/kernel.img"
-run s1-sod16   "$O/s1-sod16-64"   "$O/s1-sod16-k64.img"
-run s2-cpt16   "$O/s2-cpt16-64"   "$O/s2-cpt16-k64.img"
-run s3-cpt16f  "$O/s3-cpt16f-64"  "$O/s3-cpt16f-k64.img"
-run s4-cv8     "$O/s4-cv8-64"     "$O/s4-cv8-k64.img"
-run s5-cv8spec "$O/s5-cv8spec-64" "$O/s5-cv8spec-k64.img"
+run s0-cell    "$O/s0-cell-64"    "$O/s0-cell-s64.img"
+run s1-sod16   "$O/s1-sod16-64"   "$O/s1-sod16-s64.img"
+run s2-cpt16   "$O/s2-cpt16-64"   "$O/s2-cpt16-s64.img"
+run s3-cpt16f  "$O/s3-cpt16f-64"  "$O/s3-cpt16f-s64.img"
+run s4-cv8     "$O/s4-cv8-64"     "$O/s4-cv8-s64.img"
+run s5-cv8spec "$O/s5-cv8spec-64" "$O/s5-cv8spec-s64.img"
 echo
 echo "32-bit cells:"
-run s0-cell    "$O/s0-cell-32"    "$W/kernel32.img"
-run s1-sod16   "$O/s1-sod16-32"   "$O/s1-sod16-k32.img"
-run s2-cpt16   "$O/s2-cpt16-32"   "$O/s2-cpt16-k32.img"
-run s3-cpt16f  "$O/s3-cpt16f-32"  "$O/s3-cpt16f-k32.img"
-run s4-cv8     "$O/s4-cv8-32"     "$O/s4-cv8-k32.img"
-run s5-cv8spec "$O/s5-cv8spec-32" "$O/s5-cv8spec-k32.img"
+run s0-cell    "$O/s0-cell-32"    "$O/s0-cell-s32.img"
+run s1-sod16   "$O/s1-sod16-32"   "$O/s1-sod16-s32.img"
+run s2-cpt16   "$O/s2-cpt16-32"   "$O/s2-cpt16-s32.img"
+run s3-cpt16f  "$O/s3-cpt16f-32"  "$O/s3-cpt16f-s32.img"
+run s4-cv8     "$O/s4-cv8-32"     "$O/s4-cv8-s32.img"
+run s5-cv8spec "$O/s5-cv8spec-32" "$O/s5-cv8spec-s32.img"
 
 if [ -x "$O/sod32/sod32" ]; then
     echo

@@ -70,6 +70,7 @@ SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUD
 SELF_BOOT='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\nS" cv8-save.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KERN_BOOT='S" dict-dump-addr.4" INCLUDED\nBYE\n'
 KSELF_BOOT='S" cv8.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+KCPT_BOOT='S" cpt16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 
 dump "$O/s0-cell-64" kernel.img   d64.txt      "$SHELL_BOOT"
 dump "$O/s0-cell-32" kernel32.img d32.txt      "$SHELL_BOOT"
@@ -79,6 +80,8 @@ dump "$O/s0-cell-64" kernel.img   k64.txt      "$KERN_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32.txt      "$KERN_BOOT"
 dump "$O/s0-cell-64" kernel.img   k64-self.txt "$KSELF_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32-self.txt "$KSELF_BOOT"
+dump "$O/s0-cell-64" kernel.img   k64-cpt.txt  "$KCPT_BOOT"
+dump "$O/s0-cell-32" kernel32.img k32-cpt.txt  "$KCPT_BOOT"
 echo "built  dictionary dumps"
 
 # ---- engines ----------------------------------------------------------
@@ -134,8 +137,25 @@ img s4-cv8-32     4 d32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
 img s5-cv8spec-64 8 d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
 img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
 
-# kernel-only images - these boot into the Forth INTERPRETER, which is
-# what the ANS CORE suite and the kernel-compile benchmark need.
+# ---- kernel-only images ----------------------------------------------
+# These boot into the Forth INTERPRETER, which is what the CORE suite
+# and the kernel-compile benchmark need. TWO are built per stage, and
+# the distinction matters for every number in the article:
+#
+#   -k*   RUN-ONLY. Translated from the plain kernel dump, no compiler
+#         overlay. The word set is identical at every stage, so the size
+#         difference between two rows is the ENCODING and nothing else.
+#         It cannot compile, so it cannot run the corpus.
+#   -s*   SELF-HOSTING. Carries the stage's own emitter overlay, so it
+#         compiles its own encoding. This is the image that gets tested
+#         and benchmarked, and the one that answers "how small is a
+#         Forth that can still rebuild itself".
+#
+# s0-cell needs no overlay - its compiler already emits cells - so its
+# two images are the same file, and the gap between the columns at every
+# other row is exactly what that stage pays to carry its own compiler.
+cp "$W/kernel.img"   "$O/s0-cell-k64.img"
+cp "$W/kernel32.img" "$O/s0-cell-k32.img"
 img s1-sod16-k64   8 k64.txt --skip-pad
 img s1-sod16-k32   4 k32.txt --skip-pad
 img s2-cpt16-k64   8 k64.txt --cpt 1 --skip-pad
@@ -144,16 +164,24 @@ img s3-cpt16f-k64  8 k64.txt --cpt 3 $CPTF
 img s3-cpt16f-k32  4 k32.txt --cpt 2 $CPTF
 img s4-cv8-k64     8 k64.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot
 img s4-cv8-k32     4 k32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
-img s5-cv8spec-k64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
-img s5-cv8spec-k32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
-# ... and the same word set as s1-s4, WITHOUT the compiler overlay. The
-# self-hosting image carries cv8.4 as well, which is ~1.7 KB of extra
-# dictionary; comparing it against images that have no compiler in them
-# would credit the specialisations with a size REGRESSION they did not
-# cause. This variant is what the size table uses until every stage
-# carries its own compiler.
-img s5-nocomp-k64  8 k64.txt --v8 --cpt 3 $CPTF --spec $SPECS
-img s5-nocomp-k32  4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
+img s5-cv8spec-k64 8 k64.txt --v8 --cpt 3 $CPTF --spec $SPECS
+img s5-cv8spec-k32 4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
+
+cp "$O/s0-cell-k64.img" "$O/s0-cell-s64.img"
+cp "$O/s0-cell-k32.img" "$O/s0-cell-s32.img"
+img s2-cpt16-s64   8 k64-cpt.txt --cpt 1 --skip-pad --compiler-overlay 16
+img s2-cpt16-s32   4 k32-cpt.txt --cpt 1 --skip-pad --compiler-overlay 16
+img s3-cpt16f-s64  8 k64-cpt.txt --cpt 3 $CPTF --compiler-overlay 16
+img s3-cpt16f-s32  4 k32-cpt.txt --cpt 2 $CPTF --compiler-overlay 16
+# s4 uses cv8.4 too. Its engine is built with VARCALL=0, so it reads
+# every call as the fixed 2-byte form; cv8.4 emits the 3-byte form only
+# past 16384 scaled units, which a kernel image never reaches. The build
+# checks this rather than trusting it - see the far-call assertion in
+# the log.
+img s4-cv8-s64     8 k64-self.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot --cv8-compiler
+img s4-cv8-s32     4 k32-self.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot --cv8-compiler
+img s5-cv8spec-s64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
+img s5-cv8spec-s32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
 echo "built  stage images"
 
 # ---- stage 0 shell image ---------------------------------------------
@@ -169,8 +197,6 @@ cellshell() { # cellshell ENGINE SEEDIMG OUTNAME
 cellshell "$O/s0-cell-64" kernel.img   s0-cell-64.img
 cellshell "$O/s0-cell-32" kernel32.img s0-cell-32.img
 # and the kernel-only cell images, for the compile benchmark
-cp "$W/kernel.img"   "$O/s0-cell-k64.img"
-cp "$W/kernel32.img" "$O/s0-cell-k32.img"
 echo "built  stage 0 images"
 
 # ---- size table -------------------------------------------------------
@@ -180,12 +206,14 @@ echo "built  stage 0 images"
 # extend) is the finished artefact. A shell image would measure shell.4,
 # which is application code and has nothing to do with the encoding.
 {
-  echo "stage,image_bytes_64,image_bytes_32"
-  printf 'sod32,%s,%s\n' NA "$(stat -c%s "$SOD/forth.img")"
-  for s in s0-cell s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-nocomp; do
-      printf '%s,%s,%s\n' "$s" "$(stat -c%s "$O/$s-k64.img")" "$(stat -c%s "$O/$s-k32.img")"
+  echo "stage,runonly_64,runonly_32,selfhost_64,selfhost_32"
+  printf 'sod32,NA,NA,NA,%s\n' "$(stat -c%s "$SOD/forth.img")"
+  for st in s0-cell s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
+      sz() { [ -r "$1" ] && stat -c%s "$1" || echo NA; }
+      printf '%s,%s,%s,%s,%s\n' "$st" \
+          "$(sz "$O/$st-k64.img")" "$(sz "$O/$st-k32.img")" \
+          "$(sz "$O/$st-s64.img")" "$(sz "$O/$st-s32.img")"
   done
-  printf 's5-cv8spec+compiler,%s,%s\n' "$(stat -c%s "$O/s5-cv8spec-k64.img")" "$(stat -c%s "$O/s5-cv8spec-k32.img")"
 } > "$O/sizes.csv"
 # The shell images are still built and still measured, but in a separate
 # file, so the two questions never get mixed up in one table.
@@ -195,6 +223,6 @@ echo "built  stage 0 images"
       printf '%s,%s,%s\n' "$s" "$(stat -c%s "$O/$s-64.img")" "$(stat -c%s "$O/$s-32.img")"
   done
 } > "$O/sizes-shell.csv"
-awk -F, '{printf "%-12s %10s %10s\n", $1, $2, $3}' "$O/sizes.csv"
+awk -F, '{printf "%-12s %10s %10s %10s %10s\n", $1,$2,$3,$4,$5}' "$O/sizes.csv"
 echo
 echo "build complete: $O"

@@ -104,7 +104,16 @@ DODOES = len(G['prims']) + 2
 # the CELL image would break the cell compiler on the very next
 # definition. Here the body of each `X8` becomes the body of `X`, so the
 # emitted image's compiler emits CV8. The `X8` names stay, harmlessly.
-CV8_COMPILER = '--cv8-compiler' in ARGV
+# The suffix is a parameter, not a constant: every stage that emits its
+# own encoding ships an overlay using the same trick with a different
+# suffix (cv8.4 uses '8', cpt16.4 uses '16').
+if '--compiler-overlay' in ARGV:
+    OVERLAY_SUFFIX = ARGV[ARGV.index('--compiler-overlay') + 1]
+elif '--cv8-compiler' in ARGV:
+    OVERLAY_SUFFIX = '8'
+else:
+    OVERLAY_SUFFIX = None
+CV8_COMPILER = OVERLAY_SUFFIX is not None
 SRC_OF = {}          # destination word start -> source word start
 
 words, cells, tokn = G['words'], G['cells'], G['tokn']
@@ -172,8 +181,9 @@ if CV8_COMPILER:
         _by.setdefault(w['n'], []).append(w)
     _n, _miss, _unmatched = 0, [], []
     for w in order:
-        if len(w['n']) < 2 or not w['n'].endswith('8'): continue
-        tgt = w['n'][:-1]
+        if (len(w['n']) <= len(OVERLAY_SUFFIX)
+                or not w['n'].endswith(OVERLAY_SUFFIX)): continue
+        tgt = w['n'][:-len(OVERLAY_SUFFIX)]
         if tgt not in _by:
             _unmatched.append(w['n']); continue
         dst = _by[tgt][-1]
@@ -185,8 +195,8 @@ if CV8_COMPILER:
         # address must use that base, not the destination's.
         SRC_OF[dst['s']] = w['s']
         _n += 1
-    print("CV8 compiler: %d word bodies swapped in%s%s"
-          % (_n, "; NOT translatable: %s" % _miss if _miss else "",
+    print("compiler overlay '%s': %d word bodies swapped in%s%s"
+          % (OVERLAY_SUFFIX, _n, "; NOT translatable: %s" % _miss if _miss else "",
              "; no such target: %s" % _unmatched if _unmatched else ""))
 
 for w in order:

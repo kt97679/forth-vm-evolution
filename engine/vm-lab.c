@@ -699,6 +699,12 @@ static void virtual_machine(void) {
          *  past the real ones so the table has no hole - `dispatch[255]`
          *  would have read past the end.  */
         &&L_lit32, &&L_dovar, &&L_dodoes,
+#if ENC != 3
+        /*  LIT64 at 71, the first index past DODOES. Folded opcodes
+         *  start at FOLDBASE (128) and calls at 256, so 71..127 is
+         *  free space in both 16-bit encodings.  */
+        [71] = &&L_lit64t,
+#endif
 #if ENC == 3
         &&L_lit8, &&L_lit8x,
         [0x7C] = &&L_lit64, [0x7D] = &&L_esc,
@@ -819,6 +825,17 @@ L_lit32:   /* lit32   */ { UNS64 v = LD32(ip);
 L_lit32:   /* lit32   */ { UNS64 v = (UNS64)TOK(ip) | ((UNS64)TOK(ip + 2) << 16);
                            if (v & 0x80000000u) v |= ~(UNS64)0xFFFFFFFFu;
                            PUSH(v); ip += 4; } NEXT();
+/*  A literal too wide for LIT32's sign-extended 32 bits, as CELL_BYTES/2
+ *  tokens, little end first. The 16-bit encodings did not have this: the
+ *  translator masked every literal to 32 bits and a wider one was
+ *  silently truncated. Nothing noticed, because no image in these
+ *  encodings had ever COMPILED a literal - they were all translated from
+ *  a cell image whose own constants happened to fit. The first thing to
+ *  find it was the CORE suite's MAX-INT on a 64-bit cell.  */
+L_lit64t:  /* lit64   */ { UNS64 v = 0; int k_;
+                           for (k_ = 0; k_ < CELL_BYTES / 2; k_++)
+                               v |= (UNS64)TOK(ip + 2 * k_) << (16 * k_);
+                           PUSH(v); ip += CELL_BYTES; } NEXT();
 #endif
 #if ENC == 3 && SPEC
 /*  Specialised opcodes, each borrowed from another VM (CV8.md 10).
