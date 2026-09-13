@@ -183,3 +183,35 @@ frequency on code like this.
 That is why `s5-cv8spec` scores its best on the corpus and its worst on
 the loop benchmark, which has no variables and no dictionary work at
 all. Quote the spread, not the best column.
+
+## How a number is produced, since 2026-09
+
+All five harnesses share `bench/lib.sh` and `bench/report.py`. They
+differ only in the workload and the correctness check.
+
+The variation in these measurements is dominated by per-BUILD bias, not
+by run-to-run noise. Three consecutive runs of the SAME binaries agree
+to 1-2%; rebuild the tree and a stage moves by five or ten percent.
+Where the compiler places code is worth that much and is fixed for a
+given binary, so taking the minimum over more repetitions measures the
+bias more precisely instead of removing it.
+
+So: build each engine several times with flags that only move code
+(`LAYOUTS=5 tools/build-stages.sh`), time every build, keep the minimum
+per build across interleaved rounds, and report the MEAN across builds
+with one standard error.
+
+The mean and not the median: layout effects are roughly symmetric, so
+the mean of n has standard error sd/sqrt(n), where a median of five is
+much less efficient. Measured here, the median moved 6-9% between runs
+and the mean moves 2-3%.
+
+Worth knowing: the widest layout spread of any stage, 12.6%, belongs to
+`s0-cell` - the BASELINE that divides every ratio in every table. Any
+figure this project published from a single build should be read as
+±5% on most stages and ±13% on the baseline.
+
+`tools/layout-noise.sh` is no longer part of the sweep. It measured the
+same bias as one "floor" figure per workload; the error bar beside each
+ratio is a better version of that number, measured per stage. The script
+stays for standalone use.

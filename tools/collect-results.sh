@@ -85,6 +85,21 @@ USAGE
 esac
 
 if [ "$1" = run ]; then
+    if ! ls "$O"/s0-cell-*-v1 >/dev/null 2>&1; then
+        cat >&2 <<'WARN'
+-------------------------------------------------------------------
+ Only ONE build of each engine is present, so the tables will carry
+ no error bars and the per-build layout bias - the largest source of
+ variation here, worth up to 12% - will be invisible.
+
+ Rebuild with several layouts first:
+
+     LAYOUTS=5 tools/build-stages.sh
+
+ then re-run this sweep.
+-------------------------------------------------------------------
+WARN
+    fi
     bl=${2:-$BENCHES}
     wl=${3:-$WIDTHS}
     # Remove results for workloads no longer in the sweep. `report` used
@@ -114,7 +129,7 @@ if [ "$1" = run ]; then
             # A table HEADER is printed even when every stage was
             # excluded, so matching it reported "ok" for a cell width
             # that does not exist on this host. Count data rows.
-            if [ "$(grep -cE '^[a-z0-9]+-[a-z0-9]+ +[0-9.]+ +[0-9.]+' \
+            if [ "$(grep -cE '^[a-z0-9-]+ +[0-9.]+ +[0-9.]+' \
                     "$R/$b-$w.txt")" -gt 0 ]; then echo ok
             elif grep -q 'not built\|SKIP\|EXCLUDED' "$R/$b-$w.txt"; then
                 echo "no stages at this width"
@@ -133,18 +148,12 @@ if [ "$1" = run ]; then
 
     if [ "${2:-}" = all ] || [ $# -le 1 ]; then
         printf 'running %-7s ... ' layout-noise
-        echo
-        for _wk in $BENCHES; do
-            printf '  floor on %-7s ... ' "$_wk"
-            case "$_wk" in
-                kernel|corpus) _fr=30 ;;
-                fib)           _fr=20 ;;
-                parse|loop)    _fr=15 ;;
-            esac
-            bash tools/layout-noise.sh "$O" "$_fr" "$_wk" \
-                > "$R/layout-noise-$_wk.txt" 2>&1 \
-                && echo ok || echo FAILED
-        done
+    # layout-noise.sh is no longer run here. It existed to measure the
+    # per-build bias as a single "floor" figure; every harness now
+    # measures that bias per stage, as the error bar beside each ratio,
+    # by timing all the layout variants. Keeping both would spend
+    # minutes to produce a worse version of a number already in the
+    # table. The script remains for anyone who wants it standalone.
     fi
     exit 0
 fi
@@ -163,7 +172,7 @@ WORK = (sys.argv[3].split() if len(sys.argv) > 3 and sys.argv[3].strip()
         else ['kernel', 'corpus', 'fib', 'parse'])
 R = os.path.join(root, 'build', 'results')
 STAGES = ['sod32', 's0-cell', 'p4-pack4', 'p8-pack8', 's1-sod16',
-          's2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec']
+          's2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec', 's6-cv8b']
 NICE = {
     'sod32':      'SOD32 (Benschop, 5-bit packed, 32-bit only)',
     's0-cell':    'RelF cell threading',
@@ -174,19 +183,22 @@ NICE = {
     's3-cpt16f':  'CPT16 + folded prim;EXIT',
     's4-cv8':     'CV8    byte stream',
     's5-cv8spec': 'CV8 + specialisations',
+    's6-cv8b':    'CV8 + byte-granular dictionary headers',
 }
 
 
 def read(bench, width):
-    """stage -> net ms, from a harness table."""
+    """stage -> (ms, ratio, standard error or None)."""
     p = os.path.join(R, '%s-%s.txt' % (bench, width))
     if not os.path.exists(p):
         return {}
     out = {}
     for line in open(p):
-        m = re.match(r'^(\S+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*$', line)
+        m = re.match(r'^(\S+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+|1 build)\s*$',
+                     line)
         if m and m.group(1) in STAGES:
-            out[m.group(1)] = float(m.group(3))
+            se = None if m.group(4) == '1 build' else float(m.group(4))
+            out[m.group(1)] = (float(m.group(2)), float(m.group(3)), se)
     return out
 
 
@@ -200,10 +212,12 @@ def table(width):
         cells = []
         for b in WORK:
             d = data[b]
-            if s not in d or 's0-cell' not in d:
+            if s not in d:
                 cells.append('--')
+            elif d[s][2] is None:
+                cells.append('%.3f' % d[s][1])
             else:
-                cells.append('%.3f' % (d[s] / d['s0-cell']))
+                cells.append('%.3f ±%.3f' % (d[s][1], d[s][2]))
         if all(c == '--' for c in cells):
             continue
         lines.append('| `%s` | %s |' % (s, ' | '.join(cells)))
@@ -218,7 +232,7 @@ def abstable(width):
         cells = []
         for b in WORK:
             v = data[b].get(s)
-            cells.append('--' if v is None else '%.2f' % v)
+            cells.append('--' if v is None else '%.2f' % v[0])
         if all(c == '--' for c in cells):
             continue
         lines.append('| `%s` | %s |' % (s, ' | '.join(cells)))
@@ -239,9 +253,19 @@ out.append('times anything: the kernel-compile figures are only recorded for')
 out.append('stages whose output image is byte-identical to the reference, and')
 out.append('the rest only for runs that reach the end-of-corpus sentinel with')
 out.append('zero failing cases.\n')
-out.append('All timings are the MINIMUM of several interleaved repetitions,')
-out.append('net of process startup. Ratios travel between machines;')
-out.append('absolute milliseconds do not.\n')
+out.append('Each engine is built several times with flags that move code')
+out.append('and change nothing it computes. Every build is timed; the')
+out.append('figure is the MEAN across builds, each build being the minimum')
+out.append('of several interleaved rounds, net of process startup. The ±')
+out.append('is one standard error of the ratio.\n')
+out.append('That structure is deliberate. The variation here is dominated')
+out.append('by per-BUILD bias rather than run-to-run noise: repeated runs')
+out.append('of the same binaries agree to 1-2%, but a rebuild moves a stage')
+out.append('by five or ten, and on this project the cell-engine BASELINE -')
+out.append('which divides every ratio below - had the widest spread of all')
+out.append('at 12.6%. Averaging runs cannot remove a constant; averaging')
+out.append('builds can, and the ± includes what is left.\n')
+out.append('Ratios travel between machines; absolute milliseconds do not.\n')
 
 hp = os.path.join(R, 'host.txt')
 if os.path.exists(hp):
