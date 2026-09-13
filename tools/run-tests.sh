@@ -143,5 +143,32 @@ if [ -x "$O/sod32/sod32" ]; then
 fi
 
 echo
+# ---- locals ----------------------------------------------------------
+# locals.4 ships in the shell image and redefines `;` and `EXIT`, which
+# is intrusive enough to deserve a check. tests/core/locals.fth existed
+# for it and nothing ran it - an unrun test being exactly the thing this
+# project says is worse than none. It runs on the cell engine, which is
+# the one that carries the compiler locals.4 patches.
+echo
+echo "locals (locals.4, on the cell engine):"
+for w in 64 32; do
+    e=$O/s0-cell-$w; i=$([ "$w" = 64 ] && echo kernel.img || echo kernel32.img)
+    if [ ! -x "$e" ]; then printf '  %-12s SKIP   not built\n' "$w-bit"; continue; fi
+    cp "$W/$i" "$O/.locals-save.img"
+    printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" %s/tests/core/tester.fr" INCLUDED\nS" %s/tests/core/locals.fth" INCLUDED\nS" LOCALS-DONE" TYPE CR\nBYE\n' \
+        "$ROOT" "$ROOT" > "$O/.locals.fth"
+    ( cd "$W" && timeout 120 "$e" "$i" < "$O/.locals.fth" > "$O/.locals.out" 2>&1 )
+    cp "$O/.locals-save.img" "$W/$i"
+    if ! grep -aq LOCALS-DONE "$O/.locals.out"; then
+        printf '  %-12s FAIL   did not finish\n' "$w-bit"; FAILED=1
+    elif grep -aqE 'INCORRECT RESULT|WRONG NUMBER' "$O/.locals.out"; then
+        printf '  %-12s FAIL   %s bad cases\n' "$w-bit" \
+            "$(grep -acE 'INCORRECT RESULT|WRONG NUMBER' "$O/.locals.out")"; FAILED=1
+    else
+        printf '  %-12s ok\n' "$w-bit"
+    fi
+done
+
+[ "${FAILED:-0}" = 0 ] || rc=1
 [ $rc -eq 0 ] && echo "PASS - no regressions" || echo "FAIL - see above"
 exit $rc

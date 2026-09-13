@@ -223,7 +223,7 @@ echo "built  $_b"
 # ---- dictionary dumps -------------------------------------------------
 # Three flavours, because the translator needs to know exactly which
 # words are in the image it is laying out:
-#   d*   full shell image      - what tests/shell and the size table use
+#   d*   full shell image      - what the shell size table uses
 #   k*   bare kernel           - boots into the Forth interpreter
 #   *self  same, plus cv8.4    - the self-hosting compiler overlay
 runnable() { # runnable ENGINE - exists, and this host can execute it

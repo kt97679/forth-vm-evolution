@@ -11,7 +11,7 @@ byte-identical images. Timings are from three machines, two
 architectures, with a measured resolution floor per workload.
 
 Findings. The densest encoding, a byte stream with specialised opcodes
-for locals, variables and hot words, gives an image 0.46x the size at
+for hot kernel words and small integers, gives an image 0.46x the size at
 8-byte cells and runs kernel compilation at 0.78x the time. A 16-bit
 token encoding with a word-number table is a regression (1.40x); deleting
 the table recovers exactly that and no more (0.997x). Nearly all of the
@@ -58,7 +58,7 @@ variable-length identifiers":
 | SOD16 | token threading, word numbers through a table built at load |
 | CPT16 | token threading, table deleted; target = base + (v << S) |
 | CV8 | the same, narrowed to a byte stream |
-| +spec | CV8 with specialised opcodes for locals, variables, hot words, small ints |
+| +spec | CV8 with specialised opcodes for hot words, small ints and immediate operands |
 
 All nine separate engine from image, and the image is machine
 independent - the ARM board runs byte-for-byte the same files as the x86

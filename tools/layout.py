@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-tools/sod16-layout.py - the SOD16 layout pass.
+tools/layout.py - the layout pass: place every word, then re-encode.
 
 Iteration 173, on branch token16. Reads the addressed dictionary dump,
 lays the whole image out again with token bodies instead of cell

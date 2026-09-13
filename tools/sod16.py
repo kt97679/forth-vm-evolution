@@ -160,7 +160,7 @@ LOOP_WORDS = ('(LOOP)', '(+LOOP)')
 # So this operand carries across like the others. Its value is a
 # relative address into ANOTHER word, which a per-word translator
 # cannot resolve, so it is passed through here and relocated by
-# tools/sod16-layout.py, which is the pass that knows where words land.
+# tools/layout.py, which is the pass that knows where words land.
 XT_WORDS   = ('(POSTPONE)',)
 
 # locals.4's L-EMIT compiles "the offset as a literal, then a relative

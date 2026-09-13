@@ -18,7 +18,7 @@ the kernel.
 | `s2-cpt16` | CPT16 | delete the table: a call target is `base + (v << S)` | yes |
 | `s3-cpt16f` | CPT16 + folding | fold `prim;EXIT` into single opcodes; inline data prims | yes |
 | `s4-cv8` | CV8 | narrow the unit from 16 bits to one byte; calls become 2-3 bytes | yes |
-| `s5-cv8spec` | CV8 + specialisations | locals, variables, tiny kernel words and small ints as opcodes | yes |
+| `s5-cv8spec` | CV8 + specialisations | tiny kernel words, small integers and immediate operands as opcodes (see the note below on locals and variables) | yes |
 | `s6-cv8b` | CV8 + byte headers | dictionary link becomes a 1-3 byte backward-tagged distance; names and code bodies stop being padded; call scale drops to 0 | yes |
 
 ## Self-hosting
@@ -66,3 +66,29 @@ over the cells they occupied, so the image keeps every address it had
 and needs no relocation pass. The density is therefore reported as an
 exact count of cells folded away rather than as a smaller file. See the
 tool's header for why that is the right trade for this question.
+
+## What the specialisations actually contribute
+
+`--spec` takes five names and only three of them do anything to the
+images this project measures. Measured on the 8-byte kernel, bytes saved
+by each in isolation:
+
+    tiny   194     small  190     imm    111
+    loc      0     var    -18
+
+`loc` is inert because `locals.4` is loaded only into the SHELL image,
+not into the kernel that every benchmark here runs - so there are no
+locals to specialise. The engine's locals opcodes are real and tested
+(`tests/core/locals.fth`, run by `tools/run-tests.sh`), but they do not
+appear in the measured images.
+
+`var` makes the image slightly LARGER. It may still be worth its place
+on time rather than size, but measured here the difference between
+`loc,var,tiny,small,imm` and `tiny,small,imm` was 8 bytes and 0.8% on
+kernel compilation - the latter well inside the noise. Treat "locals and
+variables as opcodes" as a description of what the ENGINE supports, not
+of where the measured gain comes from.
+
+The build keeps all five (`SPECS` in `tools/build-stages.sh`) so that
+the published figures are not invalidated; the note is here so nobody
+reads the gain as coming from parts that contributed none of it.

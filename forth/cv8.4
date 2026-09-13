@@ -1,8 +1,8 @@
 \ cv8.4 - make the Forth compiler emit CV8 instead of cells.
 \
 \ Phase 3. Until now every CV8 image has been TRANSLATED from a cell
-\ image by tools/sod16-layout.py, so a CV8 system could run but could
-\ not compile a new definition - tests/shell/run-forth's one failure.
+\ image by tools/layout.py, so a CV8 system could run but could not
+\ compile a new definition.
 \ This file replaces the code-emitting words with CV8 emitters.
 \
 \ HOW IT IS USED. Every word here has a distinct name (`;8`, `IF8`, ...)
