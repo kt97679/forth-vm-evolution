@@ -144,3 +144,42 @@ sequence and the sparser encoding of this program.
 
 That is not a subtlety a size model was ever going to catch, because the
 model priced the fields and the program pays for the joins.
+
+## Is the CORE corpus a fair VM benchmark?
+
+It is the only workload SOD32 and the ladder both run from identical
+source, so it carries the cross-family comparison whether or not it is
+ideal. Profiling it says what it actually exercises.
+
+One corpus run on the cell engine is 10.05 million VM operations and
+1.21 million calls. Where those calls go:
+
+| called word | calls | share |
+|---|---|---|
+| `0=` | 229,524 | 18.9% |
+| `DOVAR` | 186,819 | 15.4% |
+| `-` | 123,882 | 10.2% |
+| `NAMEBUF` | 57,880 | 4.8% |
+| `1+` | 51,566 | 4.3% |
+| `1-` | 45,589 | 3.8% |
+
+Two things follow, and the second is a caveat the article must carry.
+
+**The test framework is not the cost.** A plausible objection to timing
+a test suite is that it measures the harness - `{ ... -> ... }` doing
+its depth checks and array stores - rather than the system. Measured,
+calls into everything the suite defines at run time, framework and test
+words together, are **3,217 of 1,212,908: 0.3%**. The other 99.7% land
+in kernel words. The suite is thin; what it exercises is the Forth
+underneath it.
+
+**But it is correlated with what the specialisations optimise.** `0=`,
+`DOVAR`, `-`, `1+`, `1-` are precisely the tiny kernel words CV8's
+specialisation set was chosen to fold into opcodes, and `DOVAR` at 15.4%
+is the variable-reference pattern `--spec var` exists for. So the corpus
+is not an independent judge of that stage: the alphabet was picked by
+frequency on code like this.
+
+That is why `s5-cv8spec` scores its best on the corpus and its worst on
+the loop benchmark, which has no variables and no dictionary work at
+all. Quote the spread, not the best column.

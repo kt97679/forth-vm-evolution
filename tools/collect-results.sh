@@ -63,7 +63,7 @@ case "${1:-}" in
     *)
         cat <<'USAGE'
 usage: collect-results.sh run [BENCH...] [WIDTH...]   take the measurements
-       collect-results.sh report                      assemble RESULTS.md
+       collect-results.sh report [--save PATH]        assemble RESULTS.md
 
 Run the sweep first; it takes several minutes and writes build/results/.
 `report` only assembles what is already there, so calling it on its own
@@ -72,6 +72,7 @@ produces a report with no timings in it.
   collect-results.sh run                 everything, both cell widths
   collect-results.sh run kernel 64       one benchmark, one width
   collect-results.sh report
+  collect-results.sh report --save results/my-laptop.md
 USAGE
         exit 2;;
 esac
@@ -106,10 +107,14 @@ if [ "$1" = run ]; then
     exit 0
 fi
 
-python3 - "$ROOT" <<'PY'
+SAVE=
+[ "${2:-}" = --save ] && SAVE=${3:?--save needs a path}
+
+python3 - "$ROOT" "$SAVE" <<'PY'
 import os, re, sys, csv
 
 root = sys.argv[1]
+save = sys.argv[2] if len(sys.argv) > 2 else ''
 R = os.path.join(root, 'build', 'results')
 STAGES = ['sod32', 's0-cell', 'p4-pack4', 'p8-pack8', 's1-sod16',
           's2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec']
@@ -304,7 +309,13 @@ if missing:
     out.append('printed empty. Take the measurements with:\n')
     out.append('    tools/collect-results.sh run\n')
 
-open(os.path.join(root, 'RESULTS.md'), 'w').write('\n'.join(out) + '\n')
+text = '\n'.join(out) + '\n'
+open(os.path.join(root, 'RESULTS.md'), 'w').write(text)
+if save:
+    sp = save if os.path.isabs(save) else os.path.join(root, save)
+    os.makedirs(os.path.dirname(sp), exist_ok=True)
+    open(sp, 'w').write(text)
+    print('also wrote', save)
 if missing:
     print('wrote RESULTS.md - WITHOUT timings for %s-bit cells.'
           % ' or '.join(missing))
