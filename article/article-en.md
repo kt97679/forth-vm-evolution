@@ -305,21 +305,26 @@ opcodes). Both were sized on a census, both were timed in a synthetic
 dispatch loop, and both were rejected on the timing: 1.65x and 1.60x on
 x86-64, 2.05x and 1.90x on i386. Neither was ever built.
 
-I built them. Measured in a real engine, on two machines - a
-single-vCPU VM and a 16-core laptop - the tagged-byte scheme costs this
-much on kernel compilation:
+I built them. Measured in a real engine on three machines - a
+single-vCPU VM, a 16-core laptop and an ARMv7 board - the tagged-byte
+scheme costs this much on kernel compilation:
 
-| | predicted | VM, 4-byte | laptop, 4-byte | laptop, 8-byte |
-|---|---|---|---|---|
-| tagged byte | 1.90x | 1.186 | 1.103 | **0.939** |
+| | predicted | 8-byte cells | 4-byte cells |
+|---|---|---|---|
+| tagged byte | 1.90x | 1.020, 0.939 | 1.186, 1.103, 1.066 |
 
-On the laptop at 8-byte cells it costs *nothing* - it is marginally
-ahead of the cell engine - while being 0.857x the size. The scheme
-rejected as too slow to be worth its density is, on that machine, free.
+At 8-byte cells it is close to free and on the laptop marginally ahead
+of the cell engine, while being 0.857x the size. At 4-byte cells it
+costs 7-19%. The split is by CELL WIDTH, not by machine, and the reason
+is structural: a pack carries one opcode per remaining byte of the cell,
+so it folds seven operations on an 8-byte cell and three on a 4-byte
+one. Wide cells mean fewer packs, and the per-pack decode is what the
+scheme pays for.
 
 The rejection still stands, because CV8 beats both packed schemes on
-both axes on both machines: 0.813 against 0.939 on speed, 0.47x against
-0.86x on size. But the reason recorded for it does not survive. The benchmark's
+both axes at both widths on every machine. But the reason recorded for
+it does not survive: the scheme was rejected as too slow to be worth its
+density, and where cells are wide it is not slow. The benchmark's
 own header says why, and says it in advance:
 
 > This benchmark's streams are sized to run hot, so it isolates decode
@@ -428,17 +433,19 @@ thoroughly and never creates a vocabulary.
 
 ## 5. What is not measured
 
-- **Two machines, which is not a study.** A single-vCPU VM and one
-  laptop. No ARM, no RISC-V. Two was enough to overturn one claim - the
-  packed schemes' cost - and a third would probably overturn another.
-  `results/COMPARISON.md` says which conclusions reproduced and which
-  did not.
-- **One column that does not reproduce.** On the laptop at 4-byte cells
-  every stage comes out slower than the cell engine on the loop
-  benchmark, contradicting both its own 8-byte column and the VM's
-  4-byte column. `loop.fth` is the narrowest workload and i386 has half
-  the registers, but the two machines ran the same compiler version, so
-  that explanation is incomplete. It is recorded as unexplained.
+- **Three machines, which is still not a study.** A single-vCPU x86-64
+  VM, an x86-64 laptop and an ARMv7 board. No RISC-V, no big-endian
+  anything. Two machines were enough to overturn one claim, and the
+  third overturned my explanation of it. `results/COMPARISON.md` says
+  which conclusions reproduced and which did not.
+- **One benchmark that does not reproduce at all.** `loop.fth` is the
+  only column that disagrees between machines, and it disagrees in
+  different directions: on ARM every stage but SOD16 beats the cell
+  engine, on the laptop every stage loses to it, on the VM it is mixed.
+  It is the narrowest workload here - counted loops over stack
+  arithmetic, no dictionary, no variables, no I/O - and evidently the
+  least portable thing measured. It is in the repository as a
+  cautionary tale about narrow benchmarks, not as evidence.
 - **Relocation and portability**, two of the axes Bradley's fuller
   answer in that thread lists. RelF's relative addressing has something to say
   about both - the same image runs at any load address, and the same
