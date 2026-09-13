@@ -90,46 +90,63 @@ opposite.** 0.593 on A, 0.738 on B, 0.790 on C. The spread is real and
 unexplained; three machines is not enough to separate cache size from
 issue width from compiler version.
 
-## fib, and the one place the whole ladder loses
+## fib, and a conclusion that lasted one machine
 
 `fib.fth` was added late, because nothing else isolated the CALL - the
-one operation every encoding here encodes differently. It says something
-the other workloads cannot.
+one operation every encoding here encodes differently. On the two x86
+machines it said something striking: at 4-byte cells, every stage is
+slower than plain cell threading on call-dominated code. I wrote that up
+as a finding. ARM says otherwise.
 
-On call-dominated code at 4-byte cells, **every stage is slower than
-plain cell threading**:
-
-| stage | Ryzen, 8-byte | Ryzen, 4-byte | Xeon VM, 4-byte |
+| stage | Xeon VM | Ryzen | ARMv7 |
 |---|---|---|---|
-| `s0-cell` | 1.000 | 1.000 | 1.000 |
-| `p4-pack4` | 1.423 | 1.740 | 1.653 |
-| `p8-pack8` | 1.200 | 1.647 | 1.716 |
-| `s2-cpt16` | 0.776 | 1.267 | 1.064 |
-| `s4-cv8` | 0.886 | 1.185 | 1.005 |
-| `s5-cv8spec` | 0.775 | 1.048 | 0.881 |
+| `p4-pack4` | 1.653 | 1.740 | 1.290 |
+| `p8-pack8` | 1.716 | 1.647 | 1.257 |
+| `s1-sod16` | 1.175 | 1.358 | 1.186 |
+| `s2-cpt16` | 1.064 | 1.267 | **0.947** |
+| `s3-cpt16f` | 1.131 | 1.169 | **0.918** |
+| `s4-cv8` | 1.005 | 1.185 | **0.932** |
+| `s5-cv8spec` | 0.881 | 1.048 | 0.991 |
 
-The best non-cell stage is 0.775 at 8-byte cells and 1.048 at 4-byte.
-That is not noise, and it has a one-line explanation: a RelF call is a
-single relative-offset cell, which is the cheapest call any of these
-designs has. Nothing decodes, nothing is computed, the offset IS the
-instruction. Every token encoding has to build the target address before
-it can jump.
+The direction holds for the packed schemes - always slower, everywhere -
+but for the token encodings it flips. On x86 at 4-byte cells they lose
+to cell threading on `fib`; on ARM they win.
 
-What the token encodings buy back is SIZE, and how much they buy depends
-on the width of what they replace. A call costs 8 bytes under cell
-threading on a 64-bit host and 2 under CV8 - a saving of 6. At 4-byte
-cells the same call costs 4 and 2 - a saving of 2. So the density
-argument is roughly three times stronger on a 64-bit host, and on
-call-heavy code at 4-byte cells it is not strong enough to pay for the
-decode at all.
+The plausible reason is the ISA rather than the workload. A cell call
+loads a cell from memory and adds it. A CPT16 or CV8 call takes a small
+field already in a register and computes `base + (v << shift)`. ARM has
+a barrel shifter on the ALU path, so that shift is free and the whole
+target computation is one or two register operations; the memory traffic
+the cell scheme needs is comparatively dearer. On x86 the balance goes
+the other way.
 
-This is the same axis the packed schemes sorted on, and it unifies them:
-everything here is trading decode work for bytes, and the number of
-bytes on offer scales with the cell.
+So the honest statement is narrower than the one I wrote: **a
+relative-offset cell is the cheapest call on x86 at narrow cells, and
+not obviously so anywhere else.** What survives everywhere is that the
+token encodings' advantage grows with cell width, because what they
+replace is twice as large at 8 bytes - which is the same axis the packed
+schemes sorted on.
 
-The packed schemes fare worst of all on `fib`, which is also structural:
-a pack ends at every call, so call-dense code gets almost no packing and
-pays the decode anyway.
+## The floor is per WORKLOAD, not per machine
+
+`layout-noise.sh` measures the floor on kernel compilation, and I have
+been quoting it as the resolution of every table. Two runs of the same
+ARM machine, with a measured floor of about 1.4%, say that is wrong:
+
+| stage | loop, run 1 | loop, run 2 | swing | kernel swing |
+|---|---|---|---|---|
+| `s2-cpt16` | 0.845 | 0.948 | 12.2% | 0.5% |
+| `s3-cpt16f` | 0.830 | 0.754 | 9.2% | 0.8% |
+| `s4-cv8` | 0.884 | 1.069 | **20.9%** | 1.0% |
+| `s5-cv8spec` | 0.915 | 0.855 | 6.6% | 0.9% |
+
+Kernel compile repeats to within 1% on that machine. The loop benchmark
+moves by up to 21% between runs of the same binary on the same box. The
+floor is a property of the workload, and `loop.fth` has a much larger
+one than the number at the top of this file suggests.
+
+That settles the loop question. It is not that the machines disagree; it
+is that `loop.fth` does not agree with itself.
 
 ## A caution about the floor itself
 
