@@ -60,9 +60,21 @@ difference between two rows is the encoding and nothing else.
 which is what lets them compile their own encoding.
 
 `p4-pack4` and `p8-pack8` rewrite the cell image in place and leave
-the skipped cells where they were, so their FILE size is stage 0's;
-what they would save is reported as an exact cell count in
-`build/p4-pack4-k*.log` and `build/p8-pack8-k*.log`.
+the cells they skip where they were, so the FILE they produce is
+stage 0's size. The *packed* column below is what the image
+becomes once those cells are removed.
+
+That figure is arithmetic, not an estimate and not a model. These
+schemes are cell-granular: a pack replaces exactly N cells with one,
+nothing changes alignment, and every reference in a RelF image is
+relative. So compacting removes exactly (cells folded) x (cell size)
+bytes and can change nothing else. A relocating build would
+demonstrate the number; it would not alter it.
+
+| stage | packed 64 | packed 32 | vs stage 0, 64 | vs stage 0, 32 |
+|---|---|---|---|---|
+| `p4-pack4` | 21296 | 11900 | 0.876 | 0.889 |
+| `p8-pack8` | 20848 | 11844 | 0.857 | 0.885 |
 
 | stage | run-only 64 | run-only 32 | self-hosting 64 | self-hosting 32 |
 |---|---|---|---|---|

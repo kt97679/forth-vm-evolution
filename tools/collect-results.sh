@@ -192,9 +192,33 @@ out.append('difference between two rows is the encoding and nothing else.')
 out.append('*self-hosting* images also carry that stage\'s own emitter overlay,')
 out.append('which is what lets them compile their own encoding.\n')
 out.append('`p4-pack4` and `p8-pack8` rewrite the cell image in place and leave')
-out.append('the skipped cells where they were, so their FILE size is stage 0\'s;')
-out.append('what they would save is reported as an exact cell count in')
-out.append('`build/p4-pack4-k*.log` and `build/p8-pack8-k*.log`.\n')
+out.append('the cells they skip where they were, so the FILE they produce is')
+out.append('stage 0\'s size. The *packed* column below is what the image')
+out.append('becomes once those cells are removed.\n')
+out.append('That figure is arithmetic, not an estimate and not a model. These')
+out.append('schemes are cell-granular: a pack replaces exactly N cells with one,')
+out.append('nothing changes alignment, and every reference in a RelF image is')
+out.append('relative. So compacting removes exactly (cells folded) x (cell size)')
+out.append('bytes and can change nothing else. A relocating build would')
+out.append('demonstrate the number; it would not alter it.\n')
+packed = {}
+for st in ('p4-pack4', 'p8-pack8'):
+    for w in ('64', '32'):
+        lg = os.path.join(root, 'build', '%s-k%s.log' % (st, w))
+        if os.path.exists(lg):
+            m = re.search(r'image (\d+) bytes; (\d+) bytes would be saved',
+                          open(lg).read())
+            if m:
+                packed[(st, w)] = int(m.group(1)) - int(m.group(2))
+if packed:
+    out.append('| stage | packed 64 | packed 32 | vs stage 0, 64 | vs stage 0, 32 |')
+    out.append('|---|---|---|---|---|')
+    for st in ('p4-pack4', 'p8-pack8'):
+        a, b = packed.get((st, '64')), packed.get((st, '32'))
+        s0 = sizes.get('s0-cell')
+        out.append('| `%s` | %s | %s | %.3f | %.3f |'
+                   % (st, a, b, a / int(s0[0]), b / int(s0[1])))
+    out.append('')
 out.append('| stage | run-only 64 | run-only 32 | self-hosting 64 | self-hosting 32 |')
 out.append('|---|---|---|---|---|')
 for s in STAGES:
