@@ -21,6 +21,22 @@
 # run back to back per stage, so a drifting machine perturbs all stages
 # alike instead of penalising whichever went last.
 set -u
+
+# Every engine this script runs is a measured subject, so it runs in a
+# predictable environment rather than in whatever the caller happens to
+# have exported.
+#
+# LD_PRELOAD is the one that actually bites. A desktop session that
+# preloads a library into everything will have it loaded into every
+# engine here too, which is unwanted work inside the thing being timed;
+# and when the engine is a 32-bit binary and the library is 64-bit,
+# ld.so cannot load it and writes a line of complaint per process. That
+# was reported from a real machine: six copies of "object
+# 'libgtk3-nocsd.so.0' from LD_PRELOAD cannot be preloaded" during the
+# dictionary dumps. Harmless there, because a dump captures stdout and
+# ld.so writes to stderr - but not something to leave in a benchmark.
+unset LD_PRELOAD
+
 cd "$(dirname "$0")/.."
 ROOT=$PWD
 O=${1:-$ROOT/build}

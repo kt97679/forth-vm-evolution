@@ -17,6 +17,13 @@ the reference, so a stage that is fast because it is quietly wrong is
 excluded by the same run that measures it. The others require the
 end-of-run sentinel and zero failing cases.
 
+All of them unset `LD_PRELOAD` before running anything. A desktop
+session that preloads a library into every process would otherwise have
+it loaded into every engine being timed, which is work inside the
+subject rather than around it. It showed up as noise first: on a machine
+with `libgtk3-nocsd.so.0` preloaded, the 32-bit engines could not load
+the 64-bit library and `ld.so` wrote a complaint per process.
+
 All of them report the **minimum** of several interleaved repetitions,
 not the mean. Every source of noise on a shared machine adds time, so
 the fastest run is the least contaminated one; a mean would mostly
