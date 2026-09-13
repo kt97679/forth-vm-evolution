@@ -230,25 +230,77 @@ for w in order:
 NEW_HERE = off
 OLD_HERE = order[-1]['e'] - START
 
-# ---- recompute the link chain, and re-walk it to prove it -----------
-# next_nfa = link_addr + link_value, walking newest to oldest.
-linkval = {}
-for i, w in enumerate(order):
-    if i == 0: linkval[w['s']] = 0                       # end of chain
-    else: linkval[w['s']] = new_off[order[i-1]['s']]['nfa'] - new_off[w['s']]['link']
+# ---- recompute the link chains, and re-walk them to prove it --------
+# The word list is HASHED: as many chains as there are threads, each
+# linked newest to oldest. The thread count is read out of the image
+# being translated rather than assumed, so this file has no opinion
+# about it and cannot disagree with kernel.4.
+FW = [w for w in order if w['n'] == 'FORTH-WORDLIST']
+if not FW:
+    sys.exit("no FORTH-WORDLIST in the dump")
+FW = FW[0]
+FW_PF = FW['s'] + CELL                       # parameter field: [n][heads]
+NTHREADS = cells.get(FW_PF, 0)
+if not (1 <= NTHREADS <= 4096):
+    sys.exit("FORTH-WORDLIST declares %r threads" % NTHREADS)
 
-walk, cur, n = [], order[-1], 0
-while True:
-    walk.append(cur['n'])
-    lv = linkval[cur['s']]
-    if lv == 0: break
-    nxt = new_off[cur['s']]['link'] + lv
-    hit = [x for x in order if new_off[x['s']]['nfa'] == nxt]
-    if not hit: walk.append('BROKEN'); break
-    cur = hit[0]
-    n += 1
-    if n > len(order) + 2: walk.append('LOOPED'); break
-chain_ok = (walk == [w['n'] for w in reversed(order)])
+
+def wl_hash(name):
+    """kernel.4's HASH, and cross.4's THASH. All three must agree."""
+    b = name.encode('latin-1')
+    v = len(b) ^ (b[0] << 1)
+    if len(b) > 1:
+        v ^= b[1] << 2
+    return v & (NTHREADS - 1)
+
+
+# Definition order within each thread; `order` is already oldest first.
+threads = [[] for _ in range(NTHREADS)]
+for w in order:
+    threads[wl_hash(w['n'])].append(w)
+
+linkval = {}
+for t in threads:
+    for i, w in enumerate(t):
+        if i == 0:
+            linkval[w['s']] = 0                          # end of chain
+        else:
+            linkval[w['s']] = (new_off[t[i - 1]['s']]['nfa']
+                               - new_off[w['s']]['link'])
+
+# The heads, as offsets from START, which is how the image stores them
+# and what COLD relocates. An empty thread stays 0.
+HEADS = [new_off[t[-1]['s']]['nfa'] if t else 0 for t in threads]
+
+# Walk every chain back and check the union is exactly the dictionary.
+by_nfa = {new_off[w['s']]['nfa']: w for w in order}
+seen_names, broken = [], False
+for t, head in zip(threads, HEADS):
+    if not head:
+        continue
+    cur, n = by_nfa[head], 0
+    while True:
+        seen_names.append(cur['n'])
+        lv = linkval[cur['s']]
+        if lv == 0:
+            break
+        nxt = by_nfa.get(new_off[cur['s']]['link'] + lv)
+        if nxt is None:
+            broken = True
+            break
+        cur = nxt
+        n += 1
+        if n > len(order) + 2:
+            broken = True
+            break
+chain_ok = (not broken
+            and sorted(seen_names) == sorted(w['n'] for w in order))
+
+# The heads live in FORTH-WORDLIST's own parameter field, which is DATA
+# and would otherwise be copied out of the dump verbatim - with the
+# addresses of the image we were translating FROM. Overwrite them.
+for i, h in enumerate(HEADS):
+    cells[FW_PF + (i + 1) * CELL] = h
 
 # ---- xts are ADDRESSES, and get relocated --------------------------
 # Iteration 176. `: EXECUTE ( xt --- ) >R ;` is pure Forth, not a
@@ -403,7 +455,13 @@ fixed, fixed_bad = {}, []
 _dp = pfa_of('DP')
 if _dp: fixed['DP'] = NEW_HERE
 _fw = pfa_of('FORTH-WORDLIST')
-if _fw: fixed['FORTH-WORDLIST'] = new_off[order[-1]['s']]['nfa']
+# The first cell of the word list is the THREAD COUNT, not a chain head.
+# It used to be the head, and this line still forced it to the newest
+# word's nfa - so a translated image began its boot relocation loop with
+# `<address> 1 DO`, which counts up to 2^64. The image hung before it
+# printed its banner. The heads themselves are patched into `cells`
+# where the threads are computed.
+if _fw: fixed['FORTH-WORDLIST'] = NTHREADS
 _bt = pfa_of('BOOT')
 if _bt:
     v = cells.get(_bt)
@@ -584,7 +642,13 @@ def emit(path):
               | (4 if G['SPEC'] else 0) | 8) if V8 else 0
     hdr = (b'SOD1' if CPT is None else (b'CV8' if V8 else b'CPT') + bytes([48 + CPT]))
     hdr += bytes([CELL, ord('L') if G['SPEC'] else 0, 1 if V8 else 0, _flags])
-    hdr += cel(new_off[order[-1]['s']]['nfa'])
+    # The engine cannot derive the word table from one chain any more,
+    # so the header carries every thread head: a count, then that many
+    # START-relative offsets. SOD16 needs them to number its calls; the
+    # other encodings name a call by address and ignore this entirely.
+    hdr += cel(NTHREADS)
+    for h in HEADS:
+        hdr += cel(h)
     hdr += cel(len(TAILS))
     for t in TAILS:
         h = [x for x in order if x['s'] < t < x['e']][0]

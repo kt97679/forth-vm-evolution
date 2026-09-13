@@ -61,6 +61,8 @@ VARIABLE SOD16-TAB ( --- a-addr )   \ 0 until built
 VARIABLE SOD16-N   ( --- a-addr )   \ number of words in the array
 VARIABLE SOD16-CUT ( --- a-addr )   \ first address NOT eligible
 VARIABLE SOD16-KEY ( --- a-addr )
+VARIABLE SOD16-NFA ( --- a-addr )
+VARIABLE SOD16-TA  ( --- a-addr )
 
 : SOD16-HERE ( --- a-addr )
 \ The return address of whoever called this: the address of the token
@@ -96,36 +98,49 @@ VARIABLE SOD16-KEY ( --- a-addr )
 \ RELATIVE to its own cell, exactly as the engine reads it.
   1 CELLS - DUP @ DUP 0= IF 2DROP 0 EXIT THEN + ;
 
-: SOD16-SKIP ( nfa --- nfa' )
-\ Skip forward to the newest word that is eligible for a number. The
-\ ineligible ones are the newest, so they sit at the front of the chain.
-  BEGIN DUP WHILE
-    DUP NAME> SOD16-CUT @ U< IF EXIT THEN
-    NEXT-NFA
-  REPEAT ;
+: SOD16-COLLECT ( --- )
+\ Every eligible word, from every thread, in whatever order the chains
+\ give them. The word list is HASHED, so one chain no longer reaches
+\ the whole dictionary and no longer yields address order either.
+  0 SOD16-N !
+  FORTH-WORDLIST @ 1+ 1 DO
+    FORTH-WORDLIST I CELLS + @ SOD16-NFA !
+    BEGIN SOD16-NFA @ WHILE
+      SOD16-NFA @ NAME> DUP SOD16-CUT @ U< IF
+        SOD16-TAB @ SOD16-N @ CELLS + !
+        1 SOD16-N +!
+      ELSE DROP THEN
+      SOD16-NFA @ NEXT-NFA SOD16-NFA !
+    REPEAT
+  LOOP ;
 
-: SOD16-COUNT ( nfa --- n )
-  0 SWAP BEGIN DUP WHILE SWAP 1+ SWAP NEXT-NFA REPEAT DROP ;
+: SOD16-SWAPC ( a --- )
+\ Exchange the cells at a and a+CELL.
+  SOD16-TA !
+  SOD16-TA @ @ SOD16-TA @ 1 CELLS + @
+  SOD16-TA @ ! SOD16-TA @ 1 CELLS + ! ;
+
+: SOD16-SORT ( --- )
+\ Ascending by body address, which IS definition order - the dictionary
+\ only grows upwards. The engine's loader sorts the same way, and that
+\ sort is now the definition of a word number that both ends agree on.
+\ It used to fall out of walking the single chain backwards.
+  SOD16-N @ 2 < IF EXIT THEN
+  SOD16-N @ 1- 0 DO
+    SOD16-N @ 1- 0 DO
+      SOD16-TAB @ I CELLS +
+      DUP @ OVER 1 CELLS + @ > IF SOD16-SWAPC ELSE DROP THEN
+    LOOP
+  LOOP ;
 
 : SOD16-BUILD ( --- )
-\ Build the array once. The cutoff is the body of the definition being
-\ compiled right now: everything at or above it was defined after load.
-\
-\ The array goes on the HEAP, not in the dictionary. The first version
-\ used ALLOT, which is called in the middle of compiling a definition -
-\ so it inserted 2.5 KB of table into the body of the word being
-\ defined. The symptom was a definition whose second token was a
-\ fragment of its own lookup table.
+\ Build the array once, on the heap - never with ALLOT, which is called
+\ in the middle of compiling a definition and would insert the table
+\ into the body of the word being defined.
   SOD16-MARK SOD16-CUT !
-  LAST @ SOD16-SKIP                      ( nfa )
-  DUP SOD16-COUNT DUP SOD16-N !          ( nfa n )
-  DUP CELLS ALLOCATE ABORT" sod16: cannot allocate the word table"
-  SOD16-TAB !                            ( nfa n )
-  1-                                     ( nfa idx )
-  BEGIN OVER WHILE                       ( nfa idx )
-    OVER NAME> OVER CELLS SOD16-TAB @ + !
-    1- SWAP NEXT-NFA SWAP
-  REPEAT 2DROP ;
+  8192 CELLS ALLOCATE ABORT" sod16: cannot allocate the word table"
+  SOD16-TAB !
+  SOD16-COLLECT SOD16-SORT ;
 
 : SOD16-NUM ( body --- n -1 | body 0 )
 \ The word number of the body at `body`, if it has one.

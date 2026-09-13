@@ -502,6 +502,7 @@ static const int open_flags[8] = {
  *  This function reads binary forth image from file into memory.
  */
 
+#define MAX_THREADS 4096
 #define MAX_TAILS 16
 static UNS64 nwords;
 static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
@@ -510,7 +511,8 @@ static void load_image(const char *name) {
     int fd;
     long len;
     UNS8 magic[8];
-    UNS64 head_nfa, ntails, nfa, link;
+    UNS64 head_nfa, ntails, nfa, link, nthreads;
+    UNS64 heads[MAX_THREADS];
     UNS64 tail_w[MAX_TAILS], tail_o[MAX_TAILS];
     long i, n;
 
@@ -551,8 +553,26 @@ static void load_image(const char *name) {
      *  so the header describes how to finish deriving the table rather
      *  than carrying the table itself.
      */
-    if (full_read(fd, (UNS8*)&head_nfa, CELL_BYTES) != CELL_BYTES ||
-        full_read(fd, (UNS8*)&ntails,   CELL_BYTES) != CELL_BYTES) {
+    /*  The word list is HASHED, so there is no single chain to walk and
+     *  the header carries every thread head: a count, then that many
+     *  START-relative offsets. Only SOD16 uses them - it is the one
+     *  encoding that names a call by word NUMBER - but the header has
+     *  one shape for every encoding.  */
+    if (full_read(fd, (UNS8*)&nthreads, CELL_BYTES) != CELL_BYTES) {
+        write_str(2, "Truncated image header.\n");
+        exit(2);
+    }
+    if (nthreads < 1 || nthreads > MAX_THREADS) {
+        write_str(2, "Image declares an impossible thread count.\n");
+        exit(2);
+    }
+    for (i = 0; i < nthreads; i++)
+        if (full_read(fd, (UNS8*)&heads[i], CELL_BYTES) != CELL_BYTES) {
+            write_str(2, "Truncated image header.\n");
+            exit(2);
+        }
+    head_nfa = heads[0];
+    if (full_read(fd, (UNS8*)&ntails, CELL_BYTES) != CELL_BYTES) {
         write_str(2, "Truncated image header.\n");
         exit(2);
     }
@@ -591,16 +611,61 @@ static void load_image(const char *name) {
         exit(2);
     }
 
-    /*  Count the chain, then fill it in. Walking twice avoids growing
-     *  the table, and the chain runs newest to oldest while word
-     *  numbers run oldest to newest, so the index is reversed.  */
-    nfa = (UNS64)(uintptr_t)base + head_nfa;
-    for (n = 0;; n++) {
-        link = CELL(nfa - CELL_BYTES);
-        if (link == 0) break;
-        nfa = (nfa - CELL_BYTES) + link;
+    /*  Collect every word from every thread, then sort by address.
+     *
+     *  A word NUMBER is its position in definition order, and the
+     *  dictionary only ever grows upwards, so definition order IS
+     *  ascending body address. That used to fall out of walking the one
+     *  chain backwards; with a hashed word list it has to be recovered
+     *  by sorting, and the sort is the definition both the loader and
+     *  tools/layout.py now agree on.  */
+    {
+        UNS64 cap = 4096, i2, j2;
+        UNS64 *nfas = malloc(cap * sizeof *nfas);
+        if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+        n = 0;
+        for (i2 = 0; i2 < nthreads; i2++) {
+            if (!heads[i2]) continue;
+            nfa = (UNS64)(uintptr_t)base + heads[i2];
+            for (;;) {
+                if (n == cap) {
+                    cap *= 2;
+                    nfas = realloc(nfas, cap * sizeof *nfas);
+                    if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+                }
+                nfas[n++] = nfa;
+                link = CELL(nfa - CELL_BYTES);
+                if (link == 0) break;
+                nfa = (nfa - CELL_BYTES) + link;
+            }
+        }
+        /*  Insertion sort, ascending. It runs once at load over a few
+         *  hundred entries.  */
+        for (i2 = 1; i2 < n; i2++) {
+            UNS64 k = nfas[i2];
+            for (j2 = i2; j2 > 0 && nfas[j2 - 1] > k; j2--) nfas[j2] = nfas[j2 - 1];
+            nfas[j2] = k;
+        }
+        nwords = n;
+        wordtab = malloc((n + ntails) * sizeof *wordtab);
+        if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+        for (i2 = 0; i2 < n; i2++) {
+            UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
+            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#if SKIPPAD
+            while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
+#endif
+        }
+        free(nfas);
+        for (i = 0; i < ntails; i++) {
+            if (tail_w[i] >= (UNS64)n) {
+                write_str(2, "DOES> tail names a word outside the chain.\n");
+                exit(2);
+            }
+            wordtab[n + i] = wordtab[tail_w[i]] + tail_o[i];
+        }
+        return;
     }
-    n++;
     nwords = n;
     wordtab = malloc((n + ntails) * sizeof *wordtab);
     if (!wordtab) {
