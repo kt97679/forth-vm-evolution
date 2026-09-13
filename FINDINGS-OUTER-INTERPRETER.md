@@ -146,3 +146,25 @@ because it has no way to know those cells are addresses.
 That is mechanical but it is not small, and it is the honest state of
 the branch: the finding is confirmed and measured, the fix is real, and
 half the ladder is waiting on the translator.
+
+## The port is complete
+
+All eight RelF stages now build, self-host, pass 616 CORE cases at both
+cell widths, and cross-compile the kernel byte-identically. SOD32 passes
+the same corpus. Every number in `bench/README.md` is taken from this
+baseline; nothing from before the fix should be quoted beside it.
+
+Kernel compilation, both widths, against the cell engine:
+
+    stage          8-byte    4-byte
+    s0-cell         1.000     1.000
+    p4-pack4        1.126     1.057
+    p8-pack8        1.031     1.100
+    s1-sod16        1.215     1.238
+    s2-cpt16        1.031     1.032
+    s3-cpt16f       0.959     0.962
+    s4-cv8          0.959     0.962
+    s5-cv8spec      0.749     0.802
+
+The ladder is worth 0.75x at 8-byte cells and 0.80x at 4-byte, on a
+baseline that is no longer carrying a 4x defect in its dictionary.
