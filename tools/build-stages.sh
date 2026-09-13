@@ -116,8 +116,34 @@ fi
 
 # A compile at a given cell width, or nothing at all. Both return
 # success either way so `set -e` does not abort a single-width build.
-cc64() { [ "$BUILD64" = 1 ] || return 0; $CC64 "$@"; }
-cc32() { [ "$BUILD32" = 1 ] || return 0; $CC32 "$@"; }
+# LAYOUTS: how many differently-laid-out builds of each engine to make.
+#
+# WHY. The numbers these engines produce carry a per-BUILD bias, not just
+# run-to-run noise. Three consecutive runs of the same binaries agree to
+# about 1%, but rebuild the tree and a stage can move by five or ten -
+# tools/layout-noise.sh measures 2.5% to 17% between five builds that
+# differ only in flags that move code around. Taking the minimum over
+# repetitions does nothing about that: the bias is fixed for a given
+# binary, so more repetitions measure it more precisely.
+#
+# The fix is to make it a distribution instead of a constant: build each
+# engine several ways, time all of them, and report the median. This is
+# the same reasoning as Mytkowicz et al., "Producing Wrong Data Without
+# Doing Anything Obviously Wrong!" (ASPLOS 2009), and Stabilizer.
+#
+# LAYOUTS=1 (the default) keeps the old single-build behaviour, which is
+# what the correctness gates and a quick check want.
+LAYOUTS=${LAYOUTS:-1}
+LAYOUT_FLAGS_0=""
+LAYOUT_FLAGS_1="-falign-functions=32 -falign-loops=32"
+LAYOUT_FLAGS_2="-falign-functions=64 -falign-jumps=32"
+LAYOUT_FLAGS_3="-fno-align-jumps -falign-labels=16"
+LAYOUT_FLAGS_4="-falign-functions=16 -falign-loops=64"
+LV=0                  # which variant is being built right now
+LVSUF=""              # "" for variant 0, "-v1".. for the rest
+
+cc64() { [ "$BUILD64" = 1 ] || return 0; $CC64 $LF "$@"; }
+cc32() { [ "$BUILD32" = 1 ] || return 0; $CC32 $LF "$@"; }
 
 # ---- flat work directory ---------------------------------------------
 ln -sf "$ROOT"/forth/*.4        "$W"/ 2>/dev/null || true
@@ -161,8 +187,16 @@ echo "built  sod32 (forth.img $(stat -c%s "$SOD/forth.img") bytes)"
 # ---- stage 0: the cell engine ----------------------------------------
 # This is also the bootstrap host: every other stage's image is derived
 # from a dictionary dump taken by running this one.
-cc64 -O2 -Wall -o "$O/s0-cell-64" engine/relf.c
-cc32 -O2 -Wall -o "$O/s0-cell-32" engine/relf.c
+# The baseline needs layout variants as much as any other stage - every
+# ratio in the tables is divided by it, so a single biased build would
+# tilt the whole column.
+for LV in $(seq 0 $((LAYOUTS - 1))); do
+  eval "LF=\$LAYOUT_FLAGS_$LV"
+  [ "$LV" = 0 ] && LVSUF="" || LVSUF="-v$LV"
+  cc64 -O2 -Wall -o "$O/s0-cell-64$LVSUF" engine/relf.c
+  cc32 -O2 -Wall -o "$O/s0-cell-32$LVSUF" engine/relf.c
+done
+LF=""; LVSUF=""
 _b=""
 [ "$BUILD64" = 1 ] && _b="s0-cell-64"
 [ "$BUILD32" = 1 ] && _b="${_b:+$_b }s0-cell-32"
@@ -212,59 +246,65 @@ dump "$O/s0-cell-32" kernel32.img k32-b.txt    "$KCV8B_BOOT"
 echo "built  dictionary dumps"
 
 # ---- engines ----------------------------------------------------------
-# vm-lab.c is one source with the whole ladder behind -D flags. That is
-# deliberate and is part of the article's argument: the difference
-# between these VMs is small enough to live in one file.
-#   ENC=1 SOD16 (word table)   ENC=2 CPT16 (computed target)   ENC=3 CV8
-#   REG=1 VM registers in locals        FOLD=1 folded prim+EXIT
-#   SCALE=S call scale shift            SKIPPAD=1 loader drops NOOPs
-#   SPEC=1 specialised opcodes          SHAREDCALL=1 shared call path
-cp engine/vm-lab.c "$O/"
-python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
+for LV in $(seq 0 $((LAYOUTS - 1))); do
+  eval "LF=\$LAYOUT_FLAGS_$LV"
+  [ "$LV" = 0 ] && LVSUF="" || LVSUF="-v$LV"
+  # vm-lab.c is one source with the whole ladder behind -D flags. That is
+  # deliberate and is part of the article's argument: the difference
+  # between these VMs is small enough to live in one file.
+  #   ENC=1 SOD16 (word table)   ENC=2 CPT16 (computed target)   ENC=3 CV8
+  #   REG=1 VM registers in locals        FOLD=1 folded prim+EXIT
+  #   SCALE=S call scale shift            SKIPPAD=1 loader drops NOOPs
+  #   SPEC=1 specialised opcodes          SHAREDCALL=1 shared call path
+  cp engine/vm-lab.c "$O/"
+  python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
 
-# PACK4's alphabet is derived from the image, and the engine needs it at
-# compile time, so the packer runs BEFORE the engine is built and emits
-# both the image and pack4-alphabet.h. The 64-bit run writes the header;
-# the 32-bit run reads it back, so one alphabet serves both widths.
-rm -f "$O/pack4-alphabet.h"
-[ "$BUILD64" = 1 ] && ( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k64.txt" 8 kernel.img \
-    "$O/p4-pack4-k64.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k64.log"
-if [ "$BUILD32" = 1 ]; then
-( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k32.txt" 4 kernel32.img \
-    "$O/p4-pack4-k32.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k32.log"
-  cp "$O/p4-pack4-k32.img" "$O/p4-pack4-s32.img"
-fi
-[ "$BUILD64" = 1 ] && cp "$O/p4-pack4-k64.img" "$O/p4-pack4-s64.img"
-cc64    -O2 -Wall -I"$O" -o "$O/p4-pack4-64" engine/pack4.c
-cc32 -O2 -Wall -I"$O" -o "$O/p4-pack4-32" engine/pack4.c
-cc64    -O2 -Wall -o "$O/p8-pack8-64" engine/pack8.c
-cc32 -O2 -Wall -o "$O/p8-pack8-32" engine/pack8.c
-cc64    -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64" "$O/vm-lab.c"
-cc32 -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-32" "$O/vm-lab.c"
-cc64    -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-64" "$O/vm-lab.c"
-cc32 -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-32" "$O/vm-lab.c"
+  # PACK4's alphabet is derived from the image, and the engine needs it at
+  # compile time, so the packer runs BEFORE the engine is built and emits
+  # both the image and pack4-alphabet.h. The 64-bit run writes the header;
+  # the 32-bit run reads it back, so one alphabet serves both widths.
+  rm -f "$O/pack4-alphabet.h"
+  [ "$BUILD64" = 1 ] && ( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k64.txt" 8 kernel.img \
+      "$O/p4-pack4-k64.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k64.log"
+  if [ "$BUILD32" = 1 ]; then
+  ( cd "$W" && python3 "$ROOT/tools/pack4.py" "$O/k32.txt" 4 kernel32.img \
+      "$O/p4-pack4-k32.img" "$O/pack4-alphabet.h" ) > "$O/p4-pack4-k32.log"
+    cp "$O/p4-pack4-k32.img" "$O/p4-pack4-s32.img"
+  fi
+  [ "$BUILD64" = 1 ] && cp "$O/p4-pack4-k64.img" "$O/p4-pack4-s64.img"
+  cc64    -O2 -Wall -I"$O" -o "$O/p4-pack4-64$LVSUF" engine/pack4.c
+  cc32 -O2 -Wall -I"$O" -o "$O/p4-pack4-32$LVSUF" engine/pack4.c
+  cc64    -O2 -Wall -o "$O/p8-pack8-64$LVSUF" engine/pack8.c
+  cc32 -O2 -Wall -o "$O/p8-pack8-32$LVSUF" engine/pack8.c
+  cc64    -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64$LVSUF" "$O/vm-lab.c"
+  cc32 -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-32$LVSUF" "$O/vm-lab.c"
+  cc64    -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-64$LVSUF" "$O/vm-lab.c"
+  cc32 -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-32$LVSUF" "$O/vm-lab.c"
 
-python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" > /dev/null
-cc64    -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=3 -o "$O/s3-cpt16f-64" "$O/vm-lab.c"
-cc32 -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=2 -o "$O/s3-cpt16f-32" "$O/vm-lab.c"
+  python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" > /dev/null
+  cc64    -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=3 -o "$O/s3-cpt16f-64$LVSUF" "$O/vm-lab.c"
+  cc32 -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=2 -o "$O/s3-cpt16f-32$LVSUF" "$O/vm-lab.c"
 
-python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" v8 > /dev/null
-cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-64" "$O/vm-lab.c"
-cc32 -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-32" "$O/vm-lab.c"
+  python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" v8 > /dev/null
+  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-64$LVSUF" "$O/vm-lab.c"
+  cc32 -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-32$LVSUF" "$O/vm-lab.c"
 
-python3 tools/gen-fold.py "$O/vm-lab-tos.c" "$HOT" v8 > /dev/null
-cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1 \
-        -o "$O/s5-cv8spec-64" "$O/vm-lab-tos.c"
-cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCALL=1 \
-        -o "$O/s5-cv8spec-32" "$O/vm-lab-tos.c"
-# s6: s5 with byte-aligned call targets (SCALE=0). The engine never reads
-# a dictionary link, so the byte-granular header is invisible to it; the
-# scale is the only difference in the binary.
-cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
-        -o "$O/s6-cv8b-64" "$O/vm-lab-tos.c"
-cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
-        -o "$O/s6-cv8b-32" "$O/vm-lab-tos.c"
-echo "built  stage engines"
+  python3 tools/gen-fold.py "$O/vm-lab-tos.c" "$HOT" v8 > /dev/null
+  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1 \
+          -o "$O/s5-cv8spec-64$LVSUF" "$O/vm-lab-tos.c"
+  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCALL=1 \
+          -o "$O/s5-cv8spec-32$LVSUF" "$O/vm-lab-tos.c"
+  # s6: s5 with byte-aligned call targets (SCALE=0). The engine never reads
+  # a dictionary link, so the byte-granular header is invisible to it; the
+  # scale is the only difference in the binary.
+  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
+          -o "$O/s6-cv8b-64$LVSUF" "$O/vm-lab-tos.c"
+  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
+          -o "$O/s6-cv8b-32$LVSUF" "$O/vm-lab-tos.c"
+
+done
+LF=""; LVSUF=""
+echo "built  stage engines ($LAYOUTS layout(s) each)"
 
 # ---- images -----------------------------------------------------------
 echo "translating images (pure Python; minutes on a slow machine) ..."
