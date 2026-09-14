@@ -35,22 +35,31 @@ thousandth: `s2-cpt16` 1.000, `s4-cv8` 0.891, `s5-cv8spec` 0.788,
 `s6-cv8b` 0.835 on kernel compilation. An earlier tree, before the
 audit, gave 1.003 / 0.889 / 0.788 / 0.834 - all inside their intervals.
 
-## The specialisation step does NOT dominate here
+## The specialisation step, compared with x86
 
-This is the number that contradicts the article's AMD result, so it is
-worth stating on its own. Taking the ladder as deltas of the ratio:
+Taking the ladder as deltas of the ratio on kernel compilation, using
+run 2 above throughout:
 
 | | cell -> CV8 | CV8 -> CV8+spec |
 |---|---|---|
 | AMD, 8-byte | 0.081 | 0.231 |
 | AMD, 4-byte | 0.062 | 0.264 |
-| **ARMv7, 4-byte** | **0.111** | **0.101** |
+| ARMv7, 4-byte | 0.104 | 0.107 |
 
-On both x86 columns the specialised opcodes are worth three to four
-times the whole encoding sequence. On ARM they are worth slightly less
-than it. The sign of each step is the same everywhere - both help - but
-their relative size is not portable, and any claim that ranks them has
-to say on which machine.
+On x86 the specialised opcodes are worth three to four times the whole
+encoding sequence. Here the two steps are the same size to within their
+error bars (±0.011 and ±0.008 on the two stages), so on this machine
+they are indistinguishable rather than ranked.
+
+An earlier version of this file claimed an inversion - that on ARM the
+encoding work was worth MORE than the specialisation. That came from
+mixing run 1's 0.889/0.788 with run 2's other figures, and it does not
+survive using one sweep throughout. It also does not survive treating
+the steps multiplicatively, which is the more defensible arithmetic for
+ratios: as factors the encoding step is 0.896 and the specialisation
+step 0.881, so specialisation is marginally the larger there too. The
+honest statement is that both steps help on both machines, and that
+their relative size differs between them.
 
 ## What it says
 

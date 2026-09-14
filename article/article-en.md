@@ -3,9 +3,11 @@
 In 2004, out of curiosity rather than need, I forked L.C. Benschop's
 SOD32 - the Stack Oriented Design, a 32-bit virtual machine with a Forth
 on top - threw away its packed instruction format, and replaced it with
-one relative offset per cell. I called the result RelF, for Relative Forth. The point was
-speed: a cell you can jump through directly beats six 5-bit
-subinstructions you have to unpack first. It was 32-bit only, and it sat there working. Whether it was actually faster than what it forked
+one relative offset per cell. (A cell is the machine word a Forth is
+built on: four bytes on a 32-bit host, eight on a 64-bit one.) I called the result RelF, for Relative Forth. The point was
+speed: following one offset is less work than
+unpacking six small fields out of a word before you can use any of
+them. It was 32-bit only, and it sat there working. Whether it was actually faster than what it forked
 from, I did not check at the time - a detail that comes back in section
 8.
 
@@ -47,11 +49,10 @@ The systems have working names, used throughout:
 | name | expansion | what it is |
 |---|---|---|
 | SOD32 | Stack Oriented Design, 32-bit | the ancestor: six 5-bit subinstructions packed per 32-bit cell |
-| RelF | Relative Forth | one host cell per operation; a call holds the distance to its target, a primitive holds its opcode |
-| PACK4, PACK8 | packed, 4- or 8-bit opcodes | RelF with several opcodes packed into a cell |
+| RelF | Relative Forth | direct threading with relative addresses: one host cell per operation, a call holding the distance to its target and a primitive its opcode |
 | SOD16 | the ancestor's name, unit halved | one 16-bit token per operation, calls looked up in a table |
 | CPT16 | Compressed-Pointer Threading, 16-bit | the same, but the call target is computed rather than looked up |
-| CV8 | (the 8 is the unit width in bits) | the same idea again, in a byte stream |
+| CV8 | the 8 is the unit width; what CV stood for is not recorded in the project's files | the same idea again, in a byte stream |
 
 CV8 rather than "CPT8" because the step is not just a narrower unit.
 CPT16 is fixed-width - every operation is one 16-bit token, primitive or
@@ -59,8 +60,13 @@ call. A byte cannot hold a call target, so CV8 gives that up: an opcode
 is one byte, a call is two or three. It is the first scheme here where
 operations are not all the same size.
 
-Every system named here builds, boots, compiles its own encoding and
-passes the same 616-case test corpus - the CORE word set of the ANS
+Every system named here builds, boots and passes the same 616-case test
+corpus. Each also cross-compiles the kernel, which is how the timings
+below are taken - the image it writes is always in the cell format, so
+what differs between systems is the code doing the writing, not the
+output. Six of them additionally emit their own encoding when compiling
+new definitions at run time; the other two are produced by translating a
+finished cell image with `tools/layout.py` - the CORE word set of the ANS
 Forth standard, 616 assertions about what each word must do. The tables
 come out of the repository, not out of a model.
 
@@ -105,8 +111,9 @@ being called - or a **primitive**, a small number saying which built-in
 operation it is. Some operations are followed by an inline operand; the
 `1` above is `LIT`'s.
 
-The low bit distinguishes the two, and it is free because the primitive
-index is scaled by the cell size before the bit is added. So `25` is
+The low bit distinguishes the two, and it is free: scaling the primitive
+index by the cell size - 4 or 8, both powers of two - leaves the bottom
+bits empty, so one is available to mark with. So `25` is
 `1 + 6*4` with `DUP` at index 6, on a 4-byte build. On an 8-byte build
 the same `DUP` cell reads 49.
 
@@ -132,10 +139,13 @@ already solved it by packing.
 ## 2. Attempt one: pack several operations into a cell
 
 SOD32's trick is that a cell holds six operations, not one. Nothing says
-a RelF cell has to hold one either.
+a RelF cell has to hold one either. Two variants follow, and they are
+the same idea at two field widths: **PACK4**, with 4-bit opcodes, and
+**PACK8**, with 8-bit ones.
 
-So: reserve the first byte of a cell as a tag marking it as packed, and
-fill the rest with opcodes. Instead of the seven cells above, `COUNT`
+So: reserve the first byte of a cell as a tag marking it as packed -
+a value the low-bit test above can never produce, so the two schemes
+coexist in one image - and fill the rest with opcodes. Instead of the seven cells above, `COUNT`
 would want something closer to
 
 ```
@@ -164,9 +174,12 @@ Ranges in the 4-byte column are across the two machines that build it.
 | PACK4, 4-bit opcodes | 2.05x | 1.13 | 1.14-1.18 |
 | PACK8, 8-bit opcodes | 1.90x | 1.09 | 1.08-1.18 |
 
-So the rejection was right and the recorded reason for it was wrong by
-between five and twelve times, depending which column you take: a
-predicted penalty of 90-105%, against a measured 9-18%.
+So the rejection was right and the recorded reason for it was not.
+Predicted penalty 90-105%; measured 9-18%. The two are not strictly
+comparable - one is a dispatch loop in isolation, the other is whole
+programs where dispatch is a fraction of the work - which is the point.
+As a predictor of what packing would cost a real program, the number was
+useless.
 The old benchmark's own header said why, in advance: its streams were
 sized to run hot, so it measured decode cost with memory free, which it
 called the pessimistic case. Pessimistic by four times, as it turned
@@ -182,23 +195,24 @@ ought to offset having fewer of them to choose from. Built, PACK4 folds
 away *fewer* cells - 377 against 433 - and produces the **larger**
 image: 21,296 bytes against 20,848, at 8-byte cells.
 
-The reason is the sixteen-opcode alphabet. A primitive outside it does
-not merely fail to pack: it **ends the run it is sitting in**, and both
-halves then need their own tag byte.
+The reason is the sixteen-opcode alphabet, and it turns on what a *run*
+is: how many packable operations occur one after another before
+something unpackable interrupts them. That is what decides whether a tag
+byte pays for itself, because each uninterrupted run needs exactly one.
 
-A run, here, is how many packable operations occur one after another
-before something unpackable interrupts them - and it is what decides
-whether the tag byte pays for itself. Measured on real kernel code, the
-mean run is about 1.3. One tag byte to save one opcode is not a saving.
+A primitive outside the alphabet does not merely fail to pack. It **ends
+the run it is sitting in**, so both halves need their own tag byte.
+Measured on real kernel code the mean run is about 1.3 - one tag byte to
+save one opcode, which is not a saving.
 
 So packing needs long runs of packable operations, and this kernel has
 not got them - it is mostly calls, and a call is never in the alphabet.
 Whether that is true of Forth generally I cannot say from one codebase,
 though the reason is not specific to this one: calls are what Forth is
 made of.
-Counting on paper priced the fields and got 0.76x. Built, the program
-paid for the joins as well and got 0.86x, while running 10-18% slower,
-which ended that line of attack.
+Counting on paper priced the fields and got 0.76x for both. Built, the
+program paid for the joins as well: 0.876x for PACK4 and 0.857x for
+PACK8, while running 8-18% slower. That ended the line of attack.
 
 ## 3. Attempt two: a 16-bit token through a word table
 
@@ -281,8 +295,11 @@ because tokens below that are primitives. No search and no second table.
                              1.007 ±0.016 (ARM, 4-byte)
 
 Level with the cell engine, at the same image size as SOD16 - 12,864
-bytes, identical to the byte, because the two encode the same operations
-in the same width and differ only in what a call token means. Not faster, and not
+bytes, identical to the byte. The kernel triggers neither of SOD16's
+escapes: every call in it is to a word that existed at load time, and
+the one `DOES>` is handled by its own opcode in both schemes. So the two
+images encode the same operations in the same width and differ only in
+what a call token means. Not faster, and not
 slower either: 1.024 against 1.000, with an error of 0.021.
 
 What that measures is a sum, and it is worth being precise about which.
@@ -300,8 +317,9 @@ not.
 
 ## 5. Attempt four: narrow the unit itself
 
-Two lessons now point the same way. Packing fails because Forth code has
-no long runs. Dispatcher logic fails because it costs what it costs. The
+Two lessons now point the same way. Packing failed because this kernel has no long runs. The word table
+failed because the bookkeeping it forced on the compiler was expensive
+and the lookup was not free either. The
 remaining lever is the size of the unit - not how many operations share
 a cell, and not how cleverly the target is computed, but how many bytes
 one operation takes.
@@ -321,6 +339,13 @@ removing that.
 
 For the dispatch loop that is a compare and a shift, no tag byte, and no
 dependence on runs of anything.
+
+The budget matters, and it ends up tight. Of the 128 values below 0x80:
+68 are the kernel's primitives, five more are literal and data-word
+forms, 23 are the folded pairs of section 6, and 24 are its specialised
+opcodes. The highest value used is 119, leaving eight spare. That is
+close enough that adding another family of specialisations would mean
+choosing what to drop.
 The general shape - a byte-coded stream with variable-length
 instructions - is the one FCode and the Java virtual machine use. What
 they name is different: an FCode token *is* a dictionary reference,
@@ -348,9 +373,9 @@ CV8      6 120 1 7 79                          5 bytes
 
 ## 6. Attempt five: give the common cases their own opcodes
 
-Look again at the CV8 line of that dump: five bytes for six operations.
-Two separate tricks are doing that, and each is worth having on its own.
-This section is both of them, because they were built together.
+Five bytes for six operations, in that CV8 line, is two separate tricks
+working at once. They were built together and are described together
+here.
 
 **Folding**: a primitive immediately followed by `EXIT` becomes a single
 opcode, which removes one trip round the dispatch loop from the end of a
@@ -374,26 +399,32 @@ rather than after it - `1 +` becoming a single add-immediate.
 | CV8 + specialisation | 0.688 ±0.019 | 11,088 | 0.456 |
 
 One row in that table goes the wrong way and should not be glossed over:
-CV8 is *slower* than folded CPT16, 0.919 against 0.897, on both machines.
+CV8 is *slower* than folded CPT16, 0.919 against 0.897. That gap is
+smaller than either figure's error bar, so on its own it would be
+nothing - but it has the same sign in every column measured, +0.022 at
+8-byte cells on AMD, +0.019 at 4-byte, +0.016 on ARM. Three independent
+measurements agreeing in direction is worth more than one of them
+agreeing with itself.
 Narrowing the unit to a byte does not come free - a call stops being one
 fixed token and becomes two bytes to assemble. What it buys is 10% of
 the image. It is a trade, and the sequence is only worth it because of the row
 underneath.
 
-Because on this machine the specialised opcodes are worth more than the
-encodings that carried them. Taking the ladder as deltas of the ratio,
-cell threading down to CV8 against CV8 down to CV8+specialisation:
+The specialised opcodes are the larger step on x86, and by a lot. Take
+the ladder in two halves - cell threading down to CV8, then CV8 down to
+CV8 with the opcodes - and subtract:
 
 | | cell -> CV8 | CV8 -> +spec |
 |---|---|---|
 | AMD, 8-byte | 0.081 | 0.231 |
 | AMD, 4-byte | 0.062 | 0.264 |
-| ARMv7, 4-byte | 0.111 | **0.101** |
+| ARMv7, 4-byte | 0.104 | 0.107 |
 
-Three to four times on x86. On the ARM board, slightly *less* than the
-encoding work - and that is the machine section 9 says resolves best.
-Both steps help everywhere; which of them is the bigger one is not
-portable, and I would not have known that from one machine.
+Three to four times on x86. On ARM the two come out the same size to within their error bars, which
+are ±0.011 and ±0.008 on the stages involved, so there they are
+indistinguishable rather than ranked. Both steps help on both
+machines; how much bigger one is than the other does not travel, and I
+would not have known that from a single machine.
 
 Those are sequential deltas along one path, not a ranking of techniques.
 I never tried specialising CPT16, or adding opcodes before narrowing the
@@ -422,7 +453,7 @@ align the end of each code body, and the rest data.
 None of that is code. It is the dictionary *header*, which the whole
 encoding exercise had never touched.
 
-So the link became a distance rather than an address, 1 to 3 bytes, with
+So the link became a distance, 1 to 3 bytes, with
 its tag byte last so that it decodes read backwards from the name the
 same way a call decodes read forwards. Names stopped being padded, code
 bodies stopped being padded, and calls became able to name any byte
@@ -442,17 +473,30 @@ The 860 bytes still separating the two widths break down as:
     156   a wordlist table
      23   the boot prologue and the links themselves
 
-Only the 273 is worth chasing.
+Only the 273 is worth chasing - and it is worth saying what those
+seventeen operands are, because it is the one thing that makes them
+interesting. They are control flow and its relatives: five `(DO)`/`(LOOP)`
+offsets and twelve execution tokens from `[']` and `POSTPONE`. Branches
+themselves are fine - a conditional branch in CPT16 or CV8 carries a
+signed 16-bit offset counted from the operand, which no definition in
+this kernel comes close to exhausting. It is the loop and token operands
+that were left cell-sized, because the loop runtime reads its own with a
+single aligned fetch and making it byte-granular would put decode work
+in the inner loop of every `DO`.
 
 It is not free, either, and the cost lands where the design says it
 should - on dictionary search, because a variable-length link is more
 work to walk than a cell.
 
+All at 4-byte cells, where both machines build:
+
 | workload | AMD | ARMv7 |
 |---|---|---|
-| kernel compile | +0.056 | +0.047 |
-| corpus | +0.086 | +0.071 |
-| parse | +0.119 | +0.099 |
+| kernel compile | +0.056 | +0.046 |
+| corpus | +0.086 | +0.085 |
+| parse | +0.119 | +0.101 |
+
+At 8-byte cells on the AMD machine the kernel-compile cost is +0.039.
 
 Reproduced across three separate builds on the AMD machine and two on
 the ARM board; the corpus figure repeats to a thousandth. It is a size
@@ -474,13 +518,18 @@ not in 2004, and not once in all the work above.
 SOD32 was twice as fast as RelF on the test corpus and 2.9 times as fast
 at interpreting text.
 
-It was also *slower* than RelF on the one benchmark that is almost pure
-inner interpreter - the counted loop - which is how I knew the problem
-was not the VM. That detail matters for the premise, and not in my
-favour: RelF was forked to make the inner interpreter faster, and the
-benchmarks that could settle whether it did are the two this project
-threw out for not reproducing. The 2004 claim is not vindicated here. It
-is still unchecked.
+The cause was not the VM, and the way to see that is to count rather
+than to time. On the same input SOD32 executes 44.5 million VM
+operations and RelF executes 266.6 million - six times the work for the
+same result, with the faster dispatch of the two. Those are counts. They
+are the same on every machine, and no layout bias or noisy neighbour
+touches them.
+
+Which also settles what this exercise did *not* establish. RelF was
+forked to make the inner interpreter faster. The workloads that could
+have tested that - the counted loop, the recursive Fibonacci - are the
+two this project discarded for not reproducing. On the evidence here the
+2004 claim is neither confirmed nor refuted. It is still unchecked.
 
 The cause took an afternoon. SOD32's dictionary is 32 hashed chains,
 selected on the first two characters of a name. RelF's was a single
@@ -498,10 +547,14 @@ Restored, with SOD32's hash function unchanged:
                                                 after    288,037
                                                 SOD32    397,720
 
-Those are counts, so they are the same on every machine. In
-time it was 3.7x on parsing at 4-byte cells and 4.4x at 8-byte. The
-whole encoding sequence in this article is worth about 0.69. One
-omission, restored, was worth more than all of it.
+Those are counts, so they are the same on every machine. In time it was
+2.7x on parsing at 4-byte cells and 3.5x at 8-byte - measured before the
+layout-averaging described in section 9 existed, so single-build
+figures, which at this size does not matter but should be said.
+
+Compare like with like: on parsing, the whole encoding sequence in this
+article is worth 0.80. One omission, restored, was worth two and a half
+to three and a half times.
 
 Hashing a dictionary is not an insight and SOD32 already did it, so the
 fix is not the interesting part. Why nobody noticed is: every benchmark in this project compared the system against
@@ -518,15 +571,19 @@ If you have a project with a parent, go and run the parent.
 
 ## 9. How this was measured
 
-Three machines: a single-core x86-64 virtual machine, a 16-core x86-64
-laptop, and a 4-core ARMv7 board. Every stage cross-compiles the kernel and the output
+Everything was built and tested on three machines - a single-core
+x86-64 virtual machine, a 16-core x86-64 laptop and a 4-core ARMv7
+board - but only two of them are quoted here. The VM is the container
+this work was done in; it is too noisy to resolve anything and its
+figures are not in `results/`. Every number in this article comes from
+the laptop or the board. Every stage cross-compiles the kernel and the output
 image must be byte-identical to the reference *before* the timing is
 recorded, so correctness and speed are the same run: a stage that is
 fast because it is quietly wrong fails the comparison that times it.
 
 Three things about how the numbers were taken.
 
-**The variation is per-build, not per-run.** Repeated runs of the same
+**The variation is per-build.** Repeated runs of the same
 binaries agree to 1-2%. Rebuild the tree and a stage moves by five or
 ten percent, because where the compiler places code is worth that much
 and is fixed for a given binary. Taking the minimum over more
@@ -549,14 +606,14 @@ over a handful of opcodes is dominated by indirect-branch prediction and
 code placement, which is exactly what varies between builds - so it
 the build is what it measures.
 
-Every conclusion above survived being measured twice on at least two
-machines. Several earlier ones did not, and are not above.
+Every conclusion above survived being measured twice on both machines.
+Several earlier ones did not, and are not above.
 
 ## 10. Not measured
 
-- Three machines is not a study. Two x86-64 and one ARMv7; nothing with
-  a different memory order, and nothing without an operating system
-  underneath.
+- Two machines is not a study. One x86-64 laptop and one ARMv7 board;
+  nothing with a different memory order, and nothing without an
+  operating system underneath.
 - Nothing here measures pure execution reliably, since both
   microbenchmarks failed reproducibility.
 - The locals specialisation is inert in these images: `locals.4` is
@@ -565,10 +622,10 @@ machines. Several earlier ones did not, and are not above.
   inert but is not a gain either - it costs 18 bytes and no measurable
   time. Both were left switched on so the published figures match the
   build the repository produces.
-(The one remaining limitation is large enough to have its own section,
-below.)
+### What token threading takes away
 
-## 11. What token threading takes away
+The last limitation is the largest, and it is a direct consequence of
+the thing that made the image small.
 
 In a cell-threaded Forth, the first field of a word points at the code
 that runs it, so a program can invent a new *kind* of word - a new
@@ -582,7 +639,7 @@ any more, only from C. That is the strongest architectural criticism
 this design has had, it is a direct consequence of the thing that made
 the image small, and I do not have an answer to it.
 
-## 12. What came out of it
+## 11. What came out of it
 
 Start and finish, same Forth, same 616 tests passing:
 
@@ -591,24 +648,24 @@ Start and finish, same Forth, same 616 tests passing:
 | RelF, where this began | 24,320 bytes | 1.000 | 1.000 |
 | CV8 + specialisation + byte headers | 7,609 bytes | 0.731 | 0.799 |
 
+One property survived the whole sequence untouched: every image here is
+still position-independent. CPT16 and CV8 both compute call targets from
+the image base, so an image still loads at any address, which was the
+reason RelF existed in the first place.
+
 All three columns at 8-byte cells: 0.31x the image and 0.73 the time on
 the compiler's own largest job, at the price of 20% on text
 interpretation. At 4-byte cells, where RelF started life, the same
 sequence gives 0.50x the image, 0.73 on kernel compilation and 0.83 on
 parsing.
 
-Set against that: restoring one hash table that had been missing since
-2004 was worth 3.7 to 4.4x on parsing by itself. Everything in the
-sequence above is a fraction; that one omission was a multiple.
-
-That does not make the encoding work pointless. The two are
-independent. The hash sits in the text
-interpreter and has no effect on image size at all, so the whole size
-result stands untouched by it; and every speed ratio in this article was
-measured after the fix, on a system with the hash in place. What the
-comparison does say is something about priorities: I spent months on the
-part I found interesting and had never checked the part that was
-already, demonstrably, three times worse.
+Set against section 8: the hash table was worth more on parsing than
+this entire sequence. That does not make the sequence pointless, and the
+reason is worth stating, because it is the question the ending invites.
+The two are independent. The hash lives in the text interpreter and does
+not touch image size, so the whole size result stands; and every speed
+ratio here was measured with the hash in place. What the comparison
+says is about priorities, not about wasted work.
 
 Seven things I would tell someone starting the same work.
 
@@ -618,24 +675,25 @@ pays a tag byte to amortise over a run never gets to amortise. I would
 expect that of Forth code in general, because calls break runs and Forth
 is mostly calls - but I have measured one kernel, not a language.
 
-**Fitting more into a cell failed twice; making the cell irrelevant
-worked.** Both rejected attempts kept the cell and tried to use it
-harder. What worked was dropping it as the unit of encoding altogether,
-and accepting variable-length instructions to do it. That is one
+**Making the cell irrelevant worked; using it harder did not.** The
+first rejected attempt kept the cell and tried to fit more in. What
+worked was dropping the cell as the unit of encoding altogether, and
+accepting variable-length instructions to do it. That is one
 kernel's answer, and it follows from this kernel's call density rather
 than from anything about Forth as a language.
 
-**A table costs more than its lookup.** The word-number table looked
-like free indirection. Removing it and the bookkeeping it forced on the
+**A table can cost more in the compiler than in the dispatch loop.**
+The word-number table looked like free indirection. Removing it and the bookkeeping it forced on the
 compiler was worth 34% between them - and nothing in this experiment
 separates the two, so I cannot tell you what the dispatch-loop half
 alone was worth.
 
 **Ask early whether the common cases could have their own opcodes.** On
 x86 that step was worth three to four times the whole encoding sequence
-that preceded it; on ARM it was worth slightly less than it. The size of
-the win did not travel between machines, which is itself worth knowing
-before planning around it.
+before it; on ARM the two were indistinguishable. Both helped on both,
+but the ratio between them did not travel - and several of those opcodes
+exist only because the byte stream left a one-byte hole to put them in,
+so they are not two independent things to rank.
 
 **Look outside the instruction stream.** Changing the dictionary header
 took the image from 11,088 bytes to 7,609, and none of the encoding
