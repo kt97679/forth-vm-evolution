@@ -36,7 +36,9 @@ about 0.05 between the two columns is not a difference.
 anywhere. The word table costs more than it saves.
 
 **CPT16 is indistinguishable from the cell engine**: 1.024 ±0.021 and
-1.003 ±0.017. Deleting the table recovers exactly what SOD16 lost.
+1.003 ±0.017. Removing the word table and the compiler bookkeeping that
+went with it closes the whole of SOD16's deficit; nothing here separates
+the two contributions.
 
 **The packed schemes cost 5-20%** and never win, on either machine.
 

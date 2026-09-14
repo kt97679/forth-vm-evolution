@@ -14,28 +14,43 @@ variants, widest spread 4.0%.
 
 ## Speed, 4-byte cells, ratio to the cell engine
 
+Latest sweep, two runs from one tree, three layout builds per engine.
+`tools/agree.py` over the two: 36 comparisons, all agreeing. Run 2:
+
 | stage | kernel | corpus | fib | parse |
 |---|---|---|---|---|
-| `sod32` | -- | 1.571 | 1.978 | 1.436 |
-| `s0-cell` | 1.000 ±0.016 | 1.000 ±0.012 | 1.000 ±0.004 | 1.000 ±0.019 |
-| `p4-pack4` | 1.145 ±0.022 | 1.110 ±0.023 | 1.301 ±0.023 | 1.114 ±0.029 |
-| `p8-pack8` | 1.081 ±0.024 | 1.049 ±0.021 | 1.261 ±0.012 | 1.053 ±0.019 |
-| `s1-sod16` | 1.364 ±0.024 | 1.383 ±0.032 | 1.225 ±0.011 | 1.035 ±0.037 |
-| `s2-cpt16` | 1.003 ±0.017 | 0.995 ±0.021 | 0.939 ±0.022 | 0.983 ±0.026 |
-| `s3-cpt16f` | 0.870 ±0.012 | 0.880 ±0.009 | 0.884 ±0.019 | 0.870 ±0.012 |
-| `s4-cv8` | 0.889 ±0.012 | 0.905 ±0.010 | 0.956 ±0.007 | 0.901 ±0.014 |
-| `s5-cv8spec` | 0.788 ±0.009 | 0.772 ±0.007 | 1.021 ±0.026 | 0.784 ±0.014 |
-| `s6-cv8b` | 0.834 ±0.009 | 0.843 ±0.007 | 0.956 ±0.007 | 0.885 ±0.014 |
+| `sod32` | -- | 1.505 | 1.959 | 1.444 |
+| `s0-cell` | 1.000 ±0.014 | 1.000 ±0.012 | 1.000 ±0.040 | 1.000 ±0.022 |
+| `p4-pack4` | 1.145 ±0.021 | 1.113 ±0.023 | 1.264 ±0.042 | 1.128 ±0.028 |
+| `p8-pack8` | 1.088 ±0.027 | 1.051 ±0.018 | 1.273 ±0.040 | 1.063 ±0.019 |
+| `s1-sod16` | 1.364 ±0.021 | 1.377 ±0.027 | 1.204 ±0.040 | 1.035 ±0.039 |
+| `s2-cpt16` | 1.007 ±0.016 | 0.995 ±0.020 | 0.888 ±0.027 | 0.992 ±0.035 |
+| `s3-cpt16f` | 0.880 ±0.009 | 0.880 ±0.009 | 0.935 ±0.040 | 0.877 ±0.014 |
+| `s4-cv8` | 0.896 ±0.011 | 0.904 ±0.010 | 0.935 ±0.037 | 0.913 ±0.015 |
+| `s5-cv8spec` | 0.789 ±0.008 | 0.772 ±0.007 | 0.965 ±0.030 | 0.795 ±0.013 |
+| `s6-cv8b` | 0.837 ±0.008 | 0.843 ±0.007 | 0.955 ±0.030 | 0.892 ±0.014 |
 
-Absolute, roughly 20x the x86 machines:
+Run 1 of the same tree, for the figures that differ by more than a
+thousandth: `s2-cpt16` 1.000, `s4-cv8` 0.891, `s5-cv8spec` 0.788,
+`s6-cv8b` 0.835 on kernel compilation. An earlier tree, before the
+audit, gave 1.003 / 0.889 / 0.788 / 0.834 - all inside their intervals.
 
-| stage | kernel ms | corpus ms | fib ms | parse ms |
-|---|---|---|---|---|
-| `sod32` | -- | 410.24 | 971.56 | 1954.77 |
-| `s0-cell` | 293.13 | 261.18 | 491.31 | 1361.64 |
-| `s3-cpt16f` | 255.15 | 229.87 | 434.41 | 1185.14 |
-| `s5-cv8spec` | 230.95 | 201.66 | 501.80 | 1067.82 |
-| `s6-cv8b` | 244.54 | 220.21 | 469.77 | 1204.51 |
+## The specialisation step does NOT dominate here
+
+This is the number that contradicts the article's AMD result, so it is
+worth stating on its own. Taking the ladder as deltas of the ratio:
+
+| | cell -> CV8 | CV8 -> CV8+spec |
+|---|---|---|
+| AMD, 8-byte | 0.081 | 0.231 |
+| AMD, 4-byte | 0.062 | 0.264 |
+| **ARMv7, 4-byte** | **0.111** | **0.101** |
+
+On both x86 columns the specialised opcodes are worth three to four
+times the whole encoding sequence. On ARM they are worth slightly less
+than it. The sign of each step is the same everywhere - both help - but
+their relative size is not portable, and any claim that ranks them has
+to say on which machine.
 
 ## What it says
 
