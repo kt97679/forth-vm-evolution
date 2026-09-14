@@ -60,8 +60,10 @@ The headline benchmark is each system **cross-compiling the Forth
 kernel**: reading the kernel's Forth source and writing out a fresh
 image, which is the largest piece of real work any of them does. It
 exercises the text interpreter, the compiler and the dictionary at once,
-and it cannot favour an encoding, because the image every system writes
-is in the cell format regardless. It is also the correctness check - the
+and it cannot favour an encoding by what it produces, because the image
+every system writes is in the cell format regardless - though the code
+doing the writing is of course in the encoding under test, which is the
+point. It is also the correctness check - the
 image produced must be byte-identical to the reference before any timing
 is recorded, so a system that is fast because it is quietly wrong fails
 the comparison that times it.
@@ -94,8 +96,8 @@ itself to the word being called. A **primitive** holds a small number
 saying which built-in operation it is. The low bit says which kind it
 is, so `25` is a primitive: `1 + 6*4`, where 6 is the index of `DUP`.
 
-Nothing in the image is an absolute address, which is why it can be
-loaded anywhere. That was the point of the design.
+Nothing in the image is an absolute address, so it can be loaded
+anywhere - which was the point of the design.
 
 Now count the bytes. Seven cells is 28 bytes on a 32-bit host and
 **56 on a 64-bit one**, for a definition that has not changed. The
@@ -177,8 +179,8 @@ Whether that is true of Forth generally I cannot say from one codebase,
 though the reason is not specific to this one: calls are what Forth is
 made of.
 Counting on paper priced the fields and got 0.76x. Built, the program
-paid for the joins as well and got 0.86x, while running 10-18% slower.
-So packing was out.
+paid for the joins as well and got 0.86x, while running 10-18% slower,
+which ended that line of attack.
 
 ## 3. Attempt two: a 16-bit token through a word table
 
@@ -204,11 +206,14 @@ problem. There are two tables, pointing opposite ways:
     the compiler's    address -> number    built by the image, on the heap
 
 The engine's is the one that makes the encoding work: token 256+n, look
-up entry n, jump there. But a *compiler* starts from the address of the
-word being called and needs the number, which is the other direction -
-and the engine's table is in memory Forth cannot see anyway. So the
-image has to build and maintain a second, inverted copy of it, and
-binary-search that on every call it compiles. The table is also sized at load and never grows, so a
+up entry n, jump there. That is enough to *run* a program. It is not
+enough to *compile* one. A compiler that has just parsed a name has
+found the word's address - that is what a dictionary search returns -
+and now needs the number to emit, which is the opposite direction. The
+engine's table cannot help even in principle: it is indexed by number,
+and it lives in the engine's own memory, which the Forth program has no
+way to read. So the image builds and maintains a second, inverted copy
+of it, and binary-searches that on every call it compiles. The table is also sized at load and never grows, so a
 word defined afterwards has no number at all. That needed an escape
 opcode carrying a full address.
 
@@ -240,8 +245,8 @@ and the compiler's job becomes one line:
 ```
 
 Subtract the image base from the target, shift it down, and add 256
-because tokens below that are primitives. Compare that with the four
-steps SOD16 needed.
+because tokens below that are primitives. No search, no second table,
+nothing that can fail.
 
     CPT16, kernel compile    1.024 ±0.021 (AMD)    1.007 ±0.016 (ARM)
 
@@ -254,10 +259,12 @@ loop, and the compiler's search from address back to word number. The
 37% between SOD16 and CPT16 is what those two cost together. Nothing
 here separates them, and I have not tried to.
 
-What the sum does show is that nothing here penalises the 16-bit unit
-itself: SOD16's deficit disappears when the table machinery is replaced,
-and the unit stays the same width throughout. The bookkeeping was the
-expensive part, and it had looked like free indirection.
+What the sum does show is that a 16-bit unit is not itself a problem:
+SOD16 and CPT16 use the same width, and one of them is level with the
+cell engine. How the 37% divides between the dispatch-loop lookup and
+the compiler's reverse map, I do not know and did not measure. The
+bookkeeping had looked like free indirection; at least some of it was
+not.
 
 ## 5. Attempt three: narrow the unit itself
 
@@ -267,10 +274,17 @@ remaining lever is the size of the unit - not how many operations share
 a cell, and not how cleverly the target is computed, but how many bytes
 one operation takes.
 
-So: a byte stream - CV8, one byte per unit. Values under 0x80 are
-opcodes; 0x80 and above begin a call whose remaining bits are an
-offset. No alignment, no tag bytes, no
-runs required, nothing in the dispatch path but a compare and a shift.
+So: a byte stream. One byte, one operation - if that operation is a
+primitive. Values under 0x80 are the 128 primitives.
+
+A call cannot fit in a byte, so it does not try. A byte of 0x80 or more
+means "this is a call", and its remaining seven bits are the top of an
+offset that continues into the next byte - two bytes for a target
+nearby, three for one further off. Operations are no longer all the same
+size, and nothing in the image needs aligning.
+
+For the dispatch loop that is a compare and a shift, no tag byte, and no
+dependence on runs of anything.
 Two bytes for a call to something nearby, three for one further away.
 The general shape - a byte-coded stream with variable-length
 instructions - is the one FCode and the Java virtual machine use, though
@@ -296,7 +310,9 @@ CV8      6 120 1 7 79                          5 bytes
 
 ## 6. Then it compounds
 
-Both of the tricks in that `COUNT` line are worth having on their own.
+Look again at the CV8 line of that dump: five bytes for six operations.
+Two separate tricks are doing that, and each is worth having on its
+own.
 
 **Folding**: a primitive immediately followed by `EXIT` becomes a single
 opcode, which removes one trip round the dispatch loop from the end of a
@@ -328,12 +344,14 @@ failed attempts and three successful encodings - is worth 0.081 of the
 ratio. Adding specialised opcodes is worth 0.231, about three times as
 much.
 
-That is a comparison of steps in one order, not a claim that
-specialisation beats encoding in general. The opcodes were added last
-and to a byte stream; several of them exist only because there is a
-one-byte opcode space to put them in. What is fair to say is that the
-encoding work was the smaller half of its own project, and that it took
-five attempts to get to the point where the cheap win was available.
+Those are sequential deltas along one path, not a ranking of techniques.
+I never tried specialising CPT16, or adding opcodes before narrowing the
+unit, so I have no measurement of what the same work would be worth in
+another order. Several of these opcodes exist only because a byte stream
+has a one-byte space to put them in. What the numbers
+support is narrower and still worth knowing: on this path the last step
+was the cheap one, and it took five attempts to build somewhere to put
+it.
 
 Measured by bytes saved in the image, small integers are worth 190, hot
 words 194 and immediate operands 111.
@@ -362,11 +380,15 @@ The largest single size result in the sequence, and it came from the
 part of the system that is not the instruction encoding at all.
 
 `FINDINGS-CELL-WIDTH.md` accounts for every one of the 860 bytes still
-separating the two widths: 408 in data fields, which are cells because a
-`VARIABLE` holds a cell; 273 in seventeen inline operands that are still
-cell-sized and in the padding they force on the bodies around them; 156
-in a wordlist table; and 23 in the boot prologue and the links
-themselves. Only the 273 is worth chasing.
+separating the two widths:
+
+    408   data fields - cells, because a VARIABLE holds a cell
+    273   seventeen inline operands still cell-sized, plus the
+          padding they force on the bodies around them
+    156   a wordlist table
+     23   the boot prologue and the links themselves
+
+Only the 273 is worth chasing.
 
 It is not free, either, and the cost lands where the design says it
 should - on dictionary search, because a variable-length link is more
@@ -497,6 +519,15 @@ Set against that: restoring one hash table that had been missing since
 2004 was worth 3.7 to 4.4x on parsing by itself. Everything in the
 sequence above is a fraction; that one omission was a multiple.
 
+Which does not make the encoding work pointless, and it is worth being
+clear about why. The two are independent. The hash sits in the text
+interpreter and has no effect on image size at all, so the whole size
+result stands untouched by it; and every speed ratio in this article was
+measured after the fix, on a system with the hash in place. What the
+comparison does say is something about priorities: I spent months on the
+part I found interesting and had never checked the part that was
+already, demonstrably, three times worse.
+
 Seven things I would tell someone starting the same work.
 
 **Packing needs runs, and this kernel has not got them.** The mean run
@@ -505,10 +536,12 @@ pays a tag byte to amortise over a run never gets to amortise. I would
 expect that of Forth code in general, because calls break runs and Forth
 is mostly calls - but I have measured one kernel, not a language.
 
-**A narrower unit beat a fuller cell, here.** Both failed attempts were
-ways of fitting more into a cell; what worked was making the unit
-smaller and giving up fixed width. Whether that holds for a language
-with longer straight-line runs than Forth, I have not tested.
+**Fitting more into a cell failed twice; making the cell irrelevant
+worked.** Both rejected attempts kept the cell and tried to use it
+harder. What worked was dropping it as the unit of encoding altogether,
+and accepting variable-length instructions to do it. That is one
+kernel's answer, and it follows from this kernel's call density rather
+than from anything about Forth as a language.
 
 **A table costs more than its lookup.** The word-number table looked
 like free indirection. Removing it and the bookkeeping it forced on the
@@ -516,12 +549,12 @@ compiler was worth 37% between them - and nothing in this experiment
 separates the two, so I cannot tell you what the dispatch-loop half
 alone was worth.
 
-**Specialisation was worth about three times the encoding work.** As
-steps along this sequence: 0.081 of the ratio for all the encoding
-changes together, 0.231 for adding specialised opcodes. It was applied
-last and to a byte stream, so it is not independent of what came before
-- but it is the cheap step, and it arrived only after five attempts had
-built somewhere to put it.
+**On this path, the last step was the cheapest.** All the encoding
+changes together moved the ratio 0.081; adding specialised opcodes moved
+it 0.231. I did not try the opcodes in any other order or on any other
+encoding, so this ranks two steps in one sequence and not two techniques
+in general. What it does suggest is that it is worth asking, early,
+whether the common cases could have their own instructions.
 
 **Look outside the instruction stream.** Changing the dictionary header
 took the image from 11,088 bytes to 7,609, and five rounds of encoding
