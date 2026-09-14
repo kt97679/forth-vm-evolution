@@ -19,30 +19,17 @@ operation, and the cell had just doubled.
 What follows is what I tried, in the order I tried it, including the two
 attempts that did not work and why.
 
-Some vocabulary first. A **cell** is the machine word a Forth is built on -
-four bytes on a 32-bit host, eight on a 64-bit one - and it is the unit
-Forth uses for everything from stack items to dictionary pointers.
-**Threading** is how a compiled Forth word records what it calls: a list
-of references, walked by the engine, rather than machine code. The
-schemes below differ only in what one of those references looks like.
+Some vocabulary. A **cell** is the machine word a Forth is built on -
+four bytes on a 32-bit host, eight on a 64-bit one. **Threading** is how
+a compiled word records what it calls: a list of references, walked at
+run time, rather than machine code. The schemes below differ only in
+what one of those references looks like.
 
-The **engine** is the C program
-that fetches operations and runs them - a few thousand lines, compiled
-once. The **image** is the compiled Forth system it runs: the dictionary,
+Two more that the tables depend on. The **engine** is the C program that
+fetches operations and runs them, a few thousand lines, compiled once.
+The **image** is the compiled Forth system it runs: the dictionary,
 every word body, the whole language. Only the image changes size between
-the systems below; the engine changes only in how it decodes what it
-reads. When I say "0.47x", I mean the image.
-
-The **dispatch loop** is the part of the engine that reads the next
-operation and jumps to the code for it. Every scheme here is a different
-answer to "what does one operation look like in memory", and every one
-is paid for in that loop.
-
-One more, needed late: Forth has an **inner** interpreter, the dispatch
-loop that runs compiled words, and an **outer** interpreter, the part
-that reads text, looks each word up in the dictionary and either runs or
-compiles it. Everything in sections 2 to 7 is about the inner one.
-Section 8 is about the outer one.
+the systems below. When I say "0.47x", I mean the image.
 
 The systems have working names, used throughout:
 
@@ -54,39 +41,14 @@ The systems have working names, used throughout:
 | CPT16 | Compressed-Pointer Threading, 16-bit | the same, but the call target is computed rather than looked up |
 | CV8 | the 8 is the unit width; what CV stood for is not recorded in the project's files | the same idea again, in a byte stream |
 
-CV8 rather than "CPT8" because the step is not just a narrower unit.
-CPT16 is fixed-width - every operation is one 16-bit token, primitive or
-call. A byte cannot hold a call target, so CV8 gives that up: an opcode
-is one byte, a call is two or three. It is the first scheme here where
-operations are not all the same size.
-
-Every system named here builds, boots and passes the same 616-case test
-corpus. Each also cross-compiles the kernel, which is how the timings
-below are taken - the image it writes is always in the cell format, so
-what differs between systems is the code doing the writing, not the
-output. Six of them additionally emit their own encoding when compiling
-new definitions at run time; the other two are produced by translating a
-finished cell image with `tools/layout.py` - the CORE word set of the ANS
-Forth standard, 616 assertions about what each word must do. The tables
-come out of the repository, not out of a model.
+Every system here builds, boots, and passes the same 616-case test
+corpus - the CORE word set of the ANS Forth standard. Ratios are against
+RelF, so smaller is better, and each carries one standard error. Section
+9 describes how they were taken and why it matters more than it sounds.
 
     tools/build-stages.sh      # every engine and image, both cell widths
     tools/run-tests.sh         # the corpus on all of them
     tools/collect-results.sh   # every table below
-
-The headline benchmark is each system **cross-compiling the Forth
-kernel**: reading the kernel's Forth source and writing out a fresh
-image, which is the largest piece of real work any of them does. It
-exercises the text interpreter, the compiler and the dictionary at once,
-and it cannot favour an encoding by what it produces, because every
-system writes the same cell-format image; the code doing the writing is
-in the encoding under test. It doubles as the correctness check,
-described in section 9.
-
-Ratios are against RelF, the cell engine, so smaller is better. They
-carry one standard error, measured across several differently-laid-out
-builds of each engine. Section 9 says why that is done, and what it
-costs to skip.
 
 ---
 
@@ -137,6 +99,11 @@ The obvious first thought is that this is SOD32's problem, and SOD32
 already solved it by packing.
 
 ## 2. Attempt one: pack several operations into a cell
+
+One term before the attempts start. The **dispatch loop** is the part of
+the engine that reads the next operation and jumps to the code for it.
+Every scheme here is a different answer to "what does one operation look
+like in memory", and every one of them is paid for in that loop.
 
 SOD32's trick is that a cell holds six operations, not one. Nothing says
 a RelF cell has to hold one either. Two variants follow, and they are
@@ -324,8 +291,12 @@ remaining lever is the size of the unit - not how many operations share
 a cell, and not how cleverly the target is computed, but how many bytes
 one operation takes.
 
-So: a byte stream. One byte, one operation - if that operation is a
-primitive. Values under 0x80 are the 128 primitives.
+So: a byte stream. It is called CV8 and not "CPT8" because the step is
+more than a narrower unit - CPT16 is fixed-width, every operation one
+token, and a byte cannot hold a call target. CV8 gives that up, and is
+the first scheme here whose operations are not all the same size.
+
+One byte, one operation - if that operation is a primitive. Values under 0x80 are the 128 primitives.
 
 A call cannot fit in a byte, so it does not try. A byte of 0x80 or more
 means "this is a call", and the next bit down says how long it is: one
@@ -435,12 +406,7 @@ support is narrower and still worth knowing: on this path the last step
 was the cheap one, and it took five attempts to build somewhere to put
 it.
 
-Measured by bytes each saves on its own, small integers are worth 190,
-the hot kernel words 194 and immediate operands 111. Those do not add up
-to the 328 bytes the image actually moved: they overlap, and one more
-specialisation I left switched on - giving variables their own opcodes -
-makes the image 18 bytes *larger* while doing nothing measurable for
-speed.
+Not all five of them earn their place; section 10 has the accounting.
 
 ## 7. Attempt six: the last place cell width was still being paid
 
@@ -507,6 +473,12 @@ So the sequence ends on a trade rather than a win: 0.31x the image, 0.73
 the time on kernel compilation, and a measurably slower dictionary.
 
 ## 8. The premise I never checked
+
+A distinction that has been implicit until now becomes the whole point
+here. A Forth has an **inner** interpreter - the dispatch loop, running
+compiled words - and an **outer** interpreter, which reads text, looks
+each word up in the dictionary, and either runs it or compiles it.
+Everything above is about the inner one.
 
 One thing remained, and it is the part of this exercise I would most
 like other people to avoid repeating.
@@ -581,6 +553,21 @@ image must be byte-identical to the reference *before* the timing is
 recorded, so correctness and speed are the same run: a stage that is
 fast because it is quietly wrong fails the comparison that times it.
 
+The headline benchmark is each system **cross-compiling the Forth
+kernel**: reading the kernel's Forth source and writing out a fresh
+image, the largest piece of real work any of them does. It exercises the
+text interpreter, the compiler and the dictionary at once, and it cannot
+favour an encoding by what it produces, because every system writes the
+same cell-format image - what differs is the code doing the writing. It
+doubles as the correctness check: the image must be byte-identical to
+the reference before any timing is recorded, so a system that is fast
+because it is quietly wrong fails the comparison that times it.
+
+Six of the systems emit their own encoding when compiling new
+definitions at run time. The other two are produced by translating a
+finished cell image with `tools/layout.py`, which is why they can run
+everything in the image and still compile in cells.
+
 Three things about how the numbers were taken.
 
 **The variation is per-build.** Repeated runs of the same
@@ -616,12 +603,15 @@ Several earlier ones did not, and are not above.
   operating system underneath.
 - Nothing here measures pure execution reliably, since both
   microbenchmarks failed reproducibility.
-- The locals specialisation is inert in these images: `locals.4` is
-  loaded only into the shell image, so the kernel that every benchmark
-  runs has no locals to specialise. The variable specialisation is not
-  inert but is not a gain either - it costs 18 bytes and no measurable
-  time. Both were left switched on so the published figures match the
-  build the repository produces.
+- Not all five specialisations earn their place. Measured by what each
+  saves on its own: small integers 190 bytes, hot kernel words 194,
+  immediate operands 111. Those overlap, so they do not sum to the 328
+  the image actually moved. The other two are worse than that. Locals
+  are inert - `locals.4` is loaded only into the shell image, so the
+  kernel every benchmark runs has none to specialise - and the variable
+  specialisation makes the image 18 bytes *larger* for no measurable
+  time. Both were left switched on so the published figures match what
+  the repository builds.
 ### What token threading takes away
 
 The last limitation is the largest, and it is a direct consequence of
@@ -670,49 +660,33 @@ says is about priorities, not about wasted work.
 Seven things I would tell someone starting the same work.
 
 **Packing needs runs, and this kernel has not got them.** The mean run
-of consecutive packable primitives here is about 1.3, so a scheme that
-pays a tag byte to amortise over a run never gets to amortise. I would
-expect that of Forth code in general, because calls break runs and Forth
-is mostly calls - but I have measured one kernel, not a language.
+of packable primitives here is about 1.3, so a tag byte never gets to
+amortise. I would expect that of Forth generally - calls break runs, and
+Forth is mostly calls - but I measured one kernel, not a language.
 
-**Making the cell irrelevant worked; using it harder did not.** The
-first rejected attempt kept the cell and tried to fit more in. What
-worked was dropping the cell as the unit of encoding altogether, and
-accepting variable-length instructions to do it. That is one
-kernel's answer, and it follows from this kernel's call density rather
-than from anything about Forth as a language.
+**Making the cell irrelevant worked; using it harder did not.** What
+worked was dropping the cell as the unit of encoding and accepting
+variable-length instructions.
 
 **A table can cost more in the compiler than in the dispatch loop.**
-The word-number table looked like free indirection. Removing it and the bookkeeping it forced on the
-compiler was worth 34% between them - and nothing in this experiment
-separates the two, so I cannot tell you what the dispatch-loop half
-alone was worth.
+Removing the word-number table and the bookkeeping it forced on the
+compiler was worth 34%, and nothing here separates the two halves.
 
-**Ask early whether the common cases could have their own opcodes.** On
-x86 that step was worth three to four times the whole encoding sequence
-before it; on ARM the two were indistinguishable. Both helped on both,
-but the ratio between them did not travel - and several of those opcodes
-exist only because the byte stream left a one-byte hole to put them in,
-so they are not two independent things to rank.
+**Ask early whether the common cases could have their own opcodes.**
+Three to four times the whole encoding sequence on x86; indistinguishable
+from it on ARM. The ratio between them did not travel.
 
-**Look outside the instruction stream.** Changing the dictionary header
-took the image from 11,088 bytes to 7,609, and none of the encoding
-work had touched it. Before that change, three quarters of what
-cell width still cost - links, name padding, body padding - was
-dictionary structure rather than code. Afterwards the largest remaining
-item is the parameter fields of data words, which are cells because they
-have to be.
+**Look outside the instruction stream.** The dictionary header, which
+none of the encoding work had touched, was the largest single size
+result in the sequence.
 
-**Measure builds, not just runs.** Rebuilding the same source moves a
-result by five or ten percent, because code placement is worth that and
-is fixed for a given binary; repeating a run cannot see it. Build each
-thing several ways and quote the spread. On this project the widest such
-spread belonged to the *baseline*, which divides every ratio.
+**Measure builds, not just runs.** A rebuild moves a result five or ten
+percent and repeating a run cannot see it. The widest spread of all
+belonged to the baseline that divides every ratio.
 
 **Run the parent.** If your project was forked from something, measure
-against that something, not only against your own last build. It is the
-one check here that found a problem larger than everything the project
-set out to do.
+against that something. It is the one check here that found a problem
+larger than everything the project set out to do.
 
 ## References
 
