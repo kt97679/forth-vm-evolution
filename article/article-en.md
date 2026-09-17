@@ -86,7 +86,7 @@ Now count the bytes. Seven cells is 28 bytes on a 32-bit host and
 **56 on a 64-bit one**, for a definition that has not changed. The
 operation indices still fit in a byte; the cells holding them doubled.
 
-That is cell threading's bargain and it is a fixed one: one host cell
+That is RelF's bargain, and it is a fixed one: one host cell
 per *operation*, whatever the host. Across the kernel it took the image
 from 13,380 bytes to 24,320 for the same word set - the number from the
 opening, and the reason for everything that follows.
@@ -149,8 +149,9 @@ As a predictor of what packing would cost a real program, the number was
 useless.
 The old benchmark's own header said why, in advance: its streams were
 sized to run hot, so it measured decode cost with memory free, which it
-called the pessimistic case. Pessimistic by four times, as it turned
-out. The baseline it lost to was wrong too - token threading had been
+called the pessimistic case. It was: the benchmark isolated exactly the
+cost that real work dilutes, and then the isolated number was used to
+predict real work. The baseline it lost to was wrong too - token threading had been
 recorded at 0.985, faster than cell dispatch, from a benchmark running a
 32-megabyte stream against a 2-megabyte level-2 cache. It was measuring
 memory traffic.
@@ -209,21 +210,21 @@ costs much less when you are only running what is already there.
 On kernel compilation, though, it is 37% behind the cell engine it was
 meant to improve on, and no other stage is close.
 
-It cost more than the table lookup, too, and the reason is a direction
-problem. There are two tables, pointing opposite ways:
+It cost more than the table lookup, too. The engine's table is enough to
+*run* a program and not enough to *compile* one, and that asymmetry is
+the whole of the problem. There end up being two tables, pointing
+opposite ways:
 
     the engine's      number -> address    built at load, in C memory
     the compiler's    address -> number    built by the image, on the heap
 
-The engine's is the one that makes the encoding work: token 256+n, look
-up entry n, jump there. That is enough to *run* a program. It is not
-enough to *compile* one. A compiler that has just parsed a name has
-found the word's address - that is what a dictionary search returns -
-and now needs the number to emit, which is the opposite direction. The
-engine's table cannot help even in principle: it is indexed by number,
-and it lives in the engine's own memory, which the Forth program has no
-way to read. So the image builds and maintains a second, inverted copy
-of it, and binary-searches that on every call it compiles. The table is also sized at load and never grows, so a
+Running needs the first: token 256+n, look up entry n, jump there.
+Compiling needs the second, because a dictionary search hands the
+compiler an *address* and the instruction it must emit holds a *number*.
+The engine's table cannot serve: it is indexed the wrong way round, and
+it lives in the engine's own memory, which a Forth program has no way to
+read. So the image builds and maintains an inverted copy of it, and
+binary-searches that on every call it compiles. The table is also sized at load and never grows, so a
 word defined afterwards has no number at all. That needed an escape
 opcode carrying a full address.
 
@@ -244,8 +245,8 @@ one line of Forth.
 
 If the table is the problem, compute the address instead of looking it
 up. Lay the words out so that a target is `base + (value << shift)`,
-which is what HotSpot does for object references and why this one is
-called CPT16 - compressed-pointer threading, 16-bit unit. No
+the same base-plus-scaled-index idea HotSpot uses for object references,
+and the reason this one is called CPT16 - compressed-pointer threading, 16-bit unit. No
 word-address table, so no second dependent load on the way to a call,
 and the compiler's job becomes one line:
 
@@ -273,7 +274,8 @@ What that measures is a sum, and it is worth being precise about which.
 CPT16 removes two things at once - the table lookup in the dispatch
 loop, and the compiler's search from address back to word number. The
 gap between SOD16 and CPT16 is 0.343 at 8-byte cells and 0.348 at
-4-byte: about 34%, and that is what the two cost together.
+4-byte: about 34%. That is the measured cost of SOD16's table-based design on
+kernel compilation, not the cost of a lookup.
 
 What the sum does show is that a 16-bit unit is not itself a problem:
 SOD16 and CPT16 use the same width, and one of them is level with the
@@ -303,9 +305,11 @@ means "this is a call", and the next bit down says how long it is: one
 more byte after it, giving a 14-bit offset, or two more, giving 22 bits.
 Operations are no longer all the same size.
 
-The offset is scaled, not absolute - it counts cells from the image
-base, not bytes - so at this stage a call can still only name every
-eighth address, and bodies are still padded to suit. Section 7 is about
+One thing has not moved, and it matters later: the instructions are
+byte-sized now, but their targets are still on the old cell grid. The
+offset a call carries is scaled - it counts cells from the image base,
+not bytes - so a call can still only name every eighth address, and
+bodies are still padded so that they land on one. Section 7 is about
 removing that.
 
 For the dispatch loop that is a compare and a shift, no tag byte, and no
@@ -548,19 +552,18 @@ x86-64 virtual machine, a 16-core x86-64 laptop and a 4-core ARMv7
 board - but only two of them are quoted here. The VM is the container
 this work was done in; it is too noisy to resolve anything and its
 figures are not in `results/`. Every number in this article comes from
-the laptop or the board. Every stage cross-compiles the kernel and the output
-image must be byte-identical to the reference *before* the timing is
-recorded, so correctness and speed are the same run: a stage that is
-fast because it is quietly wrong fails the comparison that times it.
+the laptop or the board.
 
 The headline benchmark is each system **cross-compiling the Forth
 kernel**: reading the kernel's Forth source and writing out a fresh
 image, the largest piece of real work any of them does. It exercises the
 text interpreter, the compiler and the dictionary at once, and it cannot
 favour an encoding by what it produces, because every system writes the
-same cell-format image - what differs is the code doing the writing. It
-doubles as the correctness check: the image must be byte-identical to
-the reference before any timing is recorded, so a system that is fast
+same cell-format image - what differs is the code doing the writing.
+
+It doubles as the correctness check. The image produced must be
+byte-identical to the reference before any timing is recorded, so
+correctness and speed come out of the same run and a system that is fast
 because it is quietly wrong fails the comparison that times it.
 
 Six of the systems emit their own encoding when compiling new
@@ -593,8 +596,8 @@ over a handful of opcodes is dominated by indirect-branch prediction and
 code placement, which is exactly what varies between builds - so it
 the build is what it measures.
 
-Every conclusion above survived being measured twice on both machines.
-Several earlier ones did not, and are not above.
+Every conclusion above survived being measured twice on both
+machines.
 
 ## 10. Not measured
 
@@ -622,8 +625,9 @@ that runs it, so a program can invent a new *kind* of word - a new
 behaviour, not just a new definition - by writing a new code field.
 Several classic Forth techniques rest on that.
 
-Under every token scheme here, a call names a word and nothing else.
-`DOES>` remains, because it was given its own escape, but it is the only
+In SOD16 and CPT16 a call names a word, and in CV8 it names an address
+that some word begins at. Neither can name a behaviour. `DOES>` survives
+only because it was given an opcode of its own, and it is the only
 extension point left: a new behaviour type cannot be added from Forth
 any more, only from C. That is the strongest architectural criticism
 this design has had, it is a direct consequence of the thing that made
@@ -659,30 +663,35 @@ says is about priorities, not about wasted work.
 
 Seven things I would tell someone starting the same work.
 
-**Packing needs runs, and this kernel has not got them.** The mean run
-of packable primitives here is about 1.3, so a tag byte never gets to
-amortise. I would expect that of Forth generally - calls break runs, and
-Forth is mostly calls - but I measured one kernel, not a language.
+**A tag-based packing scheme needs long runs of packable operations, and
+this kernel has not got them.** The mean run here is about 1.3, so the
+tag byte never gets to amortise. I would expect that of Forth generally,
+since calls break runs and Forth is mostly calls, but one kernel is not
+a language.
 
-**Making the cell irrelevant worked; using it harder did not.** What
-worked was dropping the cell as the unit of encoding and accepting
-variable-length instructions.
+**Using the cell harder failed; dropping it as the unit of encoding
+worked.** The price was variable-length instructions, which is a real
+cost in decoder complexity and was worth paying here.
 
-**A table can cost more in the compiler than in the dispatch loop.**
-Removing the word-number table and the bookkeeping it forced on the
-compiler was worth 34%, and nothing here separates the two halves.
+**A table imposes costs outside the dispatch loop.** Removing the
+word-number table and the bookkeeping it forced on the compiler was
+worth 34% between them. Which of the two mattered more, I did not
+measure.
 
-**Ask early whether the common cases could have their own opcodes.**
-Three to four times the whole encoding sequence on x86; indistinguishable
-from it on ARM. The ratio between them did not travel.
+**Ask early whether the common cases could have their own opcodes.** On
+the path measured here, adding them improved kernel compilation three to
+four times as much as the cell-to-CV8 transition before it on x86, and
+about equally on ARM. I never tried them in any other order, so this
+compares two steps in one sequence.
 
 **Look outside the instruction stream.** The dictionary header, which
 none of the encoding work had touched, was the largest single size
 result in the sequence.
 
-**Measure builds, not just runs.** A rebuild moves a result five or ten
-percent and repeating a run cannot see it. The widest spread of all
-belonged to the baseline that divides every ratio.
+**If code placement affects your benchmark, account for build-to-build
+variation.** Here a rebuild moved a result five or ten percent and
+repeating a run could not see it. The widest spread of all belonged to
+the baseline that divides every ratio.
 
 **Run the parent.** If your project was forked from something, measure
 against that something. It is the one check here that found a problem
