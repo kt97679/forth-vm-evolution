@@ -71,7 +71,7 @@ The systems have working names, used throughout:
 | RelF | Relative Forth | direct threading with relative addresses: one host cell per operation, a call holding the distance to its target and a primitive its opcode |
 | SOD16 | the ancestor's name, unit halved | one 16-bit token per operation, calls looked up in a table |
 | CPT16 | Compressed-Pointer Threading, 16-bit | the same, but the call target is computed rather than looked up |
-| CV8 | the 8 is the unit width; what CV stood for is not recorded in the project's files | the same idea again, in a byte stream |
+| CV8 | Compressed-pointer, Variable-length, 8-bit units | the same idea again, in a byte stream |
 
 Every system here builds, boots, and passes the same 616-case test
 corpus - the CORE word set of the ANS Forth standard. Ratios are against
@@ -335,10 +335,13 @@ remaining lever is the size of the unit - not how many operations share
 a cell, and not how cleverly the target is computed, but how many bytes
 one operation takes.
 
-So: a byte stream. It is called CV8 and not "CPT8" because the step is
-more than a narrower unit - CPT16 is fixed-width, every operation one
-token, and a byte cannot hold a call target. CV8 gives that up, and is
-the first scheme here whose operations are not all the same size.
+So: a byte stream. The name says why it is not simply "CPT8":
+compressed-pointer, **variable-length**, 8-bit units. The compressed
+pointer is inherited from CPT16 and the unit narrows from 16 bits to 8,
+but the middle word is the real change. CPT16 is fixed-width - every
+operation is one token, primitive or call. A byte cannot hold a call
+target, so CV8 gives up fixed width, and is the first scheme here whose
+operations are not all the same size.
 
 One byte, one operation - if that operation is a primitive. Values under 0x80 are the 128 primitives.
 

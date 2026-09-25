@@ -338,6 +338,11 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
  *  BITMAP, so an engine can tell what an image needs instead of the
  *  widths being implied by the magic string. Widening a field in future
  *  sets a bit here rather than breaking the format.  */
+/*  CV8: Compressed-pointer, Variable-length, 8-bit units. The compressed
+ *  pointer is CPT16's - a call target is base + (v << SCALE) - the unit
+ *  narrows from 16 bits to 8, and the middle term is the difference that
+ *  matters: unlike CPT16, an operation is not one fixed-width token. An
+ *  opcode is one byte, a call two or three.  */
 #define CV8_VERSION 1
 #define F_VARCALL 0x01   /* calls are 2 or 3 bytes                      */
 #define F_VARSLOT 0x02   /* slot operands are 2 or 3 bytes              */

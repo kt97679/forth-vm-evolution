@@ -17,7 +17,7 @@ the kernel.
 | `s1-sod16` | SOD16 | one 16-bit token per operation; `>=256` indexes a word table built at load | yes |
 | `s2-cpt16` | CPT16 | delete the table: a call target is `base + (v << S)` | yes |
 | `s3-cpt16f` | CPT16 + folding | fold `prim;EXIT` into single opcodes; inline data prims | yes |
-| `s4-cv8` | CV8 | narrow the unit from 16 bits to one byte; calls become 2-3 bytes | yes |
+| `s4-cv8` | CV8 - Compressed-pointer, Variable-length, 8-bit units | narrow the unit from 16 bits to one byte; calls become 2-3 bytes | yes |
 | `s5-cv8spec` | CV8 + specialisations | tiny kernel words, small integers and immediate operands as opcodes (see the note below on locals and variables) | yes |
 | `s6-cv8b` | CV8 + byte headers | dictionary link becomes a 1-3 byte backward-tagged distance; names and code bodies stop being padded; call scale drops to 0 | yes |
 
