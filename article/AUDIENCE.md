@@ -317,3 +317,122 @@ given are multi-part series where each piece is self-contained. If our
 length becomes the problem, the split that would survive this test is
 the encoding ladder as one article and the measurement methodology plus
 the twenty-year regression as another. Splitting mid-ladder would not.
+
+---
+
+# English-language venues: Hacker News, Lobsters, and the craft advice
+
+ForthHub is the primary target, but the English version can also go to
+Hacker News, Lobsters and r/Forth. Those have their own rules, and the
+best craft advice I found is Michael Lynch's "How to Write Blog Posts
+that Developers Read" (Refactoring English) - nine years of software
+blogging, 30+ Hacker News front pages. Four of his points land directly
+on this article.
+
+## "Get to the point" - and we do not
+
+His diagnosis of the commonest failure is uncomfortably close to home:
+
+> the author has some valuable insight to share, but they squander their
+> first seven paragraphs on the history of functional programming and a
+> trip they took to Bell Labs in 1973.
+
+His rule: **the title plus the first three sentences must answer two
+questions** - is this written for someone like me, and how do I benefit?
+"If you find yourself in paragraph two and you haven't answered either
+question, you're in trouble."
+
+Ours answers the first (the title says Forth virtual machine, six
+attempts, two failures). It does not answer the second until section 11.
+A reader learns *what happened to me in 2004* before learning *what they
+get*. The fix is one sentence in the opening: what this article will
+tell them that they cannot get elsewhere - measured costs for six
+encoding schemes, including the two that failed and why.
+
+This is the same finding as the Habr cut, arrived at independently: the
+opening is too long and too much about us.
+
+## "Think one degree bigger"
+
+The audience is Forth implementers. One degree out is anyone who has
+written an interpreter or a VM; two degrees is systems programmers who
+care about code density - firmware, embedded, bytecode formats. Lynch's
+point is that the widening usually costs "an extra sentence or two early
+in the article to introduce a concept or replace jargon".
+
+We have done some of this - cell, threading, dispatch loop, inner and
+outer interpreter are all defined now. The remaining jargon wall is in
+sections 3 to 5. Worth one pass asking, for each paragraph: would
+someone who has written a bytecode VM but never touched Forth follow
+this?
+
+## "Plan the route to your readers"
+
+Ask before publishing, not after: how does anyone find this?
+
+- **ForthHub discussion** - the natural home, and the one audience
+  guaranteed to care. Post there first.
+- **Hacker News** - friendly to VMs, compilers, retro-computing and
+  "surprising benchmark" stories. The Amplify study of front-page
+  stories found the strongest angles are "a technical lesson learned
+  while building something", "a surprising failure, tradeoff, benchmark,
+  or teardown", and "a clear argument that invites informed
+  disagreement". Ours is all three. But HN is a lottery - "the same
+  story can get 1 upvote or 400" - and Lynch notes one blogger whose top
+  three posts of the year all flopped on first submission and only
+  succeeded on the second or third, months later. **Resubmission is
+  normal, not shameful.**
+- **Lobsters** - narrower and more consistent than HN, invite-only, with
+  public moderation logs and strong norms against drive-by
+  self-promotion. Tags `compilers`, `plt`, `performance`, `retro`. A
+  post that stands on its own technically does well; anything that looks
+  like traffic-seeking does not.
+- **r/Forth** - small but exactly on topic. Check it accepts links.
+
+Give the post more than one chance. Betting everything on one
+submission to one site is how good articles disappear.
+
+## "Show more pictures" - our worst failing
+
+> The biggest bang-for-your-buck change you can make to a blog post is
+> adding pictures.
+
+Counted, this article contains **zero images**. Fourteen headings, 32
+table rows, five code blocks - and nothing visual at all.
+
+He is explicit that quality matters less than presence: free stock
+photos and AI images "are better than nothing, but they're worse than
+anything else, including terrible MS Paint drawings". Excalidraw is
+named as the free tool he uses for his own diagrams.
+
+Five things in this article are already diagrams pretending to be
+monospace text, and would be better drawn:
+
+1. `COUNT` as seven cells, with the low bit marked - section 1
+2. the same word in three encodings, 28 / 14 / 5 bytes, to scale
+3. the two word-number tables pointing opposite ways - section 3
+4. the byte-granular link, read backwards from the name - section 7
+5. image size across the ladder, 24,320 down to 7,609
+
+Number 5 is the one a skimmer would stop on, and it is currently a
+column of numbers in a table.
+
+## "Accommodate skimmers"
+
+His test: strip everything but headings and images, and ask whether what
+remains makes you want to read.
+
+Ours survives this better than most, because the headings carry the
+narrative - "Attempt one: pack several operations into a cell",
+"Attempt two: a 16-bit token through a word table", "The premise I never
+checked". A skimmer sees the shape of the story.
+
+But with no images, the skim is headings only, against page after page
+of dense prose. "The worst thing for a skimmer to see is a wall of
+text."
+
+## The one thing all three sources agree on
+
+Habr's moderators, the Habr meta-article, and Lynch independently arrive
+at the same two instructions: **get to the point faster, and show
+something visual.** We have done neither, and both are cheap.
