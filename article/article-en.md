@@ -14,8 +14,26 @@ Everything here regenerates from the repository: nine systems, all
 passing the same 616-case ANS CORE corpus, and every table below
 produced by the scripts named at the end.
 
-![The same definition in three encodings, to
-scale](img/count-three-encodings.svg)
+```
+: COUNT   DUP 1 + SWAP C@ ;        4-byte cells, from the real images
+
+cell     25  0  0  0 |  9  0  0  0 |  1  0  0  0 | 93  0  0  0 | ...
+         '--- DUP ---'  '--- LIT ---'  '---- 1 ----'  '---- + ----'
+         7 cells x 4 bytes ....................................  28 bytes
+
+token     6  0 |  2  0 |  1  0 | 23  0 |  7  0 | 10  0 |  1  0
+          DUP     LIT      1       +      SWAP     C@     EXIT
+         7 tokens x 2 bytes ...................................  14 bytes
+
+CV8       6 | 120   1 |  7 | 79
+          DUP    +1     SWAP  C@;EXIT ...........................  5 bytes
+
+drawn to scale, one # per byte:
+
+cell     ############################
+token    ##############
+CV8      #####
+```
 
 In 2004, out of curiosity rather than need, I forked L.C. Benschop's
 SOD32 - the Stack Oriented Design, a 32-bit virtual machine with a Forth
@@ -228,7 +246,19 @@ It cost more than the table lookup, too. The engine's table is enough to
 *run* a program and not enough to *compile* one, and that asymmetry is
 the whole of the problem.
 
-![The two tables point opposite ways](img/two-tables.svg)
+```
+        the engine's table                 the compiler's table
+        number  ->  address                address  ->  number
+   built at load, in C memory        built by the image, on the heap
+   enough to RUN a program           needed to COMPILE one
+                    \                        /
+                     '--- opposite ways ----'
+
+A dictionary search hands the compiler an ADDRESS.
+The instruction it must emit holds a NUMBER.
+The engine's table is indexed the wrong way round - and lives in
+memory a Forth program cannot read.
+```
 
 Running needs the first: token 256+n, look up entry n, jump there.
 Compiling needs the second, because a dictionary search hands the
@@ -344,19 +374,12 @@ where a CV8 call carries an offset to a location.
                            0.469x of cell threading
 
 The first scheme in the sequence that beat the cell engine on both size
-and speed at once. Here is the same definition in each encoding, dumped from the real
-images at 4-byte cells by `tools/show-word.sh`:
-
-```
-: COUNT   DUP 1 + SWAP C@ ;
-
-cell     25 9 1 93 29 41 5      7 cells x 4  = 28 bytes
-token    6 2 1 23 7 10 1        7 tokens x 2 = 14 bytes
-CV8      6 120 1 7 79                          5 bytes
-```
-
-`120` is an add-immediate opcode standing for "push 1, then add", and
-`79` is a single opcode meaning "`C@`, then return".
+and speed at once. The figure at the top of this article is now readable
+in full: `COUNT` as 28 bytes of cells, 14 of tokens and 5 of CV8, all
+three dumped from the real images by `tools/show-word.sh`. In the CV8
+row, `120` is an add-immediate opcode standing for "push 1, then add",
+and `79` is a single opcode meaning "`C@`, then return" - the two tricks
+section 6 is about.
 
 ## 6. Attempt five: give the common cases their own opcodes
 
@@ -377,7 +400,21 @@ decided at compile time. Small integers get one each, so do the hottest kernel w
 and so does an operand small enough to travel inside the instruction
 rather than after it - `1 +` becoming a single add-immediate.
 
-![Image size across the whole ladder](img/image-size-ladder.svg)
+```
+Forth image, 8-byte cells                              bytes  vs cell
+
+cell (RelF)           ##############################  24,320  1.000
+PACK4                 ##########################      21,296  0.876
+PACK8                 ##########################      20,848  0.857
+SOD16                 ################                12,864  0.529
+CPT16                 ################                12,864  0.529
+CPT16 + folding       ################                12,696  0.522
+CV8                   ##############                  11,416  0.469
+CV8 + spec            ##############                  11,088  0.456
+CV8 + byte headers    #########                        7,609  0.313
+
+The last row is the dictionary header, not the instruction encoding.
+```
 
 | stage | kernel compile (AMD, 8-byte) | image | vs cell |
 |---|---|---|---|
