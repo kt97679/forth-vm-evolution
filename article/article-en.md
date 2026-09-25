@@ -1,23 +1,37 @@
 # Making a Forth virtual machine smaller: six attempts, two of which failed
 
+This is what six ways of encoding a Forth virtual machine actually cost,
+measured on working systems rather than argued from first principles.
+Two of the six failed, and those are the two worth your time: one failed
+for a reason no size model could have predicted, and the other was
+rejected years ago on a benchmark that turned out to be useless. If you
+have ever wondered whether packing several operations into a machine
+word is worth it, section 2 has the number.
+
+The rest is how I got there, in the order it happened.
+
+Everything here regenerates from the repository: nine systems, all
+passing the same 616-case ANS CORE corpus, and every table below
+produced by the scripts named at the end.
+
+![The same definition in three encodings, to
+scale](img/count-three-encodings.svg)
+
 In 2004, out of curiosity rather than need, I forked L.C. Benschop's
 SOD32 - the Stack Oriented Design, a 32-bit virtual machine with a Forth
 on top - threw away its packed instruction format, and replaced it with
 one relative offset per cell. (A cell is the machine word a Forth is
-built on: four bytes on a 32-bit host, eight on a 64-bit one.) I called the result RelF, for Relative Forth. The point was
-speed: following one offset is less work than
-unpacking six small fields out of a word before you can use any of
-them. It was 32-bit only, and it sat there working. Whether it was actually faster than what it forked
-from, I did not check at the time - a detail that comes back in section
-8.
+built on: four bytes on a 32-bit host, eight on a 64-bit one.) I called
+the result RelF, for Relative Forth. The point was speed: following one
+offset is less work than unpacking six small fields before you can use
+any of them. It was 32-bit only, and it sat there working. Whether it
+was actually faster than what it forked from, I did not check at the
+time - a detail that comes back in section 8.
 
 Recently I came back to it and built it for 64-bit. The deal changed:
 the same Forth, the same words, in an image that had gone from 13,380
 bytes to 24,320. One relative offset per cell means one *cell* per
 operation, and the cell had just doubled.
-
-What follows is what I tried, in the order I tried it, including the two
-attempts that did not work and why.
 
 Some vocabulary. A **cell** is the machine word a Forth is built on -
 four bytes on a 32-bit host, eight on a 64-bit one. **Threading** is how
@@ -212,11 +226,9 @@ meant to improve on, and no other stage is close.
 
 It cost more than the table lookup, too. The engine's table is enough to
 *run* a program and not enough to *compile* one, and that asymmetry is
-the whole of the problem. There end up being two tables, pointing
-opposite ways:
+the whole of the problem.
 
-    the engine's      number -> address    built at load, in C memory
-    the compiler's    address -> number    built by the image, on the heap
+![The two tables point opposite ways](img/two-tables.svg)
 
 Running needs the first: token 256+n, look up entry n, jump there.
 Compiling needs the second, because a dictionary search hands the
@@ -364,6 +376,8 @@ rewrites opcodes at run time from observed types. Everything here is
 decided at compile time. Small integers get one each, so do the hottest kernel words,
 and so does an operand small enough to travel inside the instruction
 rather than after it - `1 +` becoming a single add-immediate.
+
+![Image size across the whole ladder](img/image-size-ladder.svg)
 
 | stage | kernel compile (AMD, 8-byte) | image | vs cell |
 |---|---|---|---|

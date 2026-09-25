@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" font-family="DejaVu Sans, Verdana, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="12" y="26" font-size="17" font-weight="bold">Forth image, 8-byte cells</text>
+<text x="12" y="48" font-size="13" fill="#555">identical word set at every stage; the difference is the encoding</text>
+<text x="140" y="84" font-size="13" text-anchor="end">cell (RelF)</text>
+<rect x="150" y="66" width="520.0" height="26" fill="#b9c6d8" stroke="#44506a" stroke-width="1"/>
+<text x="678.0" y="84" font-size="12" fill="#222">24,320  (1.00x)</text>
+<text x="140" y="115" font-size="13" text-anchor="end">PACK4</text>
+<rect x="150" y="97" width="455.3" height="26" fill="#b9c6d8" stroke="#44506a" stroke-width="1"/>
+<text x="613.3" y="115" font-size="12" fill="#222">21,296  (0.88x)</text>
+<text x="140" y="146" font-size="13" text-anchor="end">PACK8</text>
+<rect x="150" y="128" width="445.8" height="26" fill="#b9c6d8" stroke="#44506a" stroke-width="1"/>
+<text x="603.8" y="146" font-size="12" fill="#222">20,848  (0.86x)</text>
+<text x="140" y="177" font-size="13" text-anchor="end">SOD16</text>
+<rect x="150" y="159" width="275.1" height="26" fill="#cfe3cf" stroke="#44506a" stroke-width="1"/>
+<text x="433.1" y="177" font-size="12" fill="#222">12,864  (0.53x)</text>
+<text x="140" y="208" font-size="13" text-anchor="end">CPT16</text>
+<rect x="150" y="190" width="275.1" height="26" fill="#cfe3cf" stroke="#44506a" stroke-width="1"/>
+<text x="433.1" y="208" font-size="12" fill="#222">12,864  (0.53x)</text>
+<text x="140" y="239" font-size="13" text-anchor="end">CPT16+fold</text>
+<rect x="150" y="221" width="271.5" height="26" fill="#cfe3cf" stroke="#44506a" stroke-width="1"/>
+<text x="429.5" y="239" font-size="12" fill="#222">12,696  (0.52x)</text>
+<text x="140" y="270" font-size="13" text-anchor="end">CV8</text>
+<rect x="150" y="252" width="244.1" height="26" fill="#f0d9b8" stroke="#44506a" stroke-width="1"/>
+<text x="402.1" y="270" font-size="12" fill="#222">11,416  (0.47x)</text>
+<text x="140" y="301" font-size="13" text-anchor="end">CV8+spec</text>
+<rect x="150" y="283" width="237.1" height="26" fill="#f0d9b8" stroke="#44506a" stroke-width="1"/>
+<text x="395.1" y="301" font-size="12" fill="#222">11,088  (0.46x)</text>
+<text x="140" y="332" font-size="13" text-anchor="end">CV8+byte headers</text>
+<rect x="150" y="314" width="162.7" height="26" fill="#e8b4a0" stroke="#44506a" stroke-width="1"/>
+<text x="320.7" y="332" font-size="12" fill="#222">7,609  (0.31x)</text>
+<text x="12" y="348" font-size="12" fill="#555">The last row is the dictionary header, not the instruction encoding.</text>
+</svg>

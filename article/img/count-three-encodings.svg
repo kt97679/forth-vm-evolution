@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" font-family="DejaVu Sans, Verdana, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="12" y="26" font-size="17" font-weight="bold">: COUNT   DUP 1 + SWAP C@ ;   - the same definition, three encodings</text>
+<text x="12" y="48" font-size="13" fill="#555">drawn to scale, 4-byte cells, dumped from the real images</text>
+<text x="12" y="98" font-size="15" font-weight="bold">cell</text>
+<rect x="130" y="78" width="96" height="34" fill="#c8d8ea" stroke="#44506a" stroke-width="1.2"/>
+<text x="178" y="100" font-size="11" text-anchor="middle" fill="#1d2430">DUP</text>
+<rect x="226" y="78" width="96" height="34" fill="#c8d8ea" stroke="#44506a" stroke-width="1.2"/>
+<text x="274" y="100" font-size="11" text-anchor="middle" fill="#1d2430">LIT</text>
+<rect x="322" y="78" width="96" height="34" fill="#c8d8ea" stroke="#44506a" stroke-width="1.2"/>
+<text x="370" y="100" font-size="11" text-anchor="middle" fill="#1d2430">1</text>
+<rect x="418" y="78" width="96" height="34" fill="#c8d8ea" stroke="#44506a" stroke-width="1.2"/>
+<text x="466" y="100" font-size="11" text-anchor="middle" fill="#1d2430">+</text>
+<rect x="514" y="78" width="96" height="34" fill="#c8d8ea" stroke="#44506a" stroke-width="1.2"/>
+<text x="562" y="100" font-size="11" text-anchor="middle" fill="#1d2430">SWAP</text>
+<rect x="610" y="78" width="96" height="34" fill="#c8d8ea" stroke="#44506a" stroke-width="1.2"/>
+<text x="658" y="100" font-size="11" text-anchor="middle" fill="#1d2430">C@</text>
+<rect x="706" y="78" width="96" height="34" fill="#c8d8ea" stroke="#44506a" stroke-width="1.2"/>
+<text x="754" y="100" font-size="11" text-anchor="middle" fill="#1d2430">EXIT</text>
+<text x="814" y="100" font-size="13" fill="#333">7 cells x 4  =  28 bytes</text>
+<text x="12" y="178" font-size="15" font-weight="bold">token</text>
+<rect x="130" y="158" width="48" height="34" fill="#cfe3cf" stroke="#44506a" stroke-width="1.2"/>
+<text x="154" y="180" font-size="11" text-anchor="middle" fill="#1d2430">DUP</text>
+<rect x="178" y="158" width="48" height="34" fill="#cfe3cf" stroke="#44506a" stroke-width="1.2"/>
+<text x="202" y="180" font-size="11" text-anchor="middle" fill="#1d2430">LIT</text>
+<rect x="226" y="158" width="48" height="34" fill="#cfe3cf" stroke="#44506a" stroke-width="1.2"/>
+<text x="250" y="180" font-size="11" text-anchor="middle" fill="#1d2430">1</text>
+<rect x="274" y="158" width="48" height="34" fill="#cfe3cf" stroke="#44506a" stroke-width="1.2"/>
+<text x="298" y="180" font-size="11" text-anchor="middle" fill="#1d2430">+</text>
+<rect x="322" y="158" width="48" height="34" fill="#cfe3cf" stroke="#44506a" stroke-width="1.2"/>
+<text x="346" y="180" font-size="11" text-anchor="middle" fill="#1d2430">SWAP</text>
+<rect x="370" y="158" width="48" height="34" fill="#cfe3cf" stroke="#44506a" stroke-width="1.2"/>
+<text x="394" y="180" font-size="11" text-anchor="middle" fill="#1d2430">C@</text>
+<rect x="418" y="158" width="48" height="34" fill="#cfe3cf" stroke="#44506a" stroke-width="1.2"/>
+<text x="442" y="180" font-size="11" text-anchor="middle" fill="#1d2430">EXIT</text>
+<text x="478" y="180" font-size="13" fill="#333">7 tokens x 2  =  14 bytes</text>
+<text x="12" y="258" font-size="15" font-weight="bold">CV8</text>
+<rect x="130" y="238" width="24" height="34" fill="#f0d9b8" stroke="#44506a" stroke-width="1.2"/>
+<text x="142" y="260" font-size="11" text-anchor="middle" fill="#1d2430">DUP</text>
+<rect x="154" y="238" width="48" height="34" fill="#f0d9b8" stroke="#44506a" stroke-width="1.2"/>
+<text x="178" y="260" font-size="11" text-anchor="middle" fill="#1d2430">+1</text>
+<rect x="202" y="238" width="24" height="34" fill="#f0d9b8" stroke="#44506a" stroke-width="1.2"/>
+<text x="214" y="260" font-size="11" text-anchor="middle" fill="#1d2430">SWAP</text>
+<rect x="226" y="238" width="24" height="34" fill="#f0d9b8" stroke="#44506a" stroke-width="1.2"/>
+<text x="238" y="260" font-size="11" text-anchor="middle" fill="#1d2430">C@;EXIT</text>
+<text x="262" y="260" font-size="13" fill="#333">5 bytes</text>
+<text x="12" y="288" font-size="12" fill="#555">In the CV8 row, "+1" is one add-immediate opcode and "C@;EXIT" is one folded opcode.</text>
+</svg>

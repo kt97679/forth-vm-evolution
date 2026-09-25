@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" font-family="DejaVu Sans, Verdana, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="12" y="26" font-size="17" font-weight="bold">SOD16 needs two tables, pointing opposite ways</text>
+<rect x="40" y="60" width="290" height="70" rx="6" fill="#cfe3cf" stroke="#44506a"/>
+<text x="185" y="86" font-size="14" text-anchor="middle" font-weight="bold">the engine's table</text>
+<text x="185" y="108" font-size="13" text-anchor="middle">number  -&gt;  address</text>
+<text x="185" y="150" font-size="12" text-anchor="middle" fill="#555">built at load, in C memory</text>
+<text x="185" y="170" font-size="12" text-anchor="middle" fill="#555">enough to RUN a program</text>
+<rect x="430" y="60" width="290" height="70" rx="6" fill="#f0d9b8" stroke="#44506a"/>
+<text x="575" y="86" font-size="14" text-anchor="middle" font-weight="bold">the compiler's table</text>
+<text x="575" y="108" font-size="13" text-anchor="middle">address  -&gt;  number</text>
+<text x="575" y="150" font-size="12" text-anchor="middle" fill="#555">built by the image, on the heap</text>
+<text x="575" y="170" font-size="12" text-anchor="middle" fill="#555">needed to COMPILE one</text>
+<text x="380" y="100" font-size="20" text-anchor="middle">&#8596;</text>
+<text x="12" y="216" font-size="13" fill="#333">A dictionary search hands the compiler an ADDRESS; the instruction it must emit holds a NUMBER.</text>
+<text x="12" y="238" font-size="13" fill="#333">The engine's table is indexed the wrong way round, and a Forth program cannot read it anyway.</text>
+</svg>
