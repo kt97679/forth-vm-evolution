@@ -73,3 +73,130 @@ designs rejected on a benchmark that was four times too harsh, a
 regression inherited by omission and not noticed for two hundred
 iterations, a test suite that passed while the compiler was broken.
 That should be the spine, not a footnote at the end.
+
+---
+
+# Habr, from reading it rather than guessing
+
+Researched by reading Habr's own docs, the monthly "best articles"
+round-ups, a meta-article on what makes a good Habr piece, and the
+comment threads under a highly-rated deep-technical article. Sources and
+figures below are from those, not from intuition.
+
+## Views and rating are different currencies, and we want rating
+
+The monthly round-ups filter on "more than 30,000 views OR rating above
++30" - two separate criteria, because they do not coincide. One author
+in the July 2025 round-up appears with high view counts and a *negative*
+rating. Clickbait buys views; the community's approval is a separate
+thing and is what survives.
+
+So: optimise for rating, bookmarks and comments, not for views. A
+practical consequence is that the title must be exactly what the article
+is. Habr's own commentary on the subject calls a strong headline
+unconnected to the content "обман", and one whose content is empty and
+holywar-ish "паразит".
+
+## A hard, long, technical article can do very well
+
+The counter-example that matters for us. "Оптимизация кода: процессор"
+is marked **Сложный**, 18 minutes' reading, and scored **+97 (102 up, 5
+down), 123K views, 718 bookmarks, 142 comments**.
+
+That contradicts the general advice, also from Habr, that read articles
+run to 10 minutes and rarely past 15 - which is real, but is advice for
+the broad-audience category. The expert category plays by different
+rules: depth is the product.
+
+Note the ratio though: **718 bookmarks against 142 comments**. For a
+technical reference piece, bookmarks are the signal. People saved it to
+send to others - one commenter said outright he would use it instead of
+writing his own explanations for juniors. Write something that can be
+*re-sent*, and the numbers follow.
+
+Our article is longer than 18 minutes. That is a risk taken knowingly,
+not an oversight.
+
+## What the comments actually reward
+
+Read a comment thread under a deep technical piece and the pattern is
+consistent.
+
+**The standard positive comment is "спасибо за статью" plus a specific
+correction or addition.** Readers add `restrict` from C99, point to
+Agner Fog, supply the LFSR trick with `sbc eax,eax` on Z80. They are
+co-authoring. Leave obvious room for that - the "Not measured" section
+is exactly the right bait.
+
+**They will run your examples.** Multiple commenters pasted the
+article's code into godbolt mid-argument and reported back. One
+disproved a claim that way. Our whole repository is built for this and
+we should say so in the first screen, not in the references.
+
+**They check your sources.** The author paraphrased a Carnegie Mellon
+textbook; a commenter found the actual passage and quoted it back to
+show the paraphrase was wrong ("Большинство компиляторов НЕ ПЫТАЮТСЯ
+определить..." against the article's "тяжело определить"). Do not
+paraphrase anything not verified.
+
+**Missing versions are a complaint.** "Жаль не указана версия gcc."
+Name the compiler, the flags and the machine. We do.
+
+**Optimisation level is a trap.** The article compiled at `-Og` and a
+commenter dismissed the whole thing: "автор один из тех, кто занимается
+оптимизацией DEBUG-сборки". State the level and why.
+
+## What the comments punish
+
+**Categorical dismissiveness.** One commenter opened with "эти
+оптимизации были актуальны году так в 90" and ignored the article's
+counter-examples. Another user logged in after a year dormant purely to
+say so: "невероятно самодовольный категоричный комментарий напрочь
+игнорирующий контр-примеры из статьи".
+
+That is a lesson about the article's own voice as much as about
+commenting. Every categorical claim we make is a target, and the ones
+reviewers have already made us withdraw - "recovers precisely what the
+table cost", "worse on every machine and every workload" - are exactly
+the shape that draws this.
+
+**Appeal to authority instead of evidence.** "Я верю профессорам
+Carnegie Mellon" did not survive contact with someone who opened the
+book.
+
+**Terminology slips.** "Оптимизируем цикл на несколько циклов" for
+clock cycles drew: "программисты узнают слово такты, раньше чем начинают
+учить ассемблер, и это статья от программиста!?" The author then asked
+the thread whether to change it, which went down well. Russian technical
+vocabulary is checked hard - see TERMINOLOGY-RU.md, and when in doubt
+ask in the comments rather than defend.
+
+## Format expectations
+
+- **КДПВ** - a lead image. Habr readers expect one, and the meta-article
+  spends paragraphs on how it works: neutral, roughly about the topic,
+  pleasant, sometimes illustrating the thesis. We have none. The
+  `COUNT` cell dump rendered as an image is the obvious candidate.
+- **Anons** (the lead paragraph): start from something familiar, then
+  introduce the intrigue. Our opening - a 2004 fork, a twenty-year gap,
+  an image that doubled for no reason the author chose - already does
+  this.
+- Difficulty **Сложный**, up to 5 hubs, up to 10 keywords, all required
+  at posting time.
+- Over 10,000 characters is a "лонгрид" by their editors' definition.
+  Ours is four times that.
+- Habr uses HFM: underscores inside words are NOT italics, which
+  protects `s6-cv8b` and `LOAD_FAST`; italics need asterisks; URLs
+  autolink; tables are supported including merged cells.
+
+## The one structural idea worth stealing
+
+The meta-article's analysis of a popular piece notes that its sections
+alternate: bright, neutral, neutral, bright, neutral, bright - "как в
+кино, театре, музыке", and that this is why it does not tire the reader.
+
+Our sequence is closer to uniformly dense. The natural bright points are
+section 1 (the doubling), section 2 (the nibble scheme losing to the
+byte scheme), and section 8 (the twenty-year regression). Section 7 is
+the flattest and sits immediately before the payoff - which is what two
+English reviewers independently identified as the place they would stop.
