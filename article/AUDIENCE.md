@@ -200,3 +200,120 @@ section 1 (the doubling), section 2 (the nibble scheme losing to the
 byte scheme), and section 8 (the twenty-year regression). Section 7 is
 the flattest and sits immediately before the payoff - which is what two
 English reviewers independently identified as the place they would stop.
+
+---
+
+# What sinks an article, from Habr's moderators and from hostile comments
+
+The section above is about what works. This one is about what does not,
+and it turned up things the successful examples could not.
+
+## The formatting rules that cost rating automatically
+
+From Habr's own moderation post, "10 супер обидных ошибок авторов" (+124,
+40K views), which lists the mistakes that "напрочь проваливают нормальные,
+на первый взгляд, материалы".
+
+**The cut.** "Нет ката или докатный текст очень длинный. Как правило,
+такие статьи слёту набирают минусы за оформление, потому что
+«вытесняют» всю ленту и раздражают." Text before the cut is what shows
+in everyone's feed. Our Russian intro runs 545 words before the first
+section - that is a feed-flooding article that collects downvotes for
+formatting alone, before anyone reads a word of the argument. **Put the
+cut after the opening paragraphs, not after the vocabulary.**
+
+**Too much bold and italic**: "такие статьи как будто внезапно вылезли
+из веба девяностых. Это не лучший способ выделить в статье главное."
+Our article bolds every one of the seven lessons, plus emphasis
+throughout. Count them and cut most.
+
+**Bare long URLs**: wrap the link on a word or two instead. Our
+references are a column of raw `<https://...>`.
+
+**КДПВ under 1 MB**, no gifs, no flashing.
+
+**No full stop at the end of a subheading.** Ours comply.
+
+## Machine translation is a named failure mode
+
+The post lists "машинные переводы" among things moderators treat as
+articles written in bad faith. Our Russian version was produced from the
+finished English one, which is exactly the shape that reads as a
+translation: calques, English sentence rhythm, terms left in English
+where a Russian word exists. That is a specific, checkable risk, and it
+is why the Russian version needs a reading pass by a Russian speaker
+rather than another figure check.
+
+## Condescension, itemised
+
+"Пренебрежение к читателям" is listed as the mistake that experienced
+authors make most:
+
+- expand every abbreviation, in brackets or with the editor's function;
+- never tell the reader to google a term - "не нужно показывать своё
+  превосходство";
+- use the Russian term where one exists without loss;
+- do not estimate the reader's level: "не оценивайте знания вашего
+  невидимого, анонимного читателя (если не в курсе, для тупых
+  поясню, для тех кто в танке…) — он может оказаться новичком, а может
+  суперпрофи, который вас и ваш код уделает за пару комментариев".
+
+## Credentials belong at the end
+
+"Самопиар без границ": opening with who you are reads as "не спорьте со
+мной, я авторитет" and costs the article. Habr's editor has a "Персона"
+card for the end. Our opening is a confession rather than a CV, which is
+the right side of this line - but the instinct to establish standing
+early is the one being warned against.
+
+## The "что делать" ending is a known joke
+
+From a comment thread on a piece that got exactly this reaction:
+
+> вот этот вот абзац "Что делать?" в конце таких бесполезных статей …
+> не несет как обычно реального ответа что делать а просто очередной
+> набор кучи бесполезных советов
+
+And, on the same article: "никакой новизны нет в статье", "типичная
+писанина из серии кто виноват и что делать", "Капитан очевидность".
+
+Our section 11 is a seven-item "what I would tell someone starting this
+work". It is on exactly this template and will be read against it. What
+saves it, if anything does, is that every item carries a measurement and
+the scope it holds in - "the mean run here is about 1.3", "worth 34%
+between them", "I measured one kernel, not a language". Any item that
+degenerates into general advice should be cut rather than softened.
+
+## Benchmark articles are judged against Shipilev
+
+The sharpest technical criticism found was aimed at a performance
+article, comparing it unfavourably to Aleksey Shipilev and Martin
+Thompson:
+
+> посмотрите на статью автора с его манипуляциями байткодом с пачкой
+> необоснованных утверждений и статьи Шипилева или Томпсона, разница
+> гигантская, так как у них идет разбор на уровне asm и иногда железа
+
+Two things in that. **"Пачка необоснованных утверждений" is the phrase
+that kills a performance article** - and it is precisely what six review
+rounds have been removing from ours. And the bar for this audience is
+analysis down to instructions and hardware, not ratios alone. We have
+the counts, the operation profiles and the opcode budget; they should be
+visible, not buried.
+
+Related, from an interview with Andrey Akinshin on benchmarking: "для
+любого результата бенчмарка в интернете можно найти неправильную
+интерпретацию этого результата", and the typical mistake is
+"бездумно бенчмаркать всё подряд". Our discarding of two workloads for
+irreproducibility is the right story for this audience and is currently
+in section 9, late. It is a credential; consider whether it earns an
+earlier mention.
+
+## Splitting the article
+
+"Нелогичное дробление статей на серии" is listed as a mistake when done
+for exposure, and acceptable when "объективно необходимо" - the examples
+given are multi-part series where each piece is self-contained. If our
+length becomes the problem, the split that would survive this test is
+the encoding ladder as one article and the measurement methodology plus
+the twenty-year regression as another. Splitting mid-ladder would not.
