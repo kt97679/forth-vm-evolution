@@ -103,3 +103,17 @@ something a reader needs, and removed it. Worth recording that reviewers
 had called it the strongest section, so the next person does not
 restore it without knowing it was cut on purpose. The findings remain in
 FINDINGS-OUTER-INTERPRETER.md; only the article no longer tells them.
+
+**Tell it in order.** The introduction had promised that the failures
+were the interesting part and hinted at why, which he found hard to
+follow and not how he writes. His actual account is sequential: first a
+packed format that would suit both 32 and 64 bits, which meant nibbles;
+it did not work out well, so the next attempt was bytes; and so on. The
+nibble and byte schemes are therefore two attempts, not two variants of
+one, which makes seven attempts and three failures - and the title now
+says so.
+
+Also rewritten because it read awkwardly in Russian: "во что на самом
+деле обходятся альтернативы, а не во что я привык считать, что они
+обходятся". Replaced with the plain version: he wanted the bytes back,
+so he started trying other encodings, and here they are in order.

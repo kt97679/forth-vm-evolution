@@ -1,4 +1,4 @@
-# Making a Forth virtual machine smaller: six attempts, two of which failed
+# Making a Forth virtual machine smaller: seven attempts, three of which failed
 
 I have always liked L.C. Benschop's SOD32 - the Stack Oriented Design, a
 32-bit virtual machine with a Forth on top - for how lean, minimal and
@@ -13,15 +13,8 @@ lost interest in the project.
 Recently I came back to it and built it for 64 bits. The same Forth, the
 same words, in an image that had gone from 13,380 bytes to 24,320 - one
 relative offset per cell means one *cell* per operation, and the cell
-had just doubled. I wanted that back, and I wanted to know what the
-alternatives actually cost rather than what I assumed they cost. So I
-built six of them.
-
-Two of the six failed. Those turned out to be the interesting ones: the
-first failed for a reason no size model could have found, and the second
-had been rejected years earlier on a benchmark that turned out to be
-useless. If you have ever wondered whether packing several operations
-into one machine word pays, section 2 has the number.
+had just doubled. I wanted those bytes back, so I started trying other
+ways of encoding the system. Below they are, in the order I tried them.
 
 Everything here regenerates from the repository - nine systems, all
 passing the same 616-case ANS CORE corpus, and every table below
@@ -73,7 +66,7 @@ The systems have working names, used throughout:
 Every system here builds, boots, and passes the same 616-case test
 corpus - the CORE word set of the ANS Forth standard. Ratios are against
 RelF, so smaller is better, and each carries one standard error. Section
-8 describes how they were taken and why it matters more than it sounds.
+9 describes how they were taken and why it matters more than it sounds.
 
     tools/build-stages.sh      # every engine and image, both cell widths
     tools/run-tests.sh         # the corpus on all of them
@@ -127,91 +120,76 @@ it without giving the speed back.
 The obvious first thought is that this is SOD32's problem, and SOD32
 already solved it by packing.
 
-## 2. Attempt one: pack several operations into a cell
+## 2. Attempt one: pack operations into a cell, four bits each
 
 One term before the attempts start. The **dispatch loop** is the part of
 the engine that reads the next operation and jumps to the code for it.
 Every scheme here is a different answer to "what does one operation look
 like in memory", and every one of them is paid for in that loop.
 
-SOD32's trick is that a cell holds six operations, not one. Nothing says
-a RelF cell has to hold one either. Two variants follow, and they are
-the same idea at two field widths: **PACK4**, with 4-bit opcodes, and
-**PACK8**, with 8-bit ones.
-
-So: reserve the first byte of a cell as a tag marking it as packed -
-a value the low-bit test above can never produce, so the two schemes
-coexist in one image - and fill the rest with opcodes. Instead of the seven cells above, `COUNT`
-would want something closer to
+SOD32 fits six operations into one cell. Nothing says a RelF cell has to
+hold only one, so the first thing I tried was a packed format that would
+work well at both cell widths: four-bit opcodes, which I will call
+**PACK4**. A packed cell starts with a tag byte - a value the low-bit
+test above can never produce, so packed and ordinary cells live side by
+side in one image - and the rest of the cell holds opcodes:
 
 ```
-  [tag][DUP][LIT][ + ][SWAP][C@ ][EXIT]     one 8-byte cell
+  [tag][DUP][LIT][ + ][SWAP][C@ ][EXIT]     one packed cell
 ```
 
-At 8-byte cells that is up to seven byte-sized opcodes in the space one
-operation used to take (PACK8), or up to fourteen if an opcode is only
-four bits (PACK4). A four-bit field reaches sixteen primitives, so PACK4
-gets an alphabet of the sixteen most common; anything else stays a plain
-cell.
+Four bits per opcode gives six of them in a 4-byte cell and fourteen in
+an 8-byte one, which is why the format is worth having on both widths.
+The price is the alphabet: four bits name only sixteen primitives, so
+PACK4 packs the sixteen most common and leaves everything else as a
+plain cell.
 
-I had costed both earlier in this work and rejected them, on a synthetic
-benchmark that ran each dispatch loop over a stream of opcodes and
-compared the time to cell threading. It said the packed schemes would
-take 1.90 and 2.05 times as long - that is, 90% and 105% slower to run
-the same program. On that basis I did not build them. This time I did.
+Measured on each system cross-compiling the Forth kernel:
 
-Measured on real work - each system cross-compiling the Forth kernel -
-across three machines, as a ratio of time to the cell engine:
+    PACK4 image           21,296 bytes at 8-byte cells, 0.876x
+    PACK4 kernel compile  1.13 at 8-byte cells, 1.14-1.18 at 4-byte
 
-Ranges in the 4-byte column are across the two machines that build it.
+An eighth smaller and 13-18% slower. Not good, and the alphabet is why -
+specifically, what it does to *runs*. A run is how many packable
+operations come one after another before something unpackable interrupts
+them, and it decides whether the tag byte pays for itself, since every
+uninterrupted run needs one. A primitive outside the sixteen does not
+just fail to pack: it **ends the run it is sitting in**, and both halves
+then need a tag of their own.
 
-| | predicted | 8-byte cells | 4-byte cells |
-|---|---|---|---|
-| PACK4, 4-bit opcodes | 2.05x | 1.13 | 1.14-1.18 |
-| PACK8, 8-bit opcodes | 1.90x | 1.09 | 1.08-1.18 |
+## 3. Attempt two: pack operations into a cell, a byte each
 
-So the rejection was right and the recorded reason for it was not.
-Predicted penalty 90-105%; measured 9-18%. The two are not strictly
-comparable - one is a dispatch loop in isolation, the other is whole
-programs where dispatch is a fraction of the work - which is the point.
-As a predictor of what packing would cost a real program, the number was
-useless.
-The old benchmark's own header said why, in advance: its streams were
-sized to run hot, so it measured decode cost with memory free, which it
-called the pessimistic case. It was: the benchmark isolated exactly the
-cost that real work dilutes, and then the isolated number was used to
-predict real work. The baseline it lost to was wrong too - token threading had been
-recorded at 0.985, faster than cell dispatch, from a benchmark running a
-32-megabyte stream against a 2-megabyte level-2 cache. It was measuring
-memory traffic.
+So the next attempt widened the opcode to a byte - **PACK8**. Two
+hundred and fifty-six values cover every primitive, so nothing falls
+outside the alphabet any more. The price is fewer operations per cell:
+seven in an 8-byte cell, but only three in a 4-byte one.
 
-The other failure is the one worth reporting, and only building it
-showed it. Counting on paper, PACK4 and PACK8 came out level, both at 0.76x - the
-narrower field should pack twice as many operations per cell, which
-ought to offset having fewer of them to choose from. Built, PACK4 folds
-away *fewer* cells - 377 against 433 - and produces the **larger**
-image: 21,296 bytes against 20,848, at 8-byte cells.
+    PACK8 image           20,848 bytes at 8-byte cells, 0.857x
+    PACK8 kernel compile  1.09 at 8-byte cells, 1.08-1.18 at 4-byte
 
-The reason is the sixteen-opcode alphabet, and it turns on what a *run*
-is: how many packable operations occur one after another before
-something unpackable interrupts them. That is what decides whether a tag
-byte pays for itself, because each uninterrupted run needs exactly one.
+Smaller than PACK4 despite the wider field - it folds away 433 cells
+where PACK4 managed 377 - and slightly less slow. Still slower than the
+plain cell engine, though, and still only an eighth smaller.
 
-A primitive outside the alphabet does not merely fail to pack. It **ends
-the run it is sitting in**, so both halves need their own tag byte.
-Measured on real kernel code the mean run is about 1.3 - one tag byte to
-save one opcode, which is not a saving.
+The reason is the same one a level down. Even with every primitive in
+the alphabet, the runs are short: measured on real kernel code, the mean
+run of consecutive packable operations is about 1.3. One tag byte to save
+one opcode is not a saving. This kernel is mostly calls, and a call is
+never packable. Whether that holds for Forth in general I cannot say from
+one codebase, though the reason is not particular to it - calls are what
+Forth is made of.
 
-So packing needs long runs of packable operations, and this kernel has
-not got them - it is mostly calls, and a call is never in the alphabet.
-Whether that is true of Forth generally I cannot say from one codebase,
-though the reason is not specific to this one: calls are what Forth is
-made of.
-Counting on paper priced the fields and got 0.76x for both. Built, the
-program paid for the joins as well: 0.876x for PACK4 and 0.857x for
-PACK8, while running 8-18% slower. That ended the line of attack.
+That was the end of packing.
 
-## 3. Attempt two: a 16-bit token through a word table
+One aside, for anyone who evaluates designs this way. Before building
+either scheme I had estimated both with a synthetic benchmark, which ran
+each dispatch loop over a stream of opcodes and predicted they would take
+1.90 and 2.05 times as long as the cell engine. Real work put them at
+1.08-1.18. The benchmark timed dispatch alone, with its data sitting in
+cache, while a real program spends most of its time elsewhere - so its
+verdict was right and its numbers were no use for predicting anything.
+
+## 4. Attempt three: a 16-bit token through a word table
 
 If a cell is too wide, use a narrower unit. One 16-bit token per
 operation: values below 256 are primitives, and 256+n means "the body of
@@ -280,7 +258,7 @@ the word was defined after load, give up and emit the escape form
 instead. Compare that with CPT16's version in the next section, which is
 one line of Forth.
 
-## 4. Attempt three: delete the table
+## 5. Attempt four: delete the table
 
 If the table is the problem, compute the address instead of looking it
 up. Lay the words out so that a target is `base + (value << shift)`,
@@ -323,7 +301,7 @@ compiler's reverse map, I did not measure. The
 bookkeeping had looked like free indirection; at least some of it was
 not.
 
-## 5. Attempt four: narrow the unit itself
+## 6. Attempt five: narrow the unit itself
 
 Two lessons now point the same way. Packing failed because this kernel has no long runs. The word table
 failed because the bookkeeping it forced on the compiler was expensive
@@ -351,7 +329,7 @@ One thing has not moved, and it matters later: the instructions are
 byte-sized now, but their targets are still on the old cell grid. The
 offset a call carries is scaled - it counts cells from the image base,
 not bytes - so a call can still only name every eighth address, and
-bodies are still padded so that they land on one. Section 7 is about
+bodies are still padded so that they land on one. Section 8 is about
 removing that.
 
 For the dispatch loop that is a compare and a shift, no tag byte, and no
@@ -359,7 +337,7 @@ dependence on runs of anything.
 
 The budget matters, and it ends up tight. Of the 128 values below 0x80:
 68 are the kernel's primitives, five more are literal and data-word
-forms, 23 are the folded pairs of section 6, and 24 are its specialised
+forms, 23 are the folded pairs of section 7, and 24 are its specialised
 opcodes. The highest value used is 119, leaving eight spare. That is
 close enough that adding another family of specialisations would mean
 choosing what to drop.
@@ -379,9 +357,9 @@ in full: `COUNT` as 28 bytes of cells, 14 of tokens and 5 of CV8, all
 three dumped from the real images by `tools/show-word.sh`. In the CV8
 row, `120` is an add-immediate opcode standing for "push 1, then add",
 and `79` is a single opcode meaning "`C@`, then return" - the two tricks
-section 6 is about.
+section 7 is about.
 
-## 6. Attempt five: give the common cases their own opcodes
+## 7. Attempt six: give the common cases their own opcodes
 
 Five bytes for six operations, in that CV8 line, is two separate tricks
 working at once. They were built together and are described together
@@ -461,9 +439,9 @@ support is narrower and still worth knowing: on this path the last step
 was the cheap one, and it took five attempts to build somewhere to put
 it.
 
-Not all five of them earn their place; section 9 has the accounting.
+Not all five of them earn their place; section 10 has the accounting.
 
-## 7. Attempt six: the last place cell width was still being paid
+## 8. Attempt seven: the last place cell width was still being paid
 
 At this point the token stream is the same size at both cell widths -
 the same program either way. But the 64-bit image was still 2,980 bytes
@@ -527,7 +505,7 @@ it should know which of the two they are buying.
 So the sequence ends on a trade rather than a win: 0.31x the image, 0.73
 the time on kernel compilation, and a measurably slower dictionary.
 
-## 8. How this was measured
+## 9. How this was measured
 
 Everything was built and tested on three machines - a single-core
 x86-64 virtual machine, a 16-core x86-64 laptop and a 4-core ARMv7
@@ -581,7 +559,7 @@ the build is what it measures.
 Every conclusion above survived being measured twice on both
 machines.
 
-## 9. Not measured
+## 10. Not measured
 
 - Two machines is not a study. One x86-64 laptop and one ARMv7 board;
   nothing with a different memory order, and nothing without an
@@ -615,7 +593,7 @@ any more, only from C. That is the strongest architectural criticism
 this design has had, it is a direct consequence of the thing that made
 the image small, and I do not have an answer to it.
 
-## 10. What came out of it
+## 11. What came out of it
 
 Start and finish, same Forth, same 616 tests passing:
 
