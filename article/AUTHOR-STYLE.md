@@ -87,3 +87,19 @@ real divergence and splitting it is the honest option.
 **Minor:** he lowercases tool and system names in Russian prose -
 gentoo, ubuntu, linux, "форт система", sod32 - where our Russian text
 capitalises Forth throughout.
+
+## Corrections from the author
+
+**His motivation was not idle curiosity.** "Из любопытства, а не по
+необходимости" was my phrase and it read strangely to him. The real
+account, in his words: he liked SOD32 for its стройность, minimalism and
+simplicity, noticed its performance was fairly low, wondered whether it
+could be improved, built RelF - and the gain was modest enough that he
+lost interest for a long time. The opening now uses that almost
+verbatim.
+
+**The hash-table regression is out.** He judged it a курьёз rather than
+something a reader needs, and removed it. Worth recording that reviewers
+had called it the strongest section, so the next person does not
+restore it without knowing it was cut on purpose. The findings remain in
+FINDINGS-OUTER-INTERPRETER.md; only the article no longer tells them.

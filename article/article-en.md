@@ -1,12 +1,14 @@
 # Making a Forth virtual machine smaller: six attempts, two of which failed
 
-In 2004, out of curiosity rather than need, I forked L.C. Benschop's
-SOD32 - the Stack Oriented Design, a 32-bit virtual machine with a Forth
-on top - threw away its packed instruction format, and replaced it with
-one relative offset per cell. (A cell is the machine word a Forth is
-built on: four bytes on a 32-bit host, eight on a 64-bit one.) I called
-the result RelF, for Relative Forth. It was 32-bit only, and it sat
-there working.
+I have always liked L.C. Benschop's SOD32 - the Stack Oriented Design, a
+32-bit virtual machine with a Forth on top - for how lean, minimal and
+simple it is. But its performance is fairly low, and in 2004 I started
+wondering whether that could be improved. That is how RelF, for Relative
+Forth, came about: I threw away SOD32's packed instruction format and
+replaced it with one relative offset per cell. (A cell is the machine
+word a Forth is built on: four bytes on a 32-bit host, eight on a 64-bit
+one.) The speed-up turned out to be fairly modest, and for a long time I
+lost interest in the project.
 
 Recently I came back to it and built it for 64 bits. The same Forth, the
 same words, in an image that had gone from 13,380 bytes to 24,320 - one
@@ -46,11 +48,6 @@ token    ##############
 CV8      #####
 ```
 
-The point of that 2004 change was speed: following one offset is less
-work than unpacking six small fields before you can use any of them.
-Whether it actually came out faster than what it forked from, I did not
-check at the time - a detail that comes back in section 8.
-
 Some vocabulary. A **cell** is the machine word a Forth is built on -
 four bytes on a 32-bit host, eight on a 64-bit one. **Threading** is how
 a compiled word records what it calls: a list of references, walked at
@@ -76,7 +73,7 @@ The systems have working names, used throughout:
 Every system here builds, boots, and passes the same 616-case test
 corpus - the CORE word set of the ANS Forth standard. Ratios are against
 RelF, so smaller is better, and each carries one standard error. Section
-9 describes how they were taken and why it matters more than it sounds.
+8 describes how they were taken and why it matters more than it sounds.
 
     tools/build-stages.sh      # every engine and image, both cell widths
     tools/run-tests.sh         # the corpus on all of them
@@ -464,7 +461,7 @@ support is narrower and still worth knowing: on this path the last step
 was the cheap one, and it took five attempts to build somewhere to put
 it.
 
-Not all five of them earn their place; section 10 has the accounting.
+Not all five of them earn their place; section 9 has the accounting.
 
 ## 7. Attempt six: the last place cell width was still being paid
 
@@ -530,76 +527,7 @@ it should know which of the two they are buying.
 So the sequence ends on a trade rather than a win: 0.31x the image, 0.73
 the time on kernel compilation, and a measurably slower dictionary.
 
-## 8. The premise I never checked
-
-A distinction that has been implicit until now becomes the whole point
-here. A Forth has an **inner** interpreter - the dispatch loop, running
-compiled words - and an **outer** interpreter, which reads text, looks
-each word up in the dictionary, and either runs it or compiles it.
-Everything above is about the inner one.
-
-One thing remained, and it is the part of this exercise I would most
-like other people to avoid repeating.
-
-RelF existed to be faster than SOD32 - that was the reason for the fork
-- and at the end I ran the two side by side, which I had never done:
-not in 2004, and not once in all the work above.
-
-SOD32 was twice as fast as RelF on the test corpus and 2.9 times as fast
-at interpreting text.
-
-The cause was not the VM, and the way to see that is to count rather
-than to time. On the same input SOD32 executes 44.5 million VM
-operations and RelF executes 266.6 million - six times the work for the
-same result, with the faster dispatch of the two. Those are counts. They
-are the same on every machine, and no layout bias or noisy neighbour
-touches them.
-
-Which also settles what this exercise did *not* establish. RelF was
-forked to make the inner interpreter faster. The workloads that could
-have tested that - the counted loop, the recursive Fibonacci - are the
-two this project discarded for not reproducing. On the evidence here the
-2004 claim is neither confirmed nor refuted. It is still unchecked.
-
-The cause took an afternoon. SOD32's dictionary is 32 hashed chains,
-selected on the first two characters of a name. RelF's was a single
-chain walked from the top. I had dropped the hash while changing the
-link fields from absolute to relative in 2004 and never went back to see
-what it cost. It costs most on *numbers*, which are never found and so
-pay a complete traversal before the interpreter gives up and converts
-them - and in `parse.fth`, which is 4,000 lines of interpreted
-arithmetic, about half the tokens are numbers. Ordinary source is less
-extreme, but every number in it pays the same full traversal.
-
-Restored, with SOD32's hash function unchanged:
-
-    dictionary entries visited, same input     before  8,052,823
-                                                after    288,037
-                                                SOD32    397,720
-
-Those are counts, so they are the same on every machine. In time it was
-2.7x on parsing at 4-byte cells and 3.5x at 8-byte - measured before the
-layout-averaging described in section 9 existed, so single-build
-figures, which at this size does not matter but should be said.
-
-Compare like with like: on parsing, the whole encoding sequence in this
-article is worth 0.80. One omission, restored, was worth two and a half
-to three and a half times.
-
-Hashing a dictionary is not an insight and SOD32 already did it, so the
-fix is not the interesting part. Why nobody noticed is: every benchmark in this project compared the system against
-itself - against the previous stage, against last week's build - never
-against the thing it was forked from to beat. The fault went in in 2004
-and sat there until this year, and the ancestor was in a tarball the
-whole time.
-
-It also means everything above was tuning a system that was
-carrying a 4x handicap in its text interpreter throughout. All the
-ratios in this article were measured after the fix.
-
-If you have a project with a parent, go and run the parent.
-
-## 9. How this was measured
+## 8. How this was measured
 
 Everything was built and tested on three machines - a single-core
 x86-64 virtual machine, a 16-core x86-64 laptop and a 4-core ARMv7
@@ -653,7 +581,7 @@ the build is what it measures.
 Every conclusion above survived being measured twice on both
 machines.
 
-## 10. Not measured
+## 9. Not measured
 
 - Two machines is not a study. One x86-64 laptop and one ARMv7 board;
   nothing with a different memory order, and nothing without an
@@ -687,7 +615,7 @@ any more, only from C. That is the strongest architectural criticism
 this design has had, it is a direct consequence of the thing that made
 the image small, and I do not have an answer to it.
 
-## 11. What came out of it
+## 10. What came out of it
 
 Start and finish, same Forth, same 616 tests passing:
 
@@ -707,15 +635,7 @@ interpretation. At 4-byte cells, where RelF started life, the same
 sequence gives 0.50x the image, 0.73 on kernel compilation and 0.83 on
 parsing.
 
-Set against section 8: the hash table was worth more on parsing than
-this entire sequence. That does not make the sequence pointless, and the
-reason is worth stating, because it is the question the ending invites.
-The two are independent. The hash lives in the text interpreter and does
-not touch image size, so the whole size result stands; and every speed
-ratio here was measured with the hash in place. What the comparison
-says is about priorities, not about wasted work.
-
-Seven things I would tell someone starting the same work.
+Six things I would tell someone starting the same work.
 
 **A tag-based packing scheme needs long runs of packable operations, and
 this kernel has not got them.** The mean run here is about 1.3, so the
@@ -747,13 +667,9 @@ variation.** Here a rebuild moved a result five or ten percent and
 repeating a run could not see it. The widest spread of all belonged to
 the baseline that divides every ratio.
 
-**Run the parent.** If your project was forked from something, measure
-against that something. It is the one check here that found a problem
-larger than everything the project set out to do.
-
 ## What still bothers me
 
-Three things, in case somebody reading this knows better.
+Two things, in case somebody reading this knows better.
 
 **The 34%.** CPT16 removes the word-number table and the compiler's
 reverse map at the same time, so I know what the pair cost and not what
@@ -768,12 +684,6 @@ straightforward except for `(LOOP)`, which reads its operand with a
 single aligned fetch in the inner loop of every `DO`. A 16-bit unaligned
 fetch primitive would fix it. I have not built it, and I am not certain
 it is worth the opcode.
-
-**The premise.** RelF was forked in 2004 to make the inner interpreter
-faster, and I still do not know whether it did, because the two
-benchmarks that could tell me are the two this project threw out for not
-reproducing. If you know a way to measure inner-interpreter speed that
-survives being run twice on two machines, I would like to hear it.
 
 The repository is at the link above, everything in it builds with two
 commands, and I would rather be corrected in the comments than be wrong
