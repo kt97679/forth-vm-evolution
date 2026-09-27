@@ -1,0 +1,89 @@
+# How kt97679 actually writes, from his 14 Habr articles
+
+Read the profile, all fourteen leads, and "Сколько нужно примитивов для
+реализации форт системы?" in full - the direct predecessor of this
+project, same sod32, same kernel.img, same Hayes tests.
+
+## The numbers
+
+| | |
+|---|---|
+| articles | 14, since 2013; karma 108 |
+| reading time | 3, 3, 3, 3, 3, 4, 5, 5, 5, 6, 6, 7, 11 minutes |
+| best rated | Sun vs Intel +122 (18K views); Графика в терминале +110 (37K views, 184 bookmarks) |
+| the Forth one | 3 min, +27, 5.4K views, 30 comments |
+
+**Nothing he has written is longer than 11 minutes, and the median is
+five.** Our article is roughly 25-30. That is the single largest
+difference between this piece and everything else under his name.
+
+## The opening is always the same shape
+
+A concrete external trigger, then curiosity stated outright, then the
+question the article answers. Not one of the fourteen opens with a
+summary of findings.
+
+- "Эта статья является результатом посещения мной автосервиса. В
+  ожидании машины я подключил свой ноутбук к гостевой wifi-сети…"
+- "На моей домашней машине вот уже 7 лет работает пара дисков… И вот на
+  днях один диск в зеркале наконец начал сыпаться. Появился повод…"
+- "Эта история началась, когда я узнал о существовании bpytop. Меня
+  поразила детализация графиков и я начал разбираться как это сделано."
+- "В 1992-м году проходил очередной конкурс по обфусцированному
+  программированию… Меня поразило, что виртуальная машина была
+  реализована всего в 794 байтах… первоначальный восторг уступил место
+  разочарованию… С этого момента меня терзал вопрос —"
+
+The recurring verbs are **мне стало интересно**, **меня поразило**,
+**меня терзал вопрос**. The trigger is usually mundane and specific: a
+car service waiting room, a failing disk, a comment on reddit.
+
+## Four more habits
+
+**He disclaims practical value early, without apology.** "Хочу сразу
+отметить, что вся эта деятельность имеет чисто академический смысл.
+Применить полученные результаты на практике вряд ли получится из-за
+потери производительности."
+
+**He shows the exact commands.** Not a description of how he measured -
+the command line, pasted.
+
+**He states the result flatly, with the number and no flourish.**
+"размер двоичного образа увеличился с 10164 до 15912 (+57%),
+производительность упала в 708 раз".
+
+**He ends by saying what still bothers him, and asking.** This is the
+signature move, and it is the opposite of a list of lessons:
+
+> Меня смущает то, что для доступа к памяти присутствует целых 3
+> примитива: @, ! и lit, но я не придумал, как этого можно избежать. Я
+> вполне мог что-то упустить, так что если вы знаете как можно
+> избавиться от бОльшего количества примитивов — пожалуйста напишите в
+> комментариях.
+
+And in the cryptography article: "У меня нет глубоких криптографических
+знаний… Очень рассчитываю на то, что в комментариях мне объяснят, что и
+почему я сделал неправильно."
+
+That ending does three things at once: it is honest, it is modest
+without being coy, and it hands the comment section a specific job. The
+Forth article got 30 comments on 5.4K views with it.
+
+## What this means for our article
+
+**Keep:** the measurements, the failures, the honesty about what was not
+isolated. That register is already his.
+
+**Change:** the opening, which leads with a summary of findings rather
+than with what made him curious. And the ending, which is seven lessons
+- the "что делать" template Habr readers mock, and which nothing in his
+own writing resembles.
+
+**Unresolved:** the length. Five minutes is his median, eleven his
+maximum. This article reports a year of work rather than one experiment,
+so it is a different kind of piece - but three times his longest is a
+real divergence and splitting it is the honest option.
+
+**Minor:** he lowercases tool and system names in Russian prose -
+gentoo, ubuntu, linux, "форт система", sod32 - where our Russian text
+capitalises Forth throughout.

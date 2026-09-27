@@ -1,16 +1,27 @@
 # Making a Forth virtual machine smaller: six attempts, two of which failed
 
-This is what six ways of encoding a Forth virtual machine actually cost,
-measured on working systems rather than argued from first principles.
-Two of the six failed, and those are the two worth your time: one failed
-for a reason no size model could have predicted, and the other was
-rejected years ago on a benchmark that turned out to be useless. If you
-have ever wondered whether packing several operations into a machine
-word is worth it, section 2 has the number.
+In 2004, out of curiosity rather than need, I forked L.C. Benschop's
+SOD32 - the Stack Oriented Design, a 32-bit virtual machine with a Forth
+on top - threw away its packed instruction format, and replaced it with
+one relative offset per cell. (A cell is the machine word a Forth is
+built on: four bytes on a 32-bit host, eight on a 64-bit one.) I called
+the result RelF, for Relative Forth. It was 32-bit only, and it sat
+there working.
 
-The rest is how I got there, in the order it happened.
+Recently I came back to it and built it for 64 bits. The same Forth, the
+same words, in an image that had gone from 13,380 bytes to 24,320 - one
+relative offset per cell means one *cell* per operation, and the cell
+had just doubled. I wanted that back, and I wanted to know what the
+alternatives actually cost rather than what I assumed they cost. So I
+built six of them.
 
-Everything here regenerates from the repository: nine systems, all
+Two of the six failed. Those turned out to be the interesting ones: the
+first failed for a reason no size model could have found, and the second
+had been rejected years earlier on a benchmark that turned out to be
+useless. If you have ever wondered whether packing several operations
+into one machine word pays, section 2 has the number.
+
+Everything here regenerates from the repository - nine systems, all
 passing the same 616-case ANS CORE corpus, and every table below
 produced by the scripts named at the end.
 
@@ -35,21 +46,10 @@ token    ##############
 CV8      #####
 ```
 
-In 2004, out of curiosity rather than need, I forked L.C. Benschop's
-SOD32 - the Stack Oriented Design, a 32-bit virtual machine with a Forth
-on top - threw away its packed instruction format, and replaced it with
-one relative offset per cell. (A cell is the machine word a Forth is
-built on: four bytes on a 32-bit host, eight on a 64-bit one.) I called
-the result RelF, for Relative Forth. The point was speed: following one
-offset is less work than unpacking six small fields before you can use
-any of them. It was 32-bit only, and it sat there working. Whether it
-was actually faster than what it forked from, I did not check at the
-time - a detail that comes back in section 8.
-
-Recently I came back to it and built it for 64-bit. The deal changed:
-the same Forth, the same words, in an image that had gone from 13,380
-bytes to 24,320. One relative offset per cell means one *cell* per
-operation, and the cell had just doubled.
+The point of that 2004 change was speed: following one offset is less
+work than unpacking six small fields before you can use any of them.
+Whether it actually came out faster than what it forked from, I did not
+check at the time - a detail that comes back in section 8.
 
 Some vocabulary. A **cell** is the machine word a Forth is built on -
 four bytes on a 32-bit host, eight on a 64-bit one. **Threading** is how
@@ -750,6 +750,34 @@ the baseline that divides every ratio.
 **Run the parent.** If your project was forked from something, measure
 against that something. It is the one check here that found a problem
 larger than everything the project set out to do.
+
+## What still bothers me
+
+Three things, in case somebody reading this knows better.
+
+**The 34%.** CPT16 removes the word-number table and the compiler's
+reverse map at the same time, so I know what the pair cost and not what
+either cost alone. I could not think of a way to separate them without
+building a third system that keeps the table and drops the reverse map,
+which is a system nobody would want.
+
+**The 273 bytes.** Seventeen operands in the kernel are still cell-sized
+- five loop offsets and twelve execution tokens - and they force the
+bodies around them to stay aligned. Making them byte-granular is
+straightforward except for `(LOOP)`, which reads its operand with a
+single aligned fetch in the inner loop of every `DO`. A 16-bit unaligned
+fetch primitive would fix it. I have not built it, and I am not certain
+it is worth the opcode.
+
+**The premise.** RelF was forked in 2004 to make the inner interpreter
+faster, and I still do not know whether it did, because the two
+benchmarks that could tell me are the two this project threw out for not
+reproducing. If you know a way to measure inner-interpreter speed that
+survives being run twice on two machines, I would like to hear it.
+
+The repository is at the link above, everything in it builds with two
+commands, and I would rather be corrected in the comments than be wrong
+quietly.
 
 ## References
 
