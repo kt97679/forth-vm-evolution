@@ -16,8 +16,8 @@ relative offset per cell means one *cell* per operation, and the cell
 had just doubled. I wanted those bytes back, so I started trying other
 ways of encoding the system. Below they are, in the order I tried them.
 
-Everything here regenerates from the repository - nine systems, all
-passing the same 616-case ANS CORE corpus, and every table below
+Everything here regenerates from the repository - ten systems, SOD32
+and nine descendants, all passing the same 616-case ANS CORE corpus, and every table below
 produced by the scripts named at the end.
 
 ```
@@ -76,19 +76,9 @@ RelF, so smaller is better, and each carries one standard error. Section
 
 ## 1. What 64-bit did
 
-Here is what RelF's encoding actually looks like. This definition:
-
-```forth
-: COUNT   DUP 1 + SWAP C@ ;
-```
-
-compiles to seven consecutive cells - this is a 4-byte build - holding
-these values:
-
-```
-   25    9    1   93   29   41    5
-  DUP  LIT   1    +   SWAP  C@  EXIT
-```
+Take the top row of the figure above. `COUNT` compiles to seven
+consecutive cells, one per operation, holding the values
+`25 9 1 93 29 41 5`.
 
 A cell here holds a **call** - the distance from itself to the word
 being called - or a **primitive**, a small number saying which built-in
@@ -117,8 +107,8 @@ The goal from here on is to stop paying twice for the same program
 because the host got wider - and, since RelF existed to be fast, to do
 it without giving the speed back.
 
-The obvious first thought is that this is SOD32's problem, and SOD32
-already solved it by packing.
+The first thing that comes to mind is packing - which is exactly how
+SOD32 saves its space.
 
 ## 2. Attempt one: pack operations into a cell, four bits each
 
@@ -221,10 +211,6 @@ the whole of the problem.
                     \                        /
                      '--- opposite ways ----'
 
-A dictionary search hands the compiler an ADDRESS.
-The instruction it must emit holds a NUMBER.
-The engine's table is indexed the wrong way round - and lives in
-memory a Forth program cannot read.
 ```
 
 Running needs the first: token 256+n, look up entry n, jump there.
@@ -343,8 +329,7 @@ where a CV8 call carries an offset to a location.
     CV8, image             11,416 bytes at 8-byte cells,
                            0.469x of cell threading
 
-The first scheme in the sequence that beat the cell engine on both size
-and speed at once. The figure at the top of this article is now readable
+Faster and smaller than the cell engine. The figure at the top of this article is now readable
 in full: `COUNT` as 28 bytes of cells, 14 of tokens and 5 of CV8, all
 three dumped from the real images by `tools/show-word.sh`. In the CV8
 row, `120` is an add-immediate opcode standing for "push 1, then add",
@@ -354,8 +339,9 @@ section 7 is about.
 ## 7. Attempt six: give the common cases their own opcodes
 
 Five bytes for six operations, in that CV8 line, is two separate tricks
-working at once. They were built together and are described together
-here.
+working at once. Folding actually came earlier - I added it to CPT16,
+which is the "CPT16 + folding" row in the table below - but both are
+easiest to see in the CV8 line, so they are described together here.
 
 **Folding**: a primitive immediately followed by `EXIT` becomes a single
 opcode, which removes one trip round the dispatch loop from the end of a
@@ -369,22 +355,6 @@ rewrites opcodes at run time from observed types. Everything here is
 decided at compile time. Small integers get one each, so do the hottest kernel words,
 and so does an operand small enough to travel inside the instruction
 rather than after it - `1 +` becoming a single add-immediate.
-
-```
-Forth image, 8-byte cells                              bytes  vs cell
-
-cell (RelF)           ##############################  24,320  1.000
-PACK4                 ##########################      21,296  0.876
-PACK8                 ##########################      20,848  0.857
-SOD16                 ################                12,864  0.529
-CPT16                 ################                12,864  0.529
-CPT16 + folding       ################                12,696  0.522
-CV8                   ##############                  11,416  0.469
-CV8 + spec            ##############                  11,088  0.456
-CV8 + byte headers    #########                        7,609  0.313
-
-The last row is the dictionary header, not the instruction encoding.
-```
 
 | stage | kernel compile (AMD, 8-byte) | image | vs cell |
 |---|---|---|---|
@@ -518,10 +488,10 @@ byte-identical to the reference before any timing is recorded, so
 correctness and speed come out of the same run and a system that is fast
 because it is quietly wrong fails the comparison that times it.
 
-Six of the systems emit their own encoding when compiling new
-definitions at run time. The other two are produced by translating a
-finished cell image with `tools/layout.py`, which is why they can run
-everything in the image and still compile in cells.
+PACK4 and PACK8 are the exception here: they are produced by rewriting
+a finished cell image, so they run packed code but compile new
+definitions as plain cells. Every other system compiles in its own
+encoding.
 
 Three things about how the numbers were taken.
 
@@ -530,13 +500,13 @@ binaries agree to 1-2%. Rebuild the tree and a stage moves by five or
 ten percent, because where the compiler places code is worth that much
 and is fixed for a given binary. Taking the minimum over more
 repetitions measures that bias more precisely rather than removing it.
-So every engine is built five ways with flags that only move code, all
-five are timed, and the figure is the mean with a standard error. The
-widest spread of any stage was the *baseline* at 12.6% - the number that
-divides every ratio in every table.
+So every engine is built several ways - five on the laptop, three on
+the slower board - with flags that only move code; all are timed, and
+the figure is the mean with a standard error.
 
-**The quiet machine measured better than the fast one.** The 16-core
-laptop's resolution floor read 5.3% in one run and 13.1% in the next;
+**The quiet machine measured better than the fast one.** On the 16-core
+laptop, the spread between identical builds of one engine read 5.3% in
+one run and 13.1% in the next;
 the ARM board, four slow cores with nothing else running, resolves to
 about 1%.
 
@@ -587,6 +557,22 @@ the image small, and I do not have an answer to it.
 
 ## 11. What came out of it
 
+```
+Forth image, 8-byte cells                              bytes  vs cell
+
+cell (RelF)           ##############################  24,320  1.000
+PACK4                 ##########################      21,296  0.876
+PACK8                 ##########################      20,848  0.857
+SOD16                 ################                12,864  0.529
+CPT16                 ################                12,864  0.529
+CPT16 + folding       ################                12,696  0.522
+CV8                   ##############                  11,416  0.469
+CV8 + spec            ##############                  11,088  0.456
+CV8 + byte headers    #########                        7,609  0.313
+
+The last row is the dictionary header, not the instruction encoding.
+```
+
 Start and finish, same Forth, same 616 tests passing:
 
 | | image | kernel compile | parsing |
@@ -634,8 +620,7 @@ result in the sequence.
 
 **If code placement affects your benchmark, account for build-to-build
 variation.** Here a rebuild moved a result five or ten percent and
-repeating a run could not see it. The widest spread of all belonged to
-the baseline that divides every ratio.
+repeating a run could not see it.
 
 ## What still bothers me
 
@@ -655,20 +640,17 @@ single aligned fetch in the inner loop of every `DO`. A 16-bit unaligned
 fetch primitive would fix it. I have not built it, and I am not certain
 it is worth the opcode.
 
-The repository is at the link above, everything in it builds with two
+The repository is at REPO_URL, everything in it builds with two
 commands, and I would rather be corrected in the comments than be wrong
 quietly.
 
 ## References
 
-- Brad Rodriguez, *Moving Forth*, part 1 -
-  <https://www.bradrodriguez.com/papers/moving1.htm>
+- Brad Rodriguez, [*Moving Forth*, part 1](https://www.bradrodriguez.com/papers/moving1.htm)
 - R.G. Loeliger, *Threaded Interpretive Languages*, Byte Books, 1981
-- L.C. Benschop, SOD32 - <https://github.com/lennart-benschop/sod32>,
+- L.C. Benschop, [SOD32](https://github.com/lennart-benschop/sod32),
   vendored here at a pinned revision, GPLv2
-- ForthHub discussion #187, "An elevator description for Forth's
-  threaded code models?", whose vocabulary this article uses -
-  <https://github.com/ForthHub/discussion/discussions/187>
+- ForthHub discussion #187, ["An elevator description for Forth's threaded code models?"](https://github.com/ForthHub/discussion/discussions/187), whose vocabulary this article uses
 - IEEE 1275-1994, the Open Firmware standard, whose FCode is a byte-coded
   Forth: one-byte codes `0x10`-`0xFE`, escape band
   `0x01`-`0x0F` for two-byte codes. CV8 took the idea of a byte stream
