@@ -181,14 +181,6 @@ Forth is made of.
 
 That was the end of packing.
 
-One aside, for anyone who evaluates designs this way. Before building
-either scheme I had estimated both with a synthetic benchmark, which ran
-each dispatch loop over a stream of opcodes and predicted they would take
-1.90 and 2.05 times as long as the cell engine. Real work put them at
-1.08-1.18. The benchmark timed dispatch alone, with its data sitting in
-cache, while a real program spends most of its time elsewhere - so its
-verdict was right and its numbers were no use for predicting anything.
-
 ## 4. Attempt three: a 16-bit token through a word table
 
 If a cell is too wide, use a narrower unit. One 16-bit token per

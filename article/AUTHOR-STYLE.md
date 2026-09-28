@@ -117,3 +117,10 @@ Also rewritten because it read awkwardly in Russian: "во что на само�
 деле обходятся альтернативы, а не во что я привык считать, что они
 обходятся". Replaced with the plain version: he wanted the bytes back,
 so he started trying other encodings, and here they are in order.
+
+**Process is not result.** The synthetic-benchmark aside - predicted
+1.90-2.05x, measured 1.08-1.18 - is gone too. His reasoning: it was
+interesting while doing the work but does not matter to the outcome.
+Checked before removing: nothing else in either article depended on it,
+and the methodology lesson it carried is made more fully by the
+measurement section. The finding itself remains in the repository.
