@@ -16,9 +16,9 @@ relative offset per cell means one *cell* per operation, and the cell
 had just doubled. I wanted those bytes back, so I started trying other
 ways of encoding the system. Below they are, in the order I tried them.
 
-Everything here regenerates from the repository - ten systems, SOD32
+Everything here regenerates from [the repository](https://github.com/kt97679/forth-vm-evolution) - ten systems, SOD32
 and nine descendants, all passing the same 616-case ANS CORE corpus, and every table below
-produced by the scripts named at the end.
+produced by the scripts listed below.
 
 ```
 : COUNT   DUP 1 + SWAP C@ ;        4-byte cells, from the real images
@@ -640,12 +640,14 @@ single aligned fetch in the inner loop of every `DO`. A 16-bit unaligned
 fetch primitive would fix it. I have not built it, and I am not certain
 it is worth the opcode.
 
-The repository is at REPO_URL, everything in it builds with two
+The repository is at [github.com/kt97679/forth-vm-evolution](https://github.com/kt97679/forth-vm-evolution); everything in it builds with two
 commands, and I would rather be corrected in the comments than be wrong
 quietly.
 
 ## References
 
+- This project: [github.com/kt97679/forth-vm-evolution](https://github.com/kt97679/forth-vm-evolution) - every engine, image, benchmark and table in this
+  article, reproducible with the scripts named at the top
 - Brad Rodriguez, [*Moving Forth*, part 1](https://www.bradrodriguez.com/papers/moving1.htm)
 - R.G. Loeliger, *Threaded Interpretive Languages*, Byte Books, 1981
 - L.C. Benschop, [SOD32](https://github.com/lennart-benschop/sod32),

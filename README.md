@@ -62,7 +62,8 @@ image from 11,088 bytes to 7,609, or 0.31x of cell threading.
                     last has semantic weight, and that header explains why)
     stages/         what the stages are and how they differ
     results/        measurements, one file per machine
-    article/        the write-up
+    article/        the write-up: article-en.md for ForthHub,
+                    article-ru.md for Habr
 
 ## Method
 
