@@ -125,6 +125,7 @@ run s4-cv8     "$O/s4-cv8-64"     "$O/s4-cv8-s64.img"
 run s5-cv8spec "$O/s5-cv8spec-64" "$O/s5-cv8spec-s64.img"
 run s6-cv8b    "$O/s6-cv8b-64"    "$O/s6-cv8b-s64.img"
 run s7-spn     "$O/s7-spn-64"     "$O/s7-spn-s64.img"
+run s7-full    "$O/s7-full-64"    "$O/s7-full-s64.img"
 echo
 echo "32-bit cells:"
 run s0-cell    "$O/s0-cell-32"    "$O/s0-cell-s32.img"

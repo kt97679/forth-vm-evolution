@@ -202,6 +202,62 @@ What remains interpreted is mostly that seeding phase: the first few
 dozen words are translated by a translator that is not yet native, and
 the tree walk validates each twice. Stencil reading is 12%.
 
+### Recipes: translation decided when the image is built
+
+Everything the translator decides depends only on the dictionary -
+which words translate, which stencil each cell becomes, what each hole
+is filled with. So the build now runs the boot translation once with a
+recorder attached, writes those decisions into the image as a compact
+RECIPE per word, and undoes every patch, so the saved dictionary is
+exactly as it was. Boot reads the stencils from the running engine as
+before - their bytes and hole offsets belong to the machine and are
+never stored - and replays the recipes. A signature of every stencil's
+hole kinds guards the replay: on an engine whose stencils differ, boot
+falls back to full translation.
+
+tools/mk-spn-image.sh builds both variants from the same source:
+s7-spn with recipes, s7-full without. Checked, not assumed: they make
+the same 208 words native and emit byte-identical native code, 70,279
+bytes, and both pass all 616 cases.
+
+    image                       bytes     start-up (CPU, best of 45)
+    s7-full, no recipes        88,880        4.87 ms
+    s7-spn, recipes            99,169        2.44 ms
+    CV8+spec, for reference    13,488        0.70 ms
+
+**Cost: 10,289 bytes, all of it recipe data** - the image difference is
+exactly the recipe length, since the recorder and replayer are in both.
+That is 12% of the SPN image, and 15% of the native code it describes.
+**Gain: start-up halved**, 4.87 ms to 2.44.
+
+End to end, start-up included (net figures identical for both):
+
+                     cell  CV8+spec  SPN full  SPN recipes
+    kernel compile  1.000   0.518     0.510     0.397
+    fib             1.000   0.799     0.262     0.207
+    corpus          1.000   0.515     0.651     0.506
+    parse           1.000   0.499     0.425     0.394
+
+With recipes SPN wins kernel compile, fib and parse end to end, and the
+corpus - which it lost clearly before - is now level: 0.506 against
+0.515 is under 2%, inside this project's measured per-build noise.
+
+Three things found on the way, each measured before fixing:
+
+- The first recipe replay was barely faster (3.8 ms), because 1.6M
+  cells still ran interpreted. The replayer's own words were recorded
+  last. The cause was a 64-cell limit in the return-address scan: any
+  longer word counted as unsafe to call, and REPLAY-WORD is longer, so
+  the boot-time tree walk failed at its root. Raised to MAX-CELLS.
+  Interpreted cells in replay: 1.62M -> 0.72M.
+- A flags byte per op said which fields follow; the stencil's hole
+  kinds already say that, and the signature guarantees they match.
+  Dropping it: 14,799 -> 10,289 bytes.
+- What remains of the 2.44 ms is mostly reading the stencils (27% of
+  the interpreted work), which must happen before anything can be
+  emitted, and the first few words replayed before the replayer is
+  itself native.
+
 ### Next
 
 The next real step for start-up is a design change rather than a tune:

@@ -21,6 +21,7 @@
 \ x86-64 only; see ARCH.
 
 DECIMAL
+512 CONSTANT MAX-CELLS     \ the longest word, in cells, SPN translates
 : NIP ( x1 x2 --- x2 )  SWAP DROP ;
 \ Fill whole cells. Boot zeroes about 22 KB of tables before FILL itself
 \ is translated, and FILL goes a byte at a time - a profile of boot put
@@ -118,6 +119,7 @@ CREATE ST-START MAX-STENCILS CELLS ALLOT
 CREATE ST-LEN   MAX-STENCILS CELLS ALLOT
 CREATE ST-NH    MAX-STENCILS CELLS ALLOT
 CREATE ST-HOLES MAX-STENCILS 8 * CELLS ALLOT
+CREATE ST-MASK  MAX-STENCILS CELLS ALLOT   \ which kinds of hole, one bit each
 VARIABLE SI  VARIABLE SSRC  VARIABLE SLEN
 : HOLE, ( offset kind --- )
   SWAP 8 * +  SI @ 8 * ST-NH SI @ CELLS + @ + CELLS ST-HOLES + !
@@ -151,6 +153,47 @@ VARIABLE CODE-HERE  VARIABLE CODE-LIMIT
 
 \ ---- emitting one stencil ----
 VARIABLE ARG-IMM  VARIABLE ARG-CALL  VARIABLE ARG-JUMP  VARIABLE E-DST
+VARIABLE T-SRC  VARIABLE T-NAT   \ the word being translated, and its native start
+
+\ ---- recipes: translation decided when the image is built ----
+\ Everything VALIDATE and the emitter decide depends only on the
+\ dictionary: which words translate, which stencil each cell becomes,
+\ what each hole is filled with. The build runs the boot translation
+\ once with RECORDING on, writing those decisions into the image as a
+\ RECIPE per word; boot replays them - copying stencils and patching
+\ holes, nothing else. Stencil bytes and hole offsets are still read
+\ from the running engine, since they belong to the machine.
+\
+\ Format, per word: xt as a cell offset from START, then ops, then 255.
+\ Ops are described at RECORD-OP. 254 then a varint cell index marks a
+\ branch target, so the jumps into it can be resolved.
+VARIABLE RECORDING  0 RECORDING !
+VARIABLE ARG-RELOC  0 ARG-RELOC !     \ ARG-IMM is an address in the image
+VARIABLE ARG-CXT    0 ARG-CXT !       \ an S-CALL's callee xt; 0 for itself
+VARIABLE RCP-OFF  0 RCP-OFF !   VARIABLE RCP-LEN  0 RCP-LEN !
+VARIABLE RCP-SIG  0 RCP-SIG !         \ the stencil holes they were made for
+: UV, ( u --- )  BEGIN DUP 127 U> WHILE DUP 127 AND 128 OR C, 7 RSHIFT REPEAT C, ;
+: SV, ( n --- )  DUP 0< IF INVERT 1 LSHIFT 1+ ELSE 1 LSHIFT THEN UV, ;
+\ Which kinds of hole stencil i has, one bit per kind.
+: HOLE-MASK ( i --- m )
+  0 SWAP  DUP CELLS ST-NH + @ 0 ?DO
+    DUP 8 * I + CELLS ST-HOLES + @ 7 AND 1 SWAP LSHIFT ROT OR SWAP
+  LOOP DROP ;
+: STENCIL-SIG ( --- h )  #ENTRIES @  #ENTRIES @ 3 DO 31 * I CELLS ST-MASK + @ + LOOP ;
+\ An op is ONE byte - the stencil index, plus 64 if its literal is an
+\ address in the image, plus 128 if it calls its own word - then the
+\ fields its holes need: literal, jump target, callee, in that order.
+\ Which fields follow is read from the stencil's hole kinds, which the
+\ recipe's signature guarantees match the engine replaying it. (A flags
+\ byte per op, saying the same thing explicitly, cost 3.5 KB.)
+: RECORD-OP ( i --- )
+  DUP CELLS ST-MASK + @
+  OVER  OVER 24 AND IF ARG-RELOC @ IF 64 OR THEN THEN
+        OVER 4 AND IF ARG-CXT @ 0= IF 128 OR THEN THEN  C,
+  DUP 24 AND IF ARG-IMM @  ARG-RELOC @ IF START @ - THEN  SV, THEN
+  DUP 2 AND IF ARG-JUMP @ T-SRC @ - 3 RSHIFT UV, THEN
+  4 AND IF ARG-CXT @ ?DUP IF START @ - 3 RSHIFT UV, THEN THEN
+  DROP 0 ARG-RELOC ! ;
 CREATE FIXUPS 256 2 * CELLS ALLOT  VARIABLE #FIX   \ native field, source target
 : FIX, ( native src --- )
   #FIX @ 256 < 0= ABORT" SPN: too many branches"
@@ -165,6 +208,7 @@ CREATE FIXUPS 256 2 * CELLS ALLOT  VARIABLE #FIX   \ native field, source target
   OVER 5 = IF NIP  RP-ADDR @ SWAP ! EXIT THEN
   NIP INTERP-FN @ SWAP ! ;
 : EMIT-ST ( i --- )
+  RECORDING @ IF DUP RECORD-OP THEN
   DUP SI !
   CODE-HERE @ OVER CELLS ST-LEN + @ + CODE-LIMIT @ > ABORT" SPN: code buffer full"
   CODE-HERE @ E-DST !
@@ -250,9 +294,12 @@ VARIABLE PICK-XT  ' PICK START @ - CONSTANT PICK-OFF
 
 \ Does this CODE read its caller's return address - R> or R@ before any
 \ >R? Steps over inline strings; a call to DOVAR ends the code, since a
-\ variable's body is data from there on. Bounded: past 64 cells, unsafe.
+\ variable's body is data from there on. Bounded: past MAX-CELLS, unsafe.
 : R-SCAN-RAW ( a --- f )
-  64 0 DO
+  \ Bounded by MAX-CELLS, the longest word the translator accepts. It
+  \ was 64, and any longer word was taken as unsafe to call - REPLAY-WORD
+  \ among them, which cut the boot-time tree walk off at its root.
+  MAX-CELLS 0 DO
     DUP @ DUP 1 AND 0= IF
       OVER CELL+ +
       DUP DOVAR-XT @ = IF 2DROP FALSE UNLOOP EXIT THEN
@@ -295,7 +342,7 @@ VARIABLE RSC  VARIABLE RSC-N  0 RSC-N !
 
 \ Kinds: 0 native  1 literal (variable or constant)  2 re-entry  3 refuse
 \ 4 a primitive's own entry [prim][EXIT], inlined as that primitive
-VARIABLE C-VAL
+VARIABLE C-VAL  VARIABLE C-RELOC  VARIABLE C-XT
 \ A primitive's entry [prim][EXIT] can be inlined as the primitive -
 \ unless the primitive works on the return stack. EXECUTE is >R ; and
 \ there the EXIT is the whole point: it jumps to the address just
@@ -312,19 +359,18 @@ VARIABLE C-VAL
     DUP @ TOK DUP PLAIN-PRIM? IF C-VAL ! DROP 4 EXIT THEN DROP
   THEN THEN
   DUP @ DUP 1 AND 0= IF                      \ starts with a call:
-    OVER CELL+ +  DOVAR-XT @ = IF CELL+ C-VAL ! 1 EXIT THEN  \ a variable
+    OVER CELL+ +  DOVAR-XT @ = IF CELL+ C-VAL ! 1 C-RELOC ! 1 EXIT THEN  \ a variable
   ELSE DROP THEN
   DUP DATA-WORD? IF C-VAL ! 2 EXIT THEN      \ a DOES> child: interpret it
-  DUP @ 2 TK =  OVER 2 CELLS + @ 1 TK = AND IF CELL+ @ C-VAL ! 1 EXIT THEN
+  DUP @ 2 TK =  OVER 2 CELLS + @ 1 TK = AND IF CELL+ @ C-VAL ! 0 C-RELOC ! 1 EXIT THEN
   DUP R-SCAN IF DROP 3 EXIT THEN
   C-VAL ! 2 ;
 
 \ ---- validating a word before emitting anything ----
-512 CONSTANT MAX-CELLS
 CREATE C-NAT MAX-CELLS CELLS ALLOT     \ native address of each source cell
 CREATE C-DEP MAX-CELLS CELLS ALLOT     \ return-stack depth at each cell
 CREATE TGTS 128 CELLS ALLOT  VARIABLE #TGT
-VARIABLE T-SRC  VARIABLE T-NAT  VARIABLE T-FAR  VARIABLE T-DEP  VARIABLE T-OK
+VARIABLE T-FAR  VARIABLE T-DEP  VARIABLE T-OK
 \ How many cells of C-DEP the previous word dirtied. Clearing all 512
 \ cells for every word was most of boot time - the byte-at-a-time FILL
 \ again - when a typical word uses a few dozen. Everything past this
@@ -411,13 +457,13 @@ CREATE CALLS 128 CELLS ALLOT  VARIABLE #CALLS
 VARIABLE E-DEP
 : E-LIT ( n --- )  ARG-IMM ! S-LIT EMIT-ST ;
 : E-CALL ( xt --- )
-  DUP T-SRC @ = IF DROP T-NAT @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
-  CLASSIFY
-  DUP 0 = IF DROP C-VAL @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
-  DUP 1 = IF DROP C-VAL @ E-LIT EXIT THEN
+  DUP T-SRC @ = IF DROP T-NAT @ ARG-CALL !  0 ARG-CXT !  S-CALL EMIT-ST EXIT THEN
+  DUP C-XT !  CLASSIFY
+  DUP 0 = IF DROP C-VAL @ ARG-CALL !  C-XT @ ARG-CXT !  S-CALL EMIT-ST EXIT THEN
+  DUP 1 = IF DROP C-RELOC @ ARG-RELOC !  C-VAL @ E-LIT EXIT THEN
   DUP 4 = IF DROP C-VAL @ DUP PM@ DUP 0< 0= IF NIP EMIT-ST EXIT THEN
-    DROP 2 * CELLS PRIMBODY + ARG-IMM ! S-INTERP EMIT-ST EXIT THEN
-  DROP C-VAL @ ARG-IMM ! S-INTERP EMIT-ST ;
+    DROP 2 * CELLS PRIMBODY + ARG-IMM !  1 ARG-RELOC !  S-INTERP EMIT-ST EXIT THEN
+  DROP C-VAL @ ARG-IMM !  1 ARG-RELOC !  S-INTERP EMIT-ST ;
 : E-PRIM ( a prim --- a' )
   DUP 0 = IF DROP CELL+ EXIT THEN
   DUP 1 = IF DROP S-EXIT EMIT-ST CELL+ EXIT THEN
@@ -441,7 +487,7 @@ VARIABLE E-DEP
     THEN
   THEN
   DUP PM@ DUP 0< 0= IF NIP EMIT-ST CELL+ EXIT THEN DROP
-  2 * CELLS PRIMBODY + ARG-IMM !  S-INTERP EMIT-ST CELL+ ;
+  2 * CELLS PRIMBODY + ARG-IMM !  1 ARG-RELOC !  S-INTERP EMIT-ST CELL+ ;
 \ The string's address and length are constants by translation time.
 \ (S") pushes them; (.") pushes them and calls TYPE; (ABORT") tests its
 \ flag, jumps past on zero, and otherwise hands the counted string to
@@ -451,9 +497,9 @@ VARIABLE E-DEP
 : E-STRING ( a xt --- a' )
   DUP AQ-XT @ = IF DROP
     DUP PAST-STRING ARG-JUMP !  S-0BRANCH EMIT-ST
-    DUP CELL+ E-LIT  AM-XT @ E-CALL  PAST-STRING EXIT
+    DUP CELL+ 1 ARG-RELOC ! E-LIT  AM-XT @ E-CALL  PAST-STRING EXIT
   THEN
-  OVER CELL+ DUP 1+ E-LIT C@ E-LIT
+  OVER CELL+ DUP 1+ 1 ARG-RELOC ! E-LIT C@ E-LIT
   DQ-XT @ = IF TYPE-XT @ E-CALL THEN
   PAST-STRING ;
 : E-LOOP ( a k --- a' )
@@ -466,10 +512,12 @@ VARIABLE E-DEP
   DUP 2 = IF DROP S-QDO ELSE DUP 3 = IF DROP S-LOOP ELSE
     4 = IF S-PLOOP ELSE S-LEAVE THEN THEN THEN
   EMIT-ST 2 CELLS + ;
+: TARGET? ( a --- f )  FALSE #TGT @ 0 ?DO OVER I CELLS TGTS + @ = OR LOOP NIP ;
 : EMIT-WORD ( --- )
   0 #FIX !  T-SRC @
   BEGIN
     CODE-HERE @ OVER IDX CELLS C-NAT + !
+    RECORDING @ IF DUP TARGET? IF 254 C, DUP IDX UV, THEN THEN
     DUP @ DUP 1 AND IF
       TOK DUP 1 = IF DROP DUP T-FAR @ < 0= IF S-EXIT EMIT-ST DROP EXIT THEN 1 THEN
       E-PRIM
@@ -494,12 +542,23 @@ VARIABLE SPN-READY  0 SPN-READY !
   DUP @ 1 TK = IF DROP FALSE EXIT THEN               \ just EXIT
   DUP @ 2 TK = OVER 2 CELLS + @ 1 TK = AND IF DROP FALSE EXIT THEN \ constant
   DROP TRUE ;
+\ While recording, every patch is remembered so it can be undone: the
+\ saved image must hold the dictionary exactly as it was, untranslated.
+VARIABLE UNDO  VARIABLE #UNDO  0 #UNDO !
+: UNDO, ( xt --- )
+  DUP @ OVER CELL+ @  #UNDO @ 3 * CELLS UNDO @ +  >R
+  R@ 2 CELLS + !  R@ CELL+ !  R> !  1 #UNDO +! ;
+: UNPATCH-ALL ( --- )
+  #UNDO @ 0 ?DO
+    I 3 * CELLS UNDO @ +  DUP @ >R  DUP CELL+ @ R@ !  2 CELLS + @ R> CELL+ !
+  LOOP  0 #UNDO ! ;
 : TRY-TRANSLATE ( xt --- )
   SPN-READY @ 0= IF DROP EXIT THEN
   DUP SHAPE-OK? 0= IF DROP EXIT THEN
   DUP VALIDATE 0= IF DROP 1 #KEPT +! EXIT THEN
   TARGETS-OK? 0= IF DROP 9 WHY ! 1 #KEPT +! EXIT THEN
   CODE-HERE @ T-NAT !
+  RECORDING @ IF DUP START @ - 3 RSHIFT UV, THEN
   \ C-NAT is never cleared: RESOLVE reads only branch targets, which
   \ TARGETS-OK? has checked were decoded - so EMIT-WORD wrote them.
   EMIT-WORD RESOLVE
@@ -508,6 +567,7 @@ VARIABLE SPN-READY  0 SPN-READY !
   \ written the other way round, patching CELL+ wrote SPN-ENTER into it
   \ and then called CELL+ - which jumped to the literal 8 still sitting
   \ where its native address was about to go.
+  RECORDING @ IF 255 C,  DUP UNDO, THEN
   T-NAT @ OVER 8 + !  TOK-ENTER SWAP !  1 #NATIVE +! ;
 
 \ ---- the whole dictionary, oldest first ----
@@ -544,6 +604,7 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
   0 ENTRY M-NEXT !  1 ENTRY M-JUMP !  2 ENTRY M-CALL !
   SPN-ENGINE INTERP-FN ! RP-ADDR !
   #ENTRIES @ 3 DO I SCAN-STENCIL LOOP
+  #ENTRIES @ 3 DO I HOLE-MASK I CELLS ST-MASK + ! LOOP
   INIT-PMAP INIT-PRIMBODY
   DOVAR-OFF START @ + DOVAR-XT !   SQ-OFF START @ + SQ-XT !
   DQ-OFF START @ + DQ-XT !         AQ-OFF START @ + AQ-XT !
@@ -587,16 +648,71 @@ VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
 ' EMIT-ST       START @ - CONSTANT ES-OFF
 ' VALIDATE      START @ - CONSTANT VA-OFF
 ' TRANSLATE-ALL START @ - CONSTANT TA-OFF
-: SPN-BOOT ( --- )
-  SPN-INIT
+\ Set once the replayer exists (below). It seeds the walk first, so a
+\ recording starts with the replayer's own words and a replay makes the
+\ replayer native after its first few words, instead of running it
+\ interpreted almost to the end - which is what happened, measured at
+\ 1.6M interpreted cells.
+VARIABLE FIRST-SEED  0 FIRST-SEED !
+: TRANSLATE-BOOT ( --- )   \ the full translation, at boot or recording
   HERE START @ - 3 RSHIFT 1+ 7 + -8 AND  DUP ALLOCATE ABORT" SPN: no memory" VIS !
   VIS @ OVER 3 RSHIFT 0 CFILL  VIS-N !
+  FIRST-SEED @ ?DUP IF START @ + TRANSLATE-TREE THEN
   CM-OFF START @ + TRANSLATE-TREE
   ES-OFF START @ + TRANSLATE-TREE
   VA-OFF START @ + TRANSLATE-TREE
   TA-OFF START @ + TRANSLATE-TREE
   TRANSLATE-ALL
   VIS @ FREE DROP  0 VIS-N ! ;
+
+\ ---- replaying recipes ----
+VARIABLE RD
+: B@+ ( --- b )  RD @ C@  1 RD +! ;
+: UV@ ( --- u )
+  0 0 BEGIN B@+ DUP >R 127 AND OVER LSHIFT ROT OR SWAP 7 + R> 128 AND 0= UNTIL DROP ;
+: SV@ ( --- n )  UV@ DUP 1 AND IF 1 RSHIFT INVERT ELSE 1 RSHIFT THEN ;
+: REPLAY-WORD ( --- )
+  UV@ CELLS START @ + T-SRC !  CODE-HERE @ T-NAT !  0 #FIX !
+  BEGIN B@+ DUP 255 <> WHILE
+    DUP 254 = IF DROP  CODE-HERE @  UV@ CELLS C-NAT + !
+    ELSE
+      DUP 63 AND SWAP  OVER CELLS ST-MASK + @         ( s b m )
+      DUP 24 AND IF SV@ 2 PICK 64 AND IF START @ + THEN ARG-IMM ! THEN
+      DUP 2 AND IF UV@ CELLS T-SRC @ + ARG-JUMP ! THEN
+      4 AND IF
+        128 AND IF T-NAT @ ELSE
+          UV@ CELLS START @ +
+          DUP @ TOK-ENTER <> ABORT" SPN: a recipe calls a word not yet native"
+          CELL+ @
+        THEN ARG-CALL !
+      ELSE DROP THEN
+      EMIT-ST
+    THEN
+  REPEAT DROP
+  RESOLVE
+  T-SRC @  T-NAT @ OVER 8 + !  TOK-ENTER SWAP !  1 #NATIVE +! ;
+: REPLAY-ALL ( --- )
+  RCP-OFF @ START @ + DUP RD !  RCP-LEN @ +
+  BEGIN RD @ OVER < WHILE REPLAY-WORD REPEAT DROP ;
+
+' REPLAY-ALL START @ - FIRST-SEED !
+
+\ At image build time: translate once, recording, then undo every patch.
+: SPN-RECORD ( --- )
+  SPN-INIT
+  3072 3 * CELLS ALLOCATE ABORT" SPN: no memory" UNDO !  0 #UNDO !
+  HERE START @ - RCP-OFF !  TRUE RECORDING !
+  TRANSLATE-BOOT
+  FALSE RECORDING !
+  HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
+  UNPATCH-ALL  UNDO @ FREE DROP  FALSE SPN-READY ! ;
+
+\ Replay if there are recipes made for stencils with these same holes;
+\ otherwise, or on any other engine, translate in full.
+: SPN-BOOT ( --- )
+  SPN-INIT
+  RCP-LEN @ IF STENCIL-SIG RCP-SIG @ = IF REPLAY-ALL EXIT THEN THEN
+  TRANSLATE-BOOT ;
 
 \ New definitions: translate each as its ; completes.
 : ;  POSTPONE ;  LAST @ NAME> TRY-TRANSLATE ; IMMEDIATE
