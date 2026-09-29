@@ -132,6 +132,37 @@ S(st_rshift) { GO(sp + 1, (cell)((uint64_t)*sp >> tos)); }
 typedef spn_st (*spn_interp_fn)(cell *, cell, cell);
 S(st_interp) { spn_st r = ((spn_interp_fn)IMM_FN())(sp, tos, IMM()); GO(r.sp, r.tos); }
 
+/* DO loops, on the shared return stack in the kernel's own layout: the
+   index on top, the limit under it. Exactly the arithmetic of (LOOP) and
+   (+LOOP) in kernel.4 - +LOOP exits when old-limit and new-limit differ
+   in sign - but done UNSIGNED, since C leaves signed overflow undefined
+   and a Forth loop counter must wrap. There is no return address between
+   a native loop's parameters and an enclosing loop's, so J is rp[2];
+   interpreted J adds a cell for its own return address. */
+S(st_do)     { uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp - 2;
+               r[1] = *sp; r[0] = tos; *rpp = (uint64_t)r; GO(sp + 2, sp[1]); }
+S(st_qdo)    { if (*sp == tos) return spn_jump(sp + 2, sp[1]);
+               uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp - 2;
+               r[1] = *sp; r[0] = tos; *rpp = (uint64_t)r; GO(sp + 2, sp[1]); }
+S(st_loop)   { uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp;
+               uint64_t ix = (uint64_t)r[0] + 1;
+               if (ix == (uint64_t)r[1]) { *rpp = (uint64_t)(r + 2); GO(sp, tos); }
+               r[0] = (cell)ix; return spn_jump(sp, tos); }
+S(st_ploop)  { uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp;
+               uint64_t o = (uint64_t)r[0], l = (uint64_t)r[1], n = o + (uint64_t)tos;
+               if ((int64_t)((o - l) ^ (n - l)) < 0) { *rpp = (uint64_t)(r + 2); GO(sp + 1, *sp); }
+               r[0] = (cell)n; return spn_jump(sp + 1, *sp); }
+S(st_i)      { uint64_t *rpp = IMM_RP(); cell v = ((cell *)*rpp)[0]; *--sp = tos; GO(sp, v); }
+S(st_j)      { uint64_t *rpp = IMM_RP(); cell v = ((cell *)*rpp)[2]; *--sp = tos; GO(sp, v); }
+S(st_unloop) { uint64_t *rpp = IMM_RP(); *rpp += 16; GO(sp, tos); }
+S(st_leave)  { uint64_t *rpp = IMM_RP(); *rpp += 16; return spn_jump(sp, tos); }
+
+/* PICK. In the kernel it is built on SP@, which native code cannot use,
+   so it was refused - and every native PICK went through the re-entry
+   trampoline. In the native layout it is one load: tos is u, sp[0] is
+   x0, and xu is sp[u]. */
+S(st_pick)   { GO(sp, sp[tos]); }
+
 /* The table the Forth side reads. Order matters: SPN-TABLE hands it over
    as-is, and forth/spn.4 names the entries by position. */
 const void *const spn_table[] = {
@@ -147,5 +178,8 @@ const void *const spn_table[] = {
     (const void *)st_fetch, (const void *)st_store, (const void *)st_cfetch,
     (const void *)st_cstore, (const void *)st_or, (const void *)st_ult,
     (const void *)st_lshift, (const void *)st_rshift, (const void *)st_interp,
+    (const void *)st_do, (const void *)st_qdo, (const void *)st_loop,
+    (const void *)st_ploop, (const void *)st_i, (const void *)st_j,
+    (const void *)st_unloop, (const void *)st_leave, (const void *)st_pick,
 };
 const int spn_table_len = sizeof spn_table / sizeof spn_table[0];

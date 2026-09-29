@@ -22,6 +22,12 @@
 
 DECIMAL
 : NIP ( x1 x2 --- x2 )  SWAP DROP ;
+\ Fill whole cells. Boot zeroes about 22 KB of tables before FILL itself
+\ is translated, and FILL goes a byte at a time - a profile of boot put
+\ it at 14% of everything executed. Callers round up to whole cells.
+: CFILL ( a-addr u-cells x --- )
+  >R CELLS OVER + SWAP
+  BEGIN 2DUP > WHILE R@ OVER ! CELL+ REPEAT 2DROP R> DROP ;
 \ Not in this kernel either.
 0 CONSTANT FALSE
 
@@ -50,7 +56,10 @@ VARIABLE RP-ADDR  VARIABLE INTERP-FN
 27 CONSTANT S-STORE   28 CONSTANT S-CFETCH  29 CONSTANT S-CSTORE
 30 CONSTANT S-OR      31 CONSTANT S-ULT     32 CONSTANT S-LSHIFT
 33 CONSTANT S-RSHIFT  34 CONSTANT S-INTERP
-40 CONSTANT MAX-STENCILS
+35 CONSTANT S-DO      36 CONSTANT S-QDO     37 CONSTANT S-LOOP
+38 CONSTANT S-PLOOP   39 CONSTANT S-I       40 CONSTANT S-J
+41 CONSTANT S-UNLOOP  42 CONSTANT S-LEAVE  43 CONSTANT S-PICK
+64 CONSTANT MAX-STENCILS
 
 \ ---- ARCH: what this file knows about x86-64 ----
 6818992301515038369 CONSTANT IMM-MARK   \ 5EA1ED5EA1ED5EA1: a literal
@@ -70,14 +79,24 @@ VARIABLE RP-ADDR  VARIABLE INTERP-FN
   OVER 255 AND OVER C!  OVER 8 RSHIFT 255 AND OVER 1+ C!
   OVER 16 RSHIFT 255 AND OVER 2 + C!  SWAP 24 RSHIFT 255 AND SWAP 3 + C! ;
 : REL-TO? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
+\ Can a 32-bit relative field start at a? Only after call (E8), jmp (E9)
+\ or a conditional jump (0F 8x) - every hole a stencil has is one of
+\ those. Testing every byte position instead was most of SPN-INIT.
+: REL-OP? ( a --- f )
+  DUP 1- C@ DUP 232 = SWAP 233 = OR IF DROP TRUE EXIT THEN
+  DUP 2 - C@ 15 =  SWAP 1- C@ 240 AND 128 = AND ;
 : REL! ( target a --- )  DUP >R 4 + - R> L! ;
 : INT32? ( n --- f )  DUP -2147483648 < 0=  SWAP 2147483647 > 0= AND ;
 
 \ ---- reading the stencils, once per run ----
 : ST-SRC ( i --- a )  ENTRY DUP ENDBR? IF 4 + THEN ;
 VARIABLE LOWER
-: BOUND ( i --- a )   \ the nearest entry above this one, or +64
-  ENTRY DUP LOWER !  64 +
+: BOUND ( i --- a )   \ the nearest entry above this one
+  \ The default is only for a stencil with no entry above it. It was 64,
+  \ and it capped EVERY stencil at 64 bytes: ?DO is 76, the first to
+  \ exceed it, and lost its skip path - whose je then jumped past the
+  \ end of the copied code into whatever came next.
+  ENTRY DUP LOWER !  4096 +
   #ENTRIES @ 0 DO
     I ENTRY  LOWER @ OVER <  OVER 3 PICK <  AND IF NIP ELSE DROP THEN
   LOOP ;
@@ -111,9 +130,11 @@ VARIABLE SI  VARIABLE SSRC  VARIABLE SLEN
   SLEN @ 0 ?DO
     SSRC @ I +
     I 4 + SLEN @ > 0= IF
-      DUP M-NEXT @ REL-TO? IF I 0 HOLE, THEN
-      DUP M-JUMP @ REL-TO? IF I 1 HOLE, THEN
-      DUP M-CALL @ REL-TO? IF I 2 HOLE, THEN
+      DUP REL-OP? IF
+        DUP M-NEXT @ REL-TO? IF I 0 HOLE, THEN
+        DUP M-JUMP @ REL-TO? IF I 1 HOLE, THEN
+        DUP M-CALL @ REL-TO? IF I 2 HOLE, THEN
+      THEN
       DUP L@ IMM32-MARK = IF I 4 HOLE, THEN
     THEN
     I 8 + SLEN @ > 0= IF
@@ -200,6 +221,26 @@ VARIABLE TYPE-XT   VARIABLE AM-XT
 ' (ABORT") START @ - CONSTANT AQ-OFF
 ' TYPE     START @ - CONSTANT TYPE-OFF
 
+\ The DO-loop runtimes. Each reads or rewrites its CALLER'S return
+\ address, so none can be called blind; all are compiled natively.
+VARIABLE DO-XT  VARIABLE QDO-XT  VARIABLE LOOP-XT    VARIABLE PLOOP-XT
+VARIABLE I-XT   VARIABLE J-XT    VARIABLE UNLOOP-XT  VARIABLE LEAVE-XT
+' (DO)    START @ - CONSTANT DO-OFF      ' (?DO)  START @ - CONSTANT QDO-OFF
+' (LOOP)  START @ - CONSTANT LOOP-OFF    ' (+LOOP) START @ - CONSTANT PLOOP-OFF
+' I       START @ - CONSTANT I-OFF       ' J      START @ - CONSTANT J-OFF
+' UNLOOP  START @ - CONSTANT UNLOOP-OFF  ' (LEAVE) START @ - CONSTANT LEAVE-OFF
+VARIABLE PICK-XT  ' PICK START @ - CONSTANT PICK-OFF
+\ 0 none  1 (DO)  2 (?DO)  3 (LOOP)  4 (+LOOP)  5 I  6 J  7 UNLOOP  8 (LEAVE)
+\ 9 PICK - not a loop word, but compiled natively the same way.
+\ Kinds 2 3 4 8 are followed by an inline offset cell.
+: LOOP-KIND ( xt --- k )
+  DUP DO-XT @ = IF DROP 1 EXIT THEN     DUP QDO-XT @ = IF DROP 2 EXIT THEN
+  DUP LOOP-XT @ = IF DROP 3 EXIT THEN   DUP PLOOP-XT @ = IF DROP 4 EXIT THEN
+  DUP I-XT @ = IF DROP 5 EXIT THEN      DUP J-XT @ = IF DROP 6 EXIT THEN
+  DUP UNLOOP-XT @ = IF DROP 7 EXIT THEN DUP LEAVE-XT @ = IF DROP 8 EXIT THEN
+  PICK-XT @ = IF 9 ELSE 0 THEN ;
+: INLINE-CELL? ( k --- f )  DUP 2 = OVER 3 = OR OVER 4 = OR SWAP 8 = OR ;
+
 \ (S") (.") (ABORT") are followed by a counted string, found through
 \ their return address. A scanner must step over it rather than read
 \ text as code - which is what refused EMIT-ST, whose ABORT" message
@@ -210,18 +251,36 @@ VARIABLE TYPE-XT   VARIABLE AM-XT
 \ Does this CODE read its caller's return address - R> or R@ before any
 \ >R? Steps over inline strings; a call to DOVAR ends the code, since a
 \ variable's body is data from there on. Bounded: past 64 cells, unsafe.
-: R-SCAN ( a --- f )
+: R-SCAN-RAW ( a --- f )
   64 0 DO
     DUP @ DUP 1 AND 0= IF
       OVER CELL+ +
       DUP DOVAR-XT @ = IF 2DROP FALSE UNLOOP EXIT THEN
-      STRING-WORD? IF PAST-STRING ELSE CELL+ THEN
+      DUP LOOP-KIND INLINE-CELL? IF DROP 2 CELLS + ELSE
+        STRING-WORD? IF PAST-STRING ELSE CELL+ THEN
+      THEN
     ELSE TOK
       DUP 17 = OVER 19 = OR IF 2DROP TRUE UNLOOP EXIT THEN
       DUP 18 = OVER 1 = OR IF 2DROP FALSE UNLOOP EXIT THEN
       DUP 2 = OVER 3 = OR SWAP 4 = OR IF 2 CELLS + ELSE CELL+ THEN
     THEN
   LOOP DROP TRUE ;
+\ The scan, memoised: one byte per dictionary cell, 0 not yet known,
+\ 1 false, 2 true. CLASSIFY rescanned a callee - up to 64 cells - at
+\ every call site, twice (validation and emission): a word called from
+\ fifty places was scanned a hundred times. Words defined after boot
+\ lie past the table and are simply scanned.
+\ A TRANSLATED word passed validation, which refuses R> or R@ at depth
+\ zero, so it is never R-first. Without this check its patched body -
+\ [SPN-ENTER][native address] - was scanned as Forth, into garbage.
+VARIABLE RSC  VARIABLE RSC-N  0 RSC-N !
+: R-SCAN ( xt --- f )
+  DUP @ TOK-ENTER = IF DROP FALSE EXIT THEN
+  DUP START @ - 3 RSHIFT DUP RSC-N @ U< IF
+    RSC @ + DUP C@ ?DUP IF NIP NIP 2 = EXIT THEN
+    SWAP R-SCAN-RAW DUP IF 2 ELSE 1 THEN ROT C! EXIT
+  THEN DROP R-SCAN-RAW ;
+
 \ A DATA word: its body is a call to DOVAR or to DOES> code, then data.
 \ Calling one is safe - DOVAR or the DOES> code consumes the return
 \ address INTO the word, not its caller's. The earlier test scanned
@@ -276,8 +335,11 @@ VARIABLE HWM
 \ dictionary  4 R> of the caller's return address  5 R@ of it  6 a
 \ primitive never translated  7 call leaves the dictionary  8 calls a
 \ word that must not be called blind (WHY-XT)  9 a branch into the
-\ middle of something.
+\ middle of something  10 a loop word at the wrong return-stack depth.
 VARIABLE WHY  VARIABLE WHY-XT
+\ The words the last VALIDATE saw called, for TRANSLATE-TREE.
+CREATE CALLS 128 CELLS ALLOT  VARIABLE #CALLS
+: CALL, ( xt --- )  #CALLS @ 128 < IF #CALLS @ CELLS CALLS + ! 1 #CALLS +! ELSE DROP THEN ;
 : IDX ( a --- i )  T-SRC @ - 3 RSHIFT ;
 : INSIDE? ( a --- f )  IDX DUP 0< 0= SWAP MAX-CELLS < AND ;
 : TGT, ( a --- )
@@ -289,9 +351,22 @@ VARIABLE WHY  VARIABLE WHY-XT
   FALSE #TGT @ 0 ?DO
     I CELLS TGTS + @  2 PICK OVER < SWAP 4 PICK < AND OR
   LOOP NIP NIP ;
+\ A loop word at a: check the return-stack depth it needs, record any
+\ jump target, and step past its inline offset. ( a k --- a' ok? )
+: LOOP-TARGET ( a --- a )   DUP CELL+ DUP @ +  DUP TGT,  T-FAR @ MAX T-FAR ! ;
+: V-LOOP ( a k --- a' f )
+  DUP 1 = IF DROP 2 T-DEP +! CELL+ TRUE EXIT THEN
+  DUP 2 = IF DROP 2 T-DEP +! LOOP-TARGET 2 CELLS + TRUE EXIT THEN
+  DUP 6 = IF DROP T-DEP @ 4 < IF FALSE EXIT THEN CELL+ TRUE EXIT THEN
+  DUP 9 = IF DROP CELL+ TRUE EXIT THEN
+  T-DEP @ 2 < IF DROP FALSE EXIT THEN
+  DUP 5 = IF DROP CELL+ TRUE EXIT THEN
+  DUP 7 = IF DROP -2 T-DEP +! CELL+ TRUE EXIT THEN
+  DUP 8 = IF DROP LOOP-TARGET 2 CELLS + TRUE EXIT THEN
+  DROP -2 T-DEP +! LOOP-TARGET 2 CELLS + TRUE ;
 : VALIDATE ( xt --- f )
-  DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  TRUE T-OK !
-  C-DEP HWM @ CELLS -1 FILL  0 HWM !
+  DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  TRUE T-OK !  0 #CALLS !
+  C-DEP HWM @ -1 CFILL  0 HWM !
   BEGIN
     DUP INSIDE? 0= IF DROP 1 WHY ! FALSE EXIT THEN
     T-DEP @ OVER IDX CELLS C-DEP + !
@@ -312,15 +387,16 @@ VARIABLE WHY  VARIABLE WHY-XT
     ELSE                                  \ ( a cell ): a call
       OVER CELL+ +  DUP T-SRC @ = IF DROP CELL+ ELSE
         DUP IN-DICT? 0= IF 2DROP 7 WHY ! FALSE EXIT THEN
-        DUP STRING-WORD? IF
+        DUP LOOP-KIND ?DUP IF NIP V-LOOP 0= IF DROP 10 WHY ! FALSE EXIT THEN
+        ELSE DUP STRING-WORD? IF
           \ (ABORT") falls through only on error; otherwise it jumps
           \ past its string, which makes that a branch target.
           AQ-XT @ = IF DUP PAST-STRING DUP TGT, T-FAR @ MAX T-FAR ! THEN
           PAST-STRING
         ELSE
           DUP WHY-XT !  CLASSIFY 3 = IF DROP 8 WHY ! FALSE EXIT THEN
-          CELL+
-        THEN
+          WHY-XT @ CALL,  CELL+
+        THEN THEN
       THEN
     THEN
   0 UNTIL ;
@@ -380,6 +456,16 @@ VARIABLE E-DEP
   OVER CELL+ DUP 1+ E-LIT C@ E-LIT
   DQ-XT @ = IF TYPE-XT @ E-CALL THEN
   PAST-STRING ;
+: E-LOOP ( a k --- a' )
+  DUP 1 = IF DROP S-DO EMIT-ST CELL+ EXIT THEN
+  DUP 5 = IF DROP S-I EMIT-ST CELL+ EXIT THEN
+  DUP 6 = IF DROP S-J EMIT-ST CELL+ EXIT THEN
+  DUP 7 = IF DROP S-UNLOOP EMIT-ST CELL+ EXIT THEN
+  DUP 9 = IF DROP S-PICK EMIT-ST CELL+ EXIT THEN
+  OVER CELL+ DUP @ + ARG-JUMP !
+  DUP 2 = IF DROP S-QDO ELSE DUP 3 = IF DROP S-LOOP ELSE
+    4 = IF S-PLOOP ELSE S-LEAVE THEN THEN THEN
+  EMIT-ST 2 CELLS + ;
 : EMIT-WORD ( --- )
   0 #FIX !  T-SRC @
   BEGIN
@@ -387,7 +473,8 @@ VARIABLE E-DEP
     DUP @ DUP 1 AND IF
       TOK DUP 1 = IF DROP DUP T-FAR @ < 0= IF S-EXIT EMIT-ST DROP EXIT THEN 1 THEN
       E-PRIM
-    ELSE OVER CELL+ +  DUP STRING-WORD? IF E-STRING ELSE E-CALL CELL+ THEN THEN
+    ELSE OVER CELL+ +  DUP LOOP-KIND ?DUP IF NIP E-LOOP ELSE
+      DUP STRING-WORD? IF E-STRING ELSE E-CALL CELL+ THEN THEN THEN
   0 UNTIL ;
 : RESOLVE ( --- )
   #FIX @ 0 ?DO
@@ -434,9 +521,9 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
     DUP MARK  CELL- DUP @ DUP IF + ELSE 2DROP 0 THEN
   REPEAT ;
 : TRANSLATE-ALL ( --- )
-  START @ MBASE !  HERE MBASE @ - 3 RSHIFT 1+ MSIZE !
+  START @ MBASE !  HERE MBASE @ - 3 RSHIFT 1+ 7 + -8 AND MSIZE !
   MSIZE @ ALLOCATE ABORT" SPN: no memory" MARKS !
-  MARKS @ MSIZE @ 0 FILL
+  MARKS @ MSIZE @ 3 RSHIFT 0 CFILL
   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
   MSIZE @ 0 DO
     MARKS @ I + C@ IF  I CELLS MBASE @ + NAME> TRY-TRANSLATE  THEN
@@ -461,11 +548,55 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
   DOVAR-OFF START @ + DOVAR-XT !   SQ-OFF START @ + SQ-XT !
   DQ-OFF START @ + DQ-XT !         AQ-OFF START @ + AQ-XT !
   TYPE-OFF START @ + TYPE-XT !     AM-OFF START @ + AM-XT !
+  DO-OFF START @ + DO-XT !         QDO-OFF START @ + QDO-XT !
+  LOOP-OFF START @ + LOOP-XT !     PLOOP-OFF START @ + PLOOP-XT !
+  I-OFF START @ + I-XT !           J-OFF START @ + J-XT !
+  UNLOOP-OFF START @ + UNLOOP-XT ! LEAVE-OFF START @ + LEAVE-XT !
+  PICK-OFF START @ + PICK-XT !
   CODE-SIZE SPN-EXEC DUP 0= ABORT" SPN: no executable memory"
   DUP CODE-HERE !  CODE-SIZE + CODE-LIMIT !
-  C-DEP MAX-CELLS CELLS -1 FILL  0 HWM !
+  C-DEP MAX-CELLS -1 CFILL  0 HWM !
+  HERE START @ - 3 RSHIFT 1+ 7 + -8 AND  DUP ALLOCATE ABORT" SPN: no memory" RSC !
+  RSC @ OVER 3 RSHIFT 0 CFILL  RSC-N !
   0 #NATIVE !  0 #KEPT !  TRUE SPN-READY ! ;
-: SPN-BOOT ( --- )  SPN-INIT TRANSLATE-ALL ;
+\ ---- translating the translator first ----
+\ The translator's own words sit at the end of the dictionary, so in
+\ address order they were translated last: most of boot ran them
+\ interpreted. TRANSLATE-TREE translates a word's callees before the
+\ word, depth first, so helpers are native before anything calling
+\ them is translated. Applied to TRANSLATE-ALL at boot, it makes the
+\ translator native before it runs over the rest of the dictionary.
+VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
+: VISITED? ( xt --- f )
+  START @ - 3 RSHIFT DUP VIS-N @ U< IF VIS @ + C@ ELSE DROP TRUE THEN ;
+: VISIT ( xt --- )
+  START @ - 3 RSHIFT DUP VIS-N @ U< IF VIS @ + 1 SWAP C! ELSE DROP THEN ;
+: TRANSLATE-TREE ( xt --- )
+  DUP VISITED? IF DROP EXIT THEN  DUP VISIT
+  DUP SHAPE-OK? 0= IF DROP EXIT THEN
+  DUP VALIDATE 0= IF DROP EXIT THEN
+  >R  #CALLS @ DUP 0 ?DO I CELLS CALLS + @ SWAP LOOP
+  0 ?DO RECURSE LOOP
+  R> TRY-TRANSLATE ;
+\ Seeds, in the order every translation needs them: CMOVE copies each
+\ stencil's bytes, EMIT-ST places a stencil, VALIDATE checks a word.
+\ Seeding VALIDATE first was measured WORSE - 1.81M interpreted cells
+\ against 1.56M - because its subtree was then emitted with CMOVE still
+\ interpreted, a byte at a time.
+' CMOVE         START @ - CONSTANT CM-OFF
+' EMIT-ST       START @ - CONSTANT ES-OFF
+' VALIDATE      START @ - CONSTANT VA-OFF
+' TRANSLATE-ALL START @ - CONSTANT TA-OFF
+: SPN-BOOT ( --- )
+  SPN-INIT
+  HERE START @ - 3 RSHIFT 1+ 7 + -8 AND  DUP ALLOCATE ABORT" SPN: no memory" VIS !
+  VIS @ OVER 3 RSHIFT 0 CFILL  VIS-N !
+  CM-OFF START @ + TRANSLATE-TREE
+  ES-OFF START @ + TRANSLATE-TREE
+  VA-OFF START @ + TRANSLATE-TREE
+  TA-OFF START @ + TRANSLATE-TREE
+  TRANSLATE-ALL
+  VIS @ FREE DROP  0 VIS-N ! ;
 
 \ New definitions: translate each as its ; completes.
 : ;  POSTPONE ;  LAST @ NAME> TRY-TRANSLATE ; IMMEDIATE
