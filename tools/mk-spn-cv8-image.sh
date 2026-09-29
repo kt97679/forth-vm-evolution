@@ -1,0 +1,23 @@
+#!/bin/sh
+# mk-spn-cv8-image.sh BUILD-DIR - build s8-spncv8: SPN on the CV8 image.
+#
+# The engine is engine/spn-cv8.c - the CV8 engine plus SPN - put through
+# tools/gen-tos.py and compiled exactly as the byte-header stage s6 is.
+# The image is s6's, with the translator (forth/spn-cv8.4) and a saver
+# (forth/spn-cv8-save.4) compiled into it by its own CV8 compiler, and
+# SPN-BOOT set to run at start-up: every boot translates the dictionary.
+# Needs s6-cv8b-s64.img and the fold tables from tools/build-stages.sh.
+# x86-64 only.
+set -e
+O=$(cd "$1" && pwd); ROOT=$(cd "$(dirname "$0")/.." && pwd); W=$O/work
+[ -r "$O/s6-cv8b-s64.img" ] || { echo "build s6-cv8b first (tools/build-stages.sh)"; exit 1; }
+python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$O/spn-cv8-tos.c"
+cc -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
+   -I"$O" -o "$O/s8-spncv8-64" "$O/spn-cv8-tos.c" \
+   "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c"
+rm -f "$W/s8-spncv8-s64.img"
+( cd "$W" && printf 'S" %s/forth/spn-cv8.4" INCLUDED\nS" %s/forth/spn-cv8-save.4" INCLUDED\n'"' SPN-BOOT SET-BOOT\nS\" s8-spncv8-s64.img\" SPN-SAVE\nBYE\n" \
+      "$ROOT" "$ROOT" | "$O/s8-spncv8-64" "$O/s6-cv8b-s64.img" >/dev/null 2>&1 )
+[ -s "$W/s8-spncv8-s64.img" ] || { echo "failed to save s8-spncv8-s64.img"; exit 1; }
+cp "$W/s8-spncv8-s64.img" "$O/s8-spncv8-s64.img"
+echo "built  s8-spncv8 ($(wc -c < "$O/s8-spncv8-s64.img") bytes)"

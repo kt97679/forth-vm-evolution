@@ -1,0 +1,68 @@
+\ spn-cv8-save.4 - saving an SPN-CV8 system as a CV8 image.
+\
+\ Load after spn-cv8.4, in the byte-header CV8 system. That system is
+\ built without the pool, locals or shell, and cv8-save.4 cannot be used
+\ as it stands: its scrub names 27 shell variables, and its header is
+\ the layout from before the word list was hashed again - one head_nfa,
+\ where the engine now reads a thread count and every thread head
+\ (engine/vm-lab.c, load_image). An image it wrote would be misread
+\ from the second field on.
+\
+\ So this is save-system.4's method - copy the dictionary, put back in
+\ the copy what COLD relocates, blank live-session scratch - with the
+\ header the engine reads today:
+\
+\     magic    8 bytes  "CV80", cell width 8, 'L', version 1, flags 0x1F
+\     nthreads cell     then that many START-relative thread heads
+\     ntails   cell     0: DODOES carries its target inline
+\     locals   5 cells  0: no locals.4 in this system
+\     the dictionary, START to HERE
+\
+\ The magic is the byte-header stage's, read from its image; COLD's
+\ relocation (kernel.4) is DP, the nonzero thread heads, and BOOT.
+\ Save BEFORE SPN-BOOT has run: a translated system's entries are
+\ patched to point into a code buffer that will not exist next time.
+
+DECIMAL
+VARIABLE SV-FID  VARIABLE SV-LEN  VARIABLE SV-BUF
+CREATE SV-MAGIC  67 C, 86 C, 56 C, 48 C, 8 C, 76 C, 1 C, 31 C,
+: SV>COPY ( live-addr --- copy-addr )  START @ - SV-BUF @ + ;
+: SV-BLANK ( live-addr u --- )  SWAP SV>COPY SWAP 0 FILL ;
+: SV-CELL ( live-addr --- )  1 CELLS SV-BLANK ;
+: SV-UNRELOCATE ( live-addr --- )  SV>COPY DUP @ START @ - SWAP ! ;
+: SV-SCRUB ( --- )   \ as save-system.4's SS-SCRUB, less pool and locals
+  TIB             1 CELLS 256 + SV-BLANK
+  NAMEBUF         1 CELLS 28 +  SV-BLANK
+  POCKET          1 CELLS 252 + SV-BLANK
+  INCLUDE-BUFFER  1 CELLS 508 + SV-BLANK
+  CONTEXT         1 CELLS 28 +  SV-BLANK
+  INCLUDE-POINTER SV-CELL
+  SRC SV-CELL  #SRC SV-CELL  >IN SV-CELL  SID SV-CELL
+  #TIB SV-CELL  SPAN SV-CELL
+  LAST SV-CELL  CURRENT SV-CELL  CSP SV-CELL  'LEAVE SV-CELL
+  S0 SV-CELL  R0 SV-CELL  START SV-CELL
+  T-LIM SV-CELL                              \ SPN: the one absolute
+  SV-FID SV-CELL  SV-LEN SV-CELL  SV-BUF SV-CELL ;
+: SV-WRITE ( a u --- )  SV-FID @ WRITE-FILE ABORT" SPN-SAVE: write failed" ;
+VARIABLE SV-X
+: SV-CELL, ( n --- )  SV-X !  SV-X 1 CELLS SV-WRITE ;
+: SPN-SAVE ( c-addr u --- )
+  SPN-READY @ ABORT" SPN-SAVE: save before SPN-BOOT, not after"
+  HERE START @ - SV-LEN !
+  SV-LEN @ ALLOCATE ABORT" SPN-SAVE: out of memory" SV-BUF !
+  START @ SV-BUF @ SV-LEN @ MOVE
+  DP SV-UNRELOCATE
+  FORTH-WORDLIST @ 1+ 1 DO
+    FORTH-WORDLIST I CELLS + @ IF FORTH-WORDLIST I CELLS + SV-UNRELOCATE THEN
+  LOOP
+  SV-SCRUB
+  W/O BIN CREATE-FILE ABORT" SPN-SAVE: cannot create file" SV-FID !
+  SV-MAGIC 8 SV-WRITE
+  FORTH-WORDLIST @ SV-CELL,
+  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + SV>COPY @ SV-CELL, LOOP
+  0 SV-CELL,                                  \ ntails
+  5 0 DO 0 SV-CELL, LOOP                      \ locals header
+  SV-BUF @ SV-LEN @ SV-WRITE
+  SV-FID @ CLOSE-FILE DROP
+  SV-BUF @ FREE DROP ;
+: SET-BOOT ( xt --- )  START @ - BOOT ! ;
