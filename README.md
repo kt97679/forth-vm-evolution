@@ -59,7 +59,7 @@ the engine and patching their holes; everything else stays interpreted.
 `s8-spncv8` does it over `s6-cv8b`'s CV8 image and is the current one;
 `s7-spn` does it over the cell image and is frozen. In one build on the
 development VM, s8 runs the four workloads at 0.21-0.37x of the cell
-system end to end, start-up included, from a 38 KB image - s7 needs
+system end to end, start-up included, from a 36 KB image - s7 needs
 103 KB for roughly the same speed; s8-lazy, translating most words the
 first time they run, needs 32 KB and starts fastest. `stages/STAGES.md` lists them;
 `FINDINGS-SPN.md` has the design, the measurements and what they do and

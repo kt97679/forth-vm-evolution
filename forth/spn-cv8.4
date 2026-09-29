@@ -803,18 +803,27 @@ VARIABLE STS-OFF  0 STS-OFF !  VARIABLE STS-LEN  0 STS-LEN !
   0 ?DO RECURSE LOOP
   R> TRY-TRANSLATE ;
 \ ---- replaying recipes ----
+\ The format is spn-cv8-build.4's: a word's xt as a delta from the last
+\ one's; relocated literals and callees as deltas from the word's own
+\ xt; a branch target marked by 254 alone, and a jump naming its target
+\ by rank, so C-NAT is indexed here by rank, not by source offset.
+VARIABLE RP-PREV  VARIABLE #MARK
+: RESOLVE-RANKS ( --- )
+  #FIX @ 0 ?DO
+    I 2 * CELLS FIXUPS @ +  DUP CELL+ @ CELLS C-NAT @ + @  SWAP @ REL!
+  LOOP ;
 : REPLAY-WORD ( --- )
-  UV@ START @ + T-SRC !
-  CODE-HERE @ 15 + -16 AND CODE-HERE !  CODE-HERE @ T-NAT !  0 #FIX !
+  SV@ RP-PREV @ + DUP RP-PREV !  T-SRC !
+  CODE-HERE @ 15 + -16 AND CODE-HERE !  CODE-HERE @ T-NAT !  0 #FIX !  0 #MARK !
   BEGIN B@+ DUP 255 <> WHILE
-    DUP 254 = IF DROP  CODE-HERE @  UV@ CELLS C-NAT @ + !
+    DUP 254 = IF DROP  CODE-HERE @  #MARK @ CELLS C-NAT @ + !  1 #MARK +!
     ELSE
       DUP 63 AND SWAP  OVER ST-MASK ST@                         ( s b m )
-      DUP 24 AND IF SV@ 2 PICK 64 AND IF START @ + THEN ARG-IMM ! THEN
-      DUP 2 AND IF UV@ T-SRC @ + ARG-JUMP ! THEN
+      DUP 24 AND IF SV@ 2 PICK 64 AND IF T-SRC @ + THEN ARG-IMM ! THEN
+      DUP 2 AND IF UV@ ARG-JUMP ! THEN                   \ a target's rank
       4 AND IF
         128 AND IF T-NAT @ ELSE
-          UV@ START @ + ENTRY-OF
+          SV@ T-SRC @ + ENTRY-OF
           DUP C@ OP-ENTER <> ABORT" SPN: a recipe calls a word not yet native"
           1+ LD16 4 LSHIFT CODE-BASE @ +
         THEN ARG-CALL !
@@ -822,9 +831,10 @@ VARIABLE STS-OFF  0 STS-OFF !  VARIABLE STS-LEN  0 STS-LEN !
       EMIT-ST
     THEN
   REPEAT DROP
-  RESOLVE
+  RESOLVE-RANKS
   T-SRC @ PATCH-ENTRY  1 #NATIVE +! ;
 : REPLAY-ALL ( --- )
+  START @ RP-PREV !
   RCP-OFF @ START @ + DUP RD !  RCP-LEN @ +
   BEGIN RD @ OVER < WHILE REPLAY-WORD REPEAT DROP ;
 

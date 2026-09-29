@@ -711,3 +711,30 @@ s8-lazy 1.85 -> 1.78. All 15 systems 616/616; both recipe images corpus
 20 runs of 20; the stencil record still loads; the hook is 0 in every
 saved image.
 
+## Image size: tighter recipes
+
+Four encodings, with no cost at replay: a word's location is a delta
+from the previous word's; a relocated literal and a callee are deltas
+from the word's own xt - a word's variables and callees are usually near
+it, so most three-byte fields become two; a branch target is marked by
+the byte 254 alone, and a jump names its target by rank - the k-th
+distinct target in address order, which is the order the marks arrive
+in, so replay indexes C-NAT by rank instead of by source offset.
+
+                   before     now
+    s8-spncv8      37,670     36,360 bytes   (recipes 12,713)
+    s8-lazy        32,425     31,654         (recipes  7,742)
+    s8-full        23,196     23,348         (no recipes; the replayer grew)
+
+Start-up unchanged within noise (2.08 and 1.81 ms). All 15 systems
+616/616; both recipe images corpus 20 runs of 20.
+
+## Where s8-lazy ends up
+
+Against the start of this round: image 34,796 -> 31,654 bytes (-9%);
+resident memory over CV8 +300 -> +224 KB on a trivial run, +252 on the
+corpus, of which 64 KB is shared libraries mapped read-only - about 160 KB
+private: heap 68, native code 68-92, a larger dictionary 20-24. Start-up
+1.85 -> 1.81 ms. It stays within 3% of s8 on speed, and now uses less
+memory than s8 as well as a smaller image.
+
