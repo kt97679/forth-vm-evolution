@@ -15,9 +15,17 @@ python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$O/spn-cv8-tos.c"
 cc -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
    -I"$O" -o "$O/s8-spncv8-64" "$O/spn-cv8-tos.c" \
    "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c"
-rm -f "$W/s8-spncv8-s64.img"
-( cd "$W" && printf 'S" %s/forth/spn-cv8.4" INCLUDED\nS" %s/forth/spn-cv8-save.4" INCLUDED\n'"' SPN-BOOT SET-BOOT\nS\" s8-spncv8-s64.img\" SPN-SAVE\nBYE\n" \
-      "$ROOT" "$ROOT" | "$O/s8-spncv8-64" "$O/s6-cv8b-s64.img" >/dev/null 2>&1 )
-[ -s "$W/s8-spncv8-s64.img" ] || { echo "failed to save s8-spncv8-s64.img"; exit 1; }
-cp "$W/s8-spncv8-s64.img" "$O/s8-spncv8-s64.img"
-echo "built  s8-spncv8 ($(wc -c < "$O/s8-spncv8-s64.img") bytes)"
+# Two variants, as for s7: s8-spncv8 carries recipes - the translation
+# recorded once here and replayed at boot - and s8-full translates in
+# full at every boot. Same engine, same native code.
+build() {  # build NAME RECORD-WORD
+    rm -f "$W/$1-s64.img"
+    ( cd "$W" && printf 'S" %s/forth/spn-cv8.4" INCLUDED\nS" %s/forth/spn-cv8-save.4" INCLUDED\n%s\n'"' SPN-BOOT SET-BOOT\nS\" %s-s64.img\" SPN-SAVE\nBYE\n" \
+          "$ROOT" "$ROOT" "$2" "$1" | "$O/s8-spncv8-64" "$O/s6-cv8b-s64.img" >/dev/null 2>&1 )
+    [ -s "$W/$1-s64.img" ] || { echo "failed to save $1-s64.img"; exit 1; }
+    cp "$W/$1-s64.img" "$O/$1-s64.img"
+    [ "$1" = s8-spncv8 ] || cp "$O/s8-spncv8-64" "$O/$1-64"
+    echo "built  $1 ($(wc -c < "$O/$1-s64.img") bytes)"
+}
+build s8-spncv8 SPN-RECORD
+build s8-full   ""

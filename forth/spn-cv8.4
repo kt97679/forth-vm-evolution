@@ -73,9 +73,12 @@ VARIABLE RP-ADDR  VARIABLE INTERP-FN
 : INT32? ( n --- f )  DUP -2147483648 < 0=  SWAP 2147483647 > 0= AND ;
 
 \ ---- the working tables, allocated by SPN-INIT ----
-VARIABLE ST-START VARIABLE ST-LEN VARIABLE ST-NH VARIABLE ST-HOLES
+VARIABLE ST-START VARIABLE ST-LEN VARIABLE ST-NH VARIABLE ST-HOLES VARIABLE ST-MASK
 VARIABLE C-NAT  VARIABLE C-DEP  VARIABLE FIXUPS  VARIABLE TGTS  VARIABLE CALLS
 VARIABLE PMAP   VARIABLE PRIMBODY
+\ In the image, not on the heap: a recipe records an S-INTERP's target
+\ as an image offset, and a heap address has none.
+CREATE PRIMBODY-AREA 160 ALLOT
 : ST@ ( i table --- n )  @ SWAP CELLS + @ ;
 : ST! ( n i table --- )  @ SWAP CELLS + ! ;
 
@@ -99,6 +102,7 @@ VARIABLE LOWER
   SWAP S-EXIT <> AND ;
 VARIABLE SI  VARIABLE SSRC  VARIABLE SLEN
 : HOLE, ( offset kind --- )
+  1 OVER LSHIFT SI @ ST-MASK ST@ OR SI @ ST-MASK ST!   \ which kinds it has
   SWAP 8 * +  SI @ 8 * SI @ ST-NH ST@ + CELLS ST-HOLES @ + !
   SI @ ST-NH ST@ 1+ SI @ ST-NH ST! ;
 : SCAN-STENCIL ( i --- )
@@ -131,6 +135,36 @@ VARIABLE CODE-BASE  VARIABLE CODE-HERE  VARIABLE CODE-LIMIT
 \ ---- emitting one stencil ----
 VARIABLE ARG-IMM  VARIABLE ARG-CALL  VARIABLE ARG-JUMP  VARIABLE E-DST
 VARIABLE T-SRC  VARIABLE T-NAT  VARIABLE #FIX
+
+\ ---- recipes: translation decided when the image is built ----
+\ As in spn-full.4: the build translates once with RECORDING on and
+\ writes each word's decisions into the image; boot replays them -
+\ copying stencils and filling holes, no decoding, no validation.
+\ Stencil bytes and hole offsets are still read from the running
+\ engine; a signature of the hole kinds guards against a mismatch.
+\
+\ Per word: the xt's byte offset from START, ops, 255. An op is one
+\ byte - stencil index, +64 if its literal is an image address, +128
+\ if it calls its own word - then the fields its holes need: literal,
+\ jump target (bytes from the word's start), callee (xt offset). 254
+\ and an offset mark a branch target, so jumps to it can be resolved.
+\ Every literal that is an image address is flagged where it is made,
+\ never guessed from its value.
+VARIABLE RECORDING  0 RECORDING !
+VARIABLE ARG-RELOC  0 ARG-RELOC !     \ ARG-IMM is an address in the image
+VARIABLE ARG-CXT    0 ARG-CXT !       \ an S-CALL's callee xt; 0 for itself
+VARIABLE RCP-OFF  0 RCP-OFF !   VARIABLE RCP-LEN  0 RCP-LEN !
+VARIABLE RCP-SIG  0 RCP-SIG !
+: UV, ( u --- )  BEGIN DUP 127 U> WHILE DUP 127 AND 128 OR C, 7 RSHIFT REPEAT C, ;
+: SV, ( n --- )  DUP 0< IF INVERT 1 LSHIFT 1+ ELSE 1 LSHIFT THEN UV, ;
+: RECORD-OP ( i --- )
+  DUP ST-MASK ST@                                           ( i m )
+  OVER  OVER 24 AND IF ARG-RELOC @ IF 64 OR THEN THEN
+        OVER 4 AND IF ARG-CXT @ 0= IF 128 OR THEN THEN  C,
+  DUP 24 AND IF ARG-IMM @  ARG-RELOC @ IF START @ - THEN  SV, THEN
+  DUP 2 AND IF ARG-JUMP @ T-SRC @ - UV, THEN
+  4 AND IF ARG-CXT @ ?DUP IF START @ - UV, THEN THEN
+  DROP ;
 : FIX, ( native src --- )
   #FIX @ 256 < 0= ABORT" SPN: too many branches"
   #FIX @ 2 * CELLS FIXUPS @ +  DUP >R CELL+ !  R> !  1 #FIX +! ;
@@ -144,6 +178,7 @@ VARIABLE T-SRC  VARIABLE T-NAT  VARIABLE #FIX
   OVER 5 = IF NIP  RP-ADDR @ SWAP ! EXIT THEN
   NIP INTERP-FN @ SWAP ! ;
 : EMIT-ST ( i --- )
+  RECORDING @ IF DUP RECORD-OP THEN
   DUP SI !
   CODE-HERE @ OVER ST-LEN ST@ + CODE-LIMIT @ > ABORT" SPN: code buffer full"
   CODE-HERE @ E-DST !
@@ -151,7 +186,8 @@ VARIABLE T-SRC  VARIABLE T-NAT  VARIABLE #FIX
   SI @ ST-NH ST@ 0 ?DO
     SI @ 8 * I + CELLS ST-HOLES @ + @ PATCH-HOLE
   LOOP
-  SI @ ST-LEN ST@ CODE-HERE +! ;
+  SI @ ST-LEN ST@ CODE-HERE +!
+  0 ARG-RELOC !  0 ARG-CXT ! ;
 
 \ ---- primitives: which stencil, or run it by re-entry ----
 \ By the kernel's PRIMITIVE order, which CV8 keeps with ESCAPE off.
@@ -353,7 +389,11 @@ VARIABLE WHY  VARIABLE WHY-XT  VARIABLE #CALLS
 \ word just defined it is HERE.
 VARIABLE T-LIM  0 T-LIM !
 : INSIDE? ( a --- f )  DUP T-LIM @ < SWAP IDX DUP 0< 0= SWAP MAX-BYTES < AND AND ;
-: TGT, ( a --- )  #TGT @ 128 < IF #TGT @ CELLS TGTS @ + ! 1 #TGT +! ELSE DROP THEN ;
+\ More targets than fit: fine for a translation, which records C-NAT
+\ at every operation; fatal for a recipe, which marks only targets.
+VARIABLE TGT-OVER
+: TGT, ( a --- )
+  #TGT @ 128 < IF #TGT @ CELLS TGTS @ + ! 1 #TGT +! ELSE DROP TRUE TGT-OVER ! THEN ;
 : CALLEE, ( xt --- )  #CALLS @ 128 < IF #CALLS @ CELLS CALLS @ + ! 1 #CALLS +! ELSE DROP THEN ;
 : TARGET-IN? ( a n --- f )   \ a branch target strictly inside [a, a+n)?
   OVER + SWAP  FALSE #TGT @ 0 ?DO
@@ -387,7 +427,7 @@ VARIABLE SK  VARIABLE SV
 : REST-OP ( --- )  SK @ OP-K !  SV @ OP-V ! ;
 : VALIDATE ( xt --- f )
   T-LIM @ 0= IF HERE T-LIM ! THEN
-  DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  0 #CALLS !  0 WHY !
+  DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  0 #CALLS !  0 WHY !  0 TGT-OVER !
   C-DEP @ HWM @ -1 CFILL  0 HWM !
   BEGIN
     DUP INSIDE? 0= IF DROP 1 WHY ! FALSE EXIT THEN
@@ -434,7 +474,8 @@ VARIABLE SK  VARIABLE SV
 : E-PRIM ( p --- )   \ a primitive with no operand
   DUP 0= IF DROP EXIT THEN
   DUP PM@ DUP 0< 0= IF NIP EMIT-ST EXIT THEN DROP
-  2 * PRIMBODY @ + ARG-IMM !  S-INTERP EMIT-ST ;
+  2 * PRIMBODY @ + ARG-IMM !  TRUE ARG-RELOC !  S-INTERP EMIT-ST ;
+: E-ADDR ( a --- )  TRUE ARG-RELOC ! E-LIT ;   \ an address in the image
 : E-ADDI ( n --- )  DUP INT32? IF ARG-IMM ! S-ADDI32 ELSE ARG-IMM ! S-ADDI THEN EMIT-ST ;
 \ The fifteen tiny-word opcodes, as sequences of stencils.
 : E-TINY ( i --- )
@@ -458,8 +499,8 @@ VARIABLE SK  VARIABLE SV
   OP-K @ K-TINY = IF OP-V @ E-TINY EXIT THEN
   OP-K @ K-ADDI = IF OP-V @ E-ADDI EXIT THEN
   OP-K @ K-EQI = IF OP-V @ E-LIT S-EQ EMIT-ST EXIT THEN
-  OP-K @ K-VF = IF OP-V @ E-LIT S-FETCH EMIT-ST EXIT THEN
-  OP-K @ K-VS = IF OP-V @ E-LIT S-STORE EMIT-ST EXIT THEN
+  OP-K @ K-VF = IF OP-V @ E-ADDR S-FETCH EMIT-ST EXIT THEN
+  OP-K @ K-VS = IF OP-V @ E-ADDR S-STORE EMIT-ST EXIT THEN
   OP-K @ K-PRIM = IF OP-V @ E-PRIM EXIT THEN ;
 \ The operation just decoded ends in EXIT: emit the part before it.
 : E-FINAL ( --- )
@@ -471,12 +512,13 @@ VARIABLE SK  VARIABLE SV
 : E-INLINE ( xt --- )
   BEGIN DECODE FINAL-OP? 0= WHILE E-SIMPLE REPEAT DROP E-FINAL ;
 : E-CALL ( xt --- )
-  DUP T-SRC @ = IF DROP T-NAT @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
-  CLASSIFY
-  DUP 0 = IF DROP C-VAL @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
-  DUP 1 = IF DROP C-VAL @ E-LIT EXIT THEN
+  DUP T-SRC @ = IF DROP T-NAT @ ARG-CALL ! 0 ARG-CXT ! S-CALL EMIT-ST EXIT THEN
+  DUP >R CLASSIFY
+  DUP 0 = IF DROP C-VAL @ ARG-CALL ! R> ARG-CXT ! S-CALL EMIT-ST EXIT THEN
+  R> DROP
+  DUP 1 = IF DROP C-VAL @ E-ADDR EXIT THEN
   DUP 5 = IF DROP C-VAL @ E-INLINE EXIT THEN
-  DROP C-VAL @ ARG-IMM ! S-INTERP EMIT-ST ;
+  DROP C-VAL @ ARG-IMM ! TRUE ARG-RELOC ! S-INTERP EMIT-ST ;
 : E-LOOP ( a' k --- a'' )   \ a' is just past the call
   DUP 1 = IF DROP S-DO EMIT-ST EXIT THEN
   DUP 5 = IF DROP S-I EMIT-ST EXIT THEN
@@ -493,15 +535,16 @@ VARIABLE SK  VARIABLE SV
 : E-STRING ( a' xt --- a'' )   \ a' is the counted string
   DUP AQ-XT @ = IF DROP
     DUP PAST-STRING ARG-JUMP !  S-0BRANCH EMIT-ST
-    DUP E-LIT  AM-XT @ E-CALL  PAST-STRING EXIT
+    DUP E-ADDR  AM-XT @ E-CALL  PAST-STRING EXIT
   THEN
-  OVER DUP 1+ E-LIT C@ E-LIT
+  OVER DUP 1+ E-ADDR C@ E-LIT
   DQ-XT @ = IF TYPE-XT @ E-CALL THEN
   PAST-STRING ;
 : EMIT-WORD ( --- )
   0 #FIX !  T-SRC @
   BEGIN
     CODE-HERE @ OVER IDX CELLS C-NAT @ + !
+    RECORDING @ IF DUP TARGET? IF 254 C, DUP IDX UV, THEN THEN
     DUP VA !  DECODE                                     ( a' )
     OP-K @ K-BR = IF OP-V @ ARG-JUMP ! S-BRANCH EMIT-ST THEN
     OP-K @ K-QBR = IF OP-V @ ARG-JUMP ! S-0BRANCH EMIT-ST THEN
@@ -525,6 +568,26 @@ VARIABLE SK  VARIABLE SV
 
 \ ---- translating one word ----
 VARIABLE #NATIVE  VARIABLE #KEPT
+\ The offset goes in first and byte 0 last, with nothing but C! and
+\ literals between: the word being patched may be one this code uses.
+\ It WAS - written with OP-ENTER here, patching OP-ENTER wrote bytes
+\ 1 and 2 and then ran the half-patched OP-ENTER for byte 0.
+: PATCH-ENTRY ( xt --- )
+  ENTRY-OF  T-NAT @ CODE-BASE @ - 4 RSHIFT
+  DUP 255 AND 2 PICK 1+ C!  8 RSHIFT 255 AND OVER 2 + C!
+  [ OP-ENTER ] LITERAL SWAP C! ;
+\ While recording, every patch is remembered so it can be undone: the
+\ saved image must hold the dictionary exactly as it was, untranslated.
+VARIABLE UNDO  0 UNDO !  VARIABLE #UNDO  0 #UNDO !
+: UNDO, ( xt --- )
+  ENTRY-OF DUP C@ OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ 16 LSHIFT OR   ( e bytes )
+  #UNDO @ 2 * CELLS UNDO @ +  DUP >R CELL+ !  R> !  1 #UNDO +! ;
+: UNPATCH-ALL ( --- )
+  #UNDO @ 0 ?DO
+    I 2 * CELLS UNDO @ +  DUP @ SWAP CELL+ @                     ( e bytes )
+    2DUP 255 AND SWAP C!  2DUP 8 RSHIFT 255 AND SWAP 1+ C!
+    16 RSHIFT 255 AND SWAP 2 + C!
+  LOOP  0 #UNDO ! ;
 VARIABLE SPN-READY  0 SPN-READY !
 : SHAPE-OK? ( xt --- f )
   DUP IN-DICT? 0= IF DROP FALSE EXIT THEN
@@ -542,10 +605,12 @@ VARIABLE SPN-READY  0 SPN-READY !
 \ per boot - or at HERE for a word just defined. Every decode is held
 \ inside this bound, so none can run on into a following header.
 VARIABLE MARKS  0 MARKS !  VARIABLE MSIZE
+VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
 : LINK-BYTES ( nfa --- n )  1- C@ DUP 128 U< IF DROP 1 ELSE 192 U< IF 2 ELSE 3 THEN THEN ;
 : MARK-THREAD ( nfa --- )
   BEGIN ?DUP WHILE  DUP START @ - MARKS @ + 1 SWAP C!  NEXT-NFA8  REPEAT ;
 : BUILD-MARKS ( --- )
+  HERE MARK-END !
   HERE START @ - 1+ DUP MSIZE !  DUP MEMO-N !  DUP TABLE MEMO !  TABLE MARKS !
   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP ;
 : FREE-MARKS ( --- )  MARKS @ ?DUP IF FREE DROP THEN  0 MARKS !
@@ -554,7 +619,7 @@ VARIABLE MARKS  0 MARKS !  VARIABLE MSIZE
   MARKS @ 0= IF DROP HERE EXIT THEN
   START @ - 1+  MSIZE @ SWAP ?DO
     MARKS @ I + C@ IF I START @ + DUP LINK-BYTES - UNLOOP EXIT THEN
-  LOOP HERE ;
+  LOOP MARK-END @ ;
 : TRY-TRANSLATE ( xt --- )
   DUP BOUND-OF T-LIM !
   SPN-READY @ 0= IF DROP EXIT THEN
@@ -567,16 +632,13 @@ VARIABLE MARKS  0 MARKS !  VARIABLE MSIZE
   \ interpreted ones. Patching them would only add an entry and exit.
   DUP INLINABLE? IF DROP EXIT THEN
   DUP ENTRY-OF RS-HAZARD? IF DROP EXIT THEN
+  RECORDING @ TGT-OVER @ AND IF DROP 1 #KEPT +! EXIT THEN
   CODE-HERE @ 15 + -16 AND CODE-HERE !
   CODE-HERE @ T-NAT !
+  RECORDING @ IF DUP START @ - UV, THEN
   EMIT-WORD RESOLVE
-  \ The offset goes in first and byte 0 last, with nothing but C! and
-  \ literals between: the word being patched may be one this code uses.
-  \ It WAS - written with OP-ENTER here, patching OP-ENTER wrote bytes
-  \ 1 and 2 and then ran the half-patched OP-ENTER for byte 0.
-  ENTRY-OF  T-NAT @ CODE-BASE @ - 4 RSHIFT
-  DUP 255 AND 2 PICK 1+ C!  8 RSHIFT 255 AND OVER 2 + C!
-  [ OP-ENTER ] LITERAL SWAP C!  1 #NATIVE +! ;
+  RECORDING @ IF 255 C,  DUP UNDO, THEN
+  PATCH-ENTRY  1 #NATIVE +! ;
 
 \ ---- the whole dictionary, oldest first ----
 : TRANSLATE-ALL ( --- )     \ uses the map; builds one if there is none
@@ -591,11 +653,11 @@ VARIABLE MARKS  0 MARKS !  VARIABLE MSIZE
   0 ENTRY M-NEXT !  1 ENTRY M-JUMP !  2 ENTRY M-CALL !
   SPN-ENGINE DROP INTERP-FN ! RP-ADDR !
   MAX-STENCILS CELLS DUP TABLE ST-START !  DUP TABLE ST-LEN !  TABLE ST-NH !
-  MAX-STENCILS 8 * CELLS TABLE ST-HOLES !
+  MAX-STENCILS 8 * CELLS TABLE ST-HOLES !  MAX-STENCILS CELLS TABLE ST-MASK !
   MAX-BYTES CELLS DUP TABLE C-NAT !  TABLE C-DEP !
   C-DEP @ MAX-BYTES -1 CFILL  0 HWM !
   512 CELLS TABLE FIXUPS !  128 CELLS DUP TABLE TGTS !  TABLE CALLS !
-  80 CELLS TABLE PMAP !  160 TABLE PRIMBODY !
+  80 CELLS TABLE PMAP !  PRIMBODY-AREA PRIMBODY !
   #ENTRIES @ 3 DO I SCAN-STENCIL LOOP
   INIT-PMAP INIT-PRIMBODY
   DO-OFF START @ + DO-XT !         QDO-OFF START @ + QDO-XT !
@@ -624,19 +686,71 @@ VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
   >R  #CALLS @ DUP 0 ?DO I CELLS CALLS @ + @ SWAP LOOP
   0 ?DO RECURSE LOOP
   R> TRY-TRANSLATE ;
+\ ---- replaying recipes ----
+VARIABLE RD
+: B@+ ( --- b )  RD @ C@  1 RD +! ;
+: UV@ ( --- u )
+  0 0 BEGIN B@+ DUP >R 127 AND OVER LSHIFT ROT OR SWAP 7 + R> 128 AND 0= UNTIL DROP ;
+: SV@ ( --- n )  UV@ DUP 1 AND IF 1 RSHIFT INVERT ELSE 1 RSHIFT THEN ;
+: REPLAY-WORD ( --- )
+  UV@ START @ + T-SRC !
+  CODE-HERE @ 15 + -16 AND CODE-HERE !  CODE-HERE @ T-NAT !  0 #FIX !
+  BEGIN B@+ DUP 255 <> WHILE
+    DUP 254 = IF DROP  CODE-HERE @  UV@ CELLS C-NAT @ + !
+    ELSE
+      DUP 63 AND SWAP  OVER ST-MASK ST@                         ( s b m )
+      DUP 24 AND IF SV@ 2 PICK 64 AND IF START @ + THEN ARG-IMM ! THEN
+      DUP 2 AND IF UV@ T-SRC @ + ARG-JUMP ! THEN
+      4 AND IF
+        128 AND IF T-NAT @ ELSE
+          UV@ START @ + ENTRY-OF
+          DUP C@ OP-ENTER <> ABORT" SPN: a recipe calls a word not yet native"
+          1+ LD16 4 LSHIFT CODE-BASE @ +
+        THEN ARG-CALL !
+      ELSE DROP THEN
+      EMIT-ST
+    THEN
+  REPEAT DROP
+  RESOLVE
+  T-SRC @ PATCH-ENTRY  1 #NATIVE +! ;
+: REPLAY-ALL ( --- )
+  RCP-OFF @ START @ + DUP RD !  RCP-LEN @ +
+  BEGIN RD @ OVER < WHILE REPLAY-WORD REPEAT DROP ;
+
+\ ---- start-up: replay, or translate in full ----
+' REPLAY-ALL    START @ - CONSTANT RA-OFF
 ' CMOVE         START @ - CONSTANT CM-OFF
 ' EMIT-ST       START @ - CONSTANT ES-OFF
 ' VALIDATE      START @ - CONSTANT VA-OFF
 ' TRANSLATE-ALL START @ - CONSTANT TA-OFF
-: SPN-BOOT ( --- )
-  SPN-INIT  BUILD-MARKS
+: TRANSLATE-BOOT ( --- )   \ the translator first, then everything
+  BUILD-MARKS
   HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
+  \ Recording: the replayer's own recipes first, so boot runs it natively
+  \ after a few words.
+  RECORDING @ IF RA-OFF START @ + TRANSLATE-TREE THEN
   CM-OFF START @ + TRANSLATE-TREE
   ES-OFF START @ + TRANSLATE-TREE
   VA-OFF START @ + TRANSLATE-TREE
   TA-OFF START @ + TRANSLATE-TREE
   TRANSLATE-ALL  FREE-MARKS
-  VIS @ FREE DROP  0 VIS-N ! ;
+  VIS @ FREE DROP  0 VIS !  0 VIS-N ! ;
+\ Which hole kinds every stencil has: recipes replay only on an engine
+\ whose stencils match the one they were recorded on.
+: STENCIL-SIG ( --- h )  #ENTRIES @  #ENTRIES @ 3 DO 31 * I ST-MASK ST@ + LOOP ;
+\ At image build time: translate once, recording, then undo every patch.
+: SPN-RECORD ( --- )
+  SPN-INIT
+  4096 2 * CELLS TABLE UNDO !  0 #UNDO !
+  HERE START @ - RCP-OFF !  TRUE RECORDING !
+  TRANSLATE-BOOT
+  FALSE RECORDING !
+  HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
+  UNPATCH-ALL  UNDO @ FREE DROP  0 UNDO !  FALSE SPN-READY ! ;
+: SPN-BOOT ( --- )
+  SPN-INIT
+  RCP-LEN @ IF STENCIL-SIG RCP-SIG @ = IF REPLAY-ALL EXIT THEN THEN
+  TRANSLATE-BOOT ;
 
 \ ---- reporting ----
 : SPN-WHY? ( xt --- )

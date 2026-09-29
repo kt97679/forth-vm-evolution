@@ -41,7 +41,12 @@ CREATE SV-MAGIC  67 C, 86 C, 56 C, 48 C, 8 C, 76 C, 1 C, 31 C,
   #TIB SV-CELL  SPAN SV-CELL
   LAST SV-CELL  CURRENT SV-CELL  CSP SV-CELL  'LEAVE SV-CELL
   S0 SV-CELL  R0 SV-CELL  START SV-CELL
-  T-LIM SV-CELL                              \ SPN: the one absolute
+  \ SPN: translator scratch that can hold an absolute address after a
+  \ build-time recording - always set again before use, but a saved
+  \ image should not carry pointers from the session that built it.
+  T-LIM SV-CELL  MARK-END SV-CELL  T-SRC SV-CELL  T-NAT SV-CELL
+  C-VAL SV-CELL  WHY-XT SV-CELL  VA SV-CELL  RD SV-CELL  E-DST SV-CELL
+  ARG-IMM SV-CELL  ARG-CALL SV-CELL  ARG-JUMP SV-CELL
   SV-FID SV-CELL  SV-LEN SV-CELL  SV-BUF SV-CELL ;
 : SV-WRITE ( a u --- )  SV-FID @ WRITE-FILE ABORT" SPN-SAVE: write failed" ;
 VARIABLE SV-X
