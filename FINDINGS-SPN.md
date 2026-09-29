@@ -526,3 +526,62 @@ code into callers, and every word starts on a 16-byte boundary.
 - s8-full's start-up rose from 7.04 to 7.80 ms when the translator
   gained the recipe machinery - more words to translate at boot.
 
+## On demand: s8-lazy
+
+Suggested as the next design step: translate a word the first time it
+runs, not all at boot, to cut start-up, recipe bytes and native code at
+once. Worked through, it is more constrained: a translation on first
+call is only fast if the translator itself is already native - an
+interpreted translator costs about 35 us a word, which is what made full
+translation at boot take 7 ms - and translating the translator lazily
+too would re-enter it mid-translation. So s8-lazy is a hybrid:
+
+- Build: record recipes for the translator only - the replayer, then
+  what translating and translating on demand need. For every other
+  word, only validate it, and list its entry: about two bytes a word
+  where a recipe takes about sixty.
+- Boot: replay the translator; mark each listed word's entry as SPN-ENTER
+  with an offset of 0xF000 or more, keeping its three original bytes on
+  the heap. Never a word with a call running through its entry.
+- First call: the engine sees the reserved offset and runs a Forth hook
+  in the word's place - entry on the data stack, the caller's return
+  address still on the return stack. The hook translates the word and
+  its callees, callees first, so calls between them are direct, then
+  jumps into it as EXECUTE does. A new definition's callees are
+  translated before it, at its `;`.
+
+Two fixes this needed elsewhere: CLASSIFY treats a word not translated
+yet as one to call through re-entry, and BOUND-OF bounds a word defined
+after the map of names by HERE - its ?DO would otherwise have counted
+from past the end of the map until it wrapped, unreachable while the map
+was freed at boot.
+
+Same session, development VM, one build:
+
+                          s8 (recipes)   s8-lazy
+    image                 40,096         32,220 bytes   -20%
+    start-up              2.61           2.63 ms
+    native code, fib      112 KB         70 KB          -37%
+    native code, parse    112 KB         65 KB          -42%
+    native code, corpus   127 KB         92 KB          -27%
+    end to end, kernel    7.69           8.02 ms
+                fib       10.12          10.20
+                corpus    6.75           7.28
+                parse     20.47          19.92
+
+Memory improves; speed is within -3% to +8% - on-demand translation
+moves work from boot into the run, and corpus, which reaches the most
+words, pays most. Start-up does not improve: replaying the translator is
+half the old replay, but the interpreter's own words are then translated
+on demand at once, since even BYE runs through them. Most of s8-lazy's
+native code is the translator. This is less than the suggestion that led
+to it promised - it said start-up near plain CV8's.
+
+For start-up, two things remain, for both variants: reading the stencils
+at boot (SPN-INIT, 0.57 ms) could be replaced by hole positions computed
+at build time and checked against the running engine; and s8-lazy could
+record the interpreter's own words with the translator.
+
+The on-demand machinery is in every s8 image, and grew them: s8-spncv8
+38,130 -> 40,096 bytes, s8-full 23,370 -> 24,538.
+

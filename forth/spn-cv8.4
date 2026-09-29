@@ -28,6 +28,7 @@ DECIMAL
 : SPN-EXEC   [ 127 C, 1 C, ] ;   ( u --- a-addr )
 : SPN-CALL   [ 127 C, 2 C, ] ;   ( i*x a-addr --- j*x )
 : SPN-ENGINE [ 127 C, 4 C, ] ;   ( --- rp-addr helper code-base-addr )
+: SPN-HOOK!  [ 127 C, 5 C, ] ;   \ ( xt --- )  the on-demand hook
 126 CONSTANT OP-ENTER
 VARIABLE ENTRIES  VARIABLE #ENTRIES
 VARIABLE M-NEXT   VARIABLE M-JUMP   VARIABLE M-CALL
@@ -265,6 +266,13 @@ CREATE FOLDMAP
   OP-K @ K-FOLD = OR  OP-K @ K-LITX = OR  OP-K @ K-ADDIX = OR  OP-K @ K-EQIX = OR ;
 
 : IN-DICT? ( a --- f )  DUP START @ < 0=  SWAP HERE < AND ;
+\ ON DEMAND. An entry [126][lo][hi] whose offset is LAZY-BASE or more is
+\ a word not translated yet: the engine runs LAZY-HIT in its place. Its
+\ original three bytes are kept in LZ-TAB, by index = offset - LAZY-BASE.
+61440 CONSTANT LAZY-BASE
+VARIABLE LZ-TAB  0 LZ-TAB !  VARIABLE LZ-N  0 LZ-N !  VARIABLE LAZY-ON  0 LAZY-ON !
+VARIABLE LZ-OFF  0 LZ-OFF !  VARIABLE LZ-LEN  0 LZ-LEN !     \ the list, in the image
+: LAZY? ( a --- f )   DUP C@ 126 = IF 1+ LD16 LAZY-BASE < 0= ELSE DROP FALSE THEN ;
 \ Where compiled calls actually ENTER a word. CV8 pads some bodies with
 \ leading NOOPs for alignment, and a call targets the first real
 \ operation - HEADER's xt is 4135 but : calls 4136. Patching at the xt
@@ -367,6 +375,7 @@ VARIABLE MEMO  0 MEMO !  VARIABLE MEMO-N  0 MEMO-N !
 VARIABLE C-VAL
 : CLASSIFY ( xt --- kind )
   DUP IN-DICT? 0= IF DROP 3 EXIT THEN
+  DUP ENTRY-OF LAZY? IF C-VAL ! 2 EXIT THEN          \ not translated yet: re-enter
   DUP ENTRY-OF C@ OP-ENTER = IF ENTRY-OF 1+ LD16 4 LSHIFT CODE-BASE @ + C-VAL ! 0 EXIT THEN
   DUP C@ 69 = IF 4 + ALIGNED C-VAL ! 1 EXIT THEN          \ DOVAR: a variable
   DUP C@ 70 = IF C-VAL ! 2 EXIT THEN                      \ DODOES: interpret
@@ -683,7 +692,10 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
   MEMO @ ?DUP IF FREE DROP THEN  0 MEMO !  0 MEMO-N ! ;
 : BOUND-OF ( xt --- a )
   MARKS @ 0= IF DROP HERE EXIT THEN
-  START @ - 1+  MSIZE @ SWAP ?DO
+  \ Past the map - a word defined after it was made - the bound is HERE.
+  \ Without this, ?DO from past the end counts up until it wraps.
+  START @ - 1+  DUP MSIZE @ < 0= IF DROP HERE EXIT THEN
+  MSIZE @ SWAP ?DO
     MARKS @ I + C@ IF I START @ + DUP LINK-BYTES - UNLOOP EXIT THEN
   LOOP MARK-END @ ;
 : TRY-TRANSLATE ( xt --- )
@@ -738,6 +750,12 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
   DUP CODE-BASE ! DUP CODE-HERE !  CODE-SIZE + CODE-LIMIT !
   0 #NATIVE !  0 #KEPT !  TRUE SPN-READY ! ;
 
+: UNMARK ( a --- )   \ put a not-yet-translated word's first three bytes back
+  DUP LAZY? 0= IF DROP EXIT THEN
+  DUP 1+ LD16 LAZY-BASE - CELLS LZ-TAB @ + @                 ( a bytes )
+  2DUP 255 AND SWAP C!                  \ byte 0 first: no longer SPN-ENTER
+  2DUP 8 RSHIFT 255 AND SWAP 1+ C!
+  16 RSHIFT 255 AND SWAP 2 + C! ;
 \ Callees before callers, depth first, so a word finds its callees
 \ native when it is translated.
 VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
@@ -747,6 +765,7 @@ VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
   START @ - DUP VIS-N @ U< IF VIS @ + 1 SWAP C! ELSE DROP THEN ;
 : TRANSLATE-TREE ( xt --- )
   DUP VISITED? IF DROP EXIT THEN  DUP VISIT
+  DUP ENTRY-OF UNMARK                   \ on demand: its real code, to read
   DUP SHAPE-OK? 0= IF DROP EXIT THEN
   DUP BOUND-OF T-LIM !
   DUP VALIDATE 0= IF DROP EXIT THEN
@@ -784,6 +803,61 @@ VARIABLE RD
   RCP-OFF @ START @ + DUP RD !  RCP-LEN @ +
   BEGIN RD @ OVER < WHILE REPLAY-WORD REPEAT DROP ;
 
+\ ---- on demand ----
+\ The translator is made native from recipes at boot; every other word
+\ that would translate is marked "not translated yet" and translated -
+\ with its callees, callees first - the first time it is called. Only
+\ words that run get native code, and the image carries a list of
+\ entries, about two bytes a word, instead of their recipes.
+VARIABLE TRANSLATING  0 TRANSLATING !
+: LAZY-GO ( a --- )   \ translate a's tree; inside a translation, only restore a
+  TRANSLATING @ IF UNMARK EXIT THEN
+  TRUE TRANSLATING !  TRANSLATE-TREE  FALSE TRANSLATING ! ;
+\ Run by the engine in place of a word not translated yet, with its entry
+\ on the stack and the caller's return address on the return stack:
+\ translate it, then jump into it as EXECUTE does. Refused when the image
+\ is built - >R before an EXIT - so it runs interpreted, as it must.
+: LAZY-HIT ( a --- )  DUP LAZY-GO >R ;
+' LAZY-HIT START @ - CONSTANT LH-OFF
+\ A new definition's callees first, so its native code calls them
+\ natively rather than through re-entry.
+: LAZY-CALLEES ( xt --- )
+  LAZY-ON @ 0= IF DROP EXIT THEN
+  DUP SHAPE-OK? 0= IF DROP EXIT THEN
+  DUP BOUND-OF T-LIM !  VALIDATE 0= IF EXIT THEN
+  #CALLS @ DUP 0 ?DO I CELLS CALLS @ + @ SWAP LOOP  0 ?DO LAZY-GO LOOP ;
+\ At build time: would this word translate? Checked again when called.
+: LAZY-CANDIDATE? ( a --- f )
+  DUP SHAPE-OK? 0= IF DROP FALSE EXIT THEN
+  DUP BOUND-OF T-LIM !  DUP VALIDATE 0= IF DROP FALSE EXIT THEN
+  TARGETS-OK? 0= IF DROP FALSE EXIT THEN
+  T-END @ OVER - 3 < IF DROP FALSE EXIT THEN
+  INLINABLE? 0= ;
+: LIST-LAZY ( --- )   \ the entry of every such word not native yet
+  0 LZ-N !
+  MSIZE @ 0 DO
+    MARKS @ I + C@ IF
+      I START @ + NAME>8 ENTRY-OF
+      DUP LAZY-CANDIDATE? IF START @ - UV, 1 LZ-N +! ELSE DROP THEN
+    THEN
+  LOOP ;
+\ At boot, after the translator's recipes: mark every listed word. The
+\ map of names and the visited set are kept for the whole run.
+: LAZY-SETUP ( --- )
+  BUILD-MARKS  HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
+  LZ-N @ 1 MAX CELLS TABLE LZ-TAB !
+  LZ-OFF @ START @ + RD !
+  LZ-N @ 0 ?DO
+    UV@ START @ +                                           ( a )
+    DUP RS-HAZARD? 0= IF             \ never under a running call
+      DUP C@ OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ 16 LSHIFT OR
+      I CELLS LZ-TAB @ + !
+      I LAZY-BASE +  DUP 255 AND 2 PICK 1+ C!  8 RSHIFT 255 AND OVER 2 + C!
+      [ OP-ENTER ] LITERAL SWAP C!
+    ELSE DROP THEN
+  LOOP
+  LH-OFF START @ + SPN-HOOK!  TRUE LAZY-ON ! ;
+
 \ ---- start-up: replay, or translate in full ----
 ' REPLAY-ALL    START @ - CONSTANT RA-OFF
 ' CMOVE         START @ - CONSTANT CM-OFF
@@ -814,13 +888,35 @@ VARIABLE RD
   FALSE RECORDING !
   HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
   UNPATCH-ALL  UNDO @ FREE DROP  0 UNDO !  FALSE SPN-READY ! ;
+\ At image build time, on demand: recipes for the translator only - the
+\ replayer, then what translating and translating on demand need - and
+\ a list of every other word that would translate.
+' LAZY-GO      START @ - CONSTANT LG-OFF
+' LAZY-CALLEES START @ - CONSTANT LC-OFF
+: SPN-RECORD-LAZY ( --- )
+  SPN-INIT
+  4096 2 * CELLS TABLE UNDO !  0 #UNDO !
+  BUILD-MARKS  HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
+  HERE START @ - RCP-OFF !  TRUE RECORDING !
+  RA-OFF START @ + TRANSLATE-TREE
+  CM-OFF START @ + TRANSLATE-TREE  ES-OFF START @ + TRANSLATE-TREE
+  VA-OFF START @ + TRANSLATE-TREE  LG-OFF START @ + TRANSLATE-TREE
+  LC-OFF START @ + TRANSLATE-TREE
+  FALSE RECORDING !
+  HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
+  HERE START @ - LZ-OFF !  LIST-LAZY  HERE START @ - LZ-OFF @ - LZ-LEN !
+  FREE-MARKS  VIS @ FREE DROP  0 VIS !  0 VIS-N !
+  UNPATCH-ALL  UNDO @ FREE DROP  0 UNDO !  FALSE SPN-READY ! ;
 : SPN-BOOT ( --- )
   SPN-INIT
-  RCP-LEN @ IF STENCIL-SIG RCP-SIG @ = IF REPLAY-ALL EXIT THEN THEN
+  RCP-LEN @ IF STENCIL-SIG RCP-SIG @ = IF
+    REPLAY-ALL  LZ-LEN @ IF LAZY-SETUP THEN  EXIT
+  THEN THEN
   TRANSLATE-BOOT ;
 
 \ ---- reporting ----
 : SPN-WHY? ( xt --- )
+  DUP ENTRY-OF LAZY? IF DROP ." on demand" EXIT THEN
   DUP ENTRY-OF C@ OP-ENTER = IF DROP ." native" EXIT THEN
   DUP SHAPE-OK? 0= IF DROP ." data word" EXIT THEN
   DUP BOUND-OF T-LIM !
@@ -830,4 +926,4 @@ VARIABLE RD
   MARKS @ IF SPN-WHY? EXIT THEN  BUILD-MARKS SPN-WHY? FREE-MARKS ;
 
 \ New definitions: translate each as its ; completes.
-: ;  POSTPONE ;  LAST @ NAME>8 TRY-TRANSLATE ; IMMEDIATE
+: ;  POSTPONE ;  LAST @ NAME>8 DUP LAZY-CALLEES TRY-TRANSLATE ; IMMEDIATE

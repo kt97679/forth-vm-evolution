@@ -103,8 +103,9 @@ translated as their `;` completes. Details: `FINDINGS-SPN.md`.
 
 | id | built on | adds | image, 8-byte | status |
 |----|----------|------|---------------|--------|
-| `s8-spncv8` | `s6-cv8b` | the translator, reading CV8; recipes - the boot translation recorded at build time and replayed | 38,130 | current |
-| `s8-full` | `s6-cv8b` | the same, translating in full at every start instead of replaying | 23,370 | comparison |
+| `s8-spncv8` | `s6-cv8b` | the translator, reading CV8; recipes - the boot translation recorded at build time and replayed | 40,096 | current |
+| `s8-lazy` | `s6-cv8b` | recipes for the translator only; every other word translated the first time it is called | 32,220 | experimental |
+| `s8-full` | `s6-cv8b` | the same, translating in full at every start instead of replaying | 24,538 | comparison |
 | `s7-spn` | `s0-cell` | the first SPN: the translator reading cells; recipes | 103,441 | frozen |
 | `s7-full` | `s0-cell` | the same without recipes | 92,736 | frozen |
 

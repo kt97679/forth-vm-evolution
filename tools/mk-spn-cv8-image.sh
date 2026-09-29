@@ -22,7 +22,7 @@ engine() {  # engine SUFFIX FLAGS - the one place these flags are written
     cc -O2 $2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
        -I"$O" -o "$O/s8-spncv8-64$1" "$O/spn-cv8-tos.c" \
        "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c"
-    cp "$O/s8-spncv8-64$1" "$O/s8-full-64$1"
+    cp "$O/s8-spncv8-64$1" "$O/s8-full-64$1"; cp "$O/s8-spncv8-64$1" "$O/s8-lazy-64$1"
 }
 if [ "${2:-}" = --engine ]; then engine "$3" "$4"; exit 0; fi
 engine "" ""
@@ -39,3 +39,6 @@ build() {  # build NAME RECORD-WORD
 }
 build s8-spncv8 SPN-RECORD
 build s8-full   ""
+# On demand: recipes for the translator only; every other word marked
+# at boot and translated the first time it is called.
+build s8-lazy   SPN-RECORD-LAZY

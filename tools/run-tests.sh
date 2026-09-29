@@ -128,6 +128,7 @@ run s7-spn     "$O/s7-spn-64"     "$O/s7-spn-s64.img"
 run s7-full    "$O/s7-full-64"    "$O/s7-full-s64.img"
 run s8-spncv8  "$O/s8-spncv8-64"  "$O/s8-spncv8-s64.img"
 run s8-full    "$O/s8-full-64"    "$O/s8-full-s64.img"
+run s8-lazy    "$O/s8-lazy-64"    "$O/s8-lazy-s64.img"
 echo
 echo "32-bit cells:"
 run s0-cell    "$O/s0-cell-32"    "$O/s0-cell-s32.img"

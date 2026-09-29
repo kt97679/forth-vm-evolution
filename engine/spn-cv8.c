@@ -87,6 +87,13 @@ extern const void *const spn_table[];
 extern const int spn_table_len;
 static void virtual_machine(void);
 static uint64_t spn_code_base;    /* SPN: native code buffer, for SPN-ENTER */
+/* SPN, on demand: an entry [126][lo][hi] whose offset is 0xF000 or more
+   is a word not translated yet. SPN-ENTER then runs this Forth hook in
+   the word's place, with the word's entry address on the data stack and
+   the caller's return address still on the return stack: the hook
+   translates the word and jumps into it, as EXECUTE would. */
+#define SPN_LAZY 0xF000
+static uint64_t spn_lazy_hook;
 typedef uint16_t UNS16;   /* SOD16: a code token */
 
 extern char **environ;
@@ -1658,6 +1665,11 @@ L_spn_enter:  /* SPN 126: a translated word's body is [126][lo][hi] */
        more can be patched. Run the native code, then EXIT as the word
        would have. */
     UNS64 off = (UNS64)BYTE(ip) | ((UNS64)BYTE(ip + 1) << 8);
+    if (off >= SPN_LAZY) {             /* not translated yet: the hook */
+        PUSH(ip - 1);
+        ip = spn_lazy_hook;
+        NEXT();
+    }
     spn_fn fn = (spn_fn)(uintptr_t)(spn_code_base + (off << 4));
     g_rp = rp;
     spn_st r = fn((int64_t *)(uintptr_t)(dsp + CELL_BYTES), (int64_t)DS0);
@@ -1701,6 +1713,9 @@ L_spn_svc:    /* SPN 127 n: services, chosen by the byte that follows */
         rp = g_rp;
         dsp = (UNS64)(uintptr_t)r.sp - CELL_BYTES;
         DS0 = (UNS64)r.tos;
+    } else if (n == 5) {           /* xt ---   the on-demand hook */
+        spn_lazy_hook = DS0;
+        dsp += CELL_BYTES;
     } else if (n == 4) {           /* --- &g_rp helper &code-base */
         PUSH((UNS64)(uintptr_t)&g_rp);
         PUSH((UNS64)(uintptr_t)spn_interp);
