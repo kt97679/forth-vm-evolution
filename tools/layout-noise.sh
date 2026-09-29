@@ -103,7 +103,10 @@ REF=$L/ref.img
 cp "$REFSRC" "$REF"
 SAVEK=$L/save-kernel.img
 cp "$W/kernel.img" "$SAVEK"
-trap 'cp "$SAVEK" "$W/kernel.img"' EXIT INT TERM
+# Restore on the way out; INT and TERM still end the run.
+trap 'cp "$SAVEK" "$W/kernel.img"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 # WHICH WORKLOAD. The floor is a property of the workload, not of the
 # machine, and quoting one figure for every table was wrong. Two runs of
 # the same ARM board, with a kernel-compile floor of 1.4%, moved by up

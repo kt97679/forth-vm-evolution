@@ -29,7 +29,11 @@ bench_prepare() {
     cp "$REFSRC" "$REF"
     SAVE=$O/.save-kernel.img
     cp "$W/kernel.img" "$SAVE"
-    trap 'cp "$SAVE" "$W/kernel.img"' EXIT INT TERM
+    # Restore on the way out; INT and TERM still end the run (a trap on
+    # INT itself would swallow Ctrl-C and carry on timing).
+    trap 'cp "$SAVE" "$W/kernel.img"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
     printf 'S" extend.4" INCLUDED\nS" %s" INCLUDED\n' "$XCSRC" > "$INPUT"
 }
 

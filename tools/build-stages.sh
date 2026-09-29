@@ -62,7 +62,12 @@ command -v python3 >/dev/null || { echo "python3 is required"; exit 1; }
 #
 # So ask the compiler what it actually produces, rather than telling it.
 _t=$(mktemp -d) || { echo "cannot create a temporary directory"; exit 1; }
-trap 'rm -rf "$_t"' EXIT INT TERM
+# Clean up on the way out; INT and TERM must still END the script. A trap
+# on INT alone replaces the default action, so Ctrl-C used to delete this
+# directory and carry on building.
+trap 'rm -rf "$_t"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 printf '#include <stdio.h>\nint main(void){printf("%%d\\n",(int)sizeof(void*));return 0;}\n' \
     > "$_t/w.c"
 cc -o "$_t/w" "$_t/w.c" >/dev/null 2>&1 || { echo "the C compiler cannot build a program"; exit 1; }
