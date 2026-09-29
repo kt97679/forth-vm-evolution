@@ -399,11 +399,60 @@ Same measurement, ms:
 
 Inlining short words accounts for kernel compile and fib - without it
 s8 falls behind s7 on both - and about half of corpus. It does not
-account for parse. Part of that is the engine words run on when they
-stay interpreted: FIND is refused by both translators, and a failed
-FIND costs 389 ns on s7 and 332 ns on s8 (815 and 1,639 fully
-interpreted on CV8 and on cells) - roughly a third of s8's lead on
-parse at its token count. The rest is not attributed.
+account for parse.
+
+**Parse, attributed.** parse.fth is 4,000 copies of `1 2 + 3 4 + XOR
+DROP`. Split by input - empty lines, lines of word lookups only, the
+same lines by EVALUATE with no reading, comment lines of the same
+length - the 7.5 ms lead decomposes, and the parts add up to the whole:
+
+    reading 84,000 characters      s7 82 ns/char, s8 56      2.2 ms
+    evaluating the 4,000 lines                               5.5 ms
+      of which: lookups, NUMBER?, re-entries, measured   ~4.3 ms
+      not seen in warm microbenchmarks                   ~1.2 ms
+
+Almost all of it is one mechanism: the outer interpreter's hot words -
+FIND, NUMBER?, >NUMBER, ACCEPT - were refused by BOTH translators, so
+they ran interpreted, and CV8 interprets about twice as fast as the
+cell engine (NUMBER? of a one-digit number: 186 ns on s7, 98 on s8).
+The unattributed 16% may be memory footprint - s8's dictionary is
+about three times denser - but there is no cache profiler here to test
+that.
+
+**Why they were refused, and the fix.** Not because they are unsafe:
+every one is balanced on every path. The validator tracked return-stack
+depth LINEARLY, so after an early exit - `IF R> DROP R> BASE ! 0 EXIT
+THEN` in NUMBER? - it carried the exit path's depth, 0, into code the
+fall-through reaches with 2. spn-cv8.4 now checks depth per path, as a
+bytecode verifier does: a forward branch records the depth it arrives
+with; code after an unconditional jump or a mid-word EXIT takes that
+depth instead of the dead fall-through; where a fall-through and a jump
+meet they must agree (refusal 11); a backward branch must arrive with
+the depth seen at its target. Two refinements were needed for ACCEPT:
+code that only dead code falls into is unreachable, and records nothing
+- an EXIT followed by ELSE's branch had recorded a wrong depth at THEN -
+and `LIT 0 ?BRANCH` (`0 UNTIL`) never falls through, unless a jump
+lands on the ?BRANCH itself, as in FIND's `ELSE 0 THEN IF` (refusal 12
+if one lands there later). Safety is unchanged: every R>, R@ and EXIT
+is still checked, per path.
+
+Now native: MOVE ACCEPT FIND >NUMBER NUMBER? NAME=?, and three of the
+translator's own words. 231 words native at a full translation, 100
+refused (was 226 and 113); 240 replayed from recipes. End to end, same
+session, against the s8 before this change:
+
+                     s7-spn   s8 before   s8 now
+    start-up           2.56      2.47      2.62 ms
+    kernel             8.96      8.13      7.55    -7%
+    fib                8.86      9.37      9.54    (start-up only)
+    corpus             8.73      7.64      6.61   -13%
+    parse             32.67     25.05     20.26   -19%
+
+Images: s8-spncv8 35,369 -> 38,130 bytes, s8-full 22,514 -> 23,370 -
+more words translated, more recipes, a larger validator. fib is a tie
+with s7-spn within this machine's session-to-session variation.
+spn-full.4's validator has the same linear depth tracking; porting this
+would help s7 the same way.
 
 ### Memory
 
