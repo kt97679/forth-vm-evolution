@@ -300,6 +300,10 @@ beyond need** - 16 KB of source map and 8 KB of branch fix-ups, where
 FIB needs about twenty entries of each. The translator's own code is
 about 10 KB in cell form; in CV8 form that would be roughly 3 KB, an
 estimate from the usual cell-to-CV8 ratio rather than a measurement.
+*Measured since, on s8 below: 12.6 KB with its saver. The estimate
+ignored the headers - a CV8 translator of about 200 definitions carries
+their names - and the CV8 translator is a bigger program, since it must
+decode CV8 and bound every decode.*
 
 Peak resident memory is useless for this comparison here: a C program
 that does nothing measures 11,260 KB in this sandbox, and every Forth
@@ -324,3 +328,122 @@ than everything.
   in general.
 - No data-stack bounds checks in native code.
 - Two benchmarks, one machine.
+
+## On a CV8 image: s8-spncv8
+
+The step "Memory, against CV8" argued for: translate from CV8, so the
+image stays compact and only native code is expanded. Built in stages,
+each committed; `tools/mk-spn-cv8-image.sh` makes two variants, as for
+s7 - s8-spncv8 with recipes and s8-full without.
+
+**Engine.** `engine/spn-cv8.c` is the CV8 engine plus SPN, put through
+`gen-tos.py` and compiled exactly as s6 is. Its top-of-stack register
+convention is SPN's native one, so entering native code converts
+nothing. CV8 leaves only two opcodes free - 126 and 127, which indexed
+past the end of the dispatch table until now - so 126 is SPN-ENTER and
+127 a service opcode with a selector byte. A translated word's entry
+becomes three bytes: SPN-ENTER and the native code's offset in 16-byte
+units.
+
+**Translator.** `forth/spn-cv8.4` decodes CV8 itself, with operand
+sizes taken from the engine's handlers; the decoder was checked on the
+whole dictionary before anything relied on it. Words shorter than a
+patch cannot be patched, so short straight-line callees - constants
+among them - are copied into native callers instead. Every decode is
+held inside the word's own body. Working tables are allocated at boot,
+not kept in the image.
+
+### Results
+
+One build per stage, x86-64, CPU time.
+
+    image (bytes)   s6-cv8b 9,881   s8-full 22,514   s8-spncv8 35,369
+                    s0-cell 24,560  s7-full 88,880   s7-spn    99,169
+    start-up        s6-cv8b 0.72    s8-full 7.80     s8-spncv8 2.44 ms
+                    s0-cell 0.73    s7-full 4.98     s7-spn    2.53 ms
+
+End to end - nothing subtracted, minimum of 15 rounds interleaved across
+all seven systems, ratio to s0-cell:
+
+    workload  s5-cv8spec s6-cv8b s7-spn s7-full s8-spncv8 s8-full
+    kernel    0.531      0.588   0.416  0.527   0.373     0.625
+    fib       0.824      0.781   0.214  0.268   0.210     0.357
+    corpus    0.514      0.595   0.511  0.654   0.446     0.765
+    parse     0.490      0.590   0.404  0.436   0.311     0.380
+
+**With recipes, s8 is the fastest system on all four workloads, start-up
+included, from an image 2.8 times smaller than s7-spn's** (fib is a tie
+with s7-spn). Without recipes it translates everything at every boot,
+7 ms, and loses the short workloads to plain CV8. Recipes cost 12.9 KB
+here - a third of the image, against a tenth of s7's - and replay makes
+the same 226 words native that full translation does.
+
+**Why end to end, and not the harness's net-of-start-up tables.**
+`bench/lib.sh` subtracts the *mean* of five start-up runs from the
+*minimum* of the workload runs; the minimum run also had a lucky
+start-up, so the subtraction over-corrects, the more so the longer and
+noisier the start-up - favouring exactly the systems that translate at
+boot. It showed as s8-full beating s8-spncv8 by 20-26% net on corpus
+and parse, with the same native code on the same engine. Taking the
+minimum of both instead, the two variants agree within 2%.
+
+### What makes it faster than s7
+
+Same measurement, ms:
+
+                     s7-spn   s8-spncv8   s8 without inlining
+    kernel           9.06     8.18        9.62
+    fib              9.54     9.40       10.78
+    corpus           8.75     7.71        8.29
+    parse           33.11    25.37       25.76
+
+Inlining short words accounts for kernel compile and fib - without it
+s8 falls behind s7 on both - and about half of corpus. It does not
+account for parse. Part of that is the engine words run on when they
+stay interpreted: FIND is refused by both translators, and a failed
+FIND costs 389 ns on s7 and 332 ns on s8 (815 and 1,639 fully
+interpreted on CV8 and on cells) - roughly a third of s8's lead on
+parse at its token count. The rest is not attributed.
+
+### Memory
+
+    native code at boot     s8 91,770 bytes, 226 words   s7 70,279, 208
+    translator and saver    12,633 bytes in CV8 form
+
+About 20% more native code per word than s7: inlining copies callee
+code into callers, and every word starts on a 16-byte boundary.
+
+### Bugs found on the way
+
+- **Opcode band.** SPN first went into opcodes 36-67, described in the
+  source as freed. The remapping that freed them is off in the real
+  build, so opcode 36 was RP!. Computed from the compiled table instead.
+- **Entry after padding.** CV8 pads some bodies with leading NOOPs and
+  compiled calls enter at the first real operation - HEADER's xt is
+  4135, `:` calls 4136. Patching at the xt put SPN-ENTER's address
+  bytes where every call landed; EXECUTE enters at the xt, which is why
+  direct tests passed.
+- **A signed index.** PM@ compared signed, and a literal's value
+  reached it as a primitive number: -2147483647 read gigabytes off the
+  table.
+- **Clobbered decoder state.** Classifying a callee decodes it,
+  overwriting the caller's decoded operation.
+- **A word patched while patching itself** - OP-ENTER, the CELL+ bug of
+  s7 in a new form.
+- **The intermittent crash** was deterministic: LIT's entry
+  `[LIT][EXIT]` decoded with LIT's two operand bytes ran into BRANCH's
+  header, validated, and the patch overwrote BRANCH's link. Every boot
+  did it; a crash needed a failed FIND to walk that thread off the
+  image into unmapped memory - about one run in five. Found with a
+  fault report now built into the engine: native offset, code bytes,
+  registers, both return stacks.
+
+### Limits and loose ends
+
+- x86-64 only, and one build per stage: indicative, not a layout study.
+- `forth/cv8-save.4` cannot save today's CV8 systems: it writes the
+  header layout from before the word list was hashed again, and its
+  scrub needs the shell. Nothing tests CV8 saving. s8 has its own saver.
+- s8-full's start-up rose from 7.04 to 7.80 ms when the translator
+  gained the recipe machinery - more words to translate at boot.
+
