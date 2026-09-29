@@ -397,47 +397,109 @@ CREATE CALLS 128 CELLS ALLOT  VARIABLE #CALLS
   FALSE #TGT @ 0 ?DO
     I CELLS TGTS + @  2 PICK OVER < SWAP 4 PICK < AND OR
   LOOP NIP NIP ;
+\ Return-stack depth is checked PER PATH, as a bytecode verifier does -
+\ ported from spn-cv8.4, which has the full account. Tracked linearly it
+\ refused NUMBER?, >NUMBER, FIND, ACCEPT and MOVE, all balanced on every
+\ path: after `IF R> DROP R> BASE ! 0 EXIT THEN` the walk carried the
+\ exit path's depth into code the fall-through reaches with 2. A forward
+\ branch records the depth it arrives with; code after an unconditional
+\ jump or a mid-word EXIT takes it; a fall-through and a jump meeting
+\ must agree (11); a backward branch must match the depth at its target.
+\ Code only dead code falls into records nothing; `LIT 0 ?BRANCH` never
+\ falls through unless a jump lands on the ?BRANCH (12 if one does
+\ later). The expected depths live on the heap, allocated on first use,
+\ so the image does not grow by a table.
+VARIABLE EXP-DEP  0 EXP-DEP !  VARIABLE EHWM  0 EHWM !
+VARIABLE DEAD  VARIABLE REACH  VARIABLE PREV-ZERO  VARIABLE ZERO-NOW
+VARIABLE IS-TGT  VARIABLE VA  VARIABLE LT  VARIABLE BR-TOK
+CREATE CZ 8 CELLS ALLOT  VARIABLE #CZ
+: EXPECT ( target depth --- f )   \ a branch arrives at target with depth
+  OVER INSIDE? 0= IF 2DROP FALSE EXIT THEN
+  OVER VA @ > IF                                  \ forward: record, or agree
+    SWAP IDX DUP 1+ EHWM @ MAX EHWM !  CELLS EXP-DEP @ +
+    DUP @ DUP 0< IF DROP ! TRUE EXIT THEN  NIP =
+  ELSE                                            \ backward: as seen there
+    SWAP IDX CELLS C-DEP + @ =
+  THEN ;
+: CZ-OK? ( --- f )   \ no jump lands on a ?BRANCH taken as constant
+  #CZ @ 0 ?DO
+    FALSE #TGT @ 0 ?DO J CELLS CZ + @ I CELLS TGTS + @ = OR LOOP
+    IF FALSE UNLOOP EXIT THEN
+  LOOP TRUE ;
 \ A loop word at a: check the return-stack depth it needs, record any
 \ jump target, and step past its inline offset. ( a k --- a' ok? )
-: LOOP-TARGET ( a --- a )   DUP CELL+ DUP @ +  DUP TGT,  T-FAR @ MAX T-FAR ! ;
+: LOOP-TARGET ( a --- a )   DUP CELL+ DUP @ +  DUP LT !  DUP TGT,  T-FAR @ MAX T-FAR ! ;
 : V-LOOP ( a k --- a' f )
   DUP 1 = IF DROP 2 T-DEP +! CELL+ TRUE EXIT THEN
-  DUP 2 = IF DROP 2 T-DEP +! LOOP-TARGET 2 CELLS + TRUE EXIT THEN
+  DUP 2 = IF DROP 2 T-DEP +! LOOP-TARGET LT @ T-DEP @ 2 - EXPECT
+    0= IF FALSE EXIT THEN 2 CELLS + TRUE EXIT THEN
   DUP 6 = IF DROP T-DEP @ 4 < IF FALSE EXIT THEN CELL+ TRUE EXIT THEN
   DUP 9 = IF DROP CELL+ TRUE EXIT THEN
   T-DEP @ 2 < IF DROP FALSE EXIT THEN
   DUP 5 = IF DROP CELL+ TRUE EXIT THEN
   DUP 7 = IF DROP -2 T-DEP +! CELL+ TRUE EXIT THEN
-  DUP 8 = IF DROP LOOP-TARGET 2 CELLS + TRUE EXIT THEN
-  DROP -2 T-DEP +! LOOP-TARGET 2 CELLS + TRUE ;
+  DUP 8 = IF DROP LOOP-TARGET LT @ T-DEP @ 2 - EXPECT
+    0= IF FALSE EXIT THEN TRUE DEAD ! 2 CELLS + TRUE EXIT THEN
+  \ LOOP, +LOOP: back to the body, which must be at this same depth
+  DROP LOOP-TARGET LT @ T-DEP @ EXPECT 0= IF FALSE EXIT THEN
+  -2 T-DEP +! 2 CELLS + TRUE ;
+: DEAD-LOOP ( a k --- a' f )   \ in dead code: no depth rules, targets kept
+  INLINE-CELL? IF LOOP-TARGET 2 CELLS + ELSE CELL+ THEN TRUE ;
 : VALIDATE ( xt --- f )
   DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  TRUE T-OK !  0 #CALLS !
   C-DEP HWM @ -1 CFILL  0 HWM !
+  EXP-DEP @ 0= IF MAX-CELLS CELLS ALLOCATE ABORT" SPN: no memory" EXP-DEP !
+    MAX-CELLS EHWM ! THEN
+  EXP-DEP @ EHWM @ -1 CFILL  0 EHWM !
+  FALSE DEAD !  TRUE REACH !  FALSE ZERO-NOW !  0 #CZ !
   BEGIN
     DUP INSIDE? 0= IF DROP 1 WHY ! FALSE EXIT THEN
+    DUP VA !  ZERO-NOW @ PREV-ZERO !  FALSE ZERO-NOW !
+    \ The depth here: a jump's record after dead code, else the
+    \ fall-through, which must agree with any jump arriving here.
+    DEAD @ IF FALSE REACH ! THEN  FALSE DEAD !
+    DUP IDX CELLS EXP-DEP @ + @  DUP 0< 0= IS-TGT !
+    DUP 0< 0= IF
+      REACH @ IF T-DEP @ <> IF DROP 11 WHY ! FALSE EXIT THEN
+      ELSE T-DEP !  TRUE REACH ! THEN
+    ELSE DROP THEN
     T-DEP @ OVER IDX CELLS C-DEP + !
     DUP IDX 1+ HWM @ MAX HWM !
     DUP @ DUP 1 AND IF TOK
       DUP 1 = IF DROP
-        T-DEP @ IF DROP 2 WHY ! FALSE EXIT THEN
-        DUP T-FAR @ < 0= IF DROP T-OK @ EXIT THEN  CELL+
-      ELSE DUP 2 = IF DROP 2 CELLS +
-      ELSE DUP 3 = OVER 4 = OR IF DROP
+        REACH @ IF T-DEP @ IF DROP 2 WHY ! FALSE EXIT THEN THEN
+        DUP T-FAR @ < 0= IF DROP
+          CZ-OK? 0= IF 12 WHY ! FALSE EXIT THEN  T-OK @ EXIT THEN
+        TRUE DEAD !  CELL+                     \ a mid-word exit
+      ELSE DUP 2 = IF DROP  DUP CELL+ @ 0= ZERO-NOW !  2 CELLS +
+      ELSE DUP 3 = OVER 4 = OR IF BR-TOK !
         DUP CELL+ DUP @ +  DUP IN-DICT? 0= IF 2DROP 3 WHY ! FALSE EXIT THEN
-        DUP TGT,  T-FAR @ MAX T-FAR !  2 CELLS +
-      ELSE DUP 18 = IF DROP 1 T-DEP +! CELL+
-      ELSE DUP 17 = IF DROP T-DEP @ 0= IF DROP 4 WHY ! FALSE EXIT THEN -1 T-DEP +! CELL+
-      ELSE DUP 19 = IF DROP T-DEP @ 0= IF DROP 5 WHY ! FALSE EXIT THEN CELL+
+        DUP TGT,  DUP T-FAR @ MAX T-FAR !
+        REACH @ IF T-DEP @ EXPECT 0= IF DROP 11 WHY ! FALSE EXIT THEN ELSE DROP THEN
+        BR-TOK @ 3 = IF TRUE DEAD ! THEN
+        \ LIT 0 ?BRANCH always jumps - unless a jump already lands here.
+        BR-TOK @ 4 = PREV-ZERO @ AND IS-TGT @ 0= AND IF
+          #CZ @ 8 < 0= IF DROP 12 WHY ! FALSE EXIT THEN
+          DUP #CZ @ CELLS CZ + !  1 #CZ +!  TRUE DEAD !
+        THEN
+        2 CELLS +
+      ELSE DUP 18 = IF DROP REACH @ IF 1 T-DEP +! THEN CELL+
+      ELSE DUP 17 = IF DROP REACH @ IF T-DEP @ 0= IF DROP 4 WHY ! FALSE EXIT THEN
+        -1 T-DEP +! THEN CELL+
+      ELSE DUP 19 = IF DROP REACH @ IF T-DEP @ 0= IF DROP 5 WHY ! FALSE EXIT THEN THEN CELL+
       ELSE PM@ -2 = IF DROP 6 WHY ! FALSE EXIT THEN CELL+
       THEN THEN THEN THEN THEN THEN
     ELSE                                  \ ( a cell ): a call
       OVER CELL+ +  DUP T-SRC @ = IF DROP CELL+ ELSE
         DUP IN-DICT? 0= IF 2DROP 7 WHY ! FALSE EXIT THEN
-        DUP LOOP-KIND ?DUP IF NIP V-LOOP 0= IF DROP 10 WHY ! FALSE EXIT THEN
+        DUP LOOP-KIND ?DUP IF NIP REACH @ IF V-LOOP ELSE DEAD-LOOP THEN
+          0= IF DROP 10 WHY ! FALSE EXIT THEN
         ELSE DUP STRING-WORD? IF
           \ (ABORT") falls through only on error; otherwise it jumps
           \ past its string, which makes that a branch target.
-          AQ-XT @ = IF DUP PAST-STRING DUP TGT, T-FAR @ MAX T-FAR ! THEN
+          AQ-XT @ = IF DUP PAST-STRING DUP TGT, DUP T-FAR @ MAX T-FAR !
+            REACH @ IF T-DEP @ EXPECT 0= IF DROP 11 WHY ! FALSE EXIT THEN
+            ELSE DROP THEN THEN
           PAST-STRING
         ELSE
           DUP WHY-XT !  CLASSIFY 3 = IF DROP 8 WHY ! FALSE EXIT THEN
@@ -705,7 +767,8 @@ VARIABLE RD
   TRANSLATE-BOOT
   FALSE RECORDING !
   HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
-  UNPATCH-ALL  UNDO @ FREE DROP  FALSE SPN-READY ! ;
+  UNPATCH-ALL  UNDO @ FREE DROP  FALSE SPN-READY !
+  EXP-DEP @ ?DUP IF FREE DROP THEN  0 EXP-DEP ! ;
 
 \ Replay if there are recipes made for stencils with these same holes;
 \ otherwise, or on any other engine, translate in full.

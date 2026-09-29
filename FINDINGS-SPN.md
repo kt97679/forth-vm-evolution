@@ -373,7 +373,9 @@ all seven systems, ratio to s0-cell:
 
 **With recipes, s8 is the fastest system on all four workloads, start-up
 included, from an image 2.8 times smaller than s7-spn's** (fib is a tie
-with s7-spn). Without recipes it translates everything at every boot,
+with s7-spn). *Measured before the validator change below; once both
+translators have it, s8 and s7 are roughly matched on speed - see "Ported
+to s7".* Without recipes it translates everything at every boot,
 7 ms, and loses the short workloads to plain CV8. Recipes cost 12.9 KB
 here - a third of the image, against a tenth of s7's - and replay makes
 the same 226 words native that full translation does.
@@ -451,8 +453,27 @@ session, against the s8 before this change:
 Images: s8-spncv8 35,369 -> 38,130 bytes, s8-full 22,514 -> 23,370 -
 more words translated, more recipes, a larger validator. fib is a tie
 with s7-spn within this machine's session-to-session variation.
-spn-full.4's validator has the same linear depth tracking; porting this
-would help s7 the same way.
+
+**Ported to s7, which makes the comparison fair.** spn-full.4 had the
+same linear depth tracking; it now has the per-path check too, with the
+expected depths on the heap so its image does not grow by a table.
+NUMBER?, >NUMBER, FIND, ACCEPT and MOVE go native there as well; 218
+words at a full translation, 26 refused (was 208). End to end, same
+session, the previous s7 rebuilt for comparison:
+
+                     s7 before   s7 now    s8
+    start-up           2.55       2.57     2.57 ms
+    kernel             8.97       8.54     7.55
+    fib                8.86       8.89     9.45
+    corpus             8.90       6.95     6.68
+    parse             32.99      23.96    20.54
+    image (recipes)  99,419    103,441   38,130 bytes
+
+**This corrects the account above.** Much of s8's lead over s7 was its
+better validator, not its CV8 base. With the same validator the two are
+roughly matched on speed - s8 ahead by 12% on kernel compile and 14% on
+parse, s7 ahead by 6% on fib, corpus within noise - and what stays
+clearly s8's is size: an image 2.7 times smaller.
 
 ### Memory
 
