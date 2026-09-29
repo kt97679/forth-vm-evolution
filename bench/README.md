@@ -240,10 +240,26 @@ difference should show on a busy one.
 CPU time also does nothing about the clock speed while the process runs.
 Boost, heat and the governor all change it, so the same work takes a
 different number of CPU seconds - and a governor that ramps up slowly
-penalises short runs most, which here means the SPN systems. So
+would penalise short runs most, which here means the SPN systems. So
 `tools/cputime.c` also reads the hardware counters where it can: user-space
 cycles, which do not depend on the clock, and instructions, which are
-deterministic. Two settings use them:
+deterministic.
+
+User space is the catch. The kernel's part of every run - starting the
+process, mapping memory, page faults - is in CPU time but not in these
+cycles, and it too weighs most on short runs. So when the two disagree,
+either could be the reason, and `tools/clockfit.py` tells them apart: the
+slope of each engine's CPU time against its cycles is the clock during
+the work, and what the cycles leave of a start-up's CPU time is the time
+outside user space. (The kernel's own user/system split cannot: it is
+sampled at timer ticks, and a run of a few milliseconds comes out all
+one or all the other.) On the Ryzen 8840HS, under powersave and a load
+of 1.7, every system ran at 4.84-4.94 GHz; the whole disagreement - up to
+11% for the SPN systems end to end - was 0.4-0.55 ms per run outside user
+space. The stage tables subtract start-up, which removes most of that, so
+cycles serve them well; end to end it is real cost, so CPU time is the
+measure there and cycles the check that the clock held. Two settings use
+the counters:
 
 - `BENCH_METRIC=cycles` makes the stage harness measure cycles instead of
   CPU time. The reports say so ("CPU CYCLES", "Mcyc"); a run with no

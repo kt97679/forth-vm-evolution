@@ -22,6 +22,9 @@ build time), a stage's figure is the median over its variants, and the
 spread is their range - the per-build bias the project measures that way.
 """
 import os, re, sys, random, shutil, statistics, subprocess, tempfile, time
+sys.dont_write_bytecode = True          # no tools/__pycache__ in the tree
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import clockfit                         # CPU time vs cycles: the clock, or the kernel?
 
 if len(sys.argv) < 3:
     sys.exit(__doc__)
@@ -290,31 +293,9 @@ if HAVE_CYC:
     L.append('Deterministic: the ranges show layout, not noise.')
     L.append('')
     e2e_table(E2E_I, lambda c: c / 1e6, '%.1f %.3f')
-    L.append('## Does CPU time agree with cycles?')
-    L.append('')
-    L.append('The CPU-time ratio minus the cycle ratio, as a percentage of the')
-    L.append('cycle ratio. Near zero, CPU time was measuring the work; a stage')
-    L.append('consistently off in one direction was run at a different clock -')
-    L.append('short runs, for instance, finishing before the governor ramps up.')
-    L.append('')
-    L.append('    %-12s' % 'stage' + ''.join('%12s' % w for w in WORKLOADS))
-    worst = 0.0
-    for s in SYSTEMS:
-        if s == BASE or not any(s in E2E[w] for w in WORKLOADS): continue
-        row = '    %-12s' % s
-        for w in WORKLOADS:
-            if s in E2E[w] and s in E2E_C[w] and BASE in E2E[w] and BASE in E2E_C[w]:
-                rt = E2E[w][s][0] / E2E[w][BASE][0]
-                rc = E2E_C[w][s][0] / E2E_C[w][BASE][0]
-                d = 100.0 * (rt - rc) / rc
-                worst = max(worst, abs(d))
-                row += '%11.1f%%' % d
-            else:
-                row += '%12s' % '-'
-        L.append(row)
-    L.append('')
-    L.append('Largest difference: %.1f%%.' % worst)
-    L.append('')
+    # Why the two differ, and which to believe: tools/clockfit.py.
+    L += clockfit.agreement(RAW, SYSTEMS, BASE, WORKLOADS)
+    L += clockfit.clock(RAW, SYSTEMS, WORKLOADS)
 L.append('## Memory')
 L.append('')
 L.append('Peak resident set, KB (variant 0, least of three runs):')

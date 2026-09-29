@@ -318,7 +318,9 @@ out.append('Ratios travel between machines; absolute %s do not.\n'
 if CYCLES:
     out.append('Measured in CPU CYCLES, user space, from the hardware counters')
     out.append('(tools/cputime.c): independent of clock frequency, so of boost,')
-    out.append('throttling and the governor - not in CPU time.\n')
+    out.append('throttling and the governor - not in CPU time. User space only:')
+    out.append("the kernel's part of a run is left out, and subtracting start-up")
+    out.append('removes most of it (see tools/clockfit.py).\n')
 
 # Carry the layout-variant count into the saved report. tools/agree.py
 # needs it: a standard error from N builds has N-1 degrees of freedom,

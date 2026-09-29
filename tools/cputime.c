@@ -11,9 +11,11 @@
  *  while other processes run, but not how fast the CPU runs while this
  *  one is on it: boost, thermal throttling and a powersave governor all
  *  change CPU seconds for the same work - and a governor that ramps up
- *  slowly penalises short runs most. Cycles do not depend on the clock;
- *  instructions are deterministic. Both are counted for the child only,
- *  in user space, from the moment it execs (enable_on_exec, attached
+ *  slowly would penalise short runs most. Cycles do not depend on the
+ *  clock; instructions are deterministic. Both are counted for the child
+ *  only, in USER SPACE - the kernel's part of a run, starting the process
+ *  and page faults, is in CPU time but not here; tools/clockfit.py tells
+ *  the two effects apart - from the moment it execs (enable_on_exec, attached
  *  while the child waits on a pipe), and scaled if the kernel had to
  *  multiplex the counters. Where they cannot be opened - a VM without
  *  the PMU, or kernel.perf_event_paranoid above 2, Ubuntu's default being

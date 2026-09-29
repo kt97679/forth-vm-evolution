@@ -22,9 +22,10 @@
 #
 # CYCLES, NOT SECONDS. CPU time already leaves out time spent waiting for
 # other processes, but not the clock speed while this one runs: boost,
-# heat and the governor change it, and short runs - the SPN systems' -
-# most. So the measurements count CPU cycles, which do not depend on the
-# clock (tools/cputime.c). Reading the counters needs
+# heat and the governor change it, and could change short runs - the SPN
+# systems' - most. So the measurements also count CPU cycles, which do
+# not depend on the clock (tools/cputime.c); in user space only, which
+# tools/clockfit.py accounts for. Reading the counters needs
 # kernel.perf_event_paranoid at 2 or below; Ubuntu ships 4. If it is
 # higher, this script lowers it to 2 at the start - sudo asks for your
 # password then, not half an hour later - and puts it back when the run
