@@ -103,9 +103,9 @@ translated as their `;` completes. Details: `FINDINGS-SPN.md`.
 
 | id | built on | adds | image, 8-byte | status |
 |----|----------|------|---------------|--------|
-| `s8-spncv8` | `s6-cv8b` | the translator, reading CV8; recipes - the boot translation recorded at build time and replayed | 41,604 | current |
-| `s8-lazy` | `s6-cv8b` | recipes for the translator and the outer interpreter only; every other word translated the first time it is called | 34,796 | experimental |
-| `s8-full` | `s6-cv8b` | the same, translating in full at every start instead of replaying | 25,226 | comparison |
+| `s8-spncv8` | `s6-cv8b` | the translator, reading CV8; recipes - the boot translation recorded at build time and replayed | 37,670 | current |
+| `s8-lazy` | `s6-cv8b` | recipes for the translator and the outer interpreter only; every other word translated the first time it is called | 32,425 | experimental |
+| `s8-full` | `s6-cv8b` | the same, translating in full at every start instead of replaying | 23,196 | comparison |
 | `s7-spn` | `s0-cell` | the first SPN: the translator reading cells; recipes | 103,441 | frozen |
 | `s7-full` | `s0-cell` | the same without recipes | 92,736 | frozen |
 
@@ -116,7 +116,7 @@ fib by 6% end to end and 12% net of start-up across five layouts. s7 is kept as 
 base; it is built and tested but no longer developed.
 
 Both are x86-64 only, and `tools/build-stages.sh` builds them on such a
-host. Start-up includes the translation - about 2.2 ms with recipes and
-1.9 on demand, against 0.7 for the interpreters - and the benchmark tables are net of
+host. Start-up includes the translation - about 2.0 ms with recipes and
+1.8 on demand, against 0.75 for the interpreters - and the benchmark tables are net of
 start-up, so they understate that cost; `FINDINGS-SPN.md` gives
 end-to-end figures.

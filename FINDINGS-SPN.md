@@ -681,3 +681,33 @@ The recipes: 113 words, 4,337 stencil operations, 2.1 bytes each - op
 bytes 48%, literals 26% (409 relocated addresses at three bytes each),
 branch-target marks 9%, callees 8%, jump fields 5%, word headers 4%.
 
+## Image size: the build-time code left out
+
+The recorder and the saver run only when an image is built, but were
+saved in every s8 image - 2.1 KB of s8-lazy's. They are now in
+forth/spn-cv8-build.4, loaded after the running translator; before it
+defines anything, it takes a mark - HERE and the thread heads - and the
+saver writes the dictionary up to the mark, then the data the recorder
+wrote, with those data's offsets moved down, DP the new end, and the
+word list as it was at the mark. Running code reaches the recorder only
+through RECORD-HOOK, one hook with a selector, at the four places it
+used to call it, so no running word calls a build-only word and the
+tree walk never reaches one; the full pass and the on-demand list stop
+at the mark. The hook's build-time address is scrubbed from the image.
+
+One trap on the way: the mark's first line used ABORT" - compile-only,
+and used outside a definition this kernel compiles it, into the
+dictionary at the very place being marked. The build crashed on load.
+
+                   before     now       saved
+    s8-spncv8      41,475     37,670    3,805 bytes   9.2%
+    s8-lazy        34,752     32,425    2,327         6.7%
+    s8-full        25,170     23,196    1,974         7.8%
+
+s8-spncv8 saves more than the 2.4 KB of code: its full pass had also
+translated the recorder and the saver, and carried recipes for them - 19
+words. Start-up, fewer recipes to replay: s8-spncv8 2.18 -> 2.04 ms,
+s8-lazy 1.85 -> 1.78. All 15 systems 616/616; both recipe images corpus
+20 runs of 20; the stencil record still loads; the hook is 0 in every
+saved image.
+

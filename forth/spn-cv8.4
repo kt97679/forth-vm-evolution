@@ -154,25 +154,22 @@ VARIABLE T-SRC  VARIABLE T-NAT  VARIABLE #FIX
 \ Every literal that is an image address is flagged where it is made,
 \ never guessed from its value.
 VARIABLE RECORDING  0 RECORDING !
+\ The recorder is in forth/spn-cv8-build.4, loaded only to build an image
+\ and not saved in it. Running code reaches it only through this hook,
+\ ( x selector --- ): 0 an op, 1 a possible branch target, 2 a word's
+\ start, 3 its end - so no running word calls a build-only word, and
+\ the tree walk never reaches one.
+VARIABLE RECORD-HOOK  0 RECORD-HOOK !
+VARIABLE ALL-END  0 ALL-END !   \ if set: TRANSLATE-ALL stops at this offset
 VARIABLE ARG-RELOC  0 ARG-RELOC !     \ ARG-IMM is an address in the image
 VARIABLE ARG-CXT    0 ARG-CXT !       \ an S-CALL's callee xt; 0 for itself
 VARIABLE RCP-OFF  0 RCP-OFF !   VARIABLE RCP-LEN  0 RCP-LEN !
 VARIABLE RCP-SIG  0 RCP-SIG !
-: UV, ( u --- )  BEGIN DUP 127 U> WHILE DUP 127 AND 128 OR C, 7 RSHIFT REPEAT C, ;
-: SV, ( n --- )  DUP 0< IF INVERT 1 LSHIFT 1+ ELSE 1 LSHIFT THEN UV, ;
 VARIABLE RD
 : B@+ ( --- b )  RD @ C@  1 RD +! ;
 : UV@ ( --- u )
   0 0 BEGIN B@+ DUP >R 127 AND OVER LSHIFT ROT OR SWAP 7 + R> 128 AND 0= UNTIL DROP ;
 : SV@ ( --- n )  UV@ DUP 1 AND IF 1 RSHIFT INVERT ELSE 1 RSHIFT THEN ;
-: RECORD-OP ( i --- )
-  DUP ST-MASK ST@                                           ( i m )
-  OVER  OVER 24 AND IF ARG-RELOC @ IF 64 OR THEN THEN
-        OVER 4 AND IF ARG-CXT @ 0= IF 128 OR THEN THEN  C,
-  DUP 24 AND IF ARG-IMM @  ARG-RELOC @ IF START @ - THEN  SV, THEN
-  DUP 2 AND IF ARG-JUMP @ T-SRC @ - UV, THEN
-  4 AND IF ARG-CXT @ ?DUP IF START @ - UV, THEN THEN
-  DROP ;
 : FIX, ( native src --- )
   #FIX @ 256 < 0= ABORT" SPN: too many branches"
   #FIX @ 2 * CELLS FIXUPS @ +  DUP >R CELL+ !  R> !  1 #FIX +! ;
@@ -186,7 +183,7 @@ VARIABLE RD
   OVER 5 = IF NIP  RP-ADDR @ SWAP ! EXIT THEN
   NIP INTERP-FN @ SWAP ! ;
 : EMIT-ST ( i --- )
-  RECORDING @ IF DUP RECORD-OP THEN
+  RECORDING @ IF DUP 0 RECORD-HOOK @ EXECUTE THEN
   DUP SI !
   CODE-HERE @ OVER ST-LEN ST@ + CODE-LIMIT @ > ABORT" SPN: code buffer full"
   CODE-HERE @ E-DST !
@@ -626,7 +623,7 @@ VARIABLE SK  VARIABLE SV
   0 #FIX !  T-SRC @
   BEGIN
     CODE-HERE @ OVER IDX CELLS C-NAT @ + !
-    RECORDING @ IF DUP TARGET? IF 254 C, DUP IDX UV, THEN THEN
+    RECORDING @ IF DUP 1 RECORD-HOOK @ EXECUTE THEN
     DUP VA !  DECODE                                     ( a' )
     OP-K @ K-BR = IF OP-V @ ARG-JUMP ! S-BRANCH EMIT-ST THEN
     OP-K @ K-QBR = IF OP-V @ ARG-JUMP ! S-0BRANCH EMIT-ST THEN
@@ -658,18 +655,6 @@ VARIABLE #NATIVE  VARIABLE #KEPT
   ENTRY-OF  T-NAT @ CODE-BASE @ - 4 RSHIFT
   DUP 255 AND 2 PICK 1+ C!  8 RSHIFT 255 AND OVER 2 + C!
   [ OP-ENTER ] LITERAL SWAP C! ;
-\ While recording, every patch is remembered so it can be undone: the
-\ saved image must hold the dictionary exactly as it was, untranslated.
-VARIABLE UNDO  0 UNDO !  VARIABLE #UNDO  0 #UNDO !
-: UNDO, ( xt --- )
-  ENTRY-OF DUP C@ OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ 16 LSHIFT OR   ( e bytes )
-  #UNDO @ 2 * CELLS UNDO @ +  DUP >R CELL+ !  R> !  1 #UNDO +! ;
-: UNPATCH-ALL ( --- )
-  #UNDO @ 0 ?DO
-    I 2 * CELLS UNDO @ +  DUP @ SWAP CELL+ @                     ( e bytes )
-    2DUP 255 AND SWAP C!  2DUP 8 RSHIFT 255 AND SWAP 1+ C!
-    16 RSHIFT 255 AND SWAP 2 + C!
-  LOOP  0 #UNDO ! ;
 VARIABLE SPN-READY  0 SPN-READY !
 : SHAPE-OK? ( xt --- f )
   DUP IN-DICT? 0= IF DROP FALSE EXIT THEN
@@ -729,15 +714,15 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
   RECORDING @ TGT-OVER @ AND IF DROP 1 #KEPT +! EXIT THEN
   CODE-HERE @ 15 + -16 AND CODE-HERE !
   CODE-HERE @ T-NAT !
-  RECORDING @ IF DUP START @ - UV, THEN
+  RECORDING @ IF DUP 2 RECORD-HOOK @ EXECUTE THEN
   EMIT-WORD RESOLVE
-  RECORDING @ IF 255 C,  DUP UNDO, THEN
+  RECORDING @ IF DUP 3 RECORD-HOOK @ EXECUTE THEN
   PATCH-ENTRY  1 #NATIVE +! ;
 
 \ ---- the whole dictionary, oldest first ----
 : TRANSLATE-ALL ( --- )     \ uses the map; builds one if there is none
   MARKS @ 0= IF BUILD-MARKS THEN
-  MSIZE @ 0 DO
+  MSIZE @ ALL-END @ ?DUP IF MIN THEN 0 DO
     MARKS @ I + C@ 1 AND IF  I START @ + NAME>8 TRY-TRANSLATE  THEN
   LOOP ;
 
@@ -755,16 +740,6 @@ VARIABLE STS-OFF  0 STS-OFF !  VARIABLE STS-LEN  0 STS-LEN !
   #ENTRIES @ 3 DO
     I ST-START ST@  I ST-LEN ST@ 0 ?DO  DUP I + C@ ROT XOR 1099511628211 * SWAP  LOOP DROP
   LOOP ;
-: SAVE-STENCILS ( --- )   \ at build time, after the scan
-  HERE START @ - STS-OFF !
-  #ENTRIES @ UV,
-  #ENTRIES @ 1 ?DO I ENTRY 0 ENTRY - SV, LOOP
-  #ENTRIES @ 3 ?DO
-    I ST-START ST@ I ENTRY - UV,  I ST-LEN ST@ UV,  I ST-NH ST@ DUP UV,
-    0 ?DO J 8 * I + CELLS ST-HOLES @ + @ UV, LOOP
-  LOOP
-  STENCIL-HASH SV,
-  HERE START @ - STS-OFF @ - STS-LEN ! ;
 : LOAD-STENCILS ( --- f )   \ at boot: the build's scan, if the engine is the same
   STS-LEN @ 0= IF FALSE EXIT THEN
   STS-OFF @ START @ + RD !
@@ -876,21 +851,6 @@ VARIABLE TRANSLATING  0 TRANSLATING !
   DUP SHAPE-OK? 0= IF DROP EXIT THEN
   DUP BOUND-OF T-LIM !  VALIDATE 0= IF EXIT THEN
   #CALLS @ DUP 0 ?DO I CELLS CALLS @ + @ SWAP LOOP  0 ?DO LAZY-GO LOOP ;
-\ At build time: would this word translate? Checked again when called.
-: LAZY-CANDIDATE? ( a --- f )
-  DUP SHAPE-OK? 0= IF DROP FALSE EXIT THEN
-  DUP BOUND-OF T-LIM !  DUP VALIDATE 0= IF DROP FALSE EXIT THEN
-  TARGETS-OK? 0= IF DROP FALSE EXIT THEN
-  T-END @ OVER - 3 < IF DROP FALSE EXIT THEN
-  INLINABLE? 0= ;
-: LIST-LAZY ( --- )   \ the entry of every such word not native yet
-  0 LZ-N !
-  MSIZE @ 0 DO
-    MARKS @ I + C@ 1 AND IF
-      I START @ + NAME>8 ENTRY-OF
-      DUP LAZY-CANDIDATE? IF START @ - UV, 1 LZ-N +! ELSE DROP THEN
-    THEN
-  LOOP ;
 \ At boot, after the translator's recipes: mark every listed word. The
 \ map of names and the visited set are kept for the whole run.
 : LAZY-SETUP ( --- )
@@ -909,16 +869,12 @@ VARIABLE TRANSLATING  0 TRANSLATING !
   LH-OFF START @ + SPN-HOOK!  TRUE LAZY-ON ! ;
 
 \ ---- start-up: replay, or translate in full ----
-' REPLAY-ALL    START @ - CONSTANT RA-OFF
 ' CMOVE         START @ - CONSTANT CM-OFF
 ' EMIT-ST       START @ - CONSTANT ES-OFF
 ' VALIDATE      START @ - CONSTANT VA-OFF
 ' TRANSLATE-ALL START @ - CONSTANT TA-OFF
 : TRANSLATE-BOOT ( --- )   \ the translator first, then everything
   BUILD-MARKS
-  \ Recording: the replayer's own recipes first, so boot runs it natively
-  \ after a few words.
-  RECORDING @ IF RA-OFF START @ + TRANSLATE-TREE THEN
   CM-OFF START @ + TRANSLATE-TREE
   ES-OFF START @ + TRANSLATE-TREE
   VA-OFF START @ + TRANSLATE-TREE
@@ -927,40 +883,6 @@ VARIABLE TRANSLATING  0 TRANSLATING !
 \ Which hole kinds every stencil has: recipes replay only on an engine
 \ whose stencils match the one they were recorded on.
 : STENCIL-SIG ( --- h )  #ENTRIES @  #ENTRIES @ 3 DO 31 * I ST-MASK ST@ + LOOP ;
-\ At image build time: translate once, recording, then undo every patch.
-: SPN-RECORD ( --- )
-  SPN-INIT  SAVE-STENCILS
-  4096 2 * CELLS TABLE UNDO !  0 #UNDO !
-  HERE START @ - RCP-OFF !  TRUE RECORDING !
-  TRANSLATE-BOOT
-  FALSE RECORDING !
-  HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
-  UNPATCH-ALL  UNDO @ FREE DROP  0 UNDO !  FALSE SPN-READY ! ;
-\ At image build time, on demand: recipes for the translator only - the
-\ replayer, then what translating and translating on demand need - and
-\ a list of every other word that would translate.
-\ QUIT runs REFILL and INTERPRET; recording them too makes the outer
-\ interpreter's words - FIND, WORD, NUMBER?, ACCEPT - replayed at boot
-\ rather than translated on demand the moment the first line is read.
-' REFILL       START @ - CONSTANT RF-OFF
-' INTERPRET    START @ - CONSTANT INT-OFF
-' LAZY-GO      START @ - CONSTANT LG-OFF
-' LAZY-CALLEES START @ - CONSTANT LC-OFF
-: SPN-RECORD-LAZY ( --- )
-  SPN-INIT  SAVE-STENCILS
-  4096 2 * CELLS TABLE UNDO !  0 #UNDO !
-  BUILD-MARKS
-  HERE START @ - RCP-OFF !  TRUE RECORDING !
-  RA-OFF START @ + TRANSLATE-TREE
-  CM-OFF START @ + TRANSLATE-TREE  ES-OFF START @ + TRANSLATE-TREE
-  VA-OFF START @ + TRANSLATE-TREE  LG-OFF START @ + TRANSLATE-TREE
-  LC-OFF START @ + TRANSLATE-TREE
-  RF-OFF START @ + TRANSLATE-TREE  INT-OFF START @ + TRANSLATE-TREE
-  FALSE RECORDING !
-  HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
-  HERE START @ - LZ-OFF !  LIST-LAZY  HERE START @ - LZ-OFF @ - LZ-LEN !
-  FREE-MARKS
-  UNPATCH-ALL  UNDO @ FREE DROP  0 UNDO !  FALSE SPN-READY ! ;
 : SPN-BOOT ( --- )
   SPN-INIT
   RCP-LEN @ IF STENCIL-SIG RCP-SIG @ = IF

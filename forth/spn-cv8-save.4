@@ -1,6 +1,9 @@
 \ spn-cv8-save.4 - saving an SPN-CV8 system as a CV8 image.
 \
-\ Load after spn-cv8.4, in the byte-header CV8 system. That system is
+\ Load after spn-cv8.4 and spn-cv8-build.4, in the byte-header CV8 system.
+\ It writes the dictionary only up to the mark spn-cv8-build.4 took -
+\ the running part - followed by the data the recorder wrote, so neither
+\ the recorder nor this saver is in the image. That system is
 \ built without the pool, locals or shell, and cv8-save.4 cannot be used
 \ as it stands: its scrub names 27 shell variables, and its header is
 \ the layout from before the word list was hashed again - one head_nfa,
@@ -47,18 +50,35 @@ CREATE SV-MAGIC  67 C, 86 C, 56 C, 48 C, 8 C, 76 C, 1 C, 31 C,
   T-LIM SV-CELL  MARK-END SV-CELL  T-SRC SV-CELL  T-NAT SV-CELL
   C-VAL SV-CELL  WHY-XT SV-CELL  VA SV-CELL  RD SV-CELL  E-DST SV-CELL
   ARG-IMM SV-CELL  ARG-CALL SV-CELL  ARG-JUMP SV-CELL
-  SV-FID SV-CELL  SV-LEN SV-CELL  SV-BUF SV-CELL ;
+  \ The hook holds the build-time address of the recorder, which is not
+  \ saved. (This saver's own variables are above the mark, not in the
+  \ copy at all - scrubbing them would write past its end.)
+  RECORD-HOOK SV-CELL  ALL-END SV-CELL ;
 : SV-WRITE ( a u --- )  SV-FID @ WRITE-FILE ABORT" SPN-SAVE: write failed" ;
 VARIABLE SV-X
 : SV-CELL, ( n --- )  SV-X !  SV-X 1 CELLS SV-WRITE ;
+: SV-SHIFT ( variable shift --- )   \ a recorded offset, as it lands in the image
+  OVER @ IF SWAP SV>COPY DUP @ ROT - SWAP ! ELSE 2DROP THEN ;
+VARIABLE SV-KEEP  VARIABLE SV-BLOB
 : SPN-SAVE ( c-addr u --- )
   SPN-READY @ ABORT" SPN-SAVE: save before SPN-BOOT, not after"
-  HERE START @ - SV-LEN !
+  \ The copy: the running part, START to the mark, then the recorded data.
+  KEEP-END @ START @ - SV-KEEP !
+  BLOB-START @ ?DUP 0= IF HERE THEN                      ( blob )
+  HERE OVER - SV-BLOB !
+  SV-KEEP @ SV-BLOB @ + SV-LEN !
   SV-LEN @ ALLOCATE ABORT" SPN-SAVE: out of memory" SV-BUF !
-  START @ SV-BUF @ SV-LEN @ MOVE
-  DP SV-UNRELOCATE
+  START @ SV-BUF @ SV-KEEP @ MOVE
+  SV-BUF @ SV-KEEP @ + SV-BLOB @ MOVE
+  \ In the copy: the data's offsets, moved down to the mark; DP, the new
+  \ end; and the word list as it was at the mark, START-relative.
+  BLOB-START @ ?DUP IF KEEP-END @ -                      ( shift )
+    STS-OFF OVER SV-SHIFT  RCP-OFF OVER SV-SHIFT  LZ-OFF OVER SV-SHIFT  DROP
+  THEN
+  SV-LEN @ DP SV>COPY !
   FORTH-WORDLIST @ 1+ 1 DO
-    FORTH-WORDLIST I CELLS + @ IF FORTH-WORDLIST I CELLS + SV-UNRELOCATE THEN
+    KEEP-HEADS @ I CELLS + @ DUP IF START @ - THEN
+    FORTH-WORDLIST I CELLS + SV>COPY !
   LOOP
   SV-SCRUB
   W/O BIN CREATE-FILE ABORT" SPN-SAVE: cannot create file" SV-FID !

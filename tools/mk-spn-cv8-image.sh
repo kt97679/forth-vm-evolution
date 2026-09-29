@@ -31,8 +31,8 @@ engine "" ""
 # full at every boot. Same engine, same native code.
 build() {  # build NAME RECORD-WORD
     rm -f "$W/$1-s64.img"
-    ( cd "$W" && printf 'S" %s/forth/spn-cv8.4" INCLUDED\nS" %s/forth/spn-cv8-save.4" INCLUDED\n%s\n'"' SPN-BOOT SET-BOOT\nS\" %s-s64.img\" SPN-SAVE\nBYE\n" \
-          "$ROOT" "$ROOT" "$2" "$1" | "$O/s8-spncv8-64" "$O/s6-cv8b-s64.img" >/dev/null 2>&1 )
+    ( cd "$W" && printf 'S" %s/forth/spn-cv8.4" INCLUDED\nS" %s/forth/spn-cv8-build.4" INCLUDED\nS" %s/forth/spn-cv8-save.4" INCLUDED\n%s\n'"' SPN-BOOT SET-BOOT\nS\" %s-s64.img\" SPN-SAVE\nBYE\n" \
+          "$ROOT" "$ROOT" "$ROOT" "$2" "$1" | "$O/s8-spncv8-64" "$O/s6-cv8b-s64.img" >/dev/null 2>&1 )
     [ -s "$W/$1-s64.img" ] || { echo "failed to save $1-s64.img"; exit 1; }
     cp "$W/$1-s64.img" "$O/$1-s64.img"
     echo "built  $1 ($(wc -c < "$O/$1-s64.img") bytes)"

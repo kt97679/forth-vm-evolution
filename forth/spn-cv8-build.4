@@ -1,0 +1,124 @@
+\ spn-cv8-build.4 - what building an s8 image needs and a running s8 does not.
+\
+\ Load after forth/spn-cv8.4 and before forth/spn-cv8-save.4. The
+\ recorder and the saver run at build time only, so the saver writes the
+\ dictionary up to where this file begins - the mark - and then the data
+\ the recorder wrote, and neither is in the image: 2.1 KB of an s8 image
+\ that a running system never used. Running code reaches the recorder
+\ only through RECORD-HOOK, so no running word calls into this file.
+\
+\ The mark: HERE, and the word list as it stands, taken before this
+\ file defines anything - its first definition would change both. They
+\ wait on the data stack until there is somewhere to put them.
+\ (No ABORT" here: it is compile-only, and used outside a definition this
+\ kernel compiles it - into the dictionary, at the very place being marked.)
+HERE  FORTH-WORDLIST @ 1+ CELLS ALLOCATE DROP
+FORTH-WORDLIST OVER FORTH-WORDLIST @ 1+ CELLS MOVE
+VARIABLE KEEP-HEADS  KEEP-HEADS !      \ the word list at the mark
+VARIABLE KEEP-END    KEEP-END !        \ the mark: where the running part ends
+VARIABLE BLOB-START  0 BLOB-START !    \ where the recorded data begins
+
+DECIMAL
+\ ---- the recipe format (see spn-cv8.4, "recipes") ----
+: UV, ( u --- )  BEGIN DUP 127 U> WHILE DUP 127 AND 128 OR C, 7 RSHIFT REPEAT C, ;
+: SV, ( n --- )  DUP 0< IF INVERT 1 LSHIFT 1+ ELSE 1 LSHIFT THEN UV, ;
+: RECORD-OP ( i --- )
+  DUP ST-MASK ST@                                           ( i m )
+  OVER  OVER 24 AND IF ARG-RELOC @ IF 64 OR THEN THEN
+        OVER 4 AND IF ARG-CXT @ 0= IF 128 OR THEN THEN  C,
+  DUP 24 AND IF ARG-IMM @  ARG-RELOC @ IF START @ - THEN  SV, THEN
+  DUP 2 AND IF ARG-JUMP @ T-SRC @ - UV, THEN
+  4 AND IF ARG-CXT @ ?DUP IF START @ - UV, THEN THEN
+  DROP ;
+\ While recording, every patch is remembered so it can be undone: the
+\ saved image must hold the dictionary exactly as it was, untranslated.
+VARIABLE UNDO  0 UNDO !  VARIABLE #UNDO  0 #UNDO !
+: UNDO, ( xt --- )
+  ENTRY-OF DUP C@ OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ 16 LSHIFT OR   ( e bytes )
+  #UNDO @ 2 * CELLS UNDO @ +  DUP >R CELL+ !  R> !  1 #UNDO +! ;
+: UNPATCH-ALL ( --- )
+  #UNDO @ 0 ?DO
+    I 2 * CELLS UNDO @ +  DUP @ SWAP CELL+ @                     ( e bytes )
+    2DUP 255 AND SWAP C!  2DUP 8 RSHIFT 255 AND SWAP 1+ C!
+    16 RSHIFT 255 AND SWAP 2 + C!
+  LOOP  0 #UNDO ! ;
+
+\ ---- the stencil record (see spn-cv8.4, LOAD-STENCILS) ----
+: SAVE-STENCILS ( --- )   \ at build time, after the scan
+  HERE START @ - STS-OFF !
+  #ENTRIES @ UV,
+  #ENTRIES @ 1 ?DO I ENTRY 0 ENTRY - SV, LOOP
+  #ENTRIES @ 3 ?DO
+    I ST-START ST@ I ENTRY - UV,  I ST-LEN ST@ UV,  I ST-NH ST@ DUP UV,
+    0 ?DO J 8 * I + CELLS ST-HOLES @ + @ UV, LOOP
+  LOOP
+  STENCIL-HASH SV,
+  HERE START @ - STS-OFF @ - STS-LEN ! ;
+
+\ ---- the on-demand list ----
+\ At build time: would this word translate? Checked again when called.
+: LAZY-CANDIDATE? ( a --- f )
+  DUP SHAPE-OK? 0= IF DROP FALSE EXIT THEN
+  DUP BOUND-OF T-LIM !  DUP VALIDATE 0= IF DROP FALSE EXIT THEN
+  TARGETS-OK? 0= IF DROP FALSE EXIT THEN
+  T-END @ OVER - 3 < IF DROP FALSE EXIT THEN
+  INLINABLE? 0= ;
+: LIST-LAZY ( --- )   \ the entry of every such word not native yet
+  0 LZ-N !
+  KEEP-END @ START @ - 0 DO             \ the running part only
+    MARKS @ I + C@ 1 AND IF
+      I START @ + NAME>8 ENTRY-OF
+      DUP LAZY-CANDIDATE? IF START @ - UV, 1 LZ-N +! ELSE DROP THEN
+    THEN
+  LOOP ;
+
+\ ---- the hook running code calls while recording ----
+: REC-HOOK ( x selector --- )
+  DUP 0 = IF DROP RECORD-OP EXIT THEN                   \ an op
+  DUP 1 = IF DROP DUP TARGET? IF 254 C, IDX UV, ELSE DROP THEN EXIT THEN
+  DUP 2 = IF DROP START @ - UV, EXIT THEN               \ a word's start
+  DROP 255 C, UNDO, ;                                   \ its end
+' REC-HOOK RECORD-HOOK !
+
+\ ---- recording ----
+\ Translate once with RECORDING on, writing each word's recipe, then
+\ undo every patch: the image must hold the dictionary untranslated.
+\ Only the running part is translated or listed - below the mark.
+' REPLAY-ALL   START @ - CONSTANT RA-OFF
+' REFILL       START @ - CONSTANT RF-OFF
+' INTERPRET    START @ - CONSTANT INT-OFF
+' LAZY-GO      START @ - CONSTANT LG-OFF
+' LAZY-CALLEES START @ - CONSTANT LC-OFF
+: RECORD-START ( --- )
+  SPN-INIT  HERE BLOB-START !  SAVE-STENCILS
+  4096 2 * CELLS TABLE UNDO !  0 #UNDO !
+  BUILD-MARKS  KEEP-END @ START @ - ALL-END !
+  HERE START @ - RCP-OFF !  TRUE RECORDING !
+  \ the replayer's own recipes first, so boot runs it natively soon
+  RA-OFF START @ + TRANSLATE-TREE ;
+: RECORD-END ( --- )
+  FALSE RECORDING !
+  HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG ! ;
+: RECORD-DONE ( --- )
+  FREE-MARKS  0 ALL-END !
+  UNPATCH-ALL  UNDO @ FREE DROP  0 UNDO !  FALSE SPN-READY ! ;
+\ Everything, as s8-spncv8 replays it.
+: SPN-RECORD ( --- )
+  RECORD-START
+  CM-OFF START @ + TRANSLATE-TREE  ES-OFF START @ + TRANSLATE-TREE
+  VA-OFF START @ + TRANSLATE-TREE  TA-OFF START @ + TRANSLATE-TREE
+  TRANSLATE-ALL
+  RECORD-END  RECORD-DONE ;
+\ On demand, as s8-lazy: recipes for the translator - the replayer, then
+\ what translating and translating on demand need - and for the outer
+\ interpreter, which QUIT runs as REFILL and INTERPRET; a list of every
+\ other word that would translate.
+: SPN-RECORD-LAZY ( --- )
+  RECORD-START
+  CM-OFF START @ + TRANSLATE-TREE  ES-OFF START @ + TRANSLATE-TREE
+  VA-OFF START @ + TRANSLATE-TREE  LG-OFF START @ + TRANSLATE-TREE
+  LC-OFF START @ + TRANSLATE-TREE
+  RF-OFF START @ + TRANSLATE-TREE  INT-OFF START @ + TRANSLATE-TREE
+  RECORD-END
+  HERE START @ - LZ-OFF !  LIST-LAZY  HERE START @ - LZ-OFF @ - LZ-LEN !
+  RECORD-DONE ;
