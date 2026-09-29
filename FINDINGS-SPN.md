@@ -92,6 +92,47 @@ After that: calls. Each native call currently pays the C ABI - stack
 alignment and moving the returned pair back into the argument
 registers - about eight instructions where C pays about three.
 
+## Memory, against CV8
+
+All 8-byte cells, measured on this branch (terminal buffer at 256, so
+every image is 176 bytes larger than the article's figures).
+
+    engine code (text)            CV8 engine 19,664    SPN engine 14,707
+    image on disk                 CV8+hdr    9,873     cell       24,496
+    translator in the dictionary     -                 35,200
+
+    one word, header and body     cell   CV8+spec  CV8+hdr   native
+    FIB                            200      49        39       138
+    SUMTO                          160      44        29       163
+
+**The SPN engine is smaller than the CV8 one** - the plain cell engine
+plus about 2 KB of stencils, against CV8's variable-length decoder,
+folding and specialised opcodes. The complexity moved into Forth.
+
+**The image is 2.5x larger only because this PoC translates from the
+cell format.** Nothing in the design requires that; translating from
+CV8 would keep the 9.9 KB image.
+
+**Native code is the real cost: 3.5 to 5.6 times the CV8 form of the
+same word.** And the PoC keeps the source form too, so a translated
+word costs both.
+
+**The translator is 35 KB, but 24.8 KB of that is two tables sized far
+beyond need** - 16 KB of source map and 8 KB of branch fix-ups, where
+FIB needs about twenty entries of each. The translator's own code is
+about 10 KB in cell form; in CV8 form that would be roughly 3 KB, an
+estimate from the usual cell-to-CV8 ratio rather than a measurement.
+
+Peak resident memory is useless for this comparison here: a C program
+that does nothing measures 11,260 KB in this sandbox, and every Forth
+configuration lands within 200 KB of that. The differences that matter
+are tens of kilobytes and have to be counted inside Forth.
+
+So SPN done properly would cost, over CV8: a few KB of translator, a
+KB or two of tables, and native code only for the words actually
+translated - which argues for translating hot words on demand rather
+than everything.
+
 ## Limits of this version
 
 - x86-64 only. 32-bit ARM needs `-mslow-flash-data` so constants are
