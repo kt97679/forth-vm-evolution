@@ -92,6 +92,90 @@ After that: calls. Each native call currently pays the C ABI - stack
 alignment and moving the returned pair back into the argument
 registers - about eight instructions where C pays about three.
 
+## As a whole system: s7-spn
+
+The proof of concept translated two benchmarks by hand. s7-spn is a
+complete Forth: the kernel image plus the translator (forth/spn-full.4),
+saved with SPN-BOOT as its boot word. Every start translates the
+dictionary, then falls through to the ordinary interpreter; new
+definitions are translated as their ; completes.
+
+**It passes the same 616-case ANS CORE corpus as the other ten systems**,
+through the same harness, with the deliberately wrong control case
+detected. In the kernel-compile benchmark it reproduces the reference
+image byte for byte, or it would have been excluded from timing.
+
+Mixed mode: a translated word's body becomes [SPN-ENTER][native
+address], so interpreted callers run native code transparently. Native
+code reaches an untranslated word through a re-entry helper that runs
+the interpreter until a sentinel return address hands control back.
+Both share one return stack. A word is validated completely - calls,
+branches, return-stack depth - before anything is emitted, and left
+untouched if any check fails.
+
+At boot: 167 words native, 43 refused, the rest inlined as data.
+The 43 are mostly words that read their CALLER'S return address - DOVAR,
+the loop runtimes - which by design stay interpreted, and words
+containing DO loops. SPN-WHY reports the reason for any word.
+
+### Results
+
+One layout build per stage on the development VM, best of 5 rounds.
+Indicative: the project has measured 5-10% per-build bias.
+
+    net of start-up (as the harness reports)
+                     cell   CV8+spec  CV8+hdr   SPN
+    kernel compile  1.000    0.535     0.577    0.308
+    fib             1.000    0.829     0.776    0.164
+    corpus          1.000    0.511     0.588    0.400
+    parse           1.000    0.482     0.576    0.373
+
+**The harness subtracts each binary's start-up, and SPN's start-up is
+translating the whole dictionary**: 4.9 ms of CPU against 0.84 for the
+other stages. Included, the answer changes for short workloads:
+
+    end to end, start-up included
+                     cell   CV8+spec    SPN
+    kernel compile  1.000    0.556     0.568
+    fib             1.000    0.833     0.293
+    corpus          1.000    0.540     0.726
+    parse           1.000    0.488     0.439
+
+SPN wins clearly on anything that runs long enough to repay 4 ms; ties
+on the 10 ms kernel compile; loses on the 14 ms corpus.
+
+### What moved it
+
+Start-up was 17.3 ms at first. Most of it was the byte-at-a-time FILL
+again - clearing 8 KB of tables per word when a word uses a few dozen
+cells. Clearing only what the last word dirtied took it to 4.1 ms.
+
+Kernel compile went from 0.523 to 0.308 once the outer interpreter
+itself - INTERPRET and REFILL - became native. They had been refused
+for calling (ABORT"), which finds its message through its return
+address; (S"), (.") and (ABORT") are now compiled natively, their
+strings being constants by translation time.
+
+### Bugs found on the way
+
+In SPN: a primitive's own entry [prim][EXIT] was inlined as the bare
+primitive, which is wrong for EXECUTE (>R ;) - the EXIT is the jump.
+Latent until INTERPRET, which calls EXECUTE, became translatable.
+Patching CELL+ while using CELL+ to do the patching. A data-word test
+that scanned a variable's body as code and walked into its data.
+
+In the kernel, and on the published branch too: every image written by
+SAVE-SYSTEM crashed on boot, because the hashed word list's 32 thread
+heads were saved as absolute addresses; and ?DO and LEAVE compiled
+absolute leave addresses, the one exception to RelF's relative
+branches. Both fixed, with tests that fail on the old code.
+
+### Next
+
+Start-up is now the limit on short workloads. Translating on first
+call rather than all at boot would pay only for words actually used.
+And native DO loops would take most of the remaining 43 refusals.
+
 ## Memory, against CV8
 
 All 8-byte cells, measured on this branch (terminal buffer at 256, so
