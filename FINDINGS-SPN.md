@@ -738,3 +738,41 @@ private: heap 68, native code 68-92, a larger dictionary 20-24. Start-up
 1.85 -> 1.81 ms. It stays within 3% of s8 on speed, and now uses less
 memory than s8 as well as a smaller image.
 
+
+## The compare-and-branch fusion, ported
+
+s7 led s8 on fib - 0.111 against 0.195 of the cell engine on the Ryzen,
+in cycles - because s7 fuses two sequences and s8 fused neither. One
+turned out to be done already: CV8 byte code compiles `LIT n +` to its
+ADDI opcode, which s8 translates to the same add-immediate stencil s7
+uses. The other, `DUP n < ?BRANCH` - fib's `DUP 2 < IF` - s8 now fuses
+into s7's single compare-and-branch stencil (S-DUPLTBR: jump if TOS >
+n-1, the stack unchanged on both paths). The emitter looks three
+operations past a DUP and fuses only if no branch lands on any of them,
+since those three get no native address of their own. Recipes needed
+nothing new: the fused stencil is recorded and replayed like any other.
+The kernel has six such sites; FIB is a seventh.
+
+On the development VM, CPU time, the fib benchmark net of start-up,
+two rounds alternating old and new builds:
+
+                  before     after
+    s0-cell        42.87     43.01    (control)
+    s7-spn          6.26      6.27    (control)
+    s8-spncv8       8.19      6.42    -21.6%
+    s8-lazy         8.36      7.33    -12.3%
+    s8-full         7.33      6.75     -8.0%
+
+FIB alone - 30 FIB minus 29 FIB - is 12 to 21% faster in all three.
+kernel and parse moved by 2% or less; corpus, 4 ms for these systems,
+stayed within this VM's 5% noise. The images grew by 304 to 566 bytes:
+the translator's new words, and their recipes.
+
+s8-lazy gains less on the benchmark than s8-spncv8, for the same fused
+code. Nothing outside FIB changed - the benchmark file with `2 FIB`
+costs what it did - and FIB alone, called from the top level, was
+faster in s8-lazy than in s8-spncv8; called from BENCH, slower. So
+where its code lands matters, and fib is this project's
+layout-sensitive benchmark. Not resolved here: instruction counts on a
+machine with hardware counters will say whether the two systems execute
+the same work.

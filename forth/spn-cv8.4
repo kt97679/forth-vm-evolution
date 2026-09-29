@@ -619,12 +619,37 @@ VARIABLE SK  VARIABLE SV
   OVER DUP 1+ E-ADDR C@ E-LIT
   DQ-XT @ = IF TYPE-XT @ E-CALL THEN
   PAST-STRING ;
+\ DUP n < ?BRANCH - FIB's `DUP 2 < IF` - as ONE compare and branch, as
+\ s7 does: S-DUPLTBR jumps if TOS > n-1, and leaves the stack as it was
+\ on both paths, as the four operations do. Four operations in, one
+\ stencil out: only when no branch lands on the last three, which get no
+\ native address of their own. (LIT n + needs no fusing here: CV8 byte
+\ code already has it, as ADDI.)
+VARIABLE FZ-A  VARIABLE FZ-N  VARIABLE #FUSED  0 #FUSED !
+: FZ-NEXT ( --- f )   \ decode the operation at FZ-A, unless a branch lands on it
+  FZ-A @ TARGET? IF FALSE EXIT THEN  FZ-A @ DECODE FZ-A !  TRUE ;
+: DUPLTBR? ( a' --- a' 0 | a'' -1 )   \ a' is just past a DUP; changes OP-K, OP-V
+  DUP FZ-A !
+  FZ-NEXT 0= IF FALSE EXIT THEN
+  OP-K @ K-LIT <> IF FALSE EXIT THEN
+  OP-V @ 1- DUP INT32? 0= IF DROP FALSE EXIT THEN  FZ-N !
+  FZ-NEXT 0= IF FALSE EXIT THEN
+  OP-K @ K-PRIM <> IF FALSE EXIT THEN  OP-V @ PM@ S-LT <> IF FALSE EXIT THEN
+  FZ-NEXT 0= IF FALSE EXIT THEN
+  OP-K @ K-QBR <> IF FALSE EXIT THEN
+  DROP FZ-A @ TRUE ;
 : EMIT-WORD ( --- )
   0 #FIX !  T-SRC @
   BEGIN
     CODE-HERE @ OVER IDX CELLS C-NAT @ + !
     RECORDING @ IF DUP 1 RECORD-HOOK @ EXECUTE THEN
     DUP VA !  DECODE                                     ( a' )
+    OP-K @ K-PRIM = IF OP-V @ PM@ S-DUP = IF
+      SAVE-OP  DUPLTBR? IF
+        FZ-N @ ARG-IMM !  OP-V @ ARG-JUMP !  S-DUPLTBR EMIT-ST  1 #FUSED +!
+        K-BAD OP-K !                     \ emitted: nothing more for this one
+      ELSE REST-OP THEN
+    THEN THEN
     OP-K @ K-BR = IF OP-V @ ARG-JUMP ! S-BRANCH EMIT-ST THEN
     OP-K @ K-QBR = IF OP-V @ ARG-JUMP ! S-0BRANCH EMIT-ST THEN
     OP-K @ K-CALL = IF
