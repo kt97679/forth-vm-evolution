@@ -264,7 +264,7 @@ VARIABLE R0 ( --- a-addr)
 : (?DO)  ( n1 n2 ---)
 \ Runtime part of ?DO
    2DUP - IF R> ROT ROT SWAP >R >R CELL+ >R
-                  ELSE 2DROP R> @ >R \ Jump to leave address if equal
+                  ELSE 2DROP R> DUP @ + >R \ Jump to leave address if equal
                   THEN ;
 : I ( --- n )
 \ Return the counter (index) of the innermost DO LOOP
@@ -276,7 +276,7 @@ VARIABLE R0 ( --- a-addr)
 
 : (LEAVE)   ( --- )
 \ Runtime part of LEAVE
-  R> @ R> DROP R> DROP >R ; \ Remove loop parameters and replace top of ret
+  R> DUP @ + R> DROP R> DROP >R ; \ Remove loop parameters and replace top of ret
                             \ stack by leave address.
 
 : UNLOOP ( --- )
@@ -1207,8 +1207,13 @@ VARIABLE POCKET ( --- a-addr )
 
 : RESOLVE-LEAVE
 \ Resolve the references to the leave addresses of the loop.
+\ Each leave address is stored as an OFFSET from the cell that holds it,
+\ as every other branch in this system is. It was an absolute address -
+\ correct in the session that compiled it and wrong in any image saved
+\ and loaded elsewhere, where a skipped ?DO or a LEAVE jumped into the
+\ old address space. (?DO) and (LEAVE) add the offset back.
           'LEAVE @
-          BEGIN DUP WHILE DUP @ HERE ROT ! REPEAT DROP ;
+          BEGIN DUP WHILE DUP @ HERE 2 PICK - ROT ! REPEAT DROP ;
 
 : LOOP  ( x --- )
 \ End a DO LOOP.

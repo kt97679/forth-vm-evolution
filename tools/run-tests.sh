@@ -182,8 +182,20 @@ for w in 64 32; do
     e=$O/s0-cell-$w; i=$O/s0-cell-$w.img
     if [ ! -x "$e" ] || [ ! -r "$i" ]; then printf '  %-12s SKIP   not built\n' "$w-bit"; continue; fi
     out=$( timeout 15 "$e" "$i" -c 'echo SAVED-IMAGE-BOOTS' 2>/dev/null )
-    if [ "$out" = SAVED-IMAGE-BOOTS ]; then printf '  %-12s ok\n' "$w-bit"
-    else printf '  %-12s FAIL   the saved shell image did not boot\n' "$w-bit"; FAILED=1; fi
+    if [ "$out" != SAVED-IMAGE-BOOTS ]; then
+        printf '  %-12s FAIL   the saved shell image did not boot\n' "$w-bit"; FAILED=1; continue
+    fi
+    # Leave addresses were absolute too: right in the session that compiled
+    # them, wrong in any saved image. A skipped ?DO and a LEAVE, compiled,
+    # saved, reloaded and run.
+    k=$([ "$w" = 64 ] && echo kernel.img || echo kernel32.img)
+    cp "$W/$k" "$O/.lv-save.img"; rm -f "$O/.lv.img"
+    ( cd "$W" && printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\n: T1 0 0 ?DO 99 LOOP 7 ;\n: T2 10 0 DO I 3 = IF LEAVE THEN LOOP 8 ;\nS" %s" SAVE-SYSTEM\nBYE\n' "$O/.lv.img" \
+        | timeout 30 "$e" "$k" >/dev/null 2>&1 )
+    cp "$O/.lv-save.img" "$W/$k"
+    lv=$( printf 'T1 . T2 . CR\nBYE\n' | timeout 15 "$e" "$O/.lv.img" 2>/dev/null | tr -d '\r' | grep -c '^7 8 ' )
+    if [ "$lv" = 1 ]; then printf '  %-12s ok     boots; ?DO and LEAVE survive the save\n' "$w-bit"
+    else printf '  %-12s FAIL   ?DO or LEAVE broken in a saved image\n' "$w-bit"; FAILED=1; fi
 done
 
 [ "${FAILED:-0}" = 0 ] || rc=1
