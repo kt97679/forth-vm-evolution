@@ -550,6 +550,24 @@ if _bt:
     elif not v: fixed['BOOT'] = 0
     elif remap_body_off(v) is not None: fixed['BOOT'] = remap_body_off(v)
     else: fixed_bad.append(('BOOT', v))
+# ---- live-session scratch -------------------------------------------
+# The dump is of a LIVE session, and nothing scrubs it: these hold the
+# build session's absolute addresses, so two builds of the same sources
+# differed in exactly these cells. save-system.4's SS-SCRUB blanks the
+# kernel's ones in a saved image - COLD, WARM, QUIT or the shell's MAIN
+# set each again before it is read - and the last five are the dump
+# tool's own variables (tools/dict-dump-addr.4). LAST matters beyond
+# reproducibility: it is not reset at boot, so until the first
+# definition it pointed into the build session's address space, and an
+# IMMEDIATE typed straight after boot wrote to an arbitrary address.
+# Zeroed, as in a saved image, it is at least the same every time.
+# pool.4's, locals.4's and the saver's own scratch are SS-SCRUB's too;
+# BUF-BODY and BUF-PTR held heap addresses in the full self image.
+SCRUB = {'START', 'S0', 'R0', 'HLD', 'SRC', '#SRC', '>IN', 'SID', '#TIB',
+         'SPAN', 'LAST', 'CURRENT', 'CSP', "'LEAVE", 'INCLUDE-POINTER',
+         'CONTEXT', 'BUF-BODY', 'BUF-SIZE', 'BUF-PTR', 'LSAVE-SP',
+         'SS-FID', 'SS-LEN', 'SS-BUF',
+         'NFA', 'BP', 'BE', 'NFATAB', 'TA'}
 _bl = pfa_of('BUF-LIST')
 if _bl:
     v = cells.get(_bl)
@@ -711,6 +729,7 @@ def emit(path):
                     if len(vals) > 2 and vals[2]:
                         vals[2] = remap_pfa_off(vals[2])
                 elif w['n'] in fixed: vals[0] = fixed[w['n']]
+                elif w['n'] in SCRUB: vals = [0] * len(vals)
                 for v in vals: img += cel(v)
         assert len(img) == new_off[s0]['body'] + new_body_bytes(w), \
             "body size drift at %s" % w['n']
