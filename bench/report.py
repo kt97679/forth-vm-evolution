@@ -87,7 +87,7 @@ for st in order:
 print()
 print("%s, cell width %s: mean over %d layout variant(s), each the"
       % (name, width, nv))
-print("minimum of %s rounds of %s; startup subtracted per binary."
+print("minimum of %s rounds of %s; minimum startup subtracted per binary."
       % (reps, "CPU TIME" if USE_CPU else "wall clock"))
 
 # Which clock was steadier here, averaged over binaries. On a quiet

@@ -150,13 +150,25 @@ bench_run() {
     : > "$O/.bench.over"
     while IFS=$'\t' read -r s e i d; do
         local t0 t1
-        local sw=0 sc=0 r
-        for _ in 1 2 3 4 5; do
+        # The MINIMUM of the start-up runs, not their mean. report.py keeps
+        # the minimum of the workload runs because run noise only ever
+        # adds - and that minimum run had a lucky start-up too, so taking
+        # the mean start-up away from it over-corrected, by the start-up's
+        # noise. Measured on the development VM, from the same runs both
+        # ways: at most 0.9% on any ratio of the stages s0-s6, inside the
+        # round-to-round spread; but 0.9-2.8 ms on the SPN systems, whose
+        # boot-time translation makes start-up long and noisy - enough to
+        # make s8-full look 20-26% faster than s8-spncv8, which runs the
+        # same native code on the same engine.
+        local mw="" mc="" r w c
+        for _ in 1 2 3 4 5 6 7; do
             r=$(SAVED_INPUT=$INPUT; INPUT=$NULF; bench_time "$e" "$i" "$d";
                 INPUT=$SAVED_INPUT)
-            sw=$((sw + ${r%% *})); sc=$((sc + ${r##* }))
+            w=${r%% *}; c=${r##* }
+            if [ -z "$mw" ] || [ "$w" -lt "$mw" ]; then mw=$w; fi
+            if [ -z "$mc" ] || [ "$c" -lt "$mc" ]; then mc=$c; fi
         done
-        echo "$((sw / 5)) $((sc / 5))" >> "$O/.bench.over"
+        echo "$mw $mc" >> "$O/.bench.over"
         n=$((n + 1))
     done < "$O/.bench.ok"
 
