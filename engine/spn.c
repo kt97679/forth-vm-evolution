@@ -43,6 +43,7 @@ typedef struct { int64_t *sp; int64_t tos; } spn_st;
 typedef spn_st (*spn_fn)(int64_t *sp, int64_t tos);
 extern const void *const spn_table[];
 extern const int spn_table_len;
+static void virtual_machine(void);
 
 extern char **environ;
 
@@ -452,6 +453,25 @@ NOINLINE_IO static int t_getc(void) {
     return t_ibuf[t_ipos++];
 }
 
+/*  Native code calling a word it has no native code for. Push the stack
+ *  back into memory, push a SENTINEL return address, and run the
+ *  interpreter from the word's body. When the word EXITs it returns to
+ *  the sentinel, whose one cell is the SPN-RETURN token - which leaves
+ *  this nested virtual_machine() and comes back here. Words that read
+ *  their caller's return address as data ((S"), (LOOP), DOVAR ...) would
+ *  see the sentinel instead; forth/spn.4 never calls those this way.  */
+static UNS64 spn_sentinel = 72 * CELL_BYTES + 1;
+spn_st spn_interp(int64_t *sp, int64_t tos, int64_t body) {
+    g_dsp = (UNS64)(uintptr_t)sp - CELL_BYTES;
+    CELL(g_dsp) = (UNS64)tos;
+    g_rp -= CELL_BYTES;
+    CELL(g_rp) = (UNS64)(uintptr_t)&spn_sentinel;
+    g_ip = (UNS64)body;
+    virtual_machine();
+    spn_st r = { (int64_t *)(uintptr_t)(g_dsp + CELL_BYTES), (int64_t)CELL(g_dsp) };
+    return r;
+}
+
 static void virtual_machine(void) {
     UNS64 ip = g_ip, rp = g_rp, dsp = g_dsp, t;
     const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
@@ -471,7 +491,9 @@ static void virtual_machine(void) {
         &&L_allocate, &&L_free, &&L_resize, &&L_getpwhome,
         &&L_getfsize, &&L_setfsize,
         /* SPN, past the kernel's own primitives: 68, 69, 70 */
-        &&L_spn_table, &&L_spn_exec, &&L_spn_call
+        &&L_spn_table, &&L_spn_exec, &&L_spn_call,
+        /* 71, 72, 73 */
+        &&L_spn_enter, &&L_spn_return, &&L_spn_engine
     };
 
 #define NEXT() do { \
@@ -871,11 +893,38 @@ L_spn_call: /* i*x a-addr --- j*x   run the native word at a-addr */
        back on the way out - both stacks grow down, cell for cell. */
     spn_fn fn = (spn_fn)(uintptr_t)DS0;
     dsp += CELL_BYTES;
+    g_rp = rp;
     spn_st r = fn((int64_t *)(uintptr_t)(dsp + CELL_BYTES), (int64_t)DS0);
+    rp = g_rp;
     dsp = (UNS64)(uintptr_t)r.sp - CELL_BYTES;
     DS0 = (UNS64)r.tos;
     NEXT();
 }
+
+L_spn_enter: /* the first cell of a translated word's body */
+{
+    /* The interpreter has just called a word whose body now begins
+       [SPN-ENTER][native address]. Run the native code, then EXIT as the
+       word would have. g_rp carries the return stack across, so native
+       >R and R> - and interpreted words native code calls - share it. */
+    spn_fn fn = (spn_fn)(uintptr_t)CELL(ip);
+    g_rp = rp;
+    spn_st r = fn((int64_t *)(uintptr_t)(dsp + CELL_BYTES), (int64_t)DS0);
+    rp = g_rp;
+    dsp = (UNS64)(uintptr_t)r.sp - CELL_BYTES;
+    DS0 = (UNS64)r.tos;
+    ip = RS; rp += CELL_BYTES;
+    NEXT();
+}
+
+L_spn_return: /* reached only through spn_sentinel, below */
+    g_dsp = dsp; g_rp = rp;
+    return;
+
+L_spn_engine: /* --- a-addr1 a-addr2   the return-stack pointer; the helper */
+    PUSH((UNS64)(uintptr_t)&g_rp);
+    PUSH((UNS64)(uintptr_t)spn_interp);
+    NEXT();
 
 L_allocate: /* u --- a-addr ior */
 {

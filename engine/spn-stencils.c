@@ -42,6 +42,14 @@ typedef struct { cell *sp; cell tos; } spn_st;     /* returned in rax:rdx */
    the 64-bit hole needs a load and an operation. Chosen so its bytes do
    not occur inside the 64-bit marker's. */
 #define IMM32 0x3c1a5e77L
+/* Two more 64-bit holes, filled with ENGINE addresses rather than
+   literals: the return-stack pointer that >R and R> share with the
+   interpreter, and the helper that lets native code call a word that
+   was not translated. Distinct values, so each is found unambiguously. */
+#define SPN_RP_VALUE 0x7ea1ed5ea1ed5e77LL
+#define SPN_FN_VALUE 0x6ea1ed5ea1ed5e66LL
+#define IMM_RP() ({ uint64_t *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RP_VALUE)); _v; })
+#define IMM_FN() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_FN_VALUE)); _v; })
 #define IMM() ({ cell _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IMM_VALUE)); _v; })
 
 /* The markers. Only DECLARED here, and defined in spn-markers.c. That is
@@ -97,6 +105,33 @@ S(st_call)  { spn_st r = spn_call(sp, tos); GO(r.sp, r.tos); }
 __attribute__((noinline, used)) spn_st st_exit(cell *sp, cell tos)
 { spn_st r = { sp, tos }; return r; }
 
+/* The return stack. The interpreter and native code share one, reached
+   through the engine's own pointer - so a >R in native code and an R>
+   in an interpreted word that it calls see the same stack. */
+S(st_tor)    { uint64_t *rpp = IMM_RP(); uint64_t r = *rpp - 8;
+               *(cell *)r = tos; *rpp = r; GO(sp + 1, *sp); }
+S(st_fromr)  { uint64_t *rpp = IMM_RP(); uint64_t r = *rpp; cell v = *(cell *)r;
+               *rpp = r + 8; *--sp = tos; GO(sp, v); }
+S(st_rfetch) { uint64_t *rpp = IMM_RP(); cell v = *(cell *)*rpp;
+               *--sp = tos; GO(sp, v); }
+
+/* Memory, and the rest of the arithmetic. Unsigned where the engine is:
+   its cells are UNS64, so U<, LSHIFT and RSHIFT must be too. */
+S(st_fetch)  { GO(sp, *(cell *)tos); }
+S(st_store)  { *(cell *)tos = *sp; GO(sp + 2, sp[1]); }
+S(st_cfetch) { GO(sp, *(uint8_t *)tos); }
+S(st_cstore) { *(uint8_t *)tos = (uint8_t)*sp; GO(sp + 2, sp[1]); }
+S(st_or)     { GO(sp + 1, tos | *sp); }
+S(st_ult)    { GO(sp + 1, -(cell)((uint64_t)*sp < (uint64_t)tos)); }
+S(st_lshift) { GO(sp + 1, (cell)((uint64_t)*sp << tos)); }
+S(st_rshift) { GO(sp + 1, (cell)((uint64_t)*sp >> tos)); }
+
+/* Call a word that has no native code: run it in the interpreter and
+   come back. Both holes are absolute - the helper lives in the engine,
+   which can be further from this code than a 32-bit jump reaches. */
+typedef spn_st (*spn_interp_fn)(cell *, cell, cell);
+S(st_interp) { spn_st r = ((spn_interp_fn)IMM_FN())(sp, tos, IMM()); GO(r.sp, r.tos); }
+
 /* The table the Forth side reads. Order matters: SPN-TABLE hands it over
    as-is, and forth/spn.4 names the entries by position. */
 const void *const spn_table[] = {
@@ -108,5 +143,9 @@ const void *const spn_table[] = {
     (const void *)st_and, (const void *)st_negate, (const void *)st_0branch,
     (const void *)st_branch, (const void *)st_call, (const void *)st_exit,
     (const void *)st_addi32, (const void *)st_dup_gti_br,
+    (const void *)st_tor, (const void *)st_fromr, (const void *)st_rfetch,
+    (const void *)st_fetch, (const void *)st_store, (const void *)st_cfetch,
+    (const void *)st_cstore, (const void *)st_or, (const void *)st_ult,
+    (const void *)st_lshift, (const void *)st_rshift, (const void *)st_interp,
 };
 const int spn_table_len = sizeof spn_table / sizeof spn_table[0];

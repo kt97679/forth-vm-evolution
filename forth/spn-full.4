@@ -1,0 +1,391 @@
+\ spn.4 - SPN: Stencil-Patched Native, as a whole Forth system.
+\
+\ Load into the cell image on the SPN engine (build/spn-64). SPN-BOOT,
+\ run at every start, turns every word it can prove safe into native
+\ code; everything else stays interpreted. New definitions are
+\ translated as their ; completes. Details: FINDINGS-SPN.md.
+\
+\ HOW NATIVE AND INTERPRETED CODE MEET
+\   A translated word's body becomes [SPN-ENTER][native address], so an
+\   interpreted caller runs the native code without knowing. Native code
+\   calls a word with no native code through the engine's re-entry
+\   helper, which runs it in the interpreter and comes back. Both sides
+\   share one return stack.
+\
+\ WHAT IS NEVER TRANSLATED OR CALLED BLIND
+\   Words that read their CALLER'S return address as data - DOVAR, the
+\   loop and string runtimes, DOES> code - would see the re-entry
+\   sentinel instead. A word calling one of those is left interpreted,
+\   except that variables and constants are inlined as literals.
+\
+\ x86-64 only; see ARCH.
+
+DECIMAL
+: NIP ( x1 x2 --- x2 )  SWAP DROP ;
+\ Not in this kernel either.
+0 CONSTANT FALSE
+
+\ ---- engine primitives past the kernel's own, as raw tokens ----
+: SPN-TABLE  [ 68 CELLS 1+ , ] ;   ( --- a-addr n )
+: SPN-EXEC   [ 69 CELLS 1+ , ] ;   ( u --- a-addr )
+: SPN-CALL   [ 70 CELLS 1+ , ] ;   ( i*x a-addr --- j*x )
+: SPN-ENGINE [ 73 CELLS 1+ , ] ;   ( --- rp-addr helper-addr )
+71 CELLS 1+ CONSTANT TOK-ENTER
+
+\ ---- addresses that change every run, so are read at boot ----
+VARIABLE ENTRIES  VARIABLE #ENTRIES
+VARIABLE M-NEXT   VARIABLE M-JUMP   VARIABLE M-CALL
+VARIABLE RP-ADDR  VARIABLE INTERP-FN
+: ENTRY ( i --- a-addr )  CELLS ENTRIES @ + @ ;
+
+\ Stencils, by position in engine/spn-stencils.c's table.
+ 3 CONSTANT S-LIT      4 CONSTANT S-DUP      5 CONSTANT S-DROP
+ 6 CONSTANT S-SWAP     7 CONSTANT S-OVER     8 CONSTANT S-ROT
+ 9 CONSTANT S-PLUS    10 CONSTANT S-ADDI    11 CONSTANT S-EQ
+12 CONSTANT S-GT      13 CONSTANT S-LT      14 CONSTANT S-XOR
+15 CONSTANT S-AND     16 CONSTANT S-NEGATE  17 CONSTANT S-0BRANCH
+18 CONSTANT S-BRANCH  19 CONSTANT S-CALL    20 CONSTANT S-EXIT
+21 CONSTANT S-ADDI32  22 CONSTANT S-DUPLTBR 23 CONSTANT S-TOR
+24 CONSTANT S-FROMR   25 CONSTANT S-RFETCH  26 CONSTANT S-FETCH
+27 CONSTANT S-STORE   28 CONSTANT S-CFETCH  29 CONSTANT S-CSTORE
+30 CONSTANT S-OR      31 CONSTANT S-ULT     32 CONSTANT S-LSHIFT
+33 CONSTANT S-RSHIFT  34 CONSTANT S-INTERP
+40 CONSTANT MAX-STENCILS
+
+\ ---- ARCH: what this file knows about x86-64 ----
+6818992301515038369 CONSTANT IMM-MARK   \ 5EA1ED5EA1ED5EA1: a literal
+9124835310728732279 CONSTANT RP-MARK    \ 7EA1ED5EA1ED5E77: &g_rp
+7971913806121885286 CONSTANT FN-MARK    \ 6EA1ED5EA1ED5E66: re-entry helper
+1008361079 CONSTANT IMM32-MARK          \ 3C1A5E77: a folded literal
+233 CONSTANT OP-JMP                     \ E9  jmp rel32
+195 CONSTANT OP-RET                     \ C3  ret
+: ENDBR? ( a --- f )                    \ F3 0F 1E FA  endbr64
+  DUP C@ 243 = OVER 1+ C@ 15 = AND
+  OVER 2 + C@ 30 = AND SWAP 3 + C@ 250 = AND ;
+: L@ ( a --- u )
+  DUP C@  OVER 1+ C@ 8 LSHIFT OR
+  OVER 2 + C@ 16 LSHIFT OR  SWAP 3 + C@ 24 LSHIFT OR ;
+: SL@ ( a --- n )  L@ DUP 2147483648 AND IF 4294967296 - THEN ;
+: L! ( u a --- )
+  OVER 255 AND OVER C!  OVER 8 RSHIFT 255 AND OVER 1+ C!
+  OVER 16 RSHIFT 255 AND OVER 2 + C!  SWAP 24 RSHIFT 255 AND SWAP 3 + C! ;
+: REL-TO? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
+: REL! ( target a --- )  DUP >R 4 + - R> L! ;
+: INT32? ( n --- f )  DUP -2147483648 < 0=  SWAP 2147483647 > 0= AND ;
+
+\ ---- reading the stencils, once per run ----
+: ST-SRC ( i --- a )  ENTRY DUP ENDBR? IF 4 + THEN ;
+VARIABLE LOWER
+: BOUND ( i --- a )   \ the nearest entry above this one, or +64
+  ENTRY DUP LOWER !  64 +
+  #ENTRIES @ 0 DO
+    I ENTRY  LOWER @ OVER <  OVER 3 PICK <  AND IF NIP ELSE DROP THEN
+  LOOP ;
+: BODY-END ( i --- a )
+  DUP S-EXIT = IF  ST-SRC BEGIN DUP C@ OP-RET <> WHILE 1+ REPEAT 1+ EXIT  THEN
+  DUP ST-SRC SWAP BOUND OVER  ROT ROT SWAP DO
+    I C@ OP-JMP = IF
+      I 1+ M-NEXT @ REL-TO?  I 1+ M-JUMP @ REL-TO? OR IF DROP I 5 + THEN
+    THEN
+  LOOP ;
+: TAIL-NEXT? ( i --- f )
+  DUP BODY-END 5 -  DUP C@ OP-JMP =  SWAP 1+ M-NEXT @ REL-TO? AND
+  SWAP S-EXIT <> AND ;
+
+\ Per stencil: where its code starts, how many bytes to copy, and its
+\ holes as offset*8+kind. Kinds: 0 next  1 jump  2 call  3 literal
+\ 4 folded literal  5 return-stack pointer  6 re-entry helper.
+CREATE ST-START MAX-STENCILS CELLS ALLOT
+CREATE ST-LEN   MAX-STENCILS CELLS ALLOT
+CREATE ST-NH    MAX-STENCILS CELLS ALLOT
+CREATE ST-HOLES MAX-STENCILS 8 * CELLS ALLOT
+VARIABLE SI  VARIABLE SSRC  VARIABLE SLEN
+: HOLE, ( offset kind --- )
+  SWAP 8 * +  SI @ 8 * ST-NH SI @ CELLS + @ + CELLS ST-HOLES + !
+  1 ST-NH SI @ CELLS + +! ;
+: SCAN-STENCIL ( i --- )
+  DUP SI !  DUP ST-SRC SSRC !
+  DUP BODY-END OVER ST-SRC -  OVER TAIL-NEXT? IF 5 - THEN  SLEN !
+  SSRC @ OVER CELLS ST-START + !   SLEN @ SWAP CELLS ST-LEN + !
+  0 SI @ CELLS ST-NH + !
+  SLEN @ 0 ?DO
+    SSRC @ I +
+    I 4 + SLEN @ > 0= IF
+      DUP M-NEXT @ REL-TO? IF I 0 HOLE, THEN
+      DUP M-JUMP @ REL-TO? IF I 1 HOLE, THEN
+      DUP M-CALL @ REL-TO? IF I 2 HOLE, THEN
+      DUP L@ IMM32-MARK = IF I 4 HOLE, THEN
+    THEN
+    I 8 + SLEN @ > 0= IF
+      DUP @ IMM-MARK = IF I 3 HOLE, THEN
+      DUP @ RP-MARK  = IF I 5 HOLE, THEN
+      DUP @ FN-MARK  = IF I 6 HOLE, THEN
+    THEN
+    DROP
+  LOOP ;
+
+\ ---- the code buffer ----
+1048576 CONSTANT CODE-SIZE
+VARIABLE CODE-HERE  VARIABLE CODE-LIMIT
+
+\ ---- emitting one stencil ----
+VARIABLE ARG-IMM  VARIABLE ARG-CALL  VARIABLE ARG-JUMP  VARIABLE E-DST
+CREATE FIXUPS 256 2 * CELLS ALLOT  VARIABLE #FIX   \ native field, source target
+: FIX, ( native src --- )
+  #FIX @ 256 < 0= ABORT" SPN: too many branches"
+  #FIX @ 2 * CELLS FIXUPS +  DUP >R CELL+ !  R> !  1 #FIX +! ;
+: PATCH-HOLE ( hole --- )
+  DUP 7 AND SWAP 3 RSHIFT E-DST @ +     ( kind at )
+  OVER 0 = IF NIP  E-DST @ SI @ CELLS ST-LEN + @ +  SWAP REL! EXIT THEN
+  OVER 1 = IF NIP  ARG-JUMP @ FIX, EXIT THEN
+  OVER 2 = IF NIP  ARG-CALL @ SWAP REL! EXIT THEN
+  OVER 3 = IF NIP  ARG-IMM @ SWAP ! EXIT THEN
+  OVER 4 = IF NIP  ARG-IMM @ 4294967295 AND SWAP L! EXIT THEN
+  OVER 5 = IF NIP  RP-ADDR @ SWAP ! EXIT THEN
+  NIP INTERP-FN @ SWAP ! ;
+: EMIT-ST ( i --- )
+  DUP SI !
+  CODE-HERE @ OVER CELLS ST-LEN + @ + CODE-LIMIT @ > ABORT" SPN: code buffer full"
+  CODE-HERE @ E-DST !
+  DUP CELLS ST-START + @  E-DST @  ROT CELLS ST-LEN + @  CMOVE
+  SI @ CELLS ST-NH + @ 0 ?DO
+    SI @ 8 * I + CELLS ST-HOLES + @ PATCH-HOLE
+  LOOP
+  SI @ CELLS ST-LEN + @ CODE-HERE +! ;
+
+\ ---- which stencil implements which primitive ----
+\ By the kernel's PRIMITIVE order. -1: none, call it by re-entry.
+\ -2: never translate a word that uses it.
+CREATE PMAP 80 CELLS ALLOT
+: PM! ( stencil prim --- )  CELLS PMAP + ! ;
+: PM@ ( prim --- stencil )  DUP 80 < IF CELLS PMAP + @ ELSE DROP -2 THEN ;
+: INIT-PMAP
+  80 0 DO -1 I PM! LOOP
+  S-DROP 5 PM!   S-DUP 6 PM!    S-SWAP 7 PM!   S-ROT 8 PM!    S-OVER 9 PM!
+  S-CFETCH 10 PM! S-FETCH 11 PM! S-CSTORE 12 PM! S-STORE 13 PM!
+  S-AND 14 PM!   S-OR 15 PM!    S-XOR 16 PM!   S-FROMR 17 PM! S-TOR 18 PM!
+  S-RFETCH 19 PM! S-EQ 20 PM!   S-ULT 21 PM!   S-LT 22 PM!    S-PLUS 23 PM!
+  S-NEGATE 24 PM! S-LSHIFT 25 PM! S-RSHIFT 26 PM!
+  \ SP@ SP! RP@ RP! see the stack as the interpreter lays it out, which
+  \ native code does not; and SPN's own primitives are not for this.
+  -2 33 PM! -2 34 PM! -2 35 PM! -2 36 PM!
+  80 68 DO -2 I PM! LOOP ;
+: TOK ( cell --- prim )  1- 3 RSHIFT ;
+: TK ( prim --- cell )  CELLS 1+ ;
+
+\ A two-cell body [prim][EXIT] for every primitive, so a primitive with
+\ no stencil can still be called by re-entry.
+CREATE PRIMBODY 80 2 * CELLS ALLOT
+: INIT-PRIMBODY
+  80 0 DO  I TK  PRIMBODY I 2 * CELLS + !  1 TK  PRIMBODY I 2 * CELLS + CELL+ !  LOOP ;
+
+\ ---- never follow an address that is not a cell of this dictionary ----
+\ A body can hold data where code is expected - a primitive's entry is
+\ [BRANCH][EXIT], and a walker that trusts it reads EXIT as an offset
+\ and wanders off into the next header. Every computed address is
+\ checked before anything reads through it.
+: IN-DICT? ( a --- f )
+  DUP START @ < 0=  OVER HERE < AND  SWAP START @ - 7 AND 0= AND ;
+
+\ ---- classifying a word a native caller wants to call ----
+VARIABLE DOVAR-XT
+\ Does its first return-stack operation read the CALLER'S return
+\ address - R> or R@ before any >R? A bounded linear scan; anything it
+\ cannot see past it treats as unsafe.
+: R-FIRST? ( xt --- f )
+  64 0 DO
+    DUP @ DUP 1 AND 0= IF DROP CELL+ ELSE TOK
+      DUP 17 = OVER 19 = OR IF 2DROP TRUE UNLOOP EXIT THEN
+      DUP 18 = OVER 1 = OR IF 2DROP FALSE UNLOOP EXIT THEN
+      DUP 2 = OVER 3 = OR SWAP 4 = OR IF 2 CELLS + ELSE CELL+ THEN
+    THEN
+  LOOP DROP TRUE ;
+\ Kinds: 0 native  1 literal (variable or constant)  2 re-entry  3 refuse
+\ 4 a primitive's own entry [prim][EXIT], inlined as that primitive
+VARIABLE C-VAL
+: PLAIN-PRIM? ( p --- f )   \ no inline operand, and has some way to run
+  DUP 4 > SWAP PM@ -2 <> AND ;
+: CLASSIFY ( xt --- kind )
+  DUP IN-DICT? 0= IF DROP 3 EXIT THEN
+  DUP @ TOK-ENTER = IF CELL+ @ C-VAL ! 0 EXIT THEN
+  DUP @ 1 AND IF DUP CELL+ @ 1 TK = IF
+    DUP @ TOK DUP PLAIN-PRIM? IF C-VAL ! DROP 4 EXIT THEN DROP
+  THEN THEN
+  DUP @ DUP 1 AND 0= IF                   \ body starts with a call
+    OVER CELL+ +                          ( xt callee )
+    DUP IN-DICT? 0= IF 2DROP 3 EXIT THEN
+    DUP DOVAR-XT @ = IF DROP CELL+ C-VAL ! 1 EXIT THEN
+    R-FIRST? IF C-VAL ! 2 EXIT THEN       \ a DOES> child: interpret it
+  ELSE DROP THEN
+  DUP @ 2 TK =  OVER 2 CELLS + @ 1 TK = AND IF CELL+ @ C-VAL ! 1 EXIT THEN
+  DUP R-FIRST? IF DROP 3 EXIT THEN
+  C-VAL ! 2 ;
+
+\ ---- validating a word before emitting anything ----
+512 CONSTANT MAX-CELLS
+CREATE C-NAT MAX-CELLS CELLS ALLOT     \ native address of each source cell
+CREATE C-DEP MAX-CELLS CELLS ALLOT     \ return-stack depth at each cell
+CREATE TGTS 128 CELLS ALLOT  VARIABLE #TGT
+VARIABLE T-SRC  VARIABLE T-NAT  VARIABLE T-FAR  VARIABLE T-DEP  VARIABLE T-OK
+: IDX ( a --- i )  T-SRC @ - 3 RSHIFT ;
+: INSIDE? ( a --- f )  IDX DUP 0< 0= SWAP MAX-CELLS < AND ;
+: TGT, ( a --- )
+  #TGT @ 128 < 0= IF DROP 0 T-OK ! EXIT THEN
+  #TGT @ CELLS TGTS + !  1 #TGT +! ;
+\ Is there a branch target strictly inside [a, a+n cells)?
+: TARGET-IN? ( a n --- f )
+  CELLS OVER + SWAP                      ( end a )
+  FALSE #TGT @ 0 ?DO
+    I CELLS TGTS + @  2 PICK OVER < SWAP 4 PICK < AND OR
+  LOOP NIP NIP ;
+: VALIDATE ( xt --- f )
+  DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  TRUE T-OK !
+  C-DEP MAX-CELLS CELLS -1 FILL
+  BEGIN
+    DUP INSIDE? 0= IF DROP FALSE EXIT THEN
+    T-DEP @ OVER IDX CELLS C-DEP + !
+    DUP @ DUP 1 AND IF TOK
+      DUP 1 = IF DROP
+        T-DEP @ IF DROP FALSE EXIT THEN
+        DUP T-FAR @ < 0= IF DROP T-OK @ EXIT THEN  CELL+
+      ELSE DUP 2 = IF DROP 2 CELLS +
+      ELSE DUP 3 = OVER 4 = OR IF DROP
+        DUP CELL+ DUP @ +  DUP IN-DICT? 0= IF 2DROP FALSE EXIT THEN
+        DUP TGT,  T-FAR @ MAX T-FAR !  2 CELLS +
+      ELSE DUP 18 = IF DROP 1 T-DEP +! CELL+
+      ELSE DUP 17 = IF DROP T-DEP @ 0= IF DROP FALSE EXIT THEN -1 T-DEP +! CELL+
+      ELSE DUP 19 = IF DROP T-DEP @ 0= IF DROP FALSE EXIT THEN CELL+
+      ELSE PM@ -2 = IF DROP FALSE EXIT THEN CELL+
+      THEN THEN THEN THEN THEN THEN
+    ELSE                                  \ ( a cell ): a call
+      OVER CELL+ +  DUP T-SRC @ = IF DROP ELSE
+        DUP IN-DICT? 0= IF 2DROP FALSE EXIT THEN
+        CLASSIFY 3 = IF DROP FALSE EXIT THEN
+      THEN CELL+
+    THEN
+  0 UNTIL ;
+\ Every branch must land on a cell that was decoded, at the same depth.
+: TARGETS-OK? ( --- f )
+  #TGT @ 0 ?DO
+    I CELLS TGTS + @  DUP INSIDE? 0= IF DROP FALSE UNLOOP EXIT THEN
+    IDX CELLS C-DEP + @ 0< IF FALSE UNLOOP EXIT THEN
+  LOOP TRUE ;
+
+\ ---- emitting ----
+VARIABLE E-DEP
+: E-LIT ( n --- )  ARG-IMM ! S-LIT EMIT-ST ;
+: E-CALL ( xt --- )
+  DUP T-SRC @ = IF DROP T-NAT @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
+  CLASSIFY
+  DUP 0 = IF DROP C-VAL @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
+  DUP 1 = IF DROP C-VAL @ E-LIT EXIT THEN
+  DUP 4 = IF DROP C-VAL @ DUP PM@ DUP 0< 0= IF NIP EMIT-ST EXIT THEN
+    DROP 2 * CELLS PRIMBODY + ARG-IMM ! S-INTERP EMIT-ST EXIT THEN
+  DROP C-VAL @ ARG-IMM ! S-INTERP EMIT-ST ;
+: E-PRIM ( a prim --- a' )
+  DUP 0 = IF DROP CELL+ EXIT THEN
+  DUP 1 = IF DROP S-EXIT EMIT-ST CELL+ EXIT THEN
+  DUP 2 = IF DROP
+    DUP CELL+ @ ARG-IMM !
+    DUP 2 CELLS + @ 23 TK =  ARG-IMM @ INT32? AND  OVER 3 TARGET-IN? 0= AND IF
+      S-ADDI32 EMIT-ST 3 CELLS + EXIT
+    THEN
+    S-LIT EMIT-ST 2 CELLS + EXIT
+  THEN
+  DUP 3 = OVER 4 = OR IF
+    3 = IF S-BRANCH ELSE S-0BRANCH THEN >R
+    DUP CELL+ DUP @ + ARG-JUMP !  R> EMIT-ST  2 CELLS + EXIT
+  THEN
+  DUP 6 = IF                        \ DUP LIT n < ?BRANCH, fused
+    OVER CELL+ @ 2 TK =  2 PICK 3 CELLS + @ 22 TK = AND
+    2 PICK 4 CELLS + @ 4 TK = AND  2 PICK 2 CELLS + @ 1- INT32? AND
+    2 PICK 6 TARGET-IN? 0= AND IF
+      DROP DUP 2 CELLS + @ 1- ARG-IMM !
+      DUP 5 CELLS + DUP @ + ARG-JUMP !  S-DUPLTBR EMIT-ST  6 CELLS + EXIT
+    THEN
+  THEN
+  DUP PM@ DUP 0< 0= IF NIP EMIT-ST CELL+ EXIT THEN DROP
+  2 * CELLS PRIMBODY + ARG-IMM !  S-INTERP EMIT-ST CELL+ ;
+: EMIT-WORD ( --- )
+  0 #FIX !  T-SRC @
+  BEGIN
+    CODE-HERE @ OVER IDX CELLS C-NAT + !
+    DUP @ DUP 1 AND IF
+      TOK DUP 1 = IF DROP DUP T-FAR @ < 0= IF S-EXIT EMIT-ST DROP EXIT THEN 1 THEN
+      E-PRIM
+    ELSE OVER CELL+ + E-CALL CELL+ THEN
+  0 UNTIL ;
+: RESOLVE ( --- )
+  #FIX @ 0 ?DO
+    I 2 * CELLS FIXUPS +  DUP CELL+ @ IDX CELLS C-NAT + @  SWAP @ REL!
+  LOOP ;
+
+\ ---- translating one word ----
+VARIABLE #NATIVE  VARIABLE #KEPT
+\ Nothing is translated until SPN-INIT has read this run's stencils -
+\ the ; hook below is live from the moment this file loads.
+VARIABLE SPN-READY  0 SPN-READY !
+: SHAPE-OK? ( xt --- f )   \ worth translating, and safe to patch
+  DUP IN-DICT? 0= IF DROP FALSE EXIT THEN
+  DUP @ TOK-ENTER = IF DROP FALSE EXIT THEN          \ already native
+  DUP @ 1 AND IF DUP CELL+ @ 1 TK = IF DROP FALSE EXIT THEN THEN \ [prim][EXIT]
+  DUP @ DUP 1 AND 0= IF                              \ starts with a call:
+    OVER CELL+ +  DUP IN-DICT? 0= IF 2DROP FALSE EXIT THEN
+    R-FIRST? IF DROP FALSE EXIT THEN                 \ a data word
+  ELSE DROP THEN
+  DUP @ 1 TK = IF DROP FALSE EXIT THEN               \ just EXIT
+  DUP @ 2 TK = OVER 2 CELLS + @ 1 TK = AND IF DROP FALSE EXIT THEN \ constant
+  DROP TRUE ;
+: TRY-TRANSLATE ( xt --- )
+  SPN-READY @ 0= IF DROP EXIT THEN
+  DUP SHAPE-OK? 0= IF DROP EXIT THEN
+  DUP VALIDATE 0= IF DROP 1 #KEPT +! EXIT THEN
+  TARGETS-OK? 0= IF DROP 1 #KEPT +! EXIT THEN
+  CODE-HERE @ T-NAT !
+  C-NAT MAX-CELLS CELLS 0 FILL
+  EMIT-WORD RESOLVE
+  \ The native address goes in FIRST, and nothing is called between the
+  \ two stores. The word being patched may be one this very code uses:
+  \ written the other way round, patching CELL+ wrote SPN-ENTER into it
+  \ and then called CELL+ - which jumped to the literal 8 still sitting
+  \ where its native address was about to go.
+  T-NAT @ OVER 8 + !  TOK-ENTER SWAP !  1 #NATIVE +! ;
+
+\ ---- the whole dictionary, oldest first ----
+\ Mark every name field in a byte map indexed by address, then scan the
+\ map upward: that is definition order, with no sort. Callees are
+\ defined before callers, so callers find them already native.
+VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
+: MARK ( nfa --- )  MBASE @ - 3 RSHIFT MARKS @ + 1 SWAP C! ;
+: MARK-THREAD ( nfa --- )
+  BEGIN ?DUP WHILE
+    DUP MARK  CELL- DUP @ DUP IF + ELSE 2DROP 0 THEN
+  REPEAT ;
+: TRANSLATE-ALL ( --- )
+  START @ MBASE !  HERE MBASE @ - 3 RSHIFT 1+ MSIZE !
+  MSIZE @ ALLOCATE ABORT" SPN: no memory" MARKS !
+  MARKS @ MSIZE @ 0 FILL
+  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
+  MSIZE @ 0 DO
+    MARKS @ I + C@ IF  I CELLS MBASE @ + NAME> TRY-TRANSLATE  THEN
+  LOOP
+  MARKS @ FREE DROP ;
+
+\ ---- start-up ----
+: SPN-INIT ( --- )
+  SPN-TABLE #ENTRIES ! ENTRIES !
+  0 ENTRY M-NEXT !  1 ENTRY M-JUMP !  2 ENTRY M-CALL !
+  SPN-ENGINE INTERP-FN ! RP-ADDR !
+  #ENTRIES @ 3 DO I SCAN-STENCIL LOOP
+  INIT-PMAP INIT-PRIMBODY
+  ['] DOVAR DOVAR-XT !
+  CODE-SIZE SPN-EXEC DUP 0= ABORT" SPN: no executable memory"
+  DUP CODE-HERE !  CODE-SIZE + CODE-LIMIT !
+  0 #NATIVE !  0 #KEPT !  TRUE SPN-READY ! ;
+: SPN-BOOT ( --- )  SPN-INIT TRANSLATE-ALL ;
+
+\ New definitions: translate each as its ; completes.
+: ;  POSTPONE ;  LAST @ NAME> TRY-TRANSLATE ; IMMEDIATE
+
+\ For the proof-of-concept benchmarks, which translate a word by hand.
+: TRANSLATE ( xt --- native )  DUP TRY-TRANSLATE CELL+ @ ;
