@@ -266,8 +266,20 @@ VARIABLE TYPE-XT VARIABLE AM-XT
 \ Decodes linearly: R> or R@ before any >R or exit means yes. Inline
 \ operands are stepped over; an unknown opcode, or running past
 \ MAX-BYTES, counts as yes - the unsafe answer.
-: R-SCAN ( xt --- f )
-  DUP ENTRY-OF C@ OP-ENTER = IF DROP FALSE EXIT THEN        \ translated: validated
+\ A memo, one byte per image byte, alive only during boot (allocated
+\ with the map of names, freed with it): whether a word is inlinable,
+\ and whether it reads its caller's return address. Both are properties
+\ of the word's original code, which a boot never changes - inlinable
+\ words are never patched, and a patched word is caught before the
+\ memo is consulted. Without it one boot decoded 21,254 operations for
+\ about 320 words: every call site classified twice, each time
+\ decoding the callee again.
+VARIABLE MEMO  0 MEMO !  VARIABLE MEMO-N  0 MEMO-N !
+: MEMO@ ( xt --- a | 0 )
+  MEMO @ IF START @ - DUP MEMO-N @ U< IF MEMO @ + EXIT THEN THEN DROP 0 ;
+: MEMO! ( f m known-bit true-bit --- f )   \ record f at m, return f
+  >R >R OVER IF R> R> OR ELSE R> R> DROP THEN  OVER C@ OR SWAP C! ;
+: R-SCAN0 ( xt --- f )
   DUP MAX-BYTES + >R
   BEGIN DUP R@ < WHILE
     DECODE
@@ -283,6 +295,11 @@ VARIABLE TYPE-XT VARIABLE AM-XT
       OP-V @ STRING-WORD? IF PAST-STRING THEN
     THEN
   REPEAT DROP R> DROP TRUE ;
+: R-SCAN ( xt --- f )
+  DUP ENTRY-OF C@ OP-ENTER = IF DROP FALSE EXIT THEN        \ translated: validated
+  DUP MEMO@ ?DUP 0= IF R-SCAN0 EXIT THEN                    ( xt m )
+  DUP C@ 4 AND IF NIP C@ 8 AND 0<> EXIT THEN
+  SWAP R-SCAN0 SWAP 4 8 MEMO! ;
 
 \ ---- a callee short enough to copy into its caller ----
 \ A straight line of at most six simple operations ending in an exit:
@@ -296,13 +313,17 @@ VARIABLE TYPE-XT VARIABLE AM-XT
   OVER K-PRIM = OP-V @ 1 = AND OR
   SWAP K-FOLD = OP-V @ PM@ -2 <> AND OP-V @ 17 <> AND OP-V @ 18 <> AND
   OP-V @ 19 <> AND OR ;
-: INLINABLE? ( xt --- f )
+: INLINABLE0? ( xt --- f )
   6 0 DO
     DECODE
     FINAL-OP? IF DROP TRUE UNLOOP EXIT THEN
     SIMPLE-OP? OP-K @ K-PRIM = OP-V @ 17 = OP-V @ 18 = OR OP-V @ 19 = OR AND 0= AND
     0= IF DROP FALSE UNLOOP EXIT THEN
   LOOP DROP FALSE ;
+: INLINABLE? ( xt --- f )
+  DUP MEMO@ ?DUP 0= IF INLINABLE0? EXIT THEN                ( xt m )
+  DUP C@ 1 AND IF NIP C@ 2 AND 0<> EXIT THEN
+  SWAP INLINABLE0? SWAP 1 2 MEMO! ;
 
 \ ---- classifying a word a native caller wants to call ----
 \ 0 native  1 a literal: a variable's address  2 re-entry  3 refuse
@@ -525,9 +546,10 @@ VARIABLE MARKS  0 MARKS !  VARIABLE MSIZE
 : MARK-THREAD ( nfa --- )
   BEGIN ?DUP WHILE  DUP START @ - MARKS @ + 1 SWAP C!  NEXT-NFA8  REPEAT ;
 : BUILD-MARKS ( --- )
-  HERE START @ - 1+ DUP MSIZE !  TABLE MARKS !
+  HERE START @ - 1+ DUP MSIZE !  DUP MEMO-N !  DUP TABLE MEMO !  TABLE MARKS !
   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP ;
-: FREE-MARKS ( --- )  MARKS @ ?DUP IF FREE DROP THEN  0 MARKS ! ;
+: FREE-MARKS ( --- )  MARKS @ ?DUP IF FREE DROP THEN  0 MARKS !
+  MEMO @ ?DUP IF FREE DROP THEN  0 MEMO !  0 MEMO-N ! ;
 : BOUND-OF ( xt --- a )
   MARKS @ 0= IF DROP HERE EXIT THEN
   START @ - 1+  MSIZE @ SWAP ?DO

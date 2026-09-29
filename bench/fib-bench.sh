@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 bench_init "${1:-}" "${2:-}"
 
 BENCH_NAME=fib
-BENCH_STAGES="s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b s7-spn"
+BENCH_STAGES=${BENCH_STAGES:-"s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b s7-spn s8-spncv8"}
 BENCH_CHECK=marker
 BENCH_SOD32=1
 
