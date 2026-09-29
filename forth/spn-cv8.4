@@ -1,0 +1,602 @@
+\ spn-cv8.4 - SPN: Stencil-Patched Native, on a CV8 image.
+\
+\ The same translator as spn-full.4, reading CV8 byte code instead of
+\ cells. Load on the SPN-CV8 engine (build/spn-cv8-64) into the byte-
+\ header CV8 image. Operand sizes follow engine/vm-lab.c as built for
+\ that stage; forth/spn-cv8-decode.4 has the decoder's own check.
+\
+\ A translated word's body starts [126][lo][hi]: SPN-ENTER and the
+\ native code's offset in 16-byte units. Three bytes, so a shorter body
+\ cannot be patched; words that short are inlined into native callers.
+\ Working tables are allocated at start-up, not kept in the image.
+\ x86-64 only.
+
+DECIMAL
+0 CONSTANT FALSE                       \ not in this kernel
+1024 CONSTANT MAX-BYTES                \ the longest body SPN translates
+: NIP ( x1 x2 --- x2 )  SWAP DROP ;
+: 0<> ( x --- f )  0= 0= ;
+: CFILL ( a-addr u-cells x --- )       \ fill whole cells
+  >R CELLS OVER + SWAP
+  BEGIN 2DUP > WHILE R@ OVER ! CELL+ REPEAT 2DROP R> DROP ;
+: TABLE ( bytes --- a-addr )           \ zeroed, on the heap
+  7 + -8 AND DUP ALLOCATE ABORT" SPN: no memory"
+  SWAP 3 RSHIFT OVER SWAP 0 CFILL ;
+
+\ ---- the engine: opcode 127 and a selector ----
+: SPN-TABLE  [ 127 C, 0 C, ] ;   ( --- a-addr n )
+: SPN-EXEC   [ 127 C, 1 C, ] ;   ( u --- a-addr )
+: SPN-CALL   [ 127 C, 2 C, ] ;   ( i*x a-addr --- j*x )
+: SPN-ENGINE [ 127 C, 4 C, ] ;   ( --- rp-addr helper code-base-addr )
+126 CONSTANT OP-ENTER
+VARIABLE ENTRIES  VARIABLE #ENTRIES
+VARIABLE M-NEXT   VARIABLE M-JUMP   VARIABLE M-CALL
+VARIABLE RP-ADDR  VARIABLE INTERP-FN
+: ENTRY ( i --- a-addr )  CELLS ENTRIES @ + @ ;
+
+\ Stencils, by position in engine/spn-stencils.c's table.
+ 3 CONSTANT S-LIT      4 CONSTANT S-DUP      5 CONSTANT S-DROP
+ 6 CONSTANT S-SWAP     7 CONSTANT S-OVER     8 CONSTANT S-ROT
+ 9 CONSTANT S-PLUS    10 CONSTANT S-ADDI    11 CONSTANT S-EQ
+12 CONSTANT S-GT      13 CONSTANT S-LT      14 CONSTANT S-XOR
+15 CONSTANT S-AND     16 CONSTANT S-NEGATE  17 CONSTANT S-0BRANCH
+18 CONSTANT S-BRANCH  19 CONSTANT S-CALL    20 CONSTANT S-EXIT
+21 CONSTANT S-ADDI32  22 CONSTANT S-DUPLTBR 23 CONSTANT S-TOR
+24 CONSTANT S-FROMR   25 CONSTANT S-RFETCH  26 CONSTANT S-FETCH
+27 CONSTANT S-STORE   28 CONSTANT S-CFETCH  29 CONSTANT S-CSTORE
+30 CONSTANT S-OR      31 CONSTANT S-ULT     32 CONSTANT S-LSHIFT
+33 CONSTANT S-RSHIFT  34 CONSTANT S-INTERP  35 CONSTANT S-DO
+36 CONSTANT S-QDO     37 CONSTANT S-LOOP    38 CONSTANT S-PLOOP
+39 CONSTANT S-I       40 CONSTANT S-J       41 CONSTANT S-UNLOOP
+42 CONSTANT S-LEAVE   43 CONSTANT S-PICK
+64 CONSTANT MAX-STENCILS
+
+\ ---- ARCH: what this file knows about x86-64 ----
+6818992301515038369 CONSTANT IMM-MARK
+9124835310728732279 CONSTANT RP-MARK
+7971913806121885286 CONSTANT FN-MARK
+1008361079 CONSTANT IMM32-MARK
+233 CONSTANT OP-JMP   195 CONSTANT OP-RET
+: ENDBR? ( a --- f )
+  DUP C@ 243 = OVER 1+ C@ 15 = AND OVER 2 + C@ 30 = AND SWAP 3 + C@ 250 = AND ;
+: L@ ( a --- u )
+  DUP C@  OVER 1+ C@ 8 LSHIFT OR  OVER 2 + C@ 16 LSHIFT OR  SWAP 3 + C@ 24 LSHIFT OR ;
+: SL@ ( a --- n )  L@ DUP 2147483648 AND IF 4294967296 - THEN ;
+: L! ( u a --- )
+  OVER 255 AND OVER C!  OVER 8 RSHIFT 255 AND OVER 1+ C!
+  OVER 16 RSHIFT 255 AND OVER 2 + C!  SWAP 24 RSHIFT 255 AND SWAP 3 + C! ;
+: REL-TO? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
+: REL-OP? ( a --- f )
+  DUP 1- C@ DUP 232 = SWAP 233 = OR IF DROP TRUE EXIT THEN
+  DUP 2 - C@ 15 =  SWAP 1- C@ 240 AND 128 = AND ;
+: REL! ( target a --- )  DUP >R 4 + - R> L! ;
+: INT32? ( n --- f )  DUP -2147483648 < 0=  SWAP 2147483647 > 0= AND ;
+
+\ ---- the working tables, allocated by SPN-INIT ----
+VARIABLE ST-START VARIABLE ST-LEN VARIABLE ST-NH VARIABLE ST-HOLES
+VARIABLE C-NAT  VARIABLE C-DEP  VARIABLE FIXUPS  VARIABLE TGTS  VARIABLE CALLS
+VARIABLE PMAP   VARIABLE PRIMBODY
+: ST@ ( i table --- n )  @ SWAP CELLS + @ ;
+: ST! ( n i table --- )  @ SWAP CELLS + ! ;
+
+\ ---- reading the stencils, once per run ----
+: ST-SRC ( i --- a )  ENTRY DUP ENDBR? IF 4 + THEN ;
+VARIABLE LOWER
+: BOUND ( i --- a )   \ the nearest entry above; 4096 only if there is none
+  ENTRY DUP LOWER !  4096 +
+  #ENTRIES @ 0 DO
+    I ENTRY  LOWER @ OVER <  OVER 3 PICK <  AND IF NIP ELSE DROP THEN
+  LOOP ;
+: BODY-END ( i --- a )
+  DUP S-EXIT = IF  ST-SRC BEGIN DUP C@ OP-RET <> WHILE 1+ REPEAT 1+ EXIT  THEN
+  DUP ST-SRC SWAP BOUND OVER  ROT ROT SWAP DO
+    I C@ OP-JMP = IF
+      I 1+ M-NEXT @ REL-TO?  I 1+ M-JUMP @ REL-TO? OR IF DROP I 5 + THEN
+    THEN
+  LOOP ;
+: TAIL-NEXT? ( i --- f )
+  DUP BODY-END 5 -  DUP C@ OP-JMP =  SWAP 1+ M-NEXT @ REL-TO? AND
+  SWAP S-EXIT <> AND ;
+VARIABLE SI  VARIABLE SSRC  VARIABLE SLEN
+: HOLE, ( offset kind --- )
+  SWAP 8 * +  SI @ 8 * SI @ ST-NH ST@ + CELLS ST-HOLES @ + !
+  SI @ ST-NH ST@ 1+ SI @ ST-NH ST! ;
+: SCAN-STENCIL ( i --- )
+  DUP SI !  DUP ST-SRC SSRC !
+  DUP BODY-END OVER ST-SRC -  OVER TAIL-NEXT? IF 5 - THEN  SLEN !
+  SSRC @ OVER ST-START ST!  SLEN @ SWAP ST-LEN ST!
+  0 SI @ ST-NH ST!
+  SLEN @ 0 ?DO
+    SSRC @ I +
+    I 4 + SLEN @ > 0= IF
+      DUP REL-OP? IF
+        DUP M-NEXT @ REL-TO? IF I 0 HOLE, THEN
+        DUP M-JUMP @ REL-TO? IF I 1 HOLE, THEN
+        DUP M-CALL @ REL-TO? IF I 2 HOLE, THEN
+      THEN
+      DUP L@ IMM32-MARK = IF I 4 HOLE, THEN
+    THEN
+    I 8 + SLEN @ > 0= IF
+      DUP @ IMM-MARK = IF I 3 HOLE, THEN
+      DUP @ RP-MARK  = IF I 5 HOLE, THEN
+      DUP @ FN-MARK  = IF I 6 HOLE, THEN
+    THEN
+    DROP
+  LOOP ;
+
+\ ---- the code buffer ----
+1048576 CONSTANT CODE-SIZE
+VARIABLE CODE-BASE  VARIABLE CODE-HERE  VARIABLE CODE-LIMIT
+
+\ ---- emitting one stencil ----
+VARIABLE ARG-IMM  VARIABLE ARG-CALL  VARIABLE ARG-JUMP  VARIABLE E-DST
+VARIABLE T-SRC  VARIABLE T-NAT  VARIABLE #FIX
+: FIX, ( native src --- )
+  #FIX @ 256 < 0= ABORT" SPN: too many branches"
+  #FIX @ 2 * CELLS FIXUPS @ +  DUP >R CELL+ !  R> !  1 #FIX +! ;
+: PATCH-HOLE ( hole --- )
+  DUP 7 AND SWAP 3 RSHIFT E-DST @ +
+  OVER 0 = IF NIP  E-DST @ SI @ ST-LEN ST@ +  SWAP REL! EXIT THEN
+  OVER 1 = IF NIP  ARG-JUMP @ FIX, EXIT THEN
+  OVER 2 = IF NIP  ARG-CALL @ SWAP REL! EXIT THEN
+  OVER 3 = IF NIP  ARG-IMM @ SWAP ! EXIT THEN
+  OVER 4 = IF NIP  ARG-IMM @ 4294967295 AND SWAP L! EXIT THEN
+  OVER 5 = IF NIP  RP-ADDR @ SWAP ! EXIT THEN
+  NIP INTERP-FN @ SWAP ! ;
+: EMIT-ST ( i --- )
+  DUP SI !
+  CODE-HERE @ OVER ST-LEN ST@ + CODE-LIMIT @ > ABORT" SPN: code buffer full"
+  CODE-HERE @ E-DST !
+  DUP ST-START ST@  E-DST @  ROT ST-LEN ST@  CMOVE
+  SI @ ST-NH ST@ 0 ?DO
+    SI @ 8 * I + CELLS ST-HOLES @ + @ PATCH-HOLE
+  LOOP
+  SI @ ST-LEN ST@ CODE-HERE +! ;
+
+\ ---- primitives: which stencil, or run it by re-entry ----
+\ By the kernel's PRIMITIVE order, which CV8 keeps with ESCAPE off.
+\ -1: none, re-enter a two-byte CV8 body [prim][EXIT]; -2: never.
+: PM! ( stencil prim --- )  PMAP @ SWAP CELLS + ! ;
+\ Unsigned, so ANY value is safe: SIMPLE-OP? computes OP-V @ PM@ for
+\ every operation, literals included, and a signed 80 < let a negative
+\ literal through as an index - -2147483647 read gigabytes off the table.
+: PM@ ( prim --- stencil )  DUP 80 U< IF PMAP @ SWAP CELLS + @ ELSE DROP -2 THEN ;
+: INIT-PMAP
+  80 0 DO -1 I PM! LOOP
+  S-DROP 5 PM!   S-DUP 6 PM!    S-SWAP 7 PM!   S-ROT 8 PM!    S-OVER 9 PM!
+  S-CFETCH 10 PM! S-FETCH 11 PM! S-CSTORE 12 PM! S-STORE 13 PM!
+  S-AND 14 PM!   S-OR 15 PM!    S-XOR 16 PM!   S-FROMR 17 PM! S-TOR 18 PM!
+  S-RFETCH 19 PM! S-EQ 20 PM!   S-ULT 21 PM!   S-LT 22 PM!    S-PLUS 23 PM!
+  S-NEGATE 24 PM! S-LSHIFT 25 PM! S-RSHIFT 26 PM!
+  -2 33 PM! -2 34 PM! -2 35 PM! -2 36 PM!
+  -2 2 PM! -2 3 PM! -2 4 PM!    \ LIT BRANCH ?BRANCH: decoded apart
+  80 68 DO -2 I PM! LOOP ;
+: INIT-PRIMBODY   \ CV8 bodies: [prim][EXIT], two bytes each
+  68 0 DO  I PRIMBODY @ I 2 * + C!  1 PRIMBODY @ I 2 * + 1+ C!  LOOP ;
+
+\ ---- decoding CV8: one operation (see spn-cv8-decode.4) ----
+ 0 CONSTANT K-BAD     1 CONSTANT K-PRIM    2 CONSTANT K-LIT     3 CONSTANT K-LITX
+ 4 CONSTANT K-FOLD    5 CONSTANT K-BR      6 CONSTANT K-QBR     7 CONSTANT K-CALL
+ 8 CONSTANT K-TINY    9 CONSTANT K-ADDI   10 CONSTANT K-ADDIX  11 CONSTANT K-EQI
+12 CONSTANT K-EQIX   13 CONSTANT K-VF     14 CONSTANT K-VS     15 CONSTANT K-DOVAR
+16 CONSTANT K-DODOES
+VARIABLE OP-K  VARIABLE OP-V
+: LD16 ( a --- u )  DUP C@ SWAP 1+ C@ 8 LSHIFT OR ;
+: SX8  ( u --- n )  DUP 128 AND IF 256 - THEN ;
+: SX16 ( u --- n )  DUP 32768 AND IF 65536 - THEN ;
+CREATE FOLDMAP
+  23 , 20 , 13 , 11 , 25 , 26 , 10 , 12 , 14 , 15 , 16 ,  2 ,
+  22 , 21 ,  9 ,  5 ,  6 ,  7 ,  8 , 18 , 17 , 19 , 24 ,
+: SLOT@ ( a --- a' addr )
+  DUP C@ 128 AND IF
+    DUP C@ 127 AND 16 LSHIFT OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ OR SWAP 3 + SWAP
+  ELSE
+    DUP C@ 8 LSHIFT OVER 1+ C@ OR SWAP 2 + SWAP
+  THEN START @ + ;
+: KV ( v k --- )  OP-K ! OP-V ! ;
+: DECODE ( a --- a' )
+  DUP C@
+  DUP 128 U< 0= IF
+    DUP 64 AND IF
+      63 AND 16 LSHIFT OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ OR
+      START @ + K-CALL KV 3 + EXIT
+    THEN
+    63 AND 8 LSHIFT OVER 1+ C@ OR START @ + K-CALL KV 2 + EXIT
+  THEN
+  DUP 2 = IF DROP DUP 1+ LD16 K-LIT KV 3 + EXIT THEN
+  DUP 3 = IF DROP DUP 1+ DUP LD16 SX16 + K-BR KV 3 + EXIT THEN
+  DUP 4 = IF DROP DUP 1+ DUP LD16 SX16 + K-QBR KV 3 + EXIT THEN
+  DUP 68 < IF K-PRIM KV 1+ EXIT THEN
+  DUP 68 = IF DROP DUP 1+ L@ DUP 2147483648 AND IF 4294967296 - THEN K-LIT KV 5 + EXIT THEN
+  DUP 69 = IF DROP 0 K-DOVAR KV 1+ EXIT THEN
+  DUP 70 = IF DROP 0 K-DODOES KV 1+ EXIT THEN
+  DUP 71 = IF DROP DUP 1+ C@ K-LIT KV 2 + EXIT THEN
+  DUP 72 = IF DROP DUP 1+ C@ K-LITX KV 2 + EXIT THEN
+  DUP 84 = IF DROP DUP 1+ LD16 K-LITX KV 3 + EXIT THEN
+  DUP 96 < IF 73 - CELLS FOLDMAP + @ K-FOLD KV 1+ EXIT THEN
+  DUP 96 = IF DROP 0 K-LIT KV 1+ EXIT THEN
+  DUP 97 = IF DROP 1 K-LIT KV 1+ EXIT THEN
+  DUP 98 = IF DROP -1 K-LIT KV 1+ EXIT THEN
+  DUP 99 = IF DROP 1+ SLOT@ K-VF KV EXIT THEN
+  DUP 100 = IF DROP 1+ SLOT@ K-VS KV EXIT THEN
+  DUP 105 < IF K-BAD KV 1+ EXIT THEN
+  DUP 120 < IF 105 - K-TINY KV 1+ EXIT THEN
+  DUP 124 < IF 120 - >R DUP 1+ C@ SX8 R> K-ADDI + KV 2 + EXIT THEN
+  DUP 124 = IF DROP DUP 1+ @ K-LIT KV 9 + EXIT THEN
+  K-BAD KV 1+ ;
+: EXIT-OP? ( --- f )     \ does the operation just decoded end in EXIT?
+  OP-K @ K-PRIM = OP-V @ 1 = AND
+  OP-K @ K-FOLD = OR  OP-K @ K-LITX = OR  OP-K @ K-ADDIX = OR  OP-K @ K-EQIX = OR ;
+
+: IN-DICT? ( a --- f )  DUP START @ < 0=  SWAP HERE < AND ;
+\ Where compiled calls actually ENTER a word. CV8 pads some bodies with
+\ leading NOOPs for alignment, and a call targets the first real
+\ operation - HEADER's xt is 4135 but : calls 4136. Patching at the xt
+\ put SPN-ENTER's address bytes exactly where every compiled call lands.
+\ Patching here serves both routes: through the padding, or straight in.
+: ENTRY-OF ( xt --- a )  BEGIN DUP C@ 0= WHILE 1+ REPEAT ;
+
+\ ---- kernel words SPN must recognise, as offsets from START ----
+\ ' gives the address a word had when this file was loaded; a saved
+\ image lands somewhere else each run, so boot adds START back.
+VARIABLE DO-XT  VARIABLE QDO-XT  VARIABLE LOOP-XT    VARIABLE PLOOP-XT
+VARIABLE I-XT   VARIABLE J-XT    VARIABLE UNLOOP-XT  VARIABLE LEAVE-XT
+VARIABLE PICK-XT VARIABLE SQ-XT  VARIABLE DQ-XT      VARIABLE AQ-XT
+VARIABLE TYPE-XT VARIABLE AM-XT
+' (DO)    START @ - CONSTANT DO-OFF      ' (?DO)   START @ - CONSTANT QDO-OFF
+' (LOOP)  START @ - CONSTANT LOOP-OFF    ' (+LOOP) START @ - CONSTANT PLOOP-OFF
+' I       START @ - CONSTANT I-OFF       ' J       START @ - CONSTANT J-OFF
+' UNLOOP  START @ - CONSTANT UNLOOP-OFF  ' (LEAVE) START @ - CONSTANT LEAVE-OFF
+' PICK    START @ - CONSTANT PICK-OFF    ' (S")    START @ - CONSTANT SQ-OFF
+' (.")    START @ - CONSTANT DQ-OFF      ' (ABORT") START @ - CONSTANT AQ-OFF
+' TYPE    START @ - CONSTANT TYPE-OFF
+\ 0 none 1 (DO) 2 (?DO) 3 (LOOP) 4 (+LOOP) 5 I 6 J 7 UNLOOP 8 (LEAVE) 9 PICK
+\ Kinds 2 3 4 8 are followed by a cell: an offset from itself to a target.
+: LOOP-KIND ( xt --- k )
+  DUP DO-XT @ = IF DROP 1 EXIT THEN     DUP QDO-XT @ = IF DROP 2 EXIT THEN
+  DUP LOOP-XT @ = IF DROP 3 EXIT THEN   DUP PLOOP-XT @ = IF DROP 4 EXIT THEN
+  DUP I-XT @ = IF DROP 5 EXIT THEN      DUP J-XT @ = IF DROP 6 EXIT THEN
+  DUP UNLOOP-XT @ = IF DROP 7 EXIT THEN DUP LEAVE-XT @ = IF DROP 8 EXIT THEN
+  PICK-XT @ = IF 9 ELSE 0 THEN ;
+: INLINE-CELL? ( k --- f )  DUP 2 = OVER 3 = OR OVER 4 = OR SWAP 8 = OR ;
+: STRING-WORD? ( xt --- f )  DUP SQ-XT @ = OVER DQ-XT @ = OR SWAP AQ-XT @ = OR ;
+: PAST-STRING ( a --- a' )  DUP C@ 1+ + ALIGNED ;
+
+\ ---- does this code read its caller's return address? ----
+\ Decodes linearly: R> or R@ before any >R or exit means yes. Inline
+\ operands are stepped over; an unknown opcode, or running past
+\ MAX-BYTES, counts as yes - the unsafe answer.
+: R-SCAN ( xt --- f )
+  DUP ENTRY-OF C@ OP-ENTER = IF DROP FALSE EXIT THEN        \ translated: validated
+  DUP MAX-BYTES + >R
+  BEGIN DUP R@ < WHILE
+    DECODE
+    OP-K @ K-BAD = IF DROP R> DROP TRUE EXIT THEN
+    OP-K @ K-DOVAR = OP-K @ K-DODOES = OR IF DROP R> DROP FALSE EXIT THEN
+    OP-K @ K-PRIM = OP-K @ K-FOLD = OR IF
+      OP-V @ 17 = OP-V @ 19 = OR IF DROP R> DROP TRUE EXIT THEN
+      OP-V @ 18 = IF DROP R> DROP FALSE EXIT THEN
+    THEN
+    EXIT-OP? IF DROP R> DROP FALSE EXIT THEN
+    OP-K @ K-CALL = IF
+      OP-V @ LOOP-KIND INLINE-CELL? IF CELL+ THEN
+      OP-V @ STRING-WORD? IF PAST-STRING THEN
+    THEN
+  REPEAT DROP R> DROP TRUE ;
+
+\ ---- a callee short enough to copy into its caller ----
+\ A straight line of at most six simple operations ending in an exit:
+\ no calls, no branches, nothing on the return stack. Constants and
+\ primitives' own entries are such words, and so is CELL+ at two bytes.
+: SIMPLE-OP? ( --- f )
+  OP-K @ DUP K-LIT = OVER K-TINY = OR OVER K-ADDI = OR OVER K-EQI = OR
+  OVER K-VF = OR OVER K-VS = OR SWAP K-PRIM = OP-V @ PM@ -2 <> AND OR ;
+: FINAL-OP? ( --- f )   \ an exit whose other half is simple
+  OP-K @ DUP K-LITX = OVER K-ADDIX = OR OVER K-EQIX = OR
+  OVER K-PRIM = OP-V @ 1 = AND OR
+  SWAP K-FOLD = OP-V @ PM@ -2 <> AND OP-V @ 17 <> AND OP-V @ 18 <> AND
+  OP-V @ 19 <> AND OR ;
+: INLINABLE? ( xt --- f )
+  6 0 DO
+    DECODE
+    FINAL-OP? IF DROP TRUE UNLOOP EXIT THEN
+    SIMPLE-OP? OP-K @ K-PRIM = OP-V @ 17 = OP-V @ 18 = OR OP-V @ 19 = OR AND 0= AND
+    0= IF DROP FALSE UNLOOP EXIT THEN
+  LOOP DROP FALSE ;
+
+\ ---- classifying a word a native caller wants to call ----
+\ 0 native  1 a literal: a variable's address  2 re-entry  3 refuse
+\ 5 inline: copy its operations
+VARIABLE C-VAL
+: CLASSIFY ( xt --- kind )
+  DUP IN-DICT? 0= IF DROP 3 EXIT THEN
+  DUP ENTRY-OF C@ OP-ENTER = IF ENTRY-OF 1+ LD16 4 LSHIFT CODE-BASE @ + C-VAL ! 0 EXIT THEN
+  DUP C@ 69 = IF 4 + ALIGNED C-VAL ! 1 EXIT THEN          \ DOVAR: a variable
+  DUP C@ 70 = IF C-VAL ! 2 EXIT THEN                      \ DODOES: interpret
+  DUP INLINABLE? IF C-VAL ! 5 EXIT THEN
+  DUP R-SCAN IF DROP 3 EXIT THEN
+  C-VAL ! 2 ;
+
+\ ---- validating a word ----
+VARIABLE T-FAR  VARIABLE T-DEP  VARIABLE T-END  VARIABLE #TGT  VARIABLE HWM
+VARIABLE WHY  VARIABLE WHY-XT  VARIABLE #CALLS
+: IDX ( a --- i )  T-SRC @ - ;
+: INSIDE? ( a --- f )  IDX DUP 0< 0= SWAP MAX-BYTES < AND ;
+: TGT, ( a --- )  #TGT @ 128 < IF #TGT @ CELLS TGTS @ + ! 1 #TGT +! ELSE DROP THEN ;
+: CALLEE, ( xt --- )  #CALLS @ 128 < IF #CALLS @ CELLS CALLS @ + ! 1 #CALLS +! ELSE DROP THEN ;
+: TARGET-IN? ( a n --- f )   \ a branch target strictly inside [a, a+n)?
+  OVER + SWAP  FALSE #TGT @ 0 ?DO
+    I CELLS TGTS @ + @  2 PICK OVER < SWAP 4 PICK < AND OR
+  LOOP NIP NIP ;
+: TARGET? ( a --- f )  FALSE #TGT @ 0 ?DO OVER I CELLS TGTS @ + @ = OR LOOP NIP ;
+: LOOP-TARGET ( a' --- a' )   \ a' is the operand cell
+  DUP DUP @ +  DUP TGT,  T-FAR @ MAX T-FAR ! ;
+: V-LOOP ( a' k --- a'' f )
+  DUP 1 = IF DROP 2 T-DEP +! TRUE EXIT THEN
+  DUP 2 = IF DROP 2 T-DEP +! LOOP-TARGET CELL+ TRUE EXIT THEN
+  DUP 9 = IF DROP TRUE EXIT THEN
+  DUP 6 = IF DROP T-DEP @ 4 < 0= EXIT THEN
+  T-DEP @ 2 < IF DROP FALSE EXIT THEN
+  DUP 5 = IF DROP TRUE EXIT THEN
+  DUP 7 = IF DROP -2 T-DEP +! TRUE EXIT THEN
+  DUP 8 = IF DROP LOOP-TARGET CELL+ TRUE EXIT THEN
+  DROP -2 T-DEP +!  DUP DUP @ + TGT,  CELL+ TRUE ;
+: PRIM-DEPTH ( p --- f )   \ a primitive's effect on return-stack depth
+  DUP 18 = IF DROP 1 T-DEP +! TRUE EXIT THEN
+  DUP 17 = IF DROP T-DEP @ IF -1 T-DEP +! TRUE ELSE 4 WHY ! FALSE THEN EXIT THEN
+  DUP 19 = IF DROP T-DEP @ 0<> DUP 0= IF 5 WHY ! THEN EXIT THEN
+  PM@ -2 = IF 6 WHY ! FALSE ELSE TRUE THEN ;
+VARIABLE VA
+\ CLASSIFY, E-CALL and E-STRING decode OTHER words - the callee, to see
+\ whether it can be inlined - and so overwrite OP-K and OP-V. Without
+\ this, the caller's next test of EXIT-OP? would see the callee's last
+\ operation, and a caller could be judged to end where its callee does.
+VARIABLE SK  VARIABLE SV
+: SAVE-OP ( --- )  OP-K @ SK !  OP-V @ SV ! ;
+: REST-OP ( --- )  SK @ OP-K !  SV @ OP-V ! ;
+: VALIDATE ( xt --- f )
+  DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  0 #CALLS !  0 WHY !
+  C-DEP @ HWM @ -1 CFILL  0 HWM !
+  BEGIN
+    DUP INSIDE? 0= IF DROP 1 WHY ! FALSE EXIT THEN
+    T-DEP @ OVER IDX CELLS C-DEP @ + !  DUP IDX 1+ HWM @ MAX HWM !
+    DUP VA !  DECODE                                     ( a' )
+    OP-K @ K-BAD = OP-K @ K-DOVAR = OR OP-K @ K-DODOES = OR IF
+      DROP 6 WHY ! FALSE EXIT THEN
+    OP-K @ K-PRIM = OP-K @ K-FOLD = OR IF
+      OP-V @ 1 <> IF OP-V @ PRIM-DEPTH 0= IF DROP FALSE EXIT THEN THEN
+    THEN
+    OP-K @ K-BR = OP-K @ K-QBR = OR IF
+      OP-V @ IN-DICT? 0= IF DROP 3 WHY ! FALSE EXIT THEN
+      OP-V @ DUP TGT, T-FAR @ MAX T-FAR !
+    THEN
+    OP-K @ K-CALL = IF
+      OP-V @ T-SRC @ <> IF
+        OP-V @ IN-DICT? 0= IF DROP 7 WHY ! FALSE EXIT THEN
+        OP-V @ LOOP-KIND ?DUP IF
+          V-LOOP 0= IF DROP 10 WHY ! FALSE EXIT THEN
+        ELSE OP-V @ STRING-WORD? IF
+          OP-V @ AQ-XT @ = IF DUP PAST-STRING DUP TGT, T-FAR @ MAX T-FAR ! THEN
+          PAST-STRING
+        ELSE
+          SAVE-OP  OP-V @ DUP WHY-XT !  CLASSIFY  REST-OP
+          3 = IF DROP 8 WHY ! FALSE EXIT THEN
+          WHY-XT @ CALLEE,
+        THEN THEN
+      THEN
+    THEN
+    EXIT-OP? IF
+      T-DEP @ IF DROP 2 WHY ! FALSE EXIT THEN
+      VA @ T-FAR @ < 0= IF T-END ! TRUE EXIT THEN
+    THEN
+  0 UNTIL ;
+\ Every branch must land on a decoded operation start.
+: TARGETS-OK? ( --- f )
+  #TGT @ 0 ?DO
+    I CELLS TGTS @ + @  DUP INSIDE? 0= IF DROP FALSE UNLOOP EXIT THEN
+    IDX CELLS C-DEP @ + @ 0< IF FALSE UNLOOP EXIT THEN
+  LOOP TRUE ;
+
+\ ---- emitting ----
+: E-LIT ( n --- )  ARG-IMM ! S-LIT EMIT-ST ;
+: E-PRIM ( p --- )   \ a primitive with no operand
+  DUP 0= IF DROP EXIT THEN
+  DUP PM@ DUP 0< 0= IF NIP EMIT-ST EXIT THEN DROP
+  2 * PRIMBODY @ + ARG-IMM !  S-INTERP EMIT-ST ;
+: E-ADDI ( n --- )  DUP INT32? IF ARG-IMM ! S-ADDI32 ELSE ARG-IMM ! S-ADDI THEN EMIT-ST ;
+\ The fifteen tiny-word opcodes, as sequences of stencils.
+: E-TINY ( i --- )
+  DUP 0 = IF DROP 0 E-LIT S-EQ EMIT-ST EXIT THEN                        \ 0=
+  DUP 1 = IF DROP S-NEGATE EMIT-ST S-PLUS EMIT-ST EXIT THEN             \ -
+  DUP 2 = IF DROP S-EQ EMIT-ST -1 E-LIT S-XOR EMIT-ST EXIT THEN         \ <>
+  DUP 3 = IF DROP 0 E-LIT S-LT EMIT-ST EXIT THEN                        \ 0<
+  DUP 4 = IF DROP S-SWAP EMIT-ST S-LT EMIT-ST EXIT THEN                 \ >
+  DUP 5 = IF DROP S-OVER EMIT-ST S-OVER EMIT-ST EXIT THEN               \ 2DUP
+  DUP 6 = IF DROP S-DROP EMIT-ST S-DROP EMIT-ST EXIT THEN               \ 2DROP
+  DUP 7 = OVER 8 = OR IF DROP 1 E-ADDI EXIT THEN                        \ CHAR+ 1+
+  DUP 9 = IF DROP 8 E-ADDI EXIT THEN                                    \ CELL+
+  DUP 10 = IF DROP 3 E-LIT S-LSHIFT EMIT-ST EXIT THEN                   \ CELLS
+  DUP 11 = IF DROP -1 E-ADDI EXIT THEN                                  \ 1-
+  DUP 12 = IF DROP -1 E-LIT S-XOR EMIT-ST EXIT THEN                     \ INVERT
+  DUP 13 = IF DROP S-DUP EMIT-ST 1 E-ADDI S-SWAP EMIT-ST S-CFETCH EMIT-ST EXIT THEN
+  DROP 7 E-ADDI -8 E-LIT S-AND EMIT-ST ;                                \ ALIGNED
+\ One decoded operation that is neither control flow nor a call.
+: E-SIMPLE ( --- )
+  OP-K @ K-LIT = IF OP-V @ E-LIT EXIT THEN
+  OP-K @ K-TINY = IF OP-V @ E-TINY EXIT THEN
+  OP-K @ K-ADDI = IF OP-V @ E-ADDI EXIT THEN
+  OP-K @ K-EQI = IF OP-V @ E-LIT S-EQ EMIT-ST EXIT THEN
+  OP-K @ K-VF = IF OP-V @ E-LIT S-FETCH EMIT-ST EXIT THEN
+  OP-K @ K-VS = IF OP-V @ E-LIT S-STORE EMIT-ST EXIT THEN
+  OP-K @ K-PRIM = IF OP-V @ E-PRIM EXIT THEN ;
+\ The operation just decoded ends in EXIT: emit the part before it.
+: E-FINAL ( --- )
+  OP-K @ K-LITX = IF OP-V @ E-LIT EXIT THEN
+  OP-K @ K-ADDIX = IF OP-V @ E-ADDI EXIT THEN
+  OP-K @ K-EQIX = IF OP-V @ E-LIT S-EQ EMIT-ST EXIT THEN
+  OP-K @ K-FOLD = IF OP-V @ E-PRIM EXIT THEN ;
+\ Copy an inlinable callee's operations, without its exit.
+: E-INLINE ( xt --- )
+  BEGIN DECODE FINAL-OP? 0= WHILE E-SIMPLE REPEAT DROP E-FINAL ;
+: E-CALL ( xt --- )
+  DUP T-SRC @ = IF DROP T-NAT @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
+  CLASSIFY
+  DUP 0 = IF DROP C-VAL @ ARG-CALL ! S-CALL EMIT-ST EXIT THEN
+  DUP 1 = IF DROP C-VAL @ E-LIT EXIT THEN
+  DUP 5 = IF DROP C-VAL @ E-INLINE EXIT THEN
+  DROP C-VAL @ ARG-IMM ! S-INTERP EMIT-ST ;
+: E-LOOP ( a' k --- a'' )   \ a' is just past the call
+  DUP 1 = IF DROP S-DO EMIT-ST EXIT THEN
+  DUP 5 = IF DROP S-I EMIT-ST EXIT THEN
+  DUP 6 = IF DROP S-J EMIT-ST EXIT THEN
+  DUP 7 = IF DROP S-UNLOOP EMIT-ST EXIT THEN
+  DUP 9 = IF DROP S-PICK EMIT-ST EXIT THEN
+  OVER DUP @ + ARG-JUMP !
+  DUP 2 = IF DROP S-QDO ELSE DUP 3 = IF DROP S-LOOP ELSE
+    4 = IF S-PLOOP ELSE S-LEAVE THEN THEN THEN
+  EMIT-ST CELL+ ;
+\ (S") (.") (ABORT"): the string's address and length are constants.
+: ABORT-MSG ( c-addr --- )  COUNT TYPE SPACE HERE COUNT TYPE CR WARM ;
+' ABORT-MSG START @ - CONSTANT AM-OFF
+: E-STRING ( a' xt --- a'' )   \ a' is the counted string
+  DUP AQ-XT @ = IF DROP
+    DUP PAST-STRING ARG-JUMP !  S-0BRANCH EMIT-ST
+    DUP E-LIT  AM-XT @ E-CALL  PAST-STRING EXIT
+  THEN
+  OVER DUP 1+ E-LIT C@ E-LIT
+  DQ-XT @ = IF TYPE-XT @ E-CALL THEN
+  PAST-STRING ;
+: EMIT-WORD ( --- )
+  0 #FIX !  T-SRC @
+  BEGIN
+    CODE-HERE @ OVER IDX CELLS C-NAT @ + !
+    DUP VA !  DECODE                                     ( a' )
+    OP-K @ K-BR = IF OP-V @ ARG-JUMP ! S-BRANCH EMIT-ST THEN
+    OP-K @ K-QBR = IF OP-V @ ARG-JUMP ! S-0BRANCH EMIT-ST THEN
+    OP-K @ K-CALL = IF
+      SAVE-OP
+      OP-V @ LOOP-KIND ?DUP IF E-LOOP
+      ELSE OP-V @ STRING-WORD? IF OP-V @ E-STRING ELSE OP-V @ E-CALL THEN THEN
+      REST-OP
+    THEN
+    EXIT-OP? IF
+      E-FINAL S-EXIT EMIT-ST
+      VA @ T-FAR @ < 0= IF DROP EXIT THEN
+    ELSE
+      OP-K @ K-BR <> OP-K @ K-QBR <> AND OP-K @ K-CALL <> AND IF E-SIMPLE THEN
+    THEN
+  0 UNTIL ;
+: RESOLVE ( --- )
+  #FIX @ 0 ?DO
+    I 2 * CELLS FIXUPS @ +  DUP CELL+ @ IDX CELLS C-NAT @ + @  SWAP @ REL!
+  LOOP ;
+
+\ ---- translating one word ----
+VARIABLE #NATIVE  VARIABLE #KEPT
+VARIABLE SPN-READY  0 SPN-READY !
+: SHAPE-OK? ( xt --- f )
+  DUP IN-DICT? 0= IF DROP FALSE EXIT THEN
+  DUP ENTRY-OF C@ OP-ENTER = IF DROP FALSE EXIT THEN   \ already native
+  C@ DUP 69 <> SWAP 70 <> AND ;                      \ not a data word
+\ Is some active call returning into the three bytes a patch would
+\ overwrite? Then the patch would corrupt it; leave the word alone.
+: RS-HAZARD? ( xt --- f )
+  RP@ BEGIN DUP R0 @ < WHILE
+    DUP @ 2 PICK - DUP 0 > SWAP 3 < AND IF 2DROP TRUE EXIT THEN
+    CELL+
+  REPEAT 2DROP FALSE ;
+: TRY-TRANSLATE ( xt --- )
+  SPN-READY @ 0= IF DROP EXIT THEN
+  DUP SHAPE-OK? 0= IF DROP EXIT THEN
+  DUP VALIDATE 0= IF DROP 1 #KEPT +! EXIT THEN
+  TARGETS-OK? 0= IF DROP 9 WHY ! 1 #KEPT +! EXIT THEN
+  T-END @ OVER ENTRY-OF - 3 < IF DROP EXIT THEN      \ too short to patch
+  \ Short straight-line words - constants among them, three bytes in CV8
+  \ as LIT8 n EXIT - are inlined by native callers and run directly by
+  \ interpreted ones. Patching them would only add an entry and exit.
+  DUP INLINABLE? IF DROP EXIT THEN
+  DUP ENTRY-OF RS-HAZARD? IF DROP EXIT THEN
+  CODE-HERE @ 15 + -16 AND CODE-HERE !
+  CODE-HERE @ T-NAT !
+  EMIT-WORD RESOLVE
+  \ The offset goes in first and byte 0 last, with nothing but C! and
+  \ literals between: the word being patched may be one this code uses.
+  \ It WAS - written with OP-ENTER here, patching OP-ENTER wrote bytes
+  \ 1 and 2 and then ran the half-patched OP-ENTER for byte 0.
+  ENTRY-OF  T-NAT @ CODE-BASE @ - 4 RSHIFT
+  DUP 255 AND 2 PICK 1+ C!  8 RSHIFT 255 AND OVER 2 + C!
+  [ OP-ENTER ] LITERAL SWAP C!  1 #NATIVE +! ;
+
+\ ---- the whole dictionary, oldest first ----
+VARIABLE MARKS  VARIABLE MSIZE
+: MARK-THREAD ( nfa --- )
+  BEGIN ?DUP WHILE  DUP START @ - MARKS @ + 1 SWAP C!  NEXT-NFA8  REPEAT ;
+: TRANSLATE-ALL ( --- )
+  HERE START @ - 1+ DUP MSIZE !  TABLE MARKS !
+  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
+  MSIZE @ 0 DO
+    MARKS @ I + C@ IF  I START @ + NAME>8 TRY-TRANSLATE  THEN
+  LOOP
+  MARKS @ FREE DROP ;
+
+\ ---- start-up ----
+: SPN-INIT ( --- )
+  SPN-TABLE #ENTRIES ! ENTRIES !
+  0 ENTRY M-NEXT !  1 ENTRY M-JUMP !  2 ENTRY M-CALL !
+  SPN-ENGINE DROP INTERP-FN ! RP-ADDR !
+  MAX-STENCILS CELLS DUP TABLE ST-START !  DUP TABLE ST-LEN !  TABLE ST-NH !
+  MAX-STENCILS 8 * CELLS TABLE ST-HOLES !
+  MAX-BYTES CELLS DUP TABLE C-NAT !  TABLE C-DEP !
+  C-DEP @ MAX-BYTES -1 CFILL  0 HWM !
+  512 CELLS TABLE FIXUPS !  128 CELLS DUP TABLE TGTS !  TABLE CALLS !
+  80 CELLS TABLE PMAP !  160 TABLE PRIMBODY !
+  #ENTRIES @ 3 DO I SCAN-STENCIL LOOP
+  INIT-PMAP INIT-PRIMBODY
+  DO-OFF START @ + DO-XT !         QDO-OFF START @ + QDO-XT !
+  LOOP-OFF START @ + LOOP-XT !     PLOOP-OFF START @ + PLOOP-XT !
+  I-OFF START @ + I-XT !           J-OFF START @ + J-XT !
+  UNLOOP-OFF START @ + UNLOOP-XT ! LEAVE-OFF START @ + LEAVE-XT !
+  PICK-OFF START @ + PICK-XT !     SQ-OFF START @ + SQ-XT !
+  DQ-OFF START @ + DQ-XT !         AQ-OFF START @ + AQ-XT !
+  TYPE-OFF START @ + TYPE-XT !     AM-OFF START @ + AM-XT !
+  CODE-SIZE SPN-EXEC DUP 0= ABORT" SPN: no executable memory"
+  DUP CODE-BASE ! DUP CODE-HERE !  CODE-SIZE + CODE-LIMIT !
+  0 #NATIVE !  0 #KEPT !  TRUE SPN-READY ! ;
+
+\ Callees before callers, depth first, so a word finds its callees
+\ native when it is translated.
+VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
+: VISITED? ( xt --- f )
+  START @ - DUP VIS-N @ U< IF VIS @ + C@ ELSE DROP TRUE THEN ;
+: VISIT ( xt --- )
+  START @ - DUP VIS-N @ U< IF VIS @ + 1 SWAP C! ELSE DROP THEN ;
+: TRANSLATE-TREE ( xt --- )
+  DUP VISITED? IF DROP EXIT THEN  DUP VISIT
+  DUP SHAPE-OK? 0= IF DROP EXIT THEN
+  DUP VALIDATE 0= IF DROP EXIT THEN
+  >R  #CALLS @ DUP 0 ?DO I CELLS CALLS @ + @ SWAP LOOP
+  0 ?DO RECURSE LOOP
+  R> TRY-TRANSLATE ;
+' CMOVE         START @ - CONSTANT CM-OFF
+' EMIT-ST       START @ - CONSTANT ES-OFF
+' VALIDATE      START @ - CONSTANT VA-OFF
+' TRANSLATE-ALL START @ - CONSTANT TA-OFF
+: SPN-BOOT ( --- )
+  SPN-INIT
+  HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
+  CM-OFF START @ + TRANSLATE-TREE
+  ES-OFF START @ + TRANSLATE-TREE
+  VA-OFF START @ + TRANSLATE-TREE
+  TA-OFF START @ + TRANSLATE-TREE
+  TRANSLATE-ALL
+  VIS @ FREE DROP  0 VIS-N ! ;
+
+\ ---- reporting ----
+: SPN-WHY ( xt --- )
+  DUP ENTRY-OF C@ OP-ENTER = IF DROP ." native" EXIT THEN
+  DUP SHAPE-OK? 0= IF DROP ." data word" EXIT THEN
+  DUP VALIDATE IF T-END @ SWAP - ." validates; body bytes " . EXIT THEN
+  DROP WHY @ . ;
+
+\ New definitions: translate each as its ; completes.
+: ;  POSTPONE ;  LAST @ NAME>8 TRY-TRANSLATE ; IMMEDIATE

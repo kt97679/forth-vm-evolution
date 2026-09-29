@@ -223,7 +223,7 @@ CREATE FIXUPS 256 2 * CELLS ALLOT  VARIABLE #FIX   \ native field, source target
 \ -2: never translate a word that uses it.
 CREATE PMAP 80 CELLS ALLOT
 : PM! ( stencil prim --- )  CELLS PMAP + ! ;
-: PM@ ( prim --- stencil )  DUP 80 < IF CELLS PMAP + @ ELSE DROP -2 THEN ;
+: PM@ ( prim --- stencil )  DUP 80 U< IF CELLS PMAP + @ ELSE DROP -2 THEN ;
 : INIT-PMAP
   80 0 DO -1 I PM! LOOP
   S-DROP 5 PM!   S-DUP 6 PM!    S-SWAP 7 PM!   S-ROT 8 PM!    S-OVER 9 PM!
