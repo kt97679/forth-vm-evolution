@@ -11,7 +11,8 @@ corpus. Nothing in the measured tables is modelled.
 
 ## Build and test
 
-    tools/build-stages.sh      # every engine and image, both cell widths
+    tools/build-stages.sh      # every engine and image, both cell widths,
+                               # and the SPN stages on an x86-64 host
     tools/run-tests.sh         # the shared ANS CORE corpus on every stage
 
 That is enough to check that the systems work. To MEASURE them, build
@@ -49,10 +50,25 @@ a 1-3 byte link with its tag read backward - which takes the 8-byte
 image from 11,088 bytes to 7,609, or 0.31x of cell threading.
 `FINDINGS-CELL-WIDTH.md` accounts for every byte of what is left.
 
+## Native code: SPN
+
+On top of the encodings, two stages add a native-code layer, SPN
+(Stencil-Patched Native): at start-up every word that can be proved
+safe becomes x86-64 code, made by copying machine-code stencils out of
+the engine and patching their holes; everything else stays interpreted.
+`s8-spncv8` does it over `s6-cv8b`'s CV8 image and is the current one;
+`s7-spn` does it over the cell image and is frozen. In one build on the
+development VM, s8 runs the four workloads at 0.21-0.39x of the cell
+system end to end, start-up included, from a 38 KB image - s7 needs
+103 KB for roughly the same speed. `stages/STAGES.md` lists them;
+`FINDINGS-SPN.md` has the design, the measurements and what they do and
+do not show. x86-64 only.
+
 ## Layout
 
     vendor/sod32/   upstream SOD32, unmodified (GPLv2, see its LICENSE)
-    engine/         the C engines: relf.c, pack4/pack8, vm-lab.c
+    engine/         the C engines: relf.c, pack4/pack8, vm-lab.c; for SPN,
+                    spn.c and spn-cv8.c, the stencils in spn-stencils.c
     forth/          the Forth sources: kernel, cross-compiler, overlays
     tools/          build, test and measurement scripts
     bench/          the workloads and the shared measurement library

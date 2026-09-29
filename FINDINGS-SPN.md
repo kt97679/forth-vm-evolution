@@ -1,10 +1,17 @@
-# SPN: Stencil-Patched Native - proof of concept
+# SPN: Stencil-Patched Native
 
 The question: can a Forth keep compact code and a minimal VM and still
 run within about 2x of C? The research answer was that no interpreter
 does - the fastest known ones sit near 10x of native - but that
 copy-and-patch baseline compilation reaches roughly that range for
 WebAssembly. This is a working test of the idea on this system.
+
+**Status.** s8-spncv8 - SPN on the CV8 image, "On a CV8 image" below -
+is the current SPN. s7-spn, SPN on the cell image, is FROZEN: kept as
+the data point for why cells were the wrong base, still built and
+tested so that breakage shows, but no longer developed - fixes are not
+ported to it. Both are x86-64 only. The sections run in the order the
+work was done: the proof of concept, s7, then s8.
 
 ## Design
 
@@ -93,6 +100,8 @@ alignment and moving the returned pair back into the argument
 registers - about eight instructions where C pays about three.
 
 ## As a whole system: s7-spn
+
+*Frozen since s8 - see Status at the top.*
 
 The proof of concept translated two benchmarks by hand. s7-spn is a
 complete Forth: the kernel image plus the translator (forth/spn-full.4),
@@ -315,7 +324,7 @@ KB or two of tables, and native code only for the words actually
 translated - which argues for translating hot words on demand rather
 than everything.
 
-## Limits of this version
+## Limits of the proof of concept
 
 - x86-64 only. 32-bit ARM needs `-mslow-flash-data` so constants are
   built with movw/movt instead of literal pools, and a different hole

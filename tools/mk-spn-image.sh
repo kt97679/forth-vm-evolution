@@ -1,6 +1,9 @@
 #!/bin/sh
 # tools/mk-spn-image.sh BUILD-DIR - the SPN stage image, s7-spn-s64.img.
 #
+# FROZEN: s7 is superseded by s8 (tools/mk-spn-cv8-image.sh); kept, built
+# and tested, not developed. tools/build-stages.sh calls this on x86-64.
+#
 # Builds two images from the same source, differing only in recipes:
 #   s7-spn-s64.img   the boot translation run once at build time and its
 #                    decisions recorded in the image; boot replays them.

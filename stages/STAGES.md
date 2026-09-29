@@ -92,3 +92,30 @@ of where the measured gain comes from.
 The build keeps all five (`SPECS` in `tools/build-stages.sh`) so that
 the published figures are not invalidated; the note is here so nobody
 reads the gain as coming from parts that contributed none of it.
+
+## Native code on top: SPN
+
+Not rungs of the ladder - every row above is an ENCODING. SPN is a layer
+over one of them: at start-up it turns every word it can prove safe into
+native x86-64 code, by copying machine-code stencils out of the engine
+and patching their holes, and leaves the rest interpreted. New words are
+translated as their `;` completes. Details: `FINDINGS-SPN.md`.
+
+| id | built on | adds | image, 8-byte | status |
+|----|----------|------|---------------|--------|
+| `s8-spncv8` | `s6-cv8b` | the translator, reading CV8; recipes - the boot translation recorded at build time and replayed | 38,130 | current |
+| `s8-full` | `s6-cv8b` | the same, translating in full at every start instead of replaying | 23,370 | comparison |
+| `s7-spn` | `s0-cell` | the first SPN: the translator reading cells; recipes | 103,441 | frozen |
+| `s7-full` | `s0-cell` | the same without recipes | 92,736 | frozen |
+
+s8 is the SPN because it keeps the CV8 image compact - its translator
+is stored in CV8 form too - and matches s7 on speed: in one build on the
+development VM, ahead by 12-14% on kernel compile and parse, behind on
+fib by 6% end to end and 12% net of start-up across five layouts. s7 is kept as the data point for why cells were the wrong
+base; it is built and tested but no longer developed.
+
+Both are x86-64 only, and `tools/build-stages.sh` builds them on such a
+host. Start-up includes the translation - about 2.5 ms with recipes,
+against 0.7 for the interpreters - and the benchmark tables are net of
+start-up, so they understate that cost; `FINDINGS-SPN.md` gives
+end-to-end figures.
