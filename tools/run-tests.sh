@@ -169,6 +169,23 @@ for w in 64 32; do
     fi
 done
 
+# ---- saved images ------------------------------------------------------
+# Nothing booted an image written by SAVE-SYSTEM after tests/shell/ was
+# removed, and for months every one of them crashed on start: the hashed
+# word list's 32 thread heads were saved as absolute addresses, which
+# COLD then relocated a second time. The shell image is written by
+# SAVE-SYSTEM and boots into shell.4's MAIN, so running one command
+# through it checks save, relocation and boot together.
+echo
+echo "saved image (SAVE-SYSTEM, then boot):"
+for w in 64 32; do
+    e=$O/s0-cell-$w; i=$O/s0-cell-$w.img
+    if [ ! -x "$e" ] || [ ! -r "$i" ]; then printf '  %-12s SKIP   not built\n' "$w-bit"; continue; fi
+    out=$( timeout 15 "$e" "$i" -c 'echo SAVED-IMAGE-BOOTS' 2>/dev/null )
+    if [ "$out" = SAVED-IMAGE-BOOTS ]; then printf '  %-12s ok\n' "$w-bit"
+    else printf '  %-12s FAIL   the saved shell image did not boot\n' "$w-bit"; FAILED=1; fi
+done
+
 [ "${FAILED:-0}" = 0 ] || rc=1
 [ $rc -eq 0 ] && echo "PASS - no regressions" || echo "FAIL - see above"
 exit $rc
