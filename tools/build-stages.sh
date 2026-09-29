@@ -478,12 +478,33 @@ cellshell "$O/s0-cell-32" kernel32.img s0-cell-32.img
 # and the kernel-only cell images, for the compile benchmark
 echo "built  stage 0 images"
 
+# ---- SPN: native code from copied stencils (x86-64 only) -------------
+# s8-spncv8, s8-full: SPN on s6's CV8 image - the current SPN.
+# s7-spn, s7-full:    SPN on the cell image - frozen since s8, still built
+#                     and tested so that any breakage shows.
+# The images are built once. Layout variants are further builds of the
+# ENGINES, as for every stage above, running the same images: SPN reads
+# its stencils and finds their holes in whichever engine is running.
+if [ "$BUILD64" = 1 ] && [ "$(uname -m)" = x86_64 ]; then
+    sh tools/mk-spn-image.sh "$O"
+    sh tools/mk-spn-cv8-image.sh "$O"
+    for LV in $(seq 1 $((LAYOUTS - 1))); do
+        eval "LF=\$LAYOUT_FLAGS_$LV"
+        sh tools/mk-spn-image.sh     "$O" --engine "-v$LV" "$LF"
+        sh tools/mk-spn-cv8-image.sh "$O" --engine "-v$LV" "$LF"
+    done
+    LF=""
+else
+    echo "SPN stages skipped: they need an x86-64 host"
+fi
+
 # ---- size table -------------------------------------------------------
 # The unit of comparison is the FORTH IMAGE - the smallest image that
 # boots into the interpreter and can recompile the system - not the shell
 # image. That follows SOD32's own Makefile, where `forth.img` (kernel +
 # extend) is the finished artefact. A shell image would measure shell.4,
 # which is application code and has nothing to do with the encoding.
+
 {
   echo "stage,runonly_64,runonly_32,selfhost_64,selfhost_32"
   printf 'sod32,NA,NA,NA,%s\n' "$(stat -c%s "$SOD/forth.img")"
