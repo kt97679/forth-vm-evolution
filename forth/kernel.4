@@ -707,7 +707,7 @@ PRIMITIVE SETFSIZE  ( n --- ior )
 
 VARIABLE TIB ( --- addr)
 \ is the standard terminal input buffer.
-80 CHARS-T ALLOT-T
+256 CHARS-T ALLOT-T
 
 VARIABLE SPAN ( --- addr)
 \ This variable holds the number of characters read by EXPECT.
@@ -735,7 +735,7 @@ VARIABLE #SRC ( --- addr)
 
 : QUERY ( --- )
 \ Read a line from the terminal into the terminal input buffer.
-  TIB 80 ACCEPT #TIB ! ;
+  TIB 256 ACCEPT #TIB ! ;
 
 : SOURCE ( --- addr len)
 \ Return the address and length of the current input source.
