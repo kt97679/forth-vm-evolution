@@ -170,7 +170,45 @@ heads were saved as absolute addresses; and ?DO and LEAVE compiled
 absolute leave addresses, the one exception to RelF's relative
 branches. Both fixed, with tests that fail on the old code.
 
+### After native loops, native PICK, and translating the translator first
+
+    net of start-up                          end to end
+                     cell  CV8+spec   SPN     cell  CV8+spec   SPN
+    kernel compile  1.000   0.519   0.300    1.000   0.537   0.489
+    fib             1.000   0.826   0.158    1.000   0.830   0.254
+    corpus          1.000   0.503   0.386    1.000   0.528   0.626
+    parse           1.000   0.475   0.360    1.000   0.480   0.409
+
+193 words native, 32 refused. Start-up 4.4 ms against 0.84. End to end
+SPN now wins kernel compile as well as fib and parse; it still loses the
+14 ms corpus, by less than before (0.626 against 0.726).
+
+How start-up was reduced, each step measured by counting interpreted
+cells at boot - deterministic, unlike timing on this machine:
+
+    first version                              17.3 ms
+    stop clearing tables no word used           4.1 ms
+    (more words translatable: loops, strings)   5.7 ms
+    tables zeroed by cells, not bytes           5.0 ms
+    translator translated first, depth first    4.4 ms   2.61M -> 1.46M cells
+
+One ordering was measured WORSE and reverted: seeding the walk with
+VALIDATE first left CMOVE interpreted while VALIDATE's subtree was
+emitted, byte by byte (1.81M cells). The seeds are now the words every
+translation needs, in the order it needs them: CMOVE, EMIT-ST,
+VALIDATE, TRANSLATE-ALL.
+
+What remains interpreted is mostly that seeding phase: the first few
+dozen words are translated by a translator that is not yet native, and
+the tree walk validates each twice. Stencil reading is 12%.
+
 ### Next
+
+The next real step for start-up is a design change rather than a tune:
+validation depends only on the dictionary, so its results could be
+computed when the image is built and saved in it, leaving boot only the
+emission. That trades image size for start-up, and is worth deciding
+deliberately.
 
 Start-up is now the limit on short workloads. Translating on first
 call rather than all at boot would pay only for words actually used.
