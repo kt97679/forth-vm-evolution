@@ -15,14 +15,13 @@
 \                     carries its target inline (--dataprims)
 \     locals    5 cells, present whenever the specialised opcodes are
 \
-\ Everything else - SS-SCRUB, the unrelocation, RESET-BUFFERS - is the
+\ Everything else - SS-SCRUB, the unrelocation, SS-UNBUFFER - is the
 \ cell version's and is already right: it zeroes every cell holding a
 \ live-session address, which is exactly what made TRANSLATED images
 \ non-reproducible across dumps.
 
 BASE @  DECIMAL
 
-VARIABLE SS-HEAD        \ newest NFA, captured before SS-SCRUB clears LAST
 
 : SS-SET-MAGIC8 ( --- )
   \ Must agree with the engine's IMAGE_MAGIC exactly, including the
@@ -61,8 +60,14 @@ CREATE SS-NAME 40 ALLOT
   SS-FIND 1 CELLS + START @ - ;
 
 : SS-HEADER, ( --- )
-  \ The CV8 header fields that follow the magic.
-  SS-HEAD @ SS-CELL,                        \ head_nfa
+  \ The CV8 header fields that follow the magic, as the engine reads
+  \ them (vm-lab.c, load_image): the thread count and every thread
+  \ head, START-relative - read from the copy, already unrelocated.
+  \ This wrote a single head_nfa, the layout from before the word list
+  \ was hashed again: the engine read it as the thread count and
+  \ refused every image this saved - "impossible thread count".
+  FORTH-WORDLIST @ SS-CELL,
+  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + SS>COPY @ SS-CELL, LOOP
   0 SS-CELL,                                \ ntails: DODOES is self-contained
   S" LSAVE-SP"    SS-PFA  SS-CELL,          \ the locals save-stack pointer
   S" LSAVE-STACK" SS-PFA  SS-CELL,          \ and its buffer
@@ -99,16 +104,18 @@ CREATE SS-NAME 40 ALLOT
   SHFILE-FID SS-CELL   SHFILE-ACTIVE? SS-CELL ;
 
 : SAVE-SYSTEM8 ( c-addr u --- )
-  RESET-BUFFERS
   HERE START @ - SS-LEN !
   SS-LEN @ ALLOCATE ABORT" SAVE-SYSTEM: out of memory" SS-BUF !
   START @ SS-BUF @ SS-LEN @ MOVE
+  SS-UNBUFFER              \ in the copy; the live buffers stay (save-system.4)
   DP SS-UNRELOCATE
-  FORTH-WORDLIST SS-UNRELOCATE
-  \ The dictionary head. NOT LAST: a translated image never had LAST
-  \ remapped, so it holds a stale address of the build session. The
-  \ wordlist head is remapped, and is the same word.
-  FORTH-WORDLIST @ START @ - SS-HEAD !
+  \ Every nonzero thread head, as save-system.4 does since the hash was
+  \ restored. This still treated FORTH-WORDLIST as one cell: it
+  \ subtracted START from the thread COUNT and left all 32 heads
+  \ absolute - the bug fixed in save-system.4, never carried over here.
+  FORTH-WORDLIST @ 1+ 1 DO
+    FORTH-WORDLIST I CELLS +  DUP @ IF SS-UNRELOCATE ELSE DROP THEN
+  LOOP
   SS-SCRUB-ALL
   SS-SET-MAGIC
   W/O BIN CREATE-FILE ABORT" SAVE-SYSTEM: cannot create file" SS-FID !

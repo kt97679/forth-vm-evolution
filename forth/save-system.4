@@ -81,6 +81,18 @@ CREATE SS-MAGIC 8 ALLOT
   \ nonzero thread head of FORTH-WORDLIST.
   SS>COPY DUP @ START @ - SWAP ! ;
 
+: SS-UNBUFFER ( --- )
+  \ Every pool.4 buffer unallocated IN THE COPY - pointer 0, so the booted
+  \ image's ALLOC-BUFFERS gives each its space, and the image holds no
+  \ heap address. RESET-BUFFERS did this to the LIVE system instead,
+  \ freeing the running session's buffers - the shell's line, token and
+  \ argument buffers among them - so saving from inside a shell command
+  \ wrote a good image and then crashed the shell. The saved bytes are
+  \ the same either way; only the live system is now left alone.
+  BUF-LIST @
+  BEGIN DUP WHILE
+    START @ +  DUP SS>COPY 0 SWAP !  2 CELLS + @
+  REPEAT DROP ;
 : SS-SCRUB ( --- )
   \ Everything here is scratch that COLD, WARM or QUIT re-initializes
   \ before anything reads it, and every one of them either holds an
@@ -129,14 +141,15 @@ CREATE SS-MAGIC 8 ALLOT
   \ the magic header. The result is a complete image: run it with
   \ `relf that-image` and every word defined at save time is there.
   \
-  \ Buffer contents declared via pool.4's BUFFER: are NOT saved -
-  \ RESET-BUFFERS releases them and marks them unallocated, so the
-  \ image is written in a clean, freshly-booted state. That is what
-  \ SAVE-SYSTEM is for; it is not a checkpoint/restore facility.
-  RESET-BUFFERS
+  \ Buffer contents declared via pool.4's BUFFER: are NOT saved - in
+  \ the image every buffer is unallocated (SS-UNBUFFER), so it is
+  \ written in a clean, freshly-booted state. That is what SAVE-SYSTEM
+  \ is for; it is not a checkpoint/restore facility. The live system's
+  \ buffers are left as they are.
   HERE START @ - SS-LEN !
   SS-LEN @ ALLOCATE ABORT" SAVE-SYSTEM: out of memory" SS-BUF !
   START @ SS-BUF @ SS-LEN @ MOVE
+  SS-UNBUFFER
   DP SS-UNRELOCATE
   \ The word list is a thread COUNT followed by that many thread heads
   \ (kernel.4's hashed dictionary). COLD relocates every nonzero head

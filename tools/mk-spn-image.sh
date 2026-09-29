@@ -14,7 +14,7 @@
 # only there to save it; locals.4 is left out because it redefines ;
 # as SPN does, and save-system.4 needs only its one variable.
 set -e
-O=$1; ROOT=$(cd "$(dirname "$0")/.." && pwd); W=$O/work
+O=$(cd "$1" && pwd); ROOT=$(cd "$(dirname "$0")/.." && pwd); W=$O/work
 cc -O2 -Wall -o "$O/spn-64" "$ROOT/engine/spn.c" "$ROOT/engine/spn-stencils.c" \
    "$ROOT/engine/spn-markers.c"
 cp "$W/kernel.img" "$W/.spn-kernel-save.img"

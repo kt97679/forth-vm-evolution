@@ -203,5 +203,35 @@ for w in 64 32; do
 done
 
 [ "${FAILED:-0}" = 0 ] || rc=1
+
+# A system saving ITSELF, from inside its own shell, as a user would -
+# the cell system and the full self-hosting CV8 one. Nothing tested CV8
+# saving before: its saver still wrote the header layout from before the
+# word list was hashed again, and unrelocated the thread count instead
+# of the heads, so no CV8 system could save itself. And both savers
+# freed the live pool buffers, so a save from inside a shell command
+# wrote a good image and then crashed the shell. Checked: the save
+# exits cleanly, and the image it wrote boots and runs a command.
+echo
+echo "a system saving itself, from inside its shell:"
+for w in 64 32; do
+    for sys in s0-cell s5-cv8spec; do
+        e=$O/$sys-$w; i=$O/$sys-$w.img; t=$O/.selfsave-$sys-$w.img
+        if [ ! -x "$e" ] || [ ! -r "$i" ]; then
+            printf '  %-12s %s  SKIP   not built\n' "$sys" "$w-bit"; continue; fi
+        rm -f "$t"
+        ( cd "$W" && timeout 30 "$e" "$i" -c "forth 'S\" $t\" SAVE-SYSTEM'" \
+            >/dev/null 2>&1 ); st=$?
+        out=$( timeout 15 "$e" "$t" -c 'echo SELF-SAVED-BOOTS' 2>/dev/null | tr -d '\r' )
+        if [ $st -ne 0 ]; then
+            printf '  %-12s %s  FAIL   the save exited %s\n' "$sys" "$w-bit" "$st"; rc=1
+        elif [ "$out" != SELF-SAVED-BOOTS ]; then
+            printf '  %-12s %s  FAIL   the saved image did not boot\n' "$sys" "$w-bit"; rc=1
+        else
+            printf '  %-12s %s  ok     saves cleanly; the image boots\n' "$sys" "$w-bit"
+        fi
+        rm -f "$t"
+    done
+done
 [ $rc -eq 0 ] && echo "PASS - no regressions" || echo "FAIL - see above"
 exit $rc
