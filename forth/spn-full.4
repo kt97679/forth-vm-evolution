@@ -378,7 +378,11 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
   SPN-ENGINE INTERP-FN ! RP-ADDR !
   #ENTRIES @ 3 DO I SCAN-STENCIL LOOP
   INIT-PMAP INIT-PRIMBODY
-  ['] DOVAR DOVAR-XT !
+  \ Looked up by name, not with ['] - which compiles the address DOVAR
+  \ had when this file was loaded, and a saved image is loaded
+  \ somewhere else on every run.
+  S" DOVAR" FORTH-WORDLIST SEARCH-WORDLIST 0= ABORT" SPN: no DOVAR"
+  DOVAR-XT !
   CODE-SIZE SPN-EXEC DUP 0= ABORT" SPN: no executable memory"
   DUP CODE-HERE !  CODE-SIZE + CODE-LIMIT !
   0 #NATIVE !  0 #KEPT !  TRUE SPN-READY ! ;
