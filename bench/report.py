@@ -40,6 +40,9 @@ for line in open(dat):
     samples[k].append((w, c))
 
 USE_CPU = len(cpu) == len(wall) and all(v > 0 for v in cpu.values())
+# BENCH_METRIC=cycles: the cpu column holds user-space cycles from the
+# hardware counters (tools/cputime.c), not nanoseconds of CPU time.
+CYCLES = USE_CPU and os.environ.get('BENCH_METRIC', 'cpu') == 'cycles'
 best = cpu if USE_CPU else wall
 
 rows = collections.defaultdict(list)
@@ -71,7 +74,7 @@ if base_stage not in rows:
 base, base_se = stats(rows[base_stage])
 nv = max(len(v) for v in rows.values())
 
-print("%-12s %10s %10s %12s" % ("stage", "ms", "vs cell", "+/- (1 SE)"))
+print("%-12s %10s %10s %12s" % ("stage", "Mcyc" if CYCLES else "ms", "vs cell", "+/- (1 SE)"))
 for st in order:
     if st not in rows:
         continue
@@ -88,7 +91,7 @@ print()
 print("%s, cell width %s: mean over %d layout variant(s), each the"
       % (name, width, nv))
 print("minimum of %s rounds of %s; minimum startup subtracted per binary."
-      % (reps, "CPU TIME" if USE_CPU else "wall clock"))
+      % (reps, "CPU CYCLES" if CYCLES else "CPU TIME" if USE_CPU else "wall clock"))
 
 # Which clock was steadier here, averaged over binaries. On a quiet
 # machine the two are alike; on a loaded one CPU time should win,

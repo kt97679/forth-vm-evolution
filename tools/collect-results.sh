@@ -264,9 +264,17 @@ def table(width):
     return '\n'.join(lines)
 
 
+# Measured in cycles? report.py says so in each result file - read from
+# the files, not from the environment, so a report assembled later from
+# the same results still says what they are.
+import glob as _glob
+CYCLES = any('CPU CYCLES' in open(f, encoding='latin-1').read()
+             for f in _glob.glob(os.path.join(R, '*-*.txt')))
+UNIT = 'Mcycles' if CYCLES else 'ms'
+
 def abstable(width):
     data = {b: read(b, width) for b in WORK}
-    lines = ['| stage | ' + ' | '.join(w + ' ms' for w in WORK) + ' |',
+    lines = ['| stage | ' + ' | '.join(w + ' ' + UNIT for w in WORK) + ' |',
              '|' + '---|' * (len(WORK) + 1)]
     for s in STAGES:
         cells = []
@@ -305,7 +313,12 @@ out.append('by five or ten, and on this project the cell-engine BASELINE -')
 out.append('which divides every ratio below - had the widest spread of all')
 out.append('at 12.6%. Averaging runs cannot remove a constant; averaging')
 out.append('builds can, and the ± includes what is left.\n')
-out.append('Ratios travel between machines; absolute milliseconds do not.\n')
+out.append('Ratios travel between machines; absolute %s do not.\n'
+           % ('cycle counts' if CYCLES else 'milliseconds'))
+if CYCLES:
+    out.append('Measured in CPU CYCLES, user space, from the hardware counters')
+    out.append('(tools/cputime.c): independent of clock frequency, so of boost,')
+    out.append('throttling and the governor - not in CPU time.\n')
 
 # Carry the layout-variant count into the saved report. tools/agree.py
 # needs it: a standard error from N builds has N-1 degrees of freedom,

@@ -236,3 +236,28 @@ from a neighbour - that makes us take more cycles, not fewer - and it
 does nothing about per-build layout bias, which is what LAYOUTS is for.
 On a quiet single-CPU box the two clocks have the same spread; the
 difference should show on a busy one.
+
+CPU time also does nothing about the clock speed while the process runs.
+Boost, heat and the governor all change it, so the same work takes a
+different number of CPU seconds - and a governor that ramps up slowly
+penalises short runs most, which here means the SPN systems. So
+`tools/cputime.c` also reads the hardware counters where it can: user-space
+cycles, which do not depend on the clock, and instructions, which are
+deterministic. Two settings use them:
+
+- `BENCH_METRIC=cycles` makes the stage harness measure cycles instead of
+  CPU time. The reports say so ("CPU CYCLES", "Mcyc"); a run with no
+  cycle count makes the whole table fall back to wall clock, never a
+  mixture. `tools/spn-bench.py` records all three whenever it can, and
+  compares the CPU-time ratios with the cycle ratios.
+- `BENCH_CPU=N` pins to core N instead of 0, which often takes more
+  interrupts.
+
+`tools/bench-laptop.sh` sets both: cycles if the counters can be read,
+and the core that is quietest when the run starts, counting its SMT
+sibling. Reading the counters needs `kernel.perf_event_paranoid` at 2 or
+below (Ubuntu ships 4), so the script lowers it for the run and restores
+it however the run ends; `CHECK=1` runs just those checks. Cycles still
+count a busy SMT sibling or a neighbour filling the cache - they make the
+work itself slower - so a heavily used machine still costs precision,
+and the sweeps' agreement check still decides whether it cost too much.

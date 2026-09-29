@@ -62,7 +62,9 @@ bench_init() {
     # Pin to one CPU where possible: a migration costs a cold cache and
     # shows up as a slow round.
     PIN=""
-    command -v taskset >/dev/null 2>&1 && PIN="taskset -c 0"
+    # BENCH_CPU: the core to pin to. tools/bench-laptop.sh picks the
+    # quietest one; 0 by default, which often takes more interrupts.
+    command -v taskset >/dev/null 2>&1 && PIN="taskset -c ${BENCH_CPU:-0}"
     # CPU time when the helper is available, wall clock otherwise. Both
     # are recorded either way, so a machine can show which is steadier -
     # on a quiet single-CPU box they have the same spread, but a loaded
@@ -110,7 +112,14 @@ bench_time() {
                  ( cd "$3" && $PIN "$CPUT" "$1" "$2" < "$INPUT" >/dev/null ) 2>&1
                  t1=$(date +%s%N); } 2>&1
                echo "WALL $((t1 - t0))" )
-        cpu=$(printf '%s' "$err" | awk '/^CPUNS/{print $2}')
+        # BENCH_METRIC=cycles: the column holds cycles, not CPU ns (see
+        # tools/cputime.c); a run with no CYCLES line gives 0, and then
+        # report.py uses wall time for the whole table - never a mixture.
+        if [ "${BENCH_METRIC:-cpu}" = cycles ]; then
+            cpu=$(printf '%s' "$err" | awk '/^CYCLES/{print $2}')
+        else
+            cpu=$(printf '%s' "$err" | awk '/^CPUNS/{print $2}')
+        fi
         t0=0; t1=$(printf '%s' "$err" | awk '/^WALL/{print $2}')
         echo "${t1:-0} ${cpu:-0}"
     else

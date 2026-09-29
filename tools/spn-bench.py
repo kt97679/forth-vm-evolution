@@ -32,7 +32,9 @@ START_ROUNDS = int(sys.argv[4]) if len(sys.argv) > 4 else 40
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 W = os.path.join(O, 'work')
 CPUT = os.path.join(O, 'cputime')
-PIN = ['taskset', '-c', '0'] if shutil.which('taskset') else []
+# BENCH_CPU: the core to pin to (tools/bench-laptop.sh picks the quietest).
+CPU = os.environ.get('BENCH_CPU') or '0'   # set but empty: 0, not ''
+PIN = ['taskset', '-c', CPU] if shutil.which('taskset') else []
 SYSTEMS = ['s0-cell', 's5-cv8spec', 's6-cv8b', 's7-spn', 's8-spncv8', 's8-lazy', 's8-full']
 SPN = {'s7-spn', 's8-spncv8', 's8-lazy', 's8-full'}
 BASE = 's0-cell'
@@ -73,15 +75,19 @@ KREF = open(KIMG, 'rb').read()      # a kernel compile must reproduce this
 
 # ---- running one thing -----------------------------------------------
 def run(eng, img, name, wl=None):
-    """-> (cpu ns or None, max rss KB or None, correct?, stdout)"""
+    """-> (cpu ns or None, max rss KB or None, correct?, stdout,
+           cycles or None, instructions or None) - the last two only where
+           tools/cputime.c could open the hardware counters"""
     with open(FILES[name], 'rb') as f:
         try:
             p = subprocess.run(PIN + [CPUT, eng, img], stdin=f, cwd=W,
                                capture_output=True, timeout=600)
         except subprocess.TimeoutExpired:
-            return None, None, False, b''
+            return None, None, False, b'', None, None
     m = re.search(rb'^CPUNS (\d+)', p.stderr, re.M)
     r = re.search(rb'^MAXRSS (\d+)', p.stderr, re.M)
+    c = re.search(rb'^CYCLES (\d+)', p.stderr, re.M)
+    i = re.search(rb'^INSTR (\d+)', p.stderr, re.M)
     ok = p.returncode == 0
     wl = wl or name
     if wl == 'kernel':
@@ -89,7 +95,8 @@ def run(eng, img, name, wl=None):
         open(KIMG, 'wb').write(KREF)
     elif wl in MARK:
         ok = ok and MARK[wl] in p.stdout and not ERRS.search(p.stdout)
-    return (int(m.group(1)) if m else None), (int(r.group(1)) if r else None), ok, p.stdout
+    num = lambda x: int(x.group(1)) if x else None
+    return num(m), num(r), ok, p.stdout, num(c), num(i)
 
 def engines(s):
     out = []
@@ -121,13 +128,16 @@ for wl in ['bye'] + WORKLOADS:
         else: EXCLUDED.append((s, os.path.basename(e), wl))
 
 # ---- timing ----------------------------------------------------------
+METRICS = ('cpu', 'cyc', 'ins')        # CPU ns, cycles, instructions
 def measure(wl, rounds):
-    best = {}
+    """-> {metric: {(stage, engine): minimum over the rounds}}"""
+    best = {m: {} for m in METRICS}
     for r in range(rounds):
         order = list(GOOD[wl]); random.Random(1000 * r + len(wl)).shuffle(order)
         for s, e in order:
-            ns = run(e, image(s, e), wl)[0]
-            if ns is not None: best[(s, e)] = min(best.get((s, e), 1 << 62), ns)
+            res = run(e, image(s, e), wl)
+            for m, v in zip(METRICS, (res[0], res[4], res[5])):
+                if v is not None: best[m][(s, e)] = min(best[m].get((s, e), 1 << 62), v)
     return best
 def summary(best):
     out = {}
@@ -138,12 +148,20 @@ def summary(best):
 RAW = {}
 print('start-up, %d rounds ...' % START_ROUNDS, flush=True)
 RAW['bye'] = measure('bye', START_ROUNDS)
-START = summary(RAW['bye'])
+START = summary(RAW['bye']['cpu'])
 E2E = {}
 for wl in WORKLOADS:
     print('%s, %d rounds ...' % (wl, ROUNDS), flush=True)
     RAW[wl] = measure(wl, ROUNDS)
-    E2E[wl] = summary(RAW[wl])
+    E2E[wl] = summary(RAW[wl]['cpu'])
+# Cycles and instructions count only if every runner has them - a table
+# that mixed runners with and without would compare nothing.
+HAVE_CYC = all(RAW[w]['cyc'] and RAW[w]['cyc'].keys() == RAW[w]['cpu'].keys()
+               for w in ['bye'] + WORKLOADS)
+if HAVE_CYC:
+    START_C = summary(RAW['bye']['cyc'])
+    E2E_C = {w: summary(RAW[w]['cyc']) for w in WORKLOADS}
+    E2E_I = {w: summary(RAW[w]['ins']) for w in WORKLOADS}
 
 # ---- memory and native code (variant 0 only) --------------------------
 print('memory ...', flush=True)
@@ -209,7 +227,10 @@ L.append('    date        %s' % time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(
 L.append('    revision    %s' % (sh('cd %s && git describe --always --dirty 2>/dev/null' % ROOT) or 'n/a'))
 L.append('    kernel      %s' % sh('uname -srm'))
 L.append('    cc          %s' % sh('cc --version | head -1'))
-L.append('    cores       %s    pinned to cpu 0: %s' % (sh('nproc'), 'yes' if PIN else 'no (no taskset)'))
+L.append('    cores       %s    pinned to cpu %s' % (sh('nproc'), CPU if PIN else '- (no taskset)'))
+L.append('    counters    %s' % ('cycles and instructions (user space)' if HAVE_CYC else
+         'unavailable - CPU time only (kernel.perf_event_paranoid %s)'
+         % rd('/proc/sys/kernel/perf_event_paranoid')))
 L.append('    governor    %s' % rd('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'))
 L.append('    boost       %s' % rd('/sys/devices/system/cpu/cpufreq/boost'))
 ac = sh('cat /sys/class/power_supply/A*/online 2>/dev/null | head -1')
@@ -224,32 +245,76 @@ if EXCLUDED:
     L.append('')
 L.append('## Image size and start-up')
 L.append('')
-L.append('    stage          image bytes   start-up ms   variants: min - max')
+L.append('    stage          image bytes   start-up ms   variants: min - max' + ('    Mcycles' if HAVE_CYC else ''))
 for s in SYSTEMS:
     if s in START:
         med, lo, hi, n = START[s]
-        L.append('    %-12s %12d   %10.2f     %.2f - %.2f' % (s, os.path.getsize(IMG[s]), ms(med), ms(lo), ms(hi)))
+        L.append('    %-12s %12d   %10.2f     %.2f - %.2f' % (s, os.path.getsize(IMG[s]), ms(med), ms(lo), ms(hi))
+                 + ('%15.3f' % (START_C[s][0] / 1e6) if HAVE_CYC and s in START_C else ''))
 L.append('')
+def e2e_table(E, unit, fmt='%.2f %.3f'):
+    """One row per stage: the median over layout variants in UNIT, the
+    ratio to BASE, and - with variants - half their range in percent."""
+    L.append('    %-12s' % 'stage' + ''.join('%22s' % w for w in WORKLOADS))
+    for s in SYSTEMS:
+        if not any(s in E[w] for w in WORKLOADS): continue
+        row = '    %-12s' % s
+        for w in WORKLOADS:
+            if s in E[w] and BASE in E[w]:
+                med, lo, hi, n = E[w][s]
+                cell = fmt % (unit(med), med / E[w][BASE][0])
+                if n > 1: cell += ' +-%.0f%%' % (50.0 * (hi - lo) / med)
+                row += '%22s' % cell
+            else:
+                row += '%22s' % '-'
+        L.append(row)
+    L.append('')
+
 L.append('## End to end - CPU time, nothing subtracted')
 L.append('')
 L.append('Each cell: milliseconds, then the ratio to %s, then - with layout' % BASE)
 L.append('variants - half their range as a percentage of the median.')
 L.append('')
-hdr = '    %-12s' % 'stage' + ''.join('%22s' % w for w in WORKLOADS)
-L.append(hdr)
-for s in SYSTEMS:
-    if not any(s in E2E[w] for w in WORKLOADS): continue
-    row = '    %-12s' % s
-    for w in WORKLOADS:
-        if s in E2E[w] and BASE in E2E[w]:
-            med, lo, hi, n = E2E[w][s]
-            cell = '%.2f %.3f' % (ms(med), med / E2E[w][BASE][0])
-            if n > 1: cell += ' +-%.0f%%' % (50.0 * (hi - lo) / med)
-            row += '%22s' % cell
-        else:
-            row += '%22s' % '-'
-    L.append(row)
-L.append('')
+e2e_table(E2E, ms)
+if HAVE_CYC:
+    L.append('## End to end - cycles, nothing subtracted')
+    L.append('')
+    L.append('The same runs counted in user-space cycles: millions, then the ratio')
+    L.append('to %s. Cycles do not depend on the clock, so boost, throttling and' % BASE)
+    L.append('the governor drop out.')
+    L.append('')
+    e2e_table(E2E_C, lambda c: c / 1e6)
+    L.append('## End to end - instructions')
+    L.append('')
+    L.append('Millions of user-space instructions, then the ratio to %s.' % BASE)
+    L.append('Deterministic: the ranges show layout, not noise.')
+    L.append('')
+    e2e_table(E2E_I, lambda c: c / 1e6, '%.1f %.3f')
+    L.append('## Does CPU time agree with cycles?')
+    L.append('')
+    L.append('The CPU-time ratio minus the cycle ratio, as a percentage of the')
+    L.append('cycle ratio. Near zero, CPU time was measuring the work; a stage')
+    L.append('consistently off in one direction was run at a different clock -')
+    L.append('short runs, for instance, finishing before the governor ramps up.')
+    L.append('')
+    L.append('    %-12s' % 'stage' + ''.join('%12s' % w for w in WORKLOADS))
+    worst = 0.0
+    for s in SYSTEMS:
+        if s == BASE or not any(s in E2E[w] for w in WORKLOADS): continue
+        row = '    %-12s' % s
+        for w in WORKLOADS:
+            if s in E2E[w] and s in E2E_C[w] and BASE in E2E[w] and BASE in E2E_C[w]:
+                rt = E2E[w][s][0] / E2E[w][BASE][0]
+                rc = E2E_C[w][s][0] / E2E_C[w][BASE][0]
+                d = 100.0 * (rt - rc) / rc
+                worst = max(worst, abs(d))
+                row += '%11.1f%%' % d
+            else:
+                row += '%12s' % '-'
+        L.append(row)
+    L.append('')
+    L.append('Largest difference: %.1f%%.' % worst)
+    L.append('')
 L.append('## Memory')
 L.append('')
 L.append('Peak resident set, KB (variant 0, least of three runs):')
@@ -281,9 +346,11 @@ L.append('## Raw minima, ns')
 L.append('')
 L.append('Each runner\'s minimum; the medians and ranges above come from these.')
 L.append('')
-L.append('    workload  engine                 ns')
+L.append('    workload  engine                 ns' + ('         cycles   instructions' if HAVE_CYC else ''))
 for wl in ['bye'] + WORKLOADS:
-    for (s, e), ns in sorted(RAW[wl].items()):
-        L.append('    %-9s %-18s %12d' % (wl if wl != 'bye' else 'start-up', os.path.basename(e), ns))
+    for (s, e), ns in sorted(RAW[wl]['cpu'].items()):
+        extra = ('%15d%15d' % (RAW[wl]['cyc'][(s, e)], RAW[wl]['ins'].get((s, e), 0))
+                 if HAVE_CYC else '')
+        L.append('    %-9s %-18s %12d' % (wl if wl != 'bye' else 'start-up', os.path.basename(e), ns) + extra)
 open(OUT, 'w').write('\n'.join(L) + '\n')
 print('wrote %s in %.0f s' % (OUT, time.time() - t0))
