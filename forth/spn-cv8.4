@@ -19,6 +19,8 @@ DECIMAL
 : CFILL ( a-addr u-cells x --- )       \ fill whole cells
   >R CELLS OVER + SWAP
   BEGIN 2DUP > WHILE R@ OVER ! CELL+ REPEAT 2DROP R> DROP ;
+: BUFFER ( bytes --- a-addr )          \ on the heap, not filled
+  7 + -8 AND ALLOCATE ABORT" SPN: no memory" ;
 : TABLE ( bytes --- a-addr )           \ zeroed, on the heap
   7 + -8 AND DUP ALLOCATE ABORT" SPN: no memory"
   SWAP 3 RSHIFT OVER SWAP 0 CFILL ;
@@ -158,6 +160,11 @@ VARIABLE RCP-OFF  0 RCP-OFF !   VARIABLE RCP-LEN  0 RCP-LEN !
 VARIABLE RCP-SIG  0 RCP-SIG !
 : UV, ( u --- )  BEGIN DUP 127 U> WHILE DUP 127 AND 128 OR C, 7 RSHIFT REPEAT C, ;
 : SV, ( n --- )  DUP 0< IF INVERT 1 LSHIFT 1+ ELSE 1 LSHIFT THEN UV, ;
+VARIABLE RD
+: B@+ ( --- b )  RD @ C@  1 RD +! ;
+: UV@ ( --- u )
+  0 0 BEGIN B@+ DUP >R 127 AND OVER LSHIFT ROT OR SWAP 7 + R> 128 AND 0= UNTIL DROP ;
+: SV@ ( --- n )  UV@ DUP 1 AND IF 1 RSHIFT INVERT ELSE 1 RSHIFT THEN ;
 : RECORD-OP ( i --- )
   DUP ST-MASK ST@                                           ( i m )
   OVER  OVER 24 AND IF ARG-RELOC @ IF 64 OR THEN THEN
@@ -726,18 +733,58 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
   LOOP ;
 
 \ ---- start-up ----
+\ ---- the stencils, as scanned when the image was built ----
+\ Scanning every stencil for its holes took 0.44 ms of each start. The
+\ build now saves the result, and boot uses it only if this is the same
+\ engine: the same number of entries, the same spacing between every
+\ entry - so a rebuilt or re-laid-out engine is caught before any
+\ stencil byte is read - and the same bytes, by hash. Otherwise it scans,
+\ as before; a layout-variant engine always does.
+VARIABLE STS-OFF  0 STS-OFF !  VARIABLE STS-LEN  0 STS-LEN !
+: STENCIL-HASH ( --- h )   \ FNV-1a over every stencil's bytes
+  -3750763034362895579
+  #ENTRIES @ 3 DO
+    I ST-START ST@  I ST-LEN ST@ 0 ?DO  DUP I + C@ ROT XOR 1099511628211 * SWAP  LOOP DROP
+  LOOP ;
+: SAVE-STENCILS ( --- )   \ at build time, after the scan
+  HERE START @ - STS-OFF !
+  #ENTRIES @ UV,
+  #ENTRIES @ 1 ?DO I ENTRY 0 ENTRY - SV, LOOP
+  #ENTRIES @ 3 ?DO
+    I ST-START ST@ I ENTRY - UV,  I ST-LEN ST@ UV,  I ST-NH ST@ DUP UV,
+    0 ?DO J 8 * I + CELLS ST-HOLES @ + @ UV, LOOP
+  LOOP
+  STENCIL-HASH SV,
+  HERE START @ - STS-OFF @ - STS-LEN ! ;
+: LOAD-STENCILS ( --- f )   \ at boot: the build's scan, if the engine is the same
+  STS-LEN @ 0= IF FALSE EXIT THEN
+  STS-OFF @ START @ + RD !
+  UV@ #ENTRIES @ <> IF FALSE EXIT THEN
+  #ENTRIES @ 1 ?DO SV@ I ENTRY 0 ENTRY - <> IF FALSE UNLOOP EXIT THEN LOOP
+  #ENTRIES @ 3 ?DO
+    UV@ I ENTRY + I ST-START ST!  UV@ I ST-LEN ST!  UV@ DUP I ST-NH ST!
+    0 ?DO UV@ DUP J 8 * I + CELLS ST-HOLES @ + !
+          7 AND 1 SWAP LSHIFT J ST-MASK ST@ OR J ST-MASK ST! LOOP
+  LOOP
+  SV@ STENCIL-HASH = ;
 : SPN-INIT ( --- )
   SPN-TABLE #ENTRIES ! ENTRIES !
   0 ENTRY M-NEXT !  1 ENTRY M-JUMP !  2 ENTRY M-CALL !
   SPN-ENGINE DROP INTERP-FN ! RP-ADDR !
   MAX-STENCILS CELLS DUP TABLE ST-START !  DUP TABLE ST-LEN !  TABLE ST-NH !
   MAX-STENCILS 8 * CELLS TABLE ST-HOLES !  MAX-STENCILS CELLS TABLE ST-MASK !
-  MAX-BYTES CELLS DUP TABLE C-NAT !  TABLE C-DEP !
-  C-DEP @ MAX-BYTES -1 CFILL  0 HWM !
-  MAX-BYTES CELLS TABLE EXP-DEP !  EXP-DEP @ MAX-BYTES -1 CFILL  0 EHWM !
-  512 CELLS TABLE FIXUPS !  128 CELLS DUP TABLE TGTS !  TABLE CALLS !
+  \ The big tables unfilled: nothing reads C-NAT, FIXUPS, TGTS or CALLS
+  \ before writing them, and the first VALIDATE fills C-DEP and EXP-DEP -
+  \ their high-water marks start at the top. With recipes, no VALIDATE
+  \ runs at boot at all.
+  MAX-BYTES CELLS DUP BUFFER C-NAT !  DUP BUFFER C-DEP !  BUFFER EXP-DEP !
+  MAX-BYTES HWM !  MAX-BYTES EHWM !
+  512 CELLS BUFFER FIXUPS !  128 CELLS DUP BUFFER TGTS !  BUFFER CALLS !
   80 CELLS TABLE PMAP !  PRIMBODY-AREA PRIMBODY !
-  #ENTRIES @ 3 DO I SCAN-STENCIL LOOP
+  LOAD-STENCILS 0= IF
+    ST-MASK @ MAX-STENCILS 0 CFILL          \ no stale bits from a failed load
+    #ENTRIES @ 3 DO I SCAN-STENCIL LOOP
+  THEN
   INIT-PMAP INIT-PRIMBODY
   DO-OFF START @ + DO-XT !         QDO-OFF START @ + QDO-XT !
   LOOP-OFF START @ + LOOP-XT !     PLOOP-OFF START @ + PLOOP-XT !
@@ -773,11 +820,6 @@ VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
   0 ?DO RECURSE LOOP
   R> TRY-TRANSLATE ;
 \ ---- replaying recipes ----
-VARIABLE RD
-: B@+ ( --- b )  RD @ C@  1 RD +! ;
-: UV@ ( --- u )
-  0 0 BEGIN B@+ DUP >R 127 AND OVER LSHIFT ROT OR SWAP 7 + R> 128 AND 0= UNTIL DROP ;
-: SV@ ( --- n )  UV@ DUP 1 AND IF 1 RSHIFT INVERT ELSE 1 RSHIFT THEN ;
 : REPLAY-WORD ( --- )
   UV@ START @ + T-SRC !
   CODE-HERE @ 15 + -16 AND CODE-HERE !  CODE-HERE @ T-NAT !  0 #FIX !
@@ -881,7 +923,7 @@ VARIABLE TRANSLATING  0 TRANSLATING !
 : STENCIL-SIG ( --- h )  #ENTRIES @  #ENTRIES @ 3 DO 31 * I ST-MASK ST@ + LOOP ;
 \ At image build time: translate once, recording, then undo every patch.
 : SPN-RECORD ( --- )
-  SPN-INIT
+  SPN-INIT  SAVE-STENCILS
   4096 2 * CELLS TABLE UNDO !  0 #UNDO !
   HERE START @ - RCP-OFF !  TRUE RECORDING !
   TRANSLATE-BOOT
@@ -891,10 +933,15 @@ VARIABLE TRANSLATING  0 TRANSLATING !
 \ At image build time, on demand: recipes for the translator only - the
 \ replayer, then what translating and translating on demand need - and
 \ a list of every other word that would translate.
+\ QUIT runs REFILL and INTERPRET; recording them too makes the outer
+\ interpreter's words - FIND, WORD, NUMBER?, ACCEPT - replayed at boot
+\ rather than translated on demand the moment the first line is read.
+' REFILL       START @ - CONSTANT RF-OFF
+' INTERPRET    START @ - CONSTANT INT-OFF
 ' LAZY-GO      START @ - CONSTANT LG-OFF
 ' LAZY-CALLEES START @ - CONSTANT LC-OFF
 : SPN-RECORD-LAZY ( --- )
-  SPN-INIT
+  SPN-INIT  SAVE-STENCILS
   4096 2 * CELLS TABLE UNDO !  0 #UNDO !
   BUILD-MARKS  HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
   HERE START @ - RCP-OFF !  TRUE RECORDING !
@@ -902,6 +949,7 @@ VARIABLE TRANSLATING  0 TRANSLATING !
   CM-OFF START @ + TRANSLATE-TREE  ES-OFF START @ + TRANSLATE-TREE
   VA-OFF START @ + TRANSLATE-TREE  LG-OFF START @ + TRANSLATE-TREE
   LC-OFF START @ + TRANSLATE-TREE
+  RF-OFF START @ + TRANSLATE-TREE  INT-OFF START @ + TRANSLATE-TREE
   FALSE RECORDING !
   HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
   HERE START @ - LZ-OFF !  LIST-LAZY  HERE START @ - LZ-OFF @ - LZ-LEN !

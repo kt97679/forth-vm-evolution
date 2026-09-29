@@ -585,3 +585,57 @@ record the interpreter's own words with the translator.
 The on-demand machinery is in every s8 image, and grew them: s8-spncv8
 38,130 -> 40,096 bytes, s8-full 23,370 -> 24,538.
 
+## Start-up
+
+Measured before changing anything - s8's 2.61 ms start:
+
+    the engine and kernel, to BYE           0.75 ms
+    SPN-INIT                                0.58    of which scanning
+                                                    the stencils: 0.44
+    replaying the recipes                   ~1.28
+
+Replay, word by word (a no-boot image replaying the first N words):
+19.4 us a word for the first ten, 9.0 and 5.8 for the next twenties,
+then 3.8 from word 60 on. The replayer runs interpreted until its own
+recipes - first in the list, callees first - are in place; after that
+even native replay costs 3.8 us a word, about 0.8 ms in all. Every word
+on the replay path is native; rebuilding 92 KB of native code simply
+costs that much.
+
+Three changes:
+
+- **The stencil scan is saved when the image is built** - 299 bytes: each
+  stencil's start, length and holes. Boot uses it only on the same
+  engine: the same entry count, the same spacing between every entry -
+  which catches a rebuilt or re-laid-out engine before any stencil byte
+  is read - and the same bytes, by an FNV-1a hash. Otherwise it scans.
+  A layout-variant engine therefore always scans, 0.44 ms more than
+  variant 0; the harness subtracts each binary's own start-up, so its
+  net figures are unaffected.
+- **The big translator tables are allocated unfilled.** Nothing reads
+  C-NAT, FIXUPS, TGTS or CALLS before writing them, and the first
+  VALIDATE fills C-DEP and EXP-DEP - with recipes, none runs at boot.
+- **s8-lazy records the outer interpreter with the translator**: QUIT
+  runs REFILL and INTERPRET, and their words - FIND, WORD, NUMBER?,
+  ACCEPT - were being translated on demand the moment the first line
+  was read. Now replayed: 26 words fewer on the on-demand list.
+
+Same session, development VM, one build:
+
+                  start-up before   now      image
+    s8-spncv8     2.61              2.18 ms  41,604 bytes
+    s8-lazy       2.63              1.85     34,796
+    s8-full       8.75              8.81     25,226   (scans; unchanged)
+
+    end to end    s8-spncv8   s8-lazy    (ratio to s0-cell)
+    kernel        0.332       0.331
+    fib           0.208       0.214
+    corpus        0.364       0.375
+    parse         0.242       0.232
+
+s8-lazy now has the fastest start-up and the smallest image of the SPN
+variants, and runs within 3% of s8 on every workload. What remains of
+start-up is mostly native replay, 3.8 us a word; the likeliest target
+in it is CMOVE, a byte-at-a-time Forth loop even when native, which
+copies every stencil.
+
