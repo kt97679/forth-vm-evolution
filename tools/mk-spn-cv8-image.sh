@@ -24,21 +24,32 @@ engine() {  # engine SUFFIX FLAGS - the one place these flags are written
        "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c"
     cp "$O/s8-spncv8-64$1" "$O/s8-full-64$1"; cp "$O/s8-spncv8-64$1" "$O/s8-lazy-64$1"
 }
-if [ "${2:-}" = --engine ]; then engine "$3" "$4"; exit 0; fi
-engine "" ""
 # Two variants, as for s7: s8-spncv8 carries recipes - the translation
 # recorded once here and replayed at boot - and s8-full translates in
 # full at every boot. Same engine, same native code.
-build() {  # build NAME RECORD-WORD
-    rm -f "$W/$1-s64.img"
-    ( cd "$W" && printf 'S" %s/forth/spn-cv8.4" INCLUDED\nS" %s/forth/spn-cv8-build.4" INCLUDED\nS" %s/forth/spn-cv8-save.4" INCLUDED\n%s\n'"' SPN-BOOT SET-BOOT\nS\" %s-s64.img\" SPN-SAVE\nBYE\n" \
-          "$ROOT" "$ROOT" "$ROOT" "$2" "$1" | "$O/s8-spncv8-64" "$O/s6-cv8b-s64.img" >/dev/null 2>&1 )
-    [ -s "$W/$1-s64.img" ] || { echo "failed to save $1-s64.img"; exit 1; }
-    cp "$W/$1-s64.img" "$O/$1-s64.img"
-    echo "built  $1 ($(wc -c < "$O/$1-s64.img") bytes)"
+build() {  # build NAME RECORD-WORD [ENGINE-SUFFIX]
+    rm -f "$W/$1-s64$3.img"
+    ( cd "$W" && printf 'S" %s/forth/spn-cv8.4" INCLUDED\nS" %s/forth/spn-cv8-build.4" INCLUDED\nS" %s/forth/spn-cv8-save.4" INCLUDED\n%s\n'"' SPN-BOOT SET-BOOT\nS\" %s-s64%s.img\" SPN-SAVE\nBYE\n" \
+          "$ROOT" "$ROOT" "$ROOT" "$2" "$1" "$3" | "$O/s8-spncv8-64$3" "$O/s6-cv8b-s64.img" >/dev/null 2>&1 )
+    [ -s "$W/$1-s64$3.img" ] || { echo "failed to save $1-s64$3.img"; exit 1; }
+    cp "$W/$1-s64$3.img" "$O/$1-s64$3.img"
+    [ -n "$3" ] || echo "built  $1 ($(wc -c < "$O/$1-s64.img") bytes)"
 }
-build s8-spncv8 SPN-RECORD
-build s8-full   ""
+# A layout variant of the engine gets images of its own: an image records
+# the stencils of the engine it was built with, and on any other engine it
+# must scan them again at every start - 0.4 ms that no real build pays,
+# since a real image is always built with its own engine. Sharing one
+# image across variants put that cost on every variant but the first,
+# and into the layout study's spread. s8-full keeps no such record.
+if [ "${2:-}" = --engine ]; then
+    engine "$3" "$4"
+    build s8-spncv8 SPN-RECORD "$3"
+    build s8-lazy   SPN-RECORD-LAZY "$3"
+    exit 0
+fi
+engine "" ""
+build s8-spncv8 SPN-RECORD ""
+build s8-full   "" ""
 # On demand: recipes for the translator only; every other word marked
 # at boot and translated the first time it is called.
-build s8-lazy   SPN-RECORD-LAZY
+build s8-lazy   SPN-RECORD-LAZY ""

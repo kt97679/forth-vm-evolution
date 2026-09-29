@@ -98,6 +98,13 @@ def engines(s):
         if os.access(e, os.X_OK): out.append(e)
     return out
 IMG = {s: os.path.join(O, '%s-s64.img' % s) for s in SYSTEMS}
+def image(s, e):
+    """The image a runner uses: a variant engine's own, if it has one - an
+    s8 image records the stencils of the engine it was built with - else
+    the stage's."""
+    v = os.path.basename(e)[len(s) + 3:]
+    own = os.path.join(O, '%s-s64%s.img' % (s, v))
+    return own if v and os.path.exists(own) else IMG[s]
 RUNNERS = [(s, e) for s in SYSTEMS if os.path.exists(IMG[s]) for e in engines(s)]
 if not RUNNERS:
     sys.exit('no stages built in %s' % O)
@@ -110,7 +117,7 @@ GOOD = {}
 for wl in ['bye'] + WORKLOADS:
     GOOD[wl] = []
     for s, e in RUNNERS:
-        if run(e, IMG[s], wl)[2]: GOOD[wl].append((s, e))
+        if run(e, image(s, e), wl)[2]: GOOD[wl].append((s, e))
         else: EXCLUDED.append((s, os.path.basename(e), wl))
 
 # ---- timing ----------------------------------------------------------
@@ -119,7 +126,7 @@ def measure(wl, rounds):
     for r in range(rounds):
         order = list(GOOD[wl]); random.Random(1000 * r + len(wl)).shuffle(order)
         for s, e in order:
-            ns = run(e, IMG[s], wl)[0]
+            ns = run(e, image(s, e), wl)[0]
             if ns is not None: best[(s, e)] = min(best.get((s, e), 1 << 62), ns)
     return best
 def summary(best):
@@ -145,7 +152,7 @@ for s in SYSTEMS:
     if not os.path.exists(IMG[s]) or not engines(s): continue
     e = engines(s)[0]
     for wl in ['bye'] + WORKLOADS:
-        vals = [run(e, IMG[s], wl)[1] for _ in range(3)]
+        vals = [run(e, image(s, e), wl)[1] for _ in range(3)]
         vals = [v for v in vals if v]
         if vals: RSS[(s, wl)] = min(vals)
 def classify(out, eng):
@@ -174,12 +181,12 @@ for s in SYSTEMS:
     if not os.path.exists(IMG[s]) or not engines(s): continue
     e = engines(s)[0]
     for wl in ('bye', 'corpus'):
-        c = classify(run(e, IMG[s], 'smaps-' + wl, 'x')[3], e)
+        c = classify(run(e, image(s, e), 'smaps-' + wl, 'x')[3], e)
         if c: SM[(s, wl)] = c
     if s in SPN:
         for wl in ('bye', 'fib', 'parse', 'corpus'):
             # The engine's CR is \r\n: strip the \r before matching a line.
-            out = run(e, IMG[s], 'native-' + wl, 'x')[3].decode('latin-1').replace('\r', '')
+            out = run(e, image(s, e), 'native-' + wl, 'x')[3].decode('latin-1').replace('\r', '')
             m = re.findall(r'^(\d+) (\d+) *$', out, re.M)
             if m: NAT[(s, wl)] = (int(m[-1][0]), int(m[-1][1]))
 shutil.rmtree(T, ignore_errors=True)

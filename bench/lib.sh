@@ -83,7 +83,12 @@ bench_runners() {
         [ -r "$O/$s-s$WIDTH.img" ] || continue
         for e in "$O/$s-$WIDTH" "$O/$s-$WIDTH"-v*; do
             [ -x "$e" ] || continue
-            printf '%s\t%s\t%s\t%s\n' "$s" "$e" "$O/$s-s$WIDTH.img" "$W"
+            # A variant engine may come with an image of its own, built
+            # with it (the s8 SPN stages: an image records its engine's
+            # stencils); otherwise every variant runs the stage's image.
+            img="$O/$s-s$WIDTH.img"; v=${e##*-$WIDTH}
+            [ -n "$v" ] && [ -r "$O/$s-s$WIDTH$v.img" ] && img="$O/$s-s$WIDTH$v.img"
+            printf '%s\t%s\t%s\t%s\n' "$s" "$e" "$img" "$W"
         done
     done
     if [ "${BENCH_SOD32:-0}" = 1 ] && [ "$WIDTH" = 32 ] \

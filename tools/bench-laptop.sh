@@ -61,6 +61,8 @@ TAG="${TAG:-unknown}-$(uname -m)"
 echo "   results will be tagged '$TAG'"
 
 mkdir -p "$O" "$LOG"
+# Everything this run writes is newer than this; only that is packed.
+STAMP=$LOG/.started; touch "$STAMP"; sleep 1
 
 # ---- 1. build ------------------------------------------------------------
 say "1/5 building every stage, $LAYOUTS layout(s) each"
@@ -90,8 +92,14 @@ say "5/5 packing"
 cp /proc/cpuinfo "$LOG/cpuinfo.txt" 2>/dev/null
 { uname -a; cc --version | head -1; git describe --always --dirty 2>/dev/null; } > "$LOG/host.txt"
 ARCH=$LOG/bench-$TAG-$(date +%Y%m%d-%H%M).tar.gz
-tar czf "$ARCH" results/"$TAG"-run*.md "results/spn-$TAG.md" \
-    build/bench-laptop/*.log build/bench-laptop/*.txt build/results/*.txt build/sizes*.csv 2>/dev/null
+# Only what this run wrote. A pattern alone swept in results/*-run2.md
+# from a sweep sixteen days older, and stale files in build/results.
+FILES=$( { find results build/results build/bench-laptop -maxdepth 1 -type f -newer "$STAMP" \
+              \( -name '*.md' -o -name '*.txt' -o -name '*.log' \)
+            find build -maxdepth 1 -type f -newer "$STAMP" -name 'sizes*.csv'; } | sort)
+tar czf "$ARCH" $FILES
+OLD=$(find results/"$TAG"-run*.md build/results -maxdepth 1 -type f ! -newer "$STAMP" 2>/dev/null | sort)
+[ -n "$OLD" ] && echo "   not packed, older than this run: $(echo $OLD)"
 echo "   results:  results/$TAG-run*.md (stage tables), results/spn-$TAG.md"
 echo "   archive:  $ARCH"
 printf '\ndone in %d min - send the archive back.\n' $(( ($(date +%s) - T0 + 59) / 60 ))
