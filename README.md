@@ -20,8 +20,20 @@ several layouts first - see below.
 
 ## Measure
 
+    tools/bench-laptop.sh              # everything below, then packed to send
+
+or step by step:
+
     LAYOUTS=5 tools/build-stages.sh    # five builds of each engine
     tools/collect-results.sh sweep 2   # measure twice, save, compare
+    tools/spn-bench.py build results/spn-HOST.md   # SPN: start-up, end to
+                                       # end, memory - not in the sweep
+
+`tools/bench-laptop.sh` stops at the first failure - nothing is measured
+unless every test passes - warns about what makes a laptop noisy
+(governor, battery, load), and packs the results and logs into one
+archive under `build/bench-laptop/`. `QUICK=1` runs the whole pipeline
+in a few minutes, without error bars, as a check before the real run.
 
 `sweep N` runs everything N times, saves each under a name taken from
 this machine's CPU, and finishes by checking whether the runs agree
