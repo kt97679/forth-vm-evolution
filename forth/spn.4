@@ -1,0 +1,240 @@
+\ spn.4 - SPN: Stencil-Patched Native.
+\
+\ Turns a Forth word into native code by copying machine-code STENCILS
+\ out of the running engine and patching their holes. The engine
+\ (engine/spn.c) contributes only the stencils and three primitives;
+\ reading, verifying, copying and patching all happen here, in Forth.
+\
+\ Load on the SPN engine:  build/spn-64 build/s0-cell-s64.img
+\ This first version knows x86-64 only - see ARCH below.
+
+DECIMAL
+
+\ Not in this kernel.
+: NIP ( x1 x2 --- x2 )  SWAP DROP ;
+
+\ ---- the three primitives the engine adds past the kernel's own ----
+\ The kernel does not declare them, so they are compiled as raw tokens:
+\ a primitive in the cell image is simply  index CELLS 1+ .
+: SPN-TABLE [ 68 CELLS 1+ , ] ;   ( --- a-addr n )
+: SPN-EXEC  [ 69 CELLS 1+ , ] ;   ( u --- a-addr )
+: SPN-CALL  [ 70 CELLS 1+ , ] ;   ( i*x a-addr --- j*x )
+
+SPN-TABLE CONSTANT #ENTRIES  CONSTANT ENTRIES
+: ENTRY ( i --- a-addr )  CELLS ENTRIES + @ ;
+
+\ Entries 0-2 are the markers: never run, only their ADDRESSES matter.
+0 ENTRY CONSTANT M-NEXT   \ "continue with the next operation"
+1 ENTRY CONSTANT M-JUMP   \ a branch target
+2 ENTRY CONSTANT M-CALL   \ a call to another native word
+
+\ The stencils, by their position in engine/spn-stencils.c's table.
+ 3 CONSTANT S-LIT     4 CONSTANT S-DUP     5 CONSTANT S-DROP
+ 6 CONSTANT S-SWAP    7 CONSTANT S-OVER    8 CONSTANT S-ROT
+ 9 CONSTANT S-PLUS   10 CONSTANT S-ADDI   11 CONSTANT S-EQ
+12 CONSTANT S-GT     13 CONSTANT S-LT     14 CONSTANT S-XOR
+15 CONSTANT S-AND    16 CONSTANT S-NEGATE 17 CONSTANT S-0BRANCH
+18 CONSTANT S-BRANCH 19 CONSTANT S-CALL   20 CONSTANT S-EXIT
+21 CONSTANT S-ADDI32 22 CONSTANT S-DUP-GTI-BR
+
+\ ---- ARCH: everything this file knows about x86-64 ----
+6818992301515038369 CONSTANT IMM-MARK  \ SPN_IMM_VALUE, an 8-byte immediate
+1008361079 CONSTANT IMM32-MARK         \ IMM32, folded into the instruction
+233 CONSTANT OP-JMP                    \ E9: jmp rel32
+195 CONSTANT OP-RET                    \ C3: ret
+\ endbr64 = F3 0F 1E FA, which CET-enabled compilers put first. Skipped.
+: ENDBR? ( a --- f )
+  DUP C@ 243 = OVER 1+ C@ 15 = AND
+  OVER 2 + C@ 30 = AND SWAP 3 + C@ 250 = AND ;
+
+\ Little-endian 32-bit access, and the one test every hole relies on.
+: L@ ( a --- u )
+  DUP C@  OVER 1+ C@ 8 LSHIFT OR
+  OVER 2 + C@ 16 LSHIFT OR  SWAP 3 + C@ 24 LSHIFT OR ;
+: SL@ ( a --- n )  L@ DUP 2147483648 AND IF 4294967296 - THEN ;
+: L! ( u a --- )
+  OVER 255 AND OVER C!  OVER 8 RSHIFT 255 AND OVER 1+ C!
+  OVER 16 RSHIFT 255 AND OVER 2 + C!  SWAP 24 RSHIFT 255 AND SWAP 3 + C! ;
+\ Does the 32-bit relative field at a point at target? Exact: a stray
+\ byte pattern would also have to encode precisely this distance.
+: REL-TO? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
+
+\ ---- reading a stencil ----
+\ Where it starts (after any endbr64) and where the next function
+\ begins, which bounds the search for its end.
+: ST-SRC ( i --- a )  ENTRY DUP ENDBR? IF 4 + THEN ;
+VARIABLE LOWER
+: BOUND ( i --- a )   \ the nearest entry above this one, or +64
+  \ (No R@ in here: inside DO ... LOOP it reads the loop index.)
+  ENTRY DUP LOWER !  64 +
+  #ENTRIES 0 DO
+    I ENTRY                        ( best e )
+    LOWER @ OVER <                 ( best e above? )
+    OVER 3 PICK <                  ( best e above? nearer? )
+    AND IF NIP ELSE DROP THEN
+  LOOP ;
+
+\ The body ends after its last jump to NEXT or JUMP - or at the first
+\ RET, for EXIT. Everything past that is alignment padding.
+: BODY-END ( i --- a )
+  DUP S-EXIT = IF
+    ST-SRC BEGIN DUP C@ OP-RET <> WHILE 1+ REPEAT 1+ EXIT
+  THEN
+  DUP ST-SRC SWAP BOUND  OVER  ( lo hi end )
+  ROT ROT SWAP DO
+    I C@ OP-JMP = IF
+      I 1+ M-NEXT REL-TO?  I 1+ M-JUMP REL-TO? OR IF DROP I 5 + THEN
+    THEN
+  LOOP ;
+: BODY-LEN ( i --- n )  DUP BODY-END SWAP ST-SRC - ;
+
+\ Does it end in "jmp NEXT"? Then that jump can be dropped and the next
+\ stencil placed right after it, so control simply falls through.
+: TAIL-NEXT? ( i --- f )
+  DUP BODY-END 5 -  DUP C@ OP-JMP =  SWAP 1+ M-NEXT REL-TO? AND
+  SWAP S-EXIT <> AND ;
+
+\ ---- a report, to check all of the above against the disassembly ----
+: HOLES. ( i --- )
+  DUP ST-SRC  SWAP BODY-END OVER - 3 - 0 MAX 0 ?DO
+    DUP I + M-NEXT REL-TO? IF ."  next@" I . THEN
+    DUP I + M-JUMP REL-TO? IF ."  jump@" I . THEN
+    DUP I + M-CALL REL-TO? IF ."  call@" I . THEN
+    DUP I + @ IMM-MARK =   IF ."  imm@"  I . THEN
+    DUP I + L@ IMM32-MARK = IF ."  imm32@" I . THEN
+  LOOP DROP ;
+: STENCILS. ( --- )
+  #ENTRIES 3 DO
+    CR I . ."  len " I BODY-LEN .
+    I TAIL-NEXT? IF ."  falls-through" ELSE ."  keeps-tail  " THEN
+    I HOLES.
+  LOOP CR ;
+
+\ ---- the code buffer ----
+65536 CONSTANT CODE-SIZE
+VARIABLE CODE-BASE  VARIABLE CODE-HERE
+: CODE-INIT ( --- )
+  CODE-SIZE SPN-EXEC DUP 0= ABORT" SPN: no executable memory"
+  DUP CODE-BASE ! CODE-HERE ! ;
+
+\ Point the 32-bit relative field at a to target.
+: REL! ( target a --- )  DUP >R 4 + - R> L! ;
+
+\ ---- emitting one stencil ----
+\ What the stencil's holes should be filled with, set before emitting.
+VARIABLE ARG-IMM   VARIABLE ARG-CALL   VARIABLE ARG-JUMP
+\ Branches are resolved once the whole word is laid out: each entry is
+\ the native address of a jump field and the SOURCE address it targets.
+CREATE FIXUPS 1024 CELLS ALLOT   VARIABLE #FIX
+: FIX, ( native src --- )
+  #FIX @ 2 * CELLS FIXUPS +  DUP >R CELL+ !  R> !  1 #FIX +! ;
+
+VARIABLE E-SRC  VARIABLE E-LEN  VARIABLE E-DST
+: EMIT-STENCIL ( i --- )
+  DUP ST-SRC E-SRC !
+  DUP BODY-LEN  SWAP TAIL-NEXT? IF 5 - THEN  E-LEN !
+  CODE-HERE @ E-DST !
+  E-SRC @ E-DST @ E-LEN @ CMOVE
+  E-LEN @ 0 ?DO
+    \ Every hole is found in the ORIGINAL, where the relative fields
+    \ still point at the markers, and patched in the copy.
+    E-SRC @ I + M-NEXT REL-TO? IF  E-DST @ E-LEN @ +  E-DST @ I + REL!  THEN
+    E-SRC @ I + M-CALL REL-TO? IF  ARG-CALL @         E-DST @ I + REL!  THEN
+    E-SRC @ I + M-JUMP REL-TO? IF  E-DST @ I +  ARG-JUMP @ FIX,  THEN
+  LOOP
+  E-LEN @ 8 < 0= IF
+    E-LEN @ 7 - 0 ?DO
+      E-SRC @ I + @ IMM-MARK = IF  ARG-IMM @ E-DST @ I + !  THEN
+    LOOP
+  THEN
+  E-LEN @ 4 < 0= IF
+    E-LEN @ 3 - 0 ?DO
+      E-SRC @ I + L@ IMM32-MARK = IF
+        ARG-IMM @ 4294967295 AND  E-DST @ I + L!
+      THEN
+    LOOP
+  THEN
+  E-LEN @ CODE-HERE +! ;
+
+\ ---- which stencil implements which primitive ----
+\ Indices are the kernel's PRIMITIVE order, which is authoritative: the
+\ engine's own labels misname at least one (its "gt" implements <).
+CREATE PMAP 32 CELLS ALLOT   PMAP 32 CELLS 255 FILL   \ all -1: none
+: PM! ( stencil prim --- )  CELLS PMAP + ! ;
+S-DROP 5 PM!   S-DUP 6 PM!    S-SWAP 7 PM!   S-ROT 8 PM!   S-OVER 9 PM!
+S-AND 14 PM!   S-XOR 16 PM!   S-EQ 20 PM!    S-LT 22 PM!   S-PLUS 23 PM!
+S-NEGATE 24 PM!
+: PRIM>ST ( prim --- stencil | -1 )  DUP 32 < IF CELLS PMAP + @ ELSE DROP -1 THEN ;
+: TOKEN ( cell --- prim )  1- 3 RSHIFT ;     \ 8-byte cells: index*8+1
+23 CELLS 1+ CONSTANT TOK-PLUS
+ 2 CELLS 1+ CONSTANT TOK-LIT
+22 CELLS 1+ CONSTANT TOK-LT
+ 4 CELLS 1+ CONSTANT TOK-0BRANCH
+: INT32? ( n --- f )  DUP -2147483648 < 0=  SWAP 2147483647 > 0= AND ;
+
+\ ---- where each source cell landed, for resolving branches ----
+CREATE SMAP 2048 CELLS ALLOT   VARIABLE #SMAP   VARIABLE FOUND
+: SMAP, ( src native --- )
+  #SMAP @ 2 * CELLS SMAP +  DUP >R CELL+ !  R> !  1 #SMAP +! ;
+: SMAP@ ( src --- native | 0 )
+  0 FOUND !
+  #SMAP @ 0 ?DO
+    I 2 * CELLS SMAP +  DUP @ 2 PICK = IF CELL+ @ FOUND ! ELSE DROP THEN
+  LOOP DROP FOUND @ ;
+
+\ ---- translating one word ----
+VARIABLE T-SRC   VARIABLE T-NAT   VARIABLE T-FAR
+\ Each step translates the cell at a and leaves ( next-a done? ).
+: T-EXIT ( a --- a' f )
+  S-EXIT EMIT-STENCIL
+  \ Finished at an EXIT no forward branch jumps past.
+  DUP T-FAR @ < 0=  SWAP CELL+ SWAP ;
+: T-LIT ( a --- a' f )
+  DUP CELL+ @ ARG-IMM !
+  \ LIT n followed by + becomes one add-immediate. (Safe here only
+  \ because nothing branches to that +; a general version must check.)
+  DUP 2 CELLS + @ TOK-PLUS = IF
+    ARG-IMM @ INT32? IF S-ADDI32 ELSE S-ADDI THEN
+    EMIT-STENCIL 3 CELLS +
+  ELSE
+    S-LIT EMIT-STENCIL 2 CELLS +
+  THEN 0 ;
+: T-BRANCH ( a stencil --- a' f )
+  >R  DUP CELL+ DUP @ +  DUP ARG-JUMP !  T-FAR @ MAX T-FAR !
+  R> EMIT-STENCIL  2 CELLS + 0 ;
+: T-CALL ( a cell --- a' f )
+  OVER CELL+ +  T-SRC @ = 0= ABORT" SPN: only calls to itself, so far"
+  T-NAT @ ARG-CALL !  S-CALL EMIT-STENCIL  CELL+ 0 ;
+\ DUP LIT n < ?BRANCH  becomes one compare-and-branch, with n-1 patched
+\ in (see st_dup_gti_br). Six cells, one stencil. The general version
+\ must also check nothing branches into the middle of the six.
+: DUP-LT-IF? ( a --- f )
+  DUP CELL+ @ TOK-LIT =  OVER 3 CELLS + @ TOK-LT = AND
+  OVER 4 CELLS + @ TOK-0BRANCH = AND  SWAP 2 CELLS + @ 1- INT32? AND ;
+: T-DUP-LT-IF ( a --- a' f )
+  DUP 2 CELLS + @ 1- ARG-IMM !
+  DUP 5 CELLS + DUP @ +  DUP ARG-JUMP !  T-FAR @ MAX T-FAR !
+  S-DUP-GTI-BR EMIT-STENCIL  6 CELLS + 0 ;
+: T-PRIM ( a prim --- a' f )
+  DUP 6 = IF OVER DUP-LT-IF? IF DROP T-DUP-LT-IF EXIT THEN THEN
+  DUP 1 = IF DROP T-EXIT EXIT THEN
+  DUP 2 = IF DROP T-LIT EXIT THEN
+  DUP 3 = IF DROP S-BRANCH T-BRANCH EXIT THEN
+  DUP 4 = IF DROP S-0BRANCH T-BRANCH EXIT THEN
+  PRIM>ST DUP 0< ABORT" SPN: a primitive with no stencil"
+  EMIT-STENCIL CELL+ 0 ;
+
+: TRANSLATE ( xt --- native-xt )
+  CODE-HERE @ T-NAT !  DUP T-SRC !  0 T-FAR !  0 #FIX !  0 #SMAP !
+  BEGIN
+    DUP CODE-HERE @ SMAP,
+    DUP @ DUP 1 AND IF TOKEN T-PRIM ELSE T-CALL THEN
+  UNTIL DROP
+  #FIX @ 0 ?DO
+    I 2 * CELLS FIXUPS +  DUP CELL+ @ SMAP@
+    DUP 0= ABORT" SPN: a branch target with no native address"
+    SWAP @ REL!
+  LOOP
+  T-NAT @ ;
+
+CODE-INIT
