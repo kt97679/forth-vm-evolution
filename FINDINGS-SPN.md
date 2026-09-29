@@ -639,3 +639,40 @@ start-up is mostly native replay, 3.8 us a word; the likeliest target
 in it is CMOVE, a byte-at-a-time Forth loop even when native, which
 copies every stencil.
 
+## Memory at run time, and what the image is made of
+
+Measured with tools/cputime.c, which now also reports peak resident
+memory, and with each process reading its own /proc/self/smaps before it
+exits - resident KB per mapping, development VM, one build:
+
+                          s6-cv8b    s8-lazy      s8-spncv8
+    heap                      0         140           40
+    native code               0       72-92      116-132
+    image memory             32       56-64        64-68   dictionary, stacks, buffers
+    engine binary            36          40           40
+    shared libraries       1136        1200         1200   read-only, shared
+    total                  1272   1572-1604    1524-1544
+
+(An empty C program here peaks at 1,160 KB; the 11,260 recorded under
+"Memory, against CV8" was a different sandbox.) s8-lazy costs about 300 KB
+more than CV8, and about 45 KB MORE than s8, though it makes 40 KB less
+native code: on demand keeps three tables alive for the whole run - the
+map of names, the memo and the visited set - each one byte per byte of
+dictionary, about 34 KB apiece. They cost more than on demand saves.
+
+s8-lazy's 34,796-byte image:
+
+    the CV8 base (s6), with the file header    9,881   28%
+    SPN code and headers, 336 words           15,345   44%
+      running words                  12,884
+      the recorder - build time only  1,257
+      the saver - build time only       843
+      fallback and SPN-WHY              359
+      (names alone                    2,594)
+    recipes: translator, interpreter           8,964   26%
+    stencil record, on-demand list               606    2%
+
+The recipes: 113 words, 4,337 stencil operations, 2.1 bytes each - op
+bytes 48%, literals 26% (409 relocated addresses at three bytes each),
+branch-target marks 9%, callees 8%, jump fields 5%, word headers 4%.
+

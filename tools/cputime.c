@@ -1,7 +1,9 @@
 /*
  *  cputime.c - run a command and report how much CPU it used.
  *
- *      cputime PROG ARG...      -> "CPUNS <nanoseconds>" on stderr
+ *      cputime PROG ARG...      -> "CPUNS <nanoseconds>" on stderr,
+ *                                  then "MAXRSS <kilobytes>": peak resident
+ *                                  memory, from the same rusage record
  *
  *  WHY. Wall-clock timing on a shared machine measures the machine as
  *  much as the program: another process gets scheduled, this one waits,
@@ -57,6 +59,7 @@ int main(int argc, char **argv)
        + (unsigned long long)ru.ru_stime.tv_sec * 1000000000ULL
        + (unsigned long long)ru.ru_stime.tv_usec * 1000ULL;
     fprintf(stderr, "CPUNS %llu\n", ns);
+    fprintf(stderr, "MAXRSS %ld\n", (long)ru.ru_maxrss);
 
     if (WIFEXITED(status)) return WEXITSTATUS(status);
     return 128 + (WIFSIGNALED(status) ? WTERMSIG(status) : 0);
