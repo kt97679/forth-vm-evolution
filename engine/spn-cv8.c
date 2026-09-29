@@ -62,6 +62,7 @@
  *  cross-compiled with TARGET-CELL-BYTES set to 4 (see cross.4).
  */
 
+#define _GNU_SOURCE        /* SPN: REG_RIP for the fault report */
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/resource.h>
@@ -71,6 +72,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <sys/mman.h>
+#include <signal.h>
+#include <ucontext.h>
+#include <stdio.h>
 
 /*  SPN on CV8. This is engine/vm-lab.c, built as the CV8 byte-header
  *  engine, with SPN on the only two opcodes CV8 leaves unused: 126 is
@@ -885,6 +889,60 @@ NOINLINE_IO static int t_getc(void) {
     return t_ibuf[t_ipos++];
 }
 
+/*  SPN: a fault report. This engine runs machine code it generated, so a
+ *  bare "Segmentation fault" says nothing. On a fault: flush the Forth
+ *  output still buffered - how far the program got - then say where the
+ *  fault was, whether that was in the native code buffer, which native
+ *  return addresses are on the machine stack, and the top of the Forth
+ *  return stack. Offsets are from the code buffer and from the image;
+ *  translation is deterministic, so a clean run's map decodes them.
+ *  Exit status 70, as for the engine's other faults.  */
+#define SPN_CODE_SIZE (1024 * 1024)
+static void spn_say(const char *m) { if (write(2, m, strlen(m)) < 0) {} }
+static void spn_fault(int sig, siginfo_t *si, void *ucv) {
+    ucontext_t *uc = (ucontext_t *)ucv;
+    UNS64 rip = (UNS64)uc->uc_mcontext.gregs[REG_RIP];
+    UNS64 *rsp = (UNS64 *)(uintptr_t)uc->uc_mcontext.gregs[REG_RSP];
+    UNS64 b = (UNS64)(uintptr_t)base, cb = spn_code_base;
+    char m[160]; int i, n = 0;
+    (void)sig;
+    t_flush();
+    snprintf(m, sizeof m, "\nspn: fault at %#lx, rip %#lx",
+             (unsigned long)(uintptr_t)si->si_addr, (unsigned long)rip);
+    spn_say(m);
+    if (cb && rip - cb < SPN_CODE_SIZE) {
+        snprintf(m, sizeof m, " = native +%#lx\n", (unsigned long)(rip - cb)); spn_say(m);
+    } else spn_say(" (not native code)\n");
+    {   UNS64 fa = (UNS64)(uintptr_t)si->si_addr;
+        snprintf(m, sizeof m, "spn: image base %#lx, fault = image %+ld; rdi %#lx rsi %#lx rax %#lx\n",
+                 (unsigned long)b, (long)(fa - b),
+                 (unsigned long)uc->uc_mcontext.gregs[REG_RDI],
+                 (unsigned long)uc->uc_mcontext.gregs[REG_RSI],
+                 (unsigned long)uc->uc_mcontext.gregs[REG_RAX]);
+        spn_say(m);
+        if (cb && rip - cb < SPN_CODE_SIZE && rip - cb >= 48) {   /* bytes around rip */
+            spn_say("spn: code from rip-48:");
+            for (i = -48; i < 16; i++) {
+                snprintf(m, sizeof m, " %02x", ((UNS8 *)(uintptr_t)rip)[i]); spn_say(m);
+            }
+            spn_say("\n");
+        }
+    }
+    spn_say("spn: native returns on the machine stack:");
+    for (i = 0; i < 256 && n < 12; i++)
+        if (cb && rsp[i] - cb < SPN_CODE_SIZE) {
+            snprintf(m, sizeof m, " +%#lx", (unsigned long)(rsp[i] - cb)); spn_say(m); n++;
+        }
+    spn_say("\nspn: Forth return stack, as image offsets:");
+    for (i = 0, n = 0; i < 16 && g_rp + 8 * (UNS64)i < b + MEMSIZE; i++) {
+        UNS64 v = CELL(g_rp + 8 * (UNS64)i);
+        if (v - b < MEMSIZE) { snprintf(m, sizeof m, " %lu", (unsigned long)(v - b)); spn_say(m); }
+        else spn_say(" .");
+    }
+    spn_say("\n");
+    _exit(70);
+}
+
 /*  SPN: native code calling a word with no native code. As in engine/
  *  spn.c: push the stack back into memory, push a sentinel return
  *  address, run the interpreter from the word's body. Its EXIT lands on
@@ -1624,7 +1682,17 @@ L_spn_svc:    /* SPN 127 n: services, chosen by the byte that follows */
         void *p = mmap(NULL, (size_t)DS0, PROT_READ | PROT_WRITE | PROT_EXEC,
                        MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         DS0 = (p == MAP_FAILED) ? 0 : (UNS64)(uintptr_t)p;
-        if (DS0) spn_code_base = DS0;
+        if (DS0) {
+            struct sigaction sa;
+            spn_code_base = DS0;
+            memset(&sa, 0, sizeof sa);
+            sa.sa_sigaction = spn_fault;
+            sa.sa_flags = SA_SIGINFO;
+            sigemptyset(&sa.sa_mask);
+            sigaction(SIGSEGV, &sa, (struct sigaction *)0);
+            sigaction(SIGBUS, &sa, (struct sigaction *)0);
+            sigaction(SIGILL, &sa, (struct sigaction *)0);
+        }
     } else if (n == 2) {           /* i*x a-addr --- j*x   run native code */
         spn_fn fn = (spn_fn)(uintptr_t)DS0;
         dsp += CELL_BYTES;

@@ -321,7 +321,17 @@ VARIABLE C-VAL
 VARIABLE T-FAR  VARIABLE T-DEP  VARIABLE T-END  VARIABLE #TGT  VARIABLE HWM
 VARIABLE WHY  VARIABLE WHY-XT  VARIABLE #CALLS
 : IDX ( a --- i )  T-SRC @ - ;
-: INSIDE? ( a --- f )  IDX DUP 0< 0= SWAP MAX-BYTES < AND ;
+\ T-LIM bounds decoding to the word's own body. Without it the decoder
+\ can run on into the next header: LIT's entry is [LIT][EXIT], LIT takes
+\ two operand bytes, so EXIT and BRANCH's link tag were read as LIT's
+\ operand; decoding went on through BRANCH's header until something
+\ looked like an exit, the word "validated", and the patch overwrote
+\ BRANCH's link tag. A failed FIND then walked that thread off the image,
+\ which faulted only when the memory there was unmapped - in about one
+\ run in five. In a full pass the bound is the next word's link; for a
+\ word just defined it is HERE.
+VARIABLE T-LIM  0 T-LIM !
+: INSIDE? ( a --- f )  DUP T-LIM @ < SWAP IDX DUP 0< 0= SWAP MAX-BYTES < AND AND ;
 : TGT, ( a --- )  #TGT @ 128 < IF #TGT @ CELLS TGTS @ + ! 1 #TGT +! ELSE DROP THEN ;
 : CALLEE, ( xt --- )  #CALLS @ 128 < IF #CALLS @ CELLS CALLS @ + ! 1 #CALLS +! ELSE DROP THEN ;
 : TARGET-IN? ( a n --- f )   \ a branch target strictly inside [a, a+n)?
@@ -355,6 +365,7 @@ VARIABLE SK  VARIABLE SV
 : SAVE-OP ( --- )  OP-K @ SK !  OP-V @ SV ! ;
 : REST-OP ( --- )  SK @ OP-K !  SV @ OP-V ! ;
 : VALIDATE ( xt --- f )
+  T-LIM @ 0= IF HERE T-LIM ! THEN
   DUP T-SRC !  0 T-FAR !  0 T-DEP !  0 #TGT !  0 #CALLS !  0 WHY !
   C-DEP @ HWM @ -1 CFILL  0 HWM !
   BEGIN
@@ -505,7 +516,25 @@ VARIABLE SPN-READY  0 SPN-READY !
     DUP @ 2 PICK - DUP 0 > SWAP 3 < AND IF 2DROP TRUE EXIT THEN
     CELL+
   REPEAT 2DROP FALSE ;
+\ ---- where a word's body must end ----
+\ At the next name's link - found in a map of every name, built once
+\ per boot - or at HERE for a word just defined. Every decode is held
+\ inside this bound, so none can run on into a following header.
+VARIABLE MARKS  0 MARKS !  VARIABLE MSIZE
+: LINK-BYTES ( nfa --- n )  1- C@ DUP 128 U< IF DROP 1 ELSE 192 U< IF 2 ELSE 3 THEN THEN ;
+: MARK-THREAD ( nfa --- )
+  BEGIN ?DUP WHILE  DUP START @ - MARKS @ + 1 SWAP C!  NEXT-NFA8  REPEAT ;
+: BUILD-MARKS ( --- )
+  HERE START @ - 1+ DUP MSIZE !  TABLE MARKS !
+  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP ;
+: FREE-MARKS ( --- )  MARKS @ ?DUP IF FREE DROP THEN  0 MARKS ! ;
+: BOUND-OF ( xt --- a )
+  MARKS @ 0= IF DROP HERE EXIT THEN
+  START @ - 1+  MSIZE @ SWAP ?DO
+    MARKS @ I + C@ IF I START @ + DUP LINK-BYTES - UNLOOP EXIT THEN
+  LOOP HERE ;
 : TRY-TRANSLATE ( xt --- )
+  DUP BOUND-OF T-LIM !
   SPN-READY @ 0= IF DROP EXIT THEN
   DUP SHAPE-OK? 0= IF DROP EXIT THEN
   DUP VALIDATE 0= IF DROP 1 #KEPT +! EXIT THEN
@@ -528,16 +557,11 @@ VARIABLE SPN-READY  0 SPN-READY !
   [ OP-ENTER ] LITERAL SWAP C!  1 #NATIVE +! ;
 
 \ ---- the whole dictionary, oldest first ----
-VARIABLE MARKS  VARIABLE MSIZE
-: MARK-THREAD ( nfa --- )
-  BEGIN ?DUP WHILE  DUP START @ - MARKS @ + 1 SWAP C!  NEXT-NFA8  REPEAT ;
-: TRANSLATE-ALL ( --- )
-  HERE START @ - 1+ DUP MSIZE !  TABLE MARKS !
-  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
+: TRANSLATE-ALL ( --- )     \ uses the map; builds one if there is none
+  MARKS @ 0= IF BUILD-MARKS THEN
   MSIZE @ 0 DO
     MARKS @ I + C@ IF  I START @ + NAME>8 TRY-TRANSLATE  THEN
-  LOOP
-  MARKS @ FREE DROP ;
+  LOOP ;
 
 \ ---- start-up ----
 : SPN-INIT ( --- )
@@ -573,6 +597,7 @@ VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
 : TRANSLATE-TREE ( xt --- )
   DUP VISITED? IF DROP EXIT THEN  DUP VISIT
   DUP SHAPE-OK? 0= IF DROP EXIT THEN
+  DUP BOUND-OF T-LIM !
   DUP VALIDATE 0= IF DROP EXIT THEN
   >R  #CALLS @ DUP 0 ?DO I CELLS CALLS @ + @ SWAP LOOP
   0 ?DO RECURSE LOOP
@@ -582,21 +607,24 @@ VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
 ' VALIDATE      START @ - CONSTANT VA-OFF
 ' TRANSLATE-ALL START @ - CONSTANT TA-OFF
 : SPN-BOOT ( --- )
-  SPN-INIT
+  SPN-INIT  BUILD-MARKS
   HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
   CM-OFF START @ + TRANSLATE-TREE
   ES-OFF START @ + TRANSLATE-TREE
   VA-OFF START @ + TRANSLATE-TREE
   TA-OFF START @ + TRANSLATE-TREE
-  TRANSLATE-ALL
+  TRANSLATE-ALL  FREE-MARKS
   VIS @ FREE DROP  0 VIS-N ! ;
 
 \ ---- reporting ----
-: SPN-WHY ( xt --- )
+: SPN-WHY? ( xt --- )
   DUP ENTRY-OF C@ OP-ENTER = IF DROP ." native" EXIT THEN
   DUP SHAPE-OK? 0= IF DROP ." data word" EXIT THEN
+  DUP BOUND-OF T-LIM !
   DUP VALIDATE IF T-END @ SWAP - ." validates; body bytes " . EXIT THEN
   DROP WHY @ . ;
+: SPN-WHY ( xt --- )   \ with the map of names, so the bound is exact
+  MARKS @ IF SPN-WHY? EXIT THEN  BUILD-MARKS SPN-WHY? FREE-MARKS ;
 
 \ New definitions: translate each as its ; completes.
 : ;  POSTPONE ;  LAST @ NAME>8 TRY-TRANSLATE ; IMMEDIATE
