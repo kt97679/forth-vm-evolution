@@ -208,7 +208,7 @@ WORK = (sys.argv[3].split() if len(sys.argv) > 3 and sys.argv[3].strip()
         else ['kernel', 'corpus', 'fib', 'parse'])
 R = os.path.join(root, 'build', 'results')
 STAGES = ['sod32', 's0-cell', 'p4-pack4', 'p8-pack8', 's1-sod16',
-          's2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec', 's6-cv8b']
+          's2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec', 's6-cv8b', 's7-spn']
 NICE = {
     'sod32':      'SOD32 (Benschop, 5-bit packed, 32-bit only)',
     's0-cell':    'RelF cell threading',
@@ -220,6 +220,7 @@ NICE = {
     's4-cv8':     'CV8    byte stream',
     's5-cv8spec': 'CV8 + specialisations',
     's6-cv8b':    'CV8 + byte-granular dictionary headers',
+    's7-spn':     'SPN: cell image, translated to native code at start',
 }
 
 
