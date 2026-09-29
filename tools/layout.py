@@ -296,6 +296,16 @@ for w in order:
         new_off[w['s']]['nfa']  = off; off += align_up(len(w['n']) + 1, CELL)
         new_off[w['s']]['body'] = off; off += new_body_bytes(w)
 NEW_HERE = off
+# SYMMAP=file: write each word's body range in the NEW image, one line
+# per word - start, end, name. tools/attribute.py joins it with an
+# engine profile (-DPROFILE=1, VMPROF=file) to charge every dispatched
+# VM instruction to the Forth word it executed in.
+import os as _os
+if _os.environ.get('SYMMAP'):
+    with open(_os.environ['SYMMAP'], 'w') as _f:
+        for _w in order:
+            _b = new_off[_w['s']]['body']
+            _f.write('%d %d %s\n' % (_b, _b + new_body_bytes(_w), _w['n']))
 OLD_HERE = order[-1]['e'] - START
 
 # ---- recompute the link chains, and re-walk them to prove it --------
