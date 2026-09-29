@@ -349,8 +349,8 @@ VARIABLE MEMO  0 MEMO !  VARIABLE MEMO-N  0 MEMO-N !
 : R-SCAN ( xt --- f )
   DUP ENTRY-OF C@ OP-ENTER = IF DROP FALSE EXIT THEN        \ translated: validated
   DUP MEMO@ ?DUP 0= IF R-SCAN0 EXIT THEN                    ( xt m )
-  DUP C@ 4 AND IF NIP C@ 8 AND 0<> EXIT THEN
-  SWAP R-SCAN0 SWAP 4 8 MEMO! ;
+  DUP C@ 8 AND IF NIP C@ 16 AND 0<> EXIT THEN
+  SWAP R-SCAN0 SWAP 8 16 MEMO! ;
 
 \ ---- a callee short enough to copy into its caller ----
 \ A straight line of at most six simple operations ending in an exit:
@@ -373,8 +373,8 @@ VARIABLE MEMO  0 MEMO !  VARIABLE MEMO-N  0 MEMO-N !
   LOOP DROP FALSE ;
 : INLINABLE? ( xt --- f )
   DUP MEMO@ ?DUP 0= IF INLINABLE0? EXIT THEN                ( xt m )
-  DUP C@ 1 AND IF NIP C@ 2 AND 0<> EXIT THEN
-  SWAP INLINABLE0? SWAP 1 2 MEMO! ;
+  DUP C@ 2 AND IF NIP C@ 4 AND 0<> EXIT THEN
+  SWAP INLINABLE0? SWAP 2 4 MEMO! ;
 
 \ ---- classifying a word a native caller wants to call ----
 \ 0 native  1 a literal: a variable's address  2 re-entry  3 refuse
@@ -686,24 +686,33 @@ VARIABLE SPN-READY  0 SPN-READY !
 \ At the next name's link - found in a map of every name, built once
 \ per boot - or at HERE for a word just defined. Every decode is held
 \ inside this bound, so none can run on into a following header.
+\ ONE byte per dictionary byte serves three purposes, a bit each:
+\   1  a name starts here (the map of names)
+\   2 4 8 16  the memo: inlinable known/true, reads its caller's return
+\             address known/true - keyed by entry, never a name's byte
+\   32 visited by the tree walk - also keyed by entry
+\ They were three tables of this size, and on demand keeps them for the
+\ whole run: 102 KB of heap, more than on demand saves in native code.
 VARIABLE MARKS  0 MARKS !  VARIABLE MSIZE
+VARIABLE VIS  0 VIS !  VARIABLE VIS-N  0 VIS-N !
 VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
 : LINK-BYTES ( nfa --- n )  1- C@ DUP 128 U< IF DROP 1 ELSE 192 U< IF 2 ELSE 3 THEN THEN ;
 : MARK-THREAD ( nfa --- )
-  BEGIN ?DUP WHILE  DUP START @ - MARKS @ + 1 SWAP C!  NEXT-NFA8  REPEAT ;
+  BEGIN ?DUP WHILE  DUP START @ - MARKS @ + DUP C@ 1 OR SWAP C!  NEXT-NFA8  REPEAT ;
 : BUILD-MARKS ( --- )
   HERE MARK-END !
-  HERE START @ - 1+ DUP MSIZE !  DUP MEMO-N !  DUP TABLE MEMO !  TABLE MARKS !
+  HERE START @ - 1+ DUP MSIZE !  DUP MEMO-N !  DUP VIS-N !
+  TABLE DUP MARKS !  DUP MEMO !  VIS !
   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP ;
-: FREE-MARKS ( --- )  MARKS @ ?DUP IF FREE DROP THEN  0 MARKS !
-  MEMO @ ?DUP IF FREE DROP THEN  0 MEMO !  0 MEMO-N ! ;
+: FREE-MARKS ( --- )  MARKS @ ?DUP IF FREE DROP THEN
+  0 MARKS !  0 MEMO !  0 MEMO-N !  0 VIS !  0 VIS-N ! ;
 : BOUND-OF ( xt --- a )
   MARKS @ 0= IF DROP HERE EXIT THEN
   \ Past the map - a word defined after it was made - the bound is HERE.
   \ Without this, ?DO from past the end counts up until it wraps.
   START @ - 1+  DUP MSIZE @ < 0= IF DROP HERE EXIT THEN
   MSIZE @ SWAP ?DO
-    MARKS @ I + C@ IF I START @ + DUP LINK-BYTES - UNLOOP EXIT THEN
+    MARKS @ I + C@ 1 AND IF I START @ + DUP LINK-BYTES - UNLOOP EXIT THEN
   LOOP MARK-END @ ;
 : TRY-TRANSLATE ( xt --- )
   DUP BOUND-OF T-LIM !
@@ -729,7 +738,7 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
 : TRANSLATE-ALL ( --- )     \ uses the map; builds one if there is none
   MARKS @ 0= IF BUILD-MARKS THEN
   MSIZE @ 0 DO
-    MARKS @ I + C@ IF  I START @ + NAME>8 TRY-TRANSLATE  THEN
+    MARKS @ I + C@ 1 AND IF  I START @ + NAME>8 TRY-TRANSLATE  THEN
   LOOP ;
 
 \ ---- start-up ----
@@ -805,11 +814,10 @@ VARIABLE STS-OFF  0 STS-OFF !  VARIABLE STS-LEN  0 STS-LEN !
   16 RSHIFT 255 AND SWAP 2 + C! ;
 \ Callees before callers, depth first, so a word finds its callees
 \ native when it is translated.
-VARIABLE VIS  VARIABLE VIS-N  0 VIS-N !
 : VISITED? ( xt --- f )
-  START @ - DUP VIS-N @ U< IF VIS @ + C@ ELSE DROP TRUE THEN ;
+  START @ - DUP VIS-N @ U< IF VIS @ + C@ 32 AND 0<> ELSE DROP TRUE THEN ;
 : VISIT ( xt --- )
-  START @ - DUP VIS-N @ U< IF VIS @ + 1 SWAP C! ELSE DROP THEN ;
+  START @ - DUP VIS-N @ U< IF VIS @ + DUP C@ 32 OR SWAP C! ELSE DROP THEN ;
 : TRANSLATE-TREE ( xt --- )
   DUP VISITED? IF DROP EXIT THEN  DUP VISIT
   DUP ENTRY-OF UNMARK                   \ on demand: its real code, to read
@@ -878,7 +886,7 @@ VARIABLE TRANSLATING  0 TRANSLATING !
 : LIST-LAZY ( --- )   \ the entry of every such word not native yet
   0 LZ-N !
   MSIZE @ 0 DO
-    MARKS @ I + C@ IF
+    MARKS @ I + C@ 1 AND IF
       I START @ + NAME>8 ENTRY-OF
       DUP LAZY-CANDIDATE? IF START @ - UV, 1 LZ-N +! ELSE DROP THEN
     THEN
@@ -886,7 +894,7 @@ VARIABLE TRANSLATING  0 TRANSLATING !
 \ At boot, after the translator's recipes: mark every listed word. The
 \ map of names and the visited set are kept for the whole run.
 : LAZY-SETUP ( --- )
-  BUILD-MARKS  HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
+  BUILD-MARKS
   LZ-N @ 1 MAX CELLS TABLE LZ-TAB !
   LZ-OFF @ START @ + RD !
   LZ-N @ 0 ?DO
@@ -908,7 +916,6 @@ VARIABLE TRANSLATING  0 TRANSLATING !
 ' TRANSLATE-ALL START @ - CONSTANT TA-OFF
 : TRANSLATE-BOOT ( --- )   \ the translator first, then everything
   BUILD-MARKS
-  HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
   \ Recording: the replayer's own recipes first, so boot runs it natively
   \ after a few words.
   RECORDING @ IF RA-OFF START @ + TRANSLATE-TREE THEN
@@ -916,8 +923,7 @@ VARIABLE TRANSLATING  0 TRANSLATING !
   ES-OFF START @ + TRANSLATE-TREE
   VA-OFF START @ + TRANSLATE-TREE
   TA-OFF START @ + TRANSLATE-TREE
-  TRANSLATE-ALL  FREE-MARKS
-  VIS @ FREE DROP  0 VIS !  0 VIS-N ! ;
+  TRANSLATE-ALL  FREE-MARKS ;
 \ Which hole kinds every stencil has: recipes replay only on an engine
 \ whose stencils match the one they were recorded on.
 : STENCIL-SIG ( --- h )  #ENTRIES @  #ENTRIES @ 3 DO 31 * I ST-MASK ST@ + LOOP ;
@@ -943,7 +949,7 @@ VARIABLE TRANSLATING  0 TRANSLATING !
 : SPN-RECORD-LAZY ( --- )
   SPN-INIT  SAVE-STENCILS
   4096 2 * CELLS TABLE UNDO !  0 #UNDO !
-  BUILD-MARKS  HERE START @ - 1+ DUP VIS-N !  TABLE VIS !
+  BUILD-MARKS
   HERE START @ - RCP-OFF !  TRUE RECORDING !
   RA-OFF START @ + TRANSLATE-TREE
   CM-OFF START @ + TRANSLATE-TREE  ES-OFF START @ + TRANSLATE-TREE
@@ -953,7 +959,7 @@ VARIABLE TRANSLATING  0 TRANSLATING !
   FALSE RECORDING !
   HERE START @ - RCP-OFF @ - RCP-LEN !  STENCIL-SIG RCP-SIG !
   HERE START @ - LZ-OFF !  LIST-LAZY  HERE START @ - LZ-OFF @ - LZ-LEN !
-  FREE-MARKS  VIS @ FREE DROP  0 VIS !  0 VIS-N !
+  FREE-MARKS
   UNPATCH-ALL  UNDO @ FREE DROP  0 UNDO !  FALSE SPN-READY ! ;
 : SPN-BOOT ( --- )
   SPN-INIT

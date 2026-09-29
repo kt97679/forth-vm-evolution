@@ -660,6 +660,11 @@ native code: on demand keeps three tables alive for the whole run - the
 map of names, the memo and the visited set - each one byte per byte of
 dictionary, about 34 KB apiece. They cost more than on demand saves.
 
+*Fixed since:* they are now one table, a bit each - they are indexed
+alike and never share a bit. s8-lazy's heap 140 -> 76 KB; resident total
+1,504 KB on a trivial run and 1,528 on the corpus, below s8's 1,520 and
+1,540, and 236-264 KB above CV8's.
+
 s8-lazy's 34,796-byte image:
 
     the CV8 base (s6), with the file header    9,881   28%
