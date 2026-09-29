@@ -1,0 +1,178 @@
+\ spn-cv8-decode.4 - decode CV8 byte code, for SPN on CV8.
+\
+\ One operation at a time: DECODE takes an address and returns the next,
+\ leaving the operation's kind in OP-K and its operand in OP-V. Operand
+\ sizes are taken from the engine's own handlers (engine/vm-lab.c as
+\ built for the byte-header stage: ENC=3, SCALE=0, VARCALL, VARSLOT,
+\ FOLD, SPEC, ESCAPE off), which are the only authority on them.
+\
+\ CHECK-ALL decodes every word in the dictionary and verifies it: no
+\ unknown opcode in code, every branch landing on an operation boundary,
+\ and decoding ending before the next word's header - which a decoder
+\ that mis-sized anything would overrun.
+
+DECIMAL
+0 CONSTANT FALSE   \ not in this kernel
+
+\ ---- kinds ----
+ 0 CONSTANT K-BAD     1 CONSTANT K-PRIM    2 CONSTANT K-LIT     3 CONSTANT K-LITX
+ 4 CONSTANT K-FOLD    5 CONSTANT K-BR      6 CONSTANT K-QBR     7 CONSTANT K-CALL
+ 8 CONSTANT K-TINY    9 CONSTANT K-ADDI   10 CONSTANT K-ADDIX  11 CONSTANT K-EQI
+12 CONSTANT K-EQIX   13 CONSTANT K-VF     14 CONSTANT K-VS     15 CONSTANT K-DOVAR
+16 CONSTANT K-DODOES
+VARIABLE OP-K  VARIABLE OP-V
+
+\ ---- little-endian fields ----
+: LD16 ( a --- u )  DUP C@ SWAP 1+ C@ 8 LSHIFT OR ;
+: LD32 ( a --- u )  DUP LD16 SWAP 2 + LD16 16 LSHIFT OR ;
+: SX8  ( u --- n )  DUP 128 AND IF 256 - THEN ;
+: SX16 ( u --- n )  DUP 32768 AND IF 65536 - THEN ;
+: SX32 ( u --- n )  DUP 2147483648 AND IF 4294967296 - THEN ;
+
+\ ---- the folded opcodes: 73 + position in the build's --fold-set ----
+\ +,=,!,@,LSHIFT,RSHIFT,C@,C!,AND,OR,XOR,LIT,<,U<,OVER,DROP,DUP,SWAP,
+\ ROT,>R,R>,R@,NEGATE - as kernel primitive indices. Position 11 is LIT:
+\ a folded LIT is LIT with its 16-bit operand, then EXIT.
+CREATE FOLDMAP
+  23 , 20 , 13 , 11 , 25 , 26 , 10 , 12 , 14 , 15 , 16 ,  2 ,
+  22 , 21 ,  9 ,  5 ,  6 ,  7 ,  8 , 18 , 17 , 19 , 24 ,
+
+\ ---- one operation ----
+: SLOT@ ( a --- a' addr )   \ a variable's address: 2 or 3 bytes
+  DUP C@ 128 AND IF
+    DUP C@ 127 AND 16 LSHIFT OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ OR SWAP 3 + SWAP
+  ELSE
+    DUP C@ 8 LSHIFT OVER 1+ C@ OR SWAP 2 + SWAP
+  THEN START @ + ;
+: KV ( v k --- )  OP-K ! OP-V ! ;
+: DECODE ( a --- a' )
+  DUP C@
+  DUP 128 U< 0= IF                                   \ a call
+    DUP 64 AND IF
+      63 AND 16 LSHIFT OVER 1+ C@ 8 LSHIFT OR OVER 2 + C@ OR
+      START @ + K-CALL KV 3 + EXIT
+    THEN
+    63 AND 8 LSHIFT OVER 1+ C@ OR START @ + K-CALL KV 2 + EXIT
+  THEN
+  DUP 2 = IF DROP DUP 1+ LD16 K-LIT KV 3 + EXIT THEN
+  DUP 3 = IF DROP DUP 1+ DUP LD16 SX16 + K-BR KV 3 + EXIT THEN
+  DUP 4 = IF DROP DUP 1+ DUP LD16 SX16 + K-QBR KV 3 + EXIT THEN
+  DUP 68 < IF K-PRIM KV 1+ EXIT THEN
+  DUP 68 = IF DROP DUP 1+ LD32 SX32 K-LIT KV 5 + EXIT THEN
+  DUP 69 = IF DROP 0 K-DOVAR KV 1+ EXIT THEN
+  DUP 70 = IF DROP 0 K-DODOES KV 1+ EXIT THEN
+  DUP 71 = IF DROP DUP 1+ C@ K-LIT KV 2 + EXIT THEN
+  DUP 72 = IF DROP DUP 1+ C@ K-LITX KV 2 + EXIT THEN
+  DUP 84 = IF DROP DUP 1+ LD16 K-LITX KV 3 + EXIT THEN
+  DUP 96 < IF 73 - CELLS FOLDMAP + @ K-FOLD KV 1+ EXIT THEN
+  DUP 96 = IF DROP 0 K-LIT KV 1+ EXIT THEN
+  DUP 97 = IF DROP 1 K-LIT KV 1+ EXIT THEN
+  DUP 98 = IF DROP -1 K-LIT KV 1+ EXIT THEN
+  DUP 99 = IF DROP 1+ SLOT@ K-VF KV EXIT THEN
+  DUP 100 = IF DROP 1+ SLOT@ K-VS KV EXIT THEN
+  DUP 105 < IF K-BAD KV 1+ EXIT THEN                 \ locals
+  DUP 120 < IF 105 - K-TINY KV 1+ EXIT THEN
+  DUP 124 < IF 120 - >R DUP 1+ C@ SX8 R> K-ADDI + KV 2 + EXIT THEN
+  DUP 124 = IF DROP DUP 1+ @ K-LIT KV 9 + EXIT THEN
+  K-BAD KV 1+ ;                                      \ ESC, SPN's own
+
+\ ---- inline operands after calls ----
+\ These kernel words read data that follows their call: the loop words a
+\ cell offset to a jump target, the string words a counted string.
+: X' ( "name" --- xt )  ' ;
+VARIABLE QDO-XT  VARIABLE LOOP-XT  VARIABLE PLOOP-XT  VARIABLE LEAVE-XT
+VARIABLE SQ-XT   VARIABLE DQ-XT    VARIABLE AQ-XT
+X' (?DO) QDO-XT !  X' (LOOP) LOOP-XT !  X' (+LOOP) PLOOP-XT !  X' (LEAVE) LEAVE-XT !
+X' (S") SQ-XT !    X' (.") DQ-XT !      X' (ABORT") AQ-XT !
+: OPD-WORD? ( xt --- f )
+  DUP QDO-XT @ = OVER LOOP-XT @ = OR OVER PLOOP-XT @ = OR SWAP LEAVE-XT @ = OR ;
+: STR-WORD? ( xt --- f )  DUP SQ-XT @ = OVER DQ-XT @ = OR SWAP AQ-XT @ = OR ;
+: PAST-STRING ( a --- a' )  DUP C@ 1+ + ALIGNED ;
+
+\ ---- walking a whole word ----
+\ The end is an operation that exits - EXIT, or a folded form - at or
+\ beyond every forward branch target seen so far; a data word ends at
+\ its DOVAR or DODOES. Every operation start is recorded, to check that
+\ each branch lands on one.
+CREATE STARTS 1024 CELLS ALLOT  VARIABLE #STARTS
+CREATE TARGS  256 CELLS ALLOT   VARIABLE #TARGS
+VARIABLE FAR  VARIABLE BAD
+: EXITS? ( --- f )
+  OP-K @ K-PRIM = OP-V @ 1 = AND
+  OP-K @ K-FOLD = OR  OP-K @ K-LITX = OR  OP-K @ K-ADDIX = OR  OP-K @ K-EQIX = OR ;
+: TARG, ( a --- )
+  #TARGS @ 256 < IF #TARGS @ CELLS TARGS + ! 1 #TARGS +! ELSE DROP THEN
+  ;
+: WALK ( xt --- end )     \ decode xt to its end; sets BAD on anything wrong
+  0 FAR !  0 #STARTS !  0 #TARGS !  0 BAD !
+  BEGIN
+    #STARTS @ 1024 < IF DUP #STARTS @ CELLS STARTS + ! 1 #STARTS +! THEN
+    DUP >R DECODE R>                                  ( a' a )
+    OP-K @ K-BAD = IF DROP 1 BAD ! EXIT THEN
+    OP-K @ K-DOVAR = OP-K @ K-DODOES = OR IF DROP EXIT THEN
+    OP-K @ K-BR = OP-K @ K-QBR = OR IF
+      OP-V @ DUP TARG, FAR @ MAX FAR !
+    THEN
+    OP-K @ K-CALL = IF
+      OP-V @ OPD-WORD? IF                             \ a cell offset follows
+        OVER DUP @ + DUP TARG,
+        OP-V @ LOOP-XT @ <> OP-V @ PLOOP-XT @ <> AND IF FAR @ MAX FAR ! ELSE DROP THEN
+        SWAP CELL+ SWAP
+      THEN
+      OP-V @ STR-WORD? IF SWAP PAST-STRING SWAP THEN
+    THEN
+    EXITS? IF FAR @ < 0= IF EXIT THEN ELSE DROP THEN
+  0 UNTIL ;
+
+\ Every branch target must be an operation start.
+: TARGETS-OK ( --- f )
+  #TARGS @ 0 ?DO
+    FALSE  #STARTS @ 0 ?DO J CELLS TARGS + @  I CELLS STARTS + @ = OR LOOP
+    0= IF FALSE UNLOOP EXIT THEN
+  LOOP TRUE ;
+
+\ ---- the whole dictionary, in address order ----
+VARIABLE MARKS  VARIABLE MSIZE
+: MARK-THREAD ( nfa --- )
+  BEGIN ?DUP WHILE  DUP START @ - MARKS @ + 1 SWAP C!  NEXT-NFA8  REPEAT ;
+\ How many bytes the link before this name takes: its tag, at nfa-1,
+\ says - so a body may end exactly there and no further.
+: LINK-BYTES ( nfa --- n )  1- C@ DUP 128 U< IF DROP 1 ELSE 192 U< IF 2 ELSE 3 THEN THEN ;
+VARIABLE PREV-NFA  VARIABLE #WORDS  VARIABLE #FAIL  VARIABLE #DATA
+: CHECK-WORD ( nfa --- )     \ check the word at PREV-NFA against this one
+  PREV-NFA @ ?DUP IF
+    NAME>8 WALK                                       ( nfa end )
+    OVER DUP LINK-BYTES - > BAD @ OR TARGETS-OK 0= OR IF
+      1 #FAIL +!  #FAIL @ 8 < IF PREV-NFA @ COUNT 31 AND TYPE SPACE THEN
+    THEN
+    OP-K @ K-DOVAR = OP-K @ K-DODOES = OR IF 1 #DATA +! THEN
+    1 #WORDS +!
+  THEN PREV-NFA ! ;
+: CHECK-ALL ( --- )
+  HERE START @ - DUP MSIZE !  ALLOCATE ABORT" no memory" MARKS !
+  MARKS @ MSIZE @ 0 FILL
+  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
+  0 PREV-NFA !  0 #WORDS !  0 #FAIL !  0 #DATA !
+  MSIZE @ 0 DO MARKS @ I + C@ IF I START @ + CHECK-WORD THEN LOOP
+  CR ." words checked: " #WORDS @ .  ." data words: " #DATA @ .
+  ." failures: " #FAIL @ . CR
+  MARKS @ FREE DROP ;
+
+\ ---- a disassembler, for reading ----
+: .OP ( --- )
+  OP-K @ DUP K-PRIM = IF DROP ." p" OP-V @ . EXIT THEN
+  DUP K-LIT = IF DROP ." lit:" OP-V @ . EXIT THEN
+  DUP K-LITX = IF DROP ." litx:" OP-V @ . EXIT THEN
+  DUP K-FOLD = IF DROP ." p" OP-V @ . ." ;" EXIT THEN
+  DUP K-BR = OVER K-QBR = OR IF K-BR = IF ." br>" ELSE ." ?br>" THEN
+    OP-V @ START @ - . EXIT THEN
+  DUP K-CALL = IF DROP ." call>" OP-V @ START @ - . EXIT THEN
+  ." k" . ." :" OP-V @ . ;
+: DIS ( xt --- )   \ decode and print a word
+  CR 0 FAR ! 0 #TARGS !
+  BEGIN
+    DUP START @ - . ." : " DECODE .OP CR
+    OP-K @ K-BAD = OP-K @ K-DOVAR = OR OP-K @ K-DODOES = OR IF DROP EXIT THEN
+    EXITS? IF DUP FAR @ < 0= IF DROP EXIT THEN THEN
+    OP-K @ K-BR = OP-K @ K-QBR = OR IF OP-V @ FAR @ MAX FAR ! THEN
+  0 UNTIL ;
