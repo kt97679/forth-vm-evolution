@@ -771,8 +771,28 @@ the translator's new words, and their recipes.
 s8-lazy gains less on the benchmark than s8-spncv8, for the same fused
 code. Nothing outside FIB changed - the benchmark file with `2 FIB`
 costs what it did - and FIB alone, called from the top level, was
-faster in s8-lazy than in s8-spncv8; called from BENCH, slower. So
-where its code lands matters, and fib is this project's
-layout-sensitive benchmark. Not resolved here: instruction counts on a
-machine with hardware counters will say whether the two systems execute
-the same work.
+faster in s8-lazy than in s8-spncv8; called from BENCH, slower. On the
+VM that pointed at placement; the Ryzen settled it.
+
+**On the Ryzen 8840HS**, in cycles, the stage tables (net of start-up,
+mean of two sweeps, ratio to the cell engine):
+
+                  fib before   fib after
+    s7-spn           0.110       0.110    (control)
+    s8-spncv8        0.194       0.111    -42.9%
+    s8-lazy          0.198       0.124    -37.2%
+
+Twice what the VM showed: s8-spncv8 is level with s7. kernel, corpus
+and parse moved by 0.4% or less; the 40 figures of stages the change
+could not touch, by a median of 0.3%, at most 1.8%, between two full
+runs hours apart.
+
+Instructions, which do not depend on where code lands, answer the
+s8-lazy question. The fusion removed the same 40 million from fib's end
+to end run in both - 117.05 to 76.88 million in s8-spncv8, 115.06 to
+74.94 in s8-lazy - and s8-lazy executes FEWER instructions than
+s8-spncv8, in more cycles: 23.35 million against 22.54, 3.21
+instructions per cycle against 3.41. The same work, placed differently.
+fib is that sensitive even untouched: the cell engine, with identical
+binaries and instructions, took up to 10% more or fewer cycles per
+layout variant from one run to the next.
