@@ -29,6 +29,11 @@ or step by step:
     tools/spn-bench.py build results/spn-HOST.md   # SPN: start-up, end to
                                        # end, memory - not in the sweep
 
+On x86-64 Linux, `ENGINE_RT=nolibc` in front of `tools/build-stages.sh` (or
+`tools/bench-laptop.sh`) builds the 64-bit engines without the C library:
+a sixth of the start-up and a thirteenth of the resident memory for CV8.
+`FINDINGS-FOOTPRINT.md` has the measurements and the one thing given up.
+
 `tools/bench-laptop.sh` stops at the first failure - nothing is measured
 unless every test passes - warns about what makes a laptop noisy
 (governor, battery, load), and packs the results and logs into one

@@ -165,7 +165,9 @@ if [ "$LAYOUTS" -gt 1 ]; then
     LAYOUTS=$((_keep + 1))
 fi
 
-cc64() { [ "$BUILD64" = 1 ] || return 0; $CC64 $LF "$@"; }
+. "$ROOT/tools/engine-rt.sh"      # RT_FLAGS: with the C library, or ENGINE_RT=nolibc
+export ENGINE_RT                   # the SPN image scripts link their engines the same way
+cc64() { [ "$BUILD64" = 1 ] || return 0; $CC64 $LF "$@" $RT_FLAGS; }
 cc32() { [ "$BUILD32" = 1 ] || return 0; $CC32 $LF "$@"; }
 
 # ---- flat work directory ---------------------------------------------

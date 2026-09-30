@@ -6,6 +6,9 @@
 #                                   error bars; checks the whole pipeline
 #   CHECK=1 tools/bench-laptop.sh   only the checks below - seconds: are
 #                                   the counters readable, which core
+#   ENGINE_RT=nolibc tools/bench-laptop.sh
+#                                   engines without the C library - see
+#                                   tools/engine-rt.sh
 #
 # What it does, in order, stopping at the first failure:
 #   1. builds every stage with LAYOUTS layout variants of each engine
@@ -220,6 +223,7 @@ say "5/5 packing"
 cp /proc/cpuinfo "$LOG/cpuinfo.txt" 2>/dev/null
 { uname -a; cc --version | head -1; git describe --always --dirty 2>/dev/null
   echo "metric $BENCH_METRIC, pinned to cpu $BENCH_CPU, governor $gov, load at start $load"
+  echo "engines linked: ENGINE_RT=${ENGINE_RT:-libc}"
   echo "kernel.perf_event_paranoid $ORIG_PARANOID before the run$([ "$CHANGED" = 1 ] && echo ', 2 during it')"
 } > "$LOG/host.txt"
 ARCH=$LOG/bench-$TAG-$(date +%Y%m%d-%H%M).tar.gz

@@ -18,14 +18,15 @@
 # as SPN does, and save-system.4 needs only its one variable.
 set -e
 O=$(cd "$1" && pwd); ROOT=$(cd "$(dirname "$0")/.." && pwd); W=$O/work
+. "$ROOT/tools/engine-rt.sh"      # RT_FLAGS
 # --engine SUFFIX "FLAGS": only a layout variant of the engine, as for s8.
 if [ "${2:-}" = --engine ]; then
     cc -O2 -Wall $4 -o "$O/s7-spn-64$3" "$ROOT/engine/spn.c" \
-       "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c"
+       "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c" $RT_FLAGS
     cp "$O/s7-spn-64$3" "$O/s7-full-64$3"; exit 0
 fi
 cc -O2 -Wall -o "$O/spn-64" "$ROOT/engine/spn.c" "$ROOT/engine/spn-stencils.c" \
-   "$ROOT/engine/spn-markers.c"
+   "$ROOT/engine/spn-markers.c" $RT_FLAGS
 cp "$W/kernel.img" "$W/.spn-kernel-save.img"
 rm -f "$W/s7-spn-s64.img"
 REC=$([ "${SPN_RECIPES:-1}" = 1 ] && echo SPN-RECORD || echo "")

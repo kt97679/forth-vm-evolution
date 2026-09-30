@@ -231,6 +231,14 @@ L.append('    revision    %s' % (sh('cd %s && git describe --always --dirty 2>/d
 L.append('    kernel      %s' % sh('uname -srm'))
 L.append('    cc          %s' % sh('cc --version | head -1'))
 L.append('    cores       %s    pinned to cpu %s' % (sh('nproc'), CPU if PIN else '- (no taskset)'))
+# Start-up and memory depend on how the engines were linked: read it from
+# the binary rather than trust the environment (ENGINE_RT, engine-rt.sh).
+try:
+    _dyn = b'ld-linux' in open(os.path.join(O, 's0-cell-64'), 'rb').read(65536)
+    L.append('    engines     %s' % ('linked with the C library' if _dyn else
+             'without the C library (ENGINE_RT=nolibc, engine/rt-linux-x86_64.c)'))
+except OSError:
+    pass
 L.append('    counters    %s' % ('cycles and instructions (user space)' if HAVE_CYC else
          'unavailable - CPU time only (kernel.perf_event_paranoid %s)'
          % rd('/proc/sys/kernel/perf_event_paranoid')))
