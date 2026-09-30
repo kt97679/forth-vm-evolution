@@ -10,7 +10,8 @@ someone will quote.
     ARMv7 (Tegra), 4 cores, Gentoo     3 layout builds, 1 tree
 
 Both swept twice. `tools/agree.py`: every figure on both machines agrees
-with itself within its stated uncertainty.
+with itself within its stated uncertainty. The CV8-against-SPN section
+is the Ryzen alone: SPN runs on x86-64 only.
 
 ## Ratios to the cell engine, 4-byte cells
 
@@ -66,6 +67,86 @@ five of its eight stages are indistinguishable from the cell engine.
 Both are the short, narrow workloads. Both reliable ones run a lot of
 varied code. That is the pattern, and it is the article's one result
 about measurement rather than about encodings.
+
+## CV8 against SPN - the Ryzen only
+
+SPN runs on x86-64 only, so this is one machine: the Ryzen, in CPU
+cycles (`tools/bench-laptop.sh` at 60b5f39; the files are
+`amd-ryzen-7-pro-8840hs-x86_64-*.md` here). s8 is CV8 plus a
+translator: the same byte code, about 235 words turned into native code
+and about 100 refused and left interpreted.
+
+**Once running** - net of start-up, 8-byte cells, ratio to the cell
+engine, mean of two sweeps:
+
+| stage | kernel | corpus | fib | parse |
+|---|---|---|---|---|
+| `s4-cv8` | 0.903 | 0.929 | 1.095 | 0.933 |
+| `s5-cv8spec` | 0.677 | 0.698 | 1.026 | 0.700 |
+| `s6-cv8b` | 0.722 | 0.776 | 1.036 | 0.814 |
+| `s7-spn` | 0.311 | 0.302 | 0.110 | 0.314 |
+| `s8-spncv8` | 0.292 | 0.322 | 0.111 | 0.314 |
+| `s8-lazy` | 0.312 | 0.351 | 0.124 | 0.304 |
+
+Errors about ±0.02 for the interpreters (±0.04 on fib) and ±0.008 for
+SPN (±0.004 on fib). s8-spncv8 is 2.4-2.6x faster than `s6-cv8b`, the
+CV8 it is built on, on the three workloads that are evidence, and
+2.2-2.3x faster than `s5-cv8spec`, the fastest CV8. On fib the gap is
+ninefold - wide enough to survive the error bars that make fib's
+interpreter figures unquotable above.
+
+**End to end** - CPU time, ms, start-up included:
+
+| stage | start-up | kernel | fib | corpus | parse |
+|---|---|---|---|---|---|
+| `s5-cv8spec` | 0.55 | 10.51 | 34.92 | 8.40 | 40.39 |
+| `s6-cv8b` | 0.55 | 11.15 | 33.29 | 9.38 | 46.80 |
+| `s8-lazy` | 1.51 | 6.21 | 5.63 | 5.57 | 19.00 |
+| `s8-spncv8` | 1.76 | 6.20 | 5.34 | 5.50 | 19.93 |
+| `s8-full` | 6.48 | 11.06 | 10.24 | 10.16 | 24.66 |
+| `s7-spn` | 1.93 | 6.64 | 5.53 | 5.41 | 19.96 |
+
+SPN starts 1-1.2 ms later and repays it once a program would run about
+2 ms under CV8; a shorter script finishes sooner on CV8. `s8-full`
+translates the whole dictionary at every start, and wins only on long
+runs.
+
+**Why it is faster** - end to end, instructions and instructions per
+cycle:
+
+| workload | `s6-cv8b` | per cycle | `s8-spncv8` | per cycle |
+|---|---|---|---|---|
+| kernel | 114.2 M | 2.31 | 66.8 M | 2.61 |
+| fib | 378.2 M | 2.44 | 76.9 M | 3.41 |
+| corpus | 93.5 M | 2.26 | 60.9 M | 2.68 |
+| parse | 507.2 M | 2.36 | 247.8 M | 2.78 |
+
+35-80% fewer instructions - no fetch, decode and dispatch per
+operation - and 13-40% more per cycle, most likely from losing the
+dispatch jumps (mispredictions not measured). The CV8 interpreters run
+2.3-2.4 instructions per cycle against the cell engine's 2.6-2.8: the
+compact byte code costs cycles to decode.
+
+**What SPN costs:**
+
+| | `s6-cv8b` | `s8-lazy` | `s8-spncv8` | `s8-full` |
+|---|---|---|---|---|
+| image, bytes | 9,881 | 32,220 | 36,897 | 23,652 |
+| start-up, ms | 0.55 | 1.51 | 1.76 | 6.48 |
+| native code at start | - | 66 KB | 105 KB | 105 KB |
+| private memory, corpus | 148 KB | 336 KB | 332 KB | 352 KB |
+
+Private memory is resident memory less the shared libraries. The engine
+is 28.3 KB of machine code against 19.7 KB; SPN adds 1,171 lines of
+Forth (translator, recorder, saver) and 199 of C (stencils, markers).
+`s7-spn` reached the same speed with a 103,441-byte image.
+
+**What CV8 keeps:** every platform a C compiler reaches - it is the only
+one of the two measured on the Tegra - both cell widths, no executable
+memory, and images that are plain data, independent of the engine
+build and byte-reproducible. SPN images are tied to their engine build
+and are not yet reproducible: pointer variables are saved with
+addresses that change every run.
 
 ## Method notes worth keeping
 
