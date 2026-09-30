@@ -78,3 +78,27 @@ nothing on the systems that matter.
 **Superinstructions did.** Profiling what feeds CV8's ?BRANCH chose
 eight compare-and-branch fusions for SPN: 3-5% faster on kernel, corpus
 and parse (FINDINGS-SPN.md, "Compare-and-branch, fused").
+
+**The 256-entry table, already in the engine lab, never measured.** CV8
+tells an opcode from a call with `if (t < 0x80)` on every dispatch - a
+data-dependent branch, mispredicted whenever the run of opcodes and
+calls is irregular. `-DDISPATCH256=1` (ENGINE_CFLAGS) indexes a table by
+the whole byte instead, every call byte leading to the shared call
+path, so the decision moves into the indirect jump's predicted target.
+`-DSIGNTEST=1` changed nothing on x86: GCC already compiles `t < 0x80`
+as a sign test (the option is for RISC-V).
+
+Measured first, it made s8 two to four times SLOWER while passing every
+test: the table was a local array refilled - 256 stores - on every entry
+to the interpreter, and s8 enters it each time native code runs a word
+it could not translate. Now it is static and filled once. Development
+VM, end to end, two builds' worth of layouts:
+
+|  | kernel | fib | corpus | parse |
+|---|---|---|---|---|
+| `s5-cv8spec` | +1% | -6 to -9% | -4 to -9% | -10 to -14% |
+| `s6-cv8b` | +1% | -3 to +1% | -4 to -7% | -10 to -14% |
+| s8 | -3 to +1% | | | |
+
+A real gain for the interpreters where calls and opcodes interleave
+most; not yet the default.

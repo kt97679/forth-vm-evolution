@@ -952,10 +952,15 @@ static void virtual_machine(void) {
 #if ENC == 3 && SHAREDCALL && DISPATCH256
     /*  Same handlers, but indexed by the whole byte: 0x80-0xFF all land
      *  on do_call, so no test is needed to tell an opcode from a call. */
-    const void *dtab256[256];
-    { int i_, n_ = (int)(sizeof dispatch / sizeof dispatch[0]);
-      for (i_ = 0; i_ < 256; i_++)
-          dtab256[i_] = (i_ < n_ && i_ < 128) ? dispatch[i_] : &&do_call; }
+    /*  Static, and filled once: s8 re-enters this function every time
+     *  native code runs a word it could not translate, and a local table
+     *  refilled on every entry made s8 two to four times slower. */
+    static const void *dtab256[256];
+    if (!dtab256[0]) {
+        int i_, n_ = (int)(sizeof dispatch / sizeof dispatch[0]);
+        for (i_ = 0; i_ < 256; i_++)
+            dtab256[i_] = (i_ < n_ && i_ < 128) ? dispatch[i_] : &&do_call;
+    }
 #endif
 
 #if ENC == 3 && SHAREDCALL
