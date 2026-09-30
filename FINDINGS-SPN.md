@@ -796,3 +796,43 @@ instructions per cycle against 3.41. The same work, placed differently.
 fib is that sensitive even untouched: the cell engine, with identical
 binaries and instructions, took up to 10% more or fewer cycles per
 layout variant from one run to the next.
+
+## Compare-and-branch, fused
+
+The dispatch lab (`lab/dispatch/`) found superinstructions the largest
+win in every design, so the next fusions were chosen by measuring what
+the CV8 interpreter actually dispatches (`-DPROFILE=1`, opcode pairs):
+a ?BRANCH is 9-10% of everything dispatched on every workload, and what
+makes its flag, as a share of ALL dispatches:
+
+                  kernel   corpus   parse
+    0=             3.5%     3.2%     3.1%
+    DUP            1.0%     1.5%     2.0%
+    U<             0.4%     0.8%     1.5%
+    =              0.6%     0.8%     1.1%
+    - n= OR        0.3-0.9% each
+
+(fib's is `<`, 9.1% - DUP 2 < IF, fused already.) Each pair was a flag
+made, pushed and then tested: `0= IF` a literal, a compare and the
+33-byte ?BRANCH stencil. s8 now emits one stencil per pair - compare and
+conditional jump, no flag - for 0=, DUP, =, U<, <, n=, - and OR, when no
+branch lands on the ?BRANCH. 203 sites in the kernel, against 6. The
+translator looks at the next byte first, so operations not followed by a
+?BRANCH cost one compare; the new stencils are compiled into the s8
+engine only (SPN_FUSED_BR), since s7's scans the whole table at boot -
+s7's engine stays byte-identical.
+
+Development VM, CPU time, end to end, alternating old and new twice:
+
+                  kernel   corpus   parse    fib
+    s8-spncv8     -3.5%    -3.9%    -4.8%    +0.5%
+    s8-lazy       -3.2%    -3.3%    -3.2%    -1.3%
+    controls      within 1.2% (s0-cell, s6-cv8b, s7-spn)
+
+s8-full starts 0.3 ms later, translating two more words and fusing 203
+sites at every boot. Native code 2.3% smaller: less than hoped, because
+GCC compiles each branch stencil as a conditional jump over an
+unconditional jump to the next stencil, then a jump to the target - an
+extra transfer, and about 30 bytes where 15 would do. A stencil whose
+conditional jump goes straight to the target needs the scanner to
+recognise conditional jumps as holes, and a compiler that emits them.

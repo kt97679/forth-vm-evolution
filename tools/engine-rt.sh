@@ -21,3 +21,6 @@ case "${ENGINE_RT:-libc}" in
         fi ;;
     *)  echo "ENGINE_RT must be libc or nolibc, not '$ENGINE_RT'" >&2; exit 1 ;;
 esac
+# ENGINE_CFLAGS: more compiler flags for every 64-bit engine - for trying
+# one on the whole ladder at once, e.g. ENGINE_CFLAGS=-fcf-protection=none.
+RT_FLAGS="$RT_FLAGS ${ENGINE_CFLAGS:-}"

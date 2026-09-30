@@ -90,6 +90,31 @@ S(st_addi32) { GO(sp, tos + IMM32); }
    one conditional jump, with nothing written to the stack. */
 S(st_dup_gti_br) { if (tos > IMM32) return spn_jump(sp, tos); GO(sp, tos); }
 
+/* ?BRANCH fused with the operation that makes its flag: one compare and
+   one conditional jump, no flag made and then tested. Each jumps where the
+   pair would - when the flag would have been zero - and leaves the stack
+   as the pair would. What feeds ?BRANCH, measured on the CV8 interpreter
+   (kernel, corpus, parse): 0= about 3% of everything dispatched, DUP 1-2%,
+   U< and = around 1%, then -, n= and OR. */
+#if SPN_FUSED_BR     /* s8 only: s7's engine scans the whole table at boot, and
+                       these would cost it time for stencils it never uses */
+S(st_nz_br)  { cell f = tos; tos = *sp++;                   /* 0= IF: jump if non-zero */
+               if (f != 0) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_dup_br) { if (tos == 0) return spn_jump(sp, tos); GO(sp, tos); }   /* DUP IF */
+S(st_ne_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* = IF */
+               if (a != b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_uge_br) { uint64_t a = (uint64_t)sp[0], b = (uint64_t)tos; tos = sp[1]; sp += 2;  /* U< IF */
+               if (a >= b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_ge_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* < IF */
+               if (a >= b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_nei_br) { cell f = tos; tos = *sp++;                   /* n= IF, n in the 32-bit hole */
+               if (f != IMM32) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_eq_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* - IF: jump if equal */
+               if (a == b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_or_br)  { cell x = sp[0] | tos; tos = sp[1]; sp += 2;              /* OR IF */
+               if (x == 0) return spn_jump(sp, tos); GO(sp, tos); }
+#endif
+
 /* ?BRANCH: take the flag, then either fall through or jump. */
 S(st_0branch) {
     cell f = tos; tos = *sp++;
@@ -181,5 +206,10 @@ const void *const spn_table[] = {
     (const void *)st_do, (const void *)st_qdo, (const void *)st_loop,
     (const void *)st_ploop, (const void *)st_i, (const void *)st_j,
     (const void *)st_unloop, (const void *)st_leave, (const void *)st_pick,
+#if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
+    (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
+    (const void *)st_uge_br, (const void *)st_ge_br, (const void *)st_nei_br,
+    (const void *)st_eq_br, (const void *)st_or_br,
+#endif
 };
 const int spn_table_len = sizeof spn_table / sizeof spn_table[0];

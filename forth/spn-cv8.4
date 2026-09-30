@@ -52,6 +52,10 @@ VARIABLE RP-ADDR  VARIABLE INTERP-FN
 36 CONSTANT S-QDO     37 CONSTANT S-LOOP    38 CONSTANT S-PLOOP
 39 CONSTANT S-I       40 CONSTANT S-J       41 CONSTANT S-UNLOOP
 42 CONSTANT S-LEAVE   43 CONSTANT S-PICK
+\ ?BRANCH fused with what makes its flag (spn-stencils.c): 0= DUP = U< < n= - OR
+44 CONSTANT S-NZBR    45 CONSTANT S-DUPBR   46 CONSTANT S-NEBR
+47 CONSTANT S-UGEBR   48 CONSTANT S-GEBR    49 CONSTANT S-NEIBR
+50 CONSTANT S-EQBR    51 CONSTANT S-ORBR
 64 CONSTANT MAX-STENCILS
 
 \ ---- ARCH: what this file knows about x86-64 ----
@@ -638,6 +642,30 @@ VARIABLE FZ-A  VARIABLE FZ-N  VARIABLE #FUSED  0 #FUSED !
   FZ-NEXT 0= IF FALSE EXIT THEN
   OP-K @ K-QBR <> IF FALSE EXIT THEN
   DROP FZ-A @ TRUE ;
+\ Any flag and the ?BRANCH that takes it, as ONE compare and conditional
+\ jump - the flag never made, never tested. On the CV8 interpreter a
+\ ?BRANCH is a tenth of everything dispatched, and what feeds it is 0=
+\ (3% of everything), DUP, U<, =, -, n= and OR. The stencil for the
+\ operation just decoded, or 0:
+: BR-FUSE ( --- stencil | 0 )
+  OP-K @ K-TINY = IF
+    OP-V @ 0 = IF S-NZBR EXIT THEN  OP-V @ 1 = IF S-EQBR EXIT THEN  0 EXIT THEN
+  OP-K @ K-EQI = IF OP-V @ INT32? IF S-NEIBR ELSE 0 THEN EXIT THEN
+  OP-K @ K-PRIM <> IF 0 EXIT THEN
+  OP-V @ PM@
+  DUP S-DUP = IF DROP S-DUPBR EXIT THEN   DUP S-EQ = IF DROP S-NEBR EXIT THEN
+  DUP S-ULT = IF DROP S-UGEBR EXIT THEN   DUP S-LT = IF DROP S-GEBR EXIT THEN
+  S-OR = IF S-ORBR EXIT THEN  0 ;
+\ If the next operation is a ?BRANCH no branch lands on, emit the pair as
+\ one and step past it. (n= keeps its n in SV across the look ahead.)
+: BR-FUSE? ( a' --- a' | a'' )
+  DUP C@ 4 <> IF EXIT THEN          \ the next byte is not ?BRANCH: most operations stop here
+  BR-FUSE ?DUP 0= IF EXIT THEN                         ( a' s )
+  OVER TARGET? IF DROP EXIT THEN
+  SAVE-OP  OVER DECODE                                 ( a' s a'' )
+  OP-K @ K-QBR <> IF 2DROP REST-OP EXIT THEN
+  OP-V @ ARG-JUMP !  SV @ ARG-IMM !
+  SWAP EMIT-ST  NIP  1 #FUSED +!  K-BAD OP-K ! ;       ( a'' )
 : EMIT-WORD ( --- )
   0 #FIX !  T-SRC @
   BEGIN
@@ -650,6 +678,7 @@ VARIABLE FZ-A  VARIABLE FZ-N  VARIABLE #FUSED  0 #FUSED !
         K-BAD OP-K !                     \ emitted: nothing more for this one
       ELSE REST-OP THEN
     THEN THEN
+    BR-FUSE?
     OP-K @ K-BR = IF OP-V @ ARG-JUMP ! S-BRANCH EMIT-ST THEN
     OP-K @ K-QBR = IF OP-V @ ARG-JUMP ! S-0BRANCH EMIT-ST THEN
     OP-K @ K-CALL = IF

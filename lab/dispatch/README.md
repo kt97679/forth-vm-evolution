@@ -64,3 +64,17 @@ the classic byte sieve (memory and nested loops).
 One virtualised Intel processor, CPU time: the ordering, not the third
 digit. Real hardware with cycle counts decides - especially `native`,
 whose premise is a return predictor this VM may not show.
+
+## What carried over to the real engines
+
+**Dropping `endbr64` did not, mostly.** Built with
+`ENGINE_CFLAGS=-fcf-protection=none` (tools/engine-rt.sh), the cell
+engine ran about 5% faster, consistently; CV8 and SPN moved by under 2%
+either way. The lab's 8% for token threading was not the real CV8
+engine's, whose dispatch cost lies elsewhere. The default is unchanged:
+it would shift every ratio - the cell engine is the baseline - for
+nothing on the systems that matter.
+
+**Superinstructions did.** Profiling what feeds CV8's ?BRANCH chose
+eight compare-and-branch fusions for SPN: 3-5% faster on kernel, corpus
+and parse (FINDINGS-SPN.md, "Compare-and-branch, fused").
