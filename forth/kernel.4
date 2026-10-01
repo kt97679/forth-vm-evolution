@@ -108,11 +108,14 @@ PRIMITIVE UM/MOD ( ud u1 --- urem uquot)
 PRIMITIVE D+ ( d1 d2 --- d3)
 \ Add the double numbers d1 and d2.
 
-PRIMITIVE EMIT ( c ---)
-\ Output the character c to the terminal.
+PRIMITIVE WRITE ( c-addr u --- )
+\ Output u bytes from c-addr to the terminal. EMIT and TYPE are built on
+\ this, below.
 
-PRIMITIVE KEY ( --- c)
-\ Input the character c from the terminal.
+PRIMITIVE READ ( c-addr u1 --- u2 )
+\ Input up to u1 bytes from the terminal to c-addr: what is there, at
+\ least one byte, waiting if it must - u2 is 0 only at the end of input.
+\ KEY is built on this, below.
 
 PRIMITIVE BYE  ( ---)
 \ Terminate the execution of Forth, return to host OS.
@@ -180,10 +183,6 @@ PRIMITIVE RP!      ( a-addr ---)
 \ f is true if and only if the unsigned number u1 is greater than u2.
   SWAP U< ;
 
-: CR  ( --- )
-\ Output a newline to the terminal.
-   13 EMIT 10 EMIT ;
-
 VARIABLE START \ holds absolute address of the system address space
 
 VARIABLE BOOT
@@ -205,6 +204,24 @@ VARIABLE S0 ( --- a-addr)
 
 VARIABLE R0 ( --- a-addr)
 \ Variable that holds the bottom address of the return stack.
+
+\ The terminal in Forth, on the two primitives READ and WRITE: a byte of
+\ its own for each, so they can run as native code where that exists.
+VARIABLE EMIT-BYTE
+VARIABLE KEY-BYTE
+
+: EMIT ( c --- )
+\ Output the character c to the terminal.
+  EMIT-BYTE C!  EMIT-BYTE 1 WRITE ;
+
+: KEY ( --- c )
+\ Input the character c from the terminal. At the end of input, leave
+\ as BYE does.
+  KEY-BYTE 1 READ 0= IF BYE THEN  KEY-BYTE C@ ;
+
+: CR  ( --- )
+\ Output a newline to the terminal.
+   13 EMIT 10 EMIT ;
 
 : DEPTH ( --- n )
 \ n is the number of cells on the stack (before DEPTH was executed).
@@ -309,7 +326,7 @@ VARIABLE R0 ( --- a-addr)
 
 : TYPE ( c-addr1 u --- )
 \ Output the string starting at c-addr and length u to the terminal.
-   OVER + SWAP BEGIN 2DUP - WHILE DUP C@ EMIT CHAR+ REPEAT 2DROP ;
+   WRITE ;
 
 : ALIGNED ( c-addr --- a-addr )
 \ a-addr is the first aligned address after c-addr.

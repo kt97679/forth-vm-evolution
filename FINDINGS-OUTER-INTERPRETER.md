@@ -168,3 +168,37 @@ Kernel compilation, both widths, against the cell engine:
 
 The ladder is worth 0.75x at 8-byte cells and 0.80x at 4-byte, on a
 baseline that is no longer carrying a 4x defect in its dictionary.
+
+## KEY and EMIT in Forth
+
+KEY and EMIT were primitives 31 and 30. They are now colon definitions
+in kernel.4 on two primitives in the same slots: WRITE ( c-addr u --- )
+and READ ( c-addr u1 --- u2 ), which returns what input there is - at
+least one byte, or none at the end of input. The engines keep the same
+C buffers and flush at the same points; READ refills its buffer with a
+single read(), so a terminal still gives a line and a pipe what is
+waiting. KEY leaves through BYE at the end of input, the clean exit
+L_key used to take (GOALS.md / PROGRESS.md, Bug 3). TYPE is one WRITE
+instead of an EMIT per character.
+
+The slots kept their numbers: CV8 maps primitives to opcodes and has
+none free. A primitive changing what it does meant the old seed could
+not run on the new engines, so `tools/reseed.sh` now runs every step
+that uses the committed seed on the engine as committed
+(`OLD_ENGINE_REV`, default HEAD). The new kernel compiles itself to
+itself (24,712 bytes, was 24,560), and the 4-byte kernel is identical
+from the old seed and the new (13,680, was 13,588).
+
+Checked: 616/616 on all 15 systems and the save-and-reboot tests; and
+for all 14 systems of this repository, the corpus, the negative control
+and input ending without BYE give byte-identical output and exit status
+before and after.
+
+**What it cost.** ACCEPT reads each character through KEY, which was one
+dispatch and is now a colon call, eight operations and a one-byte READ;
+under SPN, READ still crosses into the interpreter. Development VM, end
+to end: corpus 3.5-11% slower, parse 1-9%, fib (almost no input)
+unchanged within its noise; images 88-169 bytes larger. Two ways back,
+neither done yet: ACCEPT reading a line at a time rather than a
+character, and a stencil that calls READ and WRITE directly, so native
+code no longer crosses into the interpreter for them.

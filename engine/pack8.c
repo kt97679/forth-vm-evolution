@@ -455,9 +455,22 @@ NOINLINE_IO static void t_flush(void) {
     if (t_olen) { full_write(1, t_obuf, (size_t)t_olen); t_olen = 0; }
 }
 
-NOINLINE_IO static void t_put(UNS8 c) {
-    if (t_olen == TIOBUF) t_flush();
-    t_obuf[t_olen++] = c;
+/*  WRITE and READ - primitives 30 and 31, where EMIT and KEY were; the
+ *  kernel builds EMIT, KEY and TYPE on them in Forth. The same buffers as
+ *  before: WRITE adds to t_obuf, flushed when full and wherever it was
+ *  flushed before; READ hands over what t_ibuf holds, refilling it with
+ *  ONE read() - a terminal gives a line, a pipe whatever is waiting - so at
+ *  least one byte, or none at the end of input. Out of line, like every
+ *  I/O path here.  */
+NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
+    while (n) {
+        UNS64 k;
+        if (t_olen == TIOBUF) t_flush();
+        k = (UNS64)(TIOBUF - t_olen);
+        if (k > n) k = n;
+        memcpy(t_obuf + t_olen, p, (size_t)k);
+        t_olen += (int)k; p += k; n -= k;
+    }
 }
 
 NOINLINE_IO static int t_getc(void) {
@@ -469,6 +482,21 @@ NOINLINE_IO static int t_getc(void) {
     }
     return t_ibuf[t_ipos++];
 }
+NOINLINE_IO static UNS64 t_read(UNS8 *p, UNS64 n) {
+    UNS64 k;
+    if (n == 0) return 0;
+    if (t_ipos >= t_ilen) {
+        t_flush();                     /* prompt before blocking */
+        t_ilen = (int)read(0, t_ibuf, TIOBUF);
+        t_ipos = 0;
+        if (t_ilen <= 0) { t_ilen = 0; return 0; }   /* end of input */
+    }
+    k = (UNS64)(t_ilen - t_ipos);
+    if (k > n) k = n;
+    memcpy(p, t_ibuf + t_ipos, (size_t)k);
+    t_ipos += (int)k;
+    return k;
+}
 
 static void virtual_machine(void) {
     UNS64 ip = g_ip, rp = g_rp, dsp = g_dsp, t;
@@ -479,7 +507,7 @@ static void virtual_machine(void) {
         &&L_cstore, &&L_store, &&L_and, &&L_or, &&L_xor, &&L_fromr,
         &&L_tor, &&L_rfetch, &&L_eq, &&L_ugt, &&L_gt, &&L_plus,
         &&L_negate, &&L_lshift, &&L_rshift, &&L_ummult, &&L_umdiv,
-        &&L_dplus, &&L_emit, &&L_key, &&L_bye, &&L_spfetch, &&L_spstore,
+        &&L_dplus, &&L_write, &&L_read, &&L_bye, &&L_spfetch, &&L_spstore,
         &&L_rpfetch, &&L_rpstore, &&L_openfile, &&L_closefile,
         &&L_readline, &&L_writeline, &&L_readfile, &&L_writefile,
         &&L_system, &&L_reposfile, &&L_filepos, &&L_delfile, &&L_filesize,
@@ -565,23 +593,15 @@ L_dplus:   /* d+      */
     dsp += 2 * CELL_BYTES;
     NEXT();
 
-L_emit: { /* emit    */
-    UNS8 c = (UNS8)DS0;
-    t_put(c);
-    dsp += CELL_BYTES;
+L_write: { /* write   c-addr u --- : u bytes to the terminal (t_write) */
+    t_write((const UNS8 *)(uintptr_t)DS1, (UNS64)DS0);
+    dsp += 2 * CELL_BYTES;
     NEXT();
 }
-L_key: { /* key     */
-    int ch = t_getc();
-    UNS8 c = (UNS8)ch;
-    long n = (ch < 0) ? 0 : 1;
-    if (n <= 0) {
-        /* Clean exit on stdin EOF (or a read error) instead of spinning
-         * forever re-reading EOF - see GOALS.md / PROGRESS.md, Bug 3. */
-        t_flush();
-        exit(0);
-    }
-    PUSH((UNS64)c);
+L_read: { /* read    c-addr u --- u2 : what input there is, 0 at its end (t_read) */
+    UNS64 n_ = t_read((UNS8 *)(uintptr_t)DS1, (UNS64)DS0);
+    DS1 = n_;
+    dsp += CELL_BYTES;
     NEXT();
 }
 L_bye:     /* bye     */ t_flush(); exit(0);

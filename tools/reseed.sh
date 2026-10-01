@@ -28,22 +28,33 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 W=$(mktemp -d); trap 'rm -rf "$W"' EXIT
 ENG="$W/relf-64"
 cc -O2 -o "$ENG" "$ROOT/engine/relf.c"
+# The committed seed was made for the committed engines. When a change
+# alters what a primitive DOES - not only what kernel.4 says, as when
+# slots 30 and 31 went from EMIT and KEY to WRITE and READ - the old seed
+# cannot run on the new engine. So every step that runs the OLD seed runs
+# on the engine as committed (OLD_ENGINE_REV, default HEAD), and every
+# step that runs the new seed on the engine in the tree. With the engines
+# unchanged, the two are the same program.
+OLD_ENGINE_REV=${OLD_ENGINE_REV:-HEAD}
+ENG_OLD="$W/relf-64-old"
+git -C "$ROOT" show "$OLD_ENGINE_REV:engine/relf.c" > "$W/relf-old.c"
+cc -O2 -o "$ENG_OLD" "$W/relf-old.c"
 cp "$ROOT"/forth/kernel.4 "$ROOT"/forth/extend.4 "$ROOT"/forth/cross.4 "$W/"
 sed 's/^8 TARGET-CELL-BYTES !/4 TARGET-CELL-BYTES !/' "$ROOT/forth/cross.4" > "$W/cross32.4"
 grep -q '^4 TARGET-CELL-BYTES !' "$W/cross32.4" || { echo "cannot retarget cross.4"; exit 1; }
 
 # compile SRC (cross.4 or cross32.4) with IMAGE; the result replaces IMAGE
 xc() ( cd "$W" && cp "$1" kernel.img &&
-       printf 'S" extend.4" INCLUDED\nS" %s" INCLUDED\n' "$2" | "$ENG" kernel.img >/dev/null 2>&1 &&
+       printf 'S" extend.4" INCLUDED\nS" %s" INCLUDED\n' "$2" | "$4" kernel.img >/dev/null 2>&1 &&
        cp kernel.img "$3" )
 
-xc "$ROOT/forth/kernel-seed.img" cross.4   "$W/s1.img"
-xc "$W/s1.img"                   cross.4   "$W/s2.img"
+xc "$ROOT/forth/kernel-seed.img" cross.4   "$W/s1.img"      "$ENG_OLD"
+xc "$W/s1.img"                   cross.4   "$W/s2.img"      "$ENG"
 cmp -s "$W/s1.img" "$W/s2.img" || { echo "FAIL: 8-byte kernel is not a fixed point"; exit 1; }
 echo "8-byte kernel: fixed point reached ($(wc -c < "$W/s1.img") bytes)"
 
-xc "$ROOT/forth/kernel-seed.img" cross32.4 "$W/k32-old.img"
-xc "$W/s1.img"                   cross32.4 "$W/k32-new.img"
+xc "$ROOT/forth/kernel-seed.img" cross32.4 "$W/k32-old.img"  "$ENG_OLD"
+xc "$W/s1.img"                   cross32.4 "$W/k32-new.img"  "$ENG"
 cmp -s "$W/k32-old.img" "$W/k32-new.img" || { echo "FAIL: 4-byte kernel depends on which seed built it"; exit 1; }
 echo "4-byte kernel: identical from old and new seed ($(wc -c < "$W/k32-new.img") bytes)"
 
