@@ -333,9 +333,19 @@ for LV in $(seq 0 $((LAYOUTS - 1))); do
           -o "$O/s6-cv8b-64$LVSUF" "$O/vm-lab-tos.c"
   cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
           -o "$O/s6-cv8b-32$LVSUF" "$O/vm-lab-tos.c"
+  # relf: today's CV8, vendored as a REFERENCE SYSTEM (vendor/relf, which
+  # commit in vendor/relf/UPSTREAM; tools/update-relf.sh). Built as relf
+  # builds it - -O2 -Wall, and for 32 bits -fno-pie -no-pie - with this
+  # lab's layout flags, but never ENGINE_RT or ENGINE_CFLAGS: it is
+  # measured as shipped. It runs its own kernel, so it compares as a system.
+  [ "$BUILD64" = 1 ] && $CC64 $LF -O2 -Wall -o "$O/relf-64$LVSUF" "$ROOT/vendor/relf/cv8.c"
+  [ "$BUILD32" = 1 ] && $CC32 $LF -O2 -Wall -fno-pie -no-pie -o "$O/relf-32$LVSUF" "$ROOT/vendor/relf/cv8.c"
 
 done
 LF=""; LVSUF=""
+[ "$BUILD64" = 1 ] && cp "$ROOT/vendor/relf/kernel64.img" "$O/relf-s64.img"
+[ "$BUILD32" = 1 ] && cp "$ROOT/vendor/relf/kernel32.img" "$O/relf-s32.img"
+echo "built  relf $(sed -n 's/^commit  \(.......\).*/\1/p' "$ROOT/vendor/relf/UPSTREAM") (reference: its own engine and kernel)"
 echo "built  stage engines ($LAYOUTS layout(s) each)"
 
 # A layout variant is only worth timing if it IS a different binary. If

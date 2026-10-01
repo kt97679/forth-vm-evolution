@@ -60,7 +60,10 @@ otherwise. Each report says which, and prints both spreads.
 
 `s0-cell` through `s6-cv8b`, plus the two schemes an earlier design note
 rejected and this project built anyway (`p4-pack4`, `p8-pack8`), plus
-vendored SOD32 for comparison. `stages/STAGES.md` describes each.
+vendored SOD32 for comparison. `stages/STAGES.md` describes each. And
+`relf` as it is today (`vendor/relf`): the system this ladder led to, with
+its own CV8 and its own kernel, built and measured beside the stages as a
+reference - it is where the shell and CV8 as a product now live.
 
 The last of them, `s6-cv8b`, makes the dictionary header byte-granular -
 a 1-3 byte link with its tag read backward - which takes the 8-byte
@@ -85,6 +88,8 @@ do not show. x86-64 only.
 ## Layout
 
     vendor/sod32/   upstream SOD32, unmodified (GPLv2, see its LICENSE)
+    vendor/relf/    relf's engine and kernel images at the commit in
+                    UPSTREAM (GPLv2 only, see LICENCE.md); tools/update-relf.sh
     engine/         the C engines: relf.c, pack4/pack8, vm-lab.c; for SPN,
                     spn.c and spn-cv8.c, the stencils in spn-stencils.c
     forth/          the Forth sources: kernel, cross-compiler, overlays

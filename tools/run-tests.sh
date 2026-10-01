@@ -129,6 +129,7 @@ run s7-full    "$O/s7-full-64"    "$O/s7-full-s64.img"
 run s8-spncv8  "$O/s8-spncv8-64"  "$O/s8-spncv8-s64.img"
 run s8-full    "$O/s8-full-64"    "$O/s8-full-s64.img"
 run s8-lazy    "$O/s8-lazy-64"    "$O/s8-lazy-s64.img"
+run relf       "$O/relf-64"       "$O/relf-s64.img"
 echo
 echo "32-bit cells:"
 run s0-cell    "$O/s0-cell-32"    "$O/s0-cell-s32.img"
@@ -140,6 +141,7 @@ run s3-cpt16f  "$O/s3-cpt16f-32"  "$O/s3-cpt16f-s32.img"
 run s4-cv8     "$O/s4-cv8-32"     "$O/s4-cv8-s32.img"
 run s5-cv8spec "$O/s5-cv8spec-32" "$O/s5-cv8spec-s32.img"
 run s6-cv8b    "$O/s6-cv8b-32"    "$O/s6-cv8b-s32.img"
+run relf       "$O/relf-32"       "$O/relf-s32.img"
 
 if [ -x "$O/sod32/sod32" ]; then
     echo

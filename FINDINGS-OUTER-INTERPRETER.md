@@ -202,3 +202,31 @@ unchanged within its noise; images 88-169 bytes larger. Two ways back,
 neither done yet: ACCEPT reading a line at a time rather than a
 character, and a stencil that calls READ and WRITE directly, so native
 code no longer crosses into the interpreter for them.
+
+## relf today, and standard input
+
+relf, vendored at 9934f3f (`vendor/relf`), passes the CORE corpus and runs
+every workload with the stages' output, `kernel` included. Development VM,
+CPU time, net of start-up, the same program fed on standard input and then
+by `INCLUDED` from a file, ratio to the cell engine:
+
+| system | parse, stdin | parse, file | corpus, stdin | corpus, file |
+|---|---|---|---|---|
+| `s0-cell` | 67.4 (1.00) | 63.3 (1.00) | 13.6 (1.00) | 12.2 (1.00) |
+| `s6-cv8b` | 40.5 (0.60) | 37.9 (0.60) | 8.0 (0.59) | 7.1 (0.59) |
+| `relf` | 46.2 (0.69) | 25.1 (0.40) | 13.3 (0.98) | 5.5 (0.46) |
+
+Read from a file, relf interprets text a third faster than CV8 v1 on
+parse and a fifth faster on corpus. On standard input it is slower,
+because its KEY takes one byte per read() - deliberately: descriptor 0 is
+shared with every child, and a buffered byte is a byte stolen from
+whatever runs next. That costs about 250 ns a byte here, 21 ms of parse's
+84,000. The stages buffer 4 KB, which is why their shell swallows input
+meant for `cat` and relf's does not.
+
+So a benchmark that feeds a program on standard input measures relf's
+system calls as much as its engine; load the program from a file to
+measure the engine. One improvement, not a fix, for after the article
+branch: on a SEEKABLE standard input - a file, as in these runs - relf
+could read a block and seek back before anything else reads, as bash and
+FreeBSD's sh do. Only a pipe forces one byte at a time.

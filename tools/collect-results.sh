@@ -209,7 +209,7 @@ WORK = (sys.argv[3].split() if len(sys.argv) > 3 and sys.argv[3].strip()
 R = os.path.join(root, 'build', 'results')
 STAGES = ['sod32', 's0-cell', 'p4-pack4', 'p8-pack8', 's1-sod16',
           's2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec', 's6-cv8b', 's7-spn',
-          's8-spncv8', 's8-lazy']
+          's8-spncv8', 's8-lazy', 'relf']
 NICE = {
     'sod32':      'SOD32 (Benschop, 5-bit packed, 32-bit only)',
     's0-cell':    'RelF cell threading',
@@ -224,6 +224,7 @@ NICE = {
     's7-spn':     'SPN on the cell image (frozen), recipes replayed at start',
     's8-spncv8':  'SPN on the CV8 image, recipes replayed at start',
     's8-lazy':    'SPN on the CV8 image, most words translated on first call',
+    'relf':       'relf today: its CV8 and its own kernel (reference; vendor/relf)',
 }
 
 

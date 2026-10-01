@@ -33,7 +33,7 @@ tools/spn-bench.py writes them with the same functions.
 import re, statistics, sys
 
 WORKLOADS = ['kernel', 'fib', 'corpus', 'parse']
-SYSTEMS = ['s0-cell', 's5-cv8spec', 's6-cv8b', 's7-spn', 's8-spncv8', 's8-lazy', 's8-full']
+SYSTEMS = ['s0-cell', 's5-cv8spec', 's6-cv8b', 's7-spn', 's8-spncv8', 's8-lazy', 's8-full', 'relf']
 BASE = 's0-cell'
 SAME_CLOCK = 3.0        # per cent: closer than this, the systems shared a clock
 

@@ -1,0 +1,5 @@
+url     https://github.com/kt97679/relf
+rev     origin/article-2026
+commit  9934f3f2303fb0597be4012251438549cbc97a25
+date    2026-10-01
+subject Iteration 602: Forth calling back into the shell - the gap checks for room above the data stack's guard, which nested forth commands jumped over; forthfuzz tries callbacks; 139,036 bytes, 1,079 assertions

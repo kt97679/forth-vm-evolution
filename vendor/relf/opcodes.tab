@@ -1,0 +1,165 @@
+# opcodes.tab - the CV8 opcode map, its one source (Iteration 518).
+#
+# Every one-byte opcode (0x00-0x7F) and every escape selector, with
+# its Forth name and the engine's handler. tools/gen-opcodes.sh makes
+# cv8-ops.h, the engine's dispatch tables, from it; the Forth sources
+# that must declare the same numbers themselves - kernel.4's PRIMITIVE
+# and OPCODE lines, cross.4's and shadow.4's constants - are CHECKED
+# against it (tools/gen-opcodes.sh --check, run by tests/portability),
+# and the Python tools read it. CV8.md 2.2 says what each kind is.
+#
+# Adding a primitive: a line here, then `make`, then the PRIMITIVE line
+# in kernel.4 that --check will ask for, and the kernels rebuilt.
+#
+# The last column is the operand that follows the opcode, which is how
+# every tool that decodes an image finds the next instruction (Iteration
+# 533; they kept their own lists of opcode numbers until then):
+#   -      none               u8, i8  one byte, unsigned or signed
+#   u16    two bytes          i32     four, signed       u64  eight
+#   b8     a one-byte branch offset, from the operand
+#   b16    a two-byte branch offset, from the operand
+#   slot   a variable's slot: two bytes, or three if the first has bit 7
+#   sel    ESC's selector     data    the body is data, not code
+#
+# kind     number  name        handler         operand
+direct    0x00    NOOP        L_noop          -
+direct    0x01    EXIT        L_exit          -
+direct    0x02    LIT         L_lit           u16
+direct    0x03    BRANCH      L_branch        b16
+direct    0x04    ?BRANCH     L_0branch       b16
+direct    0x05    DROP        L_drop          -
+direct    0x06    DUP         L_dup           -
+direct    0x07    SWAP        L_swap          -
+direct    0x08    ROT         L_rot           -
+direct    0x09    OVER        L_over          -
+direct    0x0A    C@          L_cfetch        -
+direct    0x0B    @           L_fetch         -
+direct    0x0C    C!          L_cstore        -
+direct    0x0D    !           L_store         -
+direct    0x0E    AND         L_and           -
+direct    0x0F    OR          L_or            -
+direct    0x10    XOR         L_xor           -
+direct    0x11    R>          L_fromr         -
+direct    0x12    >R          L_tor           -
+direct    0x13    R@          L_rfetch        -
+direct    0x14    =           L_eq            -
+direct    0x15    U<          L_ult           -
+direct    0x16    <           L_lt            -
+direct    0x17    +           L_plus          -
+direct    0x18    UM*         L_ummult        -
+direct    0x19    SP@         L_spfetch       -
+synth     0x1A    LIT32       L_lit32         i32
+synth     0x1B    DOVAR       L_dovar         data
+synth     0x1C    DODOES      L_dodoes        data
+synth     0x1D    LIT8        L_lit8          u8
+branch8   0x3F    BRANCH8     L_branch8       b8
+branch8   0x40    ?BRANCH8    L_0branch8      b8
+tiny      0x41    +!          L_plusstore     -
+tiny      0x42    ?DUP        L_qdup          -
+tiny      0x43    I           L_i             -
+tiny      0x44    (LOOP)      L_loop          -
+tiny      0x45    (?DO)       L_qdo           -
+tiny      0x46    EXECUTE     L_execute       -
+tiny      0x47    @XT         L_atxt          -
+spec      0x61    push0       L_lit0          -
+spec      0x62    push1       L_lit1          -
+spec      0x63    push-1      L_litm1         -
+spec      0x64    VAR@        L_vf            slot
+spec      0x65    VAR!        L_vs            slot
+spec      0x66    LSAVE       L_lsave         slot
+spec      0x67    LRESTORE    L_lrest         slot
+spec      0x68    L!          L_lstore        slot
+spec      0x69    LZERO       L_lzero         slot
+tiny      0x6A    0=          L_zeq           -
+tiny      0x6B    -           L_sub           -
+tiny      0x6C    <>          L_ne            -
+tiny      0x6D    0<          L_zlt           -
+tiny      0x6E    >           L_sgt           -
+tiny      0x6F    2DUP        L_2dup          -
+tiny      0x70    2DROP       L_2drop         -
+tiny      0x72    1+          L_onep          -
+tiny      0x73    CELL+       L_cellp         -
+tiny      0x74    CELLS       L_cells         -
+tiny      0x75    1-          L_onem          -
+tiny      0x77    COUNT       L_count         -
+spec      0x79    ADDI        L_addi          i8
+spec      0x7B    EQI         L_eqi           i8
+lit64     0x7D    LIT64       L_lit64         u64
+esc       0x7E    ESC         L_esc           sel
+escaped   0       BYE         L_bye           -
+escaped   1       OPEN-FILE   L_openfile      -
+escaped   2       CLOSE-FILE  L_closefile     -
+escaped   3       SYSTEM      L_system        -
+escaped   4       REPOSITION-FILE L_reposfile     -
+escaped   5       FILE-POSITION L_filepos       -
+escaped   6       DELETE-FILE L_delfile       -
+escaped   7       FILE-SIZE   L_filesize      -
+escaped   8       FORK        L_fork          -
+escaped   9       EXECVE      L_execve        -
+escaped   10      WAITPID     L_waitpid       -
+escaped   11      PIPE        L_pipe          -
+escaped   12      DUP2        L_dup2          -
+escaped   13      GETENV      L_getenv        -
+escaped   14      SETENV      L_setenv        -
+escaped   15      SYS-EXIT    L_sysexit       -
+escaped   16      CHDIR       L_chdir         -
+escaped   17      GETCWD      L_getcwd        -
+escaped   18      SYS-ARGC    L_sysargc       -
+escaped   19      SYS-ARG     L_sysarg        -
+escaped   20      GETPID      L_getpid        -
+escaped   21      UNSETENV    L_unsetenv      -
+escaped   22      ALLOCATE    L_allocate      -
+escaped   23      FREE        L_free          -
+escaped   24      RESIZE      L_resize        -
+escaped   25      GETPWHOME   L_getpwhome     -
+escaped   26      GETFSIZE    L_getfsize      -
+escaped   27      SETFSIZE    L_setfsize      -
+escaped   28      READ        L_read          -
+escaped   29      WRITE       L_write         -
+escaped   30      POLL        L_poll          -
+escaped   31      RAW-MODE    L_rawmode       -
+escaped   32      MOVE        L_move          -
+escaped   33      FILL        L_fill          -
+escaped   34      COMPARE     L_compare       -
+escaped   35      SCAN        L_scan          -
+escaped   36      CSTRLEN     L_cstrlen       -
+escaped   37      ISATTY      L_isatty        -
+escaped   38      OPEN-DIR    L_opendir       -
+escaped   39      READ-DIR    L_readdir       -
+escaped   40      CLOSE-DIR   L_closedir      -
+escaped   41      ACCESS      L_access        -
+escaped   42      KILL        L_kill          -
+escaped   43      UMASK       L_umask         -
+escaped   44      CPU-TIMES   L_cputimes      -
+escaped   45      SIGNAL-ACTION L_sigaction     -
+escaped   46      SIGNALS-PENDING L_sigpending    -
+escaped   47      TERM-RAW    L_termraw       -
+escaped   48      TERM-RESTORE L_termrestore   -
+escaped   49      FILE-KIND   L_filekind      -
+escaped   50      GETRLIMIT   L_getrlimit     -
+escaped   51      SETRLIMIT   L_setrlimit     -
+escaped   52      WAIT-NOHANG L_waitnohang    -
+escaped   53      GETPPID     L_getppid       -
+escaped   54      ENV-AT      L_envat         -
+escaped   55      SETPGID     L_setpgid       -
+escaped   56      TCSETPGRP   L_tcsetpgrp     -
+escaped   57      TCGETPGRP   L_tcgetpgrp     -
+escaped   58      WAIT-JOB    L_waitjob       -
+escaped   59      FILE-MODE   L_filemode      -
+escaped   60      LOCAL-TIME  L_localtime     -
+escaped   61      DUP-FROM    L_dupfrom       -
+escaped   62      TCP-LISTEN  L_tcplisten     -
+escaped   63      TCP-ACCEPT  L_tcpaccept     -
+escaped   64      TCP-CONNECT L_tcpconnect    -
+escaped   0x41    NEGATE      L_negate        -
+escaped   0x42    LSHIFT      L_lshift        -
+escaped   0x43    RSHIFT      L_rshift        -
+escaped   0x44    UM/MOD      L_umdiv         -
+escaped   0x45    D+          L_dplus         -
+escaped   0x46    TYPE        L_type          -
+escaped   0x47    SP!         L_spstore       -
+escaped   0x48    RP@         L_rpfetch       -
+escaped   0x49    RP!         L_rpstore       -
+escaped   0x4A    DICT-LIMIT  L_dictlimit     -
+escaped   0x4B    CHMOD       L_chmod         -
+escaped   0x4C    TRAP-XT!    L_trapxt        -

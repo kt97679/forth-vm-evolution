@@ -38,7 +38,7 @@ CPUT = os.path.join(O, 'cputime')
 # BENCH_CPU: the core to pin to (tools/bench-laptop.sh picks the quietest).
 CPU = os.environ.get('BENCH_CPU') or '0'   # set but empty: 0, not ''
 PIN = ['taskset', '-c', CPU] if shutil.which('taskset') else []
-SYSTEMS = ['s0-cell', 's5-cv8spec', 's6-cv8b', 's7-spn', 's8-spncv8', 's8-lazy', 's8-full']
+SYSTEMS = ['s0-cell', 's5-cv8spec', 's6-cv8b', 's7-spn', 's8-spncv8', 's8-lazy', 's8-full', 'relf']
 SPN = {'s7-spn', 's8-spncv8', 's8-lazy', 's8-full'}
 BASE = 's0-cell'
 WORKLOADS = ['kernel', 'fib', 'corpus', 'parse']
