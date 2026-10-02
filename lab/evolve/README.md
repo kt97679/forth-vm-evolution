@@ -158,6 +158,31 @@ compiler INSIDE the image that the genome treated as free, but the dump
 fixed. So the earlier runs' verdicts on fold lists, on byte headers
 against call granularity, and on the shared call path were artefacts.
 
+## Phase 2d: a scan of every single change, and a flawed check
+
+`lab/evolve/scan.py` checks every single-gene change of every hand-made
+design for correctness only - 125 changes; `SCAN.md` has the result.
+
+It exposed a flaw in the survival check itself. The kernel workload runs
+in a directory that starts with a copy of the reference kernel, and the
+check compared that file afterwards - so a design that died quietly
+before saving passed. Every earlier run has that flaw: designs counted
+alive may never have finished the kernel workload, and their kernel
+times, cut short, would look fast. The check now removes the file first;
+the hand-made stages all still pass.
+
+With the strict check, every death has a real cause. Two-byte-only forms
+(calls without `varcall`, near DOES> calls) reach 2^14 units - 16 KB at
+scale 0, 32 KB at scale 1 - and the kernel workload's dictionary is
+larger; with both far forms the same designs live. And the scan found a
+fourth mapping bug: DODOES decodes the far form only under VARCALL, so
+`doesfar` is now dormant, built off, without `varcall`.
+
+A broken design executes arbitrary code, and the engine's primitives
+include fork and execve. Leftover processes held pipes open past every
+timeout, and probably crashed the container once; every engine run now
+has a process group of its own, killed whole on timeout, and a CPU cap.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to

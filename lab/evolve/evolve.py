@@ -257,8 +257,13 @@ def alive(eng, img, pw):
     with open(CORPUS, 'rb') as f:
         r = sh([eng, img], cwd=pw, inp=f.read(), timeout=5)
     if r.stdout != REF_CORPUS: raise RuntimeError('died: corpus')
+    # The work directory starts with a copy of the reference kernel, so
+    # the workload must WRITE it: remove it first. Until this, a design
+    # that died quietly before saving passed - the copy matched.
+    k = os.path.join(pw, 'kernel.img')
+    if os.path.exists(k): os.remove(k)
     sh([eng, img], cwd=pw, inp=KERNEL_IN, timeout=10)
-    if open(os.path.join(pw, 'kernel.img'), 'rb').read() != open(KREF, 'rb').read():
+    if not os.path.exists(k) or open(k, 'rb').read() != open(KREF, 'rb').read():
         raise RuntimeError('died: kernel workload')
 
 def measure(eng, img, pw, works, rounds):
