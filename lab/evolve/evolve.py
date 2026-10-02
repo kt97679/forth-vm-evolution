@@ -129,14 +129,38 @@ def express(g):
     if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
     if 'rtfuse' in e and not e.get('supers'): e.pop('rtfuse')        # nothing to fuse at run time
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
+    elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     return e
 def gid(g):
     return hashlib.sha1(json.dumps(express(g), sort_keys=True).encode()).hexdigest()[:10]
 
 
 # ---- building and testing one design ------------------------------------
+def _contain():
+    """In the child: a CPU-time cap, so a design that runs wild stops even
+    if a timeout is missed."""
+    import resource
+    resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
 def sh(cmd, cwd=None, inp=None, timeout=300):
-    return subprocess.run(cmd, cwd=cwd, input=inp, capture_output=True, timeout=timeout)
+    """Run cmd in a process group of its own and kill the WHOLE group on
+    timeout. A broken design executes arbitrary code, and the engine's
+    primitives include fork and execve: a wild jump can leave processes
+    behind that hold the pipes open - one such run hung the lab and once
+    took the machine down with it."""
+    p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.PIPE if inp is not None else subprocess.DEVNULL,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain)
+    try:
+        out, err = p.communicate(inp, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        import signal
+        try: os.killpg(p.pid, signal.SIGKILL)
+        except ProcessLookupError: pass
+        p.communicate()
+        raise
+    finally:
+        try: os.killpg(p.pid, 9)        # anything the run left behind
+        except (ProcessLookupError, PermissionError): pass
+    return subprocess.CompletedProcess(cmd, p.returncode, out, err)
 
 def ccflags(g):
     return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g[k] for w in f.split()]
@@ -155,7 +179,9 @@ def build(g, d):
              '-DVARCALL=%d' % g['varcall'], '-DVARSLOT=%d' % g['varslot']]
     # Variable-length calls are decoded only on the shared call path
     # (engine/vm-lab.c, do_call), so with varcall the engine always has it.
-    eff = dict(g, sharedcall=g['sharedcall'] or g['varcall'])
+    # And DODOES reads the three-byte (far) form only under VARCALL, so far
+    # DOES> calls need variable-length calls.
+    eff = dict(g, sharedcall=g['sharedcall'] or g['varcall'], doesfar=g['doesfar'] and g['varcall'])
     for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if eff[k]: flags.append(f)
@@ -172,7 +198,7 @@ def build(g, d):
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
     opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
-    if g['doesfar']: opts.append('--does-far')
+    if g['doesfar'] and g['varcall']: opts.append('--does-far')   # see build(): far DOES> needs VARCALL
     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
     if not g['varcall']: opts.append('--no-varcall')
     if not g['varslot']: opts.append('--no-varslot')
