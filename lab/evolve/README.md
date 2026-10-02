@@ -84,6 +84,46 @@ smaller and faster. The best design came from that founder, borrowed its
 pairs from a third lineage and its call-target block from another, and
 reached 0.85 of s6's time.
 
+## Phase 2b: run-time fusion, and a correction about folds
+
+Superinstructions in the image leave out code compiled at run time.
+`forth/cv8-fuse.4` is an overlay on the CV8 compiler that fuses as it
+compiles: COMPILE,8 rewrites the previous byte when it is a plain
+primitive immediately before HERE and the pair is in SUPER-TABLE, which
+the converter fills in per design (`--rtfuse`). BEGIN and DO now clear
+LAST-OP, since they make HERE a branch target without emitting anything
+there. Read back: `: T1 DUP >R C! R> ;` compiles to 126 127 EXIT, while
+`DUP BEGIN >R` stays two bytes. Corpus identical, kernel reproduced.
+
+It does not pay on these workloads, so it is a gene (`rtfuse`, with the
+overlay only where it is set) and selection rejects it. The overlay costs
+560-576 bytes and the designs get slower: s6 with two pairs 0.956 -> 0.970,
+s4 with 24 pairs 0.855 -> 0.877. The hot pairs are in the image's code,
+already fused; code compiled at run time here holds few of the 24 (FIB
+none); and the compiler now scans the pair table for every primitive it
+compiles. In a 12 x 4 run, 5 living designs fused at run time, none on
+the front.
+
+**A correction to phase 1.** cv8.4's FOLD-OPS, the compiler's fold list,
+is fixed in its source. Every CV8 design whose fold list differed from
+the default - shorter, or reordered - compiled run-time code with fold
+opcodes its engine gives to other primitives, and died on the corpus:
+with the converter before this change, s6 without `LIT` and s6 with 12
+folds both die. So in every earlier run the fold genes could survive only
+in their default form, and nothing said about folds was learned from
+selection. The converter now writes each design's list into FOLD-OPS,
+padded with 255, which no opcode matches; the default list writes back
+the same bytes, so the hand-made stages are unchanged and it costs
+nothing. Those designs now live: the reversed list at the same size and
+speed, without `LIT` 16 bytes bigger, with 12 folds 40 bytes bigger and
+3.5% slower. In the 12 x 4 run, 4 of 5 fold mutants survived, and the best
+design has a removed fold and a borrowed fold list in its history.
+
+**Found, not yet explained:** s6 with no top-of-stack caching, no byte
+headers and `-fno-crossjumping` hangs (`died: timed out`), reproducibly,
+also with the converter from before these changes. Either of the first
+two alone is fine, and so is specialisation without caching.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to

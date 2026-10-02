@@ -74,7 +74,7 @@ CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-
           'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
 CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
-           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[])
+           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0)
 def human(enc, **kw):
     g = dict(CV8, **CC0); g.update(enc=enc, **kw); return g
 HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie dormant
@@ -90,7 +90,7 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
           ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
@@ -103,6 +103,13 @@ def super_slots(g):
     past the folds in use, and the specialisation band when SPEC is off -
     so folds, specialisations and pairs compete for the same slots."""
     return SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
+def overlay(g):
+    """Does this CV8 design need forth/cv8-fuse.4, the compiler that fuses
+    pairs at run time? Only if it has pairs and the rtfuse gene. (Its fold
+    list needs no overlay: the converter writes it into cv8.4's FOLD-OPS.)
+    Everything else keeps the build's dumps, so the hand-made stages still
+    come out byte-identical."""
+    return g['enc'] == 'cv8' and bool(supers_in(g) and g.get('rtfuse'))
 def supers_in(g):
     """[[first, second, opcode], ...] for the pairs that get a slot."""
     return [[a, b, op] for (a, b), op in zip(g['supers'], super_slots(g))]
@@ -120,6 +127,7 @@ def express(g):
     g = canon(g); e = {k: g[k] for k in ['enc'] + list(CC0) + EXPRESSED[g['enc']]}
     if g['enc'] == 'cpt16' and not g['fold']: e.pop('folds')
     if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
+    if 'rtfuse' in e and not e.get('supers'): e.pop('rtfuse')        # nothing to fuse at run time
     return e
 def gid(g):
     return hashlib.sha1(json.dumps(express(g), sort_keys=True).encode()).hexdigest()[:10]
@@ -163,8 +171,10 @@ def build(g, d):
     if not g['varcall']: opts.append('--no-varcall')
     if not g['varslot']: opts.append('--no-varslot')
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
+    if sup and g['rtfuse']: opts.append('--rtfuse')
     img = os.path.join(d, 'image.img')
-    dump = os.path.join(O, 'k64-b.txt' if g['bytehdr'] else 'k64-self.txt')
+    fuse = '-fuse' if overlay(g) else ''
+    dump = os.path.join(O, ('k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % fuse)
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img): raise RuntimeError('died: image did not convert')
     return eng, img
@@ -377,6 +387,15 @@ def setup():
     global REF_CORPUS, KREF, UNIT, POOL
     for need in (CPUT, os.path.join(O, 'k64-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
         if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
+    # The CV8 compiler with table-driven folds and run-time fusion
+    # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
+    import shutil
+    W = os.path.join(O, 'work'); src4, dst4 = os.path.join(ROOT, 'forth', 'cv8-fuse.4'), os.path.join(W, 'cv8-fuse.4')
+    if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+    for name, files in (('k64-self-fuse.txt', ['cv8.4']), ('k64-b-fuse.txt', ['cv8.4', 'cv8b.4'])):
+        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + ['cv8-fuse.4', 'dict-dump-addr.4']) + 'BYE\n'
+        out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
+        open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
     os.makedirs(EV, exist_ok=True)
     # The corpus as tools/run-tests.sh feeds it, written here so a fresh
     # build is enough: the CORE tests, then a sentinel that proves the end.
@@ -424,8 +443,9 @@ def main(argv):
     pop = [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
     # Founders carrying superinstructions, so the gene enters with a population
     # behind it rather than waiting on one mutation in seventeen.
-    pop += [get(dict(HUMAN['s4-cv8'], supers=SUPER_POOL[:24]), [], 'founder: s4-cv8 + 24 pairs', 0),
-            get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2]), [], 'founder: s6-cv8b + 2 pairs', 0)]
+    pop += [get(dict(HUMAN['s4-cv8'], supers=SUPER_POOL[:24], rtfuse=1), [], 'founder: s4-cv8 + 24 pairs, run-time fusion', 0),
+            get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2]), [], 'founder: s6-cv8b + 2 pairs', 0),
+            get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2], rtfuse=1), [], 'founder: s6-cv8b + 2 pairs, run-time fusion', 0)]
     while len(pop) < N:
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))

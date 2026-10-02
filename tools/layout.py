@@ -748,6 +748,28 @@ def emit(path):
             "body size drift at %s" % w['n']
 
     assert len(img) == NEW_HERE, "image %d, layout said %d" % (len(img), NEW_HERE)
+    # The compiler's own tables (forth/cv8-fuse.4), when this dump has
+    # them: its fold list and, with --rtfuse, the superinstruction pairs,
+    # so that code compiled at RUN time uses the opcodes this image's
+    # engine gives them. FOLD-TABLE always gets this design's folds.
+    # cv8.4's own FOLD-OPS gets this design's folds too, in fold-opcode
+    # order, padded with 255 (no opcode): its compiler scans all 23, and
+    # the default list writes back exactly the bytes it already had.
+    for w in order:
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE'): continue
+        at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
+        if w['n'] == 'FOLD-OPS':
+            ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
+            assert len(ops) <= 23, "more folds than FOLD-OPS holds"
+            data = bytes(ops + [255] * (23 - len(ops)))
+        elif w['n'] == 'FOLD-TABLE':
+            ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
+            data = bytes([len(ops)] + ops); assert len(data) <= 24, "fold table overflows"
+        else:
+            pairs = sorted(G['SUPERS'].items(), key=lambda kv: kv[1]) if '--rtfuse' in ARGV else []
+            data = bytes([len(pairs)] + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
+            assert len(data) <= 73, "superinstruction table overflows"
+        img[at:at + len(data)] = data
 
     _flags = ((1 if G['VARCALL'] else 0) | (2 if G['VARSLOT'] else 0)
               | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0)) if V8 else 0
