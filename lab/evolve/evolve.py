@@ -52,7 +52,7 @@ import hashlib, json, math, os, random, re, shutil, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 O = os.path.join(ROOT, 'build'); W = os.path.join(O, 'work')
-EV = os.path.join(O, 'evolve'); DB = os.path.join(EV, 'db.jsonl')
+EV = os.path.join(O, 'evolve'); DB = os.path.join(EV, 'db.jsonl'); CORPUS = os.path.join(EV, 'corpus.fth')
 CPUT = os.path.join(O, 'cputime')
 HOT = '+,=,!,@,LSHIFT,RSHIFT,C@,C!,AND,OR,XOR,LIT,<,U<,OVER,DROP,DUP,SWAP,ROT,>R,R>,R@,NEGATE'.split(',')
 SPECS = ['loc', 'var', 'tiny', 'small', 'imm']
@@ -131,12 +131,12 @@ def private_work(d):
 KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\n'
 def program(w):
     if w == 'kernel': return KERNEL_IN
-    path = os.path.join(ROOT, 'bench', w + '.fth') if w != 'corpus' else os.path.join(O, '.corpus-good.fth')
+    path = os.path.join(ROOT, 'bench', w + '.fth') if w != 'corpus' else CORPUS
     return ('S" %s" INCLUDED\nBYE\n' % path).encode()
 
 def alive(eng, img, pw):
     """The corpus must match the cell engine's output; the kernel must match."""
-    with open(os.path.join(O, '.corpus-good.fth'), 'rb') as f:
+    with open(CORPUS, 'rb') as f:
         r = sh([eng, img], cwd=pw, inp=f.read(), timeout=5)
     if r.stdout != REF_CORPUS: raise RuntimeError('died: corpus')
     sh([eng, img], cwd=pw, inp=KERNEL_IN, timeout=10)
@@ -281,11 +281,16 @@ def foldable():
 
 def setup():
     global REF_CORPUS, KREF, UNIT, POOL
-    for need in (CPUT, os.path.join(O, 'k64-self.txt'), os.path.join(O, 'vm-lab-tos.c'), os.path.join(O, '.corpus-good.fth')):
+    for need in (CPUT, os.path.join(O, 'k64-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
         if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
     os.makedirs(EV, exist_ok=True)
+    # The corpus as tools/run-tests.sh feeds it, written here so a fresh
+    # build is enough: the CORE tests, then a sentinel that proves the end.
+    with open(CORPUS, 'wb') as f:
+        f.write(open(os.path.join(ROOT, 'tests', 'corpus', 'core.fth'), 'rb').read())
+        f.write(b'\nS" CORPUS-REACHED-END" TYPE CR\nBYE\n')
     KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, 'kernel.img'), KREF)
-    with open(os.path.join(O, '.corpus-good.fth'), 'rb') as f:
+    with open(CORPUS, 'rb') as f:
         REF_CORPUS = sh([os.path.join(O, 's0-cell-64'), os.path.join(O, 's0-cell-s64.img')], cwd=W, inp=f.read()).stdout
     UNIT = 'cycles' if b'CYCLES' in sh([CPUT, '/bin/true']).stderr else 'cpu ns'
     POOL = foldable()
