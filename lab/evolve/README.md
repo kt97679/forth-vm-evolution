@@ -61,10 +61,32 @@ the other families held their niches. Compiler genes spread on their own
 crossover, borrowed another lineage's call path and dispatch, and took
 `-fno-crossjumping`: 0.83 of s6's time, 0.98 on the held-out loop.
 
+## Phase 2a: superinstructions
+
+`tools/gen-super.py` builds a pair's handler from the two primitives' own
+bodies - the first jumps into the second where it would have dispatched -
+and the converter fuses the pair wherever no branch lands between them
+(`--supers-file`, the same guard as folding). The pairs take the opcodes
+nothing else holds: 126 and 127, the fold band past the folds in use, and
+the specialisation band when SPEC is off, so folds, specialisations and
+pairs compete for slots. The 24 candidates are the primitive pairs the
+CV8 interpreter dispatched most over the four selection workloads.
+
+Every pair improves BOTH objectives. Development VM, against the parent:
+s6 with the two it has room for, 0.944 of the time and 16 bytes smaller;
+s4, which has thirty free slots, with all 24, 0.849 and 96 bytes smaller -
+and the held-out loop faster too, 0.983 and 0.892, so it is no artefact
+of the selection workloads.
+
+A 12 x 4 run, with two founders carrying pairs: 23 of 44 living designs
+had them, and hand-made s6 fell off the front - its founder variant was
+smaller and faster. The best design came from that founder, borrowed its
+pairs from a third lineage and its call-target block from another, and
+reached 0.85 of s6's time.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
-direct threading, tail-call threading, static superinstructions, relf's
-format-10 opcodes, indirect threading, multi-state stack caching, SPN's
+direct threading, tail-call threading, relf's format-10 opcodes, indirect threading, multi-state stack caching, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.

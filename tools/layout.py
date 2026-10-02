@@ -89,6 +89,9 @@ V8 = '--v8' in ARGV
 if V8:
     G['V8'] = True
     G['V8_FOLDLIST'] = _opt('--fold-set', '').split(',')
+    if '--supers-file' in ARGV:     # superinstructions: [[first, second, opcode], ...]
+        import json
+        G['SUPERS'] = {(a, b): op for a, b, op in json.load(open(_opt('--supers-file')))}
 
 # --bytehdr: byte-granular dictionary headers. The link is 1-3 bytes with
 # its tag byte LAST (read backward from the nfa), names are not padded,

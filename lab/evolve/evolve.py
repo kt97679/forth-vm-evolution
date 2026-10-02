@@ -74,7 +74,7 @@ CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-
           'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
 CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
-           d256=0, guard=0, folds=HOT, skippad=0, fold=1)
+           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[])
 def human(enc, **kw):
     g = dict(CV8, **CC0); g.update(enc=enc, **kw); return g
 HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie dormant
@@ -90,14 +90,28 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers')]
+# Superinstruction candidates: primitive pairs ranked by how often the CV8
+# interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
+# parse and corpus, control flow, literals, EXIT and system calls excluded.
+SUPER_POOL = [["DUP", ">R"], ["C!", "R>"], [">R", "C!"], ["ROT", "DUP"], ["R@", "ROT"], ["DUP", "C@"], [">R", "OVER"], ["OVER", "C@"], ["C@", "="], ["C@", "DUP"], ["SWAP", "R>"], ["LSHIFT", "OVER"], ["OVER", "R>"], ["ROT", "ROT"], ["C@", "SWAP"], ["C@", "OR"], ["SWAP", "DUP"], ["R>", "SWAP"], ["OVER", "R@"], ["C@", ">R"], ["DUP", "@"], ["+", "R>"], ["R>", "="], ["C@", "OVER"]]
+SUPER_FREE = [126, 127]       # free in every CV8 engine; more when folds or SPEC give theirs up
+def super_slots(g):
+    """The opcodes superinstructions may take: 126 and 127, the fold band
+    past the folds in use, and the specialisation band when SPEC is off -
+    so folds, specialisations and pairs compete for the same slots."""
+    return SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
+def supers_in(g):
+    """[[first, second, opcode], ...] for the pairs that get a slot."""
+    return [[a, b, op] for (a, b), op in zip(g['supers'], super_slots(g))]
 WORK_SEL = ['kernel', 'fib', 'parse', 'corpus']; WORK_HELD = ['loop']
 
 
 def canon(g):
     g = dict(g); g['spec'] = [s for s in SPECS if s in g['spec']]; g['folds'] = list(g['folds'])
+    g['supers'] = [list(x) for x in g.get('supers', [])]
     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
     return g
 def express(g):
@@ -105,6 +119,7 @@ def express(g):
     only in dormant genes build the same design, and are measured once."""
     g = canon(g); e = {k: g[k] for k in ['enc'] + list(CC0) + EXPRESSED[g['enc']]}
     if g['enc'] == 'cpt16' and not g['fold']: e.pop('folds')
+    if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
     return e
 def gid(g):
     return hashlib.sha1(json.dumps(express(g), sort_keys=True).encode()).hexdigest()[:10]
@@ -133,6 +148,12 @@ def build(g, d):
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if g[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
+    sup = supers_in(g)
+    if sup:
+        json.dump(sup, open(os.path.join(d, 'supers.json'), 'w'))
+        if sh(['python3', os.path.join(ROOT, 'tools', 'gen-super.py'), src, os.path.join(d, 'supers.json')]).returncode:
+            raise RuntimeError('died: superinstruction generation')
+        flags.append('-DSUPER=1')
     eng = os.path.join(d, 'engine')
     r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
     if r.returncode: raise RuntimeError('died: engine did not compile')
@@ -141,6 +162,7 @@ def build(g, d):
     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
     if not g['varcall']: opts.append('--no-varcall')
     if not g['varslot']: opts.append('--no-varslot')
+    if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     img = os.path.join(d, 'image.img')
     dump = os.path.join(O, 'k64-b.txt' if g['bytehdr'] else 'k64-self.txt')
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
@@ -240,6 +262,16 @@ def mutate(g, rnd):
             s = rnd.choice(SPECS)
             g['spec'] = [x for x in g['spec'] if x != s] if s in g['spec'] else g['spec'] + [s]
             what.append(('-' if s not in g['spec'] else '+') + 'spec ' + s)
+        elif k == 'supers':
+            f = g['supers']; out = [p for p in SUPER_POOL if p not in f]
+            op = rnd.choice(['add', 'add', 'remove', 'swap'])
+            if op == 'add' and out:
+                p = rnd.choice(out); f.insert(rnd.randrange(len(f) + 1), p); what.append('+super %s %s' % tuple(p))
+            elif op == 'remove' and f:
+                p = f.pop(rnd.randrange(len(f))); what.append('-super %s %s' % tuple(p))
+            elif f and out:
+                i = rnd.randrange(len(f)); p, q = f[i], rnd.choice(out); f[i] = q
+                what.append('super %s %s->%s %s' % (p[0], p[1], q[0], q[1]))
         elif k == 'folds':
             f = g['folds']; out = [p for p in POOL if p not in f]
             op = rnd.choice(['add', 'remove', 'swap'])
@@ -257,7 +289,12 @@ def mutate(g, rnd):
 def crossover(a, b, rnd):
     c = {}
     for k in a:
-        if k == 'folds':
+        if k == 'supers':
+            pool = [list(x) for x in dict.fromkeys(tuple(x) for x in a['supers'] + b['supers'])]
+            n = rnd.randint(min(len(a['supers']), len(b['supers'])), max(len(a['supers']), len(b['supers'])))
+            keep = set(map(tuple, rnd.sample(pool, min(n, len(pool)))))
+            c['supers'] = [x for x in pool if tuple(x) in keep]
+        elif k == 'folds':
             pool = list(dict.fromkeys(a['folds'] + b['folds']))
             n = min(FOLDMAX, rnd.randint(min(len(a['folds']), len(b['folds'])), max(len(a['folds']), len(b['folds']))))
             keep = set(rnd.sample(pool, min(n, len(pool))))
@@ -385,6 +422,10 @@ def main(argv):
                   'speed %.4g size %d' % (rec['speed'], rec['size']), how[:70]), flush=True)
         return i
     pop = [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
+    # Founders carrying superinstructions, so the gene enters with a population
+    # behind it rather than waiting on one mutation in seventeen.
+    pop += [get(dict(HUMAN['s4-cv8'], supers=SUPER_POOL[:24]), [], 'founder: s4-cv8 + 24 pairs', 0),
+            get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2]), [], 'founder: s6-cv8b + 2 pairs', 0)]
     while len(pop) < N:
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))
@@ -443,6 +484,7 @@ def report(R):
             if k == 'folds':
                 a, b = set(g['folds']) - set(r['folds']), set(r['folds']) - set(g['folds'])
                 if a or b: out.append(' '.join(['+' + x for x in sorted(a)] + ['-' + x for x in sorted(b)]))
+            elif k == 'supers' and g[k] != r.get(k): out.append('%d pairs: %s' % (len(g[k]), ', '.join(' '.join(x) for x in g[k][:4]) + (', ...' if len(g[k]) > 4 else '')))
             elif g[k] != r.get(k): out.append('%s=%s' % (k, ','.join(g[k]) if isinstance(g[k], list) else g[k]))
         return '; '.join(out) or '(s6-cv8b itself)'
     for i in sorted(F, key=lambda i: R[i]['speed']):

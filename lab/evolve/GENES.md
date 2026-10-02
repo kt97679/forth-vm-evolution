@@ -7,6 +7,7 @@
 | family: `cell`, `sod16`, `cpt16`, `cv8` | this ladder (RelF, SOD16, CPT16, CV8) | the encoding; dormant genes switch on when a lineage changes family |
 | CV8: top of stack in a register, call-target scale, byte headers, specialisation families, shared call path, far DOES>, variable opcodes, 256-entry dispatch, guard pages | the engine lab, relf | dispatch and image format |
 | folds: which of the 23 foldable primitives get prim;EXIT opcodes, in what order | the engine lab | opcode map |
+| superinstructions: primitive pairs as single opcodes, chosen from the 24 pairs the CV8 interpreter dispatches most, in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | compiler: `-O2/-O3/-Os`, `-fno-gcse`, `-fno-crossjumping`, `-fcf-protection=none`, minimal label alignment, `-fno-reorder-blocks` | gforth's and CPython's builds, this lab's endbr64 finding | how the C compiler lays out the interpreter: computed goto only pays if every handler keeps its own indirect jump, which GCSE and cross-jumping undo |
 
 ## Not yet - each needs engine work first
@@ -23,10 +24,6 @@ Ordered by how much diversity they add for the work.
    labels-as-values and tail calls and kept tail calls: one big function
    spills sp and pc). `lab/dispatch` has the C prototype; it needs the
    CV8 handler set rewritten as functions.
-3. **Static superinstructions** - gforth's prims2x, relf's S3 (measured
-   then removed for simplicity), this lab's opcode-pair profile. Needs the
-   opcode map as a budget: folds, specialisations and pairs competing for
-   the same slots - the large combinatorial space phase 1 lacks.
 4. **relf's format-10 opcodes** - loop words, EXECUTE and @XT, +!, ?DUP,
    rare primitives behind an escape byte, returns without folding, locals
    in the engine. Measured in relf at about 15% fewer dispatches.

@@ -958,6 +958,9 @@ static void virtual_machine(void) {
 #if FOLD
 #include "vm-fold-table.h"
 #endif
+#if SUPER   /* superinstructions: a pair of primitives per opcode (tools/gen-super.py) */
+#include "vm-super-table.h"
+#endif
     };
 #if ENC == 3 && ESCAPE
     /*  CV8 renumbers the primitive band: the 36 non-escaped primitives
@@ -1613,6 +1616,9 @@ L_resize: /* a-addr u --- a-addr' ior */
 #if FOLD
 #define EXITNEXT() do { ip = RS; rp += CELL_BYTES; NEXT(); } while (0)
 #include "vm-fold-bodies.h"
+#endif
+#if SUPER
+#include "vm-super-bodies.h"
 #endif
 
 }

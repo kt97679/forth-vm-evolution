@@ -329,7 +329,8 @@ def read_ops(w):
                 out.append(('STR', bytes(raw[:1 + n]))); a += blob
     out = retag(out)
     if SPEC: out = specialise(out)
-    return fold_exit(out) if FOLD else out
+    out = fold_exit(out) if FOLD else out
+    return fuse_pairs(out) if V8 and SUPERS else out
 
 def branch_targets(ops):
     cs, c = [], 0
@@ -413,6 +414,28 @@ def specialise(ops):
 
 NOFOLD = ('EXIT', 'BRANCH', '?BRANCH', 'NOOP')
 FOLDSET = None        # None = every primitive; else a set of names
+SUPERS = {}          # v8: (first, second) primitive pair -> its superinstruction opcode
+
+def fuse_pairs(ops):
+    """Fuse `a b`, two primitives with a superinstruction, into one opcode -
+    after folding, and unless something can enter at b: a branch or loop
+    target, or a DOES> tail (the same guard as fold_exit)."""
+    cs, c = [], 0
+    for k, pl in ops: cs.append(c); c += op_cells(k, pl)
+    targets = set()
+    for j, (k, pl) in enumerate(ops):
+        if k in ('BR', 'QBR'): targets.add(cs[j] + CELL + pl)
+        if k == 'OPD': targets.add(cs[j] + pl)
+        if k == 'ALN': targets.add(cs[j])
+    out, j = [], 0
+    while j < len(ops):
+        k, pl = ops[j]
+        if (k == 'P' and j + 1 < len(ops) and ops[j + 1][0] == 'P' and (pl, ops[j + 1][1]) in SUPERS
+                and cs[j + 1] not in targets and pl not in ESC_PRIMS and ops[j + 1][1] not in ESC_PRIMS):
+            out.append(('SP', (pl, ops[j + 1][1]))); j += 2; continue
+        out.append(ops[j]); j += 1
+    return out
+
 def fold_exit(ops):
     """Fold `prim EXIT` into one folded opcode, unless something can
     enter at the EXIT: a branch or loop target, or a DOES> tail."""
@@ -510,7 +533,7 @@ def op_cells(k, pl):
     if k in ('ADDI', 'EQI'): return 3 * CELL        # LIT n + op
     if k in ('ADDIX', 'EQIX'): return 4 * CELL      # ... + EXIT
     if k == 'LOC': return 3 * CELL                  # LIT off + call
-    if k == 'PX': return 2 * CELL
+    if k in ('PX', 'SP'): return 2 * CELL
     if k == 'LITX': return 3 * CELL
     if k in ('P', 'C', 'OPD', 'XT'): return CELL
     if k in ('LIT', 'LITOFF', 'BR', 'QBR'): return 2 * CELL
@@ -531,7 +554,7 @@ def op_bytes(k, pl, t):
         if k in X_IMM: return 2
         if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return 1
         if k == 'P' and pl in ESC_PRIMS: return 2
-        if k in ('P', 'PX'): return 1
+        if k in ('P', 'PX', 'SP'): return 1
         if k == 'C': return 2
         if k in ('LIT', 'LITX'):
             if 0 <= pl < 256: return 2
@@ -635,6 +658,7 @@ def to_bytes_v8(ops):
             b.append(X_LOC[pl[0]]); emit_slot(b, slotval(k, pl) or 0)
         elif k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC:
             b.append({0: X_LIT0, 1: X_LIT1, -1: X_LITM1}[pl])
+        elif k == 'SP': b.append(SUPERS[pl])
         elif k == 'PX':
             assert pl not in ESC_PRIMS, "cannot fold an escaped primitive"
             b.append(V8_FOLD0 + V8_FOLDLIST.index(pl))
