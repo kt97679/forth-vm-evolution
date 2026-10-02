@@ -1,0 +1,402 @@
+#!/usr/bin/env python3
+"""evolve.py - evolve VM designs: the faster and the smaller survive.
+
+    lab/evolve/evolve.py --validate            the hand-made stages, rebuilt
+                                               from their genomes, must give
+                                               the build's images exactly
+    lab/evolve/evolve.py [--pop N] [--gens G] [--rounds R] [--seed S]
+    lab/evolve/evolve.py --report              report.md from what is known
+
+Needs a finished tools/build-stages.sh: its dumps, engine sources, cputime
+and corpus. It keeps everything in build/evolve/: db.jsonl, one line per
+design ever evaluated - genome, parents, how it was made, how it lived or
+died, size, timings - and report.md. A design already in the database is
+never measured twice, and a run resumes where the last one stopped.
+
+GENOME - phase 1: the CV8 family, 8-byte cells
+  tos        0/1   engine with the top of stack in a register (gen-tos)
+  scale      0-3   call targets in units of 2^scale (engine SCALE, image --cpt)
+  bytehdr    0/1   byte-granular headers (image --bytehdr, from the k64-b dump)
+  spec       set   specialisation families of loc var tiny small imm
+  sharedcall 0/1   one call path shared by every call opcode
+  doesfar    0/1   DOES> children that reach anywhere (DOESFAR)
+  varcall    0/1   opcodes that call through a variable (VARCALL)
+  varslot    0/1   opcodes for variable slots (VARSLOT)
+  d256       0/1   the 256-entry dispatch table (DISPATCH256)
+  guard      0/1   guard pages below the stacks (GUARD)
+  folds      list  primitives given a folded prim;EXIT opcode, at most 23, in
+                   opcode order (gen-fold.py, and layout.py --fold-set)
+
+LIFE. The engine must compile, the image convert, the corpus give the cell
+engine's output byte for byte, and the kernel workload reproduce the
+reference kernel byte for byte. Anything else dies, and the cause is kept.
+
+FITNESS, both minimised and kept as a Pareto front, so nothing is traded:
+  speed  geometric mean of the end-to-end time - cycles where the hardware
+         counters can be read, CPU time otherwise - over kernel, fib, parse
+         and corpus, every program loaded from a FILE (standard input would
+         measure read() calls, not engines)
+  size   bytes of the self-hosting image
+loop is HELD OUT: never selected on, reported for the survivors, so a
+design tuned to the four does not pass unnoticed.
+
+OPERATORS
+  mutation   a gene flipped or nudged; a fold added, removed or swapped
+  crossover  two parents mixed gene by gene; folds drawn from both
+  borrowing  a whole block - the call path, the header format, the dispatch,
+             the folds - transplanted from an unrelated design
+  selection  NSGA-II: rank by Pareto front, then by crowding, so designs
+             that are different survive beside designs that are better
+"""
+import hashlib, json, math, os, random, re, shutil, subprocess, sys, time
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+O = os.path.join(ROOT, 'build'); W = os.path.join(O, 'work')
+EV = os.path.join(O, 'evolve'); DB = os.path.join(EV, 'db.jsonl')
+CPUT = os.path.join(O, 'cputime')
+HOT = '+,=,!,@,LSHIFT,RSHIFT,C@,C!,AND,OR,XOR,LIT,<,U<,OVER,DROP,DUP,SWAP,ROT,>R,R>,R@,NEGATE'.split(',')
+SPECS = ['loc', 'var', 'tiny', 'small', 'imm']
+FOLDMAX = 23
+# Primitives a fold may never take: control flow and the system's own.
+NOFOLD = set('NOOP EXIT BRANCH ?BRANCH EXECUTE BYE SP@ SP! RP@ RP! WRITE READ SYSTEM FORK EXECVE '
+             'WAITPID PIPE DUP2 GETENV SETENV UNSETENV CHDIR GETCWD GETPID ALLOCATE FREE RESIZE '
+             'GETPWHOME GETFSIZE SETFSIZE SYS-EXIT SYSARGC SYSARG'.split()) | {n for n in []}
+PRIMS = [l.split()[1] for l in open(os.path.join(ROOT, 'forth', 'kernel.4')) if l.startswith('PRIMITIVE')]
+POOL = [p for p in PRIMS if p not in NOFOLD and 'FILE' not in p and 'LINE' not in p] or HOT
+for h in HOT:
+    if h not in POOL: POOL.append(h)
+
+HUMAN = {   # the hand-made stages, as genomes
+    's4-cv8':     dict(tos=0, scale=3, bytehdr=0, spec=[], sharedcall=0, doesfar=0,
+                       varcall=0, varslot=0, d256=0, guard=0, folds=HOT),
+    's5-cv8spec': dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0,
+                       varcall=1, varslot=1, d256=0, guard=0, folds=HOT),
+    's6-cv8b':    dict(tos=1, scale=0, bytehdr=1, spec=SPECS, sharedcall=1, doesfar=1,
+                       varcall=1, varslot=1, d256=0, guard=0, folds=HOT),
+}
+BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
+          ('spec',), ('folds',), ('tos', 'guard')]
+WORK_SEL = ['kernel', 'fib', 'parse', 'corpus']; WORK_HELD = ['loop']
+
+
+def canon(g):
+    g = dict(g); g['spec'] = [s for s in SPECS if s in g['spec']]; g['folds'] = list(g['folds'])
+    if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
+    return g
+def gid(g):
+    return hashlib.sha1(json.dumps(canon(g), sort_keys=True).encode()).hexdigest()[:10]
+
+
+# ---- building and testing one design ------------------------------------
+def sh(cmd, cwd=None, inp=None, timeout=300):
+    return subprocess.run(cmd, cwd=cwd, input=inp, capture_output=True, timeout=timeout)
+
+def build(g, d):
+    """-> (engine, image) or raises RuntimeError('died: ...')"""
+    if os.path.exists(d): shutil.rmtree(d)
+    os.makedirs(d)
+    src = os.path.join(d, 'vm.c')
+    shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)
+    folds = ','.join(g['folds'])
+    r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-fold.py'), src, folds, 'v8'])
+    if r.returncode: raise RuntimeError('died: fold generation')
+    flags = ['-DENC=3', '-DREG=1', '-DFOLD=1', '-DSCALE=%d' % g['scale'],
+             '-DVARCALL=%d' % g['varcall'], '-DVARSLOT=%d' % g['varslot']]
+    for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
+                 ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
+        if g[k]: flags.append(f)
+    if g['spec']: flags.append('-DSPEC=1')
+    eng = os.path.join(d, 'engine')
+    r = sh(['cc', '-O2'] + flags + ['-o', eng, src])
+    if r.returncode: raise RuntimeError('died: engine did not compile')
+    opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
+    if g['bytehdr']: opts.append('--bytehdr')
+    if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
+    if not g['varcall']: opts.append('--no-varcall')
+    if not g['varslot']: opts.append('--no-varslot')
+    img = os.path.join(d, 'image.img')
+    dump = os.path.join(O, 'k64-b.txt' if g['bytehdr'] else 'k64-self.txt')
+    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
+    if r.returncode or not os.path.exists(img): raise RuntimeError('died: image did not convert')
+    return eng, img
+
+def private_work(d):
+    """A work directory of its own: the kernel workload writes kernel.img."""
+    pw = os.path.join(d, 'work'); os.makedirs(pw, exist_ok=True)
+    for f in os.listdir(W):
+        if f != 'kernel.img': os.symlink(os.path.join(W, f), os.path.join(pw, f))
+    shutil.copy(KREF, os.path.join(pw, 'kernel.img'))
+    return pw
+
+KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\n'
+def program(w):
+    if w == 'kernel': return KERNEL_IN
+    path = os.path.join(ROOT, 'bench', w + '.fth') if w != 'corpus' else os.path.join(O, '.corpus-good.fth')
+    return ('S" %s" INCLUDED\nBYE\n' % path).encode()
+
+def alive(eng, img, pw):
+    """The corpus must match the cell engine's output; the kernel must match."""
+    with open(os.path.join(O, '.corpus-good.fth'), 'rb') as f:
+        r = sh([eng, img], cwd=pw, inp=f.read(), timeout=5)
+    if r.stdout != REF_CORPUS: raise RuntimeError('died: corpus')
+    sh([eng, img], cwd=pw, inp=KERNEL_IN, timeout=10)
+    if open(os.path.join(pw, 'kernel.img'), 'rb').read() != open(KREF, 'rb').read():
+        raise RuntimeError('died: kernel workload')
+
+def measure(eng, img, pw, works, rounds):
+    best = {}
+    for _ in range(rounds):
+        for w in works:
+            r = sh(['taskset', '-c', os.environ.get('BENCH_CPU') or '0', CPUT, eng, img], cwd=pw, inp=program(w), timeout=10)
+            m = re.search(rb'^CYCLES (\d+)', r.stderr, re.M) or re.search(rb'^CPUNS (\d+)', r.stderr, re.M)
+            best[w] = min(best.get(w, 1 << 62), int(m.group(1)))
+    return best
+
+def evaluate(g, rounds, keep=False):
+    d = os.path.join(EV, 'ind-' + gid(g)); rec = {'status': 'ok'}
+    try:
+        eng, img = build(g, d)
+        rec['size'] = os.path.getsize(img)
+        pw = private_work(d)
+        alive(eng, img, pw)
+        t = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
+        rec['t'] = t
+        rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
+        rec['unit'] = UNIT
+    except RuntimeError as e:
+        rec['status'] = str(e)
+    except subprocess.TimeoutExpired:
+        rec['status'] = 'died: timed out'
+    if not keep: shutil.rmtree(d, ignore_errors=True)
+    return rec
+
+
+# ---- variation -------------------------------------------------------------
+def mutate(g, rnd):
+    g = canon(g); what = []
+    for _ in range(rnd.choice([1, 1, 2])):
+        k = rnd.choice(['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                        'varslot', 'd256', 'guard', 'folds', 'folds', 'folds'])
+        if k == 'scale':
+            g['scale'] = rnd.choice([s for s in range(4) if s != g['scale']]); what.append('scale=%d' % g['scale'])
+        elif k == 'spec':
+            s = rnd.choice(SPECS)
+            g['spec'] = [x for x in g['spec'] if x != s] if s in g['spec'] else g['spec'] + [s]
+            what.append(('-' if s not in g['spec'] else '+') + 'spec ' + s)
+        elif k == 'folds':
+            f = g['folds']; out = [p for p in POOL if p not in f]
+            op = rnd.choice(['add', 'remove', 'swap'])
+            if op == 'add' and len(f) < FOLDMAX and out:
+                p = rnd.choice(out); f.insert(rnd.randrange(len(f) + 1), p); what.append('+fold ' + p)
+            elif op == 'remove' and f:
+                p = f.pop(rnd.randrange(len(f))); what.append('-fold ' + p)
+            elif f and out:
+                i = rnd.randrange(len(f)); p, q = f[i], rnd.choice(out); f[i] = q
+                what.append('fold %s->%s' % (p, q))
+        else:
+            g[k] ^= 1; what.append('%s=%d' % (k, g[k]))
+    return g, 'mutation: ' + ', '.join(what)
+
+def crossover(a, b, rnd):
+    c = {}
+    for k in a:
+        if k == 'folds':
+            pool = list(dict.fromkeys(a['folds'] + b['folds']))
+            n = min(FOLDMAX, rnd.randint(min(len(a['folds']), len(b['folds'])), max(len(a['folds']), len(b['folds']))))
+            keep = set(rnd.sample(pool, min(n, len(pool))))
+            c['folds'] = [p for p in pool if p in keep]
+        elif k == 'spec':
+            c['spec'] = [s for s in SPECS if (s in (a['spec'] if rnd.random() < 0.5 else b['spec']))]
+        else:
+            c[k] = a[k] if rnd.random() < 0.5 else b[k]
+    return canon(c)
+
+def borrow(g, donor, rnd):
+    blk = rnd.choice(BLOCKS); g = canon(g)
+    for k in blk: g[k] = canon(donor)[k]
+    return g, 'borrowed %s' % '+'.join(blk)
+
+
+# ---- selection: NSGA-II on (speed, size) -------------------------------------
+def fronts(ids, R):
+    dom = {i: set() for i in ids}; n = {i: 0 for i in ids}
+    def better(x, y):
+        a, b = R[x], R[y]
+        return a['speed'] <= b['speed'] and a['size'] <= b['size'] and (a['speed'] < b['speed'] or a['size'] < b['size'])
+    for x in ids:
+        for y in ids:
+            if x != y and better(x, y): dom[x].add(y)
+            elif x != y and better(y, x): n[x] += 1
+    F = [[i for i in ids if n[i] == 0]]
+    while F[-1]:
+        nxt = []
+        for x in F[-1]:
+            for y in dom[x]:
+                n[y] -= 1
+                if n[y] == 0: nxt.append(y)
+        F.append(nxt)
+    return F[:-1]
+
+def crowding(front, R):
+    cd = {i: 0.0 for i in front}
+    for k in ('speed', 'size'):
+        s = sorted(front, key=lambda i: R[i][k]); lo, hi = R[s[0]][k], R[s[-1]][k]
+        cd[s[0]] = cd[s[-1]] = float('inf')
+        for j in range(1, len(s) - 1):
+            cd[s[j]] += (R[s[j + 1]][k] - R[s[j - 1]][k]) / ((hi - lo) or 1)
+    return cd
+
+def rank(ids, R):
+    order, rk, cdist = [], {}, {}
+    for r, f in enumerate(fronts(ids, R)):
+        c = crowding(f, R)
+        for i in f: rk[i] = r; cdist[i] = c[i]
+        order += sorted(f, key=lambda i: -c[i])
+    return order, rk, cdist
+
+
+# ---- the database ----------------------------------------------------------
+def load():
+    R = {}
+    if os.path.exists(DB):
+        for l in open(DB):
+            r = json.loads(l); R[r['id']] = r
+    return R
+def save(r):
+    with open(DB, 'a') as f: f.write(json.dumps(r) + '\n')
+
+def foldable():
+    """Which primitives a fold can take, tested once and kept: a primitive
+    gen-fold.py or the compiler cannot fold is a lethal gene, not a choice."""
+    path = os.path.join(EV, 'foldable.json')
+    if os.path.exists(path): return json.load(open(path))
+    good = list(HOT)
+    for p in POOL:
+        if p in HOT: continue
+        g = canon(HUMAN['s5-cv8spec']); g['folds'] = HOT[:-1] + [p]
+        try: build(g, os.path.join(EV, 'probe')); good.append(p)
+        except RuntimeError: pass
+    shutil.rmtree(os.path.join(EV, 'probe'), ignore_errors=True)
+    json.dump(good, open(path, 'w')); return good
+
+def setup():
+    global REF_CORPUS, KREF, UNIT, POOL
+    for need in (CPUT, os.path.join(O, 'k64-self.txt'), os.path.join(O, 'vm-lab-tos.c'), os.path.join(O, '.corpus-good.fth')):
+        if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
+    os.makedirs(EV, exist_ok=True)
+    KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, 'kernel.img'), KREF)
+    with open(os.path.join(O, '.corpus-good.fth'), 'rb') as f:
+        REF_CORPUS = sh([os.path.join(O, 's0-cell-64'), os.path.join(O, 's0-cell-s64.img')], cwd=W, inp=f.read()).stdout
+    UNIT = 'cycles' if b'CYCLES' in sh([CPUT, '/bin/true']).stderr else 'cpu ns'
+    POOL = foldable()
+
+
+def main(argv):
+    def opt(name, default):
+        return type(default)(argv[argv.index(name) + 1]) if name in argv else default
+    setup()
+    if '--validate' in argv:
+        ok = True
+        for name, g in HUMAN.items():
+            d = os.path.join(EV, 'validate-' + name)
+            try:
+                eng, img = build(g, d)
+                same = open(img, 'rb').read() == open(os.path.join(O, name + '-s64.img'), 'rb').read()
+                pw = private_work(d); alive(eng, img, pw)
+                print('  %-11s image %s the build\'s, corpus and kernel workload correct' % (name, 'IDENTICAL to' if same else 'DIFFERENT from'))
+                ok &= same
+            except RuntimeError as e:
+                print('  %-11s %s' % (name, e)); ok = False
+            shutil.rmtree(d, ignore_errors=True)
+        sys.exit(0 if ok else 1)
+    if '--report' in argv:
+        report(load()); return
+    N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
+    R = load()
+    def get(g, parents, how, gen):
+        i = gid(g)
+        if i not in R:
+            t0 = time.time(); rec = evaluate(g, ROUNDS)
+            rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen, secs=round(time.time() - t0, 1))
+            R[i] = rec; save(rec)
+            print('    %s %-24s %s' % (i, rec['status'] if rec['status'] != 'ok' else
+                  'speed %.4g size %d' % (rec['speed'], rec['size']), how[:70]), flush=True)
+        return i
+    pop = [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
+    while len(pop) < N:
+        g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
+        pop.append(get(g, [], 'seeded ' + how, 0))
+    for gen in range(1, G + 1):
+        live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
+        order, rk, cd = rank(live, R)
+        def pick():
+            a, b = rnd.sample(live, 2) if len(live) > 1 else (live[0], live[0])
+            return a if (rk[a], -cd[a]) <= (rk[b], -cd[b]) else b
+        kids = []
+        print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
+        for _ in range(N):
+            p1, p2 = pick(), pick()
+            for _try in range(10):
+                if rnd.random() < 0.6 and p1 != p2:
+                    g = crossover(R[p1]['genome'], R[p2]['genome'], rnd); how = 'crossover'; parents = [p1, p2]
+                else:
+                    g = canon(R[p1]['genome']); how = ''; parents = [p1]
+                if rnd.random() < 0.15 and len(live) > 2:
+                    donor = rnd.choice([i for i in live if i not in parents])
+                    g, h = borrow(g, R[donor]['genome'], rnd); how = (how + '; ' if how else '') + h + ' from ' + donor
+                    parents = parents + [donor]
+                if rnd.random() < 0.9 or gid(g) in R:
+                    g, h = mutate(g, rnd); how = (how + '; ' if how else '') + h
+                if gid(g) not in R: break
+            kids.append(get(g, parents, how, gen))
+        live = [i for i in dict.fromkeys(pop + kids) if R[i]['status'] == 'ok']
+        pop = rank(live, R)[0][:N]
+    report(R)
+
+
+def report(R):
+    ok = [i for i in R if R[i]['status'] == 'ok']
+    if not ok: print('nothing alive yet'); return
+    F = fronts(ok, R)[0]
+    hum = {R[i]['how'][10:]: i for i in ok if R[i]['how'].startswith('hand-made')}
+    ref = R[hum['s6-cv8b']] if 's6-cv8b' in hum else None
+    L = ['# Evolved VM designs', '',
+         '%d designs evaluated, %d alive. Speed is the geometric mean of %s over %s,' %
+         (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
+         'relative to s6-cv8b; size is the self-hosting image. loop is held out.', '',
+         '## The Pareto front', '',
+         '| design | speed | size | loop (held out) | genes, where they differ from s6-cv8b | how it was made |',
+         '|---|---|---|---|---|---|']
+    def diff(g):
+        if not ref: return ''
+        r = ref['genome']; out = []
+        for k in g:
+            if k == 'folds':
+                a, b = set(g['folds']) - set(r['folds']), set(r['folds']) - set(g['folds'])
+                if a or b: out.append(' '.join(['+' + x for x in sorted(a)] + ['-' + x for x in sorted(b)]))
+            elif g[k] != r[k]: out.append('%s=%s' % (k, ','.join(g[k]) if isinstance(g[k], list) else g[k]))
+        return '; '.join(out) or '(s6-cv8b itself)'
+    for i in sorted(F, key=lambda i: R[i]['speed']):
+        x = R[i]; rs = x['speed'] / ref['speed'] if ref else 1; rl = x['t']['loop'] / ref['t']['loop'] if ref else 1
+        L.append('| %s | %.3f | %d | %.3f | %s | %s |' % (i, rs, x['size'], rl, diff(x['genome']), x['how'][:60]))
+    L += ['', '## How the front came about', '']
+    for i in sorted(F, key=lambda i: R[i]['speed']):
+        chain, j = [], i
+        while j in R and R[j]['parents'] and len(chain) < 8:
+            chain.append(R[j]['how'][:70]); j = R[j]['parents'][0]
+        root = R[j]['how'] if j in R else '?'
+        L.append('- `%s`: from %s, then %s' % (i, root, ' / '.join(reversed(chain)) or '(itself)'))
+    L += ['', '## The hand-made stages', '', '| stage | speed | size | on the front |', '|---|---|---|---|']
+    for n, i in sorted(hum.items()):
+        L.append('| %s | %.3f | %d | %s |' % (n, R[i]['speed'] / ref['speed'] if ref else 1, R[i]['size'], 'yes' if i in F else 'no'))
+    deaths = {}
+    for i in R:
+        if R[i]['status'] != 'ok': deaths[R[i]['status']] = deaths.get(R[i]['status'], 0) + 1
+    L += ['', '## Deaths', ''] + ['- %s: %d' % kv for kv in sorted(deaths.items(), key=lambda kv: -kv[1])] + ['']
+    open(os.path.join(EV, 'report.md'), 'w').write('\n'.join(L) + '\n')
+    print('\n'.join(L[6:6 + 3 + len(F)] + L[6 + 3 + len(F):6 + 6 + 2 * len(F)]))
+    print('report: %s' % os.path.join(EV, 'report.md'))
+
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
