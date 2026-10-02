@@ -30,7 +30,7 @@ cc -O2 -Wall -o "$O/spn-64" "$ROOT/engine/spn.c" "$ROOT/engine/spn-stencils.c" \
 cp "$W/kernel.img" "$W/.spn-kernel-save.img"
 rm -f "$W/s7-spn-s64.img"
 REC=$([ "${SPN_RECIPES:-1}" = 1 ] && echo SPN-RECORD || echo "")
-( cd "$W" && printf 'S" pool.4" INCLUDED\nVARIABLE LSAVE-SP\nS" save-system.4" INCLUDED\nS" %s/forth/spn-full.4" INCLUDED\n%s\n'"' SPN-BOOT SET-BOOT\nS\" s7-spn-s64.img\" SAVE-SYSTEM\nBYE\n" "$ROOT" "$REC" \
+( cd "$W" && printf 'S" pool.4" INCLUDED\nVARIABLE LSAVE-SP\nS" save-system.4" INCLUDED\nS" %s/forth/spn-full.4" INCLUDED\n%s\n'"' SPN-BOOT SET-BOOT\nS\" spn-full-scrub.4\" INCLUDED\nS\" s7-spn-s64.img\" SAVE-SYSTEM\nBYE\n" "$ROOT" "$REC" \
     | "$O/spn-64" kernel.img >/dev/null 2>&1 )
 cp "$W/.spn-kernel-save.img" "$W/kernel.img"
 [ -s "$W/s7-spn-s64.img" ] || { echo "failed to save s7-spn-s64.img"; exit 1; }

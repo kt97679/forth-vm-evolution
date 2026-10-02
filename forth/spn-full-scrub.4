@@ -1,0 +1,21 @@
+\ spn-full-scrub.4 - interpreted just before SAVE-SYSTEM saves s7-spn
+\ (tools/mk-spn-image.sh). Zero what the build session's address layout
+\ left in the dictionary - engine entry points, code-buffer and table
+\ addresses, cached xts, translation scratch, and the tables of native
+\ addresses - so that two builds save the same image. Boot sets every one
+\ before reading it: SPN-INIT, the stencil scan and the translation. Each
+\ was found by building twice and locating the differing cell by its
+\ offset in the build session.
+\
+\ Plain interpreted statements, no definition: running them compiles
+\ nothing, so the saved dictionary is exactly what it would have been.
+0 ENTRIES ! 0 M-NEXT ! 0 M-JUMP ! 0 M-CALL ! 0 RP-ADDR ! 0 INTERP-FN !
+0 LOWER ! 0 SSRC ! 0 CODE-HERE ! 0 CODE-LIMIT ! 0 ARG-IMM ! 0 ARG-CALL !
+0 ARG-JUMP ! 0 E-DST ! 0 T-SRC ! 0 T-NAT ! 0 ARG-CXT ! 0 DOVAR-XT !
+0 SQ-XT ! 0 DQ-XT ! 0 AQ-XT ! 0 TYPE-XT ! 0 AM-XT ! 0 DO-XT !
+0 QDO-XT ! 0 LOOP-XT ! 0 PLOOP-XT ! 0 I-XT ! 0 J-XT ! 0 UNLOOP-XT !
+0 LEAVE-XT ! 0 PICK-XT ! 0 RSC ! 0 C-VAL ! 0 C-XT ! 0 WHY-XT !
+0 VA ! 0 LT ! 0 CZ ! 0 UNDO ! 0 MARKS ! 0 MBASE !
+0 VIS !
+ST-START MAX-STENCILS CELLS 0 FILL   FIXUPS 256 2 * CELLS 0 FILL
+C-NAT MAX-CELLS CELLS 0 FILL   TGTS 128 CELLS 0 FILL   CALLS 128 CELLS 0 FILL
