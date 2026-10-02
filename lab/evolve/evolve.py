@@ -128,6 +128,7 @@ def express(g):
     if g['enc'] == 'cpt16' and not g['fold']: e.pop('folds')
     if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
     if 'rtfuse' in e and not e.get('supers'): e.pop('rtfuse')        # nothing to fuse at run time
+    if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     return e
 def gid(g):
     return hashlib.sha1(json.dumps(express(g), sort_keys=True).encode()).hexdigest()[:10]
@@ -152,9 +153,12 @@ def build(g, d):
     if r.returncode: raise RuntimeError('died: fold generation')
     flags = ['-DENC=3', '-DREG=1', '-DFOLD=1', '-DSCALE=%d' % g['scale'],
              '-DVARCALL=%d' % g['varcall'], '-DVARSLOT=%d' % g['varslot']]
+    # Variable-length calls are decoded only on the shared call path
+    # (engine/vm-lab.c, do_call), so with varcall the engine always has it.
+    eff = dict(g, sharedcall=g['sharedcall'] or g['varcall'])
     for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
-        if g[k]: flags.append(f)
+        if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
     sup = supers_in(g)
     if sup:
@@ -167,6 +171,8 @@ def build(g, d):
     if r.returncode: raise RuntimeError('died: engine did not compile')
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
+    opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
+    if g['doesfar']: opts.append('--does-far')
     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
     if not g['varcall']: opts.append('--no-varcall')
     if not g['varslot']: opts.append('--no-varslot')

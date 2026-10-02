@@ -119,10 +119,44 @@ speed, without `LIT` 16 bytes bigger, with 12 folds 40 bytes bigger and
 3.5% slower. In the 12 x 4 run, 4 of 5 fold mutants survived, and the best
 design has a removed fold and a borrowed fold list in its history.
 
-**Found, not yet explained:** s6 with no top-of-stack caching, no byte
-headers and `-fno-crossjumping` hangs (`died: timed out`), reproducibly,
-also with the converter from before these changes. Either of the first
-two alone is fine, and so is specialisation without caching.
+## Phase 2c: the hang, and two more mapping bugs
+
+The hang was not what it looked like. On s6 the trigger is `bytehdr=0`
+ALONE; no caching and `-fno-crossjumping` only changed how it failed (a
+stack error instead of a hang). Interpreted, `SOURCE TYPE` worked;
+compiled into a definition it failed - so the fault was in code compiled
+at RUN time.
+
+cv8.4 and cv8b.4 set the in-image compiler's call shift and DOES> form
+as a pair - shift 3, near DOES> calls, 2 bytes reserved; or shift 0, far
+calls, 3 bytes - but the genome chooses `scale`, `bytehdr` and `doesfar`
+independently. s6 without byte headers got cv8.4's shift 3 with its own
+byte-granular calls, so every call compiled at run time went to the
+wrong address. The converter now writes all three variables from the
+design's own genes (`--set-compiler-vars`, `--does-far`); the hand-made
+stages come out unchanged.
+
+The second: variable-length calls are decoded only on the engine's
+shared call path (`do_call`), so `varcall` without `sharedcall` misread
+every three-byte call - in every earlier run. `sharedcall` is now dormant,
+built in, when `varcall` is set; decoding both forms on the unshared path
+would reopen that combination.
+
+What dies now is real. A byte-granular design with near DOES> calls, or
+without the three-byte call form, reaches 16 KB, and the kernel
+workload's dictionary is larger: a DOES> word past 20,000 bytes of padding
+hangs with near calls and works with far ones. They die by timing out
+because cv8.4's near forms do not check their reach.
+
+The same 12 x 4 run, before and after each fix: alive 45 -> 51 -> 53 of
+60; corpus deaths 7 -> 3 -> 0; the remaining 7 deaths all that reach
+limit. The fastest design was s6 without byte headers, with d256 and one
+pair, at 0.806 of s6 - the combination that used to hang.
+
+All three bugs (with the fold list) are one kind: a setting of the
+compiler INSIDE the image that the genome treated as free, but the dump
+fixed. So the earlier runs' verdicts on fold lists, on byte headers
+against call granularity, and on the shared call path were artefacts.
 
 ## Next
 

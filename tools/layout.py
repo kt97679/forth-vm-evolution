@@ -755,10 +755,21 @@ def emit(path):
     # cv8.4's own FOLD-OPS gets this design's folds too, in fold-opcode
     # order, padded with 255 (no opcode): its compiler scans all 23, and
     # the default list writes back exactly the bytes it already had.
+    # --set-compiler-vars: the compiler's call shift and DOES> form, which
+    # cv8.4 and cv8b.4 set as a PAIR - shift 3, near DOES> calls, 2 bytes
+    # reserved; or shift 0, far calls, 3 bytes - but which a design chooses
+    # independently: scale is --cpt, the DOES> form --does-far. Without
+    # this, code compiled at run time encodes calls the engine misreads.
+    CVARS = {}
+    if '--set-compiler-vars' in ARGV:
+        far = '--does-far' in ARGV
+        CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
     for w in order:
-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE'): continue
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
-        if w['n'] == 'FOLD-OPS':
+        if w['n'] in CVARS:
+            data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
+        elif w['n'] == 'FOLD-OPS':
             ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
             assert len(ops) <= 23, "more folds than FOLD-OPS holds"
             data = bytes(ops + [255] * (23 - len(ops)))
