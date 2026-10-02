@@ -45,9 +45,26 @@ hour, less what the database already knows.
   folded at all - the other candidates make engines that do not compile -
   so the opcode map's real combinatorial space waits for phase 2.
 
+## Phase 1b: four families and the compiler
+
+The genome now spans the whole ladder - the cell engine, SOD16, CPT16 and
+CV8 - with genes a family does not use carried dormant, and the compiler
+flags gforth and CPython rely on as genes of their own (`GENES.md`).
+`--validate` rebuilds all seven hand-made stages, s0 to s6, with
+byte-identical images. Each family keeps its best member, so a family
+survives as a species even when CV8 dominates the front.
+
+A first 12 x 3 run in the VM: 48 designs, 37 alive. CV8 took the front;
+the other families held their niches. Compiler genes spread on their own
+- `-fno-crossjumping` in 9 of the living, `-fcf-protection=none` in 7,
+`-fno-gcse` in 6. The fastest design descended from the PLAIN s4 by
+crossover, borrowed another lineage's call path and dispatch, and took
+`-fno-crossjumping`: 0.83 of s6's time, 0.98 on the held-out loop.
+
 ## Next
 
-Phase 2 adds gene families borrowed from relf - loop words, EXECUTE and
-`+!` as opcodes, rare primitives behind an escape, returns without folding
-- which must first exist as working code in the engine lab. Phase 3 adds
-SPN's: which sequences to fuse, recipes or lazy translation.
+`GENES.md` lists what other VMs could add - load-time translation to
+direct threading, tail-call threading, static superinstructions, relf's
+format-10 opcodes, indirect threading, multi-state stack caching, SPN's
+genes, a register machine - each needing engine work before evolution can
+use it.

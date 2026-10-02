@@ -66,16 +66,33 @@ POOL = [p for p in PRIMS if p not in NOFOLD and 'FILE' not in p and 'LINE' not i
 for h in HOT:
     if h not in POOL: POOL.append(h)
 
-HUMAN = {   # the hand-made stages, as genomes
-    's4-cv8':     dict(tos=0, scale=3, bytehdr=0, spec=[], sharedcall=0, doesfar=0,
-                       varcall=0, varslot=0, d256=0, guard=0, folds=HOT),
-    's5-cv8spec': dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0,
-                       varcall=1, varslot=1, d256=0, guard=0, folds=HOT),
-    's6-cv8b':    dict(tos=1, scale=0, bytehdr=1, spec=SPECS, sharedcall=1, doesfar=1,
-                       varcall=1, varslot=1, d256=0, guard=0, folds=HOT),
+# Compiler genes, from gforth's and CPython's builds: a computed-goto
+# interpreter loses its point if the compiler merges every dispatch into one
+# shared indirect jump (-fno-gcse, -fno-crossjumping); gforth also keeps
+# blocks in order and code compact. -fcf-protection=none drops endbr64.
+CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-fcf-protection=none',
+          'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
+CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
+CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
+           d256=0, guard=0, folds=HOT, skippad=0, fold=1)
+def human(enc, **kw):
+    g = dict(CV8, **CC0); g.update(enc=enc, **kw); return g
+HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie dormant
+    's0-cell':    human('cell'),
+    's1-sod16':   human('sod16', scale=1, skippad=1, fold=0),
+    's2-cpt16':   human('cpt16', scale=1, skippad=1, fold=0),
+    's3-cpt16f':  human('cpt16', scale=3, skippad=0, fold=1),
+    's4-cv8':     human('cv8', tos=0, spec=[], sharedcall=0, varcall=0, varslot=0),
+    's5-cv8spec': human('cv8'),
+    's6-cv8b':    human('cv8', scale=0, bytehdr=1, doesfar=1),
 }
+FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
+# Which genes each family expresses; the rest are carried, not built.
+EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
+             'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                     'varslot', 'd256', 'guard', 'folds']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold')]
 WORK_SEL = ['kernel', 'fib', 'parse', 'corpus']; WORK_HELD = ['loop']
 
 
@@ -83,18 +100,28 @@ def canon(g):
     g = dict(g); g['spec'] = [s for s in SPECS if s in g['spec']]; g['folds'] = list(g['folds'])
     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
     return g
+def express(g):
+    """The genes that make the design - its identity. Two genomes that differ
+    only in dormant genes build the same design, and are measured once."""
+    g = canon(g); e = {k: g[k] for k in ['enc'] + list(CC0) + EXPRESSED[g['enc']]}
+    if g['enc'] == 'cpt16' and not g['fold']: e.pop('folds')
+    return e
 def gid(g):
-    return hashlib.sha1(json.dumps(canon(g), sort_keys=True).encode()).hexdigest()[:10]
+    return hashlib.sha1(json.dumps(express(g), sort_keys=True).encode()).hexdigest()[:10]
 
 
 # ---- building and testing one design ------------------------------------
 def sh(cmd, cwd=None, inp=None, timeout=300):
     return subprocess.run(cmd, cwd=cwd, input=inp, capture_output=True, timeout=timeout)
 
+def ccflags(g):
+    return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g[k] for w in f.split()]
+
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
     if os.path.exists(d): shutil.rmtree(d)
     os.makedirs(d)
+    if g['enc'] != 'cv8': return build_other(g, d)
     src = os.path.join(d, 'vm.c')
     shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)
     folds = ','.join(g['folds'])
@@ -107,7 +134,7 @@ def build(g, d):
         if g[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
     eng = os.path.join(d, 'engine')
-    r = sh(['cc', '-O2'] + flags + ['-o', eng, src])
+    r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
     if r.returncode: raise RuntimeError('died: engine did not compile')
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
@@ -117,6 +144,33 @@ def build(g, d):
     img = os.path.join(d, 'image.img')
     dump = os.path.join(O, 'k64-b.txt' if g['bytehdr'] else 'k64-self.txt')
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
+    if r.returncode or not os.path.exists(img): raise RuntimeError('died: image did not convert')
+    return eng, img
+
+def build_other(g, d):
+    """The cell engine (relf.c, its image as built), SOD16 and CPT16."""
+    eng = os.path.join(d, 'engine'); img = os.path.join(d, 'image.img')
+    if g['enc'] == 'cell':
+        if sh(['cc'] + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')]).returncode:
+            raise RuntimeError('died: engine did not compile')
+        shutil.copy(os.path.join(O, 's0-cell-s64.img'), img); return eng, img
+    src = os.path.join(d, 'vm.c'); shutil.copy(os.path.join(O, 'vm-lab.c'), src)
+    if g['enc'] == 'sod16':
+        flags = ['-DENC=1', '-DREG=1', '-DSCALE=1'] + (['-DSKIPPAD=1'] if g['skippad'] else [])
+        dump, opts = 'k64-s16.txt', (['--skip-pad'] if g['skippad'] else []) + ['--compiler-overlay', '16']
+    else:
+        sc = max(1, g['scale'])
+        flags = ['-DENC=2', '-DREG=1', '-DSCALE=%d' % sc] + (['-DSKIPPAD=1'] if g['skippad'] else [])
+        dump, opts = 'k64-cpt.txt', ['--cpt', str(sc)] + (['--skip-pad'] if g['skippad'] else [])
+        if g['fold']:
+            folds = ','.join(g['folds'])
+            if sh(['python3', os.path.join(ROOT, 'tools', 'gen-fold.py'), src, folds]).returncode:
+                raise RuntimeError('died: fold generation')
+            flags.append('-DFOLD=1'); opts += ['--dataprims', '--fold', '--fold-set', folds]
+        opts += ['--compiler-overlay', '16']
+    if sh(['cc'] + ccflags(g) + flags + ['-o', eng, src]).returncode:
+        raise RuntimeError('died: engine did not compile')
+    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img): raise RuntimeError('died: image did not convert')
     return eng, img
 
@@ -175,9 +229,12 @@ def evaluate(g, rounds, keep=False):
 def mutate(g, rnd):
     g = canon(g); what = []
     for _ in range(rnd.choice([1, 1, 2])):
-        k = rnd.choice(['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                        'varslot', 'd256', 'guard', 'folds', 'folds', 'folds'])
-        if k == 'scale':
+        k = rnd.choice(EXPRESSED[g['enc']] + list(CC0) + ['enc'] * (1 if rnd.random() < 0.2 else 0))
+        if k == 'enc':
+            g['enc'] = rnd.choice([f for f in FAMILIES if f != g['enc']]); what.append('family %s' % g['enc'])
+        elif k == 'opt':
+            g['opt'] = rnd.choice([o for o in ('O2', 'O3', 'Os') if o != g['opt']]); what.append('-' + g['opt'])
+        elif k == 'scale':
             g['scale'] = rnd.choice([s for s in range(4) if s != g['scale']]); what.append('scale=%d' % g['scale'])
         elif k == 'spec':
             s = rnd.choice(SPECS)
@@ -195,7 +252,7 @@ def mutate(g, rnd):
                 what.append('fold %s->%s' % (p, q))
         else:
             g[k] ^= 1; what.append('%s=%d' % (k, g[k]))
-    return g, 'mutation: ' + ', '.join(what)
+    return g, 'mutation: ' + ', '.join(what or ['(none)'])
 
 def crossover(a, b, rnd):
     c = {}
@@ -341,6 +398,8 @@ def main(argv):
         print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
         for _ in range(N):
             p1, p2 = pick(), pick()
+            same = [i for i in live if i != p1 and R[i]['genome']['enc'] == R[p1]['genome']['enc']]
+            if same and rnd.random() < 0.8: p2 = rnd.choice(same)   # mostly within the species
             for _try in range(10):
                 if rnd.random() < 0.6 and p1 != p2:
                     g = crossover(R[p1]['genome'], R[p2]['genome'], rnd); how = 'crossover'; parents = [p1, p2]
@@ -355,7 +414,10 @@ def main(argv):
                 if gid(g) not in R: break
             kids.append(get(g, parents, how, gen))
         live = [i for i in dict.fromkeys(pop + kids) if R[i]['status'] == 'ok']
-        pop = rank(live, R)[0][:N]
+        order = rank(live, R)[0]
+        best_of = [next(i for i in order if R[i]['genome']['enc'] == f) for f in FAMILIES
+                   if any(R[i]['genome']['enc'] == f for i in order)]   # no family dies out by crowding
+        pop = list(dict.fromkeys(best_of + order))[:max(N, len(best_of))]
     report(R)
 
 
@@ -374,12 +436,14 @@ def report(R):
          '|---|---|---|---|---|---|']
     def diff(g):
         if not ref: return ''
-        r = ref['genome']; out = []
+        g, r = express(g), express(ref['genome']); out = []
+        if g['enc'] != r['enc']: return 'family %s: %s' % (g['enc'], ', '.join('%s=%s' % (k, v) for k, v in g.items()
+                                   if k not in ('enc', 'folds', 'spec') and CC0.get(k) != v) or 'as hand-made')
         for k in g:
             if k == 'folds':
                 a, b = set(g['folds']) - set(r['folds']), set(r['folds']) - set(g['folds'])
                 if a or b: out.append(' '.join(['+' + x for x in sorted(a)] + ['-' + x for x in sorted(b)]))
-            elif g[k] != r[k]: out.append('%s=%s' % (k, ','.join(g[k]) if isinstance(g[k], list) else g[k]))
+            elif g[k] != r.get(k): out.append('%s=%s' % (k, ','.join(g[k]) if isinstance(g[k], list) else g[k]))
         return '; '.join(out) or '(s6-cv8b itself)'
     for i in sorted(F, key=lambda i: R[i]['speed']):
         x = R[i]; rs = x['speed'] / ref['speed'] if ref else 1; rl = x['t']['loop'] / ref['t']['loop'] if ref else 1
