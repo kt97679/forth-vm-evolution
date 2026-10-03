@@ -156,19 +156,24 @@ def gid(g):
 
 
 # ---- building and testing one design ------------------------------------
-def _contain():
-    """In the child: a CPU-time cap, so a design that runs wild stops even
-    if a timeout is missed."""
+def _contain(cpu):
+    """In the child: a CPU-time limit - SIGXCPU at cpu seconds."""
     import resource
-    resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
-def sh(cmd, cwd=None, inp=None, timeout=300, env=None):
+    def f(): resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu + 2))
+    return f
+def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
     """Run cmd in a process group of its own and kill the WHOLE group on
     timeout. A broken design executes arbitrary code, and the engine's
     primitives include fork and execve: a wild jump can leave processes
     behind that hold the pipes open - one such run hung the lab and once
-    took the machine down with it."""
+    took the machine down with it.
+
+    A run's limit is in CPU time (cpu): a design that loops burns CPU and
+    is stopped however busy the machine is, while a correct design merely
+    waiting its turn on a loaded laptop is not. timeout, wall-clock, is
+    only the backstop for one that blocks. SIGXCPU counts as a timeout."""
     p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.PIPE if inp is not None else subprocess.DEVNULL,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain, env=env)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain(cpu), env=env)
     try:
         out, err = p.communicate(inp, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -180,6 +185,8 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None):
     finally:
         try: os.killpg(p.pid, 9)        # anything the run left behind
         except (ProcessLookupError, PermissionError): pass
+    import signal
+    if p.returncode == -signal.SIGXCPU: raise subprocess.TimeoutExpired(cmd, cpu)
     return subprocess.CompletedProcess(cmd, p.returncode, out, err)
 
 def ccflags(g):
@@ -242,7 +249,7 @@ def design_pairs(g, n=24):
         pw = private_work(d); share = collections.Counter()
         for w in WORK_SEL:
             pf = os.path.join(d, 'prof-' + w)
-            sh([eng, img], cwd=pw, inp=program(w), timeout=30, env=dict(os.environ, VMPROF=pf))
+            sh([eng, img], cwd=pw, inp=program(w), timeout=240, cpu=10, env=dict(os.environ, VMPROF=pf))
             c, total = collections.Counter(), 0
             for line in open(pf):
                 m = re.match(r'^(\d+) (\d+) (\d+)$', line)
@@ -367,25 +374,39 @@ def program(w):
 def alive(eng, img, pw):
     """The corpus must match the cell engine's output; the kernel must match."""
     with open(CORPUS, 'rb') as f:
-        r = sh([eng, img], cwd=pw, inp=f.read(), timeout=5)
+        r = sh([eng, img], cwd=pw, inp=f.read(), timeout=120, cpu=5)
     if r.stdout != REF_CORPUS: raise RuntimeError('died: corpus')
     # The work directory starts with a copy of the reference kernel, so
     # the workload must WRITE it: remove it first. Until this, a design
     # that died quietly before saving passed - the copy matched.
     k = os.path.join(pw, 'kernel.img')
     if os.path.exists(k): os.remove(k)
-    sh([eng, img], cwd=pw, inp=KERNEL_IN, timeout=10)
+    sh([eng, img], cwd=pw, inp=KERNEL_IN, timeout=240, cpu=10)
     if not os.path.exists(k) or open(k, 'rb').read() != open(KREF, 'rb').read():
         raise RuntimeError('died: kernel workload')
 
+METRIC = rb'^CYCLES (\d+)' if os.environ.get('EVOLVE_METRIC') == 'cycles' else rb'^CPUNS (\d+)'
+PIN, REF = [], None            # set by setup(): the core, the reference (eng, img, work dir)
+def run_metric(eng, img, pw, w):
+    """One timed run: the process's own CPU time (user + system, from
+    getrusage of the child - tools/cputime.c), not wall time, so other
+    processes on the machine do not count against it."""
+    r = sh(PIN + [CPUT, eng, img], cwd=pw, inp=program(w), timeout=240, cpu=10)
+    m = re.search(METRIC, r.stderr, re.M) or re.search(rb'^CPUNS (\d+)', r.stderr, re.M)
+    return int(m.group(1))
 def measure(eng, img, pw, works, rounds):
-    best = {}
-    for _ in range(rounds):
+    """Best (minimum) CPU time per workload over the rounds, the design and
+    the reference - hand-made s6 - run back to back in every round,
+    alternating which goes first. Returns design / reference per workload,
+    and the design's own times: a ratio of two runs minutes apart, so
+    drift in background load or clock speed over a run of hours cancels."""
+    best, ref = {}, {}
+    for r_ in range(rounds):
         for w in works:
-            r = sh(['taskset', '-c', os.environ.get('BENCH_CPU') or '0', CPUT, eng, img], cwd=pw, inp=program(w), timeout=10)
-            m = re.search(rb'^CYCLES (\d+)', r.stderr, re.M) or re.search(rb'^CPUNS (\d+)', r.stderr, re.M)
-            best[w] = min(best.get(w, 1 << 62), int(m.group(1)))
-    return best
+            pair = [(eng, img, pw, best), REF + (ref,)]
+            for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
+                store[w] = min(store.get(w, 1 << 62), run_metric(e, i, p, w))
+    return {w: best[w] / ref[w] for w in works}, best
 
 def evaluate(g, rounds, keep=False):
     d = os.path.join(EV, 'ind-' + gid(g)); rec = {'status': 'ok'}
@@ -394,8 +415,8 @@ def evaluate(g, rounds, keep=False):
         rec['size'] = os.path.getsize(img)
         pw = private_work(d)
         alive(eng, img, pw)
-        t = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
-        rec['t'] = t
+        t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
+        rec['t'] = t; rec['raw'] = raw
         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
         rec['unit'] = UNIT
     except RuntimeError as e:
@@ -546,6 +567,39 @@ def foldable():
     shutil.rmtree(os.path.join(EV, 'probe'), ignore_errors=True)
     json.dump(good, open(path, 'w')); return good
 
+def quiet_cpu():
+    """taskset arguments for the core to pin every timed run to: BENCH_CPU
+    if set; else the core that, with its hyperthread sibling, was least
+    busy over one second - not core 0 by default, which takes interrupts
+    and much background work. [] (no pinning) if taskset is missing."""
+    if not shutil.which('taskset'): return []
+    if os.environ.get('BENCH_CPU'): return ['taskset', '-c', os.environ['BENCH_CPU']]
+    def busy():
+        b = {}
+        for l in open('/proc/stat'):
+            f = l.split()
+            if re.match(r'cpu\d+$', f[0]):
+                v = list(map(int, f[1:])); b[int(f[0][3:])] = (sum(v) - v[3] - v[4], sum(v))
+        return b
+    try:
+        a = busy(); time.sleep(1); b = busy()
+        load = {c: (b[c][0] - a[c][0]) / max(b[c][1] - a[c][1], 1) for c in b}
+        def sib(c):
+            try:
+                txt = open('/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list' % c).read().strip()
+                out = set()
+                for part in txt.split(','):
+                    lo, _, hi = part.partition('-'); out |= set(range(int(lo), int(hi or lo) + 1))
+                return out
+            except OSError: return {c}
+        score = {c: sum(load.get(x, 0) for x in sib(c)) for c in load}
+        cand = [c for c in score if c != 0] or list(score)
+        c = min(cand, key=lambda c: (score[c], c))
+        print('pinned to cpu %d (it and its sibling %.0f%% busy; BENCH_CPU=N to choose)' % (c, 100 * score[c]), flush=True)
+        return ['taskset', '-c', str(c)]
+    except Exception:
+        return []
+
 def setup():
     global REF_CORPUS, KREF, UNIT, POOL
     for need in (CPUT, os.path.join(O, 'k64-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
@@ -568,7 +622,13 @@ def setup():
     KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, 'kernel.img'), KREF)
     with open(CORPUS, 'rb') as f:
         REF_CORPUS = sh([os.path.join(O, 's0-cell-64'), os.path.join(O, 's0-cell-s64.img')], cwd=W, inp=f.read()).stdout
-    UNIT = 'cycles' if b'CYCLES' in sh([CPUT, '/bin/true']).stderr else 'cpu ns'
+    UNIT = ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'
+    PIN[:] = quiet_cpu()
+    # the reference every measurement is paired with: hand-made s6
+    global REF
+    rd = os.path.join(EV, 'reference'); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)
+    re_, ri = build(canon(HUMAN['s6-cv8b']), rd); rp = private_work(rd)
+    REF = (re_, ri, rp)
     POOL = foldable()
 
 

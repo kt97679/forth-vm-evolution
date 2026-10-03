@@ -135,16 +135,18 @@ fi
 # long build, while you are still here to fix it.
 mkdir -p "$O"
 cc -O2 -Wall -o "$O/cputime" tools/cputime.c || die "tools/cputime.c did not compile"
-if [ "${NO_COUNTERS:-0}" != 1 ] && "$O/cputime" /bin/true 2>&1 >/dev/null | grep -q '^CYCLES'; then
+# The metric is the process's own CPU time (user + system, getrusage of
+# the child): other processes on the machine do not count against it. The
+# counters, where readable, add cycles and instructions as extra columns.
+# BENCH_METRIC=cycles makes cycles the metric instead.
+if [ "${BENCH_METRIC:-cpu}" = cycles ] && [ "${NO_COUNTERS:-0}" != 1 ] && \
+   "$O/cputime" /bin/true 2>&1 >/dev/null | grep -q '^CYCLES'; then
     export BENCH_METRIC=cycles
-    echo "   metric:    CPU cycles, from the hardware counters"
+    echo "   metric:    CPU cycles, from the hardware counters (BENCH_METRIC=cycles)"
 else
+    [ "${BENCH_METRIC:-cpu}" = cycles ] && warn "cycles asked for, but the counters cannot be read - measuring CPU time"
     export BENCH_METRIC=cpu
-    echo "   metric:    CPU time"
-    [ "${NO_COUNTERS:-0}" = 1 ] || \
-        warn "the hardware counters cannot be read - measuring CPU time, which
-            the clock speed moves. Steadier: a quiet machine and the performance
-            governor (now '$gov'): sudo cpupower frequency-set -g performance"
+    echo "   metric:    CPU time of the process - other processes do not count against it"
 fi
 
 # ---- the core: the quietest one now, counting its SMT sibling ------------

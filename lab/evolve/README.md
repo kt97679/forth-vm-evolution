@@ -350,6 +350,20 @@ DUP C@ and OVER C@ lead (5 new); s4, whose tiny words are calls, has + SWAP
 and + DUP on top (9 new). Mutating s4, every pair added came from its own
 pool, 4 of 6 from outside the fixed one. Founders keep the fixed pool.
 
+## Measuring on a machine that is not quiet
+
+The run happens on a laptop with other processes that cannot be stopped,
+so the evolver now measures the engine process's own CPU time (user +
+system), not cycles, and pairs every timed run of a design with one of
+hand-made s6, back to back, alternating order: a design's speed is its
+CPU time over s6's, geometric mean over the selection workloads. Drift
+over hours cancels; s6 against itself comes out within 1% of 1.0. The
+correctness limits are CPU time as well (5 s corpus, 10 s kernel), with a
+wall-clock backstop, so a correct design waiting its turn is not killed.
+Runs are pinned to the core that, with its hyperthread sibling, was
+quietest at start-up, unless BENCH_CPU says otherwise. `RUNNING.md` is
+the guide to the run; `tools/bench-laptop.sh` defaults to CPU time too.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
