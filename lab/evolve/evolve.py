@@ -568,15 +568,22 @@ def rank(ids, R):
 
 
 # ---- the database ----------------------------------------------------------
+LOADED = {'lines': 0, 'bad': 0, 'first_bad': None}
 def load():
     """The designs evaluated so far. A run killed while writing leaves a
-    truncated last line: skipped, and that design is evaluated again."""
+    truncated last line: skipped, and that design is evaluated again.
+    What was skipped is counted (LOADED), so a database that cannot be
+    read at all does not pass for an empty one."""
     R = {}
+    LOADED.update(lines=0, bad=0, first_bad=None)
     if os.path.exists(DB):
-        for l in open(DB):
-            try: r = json.loads(l)
-            except ValueError: continue
-            R[r['id']] = r
+        for l in open(DB, encoding='utf-8-sig', errors='replace'):   # a byte-order mark is not JSON
+            if not l.strip(): continue
+            LOADED['lines'] += 1
+            try: r = json.loads(l); R[r['id']] = r
+            except (ValueError, KeyError, TypeError):
+                LOADED['bad'] += 1
+                if LOADED['first_bad'] is None: LOADED['first_bad'] = l[:70]
     return R
 def save(r):
     with open(DB, 'a') as f: f.write(json.dumps(r) + '\n')
@@ -759,7 +766,14 @@ def main(argv):
 def nothing_alive(R):
     """What the database holds when no design in it is alive."""
     if not R:
-        print('%s holds no designs: run the evolution first (lab/evolve/RUNNING.md)' % DB)
+        if not os.path.exists(DB):
+            print('%s does not exist: run the evolution first (lab/evolve/RUNNING.md)' % DB)
+        elif not LOADED['lines']:
+            print('%s is empty (%d bytes): run the evolution first (lab/evolve/RUNNING.md)' % (DB, os.path.getsize(DB)))
+        else:
+            print('%s has %d lines, and none could be read as a design. The first begins:' % (DB, LOADED['lines']))
+            print('  %r' % LOADED['first_bad'])
+            print('Each line should be one JSON object, beginning {"id": ... - was the file changed on the way?')
         return
     why = collections.Counter(R[i]['status'] for i in R)
     print('%s holds %d designs, none alive. Causes of death:' % (DB, len(R)))
