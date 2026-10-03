@@ -1209,6 +1209,21 @@ L_x_i:         PUSH(RS); NEXT();                                                
 L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */
 L_x_unloop:    rp += 2 * CELL_BYTES; NEXT();                                        /* UNLOOP  */
 L_x_do:        { RPUSH(DS1); RPUSH(DS0); dsp += 2 * CELL_BYTES; } NEXT();            /* (DO)    */
+/*  The loop words with an operand: where the colon word jumps to its
+ *  return address plus the operand cell, these take the branch offset
+ *  after the opcode, as ?BRANCH does; where it skips the cell, they skip
+ *  the two bytes. (+LOOP) leaves as the kernel's does: when index - limit
+ *  changes sign.  */
+L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
+             if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
+L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */
+L_x_loop:  { UNS64 i_ = RS + 1;                                                  /* (LOOP)  */
+             if (i_ == CELL(rp + CELL_BYTES)) { rp += 2 * CELL_BYTES; ip += 2; }
+             else { CELL(rp) = i_; ip += (int16_t)LD16(ip); } } NEXT();
+L_x_ploop: { UNS64 n_ = DS0, i_ = RS, l_ = CELL(rp + CELL_BYTES), j_ = i_ + n_;  /* (+LOOP) */
+             dsp += CELL_BYTES;
+             if ((INT64)((i_ - l_) ^ (j_ - l_)) < 0) { rp += 2 * CELL_BYTES; ip += 2; }
+             else { CELL(rp) = j_; ip += (int16_t)LD16(ip); } } NEXT();
 #endif
 #if ENC == 3
 L_lit64:   /* lit64: a full cell, little-endian. CELL_BYTES bytes.      */

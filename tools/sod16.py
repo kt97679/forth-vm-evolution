@@ -338,7 +338,7 @@ def branch_targets(ops):
     for k, pl in ops: cs.append(c); c += op_cells(k, pl)
     tg = set()
     for j, (k, pl) in enumerate(ops):
-        if k in ('BR', 'QBR'): tg.add(cs[j] + CELL + pl)
+        if k in BRK: tg.add(cs[j] + CELL + pl)
         if k == 'OPD': tg.add(cs[j] + pl)
         if k == 'ALN': tg.add(cs[j])
     return cs, tg
@@ -375,7 +375,22 @@ def _expect(n):
               ('P', '@'), ('P', 'EXIT')],
         'UNLOOP': [('P', 'R>'), ('P', 'R>'), ('P', 'R>'), ('C', '2DROP'), ('P', '>R'), ('P', 'EXIT')],
         '(DO)': [('P', 'R>'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('P', '>R'), ('P', '>R'), ('P', '>R'),
-                 ('P', 'EXIT')]})
+                 ('P', 'EXIT')],
+        # the loop words with an operand: the offset after the call, read
+        # through the return address - as opcodes, a branch's two bytes
+        '(LOOP)': [('P', 'R>'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'DUP'), ('P', 'R@'), ('P', '='),
+                   ('QBR', 7 * CELL), ('P', 'R>'), ('C', '2DROP'), ('C', 'CELL+'), ('P', '>R'), ('BR', 6 * CELL),
+                   ('P', '>R'), ('P', 'DUP'), ('P', '@'), ('P', '+'), ('P', '>R'), ('P', 'EXIT')],
+        '(+LOOP)': [('P', 'R>'), ('P', 'SWAP'), ('P', 'R>'), ('P', 'DUP'), ('P', 'R@'), ('C', '-'), ('P', 'ROT'),
+                    ('P', 'ROT'), ('P', '+'), ('P', 'DUP'), ('P', 'R@'), ('C', '-'), ('P', 'ROT'), ('P', 'XOR'),
+                    ('LIT', 0), ('P', '<'), ('QBR', 7 * CELL), ('P', 'R>'), ('C', '2DROP'), ('C', 'CELL+'),
+                    ('P', '>R'), ('BR', 6 * CELL), ('P', '>R'), ('P', 'DUP'), ('P', '@'), ('P', '+'), ('P', '>R'),
+                    ('P', 'EXIT')],
+        '(LEAVE)': [('P', 'R>'), ('P', 'DUP'), ('P', '@'), ('P', '+'), ('P', 'R>'), ('P', 'DROP'), ('P', 'R>'),
+                    ('P', 'DROP'), ('P', '>R'), ('P', 'EXIT')],
+        '(?DO)': [('C', '2DUP'), ('C', '-'), ('QBR', 11 * CELL), ('P', 'R>'), ('P', 'ROT'), ('P', 'ROT'),
+                  ('P', 'SWAP'), ('P', '>R'), ('P', '>R'), ('C', 'CELL+'), ('P', '>R'), ('BR', 7 * CELL),
+                  ('C', '2DROP'), ('P', 'R>'), ('P', 'DUP'), ('P', '@'), ('P', '+'), ('P', '>R'), ('P', 'EXIT')]})
     return E.get(n)
 
 TINY_AT = None
@@ -422,10 +437,26 @@ def ops10_at():
         missing = set(X_OPS10) - set(OPS10_AT.values())
         if missing: print("ops10: no exact body match for %s" % sorted(missing))
     return OPS10_AT
+# The loop words take their operand cell with them and become BRANCH
+# kinds: call + operand is two cells, as ?BRANCH is, and the operand's
+# target is reckoned the same way (cs + CELL + offset). Same layout, same
+# emission - a 2-byte offset from the operand - with their own opcode.
+LOOPKIND = {'(LOOP)': 'LP', '(+LOOP)': 'PLP', '(?DO)': 'QDO', '(LEAVE)': 'LV'}
+LOOPNAME = {v: k for k, v in LOOPKIND.items()}
+BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV')
 def ops10_rewrite(ops):
-    """A call to one of them becomes its opcode, one operation for one."""
-    at = ops10_at()
-    return [('P', at[pl]) if k == 'C' and pl in at else (k, pl) for k, pl in ops]
+    """A call to one of them becomes its opcode, one operation for one;
+    a loop word and the operand cell after it, one branch-kind op."""
+    at, out, j = ops10_at(), [], 0
+    while j < len(ops):
+        k, pl = ops[j]
+        if k == 'C' and pl in at:
+            n = at[pl]
+            if n not in LOOPKIND: out.append(('P', n)); j += 1; continue
+            if j + 1 < len(ops) and ops[j + 1][0] == 'OPD':
+                out.append((LOOPKIND[n], ops[j + 1][1])); j += 2; continue
+        out.append(ops[j]); j += 1
+    return out
 
 LOCNAME = {}
 def specialise(ops):
@@ -464,7 +495,7 @@ def fuse_pairs(ops):
     for k, pl in ops: cs.append(c); c += op_cells(k, pl)
     targets = set()
     for j, (k, pl) in enumerate(ops):
-        if k in ('BR', 'QBR'): targets.add(cs[j] + CELL + pl)
+        if k in BRK: targets.add(cs[j] + CELL + pl)
         if k == 'OPD': targets.add(cs[j] + pl)
         if k == 'ALN': targets.add(cs[j])
     out, j = [], 0
@@ -483,7 +514,7 @@ def fold_exit(ops):
     for k, pl in ops: cs.append(c); c += op_cells(k, pl)
     targets = set()
     for j, (k, pl) in enumerate(ops):
-        if k in ('BR', 'QBR'): targets.add(cs[j] + CELL + pl)
+        if k in BRK: targets.add(cs[j] + CELL + pl)
         if k == 'OPD': targets.add(cs[j] + pl)
         if k == 'ALN': targets.add(cs[j])
     out, j = [], 0
@@ -576,7 +607,7 @@ def op_cells(k, pl):
     if k in ('PX', 'SP'): return 2 * CELL
     if k == 'LITX': return 3 * CELL
     if k in ('P', 'C', 'OPD', 'XT'): return CELL
-    if k in ('LIT', 'LITOFF', 'BR', 'QBR'): return 2 * CELL
+    if k in ('LIT', 'LITOFF') + BRK: return 2 * CELL
     if k == 'STR': return align_up(len(pl), CELL)
     raise AssertionError("unknown op kind %r" % k)
 
@@ -602,7 +633,7 @@ def op_bytes(k, pl, t):
             if -(1 << 31) <= pl < (1 << 31): return 5
             return 1 + CELL
         if k == 'LITOFF': return 5
-        if k in ('BR', 'QBR'): return 3
+        if k in BRK: return 3
     if k == 'PX': return 2
     if k == 'LITX': return 4
     if k in ('P', 'C'): return 2
@@ -734,8 +765,8 @@ def to_bytes_v8(ops):
             else:
                 assert 0 <= v < 0x8000, "v8 call value %d out of 15 bits" % v
                 b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
-        elif k in ('BR', 'QBR'):
-            b.append(idx_of['BRANCH' if k == 'BR' else '?BRANCH'])
+        elif k in BRK:
+            b.append(idx_of['BRANCH'] if k == 'BR' else idx_of['?BRANCH'] if k == 'QBR' else X_OPS10[LOOPNAME[k]])
             tgt = cs[j] + CELL + pl
             if tgt not in c2t: return None
             le(c2t[tgt] - (ts[j] + 1), 2)       # from the operand, in bytes

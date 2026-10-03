@@ -227,9 +227,31 @@ seven words and all 24 pairs, which the two free slots of s6 could not
 hold, s6 0.888 and 72 bytes smaller, s5 0.950 and 96 smaller. The scan
 tries the escape on every CV8 design and finds no new death.
 
+## Phase 3c: the loop words with an operand
+
+`(LOOP)`, `(?DO)`, `(+LOOP)` and `(LEAVE)` read an operand cell after
+the call through their return address. As opcodes they become BRANCH
+kinds: call and operand are two cells, as ?BRANCH is, and the operand's
+target is reckoned the same way, so the converter lays them out and emits
+them as ?BRANCH - a two-byte offset from the operand - with their own
+opcode. A site shrinks from a call, padding and a cell to three bytes.
+The handlers follow the kernel's definitions; `(+LOOP)` leaves when
+index - limit changes sign, as the kernel's does.
+
+The image code uses LOOP in three places and ?DO, +LOOP and LEAVE in
+none, so those three are right but idle here. s4 with all eleven words,
+144 bytes smaller; s6 with the escape, eleven words and 24 pairs, 0.871
+of the time and 72 bytes smaller (VM; these moved by a few per cent from
+run to run). Each word alone passes the strict check in s4, s5 and s6.
+
+One slip caught by that check: the handlers first used BROFF, which only
+the generated top-of-stack engine defines - s4, the plain engine, did not
+link; they now read `(int16_t)LD16(ip)`, as the plain engine's ?BRANCH
+does.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
-direct threading, tail-call threading, the rest of relf's format 10 (loop words with operands, @XT, short branches), indirect threading, multi-state stack caching, SPN's
+direct threading, tail-call threading, the rest of relf's format 10 (@XT, short branches), indirect threading, multi-state stack caching, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.
