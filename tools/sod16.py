@@ -331,7 +331,8 @@ def read_ops(w):
     if SPEC: out = specialise(out)
     if V8 and X_OPS10: out = ops10_rewrite(out)
     out = fold_exit(out) if FOLD else out
-    return fuse_pairs(out) if V8 and SUPERS else out
+    out = fuse_pairs(out) if V8 and SUPERS else out
+    return shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
 
 def branch_targets(ops):
     cs, c = [], 0
@@ -427,14 +428,14 @@ def ops10_at():
         nm_of = {w['s']: w['n'] for w in words}
         show = set(os.environ.get('SOD16_SHOW', '').split(',')) - {''}
         for w in words:
-            if w['n'] in X_OPS10 or w['n'] in show:
+            if (w['n'] in X_OPS10 and w['n'] not in PSEUDO10) or w['n'] in show:
                 o = read_ops(w)
                 if o is None: continue
                 o = [(k, nm_of.get(p, p) if k == 'C' else p) for k, p in o]
                 if w['n'] in show: print('SHOW %s %r' % (w['n'], o))
                 if w['n'] in X_OPS10 and o == _expect(w['n']): OPS10_AT[w['s']] = w['n']
         SPEC.update(saved); FOLD = fsaved
-        missing = set(X_OPS10) - set(OPS10_AT.values())
+        missing = set(X_OPS10) - PSEUDO10 - set(OPS10_AT.values())
         if missing: print("ops10: no exact body match for %s" % sorted(missing))
     return OPS10_AT
 # The loop words take their operand cell with them and become BRANCH
@@ -443,7 +444,29 @@ def ops10_at():
 # emission - a 2-byte offset from the operand - with their own opcode.
 LOOPKIND = {'(LOOP)': 'LP', '(+LOOP)': 'PLP', '(?DO)': 'QDO', '(LEAVE)': 'LV'}
 LOOPNAME = {v: k for k, v in LOOPKIND.items()}
-BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV')
+BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS')
+PSEUDO10 = {'BRANCH8', '?BRANCH8'}   # in X_OPS10 but not kernel words: the short branches
+def shorten(ops):
+    """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
+    on a layout that counts every alignment at its widest, so the real
+    offsets can only be smaller; a branch that does not fit goes long and
+    the layout is redone, until nothing changes - and a long one never
+    comes back, so that ends."""
+    ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8')) if n in X_OPS10}
+    long_ = set()
+    while True:
+        trial = [(ok[k], pl) if k in ok and j not in long_ else (k, pl) for j, (k, pl) in enumerate(ops)]
+        cs, ts, c, t = [], [], 0, 0
+        for k, pl in trial:
+            cs.append(c); ts.append(t); c += op_cells(k, pl)
+            t += (pl - 1) if k == 'ALN' else op_bytes(k, pl, t)
+        c2t = dict(zip(cs, ts)); c2t[c] = t
+        grew = False
+        for j, (k, pl) in enumerate(trial):
+            if k in ('BRS', 'QBRS'):
+                tgt = c2t.get(cs[j] + CELL + pl)
+                if tgt is None or not -128 <= tgt - (ts[j] + 1) <= 127: long_.add(j); grew = True
+        if not grew: return trial
 def ops10_rewrite(ops):
     """A call to one of them becomes its opcode, one operation for one;
     a loop word and the operand cell after it, one branch-kind op."""
@@ -633,6 +656,7 @@ def op_bytes(k, pl, t):
             if -(1 << 31) <= pl < (1 << 31): return 5
             return 1 + CELL
         if k == 'LITOFF': return 5
+        if k in ('BRS', 'QBRS'): return 2
         if k in BRK: return 3
     if k == 'PX': return 2
     if k == 'LITX': return 4
@@ -765,6 +789,13 @@ def to_bytes_v8(ops):
             else:
                 assert 0 <= v < 0x8000, "v8 call value %d out of 15 bits" % v
                 b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
+        elif k in ('BRS', 'QBRS'):
+            b.append(X_OPS10['BRANCH8' if k == 'BRS' else '?BRANCH8'])
+            tgt = cs[j] + CELL + pl
+            if tgt not in c2t: return None
+            o = c2t[tgt] - (ts[j] + 1)                # from the operand, in bytes
+            assert -128 <= o <= 127, "short branch out of range: %d" % o
+            b.append(o & 0xFF)
         elif k in BRK:
             b.append(idx_of['BRANCH'] if k == 'BR' else idx_of['?BRANCH'] if k == 'QBR' else X_OPS10[LOOPNAME[k]])
             tgt = cs[j] + CELL + pl

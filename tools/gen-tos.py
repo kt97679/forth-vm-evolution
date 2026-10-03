@@ -62,12 +62,25 @@ HOT = {
  'L_eqi':    'tos = -(UNS64)(tos == (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();',
  'L_eqix':   'tos = -(UNS64)(tos == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CELL_BYTES; NEXT();',
  'L_0branch':'t = tos; POPT(); if (t) ip += 2; else ip += BROFF(ip); NEXT();',
+ # relf's format-10 opcodes (OPS10): written for the cached top, not wrapped
+ 'L_x_qbr8':  't = tos; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();',
+ 'L_x_execute': '{ UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();',
+ 'L_x_i':     'PUSHT(RS); NEXT();',
+ 'L_x_j':     'PUSHT(CELL(rp + 2 * CELL_BYTES)); NEXT();',
+ 'L_x_qdup':  'if (tos) PUSHT(tos); NEXT();',
+ 'L_x_plusstore': '{ UNS64 a_ = tos; CELL(a_) += NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',
+ 'L_x_do':    '{ RPUSH(NOS); RPUSH(tos); tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',
+ 'L_x_qdo':   '{ UNS64 n2_ = tos, n1_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; '
+              'if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += BROFF(ip); } NEXT();',
+ 'L_x_ploop': '{ UNS64 n_ = tos, i_ = RS, l_ = CELL(rp + CELL_BYTES), j_ = i_ + n_; POPT(); '
+              'if ((INT64)((i_ - l_) ^ (j_ - l_)) < 0) { rp += 2 * CELL_BYTES; ip += 2; } '
+              'else { CELL(rp) = j_; ip += BROFF(ip); } } NEXT();',
 }
 NOSTACK = {'L_noop', 'L_exit', 'L_branch', 'L_dodoes', 'L_lsave', 'L_lrest', 'L_lzero',
            # The escape only reads its selector and jumps: wrapped, it SPILLed the
            # cached top into memory and the escaped primitive found the stack one
            # cell deep - the converter's "BUF-ALLOC fault", in every cached engine.
-           'L_esc', 'L_x_unloop', 'L_x_loop', 'L_x_leave'}   # never touch the data stack
+           'L_esc', 'L_x_unloop', 'L_x_loop', 'L_x_leave', 'L_x_br8'}   # never touch the data stack
 fend = s.index("\n#if FOLD\n#define EXITNEXT")
 start = s.index("L_noop:")
 sec = s[start:fend]

@@ -113,10 +113,12 @@ def overlay(g):
     return g['enc'] == 'cv8' and bool(supers_in(g) and g.get('rtfuse'))
 # relf's format-10 opcodes: kernel colon words given opcodes, where the
 # converter finds their compiled body exactly as the engine implements it.
-OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?DO)', '(+LOOP)', '(LEAVE)']
+OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?DO)', '(+LOOP)', '(LEAVE)',
+              '?BRANCH8', 'BRANCH8']   # the short branches: not words, opcodes the converter uses where they fit
 OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
-               '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave'}
+               '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
+               '?BRANCH8': 'L_x_qbr8', 'BRANCH8': 'L_x_br8'}
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
     return [[w, op] for w, op in zip(g.get('ops10', []), super_slots(g))]

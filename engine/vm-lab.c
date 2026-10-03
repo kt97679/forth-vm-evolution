@@ -1214,6 +1214,11 @@ L_x_do:        { RPUSH(DS1); RPUSH(DS0); dsp += 2 * CELL_BYTES; } NEXT();       
  *  after the opcode, as ?BRANCH does; where it skips the cell, they skip
  *  the two bytes. (+LOOP) leaves as the kernel's does: when index - limit
  *  changes sign.  */
+/*  Short branches: a one-byte offset, from the operand, where it fits -
+ *  the converter decides branch by branch (tools/sod16.py, shorten).  */
+L_x_br8:   ip += (int8_t)BYTE(ip); NEXT();                                         /* BRANCH8  */
+L_x_qbr8:  if (DS0) ip += 1; else ip += (int8_t)BYTE(ip);                          /* ?BRANCH8 */
+           dsp += CELL_BYTES; NEXT();
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

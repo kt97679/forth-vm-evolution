@@ -249,9 +249,29 @@ the generated top-of-stack engine defines - s4, the plain engine, did not
 link; they now read `(int16_t)LD16(ip)`, as the plain engine's ?BRANCH
 does.
 
+## Phase 3d: short branches, and the format-10 words in the cached engine
+
+`?BRANCH8` and `BRANCH8` take a one-byte offset where it fits. They are
+in `ops10` as two pseudo-words, taking slots like the rest; the converter
+decides branch by branch (`shorten`), on a layout that counts every
+alignment at its widest - so real offsets can only be smaller - going
+long where a branch does not fit and redoing the layout until nothing
+changes. About 166 branches in the image code: s6 200 bytes smaller, s5
+136, s4 192, at the same speed (s6 1.007, within noise) - a size gene.
+
+The format-10 words now have bodies written for the cached top of stack
+in gen-tos.py, instead of the generic SPILL / FILL wrapper - `?BRANCH8`
+above all, which runs on every IF and loop. s6 with the escape, all
+thirteen opcodes and 24 pairs: 0.880 of the time and 256 bytes smaller,
+every workload faster, the held-out loop 0.926 (VM). Each opcode alone
+passes the strict check in s4, s5 and s6; the scan finds no new death.
+
+@XT, relf's fused @ EXECUTE, is not taken: relf's kernel calls through
+vectors, and this one has no `@ EXECUTE` in the image's code at all.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
-direct threading, tail-call threading, the rest of relf's format 10 (@XT, short branches), indirect threading, multi-state stack caching, SPN's
+direct threading, tail-call threading,  indirect threading, multi-state stack caching, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.
