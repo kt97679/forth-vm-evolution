@@ -98,8 +98,33 @@ SPECS = {
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch']
 
+def rename(code, mp):
+    """Whole-word renaming of a spec's declared names - not its C."""
+    if not mp or not code: return code
+    pat = r'\b(%s)\b' % '|'.join(sorted(map(re.escape, mp), key=len, reverse=True))
+    return re.sub(pat, lambda m: mp[m.group(1)], code)
+
+def compose(A, B):
+    """A then B as one stack effect: B takes A's outputs first, then
+    deeper items; what passes between them becomes a temporary."""
+    n = [0]
+    def fresh(): n[0] += 1; return 'z%d' % n[0]
+    stack, inputs, code = [], [], []
+    for ins, outs, c, *_ in (A, B):
+        mp = {x: fresh() for x in dict.fromkeys(ins + outs)}
+        got = []
+        for _ in ins:
+            if stack: got.append(stack.pop())
+            else: z = fresh(); inputs.insert(0, z); got.append(z)
+        for x, z in zip(ins, reversed(got)): mp[x] = z
+        code.append(rename(c, mp))
+        stack += [mp[x] for x in outs]
+    temps = sorted({z for c in code for z in re.findall(r'\bz\d+\b', c)} - set(inputs) - set(stack))
+    return (inputs, stack, ' '.join(c for c in code if c), temps)
+
 def variant(label, spec, s):
-    ins, outs, code = spec
+    ins, outs, code = spec[:3]
+    temps = spec[3] if len(spec) > 3 else []
     regs = ['tos', 'nos'][:s]
     v = lambda n: 'v_' + n
     st = []
@@ -109,8 +134,8 @@ def variant(label, spec, s):
     rem = []                                       # cached items below the inputs, top first
     for k in range(len(ins), s):
         st.append('UNS64 r%d_ = %s;' % (k, regs[k])); rem.append('r%d_' % k)
-    st += ['UNS64 %s;' % v(o) for o in dict.fromkeys(outs) if o not in ins]
-    if code: st.append(re.sub(r'\b([a-z])\b', lambda m: v(m.group(1)), code))
+    st += ['UNS64 %s;' % v(o) for o in dict.fromkeys(list(outs) + list(temps)) if o not in ins]
+    if code: st.append(rename(code, {x: v(x) for x in set(ins) | set(outs) | set(temps)}))
     if len(ins) > s: st.append('dsp += %d * CELL_BYTES;' % (len(ins) - s))
     items = [v(o) for o in reversed(outs)] + rem   # the new stack, top first
     so = min(2, len(items))
@@ -131,8 +156,19 @@ if os.path.exists(fb) and '#if FOLD' in src:
     for l in re.findall(r'^(LX_\w+):', open(fb).read(), re.M):
         base = 'L' + l[2:]
         if base in specs:
-            ins, outs, code = specs[base]
+            ins, outs, code = specs[base][:3]
             specs[l] = (ins, outs, (code + ' ' if code else '') + 'ip = RS; rp += CELL_BYTES;')
+# the superinstructions (gen-super.py: LS_k, "/* FIRST SECOND */", in
+# vm-super-bodies.h): their two halves' effects, composed
+sb = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'vm-super-bodies.h')
+if os.path.exists(sb) and '#if SUPER' in src:
+    prims = [l.split()[1] for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'forth', 'kernel.4'))
+             if l.startswith('PRIMITIVE')]
+    tab = src[src.index('static const void *const dispatch[] = {'):]
+    order = re.findall(r'&&(L_\w+)', tab[:tab.index('};')])
+    for l, a, b in re.findall(r'^(LS_\d+): /\* (\S+) (\S+) \*/', open(sb).read(), re.M):
+        la, lb = order[prims.index(a)], order[prims.index(b)]
+        if la in SPECS and lb in SPECS: specs[l] = compose(SPECS[la], SPECS[lb])
 
 # macros, after the cached engine's own
 m = src.index('#define FILLNEXT() do { POPT(); NEXT(); } while (0)\n') + len('#define FILLNEXT() do { POPT(); NEXT(); } while (0)\n')

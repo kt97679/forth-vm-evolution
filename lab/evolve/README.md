@@ -320,8 +320,12 @@ and s6 run most. With those specified too (72 operations, folds built as
 their primitive's effect plus the return, and the format-10 opcodes but
 ?DUP), s6 0.941, s5 0.956 - fib 0.845, loop 0.815, but kernel 1.025. s6
 with the escape, thirteen opcodes and 24 pairs: 0.886 without, 0.882 with:
-the pairs are not specified yet, and composing their effects from their
-two halves is the next step.
+the pairs were not specified. Composing their effects from their two
+halves - a symbolic stack: the second half takes the first's outputs,
+then deeper items; what passes between them is a temporary - changed
+that: with the same combination and multi-state caching, s6 0.826 (kernel
+0.908, fib 0.836, parse 0.736, corpus 0.835, loop 0.831), s5 0.863. The
+best design so far, and faster than s6 on every workload.
 
 It excludes tail calls (both are made from the one-register engine).
 Every combination tried passes the strict check; the scan tries it on s5
