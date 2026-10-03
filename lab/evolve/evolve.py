@@ -74,7 +74,7 @@ CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-
           'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
 CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
-           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[])
+           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0)
 def human(enc, **kw):
     g = dict(CV8, **CC0); g.update(enc=enc, **kw); return g
 HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie dormant
@@ -90,9 +90,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -102,7 +102,8 @@ def super_slots(g):
     """The opcodes superinstructions may take: 126 and 127, the fold band
     past the folds in use, and the specialisation band when SPEC is off -
     so folds, specialisations and pairs compete for the same slots."""
-    return SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
+    return (SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
+            + (list(range(36, 68)) if g.get('escape') else []))   # ESCAPE moves primitives 36-67 behind a byte
 def overlay(g):
     """Does this CV8 design need forth/cv8-fuse.4, the compiler that fuses
     pairs at run time? Only if it has pairs and the rtfuse gene. (Its fold
@@ -196,11 +197,14 @@ def build(g, d):
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
+    if g.get('escape'): flags.append('-DESCAPE=1')
     o10 = ops10_in(g)
     if o10:
         json.dump(o10, open(os.path.join(d, 'ops10.json'), 'w'))
         open(os.path.join(os.path.dirname(src), 'vm-ops10-table.h'), 'w').write(
-            ''.join('[%d] = &&%s,\n' % (op, OPS10_LABEL[w]) for w, op in o10))
+            ''.join('[%d] = &&%s,\n' % (op, OPS10_LABEL[w]) for w, op in o10 if not 36 <= op < 68))
+        open(os.path.join(os.path.dirname(src), 'vm-ops10-esc.h'), 'w').write(     # the band ESCAPE frees
+            ''.join('cv8_tab[%d] = &&%s;\n' % (op, OPS10_LABEL[w]) for w, op in o10 if 36 <= op < 68))
         flags.append('-DOPS10=1')
     sup = supers_in(g)
     if sup:
@@ -213,6 +217,7 @@ def build(g, d):
     if r.returncode: raise RuntimeError('died: engine did not compile')
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
+    if g.get('escape'): opts.append('--escape')
     opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
     if g['doesfar'] and g['varcall']: opts.append('--does-far')   # see build(): far DOES> needs VARCALL
     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
@@ -515,7 +520,8 @@ def main(argv):
             get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2]), [], 'founder: s6-cv8b + 2 pairs', 0),
             get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2], rtfuse=1), [], 'founder: s6-cv8b + 2 pairs, run-time fusion', 0),
             get(dict(HUMAN['s4-cv8'], ops10=list(OPS10_POOL), supers=SUPER_POOL[:20]), [], 'founder: s4-cv8 + format-10 opcodes + 20 pairs', 0),
-            get(dict(HUMAN['s6-cv8b'], ops10=OPS10_POOL[:2]), [], 'founder: s6-cv8b + EXECUTE, I as opcodes', 0)]
+            get(dict(HUMAN['s6-cv8b'], ops10=OPS10_POOL[:2]), [], 'founder: s6-cv8b + EXECUTE, I as opcodes', 0),
+            get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL)), [], 'founder: s6-cv8b + escape, 7 words, 24 pairs', 0)]
     while len(pop) < N:
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))

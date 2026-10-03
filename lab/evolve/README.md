@@ -205,9 +205,31 @@ build, `PUSH(x)` lowers dsp BEFORE it evaluates x, so `PUSH(DS0)` copies
 the new, empty slot onto itself. `?DUP` failed in s5 and s6 only; it now
 takes the value first.
 
+## Phase 3b: the escape, and the BUF-ALLOC fault
+
+relf's map keeps 26 primitives in one byte and puts 77 behind an escape;
+the slots that frees are what pays for its tiny words. The engine lab and
+the converter had the escaped band already - primitives 36-67 as 125 and a
+selector - but the converter kept it OFF "until the BUF-ALLOC fault is
+found". Switched on, s4 passed and s5 and s6 died at start-up of the
+kernel workload, a segmentation fault: only the engines that cache the
+top of the stack in a register. gen-tos.py wraps any handler not on its
+list of ones that never touch the data stack in SPILL / FILL, and L_esc -
+which only reads its selector and jumps - was not on it. So every escaped
+primitive started with the top of the stack pushed once more. Listed,
+the escape passes the strict check in all three.
+
+`escape` puts the freed band in the slot pool, where words and pairs go
+in by run-time assignment into the remapped table (the base table still
+holds the escaped primitives there). Development VM, against the parent:
+the escape alone is about neutral, s6 0.984 and 40 bytes bigger; with the
+seven words and all 24 pairs, which the two free slots of s6 could not
+hold, s6 0.888 and 72 bytes smaller, s5 0.950 and 96 smaller. The scan
+tries the escape on every CV8 design and finds no new death.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
-direct threading, tail-call threading, the rest of relf's format 10, indirect threading, multi-state stack caching, SPN's
+direct threading, tail-call threading, the rest of relf's format 10 (loop words with operands, @XT, short branches), indirect threading, multi-state stack caching, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.

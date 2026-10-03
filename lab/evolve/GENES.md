@@ -9,6 +9,7 @@
 | folds: which of the 23 foldable primitives get prim;EXIT opcodes, in what order | the engine lab | opcode map |
 | superinstructions: primitive pairs as single opcodes, chosen from the 24 pairs the CV8 interpreter dispatches most, in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J` - kernel colon words - as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
+| the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
 | compiler: `-O2/-O3/-Os`, `-fno-gcse`, `-fno-crossjumping`, `-fcf-protection=none`, minimal label alignment, `-fno-reorder-blocks` | gforth's and CPython's builds, this lab's endbr64 finding | how the C compiler lays out the interpreter: computed goto only pays if every handler keeps its own indirect jump, which GCSE and cross-jumping undo |
 
 ## Not yet - each needs engine work first
@@ -29,9 +30,8 @@ Ordered by how much diversity they add for the work.
    genome (`ops10`). Left: the loop words with an inline operand
    ((LOOP), (+LOOP), (?DO), (LEAVE)), which an opcode would have to
    relocate; @XT, a fused @ EXECUTE; one-byte-offset branches, which need
-   branch relaxation in the converter; and rare primitives behind the
-   escape byte, which the converter keeps OFF until its BUF-ALLOC fault
-   is found - the slots it would free are what makes relf's map work.
+   branch relaxation in the converter. (The escape is in the genome
+   too: its "BUF-ALLOC fault" was gen-tos.py SPILLing in front of L_esc.)
 5. **Indirect threading** - gforth-itc, fig-Forth, eForth, JonesForth: a
    code field per word. Slower, classic, and a distinct ancestor.
 6. **Stack caching with several states** - Ertl's work behind gforth:

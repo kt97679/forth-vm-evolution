@@ -63,7 +63,11 @@ HOT = {
  'L_eqix':   'tos = -(UNS64)(tos == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CELL_BYTES; NEXT();',
  'L_0branch':'t = tos; POPT(); if (t) ip += 2; else ip += BROFF(ip); NEXT();',
 }
-NOSTACK = {'L_noop', 'L_exit', 'L_branch', 'L_dodoes', 'L_lsave', 'L_lrest', 'L_lzero'}   # never touch the data stack
+NOSTACK = {'L_noop', 'L_exit', 'L_branch', 'L_dodoes', 'L_lsave', 'L_lrest', 'L_lzero',
+           # The escape only reads its selector and jumps: wrapped, it SPILLed the
+           # cached top into memory and the escaped primitive found the stack one
+           # cell deep - the converter's "BUF-ALLOC fault", in every cached engine.
+           'L_esc', 'L_x_unloop'}   # never touch the data stack
 fend = s.index("\n#if FOLD\n#define EXITNEXT")
 start = s.index("L_noop:")
 sec = s[start:fend]

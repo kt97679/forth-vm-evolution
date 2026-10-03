@@ -9,9 +9,9 @@ correctness only: corpus identical to the cell engine, kernel reproduced.
 | s1-sod16 | 8 | 8 | - |
 | s2-cpt16 | 12 | 10 | scale=2 (image did not convert); scale=3 (image did not convert) |
 | s3-cpt16f | 16 | 16 | - |
-| s4-cv8 | 28 | 25 | scale=0 (timed out); scale=1 (kernel workload); bytehdr=1 (kernel workload) |
-| s5-cv8spec | 28 | 25 | scale=0 (timed out); scale=1 (timed out); bytehdr=1 (kernel workload) |
-| s6-cv8b | 25 | 23 | doesfar=0 (kernel workload); varcall=0 (kernel workload) |
+| s4-cv8 | 36 | 33 | scale=0 (timed out); scale=1 (kernel workload); bytehdr=1 (kernel workload) |
+| s5-cv8spec | 36 | 33 | scale=0 (kernel workload); scale=1 (timed out); bytehdr=1 (timed out) |
+| s6-cv8b | 33 | 31 | doesfar=0 (timed out); varcall=0 (kernel workload) |
 
 Every death is a limit the design really has:
 
@@ -24,7 +24,8 @@ Every death is a limit the design really has:
   forms live (s4 and s5 at scale 1, s5 at scale 0). The `bytehdr=1`
   changes are this case too: byte headers are built at scale 0.
 
-The scan found the fourth mapping bug (far DOES> needs VARCALL, now a
+Every new neighbour lives: the escape, and each format-10 word alone, in
+s4, s5 and s6. The scan found the fourth mapping bug (far DOES> needs VARCALL, now a
 rule in the genome), and the survival check's own flaw: the kernel
 workload's directory started with a copy of the reference kernel, so a
 design that died quietly before saving passed. Run it again with

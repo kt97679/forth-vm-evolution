@@ -989,6 +989,12 @@ static void virtual_machine(void) {
       for (i_ = 0; i_ < 32; i_++)  cv8_tab[i_] = dispatch[i_];
       for (i_ = 32; i_ < 36; i_++) cv8_tab[i_] = dispatch[i_ + 1];  /* SP@..RP! */
       for (i_ = 36; i_ < 68; i_++) cv8_tab[i_] = &&L_noop;          /* freed */
+#if SUPER   /* what this design put in the freed band (lab/evolve): */
+#include "vm-super-esc.h"
+#endif
+#if OPS10   /* assigned here, as dispatch[36..67] still holds the escaped primitives */
+#include "vm-ops10-esc.h"
+#endif
       for (i_ = 0; i_ < 32; i_++)  esc_tab[i_] = dispatch[esc_k[i_]]; }
 #define dispatch cv8_tab
 #endif

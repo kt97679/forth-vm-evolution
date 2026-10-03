@@ -29,12 +29,14 @@ def body(name):
     pos, nxt = labs[i][0], labs[i + 1][0] if i + 1 < len(labs) else len(sec)
     b = sec[pos:nxt].replace(lab + ':', '', 1)
     return ''.join(l for l in b.splitlines(True) if not l.lstrip().startswith('#'))
-table, bodies = [], []
+table, bodies, esc = [], [], []
 for k, (a, b, op) in enumerate(pairs):
     first = body(a).replace('NEXT();', 'goto LSB_%d;' % k)
     bodies.append('LS_%d: /* %s %s */\n%sLSB_%d:\n%s' % (k, a, b, first, k, body(b)))
-    table.append('[%d] = &&LS_%d,' % (op, k))
+    if 36 <= op < 68: esc.append('cv8_tab[%d] = &&LS_%d;' % (op, k))   # the band ESCAPE frees
+    else: table.append('[%d] = &&LS_%d,' % (op, k))
 d = os.path.dirname(os.path.abspath(sys.argv[1]))
 open(os.path.join(d, 'vm-super-table.h'), 'w').write('\n'.join(table) + '\n')
+open(os.path.join(d, 'vm-super-esc.h'), 'w').write('\n'.join(esc) + '\n')
 open(os.path.join(d, 'vm-super-bodies.h'), 'w').write(''.join(bodies))
 print(len(pairs), 'superinstructions')
