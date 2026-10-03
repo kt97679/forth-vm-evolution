@@ -199,9 +199,53 @@ dispatch and is now a colon call, eight operations and a one-byte READ;
 under SPN, READ still crosses into the interpreter. Development VM, end
 to end: corpus 3.5-11% slower, parse 1-9%, fib (almost no input)
 unchanged within its noise; images 88-169 bytes larger. Two ways back,
-neither done yet: ACCEPT reading a line at a time rather than a
-character, and a stencil that calls READ and WRITE directly, so native
-code no longer crosses into the interpreter for them.
+both done since: a stencil that calls READ and WRITE directly, so native
+code no longer crosses into the interpreter for them (FINDINGS-SPN.md),
+and ACCEPT taking a line at a time rather than a character (below).
+
+## ACCEPT, a line at a time
+
+ACCEPT called KEY for every character: a colon call, eight operations
+and a one-byte READ, and then its own tests for backspace, DEL, LF, CR and
+a full buffer. Now READ stops after the first LF, CR, backspace or DEL -
+the characters ACCEPT treats specially - in all six engines, so of what
+one READ puts into the buffer only the LAST byte can be special. ACCEPT
+counts the rest at once and takes the last byte exactly as the old loop
+took every byte (ACC-BYTE); with the buffer full it reads a byte at a
+time, since only a backspace can make room. KEY's one-byte READs cannot
+tell the difference.
+
+The first version was slower - 3-11% - though it made one READ a line.
+It stopped READ only at LF and CR and still examined every byte in
+Forth, and that per-character work, not the READ, was the cost: a
+one-byte READ is a copy out of the engine's buffer, not a system call.
+Stopping READ at every special character moved the scan into the
+engines' C and left Forth constant work a line.
+
+Development VM, best of 12 interleaved runs, fed on standard input,
+against the build before the change:
+
+| system | parse | corpus |
+|---|---|---|
+| `s0-cell` | 0.861 | 0.876 |
+| `s4-cv8` | 0.925 | 0.894 |
+| `s6-cv8b` | 0.952 | 0.914 |
+| `s8-spncv8` | 0.961 | 0.930 |
+
+Output is byte-identical to the old build in all 12 systems on the corpus
+and on input built to catch the edges: backspace and DEL mid-line, at a
+line's start and several in a row; CR alone and CR LF; a line longer
+than the buffer, with a backspace once it is full; KEY reading the next
+line raw after ACCEPT; and the end of input in mid-line, which still
+leaves without interpreting it. Bootstrapped into the seeds - 8-byte
+kernel 25,144 bytes, a fixed point; 4-byte 13,904 - and every image is
+still reproducible.
+
+One trap on the way: the bootstrap runs the OLD seed on the engine as
+committed. A first attempt had installed a seed whose ACCEPT needs READ
+to stop at line ends; fed both bootstrap commands in one READ, it took
+the first line and lost the second. Bootstrapping from the committed
+seed, whose ACCEPT reads a byte at a time, works on either engine.
 
 ## relf today, and standard input
 

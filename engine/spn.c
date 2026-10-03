@@ -476,6 +476,15 @@ NOINLINE_IO static UNS64 t_read(UNS8 *p, UNS64 n) {
     }
     k = (UNS64)(t_ilen - t_ipos);
     if (k > n) k = n;
+    {   /* no further than the first character ACCEPT treats specially -
+           LF, CR, backspace, DEL - so in what it gets, only the LAST byte
+           can be one: a line per READ, edited in Forth only at its end */
+        UNS64 j;
+        for (j = 0; j < k; j++) {
+            UNS8 c_ = t_ibuf[t_ipos + j];
+            if (c_ == 10 || c_ == 13 || c_ == 8 || c_ == 127) { k = j + 1; break; }
+        }
+    }
     memcpy(p, t_ibuf + t_ipos, (size_t)k);
     t_ipos += (int)k;
     return k;

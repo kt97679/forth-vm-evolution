@@ -115,6 +115,8 @@ PRIMITIVE WRITE ( c-addr u --- )
 PRIMITIVE READ ( c-addr u1 --- u2 )
 \ Input up to u1 bytes from the terminal to c-addr: what is there, at
 \ least one byte, waiting if it must - u2 is 0 only at the end of input.
+\ It stops after the first LF, CR, backspace or DEL - the characters
+\ ACCEPT treats specially - so ACCEPT takes a line per READ.
 \ KEY is built on this, below.
 
 PRIMITIVE BYE  ( ---)
@@ -699,28 +701,34 @@ PRIMITIVE SETFSIZE  ( n --- ior )
 
 \ PART 7: SOURCE INPUT WORDS.
 
+VARIABLE ACC-W ( --- addr)
+\ ACCEPT: the characters kept so far.
+
+: ACC-BYTE ( c-addr n1 c --- c-addr n1 f )
+\ One character as ACCEPT always took it, ACC-W the characters kept so
+\ far: backspace and DEL remove the previous one, LF and CR end the
+\ line (f true), and characters past n1 are dropped.
+  DUP 8 = OVER 127 = OR IF DROP ACC-W @ IF -1 ACC-W +! THEN 0 EXIT THEN
+  DUP 10 = OVER 13 = OR IF DROP -1 EXIT THEN
+  OVER ACC-W @ - IF >R OVER ACC-W @ + R> SWAP C! 1 ACC-W +! ELSE DROP THEN 0 ;
+
 : ACCEPT ( c-addr n1 --- n2 )
 \ Read a line from the terminal to a buffer starting at c-addr with
-\ length n1. n2 is the number of characters read,
-  >R 0
+\ length n1. n2 is the number of characters read. One READ a line, not
+\ a KEY a character: READ stops after the first LF, CR, backspace or
+\ DEL, so of what lands in the buffer only the LAST byte can be one of
+\ them - the rest are characters already in place, counted at once, and
+\ ACC-BYTE takes the last as the character loop took every byte. With
+\ the buffer full, a byte at a time: only a backspace can make room. At
+\ the end of input, leave as BYE does, as KEY does.
+  0 ACC-W !
   BEGIN
-   KEY DUP 8 = OVER 127 = OR 
-   IF \ Backspace/del 
-     DROP DUP IF 1- THEN 
-   ELSE
-     DUP 10 = OVER 13 = OR 
-     IF \ CR/LF
-      DROP SWAP DROP R> DROP EXIT     
-     ELSE
-      OVER R@ - IF   
-       >R OVER OVER + R> SWAP C! 1+
-      ELSE
-       DROP
-      THEN
-     THEN 
-   THEN 
-  0 UNTIL     
-;
+    OVER ACC-W @ +  OVER ACC-W @ -
+    DUP 0= IF 2DROP KEY-BYTE 1 THEN
+    OVER SWAP READ  DUP 0= IF BYE THEN
+    DUP 1- ACC-W +!  + 1- C@
+    ACC-BYTE IF 2DROP ACC-W @ EXIT THEN
+  0 UNTIL ;
 
 VARIABLE TIB ( --- addr)
 \ is the standard terminal input buffer.
