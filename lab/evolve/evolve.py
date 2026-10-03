@@ -685,6 +685,7 @@ def main(argv):
         # many noisy measurements, its designs were partly chosen for luck.
         # In the VM rehearsal they came out 3-6% slower when re-measured.
         R = load(); ok = [i for i in R if R[i]['status'] == 'ok']
+        if not ok: nothing_alive(R); sys.exit(1)
         F = fronts(ok, R)[0]; n = opt('--remeasure', 6); out = {}
         path = os.path.join(EV, 'remeasure.json')
         if os.path.exists(path): out = json.load(open(path))
@@ -755,9 +756,19 @@ def main(argv):
     report(R)
 
 
+def nothing_alive(R):
+    """What the database holds when no design in it is alive."""
+    if not R:
+        print('%s holds no designs: run the evolution first (lab/evolve/RUNNING.md)' % DB)
+        return
+    why = collections.Counter(R[i]['status'] for i in R)
+    print('%s holds %d designs, none alive. Causes of death:' % (DB, len(R)))
+    for st, k in why.most_common(6): print('  %5d  %s' % (k, st))
+    print('If that is not the reach limit or a converter refusal (RUNNING.md), please send the database.')
+
 def report(R):
     ok = [i for i in R if R[i]['status'] == 'ok']
-    if not ok: print('nothing alive yet'); return
+    if not ok: nothing_alive(R); return
     F = fronts(ok, R)[0]
     hum = {R[i]['how'][10:]: i for i in ok if R[i]['how'].startswith('hand-made')}
     ref = R[hum['s6-cv8b']] if 's6-cv8b' in hum else None
