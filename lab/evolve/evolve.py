@@ -235,6 +235,10 @@ def design_pairs(g, n=24):
     Cached per design; SUPER_POOL if profiling fails or g is no CV8."""
     if g['enc'] != 'cv8': return list(SUPER_POOL)
     key = gid(g)
+    cache = os.path.join(EV, 'pairs.json')         # kept on disk: a resumed run replays its mutations
+    if not PAIRS_CACHE and os.path.exists(cache):
+        try: PAIRS_CACHE.update(json.load(open(cache)))
+        except ValueError: pass
     if key in PAIRS_CACHE: return PAIRS_CACHE[key]
     pool = list(SUPER_POOL)
     prims = [l.split()[1] for l in open(os.path.join(ROOT, 'forth', 'kernel.4')) if l.startswith('PRIMITIVE')]
@@ -264,6 +268,8 @@ def design_pairs(g, n=24):
         PROFILING[0] = False
         shutil.rmtree(d, ignore_errors=True)
     PAIRS_CACHE[key] = pool
+    tmp = cache + '.tmp'
+    json.dump(PAIRS_CACHE, open(tmp, 'w')); os.replace(tmp, cache)
     return pool
 
 def build(g, d):
@@ -545,10 +551,14 @@ def rank(ids, R):
 
 # ---- the database ----------------------------------------------------------
 def load():
+    """The designs evaluated so far. A run killed while writing leaves a
+    truncated last line: skipped, and that design is evaluated again."""
     R = {}
     if os.path.exists(DB):
         for l in open(DB):
-            r = json.loads(l); R[r['id']] = r
+            try: r = json.loads(l)
+            except ValueError: continue
+            R[r['id']] = r
     return R
 def save(r):
     with open(DB, 'a') as f: f.write(json.dumps(r) + '\n')
