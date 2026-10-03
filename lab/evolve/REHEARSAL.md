@@ -51,10 +51,16 @@ on the front (s5 0.880, s6 1.000).
 - **A latent bug in gen-super.py**, exposed by the per-design pair pools:
   a pair whose first half has no cached body of its own (`D+`) ends in
   FILLNEXT(), which the generator mangled. Fixed.
-- **31 conversions failed once and succeeded when repeated** - not at chunk
-  boundaries, not for lack of disk; the cause was not recorded. A failed
-  build step is now tried a second time, and every death records the
-  tool's last error line.
+- **31 conversions failed, and converted when rebuilt** - not at chunk
+  boundaries, not for lack of disk. Every death now records the tool's
+  last error line, and the run on the Ryzen named the cause: `--bytehdr
+  requires --v8 --cpt 0`. canon() makes every design with byte headers
+  byte-granular, and identity is computed from canon(g), but evaluate()
+  built the raw genome: a mutation turning on byte headers in a design
+  with scaled calls was refused, and the death recorded under the identity
+  of the byte-granular design - which converts, as rebuilding from the
+  stored (canonical) genome showed. Not transient at all. Fixed: evaluate()
+  builds canon(g). (A retry added on the wrong diagnosis is gone again.)
 - **The winner's curse**: the front re-measured 3-6% slower than in the
   run, two designs slightly faster - noise both ways, the leader stays.
   `--remeasure N` measures the front again for the report.
@@ -83,8 +89,8 @@ two small ones with byte headers, 6738aed13f (0.656 at 9,793 bytes) and
 595fc2b8f4 (0.673 at 9,761), nearly as fast as the big ones at three
 quarters of their size.
 
-The order changed, and in one direction: the two designs WITHOUT
-multi-state caching gained most from the move (0.752 to 0.656, 0.781 to
-0.673), those with it least (0.739 to 0.729, 0.702 to 0.699). On Zen 4
-multi-state caching seems to buy less than on the VM's Xeon - the reason
-the run that selects must be the one on the Ryzen.
+The order changed: the two designs without multi-state caching gained
+most from the move (0.752 to 0.656, 0.781 to 0.673), those with it least.
+I read that as multi-state caching buying less on Zen 4 - wrongly: in the
+run on the Ryzen itself, every design on the front has it. Eight
+re-measured designs are no basis for a claim about a gene.

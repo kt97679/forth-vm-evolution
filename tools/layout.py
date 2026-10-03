@@ -781,6 +781,7 @@ def emit(path):
             data = bytes([len(ops)] + ops); assert len(data) <= 24, "fold table overflows"
         else:
             pairs = sorted(G['SUPERS'].items(), key=lambda kv: kv[1]) if '--rtfuse' in ARGV else []
+            pairs = pairs[:24]      # the table's room (forth/cv8-fuse.4); the rest fused in the image only
             data = bytes([len(pairs)] + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
             assert len(data) <= 73, "superinstruction table overflows"
         img[at:at + len(data)] = data

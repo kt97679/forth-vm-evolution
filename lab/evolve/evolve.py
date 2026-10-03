@@ -278,13 +278,6 @@ def why(r):
     err = [l for l in lines if 'rror' in l or 'ssert' in l] or lines
     return (' (%s)' % err[-1].strip()[:120]) if err else ' (exit %d)' % r.returncode
 
-def retried(cmd, **kw):
-    """A build step, tried a second time before it kills the design: the
-    VM rehearsal lost 31 designs to conversions that failed once and
-    succeeded when repeated, cause unrecorded."""
-    r = sh(cmd, **kw)
-    return sh(cmd, **kw) if r.returncode else r
-
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
     if os.path.exists(d): shutil.rmtree(d)
@@ -329,7 +322,7 @@ def build(g, d):
     eng = os.path.join(d, 'engine')
     if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
     else:
-        r = retried(['cc'] + ccflags(g) + flags + ['-o', eng, src])
+        r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
         if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
@@ -345,7 +338,7 @@ def build(g, d):
     img = os.path.join(d, 'image.img')
     fuse = '-fuse' if overlay(g) else ''
     dump = os.path.join(O, ('k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % fuse)
-    r = retried(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
+    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
     return eng, img
@@ -373,7 +366,7 @@ def build_other(g, d):
         opts += ['--compiler-overlay', '16']
     if sh(['cc'] + ccflags(g) + flags + ['-o', eng, src]).returncode:
         raise RuntimeError('died: engine did not compile')
-    r = retried(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
+    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
     return eng, img
@@ -430,6 +423,12 @@ def measure(eng, img, pw, works, rounds):
     return {w: best[w] / ref[w] for w in works}, best
 
 def evaluate(g, rounds, keep=False):
+    # Build what the identity names: canon(g), as express() and gid() see it.
+    # Built raw, a mutation that turned on byte headers in a design with
+    # scaled calls was refused by the converter (--bytehdr wants --cpt 0) -
+    # and the death recorded under the identity of the byte-granular design,
+    # which converts. 34 such deaths on the Ryzen, 31 in the VM rehearsal.
+    g = canon(g)
     d = os.path.join(EV, 'ind-' + gid(g)); rec = {'status': 'ok'}
     try:
         eng, img = build(g, d)
