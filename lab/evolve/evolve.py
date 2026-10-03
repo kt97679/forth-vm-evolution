@@ -323,8 +323,8 @@ def build(g, d):
             raise RuntimeError('died: superinstruction generation')
         flags.append('-DSUPER=1')
     if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py)
-        if sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src]).returncode:
-            raise RuntimeError('died: multi-state generation')
+        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src])
+        if r.returncode: raise RuntimeError('died: multi-state generation' + why(r))
         flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
     eng = os.path.join(d, 'engine')
     if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
@@ -635,8 +635,27 @@ def quiet_cpu():
     except Exception:
         return []
 
+def stale_build():
+    """The sources build/ is made from, newer than build/ itself - after
+    a git pull without a rebuild. The evolver builds every design from the
+    engine source the build generated (vm-lab-tos.c) and from its dumps:
+    stale, the newer genes die for reasons that are not theirs."""
+    made = [os.path.join(O, f) for f in ('vm-lab-tos.c', 'k64-self.txt', 'k64-b.txt')]
+    if not all(os.path.exists(f) for f in made): return ['(build/ is incomplete)']
+    when = min(os.path.getmtime(f) for f in made)
+    srcs = [os.path.join(ROOT, 'engine', 'vm-lab.c'), os.path.join(ROOT, 'tools', 'gen-tos.py'),
+            os.path.join(ROOT, 'tools', 'build-stages.sh')]
+    srcs += [os.path.join(ROOT, 'forth', f) for f in os.listdir(os.path.join(ROOT, 'forth'))
+             if f.endswith('.4') or f.endswith('-seed.img')]
+    return sorted(os.path.relpath(f, ROOT) for f in srcs if os.path.exists(f) and os.path.getmtime(f) > when + 1)
+
 def setup():
     global REF_CORPUS, KREF, UNIT, POOL
+    newer = stale_build()
+    if newer:
+        sys.exit('build/ is older than its sources (%s%s) - after a git pull, build again:\n'
+                 '    LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate'
+                 % (', '.join(newer[:4]), ', ...' if len(newer) > 4 else ''))
     for need in (CPUT, os.path.join(O, 'k64-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
         if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
     # The CV8 compiler with table-driven folds and run-time fusion

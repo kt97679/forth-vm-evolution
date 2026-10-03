@@ -34,6 +34,12 @@ Needs Linux on x86-64, `gcc`, `python3`, `objdump` (binutils) and `taskset`
     bash tools/run-tests.sh                   # must end: PASS - no regressions
     python3 lab/evolve/evolve.py --validate   # seven stages, all IDENTICAL
 
+**After every `git pull`, build again** - the evolver builds each design
+from the engine source and dumps that `build/` holds, and a `build/` older
+than the sources makes the newest genes die for reasons that are not
+theirs. The evolver checks this at start-up and stops with the command
+if `build/` is older than its sources.
+
 Plug the laptop in. If you can, choose a performance power profile
 (`powerprofilesctl set performance`, or your desktop's power settings);
 it is not required.
