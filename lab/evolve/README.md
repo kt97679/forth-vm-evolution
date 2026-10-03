@@ -364,6 +364,18 @@ Runs are pinned to the core that, with its hyperthread sibling, was
 quietest at start-up, unless BENCH_CPU says otherwise. `RUNNING.md` is
 the guide to the run; `tools/bench-laptop.sh` defaults to CPU time too.
 
+## Phase 6: the first run on the Ryzen
+
+`results/evolve-amd-ryzen-7-pro-8840hs-seed1.md`. Measured again, the
+front is 38d187239c (0.609 of s6's CPU time, 13,480 bytes), 5b70f3dd64
+(0.649, 9,801 - smaller than s6) and 83cb81c383 (0.705, 9,761); the run's
+own leader fell from 0.590 to 0.620 and off the front. All have the
+escape, multi-state caching, format-10 opcodes and about 22 pairs. The
+VM rehearsal's front, selected on another machine and re-measured on the
+Ryzen, reached the same level - 0.605 at 13,480 bytes: two searches, one
+answer. The run's recorded death reasons exposed the last two evolver
+bugs (679e6f3).
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to

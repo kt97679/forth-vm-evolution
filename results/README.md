@@ -34,3 +34,6 @@ Everything the change could not touch agreed between the two runs to a
 median of 0.3%. That earlier SPN report's sections on CPU time versus
 cycles were rewritten from its raw minima by `tools/clockfit.py`, whose
 first explanation had blamed the clock; this one's were written by it.
+
+`evolve-amd-ryzen-7-pro-8840hs-seed1.md`: the first evolution run on the Ryzen
+(lab/evolve) - the front, measured again, against the hand-made stages.
