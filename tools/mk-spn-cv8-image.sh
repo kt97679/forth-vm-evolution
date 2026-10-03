@@ -20,7 +20,7 @@ O=$(cd "$1" && pwd); ROOT=$(cd "$(dirname "$0")/.." && pwd); W=$O/work
 [ -r "$O/s6-cv8b-s64.img" ] || { echo "build s6-cv8b first (tools/build-stages.sh)"; exit 1; }
 python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$O/spn-cv8-tos.c"
 engine() {  # engine SUFFIX FLAGS - the one place these flags are written
-    cc -O2 $2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 \
+    cc -O2 $2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
        -I"$O" -o "$O/s8-spncv8-64$1" "$O/spn-cv8-tos.c" \
        "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c" $RT_FLAGS
     cp "$O/s8-spncv8-64$1" "$O/s8-full-64$1"; cp "$O/s8-spncv8-64$1" "$O/s8-lazy-64$1"

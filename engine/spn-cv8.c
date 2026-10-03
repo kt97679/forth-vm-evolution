@@ -923,6 +923,13 @@ NOINLINE_IO static UNS64 t_read(UNS8 *p, UNS64 n) {
     t_ipos += (int)k;
     return k;
 }
+/*  READ and WRITE for native code (spn-stencils.c, st_read and st_write):
+ *  the same t_read and t_write, so translated words share the buffers
+ *  with the interpreter. op 0 writes, 1 reads.  */
+static UNS64 spn_io(UNS64 op, UNS64 a, UNS64 n) {
+    if (op == 0) { t_write((const UNS8 *)(uintptr_t)a, n); return 0; }
+    return t_read((UNS8 *)(uintptr_t)a, n);
+}
 
 /*  SPN: a fault report. This engine runs machine code it generated, so a
  *  bare "Segmentation fault" says nothing. On a fault: flush the Forth
@@ -1742,6 +1749,8 @@ L_spn_svc:    /* SPN 127 n: services, chosen by the byte that follows */
     } else if (n == 5) {           /* xt ---   the on-demand hook */
         spn_lazy_hook = DS0;
         dsp += CELL_BYTES;
+    } else if (n == 6) {           /* --- helper   READ and WRITE for native code */
+        PUSH((UNS64)(uintptr_t)spn_io);
     } else if (n == 4) {           /* --- &g_rp helper &code-base */
         PUSH((UNS64)(uintptr_t)&g_rp);
         PUSH((UNS64)(uintptr_t)spn_interp);

@@ -50,6 +50,11 @@ typedef struct { cell *sp; cell tos; } spn_st;     /* returned in rax:rdx */
 #define SPN_FN_VALUE 0x6ea1ed5ea1ed5e66LL
 #define IMM_RP() ({ uint64_t *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RP_VALUE)); _v; })
 #define IMM_FN() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_FN_VALUE)); _v; })
+/* A fourth 64-bit hole, for READ and WRITE: the engine's I/O helper,
+   spn_io(op, c-addr, u) - 0 writes, 1 reads - so native code shares the
+   interpreter's buffers instead of crossing into it for every byte. */
+#define SPN_IO_VALUE 0x4ea1ed5ea1ed5e44LL
+#define IMM_IO() ({ cell (*_v)(cell, cell, cell); __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IO_VALUE)); _v; })
 #define IMM() ({ cell _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IMM_VALUE)); _v; })
 
 /* The markers. Only DECLARED here, and defined in spn-markers.c. That is
@@ -190,6 +195,13 @@ S(st_pick)   { GO(sp, sp[tos]); }
 
 /* The table the Forth side reads. Order matters: SPN-TABLE hands it over
    as-is, and forth/spn.4 names the entries by position. */
+#if SPN_IO
+/* WRITE ( c-addr u --- ) and READ ( c-addr u1 --- u2 ): one call to the
+   engine's helper. A real call, so unlike every other stencil these use
+   the machine stack - the compiler saves sp across it itself. */
+S(st_write) { cell (*f)(cell, cell, cell) = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
+S(st_read)  { cell (*f)(cell, cell, cell) = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
+#endif
 const void *const spn_table[] = {
     (const void *)spn_next, (const void *)spn_jump, (const void *)spn_call,
     (const void *)st_lit, (const void *)st_dup, (const void *)st_drop,
@@ -210,6 +222,9 @@ const void *const spn_table[] = {
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
     (const void *)st_uge_br, (const void *)st_ge_br, (const void *)st_nei_br,
     (const void *)st_eq_br, (const void *)st_or_br,
+#endif
+#if SPN_IO           /* 52- : WRITE, READ - after the fused ones, numbers kept */
+    (const void *)st_write, (const void *)st_read,
 #endif
 };
 const int spn_table_len = sizeof spn_table / sizeof spn_table[0];

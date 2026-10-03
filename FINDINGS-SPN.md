@@ -836,3 +836,27 @@ unconditional jump to the next stencil, then a jump to the target - an
 extra transfer, and about 30 bytes where 15 would do. A stencil whose
 conditional jump goes straight to the target needs the scanner to
 recognise conditional jumps as holes, and a compiler that emits them.
+
+## READ and WRITE as stencils
+
+Since KEY, EMIT and TYPE became Forth words on the READ and WRITE
+primitives, every character KEY reads was a crossing in SPN: translated
+code calling back into the interpreter to run one primitive. Now both
+have stencils (s8; `SPN_IO`, entries 52 and 53).
+
+They do not make the system call themselves. The interpreter's READ and
+WRITE are buffered - WRITE appends to `t_obuf`, READ hands out what
+`t_ibuf` holds and refills it with one read() - so a stencil that called
+read() or write() directly would reorder output and lose buffered input.
+Instead each calls the engine's helper `spn_io(op, c-addr, u)`, the same
+`t_read` and `t_write`, through a fourth 64-bit hole (kind 7, the last
+free one) that the patcher fills with the helper's address (service 6).
+Unlike every other stencil they use the machine stack: the compiler saves
+the data stack pointer across the call.
+
+Measured on the development VM, best of 25 interleaved runs, old and new
+s8-spncv8 fed on stdin, output identical: parse 0.974 (median 0.968),
+corpus 0.976 (median 0.982), fib unchanged. About 9 ns per crossing
+removed: crossing into the interpreter was cheap already, and most READs
+were buffer copies, not system calls. Line-at-a-time ACCEPT, which
+replaces the per-character KEY loop on seekable input, is the larger lever.
