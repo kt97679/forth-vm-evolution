@@ -31,7 +31,9 @@ def body(name):
     return ''.join(l for l in b.splitlines(True) if not l.lstrip().startswith('#'))
 table, bodies, esc = [], [], []
 for k, (a, b, op) in enumerate(pairs):
-    first = body(a).replace('NEXT();', 'goto LSB_%d;' % k)
+    # A handler with no cached body of its own is wrapped (gen-tos.py) and ends
+    # FILLNEXT() - refill the top, then dispatch: here, refill, then go on.
+    first = body(a).replace('FILLNEXT();', 'POPT(); goto LSB_%d;' % k).replace('NEXT();', 'goto LSB_%d;' % k)
     bodies.append('LS_%d: /* %s %s */\n%sLSB_%d:\n%s' % (k, a, b, first, k, body(b)))
     if 36 <= op < 68: esc.append('cv8_tab[%d] = &&LS_%d;' % (op, k))   # the band ESCAPE frees
     else: table.append('[%d] = &&LS_%d,' % (op, k))

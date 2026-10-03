@@ -272,6 +272,19 @@ def design_pairs(g, n=24):
     json.dump(PAIRS_CACHE, open(tmp, 'w')); os.replace(tmp, cache)
     return pool
 
+def why(r):
+    """The last line a failed tool printed, for the record."""
+    lines = [l for l in (r.stderr or b'').decode(errors='replace').splitlines() + (r.stdout or b'').decode(errors='replace').splitlines() if l.strip()]
+    err = [l for l in lines if 'rror' in l or 'ssert' in l] or lines
+    return (' (%s)' % err[-1].strip()[:120]) if err else ' (exit %d)' % r.returncode
+
+def retried(cmd, **kw):
+    """A build step, tried a second time before it kills the design: the
+    VM rehearsal lost 31 designs to conversions that failed once and
+    succeeded when repeated, cause unrecorded."""
+    r = sh(cmd, **kw)
+    return sh(cmd, **kw) if r.returncode else r
+
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
     if os.path.exists(d): shutil.rmtree(d)
@@ -316,8 +329,8 @@ def build(g, d):
     eng = os.path.join(d, 'engine')
     if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
     else:
-        r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
-        if r.returncode: raise RuntimeError('died: engine did not compile')
+        r = retried(['cc'] + ccflags(g) + flags + ['-o', eng, src])
+        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
     if g.get('escape'): opts.append('--escape')
@@ -332,8 +345,9 @@ def build(g, d):
     img = os.path.join(d, 'image.img')
     fuse = '-fuse' if overlay(g) else ''
     dump = os.path.join(O, ('k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % fuse)
-    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
-    if r.returncode or not os.path.exists(img): raise RuntimeError('died: image did not convert')
+    r = retried(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
+    if r.returncode or not os.path.exists(img):
+        raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
     return eng, img
 
 def build_other(g, d):
@@ -359,8 +373,9 @@ def build_other(g, d):
         opts += ['--compiler-overlay', '16']
     if sh(['cc'] + ccflags(g) + flags + ['-o', eng, src]).returncode:
         raise RuntimeError('died: engine did not compile')
-    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
-    if r.returncode or not os.path.exists(img): raise RuntimeError('died: image did not convert')
+    r = retried(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
+    if r.returncode or not os.path.exists(img):
+        raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
     return eng, img
 
 def private_work(d):
@@ -665,6 +680,20 @@ def main(argv):
         sys.exit(0 if ok else 1)
     if '--report' in argv:
         report(load()); return
+    if '--remeasure' in argv:
+        # The front, measured again with more rounds: chosen as the best of
+        # many noisy measurements, its designs were partly chosen for luck.
+        # In the VM rehearsal they came out 3-6% slower when re-measured.
+        R = load(); ok = [i for i in R if R[i]['status'] == 'ok']
+        F = fronts(ok, R)[0]; n = opt('--remeasure', 6); out = {}
+        path = os.path.join(EV, 'remeasure.json')
+        if os.path.exists(path): out = json.load(open(path))
+        for i in sorted(F, key=lambda i: R[i]['speed']):
+            r = evaluate(canon(R[i]['genome']), n)
+            if r['status'] == 'ok': out[i] = {'speed': r['speed'], 't': r['t'], 'rounds': n}
+            print('  %s: in the run %.3f, re-measured %s' % (i, R[i]['speed'], ('%.3f' % r['speed']) if r['status'] == 'ok' else r['status']), flush=True)
+            json.dump(out, open(path, 'w'))
+        report(R); return
     N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
     R = load()
     # The designs THIS run has asked for so far. Its decisions must not look
@@ -737,8 +766,8 @@ def report(R):
          (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
          'relative to s6-cv8b; size is the self-hosting image. loop is held out.', '',
          '## The Pareto front', '',
-         '| design | speed | size | loop (held out) | genes, where they differ from s6-cv8b | how it was made |',
-         '|---|---|---|---|---|---|']
+         '| design | speed | re-measured | size | loop (held out) | genes, where they differ from s6-cv8b | how it was made |',
+         '|---|---|---|---|---|---|---|']
     def diff(g):
         if not ref: return ''
         g, r = express(g), express(ref['genome']); out = []
@@ -751,9 +780,11 @@ def report(R):
             elif k == 'supers' and g[k] != r.get(k): out.append('%d pairs: %s' % (len(g[k]), ', '.join(' '.join(x) for x in g[k][:4]) + (', ...' if len(g[k]) > 4 else '')))
             elif g[k] != r.get(k): out.append('%s=%s' % (k, ','.join(g[k]) if isinstance(g[k], list) else g[k]))
         return '; '.join(out) or '(s6-cv8b itself)'
+    rm = os.path.join(EV, 'remeasure.json'); rm = json.load(open(rm)) if os.path.exists(rm) else {}
     for i in sorted(F, key=lambda i: R[i]['speed']):
         x = R[i]; rs = x['speed'] / ref['speed'] if ref else 1; rl = x['t']['loop'] / ref['t']['loop'] if ref else 1
-        L.append('| %s | %.3f | %d | %.3f | %s | %s |' % (i, rs, x['size'], rl, diff(x['genome']), x['how'][:60]))
+        again = ('%.3f' % (rm[i]['speed'] / ref['speed'] if ref else rm[i]['speed'])) if i in rm else '-'
+        L.append('| %s | %.3f | %s | %d | %.3f | %s | %s |' % (i, rs, again, x['size'], rl, diff(x['genome']), x['how'][:60]))
     L += ['', '## How the front came about', '']
     for i in sorted(F, key=lambda i: R[i]['speed']):
         chain, j = [], i

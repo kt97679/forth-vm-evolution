@@ -79,10 +79,24 @@ start fresh.
 hardware counters (`kernel.perf_event_paranoid` at most 2); still paired
 with s6 the same way.
 
+## After the run: measure the front again
+
+    python3 lab/evolve/evolve.py --remeasure 6
+
+The front was chosen as the best of many noisy measurements, so its
+designs were partly chosen for luck - in the VM rehearsal they came out
+3-6% slower when measured again. This measures each front design again
+with six rounds and adds a "re-measured" column to the report: quote
+those numbers.
+
+A build step that fails is tried once more before the design dies, and
+a death now records why - the converter's or the compiler's last error
+line - in `build/evolve/db.jsonl`.
+
 ## What to send back
 
-`build/evolve/report.md`, `build/evolve/db.jsonl`, `evolve.log`, and the
-output of `lscpu`.
+`build/evolve/report.md`, `build/evolve/db.jsonl`, `build/evolve/remeasure.json`,
+`evolve.log`, and the output of `lscpu`.
 
 ## The benchmark suite
 
