@@ -74,7 +74,7 @@ CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-
           'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
 CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
-           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0)
+           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0)
 def human(enc, **kw):
     g = dict(CV8, **CC0); g.update(enc=enc, **kw); return g
 HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie dormant
@@ -90,9 +90,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -144,6 +144,9 @@ def express(g):
     if 'rtfuse' in e and not e.get('supers'): e.pop('rtfuse')        # nothing to fuse at run time
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+    if 'tail' in e and not g['tos']: e.pop('tail')                     # made from the cached engine only
+    if e.get('tail'):                                                  # one call function, 256-entry table
+        e.pop('d256', None); e.pop('sharedcall', None)
     return e
 def gid(g):
     return hashlib.sha1(json.dumps(express(g), sort_keys=True).encode()).hexdigest()[:10]
@@ -178,6 +181,37 @@ def sh(cmd, cwd=None, inp=None, timeout=300):
 
 def ccflags(g):
     return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g[k] for w in f.split()]
+
+def tail_offenders(eng):
+    """Handlers whose machine code CALLS through an indexed table - a
+    dispatch the compiler did not make a jump, which would grow the C
+    stack by a frame each time it runs."""
+    out = sh(['objdump', '-d', '--no-show-raw-insn', eng]).stdout.decode(errors='replace')
+    fn, bad = None, set()
+    for line in out.splitlines():
+        m = re.match(r'^[0-9a-f]+ <([^>]+)>:', line)
+        if m: fn = m.group(1); continue
+        if fn and re.match(r'[HI]_', fn) and re.search(r'call +\*\(%\w+,%\w+,8\)', line):
+            bad.add(re.sub(r'^[HI]_', '', fn).split('.')[0])
+    return bad
+
+def build_tail(g, d, src, flags, eng):
+    """Tail-call threading (tools/gen-tail.py): preprocess this design's
+    engine with the 256-entry dispatch, make every handler a function, and
+    wrap the ones whose dispatch the compiler would not make a jump - read
+    from the machine code, then checked again: none may be left."""
+    pp, tc = os.path.join(d, 'pp.c'), os.path.join(d, 'tail.c')
+    fl = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
+    if sh(['cc', '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
+    wrap = []
+    for attempt in range(2):
+        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
+        if r.returncode: raise RuntimeError('died: tail-call generation')
+        if sh(['cc'] + ccflags(g) + ['-w', '-o', eng, tc]).returncode: raise RuntimeError('died: engine did not compile')
+        bad = tail_offenders(eng)
+        if not bad: return
+        wrap = sorted(set(wrap) | bad)
+    raise RuntimeError('died: tail calls not jumps (%s)' % ','.join(sorted(bad)))
 
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
@@ -216,8 +250,10 @@ def build(g, d):
             raise RuntimeError('died: superinstruction generation')
         flags.append('-DSUPER=1')
     eng = os.path.join(d, 'engine')
-    r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
-    if r.returncode: raise RuntimeError('died: engine did not compile')
+    if g.get('tail') and g['tos']: build_tail(g, d, src, flags, eng)
+    else:
+        r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
+        if r.returncode: raise RuntimeError('died: engine did not compile')
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
     if g.get('escape'): opts.append('--escape')

@@ -10,6 +10,7 @@
 | superinstructions: primitive pairs as single opcodes, chosen from the 24 pairs the CV8 interpreter dispatches most, in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
 | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+| tail-call threading (`tail`): every handler a function of (ip, dsp, rp, tos, t), dispatching by a tail call through a 256-entry table of functions; made from the cached engine | Wasm3, CPython 3.14, WasmKit | each handler's registers allocated for it alone; handlers that keep a frame are split so their dispatch stays a jump |
 | compiler: `-O2/-O3/-Os`, `-fno-gcse`, `-fno-crossjumping`, `-fcf-protection=none`, minimal label alignment, `-fno-reorder-blocks` | gforth's and CPython's builds, this lab's endbr64 finding | how the C compiler lays out the interpreter: computed goto only pays if every handler keeps its own indirect jump, which GCSE and cross-jumping undo |
 
 ## Not yet - each needs engine work first
@@ -22,10 +23,6 @@ Ordered by how much diversity they add for the work.
    operands, so each dispatch skips the decode. A gene any family could
    carry: compact on disk, fast in memory, at a start-up cost - exactly the
    trade the fitness weighs.
-2. **Tail-call threading** - Wasm3, CPython 3.14, WasmKit (which tried
-   labels-as-values and tail calls and kept tail calls: one big function
-   spills sp and pc). `lab/dispatch` has the C prototype; it needs the
-   CV8 handler set rewritten as functions.
 4. **relf's format 10** - in the genome: the words, the loop words, the
    short branches and the escape. Not taken: @XT, a fused @ EXECUTE -
    relf's kernel calls through vectors, and this one has no `@ EXECUTE`

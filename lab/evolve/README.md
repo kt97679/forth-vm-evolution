@@ -269,9 +269,38 @@ passes the strict check in s4, s5 and s6; the scan finds no new death.
 @XT, relf's fused @ EXECUTE, is not taken: relf's kernel calls through
 vectors, and this one has no `@ EXECUTE` in the image's code at all.
 
+## Phase 4: tail-call threading
+
+`tools/gen-tail.py` takes a design's cached engine preprocessed with the
+256-entry dispatch (`cc -E -P`), where every #if and macro is resolved
+and every dispatch is one statement, and makes each handler a function of
+(ip, dsp, rp, tos, t) - all five in argument registers - ending in a tail
+call through a table of functions. The bodies are unchanged; only their
+jumps are rewritten, and the label tables become function tables. Each
+handler is small, so its registers are allocated for it alone.
+
+GCC 13 has no musttail; the tail calls are -O2's sibling calls, and a
+handler that keeps its frame does not get one: five pass a local's
+address to the system (fstat's struct, pipe's descriptors, waitpid's
+status), and fork returns twice. Their dispatch was a CALL - a frame left
+on the C stack each time - so the build reads the machine code for an
+indexed indirect call in a handler, splits those handlers (an inner
+function runs the body and returns the next function; the outer one
+tail-calls it) and checks again: none may be left.
+
+It is a trade-off, not a free gain (VM): s6 with tail calls 0.964 - fib
+0.876, loop 0.887, parse 0.938, but kernel 1.045; s5 1.021, slower; s6
+with the escape, thirteen opcodes and 24 pairs 0.889, and with tail calls
+too 0.871. The kernel workload is slower with tail calls throughout. The
+scan tries tail calls on s5 and s6; both live.
+
+A slip on the way: inserting the tail rules between an if and its elif in
+express() made doesfar dormant in every design without tail calls - the
+scan showed it at once (s6's doesfar=0 death vanished). Restored.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
-direct threading, tail-call threading,  indirect threading, multi-state stack caching, SPN's
+direct threading, indirect threading, multi-state stack caching, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.
