@@ -513,13 +513,16 @@ def borrow(g, donor, rnd):
 
 # ---- selection: NSGA-II on (speed, size) -------------------------------------
 def fronts(ids, R):
-    dom = {i: set() for i in ids}; n = {i: 0 for i in ids}
+    # Lists, not sets: a set of ids iterates in an order that changes with
+    # each process's string hashing, the fronts would come out in another
+    # order, and a resumed run would pick different parents and fork.
+    dom = {i: [] for i in ids}; n = {i: 0 for i in ids}
     def better(x, y):
         a, b = R[x], R[y]
         return a['speed'] <= b['speed'] and a['size'] <= b['size'] and (a['speed'] < b['speed'] or a['size'] < b['size'])
     for x in ids:
         for y in ids:
-            if x != y and better(x, y): dom[x].add(y)
+            if x != y and better(x, y): dom[x].append(y)
             elif x != y and better(y, x): n[x] += 1
     F = [[i for i in ids if n[i] == 0]]
     while F[-1]:
@@ -664,8 +667,13 @@ def main(argv):
         report(load()); return
     N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
     R = load()
+    # The designs THIS run has asked for so far. Its decisions must not look
+    # at the whole database: resumed, it replays from there, and the
+    # database already holds what the first attempt made later - the
+    # replay would make different children and fork instead of resuming.
+    seen = set()
     def get(g, parents, how, gen):
-        i = gid(g)
+        i = gid(g); seen.add(i)
         if i not in R:
             t0 = time.time(); rec = evaluate(g, ROUNDS)
             rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen, secs=round(time.time() - t0, 1))
@@ -706,9 +714,9 @@ def main(argv):
                     donor = rnd.choice([i for i in live if i not in parents])
                     g, h = borrow(g, R[donor]['genome'], rnd); how = (how + '; ' if how else '') + h + ' from ' + donor
                     parents = parents + [donor]
-                if rnd.random() < 0.9 or gid(g) in R:
+                if rnd.random() < 0.9 or gid(g) in seen:
                     g, h = mutate(g, rnd); how = (how + '; ' if how else '') + h
-                if gid(g) not in R: break
+                if gid(g) not in seen: break
             kids.append(get(g, parents, how, gen))
         live = [i for i in dict.fromkeys(pop + kids) if R[i]['status'] == 'ok']
         order = rank(live, R)[0]
