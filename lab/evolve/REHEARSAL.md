@@ -58,3 +58,33 @@ on the front (s5 0.880, s6 1.000).
 - **The winner's curse**: the front re-measured 3-6% slower than in the
   run, two designs slightly faster - noise both ways, the leader stays.
   `--remeasure N` measures the front again for the report.
+
+## The same front, measured again on the Ryzen 7 PRO 8840HS
+
+`--remeasure 6` on the laptop, after a fresh build (616 cases on all 15
+systems, the hand-made stages validating). CPU time over hand-made s6's,
+both measured there, back to back:
+
+| design | VM, in the run | Ryzen, re-measured | size | multi-state |
+|---|---|---|---|---|
+| 57a9dcc7cb | 0.677 | **0.605** | 13,480 | yes |
+| 05617039f6 | 0.671 | 0.637 | 13,488 | yes |
+| 32600cab87 | 0.660 | 0.641 | 13,656 | yes |
+| 312ad2edaa | 0.713 | 0.652 | 13,456 | yes |
+| 6738aed13f | 0.752 | 0.656 | 9,793 | no |
+| 595fc2b8f4 | 0.781 | 0.673 | 9,761 | no |
+| 0b1d16def9 | 0.702 | 0.699 | 13,464 | yes |
+| 8cbc6dd05c | 0.739 | 0.729 | 9,809 | yes |
+
+The front found on the VM holds on the Ryzen, and mostly better: every
+design between 0.60 and 0.73 of s6's CPU time. Among these eight, four
+stay on the front there - 57a9dcc7cb (0.605), 312ad2edaa (0.652), and the
+two small ones with byte headers, 6738aed13f (0.656 at 9,793 bytes) and
+595fc2b8f4 (0.673 at 9,761), nearly as fast as the big ones at three
+quarters of their size.
+
+The order changed, and in one direction: the two designs WITHOUT
+multi-state caching gained most from the move (0.752 to 0.656, 0.781 to
+0.673), those with it least (0.739 to 0.729, 0.702 to 0.699). On Zen 4
+multi-state caching seems to buy less than on the VM's Xeon - the reason
+the run that selects must be the one on the Ryzen.

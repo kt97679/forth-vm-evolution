@@ -827,7 +827,9 @@ def report(R):
     rm = os.path.join(EV, 'remeasure.json'); rm = json.load(open(rm)) if os.path.exists(rm) else {}
     for i in sorted(F, key=lambda i: R[i]['speed']):
         x = R[i]; rs = x['speed'] / ref['speed'] if ref else 1; rl = x['t']['loop'] / ref['t']['loop'] if ref else 1
-        again = ('%.3f' % (rm[i]['speed'] / ref['speed'] if ref else rm[i]['speed'])) if i in rm else '-'
+        # already a ratio to s6, measured in the same session - possibly on
+        # another machine than the run, so not divided by the run's s6
+        again = ('%.3f' % rm[i]['speed']) if i in rm else '-'
         L.append('| %s | %.3f | %s | %d | %.3f | %s | %s |' % (i, rs, again, x['size'], rl, diff(x['genome']), x['how'][:60]))
     L += ['', '## How the front came about', '']
     for i in sorted(F, key=lambda i: R[i]['speed']):
