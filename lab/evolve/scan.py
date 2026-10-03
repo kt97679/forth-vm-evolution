@@ -49,6 +49,9 @@ def neighbours(g):
                 add('folds reversed', folds=f[::-1])
             extra = [p for p in E.POOL if p not in f]
             if extra: add('+fold %s' % extra[0], folds=f + [extra[0]])
+        elif k == 'ops10':
+            for w in E.OPS10_POOL:
+                if w not in v: add('+op %s' % w, ops10=v + [w])
         elif k == 'supers':
             add('+pair %s %s' % tuple(E.SUPER_POOL[0]), supers=[E.SUPER_POOL[0]])
             add('+pair %s %s, run-time fusion' % tuple(E.SUPER_POOL[0]), supers=[E.SUPER_POOL[0]], rtfuse=1)

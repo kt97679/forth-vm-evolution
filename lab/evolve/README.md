@@ -183,9 +183,31 @@ include fork and execve. Leftover processes held pipes open past every
 timeout, and probably crashed the container once; every engine run now
 has a process group of its own, killed whole on timeout, and a CPU cap.
 
+## Phase 3a: relf's format-10 opcodes
+
+`ops10`: seven kernel colon words - `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`,
+`UNLOOP`, `J` - as one-byte opcodes, in the free slots before the pairs
+take theirs, so the three compete. The converter substitutes a call only
+where the word's compiled body is exactly the definition the engine
+implements (the same check as the tiny family; `SOD16_SHOW=NAME,...`
+prints how a word reads). As opcodes the return-stack words have no
+return address of their own: `I` is the top cell, `J` two below.
+
+Development VM, against the parent: s4 with all seven, 0.964 of the time
+and 32 bytes smaller; with 20 pairs as well, 0.843 and 96 smaller; s6 with
+the two its free slots hold, `EXECUTE` and `I`, 0.981 and 16 smaller.
+Parse and corpus gain most: the outer interpreter runs every word it
+interprets through `EXECUTE`. Each word alone passes the strict check in
+s4, s5 and s6, and the scan now tries each one.
+
+That check found a hazard in the engine's macros: in the top-of-stack
+build, `PUSH(x)` lowers dsp BEFORE it evaluates x, so `PUSH(DS0)` copies
+the new, empty slot onto itself. `?DUP` failed in s5 and s6 only; it now
+takes the value first.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
-direct threading, tail-call threading, relf's format-10 opcodes, indirect threading, multi-state stack caching, SPN's
+direct threading, tail-call threading, the rest of relf's format 10, indirect threading, multi-state stack caching, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.

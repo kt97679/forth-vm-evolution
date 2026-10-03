@@ -89,6 +89,9 @@ V8 = '--v8' in ARGV
 if V8:
     G['V8'] = True
     G['V8_FOLDLIST'] = _opt('--fold-set', '').split(',')
+    if '--ops10-file' in ARGV:      # colon words as opcodes: [[name, opcode], ...]
+        import json
+        G['X_OPS10'].update({n: op for n, op in json.load(open(_opt('--ops10-file')))})
     if '--supers-file' in ARGV:     # superinstructions: [[first, second, opcode], ...]
         import json
         G['SUPERS'] = {(a, b): op for a, b, op in json.load(open(_opt('--supers-file')))}

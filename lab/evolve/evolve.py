@@ -74,7 +74,7 @@ CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-
           'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
 CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
-           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0)
+           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[])
 def human(enc, **kw):
     g = dict(CV8, **CC0); g.update(enc=enc, **kw); return g
 HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie dormant
@@ -90,9 +90,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -110,15 +110,24 @@ def overlay(g):
     Everything else keeps the build's dumps, so the hand-made stages still
     come out byte-identical."""
     return g['enc'] == 'cv8' and bool(supers_in(g) and g.get('rtfuse'))
+# relf's format-10 opcodes: kernel colon words given opcodes, where the
+# converter finds their compiled body exactly as the engine implements it.
+OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J']
+OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
+               'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do'}
+def ops10_in(g):
+    """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
+    return [[w, op] for w, op in zip(g.get('ops10', []), super_slots(g))]
 def supers_in(g):
     """[[first, second, opcode], ...] for the pairs that get a slot."""
-    return [[a, b, op] for (a, b), op in zip(g['supers'], super_slots(g))]
+    return [[a, b, op] for (a, b), op in zip(g['supers'], super_slots(g)[len(ops10_in(g)):])]
 WORK_SEL = ['kernel', 'fib', 'parse', 'corpus']; WORK_HELD = ['loop']
 
 
 def canon(g):
     g = dict(g); g['spec'] = [s for s in SPECS if s in g['spec']]; g['folds'] = list(g['folds'])
     g['supers'] = [list(x) for x in g.get('supers', [])]
+    g['ops10'] = list(g.get('ops10', []))
     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
     return g
 def express(g):
@@ -127,6 +136,7 @@ def express(g):
     g = canon(g); e = {k: g[k] for k in ['enc'] + list(CC0) + EXPRESSED[g['enc']]}
     if g['enc'] == 'cpt16' and not g['fold']: e.pop('folds')
     if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
+    if 'ops10' in e: e['ops10'] = [x[0] for x in ops10_in(g)]
     if 'rtfuse' in e and not e.get('supers'): e.pop('rtfuse')        # nothing to fuse at run time
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
@@ -186,6 +196,12 @@ def build(g, d):
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
+    o10 = ops10_in(g)
+    if o10:
+        json.dump(o10, open(os.path.join(d, 'ops10.json'), 'w'))
+        open(os.path.join(os.path.dirname(src), 'vm-ops10-table.h'), 'w').write(
+            ''.join('[%d] = &&%s,\n' % (op, OPS10_LABEL[w]) for w, op in o10))
+        flags.append('-DOPS10=1')
     sup = supers_in(g)
     if sup:
         json.dump(sup, open(os.path.join(d, 'supers.json'), 'w'))
@@ -203,6 +219,7 @@ def build(g, d):
     if not g['varcall']: opts.append('--no-varcall')
     if not g['varslot']: opts.append('--no-varslot')
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
+    if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
     if sup and g['rtfuse']: opts.append('--rtfuse')
     img = os.path.join(d, 'image.img')
     fuse = '-fuse' if overlay(g) else ''
@@ -309,6 +326,15 @@ def mutate(g, rnd):
             s = rnd.choice(SPECS)
             g['spec'] = [x for x in g['spec'] if x != s] if s in g['spec'] else g['spec'] + [s]
             what.append(('-' if s not in g['spec'] else '+') + 'spec ' + s)
+        elif k == 'ops10':
+            f = g['ops10']; out = [p for p in OPS10_POOL if p not in f]
+            op = rnd.choice(['add', 'add', 'remove', 'swap'])
+            if op == 'add' and out:
+                p = rnd.choice(out); f.insert(rnd.randrange(len(f) + 1), p); what.append('+op %s' % p)
+            elif op == 'remove' and f:
+                what.append('-op %s' % f.pop(rnd.randrange(len(f))))
+            elif f and out:
+                i = rnd.randrange(len(f)); q = rnd.choice(out); what.append('op %s->%s' % (f[i], q)); f[i] = q
         elif k == 'supers':
             f = g['supers']; out = [p for p in SUPER_POOL if p not in f]
             op = rnd.choice(['add', 'add', 'remove', 'swap'])
@@ -336,7 +362,12 @@ def mutate(g, rnd):
 def crossover(a, b, rnd):
     c = {}
     for k in a:
-        if k == 'supers':
+        if k == 'ops10':
+            pool = list(dict.fromkeys(a.get('ops10', []) + b.get('ops10', [])))
+            n = rnd.randint(min(len(a.get('ops10', [])), len(b.get('ops10', []))), max(len(a.get('ops10', [])), len(b.get('ops10', []))))
+            keep = set(rnd.sample(pool, min(n, len(pool))))
+            c['ops10'] = [x for x in pool if x in keep]
+        elif k == 'supers':
             pool = [list(x) for x in dict.fromkeys(tuple(x) for x in a['supers'] + b['supers'])]
             n = rnd.randint(min(len(a['supers']), len(b['supers'])), max(len(a['supers']), len(b['supers'])))
             keep = set(map(tuple, rnd.sample(pool, min(n, len(pool)))))
@@ -482,7 +513,9 @@ def main(argv):
     # behind it rather than waiting on one mutation in seventeen.
     pop += [get(dict(HUMAN['s4-cv8'], supers=SUPER_POOL[:24], rtfuse=1), [], 'founder: s4-cv8 + 24 pairs, run-time fusion', 0),
             get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2]), [], 'founder: s6-cv8b + 2 pairs', 0),
-            get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2], rtfuse=1), [], 'founder: s6-cv8b + 2 pairs, run-time fusion', 0)]
+            get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2], rtfuse=1), [], 'founder: s6-cv8b + 2 pairs, run-time fusion', 0),
+            get(dict(HUMAN['s4-cv8'], ops10=list(OPS10_POOL), supers=SUPER_POOL[:20]), [], 'founder: s4-cv8 + format-10 opcodes + 20 pairs', 0),
+            get(dict(HUMAN['s6-cv8b'], ops10=OPS10_POOL[:2]), [], 'founder: s6-cv8b + EXECUTE, I as opcodes', 0)]
     while len(pop) < N:
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))

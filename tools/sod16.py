@@ -329,6 +329,7 @@ def read_ops(w):
                 out.append(('STR', bytes(raw[:1 + n]))); a += blob
     out = retag(out)
     if SPEC: out = specialise(out)
+    if V8 and X_OPS10: out = ops10_rewrite(out)
     out = fold_exit(out) if FOLD else out
     return fuse_pairs(out) if V8 and SUPERS else out
 
@@ -365,7 +366,17 @@ def _expect(n):
          'COUNT': [('P', 'DUP'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('P', 'C@'), ('P', 'EXIT')],
          'ALIGNED': [('LIT', CELL), ('LIT', 1), ('C', '-'), ('P', '+'), ('LIT', CELL),
                      ('P', 'NEGATE'), ('P', 'AND'), ('P', 'EXIT')]}
-    return E[n]
+    E.update({                    # X_OPS10's words, read as the converter reads them
+        '+!': [('P', 'DUP'), ('P', '@'), ('P', 'ROT'), ('P', '+'), ('P', 'SWAP'), ('P', '!'), ('P', 'EXIT')],
+        '?DUP': [('P', 'DUP'), ('QBR', 2 * CELL), ('P', 'DUP'), ('P', 'EXIT')],
+        'EXECUTE': [('P', '>R'), ('P', 'EXIT')],
+        'I': [('P', 'R>'), ('P', 'R@'), ('P', 'SWAP'), ('P', '>R'), ('P', 'EXIT')],
+        'J': [('P', 'RP@'), ('LIT', CELL), ('LIT', CELL), ('LIT', CELL), ('P', '+'), ('P', '+'), ('P', '+'),
+              ('P', '@'), ('P', 'EXIT')],
+        'UNLOOP': [('P', 'R>'), ('P', 'R>'), ('P', 'R>'), ('C', '2DROP'), ('P', '>R'), ('P', 'EXIT')],
+        '(DO)': [('P', 'R>'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('P', '>R'), ('P', '>R'), ('P', '>R'),
+                 ('P', 'EXIT')]})
+    return E.get(n)
 
 TINY_AT = None
 def tiny_at():
@@ -386,6 +397,35 @@ def tiny_at():
         missing = set(X_TINY) - set(TINY_AT.values())
         if missing: print("tiny: no exact body match for %s" % sorted(missing))
     return TINY_AT
+
+X_OPS10 = {}          # v8 --ops10-file: colon words given opcodes from the free slots
+OPS10_AT = None       # (relf's format-10 opcodes: +!, ?DUP, EXECUTE, I, J, UNLOOP, (DO))
+def ops10_at():
+    """old body address -> name, for the X_OPS10 words whose compiled body
+    is exactly the definition the engine implements - as tiny_at. With
+    SOD16_SHOW=NAME,..., print how named words read, for writing _expect."""
+    import os
+    global OPS10_AT, FOLD
+    if OPS10_AT is None:
+        OPS10_AT, saved, fsaved = {}, set(SPEC), FOLD
+        SPEC.clear(); FOLD = False
+        nm_of = {w['s']: w['n'] for w in words}
+        show = set(os.environ.get('SOD16_SHOW', '').split(',')) - {''}
+        for w in words:
+            if w['n'] in X_OPS10 or w['n'] in show:
+                o = read_ops(w)
+                if o is None: continue
+                o = [(k, nm_of.get(p, p) if k == 'C' else p) for k, p in o]
+                if w['n'] in show: print('SHOW %s %r' % (w['n'], o))
+                if w['n'] in X_OPS10 and o == _expect(w['n']): OPS10_AT[w['s']] = w['n']
+        SPEC.update(saved); FOLD = fsaved
+        missing = set(X_OPS10) - set(OPS10_AT.values())
+        if missing: print("ops10: no exact body match for %s" % sorted(missing))
+    return OPS10_AT
+def ops10_rewrite(ops):
+    """A call to one of them becomes its opcode, one operation for one."""
+    at = ops10_at()
+    return [('P', at[pl]) if k == 'C' and pl in at else (k, pl) for k, pl in ops]
 
 LOCNAME = {}
 def specialise(ops):
@@ -646,7 +686,8 @@ def to_bytes_v8(ops):
         while len(b) < ts[j]: b.append(idx_of['NOOP'])
         assert len(b) == ts[j], "v8 layout and emission disagree"
         if k == 'ALN': continue
-        if k == 'P' and pl in X_TINY: b.append(X_TINY[pl])
+        if k == 'P' and pl in X_OPS10: b.append(X_OPS10[pl])
+        elif k == 'P' and pl in X_TINY: b.append(X_TINY[pl])
         elif k == 'P' and pl in ESC_PRIMS:
             i_, _ = cv8_op(pl); b.append(V8_ESC); b.append(i_)
         elif k == 'P': b.append(cv8_op(pl)[0])

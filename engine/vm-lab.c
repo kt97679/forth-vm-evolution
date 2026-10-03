@@ -970,6 +970,9 @@ static void virtual_machine(void) {
 #if SUPER   /* superinstructions: a pair of primitives per opcode (tools/gen-super.py) */
 #include "vm-super-table.h"
 #endif
+#if OPS10   /* colon words as opcodes, at this design's slots (lab/evolve) */
+#include "vm-ops10-table.h"
+#endif
     };
 #if ENC == 3 && ESCAPE
     /*  CV8 renumbers the primitive band: the 36 non-escaped primitives
@@ -1184,6 +1187,22 @@ L_addi:   DS0 += (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();
 L_addix:  DS0 += (UNS64)(INT64)(int8_t)BYTE(ip); ip = RS; rp += CELL_BYTES; NEXT();
 L_eqi:    DS0 = -(UNS64)(DS0 == (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();
 L_eqix:   DS0 = -(UNS64)(DS0 == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CELL_BYTES; NEXT();
+#endif
+#if ENC == 3 && OPS10
+/*  relf's format-10 opcodes: kernel colon words given opcodes from the
+ *  free slots, per design (tools/sod16.py X_OPS10, lab/evolve), each only
+ *  where its compiled body is exactly the definition here. As opcodes the
+ *  return-stack words have no return address of their own on top: I is
+ *  the top cell, J two below it.  */
+L_x_plusstore: { UNS64 a_ = DS0; CELL(a_) += DS1; dsp += 2 * CELL_BYTES; } NEXT(); /* +!      */
+/* ?DUP: the value first - one PUSH lowers dsp before it evaluates x,
+   so PUSH(DS0) would copy the new, empty slot onto itself.  */
+L_x_qdup:      if (DS0) { UNS64 v_ = DS0; PUSH(v_); } NEXT();                    /* ?DUP    */
+L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; } NEXT();    /* EXECUTE */
+L_x_i:         PUSH(RS); NEXT();                                                    /* I       */
+L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */
+L_x_unloop:    rp += 2 * CELL_BYTES; NEXT();                                        /* UNLOOP  */
+L_x_do:        { RPUSH(DS1); RPUSH(DS0); dsp += 2 * CELL_BYTES; } NEXT();            /* (DO)    */
 #endif
 #if ENC == 3
 L_lit64:   /* lit64: a full cell, little-endian. CELL_BYTES bytes.      */
