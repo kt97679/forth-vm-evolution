@@ -298,9 +298,38 @@ A slip on the way: inserting the tail rules between an if and its elif in
 express() made doesfar dormant in every design without tail calls - the
 scan showed it at once (s6's doesfar=0 death vanished). Restored.
 
+## Phase 5: multi-state stack caching
+
+`tools/gen-msc.py` rewrites a design's cached engine for three states -
+nothing, the top, or the top two items in registers (`tos`, `nos`) - with
+a dispatch table each. A handler variant knows the state it ends in and
+dispatches through that state's table, so the state needs no variable.
+Operations with a stack effect the generator knows are generated for each
+input state, keeping as much in registers as fits (as gforth's vmgen):
+DUP in state 1 ends in state 2 without touching memory. Every other
+handler keeps its one-register body, reached from states 0 and 2 through
+one normaliser each; NOOP, EXIT, BRANCH and the call path have a copy per
+state. The extra tables are filled at start-up by comparing label
+addresses, so they follow any opcode assignment.
+
+The first version specified only 25 primitives, and lost: s6 1.049, s5
+1.110 (VM). The cost was the normaliser - a second dispatch for every
+other operation reached from states 0 and 2, and the folds, the tiny
+words, the literals and immediates and the variables are exactly what s5
+and s6 run most. With those specified too (72 operations, folds built as
+their primitive's effect plus the return, and the format-10 opcodes but
+?DUP), s6 0.941, s5 0.956 - fib 0.845, loop 0.815, but kernel 1.025. s6
+with the escape, thirteen opcodes and 24 pairs: 0.886 without, 0.882 with:
+the pairs are not specified yet, and composing their effects from their
+two halves is the next step.
+
+It excludes tail calls (both are made from the one-register engine).
+Every combination tried passes the strict check; the scan tries it on s5
+and s6, and both live.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
-direct threading, indirect threading, multi-state stack caching, SPN's
+direct threading, indirect threading, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.

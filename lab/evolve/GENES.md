@@ -11,6 +11,7 @@
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
 | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
 | tail-call threading (`tail`): every handler a function of (ip, dsp, rp, tos, t), dispatching by a tail call through a 256-entry table of functions; made from the cached engine | Wasm3, CPython 3.14, WasmKit | each handler's registers allocated for it alone; handlers that keep a frame are split so their dispatch stays a jump |
+| multi-state stack caching (`msc`): 0, 1 or 2 top items in registers, a dispatch table per state, each handler variant dispatching by the table of the state it ends in; generated from stack effects for 72 operations, the rest normalised to the one-register state | Ertl and Gregg; gforth's vmgen | no memory traffic where the state absorbs it; three times the code for the specified operations |
 | compiler: `-O2/-O3/-Os`, `-fno-gcse`, `-fno-crossjumping`, `-fcf-protection=none`, minimal label alignment, `-fno-reorder-blocks` | gforth's and CPython's builds, this lab's endbr64 finding | how the C compiler lays out the interpreter: computed goto only pays if every handler keeps its own indirect jump, which GCSE and cross-jumping undo |
 
 ## Not yet - each needs engine work first
@@ -29,9 +30,6 @@ Ordered by how much diversity they add for the work.
    anywhere in the image's code, so it would have nothing to fuse.
 5. **Indirect threading** - gforth-itc, fig-Forth, eForth, JonesForth: a
    code field per word. Slower, classic, and a distinct ancestor.
-6. **Stack caching with several states** - Ertl's work behind gforth:
-   handlers per cache state, generated like gen-tos. A single fixed
-   two-register state lost in lab/dispatch; several states should not.
 7. **Dynamic superinstructions** - gforth copies primitives' machine code;
    this lab's SPN copies C stencils. SPN's genes - fusions, recipes or lazy
    translation, inlining - are phase 3.

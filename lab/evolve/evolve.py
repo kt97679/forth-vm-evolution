@@ -74,7 +74,7 @@ CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-
           'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
 CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
-           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0)
+           d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
 def human(enc, **kw):
     g = dict(CV8, **CC0); g.update(enc=enc, **kw); return g
 HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie dormant
@@ -90,9 +90,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -144,6 +144,9 @@ def express(g):
     if 'rtfuse' in e and not e.get('supers'): e.pop('rtfuse')        # nothing to fuse at run time
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+    if 'msc' in e and not g['tos']: e.pop('msc')                       # made from the cached engine only
+    if e.get('msc'):                                                   # its own tables; tail calls excluded
+        e.pop('d256', None); e.pop('sharedcall', None); e.pop('tail', None)
     if 'tail' in e and not g['tos']: e.pop('tail')                     # made from the cached engine only
     if e.get('tail'):                                                  # one call function, 256-entry table
         e.pop('d256', None); e.pop('sharedcall', None)
@@ -249,8 +252,12 @@ def build(g, d):
         if sh(['python3', os.path.join(ROOT, 'tools', 'gen-super.py'), src, os.path.join(d, 'supers.json')]).returncode:
             raise RuntimeError('died: superinstruction generation')
         flags.append('-DSUPER=1')
+    if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py)
+        if sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src]).returncode:
+            raise RuntimeError('died: multi-state generation')
+        flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
     eng = os.path.join(d, 'engine')
-    if g.get('tail') and g['tos']: build_tail(g, d, src, flags, eng)
+    if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
     else:
         r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
         if r.returncode: raise RuntimeError('died: engine did not compile')
