@@ -48,7 +48,7 @@ OPERATORS
   selection  NSGA-II: rank by Pareto front, then by crowding, so designs
              that are different survive beside designs that are better
 """
-import hashlib, json, math, os, random, re, shutil, subprocess, sys, time
+import collections, hashlib, json, math, os, random, re, shutil, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 O = os.path.join(ROOT, 'build'); W = os.path.join(O, 'work')
@@ -161,14 +161,14 @@ def _contain():
     if a timeout is missed."""
     import resource
     resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
-def sh(cmd, cwd=None, inp=None, timeout=300):
+def sh(cmd, cwd=None, inp=None, timeout=300, env=None):
     """Run cmd in a process group of its own and kill the WHOLE group on
     timeout. A broken design executes arbitrary code, and the engine's
     primitives include fork and execve: a wild jump can leave processes
     behind that hold the pipes open - one such run hung the lab and once
     took the machine down with it."""
     p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.PIPE if inp is not None else subprocess.DEVNULL,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain, env=env)
     try:
         out, err = p.communicate(inp, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -216,6 +216,49 @@ def build_tail(g, d, src, flags, eng):
         wrap = sorted(set(wrap) | bad)
     raise RuntimeError('died: tail calls not jumps (%s)' % ','.join(sorted(bad)))
 
+PROFILING = [False]      # set while design_pairs builds a profiling engine
+PAIRS_CACHE = {}
+PAIRS_BAD = {'NOOP', 'EXIT', 'LIT', 'BRANCH', '?BRANCH', 'EXECUTE', 'BYE', 'SP@', 'SP!', 'RP@', 'RP!', 'WRITE', 'READ'}
+def design_pairs(g, n=24):
+    """This design's own hottest primitive pairs: build it with the
+    engine's profiler (VMPROF) and run the selection workloads - the
+    pool a mutation adding a pair draws from. The fixed SUPER_POOL came
+    from one profile of s6; a design that already fuses some pairs, or
+    has folds, specialisations or format-10 words, leaves others hot.
+    Cached per design; SUPER_POOL if profiling fails or g is no CV8."""
+    if g['enc'] != 'cv8': return list(SUPER_POOL)
+    key = gid(g)
+    if key in PAIRS_CACHE: return PAIRS_CACHE[key]
+    pool = list(SUPER_POOL)
+    prims = [l.split()[1] for l in open(os.path.join(ROOT, 'forth', 'kernel.4')) if l.startswith('PRIMITIVE')]
+    def prim(op):                       # this design's one-byte primitive opcodes
+        if g.get('escape'): i = op if op < 32 else op + 1 if op < 36 else None
+        else: i = op if op < 68 else None
+        return prims[i] if i is not None and i < 33 and prims[i] not in PAIRS_BAD else None
+    d = os.path.join(EV, 'profile'); shutil.rmtree(d, ignore_errors=True); os.makedirs(d)
+    PROFILING[0] = True
+    try:
+        eng, img = build(dict(g, tail=0, msc=0), d)     # the stream, not the dispatch, decides the pairs
+        pw = private_work(d); share = collections.Counter()
+        for w in WORK_SEL:
+            pf = os.path.join(d, 'prof-' + w)
+            sh([eng, img], cwd=pw, inp=program(w), timeout=30, env=dict(os.environ, VMPROF=pf))
+            c, total = collections.Counter(), 0
+            for line in open(pf):
+                m = re.match(r'^(\d+) (\d+) (\d+)$', line)
+                if m:
+                    a, b, k = map(int, m.groups()); total += k
+                    if a < 128 and b < 128 and prim(a) and prim(b): c[(prim(a), prim(b))] += k
+            for pr, k in c.items(): share[pr] += k / max(total, 1)
+        if share: pool = [list(pr) for pr, _ in share.most_common(n)]
+    except Exception:
+        pass
+    finally:
+        PROFILING[0] = False
+        shutil.rmtree(d, ignore_errors=True)
+    PAIRS_CACHE[key] = pool
+    return pool
+
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
     if os.path.exists(d): shutil.rmtree(d)
@@ -237,6 +280,7 @@ def build(g, d):
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
+    if PROFILING[0]: flags.append('-DPROFILE=1')
     if g.get('escape'): flags.append('-DESCAPE=1')
     o10 = ops10_in(g)
     if o10:
@@ -387,7 +431,7 @@ def mutate(g, rnd):
             elif f and out:
                 i = rnd.randrange(len(f)); q = rnd.choice(out); what.append('op %s->%s' % (f[i], q)); f[i] = q
         elif k == 'supers':
-            f = g['supers']; out = [p for p in SUPER_POOL if p not in f]
+            f = g['supers']; out = [p for p in design_pairs(g) if p not in f]
             op = rnd.choice(['add', 'add', 'remove', 'swap'])
             if op == 'add' and out:
                 p = rnd.choice(out); f.insert(rnd.randrange(len(f) + 1), p); what.append('+super %s %s' % tuple(p))

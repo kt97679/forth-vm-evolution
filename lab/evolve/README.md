@@ -331,6 +331,25 @@ It excludes tail calls (both are made from the one-register engine).
 Every combination tried passes the strict check; the scan tries it on s5
 and s6, and both live.
 
+## Phase 5b: each design's own pairs
+
+The pairs gene drew from one fixed pool: the 24 pairs a profile of s6
+dispatched most. But a design that already fuses some pairs, or has folds,
+specialisations or format-10 words, leaves others hot. `design_pairs`
+builds the parent with the engine's profiler (VMPROF), runs the four
+selection workloads, and ranks its own primitive pairs (the opcodes map
+back through the design's own opcode map, the escape's included; folds,
+pairs and words are not primitives and drop out). A mutation adding a pair
+draws from that; a design is profiled once, when first used as a parent,
+in about 2 s, with tail calls and multi-state caching off - the stream,
+not the dispatch, decides the pairs.
+
+The pools differ as they should: s6's is close to the fixed one (3 of 24
+new); s6 with DUP >R and C! R> fused no longer offers them, and R@ ROT,
+DUP C@ and OVER C@ lead (5 new); s4, whose tiny words are calls, has + SWAP
+and + DUP on top (9 new). Mutating s4, every pair added came from its own
+pool, 4 of 6 from outside the fixed one. Founders keep the fixed pool.
+
 ## Next
 
 `GENES.md` lists what other VMs could add - load-time translation to
