@@ -28,12 +28,18 @@ trying anything again (prompts/12-progress-log).
   (`results/evolve-amd-ryzen-7-pro-8840hs-seed1.md`): measured again,
   0.609 of s6's CPU time at 13,480 bytes; 0.649 at 9,801 - smaller than
   s6. The VM rehearsal's front, re-measured there, reached 0.605.
+- What carries it (`results/evolve-knockout-amd-ryzen-7-pro-8840hs.md`):
+  the escape and the pairs it makes room for (+28-37% when undone),
+  superinstructions (+17-35%), guard pages (+9-19%), format-10 opcodes
+  (+6-14%), no endbr64 (+6-13%); multi-state caching only 2-9%.
 
 ## Next, in order
 
-1. **Knockout study** of the Ryzen front: `evolve.py --knockout` is ready
-   (Iteration 2) - run on the Ryzen, for 38d187239c, 5b70f3dd64 and
-   83cb81c383. Which genes carry the 40%.
+1. **Native code in the genome** (Iteration 3, PROGRESS.md): relf's native
+   compiler passes our corpus byte for byte but crashes on our kernel
+   workload, and its rules are not switches. Either (A) a `native` family
+   built from relf with switchable rules, or (B) our SPN in the genome
+   with relf's rules as genes. Waiting on the user's choice.
 2. **A second run on the Ryzen**, with the fixed evolver (679e6f3) and
    `--seed 2`; the first database moved aside (`RUNNING.md`).
 3. **Before adding genes: prompts/02-escape-recall.** The gene pool

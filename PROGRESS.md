@@ -74,3 +74,43 @@ noise is large - the pairs' knockout came out +22% in one run, +4% in the
 next - so the default stays 6 rounds.
 
 **Open.** Run on the Ryzen. Pick up first: its report.
+
+## Iteration 3 - 2026-10-04 - Claude
+
+**Knockouts on the Ryzen** (`results/evolve-knockout-amd-ryzen-7-pro-
+8840hs.md`; calibration: s6 against itself 1.003, size exact). What
+carries the front's 30-40%: the escape with the pairs it makes room for
+(+28-37% when undone), superinstructions (+17-35%), guard pages instead of
+a bound check per push (+9-19%), relf's format-10 opcodes (+6-14%), no
+endbr64 (+6-13% - the dispatch lab on the VM had found that did not carry
+over; on the Ryzen it does). Multi-state caching: only 2-9%.
+
+**Asked: can relf's native compiler (relf master, NATIVE.md) join the
+genome?** prompts/02 skipped: the user named the candidate. Measured, not
+read about - relf master at 8b03275, `make relf64 native-kernel`, here on
+the VM:
+
+- **Our corpus: identical to our cell engine's output, byte for byte.**
+- **Our kernel workload: segmentation fault** (exit 139), kernel.img never
+  written. extend.4 loads, INCLUDED and run-time DOES> work; cross.4
+  cross-compiles kernel.4 to its end (last message "Redefining: COLD")
+  and the crash comes after - where cross.4's RESOLVEs walk the forward
+  chains through ' >BODY @. Reproducer: in this project's build/work,
+  `printf 'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\n' |
+  .../native-kernel`; expected kernel.img written and equal to the
+  reference; actual SIGSEGV. A report for relf.
+- **Speed against s6, paired, CPU time (VM - scale only):** fib 0.127,
+  parse 0.309, corpus 0.363, loop 0.102; output identical to s6's on all
+  four. The best evolved bytecode designs are at about 0.61 on the Ryzen.
+
+**So:** not addable as it stands - it would die at the gate (kernel
+workload), and its N2 rules are fixed in its code generator, not
+switches. Two ways it could join: (A) a `native` family - relf's native
+compiler with its rules made switchable (relf-side), the crash fixed, a
+species of its own, its genes the rules and the inline threshold - which
+fits relf's own "speed first, size watched" question; (B) our SPN, the
+native back end of THIS project (s7, s8), into the genome, with relf's
+rules ported to it as genes - recombining with the CV8 genes beneath it.
+The user to choose.
+
+**Open.** GOALS.md, "Next". Pick up first: the user's choice between A and B.
