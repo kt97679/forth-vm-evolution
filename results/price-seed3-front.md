@@ -30,3 +30,16 @@ the tests before a conditional branch, by workload:
   corpus  sub 0.6%, eqi 0.5%, sgt 0.3%, zlt 0.1%, = 0.0%
 the best triples, mean share: >R+OVER+C@ 0.4%, SWAP+DUP+>R 0.3%, OVER+C@+SWAP 0.3%, C@+>R+OVER 0.3%, ROT+DUP+C@ 0.3%, >R+OVER+R> 0.3%
 
+
+**Correction (Iteration 13).** The profiler records two events that are not
+dispatches: L_esc profiles its selector (0.03% of kernel), and with the
+256-entry dispatch NEXT profiles a call's first byte before do_call
+profiles 256. 60753a0eb0's profiling engine has the 256-entry dispatch,
+so every call above is counted twice: its dispatches are overstated by
+its calls (kernel 7,881,789 is 7,295,465 by address) and its calls
+column is doubled (kernel 14.8%, really 8.0%; parse 11.8%, really 6.2%;
+fib 16.7%, really 9.1%), and every other share in its row is about 8%
+too low. 8dd8a7a146 has no 256-entry dispatch and is right. The
+comparisons drawn from the table - pairs overlap, tests before branches
+do not - are within a row and stand. lab/evolve/price.py now skips both
+events; `results/price-hotcalls-seed3-front.md` has the audit.

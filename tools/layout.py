@@ -95,6 +95,9 @@ if V8:
     if '--supers-file' in ARGV:     # superinstructions: [[first, second, opcode], ...]
         import json
         G['SUPERS'] = {(a, b): op for a, b, op in json.load(open(_opt('--supers-file')))}
+    if '--hotcalls-file' in ARGV:   # one-byte calls: [[old target address, opcode, name], ...]
+        import json                 # (Iteration 13: the image side, for pricing; no engine runs them yet)
+        G['HOTCALLS'].update({a: op for a, op, _ in json.load(open(_opt('--hotcalls-file')))})
 
 # --bytehdr: byte-granular dictionary headers. The link is 1-3 bytes with
 # its tag byte LAST (read backward from the nfa), names are not padded,
@@ -666,12 +669,27 @@ def emit(path):
     def tk(v):  return (v & 0xFFFF).to_bytes(2, 'little')
 
     img = bytearray()
+    # CALLMAP=file (Iteration 13): every call site and every operation's
+    # first byte in the code bodies, for lab/evolve/callsites.py:
+    #   H header-bytes image-bytes scale
+    #   C offset length target-offset old-target forced caller target
+    #   O offset kind first-byte
+    # Offsets from the image's start - the engine's base, as SYMMAP's.
+    # forced: a call before an inline operand, always the long form.
+    _cm = [] if (V8 and _os.environ.get('CALLMAP')) else None
+    def _tname(a):
+        if a in starts: return starts[a]['n']
+        h = [x for x in order if x['s'] < a < x['e']]
+        return '%s+%d' % (h[0]['n'], a - h[0]['s']) if h else '?%d' % a
     # Prologue. The first two cells are calls - ip = base starts here -
     # and become call tokens. The remaining cells are kept at their own
     # cell positions, so the region keeps its size and the first link
     # cell stays where the layout expects it.
     for i in (0, 1):
         v = pro[START + i * CELL]
+        if _cm is not None:
+            _t = START + i * CELL + CELL + v
+            _cm.append('C %d %d %d %d 1 (prologue) %s' % (len(img), len(callbytes(_t)), new_target_off(_t), _t, _tname(_t)))
         img += callbytes(START + i * CELL + CELL + v)
     while len(img) < PROLOGUE - 3 * CELL: img += b'\x00'
     for i in (2, 3, 4): img += cel(pro[START + i * CELL])
@@ -705,6 +723,16 @@ def emit(path):
             if V8: img += bytes(to_tokens(ops2))
             else:
                 for t_ in to_tokens(ops2): img += tk(t_)
+            if _cm is not None:
+                _, _, _ts, _, _ = layout(ops2)
+                for _j, (_k, _pl) in enumerate(ops2):
+                    if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS'): continue    # data, not operations
+                    _at = new_off[s0]['body'] + _ts[_j]
+                    if _k == 'C':
+                        _cm.append('C %d %d %d %d %d %s %s' % (_at, 1 if _pl in G['HOTCALLS'] else 3 if img[_at] >= 0xC0 else 2,
+                                   new_target_off(_pl), _pl, 1 if G['before_operand'](ops2, _j) else 0, w['n'], _tname(_pl)))
+                    else:
+                        _cm.append('O %d %s %d' % (_at, _k, img[_at]))
             if not BYTEHDR:
                 while len(img) % CELL: img += b'\x00'
             # Unheadered tail, with its builtin entries relocated.
@@ -829,6 +857,10 @@ def emit(path):
         hdr += cel(body_of('LSAVE-SP') + CELL) + cel(body_of('LSAVE-STACK') + CELL)
         hdr += cel(lmax_v) + cel(body_of('LSAVE')) + cel(body_of('LRESTORE'))
     open(path, 'wb').write(hdr + bytes(img))
+    if _cm is not None:
+        with open(_os.environ['CALLMAP'], 'w') as _f:
+            _f.write('H %d %d %d\n' % (len(hdr), len(img), CPT or 0))
+            _f.write(''.join(x + '\n' for x in _cm))
     return len(hdr), len(img)
 
 # ---- literals that hold offsets -------------------------------------

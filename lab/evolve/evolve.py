@@ -280,6 +280,7 @@ def build_tail(g, d, src, flags, eng):
     raise RuntimeError('died: tail calls not jumps (%s)' % ','.join(sorted(bad)))
 
 PROFILING = [False]      # set while design_pairs builds a profiling engine
+CONVERT_EXTRA = []       # more converter options, set by a pricing tool (callsites.py); empty in a run
 PAIRS_CACHE = {}
 PAIRS_BAD = {'NOOP', 'EXIT', 'LIT', 'BRANCH', '?BRANCH', 'EXECUTE', 'BYE', 'SP@', 'SP!', 'RP@', 'RP!', 'WRITE', 'READ'}
 def design_pairs(g, n=24):
@@ -394,12 +395,19 @@ def build(g, d):
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
     if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
+    opts += CONVERT_EXTRA
     img = os.path.join(d, 'image.img')
     fuse = '-fuse' if overlay(g) else ''
     dump = os.path.join(O, ('k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % fuse)
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
+    # Iteration 13: a format-10 or tiny word whose body the converter could not
+    # match was dropped with a printed line, and the design lived without it -
+    # 1,032 of seed 3's 1,145 living CV8 designs (lab/evolve/scan-bodycheck.py).
+    # Fixed in tools/sod16.py; a design the check fails now dies, loudly.
+    m = re.search(rb'(?:ops10|tiny): no exact body match for [^\n]*', r.stdout)
+    if m: raise RuntimeError('died: ' + m.group(0).decode(errors='replace'))
     return eng, img
 
 def build_other(g, d):

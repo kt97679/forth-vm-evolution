@@ -395,3 +395,50 @@ about 1% expected, inside the noise. A first count was nonsense (+1117%):
 the profiler appends, and my script reused one file name.
 
 **Open.** GOALS.md "Next": one-byte calls, priced first; then a fourth run.
+
+## Iteration 13 - 2026-10-04 - Claude
+
+**One-byte calls, priced** (`lab/evolve/callsites.py`): the converter
+writes every call site (CALLMAP, tools/layout.py) and lays an image out
+again with chosen targets as one-byte calls (`--hotcalls-file`, image
+only). On seed 3's front, 412-661 sites to 122-155 targets; the top 32,
+the table charged to the image at 2 bytes an entry: 136 bytes net on
+8dd8a7a146 (1.0%: bodies padded to 8 swallow single bytes), 221-320 on
+the three 9.6 KB designs (2.3-3.3%). No dispatch removed. Taking the
+pairs' slots loses - the fewest-site pairs are among the hottest (four
+carry 3-8% of the dispatches); the top of the far-call prefixes costs no
+slot. Not built yet: GOALS.md "Next" 1.
+
+**Found on the way: four format-10 words were never there.** The exact-
+body check (tools/sod16.py, ops10_at, tiny_at) compared bodies already
+rewritten by the pairs, short branches (Phase 3d) and fused tests
+(Iterations 8-12). The converter printed "no exact body match"; nothing
+read it. 1,032 of seed 3's 1,145 living CV8 designs lost a word - every
+front design `(LOOP)`, `(+LOOP)`, `(?DO)`, `?DUP`; 610 `(DO)` to their pairs
+(`lab/evolve/scan-bodycheck.py --old`). Fixed: every rewrite off while
+checking; 0 of 1,145; build() now kills a design the check fails;
+`SOD16_OLD_BODYCHECK=1` keeps the fault, to measure it. Hand-made stages
+byte-identical. The front, one engine each (`lab/evolve/image-ab.py`):
+99-112 bytes smaller, through the gate, the selection workloads'
+dispatches unchanged. Correction to Phases 3c-3d: those words were
+measured alone, where the check held; with short branches they were
+never in any design.
+
+**Two measurement faults.** (1) The profiler counts an escaped primitive
+twice, and with the 256-entry dispatch every call twice: price.py's seed
+3 table overstated 60753a0eb0's dispatches by 8% and doubled its calls
+(14.8% of kernel, really 8.0%) - corrected forward in
+`results/price-seed3-front.md`, both tools fixed. (2) The held-out loop
+moves with the image's size mod 8: before `(LOOP)` in code compiled at run
+time the compiler pads with NOOPs, run on every pass - 60753a0eb0, 99
+bytes smaller, made 1,200,000 more NOOP dispatches on loop (+14%).
+
+**Slips of my own, caught by the tool's checks**: the call-map hook,
+inserted between `if V8:` and its `else:`, re-emitted every body as
+tokens (the layout's drift assertion stopped it); a one-byte call at
+0xE0 was taken for a three-byte one by its first byte (the decode check
+stopped it). Times on this VM scattered by 9%: only sizes and counts are
+used.
+
+**Open.** GOALS.md "Next": one-byte calls as a size gene, then the fourth
+run; the loop words at run time, priced first.

@@ -237,3 +237,54 @@ gain in speed, 48 bytes in size: for selection.
 
 (A first count said +1117%: the profiler appends to its file, and the
 script reused one name. price.py uses a fresh file per run.)
+
+## Iteration 13: one-byte calls priced - and four format-10 words that were never there
+
+**Priced** (`lab/evolve/callsites.py`, `results/price-hotcalls-seed3-front.md`):
+the converter writes every call site of a design's image (CALLMAP in
+tools/layout.py) and, with `--hotcalls-file`, lays the image out again
+with chosen targets as one-byte calls - image side only, exact. On seed
+3's front, the top 32 targets by bytes, the table charged at 2 bytes an
+entry: 136 bytes net on 8dd8a7a146 (1.0% - bodies padded to 8 swallow
+single bytes), 221-320 on the three 9.6 KB designs (2.3-3.3% - byte
+headers make it better than the raw count: links shorten too). No
+dispatch is removed: a call through a table is still a call.
+
+Where the opcodes come from decides whether it pays. All 34 free slots
+are taken, and the pairs with the fewest static sites are among the
+hottest - taking four pairs' slots costs 3-8% of the dispatches for
+24-120 bytes. The top of the far-call prefixes (0xE0-0xFF) costs no slot:
+32 one-byte calls there, the far reach at scale 0 from 4 MB to 2 MB, which
+cv8.4's compiler does not check today. So: a size gene, in that band,
+targets chosen per design from its own census (no profile), table in the
+image's header - next to build.
+
+**The body check.** A kernel word becomes its format-10 or tiny opcode only
+where its body is exactly the definition the engine implements. The
+check (tools/sod16.py, ops10_at, tiny_at) cleared specialisations and
+folds but not what came later - pairs, short branches (Phase 3d), fused
+tests (Iterations 8-12) - so it compared rewritten bodies: `?DUP` read
+`DUP ?BRANCH8 ...`, `(LOOP)` `... =?BRANCH8 ...`. A design carrying a short
+branch lost `(LOOP)`, `(+LOOP)`, `(?DO)` and `?DUP`; one whose pairs fell
+inside `(DO)`, `(LEAVE)`, `+!`, `J` or tiny `COUNT` lost those. The converter
+printed a line; nothing read it; the design lived without the opcode.
+`lab/evolve/scan-bodycheck.py --old`: 1,032 of seed 3's 1,145 living CV8
+designs lost at least one word - every front design four. Every earlier
+statement that these words were measured in combination with the short
+branches is about designs that did not have them; each was measured alone
+(Phases 3a-3d), where the check held.
+
+Fixed: every rewrite off while checking (`SOD16_OLD_BODYCHECK=1` restores
+the fault, to measure it); 0 of 1,145 now; and build() kills a design whose
+check fails, so it cannot be silent again. The hand-made stages are
+byte-identical. On the front (`lab/evolve/image-ab.py`, one engine): 99-112
+bytes smaller, the selection workloads' dispatches unchanged (cold words
+there), all through the gate.
+
+**Two measurement faults found by the audit.** The profiler counts an
+escaped primitive twice, and with the 256-entry dispatch every call twice
+- price.py overstated such designs' dispatches by their calls (8%) and
+doubled their calls column; corrected. And the held-out loop moves with
+the image's size mod 8: before a call with an inline operand the compiler
+pads with NOOPs, executed on every pass - 60753a0eb0's loop made 1,200,000
+more NOOP dispatches (+14%) because its image shrank by 99 bytes.

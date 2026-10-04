@@ -403,7 +403,16 @@ def tiny_at():
     global TINY_AT, FOLD
     if TINY_AT is None:
         TINY_AT, saved, fsaved = {}, set(SPEC), FOLD
-        SPEC.clear(); FOLD = False        # read the real bodies, unrewritten
+        x10, sup = dict(X_OPS10), dict(SUPERS)
+        # Read the real bodies, unrewritten: every rewrite read_ops applies
+        # off, not only SPEC and FOLD. Iteration 13: the pairs, the short
+        # branches and the fused tests, added after these checks, rewrote
+        # the bodies they compare - a design whose pair or short branch fell
+        # inside a word lost the word's opcode, with only a printed line.
+        SPEC.clear(); FOLD = False
+        import os
+        if not os.environ.get('SOD16_OLD_BODYCHECK'):   # the fault itself, kept only to measure the fix (lab/evolve/image-ab.py)
+            X_OPS10.clear(); SUPERS.clear()
         nm_of = {w['s']: w['n'] for w in words}
         for w in words:
             if w['n'] in X_TINY:
@@ -411,7 +420,7 @@ def tiny_at():
                 if o is None: continue
                 o = [(k, nm_of.get(p, p) if k == 'C' else p) for k, p in o]
                 if o == _expect(w['n']): TINY_AT[w['s']] = w['n']
-        SPEC.update(saved); FOLD = fsaved
+        SPEC.update(saved); FOLD = fsaved; X_OPS10.update(x10); SUPERS.update(sup)
         missing = set(X_TINY) - set(TINY_AT.values())
         if missing: print("tiny: no exact body match for %s" % sorted(missing))
     return TINY_AT
@@ -426,17 +435,19 @@ def ops10_at():
     global OPS10_AT, FOLD
     if OPS10_AT is None:
         OPS10_AT, saved, fsaved = {}, set(SPEC), FOLD
-        SPEC.clear(); FOLD = False
+        x10, sup = dict(X_OPS10), dict(SUPERS)
+        SPEC.clear(); FOLD = False                                      # every rewrite off: see tiny_at
+        if not os.environ.get('SOD16_OLD_BODYCHECK'): X_OPS10.clear(); SUPERS.clear()
         nm_of = {w['s']: w['n'] for w in words}
         show = set(os.environ.get('SOD16_SHOW', '').split(',')) - {''}
         for w in words:
-            if (w['n'] in X_OPS10 and w['n'] not in PSEUDO10) or w['n'] in show:
+            if (w['n'] in x10 and w['n'] not in PSEUDO10) or w['n'] in show:
                 o = read_ops(w)
                 if o is None: continue
                 o = [(k, nm_of.get(p, p) if k == 'C' else p) for k, p in o]
                 if w['n'] in show: print('SHOW %s %r' % (w['n'], o))
-                if w['n'] in X_OPS10 and o == _expect(w['n']): OPS10_AT[w['s']] = w['n']
-        SPEC.update(saved); FOLD = fsaved
+                if w['n'] in x10 and o == _expect(w['n']): OPS10_AT[w['s']] = w['n']
+        SPEC.update(saved); FOLD = fsaved; X_OPS10.update(x10); SUPERS.update(sup)
         missing = set(X_OPS10) - PSEUDO10 - set(OPS10_AT.values())
         if missing: print("ops10: no exact body match for %s" % sorted(missing))
     return OPS10_AT
@@ -630,6 +641,8 @@ V8_CALLTOK = [None]   # layout pass binds: old target addr -> scaled value
 VARCALL = True        # 10xxxxxx = 2-byte call, 11xxxxxx = 3-byte
 VARSLOT = True        # 0xxxxxxx+1 = 15-bit slot, 1xxxxxxx+2 = 23-bit
 OP_CTX = [None]       # (ops, j) while sizing, so op_bytes can see context
+HOTCALLS = {}         # one-byte calls (Iteration 13): old target address -> opcode;
+                      # the layout pass fills it from --hotcalls-file - image side only
 V8_LIT64, V8_ESC = 0x7C, 0x7D
 
 # ---- the escaped band (Iteration 202) -------------------------------
@@ -690,6 +703,7 @@ def op_bytes(k, pl, t):
     """Size of one operation in the TOKEN image, in bytes, at offset t."""
     if k == 'ALN': return (-t) % pl
     if V8:
+        if k == 'C' and pl in HOTCALLS: return 1
         if k == 'C' and VARCALL:
             if OP_CTX[0] is not None and before_operand(*OP_CTX[0]): return 3
             return 2 if V8_CALLTOK[0] is None or V8_CALLTOK[0](pl) < (1 << 14) else 3
@@ -737,6 +751,7 @@ def pad_before(ops, j, t):
     VARCALL a near call is 2 bytes and a far one 3; letting the distance
     decide made (POSTPONE) and (LOOP) read a misaligned operand."""
     if before_operand(ops, j):
+        if V8 and ops[j][1] in HOTCALLS: return (-(t + 1)) % CELL
         return (-(t + (3 if (V8 and VARCALL) else 2))) % CELL
     return 0
 
@@ -827,6 +842,7 @@ def to_bytes_v8(ops):
                 assert not x, "cannot fold EXIT into a LIT64"
                 b.append(V8_LIT64); le(pl, CELL)
         elif k == 'LITOFF': b.append(V8_LIT32); le(pl, 4)
+        elif k == 'C' and pl in HOTCALLS: b.append(HOTCALLS[pl])
         elif k == 'C':
             v = V8_CALLTOK[0](pl) if V8_CALLTOK[0] else 0
             if VARCALL:

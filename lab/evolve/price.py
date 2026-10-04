@@ -77,7 +77,13 @@ for did in args:
         for line in open(pf):
             m = re.match(r'^(\d+) (\d+) (\d+)$', line)
             if not m: continue
-            a, b, k = map(int, m.groups()); D[w] += k
+            a, b, k = map(int, m.groups())
+            # Iteration 13: two profiler events that are not dispatches - L_esc profiles its
+            # selector (pairs out of 125), and with the 256-entry dispatch NEXT profiles a
+            # call's first byte before do_call profiles 256 (pairs into 128-255). Counted,
+            # they inflated D by the calls (8% of kernel's) and doubled the calls column.
+            if a == 0x7D or 128 <= b <= 255: continue
+            D[w] += k
             na, nb = name(a), name(b)
             if b in sup: P[w] += k
             if a in sup and prim(b): T[(w, sup[a] + '+' + prim(b))] += k

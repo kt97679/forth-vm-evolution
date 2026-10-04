@@ -47,24 +47,50 @@ trying anything again (prompts/12-progress-log).
   at 13,464 bytes, 0.622 at 9,785 - 2-4% and 4-7% past seeds 1 and 2;
   every front design keeps all eight fused-test opcodes, at the pairs'
   cost (13 left). The jail and the scale-0 rule held: 129 declined unrun.
+- **Iteration 13: four format-10 words were never there.** The converter's
+  exact-body check compared bodies already rewritten by pairs, short
+  branches and fused tests: 1,032 of seed 3's 1,145 living designs lost at
+  least one word silently - every front design `(LOOP)`, `(+LOOP)`, `(?DO)`
+  and `?DUP` (`lab/evolve/scan-bodycheck.py`). Fixed, and the evolver now
+  kills a design the check fails. The front's images, converted again:
+  99-112 bytes smaller, the selection workloads' dispatches unchanged.
+  Seed 3's recorded sizes stand as what that converter made.
+- **The held-out loop moves with the image's size mod 8**: code compiled at
+  run time pads `(LOOP)`'s operand with 0-7 NOOPs, run on every pass (about
+  4% each) - compare designs on loop only at equal size mod 8.
+- One-byte calls priced (`results/price-hotcalls-seed3-front.md`): 136-320
+  bytes net on seed 3's front (1.0-3.3%), no dispatch removed - in the
+  far-call prefix band only.
 
 ## Next, in order
 
-1. **One-byte calls through a table of hot words** - priced first: mostly
-   size (a call is 2-3 bytes), so count the static call sites by target.
+1. **One-byte calls as a size gene** - priced (Iteration 13): 136-320 bytes
+   net at 32 targets. Their opcodes from the top of the far-call prefixes
+   (0xE0-0xFF), never the pairs' slots; each design's targets from its own
+   census (`lab/evolve/callsites.py`, no profile); the table in the image's
+   header; cv8.4's compiler must check far-call reach (2 MB at scale 0);
+   a handler in every engine form, and do_call's extra test priced where
+   there is no 256-entry table. The converter side exists
+   (`--hotcalls-file`).
 2. **A fourth run on the Ryzen** with what has been added since seed 3:
-   the second escape level (works, does not pay alone), the five further
-   fused tests (Iteration 12: 1-2% fewer dispatches, 48 bytes smaller) -
-   selection weighs them together.
-3. Remaining planned gene: indirect threading; then a register machine.
-4. The article (`article/`): prompts/14-audience-research before drafting
+   the body-check fix (the front's four lost words), the second escape
+   level (works, does not pay alone), the five further fused tests
+   (Iteration 12: 1-2% fewer dispatches, 48 bytes smaller), one-byte
+   calls - selection weighs them together.
+3. **The loop words in code compiled at run time** - priced first: there
+   every pass of a DO loop runs `(LOOP)`'s colon body and 0-7 alignment
+   NOOPs; the opcodes exist and now work. Count the passes in the
+   selection workloads' run-time code before touching the compiler.
+4. Remaining planned gene: indirect threading; then a register machine.
+5. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-5. ARM port of SPN. Push master to GitHub (the owner's step).
+6. ARM port of SPN. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 
 | approach | what decided it | where |
 |---|---|---|
+| One-byte calls in the pairs' slots | priced, not built (Iteration 13): the pairs with the fewest static sites are among the hottest - four of them carry 3-8% of the dispatches, for 24-120 bytes; the far-call prefix band costs no slot | `results/price-hotcalls-seed3-front.md` |
 | Native code in the genome: relf's native compiler as a family of its own, or our SPN with relf's rules as genes | deferred by the user (Iteration 4) after measuring it (Iteration 3): our corpus byte for byte, our kernel workload a segmentation fault in cross.4's RESOLVE, 3-10 times faster than s6 on the VM | PROGRESS.md, Iterations 3 and 4 |
 | Profile-guided optimisation of the engine as a gene | measured, not built (Iteration 7): 0.903 on s6 only when trained on the measured workloads; trained on a separate program, 0.980 - what -fprofile-use's flags give without a profile; three of those flags became genes instead | `lab/evolve/GENES.md`; `lab/evolve/pgo-train.fth` |
 | A second escape level - nine more primitives behind ESC for nine slots | built, measured, does not pay (Iteration 11): with the design's own best pairs in the slots, 0.2-2.4% fewer dispatches - price.py's 6.4-12.9% counted overlapping pairs; kept as a gene for selection | `lab/evolve/GENES.md` |
