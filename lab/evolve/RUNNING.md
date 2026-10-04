@@ -28,7 +28,7 @@ fluctuations remain as noise, which the minimum over rounds reduces.
 Needs Linux on x86-64, `gcc`, `python3`, `objdump` (binutils) and `taskset`
 (util-linux).
 
-    git clone forth-vm-evolution.bundle forth-vm-evolution
+    git clone forth-vm-evolution-claude-iterN-YYYYMMDD-HHMMSS.bundle forth-vm-evolution
     cd forth-vm-evolution
     LAYOUTS=1 bash tools/build-stages.sh      # about half a minute
     bash tools/run-tests.sh                   # must end: PASS - no regressions

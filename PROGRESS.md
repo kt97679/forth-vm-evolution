@@ -35,3 +35,19 @@ bugs, the unchecked kernel, the forked resume and the raw genome. And a
 selected front re-measures 3-6% worse: quote `--remeasure`.
 
 **Open.** `GOALS.md`, "Next". Pick up first: the knockout study.
+
+## Iteration 1 - 2026-10-03 - Claude
+
+**Correction to the entry above.** It ended with a handoff named
+`forth-vm-evolution.bundle`, as every handoff before it was. That is
+prompts/07-git-handoff's placeholder, not a name: 07 asks for
+`project-claude-iterN-YYYYMMDD-HHMMSS.bundle` unless the project has its
+own convention, and this one had none written down. The user caught it.
+
+**Done.** The convention is now in `GOALS.md` ("Conventions"), where 07
+says to look before a handoff; `tools/make-bundle.sh` follows relf's
+script - N from HEAD's `Iteration N:` subject, UTC time, HEAD and master,
+the clone check, the path printed. Handoffs are numbered from this one.
+`lab/evolve/RUNNING.md` names the bundle by the convention.
+
+**Open.** Unchanged - `GOALS.md`, "Next". Pick up first: the knockout study.

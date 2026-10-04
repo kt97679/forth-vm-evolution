@@ -4,6 +4,17 @@ The present. It shrinks as things are done; the past is in `PROGRESS.md`
 (append-only) and the git log. Check the register at the bottom before
 trying anything again (prompts/12-progress-log).
 
+## Conventions
+
+- **Each handoff's last commit is titled `Iteration N: ...`**, N counting
+  handoffs, not commits - from Iteration 1 (the handoffs before it were
+  not numbered).
+- **The bundle**: `tools/make-bundle.sh DIR` names it
+  `forth-vm-evolution-claude-iterN-YYYYMMDD-HHMMSS.bundle` (UTC, N from
+  HEAD's subject), with HEAD and master, and checks that it clones to the
+  same HEAD. Example: `forth-vm-evolution-claude-iter1-20261003-180000.bundle`.
+- **Every commit builds and passes `tools/run-tests.sh`.**
+
 ## Where things stand
 
 - 15 systems, two cell widths, pass the 616-case ANS CORE corpus; every

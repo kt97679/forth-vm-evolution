@@ -121,8 +121,9 @@ across sessions and handed between machines. Scopes worth stating:
 "which design is best" question; `03-audit-tooling` every figure, since
 all of them come from this repository's own tools; `14`, `04` and `05`
 the article. Before trying an approach, search `GOALS.md` and
-`PROGRESS.md` for it. A handoff is `tools/make-bundle.sh`, which makes the
-bundle and checks that it clones.
+`PROGRESS.md` for it. A handoff is an `Iteration N:` commit, then
+`tools/make-bundle.sh DIR`, which names the bundle by `GOALS.md`'s
+convention and checks that it clones.
 
 ## Method
 
