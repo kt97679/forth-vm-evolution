@@ -31,8 +31,9 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **Knockout study** of the Ryzen front: undo one gene at a time, measure
-   again - which genes carry the 40%.
+1. **Knockout study** of the Ryzen front: `evolve.py --knockout` is ready
+   (Iteration 2) - run on the Ryzen, for 38d187239c, 5b70f3dd64 and
+   83cb81c383. Which genes carry the 40%.
 2. **A second run on the Ryzen**, with the fixed evolver (679e6f3) and
    `--seed 2`; the first database moved aside (`RUNNING.md`).
 3. **Before adding genes: prompts/02-escape-recall.** The gene pool

@@ -99,6 +99,20 @@ A build step that fails is tried once more before the design dies, and
 a death now records why - the converter's or the compiler's last error
 line - in `build/evolve/db.jsonl`.
 
+## Then: what each gene is worth
+
+    python3 lab/evolve/evolve.py --knockout ID,ID,... > knockout.md
+
+For each design (default: the front, re-measured where `--remeasure` was
+run), every gene that differs from hand-made s6 is set back to s6's
+value, one at a time, and the design measured again: what that gene is
+worth in that design. Progress goes to the screen, the report to
+`knockout.md` - machine, commit, a calibration (s6 against itself, the
+design itself) and one table per design. About 7 s per variant at the
+default 6 rounds, so a few minutes per design. `--db FILE` reads a
+database kept aside. Run it when no evolution is running: both pin a core
+and would measure each other.
+
 ## What to send back
 
 `build/evolve/report.md`, `build/evolve/db.jsonl`, `build/evolve/remeasure.json`,

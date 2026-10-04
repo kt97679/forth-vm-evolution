@@ -685,7 +685,82 @@ def setup():
     POOL = foldable()
 
 
+def knockout(argv):
+    """--knockout [ID,...] [--rounds N]: for each design (default: the
+    front, measured again where --remeasure has been run), undo one gene
+    at a time - set it to hand-made s6's value - and measure again: what
+    each gene is worth IN that design, interactions included. Reported
+    for pasting back from another machine (prompts/11): machine, commit,
+    settings, and for every variant its name, the expected and the actual
+    value. Calibrated against known answers (prompts/03): s6 against
+    itself must come out 1.000 and its image exactly s6's size; the design
+    itself is measured again in the same session."""
+    R = load(); ok = [i for i in R if R[i]['status'] == 'ok']
+    if not ok: nothing_alive(R); sys.exit(1)
+    i_ = argv.index('--knockout')
+    ids = argv[i_ + 1].split(',') if i_ + 1 < len(argv) and not argv[i_ + 1].startswith('--') else None
+    rounds = int(argv[argv.index('--rounds') + 1]) if '--rounds' in argv else 6
+    if ids is None:                                   # the front, by re-measured speed where there is one
+        rm = os.path.join(EV, 'remeasure.json'); rm = json.load(open(rm)) if os.path.exists(rm) else {}
+        F = fronts(ok, R)[0]
+        sp = {i: rm[i]['speed'] if i in rm else R[i]['speed'] for i in F}
+        ids = [i for i in F if not any(sp[j] <= sp[i] and R[j]['size'] <= R[i]['size'] and (sp[j], R[j]['size']) != (sp[i], R[i]['size']) for j in F)]
+        ids.sort(key=lambda i: sp[i])
+    bad = [i for i in ids if i not in R or R[i]['status'] != 'ok']
+    if bad: sys.exit('not alive in %s: %s' % (DB, ', '.join(bad)))
+    s6 = canon(HUMAN['s6-cv8b'])
+    model = next((l.split(':', 1)[1].strip() for l in open('/proc/cpuinfo') if l.startswith('model name')), '?')
+    head = ['# Knockouts', '',
+            'machine: %s; commit %s; %s UTC; %s; %d rounds; every figure MEASURED (none modelled): CPU time over'
+            % (model, sh(['git', '-C', ROOT, 'rev-parse', '--short', 'HEAD']).stdout.decode().strip(),
+               time.strftime('%Y-%m-%d %H:%M', time.gmtime()), ' '.join(PIN) or 'not pinned', rounds),
+            "hand-made s6's, paired run by run, geometric mean over kernel, fib, parse, corpus; size of the self-hosting image.", '',
+            'How these can mislead (prompts/03): each knockout measures a gene IN this design - interactions included, so the',
+            'changes do not add up to the total; "also changed" names what moved with it (the escape takes its slots, and',
+            'with them pairs and words; a dormant gene can wake: undoing multi-state caching turns on tail calls the genome',
+            'carries); a difference smaller than the calibration\'s distance from 1.000 is noise.', '']
+    log = lambda m: print(m, file=sys.stderr, flush=True)      # progress; the report goes to stdout once, at the end
+    cal = evaluate(s6, rounds)                         # prompts/03: a case whose answer is known
+    calline = ('calibration, s6 against itself: speed expected 1.000, measured %.3f; size expected %d, measured %d - %s'
+               % (cal.get('speed', float('nan')), R[next(i for i in R if R[i]['how'] == 'hand-made s6-cv8b')]['size'] if any(R[i]['how'] == 'hand-made s6-cv8b' for i in R) else 10065,
+                  cal.get('size', -1), cal['status']))
+    log(calline)
+    out = head + [calline, '']
+    for did in ids:
+        g = canon(R[did]['genome']); eg = express(g)
+        me = evaluate(g, rounds)
+        line = ('## %s\n\ncalibration, the design itself: speed in the run %.3f, measured now %.3f; size recorded %d, measured %d - %s'
+                % (did, R[did]['speed'], me.get('speed', float('nan')), R[did]['size'], me.get('size', -1), me['status']))
+        log(line); out += [line, '']
+        if me['status'] != 'ok': continue
+        rows = []
+        for k in list(eg):
+            if k == 'enc' or g.get(k) == s6.get(k): continue
+            v = canon(dict(g, **{k: s6[k]})); ev = express(v)
+            if ev == eg: continue                      # dormant here: nothing to undo
+            # what else moved, by EFFECTIVE value: a gene gone dormant counts as s6's value
+            also = sorted(x for x in set(ev) | set(eg) if x != k and ev.get(x, s6.get(x)) != eg.get(x, s6.get(x)))
+            r = evaluate(v, rounds)
+            show = lambda x: (('%d items' % len(x)) if isinstance(x, list) else str(x))
+            if r['status'] == 'ok':
+                rows.append((r['speed'] / me['speed'] - 1, '| %s | %s -> %s | %s | %.3f | %+.1f%% | %d | %+d | %s |' % (
+                    k, show(g[k]), show(s6[k]), ', '.join(also) or '-', r['speed'], 100 * (r['speed'] / me['speed'] - 1),
+                    r['size'], r['size'] - me['size'], ' '.join('%s %.3f' % (w, r['t'][w]) for w in ['kernel', 'fib', 'parse', 'corpus', 'loop']))))
+            else:
+                rows.append((float('inf'), '| %s | %s -> %s | %s | %s | - | - | - | - |' % (k, show(g[k]), show(s6[k]), ', '.join(also) or '-', r['status'])))
+            log('  %s: %s' % (k, rows[-1][1]))
+        tab = ['| gene | design -> s6 | also changed | speed without it | change | size | change | per workload |',
+               '|---|---|---|---|---|---|---|---|'] + [x for _, x in sorted(rows, key=lambda t: -t[0])]
+        out += tab + ['']
+    path = os.path.join(EV, 'knockout.md')
+    open(path, 'w').write('\n'.join(out) + '\n')
+    print('\n'.join(out))
+    log('written: %s' % path)
+
 def main(argv):
+    global DB
+    if '--db' in argv:                 # read another database: an earlier run kept aside
+        DB = os.path.abspath(argv[argv.index('--db') + 1])
     def opt(name, default):
         return type(default)(argv[argv.index(name) + 1]) if name in argv else default
     setup()
@@ -705,6 +780,8 @@ def main(argv):
         sys.exit(0 if ok else 1)
     if '--report' in argv:
         report(load()); return
+    if '--knockout' in argv:
+        knockout(argv); return
     if '--remeasure' in argv:
         # The front, measured again with more rounds: chosen as the best of
         # many noisy measurements, its designs were partly chosen for luck.

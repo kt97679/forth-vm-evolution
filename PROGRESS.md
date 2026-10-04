@@ -51,3 +51,26 @@ the clone check, the path printed. Handoffs are numbered from this one.
 `lab/evolve/RUNNING.md` names the bundle by the convention.
 
 **Open.** Unchanged - `GOALS.md`, "Next". Pick up first: the knockout study.
+
+## Iteration 2 - 2026-10-04 - Claude
+
+**Search first (prompts/12):** "knockout", "ablation", "contribution" in
+GOALS.md, PROGRESS.md and lab/evolve - only the plan; no prior attempt.
+
+**Done.** `evolve.py --knockout [ID,...] [--rounds N] [--db FILE]`: for
+each design, every gene that differs from hand-made s6 set back to s6's
+value, one at a time, and measured again. Shaped by prompts/03 and 11:
+every figure labelled measured; a calibration against known answers (s6
+against itself: speed 1.000, size exactly 10,065; the design itself
+measured again in the session); the ways it can mislead stated in the
+report (knockouts are in context and do not add up; "also changed" lists
+what moved with a gene - the escape takes its slots, undoing multi-state
+caching wakes the tail calls a genome carries dormant); for pasting back,
+machine and commit in the report, progress on stderr.
+
+**Tried here (VM, one design, 1-2 rounds) - not results.** It runs end to
+end: s6 against itself 0.992 and 1.024, size exact. At one round the
+noise is large - the pairs' knockout came out +22% in one run, +4% in the
+next - so the default stays 6 rounds.
+
+**Open.** Run on the Ryzen. Pick up first: its report.
