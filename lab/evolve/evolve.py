@@ -123,16 +123,25 @@ def overlay(g):
     list needs no overlay: the converter writes it into cv8.4's FOLD-OPS.)
     Everything else keeps the build's dumps, so the hand-made stages still
     come out byte-identical."""
-    return g['enc'] == 'cv8' and bool(supers_in(g) and g.get('rtfuse'))
+    return g['enc'] == 'cv8' and bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g)))
+RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
+def rt_tests(g):
+    """The fused tests this design has opcodes for - with rtfuse, its
+    compiler fuses them in code compiled at run time (Iteration 9)."""
+    return [w for w, _ in ops10_in(g) if w in RT_TESTS]
 # relf's format-10 opcodes: kernel colon words given opcodes, where the
 # converter finds their compiled body exactly as the engine implements it.
 OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?DO)', '(+LOOP)', '(LEAVE)',
               '?BRANCH8', 'BRANCH8',   # the short branches: not words, opcodes the converter uses where they fit
-              '?NBRANCH', '?NBRANCH8']  # 0= ?BRANCH fused, long and short (Iteration 8); the short needs the long
+              '?NBRANCH', '?NBRANCH8',  # 0= ?BRANCH fused, long and short (Iteration 8); the short needs the long
+              '<?BRANCH', '<?BRANCH8',  # < ?BRANCH fused (Iteration 9); at run time too, with rtfuse
+              '=?BRANCH', '=?BRANCH8', 'U<?BRANCH', 'U<?BRANCH8']
 OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
                '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
-               '?BRANCH8': 'L_x_qbr8', 'BRANCH8': 'L_x_br8', '?NBRANCH': 'L_x_nqbr', '?NBRANCH8': 'L_x_nqbr8'}
+               '?BRANCH8': 'L_x_qbr8', 'BRANCH8': 'L_x_br8', '?NBRANCH': 'L_x_nqbr', '?NBRANCH8': 'L_x_nqbr8',
+               '<?BRANCH': 'L_x_ltbr', '<?BRANCH8': 'L_x_ltbr8', '=?BRANCH': 'L_x_eqbr', '=?BRANCH8': 'L_x_eqbr8',
+               'U<?BRANCH': 'L_x_ultbr', 'U<?BRANCH8': 'L_x_ultbr8'}
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
     return [[w, op] for w, op in zip(g.get('ops10', []), super_slots(g))]
@@ -156,7 +165,7 @@ def express(g):
     if g['enc'] == 'cpt16' and not g['fold']: e.pop('folds')
     if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
     if 'ops10' in e: e['ops10'] = [x[0] for x in ops10_in(g)]
-    if 'rtfuse' in e and not e.get('supers'): e.pop('rtfuse')        # nothing to fuse at run time
+    if 'rtfuse' in e and not e.get('supers') and not rt_tests(g): e.pop('rtfuse')   # nothing to fuse at run time
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if 'msc' in e and not g['tos']: e.pop('msc')                       # made from the cached engine only
@@ -351,7 +360,7 @@ def build(g, d):
     if not g['varslot']: opts.append('--no-varslot')
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
-    if sup and g['rtfuse']: opts.append('--rtfuse')
+    if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
     img = os.path.join(d, 'image.img')
     fuse = '-fuse' if overlay(g) else ''
     dump = os.path.join(O, ('k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % fuse)
@@ -919,7 +928,8 @@ def main(argv):
             get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2], rtfuse=1), [], 'founder: s6-cv8b + 2 pairs, run-time fusion', 0),
             get(dict(HUMAN['s4-cv8'], ops10=list(OPS10_POOL), supers=SUPER_POOL[:20]), [], 'founder: s4-cv8 + format-10 opcodes + 20 pairs', 0),
             get(dict(HUMAN['s6-cv8b'], ops10=OPS10_POOL[:2]), [], 'founder: s6-cv8b + EXECUTE, I as opcodes', 0),
-            get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL)), [], 'founder: s6-cv8b + escape, 7 words, 24 pairs', 0)]
+            get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL)), [], 'founder: s6-cv8b + escape, 7 words, 24 pairs', 0),
+            get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL), rtfuse=1), [], 'founder: s6-cv8b + escape, all format-10 opcodes, pairs, tests fused at run time', 0)]
     while len(pop) < N:
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))

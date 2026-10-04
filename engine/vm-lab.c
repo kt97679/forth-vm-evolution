@@ -1227,6 +1227,23 @@ L_x_nqbr:  if (DS0) ip += (int16_t)LD16(ip); else ip += 2;                     /
            dsp += CELL_BYTES; NEXT();
 L_x_nqbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1;                      /* 0= ?BRANCH8 */
            dsp += CELL_BYTES; NEXT();
+/*  < ?BRANCH: falls through when a < b, jumps otherwise - fib's test, 9% of
+ *  its dispatches; in code compiled at run time, fused by the compiler
+ *  overlay (forth/cv8-fuse.4, ?BRANCH,) from SUPER-TABLE (Iteration 9).  */
+L_x_ltbr:  { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;    /* < ?BRANCH  */
+             if (a_ < b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_ltbr8: { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;    /* < ?BRANCH8 */
+             if (a_ < b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
+/*  = ?BRANCH and U< ?BRANCH: as < ?BRANCH (Iteration 9) - about 1-2% of
+ *  the dispatches each on kernel, parse and corpus (lab/evolve/price.py).  */
+L_x_eqbr:   { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* = ?BRANCH */
+             if (a_ == b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_eqbr8:  { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* = ?BRANCH8 */
+             if (a_ == b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
+L_x_ultbr:  { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* U< ?BRANCH */
+             if (a_ < b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_ultbr8: { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* U< ?BRANCH8 */
+             if (a_ < b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

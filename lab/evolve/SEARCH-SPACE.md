@@ -39,7 +39,7 @@ the included ones checked to be among them.
 | native code | 3 | 1 | SPN stencils; an optimising compiler |
 | **all 11 axes** | **66** | **35** | **31 missing** |
 
-Every missing value decided (12 candidate, 10 excluded, 4 stranger, 4 deferred, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
+Every missing value decided (11 candidate, 10 excluded, 4 stranger, 4 deferred, 1 planned, 1 built; checked against the register of rejected and deferred approaches in GOALS.md):
 
 | missing value | decided | why |
 |---|---|---|
@@ -60,7 +60,7 @@ Every missing value decided (12 candidate, 10 excluded, 4 stranger, 4 deferred, 
 | no stack checks at all | excluded | an underflow would corrupt memory instead of being reported - not a design to ask the gate about |
 | triples and longer runs | excluded | priced at Iteration 8 (lab/evolve/price.py, GENES.md): at most 0-4.9% of dispatches on the front, none on fib - before overlaps and the slots they would take from pairs |
 | two escape levels | candidate | the escape is the largest single gain in every knockout - more slots may be worth more |
-| compare-and-branch opcodes | candidate | priced at Iteration 8: 6.6-9.1% of dispatches on every workload; `0= IF` built (GENES.md: 0.977 on one engine); the other tests, and `< IF` in run-time code, open |
+| compare-and-branch opcodes | built | Iterations 8-9 (GENES.md): 0=, <, = and U< before a conditional branch, in kernel code and - through the compiler overlay - at run time; 0.935 on one engine. = with an immediate, and -, still open |
 | pairs chosen from the image itself | stranger | see step 4 |
 | headers apart from code | candidate | separated heads, known in Forths - denser code |
 | number of hash threads | candidate | kernel-level; FIND's speed is most of parse and corpus |

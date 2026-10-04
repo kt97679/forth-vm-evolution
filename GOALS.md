@@ -45,14 +45,14 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **The rest of test-and-branch** (`lab/evolve/GENES.md`, Iteration 8):
-   `0= IF` is built (3% on kernel, parse and corpus, one engine). Open:
-   `< IF` in code compiled at run time - fib's 9% - which needs the image's
-   own compiler to fuse as it compiles; then the other tests (=, U<, = with
-   an immediate) where slots allow.
-2. **A third run on the Ryzen** once those are in: the new genes are
-   `?NBRANCH`/`?NBRANCH8` (format-10 opcodes) and the three flag genes.
-   Then two escape levels and one-byte calls, priced first (`price.py`).
+1. **A third run on the Ryzen** (the owner's): the gene pool has grown -
+   fused tests (`0=`, `<`, `=`, `U<` before a branch, ten format-10
+   opcodes; at run time with `rtfuse`), and the three flag genes. On one
+   engine, s6 with the escape and all four: 0.960 in kernel code, 0.935
+   with the run-time overlay (+620 bytes).
+2. **Next genes, priced first** (`lab/evolve/price.py`): two escape levels
+   (the next 16 pairs: 2-9.5% of dispatches), `=` with an immediate before
+   a branch, one-byte calls through a table of hot words.
 3. Remaining planned gene: indirect threading; then a register machine.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.

@@ -157,3 +157,34 @@ the image alone, compare two images on one engine.
 half the price - each a pair of opcodes for slots; and `< IF` in fib (9%
 of its dispatches), only reachable by the image's own compiler fusing as
 it compiles.
+
+## Iteration 9: tests fused at run time too, and = and U<
+
+**At run time.** fib's `< IF` is compiled from fib.fth, by the image's own
+compiler: the converter never sees it. The compiler overlay
+(`forth/cv8-fuse.4`) gains `?BRANCH,`: IF, UNTIL and WHILE call it, and
+straight after a test it overwrites the test's byte with the fused branch,
+when SUPER-TABLE has (test, ?BRANCH, fused). LAST-OP gives it COMPILE,8's
+safety: an operand byte is never taken for a test, and nothing branching
+to HERE is fused across. The converter writes the test entries first
+(`tools/layout.py`). So `rtfuse` now means something without pairs: the
+overlay is built for a design with run-time fused tests. Changing the
+overlay changes the image of designs that already had it (rtfuse with
+pairs - none on any front).
+
+**= and U<** join 0= and < (`TESTBR` in `tools/sod16.py`: one line per
+test, plus its two handlers in the three engine forms).
+
+**Measured on one engine per design** (image with and without,
+`SOD16_NO_TESTBR=1`, both through the gate), s6 with the escape, VM:
+
+| fused / unfused | kernel | fib | parse | corpus | loop (held out) | selection | image |
+|---|---|---|---|---|---|---|---|
+| 0= and <, kernel code | 0.959 | 1.004 | 0.960 | 0.957 | 0.998 | 0.970 | 9,937 |
+| all four, kernel code | 0.948 | 1.003 | 0.945 | 0.945 | 0.949 | 0.960 | 9,929 |
+| all four, and run time | 0.962 | 0.903 | 0.930 | 0.945 | 0.950 | 0.935 | 10,553 |
+
+The overlay costs about 620 bytes for fib's 10%: a trade the two
+objectives decide. The corpus - compiled at run time, so with fused
+branches throughout under the overlay - gives identical output; held-out
+loop gains 5% from tests in the kernel words it calls.

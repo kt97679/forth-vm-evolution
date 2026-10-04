@@ -288,3 +288,22 @@ and in seed 2's fastest design. Hand-made engines byte-identical;
 
 **Open.** GOALS.md "Next": `< IF` in run-time code (fib), via the image's
 compiler; the other tests; then a Ryzen run.
+
+## Iteration 9 - 2026-10-04 - Claude
+
+**Tests fused at run time.** IF8 compiles ?BRANCH with OP,, not COMPILE,,
+so the overlay's pair fusion never saw it; the overlay now has `?BRANCH,`
+and its own IF8 and UNTIL8, fusing the test before them from SUPER-TABLE
+entries the converter writes first. `rtfuse` builds the overlay for such
+a design even without pairs; express() keeps rtfuse then - every recorded
+id unchanged (1,308 of 1,308).
+
+**< and then = and U<**, table-driven in the converter (`TESTBR`); the
+handlers generated from one template for the plain, cached and
+multi-state engines. Measured on one engine per design, image with and
+without: all four in kernel code 0.960 (kernel 0.948, parse 0.945, corpus
+0.945, held-out loop 0.949); with the run-time overlay 0.935 (fib 0.903)
+for about 620 bytes. Hand-made engines byte-identical; --validate seven
+IDENTICAL; tests PASS. A founder fusing tests at run time added.
+
+**Open.** A third run on the Ryzen (GOALS.md "Next" 1).

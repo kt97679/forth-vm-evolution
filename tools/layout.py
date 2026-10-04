@@ -781,8 +781,19 @@ def emit(path):
             data = bytes([len(ops)] + ops); assert len(data) <= 24, "fold table overflows"
         else:
             pairs = sorted(G['SUPERS'].items(), key=lambda kv: kv[1]) if '--rtfuse' in ARGV else []
-            pairs = pairs[:24]      # the table's room (forth/cv8-fuse.4); the rest fused in the image only
-            data = bytes([len(pairs)] + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
+            # A test then ?BRANCH, fused as the compiler compiles IF, UNTIL and
+            # WHILE (forth/cv8-fuse.4, ?BRANCH,; Iteration 9) - first in the
+            # table: code compiled at run time has no other way to them. A
+            # test the compiler does not emit as one opcode is left out.
+            tests = []
+            if '--rtfuse' in ARGV and not _os.environ.get('SOD16_NO_TESTBR'):
+                for t, v in G['TESTBR'].items():
+                    if v[2] not in G['X_OPS10']: continue
+                    try: tests.append((op(t)[0], op('?BRANCH')[0], G['X_OPS10'][v[2]]))
+                    except Exception: pass
+            pairs = pairs[:24 - len(tests)]      # the table's room (forth/cv8-fuse.4); the rest fused in the image only
+            data = bytes([len(tests) + len(pairs)] + [x for e in tests for x in e]
+                         + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
             assert len(data) <= 73, "superinstruction table overflows"
         img[at:at + len(data)] = data
 

@@ -97,6 +97,12 @@ SPECS = {
     'L_x_qbr8':      (['f'], [], 'if (f) ip += 1; else ip += (int8_t)BYTE(ip);'),
     'L_x_nqbr':      (['f'], [], 'if (f) ip += (int16_t)LD16(ip); else ip += 2;'),
     'L_x_nqbr8':     (['f'], [], 'if (f) ip += (int8_t)BYTE(ip); else ip += 1;'),
+    'L_x_ltbr':      (['a', 'b'], [], 'if ((INT64)a < (INT64)b) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_ltbr8':     (['a', 'b'], [], 'if ((INT64)a < (INT64)b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_eqbr':         (['a', 'b'], [], 'if (a == b) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_eqbr8':        (['a', 'b'], [], 'if (a == b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_ultbr':        (['a', 'b'], [], 'if (a < b) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_ultbr8':       (['a', 'b'], [], 'if (a < b) ip += 1; else ip += (int8_t)BYTE(ip);'),
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch']
 

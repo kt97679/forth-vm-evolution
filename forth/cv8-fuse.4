@@ -78,3 +78,16 @@ ALIGN
 : BEGIN8 ( --- a-addr )   0 LAST-OP ! HERE ; IMMEDIATE
 : DO8 ( --- a-addr )
   POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! 0 LAST-OP ! ; IMMEDIATE
+
+\ A test straight before IF, UNTIL or WHILE (which is IF) becomes one
+\ fused branch, when SUPER-TABLE has (test, ?BRANCH, fused) - the
+\ converter writes those first (Iteration 9: < for fib, 9% of its
+\ dispatches). The test's byte is overwritten where it stands, so a
+\ branch to it still lands on the fused one; LAST-OP's rules are
+\ COMPILE,8's, and >MARK and <RESOLVE clear it after.
+: ?BRANCH, ( --- )
+  LAST-OP @ DUP IF DUP 1+ HERE = IF
+    DUP C@ 0BRANCH-OP SUPER-OP IF SWAP C! EXIT THEN
+  THEN THEN DROP 0BRANCH-OP OP, ;
+: IF8 ( --- a-addr )   ?BRANCH, >MARK ; IMMEDIATE
+: UNTIL8 ( a-addr --- )   ?BRANCH, <RESOLVE ; IMMEDIATE
