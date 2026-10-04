@@ -1,5 +1,23 @@
 # Running the evolution on a machine that is not quiet
 
+## In one command (Iteration 15)
+
+    sh ~/Downloads/next-run.sh 4
+
+`lab/evolve/next-run.sh` (also handed over beside each bundle) does all of
+this page: it pulls the newest `forth-vm-evolution*.bundle` from
+~/Downloads into the clone (fast-forward only; REPO= to choose the clone,
+default ~/git/my/forth-vm-evolution-iter14), moves the previous run's
+outputs to ~/forth-vm-evolution-runs/archived-TIME/ (never deletes them),
+removes build/ and builds again, runs the tests, `--validate` and the jail
+test, then the run (seed as given; 32 x 40, 3 rounds), `--remeasure 6`, and
+packs what to send back into ~/forth-vm-evolution-runs/forth-vm-evolution-
+seedN-....tar.gz. After the pull it goes on in the background; the last
+line of its log names the pack. Run it again with the same seed after an
+interruption and it resumes; a new commit or seed starts afresh. The
+sections below are what it does, by hand.
+
+
 ## Safety: engines are jailed (Iteration 10)
 
 A design is generated, so a broken one runs arbitrary code - and the

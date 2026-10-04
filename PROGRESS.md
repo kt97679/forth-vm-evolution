@@ -461,3 +461,19 @@ mean. A size gene, for the fourth run.
 
 **Open.** GOALS.md "Next": the fourth run on the Ryzen; then the far-call
 reach check (unmeasured, unchecked: 2 MB at scale 0 with the gene).
+
+## Iteration 15 - 2026-10-04 - Claude
+
+**The next run in one command** (`lab/evolve/next-run.sh`, asked for by the
+owner): pull the newest bundle from ~/Downloads into the existing clone
+(fast-forward only, refusing changed tracked files), then run the pulled
+copy of itself; archive the previous run's outputs outside the
+repository (moved, never deleted - seed 3's database is the record of that
+run, and the evolver would reuse its stale records: the body-check fix
+changed 1,032 designs' images under unchanged ids); rebuild; tests,
+`--validate`, the jail test; the run and `--remeasure 6` in the background;
+the pack to send back. A state file makes a second call with the same seed
+and commit resume rather than start over; a lock and a check for a running
+evolve.py keep two runs from measuring each other. Tested here on a
+simulated laptop: a clone at Iteration 14 with a fake previous run, the
+script from "Downloads", a small run, then the same command again.

@@ -66,7 +66,8 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **A fourth run on the Ryzen** with what has been added since seed 3:
+1. **A fourth run on the Ryzen** - `sh ~/Downloads/next-run.sh 4`
+   (`lab/evolve/next-run.sh`) - with what has been added since seed 3:
    the body-check fix (the front's four lost words), the second escape
    level (works, does not pay alone), the five further fused tests
    (Iteration 12: 1-2% fewer dispatches, 48 bytes smaller), one-byte
