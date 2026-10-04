@@ -46,7 +46,9 @@ for db in dbs:
     else:
         ids = E.fronts([i for i, r in R.items() if r['status'] == 'ok'], R)[0]; how = 'selection front'
         sp = {i: R[i]['speed'] for i in ids}
-    label = db.replace(home, '~', 1)
+    # a label that names the run's place, not a path whose tail two runs share
+    # (Iteration 21: ".../build/evolve/db.jsonl" was this clone's AND seed 3's archive)
+    label = ('this clone: ' + base) if '/archived-' not in db else db[db.index('archived-'):].replace('/build/evolve/', ': ')
     runs.append((label, ids)); say('%s: %d designs (%s)' % (label, len(ids), how))
     for i in ids: rec.setdefault(i, (E.canon(R[i]['genome']), R[i]['size'], sp[i]))
 CAL = 's6-cv8b'

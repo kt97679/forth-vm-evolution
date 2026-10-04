@@ -127,3 +127,11 @@ after the one recorded (02:30-02:33), same kernel, load 1.09 against 2.76.
 It agrees with the recorded sweep within error bars on kernel, corpus and
 parse; on fib its bars doubled (+-0.077 against +-0.035). A repeat, not a
 change: nothing re-recorded (prompts/09).
+
+## Settled (Iteration 21)
+
+Measured in one session with every earlier run's front
+(`results/compare-fronts-amd-ryzen-7-pro-8840hs.md`; s6 against itself
+0.991): the front of all runs together is seed 4's, all seven. The small
+end's 7.5% was the sessions: 6463752a82 is 0.989 of seed 3's best small
+design and 123 bytes smaller.

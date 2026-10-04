@@ -577,3 +577,20 @@ knows it - the hazard prompts/07 item 8 names, one turn after writing it.
 Arguments are now checked after the pull; this once, the owner pulls by
 hand. Then the same replica: no archive made, seed 4's database
 byte-identical, the table and the pack made.
+
+## Iteration 21 - 2026-10-04 - Claude
+
+**All runs' fronts measured in one session** (`next-run.sh compare` on the
+laptop, 34 designs, 10 rounds, s6 against itself 0.991):
+`results/compare-fronts-amd-ryzen-7-pro-8840hs.md`. The front of all runs
+together is seed 4's, all seven: at equal size (13,352) 1.5% faster than
+seed 3's best, at the small end 1.1% faster and 123 bytes smaller. The 7.5%
+Iteration 20 left open was the sessions' calibrations. Between sessions one
+design moves by up to 7% with the means unmoved (1.000, 0.999): designs are
+ranked within one session only. fib was again the noisiest in the
+calibration (0.946): GOALS.md "Next" 1.
+
+A slip of mine, caught before it was written: matching the databases by
+the tail of their path labelled seed 3's archived `.../build/evolve/db.jsonl`
+as this clone's (seed 4); compare-fronts.py now labels a run by its archive
+or "this clone".
