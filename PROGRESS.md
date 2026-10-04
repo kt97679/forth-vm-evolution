@@ -496,3 +496,16 @@ script.
 **Tidying.** RUNNING.md's knockout and sample commands wrote reports at the
 top (the knockout's already went to build/evolve/ too); now under
 build/evolve/. .gitignore covers the old names and lscpu's output.
+
+## Iteration 17 - 2026-10-04 - Claude
+
+**next-run.sh as a tool of the repository** (asked for by the owner; it had
+been committed since Iteration 15, but handed over as a separate download
+too, and it took its clone from a fixed path): it now works on the clone
+it is in - a copy outside one keeps the owner's path, or REPO= - and is run
+from the clone, `sh lab/evolve/next-run.sh 4`; only bundles are downloaded.
+Running it from inside the clone means the pull rewrites the script while
+it runs: git replaces the file rather than writing into it, so the shell
+reads on from the old one and then executes the pulled copy - tested,
+from the top of a clone and from elsewhere, with the clone away from the
+fixed path.

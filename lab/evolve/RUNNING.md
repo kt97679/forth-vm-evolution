@@ -2,12 +2,15 @@
 
 ## In one command (Iteration 15)
 
-    sh ~/Downloads/next-run.sh 4
+In the clone, with the new bundle in ~/Downloads:
 
-`lab/evolve/next-run.sh` (also handed over beside each bundle) does all of
-this page: it pulls the newest `forth-vm-evolution*.bundle` from
-~/Downloads into the clone (fast-forward only; REPO= to choose the clone,
-default ~/git/my/forth-vm-evolution-iter14), moves the previous run's
+    sh lab/evolve/next-run.sh 4
+
+`lab/evolve/next-run.sh` does all of this page: it pulls the newest
+`forth-vm-evolution*.bundle` from ~/Downloads into the clone it is in
+(fast-forward only; REPO= to choose another), then carries on as the
+copy it pulled - so it updates itself, and only bundles need
+downloading. It moves the previous run's
 records to ~/forth-vm-evolution-runs/archived-TIME/ (never deletes them:
 every untracked file at the top but RESULTS.md, every file in
 build/evolve/ - each seed's database and reports - and build/bench-laptop/

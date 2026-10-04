@@ -5,13 +5,14 @@
 # and checked, the run, its front measured again, and what to send back
 # packed into one file.
 #
-#     sh ~/Downloads/next-run.sh 4
+#     sh lab/evolve/next-run.sh 4       # in the clone; only bundles need downloading
 #
 # It pulls first and then runs the copy in the repository, so a newer
 # bundle brings its own script. After the pull it goes on in the
 # background: closing the terminal does not stop it.
 #
-#   REPO      the clone                 default ~/git/my/forth-vm-evolution-iter14
+#   REPO      the clone                 default the clone this script is in;
+#                                       a copy outside one: ~/git/my/forth-vm-evolution-iter14
 #   BUNDLES   where bundles arrive      default ~/Downloads
 #   RUNS      logs, archives, the pack  default ~/forth-vm-evolution-runs
 #   POP GENS ROUNDS REMEASURE           default 32 40 3 6 - seed 3's run
@@ -22,6 +23,10 @@
 # the evolver refuses (Iteration 10).
 set -eu
 SEED=${1:-4}
+# Iteration 17: the clone this script is in, wherever it is - not a fixed
+# path, which a clone elsewhere would have had pulled into and archived
+self=$(cd "$(dirname "$0")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)
+[ -z "${REPO:-}" ] && [ -n "$self" ] && [ -f "$self/lab/evolve/next-run.sh" ] && REPO=$self
 REPO=${REPO:-$HOME/git/my/forth-vm-evolution-iter14}
 BUNDLES=${BUNDLES:-$HOME/Downloads}
 RUNS=${RUNS:-$HOME/forth-vm-evolution-runs}
