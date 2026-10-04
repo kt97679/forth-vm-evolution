@@ -352,3 +352,20 @@ are now recorded dead without running ("died: reach limit at scale 0 -
 not run"): no hand-made stage and none of 2,296 living designs is
 flagged; 8cfd49f24c is declined in no time. Ids unchanged; selection the
 same - dead either way.
+
+## Iteration 11 - 2026-10-04 - Claude
+
+**Seed 3 on the Ryzen** (resumed after the freeze, engines jailed):
+1,310 designs, 1,174 alive; re-measured 0.595 at 13,464 bytes and 0.622
+at 9,785 - past seeds 1 and 2 by 2-4% and 4-7%
+(`results/evolve-amd-ryzen-7-pro-8840hs-seed3.md`). Every front design
+has all eight fused-test opcodes; pairs fell to 13 for them; the run-time
+overlay was not chosen. Deaths audited: 129 declined unrun; 7 in
+generation 1 before the freeze - 6 the scale-0 reach limit (one the fork
+bomb itself), 1 the alignment refusal; none after the resume.
+
+**Priced: more slots.** On the fastest design the next 16 pairs would
+remove 6.4-12.9% of dispatches on three workloads. Ranking its kept
+primitives by use: the rarest are rare partly because they are folded -
+escaping them would break their folds - but ten in no fold or pair come to
+0.36% of its dispatches together.

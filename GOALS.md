@@ -42,17 +42,21 @@ trying anything again (prompts/12-progress-log).
   Ryzen sample of 128: the run's best beats every random design. The
   generator fix left s6's speed unchanged on the Ryzen too (pinned, each
   row calibrated: fib 0.977, parse 0.997, corpus 0.994).
+- Seed 3, with fused tests and the flag genes
+  (`results/evolve-amd-ryzen-7-pro-8840hs-seed3.md`), re-measured: 0.595
+  at 13,464 bytes, 0.622 at 9,785 - 2-4% and 4-7% past seeds 1 and 2;
+  every front design keeps all eight fused-test opcodes, at the pairs'
+  cost (13 left). The jail and the scale-0 rule held: 129 declined unrun.
 
 ## Next, in order
 
-1. **A third run on the Ryzen** (the owner's): the gene pool has grown -
-   fused tests (`0=`, `<`, `=`, `U<` before a branch, eight format-10
-   opcodes; at run time with `rtfuse`), and the three flag genes. On one
-   engine, s6 with the escape and all four: 0.960 in kernel code, 0.935
-   with the run-time overlay (+620 bytes).
-2. **Next genes, priced first** (`lab/evolve/price.py`): two escape levels
-   (the next 16 pairs: 2-9.5% of dispatches), `=` with an immediate before
-   a branch, one-byte calls through a table of hot words.
+1. **More opcode slots** (priced at Iteration 11, `price.py`): seed 3's
+   front uses all 34 - 21 format-10 opcodes, 13 pairs - and the next 16
+   pairs would remove 6.4-12.9% of the fastest design's dispatches on
+   kernel, parse, corpus (3.3-3.9% on the smallest). Ten rare primitives in
+   no fold or pair (SP! READ RP! RP@ WRITE UM/MOD D+ NOOP SP@ UM*: 0.36% of
+   its dispatches together) could go behind the escape: ten slots.
+2. Then: `=` with an immediate before a branch (1.3-1.7%); one-byte calls.
 3. Remaining planned gene: indirect threading; then a register machine.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
