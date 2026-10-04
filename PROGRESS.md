@@ -369,3 +369,15 @@ remove 6.4-12.9% of dispatches on three workloads. Ranking its kept
 primitives by use: the rarest are rare partly because they are folded -
 escaping them would break their folds - but ten in no fold or pair come to
 0.36% of its dispatches together.
+
+**A second escape level, built and measured.** The nine rarest kept
+primitives in no fold or pair are the compacted band's tail (27-35):
+escaped too, nothing else moves - `escape=2`, 41 behind ESC, nine slots
+more; every engine form lives, level-1 designs keep identical machine
+code. It does not pay: the fastest design's own best pairs in the new
+slots cut dispatches by 0.2-2.4% (counted), not the 6.4-12.9% price.py
+said - its pair and triple columns count overlapping pairs; the tool now
+says so. Timed, both front designs lost 5-6% on the VM, in fib and loop,
+which use neither - layout. Kept as a gene; recorded as not paying.
+
+**Open.** GOALS.md "Next": `=` with an immediate before a branch.

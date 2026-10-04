@@ -120,6 +120,7 @@ if '--spec' in ARGV: G['SPEC'].update(_opt('--spec').split(','))
 if '--escape' in ARGV:
     G['ESCAPE'] = True
     G['ESC_PRIMS'].update(G['ESC_PRIMS_ALL'])
+    if '--escape2' in ARGV: G['ESC_PRIMS'].update(G['ESC2_PRIMS'])
 if '--no-varcall' in ARGV: G['VARCALL'] = False
 if '--no-varslot' in ARGV: G['VARSLOT'] = False
 UB = 1 if V8 else 2                # bytes per stream unit

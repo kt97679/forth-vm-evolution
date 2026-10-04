@@ -116,7 +116,7 @@ def super_slots(g):
     past the folds in use, and the specialisation band when SPEC is off -
     so folds, specialisations and pairs compete for the same slots."""
     return (SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
-            + (list(range(36, 68)) if g.get('escape') else []))   # ESCAPE moves primitives 36-67 behind a byte
+            + (list(range(27 if g.get('escape') == 2 else 36, 68)) if g.get('escape') else []))   # ESCAPE: primitives 36-67 behind a byte; level 2 from 27
 def overlay(g):
     """Does this CV8 design need forth/cv8-fuse.4, the compiler that fuses
     pairs at run time? Only if it has pairs and the rtfuse gene. (Its fold
@@ -293,7 +293,8 @@ def design_pairs(g, n=24):
     pool = list(SUPER_POOL)
     prims = [l.split()[1] for l in open(os.path.join(ROOT, 'forth', 'kernel.4')) if l.startswith('PRIMITIVE')]
     def prim(op):                       # this design's one-byte primitive opcodes
-        if g.get('escape'): i = op if op < 32 else op + 1 if op < 36 else None
+        if g.get('escape') == 2: i = op if op < 27 else None
+        elif g.get('escape'): i = op if op < 32 else op + 1 if op < 36 else None
         else: i = op if op < 68 else None
         return prims[i] if i is not None and i < 33 and prims[i] not in PAIRS_BAD else None
     d = os.path.join(EV, 'profile'); shutil.rmtree(d, ignore_errors=True); os.makedirs(d)
@@ -350,14 +351,14 @@ def build(g, d):
         if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
     if PROFILING[0]: flags.append('-DPROFILE=1')
-    if g.get('escape'): flags.append('-DESCAPE=1')
+    if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
     o10 = ops10_in(g)
     if o10:
         json.dump(o10, open(os.path.join(d, 'ops10.json'), 'w'))
         open(os.path.join(os.path.dirname(src), 'vm-ops10-table.h'), 'w').write(
-            ''.join('[%d] = &&%s,\n' % (op, OPS10_LABEL[w]) for w, op in o10 if not 36 <= op < 68))
+            ''.join('[%d] = &&%s,\n' % (op, OPS10_LABEL[w]) for w, op in o10 if not 27 <= op < 68))
         open(os.path.join(os.path.dirname(src), 'vm-ops10-esc.h'), 'w').write(     # the band ESCAPE frees
-            ''.join('cv8_tab[%d] = &&%s;\n' % (op, OPS10_LABEL[w]) for w, op in o10 if 36 <= op < 68))
+            ''.join('cv8_tab[%d] = &&%s;\n' % (op, OPS10_LABEL[w]) for w, op in o10 if 27 <= op < 68))
         flags.append('-DOPS10=1')
     sup = supers_in(g)
     if sup:
@@ -377,6 +378,7 @@ def build(g, d):
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
     if g.get('escape'): opts.append('--escape')
+    if g.get('escape') == 2: opts.append('--escape2')
     opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
     if g['doesfar'] and g['varcall']: opts.append('--does-far')   # see build(): far DOES> needs VARCALL
     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
@@ -520,6 +522,8 @@ def mutate(g, rnd):
             g['opt'] = rnd.choice([o for o in ('O2', 'O3', 'Os') if o != g['opt']]); what.append('-' + g['opt'])
         elif k == 'scale':
             g['scale'] = rnd.choice([s for s in range(4) if s != g['scale']]); what.append('scale=%d' % g['scale'])
+        elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
+            g['escape'] = rnd.choice([e for e in range(3) if e != g.get('escape', 0)]); what.append('escape=%d' % g['escape'])
         elif k == 'spec':
             s = rnd.choice(SPECS)
             g['spec'] = [x for x in g['spec'] if x != s] if s in g['spec'] else g['spec'] + [s]
@@ -762,6 +766,7 @@ def random_genome(rnd):
         v = g.get(k, CC0.get(k))
         if k == 'opt': g[k] = rnd.choice(['O2', 'O3', 'Os'])
         elif k == 'scale': g[k] = rnd.randrange(4)
+        elif k == 'escape': g[k] = rnd.randrange(3)
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
         elif k in ('ops10', 'supers', 'folds'):
             f = [x for x in {'ops10': OPS10_POOL, 'supers': SUPER_POOL, 'folds': POOL}[k] if rnd.random() < 0.5]

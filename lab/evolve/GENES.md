@@ -188,3 +188,23 @@ The overlay costs about 620 bytes for fib's 10%: a trade the two
 objectives decide. The corpus - compiled at run time, so with fused
 branches throughout under the overlay - gives identical output; held-out
 loop gains 5% from tests in the kernel words it calls.
+
+## Iteration 11: a second escape level - built, and it does not pay
+
+Seed 3's front uses all 34 slots (21 format-10 opcodes, 13 pairs). The
+nine rarest primitives in no fold or pair - UM* UM/MOD D+ WRITE READ SP@
+SP! RP@ RP!: 0.36% of the fastest design's dispatches - are the tail of
+the compacted band (27-35), so escaping them moves no other opcode and
+the compiler's opcode constants hold. `escape=2` puts them behind ESC too:
+41 escaped, 27-67 free, nine slots more (engine/vm-lab.c; `--escape2`).
+It lives in every engine form; designs with the existing level compile to
+identical machine code (two front designs and a tail-call one, checked).
+
+**But it does not pay.** Filled with the fastest design's own hottest
+pairs (22 with slots instead of 13), dispatches fell 0.2% (kernel), 2.4%
+(parse), 1.1% (corpus), 0 (fib, loop) - counted, so free of layout.
+`price.py` had said 6.4-12.9%: its pair and triple columns count
+overlapping pairs, each operation many times (now flagged in the tool).
+Timed on the VM, both front designs at level 2 were 5-6% slower, mostly
+fib and loop, which use neither: layout, at a cost the counts cannot
+recover. Kept as a gene, like rtfuse - selection decides.

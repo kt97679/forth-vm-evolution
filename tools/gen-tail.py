@@ -84,18 +84,21 @@ for n, ((a, name), nxt) in enumerate(zip(labels, labels[1:] + [(len(rest), None)
 # the label tables as tables of functions; then the first dispatch.
 p = re.sub(r'&&([A-Za-z_]\w*)', r'H_\1', preamble)
 p = p.replace('static const void *const dispatch[] = {', 'static const hfn dispatch[] = {')
-p = p.replace('const void *cv8_tab[128], *esc_tab[32];', 'hfn cv8_tab[128], esc_tab[32];')
+ESC_N = re.search(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', p)        # 32, or 41 at ESCAPE == 2
+ESC_N = int(ESC_N.group(1)) if ESC_N else 0
+p = re.sub(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', r'hfn cv8_tab[128], esc_tab[\1];', p)
 p = p.replace('static const void *dtab256[256];', '')
 p = p.replace('dtab256', 'htab')
 entry = ('static void virtual_machine(void) {\n%s\n'
          '    tc_dsp_limit = dsp_limit; tc_rp_limit = rp_limit; tc_cbase = cbase;\n'
          '%s'
          '    t = (*(unsigned char*)(ip)); ip += 1;\n'
-         '    htab[t]%s;\n}\n') % (p, '    { int e_; for (e_ = 0; e_ < 32; e_++) esc_ftab[e_] = esc_tab[e_]; }\n'
-                                  if 'esc_tab[32]' in p else '', PASS)
+         '    htab[t]%s;\n}\n') % (p, '    { int e_; for (e_ = 0; e_ < %d; e_++) esc_ftab[e_] = esc_tab[e_]; }\n' % ESC_N
+                                  if ESC_N else '', PASS)
 head = ('typedef void (*hfn)(%s);\n'
-        'static hfn htab[256], esc_ftab[32];\n'
+        'static hfn htab[256], esc_ftab[ESC_FTAB_N];\n'
         'static UNS64 tc_dsp_limit, tc_rp_limit, tc_cbase, tc_ip, tc_dsp, tc_rp, tc_tos, tc_t;\n' % ARGS
         + ''.join('static void H_%s(%s);\n' % (n, ARGS) for n in names))
+head = head.replace('ESC_FTAB_N', str(max(ESC_N, 32)))   # 32 as ever at level 1; 41 at level 2
 open(sys.argv[2], 'w').write(pre + head + ''.join(funcs) + entry + post)
 print('%d handlers as functions, %d wrapped' % (len(names), len(WRAP & set(names))))

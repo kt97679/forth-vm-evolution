@@ -50,13 +50,12 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **More opcode slots** (priced at Iteration 11, `price.py`): seed 3's
-   front uses all 34 - 21 format-10 opcodes, 13 pairs - and the next 16
-   pairs would remove 6.4-12.9% of the fastest design's dispatches on
-   kernel, parse, corpus (3.3-3.9% on the smallest). Ten rare primitives in
-   no fold or pair (SP! READ RP! RP@ WRITE UM/MOD D+ NOOP SP@ UM*: 0.36% of
-   its dispatches together) could go behind the escape: ten slots.
-2. Then: `=` with an immediate before a branch (1.3-1.7%); one-byte calls.
+1. **`=` with an immediate before a branch** (EQI then ?BRANCH: 1.3-1.7% of
+   the dispatches on kernel, parse, corpus - a pattern that cannot overlap,
+   so priced reliably); then one-byte calls through a table of hot words.
+2. A fourth run on the Ryzen when a gene that pays is in. The second
+   escape level (Iteration 11) works but does not pay; it alone does not
+   warrant one.
 3. Remaining planned gene: indirect threading; then a register machine.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
@@ -68,6 +67,7 @@ trying anything again (prompts/12-progress-log).
 |---|---|---|
 | Native code in the genome: relf's native compiler as a family of its own, or our SPN with relf's rules as genes | deferred by the user (Iteration 4) after measuring it (Iteration 3): our corpus byte for byte, our kernel workload a segmentation fault in cross.4's RESOLVE, 3-10 times faster than s6 on the VM | PROGRESS.md, Iterations 3 and 4 |
 | Profile-guided optimisation of the engine as a gene | measured, not built (Iteration 7): 0.903 on s6 only when trained on the measured workloads; trained on a separate program, 0.980 - what -fprofile-use's flags give without a profile; three of those flags became genes instead | `lab/evolve/GENES.md`; `lab/evolve/pgo-train.fth` |
+| A second escape level - nine more primitives behind ESC for nine slots | built, measured, does not pay (Iteration 11): with the design's own best pairs in the slots, 0.2-2.4% fewer dispatches - price.py's 6.4-12.9% counted overlapping pairs; kept as a gene for selection | `lab/evolve/GENES.md` |
 | Triples - three operations as one opcode | priced, not built (Iteration 8): at most 0-4.9% of dispatches on the front, none on fib, before overlaps and slots - tests before branches came out larger | `lab/evolve/GENES.md`; `lab/evolve/price.py` |
 | Load-time direct threading (a decode cache invalidated on every store) | deferred, not built: the dispatch lab gave direct over token threading -5% fib, -12% sieve, but +9% loop; relf S8 found dispatch already at the indirect-jump rate | `lab/evolve/GENES.md` 1; `lab/dispatch/README.md` |
 | Run-time fusion of pairs (`rtfuse`) | built, kept as a gene, selection rejects it: +560-576 bytes, s6 with two pairs 0.956 -> 0.970 (VM) | 53017b4; `lab/evolve/README.md` phase 2b |

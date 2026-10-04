@@ -980,22 +980,41 @@ static void virtual_machine(void) {
      *  ones are reached as ESC + index. dispatch[] is in kernel.4
      *  order, so both tables are derived from it here rather than
      *  written out twice.  */
-    static const UNS8 esc_k[32] = { 32,
+#if ESCAPE == 2
+    /*  The second level (Iteration 11): also the nine rarest of the rest -
+     *  UM* UM/MOD D+ WRITE READ SP@ SP! RP@ RP! - which are the tail of
+     *  the compacted band (27..35), so no opcode before them moves and the
+     *  compiler's opcode constants (EXIT-OP .. 0BRANCH-OP) still hold. In
+     *  kernel.4 order the escaped are then 27..67, contiguous: 41 of them,
+     *  and 27..67 free - nine slots more.  */
+#define ESC_N 41
+    static const UNS8 esc_k[ESC_N] = { 27,28,29,30,31,32,33,34,35,36,
         37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,
         52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67 };
-    const void *cv8_tab[128], *esc_tab[32];
+#else
+#define ESC_N 32
+    static const UNS8 esc_k[ESC_N] = { 32,
+        37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,
+        52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67 };
+#endif
+    const void *cv8_tab[128], *esc_tab[ESC_N];
     { int i_, n_ = (int)(sizeof dispatch / sizeof dispatch[0]);
       for (i_ = 0; i_ < 128; i_++) cv8_tab[i_] = (i_ < n_) ? dispatch[i_] : &&L_noop;
+#if ESCAPE == 2
+      for (i_ = 0; i_ < 27; i_++)  cv8_tab[i_] = dispatch[i_];
+      for (i_ = 27; i_ < 68; i_++) cv8_tab[i_] = &&L_noop;          /* freed */
+#else
       for (i_ = 0; i_ < 32; i_++)  cv8_tab[i_] = dispatch[i_];
       for (i_ = 32; i_ < 36; i_++) cv8_tab[i_] = dispatch[i_ + 1];  /* SP@..RP! */
       for (i_ = 36; i_ < 68; i_++) cv8_tab[i_] = &&L_noop;          /* freed */
+#endif
 #if SUPER   /* what this design put in the freed band (lab/evolve): */
 #include "vm-super-esc.h"
 #endif
 #if OPS10   /* assigned here, as dispatch[36..67] still holds the escaped primitives */
 #include "vm-ops10-esc.h"
 #endif
-      for (i_ = 0; i_ < 32; i_++)  esc_tab[i_] = dispatch[esc_k[i_]]; }
+      for (i_ = 0; i_ < ESC_N; i_++)  esc_tab[i_] = dispatch[esc_k[i_]]; }
 #define dispatch cv8_tab
 #endif
 #if ENC == 3 && SHAREDCALL && DISPATCH256

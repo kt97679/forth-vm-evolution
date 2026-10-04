@@ -12,6 +12,12 @@ opcode slots a fusion would need are ignored):
                     16 three-operation fusions could add
   next 16 pairs     the hottest primitive pairs still unfused - what more
                     opcode slots (a second escape level) could host
+                    CAUTION (Iteration 11): pairs and triples OVERLAP - DUP >R,
+                    >R DUP and SWAP DUP count the same operations, each fusable
+                    once - so these two columns overstate, by 3-10 times: the
+                    nine best of the next 16, given slots, removed 0.2-2.4%
+                    where this column said 6.4-12.9%. A test before a branch
+                    cannot overlap: that column held (4% priced, 3% measured).
   test -> branch    a test followed by a conditional branch, by test - what
                     fusing them could save
   calls, EXIT       how much of the stream they are
@@ -43,7 +49,8 @@ for did in args:
     if did not in recs: sys.exit('no design %s in %s' % (did, db))
     g = E.canon(recs[did]['genome'])
     def prim(op):              # a fusable primitive (as design_pairs)
-        if g.get('escape'): i = op if op < 32 else op + 1 if op < 36 else None
+        if g.get('escape') == 2: i = op if op < 27 else None
+        elif g.get('escape'): i = op if op < 32 else op + 1 if op < 36 else None
         else: i = op if op < 68 else None
         return prims[i] if i is not None and i < 33 and prims[i] not in E.PAIRS_BAD else None
     sup = {x[2]: '%s+%s' % (x[0], x[1]) for x in E.supers_in(g)}
@@ -52,7 +59,8 @@ for did in args:
         if op in sup: return sup[op]
         if op in o10: return o10[op]
         if op >= 128: return 'call'
-        if g.get('escape'): i = op if op < 32 else op + 1 if op < 36 else None
+        if g.get('escape') == 2: i = op if op < 27 else None
+        elif g.get('escape'): i = op if op < 32 else op + 1 if op < 36 else None
         else: i = op if op < 68 else None
         if i is not None and i < len(prims): return prims[i]
         return SPECBAND.get(op, 'op%d' % op)
@@ -83,7 +91,7 @@ for did in args:
     for (w, t), k in T.items(): mean[t] += k / D[w] / len(E.WORK_SEL)
     best = [t for t, _ in mean.most_common(16)]
     print('## %s - %d pairs, %d format-10 words\n' % (did, len(sup), len(o10)))
-    print('| workload | dispatches | pairs save | best 8 triples | best 16 | next 16 pairs | test -> branch | calls | EXIT |')
+    print('| workload | dispatches | pairs save | best 8 triples (overlap: overstated) | best 16 | next 16 pairs (overlap: overstated) | test -> branch | calls | EXIT |')
     print('|---|---|---|---|---|---|---|---|---|')
     for w in E.WORK_SEL:
         up = sorted((k for (ww, _), k in UP.items() if ww == w), reverse=True)

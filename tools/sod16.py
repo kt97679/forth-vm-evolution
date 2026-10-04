@@ -624,6 +624,9 @@ WRITE-FILE SYSTEM REPOSITION-FILE FILE-POSITION DELETE-FILE FILE-SIZE FORK
 EXECVE WAITPID PIPE DUP2 GETENV SETENV SYS-EXIT CHDIR GETCWD SYS-ARGC SYS-ARG
 GETPID UNSETENV ALLOCATE FREE RESIZE GETPWHOME GETFSIZE SETFSIZE""".split())
 
+# The second level (Iteration 11, --escape2): the nine rarest of the rest,
+# the compacted band's tail, so nothing before them moves (engine/vm-lab.c).
+ESC2_PRIMS = set('UM* UM/MOD D+ WRITE READ SP@ SP! RP@ RP!'.split())
 ESC_PRIMS = set()     # populated from ESC_PRIMS_ALL when --escape is on
 
 def cv8_op(name):

@@ -35,7 +35,7 @@ for k, (a, b, op) in enumerate(pairs):
     # FILLNEXT() - refill the top, then dispatch: here, refill, then go on.
     first = body(a).replace('FILLNEXT();', 'POPT(); goto LSB_%d;' % k).replace('NEXT();', 'goto LSB_%d;' % k)
     bodies.append('LS_%d: /* %s %s */\n%sLSB_%d:\n%s' % (k, a, b, first, k, body(b)))
-    if 36 <= op < 68: esc.append('cv8_tab[%d] = &&LS_%d;' % (op, k))   # the band ESCAPE frees
+    if 27 <= op < 68: esc.append('cv8_tab[%d] = &&LS_%d;' % (op, k))   # the band ESCAPE frees: 36..67, 27..67 at level 2
     else: table.append('[%d] = &&LS_%d,' % (op, k))
 d = os.path.dirname(os.path.abspath(sys.argv[1]))
 open(os.path.join(d, 'vm-super-table.h'), 'w').write('\n'.join(table) + '\n')
