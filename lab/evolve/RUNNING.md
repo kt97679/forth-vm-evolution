@@ -134,7 +134,8 @@ not bred:
 
     python3 lab/evolve/evolve.py --sample 128 --rounds 3 > sample.md
 
-Its records go to `build/evolve/sample-seed1.jsonl`, never the run's
-database; run again, it resumes. `sample.md` has how many live, the
+Its records go to `build/evolve/sample-seed1-POOL.jsonl` - POOL a
+fingerprint of the gene pool, since a new gene changes the draws - never
+the run's database; run again, it resumes. `sample.md` has how many live, the
 spread of speed and size, the run's best placed in it, and every death
 by cause. On the VM, 32 designs took about three minutes.

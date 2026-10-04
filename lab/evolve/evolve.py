@@ -76,8 +76,16 @@ for h in HOT:
 # shared indirect jump (-fno-gcse, -fno-crossjumping); gforth also keeps
 # blocks in order and code compact. -fcf-protection=none drops endbr64.
 CFLAGS = {'nogcse': '-fno-gcse', 'nocrossjump': '-fno-crossjumping', 'nocet': '-fcf-protection=none',
-          'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks'}
-CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0)
+          'align1': '-falign-labels=1 -falign-jumps=1', 'noreorder': '-fno-reorder-blocks',
+          # Iteration 7: what -fprofile-use switches on that helped s6 without
+          # a profile - fib 6-7% better, beyond the layout-only band; on the
+          # selection mean at the band's edge (lab/evolve/GENES.md).
+          'peel': '-fpeel-loops', 'ipaclone': '-fipa-cp-clone', 'tracer': '-ftracer'}
+CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, peel=0, ipaclone=0, tracer=0)
+# Genes added after runs were recorded: left out of a design's identity when
+# off, so every design recorded before them keeps its id (databases resume,
+# knockouts and reports still find their designs by id).
+LATE = ('peel', 'ipaclone', 'tracer')
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
 def human(enc, **kw):
@@ -137,6 +145,7 @@ def canon(g):
     g = dict(g); g['spec'] = [s for s in SPECS if s in g['spec']]; g['folds'] = list(g['folds'])
     g['supers'] = [list(x) for x in g.get('supers', [])]
     g['ops10'] = list(g.get('ops10', []))
+    for k in LATE: g.setdefault(k, 0)          # genomes recorded before them: off
     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
     return g
 def express(g):
@@ -155,6 +164,8 @@ def express(g):
     if 'tail' in e and not g['tos']: e.pop('tail')                     # made from the cached engine only
     if e.get('tail'):                                                  # one call function, 256-entry table
         e.pop('d256', None); e.pop('sharedcall', None)
+    for k in LATE:
+        if not e.get(k): e.pop(k, None)                                # see LATE
     return e
 def gid(g):
     return hashlib.sha1(json.dumps(express(g), sort_keys=True).encode()).hexdigest()[:10]
@@ -720,7 +731,11 @@ def sample(argv):
     val = lambda k, d: argv[argv.index(k) + 1] if k in argv else d
     n, seed, rounds = int(val('--sample', 0)), int(val('--seed', 1)), int(val('--rounds', 2))
     rnd = random.Random(seed); draws = [random_genome(rnd) for _ in range(n)]
-    path = os.path.join(EV, 'sample-seed%d.jsonl' % seed); done = {}
+    # The draws depend on the gene pool: a new gene changes every draw after
+    # the first that meets it. So the file is named after the pool, and a
+    # sample drawn from another pool is never mixed in.
+    pool = hashlib.sha1(json.dumps([FAMILIES, CC0, EXPRESSED, SPECS, OPS10_POOL, SUPER_POOL, POOL, FOLDMAX], sort_keys=True).encode()).hexdigest()[:6]
+    path = os.path.join(EV, 'sample-seed%d-%s.jsonl' % (seed, pool)); done = {}
     if os.path.exists(path):
         for line in open(path):
             try: r = json.loads(line); done[r['id']] = r

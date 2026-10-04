@@ -43,3 +43,35 @@ Superinstructions" (complang.tuwien.ac.at/forth/gforth/Docs-html/);
 CPython Python/ceval_macros.h; Wasm3 (github.com/wasm3/wasm3); WasmKit
 PR 145 (github.com/swiftwasm/WasmKit); Shi, Gregg, Beatty, "Virtual
 Machine Showdown: Stack versus Registers", VEE 2005.
+
+## Iteration 7: profile-guided optimisation measured - and three flags from inside it
+
+**PGO is not a gene.** On s6's engine (VM, paired, CPU time), against plain
+-O2: trained on the four measured workloads, 0.903 on them and 0.877 on
+held-out loop - but that is the benchmark tuning itself. Trained on
+`pgo-train.fth`, a program with the same ingredients and none of the
+measured text, 0.980 on the four: exactly what -fprofile-use's flags give
+with no profile at all (0.980), and fib slower (1.012). Two extra compiles
+and a training run per design, for what the flags give anyway.
+
+**The flags inside it.** One at a time on s6, with four layout-only builds
+(-falign-functions/-loops 16, 32, 64; -fno-align-jumps) as the control,
+same session:
+
+| build | selection | fib | parse | loop (held out) |
+|---|---|---|---|---|
+| layout only, four builds | 0.972-0.994 | 0.971-1.028 | 0.954-0.978 | 0.899-0.990 |
+| -fpeel-loops | 0.956 | 0.936 | 0.947 | 0.911 |
+| -fipa-cp-clone | 0.961 | 0.930 | 0.957 | 0.926 |
+| -ftracer | 0.977 | 0.934 | 0.979 | 0.924 |
+| -funroll-loops | 1.015 | 1.001 | 0.980 | 1.062 |
+
+Held-out loop's 7-9% is layout: moving code alone gives it 10%. fib's 6-7%
+is beyond the layout band, for all three flags, in two sessions; on the
+selection mean the best flag beats the best layout by under 2%. Added as
+genes `peel`, `ipaclone`, `tracer`, because they are cheap and selection
+on the real machine decides - but on the VM they do not help the front:
+seed 2's fastest design (multi-state) + peel -1.0%, + ipaclone -0.3%,
++ tracer +2.9% (slower), where s6 gains 2-4%. Left out of a design's
+identity when off (`LATE` in evolve.py): every recorded id is unchanged -
+1,308 of 1,308 in seed 2's database, 1,306 of 1,306 in the VM rehearsal's.

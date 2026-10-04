@@ -39,23 +39,18 @@ trying anything again (prompts/12-progress-log).
 - Seed 2 on the Ryzen (`results/evolve-amd-ryzen-7-pro-8840hs-seed2.md`)
   found the same front as seed 1, re-measured: 0.619 at 13,472 bytes
   (seed 1: 0.609), 0.667 at 9,761 (0.649 at 9,801) - the same genes. The
-  Ryzen sample of 128: the run's best beats every random design.
+  Ryzen sample of 128: the run's best beats every random design. The
+  generator fix left s6's speed unchanged on the Ryzen too (pinned, each
+  row calibrated: fib 0.977, parse 0.997, corpus 0.994).
 
 ## Next, in order
 
-1. **On the Ryzen, one check** (the owner's, about two minutes): the fix
-   of Iteration 5 changed hand-made s6's machine code - same size, same
-   behaviour, within noise on the VM. Every speed is s6-relative, so
-   before comparing later runs with seeds 1 and 2: `tools/compare-commits.py
-   73e1e68 e456c0b --systems s6-cv8b --workloads fib,parse,corpus --rounds
-   20`. The first try (Iteration 6) was unpinned and calibrated on fib
-   alone - inconclusive for corpus (1.047 against a calibration of 1.030);
-   the tool now pins itself and calibrates every row.
-2. **The next genes, from `lab/evolve/SEARCH-SPACE.md`**: of its 14
-   candidates and 4 deliberate strangers, first those cheap to try and
-   likely to matter - profile-guided optimisation of the engine; triples;
-   two escape levels; one-byte calls through a table of hot words (a
-   stranger).
+1. **The next genes, from `lab/evolve/SEARCH-SPACE.md`**: of its 13
+   candidates and 4 deliberate strangers, first those likely to matter -
+   triples; two escape levels; one-byte calls through a table of hot words
+   (a stranger). PGO was measured at Iteration 7 and is not a gene.
+2. **A third run on the Ryzen when genes have been added** - the three flag
+   genes alone do not warrant one: on the VM they do not help the front.
 3. Remaining planned gene: indirect threading; then a register machine.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
@@ -66,6 +61,7 @@ trying anything again (prompts/12-progress-log).
 | approach | what decided it | where |
 |---|---|---|
 | Native code in the genome: relf's native compiler as a family of its own, or our SPN with relf's rules as genes | deferred by the user (Iteration 4) after measuring it (Iteration 3): our corpus byte for byte, our kernel workload a segmentation fault in cross.4's RESOLVE, 3-10 times faster than s6 on the VM | PROGRESS.md, Iterations 3 and 4 |
+| Profile-guided optimisation of the engine as a gene | measured, not built (Iteration 7): 0.903 on s6 only when trained on the measured workloads; trained on a separate program, 0.980 - what -fprofile-use's flags give without a profile; three of those flags became genes instead | `lab/evolve/GENES.md`; `lab/evolve/pgo-train.fth` |
 | Load-time direct threading (a decode cache invalidated on every store) | deferred, not built: the dispatch lab gave direct over token threading -5% fib, -12% sieve, but +9% loop; relf S8 found dispatch already at the indirect-jump rate | `lab/evolve/GENES.md` 1; `lab/dispatch/README.md` |
 | Run-time fusion of pairs (`rtfuse`) | built, kept as a gene, selection rejects it: +560-576 bytes, s6 with two pairs 0.956 -> 0.970 (VM) | 53017b4; `lab/evolve/README.md` phase 2b |
 | READ/WRITE stencils making the system call themselves | not built: they would bypass the engine's buffers (`t_obuf`, `t_ibuf`) | 973435c; `FINDINGS-SPN.md` |

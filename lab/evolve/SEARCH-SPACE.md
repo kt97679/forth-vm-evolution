@@ -39,7 +39,7 @@ the included ones checked to be among them.
 | native code | 3 | 1 | SPN stencils; an optimising compiler |
 | **all 11 axes** | **66** | **35** | **31 missing** |
 
-Every missing value decided (14 candidate, 8 excluded, 4 stranger, 4 deferred, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
+Every missing value decided (13 candidate, 9 excluded, 4 stranger, 4 deferred, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
 
 | missing value | decided | why |
 |---|---|---|
@@ -64,7 +64,7 @@ Every missing value decided (14 candidate, 8 excluded, 4 stranger, 4 deferred, 1
 | pairs chosen from the image itself | stranger | see step 4 |
 | headers apart from code | candidate | separated heads, known in Forths - denser code |
 | number of hash threads | candidate | kernel-level; FIND's speed is most of parse and corpus |
-| profile-guided optimisation | candidate | strong: the engine is one large function whose layout GCC can only guess |
+| profile-guided optimisation | excluded | measured at Iteration 7 (GENES.md): 0.903 only when trained on the measured workloads themselves; trained on a separate program, 0.980 - what its flags give with no profile. Three of those flags became genes |
 | -march=native | candidate | cheap; designs tuned to the machine they are measured on |
 | LTO | excluded | one translation unit - nothing across units to optimise |
 | global register variables | candidate | gforth pins ip, sp and the top of stack this way |

@@ -223,3 +223,40 @@ three sessions.
 
 **Open.** The same check again on the Ryzen with the new tool (GOALS.md,
 "Next" 1).
+
+## Iteration 7 - 2026-10-04 - Claude
+
+**The s6 check on the Ryzen, second try** (pinned to cpu 2, 20 rounds,
+each row calibrated): fib 0.977 (calibration 0.995), parse 0.997 (1.012),
+corpus 0.994 (1.000). corpus's 1.047 of the first try was the unpinned
+noise; fib's 0.977 is at the 2% floor and the first try had it at 1.011,
+the other way. No correction factor: later runs compare with seeds 1 and
+2 to within the ~2% noise. Noted, unexplained: fib's absolute time was
+21.5 ms in the first try and 34.4 ms in the second, parse and corpus the
+same both times - paired ratios do not see such a shift, and they have
+reproduced across sessions.
+
+**PGO, measured before building** (prompts/10). Upper bound first - s6
+trained on the four measured workloads: 0.903 on them, 0.877 on held-out
+loop. A first look said no profile had been written: my glob missed the
+nested directory GCC 13 writes it in; the profile was there and used. A
+control - -fprofile-use with no profile - gave 0.974: most of the gain is
+the profile's. Then honestly, trained on `lab/evolve/pgo-train.fth` (new:
+none of the measured text; checksum 52163 on the cell engine and s6):
+0.980 on the four, the same as the flags alone, fib 1.012. PGO is not a
+gene. Ablating the flags with four layout-only builds as the control:
+loop's gains are layout (moving code alone gives it 10%); fib's 6-7% from
+-fpeel-loops, -fipa-cp-clone and -ftracer is beyond the layout band.
+Added as genes `peel`, `ipaclone`, `tracer`; on the VM they help s6 2-4%
+and seed 2's fastest design not at all (+ tracer 2.9% slower) - selection
+on the Ryzen decides.
+
+**Ids kept.** Three new compiler genes would have changed every design's
+id (express() includes every compiler gene). Genes added after recorded
+runs (`LATE`) are now left out of the identity when off and default to
+off in old genomes: 1,308 of 1,308 ids in seed 2's database and 1,306 of
+1,306 in the VM rehearsal's recompute identically. The sampler's file is
+named after a fingerprint of the gene pool - a new gene changes its draws.
+
+**Open.** GOALS.md, "Next": triples, two escape levels, one-byte calls
+through a table of hot words.
