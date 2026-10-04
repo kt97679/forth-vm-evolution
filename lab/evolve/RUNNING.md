@@ -95,9 +95,10 @@ designs were partly chosen for luck - in the VM rehearsal they came out
 with six rounds and adds a "re-measured" column to the report: quote
 those numbers.
 
-A build step that fails is tried once more before the design dies, and
-a death now records why - the converter's or the compiler's last error
-line - in `build/evolve/db.jsonl`.
+A build step that fails is not tried again - a retry added for
+"transient" failures was removed once their real cause was found (the
+register in GOALS.md); the design dies, and the death records why - the
+converter's or the compiler's last error line - in `build/evolve/db.jsonl`.
 
 ## Then: what each gene is worth
 
