@@ -58,6 +58,13 @@ trying anything again (prompts/12-progress-log).
 - **The held-out loop moves with the image's size mod 8**: code compiled at
   run time pads `(LOOP)`'s operand with 0-7 NOOPs, run on every pass (about
   4% each) - compare designs on loop only at equal size mod 8.
+- **Seed 4** (`results/evolve-amd-ryzen-7-pro-8840hs-seed4.md`), with the
+  fix, the second escape level, Iteration 12's tests and one-byte calls,
+  re-measured: 0.589 at 13,352 bytes (seed 3: 0.595 at 13,464); the small
+  end 262-410 bytes smaller, 0.669 at 9,523 to 0.727 at 9,335 (seed 3: 0.622
+  at 9,785). One-byte calls on six of the seven front designs. The run's
+  calibration was poor - s6 against itself 1.038, fib 1.117 (seed 3: 0.986,
+  kernel 0.926) - so seeds a few per cent apart are not yet ranked.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -66,12 +73,11 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **A fourth run on the Ryzen** - `sh lab/evolve/next-run.sh 4` in the
-   clone - with what has been added since seed 3:
-   the body-check fix (the front's four lost words), the second escape
-   level (works, does not pay alone), the five further fused tests
-   (Iteration 12: 1-2% fewer dispatches, 48 bytes smaller), one-byte
-   calls - selection weighs them together.
+1. **Seeds 3 and 4's fronts measured in one session** - paired, more
+   rounds, with s6 against itself as the check: seed 4's small end is 7.5%
+   slower than seed 3's best small design, measured in different sessions
+   whose calibrations were 0.986 and 1.038. A mode of next-run.sh, so it
+   stays one command; it must not archive the seed 4 database.
 2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.

@@ -545,3 +545,22 @@ calling a suite green, not handing over a script - and that is the
 miss that nearly cost the earlier databases; its trigger now names it.
 11 applied to the pack the script sends back and was not consulted; it
 asks for nothing the pack lacks.
+
+## Iteration 20 - 2026-10-04 - Claude
+
+**Seed 4 recorded** (`results/evolve-amd-ryzen-7-pro-8840hs-seed4.md`), run by
+next-run.sh on the laptop: 1,310 designs, 1,188 alive, 37 minutes; the
+archive step kept seeds 1-3, the rehearsal and the bench archives
+(MANIFEST on the laptop). Re-measured: 0.589 at 13,352 bytes; the small end
+0.669 at 9,523 to 0.727 at 9,335. One-byte calls on six of the seven front
+designs; the second escape level on the fastest, holding 17 pairs.
+
+**The calibration was poor**: s6 against itself 1.038, fib 1.117 (seed 3,
+looked up: 0.986, kernel 0.926 - not noticed then). The re-measure took
+up to 24% off the selected figures. So seed 4's small end - 7.5% slower
+than seed 3's best small design - is open: both fronts in one session
+(GOALS.md "Next" 1). Deaths audited: 121 declined, 1 timeout - the scale-1
+near-DOES> reach limit, verified by rebuilding it here (lives with
+doesfar=1 alone). The laptop's later benchmark sweep (02:48Z, sent back by
+next-run.sh's stash) agrees with the recorded one within error bars: not
+re-recorded.

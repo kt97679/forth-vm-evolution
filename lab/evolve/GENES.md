@@ -326,3 +326,14 @@ inside its own noise: the same run with two identical images gave
 Open: the far form's reach - 2 MB at scale 0 with the gene, 4 MB without -
 is not checked by cv8.4's compiler, and how far the workloads' dictionary
 grows was not measured here.
+
+## Seed 4: what selection made of Iterations 11-14
+
+`results/evolve-amd-ryzen-7-pro-8840hs-seed4.md`, re-measured front of seven:
+one-byte calls on six (five with 32 targets; 56% of the living); Iteration
+12's tests, seven or eight on every one; the words restored at Iteration 13
+on every one. The second escape level - built and found not to pay alone
+at Iteration 11 - is on the fastest design and one small one, holding 17
+and 18 pairs where the others hold 7-8: format-10 opcodes take 26-28 slots
+now, and the nine more are what pairs need. Selection weighed it with the
+rest and kept it.
