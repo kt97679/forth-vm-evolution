@@ -8,8 +8,11 @@
 this page: it pulls the newest `forth-vm-evolution*.bundle` from
 ~/Downloads into the clone (fast-forward only; REPO= to choose the clone,
 default ~/git/my/forth-vm-evolution-iter14), moves the previous run's
-outputs to ~/forth-vm-evolution-runs/archived-TIME/ (never deletes them),
-removes build/ and builds again, runs the tests, `--validate` and the jail
+records to ~/forth-vm-evolution-runs/archived-TIME/ (never deletes them:
+every untracked file at the top but RESULTS.md, every file in
+build/evolve/ - each seed's database and reports - and build/bench-laptop/
+and build/results/; MANIFEST.txt lists them), removes the rest of build/
+and builds again, runs the tests, `--validate` and the jail
 test, then the run (seed as given; 32 x 40, 3 rounds), `--remeasure 6`, and
 packs what to send back into ~/forth-vm-evolution-runs/forth-vm-evolution-
 seedN-....tar.gz. After the pull it goes on in the background; the last
@@ -143,13 +146,13 @@ converter's or the compiler's last error line - in `build/evolve/db.jsonl`.
 
 ## Then: what each gene is worth
 
-    python3 lab/evolve/evolve.py --knockout ID,ID,... > knockout.md
+    python3 lab/evolve/evolve.py --knockout ID,ID,...
 
 For each design (default: the front, re-measured where `--remeasure` was
 run), every gene that differs from hand-made s6 is set back to s6's
 value, one at a time, and the design measured again: what that gene is
-worth in that design. Progress goes to the screen, the report to
-`knockout.md` - machine, commit, a calibration (s6 against itself, the
+worth in that design. Progress and the report go to the screen, and the
+report to `build/evolve/knockout.md` - machine, commit, a calibration (s6 against itself, the
 design itself) and one table per design. About 7 s per variant at the
 default 6 rounds, so a few minutes per design. `--db FILE` reads a
 database kept aside. Run it when no evolution is running: both pin a core
@@ -173,7 +176,7 @@ skips that.
 Before trusting the front (prompts/02, step 5) - designs drawn at random,
 not bred:
 
-    python3 lab/evolve/evolve.py --sample 128 --rounds 3 > sample.md
+    python3 lab/evolve/evolve.py --sample 128 --rounds 3 > build/evolve/sample.md
 
 Its records go to `build/evolve/sample-seed1-POOL.jsonl` - POOL a
 fingerprint of the gene pool, since a new gene changes the draws - never

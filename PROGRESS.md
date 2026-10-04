@@ -477,3 +477,22 @@ and commit resume rather than start over; a lock and a check for a running
 evolve.py keep two runs from measuring each other. Tested here on a
 simulated laptop: a clone at Iteration 14 with a fake previous run, the
 script from "Downloads", a small run, then the same command again.
+
+## Iteration 16 - 2026-10-04 - Claude
+
+**next-run.sh would have deleted the earlier seeds' databases.** Its
+fresh start kept four named files (db.jsonl, report.md, remeasure.json,
+sample-*.jsonl) and then removed build/ - where the owner's laptop also
+keeps db-seed1.jsonl, db-seed2.jsonl, db-rehearsal.jsonl, their reports
+and re-measures, knockout.md, five bench-laptop archives and
+build/results/. Found from the owner's `find .`, before any run. It now
+keeps by kind: every untracked file at the top (but RESULTS.md, the
+sweep's working copy), every file in build/evolve/, build/bench-laptop/
+and build/results/ - moved, with a MANIFEST.txt - and removes only the
+rest. The test that passed at Iteration 15 had one database in build/;
+the new one replays the laptop's tree, upgrading from Iteration 15's
+script.
+
+**Tidying.** RUNNING.md's knockout and sample commands wrote reports at the
+top (the knockout's already went to build/evolve/ too); now under
+build/evolve/. .gitignore covers the old names and lscpu's output.

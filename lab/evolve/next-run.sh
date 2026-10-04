@@ -75,17 +75,32 @@ trap 'echo; echo "next-run: FAILED in the step above - $RUN/next-run.log"' EXIT
 step "$WANT - $MODE"
 
 if [ "$MODE" = fresh ]; then
-    step "the previous run's outputs, kept"
+    # Iteration 16: by kind, not by name - the first version kept four named
+    # files and removed the rest of build/, with the earlier seeds'
+    # databases and the benchmark archives in it (the owner's find . showed
+    # them before it ran). Moved, never deleted.
+    step "the previous runs' records, kept"
     A=$RUNS/archived-$(date -u +%Y%m%d-%H%M%S)
-    for f in build/evolve/db.jsonl build/evolve/report.md build/evolve/remeasure.json \
-             build/evolve/next-run.state build/evolve/sample-*.jsonl \
-             evolve*.log nohup.out knockout*.md sample*.md lscpu*.txt; do
-        [ -e "$f" ] || continue
-        git ls-files --error-unmatch "$f" >/dev/null 2>&1 && continue      # tracked: not a run's output
-        mkdir -p "$A/$(dirname "$f")"; mv "$f" "$A/$f"; echo "   $f"
+    keep() { mkdir -p "$A/$(dirname "$1")"; mv "$1" "$A/$1"; echo "   $1"; }
+    for f in * .[!.]*; do                     # at the top: every file git does not track -
+        [ -f "$f" ] || continue                # logs, reports, checks saved by hand -
+        [ "$f" != RESULTS.md ] || continue     # but the sweep's working copy (.gitignore)
+        if git ls-files --error-unmatch -- "$f" >/dev/null 2>&1; then continue; fi
+        keep "$f"
     done
-    if [ -d "$A" ]; then echo "   moved to $A"; else echo "   (none)"; fi
-    step "build/ removed and built again"
+    for f in build/evolve/*; do                # the evolver's records: databases, reports, re-measures
+        [ -f "$f" ] || continue
+        keep "$f"
+    done
+    for d in build/bench-laptop build/results; do    # the benchmark suite's archives and raw results
+        [ -d "$d" ] || continue
+        keep "$d"
+    done
+    if [ -d "$A" ]; then
+        (cd "$A" && find . -type f | sort) > "$A/MANIFEST.txt"
+        echo "   moved to $A (MANIFEST.txt lists them)"
+    else echo "   (none)"; fi
+    step "the rest of build/ removed, built again"
     rm -rf build
     LAYOUTS=1 bash tools/build-stages.sh > "$RUN/build.log" 2>&1 || { tail -20 "$RUN/build.log"; exit 1; }
     tail -1 "$RUN/build.log"

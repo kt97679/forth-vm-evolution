@@ -18,6 +18,13 @@ __pycache__/
 # evolution logs RUNNING.md writes there (evolve.log, evolve2.log).
 /nohup.out
 /evolve*.log
+# And what RUNNING.md's commands wrote at the top before Iteration 16 (now
+# under build/evolve/), and lscpu's output for sending back. A run's
+# records live in build/ or ~/forth-vm-evolution-runs, never in git;
+# lab/evolve/next-run.sh moves anything untracked at the top there.
+/sample*.md
+/knockout*.md
+/lscpu*.txt
 
 # Editor and patch debris, and a core dump at the top (anchored: a bare
 # `core` also matched tests/core/, three tracked test files).
