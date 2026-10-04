@@ -39,7 +39,7 @@ the included ones checked to be among them.
 | native code | 3 | 1 | SPN stencils; an optimising compiler |
 | **all 11 axes** | **66** | **35** | **31 missing** |
 
-Every missing value decided (13 candidate, 9 excluded, 4 stranger, 4 deferred, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
+Every missing value decided (12 candidate, 10 excluded, 4 stranger, 4 deferred, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
 
 | missing value | decided | why |
 |---|---|---|
@@ -58,9 +58,9 @@ Every missing value decided (13 candidate, 9 excluded, 4 stranger, 4 deferred, 1
 | static caching, states chosen by the converter | candidate | large: the converter would need every instruction's stack state |
 | one stack check per word entry | candidate | hard: a word's depth is not known statically across EXECUTE and loops |
 | no stack checks at all | excluded | an underflow would corrupt memory instead of being reported - not a design to ask the gate about |
-| triples and longer runs | candidate | the next step from pairs; gen-super.py composes two bodies, three is the same path |
+| triples and longer runs | excluded | priced at Iteration 8 (lab/evolve/price.py, GENES.md): at most 0-4.9% of dispatches on the front, none on fib - before overlaps and the slots they would take from pairs |
 | two escape levels | candidate | the escape is the largest single gain in every knockout - more slots may be worth more |
-| compare-and-branch opcodes | candidate | SPN has them as stencils; in bytecode a pair whose second half takes an operand |
+| compare-and-branch opcodes | candidate | priced at Iteration 8: 6.6-9.1% of dispatches on every workload - the largest; most of it `0= IF` and, on fib, `< IF` in code compiled at run time |
 | pairs chosen from the image itself | stranger | see step 4 |
 | headers apart from code | candidate | separated heads, known in Forths - denser code |
 | number of hash threads | candidate | kernel-level; FIND's speed is most of parse and corpus |

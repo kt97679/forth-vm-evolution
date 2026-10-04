@@ -75,3 +75,50 @@ seed 2's fastest design (multi-state) + peel -1.0%, + ipaclone -0.3%,
 + tracer +2.9% (slower), where s6 gains 2-4%. Left out of a design's
 identity when off (`LATE` in evolve.py): every recorded id is unchanged -
 1,308 of 1,308 in seed 2's database, 1,306 of 1,306 in the VM rehearsal's.
+
+## Iteration 8: triples priced, not built - tests before branches are the larger prize
+
+`lab/evolve/price.py ID --db FILE` profiles a design's own dispatched
+stream (its pairs, words and specialisations already fused) and prices
+fusions before any is built (prompts/10). On seed 2's front, from its
+database, on the VM:
+
+## 9cd791dd84 - 21 pairs, 13 format-10 words
+
+| workload | dispatches | pairs save | best 8 triples | best 16 | next 16 pairs | test -> branch | calls | EXIT |
+|---|---|---|---|---|---|---|---|---|
+| kernel | 7208480 | 14.7% | 2.7% | 3.3% | 5.2% | 8.1% | 7.2% | 2.5% |
+| fib | 29672789 | 0.0% | 0.0% | 0.0% | 0.0% | 9.1% | 9.1% | 9.1% |
+| parse | 28791219 | 14.2% | 4.3% | 4.9% | 9.5% | 8.3% | 3.7% | 1.6% |
+| corpus | 5246072 | 15.0% | 3.7% | 4.5% | 6.4% | 7.9% | 4.5% | 2.0% |
+
+the tests before a conditional branch, by workload:
+  kernel  zeq 4.2%, eqi 1.3%, sub 1.1%, = 0.8%, < 0.4%
+  fib     < 9.1%, zeq 0.0%, eqi 0.0%, sub 0.0%, = 0.0%
+  parse   zeq 4.1%, eqi 1.7%, = 1.6%, sub 0.4%, sgt 0.4%
+  corpus  zeq 4.3%, = 1.3%, eqi 1.2%, sub 0.6%, sgt 0.4%
+the best triples, mean share: ROT+ROT++ 0.6%, DUP+ROT+ROT 0.6%, >R+C!+R> 0.4%, ROT+DUP+C@ 0.3%, >R+OVER+R> 0.3%, >R+OVER+C@ 0.2%
+
+## 0ebf0445e0 - 22 pairs, 12 format-10 words
+
+| workload | dispatches | pairs save | best 8 triples | best 16 | next 16 pairs | test -> branch | calls | EXIT |
+|---|---|---|---|---|---|---|---|---|
+| kernel | 7727583 | 15.4% | 2.1% | 2.4% | 3.2% | 7.3% | 8.9% | 2.1% |
+| fib | 29679019 | 0.0% | 0.0% | 0.0% | 0.0% | 9.1% | 9.1% | 9.1% |
+| parse | 33932578 | 15.7% | 1.6% | 1.9% | 2.1% | 6.6% | 7.3% | 2.1% |
+| corpus | 5937204 | 16.1% | 2.2% | 2.6% | 2.4% | 6.7% | 7.4% | 1.9% |
+
+the tests before a conditional branch, by workload:
+  kernel  zeq 4.1%, sub 1.0%, eqi 0.9%, U< 0.5%, < 0.4%
+  fib     < 9.1%, zeq 0.0%, sub 0.0%, eqi 0.0%, U< 0.0%
+  parse   zeq 3.7%, U< 1.8%, sub 0.3%, eqi 0.3%, sgt 0.3%
+  corpus  zeq 4.1%, U< 1.1%, sub 0.6%, eqi 0.5%, sgt 0.3%
+the best triples, mean share: >R+C!+R> 0.3%, C@+>R+OVER 0.3%, OVER+R>+= 0.2%, >R+OVER+C@ 0.2%, ROT+ROT+SWAP 0.2%, R>+SWAP+>R 0.1%
+
+Triples would remove 0-4.9% of dispatches - none on fib - an upper bound,
+before overlaps and the slots they would take from pairs: not built. A
+test fused with the conditional branch after it would remove 6.6-8.3% on
+kernel, parse and corpus and 9.1% on fib. Most of it is `0= IF` (about 4%
+on three workloads: a branch with its sense inverted) and, on fib, `< IF`
+- in code compiled at run time, which only the image's own compiler can
+fuse; the converter reaches the kernel's code alone.
