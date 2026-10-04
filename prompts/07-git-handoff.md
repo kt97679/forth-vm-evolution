@@ -107,6 +107,14 @@ the one kind of binary the project cannot rebuild without.
      are correct only where they were written.
    - **What an interrupted run leaves**: logs, `core`, temporary files,
      per-test result files (`*.trs`), scratch directories.
+   - **What a tool writes on the machine that runs it** goes where
+     nothing is tracked. A benchmark that writes its tables into
+     committed files changes them on every machine that measures, and
+     the next pull - or a script that refuses a dirty tree - stops
+     there. Output goes to an ignored directory; a commit copies the
+     chosen run into the tracked place. One project put this in its
+     ignore file for a generated report, and met it again in three
+     results files the rule had not been generalised to.
    - **Editor and patch debris**: `*~`, `.*.swp`, `*.orig`, `*.rej`.
 
    And the other half, which is the one that costs data:
@@ -133,6 +141,13 @@ the one kind of binary the project cannot rebuild without.
    run after a complete build and test cycle, finds anything the cycle
    generates that nobody decided about: an untracked (`??`) file there
    is either a missing ignore rule or a missing `git add`.
+
+8. **A script that pulls its own repository runs the copy it pulled.**
+   Pull, then `exec` the new file. Whatever it does before the pull runs
+   from the OLD copy, so it must stay safe in every copy that will ever
+   exist on the other machine - keep it to the pull and its checks. Test
+   the upgrade itself: the copy they have now, the bundle you are
+   sending.
 
 ## Artifact required
 

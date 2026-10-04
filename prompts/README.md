@@ -21,12 +21,12 @@ describe are ones any measurement or write-up project can reproduce.
 |---|---|---|
 | [01-problem-framing](01-problem-framing.md) | before starting a measurement project | optimising the wrong term; a benchmark with a degenerate answer |
 | [02-escape-recall](02-escape-recall.md) | whenever the task is "find the best X" | a model proposing the options history already chose, and calling it a search |
-| [03-audit-tooling](03-audit-tooling.md) | before reporting any measured result | measurement tools that quietly favour the answer you already have |
+| [03-audit-tooling](03-audit-tooling.md) | before reporting any measured result | measurement tools that quietly favour the answer you already have; options that silently did nothing |
 | [04-expert-review](04-expert-review.md) | when a technical write-up is nearly done | overclaiming; unstated modelling assumptions |
 | [05-reader-review](05-reader-review.md) | after the expert review passes | unreadable structure, repetition, no problem statement |
 | [06-handling-review](06-handling-review.md) | when review feedback arrives | accepting wrong criticism, rejecting right criticism, silent drift |
 | [07-git-handoff](07-git-handoff.md) | when a session ends or work changes hands | knowledge that lived only in the conversation; a deliverable nobody tested |
-| [08-run-it-elsewhere](08-run-it-elsewhere.md) | before calling a suite portable | a harness that measures its own environment |
+| [08-run-it-elsewhere](08-run-it-elsewhere.md) | before calling a suite portable | a harness that measures its own environment; a script that deletes what it never saw |
 | [09-baseline-discipline](09-baseline-discipline.md) | when a recorded value changes | a check quietly converted into a record of whatever happened last |
 | [10-price-before-refactor](10-price-before-refactor.md) | before restructuring working code | paying for a prize nobody measured; a proxy metric mistaken for time |
 | [11-report-from-elsewhere](11-report-from-elsewhere.md) | when writing or reading a remote failure report | a round trip spent asking what the output should have said |

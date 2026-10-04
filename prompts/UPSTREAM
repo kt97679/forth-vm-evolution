@@ -1,2 +1,9 @@
-kt97679/relf prompts/ at e96185a (master, 2026-10-03), copied unchanged.
-Refresh: copy https://github.com/kt97679/relf/tree/master/prompts again and update this line.
+kt97679/relf prompts/ at e96185a (master, 2026-10-03), copied; changed here since -
+to be carried back to relf:
+  Iteration 19 (forth-vm-evolution): 03 (step 8 - a switch is not a feature; the
+  converse in step 5; the A/A case in step 2; two triggers), 07 (tools write where
+  nothing is tracked; item 8 - a script that pulls its own repository), 08 (items
+  9-10 - what is already there, where is it; the trigger), 10 (items 6-7 - exact
+  prices, what a change displaces), INDEX, USAGE and README rows.
+Refresh: copy https://github.com/kt97679/relf/tree/master/prompts again, keeping
+these, and update this file.

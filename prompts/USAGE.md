@@ -44,14 +44,14 @@ artifact, not for a claim:
 |---|---|
 | `01` | a written cost model and a stated degenerate answer |
 | `02` | an axis table with completeness counts, and candidates nobody uses |
-| `03` | figures labelled modelled or measured, and a calibration case |
+| `03` | figures labelled modelled or measured, a calibration case, and the footprint of every option a result is credited to |
 | `04` | quoted text with concrete fixes, not general impressions |
 | `05` | the first three places a reader stopped |
 | `06` | a per-finding accepted/rejected line with reasons |
 | `07` | the log entry, a commit message body, and the bundle's clone check |
-| `08` | one line per environmental assumption: its value here, and whether the harness depends on it |
+| `08` | one line per environmental assumption: its value here, and whether the harness depends on it; for a script that deletes there, the listing it was tested against |
 | `09` | per changed value: old, new, one sentence of cause, and a verdict |
-| `10` | the prize measured before the change, and the achieved value beside it after |
+| `10` | the prize measured before the change, what it displaces, and the achieved value beside it after |
 | `11` | the name, expected and actual values in the output itself; or a local reproduction |
 | `12` | the search for a prior attempt, and the log entry saying how this one ended |
 | `13` | every failure classed, the order they will be worked in, and each crash's reproducer |

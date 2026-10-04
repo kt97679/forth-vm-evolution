@@ -21,12 +21,12 @@ fetched lazily when their trigger conditions are met.
 |---|---|---|
 | `01-problem-framing` | produce the first numbers of a comparison, benchmark or optimisation | the cost model and metric are already fixed and stated |
 | `02-escape-recall` | **name any candidate** approach, architecture or algorithm for a "which is best" question | the user fixed the candidate set, or the task is to implement one named thing |
-| `03-audit-tooling` | report a measured number produced by tooling you wrote, *or* report a result that agrees with what you expected | no figure came from your own tooling |
+| `03-audit-tooling` | report a measured number produced by tooling you wrote, *or* report a result that agrees with what you expected, *or* credit a result to an option you switched on | no figure came from your own tooling |
 | `04-expert-review` | publish a technical write-up whose claims have settled | the claims are still moving |
 | `05-reader-review` | publish, after `04` has passed | the claims are still moving |
 | `06-handling-review` | act on any review feedback | never skip |
 | `07-git-handoff` | end a session, or hand work to another machine | the work leaves no artifact |
-| `08-run-it-elsewhere` | call a suite, build or benchmark green | the environment ships with the product |
+| `08-run-it-elsewhere` | call a suite, build or benchmark green, *or* hand over a script that runs on someone else's machine - above all one that moves or deletes files | the environment ships with the product |
 | `09-baseline-discipline` | re-record a recorded value that changed | nothing is recorded - then ask why not |
 | `10-price-before-refactor` | restructure something that works, on the strength of a profile | the change is required for correctness |
 | `11-report-from-elsewhere` | write output someone on another machine will paste back, or read one | the reader has the machine |

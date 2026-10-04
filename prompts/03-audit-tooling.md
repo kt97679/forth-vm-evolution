@@ -5,6 +5,8 @@ applies-when:
   - you are about to report measured numbers
   - a result agrees with what you already expected
   - two numbers from different routes came out equal or suspiciously round
+  - a result is credited to an option, flag or feature that was switched on
+  - a change moved a figure it cannot touch, or moved it the wrong way
 skip-when:
   - no figure in the output was produced by tooling you wrote
 produces: a modelled-vs-measured table, a calibration against a known case, a direction-of-error statement per approximation
@@ -48,6 +50,9 @@ Before reporting these numbers, run this audit and show the results.
    already know independently. If you have no such case, construct one —
    a trivial input, a hand-computed example, a previously published result.
    A tool that has never reproduced a known answer has not been tested.
+   For a tool that compares two things, the known case is a thing against
+   itself: identical inputs must come out equal, and their scatter is the
+   noise floor every real difference is read against.
 
 3. DIRECTION-OF-ERROR CHECK. For each approximation in your pipeline, ask
    which candidate it favours. If every approximation happens to favour the
@@ -61,7 +66,10 @@ Before reporting these numbers, run this audit and show the results.
 5. IMPLAUSIBLE AGREEMENT IS A BUG SIGNAL. If two quantities computed by
    different routes agree exactly, or a ratio comes out suspiciously round,
    find out why before celebrating. Exact agreement between independent
-   computations usually means they were not independent.
+   computations usually means they were not independent. The converse is
+   a check you can build: where two routes MUST agree, make them. Count
+   one quantity two ways and assert equality - the mismatch is a bug in
+   one of them.
 
 6. VERIFY EDITS BY READING, NOT BY EXIT CODE. A search-and-replace that
    matches nothing reports success. A keyword count can be satisfied by
@@ -71,6 +79,13 @@ Before reporting these numbers, run this audit and show the results.
    difference to specific components before explaining it. A difference
    blamed on the wrong component produces a confident, wrong story — and a
    story is much harder to retract than a number.
+
+8. A SWITCH IS NOT A FEATURE. For every option a result is credited to,
+   count its footprint in what was actually built or run - sites, bytes,
+   executions. Zero means it was not there, and every comparison that
+   included it measured its absence. A tool that prints a warning and
+   carries on has made that decision for you: count its warnings, or
+   make them fatal.
 ```
 
 ---
@@ -84,6 +99,23 @@ numbers were individually plausible and all the tests passed.
 marginal storage, wrote it up, and only later decomposed it properly to find it
 was two wasted words of a different kind of storage. The wrong diagnosis had
 already been published in three documents.
+
+**Step 8, the converse in step 5 and the A/A case in step 2 came from a
+second project** (forth-vm-evolution, an evolutionary search over
+interpreter designs; Iteration 13). A converter gave a word its opcode
+only after checking the word's body, and features added later rewrote
+the bodies it checked: it printed "no exact body match" and carried on.
+1,032 of 1,145 living designs had silently lost at least one opcode -
+every design on the front four - and every comparison since those
+features arrived had measured their absence. It surfaced while pricing
+something else: an opcode with zero sites in the image, beside seven
+calls to the word it stood for. The same session asserted that a
+profiler's per-address and per-pair counts of one quantity agree; they
+differed by 8% - two kinds of event counted as dispatches, in a tool
+trusted for five rounds of work. And a fix that could only remove work
+raised a benchmark's count by 14%: decomposed by kind (step 7), every
+extra event was alignment padding, because the image had shrunk by a
+number of bytes that was 3 mod 8.
 
 ---
 

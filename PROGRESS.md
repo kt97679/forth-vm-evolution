@@ -521,3 +521,27 @@ edits: the script now keeps such changes as a git stash, says which, and
 puts the patch in the pack (results-measured-here.patch); a change to any
 other tracked file still stops it. Open: the benchmark suite writing
 tracked files at all - a commit here and a run there then always differ.
+
+## Iteration 19 - 2026-10-04 - Claude
+
+**The prompt library, from this session's failures** (asked for by the
+owner). No new prompt - USAGE.md: keep the count low, and every lesson
+had a home. Extended: 03 - step 8, a switch is not a feature (the body
+check: 1,032 of 1,145 designs silently without opcodes), the converse of
+step 5 (an identity asserted found the profiler's double counts), the
+A/A case in step 2 (identical images gave this VM's noise floor), and
+triggers for credited options and wrong-way moves (loop +14%, all
+alignment NOOPs); 07 - tools write where nothing is tracked (Iteration
+18's stop), and a script that pulls its own repository runs the copy it
+pulled; 08 - what is already there (Iteration 16's near loss of seeds 1
+and 2) and where it is (Iteration 17's fixed path), and its trigger; 10 -
+exact prices where the build can produce them, and what a change
+displaces. INDEX, USAGE and README rows follow; UPSTREAM no longer says
+"unchanged" and lists what to carry back to relf.
+
+Which prompts fired, and which should have: 01, 03, 09, 10 and 12 fired
+when they should. 08 did not fire for next-run.sh - its trigger was
+calling a suite green, not handing over a script - and that is the
+miss that nearly cost the earlier databases; its trigger now names it.
+11 applied to the pack the script sends back and was not consulted; it
+asks for nothing the pack lacks.

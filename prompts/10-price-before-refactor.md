@@ -47,10 +47,26 @@ without checking what kind of work it counted.
    reverted, here is the number" is worth more than silence: it stops
    the next person re-deriving the same disappointment.
 
+6. **Price exactly where the pipeline allows.** If the result of a
+   change can be produced without running it - a size from the build, a
+   count from a dry run - produce it. A count of call sites priced
+   one-byte calls at 242-359 bytes on four designs and was wrong both
+   ways (padding swallowed single bytes in one layout; shorter links
+   added bytes in another). The build, re-run with the change, said
+   136-320 net; the built feature saved 143-319.
+
+7. **Price what it displaces, on every metric.** A change that takes a
+   fixed resource - opcode slots, registers, a cache, a time budget -
+   takes it from something. Rank the incumbents on BOTH axes before
+   choosing whom to evict: of the opcode pairs with one to three static
+   sites - the cheapest to give up by size - two ran over a million
+   times each on one workload.
+
 ## Artifact required
 
 Before the refactor: the measured value of the prize, the method used to
 measure it, and one sentence on why that method does not change the
 program. After: the achieved value beside the predicted one. If they
 differ by more than a factor of two, say what the proxy was counting
-that the clock was not.
+that the clock was not. If the change takes a shared resource, what it
+displaces, priced on every metric the project measures.

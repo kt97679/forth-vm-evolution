@@ -2,7 +2,8 @@
 
 **Fires when** a test suite, benchmark or build has only ever run in one
 environment — your container, your laptop, your CI image — and you are
-about to call it green.
+about to call it green - or are about to hand over a script that will run
+there, above all one that moves, overwrites or deletes files.
 
 **Skip when** the environment is genuinely fixed and shipped with the
 product (a pinned container that is also the deployment target).
@@ -31,6 +32,16 @@ varied:
 None of these is exotic. All of them are defaults on some common
 distribution.
 
+The same holds for what is already THERE. A run script handed to the
+owner of a laptop kept four named result files and then removed the
+build directory - tested on a replica made from what the development
+machine had, which was one database. The laptop's build directory also
+held two earlier runs' databases, a rehearsal's, their reports and five
+benchmark archives; a `find .` the owner happened to send showed them
+before the first run. The same script took its repository from a fixed
+path, so from a second clone it would have pulled into, and cleaned, a
+different directory.
+
 ## Do this
 
 Before calling a suite portable, ask each of these and fix what you
@@ -57,6 +68,17 @@ find. Most fixes are one line in the harness.
    environment variable.
 8. **How wide is a pointer?** If the work has any notion of word size,
    a 32-bit host inverts native and cross.
+9. **What is already there?** A script that moves, overwrites or
+   deletes meets files your environment never had: earlier runs'
+   outputs, archives, notes saved by hand. Ask for a listing before
+   writing it, and test it on a replica of that listing - including the
+   upgrade from the copy they have now. Keep by kind, not by name: move
+   everything a build cannot make again aside, with a manifest, and
+   delete only what a build makes again.
+10. **Where is it?** A script finds its repository from its own path
+    (`git -C "$(dirname "$0")" rev-parse --show-toplevel`), never from
+    a fixed one: run from another clone, a fixed path works on the
+    wrong directory.
 
 ## Artifact required
 
@@ -69,3 +91,7 @@ A useful cheap version, when a second machine is not available: run the
 suite again with the environment perturbed — a different locale, a
 closed stdin, `HOME` set elsewhere, a hostile `LD_PRELOAD`, under load —
 and require the same answer.
+
+For a script that moves or deletes files on the other machine: the
+listing it was tested against, and what it keeps, moves and deletes, by
+kind.
