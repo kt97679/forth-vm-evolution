@@ -564,3 +564,16 @@ near-DOES> reach limit, verified by rebuilding it here (lives with
 doesfar=1 alone). The laptop's later benchmark sweep (02:48Z, sent back by
 next-run.sh's stash) agrees with the recorded one within error bars: not
 re-recorded.
+
+## Iteration 20 - 2026-10-04 - Claude
+
+**Seed 4 recorded** - the entry above, committed as Iteration 20 (part).
+**Every run's front in one session**: lab/evolve/compare-fronts.py and
+`next-run.sh compare`, which archives and removes nothing. Its replica test
+- the laptop's clone at Iteration 18, seed 4's database here, seed 3's in
+the archive - failed at once: the Iteration 18 copy checks its argument
+before it pulls, so it refused `compare` and never fetched the copy that
+knows it - the hazard prompts/07 item 8 names, one turn after writing it.
+Arguments are now checked after the pull; this once, the owner pulls by
+hand. Then the same replica: no archive made, seed 4's database
+byte-identical, the table and the pack made.

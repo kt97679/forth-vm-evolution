@@ -76,8 +76,9 @@ trying anything again (prompts/12-progress-log).
 1. **Seeds 3 and 4's fronts measured in one session** - paired, more
    rounds, with s6 against itself as the check: seed 4's small end is 7.5%
    slower than seed 3's best small design, measured in different sessions
-   whose calibrations were 0.986 and 1.038. A mode of next-run.sh, so it
-   stays one command; it must not archive the seed 4 database.
+   whose calibrations were 0.986 and 1.038. Built (Iteration 20):
+   `sh lab/evolve/next-run.sh compare` on the laptop - seeds 1-4 and the
+   rehearsal, archiving nothing.
 2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.

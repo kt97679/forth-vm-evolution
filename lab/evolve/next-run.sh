@@ -6,6 +6,8 @@
 # packed into one file.
 #
 #     sh lab/evolve/next-run.sh 4       # in the clone; only bundles need downloading
+#     sh lab/evolve/next-run.sh compare # every run's front here, measured again
+#                                       # in one session; nothing archived (Iteration 20)
 #
 # It pulls first and then runs the copy in the repository, so a newer
 # bundle brings its own script. After the pull it goes on in the
@@ -22,7 +24,10 @@
 # another size starts afresh, the old outputs archived first. Not as root:
 # the evolver refuses (Iteration 10).
 set -eu
-SEED=${1:-4}
+# Iteration 20: `compare [ROUNDS]` measures every run's front here again in one
+# session (lab/evolve/compare-fronts.py) - it archives and removes nothing.
+KIND=seed; SEED=${1:-4}; CROUNDS=10
+if [ "${1:-}" = compare ]; then KIND=compare; SEED=0; CROUNDS=${2:-10}; fi
 # Iteration 17: the clone this script is in, wherever it is - not a fixed
 # path, which a clone elsewhere would have had pulled into and archived
 self=$(cd "$(dirname "$0")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)
@@ -33,7 +38,6 @@ RUNS=${RUNS:-$HOME/forth-vm-evolution-runs}
 POP=${POP:-32}; GENS=${GENS:-40}; ROUNDS=${ROUNDS:-3}; REMEASURE=${REMEASURE:-6}
 say() { echo "next-run: $*"; }
 die() { echo "next-run: $*" >&2; exit 1; }
-case $SEED in ''|*[!0-9]*) die "the seed must be a number, not '$SEED'";; esac
 [ "$(id -u)" != 0 ] || die "not as root - the evolver refuses it (Iteration 10)"
 cd "$REPO" 2>/dev/null || die "no clone at $REPO - set REPO=..."
 running() { pgrep -f 'lab/evolve/evolve.py' >/dev/null 2>&1; }
@@ -63,18 +67,29 @@ if [ -z "${NEXT_RUN_PULLED:-}" ]; then
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" "$@"
 fi
 
+# The arguments are checked only here, in the copy just pulled: an older copy
+# that checked them before pulling refused `compare`, which it did not know,
+# and so never fetched the version that does (Iteration 20; prompts/07, 8).
+case $SEED in ''|*[!0-9]*) die "the seed must be a number, or 'compare' - not '$SEED'";; esac
+case $CROUNDS in ''|*[!0-9]*) die "the rounds must be a number, not '$CROUNDS'";; esac
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
 WANT="seed $SEED at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+if [ "$KIND" = compare ]; then
+    RUN=$RUNS/compare-$HEAD
+    WANT="every run's front here, measured again in one session at $HEAD, $CROUNDS rounds"
+fi
 
 # ---- 2. fresh or resumed - decided here, where it can be seen - then detach
 if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
-    if [ -f "$STATE" ] && [ "$(cat "$STATE")" = "$WANT" ]; then MODE=resume; else MODE=fresh; fi
+    if [ "$KIND" = compare ]; then MODE=compare
+    elif [ -f "$STATE" ] && [ "$(cat "$STATE")" = "$WANT" ]; then MODE=resume; else MODE=fresh; fi
     mkdir -p "$RUN"
     say "at $(git log -1 --format='%h %s')"
     say "$WANT - $MODE"
     [ "$MODE" = fresh ] && say "the previous run's outputs will be moved to $RUNS/archived-..."
+    [ "$MODE" = compare ] && say "nothing will be archived or removed"
     NEXT_RUN_DETACHED=$MODE nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
     say "going on in the background; follow it with"
     echo "    tail -f $RUN/next-run.log"
@@ -87,6 +102,54 @@ running && die "an evolution is running already - let it finish"
 step() { echo; echo "== $(date -u +%H:%M:%S) $*"; }
 trap 'echo; echo "next-run: FAILED in the step above - $RUN/next-run.log"' EXIT
 step "$WANT - $MODE"
+
+checks() {   # build/ made current, then everything that must pass before a measurement
+    LAYOUTS=1 bash tools/build-stages.sh > "$RUN/build.log" 2>&1 || { tail -20 "$RUN/build.log"; exit 1; }
+    tail -1 "$RUN/build.log"
+    step "tests"
+    bash tools/run-tests.sh > "$RUN/tests.log" 2>&1 || { tail -30 "$RUN/tests.log"; exit 1; }
+    tail -1 "$RUN/tests.log"
+    tail -1 "$RUN/tests.log" | grep -q '^PASS' || exit 1
+    step "the hand-made stages, rebuilt from their genomes"
+    python3 lab/evolve/evolve.py --validate > "$RUN/validate.log" 2>&1 || { cat "$RUN/validate.log"; exit 1; }
+    n=$(grep -c ' IDENTICAL' "$RUN/validate.log" || true)
+    echo "   $n of 7 IDENTICAL"
+    [ "$n" = 7 ] || { cat "$RUN/validate.log"; exit 1; }
+    step "the jail"
+    python3 lab/evolve/test-jail.py > "$RUN/jail.log" 2>&1 || { cat "$RUN/jail.log"; exit 1; }
+    tail -1 "$RUN/jail.log"
+}
+
+if [ "$MODE" = compare ]; then
+    step "build/ made current - build-stages.sh leaves build/evolve/ alone"
+    checks
+    step "the fronts: this clone's run, and every archived one"
+    set --
+    if [ -f build/evolve/db.jsonl ]; then set -- build/evolve/db.jsonl; fi
+    for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do
+        [ -f "$f" ] || continue
+        set -- "$@" "$f"
+    done
+    [ $# -gt 0 ] || { echo "   no database in build/evolve or $RUNS/archived-*"; exit 1; }
+    for f in "$@"; do echo "   $f"; done
+    python3 lab/evolve/compare-fronts.py "$@" --rounds "$CROUNDS" > "$RUN/compare.md" 2> "$RUN/compare.log" \
+        || { tail -20 "$RUN/compare.log"; exit 1; }
+    grep -m1 'Calibration' "$RUN/compare.md" || true
+    grep -m1 'front of all runs' "$RUN/compare.md" || true
+    step "packed to send back"
+    K=$RUN/pack; rm -rf "$K"; mkdir -p "$K"
+    for f in compare.md compare.log build.log tests.log validate.log jail.log; do cp "$RUN/$f" "$K/"; done
+    lscpu > "$K/lscpu.txt" 2>&1 || true
+    { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT"; } > "$K/machine.txt"
+    cp "$RUN/next-run.log" "$K/next-run.log"
+    P=$RUNS/forth-vm-evolution-compare-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
+    tar -czf "$P" -C "$RUN" pack
+    rm -rf "$K"
+    trap - EXIT
+    echo
+    say "DONE - send $P"
+    exit 0
+fi
 
 if [ "$MODE" = fresh ]; then
     # Iteration 16: by kind, not by name - the first version kept four named
@@ -116,20 +179,7 @@ if [ "$MODE" = fresh ]; then
     else echo "   (none)"; fi
     step "the rest of build/ removed, built again"
     rm -rf build
-    LAYOUTS=1 bash tools/build-stages.sh > "$RUN/build.log" 2>&1 || { tail -20 "$RUN/build.log"; exit 1; }
-    tail -1 "$RUN/build.log"
-    step "tests"
-    bash tools/run-tests.sh > "$RUN/tests.log" 2>&1 || { tail -30 "$RUN/tests.log"; exit 1; }
-    tail -1 "$RUN/tests.log"
-    tail -1 "$RUN/tests.log" | grep -q '^PASS' || exit 1
-    step "the hand-made stages, rebuilt from their genomes"
-    python3 lab/evolve/evolve.py --validate > "$RUN/validate.log" 2>&1 || { cat "$RUN/validate.log"; exit 1; }
-    n=$(grep -c ' IDENTICAL' "$RUN/validate.log" || true)
-    echo "   $n of 7 IDENTICAL"
-    [ "$n" = 7 ] || { cat "$RUN/validate.log"; exit 1; }
-    step "the jail"
-    python3 lab/evolve/test-jail.py > "$RUN/jail.log" 2>&1 || { cat "$RUN/jail.log"; exit 1; }
-    tail -1 "$RUN/jail.log"
+    checks
     mkdir -p build/evolve; echo "$WANT" > "$STATE"
 fi
 

@@ -21,7 +21,16 @@ test, then the run (seed as given; 32 x 40, 3 rounds), `--remeasure 6`, and
 packs what to send back into ~/forth-vm-evolution-runs/forth-vm-evolution-
 seedN-....tar.gz. After the pull it goes on in the background; the last
 line of its log names the pack. Run it again with the same seed after an
-interruption and it resumes; a new commit or seed starts afresh. The
+interruption and it resumes; a new commit or seed starts afresh.
+
+    sh lab/evolve/next-run.sh compare
+
+measures every run's front again in one session - this clone's database
+and every archived one, each design rebuilt with the current commit, all
+timed round-robin against hand-made s6, s6 itself as the calibration
+(`lab/evolve/compare-fronts.py`) - and packs the table. It archives and
+removes nothing. Runs measured on different days cannot be ranked by a
+few per cent: their calibrations differ (Iteration 20). The
 sections below are what it does, by hand.
 
 
