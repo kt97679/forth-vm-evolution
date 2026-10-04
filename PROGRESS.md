@@ -381,3 +381,17 @@ says so. Timed, both front designs lost 5-6% on the VM, in fib and loop,
 which use neither - layout. Kept as a gene; recorded as not paying.
 
 **Open.** GOALS.md "Next": `=` with an immediate before a branch.
+
+## Iteration 12 - 2026-10-04 - Claude
+
+**The rest of the tests before a branch**: -, <> (one pair), >, 0<, and
+EQI n then ?BRANCH - fused in place as a head and a tail, so nothing about
+positions or targets changes. Eight format-10 opcodes; each pair compiled
+only where a design has it, so seed 3's front keeps identical machine
+code (checked). Every engine form lives with all 29 format-10 opcodes.
+Measured on one engine, image with and without: 48 sites, 48 bytes; 1.1-
+2.3% fewer dispatches on kernel, parse, corpus (counted); time 1.001 -
+about 1% expected, inside the noise. A first count was nonsense (+1117%):
+the profiler appends, and my script reused one file name.
+
+**Open.** GOALS.md "Next": one-byte calls, priced first; then a fourth run.

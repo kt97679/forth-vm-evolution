@@ -124,7 +124,7 @@ def overlay(g):
     Everything else keeps the build's dumps, so the hand-made stages still
     come out byte-identical."""
     return g['enc'] == 'cv8' and bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g)))
-RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
+RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
 def rt_tests(g):
     """The fused tests this design has opcodes for - with rtfuse, its
     compiler fuses them in code compiled at run time (Iteration 9)."""
@@ -135,13 +135,19 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
               '?BRANCH8', 'BRANCH8',   # the short branches: not words, opcodes the converter uses where they fit
               '?NBRANCH', '?NBRANCH8',  # 0= ?BRANCH fused, long and short (Iteration 8); the short needs the long
               '<?BRANCH', '<?BRANCH8',  # < ?BRANCH fused (Iteration 9); at run time too, with rtfuse
-              '=?BRANCH', '=?BRANCH8', 'U<?BRANCH', 'U<?BRANCH8']
+              '=?BRANCH', '=?BRANCH8', 'U<?BRANCH', 'U<?BRANCH8',
+              '<>?BRANCH', '<>?BRANCH8', '>?BRANCH', '>?BRANCH8', '0<?BRANCH', '0<?BRANCH8', '=I?BRANCH', '=I?BRANCH8']   # Iteration 12
 OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
                '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
                '?BRANCH8': 'L_x_qbr8', 'BRANCH8': 'L_x_br8', '?NBRANCH': 'L_x_nqbr', '?NBRANCH8': 'L_x_nqbr8',
                '<?BRANCH': 'L_x_ltbr', '<?BRANCH8': 'L_x_ltbr8', '=?BRANCH': 'L_x_eqbr', '=?BRANCH8': 'L_x_eqbr8',
-               'U<?BRANCH': 'L_x_ultbr', 'U<?BRANCH8': 'L_x_ultbr8'}
+               'U<?BRANCH': 'L_x_ultbr', 'U<?BRANCH8': 'L_x_ultbr8',
+               '<>?BRANCH': 'L_x_nebr', '<>?BRANCH8': 'L_x_nebr8', '>?BRANCH': 'L_x_sgtbr', '>?BRANCH8': 'L_x_sgtbr8',
+               '0<?BRANCH': 'L_x_zltbr', '0<?BRANCH8': 'L_x_zltbr8', '=I?BRANCH': 'L_x_eqibr', '=I?BRANCH8': 'L_x_eqibr8'}
+# Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
+X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
+           '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR'}
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
     return [[w, op] for w, op in zip(g.get('ops10', []), super_slots(g))]
@@ -360,6 +366,7 @@ def build(g, d):
         open(os.path.join(os.path.dirname(src), 'vm-ops10-esc.h'), 'w').write(     # the band ESCAPE frees
             ''.join('cv8_tab[%d] = &&%s;\n' % (op, OPS10_LABEL[w]) for w, op in o10 if 27 <= op < 68))
         flags.append('-DOPS10=1')
+        flags += sorted({'-D%s=1' % X_MACRO[w] for w, _ in o10 if w in X_MACRO})
     sup = supers_in(g)
     if sup:
         json.dump(sup, open(os.path.join(d, 'supers.json'), 'w'))

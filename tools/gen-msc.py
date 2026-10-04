@@ -103,6 +103,14 @@ SPECS = {
     'L_x_eqbr8':        (['a', 'b'], [], 'if (a == b) ip += 1; else ip += (int8_t)BYTE(ip);'),
     'L_x_ultbr':        (['a', 'b'], [], 'if (a < b) ip += 2; else ip += (int16_t)LD16(ip);'),
     'L_x_ultbr8':       (['a', 'b'], [], 'if (a < b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_nebr':         (['a', 'b'], [], 'if (a != b) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_nebr8':        (['a', 'b'], [], 'if (a != b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_sgtbr':        (['a', 'b'], [], 'if ((INT64)a > (INT64)b) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_sgtbr8':       (['a', 'b'], [], 'if ((INT64)a > (INT64)b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_zltbr':        (['a'], [], 'if ((INT64)a < 0) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_zltbr8':       (['a'], [], 'if ((INT64)a < 0) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_eqibr':        (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_eqibr8':       (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 1; else ip += (int8_t)BYTE(ip);'),
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch']
 

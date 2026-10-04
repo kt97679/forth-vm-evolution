@@ -1263,6 +1263,35 @@ L_x_ultbr:  { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* U< ?BRANCH 
              if (a_ < b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
 L_x_ultbr8: { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;    /* U< ?BRANCH8 */
              if (a_ < b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
+/*  Iteration 12: the rest of the tests before a branch - "-" and <> (one
+ *  pair: both fall through when a != b), >, 0<, and = with an immediate
+ *  (EQI then ?BRANCH: the immediate byte, then the offset). Each pair is
+ *  compiled only in a design that has it (-DX_NEBR ..., from lab/evolve),
+ *  so no other engine changes - unused code moves GCC's layout too.  */
+#if X_NEBR
+L_x_nebr:   { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;      /* <> ?BRANCH, - ?BRANCH */
+              if (a_ != b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_nebr8:  { UNS64 a_ = DS1, b_ = DS0; dsp += 2 * CELL_BYTES;
+              if (a_ != b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
+#endif
+#if X_SGTBR
+L_x_sgtbr:  { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;  /* > ?BRANCH */
+              if (a_ > b_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_sgtbr8: { INT64 a_ = (INT64)DS1, b_ = (INT64)DS0; dsp += 2 * CELL_BYTES;
+              if (a_ > b_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
+#endif
+#if X_ZLTBR
+L_x_zltbr:  if ((INT64)DS0 < 0) ip += 2; else ip += (int16_t)LD16(ip);     /* 0< ?BRANCH */
+            dsp += CELL_BYTES; NEXT();
+L_x_zltbr8: if ((INT64)DS0 < 0) ip += 1; else ip += (int8_t)BYTE(ip);
+            dsp += CELL_BYTES; NEXT();
+#endif
+#if X_EQIBR
+L_x_eqibr:  { UNS64 v_ = DS0, i_ = (UNS64)(INT64)(int8_t)BYTE(ip); dsp += CELL_BYTES; ip += 1;   /* n = ?BRANCH */
+              if (v_ == i_) ip += 2; else ip += (int16_t)LD16(ip); } NEXT();
+L_x_eqibr8: { UNS64 v_ = DS0, i_ = (UNS64)(INT64)(int8_t)BYTE(ip); dsp += CELL_BYTES; ip += 1;
+              if (v_ == i_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
+#endif
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

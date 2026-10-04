@@ -208,3 +208,32 @@ overlapping pairs, each operation many times (now flagged in the tool).
 Timed on the VM, both front designs at level 2 were 5-6% slower, mostly
 fib and loop, which use neither: layout, at a cost the counts cannot
 recover. Kept as a gene, like rtfuse - selection decides.
+
+## Iteration 12: the rest of the tests before a branch
+
+`-` and `<>` (one pair: both fall through when a != b), `>`, `0<`, and
+`=` with an immediate - EQI n then ?BRANCH, fused in place: the EQI
+emits the fused opcode and n, the ?BRANCH only its offset, so positions,
+cell sizes and targets stay the converter's own (`tools/sod16.py`,
+eqibranch). Eight more format-10 opcodes (29 in the pool). Each new pair
+of handlers is compiled only in a design that has it (`-DX_NEBR` ...): the
+handlers of Iterations 8-9 sit in every format-10 engine, and unused code
+moves GCC's layout - so these leave every other engine byte-identical
+(seed 3's front, checked). `SOD16_TESTBR_SKIP=-,<>,EQI` leaves chosen tests
+unfused, for measuring on one engine.
+
+**Measured, one engine (multi-state, escape 2), image with and without
+the five new**: 48 sites fused, 48 bytes smaller, both through the gate.
+Counted dispatches (layout-free):
+
+| | kernel | parse | corpus | fib | loop |
+|---|---|---|---|---|---|
+| 0= < = U< fused (8-9) | -5.0% | -5.9% | -5.6% | 0 | -4.4% |
+| the five new, further | -2.3% | -1.1% | -1.6% | 0 | 0 |
+
+Timed: 1.001 over the selection workloads - the first four's 5-6% bought
+4-5%; these 1-2% should buy about 1%, inside one session's noise. A small
+gain in speed, 48 bytes in size: for selection.
+
+(A first count said +1117%: the profiler appends to its file, and the
+script reused one name. price.py uses a fresh file per run.)

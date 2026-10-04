@@ -60,7 +60,7 @@ Every missing value decided (10 excluded, 10 candidate, 4 stranger, 4 deferred, 
 | no stack checks at all | excluded | an underflow would corrupt memory instead of being reported - not a design to ask the gate about |
 | triples and longer runs | excluded | priced at Iteration 8 (lab/evolve/price.py, GENES.md): at most 0-4.9% of dispatches on the front, none on fib - before overlaps and the slots they would take from pairs |
 | two escape levels | built | Iteration 11, as nine more primitives behind the one escape (GENES.md): works, does not pay - 0.2-2.4% fewer dispatches; kept for selection |
-| compare-and-branch opcodes | built | Iterations 8-9 (GENES.md): 0=, <, = and U< before a conditional branch, in kernel code and - through the compiler overlay - at run time; 0.935 on one engine. = with an immediate, and -, still open |
+| compare-and-branch opcodes | built | Iterations 8-9 (GENES.md): 0=, <, = and U< before a conditional branch, in kernel code and - through the compiler overlay - at run time; 0.935 on one engine; Iteration 12 the rest (-, <>, >, 0<, = with an immediate): 1-2% fewer dispatches, 48 bytes |
 | pairs chosen from the image itself | stranger | see step 4 |
 | headers apart from code | candidate | separated heads, known in Forths - denser code |
 | number of hash threads | candidate | kernel-level; FIND's speed is most of parse and corpus |

@@ -50,12 +50,12 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **`=` with an immediate before a branch** (EQI then ?BRANCH: 1.3-1.7% of
-   the dispatches on kernel, parse, corpus - a pattern that cannot overlap,
-   so priced reliably); then one-byte calls through a table of hot words.
-2. A fourth run on the Ryzen when a gene that pays is in. The second
-   escape level (Iteration 11) works but does not pay; it alone does not
-   warrant one.
+1. **One-byte calls through a table of hot words** - priced first: mostly
+   size (a call is 2-3 bytes), so count the static call sites by target.
+2. **A fourth run on the Ryzen** with what has been added since seed 3:
+   the second escape level (works, does not pay alone), the five further
+   fused tests (Iteration 12: 1-2% fewer dispatches, 48 bytes smaller) -
+   selection weighs them together.
 3. Remaining planned gene: indirect threading; then a register machine.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.

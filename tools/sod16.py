@@ -333,6 +333,7 @@ def read_ops(w):
     out = fold_exit(out) if FOLD else out
     out = fuse_pairs(out) if V8 and SUPERS else out
     out = testbranch(out) if V8 and any(v[2] in X_OPS10 for v in TESTBR.values()) else out
+    out = eqibranch(out) if V8 and '=I?BRANCH' in X_OPS10 else out
     return shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
 
 def branch_targets(ops):
@@ -449,17 +450,23 @@ LOOPNAME = {v: k for k, v in LOOPKIND.items()}
 # kind, short kind, long opcode name, short opcode name). The long one is
 # needed for the fusion at all; the short where it fits and has a slot.
 TESTBR = {'0=': ('NQBR', 'NQBRS', '?NBRANCH', '?NBRANCH8'), '<': ('LTQBR', 'LTQBRS', '<?BRANCH', '<?BRANCH8'),
-          '=': ('EQQBR', 'EQQBRS', '=?BRANCH', '=?BRANCH8'), 'U<': ('ULTQBR', 'ULTQBRS', 'U<?BRANCH', 'U<?BRANCH8')}
+          '=': ('EQQBR', 'EQQBRS', '=?BRANCH', '=?BRANCH8'), 'U<': ('ULTQBR', 'ULTQBRS', 'U<?BRANCH', 'U<?BRANCH8'),
+          '-': ('NEQBR', 'NEQBRS', '<>?BRANCH', '<>?BRANCH8'), '<>': ('NEQBR', 'NEQBRS', '<>?BRANCH', '<>?BRANCH8'),
+          '>': ('SGTQBR', 'SGTQBRS', '>?BRANCH', '>?BRANCH8'), '0<': ('ZLTQBR', 'ZLTQBRS', '0<?BRANCH', '0<?BRANCH8')}   # 12: - <> > 0<
+# EQI n then ?BRANCH (Iteration 12) cannot be one kind - it has an immediate
+# AND an offset - so it is two, in place: the EQI emits the fused opcode and
+# its immediate (EQIH), the ?BRANCH only its offset (EQIT, short EQITS).
+# Positions, sizes in cells and targets are the originals', untouched.
 TB_LONG = {v[0]: v[2] for v in TESTBR.values()}; TB_SHORT = {v[1]: v[3] for v in TESTBR.values()}
-BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT)
-PSEUDO10 = {'BRANCH8', '?BRANCH8'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
+BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT) + ('EQIT', 'EQITS')
+PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
 def shorten(ops):
     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
     on a layout that counts every alignment at its widest, so the real
     offsets can only be smaller; a branch that does not fit goes long and
     the layout is redone, until nothing changes - and a long one never
     comes back, so that ends."""
-    ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8')) + tuple((v[0], v[1], v[3]) for v in TESTBR.values()) if n in X_OPS10}
+    ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8'), ('EQIT', 'EQITS', '=I?BRANCH8')) + tuple((v[0], v[1], v[3]) for v in TESTBR.values()) if n in X_OPS10}
     long_ = set()
     while True:
         trial = [(ok[k], pl) if k in ok and j not in long_ else (k, pl) for j, (k, pl) in enumerate(ops)]
@@ -470,9 +477,10 @@ def shorten(ops):
         c2t = dict(zip(cs, ts)); c2t[c] = t
         grew = False
         for j, (k, pl) in enumerate(trial):
-            if k in ('BRS', 'QBRS') + tuple(TB_SHORT):
+            if k in ('BRS', 'QBRS', 'EQITS') + tuple(TB_SHORT):
                 tgt = c2t.get(cs[j] + CELL + pl)
-                if tgt is None or not -128 <= tgt - (ts[j] + 1) <= 127: long_.add(j); grew = True
+                opd = ts[j] if k == 'EQITS' else ts[j] + 1       # EQIT has no opcode: its operand is its first byte
+                if tgt is None or not -128 <= tgt - opd <= 127: long_.add(j); grew = True
         if not grew: return trial
 def testbranch(ops):
     """A test followed by ?BRANCH becomes one branch (TESTBR), wherever
@@ -483,16 +491,29 @@ def testbranch(ops):
     target reckoned as every branch's: its cell + CELL + operand."""
     import os
     if os.environ.get('SOD16_NO_TESTBR'): return ops     # to measure the fusion on the same engine
+    SKIP = set(os.environ.get('SOD16_TESTBR_SKIP', '').split(','))   # or some tests only: "-,<>,EQI"
     cs, tg = branch_targets(ops)
     name = {w['s']: w['n'] for w in words}
     out, j = [], 0
     while j < len(ops):
         k, pl = ops[j]
         test = pl if k == 'P' else name.get(pl) if k == 'C' else None
-        if (test in TESTBR and TESTBR[test][2] in X_OPS10 and j + 1 < len(ops)
+        if (test in TESTBR and test not in SKIP and TESTBR[test][2] in X_OPS10 and j + 1 < len(ops)
                 and ops[j + 1][0] == 'QBR' and cs[j + 1] not in tg):
             out.append((TESTBR[test][0], ops[j + 1][1] + CELL)); j += 2; continue
         out.append(ops[j]); j += 1
+    return out
+def eqibranch(ops):
+    """EQI n then ?BRANCH, fused (Iteration 12): the two keep their places,
+    the EQI emitting the fused opcode and n (EQIH), the ?BRANCH only its
+    offset (EQIT) - wherever nothing jumps to the ?BRANCH."""
+    import os
+    if os.environ.get('SOD16_NO_TESTBR') or 'EQI' in os.environ.get('SOD16_TESTBR_SKIP', '').split(','): return ops
+    cs, tg = branch_targets(ops)
+    out = list(ops)
+    for j in range(len(ops) - 1):
+        if ops[j][0] == 'EQI' and ops[j + 1][0] == 'QBR' and cs[j + 1] not in tg:
+            out[j] = ('EQIH', ops[j][1]); out[j + 1] = ('EQIT', ops[j + 1][1])
     return out
 def ops10_rewrite(ops):
     """A call to one of them becomes its opcode, one operation for one;
@@ -654,7 +675,7 @@ def op_cells(k, pl):
     """Size of one operation in the CELL image, in bytes."""
     if k == 'ALN': return 0
     if k in ('VF', 'VS'): return 2 * CELL           # call + @/!
-    if k in ('ADDI', 'EQI'): return 3 * CELL        # LIT n + op
+    if k in ('ADDI', 'EQI', 'EQIH'): return 3 * CELL        # LIT n + op
     if k in ('ADDIX', 'EQIX'): return 4 * CELL      # ... + EXIT
     if k == 'LOC': return 3 * CELL                  # LIT off + call
     if k in ('PX', 'SP'): return 2 * CELL
@@ -676,7 +697,9 @@ def op_bytes(k, pl, t):
             if not VARSLOT: return 3
             v = slotval(k, pl)
             return 3 if v is None or v < (1 << 15) else 4
-        if k in X_IMM: return 2
+        if k in X_IMM or k == 'EQIH': return 2
+        if k == 'EQIT': return 2                 # the offset alone
+        if k == 'EQITS': return 1
         if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return 1
         if k == 'P' and pl in ESC_PRIMS: return 2
         if k in ('P', 'PX', 'SP'): return 1
@@ -820,6 +843,15 @@ def to_bytes_v8(ops):
             else:
                 assert 0 <= v < 0x8000, "v8 call value %d out of 15 bits" % v
                 b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
+        elif k == 'EQIH':                              # the fused opcode, then the immediate
+            nk = ops[j + 1][0]
+            b.append(X_OPS10['=I?BRANCH8' if nk == 'EQITS' else '=I?BRANCH']); b.append(pl & 0xFF)
+        elif k in ('EQIT', 'EQITS'):                    # the offset alone, from itself
+            tgt = cs[j] + CELL + pl
+            if tgt not in c2t: return None
+            if k == 'EQITS':
+                o = c2t[tgt] - ts[j]; assert -128 <= o <= 127, "short branch out of range: %d" % o; b.append(o & 0xFF)
+            else: le(c2t[tgt] - ts[j], 2)
         elif k in ('BRS', 'QBRS') + tuple(TB_SHORT):
             b.append(X_OPS10[dict({'BRS': 'BRANCH8', 'QBRS': '?BRANCH8'}, **TB_SHORT)[k]])
             tgt = cs[j] + CELL + pl
