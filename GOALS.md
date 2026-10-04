@@ -43,12 +43,14 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **On the Ryzen, one check** (the owner's, about a minute after the
-   rebuild): the fix of Iteration 5 changed hand-made s6's machine code -
-   same size, same behaviour, 0.997 of its old time on the VM. Every speed
-   is s6-relative, so to compare later runs with seeds 1 and 2:
-   `tools/compare-commits.py 73e1e68 HEAD --systems s6-cv8b --workloads
-   fib,parse,corpus --rounds 12` - expected within noise of 1.000.
+1. **On the Ryzen, one check** (the owner's, about two minutes): the fix
+   of Iteration 5 changed hand-made s6's machine code - same size, same
+   behaviour, within noise on the VM. Every speed is s6-relative, so
+   before comparing later runs with seeds 1 and 2: `tools/compare-commits.py
+   73e1e68 e456c0b --systems s6-cv8b --workloads fib,parse,corpus --rounds
+   20`. The first try (Iteration 6) was unpinned and calibrated on fib
+   alone - inconclusive for corpus (1.047 against a calibration of 1.030);
+   the tool now pins itself and calibrates every row.
 2. **The next genes, from `lab/evolve/SEARCH-SPACE.md`**: of its 14
    candidates and 4 deliberate strangers, first those cheap to try and
    likely to matter - profile-guided optimisation of the engine; triples;

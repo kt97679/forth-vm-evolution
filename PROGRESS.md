@@ -203,3 +203,23 @@ seven IDENTICAL.
 
 **Open.** GOALS.md, "Next". Pick up first: the s6 check on the Ryzen;
 then the first candidates from SEARCH-SPACE.md.
+
+## Iteration 6 - 2026-10-04 - Claude
+
+**The s6 check on the Ryzen, first try: inconclusive.** New s6 against
+old: fib 1.011, parse 0.996, corpus 1.047 - but the calibration (old
+against itself, fib only) was 1.030, and the run was not pinned. Two
+flaws of `tools/compare-commits.py`, fixed: (1) it pinned only with
+BENCH_CPU - it now picks the quietest core with its sibling, as the
+evolver does; (2) one calibration, on the first workload, judged every
+row - corpus, the shortest (8 ms), was judged by fib's noise. Each round
+now runs old, new and old again in rotating order, so every row carries
+its own old against itself; a change counts as beyond noise only if
+larger than both that and 2% - one pair is a single draw of the noise,
+not its width, and 2% is the project's stated run-to-run noise. A first
+version with a 1% floor flagged fib +0.5% on the VM: the floor came from
+the data, not taste - on the VM corpus read 0.996, 1.010 and 1.011 in
+three sessions.
+
+**Open.** The same check again on the Ryzen with the new tool (GOALS.md,
+"Next" 1).
