@@ -182,10 +182,32 @@ def gid(g):
 
 
 # ---- building and testing one design ------------------------------------
-def _contain(cpu):
-    """In the child: a CPU-time limit - SIGXCPU at cpu seconds."""
+BUILD_TOOLS = ('cc', 'gcc', 'make', 'sh', 'bash', 'git', 'objcopy', 'objdump', 'size', 'strip', 'ld', 'as', 'cpp', 'nm')
+def _kind(cmd):
+    """'engine', 'cputime' (about to run one) or None (a build tool, which
+    forks: the compiler, the converter). Anything not known to be a tool
+    counts as an engine - a new tool fails loudly rather than escaping."""
+    i = 3 if cmd and os.path.basename(str(cmd[0])) == 'taskset' else 0    # taskset -c N
+    exe = os.path.basename(str(cmd[i])) if len(cmd) > i else ''
+    if exe == os.path.basename(CPUT): return 'cputime'
+    return None if exe in BUILD_TOOLS or exe.startswith('python') else 'engine'
+def _contain(cpu, kind=None):
+    """In the child: a CPU-time limit - SIGXCPU at cpu seconds - and for an
+    engine, the jail: no new processes (RLIMIT_NPROC 0), at most 1 GB of
+    address space, 64 MB files, 64 open files, no core dumps. Iteration 10:
+    a broken design forked without bound and froze the owner's laptop -
+    the CPU limit and the group kill came too late, since a fork bomb fills
+    the machine in milliseconds. No workload forks. Under cputime, which
+    must fork once, cputime jails its child (CPUTIME_JAIL)."""
     import resource
-    def f(): resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu + 2))
+    def f():
+        resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu + 2))
+        if kind:
+            for r, v in ((resource.RLIMIT_CORE, 0), (resource.RLIMIT_AS, 1 << 30),
+                         (resource.RLIMIT_FSIZE, 64 << 20), (resource.RLIMIT_NOFILE, 64)):
+                resource.setrlimit(r, (v, v))
+        if kind == 'engine':
+            resource.setrlimit(resource.RLIMIT_NPROC, (0, 0))
     return f
 def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
     """Run cmd in a process group of its own and kill the WHOLE group on
@@ -198,8 +220,10 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
     is stopped however busy the machine is, while a correct design merely
     waiting its turn on a loaded laptop is not. timeout, wall-clock, is
     only the backstop for one that blocks. SIGXCPU counts as a timeout."""
+    kind = _kind(cmd)
+    if kind == 'cputime': env = dict(env if env is not None else os.environ, CPUTIME_JAIL='1')
     p = subprocess.Popen(cmd, cwd=cwd, stdin=subprocess.PIPE if inp is not None else subprocess.DEVNULL,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain(cpu), env=env)
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True, preexec_fn=_contain(cpu, kind), env=env)
     try:
         out, err = p.communicate(inp, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -675,6 +699,10 @@ def stale_build():
     return sorted(os.path.relpath(f, ROOT) for f in srcs if os.path.exists(f) and os.path.getmtime(f) > when + 1)
 
 def setup():
+    if os.geteuid() == 0 and not os.environ.get('EVOLVE_ALLOW_ROOT'):
+        sys.exit('evolve.py: will not run as root. Engines are denied fork by RLIMIT_NPROC, '
+                 'which does not bind root, and a broken design can fork without bound '
+                 '(Iteration 10). EVOLVE_ALLOW_ROOT=1 only where a fork bomb cannot hurt.')
     global REF_CORPUS, KREF, UNIT, POOL
     newer = stale_build()
     if newer:

@@ -1,5 +1,22 @@
 # Running the evolution on a machine that is not quiet
 
+## Safety: engines are jailed (Iteration 10)
+
+A design is generated, so a broken one runs arbitrary code - and the
+engines' primitives include FORK. In the third run on the Ryzen, wild
+designs forked without bound and froze the laptop; the CPU limit and the
+process-group kill came too late, since a fork bomb fills the machine in
+milliseconds. Every engine the evolver runs is now jailed: no new
+processes at all (no workload forks), at most 1 GB of address space,
+64 MB files, 64 open files, no core dumps (`_contain` in evolve.py;
+`CPUTIME_JAIL` in tools/cputime.c). The process limit does not bind
+root, so the evolver refuses to run as root.
+
+Before a run, after the rebuild, check it on this machine - it runs a
+real fork bomb, but only after one jailed fork has been refused:
+
+    python3 lab/evolve/test-jail.py      # must end: PASS
+
 ## What is measured
 
 - **CPU time of the engine process** - user plus system time, from

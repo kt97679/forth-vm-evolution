@@ -72,7 +72,7 @@ def engine(build, name):
     sys.exit('no engine for %s in %s' % (name, build))
 
 def run(cmd, inp, cwd):
-    r = subprocess.run(PIN + [CPUT] + cmd, cwd=cwd, input=inp, capture_output=True)
+    r = subprocess.run(PIN + [CPUT] + cmd, cwd=cwd, input=inp, capture_output=True, env=dict(os.environ, CPUTIME_JAIL='1'))   # the engine jailed, as the evolver's
     m = re.search(rb'^CPUNS (\d+)', r.stderr, re.M)
     if not m: sys.exit('no CPU time from %s: %r' % (' '.join(cmd), r.stderr[-200:]))
     return int(m.group(1)), r.stdout

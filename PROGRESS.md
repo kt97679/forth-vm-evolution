@@ -307,3 +307,31 @@ for about 620 bytes. Hand-made engines byte-identical; --validate seven
 IDENTICAL; tests PASS. A founder fusing tests at run time added.
 
 **Open.** A third run on the Ryzen (GOALS.md "Next" 1).
+
+## Iteration 10 - 2026-10-04 - Claude
+
+**The third run froze the owner's laptop**: many `engine` processes; only
+killing them all from a console brought it back. A broken design reaching
+the FORK primitive in a loop: every child forks again. sh()'s own
+docstring recorded the hazard ("once took the machine down"), but the
+only limits were CPU time and a process-group kill on timeout - both too
+late for a fork bomb.
+
+**Fixed: every engine is jailed.** No workload forks (corpus, benches,
+extend.4, cross.4, pgo-train.fth - checked), so: RLIMIT_NPROC 0 - no new
+processes - plus 1 GB address space, 64 MB files, 64 open files, no core
+dumps. In the evolver's own runs via preexec (any command not a known
+build tool counts as an engine: a new tool fails loudly rather than
+escaping); in timed runs by cputime itself, in its child after the one
+fork it needs (CPUTIME_JAIL). RLIMIT_NPROC does not bind root: the
+evolver refuses root (EVOLVE_ALLOW_ROOT=1 to override, where a bomb
+cannot hurt). compare-commits.py jails its engines too.
+
+**Proved by `lab/evolve/test-jail.py`**, safe even if the jail fails: one
+jailed FORK must be refused (-1) - else it stops; one unjailed must
+succeed (two processes) - so the refusal is real; only then a fork bomb,
+jailed, directly and under cputime: at most one engine, stopped by its
+CPU limit, nothing left. Its first version passed vacuously - the bomb
+used AGAIN, which the kernel lacks, and "ran" an error message; a bomb
+that exits now fails the test. Under the jail: --validate seven
+IDENTICAL, tests PASS, front-style designs evaluate.

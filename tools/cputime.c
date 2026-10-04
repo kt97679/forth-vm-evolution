@@ -44,6 +44,7 @@
  *  The timing goes to stderr so it cannot be confused with whatever the
  *  program under test writes to stdout.
  */
+#include <sys/resource.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,6 +78,19 @@ static long long perf_value(int fd)     /* -1 if there is no usable count */
     return (long long)v[0];
 }
 
+/* CPUTIME_JAIL (set by lab/evolve): the command is an engine the evolver
+ * runs - possibly a broken design executing arbitrary code, and FORK is
+ * one of its primitives. Iteration 10: a run forked without bound and
+ * froze the owner's laptop. No workload forks, so the engine gets no new
+ * processes at all (RLIMIT_NPROC - not binding for root, which the
+ * evolver refuses), and bounded memory, file sizes and open files, and no
+ * core dumps. Set in the child, after the one fork cputime needs. */
+static void jail(void) {
+    struct rlimit none = {0, 0}, as = {1UL << 30, 1UL << 30}, fsz = {64UL << 20, 64UL << 20}, nof = {64, 64};
+    setrlimit(RLIMIT_NPROC, &none); setrlimit(RLIMIT_CORE, &none);
+    setrlimit(RLIMIT_AS, &as); setrlimit(RLIMIT_FSIZE, &fsz); setrlimit(RLIMIT_NOFILE, &nof);
+}
+
 int main(int argc, char **argv)
 {
     pid_t pid;
@@ -98,6 +112,7 @@ int main(int argc, char **argv)
         close(go[1]);
         if (read(go[0], &c, 1) != 1) _exit(126);
         close(go[0]);
+        if (getenv("CPUTIME_JAIL")) jail();
         execvp(argv[1], argv + 1);
         _exit(127);                       /* exec failed */
     }
