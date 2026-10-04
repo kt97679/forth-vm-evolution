@@ -43,9 +43,18 @@ if [ -z "${NEXT_RUN_PULLED:-}" ]; then
     running && die "an evolution is running already (pgrep -f lab/evolve/evolve.py) - let it finish"
     b=$(ls -t "$BUNDLES"/forth-vm-evolution*.bundle 2>/dev/null | sed 1q)
     [ -n "$b" ] || die "no forth-vm-evolution*.bundle in $BUNDLES"
-    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-        git status --short --untracked-files=no >&2
-        die "tracked files are changed in $REPO - commit or stash them first"
+    # Iteration 18: tools/bench-laptop.sh writes its measurements into tracked
+    # files under results/ - a benchmark run, not an edit. Those are kept as a
+    # stash and sent back in the pack; a change anywhere else stops it.
+    changed=$(git status --porcelain --untracked-files=no | cut -c4-)
+    if [ -n "$changed" ]; then
+        if printf '%s\n' "$changed" | grep -qv '^results/'; then
+            git status --short --untracked-files=no >&2
+            die "tracked files outside results/ are changed in $REPO - commit or stash them first"
+        fi
+        git stash push -q -m "next-run: results/ as the benchmarks here left it, $(date -u +%Y-%m-%d)" -- results/
+        say "results/ held measurements made here - kept as $(git stash list | sed 1q | cut -d: -f1), sent back in the pack:"
+        printf '%s\n' "$changed" | sed 's/^/    /'
     fi
     say "pulling $b"
     git fetch -q "$b" HEAD || die "cannot read $b"
@@ -139,6 +148,11 @@ cp build/evolve/report.md build/evolve/db.jsonl evolve.log "$K/"
 for f in build tests validate jail; do [ ! -f "$RUN/$f.log" ] || cp "$RUN/$f.log" "$K/"; done
 lscpu > "$K/lscpu.txt" 2>&1 || true
 { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT, $MODE"; } > "$K/machine.txt"
+# results/ as the benchmarks here left it (step 1), every such stash
+s=$(git stash list | grep 'next-run: results/' | cut -d: -f1 || true)
+if [ -n "$s" ]; then
+    for x in $s; do echo "# $x: $(git log -1 --format=%s "$x")"; git stash show -p "$x"; done > "$K/results-measured-here.patch"
+fi
 cp "$RUN/next-run.log" "$K/next-run.log"
 P=$RUNS/forth-vm-evolution-seed$SEED-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
 tar -czf "$P" -C "$RUN" pack

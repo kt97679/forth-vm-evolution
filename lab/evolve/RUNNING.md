@@ -8,8 +8,9 @@ In the clone, with the new bundle in ~/Downloads:
 
 `lab/evolve/next-run.sh` does all of this page: it pulls the newest
 `forth-vm-evolution*.bundle` from ~/Downloads into the clone it is in
-(fast-forward only; REPO= to choose another), then carries on as the
-copy it pulled - so it updates itself, and only bundles need
+(fast-forward only; REPO= to choose another; tracked files the benchmark
+suite rewrote under results/ are kept as a git stash and sent back in the
+pack, any other change stops it), then carries on as the copy it pulled - so it updates itself, and only bundles need
 downloading. It moves the previous run's
 records to ~/forth-vm-evolution-runs/archived-TIME/ (never deletes them:
 every untracked file at the top but RESULTS.md, every file in

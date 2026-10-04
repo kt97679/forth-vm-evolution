@@ -509,3 +509,15 @@ it runs: git replaces the file rather than writing into it, so the shell
 reads on from the old one and then executes the pulled copy - tested,
 from the top of a clone and from elsewhere, with the clone away from the
 fixed path.
+
+## Iteration 18 - 2026-10-04 - Claude
+
+**next-run.sh stopped on the laptop's own measurements**: three tracked
+files under results/ were changed - tools/bench-laptop.sh writes its stage
+tables and SPN figures straight into results/<cpu>-runN.md and
+results/spn-<cpu>.md, so every benchmark run there leaves them changed (the
+committed ones are from 2026-09-30 02:33 UTC). They are measurements, not
+edits: the script now keeps such changes as a git stash, says which, and
+puts the patch in the pack (results-measured-here.patch); a change to any
+other tracked file still stops it. Open: the benchmark suite writing
+tracked files at all - a commit here and a run there then always differ.
