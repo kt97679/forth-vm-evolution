@@ -46,7 +46,7 @@ trying anything again (prompts/12-progress-log).
 ## Next, in order
 
 1. **A third run on the Ryzen** (the owner's): the gene pool has grown -
-   fused tests (`0=`, `<`, `=`, `U<` before a branch, ten format-10
+   fused tests (`0=`, `<`, `=`, `U<` before a branch, eight format-10
    opcodes; at run time with `rtfuse`), and the three flag genes. On one
    engine, s6 with the escape and all four: 0.960 in kernel code, 0.935
    with the run-time overlay (+620 bytes).
