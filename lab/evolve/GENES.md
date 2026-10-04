@@ -10,6 +10,7 @@
 | superinstructions: primitive pairs as single opcodes, drawn from the parent's own hottest pairs (`design_pairs`, profiled per design), in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
 | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+| one-byte calls (`hotcalls`: 0, 8, 16, 32): the far-call prefixes 0xE0-0xFF call the image's own words with the most call sites, through a table in the image's header; chosen per design by the converter, no profile | this lab's search (SEARCH-SPACE.md: a stranger), priced at Iteration 13 | a call one byte instead of two; the far form keeps 21 bits - 2 MB at scale 0 |
 | tail-call threading (`tail`): every handler a function of (ip, dsp, rp, tos, t), dispatching by a tail call through a 256-entry table of functions; made from the cached engine | Wasm3, CPython 3.14, WasmKit | each handler's registers allocated for it alone; handlers that keep a frame are split so their dispatch stays a jump |
 | multi-state stack caching (`msc`): 0, 1 or 2 top items in registers, a dispatch table per state, each handler variant dispatching by the table of the state it ends in; generated from stack effects for 72 operations, the rest normalised to the one-register state | Ertl and Gregg; gforth's vmgen | no memory traffic where the state absorbs it; three times the code for the specified operations |
 | compiler: `-O2/-O3/-Os`, `-fno-gcse`, `-fno-crossjumping`, `-fcf-protection=none`, minimal label alignment, `-fno-reorder-blocks` | gforth's and CPython's builds, this lab's endbr64 finding | how the C compiler lays out the interpreter: computed goto only pays if every handler keeps its own indirect jump, which GCSE and cross-jumping undo |
@@ -288,3 +289,40 @@ doubled their calls column; corrected. And the held-out loop moves with
 the image's size mod 8: before a call with an inline operand the compiler
 pads with NOOPs, executed on every pass - 60753a0eb0's loop made 1,200,000
 more NOOP dispatches (+14%) because its image shrank by 99 bytes.
+
+## Iteration 14: one-byte calls, built
+
+`hotcalls` (0, 8, 16, 32; in LATE, so every recorded id is unchanged): the
+converter counts the call sites in the design's own code and gives the
+bytes 0xE0-0xFF to the targets with the most (a site before an inline
+operand counted last; three sites at least - two only pay for the entry);
+the table, a count byte and 2-byte image offsets, ends the image's header
+(flag 0x20), so the size measure sees it. The engine: `L_hcall` - RPUSH,
+`ip = cbase + hot_tab[t & 0x1F]` - reached by the 256-entry table, or by
+one compare in `do_call` where there is none; a copy per state under
+multi-state caching (gen-msc.py), a function under tail calls. Engines
+without the gene compile through `HCALL(i)` to `&&do_call` as before:
+nine designs across every engine form, machine code and image identical
+to Iteration 13's.
+
+Every engine form lives with it - cached, plain, 256-entry, tail calls,
+multi-state - through the gate. Predicted against achieved (32 targets):
+
+| design | priced (Iteration 13) | built | image |
+|---|---|---|---|
+| s6-cv8b | - | 255 | 10,065 -> 9,810 |
+| 8dd8a7a146 | 136 | 143 | 13,352 -> 13,209 |
+| 60753a0eb0 | 221 | 212 | 9,686 -> 9,474 |
+| f4a6dd9a13 | 320 | 319 | 9,662 -> 9,343 |
+| 550df563ee | 304 | 303 | 9,646 -> 9,343 |
+
+One engine, image without and with (`image-ab.py --set hotcalls=32 --env
+SOD16_NO_HOTCALLS=1`): dispatches unchanged on kernel, fib and corpus,
+0.2% fewer on parse; loop -12% on 60753a0eb0, the alignment artefact of
+Iteration 13 (212 bytes, 4 mod 8). Time on this VM, selection 0.963-1.016,
+inside its own noise: the same run with two identical images gave
+0.976-1.005, single workloads 0.917-1.085. A size gene, for selection.
+
+Open: the far form's reach - 2 MB at scale 0 with the gene, 4 MB without -
+is not checked by cv8.4's compiler, and how far the workloads' dictionary
+grows was not measured here.

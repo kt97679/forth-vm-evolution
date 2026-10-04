@@ -442,3 +442,22 @@ used.
 
 **Open.** GOALS.md "Next": one-byte calls as a size gene, then the fourth
 run; the loop words at run time, priced first.
+
+## Iteration 14 - 2026-10-04 - Claude
+
+**One-byte calls, built** as the gene `hotcalls` (0, 8, 16, 32): the
+converter gives 0xE0-0xFF to the targets with the most call sites in the
+design's own code (`--hotcalls N`, tools/layout.py), the table ends the
+image's header, the engine reaches `L_hcall` by the 256-entry table or one
+compare in do_call (engine/vm-lab.c, gen-tos.py, gen-msc.py; gen-tail.py
+needed nothing). In LATE: every id unchanged. Every engine form passes the
+gate with it; without it, nine designs over every form compile to machine
+code and images identical to Iteration 13's (a worktree at 3382588,
+objdump). Achieved beside predicted, 32 targets: 143/212/319/303 bytes on
+seed 3's front against 136/221/320/304 priced; s6 255. On one engine:
+dispatches unchanged (parse -0.2%), time inside this VM's noise - measured
+by the same tool on two identical images: 0.976-1.005 on the selection
+mean. A size gene, for the fourth run.
+
+**Open.** GOALS.md "Next": the fourth run on the Ryzen; then the far-call
+reach check (unmeasured, unchecked: 2 MB at scale 0 with the gene).

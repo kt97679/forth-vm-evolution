@@ -85,7 +85,8 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls')
+HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
 def human(enc, **kw):
@@ -103,9 +104,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',)]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -174,6 +175,7 @@ def express(g):
     if 'rtfuse' in e and not e.get('supers') and not rt_tests(g): e.pop('rtfuse')   # nothing to fuse at run time
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+    if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
     if 'msc' in e and not g['tos']: e.pop('msc')                       # made from the cached engine only
     if e.get('msc'):                                                   # its own tables; tail calls excluded
         e.pop('d256', None); e.pop('sharedcall', None); e.pop('tail', None)
@@ -357,6 +359,7 @@ def build(g, d):
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
+    if g.get('hotcalls') and g['varcall']: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
     if PROFILING[0]: flags.append('-DPROFILE=1')
     if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
     o10 = ops10_in(g)
@@ -395,6 +398,7 @@ def build(g, d):
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
     if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
+    if g.get('hotcalls') and g['varcall']: opts += ['--hotcalls', str(g['hotcalls'])]
     opts += CONVERT_EXTRA
     img = os.path.join(d, 'image.img')
     fuse = '-fuse' if overlay(g) else ''
@@ -537,6 +541,8 @@ def mutate(g, rnd):
             g['opt'] = rnd.choice([o for o in ('O2', 'O3', 'Os') if o != g['opt']]); what.append('-' + g['opt'])
         elif k == 'scale':
             g['scale'] = rnd.choice([s for s in range(4) if s != g['scale']]); what.append('scale=%d' % g['scale'])
+        elif k == 'hotcalls':         # Iteration 14: one-byte calls to 0, 8, 16 or 32 of the image's words
+            g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
         elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
             g['escape'] = rnd.choice([e for e in range(3) if e != g.get('escape', 0)]); what.append('escape=%d' % g['escape'])
         elif k == 'spec':
@@ -782,6 +788,7 @@ def random_genome(rnd):
         if k == 'opt': g[k] = rnd.choice(['O2', 'O3', 'Os'])
         elif k == 'scale': g[k] = rnd.randrange(4)
         elif k == 'escape': g[k] = rnd.randrange(3)
+        elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
         elif k in ('ops10', 'supers', 'folds'):
             f = [x for x in {'ops10': OPS10_POOL, 'supers': SUPER_POOL, 'folds': POOL}[k] if rnd.random() < 0.5]

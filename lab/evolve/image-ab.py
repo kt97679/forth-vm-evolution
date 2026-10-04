@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""image-ab.py ID [ID ...] --env VAR=VALUE [--db FILE] [--rounds N] - a
+"""image-ab.py ID [ID ...] --env VAR=VALUE [--set GENE=VALUE] [--db FILE] [--rounds N] - a
 change to the image alone, measured on one engine.
 
 Iteration 8's lesson: two builds of a design differ in the engine's layout
@@ -14,14 +14,18 @@ which goes first, best of the rounds. Ratios are B / A.
 
 Iteration 13: SOD16_OLD_BODYCHECK=1 - the format-10 and tiny words' body
 check as it was, reading bodies after the pairs, short branches and fused
-tests had rewritten them - against the fix.
+tests had rewritten them - against the fix. Iteration 14: --set hotcalls=32
+--env SOD16_NO_HOTCALLS=1 - one-byte calls, image against image; and with
+no --set, both images are the same: the noise of the machine itself.
 """
 import json, math, os, shutil, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 args = sys.argv[1:]; db = os.path.join(HERE, '..', '..', 'build', 'evolve', 'db.jsonl'); rounds = 10; env = None
-for opt in ('--db', '--rounds', '--env'):
-    if opt in args:
+sets = {}
+for opt in ('--db', '--rounds', '--env', '--set'):
+    while opt in args:
         i = args.index(opt); v = args[i + 1]; del args[i:i + 2]
+        if opt == '--set': k, x = v.split('=', 1); sets[k] = int(x) if x.lstrip('-').isdigit() else x; continue
         if opt == '--db': db = v
         elif opt == '--rounds': rounds = int(v)
         else: env = v.split('=', 1)
@@ -57,7 +61,7 @@ print('| design | size A | size B | B - A | dispatches B / A: %s | time B / A: %
 print('|---|---|---|---|---|---|---|')
 for did in args:
     if did not in recs: sys.exit('no design %s in %s' % (did, db))
-    g = E.canon(recs[did]['genome'])
+    g = E.canon(dict(recs[did]['genome'], **sets))    # --set GENE=VALUE: the design with that gene changed
     d = os.path.join(E.EV, 'ab')
     eng, a, b = both(g, d)
     pw = E.private_work(d)

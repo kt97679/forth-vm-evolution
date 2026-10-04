@@ -39,14 +39,14 @@ the included ones checked to be among them.
 | native code | 3 | 1 | SPN stencils; an optimising compiler |
 | **all 11 axes** | **66** | **35** | **31 missing** |
 
-Every missing value decided (10 excluded, 10 candidate, 4 stranger, 4 deferred, 2 built, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
+Every missing value decided (10 excluded, 10 candidate, 3 stranger, 4 deferred, 3 built, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
 
 | missing value | decided | why |
 |---|---|---|
 | nibble unit | excluded | 16 codes cannot hold 68 primitives without an escape on most of them - a variable-length code by another name, covered next |
 | variable bit length (Huffman-like) | stranger | see step 4 |
 | position-relative calls | excluded | the image loads at a fixed base: relative and image-offset calls cost the same bytes and the same add |
-| one-byte calls through a table of hot words | priced | Iteration 13 (GENES.md): 136-320 bytes net on seed 3's front (1.0-3.3%), no dispatch removed; pays only in the far-call prefix band - taking pairs' slots costs 3-8% of dispatches; to build as a size gene |
+| one-byte calls through a table of hot words | built | priced at Iteration 13, built at 14 (GENES.md, `hotcalls`): 143-319 bytes on seed 3's front (1.1-3.3%), no dispatch removed; in the far-call prefix band - taking pairs' slots costs 3-8% of dispatches |
 | bodies inlined at the call site | stranger | see step 4 |
 | switch dispatch | excluded | measured slower than the token table in the dispatch lab |
 | direct threading | deferred | the register in GOALS.md: the dispatch lab gave -5% fib, -12% sieve but +9% loop; relf found dispatch already at the indirect-jump rate |
@@ -84,7 +84,7 @@ cannot say it is worse rather than unfashionable:
   a call to one of the design's hottest colon words, the targets in a
   per-design table. VMs spend scarce opcodes on operations and use one
   generic call; here the escape frees slots, and a few words take most
-  of the calls. *Priced at Iteration 13: a size gene, 1-3% of the image.*
+  of the calls. *Built at Iteration 14: a size gene, 1-3% of the image.*
 - **Bodies inlined at the call site by the converter.** Bytecode VMs leave
   inlining to a JIT: it grows code and loses a word's identity for
   redefinition and debugging. Our images are fixed after conversion,

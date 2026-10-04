@@ -96,7 +96,7 @@ NOSTACK = {'L_noop', 'L_exit', 'L_branch', 'L_dodoes', 'L_lsave', 'L_lrest', 'L_
            # The escape only reads its selector and jumps: wrapped, it SPILLed the
            # cached top into memory and the escaped primitive found the stack one
            # cell deep - the converter's "BUF-ALLOC fault", in every cached engine.
-           'L_esc', 'L_x_unloop', 'L_x_loop', 'L_x_leave', 'L_x_br8'}   # never touch the data stack
+           'L_esc', 'L_hcall', 'L_x_unloop', 'L_x_loop', 'L_x_leave', 'L_x_br8'}   # never touch the data stack
 fend = s.index("\n#if FOLD\n#define EXITNEXT")
 start = s.index("L_noop:")
 sec = s[start:fend]

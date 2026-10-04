@@ -58,25 +58,22 @@ trying anything again (prompts/12-progress-log).
 - **The held-out loop moves with the image's size mod 8**: code compiled at
   run time pads `(LOOP)`'s operand with 0-7 NOOPs, run on every pass (about
   4% each) - compare designs on loop only at equal size mod 8.
-- One-byte calls priced (`results/price-hotcalls-seed3-front.md`): 136-320
-  bytes net on seed 3's front (1.0-3.3%), no dispatch removed - in the
-  far-call prefix band only.
+- **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
+  far-call prefixes 0xE0-0xFF call the image's own most-called words
+  through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
+  priced 136-320), no dispatch removed; every engine form lives; engines
+  without it are byte-identical.
 
 ## Next, in order
 
-1. **One-byte calls as a size gene** - priced (Iteration 13): 136-320 bytes
-   net at 32 targets. Their opcodes from the top of the far-call prefixes
-   (0xE0-0xFF), never the pairs' slots; each design's targets from its own
-   census (`lab/evolve/callsites.py`, no profile); the table in the image's
-   header; cv8.4's compiler must check far-call reach (2 MB at scale 0);
-   a handler in every engine form, and do_call's extra test priced where
-   there is no 256-entry table. The converter side exists
-   (`--hotcalls-file`).
-2. **A fourth run on the Ryzen** with what has been added since seed 3:
+1. **A fourth run on the Ryzen** with what has been added since seed 3:
    the body-check fix (the front's four lost words), the second escape
    level (works, does not pay alone), the five further fused tests
    (Iteration 12: 1-2% fewer dispatches, 48 bytes smaller), one-byte
    calls - selection weighs them together.
+2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
+   checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
+   far the workloads' dictionary grows, then make the compiler refuse.
 3. **The loop words in code compiled at run time** - priced first: there
    every pass of a DO loop runs `(LOOP)`'s colon body and 0-7 alignment
    NOOPs; the opcodes exist and now work. Count the passes in the

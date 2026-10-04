@@ -115,6 +115,15 @@ static char **g_argv;
  *  align(body+3), which is what every other CV8 stage uses.  */
 #define DOESFAR 0
 #endif
+#ifndef HOTCALLS
+/*  HOTCALLS (Iteration 14): one-byte calls. The far-call prefixes
+ *  0xE0-0xFF become calls to up to 32 of the image's own words, whose
+ *  image offsets the image's header carries (F_HOTCALLS), chosen per
+ *  design by the converter from its own call sites (--hotcalls N). The
+ *  far form keeps 0xC0-0xDF: 21 bits, 2 MB at scale 0. Priced at
+ *  Iteration 13: 1-3% of the image, no dispatch removed.  */
+#define HOTCALLS 0
+#endif
 #ifndef VARCALL
 /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
  *  (14-bit payload), 11xxxxxx takes two (22-bit). Costs one extra test
@@ -348,6 +357,7 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
 #define F_VARSLOT 0x02   /* slot operands are 2 or 3 bytes              */
 #define F_SPEC    0x04   /* specialised opcodes present (locals header) */
 #define F_LIT64   0x08   /* LIT64 may appear                            */
+#define F_HOTCALLS 0x20  /* one-byte calls: 0xE0-0xFF through a table   */
 #define F_BYTEHDR 0x10   /* dictionary headers are byte-granular: a 1-3
                             byte link with its tag last, unpadded names.
                             The engine never reads a link in this
@@ -357,7 +367,7 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
 static const UNS8 IMAGE_MAGIC[8] = { 'C', 'V', '8', '0' + SCALE, CELL_BYTES,
     SPEC ? 'L' : 0, CV8_VERSION,
     (VARCALL ? F_VARCALL : 0) | (VARSLOT ? F_VARSLOT : 0)
-        | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR };
+        | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR | (HOTCALLS ? F_HOTCALLS : 0) };
 #else
 static const UNS8 IMAGE_MAGIC[8] = { 'C', 'P', 'T', '0' + SCALE, CELL_BYTES, 0, 0, 0 };
 #endif
@@ -526,6 +536,9 @@ static const int open_flags[8] = {
 #define MAX_TAILS 16
 static UNS64 nwords;
 static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
+#if ENC == 3 && HOTCALLS
+static UNS64 hot_tab[32];  /* one-byte calls: image offsets, from the header */
+#endif
 
 static void load_image(const char *name) {
     int fd;
@@ -622,6 +635,23 @@ static void load_image(const char *name) {
         }
     }
 
+#if ENC == 3 && HOTCALLS
+    /*  Last in the header: a count byte, then that many 2-byte offsets.  */
+    if (magic[7] & F_HOTCALLS) {
+        UNS8 k_, b_[2];
+        if (full_read(fd, &k_, 1) != 1 || k_ > 32) {
+            write_str(2, "Truncated image header.\n");
+            exit(2);
+        }
+        for (i = 0; i < k_; i++) {
+            if (full_read(fd, b_, 2) != 2) {
+                write_str(2, "Truncated image header.\n");
+                exit(2);
+            }
+            hot_tab[i] = b_[0] | (UNS64)b_[1] << 8;
+        }
+    }
+#endif
     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
                     & ~(UNS64)(CELL_BYTES - 1));
     len = full_read(fd, base, MEMSIZE);
@@ -1017,6 +1047,11 @@ static void virtual_machine(void) {
       for (i_ = 0; i_ < ESC_N; i_++)  esc_tab[i_] = dispatch[esc_k[i_]]; }
 #define dispatch cv8_tab
 #endif
+#if ENC == 3 && HOTCALLS          /* a one-byte call's entry; without, the same code as ever */
+#define HCALL(i) (((i) & 0xE0) == 0xE0 ? &&L_hcall : &&do_call)
+#else
+#define HCALL(i) &&do_call
+#endif
 #if ENC == 3 && SHAREDCALL && DISPATCH256
     /*  Same handlers, but indexed by the whole byte: 0x80-0xFF all land
      *  on do_call, so no test is needed to tell an opcode from a call. */
@@ -1027,7 +1062,7 @@ static void virtual_machine(void) {
     if (!dtab256[0]) {
         int i_, n_ = (int)(sizeof dispatch / sizeof dispatch[0]);
         for (i_ = 0; i_ < 256; i_++)
-            dtab256[i_] = (i_ < n_ && i_ < 128) ? dispatch[i_] : &&do_call;
+            dtab256[i_] = (i_ < n_ && i_ < 128) ? dispatch[i_] : HCALL(i_);
     }
 #endif
 
@@ -1082,6 +1117,9 @@ do_call:
                     ip += 2; }
     else          { t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; }
 #elif VARCALL
+#if HOTCALLS
+    if ((t & 0xE0) == 0xE0) { ip += 1; goto L_hcall; }   /* the low byte, as SIGNTEST sign-extends */
+#endif
     if (t & 0x40) {                       /* 11xxxxxx: 22-bit target */
         t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
         ip += 3;
@@ -1094,6 +1132,13 @@ do_call:
 #endif
     PROF(256); RPUSH(ip); ip = cbase + (t << SCALE);
     NEXT();
+#endif
+#if ENC == 3 && HOTCALLS
+#if !(SHAREDCALL && VARCALL)
+#error "HOTCALLS needs the shared, variable-length call path"
+#endif
+L_hcall:   /* one-byte call: t holds the byte (0xE0-0xFF), ip is past it */
+    PROF(256); RPUSH(ip); ip = cbase + hot_tab[t & 0x1F]; NEXT();
 #endif
 
 L_noop:    /* noop    */ NEXT();

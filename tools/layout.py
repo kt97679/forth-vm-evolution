@@ -230,6 +230,29 @@ if CV8_COMPILER:
           % (OVERLAY_SUFFIX, _n, "; NOT translatable: %s" % _miss if _miss else "",
              "; no such target: %s" % _unmatched if _unmatched else ""))
 
+# ---- one-byte calls (Iteration 14): --hotcalls N --------------------
+# The targets with the most call sites in the image's code take the bytes
+# 0xE0-0xFF, through a table in the header (2 bytes an entry). Chosen here,
+# from the design's own code, before anything is sized: a site before an
+# inline operand counts last (its operand stays aligned, so what it saves
+# depends on where it lands), and a target must have three sites - two
+# would only pay for its entry. lab/evolve/callsites.py priced it.
+import os as _os
+HOT = []
+if V8 and '--hotcalls' in ARGV and not _os.environ.get('SOD16_NO_HOTCALLS'):
+    _free, _all = collections.Counter(), collections.Counter()
+    for w in order:
+        if kind[w['s']] != 'code': continue
+        _ops = info[w['s']]
+        for _j, (_k, _pl) in enumerate(_ops):
+            if _k != 'C': continue
+            _all[_pl] += 1
+            if not G['before_operand'](_ops, _j): _free[_pl] += 1
+    _rank = sorted(_all, key=lambda a: (-_free[a], -_all[a], a))
+    HOT = [a for a in _rank if _free[a] >= 3][:min(32, int(_opt('--hotcalls')))]
+    G['HOTCALLS'].update({a: 0xE0 + i for i, a in enumerate(HOT)})
+    print('one-byte calls: %d targets, %d sites' % (len(HOT), sum(_all[a] for a in HOT)))
+
 for w in order:
     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
 
@@ -827,7 +850,7 @@ def emit(path):
         img[at:at + len(data)] = data
 
     _flags = ((1 if G['VARCALL'] else 0) | (2 if G['VARSLOT'] else 0)
-              | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0)) if V8 else 0
+              | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0) | (32 if HOT else 0)) if V8 else 0
     hdr = (b'SOD1' if CPT is None else (b'CV8' if V8 else b'CPT') + bytes([48 + CPT]))
     hdr += bytes([CELL, ord('L') if G['SPEC'] else 0, 1 if V8 else 0, _flags])
     # The engine cannot derive the word table from one chain any more,
@@ -856,6 +879,11 @@ def emit(path):
         lmax_v = [pl for k, pl in info[lmax['s']] if k in ('LIT', 'LITX')][0]
         hdr += cel(body_of('LSAVE-SP') + CELL) + cel(body_of('LSAVE-STACK') + CELL)
         hdr += cel(lmax_v) + cel(body_of('LSAVE')) + cel(body_of('LRESTORE'))
+    if HOT:            # last in the header: one-byte calls' targets, as image offsets
+        assert G['VARCALL'], "one-byte calls take far-call prefixes: they need --varcall"
+        _o = [new_target_off(a) for a in HOT]
+        assert all(0 <= x < 1 << 16 for x in _o), "a one-byte call's target beyond 64 KB"
+        hdr += bytes([len(_o)]) + b''.join(x.to_bytes(2, 'little') for x in _o)
     open(path, 'wb').write(hdr + bytes(img))
     if _cm is not None:
         with open(_os.environ['CALLMAP'], 'w') as _f:

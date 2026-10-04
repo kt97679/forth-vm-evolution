@@ -112,7 +112,7 @@ SPECS = {
     'L_x_eqibr':        (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 2; else ip += (int16_t)LD16(ip);'),
     'L_x_eqibr8':       (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 1; else ip += (int8_t)BYTE(ip);'),
 }
-STACKFREE = ['L_noop', 'L_exit', 'L_branch']
+STACKFREE = ['L_noop', 'L_exit', 'L_branch', 'L_hcall']   # L_hcall: one-byte calls (Iteration 14)
 
 def rename(code, mp):
     """Whole-word renaming of a spec's declared names - not its C."""
@@ -232,7 +232,7 @@ src = src[:m] + '''/* multi-state stack caching (tools/gen-msc.py) */
 ''' + src[m:]
 
 # the tables for states 0 and 2, after the state-1 table is filled
-fill = re.search(r'\n(\s*)dtab256\[i_\] = \(i_ < n_ && i_ < 128\) \? dispatch\[i_\] : &&do_call;\n(\s*)\}\n', src)
+fill = re.search(r'\n(\s*)dtab256\[i_\] = \(i_ < n_ && i_ < 128\) \? dispatch\[i_\] : (?:&&do_call|HCALL\(i_\));\n(\s*)\}\n', src)
 assert fill, 'no 256-entry table to follow (build with DISPATCH256)'
 cases = ''.join(under(l, '            if (dtab256[i_] == &&%s) { dtab256_0[i_] = &&%s__s0; dtab256[i_] = &&%s__s1; dtab256_2[i_] = &&%s__s2; }\n'
                 % (l, l, l, l)) for l in specs)
@@ -242,11 +242,12 @@ src = src[:fill.end()] + '''    static const void *dtab256_0[256], *dtab256_2[25
     if (!dtab256_0[0]) {
         int i_;
         for (i_ = 0; i_ < 256; i_++) {
-            if (i_ >= 128) { dtab256_0[i_] = &&do_call__0; dtab256_2[i_] = &&do_call__2; continue; }
+%s            if (i_ >= 128) { dtab256_0[i_] = &&do_call__0; dtab256_2[i_] = &&do_call__2; continue; }
             dtab256_0[i_] = &&L_norm0; dtab256_2[i_] = &&L_norm2;
 %s        }
     }
-''' % cases + src[fill.end():]
+''' % (('#if HOTCALLS\n            if (i_ >= 0xE0) { dtab256_0[i_] = &&L_hcall__0; dtab256_2[i_] = &&L_hcall__2; continue; }\n#endif\n'
+       if 'L_hcall' in labs else ''), cases) + src[fill.end():]
 
 # the variants, the normalisers and the per-state copies
 dc = src.index('\ndo_call:\n') + 1
