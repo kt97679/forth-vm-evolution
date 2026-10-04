@@ -1219,6 +1219,14 @@ L_x_do:        { RPUSH(DS1); RPUSH(DS0); dsp += 2 * CELL_BYTES; } NEXT();       
 L_x_br8:   ip += (int8_t)BYTE(ip); NEXT();                                         /* BRANCH8  */
 L_x_qbr8:  if (DS0) ip += 1; else ip += (int8_t)BYTE(ip);                          /* ?BRANCH8 */
            dsp += CELL_BYTES; NEXT();
+/*  0= ?BRANCH as one branch that jumps when the top is NOT zero: about 4%
+ *  of the dispatches on kernel, parse and corpus (lab/evolve/price.py,
+ *  Iteration 8). The converter fuses them where nothing jumps between
+ *  (tools/sod16.py, testbranch); offsets as ?BRANCH's, from the operand.  */
+L_x_nqbr:  if (DS0) ip += (int16_t)LD16(ip); else ip += 2;                     /* 0= ?BRANCH  */
+           dsp += CELL_BYTES; NEXT();
+L_x_nqbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1;                      /* 0= ?BRANCH8 */
+           dsp += CELL_BYTES; NEXT();
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

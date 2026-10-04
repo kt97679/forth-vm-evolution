@@ -260,3 +260,31 @@ named after a fingerprint of the gene pool - a new gene changes its draws.
 
 **Open.** GOALS.md, "Next": triples, two escape levels, one-byte calls
 through a table of hot words.
+
+## Iteration 8 - 2026-10-04 - Claude
+
+**Triples, priced before building** (prompts/10) with a new tool,
+`lab/evolve/price.py`: it profiles a design's own dispatched stream and
+prices fusions. On seed 2's front: the best 8-16 triples would remove
+0-4.9% of dispatches, none on fib - not built. The same profile showed
+what pairs never touch: fib, all calls, returns, a test and a branch; and
+tests followed by a conditional branch at 6.6-9.1% of dispatches on every
+workload. Three hot opcodes had no names at first - the specialisation
+band is laid out positionally from 0x60; `0=` there is the largest single
+test (about 4% on kernel, parse, corpus).
+
+**Built: `0= IF` as one branch** - `?NBRANCH`/`?NBRANCH8`, format-10
+opcodes; the converter's testbranch pass; handlers in all three engine
+forms. Two false starts: (1) the size did not move - s6 has two free
+slots, the short form got none, every fused branch stayed long and as
+large as before; (2) timed as two designs, the fused one was 5% slower,
+fib 12% - a workload that never runs `0= IF`: the engines differed, and
+that was layout. Measured again on ONE engine binary, the image converted
+with and without the fusion (`SOD16_NO_TESTBR=1`): kernel 0.969, parse
+0.972, corpus 0.966, fib 1.003, loop 0.997 - what the price said. Lives
+under multi-state caching, tail calls, no caching, without tiny words,
+and in seed 2's fastest design. Hand-made engines byte-identical;
+--validate all seven IDENTICAL.
+
+**Open.** GOALS.md "Next": `< IF` in run-time code (fib), via the image's
+compiler; the other tests; then a Ryzen run.

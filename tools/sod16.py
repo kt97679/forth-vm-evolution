@@ -332,6 +332,7 @@ def read_ops(w):
     if V8 and X_OPS10: out = ops10_rewrite(out)
     out = fold_exit(out) if FOLD else out
     out = fuse_pairs(out) if V8 and SUPERS else out
+    out = testbranch(out) if V8 and '?NBRANCH' in X_OPS10 else out
     return shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
 
 def branch_targets(ops):
@@ -444,15 +445,15 @@ def ops10_at():
 # emission - a 2-byte offset from the operand - with their own opcode.
 LOOPKIND = {'(LOOP)': 'LP', '(+LOOP)': 'PLP', '(?DO)': 'QDO', '(LEAVE)': 'LV'}
 LOOPNAME = {v: k for k, v in LOOPKIND.items()}
-BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS')
-PSEUDO10 = {'BRANCH8', '?BRANCH8'}   # in X_OPS10 but not kernel words: the short branches
+BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS', 'NQBR', 'NQBRS')
+PSEUDO10 = {'BRANCH8', '?BRANCH8', '?NBRANCH', '?NBRANCH8'}   # in X_OPS10 but not kernel words: the short branches, and 0= ?BRANCH fused
 def shorten(ops):
     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
     on a layout that counts every alignment at its widest, so the real
     offsets can only be smaller; a branch that does not fit goes long and
     the layout is redone, until nothing changes - and a long one never
     comes back, so that ends."""
-    ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8')) if n in X_OPS10}
+    ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8'), ('NQBR', 'NQBRS', '?NBRANCH8')) if n in X_OPS10}
     long_ = set()
     while True:
         trial = [(ok[k], pl) if k in ok and j not in long_ else (k, pl) for j, (k, pl) in enumerate(ops)]
@@ -463,10 +464,29 @@ def shorten(ops):
         c2t = dict(zip(cs, ts)); c2t[c] = t
         grew = False
         for j, (k, pl) in enumerate(trial):
-            if k in ('BRS', 'QBRS'):
+            if k in ('BRS', 'QBRS', 'NQBRS'):
                 tgt = c2t.get(cs[j] + CELL + pl)
                 if tgt is None or not -128 <= tgt - (ts[j] + 1) <= 127: long_.add(j); grew = True
         if not grew: return trial
+def testbranch(ops):
+    """0= ?BRANCH becomes one branch that jumps when the top is NOT zero,
+    wherever nothing jumps to the ?BRANCH (Iteration 8: about 4% of the
+    dispatches on kernel, parse and corpus). 0= is ('P', '0=') where the
+    tiny words are opcodes, else a call to the colon word. The fused op
+    starts one cell earlier, so its operand reaches the same target
+    reckoned as every branch's: its cell + CELL + operand."""
+    import os
+    if os.environ.get('SOD16_NO_TESTBR'): return ops     # to measure the fusion on the same engine
+    cs, tg = branch_targets(ops)
+    name = {w['s']: w['n'] for w in words}
+    out, j = [], 0
+    while j < len(ops):
+        k, pl = ops[j]
+        if (j + 1 < len(ops) and ops[j + 1][0] == 'QBR' and cs[j + 1] not in tg
+                and ((k == 'P' and pl == '0=') or (k == 'C' and name.get(pl) == '0='))):
+            out.append(('NQBR', ops[j + 1][1] + CELL)); j += 2; continue
+        out.append(ops[j]); j += 1
+    return out
 def ops10_rewrite(ops):
     """A call to one of them becomes its opcode, one operation for one;
     a loop word and the operand cell after it, one branch-kind op."""
@@ -630,6 +650,7 @@ def op_cells(k, pl):
     if k in ('PX', 'SP'): return 2 * CELL
     if k == 'LITX': return 3 * CELL
     if k in ('P', 'C', 'OPD', 'XT'): return CELL
+    if k in ('NQBR', 'NQBRS'): return 3 * CELL       # 0= + ?BRANCH + its operand
     if k in ('LIT', 'LITOFF') + BRK: return 2 * CELL
     if k == 'STR': return align_up(len(pl), CELL)
     raise AssertionError("unknown op kind %r" % k)
@@ -656,7 +677,7 @@ def op_bytes(k, pl, t):
             if -(1 << 31) <= pl < (1 << 31): return 5
             return 1 + CELL
         if k == 'LITOFF': return 5
-        if k in ('BRS', 'QBRS'): return 2
+        if k in ('BRS', 'QBRS', 'NQBRS'): return 2
         if k in BRK: return 3
     if k == 'PX': return 2
     if k == 'LITX': return 4
@@ -789,15 +810,15 @@ def to_bytes_v8(ops):
             else:
                 assert 0 <= v < 0x8000, "v8 call value %d out of 15 bits" % v
                 b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
-        elif k in ('BRS', 'QBRS'):
-            b.append(X_OPS10['BRANCH8' if k == 'BRS' else '?BRANCH8'])
+        elif k in ('BRS', 'QBRS', 'NQBRS'):
+            b.append(X_OPS10[{'BRS': 'BRANCH8', 'QBRS': '?BRANCH8', 'NQBRS': '?NBRANCH8'}[k]])
             tgt = cs[j] + CELL + pl
             if tgt not in c2t: return None
             o = c2t[tgt] - (ts[j] + 1)                # from the operand, in bytes
             assert -128 <= o <= 127, "short branch out of range: %d" % o
             b.append(o & 0xFF)
         elif k in BRK:
-            b.append(idx_of['BRANCH'] if k == 'BR' else idx_of['?BRANCH'] if k == 'QBR' else X_OPS10[LOOPNAME[k]])
+            b.append(idx_of['BRANCH'] if k == 'BR' else idx_of['?BRANCH'] if k == 'QBR' else X_OPS10['?NBRANCH'] if k == 'NQBR' else X_OPS10[LOOPNAME[k]])
             tgt = cs[j] + CELL + pl
             if tgt not in c2t: return None
             le(c2t[tgt] - (ts[j] + 1), 2)       # from the operand, in bytes

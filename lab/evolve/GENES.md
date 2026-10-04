@@ -122,3 +122,38 @@ kernel, parse and corpus and 9.1% on fib. Most of it is `0= IF` (about 4%
 on three workloads: a branch with its sense inverted) and, on fib, `< IF`
 - in code compiled at run time, which only the image's own compiler can
 fuse; the converter reaches the kernel's code alone.
+
+### Built: `0= IF` as one branch (Iteration 8)
+
+Two format-10 opcodes, `?NBRANCH` and `?NBRANCH8` (in OPS10_POOL): a
+branch that jumps when the top is NOT zero, long and short. The converter
+fuses `0= ?BRANCH` into it wherever nothing jumps to the ?BRANCH
+(`tools/sod16.py`, testbranch) - `0=` an opcode where the tiny words are,
+a call otherwise; the short form where the offset fits and the design has
+a slot for it. Handlers in the plain engine, the cached one (gen-tos.py)
+and multi-state caching (gen-msc.py).
+
+**Measured on one engine binary**: the design's image converted with the
+fusion and without (`SOD16_NO_TESTBR=1`), both through the gate, timed
+paired - s6 with the escape (so all three opcodes have slots), VM:
+
+| fused / unfused | kernel | parse | corpus | fib | loop (held out) | selection |
+|---|---|---|---|---|---|---|
+| 16 sites, all short | 0.969 | 0.972 | 0.966 | 1.003 | 0.997 | 0.977 |
+
+What the price said: about 4% of the dispatches on the three, none on fib
+and loop - their tests are in code compiled at run time, which the
+converter never sees. The image is 16 bytes smaller.
+
+**How it was first measured wrongly.** Two builds of s6 - with and without
+the opcodes - compared as designs: the fused one 5% SLOWER, fib 12% - a
+workload that never runs `0= IF`. The engines differed (two more
+handlers), and that was layout. And the size had not moved: s6 has two
+free slots (126, 127), so `?NBRANCH8` got none and every fused branch
+stayed long - 3 bytes, as `0=` and a short branch were. For a change to
+the image alone, compare two images on one engine.
+
+**Still open**: the other tests (=, U<, = with an immediate, -) - about
+half the price - each a pair of opcodes for slots; and `< IF` in fib (9%
+of its dispatches), only reachable by the image's own compiler fusing as
+it compiles.

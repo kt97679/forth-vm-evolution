@@ -45,12 +45,14 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **The next genes, from `lab/evolve/SEARCH-SPACE.md`**: of its 13
-   candidates and 4 deliberate strangers, first those likely to matter -
-   triples; two escape levels; one-byte calls through a table of hot words
-   (a stranger). PGO was measured at Iteration 7 and is not a gene.
-2. **A third run on the Ryzen when genes have been added** - the three flag
-   genes alone do not warrant one: on the VM they do not help the front.
+1. **The rest of test-and-branch** (`lab/evolve/GENES.md`, Iteration 8):
+   `0= IF` is built (3% on kernel, parse and corpus, one engine). Open:
+   `< IF` in code compiled at run time - fib's 9% - which needs the image's
+   own compiler to fuse as it compiles; then the other tests (=, U<, = with
+   an immediate) where slots allow.
+2. **A third run on the Ryzen** once those are in: the new genes are
+   `?NBRANCH`/`?NBRANCH8` (format-10 opcodes) and the three flag genes.
+   Then two escape levels and one-byte calls, priced first (`price.py`).
 3. Remaining planned gene: indirect threading; then a register machine.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
@@ -62,6 +64,7 @@ trying anything again (prompts/12-progress-log).
 |---|---|---|
 | Native code in the genome: relf's native compiler as a family of its own, or our SPN with relf's rules as genes | deferred by the user (Iteration 4) after measuring it (Iteration 3): our corpus byte for byte, our kernel workload a segmentation fault in cross.4's RESOLVE, 3-10 times faster than s6 on the VM | PROGRESS.md, Iterations 3 and 4 |
 | Profile-guided optimisation of the engine as a gene | measured, not built (Iteration 7): 0.903 on s6 only when trained on the measured workloads; trained on a separate program, 0.980 - what -fprofile-use's flags give without a profile; three of those flags became genes instead | `lab/evolve/GENES.md`; `lab/evolve/pgo-train.fth` |
+| Triples - three operations as one opcode | priced, not built (Iteration 8): at most 0-4.9% of dispatches on the front, none on fib, before overlaps and slots - tests before branches came out larger | `lab/evolve/GENES.md`; `lab/evolve/price.py` |
 | Load-time direct threading (a decode cache invalidated on every store) | deferred, not built: the dispatch lab gave direct over token threading -5% fib, -12% sieve, but +9% loop; relf S8 found dispatch already at the indirect-jump rate | `lab/evolve/GENES.md` 1; `lab/dispatch/README.md` |
 | Run-time fusion of pairs (`rtfuse`) | built, kept as a gene, selection rejects it: +560-576 bytes, s6 with two pairs 0.956 -> 0.970 (VM) | 53017b4; `lab/evolve/README.md` phase 2b |
 | READ/WRITE stencils making the system call themselves | not built: they would bypass the engine's buffers (`t_obuf`, `t_ibuf`) | 973435c; `FINDINGS-SPN.md` |

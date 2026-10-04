@@ -60,7 +60,7 @@ Every missing value decided (12 candidate, 10 excluded, 4 stranger, 4 deferred, 
 | no stack checks at all | excluded | an underflow would corrupt memory instead of being reported - not a design to ask the gate about |
 | triples and longer runs | excluded | priced at Iteration 8 (lab/evolve/price.py, GENES.md): at most 0-4.9% of dispatches on the front, none on fib - before overlaps and the slots they would take from pairs |
 | two escape levels | candidate | the escape is the largest single gain in every knockout - more slots may be worth more |
-| compare-and-branch opcodes | candidate | priced at Iteration 8: 6.6-9.1% of dispatches on every workload - the largest; most of it `0= IF` and, on fib, `< IF` in code compiled at run time |
+| compare-and-branch opcodes | candidate | priced at Iteration 8: 6.6-9.1% of dispatches on every workload; `0= IF` built (GENES.md: 0.977 on one engine); the other tests, and `< IF` in run-time code, open |
 | pairs chosen from the image itself | stranger | see step 4 |
 | headers apart from code | candidate | separated heads, known in Forths - denser code |
 | number of hash threads | candidate | kernel-level; FIND's speed is most of parse and corpus |

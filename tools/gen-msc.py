@@ -95,6 +95,8 @@ SPECS = {
                                  'else { CELL(rp) = j_; ip += (int16_t)LD16(ip); } }'),
     'L_x_br8':       ([], [], 'ip += (int8_t)BYTE(ip);'),
     'L_x_qbr8':      (['f'], [], 'if (f) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_nqbr':      (['f'], [], 'if (f) ip += (int16_t)LD16(ip); else ip += 2;'),
+    'L_x_nqbr8':     (['f'], [], 'if (f) ip += (int8_t)BYTE(ip); else ip += 1;'),
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch']
 

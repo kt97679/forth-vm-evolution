@@ -64,6 +64,8 @@ HOT = {
  'L_0branch':'t = tos; POPT(); if (t) ip += 2; else ip += BROFF(ip); NEXT();',
  # relf's format-10 opcodes (OPS10): written for the cached top, not wrapped
  'L_x_qbr8':  't = tos; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();',
+ 'L_x_nqbr':  't = tos; POPT(); if (t) ip += (int16_t)LD16(ip); else ip += 2; NEXT();',
+ 'L_x_nqbr8': 't = tos; POPT(); if (t) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();',
  'L_x_execute': '{ UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();',
  'L_x_i':     'PUSHT(RS); NEXT();',
  'L_x_j':     'PUSHT(CELL(rp + 2 * CELL_BYTES)); NEXT();',
