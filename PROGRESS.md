@@ -335,3 +335,20 @@ CPU limit, nothing left. Its first version passed vacuously - the bomb
 used AGAIN, which the kernel lacks, and "ran" an error message; a bomb
 that exits now fails the test. Under the jail: --validate seven
 IDENTICAL, tests PASS, front-style designs evaluate.
+
+**The cause, found.** Seed 3's first generation replayed here as an
+unprivileged user, fully jailed: 62 designs, 5 deaths - all the known
+reach limit, none unexplained, so no sign of a fault in the new fused
+branches. With a shim that logs and refuses fork() (`lab/evolve/
+forklog.c`), the five dead and s6 run through their gate workloads:
+8cfd49f24c tried to fork 8,181 times, every other 0 - a design at scale 0
+with near calls executing what lies past its reach, looping through
+FORK. Seeds 1 and 2 had such designs too (20 timeouts each) and were
+lucky; sh()'s docstring records one earlier time it was not.
+
+**A second layer: not run.** Two-byte-only forms at scale 0 died 345
+times of 345 (seed 2, the VM rehearsal; at scale 1, 13 of 18 lived). They
+are now recorded dead without running ("died: reach limit at scale 0 -
+not run"): no hand-made stage and none of 2,296 living designs is
+flagged; 8cfd49f24c is declined in no time. Ids unchanged; selection the
+same - dead either way.

@@ -12,6 +12,12 @@ processes at all (no workload forks), at most 1 GB of address space,
 `CPUTIME_JAIL` in tools/cputime.c). The process limit does not bind
 root, so the evolver refuses to run as root.
 
+A second layer: the designs that go wild most - two-byte-only call or
+DOES> forms at scale 0, whose 16 KB reach the kernel workload always
+outgrows (345 of 345 died) - are not run at all (`reach_lethal`). The
+third run's fork bomb was one: 8cfd49f24c, which tried to fork 8,181
+times in its gate run (`lab/evolve/forklog.c` counted them).
+
 Before a run, after the rebuild, check it on this machine - it runs a
 real fork bomb, but only after one jailed fork has been refused:
 

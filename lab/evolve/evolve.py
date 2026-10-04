@@ -472,6 +472,15 @@ def measure(eng, img, pw, works, rounds):
                 store[w] = min(store.get(w, 1 << 62), run_metric(e, i, p, w))
     return {w: best[w] / ref[w] for w in works}, best
 
+def reach_lethal(g):
+    """Scale 0 with a two-byte-only call or DOES> form: 2^14 bytes of reach,
+    and the kernel workload's dictionary is larger (SCAN.md) - 345 of 345
+    such designs died, none lived (seed 2 on the Ryzen, the VM rehearsal).
+    So they are not run at all: run, they execute whatever lies past their
+    reach, and one of them, 8cfd49f24c, looped through FORK 8,181 times -
+    the third run's fork bomb (Iteration 10). At scale 1 (2^15) 13 of 18
+    lived: those still run - jailed."""
+    return g['enc'] == 'cv8' and g.get('scale', 0) == 0 and not (g.get('varcall') and g.get('doesfar'))
 def evaluate(g, rounds, keep=False):
     # Build what the identity names: canon(g), as express() and gid() see it.
     # Built raw, a mutation that turned on byte headers in a design with
@@ -480,6 +489,9 @@ def evaluate(g, rounds, keep=False):
     # which converts. 34 such deaths on the Ryzen, 31 in the VM rehearsal.
     g = canon(g)
     d = os.path.join(EV, 'ind-' + gid(g)); rec = {'status': 'ok'}
+    if reach_lethal(g):
+        rec['status'] = 'died: reach limit at scale 0 - not run'
+        return rec
     try:
         eng, img = build(g, d)
         rec['size'] = os.path.getsize(img)
