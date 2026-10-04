@@ -36,13 +36,19 @@ trying anything again (prompts/12-progress-log).
   axes, 66 values, 31 left out - each decided. A uniform sample of 32
   (VM): median 1.59 times s6's time, 1 in 30 faster than s6; the run's
   best beats all of them - the front is a peak, not a plateau.
+- Seed 2 on the Ryzen (`results/evolve-amd-ryzen-7-pro-8840hs-seed2.md`)
+  found the same front as seed 1, re-measured: 0.619 at 13,472 bytes
+  (seed 1: 0.609), 0.667 at 9,761 (0.649 at 9,801) - the same genes. The
+  Ryzen sample of 128: the run's best beats every random design.
 
 ## Next, in order
 
-1. **On the Ryzen** (the owner's runs, `lab/evolve/RUNNING.md`): the
-   second run, `--seed 2`, the first database moved aside; then
-   `--sample 128 --rounds 3` - the uniform sample at a size that can say
-   where the front stands (`lab/evolve/SEARCH-SPACE.md`, step 5).
+1. **On the Ryzen, one check** (the owner's, about a minute after the
+   rebuild): the fix of Iteration 5 changed hand-made s6's machine code -
+   same size, same behaviour, 0.997 of its old time on the VM. Every speed
+   is s6-relative, so to compare later runs with seeds 1 and 2:
+   `tools/compare-commits.py 73e1e68 HEAD --systems s6-cv8b --workloads
+   fib,parse,corpus --rounds 12` - expected within noise of 1.000.
 2. **The next genes, from `lab/evolve/SEARCH-SPACE.md`**: of its 14
    candidates and 4 deliberate strangers, first those cheap to try and
    likely to matter - profile-guided optimisation of the engine; triples;

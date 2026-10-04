@@ -86,22 +86,56 @@ start = s.index("L_noop:")
 sec = s[start:fend]
 out, labs = [], [(m.start(), m.group(1)) for m in re.finditer(r'^(L_\w+):', sec, re.M)]
 pos0 = 0; res = sec[:labs[0][0]]
+def _pp(x): return [l.strip() for l in x.splitlines() if l.lstrip().startswith('#')]
+_expect = _pp(res)
 for i, (pos, lab) in enumerate(labs):
     nxt = labs[i + 1][0] if i + 1 < len(labs) else len(sec)
     blk = sec[pos:nxt]
-    # keep trailing preprocessor lines (#if/#else/#endif) that belong between blocks
+    # Keep what lies between this handler and the next - preprocessor lines,
+    # comments, blank lines - out of the handler's block: a hand-written
+    # cached body (HOT) replaces the whole block. Only trailing '#' lines were
+    # kept, so a comment after them lost them too: the "#endif" closing SPEC
+    # and the "#if ENC == 3 && OPS10" after it, which a comment follows - the
+    # format-10 handlers fell inside SPEC, and a design with format-10 words
+    # and no specialisations could not compile (Iteration 5, the uniform sample).
     lines = blk.splitlines(True)
-    tail = ''
-    while lines and lines[-1].lstrip().startswith('#'): tail = lines.pop() + tail
+    tail = []
+    while lines:
+        t = lines[-1].strip()
+        if t == '' or t.startswith('#') or (t.startswith('/*') and t.endswith('*/')):
+            tail.insert(0, lines.pop()); continue
+        if t.endswith('*/') and t.startswith('*'):          # a block comment's last line
+            taken = []
+            while lines and lines[-1].strip().startswith(('*', '/*')):
+                taken.insert(0, lines.pop())
+                if taken[0].strip().startswith('/*'): break
+            if taken and taken[0].strip().startswith('/*'):
+                tail[:0] = taken; continue
+            lines += taken                                   # a comment begun on a code line: code
+        break
+    tail = ''.join(tail)
     blk = ''.join(lines)
+    _expect += _pp(tail) if lab in HOT else _pp(blk) + _pp(tail)
     if lab in HOT:
         blk = '%s: %s\n' % (lab, HOT[lab])
     elif lab not in NOSTACK:
         blk = blk.replace(lab + ':', lab + ': SPILL();', 1).replace('NEXT();', 'FILLNEXT();')
     res += blk + tail
+# Every preprocessor line outside the bodies that HOT replaces must survive,
+# in order: one lost moves handlers into another condition without a word -
+# the format-10 handlers fell inside SPEC that way (Iteration 5). The HOT
+# bodies' own conditionals go with them: they are CV8's bodies, and the file
+# refuses any other encoding (the #error below).
+_it, _first = iter(_pp(res)), None
+for _n, _l in enumerate(_expect):
+    if not any(_l == _o for _o in _it): _first = (_n, _l); break
+if _first: sys.exit('gen-tos.py: preprocessor line %d of the handlers lost: %s' % _first)
 s = s[:start] + res + s[fend:]
 s = s.replace("#define FOLDBASE 128", """#define FOLDBASE 128
-#define TOSCACHE 1""", 1)
+#define TOSCACHE 1
+#if ENC != 3
+#error "vm-lab-tos.c: its hand-written cached bodies are CV8's - compile it with -DENC=3"
+#endif""", 1)
 # tos register, fill on entry
 s = s.replace("static void virtual_machine(void) {\n    VMREGS", """static void virtual_machine(void) {
     VMREGS

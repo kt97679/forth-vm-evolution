@@ -116,7 +116,18 @@ seed 1, 2 rounds:
   far forms back. New: past its reach, a near DOES> can fail *silently* -
   wrong output, not an error.
 
-To run on the Ryzen with more designs: `--sample 128 --rounds 3`.
+**On the Ryzen, 128 designs, 3 rounds** (Iteration 5,
+`results/sample-amd-ryzen-7-pro-8840hs.md`): alive 108 of 128; fastest
+0.860, median 1.242, 10 faster than s6; the run's best, 0.595, beats all
+108 - the same answer at four times the size and on the real machine.
+19 of its 20 deaths are the reach limit; **the 20th was a generator
+fault**, not a design's limit: cached top of stack with format-10 words
+and no specialisations could not compile (`tools/gen-tos.py` had dropped
+two preprocessor lines), and behind it multi-state caching without
+specialisations could not either (`tools/gen-msc.py`). Both fixed;
+neither run had reached that region. This is what step 5 is for: a
+search that starts from hand-made designs never visits where they are
+not.
 
 ## 6. What stayed fixed
 

@@ -148,6 +148,37 @@ def variant(label, spec, s):
 src = open(sys.argv[1]).read()
 import os
 labs = set(re.findall(r'^(L_\w+):', src, re.M))
+
+def conditions(text):
+    """Each label defined once -> the condition it is defined under, as one
+    #if expression (absent: unconditional). Everything generated here for a
+    handler - its variants, and the comparison with its address that fills
+    the state tables - must exist exactly when the handler does: the
+    tables compared with &&L_eqix unconditionally, so multi-state caching
+    without specialisations could not compile; nor, once gen-tos.py kept
+    the format-10 handlers in their own #if (Iteration 5), without them."""
+    frames, where, count = [], {}, {}
+    for line in text.splitlines():
+        m = re.match(r'\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b\s*(.*)', line)
+        if m:
+            k, e = m.group(1), m.group(2).split('/*')[0].split('//')[0].strip()
+            if k == 'if': frames.append([[], '(%s)' % e])
+            elif k == 'ifdef': frames.append([[], 'defined(%s)' % e])
+            elif k == 'ifndef': frames.append([[], '!defined(%s)' % e])
+            elif k == 'elif': frames[-1][0].append(frames[-1][1]); frames[-1][1] = '(%s)' % e
+            elif k == 'else': frames[-1][0].append(frames[-1][1]); frames[-1][1] = None
+            else: frames.pop()
+            continue
+        m = re.match(r'^(L_\w+):', line)
+        if m:
+            l = m.group(1); count[l] = count.get(l, 0) + 1
+            parts = [p for prev, cur in frames for p in ['!' + x for x in prev] + ([cur] if cur else [])]
+            where[l] = ' && '.join(parts)
+    return {l: c for l, c in where.items() if count[l] == 1 and c}
+COND = conditions(src)
+def under(l, text):
+    """text, compiled exactly when handler l is"""
+    return '#if %s\n%s#endif\n' % (COND[l], text) if l in COND else text
 specs = {l: sp for l, sp in SPECS.items() if l in labs}
 # the folds (gen-fold.py: LX_name, prim then EXIT, in vm-fold-bodies.h): the
 # primitive's stack effect, then the return
@@ -187,10 +218,10 @@ src = src[:m] + '''/* multi-state stack caching (tools/gen-msc.py) */
 # the tables for states 0 and 2, after the state-1 table is filled
 fill = re.search(r'\n(\s*)dtab256\[i_\] = \(i_ < n_ && i_ < 128\) \? dispatch\[i_\] : &&do_call;\n(\s*)\}\n', src)
 assert fill, 'no 256-entry table to follow (build with DISPATCH256)'
-cases = ''.join('            if (dtab256[i_] == &&%s) { dtab256_0[i_] = &&%s__s0; dtab256[i_] = &&%s__s1; dtab256_2[i_] = &&%s__s2; }\n'
-                % (l, l, l, l) for l in specs)
-cases += ''.join('            if (dtab256[i_] == &&%s) { dtab256_0[i_] = &&%s__0; dtab256_2[i_] = &&%s__2; }\n'
-                 % (l, l, l) for l in STACKFREE if l in labs)
+cases = ''.join(under(l, '            if (dtab256[i_] == &&%s) { dtab256_0[i_] = &&%s__s0; dtab256[i_] = &&%s__s1; dtab256_2[i_] = &&%s__s2; }\n'
+                % (l, l, l, l)) for l in specs)
+cases += ''.join(under(l, '            if (dtab256[i_] == &&%s) { dtab256_0[i_] = &&%s__0; dtab256_2[i_] = &&%s__2; }\n'
+                 % (l, l, l)) for l in STACKFREE if l in labs)
 src = src[:fill.end()] + '''    static const void *dtab256_0[256], *dtab256_2[256];
     if (!dtab256_0[0]) {
         int i_;
@@ -213,9 +244,9 @@ for s in (0, 2):
     for l in STACKFREE:
         if l not in labs: continue
         b = re.search(r'^%s:(.*?NEXT\(\);)' % l, src, re.M | re.S).group(1)   # to its own NEXT: L_branch has one per encoding
-        gen.append('%s__%d:%s' % (l, s, b.replace('NEXT();', 'NEXT_S%d();' % s)))
+        gen.append(under(l, '%s__%d:%s\n' % (l, s, b.replace('NEXT();', 'NEXT_S%d();' % s))))
 for l, sp in specs.items():
-    for s in (0, 1, 2): gen.append(variant(l, sp, s))
+    gen.append(under(l, ''.join(variant(l, sp, s) for s in (0, 1, 2))))
 # at the end of the handlers, where every macro they use is defined (SLOT)
 i = src.index('#if FOLD\n#define EXITNEXT()')
 src = src[:i] + ''.join(gen) + src[i:]

@@ -157,3 +157,49 @@ place, checked before cutting); the database is again the rehearsal's
 1,306 records; the whole file kept as `db.jsonl.with-stray-run`. Now
 `-h`/`--help` prints the usage and any unknown option is refused before
 anything runs - `--sampel` would have done the same as `--help`.
+
+## Iteration 5 - 2026-10-04 - Claude
+
+**The owner's runs on the Ryzen**: seed 2 and a uniform sample of 128.
+
+**Seed 2 found seed 1's front** (`results/evolve-amd-ryzen-7-pro-8840hs-
+seed2.md`), re-measured: 9cd791dd84 0.619 at 13,472 bytes against seed
+1's 0.609 at 13,480; 0ebf0445e0 0.667 at 9,761 against 0.649 at 9,801 -
+within noise, and the same genes. Re-measuring moved the run's figures by
+-2% to +10%. Its 161 deaths, each genome checked: 160 the reach limit,
+1 the converter's alignment refusal.
+
+**The sample** (`results/sample-amd-ryzen-7-pro-8840hs.md`): 108 of 128
+alive, median 1.242, 10 faster than s6; the run's best beats all of
+them. Regenerating its draws here first gave 2 of 125 matching ids: my
+harness drew before `setup()`, which sets the fold pool - the evolver's
+own path calls it first, and with it 125 of 125 matched. Of 20 deaths,
+19 the reach limit; **one a generator fault**: a design with cached top of
+stack, format-10 words and no specialisations whose engine did not
+compile.
+
+**Two generator faults, fixed.** (1) `tools/gen-tos.py` replaces a handler
+it has a cached body for (HOT) whole, keeping only trailing '#' lines;
+where a comment followed them, the "#endif" closing SPEC and the "#if ENC
+== 3 && OPS10" were lost, so the format-10 handlers were compiled only
+with SPEC. Now it keeps trailing comments and blank lines too, checks that
+every preprocessor line outside the replaced bodies survives in order (it
+fired at once on its first, too-strict version: the HOT bodies' own ENC
+conditionals go with them, rightly), and the file refuses any ENC but 3.
+(2) Fixing (1) uncovered `tools/gen-msc.py` comparing the state tables
+with every handler's address unconditionally: multi-state caching without
+specialisations could not compile - and, with (1) alone, nor without
+format-10 words, which until then compiled only because of (1)'s fault.
+Now each variant and comparison is emitted under its handler's own
+condition, computed from the source's #if nesting. All eight combinations
+of multi-state caching, specialisations and format-10 words live.
+
+**What the fixes change.** Seed 2's five front designs: machine code
+identical under the old and the new generators - the runs stand. Hand-made
+s5 and s6: different code, same size and behaviour (the format-10 handlers
+no longer compiled as dead code inside SPEC); s6 new against old, paired
+on the VM: 0.997. Tests: 616 cases on every 64-bit system; --validate all
+seven IDENTICAL.
+
+**Open.** GOALS.md, "Next". Pick up first: the s6 check on the Ryzen;
+then the first candidates from SEARCH-SPACE.md.
