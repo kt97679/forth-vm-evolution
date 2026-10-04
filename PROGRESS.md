@@ -614,3 +614,23 @@ pull. The owner runs the same command every time; a default seed in the
 script made "pull and run" mean a run nobody had decided on. My last
 message said the plain command "works from here on" - true, and read as
 "run it". This bundle's NEXT-RUN: compare.
+
+## Iteration 23 - 2026-10-04 - Claude
+
+**The second one-session comparison overturned the first.** Calibration
+0.996 (the first 0.991), yet seed 3's 8dd8a7a146 fastest of all, where
+Iteration 21 had put seed 4's whole front ahead: that conclusion is
+withdrawn (results/compare-fronts-amd-ryzen-7-pro-8840hs.md, GOALS.md).
+The same 34 designs moved between sessions 2-8% on kernel, parse and
+corpus and 0.71-1.28 on fib - each design its own way, while s6's fib
+calibration held (0.946, 0.981). A good s6 calibration does not make two
+sessions agree on a design. I said in Iteration 21 that a design moves "up
+to 7%" between sessions - from one pair of sessions; fib alone moves 28%.
+
+Address randomisation tested on the VM: spread 2-6% with it on or off, the
+best-of-15 ratios unmoved - not the cause there. The sessions were pinned
+to cpu 8 and cpu 2; `lab/evolve/cpu-noise.py` times the designs that moved
+most on two cores and both threads of each, in one session, and
+`next-run.sh experiment TOOL` runs any tracked lab/evolve tool on the
+laptop the way `compare` runs compare-fronts.py (now one of them).
+NEXT-RUN: experiment cpu-noise.py --rounds 20.

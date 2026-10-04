@@ -63,13 +63,14 @@ trying anything again (prompts/12-progress-log).
   re-measured: 0.589 at 13,352 bytes (seed 3: 0.595 at 13,464); the small
   end 262-410 bytes smaller, 0.669 at 9,523 to 0.727 at 9,335 (seed 3: 0.622
   at 9,785). One-byte calls on six of the seven front designs.
-- **All runs' fronts in one session** (Iteration 21,
-  `results/compare-fronts-amd-ryzen-7-pro-8840hs.md`, s6 against itself
-  0.991): the front of all runs together is seed 4's, all seven - at 13,352
-  bytes 1.5% faster than seed 3's best, at the small end 1.1% faster and 123
-  bytes smaller, and three designs smaller than any before. One design
-  moves up to 7% between sessions: rank only within one (`next-run.sh
-  compare`).
+- **All runs' fronts in one session, twice** (Iterations 21 and 23,
+  `results/compare-fronts-amd-ryzen-7-pro-8840hs.md`; calibrations 0.991
+  and 0.996): the two sessions disagree - the first put seed 4's front
+  ahead, the second seed 3's 8dd8a7a146 fastest of all. The disagreement
+  is fib: per design 0.71-1.28 between sessions, the other workloads
+  within 2-8%. Speeds a few per cent apart are not ranked reproducibly
+  yet; sizes are exact - seed 4's genes reach 9,335 bytes, the earlier
+  seeds 9,646.
 - **Seed 4 again - same seed, same code, other noise** (Iteration 22,
   `results/evolve-amd-ryzen-7-pro-8840hs-seed4b.md`): the runs part after
   the 35 starting designs and share 2 more of 1,310, yet reach the same
@@ -84,25 +85,23 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **Both seed 4 runs in one session** - `lab/evolve/NEXT-RUN` says
-   `compare`: is the replicate's front (0.581 at 13,201 in its own
-   session) better than the first's, or only better calibrated?
-2. **fib, the noisiest workload in every calibration** - s6 against itself
-   1.117 in seed 4's run, 0.946 in Iteration 21's session, where the other
-   workloads held within 2.3%. Find why before the next run: the engine is
-   position-independent and each run lands at another address (layout),
-   or fib's 20 ms is short against the clock. An A/A test first.
-3. **Far-call reach, checked**: cv8.4's compiler emits far calls without
+1. **Why fib moves a design up to 28% between sessions** - `NEXT-RUN`:
+   `experiment cpu-noise.py`, the designs that moved most timed on two
+   cores and both threads of each, in one session. Address randomisation
+   is ruled out on the VM. Then fix the measurement (pin one core with
+   its sibling idle, or weigh fib differently) before another run: until
+   then selection among designs a few per cent apart is partly noise.
+2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.
-4. **The loop words in code compiled at run time** - priced first: there
+3. **The loop words in code compiled at run time** - priced first: there
    every pass of a DO loop runs `(LOOP)`'s colon body and 0-7 alignment
    NOOPs; the opcodes exist and now work. Count the passes in the
    selection workloads' run-time code before touching the compiler.
-5. Remaining planned gene: indirect threading; then a register machine.
-6. The article (`article/`): prompts/14-audience-research before drafting
+4. Remaining planned gene: indirect threading; then a register machine.
+5. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-7. ARM port of SPN. Push master to GitHub (the owner's step).
+6. ARM port of SPN. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 

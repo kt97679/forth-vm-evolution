@@ -1,5 +1,5 @@
 #!/bin/sh
-# lab/evolve/next-run.sh [SEED | compare [ROUNDS] | none] - the next evolution run on the laptop, in
+# lab/evolve/next-run.sh [SEED | compare [ROUNDS] | experiment TOOL [ARGS] | none] - the next run on the laptop, in
 # one command (Iteration 15): the newest bundle pulled into the clone, the
 # previous run's outputs archived (moved, never deleted), everything rebuilt
 # and checked, the run, its front measured again, and what to send back
@@ -9,6 +9,9 @@
 #     sh lab/evolve/next-run.sh 4       # a run with seed 4
 #     sh lab/evolve/next-run.sh compare # every run's front here, measured again
 #                                       # in one session; nothing archived (Iteration 20)
+#     sh lab/evolve/next-run.sh experiment cpu-noise.py --rounds 20
+#                                       # any tracked tool in lab/evolve/, given every
+#                                       # database here; nothing archived (Iteration 23)
 #
 # It pulls first and then runs the copy in the repository, so a newer
 # bundle brings its own script. After the pull it goes on in the
@@ -80,30 +83,37 @@ if [ $# -eq 0 ]; then
 fi
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
-    compare) KIND=compare; SEED=0; CROUNDS=${2:-${CROUNDS:-10}} ;;
+    compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
+    experiment) KIND=experiment; TOOL=${2:-}; SEED=0; CROUNDS=10
+        TARGS=$(printf '%s\n' "$@" | sed -n '3,$p' | tr '\n' ' ') ;;
     seed) KIND=seed; SEED=${2:-}; CROUNDS=10 ;;
     *) KIND=seed; SEED=$1; CROUNDS=10 ;;
 esac
 case $SEED in ''|*[!0-9]*) die "the seed must be a number, or 'compare' - not '$SEED'";; esac
 case $CROUNDS in ''|*[!0-9]*) die "the rounds must be a number, not '$CROUNDS'";; esac
+if [ "$KIND" = experiment ]; then      # a tool of this repository, nothing else
+    case $TOOL in ''|.*|*/*|*[!A-Za-z0-9._-]*) die "an experiment is a tool in lab/evolve/, not '$TOOL'";; esac
+    git ls-files --error-unmatch -- "lab/evolve/$TOOL" >/dev/null 2>&1 || die "lab/evolve/$TOOL is not a tracked file"
+fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
 WANT="seed $SEED at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
-if [ "$KIND" = compare ]; then
-    RUN=$RUNS/compare-$HEAD
-    WANT="every run's front here, measured again in one session at $HEAD, $CROUNDS rounds"
+if [ "$KIND" = experiment ]; then
+    NAME=${TOOL%.py}
+    RUN=$RUNS/$NAME-$HEAD
+    WANT="lab/evolve/$TOOL ${TARGS% } over every run's database here, at $HEAD"
 fi
 
 # ---- 2. fresh or resumed - decided here, where it can be seen - then detach
 if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
-    if [ "$KIND" = compare ]; then MODE=compare
+    if [ "$KIND" = experiment ]; then MODE=experiment
     elif [ -f "$STATE" ] && [ "$(cat "$STATE")" = "$WANT" ]; then MODE=resume; else MODE=fresh; fi
     mkdir -p "$RUN"
     say "at $(git log -1 --format='%h %s')"
     say "$WANT - $MODE"
     [ "$MODE" = fresh ] && say "the previous run's outputs will be moved to $RUNS/archived-..."
-    [ "$MODE" = compare ] && say "nothing will be archived or removed"
+    [ "$MODE" = experiment ] && say "nothing will be archived or removed"
     NEXT_RUN_DETACHED=$MODE nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
     say "going on in the background; follow it with"
     echo "    tail -f $RUN/next-run.log"
@@ -134,10 +144,10 @@ checks() {   # build/ made current, then everything that must pass before a meas
     tail -1 "$RUN/jail.log"
 }
 
-if [ "$MODE" = compare ]; then
+if [ "$MODE" = experiment ]; then
     step "build/ made current - build-stages.sh leaves build/evolve/ alone"
     checks
-    step "the fronts: this clone's run, and every archived one"
+    step "the databases: this clone's run, and every archived one"
     set --
     if [ -f build/evolve/db.jsonl ]; then set -- build/evolve/db.jsonl; fi
     for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do
@@ -146,17 +156,16 @@ if [ "$MODE" = compare ]; then
     done
     [ $# -gt 0 ] || { echo "   no database in build/evolve or $RUNS/archived-*"; exit 1; }
     for f in "$@"; do echo "   $f"; done
-    python3 lab/evolve/compare-fronts.py "$@" --rounds "$CROUNDS" > "$RUN/compare.md" 2> "$RUN/compare.log" \
-        || { tail -20 "$RUN/compare.log"; exit 1; }
-    grep -m1 'Calibration' "$RUN/compare.md" || true
-    grep -m1 'front of all runs' "$RUN/compare.md" || true
+    step "lab/evolve/$TOOL $TARGS"
+    python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { tail -20 "$RUN/$NAME.log"; exit 1; }
+    grep -m2 -E 'Calibration|front of all runs' "$RUN/$NAME.md" || true
     step "packed to send back"
     K=$RUN/pack; rm -rf "$K"; mkdir -p "$K"
-    for f in compare.md compare.log build.log tests.log validate.log jail.log; do cp "$RUN/$f" "$K/"; done
+    for f in "$NAME.md" "$NAME.log" build.log tests.log validate.log jail.log; do cp "$RUN/$f" "$K/"; done
     lscpu > "$K/lscpu.txt" 2>&1 || true
     { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT"; } > "$K/machine.txt"
     cp "$RUN/next-run.log" "$K/next-run.log"
-    P=$RUNS/forth-vm-evolution-compare-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
+    P=$RUNS/forth-vm-evolution-$NAME-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
     tar -czf "$P" -C "$RUN" pack
     rm -rf "$K"
     trap - EXIT
