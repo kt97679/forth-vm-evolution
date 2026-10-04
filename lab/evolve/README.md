@@ -163,6 +163,11 @@ against call granularity, and on the shared call path were artefacts.
 `lab/evolve/scan.py` checks every single-gene change of every hand-made
 design for correctness only - 125 changes; `SCAN.md` has the result.
 
+`--sample N` draws designs uniformly from the whole space - the check
+that the front is a peak and not a plateau; `SEARCH-SPACE.md` has the
+space itself: its axes, what the gene pool leaves out and why, and the
+first sample.
+
 It exposed a flaw in the survival check itself. The kernel workload runs
 in a directory that starts with a copy of the reference kernel, and the
 check compared that file afterwards - so a design that died quietly

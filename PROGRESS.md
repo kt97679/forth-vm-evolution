@@ -114,3 +114,46 @@ rules ported to it as genes - recombining with the CV8 genes beneath it.
 The user to choose.
 
 **Open.** GOALS.md, "Next". Pick up first: the user's choice between A and B.
+
+## Iteration 4 - 2026-10-04 - Claude
+
+**The user deferred native code** (both ways from Iteration 3) - into the
+register in GOALS.md with what Iteration 3 measured.
+
+**The stdin figures, reproducible.** `tools/compare-commits.py OLD NEW`
+builds two commits in worktrees and times them against each other on
+stdin, with a calibration (the old build against itself). Both findings
+reproduced at their published settings: ACCEPT (12 rounds, calibration
+0.995) s0-cell 0.900/0.878, s4 0.906/0.880, s6 0.933/0.939, s8
+0.939/0.917 for parse/corpus, against 0.861-0.961 published; the stencils
+(25 rounds, calibration 1.001) parse 0.969, corpus 0.972 against 0.974,
+0.976. Same direction and size; single figures move by up to 4% on the
+VM. Each finding names its command now. At 5 rounds, the trial's
+calibration was 0.975 - the change's 0.971 within its noise: the
+calibration doing its job.
+
+**prompts/02 on the gene pool** (`lab/evolve/SEARCH-SPACE.md`). Step 1:
+every gene is recalled from a named system. Steps 2-3: 11 axes, 66 values,
+35 in the pool, 31 out - each decided: 14 candidates, 8 excluded, 4
+strangers, 4 deferred, 1 planned. Three decisions I first got wrong
+(two cached registers a candidate, direct threading "planned", call
+threading's reason) the register in GOALS.md corrected - it had them.
+Step 5: `evolve.py --sample N` added; 32 uniform designs on the VM: 30
+alive, median 1.59 times s6's time, 1 faster than s6; the run's best,
+0.662, beats all of them. Both deaths the reach limit of two-byte-only
+forms at scale 0, verified by reverting genes one at a time; new - a near
+DOES> past its reach can fail silently, with wrong output.
+
+**Open.** GOALS.md, "Next". Pick up first: the owner's runs on the Ryzen
+(seed 2, then the sample); then the first candidates from SEARCH-SPACE.md.
+
+**An incident, and its cause fixed.** Checking the edited evolver with
+`evolve.py --help`, I started a full run: the evolver did not know
+`--help`, and an unrecognised option fell through to evolving. In 4
+minutes it appended 86 records (generations 1-6 of a new run) to the VM
+rehearsal's database. Removed by the one place where the generation
+drops (after the rehearsal's last generation-40 record; exactly one such
+place, checked before cutting); the database is again the rehearsal's
+1,306 records; the whole file kept as `db.jsonl.with-stray-run`. Now
+`-h`/`--help` prints the usage and any unknown option is refused before
+anything runs - `--sampel` would have done the same as `--help`.

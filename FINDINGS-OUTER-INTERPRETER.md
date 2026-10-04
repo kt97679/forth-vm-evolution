@@ -232,6 +232,14 @@ against the build before the change:
 | `s6-cv8b` | 0.952 | 0.914 |
 | `s8-spncv8` | 0.961 | 0.930 |
 
+Reproduce: `tools/compare-commits.py 973435c e223d8e --rounds 12` - it
+builds both commits and times them against each other on stdin. Run
+again with it (Iteration 4, the same VM; calibration, the old build
+against itself, 0.995): parse / corpus s0-cell 0.900 / 0.878, s4-cv8
+0.906 / 0.880, s6-cv8b 0.933 / 0.939, s8-spncv8 0.939 / 0.917, output
+identical - the same direction and size; single figures move by up to 4%
+between runs on the VM, so read the table to within that.
+
 Output is byte-identical to the old build in all 12 systems on the corpus
 and on input built to catch the edges: backspace and DEL mid-line, at a
 line's start and several in a row; CR alone and CR LF; a line longer

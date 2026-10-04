@@ -125,3 +125,15 @@ and would measure each other.
 cycles the metric. It asks for sudo to make the hardware counters
 readable - they add cycle and instruction columns; `NO_COUNTERS=1`
 skips that.
+
+## A uniform sample of the space
+
+Before trusting the front (prompts/02, step 5) - designs drawn at random,
+not bred:
+
+    python3 lab/evolve/evolve.py --sample 128 --rounds 3 > sample.md
+
+Its records go to `build/evolve/sample-seed1.jsonl`, never the run's
+database; run again, it resumes. `sample.md` has how many live, the
+spread of speed and size, the run's best placed in it, and every death
+by cause. On the VM, 32 designs took about three minutes.

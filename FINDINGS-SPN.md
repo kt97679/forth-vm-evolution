@@ -856,7 +856,10 @@ the data stack pointer across the call.
 
 Measured on the development VM, best of 25 interleaved runs, old and new
 s8-spncv8 fed on stdin, output identical: parse 0.974 (median 0.968),
-corpus 0.976 (median 0.982), fib unchanged. About 9 ns per crossing
+corpus 0.976 (median 0.982), fib unchanged. Reproduce:
+`tools/compare-commits.py 3342bd3 973435c --systems s8-spncv8 --workloads
+parse,corpus,fib --rounds 25`; run again with it (Iteration 4,
+calibration 1.001): parse 0.969, corpus 0.972, fib 0.997. About 9 ns per crossing
 removed: crossing into the interpreter was cheap already, and most READs
 were buffer copies, not system calls. Line-at-a-time ACCEPT, which
 replaces the per-character KEY loop on seekable input, is the larger lever.

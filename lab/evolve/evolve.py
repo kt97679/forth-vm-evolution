@@ -6,6 +6,11 @@
                                                the build's images exactly
     lab/evolve/evolve.py [--pop N] [--gens G] [--rounds R] [--seed S]
     lab/evolve/evolve.py --report              report.md from what is known
+    lab/evolve/evolve.py --remeasure N         the front measured again, N rounds
+    lab/evolve/evolve.py --knockout [ID,...]   each gene set back to s6's value
+    lab/evolve/evolve.py --sample N [--seed S] designs drawn uniformly, not bred
+    --db FILE reads another database; -h or --help prints this. Any other
+    option is refused: unrecognised, it would have started a run.
 
 Needs a finished tools/build-stages.sh: its dumps, engine sources, cputime
 and corpus. It keeps everything in build/evolve/: db.jsonl, one line per
@@ -685,6 +690,73 @@ def setup():
     POOL = foldable()
 
 
+def random_genome(rnd):
+    """Uniform over the genome's space (prompts/02, step 5): a family drawn
+    uniformly, then every gene it expresses and every compiler gene drawn
+    uniformly from its domain. Lists are uniform random subsets in random
+    order - each member in or out with even odds - folds cut to FOLDMAX,
+    pairs from the founders' fixed pool (no profiling per draw)."""
+    g = dict(HUMAN['s6-cv8b']); g['enc'] = rnd.choice(FAMILIES)
+    for k in list(EXPRESSED[g['enc']]) + list(CC0):
+        v = g.get(k, CC0.get(k))
+        if k == 'opt': g[k] = rnd.choice(['O2', 'O3', 'Os'])
+        elif k == 'scale': g[k] = rnd.randrange(4)
+        elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
+        elif k in ('ops10', 'supers', 'folds'):
+            f = [x for x in {'ops10': OPS10_POOL, 'supers': SUPER_POOL, 'folds': POOL}[k] if rnd.random() < 0.5]
+            rnd.shuffle(f); g[k] = f[:FOLDMAX] if k == 'folds' else f
+        elif isinstance(v, int) or v is None: g[k] = rnd.randrange(2)
+        else: sys.exit('sample: no domain known for gene %s (%r)' % (k, v))
+    return canon(g)
+
+
+def sample(argv):
+    """--sample N [--seed S] [--rounds R]: N designs drawn uniformly, each
+    built, checked and timed as the run does them - before trusting any
+    optimum (prompts/02, step 5): how many live, the spread of speed and
+    size, and where s6 and the run's best fall in it. Records go to
+    build/evolve/sample-seedS.jsonl, one per design, never the run's
+    database; run again, it resumes where it stopped."""
+    val = lambda k, d: argv[argv.index(k) + 1] if k in argv else d
+    n, seed, rounds = int(val('--sample', 0)), int(val('--seed', 1)), int(val('--rounds', 2))
+    rnd = random.Random(seed); draws = [random_genome(rnd) for _ in range(n)]
+    path = os.path.join(EV, 'sample-seed%d.jsonl' % seed); done = {}
+    if os.path.exists(path):
+        for line in open(path):
+            try: r = json.loads(line); done[r['id']] = r
+            except ValueError: pass
+    setup()
+    with open(path, 'a') as out:
+        for i, g in enumerate(draws):
+            if gid(g) in done: continue
+            r = evaluate(g, rounds); r.update(id=gid(g), enc=g['enc'], genome=g)
+            out.write(json.dumps(r) + '\n'); out.flush(); done[r['id']] = r
+            print('  %d/%d %s %-5s %s' % (i + 1, n, gid(g), g['enc'], '%.3f %d B' % (r['speed'], r['size']) if r['status'] == 'ok' else r['status'][:60]), file=sys.stderr, flush=True)
+    R = [done[gid(g)] for g in draws]; ok = sorted((r for r in R if r['status'] == 'ok'), key=lambda r: r['speed'])
+    q = lambda xs, f: xs[min(len(xs) - 1, int(f * len(xs)))]
+    model = next((l.split(':', 1)[1].strip() for l in open('/proc/cpuinfo') if l.startswith('model name')), '?')
+    L = ['# A uniform sample of the design space', '',
+         'machine: %s; commit %s; %d designs, seed %d, %d rounds; every figure MEASURED, as the run measures (CPU time over s6\'s, paired).'
+         % (model, sh(['git', '-C', ROOT, 'rev-parse', '--short', 'HEAD']).stdout.decode().strip(), n, seed, rounds),
+         'Drawn: the family uniformly, then each gene uniformly over its domain (lists: each member in or out with even odds, random order; folds cut to %d; pairs from the founders\' pool).' % FOLDMAX, '',
+         'alive: %d of %d' % (len(ok), n)]
+    deaths = collections.Counter(re.sub(r'[0-9a-f]{10}|\d+', '#', r['status'])[:70] for r in R if r['status'] != 'ok')
+    L += ['', '| died of | designs |', '|---|---|'] + ['| %s | %d |' % (c, k) for c, k in deaths.most_common()] if deaths else []
+    if ok:
+        sp = [r['speed'] for r in ok]; sz = sorted(r['size'] for r in ok)
+        L += ['', 'speed against s6: fastest %.3f, quartile %.3f, median %.3f, quartile %.3f, slowest %.3f; faster than s6: %d of %d'
+              % (sp[0], q(sp, .25), q(sp, .5), q(sp, .75), sp[-1], sum(x < 1 for x in sp), len(sp)),
+              'size: smallest %d, median %d, largest %d bytes' % (sz[0], q(sz, .5), sz[-1])]
+        R0 = load() if os.path.exists(DB) else {}
+        best = min((r['speed'] for r in R0.values() if r.get('status') == 'ok'), default=None)
+        if best: L.append("the run's database's fastest, %.3f, is faster than %d of the %d sampled designs alive" % (best, sum(x > best for x in sp), len(sp)))
+        L += ['', '| family | drawn | alive | fastest | median |', '|---|---|---|---|---|']
+        for f in FAMILIES:
+            fs = [r['speed'] for r in ok if r['enc'] == f]
+            L.append('| %s | %d | %d | %s | %s |' % (f, sum(r['enc'] == f for r in R), len(fs), '%.3f' % fs[0] if fs else '-', '%.3f' % q(fs, .5) if fs else '-'))
+    print('\n'.join(L))
+
+
 def knockout(argv):
     """--knockout [ID,...] [--rounds N]: for each design (default: the
     front, measured again where --remeasure has been run), undo one gene
@@ -758,6 +830,14 @@ def knockout(argv):
     log('written: %s' % path)
 
 def main(argv):
+    if '-h' in argv or '--help' in argv:
+        print(__doc__); return
+    known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample'}
+    bad = [a for a in argv if a.startswith('-') and a not in known]
+    if bad:
+        # Iteration 4: `--help`, unrecognised, started a full run that wrote
+        # 86 records into the VM rehearsal's database.
+        sys.exit('evolve.py: unknown option %s (see --help)' % ', '.join(bad))
     global DB
     if '--db' in argv:                 # read another database: an earlier run kept aside
         DB = os.path.abspath(argv[argv.index('--db') + 1])
@@ -782,6 +862,8 @@ def main(argv):
         report(load()); return
     if '--knockout' in argv:
         knockout(argv); return
+    if '--sample' in argv:
+        sample(argv); return
     if '--remeasure' in argv:
         # The front, measured again with more rounds: chosen as the best of
         # many noisy measurements, its designs were partly chosen for luck.

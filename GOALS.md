@@ -32,34 +32,32 @@ trying anything again (prompts/12-progress-log).
   the escape and the pairs it makes room for (+28-37% when undone),
   superinstructions (+17-35%), guard pages (+9-19%), format-10 opcodes
   (+6-14%), no endbr64 (+6-13%); multi-state caching only 2-9%.
+- The gene pool searched, not recited (`lab/evolve/SEARCH-SPACE.md`): 11
+  axes, 66 values, 31 left out - each decided. A uniform sample of 32
+  (VM): median 1.59 times s6's time, 1 in 30 faster than s6; the run's
+  best beats all of them - the front is a peak, not a plateau.
 
 ## Next, in order
 
-1. **Native code in the genome** (Iteration 3, PROGRESS.md): relf's native
-   compiler passes our corpus byte for byte but crashes on our kernel
-   workload, and its rules are not switches. Either (A) a `native` family
-   built from relf with switchable rules, or (B) our SPN in the genome
-   with relf's rules as genes. Waiting on the user's choice.
-2. **A second run on the Ryzen**, with the fixed evolver (679e6f3) and
-   `--seed 2`; the first database moved aside (`RUNNING.md`).
-3. **Before adding genes: prompts/02-escape-recall.** The gene pool
-   (`lab/evolve/GENES.md`) is recalled from other VMs - gforth, Wasm3,
-   CPython, relf. Its axis table, with counts, and the candidates nobody
-   uses, come before the next gene.
-4. **Make the stdin figures reproducible**: the READ/WRITE stencil and
-   line-at-a-time ACCEPT numbers (`FINDINGS-SPN.md`,
-   `FINDINGS-OUTER-INTERPRETER.md`) came from inline scripts, not from
-   anything in the repository (prompts/07-git-handoff, point 1).
-5. Remaining genes: indirect threading; a register machine; SPN in the
-   genome.
-6. The article (`article/`): prompts/14-audience-research before drafting
+1. **On the Ryzen** (the owner's runs, `lab/evolve/RUNNING.md`): the
+   second run, `--seed 2`, the first database moved aside; then
+   `--sample 128 --rounds 3` - the uniform sample at a size that can say
+   where the front stands (`lab/evolve/SEARCH-SPACE.md`, step 5).
+2. **The next genes, from `lab/evolve/SEARCH-SPACE.md`**: of its 14
+   candidates and 4 deliberate strangers, first those cheap to try and
+   likely to matter - profile-guided optimisation of the engine; triples;
+   two escape levels; one-byte calls through a table of hot words (a
+   stranger).
+3. Remaining planned gene: indirect threading; then a register machine.
+4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-7. ARM port of SPN. Push master to GitHub (the owner's step).
+5. ARM port of SPN. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 
 | approach | what decided it | where |
 |---|---|---|
+| Native code in the genome: relf's native compiler as a family of its own, or our SPN with relf's rules as genes | deferred by the user (Iteration 4) after measuring it (Iteration 3): our corpus byte for byte, our kernel workload a segmentation fault in cross.4's RESOLVE, 3-10 times faster than s6 on the VM | PROGRESS.md, Iterations 3 and 4 |
 | Load-time direct threading (a decode cache invalidated on every store) | deferred, not built: the dispatch lab gave direct over token threading -5% fib, -12% sieve, but +9% loop; relf S8 found dispatch already at the indirect-jump rate | `lab/evolve/GENES.md` 1; `lab/dispatch/README.md` |
 | Run-time fusion of pairs (`rtfuse`) | built, kept as a gene, selection rejects it: +560-576 bytes, s6 with two pairs 0.956 -> 0.970 (VM) | 53017b4; `lab/evolve/README.md` phase 2b |
 | READ/WRITE stencils making the system call themselves | not built: they would bypass the engine's buffers (`t_obuf`, `t_ibuf`) | 973435c; `FINDINGS-SPN.md` |
