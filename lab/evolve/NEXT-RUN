@@ -1,0 +1,9 @@
+compare
+# The first line that is not a comment is what `lab/evolve/next-run.sh` does
+# when it is given no argument: "seed N" (a new run - the last one's records
+# archived first), "compare" (every run's front here measured again in one
+# session; archives nothing) or "none" (pull and stop). Each iteration sets it
+# for the bundle it hands over (Iteration 22).
+#
+# Iteration 22: compare - the replicate of seed 4 against the first seed 4 run
+# and the earlier seeds, in one session.

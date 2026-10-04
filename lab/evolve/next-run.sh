@@ -1,11 +1,12 @@
 #!/bin/sh
-# lab/evolve/next-run.sh [SEED] - the next evolution run on the laptop, in
+# lab/evolve/next-run.sh [SEED | compare [ROUNDS] | none] - the next evolution run on the laptop, in
 # one command (Iteration 15): the newest bundle pulled into the clone, the
 # previous run's outputs archived (moved, never deleted), everything rebuilt
 # and checked, the run, its front measured again, and what to send back
 # packed into one file.
 #
-#     sh lab/evolve/next-run.sh 4       # in the clone; only bundles need downloading
+#     sh lab/evolve/next-run.sh         # in the clone: what lab/evolve/NEXT-RUN says
+#     sh lab/evolve/next-run.sh 4       # a run with seed 4
 #     sh lab/evolve/next-run.sh compare # every run's front here, measured again
 #                                       # in one session; nothing archived (Iteration 20)
 #
@@ -26,8 +27,7 @@
 set -eu
 # Iteration 20: `compare [ROUNDS]` measures every run's front here again in one
 # session (lab/evolve/compare-fronts.py) - it archives and removes nothing.
-KIND=seed; SEED=${1:-4}; CROUNDS=10
-if [ "${1:-}" = compare ]; then KIND=compare; SEED=0; CROUNDS=${2:-10}; fi
+# The arguments are read after the pull, in the copy pulled (below).
 # Iteration 17: the clone this script is in, wherever it is - not a fixed
 # path, which a clone elsewhere would have had pulled into and archived
 self=$(cd "$(dirname "$0")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null || true)
@@ -67,9 +67,23 @@ if [ -z "${NEXT_RUN_PULLED:-}" ]; then
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" "$@"
 fi
 
-# The arguments are checked only here, in the copy just pulled: an older copy
+# The arguments are read only here, in the copy just pulled: an older copy
 # that checked them before pulling refused `compare`, which it did not know,
 # and so never fetched the version that does (Iteration 20; prompts/07, 8).
+# Iteration 22: with none, the bundle's own lab/evolve/NEXT-RUN decides - a
+# default of seed 4 started a second 38-minute seed 4 after a pull that only
+# wanted a comparison. The same command after every pull; the bundle says.
+if [ $# -eq 0 ]; then
+    [ -f lab/evolve/NEXT-RUN ] || die "no argument and no lab/evolve/NEXT-RUN - say a seed, compare or none"
+    set -- $(sed -n '/^[^#]/{p;q}' lab/evolve/NEXT-RUN)
+    say "lab/evolve/NEXT-RUN says: ${*:-none}"
+fi
+case "${1:-none}" in
+    none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
+    compare) KIND=compare; SEED=0; CROUNDS=${2:-${CROUNDS:-10}} ;;
+    seed) KIND=seed; SEED=${2:-}; CROUNDS=10 ;;
+    *) KIND=seed; SEED=$1; CROUNDS=10 ;;
+esac
 case $SEED in ''|*[!0-9]*) die "the seed must be a number, or 'compare' - not '$SEED'";; esac
 case $CROUNDS in ''|*[!0-9]*) die "the rounds must be a number, not '$CROUNDS'";; esac
 HEAD=$(git rev-parse --short HEAD)

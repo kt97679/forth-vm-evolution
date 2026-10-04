@@ -4,7 +4,11 @@
 
 In the clone, with the new bundle in ~/Downloads:
 
-    sh lab/evolve/next-run.sh 4
+    sh lab/evolve/next-run.sh
+
+With no argument it does what the bundle's `lab/evolve/NEXT-RUN` says - a
+seed, `compare` or `none` - so the same command follows every pull; an
+argument (`4`, `compare`) overrides it.
 
 `lab/evolve/next-run.sh` does all of this page: it pulls the newest
 `forth-vm-evolution*.bundle` from ~/Downloads into the clone it is in

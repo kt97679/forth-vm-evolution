@@ -594,3 +594,23 @@ A slip of mine, caught before it was written: matching the databases by
 the tail of their path labelled seed 3's archived `.../build/evolve/db.jsonl`
 as this clone's (seed 4); compare-fronts.py now labels a run by its archive
 or "this clone".
+
+## Iteration 22 - 2026-10-04 - Claude
+
+**Seed 4 again**, unplanned: next-run.sh with no argument meant seed 4, and
+after Iteration 21's pull (a new commit) it began a fresh one - archiving
+the first seed 4 run, as designed. The measured code was identical, so it
+is a replicate: same seed, other noise
+(`results/evolve-amd-ryzen-7-pro-8840hs-seed4b.md`). The runs share their 35
+starting designs and 2 more of 1,310; they reach the same kind of front
+(one-byte calls on every design, the same smallest size, 9,335). Its
+calibration was good (s6 1.004, fib 1.020) and its re-measure gap small
+(0-7%): fib's noise comes and goes between sessions. One timeout, the
+scale-1 reach limit again (here it gave wrong output instead).
+
+**What to run is now the bundle's to say**: `lab/evolve/NEXT-RUN` - "seed N",
+"compare" or "none" - read by next-run.sh when given no argument, after the
+pull. The owner runs the same command every time; a default seed in the
+script made "pull and run" mean a run nobody had decided on. My last
+message said the plain command "works from here on" - true, and read as
+"run it". This bundle's NEXT-RUN: compare.

@@ -70,6 +70,12 @@ trying anything again (prompts/12-progress-log).
   bytes smaller, and three designs smaller than any before. One design
   moves up to 7% between sessions: rank only within one (`next-run.sh
   compare`).
+- **Seed 4 again - same seed, same code, other noise** (Iteration 22,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed4b.md`): the runs part after
+  the 35 starting designs and share 2 more of 1,310, yet reach the same
+  kind of front - one-byte calls on all six, the same smallest size
+  (9,335) - leaning more on the second escape level. Calibrated well (s6
+  1.004, fib 1.020), its re-measure took 0-7% off (the first: 2-20%).
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -78,22 +84,25 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **fib, the noisiest workload in every calibration** - s6 against itself
+1. **Both seed 4 runs in one session** - `lab/evolve/NEXT-RUN` says
+   `compare`: is the replicate's front (0.581 at 13,201 in its own
+   session) better than the first's, or only better calibrated?
+2. **fib, the noisiest workload in every calibration** - s6 against itself
    1.117 in seed 4's run, 0.946 in Iteration 21's session, where the other
    workloads held within 2.3%. Find why before the next run: the engine is
    position-independent and each run lands at another address (layout),
    or fib's 20 ms is short against the clock. An A/A test first.
-2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
+3. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.
-3. **The loop words in code compiled at run time** - priced first: there
+4. **The loop words in code compiled at run time** - priced first: there
    every pass of a DO loop runs `(LOOP)`'s colon body and 0-7 alignment
    NOOPs; the opcodes exist and now work. Count the passes in the
    selection workloads' run-time code before touching the compiler.
-4. Remaining planned gene: indirect threading; then a register machine.
-5. The article (`article/`): prompts/14-audience-research before drafting
+5. Remaining planned gene: indirect threading; then a register machine.
+6. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-6. ARM port of SPN. Push master to GitHub (the owner's step).
+7. ARM port of SPN. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 
