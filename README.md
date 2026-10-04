@@ -101,8 +101,28 @@ do not show. x86-64 only.
                     last has semantic weight, and that header explains why)
     stages/         what the stages are and how they differ
     results/        measurements, one file per machine
+    lab/            experiments: dispatch/ (dispatch techniques side by
+                    side), evolve/ (evolutionary search; RUNNING.md)
     article/        the write-up: article-en.md for ForthHub,
                     article-ru.md for Habr
+    prompts/        reusable prompts for this kind of work, from relf
+                    (INDEX.md; the commit in UPSTREAM)
+    GOALS.md        where things stand, what is next, what was rejected
+    PROGRESS.md     the log, one entry per session
+
+## Working on this project
+
+    Prompt library: prompts/INDEX.md
+    Read INDEX.md at the start of the session and follow its dispatch rules.
+
+None is skipped: this is a measurement project with a write-up, worked on
+across sessions and handed between machines. Scopes worth stating:
+`02-escape-recall` covers the gene pool (`lab/evolve/GENES.md`) and any
+"which design is best" question; `03-audit-tooling` every figure, since
+all of them come from this repository's own tools; `14`, `04` and `05`
+the article. Before trying an approach, search `GOALS.md` and
+`PROGRESS.md` for it. A handoff is `tools/make-bundle.sh`, which makes the
+bundle and checks that it clones.
 
 ## Method
 

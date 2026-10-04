@@ -8,3 +8,21 @@ build/
 #     tools/collect-results.sh report --save results/ryzen-8840hs.md
 # Those are tracked; the working copy is not.
 RESULTS.md
+
+# Interpreter caches: regenerated per machine and Python version
+# (prompts/07-git-handoff). Importing the evolver (scan.py) makes them.
+__pycache__/
+*.py[co]
+
+# What a background run leaves at the top: nohup's output, and the
+# evolution logs RUNNING.md writes there (evolve.log, evolve2.log).
+/nohup.out
+/evolve*.log
+
+# Editor and patch debris, and a core dump at the top (anchored: a bare
+# `core` also matched tests/core/, three tracked test files).
+*~
+.*.swp
+*.orig
+*.rej
+/core
