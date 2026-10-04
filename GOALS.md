@@ -85,12 +85,14 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **Why fib moves a design up to 28% between sessions** - `NEXT-RUN`:
-   `experiment cpu-noise.py`, the designs that moved most timed on two
-   cores and both threads of each, in one session. Address randomisation
-   is ruled out on the VM. Then fix the measurement (pin one core with
-   its sibling idle, or weigh fib differently) before another run: until
-   then selection among designs a few per cent apart is partly noise.
+1. **Why fib moves a design up to 28% between sessions** - not the core
+   (Iteration 24, `results/cpu-noise-amd-ryzen-7-pro-8840hs.md`: 7-20%
+   between CPUs, the two threads of one core included, where kernel
+   agrees within 2.4%); the estimator is next. `NEXT-RUN`: `experiment
+   run-spread.py` keeps every run, with randomisation on and off, and
+   asks whether the best run or the median reproduces. Then change the
+   evolver's estimator before another run: until then selection among
+   designs a few per cent apart is partly noise.
 2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.

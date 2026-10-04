@@ -196,6 +196,7 @@ def _kind(cmd):
     forks: the compiler, the converter). Anything not known to be a tool
     counts as an engine - a new tool fails loudly rather than escaping."""
     i = 3 if cmd and os.path.basename(str(cmd[0])) == 'taskset' else 0    # taskset -c N
+    if len(cmd) > i + 3 and os.path.basename(str(cmd[i])) == 'setarch': i += 3   # setarch ARCH -R (Iteration 24)
     exe = os.path.basename(str(cmd[i])) if len(cmd) > i else ''
     if exe == os.path.basename(CPUT): return 'cputime'
     return None if exe in BUILD_TOOLS or exe.startswith('python') else 'engine'

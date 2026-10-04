@@ -1,4 +1,4 @@
-experiment cpu-noise.py --rounds 20
+experiment run-spread.py --runs 40
 # The first line that is not a comment is what `lab/evolve/next-run.sh` does
 # when it is given no argument: "seed N" (a new run - the last one's records
 # archived first), "compare" (every run's front here measured again in one
@@ -6,5 +6,5 @@ experiment cpu-noise.py --rounds 20
 # database here) or "none" (pull and stop). compare and experiment archive
 # nothing. Each iteration sets it for the bundle it hands over (Iteration 22).
 #
-# Iteration 23: does a design's ratio to s6 depend on the CPU it is pinned
-# to? Two calibrated sessions disagreed on fib by up to 28% for one design.
+# Iteration 24: every run kept - does fib's best run reproduce, or its
+# median; and does address randomisation spread the runs?

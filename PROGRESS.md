@@ -634,3 +634,20 @@ most on two cores and both threads of each, in one session, and
 `next-run.sh experiment TOOL` runs any tracked lab/evolve tool on the
 laptop the way `compare` runs compare-fronts.py (now one of them).
 NEXT-RUN: experiment cpu-noise.py --rounds 20.
+
+## Iteration 24 - 2026-10-04 - Claude
+
+**Not the CPU** (`results/cpu-noise-amd-ryzen-7-pro-8840hs.md`): on four
+CPUs of one session, kernel's ratios agree within 2.4%, fib's differ 7-20%
+- between the two threads of one core as much as between cores - each
+design with its own best CPU. Both spread wide run to run (median 11% and
+8.5% above the best), but only kernel's best run is reproducible: the
+suspect is the estimator. The evolver ranks by the best of N; if fib's runs
+depend on where each lands in memory (randomised every run), the best of N
+is the luckiest draw. `lab/evolve/run-spread.py` keeps every run, on two
+cores, randomisation on and off, and compares the best and the median by
+whether two halves of one session agree. evolve.py's jail sees past
+`setarch ARCH -R` as it sees past taskset - else cputime, which must fork
+once, would have been jailed as an engine (found reading, not running).
+Correction: cpu 8's sibling is 9, not 0. NEXT-RUN: experiment
+run-spread.py --runs 40.
