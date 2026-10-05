@@ -81,19 +81,18 @@
  *  SPN-ENTER, 127 a service opcode with a selector byte. The image is CV8 - compact - and
  *  forth/spn-cv8.4 translates it to native code by decoding CV8 itself.
  *  Everything SPN-specific is marked SPN.  */
-typedef struct { int64_t *sp; int64_t tos; } spn_st;
-typedef spn_st (*spn_fn)(int64_t *sp, int64_t tos);
+#include "spn-abi.h"       /* cell, spn_st, spn_fn: x86-64 and 32-bit ARM (Iteration 31) */
 extern const void *const spn_table[];
 extern const int spn_table_len;
 static void virtual_machine(void);
-static uint64_t spn_code_base;    /* SPN: native code buffer, for SPN-ENTER */
+static uintptr_t spn_code_base;   /* SPN: native code buffer, for SPN-ENTER - a cell: Forth reads it */
 /* SPN, on demand: an entry [126][lo][hi] whose offset is 0xF000 or more
    is a word not translated yet. SPN-ENTER then runs this Forth hook in
    the word's place, with the word's entry address on the data stack and
    the caller's return address still on the return stack: the hook
    translates the word and jumps into it, as EXECUTE would. */
 #define SPN_LAZY 0xF000
-static uint64_t spn_lazy_hook;
+static uintptr_t spn_lazy_hook;
 typedef uint16_t UNS16;   /* SOD16: a code token */
 
 extern char **environ;
@@ -950,10 +949,25 @@ static UNS64 spn_io(UNS64 op, UNS64 a, UNS64 n) {
  *  Exit status 70, as for the engine's other faults.  */
 #define SPN_CODE_SIZE (1024 * 1024)
 static void spn_say(const char *m) { if (write(2, m, strlen(m)) < 0) {} }
+/*  The registers a fault report reads (Iteration 31): on ARM pc, sp and
+ *  r0-r2 stand where x86-64's report says rip, rsp, rdi, rsi and rax.  */
+#if defined(__x86_64__)
+#define F_PC(uc) ((uc)->uc_mcontext.gregs[REG_RIP])
+#define F_SP(uc) ((uc)->uc_mcontext.gregs[REG_RSP])
+#define F_A0(uc) ((uc)->uc_mcontext.gregs[REG_RDI])
+#define F_A1(uc) ((uc)->uc_mcontext.gregs[REG_RSI])
+#define F_R0(uc) ((uc)->uc_mcontext.gregs[REG_RAX])
+#elif defined(__arm__)
+#define F_PC(uc) ((uc)->uc_mcontext.arm_pc)
+#define F_SP(uc) ((uc)->uc_mcontext.arm_sp)
+#define F_A0(uc) ((uc)->uc_mcontext.arm_r0)
+#define F_A1(uc) ((uc)->uc_mcontext.arm_r1)
+#define F_R0(uc) ((uc)->uc_mcontext.arm_r2)
+#endif
 static void spn_fault(int sig, siginfo_t *si, void *ucv) {
     ucontext_t *uc = (ucontext_t *)ucv;
-    UNS64 rip = (UNS64)uc->uc_mcontext.gregs[REG_RIP];
-    UNS64 *rsp = (UNS64 *)(uintptr_t)uc->uc_mcontext.gregs[REG_RSP];
+    UNS64 rip = (UNS64)F_PC(uc);
+    UNS64 *rsp = (UNS64 *)(uintptr_t)F_SP(uc);
     UNS64 b = (UNS64)(uintptr_t)base, cb = spn_code_base;
     char m[160]; int i, n = 0;
     (void)sig;
@@ -967,9 +981,9 @@ static void spn_fault(int sig, siginfo_t *si, void *ucv) {
     {   UNS64 fa = (UNS64)(uintptr_t)si->si_addr;
         snprintf(m, sizeof m, "spn: image base %#lx, fault = image %+ld; rdi %#lx rsi %#lx rax %#lx\n",
                  (unsigned long)b, (long)(fa - b),
-                 (unsigned long)uc->uc_mcontext.gregs[REG_RDI],
-                 (unsigned long)uc->uc_mcontext.gregs[REG_RSI],
-                 (unsigned long)uc->uc_mcontext.gregs[REG_RAX]);
+                 (unsigned long)F_A0(uc),
+                 (unsigned long)F_A1(uc),
+                 (unsigned long)F_R0(uc));
         spn_say(m);
         if (cb && rip - cb < SPN_CODE_SIZE && rip - cb >= 48) {   /* bytes around rip */
             spn_say("spn: code from rip-48:");
@@ -1000,15 +1014,14 @@ static void spn_fault(int sig, siginfo_t *si, void *ucv) {
  *  the sentinel - two bytes, [127][3] - which leaves this
  *  nested virtual_machine() and comes back here.  */
 static UNS8 spn_sentinel[2] = { 127, 3 };
-spn_st spn_interp(int64_t *sp, int64_t tos, int64_t body) {
+spn_st spn_interp(cell *sp, cell tos, cell body) {
     g_dsp = (UNS64)(uintptr_t)sp - CELL_BYTES;
     CELL(g_dsp) = (UNS64)tos;
     g_rp -= CELL_BYTES;
     CELL(g_rp) = (UNS64)(uintptr_t)spn_sentinel;
     g_ip = (UNS64)body;
     virtual_machine();
-    spn_st r = { (int64_t *)(uintptr_t)(g_dsp + CELL_BYTES), (int64_t)CELL(g_dsp) };
-    return r;
+    return SPN_ST((cell *)(uintptr_t)(g_dsp + CELL_BYTES), (cell)CELL(g_dsp));
 }
 
 static void virtual_machine(void) {
@@ -1714,10 +1727,10 @@ L_spn_enter:  /* SPN 126: a translated word's body is [126][lo][hi] */
     }
     spn_fn fn = (spn_fn)(uintptr_t)(spn_code_base + (off << 4));
     g_rp = rp;
-    spn_st r = fn((int64_t *)(uintptr_t)(dsp + CELL_BYTES), (int64_t)DS0);
+    spn_st r = fn((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
     rp = g_rp;
-    dsp = (UNS64)(uintptr_t)r.sp - CELL_BYTES;
-    DS0 = (UNS64)r.tos;
+    dsp = (UNS64)(uintptr_t)SPN_SP(r) - CELL_BYTES;
+    DS0 = (UNS64)SPN_TOS(r);
     ip = RS; rp += CELL_BYTES;
     NEXT();
 }
@@ -1751,15 +1764,23 @@ L_spn_svc:    /* SPN 127 n: services, chosen by the byte that follows */
         spn_fn fn = (spn_fn)(uintptr_t)DS0;
         dsp += CELL_BYTES;
         g_rp = rp;
-        spn_st r = fn((int64_t *)(uintptr_t)(dsp + CELL_BYTES), (int64_t)DS0);
+        spn_st r = fn((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
         rp = g_rp;
-        dsp = (UNS64)(uintptr_t)r.sp - CELL_BYTES;
-        DS0 = (UNS64)r.tos;
+        dsp = (UNS64)(uintptr_t)SPN_SP(r) - CELL_BYTES;
+        DS0 = (UNS64)SPN_TOS(r);
     } else if (n == 5) {           /* xt ---   the on-demand hook */
         spn_lazy_hook = DS0;
         dsp += CELL_BYTES;
     } else if (n == 6) {           /* --- helper   READ and WRITE for native code */
         PUSH((UNS64)(uintptr_t)spn_io);
+#if defined(__arm__)
+    } else if (n == 7) {           /* a u ---   ARM: u bytes of new code at a made visible
+                                      to instruction fetch (Iteration 31); x86 needs none,
+                                      and its Forth side never asks */
+        UNS64 u = DS0; dsp += CELL_BYTES;
+        UNS64 a = DS0; dsp += CELL_BYTES;
+        __builtin___clear_cache((char *)(uintptr_t)a, (char *)(uintptr_t)(a + u));
+#endif
     } else if (n == 4) {           /* --- &g_rp helper &code-base */
         PUSH((UNS64)(uintptr_t)&g_rp);
         PUSH((UNS64)(uintptr_t)spn_interp);

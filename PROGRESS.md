@@ -775,3 +775,45 @@ code that printed IDENTICAL for two binaries that had never been built -
 `sh` refused the substitution and two empty disassemblies agreed. Redone
 in bash, both binaries checked to exist. FINDINGS-SPN.md corrected: the
 port needs no `-mslow-flash-data`, which exists for M-profile cores only.
+
+## Iteration 31 - 2026-10-05 - Claude
+
+**s8 - the current SPN - runs on 32-bit ARM** (qemu): s8-full, s8-spncv8
+(recipes replayed at boot) and s8-lazy, made from the 32-bit s6 image,
+each pass the ANS corpus - the good one to its end with no error, the
+deliberately wrong one caught; 259 words native.
+
+- **gcc-multilib on this VM, for the first time**: the 4-byte-cell ladder
+  builds here (26 s) and the tests run with no SKIP. It conflicts with
+  gcc-arm-linux-gnueabihf on Ubuntu; with the cross-compiler kept, the
+  one file the 4-byte build missed is /usr/include/asm (linked by hand).
+- spn-cv8.c: the shared ABI header; uintptr_t for the code base Forth
+  reads; the fault report's registers per architecture; service 7 - ARM
+  only - makes new code visible to instruction fetch, which spn-cv8.4
+  asks for after each word's code is whole (lazy translation included).
+- spn-cv8.4: the ARCH section as spn.4's; its hole scan and patcher for
+  movw/movt pairs (kinds 3-7); TABLE zeroed a cell at a time (it zeroed
+  bytes/8 cells - half the table on ARM); the stencil hash 32-bit FNV on
+  ARM; CV8's LIT32 sign-extended by SL@.
+- **The crash, found by its own report**: the fault handler gave a native
+  offset; a throwaway instrumented copy mapped offsets to words
+  (SEARCH-WORDLIST8); the word's native code, dumped and disassembled,
+  showed CELLS translated as `3 LSHIFT` - E-TINY expanded CELL+, CELLS
+  and ALIGNED with 8-byte constants. Isolated tests (>R and R@, the
+  interpreter call-back) passed first, which pointed away from the
+  stencils.
+- spn-cv8-save.4 wrote the magic's cell width as 8: a 32-bit image the
+  engine refused.
+- Checked: the build script's x86-64 s8 binary is machine-code identical
+  to Iteration 29's sources (both built, 4,885 lines, .rodata and .data
+  too); tests PASS with no SKIP, stages IDENTICAL; the ARM check FAILs
+  with the 64-bit CELLS expansion put back.
+
+Three slips of mine: the s8 build could not find the new header (the
+generated engine compiles in build/ - my own compile command had added
+the path; the build's run showed it); a printf in the check script
+written through three layers of quoting passed Forth `S\"` instead of
+`S"`; and a bash-only `${PIPESTATUS}` in sh aborted the command that was to
+restore the deliberately broken spn-cv8.4 - caught by checking the file
+before anything else, restored, compared byte for byte with the saved
+copy.

@@ -110,14 +110,13 @@ trying anything again (prompts/12-progress-log).
    every engine family, the run-time compiler. To plan in stages, the first
    one that can be measured alone: register forms for the moves within a
    word, the stack synchronised at calls, returns and branch targets.
-3. **SPN on 32-bit ARM** - the proof of concept runs (Iteration 30):
-   spn.4, spn.c and the stencils translate fib and sumto to ARM machine
-   code with the interpreter's answers under qemu
-   (`tools/arm-qemu-check.sh`, which also runs natively on the Tegra);
-   x86-64's engines are machine-code identical. Next: s8 - spn-cv8.4's
-   ARCH part and spn-cv8.c's native interface, the same way; then the
-   Tegra times both against the interpreter, batched with the laptop
-   session.
+3. **SPN on 32-bit ARM** - correct (Iterations 30-31): the proof of
+   concept and s8, all three variants, pass under qemu
+   (`tools/arm-qemu-check.sh` - also native on the Tegra); x86-64's
+   engines machine-code identical. Left before the Tegra can TIME s8: the
+   build makes s8 only from 8-byte images (mk-spn-cv8-image.sh, then
+   s8-*-32 on an ARM host) and bench-laptop.sh skips SPN off x86-64 -
+   to do when that session is prepared.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
 5. Push master to GitHub (the owner's step).

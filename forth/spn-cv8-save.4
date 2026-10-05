@@ -15,7 +15,7 @@
 \ the copy what COLD relocates, blank live-session scratch - with the
 \ header the engine reads today:
 \
-\     magic    8 bytes  "CV80", cell width 8, 'L', version 1, flags 0x1F
+\     magic    8 bytes  "CV80", cell width (8, or 4 on ARM), 'L', version 1, flags 0x1F
 \     nthreads cell     then that many START-relative thread heads
 \     ntails   cell     0: DODOES carries its target inline
 \     locals   5 cells  0: no locals.4 in this system
@@ -28,7 +28,7 @@
 
 DECIMAL
 VARIABLE SV-FID  VARIABLE SV-LEN  VARIABLE SV-BUF
-CREATE SV-MAGIC  67 C, 86 C, 56 C, 48 C, 8 C, 76 C, 1 C, 31 C,
+CREATE SV-MAGIC  67 C, 86 C, 56 C, 48 C, 1 CELLS C, 76 C, 1 C, 31 C,   \ the width a cell's (Iteration 31)
 : SV>COPY ( live-addr --- copy-addr )  START @ - SV-BUF @ + ;
 : SV-BLANK ( live-addr u --- )  SWAP SV>COPY SWAP 0 FILL ;
 : SV-CELL ( live-addr --- )  1 CELLS SV-BLANK ;

@@ -336,8 +336,11 @@ than everything.
   (`engine/spn-abi.h`; spn.4's ARCH section chooses by cell size). fib and
   sumto give the interpreter's answers under qemu
   (`tools/arm-qemu-check.sh`), the x86-64 engines' machine code unchanged.
-  Not yet timed on the Tegra, and s7/s8 (spn-full.4, spn-cv8.4) are still
-  x86-64 only.
+  Since Iteration 31 s8 too - the current SPN, spn-cv8.4 on s6's image:
+  all three variants pass the ANS corpus on 32-bit ARM under qemu, 259
+  words native (`tools/arm-qemu-check.sh`), x86-64's s8 engine
+  machine-code identical to before the port. Not yet timed on the Tegra;
+  s7 (spn-full.4, frozen) stays x86-64 only.
 - Translates only words made of the implemented primitives and calls
   to themselves. Calls to other words, inlining, and falling back to
   the interpreter mid-word are not done.

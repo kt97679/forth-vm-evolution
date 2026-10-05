@@ -83,11 +83,11 @@ SPN-TABLE CONSTANT #ENTRIES  CONSTANT ENTRIES
 : IMM16 ( w --- u )  DUP 4 RSHIFT 61440 AND  SWAP 4095 AND OR ;
 : MOVW? ( w --- f )  267386880 AND 50331648 = ;          \ cond 0011 0000
 : MOVT? ( w --- f )  267386880 AND 54525952 = ;          \ cond 0011 0100
-: RD ( w --- r )  12 RSHIFT 15 AND ;
+: REG-RD ( w --- r )  12 RSHIFT 15 AND ;
 : PAIR? ( a u --- f )    \ a movw/movt pair at a loading u?
   >R  DUP L@  SWAP 4 + L@
   OVER MOVW?  OVER MOVT? AND
-  2 PICK RD  2 PICK RD = AND
+  2 PICK REG-RD  2 PICK REG-RD = AND
   ROT IMM16  R@ 65535 AND = AND
   SWAP IMM16  R> 16 RSHIFT 65535 AND = AND ;
 : IMM16! ( u a --- )     \ 16 bits into the movw or movt at a

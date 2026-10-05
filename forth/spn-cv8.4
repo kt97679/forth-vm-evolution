@@ -19,11 +19,13 @@ DECIMAL
 : CFILL ( a-addr u-cells x --- )       \ fill whole cells
   >R CELLS OVER + SWAP
   BEGIN 2DUP > WHILE R@ OVER ! CELL+ REPEAT 2DROP R> DROP ;
+1 CELLS 8 = CONSTANT X86?             \ 8-byte cells: x86-64; 4: 32-bit ARM (Iteration 31)
+X86? 1 AND 2 + CONSTANT CELL-SHIFT    \ log2 of a cell's bytes: 3, or 2
 : BUFFER ( bytes --- a-addr )          \ on the heap, not filled
   7 + -8 AND ALLOCATE ABORT" SPN: no memory" ;
 : TABLE ( bytes --- a-addr )           \ zeroed, on the heap
   7 + -8 AND DUP ALLOCATE ABORT" SPN: no memory"
-  SWAP 3 RSHIFT OVER SWAP 0 CFILL ;
+  SWAP CELL-SHIFT RSHIFT OVER SWAP 0 CFILL ;
 
 \ ---- the engine: opcode 127 and a selector ----
 : SPN-TABLE  [ 127 C, 0 C, ] ;   ( --- a-addr n )
@@ -32,6 +34,7 @@ DECIMAL
 : SPN-IO [ 127 C, 6 C, ] ;       ( --- io-helper )   \ engines with READ/WRITE stencils
 : SPN-ENGINE [ 127 C, 4 C, ] ;   ( --- rp-addr helper code-base-addr )
 : SPN-HOOK!  [ 127 C, 5 C, ] ;   \ ( xt --- )  the on-demand hook
+: SPN-SYNC   [ 127 C, 7 C, ] ;   \ ( a u --- )  ARM only: new code made visible to instruction fetch
 126 CONSTANT OP-ENTER
 VARIABLE ENTRIES  VARIABLE #ENTRIES
 VARIABLE M-NEXT   VARIABLE M-JUMP   VARIABLE M-CALL
@@ -60,26 +63,65 @@ VARIABLE RP-ADDR  VARIABLE INTERP-FN  VARIABLE IO-FN
 52 CONSTANT S-WRITE   53 CONSTANT S-READ    \ engines built with SPN_IO
 64 CONSTANT MAX-STENCILS
 
-\ ---- ARCH: what this file knows about x86-64 ----
-6818992301515038369 CONSTANT IMM-MARK
-9124835310728732279 CONSTANT RP-MARK
-7971913806121885286 CONSTANT FN-MARK
-5666070796908191300 CONSTANT IO-MARK   \ the I/O helper (READ, WRITE)
+\ ---- ARCH: x86-64, or 32-bit ARM in ARM state (Iteration 31) ----
+\ Every literal fits 32 bits - x86-64's 8-byte markers are built from
+\ 16-bit pieces - so a 32-bit system reads the x86-64 rules, and never
+\ runs them. The markers are engine/spn-stencils.c's SPN_*_VALUE.
+: 4H ( a b c d --- n )  >R >R >R 16 LSHIFT R> OR 16 LSHIFT R> OR 16 LSHIFT R> OR ;
+: 2H ( a b --- n )  SWAP 16 LSHIFT OR ;
+: (IMM) X86? IF 24225 60766 41453 24225 4H ELSE 24225 60673 2H THEN ;
+: (RP)  X86? IF 32417 60766 41453 24183 4H ELSE 32417 60674 2H THEN ;
+: (FN)  X86? IF 28321 60766 41453 24166 4H ELSE 28321 60675 2H THEN ;
+: (IO)  X86? IF 20129 60766 41453 24132 4H ELSE 20129 60676 2H THEN ;
+(IMM) CONSTANT IMM-MARK
+(RP) CONSTANT RP-MARK
+(FN) CONSTANT FN-MARK
+(IO) CONSTANT IO-MARK   \ the I/O helper (READ, WRITE)
 1008361079 CONSTANT IMM32-MARK
 233 CONSTANT OP-JMP   195 CONSTANT OP-RET
 : ENDBR? ( a --- f )
+  X86? 0= IF DROP 0 EXIT THEN
   DUP C@ 243 = OVER 1+ C@ 15 = AND OVER 2 + C@ 30 = AND SWAP 3 + C@ 250 = AND ;
 : L@ ( a --- u )
   DUP C@  OVER 1+ C@ 8 LSHIFT OR  OVER 2 + C@ 16 LSHIFT OR  SWAP 3 + C@ 24 LSHIFT OR ;
-: SL@ ( a --- n )  L@ DUP 2147483648 AND IF 4294967296 - THEN ;
+: SL@ ( a --- n )  L@ X86? IF DUP 1 31 LSHIFT AND IF 1 32 LSHIFT - THEN THEN ;
 : L! ( u a --- )
   OVER 255 AND OVER C!  OVER 8 RSHIFT 255 AND OVER 1+ C!
   OVER 16 RSHIFT 255 AND OVER 2 + C!  SWAP 24 RSHIFT 255 AND SWAP 3 + C! ;
-: REL-TO? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
-: REL-OP? ( a --- f )
+: REL-TO-X86? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
+: REL-OP-X86? ( a --- f )
   DUP 1- C@ DUP 232 = SWAP 233 = OR IF DROP TRUE EXIT THEN
   DUP 2 - C@ 15 =  SWAP 1- C@ 240 AND 128 = AND ;
-: REL! ( target a --- )  DUP >R 4 + - R> L! ;
+\ 32-bit ARM: every instruction one little-endian word. B/BL: cond 101L
+\ imm24, the target the instruction's address + 8 + imm24*4. A hole is a
+\ movw then a movt to one register, 16 bits each, split imm4:imm12.
+-16777216 CONSTANT HI8                 \ FF000000: cond and opcode
+-516948194 CONSTANT BX-LR              \ E12FFF1E
+-369098752 CONSTANT B-AL               \ EA000000: b, always
+: B? ( w --- f )  234881024 AND 167772160 = ;
+: B-TARGET ( a --- target )
+  DUP L@ 16777215 AND  DUP 8388608 AND IF 16777216 - THEN  2 LSHIFT  + 8 + ;
+: REL-TO-ARM? ( a target --- f )  OVER L@ B? IF SWAP B-TARGET = ELSE 2DROP 0 THEN ;
+: IMM16 ( w --- u )  DUP 4 RSHIFT 61440 AND  SWAP 4095 AND OR ;
+: MOVW? ( w --- f )  267386880 AND 50331648 = ;
+: MOVT? ( w --- f )  267386880 AND 54525952 = ;
+: REG-RD ( w --- r )  12 RSHIFT 15 AND ;
+: PAIR? ( a u --- f )
+  >R  DUP L@  SWAP 4 + L@
+  OVER MOVW?  OVER MOVT? AND
+  2 PICK REG-RD  2 PICK REG-RD = AND
+  ROT IMM16  R@ 65535 AND = AND
+  SWAP IMM16  R> 16 RSHIFT 65535 AND = AND ;
+: IMM16! ( u a --- )
+  >R  DUP 61440 AND 4 LSHIFT  SWAP 4095 AND OR
+  R@ L@  61440 4 LSHIFT 4095 OR INVERT AND  OR  R> L! ;
+: PAIR! ( v a --- )  OVER 65535 AND OVER IMM16!  SWAP 16 RSHIFT 65535 AND SWAP 4 + IMM16! ;
+: REL-TO? ( a target --- f )  X86? IF REL-TO-X86? ELSE REL-TO-ARM? THEN ;
+: REL-OP? ( a --- f )  X86? IF REL-OP-X86? ELSE L@ B? THEN ;
+: REL! ( target a --- )
+  X86? IF  DUP >R 4 + - R> L!  EXIT THEN
+  >R  R@ 8 + -  2 RSHIFT 16777215 AND   R@ L@ HI8 AND OR  R> L! ;
+4 X86? 1 AND + CONSTANT TAIL-LEN      \ the dropped "jmp/b NEXT": 5 bytes, or 4
 : INT32? ( n --- f )  DUP -2147483648 < 0=  SWAP 2147483647 > 0= AND ;
 
 \ ---- the working tables, allocated by SPN-INIT ----
@@ -100,7 +142,13 @@ VARIABLE LOWER
   #ENTRIES @ 0 DO
     I ENTRY  LOWER @ OVER <  OVER 3 PICK <  AND IF NIP ELSE DROP THEN
   LOOP ;
+: BODY-END-ARM ( i --- a )
+  DUP S-EXIT = IF  ST-SRC BEGIN DUP L@ BX-LR <> WHILE 4 + REPEAT 4 + EXIT  THEN
+  DUP ST-SRC SWAP BOUND OVER  ROT ROT SWAP DO
+    I M-NEXT @ REL-TO?  I M-JUMP @ REL-TO? OR IF DROP I 4 + THEN
+  4 +LOOP ;
 : BODY-END ( i --- a )
+  X86? 0= IF BODY-END-ARM EXIT THEN
   DUP S-EXIT = IF  ST-SRC BEGIN DUP C@ OP-RET <> WHILE 1+ REPEAT 1+ EXIT  THEN
   DUP ST-SRC SWAP BOUND OVER  ROT ROT SWAP DO
     I C@ OP-JMP = IF
@@ -108,18 +156,39 @@ VARIABLE LOWER
     THEN
   LOOP ;
 : TAIL-NEXT? ( i --- f )
-  DUP BODY-END 5 -  DUP C@ OP-JMP =  SWAP 1+ M-NEXT @ REL-TO? AND
-  SWAP S-EXIT <> AND ;
+  X86? IF
+    DUP BODY-END 5 -  DUP C@ OP-JMP =  SWAP 1+ M-NEXT @ REL-TO? AND
+  ELSE
+    DUP BODY-END 4 -  DUP L@ HI8 AND B-AL =  SWAP M-NEXT @ REL-TO? AND
+  THEN SWAP S-EXIT <> AND ;
 VARIABLE SI  VARIABLE SSRC  VARIABLE SLEN
 : HOLE, ( offset kind --- )
   1 OVER LSHIFT SI @ ST-MASK ST@ OR SI @ ST-MASK ST!   \ which kinds it has
   SWAP 8 * +  SI @ 8 * SI @ ST-NH ST@ + CELLS ST-HOLES @ + !
   SI @ ST-NH ST@ 1+ SI @ ST-NH ST! ;
+: SCAN-ARM ( --- )   \ every 4th byte: branches to the markers, and movw/movt holes
+  SLEN @ 0 ?DO
+    SSRC @ I +
+    DUP REL-OP? IF
+      DUP M-NEXT @ REL-TO? IF I 0 HOLE, THEN
+      DUP M-JUMP @ REL-TO? IF I 1 HOLE, THEN
+      DUP M-CALL @ REL-TO? IF I 2 HOLE, THEN
+    THEN
+    I 8 + SLEN @ > 0= IF
+      DUP IMM-MARK   PAIR? IF I 3 HOLE, THEN
+      DUP IMM32-MARK PAIR? IF I 4 HOLE, THEN
+      DUP RP-MARK    PAIR? IF I 5 HOLE, THEN
+      DUP FN-MARK    PAIR? IF I 6 HOLE, THEN
+      DUP IO-MARK    PAIR? IF I 7 HOLE, THEN
+    THEN
+    DROP
+  4 +LOOP ;
 : SCAN-STENCIL ( i --- )
   DUP SI !  DUP ST-SRC SSRC !
-  DUP BODY-END OVER ST-SRC -  OVER TAIL-NEXT? IF 5 - THEN  SLEN !
+  DUP BODY-END OVER ST-SRC -  OVER TAIL-NEXT? IF TAIL-LEN - THEN  SLEN !
   SSRC @ OVER ST-START ST!  SLEN @ SWAP ST-LEN ST!
   0 SI @ ST-NH ST!
+  X86? 0= IF SCAN-ARM EXIT THEN
   SLEN @ 0 ?DO
     SSRC @ I +
     I 4 + SLEN @ > 0= IF
@@ -181,13 +250,18 @@ VARIABLE RD
 : FIX, ( native src --- )
   #FIX @ 256 < 0= ABORT" SPN: too many branches"
   #FIX @ 2 * CELLS FIXUPS @ +  DUP >R CELL+ !  R> !  1 #FIX +! ;
+: HOLE-VALUE ( kind --- v )   \ what a hole of kind 3-7 holds
+  DUP 5 = IF DROP RP-ADDR @ EXIT THEN
+  DUP 6 = IF DROP INTERP-FN @ EXIT THEN
+  7 = IF IO-FN @ EXIT THEN  ARG-IMM @ ;
 : PATCH-HOLE ( hole --- )
   DUP 7 AND SWAP 3 RSHIFT E-DST @ +
   OVER 0 = IF NIP  E-DST @ SI @ ST-LEN ST@ +  SWAP REL! EXIT THEN
   OVER 1 = IF NIP  ARG-JUMP @ FIX, EXIT THEN
   OVER 2 = IF NIP  ARG-CALL @ SWAP REL! EXIT THEN
+  X86? 0= IF SWAP HOLE-VALUE SWAP PAIR! EXIT THEN    \ ARM: every value hole a movw/movt pair
   OVER 3 = IF NIP  ARG-IMM @ SWAP ! EXIT THEN
-  OVER 4 = IF NIP  ARG-IMM @ 4294967295 AND SWAP L! EXIT THEN
+  OVER 4 = IF NIP  ARG-IMM @ -1 32 RSHIFT AND SWAP L! EXIT THEN
   OVER 5 = IF NIP  RP-ADDR @ SWAP ! EXIT THEN
   OVER 6 = IF NIP  INTERP-FN @ SWAP ! EXIT THEN
   NIP IO-FN @ SWAP ! ;
@@ -258,7 +332,7 @@ CREATE FOLDMAP
   DUP 3 = IF DROP DUP 1+ DUP LD16 SX16 + K-BR KV 3 + EXIT THEN
   DUP 4 = IF DROP DUP 1+ DUP LD16 SX16 + K-QBR KV 3 + EXIT THEN
   DUP 68 < IF K-PRIM KV 1+ EXIT THEN
-  DUP 68 = IF DROP DUP 1+ L@ DUP 2147483648 AND IF 4294967296 - THEN K-LIT KV 5 + EXIT THEN
+  DUP 68 = IF DROP DUP 1+ SL@ K-LIT KV 5 + EXIT THEN
   DUP 69 = IF DROP 0 K-DOVAR KV 1+ EXIT THEN
   DUP 70 = IF DROP 0 K-DODOES KV 1+ EXIT THEN
   DUP 71 = IF DROP DUP 1+ C@ K-LIT KV 2 + EXIT THEN
@@ -576,12 +650,12 @@ VARIABLE SK  VARIABLE SV
   DUP 5 = IF DROP S-OVER EMIT-ST S-OVER EMIT-ST EXIT THEN               \ 2DUP
   DUP 6 = IF DROP S-DROP EMIT-ST S-DROP EMIT-ST EXIT THEN               \ 2DROP
   DUP 7 = OVER 8 = OR IF DROP 1 E-ADDI EXIT THEN                        \ CHAR+ 1+
-  DUP 9 = IF DROP 8 E-ADDI EXIT THEN                                    \ CELL+
-  DUP 10 = IF DROP 3 E-LIT S-LSHIFT EMIT-ST EXIT THEN                   \ CELLS
+  DUP 9 = IF DROP 1 CELLS E-ADDI EXIT THEN                              \ CELL+ (a cell's bytes: Iteration 31)
+  DUP 10 = IF DROP CELL-SHIFT E-LIT S-LSHIFT EMIT-ST EXIT THEN          \ CELLS
   DUP 11 = IF DROP -1 E-ADDI EXIT THEN                                  \ 1-
   DUP 12 = IF DROP -1 E-LIT S-XOR EMIT-ST EXIT THEN                     \ INVERT
   DUP 13 = IF DROP S-DUP EMIT-ST 1 E-ADDI S-SWAP EMIT-ST S-CFETCH EMIT-ST EXIT THEN
-  DROP 7 E-ADDI -8 E-LIT S-AND EMIT-ST ;                                \ ALIGNED
+  DROP 1 CELLS 1- E-ADDI 1 CELLS NEGATE E-LIT S-AND EMIT-ST ;           \ ALIGNED, to a cell
 \ One decoded operation that is neither control flow nor a call.
 : E-SIMPLE ( --- )
   OP-K @ K-LIT = IF OP-V @ E-LIT EXIT THEN
@@ -700,10 +774,13 @@ VARIABLE FZ-A  VARIABLE FZ-N  VARIABLE #FUSED  0 #FUSED !
       OP-K @ K-BR <> OP-K @ K-QBR <> AND OP-K @ K-CALL <> AND IF E-SIMPLE THEN
     THEN
   0 UNTIL ;
+\ ARM keeps no coherence between written code and instruction fetch:
+\ each word's code, once whole, is made visible (x86 needs nothing).
+: T-SYNC ( --- )  X86? 0= IF T-NAT @ CODE-HERE @ OVER - SPN-SYNC THEN ;
 : RESOLVE ( --- )
   #FIX @ 0 ?DO
     I 2 * CELLS FIXUPS @ +  DUP CELL+ @ IDX CELLS C-NAT @ + @  SWAP @ REL!
-  LOOP ;
+  LOOP T-SYNC ;
 
 \ ---- translating one word ----
 VARIABLE #NATIVE  VARIABLE #KEPT
@@ -795,10 +872,12 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
 \ stencil byte is read - and the same bytes, by hash. Otherwise it scans,
 \ as before; a layout-variant engine always does.
 VARIABLE STS-OFF  0 STS-OFF !  VARIABLE STS-LEN  0 STS-LEN !
-: STENCIL-HASH ( --- h )   \ FNV-1a over every stencil's bytes
-  -3750763034362895579
+: FNV-BASIS ( --- n )  X86? IF 52210 40164 33826 8997 4H ELSE -2128831035 THEN ;
+: FNV-PRIME ( --- n )  X86? IF 0 256 0 435 4H ELSE 16777619 THEN ;
+: STENCIL-HASH ( --- h )   \ FNV-1a over every stencil's bytes: 64-bit, or 32-bit on ARM
+  FNV-BASIS
   #ENTRIES @ 3 DO
-    I ST-START ST@  I ST-LEN ST@ 0 ?DO  DUP I + C@ ROT XOR 1099511628211 * SWAP  LOOP DROP
+    I ST-START ST@  I ST-LEN ST@ 0 ?DO  DUP I + C@ ROT XOR FNV-PRIME * SWAP  LOOP DROP
   LOOP ;
 : LOAD-STENCILS ( --- f )   \ at boot: the build's scan, if the engine is the same
   STS-LEN @ 0= IF FALSE EXIT THEN
@@ -872,7 +951,7 @@ VARIABLE RP-PREV  VARIABLE #MARK
 : RESOLVE-RANKS ( --- )
   #FIX @ 0 ?DO
     I 2 * CELLS FIXUPS @ +  DUP CELL+ @ CELLS C-NAT @ + @  SWAP @ REL!
-  LOOP ;
+  LOOP T-SYNC ;
 : REPLAY-WORD ( --- )
   SV@ RP-PREV @ + DUP RP-PREV !  T-SRC !
   CODE-HERE @ 15 + -16 AND CODE-HERE !  CODE-HERE @ T-NAT !  0 #FIX !  0 #MARK !
