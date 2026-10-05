@@ -974,3 +974,24 @@ designs alive, and the compiler words compiled at run time give the
 recorded designs' answers. As a gene in LATE so recorded designs build as
 recorded (all of seed 6's ids unchanged); evolution should take it
 everywhere. seed 6's smallest would be 8,558 bytes, its fastest 12,961.
+
+## Iteration 39 - 2026-10-05 - Claude
+
+**The gene `lean`** - Iteration 38's dropx8, renamed (no recorded design
+used it) and extended: an image is a dump of what the build loaded, and
+three kinds of words came along that the running system never uses - the
+compiler's X8 copies (38), **the dump tool itself** (tools/dict-dump-addr.4
+is loaded last, to write the dump: 12 words, 490-688 bytes of seed 6's
+front), and dead shadowed words (cv8.4's FOLD-OP under cv8-fuse.4's).
+Each leaves only where nothing refers to it - checked in the converter.
+Priced first with SYMMAP and CALLMAP: "never called" is not "unused" -
+`;`, LOOP, EVALUATE are run by name - so the rest stays.
+
+All ten of seed 6's front designs, image against image: 12-16% smaller
+(1,267-1,896 bytes), kernel, parse and corpus 1-5% fewer dispatches, no
+slower; alive, run-time compiled control structures, VARIABLE, CONSTANT,
+CREATE DOES> as recorded. rtimm is a third cheaper with it (278 and 336
+bytes, from 408 and 472). Smallest would be 8,060 bytes (seed 6: 9,327).
+
+**NEXT-RUN: seed 7 then compare** - the owner asked to be told when a run
+is wanted: rtimm and lean are for evolution to weigh.

@@ -1,5 +1,8 @@
 # The compiler's X8 copies, dropped: the gene `dropx8`
 
+*Since Iteration 39 part of the gene `lean` (results/lean.md), which also
+leaves out the dump tool and dead shadowed words.*
+
 Iteration 38. Every CV8 image carries the compiler that writes CV8 at run
 time (forth/cv8.4, cv8b.4, and with run-time fusion cv8-fuse.4). They are
 written as `X8` words - IF8, ;8, COMPILE,8 - because redefining `;` in the

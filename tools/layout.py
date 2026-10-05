@@ -241,7 +241,8 @@ if CV8_COMPILER:
 # smallest design, 7.7% of its fastest (lab/evolve, Iteration 38).
 DROPPED = {}
 import os as _os
-if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD16_NO_DROPX8'):   # the switch: to measure
+_NO_LEAN = _os.environ.get('SOD16_NO_LEAN')      # both parts of the gene lean off, to measure (Iteration 39)
+if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD16_NO_DROPX8') and not _NO_LEAN:   # the switch: to measure
     DROPPED = dict(SWAPPED)
     for _w in order:
         if kind[_w['s']] == 'code' and info[_w['s']]:
@@ -249,6 +250,41 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD
     _gone = [w for w in order if w['s'] in DROPPED]
     order = [w for w in order if w['s'] not in DROPPED]
     print('drop-x8: %d copies out, %d bytes of the old image' % (len(_gone), sum(w['e'] - w['link'] for w in _gone)))
+
+# ---- the dump tool and dead shadowed words left out (Iteration 39) ---
+# tools/dict-dump-addr.4 is loaded LAST, to write this very dump: its
+# words (NFA ... DUMP) came into every image, 490-688 bytes of seed 6's
+# front, and nothing in the running system uses them. And a word defined
+# again under the same name is reachable by name no more; if nothing calls
+# it or (POSTPONE)s it either (cv8.4's FOLD-OP under cv8-fuse.4's), it is
+# reachable not at all. Both leave `order` only where nothing refers to
+# them - checked, not assumed.
+DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')
+if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and not _NO_LEAN:
+    def _refs(ws):                        # every call target and (POSTPONE) target in these words' code
+        r = set()
+        for _w in ws:
+            if kind[_w['s']] != 'code' or not info[_w['s']]: continue
+            _, _cs, _, _, _ = layout(info[_w['s']])
+            for _j, (_k, _pl) in enumerate(info[_w['s']]):
+                if _k == 'C': r.add(_pl)
+                elif _k == 'XT': r.add(SRC_OF.get(_w['s'], _w['s']) + _cs[_j] + _pl)
+        return r
+    _names = [w['n'] for w in order]
+    _k = len(_names) - 1 - _names[::-1].index('NFA') if 'NFA' in _names else None
+    _tool = order[_k:] if _k is not None and all(w['n'] in DUMPTOOL for w in order[_k:]) else []
+    _keep = order[:_k] if _tool else order
+    _r = _refs(_keep)
+    if any(w['s'] in _r for w in _tool):
+        print('drop-dumptool: a word refers to the dump tool - kept'); _tool = []
+    _seen, _shadow = set(), []
+    for w in reversed(_keep):
+        if w['n'] in _seen and kind[w['s']] == 'code' and w['s'] not in _r: _shadow.append(w)
+        _seen.add(w['n'])
+    _out = set(w['s'] for w in _tool + _shadow)
+    order = [w for w in order if w['s'] not in _out]
+    print('drop-dumptool: %d dump-tool words, %d dead shadowed (%s) out, %d bytes of the old image'
+          % (len(_tool), len(_shadow), ' '.join(w['n'] for w in _shadow) or '-', sum(w['e'] - w['link'] for w in _tool + _shadow)))
 
 # ---- one-byte calls (Iteration 14): --hotcalls N --------------------
 # The targets with the most call sites in the image's code take the bytes
