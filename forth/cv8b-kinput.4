@@ -25,3 +25,24 @@
     QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
    THEN
   THEN ;
+
+\ After TABS>BL (Iteration 54, attributed again): PARSE's own stack work
+\ 9-14% of kernel, parse and corpus; ?STACK's check, run after every word
+\ interpreted, calling (ABORT") each time only to skip its message.
+
+: (PARSE) ( addr u c --- a1 len adv )
+\ Skip the leading c's, then up to the next c: the string between, and
+\ how far >IN moves - to that c and past it, if there was one. PARSE's
+\ work, as the kernel's PARSE does it with SKIP and SCAN.
+  ROT DUP >R ROT ROT DUP >R SKIP OVER SWAP R> SCAN
+  IF 1 ELSE 0 THEN OVER R> - + >R OVER - R> ;
+
+: PARSE8 ( c --- addr len )
+\ The kernel's PARSE: the rest of the source from >IN, (PARSE), >IN moved.
+  >R SOURCE SWAP >IN @ + SWAP >IN @ - R> (PARSE) >IN +! ;
+
+: ?STACK8 ( --- )
+\ The kernel's ?STACK - DEPTH below 0 or above 10000 - as one unsigned
+\ compare (DEPTH's logical shift makes an underflow huge), and (ABORT")
+\ called only when there is something to say.
+  DEPTH 10000 U> IF -1 ABORT" Stack error" THEN ;

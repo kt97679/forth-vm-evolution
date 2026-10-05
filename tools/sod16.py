@@ -392,6 +392,16 @@ def _expect(n):
         'TABS>BL': [('P', 'OVER'), ('P', '+'), ('P', 'SWAP'), ('C', '2DUP'), ('C', '-'), ('QBR', 14 * CELL), ('P', 'DUP'),
                     ('P', 'C@'), ('LIT', 9), ('P', '='), ('QBR', 4 * CELL), ('C', 'BL'), ('P', 'OVER'), ('P', 'C!'),
                     ('C', '1+'), ('BR', -16 * CELL), ('C', '2DROP'), ('P', 'EXIT')],
+        # Iteration 54: kinput's (PARSE); the kernel's HASH and PLACE
+        '(PARSE)': [('P', 'ROT'), ('P', 'DUP'), ('P', '>R'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DUP'), ('P', '>R'),
+                    ('C', 'SKIP'), ('P', 'OVER'), ('P', 'SWAP'), ('P', 'R>'), ('C', 'SCAN'), ('QBR', 5 * CELL), ('LIT', 1),
+                    ('BR', 3 * CELL), ('LIT', 0), ('P', 'OVER'), ('P', 'R>'), ('C', '-'), ('P', '+'), ('P', '>R'),
+                    ('P', 'OVER'), ('C', '-'), ('P', 'R>'), ('P', 'EXIT')],
+        'HASH': [('P', '>R'), ('P', 'OVER'), ('P', 'C@'), ('LIT', 1), ('P', 'LSHIFT'), ('P', 'OVER'), ('LIT', 1), ('C', '>'),
+                 ('QBR', 10 * CELL), ('P', 'ROT'), ('C', '1+'), ('P', 'C@'), ('LIT', 2), ('P', 'LSHIFT'), ('P', 'XOR'),
+                 ('BR', 3 * CELL), ('P', 'ROT'), ('P', 'DROP'), ('P', 'XOR'), ('P', 'R>'), ('C', '1-'), ('P', 'AND'),
+                 ('P', 'EXIT')],
+        'PLACE': [('C', '2DUP'), ('P', 'C!'), ('C', 'CHAR+'), ('P', 'SWAP'), ('C', 'CMOVE'), ('P', 'EXIT')],
         # Iteration 51: the byte-header thread walk (forth/cv8b-kfast.4)
         'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 26 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
                         ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),

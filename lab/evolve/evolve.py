@@ -138,7 +138,7 @@ def tfind_on(g):
     opcode - sure of a slot. Seed 11 found it in the pool 7 times in 1,425
     designs, once with kfast: the biggest saving there, never taken up."""
     return kfast_on(g) and bool(g.get('tfind'))
-KINPUT = ['SCAN', 'SKIP', 'TABS>BL', 'FILL']
+KINPUT = ['SCAN', 'SKIP', 'TABS>BL', 'FILL', '(PARSE)', 'HASH', 'PLACE']
 def kinput_on(g):
     """Iteration 54: the input side - forth/cv8b-kinput.4 (REFILL's tab loop
     factored out as TABS>BL) and SCAN, SKIP, TABS>BL and FILL first among the
@@ -168,7 +168,8 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
               'DUP?NBRANCH', 'DUP?NBRANCH8', 'SWAP+I',   # Iteration 34: DUP 0= ?BRANCH kept; SWAP n +
               'FILL', 'CMOVE',                           # Iteration 50: the kernel's byte loops
               'THREAD-FIND',                             # Iteration 51: the byte-header thread walk (kfast's)
-              'SCAN', 'SKIP', 'TABS>BL']                 # Iteration 54: the input side (TABS>BL: kinput's)
+              'SCAN', 'SKIP', 'TABS>BL',                 # Iteration 54: the input side (TABS>BL: kinput's)
+              '(PARSE)', 'HASH', 'PLACE']                # Iteration 54: ((PARSE): kinput's)
 OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
                '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
@@ -180,19 +181,21 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
                'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8',
                'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi',
                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
-               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', 'TABS>BL': 'L_x_tabsbl'}
+               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', 'TABS>BL': 'L_x_tabsbl',
+               '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place'}
 # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
 X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
            'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR',
            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
-           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', 'TABS>BL': 'X_TABSBL'}
+           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', 'TABS>BL': 'X_TABSBL',
+           '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE'}
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
     ws = [w for w in g.get('ops10', []) if w != 'THREAD-FIND' or kfast_on(g)]   # Iteration 51: a kfast word
     if tfind_on(g): ws = ['THREAD-FIND'] + [w for w in ws if w != 'THREAD-FIND']  # Iteration 52: first, sure of a slot
-    ws = [w for w in ws if w != 'TABS>BL' or kinput_on(g)]                         # Iteration 54: kinput's word
+    ws = [w for w in ws if w not in ('TABS>BL', '(PARSE)') or kinput_on(g)]        # Iteration 54: kinput's words
     if kinput_on(g):                                                               # Iteration 54: next, sure of slots
         ws = ws[:1 if tfind_on(g) else 0] + KINPUT + [w for w in ws[1 if tfind_on(g) else 0:] if w not in KINPUT]
     return [[w, op] for w, op in zip(ws, super_slots(g))]

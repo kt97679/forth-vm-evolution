@@ -182,8 +182,10 @@ they are done, the article on the backburner.
       fastest yet, 0.413 at 8,030 - without THREAD-FIND, never taken up;
       `tfind` puts it first. Seed 12 (Iteration 53): taken up - the
       fastest yet, 0.326 at 9,014; 17-32% faster at every size. The input
-      side (Iteration 54): the gene `kinput` - kernel 0.72, corpus 0.79,
-      parse 0.84 counted. Next in the sources: what is left after it
+      side (Iterations 54-55): the gene `kinput` - kernel 0.62, parse
+      0.65, corpus 0.61 counted. **NEXT-RUN: seed 13, then compare.**
+      Next in the sources: number conversion (NUMBER?, >NUMBER, DIGIT?:
+      17% of parse), FIND's search-order loop, then what is left
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header
       NAME>BUF (open).
    b. **The image's remaining fixed costs** (Iteration 44's audit): the

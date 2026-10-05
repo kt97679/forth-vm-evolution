@@ -1279,3 +1279,21 @@ less; alive in all four engine forms.
 
 The evolver refused to run on a build older than the engine's sources -
 its own check, as it should; rebuilt.
+
+## Iteration 55 - 2026-10-05 - Claude
+
+**kinput completed.** Attributed again with kinput on: lookup overhead
+(FIND, SEARCH-WORDLIST, HASH, PLACE) 22-35% of kernel, parse and corpus;
+PARSE's own stack work 9-14%; ?STACK after every word, with DEPTH and an
+(ABORT") call each time, 8-10% of parse and corpus. kinput's overlay - in
+no run yet - grew (PARSE) ( addr u c --- a1 len adv ) with PARSE8 around
+it, and ?STACK8 (one unsigned compare, (ABORT") only on an error); kinput
+puts (PARSE), HASH and PLACE first with its other four. HASH's handler is
+the kernel's hash exactly.
+
+dcbaf0e29f / 35135bde2f against them as recorded: kernel 0.62/0.63, parse
+0.65/0.66, corpus 0.61/0.63, sieve 0.84/0.85, fib and loop 1.00 - the
+selected geometric mean about 0.75; 63 bytes less; alive in all four
+engine forms; recorded designs and ids untouched.
+
+NEXT-RUN: seed 13, then compare.

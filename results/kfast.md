@@ -126,6 +126,28 @@ their expected bodies from SOD16_SHOW.
 alive in all four engine forms; the selected workloads' geometric mean
 about 0.86 of the dispatches.
 
+## Iteration 55: kinput completed
+
+Attributed again with kinput on dcbaf0e29f: what was left was spread -
+FIND, SEARCH-WORDLIST, HASH and PLACE 22-35% of kernel, parse and corpus;
+PARSE's own stack work 9-14%; ?STACK's check after every word, with
+DEPTH and the (ABORT") it calls each time to skip its message, 8-10% of
+parse and corpus. kinput's overlay had been in no run, so it grew:
+`(PARSE) ( addr u c --- a1 len adv )` - PARSE's skip, scan and how far
+>IN moves - with PARSE8, the kernel's PARSE around it; ?STACK8 - the same
+test as one unsigned compare (DEPTH's logical shift makes an underflow
+huge), (ABORT") called only on an error. kinput puts (PARSE), HASH and
+PLACE first with the other four; HASH's handler is the kernel's hash
+exactly (cross.4's THASH must agree with it).
+
+| design, against it as recorded | kernel | fib | parse | corpus | loop | sieve | size |
+|---|---|---|---|---|---|---|---|
+| dcbaf0e29f | 0.620 | 0.999 | 0.645 | 0.614 | 0.995 | 0.837 | 9,014 -> 8,951 |
+| 35135bde2f | 0.631 | 1.000 | 0.662 | 0.630 | 0.995 | 0.846 | 7,105 -> 7,042 |
+
+alive in all four engine forms; **the selected workloads' geometric mean
+about 0.75 of the dispatches**; recorded designs and ids untouched.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell

@@ -1402,6 +1402,24 @@ L_x_skip:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
 L_x_tabsbl: { UNS64 u_ = DS0, a_ = DS1; dsp += 2 * CELL_BYTES;
              while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } } NEXT();
 #endif
+/*  (PARSE) ( addr u c --- a1 len adv ): SKIP then SCAN, the string between and
+ *  how far >IN moves (kinput's PARSE8). HASH ( c-addr u #threads --- n ): the
+ *  kernel's, exactly - cross.4's THASH must agree. PLACE ( addr len c-addr --- ). */
+#if X_PARSE
+L_x_parse: { UNS64 c_ = DS0, u_ = DS1, a_ = DS2, p_ = a_, s_;
+             while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_;
+             while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; }
+             DS2 = s_; DS1 = p_ - s_; DS0 = (p_ - a_) + (u_ ? 1 : 0); } NEXT();
+#endif
+#if X_HASH
+L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+             h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2;
+             DS0 = (h_ ^ u_) & (t_ - 1); } NEXT();
+#endif
+#if X_PLACE
+L_x_place: { UNS64 d_ = DS0, n_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
+             BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();
+#endif
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

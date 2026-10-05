@@ -126,6 +126,9 @@ SPECS = {
     'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
     'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
     'L_x_tabsbl':       (['a', 'u'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } }'),
+    'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+    'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = (h_ ^ u) & (t - 1); n = h_; }'),
+    'L_x_place':        (['s', 'n', 'd'], [], '{ UNS64 d_ = d, s_ = s, n_ = n; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } }'),
     'L_x_cmove':        (['s', 'd', 'u'], [], '{ UNS64 s_ = s, d_ = d, u_ = u; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } }'),
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch', 'L_hcall']   # L_hcall: one-byte calls (Iteration 14)

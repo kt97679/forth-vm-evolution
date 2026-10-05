@@ -56,4 +56,9 @@
 # parse 0.49-0.51, corpus 0.63-0.65, kernel 0.82). Carrying every front.
 #
 # Iteration 53: none - seed 12 and the comparison came back.
-none
+#
+# Iteration 55: seed 13 - the first run that can choose kinput (the input
+# side: REFILL's tab loop, (PARSE), ?STACK's check; SCAN, SKIP, TABS>BL,
+# FILL, (PARSE), HASH, PLACE as opcodes) - counted on seed 12's best:
+# kernel 0.62, parse 0.65, corpus 0.61. Carrying every front.
+seed 13 then experiment compare-fronts.py --rounds 10 --cpus 2,8
