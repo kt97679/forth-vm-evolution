@@ -157,6 +157,12 @@ they are done, the article on the backburner.
       parse and corpus run it: a shorter or faster definition there is a
       gain in every design. Words the converter already rewrites (and the
       hand-made stages, which must stay identical) set the limits.
+      **Begun (Iteration 49, `results/kfast.md`)**: every dispatch
+      attributed to its word - a quarter of kernel, parse and corpus was
+      NAME>BUF's zero fill; without it (the gene `kfast`, byte headers),
+      24-29% fewer dispatches there. Next from the same table: FILL and
+      CMOVE as opcodes, the thread walk (a third of parse) as one, the
+      cell-header NAME>BUF (open).
    b. **The image's remaining fixed costs** (Iteration 44's audit): the
       353-byte image header (32 thread heads as cells), FORTH-WORDLIST's
       32 cell-sized heads (296 bytes), the names (a third of the image),
@@ -173,7 +179,6 @@ they are done, the article on the backburner.
 3. **The article - on the backburner** (the owner, Iteration 48):
    `article/`; prompts/14-audience-research before drafting for Habr and
    ForthHub, 04 and 05 before publishing.
-4. Push master to GitHub (the owner's step).
 
 ### Built from this list, for the record
 

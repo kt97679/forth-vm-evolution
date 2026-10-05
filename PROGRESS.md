@@ -1159,3 +1159,26 @@ image's remaining fixed costs, (c) the register machine's tail - with
 carry-over seed runs between batches; then the Tegra session, its two
 prerequisites named; the article last. The items built from the old list
 moved under "Built from this list".
+
+## Iteration 49 - 2026-10-05 - Claude
+
+The owner: pushing to GitHub is theirs, continuously - off the list. On to
+the Forth sources.
+
+**Where the dispatches go**, word by word (profile per address, symbol
+map), on seed 10's 96f2d8bfd7: a quarter of kernel, parse and corpus was
+FILL, almost all of it NAME>BUF zero-filling NAMEBUF's 32 bytes a byte at
+a time before every dictionary lookup; the dictionary walk a third of
+parse more. **The gene `kfast`** (`forth/cv8b-kfast.4`, byte headers):
+NAME>BUF8 = 32 MIN NAMEBUF PLACE - the byte compare never reads the
+padding. 24-29% fewer dispatches on kernel, parse and corpus; alive;
+recorded designs untouched.
+
+The cell-header version did not make it: the converter refused `?DO`
+("UNTRANSLATED code bodies"); rewritten with BEGIN WHILE REPEAT it hung the
+converted image at the first lookup; and my tests in the plain cell system
+were unsound twice - reading NAMEBUF at the prompt, after the interpreter's
+own lookups had overwritten it, and compiling S" inside a definition, which
+that kernel cannot. Left open, not shipped: 14 of seed 10's 15 front
+designs have byte headers. Also caught before running: the dump loop
+chose its overlay by a comprehension variable that does not leak.

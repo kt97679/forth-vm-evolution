@@ -1,0 +1,16 @@
+\ cv8b-kfast.4 - kernel words made faster for the byte-header system
+\ (Iteration 49: the owner asked for a look through the Forth sources).
+\ Loaded after cv8b.4, only for designs with the gene kfast (lab/evolve);
+\ each word here is an X8, so the converter gives the kernel's word its
+\ body and every caller gets it.
+\
+\ NAME>BUF zero-filled all 32 bytes of NAMEBUF before every dictionary
+\ lookup - FILL a byte at a time, about 380 dispatches a lookup: 25-27% of
+\ the kernel, parse and corpus workloads' dispatches on a seed-10 front
+\ design. The padding is for the cell kernel's SEARCH-WORDLIST, which
+\ compares names a cell at a time; cv8b.4's SEARCH-WORDLIST8 compares the
+\ count and that many bytes, and nothing else here reads NAMEBUF.
+
+: NAME>BUF8 ( c-addr u --- )
+\ Move the name c-addr u to NAMEBUF - no padding: nothing reads past it.
+  32 MIN NAMEBUF PLACE ;
