@@ -127,6 +127,14 @@ trying anything again (prompts/12-progress-log).
   0.442. But seed 8's front with bss and rtloopall, built and alive, would
   be 0.508 at 7,178 ... 0.442 at 11,569 - dominating seed 9 from 7,178 up.
   Every run starts from the same founders: progress does not compound.
+- **Seed 10 - progress compounds** (Iteration 47,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed10.md`; session 8, calibration
+  1.004): the first run to start from the earlier fronts (109 designs
+  carried in). **15 of the 16 designs on the front of all runs are its own,
+  from 6,977 bytes - the smallest yet - through 0.486 at 7,236 to 0.438
+  at 12,145**; 5-26% faster than the fastest earlier design no larger at
+  every size, a quarter at 7.1-7.2 KB. Every one descends from carried
+  designs. Seed 8's 0.436 at 13,073 is still the fastest.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -139,8 +147,8 @@ trying anything again (prompts/12-progress-log).
    owner's go): `evolve.py --carry DB,...` puts each database's own front
    into the first generation beside the founders, every one timed again;
    next-run.sh passes every archived database. compare-fronts.py credits a
-   carried design to the run that found it. **NEXT-RUN: seed 10, then
-   compare** - the first run that starts from what the others found.
+   carried design to the run that found it. Seed 10 (Iteration 47): every
+   front design descends from carried ones; 5-26% faster at every size.
 1. **fib and loop: code compiled at run time** - built (Iteration 37) as the
    gene `rtimm`: the run-time compiler makes `n +` an ADDI and `SWAP n +` a
    SWAP+I, as the converter does in the image (`results/rtimm.md`): fib

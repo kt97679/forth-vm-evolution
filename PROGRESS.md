@@ -1134,3 +1134,17 @@ all alive, each recorded as "carried from archived-seedN/db.jsonl: <id>",
 the run going on from there.
 
 NEXT-RUN: seed 10, then compare.
+
+## Iteration 47 - 2026-10-05 - Claude
+
+**Seed 10 and session 8 - progress compounds.** The first run carrying the
+earlier fronts: 109 designs in, seven minutes more. The comparison (twelve
+databases, 131 designs, calibration 1.004, ranks 1.00): **15 of the 16
+designs on the front of all runs are seed 10's own - 6,977 bytes the
+smallest yet, 0.486 at 7,236, 0.438 at 12,145** - and every one descends
+from carried designs. 5-26% faster than the fastest earlier design no
+larger at every size, 25-26% at 7.1-7.2 KB; past Iteration 45's
+projection (0.508 at 7,178). Seed 8's 0.436 at 13,073 still the fastest.
+bss on all fifteen, rtloopall on eleven.
+
+NEXT-RUN: none.

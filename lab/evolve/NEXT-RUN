@@ -41,4 +41,6 @@
 # run's front (evolve.py --carry, next-run.sh passing every archived
 # database): what seed 9 lost of seed 8's, back in its first generation,
 # with bss and rtloopall a mutation away. Then every front compared.
-seed 10 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 47: none - seed 10 and the comparison came back.
+none
