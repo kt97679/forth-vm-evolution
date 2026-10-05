@@ -103,6 +103,14 @@ trying anything again (prompts/12-progress-log).
   on every design of the front - where they remove 9-10% of the
   dispatches on kernel, parse and corpus (counted). fib and loop gain
   nothing from them: their hot code is compiled at run time.
+- **Seed 7 - the small end rewritten** (Iteration 40,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed7.md`; session 5, calibration
+  1.008): **0.673 at 8,073 bytes - the smallest yet - to 0.550 at 11,777**,
+  seven of the eight designs on the front of all runs; seed 6's 0.541 at
+  14,081 still the fastest. `lean` on every front design (none had it in
+  generation 0); `rtimm` weighed and mostly left - expressed on one, at
+  8,957 bytes. Beyond lean's bytes, 2.5-7% faster than seed 6's front with
+  lean applied, through the middle.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -118,11 +126,9 @@ trying anything again (prompts/12-progress-log).
    front's run-time-fusion designs - for 408-472 bytes, so a gene. For a
    seed run to weigh, batched with whatever else needs the laptop next.
    **And the gene `lean` (Iterations 38-39)**: build artifacts left out
-   of the image - the compiler's X8 copies, the dump tool, dead shadowed
-   words - 12-16% of every CV8 image, no slower (`results/lean.md`):
-   seed 6's smallest would be 8,060 bytes; and rtimm costs a third less
-   with it. **Seed 7 set in NEXT-RUN (Iteration 39)**, then every front
-   compared: one sitting, as Iteration 35's.
+   of the image - 12-16% of every CV8 image, no slower
+   (`results/lean.md`). Both weighed by seed 7 (Iteration 40): lean taken
+   everywhere, rtimm where fib's gain paid.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize

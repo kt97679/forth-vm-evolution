@@ -20,4 +20,6 @@
 # n + compiled at run time: fib 17-27% faster) and lean (build artifacts
 # left out: 12-16% of every image, free) - then every front here measured
 # again in one session on two CPUs. One sitting, two packs.
-seed 7 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 40: none - seed 7 and the comparison came back.
+none

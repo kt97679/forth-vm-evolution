@@ -995,3 +995,20 @@ bytes, from 408 and 472). Smallest would be 8,060 bytes (seed 6: 9,327).
 
 **NEXT-RUN: seed 7 then compare** - the owner asked to be told when a run
 is wanted: rtimm and lean are for evolution to weigh.
+
+## Iteration 40 - 2026-10-05 - Claude
+
+**Seed 7 and session 5** - both packs from one sitting. The comparison:
+nine databases, 76 front designs, calibration 1.008, the two CPUs agreeing
+(median 1.000, ranks 0.99). **Seven of the eight designs on the front of
+all runs are seed 7's: 0.673 at 8,073 bytes - the smallest yet (seed 6:
+9,327) - to 0.550 at 11,777**; seed 6's cd943ed219, 0.541 at 14,081, is
+still the fastest.
+
+`lean` spread from nothing - no design of generation 0 - to 77% of the
+living and every front design: free, as measured. `rtimm` was weighed and
+mostly left: expressed on one front design (8,957 bytes); three more carry
+it dormant. Beyond lean's bytes, seed 7 is 2.5-7% faster than seed 6's
+front with lean applied, through the middle.
+
+NEXT-RUN: none.
