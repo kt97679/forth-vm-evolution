@@ -843,3 +843,19 @@ blocks, as did ?BRANCH and the immediates themselves - 4-9% became 19-24%
 once they were read. Also: the per-address profile's comment names a
 patterns.py that this repository never had; and `find .` from the
 repository root timed out on the build tree - git ls-files instead.
+
+## Iteration 33 - 2026-10-05 - Claude
+
+**The first opcodes from the stage-1 price**: `DUP ?BRANCH` and `OVER
+?BRANCH`, tests that keep their value - converter (TESTBR), engine (under
+X_DUPBR / X_OVERBR), the cached-top and multi-state generators, and the
+gene. Designs without them unchanged: stages IDENTICAL; 8dc0f97f2c's
+image the same from the old converter and the new (the swap of sod16.py
+in a try/finally, checked restored).
+
+image-ab.py on 8dc0f97f2c with the four opcodes in its slots (its last four
+pairs displaced, on both sides): 1.8-3.2% fewer dispatches, 8 bytes,
+selection 0.980 - all the two can reach. The price had said 6% for "DUP |
+?BRANCH": it had folded every test-and-branch into that name. Kept apart,
+most of it is `DUP 0= ?BRANCH` (3.4-4.3%); regprice.py keeps the kinds
+apart now. image-ab.py's --set takes a JSON list.

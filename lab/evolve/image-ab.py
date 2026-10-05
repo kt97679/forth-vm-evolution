@@ -25,7 +25,7 @@ sets = {}
 for opt in ('--db', '--rounds', '--env', '--set'):
     while opt in args:
         i = args.index(opt); v = args[i + 1]; del args[i:i + 2]
-        if opt == '--set': k, x = v.split('=', 1); sets[k] = int(x) if x.lstrip('-').isdigit() else x; continue
+        if opt == '--set': k, x = v.split('=', 1); sets[k] = json.loads(x) if x[:1] == '[' else int(x) if x.lstrip('-').isdigit() else x; continue   # a JSON list too (Iteration 33)
         if opt == '--db': db = v
         elif opt == '--rounds': rounds = int(v)
         else: env = v.split('=', 1)

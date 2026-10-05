@@ -464,6 +464,12 @@ TESTBR = {'0=': ('NQBR', 'NQBRS', '?NBRANCH', '?NBRANCH8'), '<': ('LTQBR', 'LTQB
           '=': ('EQQBR', 'EQQBRS', '=?BRANCH', '=?BRANCH8'), 'U<': ('ULTQBR', 'ULTQBRS', 'U<?BRANCH', 'U<?BRANCH8'),
           '-': ('NEQBR', 'NEQBRS', '<>?BRANCH', '<>?BRANCH8'), '<>': ('NEQBR', 'NEQBRS', '<>?BRANCH', '<>?BRANCH8'),
           '>': ('SGTQBR', 'SGTQBRS', '>?BRANCH', '>?BRANCH8'), '0<': ('ZLTQBR', 'ZLTQBRS', '0<?BRANCH', '0<?BRANCH8')}   # 12: - <> > 0<
+# DUP ?BRANCH and OVER ?BRANCH (Iteration 33): tests that KEEP their value -
+# the largest patterns a register machine's first stage would absorb
+# (lab/evolve/regprice.py), out of the pairs' reach since ?BRANCH has an
+# operand. Each jumps where the pair would, and leaves the stack as it was.
+TESTBR.update({'DUP': ('DQBR', 'DQBRS', 'DUP?BRANCH', 'DUP?BRANCH8'),
+               'OVER': ('OQBR', 'OQBRS', 'OVER?BRANCH', 'OVER?BRANCH8')})
 # EQI n then ?BRANCH (Iteration 12) cannot be one kind - it has an immediate
 # AND an offset - so it is two, in place: the EQI emits the fused opcode and
 # its immediate (EQIH), the ?BRANCH only its offset (EQIT, short EQITS).

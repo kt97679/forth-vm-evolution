@@ -137,7 +137,8 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
               '?NBRANCH', '?NBRANCH8',  # 0= ?BRANCH fused, long and short (Iteration 8); the short needs the long
               '<?BRANCH', '<?BRANCH8',  # < ?BRANCH fused (Iteration 9); at run time too, with rtfuse
               '=?BRANCH', '=?BRANCH8', 'U<?BRANCH', 'U<?BRANCH8',
-              '<>?BRANCH', '<>?BRANCH8', '>?BRANCH', '>?BRANCH8', '0<?BRANCH', '0<?BRANCH8', '=I?BRANCH', '=I?BRANCH8']   # Iteration 12
+              '<>?BRANCH', '<>?BRANCH8', '>?BRANCH', '>?BRANCH8', '0<?BRANCH', '0<?BRANCH8', '=I?BRANCH', '=I?BRANCH8',   # Iteration 12
+              'DUP?BRANCH', 'DUP?BRANCH8', 'OVER?BRANCH', 'OVER?BRANCH8']   # Iteration 33: tests that keep their value
 OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
                '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
@@ -145,10 +146,12 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
                '<?BRANCH': 'L_x_ltbr', '<?BRANCH8': 'L_x_ltbr8', '=?BRANCH': 'L_x_eqbr', '=?BRANCH8': 'L_x_eqbr8',
                'U<?BRANCH': 'L_x_ultbr', 'U<?BRANCH8': 'L_x_ultbr8',
                '<>?BRANCH': 'L_x_nebr', '<>?BRANCH8': 'L_x_nebr8', '>?BRANCH': 'L_x_sgtbr', '>?BRANCH8': 'L_x_sgtbr8',
-               '0<?BRANCH': 'L_x_zltbr', '0<?BRANCH8': 'L_x_zltbr8', '=I?BRANCH': 'L_x_eqibr', '=I?BRANCH8': 'L_x_eqibr8'}
+               '0<?BRANCH': 'L_x_zltbr', '0<?BRANCH8': 'L_x_zltbr8', '=I?BRANCH': 'L_x_eqibr', '=I?BRANCH8': 'L_x_eqibr8',
+               'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8'}
 # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
 X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
-           '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR'}
+           '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
+           'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR'}
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
     return [[w, op] for w, op in zip(g.get('ops10', []), super_slots(g))]

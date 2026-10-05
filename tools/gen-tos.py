@@ -80,6 +80,11 @@ HOT = {
  'L_x_zltbr8':     't = (INT64)tos < 0; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();',
  'L_x_eqibr':      't = tos == (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; POPT(); if (t) ip += 2; else ip += (int16_t)LD16(ip); NEXT();',
  'L_x_eqibr8':     't = tos == (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();',
+ # Iteration 33: the tests that keep their value - nothing popped
+ 'L_x_dupbr':      'if (tos) ip += 2; else ip += (int16_t)LD16(ip); NEXT();',
+ 'L_x_dupbr8':     'if (tos) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();',
+ 'L_x_overbr':     'if (NOS) ip += 2; else ip += (int16_t)LD16(ip); NEXT();',
+ 'L_x_overbr8':    'if (NOS) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();',
  'L_x_execute': '{ UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();',
  'L_x_i':     'PUSHT(RS); NEXT();',
  'L_x_j':     'PUSHT(CELL(rp + 2 * CELL_BYTES)); NEXT();',

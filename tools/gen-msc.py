@@ -111,6 +111,11 @@ SPECS = {
     'L_x_zltbr8':       (['a'], [], 'if ((INT64)a < 0) ip += 1; else ip += (int8_t)BYTE(ip);'),
     'L_x_eqibr':        (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 2; else ip += (int16_t)LD16(ip);'),
     'L_x_eqibr8':       (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    # Iteration 33: tests that keep their value - what comes in goes out
+    'L_x_dupbr':        (['f'], ['f'], 'if (f) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_dupbr8':       (['f'], ['f'], 'if (f) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    'L_x_overbr':       (['a', 'b'], ['a', 'b'], 'if (a) ip += 2; else ip += (int16_t)LD16(ip);'),
+    'L_x_overbr8':      (['a', 'b'], ['a', 'b'], 'if (a) ip += 1; else ip += (int8_t)BYTE(ip);'),
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch', 'L_hcall']   # L_hcall: one-byte calls (Iteration 14)
 

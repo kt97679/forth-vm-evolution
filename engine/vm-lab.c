@@ -1337,6 +1337,19 @@ L_x_eqibr:  { UNS64 v_ = DS0, i_ = (UNS64)(INT64)(int8_t)BYTE(ip); dsp += CELL_B
 L_x_eqibr8: { UNS64 v_ = DS0, i_ = (UNS64)(INT64)(int8_t)BYTE(ip); dsp += CELL_BYTES; ip += 1;
               if (v_ == i_) ip += 1; else ip += (int8_t)BYTE(ip); } NEXT();
 #endif
+/*  Iteration 33: DUP ?BRANCH and OVER ?BRANCH - the test KEEPS its value:
+ *  5.8-6.2% and 0.5-0.8% of the front designs' image dispatches
+ *  (lab/evolve/regprice.py), which the pairs could not fuse - ?BRANCH
+ *  carries an operand. Nothing popped; compiled only where a design has
+ *  them, as Iteration 12's.  */
+#if X_DUPBR
+L_x_dupbr:   if (DS0) ip += 2; else ip += (int16_t)LD16(ip); NEXT();        /* DUP ?BRANCH   */
+L_x_dupbr8:  if (DS0) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();         /* DUP ?BRANCH8  */
+#endif
+#if X_OVERBR
+L_x_overbr:  if (DS1) ip += 2; else ip += (int16_t)LD16(ip); NEXT();        /* OVER ?BRANCH  */
+L_x_overbr8: if (DS1) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();         /* OVER ?BRANCH8 */
+#endif
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

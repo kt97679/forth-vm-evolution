@@ -59,6 +59,7 @@ USE = BINARY | {'@', 'C@', 'NEGATE', 'zeq', 'zlt', 'onep', 'onem', 'cellp', 'cha
 RMOVE = {'>R', 'R>', 'R@', 'I', 'J', 'UNLOOP'}       # return-stack moves: not absorbed in this stage, only counted
 TESTBR = {'QBR', 'QBRS', 'NQBR', 'NQBRS', 'LTQBR', 'LTQBRS', 'EQQBR', 'EQQBRS', 'ULTQBR', 'ULTQBRS',
           'NEQBR', 'NEQBRS', 'SGTQBR', 'SGTQBRS', 'ZLTQBR', 'ZLTQBRS'}
+USE |= {'?BRANCH:' + k for k in TESTBR}
 PRODUCE = {'R>', 'R@', 'I', 'J', 'DOVAR'} | LITS          # push without reading the stack: end a run
 WORKS = E.WORK_SEL + E.WORK_HELD
 
@@ -111,7 +112,7 @@ for did in args:
             elif k in ('ADDI', 'EQI', 'EQIH'): comps = ('addi',) if k == 'ADDI' else ('eqi',)
             elif k == 'VF': comps = ('DOVAR',)            # pushes a variable's value: a producer
             elif k == 'VS': comps = ('!',)                # stores the top: a use
-            elif k in TESTBR: comps = ('?BRANCH',)
+            elif k in TESTBR: comps = ('?BRANCH:' + k,)       # the kind kept: DUP ?BRANCH is not DUP 0= ?BRANCH (Iteration 33)
             else: comps = (k,)                            # BR, PX, LITX, ADDIX, EQIX and anything new: an end
             ops.append((int(f[1]), comps))
         elif f[0] == 'C': ops.append((int(f[1]), ('call',)))

@@ -112,10 +112,12 @@ trying anything again (prompts/12-progress-log).
    forms within a block would remove 19-24% of the front designs' image
    dispatches - and 5-8 patterns give 80% of that, led on every workload
    by `DUP ?BRANCH` (6%) and `SWAP addi` (4-5%): operand-carrying, so the
-   pairs could never fuse them. **Next: those as fused opcodes** - tests
-   that keep their operand, add-immediate to the second item - a gene,
-   about 10-12% of dispatches, at the fused tests' cost, not a register
-   machine's.
+   pairs could never fuse them. Built (Iteration 33): `DUP ?BRANCH` and
+   `OVER ?BRANCH` as opcodes - 2-3% fewer dispatches, about 2% faster on
+   selection, image against image (`results/fused-keep-tests.md`). Next,
+   the two larger: `DUP 0= ?BRANCH` kept (3.4-4.3%: a three-operation
+   fusion, which TESTBR's one-test table cannot say) and `SWAP addi`
+   (3.7-5.0%).
 3. **SPN on 32-bit ARM** - correct (Iterations 30-31): the proof of
    concept and s8, all three variants, pass under qemu
    (`tools/arm-qemu-check.sh` - also native on the Tegra); x86-64's
