@@ -18,6 +18,11 @@ randomisation on, as many runs again, for the rate of lucky runs.
 An offset that is fast every sweep is a place on the stack the engine could
 choose for itself at start, every run. None means the luck lies in the
 pages - the code's, the heap's - and not in the stack.
+
+Iteration 27, on the laptop: no offset repeated - and the premise was
+wrong. Fast runs come with randomisation off too, at the same rate as on
+(0.4-2.3% of runs for some designs, never s6's): not a place at all.
+results/lucky-amd-ryzen-7-pro-8840hs.md.
 """
 import json, os, re, shutil, statistics as st, sys
 HERE = os.path.dirname(os.path.abspath(__file__))

@@ -684,3 +684,16 @@ run. results/compare-fronts-amd-ryzen-7-pro-8840hs.md.
 the environment padded through a page of stack offsets (the environment's
 size moves the initial stack and nothing else), every offset twice, and
 randomisation on for the rate of lucky runs. NEXT-RUN: experiment lucky.py.
+
+## Iteration 27 - 2026-10-05 - Claude
+
+**The lucky run is not a place** (`results/lucky-amd-ryzen-7-pro-8840hs.md`):
+256 stack offsets, randomisation off, swept twice - no offset fast in both
+sweeps for any design; and fast runs come with randomisation off at the
+same rate as on (0.4-2.3% of runs for some designs, s6 almost never). My
+Iteration 25 claim, "never with randomisation off", was 0 of 40 runs - what
+a 1-2% rate gives half the time; corrected in evolve.py, RUNNING.md, the
+run-spread results (forward) and lucky.py. Left: something transient in a
+run, particular to some designs - not cheap to test, not for an engine to
+choose. Lead closed; the median stands. NEXT-RUN: seed 5, the first run
+selected by the median.

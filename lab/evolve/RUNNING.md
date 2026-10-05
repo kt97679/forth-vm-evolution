@@ -85,10 +85,11 @@ What CPU time does not remove: the clock speed (a hot, busy laptop turbos
 lower - the pairing takes out slow changes), and contention for what a
 core shares - its hyperthread sibling, the caches, memory bandwidth. Fast
 fluctuations remain as noise, which the median over rounds reduces. The
-minimum reduced it too, and was wrong on fib: on the laptop about one fib
-run in 40 lands where it is 34-38% faster - with address randomisation on,
-never with it off - and the best of the rounds reported that draw, a
-different one each session; two sessions ranked the same designs up to
+minimum reduced it too, and was wrong on fib: on the laptop a rare fib run
+is 20-38% faster - 0.4-2.3% of runs for some designs, with address
+randomisation on or off, at no stack offset in particular (Iterations 25,
+27) - and the best of the rounds reported that draw, a different one each
+session; two sessions ranked the same designs up to
 28% apart. The median of the same runs agreed within 3.6% between halves
 of a session and 2.1% between CPUs
 (`results/run-spread-amd-ryzen-7-pro-8840hs.md`).

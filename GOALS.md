@@ -71,10 +71,12 @@ trying anything again (prompts/12-progress-log).
   smaller; at the small end the speeds tie and seed 4 is 163-311 bytes
   smaller. The two best-of-N sessions before (Iterations 21, 23)
   disagreed by a lucky fib run.
-- **The best of N was the fault** (Iteration 25): about one fib run in 40
-  lands 34-38% fast (address randomisation on), and the best of the rounds
+- **The best of N was the fault** (Iteration 25): a rare fib run is 20-38%
+  fast - 0.4-2.3% of runs for some designs - and the best of the rounds
   reported it when drawn. The evolver now takes the median of the rounds;
-  every speed recorded before is a best of N.
+  every speed recorded before is a best of N. The lucky run is not a place
+  - no stack offset, randomisation on or off alike (Iteration 27,
+  `results/lucky-amd-ryzen-7-pro-8840hs.md`): a lead closed.
 - **Seed 4 again - same seed, same code, other noise** (Iteration 22,
   `results/evolve-amd-ryzen-7-pro-8840hs-seed4b.md`): the runs part after
   the 35 starting designs and share 2 more of 1,310, yet reach the same
@@ -89,25 +91,21 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **The lucky placement** - some fib runs are 34-38% faster, with address
-   randomisation on and never off. `NEXT-RUN`: `experiment lucky.py` -
-   randomisation off, the environment padded through a page of stack
-   offsets, twice over: if an offset is fast every time, the engine can
-   choose that place on the stack at start, every run. If none is, the
-   luck is in the pages (code, heap) - next to examine.
-2. **Seed 5, selected by the median** - the first run whose selection is
-   not partly luck; the same seed's two runs differed by 4% at the fast end.
-3. **Far-call reach, checked**: cv8.4's compiler emits far calls without
+1. **Seed 5, selected by the median** - `NEXT-RUN`: `seed 5`. The first run
+   whose selection is not partly luck: seed 4's two runs, same seed and
+   code, differed by 4% at the fast end. Then `compare` on two CPUs, by the
+   median, with every run before it.
+2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.
-4. **The loop words in code compiled at run time** - priced first: there
+3. **The loop words in code compiled at run time** - priced first: there
    every pass of a DO loop runs `(LOOP)`'s colon body and 0-7 alignment
    NOOPs; the opcodes exist and now work. Count the passes in the
    selection workloads' run-time code before touching the compiler.
-5. Remaining planned gene: indirect threading; then a register machine.
-6. The article (`article/`): prompts/14-audience-research before drafting
+4. Remaining planned gene: indirect threading; then a register machine.
+5. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-7. ARM port of SPN. Push master to GitHub (the owner's step).
+6. ARM port of SPN. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 

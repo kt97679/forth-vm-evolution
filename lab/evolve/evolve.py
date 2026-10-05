@@ -488,10 +488,10 @@ def measure(eng, img, pw, works, rounds):
     background load or clock speed over a run of hours cancels.
 
     The median, not the best (Iteration 25). On the laptop a rare fib run
-    lands where it is 34-38% faster - about one in 40, with address
-    randomisation on, never with it off - and the best of the rounds
-    reported that luck: a different draw each session, so two sessions
-    ranked the same designs up to 28% apart. The median of the same runs
+    is 20-38% faster - 0.4-2.3% of runs for some designs, with address
+    randomisation on or off, at no stack offset in particular (Iteration
+    27) - and the best of the rounds reported that luck: a different draw
+    each session, so two sessions ranked the same designs up to 28% apart. The median of the same runs
     agreed within 3.6% between halves of a session and 2.1% between CPUs
     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
     runs, ref = {}, {}

@@ -150,3 +150,11 @@ s6-cv8b    cpu 8 off 33.6 33.9 34.3 34.5 34.6 34.9 34.9 35.0 35.0 35.1 35.1 35.1
 6463752a82 cpu 8 off 25.9 26.2 26.2 26.2 26.2 26.4 26.4 26.4 26.4 26.5 26.5 26.5 26.5 26.5 26.6 26.6 26.7 26.7 26.7 26.7 26.8 26.8 26.8 26.9 26.9 27.0 27.2 27.3 27.3 27.3 27.4 27.5 27.5 27.5 27.5 27.6 27.9 28.2 28.6 28.9
 1769ca2a48 cpu 8 off 21.2 21.6 21.6 21.7 21.7 21.7 21.7 21.7 21.7 21.7 21.7 21.8 21.8 21.9 21.9 22.0 22.0 22.1 22.1 22.2 22.2 22.2 22.2 22.3 22.4 22.5 22.5 22.6 22.6 22.6 22.6 22.6 22.6 22.6 22.6 22.7 22.9 23.0 23.9 24.2
 ```
+
+**Correction (Iteration 27).** "With it off no run strays 15% under its
+median" held for these 40 runs a cell and does not hold: with 512 runs a
+design, randomisation off, 2-9 runs came under 0.85 of the median - the same
+rate as with it on (0.4-2.3%). Zero in 40 is what a 1-2% rate gives half the
+time. The lucky run is not about address randomisation, nor any stack
+offset (`results/lucky-amd-ryzen-7-pro-8840hs.md`). The decision - the
+median - stands.
