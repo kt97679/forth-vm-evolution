@@ -1,0 +1,49 @@
+\ cv8-fuse-loopall.4 - the run-time loop compiler for a design that has
+\ ALL EIGHT loop opcodes: (DO) (LOOP) (+LOOP) (?DO) (LEAVE) I J UNLOOP
+\ (Iteration 43). Loaded instead of cv8-fuse-loop.4 for designs with the
+\ genes rtloop and rtloopall (lab/evolve) - seven of the ten rtloop
+\ designs on seed 8's front have all eight.
+\
+\ cv8-fuse-loop.4 serves any subset: every word there keeps a fallback to
+\ the word it replaces, which keeps those words alive, and chooses between
+\ the 16-bit and the cell chain of pending LEAVEs at compile time. Here
+\ there is nothing to fall back to and one chain - 16 bits - so the
+\ replaced words go (the gene lean), and the three tables are one: about
+\ 270 of rtloop's ~470 bytes.
+\
+\ LOOPTAB, written by the converter (tools/layout.py): bytes 0-4 the five
+\ operand loop opcodes, 5-7 I J UNLOOP's; 8-9 I's image offset; 10 and 11
+\ J's and UNLOOP's distance past I - the three are neighbours in the
+\ kernel. A ['] here would hold the cell system's address.
+
+CREATE LOOPTAB ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C,
+ALIGN
+
+: W@ ( a --- u )   DUP C@ SWAP 1+ C@ 8 LSHIFT OR ;
+
+: COMPILE,8 ( xt --- )
+\ The COMPILE,8 before this one, and I J UNLOOP as their opcodes.
+  DUP START @ - LOOPTAB 8 + W@ -
+  DUP 0= IF DROP LOOPTAB 5 + ELSE
+  DUP LOOPTAB 10 + C@ = IF DROP LOOPTAB 6 + ELSE
+  LOOPTAB 11 + C@ = IF LOOPTAB 7 + ELSE COMPILE,8 EXIT THEN THEN THEN
+  C@ SWAP DROP 0 LAST-OP ! OP, ;
+
+: RESOLVE-LEAVE16 ( --- )
+\ Each pending (?DO) or (LEAVE) operand - which holds the distance back to
+\ the one before, or 0 - gets its offset to HERE, the loop's end.
+  'LEAVE @ BEGIN ?DUP WHILE
+    DUP W@ >R  HERE OVER - OVER !W
+    R> ?DUP IF - ELSE DROP 0 THEN
+  REPEAT ;
+
+: LOOP, ( a-addr op --- )   OP, <RESOLVE RESOLVE-LEAVE16 'LEAVE ! ;
+
+: DO8 ( --- a-addr )   0 LAST-OP ! LOOPTAB C@ OP, 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+: LOOP8 ( a-addr --- )   LOOPTAB 1+ C@ LOOP, ; IMMEDIATE
+: +LOOP8 ( a-addr --- )   LOOPTAB 2 + C@ LOOP, ; IMMEDIATE
+: ?DO8 ( --- a-addr )
+  0 LAST-OP ! LOOPTAB 3 + C@ OP, 'LEAVE @ HERE 'LEAVE ! 0 W, HERE ; IMMEDIATE
+: LEAVE8 ( --- )
+  0 LAST-OP ! LOOPTAB 4 + C@ OP,
+  HERE 'LEAVE @ ?DUP IF HERE SWAP - ELSE 0 THEN W, 'LEAVE ! ; IMMEDIATE

@@ -1066,3 +1066,16 @@ reading by name found no front at all. Read by position; the header is
 built from the lists now.
 
 NEXT-RUN: none.
+
+## Iteration 43 - 2026-10-05 - Claude
+
+**rtloop's bytes, priced word by word, and `rtloopall`.** Seed 8's front
+jumped 0.661 to 0.550 between 8,171 and 8,525 bytes - rtloop's overlay,
+about 470 bytes: the words it defers to kept alive (~150-190), three
+padded tables (~127), the machinery that serves any subset of the loop
+opcodes (~170). Seven of the ten rtloop designs on the front have all
+eight, so `forth/cv8-fuse-loopall.4` - no fallbacks, one chain, one
+12-byte table - for them, as the LATE gene rtloopall: 380-488 bytes less
+on five of them, dispatches within half a percent on every workload,
+alive, the loop tests answering as before. Recorded designs untouched:
+stages IDENTICAL, seed 8's front byte for byte, its ids kept.

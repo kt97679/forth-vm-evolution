@@ -903,7 +903,7 @@ def emit(path):
         far = '--does-far' in ARGV
         CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
     for w in order:
-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS') + tuple(CVARS): continue
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
         if w['n'] in CVARS:
             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
@@ -911,6 +911,17 @@ def emit(path):
             ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
             assert len(ops) <= 23, "more folds than FOLD-OPS holds"
             data = bytes(ops + [255] * (23 - len(ops)))
+        elif w['n'] == 'LOOPTAB':
+            # Iteration 43: the compact run-time loop compiler
+            # (forth/cv8-fuse-loopall.4) - the eight loop opcodes, I's image
+            # offset in 16 bits, J's and UNLOOP's distance past it in a byte
+            # each. Only for a design with all eight: there is no fallback.
+            _lw = ['(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP']
+            assert all(n in G['X_OPS10'] for n in _lw), 'LOOPTAB: rtloopall needs all eight loop opcodes'
+            _byn = {x['n']: x for x in order}
+            _o = [new_off[_byn[n]['s']]['body'] for n in ('I', 'J', 'UNLOOP')]
+            assert _o[0] < 65536 and 0 < _o[1] - _o[0] < 256 and 0 < _o[2] - _o[0] < 256, 'LOOPTAB: I J UNLOOP not neighbours %r' % _o
+            data = bytes([G['X_OPS10'][n] for n in _lw] + [_o[0] & 255, _o[0] >> 8, _o[1] - _o[0], _o[2] - _o[0]])
         elif w['n'] in ('LOOP-OPS', 'X10-XTS', 'X10-OPS'):
             # Iteration 41: the loop opcodes for code compiled at run time
             # (forth/cv8-fuse-loop.4) - each the design has, 0 for the rest -
