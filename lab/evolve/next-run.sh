@@ -223,8 +223,22 @@ if [ "$MODE" = fresh ]; then
     mkdir -p build/evolve; echo "$WANT" > "$STATE"
 fi
 
+# Iteration 46 (the owner): every archived run's front carried into this
+# one, so progress compounds - evolve.py --carry; sorted, so a resumed run
+# starts from the same first generation.
+CARRY=""
+for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do      # a glob expands sorted
+    [ -f "$f" ] || continue
+    CARRY="${CARRY:+$CARRY,}$f"
+done
+if [ -n "$CARRY" ]; then
+    set -- --carry "$CARRY"
+    say "carried in: the fronts of $(echo "$CARRY" | tr ',' '\n' | wc -l) archived databases"
+else
+    set --
+fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" >> evolve.log 2>&1 \
+python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" "$@" >> evolve.log 2>&1 \
     || { tail -20 evolve.log; exit 1; }
 tail -3 evolve.log
 step "the front, measured again - $REMEASURE rounds"

@@ -964,7 +964,7 @@ def knockout(argv):
 def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
-    known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample'}
+    known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry'}
     bad = [a for a in argv if a.startswith('-') and a not in known]
     if bad:
         # Iteration 4: `--help`, unrecognised, started a full run that wrote
@@ -1037,6 +1037,28 @@ def main(argv):
             get(dict(HUMAN['s6-cv8b'], ops10=OPS10_POOL[:2]), [], 'founder: s6-cv8b + EXECUTE, I as opcodes', 0),
             get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL)), [], 'founder: s6-cv8b + escape, 7 words, 24 pairs', 0),
             get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL), rtfuse=1), [], 'founder: s6-cv8b + escape, all format-10 opcodes, pairs, tests fused at run time', 0)]
+    # Iteration 46 (the owner): the earlier runs' fronts carried into this one,
+    # so what one run found the next starts from - seed 9 lost the fast end
+    # seed 8 had (Iteration 45). --carry DB,DB,...: each database's own front,
+    # chosen by its own records - speeds of other sessions, some over four
+    # workloads, so only to choose; here every one is timed again like any
+    # design of the run. Sorted, so a resumed run makes the same first
+    # generation; no random draw is spent, so the seed's draws are as before.
+    if '--carry' in argv:
+        carried, have = [], set(pop)
+        for path in sorted(p for p in argv[argv.index('--carry') + 1].split(',') if p):
+            C = {}
+            for l in open(path):
+                try: r = json.loads(l)
+                except ValueError: continue
+                if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
+            label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
+            for i in (fronts(list(C), C) or [[]])[0]:
+                g = canon(C[i]['genome'])
+                if gid(g) in have: continue
+                have.add(gid(g)); carried.append((g, 'carried from %s: %s' % (label, i)))
+        print('  carried in: %d designs, the fronts of %d databases' % (len(carried), len(argv[argv.index('--carry') + 1].split(','))), flush=True)
+        pop += [get(g, [], how, 0) for g, how in carried]
     while len(pop) < N:
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))

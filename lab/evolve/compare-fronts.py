@@ -55,6 +55,10 @@ for db in dbs:
     # a label that names the run's place, not a path whose tail two runs share
     # (Iteration 21: ".../build/evolve/db.jsonl" was this clone's AND seed 3's archive)
     label = ('this clone: ' + base) if '/archived-' not in db else db[db.index('archived-'):].replace('/build/evolve/', ': ')
+    # Iteration 46: a design a run CARRIED from an earlier one counts for the run
+    # that found it - whose database is here too - not twice, and not as new
+    nc = len(ids); ids = [i for i in ids if not R[i].get('how', '').startswith('carried')]
+    if len(ids) < nc: how += ', %d carried in and left to their own runs' % (nc - len(ids))
     runs.append((label, ids)); say('%s: %d designs (%s)' % (label, len(ids), how))
     for i in ids: rec.setdefault(i, (E.canon(R[i]['genome']), R[i]['size'], sp[i]))
 CAL = 's6-cv8b'

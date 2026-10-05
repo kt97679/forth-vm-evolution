@@ -135,11 +135,12 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-0. **Carry the fronts into the next run** (the owner to decide): seed the
-   population with every earlier front's designs alongside the founders, so
-   what one run found the next starts from - seed 9 lost the fast end that
-   seed 8 had, and seed 8's front with this commit's free genes would
-   dominate most of seed 9's. A change to the method, not a gene.
+0. **The fronts carried into every run** - built (Iteration 46, the
+   owner's go): `evolve.py --carry DB,...` puts each database's own front
+   into the first generation beside the founders, every one timed again;
+   next-run.sh passes every archived database. compare-fronts.py credits a
+   carried design to the run that found it. **NEXT-RUN: seed 10, then
+   compare** - the first run that starts from what the others found.
 1. **fib and loop: code compiled at run time** - built (Iteration 37) as the
    gene `rtimm`: the run-time compiler makes `n +` an ADDI and `SWAP n +` a
    SWAP+I, as the converter does in the image (`results/rtimm.md`): fib

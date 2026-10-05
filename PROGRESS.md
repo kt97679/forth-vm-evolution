@@ -1117,3 +1117,20 @@ seed-9 front design from 7,178 bytes up. Each run starts from the same
 founders; the next step proposed is to seed runs with the earlier fronts.
 
 NEXT-RUN: none.
+
+## Iteration 46 - 2026-10-05 - Claude
+
+**The fronts carried into every run** (the owner's go). `evolve.py --carry
+DB,DB,...`: each database's own front - chosen by its own records, which
+were measured in other sessions and some over four workloads - joins the
+first generation beside the founders, and every one is timed again like
+any design of the run; sorted, so a resumed run makes the same first
+generation, and no random draw is spent. next-run.sh passes every
+archived database to a seed run. compare-fronts.py leaves a carried design
+to the run that found it, so it is neither counted twice nor as new.
+
+A miniature run on the VM carrying seeds 8 and 9: 33 designs carried in,
+all alive, each recorded as "carried from archived-seedN/db.jsonl: <id>",
+the run going on from there.
+
+NEXT-RUN: seed 10, then compare.
