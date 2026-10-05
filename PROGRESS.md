@@ -953,3 +953,24 @@ the converter does not relocate - every colon definition crashed, so the
 converter now writes the + and SWAP opcodes into the overlay's table;
 and a Forth test with DO ... LOOP outside a definition crashed the engine
 (the same lesson as Iteration 30's IF).
+
+## Iteration 38 - 2026-10-05 - Claude
+
+The owner: postpone the laptop run, go on.
+
+**The compiler's X8 copies, dropped - the gene `dropx8`.** rtimm's size
+(Iteration 37) came partly from a converter habit: each X8 word's body is
+copied into X, and the X8 word stays - "harmlessly", said the comment.
+Priced first: 25-27 copies, 7.7-8.1% of seed 6's front images, and only
+two of them called (CREATE8, NAME>8, from copied bodies). `--drop-x8`
+sends every call to a swapped X8 to its X (the same code), resolves a
+(POSTPONE) of one to its X, and leaves the X8 words out of `order`, so
+threads, links and offsets are laid out without them.
+
+On all ten of seed 6's front designs, image against image on one engine:
+769-1,120 bytes smaller (6-10%), 0.2-3.6% fewer dispatches on kernel,
+parse and corpus (shorter threads), fib unchanged - free. Both checked
+designs alive, and the compiler words compiled at run time give the
+recorded designs' answers. As a gene in LATE so recorded designs build as
+recorded (all of seed 6's ids unchanged); evolution should take it
+everywhere. seed 6's smallest would be 8,558 bytes, its fastest 12,961.

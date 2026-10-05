@@ -146,6 +146,7 @@ else:
     OVERLAY_SUFFIX = None
 CV8_COMPILER = OVERLAY_SUFFIX is not None
 SRC_OF = {}          # destination word start -> source word start
+SWAPPED = {}         # an X8 word whose body went into X: its start -> X's start (Iteration 38)
 
 words, cells, tokn = G['words'], G['cells'], G['tokn']
 read_ops, to_tokens, layout = G['read_ops'], G['to_tokens'], G['layout']
@@ -225,10 +226,29 @@ if CV8_COMPILER:
         # word's old address, so anything that resolves an inline
         # address must use that base, not the destination's.
         SRC_OF[dst['s']] = w['s']
+        SWAPPED[w['s']] = dst['s']
         _n += 1
     print("compiler overlay '%s': %d word bodies swapped in%s%s"
           % (OVERLAY_SUFFIX, _n, "; NOT translatable: %s" % _miss if _miss else "",
              "; no such target: %s" % _unmatched if _unmatched else ""))
+
+# ---- the X8 copies dropped (Iteration 38): --drop-x8 -----------------
+# After the swap every X8 word is a second copy of its X's code, kept only
+# because something reaches it: copied bodies call X8 words (VARIABLE,
+# with VARIABLE8's body, calls CREATE8) and POSTPONE them. Each such call
+# goes to X - the same code - and (POSTPONE) operands resolve to X through
+# body_at below; then the X8 words leave the image: 8.1% of seed 6's
+# smallest design, 7.7% of its fastest (lab/evolve, Iteration 38).
+DROPPED = {}
+import os as _os
+if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD16_NO_DROPX8'):   # the switch: to measure
+    DROPPED = dict(SWAPPED)
+    for _w in order:
+        if kind[_w['s']] == 'code' and info[_w['s']]:
+            info[_w['s']] = [('C', DROPPED[_pl]) if _k == 'C' and _pl in DROPPED else (_k, _pl) for _k, _pl in info[_w['s']]]
+    _gone = [w for w in order if w['s'] in DROPPED]
+    order = [w for w in order if w['s'] not in DROPPED]
+    print('drop-x8: %d copies out, %d bytes of the old image' % (len(_gone), sum(w['e'] - w['link'] for w in _gone)))
 
 # ---- one-byte calls (Iteration 14): --hotcalls N --------------------
 # The targets with the most call sites in the image's code take the bytes
@@ -430,6 +450,8 @@ for i, h in enumerate(HEADS):
 # Nothing here converts an xt to a word number. Everything here moves
 # an offset to where its target landed.
 body_at = {w['s'] - START: w for w in order}
+for _a, _b in DROPPED.items():                     # a (POSTPONE) of a dropped X8 lands on its X
+    body_at[_a - START] = next(w for w in order if w['s'] == _b)
 
 def remap_body_off(off):
     w = body_at.get(off)

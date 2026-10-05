@@ -117,6 +117,10 @@ trying anything again (prompts/12-progress-log).
    15% fewer dispatches, 17-27% faster, selection 5-8% faster on the
    front's run-time-fusion designs - for 408-472 bytes, so a gene. For a
    seed run to weigh, batched with whatever else needs the laptop next.
+   **And the gene `dropx8` (Iteration 38)**: the compiler's X8 copies,
+   which the converter kept, left out - 6-10% of every CV8 image, no
+   slower (`results/dropx8.md`): seed 6's smallest would be 8,558 bytes.
+   The laptop run is postponed (the owner): the next seed weighs both.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize
