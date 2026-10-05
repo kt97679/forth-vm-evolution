@@ -651,3 +651,20 @@ whether two halves of one session agree. evolve.py's jail sees past
 once, would have been jailed as an engine (found reading, not running).
 Correction: cpu 8's sibling is 9, not 0. NEXT-RUN: experiment
 run-spread.py --runs 40.
+
+## Iteration 25 - 2026-10-05 - Claude
+
+**The estimator, settled** (`results/run-spread-amd-ryzen-7-pro-8840hs.md`):
+with every run kept, two halves of one session disagree by up to 52% on fib
+by the best run and by at most 3.6% by the median; across CPUs the median
+agrees within 2.1%. The cause: about one fib run in 40 lands 34-38% fast
+(8dd8a7a146: 14.9 ms against a median of 23.9), with address randomisation
+on, never with it off, never for s6 - and the best of N reports it when
+drawn. Iterations 21-24's disagreements were this.
+
+**Changed**: `measure()` takes the median of the rounds, and so do
+compare-fronts.py and image-ab.py; new records' unit says so. Every speed
+recorded before - seeds 1-4, the replicate - is a best of N. compare-fronts
+--cpus A,B times every design on both CPUs in one session and reports
+whether the rankings agree. NEXT-RUN: experiment compare-fronts.py
+--rounds 10 --cpus 2,8. Open: what the lucky runs share - a 35% faster fib.

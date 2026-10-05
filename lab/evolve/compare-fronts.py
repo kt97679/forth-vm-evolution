@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""compare-fronts.py DB [DB ...] [--rounds N] - the fronts of several runs,
-measured again in ONE session (Iteration 20).
+"""compare-fronts.py DB [DB ...] [--rounds N] [--cpus A,B] - the fronts of
+several runs, measured again in ONE session (Iteration 20).
 
 Runs measured on different days carry their own calibrations: hand-made s6
 against itself came out 0.986 inside seed 3 and 1.038 inside seed 4, so a
@@ -20,11 +20,17 @@ A run's front: the designs of its re-measure file (beside the database, `db`
 db-seed1.jsonl -> remeasure-seed1.json), else its selection front. Sizes are
 today's images, the recorded size beside. Nothing is written but stdout and
 the evolver's scratch directories.
+
+The median of the rounds, not the best (Iteration 25: the best of N reported
+rare lucky runs, a different draw every session). --cpus A,B times every
+design on each of those CPUs in the same session, interleaved, and says
+whether the rankings agree - the test that two sessions would agree.
 """
 import json, math, os, shutil, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
-args = sys.argv[1:]; rounds = 10
+args = sys.argv[1:]; rounds = 10; cpuarg = None
 if '--rounds' in args: i = args.index('--rounds'); rounds = int(args[i + 1]); del args[i:i + 2]
+if '--cpus' in args: i = args.index('--cpus'); cpuarg = args[i + 1]; del args[i:i + 2]
 if not args or any(a.startswith('-') for a in args): sys.exit(__doc__)
 dbs = [os.path.abspath(a) for a in args]
 sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
@@ -63,21 +69,32 @@ for k, (i, (g, _, _)) in enumerate(sorted(rec.items())):
     except Exception as e:
         dead[i] = str(e)[:100]
     say('built %d of %d: %s %s' % (k + 1, len(rec), i, dead.get(i, 'ok')))
-best = {}
+import statistics
+have = [c for c in range(os.cpu_count() or 1) if os.path.exists('/sys/devices/system/cpu/cpu%d' % c)]
+cpus = [c for c in map(int, cpuarg.split(','))] if cpuarg else []
+cpus = [c for c in cpus if c in have] or [None]              # None: the CPU setup() pinned
+pin0 = list(E.PIN)
+times = {}                                                  # not `runs`: that is the list of runs above
 for r_ in range(rounds):
     say('round %d of %d' % (r_ + 1, rounds))
-    n = len(live); order = live[r_ % n:] + live[:r_ % n]
-    for j, (i, eng, img, pw) in enumerate(order):
-        for w in E.WORK_SEL + E.WORK_HELD:
-            pair = [((eng, img, pw), 'd'), (E.REF, 'r')]
-            for (e, im, p), side in (pair if (r_ + j) % 2 == 0 else pair[::-1]):
-                key = (i, w, side); best[key] = min(best.get(key, 1 << 62), E.run_metric(e, im, p, w))
-t = {i: {w: best[(i, w, 'd')] / best[(i, w, 'r')] for w in E.WORK_SEL + E.WORK_HELD} for i, *_ in live}
-speed = {i: math.exp(sum(math.log(t[i][w]) for w in E.WORK_SEL) / len(E.WORK_SEL)) for i in t}
+    for ci, c in enumerate(cpus):
+        E.PIN[:] = pin0 if c is None else ['taskset', '-c', str(c)]
+        n = len(live); order = live[r_ % n:] + live[:r_ % n]
+        for j, (i, eng, img, pw) in enumerate(order):
+            for w in E.WORK_SEL + E.WORK_HELD:
+                pair = [((eng, img, pw), 'd'), (E.REF, 'r')]
+                for (e, im, p), side in (pair if (r_ + j + ci) % 2 == 0 else pair[::-1]):
+                    times.setdefault((i, w, side, c), []).append(E.run_metric(e, im, p, w))
+E.PIN[:] = pin0
+med = statistics.median
+T = {c: {i: {w: med(times[(i, w, 'd', c)]) / med(times[(i, w, 'r', c)]) for w in E.WORK_SEL + E.WORK_HELD} for i, *_ in live} for c in cpus}
+S = {c: {i: math.exp(sum(math.log(T[c][i][w]) for w in E.WORK_SEL) / len(E.WORK_SEL)) for i in T[c]} for c in cpus}
+c0 = cpus[0]; t, speed = T[c0], S[c0]
 
 cal = speed.get(CAL)
 print('# Fronts measured again in one session\n')
-print('%d rounds, every design paired with hand-made s6 on the pinned core; designs built with this commit.\n' % rounds)
+print('%d rounds, the median of them; every design paired with hand-made s6 on the same CPU (%s); designs built with this commit.\n'
+      % (rounds, ', '.join('the pinned one' if c is None else 'cpu %d' % c for c in cpus)))
 if cal is None: print('**No calibration: hand-made s6 did not build or pass the gate.**\n')
 else:
     print('**Calibration: hand-made s6 against itself %.3f** (%s).%s\n' % (cal, ', '.join('%s %.3f' % (w, t[CAL][w]) for w in E.WORK_SEL + E.WORK_HELD),
@@ -96,5 +113,24 @@ for label, ids in runs:
                     ' | '.join('%.3f' % t[i][w] for w in E.WORK_SEL + E.WORK_HELD), 'yes' if i in allf else ''))
 print('\nThe front of all runs together, by size: ' + ', '.join('%s %.3f at %s' % (i, speed[i], format(size[i], ','))
       for i in sorted(allf, key=lambda i: -size[i])))
+if len(cpus) > 1:
+    a, b = cpus[0], cpus[1]
+    ids = sorted(i for i in S[a] if i != CAL)
+    q = sorted(S[a][i] / S[b][i] for i in ids)
+    ra = {i: k for k, i in enumerate(sorted(ids, key=lambda i: S[a][i]))}; rb = {i: k for k, i in enumerate(sorted(ids, key=lambda i: S[b][i]))}
+    n = len(ids); rho = 1 - 6 * sum((ra[i] - rb[i]) ** 2 for i in ids) / (n * (n * n - 1)) if n > 1 else 1.0
+    def front_on(c):
+        return {i for i in ids if not any(S[c][j] <= S[c][i] and size[j] <= size[i] and (S[c][j], size[j]) != (S[c][i], size[i]) for j in ids)}
+    fa, fb = front_on(a), front_on(b)
+    print('\n## The same session on two CPUs\n')
+    print('Calibration on cpu %d: %.3f; on cpu %d: %.3f.\n' % (a, S[a].get(CAL, float('nan')), b, S[b].get(CAL, float('nan'))))
+    print('Speed on cpu %d over speed on cpu %d, per design: median %.3f, 10-90%% %.3f-%.3f, extremes %.3f-%.3f; '
+          'rank agreement (Spearman) %.2f.\n' % (a, b, q[len(q) // 2], q[len(q) // 10], q[9 * len(q) // 10], q[0], q[-1], rho))
+    print('The front of all runs on cpu %d: %s' % (a, ', '.join('%s %.3f at %s' % (i, S[a][i], format(size[i], ',')) for i in sorted(fa, key=lambda i: -size[i]))))
+    print('\nThe front of all runs on cpu %d: %s' % (b, ', '.join('%s %.3f at %s' % (i, S[b][i], format(size[i], ',')) for i in sorted(fb, key=lambda i: -size[i]))))
+    print('\nOn both fronts: %d of %d and %d.' % (len(fa & fb), len(fa), len(fb)))
+    print('\n| design | speed cpu %d | speed cpu %d | ratio |' % (a, b))
+    print('|---|---|---|---|')
+    for i in sorted(ids, key=lambda i: S[a][i]): print('| %s | %.3f | %.3f | %.3f |' % (i, S[a][i], S[b][i], S[a][i] / S[b][i]))
 print('\nloop is held out, and moves with an image\'s size mod 8 (Iteration 13).')
 shutil.rmtree(os.path.join(E.EV, 'cmp'), ignore_errors=True)

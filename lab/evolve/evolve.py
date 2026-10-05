@@ -53,7 +53,7 @@ OPERATORS
   selection  NSGA-II: rank by Pareto front, then by crowding, so designs
              that are different survive beside designs that are better
 """
-import collections, hashlib, json, math, os, random, re, shutil, subprocess, sys, time
+import collections, hashlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 O = os.path.join(ROOT, 'build'); W = os.path.join(O, 'work')
@@ -481,18 +481,27 @@ def run_metric(eng, img, pw, w):
     m = re.search(METRIC, r.stderr, re.M) or re.search(rb'^CPUNS (\d+)', r.stderr, re.M)
     return int(m.group(1))
 def measure(eng, img, pw, works, rounds):
-    """Best (minimum) CPU time per workload over the rounds, the design and
-    the reference - hand-made s6 - run back to back in every round,
-    alternating which goes first. Returns design / reference per workload,
-    and the design's own times: a ratio of two runs minutes apart, so
-    drift in background load or clock speed over a run of hours cancels."""
-    best, ref = {}, {}
+    """The MEDIAN CPU time per workload over the rounds, the design and the
+    reference - hand-made s6 - run back to back in every round, alternating
+    which goes first. Returns design / reference per workload, and the
+    design's own medians: a ratio of runs seconds apart, so drift in
+    background load or clock speed over a run of hours cancels.
+
+    The median, not the best (Iteration 25). On the laptop a rare fib run
+    lands where it is 34-38% faster - about one in 40, with address
+    randomisation on, never with it off - and the best of the rounds
+    reported that luck: a different draw each session, so two sessions
+    ranked the same designs up to 28% apart. The median of the same runs
+    agreed within 3.6% between halves of a session and 2.1% between CPUs
+    (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
+    runs, ref = {}, {}
     for r_ in range(rounds):
         for w in works:
-            pair = [(eng, img, pw, best), REF + (ref,)]
+            pair = [(eng, img, pw, runs), REF + (ref,)]
             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
-                store[w] = min(store.get(w, 1 << 62), run_metric(e, i, p, w))
-    return {w: best[w] / ref[w] for w in works}, best
+                store.setdefault(w, []).append(run_metric(e, i, p, w))
+    med = {w: statistics.median(runs[w]) for w in works}
+    return {w: med[w] / statistics.median(ref[w]) for w in works}, med
 
 def reach_lethal(g):
     """Scale 0 with a two-byte-only call or DOES> form: 2^14 bytes of reach,
@@ -767,7 +776,7 @@ def setup():
     KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, 'kernel.img'), KREF)
     with open(CORPUS, 'rb') as f:
         REF_CORPUS = sh([os.path.join(O, 's0-cell-64'), os.path.join(O, 's0-cell-s64.img')], cwd=W, inp=f.read()).stdout
-    UNIT = ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'
+    UNIT = 'median ' + ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'   # median: Iteration 25
     PIN[:] = quiet_cpu()
     # the reference every measurement is paired with: hand-made s6
     global REF

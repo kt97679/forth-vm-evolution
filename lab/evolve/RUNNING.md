@@ -69,7 +69,8 @@ real fork bomb, but only after one jailed fork has been refused:
   machine spends on other processes does not count against a design.
 - **Paired with a reference.** Every timed run of a design is paired with
   a run of hand-made s6 on the same workload, back to back, alternating
-  which goes first; each takes its best (minimum) over the rounds. A
+  which goes first; each takes its median over the rounds (Iteration 25 -
+  until then its best, which reported luck: see below). A
   design's speed is the geometric mean, over the four selection
   workloads, of its CPU time divided by s6's: **1.0 is as fast as s6, 0.83
   is 17% less CPU time.** Two runs seconds apart see the same machine, so
@@ -83,7 +84,14 @@ real fork bomb, but only after one jailed fork has been refused:
 What CPU time does not remove: the clock speed (a hot, busy laptop turbos
 lower - the pairing takes out slow changes), and contention for what a
 core shares - its hyperthread sibling, the caches, memory bandwidth. Fast
-fluctuations remain as noise, which the minimum over rounds reduces.
+fluctuations remain as noise, which the median over rounds reduces. The
+minimum reduced it too, and was wrong on fib: on the laptop about one fib
+run in 40 lands where it is 34-38% faster - with address randomisation on,
+never with it off - and the best of the rounds reported that draw, a
+different one each session; two sessions ranked the same designs up to
+28% apart. The median of the same runs agreed within 3.6% between halves
+of a session and 2.1% between CPUs
+(`results/run-spread-amd-ryzen-7-pro-8840hs.md`).
 
 ## Before the run
 

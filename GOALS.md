@@ -71,6 +71,10 @@ trying anything again (prompts/12-progress-log).
   within 2-8%. Speeds a few per cent apart are not ranked reproducibly
   yet; sizes are exact - seed 4's genes reach 9,335 bytes, the earlier
   seeds 9,646.
+- **The best of N was the fault** (Iteration 25): about one fib run in 40
+  lands 34-38% fast (address randomisation on), and the best of the rounds
+  reported it when drawn. The evolver now takes the median of the rounds;
+  every speed recorded before is a best of N.
 - **Seed 4 again - same seed, same code, other noise** (Iteration 22,
   `results/evolve-amd-ryzen-7-pro-8840hs-seed4b.md`): the runs part after
   the 35 starting designs and share 2 more of 1,310, yet reach the same
@@ -85,25 +89,28 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **Why fib moves a design up to 28% between sessions** - not the core
-   (Iteration 24, `results/cpu-noise-amd-ryzen-7-pro-8840hs.md`: 7-20%
-   between CPUs, the two threads of one core included, where kernel
-   agrees within 2.4%); the estimator is next. `NEXT-RUN`: `experiment
-   run-spread.py` keeps every run, with randomisation on and off, and
-   asks whether the best run or the median reproduces. Then change the
-   evolver's estimator before another run: until then selection among
-   designs a few per cent apart is partly noise.
-2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
+1. **The fronts again, by the median, on two CPUs in one session** -
+   `NEXT-RUN`: `experiment compare-fronts.py --rounds 10 --cpus 2,8`. The
+   estimator is settled (Iteration 25,
+   `results/run-spread-amd-ryzen-7-pro-8840hs.md`: the best of N reported
+   a rare lucky fib run, one in 40, 34-38% fast; the median reproduces
+   within 3.6% and across CPUs within 2.1%); this asks whether rankings
+   agree now, and which seed's front is ahead once measured fairly.
+2. **The lucky placement** - some fib runs are 34-38% faster, with address
+   randomisation on and never off. Find what those runs share (where the
+   engine's code, its tables, the VM's memory and the stacks landed):
+   a speedup every run could have.
+3. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.
-3. **The loop words in code compiled at run time** - priced first: there
+4. **The loop words in code compiled at run time** - priced first: there
    every pass of a DO loop runs `(LOOP)`'s colon body and 0-7 alignment
    NOOPs; the opcodes exist and now work. Count the passes in the
    selection workloads' run-time code before touching the compiler.
-4. Remaining planned gene: indirect threading; then a register machine.
-5. The article (`article/`): prompts/14-audience-research before drafting
+5. Remaining planned gene: indirect threading; then a register machine.
+6. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-6. ARM port of SPN. Push master to GitHub (the owner's step).
+7. ARM port of SPN. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 

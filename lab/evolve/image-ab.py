@@ -10,7 +10,7 @@ environment (A), and as the converter stands (B); both through the gate,
 the corpus and the kernel workload; their sizes; their dispatches counted
 on a profiling engine of the same design (layout-free); and their CPU
 time on the design's own engine, A and B run back to back, alternating
-which goes first, best of the rounds. Ratios are B / A.
+which goes first, the median of the rounds. Ratios are B / A.
 
 Iteration 13: SOD16_OLD_BODYCHECK=1 - the format-10 and tiny words' body
 check as it was, reading bodies after the pairs, short branches and fused
@@ -71,13 +71,14 @@ for did in args:
     peng, pa, pb = both(dict(g, tail=0, msc=0), d + '-p', profile=True)
     ppw = E.private_work(d + '-p')
     cr = [count(peng, pb, ppw, w, d) / count(peng, pa, ppw, w, d) for w in WORKS]
-    best = {}
+    runs = {}                                # the median of the rounds (Iteration 25: the best is luck)
     for r_ in range(rounds):
         for w in WORKS:
             pair = [(a, 'A'), (b, 'B')]
             for img, k in (pair if r_ % 2 == 0 else pair[::-1]):
-                best[(k, w)] = min(best.get((k, w), 1 << 62), E.run_metric(eng, img, pw, w))
-    tr = [best[('B', w)] / best[('A', w)] for w in WORKS]
+                runs.setdefault((k, w), []).append(E.run_metric(eng, img, pw, w))
+    import statistics
+    tr = [statistics.median(runs[('B', w)]) / statistics.median(runs[('A', w)]) for w in WORKS]
     sel = math.exp(sum(math.log(x) for x, w in zip(tr, WORKS) if w in E.WORK_SEL) / len(E.WORK_SEL))
     print('| %s | %d | %d | %+d | %s | %s | %.3f |' % (did, sa, sb, sb - sa, ', '.join('%.3f' % x for x in cr),
           ', '.join('%.3f' % x for x in tr), sel), flush=True)
