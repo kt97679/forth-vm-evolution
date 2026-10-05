@@ -1100,3 +1100,20 @@ byte, every id kept); alive, and S", loops and the prompt answer as before.
 seed 8's smallest would be 6,970 bytes.
 
 NEXT-RUN: seed 9, then compare - rtloopall and bss for evolution to take.
+
+## Iteration 45 - 2026-10-05 - Claude
+
+**Seed 9 and session 7.** The comparison: eleven databases, 109 front
+designs, calibration 1.000, the CPUs' ranks agreeing 1.00. **Seed 9 has
+the small end - 0.794 at 7,019 bytes, the smallest yet, to 0.515 at 7,725
+- with bss on every front design** (none in generation 0, 79% of the
+living); seed 8 keeps 8,614 bytes and up, the fastest 0.442. Seed 9's own
+fastest were 0.493-0.502: it did not find seed 8's fast end.
+
+**What does not compound**: seed 8's seven front designs built with bss and
+rtloopall - all alive on the VM - are 1,426-1,504 bytes smaller at their
+measured speeds: 0.508 at 7,178 ... 0.442 at 11,569, dominating every
+seed-9 front design from 7,178 bytes up. Each run starts from the same
+founders; the next step proposed is to seed runs with the earlier fronts.
+
+NEXT-RUN: none.

@@ -34,4 +34,6 @@
 # loops without rtloop's fallbacks: 380-488 bytes less) and bss (scratch
 # buffers out of the file: 1,056-1,064 bytes less, no dispatch more) -
 # then every front measured again. One sitting, two packs.
-seed 9 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 45: none - seed 9 and the comparison came back.
+none

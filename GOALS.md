@@ -120,6 +120,13 @@ trying anything again (prompts/12-progress-log).
   8,525 bytes, the loop opcodes taken back (I in 83% of the living): loop
   five times faster than s6. The held-out sieve improved with it
   (0.51-0.66, seed 7's 0.78-0.85): the gains carry over.
+- **Seed 9 - the small end, and what does not compound** (Iteration 45,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed9.md`; session 7, calibration
+  1.000): **0.794 at 7,019 bytes - the smallest yet - to 0.515 at 7,725**,
+  bss on every front design; seed 8 keeps 8,614 bytes and up, the fastest
+  0.442. But seed 8's front with bss and rtloopall, built and alive, would
+  be 0.508 at 7,178 ... 0.442 at 11,569 - dominating seed 9 from 7,178 up.
+  Every run starts from the same founders: progress does not compound.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -128,6 +135,11 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
+0. **Carry the fronts into the next run** (the owner to decide): seed the
+   population with every earlier front's designs alongside the founders, so
+   what one run found the next starts from - seed 9 lost the fast end that
+   seed 8 had, and seed 8's front with this commit's free genes would
+   dominate most of seed 9's. A change to the method, not a gene.
 1. **fib and loop: code compiled at run time** - built (Iteration 37) as the
    gene `rtimm`: the run-time compiler makes `n +` an ADDI and `SWAP n +` a
    SWAP+I, as the converter does in the image (`results/rtimm.md`): fib
