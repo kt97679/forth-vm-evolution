@@ -111,11 +111,12 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **fib and loop: code compiled at run time** - the new opcodes, like the
-   pairs, are the converter's: they never reach what the run-time compiler
-   writes, and fib (0.64-0.92 on the front) is now the weakest workload
-   (parse 0.40-0.54). The run-time fusion overlay (rtfuse) could make them
-   too; first priced, by counting fib's own dispatch patterns.
+1. **fib and loop: code compiled at run time** - built (Iteration 37) as the
+   gene `rtimm`: the run-time compiler makes `n +` an ADDI and `SWAP n +` a
+   SWAP+I, as the converter does in the image (`results/rtimm.md`): fib
+   15% fewer dispatches, 17-27% faster, selection 5-8% faster on the
+   front's run-time-fusion designs - for 408-472 bytes, so a gene. For a
+   seed run to weigh, batched with whatever else needs the laptop next.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize

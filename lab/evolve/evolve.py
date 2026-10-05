@@ -85,7 +85,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm')
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -104,9 +104,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',)]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -179,6 +179,7 @@ def express(g):
     if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
     if 'ops10' in e: e['ops10'] = [x[0] for x in ops10_in(g)]
     if 'rtfuse' in e and not e.get('supers') and not rt_tests(g): e.pop('rtfuse')   # nothing to fuse at run time
+    if 'rtimm' in e and not (overlay(g) and 'imm' in g['spec']): e.pop('rtimm')      # Iteration 37: n + at run time needs both
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
@@ -408,7 +409,7 @@ def build(g, d):
     if g.get('hotcalls') and g['varcall']: opts += ['--hotcalls', str(g['hotcalls'])]
     opts += CONVERT_EXTRA
     img = os.path.join(d, 'image.img')
-    fuse = '-fuse' if overlay(g) else ''
+    fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
     dump = os.path.join(O, ('k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % fuse)
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
@@ -767,10 +768,13 @@ def setup():
     # The CV8 compiler with table-driven folds and run-time fusion
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
-    W = os.path.join(O, 'work'); src4, dst4 = os.path.join(ROOT, 'forth', 'cv8-fuse.4'), os.path.join(W, 'cv8-fuse.4')
-    if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
-    for name, files in (('k64-self-fuse.txt', ['cv8.4']), ('k64-b-fuse.txt', ['cv8.4', 'cv8b.4'])):
-        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + ['cv8-fuse.4', 'dict-dump-addr.4']) + 'BYE\n'
+    W = os.path.join(O, 'work')
+    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4'):     # the second: the rtimm gene (Iteration 37)
+        src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+        if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+    for name, files in (('k64-self-fuse.txt', ['cv8.4']), ('k64-b-fuse.txt', ['cv8.4', 'cv8b.4']),
+                        ('k64-self-fuse-imm.txt', ['cv8.4']), ('k64-b-fuse-imm.txt', ['cv8.4', 'cv8b.4'])):
+        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + ['cv8-fuse.4'] + (['cv8-fuse-imm.4'] if '-imm' in name else []) + ['dict-dump-addr.4']) + 'BYE\n'
         out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
     os.makedirs(EV, exist_ok=True)

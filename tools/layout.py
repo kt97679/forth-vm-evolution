@@ -820,7 +820,7 @@ def emit(path):
         far = '--does-far' in ARGV
         CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
     for w in order:
-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE') + tuple(CVARS): continue
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
         if w['n'] in CVARS:
             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
@@ -828,6 +828,13 @@ def emit(path):
             ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
             assert len(ops) <= 23, "more folds than FOLD-OPS holds"
             data = bytes(ops + [255] * (23 - len(ops)))
+        elif w['n'] == 'IMM-OPS':
+            # Iteration 37: ADDI and SWAP+I for code compiled at run time
+            # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has
+            # them; zeros otherwise. SOD16_NO_RTIMM=1 writes zeros, to measure.
+            rt = '--rtfuse' in ARGV and not _os.environ.get('SOD16_NO_RTIMM') and 'imm' in G['SPEC']
+            data = bytes([G['X_IMM']['ADDI'] if rt else 0, G['X_OPS10'].get('SWAP+I', 0) if rt else 0,
+                          op('+')[0], op('SWAP')[0]])     # the overlay compares against these
         elif w['n'] == 'FOLD-TABLE':
             ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
             data = bytes([len(ops)] + ops); assert len(data) <= 24, "fold table overflows"

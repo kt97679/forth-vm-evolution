@@ -925,3 +925,31 @@ Seed 5's provisional claims (Iteration 28, across sessions) settled: its
 13,073-byte design 0.610, not 0.593.
 
 NEXT-RUN: none.
+
+## Iteration 37 - 2026-10-05 - Claude
+
+**n + and SWAP n + in code compiled at run time - the gene `rtimm`.**
+fib's FIB, dumped from a seed-6 front design's own image: `-1 +` and
+`SWAP -2 +` were LIT32 n, + and SWAP, LIT32 n, + - the run-time compiler
+had no ADDI and no SWAP+I. forth/cv8-fuse-imm.4 gives it both (LITERAL8
+leaves LAST-OP on a small literal; a + straight after takes its place).
+FIB: 32 bytes to 23, 13 dispatches a recursive call to 10. On the four
+front designs with run-time fusion, image against image: fib 15% fewer
+dispatches, 17-27% faster, selection 5-8% faster.
+
+**Why a gene**: built first into cv8-fuse.4, it made every run-time-fusion
+design 480 bytes bigger - cd943ed219, the fastest, 14,081 to 14,561, no
+longer its recorded size (measured with the old overlay set up in its own
+process: the evolver dumps the overlay once, at setup). As rtimm, in LATE,
+the recorded designs build byte for byte and keep their ids (all 1,309 of
+seed 6's); dormant without run-time fusion and spec imm.
+
+Slips on the way, each caught by a check before anything was measured:
+NIP and 0<> are not in this kernel - the overlay stopped loading at the
+first, silently, until build/k64-b-fuse.txt was read (and the design
+lived, its run-time fusion simply gone: 14,505 bytes and `< ?BRANCH`
+unfused were the tell); `['] +` compiled the cell system's address, which
+the converter does not relocate - every colon definition crashed, so the
+converter now writes the + and SWAP opcodes into the overlay's table;
+and a Forth test with DO ... LOOP outside a definition crashed the engine
+(the same lesson as Iteration 30's IF).
