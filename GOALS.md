@@ -143,13 +143,47 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-0. **The fronts carried into every run** - built (Iteration 46, the
+Iteration 48, the owner: the improvements first, the Tegra session once
+they are done, the article on the backburner.
+
+1. **Improvements, on the development VM** - each priced before it is
+   built; a change that would alter a recorded design's image goes behind
+   a gene, as lean and bss did. Between batches, a seed run carrying the
+   earlier fronts (one laptop sitting, run then comparison).
+   a. **The Forth sources** (the owner, Iteration 48): look through
+      forth/kernel.4, cv8.4, cv8b.4 and the overlays for simplifications
+      and optimisations. The image's code is mostly the kernel's - 6,610
+      of the 7,881 bytes of words in Iteration 44's audit - and kernel,
+      parse and corpus run it: a shorter or faster definition there is a
+      gain in every design. Words the converter already rewrites (and the
+      hand-made stages, which must stay identical) set the limits.
+   b. **The image's remaining fixed costs** (Iteration 44's audit): the
+      353-byte image header (32 thread heads as cells), FORTH-WORDLIST's
+      32 cell-sized heads (296 bytes), the names (a third of the image),
+      NAMEBUF.
+   c. **The register machine's tail**: the return-stack moves (13-16% of
+      dispatches) and the long tail of move patterns
+      (`results/price-register-stage1.md`).
+2. **The Tegra session - once the improvements are done** (the owner).
+   SPN on 32-bit ARM is correct under qemu (Iterations 30-31). Before the
+   Tegra can time it: the build makes s8 only from 8-byte images
+   (mk-spn-cv8-image.sh; s8-*-32 on an ARM host), and bench-laptop.sh
+   skips SPN off x86-64. Then one sitting: tools/arm-qemu-check.sh
+   natively, the stage ladder timed, SPN against the interpreter.
+3. **The article - on the backburner** (the owner, Iteration 48):
+   `article/`; prompts/14-audience-research before drafting for Habr and
+   ForthHub, 04 and 05 before publishing.
+4. Push master to GitHub (the owner's step).
+
+### Built from this list, for the record
+
+- **The fronts carried into every run** - built (Iteration 46, the
    owner's go): `evolve.py --carry DB,...` puts each database's own front
    into the first generation beside the founders, every one timed again;
    next-run.sh passes every archived database. compare-fronts.py credits a
    carried design to the run that found it. Seed 10 (Iteration 47): every
    front design descends from carried ones; 5-26% faster at every size.
-1. **fib and loop: code compiled at run time** - built (Iteration 37) as the
+- **fib and loop: code compiled at run time** - built (Iteration 37) as the
    gene `rtimm`: the run-time compiler makes `n +` an ADDI and `SWAP n +` a
    SWAP+I, as the converter does in the image (`results/rtimm.md`): fib
    15% fewer dispatches, 17-27% faster, selection 5-8% faster on the
@@ -173,7 +207,7 @@ trying anything again (prompts/12-progress-log).
    file, 1,056-1,064 bytes (11-13%), not a dispatch more
    (`results/bss.md`) - seed 8's smallest would be 6,970 bytes. **NEXT-RUN:
    seed 9, then every front compared** - both for evolution to take.
-2. **A register machine** - priced (Iteration 29,
+- **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize
    left, and the largest work: operands in every instruction, a
@@ -192,16 +226,6 @@ trying anything again (prompts/12-progress-log).
    with them - with the comparison of all fronts, one laptop session.
    Beyond: the run-time compiler could fuse them too (fib's code), and
    the register machine proper is the long tail and the return stack.
-3. **SPN on 32-bit ARM** - correct (Iterations 30-31): the proof of
-   concept and s8, all three variants, pass under qemu
-   (`tools/arm-qemu-check.sh` - also native on the Tegra); x86-64's
-   engines machine-code identical. Left before the Tegra can TIME s8: the
-   build makes s8 only from 8-byte images (mk-spn-cv8-image.sh, then
-   s8-*-32 on an ARM host) and bench-laptop.sh skips SPN off x86-64 -
-   to do when that session is prepared.
-4. The article (`article/`): prompts/14-audience-research before drafting
-   for Habr and ForthHub; 04 and 05 before publishing.
-5. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 

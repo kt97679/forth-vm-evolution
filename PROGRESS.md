@@ -1148,3 +1148,14 @@ projection (0.508 at 7,178). Seed 8's 0.436 at 13,073 still the fastest.
 bss on all fifteen, rtloopall on eleven.
 
 NEXT-RUN: none.
+
+## Iteration 48 - 2026-10-05 - Claude
+
+The owner: the article on the backburner; the Tegra session after all the
+improvements we have so far; and to capture that the Forth sources may
+hold simplifications and optimisations. GOALS.md's list now says so, in
+that order: improvements on the VM - (a) the Forth sources, (b) the
+image's remaining fixed costs, (c) the register machine's tail - with
+carry-over seed runs between batches; then the Tegra session, its two
+prerequisites named; the article last. The items built from the old list
+moved under "Built from this list".
