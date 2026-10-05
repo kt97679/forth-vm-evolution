@@ -1,0 +1,27 @@
+\ cv8b-kinput.4 - the input side made faster (Iteration 54), for the
+\ byte-header system with kfast; loaded after cv8b-kfast.4 for designs
+\ with the gene kinput. X8 words: the kernel's word gets the body.
+\
+\ On seed 12's fastest design, REFILL, SCAN, PARSE, SKIP and WORD were
+\ 27-36% of the kernel, parse and corpus workloads' dispatches. Most of
+\ REFILL's share is its tab loop - ten dispatches a character of every
+\ line read. Factored out here, unchanged, as TABS>BL, which the gene
+\ makes a format-10 opcode with SCAN, SKIP and FILL (lab/evolve).
+
+: TABS>BL ( c-addr u --- )
+\ Every tab in the string a space - REFILL's loop.
+  OVER + SWAP BEGIN 2DUP - WHILE DUP C@ 9 = IF BL OVER C! THEN 1+ REPEAT 2DROP ;
+
+: REFILL8 ( --- f)
+\ The kernel's REFILL, its tab loop TABS>BL.
+  SOURCE-ID -1 = IF
+   0 \ Not refillable for EVALUATE
+  ELSE
+   SOURCE-ID IF
+    SRC @ 256 SOURCE-ID READ-LINE ABORT" Error reading file"
+    SWAP #SRC ! 0 >IN !
+    #SRC @ IF SOURCE TABS>BL THEN
+   ELSE
+    QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
+   THEN
+  THEN ;

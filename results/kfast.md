@@ -101,6 +101,31 @@ in generation 7, 37% of the living at the end. The fastest yet, 0.326 at
 9,014 bytes; parse at 0.21-0.28 of hand-made s6's time, where seed 11's
 front was at 0.40-0.58.
 
+## Iteration 54: the input side - the gene `kinput`
+
+Attributed again on seed 12's fastest (dcbaf0e29f, 0.326): the dictionary
+no longer leads; REFILL, SCAN, PARSE, SKIP and WORD were 27-36% of kernel,
+parse and corpus, and FILL still 7.5% of kernel - called by code the
+workload compiles; in the pool since Iteration 50, never taken up (1% of
+seed 11's living). REFILL's share is mostly its tab loop, ten dispatches
+a character of every line read.
+
+**`kinput`** (LATE, with kfast): `forth/cv8b-kinput.4` - TABS>BL, the tab
+loop factored out unchanged, and REFILL8, the kernel's REFILL calling it -
+and SCAN, SKIP, TABS>BL and FILL first among the format-10 names, after
+THREAD-FIND: one switch, as tfind. Their handlers go a character at a
+time as the loops do, comparing the character as a cell as = and - do;
+their colon bodies become the opcode too (calls from run-time code);
+their expected bodies from SOD16_SHOW.
+
+| design | kernel | fib | parse | corpus | loop | sieve | size |
+|---|---|---|---|---|---|---|---|
+| dcbaf0e29f | 0.720 | 1.000 | 0.838 | 0.787 | 0.996 | 0.838 | 9,014 -> 8,974 |
+| 35135bde2f | 0.725 | 1.000 | 0.842 | 0.793 | 0.996 | 0.847 | 7,105 -> 7,074 |
+
+alive in all four engine forms; the selected workloads' geometric mean
+about 0.86 of the dispatches.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell

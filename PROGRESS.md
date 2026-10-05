@@ -1260,3 +1260,22 @@ s6's time, against 0.40-0.58. The record edits checked the files' text
 first this time, and the commit waited on them.
 
 NEXT-RUN: none.
+
+## Iteration 54 - 2026-10-05 - Claude
+
+The owner asked how much faster than the hand-made CV8 we are: the fastest
+design 3.07x s6-cv8b on the selected workloads, head to head in session
+10, 10% smaller; about 2.4x s5-cv8spec and 3.0x s4-cv8 bridged through
+the stage ladder's laptop table. Then: proceed with the action items.
+
+**The input side - the gene `kinput`.** Attributed again on seed 12's
+fastest: REFILL, SCAN, PARSE, SKIP, WORD 27-36% of kernel, parse and
+corpus; FILL 7.5% of kernel, in the pool and never taken up. kinput (with
+kfast): forth/cv8b-kinput.4 - REFILL's tab loop factored out as TABS>BL,
+REFILL8 calling it - and SCAN, SKIP, TABS>BL, FILL first among the
+format-10 names, their colon bodies the opcode too. On dcbaf0e29f and
+35135bde2f: kernel 0.72, parse 0.84, corpus 0.79, sieve 0.84; 31-40 bytes
+less; alive in all four engine forms.
+
+The evolver refused to run on a build older than the engine's sources -
+its own check, as it should; rebuilt.

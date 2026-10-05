@@ -1386,6 +1386,22 @@ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
                    else a_ -= ((UNS64)(t_ & 63) << 16) | ((UNS64)BYTE(a_ - 2) << 8) | BYTE(a_ - 3); } }
              DS0 = a_; } NEXT();
 #endif
+/*  Iteration 54: the input side - SCAN and SKIP ( c-addr u c --- c-addr' u' ),
+ *  the kernel's character loops, and TABS>BL ( c-addr u --- ), REFILL's tab
+ *  loop (forth/cv8b-kinput.4): a character at a time, as the loops; the
+ *  character compared as a cell, as = and - compare it.  */
+#if X_SCAN
+L_x_scan:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
+             while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } DS1 = a_; DS0 = u_; } NEXT();
+#endif
+#if X_SKIP
+L_x_skip:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
+             while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } DS1 = a_; DS0 = u_; } NEXT();
+#endif
+#if X_TABSBL
+L_x_tabsbl: { UNS64 u_ = DS0, a_ = DS1; dsp += 2 * CELL_BYTES;
+             while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } } NEXT();
+#endif
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

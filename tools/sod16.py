@@ -380,6 +380,18 @@ def _expect(n):
         'FILL': [('P', 'OVER'), ('QBR', 20 * CELL), ('P', '>R'), ('P', 'R@'), ('P', 'ROT'), ('P', 'DUP'), ('P', '>R'),
                  ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', -1), ('P', '+'), ('P', 'DUP'),
                  ('C', '0='), ('QBR', -16 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
+        # Iteration 54: the input side - the kernel's SCAN and SKIP, kinput's TABS>BL
+        'SCAN': [('P', 'OVER'), ('QBR', 22 * CELL), ('P', 'ROT'), ('P', 'DUP'), ('P', 'C@'), ('P', '>R'), ('P', 'OVER'),
+                 ('P', 'R>'), ('P', '='), ('QBR', 5 * CELL), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'),
+                 ('C', '1+'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('C', '1-'), ('P', 'SWAP'), ('BR', -23 * CELL),
+                 ('P', 'DROP'), ('P', 'EXIT')],
+        'SKIP': [('P', 'OVER'), ('QBR', 22 * CELL), ('P', 'ROT'), ('P', 'DUP'), ('P', 'C@'), ('P', '>R'), ('P', 'OVER'),
+                 ('P', 'R>'), ('C', '-'), ('QBR', 5 * CELL), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'),
+                 ('C', '1+'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('C', '1-'), ('P', 'SWAP'), ('BR', -23 * CELL),
+                 ('P', 'DROP'), ('P', 'EXIT')],
+        'TABS>BL': [('P', 'OVER'), ('P', '+'), ('P', 'SWAP'), ('C', '2DUP'), ('C', '-'), ('QBR', 14 * CELL), ('P', 'DUP'),
+                    ('P', 'C@'), ('LIT', 9), ('P', '='), ('QBR', 4 * CELL), ('C', 'BL'), ('P', 'OVER'), ('P', 'C!'),
+                    ('C', '1+'), ('BR', -16 * CELL), ('C', '2DROP'), ('P', 'EXIT')],
         # Iteration 51: the byte-header thread walk (forth/cv8b-kfast.4)
         'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 26 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
                         ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),

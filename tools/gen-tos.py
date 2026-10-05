@@ -92,6 +92,10 @@ HOT = {
  # Iteration 50: the byte loops as opcodes - three popped, the fourth the top
  'L_x_fill':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();',
  'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     { UNS8 t_ = BYTE(a_ - 1);       if (t_ < 128) a_ = t_ ? a_ - t_ : 0;       else if (t_ < 192) a_ -= ((UNS64)(t_ & 63) << 8) | BYTE(a_ - 2);       else a_ -= ((UNS64)(t_ & 63) << 16) | ((UNS64)BYTE(a_ - 2) << 8) | BYTE(a_ - 3); } } tos = a_; } NEXT();',
+ # Iteration 54: the input side - SCAN, SKIP: three in, two out; TABS>BL: two in
+ 'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+ 'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+ 'L_x_tabsbl':     '{ UNS64 u_ = tos, a_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } } NEXT();',
  'L_x_cmove':      '{ UNS64 u_ = tos, d_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();',
  'L_x_execute': '{ UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();',
  'L_x_i':     'PUSHT(RS); NEXT();',

@@ -341,7 +341,7 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
 # for a call and two dispatches instead of 12-14 a byte, and its loop gone.
 # Only these two, which never look at their caller's return address (I J
 # UNLOOP (DO) do), and only where the design has them: no recorded design.
-for _n in ('FILL', 'CMOVE'):
+for _n in ('FILL', 'CMOVE', 'SCAN', 'SKIP', 'TABS>BL'):            # Iteration 54: the input side's too
     if _n not in G['X_OPS10']: continue
     _at = {a: n for a, n in G['ops10_at']().items() if n == _n}
     _w = [w for w in order if w['s'] in _at]

@@ -181,8 +181,9 @@ they are done, the article on the backburner.
       0.42, kernel 0.53 of the dispatches. Seed 11 (Iteration 52): the
       fastest yet, 0.413 at 8,030 - without THREAD-FIND, never taken up;
       `tfind` puts it first. Seed 12 (Iteration 53): taken up - the
-      fastest yet, 0.326 at 9,014; 17-32% faster at every size. Next in
-      the sources: the input side
+      fastest yet, 0.326 at 9,014; 17-32% faster at every size. The input
+      side (Iteration 54): the gene `kinput` - kernel 0.72, corpus 0.79,
+      parse 0.84 counted. Next in the sources: what is left after it
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header
       NAME>BUF (open).
    b. **The image's remaining fixed costs** (Iteration 44's audit): the
