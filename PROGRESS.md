@@ -1182,3 +1182,22 @@ own lookups had overwritten it, and compiling S" inside a definition, which
 that kernel cannot. Left open, not shipped: 14 of seed 10's 15 front
 designs have byte headers. Also caught before running: the dump loop
 chose its overlay by a comprehension variable that does not leak.
+
+## Iteration 50 - 2026-10-05 - Claude
+
+**FILL and CMOVE as opcodes** - the kernel's byte loops, 12-14 dispatches
+a byte: format-10 opcodes in OPS10_POOL, engine handlers a byte at a time
+ascending (CMOVE's overlap as the loop's), the converter's expected bodies
+written from its own reading (SOD16_SHOW=FILL,CMOVE). With the opcode,
+the colon word's body becomes the opcode and EXIT, so code compiled at run
+time - the sieve's FILL - gets it too; only these two, which never read
+their caller's return address, and no recorded design has them.
+
+On 96f2d8bfd7 with kfast, two pairs displaced: kernel 0.865, parse 0.944,
+corpus 0.917, the held-out sieve 0.848 (still 1899 primes), 32 bytes less;
+alive; recorded designs as recorded. With kfast, kernel is about 0.65 of
+its dispatches of before, parse 0.69, corpus 0.66.
+
+A stale link of mine - build/work/cv8-kfast.4, left dangling when the
+cell-header attempt's file went - made the evolver's private work dir
+fail; removed (a laptop run deletes build/ first).

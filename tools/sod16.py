@@ -374,6 +374,16 @@ def _expect(n):
         '+!': [('P', 'DUP'), ('P', '@'), ('P', 'ROT'), ('P', '+'), ('P', 'SWAP'), ('P', '!'), ('P', 'EXIT')],
         '?DUP': [('P', 'DUP'), ('QBR', 2 * CELL), ('P', 'DUP'), ('P', 'EXIT')],
         'EXECUTE': [('P', '>R'), ('P', 'EXIT')],
+        # Iteration 50: FILL and CMOVE, the kernel's byte loops, as the converter
+        # read them (SOD16_SHOW=FILL,CMOVE) - the opcodes do the same, a byte at
+        # a time, ascending: CMOVE's overlap behaves as the loop's
+        'FILL': [('P', 'OVER'), ('QBR', 20 * CELL), ('P', '>R'), ('P', 'R@'), ('P', 'ROT'), ('P', 'DUP'), ('P', '>R'),
+                 ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', -1), ('P', '+'), ('P', 'DUP'),
+                 ('C', '0='), ('QBR', -16 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
+        'CMOVE': [('P', 'DUP'), ('QBR', 27 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'C@'), ('P', 'SWAP'), ('P', 'DUP'),
+                  ('P', '>R'), ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'),
+                  ('P', 'SWAP'), ('P', 'R>'), ('LIT', -1), ('P', '+'), ('P', 'DUP'), ('P', '>R'), ('C', '0='),
+                  ('QBR', -23 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
         'I': [('P', 'R>'), ('P', 'R@'), ('P', 'SWAP'), ('P', '>R'), ('P', 'EXIT')],
         'J': [('P', 'RP@'), ('LIT', CELL), ('LIT', CELL), ('LIT', CELL), ('P', '+'), ('P', '+'), ('P', '+'),
               ('P', '@'), ('P', 'EXIT')],

@@ -160,9 +160,10 @@ they are done, the article on the backburner.
       **Begun (Iteration 49, `results/kfast.md`)**: every dispatch
       attributed to its word - a quarter of kernel, parse and corpus was
       NAME>BUF's zero fill; without it (the gene `kfast`, byte headers),
-      24-29% fewer dispatches there. Next from the same table: FILL and
-      CMOVE as opcodes, the thread walk (a third of parse) as one, the
-      cell-header NAME>BUF (open).
+      24-29% fewer dispatches there. FILL and CMOVE as opcodes, their
+      colon bodies too (Iteration 50): kernel 0.865, corpus 0.917, the
+      held-out sieve 0.848 more, 32 bytes less. Next: the thread walk (a
+      third of parse) as one opcode; the cell-header NAME>BUF (open).
    b. **The image's remaining fixed costs** (Iteration 44's audit): the
       353-byte image header (32 thread heads as cells), FORTH-WORDLIST's
       32 cell-sized heads (296 bytes), the names (a third of the image),

@@ -89,6 +89,9 @@ HOT = {
  'L_x_dupnbr':     'if (tos) ip += (int16_t)LD16(ip); else ip += 2; NEXT();',
  'L_x_dupnbr8':    'if (tos) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();',
  'L_x_swapaddi':   't = NOS; NOS = tos; tos = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();',
+ # Iteration 50: the byte loops as opcodes - three popped, the fourth the top
+ 'L_x_fill':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();',
+ 'L_x_cmove':      '{ UNS64 u_ = tos, d_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();',
  'L_x_execute': '{ UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();',
  'L_x_i':     'PUSHT(RS); NEXT();',
  'L_x_j':     'PUSHT(CELL(rp + 2 * CELL_BYTES)); NEXT();',

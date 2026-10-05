@@ -1360,6 +1360,17 @@ L_x_dupnbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();         /* D
 #if X_SWAPADDI
 L_x_swapaddi: t = DS1; DS1 = DS0; DS0 = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();   /* SWAP n + */
 #endif
+/*  Iteration 50: FILL and CMOVE, the kernel's byte loops (12-14 dispatches a
+ *  byte in Forth; CMOVE 5-7% of kernel, parse and corpus), as opcodes - a
+ *  byte at a time, ascending, as the loops: CMOVE's overlap behaves the same.  */
+#if X_FILL
+L_x_fill:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += 3 * CELL_BYTES;             /* FILL  */
+             while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();
+#endif
+#if X_CMOVE
+L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;             /* CMOVE */
+             while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();
+#endif
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

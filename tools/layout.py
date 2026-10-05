@@ -333,6 +333,20 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
         kind[_w['s']], info[_w['s']] = 'code', [('LITOFF', 0), ('C', _start[-1]['s']), ('P', '@'), ('P', '+'), ('P', 'EXIT')]
     print('bss: %s out of the file, %d bytes' % (' '.join(w['n'] for w in order if w['s'] in BSS), sum(n for _, n in BSS.values())))
 
+# ---- FILL and CMOVE: their own bodies the opcode too (Iteration 50) --
+# With FILL or CMOVE a format-10 opcode, calls in the image's code become it
+# (ops10_rewrite); code compiled at RUN time still calls the colon word -
+# the sieve's FILL. So its body becomes the opcode and EXIT: the same work -
+# the body was checked against the definition the opcode does (ops10_at) -
+# for a call and two dispatches instead of 12-14 a byte, and its loop gone.
+# Only these two, which never look at their caller's return address (I J
+# UNLOOP (DO) do), and only where the design has them: no recorded design.
+for _n in ('FILL', 'CMOVE'):
+    if _n not in G['X_OPS10']: continue
+    _at = {a: n for a, n in G['ops10_at']().items() if n == _n}
+    _w = [w for w in order if w['s'] in _at]
+    if _w: kind[_w[-1]['s']], info[_w[-1]['s']] = 'code', [('P', _n), ('P', 'EXIT')]
+
 # ---- one-byte calls (Iteration 14): --hotcalls N --------------------
 # The targets with the most call sites in the image's code take the bytes
 # 0xE0-0xFF, through a table in the header (2 bytes an entry). Chosen here,

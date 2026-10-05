@@ -38,6 +38,28 @@ no bytes more; alive. Recorded designs untouched (kfast is in LATE: every
 id kept, sizes as recorded). 14 of seed 10's 15 front designs and 82% of
 its living designs have byte headers.
 
+## Iteration 50: FILL and CMOVE as opcodes
+
+The kernel's byte loops - 12-14 dispatches a byte - as format-10 opcodes
+(OPS10_POOL; engine handlers under X_FILL / X_CMOVE, a byte at a time,
+ascending, so CMOVE's overlap behaves as the loop's; the converter
+replaces a call only after reading the word's body as exactly the
+definition the opcode does - `_expect`, written from SOD16_SHOW). And
+with the opcode, the colon word's own body becomes the opcode and EXIT:
+code compiled at run time still calls FILL - the sieve's - and now gets a
+call and two dispatches. Only these two, which never read their caller's
+return address; no recorded design has them, so none changes.
+
+96f2d8bfd7 with kfast, then with FILL and CMOVE added (two pairs lose
+their slots for them), dispatches counted:
+
+| | kernel | fib | parse | corpus | loop | sieve | size |
+|---|---|---|---|---|---|---|---|
+| the opcodes / kfast alone | 0.865 | 1.000 | 0.944 | 0.917 | 0.998 | 0.848 | 7,228 -> 7,196 |
+
+alive; the sieve still counts 1899. With kfast: kernel about 0.65 of what
+it was, parse 0.69, corpus 0.66 - and the held-out sieve 0.85.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell
@@ -45,8 +67,6 @@ its living designs have byte headers.
   name; a version zeroing only the name's cells hung the converted image
   at its first lookup, and the plain cell system's test harness could
   not compile S" inside a definition - undiagnosed; not built.
-- **FILL and CMOVE as format-10 opcodes** (memset, an ascending copy):
-  CMOVE is 5-7% of kernel, parse and corpus, FILL the sieve's 15%.
 - **The thread walk** - NEXT-NFA8 and SEARCH-WORDLIST8's loop, a third of
   parse - as one opcode.
 - SCAN, PARSE, REFILL: 4-7% each of kernel and corpus.
