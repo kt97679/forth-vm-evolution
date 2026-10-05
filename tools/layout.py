@@ -311,6 +311,28 @@ if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and no
     print('drop-dumptool: %d dump-tool words, %d dead shadowed (%s) out, %d bytes of the old image'
           % (len(_tool), len(_shadow), ' '.join(w['n'] for w in _shadow) or '-', sum(w['e'] - w['link'] for w in _tool + _shadow)))
 
+# ---- scratch buffers out of the file (Iteration 44): --bss ----------
+# TIB, POCKET and INCLUDE-BUFFER are VARIABLEs with an ALLOT: 1,040 bytes
+# of every image that are only ever written before they are read. Each
+# becomes a word that pushes START + an offset past the image's end - a
+# LITOFF patched once the layout is known - and its parameter field moves
+# there: v8pfa and remap_pfa_off send references to it, DP starts past
+# them, and the engine's memory there is zero (a static array). NAMEBUF
+# stays: FIND reads it for every candidate, and a call would cost more
+# than a variable.
+BSS_WORDS = ('TIB', 'POCKET', 'INCLUDE-BUFFER')
+BSS, BSS_OFF, BSS_END = {}, {}, None
+if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS'):
+    _start = [w for w in order if w['n'] == 'START']
+    for _n in BSS_WORDS:
+        _ws = [w for w in order if w['n'] == _n]
+        if not _ws or not _start: continue
+        _w = _ws[-1]
+        if kind[_w['s']] != 'data' or not G['is_var'](_w['s']): continue    # only a VARIABLE and its ALLOT
+        BSS[_w['s']] = (_w['s'] - START + CELL, _w['e'] - (_w['s'] + CELL))  # old parameter field, its bytes
+        kind[_w['s']], info[_w['s']] = 'code', [('LITOFF', 0), ('C', _start[-1]['s']), ('P', '@'), ('P', '+'), ('P', 'EXIT')]
+    print('bss: %s out of the file, %d bytes' % (' '.join(w['n'] for w in order if w['s'] in BSS), sum(n for _, n in BSS.values())))
+
 # ---- one-byte calls (Iteration 14): --hotcalls N --------------------
 # The targets with the most call sites in the image's code take the bytes
 # 0xE0-0xFF, through a table in the header (2 bytes an entry). Chosen here,
@@ -410,6 +432,10 @@ for w in order:
         new_off[w['s']]['nfa']  = off; off += align_up(len(w['n']) + 1, CELL)
         new_off[w['s']]['body'] = off; off += new_body_bytes(w)
 NEW_HERE = off
+if BSS:                                              # Iteration 44: the buffers' place past the image
+    _o = align_up(NEW_HERE, CELL)
+    for _s, (_opfa, _n) in BSS.items(): BSS_OFF[_s] = _o; _o += align_up(_n, CELL)
+    BSS_END = _o
 # SYMMAP=file: write each word's body range in the NEW image, one line
 # per word - start, end, name. tools/attribute.py joins it with an
 # engine profile (-DPROFILE=1, VMPROF=file) to charge every dispatched
@@ -589,6 +615,7 @@ buf_bad = []
 def remap_pfa_off(off):
     """old START-relative parameter-field offset -> new one, or None."""
     w = pfa_at.get(off)
+    if w and w['s'] in BSS_OFF: return BSS_OFF[w['s']]              # Iteration 44: past the image
     return new_off[w['s']]['body'] + CELL if w else None
 
 bufs = 0
@@ -654,7 +681,7 @@ def pfa_of(name):
 
 fixed, fixed_bad = {}, []
 _dp = pfa_of('DP')
-if _dp: fixed['DP'] = NEW_HERE
+if _dp: fixed['DP'] = BSS_END if BSS_END is not None else NEW_HERE   # past the buffers (Iteration 44)
 _fw = pfa_of('FORTH-WORDLIST')
 # The first cell of the word list is the THREAD COUNT, not a chain head.
 # It used to be the head, and this line still forced it to the newest
@@ -737,7 +764,7 @@ def v8val(target):
     return off >> CPT
 if V8: G['V8_CALLTOK'][0] = v8val
 def v8pfa(target):
-    off = new_off[target]['body'] + CELL          # [DOVAR][pad] is one cell
+    off = BSS_OFF[target] if target in BSS_OFF else new_off[target]['body'] + CELL   # [DOVAR][pad] is one cell
     assert off % (1 << CPT) == 0 and (off >> CPT) < (1 << 23)
     return off >> CPT
 def v8loc(old):
@@ -1040,6 +1067,7 @@ for w in order:
         if n2 is None: n2 = remap_body_off(v)
         if n2 is None: lit_bad.append((w['n'], v))
         else: lit_ok += 1; lit_new[(w['s'], j)] = n2
+for _s, _o in BSS_OFF.items(): lit_new[(_s, 0)] = _o        # Iteration 44: each buffer word's LITOFF
 
 # ---- report ---------------------------------------------------------
 c = collections.Counter(kind.values())

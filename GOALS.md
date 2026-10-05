@@ -147,7 +147,11 @@ trying anything again (prompts/12-progress-log).
    **And `rtloopall` (Iteration 43)**: for a design with all eight loop
    opcodes - most of seed 8's rtloop designs - a compact run-time loop
    compiler, 380-488 bytes less, the same speed (`results/rtloopall.md`):
-   fast loops for about 100 bytes. For the next seed run to take.
+   fast loops for about 100 bytes. **And `bss` (Iteration 44)**: an audit
+   of a small image found three scratch buffers stored in it; out of the
+   file, 1,056-1,064 bytes (11-13%), not a dispatch more
+   (`results/bss.md`) - seed 8's smallest would be 6,970 bytes. **NEXT-RUN:
+   seed 9, then every front compared** - both for evolution to take.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize

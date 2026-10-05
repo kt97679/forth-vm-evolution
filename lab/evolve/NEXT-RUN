@@ -29,4 +29,9 @@
 # over the five workloads. One sitting, two packs.
 #
 # Iteration 42: none - seed 8 and the comparison came back.
-none
+#
+# Iteration 44: seed 9 - the first run that can choose rtloopall (fast
+# loops without rtloop's fallbacks: 380-488 bytes less) and bss (scratch
+# buffers out of the file: 1,056-1,064 bytes less, no dispatch more) -
+# then every front measured again. One sitting, two packs.
+seed 9 then experiment compare-fronts.py --rounds 10 --cpus 2,8

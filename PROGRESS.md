@@ -1079,3 +1079,24 @@ eight, so `forth/cv8-fuse-loopall.4` - no fallbacks, one chain, one
 on five of them, dispatches within half a percent on every workload,
 alive, the loop tests answering as before. Recorded designs untouched:
 stages IDENTICAL, seed 8's front byte for byte, its ids kept.
+
+## Iteration 44 - 2026-10-05 - Claude
+
+**An audit of a small image, and the gene `bss`.** seed 8's 85cac726b5 with
+rtloopall, 8,234 bytes: a third names and links, 353 bytes of image
+header, and the largest "words" buffers - INCLUDE-BUFFER 548, POCKET 285,
+TIB 284 - VARIABLEs with an ALLOT, written before they are ever read.
+`--bss` moves them past the image's end: each becomes a word pushing
+START plus an offset (a LITOFF patched after layout), v8pfa and
+remap_pfa_off send references there, DP starts after them; the engine's
+memory there is a zeroed static array. NAMEBUF stays (FIND reads it per
+candidate; as a call it would cost).
+
+On four of seed 8's front designs, image against image: 1,056-1,064 bytes
+(11-13%), kernel, fib, parse, corpus and sieve dispatches unchanged; loop
+moves only on the two without rtloop - the (LOOP) padding artefact, DP
+starting elsewhere. Recorded designs untouched (seed 8's front byte for
+byte, every id kept); alive, and S", loops and the prompt answer as before.
+seed 8's smallest would be 6,970 bytes.
+
+NEXT-RUN: seed 9, then compare - rtloopall and bss for evolution to take.
