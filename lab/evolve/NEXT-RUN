@@ -12,4 +12,7 @@
 # sitting, two packs. Seed 6: the first run with the tests that keep their
 # value and SWAP n + (Iterations 33-34) for the evolver to weigh; then every
 # front here, seeds 3-6, measured again in one session on two CPUs.
-seed 6 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 36: none - seed 6 and the comparison came back; nothing needs
+# the laptop's clock until the next change is built.
+none

@@ -902,3 +902,26 @@ A slip: NEXT-RUN was first edited by a replace that did not check it had
 matched - the file's command line comes before its comments, not after -
 and still said none; caught by reading the line back, then edited with an
 assertion and rewritten in reading order.
+
+## Iteration 36 - 2026-10-05 - Claude
+
+**Seed 6, and every front in one session** - both packs back from one
+sitting (Iteration 35's chain). The comparison: 64 front designs from
+eight databases, calibration 0.996, cpu 2 and cpu 8 agreeing (median
+1.001, ranks 0.99), six and a half minutes - not the 40 I had guessed.
+
+**The front of all runs is seed 6's**, every design of it: 0.547 at 14,081
+bytes (the fastest yet) to 0.685 at 9,327 (the smallest yet); 4-7% faster
+than the fastest earlier design no larger at most sizes. **And the new
+opcodes are why**: three designs of generation 0 had any; at the end
+58-80% of the living, and every design on the front; on three of those,
+declined against kept on one engine, they remove 9-10% of the dispatches
+on kernel, parse and corpus (counted). fib and loop do not move - their
+hot code is compiled at run time - and fib is now the weakest workload:
+the next item.
+
+Seed 5's provisional claims (Iteration 28, across sessions) settled: its
+"new fastest" measures 0.585, dominated by seed 4b's 0.582 at 13,201; its
+13,073-byte design 0.610, not 0.593.
+
+NEXT-RUN: none.

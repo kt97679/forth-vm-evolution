@@ -90,6 +90,19 @@ trying anything again (prompts/12-progress-log).
   earlier fronts, across sessions so provisionally: 0.593 at 13,073 bytes,
   5% faster than anything before at that size; a new fastest, 0.579 at
   14,017 (scale 2, run-time fusion); ties at 9.45 KB; slower at 9,335.
+  *Settled in one session (Iteration 36): 0.585 at 14,017 - dominated by
+  seed 4b's 0.582 at 13,201 - and 0.610 at 13,073. Seed 5 shared the front
+  with 4b and 3; it set no record.*
+- **Seed 6 - the front of all runs** (Iteration 36,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed6.md`; one session with every
+  run, calibration 0.996, two CPUs agreeing: `results/compare-fronts-...`,
+  session 4): **0.547 at 14,081 bytes, the fastest yet; 0.685 at 9,327,
+  the smallest yet**; 4-7% faster than the fastest earlier design no
+  larger at most sizes. The first run that could choose Iterations 33-34's
+  opcodes: from 3 designs of 29 at the start to 58-80% of the living, and
+  on every design of the front - where they remove 9-10% of the
+  dispatches on kernel, parse and corpus (counted). fib and loop gain
+  nothing from them: their hot code is compiled at run time.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -98,13 +111,11 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **The next laptop session - set (Iteration 35)**: plain
-   `sh lab/evolve/next-run.sh` after the pull runs what `NEXT-RUN` says -
-   seed 6, the first run that can choose the tests that keep their value
-   and SWAP n + (Iterations 33-34), THEN every front here (seeds 3-6)
-   measured again in one session on two CPUs (`compare-fronts.py --cpus
-   2,8`). One sitting, unattended - the seed about 40 minutes, the
-   comparison an estimated 40 more - and two packs to send back.
+1. **fib and loop: code compiled at run time** - the new opcodes, like the
+   pairs, are the converter's: they never reach what the run-time compiler
+   writes, and fib (0.64-0.92 on the front) is now the weakest workload
+   (parse 0.40-0.54). The run-time fusion overlay (rtfuse) could make them
+   too; first priced, by counting fib's own dispatch patterns.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize
