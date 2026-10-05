@@ -326,9 +326,18 @@ than everything.
 
 ## Limits of the proof of concept
 
-- x86-64 only. 32-bit ARM needs `-mslow-flash-data` so constants are
-  built with movw/movt instead of literal pools, and a different hole
-  rule in the ARCH section of spn.4. Not yet tried on the Tegra.
+- x86-64 and, since Iteration 30, 32-bit ARM - for the proof of concept,
+  spn.4 on the cell image. On ARM every hole is an explicit movw/movt
+  pair (`-mslow-flash-data`, named here before, exists only for
+  M-profile cores - the holes do its work), the state (sp, tos) travels
+  packed in r0:r1 (a two-word struct would come back through memory),
+  `b`/`bl` are relocated by their 24-bit word offset, and the engine
+  flushes the instruction cache before entering native code
+  (`engine/spn-abi.h`; spn.4's ARCH section chooses by cell size). fib and
+  sumto give the interpreter's answers under qemu
+  (`tools/arm-qemu-check.sh`), the x86-64 engines' machine code unchanged.
+  Not yet timed on the Tegra, and s7/s8 (spn-full.4, spn-cv8.4) are still
+  x86-64 only.
 - Translates only words made of the implemented primitives and calls
   to themselves. Calls to other words, inlining, and falling back to
   the interpreter mid-word are not done.

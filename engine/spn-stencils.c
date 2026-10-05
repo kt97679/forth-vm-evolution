@@ -32,10 +32,10 @@
  *  no static data, nothing PC-relative - the code is moved.
  */
 #include <stdint.h>
+#include "spn-abi.h"       /* cell, spn_st: registers in, registers out */
 
-typedef int64_t cell;
-typedef struct { cell *sp; cell tos; } spn_st;     /* returned in rax:rdx */
-
+typedef cell (*spn_io_fn)(cell, cell, cell);
+#if defined(__x86_64__)
 #define SPN_IMM_VALUE 0x5ea1ed5ea1ed5ea1LL
 /* A 32-bit hole, for when the literal fits. The compiler folds it into
    the instruction itself - add $imm32, cmp $imm32 - one instruction where
@@ -48,14 +48,32 @@ typedef struct { cell *sp; cell tos; } spn_st;     /* returned in rax:rdx */
    was not translated. Distinct values, so each is found unambiguously. */
 #define SPN_RP_VALUE 0x7ea1ed5ea1ed5e77LL
 #define SPN_FN_VALUE 0x6ea1ed5ea1ed5e66LL
-#define IMM_RP() ({ uint64_t *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RP_VALUE)); _v; })
+#define IMM_RP() ({ ucell *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RP_VALUE)); _v; })
 #define IMM_FN() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_FN_VALUE)); _v; })
 /* A fourth 64-bit hole, for READ and WRITE: the engine's I/O helper,
    spn_io(op, c-addr, u) - 0 writes, 1 reads - so native code shares the
    interpreter's buffers instead of crossing into it for every byte. */
 #define SPN_IO_VALUE 0x4ea1ed5ea1ed5e44LL
-#define IMM_IO() ({ cell (*_v)(cell, cell, cell); __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IO_VALUE)); _v; })
+#define IMM_IO() ({ spn_io_fn _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IO_VALUE)); _v; })
 #define IMM() ({ cell _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IMM_VALUE)); _v; })
+#elif defined(__arm__)
+/* 32-bit ARM (Iteration 30): no 64-bit immediate, and none folded into an
+   instruction - every hole is a movw/movt pair, which the patcher finds by
+   its two 16-bit halves and refills. One pair per hole, each value its own,
+   so each is found unambiguously; IMM32 is a hole like the rest. */
+#define SPN_IMM_VALUE   0x5ea1ed01
+#define SPN_RP_VALUE    0x7ea1ed02
+#define SPN_FN_VALUE    0x6ea1ed03
+#define SPN_IO_VALUE    0x4ea1ed04
+#define SPN_IMM32_VALUE 0x3c1a5e77
+#define HOLE(type, v) ({ type _v; __asm__("movw %0, %1\n\tmovt %0, %2" : "=r"(_v) \
+                         : "i"((v) & 0xffff), "i"(((unsigned)(v) >> 16) & 0xffff)); _v; })
+#define IMM()    HOLE(cell, SPN_IMM_VALUE)
+#define IMM32    HOLE(cell, SPN_IMM32_VALUE)
+#define IMM_RP() HOLE(ucell *, SPN_RP_VALUE)
+#define IMM_FN() HOLE(void *, SPN_FN_VALUE)
+#define IMM_IO() HOLE(spn_io_fn, SPN_IO_VALUE)
+#endif
 
 /* The markers. Only DECLARED here, and defined in spn-markers.c. That is
    deliberate: if the compiler can see a marker's body it learns the
@@ -108,7 +126,7 @@ S(st_nz_br)  { cell f = tos; tos = *sp++;                   /* 0= IF: jump if no
 S(st_dup_br) { if (tos == 0) return spn_jump(sp, tos); GO(sp, tos); }   /* DUP IF */
 S(st_ne_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* = IF */
                if (a != b) return spn_jump(sp, tos); GO(sp, tos); }
-S(st_uge_br) { uint64_t a = (uint64_t)sp[0], b = (uint64_t)tos; tos = sp[1]; sp += 2;  /* U< IF */
+S(st_uge_br) { ucell a = (ucell)sp[0], b = (ucell)tos; tos = sp[1]; sp += 2;  /* U< IF */
                if (a >= b) return spn_jump(sp, tos); GO(sp, tos); }
 S(st_ge_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* < IF */
                if (a >= b) return spn_jump(sp, tos); GO(sp, tos); }
@@ -129,20 +147,20 @@ S(st_0branch) {
 S(st_branch) { return spn_jump(sp, tos); }
 
 /* A call to another native word, which hands back the new stack state. */
-S(st_call)  { spn_st r = spn_call(sp, tos); GO(r.sp, r.tos); }
+S(st_call)  { spn_st r = spn_call(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }
 
 /* EXIT: leave the native word, returning the state to the caller. */
 __attribute__((noinline, used)) spn_st st_exit(cell *sp, cell tos)
-{ spn_st r = { sp, tos }; return r; }
+{ return SPN_ST(sp, tos); }
 
 /* The return stack. The interpreter and native code share one, reached
    through the engine's own pointer - so a >R in native code and an R>
    in an interpreted word that it calls see the same stack. */
-S(st_tor)    { uint64_t *rpp = IMM_RP(); uint64_t r = *rpp - 8;
+S(st_tor)    { ucell *rpp = IMM_RP(); ucell r = *rpp - sizeof(cell);
                *(cell *)r = tos; *rpp = r; GO(sp + 1, *sp); }
-S(st_fromr)  { uint64_t *rpp = IMM_RP(); uint64_t r = *rpp; cell v = *(cell *)r;
-               *rpp = r + 8; *--sp = tos; GO(sp, v); }
-S(st_rfetch) { uint64_t *rpp = IMM_RP(); cell v = *(cell *)*rpp;
+S(st_fromr)  { ucell *rpp = IMM_RP(); ucell r = *rpp; cell v = *(cell *)r;
+               *rpp = r + sizeof(cell); *--sp = tos; GO(sp, v); }
+S(st_rfetch) { ucell *rpp = IMM_RP(); cell v = *(cell *)*rpp;
                *--sp = tos; GO(sp, v); }
 
 /* Memory, and the rest of the arithmetic. Unsigned where the engine is:
@@ -152,15 +170,15 @@ S(st_store)  { *(cell *)tos = *sp; GO(sp + 2, sp[1]); }
 S(st_cfetch) { GO(sp, *(uint8_t *)tos); }
 S(st_cstore) { *(uint8_t *)tos = (uint8_t)*sp; GO(sp + 2, sp[1]); }
 S(st_or)     { GO(sp + 1, tos | *sp); }
-S(st_ult)    { GO(sp + 1, -(cell)((uint64_t)*sp < (uint64_t)tos)); }
-S(st_lshift) { GO(sp + 1, (cell)((uint64_t)*sp << tos)); }
-S(st_rshift) { GO(sp + 1, (cell)((uint64_t)*sp >> tos)); }
+S(st_ult)    { GO(sp + 1, -(cell)((ucell)*sp < (ucell)tos)); }
+S(st_lshift) { GO(sp + 1, (cell)((ucell)*sp << tos)); }
+S(st_rshift) { GO(sp + 1, (cell)((ucell)*sp >> tos)); }
 
 /* Call a word that has no native code: run it in the interpreter and
    come back. Both holes are absolute - the helper lives in the engine,
    which can be further from this code than a 32-bit jump reaches. */
 typedef spn_st (*spn_interp_fn)(cell *, cell, cell);
-S(st_interp) { spn_st r = ((spn_interp_fn)IMM_FN())(sp, tos, IMM()); GO(r.sp, r.tos); }
+S(st_interp) { spn_st r = ((spn_interp_fn)IMM_FN())(sp, tos, IMM()); GO(SPN_SP(r), SPN_TOS(r)); }
 
 /* DO loops, on the shared return stack in the kernel's own layout: the
    index on top, the limit under it. Exactly the arithmetic of (LOOP) and
@@ -169,23 +187,23 @@ S(st_interp) { spn_st r = ((spn_interp_fn)IMM_FN())(sp, tos, IMM()); GO(r.sp, r.
    and a Forth loop counter must wrap. There is no return address between
    a native loop's parameters and an enclosing loop's, so J is rp[2];
    interpreted J adds a cell for its own return address. */
-S(st_do)     { uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp - 2;
-               r[1] = *sp; r[0] = tos; *rpp = (uint64_t)r; GO(sp + 2, sp[1]); }
+S(st_do)     { ucell *rpp = IMM_RP(); cell *r = (cell *)*rpp - 2;
+               r[1] = *sp; r[0] = tos; *rpp = (ucell)r; GO(sp + 2, sp[1]); }
 S(st_qdo)    { if (*sp == tos) return spn_jump(sp + 2, sp[1]);
-               uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp - 2;
-               r[1] = *sp; r[0] = tos; *rpp = (uint64_t)r; GO(sp + 2, sp[1]); }
-S(st_loop)   { uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp;
-               uint64_t ix = (uint64_t)r[0] + 1;
-               if (ix == (uint64_t)r[1]) { *rpp = (uint64_t)(r + 2); GO(sp, tos); }
+               ucell *rpp = IMM_RP(); cell *r = (cell *)*rpp - 2;
+               r[1] = *sp; r[0] = tos; *rpp = (ucell)r; GO(sp + 2, sp[1]); }
+S(st_loop)   { ucell *rpp = IMM_RP(); cell *r = (cell *)*rpp;
+               ucell ix = (ucell)r[0] + 1;
+               if (ix == (ucell)r[1]) { *rpp = (ucell)(r + 2); GO(sp, tos); }
                r[0] = (cell)ix; return spn_jump(sp, tos); }
-S(st_ploop)  { uint64_t *rpp = IMM_RP(); cell *r = (cell *)*rpp;
-               uint64_t o = (uint64_t)r[0], l = (uint64_t)r[1], n = o + (uint64_t)tos;
-               if ((int64_t)((o - l) ^ (n - l)) < 0) { *rpp = (uint64_t)(r + 2); GO(sp + 1, *sp); }
+S(st_ploop)  { ucell *rpp = IMM_RP(); cell *r = (cell *)*rpp;
+               ucell o = (ucell)r[0], l = (ucell)r[1], n = o + (ucell)tos;
+               if ((cell)((o - l) ^ (n - l)) < 0) { *rpp = (ucell)(r + 2); GO(sp + 1, *sp); }
                r[0] = (cell)n; return spn_jump(sp + 1, *sp); }
-S(st_i)      { uint64_t *rpp = IMM_RP(); cell v = ((cell *)*rpp)[0]; *--sp = tos; GO(sp, v); }
-S(st_j)      { uint64_t *rpp = IMM_RP(); cell v = ((cell *)*rpp)[2]; *--sp = tos; GO(sp, v); }
-S(st_unloop) { uint64_t *rpp = IMM_RP(); *rpp += 16; GO(sp, tos); }
-S(st_leave)  { uint64_t *rpp = IMM_RP(); *rpp += 16; return spn_jump(sp, tos); }
+S(st_i)      { ucell *rpp = IMM_RP(); cell v = ((cell *)*rpp)[0]; *--sp = tos; GO(sp, v); }
+S(st_j)      { ucell *rpp = IMM_RP(); cell v = ((cell *)*rpp)[2]; *--sp = tos; GO(sp, v); }
+S(st_unloop) { ucell *rpp = IMM_RP(); *rpp += 2 * sizeof(cell); GO(sp, tos); }
+S(st_leave)  { ucell *rpp = IMM_RP(); *rpp += 2 * sizeof(cell); return spn_jump(sp, tos); }
 
 /* PICK. In the kernel it is built on SP@, which native code cannot use,
    so it was refused - and every native PICK went through the re-entry
@@ -199,8 +217,8 @@ S(st_pick)   { GO(sp, sp[tos]); }
 /* WRITE ( c-addr u --- ) and READ ( c-addr u1 --- u2 ): one call to the
    engine's helper. A real call, so unlike every other stencil these use
    the machine stack - the compiler saves sp across it itself. */
-S(st_write) { cell (*f)(cell, cell, cell) = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
-S(st_read)  { cell (*f)(cell, cell, cell) = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
+S(st_write) { spn_io_fn f = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
+S(st_read)  { spn_io_fn f = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
 #endif
 const void *const spn_table[] = {
     (const void *)spn_next, (const void *)spn_jump, (const void *)spn_call,

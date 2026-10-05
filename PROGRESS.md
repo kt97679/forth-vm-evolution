@@ -743,3 +743,35 @@ qemu - PASS. spn.c compiles for ARM without a warning (it has the 32-bit
 cell path); spn-stencils.c does not assemble - its holes are `movabs`, and
 its state struct and marker constants are 64-bit. The port's parts are in
 GOALS.md "Next" 3.
+
+## Iteration 30 - 2026-10-05 - Claude
+
+**SPN's proof of concept runs on 32-bit ARM** (qemu): fib and sumto,
+translated by spn.4 into ARM machine code, give the interpreter's answers.
+What it took:
+- `engine/spn-abi.h`, shared by stencils, markers and engine: a cell is a
+  pointer's size; the state (sp, tos) is a two-word struct on x86-64 and
+  one 64-bit value on ARM - r0:r1 in and out, where a struct would come
+  back through memory.
+- The stencils' holes on ARM: explicit movw/movt pairs of 32-bit markers,
+  one value each (the compiler kept every pair adjacent); every uint64_t
+  that meant "a cell, unsigned" now ucell, every 8 and 16 a cell size.
+- spn.4's ARCH section chooses by cell size: `b`/`bl` decoded and re-encoded
+  by their 24-bit word offset, holes found as a movw then movt to one
+  register, bodies ending at the last branch to NEXT or JUMP (or `bx lr`),
+  the dropped tail 4 bytes, the scan every 4th byte; literals that do not
+  fit 32 bits built from 16-bit pieces so a 32-bit system can read the file.
+- spn.c flushes the instruction cache before entering native code, on ARM
+  only - qemu would never show it missing.
+Checked: x86-64's spn engine and s8's engine are machine-code identical
+to before (both built from both sources); the tests PASS, the stages
+IDENTICAL; `tools/arm-qemu-check.sh` PASSes - and FAILs when the ARM tail
+length is broken on purpose ("Illegal instruction").
+
+Two slips of mine on the way: `IF ... THEN` at the top level to choose two
+constants - this kernel compiles IF even when interpreting, and the
+dictionary broke (arithmetic chooses now); and a comparison of s8's machine
+code that printed IDENTICAL for two binaries that had never been built -
+`sh` refused the substitution and two empty disassemblies agreed. Redone
+in bash, both binaries checked to exist. FINDINGS-SPN.md corrected: the
+port needs no `-mslow-flash-data`, which exists for M-profile cores only.

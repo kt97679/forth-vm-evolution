@@ -6,7 +6,8 @@
 \ reading, verifying, copying and patching all happen here, in Forth.
 \
 \ Load on the SPN engine:  build/spn-64 build/s0-cell-s64.img
-\ This first version knows x86-64 only - see ARCH below.
+\ It knows x86-64 and, since Iteration 30, 32-bit ARM - see ARCH below:
+\ chosen by the cell size, 8 bytes or 4. On ARM: tools/spn-arm-check.sh.
 
 DECIMAL
 
@@ -37,13 +38,21 @@ SPN-TABLE CONSTANT #ENTRIES  CONSTANT ENTRIES
 18 CONSTANT S-BRANCH 19 CONSTANT S-CALL   20 CONSTANT S-EXIT
 21 CONSTANT S-ADDI32 22 CONSTANT S-DUP-GTI-BR
 
-\ ---- ARCH: everything this file knows about x86-64 ----
-6818992301515038369 CONSTANT IMM-MARK  \ SPN_IMM_VALUE, an 8-byte immediate
-1008361079 CONSTANT IMM32-MARK         \ IMM32, folded into the instruction
+\ ---- ARCH: everything this file knows about the machine ----
+\ x86-64 (8-byte cells) or 32-bit ARM in ARM state (4-byte cells). Every
+\ literal here fits 32 bits, so a 32-bit system reads the x86-64 rules
+\ too - it just never runs them.
+1 CELLS 8 = CONSTANT X86?
+: (IMM-MARK) ( --- u )   \ SPN_IMM_VALUE: 8 bytes on x86-64, a movw/movt pair on ARM
+  X86? IF 24225 16 LSHIFT 60766 OR 16 LSHIFT 41453 OR 16 LSHIFT 24225 OR
+  ELSE 24225 16 LSHIFT 60673 OR THEN ;
+(IMM-MARK) CONSTANT IMM-MARK
+1008361079 CONSTANT IMM32-MARK         \ IMM32: folded into the instruction on x86-64, a pair on ARM
 233 CONSTANT OP-JMP                    \ E9: jmp rel32
 195 CONSTANT OP-RET                    \ C3: ret
 \ endbr64 = F3 0F 1E FA, which CET-enabled compilers put first. Skipped.
 : ENDBR? ( a --- f )
+  X86? 0= IF DROP 0 EXIT THEN
   DUP C@ 243 = OVER 1+ C@ 15 = AND
   OVER 2 + C@ 30 = AND SWAP 3 + C@ 250 = AND ;
 
@@ -51,13 +60,46 @@ SPN-TABLE CONSTANT #ENTRIES  CONSTANT ENTRIES
 : L@ ( a --- u )
   DUP C@  OVER 1+ C@ 8 LSHIFT OR
   OVER 2 + C@ 16 LSHIFT OR  SWAP 3 + C@ 24 LSHIFT OR ;
-: SL@ ( a --- n )  L@ DUP 2147483648 AND IF 4294967296 - THEN ;
+: SL@ ( a --- n )  L@ DUP 1 31 LSHIFT AND IF 1 32 LSHIFT - THEN ;   \ x86-64's
 : L! ( u a --- )
   OVER 255 AND OVER C!  OVER 8 RSHIFT 255 AND OVER 1+ C!
   OVER 16 RSHIFT 255 AND OVER 2 + C!  SWAP 24 RSHIFT 255 AND SWAP 3 + C! ;
-\ Does the 32-bit relative field at a point at target? Exact: a stray
-\ byte pattern would also have to encode precisely this distance.
-: REL-TO? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
+\ x86-64: does the 32-bit relative field at a point at target? Exact: a
+\ stray byte pattern would also have to encode precisely this distance.
+: REL-TO-X86? ( a target --- f )  >R DUP SL@ + 4 + R> = ;
+
+\ 32-bit ARM, ARM state (Iteration 30): every instruction one
+\ little-endian word. B and BL: cond 101L imm24, the target
+\ the instruction's address + 8 + imm24*4. A hole is movw then movt,
+\ one register, each with 16 bits of the value split imm4:imm12.
+-16777216 CONSTANT HI8                 \ FF000000: cond and opcode
+-516948194 CONSTANT BX-LR              \ E12FFF1E: bx lr
+-369098752 CONSTANT B-AL               \ EA000000: b, always
+: B? ( w --- f )  234881024 AND 167772160 = ;            \ cond 101L ....
+: B-TARGET ( a --- target )
+  DUP L@ 16777215 AND  DUP 8388608 AND IF 16777216 - THEN  2 LSHIFT  + 8 + ;
+: REL-TO-ARM? ( a target --- f )
+  OVER L@ B? IF SWAP B-TARGET = ELSE 2DROP 0 THEN ;
+: IMM16 ( w --- u )  DUP 4 RSHIFT 61440 AND  SWAP 4095 AND OR ;
+: MOVW? ( w --- f )  267386880 AND 50331648 = ;          \ cond 0011 0000
+: MOVT? ( w --- f )  267386880 AND 54525952 = ;          \ cond 0011 0100
+: RD ( w --- r )  12 RSHIFT 15 AND ;
+: PAIR? ( a u --- f )    \ a movw/movt pair at a loading u?
+  >R  DUP L@  SWAP 4 + L@
+  OVER MOVW?  OVER MOVT? AND
+  2 PICK RD  2 PICK RD = AND
+  ROT IMM16  R@ 65535 AND = AND
+  SWAP IMM16  R> 16 RSHIFT 65535 AND = AND ;
+: IMM16! ( u a --- )     \ 16 bits into the movw or movt at a
+  >R  DUP 61440 AND 4 LSHIFT  SWAP 4095 AND OR
+  R@ L@  61440 4 LSHIFT 4095 OR INVERT AND  OR  R> L! ;
+: PAIR! ( v a --- )  OVER 65535 AND OVER IMM16!  SWAP 16 RSHIFT 65535 AND SWAP 4 + IMM16! ;
+
+: REL-TO? ( a target --- f )  X86? IF REL-TO-X86? ELSE REL-TO-ARM? THEN ;
+4 X86? 1 AND + CONSTANT TAIL-LEN      \ the dropped "jmp/b NEXT": 5 bytes, or 4 (no IF outside a definition)
+4 X86? 3 AND - CONSTANT STEP          \ where an instruction can start: any byte, or every 4th
+: IMM-AT? ( a --- f )    X86? IF @ IMM-MARK = ELSE IMM-MARK PAIR? THEN ;
+: IMM32-AT? ( a --- f )  X86? IF L@ IMM32-MARK = ELSE IMM32-MARK PAIR? THEN ;
 
 \ ---- reading a stencil ----
 \ Where it starts (after any endbr64) and where the next function
@@ -76,7 +118,14 @@ VARIABLE LOWER
 
 \ The body ends after its last jump to NEXT or JUMP - or at the first
 \ RET, for EXIT. Everything past that is alignment padding.
+: BODY-END-ARM ( i --- a )
+  DUP S-EXIT = IF  ST-SRC BEGIN DUP L@ BX-LR <> WHILE 4 + REPEAT 4 + EXIT  THEN
+  DUP ST-SRC SWAP BOUND  OVER  ( lo hi end )
+  ROT ROT SWAP DO
+    I M-NEXT REL-TO?  I M-JUMP REL-TO? OR IF DROP I 4 + THEN
+  4 +LOOP ;
 : BODY-END ( i --- a )
+  X86? 0= IF BODY-END-ARM EXIT THEN
   DUP S-EXIT = IF
     ST-SRC BEGIN DUP C@ OP-RET <> WHILE 1+ REPEAT 1+ EXIT
   THEN
@@ -91,8 +140,11 @@ VARIABLE LOWER
 \ Does it end in "jmp NEXT"? Then that jump can be dropped and the next
 \ stencil placed right after it, so control simply falls through.
 : TAIL-NEXT? ( i --- f )
-  DUP BODY-END 5 -  DUP C@ OP-JMP =  SWAP 1+ M-NEXT REL-TO? AND
-  SWAP S-EXIT <> AND ;
+  X86? IF
+    DUP BODY-END 5 -  DUP C@ OP-JMP =  SWAP 1+ M-NEXT REL-TO? AND
+  ELSE
+    DUP BODY-END 4 -  DUP L@ HI8 AND B-AL =  SWAP M-NEXT REL-TO? AND
+  THEN SWAP S-EXIT <> AND ;
 
 \ ---- a report, to check all of the above against the disassembly ----
 : HOLES. ( i --- )
@@ -100,8 +152,8 @@ VARIABLE LOWER
     DUP I + M-NEXT REL-TO? IF ."  next@" I . THEN
     DUP I + M-JUMP REL-TO? IF ."  jump@" I . THEN
     DUP I + M-CALL REL-TO? IF ."  call@" I . THEN
-    DUP I + @ IMM-MARK =   IF ."  imm@"  I . THEN
-    DUP I + L@ IMM32-MARK = IF ."  imm32@" I . THEN
+    DUP I + IMM-AT?   IF ."  imm@"  I . THEN
+    DUP I + IMM32-AT? IF ."  imm32@" I . THEN
   LOOP DROP ;
 : STENCILS. ( --- )
   #ENTRIES 3 DO
@@ -117,8 +169,11 @@ VARIABLE CODE-BASE  VARIABLE CODE-HERE
   CODE-SIZE SPN-EXEC DUP 0= ABORT" SPN: no executable memory"
   DUP CODE-BASE ! CODE-HERE ! ;
 
-\ Point the 32-bit relative field at a to target.
-: REL! ( target a --- )  DUP >R 4 + - R> L! ;
+\ Point the 32-bit relative field at a to target - or, on ARM, the
+\ branch instruction at a: its cond and L bits kept, imm24 recomputed.
+: REL! ( target a --- )
+  X86? IF  DUP >R 4 + - R> L!  EXIT THEN
+  >R  R@ 8 + -  2 RSHIFT 16777215 AND   R@ L@ HI8 AND OR  R> L! ;
 
 \ ---- emitting one stencil ----
 \ What the stencil's holes should be filled with, set before emitting.
@@ -132,7 +187,7 @@ CREATE FIXUPS 1024 CELLS ALLOT   VARIABLE #FIX
 VARIABLE E-SRC  VARIABLE E-LEN  VARIABLE E-DST
 : EMIT-STENCIL ( i --- )
   DUP ST-SRC E-SRC !
-  DUP BODY-LEN  SWAP TAIL-NEXT? IF 5 - THEN  E-LEN !
+  DUP BODY-LEN  SWAP TAIL-NEXT? IF TAIL-LEN - THEN  E-LEN !
   CODE-HERE @ E-DST !
   E-SRC @ E-DST @ E-LEN @ CMOVE
   E-LEN @ 0 ?DO
@@ -141,18 +196,26 @@ VARIABLE E-SRC  VARIABLE E-LEN  VARIABLE E-DST
     E-SRC @ I + M-NEXT REL-TO? IF  E-DST @ E-LEN @ +  E-DST @ I + REL!  THEN
     E-SRC @ I + M-CALL REL-TO? IF  ARG-CALL @         E-DST @ I + REL!  THEN
     E-SRC @ I + M-JUMP REL-TO? IF  E-DST @ I +  ARG-JUMP @ FIX,  THEN
-  LOOP
-  E-LEN @ 8 < 0= IF
-    E-LEN @ 7 - 0 ?DO
-      E-SRC @ I + @ IMM-MARK = IF  ARG-IMM @ E-DST @ I + !  THEN
-    LOOP
-  THEN
-  E-LEN @ 4 < 0= IF
-    E-LEN @ 3 - 0 ?DO
-      E-SRC @ I + L@ IMM32-MARK = IF
-        ARG-IMM @ 4294967295 AND  E-DST @ I + L!
-      THEN
-    LOOP
+  STEP +LOOP
+  X86? IF
+    E-LEN @ 8 < 0= IF
+      E-LEN @ 7 - 0 ?DO
+        E-SRC @ I + IMM-AT? IF  ARG-IMM @ E-DST @ I + !  THEN
+      LOOP
+    THEN
+    E-LEN @ 4 < 0= IF
+      E-LEN @ 3 - 0 ?DO
+        E-SRC @ I + IMM32-AT? IF
+          ARG-IMM @ -1 32 RSHIFT AND  E-DST @ I + L!
+        THEN
+      LOOP
+    THEN
+  ELSE                     \ ARM: every hole a pair, both kinds filled the same way
+    E-LEN @ 8 < 0= IF
+      E-LEN @ 4 - 0 ?DO
+        E-SRC @ I + DUP IMM-AT? SWAP IMM32-AT? OR IF  ARG-IMM @ E-DST @ I + PAIR!  THEN
+      4 +LOOP
+    THEN
   THEN
   E-LEN @ CODE-HERE +! ;
 
@@ -165,7 +228,7 @@ S-DROP 5 PM!   S-DUP 6 PM!    S-SWAP 7 PM!   S-ROT 8 PM!   S-OVER 9 PM!
 S-AND 14 PM!   S-XOR 16 PM!   S-EQ 20 PM!    S-LT 22 PM!   S-PLUS 23 PM!
 S-NEGATE 24 PM!
 : PRIM>ST ( prim --- stencil | -1 )  DUP 32 < IF CELLS PMAP + @ ELSE DROP -1 THEN ;
-: TOKEN ( cell --- prim )  1- 3 RSHIFT ;     \ 8-byte cells: index*8+1
+: TOKEN ( cell --- prim )  1- X86? IF 3 ELSE 2 THEN RSHIFT ;   \ index*CELL+1
 23 CELLS 1+ CONSTANT TOK-PLUS
  2 CELLS 1+ CONSTANT TOK-LIT
 22 CELLS 1+ CONSTANT TOK-LT

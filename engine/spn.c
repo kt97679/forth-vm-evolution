@@ -39,8 +39,7 @@
 #include <stdint.h>
 #include <sys/mman.h>
 
-typedef struct { int64_t *sp; int64_t tos; } spn_st;
-typedef spn_st (*spn_fn)(int64_t *sp, int64_t tos);
+#include "spn-abi.h"       /* cell, spn_st, spn_fn: x86-64 and 32-bit ARM */
 extern const void *const spn_table[];
 extern const int spn_table_len;
 static void virtual_machine(void);
@@ -498,15 +497,28 @@ NOINLINE_IO static UNS64 t_read(UNS8 *p, UNS64 n) {
  *  their caller's return address as data ((S"), (LOOP), DOVAR ...) would
  *  see the sentinel instead; forth/spn.4 never calls those this way.  */
 static UNS64 spn_sentinel = 72 * CELL_BYTES + 1;
-spn_st spn_interp(int64_t *sp, int64_t tos, int64_t body) {
+
+/*  The instruction cache. x86 keeps it coherent with stores, so code the
+ *  Forth side has just written runs as written. ARM does not: written code
+ *  must be cleaned out of the data cache and dropped from the instruction
+ *  cache before it runs (Iteration 30). Done on every entry from the
+ *  interpreter - the Forth side writes no code while native code runs -
+ *  over the whole region SPN-EXEC handed out. qemu would never show the
+ *  flush missing: it watches pages it has translated.  */
+#if defined(__arm__)
+static void *spn_code; static size_t spn_code_len;
+#define SPN_SYNC() do { if (spn_code) __builtin___clear_cache((char *)spn_code, (char *)spn_code + spn_code_len); } while (0)
+#else
+#define SPN_SYNC() do { } while (0)
+#endif
+spn_st spn_interp(cell *sp, cell tos, cell body) {
     g_dsp = (UNS64)(uintptr_t)sp - CELL_BYTES;
     CELL(g_dsp) = (UNS64)tos;
     g_rp -= CELL_BYTES;
     CELL(g_rp) = (UNS64)(uintptr_t)&spn_sentinel;
     g_ip = (UNS64)body;
     virtual_machine();
-    spn_st r = { (int64_t *)(uintptr_t)(g_dsp + CELL_BYTES), (int64_t)CELL(g_dsp) };
-    return r;
+    return SPN_ST((cell *)(uintptr_t)(g_dsp + CELL_BYTES), (cell)CELL(g_dsp));
 }
 
 static void virtual_machine(void) {
@@ -910,6 +922,9 @@ L_spn_exec: /* u --- a-addr   u bytes of executable memory, or 0 */
 {
     void *p = mmap(NULL, (size_t)DS0, PROT_READ | PROT_WRITE | PROT_EXEC,
                    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#if defined(__arm__)
+    if (p != MAP_FAILED) { spn_code = p; spn_code_len = (size_t)DS0; }
+#endif
     DS0 = (p == MAP_FAILED) ? 0 : (UNS64)(uintptr_t)p;
     NEXT();
 }
@@ -923,10 +938,11 @@ L_spn_call: /* i*x a-addr --- j*x   run the native word at a-addr */
     spn_fn fn = (spn_fn)(uintptr_t)DS0;
     dsp += CELL_BYTES;
     g_rp = rp;
-    spn_st r = fn((int64_t *)(uintptr_t)(dsp + CELL_BYTES), (int64_t)DS0);
+    SPN_SYNC();
+    spn_st r = fn((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
     rp = g_rp;
-    dsp = (UNS64)(uintptr_t)r.sp - CELL_BYTES;
-    DS0 = (UNS64)r.tos;
+    dsp = (UNS64)(uintptr_t)SPN_SP(r) - CELL_BYTES;
+    DS0 = (UNS64)SPN_TOS(r);
     NEXT();
 }
 
@@ -938,10 +954,11 @@ L_spn_enter: /* the first cell of a translated word's body */
        >R and R> - and interpreted words native code calls - share it. */
     spn_fn fn = (spn_fn)(uintptr_t)CELL(ip);
     g_rp = rp;
-    spn_st r = fn((int64_t *)(uintptr_t)(dsp + CELL_BYTES), (int64_t)DS0);
+    SPN_SYNC();
+    spn_st r = fn((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
     rp = g_rp;
-    dsp = (UNS64)(uintptr_t)r.sp - CELL_BYTES;
-    DS0 = (UNS64)r.tos;
+    dsp = (UNS64)(uintptr_t)SPN_SP(r) - CELL_BYTES;
+    DS0 = (UNS64)SPN_TOS(r);
     ip = RS; rp += CELL_BYTES;
     NEXT();
 }
