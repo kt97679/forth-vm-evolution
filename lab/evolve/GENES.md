@@ -42,7 +42,10 @@ Ordered by how much diversity they add for the work.
    of the speed-for-size trade. Needs a stack-to-register translator; the
    largest item here. *Priced at Iteration 29
    (results/price-register-machine.md): up to 38-50% of dispatches on the
-   front designs are moves or lone literals - the largest prize left.*
+   front designs are moves or lone literals - the largest prize left.
+   Its first stage priced exactly at Iteration 32
+   (results/price-register-stage1.md): 19-24%, most of it in five
+   operand-carrying patterns the pairs cannot reach.*
 
 Sources: gforth manual, "Direct or Indirect Threaded?" and "Dynamic
 Superinstructions" (complang.tuwien.ac.at/forth/gforth/Docs-html/);

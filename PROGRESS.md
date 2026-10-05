@@ -817,3 +817,29 @@ written through three layers of quoting passed Forth `S\"` instead of
 restore the deliberately broken spn-cv8.4 - caught by checking the file
 before anything else, restored, compared byte for byte with the saved
 copy.
+
+## Iteration 32 - 2026-10-05 - Claude
+
+**The register machine's first stage, priced exactly**
+(`lab/evolve/regprice.py`, `results/price-register-stage1.md`): from the
+converter's operation map (CALLMAP) and the profiler's per-address counts
+- both already there, never joined - every executed block is walked: runs
+of data-stack moves absorbed into the operation after them, or collapsed
+at a block's end; lone literals made immediates. On seed 5's front 19-24%
+of the image's dispatches (s6: 26%); return-stack moves, left alone, 13-16%
+more - which reconciles with Iteration 29's bound.
+
+**And where it is**: 5-8 of 42-53 patterns give 80% - `DUP ?BRANCH` and
+`SWAP addi` lead on every workload. Both end in an operation with an
+operand, which the pairs never fuse - so the next step is a gene of
+operand-carrying fused opcodes, at the fused tests' cost, rather than a
+register machine.
+
+The first count was wrong twice before it was right: fib showed 70,297
+dispatches - FIB is compiled at run time, outside the image's map, so each
+row now says what share of everything executed it covers; and the
+evolved designs' kinds (SP pairs, fused test-and-branches, EQIH) ended
+blocks, as did ?BRANCH and the immediates themselves - 4-9% became 19-24%
+once they were read. Also: the per-address profile's comment names a
+patterns.py that this repository never had; and `find .` from the
+repository root timed out on the build tree - git ls-files instead.

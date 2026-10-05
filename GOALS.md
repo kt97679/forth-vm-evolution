@@ -107,9 +107,15 @@ trying anything again (prompts/12-progress-log).
    dispatches only move values or push a lone literal - the largest prize
    left, and the largest work: operands in every instruction, a
    stack-to-register translation in the converter, register handlers in
-   every engine family, the run-time compiler. To plan in stages, the first
-   one that can be measured alone: register forms for the moves within a
-   word, the stack synchronised at calls, returns and branch targets.
+   every engine family, the run-time compiler. Its first stage priced
+   exactly (Iteration 32, `results/price-register-stage1.md`): register
+   forms within a block would remove 19-24% of the front designs' image
+   dispatches - and 5-8 patterns give 80% of that, led on every workload
+   by `DUP ?BRANCH` (6%) and `SWAP addi` (4-5%): operand-carrying, so the
+   pairs could never fuse them. **Next: those as fused opcodes** - tests
+   that keep their operand, add-immediate to the second item - a gene,
+   about 10-12% of dispatches, at the fused tests' cost, not a register
+   machine's.
 3. **SPN on 32-bit ARM** - correct (Iterations 30-31): the proof of
    concept and s8, all three variants, pass under qemu
    (`tools/arm-qemu-check.sh` - also native on the Tegra); x86-64's
