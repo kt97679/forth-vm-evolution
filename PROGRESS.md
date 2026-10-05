@@ -880,3 +880,25 @@ A slip: the A/B commands nested a JSON list inside two layers of sh -c
 and failed on its parentheses; written to a script file with a quoted
 heredoc instead. And Iteration 33's commit first said "(part)", which
 make-bundle refuses - reworded before any bundle was made.
+
+## Iteration 35 - 2026-10-05 - Claude
+
+**next-run.sh chains "A then B"**: B starts when A has finished and packed,
+as if typed by hand - split in the foreground, carried to the detached run
+in NEXT_RUN_THEN, started at the end with the lock released and the mode
+decided anew. NEXT-RUN: `seed 6 then experiment compare-fronts.py --rounds
+10 --cpus 2,8` - one sitting, two packs.
+
+Tested end to end on the VM before handing it over: two cheap comparisons
+chained (one round, a two-design database standing in for an archive),
+through the real path - the pull from a bundle of this commit, the split,
+the detach, each part's build, tests, stages, jail, tool and pack. The
+first said DONE, `then:` started the second, which detached on its own -
+no lock conflict - and made its own pack; nothing left running. Its
+one-round calibration on this VM was 0.910, and the tool said so: this
+session cannot rank.
+
+A slip: NEXT-RUN was first edited by a replace that did not check it had
+matched - the file's command line comes before its comments, not after -
+and still said none; caught by reading the line back, then edited with an
+assertion and rewritten in reading order.

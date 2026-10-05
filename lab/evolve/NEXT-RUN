@@ -1,4 +1,3 @@
-none
 # The first line that is not a comment is what `lab/evolve/next-run.sh` does
 # when it is given no argument: "seed N" (a new run - the last one's records
 # archived first), "compare" (every run's front here measured again in one
@@ -8,3 +7,9 @@ none
 #
 # Iteration 28: none - the owner asked for as few laptop runs as possible;
 # what needs the laptop's clock is batched for one session later (GOALS.md).
+#
+# Iteration 35: "A then B" runs B when A has finished and packed - one
+# sitting, two packs. Seed 6: the first run with the tests that keep their
+# value and SWAP n + (Iterations 33-34) for the evolver to weigh; then every
+# front here, seeds 3-6, measured again in one session on two CPUs.
+seed 6 then experiment compare-fronts.py --rounds 10 --cpus 2,8

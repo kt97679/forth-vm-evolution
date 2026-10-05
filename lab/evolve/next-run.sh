@@ -81,6 +81,21 @@ if [ $# -eq 0 ]; then
     set -- $(sed -n '/^[^#]/{p;q}' lab/evolve/NEXT-RUN)
     say "lab/evolve/NEXT-RUN says: ${*:-none}"
 fi
+# Iteration 35: "A then B" - B starts when A has finished and packed, as if
+# given to this script by hand: one sitting for everything that needs the
+# laptop's clock (the owner asked for as few as possible). Split here; the
+# detached run carries B in NEXT_RUN_THEN, and starts it at the end.
+THEN=${NEXT_RUN_THEN:-}
+case " $* " in
+    *" then "*) ALL="$*"; THEN=${ALL#* then }; set -- ${ALL%% then *} ;;
+esac
+then_next() {   # the second half of "A then B": the lock released, the mode decided anew
+    [ -n "$THEN" ] || return 0
+    echo; say "then: $THEN"
+    exec 9>&-
+    unset NEXT_RUN_DETACHED NEXT_RUN_THEN
+    NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
+}
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
@@ -114,7 +129,8 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     say "$WANT - $MODE"
     [ "$MODE" = fresh ] && say "the previous run's outputs will be moved to $RUNS/archived-..."
     [ "$MODE" = experiment ] && say "nothing will be archived or removed"
-    NEXT_RUN_DETACHED=$MODE nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
+    [ -z "$THEN" ] || say "then, when this has finished and packed: $THEN"
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
     say "going on in the background; follow it with"
     echo "    tail -f $RUN/next-run.log"
     exit 0
@@ -171,6 +187,7 @@ if [ "$MODE" = experiment ]; then
     trap - EXIT
     echo
     say "DONE - send $P"
+    then_next
     exit 0
 fi
 
@@ -233,3 +250,4 @@ rm -rf "$K"
 trap - EXIT
 echo
 say "DONE - send $P"
+then_next

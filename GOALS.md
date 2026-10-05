@@ -98,10 +98,13 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **The next laptop session that measures speed** (the owner asked for as
-   few as possible): seed 5's front with all the others, by the median, on
-   two CPUs in one session (`compare-fronts.py --cpus 2,8`) - batched with
-   whatever else then needs the laptop's clock. `NEXT-RUN`: none until then.
+1. **The next laptop session - set (Iteration 35)**: plain
+   `sh lab/evolve/next-run.sh` after the pull runs what `NEXT-RUN` says -
+   seed 6, the first run that can choose the tests that keep their value
+   and SWAP n + (Iterations 33-34), THEN every front here (seeds 3-6)
+   measured again in one session on two CPUs (`compare-fronts.py --cpus
+   2,8`). One sitting, unattended - the seed about 40 minutes, the
+   comparison an estimated 40 more - and two packs to send back.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize
