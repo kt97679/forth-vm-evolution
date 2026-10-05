@@ -54,4 +54,6 @@
 # (0.413 at 8,030 bytes) on kfast and CMOVE, never having taken up
 # THREAD-FIND; the gene tfind puts it first (counted on seed 11's best:
 # parse 0.49-0.51, corpus 0.63-0.65, kernel 0.82). Carrying every front.
-seed 12 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 53: none - seed 12 and the comparison came back.
+none

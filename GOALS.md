@@ -142,6 +142,12 @@ trying anything again (prompts/12-progress-log).
   faster than anything earlier at every size, on kfast and CMOVE alone.
   THREAD-FIND, the largest saving, met kfast once in 1,425 designs: the
   gene `tfind` puts it first.
+- **Seed 12 - THREAD-FIND taken up** (Iteration 53,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed12.md`; session 10,
+  calibration 0.994): **all 12 front designs its own: the fastest yet,
+  0.326 at 9,014 bytes; 0.331 at 7,958; 0.379 at 7,105; the smallest,
+  6,941** - 17-32% faster than anything earlier at every size. THREAD-FIND
+  on 11 of the 12 (tfind from generation 7); parse at 0.21-0.28 of s6.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -174,7 +180,8 @@ they are done, the article on the backburner.
       kernel 0.799 more - from the design as recorded, parse 0.34, corpus
       0.42, kernel 0.53 of the dispatches. Seed 11 (Iteration 52): the
       fastest yet, 0.413 at 8,030 - without THREAD-FIND, never taken up;
-      `tfind` puts it first. **NEXT-RUN: seed 12, then compare.** Next in
+      `tfind` puts it first. Seed 12 (Iteration 53): taken up - the
+      fastest yet, 0.326 at 9,014; 17-32% faster at every size. Next in
       the sources: the input side
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header
       NAME>BUF (open).

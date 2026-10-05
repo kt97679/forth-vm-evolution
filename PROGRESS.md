@@ -1243,3 +1243,20 @@ part way, and the shell committed anyway - without GOALS.md, NEXT-RUN
 the commit now waits on the script.
 
 NEXT-RUN: seed 12, then compare.
+
+## Iteration 53 - 2026-10-05 - Claude
+
+**Seed 12 and session 10 - THREAD-FIND taken up.** 144 designs carried in;
+the comparison (fourteen databases, 157 designs, calibration 0.994, ranks
+1.00): **all 12 designs on the front of all runs are seed 12's - the
+fastest yet, 0.326 at 9,014 bytes (seed 11's: 0.413 at 8,030), 0.331 at
+7,958, 0.379 at 7,105, and the smallest yet, 6,941** - 17-32% faster than
+the fastest earlier design no larger at every size.
+
+THREAD-FIND expressed on 11 of the 12 (8 by tfind, 3 by the pool from
+ancestors that had it), tfind first in generation 7, 37% of the living
+with THREAD-FIND at the end against seed 11's 0%; parse at 0.21-0.28 of
+s6's time, against 0.40-0.58. The record edits checked the files' text
+first this time, and the commit waited on them.
+
+NEXT-RUN: none.

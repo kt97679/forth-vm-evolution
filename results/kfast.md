@@ -93,6 +93,14 @@ only: THREAD-FIND sat in a pool of thirty names and met kfast once in
 1,425 designs. `tfind` (LATE, with kfast): THREAD-FIND first among the
 format-10 names, sure of a slot. results/evolve-amd-ryzen-7-pro-8840hs-seed11.md.
 
+## Seed 12 (Iteration 53): THREAD-FIND taken up
+
+With tfind, THREAD-FIND was expressed on 11 of the 12 designs on the front
+of all runs (8 by tfind, 3 by the pool, from ancestors that had it), first
+in generation 7, 37% of the living at the end. The fastest yet, 0.326 at
+9,014 bytes; parse at 0.21-0.28 of hand-made s6's time, where seed 11's
+front was at 0.40-0.58.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell
