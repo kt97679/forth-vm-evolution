@@ -60,6 +60,31 @@ their slots for them), dispatches counted:
 alive; the sieve still counts 1899. With kfast: kernel about 0.65 of what
 it was, parse 0.69, corpus 0.66 - and the held-out sieve 0.85.
 
+## Iteration 51: the thread walk as an opcode
+
+After the fill and the byte loops, the dictionary search was what was
+left: on the same design, NEXT-NFA8, SEARCH-WORDLIST8's loop, NAME=?, FIND
+and HASH were about 63% of parse, half of corpus, 30% of kernel - the walk
+along one thread, ~20 dispatches a candidate word. kfast's overlay now
+factors it out of SEARCH-WORDLIST8 unchanged - `THREAD-FIND ( nfa namebuf
+--- nfa' | 0 )` - and THREAD-FIND is a format-10 opcode (OPS10_POOL; the
+handler does the count, the bytes, and NEXT-NFA8's three link forms; the
+converter checks the body; dormant in a design without kfast - only kfast
+has the word). kfast had not been in any run, so its overlay could change.
+
+96f2d8bfd7 with kfast, FILL and CMOVE, then THREAD-FIND added:
+
+| | kernel | fib | parse | corpus | loop | sieve | size |
+|---|---|---|---|---|---|---|---|
+| THREAD-FIND / without | 0.799 | 1.000 | 0.489 | 0.631 | 0.997 | 0.997 | 7,212 -> 7,212 |
+
+alive in all four engine forms (cached top with multi-state, multi-state,
+tail calls, no cached top). **From the design as recorded to here, by
+counted dispatches: kernel about 0.53, parse 0.34, corpus 0.42, fib and
+loop 1.00, sieve 0.85 - the selected workloads' geometric mean about
+0.60.** Time falls less than dispatches - one opcode does a whole walk -
+which is what the next run measures.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell
@@ -67,8 +92,6 @@ it was, parse 0.69, corpus 0.66 - and the held-out sieve 0.85.
   name; a version zeroing only the name's cells hung the converted image
   at its first lookup, and the plain cell system's test harness could
   not compile S" inside a definition - undiagnosed; not built.
-- **The thread walk** - NEXT-NFA8 and SEARCH-WORDLIST8's loop, a third of
-  parse - as one opcode.
 - SCAN, PARSE, REFILL: 4-7% each of kernel and corpus.
 
 The converter translates only what the kernel itself uses: an overlay

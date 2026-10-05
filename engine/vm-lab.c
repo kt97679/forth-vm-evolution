@@ -1371,6 +1371,21 @@ L_x_fill:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += 3 * CELL_BYTES;         
 L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;             /* CMOVE */
              while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();
 #endif
+/*  Iteration 51: THREAD-FIND ( nfa namebuf --- nfa' | 0 ) - the byte-header
+ *  dictionary's walk along one thread (forth/cv8b-kfast.4): count, then the
+ *  bytes (NAME=?), then the link back - NEXT-NFA8's three forms. ~20
+ *  dispatches a candidate word in Forth; 37-63% of kernel, parse, corpus.  */
+#if X_THREADFIND
+L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+             UNS8 n_ = BYTE(nb_);
+             while (a_) {
+                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
+                 { UNS8 t_ = BYTE(a_ - 1);
+                   if (t_ < 128) a_ = t_ ? a_ - t_ : 0;
+                   else if (t_ < 192) a_ -= ((UNS64)(t_ & 63) << 8) | BYTE(a_ - 2);
+                   else a_ -= ((UNS64)(t_ & 63) << 16) | ((UNS64)BYTE(a_ - 2) << 8) | BYTE(a_ - 3); } }
+             DS0 = a_; } NEXT();
+#endif
 L_x_qdo:   { UNS64 n2_ = DS0, n1_ = DS1; dsp += 2 * CELL_BYTES;                  /* (?DO)   */
              if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += (int16_t)LD16(ip); } NEXT();
 L_x_leave: rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip); NEXT();                        /* (LEAVE) */

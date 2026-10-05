@@ -14,3 +14,26 @@
 : NAME>BUF8 ( c-addr u --- )
 \ Move the name c-addr u to NAMEBUF - no padding: nothing reads past it.
   32 MIN NAMEBUF PLACE ;
+
+\ The thread walk (Iteration 51) - after NAME>BUF's fill, the next largest
+\ cost: NEXT-NFA8, SEARCH-WORDLIST8's loop and NAME=? were 37-63% of the
+\ kernel, parse and corpus workloads' dispatches, ~20 a candidate word.
+\ Factored out of cv8b.4's SEARCH-WORDLIST8 unchanged, so that it can be
+\ an opcode (THREAD-FIND in OPS10_POOL; the converter checks this body).
+
+: THREAD-FIND ( nfa namebuf --- nfa' | 0 )
+\ From nfa back along its thread: the first word whose count and name
+\ are namebuf's, or 0.
+  >R BEGIN DUP WHILE
+    DUP C@ 31 AND R@ C@ = IF
+      DUP 1+ R@ 1+ R@ C@ NAME=? IF R> DROP EXIT THEN
+    THEN
+    NEXT-NFA8
+  REPEAT R> DROP ;
+
+: SEARCH-WORDLIST8 ( c-addr u wid --- 0 | xt 1 | xt -1 )
+\ cv8b.4's, its walk THREAD-FIND.
+  ROT ROT NAME>BUF
+  DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP   ( nfa )
+  NAMEBUF THREAD-FIND
+  DUP IF DUP NAME>8 SWAP C@ 64 AND IF 1 ELSE -1 THEN THEN ;

@@ -1201,3 +1201,19 @@ its dispatches of before, parse 0.69, corpus 0.66.
 A stale link of mine - build/work/cv8-kfast.4, left dangling when the
 cell-header attempt's file went - made the evolver's private work dir
 fail; removed (a laptop run deletes build/ first).
+
+## Iteration 51 - 2026-10-05 - Claude
+
+**The thread walk as an opcode.** Attributed again after Iteration 50, the
+dictionary search was most of what was left (about 63% of parse). kfast's
+overlay factors the walk out of SEARCH-WORDLIST8 unchanged - THREAD-FIND
+( nfa namebuf --- nfa' | 0 ) - and THREAD-FIND is a format-10 opcode: the
+count, the bytes, NEXT-NFA8's three link forms in C; the converter checks
+its body (from SOD16_SHOW); dormant without kfast. kfast had been in no
+run, so its overlay could still change.
+
+On 96f2d8bfd7: parse 0.489, corpus 0.631, kernel 0.799 more; alive in all
+four engine forms; no bytes. From the design as recorded: parse 0.34,
+corpus 0.42, kernel 0.53 of the dispatches, the selected workloads'
+geometric mean about 0.60. NEXT-RUN: seed 11, then compare - the batch
+timed on the laptop.

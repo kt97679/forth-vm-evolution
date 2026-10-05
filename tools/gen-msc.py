@@ -122,6 +122,7 @@ SPECS = {
     'L_x_swapaddi':     (['a', 'b'], ['b', 'c'], 'c = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1;'),
     # Iteration 50
     'L_x_fill':         (['a', 'u', 'c'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { BYTE(a_) = (UNS8)c; a_++; u_--; } }'),
+    'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     { UNS8 t_ = BYTE(a_ - 1);       if (t_ < 128) a_ = t_ ? a_ - t_ : 0;       else if (t_ < 192) a_ -= ((UNS64)(t_ & 63) << 8) | BYTE(a_ - 2);       else a_ -= ((UNS64)(t_ & 63) << 16) | ((UNS64)BYTE(a_ - 2) << 8) | BYTE(a_ - 3); } } r = a_; }'),
     'L_x_cmove':        (['s', 'd', 'u'], [], '{ UNS64 s_ = s, d_ = d, u_ = u; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } }'),
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch', 'L_hcall']   # L_hcall: one-byte calls (Iteration 14)

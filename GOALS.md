@@ -162,8 +162,13 @@ they are done, the article on the backburner.
       NAME>BUF's zero fill; without it (the gene `kfast`, byte headers),
       24-29% fewer dispatches there. FILL and CMOVE as opcodes, their
       colon bodies too (Iteration 50): kernel 0.865, corpus 0.917, the
-      held-out sieve 0.848 more, 32 bytes less. Next: the thread walk (a
-      third of parse) as one opcode; the cell-header NAME>BUF (open).
+      held-out sieve 0.848 more, 32 bytes less. The thread walk as one
+      opcode, THREAD-FIND (Iteration 51): parse 0.489, corpus 0.631,
+      kernel 0.799 more - from the design as recorded, parse 0.34, corpus
+      0.42, kernel 0.53 of the dispatches. **NEXT-RUN: seed 11, then
+      compare** - the batch timed. Next in the sources: the input side
+      (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header
+      NAME>BUF (open).
    b. **The image's remaining fixed costs** (Iteration 44's audit): the
       353-byte image header (32 thread heads as cells), FORTH-WORDLIST's
       32 cell-sized heads (296 bytes), the names (a third of the image),

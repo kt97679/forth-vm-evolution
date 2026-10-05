@@ -380,6 +380,11 @@ def _expect(n):
         'FILL': [('P', 'OVER'), ('QBR', 20 * CELL), ('P', '>R'), ('P', 'R@'), ('P', 'ROT'), ('P', 'DUP'), ('P', '>R'),
                  ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', -1), ('P', '+'), ('P', 'DUP'),
                  ('C', '0='), ('QBR', -16 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
+        # Iteration 51: the byte-header thread walk (forth/cv8b-kfast.4)
+        'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 26 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
+                        ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),
+                        ('C', '1+'), ('P', 'R@'), ('P', 'C@'), ('C', 'NAME=?'), ('QBR', 4 * CELL), ('P', 'R>'), ('P', 'DROP'),
+                        ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -27 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
         'CMOVE': [('P', 'DUP'), ('QBR', 27 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'C@'), ('P', 'SWAP'), ('P', 'DUP'),
                   ('P', '>R'), ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'),
                   ('P', 'SWAP'), ('P', 'R>'), ('LIT', -1), ('P', '+'), ('P', 'DUP'), ('P', '>R'), ('C', '0='),

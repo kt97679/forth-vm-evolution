@@ -43,4 +43,10 @@
 # with bss and rtloopall a mutation away. Then every front compared.
 #
 # Iteration 47: none - seed 10 and the comparison came back.
-none
+#
+# Iteration 51: seed 11 - the first run that can choose the Forth sources'
+# batch: kfast (NAME>BUF without its fill, the thread walk factored out),
+# FILL and CMOVE as opcodes, THREAD-FIND as one - by counted dispatches
+# parse to 0.34, corpus 0.42, kernel 0.53 of a seed-10 front design's -
+# carrying every earlier front. Then every front compared.
+seed 11 then experiment compare-fronts.py --rounds 10 --cpus 2,8
