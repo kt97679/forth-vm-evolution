@@ -30,14 +30,19 @@ Ordered by how much diversity they add for the work.
    relf's kernel calls through vectors, and this one has no `@ EXECUTE`
    anywhere in the image's code, so it would have nothing to fuse.
 5. **Indirect threading** - gforth-itc, fig-Forth, eForth, JonesForth: a
-   code field per word. Slower, classic, and a distinct ancestor.
+   code field per word. Slower, classic, and a distinct ancestor. *Priced
+   at Iteration 29 (lab/dispatch/README.md): dispatch in token and direct
+   threading's band, code a cell a reference - beside s0-cell, never near a
+   front. Not built.*
 7. **Dynamic superinstructions** - gforth copies primitives' machine code;
    this lab's SPN copies C stencils. SPN's genes - fusions, recipes or lazy
    translation, inlining - are phase 3.
 8. **A register machine** - Lua, Dalvik. Shi and Gregg found a register
    JVM executing 46% fewer VM instructions for 26% more code: the far end
    of the speed-for-size trade. Needs a stack-to-register translator; the
-   largest item here.
+   largest item here. *Priced at Iteration 29
+   (results/price-register-machine.md): up to 38-50% of dispatches on the
+   front designs are moves or lone literals - the largest prize left.*
 
 Sources: gforth manual, "Direct or Indirect Threaded?" and "Dynamic
 Superinstructions" (complang.tuwien.ac.at/forth/gforth/Docs-html/);

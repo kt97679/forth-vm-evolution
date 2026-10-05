@@ -13,6 +13,7 @@ read, CPU time otherwise.
 | `switch` | a switch on compact word code - the textbook baseline |
 | `token` | the same code, computed goto through a table (the CV8 engine) |
 | `direct` | direct threading: the code is the label addresses |
+| `itc` | indirect threading (Iteration 29): every reference the address of a code field holding the handler's address - two loads before the jump; a colon word's code field holds `docol` |
 | `tail` | tail-call threading: each primitive a C function, the machine's state in argument registers, each ending in a jump to the next |
 | `native` | as `tail`, with Forth CALL a real machine call and EXIT a real return, for the return predictor |
 | `native2` | as `native`, with the top two stack items in registers |
@@ -102,3 +103,55 @@ VM, end to end, two builds' worth of layouts:
 
 A real gain for the interpreters where calls and opcodes interleave
 most; not yet the default.
+
+## Iteration 29: indirect threading, priced
+
+Added as `itc` - fig-Forth's, eForth's, gforth-itc's dispatch - and timed
+with the rest on the development VM (one CPU, no cycle counters: CPU time,
+the median of 5 rounds - `run.py` keeps the median since this iteration,
+as the evolver does since Iteration 25):
+
+```
+gcc - CPU ms, median of 5; ratio to switch without superinstructions
+    variant                                  fib                      loop                     sieve
+    switch                          142.8  1.000              324.6  1.000              165.2  1.000
+    switch + super                   77.3  0.541              270.4  0.833              145.4  0.880
+    token                            84.8  0.594              186.8  0.575              111.3  0.674
+    token + super                    49.4  0.346              160.6  0.495               85.5  0.517
+    direct                           69.6  0.488              194.3  0.599               98.9  0.599
+    direct + super                   43.7  0.306              156.7  0.483               79.0  0.478
+    itc                              81.8  0.573              191.9  0.591              102.5  0.621
+    itc + super                      54.2  0.380              159.9  0.493               76.7  0.464
+    tail                             65.8  0.461              190.0  0.585               97.4  0.590
+    tail + super                     44.9  0.314              177.2  0.546               78.6  0.476
+    native                           67.3  0.472              189.2  0.583              104.9  0.635
+    native + super                   45.7  0.320              155.8  0.480               76.6  0.464
+    native2                          73.7  0.516              202.3  0.623              112.1  0.679
+    native2 + super                  48.7  0.341              158.4  0.488               83.8  0.507
+
+gcc, no endbr64 - CPU ms, median of 5; ratio to switch without superinstructions
+    variant                                  fib                      loop                     sieve
+    switch                          123.4  1.000              334.1  1.000              160.9  1.000
+    switch + super                   82.2  0.666              283.2  0.848              129.1  0.802
+    token                            73.9  0.599              187.4  0.561              114.1  0.709
+    token + super                    63.0  0.511              159.1  0.476               88.7  0.551
+    direct                           68.2  0.553              202.0  0.605              139.2  0.865
+    direct + super                   44.5  0.361              155.4  0.465               80.0  0.498
+    itc                              82.6  0.670              185.3  0.555              104.3  0.648
+    itc + super                      47.4  0.384              179.2  0.536               81.1  0.504
+    tail                             76.2  0.617              223.1  0.668              107.4  0.667
+    tail + super                     44.5  0.361              170.7  0.511               82.5  0.513
+    native                           81.9  0.664              217.5  0.651              107.9  0.671
+    native + super                   47.9  0.389              179.4  0.537               81.9  0.509
+    native2                          69.7  0.565              187.1  0.560               98.3  0.611
+    native2 + super                  42.6  0.345              155.8  0.466               74.5  0.463
+```
+
+On this machine the lab's repeats of one variant differ by 10-40% (direct
+threading on sieve: 0.599 in one build, 0.865 in the other), so it does not
+separate `itc` from `token` and `direct`: it lands in their band, faster on
+some cells and slower on others. By construction it cannot beat direct
+threading - direct threading's work and one load more. **Priced, not built
+as a gene**: its code is a cell (8 bytes) a reference against CV8's 1-3,
+which puts it beside hand-made s0-cell - 25,144 bytes at 1.2 of s6's time,
+never near a front - with no speed to pay for the size.

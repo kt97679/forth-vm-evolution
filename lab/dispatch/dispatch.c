@@ -209,6 +209,65 @@ halt:   return tos;
 #undef DN
 }
 
+/* ---- 3b. indirect threading (Iteration 29) - fig-Forth, eForth, JonesForth,
+ *      gforth-itc: every reference is the address of a word's CODE FIELD,
+ *      which holds the address of its machine code - two loads before the
+ *      jump. A colon word's code field holds docol, and its body follows the
+ *      field; a primitive's code field sits in a table of them. ---- */
+static cell itc_cf[NOPS];                   /* the primitives' code fields */
+static void thread_itc(void *const *handler, void *docol)
+{
+    int pos[1024], target[1024] = { 0 }, p = 0;
+    for (int i = 0; i < wn; i += 1 + nargs[wc[i]]) if (wc[i] == CALL) target[wc[i + 1]] = 1;
+    for (int i = 0; i < wn; i += 1 + nargs[wc[i]]) {
+        if (target[i]) p++;                   /* a colon word: its code field before its body */
+        pos[i] = p; p += wc[i] == CALL ? 1 : 1 + nargs[wc[i]];
+    }
+    for (int op = 0; op < NOPS; op++) itc_cf[op] = (cell)handler[op];
+    for (int i = 0; i < wn; i += 1 + nargs[wc[i]]) {
+        int op = wc[i], at = pos[i];
+        if (target[i]) tc[at - 1] = (cell)docol;
+        if (op == CALL) { tc[at] = (cell)&tc[pos[wc[i + 1]] - 1]; continue; }   /* the callee's code field */
+        tc[at] = (cell)&itc_cf[op];
+        if (op == LIT || op == ADDI) tc[at + 1] = wc[i + 1];
+        else if (op == DUPLTBR) { tc[at + 1] = wc[i + 1]; tc[at + 2] = (cell)&tc[pos[wc[i + 2]]]; }
+        else if (nargs[op]) tc[at + 1] = (cell)&tc[pos[wc[i + 1]]];
+    }
+    tc[1023] = pos[0];                        /* where the program starts */
+}
+static cell run_itc(int init)
+{
+    static void *const t[NOPS] = { &&lit, &&dup, &&drop, &&swap, &&over, &&add, &&sub, &&lt,
+        &&zeq, &&zbr, &&br, 0, &&exit, &&cfetch, &&cstore, &&addi, &&do_, &&loop, &&i,
+        &&dupltbr, &&halt };
+    if (init) { thread_itc(t, &&docol); return 0; }
+    const cell *ip = tc + tc[1023], *w; cell *sp = dstk + STK, *rp = rstk + STK, tos = 0;
+#define IN do { w = (const cell *)*ip++; goto *(void *)*w; } while (0)
+    IN;
+docol:  *--rp = (cell)ip; ip = w + 1; IN;
+lit:    *--sp = tos; tos = *ip++; IN;
+dup:    *--sp = tos; IN;
+drop:   tos = *sp++; IN;
+swap:   { cell x = *sp; *sp = tos; tos = x; } IN;
+over:   { cell x = *sp; *--sp = tos; tos = x; } IN;
+add:    tos += *sp++; IN;
+sub:    tos = *sp++ - tos; IN;
+lt:     tos = -(*sp++ < tos); IN;
+zeq:    tos = -(tos == 0); IN;
+zbr:    { cell f = tos; tos = *sp++; ip = f ? ip + 1 : (const cell *)*ip; } IN;
+br:     ip = (const cell *)*ip; IN;
+exit:   ip = (const cell *)*rp++; IN;
+cfetch: tos = mem[tos]; IN;
+cstore: mem[tos] = (uint8_t)*sp; tos = sp[1]; sp += 2; IN;
+addi:   tos += *ip++; IN;
+do_:    rp -= 2; rp[1] = *sp; rp[0] = tos; tos = sp[1]; sp += 2; IN;
+loop:   if (++rp[0] != rp[1]) ip = (const cell *)*ip; else { rp += 2; ip++; } IN;
+i:      *--sp = tos; tos = rp[0]; IN;
+dupltbr: ip = tos >= ip[0] ? (const cell *)ip[1] : ip + 2; IN;
+halt:   return tos;
+#undef IN
+}
+
 /* ---- 4-6. tail-call threading ------------------------------------------- */
 #if defined(__has_attribute)
 # if __has_attribute(musttail)
@@ -301,13 +360,14 @@ static cell run_tail2(void)
 
 int main(int argc, char **argv)
 {
-    if (argc < 3) { fprintf(stderr, "usage: dispatch switch|token|direct|tail|native|native2 fib|loop|sieve [-s]\n"); return 2; }
+    if (argc < 3) { fprintf(stderr, "usage: dispatch switch|token|direct|itc|tail|native|native2 fib|loop|sieve [-s]\n"); return 2; }
     super = argc > 3 && !strcmp(argv[3], "-s");
     if (!assemble(argv[2])) { fprintf(stderr, "no program %s\n", argv[2]); return 2; }
     const char *v = argv[1]; cell r;
     if      (!strcmp(v, "switch"))  r = run_switch();
     else if (!strcmp(v, "token"))   r = run_token();
     else if (!strcmp(v, "direct"))  { run_direct(1); r = run_direct(0); }
+    else if (!strcmp(v, "itc"))     { run_itc(1); r = run_itc(0); }
     else if (!strcmp(v, "tail"))    { thread(tail_t); r = run_tail(); }
     else if (!strcmp(v, "native"))  { thread(native_t); r = run_tail(); }
     else if (!strcmp(v, "native2")) { thread(native2_t); r = run_tail2(); }

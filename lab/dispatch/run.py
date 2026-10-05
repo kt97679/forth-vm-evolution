@@ -9,7 +9,8 @@ puts at every indirect-jump target (Linux does not enforce it for user
 programs, so it is decode overhead on every dispatch) - and with clang
 too, if there is one. Every variant must print the same answer as the
 switch baseline before anything is timed. Then each configuration is run
-ROUNDS times, interleaved, through tools/cputime; the minimum is kept.
+ROUNDS times, interleaved, through tools/cputime; the median is kept
+(the minimum until Iteration 29).
 With hardware counters (see tools/cputime.c) it reports cycles and
 instructions per cycle as well; otherwise CPU time.
 """
@@ -19,7 +20,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 CPUT = os.path.join(ROOT, 'build', 'cputime')
 SRC = os.path.join(HERE, 'dispatch.c')
-VARIANTS = ['switch', 'token', 'direct', 'tail', 'native', 'native2']
+VARIANTS = ['switch', 'token', 'direct', 'itc', 'tail', 'native', 'native2']
 PROGRAMS = ['fib', 'loop', 'sieve']
 ROUNDS = int(sys.argv[1]) if len(sys.argv) > 1 else 7
 CPU = os.environ.get('BENCH_CPU') or '0'
@@ -61,11 +62,13 @@ for r in range(ROUNDS):
         for k in ('CPUNS', 'CYCLES', 'INSTR'):
             m = re.search(rb'^%s (\d+)' % k.encode(), out.stderr, re.M)
             if m:
-                best.setdefault(c, {})[k] = min(best.get(c, {}).get(k, 1 << 62), int(m.group(1)))
+                best.setdefault(c, {}).setdefault(k, []).append(int(m.group(1)))
+import statistics       # Iteration 29: the median of the rounds, as the evolver since Iteration 25 - the best is luck
+best = {c: {k: statistics.median(v) for k, v in d.items()} for c, d in best.items()}
 
 cyc = all('CYCLES' in best[c] for c in configs)
 for n, b in bins:
-    print('\n%s - %s, best of %d; ratio to switch without superinstructions' % (
+    print('\n%s - %s, median of %d; ratio to switch without superinstructions' % (
         n, 'Mcycles and instructions per cycle' if cyc else 'CPU ms', ROUNDS))
     print('    %-18s' % 'variant' + ''.join('%26s' % p for p in PROGRAMS))
     for v in VARIANTS:

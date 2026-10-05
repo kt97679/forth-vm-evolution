@@ -102,10 +102,20 @@ trying anything again (prompts/12-progress-log).
    few as possible): seed 5's front with all the others, by the median, on
    two CPUs in one session (`compare-fronts.py --cpus 2,8`) - batched with
    whatever else then needs the laptop's clock. `NEXT-RUN`: none until then.
-2. Remaining planned gene: indirect threading; then a register machine.
-3. The article (`article/`): prompts/14-audience-research before drafting
+2. **A register machine** - priced (Iteration 29,
+   `results/price-register-machine.md`): up to 38-50% of the front designs'
+   dispatches only move values or push a lone literal - the largest prize
+   left, and the largest work: operands in every instruction, a
+   stack-to-register translation in the converter, register handlers in
+   every engine family, the run-time compiler. To plan in stages, the first
+   one that can be measured alone: register forms for the moves within a
+   word, the stack synchronised at calls, returns and branch targets.
+3. **SPN on 32-bit ARM** - the cross-compiler and qemu install here
+   (Iteration 29): ported and checked for correctness on the VM, timed on
+   the Tegra later, batched.
+4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-4. ARM port of SPN. Push master to GitHub (the owner's step).
+5. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 
@@ -113,6 +123,7 @@ trying anything again (prompts/12-progress-log).
 |---|---|---|
 | The loop opcodes in code compiled at run time | priced, not built (Iteration 28): 0.1% of kernel's dispatches, 0.8-1% of corpus's, none on fib or parse; 68-70% of the held-out loop's, which building it for would spoil | `results/price-runtime-loops.md` |
 | A reach check for far calls in cv8.4 | measured, not built (Iteration 28): the workloads run code up to 68 KB, the far form reaches 2 MB (one-byte calls) to 4 MB; a check costs every image bytes | `results/price-runtime-loops.md` |
+| Indirect threading as a gene | priced, not built (Iteration 29): in the dispatch lab its dispatch lands in token and direct threading's band; its code is a cell a reference, beside s0-cell's 25 KB - dominated | `lab/dispatch/README.md` |
 | One-byte calls in the pairs' slots | priced, not built (Iteration 13): the pairs with the fewest static sites are among the hottest - four of them carry 3-8% of the dispatches, for 24-120 bytes; the far-call prefix band costs no slot | `results/price-hotcalls-seed3-front.md` |
 | Native code in the genome: relf's native compiler as a family of its own, or our SPN with relf's rules as genes | deferred by the user (Iteration 4) after measuring it (Iteration 3): our corpus byte for byte, our kernel workload a segmentation fault in cross.4's RESOLVE, 3-10 times faster than s6 on the VM | PROGRESS.md, Iterations 3 and 4 |
 | Profile-guided optimisation of the engine as a gene | measured, not built (Iteration 7): 0.903 on s6 only when trained on the measured workloads; trained on a separate program, 0.980 - what -fprofile-use's flags give without a profile; three of those flags became genes instead | `lab/evolve/GENES.md`; `lab/evolve/pgo-train.fth` |

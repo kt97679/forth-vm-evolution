@@ -715,3 +715,23 @@ dispatches and 0.8-1% of corpus's, none of fib's or parse's - priced, not
 built (the held-out loop's 68-70% is not a reason: it is held out). The
 workloads run code up to 68 KB against a far reach of 2-4 MB - measured, no
 check built. Both off GOALS.md's list into its register. NEXT-RUN: none.
+
+## Iteration 29 - 2026-10-05 - Claude
+
+The owner: postpone the article, finish the other items first.
+
+**Indirect threading, priced - not built.** An `itc` variant in the dispatch
+lab (answers identical on every program): on the VM it lands in token and
+direct threading's band, which this one CPU cannot separate (one variant's
+repeats differ 10-40%). Its code is a cell a reference - beside s0-cell's
+25 KB, which has never been near a front. Dominated. run.py now keeps the
+median, as the evolver does.
+
+**The register machine, priced** (`lab/evolve/stackops.py`,
+`results/price-register-machine.md`): on seed 5's front designs 38-50% of
+dispatches only move values or push a lone literal - an upper bound (calls
+and returns keep their moves), and the largest prize left; the largest work
+too. GOALS.md plans it in stages.
+
+**SPN on ARM**: gcc-arm-linux-gnueabihf and qemu-user install in this
+sandbox - the port can be built and checked here; the Tegra only times it.

@@ -39,7 +39,7 @@ the included ones checked to be among them.
 | native code | 3 | 1 | SPN stencils; an optimising compiler |
 | **all 11 axes** | **66** | **35** | **31 missing** |
 
-Every missing value decided (10 excluded, 10 candidate, 3 stranger, 4 deferred, 3 built, 1 planned; checked against the register of rejected and deferred approaches in GOALS.md):
+Every missing value decided (11 excluded, 10 candidate, 3 stranger, 4 deferred, 3 built, 0 planned; checked against the register of rejected and deferred approaches in GOALS.md):
 
 | missing value | decided | why |
 |---|---|---|
@@ -50,7 +50,7 @@ Every missing value decided (10 excluded, 10 candidate, 3 stranger, 4 deferred, 
 | bodies inlined at the call site | stranger | see step 4 |
 | switch dispatch | excluded | measured slower than the token table in the dispatch lab |
 | direct threading | deferred | the register in GOALS.md: the dispatch lab gave -5% fib, -12% sieve but +9% loop; relf found dispatch already at the indirect-jump rate |
-| indirect threading | planned | GOALS.md, remaining genes |
+| indirect threading | excluded | priced at Iteration 29 (lab/dispatch/README.md): dispatch in token and direct threading's band, a cell a reference - dominated by CV8 on size with no speed to pay for it |
 | subroutine threading | deferred | native code - the user deferred it at Iteration 4 |
 | call threading | excluded | real calls and returns for dispatch lost in the dispatch lab (the register in GOALS.md); tail calls are the same shape without them |
 | two items always in registers | excluded | lost in the dispatch lab (the register in GOALS.md) - multi-state caching is its dynamic form |
