@@ -334,6 +334,7 @@ def read_ops(w):
     out = fuse_pairs(out) if V8 and SUPERS else out
     out = testbranch(out) if V8 and any(v[2] in X_OPS10 for v in TESTBR.values()) else out
     out = eqibranch(out) if V8 and '=I?BRANCH' in X_OPS10 else out
+    out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10) else out
     return shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
 
 def branch_targets(ops):
@@ -475,15 +476,22 @@ TESTBR.update({'DUP': ('DQBR', 'DQBRS', 'DUP?BRANCH', 'DUP?BRANCH8'),
 # its immediate (EQIH), the ?BRANCH only its offset (EQIT, short EQITS).
 # Positions, sizes in cells and targets are the originals', untouched.
 TB_LONG = {v[0]: v[2] for v in TESTBR.values()}; TB_SHORT = {v[1]: v[3] for v in TESTBR.values()}
+# Iteration 34: DUP before the fused 0= ?BRANCH (DNQBR) - jumps when the top
+# is NOT zero and keeps it: four cells, not a one-test TESTBR entry, but a
+# branch kind like them in bytes, emission and shortening. And SWAP before
+# an ADDI (SADDI, opcode SWAP+I): ( a b -- b a+n ), ADDI's immediate byte.
+KEEPNBR = ('DNQBR', 'DNQBRS', 'DUP?NBRANCH', 'DUP?NBRANCH8')
+TB_LONG[KEEPNBR[0]] = KEEPNBR[2]; TB_SHORT[KEEPNBR[1]] = KEEPNBR[3]
 BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT) + ('EQIT', 'EQITS')
-PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
+PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
 def shorten(ops):
     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
     on a layout that counts every alignment at its widest, so the real
     offsets can only be smaller; a branch that does not fit goes long and
     the layout is redone, until nothing changes - and a long one never
     comes back, so that ends."""
-    ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8'), ('EQIT', 'EQITS', '=I?BRANCH8')) + tuple((v[0], v[1], v[3]) for v in TESTBR.values()) if n in X_OPS10}
+    ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8'), ('EQIT', 'EQITS', '=I?BRANCH8')) + tuple((v[0], v[1], v[3]) for v in TESTBR.values())
+          + ((KEEPNBR[0], KEEPNBR[1], KEEPNBR[3]),) if n in X_OPS10}
     long_ = set()
     while True:
         trial = [(ok[k], pl) if k in ok and j not in long_ else (k, pl) for j, (k, pl) in enumerate(ops)]
@@ -531,6 +539,27 @@ def eqibranch(ops):
     for j in range(len(ops) - 1):
         if ops[j][0] == 'EQI' and ops[j + 1][0] == 'QBR' and cs[j + 1] not in tg:
             out[j] = ('EQIH', ops[j][1]); out[j + 1] = ('EQIT', ops[j + 1][1])
+    return out
+def keepbranch(ops):
+    """Iteration 34: DUP before a fused 0= ?BRANCH becomes DNQBR, SWAP
+    before an ADDI becomes SADDI - wherever nothing jumps to the second and
+    the design has the opcode. After the pairs, as the price was taken
+    (lab/evolve/regprice.py): a DUP or SWAP a pair holds stays there.
+    SOD16_TESTBR_SKIP=DUPN,SADDI declines them, to measure."""
+    import os
+    if os.environ.get('SOD16_NO_TESTBR'): return ops
+    skip = set(os.environ.get('SOD16_TESTBR_SKIP', '').split(','))
+    cs, tg = branch_targets(ops)
+    out, j = [], 0
+    while j < len(ops):
+        k, pl = ops[j]
+        if k == 'P' and j + 1 < len(ops) and cs[j + 1] not in tg:
+            k2, pl2 = ops[j + 1]
+            if pl == 'DUP' and k2 == 'NQBR' and 'DUP?NBRANCH' in X_OPS10 and 'DUPN' not in skip:
+                out.append(('DNQBR', pl2 + CELL)); j += 2; continue      # one cell earlier: same target
+            if pl == 'SWAP' and k2 == 'ADDI' and 'SWAP+I' in X_OPS10 and 'SADDI' not in skip:
+                out.append(('SADDI', pl2)); j += 2; continue
+        out.append(ops[j]); j += 1
     return out
 def ops10_rewrite(ops):
     """A call to one of them becomes its opcode, one operation for one;
@@ -700,6 +729,7 @@ def op_cells(k, pl):
     if k in ('PX', 'SP'): return 2 * CELL
     if k == 'LITX': return 3 * CELL
     if k in ('P', 'C', 'OPD', 'XT'): return CELL
+    if k in ('DNQBR', 'DNQBRS', 'SADDI'): return 4 * CELL   # DUP + 0= ?BRANCH + operand; SWAP + LIT n +
     if k in TB_LONG or k in TB_SHORT: return 3 * CELL   # the test + ?BRANCH + its operand
     if k in ('LIT', 'LITOFF') + BRK: return 2 * CELL
     if k == 'STR': return align_up(len(pl), CELL)
@@ -717,7 +747,7 @@ def op_bytes(k, pl, t):
             if not VARSLOT: return 3
             v = slotval(k, pl)
             return 3 if v is None or v < (1 << 15) else 4
-        if k in X_IMM or k == 'EQIH': return 2
+        if k in X_IMM or k in ('EQIH', 'SADDI'): return 2
         if k == 'EQIT': return 2                 # the offset alone
         if k == 'EQITS': return 1
         if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return 1
@@ -823,6 +853,8 @@ def to_bytes_v8(ops):
         elif k == 'P': b.append(cv8_op(pl)[0])
         elif k in X_IMM:
             b.append(X_IMM[k]); b.append(pl & 0xFF)
+        elif k == 'SADDI':                             # SWAP n + : the opcode, then ADDI's immediate
+            b.append(X_OPS10['SWAP+I']); b.append(pl & 0xFF)
         elif k in ('VF', 'VS'):
             b.append(X_VF if k == 'VF' else X_VS); emit_slot(b, slotval(k, pl) or 0)
         elif k == 'LOC':

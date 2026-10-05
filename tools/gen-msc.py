@@ -116,6 +116,10 @@ SPECS = {
     'L_x_dupbr8':       (['f'], ['f'], 'if (f) ip += 1; else ip += (int8_t)BYTE(ip);'),
     'L_x_overbr':       (['a', 'b'], ['a', 'b'], 'if (a) ip += 2; else ip += (int16_t)LD16(ip);'),
     'L_x_overbr8':      (['a', 'b'], ['a', 'b'], 'if (a) ip += 1; else ip += (int8_t)BYTE(ip);'),
+    # Iteration 34
+    'L_x_dupnbr':       (['f'], ['f'], 'if (f) ip += (int16_t)LD16(ip); else ip += 2;'),
+    'L_x_dupnbr8':      (['f'], ['f'], 'if (f) ip += (int8_t)BYTE(ip); else ip += 1;'),
+    'L_x_swapaddi':     (['a', 'b'], ['b', 'c'], 'c = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1;'),
 }
 STACKFREE = ['L_noop', 'L_exit', 'L_branch', 'L_hcall']   # L_hcall: one-byte calls (Iteration 14)
 

@@ -112,12 +112,15 @@ trying anything again (prompts/12-progress-log).
    forms within a block would remove 19-24% of the front designs' image
    dispatches - and 5-8 patterns give 80% of that, led on every workload
    by `DUP ?BRANCH` (6%) and `SWAP addi` (4-5%): operand-carrying, so the
-   pairs could never fuse them. Built (Iteration 33): `DUP ?BRANCH` and
-   `OVER ?BRANCH` as opcodes - 2-3% fewer dispatches, about 2% faster on
-   selection, image against image (`results/fused-keep-tests.md`). Next,
-   the two larger: `DUP 0= ?BRANCH` kept (3.4-4.3%: a three-operation
-   fusion, which TESTBR's one-test table cannot say) and `SWAP addi`
-   (3.7-5.0%).
+   pairs could never fuse them. Built (Iterations 33-34): `DUP ?BRANCH`,
+   `OVER ?BRANCH`, `DUP 0= ?BRANCH` kept and `SWAP n +` as opcodes and a
+   gene - image against image about 10% fewer dispatches on kernel, parse
+   and corpus, 40 bytes, selection 0.951 on the VM; net of the seven pairs
+   they displace on 8dc0f97f2c, 6-7% fewer dispatches
+   (`results/fused-keep-tests.md`). For evolution to weigh: a seed run
+   with them - with the comparison of all fronts, one laptop session.
+   Beyond: the run-time compiler could fuse them too (fib's code), and
+   the register machine proper is the long tail and the return stack.
 3. **SPN on 32-bit ARM** - correct (Iterations 30-31): the proof of
    concept and s8, all three variants, pass under qemu
    (`tools/arm-qemu-check.sh` - also native on the Tegra); x86-64's

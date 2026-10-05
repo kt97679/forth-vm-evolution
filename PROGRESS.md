@@ -859,3 +859,24 @@ selection 0.980 - all the two can reach. The price had said 6% for "DUP |
 ?BRANCH": it had folded every test-and-branch into that name. Kept apart,
 most of it is `DUP 0= ?BRANCH` (3.4-4.3%); regprice.py keeps the kinds
 apart now. image-ab.py's --set takes a JSON list.
+
+## Iteration 34 - 2026-10-05 - Claude
+
+**DUP 0= ?BRANCH kept, and SWAP n +** - the two largest patterns left in
+the first-stage price - as opcodes and a gene, through the same five
+places as Iteration 33's; DUP 0= ?BRANCH as a four-cell branch kind
+(keepbranch, after testbranch has fused the 0= ?BRANCH). Designs without
+them unchanged: stages IDENTICAL; 8dc0f97f2c as recorded and with
+Iteration 33's four, identical images from the old converter and the new.
+
+image-ab.py on 8dc0f97f2c: all seven new opcodes about 10% fewer
+dispatches on kernel, parse and corpus (the price said 10-12%), 40 bytes,
+selection 0.951 on the VM; this iteration's two alone 7-8%. Net of the
+seven pairs whose slots they take - dispatches counted on profiling
+engines, the design as recorded against it with the seven - 6-7% fewer.
+Next for them: a seed run, so evolution weighs them design by design.
+
+A slip: the A/B commands nested a JSON list inside two layers of sh -c
+and failed on its parentheses; written to a script file with a quoted
+heredoc instead. And Iteration 33's commit first said "(part)", which
+make-bundle refuses - reworded before any bundle was made.
