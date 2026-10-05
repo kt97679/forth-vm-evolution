@@ -1012,3 +1012,37 @@ it dormant. Beyond lean's bytes, seed 7 is 2.5-7% faster than seed 6's
 front with lean applied, through the middle.
 
 NEXT-RUN: none.
+
+## Iteration 41 - 2026-10-05 - Claude
+
+The owner: speed up loops, and put the loop test in the selection.
+
+**The gene `rtloop`** (`forth/cv8-fuse-loop.4`, `results/rtloop.md`): the
+compiler the image carries emits the design's loop opcodes, each where it
+has one - DO LOOP +LOOP ?DO LEAVE with 16-bit operands, no alignment
+NOOPs (which ran on every pass), and I J UNLOOP through a table the
+converter writes. loop 57-80% fewer dispatches, 2-4x faster; about 6% of
+the image. **loop selected, sieve held out** (`bench/sieve.fth`, the BYTE
+sieve) so the generalisation check stays.
+
+Four slips, each caught before anything was measured:
+- my first patch script stopped at its first edit (a block Iteration 39
+  had changed), and the build and tests after it ran on unchanged code -
+  "PASS" that meant nothing; git status showed one new file and no edits;
+- an all-or-nothing gene (all five loop opcodes) would have applied to
+  39 of seed 7's 1,207 living designs and none of its front - evolution,
+  with loop held out, had dropped what it did not need; each word on its
+  own instead;
+- lean's aliasing first made a deferring X8 call itself; narrowed to the
+  last X8 of each name, it changed seed 7's 4cc12fc1e7 by 8 bytes - WHILE8
+  had reached the fusing IF through the alias - so the rule became: every
+  reference to any X8 goes to X, except a deferral to an earlier one of
+  the same name; seed 7's front byte for byte again;
+- that exception covered calls but not (POSTPONE): POSTPONE of an
+  immediate word compiles (POSTPONE) and an xt, so ?DO8's deferral still
+  recursed - a return-stack overflow on the first ?DO, found by testing
+  each loop word alone on a design whose ?DO and LEAVE take the old path.
+
+A miniature seed run (6 designs, one generation) ran the evolver end to
+end on the new lists: six workloads timed, the report saying so.
+NEXT-RUN: seed 8, then compare.

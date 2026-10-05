@@ -239,16 +239,50 @@ if CV8_COMPILER:
 # goes to X - the same code - and (POSTPONE) operands resolve to X through
 # body_at below; then the X8 words leave the image: 8.1% of seed 6's
 # smallest design, 7.7% of its fastest (lab/evolve, Iteration 38).
+#
+# Every call or (POSTPONE) of any X8 goes to its X - the latest code under
+# that name: cv8.4's WHILE8 calls IF8, and with run-time fusion IF is
+# cv8-fuse.4's, as seed 7's designs were built. One exception (Iteration
+# 41): a later X8 that defers to the one it replaces (cv8-fuse-loop.4)
+# calls an EARLIER X8 OF ITS OWN NAME - from X too, whose code it is - and
+# that call stays, keeping the earlier one; sent to X it would call itself.
+def _refs(ws, skip=(), chain=None):       # every call target and (POSTPONE) target in these words' code
+    r = set()
+    for _w in ws:
+        if kind[_w['s']] != 'code' or not info[_w['s']]: continue
+        _, _cs, _, _, _ = layout(info[_w['s']])
+        for _j, (_k, _pl) in enumerate(info[_w['s']]):
+            if _k == 'C': r.add(_pl)
+            elif _k == 'XT':
+                # a (POSTPONE) of a swapped X8 resolves to its X (body_at) -
+                # unless it is a deferral to an earlier one of its own name:
+                # POSTPONE of an IMMEDIATE word compiles (POSTPONE), not a
+                # call, so cv8-fuse-loop.4's ?DO8 reaches the old ?DO8 so
+                _t = SRC_OF.get(_w['s'], _w['s']) + _cs[_j] + _pl
+                if _t not in skip or (chain and chain(_w['s'], _t)): r.add(_t)
+    return r
 DROPPED = {}
 import os as _os
 _NO_LEAN = _os.environ.get('SOD16_NO_LEAN')      # both parts of the gene lean off, to measure (Iteration 39)
 if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD16_NO_DROPX8') and not _NO_LEAN:   # the switch: to measure
-    DROPPED = dict(SWAPPED)
+    _nm = {w['s']: w['n'] for w in order}
+    def _chain(caller, t):                # a later X8 (or its X) deferring to an earlier one of its name
+        src = SRC_OF.get(caller, caller)
+        return src in SWAPPED and _nm.get(src) == _nm.get(t) and t < src
     for _w in order:
         if kind[_w['s']] == 'code' and info[_w['s']]:
-            info[_w['s']] = [('C', DROPPED[_pl]) if _k == 'C' and _pl in DROPPED else (_k, _pl) for _k, _pl in info[_w['s']]]
-    _gone = [w for w in order if w['s'] in DROPPED]
-    order = [w for w in order if w['s'] not in DROPPED]
+            info[_w['s']] = [('C', SWAPPED[_pl]) if _k == 'C' and _pl in SWAPPED and not _chain(_w['s'], _pl) else (_k, _pl)
+                             for _k, _pl in info[_w['s']]]
+    _cand = set(SWAPPED)                                        # every X8: out unless a deferral still calls it
+    while True:
+        _r = _refs([w for w in order if w['s'] not in _cand], skip=SWAPPED, chain=_chain)
+        _back = {s for s in _cand if s in _r}
+        if not _back: break
+        _cand -= _back
+    DROPPED = {s: SWAPPED[s] for s in _cand}
+    _out = set(DROPPED)
+    _gone = [w for w in order if w['s'] in _out]
+    order = [w for w in order if w['s'] not in _out]
     print('drop-x8: %d copies out, %d bytes of the old image' % (len(_gone), sum(w['e'] - w['link'] for w in _gone)))
 
 # ---- the dump tool and dead shadowed words left out (Iteration 39) ---
@@ -261,15 +295,6 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD
 # them - checked, not assumed.
 DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')
 if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and not _NO_LEAN:
-    def _refs(ws):                        # every call target and (POSTPONE) target in these words' code
-        r = set()
-        for _w in ws:
-            if kind[_w['s']] != 'code' or not info[_w['s']]: continue
-            _, _cs, _, _, _ = layout(info[_w['s']])
-            for _j, (_k, _pl) in enumerate(info[_w['s']]):
-                if _k == 'C': r.add(_pl)
-                elif _k == 'XT': r.add(SRC_OF.get(_w['s'], _w['s']) + _cs[_j] + _pl)
-        return r
     _names = [w['n'] for w in order]
     _k = len(_names) - 1 - _names[::-1].index('NFA') if 'NFA' in _names else None
     _tool = order[_k:] if _k is not None and all(w['n'] in DUMPTOOL for w in order[_k:]) else []
@@ -878,7 +903,7 @@ def emit(path):
         far = '--does-far' in ARGV
         CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
     for w in order:
-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS') + tuple(CVARS): continue
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
         if w['n'] in CVARS:
             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
@@ -886,6 +911,21 @@ def emit(path):
             ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
             assert len(ops) <= 23, "more folds than FOLD-OPS holds"
             data = bytes(ops + [255] * (23 - len(ops)))
+        elif w['n'] in ('LOOP-OPS', 'X10-XTS', 'X10-OPS'):
+            # Iteration 41: the loop opcodes for code compiled at run time
+            # (forth/cv8-fuse-loop.4) - each the design has, 0 for the rest -
+            # and I J UNLOOP with their image offsets, the lowest and highest
+            # first. SOD16_NO_RTLOOP=1 writes zeros, to measure.
+            _lw = ['(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)']
+            _ok = not _os.environ.get('SOD16_NO_RTLOOP')
+            _byn = {x['n']: x for x in order}
+            _x = [(new_off[_byn[n]['s']]['body'], G['X_OPS10'][n]) for n in ('I', 'J', 'UNLOOP')
+                  if _ok and n in G['X_OPS10'] and n in _byn]
+            if w['n'] == 'LOOP-OPS': data = bytes([G['X_OPS10'].get(n, 0) if _ok else 0 for n in _lw])
+            elif w['n'] == 'X10-XTS':
+                _o = [o for o, _ in _x]
+                data = b''.join(cel(v) for v in ([min(_o), max(_o)] + _o + [0] * (3 - len(_o)) if _o else [0] * 5))
+            else: data = bytes([op for _, op in _x] + [0] * (3 - len(_x)))
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time
             # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has

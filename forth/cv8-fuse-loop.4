@@ -1,0 +1,88 @@
+\ cv8-fuse-loop.4 - loops compiled at RUN time as the image's own are
+\ (Iteration 41). Loaded after cv8.4 (and cv8b.4, cv8-fuse.4 and
+\ cv8-fuse-imm.4 where a design has them), only for designs with the gene
+\ rtloop (lab/evolve).
+\
+\ The converter turns the loop words in the IMAGE's code into format-10
+\ opcodes. Code compiled at run time called their colon bodies instead -
+\ (DO), I, (LOOP) - and padded with NOOPs before each cell operand, which
+\ execute on every pass (Iterations 13 and 28: 68-70% of the loop
+\ benchmark's dispatches). Here the run-time compiler emits the opcodes,
+\ with the 16-bit operands the converter gives them: no alignment, no
+\ padding.
+\
+\ LOOP-OPS: this design's (DO) (LOOP) (+LOOP) (?DO) (LEAVE) opcodes, each 0
+\ where it has none - evolution keeps only some (seed 7's front: no design
+\ has all five), so each word uses its own opcode where there is one and
+\ the cell compiler's form where not; a frame built by one form is read by
+\ the other, as the image's own code mixes them. X10-XTS: the lowest and highest image offset of I J
+\ UNLOOP, then each one's; X10-OPS: their opcodes - 0 where a design has
+\ none. The converter writes them (tools/layout.py); a ['] here would hold
+\ the cell system's address.
+\
+\ A pending (?DO) or (LEAVE) operand holds, until LOOP resolves it, the
+\ distance back to the previous pending one, or 0 for none: 16 bits hold
+\ that, where the cell compiler's absolute links would not fit. Only where
+\ BOTH are opcodes: one chain cannot mix the two forms, so otherwise both
+\ keep the cell chain, and LOOP resolves whichever this design has.
+
+CREATE LOOP-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C,
+ALIGN
+CREATE X10-XTS ( --- a-addr )    0 , 0 , 0 , 0 , 0 ,
+CREATE X10-OPS ( --- c-addr )    0 C, 0 C, 0 C,
+ALIGN
+
+: X10-OP ( xt --- op | 0 )
+\ The opcode I, J or UNLOOP compiles to here, or 0 - two compares for any
+\ other word: the three are neighbours in the image.
+  START @ -
+  DUP X10-XTS @ < IF DROP 0 EXIT THEN
+  DUP X10-XTS CELL+ @ > IF DROP 0 EXIT THEN
+  3 0 DO
+    DUP X10-XTS I 2 + CELLS + @ = IF DROP X10-OPS I + C@ UNLOOP EXIT THEN
+  LOOP DROP 0 ;
+
+: COMPILE,8 ( xt --- )
+\ The COMPILE,8 before this one, and I J UNLOOP as their opcodes.
+  DUP X10-OP ?DUP IF SWAP DROP 0 LAST-OP ! OP, EXIT THEN
+  COMPILE,8 ;
+
+: W@ ( a --- u )   DUP C@ SWAP 1+ C@ 8 LSHIFT OR ;
+
+: CHAIN16? ( --- f )   LOOP-OPS 3 + C@ 0= 0= LOOP-OPS 4 + C@ 0= 0= AND ;
+\ (?DO) and (LEAVE) both opcodes: the pending operands chain in 16 bits.
+
+: RESOLVE-LEAVE16 ( --- )
+\ Each pending (?DO) or (LEAVE) operand: its offset to HERE, the loop's end.
+  'LEAVE @ BEGIN ?DUP WHILE
+    DUP W@ >R  HERE OVER - OVER !W
+    R> ?DUP IF - ELSE DROP 0 THEN
+  REPEAT ;
+
+: RESOLVE-LEAVES ( --- )   CHAIN16? IF RESOLVE-LEAVE16 ELSE RESOLVE-LEAVE THEN ;
+
+: DO8 ( --- a-addr )
+  LOOP-OPS C@ ?DUP IF
+    0 LAST-OP ! OP,  'LEAVE @ HERE 0 'LEAVE ! EXIT
+  THEN POSTPONE DO8 ; IMMEDIATE
+
+: LOOP8 ( a-addr --- )
+  LOOP-OPS 1+ C@ ?DUP IF OP, <RESOLVE
+  ELSE OPERAND-ALIGN POSTPONE (LOOP) HERE - , THEN
+  RESOLVE-LEAVES 'LEAVE ! ; IMMEDIATE
+
+: +LOOP8 ( a-addr --- )
+  LOOP-OPS 2 + C@ ?DUP IF OP, <RESOLVE
+  ELSE OPERAND-ALIGN POSTPONE (+LOOP) HERE - , THEN
+  RESOLVE-LEAVES 'LEAVE ! ; IMMEDIATE
+
+: ?DO8 ( --- a-addr )
+  CHAIN16? IF
+    0 LAST-OP ! LOOP-OPS 3 + C@ OP,  'LEAVE @ HERE 'LEAVE ! 0 W, HERE EXIT
+  THEN POSTPONE ?DO8 ; IMMEDIATE
+
+: LEAVE8 ( --- )
+  CHAIN16? IF
+    0 LAST-OP ! LOOP-OPS 4 + C@ OP,
+    HERE 'LEAVE @ ?DUP IF HERE SWAP - ELSE 0 THEN W, 'LEAVE ! EXIT
+  THEN POSTPONE LEAVE8 ; IMMEDIATE

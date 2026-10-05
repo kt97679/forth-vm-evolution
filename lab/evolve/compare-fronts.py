@@ -132,5 +132,7 @@ if len(cpus) > 1:
     print('\n| design | speed cpu %d | speed cpu %d | ratio |' % (a, b))
     print('|---|---|---|---|')
     for i in sorted(ids, key=lambda i: S[a][i]): print('| %s | %.3f | %.3f | %.3f |' % (i, S[a][i], S[b][i], S[a][i] / S[b][i]))
-print('\nloop is held out, and moves with an image\'s size mod 8 (Iteration 13).')
+print('\n%s is held out (Iteration 41: loop was, until the owner put it in the selection). loop moves with an image\'s'
+      ' size mod 8 - the NOOPs before (LOOP) in run-time code (Iteration 13) - except where rtloop compiles its opcodes.'
+      % ', '.join(E.WORK_HELD))
 shutil.rmtree(os.path.join(E.EV, 'cmp'), ignore_errors=True)

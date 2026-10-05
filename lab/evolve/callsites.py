@@ -155,7 +155,7 @@ for did in args:
           + ', '.join('top %d %d' % (k, cum(k)) for k in (1, 2, 4, 8, 16, 32, 64, len(rank))) + ' bytes.')
     hottest = sorted(T, key=lambda o: -sum(T[o]['dyn'][w] / max(1, CALLS[w]) for w in E.WORK_SEL))[:8]
     print('The most-called targets, by mean share of calls over the selection workloads: '
-          + ', '.join('%s %.1f%% (%d sites)' % (T[o]['name'], 100 * sum(T[o]['dyn'][w] / max(1, CALLS[w]) for w in E.WORK_SEL) / 4, T[o]['sites']) for o in hottest))
+          + ', '.join('%s %.1f%% (%d sites)' % (T[o]['name'], 100 * sum(T[o]['dyn'][w] / max(1, CALLS[w]) for w in E.WORK_SEL) / len(E.WORK_SEL), T[o]['sites']) for o in hottest))
 
     # ---- the exact price: the image laid out again with the top K as one-byte calls
     print('\nThe price, exact - the image converted again with the top K as one-byte calls '

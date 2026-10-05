@@ -129,6 +129,12 @@ trying anything again (prompts/12-progress-log).
    of the image - 12-16% of every CV8 image, no slower
    (`results/lean.md`). Both weighed by seed 7 (Iteration 40): lean taken
    everywhere, rtimm where fib's gain paid.
+   **Loops (Iteration 41, the owner's call)**: the gene `rtloop` - the
+   run-time compiler emits the design's loop opcodes, each where it has
+   one (`results/rtloop.md`): loop 2-4x faster, 57-80% fewer dispatches,
+   for about 6% of the image. **And loop is in the selection now**, with
+   `bench/sieve.fth` held out in its place. **NEXT-RUN: seed 8, then every
+   front compared** - over five workloads.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize

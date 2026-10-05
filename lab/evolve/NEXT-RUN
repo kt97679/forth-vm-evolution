@@ -22,4 +22,9 @@
 # again in one session on two CPUs. One sitting, two packs.
 #
 # Iteration 40: none - seed 7 and the comparison came back.
-none
+#
+# Iteration 41: seed 8 - loop in the selection now (the owner), sieve held
+# out, and the gene rtloop (loops compiled at run time with the design's
+# opcodes: loop 2-4x faster) to weigh - then every front measured again,
+# over the five workloads. One sitting, two packs.
+seed 8 then experiment compare-fronts.py --rounds 10 --cpus 2,8
