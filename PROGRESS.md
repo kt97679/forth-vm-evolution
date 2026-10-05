@@ -735,3 +735,11 @@ too. GOALS.md plans it in stages.
 
 **SPN on ARM**: gcc-arm-linux-gnueabihf and qemu-user install in this
 sandbox - the port can be built and checked here; the Tegra only times it.
+
+**SPN on ARM, begun.** gcc-arm-linux-gnueabihf, libc6-dev-armhf-cross and
+qemu-user install here. `tools/arm-qemu-check.sh`: the cell engine
+cross-compiled for ARMv7 (ARM mode, static) runs the 32-bit kernel under
+qemu - PASS. spn.c compiles for ARM without a warning (it has the 32-bit
+cell path); spn-stencils.c does not assemble - its holes are `movabs`, and
+its state struct and marker constants are 64-bit. The port's parts are in
+GOALS.md "Next" 3.

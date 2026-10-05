@@ -110,9 +110,15 @@ trying anything again (prompts/12-progress-log).
    every engine family, the run-time compiler. To plan in stages, the first
    one that can be measured alone: register forms for the moves within a
    word, the stack synchronised at calls, returns and branch targets.
-3. **SPN on 32-bit ARM** - the cross-compiler and qemu install here
-   (Iteration 29): ported and checked for correctness on the VM, timed on
-   the Tegra later, batched.
+3. **SPN on 32-bit ARM** - begun (Iteration 29). The path without ARM
+   hardware works: `tools/arm-qemu-check.sh` cross-compiles the cell engine
+   for ARMv7 and runs the 32-bit kernel under qemu. SPN's engine (spn.c)
+   compiles for ARM cleanly; its stencils do not - their holes are x86-64
+   inline assembly (`movabs`). To do: the holes as `movw`/`movt` pairs with
+   32-bit cells, the state (sp, tos) returned packed in r0:r1; spn.4's ARCH
+   section for ARM - marker pairs, `b` relocation, `bx lr`, no endbr; an
+   instruction-cache flush after patching (x86 needs none); a build path.
+   Correctness under qemu here; the Tegra times it, batched.
 4. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
 5. Push master to GitHub (the owner's step).
