@@ -163,3 +163,96 @@ is the next suspect (GOALS.md).
 | archived-20261004-214724: db.jsonl | 14f6036a4b | 0.629 | 0.627 | 13,217 | 13,217 | 0.662 | 0.862 | 0.473 | 0.580 | 0.935 |  |
 | archived-20261004-214724: db.jsonl | 29ad5ba726 | 0.604 | 0.589 | 13,352 | 13,352 | 0.635 | 0.754 | 0.476 | 0.585 | 0.760 |  |
 | archived-20261004-214724: db.jsonl | 12d8e18511 | 0.638 | 0.667 | 13,360 | 13,360 | 0.693 | 0.779 | 0.528 | 0.580 | 0.910 |  |
+
+## A third session: by the median, on two CPUs (Iteration 26)
+
+`next-run.sh experiment compare-fronts.py --rounds 10 --cpus 2,8` at
+c5a4648c (Iteration 25): all 41 designs, every one timed on cpu 2 and cpu 8
+of two cores in one session, interleaved, **by the median of the rounds**.
+Calibration 0.999 on cpu 2, 0.992 on cpu 8.
+
+**The CPUs agree**: per design, cpu 2 over cpu 8 is 1.002 at the median,
+0.988-1.017 for 10-90% of the designs, 0.975-1.028 at the extremes; rank
+agreement 0.98 (the two best-of-N sessions: 0.86, fib alone 0.71-1.28). All
+seven designs on cpu 2's front are on cpu 8's; cpu 8 adds one.
+
+Each run's front, by the median over both CPUs (20 rounds a design):
+
+| run | its front (speed at size) |
+|---|---|
+| seed 1 | 0.665 at 13,368, 0.693 at 13,336, 0.733 at 9,694, 0.790 at 9,662 |
+| seed 2 | 0.694 at 13,352, 0.722 at 9,662 |
+| rehearsal (VM) | 0.622 at 13,352, 0.645 at 13,344, 0.691 at 9,694, 0.699 at 9,662 |
+| seed 3 | 0.606 at 13,352, 0.648 at 9,686, 0.671 at 9,662, 0.695 at 9,646 |
+| seed 4 (first) | 0.613 at 13,352, 0.616 at 13,209, 0.645 at 13,057, 0.658 at 9,523, 0.675 at 9,474, 0.691 at 9,450, 0.714 at 9,335 |
+| seed 4 (replicate) | **0.588 at 13,201**, 0.624 at 13,073, 0.634 at 13,057, 0.680 at 9,450, 0.700 at 9,335 |
+
+**The front of all runs, measured fairly: seven of its eight designs are
+seed 4's** - five from the replicate, two from the first run - and one is
+seed 3's (60753a0eb0, 0.648 at 9,686). At the fast end the replicate's
+e99da68667 is 0.970 of seed 3's best and 151 bytes smaller (and 0.959 of the
+first seed 4 run's best - same seed, same code: selection by the best of N
+picked worse in the noisier run). At the small end the speeds tie within
+the measurement (seed 4's 6463752a82 1.016 of seed 3's 60753a0eb0, 163
+bytes smaller; 05dcc81cdc 1.006 of 550df563ee, 311 smaller).
+
+**Iteration 23's reversal was a lucky run**: 8dd8a7a146, there "fastest of
+all" at 0.564, is the design whose best fib run was 14.9 ms against a median
+of 23.9 (Iteration 25); by the median it is 0.606. Iteration 21's reading -
+seed 4 ahead - stands, by the median, with one seed 3 design kept at 9,686.
+
+### The two CPUs, every design
+
+Calibration on cpu 2: 0.999; on cpu 8: 0.992.
+
+Speed on cpu 2 over speed on cpu 8, per design: median 1.002, 10-90% 0.988-1.017, extremes 0.975-1.028; rank agreement (Spearman) 0.98.
+
+The front of all runs on cpu 2: e99da68667 0.594 at 13,201, 4cb3fa9172 0.623 at 13,073, 66eb4a8f15 0.634 at 13,057, 6463752a82 0.656 at 9,523, 38d91795a2 0.671 at 9,474, c297551359 0.676 at 9,450, 05dcc81cdc 0.704 at 9,335
+
+The front of all runs on cpu 8: e99da68667 0.582 at 13,201, 4cb3fa9172 0.625 at 13,073, 66eb4a8f15 0.635 at 13,057, 60753a0eb0 0.639 at 9,686, 6463752a82 0.661 at 9,523, 38d91795a2 0.679 at 9,474, c297551359 0.684 at 9,450, 05dcc81cdc 0.696 at 9,335
+
+On both fronts: 7 of 7 and 8.
+
+| design | speed cpu 2 | speed cpu 8 | ratio |
+|---|---|---|---|
+| e99da68667 | 0.594 | 0.582 | 1.022 |
+| 8dd8a7a146 | 0.611 | 0.601 | 1.016 |
+| 29ad5ba726 | 0.612 | 0.614 | 0.998 |
+| 1769ca2a48 | 0.617 | 0.615 | 1.003 |
+| 05617039f6 | 0.620 | 0.625 | 0.992 |
+| 4cb3fa9172 | 0.623 | 0.625 | 0.996 |
+| 14f6036a4b | 0.624 | 0.627 | 0.995 |
+| 66eb4a8f15 | 0.634 | 0.635 | 0.999 |
+| 312ad2edaa | 0.641 | 0.650 | 0.986 |
+| e0cbf09bc2 | 0.646 | 0.644 | 1.002 |
+| 12d8e18511 | 0.649 | 0.659 | 0.985 |
+| 0b1d16def9 | 0.654 | 0.652 | 1.003 |
+| 6463752a82 | 0.656 | 0.661 | 0.992 |
+| 60753a0eb0 | 0.657 | 0.639 | 1.028 |
+| 84e302c470 | 0.658 | 0.675 | 0.975 |
+| 38d91795a2 | 0.671 | 0.679 | 0.987 |
+| 448ef1ef43 | 0.671 | 0.660 | 1.017 |
+| f4a6dd9a13 | 0.672 | 0.671 | 1.001 |
+| 38d187239c | 0.672 | 0.666 | 1.010 |
+| c297551359 | 0.676 | 0.684 | 0.989 |
+| 32600cab87 | 0.679 | 0.669 | 1.014 |
+| e8f1dd3ca2 | 0.685 | 0.687 | 0.998 |
+| 6738aed13f | 0.693 | 0.689 | 1.005 |
+| 7fe7f039bd | 0.693 | 0.690 | 1.004 |
+| 57a9dcc7cb | 0.693 | 0.688 | 1.008 |
+| 8cbc6dd05c | 0.697 | 0.698 | 0.999 |
+| a285fa6ba3 | 0.699 | 0.689 | 1.014 |
+| 53ec9bedde | 0.699 | 0.688 | 1.016 |
+| 9cd791dd84 | 0.700 | 0.704 | 0.994 |
+| 550df563ee | 0.702 | 0.689 | 1.019 |
+| 595fc2b8f4 | 0.703 | 0.696 | 1.010 |
+| 05dcc81cdc | 0.704 | 0.696 | 1.010 |
+| 3453246bdf | 0.710 | 0.719 | 0.988 |
+| 57e0e77c09 | 0.715 | 0.706 | 1.013 |
+| 0ebf0445e0 | 0.726 | 0.718 | 1.012 |
+| 5b70f3dd64 | 0.733 | 0.734 | 0.997 |
+| 90018981c6 | 0.737 | 0.725 | 1.017 |
+| c17103bf95 | 0.747 | 0.748 | 0.998 |
+| a4e82e02e5 | 0.770 | 0.759 | 1.013 |
+| 672538daf5 | 0.776 | 0.776 | 1.000 |
+| 83cb81c383 | 0.790 | 0.791 | 0.999 |

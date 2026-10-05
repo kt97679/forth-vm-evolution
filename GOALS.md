@@ -63,14 +63,14 @@ trying anything again (prompts/12-progress-log).
   re-measured: 0.589 at 13,352 bytes (seed 3: 0.595 at 13,464); the small
   end 262-410 bytes smaller, 0.669 at 9,523 to 0.727 at 9,335 (seed 3: 0.622
   at 9,785). One-byte calls on six of the seven front designs.
-- **All runs' fronts in one session, twice** (Iterations 21 and 23,
-  `results/compare-fronts-amd-ryzen-7-pro-8840hs.md`; calibrations 0.991
-  and 0.996): the two sessions disagree - the first put seed 4's front
-  ahead, the second seed 3's 8dd8a7a146 fastest of all. The disagreement
-  is fib: per design 0.71-1.28 between sessions, the other workloads
-  within 2-8%. Speeds a few per cent apart are not ranked reproducibly
-  yet; sizes are exact - seed 4's genes reach 9,335 bytes, the earlier
-  seeds 9,646.
+- **All runs' fronts, by the median, on two CPUs** (Iteration 26,
+  `results/compare-fronts-amd-ryzen-7-pro-8840hs.md`): the CPUs agree per
+  design within 1.7% (10-90%), rank agreement 0.98. Seven of the eight
+  designs on the front of all runs are seed 4's; at the fast end its
+  replicate's e99da68667 is 3% faster than seed 3's best and 151 bytes
+  smaller; at the small end the speeds tie and seed 4 is 163-311 bytes
+  smaller. The two best-of-N sessions before (Iterations 21, 23)
+  disagreed by a lucky fib run.
 - **The best of N was the fault** (Iteration 25): about one fib run in 40
   lands 34-38% fast (address randomisation on), and the best of the rounds
   reported it when drawn. The evolver now takes the median of the rounds;
@@ -89,17 +89,14 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **The fronts again, by the median, on two CPUs in one session** -
-   `NEXT-RUN`: `experiment compare-fronts.py --rounds 10 --cpus 2,8`. The
-   estimator is settled (Iteration 25,
-   `results/run-spread-amd-ryzen-7-pro-8840hs.md`: the best of N reported
-   a rare lucky fib run, one in 40, 34-38% fast; the median reproduces
-   within 3.6% and across CPUs within 2.1%); this asks whether rankings
-   agree now, and which seed's front is ahead once measured fairly.
-2. **The lucky placement** - some fib runs are 34-38% faster, with address
-   randomisation on and never off. Find what those runs share (where the
-   engine's code, its tables, the VM's memory and the stacks landed):
-   a speedup every run could have.
+1. **The lucky placement** - some fib runs are 34-38% faster, with address
+   randomisation on and never off. `NEXT-RUN`: `experiment lucky.py` -
+   randomisation off, the environment padded through a page of stack
+   offsets, twice over: if an offset is fast every time, the engine can
+   choose that place on the stack at start, every run. If none is, the
+   luck is in the pages (code, heap) - next to examine.
+2. **Seed 5, selected by the median** - the first run whose selection is
+   not partly luck; the same seed's two runs differed by 4% at the fast end.
 3. **Far-call reach, checked**: cv8.4's compiler emits far calls without
    checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
    far the workloads' dictionary grows, then make the compiler refuse.

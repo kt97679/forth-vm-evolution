@@ -668,3 +668,19 @@ recorded before - seeds 1-4, the replicate - is a best of N. compare-fronts
 --cpus A,B times every design on both CPUs in one session and reports
 whether the rankings agree. NEXT-RUN: experiment compare-fronts.py
 --rounds 10 --cpus 2,8. Open: what the lucky runs share - a 35% faster fib.
+
+## Iteration 26 - 2026-10-05 - Claude
+
+**The fronts by the median, on two CPUs in one session**: the CPUs agree per
+design within 1.7% (10-90%), rank agreement 0.98 - the estimator works.
+Seven of the eight designs on the front of all runs are seed 4's (five
+from the replicate); at the fast end the replicate's e99da68667 is 3%
+faster than seed 3's best and 151 bytes smaller, 4% faster than the first
+seed 4 run's best; at the small end speeds tie, seed 4 smaller by 163-311
+bytes. Iteration 23's "seed 3 fastest of all" was 8dd8a7a146's lucky fib
+run. results/compare-fronts-amd-ryzen-7-pro-8840hs.md.
+
+**Next, the lucky run itself**: lab/evolve/lucky.py - randomisation off,
+the environment padded through a page of stack offsets (the environment's
+size moves the initial stack and nothing else), every offset twice, and
+randomisation on for the rate of lucky runs. NEXT-RUN: experiment lucky.py.

@@ -1,4 +1,4 @@
-experiment compare-fronts.py --rounds 10 --cpus 2,8
+experiment lucky.py
 # The first line that is not a comment is what `lab/evolve/next-run.sh` does
 # when it is given no argument: "seed N" (a new run - the last one's records
 # archived first), "compare" (every run's front here measured again in one
@@ -6,5 +6,5 @@ experiment compare-fronts.py --rounds 10 --cpus 2,8
 # database here) or "none" (pull and stop). compare and experiment archive
 # nothing. Each iteration sets it for the bundle it hands over (Iteration 22).
 #
-# Iteration 25: every run's front with the median, on two CPUs of two cores
-# in one session - do the rankings agree now?
+# Iteration 26: is the lucky fib run - 34-38% fast, one in 40 - a place on
+# the stack? A page of stack offsets, randomisation off, twice over.
