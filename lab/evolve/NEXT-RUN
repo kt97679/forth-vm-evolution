@@ -49,4 +49,9 @@
 # FILL and CMOVE as opcodes, THREAD-FIND as one - by counted dispatches
 # parse to 0.34, corpus 0.42, kernel 0.53 of a seed-10 front design's -
 # carrying every earlier front. Then every front compared.
-seed 11 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 52: seed 12 - seed 11 came back with the fastest design yet
+# (0.413 at 8,030 bytes) on kfast and CMOVE, never having taken up
+# THREAD-FIND; the gene tfind puts it first (counted on seed 11's best:
+# parse 0.49-0.51, corpus 0.63-0.65, kernel 0.82). Carrying every front.
+seed 12 then experiment compare-fronts.py --rounds 10 --cpus 2,8

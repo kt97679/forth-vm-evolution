@@ -85,6 +85,14 @@ loop 1.00, sieve 0.85 - the selected workloads' geometric mean about
 0.60.** Time falls less than dispatches - one opcode does a whole walk -
 which is what the next run measures.
 
+## Seed 11 (Iteration 52): timed, and the gene `tfind`
+
+On the laptop the batch made the fastest design yet, 0.413 at 8,030 bytes,
+9-30% faster than anything earlier at every size - with kfast and CMOVE
+only: THREAD-FIND sat in a pool of thirty names and met kfast once in
+1,425 designs. `tfind` (LATE, with kfast): THREAD-FIND first among the
+format-10 names, sure of a slot. results/evolve-amd-ryzen-7-pro-8840hs-seed11.md.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell

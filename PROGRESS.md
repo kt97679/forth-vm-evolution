@@ -1217,3 +1217,29 @@ four engine forms; no bytes. From the design as recorded: parse 0.34,
 corpus 0.42, kernel 0.53 of the dispatches, the selected workloads'
 geometric mean about 0.60. NEXT-RUN: seed 11, then compare - the batch
 timed on the laptop.
+
+## Iteration 52 - 2026-10-05 - Claude
+
+**Seed 11 and session 9 - the Forth sources' batch, timed.** 131 designs
+carried in; the comparison (thirteen databases, 144 designs, calibration
+1.007, ranks 1.00): **all 11 designs on the front of all runs are seed
+11's - the fastest yet, 0.413 at 8,030 bytes (seed 8's 0.436 took
+13,073), the smallest yet, 6,971, and 0.433 at 7,238** - 9-30% faster
+than the fastest earlier design no larger at every size. kfast on 7 of
+the 11 (46% of the living, none in generation 0), CMOVE on 10.
+
+**But THREAD-FIND was never taken up** - the largest saving (parse 0.489
+counted): 7 of 1,425 designs drew it from the pool of thirty format-10
+names, 6 without kfast; the one where it worked was lost. On seed 11's two
+best, first in the list: kernel 0.82, parse 0.49-0.51, corpus 0.63-0.65,
+alive. **The gene `tfind`** (LATE, with kfast): THREAD-FIND first, sure of
+a slot - a switch where the pool was a needle. Every recorded id kept; the
+one pool-drawn design rebuilds as recorded.
+
+A slip of mine, caught before the bundle went out: the record-keeping
+script quoted GOALS.md with the wrong line breaks, its check stopped it
+part way, and the shell committed anyway - without GOALS.md, NEXT-RUN
+(still seed 11: a laptop would have run it again) or this entry. Amended;
+the commit now waits on the script.
+
+NEXT-RUN: seed 12, then compare.

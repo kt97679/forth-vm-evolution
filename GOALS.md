@@ -135,6 +135,13 @@ trying anything again (prompts/12-progress-log).
   at 12,145**; 5-26% faster than the fastest earlier design no larger at
   every size, a quarter at 7.1-7.2 KB. Every one descends from carried
   designs. Seed 8's 0.436 at 13,073 is still the fastest.
+- **Seed 11 - the Forth sources' batch, timed** (Iteration 52,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed11.md`; session 9,
+  calibration 1.007): **all 11 front designs its own: the fastest yet,
+  0.413 at 8,030 bytes; the smallest, 6,971; 0.433 at 7,238** - 9-30%
+  faster than anything earlier at every size, on kfast and CMOVE alone.
+  THREAD-FIND, the largest saving, met kfast once in 1,425 designs: the
+  gene `tfind` puts it first.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -165,8 +172,10 @@ they are done, the article on the backburner.
       held-out sieve 0.848 more, 32 bytes less. The thread walk as one
       opcode, THREAD-FIND (Iteration 51): parse 0.489, corpus 0.631,
       kernel 0.799 more - from the design as recorded, parse 0.34, corpus
-      0.42, kernel 0.53 of the dispatches. **NEXT-RUN: seed 11, then
-      compare** - the batch timed. Next in the sources: the input side
+      0.42, kernel 0.53 of the dispatches. Seed 11 (Iteration 52): the
+      fastest yet, 0.413 at 8,030 - without THREAD-FIND, never taken up;
+      `tfind` puts it first. **NEXT-RUN: seed 12, then compare.** Next in
+      the sources: the input side
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header
       NAME>BUF (open).
    b. **The image's remaining fixed costs** (Iteration 44's audit): the

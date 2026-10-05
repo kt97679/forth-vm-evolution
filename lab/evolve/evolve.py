@@ -85,7 +85,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind')
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -104,9 +104,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall'), ('bss',), ('kfast',)]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall'), ('bss',), ('kfast', 'tfind')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -133,6 +133,11 @@ def kfast_on(g):
     (forth/cv8b-kfast.4) - a byte-header CV8 design with the gene. (A
     cell-header version hung at the first lookup: an open item.)"""
     return g['enc'] == 'cv8' and bool(g.get('bytehdr')) and bool(g.get('kfast'))
+def tfind_on(g):
+    """Iteration 52: THREAD-FIND, kfast's thread walk, as the FIRST format-10
+    opcode - sure of a slot. Seed 11 found it in the pool 7 times in 1,425
+    designs, once with kfast: the biggest saving there, never taken up."""
+    return kfast_on(g) and bool(g.get('tfind'))
 def overlay(g):
     """Does this CV8 design need forth/cv8-fuse.4, the compiler that fuses
     pairs at run time? Only if it has pairs and the rtfuse gene. (Its fold
@@ -177,6 +182,7 @@ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR',
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
     ws = [w for w in g.get('ops10', []) if w != 'THREAD-FIND' or kfast_on(g)]   # Iteration 51: a kfast word
+    if tfind_on(g): ws = ['THREAD-FIND'] + [w for w in ws if w != 'THREAD-FIND']  # Iteration 52: first, sure of a slot
     return [[w, op] for w, op in zip(ws, super_slots(g))]
 def supers_in(g):
     """[[first, second, opcode], ...] for the pairs that get a slot."""
@@ -203,6 +209,7 @@ def express(g):
     if 'rtloop' in e and not rtloop_on(g): e.pop('rtloop')                         # Iteration 41: with a loop opcode to use
     if 'rtloopall' in e and not rtloopall_on(g): e.pop('rtloopall')                # Iteration 43: all eight of them
     if 'kfast' in e and not kfast_on(g): e.pop('kfast')                            # Iteration 49: byte headers
+    if 'tfind' in e and not tfind_on(g): e.pop('tfind')                            # Iteration 52: with kfast
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
