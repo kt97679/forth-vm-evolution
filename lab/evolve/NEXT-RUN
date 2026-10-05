@@ -1,4 +1,4 @@
-seed 5
+none
 # The first line that is not a comment is what `lab/evolve/next-run.sh` does
 # when it is given no argument: "seed N" (a new run - the last one's records
 # archived first), "compare" (every run's front here measured again in one
@@ -6,5 +6,5 @@ seed 5
 # database here) or "none" (pull and stop). compare and experiment archive
 # nothing. Each iteration sets it for the bundle it hands over (Iteration 22).
 #
-# Iteration 27: seed 5, the first run selected by the median of its rounds.
-# About 40 minutes; the seed 4 replicate's records are archived first.
+# Iteration 28: none - the owner asked for as few laptop runs as possible;
+# what needs the laptop's clock is batched for one session later (GOALS.md).

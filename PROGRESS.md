@@ -697,3 +697,21 @@ run-spread results (forward) and lucky.py. Left: something transient in a
 run, particular to some designs - not cheap to test, not for an engine to
 choose. Lead closed; the median stands. NEXT-RUN: seed 5, the first run
 selected by the median.
+
+## Iteration 28 - 2026-10-05 - Claude
+
+**Seed 5, the first run selected by the median**
+(`results/evolve-amd-ryzen-7-pro-8840hs-seed5.md`): re-measure within 4% of
+selection; every front design has 32 one-byte calls and the second escape
+level; provisionally (across sessions) 5% faster than anything before at
+13,073 bytes and a new fastest at 14,017. Deaths audited here, each rebuilt:
+three scale-1 reach limits; one converter assertion (scale 3, folding off)
+that Iteration 12's converter fails the same - old, rare, fails safe.
+
+**The owner asked for fewer laptop runs: counted here what counting can
+settle.** `lab/evolve/loopwords.py` (`results/price-runtime-loops.md`): the
+loop opcodes in code compiled at run time would save 0.1% of kernel's
+dispatches and 0.8-1% of corpus's, none of fib's or parse's - priced, not
+built (the held-out loop's 68-70% is not a reason: it is held out). The
+workloads run code up to 68 KB against a far reach of 2-4 MB - measured, no
+check built. Both off GOALS.md's list into its register. NEXT-RUN: none.

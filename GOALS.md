@@ -83,6 +83,13 @@ trying anything again (prompts/12-progress-log).
   kind of front - one-byte calls on all six, the same smallest size
   (9,335) - leaning more on the second escape level. Calibrated well (s6
   1.004, fib 1.020), its re-measure took 0-7% off (the first: 2-20%).
+- **Seed 5, selected by the median** (Iteration 28,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed5.md`): the re-measure agrees
+  with selection within 4% (seed 4's first run: 2-24%). Every front design
+  carries 32 one-byte calls and the second escape level. Against the
+  earlier fronts, across sessions so provisionally: 0.593 at 13,073 bytes,
+  5% faster than anything before at that size; a new fastest, 0.579 at
+  14,017 (scale 2, run-time fusion); ties at 9.45 KB; slower at 9,335.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -91,26 +98,21 @@ trying anything again (prompts/12-progress-log).
 
 ## Next, in order
 
-1. **Seed 5, selected by the median** - `NEXT-RUN`: `seed 5`. The first run
-   whose selection is not partly luck: seed 4's two runs, same seed and
-   code, differed by 4% at the fast end. Then `compare` on two CPUs, by the
-   median, with every run before it.
-2. **Far-call reach, checked**: cv8.4's compiler emits far calls without
-   checking reach - 4 MB at scale 0, 2 MB with one-byte calls. Measure how
-   far the workloads' dictionary grows, then make the compiler refuse.
-3. **The loop words in code compiled at run time** - priced first: there
-   every pass of a DO loop runs `(LOOP)`'s colon body and 0-7 alignment
-   NOOPs; the opcodes exist and now work. Count the passes in the
-   selection workloads' run-time code before touching the compiler.
-4. Remaining planned gene: indirect threading; then a register machine.
-5. The article (`article/`): prompts/14-audience-research before drafting
+1. **The next laptop session that measures speed** (the owner asked for as
+   few as possible): seed 5's front with all the others, by the median, on
+   two CPUs in one session (`compare-fronts.py --cpus 2,8`) - batched with
+   whatever else then needs the laptop's clock. `NEXT-RUN`: none until then.
+2. Remaining planned gene: indirect threading; then a register machine.
+3. The article (`article/`): prompts/14-audience-research before drafting
    for Habr and ForthHub; 04 and 05 before publishing.
-6. ARM port of SPN. Push master to GitHub (the owner's step).
+4. ARM port of SPN. Push master to GitHub (the owner's step).
 
 ## Rejected or deferred - look here first
 
 | approach | what decided it | where |
 |---|---|---|
+| The loop opcodes in code compiled at run time | priced, not built (Iteration 28): 0.1% of kernel's dispatches, 0.8-1% of corpus's, none on fib or parse; 68-70% of the held-out loop's, which building it for would spoil | `results/price-runtime-loops.md` |
+| A reach check for far calls in cv8.4 | measured, not built (Iteration 28): the workloads run code up to 68 KB, the far form reaches 2 MB (one-byte calls) to 4 MB; a check costs every image bytes | `results/price-runtime-loops.md` |
 | One-byte calls in the pairs' slots | priced, not built (Iteration 13): the pairs with the fewest static sites are among the hottest - four of them carry 3-8% of the dispatches, for 24-120 bytes; the far-call prefix band costs no slot | `results/price-hotcalls-seed3-front.md` |
 | Native code in the genome: relf's native compiler as a family of its own, or our SPN with relf's rules as genes | deferred by the user (Iteration 4) after measuring it (Iteration 3): our corpus byte for byte, our kernel workload a segmentation fault in cross.4's RESOLVE, 3-10 times faster than s6 on the VM | PROGRESS.md, Iterations 3 and 4 |
 | Profile-guided optimisation of the engine as a gene | measured, not built (Iteration 7): 0.903 on s6 only when trained on the measured workloads; trained on a separate program, 0.980 - what -fprofile-use's flags give without a profile; three of those flags became genes instead | `lab/evolve/GENES.md`; `lab/evolve/pgo-train.fth` |
