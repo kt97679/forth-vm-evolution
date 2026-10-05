@@ -111,6 +111,15 @@ trying anything again (prompts/12-progress-log).
   generation 0); `rtimm` weighed and mostly left - expressed on one, at
   8,957 bytes. Beyond lean's bytes, 2.5-7% faster than seed 6's front with
   lean applied, through the middle.
+- **Seed 8 - loop selected** (Iteration 42,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed8.md`; session 6, five
+  workloads, calibration 1.003): **0.449 at 13,073 bytes - the fastest yet
+  - 0.454 at 9,278, down to 8,034 bytes, the smallest yet**; 14 of the 17
+  designs on the front of all runs, 15-27% faster than the fastest earlier
+  design no larger from 8.5 KB up. rtloop on every front design from
+  8,525 bytes, the loop opcodes taken back (I in 83% of the living): loop
+  five times faster than s6. The held-out sieve improved with it
+  (0.51-0.66, seed 7's 0.78-0.85): the gains carry over.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -133,8 +142,8 @@ trying anything again (prompts/12-progress-log).
    run-time compiler emits the design's loop opcodes, each where it has
    one (`results/rtloop.md`): loop 2-4x faster, 57-80% fewer dispatches,
    for about 6% of the image. **And loop is in the selection now**, with
-   `bench/sieve.fth` held out in its place. **NEXT-RUN: seed 8, then every
-   front compared** - over five workloads.
+   `bench/sieve.fth` held out in its place. Seed 8 (Iteration 42) took both
+   - loop five times faster, the sieve carried along.
 2. **A register machine** - priced (Iteration 29,
    `results/price-register-machine.md`): up to 38-50% of the front designs'
    dispatches only move values or push a lone literal - the largest prize

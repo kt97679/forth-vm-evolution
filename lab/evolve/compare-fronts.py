@@ -103,8 +103,9 @@ def front(ids):
     ids = [i for i in ids if i in speed]
     return [i for i in ids if not any(speed[j] <= speed[i] and size[j] <= size[i] and (speed[j], size[j]) != (speed[i], size[i]) for j in ids)]
 allf = front([i for i in speed if i != CAL])
-print('| run | design | speed now | recorded | size now | recorded | kernel | fib | parse | corpus | loop | on the front of all |')
-print('|---|---|---|---|---|---|---|---|---|---|---|---|')
+print('| run | design | speed now | recorded | size now | recorded | %s | on the front of all |'
+      % ' | '.join(E.WORK_SEL + ['%s (held out)' % w for w in E.WORK_HELD]))   # from the lists: Iteration 42
+print('|---|---|---|---|---|---|' + '---|' * len(E.WORK_SEL + E.WORK_HELD) + '---|')
 for label, ids in runs:
     for i in sorted(ids, key=lambda i: (size.get(i, 1 << 30), speed.get(i, 9))):
         g, rs, rp = rec[i]

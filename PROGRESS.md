@@ -1046,3 +1046,23 @@ Four slips, each caught before anything was measured:
 A miniature seed run (6 designs, one generation) ran the evolver end to
 end on the new lists: six workloads timed, the report saying so.
 NEXT-RUN: seed 8, then compare.
+
+## Iteration 42 - 2026-10-05 - Claude
+
+**Seed 8 and session 6** - the first run with loop selected. The comparison:
+ten databases, 98 front designs, five workloads, calibration 1.003, the two
+CPUs agreeing (ranks 0.99). **14 of the 17 designs on the front of all runs
+are seed 8's: 0.449 at 13,073 bytes (fastest yet), 0.454 at 9,278, down to
+8,034 (smallest yet)**; 15-27% faster than the fastest earlier design no
+larger from 8.5 KB up. rtloop on every front design from 8,525 bytes and
+55% of the living (none in generation 0); the loop opcodes taken back (I
+in 83%); loop five times faster than s6. **The held-out sieve improved
+with it** - 0.51-0.66 against seed 7's 0.78-0.85.
+
+A slip in the tool, not the data: compare-fronts.py's column header was a
+fixed list of the old five workloads while its rows came from the new
+lists, so the last data column - sieve - sat under "loop", and a parser
+reading by name found no front at all. Read by position; the header is
+built from the lists now.
+
+NEXT-RUN: none.
