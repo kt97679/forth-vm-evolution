@@ -4,6 +4,26 @@ The present. It shrinks as things are done; the past is in `PROGRESS.md`
 (append-only) and the git log. Check the register at the bottom before
 trying anything again (prompts/12-progress-log).
 
+## The aim - simplicity and minimalism
+
+**Simplicity and minimalism are this project's main goal** (the owner,
+2026-10-06, Iteration 72): the smallest, simplest system that does the
+job - small images, a small and plain engine, few mechanisms, each one
+easy to read and to remove. Speed is welcome where it costs little; it
+does not justify complexity on its own.
+
+How it decides things:
+- **A mechanism earns its place by measurement**, and goes behind a gene
+  so that evolution - and the reader - can see what it buys. If it buys
+  nothing, it comes out (`rtlit`, Iteration 59).
+- **Of two ways to the same result, the simpler one**, even at a small
+  cost in speed or bytes; of two designs equally fast and small, the one
+  with fewer mechanisms.
+- **Complexity is a cost to count, not only to avoid.** The fitness today
+  is CPU time and IMAGE size; what a design adds to the ENGINE is not
+  counted. Anything that grows the engine (a JIT, say) should be measured
+  so that it is not free in the score.
+
 ## Conventions
 
 - **Each handoff's last commit is titled `Iteration N: ...`**, N counting
@@ -167,6 +187,12 @@ trying anything again (prompts/12-progress-log).
   best that small before: 0.375); the fastest yet, 0.230 at 7,958.**
   thinhdr on all 13; rtiplus on none, swapi on one - the run-time code
   genes did not pay in time. Stopping rule: go on (smallest 3.6%).
+- **Seed 16 - the first run in the two-bit tag** (Iteration 72,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed16.md`; session 14,
+  calibration 1.001): **its front is the old one moved ~370 bytes right
+  at about its speed** - 7,009 bytes (0.424) to 7,708 (0.243); 1.03-1.08
+  of the best old design no larger from 7.2 KB up. The front of all runs
+  stays the old format's. From here the tag-2 front is the one to beat.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -177,6 +203,20 @@ trying anything again (prompts/12-progress-log).
 
 Iteration 48, the owner: the improvements first, the Tegra session once
 they are done, the article on the backburner.
+
+**A JIT as a gene? (the owner, Iteration 72) - the question open.**
+Possible: SPN (FINDINGS-SPN.md) proved copy-and-patch here - stencils,
+C functions the C compiler builds into the engine, copied and patched by
+a translator in Forth, on x86-64 and 32-bit ARM - and ran fib ~5.7x faster
+than the evolved interpreter. But SPN is not minimal: a 1,861-line engine
+copy, ~2,600 lines of Forth translator. The minimal version: at `;`, a
+colon word whose every operation has a stencil (a small set - the stack
+ops, arithmetic, literals, @ !, branches, the loop opcodes, calls, EXIT)
+is copied and patched into executable memory, and the word pointed at
+it; any other stays bytecode - no decoder, no fallback. Its translator is
+Forth in the image, so the image size counts it; its stencils are in the
+engine, so their machine code should count too (the aim, above). Waits
+for the owner's word.
 
 **First, the format (Iteration 64, the owner): `FORMAT-TAG2.md`.** The
 code space was 2 MB; the owner wants relf's design - 64 opcodes and

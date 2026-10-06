@@ -1614,3 +1614,25 @@ untouched, 11 of 13 mutants alive.
 NEXT-RUN: seed 16 tag2, then compare - the old front the baseline. Left
 of the format: 32-bit cells (before the Tegra), the analysis tools'
 opcode names.
+
+## Iteration 72 - 2026-10-06 - Claude
+
+**Seed 16, the first run in the two-bit tag**, and session 14 (seeds
+12-16, calibration 1.001): the front of all runs stays the old format's;
+seed 16's front is the old one moved ~370 bytes right at about its speed
+- 1.03-1.08 of the best old design no larger from 7.2 KB up. The price,
+as counted. t2hot chosen toward size.
+
+**The aim, written down** (the owner: simplicity and minimalism are the
+main goal; it was not stated anywhere): at the top of GOALS.md and
+README.md - the smallest, simplest system that does the job; mechanisms
+earn their place by measurement, behind genes, and come out if they buy
+nothing; the simpler of two ways; and complexity counted - the fitness
+does not see what a design adds to the ENGINE.
+
+**A JIT as a gene** (the owner asked): possible - SPN proved copy-and-patch
+here, on x86-64 and ARM - but SPN is not minimal (a 1,861-line engine copy,
+~2,600 lines of Forth). The minimal version and its costs are in GOALS.md;
+it waits for the owner's word.
+
+NEXT-RUN: seed 17 tag2, then compare.

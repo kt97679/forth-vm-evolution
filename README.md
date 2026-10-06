@@ -5,6 +5,10 @@ shape over a sequence of encodings, from L.C. Benschop's SOD32 to a
 byte-coded VM under a third its size, and what each change cost or
 saved.
 
+**The aim is simplicity and minimalism** - the smallest, simplest system
+that does the job; speed where it costs little. `GOALS.md` says how that
+decides things.
+
 Every row of the ladder in `stages/STAGES.md` is a system that builds,
 boots, compiles its own encoding, and passes the same 616-case ANS CORE
 corpus. Nothing in the measured tables is modelled.

@@ -123,3 +123,6 @@ whatever format keeps images small.
   counted on the VM: size and
   dispatches of the current front re-encoded, design by design.
 - **T6 laptop runs**: seeds with `tag2` required, carrying the front.
+  Seed 16 (Iteration 72): the old front moved ~370 bytes right at about
+  its speed - the price, confirmed; the old format keeps the front of all
+  runs until the tag-2 runs win it back.
