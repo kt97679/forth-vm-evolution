@@ -190,6 +190,13 @@ the order, so these paths are tested only here.
 alive in all four engine forms; the selected workloads' geometric mean
 0.762-0.786 of the dispatches.
 
+## Seed 14 (Iteration 62): klookup taken up
+
+klookup on 8 of the 11 seed-14 designs on the front of all runs (all but
+the three smallest), first in generation 2, 41% of the living. The fastest
+yet, 0.240 at 8,320 bytes - 4.2x hand-made s6; parse at 0.09-0.12 of s6's
+time on the front, corpus 0.23-0.26.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell

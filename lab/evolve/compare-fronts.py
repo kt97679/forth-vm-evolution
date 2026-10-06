@@ -39,6 +39,12 @@ home = os.path.expanduser('~')
 def say(*a): print(*a, file=sys.stderr, flush=True)
 
 runs, rec = [], {}                  # [(label, [ids])]; id -> (genome, recorded size, recorded speed)
+# Iteration 62: the databases here, labelled as a carry names its origin
+# (evolve.py --carry: "carried from archived-.../db.jsonl: id")
+HERE_DBS = set('/'.join(d.split('/')[-4:-3] + d.split('/')[-1:]) for d in dbs)
+def carried_from(r):
+    h = r.get('how', '')
+    return h[len('carried from '):].split(':')[0] if h.startswith('carried from ') else None
 for db in dbs:
     R = {}
     for l in open(db):
@@ -56,9 +62,13 @@ for db in dbs:
     # (Iteration 21: ".../build/evolve/db.jsonl" was this clone's AND seed 3's archive)
     label = ('this clone: ' + base) if '/archived-' not in db else db[db.index('archived-'):].replace('/build/evolve/', ': ')
     # Iteration 46: a design a run CARRIED from an earlier one counts for the run
-    # that found it - whose database is here too - not twice, and not as new
-    nc = len(ids); ids = [i for i in ids if not R[i].get('how', '').startswith('carried')]
+    # that found it - whose database is here too - not twice, and not as new.
+    # Iteration 62: only if that run IS here - next-run.sh compares the newest
+    # few (COMPARE_LAST) - or it would not be measured at all: it stays here.
+    nc = len(ids); ids = [i for i in ids if carried_from(R[i]) not in HERE_DBS]
     if len(ids) < nc: how += ', %d carried in and left to their own runs' % (nc - len(ids))
+    kept = sum(1 for i in ids if carried_from(R[i]))
+    if kept: how += ', %d carried from a run not compared here, kept' % kept
     runs.append((label, ids)); say('%s: %d designs (%s)' % (label, len(ids), how))
     for i in ids: rec.setdefault(i, (E.canon(R[i]['genome']), R[i]['size'], sp[i]))
 CAL = 's6-cv8b'

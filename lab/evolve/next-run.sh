@@ -163,11 +163,21 @@ checks() {   # build/ made current, then everything that must pass before a meas
 if [ "$MODE" = experiment ]; then
     step "build/ made current - build-stages.sh leaves build/evolve/ alone"
     checks
-    step "the databases: this clone's run, and every archived one"
+    # Iteration 62: the newest COMPARE_LAST archived databases (default 4; 0:
+    # all). Every run carries the earlier fronts, and since then the front of
+    # all runs has come from the newest one or two: re-timing seeds 1-10 cost
+    # minutes a session and grew with every run.
+    LAST=${COMPARE_LAST:-4}
+    step "the databases: this clone's run, and the newest $LAST archived (0: all)"
+    n=0
+    for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do [ -f "$f" ] && n=$((n + 1)); done
+    skip=0; if [ "$LAST" -gt 0 ] && [ "$n" -gt "$LAST" ]; then skip=$((n - LAST)); fi
     set --
     if [ -f build/evolve/db.jsonl ]; then set -- build/evolve/db.jsonl; fi
-    for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do
+    i=0
+    for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do      # a glob expands sorted: oldest first
         [ -f "$f" ] || continue
+        i=$((i + 1)); [ "$i" -gt "$skip" ] || continue
         set -- "$@" "$f"
     done
     [ $# -gt 0 ] || { echo "   no database in build/evolve or $RUNS/archived-*"; exit 1; }

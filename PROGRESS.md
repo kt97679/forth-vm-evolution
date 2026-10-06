@@ -1404,3 +1404,25 @@ swapi) - the pool of format-10 names is too big for mutation to find a
 good one by chance, and a general way to let evolution order them is on
 the list. (My first try at this entry quoted GOALS.md with the wrong line
 breaks; its check stopped the commit, as it should.)
+
+## Iteration 62 - 2026-10-06 - Claude
+
+**Seed 14 and session 12 - the whole lookup taken up.** 173 designs
+carried in; the comparison (sixteen databases, 188 designs, calibration
+1.000, ranks 1.00): **11 of the 12 designs on the front of all runs are
+seed 14's - the fastest yet, 0.240 at 8,320 bytes (4.2x s6; seed 13's
+best 0.284 at 7,799), 0.244 at 7,286, 0.245 at 7,172** - 15-20% faster
+than anything earlier from 7.0 to 8.3 KB; the small end held at 6,903.
+klookup on 8 of the 11, first in generation 2. By the stopping rule:
+go on (the fastest 15% better).
+
+**The comparison capped.** It re-timed every run's front - 188 designs,
+twenty minutes, a minute more each run - though since carrying began the
+front of all runs has come from the newest one or two. next-run.sh now
+compares the newest COMPARE_LAST archived databases (default 4; 0: all);
+compare-fronts.py leaves a carried design to the run that found it only
+if that run is compared, so none goes unmeasured - checked on seed 14's
+re-measured front: 15 kept and 2 left to seed 13 with seed 13 present
+(as session 12 itself did), all 17 kept without it.
+
+NEXT-RUN: seed 15 - thinhdr, rtiplus, swapi to choose - then compare.

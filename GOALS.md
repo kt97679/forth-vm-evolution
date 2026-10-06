@@ -154,6 +154,12 @@ trying anything again (prompts/12-progress-log).
   0.284 at 7,799 bytes - 3.5x s6; 0.297 at 7,246; the smallest, 6,903 at
   0.436** - 17-34% faster than anything earlier at every size. kinput on
   all ten from generation 1; no design above 7,799 bytes on the front.
+- **Seed 14 - the whole lookup taken up** (Iteration 62,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed14.md`; session 12,
+  calibration 1.000): **11 of the 12 front designs its own - the fastest
+  yet, 0.240 at 8,320 bytes, 4.2x s6; 0.244 at 7,286; 0.245 at 7,172** -
+  15-20% faster than anything earlier from 7.0 to 8.3 KB; the small end
+  held at 6,903. klookup on 8 of the 11; parse at 0.09-0.12 of s6.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -207,8 +213,8 @@ the smallest by under ~2%.**
       0.65, corpus 0.61 counted. Seed 13 (Iteration 56): taken up from
       generation 1 - the fastest yet, 0.284 at 7,799. The whole lookup
       and the numbers (Iteration 57): the gene `klookup` - parse
-      0.53-0.57, corpus 0.60-0.65 counted. **NEXT-RUN: seed 14, then
-      compare.**
+      0.53-0.57, corpus 0.60-0.65 counted. Seed 14 (Iteration 62): the
+      fastest yet, 0.240 at 8,320.
       Next in the sources: number conversion (NUMBER?, >NUMBER, DIGIT?:
       17% of parse), FIND's search-order loop, then what is left
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header

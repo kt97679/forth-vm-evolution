@@ -67,4 +67,9 @@
 # Iteration 57: seed 14 - the first run that can choose klookup ((FIND):
 # the whole dictionary lookup, (>NUMBER): number conversion, WORD8) -
 # counted on seed 13's best: parse 0.53, corpus 0.60, kernel 0.80.
-seed 14 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 62: seed 15 - seed 14 came back with the fastest yet (0.240
+# at 8,320 bytes); thinhdr (248 bytes off every design), rtiplus (I +
+# fused: loop 0.80) and swapi (SWAP+I sure of a slot: fib 0.94) are new to
+# choose. Then compare - the newest four archived runs and this one now.
+seed 15 then experiment compare-fronts.py --rounds 10 --cpus 2,8
