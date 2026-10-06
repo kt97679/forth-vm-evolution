@@ -1742,3 +1742,16 @@ fastest of all runs no longer needs a large engine - cc0b1e2aeb, 0.238 at
 42,512 bytes total, binary 33,448 - against seed 18's 0.244 at 74,548. No
 converter deaths. NEXT-RUN: seed 20 tag2; if small, the gene set has
 converged and the JIT comes before more runs.
+
+## Iteration 79 - 2026-10-06 - Claude
+
+**Seed 20 small too - two in a row: evolution stops** (session 18, seeds
+16-20, calibration 1.000, ranks 1.00, 0 by memory alone): fastest 0.264
+against 0.243, smallest total 32,299 against 32,299, memory 208 against
+204 KB. The converged front: 32 designs, 16 of seed 20, 11 of seed 19, 5
+of seed 18. The owner asked whether evolution can run here to spare the
+laptop: processes on this VM are killed between Claude's turns (a
+background heartbeat stopped at the turn's end; the files persist), so a
+run here only advances during a reply - ~45 minutes of one; and the runs'
+last generations still make front designs (of 64: 25% by generation 20,
+50% by 30), so shorter runs would cost. NEXT-RUN: none - the JIT next.

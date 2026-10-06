@@ -71,7 +71,9 @@ buffer or a leak, tens of KB, still decides.
 session, the fastest improves < ~5%, the smallest binary + image < ~2%
 and the least memory < 8 KB. Two small runs in a row: stop - the gene set
 has converged; new genes (the JIT) before more runs. **Seed 19: small, the
-first** (+2.5%, +0.1%, none).
+first** (+2.5%, +0.1%, none). **Seed 20: small, the second - STOPPED
+(Iteration 79).** The gene set has converged under the three objectives;
+the laptop rests until new genes exist.
 
 ## Conventions
 
@@ -260,7 +262,15 @@ first** (+2.5%, +0.1%, none).
   `results/evolve-amd-ryzen-7-pro-8840hs-seed19.md`; session 17,
   calibration 1.009): fastest +2.5%, smallest total +0.1%, memory none.
   The fastest of all runs at 42.5 KB total, no large engine (cc0b1e2aeb,
-  0.238). 0 of the front's 18 by memory alone. Runs
+  0.238). 0 of the front's 18 by memory alone.
+- **Seed 20 - small, the second: evolution stops** (Iteration 79,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed20.md`; session 18,
+  calibration 1.000): fastest none, smallest total 0.0%, memory none.
+  The front of all runs, 32 designs, is the converged front. Next:
+  development - the JIT (JIT.md) first - then runs again with new genes.
+  On running faster: processes here do not survive between Claude's
+  turns, so a run here only advances during a reply; and runs keep
+  finding front designs to generation 40 (25% by 20, 50% by 30). Runs
   from seed 18 on are judged by them; the earlier fronts are carried in
   and measured again under them.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the

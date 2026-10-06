@@ -94,4 +94,8 @@
 #
 # Iteration 78: seed 19 small (the stopping rule, adopted) - the first of
 # two. If seed 20 is small too, the gene set has converged.
-seed 20 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 79: seeds 19 and 20 both small - the stopping rule says stop.
+# The gene set has converged; development next (the JIT, JIT.md). Runs
+# resume with new genes.
+none
