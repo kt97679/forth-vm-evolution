@@ -218,7 +218,9 @@ is copied and patched into executable memory, and the word pointed at
 it; any other stays bytecode - no decoder, no fallback. Its translator is
 Forth in the image, so the image size counts it; its stencils are in the
 engine, so their machine code should count too (the aim, above). Waits
-for the owner's word.
+for the owner's word. **The owner's word (Iteration 73): lazy, and no
+significant growth in code or memory - tracked.** The plan, with budgets,
+is `JIT.md`; phase 1 a prototype on the VM, its numbers decide.
 
 **First, the format (Iteration 64, the owner): `FORMAT-TAG2.md`.** The
 code space was 2 MB; the owner wants relf's design - 64 opcodes and

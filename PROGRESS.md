@@ -1649,3 +1649,10 @@ First readings: seed 15's smallest and fastest in the old format, 37.2
 and 39.9 KB of engine code, 1.43-1.44 MB peak; the fastest in the tag 45.5
 KB - the tag's cost in the engine, 5.6 KB, mostly the multi-state copies
 of its call handlers and tables - at the same peak.
+
+**JIT.md** - the minimal lazy JIT planned: SPN's stencils, markers and
+native convention borrowed, not its engine copy or translator; only
+words compiled at run time, translated on their first call, all or
+nothing per word; budgets - ~300 new lines of C, +15 KB engine code,
++1 MB peak memory, the image unchanged - and it must pay, or it comes
+out. Phase 1, a prototype on the VM, next.
