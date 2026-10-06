@@ -1824,3 +1824,12 @@ The owner agreed the next genes, in order: inlining short words and tail
 calls (priced first - lab/evolve/callsites.py's census and per-target
 call counts are the tool), the rewrite-rule search, image compression,
 the JIT's calls into bytecode, a wider flag pool. NEXT-RUN: seed 23 tag2.
+
+## Iteration 84 - 2026-10-06 - Claude
+
+**The runs directory moves into the clone** (the owner: all development
+in one place): runs/, ignored by git, the default of next-run.sh and
+tools/clean-runs.sh (RUNS still overrides). Once, under the runs lock, the
+newest archives and pack tarballs move over from ~/forth-vm-evolution-runs
+(a marker, runs/.moved-in, lists them); the rest of the old directory is
+left for the owner to delete. Packs to send back are now in runs/.

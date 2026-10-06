@@ -17,13 +17,13 @@ every pull; an argument (`4`, `compare`) overrides it.
 suite rewrote under results/ are kept as a git stash and sent back in the
 pack, any other change stops it), then carries on as the copy it pulled - so it updates itself, and only bundles need
 downloading. It moves the previous run's
-records to ~/forth-vm-evolution-runs/archived-TIME/ (never deletes them:
+records to runs/archived-TIME/ in the clone (~/forth-vm-evolution-runs before Iteration 84) (never deletes them:
 every untracked file at the top but RESULTS.md, every file in
 build/evolve/ - each seed's database and reports - and build/bench-laptop/
 and build/results/; MANIFEST.txt lists them), removes the rest of build/
 and builds again, runs the tests, `--validate` and the jail
 test, then the run (seed as given; 32 x 40, 3 rounds), `--remeasure 6`, and
-packs what to send back into ~/forth-vm-evolution-runs/forth-vm-evolution-
+packs what to send back into runs/forth-vm-evolution-
 seedN-....tar.gz. After the pull it goes on in the background; the last
 line of its log names the pack. Run it again with the same seed after an
 interruption and it resumes; a new commit or seed starts afresh.

@@ -20,7 +20,7 @@ __pycache__/
 /evolve*.log
 # And what RUNNING.md's commands wrote at the top before Iteration 16 (now
 # under build/evolve/), and lscpu's output for sending back. A run's
-# records live in build/ or ~/forth-vm-evolution-runs, never in git;
+# records live in build/ or runs/, never in git;
 # lab/evolve/next-run.sh moves anything untracked at the top there.
 /sample*.md
 /knockout*.md
@@ -33,3 +33,9 @@ __pycache__/
 *.orig
 *.rej
 /core
+
+# The runs directory (Iteration 84 - the owner: all development in one
+# place, not ~/forth-vm-evolution-runs): logs, archived records, and the
+# pack tarballs to send back. lab/evolve/next-run.sh writes it and cleans
+# it (tools/clean-runs.sh). In the clone, never in git.
+/runs/

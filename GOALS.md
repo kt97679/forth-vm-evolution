@@ -283,6 +283,9 @@ the laptop rests until new genes exist.
   +4.5% (0.199), smallest total +0.5%, memory none. 12 of the front's 39
   by memory alone, but by 16-20 KB - real pages, not noise. next-run.sh
   now cleans the runs directory before every run (tools/clean-runs.sh).
+- **The runs directory is runs/ in the clone** (Iteration 84, the owner):
+  ignored by git; next-run.sh moved what was needed from
+  ~/forth-vm-evolution-runs, once. The packs to send back are there.
 - **Next, priced before built (the owner's questions, Iteration 82)**:
   inlining short colon words - never built (GENES.md had it as "phase
   3"): a call (2-4 bytes, and an EXIT at run time) where the callee's body

@@ -20,7 +20,7 @@
 #   REPO      the clone                 default the clone this script is in;
 #                                       a copy outside one: ~/git/my/forth-vm-evolution-iter14
 #   BUNDLES   where bundles arrive      default ~/Downloads
-#   RUNS      logs, archives, the pack  default ~/forth-vm-evolution-runs
+#   RUNS      logs, archives, the pack  default runs/ in the clone (Iteration 84)
 #   POP GENS ROUNDS REMEASURE           default 32 40 3 6 - seed 3's run
 #
 # Interrupted? Run it again with the same seed: with nothing new pulled the
@@ -37,7 +37,7 @@ self=$(cd "$(dirname "$0")" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/
 [ -z "${REPO:-}" ] && [ -n "$self" ] && [ -f "$self/lab/evolve/next-run.sh" ] && REPO=$self
 REPO=${REPO:-$HOME/git/my/forth-vm-evolution-iter14}
 BUNDLES=${BUNDLES:-$HOME/Downloads}
-RUNS=${RUNS:-$HOME/forth-vm-evolution-runs}
+RUNS=${RUNS:-$REPO/runs}       # Iteration 84 (the owner): in the clone, ignored by git - all in one place
 POP=${POP:-32}; GENS=${GENS:-40}; ROUNDS=${ROUNDS:-3}; REMEASURE=${REMEASURE:-6}
 
 # Iteration 79: the archived databases, oldest first by their archive name
@@ -148,8 +148,29 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     exit 0
 fi
 MODE=$NEXT_RUN_DETACHED
+mkdir -p "$RUNS"
 exec 9> "$RUNS/.lock"
 flock -n 9 || die "another run holds $RUNS/.lock - two runs would measure each other"
+# ---- one-off (Iteration 84): the runs directory moved into the clone ----
+# Until then it was ~/forth-vm-evolution-runs. Once, under this lock: what
+# the next runs need comes over - the newest archives (the carry and the
+# comparison read them: four, or as many as CARRY_LAST / COMPARE_LAST, all
+# if either is 0) and the newest eight pack tarballs. Old run directories
+# stay behind: their logs are in their tarballs. A marker says it is done.
+OLD=$HOME/forth-vm-evolution-runs
+if [ -d "$OLD" ] && [ "$(cd "$OLD" && pwd)" != "$(cd "$RUNS" && pwd)" ] && [ ! -e "$RUNS/.moved-in" ]; then
+    k=4
+    for v in "${CARRY_LAST:-4}" "${COMPARE_LAST:-4}"; do
+        [ "$v" = 0 ] && k=1000000
+        [ "$v" -gt "$k" ] 2>/dev/null && k=$v
+    done
+    ls -d "$OLD"/archived-* 2>/dev/null | sort | tail -n "$k" > "$RUNS/.moved-in.list" || true
+    ls "$OLD"/forth-vm-evolution-*.tar.gz 2>/dev/null \
+        | sed -n 's/^\(.*-\([0-9]\{8\}-[0-9]\{6\}\)\.tar\.gz\)$/\2 \1/p' | sort | tail -n 8 | cut -d' ' -f2- >> "$RUNS/.moved-in.list" || true
+    while read -r x; do mv -- "$x" "$RUNS"/; done < "$RUNS/.moved-in.list"
+    say "moved into $RUNS from $OLD: $(grep -c /archived- "$RUNS/.moved-in.list" || true) archives, $(grep -c '\.tar\.gz$' "$RUNS/.moved-in.list" || true) pack tarballs - the rest of $OLD is not needed: delete it when you like"
+    mv "$RUNS/.moved-in.list" "$RUNS/.moved-in"
+fi
 # Iteration 83 (the owner): outdated files out, before every run - archives
 # past the newest four, run directories already in their pack tarballs, pack
 # tarballs past the newest eight (tools/clean-runs.sh says what and why).

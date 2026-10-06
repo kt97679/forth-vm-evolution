@@ -1,6 +1,6 @@
 #!/bin/sh
 # clean-runs.sh [--dry-run] [--held] - tidy the runs directory (RUNS,
-# default ~/forth-vm-evolution-runs). Iteration 63; since Iteration 83
+# default runs/ in the clone - Iteration 84). Iteration 63; since Iteration 83
 # lab/evolve/next-run.sh runs it before every run (the owner asked).
 #
 # Removed:
@@ -15,7 +15,7 @@
 # Kept: the lock, and anything else it does not recognise.
 # --dry-run: say what it would remove. --held: the caller holds the lock.
 set -eu
-RUNS=${RUNS:-$HOME/forth-vm-evolution-runs}
+RUNS=${RUNS:-$(cd "$(dirname "$0")/.." && pwd)/runs}
 KEEP=${KEEP:-4}; KEEP_PACKS=${KEEP_PACKS:-8}; DRY=0; HELD=0
 for a in "$@"; do
     case $a in
