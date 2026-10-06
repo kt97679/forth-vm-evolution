@@ -113,6 +113,16 @@ are page aligned, so a few bytes can cost a page (41,736 -> 45,832 here) -
 why the converged front's engines came in sizes 4 KB apart. To raise
 with the owner: link without page alignment, so the objective sees bytes.
 
+## Seed 21: on the laptop (Iteration 82)
+
+Evolution took the gene up in generation 6; the four fastest designs of
+all runs carry it (6fd52398b1, 0.204). Four designs measured with and
+without it, nothing else different: fib 0.17, loop 0.42, kernel, parse
+and corpus 0.98, sieve 0.96 - **no cost on the bytecode workloads on the
+laptop**; the VM's 10-17% was the VM. Linked without page padding
+(Iteration 82) the JIT costs 3.4 KB of engine (seed 19's fastest: 31,448
+-> 34,872 bytes).
+
 ## The phases
 
 1. **A prototype on the VM** - begun, Iteration 74: engine/jit.c reads

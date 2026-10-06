@@ -101,4 +101,7 @@
 #
 # Iteration 80: the lazy JIT's gene (JIT.md, phase 1) - a new gene, so the
 # stopping rule starts again. Seed 21: evolution weighs it.
-seed 21 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 82: seed 21 not small (the JIT: fastest +19.6%); engines now
+# linked without page padding - the binary objective counts bytes.
+seed 22 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

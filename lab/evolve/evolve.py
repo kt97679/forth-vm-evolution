@@ -358,7 +358,11 @@ def rt():
     fl = ['-fno-asynchronous-unwind-tables']
     u = os.uname()
     if PROFILING[0] or os.environ.get('EVOLVE_LIBC') == '1' or (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
-    return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0', RTC, '-lgcc']
+    # Iteration 82: and without page alignment (-n), RELRO or a build-id - a
+    # static engine has no dynamic relocations, and their padding made the
+    # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
+    return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
+                 '-Wl,-n', '-Wl,-z,norelro', '-Wl,--build-id=none', RTC, '-lgcc']
 
 def bin_size(eng):
     """Iteration 75: the engine as it would ship - a stripped copy's size.

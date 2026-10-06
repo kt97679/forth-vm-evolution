@@ -1787,3 +1787,21 @@ pinned code, the engine's layout, the VM's noise - for the laptop to
 weigh. Found: after the tag's call handlers gen-tos.py leaves a handler
 unwrapped (no SPILL) - the JIT handler sits among the ordinary ones; and
 the binary objective moves in 4 KB steps (page-aligned segments).
+
+## Iteration 82 - 2026-10-06 - Claude
+
+**Seed 21, the JIT's first run** (session 19, calibration 0.995): the gene
+taken up in generation 6, active in 206 designs; the four fastest designs
+of all runs carry it (6fd52398b1 0.204 at 45,560 bytes). On the laptop,
+four designs with and without it: fib 0.17, loop 0.42, kernel/parse/
+corpus 0.98, sieve 0.96 - the VM's 10-17% cost on bytecode workloads was
+the VM's. Not small (fastest +19.6%, smallest total +13.4%).
+
+**Engines without page padding** (the owner agreed): -Wl,-n, and -z
+norelro and no build-id - RELRO's end on a page boundary left ~6 KB of
+padding even under -n. The binary objective now counts bytes: s6 22,200
+(was 29,456); the JIT's real cost 3.4 KB. The owner asked: a deep dive
+into the JIT's slowdown? Not needed - the laptop shows none. Forth
+sources reviewed? Yes, Iterations 49-57 (kfast, tfind, kinput,
+klookup); number conversion and FIND's search-order loop left. Inlining
+short words? Never built - to be priced next. NEXT-RUN: seed 22 tag2.

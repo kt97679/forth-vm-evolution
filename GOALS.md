@@ -270,7 +270,20 @@ the laptop rests until new genes exist.
   development - the JIT (JIT.md) first - then runs again with new genes.
   On running faster: processes here do not survive between Claude's
   turns, so a run here only advances during a reply; and runs keep
-  finding front designs to generation 40 (25% by 20, 50% by 30). Runs
+  finding front designs to generation 40 (25% by 20, 50% by 30).
+- **Seed 21 - the JIT's first run** (Iteration 82,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed21.md`; session 19,
+  calibration 0.995): taken up in generation 6; the four fastest designs
+  of all runs carry it (6fd52398b1 0.204); on the laptop it costs the
+  bytecode workloads nothing (0.98). Not small (fastest +19.6%): the
+  stopping rule starts again. Engines now linked without page padding:
+  the binary objective counts bytes, not 4 KB pages.
+- **Next, priced before built (the owner's questions, Iteration 82)**:
+  inlining short colon words - never built (GENES.md had it as "phase
+  3"): a call (2-4 bytes, and an EXIT at run time) where the callee's body
+  is one or two one-byte opcodes; and the Forth sources' remaining
+  candidates from the kfast review (results/kfast.md): number conversion,
+  FIND's search-order loop. Runs
   from seed 18 on are judged by them; the earlier fronts are carried in
   and measured again under them.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
