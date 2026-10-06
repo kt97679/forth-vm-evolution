@@ -1550,3 +1550,25 @@ corpus and the kernel rebuild compiling at run time in the tag. By hand:
 a colon word, BEGIN UNTIL, a VARIABLE, CREATE DOES> - 49, 5, 42, 99.
 8,314 bytes against 7,799 in the old format, ranked statically. Next: the
 price, design by design, and the reference ranking.
+
+## Iteration 68 - 2026-10-06 - Claude
+
+**The tag's price.** Seed 15's front as tag 2, ranked statically: size
++6.6-8.4%, dispatches +5-42% - operations code compiled at run time uses
+are rare in the image, so they were escaped or dropped from the run-time
+tables (8298ca5d59's loop 3.98x: rtloop's loop opcodes escaped, so it
+called the colon words). Fixed: the loop opcodes pinned with either loop
+table; and the reference ranking, lab/evolve/tag2-rank.py - four seed-15
+designs profiled in the old format, each operation's share of each
+selected workload, named by the converter's own t2_names (a debug hook,
+SOD16_T2NAMES) - lab/evolve/tag2-rank-v1.json, 134 names, DUP + EXIT LIT8
+DOVAR at the top. With it: fib and loop exactly 1.000, kernel, parse and
+corpus +3-5%, selected geomean 1.023-1.030 - but size +9.1-10.6%: ranking
+by weight escapes what the image uses often and runs rarely.
+
+--tag2-hot W, the middle way: weighing at least W, hot, by weight; the
+rest by static use. 0.02: size +8.0-9.1%, dispatches 1.032-1.049; static:
++7.0-8.4%, 1.053-1.134 - which way a design should go differs, so this is
+for evolution to weigh. Where the fastest design's 638 bytes go: hot calls
+130, escaped uses 194-357, and ~245 in the tag-2 compiler's own words -
+CALL, +92, NEXT-NFA8 +51, LINK, +47, <BRANCH, 40.

@@ -393,6 +393,8 @@ if V8 and '--hotcalls' in ARGV and not TAG2_ON and not _os.environ.get('SOD16_NO
 # the rest escaped. Exact counts, so the numbering - and the image - are
 # reproducible. Before anything is sized: sizes depend on it.
 T2MAP = None
+if V8 and _os.environ.get('SOD16_T2NAMES'):        # the names behind the reference ranking (lab/evolve/tag2-rank.py)
+    json.dump({str(k): v for k, v in G['t2_names']().items()}, open(_os.environ['SOD16_T2NAMES'], 'w'))
 if TAG2_ON:
     _names = G['t2_names']()
     _static = collections.Counter()
@@ -406,17 +408,27 @@ if TAG2_ON:
     _pin = [idx_of[n] for n in ('NOOP', 'EXIT', 'LIT', 'BRANCH', '?BRANCH')]
     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
-    # forth/cv8-fuse-loopall.4 has no fallback: its eight loop opcodes, pinned
-    if any(x['n'] == 'LOOPTAB' for x in order):
+    # the run-time loop compilers (cv8-fuse-loop.4, cv8-fuse-loopall.4): their
+    # loop opcodes, pinned - loopall has no fallback, and an escaped loop
+    # opcode in loop's tables falls back to calling the colon word
+    if any(x['n'] in ('LOOPTAB', 'LOOP-OPS') for x in order):
         _pin += [G['X_OPS10'][n] for n in ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
                  if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
     assert all(p in _names for p in _pin), [p for p in _pin if p not in _names]
-    _rest = sorted((x for x in _names if x not in _pin), key=lambda x: (-_ref.get(_names[x], 0), -_static[x], x))
+    # --tag2-hot W: an operation weighing at least W in the reference is hot -
+    # ranked first, by weight; the rest by how often the image uses it. 0:
+    # every weighed operation hot (speed first); large: none (size first).
+    _hot = float(_opt('--tag2-hot')) if '--tag2-hot' in ARGV else 0.0
+    def _key(x):
+        wt = _ref.get(_names[x], 0)
+        return (0, -wt, -_static[x], x) if wt > 0 and wt >= _hot else (1, -_static[x], -wt, x)
+    _rest = sorted((x for x in _names if x not in _pin), key=_key)
     _all = _pin + _rest
     assert len(_all) <= 63 + 256, "%d operations: more than 63 one-byte codes and 256 escaped" % len(_all)
     T2MAP = {'one': {x: c for c, x in enumerate(_all[:63])}, 'esc': {x: s for s, x in enumerate(_all[63:])}, 'escc': 0x3F}
     G['TAG2'][0] = T2MAP
-    print('tag 2: %d operations, %d one-byte, %d escaped' % (len(_all), len(T2MAP['one']), len(T2MAP['esc'])))
+    print('tag 2: %d operations, %d one-byte, %d escaped; %d escaped uses in the image (a byte each)'
+          % (len(_all), len(T2MAP['one']), len(T2MAP['esc']), sum(_static[x] for x in T2MAP['esc'])))
     # the run-time compiler's opcode constants (forth/cv8t.4) - each a body
     # [LIT n][EXIT] - rewritten to this design's codes; the short branches'
     # to their codes, or 0 where the design has none
