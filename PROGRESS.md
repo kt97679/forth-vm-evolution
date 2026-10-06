@@ -1656,3 +1656,22 @@ words compiled at run time, translated on their first call, all or
 nothing per word; budgets - ~300 new lines of C, +15 KB engine code,
 +1 MB peak memory, the image unchanged - and it must pay, or it comes
 out. Phase 1, a prototype on the VM, next.
+
+## Iteration 74 - 2026-10-06 - Claude
+
+The owner: the budgets are reasonable - try it; a little over is fine,
+optimise later or drop it on its numbers. The seed-16 packs sent again
+are the same run (the clone had not pulled the bundle setting seed 17);
+the comparison, run again on them, agrees with the first - 70 designs,
+median 1.006, 10-90% 0.986-1.026, the front the old format's.
+
+**The JIT begun.** engine/jit.c: SPN's rules for reading a stencil
+(forth/spn.4) in C - the body from its address past an endbr64 to its
+last jump to NEXT or JUMP (EXIT: its first ret); the holes found exactly,
+a 32-bit relative field aimed at a marker or a magic constant (8-byte
+literal, 4-byte literal, the return stack's address). tools/jit-check.sh
+prints how this machine's compiler shaped every stencil: gcc -O2 and -Os
+here - every one the prototype needs has the holes its source implies;
+?DO's conditional exit does not, so ?DO would stay bytecode. Next: the
+converter's per-design table, the translator, JIT? and NATIVE,
+executable memory, the run-time compiler's header.

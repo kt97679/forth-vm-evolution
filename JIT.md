@@ -51,7 +51,13 @@ of Forth, a whole CV8 decoder).
 
 ## The phases
 
-1. **A prototype on the VM**, x86-64, tag-2 designs: `JIT?`/`NATIVE`, the
+1. **A prototype on the VM** - begun, Iteration 74: engine/jit.c reads
+   SPN's stencils in C (tools/jit-check.sh prints how a compiler shaped
+   them: at gcc -O2 and -Os every stencil fib and loop need has the
+   expected holes; ?DO's does not, so it would stay bytecode). Next: the
+   converter's per-design table (each logical operation's stencils and
+   operand), the translator, JIT? and NATIVE, executable memory, the
+   run-time compiler's header. The plan: x86-64, tag-2 designs: `JIT?`/`NATIVE`, the
    translator for the short list, executable memory. Measured: fib and
    loop's time, engine code, peak memory, image size; the life test.
    Decision with the owner on its numbers.
