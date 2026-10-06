@@ -26,6 +26,32 @@ How it decides things:
   grows either must show it: the tag added 5.6 KB of engine code to the
   fastest design (39.9 -> 45.5 KB), its peak memory unchanged (1.44 MB).
 
+## Resuming in a new chat (Iteration 85)
+
+Everything a new session needs is in the repository. Upload the newest
+bundle (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet
+analysed (`runs/forth-vm-evolution-*.tar.gz`), and say: "continue from
+GOALS.md". Read first: this file (the aim, the objectives, where things
+stand, the register), `lab/evolve/NEXT-RUN`, `JIT.md`, the newest
+`PROGRESS.md` entries, `lab/evolve/GENES.md`. The owner's standing
+preferences are written here: simplicity and minimalism first; three
+equal objectives (memory within 8 KB a tie); each mechanism priced before
+it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
+
+**Next steps, as agreed (Iteration 83-85):**
+1. Seed 23's results: seed 22 was small - if seed 23 is too, the gene set
+   with the JIT has converged.
+2. Port `lab/evolve/callsites.py` to the current converter and the tag
+   (its audit rebuilds designs with the pre-Iteration-13 body check, which
+   today's designs fail), then price **inlining short words** (a call to a
+   body of one or two one-byte opcodes) and **Forth tail calls** (a call
+   followed by EXIT as a BRANCH): static sites and bytes, and dynamic calls
+   per workload from the profiler.
+3. Then, each priced first: the rewrite-rule search (shorter equivalent
+   sequences of a design's own operations, verified by random testing);
+   image compression with a small decompressor; the JIT's calls into
+   bytecode words; a wider pool of compiler flags.
+
 ## Success: three objectives, equal (the owner, Iteration 75)
 
 **The smallest binary + image, the highest speed, the lowest memory** -

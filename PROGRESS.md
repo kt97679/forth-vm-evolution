@@ -1833,3 +1833,10 @@ tools/clean-runs.sh (RUNS still overrides). Once, under the runs lock, the
 newest archives and pack tarballs move over from ~/forth-vm-evolution-runs
 (a marker, runs/.moved-in, lists them); the rest of the old directory is
 left for the owner to delete. Packs to send back are now in runs/.
+
+## Iteration 85 - 2026-10-06 - Claude
+
+Every pack lists the clone (the owner): repo-files.txt - every path but
+the insides of .git, build/ and runs/ (summed), and git status --ignored.
+The owner asked whether to start a new chat: GOALS.md now says how to
+resume in one, with the next steps as agreed.

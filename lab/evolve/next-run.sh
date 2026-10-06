@@ -50,6 +50,20 @@ archives() {
     done | sort | cut -d' ' -f2-
 }
 say() { echo "next-run: $*"; }
+# Iteration 85 (the owner): what is in this clone, exactly, in every pack -
+# every path but the insides of .git, build/ and runs/ (generated: thousands
+# of files, summed instead), with type, size and date; and git's own view.
+repo_files() {
+    { echo "# $(pwd) at $(date -u +%Y-%m-%dT%H:%M:%SZ): type size date path"
+      find . \( -path ./.git -o -path ./build -o -path ./runs \) -prune -o -printf '%y %s %TY-%Tm-%Td %p\n' | sort -k4
+      for d in .git build runs; do
+          [ -d "$d" ] && echo "# $d/: $(find "$d" -type f | wc -l) files, $(du -sk "$d" | cut -f1) KB"
+      done
+      [ -d build ] && { echo "# build/, by entry (KB):"; du -sk build/* 2>/dev/null | sort -k2; }
+      echo "# git status --porcelain --ignored:"
+      git status --porcelain --ignored 2>&1
+    } > "$1/repo-files.txt" 2>&1 || true
+}
 die() { echo "next-run: $*" >&2; exit 1; }
 [ "$(id -u)" != 0 ] || die "not as root - the evolver refuses it (Iteration 10)"
 cd "$REPO" 2>/dev/null || die "no clone at $REPO - set REPO=..."
@@ -227,6 +241,7 @@ if [ "$MODE" = experiment ]; then
     lscpu > "$K/lscpu.txt" 2>&1 || true
     { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT"; } > "$K/machine.txt"
     cp "$RUN/next-run.log" "$K/next-run.log"
+    repo_files "$K"                            # Iteration 85: the clone, listed
     P=$RUNS/forth-vm-evolution-$NAME-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
     tar -czf "$P" -C "$RUN" pack
     rm -rf "$K"
@@ -311,6 +326,7 @@ if [ -n "$s" ]; then
     for x in $s; do echo "# $x: $(git log -1 --format=%s "$x")"; git stash show -p "$x"; done > "$K/results-measured-here.patch"
 fi
 cp "$RUN/next-run.log" "$K/next-run.log"
+repo_files "$K"                                # Iteration 85: the clone, listed
 P=$RUNS/forth-vm-evolution-seed$SEED-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
 tar -czf "$P" -C "$RUN" pack
 rm -rf "$K"
