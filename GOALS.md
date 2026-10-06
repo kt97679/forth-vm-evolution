@@ -227,6 +227,13 @@ objective's best - fastest, smallest total, least memory - run to run.
   at about its speed** - 7,009 bytes (0.424) to 7,708 (0.243); 1.03-1.08
   of the best old design no larger from 7.2 KB up. The front of all runs
   stays the old format's. From here the tag-2 front is the one to beat.
+- **Seed 17 - the first designs in the tag on the front of all runs**
+  (Iteration 76, `results/evolve-amd-ryzen-7-pro-8840hs-seed17.md`;
+  session 15, calibration 0.993): a36dc45e12 0.233 at 7,283 bytes, 4.5%
+  faster than the best old design no larger; the tag's own front 4.1%
+  faster at its fast end than seed 16's, 425 bytes smaller. From 7.2 KB up
+  the tag's price is won back. Both: no multi-state caching, swapi taken
+  up for the first time. The last run under the old rules.
 - **Iteration 75: the objectives change** - three, equal (above). Runs
   from seed 18 on are judged by them; the earlier fronts are carried in
   and measured again under them.

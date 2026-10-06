@@ -1697,3 +1697,16 @@ calls 45,526; 200-216 KB touched. A 2-generation run and a comparison
 checked end to end (the comparison's row format fixed on the way); in
 that small test one of five front designs was there by memory alone.
 NEXT-RUN: seed 18 tag2, then compare. The JIT (phase 1) resumes after.
+
+## Iteration 76 - 2026-10-06 - Claude
+
+**Seed 17** (the tag's second run, the last under the old rules) and
+session 15 (seeds 13-17, calibration 0.993): **the first designs in the
+tag on the front of all runs** - a36dc45e12 0.233 at 7,283 bytes, 4.5%
+faster than the best old design no larger, within 1.3% of the old
+fastest at 675 bytes less; 5671742b27 0.233 at 7,690. The tag's front at
+its fast end 4.1% faster than seed 16's and 425 bytes smaller; 9 of the
+joint tag-2 front's 12. From 7.2 KB up the price is won back; at the
+small end not yet. Both front designs: no multi-state caching - ~20 KB
+less engine, which the new objectives count - and swapi, taken up for
+the first time. NEXT-RUN stays seed 18, the first under three objectives.

@@ -125,4 +125,6 @@ whatever format keeps images small.
 - **T6 laptop runs**: seeds with `tag2` required, carrying the front.
   Seed 16 (Iteration 72): the old front moved ~370 bytes right at about
   its speed - the price, confirmed; the old format keeps the front of all
-  runs until the tag-2 runs win it back.
+  runs until the tag-2 runs win it back. Seed 17 (Iteration 76): the
+  first tag-2 designs on the front of all runs - from 7.2 KB up the price
+  is won back (a36dc45e12 0.233 at 7,283 bytes); at 7.0-7.1 KB not yet.
