@@ -38,9 +38,14 @@ preferences are written here: simplicity and minimalism first; three
 equal objectives (memory within 8 KB a tie); each mechanism priced before
 it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 
-**Next steps, as agreed (Iteration 83-85):**
-1. Seed 23's results: seed 22 was small - if seed 23 is too, the gene set
-   with the JIT has converged.
+**Where it stands (Iteration 86)**: evolution has STOPPED - seeds 22 and
+23 both small, the gene set with the JIT converged (front of all runs: 35
+designs, fastest 2cbcf427f6 0.195 at 42,816 bytes). `lab/evolve/NEXT-RUN`
+says `none`: the laptop rests until there are new genes. Every pack now
+carries `repo-files.txt` (the owner's clone, listed) - look at it first.
+
+**Next steps, as agreed (Iteration 83-86):**
+1. (Done: seed 23 was small too - stopped.)
 2. Port `lab/evolve/callsites.py` to the current converter and the tag
    (its audit rebuilds designs with the pre-Iteration-13 body check, which
    today's designs fail), then price **inlining short words** (a call to a
@@ -50,7 +55,33 @@ it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 3. Then, each priced first: the rewrite-rule search (shorter equivalent
    sequences of a design's own operations, verified by random testing);
    image compression with a small decompressor; the JIT's calls into
-   bytecode words; a wider pool of compiler flags.
+   bytecode words; a wider pool of compiler flags. The reasoning for each,
+   and where randomness helps and where it does not: lab/evolve/GENES.md,
+   "Candidates (Iterations 82-86)".
+4. When a batch of new genes is built: laptop runs again (seed 24 on),
+   the stopping rule counting afresh.
+
+**Longer term**: the Tegra session (32-bit ARM) needs 32-bit cells under
+the tag (FORMAT-TAG2.md, T5 - the DOES> body's 4-byte call does not fit
+a 4-byte first cell), an ARM version of the libc-free runtime
+(engine/rt-linux-x86_64.c is x86-64 only), and the JIT's ARM patching
+(SPN's stencils run there already). The Forth sources' remaining
+candidates (results/kfast.md): number conversion, FIND's search-order
+loop. The article stays on the backburner. Pushing to GitHub is the
+owner's step.
+
+**Working on the development VM** (how every session has done it): clone
+the bundle to /home/claude/forth-vm-evolution, owned by the user claude;
+run everything as that user (`runuser -u claude -- ...`: the evolver
+refuses root, and git refuses a repository owned by another user). Build:
+`LAYOUTS=1 bash tools/build-stages.sh`; then `bash tools/run-tests.sh` and
+`python3 lab/evolve/evolve.py --validate` (seven hand-made stages
+IDENTICAL). Commit as the owner (`git -c user.name='Kirill Timofeev' -c
+user.email='kt97679@gmail.com' commit`), the handoff's last commit titled
+`Iteration N: ...`; record in PROGRESS.md (append) and here; bundle with
+`sh tools/make-bundle.sh DIR` into /mnt/user-data/outputs/. Processes do
+not survive between turns on the VM (Iteration 79): long runs belong on
+the laptop.
 
 ## Success: three objectives, equal (the owner, Iteration 75)
 
@@ -309,6 +340,12 @@ the laptop rests until new genes exist.
   +4.5% (0.199), smallest total +0.5%, memory none. 12 of the front's 39
   by memory alone, but by 16-20 KB - real pages, not noise. next-run.sh
   now cleans the runs directory before every run (tools/clean-runs.sh).
+- **Seed 23 - small, the second: evolution stops** (Iteration 86,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed23.md`; session 21,
+  calibration 0.996): fastest none (0.212 against 0.195), smallest total
+  +0.2%, memory none. The gene set with the JIT has converged; the front
+  of all runs, 35 designs, fastest 2cbcf427f6 0.195 at 42,816 bytes. Runs
+  resume with new genes.
 - **The runs directory is runs/ in the clone** (Iteration 84, the owner):
   ignored by git; next-run.sh moved what was needed from
   ~/forth-vm-evolution-runs, once. The packs to send back are there.
@@ -327,6 +364,12 @@ the laptop rests until new genes exist.
   without it are byte-identical.
 
 ## Next, in order
+
+**The current plan is in "Resuming in a new chat" above (Iteration 86);
+what follows is how it came about.** Two figures below were later
+corrected: the JIT costs the bytecode workloads nothing on the laptop
+(the VM's 10-17% was the VM's, Iteration 82), and its engine cost is 3.4
+KB, not 8.3 (page padding, Iteration 82).
 
 Iteration 48, the owner: the improvements first, the Tegra session once
 they are done, the article on the backburner.

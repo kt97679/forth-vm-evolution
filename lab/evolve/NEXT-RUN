@@ -107,4 +107,9 @@
 #
 # Iteration 83: seed 22 small, the first of two; next-run.sh now cleans the
 # runs directory first (tools/clean-runs.sh).
-seed 23 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 86: seeds 22 and 23 both small - the stopping rule says stop.
+# The gene set with the JIT has converged. Development next (GOALS.md,
+# "Resuming in a new chat": callsites.py ported, inlining and tail calls
+# priced). Runs resume with new genes.
+none

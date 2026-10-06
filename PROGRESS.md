@@ -1840,3 +1840,23 @@ Every pack lists the clone (the owner): repo-files.txt - every path but
 the insides of .git, build/ and runs/ (summed), and git status --ignored.
 The owner asked whether to start a new chat: GOALS.md now says how to
 resume in one, with the next steps as agreed.
+
+## Iteration 86 - 2026-10-06 - Claude
+
+**Seed 23 small too - two in a row: evolution stops** (session 21, seeds
+19-23, calibration 0.996): fastest none (0.212 against 0.195), smallest
+total +0.2%, memory none. The gene set with the JIT has converged; the
+front of all runs 35 designs, fastest 2cbcf427f6 0.195 at 42,816 bytes.
+The runs directory in the clone worked on the laptop: the one-off move
+brought 4 archives and 8 tarballs from ~/forth-vm-evolution-runs; the
+clean-up removed the excess. The seed pack still carries the laptop's
+stash of results/ from 2026-10-04 (a re-measured stage ladder) - old,
+re-sent while the stash exists.
+
+**Captured for a new chat** (the owner moves to one): GOALS.md "Resuming
+in a new chat" - where it stands, the agreed next steps, the longer term
+(the Tegra's prerequisites: 32-bit cells under the tag, an ARM libc-free
+runtime, the JIT's ARM patching; the Forth sources' leftovers; the
+article; GitHub the owner's), and how to work on the development VM. The
+gene candidates and the reasoning on randomness: lab/evolve/GENES.md.
+NEXT-RUN: none.

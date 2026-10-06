@@ -359,3 +359,52 @@ at Iteration 11 - is on the fastest design and one small one, holding 17
 and 18 pairs where the others hold 7-8: format-10 opcodes take 26-28 slots
 now, and the nine more are what pairs need. Selection weighed it with the
 rest and kept it.
+
+## Candidates (Iterations 82-86) - the owner asked for more genes
+
+Each to be priced before it is built, behind a gene, in this order (the
+owner agreed, Iteration 83):
+
+1. **Inlining short colon words.** A call (2-4 bytes, and a call and an
+   EXIT dispatch every time it runs) to a word whose body is one or two
+   one-byte opcodes becomes those opcodes - in the image (the converter)
+   and in code compiled at run time (COMPILE,). Excluded: bodies touching
+   the return stack (I, J, R>, >R, R@ - inside a callee they see the
+   return address), inline operands, recursion. Never built: an early plan
+   called it "phase 3". The tool to price it: lab/evolve/callsites.py
+   (the call-site census by target, and per-target dynamic counts from
+   the profiler) - to be ported first: its audit rebuilds with the
+   pre-Iteration-13 body check, which today's designs fail.
+2. **Forth tail calls.** A call followed by EXIT becomes a BRANCH to the
+   callee (no new opcode: a 16-bit branch reaches any target in today's
+   images): no return address pushed, no EXIT dispatch. Excluded: callees
+   that read their return address - the inline-operand words ((S"),
+   (POSTPONE) and the like), and words doing R> tricks. "Tail calls" in
+   this catalog so far meant only the engine's dispatch form.
+3. **Rewrite rules found by random testing** - a small superoptimizer:
+   the profile's most frequent 2-3 operation sequences, searched for
+   shorter sequences of the design's own operations (SWAP DROP -> NIP,
+   OVER OVER -> 2DUP, 1 + -> 1+...), kept only if they agree on thousands
+   of random stacks and edge values; each verified rule a gene the
+   converter and the run-time compiler apply. The engine unchanged.
+   Randomness finds the rules; evolution decides which to use.
+4. **Image compression** with a small decompressor in the engine: the
+   7-9 KB image is repetitive (bytecode, names); a few hundred bytes of
+   decompressor against perhaps 2-3 KB of image - startup microseconds,
+   memory unchanged (decompressed into RAM as now).
+5. **The JIT's calls into bytecode words** (SPN's st_interp): most words
+   compiled at run time stay bytecode because they call kernel words -
+   the largest JIT lever left; then ?DO, +LOOP, >R/R>, kernel words
+   translated lazily too.
+6. **A wider pool of compiler flags**, sampled at random (an autotuner)
+   beyond today's nine (opt, nogcse, nocrossjump, nocet, align1,
+   noreorder, peel, ipaclone, tracer). Caution: many flags win by a code
+   layout that suits one CPU and not the next - check on the held-out
+   workload and on the second machine.
+
+**Where randomness does not belong**: mutating the Forth or C sources
+themselves - the space is vast, and the 616-case ANS corpus is not a full
+specification, so a random rewrite can pass every test and still be
+wrong. Rules verified by random testing (3) are the safe form.
+Triples were priced in Iteration 8 (~0.6% each at best) - not built.
+
