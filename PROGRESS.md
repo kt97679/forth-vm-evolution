@@ -1452,3 +1452,30 @@ archives (4), as the comparison compares - 188 carried designs cost
 minutes of seed 15's first generation.
 
 NEXT-RUN: none - the next run waits for the next batch.
+
+## Iteration 64 - 2026-10-06 - Claude
+
+The owner asked the winning design's maximum code space: **2 MB** - calls
+name a byte offset from the image base, the three-byte form's 22 bits
+less the one the 32 hot calls take; the engine's memory is 16 MB, and the
+run-time compiler's CALL, has no reach check, so a call to a word past
+2 MB would encode as a hot call to another word. The owner remembered a
+different layout - two selector bits, 64 opcodes, a reserved four-byte
+call - and asked for consistency with relf (github.com/kt97679/relf).
+
+relf, cloned and read: its reference (docs/CV8.md 2.1) is the format this
+repository uses - 128 opcodes, calls of 14 and 22 bits - with MEMSIZE cut
+to 4 MB to match the reach (its Iteration 545); its decision A15 brought
+the one-byte opcodes in use to 64 (539) but kept the calls ("don't
+implement the 1 GB call range yet"); the two-bit tag - 00 an opcode,
+calls of 14, 22, 30 bits, 1 GB - is its GOALS item 2 and Z5, priced at
+0-0.7% by its Iteration 501.
+
+**Decided with the owner, all in FORMAT-TAG2.md**: that tag; 64 one-byte
+codes and ESC + selector; codes by measured rank; no hot calls; variable
+length everywhere and full cells avoided - calls 2-4 bytes, links 1-4
+read backwards, backward branches 8 or 16 bits, forward branches 16 in
+the one-pass run-time compiler and 8 where the converter knows they
+reach, CREATE reserving the four-byte DOES> call; the old CV8 kept for
+recorded designs, new runs on the new format, the old front the
+baseline. Next: T1, the engine.

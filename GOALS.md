@@ -178,6 +178,14 @@ trying anything again (prompts/12-progress-log).
 Iteration 48, the owner: the improvements first, the Tegra session once
 they are done, the article on the backburner.
 
+**First, the format (Iteration 64, the owner): `FORMAT-TAG2.md`.** The
+code space was 2 MB; the owner wants relf's design - 64 opcodes and
+escapes - and a 1 GB code space: relf's two-bit tag, `00` an opcode,
+calls of 14, 22 and 30 bits; codes ranked by each design's profile; no
+hot calls; variable length everywhere. Its plan, T1-T6, comes before the
+improvements below and before the Tegra, which should measure the
+format the designs will keep.
+
 **The work left, and when to stop** (Iteration 60, with the owner): about
 4-6 more laptop runs of improvements - the code compiled at run time (fib
 and loop run in it entirely: I + fused, Iteration 60; next a compare
