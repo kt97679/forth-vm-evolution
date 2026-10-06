@@ -81,7 +81,14 @@ Budgets: engine code +8.3 KB (15 allowed), new C ~250 lines (~300),
 memory +4 KB (1 MB), the image +136 bytes (the new : and ;). It pays where
 code is compiled at run time and runs hot; elsewhere every run-time word's
 call pays the JIT dispatch, and most such words stay bytecode - they call
-kernel words. **Next optimisations, priced first**: a word that stays
+kernel words. Across gene combinations: eight more seed-19 front designs with the gene
+on - the four with the cached top pass the corpus and the kernel
+workload (fib 0.21-0.29, loop 0.07-0.08 where loops compile to opcodes at
+run time); the other four keep it dormant. Where a word cannot be
+translated, the cost is more than the JIT dispatch: the smallest design's
+loop, its INNER calling the kernel's loop words, 1.51 -> 1.70 - the new
+engine code moving the interpreter's layout, likely. **Next
+optimisations, priced first**: a word that stays
 bytecode should cost nothing per call (e.g. its callers re-pointed past
 the header); calls from native code to bytecode words (SPN's st_interp);
 ?DO and +LOOP; 32-bit ARM.
