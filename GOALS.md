@@ -31,7 +31,14 @@ How it decides things:
 Everything a new session needs is in the repository. Upload the newest
 bundle (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet
 analysed (`runs/forth-vm-evolution-*.tar.gz`), and say: "continue from
-GOALS.md". Read first: this file (the aim, the objectives, where things
+GOALS.md". **The fronts' genomes are in results/ (Iteration 87)**: every
+run's report ends with "The front's genomes", one JSON line per front
+design (its database record without the raw timings), and a tool that
+takes `--db` reads a report as a database - so no database needs
+uploading to rebuild a design of any front. Seeds 19-23 were filled in
+from the owner's databases (158 designs, every one on the front of all
+runs); from seed 24 on, `evolve.py --report` writes the section, and the
+report goes to results/ as always. Read first: this file (the aim, the objectives, where things
 stand, the register), `lab/evolve/NEXT-RUN`, `JIT.md`, the newest
 `PROGRESS.md` entries, `lab/evolve/GENES.md`. The owner's standing
 preferences are written here: simplicity and minimalism first; three

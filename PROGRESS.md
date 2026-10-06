@@ -1860,3 +1860,27 @@ runtime, the JIT's ARM patching; the Forth sources' leftovers; the
 article; GitHub the owner's), and how to work on the development VM. The
 gene candidates and the reasoning on randomness: lab/evolve/GENES.md.
 NEXT-RUN: none.
+
+## Iteration 87 - 2026-10-06 - Claude
+
+**The fronts' genomes in the repository** (the owner: the next chat should
+not need a separate upload). The new chat could not rebuild a single front
+design: the run reports in results/ name genes only where they differ
+from s6-cv8b, pairs cut after four (14 of the 35 designs on the front of
+all runs have 5-8), and even where nothing is cut the genome holds state
+the report does not show (rtloop counts a loop word in the genome's
+unslotted ops10 list) - 0 of 91 rebuilt from the reports matched their
+ids. The databases live on the laptop; the owner sent a snapshot of the
+clone.
+
+Now `evolve.py --report` ends the report with "The front's genomes": one
+JSON line per front design (and per design the front was measured again
+with), its database record without the raw timings. The report goes to
+results/ as always, so the genomes come with it; a tool that takes `--db`
+reads a report as a database, the lines that are not JSON skipped.
+Seeds 19-23's reports were filled in from the owner's databases, in the
+same format: 158 designs, every id equal to its genome's, all 35 of the
+front of all runs. Nothing else in the snapshot was missing from the
+repository (its tree is HEAD's; ignored files, build/, runs/ and the old
+results stash of 2026-10-04 aside). GOALS.md, "Resuming in a new chat",
+says so.

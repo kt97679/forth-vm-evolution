@@ -1310,6 +1310,14 @@ def nothing_alive(R):
     for st, k in why.most_common(6): print('  %5d  %s' % (k, st))
     print('If that is not the reach limit or a converter refusal (RUNNING.md), please send the database.')
 
+# Iteration 87 (the owner: a new chat should need no pack): the reports kept
+# in results/ carry their front's genomes. The databases stay on the laptop.
+GENOMES_NOTE = ('Each design above, and any other the front was measured again with, as one JSON line: its record '
+                'without the raw timings. A tool that takes a database (--db) reads this report as one - the lines '
+                'that are not JSON are skipped - so results/ is all a new chat needs to rebuild a front design.')
+def front_records(R, ids):
+    return ['```jsonl'] + [json.dumps({k: v for k, v in R[i].items() if k != 'raw'}, sort_keys=True) for i in ids] + ['```']
+
 def report(R):
     ok = [i for i in R if R[i]['status'] == 'ok']
     if not ok: nothing_alive(R); return
@@ -1361,6 +1369,7 @@ def report(R):
     for i in R:
         if R[i]['status'] != 'ok': deaths[R[i]['status']] = deaths.get(R[i]['status'], 0) + 1
     L += ['', '## Deaths', ''] + ['- %s: %d' % kv for kv in sorted(deaths.items(), key=lambda kv: -kv[1])] + ['']
+    L += ["## The front's genomes", '', GENOMES_NOTE, ''] + front_records(R, sorted(set(F) | {i for i in rm if i in R}, key=lambda i: R[i]['speed'])) + ['']
     open(os.path.join(EV, 'report.md'), 'w').write('\n'.join(L) + '\n')
     print('\n'.join(L[6:6 + 3 + len(F)] + L[6 + 3 + len(F):6 + 6 + 2 * len(F)]))
     print('report: %s' % os.path.join(EV, 'report.md'))
