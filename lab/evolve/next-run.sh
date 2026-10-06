@@ -236,9 +236,16 @@ fi
 # Iteration 46 (the owner): every archived run's front carried into this
 # one, so progress compounds - evolve.py --carry; sorted, so a resumed run
 # starts from the same first generation.
-CARRY=""
-for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do      # a glob expands sorted
+# Iteration 63: the newest CARRY_LAST archived databases (default 4; 0: all),
+# as the comparison - the older fronts are dominated, and carrying them
+# cost minutes of every run's first generation (188 designs in seed 15).
+CLAST=${CARRY_LAST:-4}
+n=0; for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do [ -f "$f" ] && n=$((n + 1)); done
+skip=0; if [ "$CLAST" -gt 0 ] && [ "$n" -gt "$CLAST" ]; then skip=$((n - CLAST)); fi
+CARRY=""; i=0
+for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do      # a glob expands sorted: oldest first
     [ -f "$f" ] || continue
+    i=$((i + 1)); [ "$i" -gt "$skip" ] || continue
     CARRY="${CARRY:+$CARRY,}$f"
 done
 if [ -n "$CARRY" ]; then

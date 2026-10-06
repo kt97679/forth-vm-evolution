@@ -72,4 +72,7 @@
 # at 8,320 bytes); thinhdr (248 bytes off every design), rtiplus (I +
 # fused: loop 0.80) and swapi (SWAP+I sure of a slot: fib 0.94) are new to
 # choose. Then compare - the newest four archived runs and this one now.
-seed 15 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 63: none - seed 15 and the comparison came back; the next run
+# waits for the next batch of improvements.
+none

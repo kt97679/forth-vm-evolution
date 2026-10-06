@@ -160,6 +160,13 @@ trying anything again (prompts/12-progress-log).
   yet, 0.240 at 8,320 bytes, 4.2x s6; 0.244 at 7,286; 0.245 at 7,172** -
   15-20% faster than anything earlier from 7.0 to 8.3 KB; the small end
   held at 6,903. klookup on 8 of the 11; parse at 0.09-0.12 of s6.
+- **Seed 15 - thinhdr everywhere** (Iteration 63,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed15.md`; session 13, the
+  newest four runs and this one, calibration 0.994): **13 of the 14 front
+  designs its own - the smallest yet, 6,654 bytes; 0.239 at 6,940 (the
+  best that small before: 0.375); the fastest yet, 0.230 at 7,958.**
+  thinhdr on all 13; rtiplus on none, swapi on one - the run-time code
+  genes did not pay in time. Stopping rule: go on (smallest 3.6%).
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -180,7 +187,9 @@ format-10 opcodes take the rest; 2 with klookup, rtiplus and swapi - and
 five 'put X first' switches say evolution needs a way to order the
 format-10 names itself), size (fewer dictionary threads, cheap
 now the lookup is an opcode; the names), and capping the comparison
-session (173 designs, 19 minutes, growing with every run). Then the
+session (done, Iteration 62: the newest four runs - eight minutes, not
+twenty; the carry too, Iteration 63; tools/clean-runs.sh packs the older
+runs' directories). Then the
 Tegra: 32-bit builds of the evolved designs' overlays and opcodes, SPN's
 32-bit path, one sitting. **Stopping rule: the improvement phase ends
 when two runs in a row each improve the fastest design by under ~5% and
@@ -214,7 +223,8 @@ the smallest by under ~2%.**
       generation 1 - the fastest yet, 0.284 at 7,799. The whole lookup
       and the numbers (Iteration 57): the gene `klookup` - parse
       0.53-0.57, corpus 0.60-0.65 counted. Seed 14 (Iteration 62): the
-      fastest yet, 0.240 at 8,320.
+      fastest yet, 0.240 at 8,320. Seed 15 (Iteration 63): 0.230 at
+      7,958; the smallest 6,654 (thinhdr).
       Next in the sources: number conversion (NUMBER?, >NUMBER, DIGIT?:
       17% of parse), FIND's search-order loop, then what is left
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header

@@ -1426,3 +1426,29 @@ re-measured front: 15 kept and 2 left to seed 13 with seed 13 present
 (as session 12 itself did), all 17 kept without it.
 
 NEXT-RUN: seed 15 - thinhdr, rtiplus, swapi to choose - then compare.
+
+## Iteration 63 - 2026-10-06 - Claude
+
+**Seed 15 and session 13.** The first capped comparison: seed 15 and
+seeds 11-14, 72 designs, eight minutes (twenty before), calibration
+0.994, ranks 1.00. **13 of the 14 designs on the front of all runs are
+seed 15's - the smallest yet, 6,654 bytes (thinhdr's 249), 0.239 at 6,940
+where the best that small was 0.375, and the fastest yet, 0.230 at
+7,958** (seed 14: 0.240 at 8,320). thinhdr on all 13 (70% of the living);
+rtiplus on none - it needs rtloopall, on 3 - and swapi on one: counted
+gains that did not pay in time. Stopping rule: go on - the fastest moved
+4.2%, under 5%, but the smallest 3.6%, over 2%.
+
+**Cleanup** (the owner: ~/forth-vm-evolution-runs holds a lot):
+tools/clean-runs.sh keeps every pack tarball (each run's database, report
+and logs), the newest four archives (the comparison and the carry read
+them) and the newest run directory, and packs the rest - older archives,
+older run directories - into records/NAME.tar.gz, each checked readable
+before its directory goes. A dry run unless --yes; it takes the runs'
+lock. Tested on a mock runs directory: seven archives, five run
+directories, a tarball and a stray file - the right ones packed, the
+rest untouched. next-run.sh now carries only the newest CARRY_LAST
+archives (4), as the comparison compares - 188 carried designs cost
+minutes of seed 15's first generation.
+
+NEXT-RUN: none - the next run waits for the next batch.
