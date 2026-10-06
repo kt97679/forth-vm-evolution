@@ -64,7 +64,7 @@ rebuild those entries after it has rebuilt the chain ones. Two entries.
 The word table itself stays derived and unsaved; this table describes
 how to finish deriving it.
 """
-import re, sys, collections
+import re, sys, collections, json   # json: Iteration 77 - the tag's ranking used it unimported
 
 ARGV = list(sys.argv)          # sod16.py's argv is faked below; keep ours
 DUMP = sys.argv[1] if len(sys.argv) > 1 else '/tmp/dump64.txt'

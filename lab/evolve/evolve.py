@@ -127,7 +127,13 @@ def rtloop_on(g):
 def rtloopall_on(g):
     """Iteration 43: the compact run-time loop compiler (forth/cv8-fuse-loopall.4)
     in rtloop's place - for a design with all eight loop opcodes."""
-    return rtloop_on(g) and bool(g.get('rtloopall')) and all(n in g.get('ops10', []) for n in LOOP10)
+    if not (rtloop_on(g) and bool(g.get('rtloopall')) and all(n in g.get('ops10', []) for n in LOOP10)): return False
+    # Iteration 77: all eight must GET a slot. kinput's and klookup's words
+    # claim theirs first; a loop opcode pushed out by them left the loop
+    # compiler without it - the converter's LOOPTAB assertion, 8 deaths in
+    # seed 18. I+ assumed to claim its slot whenever rtiplus is asked for.
+    got = [w for w, _ in zip(ops10_order(g, bool(g.get('rtiplus'))), super_slots(g))]
+    return all(n in got for n in LOOP10)
 def kfast_on(g):
     """Iteration 49: kernel words made faster for the byte-header system
     (forth/cv8b-kfast.4) - a byte-header CV8 design with the gene. (A
@@ -207,8 +213,10 @@ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
            'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', 'TABS>BL': 'X_TABSBL',
            '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
-def ops10_in(g):
-    """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
+def ops10_order(g, iplus):
+    """The format-10 words in the order they claim slots; iplus: whether I+
+    claims one (rtiplus) - a parameter, so rtloopall_on can ask without
+    recursing through rtiplus_on (Iteration 77)."""
     ws = [w for w in g.get('ops10', []) if w != 'THREAD-FIND' or kfast_on(g)]   # Iteration 51: a kfast word
     if tfind_on(g): ws = ['THREAD-FIND'] + [w for w in ws if w != 'THREAD-FIND']  # Iteration 52: first, sure of a slot
     ws = [w for w in ws if w not in ('TABS>BL', '(PARSE)') or kinput_on(g)]        # Iteration 54: kinput's words
@@ -216,10 +224,13 @@ def ops10_in(g):
         ws = ws[:1 if tfind_on(g) else 0] + KINPUT + [w for w in ws[1 if tfind_on(g) else 0:] if w not in KINPUT]
     ws = [w for w in ws if w not in KLOOKUP or klookup_on(g)]                      # Iteration 57: klookup's words
     if klookup_on(g): ws = KLOOKUP + [w for w in ws if w not in KLOOKUP]           # Iteration 57: first of all
-    ws = [w for w in ws if w != 'I+' or rtiplus_on(g)]                             # Iteration 60: rtiplus's
-    if rtiplus_on(g): ws = ['I+'] + [w for w in ws if w != 'I+']                   # Iteration 60: sure of a slot
+    ws = [w for w in ws if w != 'I+' or iplus]                                     # Iteration 60: rtiplus's
+    if iplus: ws = ['I+'] + [w for w in ws if w != 'I+']                           # Iteration 60: sure of a slot
     if swapi_on(g): ws = ['SWAP+I'] + [w for w in ws if w != 'SWAP+I']             # Iteration 61: sure of a slot
-    return [[w, op] for w, op in zip(ws, super_slots(g))]
+    return ws
+def ops10_in(g):
+    """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
+    return [[w, op] for w, op in zip(ops10_order(g, rtiplus_on(g)), super_slots(g))]
 def supers_in(g):
     """[[first, second, opcode], ...] for the pairs that get a slot."""
     return [[a, b, op] for (a, b), op in zip(g['supers'], super_slots(g)[len(ops10_in(g)):])]
@@ -789,6 +800,18 @@ def borrow(g, donor, rnd):
 # image, peak memory. A record from before (no binary, no memory measured)
 # falls back to its image size and no memory: its own run's two.
 OBJECTIVES = ('speed', 'total', 'rss')
+# Iteration 77: memory within MEM_TOL KB counts as a tie. Seed 18's
+# session: 18 of the front's 39 were there by memory alone, every one a
+# page or less (2-4 KB) from a design faster and smaller - the noise of the
+# count, or an image a few bytes over a page boundary. With one page of
+# tolerance none was. Speed and binary + image stay exact, so the relation
+# has no cycles and the fronts below still sort.
+MEM_TOL = float(os.environ.get('EVOLVE_MEM_TOL', 8))
+def dominates(a, b):
+    """Design a dominates design b: no worse in all three, better in one -
+    memory by more than MEM_TOL."""
+    s, t, m = (ov(a, k) for k in OBJECTIVES); s2, t2, m2 = (ov(b, k) for k in OBJECTIVES)
+    return s <= s2 and t <= t2 and m <= m2 + MEM_TOL and (s < s2 or t < t2 or m < m2 - MEM_TOL)
 def ov(r, k):
     if k == 'total': return r.get('total', r['size'])
     if k == 'rss': return r.get('rss') or 0
@@ -800,8 +823,7 @@ def fronts(ids, R):
     # order, and a resumed run would pick different parents and fork.
     dom = {i: [] for i in ids}; n = {i: 0 for i in ids}
     def better(x, y):
-        a, b = [ov(R[x], k) for k in OBJECTIVES], [ov(R[y], k) for k in OBJECTIVES]
-        return all(p <= q for p, q in zip(a, b)) and a != b
+        return dominates(R[x], R[y])
     for x in ids:
         for y in ids:
             if x != y and better(x, y): dom[x].append(y)
@@ -1280,7 +1302,7 @@ def report(R):
          '%d designs evaluated, %d alive. Speed is the geometric mean of %s over %s,' %
          (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
          'relative to s6-cv8b; size is the self-hosting image, binary the stripped engine. %s is held out.' % ', '.join(WORK_HELD),
-         'The front is over three objectives, equal (Iteration 75): speed, binary + image, peak memory.', '',
+         'The front is over three objectives, equal (Iteration 75): speed, binary + image, peak memory - memory within %g KB a tie (Iteration 77).' % MEM_TOL, '',
          '## The Pareto front', '',
          '| design | speed | re-measured | image | binary | binary + image | memory KB | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
          '|---|---|---|---|---|---|---|---|---|---|']

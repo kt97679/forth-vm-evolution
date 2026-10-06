@@ -119,9 +119,11 @@ else:
 for (i, w), v in memv.items():                  # each workload's median, the most of them: the design's peak
     rss[i] = max(rss.get(i, 0), statistics.median(v))
 def dominates(sj, si, j, i):
-    # Iteration 75 (the owner): three objectives, equal - speed, binary + image, peak memory
-    a, b = (sj, tot[j], rss.get(j, 0)), (si, tot[i], rss.get(i, 0))
-    return all(p <= q for p, q in zip(a, b)) and a != b
+    # Iteration 75 (the owner): three objectives, equal - speed, binary + image, peak memory;
+    # Iteration 77: memory within E.MEM_TOL KB a tie (evolve.py says why)
+    mj, mi = rss.get(j, 0), rss.get(i, 0)
+    return (sj <= si and tot[j] <= tot[i] and mj <= mi + E.MEM_TOL
+            and (sj < si or tot[j] < tot[i] or mj < mi - E.MEM_TOL))
 def front(ids):
     ids = [i for i in ids if i in speed]
     return [i for i in ids if not any(dominates(speed[j], speed[i], j, i) for j in ids)]
@@ -142,7 +144,8 @@ print('\nThe front of all runs together (speed, binary + image, peak memory), by
 # the designs on the front only by memory - dominated on speed and binary +
 # image together, kept by a page or a few fewer touched.
 two = [i for i in allf if any(speed[j] <= speed[i] and tot[j] <= tot[i] and (speed[j], tot[j]) != (speed[i], tot[i]) for j in allf + [k for k in speed if k != CAL])]
-print('\nOn the front by memory alone: %d of %d%s' % (len(two), len(allf), (' - ' + ', '.join('%s %.3f at %s, %s KB' % (i, speed[i], format(tot[i], ','), format(rss.get(i, 0), ',')) for i in sorted(two, key=lambda i: -tot[i]))) if two else ''))
+print('\nMemory within %g KB counts as a tie (EVOLVE_MEM_TOL).' % E.MEM_TOL)
+print('On the front by memory alone: %d of %d%s' % (len(two), len(allf), (' - ' + ', '.join('%s %.3f at %s, %s KB' % (i, speed[i], format(tot[i], ','), format(rss.get(i, 0), ',')) for i in sorted(two, key=lambda i: -tot[i]))) if two else ''))
 if len(cpus) > 1:
     a, b = cpus[0], cpus[1]
     ids = sorted(i for i in S[a] if i != CAL)

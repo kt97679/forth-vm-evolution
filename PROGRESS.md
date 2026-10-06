@@ -1710,3 +1710,23 @@ joint tag-2 front's 12. From 7.2 KB up the price is won back; at the
 small end not yet. Both front designs: no multi-state caching - ~20 KB
 less engine, which the new objectives count - and swapi, taken up for
 the first time. NEXT-RUN stays seed 18, the first under three objectives.
+
+## Iteration 77 - 2026-10-06 - Claude
+
+**Seed 18, the first run under three objectives** (session 16, seeds
+14-18, calibration 1.004, ranks 1.00). binary + image works: 35 of the
+front's 39 are seed 18's, engines down to 25,280 bytes; bbab8560dd 0.258
+at 40,786 total against the old fastest 3a96a12236's 0.249 at 65,982.
+**Memory selects on noise**: 18 of 39 on the front by memory alone, each a
+page or less from a design faster and smaller; with one page of tolerance
+none. Told the owner; memory within 8 KB (EVOLVE_MEM_TOL) is now a tie,
+speed and binary + image exact - the evolver's front on seed 18's records
+56 -> 25, the speed-and-size front. A stopping rule for three objectives
+proposed (GOALS.md).
+
+Two converter deaths fixed, both through the tag: json unimported in
+layout.py when no ops10/pairs/hot-calls file was given (7); rtloopall_on
+checked the genome's list, not the slots the loop opcodes get after
+kinput's and klookup's words (8) - ops10_order() split out of ops10_in()
+so the check needs no recursion. Replayed: all 15 alive; all 1,246 living
+designs keep their ids. NEXT-RUN: seed 19 tag2.

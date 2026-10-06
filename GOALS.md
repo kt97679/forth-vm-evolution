@@ -58,6 +58,17 @@ designs on it by memory alone (the comparison counts them: dominated on
 speed and binary + image together, kept by a page or a few); and each
 objective's best - fastest, smallest total, least memory - run to run.
 
+**Seed 18's answer (Iteration 77)**: binary + image works - it reshaped
+the front at once; memory as measured did not - 18 of 39 front designs
+by memory alone, every one a page or less from a design faster and
+smaller. **Memory within 8 KB is now a tie** (EVOLVE_MEM_TOL; speed and
+binary + image exact): the three stay equal, at a resolution the
+measurement supports - designs today differ by a few pages; a JIT's
+buffer or a leak, tens of KB, still decides. Proposed stopping rule for
+three objectives: a run is small when the fastest improves < ~5%, the
+smallest binary + image < ~2%, the least memory < 8 KB; two small runs
+in a row - stop.
+
 ## Conventions
 
 - **Each handoff's last commit is titled `Iteration N: ...`**, N counting
@@ -234,7 +245,13 @@ objective's best - fastest, smallest total, least memory - run to run.
   faster at its fast end than seed 16's, 425 bytes smaller. From 7.2 KB up
   the tag's price is won back. Both: no multi-state caching, swapi taken
   up for the first time. The last run under the old rules.
-- **Iteration 75: the objectives change** - three, equal (above). Runs
+- **Iteration 75: the objectives change** - three, equal (above).
+- **Seed 18 - the first run under them** (Iteration 77,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed18.md`; session 16,
+  calibration 1.004): binary + image reshapes the front - 35 of 39 seed
+  18's, engines down to 25,280 bytes; bbab8560dd 0.258 at 40,786 total
+  against the old fastest's 0.249 at 65,982. Memory selected on noise -
+  now a tie within 8 KB. Two converter bugs fixed. Runs
   from seed 18 on are judged by them; the earlier fronts are carried in
   and measured again under them.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the

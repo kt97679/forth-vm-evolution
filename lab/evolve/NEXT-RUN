@@ -88,4 +88,7 @@
 # Iteration 75: three objectives, equal - speed, binary + image, memory -
 # every engine without the C library. Seed 18 the first run under them;
 # the earlier fronts carried in, measured again. Then compare.
-seed 18 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 77: seed 19 - memory within 8 KB a tie (seed 18: half the
+# front was there by a page of memory); two converter deaths fixed.
+seed 19 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
