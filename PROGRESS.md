@@ -1310,3 +1310,26 @@ all ten, first in generation 1, 66% of the living. Nothing larger than
 7,799 bytes is on the front any more.
 
 NEXT-RUN: none.
+
+## Iteration 57 - 2026-10-06 - Claude
+
+**klookup - the whole lookup and the numbers.** Attributed on seed 13's
+fastest: FIND and SEARCH-WORDLIST 28-31% of parse and corpus around the
+opcodes; NUMBER?, >NUMBER, DIGIT? 12-21%. forth/cv8b-klookup.4: (FIND),
+the kernel's FIND step for step with NAMEBUF, CONTEXT and #ORDER @ given,
+and FIND8; (>NUMBER), the kernel's >NUMBER with BASE @ given, its Forth
+body the kernel's loop (calling >NUMBER would recurse); WORD8 with one
+HERE. The LATE gene klookup (with kinput) puts (FIND) and (>NUMBER) first.
+
+The kernel has no search-order words and no workload changes the order,
+so the handler's other paths were tested differentially - the kernel's
+Forth against the opcode, identical outputs on two designs: one-entry and
+three-entry orders, an empty wordlist first and last, long names; and
+NUMBER? over signs, prefixes, points, overflow past 2^128, invalid input,
+bases 2, 16, 36. Alive in all four engine forms. Counted on seed 13's
+best: parse 0.53-0.57, corpus 0.60-0.65, kernel 0.80-0.81; selected
+geomean 0.76-0.79; 40-44 bytes more.
+
+Two slips of mine, both in test harnesses: a grep waiting on stdin when
+its file list came back empty (the command timed out), and setting up one
+build's private work dir twice. NEXT-RUN: seed 14, then compare.

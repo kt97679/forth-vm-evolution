@@ -155,6 +155,41 @@ kinput on all 10 designs on the front of all runs, first in generation 1,
 0.284 at 7,799 bytes - 3.5x hand-made s6 - parse at 0.15-0.18 of s6's
 time, corpus 0.28-0.33, kernel 0.36-0.43.
 
+## Iteration 57: the whole lookup and the numbers - the gene `klookup`
+
+Attributed on seed 13's fastest (ad62971982, 0.284): FIND and
+SEARCH-WORDLIST still 28-31% of parse and corpus - FIND's loop over the
+search order and SEARCH-WORDLIST8's own stack work around the opcodes -
+and NUMBER?, >NUMBER and DIGIT? 12-21%, ~40 dispatches a digit.
+
+**`klookup`** (LATE, with kinput): `forth/cv8b-klookup.4` -
+`(FIND) ( c-addr nb ctx n --- c-addr 0 | xt 1 | xt -1 )`, the kernel's
+FIND step for step with NAMEBUF, CONTEXT and #ORDER @ given, and FIND8
+around it; `(>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 )`, the
+kernel's >NUMBER with BASE @ given - its Forth body the kernel's own loop
+(calling >NUMBER would recurse: >NUMBER8 takes its body); WORD8 with HERE
+once - and (FIND) and (>NUMBER) first among the format-10 names. The
+handlers mirror the Forth: the search order's duplicate rule, NAME>BUF8,
+HASH, the thread walk, NAME>8 and the immediate bit; DIGIT?'s test and
+the kernel's UM* and D+ arithmetic through the engine's umul().
+
+**Differential tests**, the kernel's Forth against the opcodes, outputs
+identical on ad62971982 and 097ff5bdce: the search order - one entry, an
+empty wordlist searched first and last, three with a duplicate, a 31- and
+a 36-character name, executing what was found - and NUMBER? - signs, $
+and #, points, values past 2^64 and 2^128, lowercase hex, stray letters,
+a lone sign, bases 2, 16 and 36 (the kernel's quirk kept: 1.2.3 is a
+number). The kernel has no search-order words and no workload changes
+the order, so these paths are tested only here.
+
+| design, against it as recorded | kernel | fib | parse | corpus | loop | sieve | size |
+|---|---|---|---|---|---|---|---|
+| ad62971982 | 0.804 | 1.000 | 0.530 | 0.603 | 0.998 | 0.999 | 7,799 -> 7,839 |
+| 097ff5bdce | 0.812 | 1.000 | 0.571 | 0.646 | 1.000 | 0.999 | 6,913 -> 6,957 |
+
+alive in all four engine forms; the selected workloads' geometric mean
+0.762-0.786 of the dispatches.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell

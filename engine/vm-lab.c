@@ -1416,6 +1416,25 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
              h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2;
              DS0 = (h_ ^ u_) & (t_ - 1); } NEXT();
 #endif
+/*  Iteration 57: (FIND) ( c-addr nb ctx n --- c-addr 0 | xt 1 | xt -1 ) -
+ *  the kernel's FIND with kfast's SEARCH-WORDLIST8 (forth/cv8b-klookup.4):
+ *  the last wordlist not searched twice; from the top of the search order,
+ *  the name to NAMEBUF (32 MIN, PLACE), HASH, the thread's head, THREAD-FIND's
+ *  walk, NAME>8 and the immediate bit.  */
+#if X_FIND
+L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } { UNS8 t_ = BYTE(a_ - 1); if (t_ < 128) a_ = t_ ? a_ - t_ : 0; else if (t_ < 192) a_ -= ((UNS64)(t_ & 63) << 8) | BYTE(a_ - 2); else a_ -= ((UNS64)(t_ & 63) << 16) | ((UNS64)BYTE(a_ - 2) << 8) | BYTE(a_ - 3); } } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+            dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
+#endif
+/*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER
+ *  with BASE @ given (klookup's >NUMBER8): DIGIT?'s test exactly - '0'-'9',
+ *  nothing between '9' and 'A', then A on, below base (signed) - and ud*base
+ *  + digit as the kernel does it: UM* of the low cell, * of the high, D+.  */
+#if X_TONUMBER
+L_x_tonumber: { UNS64 b_ = DS0, u_ = DS1, a_ = DS2, hi_ = CELL(dsp + 3 * CELL_BYTES), lo_ = CELL(dsp + 4 * CELL_BYTES);
+            while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; }
+            dsp += CELL_BYTES; DS0 = u_; DS1 = a_; DS2 = hi_; CELL(dsp + 3 * CELL_BYTES) = lo_; } NEXT();
+#endif
 #if X_PLACE
 L_x_place: { UNS64 d_ = DS0, n_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
              BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();

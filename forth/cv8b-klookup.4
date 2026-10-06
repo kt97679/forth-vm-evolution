@@ -1,0 +1,46 @@
+\ cv8b-klookup.4 - the whole dictionary lookup as one word (Iteration 57),
+\ for the byte-header system with kfast and kinput; loaded after
+\ cv8b-kinput.4 for designs with the gene klookup. X8 words: the kernel's
+\ word gets the body.
+\
+\ On seed 13's fastest design FIND and SEARCH-WORDLIST were still 28-31%
+\ of the parse and corpus workloads' dispatches - FIND's loop over the
+\ search order, SEARCH-WORDLIST8's own stack work - around the opcodes
+\ THREAD-FIND and HASH. (FIND) is FIND's search with what it reads given:
+\ NAMEBUF, CONTEXT and #ORDER @; the gene makes it a format-10 opcode, which
+\ does the search order, NAME>BUF8, HASH, THREAD-FIND, NAME>8 and the
+\ immediate bit in one dispatch.
+
+: (FIND) ( c-addr nb ctx n --- c-addr 0 | xt 1 | xt -1 )
+\ The kernel's FIND, step for step: the last wordlist not searched twice,
+\ then each from the top of the search order down. nb is unused here -
+\ SEARCH-WORDLIST fills NAMEBUF; the opcode fills it itself.
+  ROT DROP SWAP >R
+  DUP 1 > IF DUP 1- CELLS R@ + DUP @ SWAP 1 CELLS - @ = IF 1- THEN THEN
+  BEGIN DUP WHILE
+    1- >R DUP COUNT R> R@ SWAP >R R@ CELLS + @ SEARCH-WORDLIST
+    DUP IF R> DROP R> DROP ROT DROP EXIT THEN
+    DROP R>
+  REPEAT R> DROP ;
+
+: FIND8 ( c-addr --- c-addr 0 | xt 1 | xt -1 )
+  NAMEBUF CONTEXT #ORDER @ (FIND) ;
+
+\ Number conversion: NUMBER?, >NUMBER and DIGIT? were 12-21% of parse and
+\ corpus - ~40 dispatches a digit. (>NUMBER) is >NUMBER with BASE @ given,
+\ for the opcode; its Forth body is the kernel's own loop (calling >NUMBER
+\ would recurse - >NUMBER8 takes >NUMBER's body), reading BASE itself.
+
+: (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 )
+  DROP
+  BEGIN DUP WHILE
+   -1 + >R COUNT DIGIT? 0= IF R> 1+ SWAP -1 + SWAP EXIT THEN
+   SWAP >R >R SWAP BASE @ UM* ROT BASE @ * 0 SWAP D+ R> 0 D+ R> R>
+  REPEAT ;
+
+: >NUMBER8 ( ud c-addr u --- ud2 c-addr2 u2 )
+  BASE @ (>NUMBER) ;
+
+: WORD8 ( c --- addr )
+\ The kernel's WORD, HERE once instead of three times.
+  PARSE HERE DUP >R PLACE BL R@ COUNT + C! R> ;

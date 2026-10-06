@@ -190,7 +190,10 @@ they are done, the article on the backburner.
       fastest yet, 0.326 at 9,014; 17-32% faster at every size. The input
       side (Iterations 54-55): the gene `kinput` - kernel 0.62, parse
       0.65, corpus 0.61 counted. Seed 13 (Iteration 56): taken up from
-      generation 1 - the fastest yet, 0.284 at 7,799.
+      generation 1 - the fastest yet, 0.284 at 7,799. The whole lookup
+      and the numbers (Iteration 57): the gene `klookup` - parse
+      0.53-0.57, corpus 0.60-0.65 counted. **NEXT-RUN: seed 14, then
+      compare.**
       Next in the sources: number conversion (NUMBER?, >NUMBER, DIGIT?:
       17% of parse), FIND's search-order loop, then what is left
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header

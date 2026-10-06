@@ -392,6 +392,22 @@ def _expect(n):
         'TABS>BL': [('P', 'OVER'), ('P', '+'), ('P', 'SWAP'), ('C', '2DUP'), ('C', '-'), ('QBR', 14 * CELL), ('P', 'DUP'),
                     ('P', 'C@'), ('LIT', 9), ('P', '='), ('QBR', 4 * CELL), ('C', 'BL'), ('P', 'OVER'), ('P', 'C!'),
                     ('C', '1+'), ('BR', -16 * CELL), ('C', '2DROP'), ('P', 'EXIT')],
+        # Iteration 57: klookup's (FIND) - the kernel's FIND, step for step
+        '(FIND)': [('P', 'ROT'), ('P', 'DROP'), ('P', 'SWAP'), ('P', '>R'), ('P', 'DUP'), ('LIT', 1), ('C', '>'),
+                   ('QBR', 18 * CELL), ('P', 'DUP'), ('C', '1-'), ('C', 'CELLS'), ('P', 'R@'), ('P', '+'), ('P', 'DUP'),
+                   ('P', '@'), ('P', 'SWAP'), ('LIT', 1), ('C', 'CELLS'), ('C', '-'), ('P', '@'), ('P', '='),
+                   ('QBR', 2 * CELL), ('C', '1-'), ('P', 'DUP'), ('QBR', 28 * CELL), ('C', '1-'), ('P', '>R'), ('P', 'DUP'),
+                   ('C', 'COUNT'), ('P', 'R>'), ('P', 'R@'), ('P', 'SWAP'), ('P', '>R'), ('P', 'R@'), ('C', 'CELLS'),
+                   ('P', '+'), ('P', '@'), ('C', 'SEARCH-WORDLIST'), ('P', 'DUP'), ('QBR', 8 * CELL), ('P', 'R>'),
+                   ('P', 'DROP'), ('P', 'R>'), ('P', 'DROP'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'), ('P', 'DROP'),
+                   ('P', 'R>'), ('BR', -29 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+        # Iteration 57: klookup's (>NUMBER) - the kernel's >NUMBER after a DROP
+        '(>NUMBER)': [('P', 'DROP'), ('P', 'DUP'), ('QBR', 41 * CELL), ('LIT', -1), ('P', '+'), ('P', '>R'), ('C', 'COUNT'),
+                      ('C', 'DIGIT?'), ('C', '0='), ('QBR', 9 * CELL), ('P', 'R>'), ('C', '1+'), ('P', 'SWAP'), ('LIT', -1),
+                      ('P', '+'), ('P', 'SWAP'), ('P', 'EXIT'), ('P', 'SWAP'), ('P', '>R'), ('P', '>R'), ('P', 'SWAP'),
+                      ('C', 'BASE'), ('P', '@'), ('P', 'UM*'), ('P', 'ROT'), ('C', 'BASE'), ('P', '@'), ('C', '*'),
+                      ('LIT', 0), ('P', 'SWAP'), ('P', 'D+'), ('P', 'R>'), ('LIT', 0), ('P', 'D+'), ('P', 'R>'), ('P', 'R>'),
+                      ('BR', -42 * CELL), ('P', 'EXIT')],
         # Iteration 54: kinput's (PARSE); the kernel's HASH and PLACE
         '(PARSE)': [('P', 'ROT'), ('P', 'DUP'), ('P', '>R'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DUP'), ('P', '>R'),
                     ('C', 'SKIP'), ('P', 'OVER'), ('P', 'SWAP'), ('P', 'R>'), ('C', 'SCAN'), ('QBR', 5 * CELL), ('LIT', 1),
