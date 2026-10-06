@@ -85,7 +85,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot')
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -104,9 +104,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2',)]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -252,6 +252,7 @@ def express(g):
     if 'swapi' in e and not swapi_on(g): e.pop('swapi')                            # Iteration 61: with 'imm'
     if 'tag2' in e and (g['enc'] != 'cv8' or not g['bytehdr']): e.pop('tag2')     # Iteration 66: CV8, byte headers
     if e.get('tag2'): e.pop('hotcalls', None)                                      # no hot calls under the tag
+    if 't2hot' in e and not e.get('tag2'): e.pop('t2hot')                          # Iteration 71: with the tag
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
@@ -419,6 +420,16 @@ def why(r):
     return (' (%s)' % err[-1].strip()[:120]) if err else ' (exit %d)' % r.returncode
 
 T2RANK = os.path.join(ROOT, 'lab', 'evolve', 'tag2-rank-v1.json')   # the reference ranking (Iteration 66)
+# Iteration 71: t2hot - the tag's one-byte codes, hot first above this weight,
+# the rest by static use (layout.py --tag2-hot): 0 the middle way (the
+# default), then speed first, then size first by degrees
+T2HOT = [0.02, 0.0, 0.05, 100.0]
+# Iteration 71: --require tag2 - every design of the run, the hand-made
+# references excepted, in the two-bit tag (with byte headers)
+REQUIRE = []
+def require(g):
+    if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+    return g
 
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
@@ -485,7 +496,7 @@ def build(g, d):
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
     if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
     if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
-    if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else [])
+    if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
     if g.get('bss'): opts.append('--bss')                         # Iteration 44: scratch buffers out of the file
     if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
@@ -645,6 +656,8 @@ def mutate(g, rnd):
             g['opt'] = rnd.choice([o for o in ('O2', 'O3', 'Os') if o != g['opt']]); what.append('-' + g['opt'])
         elif k == 'scale':
             g['scale'] = rnd.choice([s for s in range(4) if s != g['scale']]); what.append('scale=%d' % g['scale'])
+        elif k == 't2hot':            # Iteration 71: the tag's ranking, size against speed
+            g['t2hot'] = rnd.choice([v for v in range(len(T2HOT)) if v != g.get('t2hot', 0)]); what.append('t2hot=%s' % T2HOT[g['t2hot']])
         elif k == 'hotcalls':         # Iteration 14: one-byte calls to 0, 8, 16 or 32 of the image's words
             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
         elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
@@ -906,6 +919,7 @@ def random_genome(rnd):
         elif k == 'scale': g[k] = rnd.randrange(4)
         elif k == 'escape': g[k] = rnd.randrange(3)
         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+        elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
         elif k in ('ops10', 'supers', 'folds'):
             f = [x for x in {'ops10': OPS10_POOL, 'supers': SUPER_POOL, 'folds': POOL}[k] if rnd.random() < 0.5]
@@ -1041,7 +1055,8 @@ def knockout(argv):
 def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
-    known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry'}
+    known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require'}
+    if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
     bad = [a for a in argv if a.startswith('-') and a not in known]
     if bad:
         # Iteration 4: `--help`, unrecognised, started a full run that wrote
@@ -1096,6 +1111,7 @@ def main(argv):
     # replay would make different children and fork instead of resuming.
     seen = set()
     def get(g, parents, how, gen):
+        if REQUIRE and not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71
         i = gid(g); seen.add(i)
         if i not in R:
             t0 = time.time(); rec = evaluate(g, ROUNDS)
@@ -1131,9 +1147,10 @@ def main(argv):
                 if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
             label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
             for i in (fronts(list(C), C) or [[]])[0]:
-                g = canon(C[i]['genome'])
+                g = canon(require(C[i]['genome'])) if REQUIRE else canon(C[i]['genome'])
                 if gid(g) in have: continue
-                have.add(gid(g)); carried.append((g, 'carried from %s: %s' % (label, i)))
+                # re-encoded (--require), it is a new design: this run's, not its origin's
+                have.add(gid(g)); carried.append((g, ('tag 2 of %s: %s' if gid(g) != i else 'carried from %s: %s') % (label, i)))
         print('  carried in: %d designs, the fronts of %d databases' % (len(carried), len(argv[argv.index('--carry') + 1].split(','))), flush=True)
         pop += [get(g, [], how, 0) for g, how in carried]
     while len(pop) < N:

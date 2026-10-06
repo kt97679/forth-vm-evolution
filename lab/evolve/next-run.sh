@@ -101,9 +101,11 @@ case "${1:-none}" in
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
     experiment) KIND=experiment; TOOL=${2:-}; SEED=0; CROUNDS=10
         TARGS=$(printf '%s\n' "$@" | sed -n '3,$p' | tr '\n' ' ') ;;
-    seed) KIND=seed; SEED=${2:-}; CROUNDS=10 ;;
-    *) KIND=seed; SEED=$1; CROUNDS=10 ;;
+    seed) KIND=seed; SEED=${2:-}; REQ=${3:-}; CROUNDS=10 ;;
+    *) KIND=seed; SEED=$1; REQ=${2:-}; CROUNDS=10 ;;
 esac
+# Iteration 71: "seed N tag2" - every design of the run in the two-bit tag
+case ${REQ:-} in ''|tag2) ;; *) die "after the seed: nothing, or tag2 - not '$REQ'";; esac
 case $SEED in ''|*[!0-9]*) die "the seed must be a number, or 'compare' - not '$SEED'";; esac
 case $CROUNDS in ''|*[!0-9]*) die "the rounds must be a number, not '$CROUNDS'";; esac
 if [ "$KIND" = experiment ]; then      # a tool of this repository, nothing else
@@ -113,7 +115,7 @@ fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
-WANT="seed $SEED at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+WANT="seed $SEED${REQ:+ $REQ} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
 if [ "$KIND" = experiment ]; then
     NAME=${TOOL%.py}
     RUN=$RUNS/$NAME-$HEAD
@@ -254,6 +256,7 @@ if [ -n "$CARRY" ]; then
 else
     set --
 fi
+if [ -n "${REQ:-}" ]; then set -- "$@" --require "$REQ"; say "every design of the run in the two-bit tag"; fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
 python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" "$@" >> evolve.log 2>&1 \
     || { tail -20 evolve.log; exit 1; }

@@ -75,4 +75,9 @@
 #
 # Iteration 63: none - seed 15 and the comparison came back; the next run
 # waits for the next batch of improvements.
-none
+#
+# Iteration 71: seed 16 in the two-bit tag (FORMAT-TAG2.md) - 64 opcodes, a
+# 1 GB code space - every design of the run re-encoded, the earlier fronts
+# carried in as tag 2; t2hot to choose. Then compare: the old front is the
+# baseline, and this first tag-2 run is expected to pay the format's price.
+seed 16 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

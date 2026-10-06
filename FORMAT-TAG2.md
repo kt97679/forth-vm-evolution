@@ -107,9 +107,19 @@ whatever format keeps images small.
   overlay that assumes the old numbering - with `OP,` escaping what has
   no one-byte code, `CALL,` in three widths, branches and links as above.
   The old files are frozen by the designs recorded with them.
-- **T4 evolver**: the gene `tag2`; profile, rank, then build; new runs
+- **T4 evolver** - **done, Iteration 71**: the gene `tag2` (converter
+  before engine), `t2hot` (the ranking's threshold), `--require tag2`
+  and next-run.sh's `seed N tag2`; carried designs re-encoded as the
+  run's own. (The analysis tools still name opcodes the old way.) The
+  plan: the gene `tag2`; profile, rank, then build; new runs
   with `tag2` required; hot calls off under it; the profiler and the
   analysis tools reading calls as 0x40-0xFF.
-- **T5 proof** (decision 9) and the price, counted on the VM: size and
+- **T5 proof** - **done, Iterations 67-70, but 32-bit cells**: alive in
+  all four engine forms, the differential tests identical, calls and
+  links past 4 MB right; the price +5.4-5.8% size and +2-3% dispatches
+  on the front (Iteration 69). Left: 32-bit cells (the converter refuses
+  them under the tag: a DOES> body's 4-byte call does not fit a 4-byte
+  first cell) - before the Tegra. The plan: decision 9 and the price,
+  counted on the VM: size and
   dispatches of the current front re-encoded, design by design.
 - **T6 laptop runs**: seeds with `tag2` required, carrying the front.

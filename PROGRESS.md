@@ -1598,3 +1598,19 @@ identical to the old format; and past 4 MB - a 5 MB ALLOT, words calling
 and called across it, DOES> on both sides of it, a tick walking a link
 across it - right in every form. The same program in the old format:
 return stack overflow.
+
+## Iteration 71 - 2026-10-06 - Claude
+
+**T4: the evolver within the two-bit tag.** The gene t2hot (LATE, with
+the tag): the ranking's hot threshold, 0.02 by default, 0, 0.05 or static
+- the trade Iteration 68 found differs by design. --require tag2: every
+design entering a run, the hand-made references excepted (s6 stays the
+measure of speed), in the tag with byte headers; a carried design that
+re-encoding gives a new id is the run's own ('tag 2 of ...'), so the
+comparison measures it there. next-run.sh: 'seed N tag2'. A miniature
+run carrying seed 15's front: 15 re-encoded and alive, the hand-made
+untouched, 11 of 13 mutants alive.
+
+NEXT-RUN: seed 16 tag2, then compare - the old front the baseline. Left
+of the format: 32-bit cells (before the Tegra), the analysis tools'
+opcode names.
