@@ -74,13 +74,14 @@ for db in dbs:
 CAL = 's6-cv8b'
 rec[CAL] = (E.canon(E.HUMAN['s6-cv8b']), None, 1.0)
 
-live, size, dead, etext, rss = [], {}, {}, {}, {}
+live, size, dead, etext, rss, binsz, tot, memv = [], {}, {}, {}, {}, {}, {}, {}
 for k, (i, (g, _, _)) in enumerate(sorted(rec.items())):
     d = os.path.join(E.EV, 'cmp', '%03d' % k)
     try:
         eng, img = E.build(g, d); pw = E.private_work(d); E.alive(eng, img, pw)
         live.append((i, eng, img, pw)); size[i] = os.path.getsize(img)
         etext[i] = E.text_size(eng)                   # Iteration 73: the engine's machine code
+        binsz[i] = E.bin_size(eng); tot[i] = binsz[i] + size[i]    # Iteration 75: binary + image
     except Exception as e:
         dead[i] = str(e)[:100]
     say('built %d of %d: %s %s' % (k + 1, len(rec), i, dead.get(i, 'ok')))
@@ -100,7 +101,7 @@ for r_ in range(rounds):
                 pair = [((eng, img, pw), 'd'), (E.REF, 'r')]
                 for (e, im, p), side in (pair if (r_ + j + ci) % 2 == 0 else pair[::-1]):
                     times.setdefault((i, w, side, c), []).append(E.run_metric(e, im, p, w))
-                    if side == 'd': rss[i] = max(rss.get(i, 0), E.RSS_LAST[0])   # Iteration 73: peak memory, KB
+                    if side == 'd': memv.setdefault((i, w), []).append(E.RSS_LAST[0])   # Iteration 75: memory touched, KB
 E.PIN[:] = pin0
 med = statistics.median
 T = {c: {i: {w: med(times[(i, w, 'd', c)]) / med(times[(i, w, 'r', c)]) for w in E.WORK_SEL + E.WORK_HELD} for i, *_ in live} for c in cpus}
@@ -115,22 +116,33 @@ if cal is None: print('**No calibration: hand-made s6 did not build or pass the 
 else:
     print('**Calibration: hand-made s6 against itself %.3f** (%s).%s\n' % (cal, ', '.join('%s %.3f' % (w, t[CAL][w]) for w in E.WORK_SEL + E.WORK_HELD),
           '' if 0.98 <= cal <= 1.02 else ' OUTSIDE 0.98-1.02: this session cannot rank designs a few per cent apart.'))
+for (i, w), v in memv.items():                  # each workload's median, the most of them: the design's peak
+    rss[i] = max(rss.get(i, 0), statistics.median(v))
+def dominates(sj, si, j, i):
+    # Iteration 75 (the owner): three objectives, equal - speed, binary + image, peak memory
+    a, b = (sj, tot[j], rss.get(j, 0)), (si, tot[i], rss.get(i, 0))
+    return all(p <= q for p, q in zip(a, b)) and a != b
 def front(ids):
     ids = [i for i in ids if i in speed]
-    return [i for i in ids if not any(speed[j] <= speed[i] and size[j] <= size[i] and (speed[j], size[j]) != (speed[i], size[i]) for j in ids)]
+    return [i for i in ids if not any(dominates(speed[j], speed[i], j, i) for j in ids)]
 allf = front([i for i in speed if i != CAL])
-print('| run | design | speed now | recorded | size now | recorded | engine KB | peak RSS MB | %s | on the front of all |'
+print('| run | design | speed now | recorded | size now | recorded | binary | binary + image | memory KB | %s | on the front of all |'
       % ' | '.join(E.WORK_SEL + ['%s (held out)' % w for w in E.WORK_HELD]))   # from the lists: Iteration 42
-print('|---|---|---|---|---|---|---|---|' + '---|' * len(E.WORK_SEL + E.WORK_HELD) + '---|')
+print('|---|---|---|---|---|---|---|---|---|' + '---|' * len(E.WORK_SEL + E.WORK_HELD) + '---|')
 for label, ids in runs:
     for i in sorted(ids, key=lambda i: (size.get(i, 1 << 30), speed.get(i, 9))):
         g, rs, rp = rec[i]
-        if i in dead: print('| %s | %s | %s | %.3f | | %s | | |%s |' % (label, i, dead[i], rp, format(rs, ','), ' |' * len(E.WORK_SEL + E.WORK_HELD)))
-        else: print('| %s | %s | %.3f | %.3f | %s | %s | %s | %s | %s | %s |' % (label, i, speed[i], rp, format(size[i], ','), format(rs, ','),
-                    ('%.1f' % (etext[i] / 1024)) if etext.get(i) else '-', ('%.1f' % (rss[i] / 1024)) if rss.get(i) else '-',
+        if i in dead: print('| %s | %s | %s | %.3f | | %s | | | |%s |' % (label, i, dead[i], rp, format(rs, ','), ' |' * len(E.WORK_SEL + E.WORK_HELD)))
+        else: print('| %s | %s | %.3f | %.3f | %s | %s | %s | %s | %s | %s | %s |' % (label, i, speed[i], rp, format(size[i], ','), format(rs, ','),
+                    format(binsz[i], ','), format(tot[i], ','), format(rss[i], ',') if rss.get(i) else '-',
                     ' | '.join('%.3f' % t[i][w] for w in E.WORK_SEL + E.WORK_HELD), 'yes' if i in allf else ''))
-print('\nThe front of all runs together, by size: ' + ', '.join('%s %.3f at %s' % (i, speed[i], format(size[i], ','))
-      for i in sorted(allf, key=lambda i: -size[i])))
+print('\nThe front of all runs together (speed, binary + image, peak memory), by binary + image: ' + ', '.join('%s %.3f at %s, %s KB' % (i, speed[i], format(tot[i], ','), format(rss.get(i, 0), ','))
+      for i in sorted(allf, key=lambda i: -tot[i])))
+# Iteration 75 (the owner: tell when three equal objectives do not work):
+# the designs on the front only by memory - dominated on speed and binary +
+# image together, kept by a page or a few fewer touched.
+two = [i for i in allf if any(speed[j] <= speed[i] and tot[j] <= tot[i] and (speed[j], tot[j]) != (speed[i], tot[i]) for j in allf + [k for k in speed if k != CAL])]
+print('\nOn the front by memory alone: %d of %d%s' % (len(two), len(allf), (' - ' + ', '.join('%s %.3f at %s, %s KB' % (i, speed[i], format(tot[i], ','), format(rss.get(i, 0), ',')) for i in sorted(two, key=lambda i: -tot[i]))) if two else ''))
 if len(cpus) > 1:
     a, b = cpus[0], cpus[1]
     ids = sorted(i for i in S[a] if i != CAL)
@@ -138,14 +150,14 @@ if len(cpus) > 1:
     ra = {i: k for k, i in enumerate(sorted(ids, key=lambda i: S[a][i]))}; rb = {i: k for k, i in enumerate(sorted(ids, key=lambda i: S[b][i]))}
     n = len(ids); rho = 1 - 6 * sum((ra[i] - rb[i]) ** 2 for i in ids) / (n * (n * n - 1)) if n > 1 else 1.0
     def front_on(c):
-        return {i for i in ids if not any(S[c][j] <= S[c][i] and size[j] <= size[i] and (S[c][j], size[j]) != (S[c][i], size[i]) for j in ids)}
+        return {i for i in ids if not any(dominates(S[c][j], S[c][i], j, i) for j in ids)}
     fa, fb = front_on(a), front_on(b)
     print('\n## The same session on two CPUs\n')
     print('Calibration on cpu %d: %.3f; on cpu %d: %.3f.\n' % (a, S[a].get(CAL, float('nan')), b, S[b].get(CAL, float('nan'))))
     print('Speed on cpu %d over speed on cpu %d, per design: median %.3f, 10-90%% %.3f-%.3f, extremes %.3f-%.3f; '
           'rank agreement (Spearman) %.2f.\n' % (a, b, q[len(q) // 2], q[len(q) // 10], q[9 * len(q) // 10], q[0], q[-1], rho))
-    print('The front of all runs on cpu %d: %s' % (a, ', '.join('%s %.3f at %s' % (i, S[a][i], format(size[i], ',')) for i in sorted(fa, key=lambda i: -size[i]))))
-    print('\nThe front of all runs on cpu %d: %s' % (b, ', '.join('%s %.3f at %s' % (i, S[b][i], format(size[i], ',')) for i in sorted(fb, key=lambda i: -size[i]))))
+    print('The front of all runs on cpu %d: %s' % (a, ', '.join('%s %.3f at %s' % (i, S[a][i], format(tot[i], ',')) for i in sorted(fa, key=lambda i: -tot[i]))))
+    print('\nThe front of all runs on cpu %d: %s' % (b, ', '.join('%s %.3f at %s' % (i, S[b][i], format(tot[i], ',')) for i in sorted(fb, key=lambda i: -tot[i]))))
     print('\nOn both fronts: %d of %d and %d.' % (len(fa & fb), len(fa), len(fb)))
     print('\n| design | speed cpu %d | speed cpu %d | ratio |' % (a, b))
     print('|---|---|---|---|')

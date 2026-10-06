@@ -328,6 +328,28 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
     if p.returncode == -signal.SIGXCPU: raise subprocess.TimeoutExpired(cmd, cpu)
     return subprocess.CompletedProcess(cmd, p.returncode, out, err)
 
+RTC = os.path.join(ROOT, 'engine', 'rt-linux-x86_64.c')
+def rt():
+    """Iteration 75 (the owner): every engine WITHOUT the C library - its
+    system calls from engine/rt-linux-x86_64.c, linked statically - so the
+    binary is all there is: its size and its memory are the design's own,
+    and logic moved into the engine shows. Without unwind tables, which
+    nothing reads. Not for profiling builds, off x86-64 Linux, or with
+    EVOLVE_LIBC=1: there, the C library as before."""
+    fl = ['-fno-asynchronous-unwind-tables']
+    u = os.uname()
+    if PROFILING[0] or os.environ.get('EVOLVE_LIBC') == '1' or (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
+    return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0', RTC, '-lgcc']
+
+def bin_size(eng):
+    """Iteration 75: the engine as it would ship - a stripped copy's size.
+    The engine itself keeps its symbols: tail_offenders reads them."""
+    s = eng + '.stripped'
+    r = sh(['strip', '--strip-all', '-o', s, eng])
+    n = os.path.getsize(s) if r.returncode == 0 and os.path.exists(s) else os.path.getsize(eng)
+    if os.path.exists(s): os.remove(s)
+    return n
+
 def ccflags(g):
     return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g[k] for w in f.split()]
 
@@ -356,7 +378,7 @@ def build_tail(g, d, src, flags, eng):
     for attempt in range(2):
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
         if r.returncode: raise RuntimeError('died: tail-call generation')
-        if sh(['cc'] + ccflags(g) + ['-w', '-o', eng, tc]).returncode: raise RuntimeError('died: engine did not compile')
+        if sh(['cc'] + ccflags(g) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
         bad = tail_offenders(eng)
         if not bad: return
         wrap = sorted(set(wrap) | bad)
@@ -480,7 +502,7 @@ def build(g, d):
     def compile_engine():
         if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
         else:
-            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
+            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + rt())
             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
@@ -524,7 +546,7 @@ def build_other(g, d):
     """The cell engine (relf.c, its image as built), SOD16 and CPT16."""
     eng = os.path.join(d, 'engine'); img = os.path.join(d, 'image.img')
     if g['enc'] == 'cell':
-        if sh(['cc'] + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')]).returncode:
+        if sh(['cc'] + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')] + rt()).returncode:
             raise RuntimeError('died: engine did not compile')
         shutil.copy(os.path.join(O, 's0-cell-s64.img'), img); return eng, img
     src = os.path.join(d, 'vm.c'); shutil.copy(os.path.join(O, 'vm-lab.c'), src)
@@ -541,7 +563,7 @@ def build_other(g, d):
                 raise RuntimeError('died: fold generation')
             flags.append('-DFOLD=1'); opts += ['--dataprims', '--fold', '--fold-set', folds]
         opts += ['--compiler-overlay', '16']
-    if sh(['cc'] + ccflags(g) + flags + ['-o', eng, src]).returncode:
+    if sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + rt()).returncode:
         raise RuntimeError('died: engine did not compile')
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
@@ -584,10 +606,15 @@ def run_metric(eng, img, pw, w):
     processes on the machine do not count against it."""
     r = sh(PIN + [CPUT, eng, img], cwd=pw, inp=program(w), timeout=240, cpu=10)
     m = re.search(METRIC, r.stderr, re.M) or re.search(rb'^CPUNS (\d+)', r.stderr, re.M)
-    mr = re.search(rb'^MAXRSS (\d+)', r.stderr, re.M)     # Iteration 73: the run's peak memory, KB
-    RSS_LAST[0] = int(mr.group(1)) if mr else 0
+    # The run's memory, KB (Iteration 75): the pages it touched - cputime's
+    # MINFLT, faults counted one by one - times the page size. MAXRSS only
+    # from an older cputime: on Linux 6.x it reads 0 for a small static run.
+    mf = re.search(rb'^MINFLT (\d+)', r.stderr, re.M)
+    mr = re.search(rb'^MAXRSS (\d+)', r.stderr, re.M)
+    RSS_LAST[0] = int(mf.group(1)) * PAGE_KB if mf else (int(mr.group(1)) if mr else 0)
     return int(m.group(1))
-RSS_LAST, LAST_RSS = [0], {}     # the last run's peak RSS (KB); the last measure()'s design, per workload
+RSS_LAST, LAST_RSS = [0], {}     # the last run's memory (KB); the last measure()'s design, per workload: the median
+PAGE_KB = os.sysconf('SC_PAGE_SIZE') // 1024
 
 def text_size(path):
     """Iteration 73: the engine's machine code - its ELF .text section, in
@@ -621,13 +648,14 @@ def measure(eng, img, pw, works, rounds):
     agreed within 3.6% between halves of a session and 2.1% between CPUs
     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
     runs, ref = {}, {}
-    LAST_RSS.clear()
+    LAST_RSS.clear(); mem = {}
     for r_ in range(rounds):
         for w in works:
             pair = [(eng, img, pw, runs), REF + (ref,)]
             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
                 store.setdefault(w, []).append(run_metric(e, i, p, w))
-                if store is runs: LAST_RSS[w] = max(LAST_RSS.get(w, 0), RSS_LAST[0])   # the design's, not s6's
+                if store is runs: mem.setdefault(w, []).append(RSS_LAST[0])   # the design's, not s6's
+    LAST_RSS.update({w: statistics.median(v) for w, v in mem.items()})     # a page or two of noise
     med = {w: statistics.median(runs[w]) for w in works}
     return {w: med[w] / statistics.median(ref[w]) for w in works}, med
 
@@ -654,13 +682,15 @@ def evaluate(g, rounds, keep=False):
     try:
         eng, img = build(g, d)
         rec['size'] = os.path.getsize(img)
+        rec['bin'] = bin_size(eng); rec['total'] = rec['bin'] + rec['size']     # Iteration 75: an objective
         pw = private_work(d)
         alive(eng, img, pw)
         t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
         rec['t'] = t; rec['raw'] = raw
         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
         rec['etext'] = text_size(eng)                              # Iteration 73: tracked, not scored
-        rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload took
+        rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
+        rec['mem'] = dict(LAST_RSS)
         rec['unit'] = UNIT
     except RuntimeError as e:
         rec['status'] = str(e)
@@ -755,14 +785,23 @@ def borrow(g, donor, rnd):
 
 
 # ---- selection: NSGA-II on (speed, size) -------------------------------------
+# Iteration 75 (the owner): three objectives, equal - CPU time, binary +
+# image, peak memory. A record from before (no binary, no memory measured)
+# falls back to its image size and no memory: its own run's two.
+OBJECTIVES = ('speed', 'total', 'rss')
+def ov(r, k):
+    if k == 'total': return r.get('total', r['size'])
+    if k == 'rss': return r.get('rss') or 0
+    return r[k]
+
 def fronts(ids, R):
     # Lists, not sets: a set of ids iterates in an order that changes with
     # each process's string hashing, the fronts would come out in another
     # order, and a resumed run would pick different parents and fork.
     dom = {i: [] for i in ids}; n = {i: 0 for i in ids}
     def better(x, y):
-        a, b = R[x], R[y]
-        return a['speed'] <= b['speed'] and a['size'] <= b['size'] and (a['speed'] < b['speed'] or a['size'] < b['size'])
+        a, b = [ov(R[x], k) for k in OBJECTIVES], [ov(R[y], k) for k in OBJECTIVES]
+        return all(p <= q for p, q in zip(a, b)) and a != b
     for x in ids:
         for y in ids:
             if x != y and better(x, y): dom[x].append(y)
@@ -779,11 +818,11 @@ def fronts(ids, R):
 
 def crowding(front, R):
     cd = {i: 0.0 for i in front}
-    for k in ('speed', 'size'):
-        s = sorted(front, key=lambda i: R[i][k]); lo, hi = R[s[0]][k], R[s[-1]][k]
+    for k in OBJECTIVES:
+        s = sorted(front, key=lambda i: ov(R[i], k)); lo, hi = ov(R[s[0]], k), ov(R[s[-1]], k)
         cd[s[0]] = cd[s[-1]] = float('inf')
         for j in range(1, len(s) - 1):
-            cd[s[j]] += (R[s[j + 1]][k] - R[s[j - 1]][k]) / ((hi - lo) or 1)
+            cd[s[j]] += (ov(R[s[j + 1]], k) - ov(R[s[j - 1]], k)) / ((hi - lo) or 1)
     return cd
 
 def rank(ids, R):
@@ -1240,10 +1279,11 @@ def report(R):
     L = ['# Evolved VM designs', '',
          '%d designs evaluated, %d alive. Speed is the geometric mean of %s over %s,' %
          (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
-         'relative to s6-cv8b; size is the self-hosting image. %s is held out.' % ', '.join(WORK_HELD), '',
+         'relative to s6-cv8b; size is the self-hosting image, binary the stripped engine. %s is held out.' % ', '.join(WORK_HELD),
+         'The front is over three objectives, equal (Iteration 75): speed, binary + image, peak memory.', '',
          '## The Pareto front', '',
-         '| design | speed | re-measured | size | engine KB | peak RSS MB | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
-         '|---|---|---|---|---|---|---|---|---|']
+         '| design | speed | re-measured | image | binary | binary + image | memory KB | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
+         '|---|---|---|---|---|---|---|---|---|---|']
     def diff(g):
         if not ref: return ''
         g, r = express(g), express(ref['genome']); out = []
@@ -1263,9 +1303,10 @@ def report(R):
         # already a ratio to s6, measured in the same session - possibly on
         # another machine than the run, so not divided by the run's s6
         again = ('%.3f' % rm[i]['speed']) if i in rm else '-'
-        ek = ('%.1f' % (x['etext'] / 1024)) if x.get('etext') else '-'
-        rm_ = ('%.1f' % (x['rss'] / 1024)) if x.get('rss') else '-'
-        L.append('| %s | %.3f | %s | %d | %s | %s | %.3f | %s | %s |' % (i, rs, again, x['size'], ek, rm_, rl, diff(x['genome']), x['how'][:60]))
+        bn = format(x['bin'], ',') if x.get('bin') else '-'
+        tt = format(x['total'], ',') if x.get('total') else '-'
+        rm_ = format(x['rss'], ',') if x.get('rss') else '-'
+        L.append('| %s | %.3f | %s | %s | %s | %s | %s | %.3f | %s | %s |' % (i, rs, again, format(x['size'], ','), bn, tt, rm_, rl, diff(x['genome']), x['how'][:60]))
     L += ['', '## How the front came about', '']
     for i in sorted(F, key=lambda i: R[i]['speed']):
         chain, j = [], i

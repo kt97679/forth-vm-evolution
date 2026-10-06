@@ -1675,3 +1675,25 @@ here - every one the prototype needs has the holes its source implies;
 ?DO's conditional exit does not, so ?DO would stay bytecode. Next: the
 converter's per-design table, the translator, JIT? and NATIVE,
 executable memory, the run-time compiler's header.
+
+## Iteration 75 - 2026-10-06 - Claude
+
+**Three objectives, equal** (the owner): the smallest binary + image, the
+highest speed, the lowest memory - to catch logic moved into the engine.
+Every evolved engine and the reference s6 now link without the C library
+(engine/rt-linux-x86_64.c, mprotect added; no unwind tables): with it,
+1.1 MB of 1.47 MB resident was the library, and its code was invisible
+in the binary. binary = a stripped copy; memory = pages touched, from a
+new MINFLT in cputime (faults counted one by one) - ru_maxrss failed
+twice over: a 388 KB floor from fork's copy of a library-linked cputime
+(the peak survives exec), then 0 KB for a static 30 ms run on Linux 6.18
+(per-CPU counters, read approximately). cputime now links without the
+library too. NSGA-II dominates and crowds over the three; the
+comparison counts designs on the front by memory alone.
+
+First readings: s6 39,521 (binary 29,456); seed 15's fastest, multi-state,
+65,982 (binary 58,024 - 20 KB of cached-state handler copies); with tail
+calls 45,526; 200-216 KB touched. A 2-generation run and a comparison
+checked end to end (the comparison's row format fixed on the way); in
+that small test one of five front designs was there by memory alone.
+NEXT-RUN: seed 18 tag2, then compare. The JIT (phase 1) resumes after.

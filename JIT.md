@@ -40,6 +40,12 @@ of Forth, a whole CV8 decoder).
 
 ## Budgets - measured, or it comes out
 
+Since Iteration 75 the evolution itself weighs these: binary + image and
+memory (pages touched) are objectives beside speed, equal - so the JIT's
+stencils and translator count in the binary, and its native code in the
+memory, of every design that carries the gene.
+
+
 - **Code**: new C at most ~300 lines beside SPN's stencils; engine code
   (the tracked .text) at most +15 KB over the design without the gene.
 - **Memory**: peak resident memory at most +1 MB on any workload.

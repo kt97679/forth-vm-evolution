@@ -45,6 +45,7 @@
  *  program under test writes to stdout.
  */
 #include <sys/resource.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,6 +56,17 @@
 #include <unistd.h>
 #include <linux/perf_event.h>
 
+/* Iteration 75: output through one helper - snprintf and write - so this
+   builds without the C library too (engine/rt-linux-x86_64.c), as the
+   engines do: then the peak memory a child reports is its own, not the
+   copy of this process that fork made. */
+static void say(const char *f, ...)
+{
+    char b[200]; va_list ap; int n;
+    va_start(ap, f); n = vsnprintf(b, sizeof b, f, ap); va_end(ap);
+    if (n > (int)sizeof b - 1) n = (int)sizeof b - 1;
+    if (n > 0 && write(2, b, (size_t)n) < 0) return;
+}
 static int perf_open(pid_t pid, unsigned type, unsigned long long config)
 {
     struct perf_event_attr a;
@@ -101,12 +113,12 @@ int main(int argc, char **argv)
     char c = 'g';
 
     if (argc < 2) {
-        fprintf(stderr, "usage: cputime PROG [ARG...]\n");
+        say("usage: cputime PROG [ARG...]\n");
         return 2;
     }
-    if (pipe(go) < 0) { perror("pipe"); return 2; }
+    if (pipe(go) < 0) { say("pipe failed\n"); return 2; }
     pid = fork();
-    if (pid < 0) { perror("fork"); return 2; }
+    if (pid < 0) { say("fork failed\n"); return 2; }
     if (pid == 0) {
         /* Wait until the parent has attached the counters, then exec. */
         close(go[1]);
@@ -119,21 +131,28 @@ int main(int argc, char **argv)
     close(go[0]);
     fc = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
     fi = perf_open(pid, PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
-    if (write(go[1], &c, 1) != 1) { perror("write"); return 2; }
+    if (write(go[1], &c, 1) != 1) { say("write failed\n"); return 2; }
     close(go[1]);
-    if (waitpid(pid, &status, 0) < 0) { perror("waitpid"); return 2; }
-    if (getrusage(RUSAGE_CHILDREN, &ru) < 0) { perror("getrusage"); return 2; }
+    if (waitpid(pid, &status, 0) < 0) { say("waitpid failed\n"); return 2; }
+    if (getrusage(RUSAGE_CHILDREN, &ru) < 0) { say("getrusage failed\n"); return 2; }
 
     ns = (unsigned long long)ru.ru_utime.tv_sec * 1000000000ULL
        + (unsigned long long)ru.ru_utime.tv_usec * 1000ULL
        + (unsigned long long)ru.ru_stime.tv_sec * 1000000000ULL
        + (unsigned long long)ru.ru_stime.tv_usec * 1000ULL;
-    fprintf(stderr, "CPUNS %llu\n", ns);
-    fprintf(stderr, "MAXRSS %ld\n", (long)ru.ru_maxrss);
+    say("CPUNS %llu\n", ns);
+    say("MAXRSS %ld\n", (long)ru.ru_maxrss);
+    /* Iteration 75: the pages the child touched - minor and major faults,
+       counted one by one. ru_maxrss is no measure for a small static
+       process: on Linux 6.x the resident counters are per-CPU and read
+       approximately, and a 30 ms engine run reports 0 KB. The VM frees
+       nothing, so each fault is a page first touched (a page read before
+       written: two). */
+    say("MINFLT %ld\n", (long)(ru.ru_minflt + ru.ru_majflt));
     cyc = perf_value(fc);
     ins = perf_value(fi);
-    if (cyc > 0) fprintf(stderr, "CYCLES %lld\n", cyc);
-    if (ins > 0) fprintf(stderr, "INSTR %lld\n", ins);
+    if (cyc > 0) say("CYCLES %lld\n", cyc);
+    if (ins > 0) say("INSTR %lld\n", ins);
 
     if (WIFEXITED(status)) return WEXITSTATUS(status);
     return 128 + (WIFSIGNALED(status) ? WTERMSIG(status) : 0);

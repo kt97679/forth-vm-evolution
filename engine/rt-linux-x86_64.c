@@ -69,6 +69,17 @@ static long ok(long r)       /* the kernel's -errno to the library's -1 */
 
 ssize_t read(int fd, void *b, size_t n)        { return S(0, fd, b, n); }
 ssize_t write(int fd, const void *b, size_t n) { return S(1, fd, b, n); }
+int mprotect(void *a, size_t n, int p)        { return (int)S(10, a, n, p); }   /* the guard pages: Iteration 75 */
+/* Iteration 75: what tools/cputime.c needs too - linked without the C
+   library it keeps a few pages resident, so the peak memory it reports
+   for a child is the child's, not the copy fork made of cputime. */
+int getrusage(__rusage_who_t w, struct rusage *u) { return (int)S(98, w, u, 0); }
+long syscall(long n, ...)
+{
+    va_list ap; long a[6]; int i;
+    va_start(ap, n); for (i = 0; i < 6; i++) a[i] = va_arg(ap, long); va_end(ap);
+    return ok(sc(n, a[0], a[1], a[2], a[3], a[4], a[5]));
+}
 int close(int fd)                              { return (int)S(3, fd, 0, 0); }
 off_t lseek(int fd, off_t o, int w)            { return S(8, fd, o, w); }
 int pipe(int fd[2])                            { return (int)S(22, fd, 0, 0); }
@@ -360,6 +371,23 @@ int vsnprintf(char *restrict buf, size_t size, const char *restrict f, va_list a
     if (size) *(o < end ? o : end) = 0;
     return (int)(o - buf);
 }
+int execvp(const char *f, char *const a[])     /* a path as given; a name along PATH */
+{
+    const char *p = getenv("PATH"), *s; char buf[4096];
+    for (s = f; *s; s++) if (*s == '/') p = 0;
+    if (!p) return execve(f, a, environ);
+    for (;;) {
+        size_t n = 0, m = strlen(f);
+        while (p[n] && p[n] != ':') n++;
+        if (n && n + 1 + m < sizeof buf) {
+            memcpy(buf, p, n); buf[n] = '/'; memcpy(buf + n + 1, f, m + 1);
+            execve(buf, a, environ);
+        }
+        if (!p[n]) return -1;
+        p += n + 1;
+    }
+}
+
 int snprintf(char *restrict buf, size_t size, const char *restrict f, ...)
 {
     va_list ap; va_start(ap, f); int n = vsnprintf(buf, size, f, ap); va_end(ap);

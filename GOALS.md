@@ -26,6 +26,38 @@ How it decides things:
   grows either must show it: the tag added 5.6 KB of engine code to the
   fastest design (39.9 -> 45.5 KB), its peak memory unchanged (1.44 MB).
 
+## Success: three objectives, equal (the owner, Iteration 75)
+
+**The smallest binary + image, the highest speed, the lowest memory** -
+treated equally: selection keeps the Pareto front over all three, no
+weights. To be changed to priorities if equal treatment does not work;
+watched in every comparison (below). The motivation: logic moved from
+the image into the engine must show - the image shrinks, the binary and
+memory grow.
+
+How each is measured:
+- **binary**: the engine, stripped. Every engine - the evolved ones and
+  the reference s6 - is linked WITHOUT the C library (raw system calls,
+  engine/rt-linux-x86_64.c) and without unwind tables, so the binary is
+  all there is: a dynamic binary hides the library's code, and with the
+  library 1.1 MB of an engine's 1.47 MB resident was the library and its
+  loader. (x86-64 Linux; the Tegra's 32-bit ARM needs its own runtime.)
+- **speed**: CPU time against s6, as before.
+- **memory**: the pages a run touches - cputime's MINFLT, page faults
+  counted one by one, times the page size; each workload's median over
+  the rounds, the largest the design's. Not ru_maxrss: on Linux 6.x it
+  reads 0 KB for a small static run, and a cputime linked with the
+  library set a 388 KB floor (now linked without it too).
+
+First readings: s6 39,521 bytes (29,456 binary); seed 15's fastest,
+multi-state cached, 65,982 (58,024 binary: the cached states' handler
+copies cost 20 KB), the same with tail calls 45,526; 200-216 KB touched.
+
+**Watched, to tell whether equal treatment works**: the front's size; the
+designs on it by memory alone (the comparison counts them: dominated on
+speed and binary + image together, kept by a page or a few); and each
+objective's best - fastest, smallest total, least memory - run to run.
+
 ## Conventions
 
 - **Each handoff's last commit is titled `Iteration N: ...`**, N counting
@@ -195,6 +227,9 @@ How it decides things:
   at about its speed** - 7,009 bytes (0.424) to 7,708 (0.243); 1.03-1.08
   of the best old design no larger from 7.2 KB up. The front of all runs
   stays the old format's. From here the tag-2 front is the one to beat.
+- **Iteration 75: the objectives change** - three, equal (above). Runs
+  from seed 18 on are judged by them; the earlier fronts are carried in
+  and measured again under them.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;

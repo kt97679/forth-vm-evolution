@@ -84,4 +84,8 @@
 # Iteration 72: seed 17 in the tag - seed 16's front is the old one ~370
 # bytes larger at about its speed; the runs in the tag now win back what
 # they can. Then compare.
-seed 17 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 75: three objectives, equal - speed, binary + image, memory -
+# every engine without the C library. Seed 18 the first run under them;
+# the earlier fronts carried in, measured again. Then compare.
+seed 18 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

@@ -274,8 +274,15 @@ echo "built  dictionary dumps"
 # a process spends descheduled - the dominant noise term on a loaded
 # machine. Built with the plain compiler, not cc64/cc32: it is a tool,
 # not a measured subject.
-cc -O2 -Wall -o "$O/cputime" tools/cputime.c 2>/dev/null || \
-    echo "note: cputime helper did not build; harnesses will use wall clock"
+# Iteration 75: without the C library on x86-64 Linux, as the evolver's
+# engines are: a few pages resident, so a child's peak memory (MAXRSS) is
+# the child's own - with the library, fork's copy of this process (~388
+# KB) is the floor every engine reports. Elsewhere, the C library.
+if [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ] && cc -O2 -Wall -static -no-pie -nostdlib \
+        -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -fno-asynchronous-unwind-tables \
+        -o "$O/cputime" tools/cputime.c engine/rt-linux-x86_64.c -lgcc 2>/dev/null; then :
+elif cc -O2 -Wall -o "$O/cputime" tools/cputime.c 2>/dev/null; then :
+else echo "note: cputime helper did not build; harnesses will use wall clock"; fi
 
 # ---- engines ----------------------------------------------------------
 for LV in $(seq 0 $((LAYOUTS - 1))); do
