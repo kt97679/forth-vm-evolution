@@ -251,8 +251,7 @@ def express(g):
     if 'rtiplus' in e and not rtiplus_on(g): e.pop('rtiplus')                      # Iteration 60: with rtloopall
     if 'swapi' in e and not swapi_on(g): e.pop('swapi')                            # Iteration 61: with 'imm'
     if 'tag2' in e and (g['enc'] != 'cv8' or not g['bytehdr']): e.pop('tag2')     # Iteration 66: CV8, byte headers
-    if e.get('tag2'):                                                              # no hot calls, no multi-state
-        e.pop('hotcalls', None); e.pop('msc', None)                                # caching (yet) under the tag
+    if e.get('tag2'): e.pop('hotcalls', None)                                      # no hot calls under the tag
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
@@ -462,13 +461,13 @@ def build(g, d):
         if sh(['python3', os.path.join(ROOT, 'tools', 'gen-super.py'), src, os.path.join(d, 'supers.json')]).returncode:
             raise RuntimeError('died: superinstruction generation')
         flags.append('-DSUPER=1')
-    if g.get('msc') and g['tos'] and not t2:   # multi-state stack caching (tools/gen-msc.py); not yet under the tag
+    if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py); the tag too (Iteration 70)
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src])
         if r.returncode: raise RuntimeError('died: multi-state generation' + why(r))
         flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
     eng = os.path.join(d, 'engine')
     def compile_engine():
-        if g.get('tail') and g['tos'] and not (g.get('msc') and not t2): build_tail(g, d, src, flags, eng)
+        if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
         else:
             r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))

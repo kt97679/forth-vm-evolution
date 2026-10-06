@@ -54,6 +54,8 @@ STATE = '    const UNS64 dsp_limit = tc_dsp_limit, rp_limit = tc_rp_limit, cbase
 def rewrite(b):
     b = b.replace('goto *dtab256[t];', 'return htab[t]%s;' % PASS)
     b = b.replace('goto *esc_tab[t];', 'return esc_ftab[t]%s;' % PASS)
+    b = b.replace('goto *t2tab[t];', 'return t2tab[t]%s;' % PASS)        # the two-bit tag (Iteration 70)
+    b = b.replace('goto *t2esc[t];', 'return t2esc[t]%s;' % PASS)
     b = re.sub(r'goto\s+([A-Za-z_]\w*)\s*;',
                lambda m: m.group(0) if m.group(1).startswith('LSB_') else 'return H_%s%s;' % (m.group(1), PASS), b)
     left = re.findall(r'goto\s*\*', b)
@@ -64,6 +66,8 @@ SAVE = '(tc_ip = ip, tc_dsp = dsp, tc_rp = rp, tc_tos = tos, tc_t = t, %s)'
 def inner(b):
     b = rewrite(b).replace('return htab[t]%s;' % PASS, 'return %s;' % (SAVE % 'htab[t]'))
     b = b.replace('return esc_ftab[t]%s;' % PASS, 'return %s;' % (SAVE % 'esc_ftab[t]'))
+    b = b.replace('return t2tab[t]%s;' % PASS, 'return %s;' % (SAVE % 't2tab[t]'))
+    b = b.replace('return t2esc[t]%s;' % PASS, 'return %s;' % (SAVE % 't2esc[t]'))
     b = re.sub(r'return H_(\w+)\(ip, dsp, rp, tos, t\);', lambda m: 'return %s;' % (SAVE % ('H_' + m.group(1))), b)
     return re.sub(r'return\s*;', 'return 0;', b)
 
@@ -88,17 +92,20 @@ ESC_N = re.search(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', p)       
 ESC_N = int(ESC_N.group(1)) if ESC_N else 0
 p = re.sub(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', r'hfn cv8_tab[128], esc_tab[\1];', p)
 p = p.replace('static const void *dtab256[256];', '')
+TAG2 = 'static const void *t2tab[256], *t2esc[256];' in p      # the two-bit tag: its tables global, of functions
+p = p.replace('static const void *t2tab[256], *t2esc[256];', '')
 p = p.replace('dtab256', 'htab')
 entry = ('static void virtual_machine(void) {\n%s\n'
          '    tc_dsp_limit = dsp_limit; tc_rp_limit = rp_limit; tc_cbase = cbase;\n'
          '%s'
          '    t = (*(unsigned char*)(ip)); ip += 1;\n'
-         '    htab[t]%s;\n}\n') % (p, '    { int e_; for (e_ = 0; e_ < %d; e_++) esc_ftab[e_] = esc_tab[e_]; }\n' % ESC_N
-                                  if ESC_N else '', PASS)
+         '    %s[t]%s;\n}\n') % (p, '    { int e_; for (e_ = 0; e_ < %d; e_++) esc_ftab[e_] = esc_tab[e_]; }\n' % ESC_N
+                                  if ESC_N else '', 't2tab' if TAG2 else 'htab', PASS)
 head = ('typedef void (*hfn)(%s);\n'
         'static hfn htab[256], esc_ftab[ESC_FTAB_N];\n'
         'static UNS64 tc_dsp_limit, tc_rp_limit, tc_cbase, tc_ip, tc_dsp, tc_rp, tc_tos, tc_t;\n' % ARGS
         + ''.join('static void H_%s(%s);\n' % (n, ARGS) for n in names))
 head = head.replace('ESC_FTAB_N', str(max(ESC_N, 32)))   # 32 as ever at level 1; 41 at level 2
+if TAG2: head += 'static hfn t2tab[256], t2esc[256];\n'
 open(sys.argv[2], 'w').write(pre + head + ''.join(funcs) + entry + post)
 print('%d handlers as functions, %d wrapped' % (len(names), len(WRAP & set(names))))

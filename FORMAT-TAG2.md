@@ -83,7 +83,8 @@ whatever format keeps images small.
 - **T1 engine** (`TAG2`) - **done, Iteration 65**, base and cached-top
   engines; the multi-state generator (gen-msc.py) finds the dispatch fill
   by pattern and copies the call path per state, so it needs its own port
-  (**T1b**); until then a tag-2 design has no multi-state caching.
+  (**T1b**) - **done, Iteration 70**, with gen-tail.py's port: all four
+  engine forms read the tag.
   Dispatch by tag - 0x00-0x3F through a 64-entry
   table, 0x40-0xFF to the call path, three widths; `ESC` through a
   256-entry table; both tables from a header the converter writes for

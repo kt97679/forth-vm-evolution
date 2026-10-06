@@ -1583,3 +1583,18 @@ MEMSIZE past what a call reaches. Seed 15's smallest and fastest as tag 2
 6,654 (+5.8%, was +9.1%) and 8,386 against 7,958 (+5.4%, was +8.0%)**. What
 is left is the format's: the hot calls it has no room for (~1.6%), the
 escaped uses (2.5-3.5%).
+
+## Iteration 70 - 2026-10-06 - Claude
+
+**T1b and T5: every engine form, and past 4 MB.** gen-tail.py turns the
+tag's two computed gotos into tail calls through function tables;
+gen-msc.py builds per-state tables for the tag (below 0x40 the variants
+as ever, above them the per-state copy of the call handler for that
+width), copies the three call handlers per state, and normalises through
+the tag's table - the escape dispatches from state 1. Seed 15's fastest
+and smallest as tag 2: alive with no cached top, cached top, tail calls,
+multi-state caching; the search-order and NUMBER? differential tests
+identical to the old format; and past 4 MB - a 5 MB ALLOT, words calling
+and called across it, DOES> on both sides of it, a tick walking a link
+across it - right in every form. The same program in the old format:
+return stack overflow.
