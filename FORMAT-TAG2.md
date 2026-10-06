@@ -90,7 +90,11 @@ whatever format keeps images small.
   the design (every handler already exists - the ranking only orders
   them); the link decoding shared by the handlers that walk the
   dictionary (THREAD-FIND, (FIND)).
-- **T2 converter** (`--tag2`): the ranking from the design's profile; the
+- **T2 converter** (`--tag2`) - **core done, Iteration 66**: ranking (a
+  reference profile's weight, then static use; the reference file still
+  to make), the map headers, opcodes, calls, links, DOES> bodies; a
+  tag-2 design boots and interprets. Left for T3: the run-time compiler's
+  tables in tag-2 codes. The ranking from the design's profile; the
   map header; opcodes in one or two bytes; calls of 2-4; links of 1-4;
   branches as above; `DOES>` with a 4-byte reservation; the run-time
   compiler's tables with this design's codes.

@@ -111,11 +111,25 @@ if BYTEHDR and not (V8 and CPT == 0):
     sys.exit("--bytehdr requires --v8 --cpt 0")
 
 
+# ---- the two-bit tag (Iteration 66, FORMAT-TAG2.md): --tag2 -----------
+TAG2_ON = '--tag2' in ARGV
+if TAG2_ON and not (V8 and CPT == 0):
+    sys.exit("--tag2 requires --v8 --cpt 0")
+if TAG2_ON and CELL != 8:
+    sys.exit("--tag2: 64-bit cells for now - a DOES> body's 4-byte call must fit its first cell")
+
+
 def linklen(d):
+    if TAG2_ON: return 1 if d < 64 else 2 if d < (1 << 14) else 3 if d < (1 << 22) else 4
     return 1 if d < 128 else (2 if d < 16384 else 3)
 
 
 def linkbytes(d, n):
+    if TAG2_ON:
+        # tag 2: low byte first, the tag in the top two bits of the LAST byte -
+        # the one before the name, read first (vm-lab.c PREVNFA)
+        assert 0 <= d < (1 << (8 * n - 2)), "link %d out of %d bits" % (d, 8 * n - 2)
+        return bytes([(d >> (8 * i)) & 0xFF for i in range(n - 1)] + [((n - 1) << 6) | (d >> (8 * (n - 1)))])
     if n == 1: return bytes([d])
     if n == 2: return bytes([d & 0xFF, 0x80 | (d >> 8)])
     return bytes([d & 0xFF, (d >> 8) & 0xFF, 0xC0 | (d >> 16)])
@@ -356,7 +370,7 @@ for _n in ('FILL', 'CMOVE', 'SCAN', 'SKIP', 'TABS>BL', '(PARSE)', 'HASH', 'PLACE
 # would only pay for its entry. lab/evolve/callsites.py priced it.
 import os as _os
 HOT = []
-if V8 and '--hotcalls' in ARGV and not _os.environ.get('SOD16_NO_HOTCALLS'):
+if V8 and '--hotcalls' in ARGV and not TAG2_ON and not _os.environ.get('SOD16_NO_HOTCALLS'):
     _free, _all = collections.Counter(), collections.Counter()
     for w in order:
         if kind[w['s']] != 'code': continue
@@ -369,6 +383,36 @@ if V8 and '--hotcalls' in ARGV and not _os.environ.get('SOD16_NO_HOTCALLS'):
     HOT = [a for a in _rank if _free[a] >= 3][:min(32, int(_opt('--hotcalls')))]
     G['HOTCALLS'].update({a: 0xE0 + i for i, a in enumerate(HOT)})
     print('one-byte calls: %d targets, %d sites' % (len(HOT), sum(_all[a] for a in HOT)))
+
+# ---- the two-bit tag: the design's operations ranked ------------------
+# Every operation this design's engine has (sod16 t2_names) gets a code: the
+# pinned ones - NOOP at 0 (padding is NOOPs), what the run-time compiler
+# writes by constant - then the rest by the reference profile's weight
+# (--tag2-rank FILE: name -> weight, each selected workload equal), then by
+# how often the image's code uses it. 63 one-byte codes, the escape at 0x3F,
+# the rest escaped. Exact counts, so the numbering - and the image - are
+# reproducible. Before anything is sized: sizes depend on it.
+T2MAP = None
+if TAG2_ON:
+    _names = G['t2_names']()
+    _static = collections.Counter()
+    for w in order:
+        if kind[w['s']] != 'code': continue
+        _ops = info[w['s']]
+        for _j in range(len(_ops)):
+            _L = G['opcode_L'](_ops, _j)
+            if _L is not None: _static[_L] += 1
+    _ref = json.load(open(_opt('--tag2-rank'))) if '--tag2-rank' in ARGV else {}
+    _pin = [idx_of[n] for n in ('NOOP', 'EXIT', 'LIT', 'BRANCH', '?BRANCH')]
+    _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
+    _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
+    assert all(p in _names for p in _pin), [p for p in _pin if p not in _names]
+    _rest = sorted((x for x in _names if x not in _pin), key=lambda x: (-_ref.get(_names[x], 0), -_static[x], x))
+    _all = _pin + _rest
+    assert len(_all) <= 63 + 256, "%d operations: more than 63 one-byte codes and 256 escaped" % len(_all)
+    T2MAP = {'one': {x: c for c, x in enumerate(_all[:63])}, 'esc': {x: s for s, x in enumerate(_all[63:])}, 'escc': 0x3F}
+    G['TAG2'][0] = T2MAP
+    print('tag 2: %d operations, %d one-byte, %d escaped' % (len(_all), len(T2MAP['one']), len(T2MAP['esc'])))
 
 for w in order:
     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
@@ -500,7 +544,8 @@ for t in threads:
             # a DISTANCE backward from this nfa, always positive
             linkval[w['s']] = (new_off[w['s']]['nfa']
                                - new_off[t[i - 1]['s']]['nfa'])
-            assert linkval[w['s']] < (1 << LINKLEN[w['s']] * 7 + (1 if LINKLEN[w['s']] > 1 else 0)), \
+            assert linkval[w['s']] < ((1 << (8 * LINKLEN[w['s']] - 2)) if TAG2_ON else
+                                      (1 << LINKLEN[w['s']] * 7 + (1 if LINKLEN[w['s']] > 1 else 0))), \
                 "link does not fit at %s" % w['n']
         else:
             linkval[w['s']] = (new_off[t[i - 1]['s']]['nfa']
@@ -790,6 +835,8 @@ def v8loc(old):
 G['V8_PFA'][0] = v8pfa
 G['V8_LOC'][0] = v8loc
 def callbytes(target):
+    if V8 and TAG2_ON:
+        v = v8val(target); return G['t2call'](v, G['t2calllen'](v))
     if V8:
         v = v8val(target)
         if G['VARCALL']:
@@ -905,11 +952,15 @@ def emit(path):
             else:
                 if DATAPRIMS and n in DOVAR:
                     # [DOVAR][pad][PFA]: the primitive pushes ALIGNED(ip)
-                    img += (bytes([69]) + b'\x00' * (CELL - 1)) if V8 else (tk(DOVARP) + b'\x00' * (CELL - 2))
+                    img += (bytes([T2MAP['one'][G['V8_DOVAR']]]) + b'\x00' * (CELL - 1)) if TAG2_ON \
+                        else (bytes([69]) + b'\x00' * (CELL - 1)) if V8 else (tk(DOVARP) + b'\x00' * (CELL - 2))
                 elif DATAPRIMS:
                     # [DODOES][tail][pad][PFA]: pushes ALIGNED(ip) as the
                     # return address the tail's R> expects, jumps to tail
-                    img += (bytes([70]) + callbytes(n) + b'\x00' * (CELL - 3)) if V8 else (tk(DODOES) + tk(calltok_addr(n)) + b'\x00' * (CELL - 4))
+                    # tag 2: always the 4-byte call - DODOES finds the parameter
+                    # field at align(body + 5), as CREATE reserves (FORMAT-TAG2.md)
+                    img += (bytes([T2MAP['one'][G['V8_DODOES']]]) + G['t2call'](v8val(n), 4) + b'\x00' * (CELL - 5)) if TAG2_ON \
+                        else (bytes([70]) + callbytes(n) + b'\x00' * (CELL - 3)) if V8 else (tk(DODOES) + tk(calltok_addr(n)) + b'\x00' * (CELL - 4))
                 else:
                     img += b'\x00' * (CELL - 2)     # pad BEFORE the token
                     img += tk(calltok_addr(n))
@@ -1011,7 +1062,8 @@ def emit(path):
         img[at:at + len(data)] = data
 
     _flags = ((1 if G['VARCALL'] else 0) | (2 if G['VARSLOT'] else 0)
-              | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0) | (32 if HOT else 0)) if V8 else 0
+              | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0) | (32 if HOT else 0)
+              | (64 if TAG2_ON else 0)) if V8 else 0
     hdr = (b'SOD1' if CPT is None else (b'CV8' if V8 else b'CPT') + bytes([48 + CPT]))
     hdr += bytes([CELL, ord('L') if G['SPEC'] else 0, 1 if V8 else 0, _flags])
     # The engine cannot derive the word table from one chain any more,
@@ -1161,6 +1213,16 @@ for i, a in enumerate(ARGV):
 if EMIT:
     h, b = emit(EMIT)
     print("wrote %s: %d B header + %d B image" % (EMIT, h, b))
+    if TAG2_ON:
+        # the engine's map (vm-lab.c TAG2): each code's logical operation
+        _one = ['T2_NONE'] * 64; _one[0x3F] = 'T2_ESC'
+        for _x, _c in T2MAP['one'].items(): _one[_c] = str(_x)
+        _esc = ['T2_NONE'] * 256
+        for _x, _s in T2MAP['esc'].items(): _esc[_s] = str(_x)
+        _d = _os.path.dirname(_os.path.abspath(EMIT))
+        open(_os.path.join(_d, 'vm-tag2-one.h'), 'w').write(', '.join(_one) + '\n')
+        open(_os.path.join(_d, 'vm-tag2-esc.h'), 'w').write(', '.join(_esc) + '\n')
+        print("wrote the tag-2 map: vm-tag2-one.h, vm-tag2-esc.h")
 
 sys.exit(0 if chain_ok and gaps == 0 and not defer_bad and not xt_bad
          and not buf_bad and not untranslated and not bi_bad and not fixed_bad

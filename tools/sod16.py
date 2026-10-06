@@ -791,6 +791,19 @@ def op_cells(k, pl):
 def op_bytes(k, pl, t):
     """Size of one operation in the TOKEN image, in bytes, at offset t."""
     if k == 'ALN': return (-t) % pl
+    if V8 and TAG2[0]:
+        # tag 2: a call by its distance, 4 bytes before an operand; anything
+        # else the old size with its opcode re-costed - 1 or 2 bytes by rank
+        if k == 'C':
+            if OP_CTX[0] is not None and before_operand(*OP_CTX[0]): return 4
+            return 2 if V8_CALLTOK[0] is None else t2calllen(V8_CALLTOK[0](pl))
+        m, TAG2[0] = TAG2[0], None
+        try: n = op_bytes(k, pl, t)
+        finally: TAG2[0] = m
+        ctx = OP_CTX[0]
+        L = opcode_L(*ctx) if ctx is not None and ctx[0][ctx[1]] == (k, pl) else (opcode_L([(k, pl), ('EQIT', 0)], 0) if k == 'EQIH' else opcode_L([(k, pl)], 0))
+        if L is None: return n
+        return n - (2 if (k == 'P' and pl in ESC_PRIMS) else 1) + t2len(L)
     if V8:
         if k == 'C' and pl in HOTCALLS: return 1
         if k == 'C' and VARCALL:
@@ -828,6 +841,69 @@ def op_bytes(k, pl, t):
     if k == 'STR': return align_up(t + len(pl), CELL) - t
     raise AssertionError("unknown op kind %r" % k)
 
+# ---- the two-bit tag (Iteration 66, FORMAT-TAG2.md) ----------------------
+# TAG2[0], once layout.py --tag2 has ranked the design's operations:
+# {'one': {L: code}, 'esc': {L: selector}, 'escc': the escape's code}. L, an
+# operation's LOGICAL number, is the code this file gives it without the tag:
+# the one-byte code (0-127), or 128 + k for the k-th escaped primitive. The
+# engine's map (vm-tag2-*.h) turns a code back into L, so every handler stays.
+TAG2 = [None]
+def t2len(L): return 1 if L in TAG2[0]['one'] else 2
+def t2put(b, L):
+    m = TAG2[0]
+    if L in m['one']: b.append(m['one'][L])
+    else: b.append(m['escc']); b.append(m['esc'][L])
+def t2calllen(v): return 2 if v < (1 << 14) else 3 if v < (1 << 22) else 4
+def t2call(v, n):
+    """A call of n bytes (2, 3, 4): 01, 10, 11 in the top two bits, then the
+    offset from the image base, high byte first (vm-lab.c L_t2call*)."""
+    assert 0 <= v < (1 << (8 * n - 2)), "call target %d out of %d bits" % (v, 8 * n - 2)
+    return bytes([((n - 1) << 6) | (v >> (8 * (n - 1)))] + [(v >> (8 * i)) & 0xFF for i in range(n - 2, -1, -1)])
+def opcode_L(ops, j):
+    """The logical opcode of op j - what to_bytes_v8 writes first - or None."""
+    k, pl = ops[j]
+    if k in ('C', 'EQIT', 'EQITS', 'XT', 'OPD', 'STR', 'ALN'): return None   # no opcode: a call, an operand
+    if k == 'P':
+        if pl in X_OPS10: return X_OPS10[pl]
+        if pl in X_TINY: return X_TINY[pl]
+        i_, e_ = cv8_op(pl); return 128 + i_ if e_ else i_
+    if k in X_IMM: return X_IMM[k]
+    if k == 'SADDI': return X_OPS10['SWAP+I']
+    if k in ('VF', 'VS'): return X_VF if k == 'VF' else X_VS
+    if k == 'LOC': return X_LOC[pl[0]]
+    if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return {0: X_LIT0, 1: X_LIT1, -1: X_LITM1}[pl]
+    if k == 'SP': return SUPERS[pl]
+    if k == 'PX': return V8_FOLD0 + V8_FOLDLIST.index(pl)
+    if k in ('LIT', 'LITX'):
+        x = k == 'LITX'
+        if 0 <= pl < 256: return V8_LIT8X if x else V8_LIT8
+        if 0 <= pl <= 0xFFFF: return V8_FOLD0 + V8_FOLDLIST.index('LIT') if x else idx_of['LIT']
+        if -(1 << 31) <= pl < (1 << 31): return V8_LIT32
+        return V8_LIT64
+    if k == 'LITOFF': return V8_LIT32
+    if k == 'EQIH': return X_OPS10['=I?BRANCH8' if ops[j + 1][0] == 'EQITS' else '=I?BRANCH']
+    if k in ('BRS', 'QBRS') + tuple(TB_SHORT):
+        return X_OPS10[dict({'BRS': 'BRANCH8', 'QBRS': '?BRANCH8'}, **TB_SHORT)[k]]
+    if k in BRK:
+        return (idx_of['BRANCH'] if k == 'BR' else idx_of['?BRANCH'] if k == 'QBR'
+                else X_OPS10[TB_LONG[k]] if k in TB_LONG else X_OPS10[LOOPNAME[k]])
+    return None
+def t2_names():
+    """L -> a design-independent name, for every operation this design's
+    engine has: what the ranking (layout.py --tag2) looks up."""
+    nm = {}
+    for n in prims:
+        i_, e_ = cv8_op(n); nm[128 + i_ if e_ else i_] = n
+    nm.update({V8_LIT32: 'LIT32', V8_DOVAR: 'DOVAR', V8_DODOES: 'DODOES', V8_LIT8: 'LIT8', V8_LIT8X: 'LIT8X', V8_LIT64: 'LIT64'})
+    if SPEC:
+        nm.update({X_LIT0: 'lit0', X_LIT1: 'lit1', X_LITM1: 'litm1', X_VF: 'vf', X_VS: 'vs'})
+        nm.update({c: n for n, c in X_LOC.items()}); nm.update({c: n for n, c in X_TINY.items()}); nm.update({c: n for n, c in X_IMM.items()})
+    for i, f in enumerate(V8_FOLDLIST): nm[V8_FOLD0 + i] = f + ';EXIT'
+    for (a, b_), c in SUPERS.items(): nm[c] = '%s %s' % (a, b_)
+    for w, c in X_OPS10.items(): nm[c] = w
+    nm.pop(V8_ESC, None)
+    return nm
+
 def before_operand(ops, j):
     """True if op j is a call whose inline CELL operand follows it."""
     return (ops[j][0] == 'C' and j + 1 < len(ops)
@@ -840,6 +916,7 @@ def pad_before(ops, j, t):
     VARCALL a near call is 2 bytes and a far one 3; letting the distance
     decide made (POSTPONE) and (LOOP) read a misaligned operand."""
     if before_operand(ops, j):
+        if V8 and TAG2[0]: return (-(t + 4)) % CELL     # tag 2: always the 4-byte call
         if V8 and ops[j][1] in HOTCALLS: return (-(t + 1)) % CELL
         return (-(t + (3 if (V8 and VARCALL) else 2))) % CELL
     return 0
@@ -889,9 +966,63 @@ def emit_slot(b, v):
         assert v < (1 << 23), "slot %d out of 23 bits" % v
         b.append(0x80 | (v >> 16)); b.append((v >> 8) & 0xFF); b.append(v & 0xFF)
 
+def to_bytes_t2(ops):
+    """to_bytes_v8 under the two-bit tag (FORMAT-TAG2.md): every opcode one or
+    two bytes by the design's rank, a call 2, 3 or 4 bytes by distance - 4
+    before an inline operand - and a branch's offset from its operand."""
+    c2t, cs, ts, _, ttot = layout(ops)
+    b = bytearray()
+    def le(v, n): b.extend((v & ((1 << (8 * n)) - 1)).to_bytes(n, 'little'))
+    for j, (k, pl) in enumerate(ops):
+        while len(b) < ts[j]: t2put(b, idx_of['NOOP'])
+        assert len(b) == ts[j], "tag-2 layout and emission disagree"
+        if k == 'ALN': continue
+        if k == 'C':
+            v = V8_CALLTOK[0](pl) if V8_CALLTOK[0] else 0
+            b.extend(t2call(v, 4 if before_operand(ops, j) else t2calllen(v))); continue
+        if k in ('EQIT', 'EQITS'):
+            tgt = cs[j] + CELL + pl
+            if tgt not in c2t: return None
+            if k == 'EQITS':
+                o = c2t[tgt] - ts[j]; assert -128 <= o <= 127, "short branch out of range: %d" % o; b.append(o & 0xFF)
+            else: le(c2t[tgt] - ts[j], 2)
+            continue
+        if k == 'XT': le(pl, CELL); continue
+        if k == 'OPD':
+            tgt = cs[j] + pl
+            if tgt not in c2t: return None
+            le(c2t[tgt] - ts[j], CELL); continue
+        if k == 'STR':
+            b.extend(pl); b.extend(bytes(op_bytes(k, pl, ts[j]) - len(pl))); continue
+        L = opcode_L(ops, j)
+        assert L is not None, "no opcode for %r" % (k,)
+        t2put(b, L)
+        if k in X_IMM or k in ('SADDI', 'EQIH'): b.append(pl & 0xFF)
+        elif k in ('VF', 'VS'): emit_slot(b, slotval(k, pl) or 0)
+        elif k == 'LOC': emit_slot(b, slotval(k, pl) or 0)
+        elif k in ('LIT', 'LITX') and not (pl in (0, 1, -1) and 'small' in SPEC and k == 'LIT'):
+            if 0 <= pl < 256: b.append(pl)
+            elif 0 <= pl <= 0xFFFF: le(pl, 2)
+            elif -(1 << 31) <= pl < (1 << 31): le(pl, 4)
+            else: le(pl, CELL)
+        elif k == 'LITOFF': le(pl, 4)
+        elif k in ('BRS', 'QBRS') + tuple(TB_SHORT):
+            tgt = cs[j] + CELL + pl
+            if tgt not in c2t: return None
+            o = c2t[tgt] - (ts[j] + t2len(L))           # from the operand, in bytes
+            assert -128 <= o <= 127, "short branch out of range: %d" % o
+            b.append(o & 0xFF)
+        elif k in BRK:
+            tgt = cs[j] + CELL + pl
+            if tgt not in c2t: return None
+            le(c2t[tgt] - (ts[j] + t2len(L)), 2)
+    while len(b) < ttot: t2put(b, idx_of['NOOP'])
+    return list(b)
+
 def to_bytes_v8(ops):
     """The v8 byte stream for one body. Same layout() as the 16-bit
     stream, so padding and branch conversion share one definition."""
+    if TAG2[0]: return to_bytes_t2(ops)
     c2t, cs, ts, _, ttot = layout(ops)
     b = bytearray()
     def le(v, n): b.extend((v & ((1 << (8 * n)) - 1)).to_bytes(n, 'little'))

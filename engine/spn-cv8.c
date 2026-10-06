@@ -129,6 +129,11 @@ static char **g_argv;
  *  let code span 32 MB - an asymmetry that fails silently.  */
 #define VARSLOT 1
 #endif
+#ifndef TAG2
+/*  vm-lab.c's two-bit tag (FORMAT-TAG2.md) - never in SPN, but the cached-top
+ *  generator's DOVAR names it for both engines (Iteration 66).  */
+#define TAG2 0
+#endif
 #ifndef DOESFAR
 /*  DOESFAR: CREATE reserves THREE bytes after the DOVAR opcode and
  *  DOES> writes the three-byte far call, so the parameter field is at

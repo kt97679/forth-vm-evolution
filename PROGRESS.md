@@ -1502,3 +1502,30 @@ design: tests, the seven stages identical, klookup designs alive in all
 four engine forms. TAG2 compiles in the base and cached-top engines. The
 multi-state generator finds the dispatch fill by pattern and copies the
 call path per cache state - its port is T1b. Next: T2, the converter.
+
+## Iteration 66 - 2026-10-06 - Claude
+
+**T2: the converter writes the two-bit tag.** sod16.py: the tag's state and
+encoders - t2put (one byte, or the escape and a selector), t2call (2, 3, 4
+bytes) - opcode_L, each operation's logical opcode as to_bytes_v8 decides
+it, op_bytes re-costing every opcode by rank, and to_bytes_t2, a separate
+emitter, the old one untouched. layout.py --tag2: every operation named
+(t2_names) and ranked - NOOP at 0 (padding), the run-time compiler's
+constants pinned, then a reference profile's weight (--tag2-rank, still
+to make), then static use; 63 one-byte codes, the escape at 0x3F; links of
+1-4 bytes with the tag; calls, and DOES> bodies always with the 4-byte
+call; no hot calls; F_TAG2; the engine's map written beside the image. The
+engine's DOVAR and DODOES at align(ip + 4) under TAG2. The evolver: the
+LATE gene tag2 - converter before engine, -DTAG2=1, no hot calls, no
+multi-state caching yet.
+
+**Smoke test**: seed 13's fastest as tag 2 - 168 operations, 63 one-byte,
+105 escaped - boots and interprets: 1 2 + . -> 3, 7 DUP * . -> 49, ' DUP
+' SWAP < . -> -1. 8,018 bytes against 7,799 in the old format, with
+static ranking only. Compiling needs T3.
+
+**A regression of mine, caught**: the cached-top generator's DOVAR now
+names TAG2, which spn-cv8.c did not define - the SPN engine stopped
+compiling, and the test suite did not notice (it does not build it); the
+stage build's last line said so. spn-cv8.c defines TAG2 0 - the same
+constant as before.

@@ -85,7 +85,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2')
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -104,9 +104,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2',)]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -250,6 +250,9 @@ def express(g):
     if 'klookup' in e and not klookup_on(g): e.pop('klookup')                      # Iteration 57: with kinput
     if 'rtiplus' in e and not rtiplus_on(g): e.pop('rtiplus')                      # Iteration 60: with rtloopall
     if 'swapi' in e and not swapi_on(g): e.pop('swapi')                            # Iteration 61: with 'imm'
+    if 'tag2' in e and g['enc'] != 'cv8': e.pop('tag2')                            # Iteration 66: CV8 only
+    if e.get('tag2'):                                                              # no hot calls, no multi-state
+        e.pop('hotcalls', None); e.pop('msc', None)                                # caching (yet) under the tag
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
@@ -416,6 +419,8 @@ def why(r):
     err = [l for l in lines if 'rror' in l or 'ssert' in l] or lines
     return (' (%s)' % err[-1].strip()[:120]) if err else ' (exit %d)' % r.returncode
 
+T2RANK = os.path.join(ROOT, 'lab', 'evolve', 'tag2-rank-v1.json')   # the reference ranking (Iteration 66)
+
 def build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
     if os.path.exists(d): shutil.rmtree(d)
@@ -437,7 +442,9 @@ def build(g, d):
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
-    if g.get('hotcalls') and g['varcall']: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
+    t2 = bool(g.get('tag2'))                 # Iteration 66: the two-bit tag (FORMAT-TAG2.md)
+    if g.get('hotcalls') and g['varcall'] and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
+    if t2: flags.append('-DTAG2=1')
     if PROFILING[0]: flags.append('-DPROFILE=1')
     if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
     o10 = ops10_in(g)
@@ -455,15 +462,17 @@ def build(g, d):
         if sh(['python3', os.path.join(ROOT, 'tools', 'gen-super.py'), src, os.path.join(d, 'supers.json')]).returncode:
             raise RuntimeError('died: superinstruction generation')
         flags.append('-DSUPER=1')
-    if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py)
+    if g.get('msc') and g['tos'] and not t2:   # multi-state stack caching (tools/gen-msc.py); not yet under the tag
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src])
         if r.returncode: raise RuntimeError('died: multi-state generation' + why(r))
         flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
     eng = os.path.join(d, 'engine')
-    if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
-    else:
-        r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
-        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+    def compile_engine():
+        if g.get('tail') and g['tos'] and not (g.get('msc') and not t2): build_tail(g, d, src, flags, eng)
+        else:
+            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src])
+            if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+    if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
     if g.get('escape'): opts.append('--escape')
@@ -476,7 +485,8 @@ def build(g, d):
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
     if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
-    if g.get('hotcalls') and g['varcall']: opts += ['--hotcalls', str(g['hotcalls'])]
+    if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
+    if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else [])
     if g.get('bss'): opts.append('--bss')                         # Iteration 44: scratch buffers out of the file
     if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
@@ -497,6 +507,7 @@ def build(g, d):
     # Fixed in tools/sod16.py; a design the check fails now dies, loudly.
     m = re.search(rb'(?:ops10|tiny): no exact body match for [^\n]*', r.stdout)
     if m: raise RuntimeError('died: ' + m.group(0).decode(errors='replace'))
+    if t2: compile_engine()          # the converter wrote vm-tag2-one.h and vm-tag2-esc.h beside vm.c
     return eng, img
 
 def build_other(g, d):

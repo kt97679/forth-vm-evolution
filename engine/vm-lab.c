@@ -1558,13 +1558,24 @@ L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
      *  the name ends, and a DOES> word created at run time then found
      *  its parameter field one cell away from where CREATE had put it.
      *  cv8.4's CREATE8 reserves the two bytes.  */
+#if TAG2
+    /*  Tag 2: CREATE reserves the longest call, 4 bytes (FORMAT-TAG2.md).  */
+    PUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#else
     PUSH((ip + (DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+#endif
 #else
     PUSH((ip + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
 #endif
     ip = RS; rp += CELL_BYTES; NEXT();
 L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
-#if ENC == 3
+#if ENC == 3 && TAG2
+    /*  Tag 2: always the 4-byte call, 11 + 30 bits, in the 4 bytes CREATE
+     *  reserved - the parameter field where DOVAR puts it.  */
+    t = ((UNS64)(BYTE(ip) & 0x3F) << 24) | ((UNS64)BYTE(ip + 1) << 16) | ((UNS64)BYTE(ip + 2) << 8) | BYTE(ip + 3);
+    RPUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+    ip = cbase + t; NEXT();
+#elif ENC == 3
 #if VARCALL
     if (BYTE(ip) & 0x40) {
         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);

@@ -35,7 +35,7 @@ HOT = {
  # path. This table OVERRIDES the source; when the source changed and this
  # did not, the first CREATE after boot pushed the wrong address on the
  # 32-bit build and the right one on 64-bit, by alignment luck.
- 'L_dovar':  'PUSHT((ip + (DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)); ip = RS; rp += CELL_BYTES; NEXT();',
+ 'L_dovar':  'PUSHT((ip + (TAG2 ? 4 : DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)); ip = RS; rp += CELL_BYTES; NEXT();',
  'L_lit0':   'PUSHT(0); NEXT();',
  'L_lit1':   'PUSHT(1); NEXT();',
  'L_litm1':  'PUSHT(~(UNS64)0); NEXT();',
