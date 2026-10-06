@@ -278,6 +278,11 @@ the laptop rests until new genes exist.
   bytecode workloads nothing (0.98). Not small (fastest +19.6%): the
   stopping rule starts again. Engines now linked without page padding:
   the binary objective counts bytes, not 4 KB pages.
+- **Seed 22 - small, the first of two** (Iteration 83,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed22.md`; session 20): fastest
+  +4.5% (0.199), smallest total +0.5%, memory none. 12 of the front's 39
+  by memory alone, but by 16-20 KB - real pages, not noise. next-run.sh
+  now cleans the runs directory before every run (tools/clean-runs.sh).
 - **Next, priced before built (the owner's questions, Iteration 82)**:
   inlining short colon words - never built (GENES.md had it as "phase
   3"): a call (2-4 bytes, and an EXIT at run time) where the callee's body

@@ -1805,3 +1805,22 @@ into the JIT's slowdown? Not needed - the laptop shows none. Forth
 sources reviewed? Yes, Iterations 49-57 (kfast, tfind, kinput,
 klookup); number conversion and FIND's search-order loop left. Inlining
 short words? Never built - to be priced next. NEXT-RUN: seed 22 tag2.
+
+## Iteration 83 - 2026-10-06 - Claude
+
+**Seed 22** (the first with binaries in bytes; session 20, calibration
+1.005): small, the first of two - fastest 0.199 (+4.5%), smallest total
+25,181 (+0.5%), memory none. 12 of the front's 39 by memory alone, by 16-20
+KB: real pages now, not noise - the tie rule kept.
+
+**The runs directory cleaned before every run** (the owner): tools/clean-
+runs.sh rewritten - archives past the newest four, run directories whose
+pack tarball exists, tarballs past the newest eight; the old tool missed
+every run directory since commits grew to 9 hex digits. next-run.sh runs
+it under its lock; a failure never stops a run. On a copy of the owner's
+directory: 20 archives -> 4, 43 run directories -> 0, 45 tarballs -> 8.
+
+The owner agreed the next genes, in order: inlining short words and tail
+calls (priced first - lab/evolve/callsites.py's census and per-target
+call counts are the tool), the rewrite-rule search, image compression,
+the JIT's calls into bytecode, a wider flag pool. NEXT-RUN: seed 23 tag2.

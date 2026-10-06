@@ -104,4 +104,7 @@
 #
 # Iteration 82: seed 21 not small (the JIT: fastest +19.6%); engines now
 # linked without page padding - the binary objective counts bytes.
-seed 22 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 83: seed 22 small, the first of two; next-run.sh now cleans the
+# runs directory first (tools/clean-runs.sh).
+seed 23 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

@@ -150,6 +150,11 @@ fi
 MODE=$NEXT_RUN_DETACHED
 exec 9> "$RUNS/.lock"
 flock -n 9 || die "another run holds $RUNS/.lock - two runs would measure each other"
+# Iteration 83 (the owner): outdated files out, before every run - archives
+# past the newest four, run directories already in their pack tarballs, pack
+# tarballs past the newest eight (tools/clean-runs.sh says what and why).
+# Under this lock; a failure never stops the run.
+RUNS="$RUNS" sh tools/clean-runs.sh --held 2>&1 | while read -r l; do say "$l"; done || true
 running && die "an evolution is running already - let it finish"
 step() { echo; echo "== $(date -u +%H:%M:%S) $*"; }
 trap 'echo; echo "next-run: FAILED in the step above - $RUN/next-run.log"' EXIT
