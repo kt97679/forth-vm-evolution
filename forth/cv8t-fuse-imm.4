@@ -1,0 +1,75 @@
+\ cv8t-fuse-imm.4 - cv8-fuse-imm.4 under the two-bit tag (Iteration 67, FORMAT-TAG2.md): 64
+\ one-byte opcodes and an escape, calls of 2, 3, 4 bytes (14, 22, 30 bits:
+\ a 1 GB code space), links of 1-4 bytes. A copy - the original is frozen by
+\ the designs recorded with it. The opcode constants keep their logical
+\ values here; layout.py --tag2 rewrites each to this design's code.
+\ cv8-fuse-imm.4 - n + and SWAP n + in code compiled at RUN time
+\ (Iteration 37). Loaded after cv8-fuse.4, and only for designs with the
+\ gene rtimm (lab/evolve): its code costs image bytes, and only the
+\ designs that choose it pay them.
+\
+\ The converter makes LIT n + an ADDI n (spec imm) and SWAP n + a SWAP+I n
+\ in the image; code the compiler writes at run time had neither - fib's
+\ `-1 +` and `SWAP -2 +` were LIT32 n, + and SWAP, LIT32 n, +: three of
+\ the thirteen dispatches of each recursive call. Here a literal ADDI can
+\ hold leaves LAST-OP pointing at it, and a + compiled straight after
+\ takes its place. Safe as the pairs are: every branch target clears
+\ LAST-OP; LIT8 and LIT32 are in no fold table and no pair, and a literal
+\ is never one byte, so ;8, ?BRANCH, and the pairs pass it by.
+\
+\ IMM-OPS: this design's ADDI and SWAP+I opcodes (0 where it has none),
+\ then its + and SWAP - all four written by the converter
+\ (tools/layout.py). A ['] + here would hold the cell system's address,
+\ which the converter does not relocate: C@ through it crashed every
+\ colon definition.
+
+CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C,
+ALIGN
+VARIABLE LIT-PREV ( --- a-addr )
+\ The primitive emitted straight before the last literal, or 0.
+
+: SMALL-LIT? ( a --- n -1 | 0 )
+\ The literal at a, ending at HERE, if ADDI's signed byte holds it: LIT8
+\ 0-127, or LIT32 -128 to -1 (a negative is never narrower).
+  DUP C@ LIT8-OP = IF
+    DUP 2 + HERE = IF 1+ C@ DUP 128 < IF -1 EXIT THEN THEN DROP 0 EXIT
+  THEN
+  DUP C@ LIT32-OP = IF DUP 5 + HERE = IF
+    DUP 2 + C@ 255 = OVER 3 + C@ 255 = AND OVER 4 + C@ 255 = AND
+    OVER 1+ C@ 128 < 0= AND IF 1+ C@ 256 - -1 EXIT THEN
+  THEN THEN DROP 0 ;
+
+: LITERAL8 ( n --- )
+\ cv8.4's, and a literal ADDI can hold stays in LAST-OP.
+  LAST-OP @ DUP IF DUP 1+ HERE = AND THEN LIT-PREV !
+  HERE SWAP LIT,
+  IMM-OPS C@ IF DUP SMALL-LIT? IF DROP LAST-OP ! EXIT THEN THEN DROP ; IMMEDIATE
+
+: IMM+ ( xt --- xt 0 | -1 )
+\ xt is + and a literal ADDI holds is straight before it: ADDI n in its
+\ place - or SWAP+I n where a plain SWAP came straight before the literal.
+  IMM-OPS C@ 0= IF 0 EXIT THEN
+  DUP C@ IMM-OPS 2 + C@ <> IF 0 EXIT THEN
+  LAST-OP @ ?DUP 0= IF 0 EXIT THEN
+  DUP SMALL-LIT? 0= IF DROP 0 EXIT THEN
+  ROT DROP SWAP
+  LIT-PREV @ ?DUP IF DUP C@ IMM-OPS 3 + C@ = IMM-OPS 1+ C@ 0= 0= AND IF
+    SWAP DROP HERE - ALLOT IMM-OPS 1+ C@ OP, C, 0 LAST-OP ! -1 EXIT
+  THEN DROP THEN
+  HERE - ALLOT IMM-OPS C@ OP, C, 0 LAST-OP ! -1 ;
+
+: COMPILE,8 ( xt --- )
+\ cv8-fuse.4's, with n + and SWAP n + tried first.
+  DUP >NAME C@ 32 AND IF
+    DUP C@ ESC-OP = IF
+      DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+    ELSE
+      IMM+ IF EXIT THEN
+      C@ LAST-OP @ DUP IF DUP 1+ HERE = AND THEN ?DUP IF
+        DUP >R C@ OVER SUPER-OP IF SWAP DROP R> C! EXIT THEN R> DROP
+      THEN
+      HERE LAST-OP ! OP,
+    THEN
+  ELSE
+    CALL,
+  THEN ;

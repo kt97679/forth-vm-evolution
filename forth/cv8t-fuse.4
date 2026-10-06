@@ -1,0 +1,98 @@
+\ cv8t-fuse.4 - cv8-fuse.4 under the two-bit tag (Iteration 67, FORMAT-TAG2.md): 64
+\ one-byte opcodes and an escape, calls of 2, 3, 4 bytes (14, 22, 30 bits:
+\ a 1 GB code space), links of 1-4 bytes. A copy - the original is frozen by
+\ the designs recorded with it. The opcode constants keep their logical
+\ values here; layout.py --tag2 rewrites each to this design's code.
+\ cv8-fuse.4 - the CV8 compiler's fold list and superinstruction pairs
+\ as TABLES, which the image converter fills in for each design
+\ (tools/layout.py, lab/evolve). Loaded after cv8.4 (and cv8b.4), and
+\ only for the designs that need it.
+\
+\ cv8.4's FOLD-OPS is the default fold list, fixed in the source. A
+\ design with a different list - shorter, or in another order - has
+\ an engine whose fold opcodes belong to other primitives, so code its
+\ compiler folded at RUN time would run the wrong handlers. Here the
+\ compiler reads its folds from FOLD-TABLE instead, and fuses pairs of
+\ primitives from SUPER-TABLE as it compiles them, as the converter
+\ fuses them in the image. The tables' contents below are only
+\ defaults: the converter overwrites both in the emitted image.
+\
+\ Loops are DO guarded by ?DUP IF, not ?DO: the converter does not
+\ translate ?DO's inline operand, and DO with equal bounds would run
+\ through the whole cell range.
+\
+\ The X8 words here replace cv8.4's: the converter gives each X the
+\ body of the LATEST word named X8.
+
+: FOLD-DEFAULTS ( --- )   #FOLD-OPS 0 DO FOLD-OPS I + C@ C, LOOP ;
+
+CREATE FOLD-TABLE ( --- c-addr )
+\ Count, then the folded primitives' opcodes in fold-opcode order.
+  #FOLD-OPS C, FOLD-DEFAULTS
+
+CREATE SUPER-TABLE ( --- c-addr )
+\ Count, then (first second fused) opcode triples - none by default.
+  0 C, 72 ALLOT
+ALIGN
+
+: FOLD-OP ( op --- op2 -1 | op 0 )
+\ The folded opcode for primitive opcode op, if this design has one.
+  FOLD-TABLE C@ ?DUP IF 0 DO
+    DUP FOLD-TABLE 1+ I + C@ = IF DROP I FOLD-BASE + -1 UNLOOP EXIT THEN
+  LOOP THEN 0 ;
+
+: SUPER-OP ( op1 op2 --- op3 -1 | 0 )
+\ The superinstruction for primitive op1 followed by op2, if any.
+  SUPER-TABLE C@ ?DUP IF 0 DO
+    SUPER-TABLE 1+ I 3 * +
+    DUP C@ 3 PICK = OVER 1+ C@ 3 PICK = AND IF
+      SWAP DROP SWAP DROP 2 + C@ -1 UNLOOP EXIT
+    THEN DROP
+  LOOP THEN 2DROP 0 ;
+
+: COMPILE,8 ( xt --- )
+\ As cv8.4's, and a primitive compiled straight after another fuses
+\ with it when the pair has a superinstruction. LAST-OP must point at
+\ the byte just before HERE: anything emitted in between - a call, a
+\ literal, an operand - stops the fusion, and anything that makes HERE
+\ a branch target clears LAST-OP. The fused byte keeps LAST-OP, and no
+\ fold or pair contains a fused opcode, so it never combines again.
+  DUP >NAME C@ 32 AND IF
+    DUP C@ ESC-OP = IF
+      DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+    ELSE
+      C@ LAST-OP @ DUP IF DUP 1+ HERE = AND THEN ?DUP IF
+        DUP >R C@ OVER SUPER-OP IF SWAP DROP R> C! EXIT THEN R> DROP
+      THEN
+      HERE LAST-OP ! OP,
+    THEN
+  ELSE
+    CALL,
+  THEN ;
+
+: ;8 ( --- )
+\ cv8.4's, but folding by FOLD-TABLE.
+  LAST-OP @ DUP IF
+    DUP C@ FOLD-OP IF SWAP C! ELSE 2DROP EXIT-OP OP, THEN
+  ELSE DROP EXIT-OP OP, THEN
+  0 LAST-OP ! 0 STATE ! ?CSP REVEAL ; IMMEDIATE
+
+\ BEGIN and DO make HERE a branch target without emitting anything
+\ there, so the next primitive must not fuse with the one before.
+\ (Folding never needed this: a BEGIN cannot come straight before `;`.)
+: BEGIN8 ( --- a-addr )   0 LAST-OP ! HERE ; IMMEDIATE
+: DO8 ( --- a-addr )
+  POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! 0 LAST-OP ! ; IMMEDIATE
+
+\ A test straight before IF, UNTIL or WHILE (which is IF) becomes one
+\ fused branch, when SUPER-TABLE has (test, ?BRANCH, fused) - the
+\ converter writes those first (Iteration 9: < for fib, 9% of its
+\ dispatches). The test's byte is overwritten where it stands, so a
+\ branch to it still lands on the fused one; LAST-OP's rules are
+\ COMPILE,8's, and >MARK and <RESOLVE clear it after.
+: ?BRANCH, ( --- )
+  LAST-OP @ DUP IF DUP 1+ HERE = IF
+    DUP C@ 0BRANCH-OP SUPER-OP IF SWAP C! EXIT THEN
+  THEN THEN DROP 0BRANCH-OP OP, ;
+: IF8 ( --- a-addr )   ?BRANCH, >MARK ; IMMEDIATE
+: UNTIL8 ( a-addr --- )   ?BRANCH, <RESOLVE ; IMMEDIATE

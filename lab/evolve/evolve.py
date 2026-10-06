@@ -250,7 +250,7 @@ def express(g):
     if 'klookup' in e and not klookup_on(g): e.pop('klookup')                      # Iteration 57: with kinput
     if 'rtiplus' in e and not rtiplus_on(g): e.pop('rtiplus')                      # Iteration 60: with rtloopall
     if 'swapi' in e and not swapi_on(g): e.pop('swapi')                            # Iteration 61: with 'imm'
-    if 'tag2' in e and g['enc'] != 'cv8': e.pop('tag2')                            # Iteration 66: CV8 only
+    if 'tag2' in e and (g['enc'] != 'cv8' or not g['bytehdr']): e.pop('tag2')     # Iteration 66: CV8, byte headers
     if e.get('tag2'):                                                              # no hot calls, no multi-state
         e.pop('hotcalls', None); e.pop('msc', None)                                # caching (yet) under the tag
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
@@ -442,7 +442,7 @@ def build(g, d):
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
         if eff[k]: flags.append(f)
     if g['spec']: flags.append('-DSPEC=1')
-    t2 = bool(g.get('tag2'))                 # Iteration 66: the two-bit tag (FORMAT-TAG2.md)
+    t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
     if g.get('hotcalls') and g['varcall'] and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
     if t2: flags.append('-DTAG2=1')
     if PROFILING[0]: flags.append('-DPROFILE=1')
@@ -497,7 +497,7 @@ def build(g, d):
     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
-    dump = os.path.join(O, ('k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse))
+    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse))
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
@@ -857,16 +857,19 @@ def setup():
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
     W = os.path.join(O, 'work')
-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4'):     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
-    for name, files in [(b + k + f + l + t + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']))
-                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b == 'k64-b' else ('',))
+    for name, files in [(b + k + f + l + t + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
+                                                                    ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
+                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b != 'k64-self' else ('',))
                         for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
-                        for t in (('', '-iplus') if l == '-loopall' else ('',)) if k or f or l or t]:   # the plain two: build-stages'
+                        for t in (('', '-iplus') if l == '-loopall' else ('',)) if k or f or l or t or b == 'k64-bt']:   # the plain two: build-stages'
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
-                       + (['cv8-fuse.4'] if '-fuse' in name else [])
-                       + (['cv8-fuse-imm.4'] if '-imm' in name else []) + (['cv8-fuse-loopall.4'] if '-loopall' in name
+                       + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
+                       + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+                       + (['cv8-fuse-loopall.4'] if '-loopall' in name
                        else ['cv8-fuse-loop.4'] if '-loop' in name else [])
                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
                        + ['dict-dump-addr.4']) + 'BYE\n'

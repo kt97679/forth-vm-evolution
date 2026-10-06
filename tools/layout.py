@@ -406,6 +406,10 @@ if TAG2_ON:
     _pin = [idx_of[n] for n in ('NOOP', 'EXIT', 'LIT', 'BRANCH', '?BRANCH')]
     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
+    # forth/cv8-fuse-loopall.4 has no fallback: its eight loop opcodes, pinned
+    if any(x['n'] == 'LOOPTAB' for x in order):
+        _pin += [G['X_OPS10'][n] for n in ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
+                 if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
     assert all(p in _names for p in _pin), [p for p in _pin if p not in _names]
     _rest = sorted((x for x in _names if x not in _pin), key=lambda x: (-_ref.get(_names[x], 0), -_static[x], x))
     _all = _pin + _rest
@@ -413,6 +417,27 @@ if TAG2_ON:
     T2MAP = {'one': {x: c for c, x in enumerate(_all[:63])}, 'esc': {x: s for s, x in enumerate(_all[63:])}, 'escc': 0x3F}
     G['TAG2'][0] = T2MAP
     print('tag 2: %d operations, %d one-byte, %d escaped' % (len(_all), len(T2MAP['one']), len(T2MAP['esc'])))
+    # the run-time compiler's opcode constants (forth/cv8t.4) - each a body
+    # [LIT n][EXIT] - rewritten to this design's codes; the short branches'
+    # to their codes, or 0 where the design has none
+    _cn = {'EXIT-OP': 1, 'LIT16-OP': 2, 'BRANCH-OP': 3, '0BRANCH-OP': 4, 'LIT32-OP': 68,
+           'DOVAR-OP': 69, 'DODOES-OP': 70, 'LIT8-OP': 71, 'LIT64-OP': 124}
+    _cx = {'BRANCH8-OP': 'BRANCH8', '?BRANCH8-OP': '?BRANCH8'}
+    _done = set()
+    for w in order:
+        if w['n'] not in _cn and w['n'] not in _cx: continue
+        _ops = info[w['s']]
+        _lj = [j for j, (k, _p) in enumerate(_ops) if k in ('LIT', 'LITX')]
+        assert kind[w['s']] == 'code' and len(_lj) == 1, ('tag 2: an opcode constant not [LIT n][EXIT]', w['n'], _ops)
+        _k, _p = _ops[_lj[0]]
+        if w['n'] in _cn:
+            assert _p == _cn[w['n']], ('tag 2: unexpected value', w['n'], _p)
+            _ops[_lj[0]] = (_k, T2MAP['one'][_p])
+        else:
+            _x = G['X_OPS10'].get(_cx[w['n']])
+            _ops[_lj[0]] = (_k, T2MAP['one'][_x] if _x is not None else 0)
+        _done.add(w['n'])
+    print('tag 2: %d opcode constants rewritten' % len(_done))
 
 for w in order:
     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
@@ -994,6 +1019,7 @@ def emit(path):
     if '--set-compiler-vars' in ARGV:
         far = '--does-far' in ARGV
         CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
+        if TAG2_ON: CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 4}   # the 4-byte call
     for w in order:
         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
@@ -1059,6 +1085,22 @@ def emit(path):
             data = bytes([len(tests) + len(pairs)] + [x for e in tests for x in e]
                          + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
             assert len(data) <= 73, "superinstruction table overflows"
+        if TAG2_ON and w['n'] in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-OPS', 'LOOPTAB'):
+            # tag 2: the tables in this design's one-byte codes. An escaped
+            # operation cannot sit in a byte: its entry goes (0 means none, as
+            # the overlays read it). Folds at run time go entirely - their
+            # opcode was the fold base plus a position, which ranking undoes.
+            _c = lambda x: T2MAP['one'].get(x, 0) if x else 0
+            if w['n'] == 'FOLD-OPS': data = bytes([255] * 23)
+            elif w['n'] == 'FOLD-TABLE': data = bytes([0])
+            elif w['n'] == 'SUPER-TABLE':
+                _t = [tuple(data[1 + 3 * i:4 + 3 * i]) for i in range(data[0])]
+                _t = [tuple(T2MAP['one'][x] for x in e) for e in _t if all(x in T2MAP['one'] for x in e)]
+                data = bytes([len(_t)] + [x for e in _t for x in e])
+            elif w['n'] == 'LOOPTAB':
+                assert all(x in T2MAP['one'] for x in data[:8]), 'tag 2: LOOPTAB opcodes not pinned'
+                data = bytes([T2MAP['one'][x] for x in data[:8]]) + data[8:]
+            else: data = bytes(_c(x) for x in data)
         img[at:at + len(data)] = data
 
     _flags = ((1 if G['VARCALL'] else 0) | (2 if G['VARSLOT'] else 0)

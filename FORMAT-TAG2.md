@@ -98,7 +98,11 @@ whatever format keeps images small.
   map header; opcodes in one or two bytes; calls of 2-4; links of 1-4;
   branches as above; `DOES>` with a 4-byte reservation; the run-time
   compiler's tables with this design's codes.
-- **T3 the run-time compiler**: `forth/tag2/` - cv8.4 and cv8b.4 and every
+- **T3 the run-time compiler** - **done, Iteration 67**: forth/cv8t.4,
+  cv8bt.4, cv8t-fuse.4, cv8t-fuse-imm.4; the converter rewrites the opcode
+  constants and the tables; a tag-2 design passes the life test (8,314
+  bytes against 7,799 in the old format, static ranking). The plan was
+  `forth/tag2/` - cv8.4 and cv8b.4 and every
   overlay that assumes the old numbering - with `OP,` escaping what has
   no one-byte code, `CALL,` in three widths, branches and links as above.
   The old files are frozen by the designs recorded with them.

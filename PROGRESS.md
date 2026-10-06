@@ -1529,3 +1529,24 @@ names TAG2, which spn-cv8.c did not define - the SPN engine stopped
 compiling, and the test suite did not notice (it does not build it); the
 stage build's last line said so. spn-cv8.c defines TAG2 0 - the same
 constant as before.
+
+## Iteration 67 - 2026-10-06 - Claude
+
+**T3: the run-time compiler in the two-bit tag.** forth/cv8t.4 and
+cv8bt.4 - copies, the originals frozen by the designs recorded with them:
+CALL, in the shortest of three widths (aborting past 1 GB), COMPILE,8
+knowing the escape by ESC-OP, backward branches one byte where the design
+has the short form and it reaches, forward ones 16 bits, DOES> always the
+4-byte call with CREATE reserving 4, links of 1-4 bytes with the tag.
+cv8t-fuse.4 and cv8t-fuse-imm.4: ESC-OP for the old escape's 125. The
+converter rewrites the run-time compiler's opcode constants - [LIT n][EXIT]
+bodies - to the design's codes, writes its tables in one-byte codes
+(dropping an entry with an escaped operation; run-time folds off - their
+opcode was the fold base plus a position), pins LOOPTAB's eight. k64-bt
+dumps for every overlay combination; tag2 needs byte headers.
+
+**Seed 13's fastest as tag 2 passes the life test**: every workload, the
+corpus and the kernel rebuild compiling at run time in the tag. By hand:
+a colon word, BEGIN UNTIL, a VARIABLE, CREATE DOES> - 49, 5, 42, 99.
+8,314 bytes against 7,799 in the old format, ranked statically. Next: the
+price, design by design, and the reference ranking.
