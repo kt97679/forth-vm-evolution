@@ -39,6 +39,16 @@ REPO=${REPO:-$HOME/git/my/forth-vm-evolution-iter14}
 BUNDLES=${BUNDLES:-$HOME/Downloads}
 RUNS=${RUNS:-$HOME/forth-vm-evolution-runs}
 POP=${POP:-32}; GENS=${GENS:-40}; ROUNDS=${ROUNDS:-3}; REMEASURE=${REMEASURE:-6}
+
+# Iteration 79: the archived databases, oldest first by their archive name
+# (a UTC timestamp) - the laptop's, in $RUNS, and the odd seeds' run on the
+# development VM, kept in the repository (lab/evolve/runs/, vm-run.sh).
+archives() {
+    for f in "$RUNS"/archived-*/build/evolve/db*.jsonl lab/evolve/runs/archived-*/build/evolve/db*.jsonl; do
+        [ -f "$f" ] || continue
+        d=${f%/build/evolve/*}; printf '%s %s\n' "${d##*/}" "$f"
+    done | sort | cut -d' ' -f2-
+}
 say() { echo "next-run: $*"; }
 die() { echo "next-run: $*" >&2; exit 1; }
 [ "$(id -u)" != 0 ] || die "not as root - the evolver refuses it (Iteration 10)"
@@ -171,18 +181,16 @@ if [ "$MODE" = experiment ]; then
     # minutes a session and grew with every run.
     LAST=${COMPARE_LAST:-4}
     step "the databases: this clone's run, and the newest $LAST archived (0: all)"
-    n=0
-    for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do [ -f "$f" ] && n=$((n + 1)); done
+    n=$(archives | wc -l)
     skip=0; if [ "$LAST" -gt 0 ] && [ "$n" -gt "$LAST" ]; then skip=$((n - LAST)); fi
     set --
     if [ -f build/evolve/db.jsonl ]; then set -- build/evolve/db.jsonl; fi
     i=0
-    for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do      # a glob expands sorted: oldest first
-        [ -f "$f" ] || continue
+    for f in $(archives); do                                    # oldest first; no spaces in these paths
         i=$((i + 1)); [ "$i" -gt "$skip" ] || continue
         set -- "$@" "$f"
     done
-    [ $# -gt 0 ] || { echo "   no database in build/evolve or $RUNS/archived-*"; exit 1; }
+    [ $# -gt 0 ] || { echo "   no database in build/evolve, $RUNS/archived-* or lab/evolve/runs/"; exit 1; }
     for f in "$@"; do echo "   $f"; done
     step "lab/evolve/$TOOL $TARGS"
     python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { tail -20 "$RUN/$NAME.log"; exit 1; }
@@ -242,11 +250,10 @@ fi
 # as the comparison - the older fronts are dominated, and carrying them
 # cost minutes of every run's first generation (188 designs in seed 15).
 CLAST=${CARRY_LAST:-4}
-n=0; for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do [ -f "$f" ] && n=$((n + 1)); done
+n=$(archives | wc -l)
 skip=0; if [ "$CLAST" -gt 0 ] && [ "$n" -gt "$CLAST" ]; then skip=$((n - CLAST)); fi
 CARRY=""; i=0
-for f in "$RUNS"/archived-*/build/evolve/db*.jsonl; do      # a glob expands sorted: oldest first
-    [ -f "$f" ] || continue
+for f in $(archives); do                                        # oldest first, the VM's runs among them
     i=$((i + 1)); [ "$i" -gt "$skip" ] || continue
     CARRY="${CARRY:+$CARRY,}$f"
 done
