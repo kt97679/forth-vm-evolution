@@ -19,10 +19,12 @@ How it decides things:
 - **Of two ways to the same result, the simpler one**, even at a small
   cost in speed or bytes; of two designs equally fast and small, the one
   with fewer mechanisms.
-- **Complexity is a cost to count, not only to avoid.** The fitness today
-  is CPU time and IMAGE size; what a design adds to the ENGINE is not
-  counted. Anything that grows the engine (a JIT, say) should be measured
-  so that it is not free in the score.
+- **Complexity is a cost to count, not only to avoid.** The fitness is CPU
+  time and IMAGE size; since Iteration 73 every design's ENGINE code
+  (its binary's .text) and peak memory (resident, per workload) are
+  recorded and reported beside them - tracked, not scored. Anything that
+  grows either must show it: the tag added 5.6 KB of engine code to the
+  fastest design (39.9 -> 45.5 KB), its peak memory unchanged (1.44 MB).
 
 ## Conventions
 

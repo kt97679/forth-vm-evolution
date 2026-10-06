@@ -584,7 +584,28 @@ def run_metric(eng, img, pw, w):
     processes on the machine do not count against it."""
     r = sh(PIN + [CPUT, eng, img], cwd=pw, inp=program(w), timeout=240, cpu=10)
     m = re.search(METRIC, r.stderr, re.M) or re.search(rb'^CPUNS (\d+)', r.stderr, re.M)
+    mr = re.search(rb'^MAXRSS (\d+)', r.stderr, re.M)     # Iteration 73: the run's peak memory, KB
+    RSS_LAST[0] = int(mr.group(1)) if mr else 0
     return int(m.group(1))
+RSS_LAST, LAST_RSS = [0], {}     # the last run's peak RSS (KB); the last measure()'s design, per workload
+
+def text_size(path):
+    """Iteration 73: the engine's machine code - its ELF .text section, in
+    bytes - what a design adds to the engine (handlers, pairs, the cached
+    states' copies, a JIT's stencils), which the image's size does not see."""
+    import struct
+    b = open(path, 'rb').read()
+    if b[:4] != b'\x7fELF': return None
+    c64, le = b[4] == 2, '<' if b[5] == 1 else '>'
+    if c64: shoff = struct.unpack_from(le + 'Q', b, 0x28)[0]; shent, shnum, shstr = struct.unpack_from(le + 'HHH', b, 0x3A)
+    else: shoff = struct.unpack_from(le + 'I', b, 0x20)[0]; shent, shnum, shstr = struct.unpack_from(le + 'HHH', b, 0x2E)
+    def sec(k):
+        return struct.unpack_from(le + ('IIQQQQ' if c64 else 'IIIIII'), b, shoff + k * shent)
+    stroff = sec(shstr)[4]
+    for k in range(shnum):
+        s = sec(k)
+        if b[stroff + s[0]:b.index(b'\0', stroff + s[0])] == b'.text': return s[5]
+    return None
 def measure(eng, img, pw, works, rounds):
     """The MEDIAN CPU time per workload over the rounds, the design and the
     reference - hand-made s6 - run back to back in every round, alternating
@@ -600,11 +621,13 @@ def measure(eng, img, pw, works, rounds):
     agreed within 3.6% between halves of a session and 2.1% between CPUs
     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
     runs, ref = {}, {}
+    LAST_RSS.clear()
     for r_ in range(rounds):
         for w in works:
             pair = [(eng, img, pw, runs), REF + (ref,)]
             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
                 store.setdefault(w, []).append(run_metric(e, i, p, w))
+                if store is runs: LAST_RSS[w] = max(LAST_RSS.get(w, 0), RSS_LAST[0])   # the design's, not s6's
     med = {w: statistics.median(runs[w]) for w in works}
     return {w: med[w] / statistics.median(ref[w]) for w in works}, med
 
@@ -636,6 +659,8 @@ def evaluate(g, rounds, keep=False):
         t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
         rec['t'] = t; rec['raw'] = raw
         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
+        rec['etext'] = text_size(eng)                              # Iteration 73: tracked, not scored
+        rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload took
         rec['unit'] = UNIT
     except RuntimeError as e:
         rec['status'] = str(e)
@@ -1217,8 +1242,8 @@ def report(R):
          (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
          'relative to s6-cv8b; size is the self-hosting image. %s is held out.' % ', '.join(WORK_HELD), '',
          '## The Pareto front', '',
-         '| design | speed | re-measured | size | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
-         '|---|---|---|---|---|---|---|']
+         '| design | speed | re-measured | size | engine KB | peak RSS MB | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
+         '|---|---|---|---|---|---|---|---|---|']
     def diff(g):
         if not ref: return ''
         g, r = express(g), express(ref['genome']); out = []
@@ -1238,7 +1263,9 @@ def report(R):
         # already a ratio to s6, measured in the same session - possibly on
         # another machine than the run, so not divided by the run's s6
         again = ('%.3f' % rm[i]['speed']) if i in rm else '-'
-        L.append('| %s | %.3f | %s | %d | %.3f | %s | %s |' % (i, rs, again, x['size'], rl, diff(x['genome']), x['how'][:60]))
+        ek = ('%.1f' % (x['etext'] / 1024)) if x.get('etext') else '-'
+        rm_ = ('%.1f' % (x['rss'] / 1024)) if x.get('rss') else '-'
+        L.append('| %s | %.3f | %s | %d | %s | %s | %.3f | %s | %s |' % (i, rs, again, x['size'], ek, rm_, rl, diff(x['genome']), x['how'][:60]))
     L += ['', '## How the front came about', '']
     for i in sorted(F, key=lambda i: R[i]['speed']):
         chain, j = [], i

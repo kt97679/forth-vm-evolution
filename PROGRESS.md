@@ -1636,3 +1636,16 @@ here, on x86-64 and ARM - but SPN is not minimal (a 1,861-line engine copy,
 it waits for the owner's word.
 
 NEXT-RUN: seed 17 tag2, then compare.
+
+## Iteration 73 - 2026-10-06 - Claude
+
+The owner: a lazy JIT, to keep the image small and gain speed - but no
+significant growth in code complexity or memory: track them. **Tracked
+now**: evaluate() records each design's engine code - its binary's .text
+section, read from the ELF section table - and the peak resident memory
+of its runs, per workload, from cputime.c's MAXRSS (printed all along,
+never read); the run's report and the comparison's table show both.
+First readings: seed 15's smallest and fastest in the old format, 37.2
+and 39.9 KB of engine code, 1.43-1.44 MB peak; the fastest in the tag 45.5
+KB - the tag's cost in the engine, 5.6 KB, mostly the multi-state copies
+of its call handlers and tables - at the same peak.

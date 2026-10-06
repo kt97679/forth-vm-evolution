@@ -74,12 +74,13 @@ for db in dbs:
 CAL = 's6-cv8b'
 rec[CAL] = (E.canon(E.HUMAN['s6-cv8b']), None, 1.0)
 
-live, size, dead = [], {}, {}
+live, size, dead, etext, rss = [], {}, {}, {}, {}
 for k, (i, (g, _, _)) in enumerate(sorted(rec.items())):
     d = os.path.join(E.EV, 'cmp', '%03d' % k)
     try:
         eng, img = E.build(g, d); pw = E.private_work(d); E.alive(eng, img, pw)
         live.append((i, eng, img, pw)); size[i] = os.path.getsize(img)
+        etext[i] = E.text_size(eng)                   # Iteration 73: the engine's machine code
     except Exception as e:
         dead[i] = str(e)[:100]
     say('built %d of %d: %s %s' % (k + 1, len(rec), i, dead.get(i, 'ok')))
@@ -99,6 +100,7 @@ for r_ in range(rounds):
                 pair = [((eng, img, pw), 'd'), (E.REF, 'r')]
                 for (e, im, p), side in (pair if (r_ + j + ci) % 2 == 0 else pair[::-1]):
                     times.setdefault((i, w, side, c), []).append(E.run_metric(e, im, p, w))
+                    if side == 'd': rss[i] = max(rss.get(i, 0), E.RSS_LAST[0])   # Iteration 73: peak memory, KB
 E.PIN[:] = pin0
 med = statistics.median
 T = {c: {i: {w: med(times[(i, w, 'd', c)]) / med(times[(i, w, 'r', c)]) for w in E.WORK_SEL + E.WORK_HELD} for i, *_ in live} for c in cpus}
@@ -117,14 +119,15 @@ def front(ids):
     ids = [i for i in ids if i in speed]
     return [i for i in ids if not any(speed[j] <= speed[i] and size[j] <= size[i] and (speed[j], size[j]) != (speed[i], size[i]) for j in ids)]
 allf = front([i for i in speed if i != CAL])
-print('| run | design | speed now | recorded | size now | recorded | %s | on the front of all |'
+print('| run | design | speed now | recorded | size now | recorded | engine KB | peak RSS MB | %s | on the front of all |'
       % ' | '.join(E.WORK_SEL + ['%s (held out)' % w for w in E.WORK_HELD]))   # from the lists: Iteration 42
-print('|---|---|---|---|---|---|' + '---|' * len(E.WORK_SEL + E.WORK_HELD) + '---|')
+print('|---|---|---|---|---|---|---|---|' + '---|' * len(E.WORK_SEL + E.WORK_HELD) + '---|')
 for label, ids in runs:
     for i in sorted(ids, key=lambda i: (size.get(i, 1 << 30), speed.get(i, 9))):
         g, rs, rp = rec[i]
-        if i in dead: print('| %s | %s | %s | %.3f | | %s | | | | | | |' % (label, i, dead[i], rp, format(rs, ',')))
-        else: print('| %s | %s | %.3f | %.3f | %s | %s | %s | %s |' % (label, i, speed[i], rp, format(size[i], ','), format(rs, ','),
+        if i in dead: print('| %s | %s | %s | %.3f | | %s | | |%s |' % (label, i, dead[i], rp, format(rs, ','), ' |' * len(E.WORK_SEL + E.WORK_HELD)))
+        else: print('| %s | %s | %.3f | %.3f | %s | %s | %s | %s | %s | %s |' % (label, i, speed[i], rp, format(size[i], ','), format(rs, ','),
+                    ('%.1f' % (etext[i] / 1024)) if etext.get(i) else '-', ('%.1f' % (rss[i] / 1024)) if rss.get(i) else '-',
                     ' | '.join('%.3f' % t[i][w] for w in E.WORK_SEL + E.WORK_HELD), 'yes' if i in allf else ''))
 print('\nThe front of all runs together, by size: ' + ', '.join('%s %.3f at %s' % (i, speed[i], format(size[i], ','))
       for i in sorted(allf, key=lambda i: -size[i])))
