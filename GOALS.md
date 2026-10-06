@@ -148,6 +148,12 @@ trying anything again (prompts/12-progress-log).
   0.326 at 9,014 bytes; 0.331 at 7,958; 0.379 at 7,105; the smallest,
   6,941** - 17-32% faster than anything earlier at every size. THREAD-FIND
   on 11 of the 12 (tfind from generation 7); parse at 0.21-0.28 of s6.
+- **Seed 13 - the input side taken up** (Iteration 56,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed13.md`; session 11,
+  calibration 0.994): **all 10 front designs its own: the fastest yet,
+  0.284 at 7,799 bytes - 3.5x s6; 0.297 at 7,246; the smallest, 6,903 at
+  0.436** - 17-34% faster than anything earlier at every size. kinput on
+  all ten from generation 1; no design above 7,799 bytes on the front.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
   far-call prefixes 0xE0-0xFF call the image's own most-called words
   through a table in its header. 143-319 bytes on seed 3's front (1.1-3.3%;
@@ -183,7 +189,8 @@ they are done, the article on the backburner.
       `tfind` puts it first. Seed 12 (Iteration 53): taken up - the
       fastest yet, 0.326 at 9,014; 17-32% faster at every size. The input
       side (Iterations 54-55): the gene `kinput` - kernel 0.62, parse
-      0.65, corpus 0.61 counted. **NEXT-RUN: seed 13, then compare.**
+      0.65, corpus 0.61 counted. Seed 13 (Iteration 56): taken up from
+      generation 1 - the fastest yet, 0.284 at 7,799.
       Next in the sources: number conversion (NUMBER?, >NUMBER, DIGIT?:
       17% of parse), FIND's search-order loop, then what is left
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header

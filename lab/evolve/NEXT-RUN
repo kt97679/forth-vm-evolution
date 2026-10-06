@@ -61,4 +61,6 @@
 # side: REFILL's tab loop, (PARSE), ?STACK's check; SCAN, SKIP, TABS>BL,
 # FILL, (PARSE), HASH, PLACE as opcodes) - counted on seed 12's best:
 # kernel 0.62, parse 0.65, corpus 0.61. Carrying every front.
-seed 13 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 56: none - seed 13 and the comparison came back.
+none

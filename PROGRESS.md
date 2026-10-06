@@ -1297,3 +1297,16 @@ selected geometric mean about 0.75; 63 bytes less; alive in all four
 engine forms; recorded designs and ids untouched.
 
 NEXT-RUN: seed 13, then compare.
+
+## Iteration 56 - 2026-10-06 - Claude
+
+**Seed 13 and session 11 - the input side taken up.** 157 designs carried
+in; the comparison (fifteen databases, 173 designs, calibration 0.994,
+ranks 1.00): **all 10 designs on the front of all runs are seed 13's -
+the fastest yet, 0.284 at 7,799 bytes (3.5x s6; seed 12's best: 0.326 at
+9,014), 0.297 at 7,246, and the smallest yet, 6,903 at 0.436** - 17-34%
+faster than the fastest earlier design no larger at every size. kinput on
+all ten, first in generation 1, 66% of the living. Nothing larger than
+7,799 bytes is on the front any more.
+
+NEXT-RUN: none.

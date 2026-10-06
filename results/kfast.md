@@ -148,6 +148,13 @@ exactly (cross.4's THASH must agree with it).
 alive in all four engine forms; **the selected workloads' geometric mean
 about 0.75 of the dispatches**; recorded designs and ids untouched.
 
+## Seed 13 (Iteration 56): kinput taken up
+
+kinput on all 10 designs on the front of all runs, first in generation 1,
+66% of the living at the end (kfast 78%, tfind 69%). The fastest yet,
+0.284 at 7,799 bytes - 3.5x hand-made s6 - parse at 0.15-0.18 of s6's
+time, corpus 0.28-0.33, kernel 0.36-0.43.
+
 ## Open
 
 - **Cell headers**: the kernel's SEARCH-WORDLIST compares cell by cell
