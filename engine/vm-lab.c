@@ -1272,6 +1272,9 @@ L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; } NEXT()
 L_x_i:         PUSH(RS); NEXT();                                                    /* I       */
 L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */
 L_x_unloop:    rp += 2 * CELL_BYTES; NEXT();                                        /* UNLOOP  */
+#if X_IPLUS
+L_x_iplus:     DS0 += RS; NEXT();                     /* I + (Iteration 60: run-time code's I+)  */
+#endif
 L_x_do:        { RPUSH(DS1); RPUSH(DS0); dsp += 2 * CELL_BYTES; } NEXT();            /* (DO)    */
 /*  The loop words with an operand: where the colon word jumps to its
  *  return address plus the operand cell, these take the branch offset

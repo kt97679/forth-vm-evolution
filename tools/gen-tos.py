@@ -105,6 +105,7 @@ HOT = {
  'L_x_execute': '{ UNS64 x_ = tos; POPT(); RPUSH(ip); ip = x_; } NEXT();',
  'L_x_i':     'PUSHT(RS); NEXT();',
  'L_x_j':     'PUSHT(CELL(rp + 2 * CELL_BYTES)); NEXT();',
+ 'L_x_iplus': 'tos += RS; NEXT();',                  # Iteration 60: I +
  'L_x_qdup':  'if (tos) PUSHT(tos); NEXT();',
  'L_x_plusstore': '{ UNS64 a_ = tos; CELL(a_) += NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',
  'L_x_do':    '{ RPUSH(NOS); RPUSH(tos); tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',

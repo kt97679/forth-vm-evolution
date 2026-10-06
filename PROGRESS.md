@@ -1366,3 +1366,26 @@ kernel 0.984 and corpus 1.016: checking every word compiled costs a
 compiling workload more than the calls saved; 132 bytes more; selected
 geomean 1.000. Reverted, in the register. Kept as candidates: I + fused
 in loops (a fifth of loop), DUP n < IF fused (fib's test).
+
+## Iteration 60 - 2026-10-06 - Claude
+
+The owner asked how much is left, and agreed to go on; the run (seed 14)
+still going, the run-time code next - the plan and a stopping rule in
+GOALS.md: the improvements end when two runs in a row each improve the
+fastest by under ~5% and the smallest by under ~2%.
+
+**rtiplus - I + fused in code compiled at run time.** The loop workload's
+body is DUP I + XOR (LOOP), a fifth of it I then +. The run-time fuser
+already fuses a pair SUPER-TABLE lists when LAST-OP points at the first;
+rtloopall compiles I and clears LAST-OP. So: a format-10 opcode I+ (tos
++= RS; a pseudo name, no kernel word), the converter's SUPER-TABLE entry
+(I, +) -> I+ placed with the tests (never cut), and forth/cv8-fuse-iplus.4
+- one COMPILE,8 link pointing LAST-OP at I's byte; a branch target in
+between clears LAST-OP as for any pair. The LATE gene rtiplus (with
+rtloopall) puts I+ first among the format-10 names.
+
+ad62971982: loop 0.801, the held-out sieve 0.967, kernel, parse and
+corpus 1.007-1.012 - the link's one offset compare for every word
+compiled; selected geomean 0.962, and 0.958 on top of klookup and thinhdr;
+37 bytes; alive in all four engine forms. Caching I's xt in a variable
+cut the compile cost to 1.004-1.008 for 37 bytes more - not kept.

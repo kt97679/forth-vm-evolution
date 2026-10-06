@@ -165,6 +165,19 @@ trying anything again (prompts/12-progress-log).
 Iteration 48, the owner: the improvements first, the Tegra session once
 they are done, the article on the backburner.
 
+**The work left, and when to stop** (Iteration 60, with the owner): about
+4-6 more laptop runs of improvements - the code compiled at run time (fib
+and loop run in it entirely: I + fused, Iteration 60; next a compare
+with a small literal fused into its branch, run-time tail calls), the
+opcode budget (seed 13's fastest had 6 pair slots left: the k-genes'
+format-10 opcodes take the rest), size (fewer dictionary threads, cheap
+now the lookup is an opcode; the names), and capping the comparison
+session (173 designs, 19 minutes, growing with every run). Then the
+Tegra: 32-bit builds of the evolved designs' overlays and opcodes, SPN's
+32-bit path, one sitting. **Stopping rule: the improvement phase ends
+when two runs in a row each improve the fastest design by under ~5% and
+the smallest by under ~2%.**
+
 1. **Improvements, on the development VM** - each priced before it is
    built; a change that would alter a recorded design's image goes behind
    a gene, as lean and bss did. Between batches, a seed run carrying the

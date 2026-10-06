@@ -1000,6 +1000,10 @@ def emit(path):
                     if v[2] not in G['X_OPS10']: continue
                     try: tests.append((op(t)[0], op('?BRANCH')[0], G['X_OPS10'][v[2]]))
                     except Exception: pass
+            # Iteration 60: I then + as I+ (forth/cv8-fuse-iplus.4 points LAST-OP
+            # at I's byte; the fuser finds this entry) - first, never cut.
+            if '--rtfuse' in ARGV and 'I+' in G['X_OPS10'] and 'I' in G['X_OPS10']:
+                tests = [(G['X_OPS10']['I'], op('+')[0], G['X_OPS10']['I+'])] + tests
             pairs = pairs[:24 - len(tests)]      # the table's room (forth/cv8-fuse.4); the rest fused in the image only
             data = bytes([len(tests) + len(pairs)] + [x for e in tests for x in e]
                          + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])

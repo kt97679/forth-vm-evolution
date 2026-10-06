@@ -82,6 +82,7 @@ SPECS = {
     # relf's format-10 opcodes (OPS10) - ?DUP alone cannot be said this way
     'L_x_i':         ([], ['x'], 'x = RS;'),
     'L_x_j':         ([], ['x'], 'x = CELL(rp + 2 * CELL_BYTES);'),
+    'L_x_iplus':     (['a'], ['b'], 'b = a + RS;'),     # Iteration 60: I +
     'L_x_plusstore': (['x', 'a'], [], 'CELL(a) += x;'),
     'L_x_do':        (['a', 'b'], [], 'RPUSH(a); RPUSH(b);'),
     'L_x_execute':   (['x'], [], 'RPUSH(ip); ip = x;'),
