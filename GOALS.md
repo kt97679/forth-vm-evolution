@@ -170,7 +170,9 @@ they are done, the article on the backburner.
 and loop run in it entirely: I + fused, Iteration 60; next a compare
 with a small literal fused into its branch, run-time tail calls), the
 opcode budget (seed 13's fastest had 6 pair slots left: the k-genes'
-format-10 opcodes take the rest), size (fewer dictionary threads, cheap
+format-10 opcodes take the rest; 2 with klookup, rtiplus and swapi - and
+five 'put X first' switches say evolution needs a way to order the
+format-10 names itself), size (fewer dictionary threads, cheap
 now the lookup is an opcode; the names), and capping the comparison
 session (173 designs, 19 minutes, growing with every run). Then the
 Tegra: 32-bit builds of the evolved designs' overlays and opcodes, SPN's

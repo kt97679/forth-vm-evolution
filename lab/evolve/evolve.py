@@ -85,7 +85,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi')
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -104,9 +104,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -149,6 +149,11 @@ def klookup_on(g):
     """Iteration 57: the whole lookup - forth/cv8b-klookup.4 ((FIND), FIND8)
     and (FIND) first among the format-10 names: a design with kinput."""
     return kinput_on(g) and bool(g.get('klookup'))
+def swapi_on(g):
+    """Iteration 61: SWAP+I (SWAP n +, Iteration 34) first among the
+    format-10 names - in the pool since, and on none of seed 13's front: fib's
+    SWAP -2 + took two dispatches. A design with the 'imm' specialisation."""
+    return g['enc'] == 'cv8' and 'imm' in g['spec'] and bool(g.get('swapi'))
 def rtiplus_on(g):
     """Iteration 60: I then + as I+ in code compiled at run time
     (forth/cv8-fuse-iplus.4) - a design with rtloopall, whose LOOPTAB knows I."""
@@ -213,6 +218,7 @@ def ops10_in(g):
     if klookup_on(g): ws = KLOOKUP + [w for w in ws if w not in KLOOKUP]           # Iteration 57: first of all
     ws = [w for w in ws if w != 'I+' or rtiplus_on(g)]                             # Iteration 60: rtiplus's
     if rtiplus_on(g): ws = ['I+'] + [w for w in ws if w != 'I+']                   # Iteration 60: sure of a slot
+    if swapi_on(g): ws = ['SWAP+I'] + [w for w in ws if w != 'SWAP+I']             # Iteration 61: sure of a slot
     return [[w, op] for w, op in zip(ws, super_slots(g))]
 def supers_in(g):
     """[[first, second, opcode], ...] for the pairs that get a slot."""
@@ -243,6 +249,7 @@ def express(g):
     if 'kinput' in e and not kinput_on(g): e.pop('kinput')                         # Iteration 54: with kfast
     if 'klookup' in e and not klookup_on(g): e.pop('klookup')                      # Iteration 57: with kinput
     if 'rtiplus' in e and not rtiplus_on(g): e.pop('rtiplus')                      # Iteration 60: with rtloopall
+    if 'swapi' in e and not swapi_on(g): e.pop('swapi')                            # Iteration 61: with 'imm'
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes

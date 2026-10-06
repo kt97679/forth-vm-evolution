@@ -1389,3 +1389,18 @@ corpus 1.007-1.012 - the link's one offset compare for every word
 compiled; selected geomean 0.962, and 0.958 on top of klookup and thinhdr;
 37 bytes; alive in all four engine forms. Caching I's xt in a variable
 cut the compile cost to 1.004-1.008 for 37 bytes more - not kept.
+
+## Iteration 61 - 2026-10-06 - Claude
+
+**swapi - SWAP+I sure of a slot.** In the pool since Iteration 34, on none
+of seed 13's front; fib's SWAP -2 + took two dispatches. The LATE gene
+swapi (with 'imm') puts it first. On ad62971982 with klookup, thinhdr and
+rtiplus: fib 0.944, corpus 0.995, kernel 0.998 - selected geomean 0.987 -
+16 bytes less; alive with all four new genes; every recorded id kept.
+
+The opcode budget: that design has 3 pair slots left, 2 with SWAP+I. This
+is the fifth 'put X first' switch (tfind, kinput, klookup, rtiplus,
+swapi) - the pool of format-10 names is too big for mutation to find a
+good one by chance, and a general way to let evolution order them is on
+the list. (My first try at this entry quoted GOALS.md with the wrong line
+breaks; its check stopped the commit, as it should.)
