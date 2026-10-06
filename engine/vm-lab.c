@@ -137,6 +137,9 @@ static char **g_argv;
 #if TAG2 && (HOTCALLS || SCALE != 0 || ENC != 3)
 #error "TAG2: no one-byte hot calls, byte offsets (SCALE 0), CV8 only"
 #endif
+#if TAG2 && defined(MEMSIZE) && MEMSIZE > (1 << 30)
+#error "TAG2: a call reaches 1 GB from the image base - MEMSIZE at most that"
+#endif
 #if TAG2
 /*  A byte-header link, read backwards from the name: the byte before it
  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14

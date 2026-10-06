@@ -52,21 +52,17 @@
   4194304 U< IF 3 ELSE 4 THEN ;
 
 : LINK, ( d n --- )
-\ Append a link of exactly n bytes, low byte first, the tag - 00 01 10 11
-\ for 1 2 3 4 bytes - in the top two bits of the last, the one before the
-\ name, which is read first.
-  DUP 1 = IF DROP C, EXIT THEN
-  DUP 2 = IF DROP DUP 255 AND C, 8 RSHIFT 64 OR C, EXIT THEN
-  DUP 3 = IF DROP DUP 255 AND C, DUP 8 RSHIFT 255 AND C, 16 RSHIFT 128 OR C, EXIT THEN
-  DROP DUP 255 AND C, DUP 8 RSHIFT 255 AND C, DUP 16 RSHIFT 255 AND C, 24 RSHIFT 192 OR C, ;
+\ Append a link of exactly n bytes: the low bytes first, then the byte
+\ before the name - read first - with the tag, n-1, in its top two bits.
+  1- DUP >R BEGIN DUP WHILE >R DUP 255 AND C, 8 RSHIFT R> 1- REPEAT DROP R> 6 LSHIFT OR C, ;
 
 : NEXT-NFA8 ( nfa --- nfa' )
-\ The previous word in this thread, or 0 at the end of the chain - tag 2.
-  DUP 1- C@                                    ( nfa tag )
-  DUP 64 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
-  DUP 128 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
-  DUP 192 U< IF 63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - EXIT THEN
-  63 AND 24 LSHIFT OVER 2 - C@ 16 LSHIFT OR OVER 3 - C@ 8 LSHIFT OR OVER 4 - C@ OR - ;
+\ The previous word in this thread, or 0 at the end of the chain: the tag
+\ byte before the name - six bits, and in its top two how many bytes below
+\ it hold the rest, high to low.
+  DUP 1- DUP C@ DUP 63 AND SWAP 6 RSHIFT                 ( nfa a d k )
+  BEGIN DUP WHILE >R 8 LSHIFT SWAP 1- SWAP OVER C@ OR R> 1- REPEAT DROP SWAP DROP
+  ?DUP IF - ELSE DROP 0 THEN ;
 
 \ ---- the header -----------------------------------------------------
 : NAME>8 ( nfa --- xt )

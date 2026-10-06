@@ -1572,3 +1572,14 @@ rest by static use. 0.02: size +8.0-9.1%, dispatches 1.032-1.049; static:
 for evolution to weigh. Where the fastest design's 638 bytes go: hot calls
 130, escaped uses 194-357, and ~245 in the tag-2 compiler's own words -
 CALL, +92, NEXT-NFA8 +51, LINK, +47, <BRANCH, 40.
+
+## Iteration 69 - 2026-10-06 - Claude
+
+**The tag-2 compiler made small.** CALL, LINK, and NEXT-NFA8 as one loop
+each instead of a branch per width; the 1 GB check out of CALL, - an
+ABORT" and its string - into vm-lab.c, which refuses at compile time a
+MEMSIZE past what a call reaches. Seed 15's smallest and fastest as tag 2
+(--tag2-hot 0.02): alive, the hand test 49 5 42 99, **7,041 bytes against
+6,654 (+5.8%, was +9.1%) and 8,386 against 7,958 (+5.4%, was +8.0%)**. What
+is left is the format's: the hot calls it has no room for (~1.6%), the
+escaped uses (2.5-3.5%).

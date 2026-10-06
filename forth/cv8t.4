@@ -138,13 +138,13 @@ ALIGN
 \ ---- calls ----------------------------------------------------------
 : CALL, ( a-addr --- )
 \ Append a call to the body at a-addr: its byte offset from the image base
-\ in the shortest form that reaches - 01 + 14 bits, 10 + 22, 11 + 30.
+\ in the shortest form that reaches - 01 + 14 bits, 10 + 22, 11 + 30: k
+\ more bytes after the first, the first holding k and the top bits. The
+\ engine holds at most 1 GB (vm-lab.c, TAG2), so every offset fits.
   0 LAST-OP !
-  START @ -
-  DUP 1073741824 U< 0= ABORT" call beyond the 1 GB code space"
-  DUP 16384 < IF DUP 8 RSHIFT 64 OR C, 255 AND C, EXIT THEN
-  DUP 4194304 < IF DUP 16 RSHIFT 128 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C, EXIT THEN
-  DUP 24 RSHIFT 192 OR C, DUP 16 RSHIFT 255 AND C, DUP 8 RSHIFT 255 AND C, 255 AND C, ;
+  START @ -  DUP 16384 < IF 1 ELSE DUP 4194304 < IF 2 ELSE 3 THEN THEN   ( v k )
+  2DUP 3 LSHIFT RSHIFT OVER 6 LSHIFT OR C,
+  BEGIN DUP WHILE 1- 2DUP 3 LSHIFT RSHIFT 255 AND C, REPEAT 2DROP ;
 
 : COMPILE,8 ( xt --- )
 \ Add the execution semantics of xt to the current definition: a
