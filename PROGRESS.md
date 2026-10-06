@@ -1333,3 +1333,15 @@ geomean 0.76-0.79; 40-44 bytes more.
 Two slips of mine, both in test harnesses: a grep waiting on stdin when
 its file list came back empty (the command timed out), and setting up one
 build's private work dir twice. NEXT-RUN: seed 14, then compare.
+
+## Iteration 58 - 2026-10-06 - Claude
+
+The owner started seed 14. Meanwhile, the image's fixed costs: the
+header's 353 bytes are 264 of thread count and heads, which only SOD16
+reads - the CV8 loader reads them and returns before the word table they
+serve. **The gene `thinhdr`** (LATE): --thin-header writes a count of 1
+and a zero head. 248 bytes off every CV8 design (6,903 -> 6,655, 3.6%),
+dispatches identical, alive; recorded designs and ids untouched.
+
+NEXT-RUN unchanged - seed 14 is running; this commit goes out with its
+analysis.

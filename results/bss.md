@@ -52,3 +52,20 @@ seed 8's smallest would be 6,970 bytes.
 
 What the audit leaves: the names (a third of the image - but FIND needs
 them), the image header's thread table (353 bytes), NAMEBUF.
+
+## Iteration 58: the header's thread heads - the gene `thinhdr`
+
+Of the image header's 353 bytes (above), 264 are the thread count and 32
+thread heads. The converter's own comment says who reads them: SOD16,
+which numbers its calls by word and builds a word table from them; the
+CV8 loader reads them and returns before that table (`#if ENC != 1 ...
+return`). It wants a count of at least 1, so `--thin-header` writes 1
+and a zero head - 16 bytes. The LATE gene `thinhdr` passes it.
+
+ad62971982 (seed 13's fastest), with and without klookup, and 5347899701
+(its smallest): **248 bytes less - 6,903 -> 6,655, 3.6% - dispatches
+identical, alive**; recorded designs and ids untouched.
+
+Left of the audit: FORTH-WORDLIST's 32 cell-sized heads (fewer threads -
+cheaper to walk now that the lookup is an opcode, but not free), the
+names (a third of the image).

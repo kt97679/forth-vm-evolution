@@ -1014,9 +1014,16 @@ def emit(path):
     # so the header carries every thread head: a count, then that many
     # START-relative offsets. SOD16 needs them to number its calls; the
     # other encodings name a call by address and ignore this entirely.
-    hdr += cel(NTHREADS)
-    for h in HEADS:
-        hdr += cel(h)
+    # Iteration 58: --thin-header. Only SOD16 reads the heads (the loader
+    # returns before its word table for every other encoding); the loader
+    # wants a count of at least 1, so a CV8 image can carry one, zero: 16
+    # bytes where 32 heads took 264.
+    if V8 and '--thin-header' in ARGV:
+        hdr += cel(1) + cel(0)
+    else:
+        hdr += cel(NTHREADS)
+        for h in HEADS:
+            hdr += cel(h)
     hdr += cel(len(TAILS))
     for t in TAILS:
         h = [x for x in order if x['s'] < t < x['e']][0]

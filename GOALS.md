@@ -198,7 +198,9 @@ they are done, the article on the backburner.
       17% of parse), FIND's search-order loop, then what is left
       (REFILL, SCAN, PARSE: a quarter of kernel); the cell-header
       NAME>BUF (open).
-   b. **The image's remaining fixed costs** (Iteration 44's audit): the
+   b. **The image's remaining fixed costs** (Iteration 44's audit) -
+      begun: the header's 32 thread heads, read by no CV8 engine, as one
+      (`thinhdr`, Iteration 58): 248 bytes off every design. Left: the
       353-byte image header (32 thread heads as cells), FORTH-WORDLIST's
       32 cell-sized heads (296 bytes), the names (a third of the image),
       NAMEBUF.
