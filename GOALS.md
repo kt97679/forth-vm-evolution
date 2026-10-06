@@ -299,6 +299,10 @@ engine, so their machine code should count too (the aim, above). Waits
 for the owner's word. **The owner's word (Iteration 73): lazy, and no
 significant growth in code or memory - tracked.** The plan, with budgets,
 is `JIT.md`; phase 1 a prototype on the VM, its numbers decide.
+**Phase 1 done (Iteration 80)**: on seed 19's fastest design fib 2.7x and
+loop 2.5x faster, kernel/parse/corpus 10-13% slower, speed 0.229 -> 0.166;
+binary +8.3 KB, image +136 bytes, memory +4 KB - within the budgets. The
+gene `jit` is wired; seed 21 lets evolution weigh it.
 
 **First, the format (Iteration 64, the owner): `FORMAT-TAG2.md`.** The
 code space was 2 MB; the owner wants relf's design - 64 opcodes and

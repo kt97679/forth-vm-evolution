@@ -282,6 +282,9 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
 
 #define CELL(reg) (*(UNS64*)(reg))
 #define BYTE(reg) (*(UNS8*)(reg))
+#if X_JIT
+#include "jit.c"        /* JIT.md (Iteration 80): SPN's stencils, read, copied and patched */
+#endif
 
 /*
  *  Macroses for stack access
@@ -1448,6 +1451,25 @@ L_x_dupnbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();         /* D
 #endif
 #if X_SWAPADDI
 L_x_swapaddi: t = DS1; DS1 = DS0; DS0 = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();   /* SWAP n + */
+#endif
+#if X_JIT
+/*  JIT.md (Iteration 80): a colon word compiled at run time begins [JIT]
+ *  [four bytes] - its length, top bit set, until its first call; then
+ *  the native code's offset (engine/jit.c), or 0: it stays bytecode.
+ *  Native code runs the whole word, EXIT included; this then returns as
+ *  EXIT does. The return stack crosses in jit_rp, for loops and >R.  */
+L_x_jit:   { uint32_t f_ = jit_ld32(ip);
+             if (f_ & 0x80000000u) { jit_cbase = cbase; f_ = jit_word(ip - 1, 0); }
+             if (f_ > 1) {
+                 spn_st r_;
+                 jit_rp = (ucell)rp;
+                 /* the stack in memory here (gen-tos.py spills around a handler it
+                    has no rule for): dsp at the top; native code wants sp at the
+                    second, the top apart - SPN's convention */
+                 r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
+                 rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
+                 ip = RS; rp += CELL_BYTES;
+             } else ip += 4; } NEXT();
 #endif
 /*  Iteration 50: FILL and CMOVE, the kernel's byte loops (12-14 dispatches a
  *  byte in Forth; CMOVE 5-7% of kernel, parse and corpus), as opcodes - a

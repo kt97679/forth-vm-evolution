@@ -85,7 +85,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit')
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -104,7 +104,7 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
           ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot')]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
@@ -204,7 +204,7 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
                'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi',
                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
                'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', 'TABS>BL': 'L_x_tabsbl',
-               '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
+               '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus', 'JIT': 'L_x_jit'}
 # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
 X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
@@ -212,7 +212,14 @@ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR',
            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
            'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', 'TABS>BL': 'X_TABSBL',
-           '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+           '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS', 'JIT': 'X_JIT'}
+def jit_on(g):
+    """Iteration 80 (JIT.md): the lazy JIT - colon words compiled at run time
+    translated to native code on their first call (engine/jit.c, SPN's
+    stencils). Phase 1: the two-bit tag, byte headers, the cached top of
+    stack, one state, no tail calls; x86-64."""
+    return (g['enc'] == 'cv8' and bool(g.get('jit')) and bool(g.get('tag2')) and bool(g['bytehdr'])
+            and bool(g['tos']) and not g.get('msc') and not g.get('tail') and os.uname().machine == 'x86_64')
 def ops10_order(g, iplus):
     """The format-10 words in the order they claim slots; iplus: whether I+
     claims one (rtiplus) - a parameter, so rtloopall_on can ask without
@@ -227,6 +234,7 @@ def ops10_order(g, iplus):
     ws = [w for w in ws if w != 'I+' or iplus]                                     # Iteration 60: rtiplus's
     if iplus: ws = ['I+'] + [w for w in ws if w != 'I+']                           # Iteration 60: sure of a slot
     if swapi_on(g): ws = ['SWAP+I'] + [w for w in ws if w != 'SWAP+I']             # Iteration 61: sure of a slot
+    if jit_on(g): ws = ['JIT'] + [w for w in ws if w != 'JIT']                     # Iteration 80: first of all
     return ws
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
@@ -259,6 +267,7 @@ def express(g):
     if 'tfind' in e and not tfind_on(g): e.pop('tfind')                            # Iteration 52: with kfast
     if 'kinput' in e and not kinput_on(g): e.pop('kinput')                         # Iteration 54: with kfast
     if 'klookup' in e and not klookup_on(g): e.pop('klookup')                      # Iteration 57: with kinput
+    if 'jit' in e and not jit_on(g): e.pop('jit')                                  # Iteration 80: phase 1's conditions
     if 'rtiplus' in e and not rtiplus_on(g): e.pop('rtiplus')                      # Iteration 60: with rtloopall
     if 'swapi' in e and not swapi_on(g): e.pop('swapi')                            # Iteration 61: with 'imm'
     if 'tag2' in e and (g['enc'] != 'cv8' or not g['bytehdr']): e.pop('tag2')     # Iteration 66: CV8, byte headers
@@ -513,7 +522,9 @@ def build(g, d):
     def compile_engine():
         if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
         else:
-            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + rt())
+            jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+                   os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
+            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + jit + rt())
             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
@@ -532,6 +543,7 @@ def build(g, d):
     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
     if g.get('bss'): opts.append('--bss')                         # Iteration 44: scratch buffers out of the file
     if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
+    if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
                                                                  # copies (Iteration 38), the dump tool and dead
                                                                  # shadowed words (Iteration 39)
@@ -540,7 +552,7 @@ def build(g, d):
     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
-    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse))
+    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '')))
     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
@@ -956,20 +968,22 @@ def setup():
     import shutil
     W = os.path.join(O, 'work')
     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
-    for name, files in [(b + k + f + l + t + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
+    for name, files in [(b + k + f + l + t + j + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
                                                                     ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
                         for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b != 'k64-self' else ('',))
                         for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
-                        for t in (('', '-iplus') if l == '-loopall' else ('',)) if k or f or l or t or b == 'k64-bt']:   # the plain two: build-stages'
+                        for t in (('', '-iplus') if l == '-loopall' else ('',))
+                        for j in (('', '-jit') if b == 'k64-bt' else ('',)) if k or f or l or t or j or b == 'k64-bt']:   # -jit: Iteration 80   # the plain two: build-stages'
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
                        + (['cv8-fuse-loopall.4'] if '-loopall' in name
                        else ['cv8-fuse-loop.4'] if '-loop' in name else [])
                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
+                       + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
                        + ['dict-dump-addr.4']) + 'BYE\n'
         out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))

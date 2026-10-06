@@ -98,4 +98,7 @@
 # Iteration 79: seeds 19 and 20 both small - the stopping rule says stop.
 # The gene set has converged; development next (the JIT, JIT.md). Runs
 # resume with new genes.
-none
+#
+# Iteration 80: the lazy JIT's gene (JIT.md, phase 1) - a new gene, so the
+# stopping rule starts again. Seed 21: evolution weighs it.
+seed 21 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

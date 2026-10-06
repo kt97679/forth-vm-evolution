@@ -1755,3 +1755,22 @@ background heartbeat stopped at the turn's end; the files persist), so a
 run here only advances during a reply - ~45 minutes of one; and the runs'
 last generations still make front designs (of 64: 25% by generation 20,
 50% by 30), so shorter runs would cost. NEXT-RUN: none - the JIT next.
+
+## Iteration 80 - 2026-10-06 - Claude
+
+**The lazy JIT, phase 1** (JIT.md), built and measured. Colon words
+compiled at run time begin [JIT][four bytes] (forth/cv8t-jit.4, an
+overlay only for the gene); the first call translates the word
+(engine/jit.c): decode as the engine does, callees first, SPN's stencils
+copied and patched - all or nothing, calls only to native words or
+itself. The converter writes vm-jit-ops.h from the operations' names and
+pins JIT to one byte. One bug on the way: inside a handler gen-tos.py has
+no rule for, the stack is spilled - dsp at the top.
+
+On seed 19's fastest design: fib 0.605 -> 0.221, loop 0.173 -> 0.070;
+kernel, parse, corpus and sieve 8-13% slower (every run-time word's call
+pays the JIT dispatch; most stay bytecode, calling kernel words); speed
+0.229 -> 0.166. Binary +8,288 bytes, image +136, memory +4 KB - within the
+budgets. The corpus, the tests and the hand-made stages pass. The gene
+`jit` is in the evolver; NEXT-RUN: seed 21 tag2 - the stopping rule
+starts again with a new gene.

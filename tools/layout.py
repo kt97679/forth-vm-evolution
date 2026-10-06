@@ -408,6 +408,7 @@ if TAG2_ON:
     _pin = [idx_of[n] for n in ('NOOP', 'EXIT', 'LIT', 'BRANCH', '?BRANCH')]
     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
+    _pin += [G['X_OPS10']['JIT']] if 'JIT' in G['X_OPS10'] else []   # Iteration 80: every run-time word's first byte
     # the run-time loop compilers (cv8-fuse-loop.4, cv8-fuse-loopall.4): their
     # loop opcodes, pinned - loopall has no fallback, and an escaped loop
     # opcode in loop's tables falls back to calling the colon word
@@ -434,7 +435,7 @@ if TAG2_ON:
     # to their codes, or 0 where the design has none
     _cn = {'EXIT-OP': 1, 'LIT16-OP': 2, 'BRANCH-OP': 3, '0BRANCH-OP': 4, 'LIT32-OP': 68,
            'DOVAR-OP': 69, 'DODOES-OP': 70, 'LIT8-OP': 71, 'LIT64-OP': 124}
-    _cx = {'BRANCH8-OP': 'BRANCH8', '?BRANCH8-OP': '?BRANCH8'}
+    _cx = {'BRANCH8-OP': 'BRANCH8', '?BRANCH8-OP': '?BRANCH8', 'JIT-OP': 'JIT'}   # JIT-OP: forth/cv8t-jit.4
     _done = set()
     for w in order:
         if w['n'] not in _cn and w['n'] not in _cx: continue
@@ -1277,6 +1278,56 @@ if EMIT:
         open(_os.path.join(_d, 'vm-tag2-one.h'), 'w').write(', '.join(_one) + '\n')
         open(_os.path.join(_d, 'vm-tag2-esc.h'), 'w').write(', '.join(_esc) + '\n')
         print("wrote the tag-2 map: vm-tag2-one.h, vm-tag2-esc.h")
+        if '--jit' in ARGV:
+            # Iteration 80 (JIT.md): each logical operation as SPN stencils,
+            # for engine/jit.c - the stencils, the operand's kind (0 none,
+            # 1 u8, 2 u16, 3 s32, 4 s64, 5 s8, 6 an 8-bit branch, 7 a
+            # 16-bit one) and a constant for the literal holes the operand
+            # does not fill. What is not here stays bytecode.
+            S1 = {'DUP': ['DUP'], 'DROP': ['DROP'], 'SWAP': ['SWAP'], 'OVER': ['OVER'], 'ROT': ['ROT'],
+                  '+': ['PLUS'], '-': ['NEGATE', 'PLUS'], 'AND': ['AND'], 'OR': ['OR'], 'XOR': ['XOR'],
+                  'NEGATE': ['NEGATE'], '=': ['EQ'], '<': ['LT'], '>': ['GT'], 'U<': ['ULT'],
+                  'LSHIFT': ['LSHIFT'], 'RSHIFT': ['RSHIFT'], '@': ['FETCH'], '!': ['STORE'],
+                  'C@': ['CFETCH'], 'C!': ['CSTORE'], 'I': ['I'], 'J': ['J'], 'UNLOOP': ['UNLOOP'],
+                  'I+': ['I', 'PLUS'], '(DO)': ['DO'], 'EXIT': ['EXIT'], '2DUP': ['OVER', 'OVER'],
+                  '2DROP': ['DROP', 'DROP'], 'NOOP': []}
+            K = {'lit0': (['LIT'], 0), 'lit1': (['LIT'], 1), 'litm1': (['LIT'], -1), '0=': (['LIT', 'EQ'], 0),
+                 '0<': (['LIT', 'LT'], 0), 'INVERT': (['LIT', 'XOR'], -1), '<>': (['EQ', 'LIT', 'XOR'], -1),
+                 '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
+                 'CELLS': (['LIT', 'LSHIFT'], 3)}
+            O = {'LIT8': (['LIT'], 1), 'LIT': (['LIT'], 2), 'LIT32': (['LIT'], 3), 'LIT64': (['LIT'], 4),
+                 'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5),
+                 'BRANCH': (['BRANCH'], 7), 'BRANCH8': (['BRANCH'], 6), '?BRANCH': (['0BRANCH'], 7),
+                 '?BRANCH8': (['0BRANCH'], 6), '(LOOP)': (['LOOP'], 7), '(LEAVE)': (['LEAVE'], 7),
+                 '<?BRANCH': (['LT', '0BRANCH'], 7), '<?BRANCH8': (['LT', '0BRANCH'], 6),
+                 '=?BRANCH': (['EQ', '0BRANCH'], 7), '=?BRANCH8': (['EQ', '0BRANCH'], 6),
+                 'U<?BRANCH': (['ULT', '0BRANCH'], 7), 'U<?BRANCH8': (['ULT', '0BRANCH'], 6),
+                 '>?BRANCH': (['GT', '0BRANCH'], 7), '>?BRANCH8': (['GT', '0BRANCH'], 6),
+                 '?NBRANCH': (['LIT', 'EQ', '0BRANCH'], 7), '?NBRANCH8': (['LIT', 'EQ', '0BRANCH'], 6),
+                 '<>?BRANCH': (['EQ', 'LIT', 'EQ', '0BRANCH'], 7), '<>?BRANCH8': (['EQ', 'LIT', 'EQ', '0BRANCH'], 6)}
+            def _jd(nm):
+                if nm in ('LIT8X', 'ADDIX', 'EQIX') or nm.endswith(';EXIT'):
+                    d = _jd(nm[:-1] if nm in ('LIT8X', 'ADDIX', 'EQIX') else nm[:-5])
+                    return d and (d[0] + ['EXIT'], d[1], d[2])
+                if nm in S1: return (S1[nm], 0, 0)
+                if nm in K: return (K[nm][0], 0, K[nm][1])
+                if nm in O: return (O[nm][0], O[nm][1], 0)
+                if ' ' in nm:      # a pair: both parts without operands, at most one constant
+                    a_, b_ = nm.split(' ', 1); da, db = _jd(a_), _jd(b_)
+                    if da and db and not da[1] and not db[1] and not (da[2] and db[2]):
+                        return (da[0] + db[0], 0, da[2] or db[2])
+                return None
+            _jl, _rows = 0, []
+            for _x, _nm in sorted(G['t2_names']().items()):
+                _dj = _jd(_nm)        # (not _d: that is the directory the headers go to)
+                if _dj and len(_dj[0]) <= 5:
+                    _rows.append('[%d] = {1, %d, %d, %d, {%s}},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
+                                 ', '.join('S_' + s for s in _dj[0]) or '0', _nm.replace('*/', '* /')))
+            _jc = T2MAP['one'][G['X_OPS10']['JIT']]
+            open(_os.path.join(_d, 'vm-jit-ops.h'), 'w').write(
+                '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
+                '#define JIT_CODE %d\nstatic const struct jit_op jit_ops[] = {\n%s\n};\n' % (_jc, '\n'.join(_rows)))
+            print("wrote vm-jit-ops.h: %d of %d operations translatable; JIT is code %d" % (len(_rows), len(G['t2_names']()), _jc))
 
 sys.exit(0 if chain_ok and gaps == 0 and not defer_bad and not xt_bad
          and not buf_bad and not untranslated and not bi_bad and not fixed_bad

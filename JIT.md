@@ -55,6 +55,37 @@ memory, of every design that carries the gene.
   the sieve, the kernel workload's cross-compiler - or it is removed, as
   `rtlit` was (Iteration 59).
 
+## Phase 1's numbers (Iteration 80)
+
+Built as designed: `forth/cv8t-jit.4` (the header, an overlay loaded only
+with the gene), `engine/jit.c` (the scanner and the translator, 246
+lines with the check's main), the handler `L_x_jit` (vm-lab.c), the
+converter's per-design table `vm-jit-ops.h` (each operation's stencils
+from its name: 86 of seed 19's fastest design's 168 operations), the gene
+`jit` (lab/evolve: the two-bit tag, byte headers, the cached top, one
+state, no tail calls; x86-64). Seed 19's fastest, cc0b1e2aeb, measured
+with and without it, 5 rounds:
+
+| | without | with the JIT | ratio |
+|---|---|---|---|
+| fib | 0.605 | 0.221 | 0.37 |
+| loop | 0.173 | 0.070 | 0.41 |
+| kernel | 0.307 | 0.337 | 1.10 |
+| parse | 0.102 | 0.115 | 1.13 |
+| corpus | 0.192 | 0.212 | 1.11 |
+| sieve (held out) | 0.438 | 0.472 | 1.08 |
+| speed (geometric mean) | 0.229 | 0.166 | 0.72 |
+| image / binary / memory | 9,064 / 33,448 / 212 KB | 9,200 / 41,736 / 216 KB | |
+
+Budgets: engine code +8.3 KB (15 allowed), new C ~250 lines (~300),
+memory +4 KB (1 MB), the image +136 bytes (the new : and ;). It pays where
+code is compiled at run time and runs hot; elsewhere every run-time word's
+call pays the JIT dispatch, and most such words stay bytecode - they call
+kernel words. **Next optimisations, priced first**: a word that stays
+bytecode should cost nothing per call (e.g. its callers re-pointed past
+the header); calls from native code to bytecode words (SPN's st_interp);
+?DO and +LOOP; 32-bit ARM.
+
 ## The phases
 
 1. **A prototype on the VM** - begun, Iteration 74: engine/jit.c reads
