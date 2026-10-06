@@ -273,6 +273,7 @@ they are done, the article on the backburner.
 
 | approach | what decided it | where |
 |---|---|---|
+| Variables and constants compiled as literals in code compiled at run time (`rtlit`) | built and measured, rejected (Iteration 59): correct, and the held-out sieve 0.811 of its dispatches - but kernel 0.984 and corpus 1.016, because a COMPILE,8 link that checks every compiled word costs a compiling workload more than it saves; 132 bytes more; selected geomean 1.000 | PROGRESS.md, Iteration 59 |
 | The loop opcodes in code compiled at run time | priced, not built (Iteration 28): 0.1% of kernel's dispatches, 0.8-1% of corpus's, none on fib or parse; 68-70% of the held-out loop's, which building it for would spoil | `results/price-runtime-loops.md` |
 | A reach check for far calls in cv8.4 | measured, not built (Iteration 28): the workloads run code up to 68 KB, the far form reaches 2 MB (one-byte calls) to 4 MB; a check costs every image bytes | `results/price-runtime-loops.md` |
 | Indirect threading as a gene | priced, not built (Iteration 29): in the dispatch lab its dispatch lands in token and direct threading's band; its code is a cell a reference, beside s0-cell's 25 KB - dominated | `lab/dispatch/README.md` |

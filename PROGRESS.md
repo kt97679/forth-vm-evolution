@@ -1345,3 +1345,24 @@ dispatches identical, alive; recorded designs and ids untouched.
 
 NEXT-RUN unchanged - seed 14 is running; this commit goes out with its
 analysis.
+
+## Iteration 59 - 2026-10-06 - Claude
+
+**The code compiled at run time, named.** fib, loop and the sieve run in
+it (98-100%), and so does 39% of kernel. With the opcodes named
+(stackops.py's naming): calls dominate - 19.5% of kernel's dispatches,
+13.6% of corpus's; call>DOVAR, a variable called, 5.2% / 3.5% and the
+sieve's 7.7%; fib's base-case test DUP 2 < IF three dispatches a call; the
+loop's body DUP I + XOR (LOOP). And seed 13's fastest has only 6 pair
+slots left - the format-10 opcodes the k-genes put first take the rest.
+
+**Variables and constants as literals - built, measured, rejected.**
+forth/cv8-fuse-lit.4 and a gene rtlit: an outermost COMPILE,8 link that
+executes a variable or a constant at compile time - known by its body,
+DOVAR, or one of LIT,'s four forms then EXIT (there is no VALUE or TO) -
+and compiles the value through LITERAL. Correct: alive in all four engine
+forms, the sieve's 1899. The held-out sieve 0.811 of its dispatches - but
+kernel 0.984 and corpus 1.016: checking every word compiled costs a
+compiling workload more than the calls saved; 132 bytes more; selected
+geomean 1.000. Reverted, in the register. Kept as candidates: I + fused
+in loops (a fifth of loop), DUP n < IF fused (fib's test).
