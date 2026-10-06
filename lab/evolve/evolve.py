@@ -204,7 +204,7 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
                'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi',
                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
                'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', 'TABS>BL': 'L_x_tabsbl',
-               '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus', 'JIT': 'L_x_jit'}
+               '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
 # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
 X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
@@ -212,7 +212,7 @@ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR',
            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
            'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', 'TABS>BL': 'X_TABSBL',
-           '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS', 'JIT': 'X_JIT'}
+           '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
 def jit_on(g):
     """Iteration 80 (JIT.md): the lazy JIT - colon words compiled at run time
     translated to native code on their first call (engine/jit.c, SPN's
@@ -234,7 +234,6 @@ def ops10_order(g, iplus):
     ws = [w for w in ws if w != 'I+' or iplus]                                     # Iteration 60: rtiplus's
     if iplus: ws = ['I+'] + [w for w in ws if w != 'I+']                           # Iteration 60: sure of a slot
     if swapi_on(g): ws = ['SWAP+I'] + [w for w in ws if w != 'SWAP+I']             # Iteration 61: sure of a slot
-    if jit_on(g): ws = ['JIT'] + [w for w in ws if w != 'JIT']                     # Iteration 80: first of all
     return ws
 def ops10_in(g):
     """[[word, opcode], ...]: they take the free slots first, the pairs the rest."""
@@ -497,6 +496,7 @@ def build(g, d):
     t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
     if g.get('hotcalls') and g['varcall'] and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
     if t2: flags.append('-DTAG2=1')
+    if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
     if PROFILING[0]: flags.append('-DPROFILE=1')
     if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
     o10 = ops10_in(g)

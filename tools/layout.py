@@ -393,6 +393,7 @@ if V8 and '--hotcalls' in ARGV and not TAG2_ON and not _os.environ.get('SOD16_NO
 # the rest escaped. Exact counts, so the numbering - and the image - are
 # reproducible. Before anything is sized: sizes depend on it.
 T2MAP = None
+G['JIT_ON'] = '--jit' in ARGV           # Iteration 81: the JIT's opcode among the tag's operations (sod16 t2_names)
 if V8 and _os.environ.get('SOD16_T2NAMES'):        # the names behind the reference ranking (lab/evolve/tag2-rank.py)
     json.dump({str(k): v for k, v in G['t2_names']().items()}, open(_os.environ['SOD16_T2NAMES'], 'w'))
 if TAG2_ON:
@@ -408,7 +409,7 @@ if TAG2_ON:
     _pin = [idx_of[n] for n in ('NOOP', 'EXIT', 'LIT', 'BRANCH', '?BRANCH')]
     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
-    _pin += [G['X_OPS10']['JIT']] if 'JIT' in G['X_OPS10'] else []   # Iteration 80: every run-time word's first byte
+    _pin += [G['T2_JIT']] if '--jit' in ARGV else []   # Iterations 80-81: every run-time word's first byte - no slot
     # the run-time loop compilers (cv8-fuse-loop.4, cv8-fuse-loopall.4): their
     # loop opcodes, pinned - loopall has no fallback, and an escaped loop
     # opcode in loop's tables falls back to calling the colon word
@@ -435,7 +436,7 @@ if TAG2_ON:
     # to their codes, or 0 where the design has none
     _cn = {'EXIT-OP': 1, 'LIT16-OP': 2, 'BRANCH-OP': 3, '0BRANCH-OP': 4, 'LIT32-OP': 68,
            'DOVAR-OP': 69, 'DODOES-OP': 70, 'LIT8-OP': 71, 'LIT64-OP': 124}
-    _cx = {'BRANCH8-OP': 'BRANCH8', '?BRANCH8-OP': '?BRANCH8', 'JIT-OP': 'JIT'}   # JIT-OP: forth/cv8t-jit.4
+    _cx = {'BRANCH8-OP': 'BRANCH8', '?BRANCH8-OP': '?BRANCH8', 'JIT-OP': None}   # JIT-OP: forth/cv8t-jit.4
     _done = set()
     for w in order:
         if w['n'] not in _cn and w['n'] not in _cx: continue
@@ -447,7 +448,7 @@ if TAG2_ON:
             assert _p == _cn[w['n']], ('tag 2: unexpected value', w['n'], _p)
             _ops[_lj[0]] = (_k, T2MAP['one'][_p])
         else:
-            _x = G['X_OPS10'].get(_cx[w['n']])
+            _x = G['X_OPS10'].get(_cx[w['n']]) if _cx[w['n']] else (G['T2_JIT'] if '--jit' in ARGV else None)
             _ops[_lj[0]] = (_k, T2MAP['one'][_x] if _x is not None else 0)
         _done.add(w['n'])
     print('tag 2: %d opcode constants rewritten' % len(_done))
@@ -1323,7 +1324,7 @@ if EMIT:
                 if _dj and len(_dj[0]) <= 5:
                     _rows.append('[%d] = {1, %d, %d, %d, {%s}},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
                                  ', '.join('S_' + s for s in _dj[0]) or '0', _nm.replace('*/', '* /')))
-            _jc = T2MAP['one'][G['X_OPS10']['JIT']]
+            _jc = T2MAP['one'][G['T2_JIT']]
             open(_os.path.join(_d, 'vm-jit-ops.h'), 'w').write(
                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
                 '#define JIT_CODE %d\nstatic const struct jit_op jit_ops[] = {\n%s\n};\n' % (_jc, '\n'.join(_rows)))

@@ -1774,3 +1774,16 @@ pays the JIT dispatch; most stay bytecode, calling kernel words); speed
 budgets. The corpus, the tests and the hand-made stages pass. The gene
 `jit` is in the evolver; NEXT-RUN: seed 21 tag2 - the stopping rule
 starts again with a new gene.
+
+## Iteration 81 - 2026-10-06 - Claude
+
+The JIT, two fixes: its opcode is an operation of its own under the tag
+(T2_JIT, a pinned one-byte code) instead of the first format-10 slot -
+which had pushed a pair out (R> =); and a word that stays bytecode
+re-points each call site past its header on the first call. The
+overhead on kernel, parse and corpus did not move, and with translation
+switched off it remained: CELLS pushed into the escaped band by the
+pinned code, the engine's layout, the VM's noise - for the laptop to
+weigh. Found: after the tag's call handlers gen-tos.py leaves a handler
+unwrapped (no SPILL) - the JIT handler sits among the ordinary ones; and
+the binary objective moves in 4 KB steps (page-aligned segments).

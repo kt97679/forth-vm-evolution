@@ -93,6 +93,26 @@ bytecode should cost nothing per call (e.g. its callers re-pointed past
 the header); calls from native code to bytecode words (SPN's st_interp);
 ?DO and +LOOP; 32-bit ARM.
 
+## Iteration 81: two fixes, and where the overhead is
+
+- **No format-10 slot.** The JIT opcode took the first format-10 slot,
+  which the pairs share: seed 19's fastest lost R> =. Now it is an
+  operation of its own under the tag (T2_JIT = 0xFFFD): a pinned one-byte
+  code and no slot; designs keep their pairs.
+- **Bytecode words cost their call sites nothing**: the first call
+  through the header re-points the call past it (jit_repoint).
+
+Neither moved the overhead on kernel, parse and corpus (10-17% on this
+VM), and with translation switched off it was there too: it belongs to
+the design, not the translator - the pinned code pushes CELLS into the
+escaped band, the engine's ~8 KB move the interpreter's layout - and to
+this VM's noise. The laptop's comparison (10 rounds, two CPUs) weighs it.
+
+**The binary objective moves in 4 KB steps**: a static engine's segments
+are page aligned, so a few bytes can cost a page (41,736 -> 45,832 here) -
+why the converged front's engines came in sizes 4 KB apart. To raise
+with the owner: link without page alignment, so the objective sees bytes.
+
 ## The phases
 
 1. **A prototype on the VM** - begun, Iteration 74: engine/jit.c reads

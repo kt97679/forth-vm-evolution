@@ -140,6 +140,26 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
     if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, 8); }
     return dst + n;
 }
+/* Iteration 81: a word that stays bytecode should cost its callers
+   nothing. The call that reached w's JIT opcode ends at ra, the return
+   address: if the 2, 3 or 4 bytes before ra are a call naming w exactly,
+   point it past the header - that call site then skips the JIT dispatch
+   for good. Anything else (EXECUTE, a target past the width) is left. */
+static void jit_repoint(UNS64 w, UNS64 ra) {
+    UNS64 t = w + 5 - jit_cbase, x;
+    int wd, i;
+    for (wd = 2; wd <= 4; wd++) {
+        UNS64 a = ra - (UNS64)wd;
+        UNS8 b = BYTE(a);
+        if ((b >> 6) != wd - 1) continue;                 /* tag 01: 2 bytes, 10: 3, 11: 4 */
+        for (x = b & 0x3F, i = 1; i < wd; i++) x = x << 8 | BYTE(a + i);
+        if (jit_cbase + x != w) continue;
+        if (t >> (8 * wd - 2)) return;                    /* past the header: too far for this width */
+        BYTE(a) = (UNS8)((b & 0xC0) | (t >> (8 * (wd - 1))));
+        for (i = 1; i < wd; i++) BYTE(a + i) = (UNS8)(t >> (8 * (wd - 1 - i)));
+        return;
+    }
+}
 /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
 static uint32_t jit_word(UNS64 w, int depth) {
     UNS64 at[JIT_MAXOPS + 1], arg[JIT_MAXOPS], end, a;

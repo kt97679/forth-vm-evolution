@@ -1102,11 +1102,17 @@ static void virtual_machine(void) {
      *  escape, T2_NONE nothing - a fault, not a no-op.  */
 #define T2_ESC  0xFFFE
 #define T2_NONE 0xFFFF
+#if X_JIT     /* the lazy JIT's opcode (JIT.md): a code, no slot in the table */
+#define T2_JIT  0xFFFD
+#define T2JIT(x) (x) == T2_JIT ? &&L_x_jit :
+#else
+#define T2JIT(x)
+#endif
 #if ESCAPE
-#define T2OP(x) ((x) == T2_ESC ? &&L_t2esc : (x) == T2_NONE ? &&L_t2bad \
+#define T2OP(x) (T2JIT(x) (x) == T2_ESC ? &&L_t2esc : (x) == T2_NONE ? &&L_t2bad \
                  : (x) < 128 ? dispatch[(x)] : (x) - 128 < ESC_N ? esc_tab[(x) - 128] : &&L_t2bad)
 #else
-#define T2OP(x) ((x) == T2_ESC ? &&L_t2esc : (x) >= n_ ? &&L_t2bad : dispatch[(x)])
+#define T2OP(x) (T2JIT(x) (x) == T2_ESC ? &&L_t2esc : (x) >= n_ ? &&L_t2bad : dispatch[(x)])
 #endif
     static const void *t2tab[256], *t2esc[256];
     if (!t2tab[0]) {
@@ -1452,25 +1458,6 @@ L_x_dupnbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();         /* D
 #if X_SWAPADDI
 L_x_swapaddi: t = DS1; DS1 = DS0; DS0 = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();   /* SWAP n + */
 #endif
-#if X_JIT
-/*  JIT.md (Iteration 80): a colon word compiled at run time begins [JIT]
- *  [four bytes] - its length, top bit set, until its first call; then
- *  the native code's offset (engine/jit.c), or 0: it stays bytecode.
- *  Native code runs the whole word, EXIT included; this then returns as
- *  EXIT does. The return stack crosses in jit_rp, for loops and >R.  */
-L_x_jit:   { uint32_t f_ = jit_ld32(ip);
-             if (f_ & 0x80000000u) { jit_cbase = cbase; f_ = jit_word(ip - 1, 0); }
-             if (f_ > 1) {
-                 spn_st r_;
-                 jit_rp = (ucell)rp;
-                 /* the stack in memory here (gen-tos.py spills around a handler it
-                    has no rule for): dsp at the top; native code wants sp at the
-                    second, the top apart - SPN's convention */
-                 r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
-                 rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
-                 ip = RS; rp += CELL_BYTES;
-             } else ip += 4; } NEXT();
-#endif
 /*  Iteration 50: FILL and CMOVE, the kernel's byte loops (12-14 dispatches a
  *  byte in Forth; CMOVE 5-7% of kernel, parse and corpus), as opcodes - a
  *  byte at a time, ascending, as the loops: CMOVE's overlap behaves the same.  */
@@ -1573,6 +1560,28 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
     write_str(2, "CV8: image uses the escaped band, engine built without it\n");
     exit(2);
 #endif
+#endif
+#if X_JIT
+/*  JIT.md (Iteration 80): a colon word compiled at run time begins [JIT]
+ *  [four bytes] - its length, top bit set, until its first call; then
+ *  the native code's offset (engine/jit.c), or 0: it stays bytecode.
+ *  Native code runs the whole word, EXIT included; this then returns as
+ *  EXIT does. The return stack crosses in jit_rp, for loops and >R.
+ *  Here among the ordinary handlers: gen-tos.py must wrap it in SPILL
+ *  and FILL - after the tag's call handlers it is left bare (Iteration 81). */
+L_x_jit:   { uint32_t f_ = jit_ld32(ip);
+             jit_cbase = cbase;
+             if (f_ & 0x80000000u) f_ = jit_word(ip - 1, 0);
+             if (f_ > 1) {
+                 spn_st r_;
+                 jit_rp = (ucell)rp;
+                 /* the stack in memory here (gen-tos.py spills around a handler it
+                    has no rule for): dsp at the top; native code wants sp at the
+                    second, the top apart - SPN's convention */
+                 r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
+                 rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
+                 ip = RS; rp += CELL_BYTES;
+             } else { jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
 #endif
 L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
 #if ENC == 3

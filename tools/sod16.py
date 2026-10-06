@@ -536,7 +536,7 @@ TB_LONG = {v[0]: v[2] for v in TESTBR.values()}; TB_SHORT = {v[1]: v[3] for v in
 KEEPNBR = ('DNQBR', 'DNQBRS', 'DUP?NBRANCH', 'DUP?NBRANCH8')
 TB_LONG[KEEPNBR[0]] = KEEPNBR[2]; TB_SHORT[KEEPNBR[1]] = KEEPNBR[3]
 BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT) + ('EQIT', 'EQITS')
-PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'I+', 'JIT'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
+PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'I+'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
 def shorten(ops):
     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
     on a layout that counts every alignment at its widest, so the real
@@ -902,7 +902,13 @@ def t2_names():
     for (a, b_), c in SUPERS.items(): nm[c] = '%s %s' % (a, b_)
     for w, c in X_OPS10.items(): nm[c] = w
     nm.pop(V8_ESC, None)
+    # Iteration 81: the lazy JIT's opcode (JIT.md) - a code of its own under
+    # the tag, but no slot in the 128-entry table: given one, it pushed a
+    # pair out (seed 19's fastest lost R> =, and 4-10% on kernel, parse,
+    # corpus). T2_JIT in engine/vm-lab.c.
+    if JIT_ON: nm[T2_JIT] = 'JIT'
     return nm
+T2_JIT, JIT_ON = 0xFFFD, False      # JIT_ON: layout.py --jit sets it
 
 def before_operand(ops, j):
     """True if op j is a call whose inline CELL operand follows it."""
