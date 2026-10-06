@@ -124,6 +124,40 @@ static char **g_argv;
  *  Iteration 13: 1-3% of the image, no dispatch removed.  */
 #define HOTCALLS 0
 #endif
+#ifndef TAG2
+/*  TAG2 (Iteration 65, FORMAT-TAG2.md): the two-bit tag, relf's planned
+ *  format, decided with the owner. A byte's top two bits: 00 an opcode -
+ *  64 of them, one the escape to 256 more - and 01, 10, 11 a call of 2,
+ *  3, 4 bytes with a 14-, 22-, 30-bit byte offset from the image base: a
+ *  1 GB code space. Which operation each code is, the design's profile
+ *  decides (the converter writes vm-tag2-one.h and vm-tag2-esc.h). The
+ *  dictionary's byte-header links take the same tag, read backwards.  */
+#define TAG2 0
+#endif
+#if TAG2 && (HOTCALLS || SCALE != 0 || ENC != 3)
+#error "TAG2: no one-byte hot calls, byte offsets (SCALE 0), CV8 only"
+#endif
+#if TAG2
+/*  A byte-header link, read backwards from the name: the byte before it
+ *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
+ *  bits), 10 three (22), 11 four (30) - the bytes below it high to low.  */
+#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
+    switch (t__ >> 6) {                                                                   \
+    case 0: d__ = t__; break;                                                             \
+    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2); break;                        \
+    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; \
+    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
+                   | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
+    d__ ? a__ - d__ : 0; })
+#else
+/*  A byte-header link in CV8 (cv8b.4's NEXT-NFA8): its last byte, the one
+ *  before the name - below 0x80 seven bits (0 ends the thread), below 0xC0
+ *  fourteen, else twenty-two.  */
+#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
+    t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
+    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
+    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })
+#endif
 #ifndef VARCALL
 /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
  *  (14-bit payload), 11xxxxxx takes two (22-bit). Costs one extra test
@@ -358,6 +392,7 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
 #define F_SPEC    0x04   /* specialised opcodes present (locals header) */
 #define F_LIT64   0x08   /* LIT64 may appear                            */
 #define F_HOTCALLS 0x20  /* one-byte calls: 0xE0-0xFF through a table   */
+#define F_TAG2    0x40   /* the two-bit tag (FORMAT-TAG2.md)             */
 #define F_BYTEHDR 0x10   /* dictionary headers are byte-granular: a 1-3
                             byte link with its tag last, unpadded names.
                             The engine never reads a link in this
@@ -367,7 +402,8 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
 static const UNS8 IMAGE_MAGIC[8] = { 'C', 'V', '8', '0' + SCALE, CELL_BYTES,
     SPEC ? 'L' : 0, CV8_VERSION,
     (VARCALL ? F_VARCALL : 0) | (VARSLOT ? F_VARSLOT : 0)
-        | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR | (HOTCALLS ? F_HOTCALLS : 0) };
+        | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR | (HOTCALLS ? F_HOTCALLS : 0)
+        | (TAG2 ? F_TAG2 : 0) };
 #else
 static const UNS8 IMAGE_MAGIC[8] = { 'C', 'P', 'T', '0' + SCALE, CELL_BYTES, 0, 0, 0 };
 #endif
@@ -1052,6 +1088,37 @@ static void virtual_machine(void) {
 #else
 #define HCALL(i) &&do_call
 #endif
+#if ENC == 3 && TAG2
+    /*  The two-bit tag: 0x00-0x3F through this design's 64 one-byte codes,
+     *  0x40-0xFF straight to the call handler of their width - no test. A
+     *  code names a logical operation (vm-tag2-*.h, the converter's): below
+     *  128 the table above, 128 + k the k-th escaped primitive, T2_ESC the
+     *  escape, T2_NONE nothing - a fault, not a no-op.  */
+#define T2_ESC  0xFFFE
+#define T2_NONE 0xFFFF
+#if ESCAPE
+#define T2OP(x) ((x) == T2_ESC ? &&L_t2esc : (x) == T2_NONE ? &&L_t2bad \
+                 : (x) < 128 ? dispatch[(x)] : (x) - 128 < ESC_N ? esc_tab[(x) - 128] : &&L_t2bad)
+#else
+#define T2OP(x) ((x) == T2_ESC ? &&L_t2esc : (x) >= n_ ? &&L_t2bad : dispatch[(x)])
+#endif
+    static const void *t2tab[256], *t2esc[256];
+    if (!t2tab[0]) {
+        static const UNS16 one_[64] = {
+#include "vm-tag2-one.h"
+        };
+        static const UNS16 esc_[256] = {
+#include "vm-tag2-esc.h"
+        };
+        int i_, n_ = (int)(sizeof dispatch / sizeof dispatch[0]);
+        (void)n_;
+        for (i_ = 0; i_ < 256; i_++) {
+            t2tab[i_] = i_ < 64 ? T2OP(one_[i_]) : i_ < 128 ? &&L_t2call2
+                      : i_ < 192 ? &&L_t2call3 : &&L_t2call4;
+            t2esc[i_] = T2OP(esc_[i_]);
+        }
+    }
+#endif
 #if ENC == 3 && SHAREDCALL && DISPATCH256
     /*  Same handlers, but indexed by the whole byte: 0x80-0xFF all land
      *  on do_call, so no test is needed to tell an opcode from a call. */
@@ -1066,7 +1133,13 @@ static void virtual_machine(void) {
     }
 #endif
 
-#if ENC == 3 && SHAREDCALL
+#if ENC == 3 && TAG2
+/*  One byte, one indirect jump: a call's three widths are three entries
+ *  of the table, so no opcode-or-call test either.  */
+#define NEXT() do { \
+        PROFIP(ip); t = BYTE(ip); ip += 1; if (t < 64) PROF(t); goto *t2tab[t]; \
+    } while (0)
+#elif ENC == 3 && SHAREDCALL
 /*  Every handler keeps its own opcode dispatch (what the branch predictor
  *  needs), but the call path - decode, RPUSH, limit check - exists once.
  *  GCC otherwise replicates ~50 bytes of it into all ~120 handlers.  */
@@ -1109,6 +1182,16 @@ static void virtual_machine(void) {
 
 next:
     NEXT();
+#if ENC == 3 && TAG2
+    /*  t holds the first byte (NEXT), ip is past it.  */
+L_t2call2: t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; goto t2call;
+L_t2call3: t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1); ip += 2; goto t2call;
+L_t2call4: t = ((t & 0x3F) << 24) | ((UNS64)BYTE(ip) << 16) | ((UNS64)BYTE(ip + 1) << 8)
+               | BYTE(ip + 2); ip += 3;
+t2call:    PROF(256); RPUSH(ip); ip = cbase + t; NEXT();
+L_t2esc:   t = BYTE(ip); ip += 1; goto *t2esc[t];
+L_t2bad:   write_str(2, "relf: no operation has this code\n"); exit(70);
+#endif
 #if ENC == 3 && SHAREDCALL
 do_call:
 #if DISPATCH256
@@ -1383,10 +1466,7 @@ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
              UNS8 n_ = BYTE(nb_);
              while (a_) {
                  if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
-                 { UNS8 t_ = BYTE(a_ - 1);
-                   if (t_ < 128) a_ = t_ ? a_ - t_ : 0;
-                   else if (t_ < 192) a_ -= ((UNS64)(t_ & 63) << 8) | BYTE(a_ - 2);
-                   else a_ -= ((UNS64)(t_ & 63) << 16) | ((UNS64)BYTE(a_ - 2) << 8) | BYTE(a_ - 3); } }
+                 a_ = PREVNFA(a_); }
              DS0 = a_; } NEXT();
 #endif
 /*  Iteration 54: the input side - SCAN and SKIP ( c-addr u c --- c-addr' u' ),
@@ -1426,7 +1506,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
  *  walk, NAME>8 and the immediate bit.  */
 #if X_FIND
 L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
-            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } { UNS8 t_ = BYTE(a_ - 1); if (t_ < 128) a_ = t_ ? a_ - t_ : 0; else if (t_ < 192) a_ -= ((UNS64)(t_ & 63) << 8) | BYTE(a_ - 2); else a_ -= ((UNS64)(t_ & 63) << 16) | ((UNS64)BYTE(a_ - 2) << 8) | BYTE(a_ - 3); } } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
 #endif
 /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER

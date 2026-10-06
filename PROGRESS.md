@@ -1479,3 +1479,26 @@ the one-pass run-time compiler and 8 where the converter knows they
 reach, CREATE reserving the four-byte DOES> call; the old CV8 kept for
 recorded designs, new runs on the new format, the old front the
 baseline. Next: T1, the engine.
+
+## Iteration 65 - 2026-10-06 - Claude
+
+**T1: the engine reads the two-bit tag.** Under TAG2, vm-lab.c fills a
+256-entry table once: 0x00-0x3F this design's one-byte codes (from
+vm-tag2-one.h, which the converter will write), 0x40-0xFF the call
+handler of their width - so a dispatch is one byte and one indirect jump,
+no opcode-or-call test. The escape goes through a 256-entry table (from
+vm-tag2-esc.h). Each code names a LOGICAL operation - the table the engine
+builds today, or an escaped primitive - so every handler, fold, pair and
+format-10 word is reused unchanged; an unassigned code faults, not
+no-ops. Calls of 14, 22 and 30 bits, byte offsets from the image base;
+F_TAG2 in the magic (neither engine reads the other's images); #error
+with hot calls, a scale, or another encoding.
+
+The two handlers that walk the dictionary - THREAD-FIND's and (FIND)'s -
+and their copies in both generators now decode a link through one macro,
+PREVNFA: the old form, or the tag's (00 one byte of 6 bits, 0 ends the
+thread; 01 two; 10 three; 11 four; read backwards). Unchanged for every
+design: tests, the seven stages identical, klookup designs alive in all
+four engine forms. TAG2 compiles in the base and cached-top engines. The
+multi-state generator finds the dispatch fill by pattern and copies the
+call path per cache state - its port is T1b. Next: T2, the converter.
