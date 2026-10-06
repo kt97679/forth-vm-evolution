@@ -1730,3 +1730,15 @@ checked the genome's list, not the slots the loop opcodes get after
 kinput's and klookup's words (8) - ops10_order() split out of ops10_in()
 so the check needs no recursion. Replayed: all 15 alive; all 1,246 living
 designs keep their ids. NEXT-RUN: seed 19 tag2.
+
+## Iteration 78 - 2026-10-06 - Claude
+
+The owner adopted the stopping rule for three objectives. **Seed 19**
+(session 17, seeds 15-19, calibration 1.009, ranks 1.00) is **small, the
+first of two**: fastest 0.238 against 0.244 (+2.5%), smallest binary +
+image 32,299 against 32,331 (+0.1%), least memory none. The memory tie
+works: 0 of the front's 18 by memory alone (19 of 40 before). The
+fastest of all runs no longer needs a large engine - cc0b1e2aeb, 0.238 at
+42,512 bytes total, binary 33,448 - against seed 18's 0.244 at 74,548. No
+converter deaths. NEXT-RUN: seed 20 tag2; if small, the gene set has
+converged and the JIT comes before more runs.

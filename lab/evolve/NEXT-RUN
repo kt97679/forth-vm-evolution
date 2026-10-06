@@ -91,4 +91,7 @@
 #
 # Iteration 77: seed 19 - memory within 8 KB a tie (seed 18: half the
 # front was there by a page of memory); two converter deaths fixed.
-seed 19 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 78: seed 19 small (the stopping rule, adopted) - the first of
+# two. If seed 20 is small too, the gene set has converged.
+seed 20 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

@@ -64,10 +64,14 @@ by memory alone, every one a page or less from a design faster and
 smaller. **Memory within 8 KB is now a tie** (EVOLVE_MEM_TOL; speed and
 binary + image exact): the three stay equal, at a resolution the
 measurement supports - designs today differ by a few pages; a JIT's
-buffer or a leak, tens of KB, still decides. Proposed stopping rule for
-three objectives: a run is small when the fastest improves < ~5%, the
-smallest binary + image < ~2%, the least memory < 8 KB; two small runs
-in a row - stop.
+buffer or a leak, tens of KB, still decides.
+
+**The stopping rule for three objectives (adopted by the owner, Iteration
+78)**: a run is SMALL when, against the earlier runs measured in the same
+session, the fastest improves < ~5%, the smallest binary + image < ~2%
+and the least memory < 8 KB. Two small runs in a row: stop - the gene set
+has converged; new genes (the JIT) before more runs. **Seed 19: small, the
+first** (+2.5%, +0.1%, none).
 
 ## Conventions
 
@@ -251,7 +255,12 @@ in a row - stop.
   calibration 1.004): binary + image reshapes the front - 35 of 39 seed
   18's, engines down to 25,280 bytes; bbab8560dd 0.258 at 40,786 total
   against the old fastest's 0.249 at 65,982. Memory selected on noise -
-  now a tie within 8 KB. Two converter bugs fixed. Runs
+  now a tie within 8 KB. Two converter bugs fixed.
+- **Seed 19 - small, the first of two** (Iteration 78,
+  `results/evolve-amd-ryzen-7-pro-8840hs-seed19.md`; session 17,
+  calibration 1.009): fastest +2.5%, smallest total +0.1%, memory none.
+  The fastest of all runs at 42.5 KB total, no large engine (cc0b1e2aeb,
+  0.238). 0 of the front's 18 by memory alone. Runs
   from seed 18 on are judged by them; the earlier fronts are carried in
   and measured again under them.
 - **One-byte calls, built (Iteration 14)**: the gene `hotcalls` - the
