@@ -375,12 +375,20 @@ owner agreed, Iteration 83):
    (the call-site census by target, and per-target dynamic counts from
    the profiler) - to be ported first: its audit rebuilds with the
    pre-Iteration-13 body check, which today's designs fail.
+   *Priced (Iterations 88-89, results/price-inline-tailcalls.md): in the
+   image 0-15 sites and 0-11 bytes on every front design - the short words
+   are opcodes already; at run time 6.1-7.6% of the kernel workload's
+   dispatches on the faster designs, mostly the empty word CHARS. Not
+   built: compiling nothing for a call to an empty word is the cheap
+   part.*
 2. **Forth tail calls.** A call followed by EXIT becomes a BRANCH to the
    callee (no new opcode: a 16-bit branch reaches any target in today's
    images): no return address pushed, no EXIT dispatch. Excluded: callees
    that read their return address - the inline-operand words ((S"),
    (POSTPONE) and the like), and words doing R> tricks. "Tail calls" in
    this catalog so far meant only the engine's dispatch form.
+   *Priced (Iteration 89): 48-55 sites, -4 to +9 bytes, at most 1.8% of
+   any workload's dispatches - not worth building.*
 3. **Rewrite rules found by random testing** - a small superoptimizer:
    the profile's most frequent 2-3 operation sequences, searched for
    shorter sequences of the design's own operations (SWAP DROP -> NIP,

@@ -53,12 +53,18 @@ carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**
 1. (Done: seed 23 was small too - stopped.)
-2. Port `lab/evolve/callsites.py` to the current converter and the tag
-   (its audit rebuilds designs with the pre-Iteration-13 body check, which
-   today's designs fail), then price **inlining short words** (a call to a
-   body of one or two one-byte opcodes) and **Forth tail calls** (a call
-   followed by EXIT as a BRANCH): static sites and bytes, and dynamic calls
-   per workload from the profiler.
+2. (Done, Iterations 88-89: `results/price-inline-tailcalls.md`.)
+   callsites.py ported to the tag; **inlining short words** and **Forth
+   tail calls** priced on the 35 designs of the front of all runs. In the
+   image neither pays: inlining 0-11 bytes (the converter's tiny words,
+   folds and format-10 words took the short words already), tail calls -4
+   to +9 bytes (a 16-bit BRANCH is as long as a call and its EXIT). At run
+   time inlining saves 6.1-7.6% of the kernel workload's dispatches on the
+   faster designs - 85% of it one empty word, CHARS, which the cross-
+   compiler calls for 12.6% of its calls; tail calls 1.8% at most anywhere.
+   Nothing built. Next: what inlining at run time would do for the JIT,
+   which refuses every run-time word that calls a kernel word (Iteration
+   90); then the owner decides.
 3. Then, each priced first: the rewrite-rule search (shorter equivalent
    sequences of a design's own operations, verified by random testing);
    image compression with a small decompressor; the JIT's calls into

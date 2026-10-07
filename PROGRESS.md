@@ -1914,3 +1914,20 @@ tag (git history keeps it). Now:
   e83972af52 that woke a JIT gene the tail-call engine kept dormant (+136
   bytes of image); the build keeps it dormant now.
 The tests pass; the seven hand-made stages are identical.
+
+## Iteration 89 - 2026-10-07 - Claude
+
+**Inlining short words and Forth tail calls, priced** (GOALS.md's step 2;
+`results/price-inline-tailcalls.md`), with callsites.py on the 35 designs of
+the front of all runs. In the image neither pays: inlining finds 0-15 sites
+and 0-11 bytes - the converter's tiny words, folds and format-10 words made
+the short kernel words opcodes long ago; tail calls find ~50 sites and -4 to
++9 bytes, since a 16-bit BRANCH is as long as a 2-byte call and its EXIT.
+Dynamically tail calls save at most 1.8% of a workload's dispatches. The
+one lever is code compiled at run time: inlining saves 6.1-7.6% of the
+kernel workload's dispatches on the faster designs (1.6-4.5% on the small
+ones), and 85% of that is CHARS - `: CHARS ;`, an empty word the cross-
+compiler calls for 12.6% of its calls. Constants (a literal and EXIT,
+outside the agreed definition): 0 bytes, 0.1-2.2%. Nothing built. Not yet
+priced: the JIT refuses every run-time word that calls a kernel word, so
+inlining could let more code go native - next.
