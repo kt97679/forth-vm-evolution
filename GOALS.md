@@ -51,8 +51,11 @@ designs, fastest 2cbcf427f6 0.195 at 42,816 bytes). `lab/evolve/NEXT-RUN`
 says `none`: the laptop rests until there are new genes.
 **Since (Iteration 92)**: two new genes built, `hotinl` and `opbody`
 (results/hotinl-opbody.md: on the fast designs about size-neutral for
-9-10% fewer dispatches on parse and corpus); NEXT-RUN says `seed 24 tag2` -
-the stopping rule counts afresh. Every pack now
+9-10% fewer dispatches on parse and corpus); NEXT-RUN says `seed 24 tag2`
+(then the comparison) - the stopping rule counts afresh. **Iteration 93**:
+`night` after the seed in next-run.sh - population 96, 80 generations, ~3
+hours (lab/evolve/RUNNING.md): the front (38-46 designs) had outgrown the
+population of 32. Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**

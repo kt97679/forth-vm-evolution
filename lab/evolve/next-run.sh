@@ -7,6 +7,9 @@
 #
 #     sh lab/evolve/next-run.sh         # in the clone: what lab/evolve/NEXT-RUN says
 #     sh lab/evolve/next-run.sh 4       # a run with seed 4
+#     sh lab/evolve/next-run.sh seed 25 tag2 night
+#                                       # a run for a night: population 96, 80
+#                                       # generations, ~3 hours (Iteration 93)
 #     sh lab/evolve/next-run.sh compare # every run's front here, measured again
 #                                       # in one session; nothing archived (Iteration 20)
 #     sh lab/evolve/next-run.sh experiment cpu-noise.py --rounds 20
@@ -21,7 +24,7 @@
 #                                       a copy outside one: ~/git/my/forth-vm-evolution-iter14
 #   BUNDLES   where bundles arrive      default ~/Downloads
 #   RUNS      logs, archives, the pack  default runs/ in the clone (Iteration 84)
-#   POP GENS ROUNDS REMEASURE           default 32 40 3 6 - seed 3's run
+#   POP GENS ROUNDS REMEASURE           default 32 40 3 6 - seed 3's run; night: 96 80
 #
 # Interrupted? Run it again with the same seed: with nothing new pulled the
 # run resumes from its database (RUNNING.md). A new commit, another seed or
@@ -125,8 +128,20 @@ case "${1:-none}" in
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
     experiment) KIND=experiment; TOOL=${2:-}; SEED=0; CROUNDS=10
         TARGS=$(printf '%s\n' "$@" | sed -n '3,$p' | tr '\n' ' ') ;;
-    seed) KIND=seed; SEED=${2:-}; REQ=${3:-}; CROUNDS=10 ;;
-    *) KIND=seed; SEED=$1; REQ=${2:-}; CROUNDS=10 ;;
+    seed) KIND=seed; SEED=${2:-}; REQ=${3:-}; SIZE=${4:-}; CROUNDS=10 ;;
+    *) KIND=seed; SEED=$1; REQ=${2:-}; SIZE=${3:-}; CROUNDS=10 ;;
+esac
+# Iteration 93 (the owner): "night" after the seed (and tag2) - a longer run.
+# The population first: under three objectives the front outgrew it (seeds
+# 21-23: 38-46 designs on the front, 32 in the population, so part of the
+# front was cut from breeding every generation); then the generations (a
+# third of each front was still found in the last 10 of 40). 96 x 80 at seed
+# 23's pace, 1.4 s a design: ~3 hours, then the re-measure as always.
+case ${REQ:-} in night) REQ=; SIZE=night ;; esac
+case ${SIZE:-} in
+    '') ;;
+    night) POP=96; GENS=80 ;;
+    *) die "after the seed and tag2: nothing, or night - not '$SIZE'" ;;
 esac
 # Iteration 71: "seed N tag2" - every design of the run in the two-bit tag
 case ${REQ:-} in ''|tag2) ;; *) die "after the seed: nothing, or tag2 - not '$REQ'";; esac

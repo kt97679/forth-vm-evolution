@@ -1988,3 +1988,19 @@ body inlined crashed at the first literal); a body the converter patches
 after reading copied (LIT8-OP); data told from code wrongly. With the genes
 off all 35 front designs build to their recorded sizes and ids; the tests
 pass; the hand-made stages are identical. NEXT-RUN: seed 24 tag2.
+
+## Iteration 93 - 2026-10-07 - Claude
+
+**A run for a night** (the owner: longer runs overnight, more combinations
+and generations?). Measured first, on seeds 19-23's databases: the fronts
+ended with 20, 27, 38, 46 and 42 designs against a population of 32 - since
+three equal objectives the front outgrew the population, so part of it was
+cut from breeding every generation; 29-52% of each final front was born in
+the last 10 of 40 generations; the best speed and smallest total mostly
+settled by generation 20-30 (seed 19's best speed moved at the end, 0.235 ->
+0.217). So the population first, then the generations: `night` after the
+seed (next-run.sh) runs 96 x 80, about 7,800 designs, ~3 hours at seed 23's
+pace, then the re-measure and comparison as always (lab/evolve/RUNNING.md).
+And NEXT-RUN gets back its comparison after the run (`then experiment
+compare-fronts.py --rounds 10 --cpus 2,8`), which Iteration 92 dropped.
+Seed 24 stays at the usual size, as the owner asked.

@@ -117,4 +117,8 @@
 # inlined, lab/evolve/hotsites-v1.json) and opbody (the words an opcode
 # replaced, [opcode EXIT]) - so runs resume and the stopping rule counts
 # afresh. Seed 24: evolution weighs them.
-seed 24 tag2
+#
+# Iteration 93: the comparison restored after the run (Iteration 92 dropped
+# it), and `night` possible after the seed - a longer run for a night
+# (next-run.sh). Seed 24 at the usual size, as the owner asked.
+seed 24 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

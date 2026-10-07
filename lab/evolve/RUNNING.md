@@ -210,3 +210,21 @@ fingerprint of the gene pool, since a new gene changes the draws - never
 the run's database; run again, it resumes. `sample.md` has how many live, the
 spread of speed and size, the run's best placed in it, and every death
 by cause. On the VM, 32 designs took about three minutes.
+
+## A run for a night (Iteration 93)
+
+    sh lab/evolve/next-run.sh seed 25 tag2 night then experiment compare-fronts.py --rounds 10 --cpus 2,8
+
+`night` after the seed (and tag2) runs a population of 96 for 80
+generations instead of 32 for 40: about 7,800 designs, ~3 hours at seed 23's
+pace (1.4 s a design), then the re-measure and the comparison - a night with
+room to spare. Why the population first: under three objectives the front
+outgrew it - seeds 21-23 ended with 38-46 designs on the front and 32 in the
+population, so part of the front was cut from breeding every generation;
+and a third of each final front was still found in the last 10 of 40
+generations, while the best speed and the smallest total mostly settled by
+generation 20-30. Other sizes: `POP=... GENS=...` before the command, as
+always. A night run counts as one run for the stopping rule; being six
+times larger, a small one says more about convergence than a small one of
+the usual size. Its database is larger too (~16 MB, ~3 MB packed); the
+front's genomes travel in its report (Iteration 87).
