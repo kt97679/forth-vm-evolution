@@ -812,7 +812,8 @@ static void load_image(const char *name) {
 #if PROFILE
 #include <stdio.h>
 #define PROFDUMP dump_prof()
-static unsigned long long prof[258], pair[258][258], callc[65536], ipc[1 << 20];
+static unsigned long long prof[258], pair[258][258], callc[65536], ipc[1 << 20], rcnt[1 << 20];
+static unsigned rtgt[1 << 20];
 static const char *prof_names[258];
 static void dump_prof(void) {
     const char *f = getenv("VMPROF"); if (!f) return;
@@ -823,13 +824,24 @@ static void dump_prof(void) {
         int n = snprintf(b, sizeof b, "I %d %llu\n", i, ipc[i]); write(fd, b, n); }
     for (int i = 0; i < 65536; i++) if (callc[i]) {
         int n = snprintf(b, sizeof b, "C %d %llu\n", i, callc[i]); write(fd, b, n); }
+    /* Iteration 88: every call under the tag by its return address - the
+       target, the count, the byte after the call and the callee's first
+       eight, read now, at the end: lab/evolve/callsites.py (calls compiled
+       at run time included, which no census of the image sees) */
+    for (int i = 0; i < (1 << 20); i++) if (rcnt[i]) {
+        const UNS8 *x_ = base + i, *y_ = base + rtgt[i];
+        int n = snprintf(b, sizeof b, "R %d %u %llu %d %d %d %d %d %d %d %d %d\n", i, rtgt[i], rcnt[i], x_[0],
+                         y_[0], y_[1], y_[2], y_[3], y_[4], y_[5], y_[6], y_[7]); write(fd, b, n); }
     close(fd);
 }
 static int prev_op = 257;
 #define PROFC(t) (callc[t]++)
 #define PROFIP(a) (ipc[((a) - (UNS64)(uintptr_t)base) & ((1 << 20) - 1)]++)
 #define PROF(k) do { pair[prev_op][k]++; prev_op = (k); } while (0)
+#define PROFRET(r, t) do { unsigned o_ = (unsigned)(((r) - (UNS64)(uintptr_t)base) & ((1 << 20) - 1)); \
+                           rcnt[o_]++; rtgt[o_] = (unsigned)(t); } while (0)
 #else
+#define PROFRET(r, t)
 #define PROF(k)
 #define PROFC(t)
 #define PROFIP(a)
@@ -1200,7 +1212,7 @@ L_t2call2: t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; goto t2call;
 L_t2call3: t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1); ip += 2; goto t2call;
 L_t2call4: t = ((t & 0x3F) << 24) | ((UNS64)BYTE(ip) << 16) | ((UNS64)BYTE(ip + 1) << 8)
                | BYTE(ip + 2); ip += 3;
-t2call:    PROF(256); RPUSH(ip); ip = cbase + t; NEXT();
+t2call:    PROF(256); PROFRET(ip, t); RPUSH(ip); ip = cbase + t; NEXT();
 L_t2esc:   t = BYTE(ip); ip += 1; goto *t2esc[t];
 L_t2bad:   write_str(2, "relf: no operation has this code\n"); exit(70);
 #endif

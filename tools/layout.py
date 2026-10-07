@@ -906,10 +906,15 @@ def emit(path):
     # first byte in the code bodies, for lab/evolve/callsites.py:
     #   H header-bytes image-bytes scale
     #   C offset length target-offset old-target forced caller target
-    #   O offset kind first-byte
+    #   O offset kind first-byte name
+    #   T offset                        a branch target (Iteration 88)
+    #   W body-start body-end code|data name      every word (Iteration 88)
+    #   M 1 code name / M 2 selector name / M E code   the tag's codes (88)
     # Offsets from the image's start - the engine's base, as SYMMAP's.
-    # forced: a call before an inline operand, always the long form.
+    # forced: a call before an inline operand, always the long form. name:
+    # the operation's design-independent name (sod16 t2_names, the tag's).
     _cm = [] if (V8 and _os.environ.get('CALLMAP')) else None
+    _NM = G['t2_names']() if _cm is not None else {}
     def _tname(a):
         if a in starts: return starts[a]['n']
         h = [x for x in order if x['s'] < a < x['e']]
@@ -957,15 +962,17 @@ def emit(path):
             else:
                 for t_ in to_tokens(ops2): img += tk(t_)
             if _cm is not None:
-                _, _, _ts, _, _ = layout(ops2)
+                _c2t, _, _ts, _, _ = layout(ops2)
                 for _j, (_k, _pl) in enumerate(ops2):
                     if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS'): continue    # data, not operations
                     _at = new_off[s0]['body'] + _ts[_j]
-                    if _k == 'C':
-                        _cm.append('C %d %d %d %d %d %s %s' % (_at, 1 if _pl in G['HOTCALLS'] else 3 if img[_at] >= 0xC0 else 2,
+                    if _k == 'C':      # tag 2: 01, 10, 11 in the top bits - 2, 3, 4 bytes (Iteration 88)
+                        _cm.append('C %d %d %d %d %d %s %s' % (_at, (img[_at] >> 6) + 1 if TAG2_ON else 1 if _pl in G['HOTCALLS'] else 3 if img[_at] >= 0xC0 else 2,
                                    new_target_off(_pl), _pl, 1 if G['before_operand'](ops2, _j) else 0, w['n'], _tname(_pl)))
-                    else:
-                        _cm.append('O %d %s %d' % (_at, _k, img[_at]))
+                    else:              # Iteration 88: and the operation's name, design-independent (sod16 t2_names)
+                        _cm.append('O %d %s %d %s' % (_at, _k, img[_at], _NM.get(G['opcode_L'](ops2, _j), _k)))
+                for _c in sorted(G['branch_targets'](ops2)[1]):      # Iteration 88: where branches land
+                    if _c in _c2t: _cm.append('T %d' % (new_off[s0]['body'] + _c2t[_c]))
             if not BYTEHDR:
                 while len(img) % CELL: img += b'\x00'
             # Unheadered tail, with its builtin entries relocated.
@@ -1013,6 +1020,8 @@ def emit(path):
                 elif w['n'] in fixed: vals[0] = fixed[w['n']]
                 elif w['n'] in SCRUB: vals = [0] * len(vals)
                 for v in vals: img += cel(v)
+        if _cm is not None:    # Iteration 88: every word's body - start, end, code or data, name
+            _cm.append('W %d %d %s %s' % (new_off[s0]['body'], new_off[s0]['body'] + new_body_bytes(w), kind[s0], w['n']))
         assert len(img) == new_off[s0]['body'] + new_body_bytes(w), \
             "body size drift at %s" % w['n']
 
@@ -1164,6 +1173,10 @@ def emit(path):
     if _cm is not None:
         with open(_os.environ['CALLMAP'], 'w') as _f:
             _f.write('H %d %d %d\n' % (len(hdr), len(img), CPT or 0))
+            if TAG2_ON:          # Iteration 88: the tag's codes - one byte, or the escape and a selector
+                _f.write('M E %d\n' % T2MAP['escc'])
+                _f.write(''.join('M 1 %d %s\n' % (c, _NM[x]) for x, c in sorted(T2MAP['one'].items(), key=lambda kv: kv[1])))
+                _f.write(''.join('M 2 %d %s\n' % (c, _NM[x]) for x, c in sorted(T2MAP['esc'].items(), key=lambda kv: kv[1])))
             _f.write(''.join(x + '\n' for x in _cm))
     return len(hdr), len(img)
 

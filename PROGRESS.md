@@ -1884,3 +1884,33 @@ front of all runs. Nothing else in the snapshot was missing from the
 repository (its tree is HEAD's; ignored files, build/, runs/ and the old
 results stash of 2026-10-04 aside). GOALS.md, "Resuming in a new chat",
 says so.
+
+## Iteration 88 - 2026-10-07 - Claude
+
+**lab/evolve/callsites.py ported to the two-bit tag** (GOALS.md, the agreed
+next step). What broke: the call map (CALLMAP, tools/layout.py) sized a
+call 2 or 3 bytes from the old encoding; the tool decoded the old 10/11
+forms with a scale; its audit rebuilt with the pre-Iteration-13 body check,
+which today's designs fail; and its hot-call price has no place under the
+tag (git history keeps it). Now:
+- **the call map** sizes a call by its tag (2, 3 or 4 bytes) and also
+  writes each operation's design-independent name, every branch target,
+  every word's body and the tag's codes - images unchanged;
+- **the profiler** (engine/vm-lab.c, PROFILE builds only - no design's
+  engine changes) records every call under the tag by its return address:
+  target, count, the byte after the call and the callee's first eight,
+  read when the run ends. So calls compiled at run time - the kernel
+  workload's cross-compiler, fib, the sieve - are seen too, which no census
+  of the image can;
+- **the tool** reads the genomes from results/ (Iteration 87) or any
+  database, builds the design with the map and the profiler, and prices
+  inlining short words and Forth tail calls, image and run-time code apart.
+  Audits, each stopping it: the image is its recorded size; every site
+  decodes to its target; dispatches by address equal dispatches by pair,
+  calls by return address equal calls by pair; every call returning into
+  the image is a census site, run as often as the site was dispatched. All
+  hold on the 35 designs of the front of all runs (5 minutes on the VM).
+  One trap on the way: profiling forces the plain dispatch (tail=0), and in
+  e83972af52 that woke a JIT gene the tail-call engine kept dormant (+136
+  bytes of image); the build keeps it dormant now.
+The tests pass; the seven hand-made stages are identical.
