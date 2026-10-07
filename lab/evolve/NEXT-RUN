@@ -121,4 +121,8 @@
 # Iteration 93: the comparison restored after the run (Iteration 92 dropped
 # it), and `night` possible after the seed - a longer run for a night
 # (next-run.sh). Seed 24 at the usual size, as the owner asked.
-seed 24 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 94: seed 24 came back without its comparison (run at Iteration
+# 92). Seed 25 at the usual size (the owner: a couple more short runs), then
+# the comparison - seeds 21-25 in one session, judging 24 and 25.
+seed 25 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

@@ -55,7 +55,13 @@ says `none`: the laptop rests until there are new genes.
 (then the comparison) - the stopping rule counts afresh. **Iteration 93**:
 `night` after the seed in next-run.sh - population 96, 80 generations, ~3
 hours (lab/evolve/RUNNING.md): the front (38-46 designs) had outgrown the
-population of 32. Every pack now
+population of 32. **Seed 24** (Iteration 94,
+results/evolve-amd-ryzen-7-pro-8840hs-seed24.md, no comparison - run before
+93): opbody on 23 of the front's 37; hotinl tried 33 times, on none (its
+clean pairs: parse 0.970, the rest within the noise); the run's fastest
+e22d91cd94 0.175 re-measured, without either. The owner: a couple more
+short runs, then a night run when he says. NEXT-RUN: seed 25 tag2, then the
+comparison of seeds 21-25, which judges 24 and 25. Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**

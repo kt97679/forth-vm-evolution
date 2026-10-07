@@ -2004,3 +2004,20 @@ pace, then the re-measure and comparison as always (lab/evolve/RUNNING.md).
 And NEXT-RUN gets back its comparison after the run (`then experiment
 compare-fronts.py --rounds 10 --cpus 2,8`), which Iteration 92 dropped.
 Seed 24 stays at the usual size, as the owner asked.
+
+## Iteration 94 - 2026-10-07 - Claude
+
+**Seed 24** (results/evolve-amd-ryzen-7-pro-8840hs-seed24.md), the first run
+with hotinl and opbody, at Iteration 92's commit - so no comparison. 1,407
+designs, 1,323 alive, no death but the reach limit's 84. **opbody taken up**
+(23 of the front's 37; clean child/parent pairs -105 bytes, neutral in
+time). **hotinl hardly tried and on no front design** (33 living): its 8
+clean pairs give parse 0.970, as counted on the VM, but the whole design
+1.017 - corpus, kernel, loop and the sieve within a pair's noise of +-5%
+(loop and the sieve run almost no image code it changes): below what a
+3-round median sees. The run's fastest, e22d91cd94, 0.175 re-measured
+(seed 23's best 0.195-0.206), carries neither new gene; the smallest total
+25,131 is opbody's 8 bytes on seed 23's smallest. Seen on the way: pairs
+differing by one image-only gene show corpus ratios up to 1.34 - the corpus
+runs ~1.5 ms on the fast designs. The owner: a couple more short runs, a
+night run later. NEXT-RUN: seed 25 tag2, then the comparison (seeds 21-25).

@@ -518,3 +518,7 @@ objectives, how sure the number is, and what it costs in mechanism:
 *Built (Iteration 92, results/hotinl-opbody.md): 1 as the gene `hotinl`, 2 as
 `opbody` - together on the fast designs about size-neutral (-16 to +16
 bytes) for 9-10% fewer dispatches on parse and corpus, 5% on kernel.*
+*Seed 24 (Iteration 94): opbody on 23 of the front's 37 designs, its clean
+pairs -105 bytes and neutral in time; hotinl tried 33 times, on none - its 8
+clean pairs parse 0.970, the rest within a pair's noise (+-5%). If seeds 25
+and 26 do not take it up, it comes out.*
