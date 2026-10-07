@@ -112,4 +112,9 @@
 # The gene set with the JIT has converged. Development next (GOALS.md,
 # "Resuming in a new chat": callsites.py ported, inlining and tail calls
 # priced). Runs resume with new genes.
-none
+#
+# Iteration 92: two new genes - hotinl (the image's hottest call sites
+# inlined, lab/evolve/hotsites-v1.json) and opbody (the words an opcode
+# replaced, [opcode EXIT]) - so runs resume and the stopping rule counts
+# afresh. Seed 24: evolution weighs them.
+seed 24 tag2

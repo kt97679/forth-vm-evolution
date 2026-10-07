@@ -10,6 +10,8 @@
 | superinstructions: primitive pairs as single opcodes, drawn from the parent's own hottest pairs (`design_pairs`, profiled per design), in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
 | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+| inlined at the hottest call sites (`hotinl`: 0, 10, 20, 40; Iteration 92; in the tag): the converter splices the first K safe sites of lab/evolve/hotsites-v1.json - the image's call sites by the fastest design's profile, named by caller, callee and ordinal - before every rewrite | Iteration 91's deep dive: short words found nothing, hot sites did | fast designs 9-10% fewer dispatches on parse and corpus, 4-5% on kernel, +40-160 bytes (results/hotinl-opbody.md) |
+| words an opcode replaced, [opcode EXIT] (`opbody`: 0, 1; Iteration 92): (FIND), (>NUMBER), THREAD-FIND, +!, ?DUP, as FILL and CMOVE (Iterations 50, 54) | Iteration 91: a quarter of the fastest image never runs | 128-144 bytes off the fast designs' images; run-time calls take the opcode (results/hotinl-opbody.md) |
 | SWAP+I sure of a slot (`swapi`: 0, 1; Iteration 61; with 'imm'): SWAP+I first among the format-10 names | seed 13's front: SWAP+I on none of it | fib 0.944, selected geomean 0.987, 16 bytes less (PROGRESS.md, Iteration 61) |
 | I + fused in run-time code (`rtiplus`: 0, 1; Iteration 60; with rtloopall): a format-10 opcode I+, SUPER-TABLE's (I, +) -> I+, and forth/cv8-fuse-iplus.4 pointing LAST-OP at I's byte | the run-time code's opcodes, named | loop 0.801, sieve 0.967, kernel/parse/corpus +0.7-1.2% compile cost; selected geomean 0.962; 37 bytes (PROGRESS.md, Iteration 60) |
 | one thread head in the header (`thinhdr`: 0, 1; Iteration 58; CV8): the header's 32 thread heads - read by the CV8 loader and never used, only SOD16 numbers calls - as a count of 1 and a zero head | this lab: an audit of the header | 248 bytes off every CV8 design, dispatches identical (results/bss.md) |
@@ -512,3 +514,7 @@ objectives, how sure the number is, and what it costs in mechanism:
 18. **Handlers ordered by the profile** (I-cache): no size; layout noise.
 19. **Factoring repeated code**: measured above - no.
 20. **Tail calls, or the fall-through layout**: measured (Iteration 89) - no.
+
+*Built (Iteration 92, results/hotinl-opbody.md): 1 as the gene `hotinl`, 2 as
+`opbody` - together on the fast designs about size-neutral (-16 to +16
+bytes) for 9-10% fewer dispatches on parse and corpus, 5% on kernel.*

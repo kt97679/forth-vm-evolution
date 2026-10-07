@@ -215,6 +215,37 @@ def classify(w):
         return 'code', ops
     return 'data', None
 
+# ---- inlining at the hottest call sites (Iteration 92): --hot-inline FILE K
+# The list (lab/evolve/hotsites.py): [[caller, callee, k, share], ...], the
+# hottest first. The first K this design can inline safely (sod16.py,
+# inline_body) are spliced in as the bodies are read, just below.
+import os as _os
+# the words whose bodies this file rewrites after reading them - the run-time
+# compiler's opcode constants under the tag (checked against that section)
+T2_CONSTS = ('EXIT-OP', 'LIT16-OP', 'BRANCH-OP', '0BRANCH-OP', 'LIT32-OP', 'DOVAR-OP', 'DODOES-OP', 'LIT8-OP', 'LIT64-OP',
+             'BRANCH8-OP', '?BRANCH8-OP', 'JIT-OP')
+G['HOT_PATCHED'].update(T2_CONSTS)
+if '--hot-inline' in ARGV and not _os.environ.get('SOD16_NO_HOTINL'):
+    _want, _sel = int(ARGV[ARGV.index('--hot-inline') + 2]), []
+    if CV8_COMPILER:                                 # the swap below, foreseen (sod16.py, final_word)
+        _by8 = collections.defaultdict(list)
+        for _w in order: _by8[_w['n']].append(_w)
+        for _n, _ws in _by8.items():
+            if len(_n) > len(OVERLAY_SUFFIX) and _n.endswith(OVERLAY_SUFFIX) and _n[:-len(OVERLAY_SUFFIX)] in _by8 and G['raw_read'](_ws[-1]):
+                _dst = _by8[_n[:-len(OVERLAY_SUFFIX)]][-1]
+                G['HOT_FINAL'][_ws[-1]['s']] = _dst['n']; G['HOT_BODY'][_dst['s']] = _ws[-1]['s']
+                G['HOT_SKIP'].add(_dst['s']); G['HOT_SKIP'].update(x['s'] for x in _ws[:-1])
+    for _c, _t, _k, _ in json.load(open(_opt('--hot-inline'))):
+        if len(_sel) >= _want: break
+        for _w in [x for x in order if G['HOT_FINAL'].get(x['s'], x['n']) == _c and x['s'] not in G['HOT_SKIP']]:
+            _ops = G['raw_read'](_w) or []
+            _at = [j for j, v in G['hot_sites'](_w, _ops).items() if v == (_t, _k)]
+            if _at and G['inline_body'](_ops[_at[0]][1]) is not None and not any(_w['s'] < e < _w['e'] for e in G['ENTRIES']):
+                _sel.append((_c, _t, _k)); break
+            if _os.environ.get('SOD16_HOTINL_WHY'): print('hot-inline: not %s>%s#%d - %s' % (_c, _t, _k, G['HOT_WHY'][0] if _at else 'no such call'))
+    G['HOTINL'].update(_sel)
+    print('hot-inline: %d sites - %s' % (len(_sel), ', '.join('%s>%s#%d' % x for x in _sel)))
+
 kind, info, tok = {}, {}, {}
 for w in order:
     k, i = classify(w)
@@ -355,7 +386,9 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
 # for a call and two dispatches instead of 12-14 a byte, and its loop gone.
 # Only these two, which never look at their caller's return address (I J
 # UNLOOP (DO) do), and only where the design has them: no recorded design.
-for _n in ('FILL', 'CMOVE', 'SCAN', 'SKIP', 'TABS>BL', '(PARSE)', 'HASH', 'PLACE'):   # Iteration 54: the input side's too
+_OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', 'TABS>BL', '(PARSE)', 'HASH', 'PLACE')     # Iteration 54: the input side's too
+if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: the gene opbody
+for _n in _OPB:
     if _n not in G['X_OPS10']: continue
     _at = {a: n for a, n in G['ops10_at']().items() if n == _n}
     _w = [w for w in order if w['s'] in _at]
@@ -437,6 +470,7 @@ if TAG2_ON:
     _cn = {'EXIT-OP': 1, 'LIT16-OP': 2, 'BRANCH-OP': 3, '0BRANCH-OP': 4, 'LIT32-OP': 68,
            'DOVAR-OP': 69, 'DODOES-OP': 70, 'LIT8-OP': 71, 'LIT64-OP': 124}
     _cx = {'BRANCH8-OP': 'BRANCH8', '?BRANCH8-OP': '?BRANCH8', 'JIT-OP': None}   # JIT-OP: forth/cv8t-jit.4
+    assert set(_cn) | set(_cx) <= set(T2_CONSTS), 'tag 2: an opcode constant --hot-inline does not know (T2_CONSTS)'
     _done = set()
     for w in order:
         if w['n'] not in _cn and w['n'] not in _cx: continue

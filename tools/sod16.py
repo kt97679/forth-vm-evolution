@@ -287,7 +287,21 @@ def read_ops(w):
         # be the plain opcode. Folding made `+` compile as `+;EXIT`,
         # which ended the caller's definition early.
         return st
+    out = raw_read(w)
+    if out is None: return None
+    if HOTINL: out = hot_inline(w, out)        # Iteration 92: before every rewrite
+    out = retag(out)
+    if SPEC: out = specialise(out)
+    if V8 and X_OPS10: out = ops10_rewrite(out)
+    out = fold_exit(out) if FOLD else out
+    out = fuse_pairs(out) if V8 and SUPERS else out
+    out = testbranch(out) if V8 and any(v[2] in X_OPS10 for v in TESTBR.values()) else out
+    out = eqibranch(out) if V8 and '=I?BRANCH' in X_OPS10 else out
+    out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10) else out
+    return shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
 
+def raw_read(w):
+    """A body as the cell image has it, before any rewrite - or None."""
     out, a, end = [], w['s'], code_end(w)
     while a < end:
         if ALIGN_TAILS and a in ENTRIES and a != w['s']:
@@ -327,15 +341,114 @@ def read_ops(w):
                     raw += (cells.get(a + k, 0) & ((1 << (8 * CELL)) - 1)
                             ).to_bytes(CELL, 'little')
                 out.append(('STR', bytes(raw[:1 + n]))); a += blob
-    out = retag(out)
-    if SPEC: out = specialise(out)
-    if V8 and X_OPS10: out = ops10_rewrite(out)
-    out = fold_exit(out) if FOLD else out
-    out = fuse_pairs(out) if V8 and SUPERS else out
-    out = testbranch(out) if V8 and any(v[2] in X_OPS10 for v in TESTBR.values()) else out
-    out = eqibranch(out) if V8 and '=I?BRANCH' in X_OPS10 else out
-    out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10) else out
-    return shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
+    return out
+
+# ---- inlining at the hottest call sites (Iteration 92: the gene hotinl) ----
+# layout.py --hot-inline FILE K fills HOTINL with (caller, callee, k): the
+# k-th call to callee in caller's body becomes the callee's body, spliced in
+# before every rewrite - specialisations, folds, pairs and fused tests then
+# see it in its place. Only a callee safe to copy: straight-line (no branch,
+# no inline operand, no DOES> entry), one EXIT and that last, its return
+# stack balanced within it, and calling no word that reads its caller's
+# return address. lab/evolve/hotsites.py makes the list from a profile.
+HOTINL = set()
+# The CV8 compiler's swap (layout.py): an X8 word's body becomes X's. So a
+# caller or callee is known by its final name and runs its final body: the
+# last X8's word for X (HOT_BODY), named X (HOT_FINAL); the X it replaces
+# and earlier X8s of the name are left alone (HOT_SKIP). Iteration 92: one
+# body read before the swap - LITERAL's cell-format compiler - broke a design.
+HOT_FINAL, HOT_BODY, HOT_SKIP = {}, {}, set()
+HOT_PATCHED = set()   # words whose bodies layout.py rewrites after reading them: never copied (LIT8-OP did, and broke)
+def is_data(w):
+    """Data behind a call - to DOVAR or a DOES> part - as layout.py's classify has it."""
+    v = cells.get(w['s'])
+    return v is not None and not (v & 1) and (w['s'] + CELL + v in _DOVAR or w['s'] + CELL + v in ENTRIES)
+def final_word(t):
+    """(the word whose body runs for a call to t, its final name) or None."""
+    w = word_at(HOT_BODY.get(t, t))
+    return None if w is None or w['s'] in HOT_SKIP else (w, HOT_FINAL.get(w['s'], w['n']))
+RA_WORDS = {'EXECUTE', 'I', 'J', 'UNLOOP', '(DO)', '(?DO)', '(LOOP)', '(+LOOP)', '(LEAVE)'}
+_BYADDR, _RA = {}, {}
+def word_at(t):
+    if not _BYADDR: _BYADDR.update({w['s']: w for w in words})
+    return _BYADDR.get(t)
+def rs_walk(ops, strict):
+    """The return stack along a body, in order: False if it reads below its
+    entry (its own return address) - and, strict, if it ends off it."""
+    d = 0
+    for k, pl in ops:
+        if k != 'P': continue
+        if pl in ('RP@', 'RP!'): return False
+        need = {'R>': 1, 'R@': 1, 'RDROP': 1, '2R>': 2, '2R@': 2}.get(pl, 0)
+        if d < need: return False
+        d += {'>R': 1, '2>R': 2, 'R>': -1, 'RDROP': -1, '2R>': -2}.get(pl, 0)
+        if pl == 'EXIT' and d: return False
+    return d == 0 or not strict
+def ra_safe(t):
+    """A word that may be called from anywhere: data, or code that never reads its caller's return address."""
+    if t not in _RA:
+        fw = final_word(t); w = fw and fw[0]
+        if not fw or fw[1] in RA_WORDS: _RA[t] = False
+        elif is_data(w): _RA[t] = True                             # data behind DOVAR or a DOES> part
+        else:
+            ops = stub_ops(w) or raw_read(w)
+            _RA[t] = ops is not None and rs_walk(ops, False)
+    return _RA[t]
+HOT_WHY = ['']
+def inline_body(t):
+    """The ops of the word a call to t runs, to splice in place of the call, or None (HOT_WHY says why)."""
+    def no(why): HOT_WHY[0] = why
+    fw = final_word(t)
+    if not fw: return no('a word the swap leaves behind')
+    w = fw[0]
+    if fw[1] in HOT_PATCHED: return no('rewritten after reading')
+    if stub_ops(w) is not None or is_data(w): return no('data or a primitive')
+    if any(w['s'] < e < w['e'] for e in ENTRIES): return no('a DOES> entry')
+    ops = raw_read(w)
+    if not ops or ops[-1] != ('P', 'EXIT'): return no('not ending in EXIT')
+    body = ops[:-1]
+    bad = [k if k != 'P' else pl for k, pl in body if k not in ('P', 'C', 'LIT') or (k == 'P' and pl == 'EXIT')]
+    if bad: return no('not straight-line: ' + ' '.join(map(str, bad[:3])))
+    op10 = ops10_at() if V8 and X_OPS10 else {}        # a call that becomes an opcode: safe unless the opcode reads the return stack
+    bad = [word_at(pl)['n'] if word_at(pl) else pl for k, pl in body
+           if k == 'C' and (pl in (t, w['s']) or not (ra_safe(pl) or (pl in op10 and op10[pl] not in RA_WORDS)))]
+    if bad: return no('calls a word reading its return address: ' + ' '.join(map(str, bad[:3])))
+    return body if rs_walk(body, True) else no('the return stack unbalanced')
+def hot_sites(w, out):
+    """{op index: (callee's final name, k)} for every call in w's raw body."""
+    seen, at = collections.Counter(), {}
+    for j, (k, pl) in enumerate(out):
+        fw = final_word(pl) if k == 'C' else None
+        if fw: seen[fw[1]] += 1; at[j] = (fw[1], seen[fw[1]])
+    return at
+def hot_inline(w, out):
+    name = HOT_FINAL.get(w['s'], w['n'])
+    if w['s'] in HOT_SKIP or not any(c == name for c, _, _ in HOTINL) or any(w['s'] < e < w['e'] for e in ENTRIES): return out
+    spl = {}
+    for j, (t, k) in hot_sites(w, out).items():
+        if (name, t, k) in HOTINL and inline_body(out[j][1]) is not None: spl[j] = inline_body(out[j][1])
+    if not spl: return out
+    cs, c = [], 0
+    for k, pl in out: cs.append(c); c += op_cells(k, pl)
+    new, src, pos, c2 = [], [], {}, 0                   # src: the old index an op came from, None if spliced in
+    for j, op in enumerate(out):
+        pos[cs[j]] = c2
+        for x in (spl[j] if j in spl else [op]):
+            new.append(x); src.append(None if j in spl else j); c2 += op_cells(*x)
+    pos[c] = c2
+    cs2, c2 = [], 0
+    for x in new: cs2.append(c2); c2 += op_cells(*x)
+    for i, j in enumerate(src):                         # every offset the splice moved, moved back
+        if j is None: continue
+        k, pl = new[i]
+        if k in ('BR', 'QBR'):
+            if cs[j] + CELL + pl not in pos: return out
+            new[i] = (k, pos[cs[j] + CELL + pl] - (cs2[i] + CELL))
+        elif k == 'OPD':
+            if cs[j] + pl not in pos: return out
+            new[i] = (k, pos[cs[j] + pl] - cs2[i])
+        elif k == 'XT': new[i] = (k, pl + cs[j] - cs2[i])
+    return new
 
 def branch_targets(ops):
     cs, c = [], 0

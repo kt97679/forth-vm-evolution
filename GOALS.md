@@ -48,7 +48,11 @@ it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 **Where it stands (Iteration 86)**: evolution has STOPPED - seeds 22 and
 23 both small, the gene set with the JIT converged (front of all runs: 35
 designs, fastest 2cbcf427f6 0.195 at 42,816 bytes). `lab/evolve/NEXT-RUN`
-says `none`: the laptop rests until there are new genes. Every pack now
+says `none`: the laptop rests until there are new genes.
+**Since (Iteration 92)**: two new genes built, `hotinl` and `opbody`
+(results/hotinl-opbody.md: on the fast designs about size-neutral for
+9-10% fewer dispatches on parse and corpus); NEXT-RUN says `seed 24 tag2` -
+the stopping rule counts afresh. Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**
@@ -79,7 +83,8 @@ carries `repo-files.txt` (the owner's clone, listed) - look at it first.
    and where randomness helps and where it does not: lab/evolve/GENES.md,
    "Candidates (Iterations 82-86)".
 4. When a batch of new genes is built: laptop runs again (seed 24 on),
-   the stopping rule counting afresh.
+   the stopping rule counting afresh. **Iteration 92: the first batch -
+   hotinl and opbody (the deep dive's 1 and 2); NEXT-RUN seed 24 tag2.**
 
 **Longer term**: the Tegra session (32-bit ARM) needs 32-bit cells under
 the tag (FORMAT-TAG2.md, T5 - the DOES> body's 4-byte call does not fit

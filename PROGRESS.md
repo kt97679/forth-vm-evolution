@@ -1969,3 +1969,22 @@ Ranked first: hot-site inlining, the dead bodies behind opcodes, the OS
 layer out, a cheaper start, the JIT's calls into bytecode. Three questions
 for the owner: is the shell part of the job, should start count in speed,
 may the tag drop its 3-byte call. Nothing built.
+
+## Iteration 92 - 2026-10-07 - Claude
+
+**The deep dive's first two, built behind genes** (results/hotinl-opbody.md;
+the owner: "proceed"). `hotinl` (0, 10, 20, 40, designs in the tag): the
+converter inlines the first K safe sites of lab/evolve/hotsites-v1.json -
+the image's call sites ranked by the fastest design's profile
+(lab/evolve/hotsites.py), named by caller, callee and ordinal - spliced in
+before every rewrite (tools/sod16.py: read_ops split into raw_read and the
+rewrites; hot_inline). `opbody` (0, 1): (FIND), (>NUMBER), THREAD-FIND, +!
+and ?DUP get [opcode EXIT], as FILL and CMOVE did. On the fast designs
+together about size-neutral (-16 and +16 bytes) for 9-10% fewer dispatches
+on parse and corpus and 5% on kernel; on the smallest the list barely
+applies (0.5%). Three faults, each caught by the gate: callers and callees
+known by their names before the compiler's X8 swap (LITERAL's cell-format
+body inlined crashed at the first literal); a body the converter patches
+after reading copied (LIT8-OP); data told from code wrongly. With the genes
+off all 35 front designs build to their recorded sizes and ids; the tests
+pass; the hand-made stages are identical. NEXT-RUN: seed 24 tag2.

@@ -85,7 +85,10 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody')
+HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: their bodies [opcode EXIT], the gene opbody
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -104,9 +107,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot')]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot'), ('hotinl',), ('opbody',)]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -272,6 +275,8 @@ def express(g):
     if 'tag2' in e and (g['enc'] != 'cv8' or not g['bytehdr']): e.pop('tag2')     # Iteration 66: CV8, byte headers
     if e.get('tag2'): e.pop('hotcalls', None)                                      # no hot calls under the tag
     if 't2hot' in e and not e.get('tag2'): e.pop('t2hot')                          # Iteration 71: with the tag
+    if 'hotinl' in e and not e.get('tag2'): e.pop('hotinl')                        # Iteration 92: designs in the tag
+    if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
     if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
@@ -547,6 +552,8 @@ def build(g, d):
     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
     if g.get('bss'): opts.append('--bss')                         # Iteration 44: scratch buffers out of the file
     if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
+    if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
+    if g.get('opbody'): opts.append('--op-bodies')                 # Iteration 92: words an opcode replaced, [opcode EXIT]
     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
                                                                  # copies (Iteration 38), the dump tool and dead
@@ -742,6 +749,8 @@ def mutate(g, rnd):
             g['t2hot'] = rnd.choice([v for v in range(len(T2HOT)) if v != g.get('t2hot', 0)]); what.append('t2hot=%s' % T2HOT[g['t2hot']])
         elif k == 'hotcalls':         # Iteration 14: one-byte calls to 0, 8, 16 or 32 of the image's words
             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
+        elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
+            g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
         elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
             g['escape'] = rnd.choice([e for e in range(3) if e != g.get('escape', 0)]); what.append('escape=%d' % g['escape'])
         elif k == 'spec':
@@ -1023,6 +1032,7 @@ def random_genome(rnd):
         elif k == 'scale': g[k] = rnd.randrange(4)
         elif k == 'escape': g[k] = rnd.randrange(3)
         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+        elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
         elif k in ('ops10', 'supers', 'folds'):
