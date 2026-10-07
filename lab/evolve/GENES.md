@@ -403,7 +403,12 @@ owner agreed, Iteration 83):
 5. **The JIT's calls into bytecode words** (SPN's st_interp): most words
    compiled at run time stay bytecode because they call kernel words -
    the largest JIT lever left; then ?DO, +LOOP, >R/R>, kernel words
-   translated lazily too.
+   translated lazily too. *Priced (Iteration 90,
+   results/price-inline-tailcalls.md): on the five JIT designs of the
+   front, every call translatable frees 9.8-10.2% of the kernel workload's
+   dispatches, 1.4-1.6% of the corpus's and 78.8-80.1% of the held-out
+   sieve's; >R without stencils is first in words holding 30.1% of the
+   kernel's. Inlining short words alone: 0%.*
 6. **A wider pool of compiler flags**, sampled at random (an autotuner)
    beyond today's nine (opt, nogcse, nocrossjump, nocet, align1,
    noreorder, peel, ipaclone, tracer). Caution: many flags win by a code

@@ -832,6 +832,9 @@ static void dump_prof(void) {
         const UNS8 *x_ = base + i, *y_ = base + rtgt[i];
         int n = snprintf(b, sizeof b, "R %d %u %llu %d %d %d %d %d %d %d %d %d\n", i, rtgt[i], rcnt[i], x_[0],
                          y_[0], y_[1], y_[2], y_[3], y_[4], y_[5], y_[6], y_[7]); write(fd, b, n); }
+#if X_JIT
+    jit_dump(fd);                                  /* Iteration 90: what the JIT left bytecode, and why */
+#endif
     close(fd);
 }
 static int prev_op = 257;

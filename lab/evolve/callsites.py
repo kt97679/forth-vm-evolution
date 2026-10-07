@@ -34,6 +34,13 @@ For each design:
      caller's EXIT. Callees that read their own return address (R> R@ RDROP
      RP@ RP! in their body) are counted apart.
 
+  5. The JIT (Iteration 90), for designs that have it: the profiler logs every
+     run-time word the translator met and, for each left bytecode, its calls
+     and its first operation without stencils. Words are freed by kind of
+     blocker - short words inlined, data words and constants as literals,
+     every call translatable - as a fixpoint, a caller waiting for its
+     callees; the dispatches of the freed words are what would run native.
+
 Bytes are counted, not laid out again: a body that starts on a cell (data,
 inline cells) can swallow a byte saved before it. Code compiled at run time
 is not in the image: it counts in the dynamic columns only.
@@ -79,7 +86,7 @@ def census(g, d):
     finally: E.PROFILING[0] = False; del os.environ['CALLMAP']
     return eng, img, [l.rstrip('\n').split(' ') for l in open(cm)]
 
-SUMMARY = []
+SUMMARY, JSUM = [], []
 for did in args:
     rec = recs[did]; g = E.canon(rec['genome'])
     if not (g.get('tag2') and g['bytehdr']): sys.exit('%s is not in the two-bit tag: this tool reads the tag only' % did)
@@ -144,15 +151,19 @@ for did in args:
         return decode(y)
 
     # ---- the profile: one fresh file per workload (the profiler appends)
-    pw = E.private_work(d); D, CALLS, R = {}, {}, {}
+    pw = E.private_work(d); D, CALLS, R, JIT = {}, {}, {}, {}
     for w in WORKS:
         pf = os.path.join(d, 'prof-' + w)
         E.sh([eng, img], cwd=pw, inp=E.program(w), timeout=240, cpu=20, env=dict(os.environ, VMPROF=pf))
         ipc, pairs, pcalls, rl = collections.Counter(), 0, 0, {}
+        jw, jb, js = {}, collections.defaultdict(list), set()       # Iteration 90: the JIT's words, what kept each bytecode
         for f in (l.split() for l in open(pf)):
             if f[0] == 'I': ipc[int(f[1])] += int(f[2])
             elif f[0] == 'R': rl[int(f[1])] = (int(f[2]), int(f[3]), int(f[4]), [int(x) for x in f[5:13]])
-            elif f[0] != 'C':
+            elif f[0] == 'J': jw[int(f[1])] = (int(f[2]), int(f[3]))
+            elif f[0] == 'B': jb[int(f[1])].append((f[2], int(f[3]), int(f[4]) if len(f) > 4 else 0))
+            elif f[0] == 'S': js.add(int(f[1]))
+            elif f[0].isdigit():
                 pairs += int(f[2]); pcalls += int(f[2]) if int(f[1]) == 256 else 0
         assert sum(ipc.values()) == pairs, '%s: %d dispatches by address, %d by pair' % (w, sum(ipc.values()), pairs)
         assert sum(x[1] for x in rl.values()) == pcalls, '%s: %d calls by return address, %d by pair' % (w, sum(x[1] for x in rl.values()), pcalls)
@@ -162,7 +173,7 @@ for did in args:
             if r > n: continue
             s = [a for a, c in C.items() if a + c['len'] == r]
             assert s and C[s[0]]['t'] == t and ipc[s[0]] == k, '%s: a call returning to %d is not a census site run %d times' % (w, r, k)
-        D[w], CALLS[w], R[w] = pairs, pcalls, rl
+        D[w], CALLS[w], R[w], JIT[w] = pairs, pcalls, rl, (jw, jb, js, ipc)
 
     # ---- inlining: the image's sites, then every call the profile saw
     code = {a: s for a, s in C.items() if s['caller'] != '(prologue)'}
@@ -237,6 +248,61 @@ for did in args:
           'Callees reading their return address, left out: %d sites (%s). %d sites are inlining\'s too.\n'
           % (len(tail), sum(v[0] for v in tail.values()), sum(1 for v in tail.values() if not v[1]), sum(1 for v in tail.values() if v[1]),
              sum(1 for v in tail.values() if v[2]), sum(tailx.values()), ', '.join('%s %d' % kv for kv in tailx.most_common(6)) or '-', both))
+    # ---- the JIT (Iteration 90): the run-time words it met, those it left bytecode
+    # and why, and those inlining at run time would free - every blocker a call to
+    # a short kernel word whose operations have stencils, or to a run-time word
+    # native already or freed too (a fixpoint). Their dispatches would go native.
+    jrows, jwhy, JOPS = [], collections.Counter(), collections.Counter()
+    for w in WORKS:
+        jw, jb, js, ipc = JIT[w]
+        if not jw: continue
+        def kernel_ok(t):
+            if short(body_of(t))[2]: return False
+            for nm, _, _ in body_of(t):
+                if nm == 'EXIT': break
+                if ONE.get(nm[:-5] if nm.endswith(';EXIT') else nm) not in js: return False
+                if nm.endswith(';EXIT'): break
+            return True
+        callee = lambda t: t if t in jw else t - 5 if t - 5 in jw else None
+        native = {x for x, (e, f) in jw.items() if f >= 2}
+        byte = [x for x in jw if x not in native]
+        def freed(ok, rtdata):                          # the fixpoint: words whose every blocker clears - a call to the image
+            free, grew = set(), True                    # if ok(t), to a run-time word without the JIT header (data, a
+            while grew:                                 # constant) if rtdata, to a run-time colon word if it goes native
+                grew = False
+                for x in byte:
+                    if x in free or not jb.get(x): continue
+                    if all(b == 'c' and (ok(t) if t < n else rtdata if callee(t) is None else callee(t) in native | free) for b, t, _ in jb[x]):
+                        free.add(x); grew = True
+            return free
+        isdata = lambda t: not (t in Wd and Wd[t][1] == 'code')
+        disp = lambda xs: sum(ipc[a] for x in xs for a in range(x + 5, jw[x][0]))
+        cols = [disp(byte)] + [disp(freed(ok, rd)) for ok, rd in ((kernel_ok, False), (isdata, True), (lambda t: kernel_ok(t) or isdata(t), True), (lambda t: True, True))]
+        for x in byte:                                  # an operation without stencils: the first in the word
+            for b, t, e in jb.get(x, []):
+                if b == 'o': JOPS[(SEL.get(e, '?') if t == ESC else BYTE.get(t, '?'), w)] += disp([x])
+        name = lambda t: (Wd[t][2] + (' (data)' if Wd[t][1] == 'data' else '')) if t in Wd else 'a DOES> tail'
+        def blockers(x):
+            return sorted({'no stencils: ' + (SEL.get(e, '?') if t == ESC else BYTE.get(t, '?')) if b == 'o' else name(t) if t < n
+                           else 'a run-time word without the JIT header (data, a constant)' if callee(t) is None
+                           else 'a run-time word left bytecode' for b, t, e in jb.get(x, [])}) or ['another reason']
+        for x in byte:
+            for k in blockers(x): jwhy[k] += 1
+        hot = sorted(byte, key=lambda x: -disp([x]))[:3]
+        jrows.append((w, len(jw), len(native), len(byte), cols, '; '.join('%s: %s' % (pct(disp([x]), D[w]), ', '.join(blockers(x))) for x in hot)))
+    if jrows:
+        print('**The JIT, run-time words** (Iteration 90): those it met, and the dispatches in those it left bytecode; then those that '
+              'would go native if every call of a kind were translatable - a fixpoint, as a caller waits for its callees. A word with '
+              'an operation without stencils stays bytecode in every column.\n')
+        print('| workload | met | native | bytecode: dispatches | freed by inlining short words | data words as literals | both | every call to the image (SPN\'s st_interp) |')
+        print('|---|---|---|---|---|---|---|---|')
+        for w, met, nat, by, c, hot in jrows:
+            print('| %s | %d | %d | %d: %s | %s | %s | %s | %s |' % (w, met, nat, by, pct(c[0], D[w]), pct(c[1], D[w]), pct(c[2], D[w]), pct(c[3], D[w]), pct(c[4], D[w])))
+        print('\nThe hottest words left bytecode, and what keeps each: ' + ' | '.join('%s - %s' % (w, hot) for w, met, nat, by, c, hot in jrows if hot) + '.\n')
+        print('Operations without stencils, by the dispatches of the words where each is the first: ' + '; '.join('%s %s %s' % (o, w, pct(k, D[w]))
+              for (o, w), k in JOPS.most_common(8)) + '.\n')
+        print('Blockers, by the words they keep bytecode (all workloads): ' + '; '.join('%s %d' % kv for kv in jwhy.most_common(10)) + '.\n')
+        JSUM.append((did, rec, {w: [x / max(1, D[w]) for x in c] for w, met, nat, by, c, hot in jrows}))
     SUMMARY.append((did, rec, len(inl), sum(b for b, _ in inl.values()), len(tail), sum(v[0] for v in tail.values()),
                     {w: (dyn[w]['inl_img'] + dyn[w]['inl_rt']) / max(1, D[w]) for w in WORKS},
                     {w: (dyn[w]['tail_img'] + dyn[w]['tail_rt']) / max(1, D[w]) for w in WORKS},
@@ -250,3 +316,11 @@ if len(SUMMARY) > 1:
     for did, rec, si, bi, st, bt, di, dt, dc, sc, bc in SUMMARY:
         print('| %s | %.3f | %s | %d | %d | %s | %d | %d | %s | %d | %d | %s |' % (did, rec['speed'], format(rec['size'], ','), si, bi, '/'.join('%.1f' % (100 * di[w]) for w in WORKS),
               st, bt, '/'.join('%.1f' % (100 * dt[w]) for w in WORKS), sc, bc, '/'.join('%.1f' % (100 * dc[w]) for w in WORKS)))
+if JSUM:
+    print('\n## The JIT\n\nPer JIT design, the dispatches of the run-time words it left bytecode and those each change would free '
+          '(kernel/corpus/sieve: fib and loop run native, parse runs no run-time code). Data as literals: calls to data words '
+          'and constants, the image\'s and those defined at run time; every call: SPN\'s st_interp, native code calling bytecode.\n')
+    print('| design | speed | left bytecode | inlining | data as literals | both | every call (st_interp) |')
+    print('|---|---|---|---|---|---|---|')
+    for did, rec, x in JSUM:
+        print('| %s | %.3f | %s |' % (did, rec['speed'], ' | '.join('/'.join('%.1f' % (100 * x[w][k]) if w in x else '-' for w in ('kernel', 'corpus', 'sieve')) for k in range(5))))

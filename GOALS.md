@@ -62,9 +62,13 @@ carries `repo-files.txt` (the owner's clone, listed) - look at it first.
    time inlining saves 6.1-7.6% of the kernel workload's dispatches on the
    faster designs - 85% of it one empty word, CHARS, which the cross-
    compiler calls for 12.6% of its calls; tail calls 1.8% at most anywhere.
-   Nothing built. Next: what inlining at run time would do for the JIT,
-   which refuses every run-time word that calls a kernel word (Iteration
-   90); then the owner decides.
+   Nothing built. **For the JIT (Iteration 90): nothing** - alone it frees
+   no run-time word; the JIT leaves 45-47% of the kernel workload's
+   dispatches and 79-80% of the sieve's in bytecode, held there by calls
+   into the image, calls to data words and constants, and >R without
+   stencils. Native code calling bytecode (SPN's st_interp, step 3's "the
+   JIT's calls into bytecode words") would free 10% of the kernel's and
+   80% of the sieve's: the largest lever measured. The owner decides.
 3. Then, each priced first: the rewrite-rule search (shorter equivalent
    sequences of a design's own operations, verified by random testing);
    image compression with a small decompressor; the JIT's calls into

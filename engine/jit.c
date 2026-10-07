@@ -160,6 +160,57 @@ static void jit_repoint(UNS64 w, UNS64 ra) {
         return;
     }
 }
+#if PROFILE
+/* Iteration 90 (lab/evolve/callsites.py): every word the translator was
+   asked for and, for each left bytecode, every call in it and the first
+   operation without stencils - what keeps it from going native. And the
+   one-byte codes that have stencils. Profiling builds only: no design's
+   engine has this. */
+#include <stdio.h>
+static UNS64 jn_w[4096], jn_end[4096];
+static int jn_n;
+#define JITNOTE(w, e) do { if (jn_n < 4096) { jn_w[jn_n] = (w); jn_end[jn_n] = (e); jn_n++; } } while (0)
+static void jit_dump(int fd) {
+    char b[96];
+    int i, k, m;
+    for (k = 0; k < 64; k++)
+        if (jit_one[k] < (unsigned)JIT_NOPS && jit_ops[jit_one[k]].ok) { m = snprintf(b, sizeof b, "S %d\n", k); write(fd, b, (size_t)m); }
+    for (i = 0; i < jn_n; i++) {
+        UNS64 w = jn_w[i], end = jn_end[i], a = w + 5;
+        uint32_t f = jit_ld32(w + 1);
+        m = snprintf(b, sizeof b, "J %llu %llu %u\n", (unsigned long long)(w - jit_cbase), (unsigned long long)(end - jit_cbase), f);
+        write(fd, b, (size_t)m);
+        while (f < 2 && a < end) {
+            UNS8 c = BYTE(a);
+            if (c >= 0x40) {
+                int wd = c < 0x80 ? 2 : c < 0xC0 ? 3 : 4, j;
+                UNS64 t = c & 0x3F;
+                for (j = 1; j < wd; j++) t = t << 8 | BYTE(a + j);
+                if (jit_cbase + t != w) {
+                    m = snprintf(b, sizeof b, "B %llu c %llu\n", (unsigned long long)(w - jit_cbase), (unsigned long long)t); write(fd, b, (size_t)m); }
+                a += (UNS64)wd;
+            } else {
+                unsigned L = jit_one[c];
+                int e = 0;
+                a++;
+                if (L == T2_ESC) { e = BYTE(a); L = jit_esc[e]; a++; }
+                if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) {
+                    m = snprintf(b, sizeof b, "B %llu o %d %d\n", (unsigned long long)(w - jit_cbase), c, e); write(fd, b, (size_t)m); break; }
+                switch (jit_ops[L].opnd) {
+                case 1: case 5: case 6: a += 1; break;
+                case 2: case 7: a += 2; break;
+                case 3: a += 4; break;
+                case 4: a += 8; break;
+                default: break;
+                }
+            }
+        }
+    }
+}
+#else
+#define JITNOTE(w, e)
+#endif
+
 /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
 static uint32_t jit_word(UNS64 w, int depth) {
     UNS64 at[JIT_MAXOPS + 1], arg[JIT_MAXOPS], end, a;
@@ -167,6 +218,7 @@ static uint32_t jit_word(UNS64 w, int depth) {
     unsigned short opl[JIT_MAXOPS];     /* the logical operation; 0xFFFF a call to w, 0xFFFE a call resolved */
     int n = 0, i, j;
     end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
+    JITNOTE(w, end);
     jit_st32(w + 1, 0);                 /* meanwhile, and if it fails: not native */
     if (depth > 4 || !jit_init()) return 0;
     for (a = w + 5; a < end; n++) {     /* decode, as the engine does */

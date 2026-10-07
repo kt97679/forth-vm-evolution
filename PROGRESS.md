@@ -1931,3 +1931,22 @@ compiler calls for 12.6% of its calls. Constants (a literal and EXIT,
 outside the agreed definition): 0 bytes, 0.1-2.2%. Nothing built. Not yet
 priced: the JIT refuses every run-time word that calls a kernel word, so
 inlining could let more code go native - next.
+
+## Iteration 90 - 2026-10-07 - Claude
+
+**What inlining at run time would do for the JIT: nothing** (the owner:
+"continue"; results/price-inline-tailcalls.md, "The JIT"). The profiler now
+logs every word the translator met and, for each left bytecode, its calls
+and its first operation without stencils (engine/jit.c, profiling builds
+only - no design's engine changes); callsites.py frees words by kind of
+blocker as a fixpoint. On the five JIT designs of the front of all runs the
+JIT leaves 44.5-46.6% of the kernel workload's dispatches in bytecode,
+3.8-4.2% of the corpus's, 78.8-80.1% of the held-out sieve's. Inlining
+short words alone frees 0.0-0.1%; data words and constants as literals
+1.2-1.3% of the kernel's, with inlining 7.5-7.9%; every call translatable -
+native code calling bytecode, SPN's st_interp, GENES.md candidate 5 -
+9.8-10.2% of the kernel's and 78.8-80.1% of the sieve's, whose one word
+PRIMES calls FILL, 1+, 2DROP and the run-time FLAGS and SIZE (no JIT
+header: data and a constant). >R without stencils is first in words holding
+30.1% of the kernel's dispatches. So candidate 5 is the lever; inlining is
+not. Nothing built; the owner decides.

@@ -123,6 +123,19 @@ laptop**; the VM's 10-17% was the VM. Linked without page padding
 (Iteration 82) the JIT costs 3.4 KB of engine (seed 19's fastest: 31,448
 -> 34,872 bytes).
 
+## Iteration 90: where the JIT stops
+
+Measured with lab/evolve/callsites.py (the profiler logs every word the
+translator met, and why each left bytecode stayed so) on the five JIT
+designs of the front of all runs: the JIT leaves 44.5-46.6% of the kernel
+workload's dispatches in bytecode, 3.8-4.2% of the corpus's, 78.8-80.1% of
+the sieve's. The blockers come together - calls into the image, calls to
+data words and constants (run-time ones have no JIT header), operations
+without stencils (>R first in words holding 30.1% of the kernel's
+dispatches) - so no single change frees much except native code calling
+bytecode (SPN's st_interp): 10% of the kernel's dispatches, 80% of the
+sieve's. Inlining short words at run time frees nothing for the JIT.
+
 ## The phases
 
 1. **A prototype on the VM** - begun, Iteration 74: engine/jit.c reads

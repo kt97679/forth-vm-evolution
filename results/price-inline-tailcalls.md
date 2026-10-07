@@ -201,3 +201,59 @@ The short words most called, everywhere (image and run-time code): CHARS 11.5%/0
 The short words most called, everywhere (image and run-time code): CHARS 7.3%/0.0%/0.0%/0.0%/0.0%/0.0%; 2DROP 0.4%/0.0%/0.0%/0.0%/0.0%/2.9%; - 1.6%/0.0%/0.0%/0.0%/0.0%/0.0%; 2DUP 0.5%/0.0%/0.0%/0.0%/0.0%/0.0%; > 0.1%/0.0%/0.0%/0.0%/0.0%/0.0%; 2* 0.0%/0.0%/0.0%/0.0%/0.0%/0.0%; INVERT 0.0%/0.0%/0.0%/0.0%/0.0%/0.0%; a run-time word: EXIT AND call 0.0%/0.0%/0.0%/0.0%/0.0%/0.0% (share of each workload's calls, in the order kernel/fib/parse/corpus/loop/sieve).
 
 **Tail calls, the image**: 49 sites, 8 bytes - the EXIT goes at 46, stays (a branch target) at 3; BRANCH8 reaches at 11. Callees reading their return address, left out: 8 sites (DNEGATE 2, FM/MOD 2, <BRANCH, 2, QUIT 1, WARM 1). 0 sites are inlining's too.
+
+## The JIT (Iteration 90)
+
+Asked above: would inlining at run time let the JIT translate more? jit.c
+translates a word compiled at run time only if every call in it reaches a
+word already native, and every operation has stencils. The profiler now
+logs every word the translator met and, for each left bytecode, its calls
+and its first operation without stencils (engine/jit.c, profiling builds
+only); callsites.py frees words by kind of blocker, as a fixpoint - a
+caller waits for its callees - and sums the dispatches of the freed words.
+The five JIT designs of the front of all runs:
+
+**No.** Inlining short words at run time frees nothing for the JIT, alone
+(0.0-0.1%). The JIT leaves 44.5-46.6% of the kernel workload's dispatches
+in bytecode, 3.8-4.2% of the corpus's, 78.8-80.1% of the held-out sieve's;
+fib and loop are native. What keeps them bytecode, together: calls into the
+image (kernel words: 1+, CELLS, FILL, (S"), CHARS ...), calls to data words
+and constants (the sieve's FLAGS and SIZE, defined at run time without the
+JIT header), and operations without stencils (>R first in words holding
+30.1% of the kernel's dispatches; DODOES 3.8%; SP@ 1.9% of the corpus's).
+Freed: data words and constants as literals, 1.2-1.3% of the kernel's;
+with inlining too, 7.5-7.9%; **every call translatable - native code
+calling bytecode, SPN's st_interp (GENES.md candidate 5) - 9.8-10.2% of
+the kernel's, 1.4-1.6% of the corpus's and 78.8-80.1% of the sieve's**:
+its one word PRIMES calls FILL, 1+, 2DROP, FLAGS and SIZE. Freed dispatches
+run native, not free: fib ran 2.7x faster native (JIT.md).
+
+## The JIT
+
+Per JIT design, the dispatches of the run-time words it left bytecode and those each change would free (kernel/corpus/sieve: fib and loop run native, parse runs no run-time code). Data as literals: calls to data words and constants, the image's and those defined at run time; every call: SPN's st_interp, native code calling bytecode.
+
+| design | speed | left bytecode | inlining | data as literals | both | every call (st_interp) |
+|---|---|---|---|---|---|---|
+| 2cbcf427f6 | 0.173 | 46.6/4.2/80.1 | 0.0/0.0/0.0 | 1.3/0.0/0.0 | 7.9/0.1/0.0 | 10.2/1.6/80.1 |
+| c5f28c89a3 | 0.190 | 45.1/4.0/78.8 | 0.0/0.0/0.0 | 1.3/0.0/0.0 | 7.9/0.0/0.0 | 10.2/1.5/78.8 |
+| 9cd36dffec | 0.194 | 44.5/3.8/80.1 | 0.0/0.0/0.0 | 1.2/0.0/0.0 | 7.5/0.0/0.0 | 9.8/1.4/80.1 |
+| 0911457251 | 0.192 | 45.6/4.0/80.1 | 0.0/0.0/0.0 | 1.2/0.0/0.0 | 7.7/0.0/0.0 | 9.9/1.5/80.1 |
+| 49b6b108eb | 0.210 | 46.0/4.0/80.1 | 0.0/0.1/0.0 | 1.3/0.0/0.0 | 7.8/0.1/0.0 | 10.1/1.6/80.1 |
+
+The fastest design, 2cbcf427f6, in detail:
+
+**The JIT, run-time words** (Iteration 90): those it met, and the dispatches in those it left bytecode; then those that would go native if every call of a kind were translatable - a fixpoint, as a caller waits for its callees. A word with an operation without stencils stays bytecode in every column.
+
+| workload | met | native | bytecode: dispatches | freed by inlining short words | data words as literals | both | every call to the image (SPN's st_interp) |
+|---|---|---|---|---|---|---|---|
+| kernel | 77 | 2 | 75: 46.6% | 0.0% | 1.3% | 7.9% | 10.2% |
+| fib | 2 | 2 | 0: 0.0% | 0.0% | 0.0% | 0.0% | 0.0% |
+| corpus | 77 | 19 | 58: 4.2% | 0.0% | 0.0% | 0.1% | 1.6% |
+| loop | 2 | 2 | 0: 0.0% | 0.0% | 0.0% | 0.0% | 0.0% |
+| sieve | 2 | 0 | 2: 80.1% | 0.0% | 0.0% | 0.0% | 80.1% |
+
+The hottest words left bytecode, and what keeps each: kernel - 24.9%: a run-time word without the JIT header (data, a constant), no stencils: >R; 6.4%: CHARS, a run-time word without the JIT header (data, a constant); 3.8%: -, 2DUP, no stencils: >R | corpus - 1.9%: (S"), <>, ?DUP, CELLS, DEPTH, a DOES> tail, a run-time word without the JIT header (data, a constant), no stencils: SP@; 1.4%: ?DUP, CELLS, DEPTH, a run-time word without the JIT header (data, a constant); 0.2%: no stencils: >R | sieve - 80.1%: 1+, 2DROP, FILL, a run-time word without the JIT header (data, a constant); 0.0%: ., CR, a run-time word left bytecode.
+
+Operations without stencils, by the dispatches of the words where each is the first: >R kernel 30.1%; DODOES kernel 3.8%; SP@ corpus 1.9%; R> kernel 0.6%; >R corpus 0.6%; (+LOOP) kernel 0.1%; R@ kernel 0.1%; vs corpus 0.0%.
+
+Blockers, by the words they keep bytecode (all workloads): a run-time word without the JIT header (data, a constant) 55; a run-time word left bytecode 48; a DOES> tail 27; no stencils: >R 21; (S") 13; 1+ 12; CELLS 10; (;CODE) 9; no stencils: R> 9; - 9.
