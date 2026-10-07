@@ -524,3 +524,7 @@ bytes) for 9-10% fewer dispatches on parse and corpus, 5% on kernel.*
 pairs -105 bytes and neutral in time; hotinl tried 33 times, on none - its 8
 clean pairs parse 0.970, the rest within a pair's noise (+-5%). If seeds 25
 and 26 do not take it up, it comes out.*
+*Seeds 25-26 (Iterations 96-97): hotinl taken up after all - 3 of seed 25's
+front, 11 of the night run's, and the two fastest designs of all runs (20
+sites); opbody on every front design of the night run. t2wide (Iteration
+95) on all 35 of the night run's front and 29 of the 30 of all runs.*

@@ -135,4 +135,9 @@
 # (fastest +6.9%). The owner: the night run now. Seed 26 at night size
 # (population 96, 80 generations, ~3.5 hours at seed 25's 1.5 s a design),
 # the first run that can choose t2wide, then the comparison.
-seed 26 tag2 night then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 97: the night run (seed 26) took 29 of the 30 designs on the
+# front of all runs and was still improving at generation 80. Another night:
+# seed 27 at night size - or, to use the whole night (~7 hours), run
+#     POP=96 GENS=160 sh lab/evolve/next-run.sh seed 27 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+seed 27 tag2 night then experiment compare-fronts.py --rounds 10 --cpus 2,8

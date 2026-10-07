@@ -228,3 +228,10 @@ always. A night run counts as one run for the stopping rule; being six
 times larger, a small one says more about convergence than a small one of
 the usual size. Its database is larger too (~16 MB, ~3 MB packed); the
 front's genomes travel in its report (Iteration 87).
+
+Seed 26, the first night run (Iteration 97): 29 of the 30 designs on the
+front of all runs against four short runs, its front born mostly after
+generation 40 and the best speed still moving at generation 80. A night
+has room for twice that - 96 x 160, ~7 hours - by size alone:
+
+    POP=96 GENS=160 sh lab/evolve/next-run.sh seed 27 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

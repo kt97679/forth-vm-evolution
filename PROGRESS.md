@@ -2056,3 +2056,22 @@ front; hotinl on 3, at 10 sites - its first. The owner: the 4 KB steps in
 the engine's file left for now, more data first; and the night run now:
 NEXT-RUN seed 26 tag2 night (96 x 80, ~3.5 hours), the first run that can
 choose t2wide, then the comparison.
+
+## Iteration 97 - 2026-10-07 - Claude
+
+**Seed 26, the first night run, and session 23**
+(results/evolve-amd-ryzen-7-pro-8840hs-seed26.md). Population 96, 80
+generations, at Iteration 96's commit: 7,718 designs, 7,268 alive, only the
+reach limit's 450 deaths, 3 h 19 min (1.55 s a design). Session 23 measured
+seeds 22-26 (calibration 0.998): **seed 26 not small** - fastest +10.3%
+(70bc3ae6b5, 0.165 at 43,224 bytes), smallest total 24,964 (+0.66%),
+memory none. **The night run took the front**: 29 of the 30 designs on the
+front of all runs against four short runs; 33 of its 35 front designs born
+after generation 40, the best speed still moving at 80 (0.163 by 40, 0.153
+by 80). **t2wide everywhere**: all 35 of the run's front, 29 of 30 of all
+runs; 25 clean pairs -104 bytes, kernel 0.986, parse 0.980, corpus 0.988.
+hotinl on 11 of the run's front and on the two fastest of all runs (20
+sites); opbody on all 35. Measured too: the same 137 designs 1.8% slower
+than in session 22 at the median (10-90% -0.8% to +7.2%; seed 25's fastest
+0.163 then, 0.184 now) - why the rule compares within one session.
+NEXT-RUN: seed 27 tag2 night (or 96 x 160 for a whole night, RUNNING.md).
