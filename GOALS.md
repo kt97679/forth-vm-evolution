@@ -69,7 +69,10 @@ carries `repo-files.txt` (the owner's clone, listed) - look at it first.
    stencils. Native code calling bytecode (SPN's st_interp, step 3's "the
    JIT's calls into bytecode words") would free 10% of the kernel's and
    80% of the sieve's: the largest lever measured. The owner decides.
-3. Then, each priced first: the rewrite-rule search (shorter equivalent
+3. (Iteration 91: a deep dive ranked twenty candidates - lab/evolve/GENES.md,
+   "Ranked (Iteration 91)"; the owner picks, and decides three questions:
+   is the shell part of the job, should process start count in speed, and
+   may the tag drop its 3-byte call.) Before it: each priced first: the rewrite-rule search (shorter equivalent
    sequences of a design's own operations, verified by random testing);
    image compression with a small decompressor; the JIT's calls into
    bytecode words; a wider pool of compiler flags. The reasoning for each,

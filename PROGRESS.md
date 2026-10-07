@@ -1950,3 +1950,22 @@ PRIMES calls FILL, 1+, 2DROP and the run-time FLAGS and SIZE (no JIT
 header: data and a constant). >R without stencils is first in words holding
 30.1% of the kernel's dispatches. So candidate 5 is the lever; inlining is
 not. Nothing built; the owner decides.
+
+## Iteration 91 - 2026-10-07 - Claude
+
+**A deep dive: what else could make it smaller and faster, ranked**
+(lab/evolve/GENES.md, "Ranked (Iteration 91)"; the owner asked for
+imagination, then a ranking). Measured for it, with one-off scripts: the
+smallest engine's 14.7 KB of code is 8.1 KB interpreter and 6.3 KB other
+functions - ~3-4 KB of them the shell's OS calls (getpwnam, setenv,
+execvp, malloc, snprintf/vsnprintf ...), which no workload uses; on the
+fastest design the workloads run 0.55-7.4 ms and a bare start costs
+0.077-0.097 ms (18% of loop) against 0.042 for an empty process; inlining
+the 10 hottest call sites, any callee, costs 26 bytes and saves 9.3% of
+parse's dispatches and 8.8% of corpus's; a quarter of the fastest image
+(1,977 bytes) never runs, led by the Forth bodies of words opcodes
+replaced; factoring repeated code saves ~1% of an image at a speed cost.
+Ranked first: hot-site inlining, the dead bodies behind opcodes, the OS
+layer out, a cheaper start, the JIT's calls into bytecode. Three questions
+for the owner: is the shell part of the job, should start count in speed,
+may the tag drop its 3-byte call. Nothing built.

@@ -421,3 +421,94 @@ specification, so a random rewrite can pass every test and still be
 wrong. Rules verified by random testing (3) are the safe form.
 Triples were priced in Iteration 8 (~0.6% each at best) - not built.
 
+
+## Ranked (Iteration 91) - a deep dive, what else could make it smaller and faster
+
+The owner asked for imagination, not templates, then a ranking. Five facts
+measured for it on the VM (one-off scripts, the front's genomes from
+results/; dispatches counted, CPU times rough):
+
+- **The binary is most of the size, and much of it is not the interpreter.**
+  Smallest design (faf72cef8e, 18,032 bytes stripped): .text 14,686, of
+  which virtual_machine 8,147 and 62 other functions 6,252 - vsnprintf
+  1,162 (through snprintf), load_image 570, __udivmodti4 430 (UM/MOD),
+  getpwnam 319, setenv 316, malloc 289, execvp 230, sigaction 188, syscall
+  168, take_env 131, unsetenv 128, freel 128; static tables 1.5 KB
+  (dispatch 1,024, esc_ 512). Fastest (2cbcf427f6, 34,936): virtual_machine
+  11,997, 106 others 12,644 (jit_word 2,541, vsnprintf 1,909).
+- **The workloads are now short, so starting counts.** On the fastest design
+  kernel 3.9 ms, fib 7.4, parse 4.8, corpus 1.5, loop 0.55, sieve 4.7 (CPU
+  per run); a bare start (BYE) 0.077-0.097 ms - 18% of loop, 7% of corpus -
+  against 0.042 for an empty static process: half of it is ours.
+- **Inlining at the hottest call sites pays where short words did not**: the
+  10 hottest sites, any callee, +26 bytes for 9.3% of parse's dispatches,
+  8.8% of corpus's, 3.4% of kernel's (fastest design; 50 sites +164 bytes,
+  10.6/10.7/4.9%). On the smallest design 1-1.5%: evolution would choose.
+- **A quarter of the fastest image never runs** in any of the six
+  workloads: 104 of 329 words, 1,977 bytes - first the Forth bodies of
+  words opcodes replaced ((FIND) 66, (>NUMBER) 57, THREAD-FIND 46) and what
+  only they call (DIGIT? 56, NEXT-NFA8 53, NAME=? 36), and the old format's
+  compiler variables (CV8-DOES-RESERVE 40, CV8-DOES-FAR? 39, CV8-SHIFT-V
+  33). Smallest: 69 words, 896 bytes (13%). Names are 27-28% of the words'
+  bytes.
+- **Factoring repeated code (outlining) does not pay**: 62-78 bytes (~1%)
+  for 0.2-4% more dispatches.
+
+Ranked, most promising first - by what it should buy on the three
+objectives, how sure the number is, and what it costs in mechanism:
+
+1. **Inline the hottest call sites in the image** (converter only, a gene
+   with K, sites from a reference profile like tag2-rank): measured above.
+2. **Dead bodies behind opcodes, and the old format's leftovers, out** (a
+   lean-like gene): words an opcode replaced get [opcode EXIT] as FILL and
+   CMOVE did (Iteration 50) - the loop words excepted, they read their
+   caller's return stack - their helpers go where nothing else reaches
+   them, and the compiler variables tag 2 never reads go. Estimated 300-600
+   bytes of the fast designs' images (4-8%).
+3. **The OS layer out of the engine**: the shell's primitives (FORK EXECVE
+   WAITPID PIPE DUP2 GETENV SETENV UNSETENV CHDIR GETCWD GETPWHOME SYSTEM
+   ALLOCATE...) carry ~3-4 KB of the smallest engine; no workload uses them.
+   Either a design without them, or one SYSCALL primitive with the wrappers
+   in Forth outside the image (the shell loads them). 12-16% of the smallest
+   total. The owner decides whether the shell is part of the job.
+4. **A cheaper start**: dispatch tables built by the compiler, not filled at
+   each start; fewer pages touched; guard pages and COLD's Forth set-up
+   looked at - up to ~10% of loop and ~4% of corpus on the fastest design.
+   And a question for the owner: should starting count in speed (longer
+   workloads, or a bare-start baseline subtracted)?
+5. **The JIT's calls into bytecode** (candidate 5 above, priced in Iteration
+   90): with data words and constants as literals, 10% of the kernel
+   workload's dispatches and 80% of the sieve's would run native.
+6. **Drop the 3-byte call form - 64 one-byte codes free**: image calls are 2
+   bytes (4 before an operand); run-time calls of 16 KB-4 MB would take 4.
+   The codes: one-byte calls to the most-called words (the hot calls the
+   tag gave up, ~200-300 bytes), no escapes, short branches with the offset
+   in the opcode. A format decision (FORMAT-TAG2.md).
+7. **Compile nothing for a call to an empty word**: CHARS, 5.2 of the
+   kernel workload's 6.1 points (Iteration 89), ~10 bytes of Forth.
+8. **Engine trims**: escaped operations as one cold -Os function, not
+   handlers each with a dispatch; dispatch tables as 16-bit offsets; UM/MOD
+   by the CPU's divide, not libgcc's 430 bytes. ~1-2.5 KB.
+9. **Names in 6 bits a character**, FIND comparing packed keys: ~25% of the
+   names, ~500 bytes.
+10. **Shipped compressed** (engine and image behind a small self-extracting
+    stub; candidate 4 widened to the engine, most of the size): perhaps a
+    third off binary + image, paid in start time (4) and memory - it shrinks
+    the file, not the system; against the aim unless the owner reads the
+    objective so.
+11. **The interpreter's handlers as the JIT's stencils**, one copy of each
+    operation's machine code: the JIT's ~3 KB of engine.
+12. **Native code for the hottest kernel words at build time**: the
+    converter writing a C handler from a word's Forth body, what the k-genes
+    did by hand (Iterations 49-57).
+13. **Operand-carrying superinstructions from each design's profile** (a
+    literal and an operation, as ADDI and EQI).
+14. **Rewrite rules by random testing** (candidate 3): the folds, pairs and
+    fused tests took the common sequences already.
+15. **A wider compiler-flag pool** (candidate 6), now for the binary as well.
+16. **A better dictionary hash or thread count**, priced offline from a
+    trace of FIND's keys.
+17. **The offset in the opcode, nibble-packed hot pairs** - need 6's codes.
+18. **Handlers ordered by the profile** (I-cache): no size; layout noise.
+19. **Factoring repeated code**: measured above - no.
+20. **Tail calls, or the fall-through layout**: measured (Iteration 89) - no.
