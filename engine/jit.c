@@ -90,7 +90,20 @@ struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; }
 #define T2_ESC  0xFFFE
 #define T2_NONE 0xFFFF
 #endif
-static const unsigned short jit_one[64] = {
+#if T2WIDE   /* Iteration 95, the gene t2wide: calls 01 and 11 only, 10xxxxxx one-byte codes too */
+#define T2_JONES 128
+#define T2_CALL(b) ((b) & 0x40)
+#define T2_CALLW(b) ((b) < 0x80 ? 2 : 4)
+#define T2_ONEIX(b) ((b) < 64 ? (b) : (b) - 64)
+#define T2_WSTEP 2
+#else
+#define T2_JONES 64
+#define T2_CALL(b) ((b) >= 0x40)
+#define T2_CALLW(b) ((b) < 0x80 ? 2 : (b) < 0xC0 ? 3 : 4)
+#define T2_ONEIX(b) (b)
+#define T2_WSTEP 1
+#endif
+static const unsigned short jit_one[T2_JONES] = {
 #include "vm-tag2-one.h"
 };
 static const unsigned short jit_esc[256] = {
@@ -148,7 +161,7 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
 static void jit_repoint(UNS64 w, UNS64 ra) {
     UNS64 t = w + 5 - jit_cbase, x;
     int wd, i;
-    for (wd = 2; wd <= 4; wd++) {
+    for (wd = 2; wd <= 4; wd += T2_WSTEP) {
         UNS64 a = ra - (UNS64)wd;
         UNS8 b = BYTE(a);
         if ((b >> 6) != wd - 1) continue;                 /* tag 01: 2 bytes, 10: 3, 11: 4 */
@@ -173,8 +186,8 @@ static int jn_n;
 static void jit_dump(int fd) {
     char b[96];
     int i, k, m;
-    for (k = 0; k < 64; k++)
-        if (jit_one[k] < (unsigned)JIT_NOPS && jit_ops[jit_one[k]].ok) { m = snprintf(b, sizeof b, "S %d\n", k); write(fd, b, (size_t)m); }
+    for (k = 0; k < T2_JONES; k++)
+        if (jit_one[k] < (unsigned)JIT_NOPS && jit_ops[jit_one[k]].ok) { m = snprintf(b, sizeof b, "S %d\n", k < 64 ? k : k + 64); write(fd, b, (size_t)m); }
     for (i = 0; i < jn_n; i++) {
         UNS64 w = jn_w[i], end = jn_end[i], a = w + 5;
         uint32_t f = jit_ld32(w + 1);
@@ -182,15 +195,15 @@ static void jit_dump(int fd) {
         write(fd, b, (size_t)m);
         while (f < 2 && a < end) {
             UNS8 c = BYTE(a);
-            if (c >= 0x40) {
-                int wd = c < 0x80 ? 2 : c < 0xC0 ? 3 : 4, j;
+            if (T2_CALL(c)) {
+                int wd = T2_CALLW(c), j;
                 UNS64 t = c & 0x3F;
                 for (j = 1; j < wd; j++) t = t << 8 | BYTE(a + j);
                 if (jit_cbase + t != w) {
                     m = snprintf(b, sizeof b, "B %llu c %llu\n", (unsigned long long)(w - jit_cbase), (unsigned long long)t); write(fd, b, (size_t)m); }
                 a += (UNS64)wd;
             } else {
-                unsigned L = jit_one[c];
+                unsigned L = jit_one[T2_ONEIX(c)];
                 int e = 0;
                 a++;
                 if (L == T2_ESC) { e = BYTE(a); L = jit_esc[e]; a++; }
@@ -225,12 +238,12 @@ static uint32_t jit_word(UNS64 w, int depth) {
         UNS8 b = BYTE(a);
         if (n >= JIT_MAXOPS) return 0;
         at[n] = a;
-        if (b >= 0x40) {                /* a call of 2, 3 or 4 bytes */
-            int wd = b < 0x80 ? 2 : b < 0xC0 ? 3 : 4; UNS64 t = b & 0x3F;
+        if (T2_CALL(b)) {               /* a call of 2, 3 or 4 bytes (2 or 4: t2wide) */
+            int wd = T2_CALLW(b); UNS64 t = b & 0x3F;
             for (i = 1; i < wd; i++) t = t << 8 | BYTE(a + i);
             arg[n] = jit_cbase + t; opl[n] = 0xFFFF; a += (UNS64)wd;
         } else {
-            unsigned L = jit_one[b];
+            unsigned L = jit_one[T2_ONEIX(b)];
             a++;
             if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
             if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 0;

@@ -966,7 +966,8 @@ def t2put(b, L):
     m = TAG2[0]
     if L in m['one']: b.append(m['one'][L])
     else: b.append(m['escc']); b.append(m['esc'][L])
-def t2calllen(v): return 2 if v < (1 << 14) else 3 if v < (1 << 22) else 4
+T2WIDE = False        # Iteration 95 (layout.py --tag2-wide): no 3-byte call - 10xxxxxx are one-byte codes
+def t2calllen(v): return 2 if v < (1 << 14) else 4 if T2WIDE else 3 if v < (1 << 22) else 4
 def t2call(v, n):
     """A call of n bytes (2, 3, 4): 01, 10, 11 in the top two bits, then the
     offset from the image base, high byte first (vm-lab.c L_t2call*)."""

@@ -60,8 +60,14 @@ results/evolve-amd-ryzen-7-pro-8840hs-seed24.md, no comparison - run before
 93): opbody on 23 of the front's 37; hotinl tried 33 times, on none (its
 clean pairs: parse 0.970, the rest within the noise); the run's fastest
 e22d91cd94 0.175 re-measured, without either. The owner: a couple more
-short runs, then a night run when he says. NEXT-RUN: seed 25 tag2, then the
-comparison of seeds 21-25, which judges 24 and 25. Every pack now
+short runs, then a night run when he says. **Iteration 95: the gene
+`t2wide`** (results/t2wide.md) - the tag without its 3-byte call, 127
+one-byte codes; on the front escapes (4-8% of kernel's, parse's and
+corpus's dispatches) go and images shrink 121-302 bytes. Found on the way:
+the engine's file moves in 4 KB steps when the code's end crosses a page
+(the page-aligned memory area) - a fix for the owner to decide. NEXT-RUN:
+seed 26 tag2, then the comparison (which also judges seed 24, and 25 if
+run). Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**

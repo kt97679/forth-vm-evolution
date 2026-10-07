@@ -125,4 +125,9 @@
 # Iteration 94: seed 24 came back without its comparison (run at Iteration
 # 92). Seed 25 at the usual size (the owner: a couple more short runs), then
 # the comparison - seeds 21-25 in one session, judging 24 and 25.
-seed 25 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 95: the gene t2wide (the tag without its 3-byte call, 127
+# one-byte codes) - seed 26 the first run that can choose it, then the
+# comparison of the newest runs. If seed 25 ran at Iteration 94, its packs
+# come back as usual; if not, it is skipped - seeds are only labels.
+seed 26 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8

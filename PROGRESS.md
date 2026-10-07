@@ -2021,3 +2021,23 @@ clean pairs give parse 0.970, as counted on the VM, but the whole design
 differing by one image-only gene show corpus ratios up to 1.34 - the corpus
 runs ~1.5 ms on the fast designs. The owner: a couple more short runs, a
 night run later. NEXT-RUN: seed 25 tag2, then the comparison (seeds 21-25).
+
+## Iteration 95 - 2026-10-07 - Claude
+
+**The gene t2wide: the tag without its 3-byte call** (results/t2wide.md;
+the owner asked about calls as continuation bytes for 128 opcodes - priced
+first, and the cheaper route agreed). The front's designs have 159-169
+operations and 63 one-byte codes; escapes ran as 4.2-8.1% of the dispatches
+of kernel, parse and corpus. Under t2wide `10xxxxxx` are 64 more one-byte
+codes (127), calls `01` (2 bytes) and `11` (4 bytes, 1 GB); the engine's
+table and profiler, the JIT's decoder and jit_repoint, the converter
+(--tag2-wide, CALL,'s 3-byte limit patched in its body) and the evolver.
+On the fastest, middle and smallest designs - cached top with the JIT,
+tail calls, plain - all through the gate; escapes run 0.0%; images -208,
+-302, -121 bytes; calls 5 MB out right. With the gene off all 68 designs
+of both fronts at their recorded sizes and ids; tests pass; hand-made
+stages identical. Not under multi-state caching yet (gen-msc.py). Found: the
+smallest engine grew 288 bytes of sections but 4,352 of file - the
+page-aligned memory area makes the file move in 4 KB steps when the code's
+end crosses a page; a fix for the owner to decide. NEXT-RUN: seed 26 tag2,
+then the comparison.

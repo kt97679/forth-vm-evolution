@@ -1117,6 +1117,16 @@ static void virtual_machine(void) {
      *  escape, T2_NONE nothing - a fault, not a no-op.  */
 #define T2_ESC  0xFFFE
 #define T2_NONE 0xFFFF
+/*  Iteration 95, the gene t2wide: no 3-byte call - 10xxxxxx are 64 more
+ *  one-byte codes (0x80-0xBF), the calls 01 (2 bytes, 16 KB) and 11 (4
+ *  bytes, 1 GB). The map's second half are those codes. */
+#if T2WIDE
+#define T2_ONES 128
+#define T2_IS_OP(t) (((t) & 0x40) == 0)
+#else
+#define T2_ONES 64
+#define T2_IS_OP(t) ((t) < 64)
+#endif
 #if X_JIT     /* the lazy JIT's opcode (JIT.md): a code, no slot in the table */
 #define T2_JIT  0xFFFD
 #define T2JIT(x) (x) == T2_JIT ? &&L_x_jit :
@@ -1131,7 +1141,7 @@ static void virtual_machine(void) {
 #endif
     static const void *t2tab[256], *t2esc[256];
     if (!t2tab[0]) {
-        static const UNS16 one_[64] = {
+        static const UNS16 one_[T2_ONES] = {
 #include "vm-tag2-one.h"
         };
         static const UNS16 esc_[256] = {
@@ -1140,8 +1150,13 @@ static void virtual_machine(void) {
         int i_, n_ = (int)(sizeof dispatch / sizeof dispatch[0]);
         (void)n_;
         for (i_ = 0; i_ < 256; i_++) {
+#if T2WIDE
+            t2tab[i_] = i_ < 64 ? T2OP(one_[i_]) : i_ < 128 ? &&L_t2call2
+                      : i_ < 192 ? T2OP(one_[i_ - 64]) : &&L_t2call4;
+#else
             t2tab[i_] = i_ < 64 ? T2OP(one_[i_]) : i_ < 128 ? &&L_t2call2
                       : i_ < 192 ? &&L_t2call3 : &&L_t2call4;
+#endif
             t2esc[i_] = T2OP(esc_[i_]);
         }
     }
@@ -1164,7 +1179,7 @@ static void virtual_machine(void) {
 /*  One byte, one indirect jump: a call's three widths are three entries
  *  of the table, so no opcode-or-call test either.  */
 #define NEXT() do { \
-        PROFIP(ip); t = BYTE(ip); ip += 1; if (t < 64) PROF(t); goto *t2tab[t]; \
+        PROFIP(ip); t = BYTE(ip); ip += 1; if (T2_IS_OP(t)) PROF(t); goto *t2tab[t]; \
     } while (0)
 #elif ENC == 3 && SHAREDCALL
 /*  Every handler keeps its own opcode dispatch (what the branch predictor
@@ -1212,7 +1227,9 @@ next:
 #if ENC == 3 && TAG2
     /*  t holds the first byte (NEXT), ip is past it.  */
 L_t2call2: t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; goto t2call;
+#if !T2WIDE
 L_t2call3: t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1); ip += 2; goto t2call;
+#endif
 L_t2call4: t = ((t & 0x3F) << 24) | ((UNS64)BYTE(ip) << 16) | ((UNS64)BYTE(ip + 1) << 8)
                | BYTE(ip + 2); ip += 3;
 t2call:    PROF(256); PROFRET(ip, t); RPUSH(ip); ip = cbase + t; NEXT();

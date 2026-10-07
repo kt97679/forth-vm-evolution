@@ -115,6 +115,10 @@ if BYTEHDR and not (V8 and CPT == 0):
 TAG2_ON = '--tag2' in ARGV
 if TAG2_ON and not (V8 and CPT == 0):
     sys.exit("--tag2 requires --v8 --cpt 0")
+# Iteration 95, the gene t2wide: --tag2-wide drops the 3-byte call; its first
+# bytes 0x80-0xBF become 64 more one-byte codes (127 with 0x00-0x3E)
+T2WIDE_ON = TAG2_ON and '--tag2-wide' in ARGV
+G['T2WIDE'] = T2WIDE_ON
 if TAG2_ON and CELL != 8:
     sys.exit("--tag2: 64-bit cells for now - a DOES> body's 4-byte call must fit its first cell")
 
@@ -223,7 +227,7 @@ import os as _os
 # the words whose bodies this file rewrites after reading them - the run-time
 # compiler's opcode constants under the tag (checked against that section)
 T2_CONSTS = ('EXIT-OP', 'LIT16-OP', 'BRANCH-OP', '0BRANCH-OP', 'LIT32-OP', 'DOVAR-OP', 'DODOES-OP', 'LIT8-OP', 'LIT64-OP',
-             'BRANCH8-OP', '?BRANCH8-OP', 'JIT-OP')
+             'BRANCH8-OP', '?BRANCH8-OP', 'JIT-OP', 'CALL,')     # CALL,: its 3-byte limit, under t2wide (Iteration 95)
 G['HOT_PATCHED'].update(T2_CONSTS)
 if '--hot-inline' in ARGV and not _os.environ.get('SOD16_NO_HOTINL'):
     _want, _sel = int(ARGV[ARGV.index('--hot-inline') + 2]), []
@@ -459,8 +463,9 @@ if TAG2_ON:
         return (0, -wt, -_static[x], x) if wt > 0 and wt >= _hot else (1, -_static[x], -wt, x)
     _rest = sorted((x for x in _names if x not in _pin), key=_key)
     _all = _pin + _rest
-    assert len(_all) <= 63 + 256, "%d operations: more than 63 one-byte codes and 256 escaped" % len(_all)
-    T2MAP = {'one': {x: c for c, x in enumerate(_all[:63])}, 'esc': {x: s for s, x in enumerate(_all[63:])}, 'escc': 0x3F}
+    _bytes = list(range(63)) + (list(range(0x80, 0xC0)) if T2WIDE_ON else [])   # the one-byte codes, in rank order
+    assert len(_all) <= len(_bytes) + 256, "%d operations: more than %d one-byte codes and 256 escaped" % (len(_all), len(_bytes))
+    T2MAP = {'one': {x: _bytes[c] for c, x in enumerate(_all[:len(_bytes)])}, 'esc': {x: s for s, x in enumerate(_all[len(_bytes):])}, 'escc': 0x3F}
     G['TAG2'][0] = T2MAP
     print('tag 2: %d operations, %d one-byte, %d escaped; %d escaped uses in the image (a byte each)'
           % (len(_all), len(T2MAP['one']), len(T2MAP['esc']), sum(_static[x] for x in T2MAP['esc'])))
@@ -486,6 +491,14 @@ if TAG2_ON:
             _ops[_lj[0]] = (_k, T2MAP['one'][_x] if _x is not None else 0)
         _done.add(w['n'])
     print('tag 2: %d opcode constants rewritten' % len(_done))
+    if T2WIDE_ON:     # Iteration 95: CALL, (cv8t.4) takes 3 bytes below 4 MB; wide, 4 past 16 KB
+        _hit = 0
+        for w in order:
+            if w['n'] != 'CALL,' or kind[w['s']] != 'code': continue
+            for _j, (_k, _p) in enumerate(info[w['s']]):
+                if _k in ('LIT', 'LITX') and _p == 4194304: info[w['s']][_j] = (_k, 16384); _hit += 1
+        assert _hit, 'tag 2 wide: no CALL, holding the 3-byte limit 4194304'
+        print('tag 2 wide: CALL,\'s 3-byte limit patched to 16 KB in %d place(s)' % _hit)
 
 for w in order:
     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
@@ -1318,8 +1331,8 @@ if EMIT:
     print("wrote %s: %d B header + %d B image" % (EMIT, h, b))
     if TAG2_ON:
         # the engine's map (vm-lab.c TAG2): each code's logical operation
-        _one = ['T2_NONE'] * 64; _one[0x3F] = 'T2_ESC'
-        for _x, _c in T2MAP['one'].items(): _one[_c] = str(_x)
+        _one = ['T2_NONE'] * (128 if T2WIDE_ON else 64); _one[0x3F] = 'T2_ESC'
+        for _x, _c in T2MAP['one'].items(): _one[_c if _c < 64 else _c - 64] = str(_x)   # wide: 0x80-0xBF the second half
         _esc = ['T2_NONE'] * 256
         for _x, _s in T2MAP['esc'].items(): _esc[_s] = str(_x)
         _d = _os.path.dirname(_os.path.abspath(EMIT))

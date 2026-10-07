@@ -122,6 +122,11 @@ whatever format keeps images small.
   first cell) - before the Tegra. The plan: decision 9 and the price,
   counted on the VM: size and
   dispatches of the current front re-encoded, design by design.
+- **Iteration 95: the wide variant, the gene `t2wide`** (results/t2wide.md):
+  no 3-byte call - `10xxxxxx` are 64 more one-byte codes (127 in all), calls
+  are `01` (2 bytes, 16 KB) and `11` (4 bytes, 1 GB). Images keep their calls;
+  escapes, 4-8% of the dispatches of kernel, parse and corpus on the front,
+  go; images 121-302 bytes smaller. Not yet under multi-state caching.
 - **T6 laptop runs**: seeds with `tag2` required, carrying the front.
   Seed 16 (Iteration 72): the old front moved ~370 bytes right at about
   its speed - the price, confirmed; the old format keeps the front of all
