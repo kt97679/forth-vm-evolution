@@ -130,4 +130,9 @@
 # one-byte codes) - seed 26 the first run that can choose it, then the
 # comparison of the newest runs. If seed 25 ran at Iteration 94, its packs
 # come back as usual; if not, it is skipped - seeds are only labels.
-seed 26 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 96: seed 25 and session 22 back - seed 24 small, seed 25 not
+# (fastest +6.9%). The owner: the night run now. Seed 26 at night size
+# (population 96, 80 generations, ~3.5 hours at seed 25's 1.5 s a design),
+# the first run that can choose t2wide, then the comparison.
+seed 26 tag2 night then experiment compare-fronts.py --rounds 10 --cpus 2,8

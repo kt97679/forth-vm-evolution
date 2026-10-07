@@ -2041,3 +2041,18 @@ smallest engine grew 288 bytes of sections but 4,352 of file - the
 page-aligned memory area makes the file move in 4 KB steps when the code's
 end crosses a page; a fix for the owner to decide. NEXT-RUN: seed 26 tag2,
 then the comparison.
+
+## Iteration 96 - 2026-10-07 - Claude
+
+**Seed 25 and session 22** (results/evolve-amd-ryzen-7-pro-8840hs-seed25.md,
+results/compare-fronts-amd-ryzen-7-pro-8840hs.md). Seed 25 at Iteration 94's
+commit: 1,426 designs, 1,335 alive, only the reach limit's 91 deaths, 37
+minutes. Session 22 measured seeds 21-25 together (calibration 0.998, cpu 2
+0.998, cpu 8 1.001): **seed 24 small** (the first since the new genes:
+fastest none, smallest total +0.03%, memory none); **seed 25 not small** -
+the fastest +6.9%, 14b8775218 0.163 at 39,296 bytes. The front of all runs
+34 designs, 18 of seed 25 and 13 of seed 24. opbody on 21 of seed 25's
+front; hotinl on 3, at 10 sites - its first. The owner: the 4 KB steps in
+the engine's file left for now, more data first; and the night run now:
+NEXT-RUN seed 26 tag2 night (96 x 80, ~3.5 hours), the first run that can
+choose t2wide, then the comparison.

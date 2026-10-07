@@ -65,9 +65,12 @@ short runs, then a night run when he says. **Iteration 95: the gene
 one-byte codes; on the front escapes (4-8% of kernel's, parse's and
 corpus's dispatches) go and images shrink 121-302 bytes. Found on the way:
 the engine's file moves in 4 KB steps when the code's end crosses a page
-(the page-aligned memory area) - a fix for the owner to decide. NEXT-RUN:
-seed 26 tag2, then the comparison (which also judges seed 24, and 25 if
-run). Every pack now
+(the page-aligned memory area) - the owner: not now, more data first.
+**Session 22** (Iteration 96, seeds 21-25, calibration 0.998): seed 24
+small, seed 25 not (fastest +6.9%: 14b8775218, 0.163 at 39,296 bytes); the
+front of all runs 34 designs; hotinl on 3 of seed 25's front, opbody on 21.
+**NEXT-RUN: seed 26 tag2 night** (population 96, 80 generations, ~3.5
+hours, then the comparison) - the first run that can choose t2wide. Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**
@@ -386,6 +389,15 @@ the laptop rests until new genes exist.
   +0.2%, memory none. The gene set with the JIT has converged; the front
   of all runs, 35 designs, fastest 2cbcf427f6 0.195 at 42,816 bytes. Runs
   resume with new genes.
+- **Seed 24 - small, the first** (Iteration 94, results/evolve-amd-ryzen-7-
+  pro-8840hs-seed24.md; judged in session 22): the first run with hotinl and
+  opbody; fastest none, smallest total +0.03%, memory none. opbody taken up
+  at once (23 of the run's front), hotinl not.
+- **Seed 25 - not small** (Iteration 96, results/evolve-amd-ryzen-7-pro-
+  8840hs-seed25.md; session 22, calibration 0.998): fastest +6.9%,
+  14b8775218 0.163 at 39,296 bytes; the front of all runs 34 designs, 18 of
+  seed 25. hotinl on 3 of its front. Next: the night run, seed 26, with
+  t2wide.
 - **The runs directory is runs/ in the clone** (Iteration 84, the owner):
   ignored by git; next-run.sh moved what was needed from
   ~/forth-vm-evolution-runs, once. The packs to send back are there.
