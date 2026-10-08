@@ -235,3 +235,26 @@ generation 40 and the best speed still moving at generation 80. A night
 has room for twice that - 96 x 160, ~7 hours - by size alone:
 
     POP=96 GENS=160 sh lab/evolve/next-run.sh seed 27 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
+
+## Four cores, and runs of hours (Iteration 99)
+
+`JOBS` workers (default 4, the owner's allowance) evaluate a generation's
+designs side by side, each pinned with its builds to its own physical core
+(evolve.py free_cores: the least busy, hyperthread siblings counted
+together, core 0 last; BENCH_CPUS=2,4,6,10 to choose) and pairing every
+timed run with hand-made s6 on that core, in its own copy of the
+reference's work directory. A generation's children are all made before any
+is evaluated, so the run decides as it did serially, and a resumed run
+replays (checked: generation 0 the same designs in the same order with one
+worker and two; a rerun on its own database evaluated nothing new).
+
+    sh lab/evolve/next-run.sh seed 28 tag2 12h then experiment compare-fronts.py --rounds 10 --cpus 2,8
+
+`12h` (any number of hours) runs a population of 256 for as many
+generations as fit before a deadline 50 minutes short of the end (evolve.py
+--until), leaving the re-measure, the report and the comparison inside the
+hours - ~90,000 designs at 4 cores, a database of ~180 MB (~30-40 MB
+packed). Resumed after an interruption, the deadline counts from the new
+start. The front over all designs is found without comparing every pair
+(evolve.py first_front: identical to the old one on seeds 25-27's
+databases, 0.07 s against 130 s on 7,267 designs).

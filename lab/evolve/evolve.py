@@ -4,7 +4,7 @@
     lab/evolve/evolve.py --validate            the hand-made stages, rebuilt
                                                from their genomes, must give
                                                the build's images exactly
-    lab/evolve/evolve.py [--pop N] [--gens G] [--rounds R] [--seed S]
+    lab/evolve/evolve.py [--pop N] [--gens G] [--rounds R] [--seed S] [--jobs N] [--until EPOCH]
     lab/evolve/evolve.py --report              report.md from what is known
     lab/evolve/evolve.py --remeasure N         the front measured again, N rounds
     lab/evolve/evolve.py --knockout [ID,...]   each gene set back to s6's value
@@ -872,6 +872,29 @@ def fronts(ids, R):
         F.append(nxt)
     return F[:-1]
 
+def first_front(ids, R):
+    """fronts(ids, R)[0] - the same designs, in the same order - without
+    comparing every pair (Iteration 99: a 12-hour run makes ~90,000 designs,
+    and fronts() over all of them would take hours). Sorted by speed, a
+    design is dominated by one strictly faster with no more total and memory
+    within MEM_TOL - so, per memory value, the least total seen among the
+    faster ones decides it - or by one as fast, no worse in both and better
+    in one: checked within its speed. Linear in the designs, times the few
+    memory values (pages: ~10)."""
+    pts = sorted(((ov(R[i], 'speed'), ov(R[i], 'total'), ov(R[i], 'rss'), i) for i in ids), key=lambda p: p[0])
+    mems = sorted(set(p[2] for p in pts)); least = {m: math.inf for m in mems}; out = set(); k = 0
+    while k < len(pts):
+        j = k
+        while j < len(pts) and pts[j][0] == pts[k][0]: j += 1
+        grp = pts[k:j]
+        for s, t, m, i in grp:
+            dom = any(least[mv] <= t for mv in mems if mv <= m + MEM_TOL)
+            dom = dom or any(i2 != i and t2 <= t and m2 <= m + MEM_TOL and (t2 < t or m2 < m - MEM_TOL) for s2, t2, m2, i2 in grp)
+            if not dom: out.add(i)
+        for s, t, m, i in grp: least[m] = min(least[m], t)
+        k = j
+    return [i for i in ids if i in out]
+
 def crowding(front, R):
     cd = {i: 0.0 for i in front}
     for k in OBJECTIVES:
@@ -957,6 +980,60 @@ def quiet_cpu():
         return ['taskset', '-c', str(c)]
     except Exception:
         return []
+
+def free_cores(n):
+    """Iteration 99 (the owner: four cores): n logical CPUs on n different
+    physical cores - each the least busy over a second, its hyperthread
+    sibling counted with it, core 0 last (interrupts) - for n workers, each
+    timing on its own core. BENCH_CPUS=2,4,6,10 to choose. Fewer if the
+    machine has fewer cores (a VM: the workers share them)."""
+    if os.environ.get('BENCH_CPUS'): return [int(c) for c in os.environ['BENCH_CPUS'].split(',')][:n]
+    def busy():
+        b = {}
+        for l in open('/proc/stat'):
+            f = l.split()
+            if re.match(r'cpu\d+$', f[0]):
+                v = list(map(int, f[1:])); b[int(f[0][3:])] = (sum(v) - v[3] - v[4], sum(v))
+        return b
+    def sib(c):
+        try:
+            out = set()
+            for part in open('/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list' % c).read().strip().split(','):
+                lo, _, hi = part.partition('-'); out |= set(range(int(lo), int(hi or lo) + 1))
+            return frozenset(out)
+        except OSError: return frozenset([c])
+    try: allowed = sorted(os.sched_getaffinity(0))
+    except AttributeError: allowed = list(range(os.cpu_count() or 1))
+    a = busy(); time.sleep(1); b = busy()
+    load = {c: (b[c][0] - a[c][0]) / max(b[c][1] - a[c][1], 1) for c in b if c in allowed}
+    cores = {}
+    for c in load: cores.setdefault(sib(c), []).append(c)
+    ranked = sorted(cores, key=lambda k: (0 in k, sum(load.get(x, 0) for x in k), min(k)))
+    return [min(c for c in k if c in load) for k in ranked][:n]
+
+WORKERS = [None]
+def _worker(q):
+    """A worker of --jobs N: its own core for everything it runs - builds and
+    timed runs alike - and its own copy of the reference's work directory
+    (the kernel workload writes kernel.img there)."""
+    global REF
+    cpu = q.get()
+    if cpu is not None:
+        try: os.sched_setaffinity(0, {cpu})
+        except (AttributeError, OSError): pass
+        PIN[:] = ['taskset', '-c', str(cpu)] if shutil.which('taskset') else []
+    d = os.path.join(EV, 'ref-w%d' % os.getpid()); shutil.rmtree(d, ignore_errors=True)
+    REF = (REF[0], REF[1], private_work(d))
+def _job(a):
+    t0 = time.time(); rec = evaluate(*a); rec['secs'] = round(time.time() - t0, 1); return rec
+def start_pool(n):
+    """n workers on n cores (free_cores); the evaluation order is the run's
+    order either way, so a resumed or a serial run asks for the same designs."""
+    import multiprocessing as mp
+    cpus = free_cores(n); ctx = mp.get_context('fork'); q = ctx.SimpleQueue()
+    for k in range(n): q.put(cpus[k % len(cpus)] if cpus else None)
+    WORKERS[0] = ctx.Pool(n, initializer=_worker, initargs=(q,))
+    print('%d workers, on cpus %s%s' % (n, ', '.join(map(str, cpus)), ' (shared: fewer cores than workers)' if len(cpus) < n else ''), flush=True)
 
 def stale_build():
     """The sources build/ is made from, newer than build/ itself - after
@@ -1178,7 +1255,8 @@ def knockout(argv):
 def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
-    known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require'}
+    known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
+             '--jobs', '--until'}
     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
     bad = [a for a in argv if a.startswith('-') and a not in known]
     if bad:
@@ -1217,7 +1295,7 @@ def main(argv):
         # In the VM rehearsal they came out 3-6% slower when re-measured.
         R = load(); ok = [i for i in R if R[i]['status'] == 'ok']
         if not ok: nothing_alive(R); sys.exit(1)
-        F = fronts(ok, R)[0]; n = opt('--remeasure', 6); out = {}
+        F = first_front(ok, R); n = opt('--remeasure', 6); out = {}
         path = os.path.join(EV, 'remeasure.json')
         if os.path.exists(path): out = json.load(open(path))
         for i in sorted(F, key=lambda i: R[i]['speed']):
@@ -1227,22 +1305,31 @@ def main(argv):
             json.dump(out, open(path, 'w'))
         report(R); return
     N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
+    JOBS, UNTIL = opt('--jobs', 1), opt('--until', 0)        # Iteration 99: workers on their own cores; a deadline
     R = load()
+    if JOBS > 1: start_pool(JOBS)
     # The designs THIS run has asked for so far. Its decisions must not look
     # at the whole database: resumed, it replays from there, and the
     # database already holds what the first attempt made later - the
     # replay would make different children and fork instead of resuming.
-    seen = set()
+    seen, pending = set(), {}
     def get(g, parents, how, gen):
+        """The design's id; asked for, it is evaluated at the next flush()."""
         if REQUIRE and not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71
         i = gid(g); seen.add(i)
-        if i not in R:
-            t0 = time.time(); rec = evaluate(g, ROUNDS)
-            rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen, secs=round(time.time() - t0, 1))
+        if i not in R and i not in pending: pending[i] = (g, parents, how, gen)
+        return i
+    def flush():
+        """Iteration 99: what get() asked for, evaluated - by the workers when
+        --jobs N - and recorded in the order asked: a generation's children are
+        all made before any is needed, so the run decides as it did serially."""
+        items = list(pending.items()); pending.clear()
+        args = [(canon(g), ROUNDS) for i, (g, parents, how, gen) in items]
+        for (i, (g, parents, how, gen)), rec in zip(items, WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args)):
+            rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen)
             R[i] = rec; save(rec)
             print('    %s %-24s %s' % (i, rec['status'] if rec['status'] != 'ok' else
                   'speed %.4g size %d' % (rec['speed'], rec['size']), how[:70]), flush=True)
-        return i
     pop = [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
     # Founders carrying superinstructions, so the gene enters with a population
     # behind it rather than waiting on one mutation in seventeen.
@@ -1269,7 +1356,7 @@ def main(argv):
                 except ValueError: continue
                 if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
             label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
-            for i in (fronts(list(C), C) or [[]])[0]:
+            for i in first_front(list(C), C):
                 g = canon(require(C[i]['genome'])) if REQUIRE else canon(C[i]['genome'])
                 if gid(g) in have: continue
                 # re-encoded (--require), it is a new design: this run's, not its origin's
@@ -1279,7 +1366,10 @@ def main(argv):
     while len(pop) < N:
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))
+    flush()
     for gen in range(1, G + 1):
+        if UNTIL and time.time() >= UNTIL:
+            print('  the deadline (--until): no generation %d' % gen, flush=True); break
         live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
         order, rk, cd = rank(live, R)
         def pick():
@@ -1304,11 +1394,13 @@ def main(argv):
                     g, h = mutate(g, rnd); how = (how + '; ' if how else '') + h
                 if gid(g) not in seen: break
             kids.append(get(g, parents, how, gen))
+        flush()
         live = [i for i in dict.fromkeys(pop + kids) if R[i]['status'] == 'ok']
         order = rank(live, R)[0]
         best_of = [next(i for i in order if R[i]['genome']['enc'] == f) for f in FAMILIES
                    if any(R[i]['genome']['enc'] == f for i in order)]   # no family dies out by crowding
         pop = list(dict.fromkeys(best_of + order))[:max(N, len(best_of))]
+    if WORKERS[0]: WORKERS[0].close(); WORKERS[0].join()
     report(R)
 
 
@@ -1340,7 +1432,7 @@ def front_records(R, ids):
 def report(R):
     ok = [i for i in R if R[i]['status'] == 'ok']
     if not ok: nothing_alive(R); return
-    F = fronts(ok, R)[0]
+    F = first_front(ok, R)
     hum = {R[i]['how'][10:]: i for i in ok if R[i]['how'].startswith('hand-made')}
     ref = R[hum['s6-cv8b']] if 's6-cv8b' in hum else None
     L = ['# Evolved VM designs', '',

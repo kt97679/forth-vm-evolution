@@ -2090,3 +2090,33 @@ end), 16 of seed 26 (still the two fastest). t2wide on 39 of the 40,
 opbody on all, hotinl on 20. The same 136 designs measured 3.0% slower than
 in session 23 (10-90% -0.2% to +7.3%). NEXT-RUN: seed 28 tag2 night - if
 small too, evolution stops for this gene set.
+
+## Iteration 99 - 2026-10-08 - Claude
+
+**Four cores and a 12-hour run** (the owner: plan the next run for 12 hours;
+only one core was busy; four are fine). evolve.py `--jobs N`: N workers,
+each pinned with its builds to its own physical core (free_cores),
+pairing its timed runs with s6 on that core in its own copy of the
+reference's work directory; a generation's children all made before any is
+evaluated (get() asks, flush() evaluates in order), so decisions are as
+before and a resumed run replays - checked: generation 0 identical with one
+worker and two, a rerun on its own database evaluated nothing new. Found on
+the way: the worker pool's first name, POOL, overwrote the fold pool of the
+same name (line 70) - renamed WORKERS before anything ran with it.
+`--until EPOCH`: no generation started after the deadline (checked: five
+generations, then the report). `first_front()`: the front over every design
+without comparing every pair - identical on seeds 25-27's databases, 0.07 s
+against 130 s - for the report, the re-measure and the carry; a 12-hour
+run's ~90,000 designs would have taken hours. next-run.sh: JOBS (default 4)
+and a size in hours, `12h`: population 256, generations until 50 minutes
+before the end. Tests pass, hand-made stages identical.
+
+The owner's compound quality Q = (binary + image) x run time x memory,
+discussed: on the front of all runs its best is a middle design
+(2766152e23: 0.200 at 34,872 bytes, 200 KB; Q 0.230 of s6's), the fastest
+0.27, the smallest 0.56 - speed spans 3.6x on the front, size 1.7x, memory
+1.1x, so Q is mostly speed. Suggested: keep the three-objective front for
+selection, Q for naming a champion and judging runs; memory in 8 KB steps;
+not before the 4 KB binary steps are fixed. Not built - the owner decides.
+
+NEXT-RUN: seed 28 tag2 12h, then the comparison.

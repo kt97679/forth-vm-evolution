@@ -144,4 +144,9 @@
 # Iteration 98: seed 27 (night size) small - the first in a row; it
 # plateaued by generation 20-40. Seed 28 at night size: if small too,
 # evolution stops for this gene set (two small runs in a row).
-seed 28 tag2 night then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 99 (the owner: a run of 12 hours, four cores): seed 28, population
+# 256, generations until 50 minutes before the 12 hours are up, four workers
+# each on its own core, then the comparison - ~90,000 designs. Seed 27 was
+# small: if seed 28 is small too, evolution stops for this gene set.
+seed 28 tag2 12h then experiment compare-fronts.py --rounds 10 --cpus 2,8

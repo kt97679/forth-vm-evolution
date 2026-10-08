@@ -10,6 +10,10 @@
 #     sh lab/evolve/next-run.sh seed 25 tag2 night
 #                                       # a run for a night: population 96, 80
 #                                       # generations, ~3 hours (Iteration 93)
+#     sh lab/evolve/next-run.sh seed 28 tag2 12h
+#                                       # a run of 12 hours, comparison included:
+#                                       # population 256, generations until a
+#                                       # deadline 50 minutes before (Iteration 99)
 #     sh lab/evolve/next-run.sh compare # every run's front here, measured again
 #                                       # in one session; nothing archived (Iteration 20)
 #     sh lab/evolve/next-run.sh experiment cpu-noise.py --rounds 20
@@ -25,6 +29,7 @@
 #   BUNDLES   where bundles arrive      default ~/Downloads
 #   RUNS      logs, archives, the pack  default runs/ in the clone (Iteration 84)
 #   POP GENS ROUNDS REMEASURE           default 32 40 3 6 - seed 3's run; night: 96 80
+#   JOBS                                workers, each on its own core: default 4 (Iteration 99)
 #
 # Interrupted? Run it again with the same seed: with nothing new pulled the
 # run resumes from its database (RUNNING.md). A new commit, another seed or
@@ -42,6 +47,7 @@ REPO=${REPO:-$HOME/git/my/forth-vm-evolution-iter14}
 BUNDLES=${BUNDLES:-$HOME/Downloads}
 RUNS=${RUNS:-$REPO/runs}       # Iteration 84 (the owner): in the clone, ignored by git - all in one place
 POP=${POP:-32}; GENS=${GENS:-40}; ROUNDS=${ROUNDS:-3}; REMEASURE=${REMEASURE:-6}
+JOBS=${JOBS:-4}; UNTIL=                 # Iteration 99: four workers, each on its own core
 
 # Iteration 79: the archived databases, oldest first by their archive name
 # (a UTC timestamp) - the laptop's, in $RUNS, and the odd seeds' run on the
@@ -137,11 +143,20 @@ esac
 # front was cut from breeding every generation); then the generations (a
 # third of each front was still found in the last 10 of 40). 96 x 80 at seed
 # 23's pace, 1.4 s a design: ~3 hours, then the re-measure as always.
-case ${REQ:-} in night) REQ=; SIZE=night ;; esac
+case ${REQ:-} in night|*[0-9]h) SIZE=$REQ; REQ= ;; esac
+# Iteration 99 (the owner): "12h" - a run of so many hours, its comparison
+# included: generations until a deadline 50 minutes before the end, for the
+# re-measure, the report and the comparison. The population 256: the night
+# run's front came from the second half of its generations, and four cores
+# (JOBS) evaluate ~4 times as many designs - ~90,000 in 12 hours.
+HOURS=
 case ${SIZE:-} in
     '') ;;
     night) POP=96; GENS=80 ;;
-    *) die "after the seed and tag2: nothing, or night - not '$SIZE'" ;;
+    *[0-9]h) HOURS=${SIZE%h}
+         case $HOURS in *[!0-9]*) die "a number of hours, as 12h - not '$SIZE'" ;; esac
+         POP=256; GENS=100000; UNTIL=$(( $(date +%s) + HOURS * 3600 - 3000 )) ;;
+    *) die "after the seed and tag2: nothing, night, or hours (12h) - not '$SIZE'" ;;
 esac
 # Iteration 71: "seed N tag2" - every design of the run in the two-bit tag
 case ${REQ:-} in ''|tag2) ;; *) die "after the seed: nothing, or tag2 - not '$REQ'";; esac
@@ -321,7 +336,7 @@ else
 fi
 if [ -n "${REQ:-}" ]; then set -- "$@" --require "$REQ"; say "every design of the run in the two-bit tag"; fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" "$@" >> evolve.log 2>&1 \
+python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} "$@" >> evolve.log 2>&1 \
     || { tail -20 evolve.log; exit 1; }
 tail -3 evolve.log
 step "the front, measured again - $REMEASURE rounds"
