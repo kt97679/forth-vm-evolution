@@ -376,7 +376,14 @@ def rt():
     # static engine has no dynamic relocations, and their padding made the
     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
-                 '-Wl,-n', '-Wl,-z,norelro', '-Wl,--build-id=none', RTC, '-lgcc']
+                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', RTC, '-lgcc']
+    # -N, not -n (Iteration 110): -n kept the default script's page alignment
+    # of the data sections - .data.rel.ro started on a page boundary, so an
+    # engine's file grew in 4 KB steps whenever its code's end crossed one,
+    # luck for any design and any change (a 430-byte saving showed as -4,296
+    # bytes and as -72). -N lays them end to end: the file is its sections
+    # and ~800 bytes of headers. The segment was readable, writable and
+    # executable under -n already.
 
 def bin_size(eng):
     """Iteration 75: the engine as it would ship - a stripped copy's size.

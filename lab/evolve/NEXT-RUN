@@ -173,4 +173,8 @@
 # hours. This bundle goes to ~/Downloads only after the day's chain (seed 30,
 # its comparison, the knockouts) has finished: every step of a chain pulls
 # the newest bundle first.
-seed 31 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 110: engines linked with -N (results/link-N.md) - the file is its
+# sections, no 4 KB page steps. Seed 32 within the day (the owner: a run
+# before 9pm) - the hours include the comparison; adjust them to the time left.
+seed 32 tag2 6h then experiment compare-fronts.py --rounds 10 --cpus 2,8

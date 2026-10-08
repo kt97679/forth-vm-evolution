@@ -104,7 +104,11 @@ all runs; jitx on 12 of its 89 front designs. **The knockouts** (results/
 knockouts-seed30.md, 22 designs): kfast, escape, kinput, ops10, rtloop, the
 JIT and klookup carry the speed; t2wide pays 8.4% and 203 bytes; rtloopall,
 t2hot, tracer, tfind and spec are worth ~nothing where they sit - candidates
-to retire. Seed 29 never ran. NEXT-RUN: seed 31 tag2 9h. **Iteration 104**: input as relf reads it - no
+to retire. Seed 29 never ran. **Iteration 110: engines linked with -N**
+(results/link-N.md) - no page padding in the file: 59 of the 75 front
+designs' engines smaller (median -160, up to -2,528 bytes), none larger; a
+gene's bytes are now its bytes. Sizes changed for every design: the
+stopping rule counts afresh. NEXT-RUN: seed 32 tag2, hours to fit the day. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

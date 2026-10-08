@@ -2281,3 +2281,20 @@ speed; t2wide 8.4% and 203 bytes; opbody 128 bytes; hotinl 1.9% for 56;
 rtloopall (with 424 bytes), t2hot, tracer, tfind and spec ~0 - candidates to
 retire, for simplicity; tail ~9% slower for 125 bytes, a size trade.
 NEXT-RUN unchanged: seed 31 tag2 9h.
+
+## Iteration 110 - 2026-10-09 - Claude
+
+**The engine's file without page padding** (results/link-N.md; the owner:
+choose between the padding fix and retiring the genes worth nothing). The
+padding fix first: it is a measurement problem, it misleads selection on
+every design, it is checkable exactly on the VM, and it unblocks the trims;
+retiring genes needs the loop column first (the knockout's speed leaves loop
+out) and changes the genome's identities. The cause, found: not the
+page-aligned memory area (.bss takes no file room) but the default linker
+script's page alignment of the data sections under -n. Linked with -N: the
+data sections end to end. The front of all runs, built both ways: 16
+engines unchanged, 59 smaller (median -160, up to -2,528 bytes), none larger;
+15 designs of every engine form through the gate; tests pass, hand-made
+stages identical. Sizes changed for every design - the stopping rule counts
+afresh. NEXT-RUN: seed 32 tag2 6h (hours to fit the day), then the
+comparison.
