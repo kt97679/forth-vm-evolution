@@ -154,4 +154,7 @@
 # not comparable with earlier records - the comparison measures everything
 # anew), the gene rtempty, the CPU's divide for UM/MOD. The stopping rule
 # counts afresh. The deadline now leaves 80 minutes for the comparison.
-seed 28 tag2 12h then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 105 (the owner): 9 hours, not 12 - generations until 80 minutes
+# before the end, then the re-measure and the comparison.
+seed 28 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8

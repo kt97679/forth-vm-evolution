@@ -2194,3 +2194,16 @@ result; stopping points; the boring-result line), **17-variants-as-data**
 null rewrites (meaning-preserving changes as the noise floor - our 4 KB
 steps), and in step 4 the disappointing result audited too. Carried back to
 relf through prompts/UPSTREAM.
+
+## Iteration 105 - 2026-10-08 - Claude
+
+The owner asked to confirm that KEY and EMIT are colon words: they are - in
+forth/kernel.4 and in every image (checked on the fastest and the smallest
+design), KEY is KEY-BYTE 1 READ 0= IF BYE THEN KEY-BYTE C@, EMIT is
+EMIT-BYTE C! EMIT-BYTE 1 WRITE, TYPE is WRITE; no design has an opcode of
+either name. They rest on the primitives READ and WRITE - not yet on one
+SYSCALL, which is agreed in principle but not built; with it, READ and WRITE
+would become colon words too, and WRITE's output buffer (4 KB in C, flushed
+before reads, fork and exit) would have to move into Forth, not go: one
+write(2) a character made relf's runs 5x slower. NEXT-RUN: the long run 9
+hours, not 12 (seed 28 tag2 9h).
