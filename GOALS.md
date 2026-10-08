@@ -84,8 +84,12 @@ on the fastest design: a start is ~1% - speeds before and after are not
 comparable, comparisons are); **rtempty** (empty words compile to nothing);
 the CPU's divide for UM/MOD in every engine; the JIT's next step priced
 (results/jit-kernel-words.md); one SYSCALL primitive agreed in principle.
-**NEXT-RUN: seed 28 tag2 9h** (Iteration 105, the owner: 9 hours) - the
-stopping rule counts afresh (new workloads, a new gene). **Iteration 104**: input as relf reads it - no
+**Seed 28** (Iteration 106, session 25, calibration 0.993): nine hours on
+four cores, 39,985 designs - **not small, by a hair** (fastest +5.0%:
+679fdd08a1, 0.132 at 38,560 bytes; smallest total 24,874, +0.20%; memory
+none); 66 of the 67 designs on the front of all runs; still improving at
+generation 158; four workers measured as tightly as one. **NEXT-RUN: seed
+29 tag2 9h**, then the comparison. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and
@@ -431,6 +435,13 @@ the laptop rests until new genes exist.
   (+0.16%), memory none; the best speed flat from generation 20. The front
   of all runs 40 designs, 24 of seed 27, 16 of seed 26. t2wide on 39 of
   them, opbody on all, hotinl on 20.
+- **Seed 28 - not small, by a hair** (Iteration 106, results/evolve-amd-
+  ryzen-7-pro-8840hs-seed28.md; session 25, calibration 0.993): nine hours,
+  four workers, the long workloads, rtempty; 39,985 designs. Fastest +5.0%
+  (679fdd08a1, 0.132 - the long workloads' units), smallest total 24,874
+  (+0.20%), memory none. The front of all runs 67, 66 of seed 28; its front
+  born mostly after generation 120. The run's speeds against the re-measured
+  as tight as with one worker (10-90% 0.900-0.955).
 - **The runs directory is runs/ in the clone** (Iteration 84, the owner):
   ignored by git; next-run.sh moved what was needed from
   ~/forth-vm-evolution-runs, once. The packs to send back are there.

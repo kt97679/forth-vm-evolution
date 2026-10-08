@@ -2207,3 +2207,22 @@ would become colon words too, and WRITE's output buffer (4 KB in C, flushed
 before reads, fork and exit) would have to move into Forth, not go: one
 write(2) a character made relf's runs 5x slower. NEXT-RUN: the long run 9
 hours, not 12 (seed 28 tag2 9h).
+
+## Iteration 106 - 2026-10-08 - Claude
+
+**Seed 28 and session 25** (results/evolve-amd-ryzen-7-pro-8840hs-seed28.md):
+nine hours on four cores (workers on cpus 4, 8, 6, 12), the long workloads,
+rtempty; population 256, 158 generations before the deadline, 39,985 designs
+(2.7 s each for a worker); deaths only the reach limit's 2,305 and one
+old-format design that does not convert. 8 h 42 min with the comparison.
+Session 25 measured seeds 24-28 with the long workloads (calibration 0.993):
+**seed 28 not small, by a hair** - the fastest +5.0% (679fdd08a1, 0.132 at
+38,560 bytes), smallest total 24,874 (+0.20%), memory none. The front of all
+runs 67 designs, 66 of seed 28. **Four workers measured as tightly as one**:
+a front design's speed in the run against its re-measured speed, 10-90%
+0.900-0.955 (seeds 26 and 27, one worker: 0.896-0.990, 0.848-0.992).
+Still improving at the end: 60 of its 86 front designs born after
+generation 120, the best recorded speed 0.124 by generation 10, 0.119 by
+158. On the front of all runs: t2wide 63, opbody 66, hotinl 37, the JIT 18,
+rtempty 17. Q (information): best fc52c18d76, 0.151 at 34,464 bytes; the
+fastest 1.04 times it, the smallest 2.79 times. NEXT-RUN: seed 29 tag2 9h.

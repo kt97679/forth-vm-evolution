@@ -157,4 +157,7 @@
 #
 # Iteration 105 (the owner): 9 hours, not 12 - generations until 80 minutes
 # before the end, then the re-measure and the comparison.
-seed 28 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 106: seed 28 (9 hours, four cores) not small, by a hair (+5.0%),
+# still improving at its end. Seed 29, the same size.
+seed 29 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8
