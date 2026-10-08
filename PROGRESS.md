@@ -2075,3 +2075,18 @@ sites); opbody on all 35. Measured too: the same 137 designs 1.8% slower
 than in session 22 at the median (10-90% -0.8% to +7.2%; seed 25's fastest
 0.163 then, 0.184 now) - why the rule compares within one session.
 NEXT-RUN: seed 27 tag2 night (or 96 x 160 for a whole night, RUNNING.md).
+
+## Iteration 98 - 2026-10-07 - Claude
+
+**Seed 27 and session 24** (results/evolve-amd-ryzen-7-pro-8840hs-seed27.md).
+Night size (96 x 80) run by day, at Iteration 97's commit: 7,691 designs,
+7,267 alive, only the reach limit's 424 deaths, 3 h 39 min. Session 24
+measured seeds 23-27 (calibration 1.009): **seed 27 small, the first in a
+row** - fastest none (0.185 against seed 26's 0.181), smallest total 24,923
+(+0.16%), memory none. From seed 26's front it plateaued early: the best
+recorded speed flat from generation 20, the smallest total from 40. The
+front of all runs: 40 designs, 24 of seed 27 (the middle and the small
+end), 16 of seed 26 (still the two fastest). t2wide on 39 of the 40,
+opbody on all, hotinl on 20. The same 136 designs measured 3.0% slower than
+in session 23 (10-90% -0.2% to +7.3%). NEXT-RUN: seed 28 tag2 night - if
+small too, evolution stops for this gene set.

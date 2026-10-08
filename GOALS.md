@@ -73,7 +73,12 @@ front of all runs 34 designs; hotinl on 3 of seed 25's front, opbody on 21.
 0.998): not small - fastest +10.3% (70bc3ae6b5, 0.165), smallest total
 24,964 (+0.66%); 29 of the 30 on the front of all runs are its own; its
 front born mostly after generation 40, still improving at 80. t2wide on its
-whole front. **NEXT-RUN: seed 27 tag2 night**, then the comparison. Every pack now
+whole front. **Seed 27** (night size, by day; Iteration 98, session 24,
+calibration 1.009): **small, the first in a row** - fastest none (0.185
+against seed 26's 0.181), smallest total 24,923 (+0.16%), memory none; it
+plateaued by generation 20-40. The front of all runs 40 designs (24 of seed
+27, 16 of seed 26). **NEXT-RUN: seed 28 tag2 night**, then the comparison -
+if small too, evolution stops for this gene set. Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**
@@ -409,6 +414,12 @@ the laptop rests until new genes exist.
   front born mostly after generation 40, the best speed still moving at 80.
   t2wide on all 35 of its front (clean pairs: -104 bytes, kernel, parse and
   corpus 1-2% faster); hotinl on the two fastest of all runs.
+- **Seed 27 - small, the first** (Iteration 98, results/evolve-amd-ryzen-7-
+  pro-8840hs-seed27.md; session 24, calibration 1.009): night size, by day,
+  7,691 designs. Fastest none (0.185 against 0.181), smallest total 24,923
+  (+0.16%), memory none; the best speed flat from generation 20. The front
+  of all runs 40 designs, 24 of seed 27, 16 of seed 26. t2wide on 39 of
+  them, opbody on all, hotinl on 20.
 - **The runs directory is runs/ in the clone** (Iteration 84, the owner):
   ignored by git; next-run.sh moved what was needed from
   ~/forth-vm-evolution-runs, once. The packs to send back are there.

@@ -140,4 +140,8 @@
 # front of all runs and was still improving at generation 80. Another night:
 # seed 27 at night size - or, to use the whole night (~7 hours), run
 #     POP=96 GENS=160 sh lab/evolve/next-run.sh seed 27 tag2 then experiment compare-fronts.py --rounds 10 --cpus 2,8
-seed 27 tag2 night then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 98: seed 27 (night size) small - the first in a row; it
+# plateaued by generation 20-40. Seed 28 at night size: if small too,
+# evolution stops for this gene set (two small runs in a row).
+seed 28 tag2 night then experiment compare-fronts.py --rounds 10 --cpus 2,8
