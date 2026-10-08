@@ -210,6 +210,18 @@ S(st_leave)  { ucell *rpp = IMM_RP(); *rpp += 2 * sizeof(cell); return spn_jump(
    trampoline. In the native layout it is one load: tos is u, sp[0] is
    x0, and xu is sp[u]. */
 S(st_pick)   { GO(sp, sp[tos]); }
+#if JITX
+/* Iteration 108 (forth-vm-evolution, the gene jitx): FILL ( c-addr u char -- )
+   for its translator - without a call, which a stencil may not hold: rep stosb
+   on x86-64, elsewhere a loop the compiler cannot turn into memset. */
+S(st_fill)   { unsigned char *p = (unsigned char *)sp[1]; cell n = *sp;
+#if defined(__x86_64__)
+               if (n > 0) { ucell k = (ucell)n; __asm__ volatile("rep stosb" : "+D"(p), "+c"(k) : "a"(tos) : "memory"); }
+#else
+               { volatile unsigned char *q = p; while (n-- > 0) *q++ = (unsigned char)tos; }
+#endif
+               GO(sp + 3, sp[2]); }
+#endif
 
 /* The table the Forth side reads. Order matters: SPN-TABLE hands it over
    as-is, and forth/spn.4 names the entries by position. */
@@ -236,6 +248,9 @@ const void *const spn_table[] = {
     (const void *)st_do, (const void *)st_qdo, (const void *)st_loop,
     (const void *)st_ploop, (const void *)st_i, (const void *)st_j,
     (const void *)st_unloop, (const void *)st_leave, (const void *)st_pick,
+#if JITX
+    (const void *)st_fill,
+#endif
 #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
     (const void *)st_uge_br, (const void *)st_ge_br, (const void *)st_nei_br,

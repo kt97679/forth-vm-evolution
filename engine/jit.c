@@ -24,7 +24,10 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
        S_AND, S_NEGATE, S_0BRANCH, S_BRANCH, S_CALL, S_EXIT, S_ADDI32, S_DUP_GTI_BR, S_TOR,
        S_FROMR, S_RFETCH, S_FETCH, S_STORE, S_CFETCH, S_CSTORE, S_OR, S_ULT, S_LSHIFT,
        S_RSHIFT, S_INTERP, S_DO, S_QDO, S_LOOP, S_PLOOP, S_I, S_J, S_UNLOOP, S_LEAVE, S_PICK,
-       S_N };                                    /* spn_table's order, the first 44 */
+#if JITX
+       S_FILL,                                   /* Iteration 108: forth-vm-evolution's own */
+#endif
+       S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
 
 #define JIT_IMM64 0x5ea1ed5ea1ed5ea1ULL         /* spn-stencils.c's SPN_IMM_VALUE */
 #define JIT_RP64  0x7ea1ed5ea1ed5e77ULL         /* SPN_RP_VALUE */
@@ -224,17 +227,68 @@ static void jit_dump(int fd) {
 #define JITNOTE(w, e)
 #endif
 
+#if JITX
+/*  Iteration 108, the gene jitx: the translator reaches further (results/
+ *  jit-kernel-words.md).
+ *  - A call to a variable (DOVAR) is a literal: its parameter field's
+ *    address, align8(body + 5) under the tag (L_dovar) - fixed for the run.
+ *  - A word without the JIT header - a kernel word in the image, a CONSTANT
+ *    made at run time - is translated too, once, kept by its address in
+ *    jit_k; its end found as the converter finds a body's: the first EXIT
+ *    no branch reaches past.
+ *  - >R, R> and R@ have stencils (layout.py --jitx), in a word whose return
+ *    stack balances in order - never below its entry, back to it at every
+ *    EXIT: a word that reads its own return address stays bytecode, since
+ *    native words return through the C stack, not the engine's.  */
+#define JIT_DEPTH 8
+#define JIT_KN 256
+static struct { UNS64 w; uint32_t f; } jit_k[JIT_KN];   /* f: native offset; 0 bytecode; 1 being translated; top bit: not yet */
+static uint32_t *jit_kslot(UNS64 w) {
+    unsigned h = (unsigned)((w * 0x9E3779B97F4A7C15ULL) >> 56), n;
+    for (n = 0; n < JIT_KN; n++, h = (h + 1) % JIT_KN) {
+        if (jit_k[h].w == w) return &jit_k[h].f;
+        if (!jit_k[h].w) { jit_k[h].w = w; jit_k[h].f = 0x80000000u; return &jit_k[h].f; }
+    }
+    return 0;                           /* full: the rest stay bytecode */
+}
+static int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; return o->n && o->st[o->n - 1] == S_EXIT; }
+#else
+#define JIT_DEPTH 4
+#endif
+
+#if JITX
+static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
+#else       /* without jitx, called once: inlined, the engine as it was */
+static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
+#endif
 /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
 static uint32_t jit_word(UNS64 w, int depth) {
-    UNS64 at[JIT_MAXOPS + 1], arg[JIT_MAXOPS], end, a;
-    uint32_t nat[JIT_MAXOPS + 1], size = 0, off;
-    unsigned short opl[JIT_MAXOPS];     /* the logical operation; 0xFFFF a call to w, 0xFFFE a call resolved */
-    int n = 0, i, j;
-    end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
+    UNS64 end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
+    uint32_t f;
     JITNOTE(w, end);
     jit_st32(w + 1, 0);                 /* meanwhile, and if it fails: not native */
-    if (depth > 4 || !jit_init()) return 0;
-    for (a = w + 5; a < end; n++) {     /* decode, as the engine does */
+    f = jit_body(w, w + 5, end, depth);
+    if (f) jit_st32(w + 1, f);
+    return f;
+}
+/* The operations from a to end - end 0: find it, a word without a header
+   (jitx) - of the word w: a call to w is a call to this code itself. */
+#if JITX
+static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
+#else
+static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth) {
+#endif
+    UNS64 at[JIT_MAXOPS + 1], arg[JIT_MAXOPS], far = 0;
+    uint32_t nat[JIT_MAXOPS + 1], size = 0, off;
+    unsigned short opl[JIT_MAXOPS];     /* the logical operation; 0xFFFF a call to w, 0xFFFE a call resolved, 0xFFFD a literal */
+    int n = 0, i, j;
+    (void)far;
+    if (depth > JIT_DEPTH || !jit_init()) return 0;
+#if JITX
+    for (; !end || a < end; n++) {      /* decode, as the engine does */
+#else
+    for (; a < end; n++) {
+#endif
         UNS8 b = BYTE(a);
         if (n >= JIT_MAXOPS) return 0;
         at[n] = a;
@@ -259,21 +313,55 @@ static uint32_t jit_word(UNS64 w, int depth) {
             case 7: arg[n] = a + (UNS64)(INT64)(int16_t)LD16(a); a += 2; break;
             default: return 0;
             }
+#if JITX
+            if (jit_ops[L].opnd >= 6 && arg[n] > far) far = arg[n];
+            if (!end && jit_ends(L) && a > far) { n++; end = a; break; }   /* the end: an EXIT no branch reaches past */
+#endif
         }
     }
     if (a != end) return 0;
     at[n] = end;
+#if JITX
+    {   int d = 0;                      /* the return stack in order: never below the entry, at it at every EXIT */
+        for (i = 0; i < n; i++) {
+            if (opl[i] == 0xFFFF) continue;
+            for (j = 0; j < jit_ops[opl[i]].n; j++) {
+                int s = jit_ops[opl[i]].st[j];
+                if (s == S_TOR) d++;
+                else if (s == S_FROMR) { if (!d) return 0; d--; }
+                else if (s == S_RFETCH) { if (!d) return 0; }
+                else if (s == S_EXIT && d) return 0;
+            }
+        }
+    }
+#endif
     for (i = 0; i < n; i++) {           /* callees first: native, or no translation */
         uint32_t f;
         if (opl[i] != 0xFFFF || arg[i] == w) continue;
-        if (BYTE(arg[i]) != JIT_CODE) return 0;
-        f = jit_ld32(arg[i] + 1);
-        if (f & 0x80000000u) f = jit_word(arg[i], depth + 1);
+        if (BYTE(arg[i]) == JIT_CODE) {
+            f = jit_ld32(arg[i] + 1);
+            if (f & 0x80000000u) f = jit_word(arg[i], depth + 1);
+        }
+#if JITX
+        else if (BYTE(arg[i]) == JIT_DOVAR) {         /* a variable: its address, a literal */
+            arg[i] = (arg[i] + 5 + 7) & ~(UNS64)7; opl[i] = 0xFFFD; continue;
+        } else {                                      /* a word without the header: translated once */
+            uint32_t *k = jit_kslot(arg[i]);
+            if (!k) return 0;
+            if (*k & 0x80000000u) { *k = 1; *k = jit_body(arg[i], arg[i], 0, depth + 1); }
+            f = *k;
+        }
+#else
+        else return 0;
+#endif
         if (f < 2) return 0;
         arg[i] = (UNS64)(uintptr_t)(jit_mem + f); opl[i] = 0xFFFE;
     }
     for (i = 0; i < n; i++) {           /* sizes, and every stencil usable */
         nat[i] = size;
+#if JITX
+        if (opl[i] == 0xFFFD) { if (!jit_usable(S_LIT)) return 0; size += (uint32_t)jit_len(S_LIT); continue; }
+#endif
         if (opl[i] >= 0xFFFE) { if (!jit_usable(S_CALL)) return 0; size += (uint32_t)jit_len(S_CALL); continue; }
         for (j = 0; j < jit_ops[opl[i]].n; j++) {
             int s = jit_ops[opl[i]].st[j];
@@ -289,6 +377,9 @@ static uint32_t jit_word(UNS64 w, int depth) {
         const struct jit_op *o;
         UNS64 jt = 0;
         int lit = 1;
+#if JITX
+        if (opl[i] == 0xFFFD) { jit_put(p, S_LIT, arg[i], 0, 0); continue; }
+#endif
         if (opl[i] >= 0xFFFE) {
             jit_put(p, S_CALL, 0, 0, opl[i] == 0xFFFF ? (UNS64)(uintptr_t)(jit_mem + off) : arg[i]);
             continue;
@@ -307,7 +398,6 @@ static uint32_t jit_word(UNS64 w, int depth) {
         }
     }
     jit_used = off + size;
-    jit_st32(w + 1, off);
     return off;
 }
 #endif
@@ -316,10 +406,10 @@ static uint32_t jit_word(UNS64 w, int depth) {
 /* tools/jit-check.sh: how this compiler shaped every stencil */
 #include <stdio.h>
 int main(void) {
-    static const char *nm[S_N] = { "next", "jump", "call", "lit", "dup", "drop", "swap", "over", "rot",
+    static const char *nm[S_N + 1] = { "next", "jump", "call", "lit", "dup", "drop", "swap", "over", "rot",
         "plus", "addi", "eq", "gt", "lt", "xor", "and", "negate", "0branch", "branch", "call", "exit",
         "addi32", "dup_gti_br", "tor", "fromr", "rfetch", "fetch", "store", "cfetch", "cstore", "or",
-        "ult", "lshift", "rshift", "interp", "do", "qdo", "loop", "ploop", "i", "j", "unloop", "leave", "pick" };
+        "ult", "lshift", "rshift", "interp", "do", "qdo", "loop", "ploop", "i", "j", "unloop", "leave", "pick", "fill" };
     int i;
     jit_scan();
     for (i = S_LIT; i < S_N; i++)

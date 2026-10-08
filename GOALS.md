@@ -93,7 +93,11 @@ generation 158; four workers measured as tightly as one. **NEXT-RUN: seed
 ~80% of a run's gain in its first hour, ~89% in three, the rest ~10% - but
 real jumps happen late): the day of the 9th - seed 30 for 6 hours, its
 comparison, then knockouts of its front (each gene's worth); the night - the
-next gene batch, 9 hours. **Iteration 104**: input as relf reads it - no
+next gene batch, 9 hours. **Iteration 108: the gene jitx** (results/jitx.md):
+the kernel workload's bytecode dispatches -10%, the held-out sieve's -99.9%
+(3.4x on the VM). **NEXT-RUN: seed 31 tag2 9h** - the bundle into ~/Downloads
+only after the day's chain has finished. The engine trims wait for the page
+padding fix: their bytes are invisible or a 4 KB step until then. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

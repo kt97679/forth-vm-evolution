@@ -123,6 +123,13 @@ laptop**; the VM's 10-17% was the VM. Linked without page padding
 (Iteration 82) the JIT costs 3.4 KB of engine (seed 19's fastest: 31,448
 -> 34,872 bytes).
 
+## Iteration 108: the gene jitx (results/jitx.md)
+
+Variables as literals, words without the JIT header (kernel words, run-time
+constants) translated once each, >R/R>/R@ in words that balance the return
+stack, and a FILL stencil: the kernel workload's bytecode dispatches -10%, the
+held-out sieve's -99.9% (its PRIMES native; 3.4x faster on the VM).
+
 ## Iteration 90: where the JIT stops
 
 Measured with lab/evolve/callsites.py (the profiler logs every word the

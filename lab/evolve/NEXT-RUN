@@ -168,4 +168,9 @@
 # measured where timing is clean (~1-2 hours). Done by about 2pm. The night
 # run (9 hours) is the next gene batch's, in the next bundle - put that one in
 # ~/Downloads only once this chain has finished.
-seed 30 tag2 6h then experiment compare-fronts.py --rounds 10 --cpus 2,8 then experiment evolve.py --knockout --rounds 6
+#
+# Iteration 108: the night of the 9th - the gene jitx (results/jitx.md), 9
+# hours. This bundle goes to ~/Downloads only after the day's chain (seed 30,
+# its comparison, the knockouts) has finished: every step of a chain pulls
+# the newest bundle first.
+seed 31 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8

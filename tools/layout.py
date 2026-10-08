@@ -1352,6 +1352,8 @@ if EMIT:
                   'C@': ['CFETCH'], 'C!': ['CSTORE'], 'I': ['I'], 'J': ['J'], 'UNLOOP': ['UNLOOP'],
                   'I+': ['I', 'PLUS'], '(DO)': ['DO'], 'EXIT': ['EXIT'], '2DUP': ['OVER', 'OVER'],
                   '2DROP': ['DROP', 'DROP'], 'NOOP': []}
+            if '--jitx' in ARGV:   # Iteration 108, the gene jitx: the return stack, in words that balance it (engine/jit.c)
+                S1.update({'>R': ['TOR'], 'R>': ['FROMR'], 'R@': ['RFETCH'], 'FILL': ['FILL']})
             K = {'lit0': (['LIT'], 0), 'lit1': (['LIT'], 1), 'litm1': (['LIT'], -1), '0=': (['LIT', 'EQ'], 0),
                  '0<': (['LIT', 'LT'], 0), 'INVERT': (['LIT', 'XOR'], -1), '<>': (['EQ', 'LIT', 'XOR'], -1),
                  '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
@@ -1387,7 +1389,8 @@ if EMIT:
             _jc = T2MAP['one'][G['T2_JIT']]
             open(_os.path.join(_d, 'vm-jit-ops.h'), 'w').write(
                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
-                '#define JIT_CODE %d\nstatic const struct jit_op jit_ops[] = {\n%s\n};\n' % (_jc, '\n'.join(_rows)))
+                '#define JIT_CODE %d\n#define JIT_DOVAR %d\nstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
+                % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]], '\n'.join(_rows)))
             print("wrote vm-jit-ops.h: %d of %d operations translatable; JIT is code %d" % (len(_rows), len(G['t2_names']()), _jc))
 
 sys.exit(0 if chain_ok and gaps == 0 and not defer_bad and not xt_bad

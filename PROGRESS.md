@@ -2242,3 +2242,24 @@ worth in each design (evolve.py --knockout, never yet run on t2wide, opbody,
 hotinl, rtempty). The knockout now finds the front with first_front, not
 fronts() - every pair of a long run's ~40,000 designs would have taken half
 an hour. NEXT-RUN: seed 30 tag2 6h, then the comparison, then the knockouts.
+
+## Iteration 108 - 2026-10-09 - Claude
+
+**The gene jitx** (results/jitx.md; the owner: "proceed" with batch 1). On
+top of `jit`, the parts priced in Iteration 103 that only pay together:
+variables as literals (DOVAR's align8(body + 5)); words without the JIT
+header - kernel words, run-time constants - translated once each, kept by
+address, their end the first EXIT no branch reaches past; >R, R> and R@ with
+SPN's stencils, in words whose return stack balances in order (native words
+return through the C stack, so a word reading its own return address stays
+bytecode); a FILL stencil without a call (rep stosb). VM counts on two JIT
+designs: kernel workload bytecode dispatches 0.900, corpus 0.997, the
+held-out sieve 0.001 - its PRIMES native, 3.4x faster on the VM. Checked
+where it changed: the gate, the sieve's output against s6's, FILL's bytes on
+the translating call and the next, a balanced >R word; tests pass,
+hand-made stages identical, the gene expressed only with the JIT. Cost: +368
+bytes of code, a 4 KB BSS table; the engine file +4,288 - the page padding's
+step. With the gene off images are identical, the JIT engines' code 48 bytes
+larger. Not in this batch: the two engine trims - until the page padding is
+fixed their bytes are invisible or a 4 KB lottery. NEXT-RUN: seed 31 tag2 9h,
+into ~/Downloads after the day's chain.
