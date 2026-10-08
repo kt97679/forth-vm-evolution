@@ -78,9 +78,14 @@ calibration 1.009): **small, the first in a row** - fastest none (0.185
 against seed 26's 0.181), smallest total 24,923 (+0.16%), memory none; it
 plateaued by generation 20-40. The front of all runs 40 designs (24 of seed
 27, 16 of seed 26). **Iteration 99**: four workers (JOBS, each on its
-own core) and runs of hours - **NEXT-RUN: seed 28 tag2 12h**, the
-comparison inside the 12 hours; if small too, evolution stops for this gene
-set. Every pack now
+own core) and runs of hours. **Iterations 100-103** (the owner's answers):
+Q for information only; **longer workloads** (each repeated to ~10-15 ms
+on the fastest design: a start is ~1% - speeds before and after are not
+comparable, comparisons are); **rtempty** (empty words compile to nothing);
+the CPU's divide for UM/MOD in every engine; the JIT's next step priced
+(results/jit-kernel-words.md); one SYSCALL primitive agreed in principle.
+**NEXT-RUN: seed 28 tag2 12h** - the stopping rule counts afresh (new
+workloads, a new gene). Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**

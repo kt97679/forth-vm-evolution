@@ -529,6 +529,20 @@ static void umul(UNS64 *a, UNS64 *b) {
     *a = (UNS64)(p >> 64);
     *b = (UNS64)p;
 }
+#if defined(__x86_64__)
+/*  Iteration 102 (an engine trim): the CPU's 128/64 divide, not libgcc's
+ *  __udivmodti4 (430 bytes in every engine). The C below truncates a
+ *  quotient that does not fit 64 bits, where divq would fault: so the high
+ *  half is reduced modulo the divisor first - the low 64 bits of the
+ *  quotient and the remainder are the same. A zero divisor faults, as the
+ *  library's division did.  */
+static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
+    UNS64 d = *a, hi = *b, lo = *c, q, r;
+    if (d && hi >= d) hi %= d;
+    __asm__("divq %4" : "=a"(q), "=d"(r) : "a"(lo), "d"(hi), "rm"(d));
+    *b = q; *c = r;
+}
+#else
 static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
     unsigned __int128 dividend =
         ((unsigned __int128)(*b) << 64) | (unsigned __int128)(*c);
@@ -536,6 +550,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
     *b = (UNS64)(dividend / divisor);
     *c = (UNS64)(dividend % divisor);
 }
+#endif
 #else
 static void umul(UNS64 *a, UNS64 *b) {
     unsigned long long p = (unsigned long long)(*a) * (unsigned long long)(*b);

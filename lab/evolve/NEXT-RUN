@@ -149,4 +149,9 @@
 # 256, generations until 50 minutes before the 12 hours are up, four workers
 # each on its own core, then the comparison - ~90,000 designs. Seed 27 was
 # small: if seed 28 is small too, evolution stops for this gene set.
+#
+# Iterations 100-103: the long workloads (speeds measured from here on are
+# not comparable with earlier records - the comparison measures everything
+# anew), the gene rtempty, the CPU's divide for UM/MOD. The stopping rule
+# counts afresh. The deadline now leaves 80 minutes for the comparison.
 seed 28 tag2 12h then experiment compare-fronts.py --rounds 10 --cpus 2,8

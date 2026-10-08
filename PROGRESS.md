@@ -2120,3 +2120,40 @@ selection, Q for naming a champion and judging runs; memory in 8 KB steps;
 not before the 4 KB binary steps are fixed. Not built - the owner decides.
 
 NEXT-RUN: seed 28 tag2 12h, then the comparison.
+
+## Iterations 100-103 - 2026-10-08 - Claude
+
+The owner's answers to the ranked list: Q for information, never selection;
+one SYSCALL primitive (agreed in principle - Linux calls take at most six
+register arguments, so one primitive serves all; the shell's speed rests on
+fork and exec, not on wrappers); longer workloads; rtempty; the trims; the
+JIT's next step priced first; packed names later.
+
+**Iteration 100 - longer workloads.** evolve.py program(): the BENCH line
+repeated (fib 2x, loop 10x, the sieve 3x), parse 3x, the corpus 5x - each
+pass followed by an empty line, which its ACCEPT test reads (without it,
+each pass swallowed the next pass's INCLUDED line: 5 of 10 ran). The kernel
+workload stays single: cross.4 included twice in one process does nothing
+the second time. Memory keeps its meaning: the corpus's from one run of the
+single corpus. On the fastest design (VM) 3.5-17 ms a workload, a start ~1%;
+s6 349 ms a round. bench/ untouched; long files made at setup.
+
+**Iteration 101 - the gene rtempty** (forth/cv8t-empty.4): a word whose
+body is EXIT alone compiles to nothing. Through the gate on the fastest and
+the smallest design; kernel workload dispatches -4.0% and -2.3%; image +32
+and +40 bytes.
+
+**Iteration 102 - the CPU's divide for UM/MOD** (engine/vm-lab.c, x86-64):
+libgcc's __udivmodti4 (430 bytes) gone from every engine; equal to the C on
+2,000,000 cases, overflowing quotients included. The engines' files: the
+fastest 35,000 -> 30,704, the smallest 18,032 -> 17,960 - the page padding
+again (the owner: later). Tests pass; hand-made stages identical.
+
+**Iteration 103 - the JIT's next step, priced** (results/jit-kernel-
+words.md): kernel words translated once each (76 of 296 made of operations
+with stencils) free nothing alone, 8.2% of the kernel workload's dispatches
+with data words as literals; the sieve waits on FILL's stencil. callsites.py
+learned the wide tag (its audit read 0x80-0xBF as calls).
+
+NEXT-RUN: seed 28 tag2 12h (the deadline 80 minutes before the end: the
+long workloads' comparison takes ~1 hour).

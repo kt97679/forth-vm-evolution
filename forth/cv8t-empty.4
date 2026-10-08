@@ -1,0 +1,14 @@
+\ cv8t-empty.4 - compile nothing for a call to a word that does nothing
+\ (Iteration 101, the gene rtempty; lab/evolve/GENES.md, "Ranked
+\ (Iteration 91)", 7). The kernel workload's cross-compiler calls CHARS -
+\ : CHARS ; - for 12.6% of its calls on the fastest design: a call and an
+\ EXIT that do nothing (Iteration 89). A word whose body is EXIT alone now
+\ compiles to nothing; a primitive, and every other word, goes on to the
+\ COMPILE,8 this one replaces. Loaded after the fusers, before the JIT's
+\ overlay - whose words begin with their header, so they are left alone.
+
+: COMPILE,8 ( xt --- )
+  DUP >NAME C@ 32 AND 0= IF
+    DUP C@ EXIT-OP = IF DROP EXIT THEN
+  THEN
+  COMPILE,8 ;

@@ -145,8 +145,8 @@ esac
 # 23's pace, 1.4 s a design: ~3 hours, then the re-measure as always.
 case ${REQ:-} in night|*[0-9]h) SIZE=$REQ; REQ= ;; esac
 # Iteration 99 (the owner): "12h" - a run of so many hours, its comparison
-# included: generations until a deadline 50 minutes before the end, for the
-# re-measure, the report and the comparison. The population 256: the night
+# included: generations until a deadline 80 minutes before the end, for the
+# re-measure, the report and the comparison (~1 hour with the long workloads). The population 256: the night
 # run's front came from the second half of its generations, and four cores
 # (JOBS) evaluate ~4 times as many designs - ~90,000 in 12 hours.
 HOURS=
@@ -155,7 +155,7 @@ case ${SIZE:-} in
     night) POP=96; GENS=80 ;;
     *[0-9]h) HOURS=${SIZE%h}
          case $HOURS in *[!0-9]*) die "a number of hours, as 12h - not '$SIZE'" ;; esac
-         POP=256; GENS=100000; UNTIL=$(( $(date +%s) + HOURS * 3600 - 3000 )) ;;
+         POP=256; GENS=100000; UNTIL=$(( $(date +%s) + HOURS * 3600 - 4800 )) ;;   # 80 minutes: the long workloads' comparison (Iteration 100) takes ~1 hour
     *) die "after the seed and tag2: nothing, night, or hours (12h) - not '$SIZE'" ;;
 esac
 # Iteration 71: "seed N tag2" - every design of the run in the two-bit tag

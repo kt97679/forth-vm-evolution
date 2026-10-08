@@ -10,6 +10,7 @@
 | superinstructions: primitive pairs as single opcodes, drawn from the parent's own hottest pairs (`design_pairs`, profiled per design), in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
 | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+| compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
 | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
 | inlined at the hottest call sites (`hotinl`: 0, 10, 20, 40; Iteration 92; in the tag): the converter splices the first K safe sites of lab/evolve/hotsites-v1.json - the image's call sites by the fastest design's profile, named by caller, callee and ordinal - before every rewrite | Iteration 91's deep dive: short words found nothing, hot sites did | fast designs 9-10% fewer dispatches on parse and corpus, 4-5% on kernel, +40-160 bytes (results/hotinl-opbody.md) |
 | words an opcode replaced, [opcode EXIT] (`opbody`: 0, 1; Iteration 92): (FIND), (>NUMBER), THREAD-FIND, +!, ?DUP, as FILL and CMOVE (Iterations 50, 54) | Iteration 91: a quarter of the fastest image never runs | 128-144 bytes off the fast designs' images; run-time calls take the opcode (results/hotinl-opbody.md) |
@@ -513,6 +514,17 @@ objectives, how sure the number is, and what it costs in mechanism:
     trace of FIND's keys.
 17. **The offset in the opcode, nibble-packed hot pairs** - need 6's codes.
     *(6 built as the gene t2wide, Iteration 95: results/t2wide.md.)*
+
+*Iterations 100-103 (the owner's answers): **Q** (size x time x memory)
+for information, never selection; **3** - one SYSCALL primitive (the
+shell's OS words in Forth on it) agreed in principle, to plan; **4** -
+longer workloads (Iteration 100); **7** built as the gene rtempty
+(Iteration 101); **8** - the CPU's divide for UM/MOD done in every x86-64
+engine (Iteration 102: libgcc's 430 bytes gone), the cold escaped
+operations and 16-bit dispatch tables next; **9** - later; **the JIT** -
+kernel words made native, priced (Iteration 103, results/jit-kernel-
+words.md): with data words as literals, 8.2% of the kernel workload's
+dispatches; FILL's stencil, the sieve's 79%.*
 18. **Handlers ordered by the profile** (I-cache): no size; layout noise.
 19. **Factoring repeated code**: measured above - no.
 20. **Tail calls, or the fall-through layout**: measured (Iteration 89) - no.

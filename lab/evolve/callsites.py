@@ -40,6 +40,9 @@ For each design:
      blocker - short words inlined, data words and constants as literals,
      every call translatable - as a fixpoint, a caller waiting for its
      callees; the dispatches of the freed words are what would run native.
+     Iteration 103 (the owner): kernel words made native too, each once -
+     those of operations with stencils only, then those calling only such
+     words - alone and with data words as literals.
 
 Bytes are counted, not laid out again: a body that starts on a cell (data,
 inline cells) can swallow a byte saved before it. Code compiled at run time
@@ -97,12 +100,15 @@ for did in args:
     assert len(im) == n == rec['size'] - hdr, 'image %d bytes after a %d-byte header, the map says %d, the record %d' % (len(im), hdr, n, rec['size'])
     C = {int(f[1]): dict(len=int(f[2]), t=int(f[3]), forced=int(f[5]), caller=f[6], target=' '.join(f[7:])) for f in M if f[0] == 'C'}
     O = {int(f[1]): ' '.join(f[4:]) for f in M if f[0] == 'O'}
+    OB = {int(f[1]): int(f[3]) for f in M if f[0] == 'O'}             # each operation's first byte - its code
     T = {int(f[1]) for f in M if f[0] == 'T'}
     Wd = {int(f[1]): (int(f[2]), f[3], ' '.join(f[4:])) for f in M if f[0] == 'W'}
     ONE = {' '.join(f[3:]): int(f[2]) for f in M if f[:2] == ['M', '1']}
     SEL = {int(f[2]): ' '.join(f[3:]) for f in M if f[:2] == ['M', '2']}
     ESC = [int(f[2]) for f in M if f[:2] == ['M', 'E']][0]
     BYTE = {c: x for x, c in ONE.items()}
+    WIDE = any(c >= 0x80 for c in ONE.values())          # t2wide (Iteration 95): 10xxxxxx are opcodes, calls 01 and 11
+    iscall = (lambda b: b & 0x40) if WIDE else (lambda b: b >= 0x40)
     for a, s in C.items():                                  # every site decodes to its target
         b = im[a]; v = b & 0x3F
         for k in range(1, s['len']): v = v << 8 | im[a + k]
@@ -139,7 +145,7 @@ for did in args:
         k = 5 if y[0] == ONE.get('JIT') else 0; out = []
         while k < 8:
             b = y[k]
-            if b >= 0x40: out.append(('call', (b >> 6) + 1, True)); break
+            if iscall(b): out.append(('call', (b >> 6) + 1, True)); break
             if b == ESC:
                 if k + 1 >= 8: break
                 out.append((SEL.get(y[k + 1], '?'), 2, False)); k += 2
@@ -168,7 +174,7 @@ for did in args:
         assert sum(ipc.values()) == pairs, '%s: %d dispatches by address, %d by pair' % (w, sum(ipc.values()), pairs)
         assert sum(x[1] for x in rl.values()) == pcalls, '%s: %d calls by return address, %d by pair' % (w, sum(x[1] for x in rl.values()), pcalls)
         for a, k in ipc.items():
-            if a < n and im[a] >= 0x40 and a not in C: sys.exit('%s: a call dispatched at %d is not in the census' % (w, a))
+            if a < n and iscall(im[a]) and a not in C: sys.exit('%s: a call dispatched at %d is not in the census' % (w, a))
         for r, (t, k, nx, y) in rl.items():
             if r > n: continue
             s = [a for a, c in C.items() if a + c['len'] == r]
@@ -252,7 +258,7 @@ for did in args:
     # and why, and those inlining at run time would free - every blocker a call to
     # a short kernel word whose operations have stencils, or to a run-time word
     # native already or freed too (a fixpoint). Their dispatches would go native.
-    jrows, jwhy, JOPS = [], collections.Counter(), collections.Counter()
+    jrows, jwhy, JOPS, KN = [], collections.Counter(), collections.Counter(), []
     for w in WORKS:
         jw, jb, js, ipc = JIT[w]
         if not jw: continue
@@ -277,7 +283,20 @@ for did in args:
             return free
         isdata = lambda t: not (t in Wd and Wd[t][1] == 'code')
         disp = lambda xs: sum(ipc[a] for x in xs for a in range(x + 5, jw[x][0]))
-        cols = [disp(byte)] + [disp(freed(ok, rd)) for ok, rd in ((kernel_ok, False), (isdata, True), (lambda t: kernel_ok(t) or isdata(t), True), (lambda t: True, True))]
+        # Iteration 103 (the owner): kernel words made native too, each once - first
+        # those made of operations with stencils only, then (a fixpoint) those that
+        # also call such words or themselves. No call with an inline operand.
+        kit = {t: [x for x in starts if t <= x < e] for t, (e, k, _) in Wd.items() if k == 'code'}
+        prim_k = {t for t, xs in kit.items() if xs and all(x not in C and OB.get(x) in js for x in xs)}
+        nat_k, grew = set(prim_k), True
+        while grew:
+            grew = False
+            for t, xs in kit.items():
+                if t not in nat_k and xs and all((C[x]['t'] in nat_k or C[x]['t'] == t) and not C[x]['forced'] if x in C else OB.get(x) in js for x in xs):
+                    nat_k.add(t); grew = True
+        cols = [disp(byte)] + [disp(freed(ok, rd)) for ok, rd in ((kernel_ok, False), (isdata, True), (lambda t: kernel_ok(t) or isdata(t), True), (lambda t: True, True),
+                                                                 (lambda t: t in prim_k, False), (lambda t: t in nat_k, False), (lambda t: t in nat_k or isdata(t), True))]
+        KN.append((len(prim_k), len(nat_k), len(kit)))
         for x in byte:                                  # an operation without stencils: the first in the word
             for b, t, e in jb.get(x, []):
                 if b == 'o': JOPS[(SEL.get(e, '?') if t == ESC else BYTE.get(t, '?'), w)] += disp([x])
@@ -294,10 +313,12 @@ for did in args:
         print('**The JIT, run-time words** (Iteration 90): those it met, and the dispatches in those it left bytecode; then those that '
               'would go native if every call of a kind were translatable - a fixpoint, as a caller waits for its callees. A word with '
               'an operation without stencils stays bytecode in every column.\n')
-        print('| workload | met | native | bytecode: dispatches | freed by inlining short words | data words as literals | both | every call to the image (SPN\'s st_interp) |')
-        print('|---|---|---|---|---|---|---|---|')
+        print('| workload | met | native | bytecode: dispatches | freed by inlining short words | data words as literals | both | every call to the image (SPN\'s st_interp) | kernel words of primitives native | kernel words native, recursively | and data words as literals |')
+        print('|---|---|---|---|---|---|---|---|---|---|---|')
         for w, met, nat, by, c, hot in jrows:
-            print('| %s | %d | %d | %d: %s | %s | %s | %s | %s |' % (w, met, nat, by, pct(c[0], D[w]), pct(c[1], D[w]), pct(c[2], D[w]), pct(c[3], D[w]), pct(c[4], D[w])))
+            print('| %s | %d | %d | %d: %s | %s | %s | %s | %s | %s | %s | %s |' % (w, met, nat, by, pct(c[0], D[w]), pct(c[1], D[w]), pct(c[2], D[w]), pct(c[3], D[w]), pct(c[4], D[w]),
+                  pct(c[5], D[w]), pct(c[6], D[w]), pct(c[7], D[w])))
+        if KN: print('\nKernel words translatable: %d made of operations with stencils only, %d with the calls among them - of %d code words.\n' % KN[0])
         print('\nThe hottest words left bytecode, and what keeps each: ' + ' | '.join('%s - %s' % (w, hot) for w, met, nat, by, c, hot in jrows if hot) + '.\n')
         print('Operations without stencils, by the dispatches of the words where each is the first: ' + '; '.join('%s %s %s' % (o, w, pct(k, D[w]))
               for (o, w), k in JOPS.most_common(8)) + '.\n')
