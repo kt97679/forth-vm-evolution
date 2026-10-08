@@ -160,4 +160,12 @@
 #
 # Iteration 106: seed 28 (9 hours, four cores) not small, by a hair (+5.0%),
 # still improving at its end. Seed 29, the same size.
-seed 29 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 107 (the owner: 6am to 9pm free, a 9-hour run from 9pm): the day
+# - seed 30 for 6 hours, the convergence check with nothing new (results/
+# run-length.md: ~95% of what 9 hours would find), its comparison inside the
+# 6 hours, then the knockouts of its front: each gene's worth in each design,
+# measured where timing is clean (~1-2 hours). Done by about 2pm. The night
+# run (9 hours) is the next gene batch's, in the next bundle - put that one in
+# ~/Downloads only once this chain has finished.
+seed 30 tag2 6h then experiment compare-fronts.py --rounds 10 --cpus 2,8 then experiment evolve.py --knockout --rounds 6

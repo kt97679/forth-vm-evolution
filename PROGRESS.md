@@ -2226,3 +2226,19 @@ generation 120, the best recorded speed 0.124 by generation 10, 0.119 by
 158. On the front of all runs: t2wide 63, opbody 66, hotinl 37, the JIT 18,
 rtempty 17. Q (information): best fc52c18d76, 0.151 at 34,464 bytes; the
 fastest 1.04 times it, the smallest 2.79 times. NEXT-RUN: seed 29 tag2 9h.
+
+## Iteration 107 - 2026-10-09 - Claude
+
+**How long a run should be** (results/run-length.md; the owner's guess:
+long runs lose efficiency at the end). Measured on seeds 26-28 by hours
+elapsed, with the run's own measurements (noisy: a run keeps its luckiest)
+and with the final front re-measured (honest): seed 28 had ~80% of its gain
+in the first hour, ~89% in three, the last five hours ~10% - though its one
+real speed jump (0.141 -> 0.133) came between hours 4 and 5. With new genes,
+9 hours; with nothing new, ~4-6 hours gets ~90-95% of it. **The day** (the
+owner: 6am to 9pm free, a 9-hour run from 9pm): seed 30 for 6 hours - the
+convergence check - its comparison, then knockouts of its front, each gene's
+worth in each design (evolve.py --knockout, never yet run on t2wide, opbody,
+hotinl, rtempty). The knockout now finds the front with first_front, not
+fronts() - every pair of a long run's ~40,000 designs would have taken half
+an hour. NEXT-RUN: seed 30 tag2 6h, then the comparison, then the knockouts.

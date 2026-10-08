@@ -1233,7 +1233,7 @@ def knockout(argv):
     rounds = int(argv[argv.index('--rounds') + 1]) if '--rounds' in argv else 6
     if ids is None:                                   # the front, by re-measured speed where there is one
         rm = os.path.join(EV, 'remeasure.json'); rm = json.load(open(rm)) if os.path.exists(rm) else {}
-        F = fronts(ok, R)[0]
+        F = first_front(ok, R)          # Iteration 107: not fronts() - every pair of a long run's ~40,000 designs
         sp = {i: rm[i]['speed'] if i in rm else R[i]['speed'] for i in F}
         ids = [i for i in F if not any(sp[j] <= sp[i] and R[j]['size'] <= R[i]['size'] and (sp[j], R[j]['size']) != (sp[i], R[i]['size']) for j in F)]
         ids.sort(key=lambda i: sp[i])

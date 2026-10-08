@@ -89,7 +89,11 @@ four cores, 39,985 designs - **not small, by a hair** (fastest +5.0%:
 679fdd08a1, 0.132 at 38,560 bytes; smallest total 24,874, +0.20%; memory
 none); 66 of the 67 designs on the front of all runs; still improving at
 generation 158; four workers measured as tightly as one. **NEXT-RUN: seed
-29 tag2 9h**, then the comparison. **Iteration 104**: input as relf reads it - no
+29 tag2 9h**, then the comparison. **Iteration 107** (results/run-length.md:
+~80% of a run's gain in its first hour, ~89% in three, the rest ~10% - but
+real jumps happen late): the day of the 9th - seed 30 for 6 hours, its
+comparison, then knockouts of its front (each gene's worth); the night - the
+next gene batch, 9 hours. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and
