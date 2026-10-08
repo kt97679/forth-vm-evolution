@@ -85,7 +85,11 @@ comparable, comparisons are); **rtempty** (empty words compile to nothing);
 the CPU's divide for UM/MOD in every engine; the JIT's next step priced
 (results/jit-kernel-words.md); one SYSCALL primitive agreed in principle.
 **NEXT-RUN: seed 28 tag2 12h** - the stopping rule counts afresh (new
-workloads, a new gene). Every pack now
+workloads, a new gene). **Iteration 104**: input as relf reads it - no
+read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
+rest is left to the next reader; proven to fail on the old engine); the
+prompts library gains 15-checks-that-can-fail, 16-premortem and
+17-variants-as-data, from the Paleocomputing article and this project. Every pack now
 carries `repo-files.txt` (the owner's clone, listed) - look at it first.
 
 **Next steps, as agreed (Iteration 83-86):**

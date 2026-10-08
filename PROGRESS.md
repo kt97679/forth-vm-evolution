@@ -2157,3 +2157,40 @@ learned the wide tag (its audit read 0x80-0xBF as calls).
 
 NEXT-RUN: seed 28 tag2 12h (the deadline 80 minutes before the end: the
 long workloads' comparison takes ~1 hour).
+
+## Iteration 104 - 2026-10-08 - Claude
+
+**Input as relf reads it** (the owner: ACCEPT should read a byte at a time on
+descriptors that cannot seek - fixed in relf). relf's KEY reads one byte off
+descriptor 0 and its READ-LINE reads a seekable descriptor a block at a time,
+seeking back past the newline, anything else a byte at a time: descriptor 0
+is shared with every child, and a byte read ahead is taken from whatever
+runs next. This engine still read stdin 4 KB ahead (t_ibuf) and gave every
+file descriptor, pipes included, a 4 KB read-ahead slot whose seek-back fails
+on a pipe. Now (engine/vm-lab.c, images unchanged): READ on descriptor 0
+hands over at most a line as before, from a seekable one a block and a seek
+back, from anything else a byte per read(2); READ-LINE on descriptor 0 a byte
+per read; a file descriptor that cannot seek is marked raw when it gets its
+slot. Proven both ways: `printf '1 2 + . CR BYE\nREST\n' | sh -c 'engine
+img; cat'` leaves REST to cat, and READ-LINE on /dev/stdin takes only its
+line - both FAIL on the previous engine, rebuilt for the purpose. Found on the
+way: a macro reading its argument four times (T_EDIT(p[k++])) lost whole
+lines on a pipe - the test suite passed it (every input it gives is a file),
+the hand-made stages' check (a pipe) caught it. Not the cause of the corpus's
+repeated passes (Iteration 100): its ACCEPT test reads the next line of
+terminal input by design, unbuffered or not - the empty line stays. Tests
+pass; hand-made stages identical; front designs in three engine forms
+through the gate.
+
+**The Paleocomputing article** (Habr, 2026: Wirth's RISC5 and Project Oberon
+rebuilt by AI agents in nine days - in the browser, QEMU, KubeVirt). Its
+technical subject does not carry over; its method does, and matches this
+project's own failures. The prompts library: **15-checks-that-can-fail**
+(plant faults; a check that cannot run is red; no verdict from a log line;
+the changed path covered), **16-premortem** (role reviewers attack a plan
+before it is built; a ceiling for every claimed gain; "first" is a search
+result; stopping points; the boring-result line), **17-variants-as-data**
+(the next variant a row, a fictional one in the tests); 03 gains step 9,
+null rewrites (meaning-preserving changes as the noise floor - our 4 KB
+steps), and in step 4 the disappointing result audited too. Carried back to
+relf through prompts/UPSTREAM.

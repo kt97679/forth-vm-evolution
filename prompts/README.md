@@ -33,6 +33,9 @@ describe are ones any measurement or write-up project can reproduce.
 | [12-progress-log](12-progress-log.md) | before trying an approach, and when any attempt ends | re-deriving and re-paying for an idea that was already tried and rejected |
 | [13-severity-first](13-severity-first.md) | when working a list of failures | a segfault weighed the same as a reworded message; crashes found only by accident |
 | [14-audience-research](14-audience-research.md) | before drafting for a venue, and before choosing where to publish | writing for an imagined reader; a venue's known failure modes met only after publishing (added at Iteration 553 from kt97679/minimal-cpu-design, where it is 07) |
+| [15-checks-that-can-fail](15-checks-that-can-fail.md) | before calling anything green | checks that cannot fail: a skipped check counted as passed, a verdict read off a log line, a suite that never takes the changed path |
+| [16-premortem](16-premortem.md) | before building a plan of more than a day | a plan attacked only after it is built; a promised gain above its own ceiling; "nobody has done this" |
+| [17-variants-as-data](17-variants-as-data.md) | before adding a third variant by hand | every new variant touching many places, copies drifting apart
 
 ## The two that mattered most
 

@@ -889,8 +889,7 @@ static int prev_op = 257;
  *  child.
  */
 #define TIOBUF 4096
-static UNS8 t_ibuf[TIOBUF];
-static int  t_ipos = 0, t_ilen = 0;
+static int  t_seek0 = -1;          /* can descriptor 0 seek? -1: not asked yet (Iteration 104) */
 static UNS8 t_obuf[TIOBUF];
 static int  t_olen = 0;
 
@@ -918,7 +917,7 @@ static int  t_olen = 0;
 #define NOINLINE_IO __attribute__((noinline))
 #define FBUFN  8
 #define FBUFSZ 4096
-static struct fbuf { int fd, len, pos; UNS8 b[FBUFSZ]; } t_fb[FBUFN];
+static struct fbuf { int fd, len, pos, raw; UNS8 b[FBUFSZ]; } t_fb[FBUFN];
 
 NOINLINE_IO static struct fbuf *t_fslot(int fd) {
     int i, free_ = -1;
@@ -928,6 +927,11 @@ NOINLINE_IO static struct fbuf *t_fslot(int fd) {
     }
     if (free_ < 0) return 0;                           /* fall back to raw */
     t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0;
+    /* Iteration 104 (relf's READ-LINE): a descriptor that cannot seek - a
+       pipe, a FIFO, a terminal - is read a byte at a time: a byte read
+       ahead could not be given back, and the other end is shared with
+       whatever reads next. Asked once, when the descriptor gets its slot. */
+    t_fb[free_].raw = lseek(fd, 0, SEEK_CUR) < 0;
     return &t_fb[free_];
 }
 
@@ -944,7 +948,7 @@ NOINLINE_IO static void t_fdrop(int fd) {
 NOINLINE_IO static int t_fgetc(int fd) {
     struct fbuf *f = t_fslot(fd);
     long n;
-    if (!f) { UNS8 c; n = read(fd, &c, 1);
+    if (!f || f->raw) { UNS8 c; n = read(fd, &c, 1);
               return n == 1 ? (int)c : (n == 0 ? -1 : -2); }
     if (f->pos >= f->len) {
         n = read(fd, f->b, FBUFSZ);
@@ -962,10 +966,16 @@ NOINLINE_IO static void t_flush(void) {
 /*  WRITE and READ - primitives 30 and 31, where EMIT and KEY were; the
  *  kernel builds EMIT, KEY and TYPE on them in Forth. The same buffers as
  *  before: WRITE adds to t_obuf, flushed when full and wherever it was
- *  flushed before; READ hands over what t_ibuf holds, refilling it with
- *  ONE read() - a terminal gives a line, a pipe whatever is waiting - so at
- *  least one byte, or none at the end of input. Out of line, like every
- *  I/O path here.  */
+ *  flushed before. Out of line, like every I/O path here.
+ *
+ *  Input has no buffer (Iteration 104, the owner - relf's KEY and
+ *  READ-LINE, forth/kernel.4 there): descriptor 0 is inherited, shared
+ *  with every child, and a byte read ahead is a byte taken from whatever
+ *  runs next - with 4096 bytes held here, `read x; cat` lost the pipe to
+ *  the engine. READ still hands over at most a line: from a descriptor 0
+ *  that can seek, a block and a seek back to just after the line; from
+ *  anything else, a byte per read(2), up to the first character ACCEPT
+ *  treats specially - LF, CR, backspace, DEL - or the count asked for.  */
 NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
     while (n) {
         UNS64 k;
@@ -977,37 +987,29 @@ NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
     }
 }
 
-NOINLINE_IO static int t_getc(void) {
-    if (t_ipos >= t_ilen) {
-        t_flush();                     /* prompt before blocking */
-        t_ilen = (int)read(0, t_ibuf, TIOBUF);
-        t_ipos = 0;
-        if (t_ilen <= 0) { t_ilen = 0; return -1; }
-    }
-    return t_ibuf[t_ipos++];
+NOINLINE_IO static int t_getc(void) {     /* READ-LINE on descriptor 0: a byte per read(2) */
+    UNS8 c;
+    t_flush();                         /* prompt before blocking */
+    return read(0, &c, 1) == 1 ? (int)c : -1;
 }
+#define T_EDIT(c) ((c) == 10 || (c) == 13 || (c) == 8 || (c) == 127)
 NOINLINE_IO static UNS64 t_read(UNS8 *p, UNS64 n) {
-    UNS64 k;
+    UNS64 k = 0;
+    long got;
     if (n == 0) return 0;
-    if (t_ipos >= t_ilen) {
-        t_flush();                     /* prompt before blocking */
-        t_ilen = (int)read(0, t_ibuf, TIOBUF);
-        t_ipos = 0;
-        if (t_ilen <= 0) { t_ilen = 0; return 0; }   /* end of input */
+    t_flush();                         /* prompt before blocking */
+    if (t_seek0 < 0) t_seek0 = lseek(0, 0, SEEK_CUR) >= 0;
+    if (t_seek0) {                     /* a block, and what follows the line given back */
+        got = read(0, p, (size_t)n);
+        if (got <= 0) return 0;        /* end of input */
+        while (k < (UNS64)got && !T_EDIT(p[k])) k++;
+        if (k < (UNS64)got) { k++; if (k < (UNS64)got) lseek(0, (off_t)k - (off_t)got, SEEK_CUR); }
+        return k;
     }
-    k = (UNS64)(t_ilen - t_ipos);
-    if (k > n) k = n;
-    {   /* no further than the first character ACCEPT treats specially -
-           LF, CR, backspace, DEL - so in what it gets, only the LAST byte
-           can be one: a line per READ, edited in Forth only at its end */
-        UNS64 j;
-        for (j = 0; j < k; j++) {
-            UNS8 c_ = t_ibuf[t_ipos + j];
-            if (c_ == 10 || c_ == 13 || c_ == 8 || c_ == 127) { k = j + 1; break; }
-        }
+    while (k < n && read(0, p + k, 1) == 1) {  /* a byte at a time: nothing read ahead */
+        UNS8 c_ = p[k++];                      /* not T_EDIT(p[k++]): a macro reads its argument four times */
+        if (T_EDIT(c_)) break;
     }
-    memcpy(p, t_ibuf + t_ipos, (size_t)k);
-    t_ipos += (int)k;
     return k;
 }
 

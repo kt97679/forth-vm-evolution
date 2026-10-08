@@ -33,6 +33,9 @@ fetched lazily when their trigger conditions are met.
 | `12-progress-log` | try an approach, or finish an attempt that worked, failed or was reverted | nothing is being tried |
 | `13-severity-first` | work through a list of failures, or decide whether a pass count is the goal | one failure, already understood |
 | `14-audience-research` | draft a write-up for a specific venue, or choose where to publish it (upstream `07-audience-research`; renumbered here, where 07 was already `07-git-handoff`) | the artefact is internal, with one known reader |
+| `15-checks-that-can-fail` | call a check, test or suite green, rely on a check you just added, or report "all checks pass" | the check was shown to fail on a broken input since it last changed |
+| `16-premortem` | start a plan of more than a day, above all one meant to prove a claim | the plan is one step whose failure is cheap and visible |
+| `17-variants-as-data` | add one more variant (a machine, a backend, a gene) by editing several places | there will only ever be two |
 
 ## The one that is hardest to self-apply
 

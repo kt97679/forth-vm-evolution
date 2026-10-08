@@ -525,6 +525,14 @@ operations and 16-bit dispatch tables next; **9** - later; **the JIT** -
 kernel words made native, priced (Iteration 103, results/jit-kernel-
 words.md): with data words as literals, 8.2% of the kernel workload's
 dispatches; FILL's stencil, the sieve's 79%.*
+
+*Iteration 104 - an engineering item, not a gene: the genes as data
+(prompts/17-variants-as-data). Each gene of Iterations 92-101 touched six to
+eight places in evolve.py (LATE, EXPRESSED, BLOCKS, express, mutate,
+random_genome, build, setup's dumps), and one addition's global name
+replaced another gene's pool; one record per gene - values, condition,
+converter options, engine flags, overlay, dump suffix - would make the next
+gene a row, checked by a fictional gene in the tests.*
 18. **Handlers ordered by the profile** (I-cache): no size; layout noise.
 19. **Factoring repeated code**: measured above - no.
 20. **Tail calls, or the fall-through layout**: measured (Iteration 89) - no.

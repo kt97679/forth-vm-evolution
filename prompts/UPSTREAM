@@ -7,3 +7,8 @@ to be carried back to relf:
   prices, what a change displaces), INDEX, USAGE and README rows.
 Refresh: copy https://github.com/kt97679/relf/tree/master/prompts again, keeping
 these, and update this file.
+  Iteration 104 (forth-vm-evolution): 15-checks-that-can-fail, 16-premortem and
+  17-variants-as-data new, from the Paleocomputing article (Habr, 2026:
+  habr.com/ru/articles/1087928 - an Oberon/RISC5 stack built by AI agents) and
+  this project's own failures; 03 step 4 (a disappointing result audited too)
+  and step 9 (null rewrites), and a trigger; INDEX and README rows.
