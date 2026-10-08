@@ -2263,3 +2263,21 @@ step. With the gene off images are identical, the JIT engines' code 48 bytes
 larger. Not in this batch: the two engine trims - until the page padding is
 fixed their bytes are invisible or a 4 KB lottery. NEXT-RUN: seed 31 tag2 9h,
 into ~/Downloads after the day's chain.
+
+## Iteration 109 - 2026-10-08 - Claude
+
+**Seed 30, session 27 and the knockouts** (results/evolve-amd-ryzen-7-pro-
+8840hs-seed30.md, results/knockouts-seed30.md). Seed 30 - the first run with
+jitx, 6 hours from 13:15 (seed 29 never ran): 24,230 designs in 95
+generations, no death but the reach limit's. Session 27 (calibration 1.001)
+measured seeds 25-28 and 30: **seed 30 small** - fastest +1.5% (4ddd323cee,
+0.135), smallest total and memory none; the front of all runs 75, 54 of seed
+30. jitx on 12 of its 89 front designs: its knockout is 2.6% of the selected
+workloads' speed, its 3.4x on the held-out sieve unseen by selection, against
+an engine file 4.3 KB larger through the page padding. **The knockouts** -
+each gene undone in each of 22 front designs: kfast +175%, escape +123%,
+kinput +68%, ops10 +51%, rtloop +51%, the JIT +47%, klookup +27% carry the
+speed; t2wide 8.4% and 203 bytes; opbody 128 bytes; hotinl 1.9% for 56;
+rtloopall (with 424 bytes), t2hot, tracer, tfind and spec ~0 - candidates to
+retire, for simplicity; tail ~9% slower for 125 bytes, a size trade.
+NEXT-RUN unchanged: seed 31 tag2 9h.

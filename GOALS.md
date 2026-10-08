@@ -97,7 +97,14 @@ next gene batch, 9 hours. **Iteration 108: the gene jitx** (results/jitx.md):
 the kernel workload's bytecode dispatches -10%, the held-out sieve's -99.9%
 (3.4x on the VM). **NEXT-RUN: seed 31 tag2 9h** - the bundle into ~/Downloads
 only after the day's chain has finished. The engine trims wait for the page
-padding fix: their bytes are invisible or a 4 KB step until then. **Iteration 104**: input as relf reads it - no
+padding fix: their bytes are invisible or a 4 KB step until then.
+**Seed 30** (Iteration 109, session 27, calibration 1.001; jitx, 6 hours):
+**small** (fastest +1.5%, size and memory none); 54 of the 75 on the front of
+all runs; jitx on 12 of its 89 front designs. **The knockouts** (results/
+knockouts-seed30.md, 22 designs): kfast, escape, kinput, ops10, rtloop, the
+JIT and klookup carry the speed; t2wide pays 8.4% and 203 bytes; rtloopall,
+t2hot, tracer, tfind and spec are worth ~nothing where they sit - candidates
+to retire. Seed 29 never ran. NEXT-RUN: seed 31 tag2 9h. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and
