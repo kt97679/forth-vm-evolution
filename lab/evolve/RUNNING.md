@@ -258,3 +258,18 @@ packed). Resumed after an interruption, the deadline counts from the new
 start. The front over all designs is found without comparing every pair
 (evolve.py first_front: identical to the old one on seeds 25-27's
 databases, 0.07 s against 130 s on 7,267 designs).
+
+## A run from scratch, and a thinner comparison (Iteration 114)
+
+`nocarry` after the seed (anywhere in its step): no archived front carried
+in - the run starts from the hand-made and random designs alone. The
+anchoring test (the owner): every carried run starts from the last fronts,
+optimized without the newest genes, and a mutation changes one gene of ~45 -
+does a fresh search find what they missed? `seed 36 tag2 4h nocarry`.
+
+`compare-fronts.py --frontier`: of each run, one design per box of 1% speed,
+64 bytes and the 8 KB memory tie, plus the run's fastest, smallest and
+least-memory designs - the stopping rule's bests measured exactly, the front
+of all runs at the resolution 6 rounds can tell apart. Half of each front:
+under honest sizes the fronts grew to ~150-180 designs and a session to
+660, 2 hours even at 6 rounds.

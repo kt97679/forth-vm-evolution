@@ -2343,3 +2343,26 @@ key - --validate caught it; now g.get(k). Gate: 23 front designs (plain,
 tail, the JIT with jitx), cached-top and tail designs with the genes, four
 with everything; tests pass; hand-made stages identical. Sizes changed for
 every design: the stopping rule counts afresh. NEXT-RUN: seed 35 tag2 9h.
+
+## Iteration 114 - 2026-10-09 - Claude
+
+**Seed 35 and session 30** (results/evolve-amd-ryzen-7-pro-8840hs-seed35.md):
+6 hours from 14:40, 25,189 designs in 98 generations, no death but the reach
+limit's. Session 30 (calibration 0.998), every engine under --gc-sections:
+**seed 35 small** - fastest +1.5% (e5193642ef, 0.133), smallest +0.08%
+(585376cf49, 20,318 bytes, ~2 KB below seed 33's: the dead code gone),
+memory 2 KB inside the tie: the second small in a row since sizes last
+changed - this gene set has converged. alignfn and noinls on ~56% of its
+front at once. The front of all runs 151, 121 of seed 35.
+
+**A run from scratch** (the owner: "proceed as you suggested", the anchoring
+question): next-run.sh `nocarry` - no archived front carried in; travels to
+the detached run in the environment (NEXT_RUN_NOCARRY) and is part of the
+run's identity, so a resume keeps it. **A thinner comparison**: the session
+had 660 designs, 2 h 4 min at 6 rounds, past the hours' 80-minute reserve;
+compare-fronts.py --frontier keeps of each run one design per box of 1%
+speed, 64 bytes and 8 KB, plus its three bests - seeds 33 and 35: 82 of 160,
+85 of 178. A first version (each run's speed-size frontier) kept ~70%: a
+run's own noisy numbers make a staircase where nearly every design survives
+by a hair. NEXT-RUN: seed 36 tag2 4h nocarry, then the comparison with
+--frontier.

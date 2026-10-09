@@ -189,4 +189,8 @@
 # Iteration 113: --gc-sections for every engine, the genes alignfn and noinls.
 # Seed 35 tonight (seed 34 may be the day's run). Into ~/Downloads after any
 # chain still running has finished.
-seed 35 tag2 9h then experiment compare-fronts.py --rounds 6 --cpus 2,8
+#
+# Iteration 114 (the owner): seed 35 small - the second in a row: converged.
+# A run from scratch, 4 hours - nothing carried in: does a fresh search find
+# what the carried runs missed? The comparison thinned (--frontier).
+seed 36 tag2 4h nocarry then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

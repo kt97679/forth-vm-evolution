@@ -121,7 +121,12 @@ every engine linked with --gc-sections - dead runtime code (vsnprintf,
 execvp, snprintf ...) out, 1.9-3.4 KB of every front design's engine - and
 two flag genes, alignfn and noinls (~1.1 and ~1.3 KB on -O2 engines). The
 16-bit dispatch tables wait (the generators rewrite that table by its text).
-NEXT-RUN: seed 35 tag2 9h. **Iteration 104**: input as relf reads it - no
+**Seed 35** (Iteration 114, session 30, calibration 0.998; 6 hours): **small**
+(fastest +1.5%, smallest 20,318 +0.08%, memory inside the tie) - the second
+small in a row: this gene set has converged. alignfn and noinls on ~60% of the
+run's front at once. **Next: a run from scratch** (`nocarry`, the owner's
+anchoring question) - and comparisons with --frontier (half the designs).
+NEXT-RUN: seed 36 tag2 4h nocarry. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

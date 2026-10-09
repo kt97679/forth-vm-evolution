@@ -31,6 +31,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 args = sys.argv[1:]; rounds = 10; cpuarg = None
 if '--rounds' in args: i = args.index('--rounds'); rounds = int(args[i + 1]); del args[i:i + 2]
 if '--cpus' in args: i = args.index('--cpus'); cpuarg = args[i + 1]; del args[i:i + 2]
+# Iteration 114: --frontier - of each run, its front thinned to one design per
+# box of 1% speed, 64 bytes and the 8 KB memory tie, plus its three bests:
+# what the stopping rule needs exactly, and the front of all runs at the
+# resolution the comparison can tell apart anyway. A run's front had
+# grown to ~150-180 designs under honest sizes, ~60% on it by memory alone -
+# mostly a page or two - and the session to 660 designs, 2 hours at 6 rounds.
+FRONTIER = '--frontier' in args
+if FRONTIER: args.remove('--frontier')
 if not args or any(a.startswith('-') for a in args): sys.exit(__doc__)
 dbs = [os.path.abspath(a) for a in args]
 sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
@@ -67,6 +75,20 @@ for db in dbs:
     # few (COMPARE_LAST) - or it would not be measured at all: it stays here.
     nc = len(ids); ids = [i for i in ids if carried_from(R[i]) not in HERE_DBS]
     if len(ids) < nc: how += ', %d carried in and left to their own runs' % (nc - len(ids))
+    if FRONTIER and ids:
+        # one design per box - 1% of speed, 64 bytes, the 8 KB memory tie -
+        # then the boxes' front; and always the run's fastest, smallest and
+        # least memory, so the stopping rule's bests are exactly measured
+        box = {}
+        for i in ids:
+            k = (int(math.log(sp[i]) / math.log(1.01) // 1), R[i]['total'] // 64, int(R[i].get('rss', 0) // 8))
+            if k not in box or (sp[i], R[i]['total']) < (sp[box[k]], R[box[k]]['total']): box[k] = i
+        ks = list(box)
+        keep = {box[k] for k in ks if not any(o != k and o[0] <= k[0] and o[1] <= k[1] and o[2] <= k[2] for o in ks)}
+        keep |= {min(ids, key=lambda i: sp[i]), min(ids, key=lambda i: R[i]['total']),
+                 min(ids, key=lambda i: (R[i].get('rss', 0), sp[i]))}
+        n0 = len(ids); ids = [i for i in ids if i in keep]
+        how += ', %d of %d: one per box of 1%% speed, 64 bytes, 8 KB, and the bests' % (len(ids), n0)
     kept = sum(1 for i in ids if carried_from(R[i]))
     if kept: how += ', %d carried from a run not compared here, kept' % kept
     runs.append((label, ids)); say('%s: %d designs (%s)' % (label, len(ids), how))

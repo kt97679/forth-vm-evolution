@@ -126,9 +126,15 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
     [ -n "$THEN" ] || return 0
     echo; say "then: $THEN"
     exec 9>&-
-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN
+    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
 }
+# Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
+# carried in: only the hand-made and random designs. The anchoring test - does
+# a fresh search find what the carried runs, each starting from the last
+# fronts, missed? It travels to the detached run in the environment, as THEN.
+NOCARRY=${NEXT_RUN_NOCARRY:-}
+case " $* " in *" nocarry "*) NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx nocarry) ;; esac
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
@@ -169,7 +175,7 @@ fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
-WANT="seed $SEED${REQ:+ $REQ} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+WANT="seed $SEED${REQ:+ $REQ}${NOCARRY:+ nocarry} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
 if [ "$KIND" = experiment ]; then
     NAME=${TOOL%.py}
     RUN=$RUNS/$NAME-$HEAD
@@ -186,7 +192,7 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     [ "$MODE" = fresh ] && say "the previous run's outputs will be moved to $RUNS/archived-..."
     [ "$MODE" = experiment ] && say "nothing will be archived or removed"
     [ -z "$THEN" ] || say "then, when this has finished and packed: $THEN"
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
     say "going on in the background; follow it with"
     echo "    tail -f $RUN/next-run.log"
     exit 0
@@ -328,6 +334,9 @@ for f in $(archives); do                                        # oldest first, 
     i=$((i + 1)); [ "$i" -gt "$skip" ] || continue
     CARRY="${CARRY:+$CARRY,}$f"
 done
+if [ -n "$NOCARRY" ]; then
+    CARRY=""; say "carried in: nothing - nocarry, a run from scratch"
+fi
 if [ -n "$CARRY" ]; then
     set -- --carry "$CARRY"
     say "carried in: the fronts of $(echo "$CARRY" | tr ',' '\n' | wc -l) archived databases"
