@@ -116,8 +116,12 @@ fastest +1.5%; 96 of the 111 on the front of all runs. jitx's clean pairs:
 session 29, calibration 0.996; 8 hours): **small** (fastest +0.8%, smallest
 +0.39% - 22,254 bytes, memory none); the front of all runs 138, 102 of seed
 33. The comparisons now run 6 rounds: ~500 designs at 10 took 2 h 18 min,
-past the hours' reserve. NEXT-RUN: seed 34 tag2 9h - if small too, this gene
-set has converged; next the engine trims, now measurable. **Iteration 104**: input as relf reads it - no
+past the hours' reserve. **Iteration 113** (results/flags-gcsections.md):
+every engine linked with --gc-sections - dead runtime code (vsnprintf,
+execvp, snprintf ...) out, 1.9-3.4 KB of every front design's engine - and
+two flag genes, alignfn and noinls (~1.1 and ~1.3 KB on -O2 engines). The
+16-bit dispatch tables wait (the generators rewrite that table by its text).
+NEXT-RUN: seed 35 tag2 9h. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

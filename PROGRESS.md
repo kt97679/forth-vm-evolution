@@ -2324,3 +2324,22 @@ of all runs 138, 102 of seed 33. The comparison measured 520 designs in
 so the 8 hours were ~9 h 15 min: comparisons now run 6 rounds (the rule's
 bars are 2% and 5%), ~40% less. NEXT-RUN: seed 34 tag2 9h, then the
 comparison at 6 rounds.
+
+## Iteration 113 - 2026-10-09 - Claude
+
+**Dead code out of every engine, and two flag genes**
+(results/flags-gcsections.md; the owner: new genes for tonight). The two
+engine trims priced first and left: 16-bit dispatch tables (~768 bytes) need
+the table's text changed in the engine, three generated headers and the
+tail-call and multi-state generators - too wide to prove in an afternoon;
+cold escaped operations overlap crossjumping. Instead six compiler flags
+priced to the byte: --gc-sections takes 1.9-3 KB off every engine - dead
+runtime code (vsnprintf, execvp, snprintf, syscall ...; vsnprintf was dead,
+not the shell's) - so it is every engine's, not a gene: the front of all runs
+(138) all smaller, 1,888-3,392 bytes, median 2,112. alignfn and noinls (~1.1
+and ~1.3 KB on -O2 engines, nothing on -Os) are genes. A slip: the flag genes
+were looked up as g[k], and the hand-made stages' non-CV8 genome had no such
+key - --validate caught it; now g.get(k). Gate: 23 front designs (plain,
+tail, the JIT with jitx), cached-top and tail designs with the genes, four
+with everything; tests pass; hand-made stages identical. Sizes changed for
+every design: the stopping rule counts afresh. NEXT-RUN: seed 35 tag2 9h.

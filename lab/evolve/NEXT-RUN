@@ -185,4 +185,8 @@
 # not 10: ~500 designs at 10 took 2 h 18 min, past the hours' 80-minute
 # reserve; 6 are plenty for the rule's 2% and 5% bars. Seed 34 - if small
 # too, this gene set has converged.
-seed 34 tag2 9h then experiment compare-fronts.py --rounds 6 --cpus 2,8
+#
+# Iteration 113: --gc-sections for every engine, the genes alignfn and noinls.
+# Seed 35 tonight (seed 34 may be the day's run). Into ~/Downloads after any
+# chain still running has finished.
+seed 35 tag2 9h then experiment compare-fronts.py --rounds 6 --cpus 2,8
