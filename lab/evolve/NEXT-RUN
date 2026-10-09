@@ -180,4 +180,9 @@
 #
 # Iteration 111: seed 32 (honest sizes) not small - the smallest +3.8%. Seed 33,
 # 9 hours (adjust the hours to the time you have), then the comparison.
-seed 33 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 112: seed 33 small (the first since 32). The comparison at 6 rounds,
+# not 10: ~500 designs at 10 took 2 h 18 min, past the hours' 80-minute
+# reserve; 6 are plenty for the rule's 2% and 5% bars. Seed 34 - if small
+# too, this gene set has converged.
+seed 34 tag2 9h then experiment compare-fronts.py --rounds 6 --cpus 2,8

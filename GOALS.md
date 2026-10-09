@@ -112,7 +112,12 @@ stopping rule counts afresh. **Seed 32** (Iteration 111, session 28,
 calibration 0.998; the first run with honest sizes): **not small** - the
 smallest +3.8% (333b2c6807, 22,342 bytes: 889 below anything before),
 fastest +1.5%; 96 of the 111 on the front of all runs. jitx's clean pairs:
-+456 bytes, kernel 0.883, the held-out sieve 6.5x. NEXT-RUN: seed 33 tag2 9h. **Iteration 104**: input as relf reads it - no
++456 bytes, kernel 0.883, the held-out sieve 6.5x. **Seed 33** (Iteration 112,
+session 29, calibration 0.996; 8 hours): **small** (fastest +0.8%, smallest
++0.39% - 22,254 bytes, memory none); the front of all runs 138, 102 of seed
+33. The comparisons now run 6 rounds: ~500 designs at 10 took 2 h 18 min,
+past the hours' reserve. NEXT-RUN: seed 34 tag2 9h - if small too, this gene
+set has converged; next the engine trims, now measurable. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

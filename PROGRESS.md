@@ -2311,3 +2311,16 @@ the fastest +1.5% (67c070bd47, 0.131), memory none. The front of all runs:
 111 designs, 96 of seed 32. **jitx with honest sizes**: 30 clean pairs, +456
 bytes (it had looked like ~4.3 KB), kernel 0.883, the held-out sieve 6.5x; on
 18 of the run's 149 front designs. NEXT-RUN: seed 33 tag2 9h.
+
+## Iteration 112 - 2026-10-09 - Claude
+
+**Seed 33 and session 29** (results/evolve-amd-ryzen-7-pro-8840hs-seed33.md):
+8 hours from 04:41 (the owner's choice), 35,862 designs in 141 generations,
+no death but the reach limit's. Session 29 (calibration 0.996) measured
+seeds 27, 28, 30, 32 and 33: **seed 33 small** - fastest +0.8% (caeb3d97ac,
+0.132), smallest +0.39% (ffe6038baf, 22,254 bytes), memory none; the front
+of all runs 138, 102 of seed 33. The comparison measured 520 designs in
+2 h 18 min - the fronts have grown to ~150 a run since sizes are honest -
+so the 8 hours were ~9 h 15 min: comparisons now run 6 rounds (the rule's
+bars are 2% and 5%), ~40% less. NEXT-RUN: seed 34 tag2 9h, then the
+comparison at 6 rounds.
