@@ -2298,3 +2298,16 @@ engines unchanged, 59 smaller (median -160, up to -2,528 bytes), none larger;
 stages identical. Sizes changed for every design - the stopping rule counts
 afresh. NEXT-RUN: seed 32 tag2 6h (hours to fit the day), then the
 comparison.
+
+## Iteration 111 - 2026-10-09 - Claude
+
+**Seed 32 and session 28** (results/evolve-amd-ryzen-7-pro-8840hs-seed32.md):
+the first run with engines linked under -N, 6 hours from 21:53, 25,016
+designs in 98 generations, no death but the reach limit's (seed 31 never
+ran). Session 28 rebuilt every run's designs under -N (calibration 0.998):
+**seed 32 not small** - the smallest binary + image +3.8% (333b2c6807, 22,342
+bytes, 889 below anything before: the page padding had hidden the small end),
+the fastest +1.5% (67c070bd47, 0.131), memory none. The front of all runs:
+111 designs, 96 of seed 32. **jitx with honest sizes**: 30 clean pairs, +456
+bytes (it had looked like ~4.3 KB), kernel 0.883, the held-out sieve 6.5x; on
+18 of the run's 149 front designs. NEXT-RUN: seed 33 tag2 9h.

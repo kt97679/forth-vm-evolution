@@ -108,7 +108,11 @@ to retire. Seed 29 never ran. **Iteration 110: engines linked with -N**
 (results/link-N.md) - no page padding in the file: 59 of the 75 front
 designs' engines smaller (median -160, up to -2,528 bytes), none larger; a
 gene's bytes are now its bytes. Sizes changed for every design: the
-stopping rule counts afresh. NEXT-RUN: seed 32 tag2, hours to fit the day. **Iteration 104**: input as relf reads it - no
+stopping rule counts afresh. **Seed 32** (Iteration 111, session 28,
+calibration 0.998; the first run with honest sizes): **not small** - the
+smallest +3.8% (333b2c6807, 22,342 bytes: 889 below anything before),
+fastest +1.5%; 96 of the 111 on the front of all runs. jitx's clean pairs:
++456 bytes, kernel 0.883, the held-out sieve 6.5x. NEXT-RUN: seed 33 tag2 9h. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

@@ -177,4 +177,7 @@
 # Iteration 110: engines linked with -N (results/link-N.md) - the file is its
 # sections, no 4 KB page steps. Seed 32 within the day (the owner: a run
 # before 9pm) - the hours include the comparison; adjust them to the time left.
-seed 32 tag2 6h then experiment compare-fronts.py --rounds 10 --cpus 2,8
+#
+# Iteration 111: seed 32 (honest sizes) not small - the smallest +3.8%. Seed 33,
+# 9 hours (adjust the hours to the time you have), then the comparison.
+seed 33 tag2 9h then experiment compare-fronts.py --rounds 10 --cpus 2,8
