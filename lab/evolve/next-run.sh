@@ -126,7 +126,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
     [ -n "$THEN" ] || return 0
     echo; say "then: $THEN"
     exec 9>&-
-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY
+    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
 }
 # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
@@ -135,6 +135,10 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
 # fronts, missed? It travels to the detached run in the environment, as THEN.
 NOCARRY=${NEXT_RUN_NOCARRY:-}
 case " $* " in *" nocarry "*) NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx nocarry) ;; esac
+# Iteration 115 (the owner): "fromzero" - nocarry and more: the first
+# generation all random genomes, no hand-made design or founder in it.
+FROMZERO=${NEXT_RUN_FROMZERO:-}
+case " $* " in *" fromzero "*) FROMZERO=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx fromzero) ;; esac
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
@@ -175,7 +179,7 @@ fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
-WANT="seed $SEED${REQ:+ $REQ}${NOCARRY:+ nocarry} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOCARRY:+ nocarry} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
 if [ "$KIND" = experiment ]; then
     NAME=${TOOL%.py}
     RUN=$RUNS/$NAME-$HEAD
@@ -192,7 +196,7 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     [ "$MODE" = fresh ] && say "the previous run's outputs will be moved to $RUNS/archived-..."
     [ "$MODE" = experiment ] && say "nothing will be archived or removed"
     [ -z "$THEN" ] || say "then, when this has finished and packed: $THEN"
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
     say "going on in the background; follow it with"
     echo "    tail -f $RUN/next-run.log"
     exit 0
@@ -345,7 +349,7 @@ else
 fi
 if [ -n "${REQ:-}" ]; then set -- "$@" --require "$REQ"; say "every design of the run in the two-bit tag"; fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} "$@" >> evolve.log 2>&1 \
+python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} "$@" >> evolve.log 2>&1 \
     || { tail -20 evolve.log; exit 1; }
 tail -3 evolve.log
 step "the front, measured again - $REMEASURE rounds"

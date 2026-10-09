@@ -126,7 +126,13 @@ two flag genes, alignfn and noinls (~1.1 and ~1.3 KB on -O2 engines). The
 small in a row: this gene set has converged. alignfn and noinls on ~60% of the
 run's front at once. **Next: a run from scratch** (`nocarry`, the owner's
 anchoring question) - and comparisons with --frontier (half the designs).
-NEXT-RUN: seed 36 tag2 4h nocarry. **Iteration 104**: input as relf reads it - no
+NEXT-RUN: seed 36 tag2 4h nocarry. **Iteration 115** (results/deep-dive-2.md;
+the owner: the primitive-set gene, more gene ideas, "SOD32 from nothing"): the
+primitive-set gene priced - no single demotion pays; it is the floor of an
+instruction set evolution builds, with promotion by synthesis its ceiling;
+**fbuf** built - memory's first lever (-28 to -40 KB); **fromzero** built - a
+first generation of random genomes only; next to build: kstack (?STACK and
+(ABORT"), 17.8% of parse's dispatches) and knum (NUMBER?, 19.1%). **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

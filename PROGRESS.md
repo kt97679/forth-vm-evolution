@@ -2366,3 +2366,25 @@ speed, 64 bytes and 8 KB, plus its three bests - seeds 33 and 35: 82 of 160,
 run's own noisy numbers make a staircase where nearly every design survives
 by a hair. NEXT-RUN: seed 36 tag2 4h nocarry, then the comparison with
 --frontier.
+
+## Iteration 115 - 2026-10-09 - Claude
+
+**Deep dive 2** (results/deep-dive-2.md, lab/evolve/GENES.md "Ranked
+(Iteration 115)"; the owner: add the primitive-set gene, find more gene
+ideas, make "SOD32 from nothing" possible). **The primitive-set gene priced**:
+each demotion turns one-byte opcodes into two-byte calls, adds a body and
+dispatches - OVER (38 uses, 2.5% of dispatches) and ROT (up to 5.8%) larger
+and slower, UM* a loop that would double the kernel workload's time; no
+demotion pays alone: recorded as the floor of an instruction set evolution
+builds, with promotion by synthesis (gen-super.py's composition generalized)
+as its ceiling. **New ideas with numbers**: ?STACK and (ABORT") are 17.8% of
+parse's dispatches (kstack, next), NUMBER? 19.1% (knum). **Built**: `fbuf` -
+a file's read-ahead buffer 4096, 1024 or 512 bytes: the kernel workload's
+memory 200 -> 172 -> 168 KB on the smallest, 216 -> 180 -> 176 on the
+fastest - the first lever on memory, whose front spans 186-200 KB; and
+`fromzero` - evolve.py --fromzero, next-run.sh `fromzero` (implies nocarry):
+the first generation all random genomes (a VM run: 8 random, 4 alive, the
+report and re-measure fine without s6 in the database). Gate: two designs
+at three buffer sizes; tests pass; hand-made stages identical. A slip: the
+first commit of this iteration missed these two notes (an edit anchor one
+word off) - amended.

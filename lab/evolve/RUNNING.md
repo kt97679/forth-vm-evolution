@@ -273,3 +273,8 @@ least-memory designs - the stopping rule's bests measured exactly, the front
 of all runs at the resolution 6 rounds can tell apart. Half of each front:
 under honest sizes the fronts grew to ~150-180 designs and a session to
 660, 2 hours even at 6 rounds.
+
+`fromzero` (Iteration 115): nocarry and more - the first generation all
+random genomes (evolve.py --fromzero), no hand-made design, founder or mutant
+of one; hand-made s6 only the yardstick. The first step towards "SOD32 from
+nothing" (results/deep-dive-2.md, section 3).

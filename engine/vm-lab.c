@@ -915,8 +915,12 @@ static int  t_olen = 0;
  *  problem from the other direction, when the VM registers were
  *  file-scope statics.  */
 #define NOINLINE_IO __attribute__((noinline))
+#ifndef FBUFN
 #define FBUFN  8
+#endif
+#ifndef FBUFSZ
 #define FBUFSZ 4096
+#endif
 static struct fbuf { int fd, len, pos, raw; UNS8 b[FBUFSZ]; } t_fb[FBUFN];
 
 NOINLINE_IO static struct fbuf *t_fslot(int fd) {

@@ -88,8 +88,9 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
 OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: their bodies [opcode EXIT], the gene opbody
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
@@ -110,9 +111,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',)]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',)]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -531,6 +532,7 @@ def build(g, d):
     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
     if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+    if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
     if PROFILING[0]: flags.append('-DPROFILE=1')
     if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
     o10 = ops10_in(g)
@@ -809,6 +811,8 @@ def mutate(g, rnd):
             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
         elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
+        elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+            g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
         elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
             g['escape'] = rnd.choice([e for e in range(3) if e != g.get('escape', 0)]); what.append('escape=%d' % g['escape'])
         elif k == 'spec':
@@ -1172,6 +1176,7 @@ def random_genome(rnd):
         elif k == 'escape': g[k] = rnd.randrange(3)
         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+        elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
         elif k in ('ops10', 'supers', 'folds'):
@@ -1309,7 +1314,7 @@ def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
-             '--jobs', '--until'}
+             '--jobs', '--until', '--fromzero'}
     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
     bad = [a for a in argv if a.startswith('-') and a not in known]
     if bad:
@@ -1383,10 +1388,21 @@ def main(argv):
             R[i] = rec; save(rec)
             print('    %s %-24s %s' % (i, rec['status'] if rec['status'] != 'ok' else
                   'speed %.4g size %d' % (rec['speed'], rec['size']), how[:70]), flush=True)
-    pop = [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
+    # Iteration 115 (the owner: "sod32 from nothing"): --fromzero - the first
+    # generation all random genomes, uniform over the whole space: no hand-made
+    # design, no founder, nothing carried, no mutant of a hand-made one (the
+    # seeded fill). Hand-made s6 stays the yardstick, outside the population.
+    FROMZERO = '--fromzero' in argv
+    if FROMZERO:
+        pop = []
+        while len(pop) < N:
+            g = random_genome(rnd); g = require(g) if REQUIRE else g
+            pop.append(get(g, [], 'random', 0))
+        print('  from zero: %d random genomes' % len(pop), flush=True)
+    pop = pop if FROMZERO else [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
     # Founders carrying superinstructions, so the gene enters with a population
     # behind it rather than waiting on one mutation in seventeen.
-    pop += [get(dict(HUMAN['s4-cv8'], supers=SUPER_POOL[:24], rtfuse=1), [], 'founder: s4-cv8 + 24 pairs, run-time fusion', 0),
+    if not FROMZERO: pop += [get(dict(HUMAN['s4-cv8'], supers=SUPER_POOL[:24], rtfuse=1), [], 'founder: s4-cv8 + 24 pairs, run-time fusion', 0),
             get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2]), [], 'founder: s6-cv8b + 2 pairs', 0),
             get(dict(HUMAN['s6-cv8b'], supers=SUPER_POOL[:2], rtfuse=1), [], 'founder: s6-cv8b + 2 pairs, run-time fusion', 0),
             get(dict(HUMAN['s4-cv8'], ops10=list(OPS10_POOL), supers=SUPER_POOL[:20]), [], 'founder: s4-cv8 + format-10 opcodes + 20 pairs', 0),
@@ -1400,7 +1416,7 @@ def main(argv):
     # workloads, so only to choose; here every one is timed again like any
     # design of the run. Sorted, so a resumed run makes the same first
     # generation; no random draw is spent, so the seed's draws are as before.
-    if '--carry' in argv:
+    if '--carry' in argv and not FROMZERO:
         carried, have = [], set(pop)
         for path in sorted(p for p in argv[argv.index('--carry') + 1].split(',') if p):
             C = {}
@@ -1416,7 +1432,7 @@ def main(argv):
                 have.add(gid(g)); carried.append((g, ('tag 2 of %s: %s' if gid(g) != i else 'carried from %s: %s') % (label, i)))
         print('  carried in: %d designs, the fronts of %d databases' % (len(carried), len(argv[argv.index('--carry') + 1].split(','))), flush=True)
         pop += [get(g, [], how, 0) for g, how in carried]
-    while len(pop) < N:
+    while len(pop) < N:                 # (from zero, already full)
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))
     flush()

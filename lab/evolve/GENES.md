@@ -10,6 +10,7 @@
 | superinstructions: primitive pairs as single opcodes, drawn from the parent's own hottest pairs (`design_pairs`, profiled per design), in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
 | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+| the file read-ahead buffer (`fbuf`: 0, 1, 2 = 4096, 1024, 512 bytes; Iteration 115) | results/deep-dive-2.md: memory had no lever | the kernel workload's memory 200 -> 172 -> 168 KB (smallest), 216 -> 180 -> 176 (fastest); more read(2) calls |
 | function alignment off (`alignfn`: 0, 1; Iteration 113): -falign-functions=1 -falign-loops=1 | the deep dive's 15, a flag pool for the binary | -O2 engines ~1.1 KB smaller, -Os ones nothing (results/flags-gcsections.md) |
 | no inlining of small functions (`noinls`: 0, 1; Iteration 113): -fno-inline-small-functions | the same | -O2 engines ~1.3 KB smaller, maybe slower |
 | the JIT reaches further (`jitx`: 0, 1; Iteration 108; on the JIT): variables as literals, words without the JIT header translated once each, >R/R>/R@ in balanced words, a FILL stencil | results/jit-kernel-words.md (priced) | kernel workload 10% fewer bytecode dispatches, the sieve 99.9% (3.4x faster on the VM); +368 bytes of code (results/jitx.md) |
@@ -551,3 +552,26 @@ and 26 do not take it up, it comes out.*
 front, 11 of the night run's, and the two fastest designs of all runs (20
 sites); opbody on every front design of the night run. t2wide (Iteration
 95) on all 35 of the night run's front and 29 of the 30 of all runs.*
+
+## Ranked (Iteration 115) - results/deep-dive-2.md
+
+1. **kstack** - ?STACK as a C opcode, falling into its Forth body only when
+   the check fails: ?STACK and (ABORT") are 17.8% of parse's dispatches, ~12%
+   of corpus's. Next to build.
+2. **knum** - NUMBER?'s plain cases in C: 19.1% of parse, 7.8% of corpus.
+3. **Promotion by synthesis** - opcodes composed from the core's handlers
+   for any straight-line word or hot sequence (gen-super.py generalized):
+   evolution building instructions, the ceiling of an instruction set.
+4. **The primitive-set gene** (the owner) - demotion to a minimal core:
+   priced, no single demotion pays (OVER, ROT: larger and slower; UM*: kernel
+   2x slower) - the floor of 3, built with it.
+5. Process: immigrants, macro-mutations, islands, success-led mutation
+   rates, a knock-in sweep - against anchoring.
+6. hotinl's list from today's fastest design; more JIT stencils (COUNT,
+   DODOES, PICK, (?DO), (+LOOP)).
+7. 16-bit dispatch tables (~768 bytes); one SYSCALL primitive (~1.3 KB and
+   the handlers); packed names (~500 bytes).
+8. INTERPRET's loop in C (34% of parse) - large, re-entrant: later.
+
+Built in Iteration 115: **fbuf** (memory: -28 to -40 KB) and the run start
+**fromzero** (random genomes only).
