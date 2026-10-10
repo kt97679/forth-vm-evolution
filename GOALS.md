@@ -93,6 +93,13 @@ on the fastest design, its long run -40% (VM). Dormant - not in EXPRESSED -
 so seeds 38 and 39 run the same genes; switched on after 39. D+ priced: -ack
 native but no faster - for ackermann and fib the native call is the cost.
 
+*The kernel holds core words only* (the owner, Iteration 138): it is the base
+everything else extends with more words, and **the size objective stays the
+kernel's** - engine plus kernel image; what an extension needs (the shell's
+OS words, its buffers) is the extension's, outside the measure. So sysc's
+saving counts in full, and a kernel word only an extension uses belongs in
+that extension (results/word-audit.md, "Core or extension").
+
 *After seed 39 has run, together (the owner agreed)*: the NAME>BUF patch
 (results/pending/namebuf-after-seed39.patch - s6's yardstick moves), the
 dormant genes jitloop, jitinl and sysc into EXPRESSED, tools/test-sysc-shell.sh into

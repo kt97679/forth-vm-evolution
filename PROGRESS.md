@@ -2822,3 +2822,14 @@ with jitloop: ackermann's 12.7 M dispatches native and its long run 10.1 ->
 the speed score, for the laptop to measure. Five JIT designs with both: the
 gate, the answers, the Forth 2012 suite as s6. Every new gene off: ids,
 images and engines identical to Iteration 130's.
+
+## Iteration 138 - 2026-10-10 - Claude
+
+**The owner: the kernel holds core words only; the size objective stays the
+kernel's.** The shell is used here for correctness alone - tests/shell in
+run-tests.sh and tools/test-sysc-shell.sh - never timed: no workload, gate or
+design image contains it (checked). A census of kernel.4 under that principle
+(results/word-audit.md): 269 words, 180 standard; 20 non-standard words only
+the shell uses or nothing does - its seventeen, SYSTEM, A/O, CHAR- - some
+300-400 bytes of every kernel image. Their move out waits on one model for
+the OS words (SYSCALL in every engine) - the owner's decision.

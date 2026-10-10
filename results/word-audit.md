@@ -154,3 +154,31 @@ the opcode genes (ops10, opbody) and the JIT answer, not a better definition. Th
 (NEXT-NFA8, SEARCH-WORDLIST, NAME=?, FIND) has kfast's and klookup's alternatives. Next to read
 closely: CMOVE and CMOVE> (byte loops), REFILL's tab loop, the interpreter's ?STACK, NUMBER?, and
 COLD (1.9% of the fastest's interpreted dispatches - start-up, in every timed run).
+
+## Core or extension (Iteration 138)
+
+The owner: the kernel holds core words only, the base everything else extends;
+the size objective is the kernel's. A source-level census of kernel.4 - every
+word it defines, its standard word set (the standard's own sources), and who
+names it: the kernel itself, the kernel workload (extend.4, cross.4), the
+workloads (the CORE corpus, bench/), the shell, the other extensions.
+
+269 words: 180 standard (CORE and CORE EXT 151, FILE 17, DOUBLE 4, MEMORY 3,
+STRING 2, SEARCH 2, TOOLS 1), 89 not. **24 non-standard words are named
+nowhere in the kernel or the workloads**; four of them - LIT, BRANCH, ?BRANCH,
+NOOP - are primitives the compiler lays down by opcode, not by name, and stay.
+The other 20 are extension words in the kernel:
+
+| words | used by | |
+|---|---|---|
+| FORK EXECVE WAITPID PIPE DUP2 GETENV SETENV UNSETENV SYS-EXIT CHDIR GETCWD SYS-ARGC SYS-ARG GETPID GETPWHOME GETFSIZE SETFSIZE | shell.4 only | the shell's seventeen - sysc's |
+| SYSTEM | nothing | a primitive and its handler (214 bytes) nobody calls |
+| A/O | shell.4, once (`>>`) | an access mode only the shell's append uses |
+| CHAR- | nothing | |
+
+Their headers are some 300-400 bytes of every kernel image. Moving them out
+meets sysc being a gene: an engine without it keeps the seventeen handlers,
+and the shell finds them by the names the kernel declares. The principle's
+own end is one model - every engine with SYSCALL, the kernel declaring it
+alone, the shell always loading forth/shell-sysc.4 - which reaches all six
+engines, the cell stage's relf.c among them. The owner's decision.
