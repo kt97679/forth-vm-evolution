@@ -2871,3 +2871,18 @@ block). Fixed in shell.4 - advance before the body runs; depth 8 and 10 run
 whole. Everything passes both ways: the four checks at both widths, the shell
 suite, the SYSC shell, ?DO and LEAVE in extensions. The libc-free default is
 a pending patch, for after seed 39.
+
+## Iteration 141 - 2026-10-10 - Claude
+
+**SYSCALL: -errno, and both widths** - the first steps of the single-SYSCALL
+model (the owner agreed: SYSCALL in every engine, the kernel declaring it
+alone - opcode slots kept, -errno, x86-64 and i386). SYSCALL returns the
+kernel's -errno, not -1 (chdir("") gives -2): the shell can tell EINTR from
+ENOENT; the overlay's 0< tests are unchanged. At 4-byte cells the engine maps
+the overlay's x86-64 numbers to i386's (eleven calls; any other ENOSYS), and
+the overlay reads a C int with SYSC-I@ at either width (PIPE's descriptors,
+WAITPID's status). tools/test-sysc-shell.sh runs at both widths: the shell
+suite, all 554 assertions, and the targeted paths as the plain shell - with
+glibc and libc-free alike. Without SYSC every engine as before: evolved
+designs identical, the four checks pass. Next: SYSCALL in relf.c, pack4.c,
+pack8.c and the SPN engines; then, after seed 39, the kernel's names.

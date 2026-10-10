@@ -62,6 +62,21 @@
  *  cross-compiled with TARGET-CELL-BYTES set to 4 (see cross.4).
  */
 
+#if SYSC
+#include <errno.h>      /* SYSCALL's -errno (Iteration 141) */
+#endif
+#if SYSC && defined(__i386__)
+/* The image's numbers are x86-64 Linux's; i386's for the calls the shell's
+   overlay makes (forth/shell-sysc.4; Iteration 141). Any other: ENOSYS. */
+static long sysc_i386(long n)
+{
+    switch (n) {
+    case 39: return 20;   case 57: return 2;    case 33: return 63;   case 80: return 12;
+    case 231: return 252; case 79: return 183;  case 61: return 114;  case 22: return 42;
+    case 97: return 191;  case 160: return 75;  case 59: return 11;   default: return -1;
+    }
+}
+#endif
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/resource.h>
@@ -1051,8 +1066,8 @@ static void virtual_machine(void) {
     const UNS64 cbase = (UNS64)(uintptr_t)base - (256u << SCALE);
 #endif
 #if SYSC
-#if !defined(__x86_64__)
-#error "the gene sysc: the image's system-call numbers are x86-64 Linux's"
+#if !defined(__x86_64__) && !defined(__i386__)
+#error "the gene sysc: the image's system-call numbers are x86-64 Linux's (i386's mapped)"
 #endif
 #define SYSF &&L_syscall
 #define SYSX(l) &&L_nosys
@@ -1968,7 +1983,8 @@ L_filesize: { /* fid --- ud ior */
 /* The gene sysc (Iteration 133): one system call in FORK's place, the shell's
  * process and environment words written in Forth on it (forth/shell-sysc.4);
  * the other seventeen of them gone. ( block num --- r ): the six arguments in
- * the block, r the kernel's result, -1 on failure (the runtime's syscall);
+ * the block, r the kernel's result - on failure -errno (Iteration 141: the
+ * shell can tell EINTR from ENOENT; the runtime's syscall gives -1 and errno);
  * num -1, -2, -3: argc, argv, the initial environment - what no call returns. */
 L_syscall: {
     long num = (long)(INT64)DS0, r;
@@ -1977,7 +1993,13 @@ L_syscall: {
     if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
     else {
         if (num == 60 || num == 231) { PROFDUMP; }
+#if defined(__i386__)
+        num = sysc_i386(num);
+        if (num < 0) r = -38;                                  /* ENOSYS */
+        else
+#endif
         r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
+        if (r == -1) r = -(long)errno;
     }
     DS1 = (UNS64)(INT64)r;
     dsp += CELL_BYTES;

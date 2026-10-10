@@ -1,7 +1,7 @@
 \ shell-sysc.4 - the shell's process and environment words over one SYSCALL
 \ (the gene sysc, Iteration 135). On an engine built with SYSC the primitive
 \ in FORK's slot is SYSCALL ( block num --- r ): one Linux x86-64 system
-\ call, its six arguments in the block, r its result or -1 on failure; num
+\ call, its six arguments in the block, r its result or -errno; num
 \ -1, -2 and -3 give argc, argv and the process's environment, which no call
 \ returns. The seventeen primitives that engine dropped are written here,
 \ each with the stack effect and the result it had in engine/vm-lab.c. Load
@@ -18,7 +18,9 @@ CREATE SYSC-BLK 6 CELLS ALLOT
 : SYSC4 ( a b c d num --- r ) SWAP SYSC-BLK 3 CELLS + ! SYSC3 ;
 : SYSC-IOR ( r --- ior ) 0< IF 200 ELSE 0 THEN ;
 CREATE SYSC-W 2 CELLS ALLOT        \ a status, two descriptors, an rlimit
--1 32 RSHIFT CONSTANT SYSC-LO32
+: SYSC-MASK ( --- m ) -1 1 CELLS 8 = IF 32 RSHIFT THEN ;   \ a C int's bits, at either width
+SYSC-MASK CONSTANT SYSC-LO32
+: SYSC-I@ ( addr --- n ) @ SYSC-LO32 AND ;            \ a C int (Iteration 141: 4-byte cells too)
 
 : GETPID ( --- pid ) 39 SYSC0 ;
 : FORK ( --- pid ) 57 SYSC0 ;
@@ -28,10 +30,10 @@ CREATE SYSC-W 2 CELLS ALLOT        \ a status, two descriptors, an rlimit
 : GETCWD ( addr max-len --- len ior )
   79 SYSC2 DUP 0< IF DROP 0 200 ELSE 1- 0 THEN ;
 : WAITPID ( pid --- status ior )
-  0 SYSC-W !  SYSC-W 0 0 61 SYSC4 0< IF -1 200 ELSE SYSC-W @ SYSC-LO32 AND 0 THEN ;
+  0 SYSC-W !  SYSC-W 0 0 61 SYSC4 0< IF -1 200 ELSE SYSC-W SYSC-I@ 0 THEN ;
 : PIPE ( --- fd-read fd-write ior )
   0 SYSC-W !  SYSC-W 22 SYSC1 0< IF 0 0 200
-  ELSE SYSC-W @ DUP SYSC-LO32 AND SWAP 32 RSHIFT 0 THEN ;
+  ELSE SYSC-W SYSC-I@ SYSC-W 4 + SYSC-I@ 0 THEN ;
 : GETFSIZE ( --- n )    \ RLIMIT_FSIZE's soft limit in 512-byte blocks, -1 unlimited
   1 SYSC-W 97 SYSC2 0< IF -1 ELSE SYSC-W @ DUP -1 = 0= IF 512 / THEN THEN ;
 : SETFSIZE ( n --- ior )

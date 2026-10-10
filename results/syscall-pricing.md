@@ -71,3 +71,11 @@ tag, tail-call threading 6,568 (every handler a function there), msc 3,728.
 Off: the recorded designs' ids, images and engines byte-identical to
 Iteration 130's. The shell's environment table is allocated when first used,
 not saved in the image.
+
+## The single model's first steps (Iteration 141)
+
+-errno, not -1; i386 at 4-byte cells (the engine maps eleven x86-64 numbers);
+the overlay width-aware. The SYSC shell passes tests/shell at both widths,
+with glibc and libc-free: s5's engine 34,672 -> 30,088 bytes (glibc, 64-bit),
+28,956 -> 24,440 (glibc, 32), 32,768 -> 28,304 (libc-free, 64), 35,704 ->
+31,340 (libc-free, 32 - static, with libgcc's 64-bit division).
