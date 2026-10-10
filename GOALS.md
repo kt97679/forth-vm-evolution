@@ -45,6 +45,45 @@ preferences are written here: simplicity and minimalism first; three
 equal objectives (memory within 8 KB a tie); each mechanism priced before
 it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 
+**HANDOFF - read this first (Iteration 122).** Checked from a fresh clone of
+the bundle: it builds, the tests pass, the hand-made stages are identical,
+every design of the front of all runs (151, session 30) has its genome in
+results/ (945 genomes, every id right), and designs rebuilt from results/
+alone pass the gate with their recorded image bytes. Outside the repository,
+by design: the laptop's run databases (lab/evolve/runs/ - a results/ report
+also reads as a database, so a carry can start from one), packs not yet
+analysed (the owner sends them), the owner's Forth collection (licences, size
+- re-upload forth.tgz to look again; results/forth-collection-catalog.md).
+
+*The state.* Seed 35 small, the second in a row: the gene set of Iteration
+113 converged (front of all runs 151; fastest e5193642ef 0.133 at 34,840
+bytes, smallest 585376cf49 20,318). New since: the genes fbuf (memory),
+kstack, abortif, opcall; the stack guard fixed; next-run.sh `nocarry` and
+`fromzero`; comparisons with --frontier at 6 rounds; the held-out check
+lab/evolve/ans-check.py (tests/ans: the ANS suite).
+
+*Pending runs.* Seed 36 - 4 hours from scratch (`nocarry`), the anchoring
+test: its packs to come. Seed 37 - 9 hours, NEXT-RUN, the new genes.
+
+*Open threads, in order.* (1) Seed 36: did a fresh search find what the
+carried runs missed? (2) Seed 37's verdict; the ANS check on its front. (3)
+Workloads: parse held out, execution-heavy ones in (bubble, ackermann from
+the owner's RelF bench) - the owner's decision. (4) The instruction set as
+genes: the primitive-set floor and promotion by synthesis (results/deep-
+dive-2.md section 3), then `fromzero` over it. (5) Genetic improvement of the
+Forth sources (level 3), with the ANS suite held out and a stack-effect check
+(Knaggs). (6) Smaller: retire genes worth nothing (check loop first), 16-bit
+dispatch tables, one SYSCALL primitive, the JIT calling bytecode, packed
+names. (7) Kernel gaps the ANS suite showed: :NONAME, CATCH/THROW, COMPARE,
+search order, AHEAD, D-, double literals.
+
+*Where to look.* results/ - each run (with its genomes), compare-fronts
+(sessions), knockouts-seed30, run-length, link-N, flags-gcsections, jitx,
+opcall, forth-sources, forth-collection and its catalog, docs-reuse,
+deep-dive-2; lab/evolve/GENES.md (the genes, the ranked lists); RUNNING.md;
+NEXT-RUN; prompts/ (the methods library). The VM has one CPU: its timings are
+noise, its dispatch counts exact - speed is measured on the laptop.
+
 **Where it stands (Iteration 86)**: evolution has STOPPED - seeds 22 and
 23 both small, the gene set with the JIT converged (front of all runs: 35
 designs, fastest 2cbcf427f6 0.195 at 42,816 bytes). `lab/evolve/NEXT-RUN`

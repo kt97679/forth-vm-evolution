@@ -2501,3 +2501,16 @@ they now switch it off, as they do pairs. Fastest design, 16 ops: parse
 smallest, 14: -2.5%, -2.5%, -1.6%, +656. Gate, the ANS suite as s6 on both,
 tests, hand-made stages; all 945 recorded ids unchanged. NEXT-RUN: seed 37
 tag2 9h.
+
+## Iteration 122 - 2026-10-10 - Claude
+
+**The handoff, checked** (the owner: last time a new chat found files
+missing - fixed?). Fixed in Iteration 87 (the fronts' genomes in results/);
+checked now from a fresh clone of the bundle: it builds, tests pass,
+hand-made stages identical; all 151 designs of the front of all runs have
+their genomes in results/ (945, every id right); eleven rebuilt from results/
+alone - the fastest and smallest among them - pass the gate with their
+recorded image bytes; the working repository holds nothing uncommitted
+(build/ and caches ignored). GOALS.md "Resuming in a new chat" now opens with
+a short HANDOFF: the state, the pending runs, the open threads in order,
+where to look.
