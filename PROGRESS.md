@@ -3109,3 +3109,16 @@ corpus -2.6% and -2.7%. run-tests PASS, 7 of 7 IDENTICAL, the jail; all 165 of
 seed 38's front designs and both founders alive on the nine patches. Open:
 ABORT"'s run-time check, compiled at run time where abortif cannot reach it.
 results/word-audit.md, Batch 4.
+
+## Iteration 157 - 2026-10-10 - Claude
+
+**ABORT" guarded where it is compiled - folded into the ninth pending patch.**
+The audit's open question: abortif guards (ABORT") in the converter, which sees
+only the kernel image; a program's ABORT" is compiled at run time, as a bare
+call. ABORT" now compiles IF -1 (ABORT") "ccc" THEN - abortif's shape, and
+kinput's ?STACK8's. Bubble's check on the JIT founder: 3,588 calls to (ABORT")
+before, none after, its interpreted dispatches -12.6%; the kernel 64 bytes
+larger at 8-byte cells (the audit's net: -104), the kernel workload +0.3%.
+run-tests PASS, 7 of 7 IDENTICAL, the jail; all 165 of seed 38's front designs
+and both founders alive, tabs and audit right. The whole audit on the JIT
+founder: kernel workload -38.6%, bubble -13.3%, corpus -2.7%, sieve -6.6%.

@@ -66,7 +66,7 @@ index acacaf3..a651fa4 100644
    LOOP THEN 2DROP 0 ;
  
 diff --git a/forth/kernel.4 b/forth/kernel.4
-index cf4a8f2..e941a41 100644
+index cf4a8f2..ac3645e 100644
 --- a/forth/kernel.4
 +++ b/forth/kernel.4
 @@ -397,7 +397,7 @@ VARIABLE KEY-BYTE
@@ -194,7 +194,20 @@ index cf4a8f2..e941a41 100644
    UNTIL
    THEN
    DROP 0 \ Not found.
-@@ -1351,6 +1353,9 @@ VARIABLE POCKET ( --- a-addr )
+@@ -1292,7 +1294,11 @@ VARIABLE POCKET ( --- a-addr )
+ : ABORT"  ( "ccc<quote>" --- )
+ \ Parse a string delimited by " and compile the following runtime semantics.
+ \ Runtime: ( f --- ) if f is nonzero, print the string and abort program.
+-  POSTPONE (ABORT") 34 PARSE STRING, ; IMMEDIATE
++\ Compiled as IF -1 (ABORT") "ccc" THEN: a false flag branches past the call
++\ and its string - one operation, where (ABORT") was called to test it. The
++\ gene abortif guards the kernel's own sites the same way in the converter,
++\ which never sees what is compiled at run time (the audit, Iteration 157).
++  POSTPONE IF -1 POSTPONE LITERAL POSTPONE (ABORT") 34 PARSE STRING, POSTPONE THEN ; IMMEDIATE
+ 
+ : ABORT ( --- )
+ \ Abort unconditionally without a message: WARM, as (ABORT") does after
+@@ -1351,6 +1357,9 @@ VARIABLE POCKET ( --- a-addr )
  
  : INTERPRET ( ---)
  \ Interpret words from the current source until the input source is exhausted.
@@ -204,7 +217,7 @@ index cf4a8f2..e941a41 100644
    BEGIN
     32 WORD DUP C@
    WHILE
-@@ -1360,12 +1365,12 @@ VARIABLE POCKET ( --- a-addr )
+@@ -1360,12 +1369,12 @@ VARIABLE POCKET ( --- a-addr )
      IF
       COMPILE,
      ELSE

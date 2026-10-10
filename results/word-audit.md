@@ -317,6 +317,12 @@ by every inline string in the source, ran 5 times in all eight workloads.
   founder before, 281 k after - what kept the JIT from them is not pinned down.
 - The converter's expected bodies for FILL and CMOVE, as it reads the new ones
   (without them every design with either opcode died: checked).
+- ABORT" compiles IF -1 (ABORT") "ccc" THEN (Iteration 157): a false flag
+  branches past the call and its message, where (ABORT") was called to test it.
+  The gene abortif guards the kernel's own sites so in the converter, which never
+  sees code compiled at run time - bubble's check on the JIT founder: 3,588 calls
+  to (ABORT") before, none after, its interpreted dispatches -12.6%; the price,
+  64 bytes of kernel at 8-byte cells and +0.3% on the kernel workload.
 - tests/core/audit.fth in run-tests.sh: the rewritten words with overlaps both
   ways, lengths 0 and 1, a sentinel, and the stack check's two paths - the
   answers the kernel gave before the audit, on 25 stages at both widths; the
@@ -324,17 +330,18 @@ by every inline string in the source, ran 5 times in all eight workloads.
 
 Checked: run-tests PASS, 7 of 7 IDENTICAL, the jail; all 165 of seed 38's front
 designs and both founders alive on the nine patches, tabs and audit right. The
-kernel images 168 bytes smaller at 8-byte cells, 84 at 4-byte.
+kernel images 104 bytes smaller at 8-byte cells, 52 at 4-byte (ABORT"'s guard
+costs 64 and 32 of the 168 and 84 the rest saves).
 
 **Measured** - exact dispatch counts, each workload's change, the batch with the
-audit against the batch without it:
+audit (ABORT"'s guard included) against the batch without it:
 
 | design | kernel | corpus | fib | loop | bubble | ackermann | sieve | parse |
 |---|---|---|---|---|---|---|---|---|
-| s6 | -6.2% | -2.6% | -0.0% | -0.0% | -0.8% | -0.0% | -2.7% | -1.4% |
-| the smallest (cd6c94b30d) | -3.0% | -0.8% | -0.0% | -0.0% | -0.8% | -0.0% | -1.4% | -0.4% |
-| seed 37's fastest (38446e6c09) | -38.8% | -2.6% | -2.3% | -3.1% | -0.0% | -0.0% | -6.6% | +0.0% |
-| the JIT founder | -38.8% | -2.7% | -2.3% | -3.1% | -0.7% | -2.0% | -6.6% | +0.0% |
+| s6 | -6.1% | -2.6% | -0.0% | -0.0% | -0.9% | -0.0% | -2.7% | -1.4% |
+| the smallest (cd6c94b30d) | -2.8% | -0.8% | -0.0% | -0.0% | -0.9% | -0.0% | -1.4% | -0.4% |
+| seed 37's fastest (38446e6c09) | -38.6% | -2.6% | -2.3% | -3.1% | -0.2% | -0.0% | -6.6% | +0.0% |
+| the JIT founder | -38.6% | -2.7% | -2.3% | -3.1% | -13.3% | -2.0% | -6.6% | +0.0% |
 
 The kernel workload carries it: CMOVE, FILL and HERE on s6, the cross-compiler's
 loops on the JIT designs. The parse workload moves least - interpreted, not
@@ -347,10 +354,6 @@ and NUMBER?'s prefix steps (two dispatches a line, rare); PARSE-WORD (one >IN
 fetch saves nothing - the shuffling costs as much); COMPARE (cold); CR (13 10,
 two writes where Unix Forths write 10 - outputs depend on it).
 
-**Open: ABORT".** Every ABORT" calls (ABORT") to test its flag and skip its
-message, failing or not - on the JIT founder, bubble's own check is 3,588 of
-those calls, 13% of its interpreted dispatches. The gene abortif (53 of seed 38's
-165 front designs, the founder among them) guards the kernel's sites in the
-converter; bubble's check is compiled at run time, which the converter never
-sees - likely why the founder still calls it, not yet confirmed. If so, the
-place is the run-time compiler's ABORT", not the kernel's.
+**ABORT" - settled (Iteration 157).** abortif works in the converter, on the
+kernel image; a program's ABORT" is compiled at run time by the kernel's ABORT",
+which laid down the bare call. Now ABORT" compiles the guard itself (built above).
