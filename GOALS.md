@@ -102,6 +102,8 @@ that extension (results/word-audit.md, "Core or extension").
 
 *After seed 39 has run, together (the owner agreed)*: the NAME>BUF patch
 (results/pending/namebuf-after-seed39.patch - s6's yardstick moves), the
+libc-free default (results/pending/nolibc-default-after-seed39.patch: the
+tests on the runtime the evolver measures, at both widths), the
 dormant genes jitloop, jitinl and sysc into EXPRESSED, tools/test-sysc-shell.sh and
 tools/test-ext-loops.sh into run-tests.sh; then a run with them.
 
