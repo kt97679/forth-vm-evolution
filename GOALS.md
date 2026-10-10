@@ -141,7 +141,12 @@ would take parse -4.3%, a source change awaiting the owner; verified
 rewrites priced at 0.09% - not built; seven other Forths collected.
 **Iteration 117**: the guarded ABORT" as the gene **abortif** (the owner: a
 gene, not every image) - the converter guards every (ABORT") call: the
-fastest design's parse -5.6% of dispatches, corpus -3.0%, for 56 bytes. **Iteration 104**: input as relf reads it - no
+fastest design's parse -5.6% of dispatches, corpus -3.0%, for 56 bytes.
+**Iteration 118** (results/forth-collection.md; the owner's Forth collection):
+RelF's history and todo (primitive-set decisions twenty years ago), minimal
+cores (eForth's 31 primitives, FIRST), benchmarks; the ANS test suite added
+(tests/ans) - it found the stack-guard gene killing the engine on underflow
+("return stack overflow", exit 1, output lost) where s6 says "Stack error". **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

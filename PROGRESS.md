@@ -2425,3 +2425,21 @@ in random and mutated genomes. The owner offered a ~100 MB collection of
 Forth material (relf's history, SOD32, eForth, 3-instruction Forth, gforth
 0.6.2, SP-Forth, test suites, books) - to look through once uploaded.
 NEXT-RUN: seed 37 tag2 9h with fbuf, kstack and abortif.
+
+## Iteration 118 - 2026-10-10 - Claude
+
+**The owner's Forth collection** (results/forth-collection.md): 138 MB,
+~1,100 source files, examined in /tmp. RelF's origin (SOD32 sped up,
+relative offsets), its early superinstruction counts and a todo with
+primitive-set decisions; minimal cores (eForth's 31 primitives, FIRST/THIRD,
+Itsy, 3ins4th); optimizers to learn from (gforth 0.6.2, SP-Forth's
+macroopt); benchmarks. Licences noted: SOD32, gforth, bigForth GPL - ideas
+only. **The ANS test suite** (Hayes, Jackson; freely distributable) added as
+tests/ans with tools/ans-upper.py (the files are lowercase) and a prelude. Its
+first run was vacuous - core.fr's ACCEPT swallowed the next file's INCLUDED,
+the corpus's trap of Iteration 100 again; with an empty line it runs:
+coreplus and memorytest pass, the rest stop at missing word sets (:NONAME, D-,
+CATCH, COMPARE, ONLY, AHEAD), double literals read as singles. **It found the
+stack-guard gene killing the engine on underflow**: "relf: return stack
+overflow", exit 1, buffered output lost - s6 and the design without the gene
+print "Stack error DROP" and go on. The corpus never underflows.
