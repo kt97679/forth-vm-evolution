@@ -132,7 +132,13 @@ primitive-set gene priced - no single demotion pays; it is the floor of an
 instruction set evolution builds, with promotion by synthesis its ceiling;
 **fbuf** built - memory's first lever (-28 to -40 KB); **fromzero** built - a
 first generation of random genomes only; next to build: kstack (?STACK and
-(ABORT"), 17.8% of parse's dispatches) and knum (NUMBER?, 19.1%). **Iteration 104**: input as relf reads it - no
+(ABORT"), 17.8% of parse's dispatches) and knum (NUMBER?, 19.1%).
+**Iteration 116** (results/forth-sources.md; the owner: improve the Forth
+sources): kstack built and corrected - kinput already had a guarded ?STACK,
+so kstack is that body alone (-0.7%); the real waste is ABORT" calling
+(ABORT") on success - a guarded ABORT" (as gforth and lbForth compile it)
+would take parse -4.3%, a source change awaiting the owner; verified
+rewrites priced at 0.09% - not built; seven other Forths collected. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

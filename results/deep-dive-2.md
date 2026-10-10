@@ -35,6 +35,10 @@ workload touches 172 KB instead of 200, with 512 bytes 168 (the fastest:
 216 -> 180 -> 176). The front's memory spans 186-200 KB: this jumps the 8 KB
 tie three to five times over. The price: more read(2) calls on files.
 
+*Corrected in Iteration 116 (results/forth-sources.md): designs with the
+kernel input gene already run a guarded ?STACK, and (ABORT")'s 5.1% comes
+from INTERPRET and REFILL; kstack is worth ~0.7%, a guarded ABORT" ~4.3%.*
+
 **The stack check** - `kstack`, next: after every word the interpreter runs
 ?STACK - DEPTH DUP 0< SWAP 10000 > OR ABORT" Stack error" - whose ABORT" calls
 (ABORT") to skip its message: **17.8% of parse's dispatches** (12.7% + 5.1%),

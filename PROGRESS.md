@@ -2388,3 +2388,22 @@ report and re-measure fine without s6 in the database). Gate: two designs
 at three buffer sizes; tests pass; hand-made stages identical. A slip: the
 first commit of this iteration missed these two notes (an edit anchor one
 word off) - amended.
+
+## Iteration 116 - 2026-10-10 - Claude
+
+**Improving the Forth sources** (results/forth-sources.md; the owner: start
+with kstack in Forth and verified rewrites; collect other Forths). kstack.4
+(?STACK8, swapped into ?STACK) first made the fastest design slower: the
+image's ?STACK already was the kernel input gene's guarded one-compare body,
+and the overlay replaced it - deep dive 2 had read kernel.4's ?STACK, not
+the one that runs, and (ABORT")'s calls come from INTERPRET (48,000 in
+parse) and REFILL (12,021), not ?STACK. Corrected: kstack is kinput's
+?STACK8 alone, expressed only without kinput - the smallest design's parse
+and corpus -0.7%, same image size, same error message. The real waste is
+ABORT" itself: a guarded ABORT" would take the fastest design's parse -4.3%,
+corpus -2.3%, for ~20 bytes - the owner's decision (kernel.4 and cross.4,
+every image). Verified rewrites of stack-word runs: 2-4 shorter patterns in
+two images, at most 0.09% of dispatches - not worth a superoptimizer. Seven
+Forths fetched (/tmp only; licences noted): gforth and lbForth compile
+ABORT" guarded, gforth's ?stack one compare. Tests pass; hand-made stages
+identical. NEXT-RUN: seed 37 tag2 9h with fbuf and kstack.

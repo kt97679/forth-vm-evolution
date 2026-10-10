@@ -193,4 +193,7 @@
 # Iteration 114 (the owner): seed 35 small - the second in a row: converged.
 # A run from scratch, 4 hours - nothing carried in: does a fresh search find
 # what the carried runs missed? The comparison thinned (--frontier).
-seed 36 tag2 4h nocarry then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+#
+# Iteration 116: the genes fbuf (memory) and kstack in a carried run, 9 hours -
+# after seed 36 (from scratch) has been looked at; fromzero waits for it.
+seed 37 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

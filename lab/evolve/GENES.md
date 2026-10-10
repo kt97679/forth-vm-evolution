@@ -10,6 +10,7 @@
 | superinstructions: primitive pairs as single opcodes, drawn from the parent's own hottest pairs (`design_pairs`, profiled per design), in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
 | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
 | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+| the stack check guarded (`kstack`: 0, 1; Iteration 116; the tag, without kinput): kinput's own ?STACK8 on its own - DEPTH 10000 U> IF ... ABORT" ... THEN | results/forth-sources.md | parse and corpus -0.7% of dispatches on the smallest design, the image the same size |
 | the file read-ahead buffer (`fbuf`: 0, 1, 2 = 4096, 1024, 512 bytes; Iteration 115) | results/deep-dive-2.md: memory had no lever | the kernel workload's memory 200 -> 172 -> 168 KB (smallest), 216 -> 180 -> 176 (fastest); more read(2) calls |
 | function alignment off (`alignfn`: 0, 1; Iteration 113): -falign-functions=1 -falign-loops=1 | the deep dive's 15, a flag pool for the binary | -O2 engines ~1.1 KB smaller, -Os ones nothing (results/flags-gcsections.md) |
 | no inlining of small functions (`noinls`: 0, 1; Iteration 113): -fno-inline-small-functions | the same | -O2 engines ~1.3 KB smaller, maybe slower |
@@ -555,9 +556,10 @@ sites); opbody on every front design of the night run. t2wide (Iteration
 
 ## Ranked (Iteration 115) - results/deep-dive-2.md
 
-1. **kstack** - ?STACK as a C opcode, falling into its Forth body only when
-   the check fails: ?STACK and (ABORT") are 17.8% of parse's dispatches, ~12%
-   of corpus's. Next to build.
+1. **kstack** - *corrected in Iteration 116 (results/forth-sources.md)*: kinput
+   already has a guarded ?STACK; (ABORT")'s calls come from INTERPRET and
+   REFILL. Built as kinput's ?STACK8 alone (-0.7% on designs without it); the
+   real fix is a guarded ABORT" (parse -4.3%) - a source change, the owner's.
 2. **knum** - NUMBER?'s plain cases in C: 19.1% of parse, 7.8% of corpus.
 3. **Promotion by synthesis** - opcodes composed from the core's handlers
    for any straight-line word or hot sequence (gen-super.py generalized):
