@@ -95,3 +95,14 @@ and SYSTEM as reserved, unnamed slots (positions kept: the seed's opcodes must
 mean what they meant); A/O into the shell and CHAR- out; tools/sod16.py's
 primitive names to match; forth/shell-sysc.4 in every shell's boot list; the
 reseed; tools/test-sysc-shell.sh into run-tests.sh.
+
+## The kernel part, built (Iteration 147)
+
+results/pending/syscall-after-seed39.patch, after the batch's other four:
+PRIMITIVE-SLOT in cross.4; SYSCALL in FORK's slot and seventeen reserved slots
+in kernel.4 (positions kept - checked against master's list one by one); the
+converter's escaped band and the evolver's NOFOLD renamed in place; SYSC by
+default in all six engines, the gene retired; the overlay in every shell's
+boot list, A/O with it; the shell suite at both widths; the jail through
+SYSCALL. Kernels 25,152 and 13,868 bytes. Everything passes - the four checks
+at both widths, four SYSCALL shells, the jail, 20 front designs.

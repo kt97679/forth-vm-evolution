@@ -2954,3 +2954,23 @@ five JIT front designs with all three genes: the gate, bubble and ackermann's
 answers, the tab test, the Forth 2012 suite as the batch's s6. The genes'
 switch and the two sections are the fourth pending patch; the four, applied
 to a fresh clone of master, give the rehearsal's files exactly.
+
+## Iteration 147 - 2026-10-10 - Claude
+
+**The single-SYSCALL model's kernel part, a pending patch** (the fifth of the
+after-seed-39 batch). cross.4 gains PRIMITIVE-SLOT - an opcode advanced past
+with nothing made in the target; kernel.4 declares SYSCALL in FORK's slot and
+the other seventeen and SYSTEM as `PRIMITIVE-SLOT (NAME)` - every position kept,
+so the old seed bootstraps the new kernel and the tools that read kernel.4's
+PRIMITIVE lines (the converter's opcodes and escaped band, the evolver's folds)
+keep their numbers; A/O moves to the shell, CHAR- goes. Every engine is SYSC by
+default and the gene sysc retires; every shell loads forth/shell-sysc.4; the
+shell suite runs at both widths; the jail test attacks through SYSCALL. The
+first attempt lost REPOSITION-FILE - a pattern's \s matched a newline and ate
+the next line, so ALLOCATE's token fell on a reserved slot and the dump
+exited 70; now the list is checked position for position against master's.
+Kernels: 25,152 bytes at 8-byte cells (25,640 at Iteration 125), 13,868 at 4.
+The four checks at both widths: the shell suite 554 assertions on four SYSCALL
+shells, the jail - one fork refused, one allowed, the bomb contained - 7 of 7;
+20 front designs through the gate with the tab test right. The five patches
+on a fresh clone of master give the tested tree, file for file.
