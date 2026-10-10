@@ -1,0 +1,39 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 172dc9b..54d9ad1 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -220,6 +220,17 @@ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR',
+            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
+            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
+            'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
++def recorded_genome(i):
++    """A recorded design's genome, from results/evolve-*.md - None if absent (Iteration 155)."""
++    import glob
++    key = '"id": "%s"' % i
++    for p in sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*.md'))):
++        for l in open(p, errors='replace'):
++            if l.startswith('{"bin"') and key in l:
++                try: return json.loads(l)['genome']
++                except ValueError: pass
++    return None
++
+ def jit_on(g):
+     """Iteration 80 (JIT.md): the lazy JIT - colon words compiled at run time
+     translated to native code on their first call (engine/jit.c, SPN's
+@@ -1482,6 +1493,16 @@ def main(argv):
+             get(dict(HUMAN['s6-cv8b'], ops10=OPS10_POOL[:2]), [], 'founder: s6-cv8b + EXECUTE, I as opcodes', 0),
+             get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL)), [], 'founder: s6-cv8b + escape, 7 words, 24 pairs', 0),
+             get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL), rtfuse=1), [], 'founder: s6-cv8b + escape, all format-10 opcodes, pairs, tests fused at run time', 0)]
++    # Iteration 155 (the owner): founders carrying the JIT's new genes, so jitloop and
++    # jitinl enter with designs behind them - through seed 38 they were dormant, no
++    # genome has them, and jitinl is two mutations (jitx too) from most JIT designs.
++    # One competitive - seed 37's fastest, its record from results/ - and one any
++    # tree can make, from hand-made s6; crossover lends their genes on.
++    if not FROMZERO:
++        pop += [get(dict(HUMAN['s6-cv8b'], jit=1, jitx=1, jitloop=1, jitinl=1), [], 'founder: s6-cv8b + the JIT, jitx, jitloop, jitinl', 0)]
++        f37 = recorded_genome('38446e6c09')
++        if f37: pop += [get(dict(f37, jitloop=1, jitinl=1), [], "founder: seed 37's fastest (38446e6c09) + jitloop, jitinl", 0)]
++        else: print("  founder: seed 37's fastest not in results/ - left out", flush=True)
+     # Iteration 46 (the owner): the earlier runs' fronts carried into this one,
+     # so what one run found the next starts from - seed 9 lost the fast end
+     # seed 8 had (Iteration 45). --carry DB,DB,...: each database's own front,

@@ -3079,3 +3079,17 @@ a finding: none of the 47 JIT designs carries jitloop or jitinl - dormant
 through seed 38, the genes must be found by mutation after the batch, jitinl
 two steps away for the 41 without jitx. results/predictions.md: what seed 39
 and the first run after the batch should show, written before either.
+
+## Iteration 155 - 2026-10-10 - Claude
+
+**Founders for the JIT's new genes - the batch's eighth pending patch** (the
+owner). Dormant through seed 38, jitloop and jitinl are in no genome, and
+jitinl needs jitx too - two mutations from 41 of seed 38's 47 JIT front
+designs. Two founders join the first generation of every run not from zero:
+seed 37's fastest with both (its record read from results/ - recorded_genome;
+left out, said so, if absent) - bubble's interpreted dispatches 13.29 M -> 197
+k, ackermann's 12.69 M -> 15.6 k; and s6 with the JIT, jitx and both - a carrier
+any tree can make (ackermann -99.4%; bubble unchanged: s6's loop words are
+calls, not the operations jitloop translates). Both built as get() builds
+them under --require tag2: the four genes expressed, the gate, the answers.
+The eight patches on a fresh clone of master give the tested files.

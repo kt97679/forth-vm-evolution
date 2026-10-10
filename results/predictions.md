@@ -30,10 +30,12 @@ test right on all, 146 with new ids.
 2. **Every design ~3.1 KB smaller** - median -3,148 bytes in the rehearsal; the
    smallest starts at ~17.6 KB (seed 38's 20,622 -> 17,594) and ends a little
    below.
-3. **jitloop spreads** to most JIT designs on the front within the run - one
-   mutation from any of them, and bubble's dispatches -98.5% with it. **jitinl
-   appears, later and fewer**: it needs jitx too, which 6 of seed 38's 47 JIT
-   front designs have - two mutations from the rest.
+3. **jitloop and jitinl spread from the founders** (Iteration 155, revised
+   before the run: the eighth pending patch seeds them - seed 37's fastest with
+   both, its bubble -98.5% and ackermann -99.9% of interpreted dispatches, and
+   s6 with the JIT and both): most JIT designs on the front carry jitloop by the
+   end, and many jitinl - with jitx, which it needs. Without the founders, jitinl
+   was two mutations from 41 of seed 38's 47 JIT front designs.
 4. **The fastest becomes a JIT design with jitloop**, bubble's ratio about
    halved; with jitinl too, ackermann's as well.
 5. **Every speed number moves**: s6, the yardstick, does 36% fewer dispatches
