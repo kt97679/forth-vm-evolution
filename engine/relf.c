@@ -700,8 +700,12 @@ L_filepos: {/* fid --- u ior */
 L_delfile: { /* c-addr u --- ior */
     t = BYTE(DS1 + DS0);
     BYTE(DS1 + DS0) = 0;
-    DS1 = (UNS64)unlink((char*)(uintptr_t)DS1);
-    BYTE(DS1 + DS0) = t;
+    {   /* the byte back first, then the result (Iteration 124: storing the
+           result first restored the byte at result + u - a segfault, always) */
+        int r_ = unlink((char*)(uintptr_t)DS1);
+        BYTE(DS1 + DS0) = t;
+        DS1 = (UNS64)r_;
+    }
     dsp += CELL_BYTES;
     NEXT();
 }

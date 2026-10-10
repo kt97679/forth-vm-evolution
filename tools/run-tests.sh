@@ -150,6 +150,37 @@ if [ -x "$O/sod32/sod32" ]; then
 fi
 
 echo
+# ---- DELETE-FILE -------------------------------------------------------
+# Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since
+# the baseline - its handler stored unlink's result over the name's address,
+# then restored the name's byte at result + length. Nothing ran it: the
+# corpus has no file words that delete, and the ANS suites stop before their
+# DELETE-FILE tests. Here: a file made, deleted (ior 0), deleted again (ior
+# not 0), and a clean exit - on every stage, the stages run counted.
+echo
+echo "DELETE-FILE (create, delete, delete again):"
+DEL=.delete-check.tmp
+printf ': DT S" %s" DELETE-FILE 0= S" %s" DELETE-FILE 0= 0= AND\n  IF S" DELETE-FILE-OK" ELSE S" DELETE-FILE-WRONG" THEN TYPE CR ;\nS" %s" R/W CREATE-FILE DROP CLOSE-FILE DROP DT\nBYE\n' \
+    "$DEL" "$DEL" "$DEL" > "$O/.delete.fth"
+for w in 64 32; do
+    ran=0; bad=""
+    for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b \
+              s7-spn s7-full s8-spncv8 s8-full s8-lazy relf; do
+        e=$O/$st-$w; i=$O/$st-s$w.img
+        [ -x "$e" ] && [ -r "$i" ] || continue
+        rm -f "$W/$DEL"; ran=$((ran + 1))
+        ( cd "$W" && timeout 15 "$e" "$i" < "$O/.delete.fth" > "$O/.delete.out" 2>&1 ); st_=$?
+        if [ $st_ -ne 0 ] || ! grep -aq DELETE-FILE-OK "$O/.delete.out" || [ -e "$W/$DEL" ]; then
+            bad="$bad $st(exit $st_)"
+        fi
+        rm -f "$W/$DEL"
+    done
+    if [ $ran -eq 0 ]; then printf '  %-12s SKIP   not built\n' "$w-bit"
+    elif [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; rc=1
+    else printf '  %-12s ok     %d stages\n' "$w-bit" "$ran"; fi
+done
+
+echo
 # ---- locals ----------------------------------------------------------
 # locals.4 ships in the shell image and redefines `;` and `EXIT`, which
 # is intrusive enough to deserve a check. tests/core/locals.fth existed
