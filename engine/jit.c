@@ -27,6 +27,9 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #if JITX
        S_FILL,                                   /* Iteration 108: forth-vm-evolution's own */
 #endif
+#if JITINL
+       S_DPLUS,                                  /* Iteration 137: the gene jitinl */
+#endif
        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
 
 #define JIT_IMM64 0x5ea1ed5ea1ed5ea1ULL         /* spn-stencils.c's SPN_IMM_VALUE */
@@ -271,6 +274,41 @@ static int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; return o
 #define JIT_DEPTH 4
 #endif
 
+#if JITINL
+/* Iteration 137 (the gene jitinl): a word of one operation and EXIT - 1+,
+   0=, CELL+ - is that operation in its caller, not a call: call and return
+   were a quarter of a small recursive word's native time. Not an operation
+   that branches, ends the word, or touches the return stack or the
+   interpreter, whose meaning a call changes; anything else stays a call. */
+static int jit_inl1(UNS64 a, unsigned short *op, UNS64 *v) {
+    UNS8 b = BYTE(a); unsigned L, L2, j; UNS64 x;
+    if (T2_CALL(b)) return 0;
+    L = jit_one[T2_ONEIX(b)]; a++;
+    if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+    if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok || jit_ops[L].opnd >= 6) return 0;
+    for (j = 0; j < jit_ops[L].n; j++) {
+        int s = jit_ops[L].st[j];
+        if (s == S_EXIT || s == S_CALL || s == S_INTERP || s == S_TOR || s == S_FROMR || s == S_RFETCH ||
+            s == S_DO || s == S_QDO || s == S_LOOP || s == S_PLOOP || s == S_I || s == S_J ||
+            s == S_UNLOOP || s == S_LEAVE || jit_st[s].njump) return 0;
+    }
+    switch (jit_ops[L].opnd) {
+    case 0: x = (UNS64)(INT64)jit_ops[L].k; break;
+    case 1: x = BYTE(a); a += 1; break;
+    case 2: x = LD16(a); a += 2; break;
+    case 3: x = (UNS64)(INT64)(int32_t)jit_ld32(a); a += 4; break;
+    case 4: x = (UNS64)jit_ld32(a) | (UNS64)jit_ld32(a + 4) << 32; a += 8; break;
+    case 5: x = (UNS64)(INT64)(int8_t)BYTE(a); a += 1; break;
+    default: return 0;
+    }
+    b = BYTE(a);
+    if (T2_CALL(b)) return 0;
+    L2 = jit_one[T2_ONEIX(b)]; a++;
+    if (L2 == T2_ESC) { L2 = jit_esc[BYTE(a)]; a++; }
+    if (L2 >= (unsigned)JIT_NOPS || !jit_ops[L2].ok || jit_ops[L2].n != 1 || jit_ops[L2].st[0] != S_EXIT) return 0;
+    *op = (unsigned short)L; *v = x; return 1;
+}
+#endif
 #if JITX
 static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
 #else       /* without jitx, called once: inlined, the engine as it was */
@@ -360,7 +398,11 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #if JITX
         else if (BYTE(arg[i]) == JIT_DOVAR) {         /* a variable: its address, a literal */
             arg[i] = (arg[i] + 5 + 7) & ~(UNS64)7; opl[i] = 0xFFFD; continue;
-        } else {                                      /* a word without the header: translated once */
+        }
+#if JITINL
+        else if (jit_inl1(arg[i], &opl[i], &arg[i])) continue;     /* one operation: inline */
+#endif
+        else {                                      /* a word without the header: translated once */
             uint32_t *k = jit_kslot(arg[i]);
             if (!k) return 0;
             if (*k & 0x80000000u) { *k = 1; *k = jit_body(arg[i], arg[i], 0, depth + 1); }
@@ -427,6 +469,9 @@ int main(void) {
         "ult", "lshift", "rshift", "interp", "do", "qdo", "loop", "ploop", "i", "j", "unloop", "leave", "pick",
 #if JITX
         "fill",
+#endif
+#if JITINL
+        "dplus",
 #endif
     };
     int i;

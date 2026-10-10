@@ -2805,3 +2805,20 @@ of zeros in the image; tests/shell still passes on the SYSC shell. The four
 checks pass at both widths. Waiting for seed 39 to have run, together: the
 NAME>BUF patch, jitloop and sysc into EXPRESSED, tools/test-sysc-shell.sh
 into run-tests.sh.
+
+## Iteration 137 - 2026-10-10 - Claude
+
+**Cheaper native calls, priced and built: the gene jitinl, dormant.** Why
+native -ack was no faster (Iteration 130): not the depth - a native call
+costs 2.5-2.8 ns at depth 10 and at depth 500 alike, against 6.6-10 ns
+bytecode on s6 - but the calls to one-operation words: -ack calls 0=, 1+ and
+1- as words, and a native call and return to one cost ~0.7 ns, a quarter of a
+small recursive word's time (1- 2.92 ns a call, -1 + 2.21). jitinl: the JIT
+makes such a call the operation itself (jit_inl1 - not one that branches,
+ends the word, or touches the return stack or the interpreter; anything else
+stays a call), and D+'s stencil comes back with it. On seed 37's fastest
+with jitloop: ackermann's 12.7 M dispatches native and its long run 10.1 ->
+5.0 ms (VM); bubble's 11.0 -> 5.4 with jitloop; together roughly a fifth off
+the speed score, for the laptop to measure. Five JIT designs with both: the
+gate, the answers, the Forth 2012 suite as s6. Every new gene off: ids,
+images and engines identical to Iteration 130's.

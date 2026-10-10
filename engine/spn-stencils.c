@@ -210,6 +210,13 @@ S(st_leave)  { ucell *rpp = IMM_RP(); *rpp += 2 * sizeof(cell); return spn_jump(
    trampoline. In the native layout it is one load: tos is u, sp[0] is
    x0, and xu is sp[u]. */
 S(st_pick)   { GO(sp, sp[tos]); }
+#if JITINL
+/* Iteration 137 (forth-vm-evolution, the gene jitinl): D+ ( d1 d2 -- d3 ), as
+   the engine's L_dplus - the low cells added, their carry into the high. */
+S(st_dplus)  { ucell lo = (ucell)sp[2] + (ucell)sp[0];
+               cell hi = (cell)((ucell)sp[1] + (ucell)tos + (lo < (ucell)sp[0]));
+               sp[2] = (cell)lo; GO(sp + 2, hi); }
+#endif
 #if JITX
 /* Iteration 108 (forth-vm-evolution, the gene jitx): FILL ( c-addr u char -- )
    for its translator - without a call, which a stencil may not hold: rep stosb
@@ -250,6 +257,9 @@ const void *const spn_table[] = {
     (const void *)st_unloop, (const void *)st_leave, (const void *)st_pick,
 #if JITX
     (const void *)st_fill,
+#endif
+#if JITINL
+    (const void *)st_dplus,      /* Iteration 137: after fill, so the others keep their numbers */
 #endif
 #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
