@@ -108,5 +108,49 @@ three sets together are 51 words** - the audit's order:
 A kernel change moves s6, the yardstick, and every design without the matching k-gene; as an overlay
 gene, s6 and the recorded designs stay as they are - the plan's rule (4).
 
-**Next**: each of the 51 against pForth, FICL, F83, ueForth, jonesforth, zForth and RelF - ours,
-theirs, the candidate - priced in dispatches and bytes, the heaviest first.
+## Batch 1 - NAME>BUF (Iteration 132): a waste, not a dispatch cost
+
+**Ours.** `NAMEBUF 32 0 FILL 32 MIN NAMEBUF PLACE` - 32 bytes zeroed a byte at a time, for every
+lookup. The search compares names a cell at a time, so the buffer needs zeros only where the
+stored names have padding (the name's last cell) and in the cell after (where the compare finds
+the name's end - the first cell that differs must be that one).
+
+**Theirs.** eForth's PACK$, used for every name it parses: the count, then one zero cell at the
+string's end, then the string - `2DUP C! 1 + 2DUP + 0 SWAP ! SWAP CMOVE` (the collection's
+EFORTH.SRC). The same idea; its compare counts cells, so it needs no cell after. pForth and FICL
+compare bytes and need no padding; kfast (Iteration 51) went that way here (NAME>BUF8, "no
+padding: nothing reads past it").
+
+**The candidate** - two cells zeroed, then the name:
+
+    : NAME>BUF ( c-addr u ---)
+      32 MIN DUP 1+ ALIGNED NAMEBUF +  0 OVER !  0 SWAP 1 CELLS - !  NAMEBUF PLACE ;
+
+and NAMEBUF one cell larger (`32 ALLOT-T`, not 28): the cell after a 31-character name lies at
+bytes 32 to 32+cell, past the old buffer at both widths - the old code *read* it there (harmless);
+the candidate writes it, and without the larger buffer the 4-byte build broke (it zeroed what
+followed NAMEBUF while the shell loaded).
+
+**The price** - exact, s6 built from a scratch clone with both changes (reseeded, both widths;
+run-tests PASS, 7 of 7 IDENTICAL):
+
+| workload | dispatches before | after | after/before |
+|---|---|---|---|
+| kernel | 9,252,139 | 6,625,636 | **0.716** |
+| corpus | 47,357,767 | 34,713,117 | **0.733** |
+| fib, loop | | | 1.000 |
+| bubble, ackermann | | | 0.998 |
+
+s6's image +8 bytes. **The owner's decision**: (a) in the kernel - s6, the yardstick, does 27-28%
+fewer dispatches on two of the six workloads, so every design's ratio to it shifts (a
+measurement-like change: alone, between runs, after seed 39); or (b) an overlay gene - s6 and the
+recorded designs unchanged, but it would reach almost none of them (kfast has 240 of seed 37's 242
+front designs past this path). The recommendation is (a): an equivalent, shorter path, one latent
+read past a buffer fixed, and the shared kernel better for everything built from it.
+
+**The rest of the heavy words, seen in this pass**: (LOOP), (+LOOP), I, 2@, 2!, 0=, 1-, 1+, >
+are already minimal colon definitions (or single operations) - their cost is the dispatch, which
+the opcode genes (ops10, opbody) and the JIT answer, not a better definition. The dictionary search
+(NEXT-NFA8, SEARCH-WORDLIST, NAME=?, FIND) has kfast's and klookup's alternatives. Next to read
+closely: CMOVE and CMOVE> (byte loops), REFILL's tab loop, the interpreter's ?STACK, NUMBER?, and
+COLD (1.9% of the fastest's interpreted dispatches - start-up, in every timed run).

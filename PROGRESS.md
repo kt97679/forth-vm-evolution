@@ -2730,3 +2730,19 @@ union is 51 words, the audit's order. Seen already: every dictionary lookup
 zero-fills a 32-byte name buffer a byte at a time (NAME>BUF's FILL - 35% of
 s6's kernel workload, 27% of its corpus; kfast avoids it, and s6 does not have
 kfast).
+
+## Iteration 132 - 2026-10-10 - Claude
+
+**The audit's batch 1, and SYSCALL priced** - two decisions for the owner,
+nothing in the kernel or the engine yet (seeds 38 and 39 run the same code).
+NAME>BUF zero-filled 32 bytes a byte at a time for every lookup; the cell-wise
+search needs two cells - eForth's PACK$ zeroes one, for the same reason. In a
+scratch clone (reseeded, both widths, run-tests PASS, 7 of 7 IDENTICAL), the
+two-cell NAME>BUF cut s6's dispatches 28% on the kernel workload and 27% on
+the corpus; NAMEBUF needed a cell more - the old code read past it for a
+31-character name, and the new one, writing there, broke the 4-byte build
+until it had room (results/word-audit.md). The other heavy words are minimal
+already; COLD is noise (2,649 dispatches of start-up on s6). SYSCALL, exact by
+source-line attribution of s6's engine: the 29 OS handlers are 3,153 bytes and
+the runtime 3,400 - ~3-3.5 KB net smaller for every design if built
+(results/syscall-pricing.md).
