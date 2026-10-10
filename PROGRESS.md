@@ -2714,3 +2714,19 @@ smallest). Dormant: in LATE, not in EXPRESSED - 0 of 20,000 mutations set it -
 and the build reads the expressed genome, so a forced value cannot build
 under an old id. The four checks pass at both widths. NEXT-RUN none while
 seed 38 runs.
+
+## Iteration 131 - 2026-10-10 - Claude
+
+**The audit's first step** (results/word-audit.md). The sources, newer online
+where they exist (the owner): pForth (0BSD-style), FICL 4.x from its author
+(BSD-3), ueForth for eForth (Apache-2.0), jonesforth (public domain), zForth
+(MIT), Retro (ISC); lbForth GPL-3 and the standard's repository (no licence
+stated) for ideas; F83, cmFORTH, FIRST/THIRD and the GPL Forths from the
+collection - fetched to the VM, the commits recorded. The weights, exact on
+profiling builds: kernel words carry 60% of s6's dispatches over the six
+selected workloads; 17 words carry 90% of that on s6 and on the smallest, 41
+on the fastest (its interpreter only - the JIT runs the rest natively); the
+union is 51 words, the audit's order. Seen already: every dictionary lookup
+zero-fills a 32-byte name buffer a byte at a time (NAME>BUF's FILL - 35% of
+s6's kernel workload, 27% of its corpus; kfast avoids it, and s6 does not have
+kfast).

@@ -1,4 +1,4 @@
-# The prompt for a new chat (Iteration 130)
+# The prompt for a new chat (Iteration 131)
 
 Paste the text below into the new chat, with the newest bundle attached
 (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet processed
@@ -51,7 +51,7 @@ any laptop runs not yet processed.
 - Every change is a commit `Iteration N: ...` (the bundle script requires that
   subject; git identity Kirill Timofeev <kt97679@gmail.com>) and a bundle:
   `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs`, the
-  file presented to me. The next iteration is 131.
+  file presented to me. The next iteration is 132.
 
 **Where it stands.** Seed 35 was the second small run in a row: the gene set
 converged. New since: the genes fbuf (memory), kstack, abortif and opcall; the

@@ -142,8 +142,12 @@ BEGIN-STRUCTURE, locals ({:), BLOCK, number prefixes and double literals;
 RelF's extend.4 has many (its ext/ tests need them) - but extend.4 is in the
 kernel workload, so porting it is a measurement change. (8) The audit of every word against other Forths
 (the owner) - results/word-audit-plan.md: the method, the premortem, the
-ceilings (~3% of speed, ~1.7% of size at best); next: the sources fetched,
-the weights, results/word-audit.md. The todo genes' status is there too: the
+ceilings (~3% of speed, ~1.7% of size at best). First step done (Iteration
+131, results/word-audit.md): the sources - newer online for pForth, FICL,
+eForth (ueForth), plus jonesforth, zForth, Retro; licences recorded - and the
+weights: 51 words carry 90% of the kernel words' dispatches on s6, the fastest
+and the smallest. Next: each against the others, the heaviest first (FILL
+through NAME>BUF: 35% of s6's kernel workload). The todo genes' status is there too: the
 JIT stencils first, then SYSCALL (not built - agreed in principle) and the
 byte trims, then knum.
 
