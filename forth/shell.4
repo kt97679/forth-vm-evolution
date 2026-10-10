@@ -6298,9 +6298,14 @@ VARIABLE FOR-WORD-CUR
   WHILE
     FOR-WORDS-BUF @ BODY@ FOR-WORD-I @ + FOR-WORD-CUR !
     FOR-VARNAME-BUF @ BODY@ FOR-WORD-CUR @ SET-SHVAR
+    \ On to the next word BEFORE the body runs: FOR-WORD-CUR is an address
+    \ into the arena, and a loop nested in the body may RESIZE - and so move
+    \ - it. Measuring the word afterwards read freed memory; glibc leaves a
+    \ freed block mapped and the bytes were right by luck, the libc-free
+    \ runtime unmaps one over 32 KB - 8 nested loops (Iteration 140).
+    FOR-WORD-I @ FOR-WORD-CUR @ CSTRLEN + 1+ FOR-WORD-I !
     -1 LOOP-RAN? !
     DO-WHILE-BODY
-    FOR-WORD-I @ FOR-WORD-CUR @ CSTRLEN + 1+ FOR-WORD-I !
   REPEAT
   0 LOOP-BREAK? !
   LOOP-DEPTH @ 1- LOOP-DEPTH !

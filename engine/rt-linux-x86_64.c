@@ -44,6 +44,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#ifndef RT_PORTABLE_ONLY   /* Iteration 140: rt-linux-i386.c includes the portable part below */
 char **environ;
 static int rt_errno;
 int *__errno_location(void) { return &rt_errno; }
@@ -148,6 +149,8 @@ int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *r
  * overflow - the JIT's native recursion - leaves it none) */
 int sigaltstack(const stack_t *restrict ss, stack_t *restrict old) { return (int)ok(sc(131, (long)ss, (long)old, 0, 0, 0, 0)); }
 
+#endif /* RT_PORTABLE_ONLY */
+
 /* ---- memory and strings --------------------------------------------------
  * rep movsb/stosb rather than loops: GCC recognises a copying loop and
  * turns it into a call to memcpy - which, here, is this function. */
@@ -197,7 +200,11 @@ static char *bump, *bump_end;
 static int cls_of(size_t total) { int c = 5; while (((size_t)1 << c) < total) c++; return c; }
 void *malloc(size_t n)
 {
+#if UINTPTR_MAX > 0xffffffffu
     if (n > ((size_t)1 << 60)) { rt_errno = ENOMEM; return NULL; }
+#else
+    if (n > ((size_t)1 << 28)) { rt_errno = ENOMEM; return NULL; }
+#endif
     size_t total = n + HDR;
     struct hdr *h;
     if (total > BIG) {
@@ -409,6 +416,7 @@ int snprintf(char *restrict buf, size_t size, const char *restrict f, ...)
     return n;
 }
 
+#ifndef RT_PORTABLE_ONLY
 /* ---- the entry point: the kernel's stack is argc, argv..., 0, envp..., 0 ---- */
 int main(int, char **);
 __attribute__((used, noreturn)) void rt_main(long argc, char **argv, char **envp)
@@ -424,3 +432,4 @@ __asm__(".text\n.globl _start\n.type _start,@function\n_start:\n"
         "\tand $-16, %rsp\n"
         "\tcall rt_main\n"
         "\thlt\n");
+#endif /* RT_PORTABLE_ONLY */

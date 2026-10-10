@@ -2847,3 +2847,27 @@ its loops. They are loop words now, like (LOOP). Every image the build makes,
 stage before shell.4, translate and run right on s1, s3, s4 and s5
 (tools/test-ext-loops.sh) - and the old converter refuses all four on all
 four stages, the negative control. The test joins run-tests.sh after seed 39.
+
+## Iteration 140 - 2026-10-10 - Claude
+
+**libc leaves the 4-byte half too, and the switch found a shell bug.** The
+owner had thought libc gone; only the evolver's engines were - build-stages.sh
+linked glibc by default (ENGINE_RT=libc), and every 32-bit engine always.
+engine/rt-linux-i386.c: int $0x80 system calls (a function of their own, ebp
+being the frame pointer), i386's numbers (mmap2, wait4, ugetrlimit), its
+signal struct and rt_sigreturn, an entry point 16-aligned at the call; the
+portable rest is rt-linux-x86_64.c's, included with RT_PORTABLE_ONLY - one
+copy. Evolved designs' engines byte-identical after that file's edit. The
+4-byte cell engine without libc: the corpus, the fix tests and Haley's +LOOP
+tests byte-identical to glibc's, both stack overflows diagnosed.
+ENGINE_RT=nolibc now covers 32-bit (RT_FLAGS32). **With every hand-made
+engine libc-free, tests/shell failed**: 8 nested for loops crashed. The
+shell's DO-FOR-ITERATE measured its current word through an arena address
+after running the body - and a nested loop's capture had RESIZEd the arena
+away from it: a use-after-free, invisible under glibc (a freed block stays
+mapped, its bytes right by luck), fatal under the libc-free allocator (over
+32 KB, unmapped). Found with strace (the fault address inside the unmapped
+block). Fixed in shell.4 - advance before the body runs; depth 8 and 10 run
+whole. Everything passes both ways: the four checks at both widths, the shell
+suite, the SYSC shell, ?DO and LEAVE in extensions. The libc-free default is
+a pending patch, for after seed 39.
