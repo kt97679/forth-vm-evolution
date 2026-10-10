@@ -160,6 +160,17 @@ if [ -x "$O/sod32/sod32" ]; then
 fi
 
 echo
+# The stages built at a cell width: SPN's native code is x86-64, so s7 and
+# s8 exist at 8 bytes only - as the corpus section above lists them. Iteration
+# 129: the two sections below listed them at both widths; on the laptop, which
+# builds the 4-byte half, that failed the suite before seed 38 (this VM, not
+# building it, never saw the half - prompts/08).
+stages_for() {
+    echo s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b
+    [ "$1" = 64 ] && echo s7-spn s7-full s8-spncv8 s8-full s8-lazy
+    echo relf
+}
+
 # ---- DELETE-FILE -------------------------------------------------------
 # Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since
 # the baseline - its handler stored unlink's result over the name's address,
@@ -174,8 +185,7 @@ printf ': DT S" %s" DELETE-FILE 0= S" %s" DELETE-FILE 0= 0= AND\n  IF S" DELETE-
     "$DEL" "$DEL" "$DEL" > "$O/.delete.fth"
 for w in 64 32; do
     ran=0; bad=""
-    for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b \
-              s7-spn s7-full s8-spncv8 s8-full s8-lazy relf; do
+    for st in $(stages_for $w); do
         e=$O/$st-$w; i=$O/$st-s$w.img
         if [ ! -x "$e" ] || [ ! -r "$i" ]; then
             [ -x "$O/s0-cell-$w" ] && bad="$bad $st(not built)"; continue    # Iteration 125
@@ -214,8 +224,7 @@ fixrun() { # fixrun ENGINE IMAGE FILE -> the output in $O/.fx.out, the status ec
 }
 for w in 64 32; do
     ran=0; bad=""
-    for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b \
-              s7-spn s7-full s8-spncv8 s8-full s8-lazy relf; do
+    for st in $(stages_for $w); do
         e=$O/$st-$w; i=$O/$st-s$w.img
         if [ ! -x "$e" ] || [ ! -r "$i" ]; then
             [ -x "$O/s0-cell-$w" ] && bad="$bad $st(not built)"; continue

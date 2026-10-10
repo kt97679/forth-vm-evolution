@@ -1,4 +1,4 @@
-# The prompt for a new chat (Iteration 128)
+# The prompt for a new chat (Iteration 129)
 
 Paste the text below into the new chat, with the newest bundle attached
 (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet processed
@@ -12,6 +12,8 @@ my RelF. Attached is the newest git bundle of the repository, and the packs of
 any laptop runs not yet processed.
 
 **Set up first.**
+0. As root, give the VM the laptop's 32-bit half: `apt-get update -qq && apt-get install -y -qq gcc-multilib` -
+   the build then makes 8-byte and 4-byte cells, as the laptop's does (Iteration 129).
 1. Clone the bundle as the user `claude` - the repository must be owned by it,
    and every git, build and tool command runs as `runuser -u claude -- ...`.
    If /home/claude belongs to root, make the directory and hand it over first:
@@ -49,7 +51,7 @@ any laptop runs not yet processed.
 - Every change is a commit `Iteration N: ...` (the bundle script requires that
   subject; git identity Kirill Timofeev <kt97679@gmail.com>) and a bundle:
   `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs`, the
-  file presented to me. The next iteration is 129.
+  file presented to me. The next iteration is 130.
 
 **Where it stands.** Seed 35 was the second small run in a row: the gene set
 converged. New since: the genes fbuf (memory), kstack, abortif and opcall; the
@@ -64,7 +66,9 @@ run-tests.sh; every image changed (+120-160 bytes). Seed 37, 9 hours with the
 new genes: not small - memory 184 -> 156 KB, 90 of 107 on the front of all
 runs. Iteration 127: the measurement changed - Haley's +LOOP cases in the
 gate, bubble and ackermann selected, parse held out. Bubble and
-ackermann are my RelF/bench programs (Iteration 128). Pending: seed 38, 6
+ackermann are my RelF/bench programs (Iteration 128). Seed 38's first start
+failed at the tests - two new sections expected SPN stages at 4 bytes, a half
+the VM did not build; fixed in Iteration 129. Pending: seed 38, 6
 hours (NEXT-RUN), the first run on the fixed kernel and the new measurement -
 process its packs when I send them; seed 39 after it. The open threads after it are in the HANDOFF.
 

@@ -226,4 +226,8 @@
 # Iteration 128: bubble and ackermann are the owner's own (RelF/bench in his
 # collection); and 6 hours, not 9 (the owner: two runs in a day) - the chain
 # about 6 h 30 min. Seed 39 next, the same.
+#
+# Iteration 129: seed 38's first start (14:07, c9c2c1c) failed at the tests -
+# run-tests.sh's DELETE-FILE and fixes sections expected s7 and s8 at 4 bytes,
+# which the laptop builds and the VM did not. Fixed; the same run, again.
 seed 38 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

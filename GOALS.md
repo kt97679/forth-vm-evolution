@@ -324,7 +324,12 @@ user.email='kt97679@gmail.com' commit`), the handoff's last commit titled
 not survive between turns on the VM (Iteration 79) - nor past the tool call
 that started them (Iteration 125: a nohup'd job died when its call returned),
 so a job runs inside one call, under its 5-minute limit; long runs belong on
-the laptop.
+the laptop. **The VM must build what the laptop builds** (Iteration 129):
+install gcc-multilib (as root, `apt-get install -y gcc-multilib`) so the build
+makes the 4-byte half too, and run next-run.sh's four checks - the build,
+run-tests.sh, --validate, test-jail.py - at both widths before a bundle goes
+to the laptop. Seed 38's first start failed on a check that had only ever run
+here, without that half.
 
 ## Success: three objectives, equal (the owner, Iteration 75)
 

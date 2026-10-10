@@ -2672,3 +2672,20 @@ kind of stage). K = 12 and 23, ~11 ms on the fastest design. Seed 37's fastest
 under the selection: 0.224 - bubble 0.32 of s6, ackermann 0.71. Still before
 any run of Iteration 127's measurement, so part of it. Runs of 6 hours now
 (the owner: two in a day): seed 38, then 39, the same genes.
+
+## Iteration 129 - 2026-10-10 - Claude
+
+**Seed 38's first start failed at the tests**, ten minutes in: run-tests.sh's
+two sections from Iteration 125 (DELETE-FILE, the fixes) listed every stage
+at both cell widths, and SPN's s7 and s8 exist at 8 bytes only - their native
+code is x86-64. The laptop builds the 4-byte half, so the five showed as
+"not built" there and failed the suite; this VM, without a 32-bit compiler,
+never built that half, so the check had passed only where it could not fail
+that way (prompts/08). Everything else on the laptop's 4-byte side passed,
+the new sections included on the ten stages that exist. Fixed: stages_for
+lists a width's stages as the corpus section does. And the VM now has
+gcc-multilib, so it builds both halves: next-run.sh's four checks - build,
+tests, validate, jail - reproduce the laptop's failure at Iteration 128's
+commit and pass with the fix; a 4-byte stage hidden fails the suite. The
+HANDOFF-PROMPT's set-up installs it. The jitloop work stays stashed until it
+works (bubble faults with the gene on).
