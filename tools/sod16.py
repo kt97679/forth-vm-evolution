@@ -299,7 +299,8 @@ def read_ops(w):
     out = testbranch(out) if V8 and any(v[2] in X_OPS10 for v in TESTBR.values()) else out
     out = eqibranch(out) if V8 and '=I?BRANCH' in X_OPS10 else out
     out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10) else out
-    return shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
+    out = shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
+    return opcall_rewrite(out) if V8 and OPCALL else out     # Iteration 121: last - the op as it ends up
 
 def raw_read(w):
     """A body as the cell image has it, before any rewrite - or None."""
@@ -616,7 +617,7 @@ def tiny_at():
     global TINY_AT, FOLD
     if TINY_AT is None:
         TINY_AT, saved, fsaved = {}, set(SPEC), FOLD
-        x10, sup = dict(X_OPS10), dict(SUPERS)
+        x10, sup, ocs = dict(X_OPS10), dict(SUPERS), dict(OPCALL)
         # Read the real bodies, unrewritten: every rewrite read_ops applies
         # off, not only SPEC and FOLD. Iteration 13: the pairs, the short
         # branches and the fused tests, added after these checks, rewrote
@@ -625,7 +626,7 @@ def tiny_at():
         SPEC.clear(); FOLD = False
         import os
         if not os.environ.get('SOD16_OLD_BODYCHECK'):   # the fault itself, kept only to measure the fix (lab/evolve/image-ab.py)
-            X_OPS10.clear(); SUPERS.clear()
+            X_OPS10.clear(); SUPERS.clear(); OPCALL.clear()
         nm_of = {w['s']: w['n'] for w in words}
         for w in words:
             if w['n'] in X_TINY:
@@ -633,7 +634,7 @@ def tiny_at():
                 if o is None: continue
                 o = [(k, nm_of.get(p, p) if k == 'C' else p) for k, p in o]
                 if o == _expect(w['n']): TINY_AT[w['s']] = w['n']
-        SPEC.update(saved); FOLD = fsaved; X_OPS10.update(x10); SUPERS.update(sup)
+        SPEC.update(saved); FOLD = fsaved; X_OPS10.update(x10); SUPERS.update(sup); OPCALL.update(ocs)
         missing = set(X_TINY) - set(TINY_AT.values())
         if missing: print("tiny: no exact body match for %s" % sorted(missing))
     return TINY_AT
@@ -648,9 +649,9 @@ def ops10_at():
     global OPS10_AT, FOLD
     if OPS10_AT is None:
         OPS10_AT, saved, fsaved = {}, set(SPEC), FOLD
-        x10, sup = dict(X_OPS10), dict(SUPERS)
+        x10, sup, ocs = dict(X_OPS10), dict(SUPERS), dict(OPCALL)
         SPEC.clear(); FOLD = False                                      # every rewrite off: see tiny_at
-        if not os.environ.get('SOD16_OLD_BODYCHECK'): X_OPS10.clear(); SUPERS.clear()
+        if not os.environ.get('SOD16_OLD_BODYCHECK'): X_OPS10.clear(); SUPERS.clear(); OPCALL.clear()
         nm_of = {w['s']: w['n'] for w in words}
         show = set(os.environ.get('SOD16_SHOW', '').split(',')) - {''}
         for w in words:
@@ -660,7 +661,7 @@ def ops10_at():
                 o = [(k, nm_of.get(p, p) if k == 'C' else p) for k, p in o]
                 if w['n'] in show: print('SHOW %s %r' % (w['n'], o))
                 if w['n'] in x10 and o == _expect(w['n']): OPS10_AT[w['s']] = w['n']
-        SPEC.update(saved); FOLD = fsaved; X_OPS10.update(x10); SUPERS.update(sup)
+        SPEC.update(saved); FOLD = fsaved; X_OPS10.update(x10); SUPERS.update(sup); OPCALL.update(ocs)
         missing = set(X_OPS10) - PSEUDO10 - set(OPS10_AT.values())
         if missing: print("ops10: no exact body match for %s" % sorted(missing))
     return OPS10_AT
@@ -815,6 +816,19 @@ def specialise(ops):
 NOFOLD = ('EXIT', 'BRANCH', '?BRANCH', 'NOOP')
 FOLDSET = None        # None = every primitive; else a set of names
 SUPERS = {}          # v8: (first, second) primitive pair -> its superinstruction opcode
+# Iteration 121, the gene opcall (results/docs-reuse.md: Koopman's op+CALL):
+# an operation followed by a call becomes `X;CALL` - its own opcode, whose
+# handler is X's then a direct jump into the call's code (vm-lab.c CALLNEXT),
+# no table dispatch between. The call stays as it was after it, so a branch
+# to the call still finds one. Only operations without an operand (a P).
+OPCALL = {}          # v8 --opcall-file: name -> its X;CALL opcode
+def opcall_rewrite(ops):
+    out = list(ops)
+    for j in range(len(out) - 1):
+        k, pl = out[j]
+        if k == 'P' and pl in OPCALL and pl not in ESC_PRIMS and out[j + 1][0] == 'C':
+            out[j] = ('OC', pl)
+    return out
 
 def fuse_pairs(ops):
     """Fuse `a b`, two primitives with a superinstruction, into one opcode -
@@ -939,6 +953,7 @@ def op_cells(k, pl):
     if k in ('ADDIX', 'EQIX'): return 4 * CELL      # ... + EXIT
     if k == 'LOC': return 3 * CELL                  # LIT off + call
     if k in ('PX', 'SP'): return 2 * CELL
+    if k == 'OC': return CELL
     if k == 'LITX': return 3 * CELL
     if k in ('P', 'C', 'OPD', 'XT'): return CELL
     if k in ('DNQBR', 'DNQBRS', 'SADDI'): return 4 * CELL   # DUP + 0= ?BRANCH + operand; SWAP + LIT n +
@@ -977,7 +992,7 @@ def op_bytes(k, pl, t):
         if k == 'EQITS': return 1
         if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return 1
         if k == 'P' and pl in ESC_PRIMS: return 2
-        if k in ('P', 'PX', 'SP'): return 1
+        if k in ('P', 'PX', 'SP', 'OC'): return 1
         if k == 'C': return 2
         if k in ('LIT', 'LITX'):
             if 0 <= pl < 256: return 2
@@ -1033,6 +1048,7 @@ def opcode_L(ops, j):
     if k == 'LOC': return X_LOC[pl[0]]
     if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return {0: X_LIT0, 1: X_LIT1, -1: X_LITM1}[pl]
     if k == 'SP': return SUPERS[pl]
+    if k == 'OC': return OPCALL[pl]
     if k == 'PX': return V8_FOLD0 + V8_FOLDLIST.index(pl)
     if k in ('LIT', 'LITX'):
         x = k == 'LITX'
@@ -1061,6 +1077,7 @@ def t2_names():
     for i, f in enumerate(V8_FOLDLIST): nm[V8_FOLD0 + i] = f + ';EXIT'
     for (a, b_), c in SUPERS.items(): nm[c] = '%s %s' % (a, b_)
     for w, c in X_OPS10.items(): nm[c] = w
+    for w, c in OPCALL.items(): nm[c] = w + ';CALL'
     nm.pop(V8_ESC, None)
     # Iteration 81: the lazy JIT's opcode (JIT.md) - a code of its own under
     # the tag, but no slot in the 128-entry table: given one, it pushed a
@@ -1212,6 +1229,7 @@ def to_bytes_v8(ops):
         elif k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC:
             b.append({0: X_LIT0, 1: X_LIT1, -1: X_LITM1}[pl])
         elif k == 'SP': b.append(SUPERS[pl])
+        elif k == 'OC': b.append(opcode_L([('P', pl)], 0))     # without the tag: not fused (opcall is the tag's)
         elif k == 'PX':
             assert pl not in ESC_PRIMS, "cannot fold an escaped primitive"
             b.append(V8_FOLD0 + V8_FOLDLIST.index(pl))

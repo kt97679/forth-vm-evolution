@@ -88,7 +88,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif')
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
 FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
@@ -111,9 +111,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
-          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',), ('kstack',), ('abortif',)]
+          ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',), ('kstack',), ('abortif',), ('opcall',)]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
 # interpreter (s6, -DPROFILE=1, VMPROF) dispatched them over kernel, fib,
 # parse and corpus, control flow, literals, EXIT and system calls excluded.
@@ -254,6 +254,30 @@ def ops10_in(g):
 def supers_in(g):
     """[[first, second, opcode], ...] for the pairs that get a slot."""
     return [[a, b, op] for (a, b), op in zip(g['supers'], super_slots(g)[len(ops10_in(g)):])]
+# Iteration 121, the gene opcall (results/docs-reuse.md - Koopman's op+CALL,
+# priced at 2.7-6.6% of dispatches): an operation and the call after it as one
+# opcode - the operation, then straight into the call's code, no table
+# dispatch. The pool: operations without an operand that come before calls
+# most (the fastest and the smallest designs' profiles), each with its handler
+# in the engine; 0= and 1+ are the tiny specialisation's, (PARSE) and PLACE
+# format-10 words - offered only where the design has them.
+OPCALL_POOL = {'DROP': 'L_drop', 'AND': 'L_and', '@': 'L_fetch', '>R': 'L_tor', 'C@': 'L_cfetch', 'SWAP': 'L_swap',
+               'DUP': 'L_dup', 'ROT': 'L_rot', 'OVER': 'L_over', 'R>': 'L_fromr', '+': 'L_plus', 'OR': 'L_or',
+               '0=': 'L_zeq', '1+': 'L_onep', '(PARSE)': 'L_x_parse', 'PLACE': 'L_x_place'}
+def opcall_on(g):
+    """The tag's computed-goto engines: the tail-call and multi-state
+    generators rewrite handlers their own way."""
+    return g['enc'] == 'cv8' and bool(g.get('tag2')) and not g.get('tail') and not g.get('msc')
+def opcall_avail(g):
+    o10 = {w for w, _ in ops10_in(g)}
+    return [n for n in OPCALL_POOL if (n not in ('0=', '1+') or 'tiny' in g['spec']) and (n not in ('(PARSE)', 'PLACE') or n in o10)]
+def opcall_in(g):
+    """[[name, logical opcode, handler], ...]: codes of their own under the tag,
+    0xFE00 + k, no slot in the 128-entry table (as the JIT's) - the designs that
+    could use them most had no slot left after format-10 words and pairs."""
+    if not opcall_on(g): return []
+    av = set(opcall_avail(g)); names = [n for n in dict.fromkeys(g.get('opcall') or []) if n in av]
+    return [[n, 0xFE00 + k, OPCALL_POOL[n]] for k, n in enumerate(names)]
 WORK_SEL = ['kernel', 'fib', 'parse', 'corpus', 'loop']; WORK_HELD = ['sieve']   # Iteration 41: loop selected (the owner), sieve held out
 
 
@@ -262,6 +286,7 @@ def canon(g):
     g['supers'] = [list(x) for x in g.get('supers', [])]
     g['ops10'] = list(g.get('ops10', []))
     for k in LATE: g.setdefault(k, 0)          # genomes recorded before them: off
+    g['opcall'] = list(g['opcall'] or [])      # Iteration 121: a list gene, [] when off
     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
     return g
 def express(g):
@@ -271,6 +296,9 @@ def express(g):
     if g['enc'] == 'cpt16' and not g['fold']: e.pop('folds')
     if 'supers' in e: e['supers'] = [x[:2] for x in supers_in(g)]   # only the pairs that got a slot
     if 'ops10' in e: e['ops10'] = [x[0] for x in ops10_in(g)]
+    if 'opcall' in e:                           # Iteration 121: only those with a slot; none, out of the identity
+        e['opcall'] = [x[0] for x in opcall_in(g)]
+        if not e['opcall']: e.pop('opcall')
     if 'rtfuse' in e and not e.get('supers') and not rt_tests(g): e.pop('rtfuse')   # nothing to fuse at run time
     if 'rtimm' in e and not (overlay(g) and 'imm' in g['spec']): e.pop('rtimm')      # Iteration 37: n + at run time needs both
     if 'rtloop' in e and not rtloop_on(g): e.pop('rtloop')                         # Iteration 41: with a loop opcode to use
@@ -551,6 +579,12 @@ def build(g, d):
         if sh(['python3', os.path.join(ROOT, 'tools', 'gen-super.py'), src, os.path.join(d, 'supers.json')]).returncode:
             raise RuntimeError('died: superinstruction generation')
         flags.append('-DSUPER=1')
+    oc = opcall_in(g)
+    if oc:                                    # Iteration 121: the op;CALL handlers
+        json.dump(oc, open(os.path.join(d, 'opcall.json'), 'w'))
+        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-opcall.py'), src, os.path.join(d, 'opcall.json')])
+        if r.returncode: raise RuntimeError('died: op;CALL generation' + why(r))
+        flags.append('-DOPCALL=1')
     if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py); the tag too (Iteration 70)
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src])
         if r.returncode: raise RuntimeError('died: multi-state generation' + why(r))
@@ -574,6 +608,7 @@ def build(g, d):
     if not g['varcall']: opts.append('--no-varcall')
     if not g['varslot']: opts.append('--no-varslot')
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
+    if oc: opts += ['--opcall-file', os.path.join(d, 'opcall.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
     if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
     if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
@@ -831,6 +866,15 @@ def mutate(g, rnd):
                 what.append('-op %s' % f.pop(rnd.randrange(len(f))))
             elif f and out:
                 i = rnd.randrange(len(f)); q = rnd.choice(out); what.append('op %s->%s' % (f[i], q)); f[i] = q
+        elif k == 'opcall':           # Iteration 121: one more, one fewer, or one swapped
+            f = g['opcall']; out = [n for n in opcall_avail(g) if n not in f]
+            op = rnd.choice(['add', 'add', 'remove', 'swap'])
+            if op == 'add' and out:
+                n = rnd.choice(out); f.insert(rnd.randrange(len(f) + 1), n); what.append('+opcall %s' % n)
+            elif op == 'remove' and f:
+                n = f.pop(rnd.randrange(len(f))); what.append('-opcall %s' % n)
+            elif f and out:
+                i = rnd.randrange(len(f)); n = rnd.choice(out); what.append('opcall %s -> %s' % (f[i], n)); f[i] = n
         elif k == 'supers':
             f = g['supers']; out = [p for p in design_pairs(g) if p not in f]
             op = rnd.choice(['add', 'add', 'remove', 'swap'])
@@ -1184,6 +1228,7 @@ def random_genome(rnd):
         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
+        elif k == 'opcall': g[k] = [n for n in OPCALL_POOL if rnd.random() < 0.5]
         elif k in ('ops10', 'supers', 'folds'):
             f = [x for x in {'ops10': OPS10_POOL, 'supers': SUPER_POOL, 'folds': POOL}[k] if rnd.random() < 0.5]
             rnd.shuffle(f); g[k] = f[:FOLDMAX] if k == 'folds' else f

@@ -156,7 +156,11 @@ the collection catalogued (results/forth-collection-catalog.md), relf-0.3's
 maps onto folds, tail calls, supers and specialisations - all but op+call,
 priced here at 2.7-6.6% of dispatches (the gene candidate opcall); Moving
 Forth's rules for choosing primitives as the prior for the primitive set;
-Knaggs's stack-effect algebra for checking edits. **Iteration 104**: input as relf reads it - no
+Knaggs's stack-effect algebra for checking edits. **Iteration 121**: the gene
+**opcall** (results/opcall.md) - an operation and the call after it in one
+opcode, codes of their own like the JIT's: the fastest design's parse -3.8%,
+corpus -3.4% of dispatches for ~45 bytes of engine an operation; the ANS suite
+as s6. NEXT-RUN: seed 37 tag2 9h. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

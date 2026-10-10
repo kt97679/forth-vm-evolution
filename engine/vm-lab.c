@@ -1171,11 +1171,21 @@ static void virtual_machine(void) {
 #else
 #define T2JIT(x)
 #endif
+#if OPCALL  /* Iteration 121: the op;CALL opcodes - codes of their own under the tag
+             * (logical 0xFE00 + k), no slot in the 128-entry table, as T2_JIT */
+#define T2_OC0 0xFE00
+    static const void *const oc_tab[] = {
+#include "vm-opcall-table.h"
+    };
+#define T2OC(x) ((x) >= T2_OC0 && (x) - T2_OC0 < (int)(sizeof oc_tab / sizeof oc_tab[0])) ? oc_tab[(x) - T2_OC0] :
+#else
+#define T2OC(x)
+#endif
 #if ESCAPE
-#define T2OP(x) (T2JIT(x) (x) == T2_ESC ? &&L_t2esc : (x) == T2_NONE ? &&L_t2bad \
+#define T2OP(x) (T2JIT(x) T2OC(x) (x) == T2_ESC ? &&L_t2esc : (x) == T2_NONE ? &&L_t2bad \
                  : (x) < 128 ? dispatch[(x)] : (x) - 128 < ESC_N ? esc_tab[(x) - 128] : &&L_t2bad)
 #else
-#define T2OP(x) (T2JIT(x) (x) == T2_ESC ? &&L_t2esc : (x) >= n_ ? &&L_t2bad : dispatch[(x)])
+#define T2OP(x) (T2JIT(x) T2OC(x) (x) == T2_ESC ? &&L_t2esc : (x) >= n_ ? &&L_t2bad : dispatch[(x)])
 #endif
     static const void *t2tab[256], *t2esc[256];
     if (!t2tab[0]) {
@@ -2091,6 +2101,20 @@ L_resize: /* a-addr u --- a-addr' ior */
 #endif
 #if SUPER
 #include "vm-super-bodies.h"
+#endif
+#if OPCALL
+/*  Iteration 121, the gene opcall: an operation and the call after it in one
+ *  opcode (Koopman's op+CALL, results/docs-reuse.md). The operation's body,
+ *  then straight into the call's code for its width - its first byte read,
+ *  a compare, a direct jump - where NEXT would have gone through the table.
+ *  Not counted as a dispatch by the profiler: it is not one.  */
+#if T2WIDE
+#define CALLNEXT() do { t = BYTE(ip); ip += 1; if (t >= 0xC0) goto L_t2call4; goto L_t2call2; } while (0)
+#else
+#define CALLNEXT() do { t = BYTE(ip); ip += 1; if (t >= 0xC0) goto L_t2call4; \
+                        if (t >= 0x80) goto L_t2call3; goto L_t2call2; } while (0)
+#endif
+#include "vm-opcall-bodies.h"
 #endif
 
 }

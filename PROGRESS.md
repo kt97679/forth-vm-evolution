@@ -2484,3 +2484,20 @@ part 5: Rodriguez's rules for which words are primitives, and the spectrum
 Knaggs's thesis: a stack-effect algebra, for checking fused sequences and
 genetic improvement's edits. The rest: theory for expression compilers,
 background, learning.
+
+## Iteration 121 - 2026-10-10 - Claude
+
+**The gene opcall** (results/opcall.md; the owner: proceed). An operation
+followed by a call becomes `X;CALL`: X's handler copied by tools/gen-opcall.py
+with NEXT() made CALLNEXT() - the call's first byte, a compare, a direct jump
+into the call's code - and the call left in place after it. The converter's
+last pass (sod16.py opcall_rewrite) on operations without an operand; the
+pool of 16, each offered where the design has its handler. The two target
+designs had no slot left in the 128-entry table, so the fused operations are
+logical 0xFE00 + k with their own table, as the JIT's opcode. A first build
+died in the converter's format-10 body checks, which ran with opcall on -
+they now switch it off, as they do pairs. Fastest design, 16 ops: parse
+-3.8%, corpus -3.4%, kernel -1.6% of dispatches, +768 bytes of engine;
+smallest, 14: -2.5%, -2.5%, -1.6%, +656. Gate, the ANS suite as s6 on both,
+tests, hand-made stages; all 945 recorded ids unchanged. NEXT-RUN: seed 37
+tag2 9h.

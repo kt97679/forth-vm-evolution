@@ -198,4 +198,7 @@
 # after seed 36 (from scratch) has been looked at; fromzero waits for it.
 #
 # Iteration 117: and the gene abortif (ABORT" guarded) - fbuf, kstack, abortif.
+#
+# Iteration 121: and opcall (Koopman's op+CALL) - with fbuf, kstack, abortif
+# and the stack guard fixed.
 seed 37 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

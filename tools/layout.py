@@ -95,6 +95,9 @@ if V8:
     if '--supers-file' in ARGV:     # superinstructions: [[first, second, opcode], ...]
         import json
         G['SUPERS'] = {(a, b): op for a, b, op in json.load(open(_opt('--supers-file')))}
+    if '--opcall-file' in ARGV:     # Iteration 121: op;CALL opcodes: [[name, opcode, label], ...]
+        import json
+        G['OPCALL'].update({n: op for n, op, _ in json.load(open(_opt('--opcall-file')))})
     if '--hotcalls-file' in ARGV:   # one-byte calls: [[old target address, opcode, name], ...]
         import json                 # (Iteration 13: the image side, for pricing; no engine runs them yet)
         G['HOTCALLS'].update({a: op for a, op, _ in json.load(open(_opt('--hotcalls-file')))})
