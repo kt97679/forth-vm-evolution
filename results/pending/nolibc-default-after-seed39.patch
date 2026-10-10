@@ -1,0 +1,25 @@
+diff --git a/tools/engine-rt.sh b/tools/engine-rt.sh
+index 8500e12..ff4da75 100644
+--- a/tools/engine-rt.sh
++++ b/tools/engine-rt.sh
+@@ -1,8 +1,9 @@
+ # engine-rt.sh - sourced by the build scripts: how the engines are linked.
+ # Needs ROOT. Sets RT_FLAGS, appended to every 64-bit engine's cc command.
+ #
+-# ENGINE_RT=libc (the default): with the C library, as always.
+-# ENGINE_RT=nolibc: engines without it - 64-bit on engine/rt-linux-x86_64.c,
++# ENGINE_RT=libc: with the C library, as before Iteration 141.
++# ENGINE_RT=nolibc (the default since Iteration 141 - the tests run on the runtime the
++#   evolver measures): engines without it - 64-bit on engine/rt-linux-x86_64.c,
+ #   32-bit (Iteration 140) on engine/rt-linux-i386.c, which shares that file's
+ #   portable part. RT_FLAGS32 is the 32-bit engines' cc command's tail.
+ #   They start in a fraction of the time and keep about a tenth of the
+@@ -11,7 +12,7 @@
+ #   before. One behaviour differs: ~name comes from /etc/passwd alone,
+ #   not through NSS (LDAP, SSSD, systemd-homed).
+ RT_FLAGS=""; RT_FLAGS32=""
+-case "${ENGINE_RT:-libc}" in
++case "${ENGINE_RT:-nolibc}" in
+     libc) ;;
+     nolibc)
+         if [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ]; then
