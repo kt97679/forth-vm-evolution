@@ -2765,3 +2765,16 @@ compiles, and SYSCALL 39 through FORK's slot returns the pid. Next: the
 shell's half - its seventeen words in Forth on SYSCALL - tested by the shell
 suite removed in 5c87022, which still runs (6 s, 8 assertions in 2 files fail
 on today's shell, the baseline); then the gene, dormant.
+
+## Iteration 134 - 2026-10-10 - Claude
+
+**The shell suite, back.** tests/shell - the parent project's 57 files - was
+removed in 5c87022 as unrun; it still ran, and its 8 failing assertions in 2
+files were the tests' own assumptions, not the shell: run-comments expected
+HOME=/root (len=5, trim=root), run-engine-stacks the parent's relf,
+kernel.img and fib.4 at its top. Fixed (HOME given; this repository's cell
+stage and kernel; fib computed inline) - the engine's own diagnostics were
+already the expected ones ("relf: data stack overflow", exit 70). run-tests.sh
+runs every file through the cell stage's shell and s5's (s6 is not built with
+one): 554 assertions each; the negative control, a shell that ignores its
+command, fails 468. The suite is what the gene sysc's shell half must pass.

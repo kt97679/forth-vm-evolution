@@ -160,6 +160,37 @@ if [ -x "$O/sod32/sod32" ]; then
 fi
 
 echo
+# ---- the shell suite ---------------------------------------------------
+# tests/shell: the parent project's shell suite, removed in 5c87022 as unrun
+# and restored in Iteration 134 (two tests' assumptions fixed: HOME=/root,
+# the parent's file layout). Every file, through a shell that boots into
+# MAIN: the cell stage's and s5's (CV8 - s6 is not built with a shell).
+# The negative control is a "shell" that ignores its command - the suite
+# must fail on it, or it is not checking what the shell does.
+echo
+echo "the shell suite (tests/shell, every file):"
+SHT=$(mktemp -d); trap 'rm -rf "$SHT"' EXIT
+mksh() { # mksh NAME ENGINE IMAGE: a wrapper the suite runs as $THIS_SH
+    printf '#!/bin/sh\nexec "%s" "%s" "$@"\n' "$2" "$3" > "$SHT/$1"; chmod +x "$SHT/$1"
+}
+shsuite() { # shsuite LABEL WRAPPER: the suite's own verdict, its exit status
+    THIS_SH="$SHT/$2" sh tests/shell/run-all > "$SHT/$2.log" 2>&1
+}
+if [ -x "$O/s0-cell-64" ] && [ -s "$O/work/s0-cell-64.img" ]; then
+    mksh s0 "$O/s0-cell-64" "$O/work/s0-cell-64.img"
+    [ -x "$O/s5-cv8spec-64" ] && [ -s "$O/s5-cv8spec-64.img" ] && mksh s5 "$O/s5-cv8spec-64" "$O/s5-cv8spec-64.img"
+    for w in s0 s5; do
+        if [ ! -x "$SHT/$w" ]; then printf '  %-12s FAIL   no shell image\n' "$w"; FAILED=1; continue; fi
+        if shsuite "$w" "$w"; then printf '  %-12s ok     %s assertions\n' "$w" "$(grep -o '^[0-9]* assertions' "$SHT/$w.log" | awk '{s+=$1} END {print s}')"
+        else printf '  %-12s FAIL   %s\n' "$w" "$(grep '^FAIL' "$SHT/$w.log" | head -3 | tr '\n' ' ')"; FAILED=1; fi
+    done
+    printf '#!/bin/sh\nexec "%s" "%s" -c "echo CONTROL"\n' "$O/s0-cell-64" "$O/work/s0-cell-64.img" > "$SHT/control"; chmod +x "$SHT/control"
+    if shsuite control control; then printf '  %-12s FAIL   a shell ignoring its commands passed the suite\n' control; FAILED=1
+    else printf '  %-12s ok     a shell ignoring its commands fails it (%s assertions)\n' control "$(grep -c '^FAIL' "$SHT/control.log")"; fi
+else
+    printf '  %-12s FAIL   the cell stage or its shell image was not built\n' s0; FAILED=1
+fi
+
 # The stages built at a cell width: SPN's native code is x86-64, so s7 and
 # s8 exist at 8 bytes only - as the corpus section above lists them. Iteration
 # 129: the two sections below listed them at both widths; on the laptop, which
