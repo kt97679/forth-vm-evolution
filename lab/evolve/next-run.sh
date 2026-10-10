@@ -159,13 +159,38 @@ case ${REQ:-} in night|*[0-9]h) SIZE=$REQ; REQ= ;; esac
 # re-measure, the report and the comparison (~1 hour with the long workloads). The population 256: the night
 # run's front came from the second half of its generations, and four cores
 # (JOBS) evaluate ~4 times as many designs - ~90,000 in 12 hours.
+# Iteration 152 (the owner: a 6-hour run took ~7): what follows the evolution -
+# the front re-measured, and the comparison if one follows - is reserved from
+# what it took last time ($RUNS/phase-times, written by each chain), scaled to
+# this one's rounds and CPUs, plus a tenth and 10 minutes for the builds,
+# checks and packing; the evolution keeps at least 40% of the hours. A fixed
+# 80 minutes had held until the longer workloads (Iteration 127); seed 38's
+# re-measure and comparison took 126.
+PT=$RUNS/phase-times
+phase_record() {   # phase_record KEY SECONDS ROUNDS [CPUS]
+    mkdir -p "$RUNS"; { grep -v "^$1 " "$PT" 2>/dev/null; echo "$*"; } > "$PT.new" && mv "$PT.new" "$PT"
+}
+reserve() {        # seconds to keep for what follows the evolution
+    rs=1120; rr=6; cs=6400; cr=6; cc=2                      # seed 38's, until a chain records its own
+    l=$(grep '^remeasure ' "$PT" 2>/dev/null | tail -1); [ -z "$l" ] || { set -- $l; rs=$2; rr=$3; }
+    l=$(grep '^compare ' "$PT" 2>/dev/null | tail -1);   [ -z "$l" ] || { set -- $l; cs=$2; cr=$3; cc=$4; }
+    r=$(( rs * ${REMEASURE:-6} / rr ))
+    case " $THEN " in *compare-fronts.py*)
+        tr_=$(printf '%s\n' "$THEN" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); tr_=${tr_:-10}
+        tc_=$(printf '%s\n' "$THEN" | sed -n 's/.*--cpus \([0-9,]*\).*/\1/p' | tr ',' '\n' | grep -c .); [ "$tc_" -gt 0 ] || tc_=1
+        r=$(( r + cs * tr_ * tc_ / (cr * cc) )) ;;
+    esac
+    r=$(( r * 11 / 10 + 600 ))
+    [ "$r" -le $(( HOURS * 3600 * 6 / 10 )) ] || r=$(( HOURS * 3600 * 6 / 10 ))
+    echo "$r"
+}
 HOURS=
 case ${SIZE:-} in
     '') ;;
     night) POP=96; GENS=80 ;;
     *[0-9]h) HOURS=${SIZE%h}
          case $HOURS in *[!0-9]*) die "a number of hours, as 12h - not '$SIZE'" ;; esac
-         POP=256; GENS=100000; UNTIL=$(( $(date +%s) + HOURS * 3600 - 4800 )) ;;   # 80 minutes: the long workloads' comparison (Iteration 100) takes ~1 hour
+         POP=256; GENS=100000; RESERVE=$(reserve); UNTIL=$(( $(date +%s) + HOURS * 3600 - RESERVE )) ;;
     *) die "after the seed and tag2: nothing, night, or hours (12h) - not '$SIZE'" ;;
 esac
 # Iteration 71: "seed N tag2" - every design of the run in the two-bit tag
@@ -196,6 +221,7 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     [ "$MODE" = fresh ] && say "the previous run's outputs will be moved to $RUNS/archived-..."
     [ "$MODE" = experiment ] && say "nothing will be archived or removed"
     [ -z "$THEN" ] || say "then, when this has finished and packed: $THEN"
+    [ -z "${RESERVE:-}" ] || say "the evolution stops at $(date -d @"$UNTIL" +%H:%M) - $(( RESERVE / 60 )) min kept for the re-measure${THEN:+ and the comparison} ($([ -s "$PT" ] && echo "as the last chain took" || echo "seed 38's times"))"
     NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
     say "going on in the background; follow it with"
     echo "    tail -f $RUN/next-run.log"
@@ -273,7 +299,13 @@ if [ "$MODE" = experiment ]; then
     [ $# -gt 0 ] || { echo "   no database in build/evolve, $RUNS/archived-* or lab/evolve/runs/"; exit 1; }
     for f in "$@"; do echo "   $f"; done
     step "lab/evolve/$TOOL $TARGS"
+    T0=$(date +%s)
     python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { tail -20 "$RUN/$NAME.log"; exit 1; }
+    if [ "$TOOL" = compare-fronts.py ]; then                      # Iteration 152: the next chain's reserve
+        cr_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); cr_=${cr_:-10}
+        cc_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--cpus \([0-9,]*\).*/\1/p' | tr ',' '\n' | grep -c .); [ "$cc_" -gt 0 ] || cc_=1
+        phase_record compare $(( $(date +%s) - T0 )) "$cr_" "$cc_"
+    fi
     grep -m2 -E 'Calibration|front of all runs' "$RUN/$NAME.md" || true
     step "packed to send back"
     K=$RUN/pack; rm -rf "$K"; mkdir -p "$K"
@@ -353,8 +385,10 @@ python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --se
     || { tail -20 evolve.log; exit 1; }
 tail -3 evolve.log
 step "the front, measured again - $REMEASURE rounds"
+T0=$(date +%s)
 python3 lab/evolve/evolve.py --remeasure "$REMEASURE" >> evolve.log 2>&1 || { tail -20 evolve.log; exit 1; }
 python3 lab/evolve/evolve.py --report >> evolve.log 2>&1 || { tail -20 evolve.log; exit 1; }
+phase_record remeasure $(( $(date +%s) - T0 )) "$REMEASURE"      # Iteration 152: the next chain's reserve
 
 step "packed to send back"
 K=$RUN/pack; rm -rf "$K"; mkdir -p "$K"

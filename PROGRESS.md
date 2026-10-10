@@ -3040,3 +3040,19 @@ cpu 8), the smallest 0.04% smaller, memory 4 KB less - small on all three. All
 results-measured-here.patch: an old local difference in three stage-benchmark
 tables (30 September), not this run's - left out. NEXT-RUN: seed 39, the same
 genes and measurement; the batch after it.
+
+## Iteration 152 - 2026-10-10 - Claude
+
+**A run ends when it says** (the owner: the 6-hour run took ~7). The evolution
+had stopped on time; what follows it - the front re-measured, the comparison
+- was given a fixed 80 minutes, right until the longer workloads (Iteration
+127): seed 38's took 126 (18 min 39 s and 1 h 47 min), the chain 6 h 49 min.
+next-run.sh now records each later phase's duration in runs/phase-times (the
+re-measure with its rounds, the comparison with its rounds and CPUs) and
+reserves the last chain's, scaled to this one's rounds and CPUs, plus a tenth
+and 10 minutes for the builds, checks and packing; seed 38's times until a
+chain records its own; the evolution keeps at least 40% of the hours; the
+plan is said at the start. Tested on the functions themselves, five cases,
+against the arithmetic by hand. The trade-off it exposes: with the two-CPU
+comparison of 6 rounds a 6-hour chain evolves ~3 h 32 min (seed 38: 4 h 42);
+a comparison of 4 rounds on one CPU would leave ~4 h 44.
