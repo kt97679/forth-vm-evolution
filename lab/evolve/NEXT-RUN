@@ -212,4 +212,9 @@
 # CONVERT, long names, IF outside a definition - in every image and engine
 # (results/relf-reuse.md). Still none: seed 37's packs first; the next run is
 # the first on the fixed kernel, every front measured anew in its session.
-none
+#
+# Iteration 126: seed 37 processed - not small, memory 184 -> 156 KB
+# (results/evolve-amd-ryzen-7-pro-8840hs-seed37.md). Proposed: seed 38, the
+# same genes, the first run on Iteration 125's fixed kernel - 9 hours like
+# seed 37 (its chain took 9 h 08 min). The owner's to choose.
+seed 38 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

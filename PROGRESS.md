@@ -2616,3 +2616,19 @@ literals) where it failed 14. Not taken: RelF's ext/ tests need its newer
 extend.4 and kernel (and extend.4 is in the kernel workload); the shell suites
 wait on whether the shell is part of the job. A job started in a tool call
 dies when the call returns: run it inside one call (GOALS.md).
+
+## Iteration 126 - 2026-10-10 - Claude
+
+**Seed 37 processed** (results/evolve-amd-ryzen-7-pro-8840hs-seed37.md; session
+32 in results/compare-fronts-amd-ryzen-7-pro-8840hs.md). 9 hours at d5917cd,
+the first run of fbuf, kstack, abortif and opcall: the fronts of seeds 32-36
+carried in, 165 generations, 42,225 designs, 40,132 alive; the chain 9 h 08
+min (estimated 9 h 10-30). **Not small: memory 184 -> 156 KB** against the
+earlier runs in the session (fastest 0.134 against seed 33's 0.133, smallest
+20,430 against 20,468 - both small), as predicted before the run; 90 of the
+107 on the front of all runs are seed 37's. On its front (242): fbuf 123 (121
+at 1 KB, 2 at 512 B; 152-184 KB, the rest 184-220, the fastest among the
+rest), abortif 79, kstack 17 (of the 19 without kinput), opcall 13. The
+held-out check at Iteration 125's code: all 242 as s6 on the Forth 2012 suite
+(58 with the guard), the control caught. Proposed: seed 38, 9 hours, the same
+genes - the first run on the fixed kernel (NEXT-RUN; the owner's call).

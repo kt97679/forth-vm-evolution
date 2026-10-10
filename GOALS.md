@@ -45,7 +45,7 @@ preferences are written here: simplicity and minimalism first; three
 equal objectives (memory within 8 KB a tie); each mechanism priced before
 it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 
-**HANDOFF - read this first (Iteration 122; refreshed 123, 124, 125).** The prompt to
+**HANDOFF - read this first (Iteration 122; refreshed 123, 124, 125, 126).** The prompt to
 open a new chat with is HANDOFF-PROMPT.md, at the top of the repository. Checked from a fresh clone of
 the bundle: it builds, the tests pass, the hand-made stages are identical,
 every design of the front of all runs (151, session 30) has its genome in
@@ -56,8 +56,13 @@ also reads as a database, so a carry can start from one), packs not yet
 analysed (the owner sends them), the owner's Forth collection (licences, size
 - re-upload forth.tgz to look again; results/forth-collection-catalog.md).
 
-*The state.* Seed 35 small, the second in a row: the gene set of Iteration
-113 converged (front of all runs, session 31: 90 designs, 70 of seed 35;
+*The state.* **Seed 37 (Iteration 126), the new genes' first run: not small -
+memory 184 -> 156 KB** (fbuf on 123 of its 242 front designs); the front of all
+runs, session 32: 107 designs, 90 of seed 37; fastest 0.133 (fecd53a41b, seed
+33; seed 37's 0.134), smallest 20,430 (cd6c94b30d, seed 37), least memory 156
+KB; all 242 of its front as s6 on the Forth 2012 suite at Iteration 125's
+code (results/evolve-amd-ryzen-7-pro-8840hs-seed37.md). Before it: seed 35
+small, the second in a row: the gene set of Iteration 113 converged (front of all runs, session 31: 90 designs, 70 of seed 35;
 fastest 0.130, smallest 585376cf49 20,318 bytes). New since: the genes fbuf (memory),
 kstack, abortif, opcall; the stack guard fixed; next-run.sh `nocarry` and
 `fromzero`; comparisons with --frontier at 6 rounds; the held-out check
@@ -69,12 +74,11 @@ scratch reached the carried runs' neighbourhood (fastest 0.146 against
 0.130, smallest 20,425 against 20,318) and no further - 2 of the 90 on the
 front of all runs (results/evolve-amd-ryzen-7-pro-8840hs-seed36.md).
 
-*Pending run.* Seed 37 - 9 hours, the new genes (fbuf, kstack, abortif,
-opcall) and the guard fix: started on the laptop from the Iteration 123
-bundle (checked before: the chain's control flow; ~9 h 10-30 min, the seed
-pack ~8 h in - the serial re-measure and the larger comparison outgrow the
-80-minute reserve; the new genes' code rehearsed on the VM). Its packs to
-come. NEXT-RUN says `none` until they are processed: this bundle only pulls.
+*Pending run - proposed, the owner's to choose.* Seed 38, 9 hours with the
+same genes (NEXT-RUN): the first run on Iteration 125's fixed kernel, and the
+first chance at a small run for this gene set (seed 37 was not small, so the
+count stands at none). Seed 37's chain took 9 h 08 min; seed 38's should be
+about the same. Its comparison measures seeds 33-38 anew.
 
 *Iteration 124 - the Forth 2012 test suite* (results/forth-standard-tests.md):
 tests/ans is now the standard suite (Jackson's, kept by the Forth Standard
@@ -105,8 +109,9 @@ literals) where it failed 14; the 90 designs as s6. The owner's collection:
 only anstests0.3 was ever copied in (now superseded) - nothing else needs
 re-uploading for this.
 
-*Open threads, in order.* (1) Seed 37's verdict (it ran on Iteration 123's
-code); ans-check.py on its front (with its database). (2) The gate: Haley's
+*Open threads, in order.* (1) Seed 38's verdict - the first run on the fixed
+kernel; ans-check.py on its front. A measurement change (2 or 3 below) costs
+no streak now: seed 37 was not small. (2) The gate: Haley's
 +LOOP tests and fixes.fth into the corpus - a measurement change (the corpus
 is timed), alone, the owner's decision. (3)
 Workloads: parse held out, execution-heavy ones in (bubble, ackermann from
