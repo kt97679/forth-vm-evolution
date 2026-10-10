@@ -3025,3 +3025,18 @@ batch itself: the smallest design 20,630 -> 17,610 bytes (-14.6%), the fastest
 33,512 -> 29,976 (-10.6%), the same genomes. No code from the permissive
 Forths taken: their compact words are primitives in C or assembler; ours are
 already short colon definitions.
+
+## Iteration 151 - 2026-10-10 - Claude
+
+**Seed 38, processed: small** (results/evolve-amd-ryzen-7-pro-8840hs-seed38.md;
+session 33 in results/compare-fronts-amd-ryzen-7-pro-8840hs.md). The first run
+of the selection with bubble and ackermann: 21,395 designs, 20,396 alive, the
+only deaths the reach limit's 999; 83 generations in 4 h 42 min; the chain 6 h
+49 min (the comparison 1 h 47 - the longer workloads). Session 33 (seeds 33-38,
+calibration 1.008): the front of all runs 88, 69 of them seed 38's; against
+seed 37 the fastest is a tie (0.236 against 0.241 on cpu 2, seed 37 ahead on
+cpu 8), the smallest 0.04% smaller, memory 4 KB less - small on all three. All
+165 front designs as s6 on the Forth 2012 suite. The laptop's pack also carried
+results-measured-here.patch: an old local difference in three stage-benchmark
+tables (30 September), not this run's - left out. NEXT-RUN: seed 39, the same
+genes and measurement; the batch after it.

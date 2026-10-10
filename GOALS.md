@@ -116,7 +116,9 @@ tests on the runtime the evolver measures, at both widths), the
 dormant genes jitloop, jitinl and sysc into EXPRESSED, tools/test-sysc-shell.sh and
 tools/test-ext-loops.sh into run-tests.sh; then a run with them.
 
-*Pending run.* Seed 38, **6 hours** (the owner: two runs in a day), the same
+*Seed 38 (Iteration 151): small* - 69 of the 88 on the front of all runs, no
+objective's best moved. *Pending run.* Seed 39, **6 hours**, the same genes
+and measurement, the same
 genes (NEXT-RUN): the first run on the fixed kernel and the new measurement;
 the chain about 6 h 30 min (the re-measure and the comparison outgrow the
 80-minute reserve). Then seed 39, 6 hours, the same genes: under the new

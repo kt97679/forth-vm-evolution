@@ -235,4 +235,7 @@
 # (562c4d18). This bundle adds the gene jitloop, dormant - none, so pulled
 # after seed 38 has finished it only pulls; seed 39 is set when seed 38's
 # packs are processed.
-none
+# Iteration 151: seed 38 processed (small; 69 of 88 on the front of all runs).
+# Seed 39 - the same genes, the same measurement: the pair. The after-seed-39
+# batch (results/pending, seven patches) waits for it.
+seed 39 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
