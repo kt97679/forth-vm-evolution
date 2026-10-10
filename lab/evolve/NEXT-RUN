@@ -238,4 +238,8 @@
 # Iteration 151: seed 38 processed (small; 69 of 88 on the front of all runs).
 # Seed 39 - the same genes, the same measurement: the pair. The after-seed-39
 # batch (results/pending, seven patches) waits for it.
-seed 39 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 153: 7 hours, not 6 - since Iteration 152 a chain ends when it says,
+# and with the re-measure and the two-CPU comparison of 6 rounds reserved (147
+# minutes, seed 38's times) 7 hours leave the evolution ~4 h 32 min against seed
+# 38's 4 h 42: the pair stays a pair. The regular length is chosen after the batch.
+seed 39 tag2 7h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

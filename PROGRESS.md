@@ -3056,3 +3056,15 @@ plan is said at the start. Tested on the functions themselves, five cases,
 against the arithmetic by hand. The trade-off it exposes: with the two-CPU
 comparison of 6 rounds a 6-hour chain evolves ~3 h 32 min (seed 38: 4 h 42);
 a comparison of 4 rounds on one CPU would leave ~4 h 44.
+
+## Iteration 153 - 2026-10-10 - Claude
+
+**Seed 39 runs 7 hours** (the owner asked which to choose). It is seed 38's pair:
+the same genes and measurement, so the same evolution budget and the same
+comparison too. With the reserve now honest, 6 hours would leave ~3 h 32 min of
+evolution against seed 38's 4 h 42 - a weaker seed 39 could not be told from a
+shorter one; a cheaper comparison would measure the very verdict the pair is
+for less precisely, and one CPU would lose the cross-check that showed seed
+38's speed a tie. 7 hours: ~4 h 32 min of evolution, the same comparison, the
+chain ending at 7 hours as it says. The regular length is chosen after the
+batch - 6 hours with a two-CPU comparison of 4 rounds would leave ~4 h 10.

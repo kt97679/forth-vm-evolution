@@ -1,4 +1,4 @@
-# The prompt for a new chat (Iteration 152)
+# The prompt for a new chat (Iteration 153)
 
 Paste the text below into the new chat, with the newest bundle attached
 (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet processed
@@ -70,7 +70,7 @@ ackermann are my RelF/bench programs (Iteration 128). Seed 38's first start
 failed at the tests - two new sections expected SPN stages at 4 bytes, a half
 the VM did not build; fixed in Iteration 129. Iteration 130: the gene jitloop ((+LOOP) and (?DO)
 native on the JIT), built and dormant until seed 39 has run. Seed 38 processed (Iteration 151:
-small). Pending: seed 39, 6 hours, the same genes; then the after-seed-39 batch - process its
+small). Pending: seed 39, 7 hours, the same genes; then the after-seed-39 batch - process its
 packs when I send them, then apply the batch (GOALS.md has the procedure). The open threads after it are in the HANDOFF.
 
 Please set up, confirm the checks pass, and tell me what you will do next.
