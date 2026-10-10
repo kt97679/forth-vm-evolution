@@ -281,3 +281,76 @@ entries ~128 bytes (2%) - each with work in the converter or FIND. For scale,
 the batch already takes the smallest design from 20,630 bytes to 17,610 (-14.6%:
 the image -192 by the kernel census, the engine -2,828 by the single SYSCALL
 model and the tight ELF) and the fastest from 33,512 to 29,976 (-10.6%).
+
+## Batch 4 - every definition read (Iteration 156)
+
+The owner: all the Forth definitions, for anything that can be faster. Read:
+every definition on a measured path - the kernel's 164, the k-genes' 12, the
+tag2 compiler overlays', cross.4's and extend.4's (cross.4 and extend.4 are the
+kernel workload) - each word's dispatches and calls measured on the batch, on
+s6, the smallest, seed 37's fastest and the JIT founder.
+
+**The rule.** A change counts only if it removes operations in every encoding.
+Call overhead does not count: words as opcodes, fused pairs and inlining at the
+hottest sites remove it where a design chooses them, and a word spelled out in
+the source slows the designs that made it an opcode. And the designs do not run
+the kernel as written - the converter and the overlays replace the compiler, the
+lookup and the parsing - so the profiles say what runs, not the source: 2SWAP
+cost 5 dispatches in its own bytes and ~150 in ROLL and CMOVE>; ALIGNED, called
+by every inline string in the source, ran 5 times in all eight workloads.
+
+**Built** - results/pending/audit-after-seed39.patch, the batch's ninth:
+- INTERPRET checks the stack where it can have changed - after a word executes,
+  after a number is interpreted - not after a word or a number compiled.
+- CMOVE, CMOVE> and FILL by D+: 11, 11 and 10 operations a byte, not 19, 19
+  and 15. CMOVE> is an opcode in no design, and HEADER8 moves every new name up
+  with it; -1 -2 is -(1,1) as a double, so -1 -2 D+ takes one from each address.
+- 2SWAP as ROT >R ROT R> - it was two ROLLs, two byte-wise CMOVE>s of the
+  stack; 2! without the return stack; WORD with one HERE, as WORD8;
+  SEARCH-WORDLIST's mask a literal (-1 224 XOR for every entry visited) and its
+  link step without a call to -.
+- SUPER-OP tests the first opcode before the second, in both fusion overlays.
+- cross.4: 8 * as 3 LSHIFT in the target-cell loops. The kernels it builds are
+  byte for byte the same at both widths (reseeded with the old cross.4 and the
+  new). On the JIT designs those loops now run translated: the code compiled at
+  run time in the kernel workload, 794 k interpreted dispatches on the JIT
+  founder before, 281 k after - what kept the JIT from them is not pinned down.
+- The converter's expected bodies for FILL and CMOVE, as it reads the new ones
+  (without them every design with either opcode died: checked).
+- tests/core/audit.fth in run-tests.sh: the rewritten words with overlaps both
+  ways, lengths 0 and 1, a sentinel, and the stack check's two paths - the
+  answers the kernel gave before the audit, on 25 stages at both widths; the
+  control, CMOVE for CMOVE>, does not give them.
+
+Checked: run-tests PASS, 7 of 7 IDENTICAL, the jail; all 165 of seed 38's front
+designs and both founders alive on the nine patches, tabs and audit right. The
+kernel images 168 bytes smaller at 8-byte cells, 84 at 4-byte.
+
+**Measured** - exact dispatch counts, each workload's change, the batch with the
+audit against the batch without it:
+
+| design | kernel | corpus | fib | loop | bubble | ackermann | sieve | parse |
+|---|---|---|---|---|---|---|---|---|
+| s6 | -6.2% | -2.6% | -0.0% | -0.0% | -0.8% | -0.0% | -2.7% | -1.4% |
+| the smallest (cd6c94b30d) | -3.0% | -0.8% | -0.0% | -0.0% | -0.8% | -0.0% | -1.4% | -0.4% |
+| seed 37's fastest (38446e6c09) | -38.8% | -2.6% | -2.3% | -3.1% | -0.0% | -0.0% | -6.6% | +0.0% |
+| the JIT founder | -38.8% | -2.7% | -2.3% | -3.1% | -0.7% | -2.0% | -6.6% | +0.0% |
+
+The kernel workload carries it: CMOVE, FILL and HERE on s6, the cross-compiler's
+loops on the JIT designs. The parse workload moves least - interpreted, not
+compiled, its words still pay the stack check.
+
+**Seen and left**, with reasons: COLD (467 dispatches once a run, microseconds);
+the loop words (opcodes on nearly every front design); DIGIT? (0.1% on s6);
+ALIGNED (5 calls); peephole patterns (none worth it); REFILL's second SOURCE-ID
+and NUMBER?'s prefix steps (two dispatches a line, rare); PARSE-WORD (one >IN
+fetch saves nothing - the shuffling costs as much); COMPARE (cold); CR (13 10,
+two writes where Unix Forths write 10 - outputs depend on it).
+
+**Open: ABORT".** Every ABORT" calls (ABORT") to test its flag and skip its
+message, failing or not - on the JIT founder, bubble's own check is 3,588 of
+those calls, 13% of its interpreted dispatches. The gene abortif (53 of seed 38's
+165 front designs, the founder among them) guards the kernel's sites in the
+converter; bubble's check is compiled at run time, which the converter never
+sees - likely why the founder still calls it, not yet confirmed. If so, the
+place is the run-time compiler's ABORT", not the kernel's.

@@ -1,0 +1,324 @@
+diff --git a/forth/cross.4 b/forth/cross.4
+index 472ae38..9a4fc04 100644
+--- a/forth/cross.4
++++ b/forth/cross.4
+@@ -79,7 +79,7 @@ CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
+   BEGIN
+     DUP TARGET-CELL-BYTES @ <
+   WHILE
+-    >R OVER R@ CHARS + C@-T R@ 8 * LSHIFT OR R> 1+
++    >R OVER R@ CHARS + C@-T R@ 3 LSHIFT LSHIFT OR R> 1+
+   REPEAT
+   DROP SWAP DROP
+   \ Sign-extend when the target cell is narrower than this host's own
+@@ -92,8 +92,8 @@ CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
+   \ host -1 - otherwise RESOLVE's BEGIN/WHILE loop never sees them as
+   \ equal and walks off the end of the chain into unrelated memory.
+   TARGET-CELL-BYTES @ 8 < IF
+-    DUP 1 TARGET-CELL-BYTES @ 8 * 1 - LSHIFT AND IF
+-      -1 TARGET-CELL-BYTES @ 8 * LSHIFT OR
++    DUP 1 TARGET-CELL-BYTES @ 3 LSHIFT 1 - LSHIFT AND IF
++      -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT OR
+     THEN
+   THEN ;
+ : !-T  ( x t-addr ---)
+@@ -101,7 +101,7 @@ CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
+   BEGIN
+     DUP TARGET-CELL-BYTES @ <
+   WHILE
+-    >R OVER R@ 8 * RSHIFT OVER R@ CHARS + C!-T R> 1+
++    >R OVER R@ 3 LSHIFT RSHIFT OVER R@ CHARS + C!-T R> 1+
+   REPEAT
+   DROP 2DROP ;
+ 
+diff --git a/forth/cv8-fuse.4 b/forth/cv8-fuse.4
+index 038db58..218578a 100644
+--- a/forth/cv8-fuse.4
++++ b/forth/cv8-fuse.4
+@@ -40,8 +40,10 @@ ALIGN
+ \ The superinstruction for primitive op1 followed by op2, if any.
+   SUPER-TABLE C@ ?DUP IF 0 DO
+     SUPER-TABLE 1+ I 3 * +
+-    DUP C@ 3 PICK = OVER 1+ C@ 3 PICK = AND IF
+-      SWAP DROP SWAP DROP 2 + C@ -1 UNLOOP EXIT
++    DUP C@ 3 PICK = IF          \ the first opcode first: most entries differ there (the audit)
++      DUP 1+ C@ 2 PICK = IF
++        SWAP DROP SWAP DROP 2 + C@ -1 UNLOOP EXIT
++      THEN
+     THEN DROP
+   LOOP THEN 2DROP 0 ;
+ 
+diff --git a/forth/cv8t-fuse.4 b/forth/cv8t-fuse.4
+index acacaf3..a651fa4 100644
+--- a/forth/cv8t-fuse.4
++++ b/forth/cv8t-fuse.4
+@@ -45,8 +45,10 @@ ALIGN
+ \ The superinstruction for primitive op1 followed by op2, if any.
+   SUPER-TABLE C@ ?DUP IF 0 DO
+     SUPER-TABLE 1+ I 3 * +
+-    DUP C@ 3 PICK = OVER 1+ C@ 3 PICK = AND IF
+-      SWAP DROP SWAP DROP 2 + C@ -1 UNLOOP EXIT
++    DUP C@ 3 PICK = IF          \ the first opcode first: most entries differ there (the audit)
++      DUP 1+ C@ 2 PICK = IF
++        SWAP DROP SWAP DROP 2 + C@ -1 UNLOOP EXIT
++      THEN
+     THEN DROP
+   LOOP THEN 2DROP 0 ;
+ 
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index cf4a8f2..e941a41 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -397,7 +397,7 @@ VARIABLE KEY-BYTE
+ 
+ : 2! ( d a-addr --- )
+ \ Store the double number d at a-addr.
+-   DUP >R ! R> CELL+ ! ;
++   SWAP OVER ! CELL+ ! ;   \ no return stack: one operation fewer (the audit, Iteration 156)
+ 
+ : ?DUP ( n --- 0 | n n)
+ \ Duplicate the top cell on the stack, but only if it is nonzero.
+@@ -576,29 +576,35 @@ VARIABLE DPL ( --- a-addr)
+ \ PART 5: MEMORY BLOCK MOVE AND RELATED WORDS.
+ 
+ : CMOVE ( c-addr1 c-addr2 u --- )
+-\ Copy u bytes starting at c-addr1 to c-addr2, proceeding in ascending
+-\ order.
+-   DUP IF >R
+-   BEGIN
+-    OVER C@ SWAP DUP >R C! R> 1 + SWAP 1 + SWAP
+-    R> -1 + DUP >R 0=
+-   UNTIL
+-   R>
++\ Copy u bytes starting at c-addr1 to c-addr2, a byte at a time in
++\ ascending order - an overlap moving up repeats bytes, as it always has.
++\ The two addresses are one double, moved on together by 1 1 D+ (it cannot
++\ carry: that needs an address at the top of memory); the copy stops at
++\ the source's end, kept on the return stack - 11 operations a byte, not
++\ 19 (the audit, Iteration 156).
++   DUP IF
++    >R OVER R> + >R
++    BEGIN OVER C@ OVER C! 1 1 D+ OVER R@ = UNTIL
++    R>
+    THEN
+-   2DROP DROP
++   DROP 2DROP
+ ;
+ 
+ : CMOVE> ( c-addr1 c-addr2 u --- )
+-\ Copy a block of u bytes starting at c-addr1 to c-addr2, proceeding in
+-\ descending order.
+-   DUP IF >R R@ + -1 + SWAP R@ + -1 + SWAP
+-   BEGIN
+-    OVER C@ SWAP DUP >R C! R> -1 + SWAP -1 + SWAP
+-    R> -1 + DUP >R 0=
+-   UNTIL
+-   R>
++\ Copy a block of u bytes starting at c-addr1 to c-addr2, a byte at a time
++\ in descending order. The two addresses are one double, set to their last
++\ bytes by adding u-1 to both at once and moved down together: -1 -2 is
++\ -(1,1) as a double, so -1 -2 D+ takes 1 from each - the low cell would
++\ borrow only from address 0. The copy stops below the source's first
++\ byte, kept on the return stack - 11 operations a byte, not 19 (the audit,
++\ Iteration 156); HEADER8 moves every new name up with it.
++   DUP IF
++    >R OVER -1 + R> SWAP >R
++    -1 + DUP D+
++    BEGIN OVER C@ OVER C! -1 -2 D+ OVER R@ = UNTIL
++    R>
+    THEN
+-   2DROP DROP
++   DROP 2DROP
+ ;
+ 
+ \ It's here because it needs CMOVE>
+@@ -613,15 +619,11 @@ VARIABLE DPL ( --- a-addr)
+   >R 2DUP U< IF R> CMOVE> ELSE R> CMOVE THEN ;
+ 
+ : FILL ( c-addr u c ---)
+-\ Fill a block of u bytes starting at c-addr with character c.
+-  OVER IF >R
+-  BEGIN
+-   R@ ROT DUP >R C! R> 1 + SWAP
+-   -1 + DUP 0=
+-  UNTIL
+-  R>
+-  THEN
+-  2DROP DROP
++\ Fill a block of u bytes starting at c-addr with character c. The address
++\ and the count are one double, moved on by 1 -1 D+ as in SKIP and SCAN; the
++\ character waits on the return stack - 10 operations a byte, not 15 (the
++\ audit, Iteration 156).
++  >R BEGIN DUP WHILE OVER R@ SWAP C! 1 -1 D+ REPEAT R> DROP 2DROP
+ ;
+ 
+ : 2OVER ( d1 d2 --- d1 d2 d1)
+@@ -631,7 +633,7 @@ VARIABLE DPL ( --- a-addr)
+ 
+ : 2SWAP ( d1 d2 --- d2 d1)
+ \ Swap the top two double numbers on the stack.
+-  03 ROLL 03 ROLL ;
++  ROT >R ROT R> ;   \ it was 03 ROLL 03 ROLL - two byte-wise CMOVE>s of the stack (the audit)
+ 
+ \ PART 6: FILE ACCESS WORDS.
+ 
+@@ -843,7 +845,7 @@ VARIABLE #SRC ( --- addr)
+ \ address of a counted string that is a copy of it. The counted
+ \ string is actually placed at HERE. The character after the counted
+ \ string is set to a space.
+-  PARSE-WORD HERE PLACE HERE BL HERE COUNT + C! ;
++  PARSE-WORD HERE DUP >R PLACE BL R@ COUNT + C! R> ;   \ HERE once, as klookup's WORD8
+ 
+ \ PART 8: INTERPRETER HELPER WORDS
+ 
+@@ -930,7 +932,7 @@ VARIABLE CURRENT ( --- addr)
+    \ are read native-endian (little-endian on every host targeted so
+    \ far - see GOALS.md phase 5), is the LOW byte of the cell, not the
+    \ high byte the old big-endian-packed mask (1 61 LSHIFT 1 -) assumed.
+-   NAMEBUF @ OVER @ -1 224 XOR AND = \ Compare first cells of names.
++   NAMEBUF @ OVER @ -225 AND = \ Compare first cells of names (-225: -1 224 XOR, once).
+            \ Mask off bits 5-7 of name length, these have special purposes.
+    IF
+     NAMEBUF CELL+
+@@ -947,11 +949,11 @@ VARIABLE CURRENT ( --- addr)
+      ELSE
+       -1
+      THEN
+-     SWAP CELLBYTES-TOK - SWAP EXIT \ Exit with execution token and flag.
++     SWAP CELLBYTES-TOK NEGATE + SWAP EXIT \ Exit with execution token and flag.
+     THEN
+     2DROP
+    THEN
+-   CELLBYTES-TOK - DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
++   CELLBYTES-TOK NEGATE + DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
+   UNTIL
+   THEN
+   DROP 0 \ Not found.
+@@ -1351,6 +1353,9 @@ VARIABLE POCKET ( --- a-addr )
+ 
+ : INTERPRET ( ---)
+ \ Interpret words from the current source until the input source is exhausted.
++\ The stack is checked where it can have changed: after a word executes and
++\ after a number is interpreted. A word or a number compiled leaves it as it
++\ was, so most of a source pays no check (the audit, Iteration 156).
+   BEGIN
+    32 WORD DUP C@
+   WHILE
+@@ -1360,12 +1365,12 @@ VARIABLE POCKET ( --- a-addr )
+     IF
+      COMPILE,
+     ELSE
+-     EXECUTE
++     EXECUTE ?STACK
+     THEN
+    ELSE DROP
+     NUMBER? 0= ABORT" Undefined word" DROP
+-    STATE @ IF LITERAL THEN
+-   THEN  ?STACK
++    STATE @ IF LITERAL ELSE ?STACK THEN
++   THEN
+   REPEAT   DROP
+ ;
+ 
+diff --git a/tests/core/audit.fth b/tests/core/audit.fth
+new file mode 100644
+index 0000000..6b9effc
+--- /dev/null
++++ b/tests/core/audit.fth
+@@ -0,0 +1,23 @@
++\ audit.fth - the words the audit rewrote (Iteration 156) behave as before:
++\ CMOVE and CMOVE> by D+, FILL by 1 -1 D+, 2SWAP, 2!, WORD, and INTERPRET's
++\ stack check, now only where the stack can have changed.
++CREATE B 16 ALLOT
++: INIT  S" abcdefgh" B SWAP CMOVE  0 B 8 + C! ;
++INIT B 7 + C@ . CR
++INIT B B 1+ 7 CMOVE  B 7 + C@ . CR
++INIT B B 1+ 7 CMOVE>  B 7 + C@ . B 1+ C@ . CR
++INIT B 1+ B 7 CMOVE>  B C@ . B 6 + C@ . CR
++INIT B 1+ B 7 CMOVE  B C@ . B 6 + C@ . CR
++INIT B B 4 + 0 CMOVE  B B 4 + 0 CMOVE>  B 0 33 FILL  B 4 + C@ . B C@ . DEPTH . CR
++INIT B B 4 + 1 CMOVE  B 4 + C@ . B 5 + C@ . CR
++INIT B 4 + B 1 CMOVE>  B C@ . B 1+ C@ . CR
++INIT B 8 42 FILL  B C@ . B 7 + C@ . B 8 + C@ . CR
++INIT B 1 43 FILL  B C@ . B 1+ C@ . CR
++INIT B B 2 + 6 MOVE  B 7 + C@ . B 2 + C@ . CR
++INIT B 2 + B 6 MOVE  B C@ . B 5 + C@ . CR
++1 2 3 4 2SWAP  1000 * SWAP 100 * + SWAP 10 * + + . CR
++CREATE D 2 CELLS ALLOT  5 7 D 2!  D @ . D CELL+ @ . D 2@ 10 * + . CR
++BL WORD hello COUNT DUP . + C@ . CR
++1 2 : T12 3 4 + ; T12 . . . CR
++DROP 5 . CR
++6 . DEPTH . CR
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 782283b..70092c2 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -243,6 +243,34 @@ got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&
+ if [ "$got" = "$TABS_WANT" ]; then printf '  %-12s FAIL   the file without tabs gave the answers too\n' control; FAILED=1
+ else printf '  %-12s ok     the file without tabs does not give them\n' control; fi
+ 
++# tests/core/audit.fth (Iteration 156): the words the audit rewrote - CMOVE and
++# CMOVE> by D+ with overlaps both ways and lengths 0 and 1, FILL by 1 -1 D+ with
++# a sentinel, MOVE, 2SWAP, 2!, WORD's trailing space, and INTERPRET's stack check
++# where the stack can change (a definition compiled over values, an underflow
++# that ends its line). The answers the kernel gave before the audit. The negative
++# control swaps CMOVE> for CMOVE, which an overlap must tell apart.
++echo
++echo "the audit's words (tests/core/audit.fth):"
++AUDIT_WANT='104 |97 |103 97 |104 104 |98 104 |101 97 0 |97 102 |101 98 |42 42 0 |43 98 |102 97 |99 104 |2143 |7 5 75 |5 32 |7 2 1 |6 0 |'
++for w in 64 32; do
++    [ -x "$O/s0-cell-$w" ] || continue
++    bad=""; n=0
++    for st in $(stages_for $w); do
++        e="$O/$st-$w"; i="$O/$st-s$w.img"; [ "$st" = relf ] && continue
++        case "$st" in s7-*|s8-*) e="$O/$st-64"; i="$W/$st-s64.img" ;; esac
++        [ -x "$e" ] && [ -s "$i" ] || continue
++        got=$( (cd "$W" && timeout 15 "$e" "$i" < "$ROOT/tests/core/audit.fth" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|')
++        n=$((n + 1)); [ "$got" = "$AUDIT_WANT" ] || bad="$bad $st"
++    done
++    [ "$n" -gt 0 ] || bad=" (no stage tested)"
++    if [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; FAILED=1
++    else printf '  %-12s ok     %s stages\n' "$w-bit" "$n"; fi
++done
++CTRL=$(mktemp); sed 's/CMOVE>/CMOVE/g' "$ROOT/tests/core/audit.fth" > "$CTRL"
++got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|'); rm -f "$CTRL"
++if [ "$got" = "$AUDIT_WANT" ]; then printf '  %-12s FAIL   CMOVE for CMOVE> gave the answers too\n' control; FAILED=1
++else printf '  %-12s ok     CMOVE for CMOVE> does not give them\n' control; fi
++
+ # ---- DELETE-FILE -------------------------------------------------------
+ # Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since
+ # the baseline - its handler stored unlink's result over the name's address,
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 6421045..45ddf06 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -537,9 +537,11 @@ def _expect(n):
+         # Iteration 50: FILL and CMOVE, the kernel's byte loops, as the converter
+         # read them (SOD16_SHOW=FILL,CMOVE) - the opcodes do the same, a byte at
+         # a time, ascending: CMOVE's overlap behaves as the loop's
+-        'FILL': [('P', 'OVER'), ('QBR', 20 * CELL), ('P', '>R'), ('P', 'R@'), ('P', 'ROT'), ('P', 'DUP'), ('P', '>R'),
+-                 ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', -1), ('P', '+'), ('P', 'DUP'),
+-                 ('C', '0='), ('QBR', -16 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
++        # Iteration 156 (the audit): both now move on by D+ - FILL's address and count
++        # by 1 -1 D+, CMOVE's two addresses by 1 1 D+ to the source's end - read again
++        'FILL': [('P', '>R'), ('P', 'DUP'), ('QBR', 12 * CELL), ('P', 'OVER'), ('P', 'R@'), ('P', 'SWAP'), ('P', 'C!'),
++                 ('LIT', 1), ('LIT', -1), ('P', 'D+'), ('BR', -13 * CELL), ('P', 'R>'), ('P', 'DROP'), ('C', '2DROP'),
++                 ('P', 'EXIT')],
+         # Iteration 54: the input side - the kernel's SCAN and SKIP, kinput's TABS>BL
+         # Iteration 145: SKIP and SCAN move on by 1 -1 D+ with the delimiter on the
+         # return stack, and a space delimiter takes any control character - the
+@@ -585,10 +587,10 @@ def _expect(n):
+                         ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),
+                         ('C', '1+'), ('P', 'R@'), ('P', 'C@'), ('C', 'NAME=?'), ('QBR', 4 * CELL), ('P', 'R>'), ('P', 'DROP'),
+                         ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -27 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+-        'CMOVE': [('P', 'DUP'), ('QBR', 27 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'C@'), ('P', 'SWAP'), ('P', 'DUP'),
+-                  ('P', '>R'), ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'),
+-                  ('P', 'SWAP'), ('P', 'R>'), ('LIT', -1), ('P', '+'), ('P', 'DUP'), ('P', '>R'), ('C', '0='),
+-                  ('QBR', -23 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
++        'CMOVE': [('P', 'DUP'), ('QBR', 21 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'R>'), ('P', '+'), ('P', '>R'),
++                  ('P', 'OVER'), ('P', 'C@'), ('P', 'OVER'), ('P', 'C!'), ('LIT', 1), ('LIT', 1), ('P', 'D+'),
++                  ('P', 'OVER'), ('P', 'R@'), ('P', '='), ('QBR', -13 * CELL), ('P', 'R>'), ('P', 'DROP'), ('C', '2DROP'),
++                  ('P', 'EXIT')],
+         'I': [('P', 'R>'), ('P', 'R@'), ('P', 'SWAP'), ('P', '>R'), ('P', 'EXIT')],
+         'J': [('P', 'RP@'), ('LIT', CELL), ('LIT', CELL), ('LIT', CELL), ('P', '+'), ('P', '+'), ('P', '+'),
+               ('P', '@'), ('P', 'EXIT')],

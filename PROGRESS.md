@@ -3093,3 +3093,19 @@ any tree can make (ackermann -99.4%; bubble unchanged: s6's loop words are
 calls, not the operations jitloop translates). Both built as get() builds
 them under --require tag2: the four genes expressed, the gate, the answers.
 The eight patches on a fresh clone of master give the tested files.
+
+## Iteration 156 - 2026-10-10 - Claude
+
+**Every Forth definition audited - the batch's ninth pending patch** (the owner).
+Every definition on a measured path read, with each word's dispatches and calls
+measured on the batch; the rule: a change removes operations in every encoding
+(call overhead is the genes' to remove). Built: INTERPRET checks the stack only
+where it can have changed; CMOVE, CMOVE>, FILL by D+; 2SWAP, 2!, WORD,
+SEARCH-WORDLIST's constants; SUPER-OP's first opcode first; cross.4's 8 * as
+3 LSHIFT (the same kernels, byte for byte); the converter's expected bodies for
+FILL and CMOVE; tests/core/audit.fth with a control. Kernel workload -6.2% on s6
+and -38.8% on the JIT founder (the cross-compiler's loops now translated), the
+corpus -2.6% and -2.7%. run-tests PASS, 7 of 7 IDENTICAL, the jail; all 165 of
+seed 38's front designs and both founders alive on the nine patches. Open:
+ABORT"'s run-time check, compiled at run time where abortif cannot reach it.
+results/word-audit.md, Batch 4.
