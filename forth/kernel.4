@@ -314,8 +314,18 @@ VARIABLE KEY-BYTE
 : (+LOOP) ( n ---)
 \ Runtime part of +LOOP
 \ Very similar to (LOOP), but the compare condition is different.
-\  exit if ( oldcount - lim < 0) xor ( newcount - lim < 0).
-     R> SWAP R> DUP R@ - ROT ROT + DUP R@ - ROT XOR 0 <
+\ With x = index - limit, the loop has crossed the boundary between
+\ limit-1 and limit exactly when x changes sign AND x and the step n
+\ have opposite signs:  ((x XOR x+n) AND (x XOR n)) < 0 - gforth's test.
+\ The sign alone also flips where x wraps from MAX-INT to MIN-INT, so a
+\ step of a 256th of the cell range stopped half way (Iteration 125,
+\ RelF's Iteration 243; the standard's coreplustest, seven cases).
+     R> SWAP R>              \ ret n index
+     2DUP + ROT ROT          \ ret index' n index
+     R@ -                    \ ret index' n x
+     2DUP XOR >R             \ ret index' n x        R: x^n limit
+     DUP ROT +               \ ret index' x x'
+     XOR R> AND 0 <          \ ret index' crossed?
      IF R> 2DROP CELL+ >R
      ELSE >R DUP @ + >R THEN ;
 
@@ -820,13 +830,25 @@ VARIABLE #SRC ( --- addr)
   REPEAT DROP
 ;
 
-: PARSE ( c --- addr len )
-\ Find a character sequence in the current source that is delimited by
-\ character c. Adjust >IN to 1 past the end delimiter character.
+: PARSE-WORD ( c --- addr len )
+\ WORD's parse: skip the leading c's, then the character sequence
+\ delimited by c; >IN 1 past the end delimiter. This was PARSE, which
+\ skipped them as SOD32's does and the standard's does not - S" " took
+\ its closing quote for a leading delimiter and swallowed the rest of the
+\ line (Iteration 125). WORD keeps the skip, and its speed.
   >R SOURCE >IN @ - SWAP >IN @ + R> OVER >R >R SWAP
   R@ SKIP OVER R> SWAP >R SCAN IF 1 >IN +! THEN
   DUP R@ - R> SWAP
   ROT R> - >IN +! ;
+
+: PARSE ( c --- c-addr u )
+\ Parse ccc delimited by c from the input source and step past the
+\ delimiter. Leading delimiters are NOT skipped - that is WORD's job, and
+\ the standard's (Iteration 125, RelF's Iteration 245).
+  >R SOURCE SWAP >IN @ + SWAP >IN @ -   ( a n )
+  OVER SWAP R> SCAN                     ( a a2 n2 )
+  IF 1 >IN +! THEN
+  OVER - DUP >IN +! ;
 
 : PLACE ( addr len c-addr --- )
 \ Place the string starting at addr with length len at c-addr as
@@ -838,7 +860,7 @@ VARIABLE #SRC ( --- addr)
 \ address of a counted string that is a copy of it. The counted
 \ string is actually placed at HERE. The character after the counted
 \ string is set to a space.
-  PARSE HERE PLACE HERE BL HERE COUNT + C! ;
+  PARSE-WORD HERE PLACE HERE BL HERE COUNT + C! ;
 
 \ PART 8: INTERPRETER HELPER WORDS
 
@@ -1007,7 +1029,9 @@ VARIABLE CURRENT ( --- addr)
 : CONVERT ( ud1 c-addr1 --- ud2 c-addr2)
 \ Convert the string starting at c-addr1 + 1 to binary. c-addr2 is the
 \ address of the first non-digit. Digits are added into ud1 as in >NUMBER
-  -1 + -1 >NUMBER DROP ;
+\ It began at c-addr1 - 1 (`-1 +` for `1+`) and converted nothing
+\ (Iteration 125; RelF's Iteration 554).
+  1+ -1 >NUMBER DROP ;
 
 : NUMBER? ( c-addr ---- d f)
 \ Convert the counted string at c-addr to a double binary number.
@@ -1072,7 +1096,7 @@ VARIABLE CURRENT ( --- addr)
   \ which is what SOD32 does.
   HERE >R 0 ,
   HERE LAST !         \ Set LAST so definition can be linked by REVEAL
-  32 WORD DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP
+  32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP
                        \ Give warning if existing word redefined.
   DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @
   ?DUP IF R@ - R@ ! THEN    \ link, relative to the link cell itself
@@ -1138,10 +1162,16 @@ VARIABLE 'LEAVE ( --- a-addr)
 \ Check that stack pointer is equal to value contained in CSP.
    SP@ CSP @ - ABORT" Incomplete control structure" ;
 
+: ?COMP ( --- )
+\ Refuse a word that lays down code outside a definition (Iteration 125,
+\ RelF's Iteration 552): interpreted, IF and its kind wrote branches at
+\ HERE, and an IF at the top level killed the engine.
+  STATE @ 0= ABORT" compile only" ;
+
 : ; ( --- )
 \ Finish the current definition by adding a return to it, make it
 \ visible and leave compilation mode.
-  EXIT-TOK , [ ?CSP REVEAL ; IMMEDIATE
+  ?COMP EXIT-TOK , [ ?CSP REVEAL ; IMMEDIATE
 
 : (POSTPONE) ( --- )
 \ Runtime for POSTPONE.
@@ -1156,13 +1186,13 @@ VARIABLE 'LEAVE ( --- a-addr)
 
 : BEGIN ( --- x )
 \ Start a BEGIN UNTIL or BEGIN WHILE REPEAT loop.
-  HERE ; IMMEDIATE
+  ?COMP HERE ; IMMEDIATE
 
 : UNTIL ( x --- )
 \ Form a loop with matching BEGIN.
 \ Runtime: A flag is take from the stack
 \ each time UNTIL is encountered and the loop iterates until it is nonzero.
-  0BRANCH-TOK , HERE - , ; IMMEDIATE
+  ?COMP 0BRANCH-TOK , HERE - , ; IMMEDIATE
 
 : IF    ( --- x)
 \ Start an IF THEN or IF ELSE THEN construction.
@@ -1170,26 +1200,26 @@ VARIABLE 'LEAVE ( --- a-addr)
 \ the stack and if it is true the part between IF and ELSE is executed,
 \ otherwise the part between ELSE and THEN. If there is no ELSE, the part
 \ between IF and THEN is executed only if flag is true.
-  0BRANCH-TOK , HERE 1 CELLS ALLOT ; IMMEDIATE
+  ?COMP 0BRANCH-TOK , HERE 1 CELLS ALLOT ; IMMEDIATE
 
 : THEN ( x ---)
 \ End an IF THEN or IF ELSE THEN construction.
-  HERE OVER - SWAP ! ; IMMEDIATE
+  ?COMP HERE OVER - SWAP ! ; IMMEDIATE
 
 : ELSE ( x1 --- x2)
 \ part of IF ELSE THEN construction.
-  BRANCH-TOK , HERE 1 CELLS ALLOT SWAP HERE OVER - SWAP ! ; IMMEDIATE
+  ?COMP BRANCH-TOK , HERE 1 CELLS ALLOT SWAP HERE OVER - SWAP ! ; IMMEDIATE
 
 : WHILE  ( x1 --- x2 x1 )
 \ part of BEGIN WHILE REPEAT construction.
 \ Runtime: At WHILE a flag is taken from the stack. If it is false,
 \  the program jumps out of the loop, otherwise the part between WHILE
 \  and REPEAT is executed and the loop iterates to BEGIN.
-  POSTPONE IF SWAP ; IMMEDIATE
+  ?COMP POSTPONE IF SWAP ; IMMEDIATE
 
 : REPEAT ( x1 x2 --- )
 \ part of BEGIN WHILE REPEAT construction.
-  BRANCH-TOK , HERE - , HERE OVER - SWAP ! ; IMMEDIATE
+  ?COMP BRANCH-TOK , HERE - , HERE OVER - SWAP ! ; IMMEDIATE
 
 VARIABLE POCKET ( --- a-addr )
 \ Buffer for S" strings that are interpreted.
@@ -1215,20 +1245,20 @@ VARIABLE POCKET ( --- a-addr )
 \ Start a DO LOOP.
 \ Runtime: ( n1 n2 --- ) start a loop with initial count n2 and
 \ limit n1.
-  POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+  ?COMP POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
 
 : ?DO ( --- x )
 \ Start a ?DO LOOP.
 \ Runtime: ( n1 n2 --- ) start a loop with initial count n2 and
 \ limit n1. Exit immediately if n1 = n2.
-  POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
+  ?COMP POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
 
 : LEAVE ( --- )
 \ Runtime: leave the matching DO LOOP immediately.
 \ All places where a leave address for the loop is needed are in a linked
 \ list, starting with 'LEAVE variable, the other links in the cells where
 \ the leave addresses will come.
-  POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
+  ?COMP POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
 
 : RESOLVE-LEAVE
 \ Resolve the references to the leave addresses of the loop.
@@ -1243,38 +1273,46 @@ VARIABLE POCKET ( --- a-addr )
 : LOOP  ( x --- )
 \ End a DO LOOP.
 \ Runtime: Add 1 to the count and if it is equal to the limit leave the loop.
-  POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 : +LOOP ( x --- )
 \ End a DO +LOOP
 \ Runtime: ( n ---) Add n to the count and exit if this crosses the
 \ boundary between limit-1 and limit.
-  POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 : RECURSE ( --- )
 \ Compile a call to the current (not yet finished) definition.
-  LAST @ NAME> COMPILE, ; IMMEDIATE
+  ?COMP LAST @ NAME> COMPILE, ; IMMEDIATE
+
+: STRING, ( c-addr u --- )
+\ Compile a counted string inline and align - what (S"), (.") and
+\ (ABORT") skip at run time (Iteration 125; RelF's, aligned here).
+  DUP C, HERE OVER ALLOT SWAP MOVE ALIGN ;
 
 : ."  ( "ccc<quote>" --- )
 \ Parse a string delimited by " and compile the following runtime semantics.
 \ Runtime: type that string.
-   POSTPONE (.") 34 WORD C@ 1+ ALLOT ALIGN ; IMMEDIATE
+   POSTPONE (.") 34 PARSE STRING, ; IMMEDIATE
 
 
 : S"  ( "ccc<quote>" --- )
 \ Parse a string delimited by " and compile the following runtime semantics.
 \ Runtime: ( --- c-addr u) Return start address and length of that string.
-  STATE @ IF POSTPONE (S") 34 WORD C@ 1+ ALLOT ALIGN
-             ELSE 34 WORD COUNT POCKET PLACE POCKET COUNT THEN ; IMMEDIATE
+  STATE @ IF POSTPONE (S") 34 PARSE STRING,
+             ELSE 34 PARSE POCKET PLACE POCKET COUNT THEN ; IMMEDIATE
 
 : ABORT"  ( "ccc<quote>" --- )
 \ Parse a string delimited by " and compile the following runtime semantics.
 \ Runtime: ( f --- ) if f is nonzero, print the string and abort program.
-  POSTPONE (ABORT") 34 WORD C@ 1+ ALLOT ALIGN ; IMMEDIATE
+  POSTPONE (ABORT") 34 PARSE STRING, ; IMMEDIATE
 
 : ABORT ( --- )
-\ Abort unconditionally without a message.
-1 ABORT" " ;
+\ Abort unconditionally without a message: WARM, as (ABORT") does after
+\ its message. It was `1 ABORT" "`, whose empty string the cross
+\ compiler's WORD read to the end of the line, so ABORT printed " ;" and
+\ the last word read (Iteration 125; RelF made it -1 THROW).
+  WARM ;
 
 : POSTPONE ( "ccc" --- )
 \ Parse the next word delimited by spaces and compile the following runtime.
@@ -1314,7 +1352,7 @@ VARIABLE POCKET ( --- a-addr )
 \ Word that contains DOES> will change the behavior of the last created
 \ word such that it pushes its parameter field address onto the stack
 \ and then executes whatever comes after DOES>
-  POSTPONE (;CODE) RFROM-TOK , \ Compile the R> primitive, which is the first
+  ?COMP POSTPONE (;CODE) RFROM-TOK , \ Compile the R> primitive, which is the first
                         \ instruction that the defined word performs.
 ; IMMEDIATE
 

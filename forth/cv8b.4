@@ -74,8 +74,9 @@ VARIABLE HDR-LEN
 : HEADER8 ( --- )
 \ Parse the name first - WORD leaves it counted at HERE - then work out
 \ the link, move the name up to make room, and write the link into the
-\ gap. The name is at most 31 bytes, so the move is trivial.
-  32 WORD DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP DROP
+\ gap. The name is at most 31 bytes - longer ones refused (Iteration 125) -
+\ so the move is trivial.
+  32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP DROP
   HERE COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @ HDR-HEAD !
   \ The link's length depends on the distance, and the distance depends
   \ on where the nfa lands, which depends on the link's length. Bound it

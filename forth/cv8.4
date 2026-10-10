@@ -158,7 +158,7 @@ ALIGN
 
 : ;8 ( --- )
 \ Finish the current definition.
-  LAST-OP @ DUP IF
+  ?COMP LAST-OP @ DUP IF
     DUP C@ FOLD-OP IF SWAP C! ELSE 2DROP EXIT-OP OP, THEN
   ELSE DROP EXIT-OP OP, THEN
   0 LAST-OP ! 0 STATE ! ?CSP REVEAL ; IMMEDIATE
@@ -187,30 +187,30 @@ ALIGN
   0 LAST-OP ! HERE - W, ;
 
 : BEGIN8 ( --- a-addr )
-  HERE ; IMMEDIATE
+  ?COMP HERE ; IMMEDIATE
 
 : UNTIL8 ( a-addr --- )
-  0BRANCH-OP OP, <RESOLVE ; IMMEDIATE
+  ?COMP 0BRANCH-OP OP, <RESOLVE ; IMMEDIATE
 
 : AGAIN8 ( a-addr --- )
   BRANCH-OP OP, <RESOLVE ; IMMEDIATE
 
 : IF8 ( --- a-addr )
-  0BRANCH-OP OP, >MARK ; IMMEDIATE
+  ?COMP 0BRANCH-OP OP, >MARK ; IMMEDIATE
 
 : THEN8 ( a-addr --- )
-  >RESOLVE ; IMMEDIATE
+  ?COMP >RESOLVE ; IMMEDIATE
 
 : ELSE8 ( a-addr1 --- a-addr2 )
-  BRANCH-OP OP, >MARK SWAP >RESOLVE ; IMMEDIATE
+  ?COMP BRANCH-OP OP, >MARK SWAP >RESOLVE ; IMMEDIATE
 
 : WHILE8 ( a-addr1 --- a-addr2 a-addr1 )
-  POSTPONE IF8 SWAP ; IMMEDIATE
+  ?COMP POSTPONE IF8 SWAP ; IMMEDIATE
 
 : REPEAT8 ( a-addr1 a-addr2 --- )
   \ ( a-addr1 a-addr2 --- ) with the BEGIN address on top, as WHILE8
   \ left it: <RESOLVE takes that one, >RESOLVE patches WHILE's mark.
-  BRANCH-OP OP, <RESOLVE >RESOLVE ; IMMEDIATE
+  ?COMP BRANCH-OP OP, <RESOLVE >RESOLVE ; IMMEDIATE
 
 \ ---- defining words -------------------------------------------------
 : CREATE8 ( "ccc" --- )
@@ -228,7 +228,7 @@ ALIGN
   HEADER REVEAL LIT, EXIT-OP OP, ;
 
 : RECURSE8 ( --- )
-  LAST @ NAME> CALL, ; IMMEDIATE
+  ?COMP LAST @ NAME> CALL, ; IMMEDIATE
 
 \ ---- DO ... LOOP ----------------------------------------------------
 \ (LOOP) and (+LOOP) read an inline CELL operand, and it must stay
@@ -242,22 +242,22 @@ ALIGN
 
 : DO8 ( --- a-addr )
 \ (DO) has no inline operand, so this matches the cell version.
-  POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+  ?COMP POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
 
 : LOOP8 ( a-addr --- )
-  OPERAND-ALIGN POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 : +LOOP8 ( a-addr --- )
-  OPERAND-ALIGN POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 \ ---- ?DO and LEAVE ---------------------------------------------------
 \ (?DO) and (LEAVE) also carry an inline CELL operand, so they need the
 \ same alignment as (LOOP).
 : ?DO8 ( --- a-addr )
-  OPERAND-ALIGN POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
 
 : LEAVE8 ( --- )
-  OPERAND-ALIGN POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
 
 \ ---- DOES> -----------------------------------------------------------
 \ A DOES> word's body is [DODOES][2-byte call to the tail][pad][PFA],
@@ -297,7 +297,7 @@ ALIGN
   \ The tail must be an ALIGNED call target: a call is a SCALED offset,
   \ so an unaligned tail address loses its low bits and jumps to the
   \ wrong place. The pad is dead code - (;CODE) never returns here.
-  POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
+  ?COMP POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
 
 \ ---- debugging aid --------------------------------------------------
 : BYTES. ( a-addr n --- )

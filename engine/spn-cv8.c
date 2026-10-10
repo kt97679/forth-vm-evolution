@@ -1440,6 +1440,7 @@ L_readline: { /* c-addr u1 fid --- u2 flag ior */
     long n, err = 0, got_any = 0;
     UNS8 c;
 
+    if (max == 0) got_any = 1;   /* zero characters: not end of file (Iteration 125, as RelF) */
     while (count < max) {
         int ch = (fd == 0) ? t_getc() : t_fgetc(fd);
         n = (ch == -2) ? -1 : (ch < 0 ? 0 : 1);
@@ -1534,22 +1535,31 @@ L_system: { t_flush(); /* c-addr u --- ior */
     dsp += CELL_BYTES;
     NEXT();
 }
-L_reposfile: {/* offset fid --- ior */
+L_reposfile: {/* ud fid --- ior */
+    /*  ANS: ( ud fileid -- ior ) - the offset a double, low cell under the
+     *  high one; the ior 0 or 200. It took one cell and returned the new
+     *  position as its ior, so any position but 0 read as a failure
+     *  (Iteration 125; RelF's cv8.c has the double). */
     t_fdrop((int)DS0);
-
-    DS1 = (UNS64)lseek((int)DS0, (long)DS1, SEEK_SET);
-    dsp += CELL_BYTES;
+    {   unsigned long long off_ = (CELL_BYTES == 8) ? (unsigned long long)DS2
+            : ((unsigned long long)DS2 | ((unsigned long long)DS1 << 32));
+        long r_ = lseek((int)DS0, (long)off_, SEEK_SET);
+        dsp += 2 * CELL_BYTES;
+        DS0 = (r_ < 0) ? 200 : 0;
+    }
     NEXT();
     }
-L_filepos: {/* fid --- u ior */
+L_filepos: {/* fid --- ud ior */
+    /*  ANS: ( fileid -- ud ior ) - a double, low cell under the high one.
+     *  It returned one cell until the Forth 2012 file tests said so;
+     *  nothing in Forth calls it (Iteration 125; RelF: the same fault and
+     *  fix). */
     t_fdrop((int)DS0);
-
-    DS0 = (UNS64)lseek((int)DS0, 0, SEEK_CUR);
-    dsp -= CELL_BYTES;
-    if ((INT64)DS1 == -1) {
-        DS0 = 200;
-    } else {
-        DS0 = 0;
+    {   long p_ = lseek((int)DS0, 0, SEEK_CUR);
+        unsigned long long q_ = (unsigned long long)p_;
+        dsp -= 2 * CELL_BYTES;
+        if (p_ < 0) { DS2 = 0; DS1 = 0; DS0 = 200; }
+        else { DS2 = (UNS64)q_; DS1 = (UNS64)(CELL_BYTES == 8 ? 0ULL : (q_ >> 32)); DS0 = 0; }
     }
     NEXT();
     }
@@ -1565,14 +1575,18 @@ L_delfile: { /* c-addr u --- ior */
     dsp += CELL_BYTES;
     NEXT();
 }
-L_filesize: { /* fid --- u ior */
+L_filesize: { /* fid --- ud ior */
+    /*  ANS: ( fileid -- ud ior ), a double - see L_filepos; the ior 200
+     *  where the size cannot be had, not always 0 (Iteration 125). */
     t_fdrop((int)DS0);
     int fd = (int)DS0;
-    long cur = lseek(fd, 0, SEEK_CUR);
-    long size = lseek(fd, 0, SEEK_END);
-    lseek(fd, cur, SEEK_SET);
-    DS0 = (UNS64)size;
-    PUSH(0);
+    long cur = lseek(fd, 0, SEEK_CUR), size = -1;
+    if (cur >= 0) { size = lseek(fd, 0, SEEK_END); lseek(fd, cur, SEEK_SET); }
+    {   unsigned long long q_ = (unsigned long long)size;
+        dsp -= 2 * CELL_BYTES;
+        if (size < 0) { DS2 = 0; DS1 = 0; DS0 = 200; }
+        else { DS2 = (UNS64)q_; DS1 = (UNS64)(CELL_BYTES == 8 ? 0ULL : (q_ >> 32)); DS0 = 0; }
+    }
     NEXT();
 }
 /*

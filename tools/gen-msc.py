@@ -92,7 +92,7 @@ SPECS = {
                               'else { CELL(rp) = i_; ip += (int16_t)LD16(ip); } }'),
     'L_x_qdo':       (['a', 'b'], [], 'if (a != b) { RPUSH(a); RPUSH(b); ip += 2; } else ip += (int16_t)LD16(ip);'),
     'L_x_ploop':     (['n'], [], '{ UNS64 i_ = RS, l_ = CELL(rp + CELL_BYTES), j_ = i_ + n; '
-                                 'if ((INT64)((i_ - l_) ^ (j_ - l_)) < 0) { rp += 2 * CELL_BYTES; ip += 2; } '
+                                 'if ((INT64)(((i_ - l_) ^ (j_ - l_)) & ((i_ - l_) ^ n)) < 0) { rp += 2 * CELL_BYTES; ip += 2; } '
                                  'else { CELL(rp) = j_; ip += (int16_t)LD16(ip); } }'),
     'L_x_br8':       ([], [], 'ip += (int8_t)BYTE(ip);'),
     'L_x_qbr8':      (['f'], [], 'if (f) ip += 1; else ip += (int8_t)BYTE(ip);'),

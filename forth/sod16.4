@@ -190,7 +190,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
   THEN ;
 
 : ;16 ( --- )
-  EXIT-OP OP, 0 STATE ! ?CSP REVEAL ; IMMEDIATE
+  ?COMP EXIT-OP OP, 0 STATE ! ?CSP REVEAL ; IMMEDIATE
 
 \ ---- control flow ---------------------------------------------------
 : >MARK ( --- a-addr )
@@ -203,28 +203,28 @@ VARIABLE SOD16-TA  ( --- a-addr )
   HERE - 2/ OP, ;
 
 : BEGIN16 ( --- a-addr )
-  HERE ; IMMEDIATE
+  ?COMP HERE ; IMMEDIATE
 
 : UNTIL16 ( a-addr --- )
-  0BRANCH-OP OP, <RESOLVE ; IMMEDIATE
+  ?COMP 0BRANCH-OP OP, <RESOLVE ; IMMEDIATE
 
 : AGAIN16 ( a-addr --- )
   BRANCH-OP OP, <RESOLVE ; IMMEDIATE
 
 : IF16 ( --- a-addr )
-  0BRANCH-OP OP, >MARK ; IMMEDIATE
+  ?COMP 0BRANCH-OP OP, >MARK ; IMMEDIATE
 
 : THEN16 ( a-addr --- )
-  >RESOLVE ; IMMEDIATE
+  ?COMP >RESOLVE ; IMMEDIATE
 
 : ELSE16 ( a-addr1 --- a-addr2 )
-  BRANCH-OP OP, >MARK SWAP >RESOLVE ; IMMEDIATE
+  ?COMP BRANCH-OP OP, >MARK SWAP >RESOLVE ; IMMEDIATE
 
 : WHILE16 ( a-addr1 --- a-addr2 a-addr1 )
-  POSTPONE IF16 SWAP ; IMMEDIATE
+  ?COMP POSTPONE IF16 SWAP ; IMMEDIATE
 
 : REPEAT16 ( a-addr1 a-addr2 --- )
-  BRANCH-OP OP, <RESOLVE >RESOLVE ; IMMEDIATE
+  ?COMP BRANCH-OP OP, <RESOLVE >RESOLVE ; IMMEDIATE
 
 \ ---- defining words -------------------------------------------------
 : CREATE16 ( "ccc" --- )
@@ -239,7 +239,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
 : RECURSE16 ( --- )
 \ Always the far form: the word being defined is by definition not in
 \ the table.
-  LAST @ NAME> START @ - FARCALL-OP OP, DUP OP, 16 RSHIFT OP, ; IMMEDIATE
+  ?COMP LAST @ NAME> START @ - FARCALL-OP OP, DUP OP, 16 RSHIFT OP, ; IMMEDIATE
 
 \ ---- DO ... LOOP ----------------------------------------------------
 : OPERAND-ALIGN ( --- )
@@ -248,19 +248,19 @@ VARIABLE SOD16-TA  ( --- a-addr )
   BEGIN HERE 2 + 1 CELLS 1- AND WHILE NOOP-OP OP, REPEAT ;
 
 : DO16 ( --- a-addr )
-  POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+  ?COMP POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
 
 : LOOP16 ( a-addr --- )
-  OPERAND-ALIGN POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 : +LOOP16 ( a-addr --- )
-  OPERAND-ALIGN POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 : ?DO16 ( --- a-addr )
-  OPERAND-ALIGN POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
 
 : LEAVE16 ( --- )
-  OPERAND-ALIGN POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
 
 \ ---- DOES> -----------------------------------------------------------
 \ CREATE16 laid down [DOVAR][pad to a cell], so there is exactly one
@@ -284,7 +284,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
   THEN ;
 
 : DOES>16 ( --- )
-  POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
+  ?COMP POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
 
 \ ---- debugging aid --------------------------------------------------
 : TOKENS. ( a-addr n --- )

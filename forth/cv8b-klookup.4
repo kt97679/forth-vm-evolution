@@ -43,4 +43,4 @@
 
 : WORD8 ( c --- addr )
 \ The kernel's WORD, HERE once instead of three times.
-  PARSE HERE DUP >R PLACE BL R@ COUNT + C! R> ;
+  PARSE-WORD HERE DUP >R PLACE BL R@ COUNT + C! R> ;

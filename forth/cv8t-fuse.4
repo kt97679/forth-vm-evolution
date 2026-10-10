@@ -72,7 +72,7 @@ ALIGN
 
 : ;8 ( --- )
 \ cv8.4's, but folding by FOLD-TABLE.
-  LAST-OP @ DUP IF
+  ?COMP LAST-OP @ DUP IF
     DUP C@ FOLD-OP IF SWAP C! ELSE 2DROP EXIT-OP OP, THEN
   ELSE DROP EXIT-OP OP, THEN
   0 LAST-OP ! 0 STATE ! ?CSP REVEAL ; IMMEDIATE
@@ -80,9 +80,9 @@ ALIGN
 \ BEGIN and DO make HERE a branch target without emitting anything
 \ there, so the next primitive must not fuse with the one before.
 \ (Folding never needed this: a BEGIN cannot come straight before `;`.)
-: BEGIN8 ( --- a-addr )   0 LAST-OP ! HERE ; IMMEDIATE
+: BEGIN8 ( --- a-addr )   ?COMP 0 LAST-OP ! HERE ; IMMEDIATE
 : DO8 ( --- a-addr )
-  POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! 0 LAST-OP ! ; IMMEDIATE
+  ?COMP POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! 0 LAST-OP ! ; IMMEDIATE
 
 \ A test straight before IF, UNTIL or WHILE (which is IF) becomes one
 \ fused branch, when SUPER-TABLE has (test, ?BRANCH, fused) - the
@@ -94,5 +94,5 @@ ALIGN
   LAST-OP @ DUP IF DUP 1+ HERE = IF
     DUP C@ 0BRANCH-OP SUPER-OP IF SWAP C! EXIT THEN
   THEN THEN DROP 0BRANCH-OP OP, ;
-: IF8 ( --- a-addr )   ?BRANCH, >MARK ; IMMEDIATE
-: UNTIL8 ( a-addr --- )   ?BRANCH, <RESOLVE ; IMMEDIATE
+: IF8 ( --- a-addr )   ?COMP ?BRANCH, >MARK ; IMMEDIATE
+: UNTIL8 ( a-addr --- )   ?COMP ?BRANCH, <RESOLVE ; IMMEDIATE

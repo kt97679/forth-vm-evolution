@@ -148,7 +148,7 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
   THEN ;
 
 : ;16 ( --- )
-  EXIT-OP OP, 0 STATE ! ?CSP REVEAL ; IMMEDIATE
+  ?COMP EXIT-OP OP, 0 STATE ! ?CSP REVEAL ; IMMEDIATE
 
 \ ---- control flow ---------------------------------------------------
 \ A branch operand is a signed 16-bit count of TOKENS, measured from the
@@ -165,28 +165,28 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
   HERE - 2 / OP, ;
 
 : BEGIN16 ( --- a-addr )
-  HERE ; IMMEDIATE
+  ?COMP HERE ; IMMEDIATE
 
 : UNTIL16 ( a-addr --- )
-  0BRANCH-OP OP, <RESOLVE ; IMMEDIATE
+  ?COMP 0BRANCH-OP OP, <RESOLVE ; IMMEDIATE
 
 : AGAIN16 ( a-addr --- )
   BRANCH-OP OP, <RESOLVE ; IMMEDIATE
 
 : IF16 ( --- a-addr )
-  0BRANCH-OP OP, >MARK ; IMMEDIATE
+  ?COMP 0BRANCH-OP OP, >MARK ; IMMEDIATE
 
 : THEN16 ( a-addr --- )
-  >RESOLVE ; IMMEDIATE
+  ?COMP >RESOLVE ; IMMEDIATE
 
 : ELSE16 ( a-addr1 --- a-addr2 )
-  BRANCH-OP OP, >MARK SWAP >RESOLVE ; IMMEDIATE
+  ?COMP BRANCH-OP OP, >MARK SWAP >RESOLVE ; IMMEDIATE
 
 : WHILE16 ( a-addr1 --- a-addr2 a-addr1 )
-  POSTPONE IF16 SWAP ; IMMEDIATE
+  ?COMP POSTPONE IF16 SWAP ; IMMEDIATE
 
 : REPEAT16 ( a-addr1 a-addr2 --- )
-  BRANCH-OP OP, <RESOLVE >RESOLVE ; IMMEDIATE
+  ?COMP BRANCH-OP OP, <RESOLVE >RESOLVE ; IMMEDIATE
 
 \ ---- defining words -------------------------------------------------
 : CREATE16 ( "ccc" --- )
@@ -201,7 +201,7 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
   HEADER REVEAL LIT, EXIT-OP OP, ;
 
 : RECURSE16 ( --- )
-  LAST @ NAME> CALL, ; IMMEDIATE
+  ?COMP LAST @ NAME> CALL, ; IMMEDIATE
 
 \ ---- DO ... LOOP ----------------------------------------------------
 \ (LOOP) and (+LOOP) read an inline CELL operand holding a BYTE offset,
@@ -215,19 +215,19 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
   BEGIN HERE 2 + 1 CELLS 1- AND WHILE NOOP-OP OP, REPEAT ;
 
 : DO16 ( --- a-addr )
-  POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+  ?COMP POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
 
 : LOOP16 ( a-addr --- )
-  OPERAND-ALIGN POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 : +LOOP16 ( a-addr --- )
-  OPERAND-ALIGN POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
 
 : ?DO16 ( --- a-addr )
-  OPERAND-ALIGN POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
 
 : LEAVE16 ( --- )
-  OPERAND-ALIGN POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
+  ?COMP OPERAND-ALIGN POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
 
 \ ---- DOES> -----------------------------------------------------------
 \ A DOES> word's body is [DODOES][call token][pad][PFA], where the cell
@@ -249,7 +249,7 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
 \ The tail must be an aligned call target: a call is a SCALED offset, so
 \ an unaligned tail address loses its low bits and jumps to the wrong
 \ place. The pad is dead code - (;CODE) never returns here.
-  POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
+  ?COMP POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
 
 \ ---- debugging aid --------------------------------------------------
 : TOKENS. ( a-addr n --- )

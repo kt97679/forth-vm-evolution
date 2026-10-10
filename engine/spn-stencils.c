@@ -183,7 +183,7 @@ S(st_interp) { spn_st r = ((spn_interp_fn)IMM_FN())(sp, tos, IMM()); GO(SPN_SP(r
 /* DO loops, on the shared return stack in the kernel's own layout: the
    index on top, the limit under it. Exactly the arithmetic of (LOOP) and
    (+LOOP) in kernel.4 - +LOOP exits when old-limit and new-limit differ
-   in sign - but done UNSIGNED, since C leaves signed overflow undefined
+   in sign and the step points at the limit (Iteration 125) - but done UNSIGNED, since C leaves signed overflow undefined
    and a Forth loop counter must wrap. There is no return address between
    a native loop's parameters and an enclosing loop's, so J is rp[2];
    interpreted J adds a cell for its own return address. */
@@ -198,7 +198,7 @@ S(st_loop)   { ucell *rpp = IMM_RP(); cell *r = (cell *)*rpp;
                r[0] = (cell)ix; return spn_jump(sp, tos); }
 S(st_ploop)  { ucell *rpp = IMM_RP(); cell *r = (cell *)*rpp;
                ucell o = (ucell)r[0], l = (ucell)r[1], n = o + (ucell)tos;
-               if ((cell)((o - l) ^ (n - l)) < 0) { *rpp = (ucell)(r + 2); GO(sp + 1, *sp); }
+               if ((cell)(((o - l) ^ (n - l)) & ((o - l) ^ (ucell)tos)) < 0) { *rpp = (ucell)(r + 2); GO(sp + 1, *sp); }
                r[0] = (cell)n; return spn_jump(sp + 1, *sp); }
 S(st_i)      { ucell *rpp = IMM_RP(); cell v = ((cell *)*rpp)[0]; *--sp = tos; GO(sp, v); }
 S(st_j)      { ucell *rpp = IMM_RP(); cell v = ((cell *)*rpp)[2]; *--sp = tos; GO(sp, v); }

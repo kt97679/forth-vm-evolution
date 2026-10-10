@@ -112,7 +112,7 @@ HOT = {
  'L_x_qdo':   '{ UNS64 n2_ = tos, n1_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; '
               'if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += BROFF(ip); } NEXT();',
  'L_x_ploop': '{ UNS64 n_ = tos, i_ = RS, l_ = CELL(rp + CELL_BYTES), j_ = i_ + n_; POPT(); '
-              'if ((INT64)((i_ - l_) ^ (j_ - l_)) < 0) { rp += 2 * CELL_BYTES; ip += 2; } '
+              'if ((INT64)(((i_ - l_) ^ (j_ - l_)) & ((i_ - l_) ^ n_)) < 0) { rp += 2 * CELL_BYTES; ip += 2; } '
               'else { CELL(rp) = j_; ip += BROFF(ip); } } NEXT();',
 }
 NOSTACK = {'L_noop', 'L_exit', 'L_branch', 'L_dodoes', 'L_lsave', 'L_lrest', 'L_lzero',

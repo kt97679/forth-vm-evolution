@@ -83,7 +83,13 @@ run() { # run LABEL ENGINE IMAGE [WORKDIR]
     local label=$1 eng=$2 img=$3 wd=${4:-$W} g b gs gd bs bd xf=0
     case "$XFAIL" in *" $label "*) xf=1;; esac
     if [ ! -x "$eng" ] || [ ! -r "$img" ]; then
-        printf '  %-12s SKIP   not built\n' "$label"; return
+        # Iteration 125: a stage missing where its cell width WAS built is a
+        # failed build, not a skip - a build that stopped half way passed here.
+        case $eng in *-64) w_=64 ;; *-32) w_=32 ;; *) w_= ;; esac
+        if [ -n "$w_" ] && [ -x "$O/s0-cell-$w_" ]; then
+            printf '  %-12s FAIL   not built, though the %s-bit build ran\n' "$label" "$w_"; rc=1
+        else printf '  %-12s SKIP   not built\n' "$label"; fi
+        return
     fi
     g=$(one "$GOOD" "$eng" "$img" "$wd"); gs=${g%%|*}; gd=${g#*|}
     if [ "$gs" != ran ]; then
@@ -167,7 +173,9 @@ for w in 64 32; do
     for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b \
               s7-spn s7-full s8-spncv8 s8-full s8-lazy relf; do
         e=$O/$st-$w; i=$O/$st-s$w.img
-        [ -x "$e" ] && [ -r "$i" ] || continue
+        if [ ! -x "$e" ] || [ ! -r "$i" ]; then
+            [ -x "$O/s0-cell-$w" ] && bad="$bad $st(not built)"; continue    # Iteration 125
+        fi
         rm -f "$W/$DEL"; ran=$((ran + 1))
         ( cd "$W" && timeout 15 "$e" "$i" < "$O/.delete.fth" > "$O/.delete.out" 2>&1 ); st_=$?
         if [ $st_ -ne 0 ] || ! grep -aq DELETE-FILE-OK "$O/.delete.out" || [ -e "$W/$DEL" ]; then
@@ -175,9 +183,53 @@ for w in 64 32; do
         fi
         rm -f "$W/$DEL"
     done
-    if [ $ran -eq 0 ]; then printf '  %-12s SKIP   not built\n' "$w-bit"
+    if [ $ran -eq 0 ] && [ -z "$bad" ]; then printf '  %-12s SKIP   not built\n' "$w-bit"
     elif [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; rc=1
     else printf '  %-12s ok     %d stages\n' "$w-bit" "$ran"; fi
+done
+
+echo
+# ---- the fixes of Iteration 125 ---------------------------------------
+# What the Forth 2012 test suite and RelF found wrong (results/forth-
+# standard-tests.md): coreplus-loop.fth (RelF's, the standard's +LOOP
+# sections) and fixes.fth in one file with the sentinel at its end - an
+# abort inside INCLUDED returns to stdin, so a sentinel after it proves
+# nothing - and a copy with one wrong case that must be caught. Then the
+# refusals, which abort and so cannot be tester cases: a name over 31
+# characters, IF outside a definition (it killed the engine).
+echo
+echo "the fixes of Iteration 125 (+LOOP, strings, CONVERT, file words, refusals):"
+FG=$O/.fixes-good.fth; FB=$O/.fixes-bad.fth; FR=$O/.fixes-refuse.fth
+{ cat "$ROOT/tests/core/coreplus-loop.fth" "$ROOT/tests/core/fixes.fth"; printf '\nS" FIXES-REACHED-END" TYPE CR\n'; } > "$FG"
+{ cat "$ROOT/tests/core/coreplus-loop.fth" "$ROOT/tests/core/fixes.fth"; printf '\n{ 1 2 + -> 4 }\nS" FIXES-REACHED-END" TYPE CR\n'; } > "$FB"
+printf ': ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ 1 ;\n1 IF 2 THEN\nS" REFUSED-AND-ALIVE" TYPE CR\nBYE\n' > "$FR"
+fixrun() { # fixrun ENGINE IMAGE FILE -> the output in $O/.fx.out, the status echoed
+    rm -f "$W/fixes-test.tmp"
+    ( cd "$W" && printf 'S" tester.fr" INCLUDED\n\nS" %s" INCLUDED\nBYE\n' "$3" | timeout 60 "$1" "$2" > "$O/.fx.out" 2>&1 ); echo $?
+    rm -f "$W/fixes-test.tmp"
+}
+for w in 64 32; do
+    ran=0; bad=""
+    for st in s0-cell p4-pack4 p8-pack8 s1-sod16 s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec s6-cv8b \
+              s7-spn s7-full s8-spncv8 s8-full s8-lazy relf; do
+        e=$O/$st-$w; i=$O/$st-s$w.img
+        if [ ! -x "$e" ] || [ ! -r "$i" ]; then
+            [ -x "$O/s0-cell-$w" ] && bad="$bad $st(not built)"; continue
+        fi
+        ran=$((ran + 1))
+        x=$(fixrun "$e" "$i" "$FG")
+        if [ "$x" != 0 ] || ! grep -aq FIXES-REACHED-END "$O/.fx.out" || grep -aqE "$ERRS" "$O/.fx.out"; then
+            bad="$bad $st(exit $x$(grep -acE "$ERRS" "$O/.fx.out" | sed 's/^/, failed /'))"; continue
+        fi
+        x=$(fixrun "$e" "$i" "$FB")
+        if [ "$x" != 0 ] || [ "$(grep -acE "$ERRS" "$O/.fx.out")" -lt 1 ]; then bad="$bad $st(control not caught)"; continue; fi
+        ( cd "$W" && timeout 15 "$e" "$i" < "$FR" > "$O/.fx.out" 2>&1 ); x=$?
+        if [ $x != 0 ] || ! grep -aq 'name too long' "$O/.fx.out" || ! grep -aq 'compile only IF' "$O/.fx.out" \
+           || ! grep -aq REFUSED-AND-ALIVE "$O/.fx.out"; then bad="$bad $st(refusals, exit $x)"; fi
+    done
+    if [ $ran -eq 0 ] && [ -z "$bad" ]; then printf '  %-12s SKIP   not built\n' "$w-bit"
+    elif [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; rc=1
+    else printf '  %-12s ok     %d stages, each with its negative control\n' "$w-bit" "$ran"; fi
 done
 
 echo
