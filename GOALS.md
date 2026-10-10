@@ -130,7 +130,12 @@ names. (7) Kernel gaps, named by where each standard file stops: :NONAME and
 0<>, CATCH/THROW, /STRING, -TRAILING and COMPARE, search order (ONLY), AHEAD,
 BEGIN-STRUCTURE, locals ({:), BLOCK, number prefixes and double literals;
 RelF's extend.4 has many (its ext/ tests need them) - but extend.4 is in the
-kernel workload, so porting it is a measurement change.
+kernel workload, so porting it is a measurement change. (8) The audit of every word against other Forths
+(the owner) - results/word-audit-plan.md: the method, the premortem, the
+ceilings (~3% of speed, ~1.7% of size at best); next: the sources fetched,
+the weights, results/word-audit.md. The todo genes' status is there too: the
+JIT stencils first, then SYSCALL (not built - agreed in principle) and the
+byte trims, then knum.
 
 *Where to look.* results/ - each run (with its genomes), compare-fronts
 (sessions), knockouts-seed30, run-length, link-N, flags-gcsections, jitx,

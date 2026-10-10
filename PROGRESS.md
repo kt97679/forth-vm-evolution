@@ -2651,3 +2651,12 @@ and 20 for ~11 ms on the fastest design. That design, seed 37's fastest:
 0.57, against loop 0.06. Speeds are not comparable with earlier records; the
 stopping rule counts afresh. evolve.py's knockout report named the old
 workloads by hand; it reads the list now.
+
+**And the plan** (results/word-audit-plan.md): the todo genes' status - built
+since Iteration 115: kstack, abortif, fbuf, fromzero, opcall; open: the JIT
+stencils (first now: bubble and ackermann are where the front is weakest),
+one SYSCALL (not built), 16-bit dispatch tables, packed names, knum,
+promotion by synthesis. The owner's audit of every word against other Forths:
+weigh, collect (permissive sources only), compare in this VM's terms, land as
+overlay genes; its premortem puts the ceiling at ~3% of speed and ~1.7% of
+size, with stopping points.
