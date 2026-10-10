@@ -79,3 +79,19 @@ the overlay width-aware. The SYSC shell passes tests/shell at both widths,
 with glibc and libc-free: s5's engine 34,672 -> 30,088 bytes (glibc, 64-bit),
 28,956 -> 24,440 (glibc, 32), 32,768 -> 28,304 (libc-free, 64), 35,704 ->
 31,340 (libc-free, 32 - static, with libgcc's 64-bit division).
+
+## The engine half, done (Iteration 143)
+
+SYSCALL is in all six engine sources - vm-lab.c, relf.c, pack4.c, pack8.c,
+spn.c, spn-cv8.c - under SYSC, by tools/sysc-xform.py, each at the widths it
+builds (the SPN engines 64-bit only). Without SYSC every engine is
+byte-identical; with it, everything but the shells built without the overlay
+passes, and SYSCALL answers on every stage.
+
+**The kernel part, after seed 39** (with the NAME>BUF patch and the libc-free
+default): SYSC the only model - every engine built with it, the gene sysc
+retired; kernel.4 declaring SYSCALL in FORK's slot and the other seventeen
+and SYSTEM as reserved, unnamed slots (positions kept: the seed's opcodes must
+mean what they meant); A/O into the shell and CHAR- out; tools/sod16.py's
+primitive names to match; forth/shell-sysc.4 in every shell's boot list; the
+reseed; tools/test-sysc-shell.sh into run-tests.sh.

@@ -2899,3 +2899,16 @@ matches the plain cell shell at both widths, with glibc and libc-free. The
 libc-free cell engine: 28,552 -> 24,120 bytes at 8-byte cells, 32,092 ->
 27,964 at 4. tools/test-sysc-shell.sh covers s5 and the cell stage. Left:
 pack4.c, pack8.c and the SPN engines; then, after seed 39, the kernel.
+
+## Iteration 143 - 2026-10-10 - Claude
+
+**SYSCALL in every engine: the single model's engine half done.** pack4.c,
+pack8.c, spn.c and spn-cv8.c take tools/sysc-xform.py's transformation, as
+vm-lab.c and relf.c did. Without SYSC all nine pack and SPN engines the build
+makes are byte-identical. With every 64-bit engine built SYSC
+(ENGINE_CFLAGS=-DSYSC=1), run-tests.sh fails only where a shell built without
+the overlay boots - the corpus on all fifteen 64-bit stages, DELETE-FILE, the
+fixes, locals all pass - and getpid through FORK's slot answers on every
+stage: the cell stage, both pack engines (at both widths, i386's number
+mapped), s1-s6, SPN's s7 and s8s. The kernel part waits for seed 39 to have
+run (results/syscall-pricing.md).
