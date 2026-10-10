@@ -1,0 +1,101 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 24fb561..172dc9b 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -430,13 +430,11 @@ def rt():
+     # executable under -n already.
+ 
+ def bin_size(eng):
+-    """Iteration 75: the engine as it would ship - a stripped copy's size.
+-    The engine itself keeps its symbols: tail_offenders reads them."""
+-    s = eng + '.stripped'
+-    r = sh(['strip', '--strip-all', '-o', s, eng])
+-    n = os.path.getsize(s) if r.returncode == 0 and os.path.exists(s) else os.path.getsize(eng)
+-    if os.path.exists(s): os.remove(s)
+-    return n
++    """Iteration 75: the engine as it would ship. Since Iteration 149 build()
++    returns it so - tools/elf_tight.py: no section headers, symbols or
++    .comment, 620 bytes a design - and keeps the full file beside it as
++    engine.full, for tail_offenders and anyone with nm or gdb."""
++    return os.path.getsize(eng)
+ 
+ def ccflags(g):
+     return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
+@@ -541,7 +539,7 @@ def require(g):
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+     return g
+ 
+-def build(g, d):
++def _build(g, d):
+     """-> (engine, image) or raises RuntimeError('died: ...')"""
+     if os.path.exists(d): shutil.rmtree(d)
+     os.makedirs(d)
+@@ -656,6 +654,19 @@ def build(g, d):
+     if t2: compile_engine()          # the converter wrote vm-tag2-one.h and vm-tag2-esc.h beside vm.c
+     return eng, img
+ 
++sys.path.insert(0, os.path.join(ROOT, 'tools'))
++import elf_tight                                    # Iteration 149
++def build(g, d):
++    """-> (engine, image) or raises RuntimeError('died: ...'). The engine as
++    it ships (Iteration 149): the ELF header, the program headers and the
++    bytes they load - what runs is the same bytes, and the gate, the timings
++    and the size are all of this file; the full one stays as engine.full."""
++    eng, img = _build(g, d)
++    data = open(eng, 'rb').read(); t = elf_tight.tighten(data)
++    if t is not None and len(t) < len(data):
++        os.replace(eng, eng + '.full'); open(eng, 'wb').write(t); os.chmod(eng, 0o755)
++    return eng, img
++
+ def build_other(g, d):
+     """The cell engine (relf.c, its image as built), SOD16 and CPT16."""
+     eng = os.path.join(d, 'engine'); img = os.path.join(d, 'image.img')
+diff --git a/tools/elf_tight.py b/tools/elf_tight.py
+new file mode 100644
+index 0000000..337b63e
+--- /dev/null
++++ b/tools/elf_tight.py
+@@ -0,0 +1,43 @@
++#!/usr/bin/env python3
++"""tools/elf_tight.py - an executable as it ships (Iteration 149): the ELF
++header, the program headers and the bytes they load - nothing after them.
++The section headers, their names, the symbol tables and the compiler's
++.comment are for tools (nm, objdump, gdb), not for the kernel, which loads a
++file from its program headers alone - SmithForth's hand-made ELF is the
++proof (dacvs.neocities.org/SF). What runs is the same bytes; keep the full
++file for analysis. ELF32 and ELF64, little-endian; anything else untouched.
++
++    python3 tools/elf_tight.py IN [OUT]      OUT defaults to IN, rewritten
++"""
++import struct, sys
++
++def tighten(data):
++    """The tight form of an ELF file's bytes, or None if it is not one this knows."""
++    if len(data) < 52 or data[:4] != b'\x7fELF' or data[5] != 1: return None
++    if data[4] == 2:      # ELF64: e_phoff 0x20, e_phentsize/e_phnum 0x36, e_shoff 0x28, e_shentsize.. 0x3A
++        phoff, = struct.unpack_from('<Q', data, 0x20); phent, phnum = struct.unpack_from('<HH', data, 0x36)
++        segs = [struct.unpack_from('<IIQQQQ', data, phoff + i * phent) for i in range(phnum)]
++        spans = [(s[2], s[5]) for s in segs]                        # (p_offset, p_filesz)
++        sh_off, sh_fields, sh_size = 0x28, 0x3A, 8
++    elif data[4] == 1:    # ELF32: e_phoff 0x1C, e_phentsize/e_phnum 0x2A, e_shoff 0x20, e_shentsize.. 0x2E
++        phoff, = struct.unpack_from('<I', data, 0x1C); phent, phnum = struct.unpack_from('<HH', data, 0x2A)
++        segs = [struct.unpack_from('<IIIII', data, phoff + i * phent) for i in range(phnum)]
++        spans = [(s[1], s[4]) for s in segs]
++        sh_off, sh_fields, sh_size = 0x20, 0x2E, 4
++    else:
++        return None
++    if not segs: return None
++    end = max([phoff + phnum * phent] + [o + n for o, n in spans if n])   # every segment with file bytes
++    out = bytearray(data[:min(end, len(data))])
++    out[sh_off:sh_off + sh_size] = bytes(sh_size)                  # e_shoff
++    out[sh_fields:sh_fields + 6] = bytes(6)                        # e_shentsize, e_shnum, e_shstrndx
++    return bytes(out)
++
++if __name__ == '__main__':
++    src = sys.argv[1]; dst = sys.argv[2] if len(sys.argv) > 2 else src
++    data = open(src, 'rb').read(); t = tighten(data)
++    if t is None: sys.exit('%s: not a little-endian ELF32/ELF64 - left as it is' % src)
++    import os
++    mode = os.stat(src).st_mode
++    open(dst, 'wb').write(t); os.chmod(dst, mode)
++    print('%s: %d -> %d bytes' % (dst, len(data), len(t)))

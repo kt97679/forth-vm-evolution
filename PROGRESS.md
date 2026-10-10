@@ -2997,3 +2997,18 @@ front designs - 18 naming it - through the gate, the tab test right, none
 built with it; the four checks at both widths. tools/sysc-xform.py retired with
 it (its six engines done). The six patches, in order, on a fresh clone of
 master give the tested tree's code exactly.
+
+## Iteration 149 - 2026-10-10 - Claude
+
+**SmithForth reviewed; the engine as it ships** (results/smithforth-review.md).
+No licence - ideas only - and machine code that would not fit C engines. Its
+lesson is the executable that is only its headers and its loaded bytes; ours
+already were one RWE segment, but carried the section headers, their names and
+.comment past the strip the size objective measures - 616-620 bytes in every
+engine. tools/elf_tight.py drops them; build() returns the tight engine - it
+is what runs, is gated, timed and measured - and keeps engine.full for
+analysis. 20 front designs pass the gate and the tab test tight; the
+four checks pass; the carry re-measures every carried design, so the change is
+consistent within a run (sessions before and after the batch are not
+comparable). The batch's seventh pending patch; the seven on a fresh clone of
+master give the tested tree's code exactly.
