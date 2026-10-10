@@ -102,8 +102,8 @@ that extension (results/word-audit.md, "Core or extension").
 
 *After seed 39 has run, together (the owner agreed)*: the NAME>BUF patch
 (results/pending/namebuf-after-seed39.patch - s6's yardstick moves), the
-dormant genes jitloop, jitinl and sysc into EXPRESSED, tools/test-sysc-shell.sh into
-run-tests.sh; then a run with them.
+dormant genes jitloop, jitinl and sysc into EXPRESSED, tools/test-sysc-shell.sh and
+tools/test-ext-loops.sh into run-tests.sh; then a run with them.
 
 *Pending run.* Seed 38, **6 hours** (the owner: two runs in a day), the same
 genes (NEXT-RUN): the first run on the fixed kernel and the new measurement;

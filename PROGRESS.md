@@ -2833,3 +2833,17 @@ design image contains it (checked). A census of kernel.4 under that principle
 the shell uses or nothing does - its seventeen, SYSTEM, A/O, CHAR- - some
 300-400 bytes of every kernel image. Their move out waits on one model for
 the OS words (SYSCALL in every engine) - the owner's decision.
+
+## Iteration 139 - 2026-10-10 - Claude
+
+**?DO and LEAVE in extensions.** The converter refused both (BAD_WORDS):
+their operand had been an absolute address. The kernel has since stored
+leave addresses as offsets from the cell that holds them, like every other
+branch (RESOLVE-LEAVE; run-tests.sh saves and reloads a skipped ?DO and a
+LEAVE) - the refusal was stale, and it had made the shell's overlay rewrite
+its loops. They are loop words now, like (LOOP). Every image the build makes,
+63 of them at both widths, byte-identical; four words using them (a skipped
+?DO, a LEAVE, a running ?DO, a LEAVE in a nested loop), compiled on the cell
+stage before shell.4, translate and run right on s1, s3, s4 and s5
+(tools/test-ext-loops.sh) - and the old converter refuses all four on all
+four stages, the negative control. The test joins run-tests.sh after seed 39.

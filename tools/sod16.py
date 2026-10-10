@@ -137,15 +137,15 @@ DATA = (set(re.findall(r'CREATE\s+(\S+)', src)) |
 #       NOOP tokens BEFORE the call token - padding after it would be
 #       what `@` read.
 #
-# (?DO) and (LEAVE) are refused, not translated. Their operand is an
-# ABSOLUTE address: RESOLVE-LEAVE compiles a bare `HERE` into it. That
-# is a latent fault in the cell image too - an absolute address does not
-# survive the relocation a saved image performs on every load - and it
-# is invisible today only because both words have ZERO call sites in
-# this image. Anything that adds a ?DO or a LEAVE to shell.4 breaks
-# saved images before it ever reaches SOD16.
+# (?DO) and (LEAVE) were refused here: their operand was an ABSOLUTE
+# address, RESOLVE-LEAVE compiling a bare `HERE` into it. The kernel has
+# since stored it as an OFFSET from the cell that holds it, as every other
+# branch (RESOLVE-LEAVE, kernel.4; run-tests.sh saves and reloads a skipped
+# ?DO and a LEAVE), so they are loop words like (LOOP) and (+LOOP), their
+# operand a forward branch - and an extension compiled on the cell stage
+# may use them (Iteration 139: the shell's overlay could not).
 STR_WORDS  = ('(S")', '(.")', '(ABORT")')
-LOOP_WORDS = ('(LOOP)', '(+LOOP)')
+LOOP_WORDS = ('(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)')
 # (POSTPONE) is the eighth inline-operand word - its own comment in
 # kernel.4 says "has inline argument". `R> DUP DUP @ + SWAP CELL+ >R`
 # reads a CELL holding a relative address to another word's body and
@@ -181,7 +181,7 @@ for _n in ('L-LSAVE-XT', 'L-L!-XT', 'L-LZERO-XT', 'L-LRESTORE-XT'):
     if _w:
         _v = cells.get(_w['s'] + CELL)
         if _v: LOCALS_RT.add(START_ADDR + _v)
-BAD_WORDS  = ('(?DO)', '(LEAVE)')
+BAD_WORDS  = ()          # Iteration 139: none - see LOOP_WORDS
 
 STR  = {by_name[n]['s'] for n in STR_WORDS  if n in by_name}
 LOOPS = {by_name[n]['s'] for n in LOOP_WORDS if n in by_name}
