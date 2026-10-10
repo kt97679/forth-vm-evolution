@@ -2974,3 +2974,26 @@ The four checks at both widths: the shell suite 554 assertions on four SYSCALL
 shells, the jail - one fork refused, one allowed, the bomb contained - 7 of 7;
 20 front designs through the gate with the tab test right. The five patches
 on a fresh clone of master give the tested tree, file for file.
+
+## Iteration 148 - 2026-10-10 - Claude
+
+**The next JIT stencil, priced: none.** On seed 37's fastest with jitloop and
+jitinl, the JIT's own blocker log, each blocker weighted by the dispatches the
+words it blocks execute: PLACE blocks 11% of bubble's remaining interpreted
+work (197 k dispatches - ~2% of its time), SYS-ARGC 4% of the kernel
+workload's (gone with the single-SYSCALL model); * blocks nothing - the guess
+that RANDOM waited on it was wrong. What the corpus, kernel and parse
+workloads still interpret (3.9 M, 1.7 M, 8.0 M dispatches) is the outer
+interpreter - INTERPRET, the parse, FIND, NUMBER? - bytecode because the
+interpreter loop is, not for a missing stencil. The k-genes and the batch's
+kernel patches are what reach it.
+
+**TABS>BL gone - the batch's sixth pending patch.** Dead since the parsing
+patch, it still claimed a format-10 slot: 214 of seed 37's 242 front genomes
+name it, and kinput put it first. Out of kinput, the evolver's lists and maps,
+the engine and both generators, the converter's expected bodies and opbody's
+list; an old genome naming it builds without it, the slot passing on. 20
+front designs - 18 naming it - through the gate, the tab test right, none
+built with it; the four checks at both widths. tools/sysc-xform.py retired with
+it (its six engines done). The six patches, in order, on a fresh clone of
+master give the tested tree's code exactly.

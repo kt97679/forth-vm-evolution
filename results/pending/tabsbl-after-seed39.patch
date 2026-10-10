@@ -1,0 +1,258 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 86506ad..836a6db 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1606,10 +1606,6 @@ L_x_skip:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
+              else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; }
+              DS1 = a_; DS0 = u_; } NEXT();
+ #endif
+-#if X_TABSBL
+-L_x_tabsbl: { UNS64 u_ = DS0, a_ = DS1; dsp += 2 * CELL_BYTES;
+-             while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } } NEXT();
+-#endif
+ /*  (PARSE) ( addr u c --- a1 len adv ): SKIP then SCAN, the string between and
+  *  how far >IN moves (kinput's PARSE8). HASH ( c-addr u #threads --- n ): the
+  *  kernel's, exactly - cross.4's THASH must agree. PLACE ( addr len c-addr --- ). */
+diff --git a/forth/cv8b-kinput.4 b/forth/cv8b-kinput.4
+index ceb21e5..b357650 100644
+--- a/forth/cv8b-kinput.4
++++ b/forth/cv8b-kinput.4
+@@ -4,30 +4,29 @@
+ \
+ \ On seed 12's fastest design, REFILL, SCAN, PARSE, SKIP and WORD were
+ \ 27-36% of the kernel, parse and corpus workloads' dispatches. Most of
+-\ REFILL's share is its tab loop - ten dispatches a character of every
+-\ line read. Factored out here, unchanged, as TABS>BL, which the gene
+-\ makes a format-10 opcode with SCAN, SKIP and FILL (lab/evolve).
++\ REFILL's share was its tab loop - ten dispatches a character of every
++\ line read - factored out here as TABS>BL, a format-10 opcode with SCAN,
++\ SKIP and FILL. Since Iterations 145 and 148 no tab is made a space: SKIP
++\ and SCAN take any control character for a space delimiter, and TABS>BL
++\ is gone (lab/evolve).
+ 
+-: TABS>BL ( c-addr u --- )
+-\ Every tab in the string a space - REFILL's loop.
+-  OVER + SWAP BEGIN 2DUP - WHILE DUP C@ 9 = IF BL OVER C! THEN 1+ REPEAT 2DROP ;
+ 
+ : REFILL8 ( --- f)
+-\ The kernel's REFILL, its tab loop TABS>BL.
++\ The kernel's REFILL.
+   SOURCE-ID -1 = IF
+    0 \ Not refillable for EVALUATE
+   ELSE
+    SOURCE-ID IF
+     SRC @ 256 SOURCE-ID READ-LINE ABORT" Error reading file"
+     SWAP #SRC ! 0 >IN !
+-    \ No TABS>BL (Iteration 145): SKIP and SCAN take control characters for a
+-    \ space delimiter. TABS>BL stays defined - genomes name it - and unused.
++    \ No tab is made a space (Iterations 145, 148): SKIP and SCAN take control
++    \ characters for a space delimiter.
+    ELSE
+     QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
+    THEN
+   THEN ;
+ 
+-\ After TABS>BL (Iteration 54, attributed again): PARSE's own stack work
++\ After the tab loop (Iteration 54, attributed again): PARSE's own stack work
+ \ 9-14% of kernel, parse and corpus; ?STACK's check, run after every word
+ \ interpreted, calling (ABORT") each time only to skip its message.
+ 
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index a6843dc..24fb561 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -153,10 +153,10 @@ def tfind_on(g):
+     opcode - sure of a slot. Seed 11 found it in the pool 7 times in 1,425
+     designs, once with kfast: the biggest saving there, never taken up."""
+     return kfast_on(g) and bool(g.get('tfind'))
+-KINPUT = ['SCAN', 'SKIP', 'TABS>BL', 'FILL', '(PARSE)', 'HASH', 'PLACE']
++KINPUT = ['SCAN', 'SKIP', 'FILL', '(PARSE)', 'HASH', 'PLACE']   # TABS>BL gone with Iteration 148: no tab is made a space
+ def kinput_on(g):
+     """Iteration 54: the input side - forth/cv8b-kinput.4 (REFILL's tab loop
+-    factored out as TABS>BL) and SCAN, SKIP, TABS>BL and FILL first among the
++    was factored out as TABS>BL, gone with Iteration 148) and SCAN, SKIP and FILL first among the
+     format-10 names: one switch, as tfind - a design with kfast."""
+     return kfast_on(g) and bool(g.get('kinput'))
+ KLOOKUP = ['(FIND)', '(>NUMBER)']
+@@ -197,7 +197,7 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
+               'DUP?NBRANCH', 'DUP?NBRANCH8', 'SWAP+I',   # Iteration 34: DUP 0= ?BRANCH kept; SWAP n +
+               'FILL', 'CMOVE',                           # Iteration 50: the kernel's byte loops
+               'THREAD-FIND',                             # Iteration 51: the byte-header thread walk (kfast's)
+-              'SCAN', 'SKIP', 'TABS>BL',                 # Iteration 54: the input side (TABS>BL: kinput's)
++              'SCAN', 'SKIP',                            # Iteration 54: the input side (TABS>BL went, Iteration 148; kinput's)
+               '(PARSE)', 'HASH', 'PLACE',                # Iteration 54: ((PARSE): kinput's)
+               '(FIND)', '(>NUMBER)',                     # Iteration 57: the lookup, numbers (klookup's)
+               'I+']                                      # Iteration 60: I then + in run-time code (rtiplus's)
+@@ -212,16 +212,14 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
+                'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8',
+                'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi',
+                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
+-               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', 'TABS>BL': 'L_x_tabsbl',
+-               '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
++               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
+ # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
+ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
+            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
+            'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR',
+            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
+            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
+-           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', 'TABS>BL': 'X_TABSBL',
+-           '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
++           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+ def jit_on(g):
+     """Iteration 80 (JIT.md): the lazy JIT - colon words compiled at run time
+     translated to native code on their first call (engine/jit.c, SPN's
+@@ -241,7 +239,8 @@ def ops10_order(g, iplus):
+     recursing through rtiplus_on (Iteration 77)."""
+     ws = [w for w in g.get('ops10', []) if w != 'THREAD-FIND' or kfast_on(g)]   # Iteration 51: a kfast word
+     if tfind_on(g): ws = ['THREAD-FIND'] + [w for w in ws if w != 'THREAD-FIND']  # Iteration 52: first, sure of a slot
+-    ws = [w for w in ws if w not in ('TABS>BL', '(PARSE)') or kinput_on(g)]        # Iteration 54: kinput's words
++    ws = [w for w in ws if w != 'TABS>BL']                                         # Iteration 148: gone - a genome naming it frees the slot
++    ws = [w for w in ws if w != '(PARSE)' or kinput_on(g)]                         # Iteration 54: kinput's words
+     if kinput_on(g):                                                               # Iteration 54: next, sure of slots
+         ws = ws[:1 if tfind_on(g) else 0] + KINPUT + [w for w in ws[1 if tfind_on(g) else 0:] if w not in KINPUT]
+     ws = [w for w in ws if w not in KLOOKUP or klookup_on(g)]                      # Iteration 57: klookup's words
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index 590bb68..a29d440 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -126,7 +126,6 @@ SPECS = {
+     'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+     'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+     'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_tabsbl':       (['a', 'u'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } }'),
+     'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+     'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
+     'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index b612a3d..704cf61 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -95,7 +95,6 @@ HOT = {
+  # Iteration 54: the input side - SCAN, SKIP: three in, two out; TABS>BL: two in
+  'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+  'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+- 'L_x_tabsbl':     '{ UNS64 u_ = tos, a_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } } NEXT();',
+  'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
+  'L_x_tonumber':   '{ UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();',
+  'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
+diff --git a/tools/layout.py b/tools/layout.py
+index bc94567..7dd141c 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -394,7 +394,7 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
+ # for a call and two dispatches instead of 12-14 a byte, and its loop gone.
+ # Only these two, which never look at their caller's return address (I J
+ # UNLOOP (DO) do), and only where the design has them: no recorded design.
+-_OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', 'TABS>BL', '(PARSE)', 'HASH', 'PLACE')     # Iteration 54: the input side's too
++_OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')   # TABS>BL gone: Iteration 148     # Iteration 54: the input side's too
+ if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: the gene opbody
+ for _n in _OPB:
+     if _n not in G['X_OPS10']: continue
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 39e4ff8..6421045 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -554,9 +554,6 @@ def _expect(n):
+                  ('BR', -16 * CELL), ('P', 'EXIT'), ('P', '>R'), ('P', 'DUP'), ('QBR', 14 * CELL), ('P', 'OVER'), ('P', 'C@'),
+                  ('P', 'R@'), ('P', '='), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1), ('P', 'D+'), ('BR', -15 * CELL),
+                  ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+-        'TABS>BL': [('P', 'OVER'), ('P', '+'), ('P', 'SWAP'), ('C', '2DUP'), ('C', '-'), ('QBR', 14 * CELL), ('P', 'DUP'),
+-                    ('P', 'C@'), ('LIT', 9), ('P', '='), ('QBR', 4 * CELL), ('C', 'BL'), ('P', 'OVER'), ('P', 'C!'),
+-                    ('C', '1+'), ('BR', -16 * CELL), ('C', '2DROP'), ('P', 'EXIT')],
+         # Iteration 57: klookup's (FIND) - the kernel's FIND, step for step
+         '(FIND)': [('P', 'ROT'), ('P', 'DROP'), ('P', 'SWAP'), ('P', '>R'), ('P', 'DUP'), ('LIT', 1), ('C', '>'),
+                    ('QBR', 18 * CELL), ('P', 'DUP'), ('C', '1-'), ('C', 'CELLS'), ('P', 'R@'), ('P', '+'), ('P', 'DUP'),
+diff --git a/tools/sysc-xform.py b/tools/sysc-xform.py
+deleted file mode 100644
+index 89c2c50..0000000
+--- a/tools/sysc-xform.py
++++ /dev/null
+@@ -1,87 +0,0 @@
+-"""Apply the gene sysc's engine transformation (Iterations 133, 141) to an engine source:
+-the eighteen shell primitives' table entries and handlers under SYSC, SYSCALL in FORK's slot."""
+-import re, sys
+-P1 = ['L_system', 'L_execve', 'L_waitpid', 'L_pipe', 'L_dup2', 'L_getenv', 'L_setenv', 'L_sysexit', 'L_chdir', 'L_getcwd',
+-      'L_sysargc', 'L_sysarg', 'L_getpwhome', 'L_getfsize', 'L_setfsize', 'L_getpid', 'L_unsetenv']
+-def xform(path, name):
+-    s = open(path).read()
+-    if 'L_syscall' in s: return 'already has SYSC'
+-    need = ['DS0', 'DS1', 'dsp', 'CELL_BYTES', 'NEXT()', 'g_argc', 'g_argv', 't_flush']
+-    miss = [t for t in need if t not in s]
+-    if miss: return 'MISSING %s' % miss
+-    for l in P1 + ['L_fork']:
+-        if s.count('&&' + l + ',') + s.count('&&' + l + '\n') != 1: return 'table: %s x%d' % (l, s.count('&&' + l))
+-    for l in P1: s = re.sub(r'&&' + l + r'(?=[,\n])', 'SYSX(' + l + ')', s)
+-    s = re.sub(r'&&L_fork(?=[,\n])', 'SYSF', s)
+-    L = s.split('\n')
+-    labs = [i for i, x in enumerate(L) if re.match(r'^L_[a-z0-9_]+:', x)]
+-    nxt = {i: j for i, j in zip(labs, labs[1:])}
+-    wrap = sorted((i, nxt[i]) for i in labs if L[i].split(':')[0] in P1 + ['L_fork'] and i in nxt)
+-    if len(wrap) != 18: return 'handlers: %d of 18' % len(wrap)
+-    for a, b in reversed(wrap): L.insert(b, '#endif /* !SYSC */'); L.insert(a, '#if !SYSC')
+-    s = '\n'.join(L)
+-    at = s.index('#if !SYSC\nL_fork:')
+-    s = s[:at] + '''#if SYSC
+-/* The gene sysc (Iterations 133, 141; %s from Iteration 142): one system call in
+- * FORK's slot, the shell's process and environment words written in Forth on it
+- * (forth/shell-sysc.4); the other seventeen gone. ( block num --- r ): the six
+- * arguments in the block, r the kernel's result - on failure -errno; num -1, -2,
+- * -3: argc, argv, the initial environment. x86-64's numbers; i386's mapped. */
+-L_syscall: {
+-    long num = (long)(INT64)DS0, r;
+-    const UNS64 *a = (const UNS64 *)(uintptr_t)DS1;
+-    t_flush();
+-    if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
+-    else {
+-        if (num == 60 || num == 231) { PROFDUMP; }
+-#if defined(__i386__)
+-        num = sysc_i386(num);
+-        if (num < 0) r = -38;                                  /* ENOSYS */
+-        else
+-#endif
+-        r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
+-        if (r == -1) r = -(long)errno;
+-    }
+-    DS1 = (UNS64)(INT64)r;
+-    dsp += CELL_BYTES;
+-    NEXT();
+-}
+-L_nosys:   /* a primitive the gene sysc removed: the shell's are Forth now */
+-    t_flush(); _exit(70);
+-#endif
+-''' % name + s[at:]
+-    tab = s.index('SYSF')
+-    start = s.rfind('\n', 0, s.rfind('{', 0, tab))
+-    s = s[:start] + '''
+-#if SYSC
+-#if !defined(__x86_64__) && !defined(__i386__)
+-#error "the gene sysc: the image's system-call numbers are x86-64 Linux's (i386's mapped)"
+-#endif
+-#define SYSF &&L_syscall
+-#define SYSX(l) &&L_nosys
+-#else
+-#define SYSF &&L_fork
+-#define SYSX(l) &&l
+-#endif''' + s[start:]
+-    L = s.split('\n'); first = [i for i, l in enumerate(L) if l.startswith('#include <')][0]
+-    L.insert(first, '''#if SYSC
+-#include <errno.h>      /* SYSCALL's -errno */
+-#ifndef PROFDUMP
+-#define PROFDUMP        /* an engine without the profiler */
+-#endif
+-#endif
+-#if SYSC && defined(__i386__)
+-/* The image's numbers are x86-64 Linux's; i386's for the calls the shell's
+-   overlay makes (forth/shell-sysc.4). Any other: ENOSYS. */
+-static long sysc_i386(long n)
+-{
+-    switch (n) {
+-    case 39: return 20;   case 57: return 2;    case 33: return 63;   case 80: return 12;
+-    case 231: return 252; case 79: return 183;  case 61: return 114;  case 22: return 42;
+-    case 97: return 191;  case 160: return 75;  case 59: return 11;   default: return -1;
+-    }
+-}
+-#endif''')
+-    open(path, 'w').write('\n'.join(L)); return 'transformed'
+-if __name__ == '__main__':
+-    for p in sys.argv[1:]: print(p, xform(p, p.split('/')[-1]))

@@ -101,7 +101,7 @@ saving counts in full, and a kernel word only an extension uses belongs in
 that extension (results/word-audit.md, "Core or extension").
 
 *The after-seed-39 batch, rehearsed* (Iteration 146): in a fresh tree,
-`git apply` results/pending/{namebuf,parsing,nolibc-default,genes-tests,syscall}-after-seed39.patch
+`git apply` results/pending/{namebuf,parsing,nolibc-default,genes-tests,syscall,tabsbl}-after-seed39.patch
 in that order, `sh tools/reseed.sh`, the four checks at both widths (Iteration 147:
 the five reproduce the tested tree exactly; the single-SYSCALL model is the fifth).
 
