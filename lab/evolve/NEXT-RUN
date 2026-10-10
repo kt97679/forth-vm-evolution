@@ -207,4 +207,9 @@
 # --cpus 2,8`). This bundle changes engines (DELETE-FILE fixed) and the held-out
 # check, not the run: none - pulled after seed 37's chain has finished, it only
 # pulls. The next run is chosen when seed 37's packs are processed.
+#
+# Iteration 125: RelF's fixes - +LOOP, PARSE and the strings, the file words,
+# CONVERT, long names, IF outside a definition - in every image and engine
+# (results/relf-reuse.md). Still none: seed 37's packs first; the next run is
+# the first on the fixed kernel, every front measured anew in its session.
 none

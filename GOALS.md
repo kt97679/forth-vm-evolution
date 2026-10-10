@@ -45,7 +45,7 @@ preferences are written here: simplicity and minimalism first; three
 equal objectives (memory within 8 KB a tie); each mechanism priced before
 it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 
-**HANDOFF - read this first (Iteration 122; refreshed 123, 124).** The prompt to
+**HANDOFF - read this first (Iteration 122; refreshed 123, 124, 125).** The prompt to
 open a new chat with is HANDOFF-PROMPT.md, at the top of the repository. Checked from a fresh clone of
 the bundle: it builds, the tests pass, the hand-made stages are identical,
 every design of the front of all runs (151, session 30) has its genome in
@@ -89,11 +89,26 @@ tests/core/tester.fr, overwritten through a symlink by ans-check.py since
 Iteration 118, restored. The 90 designs of the front of all runs and 8 with
 the new genes say what s6 says on all 14 files.
 
-*Open threads, in order.* (1) Seed 37's verdict; ans-check.py on its front
-(with its database). (2) The kernel faults the standard suite found - +LOOP
-(RelF's rule, the owner's own, to port), empty S" and ." (`34 PARSE`),
-FILE-POSITION, READ-LINE: each fix changes every image or engine - the
-owner's decision; then Haley's +LOOP tests into the gate, alone. (3)
+*Iteration 125 - RelF's fixes* (results/relf-reuse.md; the owner: reuse what
+RelF upstream has). This project forked from RelF at e8440ed (kernel.4,
+extend.4, cross.4 and the tester byte for byte). Taken, each a fault on s6 and
+right on RelF: +LOOP (gforth's test, in all six places), PARSE standard
+(its old skipping body kept as PARSE-WORD for WORD - no cost per token) and the
+strings on it, the file words' doubles and iors, READ-LINE into 0 bytes,
+CONVERT, names over 31 refused, IF outside a definition refused (it
+segfaulted; ?COMP in 95 bodies). Tests: RelF's coreplus-loop.fth and
+tests/core/fixes.fth in run-tests.sh on every stage, shown to fail on
+Iteration 124's build; a stage missing where its width was built now fails
+the suite. Images +120-160 bytes; dispatches: kernel +1.8-2.5%, corpus
++0.1-1.5%, parse 0-0.7%. s6 fails 4 tests of the standard suite (the double
+literals) where it failed 14; the 90 designs as s6. The owner's collection:
+only anstests0.3 was ever copied in (now superseded) - nothing else needs
+re-uploading for this.
+
+*Open threads, in order.* (1) Seed 37's verdict (it ran on Iteration 123's
+code); ans-check.py on its front (with its database). (2) The gate: Haley's
++LOOP tests and fixes.fth into the corpus - a measurement change (the corpus
+is timed), alone, the owner's decision. (3)
 Workloads: parse held out, execution-heavy ones in (bubble, ackermann from
 the owner's RelF bench) - the owner's decision. (4) The instruction set as
 genes: the primitive-set floor and promotion by synthesis (results/deep-
@@ -102,13 +117,15 @@ Forth sources (level 3), with the ANS suite held out and a stack-effect check
 (Knaggs). (6) Smaller: retire genes worth nothing (check loop first), 16-bit
 dispatch tables, one SYSCALL primitive, the JIT calling bytecode, packed
 names. (7) Kernel gaps, named by where each standard file stops: :NONAME and
-0<>, CATCH/THROW, /STRING and COMPARE, search order (ONLY), AHEAD,
-BEGIN-STRUCTURE, locals ({:), BLOCK, number prefixes and double literals.
+0<>, CATCH/THROW, /STRING, -TRAILING and COMPARE, search order (ONLY), AHEAD,
+BEGIN-STRUCTURE, locals ({:), BLOCK, number prefixes and double literals;
+RelF's extend.4 has many (its ext/ tests need them) - but extend.4 is in the
+kernel workload, so porting it is a measurement change.
 
 *Where to look.* results/ - each run (with its genomes), compare-fronts
 (sessions), knockouts-seed30, run-length, link-N, flags-gcsections, jitx,
 opcall, forth-sources, forth-collection and its catalog, docs-reuse,
-deep-dive-2, forth-standard-tests; lab/evolve/GENES.md (the genes, the ranked lists); RUNNING.md;
+deep-dive-2, forth-standard-tests, relf-reuse; lab/evolve/GENES.md (the genes, the ranked lists); RUNNING.md;
 NEXT-RUN; prompts/ (the methods library). The VM has one CPU: its timings are
 noise, its dispatch counts exact - speed is measured on the laptop.
 
@@ -286,7 +303,9 @@ IDENTICAL). Commit as the owner (`git -c user.name='Kirill Timofeev' -c
 user.email='kt97679@gmail.com' commit`), the handoff's last commit titled
 `Iteration N: ...`; record in PROGRESS.md (append) and here; bundle with
 `sh tools/make-bundle.sh DIR` into /mnt/user-data/outputs/. Processes do
-not survive between turns on the VM (Iteration 79): long runs belong on
+not survive between turns on the VM (Iteration 79) - nor past the tool call
+that started them (Iteration 125: a nohup'd job died when its call returned),
+so a job runs inside one call, under its 5-minute limit; long runs belong on
 the laptop.
 
 ## Success: three objectives, equal (the owner, Iteration 75)

@@ -181,6 +181,11 @@ instead of writing through it, and this iteration's runs left it unchanged.
 
 ## For the owner
 
+*Iteration 125: the four kernel faults below are fixed, as RelF had them, with
+three more of RelF's - CONVERT, names over 31 characters, IF outside a
+definition (a segfault) - and REPOSITION-FILE's ior; s6 now fails only the
+double literals (results/relf-reuse.md).*
+
 - **The kernel faults** - +LOOP, the empty strings, FILE-POSITION, READ-LINE.
   Each fix changes every image or every engine: your call. +LOOP: RelF's rule
   is yours to port; the opcode follows the colon word. The empty strings:

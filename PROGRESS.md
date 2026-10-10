@@ -2579,3 +2579,40 @@ the 56-line ANS tester, not the 1,022-line tester and core tests the locals
 check loads (that check passed either way; the corpus and the gate never read
 it). Restored byte for byte; ans-check.py replaces files instead of writing
 through them. NEXT-RUN: none - seed 37's packs first.
+
+## Iteration 125 - 2026-10-10 - Claude
+
+**RelF's fixes, taken** (results/relf-reuse.md; the owner: reuse what RelF
+upstream has, then fix). This project forked from RelF at e8440ed - kernel.4,
+extend.4, cross.4 and the tester byte for byte - so RelF's 140 later commits
+were the list. Each fix below was a fault on s6 and right on the vendored RelF:
+**+LOOP** (gforth's test, ((x XOR x+n) AND (x XOR n)) < 0, in all six places:
+kernel.4, sod16.py's expected body, the opcode in vm-lab.c, gen-tos.py and
+gen-msc.py, SPN's st_ploop); **PARSE** skipped leading delimiters, as SOD32's
+does - so S" " and ( ) took the rest of the line; it is standard now, its old
+body kept as PARSE-WORD for WORD and klookup's WORD8 (kinput's PARSE8 is
+PARSE-WORD8, its opcode unchanged; hotinl's sites renamed) - RelF put the skip
+into WORD, which would cost ~15 dispatches a token; S" ." ABORT" and cross.4's
+on 34 PARSE STRING,, ABORT = WARM (it printed " ;"); **the file words'** doubles
+and iors (REPOSITION-FILE returned the position as its ior, FILE-SIZE always
+0) and READ-LINE into 0 bytes, in all six engines; **CONVERT** (`1+`, not `-1 +`);
+**names over 31** refused in the three header words; **IF outside a definition**
+refused (it segfaulted) - ?COMP in 95 bodies, every copy of the 15 compile-only
+words. shell.4's one comment that leaned on the old PARSE, `( ) )`, is `\ )` -
+found by the shell image failing to build. Bootstrapped by tools/reseed.sh:
+the 8-byte kernel a fixed point at 25,640 bytes (was 25,144).
+
+**Tests**: RelF's coreplus-loop.fth (the standard suite's +LOOP sections) and
+a new tests/core/fixes.fth run on every stage from run-tests.sh, in one file
+with the sentinel at its end and a copy with one wrong case, plus the two
+refusals; on Iteration 124's build all 14 stages fail them (8 cases each; the
+refusals a segfault). run-tests.sh passed a build that had stopped half way -
+a missing stage was a SKIP; now a stage missing where its width was built
+FAILs (s3 hidden: the suite fails). **Cost**, the 98 designs rebuilt: none died,
+all as s6 on the standard suite (ans-check.py on the 90: 0 differ); images
++120-160 bytes, binaries mostly +64 or +96; dispatches kernel +1.8-2.5%, corpus
++0.1-1.5%, parse 0-0.7%. s6 fails 4 of the standard suite (the double
+literals) where it failed 14. Not taken: RelF's ext/ tests need its newer
+extend.4 and kernel (and extend.4 is in the kernel workload); the shell suites
+wait on whether the shell is part of the job. A job started in a tool call
+dies when the call returns: run it inside one call (GOALS.md).

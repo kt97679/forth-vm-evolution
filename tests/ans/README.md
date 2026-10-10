@@ -21,12 +21,10 @@ follows core.fr: its ACCEPT test reads the next line of input. runtests.fth is
 the suite's own runner, kept for reference: it loads everything into one
 process, which stops at the first word set the kernel lacks.
 
-On hand-made s6 (the first table ans-check.py prints): prelimtest (23) and
-memorytest (198) pass whole, core.fr's 638 tests pass; coreplustest stops at
-:NONAME after 56 tests, 7 failed - +LOOP at the wrap-around boundaries;
-filetest stops at /STRING after 16, 3 failed - FILE-POSITION's stack effect
-and READ-LINE into a buffer of length 0; doubletest: double literals read as
-singles; stringtest stops at S8 because S7's empty S" " swallowed the line that
-defines it; the rest stop at the first word set the kernel lacks. Every stage
-of the ladder says the same; the vendored RelF passes the +LOOP and file tests.
-results/forth-standard-tests.md.
+On hand-made s6 (the first table ans-check.py prints) it found +LOOP at the
+wrap-around boundaries, FILE-POSITION's stack effect, READ-LINE into a buffer
+of length 0 and empty strings (Iteration 124, results/forth-standard-tests.md)
+- all fixed in Iteration 125, as RelF had them (results/relf-reuse.md). Now
+its only failures are doubletest's double literals, read as singles; the
+files stop at the first word set the kernel lacks (coreplustest at :NONAME,
+filetest at /STRING, ...).
