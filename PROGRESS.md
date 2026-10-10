@@ -2468,3 +2468,19 @@ for ideas. relf_dev/relf-0.3 holds the owner's 2009 JIT base: t1.asm copies
 precompiled machine-code snippets per opcode into a buffer and runs it - the
 template idea the project's stencil JIT uses - and relf2.c pre-decodes
 threaded code into handler pointers.
+
+## Iteration 120 - 2026-10-10 - Claude
+
+**What doc/ gives the project** (results/docs-reuse.md; the owner: anything
+to reuse from the docs?). Koopman's Stack Computers, section 6.3: on the RTX
+32P instruction combining cut instructions by ~25% - op+EXIT (here folds),
+call+EXIT (tail calls), op+op (supers), literal or variable + op
+(specialisations), and op+call, which no gene has: priced on this project's
+designs with the profiler - an operation right before a call is 2.7-6.6% of
+the fastest design's dispatches (LIT8, ?BRANCH8, (PARSE), PLACE, DROP, 0=), 2.7-
+3.8% of the smallest's - the gene candidate opcall (GENES.md). Moving Forth
+part 5: Rodriguez's rules for which words are primitives, and the spectrum
+13 / eForth 31 / CamelForth ~70 - a prior for the instruction-set search.
+Knaggs's thesis: a stack-effect algebra, for checking fused sequences and
+genetic improvement's edits. The rest: theory for expression compilers,
+background, learning.

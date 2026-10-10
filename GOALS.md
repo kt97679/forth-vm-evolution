@@ -151,7 +151,12 @@ cores (eForth's 31 primitives, FIRST), benchmarks; the ANS test suite added
 the stack and direction named, the C stack too; output flushed; status 70);
 the held-out check lab/evolve/ans-check.py - twelve front designs, all as s6;
 the collection catalogued (results/forth-collection-catalog.md), relf-0.3's
-2009 JIT base found (template copy - the stencil idea). **Iteration 104**: input as relf reads it - no
+2009 JIT base found (template copy - the stencil idea). **Iteration 120**
+(results/docs-reuse.md): from doc/, Koopman's instruction-combining table
+maps onto folds, tail calls, supers and specialisations - all but op+call,
+priced here at 2.7-6.6% of dispatches (the gene candidate opcall); Moving
+Forth's rules for choosing primitives as the prior for the primitive set;
+Knaggs's stack-effect algebra for checking edits. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

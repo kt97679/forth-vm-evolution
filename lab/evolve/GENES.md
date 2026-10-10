@@ -578,3 +578,10 @@ sites); opbody on every front design of the night run. t2wide (Iteration
 
 Built in Iteration 115: **fbuf** (memory: -28 to -40 KB) and the run start
 **fromzero** (random genomes only).
+
+*Iteration 120 (results/docs-reuse.md, Koopman's Table 6.3): **opcall** - an
+operation and the call after it as one opcode, the call's width decided by a
+direct jump, no table dispatch between: priced at 2.7-6.6% of dispatches on
+the fastest design (LIT8, ?BRANCH8, (PARSE), PLACE, DROP and 0= before calls:
+the top ten 95% of the pairs), 2.7-3.8% on the smallest. The one combination
+of the RTX 32P's that no gene has. A slot a pair, competing with supers.*
