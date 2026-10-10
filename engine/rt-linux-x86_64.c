@@ -144,6 +144,9 @@ int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *r
     }
     return (int)r;
 }
+/* Iteration 119: the stack guard's handler runs on its own stack (a C-stack
+ * overflow - the JIT's native recursion - leaves it none) */
+int sigaltstack(const stack_t *restrict ss, stack_t *restrict old) { return (int)ok(sc(131, (long)ss, (long)old, 0, 0, 0, 0)); }
 
 /* ---- memory and strings --------------------------------------------------
  * rep movsb/stosb rather than loops: GCC recognises a copying loop and

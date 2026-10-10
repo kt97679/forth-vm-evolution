@@ -146,7 +146,12 @@ fastest design's parse -5.6% of dispatches, corpus -3.0%, for 56 bytes.
 RelF's history and todo (primitive-set decisions twenty years ago), minimal
 cores (eForth's 31 primitives, FIRST), benchmarks; the ANS test suite added
 (tests/ans) - it found the stack-guard gene killing the engine on underflow
-("return stack overflow", exit 1, output lost) where s6 says "Stack error". **Iteration 104**: input as relf reads it - no
+("return stack overflow", exit 1, output lost) where s6 says "Stack error".
+**Iteration 119**: the guard fixed (shallow underflows reported as without it;
+the stack and direction named, the C stack too; output flushed; status 70);
+the held-out check lab/evolve/ans-check.py - twelve front designs, all as s6;
+the collection catalogued (results/forth-collection-catalog.md), relf-0.3's
+2009 JIT base found (template copy - the stencil idea). **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

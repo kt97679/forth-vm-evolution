@@ -470,17 +470,30 @@ static void write_str(int fd, const char *s) {
  *  below its floor; the return stack's sits between the two stacks, so
  *  a return-stack overflow traps instead of quietly eating the data
  *  stack. Both are inside mem, so nothing else has to move.  */
-static UNS64 g_dguard, g_rguard;
+static UNS64 g_dguard, g_rguard, g_ctop;
+static char g_altstack[16384];   /* the handler's own stack: a C-stack overflow leaves none */
+static void t_flush(void);
+/*  Iteration 119 (the ANS tests found it, results/forth-collection.md): which
+ *  stack, which way - a stack meets its guard at the page's near edge. The
+ *  data stack UNDERFLOWS into the bottom of the return stack's guard (it
+ *  starts right below it), the return stack overflows into its top; the data
+ *  stack overflows into the top of its own guard, the dictionary grows into
+ *  its bottom. Called "return stack overflow" before, for a data stack
+ *  underflow. And the output written so far is flushed first - it was lost -
+ *  and the status is 70, an engine fault, as stack_fault's.  */
 static void guard_trap(int sig, siginfo_t *si, void *uc) {
     UNS64 a = (UNS64)(uintptr_t)si->si_addr;
+    const char *m = "relf: segmentation fault (not a stack guard)\n";
     (void)sig; (void)uc;
-    if (a >= g_dguard && a < g_dguard + PAGE)
-        write_str(2, "relf: data stack overflow\n");
-    else if (a >= g_rguard && a < g_rguard + PAGE)
-        write_str(2, "relf: return stack overflow\n");
-    else
-        write_str(2, "relf: segmentation fault (not a stack guard)\n");
-    _exit(1);
+    if (a >= g_rguard && a < g_rguard + PAGE)
+        m = a < g_rguard + PAGE / 2 ? "relf: data stack underflow\n" : "relf: return stack overflow\n";
+    else if (a >= g_dguard && a < g_dguard + PAGE)
+        m = a >= g_dguard + PAGE / 2 ? "relf: data stack overflow\n" : "relf: dictionary full\n";
+    else if (a < g_ctop && a > g_ctop - (64u << 20))   /* below main's frame: the C stack -  */
+        m = "relf: native (C) stack overflow\n";        /* the JIT's native words call on it */
+    t_flush();
+    write_str(2, m);
+    _exit(70);
 }
 /*  The regions, top down:
  *      [rfloor, MEMSIZE)        return stack
@@ -494,12 +507,16 @@ static void install_guards(UNS8 *b) {
     UNS64 dfloor = (UNS64)(uintptr_t)b + MEMSIZE - RSTACK_BYTES - DSTACK_BYTES;
     UNS64 rfloor = (UNS64)(uintptr_t)b + MEMSIZE - RSTACK_BYTES;
     struct sigaction sa;
+    stack_t ss;
+    ss.ss_sp = g_altstack; ss.ss_size = sizeof g_altstack; ss.ss_flags = 0;
+    sigaltstack(&ss, (stack_t *)0);
+    g_ctop = (UNS64)(uintptr_t)&ss;
     mprotect((void *)(uintptr_t)(rfloor - PAGE), PAGE, PROT_NONE);
     mprotect((void *)(uintptr_t)dfloor, PAGE, PROT_NONE);
     g_dguard = dfloor; g_rguard = rfloor - PAGE;
     sa.sa_sigaction = guard_trap;
     sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_SIGINFO;
+    sa.sa_flags = SA_SIGINFO | SA_ONSTACK;
     sigaction(SIGSEGV, &sa, (struct sigaction *)0);
     sigaction(SIGBUS, &sa, (struct sigaction *)0);
 }
@@ -2098,7 +2115,11 @@ int main(int argc, char **argv) {
      *  TWO cells of slack, not one: with TOS caching dsp sits one cell
      *  ABOVE the logical top, so with one cell the empty stack would
      *  put dsp exactly on the guard and any NOS read would trap. */
-    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - PAGE - 2 * CELL_BYTES;
+    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - PAGE - 2 * CELL_BYTES
+            - 64 * CELL_BYTES;   /* Iteration 119: slack for a shallow underflow -
+                                    ?STACK reports it after the word, as without
+                                    the guard ("Stack error DROP"); only a
+                                    runaway one reaches the guard page */
 #else
     g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - CELL_BYTES;
 #endif

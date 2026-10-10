@@ -66,3 +66,22 @@ the 22 knocked-out front designs carry the gene.
    output on the files that run - for genetic improvement first.
 3. Execution-heavy workloads from the benchmarks (with parse held out).
 4. eForth's and FIRST's cores as floors for the instruction-set search.
+
+## Iteration 119: the guard fixed, the held-out check, the catalog
+
+**The stack guard** (engine/vm-lab.c, rt-linux-x86_64.c): 64 cells of slack
+above the data stack, so a shallow underflow is ?STACK's, as without the
+guard ("Stack error DROP", and on); a stack meets its guard at the page's
+near edge, so the handler names the stack and the way - data stack
+underflow, return stack overflow, data stack overflow, dictionary full - and
+a fault below main's frame is the C stack (the JIT's native recursion,
+which before killed the engine with a bare SIGSEGV); the handler runs on its
+own stack (sigaltstack), flushes the output and exits 70, as stack_fault.
+Two guard designs with the JIT: all four faults reported, the gate passed.
+
+**The held-out check** (lab/evolve/ans-check.py): each design's output on the
+ten ANS files against s6's, byte for byte. Twelve front designs, six with the
+guard: all ten files as s6.
+
+**The catalog**: results/forth-collection-catalog.md - every item, what it is,
+its licence, how useful.

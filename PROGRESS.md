@@ -2443,3 +2443,28 @@ CATCH, COMPARE, ONLY, AHEAD), double literals read as singles. **It found the
 stack-guard gene killing the engine on underflow**: "relf: return stack
 overflow", exit 1, buffered output lost - s6 and the design without the gene
 print "Stack error DROP" and go on. The corpus never underflows.
+
+## Iteration 119 - 2026-10-10 - Claude
+
+**The stack guard fixed** (the owner: proceed). The guard's data stack began
+two cells below the return stack's guard page, so one DROP too many trapped
+there and was reported as "return stack overflow", the process killed with
+its output unflushed. Now: 64 cells of slack, so a shallow underflow is
+?STACK's - "Stack error DROP", as in s6; the handler names the stack and the
+direction by the edge of the page the access hit, recognises the C stack
+(the JIT's native recursion killed the engine with a bare SIGSEGV - found
+while testing this), runs on its own stack (sigaltstack, added to the
+libc-free runtime), flushes the output and exits 70. Gate, tests, hand-made
+stages pass; non-guard engines unchanged (--gc-sections drops the new code).
+
+**The held-out check** - lab/evolve/ans-check.py: the ANS suite (tests/ans)
+on each design, every file's output against s6's. Twelve front designs (six
+with the guard): all ten files identical.
+
+**The collection catalogued** (results/forth-collection-catalog.md): every
+top-level item, its licence and use - pForth (public domain) and FICL
+(freeware) usable as code; Koopman, Moving Forth, eForth, FIRST, strongForth
+for ideas. relf_dev/relf-0.3 holds the owner's 2009 JIT base: t1.asm copies
+precompiled machine-code snippets per opcode into a buffer and runs it - the
+template idea the project's stencil JIT uses - and relf2.c pre-decodes
+threaded code into handler pointers.
