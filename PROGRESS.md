@@ -2746,3 +2746,22 @@ already; COLD is noise (2,649 dispatches of start-up on s6). SYSCALL, exact by
 source-line attribution of s6's engine: the 29 OS handlers are 3,153 bytes and
 the runtime 3,400 - ~3-3.5 KB net smaller for every design if built
 (results/syscall-pricing.md).
+
+## Iteration 133 - 2026-10-10 - Claude
+
+**The owner's go: NAME>BUF into the kernel after seed 39, SYSCALL built as a
+gene.** NAME>BUF waits as results/pending/namebuf-after-seed39.patch (it
+applies to master; not applied - seeds 38 and 39 run the same code).
+**SYSCALL, phase 1 - the engine half** (the gene sysc, not yet wired into
+the evolver). A design's image is the kernel only - the evolver never loads
+the shell - and neither the kernel nor extend.4 calls the shell's process and
+environment primitives, so with SYSC the engine keeps one SYSCALL in FORK's
+slot, ( block num --- r ), and the other seventeen and the runtime's
+environment and getpwnam compile out (x86-64 only, by #error). s6's engine:
+20,248 bytes as built, 15,568 with SYSC - 4,680 smaller, 23% (the linker
+drops what only those handlers used, too). Without SYSC every hand-made engine
+is identical; with it the gate passes on s6's image, the profiling build
+compiles, and SYSCALL 39 through FORK's slot returns the pid. Next: the
+shell's half - its seventeen words in Forth on SYSCALL - tested by the shell
+suite removed in 5c87022, which still runs (6 s, 8 assertions in 2 files fail
+on today's shell, the baseline); then the gene, dormant.

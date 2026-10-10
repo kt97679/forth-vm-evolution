@@ -248,6 +248,7 @@ void *realloc(void *p, size_t n)
  * which is what the C library does too. */
 static char **own; static size_t own_n, own_cap;
 static int name_ok(const char *n) { if (!n || !*n) return 0; for (; *n; n++) if (*n == '=') return 0; return 1; }
+#if !SYSC
 static int take_env(void)
 {
     if (own) return 0;
@@ -259,6 +260,8 @@ static int take_env(void)
     own[n] = NULL; own_n = n; environ = own;
     return 0;
 }
+#endif
+#if !SYSC || PROFILE
 char *getenv(const char *n)
 {
     size_t l = strlen(n);
@@ -266,6 +269,8 @@ char *getenv(const char *n)
         if (same(*e, n, l) && (*e)[l] == '=') return *e + l + 1;
     return NULL;
 }
+#endif
+#if !SYSC
 int setenv(const char *n, const char *v, int overwrite)
 {
     if (!name_ok(n)) { rt_errno = EINVAL; return -1; }
@@ -285,6 +290,8 @@ int setenv(const char *n, const char *v, int overwrite)
     own[own_n++] = s; own[own_n] = NULL;
     return 0;
 }
+#endif
+#if !SYSC
 int unsetenv(const char *n)
 {
     if (!name_ok(n)) { rt_errno = EINVAL; return -1; }
@@ -295,8 +302,10 @@ int unsetenv(const char *n)
     own_n = j; own[j] = NULL;
     return 0;
 }
+#endif
 
 /* ---- the one user-database lookup: /etc/passwd only (see WHAT IS GIVEN UP) - */
+#if !SYSC
 struct passwd *getpwnam(const char *name)
 {
     static struct passwd pw;
@@ -327,6 +336,7 @@ struct passwd *getpwnam(const char *name)
     }
     return NULL;
 }
+#endif
 
 /* ---- snprintf: what SPN's diagnostics use, and a little more -------------- */
 static void put(char **o, char *end, char c) { if (*o < end) **o = c; (*o)++; }
@@ -374,6 +384,7 @@ int vsnprintf(char *restrict buf, size_t size, const char *restrict f, va_list a
     if (size) *(o < end ? o : end) = 0;
     return (int)(o - buf);
 }
+#if !SYSC
 int execvp(const char *f, char *const a[])     /* a path as given; a name along PATH */
 {
     const char *p = getenv("PATH"), *s; char buf[4096];
@@ -390,6 +401,7 @@ int execvp(const char *f, char *const a[])     /* a path as given; a name along 
         p += n + 1;
     }
 }
+#endif
 
 int snprintf(char *restrict buf, size_t size, const char *restrict f, ...)
 {

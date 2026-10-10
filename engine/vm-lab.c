@@ -1050,6 +1050,16 @@ static void virtual_machine(void) {
 #define CALLTARGET(t) (cbase + ((t) << SCALE))
     const UNS64 cbase = (UNS64)(uintptr_t)base - (256u << SCALE);
 #endif
+#if SYSC
+#if !defined(__x86_64__)
+#error "the gene sysc: the image's system-call numbers are x86-64 Linux's"
+#endif
+#define SYSF &&L_syscall
+#define SYSX(l) &&L_nosys
+#else
+#define SYSF &&L_fork
+#define SYSX(l) &&l
+#endif
     static const void *const dispatch[] = {
         &&L_noop, &&L_exit, &&L_lit, &&L_branch, &&L_0branch, &&L_drop,
         &&L_dup, &&L_swap, &&L_rot, &&L_over, &&L_cfetch, &&L_fetch,
@@ -1059,12 +1069,12 @@ static void virtual_machine(void) {
         &&L_dplus, &&L_write, &&L_read, &&L_bye, &&L_spfetch, &&L_spstore,
         &&L_rpfetch, &&L_rpstore, &&L_openfile, &&L_closefile,
         &&L_readline, &&L_writeline, &&L_readfile, &&L_writefile,
-        &&L_system, &&L_reposfile, &&L_filepos, &&L_delfile, &&L_filesize,
-        &&L_fork, &&L_execve, &&L_waitpid, &&L_pipe, &&L_dup2,
-        &&L_getenv, &&L_setenv, &&L_sysexit, &&L_chdir, &&L_getcwd,
-        &&L_sysargc, &&L_sysarg, &&L_getpid, &&L_unsetenv,
-        &&L_allocate, &&L_free, &&L_resize, &&L_getpwhome,
-        &&L_getfsize, &&L_setfsize,
+        SYSX(L_system), &&L_reposfile, &&L_filepos, &&L_delfile, &&L_filesize,
+        SYSF, SYSX(L_execve), SYSX(L_waitpid), SYSX(L_pipe), SYSX(L_dup2),
+        SYSX(L_getenv), SYSX(L_setenv), SYSX(L_sysexit), SYSX(L_chdir), SYSX(L_getcwd),
+        SYSX(L_sysargc), SYSX(L_sysarg), SYSX(L_getpid), SYSX(L_unsetenv),
+        &&L_allocate, &&L_free, &&L_resize, SYSX(L_getpwhome),
+        SYSX(L_getfsize), SYSX(L_setfsize),
         /*  LIT32 is not one of kernel.4's primitives. It is appended
          *  past the real ones so the table has no hole - `dispatch[255]`
          *  would have read past the end.  */
@@ -1859,6 +1869,7 @@ L_writefile: { /* c-addr u fid --- ior */
     dsp += 2 * CELL_BYTES;
     NEXT();
 }
+#if !SYSC
 L_system: { t_flush(); /* c-addr u --- ior */
     UNS64 addr = DS1, len = DS0;
     UNS8 saved;
@@ -1889,6 +1900,7 @@ L_system: { t_flush(); /* c-addr u --- ior */
     dsp += CELL_BYTES;
     NEXT();
 }
+#endif /* !SYSC */
 L_reposfile: {/* ud fid --- ior */
     /*  ANS: ( ud fileid -- ior ) - the offset a double, low cell under the
      *  high one; the ior 0 or 200. It took one cell and returned the new
@@ -1952,9 +1964,34 @@ L_filesize: { /* fid --- ud ior */
  *  already being built fresh in a scratch buffer, not sliced out of
  *  live source text the way OPEN-FILE's c-addr/u pair typically is).
  */
+#if SYSC
+/* The gene sysc (Iteration 133): one system call in FORK's place, the shell's
+ * process and environment words written in Forth on it (forth/shell-sysc.4);
+ * the other seventeen of them gone. ( block num --- r ): the six arguments in
+ * the block, r the kernel's result, -1 on failure (the runtime's syscall);
+ * num -1, -2, -3: argc, argv, the initial environment - what no call returns. */
+L_syscall: {
+    long num = (long)(INT64)DS0, r;
+    const UNS64 *a = (const UNS64 *)(uintptr_t)DS1;
+    t_flush();
+    if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
+    else {
+        if (num == 60 || num == 231) { PROFDUMP; }
+        r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
+    }
+    DS1 = (UNS64)(INT64)r;
+    dsp += CELL_BYTES;
+    NEXT();
+}
+L_nosys:   /* a primitive the gene sysc removed: the shell's are Forth now */
+    t_flush(); _exit(70);
+#endif
+#if !SYSC
 L_fork: /* --- pid */
      t_flush();PUSH((UNS64)(INT64)fork());
     NEXT();
+#endif /* !SYSC */
+#if !SYSC
 L_execve: { t_flush(); /* argv-addr path-addr --- ior */
     char *path = (char*)(uintptr_t)DS0;
     char **argv = (char**)(uintptr_t)DS1;
@@ -1964,6 +2001,8 @@ L_execve: { t_flush(); /* argv-addr path-addr --- ior */
     dsp += CELL_BYTES;
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_waitpid: { /* pid --- status ior */
     int status = 0;
     pid_t r = waitpid((pid_t)(INT64)DS0, &status, 0);
@@ -1976,6 +2015,8 @@ L_waitpid: { /* pid --- status ior */
     }
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_pipe: { /* --- fd-read fd-write ior */
     int fds[2];
     if (pipe(fds) < 0) {
@@ -1985,24 +2026,36 @@ L_pipe: { /* --- fd-read fd-write ior */
     }
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_dup2: /* oldfd newfd --- ior */
     DS1 = (UNS64)((dup2((int)DS1, (int)DS0) < 0) ? 200 : 0);
     dsp += CELL_BYTES;
     NEXT();
+#endif /* !SYSC */
+#if !SYSC
 L_getenv: { /* c-addr --- addr */
     char *v = getenv((char*)(uintptr_t)DS0);
     DS0 = (UNS64)(uintptr_t)v;
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_setenv: /* value-addr name-addr --- ior */
     DS1 = (UNS64)((setenv((char*)(uintptr_t)DS0, (char*)(uintptr_t)DS1, 1) < 0) ? 200 : 0);
     dsp += CELL_BYTES;
     NEXT();
+#endif /* !SYSC */
+#if !SYSC
 L_sysexit: /* n --- */
      t_flush();PROFDUMP; _exit((int)DS0);
+#endif /* !SYSC */
+#if !SYSC
 L_chdir: /* c-addr --- ior */
     DS0 = (UNS64)((chdir((char*)(uintptr_t)DS0) < 0) ? 200 : 0);
     NEXT();
+#endif /* !SYSC */
+#if !SYSC
 L_getcwd: { /* addr max-len --- len ior */
     char *r = getcwd((char*)(uintptr_t)DS1, (size_t)DS0);
     if (r == 0) {
@@ -2014,9 +2067,13 @@ L_getcwd: { /* addr max-len --- len ior */
     }
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_sysargc: /* --- n */
     PUSH((UNS64)(g_argc > 2 ? g_argc - 2 : 0));
     NEXT();
+#endif /* !SYSC */
+#if !SYSC
 L_sysarg: { /* n --- c-addr */
     long n = (long)(INT64)DS0;
     if (n < 0 || n + 2 >= g_argc) {
@@ -2026,6 +2083,8 @@ L_sysarg: { /* n --- c-addr */
     }
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_getpwhome: { /* c-addr --- addr | 0 */
     /* A named user's home directory, via NSS rather than by reading
      * /etc/passwd. That file is one NSS source among several: on a
@@ -2039,6 +2098,8 @@ L_getpwhome: { /* c-addr --- addr | 0 */
     DS0 = pw ? (UNS64)(uintptr_t)pw->pw_dir : 0;
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_getfsize: { /* --- n */
     /* RLIMIT_FSIZE's soft limit in POSIX's 512-byte blocks, or -1 for
      * unlimited. Blocks rather than bytes deliberately: POSIX specifies
@@ -2055,6 +2116,8 @@ L_getfsize: { /* --- n */
     }
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_setfsize: { /* n --- ior */
     struct rlimit rl;
     INT64 n = (INT64)DS0;
@@ -2072,9 +2135,13 @@ L_setfsize: { /* n --- ior */
     }
     NEXT();
 }
+#endif /* !SYSC */
+#if !SYSC
 L_getpid: /* --- pid */
     PUSH((UNS64)(INT64)getpid());
     NEXT();
+#endif /* !SYSC */
+#if !SYSC
 L_unsetenv: /* c-addr --- ior */
     DS0 = (UNS64)((unsetenv((char*)(uintptr_t)DS0) < 0) ? 200 : 0);
     NEXT();
@@ -2090,6 +2157,7 @@ L_unsetenv: /* c-addr --- ior */
  *  therefore NOT valid across a save/reload, which is why buffer
  *  pointers are reset before an image is written - see pool.4.
  */
+#endif /* !SYSC */
 L_allocate: /* u --- a-addr ior */
 {
     void *p = malloc((size_t)DS0);
