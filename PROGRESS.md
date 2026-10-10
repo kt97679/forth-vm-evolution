@@ -2886,3 +2886,16 @@ suite, all 554 assertions, and the targeted paths as the plain shell - with
 glibc and libc-free alike. Without SYSC every engine as before: evolved
 designs identical, the four checks pass. Next: SYSCALL in relf.c, pack4.c,
 pack8.c and the SPN engines; then, after seed 39, the kernel's names.
+
+## Iteration 142 - 2026-10-10 - Claude
+
+**SYSCALL in the cell engine.** relf.c takes the same transformation as
+vm-lab.c - now a script that checks an engine has what SYSCALL needs before
+changing it (it refused relf.c until PROFDUMP, the profiler's, was made
+optional). Without SYSC the cell engine is byte-identical at both widths;
+with it, a shell built as build-stages.sh's cellshell builds the cell
+stage's, the overlay loaded first, passes tests/shell (554 assertions) and
+matches the plain cell shell at both widths, with glibc and libc-free. The
+libc-free cell engine: 28,552 -> 24,120 bytes at 8-byte cells, 32,092 ->
+27,964 at 4. tools/test-sysc-shell.sh covers s5 and the cell stage. Left:
+pack4.c, pack8.c and the SPN engines; then, after seed 39, the kernel.

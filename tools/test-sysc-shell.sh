@@ -42,5 +42,21 @@ for w in 64 32; do
     for s in plain sh; do env -i HOME="$HOME" PATH=/usr/bin:/bin USER="${USER:-x}" "$T/$s$w" -c "$CMD" > "$T/$s$w.out" 2>&1 || true; done
     if cmp -s "$T/plain$w.out" "$T/sh$w.out"; then echo "ok     $w-bit: ~user, ulimit -f, export, unset, the environment, cd, a pipe: as the plain shell"
     else echo "FAIL   $w-bit: differs from the plain shell:"; diff "$T/plain$w.out" "$T/sh$w.out" | head -6; bad=1; fi
+    # the cell stage (engine/relf.c, Iteration 142): its shell as build-stages.sh's
+    # cellshell makes it, the overlay loaded before shell.4, on a SYSC cell engine
+    ccc="cc -O2 -Wall"; [ $w = 32 ] && ccc="cc -m32 -O2 -Wall"
+    $ccc -DSYSC=1 -o "$T/celleng$w" engine/relf.c $rt
+    ( cd "$W" && printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\n'"' MAIN SET-BOOT\nS\" $T/cellsh$w.img\" SAVE-SYSTEM\nBYE\n" \
+        | "$T/celleng$w" $k > /dev/null 2>&1 )
+    if [ ! -s "$T/cellsh$w.img" ]; then echo "FAIL   $w-bit cell: no shell image"; bad=1; continue; fi
+    printf '#!/bin/sh\nexec "%s" "%s" "$@"\n' "$T/celleng$w" "$T/cellsh$w.img" > "$T/csh$w"; chmod +x "$T/csh$w"
+    printf '#!/bin/sh\nexec "%s" "%s" "$@"\n' "$O/s0-cell-$w" "$O/s0-cell-$w.img" > "$T/cplain$w"; chmod +x "$T/cplain$w"
+    echo "$w-bit: the cell engine $(stat -c%s "$O/s0-cell-$w") bytes, $(stat -c%s "$T/celleng$w") with SYSC"
+    if THIS_SH="$T/csh$w" sh tests/shell/run-all > "$T/csuite$w.log" 2>&1; then
+        echo "ok     $w-bit cell: tests/shell on the SYSC shell, $(grep -o '^[0-9]* assertions' "$T/csuite$w.log" | awk '{s+=$1} END {print s}') assertions"
+    else echo "FAIL   $w-bit cell: tests/shell on the SYSC shell: $(grep '^FAIL' "$T/csuite$w.log" | head -3 | tr '\n' ' ')"; bad=1; fi
+    for s in cplain csh; do env -i HOME="$HOME" PATH=/usr/bin:/bin USER="${USER:-x}" "$T/$s$w" -c "$CMD" > "$T/$s$w.out" 2>&1 || true; done
+    if cmp -s "$T/cplain$w.out" "$T/csh$w.out"; then echo "ok     $w-bit cell: the same paths as the plain cell shell"
+    else echo "FAIL   $w-bit cell: differs from the plain cell shell:"; diff "$T/cplain$w.out" "$T/csh$w.out" | head -6; bad=1; fi
 done
 exit $bad
