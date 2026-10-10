@@ -3068,3 +3068,14 @@ for less precisely, and one CPU would lose the cross-check that showed seed
 38's speed a tie. 7 hours: ~4 h 32 min of evolution, the same comparison, the
 chain ending at 7 hours as it says. The regular length is chosen after the
 batch - 6 hours with a two-CPU comparison of 4 rounds would leave ~4 h 10.
+
+## Iteration 154 - 2026-10-10 - Claude
+
+**While seed 39 runs: the batch on seed 38's front, and predictions.** All 165
+of seed 38's front designs rebuilt on the after-seed-39 batch: all alive, the
+tab test right on all, 146 with new ids (TABS>BL left their operations), each
+smaller by a median 3,148 bytes - the smallest 20,622 -> 17,594 (-14.7%). And
+a finding: none of the 47 JIT designs carries jitloop or jitinl - dormant
+through seed 38, the genes must be found by mutation after the batch, jitinl
+two steps away for the 41 without jitx. results/predictions.md: what seed 39
+and the first run after the batch should show, written before either.
