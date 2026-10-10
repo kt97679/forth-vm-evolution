@@ -3012,3 +3012,16 @@ four checks pass; the carry re-measures every carried design, so the change is
 consistent within a run (sessions before and after the batch are not
 comparable). The batch's seventh pending patch; the seven on a fresh clone of
 master give the tested tree's code exactly.
+
+## Iteration 150 - 2026-10-10 - Claude
+
+**The size review of the kernel's long tail** (results/word-audit.md, batch
+3). On the after-seed-39 batch: the smallest image's bytes are 62% word bodies
+and 38% headers; the code no workload runs is 151 bytes (lean leaves the rest
+out); the rarely-run words are already 20-60 bytes in a dense encoding. 21
+words are named by no loadable source - headerless, ~150 bytes; half-width
+thread entries ~128 - priced, not built (2% each, with converter work). The
+batch itself: the smallest design 20,630 -> 17,610 bytes (-14.6%), the fastest
+33,512 -> 29,976 (-10.6%), the same genomes. No code from the permissive
+Forths taken: their compact words are primitives in C or assembler; ours are
+already short colon definitions.

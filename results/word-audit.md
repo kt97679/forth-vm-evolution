@@ -248,3 +248,36 @@ control, the file with X for tab, does not give the answers; run-tests PASS,
 7 of 7 IDENTICAL. **Priced** on s6 after NAME>BUF: the kernel workload -11.3%,
 the corpus -5.4%, parse -3.7%; the image 8 bytes larger. With NAME>BUF, s6's
 kernel workload -36%, its corpus -31%.
+
+## Batch 3 - the size review of the long tail (Iteration 150)
+
+The owner: the rarely-run kernel words, for bytes - compact definitions from
+the permissive Forths where they help. Measured on the after-seed-39 batch
+(all seven pending patches, reseeded): every word's bytes in s6's image and
+the front's smallest's (cd6c94b30d), and its runs over all eight workloads.
+
+**The definitions have little left to give.** The smallest image is 6,982
+bytes: word bodies 4,356 (code 3,476, data 880) and headers - links, counts,
+names, alignment - 2,626 (38%; the names alone 1,516). Code never run by any
+workload: 151 bytes over 45 words - `lean` already leaves out the dump tool and
+the compiler's copies. The kernel's rarely-run words are 20-60 bytes each
+(ACCEPT 50, QUIT 46, INCLUDED 39) in an encoding averaging 24 bytes a word: a
+fifth off the twenty largest would be ~120 bytes. The biggest rarely-run items
+in s6 - INCLUDE-BUFFER, TIB, POCKET, 1,072 bytes of zeros - are layout, not
+definitions: the bss gene already leaves them out of evolved images.
+
+**The headers are where the bytes are, and nearly all are needed.** Of 293
+words, 21 are named by no source that loads on top of the kernel (48 files:
+the extensions, the cross-compiler, the overlays, the shell, the workloads and
+tests) and are not standard - ~211 bytes of headers at most, ~150 in truth
+(\, INTERPRET, the stack-pointer primitives are named by people if not by
+files); headerless words would cost the converter and the dump real work. The
+data: FORTH-WORDLIST's 32 threads are 272 bytes - 4-byte entries would save
+~128, fewer threads would slow every lookup; the rest is state, ~20 variables
+at 16 bytes.
+
+**Priced, not built.** Headerless internals ~150 bytes (2%), half-width thread
+entries ~128 bytes (2%) - each with work in the converter or FIND. For scale,
+the batch already takes the smallest design from 20,630 bytes to 17,610 (-14.6%:
+the image -192 by the kernel census, the engine -2,828 by the single SYSCALL
+model and the tight ELF) and the fastest from 33,512 to 29,976 (-10.6%).
