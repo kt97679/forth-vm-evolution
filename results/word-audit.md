@@ -214,3 +214,37 @@ line turns tabs into spaces - 7.3% of s6's kernel workload. Only parsing that
 treats any control character as a space delimiter (the standard allows it)
 removes the pass, and that changes behaviour: a tab inside a string literal
 would stay a tab. kinput's TABS>BL operation already serves evolved designs.
+
+## Batch 2, revised - tab-free parsing (Iteration 145)
+
+The owner: a tab is a space to the parser, as the standard allows - no need to
+make it one. And nothing in this repository's sources holds a single tab: the
+pass REFILL made over every line (7.3% of s6's kernel workload) never changed
+a byte here. **results/pending/parsing-after-seed39.patch replaces the SKIP/SCAN
+patch**, eight files:
+
+- the kernel: SKIP and SCAN by `1 -1 D+`, a space delimiter taking every
+  control character (a separate loop - other delimiters, control characters
+  among them, `0 WORD` style, still match exactly); REFILL without its pass;
+- kinput's REFILL8 without TABS>BL (TABS>BL stays defined: genomes name it);
+- the C operations for SCAN, SKIP and (PARSE) - and they are in three places:
+  vm-lab.c, and gen-tos.py's and gen-msc.py's own copies for their engines;
+- tools/sod16.py's expected bodies for SCAN and SKIP;
+- tests/core/tabs.fth and its section in run-tests.sh.
+
+**Two catches.** The converter makes a word its C operation only if its body
+is exactly the expected one, and the evolver kills a design whose isn't - the
+SKIP/SCAN patch alone would have killed every kinput design, most of the front
+(found building seed 37's fastest; validate's stages carry no kinput). And with
+vm-lab.c's operations changed, half of a front sample still read a tab as part
+of a word: the register-cached and msc engines take gen-tos.py's and
+gen-msc.py's copies. All three agree now.
+
+**Proved**: the tab test - tabs between words and leading, in a definition,
+kept in a string (9, not 32), in an EVALUATEd string, before CHAR and a
+comment - right on all 22 hand-made stages at both widths and 20 front designs
+(kinput 19, opbody 20, the JIT 8), every one through the gate; its negative
+control, the file with X for tab, does not give the answers; run-tests PASS,
+7 of 7 IDENTICAL. **Priced** on s6 after NAME>BUF: the kernel workload -11.3%,
+the corpus -5.4%, parse -3.7%; the image 8 bytes larger. With NAME>BUF, s6's
+kernel workload -36%, its corpus -31%.

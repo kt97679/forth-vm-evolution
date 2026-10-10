@@ -102,7 +102,8 @@ that extension (results/word-audit.md, "Core or extension").
 
 *After seed 39 has run, together (the owner agreed)*: the NAME>BUF patch
 (results/pending/namebuf-after-seed39.patch - s6's yardstick moves) and
-the SKIP/SCAN patch (results/pending/skipscan-after-seed39.patch), the
+the parsing patch (results/pending/parsing-after-seed39.patch - tab-free parsing, its C
+operations in three places and the converter's expected bodies; after NAME>BUF), the
 single-SYSCALL model's kernel part (results/syscall-pricing.md), the
 libc-free default (results/pending/nolibc-default-after-seed39.patch: the
 tests on the runtime the evolver measures, at both widths), the

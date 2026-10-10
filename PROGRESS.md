@@ -2922,3 +2922,19 @@ delimiter on the return stack: on s6 after NAME>BUF, the kernel workload
 patch for after seed 39. CMOVE, CMOVE>, ?STACK, NUMBER? and DIGIT? read and
 counted, not worth a kernel change; REFILL's tab pass (7.3% of s6's kernel
 workload) removable only by changing what a delimiter is - the owner's call.
+
+## Iteration 145 - 2026-10-10 - Claude
+
+**Tab-free parsing, a pending patch** (the owner's: a tab is a space to the
+parser). No source here holds a tab, yet REFILL passed over every line for
+them. SKIP and SCAN take any control character for a space delimiter - in the
+kernel and in the C operations, which live in three places (vm-lab.c,
+gen-tos.py, gen-msc.py) - and REFILL and kinput's REFILL8 make no tab a
+space. Building seed 37's fastest found what the plain SKIP/SCAN patch had
+missed: a body unlike the converter's expected one kills a kinput design -
+it would have killed most of the front after seed 39; the expected bodies
+are updated, and that patch is replaced. The tab test (tests/core/tabs.fth)
+is right on 22 hand-made stages and 20 front designs, with a negative
+control; on s6 the kernel workload -11.3%, the corpus -5.4%, parse -3.7%.
+Its run-tests section first reported "ok, 0 stages" - run before stages_for
+existed; now after it, and no stage tested is a failure.

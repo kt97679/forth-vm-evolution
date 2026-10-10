@@ -1,0 +1,238 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index d84bca7..de3f330 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1593,11 +1593,15 @@ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+  *  character compared as a cell, as = and - compare it.  */
+ #if X_SCAN
+ L_x_scan:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
+-             while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } DS1 = a_; DS0 = u_; } NEXT();
++             if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; }   /* a space: any control character too (Iteration 145) */
++             else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; }
++             DS1 = a_; DS0 = u_; } NEXT();
+ #endif
+ #if X_SKIP
+ L_x_skip:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
+-             while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } DS1 = a_; DS0 = u_; } NEXT();
++             if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; }  /* a space: any control character too (Iteration 145) */
++             else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; }
++             DS1 = a_; DS0 = u_; } NEXT();
+ #endif
+ #if X_TABSBL
+ L_x_tabsbl: { UNS64 u_ = DS0, a_ = DS1; dsp += 2 * CELL_BYTES;
+@@ -1608,8 +1612,13 @@ L_x_tabsbl: { UNS64 u_ = DS0, a_ = DS1; dsp += 2 * CELL_BYTES;
+  *  kernel's, exactly - cross.4's THASH must agree. PLACE ( addr len c-addr --- ). */
+ #if X_PARSE
+ L_x_parse: { UNS64 c_ = DS0, u_ = DS1, a_ = DS2, p_ = a_, s_;
+-             while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_;
+-             while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; }
++             if (c_ == 32) {                       /* a space: any control character too (Iteration 145) */
++                 while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_;
++                 while (u_ && BYTE(p_) > 32) { p_++; u_--; }
++             } else {
++                 while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_;
++                 while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; }
++             }
+              DS2 = s_; DS1 = p_ - s_; DS0 = (p_ - a_) + (u_ ? 1 : 0); } NEXT();
+ #endif
+ #if X_HASH
+diff --git a/forth/cv8b-kinput.4 b/forth/cv8b-kinput.4
+index f137810..ceb21e5 100644
+--- a/forth/cv8b-kinput.4
++++ b/forth/cv8b-kinput.4
+@@ -20,7 +20,8 @@
+    SOURCE-ID IF
+     SRC @ 256 SOURCE-ID READ-LINE ABORT" Error reading file"
+     SWAP #SRC ! 0 >IN !
+-    #SRC @ IF SOURCE TABS>BL THEN
++    \ No TABS>BL (Iteration 145): SKIP and SCAN take control characters for a
++    \ space delimiter. TABS>BL stays defined - genomes name it - and unused.
+    ELSE
+     QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
+    THEN
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index 0b424de..7685e61 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -790,9 +790,8 @@ VARIABLE #SRC ( --- addr)
+    SOURCE-ID IF
+     SRC @ 256 SOURCE-ID READ-LINE ABORT" Error reading file"
+     SWAP #SRC ! 0 >IN !
+-    #SRC @ IF SOURCE OVER + SWAP 
+-    BEGIN 2DUP - WHILE DUP C@ 9 = IF BL OVER C! THEN 1+ REPEAT 2DROP THEN
+-    \ Change tabs to space.
++    \ No tab is made a space: SKIP and SCAN take any control character for a
++    \ space delimiter (Iteration 145).
+     \ flag from READ-LINE is returned (no success at EOF)
+    ELSE
+     QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
+@@ -804,30 +803,22 @@ VARIABLE #SRC ( --- addr)
+ \ Find the first occurrence of character c in the string c-addr1 u1
+ \ c-addr2 u2 is the remaining part of the string starting with that char.
+ \ It is a zero-length string if c was not found.
+-  BEGIN
+-   OVER
+-  WHILE
+-   ROT DUP C@ >R OVER R> =
+-   IF
+-    ROT ROT DROP EXIT
+-   THEN
+-   1+ ROT ROT SWAP 1- SWAP
+-  REPEAT DROP
++\ As SKIP: 1 -1 D+ to move on; a space delimiter is met by any control
++\ character too.
++  DUP BL = IF DROP BEGIN DUP WHILE OVER C@ 33 U< 0= WHILE 1 -1 D+ REPEAT THEN EXIT THEN
++  >R BEGIN DUP WHILE OVER C@ R@ = 0= WHILE 1 -1 D+ REPEAT THEN R> DROP
+ ;
+ 
+ : SKIP ( c-addr1 u1 c --- c-addr2 u2 )
+ \ Find the first character not equal to c in the string c-addr1 u1
+ \ c-addr2 u2 is the remaining part of the string starting with the
+ \ nonmatching char. It is a zero-length string if no other chars found.
+-  BEGIN
+-   OVER
+-  WHILE
+-   ROT DUP C@ >R OVER R> -
+-   IF
+-    ROT ROT DROP EXIT
+-   THEN
+-   1+ ROT ROT SWAP 1- SWAP
+-  REPEAT DROP
++\ The delimiter on the return stack, the string moved on by 1 -1 D+ - one
++\ double add for the address up and the length down; a space delimiter
++\ skips every control character too, as the standard allows (3.4.1.1) - so
++\ no tab need ever be made a space (the audit, Iteration 145).
++  DUP BL = IF DROP BEGIN DUP WHILE OVER C@ 33 U< WHILE 1 -1 D+ REPEAT THEN EXIT THEN
++  >R BEGIN DUP WHILE OVER C@ R@ = WHILE 1 -1 D+ REPEAT THEN R> DROP
+ ;
+ 
+ : PARSE-WORD ( c --- addr len )
+diff --git a/tests/core/tabs.fth b/tests/core/tabs.fth
+new file mode 100644
+index 0000000..0f7b25c
+--- /dev/null
++++ b/tests/core/tabs.fth
+@@ -0,0 +1,11 @@
++\ tabs.fth - a tab is a space to the parser and itself in a string (Iteration 145):
++\ SKIP and SCAN take any control character for a space delimiter, and no tab
++\ is made a space. Every line's answer differs from what converting gave.
++	1	2	+ . CR
++: TT	DUP	* ;	5 TT . CR
++S" a	b" SWAP DROP . CR
++S" a	b" DROP 1+ C@ . CR
++S" 7	8	*" EVALUATE . CR
++CHAR	A . CR
++1	\ a comment after a tab
++. CR
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index 9f456ab..590bb68 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -124,12 +124,12 @@ SPECS = {
+     # Iteration 50
+     'L_x_fill':         (['a', 'u', 'c'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { BYTE(a_) = (UNS8)c; a_++; u_--; } }'),
+     'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+-    'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
++    'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
++    'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+     'L_x_tabsbl':       (['a', 'u'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } }'),
+     'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+     'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
+-    'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
++    'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+     'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = (h_ ^ u) & (t - 1); n = h_; }'),
+     'L_x_place':        (['s', 'n', 'd'], [], '{ UNS64 d_ = d, s_ = s, n_ = n; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } }'),
+     'L_x_cmove':        (['s', 'd', 'u'], [], '{ UNS64 s_ = s, d_ = d, u_ = u; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } }'),
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index effdac5..b612a3d 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -93,12 +93,12 @@ HOT = {
+  'L_x_fill':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();',
+  'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } tos = a_; } NEXT();',
+  # Iteration 54: the input side - SCAN, SKIP: three in, two out; TABS>BL: two in
+- 'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+- 'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
++ 'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
++ 'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+  'L_x_tabsbl':     '{ UNS64 u_ = tos, a_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } } NEXT();',
+  'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
+  'L_x_tonumber':   '{ UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();',
+- 'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
++ 'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
+  'L_x_hash':       '{ UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 * CELL_BYTES; h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2; tos = (h_ ^ u_) & (t_ - 1); } NEXT();',
+  'L_x_place':      '{ UNS64 d_ = tos, n_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();',
+  'L_x_cmove':      '{ UNS64 u_ = tos, d_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } } NEXT();',
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 062ad59..31812eb 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -202,6 +202,35 @@ stages_for() {
+     echo relf
+ }
+ 
++# ---- tabs (Iteration 145) ------------------------------------------------
++# No tab is made a space any more: SKIP and SCAN - and the C operations that
++# stand in for them - take any control character for a space delimiter.
++# tests/core/tabs.fth: tabs between words and at a line's start, in a
++# definition, in a string (kept: 9, not 32), in an EVALUATEd string, before
++# CHAR and a comment. Every stage at every width built; the negative
++# control is the file with its tabs made X, which must not give the answers.
++echo
++echo "tabs (tests/core/tabs.fth):"
++TABS_WANT='3 |25 |3 |9 |56 |65 |1 |'
++for w in 64 32; do
++    [ -x "$O/s0-cell-$w" ] || continue
++    bad=""; n=0
++    for st in $(stages_for $w); do
++        e="$O/$st-$w"; i="$O/$st-s$w.img"; [ "$st" = relf ] && continue
++        case "$st" in s7-*|s8-*) e="$O/$st-64"; i="$W/$st-s64.img" ;; esac
++        [ -x "$e" ] && [ -s "$i" ] || continue
++        got=$( (cd "$W" && timeout 15 "$e" "$i" < "$ROOT/tests/core/tabs.fth" 2>&1) | tr -d '\r' | grep -E '^[0-9]+ $' | tr '\n' '|')
++        n=$((n + 1)); [ "$got" = "$TABS_WANT" ] || bad="$bad $st"
++    done
++    [ "$n" -gt 0 ] || bad=" (no stage tested)"
++    if [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; FAILED=1
++    else printf '  %-12s ok     %s stages\n' "$w-bit" "$n"; fi
++done
++CTRL=$(mktemp); tr '\t' 'X' < "$ROOT/tests/core/tabs.fth" > "$CTRL"
++got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&1) | tr -d '\r' | grep -E '^[0-9]+ $' | tr '\n' '|'); rm -f "$CTRL"
++if [ "$got" = "$TABS_WANT" ]; then printf '  %-12s FAIL   the file without tabs gave the answers too\n' control; FAILED=1
++else printf '  %-12s ok     the file without tabs does not give them\n' control; fi
++
+ # ---- DELETE-FILE -------------------------------------------------------
+ # Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since
+ # the baseline - its handler stored unlink's result over the name's address,
+diff --git a/tools/sod16.py b/tools/sod16.py
+index f8855e7..da11045 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -541,14 +541,19 @@ def _expect(n):
+                  ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', -1), ('P', '+'), ('P', 'DUP'),
+                  ('C', '0='), ('QBR', -16 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
+         # Iteration 54: the input side - the kernel's SCAN and SKIP, kinput's TABS>BL
+-        'SCAN': [('P', 'OVER'), ('QBR', 22 * CELL), ('P', 'ROT'), ('P', 'DUP'), ('P', 'C@'), ('P', '>R'), ('P', 'OVER'),
+-                 ('P', 'R>'), ('P', '='), ('QBR', 5 * CELL), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'),
+-                 ('C', '1+'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('C', '1-'), ('P', 'SWAP'), ('BR', -23 * CELL),
+-                 ('P', 'DROP'), ('P', 'EXIT')],
+-        'SKIP': [('P', 'OVER'), ('QBR', 22 * CELL), ('P', 'ROT'), ('P', 'DUP'), ('P', 'C@'), ('P', '>R'), ('P', 'OVER'),
+-                 ('P', 'R>'), ('C', '-'), ('QBR', 5 * CELL), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'),
+-                 ('C', '1+'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('C', '1-'), ('P', 'SWAP'), ('BR', -23 * CELL),
+-                 ('P', 'DROP'), ('P', 'EXIT')],
++        # Iteration 145: SKIP and SCAN move on by 1 -1 D+ with the delimiter on the
++        # return stack, and a space delimiter takes any control character - the
++        # engine's L_x_scan, L_x_skip and L_x_parse do the same (SOD16_SHOW)
++        'SCAN': [('P', 'DUP'), ('LIT', 32), ('P', '='), ('QBR', 21 * CELL), ('P', 'DROP'), ('P', 'DUP'), ('QBR', 16 * CELL),
++                 ('P', 'OVER'), ('P', 'C@'), ('LIT', 33), ('P', 'U<'), ('C', '0='), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1),
++                 ('P', 'D+'), ('BR', -17 * CELL), ('P', 'EXIT'), ('P', '>R'), ('P', 'DUP'), ('QBR', 15 * CELL), ('P', 'OVER'),
++                 ('P', 'C@'), ('P', 'R@'), ('P', '='), ('C', '0='), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1), ('P', 'D+'),
++                 ('BR', -16 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
++        'SKIP': [('P', 'DUP'), ('LIT', 32), ('P', '='), ('QBR', 20 * CELL), ('P', 'DROP'), ('P', 'DUP'), ('QBR', 15 * CELL),
++                 ('P', 'OVER'), ('P', 'C@'), ('LIT', 33), ('P', 'U<'), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1), ('P', 'D+'),
++                 ('BR', -16 * CELL), ('P', 'EXIT'), ('P', '>R'), ('P', 'DUP'), ('QBR', 14 * CELL), ('P', 'OVER'), ('P', 'C@'),
++                 ('P', 'R@'), ('P', '='), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1), ('P', 'D+'), ('BR', -15 * CELL),
++                 ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+         'TABS>BL': [('P', 'OVER'), ('P', '+'), ('P', 'SWAP'), ('C', '2DUP'), ('C', '-'), ('QBR', 14 * CELL), ('P', 'DUP'),
+                     ('P', 'C@'), ('LIT', 9), ('P', '='), ('QBR', 4 * CELL), ('C', 'BL'), ('P', 'OVER'), ('P', 'C!'),
+                     ('C', '1+'), ('BR', -16 * CELL), ('C', '2DROP'), ('P', 'EXIT')],
