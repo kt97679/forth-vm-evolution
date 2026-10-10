@@ -86,6 +86,13 @@ measures every front anew; the stopping rule counts afresh (nothing lost:
 seed 37 was not small). Each design times 8 workloads now, not 6 (~8% fewer
 designs a run).
 
+*Iteration 130 - the gene jitloop, built and dormant* (lab/evolve/GENES.md):
+(+LOOP) and (?DO) native on the JIT - the scanner's 64-byte read had cut
+both stencils, so neither could ever have worked; bubble's dispatches -98.5%
+on the fastest design, its long run -40% (VM). Dormant - not in EXPRESSED -
+so seeds 38 and 39 run the same genes; switched on after 39. D+ priced: -ack
+native but no faster - for ackermann and fib the native call is the cost.
+
 *Pending run.* Seed 38, **6 hours** (the owner: two runs in a day), the same
 genes (NEXT-RUN): the first run on the fixed kernel and the new measurement;
 the chain about 6 h 30 min (the re-measure and the comparison outgrow the

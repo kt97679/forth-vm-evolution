@@ -230,4 +230,9 @@
 # Iteration 129: seed 38's first start (14:07, c9c2c1c) failed at the tests -
 # run-tests.sh's DELETE-FILE and fixes sections expected s7 and s8 at 4 bytes,
 # which the laptop builds and the VM did not. Fixed; the same run, again.
-seed 38 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+#
+# Iteration 130: seed 38 is running, started from the Iteration 129 bundle
+# (562c4d18). This bundle adds the gene jitloop, dormant - none, so pulled
+# after seed 38 has finished it only pulls; seed 39 is set when seed 38's
+# packs are processed.
+none

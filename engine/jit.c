@@ -43,11 +43,20 @@ static struct jit_st jit_st[S_N];
 static int32_t jit_rel32(const unsigned char *p) { int32_t v; memcpy(&v, p, 4); return v; }
 static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit_rel32(p) == (const unsigned char *)t; }
 
+/* Iteration 129: a stencil is read up to the next table function, or this
+   far. 64 cut (+LOOP)'s stencil (87 bytes since Iteration 125's rule) before
+   either exit, and (?DO)'s (76) after its fall-through, before its skip -
+   neither was mapped until the gene jitloop, which reads further. */
+#if JITLOOP
+#define JIT_SCAN_MAX 160
+#else
+#define JIT_SCAN_MAX 64
+#endif
 static void jit_scan(void) {
     int i, k;
     for (i = S_LIT; i < S_N && i < spn_table_len; i++) {
         struct jit_st *s = &jit_st[i];
-        const unsigned char *a = spn_table[i], *hi = a + 64, *end = 0, *p;
+        const unsigned char *a = spn_table[i], *hi = a + JIT_SCAN_MAX, *end = 0, *p;
         s->len = -1;
         if (a[0] == 0xF3 && a[1] == 0x0F && a[2] == 0x1E && a[3] == 0xFA) a += 4;     /* endbr64 */
         for (k = 0; k < spn_table_len; k++) {
@@ -136,6 +145,12 @@ static int jit_init(void) {
 }
 /* A stencil the translator may use: read, and no call hole unless CALL. */
 static int jit_usable(int s) {
+#if JITLOOP
+    /* Iteration 129: (+LOOP) and (?DO) have two exits - on, and to their
+       branch target. A stencil read without both holes would jump nowhere,
+       so it is not used: slower, never wrong. */
+    if ((s == S_PLOOP || s == S_QDO) && (jit_st[s].nnext < 1 || jit_st[s].njump != 1)) return 0;
+#endif
     return jit_st[s].len > 0 && jit_st[s].ncall == (s == S_CALL) && jit_st[s].njump <= 1;
 }
 static int jit_len(int s) { return jit_st[s].len - (jit_st[s].tailnext ? 5 : 0); }
@@ -409,7 +424,11 @@ int main(void) {
     static const char *nm[S_N + 1] = { "next", "jump", "call", "lit", "dup", "drop", "swap", "over", "rot",
         "plus", "addi", "eq", "gt", "lt", "xor", "and", "negate", "0branch", "branch", "call", "exit",
         "addi32", "dup_gti_br", "tor", "fromr", "rfetch", "fetch", "store", "cfetch", "cstore", "or",
-        "ult", "lshift", "rshift", "interp", "do", "qdo", "loop", "ploop", "i", "j", "unloop", "leave", "pick", "fill" };
+        "ult", "lshift", "rshift", "interp", "do", "qdo", "loop", "ploop", "i", "j", "unloop", "leave", "pick",
+#if JITX
+        "fill",
+#endif
+    };
     int i;
     jit_scan();
     for (i = S_LIT; i < S_N; i++)

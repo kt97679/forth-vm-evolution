@@ -88,7 +88,9 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Genes added after runs were recorded: left out of a design's identity when
 # off, so every design recorded before them keeps its id (databases resume,
 # knockouts and reports still find their designs by id).
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall')
+# Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+# mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
 FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
@@ -321,6 +323,7 @@ def express(g):
     if 'rtempty' in e and not e.get('tag2'): e.pop('rtempty')                      # Iteration 101: the tag's run-time compiler
     if 'kstack' in e and (not e.get('tag2') or kinput_on(g)): e.pop('kstack')     # Iteration 116: the tag's dumps; kinput has it already
     if 'jitx' in e and not jit_on(g): e.pop('jitx')                                # Iteration 108: on the JIT
+    if 'jitloop' in e and not jit_on(g): e.pop('jitloop')                          # Iteration 129: on the JIT
     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
@@ -564,6 +567,7 @@ def build(g, d):
     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
     if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+    if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
     if PROFILING[0]: flags.append('-DPROFILE=1')
     if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
@@ -623,6 +627,7 @@ def build(g, d):
     if g.get('opbody'): opts.append('--op-bodies')                 # Iteration 92: words an opcode replaced, [opcode EXIT]
     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
+    if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
     if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
                                                                  # copies (Iteration 38), the dump tool and dead

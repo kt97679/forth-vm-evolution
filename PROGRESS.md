@@ -2689,3 +2689,28 @@ tests, validate, jail - reproduce the laptop's failure at Iteration 128's
 commit and pass with the fix; a 4-byte stage hidden fails the suite. The
 HANDOFF-PROMPT's set-up installs it. The jitloop work stays stashed until it
 works (bubble faults with the gene on).
+
+## Iteration 130 - 2026-10-10 - Claude
+
+**The gene jitloop, built and dormant.** Why the front is weak on the new
+workloads (the JIT's own log, profiling builds of seed 37's fastest design):
+bubble's inner words stay bytecode at (+LOOP), which has no stencil mapped,
+and ackermann's -ack at D+. Mapping SPN's (+LOOP) stencil crashed the corpus
+and bubble - and the cause was the JIT's scanner, not the mapping: it reads a
+stencil to the next table function or 64 bytes, and (+LOOP)'s is 87 bytes
+(since Iteration 125's rule; 55 before, missing its exit even then), (?DO)'s
+76 - cut after its fall-through, its skip lost, so a (?DO) with equal bounds
+would have jumped into the next stencil. No stencil any recorded design uses
+reads differently at 160 bytes, so none carried the fault. Under JITLOOP: the
+read 160 bytes, and both exits required of PLOOP and QDO, else bytecode
+(slower, never wrong). On five JIT designs with the gene on: the gate, bubble
+65505 0 and ackermann 253, the Forth 2012 suite as s6 on all 14 files. On the
+fastest: bubble's dispatches 13.29 M -> 197 k, its long run 13.2 -> 7.9 ms
+(VM), the corpus -1.1%, the rest unchanged. A D+ stencil made -ack native
+(dispatches -99.9%) and ackermann no faster (12.8 ms both) - the call is the
+cost, and the native call costs what the bytecode one does; left out. With the
+gene off, ids, images and engines are byte-identical (two JIT designs and the
+smallest). Dormant: in LATE, not in EXPRESSED - 0 of 20,000 mutations set it -
+and the build reads the expressed genome, so a forced value cannot build
+under an old id. The four checks pass at both widths. NEXT-RUN none while
+seed 38 runs.

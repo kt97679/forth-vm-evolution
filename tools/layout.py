@@ -1372,6 +1372,8 @@ if EMIT:
                  '>?BRANCH': (['GT', '0BRANCH'], 7), '>?BRANCH8': (['GT', '0BRANCH'], 6),
                  '?NBRANCH': (['LIT', 'EQ', '0BRANCH'], 7), '?NBRANCH8': (['LIT', 'EQ', '0BRANCH'], 6),
                  '<>?BRANCH': (['EQ', 'LIT', 'EQ', '0BRANCH'], 7), '<>?BRANCH8': (['EQ', 'LIT', 'EQ', '0BRANCH'], 6)}
+            if '--jitloop' in ARGV:   # Iteration 129, the gene jitloop: SPN's (+LOOP) and (?DO) stencils, a branch operand as (LOOP)'s
+                O.update({'(+LOOP)': (['PLOOP'], 7), '(?DO)': (['QDO'], 7)})
             def _jd(nm):
                 if nm in ('LIT8X', 'ADDIX', 'EQIX') or nm.endswith(';EXIT'):
                     d = _jd(nm[:-1] if nm in ('LIT8X', 'ADDIX', 'EQIX') else nm[:-5])
