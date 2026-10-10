@@ -290,6 +290,7 @@ def read_ops(w):
     out = raw_read(w)
     if out is None: return None
     if HOTINL: out = hot_inline(w, out)        # Iteration 92: before every rewrite
+    if GUARD_ABORT[0]: out = guard_aborts(w, out)  # Iteration 117: before the fusers, which take its ?BRANCH
     out = retag(out)
     if SPEC: out = specialise(out)
     if V8 and X_OPS10: out = ops10_rewrite(out)
@@ -342,6 +343,51 @@ def raw_read(w):
                             ).to_bytes(CELL, 'little')
                 out.append(('STR', bytes(raw[:1 + n]))); a += blob
     return out
+
+# ---- ABORT" guarded (Iteration 117: the gene abortif) ----
+# ABORT" compiles a call to (ABORT") and its message, and (ABORT") runs even
+# when its flag is false - only to skip the message (R> COUNT + ALIGNED >R):
+# ~6 dispatches at every site, every time (INTERPRET's "Undefined word" once
+# a number, REFILL's once a line). gforth and lbForth compile it guarded,
+# `IF ... THEN` around the call (results/forth-sources.md). Here every call to
+# (ABORT") with its string gets `?BRANCH` to just past the string and `-1`
+# before it: a false flag jumps over, a true one aborts as before, with the
+# same message. A site guarded by hand - `-1` right before the call, as the
+# kernel input gene's ?STACK8 - is left alone; a word with a DOES> entry too.
+GUARD_ABORT = [False]           # layout.py --guard-abort
+def guard_aborts(w, out):
+    ab = [x['s'] for x in words if x['n'] == '(ABORT")']
+    if not ab or any(w['s'] < e < w['e'] for e in ENTRIES): return out
+    M = (1 << (8 * CELL)) - 1
+    sites = {j for j, (k, pl) in enumerate(out) if k == 'C' and pl == ab[0] and j + 1 < len(out) and out[j + 1][0] == 'STR'
+             and not (j and out[j - 1][0] == 'LIT' and (out[j - 1][1] & M) == M)}
+    if not sites: return out
+    cs, c = [], 0
+    for k, pl in out: cs.append(c); c += op_cells(k, pl)
+    new, src, pos, c2 = [], [], {}, 0       # src: the old index an op came from; ('guard', j) for a new ?BRANCH; None for its -1
+    for j, op in enumerate(out):
+        pos[cs[j]] = c2                      # a branch to the call now lands on its guard - the same flag, the same test
+        if j in sites:
+            new += [('QBR', 0), ('LIT', M)]; src += [('guard', j), None]; c2 += op_cells('QBR', 0) + op_cells('LIT', M)
+        new.append(op); src.append(j); c2 += op_cells(*op)
+    pos[c] = c2
+    cs2, c2 = [], 0
+    for x in new: cs2.append(c2); c2 += op_cells(*x)
+    for i, j in enumerate(src):
+        k, pl = new[i]
+        if isinstance(j, tuple):             # past the string after its call
+            after = cs[j[1] + 1] + op_cells(*out[j[1] + 1])
+            if after not in pos: return out
+            new[i] = ('QBR', pos[after] - (cs2[i] + CELL)); continue
+        if j is None: continue
+        if k in ('BR', 'QBR'):
+            if cs[j] + CELL + pl not in pos: return out
+            new[i] = (k, pos[cs[j] + CELL + pl] - (cs2[i] + CELL))
+        elif k == 'OPD':
+            if cs[j] + pl not in pos: return out
+            new[i] = (k, pos[cs[j] + pl] - cs2[i])
+        elif k == 'XT': new[i] = (k, pl + cs[j] - cs2[i])
+    return new
 
 # ---- inlining at the hottest call sites (Iteration 92: the gene hotinl) ----
 # layout.py --hot-inline FILE K fills HOTINL with (caller, callee, k): the

@@ -63,3 +63,24 @@ Two mature Forths guard ABORT" at compile time - section 2's fix. A
 systematic comparison of the hot words (INTERPRET, NUMBER?, PARSE, FIND)
 across these sources is the next use of the collection: variants for genes
 (level 1), material for genetic improvement (level 3).
+
+## 5. The guarded ABORT" as a gene: `abortif` (Iteration 117)
+
+The owner: a gene, not a change to every image. The converter
+(tools/sod16.py guard_aborts, layout.py --guard-abort) puts every compiled
+call to (ABORT") with its message behind `?BRANCH` to just past the message
+and `-1` - before the fusers, which then fuse the ?BRANCH with its test, and
+`-1` becomes the one-byte literal. Sites already guarded by hand (the kernel
+input gene's ?STACK8) and words with a DOES> entry are left alone; every
+branch the splice moves is moved back, as hot-site inlining does.
+
+| design | image | kernel | parse | corpus |
+|---|---|---|---|---|
+| fastest, e5193642ef | +56 bytes | -1.0% | **-5.6%** | -3.0% |
+| smallest, 585376cf49 | +72 bytes | -0.3% | -0.8% | -0.7% |
+
+(Bytecode dispatches.) Errors unchanged: an undefined word still prints
+"Undefined word", a tick of a missing name "Not found". Through the gate on
+both; tests pass; hand-made stages identical. On the smallest design the
+share is small because it does far more work a word without the kernel's
+fast paths - the trade evolution weighs.

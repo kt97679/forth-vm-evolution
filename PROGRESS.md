@@ -2407,3 +2407,21 @@ two images, at most 0.09% of dispatches - not worth a superoptimizer. Seven
 Forths fetched (/tmp only; licences noted): gforth and lbForth compile
 ABORT" guarded, gforth's ?stack one compare. Tests pass; hand-made stages
 identical. NEXT-RUN: seed 37 tag2 9h with fbuf and kstack.
+
+## Iteration 117 - 2026-10-10 - Claude
+
+**The guarded ABORT" as a gene: abortif** (results/forth-sources.md section
+5; the owner: "can we add this as a new gene?"). tools/sod16.py
+guard_aborts, switched by layout.py --guard-abort: every compiled call to
+(ABORT") with its message gets `?BRANCH` to past the message and `-1` before
+it, spliced in right after hot-site inlining and before the specialisations
+and fusers (which then fuse the ?BRANCH with its test, and -1 is the one-byte
+literal); sites guarded by hand and words with a DOES> entry left alone;
+moved branches moved back. Fastest design: parse -5.6% of bytecode
+dispatches, corpus -3.0%, kernel -1.0%, image +56 bytes; smallest: -0.8%,
+-0.7%, -0.3%, +72 bytes. "Undefined word" and "Not found" exactly as before;
+through the gate; tests pass; hand-made stages identical; the gene expressed
+in random and mutated genomes. The owner offered a ~100 MB collection of
+Forth material (relf's history, SOD32, eForth, 3-instruction Forth, gforth
+0.6.2, SP-Forth, test suites, books) - to look through once uploaded.
+NEXT-RUN: seed 37 tag2 9h with fbuf, kstack and abortif.

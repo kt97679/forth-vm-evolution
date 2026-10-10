@@ -138,7 +138,10 @@ sources): kstack built and corrected - kinput already had a guarded ?STACK,
 so kstack is that body alone (-0.7%); the real waste is ABORT" calling
 (ABORT") on success - a guarded ABORT" (as gforth and lbForth compile it)
 would take parse -4.3%, a source change awaiting the owner; verified
-rewrites priced at 0.09% - not built; seven other Forths collected. **Iteration 104**: input as relf reads it - no
+rewrites priced at 0.09% - not built; seven other Forths collected.
+**Iteration 117**: the guarded ABORT" as the gene **abortif** (the owner: a
+gene, not every image) - the converter guards every (ABORT") call: the
+fastest design's parse -5.6% of dispatches, corpus -3.0%, for 56 bytes. **Iteration 104**: input as relf reads it - no
 read-ahead on stdin, pipes a byte at a time in READ-LINE (a shared pipe's
 rest is left to the next reader; proven to fail on the old engine); the
 prompts library gains 15-checks-that-can-fail, 16-premortem and

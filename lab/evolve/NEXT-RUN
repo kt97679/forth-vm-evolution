@@ -196,4 +196,6 @@
 #
 # Iteration 116: the genes fbuf (memory) and kstack in a carried run, 9 hours -
 # after seed 36 (from scratch) has been looked at; fromzero waits for it.
+#
+# Iteration 117: and the gene abortif (ABORT" guarded) - fbuf, kstack, abortif.
 seed 37 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

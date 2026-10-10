@@ -229,6 +229,7 @@ import os as _os
 T2_CONSTS = ('EXIT-OP', 'LIT16-OP', 'BRANCH-OP', '0BRANCH-OP', 'LIT32-OP', 'DOVAR-OP', 'DODOES-OP', 'LIT8-OP', 'LIT64-OP',
              'BRANCH8-OP', '?BRANCH8-OP', 'JIT-OP', 'CALL,')     # CALL,: its 3-byte limit, under t2wide (Iteration 95)
 G['HOT_PATCHED'].update(T2_CONSTS)
+if '--guard-abort' in ARGV: G['GUARD_ABORT'][0] = True      # Iteration 117: the gene abortif (sod16.guard_aborts)
 if '--hot-inline' in ARGV and not _os.environ.get('SOD16_NO_HOTINL'):
     _want, _sel = int(ARGV[ARGV.index('--hot-inline') + 2]), []
     if CV8_COMPILER:                                 # the swap below, foreseen (sod16.py, final_word)
