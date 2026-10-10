@@ -101,7 +101,8 @@ saving counts in full, and a kernel word only an extension uses belongs in
 that extension (results/word-audit.md, "Core or extension").
 
 *After seed 39 has run, together (the owner agreed)*: the NAME>BUF patch
-(results/pending/namebuf-after-seed39.patch - s6's yardstick moves), the
+(results/pending/namebuf-after-seed39.patch - s6's yardstick moves) and
+the SKIP/SCAN patch (results/pending/skipscan-after-seed39.patch), the
 single-SYSCALL model's kernel part (results/syscall-pricing.md), the
 libc-free default (results/pending/nolibc-default-after-seed39.patch: the
 tests on the runtime the evolver measures, at both widths), the

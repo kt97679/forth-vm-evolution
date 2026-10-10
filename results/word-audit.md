@@ -182,3 +182,35 @@ and the shell finds them by the names the kernel declares. The principle's
 own end is one model - every engine with SYSCALL, the kernel declaring it
 alone, the shell always loading forth/shell-sysc.4 - which reaches all six
 engines, the cell stage's relf.c among them. The owner's decision.
+
+## Batch 2 - the last heavy words (Iteration 144)
+
+**SKIP and SCAN - built, a pending patch.** Every word the interpreter parses
+goes through them, and they moved on a character with `1+ ROT ROT SWAP 1- SWAP`
+- about 17 dispatches a character. Now the delimiter waits on the return stack
+and `1 -1 D+` - the owner's own idiom, from his ackermann - moves the address
+up and the length down in one double add (it cannot carry: that would need an
+address at the top of memory):
+
+    : SCAN ( c-addr u c -- c-addr' u' )
+      >R BEGIN DUP WHILE OVER C@ R@ = 0= WHILE 1 -1 D+ REPEAT THEN R> DROP ;
+
+On s6, after NAME>BUF (a scratch clone; reseeded, both widths, run-tests PASS,
+7 of 7 IDENTICAL): the kernel workload -2.3%, the corpus -1.7%, parse (held
+out) -1.4%, the rest unchanged; s6's image 8 bytes smaller.
+results/pending/skipscan-after-seed39.patch, with NAME>BUF's or alone.
+
+**Not worth a kernel change**, read and counted:
+- **CMOVE, CMOVE>** - 20 dispatches a byte, 17 at best in this Forth; -15% of
+  a 2.5% share is 0.4%, and the k-genes give evolved designs CMOVE as an
+  operation already.
+- **?STACK** - a few dispatches cheaper against precomputed bounds; it
+  matters only on the JIT designs, at 3.7% of what they still interpret.
+- **NUMBER?, DIGIT?** - ~20 dispatches a digit; a lookup table would be
+  faster and cost 256 bytes of every kernel image, against the size objective.
+
+**REFILL's tab pass - a decision, not built.** A full pass over every source
+line turns tabs into spaces - 7.3% of s6's kernel workload. Only parsing that
+treats any control character as a space delimiter (the standard allows it)
+removes the pass, and that changes behaviour: a tab inside a string literal
+would stay a tab. kinput's TABS>BL operation already serves evolved designs.

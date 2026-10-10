@@ -2912,3 +2912,13 @@ fixes, locals all pass - and getpid through FORK's slot answers on every
 stage: the cell stage, both pack engines (at both widths, i386's number
 mapped), s1-s6, SPN's s7 and s8s. The kernel part waits for seed 39 to have
 run (results/syscall-pricing.md).
+
+## Iteration 144 - 2026-10-10 - Claude
+
+**The audit's batch 2** (results/word-audit.md). SKIP and SCAN, under every
+parsed word, move on with `1 -1 D+` (the owner's idiom) and keep the
+delimiter on the return stack: on s6 after NAME>BUF, the kernel workload
+-2.3%, the corpus -1.7%, parse -1.4%, the image 8 bytes smaller - a pending
+patch for after seed 39. CMOVE, CMOVE>, ?STACK, NUMBER? and DIGIT? read and
+counted, not worth a kernel change; REFILL's tab pass (7.3% of s6's kernel
+workload) removable only by changing what a delimiter is - the owner's call.
