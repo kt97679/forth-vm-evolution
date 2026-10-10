@@ -2660,3 +2660,15 @@ promotion by synthesis. The owner's audit of every word against other Forths:
 weigh, collect (permissive sources only), compare in this VM's terms, land as
 overlay genes; its premortem puts the ceiling at ~3% of speed and ~1.7% of
 size, with stopping points.
+
+## Iteration 128 - 2026-10-10 - Claude
+
+**Bubble and ackermann are the owner's own** (he sent his collection,
+forth.tgz): RelF/bench/bubble.4 and ackermann.4, their words as they were -
+bubble's CELL +LOOP over addresses, 2@ and 2!, VERIFY-LIST; ackermann's -ack
+with 1 -1 D+ for A(x-1,1) - sized for a timed run (ELEMENTS 300, not 6000;
+NUM 5, not 3) and given a BENCH word that prints (65505 0; 253, alike on every
+kind of stage). K = 12 and 23, ~11 ms on the fastest design. Seed 37's fastest
+under the selection: 0.224 - bubble 0.32 of s6, ackermann 0.71. Still before
+any run of Iteration 127's measurement, so part of it. Runs of 6 hours now
+(the owner: two in a day): seed 38, then 39, the same genes.

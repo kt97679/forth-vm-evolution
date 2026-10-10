@@ -280,8 +280,8 @@ def opcall_in(g):
     return [[n, 0xFE00 + k, OPCALL_POOL[n]] for k, n in enumerate(names)]
 WORK_SEL = ['kernel', 'fib', 'corpus', 'loop', 'bubble', 'ackermann']; WORK_HELD = ['sieve', 'parse']
 # Iteration 41: loop selected (the owner), sieve held out. Iteration 127 (the owner): parse held out - it
-# timed the interpreter twice over, with the corpus - and two execution-heavy workloads in: bubble (his
-# RelF bench) and ackermann (deep recursion), where the fastest design was 2.4 and 1.6 times s6.
+# timed the interpreter twice over, with the corpus - and two execution-heavy workloads in, the owner's
+# RelF/bench programs (his collection; Iteration 128): bubble and ackermann (deep recursion).
 
 
 def canon(g):
@@ -695,7 +695,7 @@ KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\n'
 # Memory keeps its meaning: repeated, the corpus redefines its words, so its
 # memory is one run of the single corpus (measure); the others allocate
 # nothing when repeated. bench/ is untouched: the long files are made here.
-LONG = {'fib': 2, 'loop': 10, 'sieve': 3, 'parse': 3, 'corpus': 5, 'bubble': 8, 'ackermann': 20}   # 127: ~11 ms each on the fastest (VM)
+LONG = {'fib': 2, 'loop': 10, 'sieve': 3, 'parse': 3, 'corpus': 5, 'bubble': 12, 'ackermann': 23}   # 128: ~11 ms each on the fastest (VM)
 LONGF = {}
 def long_files():
     for w, k in LONG.items():

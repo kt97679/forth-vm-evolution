@@ -222,4 +222,8 @@
 # and the selection kernel, fib, corpus, loop, bubble, ackermann (parse held
 # out). Speeds from here on are not comparable with earlier records; the
 # comparison measures everything anew; the stopping rule counts afresh.
-seed 38 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+#
+# Iteration 128: bubble and ackermann are the owner's own (RelF/bench in his
+# collection); and 6 hours, not 9 (the owner: two runs in a day) - the chain
+# about 6 h 30 min. Seed 39 next, the same.
+seed 38 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

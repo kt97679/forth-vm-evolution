@@ -13,7 +13,7 @@ implementations; ideally audit every word in our sources.
 | fbuf, fromzero | built (115) | fbuf took memory 184 -> 156 KB (seed 37) |
 | opcall (Koopman) | built (121) | on 13 of seed 37's front |
 | **knum** - NUMBER?'s plain cases in C | not built | was 19.1% of parse (now held out); 7.8% of the corpus |
-| **more JIT stencils** - (+LOOP), (?DO), COUNT, DODOES, PICK; hotinl's list renewed | not built | **the most**: the fastest design runs bubble at 0.44 of s6 and ackermann at 0.57, against 0.06 on loop - what it cannot translate |
+| **more JIT stencils** - (+LOOP), (?DO), COUNT, DODOES, PICK; hotinl's list renewed | not built | **the most**: the fastest design runs bubble at 0.32 of s6 and ackermann at 0.71 (Iteration 128's programs), against 0.06 on loop - what it cannot translate |
 | **one SYSCALL primitive** | **not built** - agreed in principle (Iterations 100-103) | ~1.3 KB of engine, its handlers too; the OS words become Forth on it |
 | 16-bit dispatch tables | not built | ~768 bytes |
 | packed names | not built | ~500 bytes |

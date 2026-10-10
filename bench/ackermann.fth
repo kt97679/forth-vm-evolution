@@ -1,19 +1,26 @@
 \ ackermann.fth - Ackermann's function: deep recursion and nothing else.
 \
-\ fib.fth recurses some 25 deep; this goes hundreds deep, and its data stack
-\ grows with it - what a call, a return and the stacks cost when nothing is
-\ shallow. A(3,5) = 253, by 42,438 calls. The owner's collection has an
-\ Ackermann among RelF's old benchmarks (RelF/bench, not in this repository);
-\ this is the textbook definition, written as his bench.4 writes fib (Iteration
-\ 127). CORE words only; the value is printed, so a design that gets it wrong
-\ shows.
+\ The owner's RelF benchmark (RelF/bench/ackermann.4 in his collection,
+\ forth.tgz) as it was - his -ack, with 1 -1 D+ for A(x-1,1) - NUM 5, not 3,
+\ so a timed run stays near the others (Iteration 128; Iteration 127 had the
+\ textbook definition). fib.fth recurses some 25 deep; this goes hundreds
+\ deep, and its data stack with it. A(3,5) = 253, by 42,438 calls; the value
+\ is printed, so a design that gets it wrong shows.
 
-: ACK ( m n --- a )
-  OVER 0= IF SWAP DROP 1+ EXIT THEN
-  DUP 0= IF DROP 1- 1 RECURSE EXIT THEN
-  OVER SWAP 1- RECURSE SWAP 1- SWAP RECURSE ;
+5 CONSTANT NUM
 
-: BENCH ( --- )  3 5 ACK . CR ;
+: -ack ( y x -- n )
+   DUP 0= IF
+     DROP 1+
+   ELSE
+     OVER IF
+       SWAP 1- OVER RECURSE SWAP 1- RECURSE
+     ELSE
+       1 -1 D+ RECURSE
+     THEN
+   THEN ;
+
+: BENCH ( --- )  NUM 3 -ack . CR ;
 
 BENCH
 S" BENCH-DONE" TYPE CR

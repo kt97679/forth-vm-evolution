@@ -1,25 +1,53 @@
 \ bubble.fth - a bubble sort of pseudo-random cells: loops, memory, compares.
 \
-\ The owner's RelF bench (relf's bench/langs/bench.4 - his own, the same
-\ program in C, Go, Python and Ruby beside it), the array 300 cells, not 3000,
-\ so a timed run stays near the others. DO LOOP two deep, @ and ! through
-\ computed addresses, a compare and a swap: execution, where parse - which it
-\ replaced in the selection, with ackermann.fth (Iteration 127) - is the
-\ interpreter. CORE words only, as the others; the checksum is printed, so a
+\ The owner's RelF benchmark (RelF/bench/bubble.4 in his collection,
+\ forth.tgz), its words as they were, ELEMENTS 300 and not 6000 so a timed run
+\ stays near the others (Iteration 128; Iteration 127 had the program of
+\ RelF's bench/langs/bench.4). DO loops over addresses with CELL +LOOP, 2@ and
+\ 2!, a compare and a swap: execution, where parse - which it replaced in the
+\ selection, with ackermann.fth - is the interpreter. VERIFY-LIST aborts if
+\ the list is not sorted, and BENCH prints its first and last cells, so a
 \ design that sorts wrongly shows.
 
-300 CONSTANT NB
-CREATE ARR NB CELLS ALLOT
-VARIABLE SEED
-: RND ( --- n )  SEED @ 1103515245 * 12345 + 2147483647 AND DUP SEED ! ;
-: BUBBLE ( --- checksum )
-  74755 SEED !  NB 0 DO RND 1000000 MOD ARR I CELLS + ! LOOP
-  NB 1 DO  NB I - 0 DO
-    ARR I CELLS + DUP @ OVER CELL+ @ 2DUP > IF ROT DUP >R ! R> CELL+ ! ELSE 2DROP DROP THEN
-  LOOP LOOP
-  0 NB 0 DO ARR I CELLS + @ I 1+ * + LOOP ;
+: MYBOUNDS  OVER + SWAP ;
 
-: BENCH ( --- )  BUBBLE . CR ;
+1 CELLS CONSTANT CELL
+
+VARIABLE SEED
+
+: INITIATE-SEED  74755 SEED ! ;
+: RANDOM  SEED @ 1309 * 13849 + 65535 AND DUP SEED ! ;
+
+300 CONSTANT ELEMENTS
+
+ALIGN CREATE LIST ELEMENTS CELLS ALLOT
+
+: INITIATE-LIST
+  LIST ELEMENTS CELLS + LIST DO RANDOM I ! CELL +LOOP
+;
+
+: VERIFY-LIST
+  LIST ELEMENTS 1- CELLS MYBOUNDS DO
+    I 2@ > ABORT" BUBBLE-SORT: NOT SORTED"
+  CELL +LOOP
+;
+
+: BUBBLE
+  1 ELEMENTS 1 DO
+    LIST ELEMENTS I - CELLS MYBOUNDS DO
+      I 2@ > IF I 2@ SWAP I 2! THEN
+    CELL +LOOP
+  LOOP
+;
+
+: BUBBLE-SORT
+  INITIATE-SEED
+  INITIATE-LIST
+  BUBBLE
+  VERIFY-LIST
+;
+
+: BENCH ( --- )  BUBBLE-SORT  LIST @ .  LIST ELEMENTS 1- CELLS + @ . CR ;
 
 BENCH
 S" BENCH-DONE" TYPE CR

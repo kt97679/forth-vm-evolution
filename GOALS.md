@@ -77,17 +77,20 @@ front of all runs (results/evolve-amd-ryzen-7-pro-8840hs-seed36.md).
 *Iteration 127 - the measurement changed (the owner, alone).* The gate: the
 corpus has Haley's +LOOP cases (661 cases; upstream SOD32 fails exactly those
 7, checked). The selection: kernel, fib, corpus, loop, **bubble**,
-**ackermann** - parse held out beside sieve (bench/bubble.fth from the
-owner's RelF bench, bench/ackermann.fth A(3,5)). Seed 37's fastest scored
-0.229 under it (0.130 before): 0.44 of s6 on bubble, 0.57 on ackermann. Speeds
+**ackermann** - parse held out beside sieve: the owner's RelF/bench programs
+from his collection (Iteration 128), bubble 300 cells, ackermann A(3,5).
+Seed 37's fastest scores 0.224 under it (0.130 before): 0.32 of s6 on
+bubble, **0.71 on ackermann** - deep calls the weakest. Speeds
 from here on are not comparable with earlier records - each comparison
 measures every front anew; the stopping rule counts afresh (nothing lost:
 seed 37 was not small). Each design times 8 workloads now, not 6 (~8% fewer
 designs a run).
 
-*Pending run - proposed, the owner's to choose.* Seed 38, 9 hours, the same
-genes (NEXT-RUN): the first run on the fixed kernel and the new measurement.
-Seed 37's chain took 9 h 08 min; seed 38's should be about the same.
+*Pending run.* Seed 38, **6 hours** (the owner: two runs in a day), the same
+genes (NEXT-RUN): the first run on the fixed kernel and the new measurement;
+the chain about 6 h 30 min (the re-measure and the comparison outgrow the
+80-minute reserve). Then seed 39, 6 hours, the same genes: under the new
+measurement the first run is unlikely to be small, the second can be.
 
 *Iteration 124 - the Forth 2012 test suite* (results/forth-standard-tests.md):
 tests/ans is now the standard suite (Jackson's, kept by the Forth Standard

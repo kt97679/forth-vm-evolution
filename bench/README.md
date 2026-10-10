@@ -285,7 +285,8 @@ hand-made s6 on the same CPU, repeated (LONG) to 8-17 ms on the fastest
 design: **selected** - the kernel workload (extend.4 and cross.4: the system
 compiling itself), fib.fth, the CORE corpus (with Haley's +LOOP cases since
 Iteration 127), loop.fth, bubble.fth, ackermann.fth; **held out** - sieve.fth,
-parse.fth. bubble.fth (the owner's RelF bench, bench/langs/bench.4 there) and
-ackermann.fth (deep recursion) replaced parse in the selection: the fastest
-design ran them at 0.44 and 0.57 of s6's time, against 0.06-0.25 elsewhere -
-execution, where parse timed the interpreter a second time beside the corpus.
+parse.fth. bubble.fth and ackermann.fth are the owner's own benchmarks
+(RelF/bench in his collection, Iteration 128), sized for a timed run; they
+replaced parse in the selection. Seed 37's fastest design ran them at 0.32
+and 0.71 of s6's time, against 0.06-0.25 elsewhere - execution and deep
+calls, where parse timed the interpreter a second time beside the corpus.
