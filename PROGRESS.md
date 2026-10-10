@@ -2514,3 +2514,17 @@ recorded image bytes; the working repository holds nothing uncommitted
 (build/ and caches ignored). GOALS.md "Resuming in a new chat" now opens with
 a short HANDOFF: the state, the pending runs, the open threads in order,
 where to look.
+
+## Iteration 123 - 2026-10-10 - Claude
+
+**Seed 36 and session 31 - the anchoring test** (results/evolve-amd-ryzen-
+7-pro-8840hs-seed36.md). 4 hours with nothing carried in (2 h 40 min of
+evolution, 53 generations, 13,508 designs): the best speed 0.812 -> 0.148 by
+generation 20 -> 0.141; the smallest 25,369 -> 20,425. Session 31 (calibration
+1.007; with --frontier: 362 designs in 63 minutes, inside the reserve): seed
+36's fastest 0.146 against the carried 0.130, smallest 20,425 against 20,318,
+memory 188 against 186; 2 of the 90 on the front of all runs, both in the
+middle; the same gene choices as the carried runs. **The owner's question -
+does adding genes one at a time skew the search? - answered no**: a fresh
+start reaches the carried runs' neighbourhood and no further. NEXT-RUN
+unchanged: seed 37 tag2 9h with the new genes.
