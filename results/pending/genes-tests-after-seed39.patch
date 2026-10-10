@@ -1,0 +1,32 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 0a66174..be20c70 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -115,6 +115,7 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
+ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
+              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
++EXPRESSED['cv8'] += ['jitloop', 'jitinl', 'sysc']   # the after-seed-39 batch: the dormant genes switched on
+ BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
+           ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',), ('kstack',), ('abortif',), ('opcall',)]
+ # Superinstruction candidates: primitive pairs ranked by how often the CV8
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 31812eb..fb9b902 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -160,6 +160,15 @@ if [ -x "$O/sod32/sod32" ]; then
+ fi
+ 
+ echo
++# ---- SYSCALL's shell and ?DO/LEAVE in extensions (the after-seed-39 batch) --
++echo
++echo "the SYSC shell (tools/test-sysc-shell.sh):"
++if sh tools/test-sysc-shell.sh > "$O/.sysc.log" 2>&1; then printf '  %-12s ok     %s\n' sysc "$(grep -c '^ok' "$O/.sysc.log") checks"
++else printf '  %-12s FAIL   %s\n' sysc "$(grep '^FAIL' "$O/.sysc.log" | head -2 | tr '\n' ' ')"; FAILED=1; fi
++echo "?DO and LEAVE in extensions (tools/test-ext-loops.sh):"
++if sh tools/test-ext-loops.sh > "$O/.extl.log" 2>&1; then printf '  %-12s ok     %s\n' ext-loops "$(grep -c '^ok' "$O/.extl.log") stages"
++else printf '  %-12s FAIL   %s\n' ext-loops "$(grep '^FAIL' "$O/.extl.log" | head -2 | tr '\n' ' ')"; FAILED=1; fi
++
+ # ---- the shell suite ---------------------------------------------------
+ # tests/shell: the parent project's shell suite, removed in 5c87022 as unrun
+ # and restored in Iteration 134 (two tests' assumptions fixed: HOME=/root,

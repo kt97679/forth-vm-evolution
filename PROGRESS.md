@@ -2938,3 +2938,19 @@ is right on 22 hand-made stages and 20 front designs, with a negative
 control; on s6 the kernel workload -11.3%, the corpus -5.4%, parse -3.7%.
 Its run-tests section first reported "ok, 0 stages" - run before stages_for
 existed; now after it, and no stage tested is a failure.
+
+## Iteration 146 - 2026-10-10 - Claude
+
+**The after-seed-39 batch, rehearsed.** A scratch clone with the pending
+patches in order - NAME>BUF, parsing, the libc-free default - the dormant
+genes jitloop, jitinl and sysc expressed, and tools/test-sysc-shell.sh and
+tools/test-ext-loops.sh as run-tests.sh sections: the kernel's fixed point,
+then the four checks at both widths, libc-free - every section run (the SYSC
+shell 8 checks, extension loops 4 stages, tabs 22 stages and the control),
+7 of 7 IDENTICAL, the jail. A short tag2 run (138 designs, the VM's one CPU):
+119 alive, 18 refused by the reach limit (seed 37: 5% of its 42,225), one
+layout that dies as it does on master; the six carrying sysc all alive. The
+five JIT front designs with all three genes: the gate, bubble and ackermann's
+answers, the tab test, the Forth 2012 suite as the batch's s6. The genes'
+switch and the two sections are the fourth pending patch; the four, applied
+to a fresh clone of master, give the rehearsal's files exactly.
