@@ -59,3 +59,15 @@ as on the plain one; ~user, ulimit -f, export, unset, the environment and cd
 line for line as the plain shell. Found on the way: the converter does not
 translate ?DO in cell-compiled code (the shell never used it). Next: the gene,
 dormant; the test into run-tests.sh once it skips cleanly at 4 bytes.
+
+## The gene (Iteration 136)
+
+`sysc` in the evolver - in LATE, expressed only on CV8 designs (the ones
+built from vm-lab.c), dormant until seed 39 has run. With it forced on, every
+engine shape builds and passes the gate: the five fastest of seed 37 (JIT)
+3,392-3,808 bytes smaller, its smallest 2,880 (16,344 -> 13,464; 20,430 ->
+~17,550 in all, -14%), two plain designs 3,848; on s6's genome, outside the
+tag, tail-call threading 6,568 (every handler a function there), msc 3,728.
+Off: the recorded designs' ids, images and engines byte-identical to
+Iteration 130's. The shell's environment table is allocated when first used,
+not saved in the image.

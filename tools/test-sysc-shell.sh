@@ -11,7 +11,9 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd); cd "$ROOT"
 . tools/engine-rt.sh
 O=$ROOT/build; W=$O/work; T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 [ "$(uname -m)" = x86_64 ] && [ -x "$O/s0-cell-64" ] && [ -s "$O/vm-lab-tos.c" ] || { echo "SKIP   needs x86-64 and the 8-byte build"; exit 0; }
-cp forth/shell-sysc.4 "$W/"
+# build-stages.sh links every forth/*.4 into the work directory; copy only
+# into a tree built before the overlay existed (never through a link)
+cmp -s forth/shell-sysc.4 "$W/shell-sysc.4" 2>/dev/null || { rm -f "$W/shell-sysc.4"; cp forth/shell-sysc.4 "$W/"; }
 SB='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" cv8-save.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 ( cd "$W" && printf "$SB" | "$O/s0-cell-64" kernel.img ) | tr -d '\r' > "$T/d64.txt"
 if grep -q -i 'undefined word\|not found' "$T/d64.txt"; then echo "FAIL   the overlay did not compile: $(grep -i -m2 'undefined word\|not found' "$T/d64.txt" | tr '\n' ' ')"; exit 1; fi

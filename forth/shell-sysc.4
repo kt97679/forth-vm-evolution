@@ -46,11 +46,13 @@ CREATE SYSC-W 2 CELLS ALLOT        \ a status, two descriptors, an rlimit
 \ The environment: the process's, its pointers taken once; a value set here
 \ is a new NAME=VALUE string from ALLOCATE. Zero after the last, for EXECVE.
 512 CONSTANT SYSC-ENVMAX
-CREATE SYSC-ENV SYSC-ENVMAX 1+ CELLS ALLOT
+VARIABLE SYSC-ENVT                 \ the table, ALLOCATE'd when first used - not in the image
 VARIABLE SYSC-ENVN  -1 SYSC-ENVN !
+: SYSC-ENV ( --- addr ) SYSC-ENVT @ ;
 : SYSC-ZLEN ( z --- u ) DUP BEGIN DUP C@ WHILE 1+ REPEAT SWAP - ;
 : SYSC-TAKE ( --- )
   SYSC-ENVN @ 0< IF
+    SYSC-ENVMAX 1+ CELLS ALLOCATE IF DROP 0 SYSC-ENVN ! EXIT THEN SYSC-ENVT !
     0 SYSC-ENVN !  -3 SYSC0
     BEGIN DUP @ ?DUP WHILE
       SYSC-ENVN @ SYSC-ENVMAX < IF SYSC-ENV SYSC-ENVN @ CELLS + !  1 SYSC-ENVN +! ELSE DROP THEN

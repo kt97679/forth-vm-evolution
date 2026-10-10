@@ -2791,3 +2791,17 @@ unset, the child's environment and cd agree line for line
 taught: ?DO is not translated in cell-compiled code (the shell never used
 it - the overlay's loops are BEGIN WHILE REPEAT), and the cell kernel has no
 NIP. Next: the gene sysc, dormant (after seed 39, with NAME>BUF).
+
+## Iteration 136 - 2026-10-10 - Claude
+
+**The gene sysc, wired and dormant.** In LATE, expressed on CV8 designs only
+(SYSC is vm-lab.c's; the cell family is relf.c), the build flag from the
+expressed genome - not in EXPRESSED until seed 39 has run. Forced on: eight
+front designs of seed 37 through the gate, engines 2,880-3,848 bytes smaller
+(its smallest -14% in all); tail-call threading -6,568 and msc -3,728 on s6's
+genome (the tag carries neither). Off: ids, images and engines as Iteration
+130's. The shell's environment table is ALLOCATE'd on first use - not 4 KB
+of zeros in the image; tests/shell still passes on the SYSC shell. The four
+checks pass at both widths. Waiting for seed 39 to have run, together: the
+NAME>BUF patch, jitloop and sysc into EXPRESSED, tools/test-sysc-shell.sh
+into run-tests.sh.

@@ -93,6 +93,11 @@ on the fastest design, its long run -40% (VM). Dormant - not in EXPRESSED -
 so seeds 38 and 39 run the same genes; switched on after 39. D+ priced: -ack
 native but no faster - for ackermann and fib the native call is the cost.
 
+*After seed 39 has run, together (the owner agreed)*: the NAME>BUF patch
+(results/pending/namebuf-after-seed39.patch - s6's yardstick moves), the
+dormant genes jitloop and sysc into EXPRESSED, tools/test-sysc-shell.sh into
+run-tests.sh; then a run with them.
+
 *Pending run.* Seed 38, **6 hours** (the owner: two runs in a day), the same
 genes (NEXT-RUN): the first run on the fixed kernel and the new measurement;
 the chain about 6 h 30 min (the re-measure and the comparison outgrow the
