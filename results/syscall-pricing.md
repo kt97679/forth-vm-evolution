@@ -40,3 +40,22 @@ smallest (20,430). The largest size lever priced so far; fbuf's 26 KB were memor
   (DELETE-FILE, the file-word fixes, the shell's pipes and redirections, the jail) must pass on it.
 
 **The owner's decision**: build it (as a gene, after seed 39), or not.
+
+## Built - phase 1 (Iterations 133-135)
+
+The owner's go. Phase 1 is the shell's process and environment words - not
+the file words, whose READ-LINE runs on the runtime's buffered reader on the
+workloads' hot path (phase 2, if ever). **The engine half** (engine/vm-lab.c,
+engine/rt-linux-x86_64.c, `-DSYSC=1`): SYSCALL in FORK's slot, ( block num ---
+r ), the other seventeen and the runtime's environment and getpwnam compiled
+out. s6's engine as the evolver builds it: 20,248 -> **15,568 bytes**; s5's
+(glibc): 34,672 -> 30,032. A design's image is the kernel, which calls none of
+them - the saving costs no image byte. **The shell half** (forth/shell-sysc.4,
+loaded before shell.4): the seventeen in Forth, each with its old stack effect
+and result; the environment taken from the process once, ALLOCATE'd strings;
+/etc/passwd parsed as the libc-free runtime did. **Tested**
+(tools/test-sysc-shell.sh): tests/shell on a SYSC s5 shell, all 554 assertions
+as on the plain one; ~user, ulimit -f, export, unset, the environment and cd
+line for line as the plain shell. Found on the way: the converter does not
+translate ?DO in cell-compiled code (the shell never used it). Next: the gene,
+dormant; the test into run-tests.sh once it skips cleanly at 4 bytes.

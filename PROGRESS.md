@@ -2778,3 +2778,16 @@ already the expected ones ("relf: data stack overflow", exit 70). run-tests.sh
 runs every file through the cell stage's shell and s5's (s6 is not built with
 one): 554 assertions each; the negative control, a shell that ignores its
 command, fails 468. The suite is what the gene sysc's shell half must pass.
+
+## Iteration 135 - 2026-10-10 - Claude
+
+**SYSCALL phase 1, the shell half.** forth/shell-sysc.4: the seventeen
+process and environment words over SYSCALL, with their old stack effects
+and results. On a SYSC s5 engine with a shell image built through the cell
+stage and the converter, as build-stages.sh builds s5's, tests/shell passes
+all 554 assertions, as the plain shell does, and ~user, ulimit -f, export,
+unset, the child's environment and cd agree line for line
+(tools/test-sysc-shell.sh, not yet in run-tests.sh). Two things the converter
+taught: ?DO is not translated in cell-compiled code (the shell never used
+it - the overlay's loops are BEGIN WHILE REPEAT), and the cell kernel has no
+NIP. Next: the gene sysc, dormant (after seed 39, with NAME>BUF).

@@ -1,0 +1,131 @@
+\ shell-sysc.4 - the shell's process and environment words over one SYSCALL
+\ (the gene sysc, Iteration 135). On an engine built with SYSC the primitive
+\ in FORK's slot is SYSCALL ( block num --- r ): one Linux x86-64 system
+\ call, its six arguments in the block, r its result or -1 on failure; num
+\ -1, -2 and -3 give argc, argv and the process's environment, which no call
+\ returns. The seventeen primitives that engine dropped are written here,
+\ each with the stack effect and the result it had in engine/vm-lab.c. Load
+\ this before shell.4, and on a SYSC engine only: elsewhere FORK is fork.
+\ No ?DO: the converter does not translate it in cell-compiled code (the
+\ shell never used it), so the counted loops are BEGIN WHILE REPEAT.
+
+: SYSCALL ( block num --- r ) FORK ;
+CREATE SYSC-BLK 6 CELLS ALLOT
+: SYSC0 ( num --- r ) SYSC-BLK SWAP SYSCALL ;
+: SYSC1 ( a num --- r ) SWAP SYSC-BLK ! SYSC0 ;
+: SYSC2 ( a b num --- r ) SWAP SYSC-BLK CELL+ ! SYSC1 ;
+: SYSC3 ( a b c num --- r ) SWAP SYSC-BLK 2 CELLS + ! SYSC2 ;
+: SYSC4 ( a b c d num --- r ) SWAP SYSC-BLK 3 CELLS + ! SYSC3 ;
+: SYSC-IOR ( r --- ior ) 0< IF 200 ELSE 0 THEN ;
+CREATE SYSC-W 2 CELLS ALLOT        \ a status, two descriptors, an rlimit
+-1 32 RSHIFT CONSTANT SYSC-LO32
+
+: GETPID ( --- pid ) 39 SYSC0 ;
+: FORK ( --- pid ) 57 SYSC0 ;
+: DUP2 ( oldfd newfd --- ior ) 33 SYSC2 SYSC-IOR ;
+: CHDIR ( c-addr --- ior ) 80 SYSC1 SYSC-IOR ;
+: SYS-EXIT ( n --- ) 231 SYSC1 DROP ;
+: GETCWD ( addr max-len --- len ior )
+  79 SYSC2 DUP 0< IF DROP 0 200 ELSE 1- 0 THEN ;
+: WAITPID ( pid --- status ior )
+  0 SYSC-W !  SYSC-W 0 0 61 SYSC4 0< IF -1 200 ELSE SYSC-W @ SYSC-LO32 AND 0 THEN ;
+: PIPE ( --- fd-read fd-write ior )
+  0 SYSC-W !  SYSC-W 22 SYSC1 0< IF 0 0 200
+  ELSE SYSC-W @ DUP SYSC-LO32 AND SWAP 32 RSHIFT 0 THEN ;
+: GETFSIZE ( --- n )    \ RLIMIT_FSIZE's soft limit in 512-byte blocks, -1 unlimited
+  1 SYSC-W 97 SYSC2 0< IF -1 ELSE SYSC-W @ DUP -1 = 0= IF 512 / THEN THEN ;
+: SETFSIZE ( n --- ior )
+  1 SYSC-W 97 SYSC2 0< IF DROP 202 EXIT THEN
+  DUP 0< IF DROP -1 ELSE 512 * THEN DUP SYSC-W ! SYSC-W CELL+ !
+  1 SYSC-W 160 SYSC2 0< IF 202 ELSE 0 THEN ;
+: SYS-ARGC ( --- n ) -1 SYSC0 2 - 0 MAX ;
+: SYS-ARG ( n --- c-addr | 0 )
+  DUP 0< IF DROP 0 EXIT THEN  2 +  DUP -1 SYSC0 < 0= IF DROP 0 EXIT THEN
+  CELLS -2 SYSC0 + @ ;
+
+\ The environment: the process's, its pointers taken once; a value set here
+\ is a new NAME=VALUE string from ALLOCATE. Zero after the last, for EXECVE.
+512 CONSTANT SYSC-ENVMAX
+CREATE SYSC-ENV SYSC-ENVMAX 1+ CELLS ALLOT
+VARIABLE SYSC-ENVN  -1 SYSC-ENVN !
+: SYSC-ZLEN ( z --- u ) DUP BEGIN DUP C@ WHILE 1+ REPEAT SWAP - ;
+: SYSC-TAKE ( --- )
+  SYSC-ENVN @ 0< IF
+    0 SYSC-ENVN !  -3 SYSC0
+    BEGIN DUP @ ?DUP WHILE
+      SYSC-ENVN @ SYSC-ENVMAX < IF SYSC-ENV SYSC-ENVN @ CELLS + !  1 SYSC-ENVN +! ELSE DROP THEN
+      CELL+
+    REPEAT DROP
+    0 SYSC-ENV SYSC-ENVN @ CELLS + !
+  THEN ;
+: ENVP ( --- addr ) SYSC-TAKE SYSC-ENV ;
+: SYSC-MATCH ( entry name --- value | 0 )
+  BEGIN DUP C@ WHILE
+    OVER C@ OVER C@ = 0= IF 2DROP 0 EXIT THEN
+    1+ SWAP 1+ SWAP
+  REPEAT
+  DROP DUP C@ [CHAR] = = IF 1+ ELSE DROP 0 THEN ;
+: SYSC-FIND ( name --- index | -1 )
+  SYSC-TAKE 0
+  BEGIN DUP SYSC-ENVN @ < WHILE
+    SYSC-ENV OVER CELLS + @ 2 PICK SYSC-MATCH IF SWAP DROP EXIT THEN
+    1+
+  REPEAT 2DROP -1 ;
+: GETENV ( c-addr --- addr | 0 )
+  DUP SYSC-FIND DUP 0< IF 2DROP 0 ELSE CELLS SYSC-ENV + @ SWAP SYSC-MATCH THEN ;
+: SYSC-PUT ( z addr --- addr' ) OVER SYSC-ZLEN >R SWAP OVER R@ CMOVE R> + ;
+: SETENV ( value-addr name-addr --- ior )
+  SYSC-TAKE  2DUP SYSC-ZLEN SWAP SYSC-ZLEN + 2 + ALLOCATE IF DROP 2DROP 200 EXIT THEN
+  DUP >R  ROT >R
+  OVER SWAP SYSC-PUT  [CHAR] = OVER C! 1+  R> SWAP SYSC-PUT  0 SWAP C!
+  SYSC-FIND DUP 0< IF
+    DROP SYSC-ENVN @ DUP SYSC-ENVMAX < 0= IF DROP R> FREE DROP 200 EXIT THEN
+    1 SYSC-ENVN +!  0 SYSC-ENV SYSC-ENVN @ CELLS + !
+  THEN
+  CELLS SYSC-ENV + R> SWAP !  0 ;
+: UNSETENV ( c-addr --- ior )
+  SYSC-FIND DUP 0< IF DROP 0 EXIT THEN
+  BEGIN DUP SYSC-ENVN @ < WHILE
+    SYSC-ENV OVER 1+ CELLS + @  SYSC-ENV 2 PICK CELLS + !  1+
+  REPEAT DROP
+  -1 SYSC-ENVN +!  0 ;
+: EXECVE ( argv-addr path-addr --- ior ) SWAP ENVP 59 SYSC3 DROP 200 ;
+
+\ A user's home directory from /etc/passwd - what the libc-free runtime read.
+CREATE SYSC-PW 256 ALLOT
+CREATE SYSC-HOME 256 ALLOT
+: SYSC-COLON ( a u --- a' u' )   \ to the next colon, or the end
+  BEGIN DUP WHILE OVER C@ [CHAR] : = IF EXIT THEN 1- SWAP 1+ SWAP REPEAT ;
+: SYSC-SKIP ( a u n --- a' u' )  \ past n colons
+  BEGIN DUP WHILE >R SYSC-COLON DUP IF 1- SWAP 1+ SWAP THEN R> 1- REPEAT DROP ;
+: SYSC-SAME ( a1 a2 u --- flag )
+  BEGIN DUP WHILE
+    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN 1+ SWAP 1+ SWAP R> 1-
+  REPEAT DROP 2DROP -1 ;
+: GETPWHOME ( c-addr --- addr | 0 )
+  S" /etc/passwd" R/O OPEN-FILE IF DROP DROP 0 EXIT THEN >R
+  BEGIN SYSC-PW 255 R@ READ-LINE 0= AND WHILE
+    SYSC-PW SWAP 2DUP SYSC-COLON DROP 2 PICK -       ( name a u len )
+    DUP 4 PICK SYSC-ZLEN = IF
+      3 PICK 3 PICK ROT SYSC-SAME IF
+        5 SYSC-SKIP OVER SWAP SYSC-COLON DROP OVER -  255 MIN    ( name a' len )
+        >R SYSC-HOME R@ CMOVE  0 SYSC-HOME R> + C!  DROP
+        R> CLOSE-FILE DROP SYSC-HOME EXIT
+      THEN
+    ELSE DROP THEN
+    2DROP
+  REPEAT
+  DROP DROP R> CLOSE-FILE DROP 0 ;
+
+\ SYSTEM ( c-addr u --- ior ): /bin/sh -c, as the engine's did.
+CREATE SYSC-SH 4 CELLS ALLOT
+CREATE SYSC-BINSH 8 ALLOT
+CREATE SYSC-DASHC 4 ALLOT
+: SYSTEM ( c-addr u --- ior )
+  S" /bin/sh" SYSC-BINSH SWAP CMOVE  0 SYSC-BINSH 7 + C!
+  [CHAR] - SYSC-DASHC C!  [CHAR] c SYSC-DASHC 1+ C!  0 SYSC-DASHC 2 + C!
+  2DUP + DUP C@ >R >R  0 R@ C!  DROP
+  SYSC-BINSH SYSC-SH !  SYSC-DASHC SYSC-SH CELL+ !  SYSC-SH 2 CELLS + !  0 SYSC-SH 3 CELLS + !
+  FORK DUP 0= IF DROP SYSC-SH SYSC-BINSH EXECVE DROP 127 SYS-EXIT THEN
+  DUP 0< IF DROP 200 ELSE WAITPID DROP 8 RSHIFT 255 AND THEN
+  R> R> SWAP C! ;
