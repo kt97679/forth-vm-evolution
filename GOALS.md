@@ -45,7 +45,7 @@ preferences are written here: simplicity and minimalism first; three
 equal objectives (memory within 8 KB a tie); each mechanism priced before
 it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 
-**HANDOFF - read this first (Iteration 122; refreshed 123, 124, 125, 126).** The prompt to
+**HANDOFF - read this first (Iteration 122; refreshed 123-127).** The prompt to
 open a new chat with is HANDOFF-PROMPT.md, at the top of the repository. Checked from a fresh clone of
 the bundle: it builds, the tests pass, the hand-made stages are identical,
 every design of the front of all runs (151, session 30) has its genome in
@@ -74,11 +74,20 @@ scratch reached the carried runs' neighbourhood (fastest 0.146 against
 0.130, smallest 20,425 against 20,318) and no further - 2 of the 90 on the
 front of all runs (results/evolve-amd-ryzen-7-pro-8840hs-seed36.md).
 
-*Pending run - proposed, the owner's to choose.* Seed 38, 9 hours with the
-same genes (NEXT-RUN): the first run on Iteration 125's fixed kernel, and the
-first chance at a small run for this gene set (seed 37 was not small, so the
-count stands at none). Seed 37's chain took 9 h 08 min; seed 38's should be
-about the same. Its comparison measures seeds 33-38 anew.
+*Iteration 127 - the measurement changed (the owner, alone).* The gate: the
+corpus has Haley's +LOOP cases (661 cases; upstream SOD32 fails exactly those
+7, checked). The selection: kernel, fib, corpus, loop, **bubble**,
+**ackermann** - parse held out beside sieve (bench/bubble.fth from the
+owner's RelF bench, bench/ackermann.fth A(3,5)). Seed 37's fastest scored
+0.229 under it (0.130 before): 0.44 of s6 on bubble, 0.57 on ackermann. Speeds
+from here on are not comparable with earlier records - each comparison
+measures every front anew; the stopping rule counts afresh (nothing lost:
+seed 37 was not small). Each design times 8 workloads now, not 6 (~8% fewer
+designs a run).
+
+*Pending run - proposed, the owner's to choose.* Seed 38, 9 hours, the same
+genes (NEXT-RUN): the first run on the fixed kernel and the new measurement.
+Seed 37's chain took 9 h 08 min; seed 38's should be about the same.
 
 *Iteration 124 - the Forth 2012 test suite* (results/forth-standard-tests.md):
 tests/ans is now the standard suite (Jackson's, kept by the Forth Standard
@@ -110,12 +119,8 @@ only anstests0.3 was ever copied in (now superseded) - nothing else needs
 re-uploading for this.
 
 *Open threads, in order.* (1) Seed 38's verdict - the first run on the fixed
-kernel; ans-check.py on its front. A measurement change (2 or 3 below) costs
-no streak now: seed 37 was not small. (2) The gate: Haley's
-+LOOP tests and fixes.fth into the corpus - a measurement change (the corpus
-is timed), alone, the owner's decision. (3)
-Workloads: parse held out, execution-heavy ones in (bubble, ackermann from
-the owner's RelF bench) - the owner's decision. (4) The instruction set as
+kernel and the new measurement; ans-check.py on its front. (2), (3): the gate's
++LOOP cases and the workloads - done, Iteration 127. (4) The instruction set as
 genes: the primitive-set floor and promotion by synthesis (results/deep-
 dive-2.md section 3), then `fromzero` over it. (5) Genetic improvement of the
 Forth sources (level 3), with the ANS suite held out and a stack-effect check

@@ -100,21 +100,25 @@ run() { # run LABEL ENGINE IMAGE [WORKDIR]
         fi
         return
     fi
-    if [ "$gd" -ne 0 ]; then
+    # Iteration 127: upstream SOD32, the ancestor, keeps the +LOOP rule this
+    # project fixed in Iteration 125 - so it fails exactly the corpus's seven
+    # Haley cases (GD8, GD9), checked to be those and no others.
+    kn=0; [ "$label" = sod32 ] && kn=7
+    if [ "$gd" -ne "$kn" ] || { [ "$kn" -gt 0 ] && [ "$(grep -aE "$ERRS" "$O/.t.out" | grep -cE 'GD8|GD9')" -ne "$kn" ]; }; then
         printf '  %-12s FAIL   %s bad cases\n' "$label" "$gd"
         grep -aE "$ERRS" "$O/.t.out" | head -4 | sed 's/^/       /'
         rc=1; return
     fi
     # negative control
     b=$(one "$BAD" "$eng" "$img" "$wd"); bs=${b%%|*}; bd=${b#*|}
-    if [ "$bs" != ran ] || [ "$bd" -lt 1 ]; then
+    if [ "$bs" != ran ] || [ "$bd" -le "$kn" ]; then
         printf '  %-12s BROKEN the deliberately wrong case was not detected\n' "$label"
         rc=1; return
     fi
     if [ $xf -eq 1 ]; then
         printf '  %-12s XPASS  %s cases (expected no compiler - update XFAIL)\n' "$label" "$CASES"
     else
-        printf '  %-12s ok     %s cases\n' "$label" "$CASES"
+        printf '  %-12s ok     %s cases%s\n' "$label" "$CASES" "$([ "$kn" -gt 0 ] && echo "; the $kn +LOOP cases fail, as expected of the ancestor")"
     fi
 }
 

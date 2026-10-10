@@ -278,7 +278,10 @@ def opcall_in(g):
     if not opcall_on(g): return []
     av = set(opcall_avail(g)); names = [n for n in dict.fromkeys(g.get('opcall') or []) if n in av]
     return [[n, 0xFE00 + k, OPCALL_POOL[n]] for k, n in enumerate(names)]
-WORK_SEL = ['kernel', 'fib', 'parse', 'corpus', 'loop']; WORK_HELD = ['sieve']   # Iteration 41: loop selected (the owner), sieve held out
+WORK_SEL = ['kernel', 'fib', 'corpus', 'loop', 'bubble', 'ackermann']; WORK_HELD = ['sieve', 'parse']
+# Iteration 41: loop selected (the owner), sieve held out. Iteration 127 (the owner): parse held out - it
+# timed the interpreter twice over, with the corpus - and two execution-heavy workloads in: bubble (his
+# RelF bench) and ackermann (deep recursion), where the fastest design was 2.4 and 1.6 times s6.
 
 
 def canon(g):
@@ -692,12 +695,12 @@ KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\n'
 # Memory keeps its meaning: repeated, the corpus redefines its words, so its
 # memory is one run of the single corpus (measure); the others allocate
 # nothing when repeated. bench/ is untouched: the long files are made here.
-LONG = {'fib': 2, 'loop': 10, 'sieve': 3, 'parse': 3, 'corpus': 5}
+LONG = {'fib': 2, 'loop': 10, 'sieve': 3, 'parse': 3, 'corpus': 5, 'bubble': 8, 'ackermann': 20}   # 127: ~11 ms each on the fastest (VM)
 LONGF = {}
 def long_files():
     for w, k in LONG.items():
         lines = open(CORPUS if w == 'corpus' else os.path.join(ROOT, 'bench', w + '.fth')).read().split('\n')
-        if w in ('fib', 'loop', 'sieve'):
+        if w not in ('parse', 'corpus'):          # a bench/ file with one BENCH line
             assert lines.count('BENCH') == 1, 'bench/%s.fth: one BENCH line to repeat' % w
             text = '\n'.join('\n'.join(['BENCH'] * k) if l == 'BENCH' else l for l in lines)
         else:
@@ -1317,7 +1320,7 @@ def knockout(argv):
             'machine: %s; commit %s; %s UTC; %s; %d rounds; every figure MEASURED (none modelled): CPU time over'
             % (model, sh(['git', '-C', ROOT, 'rev-parse', '--short', 'HEAD']).stdout.decode().strip(),
                time.strftime('%Y-%m-%d %H:%M', time.gmtime()), ' '.join(PIN) or 'not pinned', rounds),
-            "hand-made s6's, paired run by run, geometric mean over kernel, fib, parse, corpus; size of the self-hosting image.", '',
+            "hand-made s6's, paired run by run, geometric mean over %s; size of the self-hosting image." % ', '.join(WORK_SEL), '',
             'How these can mislead (prompts/03): each knockout measures a gene IN this design - interactions included, so the',
             'changes do not add up to the total; "also changed" names what moved with it (the escape takes its slots, and',
             'with them pairs and words; a dormant gene can wake: undoing multi-state caching turns on tail calls the genome',

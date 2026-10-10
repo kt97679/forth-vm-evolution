@@ -2632,3 +2632,22 @@ rest), abortif 79, kstack 17 (of the 19 without kinput), opcall 13. The
 held-out check at Iteration 125's code: all 242 as s6 on the Forth 2012 suite
 (58 with the guard), the control caught. Proposed: seed 38, 9 hours, the same
 genes - the first run on the fixed kernel (NEXT-RUN; the owner's call).
+
+## Iteration 127 - 2026-10-10 - Claude
+
+**The measurement changed, alone** (the owner: both, before seed 38). The
+gate: tests/corpus/core.fth ends with the +LOOP sections of the Forth 2012
+suite's coreplustest.fth (tests/core/coreplus-loop.fth, RelF's) - 661 cases;
+every stage passes them; upstream SOD32, the ancestor, fails exactly those 7
+(GD8, GD9) and run-tests.sh checks that it is those and no others, its
+negative control then needing an eighth. The selection: kernel, fib, corpus,
+loop, bubble, ackermann; held out sieve and parse. bench/bubble.fth is the
+owner's (RelF's bench/langs/bench.4, 300 cells), bench/ackermann.fth A(3,5) -
+the collection's RelF/bench Ackermann is not in the repository (a re-upload
+would let it replace this textbook one). Both run alike on every kind of
+stage (cell, pack, SOD16, CV8, CV8b, SPN, RelF: 30836742192 and 253); K = 8
+and 20 for ~11 ms on the fastest design. That design, seed 37's fastest:
+0.229 under the new selection (0.130 before) - bubble 0.44 of s6, ackermann
+0.57, against loop 0.06. Speeds are not comparable with earlier records; the
+stopping rule counts afresh. evolve.py's knockout report named the old
+workloads by hand; it reads the list now.

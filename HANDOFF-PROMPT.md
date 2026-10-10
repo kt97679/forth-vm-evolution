@@ -1,4 +1,4 @@
-# The prompt for a new chat (Iteration 126)
+# The prompt for a new chat (Iteration 127)
 
 Paste the text below into the new chat, with the newest bundle attached
 (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet processed
@@ -49,7 +49,7 @@ any laptop runs not yet processed.
 - Every change is a commit `Iteration N: ...` (the bundle script requires that
   subject; git identity Kirill Timofeev <kt97679@gmail.com>) and a bundle:
   `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs`, the
-  file presented to me. The next iteration is 127.
+  file presented to me. The next iteration is 128.
 
 **Where it stands.** Seed 35 was the second small run in a row: the gene set
 converged. New since: the genes fbuf (memory), kstack, abortif and opcall; the
@@ -62,7 +62,9 @@ e8440ed) - +LOOP, a standard PARSE and the strings on it, the file words,
 CONVERT, long names and IF outside a definition refused - with their tests in
 run-tests.sh; every image changed (+120-160 bytes). Seed 37, 9 hours with the
 new genes: not small - memory 184 -> 156 KB, 90 of 107 on the front of all
-runs. Pending: seed 38 (NEXT-RUN), the first run on the fixed kernel - process
-its packs when I send them. The open threads after it are in the HANDOFF.
+runs. Iteration 127: the measurement changed - Haley's +LOOP cases in the
+gate, bubble and ackermann selected, parse held out. Pending: seed 38
+(NEXT-RUN), the first run on the fixed kernel and the new measurement -
+process its packs when I send them. The open threads after it are in the HANDOFF.
 
 Please set up, confirm the checks pass, and tell me what you will do next.

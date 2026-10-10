@@ -277,3 +277,15 @@ it however the run ends; `CHECK=1` runs just those checks. Cycles still
 count a busy SMT sibling or a neighbour filling the cache - they make the
 work itself slower - so a heavily used machine still costs precision,
 and the sweeps' agreement check still decides whether it cost too much.
+
+## The evolver's workloads (Iteration 127)
+
+What lab/evolve/evolve.py times (WORK_SEL, WORK_HELD), each paired with
+hand-made s6 on the same CPU, repeated (LONG) to 8-17 ms on the fastest
+design: **selected** - the kernel workload (extend.4 and cross.4: the system
+compiling itself), fib.fth, the CORE corpus (with Haley's +LOOP cases since
+Iteration 127), loop.fth, bubble.fth, ackermann.fth; **held out** - sieve.fth,
+parse.fth. bubble.fth (the owner's RelF bench, bench/langs/bench.4 there) and
+ackermann.fth (deep recursion) replaced parse in the selection: the fastest
+design ran them at 0.44 and 0.57 of s6's time, against 0.06-0.25 elsewhere -
+execution, where parse timed the interpreter a second time beside the corpus.

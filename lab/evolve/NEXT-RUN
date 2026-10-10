@@ -217,4 +217,9 @@
 # (results/evolve-amd-ryzen-7-pro-8840hs-seed37.md). Proposed: seed 38, the
 # same genes, the first run on Iteration 125's fixed kernel - 9 hours like
 # seed 37 (its chain took 9 h 08 min). The owner's to choose.
+#
+# Iteration 127: the measurement changed - Haley's +LOOP cases in the corpus,
+# and the selection kernel, fib, corpus, loop, bubble, ackermann (parse held
+# out). Speeds from here on are not comparable with earlier records; the
+# comparison measures everything anew; the stopping rule counts afresh.
 seed 38 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
