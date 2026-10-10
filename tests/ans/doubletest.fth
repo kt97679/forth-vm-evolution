@@ -1,331 +1,437 @@
 \ To test the ANS Forth Double-Number word set and double number extensions
 
-\ Copyright (C) Gerry Jackson 2006, 2007
-
-\ This program is free software; you can redistribute it and/or
-\ modify it any way.
+\ This program was written by Gerry Jackson in 2006, with contributions from
+\ others where indicated, and is in the public domain - it can be distributed
+\ and/or modified in any way but please retain this notice.
 
 \ This program is distributed in the hope that it will be useful,
 \ but WITHOUT ANY WARRANTY; without even the implied warranty of
 \ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 \ The tests are not claimed to be comprehensive or correct 
-
-\ --------------------------------------------------------------------
-\ Version 0.3   20 April 2007 ANS Forth words changed to upper case
+\ ------------------------------------------------------------------------------
+\ Version 0.13  Assumptions and dependencies changed
+\         0.12  1 August 2015 test D< acts on MS cells of double word
+\         0.11  7 April 2015 2VALUE tested
+\         0.6   1 April 2012 Tests placed in the public domain.
+\               Immediate 2CONSTANTs and 2VARIABLEs tested
+\         0.5   20 November 2009 Various constants renamed to avoid
+\               redefinition warnings. <TRUE> and <FALSE> replaced
+\               with TRUE and FALSE
+\         0.4   6 March 2009 { and } replaced with T{ and }T
+\               Tests rewritten to be independent of word size and
+\               tests re-ordered
+\         0.3   20 April 2007 ANS Forth words changed to upper case
 \         0.2   30 Oct 2006 Updated following GForth test to include
 \               various constants from core.fr
 \         0.1   Oct 2006 First version released
-
-\ --------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
 \ The tests are based on John Hayes test program for the core word set
-\ and requires those files to have been loaded
 
 \ Words tested in this file are:
-\     D+ D- D0< D0= D2* D2/ D< D= 2CONSTANT 2LITERAL 2VARIABLE
-\     DMAX DMIN D>S DABS DNEGATE D. D.R M* M+ 2ROT DU<
-
-\ --------------------------------------------------------------------
+\     2CONSTANT 2LITERAL 2VARIABLE D+ D- D. D.R D0< D0= D2* D2/
+\     D< D= D>S DABS DMAX DMIN DNEGATE M*/ M+ 2ROT DU<
+\ Also tests the interpreter and compiler reading a double number
+\ ------------------------------------------------------------------------------
 \ Assumptions and dependencies:
-\     - tester.fr has been included prior to this file
-\ --------------------------------------------------------------------
-\ Constant definitions copied from core.fr
-
-0 INVERT 1 RSHIFT        CONSTANT max-int
-0 INVERT 1 RSHIFT INVERT CONSTANT min-int
-0 INVERT 1 RSHIFT        CONSTANT mid-uint
-0 INVERT 1 RSHIFT INVERT CONSTANT mid-uint+1
-0 INVERT CONSTANT 1s
-1s 1 RSHIFT INVERT CONSTANT msb
-0  CONSTANT <false>
-1s CONSTANT <true>
-
-\ --------------------------------------------------------------------
-Testing Double-Number word set
+\     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth have been
+\       included prior to this file
+\     - the Core word set is available and tested
+\ ------------------------------------------------------------------------------
+\ Constant definitions
 
 DECIMAL
+0 INVERT        CONSTANT 1SD
+1SD 1 RSHIFT    CONSTANT MAX-INTD   \ 01...1
+MAX-INTD INVERT CONSTANT MIN-INTD   \ 10...0
+MAX-INTD 2/     CONSTANT HI-INT     \ 001...1
+MIN-INTD 2/     CONSTANT LO-INT     \ 110...1
 
-Testing D+ with simple small integers
+\ ------------------------------------------------------------------------------
+TESTING interpreter and compiler reading double numbers, with/without prefixes
 
-{  0 S>D  5 S>D D+ ->  5  0 }
-{  5 S>D  0 S>D D+ ->  5  0 }
-{  0 S>D -5 S>D D+ -> -5 -1 }
-{ -5 S>D  0 S>D D+ -> -5 -1 }
-{  1 S>D  2 S>D D+ ->  3  0 }
-{  1 S>D -2 S>D D+ -> -1 -1 }
-{ -1 S>D  2 S>D D+ ->  1  0 }
-{ -1 S>D -2 S>D D+ -> -3 -1 }
-{ -1 S>D  1 S>D D+ ->  0  0 }
+T{ 1. -> 1 0 }T
+T{ -2. -> -2 -1 }T
+T{ : RDL1 3. ; RDL1 -> 3 0 }T
+T{ : RDL2 -4. ; RDL2 -> -4 -1 }T
 
-testing D+ with mid range integers
+VARIABLE OLD-DBASE
+DECIMAL BASE @ OLD-DBASE !
+T{ #12346789. -> 12346789. }T
+T{ #-12346789. -> -12346789. }T
+T{ $12aBcDeF. -> 313249263. }T
+T{ $-12AbCdEf. -> -313249263. }T
+T{ %10010110. -> 150. }T
+T{ %-10010110. -> -150. }T
+\ Check BASE is unchanged
+T{ BASE @ OLD-DBASE @ = -> <TRUE> }T
 
-{  0  0  0  5 D+ ->  0  5 }
-{ -1  5  0  0 D+ -> -1  5 }
-{  0  0  0 -5 D+ ->  0 -5 }
-{  0 -5 -1  0 D+ -> -1 -5 }
-{  0  1  0  2 D+ ->  0  3 }
-{ -1  1  0 -2 D+ -> -1 -1 }
-{  0 -1  0  2 D+ ->  0  1 }
-{  0 -1 -1 -2 D+ -> -1 -3 }
-{ -1 -1  0  1 D+ -> -1  0 }
+\ Repeat in Hex mode
+16 OLD-DBASE ! 16 BASE !
+T{ #12346789. -> BC65A5. }T
+T{ #-12346789. -> -BC65A5. }T
+T{ $12aBcDeF. -> 12AbCdeF. }T
+T{ $-12AbCdEf. -> -12ABCDef. }T
+T{ %10010110. -> 96. }T
+T{ %-10010110. -> -96. }T
+\ Check BASE is unchanged
+T{ BASE @ OLD-DBASE @ = -> <TRUE> }T   \ 2
 
-{ min-int 0 2DUP D+ -> 0 1 }
-{ min-int S>D min-int 0 D+ -> 0 0 }
+DECIMAL
+\ Check number prefixes in compile mode
+T{ : dnmp  #8327. $-2cbe. %011010111. ; dnmp -> 8327. -11454. 215. }T
 
-testing D+ with large double integers
+\ ------------------------------------------------------------------------------
+TESTING 2CONSTANT
 
-{ 1s mid-uint 1 S>D D+ -> 0 mid-uint+1 }
-{ 1 S>D 1s mid-uint D+ -> 0 mid-uint+1 }
-{ min-int max-int min-int 0 D+ -> 0 min-int }
-{ min-int max-int 2DUP D+ -> 0 1s }
+T{ 1 2 2CONSTANT 2C1 -> }T
+T{ 2C1 -> 1 2 }T
+T{ : CD1 2C1 ; -> }T
+T{ CD1 -> 1 2 }T
+T{ : CD2 2CONSTANT ; -> }T
+T{ -1 -2 CD2 2C2 -> }T
+T{ 2C2 -> -1 -2 }T
+T{ 4 5 2CONSTANT 2C3 IMMEDIATE 2C3 -> 4 5 }T
+T{ : CD6 2C3 2LITERAL ; CD6 -> 4 5 }T
 
-: dbl1 1234567890123456789. ;
-: dbl2 4321098765432109876. ;
-: dbl3 -2345678901234567890. ;
-: dbl4 -6543210987654321098. ;
+\ ------------------------------------------------------------------------------
+\ Some 2CONSTANTs for the following tests
 
-{ dbl1 dbl2 D+ ->  5555666655555566665. }
-{ dbl2 dbl1 D+ ->  5555666655555566665. }
-{ dbl2 dbl3 D+ ->  1975419864197541986. }
-{ dbl3 dbl2 D+ ->  1975419864197541986. }
-{ dbl1 dbl3 D+ -> -1111111011111111101. }
-{ dbl3 dbl1 D+ -> -1111111011111111101. }
-{ dbl3 dbl4 D+ -> -8888889888888888988. }
-{ dbl4 dbl3 D+ -> -8888889888888888988. }
+1SD MAX-INTD 2CONSTANT MAX-2INT  \ 01...1
+0   MIN-INTD 2CONSTANT MIN-2INT  \ 10...0
+MAX-2INT 2/  2CONSTANT HI-2INT   \ 001...1
+MIN-2INT 2/  2CONSTANT LO-2INT   \ 110...0
 
-\ --------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
+TESTING DNEGATE
 
-Testing D- with small integers
+T{ 0. DNEGATE -> 0. }T
+T{ 1. DNEGATE -> -1. }T
+T{ -1. DNEGATE -> 1. }T
+T{ MAX-2INT DNEGATE -> MIN-2INT SWAP 1+ SWAP }T
+T{ MIN-2INT SWAP 1+ SWAP DNEGATE -> MAX-2INT }T
 
-{  0 S>D  5 S>D D- -> -5. }
-{  5 S>D  0 S>D D- ->  5. }
-{  0 S>D -5 S>D D- ->  5. }
-{ -5 S>D  0 S>D D- -> -5. }
-{  1 S>D  2 S>D D- -> -1. }
-{  1 S>D -2 S>D D- ->  3. }
-{ -1 S>D  2 S>D D- -> -3. }
-{ -1 S>D -2 S>D D- ->  1. }
-{  0 S>D  1 S>D D- -> -1. }
+\ ------------------------------------------------------------------------------
+TESTING D+ with small integers
 
-Testing D- with mid-range integers
+T{  0.  5. D+ ->  5. }T
+T{ -5.  0. D+ -> -5. }T
+T{  1.  2. D+ ->  3. }T
+T{  1. -2. D+ -> -1. }T
+T{ -1.  2. D+ ->  1. }T
+T{ -1. -2. D+ -> -3. }T
+T{ -1.  1. D+ ->  0. }T
 
-{  0  0  0  5 D- ->  0 -5 }
-{ -1  5  0  0 D- -> -1  5 }
-{  0  0 -1 -5 D- ->  1  4 }
-{  0 -5  0  0 D- ->  0 -5 }
-{ -1  1  0  2 D- -> -1 -1 }
-{  0  1 -1 -2 D- ->  1  2 }
-{  0 -1  0  2 D- ->  0 -3 }
-{  0 -1  0 -2 D- ->  0  1 }
-{  0  0  0  1 D- ->  0 -1 }
+TESTING D+ with mid range integers
 
-{ min-int 0 2DUP D- -> 0. }
-{ min-int S>D mid-uint 0 D- -> 1 1s }
+T{  0  0  0  5 D+ ->  0  5 }T
+T{ -1  5  0  0 D+ -> -1  5 }T
+T{  0  0  0 -5 D+ ->  0 -5 }T
+T{  0 -5 -1  0 D+ -> -1 -5 }T
+T{  0  1  0  2 D+ ->  0  3 }T
+T{ -1  1  0 -2 D+ -> -1 -1 }T
+T{  0 -1  0  2 D+ ->  0  1 }T
+T{  0 -1 -1 -2 D+ -> -1 -3 }T
+T{ -1 -1  0  1 D+ -> -1  0 }T
+T{ MIN-INTD 0 2DUP D+ -> 0 1 }T
+T{ MIN-INTD S>D MIN-INTD 0 D+ -> 0 0 }T
 
-Testing D- with large integers
+TESTING D+ with large double integers
 
-{ 0 mid-uint+1 0 1 D- -> 0 mid-uint }
-{ 0. 1s mid-uint   D- -> 1 mid-uint+1 }
-{ 0 min-int min-int 0 D- -> min-int max-int }
-{ min-int min-int max-int max-int D- -> 1 1 }
-{ 0 mid-uint+1 0 1 D- -> 0 mid-uint }
+T{ HI-2INT 1. D+ -> 0 HI-INT 1+ }T
+T{ HI-2INT 2DUP D+ -> 1SD 1- MAX-INTD }T
+T{ MAX-2INT MIN-2INT D+ -> -1. }T
+T{ MAX-2INT LO-2INT D+ -> HI-2INT }T
+T{ HI-2INT MIN-2INT D+ 1. D+ -> LO-2INT }T
+T{ LO-2INT 2DUP D+ -> MIN-2INT }T
 
-{ dbl2 dbl1 D- ->  3086530875308653087. }
-{ dbl1 dbl2 D- -> -3086530875308653087. }
-{ dbl1 dbl3 D- ->  3580246791358024679. }
-{ dbl3 dbl1 D- -> -3580246791358024679. }
-{ dbl4 dbl3 D- -> -4197532086419753208. }
-{ dbl3 dbl4 D- ->  4197532086419753208. }
+\ ------------------------------------------------------------------------------
+TESTING D- with small integers
 
-\ --------------------------------------------------------------------
+T{  0.  5. D- -> -5. }T
+T{  5.  0. D- ->  5. }T
+T{  0. -5. D- ->  5. }T
+T{  1.  2. D- -> -1. }T
+T{  1. -2. D- ->  3. }T
+T{ -1.  2. D- -> -3. }T
+T{ -1. -2. D- ->  1. }T
+T{ -1. -1. D- ->  0. }T
 
-Testing D0< D0=
+TESTING D- with mid-range integers
 
-{ 1. D0< -> <false> }
-{ min-int 0 D0< -> <false> }
-{ 0 max-int D0< -> <false> }
-{ -1 max-int D0< -> <false> }
-{ 0. D0< -> <false> }
-{ -1. D0< -> <true> }
-{ 0 min-int D0< -> <true> }
+T{  0  0  0  5 D- ->  0 -5 }T
+T{ -1  5  0  0 D- -> -1  5 }T
+T{  0  0 -1 -5 D- ->  1  4 }T
+T{  0 -5  0  0 D- ->  0 -5 }T
+T{ -1  1  0  2 D- -> -1 -1 }T
+T{  0  1 -1 -2 D- ->  1  2 }T
+T{  0 -1  0  2 D- ->  0 -3 }T
+T{  0 -1  0 -2 D- ->  0  1 }T
+T{  0  0  0  1 D- ->  0 -1 }T
+T{ MIN-INTD 0 2DUP D- -> 0. }T
+T{ MIN-INTD S>D MAX-INTD 0 D- -> 1 1SD }T
 
-{ 1. D0= -> <false> }
-{ min-int 0 D0= -> <false> }
-{ 0 max-int D0= -> <false> }
-{ -1 max-int D0= -> <false> }
-{ 0. D0= -> <true> }
-{ -1. D0= -> <false> }
-{ 0 min-int D0= -> <false> }
+TESTING D- with large integers
 
-\ --------------------------------------------------------------------
+T{ MAX-2INT MAX-2INT D- -> 0. }T
+T{ MIN-2INT MIN-2INT D- -> 0. }T
+T{ MAX-2INT HI-2INT  D- -> LO-2INT DNEGATE }T
+T{ HI-2INT  LO-2INT  D- -> MAX-2INT }T
+T{ LO-2INT  HI-2INT  D- -> MIN-2INT 1. D+ }T
+T{ MIN-2INT MIN-2INT D- -> 0. }T
+T{ MIN-2INT LO-2INT  D- -> LO-2INT }T
 
-Testing D2* D2/
+\ ------------------------------------------------------------------------------
+TESTING D0< D0=
 
-{ min-int 0 D2* -> 0 1 }
-{ 1s max-int 1 RSHIFT D2* -> -2 max-int }
-{ min-int DUP D2* -> 0 1 }
+T{ 0. D0< -> FALSE }T
+T{ 1. D0< -> FALSE }T
+T{ MIN-INTD 0 D0< -> FALSE }T
+T{ 0 MAX-INTD D0< -> FALSE }T
+T{ MAX-2INT  D0< -> FALSE }T
+T{ -1. D0< -> TRUE }T
+T{ MIN-2INT D0< -> TRUE }T
 
-{ 0 1 D2/ -> min-int 0 }
-{ 1s DUP D2/ -> 1s DUP }
-{ 1s 1 XOR 1s D2/ -> 1s 1s }
-{ 0 msb D2/ msb AND -> 0 msb }
+T{ 1. D0= -> FALSE }T
+T{ MIN-INTD 0 D0= -> FALSE }T
+T{ MAX-2INT  D0= -> FALSE }T
+T{ -1 MAX-INTD D0= -> FALSE }T
+T{ 0. D0= -> TRUE }T
+T{ -1. D0= -> FALSE }T
+T{ 0 MIN-INTD D0= -> FALSE }T
 
-\ --------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
+TESTING D2* D2/
 
-Testing D< D=
+T{ 0. D2* -> 0. D2* }T
+T{ MIN-INTD 0 D2* -> 0 1 }T
+T{ HI-2INT D2* -> MAX-2INT 1. D- }T
+T{ LO-2INT D2* -> MIN-2INT }T
 
-{ 0. 1. D< -> <true> }
-{ 0. 0. D< -> <false> }
-{ 1. 0. D< -> <false> }
-{ -1. 1. D< -> <true> }
-{ -1. 0 max-int D< -> <true> }
-{ max-int min-int 0 min-int 1+ D< -> <true> }
-{ 0 max-int 1- 0 max-int D< -> <true> }
-{ 0 min-int 1s max-int D< -> <true> }
+T{ 0. D2/ -> 0. }T
+T{ 1. D2/ -> 0. }T
+T{ 0 1 D2/ -> MIN-INTD 0 }T
+T{ MAX-2INT D2/ -> HI-2INT }T
+T{ -1. D2/ -> -1. }T
+T{ MIN-2INT D2/ -> LO-2INT }T
 
-{ -1. -1. D= -> <true>  }
-{ -1.  0. D= -> <false> }
-{ -1.  1. D= -> <false> }
-{  0. -1. D= -> <false> }
-{  0.  0. D= -> <true>  }
-{  0.  1. D= -> <false> }
-{  1. -1. D= -> <false> }
-{  1.  0. D= -> <false> }
-{  1.  1. D= -> <true>  }
+\ ------------------------------------------------------------------------------
+TESTING D< D=
 
-{ 0 -1 0 -1 D= -> <true>  }
-{ 0 -1 0  0 D= -> <false> }
-{ 0 -1 0  1 D= -> <false> }
-{ 0  0 0 -1 D= -> <false> }
-{ 0  0 0  0 D= -> <true>  }
-{ 0  0 0  1 D= -> <false> }
-{ 0  1 0 -1 D= -> <false> }
-{ 0  1 0  0 D= -> <false> }
-{ 0  1 0  1 D= -> <true>  }
+T{  0.  1. D< -> TRUE  }T
+T{  0.  0. D< -> FALSE }T
+T{  1.  0. D< -> FALSE }T
+T{ -1.  1. D< -> TRUE  }T
+T{ -1.  0. D< -> TRUE  }T
+T{ -2. -1. D< -> TRUE  }T
+T{ -1. -2. D< -> FALSE }T
+T{ 0 1   1. D< -> FALSE }T  \ Suggested by Helmut Eller
+T{ 1.  0 1  D< -> TRUE  }T
+T{ 0 -1 1 -2 D< -> FALSE }T
+T{ 1 -2 0 -1 D< -> TRUE  }T
+T{ -1. MAX-2INT D< -> TRUE }T
+T{ MIN-2INT MAX-2INT D< -> TRUE }T
+T{ MAX-2INT -1. D< -> FALSE }T
+T{ MAX-2INT MIN-2INT D< -> FALSE }T
+T{ MAX-2INT 2DUP -1. D+ D< -> FALSE }T
+T{ MIN-2INT 2DUP  1. D+ D< -> TRUE  }T
+T{ MAX-INTD S>D 2DUP 1. D+ D< -> TRUE }T \ Ensure D< acts on MS cells 
 
-{ 0  max-int 0 min-int D= -> <false> }
-{ 0  max-int 0 0 D= -> <false> }
-{ 0  max-int 0 max-int D= -> <true> }
-{ 1s max-int 0 max-int D= -> <false> }
-{ 1s max-int 0 min-int D= -> <false> }
-{ 0 min-int  0 min-int D= -> <true> }
-{ 0 min-int 1s min-int D= -> <false> }
-{ 0 min-int 1s max-int D= -> <false> }
+T{ -1. -1. D= -> TRUE  }T
+T{ -1.  0. D= -> FALSE }T
+T{ -1.  1. D= -> FALSE }T
+T{  0. -1. D= -> FALSE }T
+T{  0.  0. D= -> TRUE  }T
+T{  0.  1. D= -> FALSE }T
+T{  1. -1. D= -> FALSE }T
+T{  1.  0. D= -> FALSE }T
+T{  1.  1. D= -> TRUE  }T
 
-\ --------------------------------------------------------------------
+T{ 0 -1 0 -1 D= -> TRUE  }T
+T{ 0 -1 0  0 D= -> FALSE }T
+T{ 0 -1 0  1 D= -> FALSE }T
+T{ 0  0 0 -1 D= -> FALSE }T
+T{ 0  0 0  0 D= -> TRUE  }T
+T{ 0  0 0  1 D= -> FALSE }T
+T{ 0  1 0 -1 D= -> FALSE }T
+T{ 0  1 0  0 D= -> FALSE }T
+T{ 0  1 0  1 D= -> TRUE  }T
 
-Testing 2CONSTANT 2LITERAL 2VARIABLE
+T{ MAX-2INT MIN-2INT D= -> FALSE }T
+T{ MAX-2INT 0. D= -> FALSE }T
+T{ MAX-2INT MAX-2INT D= -> TRUE }T
+T{ MAX-2INT HI-2INT  D= -> FALSE }T
+T{ MAX-2INT MIN-2INT D= -> FALSE }T
+T{ MIN-2INT MIN-2INT D= -> TRUE }T
+T{ MIN-2INT LO-2INT  D=  -> FALSE }T
+T{ MIN-2INT MAX-2INT D= -> FALSE }T
 
-{ 1111 2222 2CONSTANT 2c1 -> }
-{ 2c1 -> 1111 2222 }
-{ : cd1 2c1 ; -> }
-{ cd1 -> 1111 2222 }
-{ : cd2 2CONSTANT ; -> }
-{ dbl1 cd2 2c2 -> }
-{ 2c2 -> dbl1 }
-{ : cd3 [ dbl2 ] 2LITERAL ; -> }
-{ cd3 -> dbl2 }
-{ 2VARIABLE 2v1 -> }
-{ 2c1 2v1 2! -> }
-{ 2v1 2@ -> 2c1 }
-{ : cd3 2VARIABLE ; -> }
-{ cd3 2v2 -> }
-{ : cd4 2v2 2! ; -> }
-{ dbl2 cd4 -> }
-{ 2v2 2@ -> dbl2 }
+\ ------------------------------------------------------------------------------
+TESTING 2LITERAL 2VARIABLE
 
-\ --------------------------------------------------------------------
+T{ : CD3 [ MAX-2INT ] 2LITERAL ; -> }T
+T{ CD3 -> MAX-2INT }T
+T{ 2VARIABLE 2V1 -> }T
+T{ 0. 2V1 2! -> }T
+T{ 2V1 2@ -> 0. }T
+T{ -1 -2 2V1 2! -> }T
+T{ 2V1 2@ -> -1 -2 }T
+T{ : CD4 2VARIABLE ; -> }T
+T{ CD4 2V2 -> }T
+T{ : CD5 2V2 2! ; -> }T
+T{ -2 -1 CD5 -> }T
+T{ 2V2 2@ -> -2 -1 }T
+T{ 2VARIABLE 2V3 IMMEDIATE 5 6 2V3 2! -> }T
+T{ 2V3 2@ -> 5 6 }T
+T{ : CD7 2V3 [ 2@ ] 2LITERAL ; CD7 -> 5 6 }T
+T{ : CD8 [ 6 7 ] 2V3 [ 2! ] ; 2V3 2@ -> 6 7 }T
 
-Testing DMAX DMIN
+\ ------------------------------------------------------------------------------
+TESTING DMAX DMIN
 
-{ dbl1 dbl2 DMAX -> dbl2 }
-{ dbl2 dbl1 DMAX -> dbl2 }
-{ dbl1 dbl1 DMAX -> dbl1 }
-{ dbl1 dbl2 DMIN -> dbl1 }
-{ dbl2 dbl1 DMIN -> dbl1 }
-{ dbl1 dbl1 DMIN -> dbl1 }
+T{  1.  2. DMAX -> 2. }T
+T{  1.  0. DMAX -> 1. }T
+T{  1. -1. DMAX -> 1. }T
+T{  1.  1. DMAX -> 1. }T
+T{  0.  1. DMAX -> 1. }T
+T{  0. -1. DMAX -> 0. }T
+T{ -1.  1. DMAX -> 1. }T
+T{ -1. -2. DMAX -> -1. }T
 
-{ dbl3 dbl4 DMAX -> dbl3 }
-{ dbl4 dbl3 DMAX -> dbl3 }
-{ dbl3 dbl3 DMAX -> dbl3 }
-{ dbl3 dbl4 DMIN -> dbl4 }
-{ dbl4 dbl3 DMIN -> dbl4 }
-{ dbl3 dbl3 DMIN -> dbl3 }
+T{ MAX-2INT HI-2INT  DMAX -> MAX-2INT }T
+T{ MAX-2INT MIN-2INT DMAX -> MAX-2INT }T
+T{ MIN-2INT MAX-2INT DMAX -> MAX-2INT }T
+T{ MIN-2INT LO-2INT  DMAX -> LO-2INT  }T
 
-{ dbl1 dbl3 DMAX -> dbl1 }
-{ dbl3 dbl1 DMAX -> dbl1 }
-{ dbl1 dbl3 DMIN -> dbl3 }
-{ dbl3 dbl1 DMIN -> dbl3 }
-
-{ -1 max-int 0 min-int DMAX -> -1 max-int }
-{ -1 max-int 0 min-int DMIN ->  0 min-int }
-
-\ --------------------------------------------------------------------
-
-Testing D>S DNEGATE DABS
-
-{  1234  0 D>S ->  1234 }
-{ -1234 -1 D>S -> -1234 }
-{ max-int  0 D>S -> max-int }
-{ min-int -1 D>S -> min-int }
-
-{ dbl1 DNEGATE dbl1 D+ -> 0 0 }
-{ dbl3 DNEGATE dbl3 D+ -> 0 0 }
-{ 0  1 DNEGATE -> 0 -1 }
-{ 0 -1 DNEGATE -> 0 1 }
-
-{ dbl1 DABS -> dbl1 }
-{ dbl3 DABS -> dbl3 DNEGATE }
+T{ MAX-2INT  1. DMAX -> MAX-2INT }T
+T{ MAX-2INT -1. DMAX -> MAX-2INT }T
+T{ MIN-2INT  1. DMAX ->  1. }T
+T{ MIN-2INT -1. DMAX -> -1. }T
 
 
-\ --------------------------------------------------------------------
+T{  1.  2. DMIN ->  1. }T
+T{  1.  0. DMIN ->  0. }T
+T{  1. -1. DMIN -> -1. }T
+T{  1.  1. DMIN ->  1. }T
+T{  0.  1. DMIN ->  0. }T
+T{  0. -1. DMIN -> -1. }T
+T{ -1.  1. DMIN -> -1. }T
+T{ -1. -2. DMIN -> -2. }T
 
-Testing D. D.R
+T{ MAX-2INT HI-2INT  DMIN -> HI-2INT  }T
+T{ MAX-2INT MIN-2INT DMIN -> MIN-2INT }T
+T{ MIN-2INT MAX-2INT DMIN -> MIN-2INT }T
+T{ MIN-2INT LO-2INT  DMIN -> MIN-2INT }T
 
-{ : DoubleOutput
-	CR ." You should see lines duplicated:" CR
-	5 SPACES ." 1234567890123456789"       CR 5 SPACES dbl1 D. CR
-	5 SPACES ."    1234567890123456789"    CR 5 SPACES dbl1 22 D.R CR
-	5 SPACES ." -2345678901234567890"      CR 5 SPACES dbl3 D. CR
-	5 SPACES ."      -2345678901234567890" CR 5 SPACES dbl3 25 D.R CR
-	CR
-; -> }
+T{ MAX-2INT  1. DMIN ->  1. }T
+T{ MAX-2INT -1. DMIN -> -1. }T
+T{ MIN-2INT  1. DMIN -> MIN-2INT }T
+T{ MIN-2INT -1. DMIN -> MIN-2INT }T
 
-{ DoubleOutput -> }
+\ ------------------------------------------------------------------------------
+TESTING D>S DABS
 
-\ --------------------------------------------------------------------
+T{  1234  0 D>S ->  1234 }T
+T{ -1234 -1 D>S -> -1234 }T
+T{ MAX-INTD  0 D>S -> MAX-INTD }T
+T{ MIN-INTD -1 D>S -> MIN-INTD }T
 
-Testing M*/ M+
+T{  1. DABS -> 1. }T
+T{ -1. DABS -> 1. }T
+T{ MAX-2INT DABS -> MAX-2INT }T
+T{ MIN-2INT 1. D+ DABS -> MAX-2INT }T
 
-{ dbl1  1 M+ -> dbl1  1. D+ }
-{ dbl1 -1 M+ -> dbl1 -1. D+ }
-{ dbl3  1 M+ -> dbl3  1. D+ }
-{ dbl3 -1 M+ -> dbl3 -1. D+ }
+\ ------------------------------------------------------------------------------
+TESTING M+ M*/
 
-{ 4153874092166845345. 2CONSTANT dp1 -> }
-{ 98656350292512810.   2CONSTANT dp2 -> }
-{ dp1          234567 9876321 M*/ -> dp2         }
-{ dp1 DNEGATE  234567 9876321 M*/ -> dp2 DNEGATE }
-{ dp1 DNEGATE -234567 9876321 M*/ -> dp2         }
-{ dp1         -234567 9876321 M*/ -> dp2 DNEGATE }
+T{ HI-2INT   1 M+ -> HI-2INT   1. D+ }T
+T{ MAX-2INT -1 M+ -> MAX-2INT -1. D+ }T
+T{ MIN-2INT  1 M+ -> MIN-2INT  1. D+ }T
+T{ LO-2INT  -1 M+ -> LO-2INT  -1. D+ }T
 
-\ --------------------------------------------------------------------
+\ To correct the result if the division is floored, only used when
+\ necessary i.e. negative quotient and remainder <> 0
 
-Testing 2ROT DU<
+: ?FLOORED [ -3 2 / -2 = ] LITERAL IF 1. D- THEN ;
 
-{ dbl1 dbl2 dbl3 2ROT -> dbl2 dbl3 dbl1 }
+T{  5.  7 11 M*/ ->  3. }T
+T{  5. -7 11 M*/ -> -3. ?FLOORED }T    \ FLOORED -4.
+T{ -5.  7 11 M*/ -> -3. ?FLOORED }T    \ FLOORED -4.
+T{ -5. -7 11 M*/ ->  3. }T
+T{ MAX-2INT  8 16 M*/ -> HI-2INT }T
+T{ MAX-2INT -8 16 M*/ -> HI-2INT DNEGATE ?FLOORED }T  \ FLOORED SUBTRACT 1
+T{ MIN-2INT  8 16 M*/ -> LO-2INT }T
+T{ MIN-2INT -8 16 M*/ -> LO-2INT DNEGATE }T
+T{ MAX-2INT MAX-INTD MAX-INTD M*/ -> MAX-2INT }T
+T{ MAX-2INT MAX-INTD 2/ MAX-INTD M*/ -> MAX-INTD 1- HI-2INT NIP }T
+T{ MIN-2INT LO-2INT NIP 1+ DUP 1- NEGATE M*/ -> 0 MAX-INTD 1- }T
+T{ MIN-2INT LO-2INT NIP 1- MAX-INTD M*/ -> MIN-INTD 3 + HI-2INT NIP 2 + }T
+T{ MAX-2INT LO-2INT NIP DUP NEGATE M*/ -> MAX-2INT DNEGATE }T
+T{ MIN-2INT MAX-INTD DUP M*/ -> MIN-2INT }T
 
-{ dbl1 dbl1 DU< -> <false> }
-{ dbl1 dbl2 DU< -> <true> }
-{ dbl2 dbl1 DU< -> <false> }
-{ dbl3 dbl3 DU< -> <false> }
-{ dbl3 dbl4 DU< -> <false> }
-{ dbl4 dbl3 DU< -> <true> }
-{ 0 min-int 0 min-int DU< -> <false> }
-{ 0 min-int 0 min-int 1. D+ DU< -> <true> }
-{ 0 min-int 1. D+ 0 min-int DU< -> <false> }
+\ ------------------------------------------------------------------------------
+TESTING D. D.R
 
-\ --------------------------------------------------------------------
+\ Create some large double numbers
+MAX-2INT 71 73 M*/ 2CONSTANT DBL1
+MIN-2INT 73 79 M*/ 2CONSTANT DBL2
+
+: D>ASCII  ( D -- CADDR U )
+   DUP >R <# DABS #S R> SIGN #>    ( -- CADDR1 U )
+   HERE SWAP 2DUP 2>R CHARS DUP ALLOT MOVE 2R>
+;
+
+DBL1 D>ASCII 2CONSTANT "DBL1"
+DBL2 D>ASCII 2CONSTANT "DBL2"
+
+: DOUBLEOUTPUT
+   CR ." You should see lines duplicated:" CR
+   5 SPACES "DBL1" TYPE CR
+   5 SPACES DBL1 D. CR
+   8 SPACES "DBL1" DUP >R TYPE CR
+   5 SPACES DBL1 R> 3 + D.R CR
+   5 SPACES "DBL2" TYPE CR
+   5 SPACES DBL2 D. CR
+   10 SPACES "DBL2" DUP >R TYPE CR
+   5 SPACES DBL2 R> 5 + D.R CR
+;
+
+T{ DOUBLEOUTPUT -> }T
+
+\ ------------------------------------------------------------------------------
+TESTING 2ROT DU< (Double Number extension words)
+
+T{ 1. 2. 3. 2ROT -> 2. 3. 1. }T
+T{ MAX-2INT MIN-2INT 1. 2ROT -> MIN-2INT 1. MAX-2INT }T
+
+T{  1.  1. DU< -> FALSE }T
+T{  1. -1. DU< -> TRUE  }T
+T{ -1.  1. DU< -> FALSE }T
+T{ -1. -2. DU< -> FALSE }T
+T{ 0 1   1. DU< -> FALSE }T
+T{ 1.  0 1  DU< -> TRUE  }T
+T{ 0 -1 1 -2 DU< -> FALSE }T
+T{ 1 -2 0 -1 DU< -> TRUE  }T
+
+T{ MAX-2INT HI-2INT  DU< -> FALSE }T
+T{ HI-2INT  MAX-2INT DU< -> TRUE  }T
+T{ MAX-2INT MIN-2INT DU< -> TRUE }T
+T{ MIN-2INT MAX-2INT DU< -> FALSE }T
+T{ MIN-2INT LO-2INT  DU< -> TRUE }T
+
+\ ------------------------------------------------------------------------------
+TESTING 2VALUE
+
+T{ 1111 2222 2VALUE 2VAL -> }T
+T{ 2VAL -> 1111 2222 }T
+T{ 3333 4444 TO 2VAL -> }T
+T{ 2VAL -> 3333 4444 }T
+T{ : TO-2VAL TO 2VAL ; 5555 6666 TO-2VAL -> }T
+T{ 2VAL -> 5555 6666 }T
+
+\ ------------------------------------------------------------------------------
+
+DOUBLE-ERRORS SET-ERROR-COUNT
 
 CR .( End of Double-Number word tests) CR
 

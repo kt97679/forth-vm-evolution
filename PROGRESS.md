@@ -2528,3 +2528,54 @@ middle; the same gene choices as the carried runs. **The owner's question -
 does adding genes one at a time skew the search? - answered no**: a fresh
 start reaches the carried runs' neighbourhood and no further. NEXT-RUN
 unchanged: seed 37 tag2 9h with the new genes.
+
+## Iteration 124 - 2026-10-10 - Claude
+
+**Set up from the Iteration 123 bundle, the checks shown to fail first**
+(prompts/15): run-tests.sh's negative control caught on all 16 corpus runs;
+--validate's image comparison caught one bit flipped in the build's s6 image
+(DIFFERENT, exit 1; s5 still IDENTICAL; restored, hash checked); alive()'s
+corpus half caught one wrong case ("died: corpus"), its kernel half a
+workload that never writes kernel.img and a written kernel one bit off. The
+handoff prompt's clone fails where /home/claude belongs to root: make the
+directory and chown it first (HANDOFF-PROMPT.md, GOALS.md).
+
+**Seed 37 confirmed, then started by the owner.** next-run.sh traced: the
+deadline is fixed at the start (evolution to 7 h 40 min), but the re-measure
+is serial (~7 s a design) and session 32 (seeds 32-37 by --frontier, ~400
+designs at 10.4 s) is larger than 31 - the chain ~9 h 10-30 min, the seed pack
+~8 h in. The code of Iterations 115-121, new to the laptop, rehearsed on the
+VM: the carry as main() does it (0 of 604 recorded ids changed); 22,000+
+children through crossover, borrow and mutate, no exception; the run's
+evaluate() on the fastest and smallest of seeds 32, 33, 35, 36 with all four
+new genes on - 8 of 8 alive; fbuf's memory per design -32 to -40 KB.
+
+**The Forth 2012 test suite** (results/forth-standard-tests.md; the owner:
+reuse tests from the Forth Standard committee's suite?). tests/ans is now that
+suite (commit 4c87e56; Hayes's files "distributed freely", Jackson's public
+domain) - 963 tests on s6 against the old copy's 821; doubletest alone covers
+less (5 against 32: it opens with number prefixes). ans-check.py rewritten:
+s6's own result against the suite first (a fault every stage shares is
+invisible to a comparison with s6), sentinels inside each file, every test
+counted, a negative control, an exit status. **It found five faults**, alike
+on all 14 systems, not on RelF: +LOOP exits early at the wrap-around
+boundaries (Haley's tests; the kernel's sign-flip rule from SOD32, checked
+three ways - s6 128 where RelF and the standard give 256); FILE-POSITION
+leaves 2 cells, not ( ud ior ); READ-LINE into a 0-length buffer says end of
+file; an empty S" " or ." " swallows the rest of the line (`34 WORD`); and
+**DELETE-FILE segfaulted on every call** - the handler stored unlink's result
+over the name's address, then restored the byte at result + u (0xc, the
+address SPN's handler named), in six engine sources since the baseline;
+nothing called it, the suites stop before their test. **Fixed**: images
+identical, binaries +0 on 76 of 98 designs and +32 on 22; a check in
+run-tests.sh on every stage, failing on all 14 old binaries. The rest are the
+owner's decision (each changes every image or engine). The 90 designs of the
+front of all runs and 8 with the new genes say what s6 says on all 14 files.
+
+**tests/core/tester.fr restored.** ans-check.py copied the suite's tester.fr
+into the work directories, whose files are symlinks into build/work - and
+build/work/tester.fr is tests/core/tester.fr: from Iteration 118 to 123 it was
+the 56-line ANS tester, not the 1,022-line tester and core tests the locals
+check loads (that check passed either way; the corpus and the gate never read
+it). Restored byte for byte; ans-check.py replaces files instead of writing
+through them. NEXT-RUN: none - seed 37's packs first.

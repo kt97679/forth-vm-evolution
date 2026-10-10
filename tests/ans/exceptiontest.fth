@@ -1,9 +1,8 @@
 \ To test the ANS Forth Exception word set and extension words
 
-\ Copyright (C) Gerry Jackson 2006, 2007
-
-\ This program is free software; you can redistribute it and/or
-\ modify it any way.
+\ This program was written by Gerry Jackson in 2006, with contributions from
+\ others where indicated, and is in the public domain - it can be distributed
+\ and/or modified in any way but please retain this notice.
 
 \ This program is distributed in the hope that it will be useful,
 \ but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -11,89 +10,93 @@
 
 \ The tests are not claimed to be comprehensive or correct 
 
-\ --------------------------------------------------------------------
-\ Version 0.2 20 April 2007 ANS Forth words changed to upper case
+\ ------------------------------------------------------------------------------
+\ Version 0.13 13 Nov 2015 C6 rewritten to avoid use of CASE etc and hence
+\              dependence on the Core extension word set.     
+\         0.4 1 April 2012  Tests placed in the public domain.
+\         0.3 6 March 2009 { and } replaced with T{ and }T
+\         0.2 20 April 2007 ANS Forth words changed to upper case
 \         0.1 Oct 2006 First version released
 
-\ --------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
 \ The tests are based on John Hayes test program for the core word set
-\ and requires those files to have been loaded
-
+\
 \ Words tested in this file are:
 \     CATCH THROW ABORT ABORT"
-
-\ --------------------------------------------------------------------
+\
+\ ------------------------------------------------------------------------------
 \ Assumptions and dependencies:
 \     - the forth system under test throws an exception with throw
 \       code -13 for a word not found by the text interpreter. The
 \       undefined word used is $$qweqweqwert$$,  if this happens to be
 \       a valid word in your system change the definition of t7 below
-\     - tester.fr has been loaded prior to this file
+\     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth have been
+\       included prior to this file
+\     - the Core word set available and tested
 \     - CASE, OF, ENDOF and ENDCASE from the core extension wordset
 \       are present and work correctly
-\ --------------------------------------------------------------------
-
-Testing CATCH THROW
+\ ------------------------------------------------------------------------------
+TESTING CATCH THROW
 
 DECIMAL
 
-: t1 9 ;
-: c1 1 2 3 ['] t1 CATCH ;
-{ c1 -> 1 2 3 9 0 }			\ No throw executed
+: T1 9 ;
+: C1 1 2 3 ['] T1 CATCH ;
+T{ C1 -> 1 2 3 9 0 }T         \ No THROW executed
 
-: t2 8 0 THROW ;
-: c2 1 2 ['] t2 CATCH ;
-{ c2 -> 1 2 8 0 }				\ 0 throw does nothing
+: T2 8 0 THROW ;
+: C2 1 2 ['] T2 CATCH ;
+T{ C2 -> 1 2 8 0 }T            \ 0 THROW does nothing
 
-: t3 7 8 9 99 THROW ;
-: c3 1 2 ['] t3 CATCH ;
-{ c3 -> 1 2 99 }				\ Restores stack to CATCH depth
+: T3 7 8 9 99 THROW ;
+: C3 1 2 ['] T3 CATCH ;
+T{ C3 -> 1 2 99 }T            \ Restores stack to CATCH depth
 
-: t4 1- DUP 0> IF RECURSE ELSE 999 THROW -222 THEN ;
-: c4 3 4 5 10 ['] t4 CATCH -111 ;
-{ c4 -> 3 4 5 0 999 -111 }	\ Test return stack unwinding
+: T4 1- DUP 0> IF RECURSE ELSE 999 THROW -222 THEN ;
+: C4 3 4 5 10 ['] T4 CATCH -111 ;
+T{ C4 -> 3 4 5 0 999 -111 }T   \ Test return stack unwinding
 
-: t5 2DROP 2DROP 9999 THROW ;
-: c5 1 2 3 4 ['] t5 CATCH				\ Test depth restored correctly
-	DEPTH >R DROP 2DROP 2DROP R> ;	\ when stack has been emptied
-{ c5 -> 5 }
+: T5 2DROP 2DROP 9999 THROW ;
+: C5 1 2 3 4 ['] T5 CATCH            \ Test depth restored correctly
+   DEPTH >R DROP 2DROP 2DROP R> ;   \ after stack has been emptied
+T{ C5 -> 5 }T
 
-\ --------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
+TESTING ABORT ABORT"
 
-Testing ABORT ABORT"
+-1  CONSTANT EXC_ABORT
+-2  CONSTANT EXC_ABORT"
+-13 CONSTANT EXC_UNDEF
+: T6 ABORT ;
 
--1	CONSTANT exc_abort
--2 CONSTANT exc_abort"
--13 CONSTANT exc_undef
-: t6 ABORT ;
-
-\ The 77 in t10 is necessary for the second ABORT" test as the data stack
+\ The 77 in T10 is necessary for the second ABORT" test as the data stack
 \ is restored to a depth of 2 when THROW is executed. The 77 ensures the top
 \ of stack value is known for the results check
 
-: t10 77 SWAP ABORT" This should not be displayed" ;
-: c6 CATCH
-	CASE exc_abort  OF 11 ENDOF
-	     exc_abort" OF 12 ENDOF
-		  exc_undef  OF 13 ENDOF
-	ENDCASE
+: T10 77 SWAP ABORT" This should not be displayed" ;
+: C6 CATCH
+   >R   R@ EXC_ABORT  = IF 11
+   ELSE R@ EXC_ABORT" = IF 12
+   ELSE R@ EXC_UNDEF  = IF 13
+   THEN THEN THEN R> DROP
 ;
 
-{ 1 2 ' t6 c6  -> 1 2 11 }		\ Test that ABORT is caught
-{ 3 0 ' t10 c6 -> 3 77 }		\ ABORT" does nothing
-{ 4 5 ' t10 c6 -> 4 77 12 }	\ ABORT" caught, no message
+T{ 1 2 ' T6 C6  -> 1 2 11 }T     \ Test that ABORT is caught
+T{ 3 0 ' T10 C6 -> 3 77 }T       \ ABORT" does nothing
+T{ 4 5 ' T10 C6 -> 4 77 12 }T    \ ABORT" caught, no message
 
-\ --------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
+TESTING a system generated exception
 
-Testing a system generated exception
+: T7 S" 333 $$QWEQWEQWERT$$ 334" EVALUATE 335 ;
+: T8 S" 222 T7 223" EVALUATE 224 ;
+: T9 S" 111 112 T8 113" EVALUATE 114 ;
 
-: t7 s" 333 $$qweqweqwert$$ 334" EVALUATE 335 ;
-: t8 s" 222 t7 223" EVALUATE 224 ;
-: t9 s" 111 112 t8 113" EVALUATE 114 ;
+T{ 6 7 ' T9 C6 3 -> 6 7 13 3 }T         \ Test unlinking of sources
 
-{ 6 7 ' t9 c6 3 -> 6 7 13 3 }			\ Test unlinking of sources
+\ ------------------------------------------------------------------------------
 
-\ --------------------------------------------------------------------
+EXCEPTION-ERRORS SET-ERROR-COUNT
 
 CR .( End of Exception word tests) CR
 

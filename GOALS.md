@@ -45,7 +45,7 @@ preferences are written here: simplicity and minimalism first; three
 equal objectives (memory within 8 KB a tie); each mechanism priced before
 it is built, behind a gene; laptop runs via next-run.sh, packs in runs/.
 
-**HANDOFF - read this first (Iteration 122; refreshed 123).** The prompt to
+**HANDOFF - read this first (Iteration 122; refreshed 123, 124).** The prompt to
 open a new chat with is HANDOFF-PROMPT.md, at the top of the repository. Checked from a fresh clone of
 the bundle: it builds, the tests pass, the hand-made stages are identical,
 every design of the front of all runs (151, session 30) has its genome in
@@ -61,18 +61,39 @@ analysed (the owner sends them), the owner's Forth collection (licences, size
 fastest 0.130, smallest 585376cf49 20,318 bytes). New since: the genes fbuf (memory),
 kstack, abortif, opcall; the stack guard fixed; next-run.sh `nocarry` and
 `fromzero`; comparisons with --frontier at 6 rounds; the held-out check
-lab/evolve/ans-check.py (tests/ans: the ANS suite).
+lab/evolve/ans-check.py - since Iteration 124 the Forth 2012 test suite
+(tests/ans; results/forth-standard-tests.md).
 
 *Seed 36 (Iteration 123), the anchoring test - answered no*: 4 hours from
 scratch reached the carried runs' neighbourhood (fastest 0.146 against
 0.130, smallest 20,425 against 20,318) and no further - 2 of the 90 on the
 front of all runs (results/evolve-amd-ryzen-7-pro-8840hs-seed36.md).
 
-*Pending run.* Seed 37 - 9 hours, NEXT-RUN, the new genes (fbuf, kstack,
-abortif, opcall) and the guard fix: its packs to come.
+*Pending run.* Seed 37 - 9 hours, the new genes (fbuf, kstack, abortif,
+opcall) and the guard fix: started on the laptop from the Iteration 123
+bundle (checked before: the chain's control flow; ~9 h 10-30 min, the seed
+pack ~8 h in - the serial re-measure and the larger comparison outgrow the
+80-minute reserve; the new genes' code rehearsed on the VM). Its packs to
+come. NEXT-RUN says `none` until they are processed: this bundle only pulls.
 
-*Open threads, in order.* (1) Seed 37's verdict; the ANS check on its front
-(lab/evolve/ans-check.py with its database). (3)
+*Iteration 124 - the Forth 2012 test suite* (results/forth-standard-tests.md):
+tests/ans is now the standard suite (Jackson's, kept by the Forth Standard
+committee; 963 tests run on s6 against the old copy's 821), ans-check.py
+rewritten - s6's own result against the suite first, a negative control, an
+exit status. It found five faults every stage shares and RelF does not:
++LOOP at the wrap-around boundaries, FILE-POSITION's stack effect, READ-LINE
+into a 0-length buffer, empty S" " and ." ", and DELETE-FILE segfaulting in
+every engine since the baseline - **fixed** (2 lines in 6 engine sources;
+images identical, 22 of 98 binaries +32 bytes; a check in run-tests.sh).
+tests/core/tester.fr, overwritten through a symlink by ans-check.py since
+Iteration 118, restored. The 90 designs of the front of all runs and 8 with
+the new genes say what s6 says on all 14 files.
+
+*Open threads, in order.* (1) Seed 37's verdict; ans-check.py on its front
+(with its database). (2) The kernel faults the standard suite found - +LOOP
+(RelF's rule, the owner's own, to port), empty S" and ." (`34 PARSE`),
+FILE-POSITION, READ-LINE: each fix changes every image or engine - the
+owner's decision; then Haley's +LOOP tests into the gate, alone. (3)
 Workloads: parse held out, execution-heavy ones in (bubble, ackermann from
 the owner's RelF bench) - the owner's decision. (4) The instruction set as
 genes: the primitive-set floor and promotion by synthesis (results/deep-
@@ -80,13 +101,14 @@ dive-2.md section 3), then `fromzero` over it. (5) Genetic improvement of the
 Forth sources (level 3), with the ANS suite held out and a stack-effect check
 (Knaggs). (6) Smaller: retire genes worth nothing (check loop first), 16-bit
 dispatch tables, one SYSCALL primitive, the JIT calling bytecode, packed
-names. (7) Kernel gaps the ANS suite showed: :NONAME, CATCH/THROW, COMPARE,
-search order, AHEAD, D-, double literals.
+names. (7) Kernel gaps, named by where each standard file stops: :NONAME and
+0<>, CATCH/THROW, /STRING and COMPARE, search order (ONLY), AHEAD,
+BEGIN-STRUCTURE, locals ({:), BLOCK, number prefixes and double literals.
 
 *Where to look.* results/ - each run (with its genomes), compare-fronts
 (sessions), knockouts-seed30, run-length, link-N, flags-gcsections, jitx,
 opcall, forth-sources, forth-collection and its catalog, docs-reuse,
-deep-dive-2; lab/evolve/GENES.md (the genes, the ranked lists); RUNNING.md;
+deep-dive-2, forth-standard-tests; lab/evolve/GENES.md (the genes, the ranked lists); RUNNING.md;
 NEXT-RUN; prompts/ (the methods library). The VM has one CPU: its timings are
 noise, its dispatch counts exact - speed is measured on the laptop.
 
@@ -253,7 +275,9 @@ loop. The article stays on the backburner. Pushing to GitHub is the
 owner's step.
 
 **Working on the development VM** (how every session has done it): clone
-the bundle to /home/claude/forth-vm-evolution, owned by the user claude;
+the bundle to /home/claude/forth-vm-evolution, owned by the user claude (if
+/home/claude belongs to root, make that directory and chown it to claude
+first - Iteration 124);
 run everything as that user (`runuser -u claude -- ...`: the evolver
 refuses root, and git refuses a repository owned by another user). Build:
 `LAYOUTS=1 bash tools/build-stages.sh`; then `bash tools/run-tests.sh` and

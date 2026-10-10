@@ -2,9 +2,10 @@
 """ans-upper.py SRC DST - the ANS test files (tests/ans, lowercase) in the
 upper case this case-sensitive Forth reads: every word upper-cased except
 where case is data - the text of S" ." C" ABORT" .( and comments, the word
-after CHAR and [CHAR], and 'c' character literals (Iteration 118)."""
+after CHAR and [CHAR], and 'c' character literals (Iteration 118); and the text
+of utilities.fth's $" and $2" (Iteration 124)."""
 import sys, re
-STR = {'S"': '"', '."': '"', 'C"': '"', 'ABORT"': '"', '.(': ')', 'S\\"': '"'}
+STR = {'S"': '"', '."': '"', 'C"': '"', 'ABORT"': '"', '.(': ')', 'S\\"': '"', '$"': '"', '$2"': '"'}   # $" $2": utilities.fth's (Iteration 124)
 def conv(line):
     out, i, n = [], 0, len(line)
     keep_next = False

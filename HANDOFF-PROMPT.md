@@ -1,4 +1,4 @@
-# The prompt for a new chat (Iteration 123)
+# The prompt for a new chat (Iteration 124)
 
 Paste the text below into the new chat, with the newest bundle attached
 (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet processed
@@ -13,8 +13,9 @@ any laptop runs not yet processed.
 
 **Set up first.**
 1. Clone the bundle as the user `claude` - the repository must be owned by it,
-   and every git, build and tool command runs as `runuser -u claude -- ...`:
-   `cd /home/claude && runuser -u claude -- git clone /mnt/user-data/uploads/<bundle> forth-vm-evolution`
+   and every git, build and tool command runs as `runuser -u claude -- ...`.
+   If /home/claude belongs to root, make the directory and hand it over first:
+   `cd /home/claude && mkdir -p forth-vm-evolution && chown claude:claude forth-vm-evolution && runuser -u claude -- git clone /mnt/user-data/uploads/<bundle> forth-vm-evolution`
 2. Build and check, in the clone:
    `runuser -u claude -- env LAYOUTS=1 bash tools/build-stages.sh && runuser -u claude -- bash tools/run-tests.sh && runuser -u claude -- python3 lab/evolve/evolve.py --validate`
    - expect "PASS - no regressions" and the seven hand-made stages IDENTICAL.
@@ -48,13 +49,17 @@ any laptop runs not yet processed.
 - Every change is a commit `Iteration N: ...` (the bundle script requires that
   subject; git identity Kirill Timofeev <kt97679@gmail.com>) and a bundle:
   `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs`, the
-  file presented to me. The next iteration is 124.
+  file presented to me. The next iteration is 125.
 
 **Where it stands.** Seed 35 was the second small run in a row: the gene set
 converged. New since: the genes fbuf (memory), kstack, abortif and opcall; the
-stack guard fixed; a held-out check, lab/evolve/ans-check.py (the ANS test
-suite in tests/ans). Seed 36, 4 hours from scratch, answered the anchoring
-question: no. Pending: seed 37, 9 hours with the new genes - process its packs
-when I send them. The open threads after it are in the HANDOFF.
+stack guard fixed; a held-out check, lab/evolve/ans-check.py. Seed 36, 4
+hours from scratch, answered the anchoring question: no. Iteration 124: the
+held-out check is now the Forth 2012 test suite (tests/ans); it found five
+faults every stage shares - DELETE-FILE's segfault fixed, the other four (+LOOP
+at the boundaries, empty S" and .", FILE-POSITION, READ-LINE) await my
+decision; tests/core/tester.fr restored. Pending: seed 37, 9 hours with the new
+genes, started from the Iteration 123 bundle - process its packs when I send
+them. The open threads after it are in the HANDOFF.
 
 Please set up, confirm the checks pass, and tell me what you will do next.

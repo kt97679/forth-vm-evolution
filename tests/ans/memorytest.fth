@@ -1,9 +1,8 @@
 \ To test the ANS Forth Memory-Allocation word set
 
-\ Copyright (C) Gerry Jackson 2006, 2007
-
-\ This program is free software; you can redistribute it and/or
-\ modify it any way.
+\ This program was written by Gerry Jackson in 2006, with contributions from
+\ others where indicated, and is in the public domain - it can be distributed
+\ and/or modified in any way but please retain this notice.
 
 \ This program is distributed in the hope that it will be useful,
 \ but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -11,81 +10,118 @@
 
 \ The tests are not claimed to be comprehensive or correct 
 
-\ --------------------------------------------------------------------
-\ Version 0.2  20 April 2007  ANS Forth words changed to upper case
-\         0.1  Oct 2006 First version released
+\ ------------------------------------------------------------------------------
+\ Version 0.11 25 April 2015 Now checks memory region is unchanged following a
+\              RESIZE. @ and ! in allocated memory.
+\         0.8 10 January 2013, Added CHARS and CHAR+ where necessary to correct
+\             the assumption that 1 CHARS = 1
+\         0.7 1 April 2012  Tests placed in the public domain.
+\         0.6 30 January 2011 CHECKMEM modified to work with ttester.fs
+\         0.5 30 November 2009 <FALSE> replaced with FALSE
+\         0.4 9 March 2009 Aligned test improved and data space pointer tested
+\         0.3 6 March 2009 { and } replaced with T{ and }T
+\         0.2 20 April 2007  ANS Forth words changed to upper case
+\         0.1 October 2006 First version released
 
-\ --------------------------------------------------------------------
+\ ------------------------------------------------------------------------------
 \ The tests are based on John Hayes test program for the core word set
-\ and requires those files to have been loaded
 
 \ Words tested in this file are:
 \     ALLOCATE FREE RESIZE
 \     
-\ --------------------------------------------------------------------
-\ Assumptions and dependencies:
+\ ------------------------------------------------------------------------------
+\ Assumptions, dependencies and notes:
+\     - tester.fr (or ttester.fs), errorreport.fth and utilities.fth have been
+\       included prior to this file
+\     - the Core word set is available and tested
 \     - that 'addr -1 ALLOCATE' and 'addr -1 RESIZE' will return an error
-\     - tester.fr has been loaded prior to this file
-\     - testing FREE failing is not done as it is likely to crash the
-\       system
-\ --------------------------------------------------------------------
+\     - testing FREE failing is not done as it is likely to crash the system
+\ ------------------------------------------------------------------------------
 
-Testing Memory-Allocation word set
+TESTING Memory-Allocation word set
 
 DECIMAL
 
-0 CONSTANT <false>
+\ ------------------------------------------------------------------------------
+TESTING ALLOCATE FREE RESIZE
 
-\ --------------------------------------------------------------------
+VARIABLE ADDR1
+VARIABLE DATSP
 
-Testing ALLOCATE FREE RESIZE
+HERE DATSP !
+T{ 100 ALLOCATE SWAP ADDR1 ! -> 0 }T
+T{ ADDR1 @ ALIGNED -> ADDR1 @ }T   \ Test address is aligned
+T{ HERE -> DATSP @ }T            \ Check data space pointer is unchanged
+T{ ADDR1 @ FREE -> 0 }T
 
-VARIABLE addr
+T{ 99 ALLOCATE SWAP ADDR1 ! -> 0 }T
+T{ ADDR1 @ ALIGNED -> ADDR1 @ }T
+T{ ADDR1 @ FREE -> 0 }T
 
-{ 100 ALLOCATE SWAP addr ! -> 0 }
-{ addr @ 1 CELLS 1- and -> 0 }		\ Test address is aligned
-{ addr @ FREE -> 0 }
+T{ 50 CHARS ALLOCATE SWAP ADDR1 ! -> 0 }T
 
-{ 99 ALLOCATE SWAP addr ! -> 0 }
+: WRITEMEM 0 DO I 1+ OVER C! CHAR+ LOOP DROP ;   ( ad n -- )
 
-{ addr @ 1 CELLS 1- AND -> 0 }		\ Test address is aligned
+\ CHECKMEM is defined this way to maintain compatibility with both
+\ tester.fr and ttester.fs which differ in their definitions of T{
 
-{ addr @ FREE -> 0 }
-
-{ 50 ALLOCATE SWAP addr ! -> 0 }
-
-: writemem 0 DO I 1+ OVER C! 1+ LOOP DROP ;	( ad n -- )
-
-: checkmem  ( ad n --- )
+: CHECKMEM  ( ad n --- )
    0
    DO
-      DUP C@ SWAP >R
-      { -> R> I 1+ SWAP >R }  \ Luckily tester checks can be compiled
-      R> 1+
+      >R
+      T{ R@ C@ -> R> I 1+ SWAP >R }T
+      R> CHAR+
    LOOP
    DROP
 ;
 
-addr @ 50 writemem addr @ 50 checkmem
+ADDR1 @ 50 WRITEMEM ADDR1 @ 50 CHECKMEM
 
-{ addr @ 28 RESIZE SWAP addr ! -> 0 }
+T{ ADDR1 @ 28 CHARS RESIZE SWAP ADDR1 ! -> 0 }T
+ADDR1 @ 28 CHECKMEM
 
-addr @ 28 checkmem
+T{ ADDR1 @ 200 CHARS RESIZE SWAP ADDR1 ! -> 0 }T
+ADDR1 @ 28 CHECKMEM
 
-{ addr @ 200 RESIZE SWAP addr ! -> 0 }
+\ ------------------------------------------------------------------------------
+TESTING failure of RESIZE and ALLOCATE (unlikely to be enough memory)
 
-{ addr @ 28 checkmem
+\ This test relies on the previous test having passed
 
-\ --------------------------------------------------------------------
+VARIABLE RESIZE-OK
+T{ ADDR1 @ -1 CHARS RESIZE 0= DUP RESIZE-OK ! -> ADDR1 @ FALSE }T
 
-Testing failure of RESIZE and ALLOCATE (unlikely to be enough memory)
+\ Check unRESIZEd allocation is unchanged following RESIZE failure 
+: MEM?  RESIZE-OK @ 0= IF ADDR1 @ 28 CHECKMEM THEN ;   \ Avoid using [IF]
+MEM?
 
-{ addr @ -1 RESIZE 0= -> addr @ <false> }
+T{ ADDR1 @ FREE -> 0 }T   \ Tidy up
 
-{ addr @ FREE -> 0 }
+T{ -1 ALLOCATE SWAP DROP 0= -> FALSE }T      \ Memory allocate failed
 
-{ -1 ALLOCATE SWAP DROP 0= -> <false> }		\ Memory allocate failed
+\ ------------------------------------------------------------------------------
+TESTING @  and ! work in ALLOCATEd memory (provided by Peter Knaggs)
 
-\ --------------------------------------------------------------------
+: WRITE-CELL-MEM ( ADDR N -- )
+  1+ 1 DO I OVER ! CELL+ LOOP DROP
+;
+
+: CHECK-CELL-MEM ( ADDR N -- )
+  1+ 1 DO
+    I SWAP >R >R
+    T{ R> ( I ) -> R@ ( ADDR ) @ }T
+    R> CELL+
+  LOOP DROP
+;
+
+\ Cell based access to the heap
+
+T{ 50 CELLS ALLOCATE SWAP ADDR1 ! -> 0 }T
+ADDR1 @ 50 WRITE-CELL-MEM
+ADDR1 @ 50 CHECK-CELL-MEM
+
+\ ------------------------------------------------------------------------------
+
+MEMORY-ERRORS SET-ERROR-COUNT
 
 CR .( End of Memory-Allocation word tests) CR

@@ -1,0 +1,6 @@
+url     https://github.com/Forth-Standard/forth-standard-test-suite
+rev     master
+commit  4c87e5659c5b79bd7a6664daa56603df080c6f9b
+date    2026-09-05
+subject Mentioning the repository transfer in ReadMe
+files   src/ without fp/ and ttester.fs (no floating point here; tester.fr is the harness)

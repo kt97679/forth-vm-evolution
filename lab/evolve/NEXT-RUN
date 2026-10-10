@@ -201,4 +201,10 @@
 #
 # Iteration 121: and opcall (Koopman's op+CALL) - with fbuf, kstack, abortif
 # and the stack guard fixed.
-seed 37 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+#
+# Iteration 124: seed 37 is running, started from the Iteration 123 bundle
+# (`seed 37 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier
+# --cpus 2,8`). This bundle changes engines (DELETE-FILE fixed) and the held-out
+# check, not the run: none - pulled after seed 37's chain has finished, it only
+# pulls. The next run is chosen when seed 37's packs are processed.
+none
