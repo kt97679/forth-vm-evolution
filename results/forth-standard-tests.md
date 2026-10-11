@@ -366,3 +366,30 @@ and RESTORE-INPUT of a file included. On s6: 2,069 tests, 0 failed; thirteen
 of fourteen files whole - left localstest ({:, locals: the kernel's name lookup
 needs a hook - the owner's decision). Held out: 0 of 12 of seed 40's front
 designs (one in eighteen) differ from s6, 14 of 14 files each.
+
+## Locals; the suite whole (Iteration 194) - results/pending/coreext-w11-after-seed41.patch
+
+The locals word set in coreext.4, with no kernel change (results/drafts/
+locals-plan.md): the kernel's FIND walks the search order, so the names of the
+definition being compiled live in a wordlist of their own, first in the order
+while it compiles; each name is an immediate word made in a scratch area
+(HERE, LAST and CURRENT saved and restored - the definition's code
+uninterrupted, RECURSE still finding it), compiling its index and (L@). The
+values live on a stack of their own: DO loops keep the return stack as they
+find it, and a local named I or J is the local (localstest's LT29). {: with |
+and --, (LOCAL) (the first declared from the top, as LOCALS| has it - {: the
+last), TO a local first, ; and DOES> ending the scope (the frame dropped, the
+names gone), EXIT immediate while locals are active, ENVIRONMENT? answering
+#LOCALS (64). And .S - localstest's last line; the system had none.
+
+localstest: 50 tests, 0 failed, whole - local names over global names and
+numbers (DUP, BEAD in HEX), :NONAME and DOES>, recursion, 16 locals, (LOCAL),
+and over wordlists pushed after them. On s6: **2,119 tests, 0 failed; all
+fourteen files whole.** Held out: 0 of 12 of seed 40's front designs (one in
+eighteen) differ from s6, 14 of 14 files each.
+
+Not covered by the suite, left as they are: a THROW out of a definition with
+locals leaves their frame on the locals stack (CATCH restores the data and
+return stacks, not this one), and a definition abandoned mid-compilation by an
+error leaves its names in the search order until the next ; - both harmless to
+the tests, and the standard leaves the first unspecified.

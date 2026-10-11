@@ -3584,3 +3584,13 @@ found by the ordinary interpreter; the names' headers go into a scratch area
 a local made mid-definition compiles, is gone after the scope, the dictionary
 intact. The owner's decision is not needed: coreext.4 only, like every wave.
 results/drafts/locals-plan.md - the next turn's work.
+
+## Iteration 194 - 2026-10-11 - Claude
+
+**The standard suite whole: 2,119 tests, 0 failed, fourteen of fourteen files.**
+The locals word set in coreext.4 - no kernel hook (Iteration 193's finding): a
+wordlist of the definition's local names, first in the search order while it
+compiles, headers in a scratch area; values on a stack of their own; {:
+(LOCAL) TO, ; DOES> EXIT ending the scope; ENVIRONMENT? (#LOCALS) and .S.
+localstest 50 tests, 0 failed. 0 of 12 front designs differ from s6. The
+seventeenth after-seed-41 patch: coreext-w11-after-seed41.patch (ORDER.md).

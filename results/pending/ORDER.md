@@ -1,8 +1,8 @@
-# The after-seed-41 batch: sixteen patches, in this order
+# The after-seed-41 batch: seventeen patches, in this order
 
 Each was made on a fresh clone of master with all the ones before it applied,
 and the sixteen together verified to apply in order on a fresh clone and to
-reproduce the tested files (last: Iteration 192).
+reproduce the tested files (last: Iteration 194).
 
 | # | patch | what |
 |---|---|---|
@@ -22,11 +22,12 @@ reproduce the tested files (last: Iteration 192).
 | 14 | rtloop2-after-seed41.patch | headerless words in the converter; rtloop=2 (190) |
 | 15 | opcall-fix-after-seed41.patch | opcall's cause fixed; every band open again (191) |
 | 16 | coreext-w10-after-seed41.patch | RESTORE-INPUT across a file's lines; filetest whole (192) |
+| 17 | coreext-w11-after-seed41.patch | the locals word set ({: (LOCAL) TO), ENVIRONMENT?, .S; the suite whole (194) |
 
 To apply, on a fresh clone of master:
 
     for f in rtimm2 keepforms founder regprice-names opcall-band loopalign coreext-w7 \
-             coreext-w8 dskew ansupper-sq stacksep coreext-w9 weighing rtloop2 opcall-fix coreext-w10; do
+             coreext-w8 dskew ansupper-sq stacksep coreext-w9 weighing rtloop2 opcall-fix coreext-w10 coreext-w11; do
         git apply results/pending/$f-after-seed41.patch || break
     done
 

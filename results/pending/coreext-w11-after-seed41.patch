@@ -1,0 +1,75 @@
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index d2c5f5c..850ee58 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -345,3 +345,70 @@ VARIABLE TW-XT  VARIABLE TW-WID
+ : NAME>INTERPRET ( nt --- xt )  NAME> ;
+ : NAME>COMPILE ( nt --- x xt )  DUP NAME> SWAP C@ 64 AND IF ['] EXECUTE ELSE ['] COMPILE, THEN ;
+ [THEN]
++\ The eleventh wave (Iteration 194): the locals word set - {: (LOCAL) TO
++\ ENVIRONMENT? - localstest. No kernel hook: the kernel's FIND walks the
++\ search order, so the names of the definition being compiled live in a
++\ wordlist of their own (LWL), searched first while it compiles; their
++\ headers go into a scratch area (LNAMES), HERE, LAST and CURRENT saved and
++\ restored around each, so the definition's code is not interrupted and
++\ RECURSE still finds it (results/drafts/locals-plan.md). The values live on
++\ a stack of their own (LP): DO loops and >R keep the return stack as they
++\ find it, and a local named I or J is the local.
++CREATE LSTACK 1024 CELLS ALLOT  HERE CONSTANT LSTACK-END
++VARIABLE LP  LSTACK-END LP !
++: (L@) ( i --- x )  CELLS LP @ + @ ;
++: (L!) ( x i --- )  CELLS LP @ + ! ;
++: (LEXIT) ( n --- )  CELLS LP +! ;
++: (LENTER) ( x1 .. xk k n --- )   \ {:'s - n cells, 0; the k initialized popped in, the last declared from the top
++  DUP CELLS NEGATE LP +!  LP @ SWAP CELLS ERASE
++  BEGIN DUP WHILE 1- TUCK (L!) REPEAT DROP ;
++: (LENTER-REV) ( xk .. x1 k n --- )   \ (LOCAL)'s - the first declared from the top
++  DUP CELLS NEGATE LP +!  LP @ SWAP CELLS ERASE
++  0 ?DO I (L!) LOOP ;
++WORDLIST CONSTANT LWL
++CREATE LNAMES 4096 ALLOT  VARIABLE LNP  LNAMES LNP !
++VARIABLE #LOC  0 #LOC !  VARIABLE #LINIT  0 #LINIT !
++VARIABLE L-SDP  VARIABLE L-SLAST  VARIABLE L-SCUR  CREATE LBUF 80 ALLOT
++: LOCAL-WORD ( i "name" --- )  CREATE , IMMEDIATE DOES> @ POSTPONE LITERAL POSTPONE (L@) ;
++: L-NAME ( c-addr u --- )   \ the next local, named c-addr u: an immediate word in LWL, in the scratch area
++  #LOC @ 0= IF GET-ORDER LWL SWAP 1+ SET-ORDER THEN
++  DUP >R LBUF 11 + SWAP CMOVE  S" LOCAL-WORD " LBUF SWAP CMOVE
++  #LOC @ LBUF R> 11 +
++  DP @ L-SDP !  LAST @ L-SLAST !  GET-CURRENT L-SCUR !  LNP @ DP !  LWL SET-CURRENT
++  STATE @ >R POSTPONE [  EVALUATE  R> IF ] THEN
++  HERE LNP !  L-SDP @ DP !  L-SLAST @ LAST !  L-SCUR @ SET-CURRENT
++  1 #LOC +! ;
++: LOCALS-END ( --- )   \ the scope's end: the frame dropped at run time, the names gone
++  #LOC @ IF
++    #LOC @ POSTPONE LITERAL POSTPONE (LEXIT)
++    GET-ORDER NIP 1- SET-ORDER
++    LWL DUP @ 0 ?DO 0 OVER I 1+ CELLS + ! LOOP DROP
++    LNAMES LNP !  0 #LOC !  0 #LINIT !
++  THEN ;
++: {: ( --- )   \ {: args [| vals] [-- outs] :}
++  0 >R                                     \ 0 args, 1 vals, 2 outs: the part being read
++  BEGIN
++    PARSE-NAME DUP 0= IF 2DROP REFILL 0= ABORT" {: without :}" FALSE
++    ELSE 2DUP S" :}" COMPARE 0= IF 2DROP TRUE
++    ELSE 2DUP S" |" COMPARE 0= IF 2DROP R> DROP 1 >R FALSE
++    ELSE 2DUP S" --" COMPARE 0= IF 2DROP R> DROP 2 >R FALSE
++    ELSE R@ 2 = IF 2DROP ELSE R@ 0= IF 1 #LINIT +! THEN L-NAME THEN FALSE
++    THEN THEN THEN THEN
++  UNTIL R> DROP
++  #LOC @ IF #LINIT @ POSTPONE LITERAL #LOC @ POSTPONE LITERAL POSTPONE (LENTER) THEN ; IMMEDIATE
++: (LOCAL) ( c-addr u --- )   \ u 0: the last - the frame's entry compiled
++  DUP IF 1 #LINIT +! L-NAME
++  ELSE 2DROP #LOC @ IF #LOC @ DUP POSTPONE LITERAL POSTPONE LITERAL POSTPONE (LENTER-REV) THEN THEN ;
++: TO ( i*x "name" --- )   \ a local first
++  STATE @ #LOC @ AND IF
++    >IN @ >R PARSE-NAME LWL SEARCH-WORDLIST IF
++      R> DROP >BODY @ POSTPONE LITERAL POSTPONE (L!) EXIT
++    THEN R> >IN !
++  THEN POSTPONE TO ; IMMEDIATE
++: ENVIRONMENT? ( c-addr u --- false | i*x true )   \ #LOCALS known; anything else not
++  S" #LOCALS" COMPARE 0= IF 64 TRUE ELSE FALSE THEN ;
++: EXIT ( --- )  #LOC @ IF #LOC @ POSTPONE LITERAL POSTPONE (LEXIT) THEN POSTPONE EXIT ; IMMEDIATE
++: DOES> ( --- )  LOCALS-END POSTPONE DOES> ; IMMEDIATE
++: ; ( --- )  LOCALS-END POSTPONE ; ; IMMEDIATE
++: .S ( --- )   \ the stack, bottom first, left as it was: <depth> x1 ... xn
++  DEPTH DUP ." <" 0 <# #S #> TYPE ." > "  0 ?DO DEPTH I - 1- PICK . LOOP ;
