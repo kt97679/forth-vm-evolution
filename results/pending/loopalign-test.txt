@@ -1,0 +1,9 @@
+build complete: /tmp/fe/r/build
+run-tests exit 0: PASS - no regressions
+validate: 7 of 7 IDENTICAL
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+smallest, no pad: alive, image 7446; loop 88,139,166 dispatches, NOOP 0.0%; bubble 31,926,585 dispatches, NOOP 0.0%; sieve 25,022,648 dispatches, NOOP 0.0%
+fastest (JIT, padded): alive
+SEED 40 FRONT WITH LOOP-ALIGN: 218 alive, 0 dead
+0 of 6 designs differ from s6 somewhere.
+DONE

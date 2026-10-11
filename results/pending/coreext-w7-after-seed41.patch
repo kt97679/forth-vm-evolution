@@ -1,0 +1,63 @@
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 5e10778..48b6cfe 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -11,7 +11,17 @@
+ : ERASE ( addr u --- )  0 FILL ;
+ : BLANK ( c-addr u --- )  BL FILL ;
+ : WITHIN ( n lo hi --- f )  OVER - >R - R> U< ;
+-: PARSE-NAME ( "name" --- c-addr u )  BL PARSE-WORD ;
++: PARSE-NAME ( "<spaces>name<space>" --- c-addr u )
++\ In the input buffer, not a copy: PARSE-WORD's copy at HERE was clobbered by
++\ the next word the interpreter parsed (coreexttest; Iteration 181).
++  SOURCE >IN @ /STRING
++  BEGIN DUP 0 > IF OVER C@ BL > 0= ELSE 0 THEN WHILE 1 /STRING REPEAT
++  OVER >R
++  BEGIN DUP 0 > IF OVER C@ BL > ELSE 0 THEN WHILE 1 /STRING REPEAT
++  OVER R@ - >R
++  DUP 0 > IF 1 /STRING THEN
++  SWAP DROP SOURCE SWAP DROP SWAP - >IN !
++  R> R> SWAP ;
+ : BUFFER: ( u "name" --- )  CREATE ALLOT ;
+ : CASE ( --- 0 )  0 ; IMMEDIATE
+ : OF ( --- of-sys )  POSTPONE OVER POSTPONE = POSTPONE IF POSTPONE DROP ; IMMEDIATE
+@@ -166,3 +176,26 @@ CREATE STAT-BLOCK 16 ALLOT  CREATE STAT-PATH 256 ALLOT  CREATE STAT-BUF 256 ALLO
+ : FILE-STATUS ( c-addr u --- x ior )   \ stat: 0 and its result (filetest)
+   STAT-PATH ZPLACE STAT-BLOCK 16 ERASE STAT-PATH STAT-BLOCK ! STAT-BUF STAT-BLOCK 8 + !
+   0 STAT-BLOCK 4 SYSCALL 0<> ;
++\ The seventh wave (Iteration 181): toolstest at SYNONYM, filetest at REQUIRED,
++\ coreexttest at SAVE-INPUT.
++: SYNONYM ( "newname" "oldname" --- )   \ newname does what oldname does, immediacy too
++  CREATE BL WORD FIND DUP 0= ABORT" Undefined word" 1 = >R , R> IF IMMEDIATE THEN
++  DOES> @ EXECUTE ;
++CREATE INCLUDED-NAMES 0 ,   \ the newest record: link, then a counted name
++: NAME-INCLUDED? ( c-addr u --- f )
++  INCLUDED-NAMES @ BEGIN DUP WHILE
++    >R 2DUP R@ CELL+ COUNT COMPARE 0= IF 2DROP R> DROP TRUE EXIT THEN R> @
++  REPEAT DROP 2DROP FALSE ;
++: NOTE-INCLUDED ( c-addr u --- )
++  ALIGN HERE INCLUDED-NAMES @ , INCLUDED-NAMES ! DUP C, HERE SWAP DUP ALLOT CMOVE ALIGN ;
++' INCLUDED CONSTANT 'INCLUDED
++: INCLUDED ( i*x c-addr u --- j*x )  2DUP NOTE-INCLUDED 'INCLUDED EXECUTE ;
++: REQUIRED ( i*x c-addr u --- i*x )  2DUP NAME-INCLUDED? IF 2DROP ELSE INCLUDED THEN ;
++: INCLUDE ( i*x "name" --- j*x )  PARSE-NAME INCLUDED ;
++: REQUIRE ( i*x "name" --- i*x )  PARSE-NAME REQUIRED ;
++: SAVE-INPUT ( --- xn ... x1 n )  SRC @ #SRC @ >IN @ SID @ 4 ;
++: RESTORE-INPUT ( xn ... x1 n --- flag )   \ the same source only: else true, nothing done
++  DUP 4 <> IF 0 ?DO DROP LOOP TRUE EXIT THEN DROP
++  DUP SID @ <> IF 2DROP 2DROP TRUE EXIT THEN DROP
++  >R 2DUP #SRC @ = SWAP SRC @ = AND IF #SRC ! SRC ! R> >IN ! FALSE EXIT THEN
++  2DROP R> DROP TRUE ;
+diff --git a/tools/ans-upper.py b/tools/ans-upper.py
+index cb1aa30..78fc755 100644
+--- a/tools/ans-upper.py
++++ b/tools/ans-upper.py
+@@ -23,7 +23,7 @@ def conv(line):
+             k = line.find(STR[up], j + 1); k = n if k < 0 else k + 1
+             out.append(up + line[j:k]); i = k; continue
+         if re.fullmatch(r"'.'", tok): out.append(tok); i = j; continue
+-        if up in ('CHAR', '[CHAR]'): keep_next = True
++        if up in ('CHAR', '[CHAR]', 'INCLUDE', 'REQUIRE', 'PARSE-NAME'): keep_next = True   # Iteration 181: a file name after INCLUDE, REQUIRE; PARSE-NAME's token, compared with an S" string
+         out.append(up); i = j
+     return ''.join(out)
+ src = open(sys.argv[1], encoding='latin-1').read().replace('\r', '')

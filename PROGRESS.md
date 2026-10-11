@@ -3399,3 +3399,17 @@ results/pending/opcall-band-after-seed41.patch.
 body - every iteration, not "once per loop" as the comment has it: 8.4% of the
 smallest's dispatches on loop. Next: price a wider call or an unaligned-safe
 operand read (results/price-hybrid.md).
+
+## Iteration 181 - 2026-10-11 - Claude
+
+**The loops' padding removed where it runs; the standard's seventh wave.**
+Priced: executed NOOPs 8.0-8.3% of loop's dispatches on interpreted designs
+without a run-time loop compiler (27 of seed 40's front). cv8t.4 no longer pads
+loop operands in a design without the JIT ((LOOP) reads them unaligned): the
+smallest's loop -8.3% of dispatches, bubble -3.4%, sieve -6.9%; 218 of 218
+alive; the suite on six interpreted designs as s6. The seventh wave - SYNONYM,
+INCLUDE, REQUIRED, REQUIRE, SAVE-INPUT, RESTORE-INPUT - and two case faults of
+the test conversion (file names, PARSE-NAME's token): s6 1,862 tests, 0
+failed. Pending after seed 41, sixth and seventh: loopalign, coreext-w7.
+
+**The whole batch, held out (Iteration 181):** all seven pending patches on seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.

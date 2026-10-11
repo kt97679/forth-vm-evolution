@@ -147,3 +147,18 @@ overlay's bytes against the loops' speed, evolution's to weigh. A fix for the
 designs without it, to price next: a wider call (tag 2's 3- and 4-byte forms)
 absorbs up to two pad bytes; an unaligned-safe operand read (memcpy, one load
 on x86-64) needs no pad at all - with ARM in mind.
+
+## The padding, removed where it runs (Iteration 181)
+
+Priced first: executed NOOPs on the eight workloads - s6 loop 4.3%, bubble
+3.5%, sieve 5.6%; three interpreted front designs without a run-time loop
+compiler (27 of seed 40's 218) loop 8.0-8.3%, bubble 3.3-3.4%, sieve 6.7-6.9%,
+kernel and corpus under 1%. The loops that matter are compiled at run time,
+so only the run-time compiler changes: cv8t.4's OPERAND-ALIGN pads only where
+LOOP-ALIGN is set, and the converter sets it for JIT designs alone - (LOOP)'s
+@ reads its operand unaligned, a plain load on x86-64 (CELL() is
+*(UNS64*)); the converter's image layout, s6's cv8.4 and the ARM path are
+untouched. Seed 40's smallest: loop 96.15 M -> 88.14 M dispatches (-8.3%),
+bubble -3.4%, sieve -6.9%, no NOOP executed; alive. All 218 of seed 40's front
+designs alive; the held-out suite on six interpreted designs as s6; run-tests
+PASS; 7 of 7 stages identical. results/pending/loopalign-after-seed41.patch.

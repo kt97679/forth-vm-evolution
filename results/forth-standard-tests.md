@@ -284,3 +284,17 @@ HANDLER; extend.4's preliminary THROW out. With no CATCH every message is as
 before. exceptiontest whole; s6 1,821 tests, 0 failed; reseeded (the 8-byte
 kernel 26,904 bytes), run-tests, 7 of 7 IDENTICAL, the jail; 186 alive and 0
 of 186 differ from s6.
+
+## The seventh wave (Iteration 181) - results/pending/coreext-w7-after-seed41.patch
+
+SYNONYM (immediacy carried), INCLUDE REQUIRED REQUIRE (INCLUDED wrapped to note
+each file it loads), SAVE-INPUT RESTORE-INPUT (the same source; otherwise true,
+as the standard allows), and PARSE-NAME rewritten to return its name inside the
+input buffer. Two faults of the conversion, not of the system, in
+tools/ans-upper.py: a file name after INCLUDE or REQUIRE was upper-cased (no
+such file - filetest stopped at "Can't open include file"), and so was
+PARSE-NAME's token, compared there with a lower-case S" string (two "failures"
+in coreexttest - first taken, wrongly, for PARSE-NAME's fault). Both now keep
+their case, like CHAR's. On s6: 1,862 tests, 0 failed. Stopping at: DEFER
+(coreexttest), S\" (filetest), TRAVERSE-WORDLIST (toolstest), SUBSTITUTE
+(stringtest), BLOCK, {:.

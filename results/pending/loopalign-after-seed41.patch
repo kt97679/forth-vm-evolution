@@ -1,0 +1,33 @@
+diff --git a/forth/cv8t.4 b/forth/cv8t.4
+index 71d1b9a..a29bf31 100644
+--- a/forth/cv8t.4
++++ b/forth/cv8t.4
+@@ -253,9 +253,15 @@ ALIGN
+ \ (CV8-REFERENCE.md 3.3). The translator pads BEFORE the call so the
+ \ operand lands aligned just after it; the runtime compiler does the
+ \ same. The pad is NOOPs, which do execute, once per loop.
++VARIABLE LOOP-ALIGN ( --- a-addr )
++\ -1: pad as below; 0: no pad - (LOOP)'s @ reads the operand unaligned, a
++\ plain load on x86-64. LOOP8's pad sat inside the loop body and executed
++\ every iteration, not once (8.3% of a small design's loop dispatches); the
++\ converter writes 0 for a design without the JIT (Iteration 181).
++-1 LOOP-ALIGN !
+ : OPERAND-ALIGN ( --- )
+ \ Emit NOOPs until a 2-byte call would leave HERE cell-aligned.
+-  BEGIN HERE 2 + 1 CELLS 1- AND WHILE 0 C, REPEAT ;
++  LOOP-ALIGN @ IF BEGIN HERE 2 + 1 CELLS 1- AND WHILE 0 C, REPEAT THEN ;
+ 
+ : DO8 ( --- a-addr )
+ \ (DO) has no inline operand, so this matches the cell version.
+diff --git a/tools/layout.py b/tools/layout.py
+index b4510a8..6fbb7a8 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1118,6 +1118,7 @@ def emit(path):
+     # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
+     # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
+     # VARCALL, kept the overlay's default and wrote far calls its engine misread.
++    if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
+     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
+     for w in order:
+         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
