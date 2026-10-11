@@ -1,0 +1,293 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 1250430..65456ee 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -179,6 +179,37 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+    address: if the 2, 3 or 4 bytes before ra are a call naming w exactly,
+    point it past the header - that call site then skips the JIT dispatch
+    for good. Anything else (EXECUTE, a target past the width) is left. */
++#ifndef CALLREL
++#define CALLREL 0
++#endif
++/*  Iteration 164 (the gene callrel): a tag-2 call's target from its field -
++    the offset from the image base, the distance from the byte after it, or
++    either by the low bit - and the field for a target, in the given form
++    (site: the distance), 0 if it does not fit.  */
++static UNS64 jit_t2dec(UNS64 raw, int wd, UNS64 after) {
++    int n = 8 * wd - 2; UNS64 m;
++#if CALLREL == 1
++    m = (UNS64)1 << (n - 1); return after + ((raw ^ m) - m);
++#elif CALLREL == 2
++    if (raw & 1) { m = (UNS64)1 << (n - 2); return after + (((raw >> 1) ^ m) - m); }
++    (void)m; return jit_cbase + (raw >> 1);
++#else
++    (void)after; (void)n; (void)m; return jit_cbase + raw;
++#endif
++}
++static int jit_t2enc(UNS64 target, int wd, UNS64 after, int site, UNS64 *field) {
++    int n = 8 * wd - 2; long long d = (long long)(target - after);
++#if CALLREL == 1
++    (void)site; if (d < -(1LL << (n - 1)) || d >= (1LL << (n - 1))) return 0;
++    *field = (UNS64)d & (((UNS64)1 << n) - 1); return 1;
++#elif CALLREL == 2
++    if (!site) { UNS64 v = target - jit_cbase; if (v >> (n - 1)) return 0; *field = v << 1; return 1; }
++    if (d < -(1LL << (n - 2)) || d >= (1LL << (n - 2))) return 0;
++    *field = (((UNS64)d << 1) | 1) & (((UNS64)1 << n) - 1); return 1;
++#else
++    UNS64 v = target - jit_cbase; (void)after; (void)site; (void)d; if (v >> n) return 0; *field = v; return 1;
++#endif
++}
+ static void jit_repoint(UNS64 w, UNS64 ra) {
+     UNS64 t = w + 5 - jit_cbase, x;
+     int wd, i;
+@@ -187,8 +218,8 @@ static void jit_repoint(UNS64 w, UNS64 ra) {
+         UNS8 b = BYTE(a);
+         if ((b >> 6) != wd - 1) continue;                 /* tag 01: 2 bytes, 10: 3, 11: 4 */
+         for (x = b & 0x3F, i = 1; i < wd; i++) x = x << 8 | BYTE(a + i);
+-        if (jit_cbase + x != w) continue;
+-        if (t >> (8 * wd - 2)) return;                    /* past the header: too far for this width */
++        if (jit_t2dec(x, wd, ra) != w) continue;
++        if (!jit_t2enc(w + 5, wd, ra, (int)(x & 1), &t)) return;   /* past the header: too far for this width, in the call's own form (Iteration 164) */
+         BYTE(a) = (UNS8)((b & 0xC0) | (t >> (8 * (wd - 1))));
+         for (i = 1; i < wd; i++) BYTE(a + i) = (UNS8)(t >> (8 * (wd - 1 - i)));
+         return;
+@@ -220,7 +251,7 @@ static void jit_dump(int fd) {
+                 int wd = T2_CALLW(c), j;
+                 UNS64 t = c & 0x3F;
+                 for (j = 1; j < wd; j++) t = t << 8 | BYTE(a + j);
+-                if (jit_cbase + t != w) {
++                if (jit_t2dec(t, wd, a + (UNS64)wd) != w) {
+                     m = snprintf(b, sizeof b, "B %llu c %llu\n", (unsigned long long)(w - jit_cbase), (unsigned long long)t); write(fd, b, (size_t)m); }
+                 a += (UNS64)wd;
+             } else {
+@@ -348,7 +379,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         if (T2_CALL(b)) {               /* a call of 2, 3 or 4 bytes (2 or 4: t2wide) */
+             int wd = T2_CALLW(b); UNS64 t = b & 0x3F;
+             for (i = 1; i < wd; i++) t = t << 8 | BYTE(a + i);
+-            arg[n] = jit_cbase + t; opl[n] = 0xFFFF; a += (UNS64)wd;
++            arg[n] = jit_t2dec(t, wd, a + (UNS64)wd); opl[n] = 0xFFFF; a += (UNS64)wd;
+         } else {
+             unsigned L = jit_one[T2_ONEIX(b)];
+             a++;
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index c82a9ff..ebf18f1 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -152,6 +152,23 @@ static char **g_argv;
+  *  dictionary's byte-header links take the same tag, read backwards.  */
+ #define TAG2 0
+ #endif
++#ifndef CALLREL
++/*  CALLREL (Iteration 164, the owner; the gene callrel): what a tag-2 call's
++ *  field holds - 0 the target's offset from the image base, 1 its distance
++ *  from the byte after the call (signed), 2 either: the low bit says which,
++ *  the rest is the value. T2TARGET_AT(raw, n, after): the target's offset
++ *  from cbase, for an n-bit field ending at after.  */
++#define CALLREL 0
++#endif
++#define T2SEXT(v, n) ((((UNS64)(v)) ^ ((UNS64)1 << ((n) - 1))) - ((UNS64)1 << ((n) - 1)))
++#if CALLREL == 1
++#define T2TARGET_AT(raw, n, after) ((after) + T2SEXT(raw, n) - cbase)
++#elif CALLREL == 2
++#define T2TARGET_AT(raw, n, after) (((raw) & 1) ? (after) + T2SEXT((raw) >> 1, (n) - 1) - cbase : (raw) >> 1)
++#else
++#define T2TARGET_AT(raw, n, after) (raw)
++#endif
++#define T2TARGET(raw, n) T2TARGET_AT(raw, n, ip)
+ #if TAG2 && (HOTCALLS || SCALE != 0 || ENC != 3)
+ #error "TAG2: no one-byte hot calls, byte offsets (SCALE 0), CV8 only"
+ #endif
+@@ -1388,12 +1405,12 @@ next:
+     NEXT();
+ #if ENC == 3 && TAG2
+     /*  t holds the first byte (NEXT), ip is past it.  */
+-L_t2call2: t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; goto t2call;
++L_t2call2: t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; t = T2TARGET(t, 14); goto t2call;
+ #if !T2WIDE
+-L_t2call3: t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1); ip += 2; goto t2call;
++L_t2call3: t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1); ip += 2; t = T2TARGET(t, 22); goto t2call;
+ #endif
+ L_t2call4: t = ((t & 0x3F) << 24) | ((UNS64)BYTE(ip) << 16) | ((UNS64)BYTE(ip + 1) << 8)
+-               | BYTE(ip + 2); ip += 3;
++               | BYTE(ip + 2); ip += 3; t = T2TARGET(t, 30);
+ t2call:    PROF(256); PROFRET(ip, t); RPUSH(ip); ip = cbase + t; TRACE_CALL(); NEXT();
+ L_t2esc:   t = BYTE(ip); ip += 1; goto *t2esc[t];
+ L_t2bad:   write_str(2, "relf: no operation has this code\n"); exit(70);
+@@ -1806,7 +1823,7 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+ #if ENC == 3 && TAG2
+     /*  Tag 2: always the 4-byte call, 11 + 30 bits, in the 4 bytes CREATE
+      *  reserved - the parameter field where DOVAR puts it.  */
+-    t = ((UNS64)(BYTE(ip) & 0x3F) << 24) | ((UNS64)BYTE(ip + 1) << 16) | ((UNS64)BYTE(ip + 2) << 8) | BYTE(ip + 3);
++    t = ((UNS64)(BYTE(ip) & 0x3F) << 24) | ((UNS64)BYTE(ip + 1) << 16) | ((UNS64)BYTE(ip + 2) << 8) | BYTE(ip + 3); t = T2TARGET_AT(t, 30, ip + 4);
+     RPUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     ip = cbase + t; NEXT();
+ #elif ENC == 3
+diff --git a/forth/cv8t.4 b/forth/cv8t.4
+index 71d1b9a..cad8141 100644
+--- a/forth/cv8t.4
++++ b/forth/cv8t.4
+@@ -136,12 +136,41 @@ ALIGN
+   LOOP 0 ;
+ 
+ \ ---- calls ----------------------------------------------------------
++VARIABLE CV8-CALLREL-V ( --- a-addr )
++\ What a call's field holds - 0 the offset from the image base, 1 the
++\ distance from the byte after the call, 2 either, the low bit saying which
++\ (the gene callrel; the converter writes it - Iteration 164).
++0 CV8-CALLREL-V !
++VARIABLE CV8-T2WIDE-V ( --- a-addr )
++\ True under t2wide: no 3-byte call (the converter writes it).
++0 CV8-T2WIDE-V !
++: T2CALL! ( field k --- )
++\ A call of k more bytes after the first, its field cut to 6+8k bits.
++  >R 1 R@ 3 LSHIFT 6 + LSHIFT 1- AND R>
++  2DUP 3 LSHIFT RSHIFT OVER 6 LSHIFT OR C,
++  BEGIN DUP WHILE 1- 2DUP 3 LSHIFT RSHIFT 255 AND C, REPEAT 2DROP ;
++: T2FIT? ( d bits --- f )
++\ -2^(bits-1) <= d < 2^(bits-1)
++  1- 1 SWAP LSHIFT DUP >R + R> 2* U< ;
++: T2CALL-REL ( a-addr --- )
++\ The first form - 2, 3 or 4 bytes - that holds the call: by distance from
++\ the byte after it (1), or (2) the base offset when that is as short, else
++\ the distance, the low bit saying which.
++  4 1 DO I 2 = CV8-T2WIDE-V @ AND 0= IF
++    CV8-CALLREL-V @ 2 = IF
++      DUP START @ - DUP 1 I 3 LSHIFT 5 + LSHIFT U< IF 2* SWAP DROP I T2CALL! UNLOOP EXIT THEN DROP
++      DUP HERE I + 1+ - DUP I 3 LSHIFT 5 + T2FIT? IF 2* 1 OR SWAP DROP I T2CALL! UNLOOP EXIT THEN DROP
++    ELSE
++      DUP HERE I + 1+ - DUP I 3 LSHIFT 6 + T2FIT? IF SWAP DROP I T2CALL! UNLOOP EXIT THEN DROP
++    THEN
++  THEN LOOP -1 ABORT" call out of reach" ;
+ : CALL, ( a-addr --- )
+ \ Append a call to the body at a-addr: its byte offset from the image base
+ \ in the shortest form that reaches - 01 + 14 bits, 10 + 22, 11 + 30: k
+ \ more bytes after the first, the first holding k and the top bits. The
+ \ engine holds at most 1 GB (vm-lab.c, TAG2), so every offset fits.
+   0 LAST-OP !
++  CV8-CALLREL-V @ IF T2CALL-REL EXIT THEN
+   START @ -  DUP 16384 < IF 1 ELSE DUP 4194304 < IF 2 ELSE 3 THEN THEN   ( v k )
+   2DUP 3 LSHIFT RSHIFT OVER 6 LSHIFT OR C,
+   BEGIN DUP WHILE 1- 2DUP 3 LSHIFT RSHIFT 255 AND C, REPEAT 2DROP ;
+@@ -293,6 +322,9 @@ ALIGN
+   \ tag 2: always the 4-byte form, 11 + 30 bits, high byte first, in the 4
+   \ bytes CREATE reserved (the engine's DODOES reads exactly that)
+   START @ -                         ( a-addr v )
++  CV8-CALLREL-V @ 1 = IF START @ + OVER 4 + - THEN   \ by distance: from the byte after the four (Iteration 164)
++  CV8-CALLREL-V @ 2 = IF 2* THEN                      \ either: the base offset, its low bit 0
++  1073741823 AND                                       \ thirty bits
+   2DUP 255 AND SWAP 3 + C!
+   2DUP 8 RSHIFT 255 AND SWAP 2 + C!
+   2DUP 16 RSHIFT 255 AND SWAP 1+ C!
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index dd721c9..50bfb79 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -25,6 +25,7 @@ GENOME - phase 1: the CV8 family, 8-byte cells
+   spec       set   specialisation families of loc var tiny small imm
+   sharedcall 0/1   one call path shared by every call opcode
+   doesfar    0/1   DOES> children that reach anywhere (DOESFAR)
++  callrel    0/2   tag-2 calls: 0 the offset from the image base; 2 either it or the distance from the call, a bit says which (CALLREL; 1, by distance alone, to come)
+   varcall    0/1   opcodes that call through a variable (VARCALL)
+   varslot    0/1   opcodes for variable slots (VARSLOT)
+   d256       0/1   the 256-entry dispatch table (DISPATCH256)
+@@ -90,6 +91,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+ LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
++LATE = LATE + ('callrel',)   # Iteration 164: recorded genomes have it off
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -113,7 +115,8 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
+ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
+              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+-EXPRESSED['cv8'] += ['jitloop', 'jitinl']   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
++EXPRESSED['cv8'] += ['jitloop', 'jitinl', 'callrel']   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
++CALLRELN = [0, 2]   # Iteration 164: 1 - by distance alone - when the converter places calls by distance
+ BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
+           ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',), ('kstack',), ('abortif',), ('opcall',)]
+ # Superinstruction candidates: primitive pairs ranked by how often the CV8
+@@ -337,6 +340,7 @@ def express(g):
+     if 'jitloop' in e and not jit_on(g): e.pop('jitloop')                          # Iteration 129: on the JIT
+     if 'sysc' in e and g['enc'] != 'cv8': e.pop('sysc')                            # Iteration 136: SYSC is vm-lab.c's, build()'s
+     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
++    if 'callrel' in e and not (e['callrel'] and e.get('tag2')): e.pop('callrel')   # Iteration 164: tag 2's calls; off, not in the id - every recorded design keeps its id
+     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
+     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
+     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+@@ -581,6 +585,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
+     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
++    if express(g).get('callrel'): flags.append('-DCALLREL=%d' % express(g)['callrel'])   # Iteration 164
+     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
+     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
+     if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
+@@ -642,6 +647,7 @@ def _build(g, d):
+     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
+     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
+     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
++    if express(g).get('callrel'): opts += ['--call-rel', str(express(g)['callrel'])]   # Iteration 164
+     if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
+     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
+                                                                  # copies (Iteration 38), the dump tool and dead
+@@ -909,6 +915,8 @@ def mutate(g, rnd):
+             g['t2hot'] = rnd.choice([v for v in range(len(T2HOT)) if v != g.get('t2hot', 0)]); what.append('t2hot=%s' % T2HOT[g['t2hot']])
+         elif k == 'hotcalls':         # Iteration 14: one-byte calls to 0, 8, 16 or 32 of the image's words
+             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
++        elif k == 'callrel':          # Iteration 164: the call's field - 0 the base offset, 2 either it or the distance
++            g['callrel'] = rnd.choice([v for v in CALLRELN if v != g.get('callrel', 0)]); what.append('callrel=%d' % g['callrel'])
+         elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
+             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+@@ -1286,6 +1294,7 @@ def random_genome(rnd):
+         elif k == 'scale': g[k] = rnd.randrange(4)
+         elif k == 'escape': g[k] = rnd.randrange(3)
+         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
++        elif k == 'callrel': g[k] = rnd.choice(CALLRELN)
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
+         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
+diff --git a/tools/layout.py b/tools/layout.py
+index 28b58d3..f54a12a 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -146,6 +146,9 @@ if '--escape' in ARGV:
+     G['ESC_PRIMS'].update(G['ESC_PRIMS_ALL'])
+     if '--escape2' in ARGV: G['ESC_PRIMS'].update(G['ESC2_PRIMS'])
+ if '--no-varcall' in ARGV: G['VARCALL'] = False
++if '--call-rel' in ARGV:   # Iteration 164: the gene callrel - 2, either; 1, by distance, needs calls placed by distance here
++    G['T2CALLREL'][0] = int(_opt('--call-rel'))
++    assert G['T2CALLREL'][0] in (0, 2), '--call-rel %d: the converter does not place calls by distance yet' % G['T2CALLREL'][0]
+ if '--no-varslot' in ARGV: G['VARSLOT'] = False
+ UB = 1 if V8 else 2                # bytes per stream unit
+ DOVARP = len(G['prims']) + 1       # after LIT32
+@@ -1098,6 +1101,7 @@ def emit(path):
+     # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
+     # VARCALL, kept the overlay's default and wrote far calls its engine misread.
+     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
++    if V8 and TAG2_ON: CVARS['CV8-CALLREL-V'] = G['T2CALLREL'][0]; CVARS['CV8-T2WIDE-V'] = -1 if G.get('T2WIDE') else 0   # Iteration 164: the call form; t2wide has no 3-byte call
+     for w in order:
+         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
+         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 45ddf06..cb1d858 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -1032,10 +1032,14 @@ def t2put(b, L):
+     if L in m['one']: b.append(m['one'][L])
+     else: b.append(m['escc']); b.append(m['esc'][L])
+ T2WIDE = False        # Iteration 95 (layout.py --tag2-wide): no 3-byte call - 10xxxxxx are one-byte codes
+-def t2calllen(v): return 2 if v < (1 << 14) else 4 if T2WIDE else 3 if v < (1 << 22) else 4
++T2CALLREL = [0]   # Iteration 164: layout's --call-rel - 2: either, the base offset with its low bit 0
++def t2calllen(v):
++    if T2CALLREL[0] == 2: return 2 if v < (1 << 13) else 4 if T2WIDE else 3 if v < (1 << 21) else 4
++    return 2 if v < (1 << 14) else 4 if T2WIDE else 3 if v < (1 << 22) else 4
+ def t2call(v, n):
+     """A call of n bytes (2, 3, 4): 01, 10, 11 in the top two bits, then the
+     offset from the image base, high byte first (vm-lab.c L_t2call*)."""
++    if T2CALLREL[0] == 2: v <<= 1        # Iteration 164: the base form, the low bit 0
+     assert 0 <= v < (1 << (8 * n - 2)), "call target %d out of %d bits" % (v, 8 * n - 2)
+     return bytes([((n - 1) << 6) | (v >> (8 * (n - 1)))] + [(v >> (8 * i)) & 0xFF for i in range(n - 2, -1, -1)])
+ def opcode_L(ops, j):
