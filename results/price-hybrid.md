@@ -132,3 +132,18 @@ Seed 40's smallest on loop: NOOPs executed - 8.4% of the dispatches (NOOP NOOP,
 NOOP then a call) - padding on the hot path. Careful: in a tag-2 profile the
 escaped operations are logical 128 and up, which a quick naming takes for
 calls; the next price names them.
+
+## The padding that runs every iteration (Iteration 180)
+
+forth/cv8t.4 (and cv8.4): `(LOOP)` and `(+LOOP)` read an inline cell operand,
+kept cell-aligned, so OPERAND-ALIGN pads with NOOPs before the call. The
+comment says the pad "executes once per loop" - true for ?DO8, whose pad is
+before the loop; LOOP8's and +LOOP8's sit inside the body, before (LOOP)'s
+call: they execute every iteration - 8.4% of seed 40's smallest's dispatches on
+loop. Designs with the run-time loop compiler (rtloop: loop opcodes, no cell
+operand) never pad; the smallest has seven loop opcodes and is one mutation
+from rtloop (its rtloopall is dormant: it needs rtloop and (+LOOP) too) - the
+overlay's bytes against the loops' speed, evolution's to weigh. A fix for the
+designs without it, to price next: a wider call (tag 2's 3- and 4-byte forms)
+absorbs up to two pad bytes; an unaligned-safe operand read (memcpy, one load
+on x86-64) needs no pad at all - with ARM in mind.

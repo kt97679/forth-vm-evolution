@@ -3394,3 +3394,8 @@ converter now writes X;CALL only in the base band: all five right, all 48 of
 seed 40's opcall front designs alive. The mechanism outside the band is still
 unexplained - a containment, recorded as such. Pending after seed 41, fifth:
 results/pending/opcall-band-after-seed41.patch.
+
+**And the loops' padding (Iteration 180):** LOOP8's NOOPs sit inside the loop
+body - every iteration, not "once per loop" as the comment has it: 8.4% of the
+smallest's dispatches on loop. Next: price a wider call or an unaligned-safe
+operand read (results/price-hybrid.md).
