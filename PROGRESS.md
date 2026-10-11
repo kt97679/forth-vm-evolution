@@ -3122,3 +3122,18 @@ larger at 8-byte cells (the audit's net: -104), the kernel workload +0.3%.
 run-tests PASS, 7 of 7 IDENTICAL, the jail; all 165 of seed 38's front designs
 and both founders alive, tabs and audit right. The whole audit on the JIT
 founder: kernel workload -38.6%, bubble -13.3%, corpus -2.7%, sieve -6.6%.
+
+## Iteration 158 - 2026-10-10 - Claude
+
+**Code far from the image base: the gate and cv8's refusals - the batch's tenth
+pending patch** (the owner: long addresses). tests/core/far.fth puts code and
+data past 64 KB, then 8 MB more; tools/farcheck.py: every answer right, any
+missing one refused out loud. All 165 of seed 38's front designs and both
+founders: every answer. The ladder broke - crashed, hung, lost words, stopped
+silently; cv8 now refuses (CALL, past 21 bits, DOES>8 out of its form's reach,
+cv8b's links past 4 MB), so s1, s5, s6 and the s8 stages refuse where they
+broke. Still broken, listed and shown in run-tests.sh: s4 (no far form in its
+engine), s0, pack4, pack8, s7 (crash), s2, s3 (hang). The gate: alive() runs
+far.fth on every evolved design; hand-made stages and --validate exempt.
+run-tests PASS, 7 of 7 IDENTICAL, the jail; 167 of 167 alive through the gate.
+results/far-addresses.md.

@@ -1,0 +1,208 @@
+diff --git a/forth/cv8.4 b/forth/cv8.4
+index 079afb8..b86942c 100644
+--- a/forth/cv8.4
++++ b/forth/cv8.4
+@@ -136,6 +136,10 @@ ALIGN
+   DUP 16384 < IF
+     DUP 8 RSHIFT 128 OR C, 255 AND C,
+   ELSE
++    \ 21 bits: the far form's first byte is 0xC0-0xDF where one-byte hot
++    \ calls hold 0xE0-0xFF, so past them a call is refused, not truncated
++    \ into some other target (Iteration 158).
++    DUP 2097152 U< 0= IF -1 ABORT" call out of reach" THEN
+     DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C,
+   THEN ;
+ 
+@@ -297,7 +301,13 @@ ALIGN
+   \ The tail must be an ALIGNED call target: a call is a SCALED offset,
+   \ so an unaligned tail address loses its low bits and jumps to the
+   \ wrong place. The pad is dead code - (;CODE) never returns here.
+-  ?COMP POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
++  ?COMP POSTPONE (;CODE) ALIGN
++  \ HERE is the tail every child will call, in the form CV8-DOES-FAR?
++  \ selects - out of its reach, the defining word is refused here, before a
++  \ child exists to be left half made (Iteration 158).
++  HERE START @ - CV8-SHIFT RSHIFT CV8-DOES-FAR? @ IF 2097152 ELSE 16384 THEN U< 0=
++  IF -1 ABORT" DOES> out of reach" THEN
++  POSTPONE R> ; IMMEDIATE
+ 
+ \ ---- debugging aid --------------------------------------------------
+ : BYTES. ( a-addr n --- )
+diff --git a/forth/cv8b.4 b/forth/cv8b.4
+index bcf6f0e..109187a 100644
+--- a/forth/cv8b.4
++++ b/forth/cv8b.4
+@@ -42,6 +42,9 @@
+ \ ---- the link -------------------------------------------------------
+ : LINK-LEN ( d --- n )
+   DUP 128 U< IF DROP 1 EXIT THEN
++  \ Three bytes hold 22 bits: past 4 MB a link is refused, not cut short -
++  \ a cut link broke the thread and later words went missing (Iteration 158).
++  DUP 4194304 U< 0= IF -1 ABORT" link out of reach" THEN
+   16384 U< IF 2 ELSE 3 THEN ;
+ 
+ : LINK, ( d n --- )
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 54d9ad1..ea143ac 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -667,6 +667,7 @@ def _build(g, d):
+ 
+ sys.path.insert(0, os.path.join(ROOT, 'tools'))
+ import elf_tight                                    # Iteration 149
++import farcheck                                     # Iteration 158: code far from the image base
+ def build(g, d):
+     """-> (engine, image) or raises RuntimeError('died: ...'). The engine as
+     it ships (Iteration 149): the ELF header, the program headers and the
+@@ -748,7 +749,14 @@ def program(w, single=False):
+     if w == 'parse': return (('S" %s" INCLUDED\n' % LONGF[w]) * LONG[w] + 'BYE\n').encode()
+     return ('S" %s" INCLUDED\nBYE\n' % LONGF[w]).encode()
+ 
+-def alive(eng, img, pw):
++FAR_IN = open(os.path.join(ROOT, 'tests', 'core', 'far.fth'), 'rb').read()
++HAND_MADE = []
++def hand_made(g):
++    """Whether g is one of the hand-made stages (Iteration 158: not gated far)."""
++    if not HAND_MADE: HAND_MADE.extend(canon(v) for v in HUMAN.values())
++    return canon(g) in HAND_MADE
++
++def alive(eng, img, pw, far=True):
+     """The corpus must match the cell engine's output; the kernel must match."""
+     with open(CORPUS, 'rb') as f:
+         r = sh([eng, img], cwd=pw, inp=f.read(), timeout=120, cpu=5)
+@@ -761,6 +769,16 @@ def alive(eng, img, pw):
+     sh([eng, img], cwd=pw, inp=KERNEL_IN, timeout=240, cpu=10)
+     if not os.path.exists(k) or open(k, 'rb').read() != open(KREF, 'rb').read():
+         raise RuntimeError('died: kernel workload')
++    # Iteration 158 (the owner): code and data far from the image base - past
++    # 64 KB, then past 8 MB more (tests/core/far.fth). Every answer right, or
++    # refused out loud: a design that computes something else, crashes or
++    # hangs there dies. The hand-made stages are run-tests.sh's to judge.
++    if far:
++        try:
++            r = sh([eng, img], cwd=pw, inp=FAR_IN, timeout=60, cpu=5); out, code = r.stdout.decode(errors='replace'), r.returncode
++        except Exception as e: out, code = '', 'raised: %s' % str(e)[:60]
++        v = farcheck.verdict(out, code)
++        if v != 'all' and not v.startswith('refused'): raise RuntimeError('died: far (%s)' % v)
+ 
+ METRIC = rb'^CYCLES (\d+)' if os.environ.get('EVOLVE_METRIC') == 'cycles' else rb'^CPUNS (\d+)'
+ PIN, REF = [], None            # set by setup(): the core, the reference (eng, img, work dir)
+@@ -850,7 +868,7 @@ def evaluate(g, rounds, keep=False):
+         rec['size'] = os.path.getsize(img)
+         rec['bin'] = bin_size(eng); rec['total'] = rec['bin'] + rec['size']     # Iteration 75: an objective
+         pw = private_work(d)
+-        alive(eng, img, pw)
++        alive(eng, img, pw, far=not hand_made(g))
+         t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
+         rec['t'] = t; rec['raw'] = raw
+         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
+@@ -1418,7 +1436,7 @@ def main(argv):
+             try:
+                 eng, img = build(g, d)
+                 same = open(img, 'rb').read() == open(os.path.join(O, name + '-s64.img'), 'rb').read()
+-                pw = private_work(d); alive(eng, img, pw)
++                pw = private_work(d); alive(eng, img, pw, far=False)   # Iteration 158: run-tests.sh judges them far
+                 print('  %-11s image %s the build\'s, corpus and kernel workload correct' % (name, 'IDENTICAL to' if same else 'DIFFERENT from'))
+                 ok &= same
+             except RuntimeError as e:
+diff --git a/tests/core/far.fth b/tests/core/far.fth
+new file mode 100644
+index 0000000..1c9971a
+--- /dev/null
++++ b/tests/core/far.fth
+@@ -0,0 +1,30 @@
++\ far.fth - code and data far from the image base (Iteration 158). Words
++\ compiled past 64 KB take tag2's three-byte calls; past 8 MB more, its
++\ four-byte calls, beyond the reach of cv8's far form and its links. Line k
++\ prints k*100000 plus its answer. Each answer must be right; a missing one
++\ must be refused out loud ("out of reach") - nothing computed otherwise.
++VARIABLE V
++: NEAR ( x --- x' ) V @ EXECUTE ;
++65536 ALLOT
++: F1 ( n --- n' ) 1+ ;
++: FIB ( n --- f ) DUP 2 < IF EXIT THEN DUP 1- RECURSE SWAP 2 - RECURSE + ;
++: F2 ( n --- n' ) F1 F1 ;
++12 FIB 100000 + . CR
++5 F2 200000 + . CR
++: CONST CREATE , DOES> @ ;
++42 CONST K1
++K1 300000 + . CR
++' F2 V ! 10 NEAR 400000 + . CR
++8388608 ALLOT
++: G1 ( n --- n' ) 2 + ;
++: GFIB ( n --- f ) DUP 2 < IF EXIT THEN DUP 1- RECURSE SWAP 2 - RECURSE + ;
++: G2 ( n --- n' ) G1 G1 F2 ;
++CREATE BUF 4 CELLS ALLOT
++: G3 ( --- n ) 7 BUF ! BUF @ 1+ ;
++13 GFIB 500000 + . CR
++5 G2 600000 + . CR
++G3 700000 + . CR
++: CONST2 CREATE , DOES> @ 1+ ;
++43 CONST2 K2
++K2 800000 + . CR
++' G2 V ! 10 NEAR 900000 + . CR
+diff --git a/tools/farcheck.py b/tools/farcheck.py
+new file mode 100644
+index 0000000..0510f59
+--- /dev/null
++++ b/tools/farcheck.py
+@@ -0,0 +1,18 @@
++"""tests/core/far.fth's verdict (Iteration 158): line k prints k*100000 plus its
++answer; every answer right, and any missing one refused out loud - never
++something else computed. Used by run-tests.sh and the evolution's gate."""
++import sys, re
++WANT = {1: 144, 2: 7, 3: 42, 4: 12, 5: 233, 6: 11, 7: 8, 8: 44, 9: 16}
++def verdict(out, code):
++    """'all' | 'refused N' | a failure - right or refused out loud, never else."""
++    out = out.replace('\r', ''); got = {}
++    for l in out.split('\n'):
++        if re.fullmatch(r'[0-9]+ ', l):
++            n = int(l); k, v = divmod(n, 100000)
++            if WANT.get(k) != v or k in got: return 'WRONG line %d: %d' % (k, v)
++            got[k] = v
++    if code not in (0,): return 'died (exit %s) after %d answers' % (code, len(got))
++    if len(got) == len(WANT): return 'all'
++    if re.search(r'out of reach|beyond', out): return 'refused %d of %d' % (len(WANT) - len(got), len(WANT))
++    return 'MISSING %d answers, no refusal' % (len(WANT) - len(got))
++if __name__ == '__main__': print(verdict(sys.stdin.read(), int(sys.argv[1])))
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 70092c2..6eb6894 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -271,6 +271,36 @@ got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&
+ if [ "$got" = "$AUDIT_WANT" ]; then printf '  %-12s FAIL   CMOVE for CMOVE> gave the answers too\n' control; FAILED=1
+ else printf '  %-12s ok     CMOVE for CMOVE> does not give them\n' control; fi
+ 
++# tests/core/far.fth (Iteration 158): code and data past 64 KB, then 8 MB more
++# - calls, recursion, DOES>, data, EXECUTE across. tools/farcheck.py: every
++# answer right, any missing one refused out loud. Most of the ladder could not
++# reach that far and broke instead (crashed, hung, lost words); cv8 now refuses.
++# The stages still broken are listed and shown, not hidden: a wrong answer from
++# any stage fails, and a listed stage that passes says so. The control: the
++# file without its gaps gives every answer on s6, which refuses with them.
++echo
++echo "far from the image base (tests/core/far.fth):"
++FAR_KNOWN=" s0-cell p4-pack4 p8-pack8 s7-full s7-spn s2-cpt16 s3-cpt16f s4-cv8 "
++for w in 64 32; do
++    for st in $(stages_for $w); do
++        e="$O/$st-$w"; i="$O/$st-s$w.img"
++        [ -x "$e" ] && [ -s "$i" ] || continue
++        out=$( (cd "$W" && timeout 30 "$e" "$i" < "$ROOT/tests/core/far.fth" 2>/dev/null) | tr -d '\000'; exit ${PIPESTATUS[0]} ); c=$?
++        v=$(printf '%s' "$out" | python3 "$ROOT/tools/farcheck.py" "$c")
++        case "$v" in
++            all|refused*) case "$FAR_KNOWN" in *" $st "*) printf '  %-15s ok     %s - listed as broken: take it off FAR_KNOWN\n' "$st-$w" "$v" ;;
++                          *) printf '  %-15s ok     %s\n' "$st-$w" "$v" ;; esac ;;
++            WRONG*) printf '  %-15s FAIL   %s\n' "$st-$w" "$v"; FAILED=1 ;;
++            *) case "$FAR_KNOWN" in *" $st "*) printf '  %-15s known  %s\n' "$st-$w" "$v" ;;
++               *) printf '  %-15s FAIL   %s\n' "$st-$w" "$v"; FAILED=1 ;; esac ;;
++        esac
++    done
++done
++CTRL=$(mktemp); grep -v '^[0-9]* ALLOT$' "$ROOT/tests/core/far.fth" > "$CTRL"
++v=$( (cd "$W" && timeout 30 "$O/s6-cv8b-64" "$O/s6-cv8b-s64.img" < "$CTRL" 2>/dev/null) | python3 "$ROOT/tools/farcheck.py" 0); rm -f "$CTRL"
++if [ "$v" = all ]; then printf '  %-15s ok     without the gaps s6 gives every answer\n' control
++else printf '  %-15s FAIL   without the gaps s6 gives: %s\n' control "$v"; FAILED=1; fi
++
+ # ---- DELETE-FILE -------------------------------------------------------
+ # Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since
+ # the baseline - its handler stored unlink's result over the name's address,
