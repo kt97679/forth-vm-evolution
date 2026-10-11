@@ -37,3 +37,35 @@ designs a percent larger).
 3. Every report names the Q-best design (the knee) beside the extremes, and
    my analyses start from it - founders included: the rtimm2/keepforms founder
    rebuilt on a knee design (d99e3d9ed9 or 903b231e0d) rather than the smallest.
+
+## Adopted (Iteration 189) - the owner: yes to all three, and do not filter out designs with potential - demote the worst rather than promote the best
+
+`results/pending/weighing-after-seed41.patch` (the thirteenth of the batch):
+
+- **Demote, don't delete.** Survival kept the best 256 of 512 and deleted the
+  rest - a design one step from something excellent was gone for good. Now a
+  demoted design carrying a gene value no survivor has goes to the attic (128,
+  the rarest genes first; it leaves once the population has those values
+  again). One parent in ten comes from there, and borrowed genes may: a
+  stepping stone keeps its chance, at no measuring cost. Children of attic
+  parents are tagged "via the attic" - the laptop's run will say whether the
+  attic's children reach the front. Deterministic, so a resumed run's replay
+  rebuilds it. EVOLVE_ATTIC=0 turns it off.
+- **The knee survives:** the 8 best by Q always, as the extremes and each
+  family's best already did.
+- **Judging:** compare-fronts.py prints per run its extremes, hypervolume and
+  best Q against the others, the five-part verdict for the new run, and the
+  Q-best design of all runs; evolve.py's report names its own.
+- **The founder from the knee:** d99e3d9ed9 (the small end's best Q) - the
+  forms push out only HASH and SKIP there; on 903b231e0d they would push out
+  (LOOP). Both knees are JIT designs.
+
+Checked: a scratch run (12 x 4 generations) - the attic grew 12 -> 31
+designs holding 21 -> 42 gene values no survivor had; 8 of 48 children via the
+attic, all alive, four among the run's notable designs (one at speed 0.58); the
+report names the knee. The judging section's own code on session 35's table:
+seed 40 +49.7% fastest, hypervolume +19.3%, best Q +46.1%, not small; and it
+shows seed 39's run still holding 3.6% of the joint volume. The knee founder:
+alive, speed 0.980 of s6 (the knee recorded 0.986), 164 KB. run-tests PASS (as
+the user; my first try ran it with sh, not bash - 27 false failures). Thirteen
+patches apply in order on a fresh clone.

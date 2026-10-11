@@ -3512,3 +3512,14 @@ by all, seed 40 big by all), but nothing guarded. And I had anchored on the
 extremes - the founder built on the smallest, the worst Q of its neighbourhood.
 Proposed: the rule to include hypervolume and best Q; reports to name the Q-best
 design; founders from the knee. results/weighing.md - the owner decides.
+
+## Iteration 189 - 2026-10-11 - Claude
+
+**Selection: demote, don't delete (the owner).** The thirteenth after-seed-41
+patch (weighing-after-seed41.patch): demoted designs carrying gene values no
+survivor has kept in an attic (128), one parent in ten and borrowed genes from
+there; the 8 best by Q always survive; compare-fronts.py judges a run by five
+measures (the extremes, hypervolume, best Q) and names the Q-best design; the
+founder from the small end's knee (d99e3d9ed9, JIT; alive, 0.980 of s6). A
+scratch run: the attic held 42 lost gene values by generation 4, its children
+alive and among the notable. run-tests PASS. results/weighing.md.
