@@ -53,9 +53,26 @@ s5, s6 and the s8 stages refuse with "out of reach" where they broke.
   spn.c) - with 16 MB, as vm-lab.c, every answer right: the memory was all they
   lacked (static arrays: untouched pages cost nothing; the seeds unchanged).
 
-Still open: ALLOT checks nothing - past an engine's memory it writes beyond
-it, in every engine. A "dictionary full" refusal needs the memory's end known
-to Forth.
+**The dictionary full (Iteration 161).** ALLOT checked nothing: gdb on s6 - a
+SIGSEGV at a byte store past the end of memory. The data stack sits 64 KB below
+the top of every 16 MB engine and grows down, and S0 says where: ALLOT now
+refuses past 10,000 cells (what ?STACK allows) and a page below it, "dictionary
+full", HERE unmoved; , and C, add to DP directly (the check runs once per
+definition, each header ending with ALLOT). tests/core/full.fth in run-tests.sh
+and the gate. The kernel workload +0.5% of dispatches, the rest flat.
+
+**A blind spot of the test itself.** RelF's 4 MB engine refused far.fth's 8 MB
+gap - its own kernel says "dictionary full", on stderr - and its far words then
+compiled near: every answer right, "all". far.fth now prints that each gap was
+taken (lines 10, 11), farcheck counts "dictionary full" a refusal, and run-tests
+reads stderr: RelF "refused 1 of 11".
+
+## The far benchmark
+
+compare-fronts.py measures a held-out workload `far` - the timed fib behind a
+1 MB gap, three-byte calls under the tag, within s6's reach for the calibration.
+Front designs only: the evolution does not time it. Its output is fib's but for
+the gap line's OK.
 
 
 ## The gate

@@ -3160,3 +3160,16 @@ a gap (s6's locals, s1's near DODOES). The front's engines are not measured
 yet: their copied stencils break under --coverage. tools/covsum.py,
 results/coverage.md. The far workload for compare-fronts is written but held
 back: its output did not match fib's on a first check.
+
+## Iteration 161 - 2026-10-10 - Claude
+
+**The remaining action items; the coverage patch merged into the tenth** (the
+owner: proceed; use gdb on segfaults). The far benchmark verified (output fib's
+but for the gap line's OK) and added to compare-fronts.py as a held-out
+workload. The front's coverage measured with the copied stencils left
+uninstrumented: jit.c 98-100%, vm.c 80-82%; WRITE-LINE run by none - paths.fth
+writes a line. The dictionary full: gdb showed a byte store past memory; ALLOT
+refuses past the data stack's room (S0), , and C, by DP +!; full.fth in
+run-tests and the gate. far.fth now checks its gaps were taken - RelF had
+refused one and run the rest near. run-tests PASS, 7 of 7 IDENTICAL, the jail;
+167 of 167 alive. results/coverage.md, results/far-addresses.md.
