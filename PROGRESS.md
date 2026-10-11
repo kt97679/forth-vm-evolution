@@ -3523,3 +3523,15 @@ measures (the extremes, hypervolume, best Q) and names the Q-best design; the
 founder from the small end's knee (d99e3d9ed9, JIT; alive, 0.980 of s6). A
 scratch run: the attic held 42 lost gene values by generation 4, its children
 alive and among the notable. run-tests PASS. results/weighing.md.
+
+## Iteration 190 - 2026-10-11 - Claude
+
+**The cheaper rtloop: rtloop=2.** The converter learned headerless words
+(tools/layout.py --headerless: code kept, header dropped, on no chain; a name
+defined once only); rtloop=2 builds cv8-fuse-loop.4's eight internal words that
+way. 96-108 bytes a design: rtloop costs +460 bytes on seed 40's smallest
+instead of +568, for -72% loop time. 128 of seed 40's recorded designs carry
+rtloop=1; ten rebuilt with rtloop=2, all alive. A fib/bubble slowdown seen with
+rtloop on the knee founder was noise - probes show the forms compile the same
+with and without the loop overlay. run-tests PASS. The fourteenth after-seed-41
+patch: rtloop2-after-seed41.patch. results/drafts/rtloop-cheaper.md.

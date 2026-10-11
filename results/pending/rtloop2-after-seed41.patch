@@ -1,0 +1,174 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 06f6c78..062dad9 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -401,3 +401,15 @@ parent in ten comes from the attic (EVOLVE_ATTIC_P), and a borrowed gene may
+ come from there - a stepping stone keeps its chance, at no measuring cost.
+ Children of attic parents say "via the attic" in how they were made.
+ EVOLVE_ATTIC=0 turns the attic off.
++
++## rtloop=2 (Iteration 190): the loop compiler's internal words headerless
++
++forth/cv8-fuse-loop.4 defines eight words only its own code calls, or the
++converter fills by name in the dump: X10-OP, W@, CHAIN16?, RESOLVE-LEAVE16,
++RESOLVE-LEAVES, LOOP-OPS, X10-XTS, X10-OPS. With rtloop=2 the converter
++(tools/layout.py --headerless) keeps their code and drops their headers - no
++link, no name, on no thread; its chain check expects the rest. Only a name
++defined once loses its header: hiding the later of two would hand the name
++back to the earlier. 96-108 bytes a design; rtloop costs +460 bytes on seed
++40's smallest instead of +568, for -72% loop time. Under rtloopall (its own
++overlay) rtloop=2 expresses as 1: the same build, one id.
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c4be965..da97dc8 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -129,6 +129,10 @@ def super_slots(g):
+     return (SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
+             + (list(range(27 if g.get('escape') == 2 else 36, 68)) if g.get('escape') else []))   # ESCAPE: primitives 36-67 behind a byte; level 2 from 27
+ LOOP10 = ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
++# Iteration 190: forth/cv8-fuse-loop.4's words reached only by its own code
++# (and the converter, which fills the three tables by their names in the
++# dump): rtloop=2 builds them headerless (tools/layout.py --headerless).
++RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVES', 'LOOP-OPS', 'X10-XTS', 'X10-OPS')
+ def rtloop_on(g):
+     """Iteration 41: does this design compile loops at run time with its loop
+     opcodes (forth/cv8-fuse-loop.4)? The gene, and any of them - each word
+@@ -327,6 +331,7 @@ def express(g):
+     if e.get('rtimm') == 2 and g.get('rtfuse') and (supers_in(g) or rt_tests(g)): e['rtimm'] = 1   # Iteration 175: the same build - one id
+     if 'rtloop' in e and not rtloop_on(g): e.pop('rtloop')                         # Iteration 41: with a loop opcode to use
+     if 'rtloopall' in e and not rtloopall_on(g): e.pop('rtloopall')                # Iteration 43: all eight of them
++    if e.get('rtloop') == 2 and rtloopall_on(g): e['rtloop'] = 1                   # Iteration 190: loopall's own words - the same build
+     if 'kfast' in e and not kfast_on(g): e.pop('kfast')                            # Iteration 49: byte headers
+     if 'tfind' in e and not tfind_on(g): e.pop('tfind')                            # Iteration 52: with kfast
+     if 'kinput' in e and not kinput_on(g): e.pop('kinput')                         # Iteration 54: with kfast
+@@ -650,6 +655,8 @@ def _build(g, d):
+     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
+     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
+     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
++    if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2:   # Iteration 190: cv8-fuse-loop.4's internal words
++        opts += ['--headerless', ','.join(RTLOOP_INTERNAL)]
+     if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
+     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
+                                                                  # copies (Iteration 38), the dump tool and dead
+@@ -921,6 +928,8 @@ def mutate(g, rnd):
+             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
++        elif k == 'rtloop':           # 0, 1, or 2 (Iteration 190: 2 with its internal words headerless)
++            g['rtloop'] = rnd.choice([v for v in range(3) if v != g.get('rtloop', 0)]); what.append('rtloop=%d' % g['rtloop'])
+         elif k == 'rtimm':            # 0, 1, or 2 (Iteration 175: 2 without pairs)
+             g['rtimm'] = rnd.choice([v for v in range(3) if v != g.get('rtimm', 0)]); what.append('rtimm=%d' % g['rtimm'])
+         elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
+@@ -1335,6 +1344,7 @@ def random_genome(rnd):
+         elif k == 'scale': g[k] = rnd.randrange(4)
+         elif k == 'escape': g[k] = rnd.randrange(3)
+         elif k == 'rtimm': g[k] = rnd.randrange(3)
++        elif k == 'rtloop': g[k] = rnd.randrange(3)        # Iteration 190
+         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
+diff --git a/tools/layout.py b/tools/layout.py
+index cfb6c0d..86fdf25 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -576,8 +576,24 @@ def _wl_hash(name):
+     return v & (_NTH - 1)
+ 
+ 
++# Iteration 190: --headerless NAMES. Words whose code stays and whose header
++# goes: no link, no name, on no thread - reached only by the calls and
++# operands already compiled to them, as an overlay's internal words are
++# (forth/cv8-fuse-loop.4: rtloop=2). Only a name defined once: hiding the
++# later of two would hand its name back to the earlier.
++import collections as _co
++_hl_req = [n for n in (_opt('--headerless') or '').split(',') if n]
++_hl_count = _co.Counter(w['n'] for w in order)
++HL = {w['s'] for w in order if w['n'] in _hl_req and _hl_count[w['n']] == 1}
++if _hl_req:
++    _kept = [n for n in _hl_req if _hl_count[n] != 1]
++    print('headerless: %d words, %d header bytes out%s' % (len(HL),
++          sum(len(w['n']) + 1 + (2 if BYTEHDR else CELL) for w in order if w['s'] in HL),
++          ('; kept: ' + ', '.join('%s (%s)' % (n, 'none' if not _hl_count[n] else '%d of that name' % _hl_count[n]) for n in _kept)) if _kept else ''))
++
+ _prev_in_thread, _last = {}, {}
+ for w in order:
++    if w['s'] in HL: continue
+     h = _wl_hash(w['n'])
+     _prev_in_thread[w['s']] = _last.get(h)
+     _last[h] = w['s']
+@@ -585,6 +601,12 @@ for w in order:
+ new_off, off = {}, PROLOGUE
+ LINKLEN = {}
+ for w in order:
++    if w['s'] in HL:                                 # Iteration 190: the code alone
++        LINKLEN[w['s']] = 0
++        new_off[w['s']] = {'link': off, 'nfa': off}
++        if not BYTEHDR or body_needs_align(w): off = align_up(off, CELL)
++        new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
++        continue
+     if BYTEHDR:
+         pv = _prev_in_thread[w['s']]
+         # Bound from above: the nfa lands at most 3 bytes past `off`, so
+@@ -644,7 +666,7 @@ def wl_hash(name):
+ # Definition order within each thread; `order` is already oldest first.
+ threads = [[] for _ in range(NTHREADS)]
+ for w in order:
+-    threads[wl_hash(w['n'])].append(w)
++    if w['s'] not in HL: threads[wl_hash(w['n'])].append(w)
+ 
+ linkval = {}
+ for t in threads:
+@@ -667,7 +689,7 @@ for t in threads:
+ HEADS = [new_off[t[-1]['s']]['nfa'] if t else 0 for t in threads]
+ 
+ # Walk every chain back and check the union is exactly the dictionary.
+-by_nfa = {new_off[w['s']]['nfa']: w for w in order}
++by_nfa = {new_off[w['s']]['nfa']: w for w in order if w['s'] not in HL}
+ seen_names, broken = [], False
+ for t, head in zip(threads, HEADS):
+     if not head:
+@@ -689,7 +711,7 @@ for t, head in zip(threads, HEADS):
+             broken = True
+             break
+ chain_ok = (not broken
+-            and sorted(seen_names) == sorted(w['n'] for w in order))
++            and sorted(seen_names) == sorted(w['n'] for w in order if w['s'] not in HL))   # Iteration 190: headerless words on no chain
+ 
+ # The heads live in FORTH-WORDLIST's own parameter field, which is DATA
+ # and would otherwise be copied out of the dump verbatim - with the
+@@ -1011,10 +1033,11 @@ def emit(path):
+     for w in order:
+         s0 = w['s']
+         assert len(img) == new_off[s0]['link'], "link drift at %s" % w['n']
+-        if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
+-        else:       img += cel(linkval[s0])
+-        nm = w['n'].encode('latin-1')
+-        img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
++        if s0 not in HL:                             # Iteration 190: a headerless word, its code alone
++            if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
++            else:       img += cel(linkval[s0])
++            nm = w['n'].encode('latin-1')
++            img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
+         # pad to the body: a cell boundary in the classic layout, or only
+         # as far as body_needs_align() asked for in the byte layout
+         while len(img) < new_off[s0]['body']: img += b'\x00'
+@@ -1303,7 +1326,7 @@ newcode = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'code')
+ tails_kept = [(w['n'], tail_bytes(w)) for w in order if tail_bytes(w)]
+ newdata = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'data')
+ heads = sum(CELL + align_up(len(w['n']) + 1, CELL) for w in order)
+-heads_new = (sum(LINKLEN[w['s']] + len(w['n']) + 1 for w in order)
++heads_new = (sum(LINKLEN[w['s']] + len(w['n']) + 1 for w in order if w['s'] not in HL)
+              if BYTEHDR else heads)
+ 
+ EMIT = None
+@@ -1340,8 +1363,8 @@ if tails_kept:
+           % (builtins, len(bi_bad), bi_bad[:3] if bi_bad else ""))
+ for w in untranslated:
+     print("   %s" % w['n'])
+-print("link chain re-walks to the same %d words in the same order: %s"
+-      % (len(order), "yes" if chain_ok else "NO"))
++print("link chain re-walks to the same %d words in the same order: %s%s"
++      % (len(order) - len(HL), "yes" if chain_ok else "NO", ' (%d headerless, on no chain)' % len(HL) if HL else ''))
+ print("(POSTPONE) operands relocated: %d resolved, %d unresolved %s"
+       % (xt_ok, len(xt_bad), xt_bad[:3] if xt_bad else ""))
+ print("DEFER xts relocated: %d resolved, %d unresolved %s"
