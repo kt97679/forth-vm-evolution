@@ -58,3 +58,26 @@ the converter would choose the site form where shorter; it does not. Next: the
 converter placing the kernel's calls by distance, sized to a fixed point - the
 work the site form alone needs too. The draft: results/drafts/callrel-draft.patch,
 against the fourteen pending patches.
+
+## Rebased, and the drift fixed (Iteration 185) - results/drafts/callrel-draft-rebased.patch
+
+Rebased onto the eleven after-seed-41 patches (a three-way merge; evolve.py's
+two conflicts both sides' additions - the late genes, the cv8 family's
+expressed genes). With the gene off, a design is alive and pays its 56 bytes
+(note: the stacksep patch changes kernel.4 - a tree carrying it needs the
+reseed, or ALLOT refuses everything; the batch's procedure does reseed).
+
+The drift's cause, found: the converter encodes each word's tokens once,
+before any offset exists - every tag-2 call sized 2 bytes - and emission
+re-encodes each call against the true offset. At 13 bits a call to a word
+past 8 KB came out longer than sized. Fixed without a fixed-point loop (which
+would have to rerun the header links and all between placement and emission):
+in hybrid mode a call is sized, at both passes, from an upper bound of its
+target's offset - its old offset from the dump's lowest word, plus 1 KB for
+the new header - and emitted at exactly that length, with an assertion that
+the true offset fits. SEARCH-WORDLIST's drift is gone.
+
+**Next blocker:** "short branch out of range" (-130 to -146) on part of the
+front: the pass that chooses 8-bit branches estimates a loop body with 2-byte
+calls; with calls sized by the bound the body grows past 128 bytes. That pass
+must size calls by the same rule (sod16 shorten, or op_bytes' callers).

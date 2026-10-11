@@ -3454,3 +3454,14 @@ against the room left now); and that unsigned compare refused negative ALLOT
 past 16 MB and run code there. Pending after seed 41, eleventh: stacksep.
 
 **Held out with the stacks apart (Iteration 184):** all eleven pending patches on seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.
+
+## Iteration 185 - 2026-10-11 - Claude
+
+**callrel rebased; its drift found and fixed; the next blocker named.**
+The draft rebased onto the eleven pending patches (two evolve.py conflicts,
+both sides kept). The drift: tag-2 calls are sized 2 bytes before any offset
+exists and re-encoded at emission against the true one - at 13 bits, longer
+past 8 KB. Hybrid calls are now sized from an upper bound of their target's
+offset, the same at both passes, emitted at that length. Next: the short-branch
+pass still assumes 2-byte calls ("short branch out of range" on part of the
+front). Still a draft: results/drafts/callrel-draft-rebased.patch.
