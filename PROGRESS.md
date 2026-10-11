@@ -3535,3 +3535,15 @@ rtloop=1; ten rebuilt with rtloop=2, all alive. A fib/bubble slowdown seen with
 rtloop on the knee founder was noise - probes show the forms compile the same
 with and without the loop overlay. run-tests PASS. The fourteenth after-seed-41
 patch: rtloop2-after-seed41.patch. results/drafts/rtloop-cheaper.md.
+
+## Iteration 191 - 2026-10-11 - Claude
+
+**opcall's root cause found and fixed.** Padding between an X;CALL and its
+call: a call taking an inline operand ((LOOP), (POSTPONE)) is padded in front
+so its operand is aligned, and CALLNEXT read the first padding byte as the
+call - a call to the image's start. Bisected to one DROP;CALL in SUPER-OP, its
+bytes read. One cause for all five of seed 40's wrong corpora; the base band
+was a coincidence. Fix: no X;CALL before such a call; the base-band containment
+removed - every band open. 30 of 30 opcall designs alive (seed 40's front 25,
+the five dead), run-tests PASS. The fifteenth after-seed-41 patch:
+opcall-fix-after-seed41.patch (supersedes the fifth's containment).

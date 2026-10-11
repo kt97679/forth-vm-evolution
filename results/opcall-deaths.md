@@ -56,3 +56,28 @@ how many operations compete for the 63 base codes, moving the X;CALL in.
 plain operation (tools/layout.py, results/pending/opcall-band-after-seed41.patch).
 All five dead designs right; all 48 of seed 40's front designs with opcall
 alive; 7 of 7 stages identical. The root cause stays open.
+
+## The cause (Iteration 191)
+
+Bisected on 9586059a75 with the band containment off: eleven X;CALLs, each
+built alone - only one breaks it, the DROP;CALL in SUPER-OP (the run-time
+pair fuser's lookup), whose call goes to (LOOP) - a colon word taking an
+inline operand. Not the branch targets (fused only where a branch targets
+the call: right; only elsewhere: wrong). The bytes: `3f 00` (DROP;CALL,
+escaped, selector 0), then `00 00 00 00`, then the 4-byte call `c0 00 03 2a`,
+then the operand. The four zeros are pad_before's alignment for the operand -
+in FRONT of the call, so BETWEEN X;CALL and its call. CALLNEXT reads the byte
+after X;CALL as the call's first: 0x00, a 2-byte call to offset 0 - the
+image's start - and the system restarts.
+
+So the band was a coincidence: escaping moved that one site to a padded
+position. Any X;CALL before a call with an inline operand is exposed wherever
+the padding is not zero (7 positions of 8); the base-band designs that
+survived had none padded. The "two bugs" of Iteration 178 were genes moving
+code positions. The fix (tools/sod16.py opcall_rewrite): no X;CALL in front of
+a call whose operand follows it - padding goes only there, so an X;CALL is
+always followed by its call. The containment is out: every band open again.
+
+Checked: all five dead designs right with every band (corpus); all 25 opcall
+designs of seed 40's front and the five alive through the full gate (30 of 30);
+run-tests PASS. results/pending/opcall-fix-after-seed41.patch, the fifteenth.

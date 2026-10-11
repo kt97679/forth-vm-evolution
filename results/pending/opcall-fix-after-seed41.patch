@@ -1,0 +1,48 @@
+diff --git a/tools/layout.py b/tools/layout.py
+index 86fdf25..83217dc 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -476,21 +476,9 @@ if TAG2_ON:
+     _bytes = list(range(63)) + (list(range(0x80, 0xC0)) if T2WIDE_ON else [])   # the one-byte codes, in rank order
+     assert len(_all) <= len(_bytes) + 256, "%d operations: more than %d one-byte codes and 256 escaped" % (len(_all), len(_bytes))
+     T2MAP = {'one': {x: _bytes[c] for c, x in enumerate(_all[:len(_bytes)])}, 'esc': {x: s for s, x in enumerate(_all[len(_bytes):])}, 'escc': 0x3F}
+-    # Iteration 180: X;CALL only where its code is in the base band (bytes
+-    # 0x00-0x3E). Seed 40's five wrong corpora had every one of their X;CALLs
+-    # escaped or in t2wide's band (0x80-0xBF), and no design with them all in
+-    # the base band went wrong; there the operation is written plain - the
+-    # band's own mechanism is not found yet (results/opcall-deaths.md).
+-    if G.get('OPCALL'):
+-        _base = lambda L: L in T2MAP['one'] and T2MAP['one'][L] < 0x3F
+-        _demoted = 0
+-        for w in order:
+-            if kind[w['s']] != 'code': continue
+-            _o = info[w['s']]
+-            for _j in range(len(_o)):
+-                if _o[_j][0] == 'OC' and not _base(G['OPCALL'][_o[_j][1]]):
+-                    _o[_j] = ('P', _o[_j][1]); _demoted += 1
+-        if _demoted: print('opcall: %d X;CALL written plain - their codes outside the base band' % _demoted)
++    # Iteration 180 kept X;CALL to the base band (0x00-0x3E) after five wrong
++    # corpora; Iteration 191 found the cause - padding between an X;CALL and
++    # its call (tools/sod16.py opcall_rewrite) - and every band is open again.
+     G['TAG2'][0] = T2MAP
+     print('tag 2: %d operations, %d one-byte, %d escaped; %d escaped uses in the image (a byte each)'
+           % (len(_all), len(T2MAP['one']), len(T2MAP['esc']), sum(_static[x] for x in T2MAP['esc'])))
+diff --git a/tools/sod16.py b/tools/sod16.py
+index ec8839e..8694f2f 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -836,7 +836,13 @@ def opcall_rewrite(ops):
+     out = list(ops)
+     for j in range(len(out) - 1):
+         k, pl = out[j]
+-        if k == 'P' and pl in OPCALL and pl not in ESC_PRIMS and out[j + 1][0] == 'C':
++        # Iteration 191: not before a call whose inline operand follows it.
++        # The operand's alignment pads in front of that call (pad_before), and
++        # CALLNEXT reads the byte after X;CALL as the call's first: a padding
++        # byte, 0x00, became a call to the image's start - seed 40's five wrong
++        # corpora, every one (results/opcall-deaths.md). Padding goes only in
++        # front of such a call, so an X;CALL is now always followed by its call.
++        if k == 'P' and pl in OPCALL and pl not in ESC_PRIMS and out[j + 1][0] == 'C' and not before_operand(out, j + 1):
+             out[j] = ('OC', pl)
+     return out
+ 
