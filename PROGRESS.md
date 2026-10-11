@@ -3380,3 +3380,7 @@ excluded. Bug 2 needs the tiny specialisation: 1+;CALL copies L_onep, which
 tiny's 1+ may not be. The fastest's loop: I then + a fifth of its dispatches
 (I+ exists, behind three genes); the smallest's: NOOPs executed, 8.4%. No
 patch this time: findings, results/opcall-deaths.md, results/price-hybrid.md.
+
+**Corrected (Iteration 179):** bug 2's "tiny" is no clue - tiny makes 1+ an
+opcode; without it 1+ is never fused, so tiny off is opcall off. What is left:
+1+;CALL with the JIT, t2wide and tos.

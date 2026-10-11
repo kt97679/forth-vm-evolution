@@ -35,6 +35,8 @@ and L_onep have none). Next: what the fuser writes for `: T DUP C@ ;` there.
 
 **Bug 2, f7dc8437ff (opcall 1+).** Right with the tiny specialisation off -
 var, small, imm do not matter; nor tracer, jitinl, supers, hotinl, hotcalls.
-opcall offers 1+ only with tiny, and its X;CALL copies L_onep; if tiny's 1+ is
-another handler, 1+;CALL and the design's 1+ differ - showing with the JIT,
-t2wide and tos. Next: that, directly.
+*Corrected the same day:* that says nothing about tiny. tiny is what makes 1+
+an opcode (sod16 tiny_at: a call to the colon word becomes the operation);
+without it 1+ is a call and is never fused - tiny off is opcall off by another
+road. What is left: 1+;CALL itself goes wrong with the JIT, t2wide and tos
+together. Next: what the JIT does around an X;CALL in such a design.
