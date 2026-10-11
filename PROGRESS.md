@@ -3147,3 +3147,16 @@ CALL,, !CALL and DOES>16 refuse past one token; relf.c, pack4.c, pack8.c and
 spn.c hold 16 MB, as vm-lab.c - s0, the pack stages and s7 then give every
 answer. FAR_KNOWN empty. The seeds unchanged; run-tests PASS, 7 of 7
 IDENTICAL, the jail; 167 of 167 alive. Open: ALLOT past an engine's memory.
+
+## Iteration 160 - 2026-10-10 - Claude
+
+**Engine coverage measured; the untested handlers given a test - the batch's
+eleventh pending patch** (the owner: every execution path tested). gcov over
+the whole suite on --coverage builds of every stage: READ-FILE, RESIZE run by
+no test anywhere; FREE, ALLOCATE, WRITE-FILE, SYSCALL by none on most stages.
+tests/core/paths.fth closes them on every stage at both widths (with a
+control); lines run rose to 82-93%. What is left has a reason or is listed as
+a gap (s6's locals, s1's near DODOES). The front's engines are not measured
+yet: their copied stencils break under --coverage. tools/covsum.py,
+results/coverage.md. The far workload for compare-fronts is written but held
+back: its output did not match fib's on a first check.

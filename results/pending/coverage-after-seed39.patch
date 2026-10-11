@@ -1,0 +1,106 @@
+diff --git a/tests/core/paths.fth b/tests/core/paths.fth
+new file mode 100644
+index 0000000..a7a504a
+--- /dev/null
++++ b/tests/core/paths.fth
+@@ -0,0 +1,22 @@
++\ paths.fth - the handlers no test ran (Iteration 159, the coverage audit):
++\ ALLOCATE RESIZE FREE; the file words - CREATE-FILE WRITE-FILE READ-FILE
++\ REPOSITION-FILE FILE-POSITION FILE-SIZE CLOSE-FILE DELETE-FILE; SYSCALL.
++\ Every answer is a non-negative number on a line of its own.
++VARIABLE A  VARIABLE FD  CREATE BUF 64 ALLOT  CREATE BLK 8 CELLS ALLOT
++16 ALLOCATE . A ! CR
++77 A @ C! A @ 4096 RESIZE . A ! A @ C@ . CR
++A @ FREE . CR
++S" paths.tmp" R/W CREATE-FILE . FD ! CR
++S" hello, file" FD @ WRITE-FILE . CR
++FD @ CLOSE-FILE . CR
++S" paths.tmp" R/O OPEN-FILE . FD ! CR
++FD @ FILE-SIZE . . . CR
++BUF 5 FD @ READ-FILE . . BUF C@ . BUF 4 + C@ . CR
++7 0 FD @ REPOSITION-FILE . CR
++FD @ FILE-POSITION . . . CR
++BUF 4 FD @ READ-FILE . . BUF C@ . CR
++FD @ CLOSE-FILE . S" paths.tmp" DELETE-FILE . CR
++\ x86-64's number at both widths, as the shell's: the 32-bit engines translate it.
++BLK 39 SYSCALL 0 > 1 AND . CR
++: NE <> ; : INV INVERT ;
++1 2 NE 1 AND . 5 INV 6 + . CR
+diff --git a/tools/covsum.py b/tools/covsum.py
+new file mode 100644
+index 0000000..1528c97
+--- /dev/null
++++ b/tools/covsum.py
+@@ -0,0 +1,35 @@
++"""Engine coverage (Iteration 160): gcov over a --coverage build - per binary the
++lines run and the handlers (L_ labels, switch cases) no run reached. Usage:
++covsum.py BUILD_DIR ROOT. The build: CC with --coverage, ENGINE_RT=libc."""
++import os, re, subprocess, glob, json, collections, sys
++B = sys.argv[1] if len(sys.argv) > 1 else '/tmp/fa/cov/build'; out = {}
++ROOT = sys.argv[2] if len(sys.argv) > 2 else os.path.dirname(B.rstrip('/'))
++for gcda in sorted(glob.glob(B + '/*.gcda')):
++    tmp = '/tmp/fa/gcovtmp'; os.makedirs(tmp, exist_ok=True)
++    r = subprocess.run(['gcov', '-t', '-o', os.path.dirname(gcda), gcda], cwd=ROOT, capture_output=True, text=True, errors='replace')
++    src, lines, per = None, {}, {}
++    for l in r.stdout.split('\n'):
++        m = re.match(r'\s*([^:]+):\s*(\d+):(.*)$', l)
++        if not m: continue
++        c, n, text = m.group(1).strip(), int(m.group(2)), m.group(3)
++        if n == 0:
++            if text.startswith('Source:'): src = text[7:]; lines = per.setdefault(src, {})
++            continue
++        lines[n] = (c, text)
++    mains = [k for k in per if k.endswith('.c') and not k.endswith('.h')]
++    src = max(mains, key=lambda k: len(per[k])) if mains else src; lines = per.get(src, {})
++    exe = [v for v in lines.values() if v[0] != '-']; run = [v for v in exe if v[0] not in ('#####', '=====')]
++    labels = [(n, re.match(r'\s*(L_\w+):', t).group(1), c) for n, (c, t) in sorted(lines.items()) if re.match(r'\s*L_\w+:', t)]
++    labels += [(n, 'case:' + re.match(r'\s*case\s+([\w ]+?)\s*:', t).group(1), c) for n, (c, t) in sorted(lines.items()) if re.match(r'\s*case\s+[\w ]+?\s*:', t)]
++    out[os.path.basename(gcda)[:-5]] = {'src': src, 'exe': len(exe), 'run': len(run), 'labels': labels}
++json.dump(out, open('/tmp/fa/cov-%s.json' % os.path.basename(os.path.dirname(B.rstrip('/'))), 'w'))
++print('%-34s %-10s %6s %8s  %s' % ('binary', 'source', 'lines', 'run', 'handlers never run'))
++never = collections.defaultdict(list); have = collections.defaultdict(list)
++for k, v in out.items():
++    nr = [lab for n, lab, c in v['labels'] if c in ('#####', '=====')]
++    for n, lab, c in v['labels']:
++        have[lab].append(k)
++        if c in ('#####', '====='): never[lab].append(k)
++    print('%-34s %-10s %6d %7.1f%%  %d of %d: %s' % (k, os.path.basename(v['src'] or '?'), v['exe'], 100.0 * v['run'] / max(1, v['exe']), len(nr), len(v['labels']), ' '.join(nr)[:150]))
++everywhere = sorted(l for l in never if len(never[l]) == len(have[l]))
++print('\nhandlers run by NO test in ANY binary that has them (%d): %s' % (len(everywhere), ' '.join(everywhere)))
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 1cb3267..4a24cfd 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -302,6 +302,32 @@ v=$( (cd "$W" && timeout 30 "$O/s6-cv8b-64" "$O/s6-cv8b-s64.img" < "$CTRL" 2>/de
+ if [ "$v" = all ]; then printf '  %-15s ok     without the gaps s6 gives every answer\n' control
+ else printf '  %-15s FAIL   without the gaps s6 gives: %s\n' control "$v"; FAILED=1; fi
+ 
++# tests/core/paths.fth (Iteration 159, the coverage audit: gcov over this suite
++# found handlers no test ran - READ-FILE, RESIZE on every engine; FREE,
++# ALLOCATE, WRITE-FILE, SYSCALL on most): memory, the file cycle and a system
++# call, on every stage at both widths. The control writes other bytes.
++echo
++echo "paths no test ran (tests/core/paths.fth):"
++PATHS_WANT='0 |0 77 |0 |0 |0 |0 |0 |0 0 11 |0 5 104 111 |0 |0 0 7 |0 4 102 |0 0 |1 |1 0 |'
++for w in 64 32; do
++    [ -x "$O/s0-cell-$w" ] || continue
++    bad=""; n=0
++    for st in $(stages_for $w); do
++        e="$O/$st-$w"; i="$O/$st-s$w.img"; [ "$st" = relf ] && continue
++        case "$st" in s7-*|s8-*) e="$O/$st-64"; i="$W/$st-s64.img" ;; esac
++        [ -x "$e" ] && [ -s "$i" ] || continue
++        got=$( (cd "$W" && timeout 15 "$e" "$i" < "$ROOT/tests/core/paths.fth" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|')
++        n=$((n + 1)); [ "$got" = "$PATHS_WANT" ] || bad="$bad $st"
++    done
++    [ "$n" -gt 0 ] || bad=" (no stage tested)"
++    if [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; FAILED=1
++    else printf '  %-12s ok     %s stages\n' "$w-bit" "$n"; fi
++done
++CTRL=$(mktemp); sed 's/hello, file/hi/' "$ROOT/tests/core/paths.fth" > "$CTRL"
++got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|'); rm -f "$CTRL"
++if [ "$got" = "$PATHS_WANT" ]; then printf '  %-12s FAIL   other bytes gave the answers too\n' control; FAILED=1
++else printf '  %-12s ok     other bytes do not give them\n' control; fi
++
+ # ---- DELETE-FILE -------------------------------------------------------
+ # Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since
+ # the baseline - its handler stored unlink's result over the name's address,
