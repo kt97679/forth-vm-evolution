@@ -3631,3 +3631,16 @@ expressions (Mecrisp); single-use words inlined in the image (Mecrisp-Across);
 optimal superinstruction choice (Gforth - ours is greedy); stack caching for
 the hottest primitives only (Gforth's peeprules); tail-call threading (Clang
 19+ only).
+
+## Iteration 197 - 2026-10-11 - Claude
+
+**The GP process changes and regpin built** - the 18th and 19th after-seed-41
+patches. Process (for seed 42 against seed 41): crossover 0.25; the genes
+linked on seed 40's front inherited whole (crossover was uniform gene by gene,
+splitting them); varcall/doesfar drawn one time in ten; speed within 2% a tie
+in the ranking, fronts guarded against non-transitive cycles. regpin: VM
+registers pinned, three assignments - on this VM bigger and no faster except
+the fastest JIT design (160-320 bytes smaller, equal speed); the laptop
+decides. Run-time folding not built: one constant expression in all the
+benchmarks. run-tests PASS; hand-made stages identical; nineteen patches apply
+in order (ORDER.md).

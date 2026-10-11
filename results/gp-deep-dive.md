@@ -165,3 +165,14 @@ deep-parameter sweep. Replication and PGO as genes after that.
 - CPython PGO and the tail-calling interpreter - lwn.net/Articles/1033373; BOLT - github.com/signalapp/BOLT/blob/master/docs/OptimizingClang.md
 - Liou, Forrest, Wu, GEVO (NSGA-II over LLVM-IR edits; epistasis) - arxiv.org/abs/2004.08140, arxiv.org/abs/2208.12350
 - Jin, Surrogate-assisted evolutionary computation, 2011; Liu et al., SAEAs for expensive combinatorial optimization, 2024
+
+## Adopted (Iteration 197) - results/pending/gp-process-after-seed41.patch
+
+The four cheap changes, for seed 42 to test against seed 41: crossover 0.25
+(EVOLVE_XOVER); LINKS - the JIT's four genes, tos/tail/msc, escape/rtloopall,
+rtfuse/rtimm - inherited whole from one parent (crossover had been uniform,
+gene by gene; BLOCKS serve borrow only); varcall and doesfar drawn one time in
+ten; speed within 2% a tie in the generation's ranking (EVOLVE_SPEED_TOL),
+with a guard: a design the relation leaves in no front (tolerances need not be
+transitive) goes in a last one, not lost. A scratch run: 28% of 36 children by
+crossover, all alive, no varcall or doesfar mutation; run-tests PASS.

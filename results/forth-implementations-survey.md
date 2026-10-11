@@ -83,3 +83,19 @@ modules - another target.
 - Tails - github.com/snej/tails; Wasm3's interpreter design - github.com/wasm3/wasm3/blob/main/docs/Interpreter.md
 - CPython's tail-calling interpreter - github.com/python/cpython/issues/128563; PHP's TAILCALL VM
 - colorForth's packed names - the colorForth mailing list (strangegizmo.com/forth/colorforth)
+
+## Built and measured (Iteration 197)
+
+**regpin** (results/pending/regpin-after-seed41.patch): VMREGS pinned in three
+assignments over rbx and r12-r15, tos with them (tools/gen-tos.py). All twelve
+builds (three designs x regpin 0-3) pass the gate; hand-made stages identical.
+On the development VM's GCC: the smallest +800-928 bytes in all and ~1% slower
+(noise); the small knee +768-896 bytes and 4-7% slower; the fastest JIT design
+160-320 bytes smaller at equal speed - pinning takes registers GCC used well,
+except where it makes the JIT design smaller. Kept as a gene: the laptop's GCC
+and CPU decide, and the fast end has a use for it.
+
+**Run-time folding - not built.** Every constant expression in the
+benchmarks' sources: one (`1 CELLS`). Folding would cost image bytes for no
+measured gain - a gene selection would only reject. Worth it if real programs
+join the workloads.
