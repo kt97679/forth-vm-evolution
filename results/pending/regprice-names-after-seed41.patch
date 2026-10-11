@@ -1,0 +1,13 @@
+diff --git a/lab/evolve/regprice.py b/lab/evolve/regprice.py
+index 20982c7..3221eed 100644
+--- a/lab/evolve/regprice.py
++++ b/lab/evolve/regprice.py
+@@ -108,7 +108,7 @@ for did in args:
+         f = l.split()
+         if f[0] == 'O':
+             k = f[2]; kinds[k] += 1
+-            if k in ('P', 'LIT', 'SP'): comps = name(int(f[3]))          # SP: a pair, named by its opcode
++            if k in ('P', 'LIT', 'SP'): comps = tuple(f[4].split(' ')) if len(f) >= 5 else name(int(f[3]))   # Iteration 178: the converter's names (CALLMAP's fifth field; a pair 'A B') - name() from the primitive list's order went wrong as it moved
+             elif k in ('ADDI', 'EQI', 'EQIH'): comps = ('addi',) if k == 'ADDI' else ('eqi',)
+             elif k == 'VF': comps = ('DOVAR',)            # pushes a variable's value: a producer
+             elif k == 'VS': comps = ('!',)                # stores the top: a use

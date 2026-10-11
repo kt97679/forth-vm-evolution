@@ -3360,3 +3360,14 @@ after seed 41, after rtimm2: results/pending/keepforms-after-seed41.patch.
 
 **Seed 41 runs 6 hours, not 9** (the owner). NEXT-RUN changed; the command
 with the plan given explicitly does the same with any bundle.
+
+## Iteration 178 - 2026-10-11 - Claude
+
+**The keeping forms checked by the suite; a founder; regprice fixed; opcall's
+two bugs located.** Eight front designs with rtimm=2 and the forms (six
+interpreted): 14 of 14 standard files as s6. Pending after seed 41, in order:
+rtimm2, keepforms, founder, regprice-names - the four reproduce the tested
+tree on a fresh clone. The five wrong corpora are two bugs: run-time pair
+fusion under the escape with DROP;CALL, and the JIT with 1+;CALL
+(results/opcall-deaths.md). Next: those, then the return stack - the
+hybrid's tail (41% of loop's image dispatches).

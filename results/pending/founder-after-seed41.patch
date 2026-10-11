@@ -1,0 +1,20 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c73c560..b9f2f63 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1541,6 +1541,15 @@ def main(argv):
+         f37 = recorded_genome('38446e6c09')
+         if f37: pop += [get(dict(f37, jitloop=1, jitinl=1), [], "founder: seed 37's fastest (38446e6c09) + jitloop, jitinl", 0)]
+         else: print("  founder: seed 37's fastest not in results/ - left out", flush=True)
++    # Iteration 178: the hybrid's first forms - run-time immediates without pairs
++    # (rtimm=2) and the keeping forms (DUP+I, DUP<I) - three mutations from seed
++    # 40's smallest, whose fib they take -36% (results/price-hybrid.md): a founder
++    # starts there, its record from results/.
++    if not FROMZERO:
++        f40 = recorded_genome('0ceb043115')
++        if f40: pop += [get(dict(f40, rtimm=2, ops10=['DUP+I', 'DUP<I'] + [w for w in f40.get('ops10', []) if w not in ('DUP+I', 'DUP<I')]), [],
++                            "founder: seed 40's smallest (0ceb043115) + rtimm=2, DUP+I, DUP<I", 0)]
++        else: print("  founder: seed 40's smallest not in results/ - left out", flush=True)
+     # Iteration 46 (the owner): the earlier runs' fronts carried into this one,
+     # so what one run found the next starts from - seed 9 lost the fast end
+     # seed 8 had (Iteration 45). --carry DB,DB,...: each database's own front,

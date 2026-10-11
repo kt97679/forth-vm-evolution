@@ -1,4 +1,4 @@
-pinned to cpu 0 (it and its sibling 1% busy; BENCH_CPU=N to choose)
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
 # The Forth 2012 test suite: hand-made s6, then each design against it (held out)
 
 Hand-made s6 against the suite's expected values - its own tests in each file (core.fr's and the
@@ -25,7 +25,13 @@ Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1)
 
 | design | guard | files as s6 | differing |
 |---|---|---|---|
-| c4b27765c5 | 0 | 14 of 14 | - |
-| 14da5d71a0 | 1 | 14 of 14 | - |
+| 8f1ae50286 | 0 | 14 of 14 | - |
+| fe7d8c7efe | 0 | 14 of 14 | - |
+| 18296f50bb | 0 | 14 of 14 | - |
+| 575abf8349 | 0 | 14 of 14 | - |
+| 0fb21c1a18 | 0 | 14 of 14 | - |
+| 3da0ab8eb5 | 0 | 14 of 14 | - |
+| 02dc1b3d86 | 1 | 14 of 14 | - |
+| 5e1d118a46 | 1 | 14 of 14 | - |
 
-0 of 2 designs differ from s6 somewhere.
+0 of 8 designs differ from s6 somewhere.

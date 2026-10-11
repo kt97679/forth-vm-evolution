@@ -110,3 +110,15 @@ as s6 on the two it took - ans-check keeps only its database's front, and
 picked 2 of the 8 given (both JIT designs); the interpreted ones are not yet
 checked by the suite - to do before the batch is applied.
 results/pending/keepforms-after-seed41.patch, after rtimm2-after-seed41.patch.
+
+## Iteration 178: checked, founded, and the tail
+
+The held-out check on eight front designs with rtimm=2 and the keeping forms -
+six interpreted, two JIT, chosen through a remeasure file beside the database
+(ans-check checks what it lists): 14 of 14 files as s6 on all eight. A founder
+for the run after seed 41 - seed 40's smallest with rtimm=2, DUP+I and DUP<I
+(results/pending/founder-after-seed41.patch). regprice.py takes CALLMAP's names
+now (regprice-names-after-seed41.patch); on s6's image code it saves corpus and
+parse 20.3%, kernel 18.1%, bubble 15.9% - and shows the next target: return-stack
+moves no form absorbs, 41% of loop's image dispatches, 30% of sieve's, 23% of
+bubble's (results/drafts/regprice-iter178.txt).
