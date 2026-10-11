@@ -3413,3 +3413,14 @@ the test conversion (file names, PARSE-NAME's token): s6 1,862 tests, 0
 failed. Pending after seed 41, sixth and seventh: loopalign, coreext-w7.
 
 **The whole batch, held out (Iteration 181):** all seven pending patches on seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.
+
+## Iteration 182 - 2026-10-11 - Claude
+
+**The standard's eighth wave: s6 1,988 tests, 1 failed; stringtest whole.**
+DEFER and its words, S\", REPLACES, SUBSTITUTE, HOLDS, two transient buffers
+for S" - and my CHAR-AT's R@ inside a DO loop, found by the suite. Pending
+after seed 41, eighth: coreext-w8. callrel's draft no longer applies (the
+batches since changed evolve.py and layout.py): rebase first, then the
+converter's placement by distance - its own session.
+
+**Held out with the eighth wave (Iteration 182):** all eight pending patches on seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.

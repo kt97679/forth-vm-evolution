@@ -298,3 +298,18 @@ in coreexttest - first taken, wrongly, for PARSE-NAME's fault). Both now keep
 their case, like CHAR's. On s6: 1,862 tests, 0 failed. Stopping at: DEFER
 (coreexttest), S\" (filetest), TRAVERSE-WORDLIST (toolstest), SUBSTITUTE
 (stringtest), BLOCK, {:.
+
+## The eighth wave (Iteration 182) - results/pending/coreext-w8-after-seed41.patch
+
+DEFER DEFER@ DEFER! IS ACTION-OF; S\" with the standard's escapes; REPLACES
+and SUBSTITUTE; HOLDS; and S" interpreted into two transient buffers in turn,
+as the file word set asks (11.6.1.2165) - its test reads two strings at once.
+A fault of mine on the way: CHAR-AT kept its character with >R and read it
+with R@ inside a ?DO loop, where R@ is the loop's own - 23 of stringtest's
+tests wrong, until the character stayed on the data stack. On s6: 1,988
+tests, 1 failed - RESTORE-INPUT across lines of a file, which the standard
+lets fail and the test expects to work (a file's read-ahead buffer makes the
+position unreliable: left). Whole files now nine of fourteen, stringtest
+among them. Stopping at: X32X32 (coreexttest's own word - something before it),
+SI_INC (filetest, after that RESTORE-INPUT), TRAVERSE-WORDLIST (walks headers,
+whose layout differs by design - held back), BLOCK, {:.

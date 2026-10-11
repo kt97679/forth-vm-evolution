@@ -1,0 +1,72 @@
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 48b6cfe..35a428f 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -199,3 +199,67 @@ CREATE INCLUDED-NAMES 0 ,   \ the newest record: link, then a counted name
+   DUP SID @ <> IF 2DROP 2DROP TRUE EXIT THEN DROP
+   >R 2DUP #SRC @ = SWAP SRC @ = AND IF #SRC ! SRC ! R> >IN ! FALSE EXIT THEN
+   2DROP R> DROP TRUE ;
++\ The eighth wave (Iteration 182): coreexttest at DEFER, filetest at S\",
++\ stringtest at SUBSTITUTE.
++: DEFER ( "name" --- )  CREATE ['] ABORT , DOES> @ EXECUTE ;
++: DEFER@ ( xt1 --- xt2 )  >BODY @ ;
++: DEFER! ( xt2 xt1 --- )  >BODY ! ;
++: IS ( xt "name" --- )  STATE @ IF POSTPONE ['] POSTPONE DEFER! ELSE ' DEFER! THEN ; IMMEDIATE
++: ACTION-OF ( "name" --- xt )  STATE @ IF POSTPONE ['] POSTPONE DEFER@ ELSE ' DEFER@ THEN ; IMMEDIATE
++CREATE S"-BUFS 512 ALLOT  VARIABLE S"-NEXT  0 S"-NEXT !
++: S"-BUF ( --- c-addr )   \ two transient buffers in turn - the file wordset's S" (11.6.1.2165)
++  S"-NEXT @ 256 * S"-BUFS +  S"-NEXT @ 1 XOR S"-NEXT ! ;
++' S" CONSTANT 'S"
++: S" ( "ccc<quote>" --- ) ( interpreted: --- c-addr u )
++  STATE @ IF 'S" EXECUTE EXIT THEN
++  [CHAR] " PARSE DUP >R S"-BUF DUP >R SWAP CMOVE R> R> ; IMMEDIATE
++CREATE S\-BUF 256 ALLOT  VARIABLE S\-N
++: S\-C, ( c --- )  S\-BUF S\-N @ + C! 1 S\-N +! ;
++: S\-NEXT ( --- c )   \ the next character of the input, 0 past its end
++  SOURCE >IN @ > IF >IN @ + C@ ELSE DROP 0 THEN 1 >IN +! ;
++: HEXDIGIT ( c --- n )  DUP [CHAR] a [CHAR] z 1+ WITHIN IF 32 - THEN DUP [CHAR] 9 > IF 55 - ELSE [CHAR] 0 - THEN ;
++: S\-PARSE ( --- )   \ the escaped text to the closing quote, into S\-BUF
++  0 S\-N !
++  BEGIN S\-NEXT DUP [CHAR] " <> OVER 0<> AND WHILE
++    DUP [CHAR] \ = IF DROP S\-NEXT
++      CASE
++        [CHAR] a OF 7 S\-C, ENDOF   [CHAR] b OF 8 S\-C, ENDOF   [CHAR] e OF 27 S\-C, ENDOF
++        [CHAR] f OF 12 S\-C, ENDOF  [CHAR] l OF 10 S\-C, ENDOF  [CHAR] m OF 13 S\-C, 10 S\-C, ENDOF
++        [CHAR] n OF 10 S\-C, ENDOF  [CHAR] q OF 34 S\-C, ENDOF  [CHAR] r OF 13 S\-C, ENDOF
++        [CHAR] t OF 9 S\-C, ENDOF   [CHAR] v OF 11 S\-C, ENDOF  [CHAR] z OF 0 S\-C, ENDOF
++        [CHAR] " OF 34 S\-C, ENDOF
++        [CHAR] x OF S\-NEXT HEXDIGIT 16 * S\-NEXT HEXDIGIT + S\-C, ENDOF
++        DUP S\-C,
++      ENDCASE
++    ELSE S\-C, THEN
++  REPEAT DROP ;
++: S\" ( "ccc<quote>" --- ) ( run time: --- c-addr u )
++  S\-PARSE S\-BUF S\-N @ STATE @ IF POSTPONE SLITERAL EXIT THEN
++  DUP >R S"-BUF DUP >R SWAP CMOVE R> R> ; IMMEDIATE   \ interpreted: one of the two buffers
++CREATE SUBST-LIST 0 ,   \ the newest pair: link, the name counted, the text counted
++: REPLACES ( c-addr1 u1 c-addr2 u2 --- )   \ %name% (c-addr2 u2) stands for c-addr1 u1
++  ALIGN HERE SUBST-LIST @ , SUBST-LIST ! DUP C, HERE SWAP DUP ALLOT CMOVE
++  DUP C, HERE SWAP DUP ALLOT CMOVE ALIGN ;
++: SUBST-FIND ( c-addr u --- c-addr' u' -1 | 0 )
++  SUBST-LIST @ BEGIN DUP WHILE
++    >R 2DUP R@ CELL+ COUNT COMPARE 0= IF 2DROP R> CELL+ COUNT + COUNT -1 EXIT THEN R> @
++  REPEAT DROP 2DROP 0 ;
++VARIABLE SUB-D  VARIABLE SUB-MAX  VARIABLE SUB-N  VARIABLE SUB-ERR  VARIABLE SUB-COUNT
++: SUB-C, ( c --- )  SUB-N @ SUB-MAX @ < IF SUB-D @ SUB-N @ + C! 1 SUB-N +! ELSE DROP -1 SUB-ERR ! THEN ;
++: SUB-S, ( c-addr u --- )  0 ?DO DUP I + C@ SUB-C, LOOP DROP ;
++: CHAR-AT ( c-addr u c --- n )   \ c's index, or -1 - c on the data stack: in a
++  SWAP 0 ?DO OVER I + C@ OVER = IF 2DROP I UNLOOP EXIT THEN LOOP 2DROP -1 ;   \ DO loop R@ is the loop's
++: SUBSTITUTE ( c-addr1 u1 c-addr2 u2 --- c-addr2 u3 n )
++  SUB-MAX ! SUB-D ! 0 SUB-N ! 0 SUB-ERR ! 0 SUB-COUNT !
++  BEGIN DUP WHILE
++    OVER C@ [CHAR] % <> IF OVER C@ SUB-C, 1 /STRING ELSE
++      1 /STRING 2DUP [CHAR] % CHAR-AT
++      DUP 0< IF DROP [CHAR] % SUB-C, ELSE
++        DUP 0= IF DROP [CHAR] % SUB-C, 1 /STRING ELSE
++          >R OVER R@ SUBST-FIND IF SUB-S, 1 SUB-COUNT +! ELSE [CHAR] % SUB-C, OVER R@ SUB-S, [CHAR] % SUB-C, THEN
++          R> 1+ /STRING
++        THEN
++      THEN
++    THEN
++  REPEAT 2DROP SUB-D @ SUB-N @ SUB-ERR @ IF -1 ELSE SUB-COUNT @ THEN ;
++: HOLDS ( c-addr u --- )  BEGIN DUP WHILE 1- 2DUP + C@ HOLD REPEAT 2DROP ;   \ coreexttest

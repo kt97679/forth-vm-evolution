@@ -9,17 +9,17 @@ helpers' not counted again), failed, and where a file stopped short of its end:
 | prelimtest.fth | 23 | 0 | yes |  |
 | core.fr | 638 | 0 | yes |  |
 | coreplustest.fth | 101 | 0 | yes |  |
-| coreexttest.fth | 318 | 0 | no | DEFER |
+| coreexttest.fth | 382 | 0 | no | X32X32 |
 | blocktest.fth | 0 | 0 | no | BLOCK |
 | doubletest.fth | 247 | 0 | yes |  |
 | exceptiontest.fth | 9 | 0 | yes |  |
 | facilitytest.fth | 70 | 0 | yes |  |
-| filetest.fth | 88 | 0 | no | S\" |
+| filetest.fth | 95 | 1 | no | SI_INC |
 | localstest.fth | 0 | 0 | no | {: |
 | memorytest.fth | 198 | 0 | yes |  |
 | toolstest.fth | 49 | 0 | no | TRAVERSE-WORDLIST |
 | searchordertest.fth | 41 | 0 | yes |  |
-| stringtest.fth | 80 | 0 | no | SUBSTITUTE |
+| stringtest.fth | 135 | 0 | yes |  |
 
 Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
 
