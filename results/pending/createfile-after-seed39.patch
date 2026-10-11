@@ -1,0 +1,160 @@
+diff --git a/engine/pack4.c b/engine/pack4.c
+index 8f2d3b0..26dcd7f 100644
+--- a/engine/pack4.c
++++ b/engine/pack4.c
+@@ -331,7 +331,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
+  *  virtual machine I/O primitives' shared state
+  */
+ 
+-static const int open_flags[8] = {
++static const int open_flags[10] = {
+     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
+     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
+     O_RDONLY,                      /* r  */
+@@ -343,7 +343,9 @@ static const int open_flags[8] = {
+                                        the original six modes create a
+                                        missing file *without* truncating
+                                        it, which append redirection needs */
+-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
++    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
++    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
++    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
+ };
+ 
+ /*
+diff --git a/engine/pack8.c b/engine/pack8.c
+index 80cf288..1d61d4b 100644
+--- a/engine/pack8.c
++++ b/engine/pack8.c
+@@ -329,7 +329,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
+  *  virtual machine I/O primitives' shared state
+  */
+ 
+-static const int open_flags[8] = {
++static const int open_flags[10] = {
+     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
+     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
+     O_RDONLY,                      /* r  */
+@@ -341,7 +341,9 @@ static const int open_flags[8] = {
+                                        the original six modes create a
+                                        missing file *without* truncating
+                                        it, which append redirection needs */
+-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
++    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
++    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
++    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
+ };
+ 
+ /*
+diff --git a/engine/relf.c b/engine/relf.c
+index d2ddf6f..d20f3bd 100644
+--- a/engine/relf.c
++++ b/engine/relf.c
+@@ -296,7 +296,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
+  *  virtual machine I/O primitives' shared state
+  */
+ 
+-static const int open_flags[8] = {
++static const int open_flags[10] = {
+     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
+     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
+     O_RDONLY,                      /* r  */
+@@ -308,7 +308,9 @@ static const int open_flags[8] = {
+                                        the original six modes create a
+                                        missing file *without* truncating
+                                        it, which append redirection needs */
+-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
++    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
++    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
++    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
+ };
+ 
+ /*
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 2edc4c1..939098c 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -552,7 +552,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
+  *  virtual machine I/O primitives' shared state
+  */
+ 
+-static const int open_flags[8] = {
++static const int open_flags[10] = {
+     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
+     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
+     O_RDONLY,                      /* r  */
+@@ -564,7 +564,9 @@ static const int open_flags[8] = {
+                                        the original six modes create a
+                                        missing file *without* truncating
+                                        it, which append redirection needs */
+-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
++    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
++    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
++    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
+ };
+ 
+ /*
+diff --git a/engine/spn.c b/engine/spn.c
+index 7e6bb5e..9f4f9fd 100644
+--- a/engine/spn.c
++++ b/engine/spn.c
+@@ -311,7 +311,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
+  *  virtual machine I/O primitives' shared state
+  */
+ 
+-static const int open_flags[8] = {
++static const int open_flags[10] = {
+     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
+     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
+     O_RDONLY,                      /* r  */
+@@ -323,7 +323,9 @@ static const int open_flags[8] = {
+                                        the original six modes create a
+                                        missing file *without* truncating
+                                        it, which append redirection needs */
+-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
++    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
++    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
++    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
+ };
+ 
+ /*
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index c82a9ff..9b1dea9 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -605,7 +605,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
+  *  virtual machine I/O primitives' shared state
+  */
+ 
+-static const int open_flags[8] = {
++static const int open_flags[10] = {
+     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
+     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
+     O_RDONLY,                      /* r  */
+@@ -617,7 +617,9 @@ static const int open_flags[8] = {
+                                        the original six modes create a
+                                        missing file *without* truncating
+                                        it, which append redirection needs */
+-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
++    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
++    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
++    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
+ };
+ 
+ /*
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index a63e8b0..8a17e6a 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -697,7 +697,10 @@ PRIMITIVE-SLOT (SETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
+ : CREATE-FILE ( c-addr u mode --- fid ior)
+ \ Create a new file with the name starting at c-addr with length u.
+ \ Return the file-ID and the IO result. (ior=0 if success)
+-  1 AND OPEN-FILE ;
++\ R/W (with BIN or not) is the engine's mode 8 or 9 - created, read and
++\ written; the others as before, created to write. It was 1 AND, and a file
++\ created R/W could not be read (the standard suite's filetest; Iteration 168).
++  DUP 4 AND IF 4 + ELSE 1 AND THEN OPEN-FILE ;
+ 
+ \ : READ-LINE >R OVER R> READ-FILE >R OVER + SWAP 
+ \ BEGIN WHILE REPEAT 

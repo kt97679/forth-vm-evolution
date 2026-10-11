@@ -51,3 +51,13 @@ test right on all, 146 with new ids.
    -0.9, the rest under 0.1. Speed is a ratio to s6, so on those workloads every
    design's ratio moves against it by about as much - on top of what the batch
    does to the designs themselves.
+
+## Seed 39, checked (Iteration 168)
+
+1. Small again - **right** (fastest 0.239 against 0.237, smallest and memory
+   equal; the second small run in a row).
+2. The front shared with seed 38 - **right**: 71 and 39 of the joint 119.
+3. The fastest still not a JIT design - **wrong**: the joint front's fastest,
+   9932cc5c32, is a JIT design, and so are 74 of the 119 - before jitloop and
+   jitinl are even expressed.
+4. The chain ends on time - **right**: 6 h 28 min of 7 hours.

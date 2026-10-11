@@ -3244,3 +3244,21 @@ by distance first. coreext.4: waves two and three, a standard COMPARE; the
 kernel's NUMBER? and INTERPRET as the standard reads numbers. The standard
 suite on s6: 1,599 tests, 6 failed (CREATE-FILE). The fourteen patches on a
 fresh clone, reseeded: run-tests PASS, 7 of 7 IDENTICAL, the jail, 167 alive.
+
+## Iteration 168 - 2026-10-11 - Claude
+
+**Seed 39 processed - small, the second in a row: the gene set has converged
+under the selection with bubble and ackermann.** Session 34 (seeds 35-39,
+calibration 0.996): seed 39's fastest 0.239 against seed 38's 0.237, smallest
+and memory equal (20,622 bytes, 152 KB); 71 of the joint front's 119 designs
+its, 39 seed 38's. 74 of the 119 are JIT designs, the fastest among them - the
+prediction "fastest still not JIT" was wrong. The chain: 6 h 28 min of 7. The
+held-out check: 0 of seed 39's 186 front designs differ from s6 on the Forth
+2012 suite. results/evolve-amd-ryzen-7-pro-8840hs-seed39.md, session 34 in
+results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/predictions.md.
+
+**CREATE-FILE with R/W - the batch's fifteenth pending patch** (the owner:
+respect the standard, tolerate the size). It was 1 AND OPEN-FILE: a file
+created R/W could only be written. The engines' open-flags table takes two
+more entries (create, read and write), CREATE-FILE maps R/W to them: the
+standard suite on s6 1,599 tests, 0 failed.
