@@ -3465,3 +3465,11 @@ past 8 KB. Hybrid calls are now sized from an upper bound of their target's
 offset, the same at both passes, emitted at that length. Next: the short-branch
 pass still assumes 2-byte calls ("short branch out of range" on part of the
 front). Still a draft: results/drafts/callrel-draft-rebased.patch.
+
+## Iteration 186 - 2026-10-11 - Claude
+
+**callrel: the short branches explained - it needs a real fixed point.** The
+branch-shortening pass sizes with non-tag-2 sizes (it runs before the tag-2
+map exists); and Iteration 185's bound, measured from the 27 KB cell dump,
+sizes nearly every call long - correct, and larger than base mode. The fix is
+a layout rerun to a fixed point: its own session (results/drafts/callrel.md).

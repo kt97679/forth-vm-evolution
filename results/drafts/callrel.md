@@ -81,3 +81,27 @@ the true offset fits. SEARCH-WORDLIST's drift is gone.
 front: the pass that chooses 8-bit branches estimates a loop body with 2-byte
 calls; with calls sized by the bound the body grows past 128 bytes. That pass
 must size calls by the same rule (sod16 shorten, or op_bytes' callers).
+
+## The short branches, and why the bound will not do (Iteration 186)
+
+Every design with the gene on now dies one way: "short branch out of range"
+at emission. The converter's branch-shortening pass runs inside read_ops
+(layout.py line 223, each word's operations read), long before the tag-2 map
+is installed (line 511) - so it measures with the non-tag-2 sizes: every call
+2 bytes, escaped opcodes 1. Base mode lives on the margins; the hybrid's
+longer calls push loop bodies past 128 bytes.
+
+And fixing that alone would not make the gene worth having: the bound of
+Iteration 185 measures from the old, cell-sized dump (about 27 KB) where the
+byte image is 7-11 KB - nearly every call to a kernel word past ~7 KB of old
+offset is sized 3-4 bytes though its real offset is under 8 KB. Correct, and
+larger than base mode: the gene's point lost.
+
+**What it needs:** a real fixed point - place the image, take the true
+offsets, size calls (and branches) from them, place again until nothing
+changes (calls only grow, so it ends). layout.py places at module level
+(placement, the header links, BSS, the tables between it and emission), so
+that flow becomes a function rerun - a session's work. Or two converter runs,
+the second sized from the first's CALLMAP offsets. To weigh with the owner as
+well: the hybrid for run-time code only - but the engine has one call decoder,
+so the image's calls would carry the flag bit too.
