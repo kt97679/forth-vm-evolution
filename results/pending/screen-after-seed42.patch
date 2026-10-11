@@ -1,0 +1,166 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 4af3ab4..0cc7d26 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -446,3 +446,18 @@ its cell offset) instead of asserting, tools/layout.py writes them to
+ --long-branches FILE and exits 4, and evolve.py converts again with them kept
+ long (up to four times; the set only grows). A design that converted before
+ meets none and is byte for byte as it was.
++
++## The surrogate screen (Iteration 200)
++
++A child whose predicted speed and binary + image are both beaten - by 30% and
++5% - by what was measured before its generation is not measured: recorded
++`screened` (not a death; the report counts them apart). The model is
++additive, one weight per gene value, fitted in pure Python on the earlier
++generations' living designs every 10 generations; seed 40 offline: a third of
++the children skipped, 1 of 163 final-front designs lost
++(results/drafts/surrogate-offline.md). One screened child in ten, chosen by
++id, is measured anyway ("screened, audited") - the screen checked as it runs.
++Deterministic, so a resumed run decides the same. Settings: EVOLVE_SCREEN (0
++off), EVOLVE_SCREEN_MARGINS (0.30,0.05), EVOLVE_SCREEN_AUDIT (10),
++EVOLVE_SCREEN_FROM (generation 5), EVOLVE_SCREEN_EVERY (10), EVOLVE_SCREEN_MIN
++(1,000 designs).
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index d1cd9c3..2cc6677 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -53,7 +53,7 @@ OPERATORS
+   selection  NSGA-II: rank by Pareto front, then by crowding, so designs
+              that are different survive beside designs that are better
+ """
+-import collections, hashlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
++import bisect, collections, hashlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
+ 
+ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ O = os.path.join(ROOT, 'build'); W = os.path.join(O, 'work')
+@@ -1047,6 +1047,65 @@ MEM_TOL = float(os.environ.get('EVOLVE_MEM_TOL', 8))
+ # generation's ranking (fronts, rank); first_front - the reports' and the
+ # carry's, over whole databases - stays exact (compare-fronts measures again).
+ SPEED_TOL = float(os.environ.get('EVOLVE_SPEED_TOL', 0.02))
++# Iteration 200 (the owner: pure Python, conservative): the surrogate
++# screen (results/drafts/surrogate-offline.md). A child whose predicted speed
++# and binary + image are both beaten - by SCREEN_MS and SCREEN_MT - by what was
++# measured before its generation is not measured: recorded "screened". The
++# model is additive - one weight per gene value, log speed and log size, fitted
++# by stochastic gradient descent on the earlier generations' living designs
++# every SCREEN_EVERY generations (seed 40 offline: speed within 8.2%, size 1.2%;
++# at 30%/5% a third of the children skipped, 1 of 163 final-front designs
++# lost). One screened child in SCREEN_AUDIT is measured anyway ("screened,
++# audited" in how it was made) - the screen's own check. Deterministic: the
++# fit has its own seed and sees only earlier generations, the audit is chosen
++# by id - a resumed run's replay decides the same. EVOLVE_SCREEN=0: off.
++SCREEN = os.environ.get('EVOLVE_SCREEN', '1') != '0'
++SCREEN_MS, SCREEN_MT = (float(x) for x in os.environ.get('EVOLVE_SCREEN_MARGINS', '0.30,0.05').split(','))
++SCREEN_AUDIT = int(os.environ.get('EVOLVE_SCREEN_AUDIT', 10))
++SCREEN_FROM = int(os.environ.get('EVOLVE_SCREEN_FROM', 5))
++SCREEN_EVERY = int(os.environ.get('EVOLVE_SCREEN_EVERY', 10))
++SCREEN_MIN = int(os.environ.get('EVOLVE_SCREEN_MIN', 1000))
++
++def screen_feats(g):
++    f = []
++    for k, v in express(g).items():
++        if isinstance(v, (list, tuple)): f += ['%s:%s' % (k, json.dumps(x, sort_keys=True)) for x in v]
++        else: f.append('%s=%s' % (k, json.dumps(v, sort_keys=True)))
++    return f
++
++def screen_fit(recs, epochs=12):
++    """The additive model: [(weights, bias) for log speed, for log binary + image]."""
++    data = [(screen_feats(r['genome']), math.log(r['speed']), math.log(ov(r, 'total'))) for r in recs]
++    model = []
++    for t in (1, 2):
++        w = collections.defaultdict(float); b = sum(d[t] for d in data) / len(data)
++        rnd = random.Random(1); idx = list(range(len(data)))
++        for ep in range(epochs):
++            rnd.shuffle(idx); a = 0.02 / (1 + ep * 0.2)
++            for i in idx:
++                fs, y = data[i][0], data[i][t]
++                e = b + sum(w[f] for f in fs) - y
++                for f in fs: w[f] -= a * (e + 1e-5 * w[f])
++                b -= a * e * 0.1
++        model.append((dict(w), b))
++    return model
++
++def screen_predict(model, g):
++    fs = screen_feats(g)
++    return tuple(math.exp(b + sum(w.get(f, 0.0) for f in fs)) for w, b in model)
++
++def screen_stair(recs):
++    """What was measured, as a staircase: speeds ascending, the least size up to each."""
++    sp, tt = [], []
++    for s_, t_ in sorted((r['speed'], ov(r, 'total')) for r in recs):
++        if tt and tt[-1] <= t_: continue
++        sp.append(s_); tt.append(t_)
++    return sp, tt
++
++def screen_beaten(stair, s_, t_):
++    sp, tt = stair; k = bisect.bisect_right(sp, s_ * (1 - SCREEN_MS))
++    return k > 0 and tt[k - 1] <= t_ * (1 - SCREEN_MT)
++
+ def dominates(a, b):
+     """Design a dominates design b: no worse in all three, better in one -
+     memory by more than MEM_TOL, speed by more than SPEED_TOL."""
+@@ -1586,6 +1645,7 @@ def main(argv):
+     # database already holds what the first attempt made later - the
+     # replay would make different children and fork instead of resuming.
+     seen, pending = set(), {}
++    SCR = {'model': None, 'fit': -1}          # Iteration 200: the screen's model and when it was fitted
+     def get(g, parents, how, gen):
+         """The design's id; asked for, it is evaluated at the next flush()."""
+         if REQUIRE and not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71
+@@ -1597,6 +1657,28 @@ def main(argv):
+         --jobs N - and recorded in the order asked: a generation's children are
+         all made before any is needed, so the run decides as it did serially."""
+         items = list(pending.items()); pending.clear()
++        gen_now = max((it[1][3] for it in items), default=0)
++        if SCREEN and items and gen_now >= SCREEN_FROM:          # Iteration 200: the screen
++            if SCR['model'] is None or gen_now - SCR['fit'] >= SCREEN_EVERY:
++                recs = [r for r in R.values() if r['status'] == 'ok' and r.get('speed') and ov(r, 'total') and r.get('gen', 0) < gen_now]
++                if len(recs) >= SCREEN_MIN:
++                    SCR['model'], SCR['fit'] = screen_fit(recs), gen_now
++                    print('  the screen: fitted on %d designs at generation %d' % (len(recs), gen_now), flush=True)
++            if SCR['model'] is not None:
++                stair = screen_stair([r for r in R.values() if r['status'] == 'ok' and r.get('speed') and ov(r, 'total') and r.get('gen', 0) < gen_now])
++                keep, n_scr, n_aud = [], 0, 0
++                for i, (g, parents, how, gen) in items:
++                    ps, pt = screen_predict(SCR['model'], canon(g))
++                    if gen >= SCREEN_FROM and screen_beaten(stair, ps, pt):
++                        if int(i, 16) % SCREEN_AUDIT == 0:
++                            n_aud += 1; keep.append((i, (g, parents, how + '; screened, audited', gen))); continue
++                        n_scr += 1
++                        rec = {'status': 'screened', 'pred': [round(ps, 4), round(pt)], 'secs': 0,
++                               'id': i, 'genome': canon(g), 'parents': parents, 'how': how, 'gen': gen}
++                        R[i] = rec; save(rec)
++                    else: keep.append((i, (g, parents, how, gen)))
++                if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
++                items = keep
+         args = [(canon(g), ROUNDS) for i, (g, parents, how, gen) in items]
+         for (i, (g, parents, how, gen)), rec in zip(items, WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args)):
+             rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen)
+@@ -1760,8 +1842,10 @@ def report(R):
+     hum = {R[i]['how'][10:]: i for i in ok if R[i]['how'].startswith('hand-made')}
+     ref = R[hum['s6-cv8b']] if 's6-cv8b' in hum else None
+     L = ['# Evolved VM designs', '',
+-         '%d designs evaluated, %d alive. Speed is the geometric mean of %s over %s,' %
+-         (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
++         '%d designs evaluated, %d alive%s. Speed is the geometric mean of %s over %s,' %
++         (sum(1 for x in R.values() if x['status'] != 'screened'), len(ok),
++          ', %d screened - not measured (Iteration 200)' % sum(1 for x in R.values() if x['status'] == 'screened') if any(x['status'] == 'screened' for x in R.values()) else '',
++          R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
+          'relative to s6-cv8b; size is the self-hosting image, binary the stripped engine. %s is held out.' % ', '.join(WORK_HELD),
+          'The front is over three objectives, equal (Iteration 75): speed, binary + image, peak memory - memory within %g KB a tie (Iteration 77).' % MEM_TOL, '',
+          '', qbest_line(F, R, ref), '',
+@@ -1803,8 +1887,12 @@ def report(R):
+         L.append('| %s | %.3f | %d | %s |' % (n, R[i]['speed'] / ref['speed'] if ref else 1, R[i]['size'], 'yes' if i in F else 'no'))
+     deaths = {}
+     for i in R:
+-        if R[i]['status'] != 'ok': deaths[R[i]['status']] = deaths.get(R[i]['status'], 0) + 1
++        if R[i]['status'] not in ('ok', 'screened'): deaths[R[i]['status']] = deaths.get(R[i]['status'], 0) + 1
+     L += ['', '## Deaths', ''] + ['- %s: %d' % kv for kv in sorted(deaths.items(), key=lambda kv: -kv[1])] + ['']
++    scr = [i for i in R if R[i]['status'] == 'screened']; aud = [i for i in ok if 'screened, audited' in R[i].get('how', '')]
++    if scr or aud:                                      # Iteration 200
++        L += ['## The screen', '', '- not measured, predicted beaten by %d%% in speed and %d%% in binary + image: %d' % (100 * SCREEN_MS, 100 * SCREEN_MT, len(scr)),
++              '- audited (one in %d, measured anyway): %d, of them on the front: %d' % (SCREEN_AUDIT, len(aud), sum(1 for i in aud if i in set(F))), '']
+     L += ["## The front's genomes", '', GENOMES_NOTE, ''] + front_records(R, sorted(set(F) | {i for i in rm if i in R}, key=lambda i: R[i]['speed'])) + ['']
+     open(os.path.join(EV, 'report.md'), 'w').write('\n'.join(L) + '\n')
+     print('\n'.join(L[6:6 + 3 + len(F)] + L[6 + 3 + len(F):6 + 6 + 2 * len(F)]))
