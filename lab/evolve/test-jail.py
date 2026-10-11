@@ -2,7 +2,7 @@
 """test-jail.py - prove that an engine the evolver runs cannot fork.
 
 Iteration 10: a run on the owner's laptop forked without bound - a broken
-design reaching the FORK primitive in a loop - and froze the machine. The
+design reaching the FORK primitive in a loop (SYSCALL's fork since Iteration 147) - and froze the machine. The
 evolver now jails every engine it runs (lab/evolve/evolve.py, _contain;
 tools/cputime.c, CPUTIME_JAIL): no new processes, bounded memory and
 files. This checks it, on hand-made s6, in an order that is safe even if
@@ -44,7 +44,7 @@ def run(cmd, inp, cpu=3, jail=True):
     finally: E._kind = real_kind
 def numbers(r): return [l.strip() for l in r.stdout.decode(errors='replace').replace('\r', '').split('\n') if l.strip().lstrip('-').isdigit()]
 
-ONE = b'FORK . CR BYE\n'
+ONE = b'CREATE B 6 CELLS ALLOT B 57 SYSCALL . CR BYE\n'   # Iteration 147: fork through SYSCALL
 r = run([ENG, IMG], ONE)
 n = numbers(r)
 check(n == ['-1'] or (len(n) == 1 and int(n[0]) < 0), '1. one FORK, jailed: refused (printed %s)' % n)
@@ -53,7 +53,7 @@ r = run([ENG, IMG], ONE, jail=False)
 n = numbers(r)
 check(len(n) == 2 and '0' in n, '2. one FORK, not jailed: two processes printed (%s)' % n)
 
-BOMB = b': BOMB BEGIN FORK DROP 0 UNTIL ; BOMB\n'   # the kernel has UNTIL; AGAIN comes with extend.4
+BOMB = b'CREATE B 6 CELLS ALLOT : BOMB BEGIN B 57 SYSCALL DROP 0 UNTIL ; BOMB\n'   # the kernel has UNTIL; AGAIN comes with extend.4
 def engines():
     k = 0
     for p in os.listdir('/proc'):

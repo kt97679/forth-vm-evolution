@@ -100,8 +100,10 @@ OS words, its buffers) is the extension's, outside the measure. So sysc's
 saving counts in full, and a kernel word only an extension uses belongs in
 that extension (results/word-audit.md, "Core or extension").
 
-*The after-seed-39 batch, rehearsed* (Iteration 146): in a fresh tree,
-`git apply` results/pending/{namebuf,parsing,nolibc-default,genes-tests,syscall,tabsbl,tight,founders,audit,far,tracer,coreext,lean56,numbers,createfile}-after-seed39.patch
+*The after-seed-39 batch - applied at Iteration 169*: on master, reseeded (the
+kernel 26,080 bytes), the four checks, seed 39's 186 front designs alive on
+it. Rehearsed since Iteration 146: in a fresh tree,
+`git apply` results/applied-after-seed39/{namebuf,parsing,nolibc-default,genes-tests,syscall,tabsbl,tight,founders,audit,far,tracer,coreext,lean56,numbers,createfile}-after-seed39.patch
 in that order, `sh tools/reseed.sh`, the four checks at both widths - a measurement
 change: sizes and speeds before the batch are not comparable with those after (Iteration 147:
 the five reproduce the tested tree exactly; the single-SYSCALL model is the fifth).

@@ -1,4 +1,6 @@
 \ spn-cv8.4 - SPN: Stencil-Patched Native, on a CV8 image.
+\ Iteration 166: NAME>, the kernel's name - --cv8-compiler gave it NAME>8's
+\ code, and s6, lean, leaves the copy out.
 \
 \ The same translator as spn-full.4, reading CV8 byte code instead of
 \ cells. Load on the SPN-CV8 engine (build/spn-cv8-64) into the byte-
@@ -860,7 +862,7 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
 : TRANSLATE-ALL ( --- )     \ uses the map; builds one if there is none
   MARKS @ 0= IF BUILD-MARKS THEN
   MSIZE @ ALL-END @ ?DUP IF MIN THEN 0 DO
-    MARKS @ I + C@ 1 AND IF  I START @ + NAME>8 TRY-TRANSLATE  THEN
+    MARKS @ I + C@ 1 AND IF  I START @ + NAME> TRY-TRANSLATE  THEN
   LOOP ;
 
 \ ---- start-up ----
@@ -1052,4 +1054,4 @@ VARIABLE TRANSLATING  0 TRANSLATING !
   MARKS @ IF SPN-WHY? EXIT THEN  BUILD-MARKS SPN-WHY? FREE-MARKS ;
 
 \ New definitions: translate each as its ; completes.
-: ;  POSTPONE ;  LAST @ NAME>8 DUP LAZY-CALLEES TRY-TRANSLATE ; IMMEDIATE
+: ;  POSTPONE ;  LAST @ NAME> DUP LAZY-CALLEES TRY-TRANSLATE ; IMMEDIATE

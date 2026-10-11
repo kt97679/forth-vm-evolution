@@ -20,6 +20,9 @@
  *  cross-compiled with TARGET-CELL-BYTES set to 4 (see cross.4).
  */
 
+#ifndef SYSC
+#define SYSC 1      /* the single-SYSCALL model, every engine (Iteration 147) */
+#endif
 #if SYSC
 #include <errno.h>      /* SYSCALL's -errno */
 #ifndef PROFDUMP
@@ -83,7 +86,7 @@ typedef int32_t  INT64;
  *  empty name, nowhere near the actual cause. 1M is still small
  *  enough to be unremarkable and leaves real headroom for shell.4 to
  *  keep growing.  */
-#define MEMSIZE (1024 * 1024)
+#define MEMSIZE (16 * 1024 * 1024)   /* 16 MB, as vm-lab.c: 1 MB ran far code off its end (Iteration 159) */
 /*  Room reserved for the return stack. Raised from 2048 in Iteration
  *  90: 2048 bytes is 256 cells, and each level of shell function
  *  recursion nests roughly a dozen Forth calls, so the return stack
@@ -293,7 +296,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
  *  virtual machine I/O primitives' shared state
  */
 
-static const int open_flags[8] = {
+static const int open_flags[10] = {
     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
     O_RDONLY,                      /* r  */
@@ -305,7 +308,9 @@ static const int open_flags[8] = {
                                        the original six modes create a
                                        missing file *without* truncating
                                        it, which append redirection needs */
-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
+    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
+    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
+    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
 };
 
 /*

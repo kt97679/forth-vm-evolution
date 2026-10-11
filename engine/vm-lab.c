@@ -62,6 +62,9 @@
  *  cross-compiled with TARGET-CELL-BYTES set to 4 (see cross.4).
  */
 
+#ifndef SYSC
+#define SYSC 1      /* the single-SYSCALL model, every engine (Iteration 147) */
+#endif
 #if SYSC
 #include <errno.h>      /* SYSCALL's -errno (Iteration 141) */
 #endif
@@ -602,7 +605,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
  *  virtual machine I/O primitives' shared state
  */
 
-static const int open_flags[8] = {
+static const int open_flags[10] = {
     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
     O_RDONLY,                      /* r  */
@@ -614,7 +617,9 @@ static const int open_flags[8] = {
                                        the original six modes create a
                                        missing file *without* truncating
                                        it, which append redirection needs */
-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
+    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
+    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
+    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
 };
 
 /*
@@ -858,16 +863,101 @@ static void load_image(const char *name) {
 
 #if PROFILE
 #include <stdio.h>
-#define PROFDUMP dump_prof()
-static unsigned long long prof[258], pair[258][258], callc[65536], ipc[1 << 20], rcnt[1 << 20];
-static unsigned rtgt[1 << 20];
+#define PROFDUMP do { dump_prof(); TR_DUMP(); } while (0)
+/*  Per address over the whole memory: they were masked to 1 MB, and code
+    past it - the far tests, the far benchmark - was counted elsewhere
+    (Iteration 162). Untouched pages cost nothing.  */
+#define PROFOFF(a) ((unsigned)(((a) - (UNS64)(uintptr_t)base) % MEMSIZE))
+static unsigned long long prof[258], pair[258][258], callc[65536], ipc[MEMSIZE], rcnt[MEMSIZE];
+static unsigned rtgt[MEMSIZE];
+#if PROFILE >= 2
+/*  The tracer (Iteration 162, the owner): every call pushes a frame on a
+    shadow stack - target, return address, and rp just after the push. A
+    frame whose rp the live rp has passed has returned - an EXIT, a fold's
+    return, R> DROP, RP! - so returns need no hook, and >R or loop data on
+    the return stack cannot confuse the path. The first time an instruction
+    runs: a record of its offset, the call path, the top three data-stack
+    cells, and the input line being interpreted (SRC, #SRC, >IN, their
+    offsets in VMTRACE_PROBES). Each frame counts the dispatches it runs
+    itself; when it returns they go to its call path - folded stacks at the
+    end. Output: VMTRACE. tools/vmtrace.py reads it with the converter's map. */
+#ifndef TR_TOP3
+#define TR_TOP3 DS0, DS1, DS2      /* gen-tos.py: the top in its register */
+#endif
+#define TR_MAX 4096
+#define TR_PATHS (1 << 16)
+#define TR_DEPTH 24
+static UNS64 tr_rp[TR_MAX]; static unsigned tr_tgt[TR_MAX], tr_ret[TR_MAX];
+static unsigned long long tr_self[TR_MAX], tr_hash[TR_MAX], tr_top; static int tr_n, tr_lost;
+static UNS8 tr_seen[MEMSIZE / 8];
+static FILE *tr_f; static long tr_probe[3] = { -1, -1, -1 };
+static struct { unsigned long long h, n; int d; unsigned t[TR_DEPTH]; } tr_path[TR_PATHS];
+static unsigned tr_off(UNS64 a) { return (unsigned)(a - (UNS64)(uintptr_t)base); }
+static void tr_open(void) {
+    if (tr_f) return;
+    const char *f = getenv("VMTRACE"); tr_f = fopen(f ? f : "/dev/null", "w"); if (!tr_f) tr_f = fopen("/dev/null", "w");
+    const char *p = getenv("VMTRACE_PROBES"); if (p) sscanf(p, "%ld,%ld,%ld", &tr_probe[0], &tr_probe[1], &tr_probe[2]);
+}
+static void tr_close_frame(void) {
+    int i = tr_n - 1; unsigned long long h = tr_hash[i]; unsigned k = (unsigned)(h % TR_PATHS);
+    for (int j = 0; j < TR_PATHS; j++, k = (k + 1) % TR_PATHS) {
+        if (tr_path[k].h == 0) {
+            int d = tr_n < TR_DEPTH ? tr_n : TR_DEPTH; tr_path[k].h = h; tr_path[k].d = d;
+            for (int m = 0; m < d; m++) tr_path[k].t[m] = tr_tgt[tr_n - d + m];
+        }
+        if (tr_path[k].h == h) { tr_path[k].n += tr_self[i]; break; }
+    }
+    tr_n--;
+}
+static void tr_call(UNS64 ip_, UNS64 ret, UNS64 rp_) {
+    tr_open();
+    if (tr_n >= TR_MAX) { tr_lost++; return; }
+    tr_rp[tr_n] = rp_; tr_tgt[tr_n] = tr_off(ip_); tr_ret[tr_n] = tr_off(ret); tr_self[tr_n] = 0;
+    tr_hash[tr_n] = (((tr_n ? tr_hash[tr_n - 1] : 0x9E3779B97F4A7C15ull) ^ tr_tgt[tr_n]) * 0x100000001B3ull) | 1;
+    tr_n++;
+}
+static void tr_first(unsigned o, UNS64 d0, UNS64 d1, UNS64 d2) {
+    tr_open();
+    int s_ = tr_n > TR_DEPTH ? tr_n - TR_DEPTH : 0;
+    fprintf(tr_f, "F %u d=%d p=", o, tr_n);
+    for (int i = s_; i < tr_n; i++) fprintf(tr_f, "%s%u/%u", i > s_ ? "," : "", tr_tgt[i], tr_ret[i]);
+    fprintf(tr_f, " s=%lld,%lld,%lld", (long long)d0, (long long)d1, (long long)d2);
+    if (tr_probe[0] >= 0) {
+        UNS64 src = CELL(base + tr_probe[0]), n = CELL(base + tr_probe[1]), in = CELL(base + tr_probe[2]);
+        fprintf(tr_f, " in=%llu l=", (unsigned long long)in);
+        if (src >= (UNS64)(uintptr_t)base && src < (UNS64)(uintptr_t)base + MEMSIZE && n <= 4096)
+            for (UNS64 i = 0; i < n && i < 160; i++) { int c = ((const UNS8 *)(uintptr_t)src)[i]; fputc(c >= 32 && c < 127 ? c : '.', tr_f); }
+    }
+    fputc('\n', tr_f);
+}
+static void tr_dump(void) {
+    tr_open(); while (tr_n) tr_close_frame();
+    for (int k = 0; k < TR_PATHS; k++) if (tr_path[k].n) {
+        fprintf(tr_f, "P %llu", tr_path[k].n);
+        for (int m = 0; m < tr_path[k].d; m++) fprintf(tr_f, "%s%u", m ? ";" : " ", tr_path[k].t[m]);
+        fputc('\n', tr_f);
+    }
+    fprintf(tr_f, "T top=%llu lost=%d\n", tr_top, tr_lost); fclose(tr_f); tr_f = 0;
+}
+#define TRACE_STEP(a) do { while (tr_n && rp > tr_rp[tr_n - 1]) tr_close_frame(); \
+    if (tr_n) tr_self[tr_n - 1]++; else tr_top++; \
+    UNS64 o_ = (UNS64)(a) - (UNS64)(uintptr_t)base; \
+    if (o_ < MEMSIZE && !(tr_seen[o_ >> 3] & (1u << (o_ & 7)))) { \
+        tr_seen[o_ >> 3] |= (UNS8)(1u << (o_ & 7)); tr_first((unsigned)o_, TR_TOP3); } } while (0)
+#define TRACE_CALL() tr_call(ip, RS, rp)
+#define TR_DUMP() tr_dump()
+#else
+#define TRACE_STEP(a)
+#define TRACE_CALL()
+#define TR_DUMP()
+#endif
 static const char *prof_names[258];
 static void dump_prof(void) {
     const char *f = getenv("VMPROF"); if (!f) return;
     int fd = open(f, O_WRONLY|O_CREAT|O_APPEND, 0644); char b[128];
     for (int i = 0; i < 258; i++) for (int j = 0; j < 258; j++) if (pair[i][j]) {
         int n = snprintf(b, sizeof b, "%d %d %llu\n", i, j, pair[i][j]); write(fd, b, n); }
-    for (int i = 0; i < (1 << 20); i++) if (ipc[i]) {   /* per-address: patterns.py */
+    for (int i = 0; i < MEMSIZE; i++) if (ipc[i]) {   /* per-address: patterns.py */
         int n = snprintf(b, sizeof b, "I %d %llu\n", i, ipc[i]); write(fd, b, n); }
     for (int i = 0; i < 65536; i++) if (callc[i]) {
         int n = snprintf(b, sizeof b, "C %d %llu\n", i, callc[i]); write(fd, b, n); }
@@ -875,7 +965,7 @@ static void dump_prof(void) {
        target, the count, the byte after the call and the callee's first
        eight, read now, at the end: lab/evolve/callsites.py (calls compiled
        at run time included, which no census of the image sees) */
-    for (int i = 0; i < (1 << 20); i++) if (rcnt[i]) {
+    for (int i = 0; i < MEMSIZE; i++) if (rcnt[i]) {
         const UNS8 *x_ = base + i, *y_ = base + rtgt[i];
         int n = snprintf(b, sizeof b, "R %d %u %llu %d %d %d %d %d %d %d %d %d\n", i, rtgt[i], rcnt[i], x_[0],
                          y_[0], y_[1], y_[2], y_[3], y_[4], y_[5], y_[6], y_[7]); write(fd, b, n); }
@@ -886,9 +976,9 @@ static void dump_prof(void) {
 }
 static int prev_op = 257;
 #define PROFC(t) (callc[t]++)
-#define PROFIP(a) (ipc[((a) - (UNS64)(uintptr_t)base) & ((1 << 20) - 1)]++)
+#define PROFIP(a) do { ipc[PROFOFF(a)]++; TRACE_STEP(a); } while (0)
 #define PROF(k) do { pair[prev_op][k]++; prev_op = (k); } while (0)
-#define PROFRET(r, t) do { unsigned o_ = (unsigned)(((r) - (UNS64)(uintptr_t)base) & ((1 << 20) - 1)); \
+#define PROFRET(r, t) do { unsigned o_ = PROFOFF(r); \
                            rcnt[o_]++; rtgt[o_] = (unsigned)(t); } while (0)
 #else
 #define PROFRET(r, t)
@@ -896,6 +986,7 @@ static int prev_op = 257;
 #define PROFC(t)
 #define PROFIP(a)
 #define PROFDUMP
+#define TRACE_CALL()
 #endif
 
 /*
@@ -1283,14 +1374,14 @@ static void virtual_machine(void) {
         PROFIP(ip); t = BYTE(ip); \
         if (t < 0x80) { ip += 1; PROF(t); goto *dispatch[t]; } \
         t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2; \
-        PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); \
+        PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); TRACE_CALL(); \
         goto next; \
     } while (0)
 #else
 #define NEXT() do { \
         t = TOK(ip); ip += 2; \
         if (t < 256) { PROF(t); goto *dispatch[t]; } \
-        PROF(256); PROFC(t); RPUSH(ip); ip = CALLTARGET(t); \
+        PROF(256); PROFC(t); RPUSH(ip); ip = CALLTARGET(t); TRACE_CALL(); \
         goto next; \
     } while (0)
 #endif
@@ -1305,7 +1396,7 @@ L_t2call3: t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1); ip +=
 #endif
 L_t2call4: t = ((t & 0x3F) << 24) | ((UNS64)BYTE(ip) << 16) | ((UNS64)BYTE(ip + 1) << 8)
                | BYTE(ip + 2); ip += 3;
-t2call:    PROF(256); PROFRET(ip, t); RPUSH(ip); ip = cbase + t; NEXT();
+t2call:    PROF(256); PROFRET(ip, t); RPUSH(ip); ip = cbase + t; TRACE_CALL(); NEXT();
 L_t2esc:   t = BYTE(ip); ip += 1; goto *t2esc[t];
 L_t2bad:   write_str(2, "relf: no operation has this code\n"); exit(70);
 #endif
@@ -1330,7 +1421,7 @@ do_call:
 #else
     t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2;
 #endif
-    PROF(256); RPUSH(ip); ip = cbase + (t << SCALE);
+    PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); TRACE_CALL();
     NEXT();
 #endif
 #if ENC == 3 && HOTCALLS
@@ -1338,7 +1429,7 @@ do_call:
 #error "HOTCALLS needs the shared, variable-length call path"
 #endif
 L_hcall:   /* one-byte call: t holds the byte (0xE0-0xFF), ip is past it */
-    PROF(256); RPUSH(ip); ip = cbase + hot_tab[t & 0x1F]; NEXT();
+    PROF(256); RPUSH(ip); ip = cbase + hot_tab[t & 0x1F]; TRACE_CALL(); NEXT();
 #endif
 
 L_noop:    /* noop    */ NEXT();
@@ -1424,12 +1515,12 @@ L_vs:     { UNS64 a = SLOT(); CELL(a) = DS0; dsp += CELL_BYTES; } NEXT();
 L_lsave: { UNS64 a = SLOT(), lsp = cbase + loc_hdr[0];
     UNS64 sp = CELL(lsp), stk = CELL(cbase + loc_hdr[1]);
     if ((INT64)sp >= (INT64)loc_hdr[2] || (INT64)sp < 0 || !stk) {
-        VMPUSH(a - cbase); RPUSH(ip); ip = cbase + loc_hdr[3]; NEXT(); }
+        VMPUSH(a - cbase); RPUSH(ip); ip = cbase + loc_hdr[3]; TRACE_CALL(); NEXT(); }
     CELL(stk + sp * CELL_BYTES) = CELL(a); CELL(lsp) = sp + 1; } NEXT();
 L_lrest: { UNS64 a = SLOT(), lsp = cbase + loc_hdr[0];
     UNS64 sp = CELL(lsp), stk = CELL(cbase + loc_hdr[1]);
     if ((INT64)sp <= 0 || !stk) {
-        VMPUSH(a - cbase); RPUSH(ip); ip = cbase + loc_hdr[4]; NEXT(); }
+        VMPUSH(a - cbase); RPUSH(ip); ip = cbase + loc_hdr[4]; TRACE_CALL(); NEXT(); }
     CELL(lsp) = --sp; CELL(a) = CELL(stk + sp * CELL_BYTES); } NEXT();
 L_lstore: { UNS64 a = SLOT(); CELL(a) = DS0; dsp += CELL_BYTES; } NEXT();
 L_lzero:  { UNS64 a = SLOT(); CELL(a) = 0; } NEXT();
@@ -1468,7 +1559,7 @@ L_x_plusstore: { UNS64 a_ = DS0; CELL(a_) += DS1; dsp += 2 * CELL_BYTES; } NEXT(
 /* ?DUP: the value first - one PUSH lowers dsp before it evaluates x,
    so PUSH(DS0) would copy the new, empty slot onto itself.  */
 L_x_qdup:      if (DS0) { UNS64 v_ = DS0; PUSH(v_); } NEXT();                    /* ?DUP    */
-L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; } NEXT();    /* EXECUTE */
+L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; TRACE_CALL(); } NEXT();    /* EXECUTE */
 L_x_i:         PUSH(RS); NEXT();                                                    /* I       */
 L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */
 L_x_unloop:    rp += 2 * CELL_BYTES; NEXT();                                        /* UNLOOP  */
@@ -1593,23 +1684,28 @@ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
  *  character compared as a cell, as = and - compare it.  */
 #if X_SCAN
 L_x_scan:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
-             while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } DS1 = a_; DS0 = u_; } NEXT();
+             if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; }   /* a space: any control character too (Iteration 145) */
+             else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; }
+             DS1 = a_; DS0 = u_; } NEXT();
 #endif
 #if X_SKIP
 L_x_skip:  { UNS64 c_ = DS0, u_ = DS1, a_ = DS2; dsp += CELL_BYTES;
-             while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } DS1 = a_; DS0 = u_; } NEXT();
-#endif
-#if X_TABSBL
-L_x_tabsbl: { UNS64 u_ = DS0, a_ = DS1; dsp += 2 * CELL_BYTES;
-             while (u_) { if (BYTE(a_) == 9) BYTE(a_) = 32; a_++; u_--; } } NEXT();
+             if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; }  /* a space: any control character too (Iteration 145) */
+             else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; }
+             DS1 = a_; DS0 = u_; } NEXT();
 #endif
 /*  (PARSE) ( addr u c --- a1 len adv ): SKIP then SCAN, the string between and
  *  how far >IN moves (kinput's PARSE8). HASH ( c-addr u #threads --- n ): the
  *  kernel's, exactly - cross.4's THASH must agree. PLACE ( addr len c-addr --- ). */
 #if X_PARSE
 L_x_parse: { UNS64 c_ = DS0, u_ = DS1, a_ = DS2, p_ = a_, s_;
-             while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_;
-             while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; }
+             if (c_ == 32) {                       /* a space: any control character too (Iteration 145) */
+                 while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_;
+                 while (u_ && BYTE(p_) > 32) { p_++; u_--; }
+             } else {
+                 while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_;
+                 while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; }
+             }
              DS2 = s_; DS1 = p_ - s_; DS0 = (p_ - a_) + (u_ ? 1 : 0); } NEXT();
 #endif
 #if X_HASH

@@ -537,21 +537,25 @@ def _expect(n):
         # Iteration 50: FILL and CMOVE, the kernel's byte loops, as the converter
         # read them (SOD16_SHOW=FILL,CMOVE) - the opcodes do the same, a byte at
         # a time, ascending: CMOVE's overlap behaves as the loop's
-        'FILL': [('P', 'OVER'), ('QBR', 20 * CELL), ('P', '>R'), ('P', 'R@'), ('P', 'ROT'), ('P', 'DUP'), ('P', '>R'),
-                 ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', -1), ('P', '+'), ('P', 'DUP'),
-                 ('C', '0='), ('QBR', -16 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
+        # Iteration 156 (the audit): both now move on by D+ - FILL's address and count
+        # by 1 -1 D+, CMOVE's two addresses by 1 1 D+ to the source's end - read again
+        'FILL': [('P', '>R'), ('P', 'DUP'), ('QBR', 12 * CELL), ('P', 'OVER'), ('P', 'R@'), ('P', 'SWAP'), ('P', 'C!'),
+                 ('LIT', 1), ('LIT', -1), ('P', 'D+'), ('BR', -13 * CELL), ('P', 'R>'), ('P', 'DROP'), ('C', '2DROP'),
+                 ('P', 'EXIT')],
         # Iteration 54: the input side - the kernel's SCAN and SKIP, kinput's TABS>BL
-        'SCAN': [('P', 'OVER'), ('QBR', 22 * CELL), ('P', 'ROT'), ('P', 'DUP'), ('P', 'C@'), ('P', '>R'), ('P', 'OVER'),
-                 ('P', 'R>'), ('P', '='), ('QBR', 5 * CELL), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'),
-                 ('C', '1+'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('C', '1-'), ('P', 'SWAP'), ('BR', -23 * CELL),
-                 ('P', 'DROP'), ('P', 'EXIT')],
-        'SKIP': [('P', 'OVER'), ('QBR', 22 * CELL), ('P', 'ROT'), ('P', 'DUP'), ('P', 'C@'), ('P', '>R'), ('P', 'OVER'),
-                 ('P', 'R>'), ('C', '-'), ('QBR', 5 * CELL), ('P', 'ROT'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'),
-                 ('C', '1+'), ('P', 'ROT'), ('P', 'ROT'), ('P', 'SWAP'), ('C', '1-'), ('P', 'SWAP'), ('BR', -23 * CELL),
-                 ('P', 'DROP'), ('P', 'EXIT')],
-        'TABS>BL': [('P', 'OVER'), ('P', '+'), ('P', 'SWAP'), ('C', '2DUP'), ('C', '-'), ('QBR', 14 * CELL), ('P', 'DUP'),
-                    ('P', 'C@'), ('LIT', 9), ('P', '='), ('QBR', 4 * CELL), ('C', 'BL'), ('P', 'OVER'), ('P', 'C!'),
-                    ('C', '1+'), ('BR', -16 * CELL), ('C', '2DROP'), ('P', 'EXIT')],
+        # Iteration 145: SKIP and SCAN move on by 1 -1 D+ with the delimiter on the
+        # return stack, and a space delimiter takes any control character - the
+        # engine's L_x_scan, L_x_skip and L_x_parse do the same (SOD16_SHOW)
+        'SCAN': [('P', 'DUP'), ('LIT', 32), ('P', '='), ('QBR', 21 * CELL), ('P', 'DROP'), ('P', 'DUP'), ('QBR', 16 * CELL),
+                 ('P', 'OVER'), ('P', 'C@'), ('LIT', 33), ('P', 'U<'), ('C', '0='), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1),
+                 ('P', 'D+'), ('BR', -17 * CELL), ('P', 'EXIT'), ('P', '>R'), ('P', 'DUP'), ('QBR', 15 * CELL), ('P', 'OVER'),
+                 ('P', 'C@'), ('P', 'R@'), ('P', '='), ('C', '0='), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1), ('P', 'D+'),
+                 ('BR', -16 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+        'SKIP': [('P', 'DUP'), ('LIT', 32), ('P', '='), ('QBR', 20 * CELL), ('P', 'DROP'), ('P', 'DUP'), ('QBR', 15 * CELL),
+                 ('P', 'OVER'), ('P', 'C@'), ('LIT', 33), ('P', 'U<'), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1), ('P', 'D+'),
+                 ('BR', -16 * CELL), ('P', 'EXIT'), ('P', '>R'), ('P', 'DUP'), ('QBR', 14 * CELL), ('P', 'OVER'), ('P', 'C@'),
+                 ('P', 'R@'), ('P', '='), ('QBR', 8 * CELL), ('LIT', 1), ('LIT', -1), ('P', 'D+'), ('BR', -15 * CELL),
+                 ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
         # Iteration 57: klookup's (FIND) - the kernel's FIND, step for step
         '(FIND)': [('P', 'ROT'), ('P', 'DROP'), ('P', 'SWAP'), ('P', '>R'), ('P', 'DUP'), ('LIT', 1), ('C', '>'),
                    ('QBR', 18 * CELL), ('P', 'DUP'), ('C', '1-'), ('C', 'CELLS'), ('P', 'R@'), ('P', '+'), ('P', 'DUP'),
@@ -583,10 +587,10 @@ def _expect(n):
                         ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),
                         ('C', '1+'), ('P', 'R@'), ('P', 'C@'), ('C', 'NAME=?'), ('QBR', 4 * CELL), ('P', 'R>'), ('P', 'DROP'),
                         ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -27 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
-        'CMOVE': [('P', 'DUP'), ('QBR', 27 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'C@'), ('P', 'SWAP'), ('P', 'DUP'),
-                  ('P', '>R'), ('P', 'C!'), ('P', 'R>'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'),
-                  ('P', 'SWAP'), ('P', 'R>'), ('LIT', -1), ('P', '+'), ('P', 'DUP'), ('P', '>R'), ('C', '0='),
-                  ('QBR', -23 * CELL), ('P', 'R>'), ('C', '2DROP'), ('P', 'DROP'), ('P', 'EXIT')],
+        'CMOVE': [('P', 'DUP'), ('QBR', 21 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'R>'), ('P', '+'), ('P', '>R'),
+                  ('P', 'OVER'), ('P', 'C@'), ('P', 'OVER'), ('P', 'C!'), ('LIT', 1), ('LIT', 1), ('P', 'D+'),
+                  ('P', 'OVER'), ('P', 'R@'), ('P', '='), ('QBR', -13 * CELL), ('P', 'R>'), ('P', 'DROP'), ('C', '2DROP'),
+                  ('P', 'EXIT')],
         'I': [('P', 'R>'), ('P', 'R@'), ('P', 'SWAP'), ('P', '>R'), ('P', 'EXIT')],
         'J': [('P', 'RP@'), ('LIT', CELL), ('LIT', CELL), ('LIT', CELL), ('P', '+'), ('P', '+'), ('P', '+'),
               ('P', '@'), ('P', 'EXIT')],
@@ -915,10 +919,9 @@ V8_LIT64, V8_ESC = 0x7C, 0x7D
 # EMIT and KEY stay direct: they are the only two plausibly hot ones,
 # and the profile that says otherwise is from scripts that print little.
 ESCAPE = False        # --escape (the "BUF-ALLOC fault" was gen-tos.py SPILLing in L_esc)
-ESC_PRIMS_ALL = set("""BYE OPEN-FILE CLOSE-FILE READ-LINE WRITE-LINE READ-FILE
-WRITE-FILE SYSTEM REPOSITION-FILE FILE-POSITION DELETE-FILE FILE-SIZE FORK
-EXECVE WAITPID PIPE DUP2 GETENV SETENV SYS-EXIT CHDIR GETCWD SYS-ARGC SYS-ARG
-GETPID UNSETENV ALLOCATE FREE RESIZE GETPWHOME GETFSIZE SETFSIZE""".split())
+ESC_PRIMS_ALL = set("""BYE OPEN-FILE CLOSE-FILE READ-LINE WRITE-LINE READ-FILE WRITE-FILE (SYSTEM) REPOSITION-FILE FILE-POSITION DELETE-FILE FILE-SIZE
+SYSCALL (EXECVE) (WAITPID) (PIPE) (DUP2) (GETENV) (SETENV) (SYS-EXIT) (CHDIR) (GETCWD) (SYS-ARGC) (SYS-ARG)
+(GETPID) (UNSETENV) ALLOCATE FREE RESIZE (GETPWHOME) (GETFSIZE) (SETFSIZE)""".split())
 
 # The second level (Iteration 11, --escape2): the nine rarest of the rest,
 # the compacted band's tail, so nothing before them moves (engine/vm-lab.c).

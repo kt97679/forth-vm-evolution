@@ -1,15 +1,20 @@
-\ shell-sysc.4 - the shell's process and environment words over one SYSCALL
-\ (the gene sysc, Iteration 135). On an engine built with SYSC the primitive
-\ in FORK's slot is SYSCALL ( block num --- r ): one Linux x86-64 system
-\ call, its six arguments in the block, r its result or -errno; num
-\ -1, -2 and -3 give argc, argv and the process's environment, which no call
-\ returns. The seventeen primitives that engine dropped are written here,
-\ each with the stack effect and the result it had in engine/vm-lab.c. Load
-\ this before shell.4, and on a SYSC engine only: elsewhere FORK is fork.
-\ No ?DO: the converter does not translate it in cell-compiled code (the
-\ shell never used it), so the counted loops are BEGIN WHILE REPEAT.
+\ shell-sysc.4 - the shell's process and environment words, in Forth over the
+\ kernel's one SYSCALL ( block num --- r ): one Linux x86-64 system call, its
+\ six arguments in the block, r its result or -errno; num -1, -2 and -3 give
+\ argc, argv and the process's environment, which no call returns. Since
+\ Iteration 147 the single model: every engine has SYSCALL, the kernel declares
+\ it alone - the seventeen it kept and SYSTEM are reserved slots - and every
+\ shell loads this before shell.4. Each word has the stack effect and the
+\ result its primitive had (engine/vm-lab.c until then). The counted loops are
+\ BEGIN WHILE REPEAT (written before the converter translated ?DO).
 
-: SYSCALL ( block num --- r ) FORK ;
+
+06 CONSTANT A/O ( --- mode)
+\ Write only, append (create if missing, never truncate) file access
+\ mode - added for shell.4's ">>" redirection (see PROGRESS.md,
+\ Iteration 7); none of the three modes above create a missing file
+\ without also truncating it if it already exists.
+\ (the kernel's until Iteration 147)
 CREATE SYSC-BLK 6 CELLS ALLOT
 : SYSC0 ( num --- r ) SYSC-BLK SWAP SYSCALL ;
 : SYSC1 ( a num --- r ) SWAP SYSC-BLK ! SYSC0 ;

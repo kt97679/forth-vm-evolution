@@ -79,7 +79,7 @@ CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
   BEGIN
     DUP TARGET-CELL-BYTES @ <
   WHILE
-    >R OVER R@ CHARS + C@-T R@ 8 * LSHIFT OR R> 1+
+    >R OVER R@ CHARS + C@-T R@ 3 LSHIFT LSHIFT OR R> 1+
   REPEAT
   DROP SWAP DROP
   \ Sign-extend when the target cell is narrower than this host's own
@@ -92,8 +92,8 @@ CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
   \ host -1 - otherwise RESOLVE's BEGIN/WHILE loop never sees them as
   \ equal and walks off the end of the chain into unrelated memory.
   TARGET-CELL-BYTES @ 8 < IF
-    DUP 1 TARGET-CELL-BYTES @ 8 * 1 - LSHIFT AND IF
-      -1 TARGET-CELL-BYTES @ 8 * LSHIFT OR
+    DUP 1 TARGET-CELL-BYTES @ 3 LSHIFT 1 - LSHIFT AND IF
+      -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT OR
     THEN
   THEN ;
 : !-T  ( x t-addr ---)
@@ -101,7 +101,7 @@ CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
   BEGIN
     DUP TARGET-CELL-BYTES @ <
   WHILE
-    >R OVER R@ 8 * RSHIFT OVER R@ CHARS + C!-T R> 1+
+    >R OVER R@ 3 LSHIFT RSHIFT OVER R@ CHARS + C!-T R> 1+
   REPEAT
   DROP 2DROP ;
 
@@ -271,6 +271,13 @@ ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
   TLINK @ DUP C@-T 32 OR SWAP C!-T   \ Set the MACRO bit of last name. 
   DOES> @ ,-T
 ;
+
+: PRIMITIVE-SLOT ( --- )
+  \ An opcode kept without a name (Iteration 147). The single-SYSCALL model
+  \ gave these to the shell's Forth (forth/shell-sysc.4); their positions stay,
+  \ so the seed's opcodes mean what they meant. The placeholder after it is for
+  \ the tools that read kernel.4's PRIMITIVE lines - nothing is made here.
+  BL WORD DROP TARGET-CELL-BYTES @ LAST-PRIMITIVE +! ;
 
 \ TRANSIENT-vocabulary wrappers around the -TOKEN words above, for use
 \ *inside* kernel.4's own target-level colon-definitions (CONSTANT,

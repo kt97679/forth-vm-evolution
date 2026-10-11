@@ -61,3 +61,13 @@ test right on all, 146 with new ids.
    9932cc5c32, is a JIT design, and so are 74 of the 119 - before jitloop and
    jitinl are even expressed.
 4. The chain ends on time - **right**: 6 h 28 min of 7 hours.
+
+## Added at Iteration 169, before seed 40 (9 hours)
+
+1. Every design's image grows by ~100-150 bytes (the standard's numbers,
+   CREATE-FILE): the smallest binary + image of the session moves up by about
+   that much from 20,622 - for the carried designs as for the new.
+2. The chain ends within its 9 hours (the reserve from seed 39's times; the
+   comparison has one workload more, far).
+3. The far workload: every design on the joint front answers it (the gate
+   refuses any that does not).

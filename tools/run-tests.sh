@@ -160,6 +160,12 @@ if [ -x "$O/sod32/sod32" ]; then
 fi
 
 echo
+# ---- SYSCALL's shell and ?DO/LEAVE in extensions (the after-seed-39 batch) --
+echo
+echo "?DO and LEAVE in extensions (tools/test-ext-loops.sh):"
+if sh tools/test-ext-loops.sh > "$O/.extl.log" 2>&1; then printf '  %-12s ok     %s\n' ext-loops "$(grep -c '^ok' "$O/.extl.log") stages"
+else printf '  %-12s FAIL   %s\n' ext-loops "$(grep '^FAIL' "$O/.extl.log" | head -2 | tr '\n' ' ')"; FAILED=1; fi
+
 # ---- the shell suite ---------------------------------------------------
 # tests/shell: the parent project's shell suite, removed in 5c87022 as unrun
 # and restored in Iteration 134 (two tests' assumptions fixed: HOME=/root,
@@ -179,7 +185,13 @@ shsuite() { # shsuite LABEL WRAPPER: the suite's own verdict, its exit status
 if [ -x "$O/s0-cell-64" ] && [ -s "$O/work/s0-cell-64.img" ]; then
     mksh s0 "$O/s0-cell-64" "$O/work/s0-cell-64.img"
     [ -x "$O/s5-cv8spec-64" ] && [ -s "$O/s5-cv8spec-64.img" ] && mksh s5 "$O/s5-cv8spec-64" "$O/s5-cv8spec-64.img"
-    for w in s0 s5; do
+    # Iteration 147: every shell is SYSCALL's, so the 4-byte ones too (i386's numbers mapped)
+    sw="s0 s5"
+    if [ -x "$O/s0-cell-32" ] && [ -s "$O/s0-cell-32.img" ]; then
+        mksh s0-32 "$O/s0-cell-32" "$O/s0-cell-32.img"; sw="$sw s0-32"
+        [ -x "$O/s5-cv8spec-32" ] && [ -s "$O/s5-cv8spec-32.img" ] && mksh s5-32 "$O/s5-cv8spec-32" "$O/s5-cv8spec-32.img" && sw="$sw s5-32"
+    fi
+    for w in $sw; do
         if [ ! -x "$SHT/$w" ]; then printf '  %-12s FAIL   no shell image\n' "$w"; FAILED=1; continue; fi
         if shsuite "$w" "$w"; then printf '  %-12s ok     %s assertions\n' "$w" "$(grep -o '^[0-9]* assertions' "$SHT/$w.log" | awk '{s+=$1} END {print s}')"
         else printf '  %-12s FAIL   %s\n' "$w" "$(grep '^FAIL' "$SHT/$w.log" | head -3 | tr '\n' ' ')"; FAILED=1; fi
@@ -201,6 +213,157 @@ stages_for() {
     [ "$1" = 64 ] && echo s7-spn s7-full s8-spncv8 s8-full s8-lazy
     echo relf
 }
+
+# ---- tabs (Iteration 145) ------------------------------------------------
+# No tab is made a space any more: SKIP and SCAN - and the C operations that
+# stand in for them - take any control character for a space delimiter.
+# tests/core/tabs.fth: tabs between words and at a line's start, in a
+# definition, in a string (kept: 9, not 32), in an EVALUATEd string, before
+# CHAR and a comment. Every stage at every width built; the negative
+# control is the file with its tabs made X, which must not give the answers.
+echo
+echo "tabs (tests/core/tabs.fth):"
+TABS_WANT='3 |25 |3 |9 |56 |65 |1 |'
+for w in 64 32; do
+    [ -x "$O/s0-cell-$w" ] || continue
+    bad=""; n=0
+    for st in $(stages_for $w); do
+        e="$O/$st-$w"; i="$O/$st-s$w.img"; [ "$st" = relf ] && continue
+        case "$st" in s7-*|s8-*) e="$O/$st-64"; i="$W/$st-s64.img" ;; esac
+        [ -x "$e" ] && [ -s "$i" ] || continue
+        got=$( (cd "$W" && timeout 15 "$e" "$i" < "$ROOT/tests/core/tabs.fth" 2>&1) | tr -d '\r' | grep -E '^[0-9]+ $' | tr '\n' '|')
+        n=$((n + 1)); [ "$got" = "$TABS_WANT" ] || bad="$bad $st"
+    done
+    [ "$n" -gt 0 ] || bad=" (no stage tested)"
+    if [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; FAILED=1
+    else printf '  %-12s ok     %s stages\n' "$w-bit" "$n"; fi
+done
+CTRL=$(mktemp); tr '\t' 'X' < "$ROOT/tests/core/tabs.fth" > "$CTRL"
+got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&1) | tr -d '\r' | grep -E '^[0-9]+ $' | tr '\n' '|'); rm -f "$CTRL"
+if [ "$got" = "$TABS_WANT" ]; then printf '  %-12s FAIL   the file without tabs gave the answers too\n' control; FAILED=1
+else printf '  %-12s ok     the file without tabs does not give them\n' control; fi
+
+# tests/core/audit.fth (Iteration 156): the words the audit rewrote - CMOVE and
+# CMOVE> by D+ with overlaps both ways and lengths 0 and 1, FILL by 1 -1 D+ with
+# a sentinel, MOVE, 2SWAP, 2!, WORD's trailing space, and INTERPRET's stack check
+# where the stack can change (a definition compiled over values, an underflow
+# that ends its line). The answers the kernel gave before the audit. The negative
+# control swaps CMOVE> for CMOVE, which an overlap must tell apart.
+echo
+echo "the audit's words (tests/core/audit.fth):"
+AUDIT_WANT='104 |97 |103 97 |104 104 |98 104 |101 97 0 |97 102 |101 98 |42 42 0 |43 98 |102 97 |99 104 |2143 |7 5 75 |5 32 |7 2 1 |6 0 |'
+for w in 64 32; do
+    [ -x "$O/s0-cell-$w" ] || continue
+    bad=""; n=0
+    for st in $(stages_for $w); do
+        e="$O/$st-$w"; i="$O/$st-s$w.img"; [ "$st" = relf ] && continue
+        case "$st" in s7-*|s8-*) e="$O/$st-64"; i="$W/$st-s64.img" ;; esac
+        [ -x "$e" ] && [ -s "$i" ] || continue
+        got=$( (cd "$W" && timeout 15 "$e" "$i" < "$ROOT/tests/core/audit.fth" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|')
+        n=$((n + 1)); [ "$got" = "$AUDIT_WANT" ] || bad="$bad $st"
+    done
+    [ "$n" -gt 0 ] || bad=" (no stage tested)"
+    if [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; FAILED=1
+    else printf '  %-12s ok     %s stages\n' "$w-bit" "$n"; fi
+done
+CTRL=$(mktemp); sed 's/CMOVE>/CMOVE/g' "$ROOT/tests/core/audit.fth" > "$CTRL"
+got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|'); rm -f "$CTRL"
+if [ "$got" = "$AUDIT_WANT" ]; then printf '  %-12s FAIL   CMOVE for CMOVE> gave the answers too\n' control; FAILED=1
+else printf '  %-12s ok     CMOVE for CMOVE> does not give them\n' control; fi
+
+# tests/core/far.fth (Iteration 158): code and data past 64 KB, then 8 MB more
+# - calls, recursion, DOES>, data, EXECUTE across. tools/farcheck.py: every
+# answer right, any missing one refused out loud. Most of the ladder could not
+# reach that far and broke instead (crashed, hung, lost words); since Iteration
+# 159 each answers or refuses - cv8 and cpt16 refuse, the 1 MB engines hold 16.
+# The stages still broken are listed and shown, not hidden: a wrong answer from
+# any stage fails, and a listed stage that passes says so. The control: the
+# file without its gaps gives every answer on s6, which refuses with them.
+echo
+echo "far from the image base (tests/core/far.fth):"
+FAR_KNOWN=" "      # Iteration 159: none - every stage answers or refuses (keep the mechanism)
+for w in 64 32; do
+    for st in $(stages_for $w); do
+        e="$O/$st-$w"; i="$O/$st-s$w.img"
+        [ -x "$e" ] && [ -s "$i" ] || continue
+        # 2>&1: a refusal may come on stderr (RelF's "dictionary full")
+        out=$( (cd "$W" && timeout 30 "$e" "$i" < "$ROOT/tests/core/far.fth" 2>&1) | tr -d '\000'; exit ${PIPESTATUS[0]} ); c=$?
+        v=$(printf '%s' "$out" | python3 "$ROOT/tools/farcheck.py" "$c")
+        case "$v" in
+            all|refused*) case "$FAR_KNOWN" in *" $st "*) printf '  %-15s ok     %s - listed as broken: take it off FAR_KNOWN\n' "$st-$w" "$v" ;;
+                          *) printf '  %-15s ok     %s\n' "$st-$w" "$v" ;; esac ;;
+            WRONG*) printf '  %-15s FAIL   %s\n' "$st-$w" "$v"; FAILED=1 ;;
+            *) case "$FAR_KNOWN" in *" $st "*) printf '  %-15s known  %s\n' "$st-$w" "$v" ;;
+               *) printf '  %-15s FAIL   %s\n' "$st-$w" "$v"; FAILED=1 ;; esac ;;
+        esac
+    done
+done
+CTRL=$(mktemp); grep -v '^[0-9]* ALLOT$' "$ROOT/tests/core/far.fth" > "$CTRL"      # no gap: lines 1-9, and 10, 11 rightly absent
+v=$( (cd "$W" && timeout 30 "$O/s6-cv8b-64" "$O/s6-cv8b-s64.img" < "$CTRL" 2>/dev/null) | python3 "$ROOT/tools/farcheck.py" 0); rm -f "$CTRL"
+if [ "$v" = 'MISSING 2 answers, no refusal' ]; then printf '  %-15s ok     without the gaps s6 gives every answer, and takes no gap\n' control
+else printf '  %-15s FAIL   without the gaps s6 gives: %s\n' control "$v"; FAILED=1; fi
+
+# tests/core/paths.fth (Iteration 159, the coverage audit: gcov over this suite
+# found handlers no test ran - READ-FILE, RESIZE on every engine; FREE,
+# ALLOCATE, WRITE-FILE, SYSCALL on most): memory, the file cycle and a system
+# call, on every stage at both widths. The control writes other bytes.
+echo
+echo "paths no test ran (tests/core/paths.fth):"
+PATHS_WANT='0 |0 77 |0 |0 |0 |0 |0 |0 |0 0 13 |0 5 104 111 |0 |0 0 7 |0 4 102 |0 0 |1 |1 0 |'
+for w in 64 32; do
+    [ -x "$O/s0-cell-$w" ] || continue
+    bad=""; n=0
+    for st in $(stages_for $w); do
+        e="$O/$st-$w"; i="$O/$st-s$w.img"; [ "$st" = relf ] && continue
+        case "$st" in s7-*|s8-*) e="$O/$st-64"; i="$W/$st-s64.img" ;; esac
+        [ -x "$e" ] && [ -s "$i" ] || continue
+        got=$( (cd "$W" && timeout 15 "$e" "$i" < "$ROOT/tests/core/paths.fth" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|')
+        n=$((n + 1)); [ "$got" = "$PATHS_WANT" ] || bad="$bad $st"
+    done
+    [ "$n" -gt 0 ] || bad=" (no stage tested)"
+    if [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; FAILED=1
+    else printf '  %-12s ok     %s stages\n' "$w-bit" "$n"; fi
+done
+CTRL=$(mktemp); sed 's/hello, file/hi/' "$ROOT/tests/core/paths.fth" > "$CTRL"
+got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|'); rm -f "$CTRL"
+if [ "$got" = "$PATHS_WANT" ]; then printf '  %-12s FAIL   other bytes gave the answers too\n' control; FAILED=1
+else printf '  %-12s ok     other bytes do not give them\n' control; fi
+
+# tests/core/full.fth (Iteration 161): ALLOT past the dictionary's room is
+# refused - "dictionary full", HERE unmoved, the system going on. Before, the
+# store past the engine's memory crashed (gdb: a byte store past the end) -
+# RelF's own kernel already refused. The control allots a little: HERE moves.
+echo
+echo "the dictionary full (tests/core/full.fth):"
+for w in 64 32; do
+    [ -x "$O/s0-cell-$w" ] || continue
+    bad=""; n=0
+    for st in $(stages_for $w); do
+        e="$O/$st-$w"; i="$O/$st-s$w.img"
+        case "$st" in s7-*|s8-*) e="$O/$st-64"; i="$W/$st-s64.img" ;; esac
+        [ -x "$e" ] && [ -s "$i" ] || continue
+        out=$( (cd "$W" && timeout 15 "$e" "$i" < "$ROOT/tests/core/full.fth" 2>&1) | tr -d '\r\000'); c=$?
+        got=$(printf '%s\n' "$out" | grep -E '^[0-9 ]+ $' | tr '\n' '|')
+        n=$((n + 1)); { [ "$got" = '1 |42 |' ] && printf '%s' "$out" | grep -q 'dictionary full'; } || bad="$bad $st"
+    done
+    [ "$n" -gt 0 ] || bad=" (no stage tested)"
+    if [ -n "$bad" ]; then printf '  %-12s FAIL  %s\n' "$w-bit" "$bad"; FAILED=1
+    else printf '  %-12s ok     %s stages\n' "$w-bit" "$n"; fi
+done
+CTRL=$(mktemp); sed 's/^2000000000 ALLOT$/64 ALLOT/' "$ROOT/tests/core/full.fth" > "$CTRL"
+got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&1) | tr -d '\r' | grep -E '^[0-9 ]+ $' | tr '\n' '|'); rm -f "$CTRL"
+if [ "$got" = '1 |42 |' ]; then printf '  %-12s FAIL   a small ALLOT left HERE where it was\n' control; FAILED=1
+else printf '  %-12s ok     a small ALLOT moves HERE\n' control; fi
+
+# The tracer (Iteration 162): vm-lab.c with -DPROFILE=2 keeps a shadow call
+# stack and records, the first time each instruction runs, its call path, the
+# top three data-stack cells and the input line. The self-test traces
+# ": SQ DUP * ; : TWICE SQ SQ ; 3 TWICE": SQ first reached from TWICE, 3 on
+# the stack, that line - and a folded call path ending in SQ.
+echo
+echo "the tracer (tools/vmtrace.py --self-test):"
+if out=$(python3 "$ROOT/tools/vmtrace.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' s6 "$(printf '%s' "$out" | tail -1 | cut -c17-110)"
+else printf '  %-12s FAIL   %s\n' s6 "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
 
 # ---- DELETE-FILE -------------------------------------------------------
 # Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since

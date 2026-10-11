@@ -246,8 +246,8 @@ dump() { # dump ENGINE IMAGE OUTFILE BOOTSCRIPT
     runnable "$1" || return 0
     ( cd "$W" && printf "$4" | "$1" "$2" ) | tr -d '\r' > "$O/$3"
 }
-SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
-SELF_BOOT='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\nS" cv8-save.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+SELF_BOOT='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" cv8-save.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KERN_BOOT='S" dict-dump-addr.4" INCLUDED\nBYE\n'
 KSELF_BOOT='S" cv8.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KCPT_BOOT='S" cpt16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
@@ -415,8 +415,9 @@ img s3-cpt16f-64  8 d64.txt --cpt 3 $CPTF
 img s3-cpt16f-32  4 d32.txt --cpt 2 $CPTF
 img s4-cv8-64     8 d64.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot
 img s4-cv8-32     4 d32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
-img s5-cv8spec-64 8 d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
-img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
+# Iteration 166: s5 and s6 lean - the copies --cv8-compiler leaves, and the dump tool, out
+img s5-cv8spec-64 8 d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
+img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
 
 # ---- kernel-only images ----------------------------------------------
 # These boot into the Forth INTERPRETER, which is what the CORE suite
@@ -480,10 +481,10 @@ img s3-cpt16f-s32  4 k32-cpt.txt --cpt 2 $CPTF --compiler-overlay 16
 # the log.
 img s4-cv8-s64     8 k64-self.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot --cv8-compiler
 img s4-cv8-s32     4 k32-self.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot --cv8-compiler
-img s5-cv8spec-s64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
-img s5-cv8spec-s32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
-img s6-cv8b-s64    8 k64-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler
-img s6-cv8b-s32    4 k32-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler
+img s5-cv8spec-s64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
+img s5-cv8spec-s32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
+img s6-cv8b-s64    8 k64-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
+img s6-cv8b-s32    4 k32-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
 echo "built  stage images"
 
 # ---- stage 0 shell image ---------------------------------------------
@@ -492,7 +493,7 @@ echo "built  stage images"
 # writes the running system out; SET-BOOT makes it boot into MAIN.
 cellshell() { # cellshell ENGINE SEEDIMG OUTNAME
     runnable "$1" || return 0
-    ( cd "$W" && printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell.4" INCLUDED\n'"'"' MAIN SET-BOOT\nS" %s" SAVE-SYSTEM\nBYE\n' "$3" \
+    ( cd "$W" && printf 'S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\n'"'"' MAIN SET-BOOT\nS" %s" SAVE-SYSTEM\nBYE\n' "$3" \
         | "$1" "$2" >/dev/null 2>&1 )
     [ -s "$W/$3" ] || { echo "failed to save $3"; exit 1; }
     cp "$W/$3" "$O/$3"

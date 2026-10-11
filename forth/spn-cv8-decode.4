@@ -1,4 +1,6 @@
 \ spn-cv8-decode.4 - decode CV8 byte code, for SPN on CV8.
+\ Iteration 166: NAME>, the kernel's name - --cv8-compiler gave it NAME>8's
+\ code, and s6, lean, leaves the copy out.
 \
 \ One operation at a time: DECODE takes an address and returns the next,
 \ leaving the operation's kind in OP-K and its operand in OP-V. Operand
@@ -141,7 +143,7 @@ VARIABLE MARKS  VARIABLE MSIZE
 VARIABLE PREV-NFA  VARIABLE #WORDS  VARIABLE #FAIL  VARIABLE #DATA
 : CHECK-WORD ( nfa --- )     \ check the word at PREV-NFA against this one
   PREV-NFA @ ?DUP IF
-    NAME>8 WALK                                       ( nfa end )
+    NAME> WALK                                       ( nfa end )
     OVER DUP LINK-BYTES - > BAD @ OR TARGETS-OK 0= OR IF
       1 #FAIL +!  #FAIL @ 8 < IF PREV-NFA @ COUNT 31 AND TYPE SPACE THEN
     THEN

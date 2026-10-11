@@ -133,7 +133,11 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
 : CALL, ( a-addr --- )
 \ Append a call to the body at a-addr. One token, no table, no word
 \ number: the whole of CPT16's call mechanism is this line.
-  START @ - CPT-SHIFT RSHIFT 256 + OP, ;
+  START @ - CPT-SHIFT RSHIFT
+  \ One token: past 65,280 scaled units it would wrap into another word or an
+  \ opcode - refused instead (Iteration 159).
+  DUP 65280 U< 0= IF -1 ABORT" call out of reach" THEN
+  256 + OP, ;
 
 : COMPILE,16 ( xt --- )
 \ Add the execution semantics of xt to the current definition: a
@@ -235,7 +239,7 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
 \ down [DOVAR][pad], so there is exactly room to overwrite.
 
 : !CALL ( a-addr target --- )
-  START @ - CPT-SHIFT RSHIFT 256 + SWAP !W ;
+  START @ - CPT-SHIFT RSHIFT DUP 65280 U< 0= IF -1 ABORT" call out of reach" THEN 256 + SWAP !W ;
 
 : (;CODE)16 ( --- )
 \ Runtime for DOES>: point the last created word at the code following
@@ -249,7 +253,11 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
 \ The tail must be an aligned call target: a call is a SCALED offset, so
 \ an unaligned tail address loses its low bits and jumps to the wrong
 \ place. The pad is dead code - (;CODE) never returns here.
-  ?COMP POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
+  ?COMP POSTPONE (;CODE) ALIGN
+  \ HERE is every child's call target: out of a token's reach, the defining
+  \ word is refused here, before a child is left half made (Iteration 159).
+  HERE START @ - CPT-SHIFT RSHIFT 65280 U< 0= IF -1 ABORT" DOES> out of reach" THEN
+  POSTPONE R> ; IMMEDIATE
 
 \ ---- debugging aid --------------------------------------------------
 : TOKENS. ( a-addr n --- )

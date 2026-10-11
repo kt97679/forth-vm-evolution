@@ -63,6 +63,9 @@
  */
 
 #define _GNU_SOURCE        /* SPN: REG_RIP for the fault report */
+#ifndef SYSC
+#define SYSC 1      /* the single-SYSCALL model, every engine (Iteration 147) */
+#endif
 #if SYSC
 #include <errno.h>      /* SYSCALL's -errno */
 #ifndef PROFDUMP
@@ -549,7 +552,7 @@ static void udiv(UNS64 *a, UNS64 *b, UNS64 *c) {
  *  virtual machine I/O primitives' shared state
  */
 
-static const int open_flags[8] = {
+static const int open_flags[10] = {
     O_WRONLY | O_CREAT | O_TRUNC,  /* w  */
     O_WRONLY | O_CREAT | O_TRUNC,  /* wb : same, no text/binary distinction */
     O_RDONLY,                      /* r  */
@@ -561,7 +564,9 @@ static const int open_flags[8] = {
                                        the original six modes create a
                                        missing file *without* truncating
                                        it, which append redirection needs */
-    O_WRONLY | O_CREAT | O_APPEND  /* ab : same */
+    O_WRONLY | O_CREAT | O_APPEND, /* ab : same */
+    O_RDWR | O_CREAT | O_TRUNC,    /* w+ : CREATE-FILE with R/W - created to read and write (Iteration 168) */
+    O_RDWR | O_CREAT | O_TRUNC     /* w+b: same */
 };
 
 /*

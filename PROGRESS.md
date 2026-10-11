@@ -3262,3 +3262,14 @@ respect the standard, tolerate the size). It was 1 AND OPEN-FILE: a file
 created R/W could only be written. The engines' open-flags table takes two
 more entries (create, read and write), CREATE-FILE maps R/W to them: the
 standard suite on s6 1,599 tests, 0 failed.
+
+## Iteration 169 - 2026-10-11 - Claude
+
+**The after-seed-39 batch applied - fifteen patches; seed 40 runs 9 hours.**
+On master in order (results/applied-after-seed39/), reseeded - the 8-byte
+kernel a fixed point at 26,080 bytes, the 4-byte identical from either seed -
+then the four checks: build, run-tests PASS, 7 of 7 IDENTICAL, the jail PASS.
+Seed 39's 186 front designs, rebuilt on it: 186 alive. NEXT-RUN: seed 40 tag2
+9h then the two-CPU comparison - the batch's first run, not comparable with
+the runs before it. Predictions: results/predictions.md (Iterations 154, 166,
+169).

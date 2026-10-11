@@ -1,4 +1,6 @@
 \ spn-cv8-build.4 - what building an s8 image needs and a running s8 does not.
+\ Iteration 166: NAME>, the kernel's name - --cv8-compiler gave it NAME>8's
+\ code, and s6, lean, leaves the copy out.
 \
 \ Load after forth/spn-cv8.4 and before forth/spn-cv8-save.4. The
 \ recorder and the saver run at build time only, so the saver writes the
@@ -81,7 +83,7 @@ VARIABLE UNDO  0 UNDO !  VARIABLE #UNDO  0 #UNDO !
   0 LZ-N !
   KEEP-END @ START @ - 0 DO             \ the running part only
     MARKS @ I + C@ 1 AND IF
-      I START @ + NAME>8 ENTRY-OF
+      I START @ + NAME> ENTRY-OF
       DUP LAZY-CANDIDATE? IF START @ - UV, 1 LZ-N +! ELSE DROP THEN
     THEN
   LOOP ;

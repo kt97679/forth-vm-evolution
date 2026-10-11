@@ -119,14 +119,14 @@ for r_ in range(rounds):
         E.PIN[:] = pin0 if c is None else ['taskset', '-c', str(c)]
         n = len(live); order = live[r_ % n:] + live[:r_ % n]
         for j, (i, eng, img, pw) in enumerate(order):
-            for w in E.WORK_SEL + E.WORK_HELD:
+            for w in E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR):
                 pair = [((eng, img, pw), 'd'), (E.REF, 'r')]
                 for (e, im, p), side in (pair if (r_ + j + ci) % 2 == 0 else pair[::-1]):
                     times.setdefault((i, w, side, c), []).append(E.run_metric(e, im, p, w))
                     if side == 'd': memv.setdefault((i, w), []).append(E.RSS_LAST[0])   # Iteration 75: memory touched, KB
 E.PIN[:] = pin0
 med = statistics.median
-T = {c: {i: {w: med(times[(i, w, 'd', c)]) / med(times[(i, w, 'r', c)]) for w in E.WORK_SEL + E.WORK_HELD} for i, *_ in live} for c in cpus}
+T = {c: {i: {w: med(times[(i, w, 'd', c)]) / med(times[(i, w, 'r', c)]) for w in E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR)} for i, *_ in live} for c in cpus}
 S = {c: {i: math.exp(sum(math.log(T[c][i][w]) for w in E.WORK_SEL) / len(E.WORK_SEL)) for i in T[c]} for c in cpus}
 c0 = cpus[0]; t, speed = T[c0], S[c0]
 
@@ -136,7 +136,7 @@ print('%d rounds, the median of them; every design paired with hand-made s6 on t
       % (rounds, ', '.join('the pinned one' if c is None else 'cpu %d' % c for c in cpus)))
 if cal is None: print('**No calibration: hand-made s6 did not build or pass the gate.**\n')
 else:
-    print('**Calibration: hand-made s6 against itself %.3f** (%s).%s\n' % (cal, ', '.join('%s %.3f' % (w, t[CAL][w]) for w in E.WORK_SEL + E.WORK_HELD),
+    print('**Calibration: hand-made s6 against itself %.3f** (%s).%s\n' % (cal, ', '.join('%s %.3f' % (w, t[CAL][w]) for w in E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR)),
           '' if 0.98 <= cal <= 1.02 else ' OUTSIDE 0.98-1.02: this session cannot rank designs a few per cent apart.'))
 for (i, w), v in memv.items():                  # each workload's median, the most of them: the design's peak
     rss[i] = max(rss.get(i, 0), statistics.median(v))
@@ -151,15 +151,15 @@ def front(ids):
     return [i for i in ids if not any(dominates(speed[j], speed[i], j, i) for j in ids)]
 allf = front([i for i in speed if i != CAL])
 print('| run | design | speed now | recorded | size now | recorded | binary | binary + image | memory KB | %s | on the front of all |'
-      % ' | '.join(E.WORK_SEL + ['%s (held out)' % w for w in E.WORK_HELD]))   # from the lists: Iteration 42
-print('|---|---|---|---|---|---|---|---|---|' + '---|' * len(E.WORK_SEL + E.WORK_HELD) + '---|')
+      % ' | '.join(E.WORK_SEL + ['%s (held out)' % w for w in (E.WORK_HELD + E.WORK_FAR)]))   # from the lists: Iteration 42
+print('|---|---|---|---|---|---|---|---|---|' + '---|' * len(E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR)) + '---|')
 for label, ids in runs:
     for i in sorted(ids, key=lambda i: (size.get(i, 1 << 30), speed.get(i, 9))):
         g, rs, rp = rec[i]
-        if i in dead: print('| %s | %s | %s | %.3f | | %s | | | |%s |' % (label, i, dead[i], rp, format(rs, ','), ' |' * len(E.WORK_SEL + E.WORK_HELD)))
+        if i in dead: print('| %s | %s | %s | %.3f | | %s | | | |%s |' % (label, i, dead[i], rp, format(rs, ','), ' |' * len(E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR))))
         else: print('| %s | %s | %.3f | %.3f | %s | %s | %s | %s | %s | %s | %s |' % (label, i, speed[i], rp, format(size[i], ','), format(rs, ','),
                     format(binsz[i], ','), format(tot[i], ','), format(rss[i], ',') if rss.get(i) else '-',
-                    ' | '.join('%.3f' % t[i][w] for w in E.WORK_SEL + E.WORK_HELD), 'yes' if i in allf else ''))
+                    ' | '.join('%.3f' % t[i][w] for w in E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR)), 'yes' if i in allf else ''))
 print('\nThe front of all runs together (speed, binary + image, peak memory), by binary + image: ' + ', '.join('%s %.3f at %s, %s KB' % (i, speed[i], format(tot[i], ','), format(rss.get(i, 0), ','))
       for i in sorted(allf, key=lambda i: -tot[i])))
 # Iteration 75 (the owner: tell when three equal objectives do not work):
@@ -189,5 +189,5 @@ if len(cpus) > 1:
     for i in sorted(ids, key=lambda i: S[a][i]): print('| %s | %.3f | %.3f | %.3f |' % (i, S[a][i], S[b][i], S[a][i] / S[b][i]))
 print('\n%s is held out (Iteration 41: loop was, until the owner put it in the selection). loop moves with an image\'s'
       ' size mod 8 - the NOOPs before (LOOP) in run-time code (Iteration 13) - except where rtloop compiles its opcodes.'
-      % ', '.join(E.WORK_HELD))
+      % ', '.join((E.WORK_HELD + E.WORK_FAR)))
 shutil.rmtree(os.path.join(E.EV, 'cmp'), ignore_errors=True)

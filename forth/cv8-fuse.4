@@ -40,8 +40,10 @@ ALIGN
 \ The superinstruction for primitive op1 followed by op2, if any.
   SUPER-TABLE C@ ?DUP IF 0 DO
     SUPER-TABLE 1+ I 3 * +
-    DUP C@ 3 PICK = OVER 1+ C@ 3 PICK = AND IF
-      SWAP DROP SWAP DROP 2 + C@ -1 UNLOOP EXIT
+    DUP C@ 3 PICK = IF          \ the first opcode first: most entries differ there (the audit)
+      DUP 1+ C@ 2 PICK = IF
+        SWAP DROP SWAP DROP 2 + C@ -1 UNLOOP EXIT
+      THEN
     THEN DROP
   LOOP THEN 2DROP 0 ;
 

@@ -394,7 +394,7 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
 # for a call and two dispatches instead of 12-14 a byte, and its loop gone.
 # Only these two, which never look at their caller's return address (I J
 # UNLOOP (DO) do), and only where the design has them: no recorded design.
-_OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', 'TABS>BL', '(PARSE)', 'HASH', 'PLACE')     # Iteration 54: the input side's too
+_OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')   # TABS>BL gone: Iteration 148     # Iteration 54: the input side's too
 if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: the gene opbody
 for _n in _OPB:
     if _n not in G['X_OPS10']: continue
@@ -1094,6 +1094,10 @@ def emit(path):
         far = '--does-far' in ARGV
         CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
         if TAG2_ON: CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 4}   # the 4-byte call
+    # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
+    # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
+    # VARCALL, kept the overlay's default and wrote far calls its engine misread.
+    if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
     for w in order:
         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data

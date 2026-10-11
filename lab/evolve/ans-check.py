@@ -50,12 +50,15 @@ for f in dict.fromkeys(TESTED + [h for h in HARNESS if h] + ['required-helper1.f
     if f in TESTED:
         with open(os.path.join(CONV, f), 'a', encoding='latin-1') as fh: fh.write('\nS" <<END OF %s>>" TYPE CR\n' % f)
 shutil.copy(os.path.join(T, 'prelude.fth'), os.path.join(CONV, 'prelude.fth'))
+# Iteration 165: the system's own extensions under test too - coreext.4 (the
+# standard words the kernel leaves out) and extend.4 (the search order).
+for _x in ('coreext.4', 'extend.4'): shutil.copy(os.path.join(ROOT, 'forth', _x), os.path.join(CONV, _x))
 core = open(os.path.join(CONV, 'core.fr'), encoding='latin-1').read(); k = core.rindex('S" <<END OF core.fr>>"')
 open(os.path.join(CONV, 'core-control.fr'), 'w', encoding='latin-1').write(core[:k] + 'T{ 1 2 + -> 4 }T\n' + core[k:])
 
 def program(f, n, core='core.fr'):
     if not n: return 'S" %s" INCLUDED\nBYE\n' % f
-    p, mark = 'S" prelude.fth" INCLUDED\n', '[ DECIMAL .( <<FILE>> ) #T @ . CR\n'   # the file under test starts here
+    p, mark = 'S" prelude.fth" INCLUDED\nS" extend.4" INCLUDED\nS" coreext.4" INCLUDED\n', '[ DECIMAL .( <<FILE>> ) #T @ . CR\n'   # the file under test starts here
     for h in HARNESS[:n]:
         if h == 'core.fr' and f == 'core.fr': p += mark
         h = core if h == 'core.fr' else h

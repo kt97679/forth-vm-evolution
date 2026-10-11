@@ -63,9 +63,7 @@ HOT = '+,=,!,@,LSHIFT,RSHIFT,C@,C!,AND,OR,XOR,LIT,<,U<,OVER,DROP,DUP,SWAP,ROT,>R
 SPECS = ['loc', 'var', 'tiny', 'small', 'imm']
 FOLDMAX = 23
 # Primitives a fold may never take: control flow and the system's own.
-NOFOLD = set('NOOP EXIT BRANCH ?BRANCH EXECUTE BYE SP@ SP! RP@ RP! WRITE READ SYSTEM FORK EXECVE '
-             'WAITPID PIPE DUP2 GETENV SETENV UNSETENV CHDIR GETCWD GETPID ALLOCATE FREE RESIZE '
-             'GETPWHOME GETFSIZE SETFSIZE SYS-EXIT SYSARGC SYSARG'.split()) | {n for n in []}
+NOFOLD = set('NOOP EXIT BRANCH ?BRANCH EXECUTE BYE SP@ SP! RP@ RP! WRITE READ (SYSTEM) SYSCALL (EXECVE) (WAITPID) (PIPE) (DUP2) (GETENV) (SETENV) (UNSETENV) (CHDIR) (GETCWD) (GETPID) ALLOCATE FREE RESIZE (GETPWHOME) (GETFSIZE) (SETFSIZE) (SYS-EXIT) (SYS-ARGC) (SYS-ARG)'.split()) | {n for n in []}
 PRIMS = [l.split()[1] for l in open(os.path.join(ROOT, 'forth', 'kernel.4')) if l.startswith('PRIMITIVE')]
 POOL = [p for p in PRIMS if p not in NOFOLD and 'FILE' not in p and 'LINE' not in p] or HOT
 for h in HOT:
@@ -107,14 +105,15 @@ HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie 
     's2-cpt16':   human('cpt16', scale=1, skippad=1, fold=0),
     's3-cpt16f':  human('cpt16', scale=3, skippad=0, fold=1),
     's4-cv8':     human('cv8', tos=0, spec=[], sharedcall=0, varcall=0, varslot=0),
-    's5-cv8spec': human('cv8'),
-    's6-cv8b':    human('cv8', scale=0, bytehdr=1, doesfar=1),
+    's5-cv8spec': human('cv8', lean=1),     # Iteration 166: the compiler's copies and the dump tool left out
+    's6-cv8b':    human('cv8', scale=0, bytehdr=1, doesfar=1, lean=1),
 }
 FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+EXPRESSED['cv8'] += ['jitloop', 'jitinl']   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
           ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',), ('kstack',), ('abortif',), ('opcall',)]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
@@ -154,10 +153,10 @@ def tfind_on(g):
     opcode - sure of a slot. Seed 11 found it in the pool 7 times in 1,425
     designs, once with kfast: the biggest saving there, never taken up."""
     return kfast_on(g) and bool(g.get('tfind'))
-KINPUT = ['SCAN', 'SKIP', 'TABS>BL', 'FILL', '(PARSE)', 'HASH', 'PLACE']
+KINPUT = ['SCAN', 'SKIP', 'FILL', '(PARSE)', 'HASH', 'PLACE']   # TABS>BL gone with Iteration 148: no tab is made a space
 def kinput_on(g):
     """Iteration 54: the input side - forth/cv8b-kinput.4 (REFILL's tab loop
-    factored out as TABS>BL) and SCAN, SKIP, TABS>BL and FILL first among the
+    was factored out as TABS>BL, gone with Iteration 148) and SCAN, SKIP and FILL first among the
     format-10 names: one switch, as tfind - a design with kfast."""
     return kfast_on(g) and bool(g.get('kinput'))
 KLOOKUP = ['(FIND)', '(>NUMBER)']
@@ -198,7 +197,7 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
               'DUP?NBRANCH', 'DUP?NBRANCH8', 'SWAP+I',   # Iteration 34: DUP 0= ?BRANCH kept; SWAP n +
               'FILL', 'CMOVE',                           # Iteration 50: the kernel's byte loops
               'THREAD-FIND',                             # Iteration 51: the byte-header thread walk (kfast's)
-              'SCAN', 'SKIP', 'TABS>BL',                 # Iteration 54: the input side (TABS>BL: kinput's)
+              'SCAN', 'SKIP',                            # Iteration 54: the input side (TABS>BL went, Iteration 148; kinput's)
               '(PARSE)', 'HASH', 'PLACE',                # Iteration 54: ((PARSE): kinput's)
               '(FIND)', '(>NUMBER)',                     # Iteration 57: the lookup, numbers (klookup's)
               'I+']                                      # Iteration 60: I then + in run-time code (rtiplus's)
@@ -213,16 +212,25 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
                'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8',
                'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi',
                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
-               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', 'TABS>BL': 'L_x_tabsbl',
-               '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
+               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
 # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
 X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
            'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR',
            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
-           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', 'TABS>BL': 'X_TABSBL',
-           '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+def recorded_genome(i):
+    """A recorded design's genome, from results/evolve-*.md - None if absent (Iteration 155)."""
+    import glob
+    key = '"id": "%s"' % i
+    for p in sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*.md'))):
+        for l in open(p, errors='replace'):
+            if l.startswith('{"bin"') and key in l:
+                try: return json.loads(l)['genome']
+                except ValueError: pass
+    return None
+
 def jit_on(g):
     """Iteration 80 (JIT.md): the lazy JIT - colon words compiled at run time
     translated to native code on their first call (engine/jit.c, SPN's
@@ -242,7 +250,8 @@ def ops10_order(g, iplus):
     recursing through rtiplus_on (Iteration 77)."""
     ws = [w for w in g.get('ops10', []) if w != 'THREAD-FIND' or kfast_on(g)]   # Iteration 51: a kfast word
     if tfind_on(g): ws = ['THREAD-FIND'] + [w for w in ws if w != 'THREAD-FIND']  # Iteration 52: first, sure of a slot
-    ws = [w for w in ws if w not in ('TABS>BL', '(PARSE)') or kinput_on(g)]        # Iteration 54: kinput's words
+    ws = [w for w in ws if w != 'TABS>BL']                                         # Iteration 148: gone - a genome naming it frees the slot
+    ws = [w for w in ws if w != '(PARSE)' or kinput_on(g)]                         # Iteration 54: kinput's words
     if kinput_on(g):                                                               # Iteration 54: next, sure of slots
         ws = ws[:1 if tfind_on(g) else 0] + KINPUT + [w for w in ws[1 if tfind_on(g) else 0:] if w not in KINPUT]
     ws = [w for w in ws if w not in KLOOKUP or klookup_on(g)]                      # Iteration 57: klookup's words
@@ -282,6 +291,7 @@ def opcall_in(g):
     av = set(opcall_avail(g)); names = [n for n in dict.fromkeys(g.get('opcall') or []) if n in av]
     return [[n, 0xFE00 + k, OPCALL_POOL[n]] for k, n in enumerate(names)]
 WORK_SEL = ['kernel', 'fib', 'corpus', 'loop', 'bubble', 'ackermann']; WORK_HELD = ['sieve', 'parse']
+WORK_FAR = ['far']   # Iteration 159: the timed fib behind a 1 MB gap - three-byte calls; compare-fronts only
 # Iteration 41: loop selected (the owner), sieve held out. Iteration 127 (the owner): parse held out - it
 # timed the interpreter twice over, with the corpus - and two execution-heavy workloads in, the owner's
 # RelF/bench programs (his collection; Iteration 128): bubble and ackermann (deep recursion).
@@ -432,13 +442,11 @@ def rt():
     # executable under -n already.
 
 def bin_size(eng):
-    """Iteration 75: the engine as it would ship - a stripped copy's size.
-    The engine itself keeps its symbols: tail_offenders reads them."""
-    s = eng + '.stripped'
-    r = sh(['strip', '--strip-all', '-o', s, eng])
-    n = os.path.getsize(s) if r.returncode == 0 and os.path.exists(s) else os.path.getsize(eng)
-    if os.path.exists(s): os.remove(s)
-    return n
+    """Iteration 75: the engine as it would ship. Since Iteration 149 build()
+    returns it so - tools/elf_tight.py: no section headers, symbols or
+    .comment, 620 bytes a design - and keeps the full file beside it as
+    engine.full, for tail_offenders and anyone with nm or gdb."""
+    return os.path.getsize(eng)
 
 def ccflags(g):
     return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
@@ -543,7 +551,7 @@ def require(g):
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
     return g
 
-def build(g, d):
+def _build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
     if os.path.exists(d): shutil.rmtree(d)
     os.makedirs(d)
@@ -571,10 +579,10 @@ def build(g, d):
     if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
-    if express(g).get('sysc'): flags.append('-DSYSC=1')   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
+    # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
-    if PROFILING[0]: flags.append('-DPROFILE=1')
+    if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
     if g.get('escape'): flags.append('-DESCAPE=%d' % g['escape'])
     o10 = ops10_in(g)
     if o10:
@@ -658,6 +666,20 @@ def build(g, d):
     if t2: compile_engine()          # the converter wrote vm-tag2-one.h and vm-tag2-esc.h beside vm.c
     return eng, img
 
+sys.path.insert(0, os.path.join(ROOT, 'tools'))
+import elf_tight                                    # Iteration 149
+import farcheck                                     # Iteration 158: code far from the image base
+def build(g, d):
+    """-> (engine, image) or raises RuntimeError('died: ...'). The engine as
+    it ships (Iteration 149): the ELF header, the program headers and the
+    bytes they load - what runs is the same bytes, and the gate, the timings
+    and the size are all of this file; the full one stays as engine.full."""
+    eng, img = _build(g, d)
+    data = open(eng, 'rb').read(); t = elf_tight.tighten(data)
+    if t is not None and len(t) < len(data):
+        os.replace(eng, eng + '.full'); open(eng, 'wb').write(t); os.chmod(eng, 0o755)
+    return eng, img
+
 def build_other(g, d):
     """The cell engine (relf.c, its image as built), SOD16 and CPT16."""
     eng = os.path.join(d, 'engine'); img = os.path.join(d, 'image.img')
@@ -721,6 +743,8 @@ def long_files():
 def program(w, single=False):
     """The workload's input: the long one (Iteration 100), or single - as before."""
     if w == 'kernel': return KERNEL_IN
+    if w == 'far':         # Iteration 159: fib's words past 1 MB - long calls under the tag, within s6's reach
+        return ('1048576 ALLOT\n' + program('fib', single).decode()).encode()
     path = os.path.join(ROOT, 'bench', w + '.fth') if w != 'corpus' else CORPUS
     if single or w not in LONGF: return ('S" %s" INCLUDED\nBYE\n' % path).encode()
     if w == 'corpus':      # an empty line after each pass, for its ACCEPT test to read (it took the next pass's line)
@@ -728,7 +752,15 @@ def program(w, single=False):
     if w == 'parse': return (('S" %s" INCLUDED\n' % LONGF[w]) * LONG[w] + 'BYE\n').encode()
     return ('S" %s" INCLUDED\nBYE\n' % LONGF[w]).encode()
 
-def alive(eng, img, pw):
+FAR_IN = open(os.path.join(ROOT, 'tests', 'core', 'far.fth'), 'rb').read()
+FULL_IN = open(os.path.join(ROOT, 'tests', 'core', 'full.fth'), 'rb').read()
+HAND_MADE = []
+def hand_made(g):
+    """Whether g is one of the hand-made stages (Iteration 158: not gated far)."""
+    if not HAND_MADE: HAND_MADE.extend(canon(v) for v in HUMAN.values())
+    return canon(g) in HAND_MADE
+
+def alive(eng, img, pw, far=True):
     """The corpus must match the cell engine's output; the kernel must match."""
     with open(CORPUS, 'rb') as f:
         r = sh([eng, img], cwd=pw, inp=f.read(), timeout=120, cpu=5)
@@ -741,6 +773,22 @@ def alive(eng, img, pw):
     sh([eng, img], cwd=pw, inp=KERNEL_IN, timeout=240, cpu=10)
     if not os.path.exists(k) or open(k, 'rb').read() != open(KREF, 'rb').read():
         raise RuntimeError('died: kernel workload')
+    # Iteration 158 (the owner): code and data far from the image base - past
+    # 64 KB, then past 8 MB more (tests/core/far.fth). Every answer right, or
+    # refused out loud: a design that computes something else, crashes or
+    # hangs there dies. The hand-made stages are run-tests.sh's to judge.
+    if far:
+        try:
+            r = sh([eng, img], cwd=pw, inp=FAR_IN, timeout=60, cpu=5); out, code = r.stdout.decode(errors='replace'), r.returncode
+        except Exception as e: out, code = '', 'raised: %s' % str(e)[:60]
+        v = farcheck.verdict(out, code)
+        if v != 'all' and not v.startswith('refused'): raise RuntimeError('died: far (%s)' % v)
+        # Iteration 161: an ALLOT past the dictionary's room - refused, HERE
+        # unmoved, the system going on (tests/core/full.fth).
+        try: r = sh([eng, img], cwd=pw, inp=FULL_IN, timeout=60, cpu=5); out = r.stdout.decode(errors='replace')
+        except Exception: out = ''
+        if 'dictionary full' not in out or [l for l in out.replace('\r', '').split('\n') if re.fullmatch(r'[0-9]+ ', l)] != ['1 ', '42 ']:
+            raise RuntimeError('died: dictionary full not refused')
 
 METRIC = rb'^CYCLES (\d+)' if os.environ.get('EVOLVE_METRIC') == 'cycles' else rb'^CPUNS (\d+)'
 PIN, REF = [], None            # set by setup(): the core, the reference (eng, img, work dir)
@@ -830,7 +878,7 @@ def evaluate(g, rounds, keep=False):
         rec['size'] = os.path.getsize(img)
         rec['bin'] = bin_size(eng); rec['total'] = rec['bin'] + rec['size']     # Iteration 75: an objective
         pw = private_work(d)
-        alive(eng, img, pw)
+        alive(eng, img, pw, far=not hand_made(g))
         t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
         rec['t'] = t; rec['raw'] = raw
         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
@@ -1398,7 +1446,7 @@ def main(argv):
             try:
                 eng, img = build(g, d)
                 same = open(img, 'rb').read() == open(os.path.join(O, name + '-s64.img'), 'rb').read()
-                pw = private_work(d); alive(eng, img, pw)
+                pw = private_work(d); alive(eng, img, pw, far=False)   # Iteration 158: run-tests.sh judges them far
                 print('  %-11s image %s the build\'s, corpus and kernel workload correct' % (name, 'IDENTICAL to' if same else 'DIFFERENT from'))
                 ok &= same
             except RuntimeError as e:
@@ -1473,6 +1521,16 @@ def main(argv):
             get(dict(HUMAN['s6-cv8b'], ops10=OPS10_POOL[:2]), [], 'founder: s6-cv8b + EXECUTE, I as opcodes', 0),
             get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL)), [], 'founder: s6-cv8b + escape, 7 words, 24 pairs', 0),
             get(dict(HUMAN['s6-cv8b'], escape=1, ops10=list(OPS10_POOL), supers=list(SUPER_POOL), rtfuse=1), [], 'founder: s6-cv8b + escape, all format-10 opcodes, pairs, tests fused at run time', 0)]
+    # Iteration 155 (the owner): founders carrying the JIT's new genes, so jitloop and
+    # jitinl enter with designs behind them - through seed 38 they were dormant, no
+    # genome has them, and jitinl is two mutations (jitx too) from most JIT designs.
+    # One competitive - seed 37's fastest, its record from results/ - and one any
+    # tree can make, from hand-made s6; crossover lends their genes on.
+    if not FROMZERO:
+        pop += [get(dict(HUMAN['s6-cv8b'], jit=1, jitx=1, jitloop=1, jitinl=1), [], 'founder: s6-cv8b + the JIT, jitx, jitloop, jitinl', 0)]
+        f37 = recorded_genome('38446e6c09')
+        if f37: pop += [get(dict(f37, jitloop=1, jitinl=1), [], "founder: seed 37's fastest (38446e6c09) + jitloop, jitinl", 0)]
+        else: print("  founder: seed 37's fastest not in results/ - left out", flush=True)
     # Iteration 46 (the owner): the earlier runs' fronts carried into this one,
     # so what one run found the next starts from - seed 9 lost the fast end
     # seed 8 had (Iteration 45). --carry DB,DB,...: each database's own front,

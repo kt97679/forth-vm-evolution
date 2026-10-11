@@ -51,9 +51,17 @@ any laptop runs not yet processed.
 - Every change is a commit `Iteration N: ...` (the bundle script requires that
   subject; git identity Kirill Timofeev <kt97679@gmail.com>) and a bundle:
   `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs`, the
-  file presented to me. The next iteration is 133.
+  file presented to me. The next iteration is 170.
 
-**Where it stands.** Seed 35 was the second small run in a row: the gene set
+**Where it stands.** Since Iteration 169 the after-seed-39 batch is applied
+(results/applied-after-seed39/, fifteen patches: the JIT genes jitloop and
+jitinl expressed and founded, the Forth definition audit, long addresses
+checked and refused, the tracer, s5/s6 lean, the standard's numbers and
+CREATE-FILE, coreext.4); seeds 38 and 39 were small - converged under the
+old selection - and seed 40 is the batch's first run, 9 hours. Open: the
+gene callrel (results/drafts/callrel.md - the converter must place kernel
+calls by distance), the standard's next words (MARKER, CS-PICK, M*/,
+RESIZE-FILE, ABORT through THROW). Earlier: Seed 35 was the second small run in a row: the gene set
 converged. New since: the genes fbuf (memory), kstack, abortif and opcall; the
 stack guard fixed; a held-out check, lab/evolve/ans-check.py. Seed 36, 4
 hours from scratch, answered the anchoring question: no. Iteration 124: the

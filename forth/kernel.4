@@ -249,9 +249,6 @@ VARIABLE KEY-BYTE
 \ n2 is the number of address units occupied by n1 characters.
 ; \ A no-op.
 
-: CHAR-  ( c-addr1 --- c-addr2)
-\ c-addr2 is the previous character address before c-addr1.
-   -1 + ;
 
 : CELL+ ( a-addr1 --- a-addr2)
 \ a-addr2 is the address of the next cell after a-addr2.
@@ -400,7 +397,7 @@ VARIABLE KEY-BYTE
 
 : 2! ( d a-addr --- )
 \ Store the double number d at a-addr.
-   DUP >R ! R> CELL+ ! ;
+   SWAP OVER ! CELL+ ! ;   \ no return stack: one operation fewer (the audit, Iteration 156)
 
 : ?DUP ( n --- 0 | n n)
 \ Duplicate the top cell on the stack, but only if it is nonzero.
@@ -579,29 +576,35 @@ VARIABLE DPL ( --- a-addr)
 \ PART 5: MEMORY BLOCK MOVE AND RELATED WORDS.
 
 : CMOVE ( c-addr1 c-addr2 u --- )
-\ Copy u bytes starting at c-addr1 to c-addr2, proceeding in ascending
-\ order.
-   DUP IF >R
-   BEGIN
-    OVER C@ SWAP DUP >R C! R> 1 + SWAP 1 + SWAP
-    R> -1 + DUP >R 0=
-   UNTIL
-   R>
+\ Copy u bytes starting at c-addr1 to c-addr2, a byte at a time in
+\ ascending order - an overlap moving up repeats bytes, as it always has.
+\ The two addresses are one double, moved on together by 1 1 D+ (it cannot
+\ carry: that needs an address at the top of memory); the copy stops at
+\ the source's end, kept on the return stack - 11 operations a byte, not
+\ 19 (the audit, Iteration 156).
+   DUP IF
+    >R OVER R> + >R
+    BEGIN OVER C@ OVER C! 1 1 D+ OVER R@ = UNTIL
+    R>
    THEN
-   2DROP DROP
+   DROP 2DROP
 ;
 
 : CMOVE> ( c-addr1 c-addr2 u --- )
-\ Copy a block of u bytes starting at c-addr1 to c-addr2, proceeding in
-\ descending order.
-   DUP IF >R R@ + -1 + SWAP R@ + -1 + SWAP
-   BEGIN
-    OVER C@ SWAP DUP >R C! R> -1 + SWAP -1 + SWAP
-    R> -1 + DUP >R 0=
-   UNTIL
-   R>
+\ Copy a block of u bytes starting at c-addr1 to c-addr2, a byte at a time
+\ in descending order. The two addresses are one double, set to their last
+\ bytes by adding u-1 to both at once and moved down together: -1 -2 is
+\ -(1,1) as a double, so -1 -2 D+ takes 1 from each - the low cell would
+\ borrow only from address 0. The copy stops below the source's first
+\ byte, kept on the return stack - 11 operations a byte, not 19 (the audit,
+\ Iteration 156); HEADER8 moves every new name up with it.
+   DUP IF
+    >R OVER -1 + R> SWAP >R
+    -1 + DUP D+
+    BEGIN OVER C@ OVER C! -1 -2 D+ OVER R@ = UNTIL
+    R>
    THEN
-   2DROP DROP
+   DROP 2DROP
 ;
 
 \ It's here because it needs CMOVE>
@@ -616,15 +619,11 @@ VARIABLE DPL ( --- a-addr)
   >R 2DUP U< IF R> CMOVE> ELSE R> CMOVE THEN ;
 
 : FILL ( c-addr u c ---)
-\ Fill a block of u bytes starting at c-addr with character c.
-  OVER IF >R
-  BEGIN
-   R@ ROT DUP >R C! R> 1 + SWAP
-   -1 + DUP 0=
-  UNTIL
-  R>
-  THEN
-  2DROP DROP
+\ Fill a block of u bytes starting at c-addr with character c. The address
+\ and the count are one double, moved on by 1 -1 D+ as in SKIP and SCAN; the
+\ character waits on the return stack - 10 operations a byte, not 15 (the
+\ audit, Iteration 156).
+  >R BEGIN DUP WHILE OVER R@ SWAP C! 1 -1 D+ REPEAT R> DROP 2DROP
 ;
 
 : 2OVER ( d1 d2 --- d1 d2 d1)
@@ -634,7 +633,7 @@ VARIABLE DPL ( --- a-addr)
 
 : 2SWAP ( d1 d2 --- d2 d1)
 \ Swap the top two double numbers on the stack.
-  03 ROLL 03 ROLL ;
+  ROT >R ROT R> ;   \ it was 03 ROLL 03 ROLL - two byte-wise CMOVE>s of the stack (the audit)
 
 \ PART 6: FILE ACCESS WORDS.
 
@@ -647,11 +646,6 @@ VARIABLE DPL ( --- a-addr)
 04 CONSTANT R/W ( --- mode)
 \ Read write file access mode.
 
-06 CONSTANT A/O ( --- mode)
-\ Write only, append (create if missing, never truncate) file access
-\ mode - added for shell.4's ">>" redirection (see PROGRESS.md,
-\ Iteration 7); none of the three modes above create a missing file
-\ without also truncating it if it already exists.
 
 : BIN ( mode1 --- mode2)
 \ Modify the R/O W/O or R/W mode so that it applies to binary files.
@@ -663,7 +657,7 @@ PRIMITIVE READ-LINE
 PRIMITIVE WRITE-LINE
 PRIMITIVE READ-FILE
 PRIMITIVE WRITE-FILE
-PRIMITIVE SYSTEM
+PRIMITIVE-SLOT (SYSTEM)          \ the shell's, in Forth (forth/shell-sysc.4)
 PRIMITIVE REPOSITION-FILE
 PRIMITIVE FILE-POSITION
 PRIMITIVE DELETE-FILE
@@ -672,20 +666,20 @@ PRIMITIVE FILE-SIZE
 \ Process-control primitives (shell support, see PROGRESS.md). Order
 \ here must match relf.c's dispatch table exactly, since PRIMITIVE
 \ assigns tokens sequentially as each of these lines is processed.
-PRIMITIVE FORK      ( --- pid )
-PRIMITIVE EXECVE    ( argv-addr path-addr --- ior )
-PRIMITIVE WAITPID   ( pid --- status ior )
-PRIMITIVE PIPE      ( --- fd-read fd-write ior )
-PRIMITIVE DUP2      ( oldfd newfd --- ior )
-PRIMITIVE GETENV    ( c-addr --- addr )
-PRIMITIVE SETENV    ( value-addr name-addr --- ior )
-PRIMITIVE SYS-EXIT  ( n --- )
-PRIMITIVE CHDIR     ( c-addr --- ior )
-PRIMITIVE GETCWD    ( addr max-len --- len ior )
-PRIMITIVE SYS-ARGC  ( --- n )
-PRIMITIVE SYS-ARG   ( n --- c-addr )
-PRIMITIVE GETPID    ( --- pid )
-PRIMITIVE UNSETENV  ( c-addr --- ior )
+PRIMITIVE SYSCALL ( block num --- r )  \ one system call, its arguments in the block; the shell's OS words are Forth on it
+PRIMITIVE-SLOT (EXECVE)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (WAITPID)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (PIPE)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (DUP2)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SYS-EXIT)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (CHDIR)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETCWD)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SYS-ARGC)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SYS-ARG)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETPID)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (UNSETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
 \ Forth-2012 memory-allocation wordset, backed by the host's own
 \ malloc/free/realloc. This is memory OUTSIDE the image - it does not
 \ consume dictionary space and is not saved by SAVE-SYSTEM. Appended
@@ -696,14 +690,17 @@ PRIMITIVE UNSETENV  ( c-addr --- ior )
 PRIMITIVE ALLOCATE  ( u --- a-addr ior )
 PRIMITIVE FREE      ( a-addr --- ior )
 PRIMITIVE RESIZE    ( a-addr u --- a-addr2 ior )
-PRIMITIVE GETPWHOME ( c-addr --- addr | 0 )
-PRIMITIVE GETFSIZE  ( --- n )
-PRIMITIVE SETFSIZE  ( n --- ior )
+PRIMITIVE-SLOT (GETPWHOME)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
 
 : CREATE-FILE ( c-addr u mode --- fid ior)
 \ Create a new file with the name starting at c-addr with length u.
 \ Return the file-ID and the IO result. (ior=0 if success)
-  1 AND OPEN-FILE ;
+\ R/W (with BIN or not) is the engine's mode 8 or 9 - created, read and
+\ written; the others as before, created to write. It was 1 AND, and a file
+\ created R/W could not be read (the standard suite's filetest; Iteration 168).
+  DUP 4 AND IF 4 + ELSE 1 AND THEN OPEN-FILE ;
 
 \ : READ-LINE >R OVER R> READ-FILE >R OVER + SWAP 
 \ BEGIN WHILE REPEAT 
@@ -790,9 +787,8 @@ VARIABLE #SRC ( --- addr)
    SOURCE-ID IF
     SRC @ 256 SOURCE-ID READ-LINE ABORT" Error reading file"
     SWAP #SRC ! 0 >IN !
-    #SRC @ IF SOURCE OVER + SWAP 
-    BEGIN 2DUP - WHILE DUP C@ 9 = IF BL OVER C! THEN 1+ REPEAT 2DROP THEN
-    \ Change tabs to space.
+    \ No tab is made a space: SKIP and SCAN take any control character for a
+    \ space delimiter (Iteration 145).
     \ flag from READ-LINE is returned (no success at EOF)
    ELSE
     QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
@@ -804,30 +800,22 @@ VARIABLE #SRC ( --- addr)
 \ Find the first occurrence of character c in the string c-addr1 u1
 \ c-addr2 u2 is the remaining part of the string starting with that char.
 \ It is a zero-length string if c was not found.
-  BEGIN
-   OVER
-  WHILE
-   ROT DUP C@ >R OVER R> =
-   IF
-    ROT ROT DROP EXIT
-   THEN
-   1+ ROT ROT SWAP 1- SWAP
-  REPEAT DROP
+\ As SKIP: 1 -1 D+ to move on; a space delimiter is met by any control
+\ character too.
+  DUP BL = IF DROP BEGIN DUP WHILE OVER C@ 33 U< 0= WHILE 1 -1 D+ REPEAT THEN EXIT THEN
+  >R BEGIN DUP WHILE OVER C@ R@ = 0= WHILE 1 -1 D+ REPEAT THEN R> DROP
 ;
 
 : SKIP ( c-addr1 u1 c --- c-addr2 u2 )
 \ Find the first character not equal to c in the string c-addr1 u1
 \ c-addr2 u2 is the remaining part of the string starting with the
 \ nonmatching char. It is a zero-length string if no other chars found.
-  BEGIN
-   OVER
-  WHILE
-   ROT DUP C@ >R OVER R> -
-   IF
-    ROT ROT DROP EXIT
-   THEN
-   1+ ROT ROT SWAP 1- SWAP
-  REPEAT DROP
+\ The delimiter on the return stack, the string moved on by 1 -1 D+ - one
+\ double add for the address up and the length down; a space delimiter
+\ skips every control character too, as the standard allows (3.4.1.1) - so
+\ no tab need ever be made a space (the audit, Iteration 145).
+  DUP BL = IF DROP BEGIN DUP WHILE OVER C@ 33 U< WHILE 1 -1 D+ REPEAT THEN EXIT THEN
+  >R BEGIN DUP WHILE OVER C@ R@ = WHILE 1 -1 D+ REPEAT THEN R> DROP
 ;
 
 : PARSE-WORD ( c --- addr len )
@@ -860,7 +848,7 @@ VARIABLE #SRC ( --- addr)
 \ address of a counted string that is a copy of it. The counted
 \ string is actually placed at HERE. The character after the counted
 \ string is set to a space.
-  PARSE-WORD HERE PLACE HERE BL HERE COUNT + C! ;
+  PARSE-WORD HERE DUP >R PLACE BL R@ COUNT + C! R> ;   \ HERE once, as klookup's WORD8
 
 \ PART 8: INTERPRETER HELPER WORDS
 
@@ -885,8 +873,10 @@ VARIABLE #SRC ( --- addr)
 \ PARAMETER field: (body) Contains the data of constants and variables etc.
 
 VARIABLE NAMEBUF ( --- a-addr)
-\ An aligned buffer that holds a copy of the name that is searched.
-28 ALLOT-T
+\ An aligned buffer that holds a copy of the name that is searched - 32
+\ bytes and the cell after them, which the search compares to find the
+\ name's end (the cell after a 31-character name was past it: the audit).
+32 ALLOT-T
 
 VARIABLE FORTH-WORDLIST ( --- addr)
 \ A hashed word list, laid out as SOD32's is: cell 0 holds the number
@@ -924,8 +914,10 @@ VARIABLE CURRENT ( --- addr)
   R> 1- AND ;
 
 : NAME>BUF ( c-addr u ---)
-\ Move the name c-addr u to the aligned buffer NAMEBUF.
-  NAMEBUF 32 0 FILL 32 MIN NAMEBUF PLACE ;
+\ Move the name c-addr u to the aligned buffer NAMEBUF. The search compares
+\ cells, so the name's last cell is zeroed for its padding and the one after
+\ for the compare's end - not 32 bytes a byte at a time (the audit).
+  32 MIN DUP 1+ ALIGNED NAMEBUF +  0 OVER !  0 SWAP 1 CELLS - !  NAMEBUF PLACE ;
 
 : SEARCH-WORDLIST ( c-addr u wid --- 0 | xt 1 xt -1)
 \ Search the wordlist with address wid for the name c-addr u.
@@ -943,7 +935,7 @@ VARIABLE CURRENT ( --- addr)
    \ are read native-endian (little-endian on every host targeted so
    \ far - see GOALS.md phase 5), is the LOW byte of the cell, not the
    \ high byte the old big-endian-packed mask (1 61 LSHIFT 1 -) assumed.
-   NAMEBUF @ OVER @ -1 224 XOR AND = \ Compare first cells of names.
+   NAMEBUF @ OVER @ -225 AND = \ Compare first cells of names (-225: -1 224 XOR, once).
            \ Mask off bits 5-7 of name length, these have special purposes.
    IF
     NAMEBUF CELL+
@@ -960,11 +952,11 @@ VARIABLE CURRENT ( --- addr)
      ELSE
       -1
      THEN
-     SWAP CELLBYTES-TOK - SWAP EXIT \ Exit with execution token and flag.
+     SWAP CELLBYTES-TOK NEGATE + SWAP EXIT \ Exit with execution token and flag.
     THEN
     2DROP
    THEN
-   CELLBYTES-TOK - DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
+   CELLBYTES-TOK NEGATE + DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
   UNTIL
   THEN
   DROP 0 \ Not found.
@@ -1037,13 +1029,19 @@ VARIABLE CURRENT ( --- addr)
 \ Convert the counted string at c-addr to a double binary number.
 \ f is true if and only if the conversion was successful. DPL contains
 \ -1 if there was no point in the number, else the position of the point
-\ from the right. Special prefixes: # means decimal, $ means hex.
+\ from the right. Special prefixes: # decimal, $ hex, % binary, and 'c' a
+\ character (Forth 2012, 3.4.1.3) - the sign after the prefix as the
+\ standard writes it (#-1289), or before it as this kernel always took it
+\ (Iteration 167).
+  DUP C@ 3 = IF DUP 1+ C@ 39 = OVER 3 + C@ 39 = AND IF -1 DPL ! 2 + C@ 0 -1 EXIT THEN THEN
   -1 DPL !
   BASE @ >R
   COUNT
   OVER C@ 45 = DUP >R IF    -1 + SWAP 1 + SWAP THEN \ Get any - sign
   OVER C@ 36 = IF 16 BASE ! -1 + SWAP 1 + SWAP THEN   \ $ sign for hex.
   OVER C@ 35 = IF 10 BASE ! -1 + SWAP 1 + SWAP THEN   \ # sign for decimal
+  OVER C@ 37 = IF  2 BASE ! -1 + SWAP 1 + SWAP THEN   \ % for binary
+  R@ 0= IF OVER C@ 45 = IF R> DROP -1 >R -1 + SWAP 1 + SWAP THEN THEN   \ a sign after the prefix
   DUP  0 > 0= IF  R> DROP R> BASE ! 0 EXIT THEN   \ Length 0 or less?
   >R >R 0 0 R> R>
   BEGIN
@@ -1065,15 +1063,21 @@ VARIABLE CURRENT ( --- addr)
 
 : ALLOT ( n --- )
 \ Allot n extra bytes of memory, starting at HERE to the dictionary.
-  DP +! ;
+\ Refused past the data stack's room - the 10000 cells ?STACK allows below
+\ S0, and a page: a big ALLOT jumped over every guard and wrote past the
+\ engine's memory - a crash (Iteration 161; gdb: a byte store past the
+\ end), where RelF's own kernel refuses. Each header ends with
+\ ALLOT, so a definition is checked once.
+  DUP HERE + S0 @ 10000 CELLS - 4096 - U> IF -1 ABORT" dictionary full" THEN DP +! ;
 
 : , ( x --- )
-\ Append cell x to the dictionary at HERE.
-  HERE ! 1 CELLS ALLOT ;
+\ Append cell x to the dictionary at HERE - DP +!, not ALLOT: the room is
+\ checked once per definition, not per cell (Iteration 161).
+  HERE ! CELLBYTES-TOK DP +! ;
 
 : C, ( n --- )
-\ Append character c to the dictionary at HERE.
-  HERE C! 1 ALLOT ;
+\ Append character c to the dictionary at HERE - DP +!, as , (Iteration 161).
+  HERE C! 1 DP +! ;
 
 : ALIGN ( --- )
 \ Add as many bytes to the dictionary as needed to align dictionary pointer.
@@ -1305,7 +1309,11 @@ VARIABLE POCKET ( --- a-addr )
 : ABORT"  ( "ccc<quote>" --- )
 \ Parse a string delimited by " and compile the following runtime semantics.
 \ Runtime: ( f --- ) if f is nonzero, print the string and abort program.
-  POSTPONE (ABORT") 34 PARSE STRING, ; IMMEDIATE
+\ Compiled as IF -1 (ABORT") "ccc" THEN: a false flag branches past the call
+\ and its string - one operation, where (ABORT") was called to test it. The
+\ gene abortif guards the kernel's own sites the same way in the converter,
+\ which never sees what is compiled at run time (the audit, Iteration 157).
+  POSTPONE IF -1 POSTPONE LITERAL POSTPONE (ABORT") 34 PARSE STRING, POSTPONE THEN ; IMMEDIATE
 
 : ABORT ( --- )
 \ Abort unconditionally without a message: WARM, as (ABORT") does after
@@ -1364,6 +1372,9 @@ VARIABLE POCKET ( --- a-addr )
 
 : INTERPRET ( ---)
 \ Interpret words from the current source until the input source is exhausted.
+\ The stack is checked where it can have changed: after a word executes and
+\ after a number is interpreted. A word or a number compiled leaves it as it
+\ was, so most of a source pays no check (the audit, Iteration 156).
   BEGIN
    32 WORD DUP C@
   WHILE
@@ -1373,12 +1384,15 @@ VARIABLE POCKET ( --- a-addr )
     IF
      COMPILE,
     ELSE
-     EXECUTE
+     EXECUTE ?STACK
     THEN
    ELSE DROP
-    NUMBER? 0= ABORT" Undefined word" DROP
-    STATE @ IF LITERAL THEN
-   THEN  ?STACK
+    NUMBER? 0= ABORT" Undefined word"
+    \ A point made it a double (Forth 2012, 3.4.1.3): both cells kept, and
+    \ compiled as two literals; a single drops its high cell (Iteration 167).
+    DPL @ 0< IF DROP STATE @ IF LITERAL ELSE ?STACK THEN
+    ELSE STATE @ IF SWAP LITERAL LITERAL ELSE ?STACK THEN THEN
+   THEN
   REPEAT   DROP
 ;
 

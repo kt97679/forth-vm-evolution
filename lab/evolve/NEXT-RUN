@@ -242,4 +242,10 @@
 # and with the re-measure and the two-CPU comparison of 6 rounds reserved (147
 # minutes, seed 38's times) 7 hours leave the evolution ~4 h 32 min against seed
 # 38's 4 h 42: the pair stays a pair. The regular length is chosen after the batch.
-seed 39 tag2 7h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 169: the batch is applied (fifteen patches - results/applied-
+# after-seed39/); seed 39 was the second small run in a row. Seed 40 is the
+# batch's first run, 9 hours (the owner): the founders with jitloop and
+# jitinl, the far workload held out in the comparison, every image ~110 bytes
+# larger for the standard's numbers and CREATE-FILE (the owner: respect the
+# standard, tolerate the size). Not comparable with the runs before the batch.
+seed 40 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

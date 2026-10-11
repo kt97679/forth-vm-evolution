@@ -42,6 +42,9 @@
 \ ---- the link -------------------------------------------------------
 : LINK-LEN ( d --- n )
   DUP 128 U< IF DROP 1 EXIT THEN
+  \ Three bytes hold 22 bits: past 4 MB a link is refused, not cut short -
+  \ a cut link broke the thread and later words went missing (Iteration 158).
+  DUP 4194304 U< 0= IF -1 ABORT" link out of reach" THEN
   16384 U< IF 2 ELSE 3 THEN ;
 
 : LINK, ( d n --- )
