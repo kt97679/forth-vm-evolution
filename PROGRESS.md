@@ -3617,3 +3617,17 @@ racing (irace), lexicase, islands (FunSearch/AlphaEvolve); new genes from
 deep-parameter sweeps (fbuf is one), instruction replication, PGO, two stack
 registers. Proposed for seed 42: crossover 0.25, the learned blocks, the dead
 genes slowed, speed ties within 2% - the owner decides.
+
+## Iteration 196 - 2026-10-11 - Claude
+
+**Other Forths surveyed (the owner): results/forth-implementations-survey.md.**
+Much is ours already (superinstructions, TOS register, tail calls, stencil JIT,
+thinned headers, sized operands - Nga's bundles and zForth's variable cells
+included). New, ranked: pinned VM registers (Gforth's build tuning - our engine
+pins none); primitives demoted to Forth (sectorforth's eight primitives; the
+interpreter function is 10.7 of a JIT design's 21.1 KB, and no gene moves
+primitives out of C); packed names (colorForth); run-time folding of literal
+expressions (Mecrisp); single-use words inlined in the image (Mecrisp-Across);
+optimal superinstruction choice (Gforth - ours is greedy); stack caching for
+the hottest primitives only (Gforth's peeprules); tail-call threading (Clang
+19+ only).
