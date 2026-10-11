@@ -30,6 +30,15 @@ To apply, on a fresh clone of master:
         git apply results/pending/$f-after-seed41.patch || break
     done
 
-Then, as for each batch: LAYOUTS=1 bash tools/build-stages.sh, bash tools/run-tests.sh
-(bash, not sh), python3 lab/evolve/evolve.py --validate, the reseed's fixed point,
-the front designs alive, and lab/evolve/ans-check.py on the front.
+Then, in this order:
+
+1. **sh tools/reseed.sh - before anything is built.** The patches change
+   forth/kernel.4 (the stacks apart, DICT-MAX) but carry no binaries, and every
+   image starts from forth/kernel-seed.img: without the reseed the stages are
+   built from the old kernel - every tag-2 design dies with "dictionary full"
+   (found in Iteration 193 on a fresh clone). Expected: the 8-byte fixed point
+   at 27,120 bytes, the 4-byte seed identical from old and new (14,880 bytes).
+2. LAYOUTS=1 bash tools/build-stages.sh
+3. bash tools/run-tests.sh (bash, not sh)
+4. python3 lab/evolve/evolve.py --validate
+5. the front designs alive, and lab/evolve/ans-check.py on the front.

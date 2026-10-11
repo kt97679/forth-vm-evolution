@@ -3563,3 +3563,16 @@ Also: results/pending/ORDER.md - the sixteen patches' order and the checks
 after; the callrel draft rebased onto them (results/drafts/
 callrel-draft-rebased16.patch), its fixed point planned as two converter runs
 (results/drafts/callrel.md).
+
+## Iteration 193 - 2026-10-11 - Claude
+
+**callrel: the fixed point built, the gene measured - not worth it.** Calls
+sized from the pass before (two converter runs or more; the short branches
+sized as emission sizes them): every design alive with the gene. On four of
+seed 40's designs callrel=2 is worse on all: +300-400 bytes of image, +400-800
+in all, interpreted designs 10-17% slower (a flag tested on every call). Kept
+as a draft (results/drafts/callrel-draft-twopass.patch), not in the batch.
+**Found on the way:** the batch carries no binaries - after applying it, the
+reseed must come first, or every stage is built from the old kernel (every
+tag-2 design died "dictionary full" on a fresh clone). results/pending/ORDER.md
+corrected: reseed (27,120 bytes, as tested), then the build and the checks.

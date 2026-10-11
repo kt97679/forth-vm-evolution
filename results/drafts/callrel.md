@@ -120,3 +120,32 @@ a call short there is short in the end. The short-branch pass needs the same:
 measured in pass 2 with pass 1's tag-2 map installed, not the pre-tag-2 sizes
 (the blocker of Iteration 186). Cost: one more converter run per design built.
 Then the sweep of 186: the front with callrel=2 alive, and its bytes.
+
+## The fixed point built, and measured (Iteration 193) - results/drafts/callrel-draft-twopass.patch
+
+Two converter runs or more (lab/evolve/evolve.py): pass 1 sizes calls from the
+loose bound and writes each word's call value (tools/layout.py --emit-offsets);
+each pass after sizes from the one before (--call-bounds: upper bounds - calls
+only shrink between passes); the first to convert after pass 1 is the image.
+And the short-branch pass sizes a call as emission does (tools/sod16.py
+op_bytes) - the blocker of Iteration 186 gone.
+
+On the sixteen after-seed-41 patches, reseeded (27,120 bytes), stages rebuilt,
+three rounds each - every one alive both ways:
+
+| design | callrel=0 image / total | callrel=2 image / total | speed with callrel=2 |
+|---|---|---|---|
+| 0ceb043115, the smallest | 7,566 / 18,194 | 7,870 / 18,658 | sieve 1.20 -> 1.41, bubble 1.32 -> 1.50, corpus 1.34 -> 1.48 |
+| d99e3d9ed9, the small knee | 7,358 / 18,402 | 7,678 / 18,818 | sieve 1.26 -> 1.42, bubble 1.22 -> 1.45 |
+| 528c2523c3, the Q-best | 8,224 / 26,680 | 8,568 / 27,312 | fib 0.20 -> 0.22, bubble 0.15 -> 0.12 |
+| d9247d19b0, the fastest | 8,384 / 31,000 | 8,776 / 31,776 | fib 0.22 -> 0.25 |
+
+Worse on all four: +300-400 bytes of image, +400-800 in all - the flag bit
+halves a 2-byte call's reach to 8 KB, and these images end just past it - and
+the interpreted designs 10-17% slower on sieve, bubble and the corpus: every
+call decoded tests the flag. The gain was to come from run-time code's
+relative calls; these workloads do not have enough of them. Not in the batch:
+the gene, there, would cost every tag-2 design ~48 bytes to be selected
+against. Worth it, if ever, as calls relative only for code compiled at run
+time, with the image's own calls left in the base form - an engine with two
+call decoders, which is the owner's to weigh.
