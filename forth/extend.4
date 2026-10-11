@@ -21,9 +21,6 @@
   DROP DROP R> NEGATE
 ;
 
-: THROW ( f --- )
-\ Will abort if f is nonzero, a preliminary substitute for real THROW.
-  ABORT" Throw Exception" ;
 
 : GET-ORDER ( --- w1 w2 ... wn n )
 \ Return all wordlists in the search order, followed by the count.

@@ -869,6 +869,7 @@ static void load_image(const char *name) {
     (Iteration 162). Untouched pages cost nothing.  */
 #define PROFOFF(a) ((unsigned)(((a) - (UNS64)(uintptr_t)base) % MEMSIZE))
 static unsigned long long prof[258], pair[258][258], callc[65536], ipc[MEMSIZE], rcnt[MEMSIZE];
+static unsigned long long trip[258][258][258];   /* an opcode and the two before it: the hybrid's price (Iteration 173) */
 static unsigned rtgt[MEMSIZE];
 #if PROFILE >= 2
 /*  The tracer (Iteration 162, the owner): every call pushes a frame on a
@@ -957,6 +958,8 @@ static void dump_prof(void) {
     int fd = open(f, O_WRONLY|O_CREAT|O_APPEND, 0644); char b[128];
     for (int i = 0; i < 258; i++) for (int j = 0; j < 258; j++) if (pair[i][j]) {
         int n = snprintf(b, sizeof b, "%d %d %llu\n", i, j, pair[i][j]); write(fd, b, n); }
+    for (int i = 0; i < 258; i++) for (int j = 0; j < 258; j++) for (int k = 0; k < 258; k++) if (trip[i][j][k]) {
+        int n = snprintf(b, sizeof b, "T %d %d %d %llu\n", i, j, k, trip[i][j][k]); write(fd, b, n); }
     for (int i = 0; i < MEMSIZE; i++) if (ipc[i]) {   /* per-address: patterns.py */
         int n = snprintf(b, sizeof b, "I %d %llu\n", i, ipc[i]); write(fd, b, n); }
     for (int i = 0; i < 65536; i++) if (callc[i]) {
@@ -974,10 +977,10 @@ static void dump_prof(void) {
 #endif
     close(fd);
 }
-static int prev_op = 257;
+static int prev_op = 257, prev_op2 = 257;
 #define PROFC(t) (callc[t]++)
 #define PROFIP(a) do { ipc[PROFOFF(a)]++; TRACE_STEP(a); } while (0)
-#define PROF(k) do { pair[prev_op][k]++; prev_op = (k); } while (0)
+#define PROF(k) do { pair[prev_op][k]++; trip[prev_op2][prev_op][k]++; prev_op2 = prev_op; prev_op = (k); } while (0)
 #define PROFRET(r, t) do { unsigned o_ = PROFOFF(r); \
                            rcnt[o_]++; rtgt[o_] = (unsigned)(t); } while (0)
 #else

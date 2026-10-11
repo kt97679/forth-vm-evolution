@@ -38,3 +38,28 @@ selection's dispatches: the gene - forms in the converter, in the run-time
 compiler (where fib, loop, bubble and ackermann are compiled), handlers in
 the engines, the JIT copying them; (3) the laptop's measurement in the run
 after seed 40's batch.
+
+## With triples and every opcode named (Iteration 173)
+
+The profiler now counts each opcode with the two before it (profiling builds
+only - results/applied-after-seed40/triples-after-seed40.patch), and every
+opcode kind takes its name from CALLMAP, immediates included. A move counts as
+absorbed when the next operation uses it, when a literal stands between it and
+a binary operation (DUP 2 <), or when a move does and a use follows; a literal
+feeding a binary operation becomes an immediate. Collapsed runs (moves before a
+call or a branch) are not counted - the price errs low, most on ackermann and
+loop. Tables: results/drafts/hybprice3-iter173.txt.
+
+| saved, of all dispatches | kernel | fib | corpus | loop | bubble | ackermann | selection mean | sieve | parse |
+|---|---|---|---|---|---|---|---|---|---|
+| s6 | 16.1% | 36.4% | 22.2% | 4.4% | 6.8% | 3.9% | 15.0% | 7.4% | 22.6% |
+| 0ceb043115, seed 40's smallest | 12.8% | 36.4% | 20.5% | 4.2% | 8.3% | 3.9% | 14.4% | 5.9% | 20.9% |
+| d9247d19b0, seed 40's fastest (JIT off) | 3.2% | 5.9% | 6.0% | 0.0% | 10.0% | 3.9% | 4.8% | 5.6% | 6.3% |
+
+fib's moves all feed literals - the pairs saw none of it. The fastest's own
+run-time compiler genes already make fib's literals immediates; it has less to
+gain, and runs mostly JIT code. **Decision:** the gene is worth building for
+the interpreted designs (over half the joint front; 14-15% of the selection's
+dispatches, past the 10% set before measuring) - register forms with
+immediates, in the converter and the run-time compiler, handlers in the
+engines; the collapse form priced next, for ackermann and loop.

@@ -100,6 +100,13 @@ OS words, its buffers) is the extension's, outside the measure. So sysc's
 saving counts in full, and a kernel word only an extension uses belongs in
 that extension (results/word-audit.md, "Core or extension").
 
+*The after-seed-40 batch - applied at Iteration 174*: coreext, exceptions,
+triples (results/applied-after-seed40/) - reseeded, the four checks, seed 40's
+218 front designs alive, the held-out check over them. Next, in order: the
+hybrid's gene for the interpreted designs (results/price-hybrid.md), the
+opcall restarts (results/opcall-deaths.md), regprice.py's opcode names,
+callrel's converter work, the standard's next words.
+
 *The after-seed-39 batch - applied at Iteration 169*: on master, reseeded (the
 kernel 26,080 bytes), the four checks, seed 39's 186 front designs alive on
 it. Rehearsed since Iteration 146: in a fresh tree,

@@ -51,7 +51,7 @@ any laptop runs not yet processed.
 - Every change is a commit `Iteration N: ...` (the bundle script requires that
   subject; git identity Kirill Timofeev <kt97679@gmail.com>) and a bundle:
   `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs`, the
-  file presented to me. The next iteration is 170.
+  file presented to me. The next iteration is 175.
 
 **Where it stands.** Since Iteration 169 the after-seed-39 batch is applied
 (results/applied-after-seed39/, fifteen patches: the JIT genes jitloop and

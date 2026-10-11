@@ -248,4 +248,7 @@
 # jitinl, the far workload held out in the comparison, every image ~110 bytes
 # larger for the standard's numbers and CREATE-FILE (the owner: respect the
 # standard, tolerate the size). Not comparable with the runs before the batch.
-seed 40 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 174: seed 40 was not small (the JIT genes); the after-seed-40
+# batch is applied - the standard's words and exceptions (every image ~170
+# bytes larger), the profiler's triples. Seed 41: 9 hours, as seed 40.
+seed 41 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

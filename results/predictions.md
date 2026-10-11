@@ -71,3 +71,29 @@ test right on all, 146 with new ids.
    comparison has one workload more, far).
 3. The far workload: every design on the joint front answers it (the gate
    refuses any that does not).
+
+## Seed 40, the batch's first run, checked (Iteration 173)
+
+From Iteration 154: (1) no deaths beyond the reach limit among the carried
+designs - **right** (none died; 5 new designs died with a wrong corpus);
+(2) ~3.1 KB smaller, the smallest from ~17.6 KB ending a little below -
+**right** (17,770 carried, 17,762 at the end - with the later ~170 bytes);
+(3) jitloop and jitinl spread from the founders - **right** (all 42 JIT
+designs on the joint front carry jitloop, 34 jitinl); (4) the fastest a JIT
+design with jitloop, bubble's ratio about halved, ackermann's too with jitinl
+- **right, and more**: bubble 24%, ackermann 58% of the best carried; (5)
+every speed moves, carried ratios rise - **right** (seed 38's fastest 0.237
+-> 0.280, seed 39's 0.239 -> 0.299). From 166: (6) s6 faster on lookup -
+consistent, not separable. From 169: (1) images +100-150 bytes - **roughly**
+(~170); (2) within 9 hours - **right** (8 h 39 min); (3) far answered by the
+whole joint front - **right** (97 of 97).
+
+## Seed 41, predicted (Iteration 174)
+
+1. Every image ~170 bytes larger (the exception wordset): the session's
+   smallest binary + image starts near 17,930, carried designs too.
+2. Small against seed 40 in its session: the fastest within 5% - the JIT genes
+   have spread already.
+3. The held-out check: no front design differs from s6.
+4. The chain ends within its 9 hours.
+5. A few corpus deaths again (10 or fewer), every one with opcall.

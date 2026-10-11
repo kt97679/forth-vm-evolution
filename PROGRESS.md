@@ -3311,3 +3311,25 @@ see. regprice.py names opcodes wrongly on today's designs (its order of
 primitives has moved); the converter's CALLMAP names are right and now used.
 results/price-hybrid.md: the plan - triples, then the gene, in the run-time
 compiler too.
+
+## Iteration 173 - 2026-10-11 - Claude
+
+**Seed 40 processed - the batch's first run, not small: the JIT genes halve
+the time.** Session 35 (seeds 36-40, calibration 0.988): fastest 0.187
+(d9247d19b0: jit, jitloop, jitinl) against 0.280; bubble at 24% of the best
+carried design's ratio, ackermann 58%; smallest 17,762 bytes (nolibc and the
+tight ELF: ~2.9 KB off every design), memory level. 89 of the joint front's
+97 designs are seed 40's. Every prediction right, the image growth only
+roughly (~170 bytes). The held-out check: 0 of 218 differ from s6. The five
+corpus deaths reproduced: the gene opcall (results/opcall-deaths.md). The
+hybrid priced with triples: 14-15% of the selection's dispatches on the
+interpreted designs, 5% on the fastest - built next, for them
+(results/price-hybrid.md).
+
+## Iteration 174 - 2026-10-11 - Claude
+
+**The after-seed-40 batch applied - seed 41 runs 9 hours.** coreext (the
+standard's words), exceptions (CATCH and THROW in the kernel; ABORT and ABORT"
+through them), triples (the profiler; profiling builds only) - results/
+applied-after-seed40/. Reseeded (26,904 bytes), run-tests PASS, 7 of 7
+IDENTICAL, the jail; seed 40's 218 front designs alive on it; held-out: 0 of 218 designs differ from s6 somewhere.
