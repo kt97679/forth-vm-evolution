@@ -3576,3 +3576,11 @@ as a draft (results/drafts/callrel-draft-twopass.patch), not in the batch.
 reseed must come first, or every stage is built from the old kernel (every
 tag-2 design died "dictionary full" on a fresh clone). results/pending/ORDER.md
 corrected: reseed (27,120 bytes, as tested), then the build and the checks.
+
+**Locals need no kernel hook.** The kernel's FIND walks the search order, so a
+wordlist of local names, first in the order while a definition compiles, is
+found by the ordinary interpreter; the names' headers go into a scratch area
+(HERE, LAST, CURRENT saved and restored). Prototyped on a built tag-2 design:
+a local made mid-definition compiles, is gone after the scope, the dictionary
+intact. The owner's decision is not needed: coreext.4 only, like every wave.
+results/drafts/locals-plan.md - the next turn's work.
