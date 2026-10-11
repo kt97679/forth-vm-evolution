@@ -1,0 +1,31 @@
+pinned to cpu 0 (it and its sibling 1% busy; BENCH_CPU=N to choose)
+# The Forth 2012 test suite: hand-made s6, then each design against it (held out)
+
+Hand-made s6 against the suite's expected values - its own tests in each file (core.fr's and the
+helpers' not counted again), failed, and where a file stopped short of its end:
+
+| file | tests | failed | whole file | stopped at |
+|---|---|---|---|---|
+| prelimtest.fth | 23 | 0 | yes |  |
+| core.fr | 638 | 0 | yes |  |
+| coreplustest.fth | 101 | 0 | yes |  |
+| coreexttest.fth | 284 | 0 | no | SAVE-INPUT |
+| blocktest.fth | 0 | 0 | no | BLOCK |
+| doubletest.fth | 247 | 0 | yes |  |
+| exceptiontest.fth | 9 | 0 | yes |  |
+| facilitytest.fth | 70 | 0 | yes |  |
+| filetest.fth | 86 | 0 | no | REQUIRED |
+| localstest.fth | 0 | 0 | no | {: |
+| memorytest.fth | 198 | 0 | yes |  |
+| toolstest.fth | 44 | 0 | no | SYNONYM |
+| searchordertest.fth | 41 | 0 | yes |  |
+| stringtest.fth | 80 | 0 | no | SUBSTITUTE |
+
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+
+| design | guard | files as s6 | differing |
+|---|---|---|---|
+| c4b27765c5 | 0 | 14 of 14 | - |
+| 14da5d71a0 | 1 | 14 of 14 | - |
+
+0 of 2 designs differ from s6 somewhere.

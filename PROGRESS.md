@@ -3344,3 +3344,14 @@ slots for. rtimm=2 gives it the immediates overlay alone: +662 bytes, fib
 seed 40's front designs alive with it; the held-out check clean on the two
 checked. Pending after seed 41: results/pending/rtimm2-after-seed41.patch.
 Next on it: the forms the price asks for - `-` and `<` immediates, DUP n <.
+
+## Iteration 176 - 2026-10-11 - Claude
+
+**The hybrid's keeping forms: fib -36.3%, the price met.** DUP+I and DUP<I in
+every layer (engine, both generators, converter, JIT steps, run-time fusion),
+pinned to one-byte codes where the run-time immediates' table is - escaped,
+they did nothing (found by probing what the run-time compiler wrote). On seed
+40's smallest with rtimm=2: fib 59.27 M -> 37.74 M dispatches for +726 bytes;
+218 of 218 front designs alive with them; the held-out check clean on the two
+ans-check took (it keeps its database's front - the rest to check). Pending
+after seed 41, after rtimm2: results/pending/keepforms-after-seed41.patch.

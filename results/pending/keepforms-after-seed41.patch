@@ -1,0 +1,281 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index a439438..8429c24 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1658,6 +1658,15 @@ L_x_dupnbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();         /* D
+ #if X_SWAPADDI
+ L_x_swapaddi: t = DS1; DS1 = DS0; DS0 = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();   /* SWAP n + */
+ #endif
++/*  Iteration 176, the hybrid's keeping forms: an operation on the top with an
++ *  immediate, the top kept - DUP n + and DUP n < (fib's DUP -1 + and DUP 2 <),
++ *  one dispatch for three. results/price-hybrid.md.  */
++#if X_DUPADDI
++L_x_dupaddi: PUSH(DS1 + (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();                 /* DUP n + */
++#endif
++#if X_DUPLTI
++L_x_duplti: PUSH(-(UNS64)((INT64)DS1 < (INT64)(int8_t)BYTE(ip))); ip += 1; NEXT();         /* DUP n < */
++#endif
+ /*  Iteration 50: FILL and CMOVE, the kernel's byte loops (12-14 dispatches a
+  *  byte in Forth; CMOVE 5-7% of kernel, parse and corpus), as opcodes - a
+  *  byte at a time, ascending, as the loops: CMOVE's overlap behaves the same.  */
+diff --git a/forth/cv8-fuse-imm.4 b/forth/cv8-fuse-imm.4
+index b77364e..41999dc 100644
+--- a/forth/cv8-fuse-imm.4
++++ b/forth/cv8-fuse-imm.4
+@@ -18,7 +18,7 @@
+ \ which the converter does not relocate: C@ through it crashed every
+ \ colon definition.
+ 
+-CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C,
++CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C,   \ Iteration 176: DUP+I DUP<I DUP <
+ ALIGN
+ VARIABLE LIT-PREV ( --- a-addr )
+ \ The primitive emitted straight before the last literal, or 0.
+diff --git a/forth/cv8t-fuse-imm.4 b/forth/cv8t-fuse-imm.4
+index a4e65b6..845095a 100644
+--- a/forth/cv8t-fuse-imm.4
++++ b/forth/cv8t-fuse-imm.4
+@@ -23,7 +23,7 @@
+ \ which the converter does not relocate: C@ through it crashed every
+ \ colon definition.
+ 
+-CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C,
++CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C,   \ Iteration 176: DUP+I DUP<I DUP <
+ ALIGN
+ VARIABLE LIT-PREV ( --- a-addr )
+ \ The primitive emitted straight before the last literal, or 0.
+@@ -45,19 +45,26 @@ VARIABLE LIT-PREV ( --- a-addr )
+   HERE SWAP LIT,
+   IMM-OPS C@ IF DUP SMALL-LIT? IF DROP LAST-OP ! EXIT THEN THEN DROP ; IMMEDIATE
+ 
++\ Iteration 176: IMM+ with variables - SWAP n + a SWAP+I, DUP n + a DUP+I,
++\ n + an ADDI, DUP n < a DUP<I (IMM-OPS bytes 4-7); xt kept when nothing fuses.
++VARIABLE IMM-N  VARIABLE IMM-L  VARIABLE IMM-P
++: IMM-AT ( a op --- -1 )   \ back to a: the opcode, then the immediate
++  SWAP HERE - ALLOT OP, IMM-N @ C, 0 LAST-OP ! -1 ;
++: IMM-AFTER ( op --- f )   \ was the operation before the literal op?
++  IMM-P @ DUP IF C@ = ELSE SWAP DROP THEN ;
+ : IMM+ ( xt --- xt 0 | -1 )
+-\ xt is + and a literal ADDI holds is straight before it: ADDI n in its
+-\ place - or SWAP+I n where a plain SWAP came straight before the literal.
+   IMM-OPS C@ 0= IF 0 EXIT THEN
+-  DUP C@ IMM-OPS 2 + C@ <> IF 0 EXIT THEN
+-  LAST-OP @ ?DUP 0= IF 0 EXIT THEN
+-  DUP SMALL-LIT? 0= IF DROP 0 EXIT THEN
+-  ROT DROP SWAP
+-  LIT-PREV @ ?DUP IF DUP C@ IMM-OPS 3 + C@ = IMM-OPS 1+ C@ 0= 0= AND IF
+-    SWAP DROP HERE - ALLOT IMM-OPS 1+ C@ OP, C, 0 LAST-OP ! -1 EXIT
+-  THEN DROP THEN
+-  HERE - ALLOT IMM-OPS C@ OP, C, 0 LAST-OP ! -1 ;
+-
++  LAST-OP @ DUP 0= IF EXIT THEN
++  DUP IMM-L ! SMALL-LIT? 0= IF 0 EXIT THEN IMM-N !
++  LIT-PREV @ IMM-P !
++  DUP C@ IMM-OPS 2 + C@ = IF
++    IMM-OPS 1+ C@ IF IMM-OPS 3 + C@ IMM-AFTER IF DROP IMM-P @ IMM-OPS 1+ C@ IMM-AT EXIT THEN THEN
++    IMM-OPS 4 + C@ IF IMM-OPS 6 + C@ IMM-AFTER IF DROP IMM-P @ IMM-OPS 4 + C@ IMM-AT EXIT THEN THEN
++    DROP IMM-L @ IMM-OPS C@ IMM-AT EXIT
++  THEN
++  IMM-OPS 5 + C@ IF DUP C@ IMM-OPS 7 + C@ = IF
++    IMM-OPS 6 + C@ IMM-AFTER IF DROP IMM-P @ IMM-OPS 5 + C@ IMM-AT EXIT THEN
++  THEN THEN 0 ;
+ : COMPILE,8 ( xt --- )
+ \ cv8-fuse.4's, with n + and SWAP n + tried first.
+   DUP >NAME C@ 32 AND IF
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 1ccd004..405cd0e 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -25,6 +25,7 @@
+ | inlined at the hottest call sites (`hotinl`: 0, 10, 20, 40; Iteration 92; in the tag): the converter splices the first K safe sites of lab/evolve/hotsites-v1.json - the image's call sites by the fastest design's profile, named by caller, callee and ordinal - before every rewrite | Iteration 91's deep dive: short words found nothing, hot sites did | fast designs 9-10% fewer dispatches on parse and corpus, 4-5% on kernel, +40-160 bytes (results/hotinl-opbody.md) |
+ | words an opcode replaced, [opcode EXIT] (`opbody`: 0, 1; Iteration 92): (FIND), (>NUMBER), THREAD-FIND, +!, ?DUP, as FILL and CMOVE (Iterations 50, 54) | Iteration 91: a quarter of the fastest image never runs | 128-144 bytes off the fast designs' images; run-time calls take the opcode (results/hotinl-opbody.md) |
+ | SWAP+I sure of a slot (`swapi`: 0, 1; Iteration 61; with 'imm'): SWAP+I first among the format-10 names | seed 13's front: SWAP+I on none of it | fib 0.944, selected geomean 0.987, 16 bytes less (PROGRESS.md, Iteration 61) |
++| the keeping forms (`ops10` names DUP+I, DUP<I; Iteration 176): DUP n + and DUP n < in one dispatch, the top kept - in the image (the converter) and at run time (cv8t-fuse-imm.4's IMM+), pinned to one-byte codes where IMM-OPS is | results/price-hybrid.md: the hybrid's keeping forms | seed 40's smallest with rtimm=2: fib -36.3% of its dispatches (the price: 36.4), +726 bytes |
+ | I + fused in run-time code (`rtiplus`: 0, 1; Iteration 60; with rtloopall): a format-10 opcode I+, SUPER-TABLE's (I, +) -> I+, and forth/cv8-fuse-iplus.4 pointing LAST-OP at I's byte | the run-time code's opcodes, named | loop 0.801, sieve 0.967, kernel/parse/corpus +0.7-1.2% compile cost; selected geomean 0.962; 37 bytes (PROGRESS.md, Iteration 60) |
+ | one thread head in the header (`thinhdr`: 0, 1; Iteration 58; CV8): the header's 32 thread heads - read by the CV8 loader and never used, only SOD16 numbers calls - as a count of 1 and a zero head | this lab: an audit of the header | 248 bytes off every CV8 design, dispatches identical (results/bss.md) |
+ | the whole lookup and numbers (`klookup`: 0, 1; Iteration 57; with kinput): forth/cv8b-klookup.4 ((FIND) and FIND8, (>NUMBER) and >NUMBER8, WORD8) and (FIND), (>NUMBER) first among the format-10 names | the dispatch attribution on seed 13's fastest | parse 0.53-0.57, corpus 0.60-0.65, kernel 0.80-0.81 counted; differential tests identical (results/kfast.md) |
+diff --git a/lab/evolve/callsites.py b/lab/evolve/callsites.py
+index 7527803..97ae6fd 100644
+--- a/lab/evolve/callsites.py
++++ b/lab/evolve/callsites.py
+@@ -74,7 +74,7 @@ E.setup()
+ WORKS = E.WORK_SEL + E.WORK_HELD
+ RA_READ = {'R>', 'R@', 'RDROP', '2R>', '2R@', 'RP@', 'RP!'}         # a callee's own return address, read
+ RSTACK = RA_READ | {'>R', '2>R', 'I', 'J', 'UNLOOP', '(DO)', '(?DO)', '(LOOP)', '(+LOOP)', '(LEAVE)', 'I+', 'EXECUTE'}
+-OPND = ('LIT', 'BRANCH', 'ADDI', 'EQI', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'SWAP+I', 'JIT', 'DOVAR', 'DODOES')
++OPND = ('LIT', 'BRANCH', 'ADDI', 'EQI', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'SWAP+I', 'DUP+I', 'DUP<I', 'JIT', 'DOVAR', 'DODOES')
+ def parts(name): return (name[:-5] if name.endswith(';EXIT') else name).split(' ')
+ pct = lambda a, b: '%.1f%%' % (100.0 * a / b) if b else '-'
+ 
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 2ebe15a..c73c560 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -200,7 +200,7 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
+               '=?BRANCH', '=?BRANCH8', 'U<?BRANCH', 'U<?BRANCH8',
+               '<>?BRANCH', '<>?BRANCH8', '>?BRANCH', '>?BRANCH8', '0<?BRANCH', '0<?BRANCH8', '=I?BRANCH', '=I?BRANCH8',   # Iteration 12
+               'DUP?BRANCH', 'DUP?BRANCH8', 'OVER?BRANCH', 'OVER?BRANCH8',   # Iteration 33: tests that keep their value
+-              'DUP?NBRANCH', 'DUP?NBRANCH8', 'SWAP+I',   # Iteration 34: DUP 0= ?BRANCH kept; SWAP n +
++              'DUP?NBRANCH', 'DUP?NBRANCH8', 'SWAP+I', 'DUP+I', 'DUP<I',   # Iteration 34: DUP 0= ?BRANCH kept; SWAP n +
+               'FILL', 'CMOVE',                           # Iteration 50: the kernel's byte loops
+               'THREAD-FIND',                             # Iteration 51: the byte-header thread walk (kfast's)
+               'SCAN', 'SKIP',                            # Iteration 54: the input side (TABS>BL went, Iteration 148; kinput's)
+@@ -216,14 +216,14 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
+                '<>?BRANCH': 'L_x_nebr', '<>?BRANCH8': 'L_x_nebr8', '>?BRANCH': 'L_x_sgtbr', '>?BRANCH8': 'L_x_sgtbr8',
+                '0<?BRANCH': 'L_x_zltbr', '0<?BRANCH8': 'L_x_zltbr8', '=I?BRANCH': 'L_x_eqibr', '=I?BRANCH8': 'L_x_eqibr8',
+                'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8',
+-               'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi',
++               'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi', 'DUP+I': 'L_x_dupaddi', 'DUP<I': 'L_x_duplti',
+                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
+                'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
+ # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
+ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
+            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
+            'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR',
+-           'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
++           'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI', 'DUP+I': 'X_DUPADDI', 'DUP<I': 'X_DUPLTI',
+            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
+            'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+ def recorded_genome(i):
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index a29d440..e2b46f5 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -121,6 +121,8 @@ SPECS = {
+     'L_x_dupnbr':       (['f'], ['f'], 'if (f) ip += (int16_t)LD16(ip); else ip += 2;'),
+     'L_x_dupnbr8':      (['f'], ['f'], 'if (f) ip += (int8_t)BYTE(ip); else ip += 1;'),
+     'L_x_swapaddi':     (['a', 'b'], ['b', 'c'], 'c = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1;'),
++    'L_x_dupaddi':      (['a'], ['a', 'c'], 'c = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1;'),
++    'L_x_duplti':       (['a'], ['a', 'c'], 'c = -(UNS64)((INT64)a < (INT64)(int8_t)BYTE(ip)); ip += 1;'),
+     # Iteration 50
+     'L_x_fill':         (['a', 'u', 'c'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { BYTE(a_) = (UNS8)c; a_++; u_--; } }'),
+     'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index 5a8c810..0bb5f7e 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -89,6 +89,8 @@ HOT = {
+  'L_x_dupnbr':     'if (tos) ip += (int16_t)LD16(ip); else ip += 2; NEXT();',
+  'L_x_dupnbr8':    'if (tos) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();',
+  'L_x_swapaddi':   't = NOS; NOS = tos; tos = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();',
++ 'L_x_dupaddi':    'PUSHT(tos); tos = tos + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();',
++ 'L_x_duplti':     'PUSHT(tos); tos = -(UNS64)((INT64)tos < (INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();',
+  # Iteration 50: the byte loops as opcodes - three popped, the fourth the top
+  'L_x_fill':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();',
+  'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } tos = a_; } NEXT();',
+diff --git a/tools/layout.py b/tools/layout.py
+index 28b58d3..ab134b3 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -457,6 +457,12 @@ if TAG2_ON:
+     if any(x['n'] in ('LOOPTAB', 'LOOP-OPS') for x in order):
+         _pin += [G['X_OPS10'][n] for n in ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
+                  if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
++    # the run-time immediates (forth/cv8t-fuse-imm.4): IMM-OPS holds one-byte
++    # codes, as the loop tables do - so its keeping forms are pinned where the
++    # design has them (Iteration 176: escaped, fib's DUP -1 + and DUP 2 < went
++    # unfused, and an escaped form costs the two dispatches it saves)
++    if any(x['n'] == 'IMM-OPS' for x in order):
++        _pin += [G['X_OPS10'][n] for n in ('DUP+I', 'DUP<I') if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
+     assert all(p in _names for p in _pin), [p for p in _pin if p not in _names]
+     # --tag2-hot W: an operation weighing at least W in the reference is hot -
+     # ranked first, by weight; the rest by how often the image uses it. 0:
+@@ -1139,7 +1145,9 @@ def emit(path):
+             # them; zeros otherwise. SOD16_NO_RTIMM=1 writes zeros, to measure.
+             rt = '--rtfuse' in ARGV and not _os.environ.get('SOD16_NO_RTIMM') and 'imm' in G['SPEC']
+             data = bytes([G['X_IMM']['ADDI'] if rt else 0, G['X_OPS10'].get('SWAP+I', 0) if rt else 0,
+-                          op('+')[0], op('SWAP')[0]])     # the overlay compares against these
++                          op('+')[0], op('SWAP')[0],      # the overlay compares against these
++                          G['X_OPS10'].get('DUP+I', 0) if rt else 0, G['X_OPS10'].get('DUP<I', 0) if rt else 0,
++                          op('DUP')[0], op('<')[0]])      # Iteration 176: the keeping forms
+         elif w['n'] == 'FOLD-TABLE':
+             ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
+             data = bytes([len(ops)] + ops); assert len(data) <= 24, "fold table overflows"
+@@ -1367,7 +1375,7 @@ if EMIT:
+                  '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
+                  'CELLS': (['LIT', 'LSHIFT'], 3)}
+             O = {'LIT8': (['LIT'], 1), 'LIT': (['LIT'], 2), 'LIT32': (['LIT'], 3), 'LIT64': (['LIT'], 4),
+-                 'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5),
++                 'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5), 'DUP+I': (['DUP', 'ADDI'], 5), 'DUP<I': (['DUP', 'LIT', 'LT'], 5),
+                  'BRANCH': (['BRANCH'], 7), 'BRANCH8': (['BRANCH'], 6), '?BRANCH': (['0BRANCH'], 7),
+                  '?BRANCH8': (['0BRANCH'], 6), '(LOOP)': (['LOOP'], 7), '(LEAVE)': (['LEAVE'], 7),
+                  '<?BRANCH': (['LT', '0BRANCH'], 7), '<?BRANCH8': (['LT', '0BRANCH'], 6),
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 45ddf06..ec8839e 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -298,7 +298,7 @@ def read_ops(w):
+     out = fuse_pairs(out) if V8 and SUPERS else out
+     out = testbranch(out) if V8 and any(v[2] in X_OPS10 for v in TESTBR.values()) else out
+     out = eqibranch(out) if V8 and '=I?BRANCH' in X_OPS10 else out
+-    out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10) else out
++    out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10 or 'DUP+I' in X_OPS10 or 'DUP<I' in X_OPS10) else out
+     out = shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
+     return opcall_rewrite(out) if V8 and OPCALL else out     # Iteration 121: last - the op as it ends up
+ 
+@@ -701,7 +701,7 @@ TB_LONG = {v[0]: v[2] for v in TESTBR.values()}; TB_SHORT = {v[1]: v[3] for v in
+ KEEPNBR = ('DNQBR', 'DNQBRS', 'DUP?NBRANCH', 'DUP?NBRANCH8')
+ TB_LONG[KEEPNBR[0]] = KEEPNBR[2]; TB_SHORT[KEEPNBR[1]] = KEEPNBR[3]
+ BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT) + ('EQIT', 'EQITS')
+-PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'I+'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
++PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'DUP+I', 'DUP<I', 'I+'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
+ def shorten(ops):
+     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
+     on a layout that counts every alignment at its widest, so the real
+@@ -777,6 +777,11 @@ def keepbranch(ops):
+                 out.append(('DNQBR', pl2 + CELL)); j += 2; continue      # one cell earlier: same target
+             if pl == 'SWAP' and k2 == 'ADDI' and 'SWAP+I' in X_OPS10 and 'SADDI' not in skip:
+                 out.append(('SADDI', pl2)); j += 2; continue
++            if pl == 'DUP' and k2 == 'ADDI' and 'DUP+I' in X_OPS10 and 'DADDI' not in skip:     # Iteration 176
++                out.append(('DADDI', pl2)); j += 2; continue
++            if (pl == 'DUP' and k2 == 'LIT' and -128 <= pl2 <= 127 and j + 2 < len(ops) and cs[j + 2] not in tg
++                    and ops[j + 2] == ('P', '<') and 'DUP<I' in X_OPS10 and 'DLTI' not in skip):
++                out.append(('DLTI', pl2)); j += 3; continue
+         out.append(ops[j]); j += 1
+     return out
+ def ops10_rewrite(ops):
+@@ -960,7 +965,7 @@ def op_cells(k, pl):
+     if k == 'OC': return CELL
+     if k == 'LITX': return 3 * CELL
+     if k in ('P', 'C', 'OPD', 'XT'): return CELL
+-    if k in ('DNQBR', 'DNQBRS', 'SADDI'): return 4 * CELL   # DUP + 0= ?BRANCH + operand; SWAP + LIT n +
++    if k in ('DNQBR', 'DNQBRS', 'SADDI', 'DADDI', 'DLTI'): return 4 * CELL   # DUP + 0= ?BRANCH + operand; SWAP + LIT n +
+     if k in TB_LONG or k in TB_SHORT: return 3 * CELL   # the test + ?BRANCH + its operand
+     if k in ('LIT', 'LITOFF') + BRK: return 2 * CELL
+     if k == 'STR': return align_up(len(pl), CELL)
+@@ -991,7 +996,7 @@ def op_bytes(k, pl, t):
+             if not VARSLOT: return 3
+             v = slotval(k, pl)
+             return 3 if v is None or v < (1 << 15) else 4
+-        if k in X_IMM or k in ('EQIH', 'SADDI'): return 2
++        if k in X_IMM or k in ('EQIH', 'SADDI', 'DADDI', 'DLTI'): return 2
+         if k == 'EQIT': return 2                 # the offset alone
+         if k == 'EQITS': return 1
+         if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return 1
+@@ -1048,6 +1053,8 @@ def opcode_L(ops, j):
+         i_, e_ = cv8_op(pl); return 128 + i_ if e_ else i_
+     if k in X_IMM: return X_IMM[k]
+     if k == 'SADDI': return X_OPS10['SWAP+I']
++    if k == 'DADDI': return X_OPS10['DUP+I']
++    if k == 'DLTI': return X_OPS10['DUP<I']
+     if k in ('VF', 'VS'): return X_VF if k == 'VF' else X_VS
+     if k == 'LOC': return X_LOC[pl[0]]
+     if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return {0: X_LIT0, 1: X_LIT1, -1: X_LITM1}[pl]
+@@ -1184,7 +1191,7 @@ def to_bytes_t2(ops):
+         L = opcode_L(ops, j)
+         assert L is not None, "no opcode for %r" % (k,)
+         t2put(b, L)
+-        if k in X_IMM or k in ('SADDI', 'EQIH'): b.append(pl & 0xFF)
++        if k in X_IMM or k in ('SADDI', 'EQIH', 'DADDI', 'DLTI'): b.append(pl & 0xFF)
+         elif k in ('VF', 'VS'): emit_slot(b, slotval(k, pl) or 0)
+         elif k == 'LOC': emit_slot(b, slotval(k, pl) or 0)
+         elif k in ('LIT', 'LITX') and not (pl in (0, 1, -1) and 'small' in SPEC and k == 'LIT'):
+@@ -1226,6 +1233,8 @@ def to_bytes_v8(ops):
+             b.append(X_IMM[k]); b.append(pl & 0xFF)
+         elif k == 'SADDI':                             # SWAP n + : the opcode, then ADDI's immediate
+             b.append(X_OPS10['SWAP+I']); b.append(pl & 0xFF)
++        elif k in ('DADDI', 'DLTI'):                   # DUP n + and DUP n < (Iteration 176)
++            b.append(X_OPS10['DUP+I' if k == 'DADDI' else 'DUP<I']); b.append(pl & 0xFF)
+         elif k in ('VF', 'VS'):
+             b.append(X_VF if k == 'VF' else X_VS); emit_slot(b, slotval(k, pl) or 0)
+         elif k == 'LOC':

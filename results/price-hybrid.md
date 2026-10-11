@@ -83,3 +83,30 @@ check on the two that ans-check's small front kept: 14 of 14 files as s6.
 Evolution now weighs it in one mutation. Next, the hybrid's own forms on top:
 `-` and `<` immediates and the keeping forms (DUP n <, DUP n -, SWAP n -) -
 fib's price is 36%, rtimm=2 takes 13.6.
+
+## The keeping forms (Iteration 176) - fib's price, met
+
+DUP+I (DUP n +) and DUP<I (DUP n <): one dispatch each where fib's `DUP -1 +`
+takes two with rtimm and `DUP 2 <` three - format-10 names, in the image (the
+converter's peephole) and at run time (cv8t-fuse-imm.4's IMM+, now SWAP n +,
+DUP n +, n + and DUP n <), JIT steps from existing stencils. First try: no
+effect on fib - in a small design the forms landed behind the escape (two
+dispatches each, and IMM-OPS holds one-byte codes only: escaped, the run-time
+compiler had nothing to write). The tag-2 ranking puts them by image use and a
+reference profile made before they existed; now they are pinned to one-byte
+codes where IMM-OPS is, as the loop opcodes are for the loop tables.
+
+| seed 40's smallest, 0ceb043115 | image | fib's dispatches |
+|---|---|---|
+| as recorded | 7,406 | 59.27 M |
+| rtimm=2 | +662 | 51.20 M (-13.6%) |
+| rtimm=2 and the keeping forms | +64 more | 37.74 M (-36.3% in all; the price: 36.4) |
+
+The other workloads within 0.1%. What the run-time compiler writes, probed:
+`DUP -1 +` -> DUP+I 255, `DUP 2 <` -> DUP<I 2, both right. All 218 of seed 40's
+front designs with rtimm=2 and both forms: alive (rtimm=2 expressed on 171;
+the 47 with pairs and rtfuse are rtimm=1). The held-out check: 14 of 14 files
+as s6 on the two it took - ans-check keeps only its database's front, and
+picked 2 of the 8 given (both JIT designs); the interpreted ones are not yet
+checked by the suite - to do before the batch is applied.
+results/pending/keepforms-after-seed41.patch, after rtimm2-after-seed41.patch.

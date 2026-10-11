@@ -100,6 +100,12 @@ OS words, its buffers) is the extension's, outside the measure. So sysc's
 saving counts in full, and a kernel word only an extension uses belongs in
 that extension (results/word-audit.md, "Core or extension").
 
+*The after-seed-41 batch - pending* (Iterations 175-176): rtimm2 (run-time
+immediates without pairs), keepforms (DUP+I, DUP<I) - results/pending/. Before
+applying: the held-out check on the interpreted designs with them (ans-check
+checks only its database's front); a founder - seed 40's smallest with rtimm=2
+and both forms - so evolution starts from it (three mutations otherwise).
+
 *The after-seed-40 batch - applied at Iteration 174*: coreext, exceptions,
 triples (results/applied-after-seed40/) - reseeded, the four checks, seed 40's
 218 front designs alive, the held-out check over them. Next, in order: the
