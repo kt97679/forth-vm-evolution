@@ -1,0 +1,74 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 2cc6677..d048102 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
++LATE = ('pgo', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -114,6 +114,7 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
+              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+ EXPRESSED['cv8'] += ['jitloop', 'jitinl']
++EXPRESSED['cv8'] += ['pgo']   # Iteration 200: the engine compiled from a profile of the corpus
+ EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
+ EXPRESSED['cv8'] += ['dskew']   # Iteration 183 (the owner: the stacks' place): the data stack 2 KB lower - its top cells off the return stack's page offsets   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
+ BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
+@@ -688,6 +689,52 @@ def _build(g, d):
+     m = re.search(rb'(?:ops10|tiny): no exact body match for [^\n]*', r.stdout)
+     if m: raise RuntimeError('died: ' + m.group(0).decode(errors='replace'))
+     if t2: compile_engine()          # the converter wrote vm-tag2-one.h and vm-tag2-esc.h beside vm.c
++    if g.get('pgo') and not (g.get('tail') and g['tos'] and not g.get('msc')):
++        # Iteration 200, the gene pgo (results/gp-deep-dive.md): the engine
++        # compiled again from a profile - instrumented and hosted (libgcov
++        # writes the profile through the C library), trained on the corpus
++        # with this design's image, then freestanding with -fprofile-use under
++        # the same name, so the profile is found. The corpus is the gate's
++        # input, so training sees a selected workload: the held-out ones say
++        # whether it generalises.
++        prof = os.path.join(d, 'pgo'); shutil.rmtree(prof, ignore_errors=True); os.makedirs(prof)
++        jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
++               os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []
++        base = ['cc'] + ccflags(g) + flags
++        # Iteration 201 (the second attempt): hosted, but static and not
++        # position-independent, as the freestanding engine is - the JIT places
++        # code by the engine's own addresses (the first attempt's JIT design
++        # crashed hosted); no static C library here falls back to -no-pie.
++        gen_fl = ['-fprofile-generate=' + prof, '-o', eng, src] + jit + ['-fno-asynchronous-unwind-tables', '-no-pie']
++        r = sh(base + gen_fl + ['-static'])
++        if r.returncode: r = sh(base + gen_fl)
++        if r.returncode: raise RuntimeError('died: pgo: the training engine did not compile' + why(r))
++        # Iteration 201: trained on every selection workload once (its single
++        # form) - the first attempt's corpus alone made the loops and calls cold
++        # (fib and bubble 11-27% slower). The held-out workloads, never trained
++        # on, say whether the profile generalises.
++        # Its long forms, as measured: the single runs were mostly compiling,
++        # and the loops' share small (bubble 13-20% slower). A workload the
++        # hosted training engine cannot run (the JIT design's kernel: SIGSEGV)
++        # is left out of the profile, not fatal - three at least.
++        pwt = private_work(prof)          # its own work directory: evaluate() makes the design's
++        if not LONGF: long_files()
++        trained = []
++        for w in WORK_SEL:
++            try: tr = subprocess.run([eng, img], cwd=pwt, input=program(w), capture_output=True, timeout=120)
++            except subprocess.TimeoutExpired: continue
++            if tr.returncode in (0, 1): trained.append(w)
++        if len(trained) < 3 or not any(f.endswith('.gcda') for _, _, fs in os.walk(prof) for f in fs):
++            raise RuntimeError('died: pgo: profile from %d workloads' % len(trained))
++        # the I/O functions differ hosted and freestanding (the C library against
++        # our system calls): their profiles do not match and are left out
++        # Without the value-profile transformations (an indirect jump promoted
++        # to compares for the training's favourite targets) and without hot/cold
++        # splitting of the one interpreter function.
++        r = sh(base + ['-fprofile-use=' + prof, '-fprofile-correction', '-Wno-missing-profile', '-Wno-error=coverage-mismatch', '-Wno-coverage-mismatch',
++                       '-fno-vpt', '-fno-reorder-blocks-and-partition', '-fno-reorder-blocks', '-fno-tracer',
++                       '-o', eng, src] + jit + rt())
++        if r.returncode: raise RuntimeError('died: pgo: the engine did not compile from its profile' + why(r))
+     return eng, img
+ 
+ sys.path.insert(0, os.path.join(ROOT, 'tools'))

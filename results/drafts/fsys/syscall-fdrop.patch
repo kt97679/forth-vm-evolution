@@ -1,0 +1,17 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index b2558cc..4082dfb 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -2153,7 +2153,11 @@ L_syscall: {
+     long num = (long)(INT64)DS0, r;
+     const UNS64 *a = (const UNS64 *)(uintptr_t)DS1;
+     t_flush();
+-    if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
++    /*  -4 (Iteration 202, the gene fsys): fid a[0]'s read-ahead dropped, as the
++     *  native READ-FILE and the positioning words did first - forth/file-sysc.4's
++     *  file words, which READ-LINE's buffer would otherwise leave behind.  */
++    if (num == -4) { t_fdrop((int)a[0]); r = 0; }
++    else if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
+     else {
+         if (num == 60 || num == 231) { PROFDUMP; }
+ #if defined(__i386__)
