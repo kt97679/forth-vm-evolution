@@ -1,0 +1,77 @@
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 3406b8c..39e369b 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -90,3 +90,72 @@ VARIABLE HANDLER  0 HANDLER !
+     1+ SWAP 1+ SWAP R> 1-
+   REPEAT DROP 2DROP R> DUP IF 0< IF 1 ELSE -1 THEN THEN ;
+ : AGAIN ( dest --- )  0 POSTPONE LITERAL POSTPONE UNTIL ; IMMEDIATE
++\ The fourth wave (Iteration 170): where the suite stopped next - coreexttest
++\ at MARKER, toolstest at CS-PICK, doubletest at M*/, filetest at RESIZE-FILE,
++\ stringtest at SLITERAL, searchordertest at FORTH-WORDLIST (ONLY's minimum
++\ order must hold it and SET-ORDER; -1 SET-ORDER is ONLY).
++: CS-PICK ( ... u --- ... x )  PICK ;   \ a control-flow item is one cell here
++: CS-ROLL ( ... u --- ... )  ROLL ;
++: SLITERAL ( c-addr1 u --- ) ( run time: --- c-addr2 u )   \ the string kept on the heap
++  DUP ALLOCATE DROP 2DUP 2>R SWAP CMOVE 2R> POSTPONE LITERAL POSTPONE LITERAL ; IMMEDIATE
++: UT* ( ud u --- ut )  TUCK UM* 2>R UM* 0 2R> D+ ;
++: UT/MOD ( ut u --- rem ud )  DUP >R UM/MOD ROT ROT R> UM/MOD ROT ;
++: M*/ ( d1 n1 +n2 --- d2 )   \ a three-cell product; the quotient floored, as this system's /
++  >R OVER OVER XOR >R ABS >R DABS R> UT* R> R> SWAP >R UT/MOD
++  R> 0< IF DNEGATE ROT IF 1. D- THEN ELSE ROT DROP THEN ;
++CREATE RESIZE-BLOCK 16 ALLOT
++: RESIZE-FILE ( ud fileid --- ior )   \ ftruncate: SYSCALL's block holds 64-bit arguments
++  RESIZE-BLOCK 16 ERASE RESIZE-BLOCK ! DROP RESIZE-BLOCK 8 + ! RESIZE-BLOCK 77 SYSCALL 0<> ;
++: WID-SAVE ( wid --- a )   \ a wordlist's count and threads, copied to the heap
++  DUP @ 1+ CELLS DUP ALLOCATE DROP DUP >R SWAP CMOVE R> ;
++: MARKER ( "name" --- )   \ the current wordlist's threads, LAST and HERE, as before name
++  HERE LAST @ CURRENT @ DUP WID-SAVE
++  CREATE , , , ,
++  DOES> DUP @ OVER CELL+ @ OVER @ 1+ CELLS CMOVE
++        DUP CELL+ @ CURRENT !  DUP 2 CELLS + @ LAST !  3 CELLS + @ DP ! ;
++\ A word here is found while it is compiled, so a new definition that calls the
++\ old takes the old one's xt first - else it calls itself.
++' SET-ORDER CONSTANT 'SET-ORDER
++: SET-ORDER ( widn ... wid1 n --- )   \ -1 is ONLY; 0 an empty order (extend.4's loop
++  DUP -1 = IF DROP ONLY EXIT THEN       \ ran from -1 down through memory: searchordertest)
++  DUP 0= IF #ORDER ! EXIT THEN  'SET-ORDER EXECUTE ;
++' SET-ORDER CONSTANT 'SET-ORDER-1
++GET-CURRENT ROOT-WORDLIST SET-CURRENT
++: FORTH-WORDLIST ( --- wid )  [ FORTH-WORDLIST ] LITERAL ;
++: SET-ORDER ( widn ... wid1 n --- )  'SET-ORDER-1 EXECUTE ;
++SET-CURRENT
++\ The fifth wave (Iteration 170): coreexttest at VALUE, doubletest at 2VALUE,
++\ toolstest at [DEFINED], filetest at RENAME-FILE, searchordertest at C".
++: VALUE ( x "name" --- )  CREATE 1 , , DOES> CELL+ @ ;          \ the kind first: TO
++: 2VALUE ( x1 x2 "name" --- )  CREATE 2 , , , DOES> CELL+ 2@ ;  \ stores one cell or two
++: TO ( i*x "name" --- )
++  ' >BODY DUP CELL+ SWAP @ 2 =
++  STATE @ IF SWAP POSTPONE LITERAL IF POSTPONE 2! ELSE POSTPONE ! THEN
++          ELSE IF 2! ELSE ! THEN THEN ; IMMEDIATE
++: [DEFINED] ( "name" --- flag )  BL WORD FIND NIP 0<> ; IMMEDIATE
++: [UNDEFINED] ( "name" --- flag )  BL WORD FIND NIP 0= ; IMMEDIATE
++: ZPLACE ( c-addr u buf --- )  2DUP + 0 SWAP C! SWAP CMOVE ;   \ zero-terminated at buf
++CREATE RENAME-BLOCK 16 ALLOT  CREATE RENAME-PATHS 512 ALLOT
++: RENAME-FILE ( c-addr1 u1 c-addr2 u2 --- ior )   \ rename: two paths in SYSCALL's block
++  RENAME-PATHS 256 + ZPLACE RENAME-PATHS ZPLACE
++  RENAME-BLOCK 16 ERASE RENAME-PATHS RENAME-BLOCK ! RENAME-PATHS 256 + RENAME-BLOCK 8 + !
++  RENAME-BLOCK 82 SYSCALL 0<> ;
++: C" ( "ccc<quote>" --- ) ( run time: --- c-addr )   \ the counted string kept on the heap
++  34 PARSE DUP 1+ ALLOCATE DROP DUP >R 2DUP C! 1+ SWAP CMOVE R> POSTPONE LITERAL ; IMMEDIATE
++\ The sixth wave (Iteration 170). RECURSE in :NONAME: the kernel's and the
++\ byte compilers' RECURSE call LAST's word - a :NONAME has no header, so its
++\ own xt is kept, and used while no header is newer (coreexttest).
++\ (held back: under the runner coreexttest crashed with it - Iteration 170)
++: ORDER ( --- )  GET-ORDER 0 ?DO . LOOP CR GET-CURRENT . CR ;   \ searchordertest
++: N>R ( xn .. x1 n --- ) ( R: --- x1 .. xn n )   \ the standard's reference design
++  DUP BEGIN DUP WHILE ROT R> SWAP >R >R 1- REPEAT DROP R> SWAP >R >R ;
++: NR> ( --- xn .. x1 n ) ( R: x1 .. xn n --- )
++  R> R> SWAP >R DUP BEGIN DUP WHILE R> R> SWAP >R ROT ROT 1- REPEAT DROP ;
++: UNESCAPE ( c-addr1 len1 c-addr2 --- c-addr2 len2 )   \ each % doubled (stringtest)
++  DUP 2SWAP OVER + SWAP ?DO
++    I C@ [CHAR] % = IF [CHAR] % OVER C! 1+ THEN I C@ OVER C! 1+
++  LOOP OVER - ;
++CREATE STAT-BLOCK 16 ALLOT  CREATE STAT-PATH 256 ALLOT  CREATE STAT-BUF 256 ALLOT
++: FILE-STATUS ( c-addr u --- x ior )   \ stat: 0 and its result (filetest)
++  STAT-PATH ZPLACE STAT-BLOCK 16 ERASE STAT-PATH STAT-BLOCK ! STAT-BUF STAT-BLOCK 8 + !
++  0 STAT-BLOCK 4 SYSCALL 0<> ;

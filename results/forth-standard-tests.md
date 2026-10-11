@@ -233,3 +233,30 @@ seed39.patch, the batch's fourteenth; coreext's, regenerated.
 
 On s6: 1,599 tests (991 before the extension), 6 failed - all filetest's, one
 bug: CREATE-FILE could not make a file to read and write.
+
+## Waves four to six (Iteration 170) - results/pending/coreext-after-seed40.patch
+
+coreext.4: CS-PICK CS-ROLL SLITERAL M*/ RESIZE-FILE MARKER, FORTH-WORDLIST and
+SET-ORDER in the root wordlist (ONLY's minimum order must hold them), VALUE
+2VALUE TO [DEFINED] [UNDEFINED] RENAME-FILE C" ORDER N>R NR> UNESCAPE
+FILE-STATUS. Found on the way: extend.4's SET-ORDER with 0 ran its loop from -1
+down through memory (searchordertest crashed); M*/ must floor, as this
+system's / does (doubletest's ?FLOORED); .( is missing; RECURSE in :NONAME
+called LAST's word - its fix crashes under the runner only, held back
+(results/drafts/recurse-noname.md). SLITERAL and C" keep their strings on the
+heap, not inline in code.
+
+On s6: 1,817 tests, 4 failed (RECURSE in :NONAME). Whole files now:
+doubletest (247) and searchordertest (41), with prelimtest, core, coreplus,
+facility, memory. Stopping: coreexttest at SAVE-INPUT, filetest at REQUIRED,
+toolstest at SYNONYM, stringtest at SUBSTITUTE, exceptiontest at ABORT (the
+kernel's abort does not THROW), localstest at {:, blocktest at BLOCK.
+
+**Not ready - a draft, not the batch's.** The held-out check over seed 39's
+186 front designs with these waves: all 186 differ from s6 somewhere -
+searchordertest on every one, coreexttest on some (before the waves: 0 of 186,
+searchordertest stopping at its seventh line on all alike). Either the waves'
+search-order words assume s6's wordlists, or the deeper tests reach a real
+difference in the designs' - next: one design's searchordertest output beside
+s6's. results/drafts/coreext-after-seed40-draft.patch, the check's table
+beside it (-front-check.txt).

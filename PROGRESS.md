@@ -3273,3 +3273,16 @@ Seed 39's 186 front designs, rebuilt on it: 186 alive. NEXT-RUN: seed 40 tag2
 9h then the two-CPU comparison - the batch's first run, not comparable with
 the runs before it. Predictions: results/predictions.md (Iterations 154, 166,
 169).
+
+## Iteration 170 - 2026-10-11 - Claude
+
+**The standard's words, waves four to six - a draft: the held-out check says
+not yet.** coreext.4 grew by CS-PICK SLITERAL M*/ RESIZE-FILE MARKER VALUE
+2VALUE TO C" N>R UNESCAPE FILE-STATUS and others; on s6 the suite runs 1,817
+tests, 4 failed (doubletest and searchordertest whole). Found: extend.4's
+SET-ORDER with 0 ran down through memory; M*/ floors as this system's /; .(
+is missing; RECURSE in :NONAME calls LAST's word - its fix crashes under the
+runner only (results/drafts/recurse-noname.md). But over seed 39's 186 front
+designs all 186 now differ from s6 - searchordertest on every one - so the
+waves stay a draft (results/drafts/coreext-after-seed40-draft.patch) until
+that difference is understood. Master's code is unchanged: seed 40 runs it.
