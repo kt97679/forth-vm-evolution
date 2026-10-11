@@ -3558,3 +3558,8 @@ again), RESTORE-INPUT repositions and reads it again - coreext.4 only. On s6:
 2,069 tests, 0 failed; thirteen of fourteen files whole (localstest waits on
 the owner's decision on a kernel hook). 0 of 12 front designs differ from s6.
 The sixteenth after-seed-41 patch: coreext-w10-after-seed41.patch.
+
+Also: results/pending/ORDER.md - the sixteen patches' order and the checks
+after; the callrel draft rebased onto them (results/drafts/
+callrel-draft-rebased16.patch), its fixed point planned as two converter runs
+(results/drafts/callrel.md).

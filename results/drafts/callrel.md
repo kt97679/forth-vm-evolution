@@ -105,3 +105,18 @@ that flow becomes a function rerun - a session's work. Or two converter runs,
 the second sized from the first's CALLMAP offsets. To weigh with the owner as
 well: the hybrid for run-time code only - but the engine has one call decoder,
 so the image's calls would carry the flag bit too.
+
+## Rebased onto the sixteen (Iteration 192); the fixed point, planned
+
+results/drafts/callrel-draft-rebased16.patch: the draft on the after-seed-41
+batch - two evolve.py hunks moved by rtloop=2's lines, mended; it parses.
+
+The fixed point, as two converter runs rather than layout.py made a function:
+pass 1 with every call long; its offsets are upper bounds for pass 2's, since
+calls only shrink between them - so every word's offset, and every call's
+distance (forward or backward: what lies between site and target only
+shrinks), can only get smaller. Pass 2 sizes each call from pass 1's distance:
+a call short there is short in the end. The short-branch pass needs the same:
+measured in pass 2 with pass 1's tag-2 map installed, not the pre-tag-2 sizes
+(the blocker of Iteration 186). Cost: one more converter run per design built.
+Then the sweep of 186: the front with callrel=2 alive, and its bytes.
