@@ -40,3 +40,19 @@ an opcode (sod16 tiny_at: a call to the colon word becomes the operation);
 without it 1+ is a call and is never fused - tiny off is opcall off by another
 road. What is left: 1+;CALL itself goes wrong with the JIT, t2wide and tos
 together. Next: what the JIT does around an X;CALL in such a design.
+
+## One pattern, contained (Iteration 180)
+
+Probing bug 1's design step by step (each step its own process - a restart
+loses the buffered output): `: U DUP @ ;` alone restarts it; `DUP C@` (a pair)
+is right. The X;CALLs in all five dead designs: 9586059a75's eleven DROP;CALLs
+escaped (first byte 0x3F); the other four's in t2wide's band (144, 157, 177,
+178, 179 - 0x80-0xBF). The engine's tables send both bands to the X;CALL
+handlers, and the JIT decodes the wide band right - the mechanism is still not
+found. But the pattern holds: every gene whose removal fixed a design changes
+how many operations compete for the 63 base codes, moving the X;CALL in.
+
+**Contained:** X;CALL only where its code is in the base band; elsewhere the
+plain operation (tools/layout.py, results/pending/opcall-band-after-seed41.patch).
+All five dead designs right; all 48 of seed 40's front designs with opcall
+alive; 7 of 7 stages identical. The root cause stays open.

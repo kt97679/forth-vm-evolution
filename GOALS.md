@@ -100,8 +100,8 @@ OS words, its buffers) is the extension's, outside the measure. So sysc's
 saving counts in full, and a kernel word only an extension uses belongs in
 that extension (results/word-audit.md, "Core or extension").
 
-*The after-seed-41 batch - pending* (Iterations 175-178): rtimm2, keepforms,
-founder, regprice-names - results/pending/, in that order; the held-out check
+*The after-seed-41 batch - pending* (Iterations 175-180): rtimm2, keepforms,
+founder, regprice-names, opcall-band - results/pending/, in that order; the held-out check
 on eight designs with the forms clean.
 
 *The after-seed-40 batch - applied at Iteration 174*: coreext, exceptions,

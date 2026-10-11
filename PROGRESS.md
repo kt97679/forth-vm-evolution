@@ -3384,3 +3384,13 @@ patch this time: findings, results/opcall-deaths.md, results/price-hybrid.md.
 **Corrected (Iteration 179):** bug 2's "tiny" is no clue - tiny makes 1+ an
 opcode; without it 1+ is never fused, so tiny off is opcall off. What is left:
 1+;CALL with the JIT, t2wide and tos.
+
+## Iteration 180 - 2026-10-11 - Claude
+
+**opcall's wrong answers contained.** Both "bugs" are one pattern: every
+X;CALL of the five dead designs had its code outside the base one-byte band
+(escaped, or t2wide's 0x80-0xBF), and each gene that fixed one moved it in. The
+converter now writes X;CALL only in the base band: all five right, all 48 of
+seed 40's opcall front designs alive. The mechanism outside the band is still
+unexplained - a containment, recorded as such. Pending after seed 41, fifth:
+results/pending/opcall-band-after-seed41.patch.

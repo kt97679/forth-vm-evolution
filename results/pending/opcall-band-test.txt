@@ -1,0 +1,9 @@
+build complete: /tmp/fe/r/build
+validate: 7 of 7 IDENTICAL
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+dead 8587e5a5c1 (opcall ['1+']): right
+dead 8dff2a3647 (opcall ['1+']): right
+dead 9586059a75 (opcall ['DROP']): right
+dead ee0eff671a (opcall ['OR', '1+']): right
+dead f7dc8437ff (opcall ['1+']): right
+seed 40 front with opcall: 48 designs, 48 alive; []

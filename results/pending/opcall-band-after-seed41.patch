@@ -1,0 +1,26 @@
+diff --git a/tools/layout.py b/tools/layout.py
+index ab134b3..b4510a8 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -476,6 +476,21 @@ if TAG2_ON:
+     _bytes = list(range(63)) + (list(range(0x80, 0xC0)) if T2WIDE_ON else [])   # the one-byte codes, in rank order
+     assert len(_all) <= len(_bytes) + 256, "%d operations: more than %d one-byte codes and 256 escaped" % (len(_all), len(_bytes))
+     T2MAP = {'one': {x: _bytes[c] for c, x in enumerate(_all[:len(_bytes)])}, 'esc': {x: s for s, x in enumerate(_all[len(_bytes):])}, 'escc': 0x3F}
++    # Iteration 180: X;CALL only where its code is in the base band (bytes
++    # 0x00-0x3E). Seed 40's five wrong corpora had every one of their X;CALLs
++    # escaped or in t2wide's band (0x80-0xBF), and no design with them all in
++    # the base band went wrong; there the operation is written plain - the
++    # band's own mechanism is not found yet (results/opcall-deaths.md).
++    if G.get('OPCALL'):
++        _base = lambda L: L in T2MAP['one'] and T2MAP['one'][L] < 0x3F
++        _demoted = 0
++        for w in order:
++            if kind[w['s']] != 'code': continue
++            _o = info[w['s']]
++            for _j in range(len(_o)):
++                if _o[_j][0] == 'OC' and not _base(G['OPCALL'][_o[_j][1]]):
++                    _o[_j] = ('P', _o[_j][1]); _demoted += 1
++        if _demoted: print('opcall: %d X;CALL written plain - their codes outside the base band' % _demoted)
+     G['TAG2'][0] = T2MAP
+     print('tag 2: %d operations, %d one-byte, %d escaped; %d escaped uses in the image (a byte each)'
+           % (len(_all), len(T2MAP['one']), len(T2MAP['esc']), sum(_static[x] for x in T2MAP['esc'])))
