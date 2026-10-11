@@ -3298,3 +3298,16 @@ ABORT" through THROW, -13 for an undefined word under a CATCH, every message
 as before without one. s6: 1,821 standard tests, 0 failed (exceptiontest
 whole); the checks; seed 39's 186 designs alive and none differing from s6.
 Master's code unchanged - seed 40 runs it.
+
+## Iteration 172 - 2026-10-11 - Claude
+
+**The hybrid stack/register design, priced again - and a measurement bug.**
+The owner's request of Iteration 163 had stopped at measuring the shuffles.
+Priced now on every executed dispatch, run-time code included: moves are
+17-27% of the dispatches of s6, the fastest and the smallest alike; a move
+feeding the next operation is 4-12% on the image-heavy workloads, little on
+fib, loop and bubble - whose moves feed literals first, which only triples
+see. regprice.py names opcodes wrongly on today's designs (its order of
+primitives has moved); the converter's CALLMAP names are right and now used.
+results/price-hybrid.md: the plan - triples, then the gene, in the run-time
+compiler too.
