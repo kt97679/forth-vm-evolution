@@ -3695,3 +3695,12 @@ none); at 20%/2% it is overconfident (46 lost) - it cannot see gene
 interactions. Parents predict poorly (25.7%): a child is not like its parents.
 The choice is the owner's: the forest with scikit-learn, or the additive model
 at the conservative margins only.
+
+**The gene fsys built** - the third after-seed-42 patch. Six file words and
+RESIZE in Forth over SYSCALL in an -fsys dump, their seven handlers out of the
+engine. Without the gene, designs byte for byte as before (engine and image,
+three designs); with it, the smallest 104 bytes smaller in all (engine -608,
+image +504), the fastest 328, the standard suite 14 of 14 as s6 on all three.
+Two faults found: the dump-making system has no NIP or TUCK (the library had
+stopped after READ-FILE), and my first check of the kernel's uses had hidden
+every line with a stack comment.

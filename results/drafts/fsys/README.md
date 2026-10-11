@@ -36,3 +36,29 @@ without --fsys, so a design without the gene stays byte for byte; with it,
 FSYS in the engine points the seven dispatch entries at L_nosys. Then:
 images byte-identical at fsys=0, alive and smaller at fsys=1, the standard
 suite whole on fsys=1 designs, and the seven's exact saving.
+
+## Built (Iteration 202) - results/pending/fsys-after-seed42.patch
+
+The gene fsys: every dump variant has an -fsys twin with file-sysc.4 loaded
+last (before the dump tool); FSYS points seven dispatch entries at L_nosys;
+SYSCALL -4 under FSYS only; the library's helpers headerless (one
+--headerless list with rtloop=2's). Two faults found on the way: the cell
+system that makes the dumps has no NIP or TUCK (the load stopped after
+READ-FILE - every other word stayed native, and the suite's file and memory
+tests ended in the engine's exit 70); and a check of the kernel's own uses that
+skipped every line with a stack comment (redone: none use the seven).
+
+| design | fsys=0 | fsys=1: engine | image | total |
+|---|---|---|---|---|
+| 0ceb043115, the smallest | identical, engine and image | -608 | +504 | -104 |
+| d99e3d9ed9, the knee | identical | -608 | +512 | -96 |
+| d9247d19b0, the fastest | identical | -832 | +504 | -328 |
+
+The standard suite on all three with fsys=1: 14 of 14 files as s6
+(ans-check, ANS_SET=fsys=1). 7 of 7 hand-made stages identical; run-tests PASS.
+
+Next, to make it pay more: the library is 504 bytes of image against 608 of
+engine - shorter Forth (one read/write loop shared, the memory words only if
+RESIZE moves) would widen the margin; OPEN-FILE, CLOSE-FILE and WRITE-FILE
+(352 engine bytes more) wait on INCLUDED, which the kernel compiles against
+OPEN-FILE and CLOSE-FILE.
