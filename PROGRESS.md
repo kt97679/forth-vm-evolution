@@ -3480,3 +3480,9 @@ NEXT-NFA8): blocktest and toolstest whole - s6 2,068 tests, 1 failed; twelve
 of fourteen files whole. Pending after seed 41, twelfth: coreext-w9.
 
 **Held out with the twelve (Iteration 186):** seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.
+
+**The return stack, priced (Iteration 186):** 31.8% of loop's dispatches on
+the founder configuration - the colon-word loop runtime. And rtloop, one
+mutation from it, is inert there: +582 bytes, not one dispatch saved - a
+run-time DO LOOP still compiles calls to (DO), I and (LOOP). Next first: why
+(results/price-hybrid.md).

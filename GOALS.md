@@ -107,8 +107,9 @@ on eight designs with the forms clean.
 
 *The after-seed-40 batch - applied at Iteration 174*: coreext, exceptions,
 triples (results/applied-after-seed40/) - reseeded, the four checks, seed 40's
-218 front designs alive, the held-out check over them. Next, in order: the
-hybrid's gene for the interpreted designs (results/price-hybrid.md), the
+218 front designs alive, the held-out check over them. Next, in order (Iteration 186): rtloop inert on
+tag-2 designs - a run-time DO LOOP compiles calls (results/price-hybrid.md);
+then the hybrid's gene for the interpreted designs (results/price-hybrid.md), the
 opcall restarts (results/opcall-deaths.md), regprice.py's opcode names,
 callrel's converter work, the standard's next words.
 

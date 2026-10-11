@@ -162,3 +162,26 @@ untouched. Seed 40's smallest: loop 96.15 M -> 88.14 M dispatches (-8.3%),
 bubble -3.4%, sieve -6.9%, no NOOP executed; alive. All 218 of seed 40's front
 designs alive; the held-out suite on six interpreted designs as s6; run-tests
 PASS; 7 of 7 stages identical. results/pending/loopalign-after-seed41.patch.
+
+## The return stack, priced - and rtloop inert on a tag-2 design (Iteration 186)
+
+On the founder configuration (seed 40's smallest, rtimm=2, the keeping forms;
+JIT off), return-stack operations are loop 31.8% of the dispatches, bubble
+18.8%, sieve 13.2%, kernel/corpus/parse 6-8%, fib and ackermann 0. The pairs
+name the cause: a call then R> (loop 9.1%), DUP R@, R@ =, R> R> - the kernel's
+colon-word loop runtime, (LOOP) beginning R> R> 1 + DUP R@ = ...
+
+The remedy should have been rtloop (loop opcodes at run time), one mutation
+from this design. Counterfactual: rtloop expressed, +582 bytes - and loop,
+bubble, sieve unchanged to the dispatch (compile-heavy kernel, corpus, parse
++0.7-1.3%). Probed: `: T 10 0 DO I DROP LOOP ;` compiles LIT8 10, LIT8 0,
+then tag-2 calls to (DO) and I, DROP, a call to (LOOP) and its operand byte -
+calls to the colon words, not the opcodes, with rtloop's LOOP-OPS table in
+the image and I an opcode of this design. **rtloop is inert here** - pure cost,
+which may be why evolution declines it at the small end.
+
+**Next, first:** why - the LOOP-OPS table's contents in a tag-2 image (zeros
+for what the converter is not told about?), the converter's flag for rtloop
+in tag 2, cv8-fuse-loop.4 (a cv8, not cv8t, overlay) under the tag-2
+compiler; then how many of the front's rtloop designs are inert. Worth it:
+loop's iteration from about 15 dispatches to 5 on the interpreted designs.
