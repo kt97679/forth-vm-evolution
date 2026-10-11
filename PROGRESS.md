@@ -3501,3 +3501,14 @@ cheaper rtloop.
 headers of overlay-internal words nothing reads at run time - dropping them
 would serve every overlay - and ~50-100 the lookup and leave-chain machinery:
 roughly 320-370 left. The next build for the small end.
+
+## Iteration 188 - 2026-10-11 - Claude
+
+**Weighing the objectives (the owner).** Selection keeps the good trade-offs -
+seed 40's small end has designs 1-2% larger and 23-29% faster, Q 0.62-0.63 of
+the smallest's. The judging could miss them: the stopping rule sees only the
+extremes. On sessions 34-35 hypervolume and best Q agree with it (seed 39 small
+by all, seed 40 big by all), but nothing guarded. And I had anchored on the
+extremes - the founder built on the smallest, the worst Q of its neighbourhood.
+Proposed: the rule to include hypervolume and best Q; reports to name the Q-best
+design; founders from the knee. results/weighing.md - the owner decides.
