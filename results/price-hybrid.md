@@ -63,3 +63,23 @@ the interpreted designs (over half the joint front; 14-15% of the selection's
 dispatches, past the 10% set before measuring) - register forms with
 immediates, in the converter and the run-time compiler, handlers in the
 engines; the collapse form priced next, for ackermann and loop.
+
+## Before building: what evolution could already have (Iteration 175)
+
+Most of the price on the interpreted designs is what genes already offer:
+run-time immediates (rtimm: `n +` an ADDI, `SWAP n +` a SWAP+I, in the code
+the design's own compiler writes). Seed 40's smallest, 0ceb043115, carries
+rtimm=1 - unexpressed: it waited on the pair-fusion overlay, itself waiting on
+rtfuse and on pairs the design has no slots for - three mutations away, each
+priced alone. So the first step is not new opcodes but **rtimm=2**: the
+overlay for immediates without pairs (results/pending/rtimm2-after-seed41.patch;
+on a design with pairs and rtfuse it is rtimm=1, one id).
+
+On 0ceb043115: +662 bytes of image; fib -13.6% of its dispatches; kernel,
+corpus, parse, sieve +0.4 to +1.1% (the fusing compiler's own cost, on what
+they compile); loop, bubble, ackermann unchanged. Every one of seed 40's 218
+front designs, rtimm=2 forced: expressed on all, all alive; the held-out
+check on the two that ans-check's small front kept: 14 of 14 files as s6.
+Evolution now weighs it in one mutation. Next, the hybrid's own forms on top:
+`-` and `<` immediates and the keeping forms (DUP n <, DUP n -, SWAP n -) -
+fib's price is 36%, rtimm=2 takes 13.6.

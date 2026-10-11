@@ -1,0 +1,3 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+RTIMM=2 ON SEED 40'S FRONT: 218 with imm (0 without), rtimm=2 expressed on 218; 218 alive, 0 dead
+DONE

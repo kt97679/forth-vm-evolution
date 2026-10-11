@@ -3333,3 +3333,14 @@ standard's words), exceptions (CATCH and THROW in the kernel; ABORT and ABORT"
 through them), triples (the profiler; profiling builds only) - results/
 applied-after-seed40/. Reseeded (26,904 bytes), run-tests PASS, 7 of 7
 IDENTICAL, the jail; seed 40's 218 front designs alive on it; held-out: 0 of 218 designs differ from s6 somewhere.
+
+## Iteration 175 - 2026-10-11 - Claude
+
+**The hybrid's first step: rtimm=2 - run-time immediates without pairs.**
+Before building new opcodes, the counterfactual: seed 40's smallest already
+carried rtimm, unexpressed behind the pair overlay, rtfuse and pairs it has no
+slots for. rtimm=2 gives it the immediates overlay alone: +662 bytes, fib
+-13.6% of its dispatches, the compile-heavy workloads +0.4-1.1%. All 218 of
+seed 40's front designs alive with it; the held-out check clean on the two
+checked. Pending after seed 41: results/pending/rtimm2-after-seed41.patch.
+Next on it: the forms the price asks for - `-` and `<` immediates, DUP n <.

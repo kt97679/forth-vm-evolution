@@ -1,0 +1,66 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 8d01bdb..1ccd004 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -37,7 +37,7 @@
+ | rtloop compact (`rtloopall`: 0, 1; Iteration 43): with rtloop and all eight loop opcodes, a run-time loop compiler without fallbacks - one chain, one 12-byte table (forth/cv8-fuse-loopall.4) | this lab: rtloop's own bytes, priced word by word | 380-488 bytes of rtloop's ~470 on seed 8's front, the same speed (results/rtloopall.md) |
+ | run-time loops (`rtloop`: 0, 1; Iteration 41): the compiler the image carries emits the design's loop opcodes - (DO) (LOOP) (+LOOP) (?DO) (LEAVE), I J UNLOOP - each where it has one, 16-bit operands, no padding (forth/cv8-fuse-loop.4) | this lab: loop.fth's INNER, dumped | loop 2-4x faster, for about 6% of the image (results/rtloop.md); loop is selected since |
+ | build artifacts left out (`lean`: 0, 1; Iterations 38-39): the compiler's X8 copies (calls and (POSTPONE)s to them go to X), the dump tool's words, dead shadowed words | this lab: the converter's own comment called the copies harmless | 12-16% of every CV8 image, 1,267-1,896 bytes on seed 6's front, no slower (results/lean.md) |
+-| run-time immediates (`rtimm`: 0, 1; Iteration 37): with run-time fusion and spec imm, the compiler the image carries makes `n +` an ADDI and `SWAP n +` a SWAP+I in the code it writes (forth/cv8-fuse-imm.4) | this lab: fib's own code, dumped from a front design | fib 15% fewer dispatches, 17-27% faster, for 408-472 bytes (results/rtimm.md) |
++| run-time immediates (`rtimm`: 0, 1, 2; Iteration 37; 2 - Iteration 175: without pairs, the overlay alone): with run-time fusion and spec imm, the compiler the image carries makes `n +` an ADDI and `SWAP n +` a SWAP+I in the code it writes (forth/cv8-fuse-imm.4) | this lab: fib's own code, dumped from a front design | fib 15% fewer dispatches, 17-27% faster, for 408-472 bytes (results/rtimm.md) |
+ | one-byte calls (`hotcalls`: 0, 8, 16, 32): the far-call prefixes 0xE0-0xFF call the image's own words with the most call sites, through a table in the image's header; chosen per design by the converter, no profile | this lab's search (SEARCH-SPACE.md: a stranger), priced at Iteration 13 | a call one byte instead of two; the far form keeps 21 bits - 2 MB at scale 0 |
+ | tail-call threading (`tail`): every handler a function of (ip, dsp, rp, tos, t), dispatching by a tail call through a 256-entry table of functions; made from the cached engine | Wasm3, CPython 3.14, WasmKit | each handler's registers allocated for it alone; handlers that keep a frame are split so their dispatch stays a jump |
+ | multi-state stack caching (`msc`): 0, 1 or 2 top items in registers, a dispatch table per state, each handler variant dispatching by the table of the state it ends in; generated from stack effects for 72 operations, the rest normalised to the one-register state | Ertl and Gregg; gforth's vmgen | no memory traffic where the state absorbs it; three times the code for the specified operations |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 7333e71..2ebe15a 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -179,7 +179,13 @@ def overlay(g):
+     list needs no overlay: the converter writes it into cv8.4's FOLD-OPS.)
+     Everything else keeps the build's dumps, so the hand-made stages still
+     come out byte-identical."""
+-    return g['enc'] == 'cv8' and bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g)))
++    return g['enc'] == 'cv8' and (bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g))) or rtimm2(g))
++def rtimm2(g):
++    """Iteration 175: rtimm=2 - run-time immediates without pairs: the overlay
++    for ADDI and SWAP+I alone (forth/cv8t-fuse.4's lookup over no pairs, then
++    cv8t-fuse-imm.4). Seed 40's small designs carried rtimm=1 unexpressed: it
++    waited on pairs and rtfuse, three mutations away (results/price-hybrid.md)."""
++    return g['enc'] == 'cv8' and g.get('rtimm') == 2 and 'imm' in g['spec']
+ RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
+ def rt_tests(g):
+     """The fused tests this design has opcodes for - with rtfuse, its
+@@ -317,6 +323,7 @@ def express(g):
+         if not e['opcall']: e.pop('opcall')
+     if 'rtfuse' in e and not e.get('supers') and not rt_tests(g): e.pop('rtfuse')   # nothing to fuse at run time
+     if 'rtimm' in e and not (overlay(g) and 'imm' in g['spec']): e.pop('rtimm')      # Iteration 37: n + at run time needs both
++    if e.get('rtimm') == 2 and g.get('rtfuse') and (supers_in(g) or rt_tests(g)): e['rtimm'] = 1   # Iteration 175: the same build - one id
+     if 'rtloop' in e and not rtloop_on(g): e.pop('rtloop')                         # Iteration 41: with a loop opcode to use
+     if 'rtloopall' in e and not rtloopall_on(g): e.pop('rtloopall')                # Iteration 43: all eight of them
+     if 'kfast' in e and not kfast_on(g): e.pop('kfast')                            # Iteration 49: byte headers
+@@ -630,7 +637,7 @@ def _build(g, d):
+     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
+     if oc: opts += ['--opcall-file', os.path.join(d, 'opcall.json')]
+     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
+-    if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
++    if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g): opts.append('--rtfuse')   # rtimm=2: IMM-OPS filled
+     if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
+     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
+     if t2wide_on(g): opts.append('--tag2-wide')
+@@ -913,6 +920,8 @@ def mutate(g, rnd):
+             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
++        elif k == 'rtimm':            # 0, 1, or 2 (Iteration 175: 2 without pairs)
++            g['rtimm'] = rnd.choice([v for v in range(3) if v != g.get('rtimm', 0)]); what.append('rtimm=%d' % g['rtimm'])
+         elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
+             g['escape'] = rnd.choice([e for e in range(3) if e != g.get('escape', 0)]); what.append('escape=%d' % g['escape'])
+         elif k == 'spec':
+@@ -1285,6 +1294,7 @@ def random_genome(rnd):
+         if k == 'opt': g[k] = rnd.choice(['O2', 'O3', 'Os'])
+         elif k == 'scale': g[k] = rnd.randrange(4)
+         elif k == 'escape': g[k] = rnd.randrange(3)
++        elif k == 'rtimm': g[k] = rnd.randrange(3)
+         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
