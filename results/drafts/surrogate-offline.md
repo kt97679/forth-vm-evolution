@@ -37,3 +37,27 @@ to be measured the same way.
 database and the carried runs; skip children beyond 30%/5% at first, recorded
 as screened (not measured, not selected); one screened child in ten measured
 anyway, to keep the model honest and leave room for surprises.
+
+## Without scikit-learn (Iteration 199)
+
+The laptop may not have it, so two models with no library, the same protocol
+(seed 40, trained on generations 0-68, scored on 69-136):
+
+| model | speed error, median / 90% | size error, median | 30%/5% screen: skipped, front lost | 20%/2% |
+|---|---|---|---|---|
+| random forest (scikit-learn) | 3.1% / 10.6% | 0.74% | 34%, 0 of 163 | 58%, 6 |
+| additive, pure Python (one weight per gene value, SGD, 22 s) | 8.2% / 26.7% | 1.23% | 34%, 1 of 163 | 70%, 46 |
+| the parents' geometric mean | 25.7% / 57.5% | 5.08% | 1%, 1 | 10%, 3 |
+| parents and each mutation's learned effect | 21.6% / 55.3% | 4.82% | 11%, 2 | 32%, 10 |
+
+A child is not like its parents: one gene (jit) moves speed by a factor, and
+crossover's children sit between parents unlike each other - the map from
+genes to speed has to be learned globally. Additive, it is good enough at the
+conservative margins (a third of the measurements saved, one front design in
+163 lost - the audit's one in ten measured anyway would catch some), and
+overconfident at tighter ones: it cannot see interactions (jit with the rest).
+The forest sees them: at 20%/2% it saves 58% for 6 lost.
+
+So: with scikit-learn on the laptop, the forest at 30%/5% first, then 20%/2%;
+without it, the additive model at 30%/5% only. Pairwise features for the
+linked genes (LINKS) would bring the additive model closer - to measure.

@@ -3686,3 +3686,12 @@ evolve.py converts again with them kept long. All 37 of seed 41's dead genomes
 alive with the batch's code; the smallest's and the knee's images byte for
 byte as before; 7 of 7 stages identical; run-tests PASS. The first
 after-seed-42 patch (results/pending/shortbranch-after-seed42.patch).
+
+**The surrogate without scikit-learn** (results/drafts/surrogate-offline.md):
+a pure-Python additive model (22 s to fit) predicts speed within 8.2% and size
+within 1.2% (the forest: 3.1%, 0.74%), and at the conservative 30%/5% screen
+skips the same third of children, losing 1 of 163 front designs (the forest
+none); at 20%/2% it is overconfident (46 lost) - it cannot see gene
+interactions. Parents predict poorly (25.7%): a child is not like its parents.
+The choice is the owner's: the forest with scikit-learn, or the additive model
+at the conservative margins only.
