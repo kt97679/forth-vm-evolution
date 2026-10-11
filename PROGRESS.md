@@ -3644,3 +3644,11 @@ the fastest JIT design (160-320 bytes smaller, equal speed); the laptop
 decides. Run-time folding not built: one constant expression in all the
 benchmarks. run-tests PASS; hand-made stages identical; nineteen patches apply
 in order (ORDER.md).
+
+**The surrogate, tested offline** (results/drafts/surrogate-offline.md): random
+forests on the genes, trained on seed 40's first half, predict the second
+half's speed within 3.1% (median) and size within 0.74%. Replayed as a screen
+against the front of what was measured before: skipping children predicted 30%
+slower and 5% bigger skips 34% of them and loses none of the final front's 163;
+20%/2% skips 58% and loses 6 (random skipping: 95). Proposed: built into the
+evolver, conservative at first - the owner decides, and on the dependency.
