@@ -3355,3 +3355,8 @@ they did nothing (found by probing what the run-time compiler wrote). On seed
 218 of 218 front designs alive with them; the held-out check clean on the two
 ans-check took (it keeps its database's front - the rest to check). Pending
 after seed 41, after rtimm2: results/pending/keepforms-after-seed41.patch.
+
+## Iteration 177 - 2026-10-11 - Claude
+
+**Seed 41 runs 6 hours, not 9** (the owner). NEXT-RUN changed; the command
+with the plan given explicitly does the same with any bundle.

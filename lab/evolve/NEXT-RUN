@@ -251,4 +251,5 @@
 # Iteration 174: seed 40 was not small (the JIT genes); the after-seed-40
 # batch is applied - the standard's words and exceptions (every image ~170
 # bytes larger), the profiler's triples. Seed 41: 9 hours, as seed 40.
-seed 41 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 177: 6 hours, not 9 (the owner).
+seed 41 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
