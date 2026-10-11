@@ -21,3 +21,20 @@ comes right again with
 Tested and not it: a call written as a one-byte hot call after X;CALL (no
 effect on any of the five; reverted). 25 of seed 40's front designs combine
 opcall and tos and are right. Next: one bug at a time, a design each.
+
+## Narrowed (Iteration 179)
+
+**Bug 1, 9586059a75 (opcall DROP).** Its 17 pairs removed one at a time: right
+without `DUP C@` alone, wrong with `DUP C@` the only pair - the trigger is that
+pair fused at run time (cv8t-fuse.4), with DROP;CALL, under escape 2. DROP;CALL
+sits in the fuser's own code (`... R> DROP THEN HERE`). Excluded: a hot call
+after X;CALL (no effect, reverted); a numbering collision (opcall ops are
+logical 0xFE00+k, pairs below 128); the wrong engine for the bodies (a TOS
+design's gen-opcall copies vm-lab-tos.c); preprocessor lines spliced (L_drop
+and L_onep have none). Next: what the fuser writes for `: T DUP C@ ;` there.
+
+**Bug 2, f7dc8437ff (opcall 1+).** Right with the tiny specialisation off -
+var, small, imm do not matter; nor tracer, jitinl, supers, hotinl, hotcalls.
+opcall offers 1+ only with tiny, and its X;CALL copies L_onep; if tiny's 1+ is
+another handler, 1+;CALL and the design's 1+ differ - showing with the JIT,
+t2wide and tos. Next: that, directly.

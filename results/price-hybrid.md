@@ -122,3 +122,13 @@ now (regprice-names-after-seed41.patch); on s6's image code it saves corpus and
 parse 20.3%, kernel 18.1%, bubble 15.9% - and shows the next target: return-stack
 moves no form absorbs, 41% of loop's image dispatches, 30% of sieve's, 23% of
 bubble's (results/drafts/regprice-iter178.txt).
+
+## The loops, looked at (Iteration 179)
+
+Seed 40's fastest, JIT off, on loop: five dispatches an iteration, 20% each -
+DUP, I, +, XOR, (LOOP); I then + is a fifth of them, and I+ exists (Iteration
+60) - behind rtloopall, rtiplus and I+ in ops10, as rtimm was behind pairs.
+Seed 40's smallest on loop: NOOPs executed - 8.4% of the dispatches (NOOP NOOP,
+NOOP then a call) - padding on the hot path. Careful: in a tag-2 profile the
+escaped operations are logical 128 and up, which a quick naming takes for
+calls; the next price names them.

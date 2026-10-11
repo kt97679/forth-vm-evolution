@@ -3371,3 +3371,12 @@ tree on a fresh clone. The five wrong corpora are two bugs: run-time pair
 fusion under the escape with DROP;CALL, and the JIT with 1+;CALL
 (results/opcall-deaths.md). Next: those, then the return stack - the
 hybrid's tail (41% of loop's image dispatches).
+
+## Iteration 179 - 2026-10-11 - Claude
+
+**opcall's two bugs narrowed; the loops looked at.** Bug 1 needs one pair,
+`DUP C@`, fused at run time with DROP;CALL under escape 2 - four mechanisms
+excluded. Bug 2 needs the tiny specialisation: 1+;CALL copies L_onep, which
+tiny's 1+ may not be. The fastest's loop: I then + a fifth of its dispatches
+(I+ exists, behind three genes); the smallest's: NOOPs executed, 8.4%. No
+patch this time: findings, results/opcall-deaths.md, results/price-hybrid.md.
