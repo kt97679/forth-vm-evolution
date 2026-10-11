@@ -107,3 +107,37 @@ Calls by offset, bytes per executed call: from the image base (today)
 Stack shuffles (DUP SWAP OVER ROT DROP >R R> R@ ...), share of all dispatches:
 loop 46, bubble 43, parse 32, corpus 31, sieve 30, kernel 29, ackermann 27,
 fib 23 (percent) - DUP, SWAP, R>, OVER, >R and R@ the heaviest.
+
+## Third use (Iteration 166): s5 and s6 lean - the batch's thirteenth pending patch
+
+The owner: take the dead copies out of s6. The converter had the means - the
+gene lean's two halves, --drop-x8 (the X8 words --cv8-compiler copied into the
+kernel's, their callers sent to the kernel's) and --drop-dumptool - and s5 and
+s6 were built without them. Now HUMAN's s5 and s6 are lean, and build-stages.sh
+builds their --cv8-compiler images so (validate: 7 of 7 IDENTICAL).
+
+| image | before | after |
+|---|---|---|
+| s6, 8-byte cells | 10,385 | 8,761 (-1,624) |
+| s6, 4-byte | 9,325 | 7,869 (-1,456) |
+| s5, 8-byte | 13,784 | 12,104 (-1,680) |
+| s5, 4-byte | 10,276 | 8,992 (-1,284) |
+| s5's shell, 8-byte | 73,600 | 71,568 (-2,032) |
+| s5's shell, 4-byte | 58,852 | 57,248 (-1,604) |
+
+**Not only bytes.** s6's dispatches fell on every workload - parse -5.0
+percent, the corpus -2.2, the kernel workload -0.9, the rest under 0.1 - all in
+the dictionary search: on parse NEXT-NFA8 -2,520,220 and SEARCH-WORDLIST
+-1,440,120. The copies' code never ran, but their entries sat in the hash
+threads and every lookup walking those threads stepped over them. The
+yardstick is faster where lookups weigh: every design's ratio to it moves
+against the design there - one more reason this goes with the batch.
+
+**What named a copy.** The SPN stage's sources (spn-cv8.4, spn-cv8-build.4,
+spn-cv8-decode.4) and the tracer's dictionary walk called NAME>8 by name, after
+the drop; now NAME> - in a --cv8-compiler image the kernel's name holds
+NAME>8's code - and the tracer picks NAME>8 where the image has it (the tag-2
+front). Checked: run-tests PASS (s5's shell suite, 554 assertions at both
+widths; the tracer's self-test), the jail, the standard suite on s6 unchanged,
+167 front designs and founders alive; on a fresh clone with the thirteen
+patches, reseeded, the same.

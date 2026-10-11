@@ -1,0 +1,126 @@
+diff --git a/forth/spn-cv8-build.4 b/forth/spn-cv8-build.4
+index c7fba39..e678f56 100644
+--- a/forth/spn-cv8-build.4
++++ b/forth/spn-cv8-build.4
+@@ -1,4 +1,6 @@
+ \ spn-cv8-build.4 - what building an s8 image needs and a running s8 does not.
++\ Iteration 166: NAME>, the kernel's name - --cv8-compiler gave it NAME>8's
++\ code, and s6, lean, leaves the copy out.
+ \
+ \ Load after forth/spn-cv8.4 and before forth/spn-cv8-save.4. The
+ \ recorder and the saver run at build time only, so the saver writes the
+@@ -81,7 +83,7 @@ VARIABLE UNDO  0 UNDO !  VARIABLE #UNDO  0 #UNDO !
+   0 LZ-N !
+   KEEP-END @ START @ - 0 DO             \ the running part only
+     MARKS @ I + C@ 1 AND IF
+-      I START @ + NAME>8 ENTRY-OF
++      I START @ + NAME> ENTRY-OF
+       DUP LAZY-CANDIDATE? IF START @ - UV, 1 LZ-N +! ELSE DROP THEN
+     THEN
+   LOOP ;
+diff --git a/forth/spn-cv8-decode.4 b/forth/spn-cv8-decode.4
+index c56ef96..4723cfb 100644
+--- a/forth/spn-cv8-decode.4
++++ b/forth/spn-cv8-decode.4
+@@ -1,4 +1,6 @@
+ \ spn-cv8-decode.4 - decode CV8 byte code, for SPN on CV8.
++\ Iteration 166: NAME>, the kernel's name - --cv8-compiler gave it NAME>8's
++\ code, and s6, lean, leaves the copy out.
+ \
+ \ One operation at a time: DECODE takes an address and returns the next,
+ \ leaving the operation's kind in OP-K and its operand in OP-V. Operand
+@@ -141,7 +143,7 @@ VARIABLE MARKS  VARIABLE MSIZE
+ VARIABLE PREV-NFA  VARIABLE #WORDS  VARIABLE #FAIL  VARIABLE #DATA
+ : CHECK-WORD ( nfa --- )     \ check the word at PREV-NFA against this one
+   PREV-NFA @ ?DUP IF
+-    NAME>8 WALK                                       ( nfa end )
++    NAME> WALK                                       ( nfa end )
+     OVER DUP LINK-BYTES - > BAD @ OR TARGETS-OK 0= OR IF
+       1 #FAIL +!  #FAIL @ 8 < IF PREV-NFA @ COUNT 31 AND TYPE SPACE THEN
+     THEN
+diff --git a/forth/spn-cv8.4 b/forth/spn-cv8.4
+index 4d5e4b5..d58696f 100644
+--- a/forth/spn-cv8.4
++++ b/forth/spn-cv8.4
+@@ -1,4 +1,6 @@
+ \ spn-cv8.4 - SPN: Stencil-Patched Native, on a CV8 image.
++\ Iteration 166: NAME>, the kernel's name - --cv8-compiler gave it NAME>8's
++\ code, and s6, lean, leaves the copy out.
+ \
+ \ The same translator as spn-full.4, reading CV8 byte code instead of
+ \ cells. Load on the SPN-CV8 engine (build/spn-cv8-64) into the byte-
+@@ -860,7 +862,7 @@ VARIABLE MARK-END   \ HERE when the map was made: recording appends recipes
+ : TRANSLATE-ALL ( --- )     \ uses the map; builds one if there is none
+   MARKS @ 0= IF BUILD-MARKS THEN
+   MSIZE @ ALL-END @ ?DUP IF MIN THEN 0 DO
+-    MARKS @ I + C@ 1 AND IF  I START @ + NAME>8 TRY-TRANSLATE  THEN
++    MARKS @ I + C@ 1 AND IF  I START @ + NAME> TRY-TRANSLATE  THEN
+   LOOP ;
+ 
+ \ ---- start-up ----
+@@ -1052,4 +1054,4 @@ VARIABLE TRANSLATING  0 TRANSLATING !
+   MARKS @ IF SPN-WHY? EXIT THEN  BUILD-MARKS SPN-WHY? FREE-MARKS ;
+ 
+ \ New definitions: translate each as its ; completes.
+-: ;  POSTPONE ;  LAST @ NAME>8 DUP LAZY-CALLEES TRY-TRANSLATE ; IMMEDIATE
++: ;  POSTPONE ;  LAST @ NAME> DUP LAZY-CALLEES TRY-TRANSLATE ; IMMEDIATE
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index dd721c9..7333e71 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -105,8 +105,8 @@ HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie
+     's2-cpt16':   human('cpt16', scale=1, skippad=1, fold=0),
+     's3-cpt16f':  human('cpt16', scale=3, skippad=0, fold=1),
+     's4-cv8':     human('cv8', tos=0, spec=[], sharedcall=0, varcall=0, varslot=0),
+-    's5-cv8spec': human('cv8'),
+-    's6-cv8b':    human('cv8', scale=0, bytehdr=1, doesfar=1),
++    's5-cv8spec': human('cv8', lean=1),     # Iteration 166: the compiler's copies and the dump tool left out
++    's6-cv8b':    human('cv8', scale=0, bytehdr=1, doesfar=1, lean=1),
+ }
+ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
+ # Which genes each family expresses; the rest are carried, not built.
+diff --git a/tools/build-stages.sh b/tools/build-stages.sh
+index d27eee0..927a9b4 100755
+--- a/tools/build-stages.sh
++++ b/tools/build-stages.sh
+@@ -415,8 +415,9 @@ img s3-cpt16f-64  8 d64.txt --cpt 3 $CPTF
+ img s3-cpt16f-32  4 d32.txt --cpt 2 $CPTF
+ img s4-cv8-64     8 d64.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot
+ img s4-cv8-32     4 d32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
+-img s5-cv8spec-64 8 d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
+-img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
++# Iteration 166: s5 and s6 lean - the copies --cv8-compiler leaves, and the dump tool, out
++img s5-cv8spec-64 8 d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
++img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
+ 
+ # ---- kernel-only images ----------------------------------------------
+ # These boot into the Forth INTERPRETER, which is what the CORE suite
+@@ -480,10 +481,10 @@ img s3-cpt16f-s32  4 k32-cpt.txt --cpt 2 $CPTF --compiler-overlay 16
+ # the log.
+ img s4-cv8-s64     8 k64-self.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot --cv8-compiler
+ img s4-cv8-s32     4 k32-self.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot --cv8-compiler
+-img s5-cv8spec-s64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler
+-img s5-cv8spec-s32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
+-img s6-cv8b-s64    8 k64-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler
+-img s6-cv8b-s32    4 k32-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler
++img s5-cv8spec-s64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
++img s5-cv8spec-s32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
++img s6-cv8b-s64    8 k64-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
++img s6-cv8b-s32    4 k32-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
+ echo "built  stage images"
+ 
+ # ---- stage 0 shell image ---------------------------------------------
+diff --git a/tools/vmtrace.py b/tools/vmtrace.py
+index 61b5d5e..af82522 100644
+--- a/tools/vmtrace.py
++++ b/tools/vmtrace.py
+@@ -98,7 +98,8 @@ def named_run(M, eng, img, pw, text, out, cwd=None, probe=None):
+     # and every word compiled past the image, walking each thread with the
+     # design's own NEXT-NFA8 and NAME>8 (byte headers - the front and s6):
+     # what EXECUTE ran is never a call target, but its name is here
+-    epi += (b': TRWALK ( lim --- ) FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ BEGIN DUP WHILE DUP NAME>8 START @ -'
++    nm8 = b'NAME>8' if any(w[2] == 'NAME>8' for w in M.words) else b'NAME>'   # a lean --cv8-compiler image: NAME> holds its code
++    epi += (b': TRWALK ( lim --- ) FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ BEGIN DUP WHILE DUP ' + nm8 + b' START @ -'
+             b' DUP 3 PICK < IF DROP ELSE CR 777002 . . DUP COUNT 31 AND TYPE SPACE THEN NEXT-NFA8 REPEAT DROP LOOP DROP ;\n'
+             b'%d TRWALK\n' % M.words[-1][1])
+     r = run(eng, img, pw, body + b'\n' + epi + b'CR BYE\n', out, cwd, probe)

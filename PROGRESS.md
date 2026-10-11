@@ -3220,3 +3220,15 @@ results/drafts/callrel.md.
 **165: the standard words as an extension - the batch's twelfth pending
 patch.** forth/coreext.4 and extend.4 load before each suite file: 991 tests
 -> 1,194 on s6, no new failure. results/forth-standard-tests.md.
+
+## Iteration 166 - 2026-10-11 - Claude
+
+**s5 and s6 lean - the batch's thirteenth pending patch** (the owner: yes).
+The gene lean's --drop-x8 and --drop-dumptool on the hand-made s5 and s6 (HUMAN
+and build-stages.sh in step): s6's image 10,385 -> 8,761 bytes at 8-byte cells,
+s5's 13,784 -> 12,104. And s6's dispatches fell - parse -5.0 percent, corpus
+-2.2, kernel -0.9: the copies' entries lengthened the hash threads every lookup
+walks. The SPN sources and the tracer named NAME>8, now dropped: NAME> instead.
+run-tests PASS, 7 of 7 IDENTICAL, the jail, the standard suite unchanged, 167
+alive; the thirteen patches on a fresh clone of master, reseeded, the same.
+results/tracer.md, results/predictions.md.

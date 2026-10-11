@@ -43,3 +43,11 @@ test right on all, 146 with new ids.
    designs that already had kfast and kinput gain less - their ratios rise.
    Speed and size are not to be compared across the batch; within the session
    that measures it, they are.
+
+## Added before the post-batch run (Iteration 166)
+
+6. **s6 itself is faster on lookup-heavy workloads** - lean (the batch's
+   thirteenth patch): its dispatches parse -5.0 percent, corpus -2.2, kernel
+   -0.9, the rest under 0.1. Speed is a ratio to s6, so on those workloads every
+   design's ratio moves against it by about as much - on top of what the batch
+   does to the designs themselves.
