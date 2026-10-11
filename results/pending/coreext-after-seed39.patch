@@ -1,9 +1,9 @@
 diff --git a/forth/coreext.4 b/forth/coreext.4
 new file mode 100644
-index 0000000..f22c9ff
+index 0000000..3406b8c
 --- /dev/null
 +++ b/forth/coreext.4
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,92 @@
 +\ coreext.4 - standard words the kernel leaves out (Iteration 165, the owner):
 +\ the core words stay in the kernel, these load on top - first the ones the
 +\ Forth 2012 test suite stopped at (coreplustest at :NONAME, coreexttest at
@@ -26,8 +26,78 @@ index 0000000..f22c9ff
 +: ENDCASE ( 0 endof-sys... --- )  POSTPONE DROP BEGIN DUP WHILE POSTPONE THEN REPEAT DROP ; IMMEDIATE
 +: .R ( n w --- )  >R DUP >R ABS 0 <# #S R> SIGN #> R> OVER - 0 MAX SPACES TYPE ;
 +: U.R ( u w --- )  >R 0 <# #S #> R> OVER - 0 MAX SPACES TYPE ;
++\ The second wave (Iteration 167): where the suite stopped next - coreexttest
++\ at UNUSED, filetest at FLUSH-FILE, toolstest at [IF], searchordertest at
++\ GET-CURRENT, stringtest at SEARCH, exceptiontest at CATCH, facilitytest at
++\ BEGIN-STRUCTURE. [ELSE] and SEARCH use extend.4's COMPARE: load it first.
++: FALSE ( --- 0 )  0 ;
++: NIP ( x1 x2 --- x2 )  SWAP DROP ;
++: TUCK ( x1 x2 --- x2 x1 x2 )  SWAP OVER ;
++: 2>R ( x1 x2 --- ) ( R: --- x1 x2 )  R> ROT ROT SWAP >R >R >R ;
++: 2R> ( --- x1 x2 ) ( R: x1 x2 --- )  R> R> R> SWAP ROT >R ;
++: 2R@ ( --- x1 x2 ) ( R: x1 x2 --- x1 x2 )  R> R> R> 2DUP >R >R SWAP ROT >R ;
++: UNUSED ( --- u )  S0 @ 10000 CELLS - 4096 - HERE - ;   \ to the limit ALLOT keeps
++: FLUSH-FILE ( fileid --- ior )  DROP 0 ;                 \ nothing is buffered
++: GET-CURRENT ( --- wid )  CURRENT @ ;
++: SET-CURRENT ( wid --- )  CURRENT ! ;
++: [ELSE] ( --- )
++  1 BEGIN
++    BEGIN BL WORD COUNT DUP WHILE
++      2DUP S" [IF]" COMPARE 0= IF 2DROP 1+ ELSE
++      2DUP S" [ELSE]" COMPARE 0= IF 2DROP 1- DUP IF 1+ THEN ELSE
++      S" [THEN]" COMPARE 0= IF 1- THEN THEN THEN
++      ?DUP 0= IF EXIT THEN
++    REPEAT 2DROP
++  REFILL 0= UNTIL DROP ; IMMEDIATE
++: [IF] ( flag --- )  0= IF POSTPONE [ELSE] THEN ; IMMEDIATE
++: [THEN] ( --- ) ; IMMEDIATE
++: SEARCH ( c-addr1 u1 c-addr2 u2 --- c-addr3 u3 flag )
++  2>R 2DUP
++  BEGIN DUP R@ < 0= WHILE
++    OVER R@ 2R@ DROP R@ COMPARE 0= IF 2SWAP 2DROP 2R> 2DROP TRUE EXIT THEN
++    1 /STRING
++  REPEAT 2DROP 2R> 2DROP FALSE ;
++VARIABLE HANDLER  0 HANDLER !
++: CATCH ( i*x xt --- j*x 0 | i*x n )
++  SP@ >R  HANDLER @ >R  RP@ HANDLER !  EXECUTE  R> HANDLER !  R> DROP  0 ;
++: THROW ( k*x n --- k*x | i*x n )
++  ?DUP IF HANDLER @ RP!  R> HANDLER !  R> SWAP >R  SP! DROP  R> THEN ;
++: BEGIN-STRUCTURE ( "name" --- struct-sys 0 )  CREATE HERE 0 0 , DOES> @ ;
++: END-STRUCTURE ( struct-sys +n --- )  SWAP ! ;
++: +FIELD ( n1 n2 "name" --- n3 )  CREATE OVER , + DOES> @ + ;
++: FIELD: ( n1 "name" --- n2 )  ALIGNED 1 CELLS +FIELD ;
++: CFIELD: ( n1 "name" --- n2 )  1 CHARS +FIELD ;
++: 2CONSTANT ( x1 x2 "name" --- )  CREATE , , DOES> 2@ ;
++: 2VARIABLE ( "name" --- )  CREATE 0 , 0 , ;
++: 2LITERAL ( x1 x2 --- )  SWAP POSTPONE LITERAL POSTPONE LITERAL ; IMMEDIATE
++\ The third wave (Iteration 167): doubletest's words, now that a point reads
++\ a double.
++: D- ( d1 d2 --- d3 )  DNEGATE D+ ;
++: D0< ( d --- f )  NIP 0< ;
++: D0= ( d --- f )  OR 0= ;
++: D= ( d1 d2 --- f )  ROT = >R = R> AND ;
++: D< ( d1 d2 --- f )  ROT 2DUP = IF 2DROP U< ELSE > NIP NIP THEN ;
++: DU< ( ud1 ud2 --- f )  ROT 2DUP = IF 2DROP U< ELSE U> NIP NIP THEN ;
++: D>S ( d --- n )  DROP ;
++: D2* ( d1 --- d2 )  2DUP D+ ;
++: D2/ ( d1 --- d2 )  DUP 1 AND >R 2/ SWAP 1 RSHIFT R> IF -1 1 RSHIFT INVERT OR THEN SWAP ;
++: DMAX ( d1 d2 --- d3 )  2OVER 2OVER D< IF 2SWAP THEN 2DROP ;
++: DMIN ( d1 d2 --- d3 )  2OVER 2OVER D< 0= IF 2SWAP THEN 2DROP ;
++: M+ ( d1 n --- d2 )  S>D D+ ;
++: D.R ( d n --- )  >R SWAP OVER DABS <# #S ROT SIGN #> R> OVER - 0 MAX SPACES TYPE ;
++: 2ROT ( x1 x2 x3 x4 x5 x6 --- x3 x4 x5 x6 x1 x2 )  5 ROLL 5 ROLL ;
++\ COMPARE as the standard has it (17.6.1.0935): -1, 0 or 1 - extend.4's gives
++\ the difference of the first unequal characters, or of the lengths, and is
++\ the kernel workload's, so it stays; this one serves what loads after it.
++: COMPARE ( c-addr1 u1 c-addr2 u2 --- n )
++  ROT 2DUP - >R MIN
++  BEGIN DUP WHILE
++    >R OVER C@ OVER C@ - ?DUP IF 0< IF -1 ELSE 1 THEN R> DROP R> DROP NIP NIP EXIT THEN
++    1+ SWAP 1+ SWAP R> 1-
++  REPEAT DROP 2DROP R> DUP IF 0< IF 1 ELSE -1 THEN THEN ;
++: AGAIN ( dest --- )  0 POSTPONE LITERAL POSTPONE UNTIL ; IMMEDIATE
 diff --git a/lab/evolve/ans-check.py b/lab/evolve/ans-check.py
-index 55ab272..7b3305d 100644
+index 55ab272..7bb7073 100644
 --- a/lab/evolve/ans-check.py
 +++ b/lab/evolve/ans-check.py
 @@ -50,12 +50,15 @@ for f in dict.fromkeys(TESTED + [h for h in HARNESS if h] + ['required-helper1.f
@@ -43,7 +113,7 @@ index 55ab272..7b3305d 100644
  def program(f, n, core='core.fr'):
      if not n: return 'S" %s" INCLUDED\nBYE\n' % f
 -    p, mark = 'S" prelude.fth" INCLUDED\n', '[ DECIMAL .( <<FILE>> ) #T @ . CR\n'   # the file under test starts here
-+    p, mark = 'S" prelude.fth" INCLUDED\nS" coreext.4" INCLUDED\nS" extend.4" INCLUDED\n', '[ DECIMAL .( <<FILE>> ) #T @ . CR\n'   # the file under test starts here
++    p, mark = 'S" prelude.fth" INCLUDED\nS" extend.4" INCLUDED\nS" coreext.4" INCLUDED\n', '[ DECIMAL .( <<FILE>> ) #T @ . CR\n'   # the file under test starts here
      for h in HARNESS[:n]:
          if h == 'core.fr' and f == 'core.fr': p += mark
          h = core if h == 'core.fr' else h

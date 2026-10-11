@@ -3232,3 +3232,15 @@ walks. The SPN sources and the tracer named NAME>8, now dropped: NAME> instead.
 run-tests PASS, 7 of 7 IDENTICAL, the jail, the standard suite unchanged, 167
 alive; the thirteen patches on a fresh clone of master, reseeded, the same.
 results/tracer.md, results/predictions.md.
+
+## Iteration 167 - 2026-10-11 - Claude
+
+**callrel packaged, still a draft; the standard's words and numbers - the
+batch's twelfth (regenerated) and fourteenth pending patches.** CALL, reaches
+callrel's encoder through a cell the converter writes; without the gene it is
+left out (56 bytes, not ~400) - but 23 of 167 designs, those with images past
+8 KB, do not convert with the gene on: the converter must place kernel calls
+by distance first. coreext.4: waves two and three, a standard COMPARE; the
+kernel's NUMBER? and INTERPRET as the standard reads numbers. The standard
+suite on s6: 1,599 tests, 6 failed (CREATE-FILE). The fourteen patches on a
+fresh clone, reseeded: run-tests PASS, 7 of 7 IDENTICAL, the jail, 167 alive.

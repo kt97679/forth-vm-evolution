@@ -216,3 +216,20 @@ system's own extend.4 (the search order) load before each file
 Next: UNUSED, FLUSH-FILE, [IF] [ELSE] [THEN], GET-CURRENT SET-CURRENT, SEARCH,
 CATCH THROW, the structures, NUMBER?'s "#-", double literals; BLOCK and the
 standard's {: are larger.
+
+## Waves two and three, and the kernel's numbers (Iteration 167)
+
+forth/coreext.4 grew: FALSE NIP TUCK 2>R 2R> 2R@ UNUSED FLUSH-FILE GET-CURRENT
+SET-CURRENT [IF] [ELSE] [THEN] SEARCH CATCH THROW, the structures
+(BEGIN-STRUCTURE END-STRUCTURE +FIELD FIELD: CFIELD:), seventeen double words,
+AGAIN, and COMPARE as the standard has it (-1, 0, 1; extend.4's gives
+differences and is the kernel workload's, so it stays). The runner loads
+extend.4 first. The kernel's NUMBER? takes the standard's sign after a prefix
+(#-1289), % for binary and 'c' for a character; INTERPRET keeps a double
+literal's two cells (no source of ours wrote a number with a point). Every
+design pays ~104 bytes of image for the numbers (s6 8,761 -> 8,865) - the
+owner: respect the standard, tolerate the size. results/pending/numbers-after-
+seed39.patch, the batch's fourteenth; coreext's, regenerated.
+
+On s6: 1,599 tests (991 before the extension), 6 failed - all filetest's, one
+bug: CREATE-FILE could not make a file to read and write.

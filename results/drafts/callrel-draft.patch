@@ -123,10 +123,10 @@ index c82a9ff..ebf18f1 100644
      ip = cbase + t; NEXT();
  #elif ENC == 3
 diff --git a/forth/cv8t.4 b/forth/cv8t.4
-index 71d1b9a..cad8141 100644
+index 71d1b9a..b9e81b6 100644
 --- a/forth/cv8t.4
 +++ b/forth/cv8t.4
-@@ -136,12 +136,41 @@ ALIGN
+@@ -136,12 +136,45 @@ ALIGN
    LOOP 0 ;
  
  \ ---- calls ----------------------------------------------------------
@@ -158,28 +158,30 @@ index 71d1b9a..cad8141 100644
 +      DUP HERE I + 1+ - DUP I 3 LSHIFT 6 + T2FIT? IF SWAP DROP I T2CALL! UNLOOP EXIT THEN DROP
 +    THEN
 +  THEN LOOP -1 ABORT" call out of reach" ;
++VARIABLE CALLREL-XT ( --- a-addr )
++\ 0, or the offset of T2CALL-REL: the converter writes it for a design with
++\ the gene callrel and leaves the encoder out of every other (Iteration 167).
++0 CALLREL-XT !
  : CALL, ( a-addr --- )
  \ Append a call to the body at a-addr: its byte offset from the image base
  \ in the shortest form that reaches - 01 + 14 bits, 10 + 22, 11 + 30: k
  \ more bytes after the first, the first holding k and the top bits. The
  \ engine holds at most 1 GB (vm-lab.c, TAG2), so every offset fits.
    0 LAST-OP !
-+  CV8-CALLREL-V @ IF T2CALL-REL EXIT THEN
++  CALLREL-XT @ ?DUP IF START @ + EXECUTE EXIT THEN
    START @ -  DUP 16384 < IF 1 ELSE DUP 4194304 < IF 2 ELSE 3 THEN THEN   ( v k )
    2DUP 3 LSHIFT RSHIFT OVER 6 LSHIFT OR C,
    BEGIN DUP WHILE 1- 2DUP 3 LSHIFT RSHIFT 255 AND C, REPEAT 2DROP ;
-@@ -293,6 +322,9 @@ ALIGN
+@@ -293,6 +326,7 @@ ALIGN
    \ tag 2: always the 4-byte form, 11 + 30 bits, high byte first, in the 4
    \ bytes CREATE reserved (the engine's DODOES reads exactly that)
    START @ -                         ( a-addr v )
-+  CV8-CALLREL-V @ 1 = IF START @ + OVER 4 + - THEN   \ by distance: from the byte after the four (Iteration 164)
-+  CV8-CALLREL-V @ 2 = IF 2* THEN                      \ either: the base offset, its low bit 0
-+  1073741823 AND                                       \ thirty bits
++  CALLREL-XT @ IF 2* THEN                            \ the gene callrel: the base form, its low bit 0 (Iteration 167)
    2DUP 255 AND SWAP 3 + C!
    2DUP 8 RSHIFT 255 AND SWAP 2 + C!
    2DUP 16 RSHIFT 255 AND SWAP 1+ C!
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index dd721c9..50bfb79 100644
+index 7333e71..f8cd139 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
 @@ -25,6 +25,7 @@ GENOME - phase 1: the CV8 family, 8-byte cells
@@ -250,7 +252,7 @@ index dd721c9..50bfb79 100644
          elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
          elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
 diff --git a/tools/layout.py b/tools/layout.py
-index 28b58d3..f54a12a 100644
+index 28b58d3..50e74e9 100644
 --- a/tools/layout.py
 +++ b/tools/layout.py
 @@ -146,6 +146,9 @@ if '--escape' in ARGV:
@@ -263,11 +265,35 @@ index 28b58d3..f54a12a 100644
  if '--no-varslot' in ARGV: G['VARSLOT'] = False
  UB = 1 if V8 else 2                # bytes per stream unit
  DOVARP = len(G['prims']) + 1       # after LIT32
-@@ -1098,6 +1101,7 @@ def emit(path):
+@@ -364,6 +367,20 @@ if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and no
+     print('drop-dumptool: %d dump-tool words, %d dead shadowed (%s) out, %d bytes of the old image'
+           % (len(_tool), len(_shadow), ' '.join(w['n'] for w in _shadow) or '-', sum(w['e'] - w['link'] for w in _tool + _shadow)))
+ 
++# ---- the gene callrel's run-time encoder, out unless used (Iteration 167) --
++# cv8t.4 carries T2CALL-REL and its helpers; CALL, reaches the encoder only
++# through CALLREL-XT, written below. A tag-2 design without the gene refers to
++# none of them, so they go - the gene costs the others a cell and two tests.
++CALLREL_WORDS = ('CV8-CALLREL-V', 'CV8-T2WIDE-V', 'T2CALL!', 'T2FIT?', 'T2CALL-REL')
++if TAG2_ON and not G['T2CALLREL'][0]:
++    _cw = [w for w in order if w['n'] in CALLREL_WORDS]
++    if _cw:
++        _r = _refs([w for w in order if w['n'] not in CALLREL_WORDS])
++        if any(w['s'] in _r for w in _cw): print('callrel: a word refers to the encoder - kept')
++        else:
++            order = [w for w in order if w['n'] not in CALLREL_WORDS]
++            print('callrel: the encoder out, %d words, %d bytes of the old image' % (len(_cw), sum(w['e'] - w['link'] for w in _cw)))
++
+ # ---- scratch buffers out of the file (Iteration 44): --bss ----------
+ # TIB, POCKET and INCLUDE-BUFFER are VARIABLEs with an ALLOT: 1,040 bytes
+ # of every image that are only ever written before they are read. Each
+@@ -1098,6 +1115,10 @@ def emit(path):
      # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
      # VARCALL, kept the overlay's default and wrote far calls its engine misread.
      if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
-+    if V8 and TAG2_ON: CVARS['CV8-CALLREL-V'] = G['T2CALLREL'][0]; CVARS['CV8-T2WIDE-V'] = -1 if G.get('T2WIDE') else 0   # Iteration 164: the call form; t2wide has no 3-byte call
++    if V8 and TAG2_ON:   # Iteration 164, 167: the gene callrel - its mode, t2wide's lack of a 3-byte call, the encoder's offset
++        CVARS['CV8-CALLREL-V'] = G['T2CALLREL'][0]; CVARS['CV8-T2WIDE-V'] = -1 if G.get('T2WIDE') else 0
++        _enc = [w for w in order if w['n'] == 'T2CALL-REL']
++        CVARS['CALLREL-XT'] = new_off[_enc[-1]['s']]['body'] if (_enc and G['T2CALLREL'][0]) else 0
      for w in order:
          if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
          at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data

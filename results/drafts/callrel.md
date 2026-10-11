@@ -44,3 +44,17 @@ to an overlay of its own, loaded for callrel designs only (one more dump
 variant), CALL, reaching it through a cell the converter writes. Then the 167
 designs swept at 0 and 2, the far benchmark timed at both, and 1 if the
 converter learns to place calls by distance.
+
+## Packaged (Iteration 167) - and why it is still a draft
+
+CALL, reaches the encoder through CALLREL-XT, written by the converter; a
+design without the gene leaves the encoder out: 56 bytes to the others, not
+~400 (the smallest 7,062 -> 7,118; with the gene 7,406). But swept over seed
+38's front with the gene forced on, 23 of 167 did not convert - "body size
+drift" - every one with a kernel image past 8 KB: the converter writes the
+kernel's calls in the base form only, so at 13 bits a call above 8 KB grows and
+its sizing and emission passes disagree. The "+0 bytes" for either form assumed
+the converter would choose the site form where shorter; it does not. Next: the
+converter placing the kernel's calls by distance, sized to a fixed point - the
+work the site form alone needs too. The draft: results/drafts/callrel-draft.patch,
+against the fourteen pending patches.
