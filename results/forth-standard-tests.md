@@ -313,3 +313,14 @@ position unreliable: left). Whole files now nine of fourteen, stringtest
 among them. Stopping at: X32X32 (coreexttest's own word - something before it),
 SI_INC (filetest, after that RESTORE-INPUT), TRAVERSE-WORDLIST (walks headers,
 whose layout differs by design - held back), BLOCK, {:.
+
+## coreexttest whole (Iteration 183) - results/pending/ansupper-sq-after-seed41.patch
+
+Its stop at "X32X32" was a word made of string text: line 767 nests an escaped
+string in an escaped string, and tools/ans-upper.py ended an S\" string at its
+first quote - an escaped one - and upper-cased the rest, \x32 into \X32, no
+escape at all. The conversion now steps over an escaped character inside S\".
+coreexttest: 383 tests, 0 failed, the whole file. On s6: 1,989 tests, 1 failed
+(RESTORE-INPUT across a file's lines, left as before); ten of fourteen files
+whole. Held out with the ten pending patches: 0 of seed 40's 218 front designs
+differ from s6.

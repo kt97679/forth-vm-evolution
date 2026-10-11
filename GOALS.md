@@ -101,8 +101,8 @@ saving counts in full, and a kernel word only an extension uses belongs in
 that extension (results/word-audit.md, "Core or extension").
 
 *The after-seed-41 batch - pending* (Iterations 175-181): rtimm2, keepforms,
-founder, regprice-names, opcall-band, loopalign, coreext-w7, coreext-w8, dskew -
-results/pending/, in that order; the held-out check
+founder, regprice-names, opcall-band, loopalign, coreext-w7, coreext-w8, dskew,
+ansupper-sq - results/pending/, in that order; the held-out check
 on eight designs with the forms clean.
 
 *The after-seed-40 batch - applied at Iteration 174*: coreext, exceptions,

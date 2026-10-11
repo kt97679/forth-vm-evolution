@@ -1,0 +1,18 @@
+diff --git a/tools/ans-upper.py b/tools/ans-upper.py
+index 78fc755..c3c8c6a 100644
+--- a/tools/ans-upper.py
++++ b/tools/ans-upper.py
+@@ -20,7 +20,12 @@ def conv(line):
+             k = line.find(')', j); k = n if k < 0 else k + 1
+             out.append(line[i:k]); i = k; continue
+         if up in STR:
+-            k = line.find(STR[up], j + 1); k = n if k < 0 else k + 1
++            if up == 'S\\"':          # Iteration 183: in S\" a backslash escapes the next character -
++                k = j + 1              # an escaped quote does not end it (coreexttest's nested S\")
++                while k < n and line[k] != '"': k += 2 if line[k] == '\\' else 1
++                k = min(k, n - 1) + 1 if k < n else n
++            else:
++                k = line.find(STR[up], j + 1); k = n if k < 0 else k + 1
+             out.append(up + line[j:k]); i = k; continue
+         if re.fullmatch(r"'.'", tok): out.append(tok); i = j; continue
+         if up in ('CHAR', '[CHAR]', 'INCLUDE', 'REQUIRE', 'PARSE-NAME'): keep_next = True   # Iteration 181: a file name after INCLUDE, REQUIRE; PARSE-NAME's token, compared with an S" string

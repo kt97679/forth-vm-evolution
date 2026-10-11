@@ -3436,3 +3436,8 @@ deeper. On the VM an A/B is lost in noise (rounds differ by 9%); the gene
 dskew (data stack 2 KB lower) lets the laptop judge. Every recorded id kept;
 validate's KeyError on hand-made genomes found and fixed. Pending after seed
 41, ninth: dskew. results/stack-placement.md.
+
+**coreexttest whole (Iteration 183):** its "X32X32" was the test conversion
+ending an S\" string at an escaped quote; it steps over escapes now - 383
+tests, 0 failed. s6 1,989 tests, 1 failed; ten of fourteen files whole. Ten
+patches pending after seed 41, held out clean on seed 40's 218 designs.
