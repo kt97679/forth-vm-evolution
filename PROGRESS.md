@@ -3188,3 +3188,17 @@ untouched (12 stage engines byte for byte); run-tests PASS, 7 of 7
 IDENTICAL, the jail. First use, s6 under the suite: 73.4% of instructions,
 ?DO never, the cv8 compiler's own names never (dead copies?), NUMBER?'s
 prefixes never. results/tracer.md.
+
+## Iteration 163 - 2026-10-11 - Claude
+
+**The tracer's second use; two genes measured** (the owner: a gene for call
+offsets from the base or the call site; a hybrid stack/register design; the
+remaining items). The standard suite runs by ans-check.py (a correction: I had
+said it never ran): on s6 991 tests, four files of fourteen whole, the rest
+stopping at words the kernel lacks - which also hides the tests of ?DO and
+ABORT". Traced: s6 76.2 percent of instructions under the suite and
+run-tests.sh's files. s6's never-run compiler words are copies --cv8-compiler
+leaves behind: 26 words, 733 bytes of code. Measured for the genes: a one-bit
+"base or call site" choice keeps every workload at 2.00-2.10 bytes per call
+and takes far from 3.00 to 2.00; stack shuffles are 23-46 percent of the
+smallest design's dispatches. results/tracer.md.

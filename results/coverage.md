@@ -46,3 +46,10 @@ run; vm.c: 80-82%. WRITE-LINE was run by none: paths.fth now writes a line.
 
 A dictionary overflow on s6 (Iteration 161): SIGSEGV at a byte store
 (mov %al,(%r12)) past the end of memory - the refusal in far-addresses.md.
+
+## A correction (Iteration 163)
+
+The standard suite in tests/ans runs - by lab/evolve/ans-check.py, not by
+run-tests.sh - through prelude.fth and upper-cased copies; a probe that fed
+runtests.fth raw died at .( and was read as "never runs". What it does not
+reach is the word sets the kernel lacks: see tracer.md, "Second use".

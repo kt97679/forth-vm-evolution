@@ -70,3 +70,40 @@ memory.
   by the dictionary walk.
 - Run-time words are named by the walk only with byte headers; otherwise call
   targets alone, by >NAME.
+
+## Second use (Iteration 163): s6 under the standard suite too
+
+The standard suite IS run - not by run-tests.sh but by lab/evolve/ans-check.py,
+each file in its own process, through prelude.fth (the harness words the
+kernel lacks) and tools/ans-upper.py; an earlier note here and in coverage.md
+said it never ran, from a probe that bypassed both. On s6: 991 tests, failing
+only doubletest's double literals (read as singles); four files of fourteen
+run to their end, the rest stop at the first word the kernel lacks -
+coreplustest at :NONAME, coreexttest at 0<>, filetest at /STRING, stringtest
+at -TRAILING, toolstest at AHEAD, exceptiontest at CATCH, facilitytest at
+BEGIN-STRUCTURE, blocktest at BLOCK, and two at words the system has in files
+the runner does not load: searchordertest at ONLY (extend.4), localstest at
+{: (locals.4).
+
+Traced with its inputs rebuilt as the runner builds them, and run-tests.sh's
+Forth files: 1,610 of 2,113 instructions (76.2 percent, from 73.4), 59 words
+never entered. ?DO, ABORT" and ABORT still never run: the files that test them
+stop first - the missing words hide the tests of words that exist.
+
+The cv8 compiler words never run under their own names on s6 are copies: the
+converter's --cv8-compiler writes the overlay's code over the kernel's words
+(COMPILE, and COMPILE,8 both 46 bytes, HEADER and HEADER8 both 166, at
+different addresses; no address has two names) and leaves the originals in
+the image. The overlay copies never run in s6: 26 words, 733 bytes of code (+ their headers); the dump tool: 6 words, 419 bytes; s6 image 10065 bytes. s5 is built the same way; the tag2 front runs the
+overlay's words under their own names - nothing copied there.
+
+## The genes the owner asked about (measured on seed 37's smallest, tag2)
+
+Calls by offset, bytes per executed call: from the image base (today)
+2.00-2.10 on the eight workloads, 3.00 on far; from the call site 2.00-2.99
+(bubble 2.82, sieve 2.99 - their data sits between the code and the kernel),
+2.00 on far; either, one tag bit choosing per call, 2.00-2.10 and 2.00 on far.
+
+Stack shuffles (DUP SWAP OVER ROT DROP >R R> R@ ...), share of all dispatches:
+loop 46, bubble 43, parse 32, corpus 31, sieve 30, kernel 29, ackermann 27,
+fib 23 (percent) - DUP, SWAP, R>, OVER, >R and R@ the heaviest.
