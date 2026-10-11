@@ -1,19 +1,122 @@
+diff --git a/engine/pack4.c b/engine/pack4.c
+index 9fe8557..8f2d3b0 100644
+--- a/engine/pack4.c
++++ b/engine/pack4.c
+@@ -121,7 +121,7 @@ typedef int32_t  INT64;
+  *  empty name, nowhere near the actual cause. 1M is still small
+  *  enough to be unremarkable and leaves real headroom for shell.4 to
+  *  keep growing.  */
+-#define MEMSIZE (1024 * 1024)
++#define MEMSIZE (16 * 1024 * 1024)   /* 16 MB, as vm-lab.c: 1 MB ran far code off its end (Iteration 159) */
+ /*  Room reserved for the return stack. Raised from 2048 in Iteration
+  *  90: 2048 bytes is 256 cells, and each level of shell function
+  *  recursion nests roughly a dozen Forth calls, so the return stack
+diff --git a/engine/pack8.c b/engine/pack8.c
+index dc19420..80cf288 100644
+--- a/engine/pack8.c
++++ b/engine/pack8.c
+@@ -119,7 +119,7 @@ typedef int32_t  INT64;
+  *  empty name, nowhere near the actual cause. 1M is still small
+  *  enough to be unremarkable and leaves real headroom for shell.4 to
+  *  keep growing.  */
+-#define MEMSIZE (1024 * 1024)
++#define MEMSIZE (16 * 1024 * 1024)   /* 16 MB, as vm-lab.c: 1 MB ran far code off its end (Iteration 159) */
+ /*  Room reserved for the return stack. Raised from 2048 in Iteration
+  *  90: 2048 bytes is 256 cells, and each level of shell function
+  *  recursion nests roughly a dozen Forth calls, so the return stack
+diff --git a/engine/relf.c b/engine/relf.c
+index 0810aa8..d2ddf6f 100644
+--- a/engine/relf.c
++++ b/engine/relf.c
+@@ -86,7 +86,7 @@ typedef int32_t  INT64;
+  *  empty name, nowhere near the actual cause. 1M is still small
+  *  enough to be unremarkable and leaves real headroom for shell.4 to
+  *  keep growing.  */
+-#define MEMSIZE (1024 * 1024)
++#define MEMSIZE (16 * 1024 * 1024)   /* 16 MB, as vm-lab.c: 1 MB ran far code off its end (Iteration 159) */
+ /*  Room reserved for the return stack. Raised from 2048 in Iteration
+  *  90: 2048 bytes is 256 cells, and each level of shell function
+  *  recursion nests roughly a dozen Forth calls, so the return stack
+diff --git a/engine/spn.c b/engine/spn.c
+index 6f2614f..7e6bb5e 100644
+--- a/engine/spn.c
++++ b/engine/spn.c
+@@ -101,7 +101,7 @@ typedef int32_t  INT64;
+  *  empty name, nowhere near the actual cause. 1M is still small
+  *  enough to be unremarkable and leaves real headroom for shell.4 to
+  *  keep growing.  */
+-#define MEMSIZE (1024 * 1024)
++#define MEMSIZE (16 * 1024 * 1024)   /* 16 MB, as vm-lab.c: 1 MB ran far code off its end (Iteration 159) */
+ /*  Room reserved for the return stack. Raised from 2048 in Iteration
+  *  90: 2048 bytes is 256 cells, and each level of shell function
+  *  recursion nests roughly a dozen Forth calls, so the return stack
+diff --git a/forth/cpt16.4 b/forth/cpt16.4
+index 46eeff7..7b42e9d 100644
+--- a/forth/cpt16.4
++++ b/forth/cpt16.4
+@@ -133,7 +133,11 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
+ : CALL, ( a-addr --- )
+ \ Append a call to the body at a-addr. One token, no table, no word
+ \ number: the whole of CPT16's call mechanism is this line.
+-  START @ - CPT-SHIFT RSHIFT 256 + OP, ;
++  START @ - CPT-SHIFT RSHIFT
++  \ One token: past 65,280 scaled units it would wrap into another word or an
++  \ opcode - refused instead (Iteration 159).
++  DUP 65280 U< 0= IF -1 ABORT" call out of reach" THEN
++  256 + OP, ;
+ 
+ : COMPILE,16 ( xt --- )
+ \ Add the execution semantics of xt to the current definition: a
+@@ -235,7 +239,7 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
+ \ down [DOVAR][pad], so there is exactly room to overwrite.
+ 
+ : !CALL ( a-addr target --- )
+-  START @ - CPT-SHIFT RSHIFT 256 + SWAP !W ;
++  START @ - CPT-SHIFT RSHIFT DUP 65280 U< 0= IF -1 ABORT" call out of reach" THEN 256 + SWAP !W ;
+ 
+ : (;CODE)16 ( --- )
+ \ Runtime for DOES>: point the last created word at the code following
+@@ -249,7 +253,11 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
+ \ The tail must be an aligned call target: a call is a SCALED offset, so
+ \ an unaligned tail address loses its low bits and jumps to the wrong
+ \ place. The pad is dead code - (;CODE) never returns here.
+-  ?COMP POSTPONE (;CODE) ALIGN POSTPONE R> ; IMMEDIATE
++  ?COMP POSTPONE (;CODE) ALIGN
++  \ HERE is every child's call target: out of a token's reach, the defining
++  \ word is refused here, before a child is left half made (Iteration 159).
++  HERE START @ - CPT-SHIFT RSHIFT 65280 U< 0= IF -1 ABORT" DOES> out of reach" THEN
++  POSTPONE R> ; IMMEDIATE
+ 
+ \ ---- debugging aid --------------------------------------------------
+ : TOKENS. ( a-addr n --- )
 diff --git a/forth/cv8.4 b/forth/cv8.4
-index 079afb8..b86942c 100644
+index 079afb8..6aa6e69 100644
 --- a/forth/cv8.4
 +++ b/forth/cv8.4
-@@ -136,6 +136,10 @@ ALIGN
+@@ -54,6 +54,11 @@ VARIABLE CV8-SHIFT-V ( --- a-addr )
+ \ loaded; everything below reads it through CV8-SHIFT.
+ : CV8-SHIFT-DEFAULT ( --- n ) 1 CELLS 8 = IF 3 ELSE 2 THEN ;
+ CV8-SHIFT-DEFAULT CV8-SHIFT-V !
++VARIABLE CV8-VARCALL-V ( --- a-addr )
++\ True when calls may take the 3-byte far form: the engine's VARCALL. The
++\ converter writes it per design, as CV8-SHIFT-V (Iteration 159): without
++\ VARCALL every call is two bytes, and one out of their reach is refused.
++-1 CV8-VARCALL-V !
+ : CV8-SHIFT ( --- n ) CV8-SHIFT-V @ ;
+ 
+ VARIABLE CV8-DOES-FAR? ( --- a-addr )
+@@ -136,6 +141,10 @@ ALIGN
    DUP 16384 < IF
      DUP 8 RSHIFT 128 OR C, 255 AND C,
    ELSE
 +    \ 21 bits: the far form's first byte is 0xC0-0xDF where one-byte hot
 +    \ calls hold 0xE0-0xFF, so past them a call is refused, not truncated
 +    \ into some other target (Iteration 158).
-+    DUP 2097152 U< 0= IF -1 ABORT" call out of reach" THEN
++    DUP 2097152 U< 0= CV8-VARCALL-V @ 0= OR IF -1 ABORT" call out of reach" THEN
      DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C,
    THEN ;
  
-@@ -297,7 +301,13 @@ ALIGN
+@@ -297,7 +306,13 @@ ALIGN
    \ The tail must be an ALIGNED call target: a call is a SCALED offset,
    \ so an unaligned tail address loses its low bits and jumps to the
    \ wrong place. The pad is dead code - (;CODE) never returns here.
@@ -165,24 +268,40 @@ index 0000000..0510f59
 +    if re.search(r'out of reach|beyond', out): return 'refused %d of %d' % (len(WANT) - len(got), len(WANT))
 +    return 'MISSING %d answers, no refusal' % (len(WANT) - len(got))
 +if __name__ == '__main__': print(verdict(sys.stdin.read(), int(sys.argv[1])))
+diff --git a/tools/layout.py b/tools/layout.py
+index 7dd141c..28b58d3 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1094,6 +1094,10 @@ def emit(path):
+         far = '--does-far' in ARGV
+         CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
+         if TAG2_ON: CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 4}   # the 4-byte call
++    # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
++    # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
++    # VARCALL, kept the overlay's default and wrote far calls its engine misread.
++    if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
+     for w in order:
+         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
+         at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
 diff --git a/tools/run-tests.sh b/tools/run-tests.sh
-index 70092c2..6eb6894 100755
+index 70092c2..1cb3267 100755
 --- a/tools/run-tests.sh
 +++ b/tools/run-tests.sh
-@@ -271,6 +271,36 @@ got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&
+@@ -271,6 +271,37 @@ got=$( (cd "$W" && timeout 15 "$O/s0-cell-64" "$O/s0-cell-s64.img" < "$CTRL" 2>&
  if [ "$got" = "$AUDIT_WANT" ]; then printf '  %-12s FAIL   CMOVE for CMOVE> gave the answers too\n' control; FAILED=1
  else printf '  %-12s ok     CMOVE for CMOVE> does not give them\n' control; fi
  
 +# tests/core/far.fth (Iteration 158): code and data past 64 KB, then 8 MB more
 +# - calls, recursion, DOES>, data, EXECUTE across. tools/farcheck.py: every
 +# answer right, any missing one refused out loud. Most of the ladder could not
-+# reach that far and broke instead (crashed, hung, lost words); cv8 now refuses.
++# reach that far and broke instead (crashed, hung, lost words); since Iteration
++# 159 each answers or refuses - cv8 and cpt16 refuse, the 1 MB engines hold 16.
 +# The stages still broken are listed and shown, not hidden: a wrong answer from
 +# any stage fails, and a listed stage that passes says so. The control: the
 +# file without its gaps gives every answer on s6, which refuses with them.
 +echo
 +echo "far from the image base (tests/core/far.fth):"
-+FAR_KNOWN=" s0-cell p4-pack4 p8-pack8 s7-full s7-spn s2-cpt16 s3-cpt16f s4-cv8 "
++FAR_KNOWN=" "      # Iteration 159: none - every stage answers or refuses (keep the mechanism)
 +for w in 64 32; do
 +    for st in $(stages_for $w); do
 +        e="$O/$st-$w"; i="$O/$st-s$w.img"

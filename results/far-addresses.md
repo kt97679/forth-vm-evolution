@@ -40,14 +40,23 @@ bits, DOES>8 a tail out of its form's reach (refused with the defining word,
 before a child exists to be left half made), cv8b's LINK-LEN past 4 MB. Now s1,
 s5, s6 and the s8 stages refuse with "out of reach" where they broke.
 
-**Still broken, listed in run-tests.sh (FAR_KNOWN) and shown on every run:**
-- s4: its engine (vm-lab.c without shared calls) has no 0xC0 far form - a far
-  call there is the FARCALL opcode - but cv8.4's CALL, cannot tell which engine
-  it compiles for. Needs a flag the converter sets, as CV8-DOES-FAR? is.
-- s0, pack4, pack8, s7: crash before an answer, output lost with the crash.
-  pack4, pack8 and spn.c hold 1 MB (an 8 MB gap is past their memory; ALLOT
-  checks nothing); s0's cause is not found yet.
-- s2, s3: hang past 64 KB; not diagnosed.
+**Fixed in Iteration 159 - every stage answers or refuses, the list empty:**
+- s4: cv8's 3-byte far form needs VARCALL, which s4 lacks; the converter now
+  writes CV8-VARCALL-V for every cv8 design (it wrote the compiler variables
+  only under --set-compiler-vars, so hand-made s4 kept the overlay's "yes"),
+  and CALL, refuses a far call without it. s4 refuses past 128 KB (64-bit) and
+  64 KB (32-bit) - its whole reach.
+- s2, s3: cpt16's call is one token, scaled offset + 256 - past 65,280 units it
+  wrapped into another word or an opcode (a hang, an unknown opcode). CALL,,
+  !CALL and DOES>16 refuse, as sod16's DOES> already did.
+- s0, pack4, pack8, s7: their engines held 1 MB (relf.c, pack4.c, pack8.c,
+  spn.c) - with 16 MB, as vm-lab.c, every answer right: the memory was all they
+  lacked (static arrays: untouched pages cost nothing; the seeds unchanged).
+
+Still open: ALLOT checks nothing - past an engine's memory it writes beyond
+it, in every engine. A "dictionary full" refusal needs the memory's end known
+to Forth.
+
 
 ## The gate
 

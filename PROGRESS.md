@@ -3137,3 +3137,13 @@ engine), s0, pack4, pack8, s7 (crash), s2, s3 (hang). The gate: alive() runs
 far.fth on every evolved design; hand-made stages and --validate exempt.
 run-tests PASS, 7 of 7 IDENTICAL, the jail; 167 of 167 alive through the gate.
 results/far-addresses.md.
+
+## Iteration 159 - 2026-10-10 - Claude
+
+**Every stage answers far code or refuses it - folded into the tenth pending
+patch** (the owner: proceed). s4: the converter writes CV8-VARCALL-V for every
+cv8 design and CALL, refuses a far call without VARCALL; cpt16 (s2, s3):
+CALL,, !CALL and DOES>16 refuse past one token; relf.c, pack4.c, pack8.c and
+spn.c hold 16 MB, as vm-lab.c - s0, the pack stages and s7 then give every
+answer. FAR_KNOWN empty. The seeds unchanged; run-tests PASS, 7 of 7
+IDENTICAL, the jail; 167 of 167 alive. Open: ALLOT past an engine's memory.
