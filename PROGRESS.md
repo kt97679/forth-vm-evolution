@@ -3173,3 +3173,18 @@ refuses past the data stack's room (S0), , and C, by DP +!; full.fth in
 run-tests and the gate. far.fth now checks its gaps were taken - RelF had
 refused one and run the rest near. run-tests PASS, 7 of 7 IDENTICAL, the jail;
 167 of 167 alive. results/coverage.md, results/far-addresses.md.
+
+## Iteration 162 - 2026-10-11 - Claude
+
+**The tracer - the batch's eleventh pending patch** (the owner: a profiler in
+the engine, with stack context). vm-lab.c at -DPROFILE=2: a shadow call stack
+resynchronised by rp (returns need no hook), the first run of every
+instruction recorded with its call path, the top three cells and the input
+line, dispatches per call path as folded stacks. tools/vmtrace.py builds a
+trace engine for any design, names what the input compiled through the
+design's own dictionary, and reports coverage and contexts; its self-test is
+in run-tests.sh. The profiler's 1 MB address mask removed. Measured engines
+untouched (12 stage engines byte for byte); run-tests PASS, 7 of 7
+IDENTICAL, the jail. First use, s6 under the suite: 73.4% of instructions,
+?DO never, the cv8 compiler's own names never (dead copies?), NUMBER?'s
+prefixes never. results/tracer.md.
