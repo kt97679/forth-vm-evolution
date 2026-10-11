@@ -3496,3 +3496,8 @@ is still the founder's best (kernel +0.9%, corpus +1.9%). rtloop on the
 recorded smallest: +568 bytes, loop -77% of dispatches, bubble -13.5%, sieve
 -27.7% - the size end declines it, as the front intends. Next worth pricing: a
 cheaper rtloop.
+
+**A cheaper rtloop, priced (Iteration 187):** of its 568 bytes, ~160 are
+headers of overlay-internal words nothing reads at run time - dropping them
+would serve every overlay - and ~50-100 the lookup and leave-chain machinery:
+roughly 320-370 left. The next build for the small end.

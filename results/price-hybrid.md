@@ -212,3 +212,15 @@ the smallest lacks it because it is the front's size end: the trade-off doing
 its work. The return stack's 32% on loop is the colon-word loop runtime, and
 rtloop already takes it away. Worth pricing next: a cheaper rtloop - the
 overlay's 568 bytes are what keep the small end from it.
+
+## A cheaper rtloop, priced (Iteration 187)
+
+rtloop's 568 bytes on seed 40's smallest, by word (CALLMAP): the overlay's 12
+new words' bodies 326 - X10-OP 56, X10-XTS 48 (a five-cell table), COMPILE,8
+43, ?DO8 30, RESOLVE-LEAVE16 29, LEAVE8 26, DO8 25, LOOP-OPS 16, X10-OPS 16,
+CHAIN16? 16, RESOLVE-LEAVES 11, W@ 10; their headers about 160 (names and
+links nothing reads at run time); the kernel's compile words, swapped to the
+overlay's, +79. Two levers: the overlay-internal words headerless (~160 bytes,
+for every overlay - fuse, imm, loop alike), and the I/J/UNLOOP lookup and the
+16-bit leave chain simpler (~50-100). From 568 to roughly 320-370 - for the
+small end, -77% of loop's dispatches at about half the bytes.
