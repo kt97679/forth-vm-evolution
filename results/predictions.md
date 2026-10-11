@@ -97,3 +97,9 @@ whole joint front - **right** (97 of 97).
 3. The held-out check: no front design differs from s6.
 4. The chain ends within its 9 hours.
 5. A few corpus deaths again (10 or fewer), every one with opcall.
+
+## Added at Iteration 183, for the run after seed 41's batch
+
+1. dskew (the stacks' page offsets apart) neutral on the laptop's AMD core:
+   on the joint front no more often than mutation alone would put it - if it
+   is enriched there, the skew is worth something after all.

@@ -1,0 +1,75 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 8429c24..fc53378 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -287,6 +287,9 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
+  *  nothing and moves nothing: dsp and rp start exactly where they
+  *  always did, so S0/R0 and every saved image are unaffected.  */
+ #define DSTACK_BYTES 262144
++#ifndef DSKEW
++#define DSKEW 0   /* Iteration 183: bytes the data stack starts lower - its top cells' page offsets apart from the return stack's (4K aliasing) */
++#endif
+ 
+ /*
+  *  Macroses for memory access. Plain native access, both cell- and
+@@ -2357,12 +2360,12 @@ int main(int argc, char **argv) {
+      *  ABOVE the logical top, so with one cell the empty stack would
+      *  put dsp exactly on the guard and any NOS read would trap. */
+     g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - PAGE - 2 * CELL_BYTES
+-            - 64 * CELL_BYTES;   /* Iteration 119: slack for a shallow underflow -
++            - 64 * CELL_BYTES - DSKEW;   /* Iteration 119: slack for a shallow underflow -
+                                     ?STACK reports it after the word, as without
+                                     the guard ("Stack error DROP"); only a
+                                     runaway one reaches the guard page */
+ #else
+-    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - CELL_BYTES;
++    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - CELL_BYTES - DSKEW;
+ #endif
+     g_rp_limit  = g_ip + MEMSIZE - RSTACK_BYTES;
+     g_dsp_limit = g_ip + MEMSIZE - RSTACK_BYTES - DSTACK_BYTES
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 405cd0e..2294d3f 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -24,6 +24,7 @@
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+ | inlined at the hottest call sites (`hotinl`: 0, 10, 20, 40; Iteration 92; in the tag): the converter splices the first K safe sites of lab/evolve/hotsites-v1.json - the image's call sites by the fastest design's profile, named by caller, callee and ordinal - before every rewrite | Iteration 91's deep dive: short words found nothing, hot sites did | fast designs 9-10% fewer dispatches on parse and corpus, 4-5% on kernel, +40-160 bytes (results/hotinl-opbody.md) |
+ | words an opcode replaced, [opcode EXIT] (`opbody`: 0, 1; Iteration 92): (FIND), (>NUMBER), THREAD-FIND, +!, ?DUP, as FILL and CMOVE (Iterations 50, 54) | Iteration 91: a quarter of the fastest image never runs | 128-144 bytes off the fast designs' images; run-time calls take the opcode (results/hotinl-opbody.md) |
++| the data stack's start skewed (`dskew`: 0, 1; Iteration 183, the owner's question - the stacks' place): 2 KB lower, so its top cells and the return stack's stop sharing page offsets (4K aliasing: with both stacks at the block's top they met whenever the return stack was one cell deeper) | the engine's layout (vm-lab.c DSKEW) | not measurable on the development VM (rounds differ by up to 9%): the laptop's to judge |
+ | SWAP+I sure of a slot (`swapi`: 0, 1; Iteration 61; with 'imm'): SWAP+I first among the format-10 names | seed 13's front: SWAP+I on none of it | fib 0.944, selected geomean 0.987, 16 bytes less (PROGRESS.md, Iteration 61) |
+ | the keeping forms (`ops10` names DUP+I, DUP<I; Iteration 176): DUP n + and DUP n < in one dispatch, the top kept - in the image (the converter) and at run time (cv8t-fuse-imm.4's IMM+), pinned to one-byte codes where IMM-OPS is | results/price-hybrid.md: the hybrid's keeping forms | seed 40's smallest with rtimm=2: fib -36.3% of its dispatches (the price: 36.4), +726 bytes |
+ | I + fused in run-time code (`rtiplus`: 0, 1; Iteration 60; with rtloopall): a format-10 opcode I+, SUPER-TABLE's (I, +) -> I+, and forth/cv8-fuse-iplus.4 pointing LAST-OP at I's byte | the run-time code's opcodes, named | loop 0.801, sieve 0.967, kernel/parse/corpus +0.7-1.2% compile cost; selected geomean 0.962; 37 bytes (PROGRESS.md, Iteration 60) |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index b9f2f63..0c98ccc 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
++LATE = ('dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -113,7 +113,8 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
+ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
+              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+-EXPRESSED['cv8'] += ['jitloop', 'jitinl']   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
++EXPRESSED['cv8'] += ['jitloop', 'jitinl']
++EXPRESSED['cv8'] += ['dskew']   # Iteration 183 (the owner: the stacks' place): the data stack 2 KB lower - its top cells off the return stack's page offsets   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
+ BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
+           ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',), ('kstack',), ('abortif',), ('opcall',)]
+ # Superinstruction candidates: primitive pairs ranked by how often the CV8
+@@ -576,8 +577,8 @@ def _build(g, d):
+     # DOES> calls need variable-length calls.
+     eff = dict(g, sharedcall=g['sharedcall'] or g['varcall'], doesfar=g['doesfar'] and g['varcall'])
+     for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
+-                 ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
+-        if eff[k]: flags.append(f)
++                 ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
++        if eff.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
+     if g['spec']: flags.append('-DSPEC=1')
+     t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
+     if g.get('hotcalls') and g['varcall'] and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()

@@ -3424,3 +3424,15 @@ batches since changed evolve.py and layout.py): rebase first, then the
 converter's placement by distance - its own session.
 
 **Held out with the eighth wave (Iteration 182):** all eight pending patches on seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.
+
+## Iteration 183 - 2026-10-11 - Claude
+
+**The stacks' place (the owner's question): a gene, dskew.** The stacks
+already sit 16 MB from the dictionary in the same block; a separate block
+would change neither speed nor memory and would need the kernel's dictionary
+limit moved. What placement can change is 4K aliasing between the two stacks'
+top cells - they share page offsets whenever the return stack is one cell
+deeper. On the VM an A/B is lost in noise (rounds differ by 9%); the gene
+dskew (data stack 2 KB lower) lets the laptop judge. Every recorded id kept;
+validate's KeyError on hand-made genomes found and fixed. Pending after seed
+41, ninth: dskew. results/stack-placement.md.
