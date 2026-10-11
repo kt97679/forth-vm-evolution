@@ -224,3 +224,35 @@ overlay's, +79. Two levers: the overlay-internal words headerless (~160 bytes,
 for every overlay - fuse, imm, loop alike), and the I/J/UNLOOP lookup and the
 16-bit leave chain simpler (~50-100). From 568 to roughly 320-370 - for the
 small end, -77% of loop's dispatches at about half the bytes.
+
+## Rerun on today's designs (Iteration 194) - regprice.py with CALLMAP's names
+
+The first register stage priced again (lab/evolve/regprice.py: data-stack
+moves absorbed into the operation after them, collapsed into one shuffle
+where the stack must be real, lone literals made immediate) - on s6 and four
+of seed 40's front designs built with the after-seed-41 batch's code. Shares
+of the dispatches executed in the image's own code (code compiled at run time
+- fib's words, the benchmarks' loops - has no CALLMAP and is not priced):
+
+| design | kernel | corpus | parse | bubble | sieve | loop |
+|---|---|---|---|---|---|---|
+| s6 | 18.1% | 20.3% | 20.3% | 15.9% | 10.2% | 5.9% |
+| 0ceb043115, the smallest (interpreted) | 19.8% | 25.4% | 25.6% | 17.7% | 10.2% | 5.9% |
+| d99e3d9ed9, the small-end knee (JIT) | 11.5% | 11.2% | 11.3% | 15.9% | 10.2% | 5.9% |
+| 528c2523c3, the Q-best (JIT) | 8.7% | 11.5% | 12.0% | 15.3%* | 11.0%* | 10.0%* |
+| d9247d19b0, the fastest (JIT) | 7.2% | 10.1% | 10.9% | 19.5%* | 8.2%* | 8.3%* |
+
+\* of 8-70 thousand image-code dispatches: the JIT compiled those loops.
+
+What it says: the register forms' value is at the interpreted small end -
+a fifth to a quarter of the image's dispatches there; half that on the JIT
+designs, whose hot code no longer dispatches. The loop workload's 41% of
+return-stack moves (s6, the smallest, the knee) is the kernel's colon-word
+loop runtime - rtloop's ground (rtloop=2 now +460 bytes on the smallest), not
+the register stage's. The largest absorbable patterns on the smallest, as
+shares of each workload's image-code dispatches - the next keeping forms, as
+DUP+I and DUP<I were:
+
+- kernel: DUP | ?BRANCH:QBRS 4.6%, OVER | C@ 2.0%, DROP SWAP DROP | ?DUP 1.5%, DUP | C@ 1.3%, SWAP | C! 1.0%
+- corpus: DUP | ?BRANCH:QBRS 4.8%, DROP SWAP DROP | ?DUP 3.6%, DUP | C@ 2.7%, OVER | C@ 1.6%, SWAP OVER | C@ 1.6%
+- bubble: DUP ROT | + 4.2%, DUP | CELL+ 3.1%, DUP | @ 2.1%, SWAP | < 2.1%, SWAP OVER | ! 2.0%

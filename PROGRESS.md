@@ -3594,3 +3594,11 @@ compiles, headers in a scratch area; values on a stack of their own; {:
 (LOCAL) TO, ; DOES> EXIT ending the scope; ENVIRONMENT? (#LOCALS) and .S.
 localstest 50 tests, 0 failed. 0 of 12 front designs differ from s6. The
 seventeenth after-seed-41 patch: coreext-w11-after-seed41.patch (ORDER.md).
+
+**regprice.py rerun** on s6 and four of seed 40's designs (results/price-
+hybrid.md): the register stage would remove 20-26% of the image's dispatches
+on the interpreted smallest (corpus, parse), 7-12% on the JIT designs; the
+largest patterns there (DUP before ?BRANCH, OVER before C@) are the next
+keeping-form candidates. Every action item of the list is now done or
+measured; what stays open is for the owner (callrel's two-decoder variant)
+and the laptop (dskew, seed 41).
