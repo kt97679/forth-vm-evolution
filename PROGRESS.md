@@ -3602,3 +3602,18 @@ largest patterns there (DUP before ?BRANCH, OVER before C@) are the next
 keeping-form candidates. Every action item of the list is now done or
 measured; what stays open is for the owner (callrel's two-decoder variant)
 and the laptop (dskew, seed 41).
+
+## Iteration 195 - 2026-10-11 - Claude
+
+**The GP process, a deep dive (the owner): results/gp-deep-dive.md.** Our data
+first (seed 40's database): mutation-only children made 73% of the final front
+from a quarter of the children - crossover, 60% of variation, is 12 times less
+productive per child; varcall and doesfar never help (3.5% of evaluations);
+the JIT genes, tos-msc and escape-rtloopall are linked on the front but split
+by crossover; corpus, parse and kernel correlate 0.90-0.99 (three votes for
+one behaviour); noise +-2.6% (5-95%). Literature weighed against it: operator
+bandits (OpenTuner), learned linkage (GOMEA), surrogates, age (AFPO/ALPS),
+racing (irace), lexicase, islands (FunSearch/AlphaEvolve); new genes from
+deep-parameter sweeps (fbuf is one), instruction replication, PGO, two stack
+registers. Proposed for seed 42: crossover 0.25, the learned blocks, the dead
+genes slowed, speed ties within 2% - the owner decides.
