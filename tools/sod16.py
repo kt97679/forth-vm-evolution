@@ -298,7 +298,7 @@ def read_ops(w):
     out = fuse_pairs(out) if V8 and SUPERS else out
     out = testbranch(out) if V8 and any(v[2] in X_OPS10 for v in TESTBR.values()) else out
     out = eqibranch(out) if V8 and '=I?BRANCH' in X_OPS10 else out
-    out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10) else out
+    out = keepbranch(out) if V8 and ('DUP?NBRANCH' in X_OPS10 or 'SWAP+I' in X_OPS10 or 'DUP+I' in X_OPS10 or 'DUP<I' in X_OPS10) else out
     out = shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
     return opcall_rewrite(out) if V8 and OPCALL else out     # Iteration 121: last - the op as it ends up
 
@@ -701,7 +701,7 @@ TB_LONG = {v[0]: v[2] for v in TESTBR.values()}; TB_SHORT = {v[1]: v[3] for v in
 KEEPNBR = ('DNQBR', 'DNQBRS', 'DUP?NBRANCH', 'DUP?NBRANCH8')
 TB_LONG[KEEPNBR[0]] = KEEPNBR[2]; TB_SHORT[KEEPNBR[1]] = KEEPNBR[3]
 BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT) + ('EQIT', 'EQITS')
-PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'I+'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
+PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'DUP+I', 'DUP<I', 'I+'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
 def shorten(ops):
     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
     on a layout that counts every alignment at its widest, so the real
@@ -777,6 +777,11 @@ def keepbranch(ops):
                 out.append(('DNQBR', pl2 + CELL)); j += 2; continue      # one cell earlier: same target
             if pl == 'SWAP' and k2 == 'ADDI' and 'SWAP+I' in X_OPS10 and 'SADDI' not in skip:
                 out.append(('SADDI', pl2)); j += 2; continue
+            if pl == 'DUP' and k2 == 'ADDI' and 'DUP+I' in X_OPS10 and 'DADDI' not in skip:     # Iteration 176
+                out.append(('DADDI', pl2)); j += 2; continue
+            if (pl == 'DUP' and k2 == 'LIT' and -128 <= pl2 <= 127 and j + 2 < len(ops) and cs[j + 2] not in tg
+                    and ops[j + 2] == ('P', '<') and 'DUP<I' in X_OPS10 and 'DLTI' not in skip):
+                out.append(('DLTI', pl2)); j += 3; continue
         out.append(ops[j]); j += 1
     return out
 def ops10_rewrite(ops):
@@ -831,7 +836,13 @@ def opcall_rewrite(ops):
     out = list(ops)
     for j in range(len(out) - 1):
         k, pl = out[j]
-        if k == 'P' and pl in OPCALL and pl not in ESC_PRIMS and out[j + 1][0] == 'C':
+        # Iteration 191: not before a call whose inline operand follows it.
+        # The operand's alignment pads in front of that call (pad_before), and
+        # CALLNEXT reads the byte after X;CALL as the call's first: a padding
+        # byte, 0x00, became a call to the image's start - seed 40's five wrong
+        # corpora, every one (results/opcall-deaths.md). Padding goes only in
+        # front of such a call, so an X;CALL is now always followed by its call.
+        if k == 'P' and pl in OPCALL and pl not in ESC_PRIMS and out[j + 1][0] == 'C' and not before_operand(out, j + 1):
             out[j] = ('OC', pl)
     return out
 
@@ -960,7 +971,7 @@ def op_cells(k, pl):
     if k == 'OC': return CELL
     if k == 'LITX': return 3 * CELL
     if k in ('P', 'C', 'OPD', 'XT'): return CELL
-    if k in ('DNQBR', 'DNQBRS', 'SADDI'): return 4 * CELL   # DUP + 0= ?BRANCH + operand; SWAP + LIT n +
+    if k in ('DNQBR', 'DNQBRS', 'SADDI', 'DADDI', 'DLTI'): return 4 * CELL   # DUP + 0= ?BRANCH + operand; SWAP + LIT n +
     if k in TB_LONG or k in TB_SHORT: return 3 * CELL   # the test + ?BRANCH + its operand
     if k in ('LIT', 'LITOFF') + BRK: return 2 * CELL
     if k == 'STR': return align_up(len(pl), CELL)
@@ -991,7 +1002,7 @@ def op_bytes(k, pl, t):
             if not VARSLOT: return 3
             v = slotval(k, pl)
             return 3 if v is None or v < (1 << 15) else 4
-        if k in X_IMM or k in ('EQIH', 'SADDI'): return 2
+        if k in X_IMM or k in ('EQIH', 'SADDI', 'DADDI', 'DLTI'): return 2
         if k == 'EQIT': return 2                 # the offset alone
         if k == 'EQITS': return 1
         if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return 1
@@ -1048,6 +1059,8 @@ def opcode_L(ops, j):
         i_, e_ = cv8_op(pl); return 128 + i_ if e_ else i_
     if k in X_IMM: return X_IMM[k]
     if k == 'SADDI': return X_OPS10['SWAP+I']
+    if k == 'DADDI': return X_OPS10['DUP+I']
+    if k == 'DLTI': return X_OPS10['DUP<I']
     if k in ('VF', 'VS'): return X_VF if k == 'VF' else X_VS
     if k == 'LOC': return X_LOC[pl[0]]
     if k == 'LIT' and pl in (0, 1, -1) and 'small' in SPEC: return {0: X_LIT0, 1: X_LIT1, -1: X_LITM1}[pl]
@@ -1184,7 +1197,7 @@ def to_bytes_t2(ops):
         L = opcode_L(ops, j)
         assert L is not None, "no opcode for %r" % (k,)
         t2put(b, L)
-        if k in X_IMM or k in ('SADDI', 'EQIH'): b.append(pl & 0xFF)
+        if k in X_IMM or k in ('SADDI', 'EQIH', 'DADDI', 'DLTI'): b.append(pl & 0xFF)
         elif k in ('VF', 'VS'): emit_slot(b, slotval(k, pl) or 0)
         elif k == 'LOC': emit_slot(b, slotval(k, pl) or 0)
         elif k in ('LIT', 'LITX') and not (pl in (0, 1, -1) and 'small' in SPEC and k == 'LIT'):
@@ -1226,6 +1239,8 @@ def to_bytes_v8(ops):
             b.append(X_IMM[k]); b.append(pl & 0xFF)
         elif k == 'SADDI':                             # SWAP n + : the opcode, then ADDI's immediate
             b.append(X_OPS10['SWAP+I']); b.append(pl & 0xFF)
+        elif k in ('DADDI', 'DLTI'):                   # DUP n + and DUP n < (Iteration 176)
+            b.append(X_OPS10['DUP+I' if k == 'DADDI' else 'DUP<I']); b.append(pl & 0xFF)
         elif k in ('VF', 'VS'):
             b.append(X_VF if k == 'VF' else X_VS); emit_slot(b, slotval(k, pl) or 0)
         elif k == 'LOC':

@@ -252,4 +252,11 @@
 # batch is applied - the standard's words and exceptions (every image ~170
 # bytes larger), the profiler's triples. Seed 41: 9 hours, as seed 40.
 # Iteration 177: 6 hours, not 9 (the owner).
-seed 41 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 198: seed 41 small (the five measures: fastest +1.6%, hypervolume
+# +1.2%, best Q -0.2%); the after-seed-41 batch applied (nineteen patches -
+# results/applied-after-seed41/, ORDER.md): the hybrid's forms and run-time
+# immediates, rtloop=2, opcall fixed in every band, regpin, the attic and the
+# knee kept, crossover 0.25 with linked genes whole, speed ties within 2%, the
+# standard suite whole. New genes, so the stopping rule counts afresh. Seed 42:
+# 6 hours like seed 41 - the process changes against it on equal time.
+seed 42 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

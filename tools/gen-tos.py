@@ -89,6 +89,8 @@ HOT = {
  'L_x_dupnbr':     'if (tos) ip += (int16_t)LD16(ip); else ip += 2; NEXT();',
  'L_x_dupnbr8':    'if (tos) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();',
  'L_x_swapaddi':   't = NOS; NOS = tos; tos = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();',
+ 'L_x_dupaddi':    'PUSHT(tos); tos = tos + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();',
+ 'L_x_duplti':     'PUSHT(tos); tos = -(UNS64)((INT64)tos < (INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();',
  # Iteration 50: the byte loops as opcodes - three popped, the fourth the top
  'L_x_fill':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();',
  'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } tos = a_; } NEXT();',
@@ -178,7 +180,11 @@ s = s.replace("#define FOLDBASE 128", """#define FOLDBASE 128
 # tos register, fill on entry
 s = s.replace("static void virtual_machine(void) {\n    VMREGS", """static void virtual_machine(void) {
     VMREGS
+#ifdef TOSREG
+    register UNS64 tos asm(TOSREG) = CELL(dsp); dsp += CELL_BYTES;   /* fill; pinned: the gene regpin */
+#else
     UNS64 tos = CELL(dsp); dsp += CELL_BYTES;       /* fill */
+#endif
 #define NOS CELL(dsp)
 #if GUARD
 #define PUSHT(x) do { UNS64 v_ = (x); dsp -= CELL_BYTES; \\

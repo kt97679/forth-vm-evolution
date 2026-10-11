@@ -103,3 +103,31 @@ whole joint front - **right** (97 of 97).
 1. dskew (the stacks' page offsets apart) neutral on the laptop's AMD core:
    on the joint front no more often than mutation alone would put it - if it
    is enriched there, the skew is worth something after all.
+
+## Seed 41, scored (Iteration 198)
+
+1. The session's smallest near 17,930 bytes: 17,938 (f0aeaeb237). Yes.
+2. Small against seed 40, the fastest within 5%: +1.6%, and small by all five
+   measures. Yes.
+3. No front design differs from s6: 0 of 12 sampled, with the after-seed-41
+   batch's code (2,119 tests). Yes, on the sample.
+4. The chain within its time (6 hours since Iteration 177): 14:45 to 20:54 with
+   the comparison. Yes.
+5. Ten or fewer corpus deaths, every one with opcall: 12, every one opcall 1+.
+   Half - the count was over, the cause right (fixed in the batch since).
+
+## Seed 42, predicted (Iteration 198) - the after-seed-41 batch's first run
+
+1. No corpus death with opcall (the padding between X;CALL and its call is
+   fixed), and opcall's X;CALLs outside the base band on the front.
+2. Short branches out of range again, about as often as seed 41's 37 in 18,213
+   (0.2%) - not fixed yet.
+3. Crossover makes about a quarter of the children; mutation-only children
+   still most of the final front.
+4. Among front designs with rtloop, rtloop=2 more often than rtloop=1 (the
+   same loops, 96-108 bytes smaller).
+5. regpin on the joint front, if at all, at the fast end (JIT designs), not
+   the small end.
+6. At least one front design made "via the attic".
+7. Not small: hypervolume +2% or more - the forms and run-time immediates
+   (fib 0.83 on the knee founder) are new trade-offs at the knee.

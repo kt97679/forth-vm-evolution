@@ -64,6 +64,12 @@ def program(f, n, core='core.fr'):
         h = core if h == 'core.fr' else h
         p += ('S" %s" INCLUDED\n' % h) if h else '\n'
         if h == 'tester.fr': p += 'VARIABLE #T 0 #T !\n: }T 1 #T +! }T ;\n'          # every test counted
+    # Iteration 192: filetest's nested SAVE-INPUT test uses SI_INC, SI1 and S$,
+    # which coreexttest defines - upstream's runtests.fth includes that file
+    # first, in the same session. Here each file has its own: the three, as
+    # coreexttest has them.
+    if f == 'filetest.fth':
+        p += 'VARIABLE SI_INC 0 SI_INC !\n: SI1 SI_INC @ >IN +! 15 SI_INC ! ;\n: S$ S" SAVE-INPUT SI1 RESTORE-INPUT 12345" ;\n'
     if f != 'core.fr': p += mark + 'S" %s" INCLUDED\n' % f
     return p + '[ CR DECIMAL .( TESTS ) #T @ . .( FAILED ) #ERRORS @ . CR\nBYE\n'
 

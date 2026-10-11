@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
 # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
 # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
-LATE = ('peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
+LATE = ('regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
 FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
@@ -113,7 +113,9 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
-EXPRESSED['cv8'] += ['jitloop', 'jitinl']   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
+EXPRESSED['cv8'] += ['jitloop', 'jitinl']
+EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
+EXPRESSED['cv8'] += ['dskew']   # Iteration 183 (the owner: the stacks' place): the data stack 2 KB lower - its top cells off the return stack's page offsets   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
           ('spec',), ('folds',), ('tos', 'guard'), tuple(CC0), ('skippad', 'fold'), ('supers',), ('folds', 'supers'), ('ops10',), ('ops10', 'supers'), ('escape', 'ops10', 'supers'), ('tail',), ('tail', 'tos'), ('msc',), ('msc', 'tail'), ('hotcalls',), ('rtimm',), ('rtfuse', 'rtimm'), ('lean',), ('rtloop',), ('rtloopall',), ('rtloop', 'rtloopall', 'rtiplus', 'swapi'), ('bss', 'thinhdr'), ('kfast', 'tfind', 'kinput', 'klookup'), ('tag2', 't2hot', 't2wide'), ('hotinl',), ('opbody',), ('rtempty',), ('jitx',), ('alignfn',), ('noinls',), ('fbuf',), ('kstack',), ('abortif',), ('opcall',)]
 # Superinstruction candidates: primitive pairs ranked by how often the CV8
@@ -128,6 +130,10 @@ def super_slots(g):
     return (SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
             + (list(range(27 if g.get('escape') == 2 else 36, 68)) if g.get('escape') else []))   # ESCAPE: primitives 36-67 behind a byte; level 2 from 27
 LOOP10 = ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
+# Iteration 190: forth/cv8-fuse-loop.4's words reached only by its own code
+# (and the converter, which fills the three tables by their names in the
+# dump): rtloop=2 builds them headerless (tools/layout.py --headerless).
+RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVES', 'LOOP-OPS', 'X10-XTS', 'X10-OPS')
 def rtloop_on(g):
     """Iteration 41: does this design compile loops at run time with its loop
     opcodes (forth/cv8-fuse-loop.4)? The gene, and any of them - each word
@@ -179,7 +185,13 @@ def overlay(g):
     list needs no overlay: the converter writes it into cv8.4's FOLD-OPS.)
     Everything else keeps the build's dumps, so the hand-made stages still
     come out byte-identical."""
-    return g['enc'] == 'cv8' and bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g)))
+    return g['enc'] == 'cv8' and (bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g))) or rtimm2(g))
+def rtimm2(g):
+    """Iteration 175: rtimm=2 - run-time immediates without pairs: the overlay
+    for ADDI and SWAP+I alone (forth/cv8t-fuse.4's lookup over no pairs, then
+    cv8t-fuse-imm.4). Seed 40's small designs carried rtimm=1 unexpressed: it
+    waited on pairs and rtfuse, three mutations away (results/price-hybrid.md)."""
+    return g['enc'] == 'cv8' and g.get('rtimm') == 2 and 'imm' in g['spec']
 RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
 def rt_tests(g):
     """The fused tests this design has opcodes for - with rtfuse, its
@@ -194,7 +206,7 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
               '=?BRANCH', '=?BRANCH8', 'U<?BRANCH', 'U<?BRANCH8',
               '<>?BRANCH', '<>?BRANCH8', '>?BRANCH', '>?BRANCH8', '0<?BRANCH', '0<?BRANCH8', '=I?BRANCH', '=I?BRANCH8',   # Iteration 12
               'DUP?BRANCH', 'DUP?BRANCH8', 'OVER?BRANCH', 'OVER?BRANCH8',   # Iteration 33: tests that keep their value
-              'DUP?NBRANCH', 'DUP?NBRANCH8', 'SWAP+I',   # Iteration 34: DUP 0= ?BRANCH kept; SWAP n +
+              'DUP?NBRANCH', 'DUP?NBRANCH8', 'SWAP+I', 'DUP+I', 'DUP<I',   # Iteration 34: DUP 0= ?BRANCH kept; SWAP n +
               'FILL', 'CMOVE',                           # Iteration 50: the kernel's byte loops
               'THREAD-FIND',                             # Iteration 51: the byte-header thread walk (kfast's)
               'SCAN', 'SKIP',                            # Iteration 54: the input side (TABS>BL went, Iteration 148; kinput's)
@@ -210,14 +222,14 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
                '<>?BRANCH': 'L_x_nebr', '<>?BRANCH8': 'L_x_nebr8', '>?BRANCH': 'L_x_sgtbr', '>?BRANCH8': 'L_x_sgtbr8',
                '0<?BRANCH': 'L_x_zltbr', '0<?BRANCH8': 'L_x_zltbr8', '=I?BRANCH': 'L_x_eqibr', '=I?BRANCH8': 'L_x_eqibr8',
                'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8',
-               'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi',
+               'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi', 'DUP+I': 'L_x_dupaddi', 'DUP<I': 'L_x_duplti',
                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
                'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
 # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
 X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
            'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR',
-           'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI',
+           'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI', 'DUP+I': 'X_DUPADDI', 'DUP<I': 'X_DUPLTI',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
            'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
 def recorded_genome(i):
@@ -317,8 +329,10 @@ def express(g):
         if not e['opcall']: e.pop('opcall')
     if 'rtfuse' in e and not e.get('supers') and not rt_tests(g): e.pop('rtfuse')   # nothing to fuse at run time
     if 'rtimm' in e and not (overlay(g) and 'imm' in g['spec']): e.pop('rtimm')      # Iteration 37: n + at run time needs both
+    if e.get('rtimm') == 2 and g.get('rtfuse') and (supers_in(g) or rt_tests(g)): e['rtimm'] = 1   # Iteration 175: the same build - one id
     if 'rtloop' in e and not rtloop_on(g): e.pop('rtloop')                         # Iteration 41: with a loop opcode to use
     if 'rtloopall' in e and not rtloopall_on(g): e.pop('rtloopall')                # Iteration 43: all eight of them
+    if e.get('rtloop') == 2 and rtloopall_on(g): e['rtloop'] = 1                   # Iteration 190: loopall's own words - the same build
     if 'kfast' in e and not kfast_on(g): e.pop('kfast')                            # Iteration 49: byte headers
     if 'tfind' in e and not tfind_on(g): e.pop('tfind')                            # Iteration 52: with kfast
     if 'kinput' in e and not kinput_on(g): e.pop('kinput')                         # Iteration 54: with kfast
@@ -569,8 +583,9 @@ def _build(g, d):
     # DOES> calls need variable-length calls.
     eff = dict(g, sharedcall=g['sharedcall'] or g['varcall'], doesfar=g['doesfar'] and g['varcall'])
     for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
-                 ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1')):
-        if eff[k]: flags.append(f)
+                 ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
+        if eff.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
+    if g.get('regpin'): flags.append('-DREGPIN=%d' % g['regpin'])   # Iteration 197: the VM registers pinned
     if g['spec']: flags.append('-DSPEC=1')
     t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
     if g.get('hotcalls') and g['varcall'] and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
@@ -630,7 +645,7 @@ def _build(g, d):
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     if oc: opts += ['--opcall-file', os.path.join(d, 'opcall.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
-    if g['rtfuse'] and (sup or rt_tests(g)): opts.append('--rtfuse')
+    if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g): opts.append('--rtfuse')   # rtimm=2: IMM-OPS filled
     if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
     if t2wide_on(g): opts.append('--tag2-wide')
@@ -642,6 +657,8 @@ def _build(g, d):
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
+    if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2:   # Iteration 190: cv8-fuse-loop.4's internal words
+        opts += ['--headerless', ','.join(RTLOOP_INTERNAL)]
     if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
                                                                  # copies (Iteration 38), the dump tool and dead
@@ -898,7 +915,9 @@ def evaluate(g, rounds, keep=False):
 def mutate(g, rnd):
     g = canon(g); what = []
     for _ in range(rnd.choice([1, 1, 2])):
-        k = rnd.choice(EXPRESSED[g['enc']] + list(CC0) + ['enc'] * (1 if rnd.random() < 0.2 else 0))
+        pool = EXPRESSED[g['enc']] + list(CC0) + ['enc'] * (1 if rnd.random() < 0.2 else 0)
+        k = rnd.choice(pool)
+        if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
         if k == 'enc':
             g['enc'] = rnd.choice([f for f in FAMILIES if f != g['enc']]); what.append('family %s' % g['enc'])
         elif k == 'opt':
@@ -913,6 +932,12 @@ def mutate(g, rnd):
             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
+        elif k == 'regpin':           # Iteration 197: 0 GCC's choice; 1-3 three assignments
+            g['regpin'] = rnd.choice([v for v in range(4) if v != g.get('regpin', 0)]); what.append('regpin=%d' % g['regpin'])
+        elif k == 'rtloop':           # 0, 1, or 2 (Iteration 190: 2 with its internal words headerless)
+            g['rtloop'] = rnd.choice([v for v in range(3) if v != g.get('rtloop', 0)]); what.append('rtloop=%d' % g['rtloop'])
+        elif k == 'rtimm':            # 0, 1, or 2 (Iteration 175: 2 without pairs)
+            g['rtimm'] = rnd.choice([v for v in range(3) if v != g.get('rtimm', 0)]); what.append('rtimm=%d' % g['rtimm'])
         elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
             g['escape'] = rnd.choice([e for e in range(3) if e != g.get('escape', 0)]); what.append('escape=%d' % g['escape'])
         elif k == 'spec':
@@ -963,6 +988,10 @@ def mutate(g, rnd):
 
 def crossover(a, b, rnd):
     c = {}
+    whole = {}                       # Iteration 197: each linked group from one parent
+    for grp in LINKS:
+        src = a if rnd.random() < 0.5 else b
+        for k in grp: whole[k] = src
     for k in a:
         if k == 'ops10':
             pool = list(dict.fromkeys(a.get('ops10', []) + b.get('ops10', [])))
@@ -981,6 +1010,8 @@ def crossover(a, b, rnd):
             c['folds'] = [p for p in pool if p in keep]
         elif k == 'spec':
             c['spec'] = [s for s in SPECS if (s in (a['spec'] if rnd.random() < 0.5 else b['spec']))]
+        elif k in whole and k in whole[k]:
+            c[k] = whole[k][k]
         else:
             c[k] = a[k] if rnd.random() < 0.5 else b[k]
     return canon(c)
@@ -1003,11 +1034,18 @@ OBJECTIVES = ('speed', 'total', 'rss')
 # tolerance none was. Speed and binary + image stay exact, so the relation
 # has no cycles and the fronts below still sort.
 MEM_TOL = float(os.environ.get('EVOLVE_MEM_TOL', 8))
+# Iteration 197: speed within SPEED_TOL (a fraction) a tie, as memory within
+# MEM_TOL is - seed 40's front measured again in another session moved
+# +-2.6% (5-95%), so a smaller difference decided dominance by noise. In the
+# generation's ranking (fronts, rank); first_front - the reports' and the
+# carry's, over whole databases - stays exact (compare-fronts measures again).
+SPEED_TOL = float(os.environ.get('EVOLVE_SPEED_TOL', 0.02))
 def dominates(a, b):
     """Design a dominates design b: no worse in all three, better in one -
-    memory by more than MEM_TOL."""
+    memory by more than MEM_TOL, speed by more than SPEED_TOL."""
     s, t, m = (ov(a, k) for k in OBJECTIVES); s2, t2, m2 = (ov(b, k) for k in OBJECTIVES)
-    return s <= s2 and t <= t2 and m <= m2 + MEM_TOL and (s < s2 or t < t2 or m < m2 - MEM_TOL)
+    return (s <= s2 * (1 + SPEED_TOL) and t <= t2 and m <= m2 + MEM_TOL
+            and (s < s2 * (1 - SPEED_TOL) or t < t2 or m < m2 - MEM_TOL))
 def ov(r, k):
     if k == 'total': return r.get('total', r['size'])
     if k == 'rss': return r.get('rss') or 0
@@ -1032,7 +1070,12 @@ def fronts(ids, R):
                 n[y] -= 1
                 if n[y] == 0: nxt.append(y)
         F.append(nxt)
-    return F[:-1]
+    F = F[:-1]
+    # Iteration 197: with tolerances the relation need not be transitive - a
+    # cycle would leave its designs in no front and drop them unseen; last.
+    placed = set(x for f in F for x in f)
+    left = [i for i in ids if i not in placed]
+    return F + [left] if left else F
 
 def first_front(ids, R):
     """fronts(ids, R)[0] - the same designs, in the same order - without
@@ -1065,6 +1108,56 @@ def crowding(front, R):
         for j in range(1, len(s) - 1):
             cd[s[j]] += (ov(R[s[j + 1]], k) - ov(R[s[j - 1]], k)) / ((hi - lo) or 1)
     return cd
+
+# Iteration 188 (the owner): demote, don't delete - and keep what has
+# potential. Survival keeps the best N of parents and children; what falls
+# out is no longer simply gone: a demoted design carrying a gene value no
+# survivor has goes to the attic (ATTIC of them, the rarest genes first), and
+# leaves it once the population has that value again. One parent in ATTIC_P
+# comes from the attic, and a borrowed gene may come from there: a stepping
+# stone (a gene costly alone, good with a partner not yet found) keeps its
+# chance to pass on, at no measuring cost - the attic is measured already.
+# And the Q_KEEP best by Q - binary + image x run time x memory, the owner's
+# compound quality: the front's knee - always survive, as the extremes
+# (crowding) and each family's best already do.
+# Iteration 197 (results/gp-deep-dive.md, seed 40's database): mutation-only
+# children made 73% of the final front from a quarter of the children;
+# crossover, then 60% of variation, was twelve times less productive per
+# child - so less of it (EVOLVE_XOVER). Its uniform choice gene by gene split
+# genes linked on the front (mutual information 0.67-1.00): LINKS are
+# inherited whole, from one parent. varcall's and doesfar's mutants were not
+# dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
+# evaluations: drawn one time in ten (SLOW_GENES).
+XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
+LINKS = [('jit', 'jitx', 'jitloop', 'jitinl'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
+SLOW_GENES = ('varcall', 'doesfar')
+ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
+ATTIC_P = float(os.environ.get('EVOLVE_ATTIC_P', 0.1))
+Q_KEEP = int(os.environ.get('EVOLVE_Q_KEEP', 8))
+
+def qual(r):
+    """Q, lower better; a record with no memory measured has none."""
+    return ov(r, 'speed') * ov(r, 'total') * r['rss'] if r.get('rss') else math.inf
+
+def genes_of(r):
+    """The design's gene values as strings: one per scalar gene, one per
+    element of a list gene (a fold, a pair, a slot) - the units a design can
+    lose or carry alone."""
+    out = []
+    for k, v in sorted(express(r['genome']).items()):
+        if isinstance(v, (list, tuple)): out += ['%s:%s' % (k, json.dumps(x, sort_keys=True)) for x in v]
+        else: out.append('%s=%s' % (k, json.dumps(v, sort_keys=True)))
+    return out
+
+def attic_of(order, pop, attic, R):
+    """The new attic: from the designs out of the population (this
+    generation's demoted, then the attic before), those carrying a gene value
+    no survivor has - most such values first, then by rank; deterministic, so
+    a resumed run's replay rebuilds it."""
+    have = set(g for i in pop for g in genes_of(R[i])); inpop = set(pop)
+    cand = list(dict.fromkeys([i for i in order if i not in inpop] + [i for i in attic if i not in inpop and R[i]['status'] == 'ok']))
+    nov = [(-sum(g not in have for g in genes_of(R[i])), k, i) for k, i in enumerate(cand)]
+    return [i for n, k, i in sorted(nov) if n < 0][:ATTIC]
 
 def rank(ids, R):
     order, rk, cdist = [], {}, {}
@@ -1285,6 +1378,9 @@ def random_genome(rnd):
         if k == 'opt': g[k] = rnd.choice(['O2', 'O3', 'Os'])
         elif k == 'scale': g[k] = rnd.randrange(4)
         elif k == 'escape': g[k] = rnd.randrange(3)
+        elif k == 'rtimm': g[k] = rnd.randrange(3)
+        elif k == 'rtloop': g[k] = rnd.randrange(3)        # Iteration 190
+        elif k == 'regpin': g[k] = rnd.randrange(4)        # Iteration 197
         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
@@ -1531,6 +1627,20 @@ def main(argv):
         f37 = recorded_genome('38446e6c09')
         if f37: pop += [get(dict(f37, jitloop=1, jitinl=1), [], "founder: seed 37's fastest (38446e6c09) + jitloop, jitinl", 0)]
         else: print("  founder: seed 37's fastest not in results/ - left out", flush=True)
+    # Iteration 178: the hybrid's first forms - run-time immediates without pairs
+    # (rtimm=2) and the keeping forms (DUP+I, DUP<I) - three mutations from seed
+    # 40's smallest, whose fib they take -36% (results/price-hybrid.md): a founder
+    # starts there, its record from results/.
+    if not FROMZERO:
+        # Iteration 188 (the owner: weigh, do not lock out): from the small
+        # end's knee, not its extreme - d99e3d9ed9, 1.3% larger than the
+        # smallest and 28% faster, the best Q there (the smallest's the worst);
+        # the forms push out only HASH and SKIP, compile-time words, where on
+        # 903b231e0d (Q 0.63) they would push out (LOOP).
+        f40 = recorded_genome('d99e3d9ed9')
+        if f40: pop += [get(dict(f40, rtimm=2, ops10=['DUP+I', 'DUP<I'] + [w for w in f40.get('ops10', []) if w not in ('DUP+I', 'DUP<I')]), [],
+                            "founder: seed 40's small-end knee (d99e3d9ed9) + rtimm=2, DUP+I, DUP<I", 0)]
+        else: print("  founder: seed 40's small-end knee not in results/ - left out", flush=True)
     # Iteration 46 (the owner): the earlier runs' fronts carried into this one,
     # so what one run found the next starts from - seed 9 lost the fast end
     # seed 8 had (Iteration 45). --carry DB,DB,...: each database's own front,
@@ -1558,12 +1668,14 @@ def main(argv):
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))
     flush()
+    attic = []   # Iteration 188: demoted designs with genes the population lost
     for gen in range(1, G + 1):
         if UNTIL and time.time() >= UNTIL:
             print('  the deadline (--until): no generation %d' % gen, flush=True); break
         live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
         order, rk, cd = rank(live, R)
         def pick():
+            if attic and rnd.random() < ATTIC_P: return rnd.choice(attic)   # Iteration 188
             a, b = rnd.sample(live, 2) if len(live) > 1 else (live[0], live[0])
             return a if (rk[a], -cd[a]) <= (rk[b], -cd[b]) else b
         kids = []
@@ -1573,24 +1685,28 @@ def main(argv):
             same = [i for i in live if i != p1 and R[i]['genome']['enc'] == R[p1]['genome']['enc']]
             if same and rnd.random() < 0.8: p2 = rnd.choice(same)   # mostly within the species
             for _try in range(10):
-                if rnd.random() < 0.6 and p1 != p2:
+                if rnd.random() < XOVER and p1 != p2:   # Iteration 197: 0.6 before
                     g = crossover(R[p1]['genome'], R[p2]['genome'], rnd); how = 'crossover'; parents = [p1, p2]
                 else:
                     g = canon(R[p1]['genome']); how = ''; parents = [p1]
                 if rnd.random() < 0.15 and len(live) > 2:
-                    donor = rnd.choice([i for i in live if i not in parents])
+                    donor = rnd.choice([i for i in live + attic if i not in parents])   # the attic's lost genes too
                     g, h = borrow(g, R[donor]['genome'], rnd); how = (how + '; ' if how else '') + h + ' from ' + donor
                     parents = parents + [donor]
                 if rnd.random() < 0.9 or gid(g) in seen:
                     g, h = mutate(g, rnd); how = (how + '; ' if how else '') + h
                 if gid(g) not in seen: break
-            kids.append(get(g, parents, how, gen))
+            kids.append(get(g, parents, how + ('; via the attic' if set(parents) & set(attic) else ''), gen))
         flush()
         live = [i for i in dict.fromkeys(pop + kids) if R[i]['status'] == 'ok']
         order = rank(live, R)[0]
         best_of = [next(i for i in order if R[i]['genome']['enc'] == f) for f in FAMILIES
                    if any(R[i]['genome']['enc'] == f for i in order)]   # no family dies out by crowding
-        pop = list(dict.fromkeys(best_of + order))[:max(N, len(best_of))]
+        qbest = sorted((i for i in order if R[i].get('rss')), key=lambda i: qual(R[i]))[:Q_KEEP]   # the knee survives
+        pop = list(dict.fromkeys(best_of + qbest + order))[:max(N, len(best_of) + len(qbest))]
+        attic = attic_of(order, pop, attic, R) if ATTIC else []
+        print('  the attic: %d designs, %d gene values no survivor has' % (len(attic),
+              len(set(g for i in attic for g in genes_of(R[i])) - set(g for i in pop for g in genes_of(R[i])))), flush=True)
     if WORKERS[0]: WORKERS[0].close(); WORKERS[0].join()
     report(R)
 
@@ -1620,6 +1736,16 @@ GENOMES_NOTE = ('Each design above, and any other the front was measured again w
 def front_records(R, ids):
     return ['```jsonl'] + [json.dumps({k: v for k, v in R[i].items() if k != 'raw'}, sort_keys=True) for i in ids] + ['```']
 
+def qbest_line(F, R, ref):
+    """Iteration 188: the knee named beside the extremes - the design of the
+    best Q (binary + image x run time x memory; information, the owner's)."""
+    qs = [i for i in F if R[i].get('rss')]
+    if not qs: return 'The Q-best design: none (no memory measured).'
+    i = min(qs, key=lambda i: qual(R[i])); x = R[i]
+    rel = ' - Q %.3f of s6-cv8b\'s' % (qual(x) / qual(ref)) if ref and ref.get('rss') else ''
+    return ('The Q-best design (binary + image x run time x memory - the knee; information): %s, speed %.3f, '
+            'binary + image %s, memory %d KB%s.' % (i, x['speed'] / (ref['speed'] if ref else 1), format(ov(x, 'total'), ','), x['rss'], rel))
+
 def report(R):
     ok = [i for i in R if R[i]['status'] == 'ok']
     if not ok: nothing_alive(R); return
@@ -1631,6 +1757,7 @@ def report(R):
          (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
          'relative to s6-cv8b; size is the self-hosting image, binary the stripped engine. %s is held out.' % ', '.join(WORK_HELD),
          'The front is over three objectives, equal (Iteration 75): speed, binary + image, peak memory - memory within %g KB a tie (Iteration 77).' % MEM_TOL, '',
+         '', qbest_line(F, R, ref), '',
          '## The Pareto front', '',
          '| design | speed | re-measured | image | binary | binary + image | memory KB | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
          '|---|---|---|---|---|---|---|---|---|---|']

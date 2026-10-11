@@ -1075,6 +1075,12 @@ VARIABLE HANDLER ( --- a-addr)
            ELSE R> COUNT + ALIGNED >R THEN ;
 
 
+VARIABLE DICT-MAX ( --- a-addr)
+\ The dictionary's room in bytes from START where the engine keeps the stacks
+\ apart (the converter writes it); 0 where they sit above the dictionary - its
+\ limit then S0 less a margin, as always (Iteration 184).
+: DICT-LIMIT ( --- addr)
+  DICT-MAX @ ?DUP IF START @ + 4096 - ELSE S0 @ 10000 CELLS - 4096 - THEN ;
 : ALLOT ( n --- )
 \ Allot n extra bytes of memory, starting at HERE to the dictionary.
 \ Refused past the data stack's room - the 10000 cells ?STACK allows below
@@ -1082,7 +1088,9 @@ VARIABLE HANDLER ( --- a-addr)
 \ engine's memory - a crash (Iteration 161; gdb: a byte store past the
 \ end), where RelF's own kernel refuses. Each header ends with
 \ ALLOT, so a definition is checked once.
-  DUP HERE + S0 @ 10000 CELLS - 4096 - U> IF -1 ABORT" dictionary full" THEN DP +! ;
+\ n against the room left, not HERE + n against the limit: with 32-bit cells a
+\ dictionary placed high wrapped HERE + n under the limit (Iteration 184).
+  DUP 0> IF DUP DICT-LIMIT HERE - U> IF -1 ABORT" dictionary full" THEN THEN DP +! ;   \ n < 0 gives room back: unchecked
 
 : , ( x --- )
 \ Append cell x to the dictionary at HERE - DP +!, not ALLOT: the room is

@@ -74,7 +74,7 @@ E.setup()
 WORKS = E.WORK_SEL + E.WORK_HELD
 RA_READ = {'R>', 'R@', 'RDROP', '2R>', '2R@', 'RP@', 'RP!'}         # a callee's own return address, read
 RSTACK = RA_READ | {'>R', '2>R', 'I', 'J', 'UNLOOP', '(DO)', '(?DO)', '(LOOP)', '(+LOOP)', '(LEAVE)', 'I+', 'EXECUTE'}
-OPND = ('LIT', 'BRANCH', 'ADDI', 'EQI', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'SWAP+I', 'JIT', 'DOVAR', 'DODOES')
+OPND = ('LIT', 'BRANCH', 'ADDI', 'EQI', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'SWAP+I', 'DUP+I', 'DUP<I', 'JIT', 'DOVAR', 'DODOES')
 def parts(name): return (name[:-5] if name.endswith(';EXIT') else name).split(' ')
 pct = lambda a, b: '%.1f%%' % (100.0 * a / b) if b else '-'
 

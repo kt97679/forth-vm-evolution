@@ -876,3 +876,11 @@ the smallest by under ~2%.**
 | A retry for "transient" conversion failures | added on a wrong diagnosis, removed: the cause was the raw genome built under the canonical identity | 9d46ba3 -> 679e6f3 |
 | "Multi-state caching buys less on Zen 4" | an inference from 8 re-measured designs, retracted: every design on the Ryzen's front has it | 679e6f3; `lab/evolve/REHEARSAL.md` |
 | Two top-of-stack registers always; real calls and returns for dispatch | lost in the dispatch lab (before this register) | `lab/dispatch/README.md` |
+
+**Judging a run (Iteration 188, the owner: weigh, do not lock out).** A run is
+small only if all five are: fastest under 5%, smallest under 2%, memory under
+8 KB, and the two front-wide measures - the hypervolume in log space under 2%
+and the best Q (binary + image x run time x memory) under 2%. A run that moves
+the front's middle - +1% size for -25% time - is not small.
+compare-fronts.py prints the five per run ("Judging the runs") and names the
+Q-best design of all runs; evolve.py's report names its own.

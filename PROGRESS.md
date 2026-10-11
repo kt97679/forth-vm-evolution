@@ -3652,3 +3652,24 @@ against the front of what was measured before: skipping children predicted 30%
 slower and 5% bigger skips 34% of them and loses none of the final front's 163;
 20%/2% skips 58% and loses 6 (random skipping: 95). Proposed: built into the
 evolver, conservative at first - the owner decides, and on the dependency.
+
+## Iteration 198 - 2026-10-11 - Claude
+
+**Seed 41 processed - small.** 18,213 designs in 6 hours (14:45-18:50, session
+36 by 20:54). By the five measures against seeds 37-40: fastest +1.6%
+(9e2a6f1307 0.183), smallest +0.00% (f0aeaeb237, 17,938), memory -4 KB,
+hypervolume +1.2%, best Q -0.2%. The run's own fastest (28677d13b1, 0.174) was
+0.185 in the session - the winner's curse. Deaths: 858 reach limit, 37 short
+branch out of range (new: the converter sizes branches before the tag-2 map;
+all tag-2 with hotcalls - a targeted fix is next), 12 corpus (all opcall 1+,
+fixed in the batch). Predictions: four of five, the fifth half
+(results/predictions.md); seed 42's written.
+
+**The after-seed-41 batch applied to master** - nineteen patches in order
+(results/applied-after-seed41/ORDER.md), the run's measured results first:
+the reseed's fixed point at 27,120 bytes (identical to the tested seed), the
+stages rebuilt, the hand-made stages 7 of 7 IDENTICAL, run-tests PASS, every
+front design alive (126: seed 41's 75 and the joint front - two from seed 39's
+database), the held-out check 0 of 12 of seed 41's front differing from s6
+(2,119 tests, the suite whole). NEXT-RUN: seed 42, 6 hours - the process
+changes against seed 41 on equal time.

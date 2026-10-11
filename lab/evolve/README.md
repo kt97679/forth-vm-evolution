@@ -387,3 +387,51 @@ bugs (679e6f3).
 direct threading, indirect threading, SPN's
 genes, a register machine - each needing engine work before evolution can
 use it.
+
+## Selection since Iteration 188: demote, don't delete
+
+The owner: a small size increase for a big speed gain is a gain, and designs
+with potential must not be filtered out. Survival still keeps the best N of
+parents and children by front and crowding, and each family's best; and now
+the 8 best by Q (binary + image x run time x memory - the knee; EVOLVE_Q_KEEP)
+always survive too. What falls out is demoted, not deleted, when it carries a
+gene value no survivor has: the attic (EVOLVE_ATTIC, 128) keeps such designs,
+the rarest genes first, until the population has those values again. One
+parent in ten comes from the attic (EVOLVE_ATTIC_P), and a borrowed gene may
+come from there - a stepping stone keeps its chance, at no measuring cost.
+Children of attic parents say "via the attic" in how they were made.
+EVOLVE_ATTIC=0 turns the attic off.
+
+## rtloop=2 (Iteration 190): the loop compiler's internal words headerless
+
+forth/cv8-fuse-loop.4 defines eight words only its own code calls, or the
+converter fills by name in the dump: X10-OP, W@, CHAIN16?, RESOLVE-LEAVE16,
+RESOLVE-LEAVES, LOOP-OPS, X10-XTS, X10-OPS. With rtloop=2 the converter
+(tools/layout.py --headerless) keeps their code and drops their headers - no
+link, no name, on no thread; its chain check expects the rest. Only a name
+defined once loses its header: hiding the later of two would hand the name
+back to the earlier. 96-108 bytes a design; rtloop costs +460 bytes on seed
+40's smallest instead of +568, for -72% loop time. Under rtloopall (its own
+overlay) rtloop=2 expresses as 1: the same build, one id.
+
+## Variation since Iteration 197 (results/gp-deep-dive.md)
+
+Seed 40's database: mutation-only children made 73% of the final front from a
+quarter of the children; crossover, 60% of variation, was twelve times less
+productive per child. Now: crossover 0.25 (EVOLVE_XOVER); genes linked on the
+front (mutual information 0.67-1.00: the JIT's four, tos/tail/msc,
+escape/rtloopall, rtfuse/rtimm) inherited whole from one parent (LINKS) - the
+uniform choice gene by gene split them; varcall and doesfar, whose mutants
+were almost never better than their parent, drawn one time in ten
+(SLOW_GENES). In the generation's ranking, speed within 2% is a tie as memory
+within 8 KB is (EVOLVE_SPEED_TOL; seed 40's front measured again moved +-2.6%
+at 5-95%); the reports' and the carry's fronts stay exact.
+
+## regpin (Iteration 197, results/forth-implementations-survey.md)
+
+Gforth tunes its build by pinning the VM registers to machine registers; ours
+left them to GCC. regpin 1-3 pins ip, rp and dsp (and tos) to callee-saved
+registers in three assignments (engine/vm-lab.c VMREGS, tools/gen-tos.py).
+Measured on the development VM: the smallest and the small knee +800-930 bytes
+and no faster (the knee 4-7% slower); the fastest JIT design 160-320 bytes
+smaller at equal speed - a point of the front. The laptop decides.

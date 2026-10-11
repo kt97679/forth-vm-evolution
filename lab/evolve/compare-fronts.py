@@ -168,6 +168,56 @@ print('\nThe front of all runs together (speed, binary + image, peak memory), by
 two = [i for i in allf if any(speed[j] <= speed[i] and tot[j] <= tot[i] and (speed[j], tot[j]) != (speed[i], tot[i]) for j in allf + [k for k in speed if k != CAL])]
 print('\nMemory within %g KB counts as a tie (EVOLVE_MEM_TOL).' % E.MEM_TOL)
 print('On the front by memory alone: %d of %d%s' % (len(two), len(allf), (' - ' + ', '.join('%s %.3f at %s, %s KB' % (i, speed[i], format(tot[i], ','), format(rss.get(i, 0), ',')) for i in sorted(two, key=lambda i: -tot[i]))) if two else ''))
+# Iteration 188 (the owner: a small size increase for a big speed gain is
+# a gain - do not lock such out). The rule judged a run by the front's
+# extremes alone: a run that moved its middle (+1% size, -25% time) counted
+# as small. Two front-wide measures beside them: the hypervolume (the share
+# of objective space the front dominates, in log space - a 1% change counts
+# the same on every axis; it grows when any part of the front improves) and
+# the best Q (binary + image x run time x memory, the owner's - the knee). A
+# run is small only if all five are: fastest under 5%, smallest under 2%,
+# memory under 8 KB, hypervolume under 2%, best Q under 2%.
+def _hv(pts, lo, ref, n=100000):
+    import random as _r
+    P = [p for p in pts if not any(all(q[k] <= p[k] for k in range(3)) and q != p for q in pts)]
+    try:
+        import numpy as np
+        rng = np.random.default_rng(1); S = np.asarray(lo) + rng.random((n, 3)) * (np.asarray(ref) - np.asarray(lo))
+        hit = np.zeros(n, bool)
+        for p in P: hit |= (S >= np.asarray(p)).all(axis=1)
+        return hit.mean()
+    except ImportError:
+        rnd = _r.Random(1); n = 20000; hit = 0
+        for _ in range(n):
+            x = [lo[k] + rnd.random() * (ref[k] - lo[k]) for k in range(3)]
+            hit += any(all(p[k] <= x[k] for k in range(3)) for p in P)
+        return hit / n
+_ok = [i for i in speed if i != CAL and rss.get(i)]
+_lp = {i: (math.log(speed[i]), math.log(tot[i]), math.log(rss[i])) for i in _ok}
+_q = lambda i: speed[i] * tot[i] * rss[i]
+if len(_lp) > 1 and len(runs) > 1:
+    _lo = tuple(min(v[k] for v in _lp.values()) for k in range(3)); _ref = tuple(max(v[k] for v in _lp.values()) + 0.05 for k in range(3))
+    print('\n## Judging the runs (Iteration 188)\n')
+    print('Each run against all the others: its extremes, and two front-wide measures - the hypervolume in log space and the best Q '
+          '(binary + image x run time x memory). A run is small only if all five are: fastest under 5%, smallest under 2%, '
+          'memory under 8 KB, hypervolume under 2%, best Q under 2%.\n')
+    print('| run | fastest | smallest | memory | hypervolume | best Q | verdict |')
+    print('|---|---|---|---|---|---|---|')
+    for label, ids in runs:
+        mine = [i for i in ids if i in _lp]; rest = [i for l2, ids2 in runs if l2 != label for i in ids2 if i in _lp]
+        if not mine or not rest: continue
+        fg = min(speed[i] for i in rest) / min(speed[i] for i in mine) - 1
+        sg = min(tot[i] for i in rest) / min(tot[i] for i in mine) - 1
+        mg = min(rss[i] for i in rest) - min(rss[i] for i in mine)
+        h0 = _hv([_lp[i] for i in rest], _lo, _ref); h1 = _hv([_lp[i] for i in rest + mine], _lo, _ref)
+        hg = h1 / h0 - 1 if h0 else float('nan')
+        qg = min(map(_q, rest)) / min(map(_q, mine)) - 1
+        small = fg < .05 and sg < .02 and mg < 8 and hg < .02 and qg < .02
+        print('| %s | %+.1f%% | %+.2f%% | %+d KB | %+.1f%% | %+.1f%% | %s |' % (label, 100 * fg, 100 * sg, mg, 100 * hg, 100 * qg, ('small' if small else 'not small') if label.startswith('this clone') else '(an earlier run: what it still holds)'))
+    _qb = min(_ok, key=_q)
+    _rel = ' - Q %.3f of s6\'s' % (_q(_qb) / (speed[CAL] * tot[CAL] * rss[CAL])) if CAL in speed and rss.get(CAL) and CAL in tot else ''
+    print('\nThe Q-best design of all runs (the knee): %s, speed %.3f at %s bytes, %s KB%s - %s.'
+          % (_qb, speed[_qb], format(tot[_qb], ','), format(rss[_qb], ','), _rel, next(l for l, ids in runs if _qb in ids)))
 if len(cpus) > 1:
     a, b = cpus[0], cpus[1]
     ids = sorted(i for i in S[a] if i != CAL)

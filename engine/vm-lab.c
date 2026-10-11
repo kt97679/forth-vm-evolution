@@ -287,6 +287,21 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
  *  nothing and moves nothing: dsp and rp start exactly where they
  *  always did, so S0/R0 and every saved image are unaffected.  */
 #define DSTACK_BYTES 262144
+#ifndef STACKSEP
+#if ENC == 3          /* the cv8 family only: sod16's and cpt16's compact encodings keep the stacks in reach (they crashed apart) */
+#define STACKSEP 1   /* Iteration 184 (the owner): the stacks in a chunk of their own; the dictionary in
+                        a reservation of MEMMAX, committed as touched, that never moves - so it can grow
+                        past MEMSIZE (addresses are absolute everywhere: a moved block would break them) */
+#else
+#define STACKSEP 0
+#endif
+#endif
+#ifndef MEMMAX
+#define MEMMAX (256u << 20)   /* within the jail's 1 GB of address space, and tag 2's 1 GB call reach */
+#endif
+#ifndef DSKEW
+#define DSKEW 0   /* Iteration 183: bytes the data stack starts lower - its top cells' page offsets apart from the return stack's (4K aliasing) */
+#endif
 
 /*
  *  Macroses for memory access. Plain native access, both cell- and
@@ -349,6 +364,16 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
 #define GUARD 0   /* 1: guard pages. See PROGRESS.md 206 - one
                     * tests/diff case (tilde) regresses, not yet diagnosed. */
 #endif
+#if STACKSEP
+#include <sys/mman.h>
+#if GUARD
+#include <signal.h>
+#endif
+#define PAGE 4096
+static UNS8 stackmem[RSTACK_BYTES + DSTACK_BYTES] __attribute__((aligned(PAGE)));   /* the stacks' own chunk */
+static UNS8 *mem;                                                  /* the dictionary: mmap'd at load */
+#define STK_END ((UNS64)(uintptr_t)stackmem + RSTACK_BYTES + DSTACK_BYTES)
+#else
 #if GUARD
 #include <sys/mman.h>
 #include <signal.h>
@@ -356,6 +381,8 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
 static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((aligned(PAGE)));
 #else
 static UNS8 mem[MEMSIZE + CELL_BYTES - 1];
+#endif
+#define STK_END ((UNS64)(uintptr_t)base + MEMSIZE)
 #endif
 
 /*
@@ -370,6 +397,28 @@ static UNS8 *base;
 #if REG
 static UNS64  g_ip, g_rp, g_dsp;
 #define VMREGS UNS64 ip = g_ip, rp = g_rp, dsp = g_dsp, t; const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
+#if defined(REGPIN) && REGPIN && defined(__x86_64__)
+/*  Iteration 197, the gene regpin (Gforth's build tuning: explicit register
+ *  allocation, results/forth-implementations-survey.md): the VM registers
+ *  pinned to callee-saved machine registers, in one of three assignments -
+ *  they live across every call and system call the engine makes. GCC keeps a
+ *  local register variable in its register where it can; whether that helps
+ *  the 10 KB dispatch function is the laptop's measurement. 0: GCC chooses.  */
+#undef VMREGS
+#if REGPIN == 1
+#define VMREGS register UNS64 ip asm("rbx") = g_ip; register UNS64 rp asm("r12") = g_rp; \
+               register UNS64 dsp asm("r13") = g_dsp; UNS64 t; const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
+#define TOSREG "r14"
+#elif REGPIN == 2
+#define VMREGS register UNS64 ip asm("r12") = g_ip; register UNS64 rp asm("r13") = g_rp; \
+               register UNS64 dsp asm("r14") = g_dsp; UNS64 t; const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
+#define TOSREG "r15"
+#else
+#define VMREGS register UNS64 ip asm("r15") = g_ip; register UNS64 rp asm("r14") = g_rp; \
+               register UNS64 dsp asm("rbx") = g_dsp; UNS64 t; const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
+#define TOSREG "r12"
+#endif
+#endif
 #else
 static UNS64 ip, rp, dsp, t;
 #define g_ip ip
@@ -522,8 +571,9 @@ static void guard_trap(int sig, siginfo_t *si, void *uc) {
  *  The two guard pages come out of the data stack, so the stacks stay
  *  where they were and only the usable data depth shrinks by 8 KB. */
 static void install_guards(UNS8 *b) {
-    UNS64 dfloor = (UNS64)(uintptr_t)b + MEMSIZE - RSTACK_BYTES - DSTACK_BYTES;
-    UNS64 rfloor = (UNS64)(uintptr_t)b + MEMSIZE - RSTACK_BYTES;
+    UNS64 dfloor = STK_END - RSTACK_BYTES - DSTACK_BYTES;   /* the stacks' top: their own chunk with STACKSEP */
+    UNS64 rfloor = STK_END - RSTACK_BYTES;
+    (void)b;
     struct sigaction sa;
     stack_t ss;
     ss.ss_sp = g_altstack; ss.ss_size = sizeof g_altstack; ss.ss_flags = 0;
@@ -745,6 +795,11 @@ static void load_image(const char *name) {
             hot_tab[i] = b_[0] | (UNS64)b_[1] << 8;
         }
     }
+#endif
+#if STACKSEP
+    mem = (UNS8 *)mmap(NULL, MEMMAX, PROT_READ | PROT_WRITE,
+                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | (CELL_BYTES == 4 ? MAP_32BIT : 0), -1, 0);
+    if (mem == (UNS8 *)MAP_FAILED) { write_str(2, "no room for the dictionary\n"); _exit(1); }
 #endif
     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
                     & ~(UNS64)(CELL_BYTES - 1));
@@ -1658,6 +1713,15 @@ L_x_dupnbr8: if (DS0) ip += (int8_t)BYTE(ip); else ip += 1; NEXT();         /* D
 #if X_SWAPADDI
 L_x_swapaddi: t = DS1; DS1 = DS0; DS0 = t + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; NEXT();   /* SWAP n + */
 #endif
+/*  Iteration 176, the hybrid's keeping forms: an operation on the top with an
+ *  immediate, the top kept - DUP n + and DUP n < (fib's DUP -1 + and DUP 2 <),
+ *  one dispatch for three. results/price-hybrid.md.  */
+#if X_DUPADDI
+L_x_dupaddi: PUSH(DS1 + (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();                 /* DUP n + */
+#endif
+#if X_DUPLTI
+L_x_duplti: PUSH(-(UNS64)((INT64)DS1 < (INT64)(int8_t)BYTE(ip))); ip += 1; NEXT();         /* DUP n < */
+#endif
 /*  Iteration 50: FILL and CMOVE, the kernel's byte loops (12-14 dispatches a
  *  byte in Forth; CMOVE 5-7% of kernel, parse and corpus), as opcodes - a
  *  byte at a time, ascending, as the loops: CMOVE's overlap behaves the same.  */
@@ -2340,23 +2404,23 @@ int main(int argc, char **argv) {
     g_argv = argv;
     load_image(argv[1]);
     g_ip = (UNS64)(uintptr_t)base;
-    g_rp = g_ip + MEMSIZE;
+    g_rp = STK_END;
 #if GUARD
     install_guards(base);
     /*  Below the return stack's guard page, not below the return stack.
      *  TWO cells of slack, not one: with TOS caching dsp sits one cell
      *  ABOVE the logical top, so with one cell the empty stack would
      *  put dsp exactly on the guard and any NOS read would trap. */
-    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - PAGE - 2 * CELL_BYTES
-            - 64 * CELL_BYTES;   /* Iteration 119: slack for a shallow underflow -
+    g_dsp = STK_END - RSTACK_BYTES - PAGE - 2 * CELL_BYTES
+            - 64 * CELL_BYTES - DSKEW;   /* Iteration 119: slack for a shallow underflow -
                                     ?STACK reports it after the word, as without
                                     the guard ("Stack error DROP"); only a
                                     runaway one reaches the guard page */
 #else
-    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - CELL_BYTES;
+    g_dsp = STK_END - RSTACK_BYTES - CELL_BYTES - DSKEW;
 #endif
-    g_rp_limit  = g_ip + MEMSIZE - RSTACK_BYTES;
-    g_dsp_limit = g_ip + MEMSIZE - RSTACK_BYTES - DSTACK_BYTES
+    g_rp_limit  = STK_END - RSTACK_BYTES;
+    g_dsp_limit = STK_END - RSTACK_BYTES - DSTACK_BYTES
 #if GUARD
                   + PAGE
 #endif

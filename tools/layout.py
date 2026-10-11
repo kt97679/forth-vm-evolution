@@ -457,6 +457,12 @@ if TAG2_ON:
     if any(x['n'] in ('LOOPTAB', 'LOOP-OPS') for x in order):
         _pin += [G['X_OPS10'][n] for n in ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
                  if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
+    # the run-time immediates (forth/cv8t-fuse-imm.4): IMM-OPS holds one-byte
+    # codes, as the loop tables do - so its keeping forms are pinned where the
+    # design has them (Iteration 176: escaped, fib's DUP -1 + and DUP 2 < went
+    # unfused, and an escaped form costs the two dispatches it saves)
+    if any(x['n'] == 'IMM-OPS' for x in order):
+        _pin += [G['X_OPS10'][n] for n in ('DUP+I', 'DUP<I') if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
     assert all(p in _names for p in _pin), [p for p in _pin if p not in _names]
     # --tag2-hot W: an operation weighing at least W in the reference is hot -
     # ranked first, by weight; the rest by how often the image uses it. 0:
@@ -470,6 +476,9 @@ if TAG2_ON:
     _bytes = list(range(63)) + (list(range(0x80, 0xC0)) if T2WIDE_ON else [])   # the one-byte codes, in rank order
     assert len(_all) <= len(_bytes) + 256, "%d operations: more than %d one-byte codes and 256 escaped" % (len(_all), len(_bytes))
     T2MAP = {'one': {x: _bytes[c] for c, x in enumerate(_all[:len(_bytes)])}, 'esc': {x: s for s, x in enumerate(_all[len(_bytes):])}, 'escc': 0x3F}
+    # Iteration 180 kept X;CALL to the base band (0x00-0x3E) after five wrong
+    # corpora; Iteration 191 found the cause - padding between an X;CALL and
+    # its call (tools/sod16.py opcall_rewrite) - and every band is open again.
     G['TAG2'][0] = T2MAP
     print('tag 2: %d operations, %d one-byte, %d escaped; %d escaped uses in the image (a byte each)'
           % (len(_all), len(T2MAP['one']), len(T2MAP['esc']), sum(_static[x] for x in T2MAP['esc'])))
@@ -555,8 +564,24 @@ def _wl_hash(name):
     return v & (_NTH - 1)
 
 
+# Iteration 190: --headerless NAMES. Words whose code stays and whose header
+# goes: no link, no name, on no thread - reached only by the calls and
+# operands already compiled to them, as an overlay's internal words are
+# (forth/cv8-fuse-loop.4: rtloop=2). Only a name defined once: hiding the
+# later of two would hand its name back to the earlier.
+import collections as _co
+_hl_req = [n for n in (_opt('--headerless') or '').split(',') if n]
+_hl_count = _co.Counter(w['n'] for w in order)
+HL = {w['s'] for w in order if w['n'] in _hl_req and _hl_count[w['n']] == 1}
+if _hl_req:
+    _kept = [n for n in _hl_req if _hl_count[n] != 1]
+    print('headerless: %d words, %d header bytes out%s' % (len(HL),
+          sum(len(w['n']) + 1 + (2 if BYTEHDR else CELL) for w in order if w['s'] in HL),
+          ('; kept: ' + ', '.join('%s (%s)' % (n, 'none' if not _hl_count[n] else '%d of that name' % _hl_count[n]) for n in _kept)) if _kept else ''))
+
 _prev_in_thread, _last = {}, {}
 for w in order:
+    if w['s'] in HL: continue
     h = _wl_hash(w['n'])
     _prev_in_thread[w['s']] = _last.get(h)
     _last[h] = w['s']
@@ -564,6 +589,12 @@ for w in order:
 new_off, off = {}, PROLOGUE
 LINKLEN = {}
 for w in order:
+    if w['s'] in HL:                                 # Iteration 190: the code alone
+        LINKLEN[w['s']] = 0
+        new_off[w['s']] = {'link': off, 'nfa': off}
+        if not BYTEHDR or body_needs_align(w): off = align_up(off, CELL)
+        new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
+        continue
     if BYTEHDR:
         pv = _prev_in_thread[w['s']]
         # Bound from above: the nfa lands at most 3 bytes past `off`, so
@@ -623,7 +654,7 @@ def wl_hash(name):
 # Definition order within each thread; `order` is already oldest first.
 threads = [[] for _ in range(NTHREADS)]
 for w in order:
-    threads[wl_hash(w['n'])].append(w)
+    if w['s'] not in HL: threads[wl_hash(w['n'])].append(w)
 
 linkval = {}
 for t in threads:
@@ -646,7 +677,7 @@ for t in threads:
 HEADS = [new_off[t[-1]['s']]['nfa'] if t else 0 for t in threads]
 
 # Walk every chain back and check the union is exactly the dictionary.
-by_nfa = {new_off[w['s']]['nfa']: w for w in order}
+by_nfa = {new_off[w['s']]['nfa']: w for w in order if w['s'] not in HL}
 seen_names, broken = [], False
 for t, head in zip(threads, HEADS):
     if not head:
@@ -668,7 +699,7 @@ for t, head in zip(threads, HEADS):
             broken = True
             break
 chain_ok = (not broken
-            and sorted(seen_names) == sorted(w['n'] for w in order))
+            and sorted(seen_names) == sorted(w['n'] for w in order if w['s'] not in HL))   # Iteration 190: headerless words on no chain
 
 # The heads live in FORTH-WORDLIST's own parameter field, which is DATA
 # and would otherwise be copied out of the dump verbatim - with the
@@ -990,10 +1021,11 @@ def emit(path):
     for w in order:
         s0 = w['s']
         assert len(img) == new_off[s0]['link'], "link drift at %s" % w['n']
-        if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
-        else:       img += cel(linkval[s0])
-        nm = w['n'].encode('latin-1')
-        img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
+        if s0 not in HL:                             # Iteration 190: a headerless word, its code alone
+            if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
+            else:       img += cel(linkval[s0])
+            nm = w['n'].encode('latin-1')
+            img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
         # pad to the body: a cell boundary in the classic layout, or only
         # as far as body_needs_align() asked for in the byte layout
         while len(img) < new_off[s0]['body']: img += b'\x00'
@@ -1097,6 +1129,8 @@ def emit(path):
     # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
     # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
     # VARCALL, kept the overlay's default and wrote far calls its engine misread.
+    if V8: CVARS['DICT-MAX'] = 256 << 20   # Iteration 184: vm-lab.c's MEMMAX - the stacks apart, the dictionary its own
+    if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
     for w in order:
         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
@@ -1139,7 +1173,9 @@ def emit(path):
             # them; zeros otherwise. SOD16_NO_RTIMM=1 writes zeros, to measure.
             rt = '--rtfuse' in ARGV and not _os.environ.get('SOD16_NO_RTIMM') and 'imm' in G['SPEC']
             data = bytes([G['X_IMM']['ADDI'] if rt else 0, G['X_OPS10'].get('SWAP+I', 0) if rt else 0,
-                          op('+')[0], op('SWAP')[0]])     # the overlay compares against these
+                          op('+')[0], op('SWAP')[0],      # the overlay compares against these
+                          G['X_OPS10'].get('DUP+I', 0) if rt else 0, G['X_OPS10'].get('DUP<I', 0) if rt else 0,
+                          op('DUP')[0], op('<')[0]])      # Iteration 176: the keeping forms
         elif w['n'] == 'FOLD-TABLE':
             ops = [op(x)[0] for x in G['V8_FOLDLIST'] if x]
             data = bytes([len(ops)] + ops); assert len(data) <= 24, "fold table overflows"
@@ -1278,7 +1314,7 @@ newcode = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'code')
 tails_kept = [(w['n'], tail_bytes(w)) for w in order if tail_bytes(w)]
 newdata = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'data')
 heads = sum(CELL + align_up(len(w['n']) + 1, CELL) for w in order)
-heads_new = (sum(LINKLEN[w['s']] + len(w['n']) + 1 for w in order)
+heads_new = (sum(LINKLEN[w['s']] + len(w['n']) + 1 for w in order if w['s'] not in HL)
              if BYTEHDR else heads)
 
 EMIT = None
@@ -1315,8 +1351,8 @@ if tails_kept:
           % (builtins, len(bi_bad), bi_bad[:3] if bi_bad else ""))
 for w in untranslated:
     print("   %s" % w['n'])
-print("link chain re-walks to the same %d words in the same order: %s"
-      % (len(order), "yes" if chain_ok else "NO"))
+print("link chain re-walks to the same %d words in the same order: %s%s"
+      % (len(order) - len(HL), "yes" if chain_ok else "NO", ' (%d headerless, on no chain)' % len(HL) if HL else ''))
 print("(POSTPONE) operands relocated: %d resolved, %d unresolved %s"
       % (xt_ok, len(xt_bad), xt_bad[:3] if xt_bad else ""))
 print("DEFER xts relocated: %d resolved, %d unresolved %s"
@@ -1367,7 +1403,7 @@ if EMIT:
                  '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
                  'CELLS': (['LIT', 'LSHIFT'], 3)}
             O = {'LIT8': (['LIT'], 1), 'LIT': (['LIT'], 2), 'LIT32': (['LIT'], 3), 'LIT64': (['LIT'], 4),
-                 'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5),
+                 'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5), 'DUP+I': (['DUP', 'ADDI'], 5), 'DUP<I': (['DUP', 'LIT', 'LT'], 5),
                  'BRANCH': (['BRANCH'], 7), 'BRANCH8': (['BRANCH'], 6), '?BRANCH': (['0BRANCH'], 7),
                  '?BRANCH8': (['0BRANCH'], 6), '(LOOP)': (['LOOP'], 7), '(LEAVE)': (['LEAVE'], 7),
                  '<?BRANCH': (['LT', '0BRANCH'], 7), '<?BRANCH8': (['LT', '0BRANCH'], 6),

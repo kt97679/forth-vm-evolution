@@ -18,7 +18,7 @@
 \ which the converter does not relocate: C@ through it crashed every
 \ colon definition.
 
-CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C,
+CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C,   \ Iteration 176: DUP+I DUP<I DUP <
 ALIGN
 VARIABLE LIT-PREV ( --- a-addr )
 \ The primitive emitted straight before the last literal, or 0.
