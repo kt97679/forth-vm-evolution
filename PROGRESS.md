@@ -3286,3 +3286,15 @@ runner only (results/drafts/recurse-noname.md). But over seed 39's 186 front
 designs all 186 now differ from s6 - searchordertest on every one - so the
 waves stay a draft (results/drafts/coreext-after-seed40-draft.patch) until
 that difference is understood. Master's code is unchanged: seed 40 runs it.
+
+## Iteration 171 - 2026-10-11 - Claude
+
+**The standard's words ready, and the exception wordset in the kernel - the
+after-seed-40 batch's first two pending patches.** The 186 differences were
+ORDER printing addresses (names now) and :NONAME's bare-HERE xt, wrong for a
+tag-2 design's COMPILE, (now the design's own :, which mends RECURSE in
+:NONAME too). The kernel: CATCH and THROW (input source restored), ABORT and
+ABORT" through THROW, -13 for an undefined word under a CATCH, every message
+as before without one. s6: 1,821 standard tests, 0 failed (exceptiontest
+whole); the checks; seed 39's 186 designs alive and none differing from s6.
+Master's code unchanged - seed 40 runs it.

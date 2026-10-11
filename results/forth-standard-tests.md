@@ -260,3 +260,27 @@ search-order words assume s6's wordlists, or the deeper tests reach a real
 difference in the designs' - next: one design's searchordertest output beside
 s6's. results/drafts/coreext-after-seed40-draft.patch, the check's table
 beside it (-front-check.txt).
+
+## Iteration 171: ready - and the kernel's exceptions
+
+**Why all 186 differed:** the runner compares each design's whole output with
+s6's, and ORDER printed wordlist ids - addresses, different on every design;
+it prints names now (the standard leaves ORDER's format to the system). And
+:NONAME's xt was HERE alone: a tag-2 design's COMPILE, tells a colon xt by
+what its own : writes, so coreexttest's COMPILE, test failed on every one.
+:NONAME is now the design's own : under a fresh name, (NONAMEn) - which also
+mends RECURSE in :NONAME (LAST is the definition) and retires the held-back
+fix. Its first form failed ;'s depth check (: took the depth before the xt).
+With these: s6 1,817 tests, 0 failed; seed 39's 186 front designs, 0 differ -
+results/pending/coreext-after-seed40.patch (the check's table beside it).
+
+**The exception wordset in the kernel** - results/pending/exceptions-after-
+seed40.patch, after the coreext patch: HANDLER, CATCH and THROW (the
+standard's reference design, and the frame keeps the input source - THROW
+restores the one CATCH began with, which exceptiontest's -13 in three nested
+EVALUATEs needs); ABORT is -1 THROW, ABORT" -2 THROW (its message only when
+nothing catches it), an undefined word -13 THROW under a CATCH; QUIT clears
+HANDLER; extend.4's preliminary THROW out. With no CATCH every message is as
+before. exceptiontest whole; s6 1,821 tests, 0 failed; reseeded (the 8-byte
+kernel 26,904 bytes), run-tests, 7 of 7 IDENTICAL, the jail; 186 alive and 0
+of 186 differ from s6.

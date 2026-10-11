@@ -1,8 +1,16 @@
 diff --git a/forth/coreext.4 b/forth/coreext.4
-index 3406b8c..39e369b 100644
+index 3406b8c..1d1b029 100644
 --- a/forth/coreext.4
 +++ b/forth/coreext.4
-@@ -90,3 +90,72 @@ VARIABLE HANDLER  0 HANDLER !
+@@ -8,7 +8,6 @@
+ : -TRAILING ( c-addr u --- c-addr u' )
+   BEGIN DUP WHILE 2DUP + 1- C@ BL = WHILE 1- REPEAT THEN ;
+ : AHEAD ( --- orig )  0 POSTPONE LITERAL POSTPONE IF ; IMMEDIATE
+-: :NONAME ( --- xt colon-sys )  ALIGN HERE !CSP ] ;
+ : ERASE ( addr u --- )  0 FILL ;
+ : BLANK ( c-addr u --- )  BL FILL ;
+ : WITHIN ( n lo hi --- f )  OVER - >R - R> U< ;
+@@ -90,3 +89,84 @@ VARIABLE HANDLER  0 HANDLER !
      1+ SWAP 1+ SWAP R> 1-
    REPEAT DROP 2DROP R> DUP IF 0< IF 1 ELSE -1 THEN THEN ;
  : AGAIN ( dest --- )  0 POSTPONE LITERAL POSTPONE UNTIL ; IMMEDIATE
@@ -61,8 +69,20 @@ index 3406b8c..39e369b 100644
 +\ The sixth wave (Iteration 170). RECURSE in :NONAME: the kernel's and the
 +\ byte compilers' RECURSE call LAST's word - a :NONAME has no header, so its
 +\ own xt is kept, and used while no header is newer (coreexttest).
-+\ (held back: under the runner coreexttest crashed with it - Iteration 170)
-+: ORDER ( --- )  GET-ORDER 0 ?DO . LOOP CR GET-CURRENT . CR ;   \ searchordertest
++\ :NONAME by the design's own : - an xt is what that : makes (a tag-2 design's
++\ COMPILE, tells a colon xt by what its : writes; HERE alone failed
++\ coreexttest's COMPILE, test on every one), and RECURSE finds it through
++\ LAST like any other. A new name each time: the kernel warns on a name it
++\ finds, and has no switch (Iteration 171).
++CREATE NONAME-SRC 32 ALLOT  VARIABLE NONAMES  0 NONAMES !
++: :NONAME ( --- xt colon-sys )
++  1 NONAMES +!  S" : (NONAME" NONAME-SRC SWAP CMOVE
++  NONAMES @ 0 <# [CHAR] ) HOLD #S #> TUCK NONAME-SRC 9 + SWAP CMOVE
++  NONAME-SRC SWAP 9 + EVALUATE  LAST @ NAME> !CSP ;   \ : took the depth before the xt: again after it
++: .( ( "ccc<paren>" --- )  [CHAR] ) PARSE TYPE ; IMMEDIATE
++: .WID ( wid --- )   \ by name: a wid is an address, and differs by design
++  DUP FORTH-WORDLIST = IF DROP ." FORTH " EXIT THEN ROOT-WORDLIST = IF ." ROOT " EXIT THEN ." WORDLIST " ;
++: ORDER ( --- )  GET-ORDER 0 ?DO .WID LOOP CR GET-CURRENT .WID CR ;   \ searchordertest
 +: N>R ( xn .. x1 n --- ) ( R: --- x1 .. xn n )   \ the standard's reference design
 +  DUP BEGIN DUP WHILE ROT R> SWAP >R >R 1- REPEAT DROP R> SWAP >R >R ;
 +: NR> ( --- xn .. x1 n ) ( R: x1 .. xn n --- )
