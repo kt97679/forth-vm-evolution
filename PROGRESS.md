@@ -3673,3 +3673,16 @@ front design alive (126: seed 41's 75 and the joint front - two from seed 39's
 database), the held-out check 0 of 12 of seed 41's front differing from s6
 (2,119 tests, the suite whole). NEXT-RUN: seed 42, 6 hours - the process
 changes against seed 41 on equal time.
+
+## Iteration 199 - 2026-10-11 - Claude
+
+**Seed 41's 37 converter deaths fixed.** The converter decides which
+branches can be short before the tag-2 map exists (escaped opcodes 1 byte,
+calls 2), and a loop body near 128 bytes encoded a few bytes past reach
+(-131 to -135). Now the encoding records each such branch (word, cell offset -
+stable from shorten() to the encoding: only opcall_rewrite comes between, one
+token for one), layout.py writes them (--long-branches) and exits 4, and
+evolve.py converts again with them kept long. All 37 of seed 41's dead genomes
+alive with the batch's code; the smallest's and the knee's images byte for
+byte as before; 7 of 7 stages identical; run-tests PASS. The first
+after-seed-42 patch (results/pending/shortbranch-after-seed42.patch).

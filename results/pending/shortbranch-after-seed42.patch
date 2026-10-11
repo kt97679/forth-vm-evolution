@@ -1,0 +1,166 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index e96b8f6..4af3ab4 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -435,3 +435,14 @@ registers in three assignments (engine/vm-lab.c VMREGS, tools/gen-tos.py).
+ Measured on the development VM: the smallest and the small knee +800-930 bytes
+ and no faster (the knee 4-7% slower); the fastest JIT design 160-320 bytes
+ smaller at equal speed - a point of the front. The laptop decides.
++
++## Short branches kept long (Iteration 199)
++
++The converter decides which branches can be short before the tag-2 map
++exists, with escaped opcodes counted as one byte and calls as two; a loop
++body near 128 bytes could then encode a few bytes past reach - seed 41 lost 37
++designs at -131 to -135. Now the encoding records each such branch (its word,
++its cell offset) instead of asserting, tools/layout.py writes them to
++--long-branches FILE and exits 4, and evolve.py converts again with them kept
++long (up to four times; the set only grows). A design that converted before
++meets none and is byte for byte as it was.
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 6d213a1..d1cd9c3 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -671,7 +671,14 @@ def _build(g, d):
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+     fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
+     dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '')))
+-    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
++    # Iteration 199: a short branch the tag-2 encoding finds out of range is
++    # written to long-branches.json and the conversion fails; converted again
++    # with it kept long - the set only grows, so it ends.
++    lb = os.path.join(d, 'long-branches.json')
++    if os.path.exists(lb): os.remove(lb)
++    for _try in range(4):
++        r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--long-branches', lb, '--emit-image', img], cwd=W)
++        if r.returncode != 4: break
+     if r.returncode or not os.path.exists(img):
+         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
+     # Iteration 13: a format-10 or tiny word whose body the converter could not
+diff --git a/tools/layout.py b/tools/layout.py
+index 83217dc..507719f 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -83,6 +83,18 @@ def _opt(name, default=None):
+ CPT = int(_opt('--cpt')) if '--cpt' in ARGV else None   # scale shift S
+ DATAPRIMS = '--dataprims' in ARGV
+ if '--fold' in ARGV: G['FOLD'] = True
++if '--long-branches' in ARGV:   # Iteration 199: short branches the tag-2 encoding found out of range, kept long
++    import json as _json, os as _osl
++    if _osl.path.exists(_opt('--long-branches')): G['FORCE_LONG'].update(map(tuple, _json.load(open(_opt('--long-branches')))))
++def _short_fails_out():
++    """Iteration 199: out-of-range short branches written (with those kept long already) for the next conversion."""
++    if not G['SHORT_FAILS']: return
++    _all = sorted(set(G['FORCE_LONG']) | set(G['SHORT_FAILS']))
++    if '--long-branches' in ARGV:
++        import json as _json
++        _json.dump([list(x) for x in _all], open(_opt('--long-branches'), 'w'))
++    print('short branch out of range: %d branch(es) - kept long next conversion (%d in all)' % (len(set(G['SHORT_FAILS'])), len(_all)))
++    sys.exit(4)
+ if '--fold-set' in ARGV: G['FOLDSET'] = set(_opt('--fold-set').split(','))
+ if CPT is not None and CPT > 1: G['ALIGN_TAILS'] = 1 << CPT
+ V8 = '--v8' in ARGV
+@@ -514,7 +526,9 @@ if TAG2_ON:
+         print('tag 2 wide: CALL,\'s 3-byte limit patched to 16 KB in %d place(s)' % _hit)
+ 
+ for w in order:
++    G['CUR_WORD'][0] = w['s']          # Iteration 199
+     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
++_short_fails_out()
+ 
+ # ---- new sizes ------------------------------------------------------
+ def tail_bytes(w):
+@@ -1041,6 +1055,7 @@ def emit(path):
+                 if ws == s0: ops2[j] = ('LITOFF', nv)
+             for (ws, j), nv in xt_new.items():
+                 if ws == s0: ops2[j] = ('XT', nv)
++            G['CUR_WORD'][0] = s0          # Iteration 199
+             if V8: img += bytes(to_tokens(ops2))
+             else:
+                 for t_ in to_tokens(ops2): img += tk(t_)
+@@ -1441,6 +1456,7 @@ if EMIT:
+                 % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]], '\n'.join(_rows)))
+             print("wrote vm-jit-ops.h: %d of %d operations translatable; JIT is code %d" % (len(_rows), len(G['t2_names']()), _jc))
+ 
++_short_fails_out()
+ sys.exit(0 if chain_ok and gaps == 0 and not defer_bad and not xt_bad
+          and not buf_bad and not untranslated and not bi_bad and not fixed_bad
+          and not lit_bad else 1)
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 8694f2f..0cce029 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -272,6 +272,7 @@ def retag(ops):
+     return ops
+ 
+ def read_ops(w):
++    CUR_WORD[0] = w['s']      # Iteration 199: the word, for FORCE_LONG and SHORT_FAILS
+     # A PRIMITIVE stub is not threaded code. cross.4's PRIMITIVE emits
+     # `"HEADER DUP , ,-T EXIT-TOKEN ,-T`, so the body is exactly
+     # [prim-token, EXIT]. Read as code, LIT/BRANCH/?BRANCH swallow that
+@@ -702,6 +703,20 @@ KEEPNBR = ('DNQBR', 'DNQBRS', 'DUP?NBRANCH', 'DUP?NBRANCH8')
+ TB_LONG[KEEPNBR[0]] = KEEPNBR[2]; TB_SHORT[KEEPNBR[1]] = KEEPNBR[3]
+ BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT) + ('EQIT', 'EQITS')
+ PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'DUP+I', 'DUP<I', 'I+'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
++# Iteration 199: the branches shorten() sized short but the tag-2 encoding
++# found out of range (it sizes before the tag-2 map: escaped opcodes 1 byte,
++# calls 2 - seed 41: 37 designs dead at -131 to -135). Not asserted: each is
++# recorded (the word, the branch's cell offset - stable from shorten to the
++# encoding), layout.py writes them and fails, and evolve.py converts again
++# with them kept long (layout.py --long-branches). A design that converted
++# before meets none and is byte for byte as it was.
++FORCE_LONG = set()
++CUR_WORD = [None]
++SHORT_FAILS = []
++def _short_ok(o, cell):
++    if -128 <= o <= 127: return o
++    SHORT_FAILS.append((CUR_WORD[0], cell)); return 0
++
+ def shorten(ops):
+     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
+     on a layout that counts every alignment at its widest, so the real
+@@ -711,6 +726,9 @@ def shorten(ops):
+     ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8'), ('EQIT', 'EQITS', '=I?BRANCH8')) + tuple((v[0], v[1], v[3]) for v in TESTBR.values())
+           + ((KEEPNBR[0], KEEPNBR[1], KEEPNBR[3]),) if n in X_OPS10}
+     long_ = set()
++    cs0, c0 = [], 0
++    for k, pl in ops: cs0.append(c0); c0 += op_cells(k, pl)
++    long_ |= {j for j in range(len(ops)) if (CUR_WORD[0], cs0[j]) in FORCE_LONG}   # Iteration 199
+     while True:
+         trial = [(ok[k], pl) if k in ok and j not in long_ else (k, pl) for j, (k, pl) in enumerate(ops)]
+         cs, ts, c, t = [], [], 0, 0
+@@ -1184,7 +1202,7 @@ def to_bytes_t2(ops):
+             tgt = cs[j] + CELL + pl
+             if tgt not in c2t: return None
+             if k == 'EQITS':
+-                o = c2t[tgt] - ts[j]; assert -128 <= o <= 127, "short branch out of range: %d" % o; b.append(o & 0xFF)
++                o = _short_ok(c2t[tgt] - ts[j], cs[j]); b.append(o & 0xFF)
+             else: le(c2t[tgt] - ts[j], 2)
+             continue
+         if k == 'XT': le(pl, CELL); continue
+@@ -1210,7 +1228,7 @@ def to_bytes_t2(ops):
+             tgt = cs[j] + CELL + pl
+             if tgt not in c2t: return None
+             o = c2t[tgt] - (ts[j] + t2len(L))           # from the operand, in bytes
+-            assert -128 <= o <= 127, "short branch out of range: %d" % o
++            o = _short_ok(o, cs[j])
+             b.append(o & 0xFF)
+         elif k in BRK:
+             tgt = cs[j] + CELL + pl
+@@ -1291,14 +1309,14 @@ def to_bytes_v8(ops):
+             tgt = cs[j] + CELL + pl
+             if tgt not in c2t: return None
+             if k == 'EQITS':
+-                o = c2t[tgt] - ts[j]; assert -128 <= o <= 127, "short branch out of range: %d" % o; b.append(o & 0xFF)
++                o = _short_ok(c2t[tgt] - ts[j], cs[j]); b.append(o & 0xFF)
+             else: le(c2t[tgt] - ts[j], 2)
+         elif k in ('BRS', 'QBRS') + tuple(TB_SHORT):
+             b.append(X_OPS10[dict({'BRS': 'BRANCH8', 'QBRS': '?BRANCH8'}, **TB_SHORT)[k]])
+             tgt = cs[j] + CELL + pl
+             if tgt not in c2t: return None
+             o = c2t[tgt] - (ts[j] + 1)                # from the operand, in bytes
+-            assert -128 <= o <= 127, "short branch out of range: %d" % o
++            o = _short_ok(o, cs[j])
+             b.append(o & 0xFF)
+         elif k in BRK:
+             b.append(idx_of['BRANCH'] if k == 'BR' else idx_of['?BRANCH'] if k == 'QBR' else X_OPS10[TB_LONG[k]] if k in TB_LONG else X_OPS10[LOOPNAME[k]])
