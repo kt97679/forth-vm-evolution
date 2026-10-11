@@ -1,0 +1,62 @@
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 9e8f827..0fe394a 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -263,3 +263,57 @@ VARIABLE SUB-D  VARIABLE SUB-MAX  VARIABLE SUB-N  VARIABLE SUB-ERR  VARIABLE SUB
+     THEN
+   REPEAT 2DROP SUB-D @ SUB-N @ SUB-ERR @ IF -1 ELSE SUB-COUNT @ THEN ;
+ : HOLDS ( c-addr u --- )  BEGIN DUP WHILE 1- 2DUP + C@ HOLD REPEAT 2DROP ;   \ coreexttest
++\ The block word set (Iteration 186): blocks.fb in the working directory,
++\ 1024 bytes a block; two buffers - a new block takes the one not current,
++\ written back first if updated (blocktest wants two at once).
++VARIABLE BLK  0 BLK !   VARIABLE SCR  0 SCR !   VARIABLE BLOCK-FID  0 BLOCK-FID !
++CREATE BLK-BUFS 2048 ALLOT   CREATE BLK-NUMS 0 , 0 ,   CREATE BLK-DIRTY 0 , 0 ,
++VARIABLE BLK-CUR  0 BLK-CUR !
++: BUF-ADDR ( i --- a-addr )  1024 * BLK-BUFS + ;
++: BUF-NUM ( i --- a-addr )  CELLS BLK-NUMS + ;
++: BUF-DIRTY ( i --- a-addr )  CELLS BLK-DIRTY + ;
++: BLOCK-FILE ( --- fileid )
++  BLOCK-FID @ ?DUP IF EXIT THEN
++  S" blocks.fb" R/W BIN OPEN-FILE IF DROP S" blocks.fb" R/W BIN CREATE-FILE THROW THEN
++  DUP BLOCK-FID ! ;
++: WRITE-BUF ( i --- )
++  DUP BUF-DIRTY @ IF
++    DUP BUF-NUM @ 1- 1024 UM* BLOCK-FILE REPOSITION-FILE DROP
++    DUP BUF-ADDR 1024 BLOCK-FILE WRITE-FILE DROP  0 OVER BUF-DIRTY !
++  THEN DROP ;
++: FIND-BUF ( u --- i | -1 )  2 0 DO DUP I BUF-NUM @ = IF DROP I UNLOOP EXIT THEN LOOP DROP -1 ;
++: GRAB-BUF ( u --- i )  BLK-CUR @ 1 XOR DUP WRITE-BUF TUCK BUF-NUM ! ;
++: BUFFER ( u --- a-addr )
++  DUP FIND-BUF DUP 0< IF DROP GRAB-BUF ELSE NIP THEN DUP BLK-CUR ! BUF-ADDR ;
++: BLOCK ( u --- a-addr )
++  DUP FIND-BUF DUP 0< 0= IF NIP DUP BLK-CUR ! BUF-ADDR EXIT THEN DROP
++  DUP GRAB-BUF DUP BLK-CUR ! DUP BUF-ADDR 1024 BLANK
++  SWAP 1- 1024 UM* BLOCK-FILE REPOSITION-FILE DROP
++  DUP BUF-ADDR 1024 BLOCK-FILE READ-FILE 2DROP BUF-ADDR ;
++: UPDATE ( --- )  -1 BLK-CUR @ BUF-DIRTY ! ;
++: SAVE-BUFFERS ( --- )  2 0 DO I WRITE-BUF LOOP ;
++: EMPTY-BUFFERS ( --- )  2 0 DO 0 I BUF-NUM ! 0 I BUF-DIRTY ! LOOP ;
++: FLUSH ( --- )  SAVE-BUFFERS EMPTY-BUFFERS ;
++: LOAD ( i*x u --- j*x )  BLK @ >R DUP BLK ! BLOCK 1024 EVALUATE R> BLK ! ;
++: THRU ( i*x u1 u2 --- j*x )  1+ SWAP ?DO I LOAD LOOP ;
++: LIST ( u --- )  DUP SCR ! BLOCK 16 0 DO CR I 2 .R SPACE DUP I 64 * + 64 TYPE LOOP DROP CR ;
++' \ CONSTANT '\
++: \ ( --- )  BLK @ IF >IN @ 63 + -64 AND >IN ! ELSE '\ EXECUTE THEN ; IMMEDIATE   \ in a block: to its line's end
++\ TRAVERSE-WORDLIST and the name tokens (Iteration 186): a name token is the
++\ header's nfa; NEXT-NFA8, the byte headers' own link walk, gives the one
++\ before it in its thread. The walk's state in variables: the word called may
++\ reach the stack below its nt.
++[DEFINED] NEXT-NFA8 [IF]
++VARIABLE TW-XT  VARIABLE TW-WID
++: TRAVERSE-WORDLIST ( i*x xt wid --- j*x )
++  TW-WID ! TW-XT !
++  TW-WID @ @ 1+ 1 ?DO
++    TW-WID @ I CELLS + @
++    BEGIN DUP WHILE
++      DUP >R TW-XT @ EXECUTE 0= IF R> DROP UNLOOP EXIT THEN R> NEXT-NFA8
++    REPEAT DROP
++  LOOP ;
++: NAME>STRING ( nt --- c-addr u )  COUNT 31 AND ;
++: NAME>INTERPRET ( nt --- xt )  NAME> ;
++: NAME>COMPILE ( nt --- x xt )  DUP NAME> SWAP C@ 64 AND IF ['] EXECUTE ELSE ['] COMPILE, THEN ;
++[THEN]

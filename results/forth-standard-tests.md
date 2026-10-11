@@ -324,3 +324,24 @@ coreexttest: 383 tests, 0 failed, the whole file. On s6: 1,989 tests, 1 failed
 (RESTORE-INPUT across a file's lines, left as before); ten of fourteen files
 whole. Held out with the ten pending patches: 0 of seed 40's 218 front designs
 differ from s6.
+
+## Blocks and TRAVERSE-WORDLIST (Iteration 186) - results/pending/coreext-w9-after-seed41.patch
+
+The block word set over blocks.fb in the working directory (1024 bytes a
+block, opened R/W or created - CREATE-FILE R/W since Iteration 168): two
+buffers, a new block taking the one not current and writing it back first if
+updated (blocktest asks for two at once); BLOCK BUFFER UPDATE SAVE-BUFFERS
+EMPTY-BUFFERS FLUSH LOAD THRU LIST, BLK and SCR, and \ in a block skipping to
+its 64-character line's end. blocktest: 65 tests, 0 failed, whole - REFILL
+past a block's end and a nested LOAD's eviction were the expected gaps; its
+tests did not reach them.
+
+TRAVERSE-WORDLIST, NAME>STRING, NAME>INTERPRET, NAME>COMPILE: a name token is
+the nfa, and NEXT-NFA8 - the byte headers' own link walk, findable in s6 and
+the evolved designs, lean ones too - gives the one before it; the walk's state
+in variables, since the word called may reach below its nt. Guarded by
+[DEFINED] NEXT-NFA8. toolstest: 63 tests, 0 failed, whole.
+
+On s6: 2,068 tests, 1 failed (RESTORE-INPUT across a file's lines). Whole
+files: twelve of fourteen - left filetest (that test, then SI_INC after it)
+and localstest ({:, locals).

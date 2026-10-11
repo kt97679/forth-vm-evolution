@@ -10,14 +10,14 @@ helpers' not counted again), failed, and where a file stopped short of its end:
 | core.fr | 638 | 0 | yes |  |
 | coreplustest.fth | 101 | 0 | yes |  |
 | coreexttest.fth | 383 | 0 | yes |  |
-| blocktest.fth | 0 | 0 | no | BLOCK |
+| blocktest.fth | 65 | 0 | yes |  |
 | doubletest.fth | 247 | 0 | yes |  |
 | exceptiontest.fth | 9 | 0 | yes |  |
 | facilitytest.fth | 70 | 0 | yes |  |
 | filetest.fth | 95 | 1 | no | SI_INC |
 | localstest.fth | 0 | 0 | no | {: |
 | memorytest.fth | 198 | 0 | yes |  |
-| toolstest.fth | 49 | 0 | no | TRAVERSE-WORDLIST |
+| toolstest.fth | 63 | 0 | yes |  |
 | searchordertest.fth | 41 | 0 | yes |  |
 | stringtest.fth | 135 | 0 | yes |  |
 

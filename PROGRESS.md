@@ -3473,3 +3473,10 @@ branch-shortening pass sizes with non-tag-2 sizes (it runs before the tag-2
 map exists); and Iteration 185's bound, measured from the 27 KB cell dump,
 sizes nearly every call long - correct, and larger than base mode. The fix is
 a layout rerun to a fixed point: its own session (results/drafts/callrel.md).
+
+**And the standard (Iteration 186):** the block word set (two buffers over
+blocks.fb) and TRAVERSE-WORDLIST with the name tokens (on the byte headers'
+NEXT-NFA8): blocktest and toolstest whole - s6 2,068 tests, 1 failed; twelve
+of fourteen files whole. Pending after seed 41, twelfth: coreext-w9.
+
+**Held out with the twelve (Iteration 186):** seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.
