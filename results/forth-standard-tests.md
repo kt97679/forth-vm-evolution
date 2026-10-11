@@ -194,3 +194,25 @@ double literals (results/relf-reuse.md).*
 - **The kernel's gaps** (the HANDOFF's thread on them), now named file by
   file: :NONAME and 0<> (core extensions), CATCH, AHEAD, ONLY, /STRING,
   BEGIN-STRUCTURE, {:, BLOCK, number prefixes and double literals.
+
+## The extensions under test (Iteration 165)
+
+The owner: add the standard words the suite needs, as an extension.
+forth/coreext.4 - 0<> /STRING -TRAILING AHEAD :NONAME ERASE BLANK WITHIN
+PARSE-NAME BUFFER: CASE OF ENDOF ENDCASE .R U.R, portable Forth - and the
+system's own extend.4 (the search order) load before each file
+(ans-check.py). On s6, tests run before -> after, and where each file stops:
+
+| file | before | after | stopped at |
+|---|---|---|---|
+| coreplustest | 56 | 70 | #-1289 (NUMBER? reads a sign before a prefix, not after) |
+| coreexttest | 21 | 183 | UNUSED |
+| filetest | 16 | 47 | FLUSH-FILE |
+| stringtest | 10 | 18 | SEARCH |
+| searchordertest | 0 | 10 | GET-CURRENT |
+| toolstest | 0 | 2 | [IF] |
+
+991 tests -> 1,194, no new failure (doubletest's four double literals remain).
+Next: UNUSED, FLUSH-FILE, [IF] [ELSE] [THEN], GET-CURRENT SET-CURRENT, SEARCH,
+CATCH THROW, the structures, NUMBER?'s "#-", double literals; BLOCK and the
+standard's {: are larger.

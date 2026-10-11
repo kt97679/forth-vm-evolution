@@ -3202,3 +3202,21 @@ leaves behind: 26 words, 733 bytes of code. Measured for the genes: a one-bit
 "base or call site" choice keeps every workload at 2.00-2.10 bytes per call
 and takes far from 3.00 to 2.00; stack shuffles are 23-46 percent of the
 smallest design's dispatches. results/tracer.md.
+
+## Iterations 164-165 - 2026-10-11 - Claude
+
+**164: the gene callrel - a draft outside the batch.** The owner: tag-2 calls
+from the base, from the call site, or either by a bit; can 13 bits do? Measured:
+the kernel images' calls cost +0 bytes at 13 bits from the base or either (the
+images are under 8 KB), the call site alone +35 and +41. Built in the engine
+(byte for byte the same at 0), the JIT, the converter (either: the base form,
+the low bit 0) and the run-time compiler (the shortest form, none of 3 bytes
+under t2wide - 140 of 165 front designs); base and either work on three kinds
+of design, and the corpus compiled past a 4 MB ALLOT (the owner's trick) gives
+the same output. Not in the batch: the run-time encoder adds ~400 bytes to
+every tag-2 image, used or not - it goes to its own overlay first.
+results/drafts/callrel.md.
+
+**165: the standard words as an extension - the batch's twelfth pending
+patch.** forth/coreext.4 and extend.4 load before each suite file: 991 tests
+-> 1,194 on s6, no new failure. results/forth-standard-tests.md.
