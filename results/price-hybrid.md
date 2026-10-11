@@ -185,3 +185,30 @@ for what the converter is not told about?), the converter's flag for rtloop
 in tag 2, cv8-fuse-loop.4 (a cv8, not cv8t, overlay) under the tag-2
 compiler; then how many of the front's rtloop designs are inert. Worth it:
 loop's iteration from about 15 dispatches to 5 on the interpreted designs.
+
+## Corrected: rtloop works; the founder lost the loop opcodes (Iteration 187)
+
+Iteration 186's "rtloop inert on a tag-2 design" was wrong - an artifact of
+testing it on the founder. In the running design with rtloop alone, LOOP-OPS
+reads 0 12 0 0 13 and X10-OPS 14 15 0, and `: T 10 0 DO I DROP LOOP ;` compiles
+I as opcode 14 and (LOOP) as opcode 12 with its 16-bit branch - only (DO),
+unslotted in this design, stays a call (once a loop). The founder put DUP+I and
+DUP<I first among format-10 names; this design has 10 slots (SWAP+I pinned
+first), so they pushed out the last two: I and (LOOP). rtloop on the founder
+had no loop opcode to use.
+
+The founder's choice, measured (dispatches, JIT off; the forms taking the slots
+of different pairs, every other name in place): displacing I and (LOOP) costs
+kernel +0.9% and corpus +1.9% - the kernel's own loops; displacing +!/?DUP,
++!/CMOVE, ?DUP/UNLOOP or BRANCH8/?DUP costs more (kernel 5.53-6.18 M against
+5.44, corpus 35.7-37.1 M against 34.1). The founder as built is the best of
+these; fib's -36% is the same in all. results/drafts/founder-variants-iter187.txt.
+
+What rtloop does on the recorded smallest (I and (LOOP) slotted): +568 bytes;
+loop 88.14 M -> 20.09 M dispatches (-77%), bubble -13.5%, sieve -27.7%;
+kernel, corpus, parse +0.2-1.4% (the compiler's own cost). About a quarter
+fewer dispatches on the selection's geometric mean, for ~3% more bytes - and
+the smallest lacks it because it is the front's size end: the trade-off doing
+its work. The return stack's 32% on loop is the colon-word loop runtime, and
+rtloop already takes it away. Worth pricing next: a cheaper rtloop - the
+overlay's 568 bytes are what keep the small end from it.

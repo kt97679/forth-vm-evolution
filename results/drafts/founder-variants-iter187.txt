@@ -1,0 +1,7 @@
+pinned to cpu 0 (it and its sibling 1% busy; BENCH_CPU=N to choose)
+recorded (no forms, rtimm 1)   image  7518 | kernel 5.39M fib 59.27M corpus 33.49M loop 88.14M bubble 31.93M ackermann 12.73M | slots: SWAP+I,+!,?BRANCH8,CMOVE,BRANCH8,(LEAVE),?DUP,UNLOOP,I,(LOOP)
+founder now (I, (LOOP) out)    image  8418 | kernel 5.44M fib 37.74M corpus 34.13M loop 88.14M bubble 31.93M ackermann 12.74M | slots: SWAP+I,DUP+I,DUP<I,+!,?BRANCH8,CMOVE,BRANCH8,(LEAVE),?DUP,UNLOOP
+forms for +! ?DUP              image  8378 | kernel 5.66M fib 37.74M corpus 36.24M loop 88.14M bubble 31.94M ackermann 12.74M | slots: SWAP+I,DUP+I,?BRANCH8,CMOVE,BRANCH8,(LEAVE),DUP<I,UNLOOP,I,(LOOP)
+forms for +! CMOVE             image  8386 | kernel 6.18M fib 37.74M corpus 37.13M loop 88.15M bubble 31.95M ackermann 12.75M | slots: SWAP+I,DUP+I,?BRANCH8,DUP<I,BRANCH8,(LEAVE),?DUP,UNLOOP,I,(LOOP)
+forms for ?DUP UNLOOP          image  8362 | kernel 5.53M fib 37.74M corpus 35.73M loop 88.14M bubble 31.93M ackermann 12.74M | slots: SWAP+I,+!,?BRANCH8,CMOVE,BRANCH8,(LEAVE),DUP+I,DUP<I,I,(LOOP)
+forms for BRANCH8 ?DUP         image  8403 | kernel 5.53M fib 37.74M corpus 35.73M loop 88.14M bubble 31.93M ackermann 12.74M | slots: SWAP+I,+!,?BRANCH8,CMOVE,DUP+I,(LEAVE),DUP<I,UNLOOP,I,(LOOP)

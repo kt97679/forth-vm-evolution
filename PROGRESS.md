@@ -3486,3 +3486,13 @@ the founder configuration - the colon-word loop runtime. And rtloop, one
 mutation from it, is inert there: +582 bytes, not one dispatch saved - a
 run-time DO LOOP still compiles calls to (DO), I and (LOOP). Next first: why
 (results/price-hybrid.md).
+
+## Iteration 187 - 2026-10-11 - Claude
+
+**Corrected: rtloop works - my test of it ran on the founder, which had lost
+the loop opcodes.** Two keeping forms first among format-10 names pushed I and
+(LOOP) out of the smallest's 10 slots; measured against four other choices, it
+is still the founder's best (kernel +0.9%, corpus +1.9%). rtloop on the
+recorded smallest: +568 bytes, loop -77% of dispatches, bubble -13.5%, sieve
+-27.7% - the size end declines it, as the front intends. Next worth pricing: a
+cheaper rtloop.
