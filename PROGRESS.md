@@ -3547,3 +3547,14 @@ was a coincidence. Fix: no X;CALL before such a call; the base-band containment
 removed - every band open. 30 of 30 opcall designs alive (seed 40's front 25,
 the five dead), run-tests PASS. The fifteenth after-seed-41 patch:
 opcall-fix-after-seed41.patch (supersedes the fifth's containment).
+
+## Iteration 192 - 2026-10-11 - Claude
+
+**filetest whole.** Its stop at SI_INC was the harness: SI_INC, SI1 and S$ come
+from coreexttest, which upstream runs first in the same session; ans-check.py
+now defines them before filetest. And RESTORE-INPUT now returns to a file's
+earlier line: SAVE-INPUT records where the line starts (verified by reading it
+again), RESTORE-INPUT repositions and reads it again - coreext.4 only. On s6:
+2,069 tests, 0 failed; thirteen of fourteen files whole (localstest waits on
+the owner's decision on a kernel hook). 0 of 12 front designs differ from s6.
+The sixteenth after-seed-41 patch: coreext-w10-after-seed41.patch.

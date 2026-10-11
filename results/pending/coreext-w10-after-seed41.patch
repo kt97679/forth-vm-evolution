@@ -1,0 +1,59 @@
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 0fe394a..d2c5f5c 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -193,8 +193,36 @@ CREATE INCLUDED-NAMES 0 ,   \ the newest record: link, then a counted name
+ : REQUIRED ( i*x c-addr u --- i*x )  2DUP NAME-INCLUDED? IF 2DROP ELSE INCLUDED THEN ;
+ : INCLUDE ( i*x "name" --- j*x )  PARSE-NAME INCLUDED ;
+ : REQUIRE ( i*x "name" --- i*x )  PARSE-NAME REQUIRED ;
+-: SAVE-INPUT ( --- xn ... x1 n )  SRC @ #SRC @ >IN @ SID @ 4 ;
++\ The tenth wave (Iteration 192): RESTORE-INPUT across a file's lines -
++\ filetest's last tests. SAVE-INPUT on a file also keeps where the current
++\ line starts: the position READ-LINE left, less the line and its end - an
++\ LF, a CR LF, or none (the file's last line, or one longer than the buffer) -
++\ each tried by reading the line again and comparing; the position put back.
++CREATE LINE-AGAIN 256 ALLOT
++CREATE LINE-P 2 CELLS ALLOT
++: LINE-AT? ( ud --- f )   \ does the current line start at ud? the file left where it was
++  SID @ FILE-POSITION THROW LINE-P 2!
++  SID @ REPOSITION-FILE THROW
++  LINE-AGAIN 256 SID @ READ-LINE THROW              ( u flag )
++  SWAP DUP #SRC @ = ROT AND                         ( u f )
++  IF LINE-AGAIN SWAP SOURCE COMPARE 0= ELSE DROP FALSE THEN
++  SID @ FILE-POSITION THROW LINE-P 2@ ROT = >R = R> AND AND
++  LINE-P 2@ SID @ REPOSITION-FILE THROW ;
++: LINE-START ( --- u )   \ where the file's current line starts
++  SID @ FILE-POSITION THROW DROP #SRC @             ( p n )
++  2DUP 1+ U< 0= IF 2DUP 1+ - 0 LINE-AT? IF 1+ - EXIT THEN THEN     \ an LF
++  2DUP 2 + U< 0= IF 2DUP 2 + - 0 LINE-AT? IF 2 + - EXIT THEN THEN  \ a CR LF
++  - ;                                                               \ no end
++: SAVE-INPUT ( --- xn ... x1 n )
++  SID @ 0> IF LINE-START SRC @ #SRC @ >IN @ SID @ 5 EXIT THEN   \ a file: where its line starts too
++  SRC @ #SRC @ >IN @ SID @ 4 ;
+ : RESTORE-INPUT ( xn ... x1 n --- flag )   \ the same source only: else true, nothing done
++  DUP 5 = IF DROP                                   \ a file's line: read it again, from where it starts
++    DUP SID @ <> IF 2DROP 2DROP DROP TRUE EXIT THEN DROP
++    >R 2DROP 0 SID @ REPOSITION-FILE IF R> DROP TRUE EXIT THEN
++    REFILL 0= IF R> DROP TRUE EXIT THEN
++    R> >IN ! FALSE EXIT
++  THEN
+   DUP 4 <> IF 0 ?DO DROP LOOP TRUE EXIT THEN DROP
+   DUP SID @ <> IF 2DROP 2DROP TRUE EXIT THEN DROP
+   >R 2DUP #SRC @ = SWAP SRC @ = AND IF #SRC ! SRC ! R> >IN ! FALSE EXIT THEN
+diff --git a/lab/evolve/ans-check.py b/lab/evolve/ans-check.py
+index 7bb7073..de54994 100644
+--- a/lab/evolve/ans-check.py
++++ b/lab/evolve/ans-check.py
+@@ -64,6 +64,12 @@ def program(f, n, core='core.fr'):
+         h = core if h == 'core.fr' else h
+         p += ('S" %s" INCLUDED\n' % h) if h else '\n'
+         if h == 'tester.fr': p += 'VARIABLE #T 0 #T !\n: }T 1 #T +! }T ;\n'          # every test counted
++    # Iteration 192: filetest's nested SAVE-INPUT test uses SI_INC, SI1 and S$,
++    # which coreexttest defines - upstream's runtests.fth includes that file
++    # first, in the same session. Here each file has its own: the three, as
++    # coreexttest has them.
++    if f == 'filetest.fth':
++        p += 'VARIABLE SI_INC 0 SI_INC !\n: SI1 SI_INC @ >IN +! 15 SI_INC ! ;\n: S$ S" SAVE-INPUT SI1 RESTORE-INPUT 12345" ;\n'
+     if f != 'core.fr': p += mark + 'S" %s" INCLUDED\n' % f
+     return p + '[ CR DECIMAL .( TESTS ) #T @ . .( FAILED ) #ERRORS @ . CR\nBYE\n'
+ 

@@ -345,3 +345,24 @@ in variables, since the word called may reach below its nt. Guarded by
 On s6: 2,068 tests, 1 failed (RESTORE-INPUT across a file's lines). Whole
 files: twelve of fourteen - left filetest (that test, then SI_INC after it)
 and localstest ({:, locals).
+
+## RESTORE-INPUT across a file's lines; filetest whole (Iteration 192) - results/pending/coreext-w10-after-seed41.patch
+
+filetest's stop at SI_INC was the harness, not the system: SI_INC, SI1 and S$
+are coreexttest's, and upstream's runtests.fth includes coreexttest first in
+the same session, where ans-check.py gives every file its own. The three are
+defined before filetest now, as coreexttest has them.
+
+Then the system: RESTORE-INPUT refused a file's earlier line (the one failure
+since Iteration 181). SAVE-INPUT on a file now also records where the current
+line starts - the position READ-LINE left, less the line and its end: an LF, a
+CR LF or none (the last line, or one longer than the buffer), each tried by
+reading the line again and comparing, the position put back. RESTORE-INPUT
+repositions there, reads the line again, and restores >IN. In coreext.4 - no
+kernel change, no image changes.
+
+filetest: 96 tests, 0 failed, whole - the nested SAVE-INPUT, REFILL, EVALUATE
+and RESTORE-INPUT of a file included. On s6: 2,069 tests, 0 failed; thirteen
+of fourteen files whole - left localstest ({:, locals: the kernel's name lookup
+needs a hook - the owner's decision). Held out: 0 of 12 of seed 40's front
+designs (one in eighteen) differ from s6, 14 of 14 files each.
