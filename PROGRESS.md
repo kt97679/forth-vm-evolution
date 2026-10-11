@@ -3441,3 +3441,16 @@ validate's KeyError on hand-made genomes found and fixed. Pending after seed
 ending an S\" string at an escaped quote; it steps over escapes now - 383
 tests, 0 failed. s6 1,989 tests, 1 failed; ten of fourteen files whole. Ten
 patches pending after seed 41, held out clean on seed 40's 218 designs.
+
+## Iteration 184 - 2026-10-11 - Claude
+
+**The stacks apart, the dictionary growable (the owner).** The stacks in a
+chunk of their own; the dictionary in a 256 MB reservation that never moves -
+addresses are absolute everywhere, so growth must be in place, not a realloc.
+Three faults found by the checks: s1-s3's encodings crashed apart (they keep
+the old layout); ALLOT's HERE + n wrapped in a 32-bit process placed high (n
+against the room left now); and that unsigned compare refused negative ALLOT
+(35 designs wrong, fixed). All 218 front designs alive; evolved designs grow
+past 16 MB and run code there. Pending after seed 41, eleventh: stacksep.
+
+**Held out with the stacks apart (Iteration 184):** all eleven pending patches on seed 40's 218 front designs - 0 of 218 designs differ from s6 somewhere.

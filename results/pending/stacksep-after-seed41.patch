@@ -1,0 +1,155 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index fc53378..2a6c611 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -287,6 +287,18 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
+  *  nothing and moves nothing: dsp and rp start exactly where they
+  *  always did, so S0/R0 and every saved image are unaffected.  */
+ #define DSTACK_BYTES 262144
++#ifndef STACKSEP
++#if ENC == 3          /* the cv8 family only: sod16's and cpt16's compact encodings keep the stacks in reach (they crashed apart) */
++#define STACKSEP 1   /* Iteration 184 (the owner): the stacks in a chunk of their own; the dictionary in
++                        a reservation of MEMMAX, committed as touched, that never moves - so it can grow
++                        past MEMSIZE (addresses are absolute everywhere: a moved block would break them) */
++#else
++#define STACKSEP 0
++#endif
++#endif
++#ifndef MEMMAX
++#define MEMMAX (256u << 20)   /* within the jail's 1 GB of address space, and tag 2's 1 GB call reach */
++#endif
+ #ifndef DSKEW
+ #define DSKEW 0   /* Iteration 183: bytes the data stack starts lower - its top cells' page offsets apart from the return stack's (4K aliasing) */
+ #endif
+@@ -352,6 +364,16 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
+ #define GUARD 0   /* 1: guard pages. See PROGRESS.md 206 - one
+                     * tests/diff case (tilde) regresses, not yet diagnosed. */
+ #endif
++#if STACKSEP
++#include <sys/mman.h>
++#if GUARD
++#include <signal.h>
++#endif
++#define PAGE 4096
++static UNS8 stackmem[RSTACK_BYTES + DSTACK_BYTES] __attribute__((aligned(PAGE)));   /* the stacks' own chunk */
++static UNS8 *mem;                                                  /* the dictionary: mmap'd at load */
++#define STK_END ((UNS64)(uintptr_t)stackmem + RSTACK_BYTES + DSTACK_BYTES)
++#else
+ #if GUARD
+ #include <sys/mman.h>
+ #include <signal.h>
+@@ -360,6 +382,8 @@ static UNS8 mem[MEMSIZE + CELL_BYTES - 1] __attribute__((aligned(PAGE)));
+ #else
+ static UNS8 mem[MEMSIZE + CELL_BYTES - 1];
+ #endif
++#define STK_END ((UNS64)(uintptr_t)base + MEMSIZE)
++#endif
+ 
+ /*
+  *  1st CELL_BYTES-aligned address in mem array. Base address of the
+@@ -525,8 +549,9 @@ static void guard_trap(int sig, siginfo_t *si, void *uc) {
+  *  The two guard pages come out of the data stack, so the stacks stay
+  *  where they were and only the usable data depth shrinks by 8 KB. */
+ static void install_guards(UNS8 *b) {
+-    UNS64 dfloor = (UNS64)(uintptr_t)b + MEMSIZE - RSTACK_BYTES - DSTACK_BYTES;
+-    UNS64 rfloor = (UNS64)(uintptr_t)b + MEMSIZE - RSTACK_BYTES;
++    UNS64 dfloor = STK_END - RSTACK_BYTES - DSTACK_BYTES;   /* the stacks' top: their own chunk with STACKSEP */
++    UNS64 rfloor = STK_END - RSTACK_BYTES;
++    (void)b;
+     struct sigaction sa;
+     stack_t ss;
+     ss.ss_sp = g_altstack; ss.ss_size = sizeof g_altstack; ss.ss_flags = 0;
+@@ -748,6 +773,11 @@ static void load_image(const char *name) {
+             hot_tab[i] = b_[0] | (UNS64)b_[1] << 8;
+         }
+     }
++#endif
++#if STACKSEP
++    mem = (UNS8 *)mmap(NULL, MEMMAX, PROT_READ | PROT_WRITE,
++                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE | (CELL_BYTES == 4 ? MAP_32BIT : 0), -1, 0);
++    if (mem == (UNS8 *)MAP_FAILED) { write_str(2, "no room for the dictionary\n"); _exit(1); }
+ #endif
+     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
+                     & ~(UNS64)(CELL_BYTES - 1));
+@@ -2352,23 +2382,23 @@ int main(int argc, char **argv) {
+     g_argv = argv;
+     load_image(argv[1]);
+     g_ip = (UNS64)(uintptr_t)base;
+-    g_rp = g_ip + MEMSIZE;
++    g_rp = STK_END;
+ #if GUARD
+     install_guards(base);
+     /*  Below the return stack's guard page, not below the return stack.
+      *  TWO cells of slack, not one: with TOS caching dsp sits one cell
+      *  ABOVE the logical top, so with one cell the empty stack would
+      *  put dsp exactly on the guard and any NOS read would trap. */
+-    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - PAGE - 2 * CELL_BYTES
++    g_dsp = STK_END - RSTACK_BYTES - PAGE - 2 * CELL_BYTES
+             - 64 * CELL_BYTES - DSKEW;   /* Iteration 119: slack for a shallow underflow -
+                                     ?STACK reports it after the word, as without
+                                     the guard ("Stack error DROP"); only a
+                                     runaway one reaches the guard page */
+ #else
+-    g_dsp = g_ip + MEMSIZE - RSTACK_BYTES - CELL_BYTES - DSKEW;
++    g_dsp = STK_END - RSTACK_BYTES - CELL_BYTES - DSKEW;
+ #endif
+-    g_rp_limit  = g_ip + MEMSIZE - RSTACK_BYTES;
+-    g_dsp_limit = g_ip + MEMSIZE - RSTACK_BYTES - DSTACK_BYTES
++    g_rp_limit  = STK_END - RSTACK_BYTES;
++    g_dsp_limit = STK_END - RSTACK_BYTES - DSTACK_BYTES
+ #if GUARD
+                   + PAGE
+ #endif
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 35a428f..9e8f827 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -39,7 +39,7 @@
+ : 2>R ( x1 x2 --- ) ( R: --- x1 x2 )  R> ROT ROT SWAP >R >R >R ;
+ : 2R> ( --- x1 x2 ) ( R: x1 x2 --- )  R> R> R> SWAP ROT >R ;
+ : 2R@ ( --- x1 x2 ) ( R: x1 x2 --- x1 x2 )  R> R> R> 2DUP >R >R SWAP ROT >R ;
+-: UNUSED ( --- u )  S0 @ 10000 CELLS - 4096 - HERE - ;   \ to the limit ALLOT keeps
++: UNUSED ( --- u )  DICT-LIMIT HERE - ;   \ to the limit ALLOT keeps (Iteration 184)
+ : FLUSH-FILE ( fileid --- ior )  DROP 0 ;                 \ nothing is buffered
+ : GET-CURRENT ( --- wid )  CURRENT @ ;
+ : SET-CURRENT ( wid --- )  CURRENT ! ;
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index 2bd8f40..d292472 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -1075,6 +1075,12 @@ VARIABLE HANDLER ( --- a-addr)
+            ELSE R> COUNT + ALIGNED >R THEN ;
+ 
+ 
++VARIABLE DICT-MAX ( --- a-addr)
++\ The dictionary's room in bytes from START where the engine keeps the stacks
++\ apart (the converter writes it); 0 where they sit above the dictionary - its
++\ limit then S0 less a margin, as always (Iteration 184).
++: DICT-LIMIT ( --- addr)
++  DICT-MAX @ ?DUP IF START @ + 4096 - ELSE S0 @ 10000 CELLS - 4096 - THEN ;
+ : ALLOT ( n --- )
+ \ Allot n extra bytes of memory, starting at HERE to the dictionary.
+ \ Refused past the data stack's room - the 10000 cells ?STACK allows below
+@@ -1082,7 +1088,9 @@ VARIABLE HANDLER ( --- a-addr)
+ \ engine's memory - a crash (Iteration 161; gdb: a byte store past the
+ \ end), where RelF's own kernel refuses. Each header ends with
+ \ ALLOT, so a definition is checked once.
+-  DUP HERE + S0 @ 10000 CELLS - 4096 - U> IF -1 ABORT" dictionary full" THEN DP +! ;
++\ n against the room left, not HERE + n against the limit: with 32-bit cells a
++\ dictionary placed high wrapped HERE + n under the limit (Iteration 184).
++  DUP 0> IF DUP DICT-LIMIT HERE - U> IF -1 ABORT" dictionary full" THEN THEN DP +! ;   \ n < 0 gives room back: unchecked
+ 
+ : , ( x --- )
+ \ Append cell x to the dictionary at HERE - DP +!, not ALLOT: the room is
+diff --git a/tools/layout.py b/tools/layout.py
+index 6fbb7a8..cfb6c0d 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1118,6 +1118,7 @@ def emit(path):
+     # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
+     # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
+     # VARCALL, kept the overlay's default and wrote far calls its engine misread.
++    if V8: CVARS['DICT-MAX'] = 256 << 20   # Iteration 184: vm-lab.c's MEMMAX - the stacks apart, the dictionary its own
+     if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
+     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
+     for w in order:
