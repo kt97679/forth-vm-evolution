@@ -1,0 +1,95 @@
+vmnoop       0 0
+vmexit       1 3004404
+vmlit        2 2145519
+vmbranch     3 85961
+vm0branch    4 1360411
+vmdrop       5 105158
+vmdup        6 1514212
+vmswap       7 897686
+vmrot        8 1167970
+vmover       9 722273
+vmcfetch    10 168606
+vmfetch     11 1394249
+vmcstore    12 269649
+vmstore     13 24742
+vmand       14 451434
+vmor        15 1518
+vmxor       16 122
+vmfromr     17 939264
+vmtor       18 381814
+vmrfetch    19 227326
+vmzeroeq    20 1168483
+vmugt       21 0
+vmgt        22 17234
+vmplus      23 2617404
+vmnegate    24 1018714
+vmlshift    25 14682
+vmrshift    26 8785
+vmummult    27 732
+vmumdiv     28 0
+vmdplus     29 732
+vmemit      30 1342
+vmkey       31 43
+vmbye       32 1
+vmspfetch   33 1568
+vmspstore   34 1
+vmrpfetch   35 1
+vmrpstore   36 2
+vmopenfile  37 4
+vmclosefile 38 3
+vmreadline  39 1686
+vmwriteline 40 0
+vmreadfile  41 0
+vmwritefile 42 1
+vmsystem    43 0
+vmreposfile 44 0
+vmfilepos   45 0
+vmdelfile   46 0
+vmfilesize  47 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

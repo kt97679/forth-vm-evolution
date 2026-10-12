@@ -1,0 +1,118 @@
+sieve                 bubble             fib
+
+3001000 -             36027600 -         18454929 FIB        
+2508500 I             35710986 I         7353 DOVAR          
+1499600 (+LOOP)       35706207 CELL+     4425 NAMEBUF        
+821597 0=             26850993 2@        1948 CODECHAIN_CNT  
+819100 (LOOP)         18008999 CELL      1134 0=             
+262000 EFLAG          18008999 (+LOOP)   788 -               
+73117 2DROP           18003550 >         431 2DUP            
+72498 CELL+           8847994 2!         368 2DROP           
+72101 (DO)            48697 DOVAR        290 1+              
+16264 DOVAR           20863 NAMEBUF      281 1-              
+10008 NAMEBUF         12001 SEED         257 CODECHAIN_CMP   
+4092 CODECHAIN_CNT    7443 2DROP         213 DP              
+1024 2DUP             6927 0=            182 HERE            
+756 1-                6634 COUNT         164 CELL+           
+689 CODECHAIN_CMP     6557 CELLS         159 >IN             
+636 1+                6352 ALIGNED       121 COUNT           
+476 DP                6171 (ABORT")      121 +!              
+396 HERE              6030 *             108 >               
+305 >IN               6002 ELEMENTS      102 CHAR+           
+264 +!                6002 (DO)          80 CELLS            
+259 COUNT             6002 LIST          70 PLACE            
+248 >                 6000 RANDOM        70 CMOVE            
+200 FLAGS             6000 MYBOUNDS      66 ALIGNED          
+193 CELLS             5999 (LOOP)        60 CONTEXT          
+172 CHAR+             4159 CODECHAIN_CNT 59 #ORDER           
+165 FILL              2177 1-            59 CURRENT_CODE     
+151 CURRENT_CODE      1692 1+            58 CODECHAIN_PTR    
+143 PLACE             1658 2DUP          55 #SRC             
+143 CMOVE             1544 DP            44 STATE            
+136 ALIGNED           1268 HERE          43 SRC              
+132 CONTEXT           861 >IN            42 SCAN             
+132 CODECHAIN_PTR     833 CODECHAIN_CMP  42 SKIP             
+131 #ORDER            754 +!             42 PARSE            
+100 PRIMES            540 CURRENT_CODE   42 SOURCE           
+94 BASE               466 CHAR+          41 WORD             
+93 #SRC               391 PLACE          36 BASE             
+83 0<                 391 CMOVE          35 CODECHAIN_LNK    
+80 SRC                364 CODECHAIN_PTR  35 0<               
+79 SCAN               332 CONTEXT        33 (ABORT")         
+79 SKIP               331 #ORDER         29 FILL             
+79 PARSE              287 #SRC           29 NAME>BUF         
+79 STATE              274 ALLOT          29 MIN              
+79 SOURCE             233 STATE          29 FIND             
+78 ALLOT              227 SRC            29 SEARCH-WORDLIST  
+78 WORD               226 SCAN           28 ALLOT            
+74 (ABORT")           226 SKIP           28 S0               
+65 NAME>BUF           226 PARSE          27 SID              
+65 MIN                226 WORD           26 ?STACK           
+65 FIND               226 SOURCE         26 #TIB             
+65 SEARCH-WORDLIST    223 ,              26 DEPTH            
+63 CODECHAIN_LNK      179 0<             26 SOURCE-ID        
+62 S0                 165 FILL           22 COMPILE_OPCODE   
+60 ,                  165 NAME>BUF       20 ,                
+60 ?STACK             165 MIN            16 HLD              
+60 DEPTH              165 FIND           14 TIB              
+50 COMPILE_OPCODE     165 SEARCH-WORDLIST13 START            
+40 >NAME              151 S0             13 ACCEPT           
+33 COMPILE,           149 ?STACK         13 COMPILE,         
+29 START              149 DEPTH          13 INTERPRET        
+29 SID                129 COMPILE_OPCODE 13 CR               
+28 #TIB               123 SID            13 QUERY            
+28 SOURCE-ID          122 CODECHAIN_LNK  13 REFILL           
+25 COMPLETE_CODECHAIN 122 #TIB           13 >NAME            
+25 <>                 122 SOURCE-ID      11 EXECUTE          
+25 FIND_CODECHAIN     119 >NAME          9 COMPLETE_CODECHAIN
+23 DIGIT?             115 BASE           9 <>                
+23 *                  106 START          9 FIND_CODECHAIN    
+23 EXECUTE            104 COMPLETE_CODECH7 MU/MOD            AIN
+15 TIB                104 <>             7 #                 
+14 ACCEPT             102 FIND_CODECHAIN 7 CURRENT           
+14 INTERPRET          101 COMPILE,       7 HOLD              
+14 CR                 62 TIB             6 TYPE              
+14 QUERY              61 ACCEPT          6 DIGIT?            
+14 REFILL             61 INTERPRET       6 *                 
+13 CURRENT            61 CR              6 LAST              
+12 >NUMBER            61 QUERY           5 LITERAL           
+12 'LEAVE             61 REFILL          5 >NUMBER           
+12 DPL                55 EXECUTE         5 DPL               
+12 NUMBER?            46 CURRENT         5 (.")              
+10 LITERAL            31 ALIGN           5 NUMBER?           
+10 C,                 31 C,              4 CSP               
+8 ALIGN               30 TYPE            4 ALIGN             
+8 LAST                30 DIGIT?          4 LAST_CODECHAIN_LNK
+7 TYPE                30 'LEAVE          4 FORTH-WORDLIST    
+7 (.")                30 LAST            3 R0                
+7 (POSTPONE)          30 (.")            3 C,                
+6 LAST_CODECHAIN_LNK  22 CSP             3 [                 
+4 CSP                 18 (POSTPONE)      2 !CSP              
+4 REVEAL              15 REVEAL          2 DNEGATE           
+4 HEADER              15 HEADER          2 REVEAL            
+4 FORTH-WORDLIST      12 >NUMBER         2 NAME>             
+3 RESOLVE-LEAVE       12 [               2 HEADER            
+3 R0                  12 DPL             2 ]                 
+3 [                   12 NUMBER?         2 ?CSP              
+2 !CSP                11 !CSP            2 PAD               
+2 ]                   11 ]               1 COLD              
+2 ?CSP                11 ?CSP            1 QUIT              
+1 COLD                10 LITERAL         1 INCLUDE-BUFFER    
+1 QUIT                7 RESOLVE-LEAVE    1 SPACE             
+1 INCLUDE-BUFFER      4 FORTH-WORDLIST   1 DABS              
+1 INCLUDE-POINTER     3 R0               1 .                 
+1 DECIMAL             3 LAST_CODECHAIN_LN1 INCLUDE-POINTER   K
+1 WARM                1 COLD             1 #>                
+1 CODECHAIN_INIT      1 QUIT             1 DECIMAL           
+                      1 INCLUDE-BUFFER   1 S>D               
+1 DNEGATE          1 #S                
+1 INITIATE-SEED    1 WARM              
+1 BUBBLE           1 <#                
+1 INCLUDE-POINTER  1 SIGN              
+1 CREATE           1 CODECHAIN_INIT    
+1 BUBBLE-SORT      1 D.                
+1 DECIMAL                              
+1 WARM
+1 INITIATE-LIST
+1 CODECHAIN_INIT
+1 VERIFY-LIST

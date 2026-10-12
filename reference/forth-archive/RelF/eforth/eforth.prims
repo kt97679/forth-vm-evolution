@@ -1,0 +1,2 @@
+doLIT doLIST COLD BYE
+EXECUTE EXIT next ?branch branch ! @ C! C@ RP@ RP! R> R@ >R SP@ SP! DROP DUP SWAP OVER 0< AND OR XOR UM+ IO? TX! 

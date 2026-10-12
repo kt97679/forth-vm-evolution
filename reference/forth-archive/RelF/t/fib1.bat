@@ -1,0 +1,1 @@
+@type fib.4|relf kernel.img >NUL

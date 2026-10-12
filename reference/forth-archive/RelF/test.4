@@ -1,0 +1,5 @@
+65 EMIT CR 2 3 + . CR
+: word1 ." test word 1" CR ;
+: word2 ." another test word" CR ;
+: test 10 0 DO I . LOOP word1 word2 ;
+test

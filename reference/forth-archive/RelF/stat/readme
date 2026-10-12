@@ -1,0 +1,14 @@
+All words and opcodes
+
+words.stat
+words2.stat pairs
+
+All words, no opcodes
+
+words_no_opcodes.stat
+words2_no_opcodes.stat pairs
+
+All words and opcodes except vmdolist
+
+words_3.stat
+words2_3.stat pairs

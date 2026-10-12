@@ -1,0 +1,376 @@
+S" EXT\SPF-ASM.F" INCLUDED
+
+128 1024 * CONSTANT MEM_SIZE
+
+HERE 1 - 256 CELLS ALLOT CONSTANT OPCODES
+: " ' OVER ! CELL+ ;
+
+HERE 3 + -4 AND HERE - ALLOT \ Got next aligned address
+HERE MEM_SIZE CHARS ALLOT    \ This space contains the target image.
+DUP  MEM_SIZE 0 FILL         \ Initialize it to zero.
+CONSTANT VMEM
+
+HEX
+
+: SWAPMEM ( addr len -- )
+  SWAP -4 AND SWAP OVER + SWAP
+  BEGIN 2DUP > WHILE DUP @ DUP 10 LSHIFT SWAP 10 RSHIFT OR 
+  DUP FF00FF00 AND 8 RSHIFT SWAP 00FF00FF AND 8 LSHIFT OR 
+  OVER ! CELL+ REPEAT 2DROP ;
+
+DECIMAL
+
+\ First we will load a Forth image into the vir.
+: LOAD-IMAGE ( "name" --- )
+\  20 WORD COUNT 
+  R/O OPEN-FILE ABORT" Can't open file" >R VMEM MEM_SIZE R@ 
+  READ-FILE ABORT" Can't read file" CR VMEM OVER SWAPMEM 
+  . ." byte image loaded" CR R> CLOSE-FILE ABORT" Can't close file" ;
+
+VARIABLE SP       \ old stack pointer.
+VARIABLE RP       \ old return stack pointer.
+SP@ SP ! RP@ RP ! \ save pointers
+
+CODE PROCESSOR
+@@1:    MOV EBX, [EDI]
+        ADD EDI, # 4
+        MOV ECX, EBX
+        AND ECX, # 1
+        JCXZ @@2
+        ADD EBX, # OPCODES
+        JMP [EBX]
+@@2:    PUSH EDI
+        ADD EDI, EBX
+        JMP @@1
+END-CODE
+
+CODE DO_NOOP
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_EXIT
+     POP EDI
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_LIT
+     SUB EBP, # 4
+     MOV EAX, [EDI]
+     MOV [EBP], EAX
+     ADD EDI, # 4
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_BRANCH
+     ADD EDI, [EDI]
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_?BRANCH
+     MOV ECX, [EBP]
+     ADD EBP, # 4
+     JCXZ ' DO_BRANCH
+     ADD EDI, # 4
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_DROP ( x -- ) \ 94
+     ADD EBP, # 4
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_DUP ( x -- x x ) \ 94
+     MOV EAX, [EBP]
+     SUB EBP, # 4
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_SWAP ( x1 x2 -- x2 x1 ) \ 94
+     MOV EAX, [EBP]
+     MOV EBX, 4 [EBP]
+     MOV [EBP], EBX
+     MOV 4 [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_ROT ( x1 x2 x3 -- x2 x3 x1 ) \ 94
+     XCHG EBP, ESP
+     POP ECX
+     POP EBX
+     POP EAX
+     PUSH EBX
+     PUSH ECX
+     PUSH EAX
+     XCHG EBP, ESP
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_OVER ( x1 x2 -- x1 x2 x1 ) \ 94
+     MOV EAX, 4 [EBP]
+     SUB EBP, # 4
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_C@
+     MOV EBX, [EBP]
+     XOR EBX, # 3
+     XOR EAX, EAX
+     MOV AL,  [EBX]
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_@ ( a-addr -- x ) \ 94
+     MOV EBX, [EBP]
+     MOV EAX, [EBX]
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_C!
+     MOV EBX, [EBP]
+     XOR EBX, # 3
+     MOV EAX, 4 [EBP]
+     MOV [EBX], AL
+     ADD EBP, # 8
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_! ( x a-addr -- ) \ 94
+     MOV EBX, [EBP]
+     MOV EAX, 4 [EBP]
+     MOV [EBX], EAX
+     ADD EBP, # 8
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_AND ( x1 x2 -- x3 ) \ 94
+     MOV EAX, [EBP]
+     ADD EBP, # 4
+     AND [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_OR ( x1 x2 -- x3 ) \ 94
+     MOV EAX, [EBP]
+     ADD EBP, # 4
+     OR  [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_XOR ( x1 x2 -- x3 ) \ 94
+     MOV EAX, [EBP]
+     ADD EBP, # 4
+     XOR [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_>R    \ 94
+     MOV EAX, [EBP]
+     ADD EBP, # 4
+     PUSH EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_R>    \ 94
+     POP EAX
+     SUB EBP, # 4
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_R@    \ 94
+     SUB EBP, # 4
+     POP EAX
+     PUSH EAX
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_0= ( x -- flag ) \ 94
+     XOR EAX, EAX
+     CMP DWORD [EBP], # 0
+     JNZ @@1
+     NOT EAX
+@@1: MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_U< ( u1 u2 -- flag ) \ 94
+       XCHG EBP, ESP
+       POP  ECX
+       POP  EAX
+       CMP  EAX, ECX
+       JB   @@1
+       XOR  EAX, EAX
+       JMP  @@2
+@@1:   MOV  EAX, # -1
+@@2:   PUSH EAX
+       XCHG EBP, ESP
+       JMP ' PROCESSOR
+END-CODE
+
+CODE DO_< ( n1 n2 -- flag ) \ 94
+       MOV ECX, [EBP]
+       ADD EBP, # 4
+       MOV EAX, [EBP]
+       SUB EAX, ECX
+       MOV EAX, # 0
+       JNL @@1
+       NOT EAX
+@@1:   MOV [EBP], EAX
+       JMP ' PROCESSOR
+END-CODE
+
+CODE DO_+ ( n1|u1 n2|u2 -- n3|u3 ) \ 94
+     MOV EAX, [EBP]
+     ADD EBP, # 4
+     ADD [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_NEGATE ( n1 -- n2 ) \ 94
+     MOV EAX, [EBP]
+     NEG EAX
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_LSHIFT ( x1 u -- x2 ) \ 94
+     XCHG EBP, ESP
+     POP ECX
+     POP EAX
+     SHL EAX, CL
+     PUSH EAX
+     XCHG EBP, ESP
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_RSHIFT ( x1 u -- x2 ) \ 94
+     XCHG EBP, ESP
+     POP ECX
+     POP EAX
+     SHR EAX, CL
+     PUSH EAX
+     XCHG EBP, ESP
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_UM* ( u1 u2 -- ud ) \ 94
+       XCHG EBP, ESP
+       POP  ECX
+       POP  EAX
+       MUL  ECX
+       PUSH EAX
+       PUSH EDX
+       XCHG EBP, ESP
+       JMP ' PROCESSOR
+END-CODE
+
+CODE DO_UM/MOD ( ud u1 -- u2 u3 ) \ 94
+       XCHG EBP, ESP
+       POP ECX
+       POP EDX
+       POP EAX
+       DIV ECX
+       PUSH EDX
+       PUSH EAX
+       XCHG EBP, ESP
+       JMP ' PROCESSOR
+END-CODE
+
+CODE DO_D+ ( d1|ud1 d2|ud2 -- d3|ud3 ) \ 94 DOUBLE
+       XCHG EBP, ESP
+       POP ECX
+       POP EAX
+       MOV EBX, ESP
+       ADD 4 [EBX], EAX
+       ADC [EBX], ECX
+       XCHG EBP, ESP
+       JMP ' PROCESSOR
+END-CODE
+
+CODE DO_EMIT
+     CALL ' EMIT
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_KEY
+     CALL ' KEY
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_SP@ ( -> A )
+     MOV EAX, EBP
+     SUB EBP, # 4
+     MOV [EBP], EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_SP! ( A -> )
+     MOV EAX, [EBP]
+     MOV EBP, EAX
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_RP@ ( -- RP )
+     SUB EBP, # 4
+     MOV [EBP], ESP
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_RP! ( A -> )
+     MOV EAX, [EBP]
+     ADD EBP, # 4
+     MOV ESP, EAX
+     JMP ' PROCESSOR
+END-CODE
+
+: DO_BYE CR ." Exiting simulator" CR RP @ RP! SP @ SP! QUIT ;
+: OPENFILE 2 + 29 LSHIFT >R 2DUP SWAPMEM 2DUP R> OPEN-FILE 
+  >R >R SWAPMEM R> R> ;
+: READLINE >R 2DUP SWAPMEM 2DUP R> READ-LINE >R >R >R SWAPMEM R> R> R> ;
+
+CODE DO_OPEN-FILE
+     CALL ' OPENFILE
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_CLOSE-FILE
+     CALL ' CLOSE-FILE
+     JMP ' PROCESSOR
+END-CODE
+
+CODE DO_READ-LINE
+     CALL ' READLINE
+     JMP ' PROCESSOR
+END-CODE
+
+OPCODES 1 +
+" DO_NOOP " DO_EXIT " DO_LIT " DO_BRANCH " DO_?BRANCH
+" DO_DROP " DO_DUP " DO_SWAP " DO_ROT " DO_OVER
+" DO_C@ " DO_@ " DO_C! " DO_! 
+" DO_AND " DO_OR " DO_XOR 
+" DO_R> " DO_>R " DO_R@
+" DO_0= " DO_U< " DO_<
+" DO_+ " DO_NEGATE " DO_LSHIFT " DO_RSHIFT " DO_UM* " DO_UM/MOD " DO_D+
+" DO_EMIT " DO_KEY " DO_BYE " DO_SP@ " DO_SP! " DO_RP@ " DO_RP!
+" DO_OPEN-FILE " DO_CLOSE-FILE " DO_READ-LINE
+DROP
+
+CODE INIT-RELF
+     MOV EDI, # VMEM \ EDI - IP
+     JMP ' PROCESSOR
+END-CODE
+
+: RELF
+  LOAD-IMAGE
+  MEM_SIZE VMEM + RP!
+  MEM_SIZE 1024 - VMEM + SP!
+  VMEM INIT-RELF
+;
+
+: R S" kernel.img" RELF ;
+.( Ready...) CR

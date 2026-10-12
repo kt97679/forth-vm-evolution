@@ -1,0 +1,190 @@
+1346268 vmdup vmlit vmgt vm0branch vmdup vmlit vmplus 
+514229 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmswap vmlit vmplus 
+514229 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmswap vmlit vmplus 
+196418 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+75025 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+28657 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+10946 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+4181 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+4081 vmfromr vmexit vmfetch vmover vmfetch vmlit vmand vmeq vm0branch vmlit vmplus vmdup vmfetch vmdup vmrot vmrot vmplus vmswap vmlit vmeq vm0branch 
+1597 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+ 899 vmlit vmeq vmexit vm0branch vmrfetch vmrot vmdup vmtor vmcstore vmfromr vmlit vmplus vmswap vmlit vmplus vmdup 
+ 610 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+ 233 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+ 193 vmfromr vmexit 
+ 160 vmfromr vmexit vmfetch 
+ 154 vmnegate vmplus vmexit vm0branch vmtor vmover vmover vmplus vmfromr vmswap vmcstore 
+ 143 vmlit vmplus vmexit vmbranch vmlit vm0branch vmkey vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmover vmrfetch 
+ 134 vmlit vmplus vmexit vmrot vmrot vmswap 
+ 132 vmfromr vmexit vmfetch vmexit 
+  99 vmlit vmplus vmexit vmswap 
+  89 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+  88 vmlit vmeq vmexit vm0branch vmover vmcfetch vmswap vmdup vmtor vmcstore vmfromr vmlit vmplus vmswap vmlit vmplus vmswap vmfromr vmlit vmplus vmdup vmtor 
+  87 vmlit vmeq vmexit vm0branch vmfromr 
+  72 vmover vmover vmexit 
+  70 vmover vmover vmexit vmcstore 
+  60 vmlit vmlshift vmexit 
+  58 vmdup vm0branch vmtor vmover vmcfetch vmswap vmdup vmtor vmcstore vmfromr vmlit vmplus vmswap vmlit vmplus vmswap vmfromr vmlit vmplus vmdup vmtor 
+  58 vmnegate vmplus vmexit vm0branch 
+  52 vmlit vmplus vmexit vmswap vmbranch vmover vm0branch vmrot vmdup vmcfetch vmtor vmover vmfromr vmeq vm0branch 
+  52 vmlit vmplus vmexit vmswap vmbranch vmover vm0branch vmrot vmdup vmcfetch vmtor vmover vmfromr 
+  50 vmnegate vmplus vmexit 
+  47 vmlit vmplus vmexit vmdup vmcfetch vmlit vmand vm0branch 
+  43 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit 
+  43 vmfromr vmexit vmfetch vmexit vmlit 
+  42 vmlit 
+  42 vmnegate vmplus vmexit vmswap 
+  42 vmtor 
+  42 vmfromr vmexit vmfetch vmplus vmfromr vmover vmtor vmtor vmswap vmrfetch 
+  42 vmnegate vmplus vmexit vmfromr vmswap vmrot vmfromr 
+  41 vmdrop vmdrop vmexit vmdrop vmexit vmexit 
+  36 vmlit vmplus vmexit 
+  34 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+  33 vm0branch vmfromr 
+  33 vmdup vmlit vmplus vmswap vmcfetch vmexit vmplus 
+  32 vmlit vmplus vmexit vmbranch 
+  32 vmnegate vmplus vmexit vm0branch vmdup vmcfetch vmemit 
+  30 vmspfetch 
+  30 vmnegate vmplus vmexit vm0branch vmrot vmrot vmdrop vmexit vmover vmfromr vmswap vmtor 
+  30 vmover vm0branch vmrot vmdup vmcfetch vmtor vmover vmfromr 
+  30 vmover vm0branch vmrot vmdup vmcfetch vmtor vmover vmfromr vmeq vm0branch 
+  29 vmrot vmrot 
+  29 vmnegate vmplus vmexit vmtor 
+  29 vmover vm0branch vmtor vmrfetch vmrot vmdup vmtor vmcstore vmfromr vmlit vmplus vmswap vmlit vmplus vmdup 
+  29 vmfromr vmexit vmfetch vmdup vmlit 
+  29 vmdup vmlit vmplus vmswap vmcfetch vmexit vmrfetch 
+  29 vmlit vmplus vmexit vmswap vmfromr vmfromr 
+  29 vmnegate vmplus vmexit vmfetch vmeq vmbranch vm0branch 
+  29 vmfromr vmexit vmplus vmfetch 
+  29 vmlit vmlshift vmexit vmplus vmdup vmfetch vmswap vmlit 
+  29 vmdrop vmdrop vmexit vmdrop vmexit vmlit 
+  29 vmfromr vmexit vmlit vmlit 
+  29 vmswap vmgt vmexit vm0branch 
+  29 vmfromr vmexit vmfetch vmexit vmstore vmlit 
+  29 vmlit vmplus vmexit vmtor vmdup 
+  29 vmdrop vmdrop vmexit vmdrop vmexit vmexit vmexit vmfetch vmdup vm0branch 
+  29 vmlit vmplus vmexit vmdup vm0branch 
+  29 vmswap vmgt vmexit vm0branch vmdrop vmexit 
+  27 vmdup vmlit vmplus vmswap vmcfetch vmexit vmplus vmcstore vmexit vmdup vmcfetch vm0branch 
+  26 vmswap vmgt vmexit vmor 
+  26 vmnegate vmplus vmexit vmlit vmrshift vmexit vmdup 
+  26 vmlit vmgt vmexit vmswap vmlit 
+  26 vmfromr vmexit vmfetch vmswap 
+  26 vmlit vmplus vmlit vmand vmexit vmtor vmexit vmexit vmbranch vmlit 
+  23 vmlit vmeq vmexit vm0branch 
+  22 vmfromr vmexit vmfetch vmand vm0branch 
+  22 vmlit vmplus vmexit vmlit vmtor vmover vmfetch vmover vmfetch 
+  22 vmlit vmplus vmexit vmtor vm0branch vmfromr 
+  22 vmfromr vmexit vmcfetch vmlit vmplus 
+  22 vmlit vmplus vmlit vmand vmexit 
+  22 vmlit vmplus vmexit vmover 
+  22 vmfromr vmexit vmfetch vmover vmfetch vmlit vmand vmeq vm0branch 
+  20 vmlit vmplus vmexit vmswap vmbranch vmover vm0branch vmrot vmdup vmcfetch vmtor vmover vmfromr vmeq vm0branch vmrot vmrot vmdrop vmexit vm0branch vmlit 
+  20 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmdup vmrfetch 
+  19 vmfromr vmexit vmstore vmexit 
+  16 vmfromr vmexit vmstore vmlit 
+  15 vmdup 
+  14 vmlit vmplus vmexit vmeq vm0branch vmswap vmdrop vmswap vmcfetch vmlit vmand vm0branch vmlit vmswap vmlit vmplus vmswap vmexit vmdup vm0branch vmfromr vmdrop vmrot vmdrop vmexit vmdup vm0branch vmlit vmeq 
+  13 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+  13 vmfromr vmexit vmfetch vmexit vm0branch 
+  13 vmfromr vmexit vmfetch vmexit vmlit vmeq vm0branch 
+  13 vmfromr vmexit vmlit 
+  13 vmfromr vmexit vmstore vmlit vmexit vmdrop 
+  12 vmdup vm0branch 
+  12 vmfromr vmexit vmstore 
+  12 vmover vm0branch vmdrop vmexit vmover vmfromr vmswap vmtor 
+  12 vmdup vmlit vmplus vmswap vmcfetch vmexit vmplus vmcstore vmexit vmdup vmcfetch vm0branch vmdrop vmexit 
+  12 vmlit vmemit vmlit vmemit vmexit vmlit vm0branch 
+  12 vmover vm0branch vmdrop vmexit vm0branch vmdup vmrfetch 
+  11 vmtor vmlit vmkey vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmover vmrfetch 
+  11 vmdup vmlit vmplus vmswap vmcfetch vmexit 
+  11 vmlit vmplus vmexit vmbranch vmlit vm0branch vmkey vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmdrop vmswap vmdrop vmfromr vmdrop vmexit 
+  10 vmlit vmplus vmexit vmswap vmbranch vmover vm0branch vmdrop vmexit vm0branch vmdup vmrfetch 
+   9 vmlit vmplus vmexit vmdup vmcfetch vmlit vmand vm0branch vmexit vmcfetch vmlit vmand vm0branch vmfetch 
+   9 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmexit vmbranch vmexit vmbranch vmbranch 
+   9 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmexit 
+   8 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit 
+   8 vmlit vmplus vmexit vmeq vm0branch vmswap vmdrop vmswap vmcfetch vmlit vmand vm0branch vmlit vmbranch vmswap vmlit vmplus vmswap vmexit vmdup vm0branch vmfromr vmdrop vmrot vmdrop vmexit vmdup vm0branch vmlit vmeq 
+   7 vmover vmover vmexit vmor 
+   7 vmfromr vmexit vmfetch vmcstore vmexit vmexit 
+   7 vmlit vmplus vmexit vmtor vm0branch vmover vmfetch vmover vmfetch 
+   7 vmlit vmeq vmexit 
+   7 vmtor vmlit vmrfetch vmumdiv vmfromr vmswap vmtor vmumdiv vmfromr vmexit vmrot vmdup vmlit 
+   7 vmswap vmgt vmexit vm0branch vmlit vmplus 
+   6 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmexit vmbranch 
+   6 vmlit vmeq vmexit vm0branch vmswap vmtor vmtor vmswap 
+   6 vmswap vmgt vmexit vmover vmlit vmgt vmand vm0branch vmdup vmlit 
+   6 vmnegate vmplus vmexit vmdup 
+   6 vmfromr vmexit vmfetch vmummult vmrot 
+   6 vmfromr vmexit vmfetch vmgt 
+   6 vmover vmplus vmswap 
+   6 vmlit vmeq vmexit vm0branch vmlit vmexit 
+   6 vmlit vmgt vmexit vm0branch vmdup vmlit 
+   6 vmswap vmgt vmexit vm0branch vmdup 
+   5 vmtor vmexit 
+   5 vmdup vm0branch vmlit vmplus vmtor 
+   5 vmlit vmeq vmexit vm0branch vmtor vmtor vmlit vmlit vmfromr vmfromr 
+   5 vmfromr vmexit vmfetch vmover vmfetch vmlit vmand vmeq vm0branch vmlit vmplus vmdup vmfetch vmdup vmrot vmrot vmplus vmswap vmlit vmeq vm0branch vmdrop vmlit vmexit vmdup vm0branch vmdrop vmfromr vmbranch vmdup vm0branch vmexit vmdup vm0branch vmdrop 
+   5 vmlit vmplus vmlit vmand vmexit vmtor vmexit 
+   5 vmfromr 
+   5 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+   5 vmfromr vmexit vmfetch vm0branch 
+   5 vmtor vmexit vmlit 
+   5 vmummult vmdrop vmexit vmlit vmswap vmdplus vmfromr vmlit vmdplus vmfromr vmfromr vmbranch vmdup vm0branch vmexit vmdup vm0branch vmdup 
+   5 vmlit vmplus vmlit vmand vmexit vmtor vmexit vmdrop 
+   5 vmdrop vmdrop vmexit vmexit vmplus 
+   5 vmswap vmgt vmexit 
+   5 vmfromr vmexit vmstore vmlit vmexit 
+   5 vmfromr vmexit vmfetch vmtor 
+   5 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmexit vmexit 
+   4 vmlit vmplus vmexit vmdup vmcfetch vmlit vmand vm0branch vmexit vmcfetch vmlit vmand vm0branch 
+   3 vmfromr vmexit vmfetch vmexit vmcstore vmlit 
+   3 vmdrop vmdrop vmexit vmfromr vm0branch vmfromr 
+   3 vmdup vmlit vmplus vmswap vmcfetch vmexit vmover vmcfetch vmlit vmeq vmdup vmtor vm0branch vmover vmcfetch vmlit vmeq vm0branch vmover vmcfetch vmlit vmeq vm0branch vmdup vmlit 
+   3 vmfromr vmexit vmfetch vmexit vmlit vmand vm0branch vmlit 
+   2 vmlit vmplus vmlit vmand vmexit vmexit 
+   2 vmfromr vmexit vmfetch vmexit vmlit vmand vm0branch vmexit 
+   2 vmfromr vmexit vmfetch vmexit vmover 
+   2 vmlit vmeq vmexit vmplus vmexit vmfromr 
+   2 vmdrop vmdrop vmexit vmfromr vm0branch 
+   2 vmfromr vmexit vmfetch vmrpstore 
+   2 vmtor vmlit vmkey vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch vmdrop vmswap vmdrop vmfromr vmdrop vmexit 
+   2 vmfromr vmexit vmfetch vmfetch 
+   2 vmlit vmgt vmexit vm0branch vmexit 
+   2 vmfromr vmexit vmfetch vmexit vmlit vmand vm0branch vmexit vmexit 
+   2 vmnegate vmplus vmexit vmswap vmstore vmexit vmbranch 
+   2 vmfromr vmexit vmfetch vmover vmfetch vmlit vmand vmeq vm0branch vmlit vmplus vmdup vmfetch vmdup vmrot vmrot vmplus vmswap vmlit vmeq vm0branch vmdrop vmlit vmexit vmdup vm0branch vmdrop vmfromr vmbranch vmdup vm0branch vmexit vm0branch vmdrop vmcfetch 
+   2 vmfromr vmexit vmfetch vmfetch vm0branch 
+   2 vmdup vmlit vmplus vmswap vmcfetch vmexit vmover vmcfetch vmlit vmeq vmdup vmtor vm0branch vmlit vmplus vmswap vmlit vmplus vmswap vmover vmcfetch vmlit vmeq vm0branch vmover vmcfetch vmlit vmeq vm0branch vmdup vmlit 
+   2 vmtor vmnegate vmfromr vmnegate vmover 
+   2 vmdup vmlit vmplus vmswap vmcfetch vmexit vmlit vmand vmplus 
+   2 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmexit vmexit vmbranch vmbranch 
+   2 vmlit vmplus vmlit vmand vmexit vmtor vmexit vmexit 
+   2 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmexit vmexit vmexit vmbranch 
+   2 vmfromr vmexit vmfetch vmexit vmcfetch vmlit vmplus 
+   2 vmdup vmlit vmplus vmswap vmcfetch vmexit vmplus vmcstore vmexit vmdup 
+   2 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmswap vmlit vmplus 
+   2 vmfromr vmexit vmfetch vmexit vmcstore 
+   2 vmfromr vmexit vmfetch vmstore vmexit vmexit vmbranch 
+   2 vmfromr vmexit vmstore vmexit vmexit vmbranch 
+   1 vmdup vmlit vmgt vm0branch vmdrop vmlit vmbranch vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit vmplus vmexit 
+   1 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmplus vmcfetch vmeq 
+   1 vmlit vmeq vmexit vm0branch vmexit vmbranch 
+   1 vmlit vmemit vmexit vmexit vmexit vmbye 
+   1 vmswap vmover 
+   1 vmlit vmplus vmexit vmstore 
+   1 vmtor vmexit vmlit vmdup 
+   1 vmnegate vmplus vmexit vmexit 
+   1 vmlit vmeq vmexit vm0branch vmexit vmrot 
+   1 vmlit vmemit vmlit vmemit vmexit 
+   1 vmlit vmgt vmexit vmexit 
+   1 vmummult vmdrop vmexit vmlit vmswap vmdplus vmfromr vmlit vmdplus vmfromr vmfromr vmbranch vmdup vm0branch vmlit vmplus vmtor 
+   1 vmfromr vmexit vmstore vmexit vmlit 
+   1 vmdrop vmdrop vmexit vmexit 
+   1 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmexit vmswap 
+   1 vmfromr vmexit vmstore vmrpfetch 
+   1 vmdrop vmdrop vmexit 
+   1 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit vmspfetch 
+   1 vmfromr vmexit vmfetch vmlit vmplus vmexit 
+   1 vmfromr vmexit vmfetch vmspstore 
+   1 vmfromr vmexit vmfetch vmlit vmplus vmexit vmover 

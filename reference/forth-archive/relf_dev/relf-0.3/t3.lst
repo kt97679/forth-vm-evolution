@@ -1,0 +1,101 @@
+     1                                  ; ----------------------------------------------------------------------------
+     2                                  ; echo.asm
+     3                                  ;
+     4                                  ; NASM implementation of a program that displays its commandline arguments,
+     5                                  ; one per line.
+     6                                  ; ----------------------------------------------------------------------------	
+     7                                  
+     8                                  	global	_main
+     9                                  	extern	_printf
+    10                                          extern  _exit
+    11                                          extern _putchar
+    12                                  	
+    13                                  	section .text
+    14                                  _main:
+    15                                  ;    call print3
+    16                                  ;    push dword 0
+    17                                  ;    call _exit
+    18                                  ;    jmp print
+    19 00000000 BF[0A000000]                mov edi, codedata
+    20 00000005 BE[73000000]                mov esi, print3
+    21 0000000A B8[83000000]                mov eax, end3
+    22                                  
+    23                                  copycode:
+    24 0000000F A4                          movsb         ; [esi] -> [edi], esi++, edi++
+    25 00000010 39F0                        cmp eax, esi
+    26 00000012 75FB                        jne copycode
+    27                                  
+    28                                  ;    jmp codedata
+    29 00000014 E8(0A000000)                call codedata
+    30                                  
+    31 00000019 51                      	push	ecx			; save registers that printf wastes
+    32 0000001A 52                      	push	edx
+    33                                  	
+    34 0000001B 50                      	push	dword eax		; the argument string to display
+    35 0000001C 68[00000000]            	push	dword format		; the format string	
+    36 00000021 E8(00000000)            	call	_printf
+    37 00000026 83C408                  	add	esp, 8			; remove the two parameters
+    38                                  	
+    39 00000029 5A                      	pop	edx			; restore registers printf used
+    40 0000002A 59                      	pop	ecx
+    41                                  
+    42 0000002B C3                          ret
+    43 0000002C BB[0A000000]                mov ebx, codedata
+    44                                  l1:
+    45 00000031 8B03                        mov eax, [ebx]
+    46 00000033 83F800                      cmp eax, 0
+    47 00000036 740A                        je done
+    48 00000038 50                          push eax
+    49 00000039 E8(00000000)                call _putchar
+    50 0000003E 58                          pop eax
+    51 0000003F 43                          inc ebx
+    52 00000040 EBEF                        jmp l1
+    53                                  done:
+    54 00000042 6A00                        push dword 0
+    55 00000044 E8(00000000)                call _exit
+    56                                  
+    57                                  	
+    58 00000049 C3                      	ret
+    59                                  
+    60                                  print:
+    61 0000004A 51                      	push	ecx			; save registers that printf wastes
+    62 0000004B 52                      	push	edx
+    63                                  	
+    64 0000004C 31C0                    	xor eax, eax
+    65 0000004E 50                      	push	dword eax		; the argument string to display
+    66 0000004F 68[00000000]            	push	dword format		; the format string	
+    67 00000054 E8(00000000)            	call	_printf
+    68 00000059 83C408                  	add	esp, 8			; remove the two parameters
+    69                                  	
+    70 0000005C 5A                      	pop	edx			; restore registers printf used
+    71 0000005D 59                      	pop	ecx
+    72                                  
+    73 0000005E 6A00                            push dword 0
+    74 00000060 E8(00000000)                    call _exit
+    75                                  end:
+    76                                  print2:
+    77 00000065 616263646566203132-     db 'abcdef 12345', 10, 0
+    78 0000006E 3334350A00         
+    79                                  end2:
+    80                                  print3:
+    81 00000073 A1[0E040000]                mov eax, [intdata + 4]
+    82 00000078 6A41                        push dword 65
+    83 0000007A B8[00000000]                mov eax, _putchar
+    84 0000007F FFD0                        call eax
+    85 00000081 58                          pop eax
+    86 00000082 C3                          ret
+    87                                  end3:
+    88                                  
+    89                                  section .data
+    90                                  
+    91                                  format:
+    92 00000000 656178203A2025780A-     	db	'eax : %x', 10, 0
+    93 00000009 00                 
+    94                                  codedata:
+    95 0000000A 00<rept>                times 1024 db 0
+    96                                  intdata
+    97 0000040A 090000000800000007-     dd 9,8,7,6,5,4,3,2,1,0
+    98 00000413 000000060000000500-
+    99 0000041C 000004000000030000-
+   100 00000425 000200000001000000-
+   101 0000042E 00000000           

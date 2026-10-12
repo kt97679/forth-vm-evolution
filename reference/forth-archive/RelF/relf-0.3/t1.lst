@@ -1,0 +1,76 @@
+     1                                  extern _exit
+     2                                  extern _putchar
+     3                                  
+     4                                  global _virtual_machine
+     5                                  
+     6                                  section .text
+     7                                  
+     8                                  _virtual_machine:
+     9 00000000 BF[41000000]                mov edi, data
+    10 00000005 BA[0E000000]                mov edx, datatbl
+    11                                  l3:
+    12 0000000A 8B1A                        mov ebx, [edx]
+    13 0000000C 52                          push edx
+    14 0000000D 53                          push ebx
+    15                                  
+    16 0000000E 83C204                      add edx, 4
+    17 00000011 31C9                        xor ecx, ecx
+    18 00000013 8A0A                        mov cl, [edx]
+    19 00000015 BB01000000                  mov ebx, 1
+    20                                  l2:
+    21 0000001A 31C0                        xor eax, eax
+    22 0000001C 8A041A                      mov al, [edx + ebx]
+    23 0000001F 8B3485[2D000000]            mov esi, [dataidx + eax * 4]
+    24 00000026 8B0485[31000000]            mov eax, [dataidx + eax * 4 + 4]
+    25                                  
+    26                                  copycode:
+    27 0000002D A4                          movsb         ; [esi] -> [edi], esi++, edi++
+    28 0000002E 39F0                        cmp eax, esi
+    29 00000030 75FB                        jne copycode
+    30                                  
+    31 00000032 43                          inc ebx
+    32 00000033 E2E5                        loop l2, ecx
+    33                                  
+    34 00000035 5B                          pop ebx
+    35 00000036 5A                          pop edx
+    36 00000037 01DA                        add edx, ebx
+    37 00000039 83FB00                      cmp ebx, 0
+    38 0000003C 75CC                        jne l3
+    39                                  
+    40                                  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    41 0000003E BB[41000000]                mov ebx, data
+    42                                  l1:
+    43 00000043 8B03                        mov eax, [ebx]
+    44 00000045 83F800                      cmp eax, 0
+    45 00000048 740A                        je done
+    46 0000004A 50                          push eax
+    47 0000004B E8(00000000)                call _putchar
+    48 00000050 58                          pop eax
+    49 00000051 43                          inc ebx
+    50 00000052 EBEF                        jmp l1
+    51                                  done:
+    52 00000054 6A00                        push dword 0
+    53 00000056 E8(00000000)                call _exit
+    54                                  
+    55                                  section .data
+    56                                  
+    57 00000000 312E                    data1 db '1.'
+    58 00000002 32322E                  data2 db '22.'
+    59 00000005 3333332E                data3 db '333.'
+    60 00000009 343434342E              data4 db '4444.'
+    61                                  data5
+    62                                  datatbl
+    63 0000000E 09000000                    dd 9
+    64 00000012 0302010000                  db 3, 2, 1, 0, 0
+    65                                  datatbl2
+    66 00000017 09000000                    dd 9
+    67 0000001B 0202000000                  db 2, 2, 0, 0, 0
+    68 00000020 00000000                    dd 0
+    69 00000024 0400010203                  db 4, 0, 1, 2, 3
+    70 00000029 03020001                dataseq db 3, 2, 0, 1
+    71 0000002D [00000000]-             dataidx dd data1, data2, data3, data4, data5
+    72 00000031 [02000000]-        
+    73 00000035 [05000000]-        
+    74 00000039 [09000000]-        
+    75 0000003D [0E000000]         
+    76 00000041 00<rept>                data times 1024 db 0

@@ -1,0 +1,71 @@
+128 1024 * CONSTANT MEM_SIZE
+
+HERE 3 + -4 AND          \ Got next aligned address
+DUP MEM_SIZE CHARS ALLOT \ This space contains the target image.
+DUP MEM_SIZE 0 FILL      \ Initialize it to zero.
+CONSTANT VMEM
+
+HEX
+
+\ First we will load a Forth image into the vir.
+: LOAD-IMAGE ( "name" --- )
+\  20 WORD COUNT 
+  R/O OPEN-FILE ABORT" Can't open file" >R
+  VMEM  MEM_SIZE R@ READ-FILE ABORT" Can't write file" CR
+ DUP DUP 3 AND IF 3 OR 1 + THEN VMEM + VMEM
+ DO I @ DUP 10 LSHIFT SWAP 10 RSHIFT OR 
+ DUP FF00FF00 AND 8 RSHIFT SWAP 00FF00FF AND 8 LSHIFT OR I ! 4 +LOOP
+  . ." byte image read" CR
+  R> CLOSE-FILE ABORT" Can't close file" ;
+
+DECIMAL
+
+VARIABLE IP \ Instruction pointer.
+VARIABLE SP \ Stack pointer.
+VARIABLE RP \ Return stack pointer.
+
+: DO_R>      RP @ @ 4 RP +! ;
+: DO_>R      -4 RP +! RP @ ! ;
+: DO_R@      RP @ @ ;
+: DO_LIT     IP @ @ 4 IP +! ;
+: DO_EXIT    RP @ @ IP ! 4 RP +! ;
+: DO_BYE     CR ." Exiting simulator" CR SP @ SP! QUIT ;
+: DO_BRANCH  IP @ @ IP +! ;
+: DO_?BRANCH 0= IF IP @ @ IP +! ELSE 4 IP +! THEN ;
+: DO_RP@     RP @ ;
+: DO_RP!     RP ! ;
+: DO_C@      3 XOR C@ ;
+: DO_C!      3 XOR C! ;
+
+HERE 1 -
+' NOOP , ' DO_EXIT , ' DO_LIT , ' DO_BRANCH , ' DO_?BRANCH , 
+' DROP , ' DUP , ' SWAP , ' ROT , ' OVER ,
+' DO_C@ , ' @ , ' DO_C! , ' ! , 
+' AND , ' OR , ' XOR , 
+' DO_R> , ' DO_>R , ' DO_R@ ,  
+' 0= , ' U< , ' < , 
+' + , ' NEGATE , ' LSHIFT , ' RSHIFT , ' UM* , ' UM/MOD , ' D+ ,
+' EMIT , ' KEY , ' DO_BYE , ' SP@ , ' SP! , ' DO_RP@ , ' DO_RP! ,
+CONSTANT OPCODES
+
+: PROCESSOR
+  BEGIN
+\ ." IP " IP @ VMEM - . ." VALUE " IP @ @ . ." STACK " DUP . ." RETURN STACK "
+\ RP @ @ VMEM - . CR
+\ ." VALUE+4 " IP @ 4 + @ . CR
+  IP @ @ DUP 1 AND 4 IP +!
+  IF OPCODES + @ EXECUTE ELSE -4 RP +! IP @ RP @ ! IP +! THEN
+\ KEY DROP
+  AGAIN
+;
+
+: RELF
+  LOAD-IMAGE
+  VMEM IP !
+  VMEM MEM_SIZE + RP !
+  SP@ SP !
+  MEM_SIZE 1024 - VMEM + SP!
+  VMEM PROCESSOR
+;
+
+: R S" kernel.img" RELF ;

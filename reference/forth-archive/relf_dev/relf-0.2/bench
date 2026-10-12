@@ -1,0 +1,12 @@
+OS: SuSe Linux 9.2 (kernel 2.6.4-52-smp)
+CPU: Intel(R) Xeon(TM) CPU 2.40GHz
+gcc version 3.3.3 (SuSE Linux)
+fib 40
+
+spf 2.526
+relf 87.81
+relfgcc 58.05
+C 3.889
+sod32 89.66
+gforth 14.37
+gforth-fast 7.698

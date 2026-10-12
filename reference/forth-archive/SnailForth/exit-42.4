@@ -1,0 +1,56 @@
+variable image-start
+variable image-length
+variable p_filesz
+
+: save-image s" a.out" w/o bin create-file abort" Can't open file" >r
+image-start @ image-length @ r@ write-file abort" Can't write file" 
+r> close-file abort" Can't close file" ;
+
+here image-start !
+hex
+
+\ a single dollar sign, evaluates to the current address being assembled at the beginning of the current line
+\ the double dollar sign, evaluates to the address of the start of the current section, so that you can check how much space you've used (with the expression $ - $$)
+\ ehdr: (Elf32_Ehdr)
+7f c, 45 c, 4c c, 46 c, 01 c, 01 c, 01 c, 00 c, \ e_ident
+00 c, 00 c, 00 c, 00 c, 00 c, 00 c, 00 c, 00 c,
+02 c, 00 c, \ e_type
+03 c, 00 c, \ e_machine
+01 c, 00 c, 00 c, 00 c, \ e_version
+54 c, 80 c, 04 c, 08 c, \ e_entry
+34 c, 00 c, 00 c, 00 c, \ e_phoff (phdr - $$)
+00 c, 00 c, 00 c, 00 c, \ e_shoff
+00 c, 00 c, 00 c, 00 c, \ e_flags
+34 c, 00 c, \ e_ehsize (ehdrsize)
+20 c, 00 c, \ e_phentsize (phdrsize)
+01 c, 00 c, \ e_phnum
+00 c, 00 c, \ e_shentsize
+00 c, 00 c, \ e_shnum
+00 c, 00 c, \ e_shstrndx
+\ ehdrsize      equ     $ - ehdr
+\ phdr: (Elf32_Phdr)
+01 c, 00 c, 00 c, 00 c, \ p_type
+00 c, 00 c, 00 c, 00 c, \ p_offset
+00 c, 80 c, 04 c, 08 c, \ p_vaddr ($$)
+00 c, 80 c, 04 c, 08 c, \ p_paddr ($$)
+
+here p_filesz !
+
+01 c, 23 c, 45 c, 67 c, \ p_filesz (filesize)
+5b c, 00 c, 00 c, 00 c, \ p_memsz (filesize)
+05 c, 00 c, 00 c, 00 c, \ p_flags
+00 c, 10 c, 00 c, 00 c, \ p_align
+\ phdrsize      equ     $ - phdr
+
+b3 c, 2a c, \ mov bl, 42
+31 c, c0 c, \ xor eax, eax
+40 c,       \ inc eax
+cd c, 80 c, \ int 0x80
+\ filesize      equ     $ - $$
+decimal
+here image-start @ - image-length !
+
+image-length @ p_filesz @ !
+
+save-image
+bye

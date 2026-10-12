@@ -1,0 +1,254 @@
+\
+: VOCABULARY WORDLIST CREATE  ,  
+  DOES> >R                      
+  GET-ORDER SWAP DROP R> @ SWAP SET-ORDER ;
+VOCABULARY TARGET
+VOCABULARY TRANSIENT
+: \D POSTPONE 
+100000 CONSTANT IMAGE_SIZE
+CREATE IMAGE IMAGE_SIZE CHARS ALLOT 
+       IMAGE IMAGE_SIZE 0 FILL      
+: C@-T  CHARS IMAGE + C@ ;
+: C!-T  CHARS IMAGE + C! ;
+: @-T  
+       CHARS IMAGE + DUP C@ 24 LSHIFT OVER 1 CHARS + C@ 16 LSHIFT +
+       OVER 2 CHARS + C@ 8 LSHIFT + SWAP 3 CHARS + C@ + ;
+: !-T  
+       CHARS IMAGE + OVER 24 RSHIFT OVER C! OVER 16 RSHIFT OVER 1 CHARS + C!
+       OVER 8 RSHIFT OVER 2 CHARS + C! 3 CHARS + C! ;
+VARIABLE DP-T                       
+0 DP-T !                            
+: THERE  DP-T @ ;      
+: ALLOT-T  DP-T +! ;       
+: CHARS-T  ;      
+: CELLS-T  2 LSHIFT ;  
+: ALIGN-T                           
+                                    
+  BEGIN THERE 3 AND WHILE 1 ALLOT-T REPEAT ;
+: ,-T     THERE !-T  1 CELLS-T ALLOT-T ;
+: PLACE-T  
+  OVER OVER C!-T 1+ CHARS IMAGE + SWAP CHARS CMOVE ;      
+: SAVE-IMAGE 
+  32 WORD COUNT W/O BIN CREATE-FILE ABORT" Can't open file" >R
+  IMAGE THERE R@ WRITE-FILE ABORT" Can't write file" 
+  R> CLOSE-FILE ABORT" Can't close file" ;
+32 CONSTANT #THREADS 
+CREATE TLINKS #THREADS CELLS ALLOT   
+                           
+TLINKS #THREADS CELLS 0 FILL 
+VARIABLE LAST-T          
+: HASH 
+  >R OVER C@ 1 LSHIFT OVER 1 > IF ROT CHAR+ C@ 2 LSHIFT XOR ELSE ROT DROP 
+   THEN XOR 
+  R> 1- AND 
+;  
+: "HEADER >IN @ CREATE >IN ! 
+  BL WORD
+  DUP COUNT #THREADS HASH >R 
+  ALIGN-T TLINKS R@ CELLS + @ ,-T        
+\D  DUP COUNT CR ." Creating: " TYPE ."  Hash:" R@ . 
+  COUNT DUP >R THERE PLACE-T  
+  THERE TLINKS R> R> SWAP >R CELLS + !
+  THERE LAST-T !               
+  THERE C@-T 128 OR THERE C!-T R> 1+ ALLOT-T ALIGN-T ; 
+      
+                      
+: MACRO LAST-T @ DUP C@-T 32 OR SWAP C!-T ; 
+   
+   
+ALSO TRANSIENT DEFINITIONS 
+: IMMEDIATE LAST-T @ DUP C@-T 64 OR SWAP C!-T ; 
+            
+PREVIOUS DEFINITIONS
+VARIABLE STATE-T 0 STATE-T ! 
+: T] 1 STATE-T ! ;
+: T[ 0 STATE-T ! ;
+VARIABLE CSP   
+: !CSP DEPTH CSP ! ;
+: ?CSP DEPTH CSP @ - ABORT" Incomplete control structure" ;
+HEX 80000000 DECIMAL CONSTANT RET-CODE 
+VARIABLE OPLOC 0 OPLOC !  
+VARIABLE OPSHIFT 31 OPSHIFT ! 
+: CODEFLUSH 32 OPSHIFT ! ; 
+                            
+                            
+: INSERT-OPCODE  
+   OPSHIFT @ 30 > IF                                            
+      THERE OPLOC ! 1 ,-T  
+      1 OPSHIFT !          
+   THEN   
+ \D  DUP CR ."  OPCODE " .  
+   OPSHIFT @ LSHIFT OPLOC @ @-T + OPLOC @ !-T 
+   5 OPSHIFT +!            
+;
+: LITERAL-T  
+\D DUP ."  Literal:" . CR  
+  31 INSERT-OPCODE ,-T ;
+TRANSIENT DEFINITIONS FORTH
+: OPCODE 
+  "HEADER DUP C, 2* RET-CODE 1+ OR ,-T MACRO 
+                                             
+  DOES> C@ INSERT-OPCODE 
+;
+: : !CSP "HEADER THERE , T]
+    DOES> @ CODEFLUSH ,-T ;
+: M: "HEADER THERE , MACRO 
+  T]                       
+                           
+                           
+                           
+   DOES> @ BEGIN
+            DUP @-T         
+            DUP 1 AND 0= ABORT" Instruction not allowed in macro" 2/
+            SWAP 4 + SWAP   
+            6 0 DO 
+              DUP 31 AND ?DUP IF 
+               DUP INSERT-OPCODE
+               31 = IF 
+                      OVER @-T 
+\D                         DUP . 
+                      ,-T SWAP 4 + SWAP 
+                    THEN
+              THEN
+              5 RSHIFT    
+            LOOP
+            1 AND 
+           UNTIL
+           DROP
+;
+: ; RET-CODE OPSHIFT @ 32 = IF 
+        1 + ,-T              
+    ELSE 
+        OPLOC @ @-T + OPLOC @ !-T 
+    THEN CODEFLUSH T[ ?CSP 
+  ;
+FORTH DEFINITIONS
+: FORWARD  
+  CREATE -1 ,              
+  DOES> CODEFLUSH 
+        DUP @ ,-T THERE 1 CELLS-T - SWAP ! 
+                  
+	          
+                  
+;
+: RESOLVE
+  ALSO TARGET >IN @ ' >BODY @ >R >IN ! 
+                          
+\D >IN @ BL WORD COUNT CR ." Resolving: " TYPE >IN !
+  TRANSIENT ' >BODY  @                 
+                                       
+  BEGIN
+   DUP -1 -                            
+  WHILE
+   DUP @-T                             
+   R@ ROT !-T                           
+  REPEAT DROP R> DROP PREVIOUS
+;
+TRANSIENT DEFINITIONS FORTH
+ 
+FORWARD DOVAR 
+: VARIABLE "HEADER THERE , [ TRANSIENT ] DOVAR [ FORTH ]  0 ,-T
+DOES> @ 4 + LITERAL-T  
+; 
+: CONSTANT "HEADER THERE ,
+  RET-CODE 1 + 31 2* + ,-T  
+  ,-T
+  DOES> @ 4 + @-T LITERAL-T 
+;
+FORTH DEFINITIONS
+: T'  
+  ALSO TARGET ' >BODY @ 
+  PREVIOUS
+;
+: >BODY-T  
+  1 CELLS + ;
+TRANSIENT DEFINITIONS FORTH
+: BEGIN CODEFLUSH THERE ;
+: UNTIL CODEFLUSH 2 + ,-T ; 
+: IF CODEFLUSH THERE 1 CELLS ALLOT-T ;
+: THEN CODEFLUSH THERE 2 + SWAP !-T ; TARGET
+: ELSE 28 INSERT-OPCODE [ TRANSIENT ] IF SWAP THEN [ FORTH ] ; 
+: WHILE [ TRANSIENT ] IF [ FORTH ] SWAP ; TARGET
+: REPEAT 28 INSERT-OPCODE [ TRANSIENT ] UNTIL THEN [ FORTH ] ; 
+FORWARD (DO)
+FORWARD (LOOP)
+FORWARD (.")
+FORWARD (POSTPONE)
+: DO [ TRANSIENT ] (DO) [ FORTH ] THERE ;
+: LOOP [ TRANSIENT ] (LOOP) [ FORTH ] ,-T ;
+: ." [ TRANSIENT ] (.") [ FORTH ] 34 WORD COUNT DUP 1+ >R 
+      THERE PLACE-T R> ALLOT-T ALIGN-T ;
+: POSTPONE [ TRANSIENT ] (POSTPONE) [ FORTH ] T' ,-T ;
+: 
+: \G POSTPONE 
+: ( POSTPONE ( ; IMMEDIATE 
+: CHARS-T CHARS-T ; 
+: CELLS-T CELLS-T ;
+: ALLOT-T ALLOT-T ;
+: ['] T' LITERAL-T ;
+FORTH DEFINITIONS
+VARIABLE DPL
+: NUMBER? 
+  -1 DPL !
+  BASE @ >R
+  COUNT   
+  OVER C@ 45 = DUP >R IF 1 - SWAP 1 + SWAP THEN 
+  OVER C@ 36 = IF 16 BASE ! 1 - SWAP 1 + SWAP THEN   
+  OVER C@ 35 = IF 10 BASE ! 1 - SWAP 1 + SWAP THEN   
+  DUP  0 > 0= IF  R> DROP R> BASE ! 0 EXIT THEN   
+  >R >R 0 0 R> R>
+  BEGIN  
+   >NUMBER  
+   DUP IF OVER C@ 46 = IF 1 - DUP DPL ! SWAP 1 + SWAP ELSE 
+         R> DROP R> BASE ! 0 EXIT THEN   
+       THEN    
+  DUP 0= UNTIL DROP DROP R> IF DNEGATE THEN    
+  R> BASE ! -1  
+;
+: CROSS-COMPILE
+  ONLY TARGET DEFINITIONS ALSO TRANSIENT 
+  BEGIN 
+   BL WORD 
+ \D CR DUP COUNT TYPE 
+   DUP C@ 0= IF 
+    DROP REFILL DROP                      
+   ELSE
+    DUP COUNT S" END-CROSS" COMPARE 0=    
+    IF
+     ONLY FORTH ALSO DEFINITIONS          
+     DROP EXIT
+    THEN
+    FIND IF                               
+     EXECUTE
+    ELSE
+     NUMBER? 0= ABORT" Undefined word" DROP 
+     STATE-T @ IF 
+      LITERAL-T   
+     THEN  
+    THEN
+   THEN
+  0 UNTIL
+;
+TRANSIENT DEFINITIONS
+FORWARD COLD
+FORWARD WARM
+FORWARD DIV-EX
+FORWARD BREAK-EX
+FORWARD TIMER-EX
+FORWARD THROW
+FORTH DEFINITIONS
+S" kernel.4" INCLUDED
+RESOLVE (DO) RESOLVE DOVAR
+RESOLVE (LOOP) RESOLVE (.") 
+RESOLVE COLD   RESOLVE WARM
+RESOLVE DIV-EX RESOLVE BREAK-EX
+RESOLVE TIMER-EX RESOLVE THROW
+RESOLVE (POSTPONE)
+: CELLS>TARGET
+  0 DO OVER I CELLS + @ OVER I CELLS + !-T LOOP 2DROP ;
+#THREADS T' FORTH-WORDLIST >BODY-T !-T
+TLINKS T' FORTH-WORDLIST >BODY-T 4 + #THREADS CELLS>TARGET 
+THERE   T' DP             >BODY-T !-T 
+SAVE-IMAGE kernel.img 
+ 
+BYE 

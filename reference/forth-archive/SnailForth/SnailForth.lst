@@ -1,0 +1,259 @@
+     1                                  ; nasm SnailForth.asm -fbin -l SnailForth.lst -o SnailForth && chmod +x SnailForth
+     2                                  
+     3                                  %define link 0
+     4                                  %define immediate 080h
+     5                                  
+     6                                  %macro head 3       ; macro with 3 arguments: 1 - name for forth dictionary, 2 - name for nasm label, 3 - additional flags
+     7                                  %%link dd link      ; %% defines label local to macro
+     8                                  %define link %%link ; link is redefined (to be used in next word definition)
+     9                                  %strlen %%count %1  ; length of the word name goes to 'count'
+    10                                  db %3 + %%count, %1 ; %3 contains flags value (e.g. for immediate words)
+    11                                  xt_ %+ %2:          ; %+ concatenates strings
+    12                                  %endmacro
+    13                                  
+    14                                  ; primitive and colon macros are the same
+    15                                  ; primitives are distinguished from colons by their location in the code
+    16                                  ; all primitives are in the beginning of the file before docolon label
+    17                                  
+    18                                  %macro primitive 2-3 0 ; 0 - default value for the 3rd paramseter (no flags)
+    19                                  head %1, %2, %3
+    20                                  %endmacro
+    21                                  
+    22                                  %macro colon 2-3 0
+    23                                  head %1, %2, %3
+    24                                  %endmacro
+    25                                  
+    26                                  %macro variable 3
+    27                                  head %1, %2, 0, dovar
+    28                                  val_ %+ %2 dd %3
+    29                                  %endmacro
+    30                                  
+    31                                  %define TEXTORG 0x00400000
+    32                                  %define MEMSIZE 1048576
+    33                                  %define TIBSIZE 80
+    34                                  %define STACKSIZE 4096
+    35                                  %define TIBPTR TEXTORG + MEMSIZE - TIBSIZE
+    36                                  %define SP0 TIBPTR - 4
+    37                                  %define RP0 SP0 - STACKSIZE
+    38                                  
+    39                                  BITS 32
+    40                                          org     TEXTORG
+    41                                  
+    42                                  ehdr:                           ; Elf32_Ehdr
+    43 00000000 7F454C4601010100                db   0x7F, "ELF", 1, 1, 1, 0     ; e_ident
+    44 00000008 00<rept>                        times 8 db   0
+    45 00000010 0200                            dw   2                  ; e_type
+    46 00000012 0300                            dw   3                  ; e_machine
+    47 00000014 01000000                        dd   1                  ; e_version
+    48 00000018 [C3010000]                      dd   _start       ; e_entry
+    49 0000001C 34000000                        dd   phdr - $$  ; e_phoff
+    50 00000020 00000000                        dd   0                  ; e_shoff
+    51 00000024 00000000                        dd   0                  ; e_flags
+    52 00000028 3400                            dw   ehdrsize   ; e_ehsize
+    53 0000002A 2000                            dw   phdrsize   ; e_phentsize
+    54 0000002C 0100                            dw   1                  ; e_phnum
+    55 0000002E 0000                            dw   0                  ; e_shentsize
+    56 00000030 0000                            dw   0                  ; e_shnum
+    57 00000032 0000                            dw   0                  ; e_shstrndx
+    58                                  
+    59                                  ehdrsize   equ   $ - ehdr
+    60                                  
+    61                                  phdr:                           ; Elf32_Phdr
+    62 00000034 01000000                        dd   1                  ; p_type
+    63 00000038 00000000                        dd   0                  ; p_offset
+    64 0000003C [00000000]                      dd   $$                 ; p_vaddr
+    65 00000040 [00000000]                      dd   $$                 ; p_paddr
+    66 00000044 F3010000                        dd   filesize   ; p_filesz
+    67 00000048 00001000                        dd   MEMSIZE    ; p_memsz
+    68 0000004C 07000000                        dd   7                  ; p_flags
+    69 00000050 00100000                        dd   0x1000             ; p_align
+    70                                  
+    71                                  phdrsize   equ   $ - phdr
+    72                                  
+    73                                  ; esi - forth instruction pointer
+    74 00000054 ACFF4F00                d_sp dd SP0
+    75 00000058 ACEF4F00                r_sp dd RP0
+    76 0000005C 00000000                reg0 dd 0
+    77 00000060 00000000                reg1 dd 0
+    78                                  
+    79                                      primitive 'lit', lit
+    80                              <1> head %1, %2, %3
+    81 00000064 00000000            <2> %%link dd link
+    82                              <2> %define link %%link
+    83                              <2> %strlen %%count %1
+    84 00000068 036C6974            <2> db %3 + %%count, %1
+    85                              <2> xt_ %+ %2:
+    86 0000006C AD                              lodsd
+    87 0000006D 8B25[54000000]                  mov esp, [d_sp]
+    88 00000073 50                              push eax
+    89 00000074 8925[54000000]                  mov [d_sp], esp
+    90 0000007A E989000000                      jmp next
+    91                                  
+    92                                      primitive '+', plus
+    93                              <1> head %1, %2, %3
+    94 0000007F [64000000]          <2> %%link dd link
+    95                              <2> %define link %%link
+    96                              <2> %strlen %%count %1
+    97 00000083 012B                <2> db %3 + %%count, %1
+    98                              <2> xt_ %+ %2:
+    99 00000085 8B25[54000000]                  mov esp, [d_sp]
+   100 0000008B 58                              pop eax
+   101 0000008C 5B                              pop ebx
+   102 0000008D 01D8                            add eax, ebx
+   103 0000008F 50                              push eax
+   104 00000090 8925[54000000]                  mov [d_sp], esp
+   105 00000096 EB70                            jmp next
+   106                                  
+   107                                      primitive '@', fetch
+   108                              <1> head %1, %2, %3
+   109 00000098 [7F000000]          <2> %%link dd link
+   110                              <2> %define link %%link
+   111                              <2> %strlen %%count %1
+   112 0000009C 0140                <2> db %3 + %%count, %1
+   113                              <2> xt_ %+ %2:
+   114 0000009E 8B25[54000000]                  mov esp, [d_sp]
+   115 000000A4 58                              pop eax
+   116 000000A5 FF30                            push dword[eax]
+   117 000000A7 EB5F                            jmp next
+   118                                  
+   119                                      primitive '!', store
+   120                              <1> head %1, %2, %3
+   121 000000A9 [98000000]          <2> %%link dd link
+   122                              <2> %define link %%link
+   123                              <2> %strlen %%count %1
+   124 000000AD 0121                <2> db %3 + %%count, %1
+   125                              <2> xt_ %+ %2:
+   126 000000AF 8B25[54000000]                  mov esp, [d_sp]
+   127 000000B5 58                              pop eax
+   128 000000B6 8F00                            pop dword[eax]
+   129 000000B8 8925[54000000]                  mov [d_sp], esp
+   130 000000BE EB48                            jmp next
+   131                                  
+   132                                      primitive 'exit', exit
+   133                              <1> head %1, %2, %3
+   134 000000C0 [A9000000]          <2> %%link dd link
+   135                              <2> %define link %%link
+   136                              <2> %strlen %%count %1
+   137 000000C4 0465786974          <2> db %3 + %%count, %1
+   138                              <2> xt_ %+ %2:
+   139 000000C9 8B25[58000000]                  mov esp, [r_sp]
+   140 000000CF 5E                              pop esi
+   141 000000D0 8925[58000000]                  mov [r_sp], esp
+   142 000000D6 EB30                            jmp next
+   143                                  
+   144                                      primitive 'syscall', syscall
+   145                              <1> head %1, %2, %3
+   146 000000D8 [C0000000]          <2> %%link dd link
+   147                              <2> %define link %%link
+   148                              <2> %strlen %%count %1
+   149 000000DC 0773797363616C6C    <2> db %3 + %%count, %1
+   150                              <2> xt_ %+ %2:
+   151 000000E4 8B25[54000000]                  mov esp, [d_sp]
+   152 000000EA 58                              pop eax
+   153 000000EB 5B                              pop ebx
+   154 000000EC 59                              pop ecx
+   155 000000ED 5A                              pop edx
+   156 000000EE CD80                            int 80h
+   157 000000F0 50                              push eax
+   158 000000F1 8925[54000000]                  mov [d_sp], esp
+   159 000000F7 EB0F                            jmp next
+   160                                  
+   161 000000F9 8B25[58000000]          docolon mov esp, [r_sp]
+   162 000000FF 56                              push esi
+   163 00000100 8925[58000000]                  mov [r_sp], esp
+   164 00000106 89C6                            mov esi, eax
+   165 00000108 AD                      next    lodsd
+   166 00000109 3D[09010000]                    cmp eax, $ ; if eax contains address from below
+   167 0000010E 77E9                            ja docolon ; this is a colon definition, jump to the docolon
+   168 00000110 FFE0                            jmp eax    ; otherwise this is a primitive, jump to the appropriate address
+   169                                  
+   170                                      colon 'drop', drop
+   171                              <1> head %1, %2, %3
+   172 00000112 [D8000000]          <2> %%link dd link
+   173                              <2> %define link %%link
+   174                              <2> %strlen %%count %1
+   175 00000116 0464726F70          <2> db %3 + %%count, %1
+   176                              <2> xt_ %+ %2:
+   177 0000011B [6C000000]-                     dd xt_lit, reg0
+   178 0000011F [5C000000]         
+   179 00000123 [AF000000]                      dd xt_store
+   180 00000127 [C9000000]                      dd xt_exit
+   181                                  
+   182                                      colon 'swap', swap
+   183                              <1> head %1, %2, %3
+   184 0000012B [12010000]          <2> %%link dd link
+   185                              <2> %define link %%link
+   186                              <2> %strlen %%count %1
+   187 0000012F 0473776170          <2> db %3 + %%count, %1
+   188                              <2> xt_ %+ %2:
+   189 00000134 [6C000000]-                     dd xt_lit, reg0
+   190 00000138 [5C000000]         
+   191 0000013C [AF000000]                      dd xt_store
+   192 00000140 [6C000000]-                     dd xt_lit, reg1
+   193 00000144 [60000000]         
+   194 00000148 [AF000000]                      dd xt_store
+   195 0000014C [6C000000]-                     dd xt_lit, reg0
+   196 00000150 [5C000000]         
+   197 00000154 [9E000000]                      dd xt_fetch
+   198 00000158 [6C000000]-                     dd xt_lit, reg1
+   199 0000015C [60000000]         
+   200 00000160 [9E000000]                      dd xt_fetch
+   201 00000164 [C9000000]                      dd xt_exit
+   202                                  
+   203                                  ;    colon 'accept', accept
+   204                                  ;        dd xt_swap    ; buffer goes to ecx, byte count to edx
+   205                                  ;        dd xt_lit, 3  ; sys_read, eax
+   206                                  ;        dd xt_lit, 0  ; stdin, ebx
+   207                                  ;        dd xt_syscall
+   208                                  ;        dd xt_lit, -1 ; read byte count includes terminating CR, decrementing
+   209                                  ;        dd xt_plus
+   210                                  ;        dd xt_exit
+   211                                  
+   212                                      colon 'type', type
+   213                              <1> head %1, %2, %3
+   214 00000168 [2B010000]          <2> %%link dd link
+   215                              <2> %define link %%link
+   216                              <2> %strlen %%count %1
+   217 0000016C 0474797065          <2> db %3 + %%count, %1
+   218                              <2> xt_ %+ %2:
+   219 00000171 [34010000]                      dd xt_swap    ; buffer goes to ecx, byte count to edx
+   220 00000175 [6C000000]01000000              dd xt_lit, 1  ; stdout, ebx
+   221 0000017D [6C000000]04000000              dd xt_lit, 4  ; sys_write, eax
+   222 00000185 [E4000000]                      dd xt_syscall
+   223 00000189 [1B010000]                      dd xt_drop
+   224 0000018D [C9000000]                      dd xt_exit
+   225                                  
+   226                                      colon 'bye', bye
+   227                              <1> head %1, %2, %3
+   228 00000191 [68010000]          <2> %%link dd link
+   229                              <2> %define link %%link
+   230                              <2> %strlen %%count %1
+   231 00000195 03627965            <2> db %3 + %%count, %1
+   232                              <2> xt_ %+ %2:
+   233 00000199 [6C000000]00000000              dd xt_lit, 0 ; edx not used
+   234 000001A1 [6C000000]00000000              dd xt_lit, 0 ; ecx not used
+   235 000001A9 [6C000000]2A000000              dd xt_lit, 42 ; ebx exit code
+   236 000001B1 [6C000000]01000000              dd xt_lit, 1 ; eax sys_exit
+   237 000001B9 [E4000000]                      dd xt_syscall
+   238                                  
+   239 000001BD 48656C6C6F0A            hello db 'Hello', 10
+   240                                  
+   241                                  _start:
+   242 000001C3 BE[DB010000]                mov esi, xt_interpret
+   243 000001C8 E93BFFFFFF                  jmp next
+   244                                  
+   245                                      colon 'interpret', interpret
+   246                              <1> head %1, %2, %3
+   247 000001CD [91010000]          <2> %%link dd link
+   248                              <2> %define link %%link
+   249                              <2> %strlen %%count %1
+   250 000001D1 09696E746572707265- <2> db %3 + %%count, %1
+   251 000001DA 74                  <2>
+   252                              <2> xt_ %+ %2:
+   253 000001DB [6C000000]-                     dd xt_lit, hello
+   254 000001DF [BD010000]         
+   255 000001E3 [6C000000]06000000              dd xt_lit, 6
+   256 000001EB [71010000]                      dd xt_type
+   257 000001EF [99010000]                      dd xt_bye
+   258                                  
+   259                                  filesize   equ   $ - $$

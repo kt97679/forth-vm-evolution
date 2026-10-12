@@ -1,0 +1,686 @@
+CROSS-COMPILE
+COLD 
+WARM 
+DIV-EX 
+BREAK-EX 
+TIMER-EX 
+0 
+OPCODE NOOP        
+1 
+OPCODE SWAP     
+2 
+OPCODE ROT   
+3 
+OPCODE 0=    
+4 
+OPCODE NEGATE  
+5 
+OPCODE UM*     
+6 
+OPCODE C@      
+7 
+OPCODE @       
+ 
+8 
+OPCODE +           
+9 
+OPCODE AND     
+10 
+OPCODE OR      
+11 
+OPCODE XOR     
+12 
+OPCODE U<      
+13 
+OPCODE <      
+14 
+OPCODE LSHIFT 
+15 
+OPCODE RSHIFT 
+16 
+OPCODE UM/MOD 
+17 
+OPCODE +CY    
+18 
+OPCODE SCAN1  
+19 
+OPCODE SPECIAL 
+20 
+OPCODE DROP   
+21 
+OPCODE >R     
+22 
+OPCODE C!A    
+23 
+OPCODE !A     
+24 
+OPCODE DUP    
+25 
+OPCODE OVER   
+26 
+OPCODE R@     
+27 
+OPCODE R>     
+28 
+OPCODE 0      
+29 
+OPCODE 1      
+30 
+OPCODE 4      
+31 
+OPCODE LIT    
+: DOVAR  
+  R> ; 
+M: -    
+  NEGATE + ;
+M: =    
+  - 0= ;
+M: 0<   
+  0 < ;
+M: >    
+  SWAP < ;
+M: EMIT 
+  1 1 + 32 SPECIAL ;
+M: KEY  
+  1 32 SPECIAL ;
+M: BYE    
+  0 32 SPECIAL ;
+: CR  
+   13 EMIT 10 EMIT ;
+VARIABLE S0 
+VARIABLE R0 
+M: SP@      
+   0 SPECIAL ;
+M: SP!      
+   1 SPECIAL ;
+M: RP@      
+  02 SPECIAL ;
+M: RP!      
+  03 SPECIAL ;
+: 2/  
+  DUP $80000000 AND SWAP 1 RSHIFT OR ;
+: DEPTH 
+  SP@ S0 @ SWAP - 2/ ; 
+: (DO)   
+  R> ROT ROT SWAP >R >R >R ;
+M: I 
+     R@ ;
+: (LOOP) 
+  R> R> 1 + DUP R@ =   
+  IF 
+   R> DROP DROP 4 + >R 
+  ELSE 
+   >R @ >R  
+  THEN ;
+M: -1 
+  1 NEGATE ;
+M: COUNT  
+   DUP 1 + SWAP C@ ;
+: TYPE 
+  DUP IF 0 DO DUP I + C@ EMIT LOOP DROP ELSE DROP DROP THEN ; 
+M: ALIGNED 
+  4 1 NEGATE + + 4 NEGATE AND ;
+: (.") 
+  R> COUNT OVER OVER TYPE + ALIGNED >R ;
+32 
+CONSTANT BL 
+M: PICK  
+  1 + 1 1 + LSHIFT SP@ + @ ;
+M: C!   
+   C!A DROP ; 
+M: ! 
+   !A DROP ;
+M: 1+ 
+   1 + ;
+M: 1- 
+   1 - ;
+ 
+M: CHAR+ 
+   1 + ;
+M: CELL+ 
+    4 + ;
+M: CELLS 
+   1 1 + LSHIFT ;
+M: CELL- 
+   4 - ;
+M: +! 
+   DUP @ ROT + SWAP !A DROP ;
+M: D+ 
+   >R ROT 0 +CY ROT + R> + ;
+M: 2DUP  
+   OVER OVER ;
+: ?DUP 
+   DUP IF DUP THEN ;
+: MIN 
+   OVER OVER > IF SWAP THEN DROP ;
+M: DNEGATE 
+   >R NEGATE R> NEGATE OVER 0= 0=  + ;  
+: ABS 
+   DUP 0< IF NEGATE THEN ;
+: DABS 
+   DUP 0< IF DNEGATE THEN ;
+: SM/REM 
+  2DUP XOR >R OVER >R 
+  ABS >R DABS R>
+  UM/MOD
+  SWAP R> 0< IF NEGATE THEN SWAP
+  R> 0< IF NEGATE THEN ;
+: FM/MOD 
+  DUP >R OVER OVER XOR >R
+  SM/REM
+  OVER R> 0< AND IF SWAP R@ + SWAP 1 - THEN R> DROP ;
+M: * 
+  UM* DROP ;
+M: S>D  
+   DUP 0< ;
+: /MOD  
+   SWAP S>D ROT FM/MOD ;
+: /  
+ /MOD SWAP DROP ;
+: EXIT 
+   R> DROP ;
+: EXECUTE  
+  >R ;
+: ?THROW 
+  SWAP IF THROW ELSE DROP THEN ;  
+VARIABLE BASE 
+VARIABLE DP   
+VARIABLE HLD 
+VARIABLE DPL 
+: DECIMAL 
+  10 BASE ! ;
+: SPACE  
+  32 EMIT ;
+: HERE 
+  DP @ ;
+: PAD 
+  DP @ 84 + ;
+: MU/MOD 
+  >R 0 R@ UM/MOD R> SWAP >R UM/MOD R> ;
+: HOLD 
+  1 NEGATE HLD +! HLD @ C! ;
+: # 
+  BASE @ MU/MOD ROT DUP 9 > IF 7 + THEN 48 + HOLD ; 
+: #S 
+  BEGIN # OVER OVER OR 0= UNTIL ;
+: SIGN 
+  0< IF 45 HOLD THEN ;
+: <# 
+  PAD HLD ! ;
+: #> 
+  DROP DROP HLD @ PAD OVER - ;
+: D. 
+  SWAP OVER DABS <# #S ROT SIGN #> TYPE SPACE ;
+: . 
+  S>D D. ;
+: CMOVE 
+   DUP IF >R 
+   BEGIN
+    OVER C@ SWAP C!A 1 + SWAP 1 + SWAP 
+    R> 1 - DUP >R 0=
+   UNTIL
+   R>
+   THEN
+   DROP DROP DROP
+;
+: FILL 
+  OVER IF >R 
+  BEGIN
+   R@ ROT C!A 1 + SWAP   
+   1 - DUP 0= 
+  UNTIL
+  R>
+  THEN
+  DROP DROP DROP
+;     
+M: OSCALL 
+  32 SPECIAL ;
+: READ-LINE  
+  1- 10 OSCALL ;
+VARIABLE TERMMODE
+: SETRAW 
+   1 4 32 SPECIAL 1 TERMMODE ! ;
+: ACCEPT 
+  >R 0
+  BEGIN
+   KEY DUP 8 = OVER 127 = OR 
+   IF 
+     DROP DUP IF 1-  TERMMODE @ IF 8 EMIT THEN THEN 
+   ELSE
+     DUP 10 = OVER 13 = OR 
+     IF 
+      DROP SWAP DROP R> DROP SPACE EXIT      
+     ELSE
+      TERMMODE @ IF DUP EMIT THEN 
+      OVER R@ - IF   
+       >R OVER OVER + R> SWAP C! 1+
+      ELSE
+       DROP
+      THEN
+     THEN 
+   THEN 
+  0 UNTIL     
+;
+VARIABLE TIB  
+80 CHARS-T ALLOT-T
+VARIABLE #TIB 
+VARIABLE >IN  
+VARIABLE SID  
+VARIABLE SRC  
+VARIABLE #SRC 
+VARIABLE LOADLINE 
+: QUERY 
+  TIB 80 ACCEPT #TIB ! ;
+: SOURCE 
+   SRC @ #SRC @ ;
+: SOURCE-ID 
+   SID @ ;
+: REFILL 
+  SOURCE-ID -1 = IF
+   0 
+  ELSE
+   SOURCE-ID IF
+    SRC @ 256 SOURCE-ID READ-LINE -37 ?THROW
+    SWAP #SRC ! 0 >IN !
+    #SRC @ IF SOURCE OVER + SWAP DO I C@ 9 = IF 32 I C! THEN LOOP THEN
+    1 LOADLINE +!
+    
+    
+   ELSE
+    QUERY #TIB @ #SRC ! 0 >IN ! -1 
+   THEN 
+  THEN
+; 
+: SCAN 
+  BEGIN
+   OVER
+  WHILE
+   ROT DUP C@ >R OVER R> = 
+   IF
+    ROT ROT DROP EXIT
+   THEN
+   1+ ROT ROT SWAP 1- SWAP 
+  REPEAT DROP    
+;  
+ 
+: SKIP 
+  BEGIN
+   OVER
+  WHILE
+   ROT DUP C@ >R OVER R> - 
+   IF
+    ROT ROT DROP EXIT
+   THEN
+   1+ ROT ROT SWAP 1- SWAP 
+  REPEAT DROP    
+;  
+: PARSE 
+  >R SOURCE >IN @ - SWAP >IN @ + R> OVER >R >R SWAP 
+  R@ SKIP OVER R> SWAP >R SCAN IF 1 >IN +! THEN 
+  DUP R@ - R> SWAP 
+  ROT R> - >IN +! ;
+: PLACE 
+  OVER OVER C! 
+  1+ SWAP CMOVE ;
+: WORD 
+  PARSE HERE PLACE HERE BL HERE COUNT + C! ;
+VARIABLE CAPS 
+: UPPERCASE? 
+   CAPS @ HERE C@ AND IF
+   HERE COUNT 0 DO 
+    DUP I + C@ DUP 96 > SWAP 123 < AND IF DUP I + DUP C@ 32 - SWAP C! THEN
+   LOOP DROP
+  THEN
+;
+VARIABLE NAMEBUF 
+28 ALLOT-T
+VARIABLE FORTH-WORDLIST 
+32 CELLS-T ALLOT-T
+VARIABLE LAST 
+VARIABLE CONTEXT 28 ALLOT-T 
+VARIABLE #ORDER 
+VARIABLE CURRENT 
+: HASH 
+  >R OVER C@ 1 LSHIFT OVER 1 > IF ROT CHAR+ C@ 2 LSHIFT XOR ELSE ROT DROP 
+   THEN XOR 
+  R> 1- AND 
+;  
+                        
+: NAME>BUF   
+  NAMEBUF 32 0 FILL 32 MIN NAMEBUF PLACE ; 
+: SEARCH-WORDLIST 
+  ROT ROT 
+  NAME>BUF
+  NAMEBUF COUNT 2 PICK @ HASH 1+ CELLS SWAP + @ 
+  DUP IF
+  BEGIN 
+   NAMEBUF @ OVER @ $1FFFFFFF AND = 
+           
+   IF 
+    NAMEBUF 4 + 
+    OVER 4 +
+    4 >R
+    BEGIN
+     OVER @ OVER @ - >R
+     CELL+ SWAP CELL+ SWAP R> R> CELL+ >R 
+    UNTIL 
+    R> NAMEBUF C@ 1 + ALIGNED 4 + = IF 
+     SWAP DROP SWAP C@  
+     64 AND IF 
+      1
+     ELSE
+      -1
+     THEN
+     SWAP 4 - SWAP EXIT 
+    THEN
+    DROP DROP 
+   THEN
+   4 - @ DUP 0=  
+  UNTIL
+  THEN
+  DROP 0 
+;
+: FIND 
+  #ORDER @ DUP 1 > IF
+   CONTEXT #ORDER @ 1- CELLS + DUP @ SWAP 4 - @ = 
+  ELSE 0 THEN
+  IF 1- THEN 
+  BEGIN
+   DUP
+  WHILE
+   1- >R
+   DUP COUNT 
+   R@ CELLS CONTEXT + @ SEARCH-WORDLIST
+   DUP
+   IF
+    R> DROP ROT DROP EXIT 
+   THEN 
+   DROP R>
+  REPEAT
+;
+: DIGIT? 
+  48 - DUP 0< IF DROP 0 EXIT THEN
+  DUP 9 > OVER 17 < AND IF DROP 0 EXIT THEN
+  DUP 9 > IF 7 - THEN
+  DUP BASE @ < 0= IF DROP 0 EXIT THEN
+  -1  
+;
+: >NUMBER 
+  BEGIN
+   DUP
+  WHILE
+   1 - >R
+   COUNT DIGIT? 0= 
+   IF
+    R> 1+ SWAP 1 - SWAP  EXIT
+   THEN  
+   SWAP >R 
+   >R 
+   SWAP BASE @ UM* ROT BASE @ * 0 SWAP D+ 
+   R> 0 D+                                
+   R> R> 
+  REPEAT
+;  
+  
+: NUMBER? 
+  -1 DPL !
+  BASE @ >R
+  COUNT   
+  OVER C@ 45 = DUP >R IF 1 - SWAP 1 + SWAP THEN 
+  OVER C@ 36 = IF 16 BASE ! 1 - SWAP 1 + SWAP THEN   
+  OVER C@ 35 = IF 10 BASE ! 1 - SWAP 1 + SWAP THEN   
+  DUP  0 > 0= IF  R> DROP R> BASE ! 0 EXIT THEN   
+  >R >R 0 0 R> R>
+  BEGIN  
+   >NUMBER  
+   DUP IF OVER C@ 46 = IF 1 - DUP DPL ! SWAP 1 + SWAP ELSE 
+         R> DROP R> BASE ! 0 EXIT THEN   
+       THEN    
+  DUP 0= UNTIL DROP DROP R> IF DNEGATE THEN    
+  R> BASE ! -1  
+;
+VARIABLE ERROR$ 
+VARIABLE HANDLER 
+: THROW 
+DUP IF
+ HANDLER @ IF
+  HANDLER @ RP!
+  RP@ 4 + @ HANDLER ! 
+  R>                  
+  SWAP >R SP! DROP R> 
+  R> DROP             
+                      
+ ELSE
+  WARM 
+ THEN
+ELSE
+ DROP 
+THEN  
+;  
+: DIV-EX 
+  -10 THROW ;
+: TIMER-EX 
+  49 SPECIAL ;
+: BREAK-EX 
+  -28 THROW ;
+: CATCH 
+ HANDLER @ >R  
+ SP@ >R        
+ RP@ HANDLER ! 
+ EXECUTE 
+ RP@ 4 + @ HANDLER ! 
+ R> DROP R> DROP 
+ 0 
+;
+: ALLOT 
+  DP +! ;
+: , 
+  HERE ! 1 CELLS ALLOT ;
+: C, 
+  HERE C! 1 ALLOT ;
+: ALIGN 
+  BEGIN HERE 03 AND WHILE 0 C, REPEAT ;
+: >NAME 
+  BEGIN 1- DUP C@ 128 AND UNTIL ;
+: HEADER 
+  ALIGN 0 , 
+  HERE LAST !         
+  32 WORD UPPERCASE?
+           DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP
+                       
+  DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @ HERE CELL- !
+                       
+  C@ 1+ HERE C@ 128 + HERE C! ALLOT ALIGN 
+                       
+; 
+: REVEAL 
+  LAST @ DUP COUNT 31 AND 
+  CURRENT @ @ HASH        
+  1+ CELLS CURRENT @ + ! ;
+: CREATE 
+  HEADER REVEAL POSTPONE DOVAR ;
+: VARIABLE 
+  CREATE 0 , ;
+: CONSTANT 
+  HEADER REVEAL $8000003F , , ;
+VARIABLE STATE 
+: ]  
+  1 STATE ! ;
+: [  
+  0 STATE ! ; IMMEDIATE
+VARIABLE OPLOC 
+  
+VARIABLE OPSHIFT 
+: CODEFLUSH   
+ 32 OPSHIFT ! ;
+: INSERT-OPCODE  
+   OPSHIFT @ 30 > IF                                            
+      HERE OPLOC ! 1 ,  
+      1 OPSHIFT !          
+   THEN   
+   OPSHIFT @ LSHIFT OPLOC @ +! 
+   5 OPSHIFT +!            
+;
+: LITERAL  
+  31 INSERT-OPCODE , ; IMMEDIATE
+: EXPAND-MACRO 
+          BEGIN
+            DUP @         
+            DUP 1 AND 0= -100 ?THROW 
+            1 RSHIFT
+            SWAP 4 + SWAP   
+            6 0 DO 
+              DUP 31 AND ?DUP IF 
+               DUP INSERT-OPCODE
+               31 = IF 
+                      OVER @ , SWAP 4 + SWAP 
+                    THEN
+              THEN
+              5 RSHIFT    
+            LOOP
+            1 AND 
+           UNTIL
+           DROP
+;
+: COMPILE, 
+  DUP >NAME C@ 32 AND 
+  IF 
+   EXPAND-MACRO
+  ELSE
+   DUP @ LIT DOVAR = IF
+    4 + LITERAL 
+   ELSE
+    DUP @ $8000003F = 
+    IF
+     4 + @ LITERAL  
+    ELSE
+     CODEFLUSH ,    
+    THEN
+   THEN
+  THEN
+;
+VARIABLE CSP 
+VARIABLE 'LEAVE  
+: !CSP 
+   SP@ CSP ! ;
+: ?CSP 
+   SP@ CSP @ - -22 ?THROW ;
+: ; 
+    $80000000 OPSHIFT @ 32 = IF 
+        1 + ,              
+    ELSE 
+        OPLOC @ +! 
+    THEN CODEFLUSH [ 
+    ?CSP REVEAL
+; IMMEDIATE
+: (POSTPONE) 
+  R> DUP @ SWAP CELL+ >R 
+  DUP >NAME C@ 64 AND IF EXECUTE ELSE COMPILE, THEN 
+;  
+: : 
+  !CSP HEADER ] ;
+: BEGIN 
+  CODEFLUSH HERE ; IMMEDIATE
+: UNTIL 
+  CODEFLUSH 02 + , ; IMMEDIATE 
+: IF    
+  CODEFLUSH HERE 1 CELLS ALLOT ; IMMEDIATE
+: THEN 
+  CODEFLUSH HERE 02 + SWAP ! ; IMMEDIATE
+: ELSE 
+  28 INSERT-OPCODE POSTPONE IF SWAP POSTPONE THEN ; IMMEDIATE 
+: WHILE  
+  POSTPONE IF SWAP ; IMMEDIATE
+: REPEAT 
+  28 INSERT-OPCODE POSTPONE UNTIL POSTPONE THEN ; IMMEDIATE
+: '  
+  32 WORD UPPERCASE? FIND 0= -13 ?THROW ;
+: ['] 
+  ' LITERAL ; IMMEDIATE
+: DO 
+  POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+: RESOLVE-LEAVE 
+          'LEAVE @ 
+          BEGIN DUP WHILE DUP @ HERE ROT ! REPEAT DROP ; 
+: LOOP  
+  POSTPONE (LOOP) , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+: ."  
+   POSTPONE (.") 34 WORD C@ 1+ ALLOT ALIGN ; IMMEDIATE 
+: POSTPONE 
+  POSTPONE (POSTPONE) ' , ; IMMEDIATE
+: IMMEDIATE 
+  LAST @ DUP C@ 64 OR SWAP C! ;
+: 
+  41 PARSE DROP DROP ; IMMEDIATE  
+: \
+  SOURCE >IN ! DROP ; IMMEDIATE
+: ?STACK 
+  DEPTH DUP 0< -4 ?THROW 10000 > -3 ?THROW ;
+: INTERPRET 
+  BEGIN
+   32 WORD UPPERCASE?  DUP C@ 
+  WHILE
+   FIND DUP 
+   IF 
+    -1 = STATE @ AND 
+    IF
+     COMPILE,
+    ELSE 
+     EXECUTE 
+    THEN
+   ELSE DROP  
+    NUMBER? 0= -13 ?THROW  
+    DPL @ 1+ IF
+     STATE @ IF SWAP LITERAL LITERAL THEN  
+    ELSE  
+     DROP STATE @ IF LITERAL THEN 
+    THEN
+   THEN  ?STACK  
+  REPEAT   DROP
+;
+VARIABLE INCLUDE-BUFFER 
+508 ALLOT-T
+VARIABLE INCLUDE-POINTER 
+VARIABLE ERRORS 
+: ERROR-SOURCE 
+     SID @ 0 > IF
+      ." in line " LOADLINE @ . 
+     THEN
+     HERE COUNT TYPE CR WARM
+;  
+: QUIT 
+  R0 @ RP! [
+  TIB SRC ! 0 SID !
+  INCLUDE-BUFFER INCLUDE-POINTER !  
+  32 OPSHIFT ! 
+  BEGIN
+   REFILL DROP ['] INTERPRET CATCH DUP 0= IF 
+         DROP STATE @ 0= IF ." OK" THEN CR
+   ELSE 
+     DUP -2 = IF
+      ERROR$ @ COUNT TYPE SPACE
+     ELSE
+      ERRORS @
+      BEGIN DUP WHILE
+       OVER OVER @ = IF 8 + COUNT TYPE SPACE ERROR-SOURCE THEN 4 + @   
+      REPEAT DROP       
+      ." Error " . 
+     THEN ERROR-SOURCE
+   THEN      
+  0 UNTIL
+;
+: WARM  
+  R0 @ RP! S0 @ SP! DECIMAL 
+  2 #ORDER !
+  FORTH-WORDLIST CONTEXT ! 
+  FORTH-WORDLIST CONTEXT CELL+ !
+  FORTH-WORDLIST CURRENT ! 
+  SETRAW
+  0 HANDLER !
+  QUIT ;
+: COLD 
+  SP@ S0 !
+  RP@ 4 + R0 ! 
+  ." Welcome to Forth " CR 
+  WARM ;
+END-CROSS

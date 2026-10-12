@@ -4,6 +4,9 @@ Append-only: one entry per session, newest last. A wrong entry is
 corrected by a later one that says so, not edited (prompts/12-progress-log).
 History before this log: the git log, `FINDINGS-*.md`, `lab/*/README.md`.
 
+**A new chat starts at the HANDOFF entry at the end of this file (Iteration 213):
+the state, the routine, the owner's standing decisions, the open items.**
+
 ## 2026-10-03 - Claude, commits 868c4c3 .. this one
 
 **Done.** The evolution lab's gene pool grew: superinstructions (pairs from
@@ -3819,3 +3822,167 @@ and the loaded files define it - the count catches a failed redefinition an
 older definition hides (fsys 5's READ-LINE behind fsys 3's). Tested both ways:
 the original remark stops the run (FS-FILL, FS-TAKE missing); READ-LINE alone
 broken stops it (READ-LINE 2 of 3). All 2,666 dumps pass; 7 of 7 stages.
+
+## Iteration 213 - 2026-10-12 - Claude: HANDOFF - start here in a new chat
+
+Read this entry whole, then `prompts/` (the project's conventions), then the
+entries it points to. Everything needed is in the repository; nothing from
+earlier chats or uploads is needed - the owner's Forth collection (forth.tgz)
+is kept in `reference/forth-archive/` (README there), the packs' results are in
+`results/`. Earlier chats' transcripts will not be there: this log and
+`results/` are the record.
+
+### What this is
+
+An evolutionary search over the design of a Forth system: the engine
+(`engine/vm-lab.c`, computed-goto C), the kernel (`forth/kernel.4`, cross-
+compiled by `forth/cross.4` in the cell system), the converter (`tools/layout.py`
+with `tools/sod16.py`: the cell-threaded dump into the byte-coded CV8 / tag-2
+image), and the evolver (`lab/evolve/evolve.py`: NSGA-II over genes; three
+objectives - speed: the geometric mean of median cpu time over the selection
+workloads against the hand-made s6; size: engine plus image bytes; memory:
+rss). The owner, Kirill Timofeev, runs the seeds on his laptop (AMD Ryzen 7 PRO
+8840HS, "fury") per `lab/evolve/NEXT-RUN` and sends back two packs: the run
+(`forth-vm-evolution-seedN-<commit>-fury-<time>_tar.gz`) and the comparison
+(`...-compare-fronts-...`). Commits are authored `Kirill Timofeev
+<kt97679@gmail.com>`; deliveries are git bundles (`sh tools/make-bundle.sh
+/mnt/user-data/outputs`, then present the file).
+
+### The state now
+
+- master: Iteration 213 (this entry). The after-seed-42 batch is applied
+  (Iteration 209: `results/applied-after-seed42/ORDER.md`).
+- Seed 43 is RUNNING on the laptop (started 2026-10-12 ~03:00, 9 hours - the
+  owner's choice - including the re-measure and the comparison), at Iteration
+  210's commit: `seed 43 tag2 9h then experiment compare-fronts.py --rounds 6
+  --frontier --cpus 2,8`. Its predictions: `results/predictions.md`.
+- The after-seed-43 batch, pending in `results/pending/` (ORDER.md): (1)
+  rebind - the converter rebinds a primitive to its NEWEST Forth redefinition;
+  (2) fsys 5 - READ-LINE reading ahead where a file can seek; (3) the dump
+  guard. No kernel change: no reseed.
+- **Seed 43 caveat:** it runs with the rebind fault (Iteration 211): its fsys
+  4 is fsys 3 plus dead bytes (the buffered WRITE was never bound), so fsys 4
+  will look strictly worse than fsys 3 - seed 43's front says nothing about
+  buffering. Its fsys 3/4 designs work.
+
+### Processing a returned seed (the routine - seeds 41 and 42 were done so)
+
+1. Unpack both packs into /tmp. Check `pack/tests.log` (PASS), `jail.log`,
+   `validate.log`; `report.md`'s count; `next-run.log` times.
+2. The comparison judges itself (`compare-fronts.md`, "Judging the runs"):
+   fastest, smallest, memory (+-8 KB), hypervolume, best Q - a run is small
+   only if all five are. Note the Q-best design of all runs.
+3. From the run's `db.jsonl`: deaths by cause, corpus deaths, crossover share,
+   children and front designs "via the attic", the final front by how made,
+   the new genes on the front (`E.first_front`, `E.express`).
+4. Score the seed's predictions in `results/predictions.md`; write the next.
+5. Write `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md` (a heading of the
+   verdict and facts, then the pack's report.md) - `ans-check.py` and other
+   tools find genomes through these files.
+6. The pack's `results-measured-here.patch` has so far been the same laptop
+   stash every time, already on master: check with `git apply -R --check`.
+7. Apply the pending batch per `results/pending/ORDER.md` (reseed first with
+   `tools/reseed.sh` only if a patch changes `forth/kernel.4`), then
+   `LAYOUTS=1 bash tools/build-stages.sh`, `bash tools/run-tests.sh` (PASS),
+   `python3 lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL).
+8. Every front design alive with the new code: the run's front and the joint
+   front from compare-fronts.md, genomes from the run's db (earlier runs' for
+   the joint front) - build and run the corpus (seed 42: 101 of 101).
+9. Held out: `python3 lab/evolve/ans-check.py --ids <12 of the front>` - 0
+   differ from s6, s6 2,119 tests, 0 failed, 14 of 14 whole.
+10. `git mv results/pending results/applied-after-seedN`; append the session to
+   `results/compare-fronts-amd-ryzen-7-pro-8840hs.md`; set `lab/evolve/NEXT-RUN`
+   (the next seed, the owner's hours); a PROGRESS entry; commit; bundle.
+
+### The owner's standing decisions
+
+- Judging by five measures (Iterations 188-189): hypervolume and best Q count
+  with the extremes; the stopping rule counts small runs. Seed 42 showed why:
+  small by the extremes, not small by hypervolume (+4.8%).
+- Demote, don't delete: the attic (demoted designs with gene values no
+  survivor has; a tenth of parents from it); the 8 best by Q always survive.
+- Offer trade-offs to evolution as genes rather than deciding: a small size
+  cost for a large speed gain is welcome (threads, fsys levels, rtloop...).
+- Noisy timing questions go to the laptop; here (a VM, +-10%) decide by the
+  profiler's dispatch counts, which are deterministic.
+- The surrogate screen: pure Python, 30%/5%, one screened child in ten audited.
+- I/O (Iterations 202-211): keep both families - native I/O primitives
+  (fsys 0) and the single SYSCALL primitive (fsys 1-5) - "to ensure we are not
+  losing anything". No buffering of input from stdin, pipes or anything that
+  cannot seek; output buffers on the heap, never in the dictionary; output to a
+  terminal unbuffered (Gforth's rule; the standard leaves it open); read-ahead
+  only where a file can seek, given back before any other use.
+- From the Forth collection: code only from public-domain, permissive or the
+  owner's own sources; GPL ones (SOD32, gforth, SP-Forth, bigFORTH) ideas only.
+- Run lengths: seeds 41-42 6 hours, seed 43 9 hours - ask for the next.
+- Every patch: tested, then verified to apply in order on a fresh clone and to
+  reproduce the tested files; batches wait in `results/pending/` with ORDER.md.
+
+### Open items (roughly by value)
+
+1. Seed 43: process (above); mind the fsys 4 caveat; check the crossover share
+   (33% recorded at XOVER 0.25 in seed 42 - explained as remade repeats, which
+   are mostly mutation-only: verify from the db).
+2. The after-seed-43 batch: apply; NEXT-RUN seed 44 (ask the hours).
+3. fsys follow-ups: READ (stdin) finds the editing character in a Forth loop
+   (SCAN can find one character; the four need care); level 5's bookkeeping
+   costs more dispatches than level 4 (6.95M against 6.76M, the kernel
+   workload) for fewer system calls - tighten; shared loops in the libraries.
+4. Packed names (colorForth): `reference/forth-archive/colorforth-chars.md` -
+   our names need characters colorForth lacks: an escape code or our own
+   frequency table; NAME=? and the chain walk as cell compares.
+5. A lookup cache beside the threads gene (results/loop-audit.md): name to
+   word, cleared on every definition and order change.
+6. The next keeping forms: DUP before ?BRANCH, OVER before C@ (regprice.py,
+   results/price-hybrid.md).
+7. Instruction replication; a sweep of the engine's constants.
+8. Engine findings, not yet acted on: `1 0 /` kills every engine with SIGFPE
+   (the standard leaves it ambiguous; THROW -10 would be kinder); the native
+   engine loses buffered output on a signal death and buffers terminal output.
+9. Settled, not to redo: callrel (worse, results/drafts/callrel*), PGO (not a
+   gene, results/drafts/pgo.md), run-time folding (one constant expression in
+   all workloads), NAME=? a cell at a time (no gain - Iteration 203),
+   regpin (in, the laptop decides), dskew (the laptop judges).
+
+### Lessons - how faults got in, and the checks that now catch them
+
+- A passing gate does not prove the intended code ran: twice a fallback of the
+  same name answered (fsys 5's READ-LINE never loaded; fsys 4's WRITE never
+  bound). Profile and look for the new words; the dump guard (Iteration 212)
+  now stops a run whose libraries do not load whole.
+- The dump lists words NEWEST first; Forth remarks must be in comments; the
+  cell system has no NIP or TUCK; the kernel never uses ?DO (the translator has
+  no case for it); a colon word shaped like a stub (TYPE is `WRITE ;`) is read
+  as a stub - rebinding handles it.
+- Patches: commit each locally before diffing the next (a patch once carried
+  the one before); verify the whole batch in order on a fresh clone.
+- Tool calls run /bin/sh (no bash-only syntax); about 300 s a call - run-tests
+  takes ~4 min alone, ans-check ~2.5 min a design at one setting; split.
+- After changing `forth/` or `engine/`, rebuild the stages - the evolver's
+  freshness check refuses a stale build.
+
+### The environment
+
+Work as user `claude` (`runuser -u claude`) in
+`/home/claude/forth-vm-evolution` (clone the bundle there); scratch in /tmp. A
+scratch tree for a batch in progress: clone master, apply the pending patches,
+build stages there. Uploads arrive in `/mnt/user-data/uploads`; deliver to
+`/mnt/user-data/outputs`.
+
+### Where things are
+
+- The log: this file; the goals: `GOALS.md`; conventions: `prompts/`.
+- The evolver and its tools: `lab/evolve/` (README.md: every gene and process
+  change by iteration); `evolve.py`, `compare-fronts.py`, `ans-check.py`,
+  `outbuf-check.py`, `regprice.py`, `loopwords.py`, `surrogate-*.py` (in
+  results/drafts), `NEXT-RUN`.
+- Results: `results/evolve-amd-ryzen-7-pro-8840hs-seed*.md` (each run),
+  `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` (every session),
+  `results/predictions.md`, `results/gp-deep-dive.md`, `results/weighing.md`,
+  `results/loop-audit.md`, `results/forth-implementations-survey.md`,
+  `results/forth-standard-tests.md`, `results/drafts/` (designs and negative
+  results: fsys/single-syscall.md, pgo.md, callrel*, surrogate-offline.md).
+- Batches: `results/applied-after-seed41/`, `results/applied-after-seed42/`,
+  `results/pending/` (after seed 43).
+- The Forth collection: `reference/forth-archive/` and
+  `results/forth-collection-catalog.md`.

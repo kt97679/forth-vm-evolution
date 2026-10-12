@@ -1,0 +1,319 @@
+     1                                  [bits 16]
+     2                                  [org 100h]
+     3                                  
+     4 00000000 8CC8                        mov      AX,CS          ;Make sure all segments
+     5 00000002 8ED8                        mov      DS,AX          ;point to this code
+     6                                  ;mov     ax, 0x0000
+     7                                  ;mov     ss, ax
+     8                                  
+     9                                  virtual_machine:
+    10 00000004 66B8[AA020000]              mov eax, vmlabels + 144
+    11 0000000A 66BB[15020000]              mov ebx, vmrpstore
+    12 00000010 B92400                      mov cx, 36
+    13 00000013 6631D2                      xor edx, edx
+    14                                  adjust_labels:
+    15 00000016 6683E804                    sub eax, 4
+    16 0000001A 678A91[5E000000]            mov dl, [vmdata - 1 + ecx]
+    17 00000021 6629D3                      sub ebx, edx
+    18 00000024 66678918                    mov [eax], ebx
+    19 00000028 E2EC                        loop adjust_labels
+    20 0000002A BF[0004]                    mov di, code
+    21 0000002D 66BD00FF0000                mov ebp, 0xff00
+    22 00000033 66BCFCFF0000                mov esp, 0xfffc
+    23 00000039 6657                        push edi
+    24                                  next:
+    25 0000003B 66678B07                    mov eax, [edi]
+    26 0000003F 6683C704                    add edi, 4
+    27 00000043 6689C1                      mov ecx, eax
+    28 00000046 2401                        and al, 1
+    29 00000048 7407                        jz high_level
+    30 0000004A 67FFA1[19020000]            jmp [ecx + vmops]
+    31                                  high_level:
+    32 00000051 6683ED04                    sub ebp, 4
+    33 00000055 6667897D00                  mov [ebp], edi
+    34 0000005A 6601CF                      add edi, ecx
+    35 0000005D EBDC                        jmp next
+    36                                  
+    37                                  ;_vmops dd vmnoop, vmexit, vmlit, vmbranch, vm0branch, vmdrop,
+    38                                  ;       dd vmdup, vmswap, vmrot, vmover, vmcfetch, vmfetch, vmcstore, vmstore,
+    39                                  ;       dd vmand, vmor, vmxor, vmfromr, vmtor, vmrfetch, vmzeroeq, vmugt, vmgt,
+    40                                  ;       dd vmplus, vmnegate, vmlshift, vmrshift, vmummult, vmumdiv, vmdplus,
+    41                                  ;       dd vmemit, vmkey, vmspfetch, vmspstore, vmrpfetch, vmrpstore,
+    42                                  
+    43                                  ;vmops equ _vmops - 1
+    44                                  
+    45                                  vmdata:
+    46 0000005F 02                      db vmexit - vmnoop 
+    47 00000060 0B                      db vmlit - vmexit 
+    48 00000061 0A                      db vmbranch - vmlit 
+    49 00000062 06                      db vm0branch - vmbranch 
+    50 00000063 0B                      db vmdrop - vm0branch
+    51 00000064 04                      db vmdup - vmdrop 
+    52 00000065 08                      db vmswap - vmdup 
+    53 00000066 0B                      db vmrot - vmswap 
+    54 00000067 0F                      db vmover - vmrot 
+    55 00000068 0D                      db vmcfetch - vmover 
+    56 00000069 11                      db vmfetch - vmcfetch 
+    57 0000006A 09                      db vmcstore - vmfetch 
+    58 0000006B 0E                      db vmstore - vmcstore 
+    59 0000006C 0B                      db vmand - vmstore 
+    60 0000006D 0C                      db vmor - vmand 
+    61 0000006E 0C                      db vmxor - vmor 
+    62 0000006F 0C                      db vmfromr - vmxor 
+    63 00000070 0C                      db vmtor - vmfromr 
+    64 00000071 0E                      db vmrfetch - vmtor 
+    65 00000072 08                      db vmzeroeq - vmrfetch 
+    66 00000073 11                      db vmugt - vmzeroeq 
+    67 00000074 15                      db vmgt - vmugt 
+    68 00000075 15                      db vmplus - vmgt 
+    69 00000076 0C                      db vmnegate - vmplus 
+    70 00000077 0A                      db vmrshift - vmnegate 
+    71 00000078 0C                      db vmlshift - vmrshift 
+    72 00000079 0C                      db vmummult - vmlshift 
+    73 0000007A 0E                      db vmumdiv - vmummult 
+    74 0000007B 10                      db vmdplus - vmumdiv 
+    75 0000007C 12                      db vmemit - vmdplus 
+    76 0000007D 09                      db vmkey - vmemit 
+    77 0000007E 0A                      db vmspfetch - vmkey 
+    78 0000007F 08                      db vmspstore - vmspfetch
+    79 00000080 05                      db vmrpfetch - vmspstore
+    80 00000081 05                      db vmrpstore - vmrpfetch
+    81 00000082 00                      db 0
+    82                                  
+    83                                  vmnoop:
+    84 00000083 EBB6                        jmp next
+    85                                  
+    86                                  vmexit:
+    87 00000085 66678B7D00                  mov edi, [ebp] 
+    88 0000008A 6683C504                    add ebp, 4
+    89 0000008E EBAB                        jmp next
+    90                                  
+    91                                  vmlit:
+    92 00000090 6667FF37                    push dword [edi]
+    93 00000094 6683C704                    add edi, 4
+    94 00000098 EBA1                        jmp next
+    95                                  
+    96                                  vmbranch:
+    97 0000009A 6667033F                    add edi, [edi]
+    98 0000009E EB9B                        jmp next
+    99                                  
+   100                                  vm0branch:
+   101 000000A0 6659                        pop ecx
+   102 000000A2 67E3F5                      jecxz vmbranch
+   103 000000A5 6683C704                    add edi, 4
+   104 000000A9 EB90                        jmp next
+   105                                  
+   106                                  vmdrop:
+   107 000000AB 6658                        pop eax
+   108 000000AD EB8C                        jmp next
+   109                                  
+   110                                  vmdup:
+   111 000000AF 6658                        pop eax
+   112 000000B1 6650                        push eax
+   113 000000B3 6650                        push eax
+   114 000000B5 EB84                        jmp next
+   115                                  
+   116                                  vmswap:
+   117 000000B7 6658                        pop eax
+   118 000000B9 6659                        pop ecx
+   119 000000BB 6650                        push eax
+   120 000000BD 6651                        push ecx
+   121 000000BF E979FF                      jmp next
+   122                                  
+   123                                  vmrot:
+   124 000000C2 6659                        pop ecx
+   125 000000C4 665A                        pop edx
+   126 000000C6 6658                        pop eax
+   127 000000C8 6652                        push edx
+   128 000000CA 6651                        push ecx
+   129 000000CC 6650                        push eax    
+   130 000000CE E96AFF                      jmp next
+   131                                  
+   132                                  vmover:
+   133 000000D1 6658                        pop eax
+   134 000000D3 6659                        pop ecx
+   135 000000D5 6651                        push ecx
+   136 000000D7 6650                        push eax
+   137 000000D9 6651                        push ecx
+   138 000000DB E95DFF                      jmp next
+   139                                  
+   140                                  vmcfetch:
+   141 000000DE 6631D2                      xor edx, edx
+   142 000000E1 6659                        pop ecx
+   143 000000E3 6683F103                    xor ecx, 3
+   144 000000E7 678A11                      mov dl, [ecx]
+   145 000000EA 6652                        push edx
+   146 000000EC E94CFF                      jmp next
+   147                                  
+   148                                  vmfetch:
+   149 000000EF 6658                        pop eax
+   150 000000F1 6667FF30                    push dword [eax]
+   151 000000F5 E943FF                      jmp next
+   152                                  
+   153                                  vmcstore:
+   154 000000F8 665A                        pop edx
+   155 000000FA 6659                        pop ecx
+   156 000000FC 6683F203                    xor edx, 3
+   157 00000100 67880A                      mov [edx], cl
+   158 00000103 E935FF                      jmp next
+   159                                  
+   160                                  vmstore:
+   161 00000106 665A                        pop edx
+   162 00000108 6659                        pop ecx
+   163 0000010A 6667890A                    mov [edx], ecx
+   164 0000010E E92AFF                      jmp next
+   165                                  
+   166                                  vmand:
+   167 00000111 6658                        pop eax
+   168 00000113 6659                        pop ecx
+   169 00000115 6621C8                      and eax, ecx
+   170 00000118 6650                        push eax
+   171 0000011A E91EFF                      jmp next
+   172                                  
+   173                                  vmor:
+   174 0000011D 6658                        pop eax
+   175 0000011F 6659                        pop ecx
+   176 00000121 6609C8                      or eax, ecx
+   177 00000124 6650                        push eax
+   178 00000126 E912FF                      jmp next
+   179                                  
+   180                                  vmxor:
+   181 00000129 6658                        pop eax
+   182 0000012B 6659                        pop ecx
+   183 0000012D 6631C8                      xor eax, ecx
+   184 00000130 6650                        push eax
+   185 00000132 E906FF                      jmp next
+   186                                  
+   187                                  vmfromr:
+   188 00000135 6667FF7500                  push dword [ebp]
+   189 0000013A 6683C504                    add ebp, 4
+   190 0000013E E9FAFE                      jmp next
+   191                                  
+   192                                  vmtor:
+   193 00000141 6658                        pop eax
+   194 00000143 6683ED04                    sub ebp, 4
+   195 00000147 6667894500                  mov [ebp], eax
+   196 0000014C E9ECFE                      jmp next
+   197                                  
+   198                                  vmrfetch:
+   199 0000014F 6667FF7500                  push dword [ebp]
+   200 00000154 E9E4FE                      jmp next
+   201                                  
+   202                                  vmzeroeq:
+   203 00000157 6659                        pop ecx
+   204 00000159 67E306                      jecxz vmzeroeq_true
+   205 0000015C 666A00                      push dword 0
+   206 0000015F E9D9FE                      jmp next
+   207                                  vmzeroeq_true:
+   208 00000162 666AFF                      push dword -1
+   209 00000165 E9D3FE                      jmp next
+   210                                  
+   211                                  vmugt:
+   212 00000168 6659                        pop ecx
+   213 0000016A 6658                        pop eax
+   214 0000016C 6639C8                      cmp eax, ecx
+   215 0000016F 7206                        jb l1
+   216 00000171 666A00                      push dword 0
+   217 00000174 E9C4FE                      jmp next
+   218                                  l1:
+   219 00000177 666AFF                      push dword -1
+   220 0000017A E9BEFE                      jmp next
+   221                                  
+   222                                  vmgt:
+   223 0000017D 6659                        pop ecx
+   224 0000017F 6658                        pop eax
+   225 00000181 6629C8                      sub eax, ecx
+   226 00000184 7D06                        jnl vmgt_false
+   227 00000186 666AFF                      push dword -1
+   228 00000189 E9AFFE                      jmp next
+   229                                  vmgt_false:
+   230 0000018C 666A00                      push dword 0
+   231 0000018F E9A9FE                      jmp next
+   232                                  
+   233                                  vmplus:
+   234 00000192 6658                        pop eax
+   235 00000194 6659                        pop ecx
+   236 00000196 6601C8                      add eax, ecx
+   237 00000199 6650                        push eax
+   238 0000019B E99DFE                      jmp next
+   239                                  
+   240                                  vmnegate:
+   241 0000019E 6658                        pop eax
+   242 000001A0 66F7D8                      neg eax
+   243 000001A3 6650                        push eax
+   244 000001A5 E993FE                      jmp next
+   245                                  
+   246                                  vmrshift:
+   247 000001A8 6659                        pop ecx
+   248 000001AA 6658                        pop eax
+   249 000001AC 66D3E8                      shr eax, cl
+   250 000001AF 6650                        push eax
+   251 000001B1 E987FE                      jmp next
+   252                                  
+   253                                  vmlshift:
+   254 000001B4 6659                        pop ecx
+   255 000001B6 6658                        pop eax
+   256 000001B8 66D3E0                      shl eax, cl
+   257 000001BB 6650                        push eax
+   258 000001BD E97BFE                      jmp next
+   259                                  
+   260                                  vmummult:
+   261 000001C0 6659                        pop ecx
+   262 000001C2 6658                        pop eax
+   263 000001C4 66F7E1                      mul ecx
+   264 000001C7 6650                        push eax
+   265 000001C9 6652                        push edx
+   266 000001CB E96DFE                      jmp next
+   267                                  
+   268                                  vmumdiv:
+   269 000001CE 6659                        pop ecx
+   270 000001D0 665A                        pop edx
+   271 000001D2 6658                        pop eax
+   272 000001D4 66F7F1                      div ecx
+   273 000001D7 6652                        push edx
+   274 000001D9 6650                        push eax
+   275 000001DB E95DFE                      jmp next
+   276                                  
+   277                                  vmdplus:
+   278 000001DE 6659                        pop ecx
+   279 000001E0 6658                        pop eax
+   280 000001E2 666701442404                add [esp + 4], eax
+   281 000001E8 6667110C24                  adc [esp], ecx
+   282 000001ED E94BFE                      jmp next
+   283                                  
+   284                                  vmemit:
+   285 000001F0 6658                        pop eax
+   286 000001F2 B40E                        mov ah, 14
+   287 000001F4 CD10                        int 10h
+   288 000001F6 E942FE                      jmp next
+   289                                  
+   290                                  vmkey:
+   291 000001F9 6631C0                      xor eax, eax
+   292 000001FC CD16                        int 0x16
+   293 000001FE 6650                        push eax
+   294 00000200 E938FE                      jmp next
+   295                                  
+   296                                  vmspfetch:
+   297 00000203 6689E0                      mov eax, esp
+   298 00000206 6650                        push eax
+   299 00000208 E930FE                      jmp next
+   300                                  
+   301                                  vmspstore:
+   302 0000020B 665C                        pop esp
+   303 0000020D E92BFE                      jmp next
+   304                                  
+   305                                  vmrpfetch:
+   306 00000210 6655                        push ebp
+   307 00000212 E926FE                      jmp next
+   308                                  
+   309                                  vmrpstore:
+   310 00000215 665D                        pop ebp
+   311 00000217 E921FE                      jmp next
+   312                                  
+   313                                  vmlabels:
+   314                                  
+   315                                  vmops equ vmlabels - 1
+   316                                  
+   317 0000021A 00<rept>                TIMES   1024-($-$$) DB 0		
+   318                                  
+   319                                  code:

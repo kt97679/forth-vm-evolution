@@ -1,0 +1,228 @@
+ 161 vmdolist
+  64 vmexit
+  36 vmlit vmdolist
+  33 vm0branch
+  20 vmbranch
+  13 vmfromr vmdolist
+  12 vmfetch vmdolist
+  12 vmdrop vmexit
+  10 vmdup vmdolist
+   9 vmdup vm0branch
+   8 vmstore vmexit
+   7 vmlit vmplus vmexit
+   7 vmlit vmexit
+   6 vmtor vmexit
+   5 vmswap vmdolist
+   5 vmlit vmstore vmexit
+   5 vmtor vmdolist
+   5 vmover vmdolist
+   4 vmdrop vmlit vmexit
+   4 vmswap vmdrop vmexit
+   3 vmtor vmbranch
+   3 vmfetch vmexit
+   3 vmrot vmdolist
+   3 vmstore vmlit vmdolist
+   3 vmcfetch vmdolist
+   3 vmnegate vmexit
+   3 vmplus vmdolist
+   3 vmswap vmstore vmexit
+   3 vmover vm0branch
+   2 vmover vmplus vmswap vmdolist
+   2 vmlit vmbranch
+   2 vmrot vmrot vmdrop vmexit
+   2 vmfromr vmexit
+   2 vmdup vmexit
+   2 vmdrop vmdolist
+   2 vmrot vmrot vmswap vmdolist
+   2 vmxor vmtor vmdolist
+   2 vmswap vmbranch
+   2 vmcfetch vmlit vmand vm0branch
+   2 vmlit vmlshift vmexit
+   2 vmswap vmexit
+   2 vmor vmexit
+   2 vmlit vm0branch
+   2 vmcstore vmdolist
+   2 vmlit vmplus vmdolist
+   2 vmdup vmlit vmdolist
+   2 vmfetch vmdup vm0branch
+   2 vmplus vmexit
+   2 vmtor vmdup vmdolist
+   2 vmfromr vmdrop vmfromr vmstore vmlit vmexit
+   2 vmtor vmdup vmfetch vmplus vmtor vmexit
+   1 vmspfetch vmfetch vmdolist
+   1 vmspstore vmexit
+   1 vmstore vmstore vmdolist
+   1 vmfetch vmover vmfetch vmlit vmand vmeq vm0branch
+   1 vmfetch vmfetch vmexit
+   1 vmfetch vmeq vmbranch
+   1 vmfetch vmdup vmlit vmdolist
+   1 vmswap vmtor vmtor vmswap vmfetch vmummult vmrot vmfetch vmdolist
+   1 vmlit vmswap vmlit vmplus vmswap vmexit
+   1 vmlit vmswap vmdplus vmfromr vmlit vmdplus vmfromr vmfromr vmbranch
+   1 vmfromr vmrfetch vmswap vmtor vmexit
+   1 vmover vmover vmexit
+   1 vmswap vmlit vmdolist
+   1 vmdup vmcfetch vm0branch
+   1 vmtor vmnegate vmfromr vmnegate vmover vmdolist
+   1 vmrot vmrot vmdolist
+   1 vmswap vmfromr vmfromr vmdolist
+   1 vmdrop vmlit vm0branch
+   1 vmeq vmdolist
+   1 vmcfetch vmexit
+   1 vmdup vmtor vmstore vmfromr vmdolist
+   1 vmlit vmplus vmdup vmstore vmswap vmlit vmplus vmswap vmbranch
+   1 vmugt vmexit
+   1 vmcstore vmlit vmdolist
+   1 vmugt vm0branch
+   1 vmrot vmrot vmplus vmdup vmrfetch vmdolist
+   1 vmplus vmcstore vmexit
+   1 vmlit vmopenfile vmdup vmtor vmdolist
+   1 vmlit vmplus vmswap vmlit vmplus vmswap vmover vmcfetch vmlit vmeq vm0branch
+   1 vmfetch vmtor vmfetch vmtor vmfetch vmtor vmfetch vmtor vmfetch vmtor vmfetch vmdolist
+   1 vmlit vmplus vmlit vmplus vmdolist
+   1 vmtor vm0branch
+   1 vmeq vm0branch
+   1 vmover vmexit
+   1 vmlit vmplus vmcfetch vmexit
+   1 vmstore vmdolist
+   1 vmfromr vmdup vmdup vmfetch vmplus vmswap vmdolist
+   1 vmdrop vmfetch vm0branch
+   1 vmfetch vmdup vmcfetch vmlit vmor vmswap vmcstore vmexit
+   1 vmlit vmstore vmlit vmplus vmswap vmlit vmplus vmswap vmdup vmlit vmdolist
+   1 vmkey vmexit
+   1 vmdup vmfetch vmgt vmdolist
+   1 vmfromr vmumdiv vmswap vmfromr vmdolist
+   1 vmdup vmlit vmplus vmswap vmcfetch vmexit
+   1 vmfetch vmlit vmdolist
+   1 vmrpfetch vmlit vmplus vmfetch vmexit
+   1 vmtor vmtor vmlit vmlit vmfromr vmfromr vmdolist
+   1 vmemit vmexit
+   1 vmnegate vmswap vmfromr vmdolist
+   1 vmlit vmover vmcstore vmdolist
+   1 vmlit vmplus vmlit vmand vmexit
+   1 vmover vmcfetch vmlit vmeq vm0branch
+   1 vmdup vmtor vmdolist
+   1 vmtor vmover vmcfetch vmswap vmdup vmtor vmcstore vmfromr vmlit vmplus vmswap vmlit vmplus vmswap vmfromr vmlit vmplus vmdup vmtor vmdolist
+   1 vmfromr vmrot vmrot vmswap vmtor vmtor vmdolist
+   1 vmlit vmemit vmexit
+   1 vmplus vmdup vmfetch vmswap vmlit vmdolist
+   1 vmnoop vmexit
+   1 vmspfetch vmstore vmexit
+   1 vmfromr vmcfetch vmlit vmplus vmdolist
+   1 vmover vmlit vmgt vmand vm0branch
+   1 vmummult vmfromr vmdolist
+   1 vmfromr vmstore vmlit vmexit
+   1 vmrot vmdup vmlit vmdolist
+   1 vmdup vmfetch vmrot vmplus vmswap vmstore vmexit
+   1 vmlit vmxor vmexit
+   1 vmplus vmfetch vmdolist
+   1 vmtor vmover vmover vmplus vmfromr vmswap vmcstore vmdolist
+   1 vmdup vmlit vmand vmswap vmlit vmrshift vmor vmexit
+   1 vmstore vmlit vmstore vmstore vmdolist
+   1 vmlit vmtor vmover vmfetch vmover vmfetch vmdolist
+   1 vmrpstore vmexit
+   1 vmrfetch vmdolist
+   1 vmdrop vmfromr vmbranch
+   1 vmlit vmplus vmdup vmfetch vmdup vmrot vmrot vmplus vmswap vmlit vmeq vm0branch
+   1 vmdup vmspfetch vmplus vmdolist
+   1 vmswap vmgt vmexit
+   1 vmfromr vmstore vmfromr vmstore vmfromr vmstore vmfromr vmstore vmfromr vmstore vmexit
+   1 vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch
+   1 vmummult vmdrop vmexit
+   1 vmdup vmcfetch vmlit vmand vm0branch
+   1 vmdup vmcfetch vmemit vmdolist
+   1 vmspfetch vmstore vmrpfetch vmdolist
+   1 vmspfetch vmplus vmfetch vmexit
+   1 vmplus vmcfetch vmeq vmdolist
+   1 vmdplus vmexit
+   1 vmlshift vmexit
+   1 vmfromr vm0branch
+   1 vmlit vmlit vmdolist
+   1 vmfetch vmfetch vmdolist
+   1 vmspfetch vmexit
+   1 vmfromr vmswap vmfromr vmdup vmrfetch vmdolist
+   1 vmfromr vmfromr vmfromr vmdolist
+   1 vmfromr vmfetch vmfromr vmdrop vmfromr vmdrop vmtor vmexit
+   1 vmfromr vmdrop vmrot vmdrop vmexit
+   1 vmfetch vm0branch
+   1 vmrshift vmexit
+   1 vmtor vmrfetch vmrot vmdup vmtor vmcstore vmfromr vmlit vmplus vmswap vmlit vmplus vmdup vmdolist
+   1 vmfetch vmrpstore vmfetch vmspstore vmdolist
+   1 vmand vmexit
+   1 vmlit vmstore vmlit vmplus vmswap vmlit vmplus vmswap vmover vmcfetch vmlit vmeq vm0branch
+   1 vmfetch vmswap vmfetch vmexit
+   1 vmcfetch vmlit vmplus vmdolist
+   1 vmfromr vmclosefile vmdrop vmexit
+   1 vmfromr vmswap vmrot vmfromr vmdolist
+   1 vmnegate vmplus vmexit
+   1 vmgt vmexit
+   1 vmlit vmrshift vmexit
+   1 vmfetch vmcstore vmexit
+   1 vmfetch vmlit vmplus vmexit
+   1 vmlit vmstore vmstore vmdolist
+   1 vmfetch vmstore vmstore vmdolist
+   1 vmbye vmexit
+   1 vmummult vmexit
+   1 vmdrop vmdup vm0branch
+   1 vmlit vmgt vmexit
+   1 vmtor vmlit vmkey vmdup vmlit vmeq vmover vmlit vmeq vmor vm0branch
+   1 vmrot vmdup vmcfetch vmtor vmover vmfromr vmeq vm0branch
+   1 vmcstore vmexit
+   1 vmlit vmplus vmlit vmdolist
+   1 vmfetch vmrpstore vmdolist
+   1 vmand vm0branch
+   1 vmtor vmlit vmrfetch vmumdiv vmfromr vmswap vmtor vmumdiv vmfromr vmexit
+   1 vmover vmcfetch vmlit vmeq vmdup vmtor vm0branch
+   1 vmlit vmand vmplus vmdolist
+   1 vmfetch vmfetch vm0branch
+   1 vmrfetch vmexit
+   1 vmfromr vmrot vmrot vmswap vmtor vmtor vmtor vmexit
+   1 vmxor vmtor vmover vmtor vmdolist
+   1 vmlit vmplus vmswap vmstore vmexit
+   1 vmgt vm0branch
+   1 vmswap vmrfetch vmplus vmswap vmlit vmdolist
+   1 vmlit vmand vm0branch
+   1 vmumdiv vmexit
+   1 vmlit vmeq vm0branch
+   1 vmlit vmeq vmfetch vmand vm0branch
+   1 vmfetch vmswap vmspfetch vmdolist
+   1 vmswap vmugt vmexit
+   1 vmstore vmfetch vmdolist
+   1 vmswap vmover vmdolist
+   1 vmover vmrfetch vmdolist
+   1 vmrot vmexit
+   1 vmor vmdolist
+   1 vmxor vmexit
+   1 vmswap vmfetch vmplus vmfromr vmover vmtor vmtor vmswap vmrfetch vmdolist
+   1 vmrot vmstore vmbranch
+   1 vmfromr vmover vmdolist
+   1 vmdrop vmcfetch vmdolist
+   1 vmfromr vmdrop vmexit
+   1 vmfetch vmtor vmfetch vmtor vmfetch vmtor vmfetch vmtor vmstore vmstore vmlit vmstore vmlit vmstore vmdolist
+   1 vmfromr vmstore vmfromr vmstore vmfromr vmstore vmfromr vmstore vmexit
+   1 vmrot vmdup vmcfetch vmtor vmover vmfromr vmdolist
+   1 vmswap vmdrop vmswap vmcfetch vmlit vmand vm0branch
+   1 vmfetch vmfetch vmstore vmexit
+   1 vmfromr vmfromr vmlit vmplus vmdup vmrfetch vmeq vm0branch
+   1 vmfromr vmfetch vmtor vmexit
+   1 vmrpfetch vmexit
+   1 vmdrop vmswap vmdrop vmfromr vmdrop vmexit
+   1 vmdrop vmdrop vmexit
+   1 vmover vmfromr vmswap vmtor vmdolist
+   1 vmlit vmstore vmfetch vmtor vmdolist
+   1 vmlit vmand vmopenfile vmexit
+   1 vmeq vmexit
+   1 vmlit vmemit vmlit vmemit vmexit
+   1 vmover vmfromr vmdolist
+   1 vmlit vmplus vmtor vmdolist
+   1 vmdup vmrfetch vmdolist
+   1 vmrot vmxor vmlit vmgt vm0branch
+   1 vmfetch vmstore vmlit vmstore vmlit vmexit
+   1 vmdup vmcfetch vmlit vmeq vm0branch
+   1 vmlit vmeq vmexit
+   1 vmstore vmdrop vmexit
+   1 vmtor vmrfetch vmplus vmlit vmplus vmswap vmrfetch vmplus vmlit vmplus vmswap vmover vmcfetch vmswap vmdup vmtor vmcstore vmfromr vmlit vmplus vmswap vmlit vmplus vmswap vmfromr vmlit vmplus vmdup vmtor vmdolist
+   1 vmlit vmdup vmdolist
+   1 vmdup vmfetch vmdolist
+   1 vmswap vmlit vmplus vmswap vmexit
+   1 vmspfetch vmfetch vmswap vmdolist

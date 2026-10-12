@@ -1,0 +1,21 @@
+build.bat - batch file to compile relf.asm into relf.com and concatenate
+            RelF system image
+
+conv.c - this tool converts RelF images between big endian and little endian
+         formats.
+conv.exe
+kernel.4 - kernel source. Main changes are: removed BYE, changed ACCEPT code
+           due to corrected behaviour of KEY.
+kernel.new - compiled kernel
+readme - this file
+relf.asm - nasm source of RelF engine.
+relf.com - ready to use binary.
+relf.lst - nasm listing.
+
+I'm trying to pack RelF engin into standard PC bootsector (512 bytes). At
+present moment engine code occupies 538 bytes and it does not contain disk i/o
+and does not switch to protected mode. I'm going to create at 1st bootsector,
+that switches to protected mode and contains code for disk, screen and
+keyboard i/o. After that it would be clear if we have enough room for engine
+or not. It should worth considering some kind of decompressing technique to
+pack more code into bootsector.

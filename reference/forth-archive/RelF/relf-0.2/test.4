@@ -1,0 +1,16 @@
+CROSS-COMPILE
+
+\ PART 0: BOOT VECTORS.
+
+COLD \ call to cold start location.
+WARM \ call to warm start location.
+DIV-EX \ address of division exception routine.
+BREAK-EX \ address of break handling routine.
+TIMER-EX \ address of timer interrupt routine.
+
+0 PRIMITIVE NOOP  ( --- )
+
+: COLD ;
+: WARM ;
+
+END-CROSS

@@ -1,0 +1,253 @@
+<HTML>
+<HEAD>
+<META name="robots"
+      contents="all">
+
+<META name="description"
+      contents="This page shows the results of some speed benchmarks comparing
+                Misty Beach Forth against other Forth implementations.">
+
+<META name="keywords"
+      contents="Java, Forth, Benchmark. Comparison">
+
+
+<TITLE>Misty Beach Forth: Benchmark Results</TITLE>
+</HEAD>
+
+<BODY BGCOLOR    = "#FFFFFF"
+      TEXT       = "#000000"
+      LINK       = "#0000ff"
+      VLINK      = "#660066">
+
+<CENTER>
+<H1>Benchmark Results</H1>
+</CENTER>
+<HR>
+Here are some speed comparisons of Misty Beach Forth
+versus some other Forth implementations.  Note that Misty
+Beach Forth has several reported times because I ran it under several
+environments.  The best result is running under Netscape 4.x.
+Using this environment, Misty Beach Forth is as fast as the native Win32Forth
+at stack operations and about half as fast at variable operations.
+<P>
+All the Misty Beach Forth benchmarks were run with Misty Beach Forth configured
+as it is launched, which means that control optimizations and small word unrolling
+are turned on but peephole optimization is turned off.  With peephole optimization on,
+the variable operation benchmark runs about 3 times faster, but peephole optimization
+is not fully implemented, so I'm leaving it turned off for these benchmarks.
+<P>
+Obviously, this is a far from complete benchmark of Forth implementation
+performance.  I have some pointers to better benchmarks, but haven't downloaded
+and run them yet.  As I find and run better benchmarks, I'll add them here.
+<P>
+<H2>Stack operations</H2>
+<CODE><PRE>
+: INNER 10000 0 DO 34 DROP LOOP ;
+: OUTER 10000 0 DO INNER LOOP ;
+OUTER
+</PRE></CODE>
+This is a variation of a benchmark posted by Bernie Mentink.  See
+<A HREF = "http://www.dnai.com/~jfox/forml93.html#f*f">F21 and F*F</A>
+by Jeff Fox for a discussion and results from other Forths.  Note that
+the original benchmark only loops to 1000 in both loops, so the numbers
+reported by Jeff Fox must be multiplied by 100 to compare them to these.
+
+<TABLE BORDER = 1>
+   <TR>
+      <TD><B>Forth Implementation</B></TD>
+      <TD><B>Time in seconds</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Jax Forth V1.25<A HREF="#footnote_1"><SUP>(1)</SUP></A></B></TD>
+      <TD><B>144</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 under Netscape 3.x<A HREF="#footnote_2"><SUP>(2)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>92</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 under Internet Explorer 3.x<A HREF="#footnote_3"><SUP>(3)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>67</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 with Symantec JIT 2.0.54<A HREF="#footnote_4"><SUP>(4)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>59</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Win32Forth V3.2<A HREF="#footnote_5"><SUP>(5)</SUP></A></B></TD>
+      <TD><B>59</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 under Netscape 4.x<A HREF="#footnote_6"><SUP>(6)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>54</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B><A HREF = "http://www.cerfnet.com/~lmi/">LMI Forth V1.01</A> (no optimizations) <A HREF="#footnote_7"><SUP>(7)</SUP></A></B></TD>
+      <TD><B>27</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B><A HREF = "http://www.cerfnet.com/~lmi/">LMI Forth V1.01</A> (optimized with NCC and COMPILE:) <A HREF="#footnote_8"><SUP>(8)</SUP></A></B></TD>
+      <TD><B>7</B></TD>
+   </TR>
+</TABLE>
+
+<H2>Variable operations</H2>
+<CODE><PRE>
+VARIABLE TEMP
+: INNER 10000 0 DO 34 TEMP ! LOOP ;
+: OUTER 10000 0 DO INNER LOOP ;
+OUTER
+</PRE></CODE>
+<TABLE BORDER = 1>
+   <TR>
+      <TD><B>Forth Implementation</B></TD>
+      <TD><B>Time in seconds</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 under Netscape 3.x<A HREF="#footnote_2"><SUP>(2)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>203</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Jax Forth V1.25<A HREF="#footnote_1"><SUP>(1)</SUP></A></B></TD>
+      <TD><B>186</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 with Symantec JIT 2.0.54<A HREF="#footnote_4"><SUP>(4)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>144</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 under Internet Explorer 3.x<A HREF="#footnote_3"><SUP>(3)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>133</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Misty Beach Forth V0.30 under Netscape 4.x<A HREF="#footnote_6"><SUP>(6)</SUP></A>&#32;&#32;&#32;</B></TD>
+      <TD><B>116</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B>Win32Forth V3.2<A HREF="#footnote_5"><SUP>(5)</SUP></A></B></TD>
+      <TD><B>68</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B><A HREF = "http://www.cerfnet.com/~lmi/">LMI Forth V1.01</A> (no optimizations) <A HREF="#footnote_7"><SUP>(7)</SUP></A></B></TD>
+      <TD><B>35</B></TD>
+   </TR>
+
+   <TR>
+      <TD><B><A HREF = "http://www.cerfnet.com/~lmi/">LMI Forth V1.01</A> (optimized with NCC and COMPILE:) <A HREF="#footnote_8"><SUP>(8)</SUP></A></B></TD>
+      <TD><B>3</B></TD>
+   </TR>
+</TABLE>
+<P>
+
+<HR>
+<FONT SIZE=-1>
+<DL>
+   <DT>
+      <UL>
+         <LI><B>Footnotes</B></LI>
+      </UL>
+   </DT>
+
+   <DD>
+      <OL>
+         <LI><A NAME="footnote_1"></A>
+             Jax4th for Windows-NT Revision 1.25 on a Pentium-90 with 64 MB RAM running
+             Windows-NT 4.00.<BR>
+             Jax4th is a GNU copylefted 32-bit Forth by Jack J Woehr.  Jack provides the following
+             comment:<BR>
+             <CITE>
+             Jax4th is not an optimizing compiler targeted at professional development. The
+             author did not dream of providing in two hundred (200) hours of his time a freeware
+             Forth to compete with professional systems which required thousands of hours of
+             programmer time to complete.
+             </CITE>
+             <P>
+         </LI>
+
+
+         <LI><A NAME="footnote_2"></A>
+             Running Netscape Navigator 3.01 on a Pentium-90 with 64 MB RAM running
+             Windows-NT 4.00.<BR>
+             This version on Netscape comes with Borland's JIT (AppAccelerator) compiler for Java applets.
+             <P>
+         </LI>
+
+         <LI><A NAME="footnote_3"></A>
+             Running Microsoft Internet Explorer 3.01 with one patch on a Pentium-90
+             with 64 MB RAM running Windows-NT 4.00.<BR>
+             This version of Internet Explorer comes with Microsoft's JIT compiler.  The patch
+             is available at <A HREF="http://www.microsoft.com/java">http://www.microsoft.com/java</A>
+             and fixes some known bugs that were preventing Misty Beach Forth from
+             running.
+             <P>
+         </LI>
+
+         <LI><A NAME="footnote_4"></A>
+             Running Symantec Visual Cafe 1.0d with JIT 2.0.54 on a Pentium-90 with 64 MB RAM running
+             Windows-NT 4.00.
+             <P>
+         </LI>
+
+         <LI><A NAME="footnote_5"></A>
+             Win32Forth V3.2 build 0819 built July 26th 1996 running on a Pentium-90 with
+             64 MB RAM running Windows-NT 4.00.<BR>
+             Win32Forth is a public domain 32-bit Forth by Andrew McKewan, Tom Zimmer,
+             Jim Schneider, Robert Smith, Y.T. Lin and Andy Korsak.
+             <P>
+         </LI>
+
+
+         <LI><A NAME="footnote_6"></A>
+             Running Netscape Navigator 4.x on a Pentium-90 with 64 MB RAM running
+             Windows-NT 4.00.<BR>
+             This version on Netscape comes with Symantec's JIT (AppAccelerator) compiler for Java applets.
+             Obviously, this is a faster than the JIT supplied with Visual Cafe 1.0d
+             <P>
+         </LI>
+
+         <LI><A NAME="footnote_7"></A>
+             LMI Forth for Windows 1.01 on a Pentium-90 with 64 MB RAM running
+             Windows-NT 4.00.<BR>
+             LMI Forth is a commercial 16-bit Forth by Laboratory Microsystems Inc.
+             <P>
+         </LI>
+
+         <LI><A NAME="footnote_8"></A>
+             LMI Forth for Windows 1.01 on a Pentium-90 with 64 MB RAM running
+             Windows-NT 4.00.<BR>
+             LMI Forth is a commercial 16-bit Forth by Laboratory Microsystems Inc.  LMI
+             has some options for speeding up code and this benchmark is generated using
+             the NCC (Native Code Compiler) option and then using the COMPILE: word in
+             place of :.
+             <P>
+         </LI>
+       </OL>
+   </DD>
+</DL>
+</FONT>
+
+
+<HR>
+<A HREF="../../index.html">Misty Beach Home Page</A><BR>
+Last Updated: 12-Jan-1998<BR>
+Questions?  Comments?  Email: <A HREF = "mailto:mark@mistybeach.com">Mark</A><BR>
+Copyright &#169; 1996-7 by Misty Beach Software Organization
+
+</BODY>
+
+</HTML>

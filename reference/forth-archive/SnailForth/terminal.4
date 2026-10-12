@@ -1,0 +1,32 @@
+27 CONSTANT ESC
+: ESCAPE ESC EMIT ;
+: enablePrinter ESCAPE ." [5i" ;
+: disablePrinter ESCAPE ." [4i" ;
+: home ESCAPE ." [H" ;
+: AT-XY SWAP ESCAPE ." [" 0 <# #S #> TYPE ." ;" 0 <# #S #> TYPE ." H" ;
+
+: allAttributesOff ESCAPE ." [0m" ;
+: boldOn ESCAPE ." [1m" ;
+: boldOff ESCAPE ." [22m" ;
+: underlineOn ESCAPE ." [4m" ;
+: underlineOff ESCAPE ." [24m" ;
+: blinkOn ESCAPE ." [5m" ;
+: blinkOff ESCAPE ." [25m" ;
+: reverseOn ESCAPE ." [7m" ;
+: reverseOff ESCAPE ." [27m" ;
+
+: showCursor ESCAPE ." [?25h" ;
+: hideCursor ESCAPE ." [?25l" ;
+: insertOn ESCAPE ." [4h" ;
+: insertOff ESCAPE ." [4l" ;
+
+: eraseToLineEnd ESCAPE ." [0K" ;
+: eraseFromLineStart ESCAPE ." [1K" ;
+: eraseLine ESCAPE ." [2K" ;
+
+: eraseToScreenEnd ESCAPE ." [0J" ;
+: eraseFromScreenStart ESCAPE ." [1J" ;
+: eraseScreen ESCAPE ." [2J" ;
+
+: DCS ESCAPE ." P" ;
+: ST ESCAPE ." \" ;
