@@ -3790,3 +3790,10 @@ laptop's results patch was the same stash as seed 41's, on master already.
 Stages rebuilt, 7 of 7 identical, run-tests PASS, every front design alive
 (101: seed 42's 59 and the joint front's 89), 0 of 12 of seed 42's front
 differing from s6 (2,119 tests). NEXT-RUN: seed 43, 6 hours.
+
+## Iteration 210 - 2026-10-12 - Claude
+
+**Seed 43 for 9 hours (the owner)** - NEXT-RUN `seed 43 tag2 9h then experiment
+compare-fronts.py --rounds 6 --frontier --cpus 2,8`; the hours include the
+re-measure and the comparison, as for seed 40. Seed 43's prediction about the
+screen now per hour (seed 42: ~3,000 designs an hour).

@@ -151,8 +151,9 @@ whole joint front - **right** (97 of 97).
 
 1. No death from a short branch out of range (now converted again).
 2. The screen skips about a third of the children from generation 5 on, and
-   the run measures more generations than seed 42's in the same hours; of the
-   audited (measured though screened) none on the final front.
+   the run makes more designs an hour than seed 42's (3,000 an hour over its
+   5 h 06 min) - 9 hours now (Iteration 210), so per hour; of the audited
+   (measured though screened) none on the final front.
 3. threads: 64 or 128 chains on most of the front's designs without klookup -
    the corpus 28-41% fewer dispatches - and 16 chains, if anywhere, at the
    smallest end.

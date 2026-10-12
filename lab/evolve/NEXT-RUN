@@ -266,4 +266,7 @@
 # single-SYSCALL family, buffered and not), threads (16-128 chains), READ-LINE
 # faster. New genes and a new process - the stopping rule counts afresh.
 # Seed 43: 6 hours like seeds 41 and 42.
-seed 43 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 210 (the owner): 9 hours - the hours include the re-measure and
+# the comparison's reserve, as for seed 40's 9. The comparison measures every
+# run's front again in one session, so a longer run is judged on equal terms.
+seed 43 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
