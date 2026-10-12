@@ -861,6 +861,7 @@ the smallest by under ~2%.**
 
 | approach | what decided it | where |
 |---|---|---|
+| Stack state in the JIT's translator (cells in registers across stencils) | priced, deferred (Iterations 218-219): -27% instructions with free renames, but the fixed-register form (+1.4 KB at K=2) saves few, and on the VM neither is reliably faster at eight code placements - only the loop index in registers is (-40%, the loop workload alone); the laptop's `jitstack-inner-sweep.sh` decides | `results/price-jit-stack.md` |
 | fsys 5 copying lines out a cell at a time (FS-MOVE) | priced, not built (Iteration 214): where CMOVE has no opcode, kernel -28% and corpus -17% of fsys 5's dispatches; where it has one, +2.2% to +11.7% and +0.8% to +6.5% - evolution can give CMOVE its opcode instead | `results/drafts/fsys/single-syscall.md` |
 | Variables and constants compiled as literals in code compiled at run time (`rtlit`) | built and measured, rejected (Iteration 59): correct, and the held-out sieve 0.811 of its dispatches - but kernel 0.984 and corpus 1.016, because a COMPILE,8 link that checks every compiled word costs a compiling workload more than it saves; 132 bytes more; selected geomean 1.000 | PROGRESS.md, Iteration 59 |
 | The loop opcodes in code compiled at run time | priced, not built (Iteration 28): 0.1% of kernel's dispatches, 0.8-1% of corpus's, none on fib or parse; 68-70% of the held-out loop's, which building it for would spoil | `results/price-runtime-loops.md` |

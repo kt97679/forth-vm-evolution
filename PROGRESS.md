@@ -4158,3 +4158,27 @@ iteration, three cells cached 0.72-0.76 (25-30% less, as the 27% instructions
 said), the loop's index in registers too 0.62-0.65. Estimated: the selection's
 geometric mean ~15% better on JIT designs. Not yet priced: the engine bytes -
 stencil variants or an emitter.
+
+## Iteration 219 - 2026-10-12 - Claude
+
+**Stack state in the JIT, the cheapest form built and priced; Iteration 218's
+time corrected** (results/price-jit-stack.md). Correction forward: the 25-30%
+measured on the loop's hot word was one build's placement. Swept over eight
+loop-head offsets (lab/evolve/jitstack-inner-sweep.sh, the VM's Intel core):
+today 1.03-1.21 ns an iteration; three cells cached with free renames 0.68 at
+two offsets, 1.61-1.96 at six; the loop's index in registers too 0.61-0.65 at
+all eight. The data stack's memory traffic removed alone is not reliably faster
+here: the index's load-add-store through memory remains, and the core's
+speculation and alignment decide the rest. The proxy (instructions, stack
+accesses) did not see that chain. **Engine bytes**: lab/evolve/jitvariants.py
+builds the fixed-register form (cells always in %rsi, %rdx, %rcx; a stencil
+per data operation per state; immediate forms; canonicalisers) with the
+fastest design's flags - 113 stencils, 2,072 bytes at K=2; 151, 2,813 at K=3;
+today 43, 1,007: ~+1.4 KB and ~+2.1 KB. Simulated with those stencils
+(jitstack.py --variants): instructions -4.5% loop, -12% fib, +4% bubble, +4-13%
+kernel, -22% sieve - fixed registers turn shuffles into moves; memory traffic
+-24% to -100%, which alone did not pay on this core. Loops whose index could
+live in registers (bodies calling nothing): 99.9% of the loop workload's, none
+of bubble's or the sieve's. **Deferred, not built**: the laptop's sweep decides
+(`sh lab/evolve/jitstack-inner-sweep.sh` on the Zen 4). Also: the JIT_PRICE
+switch and jitstack.py's loop count stay for that.

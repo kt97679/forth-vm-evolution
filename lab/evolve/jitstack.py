@@ -42,7 +42,8 @@ def opt(name, default=None, many=False):
 dbs = opt('--db', many=True)
 works = opt('--works', 'fib,loop,bubble,ackermann,kernel,corpus,sieve,parse').split(',')
 KS = [int(k) for k in opt('--regs', '2,3').split(',')]
-SHOW = int(opt('--show', '0'))   # the N hottest translated words, operation by operation: the audit
+SHOW = int(opt('--show', '0'))
+VARIANTS = opt('--variants')   # lab/evolve/jitvariants.py's JSON: the fixed-register design's stencils, measured   # the N hottest translated words, operation by operation: the audit
 if not args or any(a.startswith('-') for a in args): sys.exit(__doc__)
 sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
 E.setup()
@@ -111,6 +112,44 @@ EFFECT = {'S_LIT': (0, 1, 'lit'), 'S_DUP': (1, 2, 'shuf'), 'S_DROP': (1, 0, 'shu
           'S_BRANCH': (0, 0, 'ctl'), 'S_DUP_GTI_BR': (1, 1, 'ctl'), 'S_CALL': (0, 0, 'ctl'), 'S_EXIT': (0, 0, 'ctl'),
           'S_INTERP': (0, 0, 'ctl'), 'S_PICK': (1, 1, 'pick'), 'S_FILL': (3, 0, 'st'), 'S_DPLUS': (4, 2, 'alu')}
 
+VOP = {'S_LIT': 'lit', 'S_DUP': 'dup', 'S_DROP': 'drop', 'S_SWAP': 'swap', 'S_OVER': 'over', 'S_ROT': 'rot', 'S_PLUS': 'plus',
+       'S_XOR': 'xor', 'S_AND': 'and', 'S_OR': 'or', 'S_EQ': 'eq', 'S_GT': 'gt', 'S_LT': 'lt', 'S_ULT': 'ult', 'S_LSHIFT': 'lshift',
+       'S_RSHIFT': 'rshift', 'S_NEGATE': 'negate', 'S_ADDI': 'addi', 'S_ADDI32': 'addi32', 'S_FETCH': 'fetch', 'S_CFETCH': 'cfetch',
+       'S_STORE': 'store', 'S_CSTORE': 'cstore', 'S_TOR': 'tor', 'S_FROMR': 'fromr', 'S_RFETCH': 'rfetch', 'S_I': 'i', 'S_J': 'j',
+       'S_DPLUS': 'dplus'}
+IMMF = {'plus', 'xor', 'and', 'or', 'eq', 'gt', 'lt', 'ult'}
+
+class Fixed:
+    """The design priced in engine bytes by jitvariants.py: c cells cached in
+    fixed registers (the top always in the same one), a stencil per input
+    state measured, literals pending until taken - by an immediate form, or
+    loaded by LIT's variant; canonical (c = 1) around control, as Cache."""
+    def __init__(self, per): self.per = per; self.reset()
+    def reset(self): self.c, self.k = 1, 0          # cached cells; pending constants above them
+    def run(self, v):
+        e = self.per[v]; self.c = e['out']; return e['ins'], e['mem']
+    def flush(self):
+        ins = mem = 0
+        while self.k: i, m = self.run('lit_%d' % self.c); ins += i; mem += m; self.k -= 1
+        return ins, mem
+    def canon(self):
+        ins, mem = self.flush()
+        if self.c != 1: i, m = self.run('canon_%d' % self.c); ins += i; mem += m
+        return ins, mem
+    def op(self, name, cost):
+        v = VOP.get(name)
+        if v == 'lit': self.k += 1; return 0, 0
+        if v == 'drop' and self.k: self.k -= 1; return 0, 0
+        if v == 'dup' and self.k: self.k += 1; return 0, 0
+        if v in IMMF and self.k == 1:                   # a constant on top: the immediate form
+            self.k = 0; return self.run('%s_i_%d' % (v, self.c))
+        if v is not None:
+            ins, mem = self.flush(); i, m = self.run('%s_%d' % (v, self.c)); return ins + i, mem + m
+        take = EFFECT.get(name, (0, 0, 'ctl'))[0]
+        ins, mem = self.canon()
+        base, only, acc = cost.get(name, (3, 0, 0))
+        return ins + base, mem + acc                    # today's stencil, in state 1
+
 class Cache:
     """The top of the stack as the translator would know it: entries 'R' (a
     register) or 'C' (a constant), the rest in memory; canonical: ['R'].
@@ -171,6 +210,7 @@ class Cache:
         i2, m2 = self.canon()
         return i1 + i2 + max(base - only, 1), m1 + m2 + cost.get(name, (0, 0, 0))[2] * 0
 
+VJ = json.load(open(VARIANTS)) if VARIANTS else None
 for did in args:
     g0 = recs[did]['genome'] if did in recs else E.recorded_genome(did)
     if g0 is None: sys.exit('no design %s' % did)
@@ -205,7 +245,8 @@ for did in args:
         words = collections.defaultdict(list)
         for wd, at, L, t in ops: words[wd].append((at, L, t))
         total = sum(ipc.values())
-        Z = lambda: [0, 0, 0] + [0] * (2 * len(KS))      # ops, instructions now, accesses now, then (ins, acc) per K
+        FK = sorted(int(k) for k in VJ['K']) if VJ else []
+        Z = lambda: [0, 0, 0] + [0] * (2 * len(KS)) + [0] * (2 * len(FK))   # ops, now (ins, acc), each K's (ins, acc), then the fixed design's
         res = {'rt': Z(), 'all': Z()}; hot = []
         for wd, lst in words.items():
             lst = sorted(set(lst))
@@ -223,6 +264,13 @@ for did in args:
                     for x in st:
                         i, m = cache.op(x, cost); ti += c * i; tm += c * m
                 vals += [ti, tm]
+            for k in FK:
+                fx, ti, tm = Fixed(VJ['K'][str(k)]['per']), 0, 0
+                for at, c, st in seq:
+                    if at in targets: i, m = fx.canon(); ti += c * i; tm += c * m
+                    for x in st:
+                        i, m = fx.op(x, cost); ti += c * i; tm += c * m
+                vals += [ti, tm]
             for key in (['rt', 'all'] if header else ['all']):
                 for i, v in enumerate(vals): res[key][i] += v
             hot.append((vals[0], wd, seq, targets))
@@ -238,11 +286,31 @@ for did in args:
                     line.append('%d/%d %s' % (ci, cm, ''.join(e[0] for e in cache.top)))
                 print('    %6d %10s %-28s now %2d/%d   %s' % (at, format(c, ','), ' '.join(x[2:].lower() for x in st) + (' <-' if at in targets else ''),
                       sum(cost.get(x, (3, 0, 0))[0] for x in st), sum(cost.get(x, (3, 0, 0))[2] for x in st), '   '.join(line)))
+        # Loops whose index and limit could stay in registers: a DO ... LOOP in a translated word whose body
+        # calls nothing and leaves the return stack alone (no >R R> R@, no EXIT) - I a register, LOOP an add
+        # and a compare. Counted: LOOP and +LOOP executions, and I and J, in such loops against all of them.
+        lp = collections.Counter()
+        for wd, lst in words.items():
+            lst = sorted(set(lst)); ats = [at for at, _, _ in lst]
+            seq = {at: (ipc.get(at, 0), ['S_LIT'] if L == 0xFFFD else ['S_CALL'] if L >= 0xFFFE else recipes.get(L, ['S_CALL']), t) for at, L, t in lst}
+            for at in ats:
+                c, st, t = seq[at]
+                if not ({'S_LOOP', 'S_PLOOP'} & set(st)) or not t: continue
+                body = [seq[a][1] for a in ats if t <= a < at]
+                leaf = not any(x in ('S_CALL', 'S_INTERP', 'S_TOR', 'S_FROMR', 'S_RFETCH', 'S_EXIT', 'S_DO', 'S_QDO') for b in body for x in b)
+                ij = sum(seq[a][0] for a in ats if t <= a < at for x in seq[a][1] if x in ('S_I', 'S_J'))
+                lp['loops'] += c; lp['ij'] += ij
+                if leaf: lp['leaf'] += c; lp['leafij'] += ij
+        print('|  loops | LOOP/+LOOP run %s, in loops calling nothing %s (%s); I/J run %s, in them %s |' % (format(lp['loops'], ','),
+              format(lp['leaf'], ','), '%.1f%%' % (100.0 * lp['leaf'] / lp['loops']) if lp['loops'] else '-', format(lp['ij'], ','), format(lp['leafij'], ',')))
         a, rt = res['all'], res['rt']
         def pct(x, y): return '%.1f%%' % (100.0 * x / y) if y else '-'
         def both(i): return '%s / %s' % (format(rt[i], ','), format(a[i], ','))
         def red(i, base): return '%s (%s / %s)' % (both(i), pct(rt[i] - rt[base], rt[base]), pct(a[i] - a[base], a[base]))
         print('| %s | %s | %s / %s | %s | %s | %s | %s |' % (w, format(total, ','), pct(rt[0], total), pct(a[0], total), both(1),
               ' | '.join(red(3 + 2 * i, 1) for i in range(len(KS))), both(2), ' | '.join(red(4 + 2 * i, 2) for i in range(len(KS)))))
+        o = 3 + 2 * len(KS)
+        for j, k in enumerate(FK):
+            print('|  fixed registers, K=%d | | | | instructions %s | | accesses %s |' % (k, red(o + 2 * j, 1), red(o + 1 + 2 * j, 2)))
     print()
     shutil.rmtree(d, ignore_errors=True)

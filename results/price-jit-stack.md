@@ -97,9 +97,69 @@ by about 15% on the JIT designs (fib and loop ~25%, bubble ~15%, ackermann
 ~12%, kernel ~8%, corpus nothing), the held-out sieve ~40%. An estimate, not
 a measurement.
 
-## Not yet priced: what it displaces
+## Correction (Iteration 219): the time above was a placement accident
 
-The binary objective counts every engine byte, and stencils have their
-registers fixed in their machine code: the state needs stencil variants, or
-a small instruction emitter in the translator. The JIT costs about 3.4 KB of
-engine today (JIT.md, Iteration 82).
+The 25-30% came from one build in which the cached loop happened to land well.
+Built again with every loop head at eight offsets in a 64-byte line
+(lab/evolve/jitstack-inner-sweep.sh), on the same VM, ns per iteration:
+
+| version | at the eight placements |
+|---|---|
+| today | 1.03-1.21 |
+| three cells cached, free renames (the ideal) | 0.68-0.69 at two placements, 1.61-1.96 at six |
+| and the loop's index and limit in registers | 0.61-0.65 at all eight |
+| fixed registers, K=2 (below) | 1.27-1.86 |
+| fixed registers, K=3 (below) | 1.28-1.47 |
+
+Removing the data stack's memory traffic alone is not reliably faster here -
+mostly slower: what remains is the loop index's own load-add-store through
+memory every iteration, and a shorter loop body issues the next load of it
+sooner (the core's memory-dependence speculation and decoded-code alignment,
+likely; this VM is an Intel Xeon). Only with the index in registers too is the
+loop reliably faster, by ~40%. **What the proxy counted that the clock did
+not** (prompts/10): instructions and data-stack accesses, not the chain
+through the return stack's memory nor where the code lands.
+
+## The cheapest form, built and priced (Iteration 219)
+
+lab/evolve/jitvariants.py writes the fixed-register form in C, as the
+stencils are written (Ertl's static stack caching, CPython 3.15's form): the
+state is how many top cells are cached, always in the same registers (%rsi,
+%rdx, %rcx; state 1 is today's), one stencil per data operation per input
+state, immediate forms of the binary operations for a constant top,
+canonicalising stencils for control; compiled with the fastest design's flags:
+
+| | stencils | bytes | aligned to 16 |
+|---|---|---|---|
+| today (data and control) | 43 | 1,007 | 1,328 |
+| fixed registers, K=2 (data variants and canonicalisers) | 113 | 2,072 | 2,880 |
+| fixed registers, K=3 | 151 | 2,813 | 3,920 |
+
+So ~+1.4 KB of engine at K=2 (its state-1 variants replace today's data
+stencils), ~+2.1 KB at K=3, before the translator's state logic. Its cost
+simulated with those measured stencils (jitstack.py --variants) on the
+fastest design: native instructions -4.5% loop (K=2) and 0.0% (K=3), -12.3%
+fib, +4% bubble, -2% to +14% ackermann, +4% to +13% kernel, -22% the sieve
+(K=2); data-stack accesses -50% to -100% loop, -38% fib, -24% kernel, -57%
+the sieve. Fixed registers turn every shuffle into moves (`plus` at three
+cells is four instructions: the result and the cells below must land in their
+registers) - the instructions removed are spent again; the memory traffic
+goes, and the sweep above shows that alone does not pay on this core.
+
+**Loops with the index in registers** - the one reliably faster thing - need
+loops whose body calls nothing and leaves the return stack alone (else the
+index must be in memory around the call): counted in the translated words,
+such loops carry 99.9% of the loop workload's LOOP executions but none of
+bubble's (541,788) or the sieve's (368,550); fib, ackermann and the kernel
+workload have no loops in translated words.
+
+## Verdict, for now
+
+Deferred, not built: in instructions the prize needs free renames (an
+emitter or many more variants, more engine bytes), and on this VM even the
+ideal does not turn reliably into time. What would decide it is the laptop:
+`sh lab/evolve/jitstack-inner-sweep.sh` on the Zen 4 - if there the cached
+versions are faster at every placement, the fixed form at K=2 (+1.4 KB) is
+worth a gene; if not, the stack cache in the JIT is closed, and the loop
+index in registers for loops that call nothing is the only part left - which
+helps the loop workload alone.
