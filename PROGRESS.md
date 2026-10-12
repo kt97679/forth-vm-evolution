@@ -4247,3 +4247,10 @@ per overlay, checked on every gene combination, could carry the -2.7%.
 opcode constants are 2-byte bodies (~28 bytes as literals), words called once
 ~3 bytes each (36 and 15 bytes), and the words no call reaches are not dead -
 reached through headers, tables and POSTPONE. The bytes are in the headers.
+
+## Iteration 224 - 2026-10-12 - Claude
+
+**The owner: capture the hidden-names findings, do nothing more on them now.**
+Recorded in GOALS.md's register as deferred, with what a safe form would need
+(hand-kept lists per overlay, LEAVE8's crash understood, every gene combination
+through the gate and the standard suite). On to the other action items.
