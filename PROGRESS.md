@@ -4114,3 +4114,24 @@ next-run.sh keeps the last chain's re-measure and comparison time (seed 43's:
 hours - seeds 41 and 42 ran 6-hour chains too; the comparison measures every
 front again in one session, so a shorter run is judged on equal terms. Seed
 44's predictions (results/predictions.md, Iteration 215) stand as written.
+
+## Iteration 217 - 2026-10-12 - Claude
+
+**A survey of JITs and VM speed elsewhere (the owner, seed 44 running):
+results/drafts/jit-vm-survey.md.** Read against what the project has and has
+rejected first (JIT.md, GENES.md's candidates, GOALS.md's register), so it
+re-proposes nothing. The strongest finding is new this year: RPyForth (Izawa
+and Hakamada, arXiv 2609.23759, September 2026), a Forth on RPython's
+meta-tracing JIT, gained 1.44-1.60x from letting the compiler name a window of
+top stack cells, beat gforth-fast and SwiftForth, and beat VFX on kernels but
+not on call-heavy applications. CPython's copy-and-patch JIT added the same
+thing in 3.15 as stencil variants per cached-register state. Ranked: (1) stack
+state in the JIT's translator - stencil variants by cells in registers, with
+constants tracked as Liftoff does - priced first with stackops.py over the
+words the JIT translates; (2) native code calling byte code (candidate 5,
+priced); (3) the handlers as the stencils (candidate 11, Deegen's way); (4)
+hot/cold splitting of stencils; (5) the IP/sp dependence chain on loops (Ertl
+and Paysan, ECOOP 2024) - perf on the laptop first; (6) replication only if
+(5) shows mispredictions; (7) folding literal inputs at compile time
+(Mecrisp's n-foldable). Not borrowed: tracing JITs, a register byte code for
+the interpreter, preserve_none.
