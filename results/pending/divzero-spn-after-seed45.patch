@@ -1,0 +1,41 @@
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 303a329..79cef55 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -577,6 +577,16 @@ static const int open_flags[10] = {
+ #define MAX_TAILS 16
+ static UNS64 nwords;
+ static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
++#if ENC == 3
++static UNS64 throw_off;    /* Iteration 231: THROW's body (offset) - UM/MOD's zero divisor, as vm-lab.c */
++#ifndef DIV0_DISPATCH
++#define DIV0_DISPATCH() NEXT()
++#endif
++#define DIV0() do { DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; DIV0_DISPATCH(); } while (0)
++#define DIV0_CHECK() do { if (!DS0 && throw_off) DIV0(); } while (0)
++#else
++#define DIV0_CHECK() do { } while (0)
++#endif
+ 
+ static void load_image(const char *name) {
+     int fd;
+@@ -676,8 +686,8 @@ static void load_image(const char *name) {
+     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
+                     & ~(UNS64)(CELL_BYTES - 1));
+ #if ENC == 3
+-    {   UNS64 t_;                 /* Iteration 229: THROW's body - vm-lab.c's, read past here */
+-        if (full_read(fd, (UNS8*)&t_, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); } }
++    /* Iteration 229: THROW's body; Iteration 231: SPN throws there too, as vm-lab.c */
++    if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); }
+ #endif
+     len = full_read(fd, base, MEMSIZE);
+     close(fd);
+@@ -1431,7 +1441,7 @@ L_negate:  /* negate  */ DS0 = - DS0; NEXT();
+ L_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; NEXT();
+ L_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; NEXT();
+ L_ummult:  /* um*     */ umul(&DS0, &DS1); NEXT();
+-L_umdiv:   /* um/mod  */ udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
++L_umdiv:   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
+ L_dplus:   /* d+      */
+     DS3 += DS1; DS2 += DS0; DS2 += (DS3 < DS1);
+     dsp += 2 * CELL_BYTES;

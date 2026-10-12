@@ -4376,3 +4376,21 @@ alive (161 of 161: 120 and 82, 41 in both), the standard suite on 12 of the
 front 0 differ (s6 2,119 tests, 0 failed, 14 of 14 whole). NEXT-RUN: seed 45, 6
 hours, proposed - by GOALS.md's rule a second small run stops the evolution
 until new genes exist; the batch has none. The owner chooses.
+
+## Iteration 231 - 2026-10-12 - Claude
+
+**The after-seed-45 batch begun, as seed 45 runs (results/pending/, ORDER.md).**
+(1) **Native output to a terminal unbuffered** - the owner's standing rule,
+which the native engine broke (Iteration 214 found it, Iteration 229 named it
+a defect): the first WRITE asks isatty(1) - a small isatty added to the
+libc-free runtimes (ioctl TCGETS) - and a terminal gets every WRITE at once.
+outbuf-check.py's terminal case holds native to it now: "A" at 0.00 s, "B" at
+0.88 s. +132 engine bytes on native designs (the generic syscall() measured
++68 and +100 - a trim before applying). (2) **The SPN engine throws -10 too**:
+s8 read THROW's cell (Iteration 229) but still died of SIGFPE - now as
+vm-lab.c; s8-full and s8-spncv8 checked. Both: run-tests PASS, 7 of 7, 161 of
+161 front designs alive, the suite 0 of 2 differ, a fresh clone reproduces the
+files. **A correction to Iteration 229:** s6's bare-kernel image dying on any
+input is known and documented (build-stages.sh: "for the size column ONLY. It
+does not boot" - the kernel's own word-list search assumes cell headers);
+confirmed here - the same conversion without --bytehdr runs. Not a defect.
