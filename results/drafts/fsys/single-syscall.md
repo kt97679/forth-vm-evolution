@@ -78,3 +78,40 @@ unbuffered output, a write(2) for each TYPE and EMIT; the kernel workload pays
 three system calls a line in READ-LINE against the native 4 KB read-ahead.
 Within the owner's rules the one cheaper read is fewer calls a line (the
 seek test remembered per file); the output's cost is the buffer's absence.
+
+## The buffered level (Iteration 207) - results/pending/fsys4-after-seed42.patch
+
+The owner: a buffered-output level beside the unbuffered one, with tests that
+buffering breaks nothing; unsure how EMIT should be buffered. What is expected:
+the standard leaves buffering open (FLUSH-FILE implies it is allowed); Gforth's
+proposal and practice - no buffering of input, none of output to a terminal,
+buffering of output to a pipe or file; it gave up terminal buffering after
+users complained, and measured anywhere from no gain to a factor of 25 for a
+filter (complang.tuwien.ac.at/forth/ansforth-cvs/buffering.html).
+
+fsys 4: WRITE (so EMIT and TYPE) asks once whether stdout is a terminal - there
+it writes at once; elsewhere into 4 KB on the heap, the dictionary holding its
+[address, fill], registered with the engine (SYSCALL -5): t_flush, the native
+engine's own flush, empties it at every native flush point - before each system
+call, before a read blocks, at exits and faults (the return-stack fault's path
+included). A full buffer: SYSCALL -6.
+
+lab/evolve/outbuf-check.py, against native (fsys 0), unbuffered (3), buffered
+(4), seed 40's smallest:
+- T1, stdout and stderr on one pipe - ten programs (stderr between outputs,
+  9,000 EMITs, a 6,000-byte TYPE, no final newline, the end of input without
+  BYE, an ABORT", a file written between outputs, control characters, a
+  return-stack fault): byte for byte as native at 3 and 4. One case differs as
+  it should: 1 0 / kills every engine (SIGFPE) - native loses the 7 bytes its
+  buffer held, 3 and 4 keep them.
+- T2, a prompt before a blocking read: shown at 0, 3 and 4.
+- T3, a terminal: 'A', then a computation with no system call, then 'B' -
+  'A' at once at 3 and 4 (0.00 s, 'B' 0.8 s later); native holds it until the
+  end (0.72 s with 'B') - its buffer never asked whether it was a terminal.
+- The standard suite 14 of 14 as s6 at fsys 4; run-tests PASS; 7 of 7 stages.
+
+Speed: fsys 4 about fsys 3 - the workloads print little; their I/O cost is
+READ-LINE's: counted on the smallest, fsys 4 adds 3.5M dispatches to the corpus
+(+10%), 1.9M of them FS-LF, the Forth loop that finds the line's end, and
+three system calls a line. The next step for speed is there: SCAN (native
+under kinput) for FS-LF, and the seek test remembered per file.

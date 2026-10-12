@@ -3750,3 +3750,16 @@ I/O workloads slower (kernel +37-89%, corpus +23-88% - the unbuffered output
 and three calls a line), fib and bubble not; the standard suite whole. A
 fault found by instrumenting L_nosys: TYPE (`WRITE ;`) looked like a primitive
 stub and kept the dropped opcode - stub-shaped colon words are rebound now.
+
+## Iteration 207 - 2026-10-12 - Claude
+
+**fsys 4: the output buffered, and tests that it breaks nothing** - the seventh
+after-seed-42 patch. Gforth's rule (the standard leaves it open): no input
+buffering, no output buffering to a terminal, buffering to a pipe or file -
+WRITE asks once (ioctl TCGETS); its 4 KB heap buffer is registered with the
+engine, whose t_flush empties it at every native flush point.
+lab/evolve/outbuf-check.py against native: ten programs on one pipe with
+stderr byte for byte (a SIGFPE death where native loses output 3 and 4 keep),
+the prompt before a blocking read, a terminal shown at once (native holds it).
+Speed about fsys 3: the workloads' I/O cost is READ-LINE's line scan (FS-LF,
+1.9M dispatches of the corpus) and calls a line - the next step.
