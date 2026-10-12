@@ -4196,3 +4196,18 @@ into the interpreter every 3-4 operations (44,675 crossings for 180,846
 operations on the kernel workload). Recorded in GOALS.md's register. Of the
 survey's list: 1 deferred to the laptop's sweep, 2 not built; 3 and 4 are
 bytes (~1.3 KB of stencils, a few cold paths), 5 and 6 need the laptop's perf.
+
+## Iteration 221 - 2026-10-12 - Claude
+
+**A name-lookup cache (the handoff's open item 5), priced: not built**
+(results/price-lookup-cache.md; results/drafts/lookup-cache-model.py). Over
+the corpus's and parse's own token streams, the dictionary growing as they
+define, on seed 43's smallest design at the 16 chains most of its front chose:
+a 16-entry cache cuts the entries visited per lookup 22% (corpus, 23.5 -> 18.3)
+and 48% (parse, 22.7 -> 11.8); doubling the chains halves both, 64 chains cut
+three quarters - for 128-384 bytes, which evolution declined at the small end.
+Half the walk is names not found (57% and 49% of the visits), which a cache of
+found names cannot serve; a per-chain filter would - noted, not priced in
+bytes. Register updated. Open items now: 3 (fsys: READ's editing characters,
+the libraries' shared loops), 4 (packed names), 6 (keeping forms), 7-8; the
+JIT survey's 1 waits for the laptop's sweep, 5-6 for its perf.

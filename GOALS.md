@@ -861,6 +861,7 @@ the smallest by under ~2%.**
 
 | approach | what decided it | where |
 |---|---|---|
+| A name-lookup cache beside the threads gene | priced, not built (Iteration 221): at 16 chains a 16-entry cache cuts the walk 22% (corpus) and 48% (parse); doubling the chains halves it, for bytes evolution already declined at the small end; half the walk is names not found, which a cache cannot serve | `results/price-lookup-cache.md` |
 | Native code calling byte code (SPN's st_interp, GENES.md candidate 5) | priced again, not built (Iteration 220): since jitx the words it would free hold 9.3% of the kernel workload's dispatches, 4.1% of the corpus's, ~0 elsewhere, and they would cross back to byte code every 3-4 operations | `results/price-jit-interp.md` |
 | Stack state in the JIT's translator (cells in registers across stencils) | priced, deferred (Iterations 218-219): -27% instructions with free renames, but the fixed-register form (+1.4 KB at K=2) saves few, and on the VM neither is reliably faster at eight code placements - only the loop index in registers is (-40%, the loop workload alone); the laptop's `jitstack-inner-sweep.sh` decides | `results/price-jit-stack.md` |
 | fsys 5 copying lines out a cell at a time (FS-MOVE) | priced, not built (Iteration 214): where CMOVE has no opcode, kernel -28% and corpus -17% of fsys 5's dispatches; where it has one, +2.2% to +11.7% and +0.8% to +6.5% - evolution can give CMOVE its opcode instead | `results/drafts/fsys/single-syscall.md` |
