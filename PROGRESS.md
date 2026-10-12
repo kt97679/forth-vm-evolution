@@ -3797,3 +3797,15 @@ differing from s6 (2,119 tests). NEXT-RUN: seed 43, 6 hours.
 compare-fronts.py --rounds 6 --frontier --cpus 2,8`; the hours include the
 re-measure and the comparison, as for seed 40. Seed 43's prediction about the
 screen now per hour (seed 42: ~3,000 designs an hour).
+
+## Iteration 211 - 2026-10-12 - Claude
+
+**fsys 5 - read-ahead where a file can seek - and a converter fault found.**
+The after-seed-43 batch begun (results/pending/ORDER.md). fsys 5: READ-LINE
+reads 4 KB ahead on seekable descriptors (never stdin or pipes), given back
+before every other use; measured between fsys 4 and native. On the way, two
+faults: file-sysc5.4 did not load (remarks outside comments) and the gate hid
+it; and --rebind took the OLDEST redefinition, so fsys 4's buffered WRITE was
+never bound since Iteration 207 - seed 43 runs with that (its fsys 4 is fsys
+3 with dead bytes). Fixed; outbuf-check.py now tests real buffering and
+passes; the standard suite whole at fsys 4 and 5; run-tests PASS.

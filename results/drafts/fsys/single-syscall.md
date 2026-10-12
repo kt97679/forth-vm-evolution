@@ -133,3 +133,28 @@ What would close the rest: read-ahead where the file can seek - the owner's
 rule allows it there - a heap buffer a descriptor, given back by lseek(2)
 before READ-FILE, the positioning words and CLOSE-FILE, as the native engine's
 t_fgetc and t_fdrop do in C: one read(2) for many lines, as native.
+
+## fsys 5 and a converter fault (Iteration 211) - results/pending/
+
+fsys 5: READ-LINE reads ahead 4 KB where a file can seek (descriptors 1-63,
+never stdin or a pipe), its state on the heap, and every other use of the
+file first gives back what was read ahead (lseek), as native t_fgetc and
+t_fdrop. Measured (VM, three rounds, noisy): against native, the fastest
+design 7% behind (fsys 4: 17%), the smallest 2.4% (fsys 4: 3.7%); ~630 bytes
+over fsys 4. Counted: more dispatches than fsys 4 (6.95M against 6.76M, the
+kernel workload) - the bookkeeping in Forth - for far fewer system calls.
+
+Two faults found on the way, by measuring rather than trusting the gate:
+- file-sysc5.4 did not load: two remarks after stack comments were not in
+  comments ("Undefined word read(fid,"), and the gate passed on fsys 3's
+  READ-LINE, which the converter bound instead. Found because the profile
+  showed fsys 3's FS-BACK and none of fsys 5's words.
+- --rebind took the OLDEST redefinition: the dump lists words newest first.
+  So since Iteration 207 fsys 4's buffered WRITE was never bound (fsys 4 ran
+  as fsys 3; its tests passed testing unbuffered output) and INCLUDED used fsys
+  2's OPEN-FILE and CLOSE-FILE. Now the newest, by address. Measured after:
+  fsys 4 genuinely buffered - the fastest design's kernel workload at times
+  near native's; outbuf-check.py now tests buffering for real: on a SIGFPE
+  death fsys 4 and 5 lose what their buffer held, exactly as native, fsys 3
+  keeps it; the prompt still shown before a blocking read; a terminal still
+  shown at once. The standard suite 14 of 14 at fsys 4 and 5; run-tests PASS.
