@@ -237,11 +237,27 @@ for did in args:
         if os.path.exists(pf): os.remove(pf)
         E.sh([eng, img], cwd=pw, inp=E.program(w), timeout=900, cpu=120, env=dict(os.environ, VMPROF=pf))
         ipc, recipes, ops = collections.Counter(), {}, []
+        met, opblock, calls = {}, set(), collections.defaultdict(list)
         for line in open(pf):
             f = line.split()
             if f[0] == 'I': ipc[int(f[1])] += int(f[2])
             elif f[0] == 'L': recipes[int(f[1])] = [names[int(x)] for x in f[5:5 + int(f[4])]]
             elif f[0] == 'O': ops.append((int(f[1]), int(f[2]), int(f[3]), int(f[4])))
+            elif f[0] == 'J': met[int(f[1])] = (int(f[2]), int(f[3]))
+            elif f[0] == 'B' and f[2] == 'o': opblock.add(int(f[1]))
+            elif f[0] == 'K': calls[int(f[1])].append((int(f[2]), int(f[3])))
+        # Item 2 (GENES.md candidate 5): native code calling byte code. A word the JIT met and left byte code
+        # because of a call - no operation without a stencil - would go native if native code could call
+        # byte code; each call it makes to a word that is not native would cross back (a transition).
+        native = {wd for wd, _, _, _ in ops} | {w for w, (e, fl) in met.items() if fl > 1}
+        q = collections.Counter()
+        for w, (e, fl) in met.items():
+            if fl > 1: continue
+            n = sum(k for a, k in ipc.items() if w + 5 <= a < e)
+            if w in opblock: q['op'] += n; q['opw'] += 1
+            else:
+                q['call'] += n; q['callw'] += 1
+                q['trans'] += sum(ipc.get(at, 0) for at, t in calls[w] if t not in native)
         words = collections.defaultdict(list)
         for wd, at, L, t in ops: words[wd].append((at, L, t))
         total = sum(ipc.values())
@@ -301,6 +317,9 @@ for did in args:
                 ij = sum(seq[a][0] for a in ats if t <= a < at for x in seq[a][1] if x in ('S_I', 'S_J'))
                 lp['loops'] += c; lp['ij'] += ij
                 if leaf: lp['leaf'] += c; lp['leafij'] += ij
+        print('|  byte code the JIT met | words left by an operation without a stencil: %d, %s ops (%s); by a call only: %d, %s ops (%s), calling what is not native %s times |' % (
+              q['opw'], format(q['op'], ','), '%.1f%%' % (100.0 * q['op'] / total) if total else '-', q['callw'], format(q['call'], ','),
+              '%.1f%%' % (100.0 * q['call'] / total) if total else '-', format(q['trans'], ',')))
         print('|  loops | LOOP/+LOOP run %s, in loops calling nothing %s (%s); I/J run %s, in them %s |' % (format(lp['loops'], ','),
               format(lp['leaf'], ','), '%.1f%%' % (100.0 * lp['leaf'] / lp['loops']) if lp['loops'] else '-', format(lp['ij'], ','), format(lp['leafij'], ',')))
         a, rt = res['all'], res['rt']

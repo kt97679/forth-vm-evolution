@@ -4182,3 +4182,17 @@ live in registers (bodies calling nothing): 99.9% of the loop workload's, none
 of bubble's or the sieve's. **Deferred, not built**: the laptop's sweep decides
 (`sh lab/evolve/jitstack-inner-sweep.sh` on the Zen 4). Also: the JIT_PRICE
 switch and jitstack.py's loop count stay for that.
+
+## Iteration 220 - 2026-10-12 - Claude
+
+**Native code calling byte code (the survey's item 2, GENES.md candidate 5),
+priced again: not built** (results/price-jit-interp.md). The JIT_PRICE dump
+now lists every call of every word the JIT met (`K` lines; two designs'
+engines and images byte for byte as before). On the fastest design, the words
+the JIT leaves because of a call alone hold 9.3% of the kernel workload's
+dispatches, 4.1% of the corpus's, 0.5% of bubble's and nothing elsewhere
+(Iteration 90's 80% of the sieve went to jitx) - and they would cross back
+into the interpreter every 3-4 operations (44,675 crossings for 180,846
+operations on the kernel workload). Recorded in GOALS.md's register. Of the
+survey's list: 1 deferred to the laptop's sweep, 2 not built; 3 and 4 are
+bytes (~1.3 KB of stencils, a few cold paths), 5 and 6 need the laptop's perf.

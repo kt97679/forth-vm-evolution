@@ -221,6 +221,32 @@ static void jit_dump(int fd) {
     for (i = 0; i < JIT_NOPS; i++) if (jit_ops[i].ok) {
         m = snprintf(b, sizeof b, "L %d %d %d %d %d %d %d %d %d\n", i, jit_ops[i].opnd, jit_ops[i].k, jit_ops[i].n,
                      jit_ops[i].st[0], jit_ops[i].st[1], jit_ops[i].st[2], jit_ops[i].st[3], jit_ops[i].st[4]); write(fd, b, (size_t)m); }
+    for (i = 0; i < jn_n; i++) {        /* Iteration 220: every call of every word met, translated or not */
+        UNS64 w = jn_w[i], end = jn_end[i], a = w + 5;
+        while (a < end) {
+            UNS8 c = BYTE(a);
+            if (T2_CALL(c)) {
+                int wd = T2_CALLW(c), j;
+                UNS64 t = c & 0x3F;
+                for (j = 1; j < wd; j++) t = t << 8 | BYTE(a + j);
+                m = snprintf(b, sizeof b, "K %llu %llu %llu\n", (unsigned long long)(w - jit_cbase), (unsigned long long)(a - jit_cbase),
+                             (unsigned long long)t); write(fd, b, (size_t)m);
+                a += (UNS64)wd;
+            } else {
+                unsigned L = jit_one[T2_ONEIX(c)];
+                a++;
+                if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+                if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) break;
+                switch (jit_ops[L].opnd) {
+                case 1: case 5: case 6: a += 1; break;
+                case 2: case 7: a += 2; break;
+                case 3: a += 4; break;
+                case 4: a += 8; break;
+                default: break;
+                }
+            }
+        }
+    }
     for (i = 0; i < jp_n; i++) {
         m = snprintf(b, sizeof b, "O %llu %llu %u %llu\n", (unsigned long long)(jp_w[i] - jit_cbase),
                      (unsigned long long)(jp_at[i] - jit_cbase), jp_l[i], (unsigned long long)(jp_t[i] ? jp_t[i] - jit_cbase : 0));
