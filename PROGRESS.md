@@ -4314,3 +4314,23 @@ in the base kernel; helper words where convenient, in a reasonable balance with
 size - developer friendly, so reusable non-standard words keep their names;
 splitting a long word for understanding, testing and extending counts as a plus
 beside the bytes. The hidden-names entry in the register notes it.
+
+## Iteration 228 - 2026-10-12 - Claude
+
+**The fourth after-seed-44 patch: 32 KB of stack nobody used, on every run of
+every design** (results/pending/stackheads-after-seed44.patch; open item 7, the
+engine's constants swept by memory). Found by reading which pages a design
+still has present after a workload (/proc/pid/pagemap, mapped to the engine's
+symbols): 9-11 pages of C stack in a libc-free engine. load_image keeps
+`heads[MAX_THREADS]` - 4,096 cells, 32 KB - on the stack, and Ubuntu's gcc
+compiles with -fstack-clash-protection, which probes every page of a frame
+that large: 8 pages written at each start, for the 16 to 128 heads an image
+has. Static, in BSS, only the pages written count. With patch 2, memory by
+pages touched against master: seed 43's smallest -28 to -40 KB on every
+selection workload (fib 112 -> 80, kernel 172 -> 132), d3149e10c6 (full file
+buffers) -52 to -60, seed 43's fastest -24 to -44, the Q-best of all runs -16
+(-4 and 0 on bubble and ackermann). Tested on master and patches 1-4: run-tests
+PASS, 7 of 7 identical, all 165 of seed 43's front designs alive, the standard
+suite 0 of 2 differ; engines +-32 bytes, images unchanged; the four apply in
+order on a fresh clone and reproduce the tested files. load_image is the only
+function the compiler probes page by page (objdump: one probe loop).
