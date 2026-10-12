@@ -1,0 +1,29 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 7d962eb..2099789 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1118,7 +1118,14 @@ static int  t_olen = 0;
+ #ifndef FBUFSZ
+ #define FBUFSZ 4096
+ #endif
+-static struct fbuf { int fd, len, pos, raw; UNS8 b[FBUFSZ]; } t_fb[FBUFN];
++/*  Iteration 225: the slots' state together, their buffers apart. With each
++    buffer inside its slot, t_fslot's scan of the fd fields touched one page a
++    slot - 8 pages (32 KB) at 4 KB buffers, the first time any file was read -
++    and the fbuf gene bought that back with smaller buffers and more read(2).
++    Apart, the scan touches the state's one page; a buffer is touched when its
++    slot reads.  */
++static UNS8 t_fbb[FBUFN][FBUFSZ];
++static struct fbuf { int fd, len, pos, raw; UNS8 *b; } t_fb[FBUFN];
+ 
+ NOINLINE_IO static struct fbuf *t_fslot(int fd) {
+     int i, free_ = -1;
+@@ -1127,7 +1134,7 @@ NOINLINE_IO static struct fbuf *t_fslot(int fd) {
+         if (t_fb[i].fd == 0 && free_ < 0) free_ = i;   /* 0 marks unused */
+     }
+     if (free_ < 0) return 0;                           /* fall back to raw */
+-    t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0;
++    t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0; t_fb[free_].b = t_fbb[free_];
+     /* Iteration 104 (relf's READ-LINE): a descriptor that cannot seek - a
+        pipe, a FIFO, a terminal - is read a byte at a time: a byte read
+        ahead could not be given back, and the other end is shared with

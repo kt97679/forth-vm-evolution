@@ -4254,3 +4254,32 @@ reached through headers, tables and POSTPONE. The bytes are in the headers.
 Recorded in GOALS.md's register as deferred, with what a safe form would need
 (hand-kept lists per overlay, LEAVE8's crash understood, every gene combination
 through the gate and the standard suite). On to the other action items.
+
+## Iteration 225 - 2026-10-12 - Claude
+
+**Two engine changes for the after-seed-44 batch (results/pending/, ORDER.md).**
+(1) **Native WRITE-LINE gives back the read-ahead** (open item 8, found by
+readline-check.py in Iteration 214): one line, `t_fdrop` before the write, as
+WRITE-FILE and the positioning handlers already did; readline-check.py now
+holds native to the right bytes too. (2) **The native file buffers' slots,
+state apart from buffers** (open item 7, "a sweep of the engine's constants",
+by pages touched - cputime's MINFLT, the memory objective): t_fslot's scan of
+the slots' fd fields touched one page a slot, 32 KB at 4 KB buffers, the first
+time any file was read. With the state in one array, d3149e10c6 (fbuf 0): fib
+144 -> 116 KB, loop 144 -> 116, corpus 168 -> 144, kernel 204 -> 168 - what
+512-byte buffers cost before (112-164), without their reads; fbuf 2 itself
+0 to +8 KB, within the tie. 30 of seed 43's native designs have full buffers,
+83 the 1 KB ones. Tested together: readline-check PASS on two designs, run-tests
+PASS, 7 of 7 identical, outbuf-check PASS, every native front design of seed
+43 alive (117 of 117), the standard suite 0 of 2 differ; engines and images of
+three designs the same sizes as master's; both patches apply in order on a
+fresh clone and reproduce the tested files.
+
+**Left for the owner** (open item 8): `1 0 /` kills every engine (SIGFPE) - a
+THROW -10 needs a way for a handler to raise a Forth exception, which the
+engine has not (it reports and exits); native output held when the terminal
+should see it at once, and lost when a signal kills the engine - each fix
+adds bytes to every native engine. Open items now: 3 (fsys: READ's editing
+characters - pipes read a byte at a time, so the workloads would not see it -
+and the libraries' shared loops), 7 (replication: the laptop's perf), the JIT
+survey's 1, 5 and 6 (the laptop).
