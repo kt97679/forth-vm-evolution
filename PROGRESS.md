@@ -3728,3 +3728,14 @@ And the single-SYSCALL family designed with the owner
 (results/drafts/fsys/single-syscall.md): fsys 2 - every I/O word over SYSCALL,
 the kernel's compiled uses rebound by the converter, WRITE's buffer on the
 heap - beside fsys 0 (all native) for evolution to weigh.
+
+## Iteration 205 - 2026-10-12 - Claude
+
+**The single-SYSCALL family, stage A** - the fifth after-seed-42 patch. fsys
+2: OPEN-FILE, CLOSE-FILE, WRITE-FILE, ALLOCATE and FREE in Forth over SYSCALL
+too; the converter rebinds the kernel's compiled uses (INCLUDED, SAVE-SYSTEM)
+to them, so their handlers - and the C allocator - leave the engine. The
+smallest 628 bytes smaller in all (fsys 1: 104), the fastest 1,039; the full
+gate and the standard suite whole. fsys 0 byte-identical. Patch 5 regenerated
+once: it had carried patch 4's hunks (patch 4 never committed in the working
+tree). Stage B next: WRITE on a heap buffer, READ, READ-LINE, BYE.
