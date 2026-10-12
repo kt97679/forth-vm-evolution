@@ -4211,3 +4211,22 @@ found names cannot serve; a per-chain filter would - noted, not priced in
 bytes. Register updated. Open items now: 3 (fsys: READ's editing characters,
 the libraries' shared loops), 4 (packed names), 6 (keeping forms), 7-8; the
 JIT survey's 1 waits for the laptop's sweep, 5-6 for its perf.
+
+## Iteration 222 - 2026-10-12 - Claude
+
+**The next keeping forms (open item 6) and packed names (open item 4), priced:
+neither built; a better size lever found** (results/price-keepforms-next.md,
+results/price-names.md). regprice.py on seed 43's smallest: the largest
+absorbable pattern is still DUP before a short ?BRANCH (5.4% kernel, 6.3%
+corpus, 6.4% parse of image dispatches) - which has its form, DUP?BRANCH8,
+listed by 121 of the 165 front designs and realised by 28: the small designs
+realise 10-14 of the 31 format-10 names they list; codes are what is short
+there, and new forms (OVER C@ 1.4-3.0%, DUP C@ 1.3-2.9%) would queue for them.
+Packed names: all 58 characters fit six bits; -292 to -384 bytes before the
+code, a kernel change and a reseed - not built. **The names nobody uses**
+(results/drafts/hidden-names.py): the names no program here writes, made
+headerless with the converter's existing switch - the overlays' compiler
+helpers and constants, NAME=? and NEXT-NFA8 - the smallest of all runs 16,136
+-> 15,688 bytes (-2.8%), seed 43's fastest -936 (-2.7%), both alive; no
+standard word among them. A candidate for the after-seed-44 batch, as lists
+kept by hand per overlay; gene or default, the owner's call.
