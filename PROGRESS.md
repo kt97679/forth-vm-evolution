@@ -3716,3 +3716,15 @@ Two assumptions refuted on the way (thinhdr is not one chain; FIND skips the
 duplicate FORTH). NAME=? a cell at a time tried and measured - no gain (most
 compares end at the first character), reverted. What would cut the lookup:
 fewer entries a lookup - more chains as a gene, or a lookup cache.
+
+## Iteration 204 - 2026-10-12 - Claude
+
+**The gene threads** - the fourth after-seed-42 patch. The loop audit's
+lever: the converter files the dictionary into 16, 32, 64 or 128 chains (32 as
+built: byte-identical). Counted on the smallest: 64 chains cut corpus 28%,
+parse 27%, kernel 9% for ~240 bytes; 128 chains 41%, 43%, 14% for ~700; 16
+save 128 bytes and cost +49%. The suite whole at every count; run-tests PASS.
+And the single-SYSCALL family designed with the owner
+(results/drafts/fsys/single-syscall.md): fsys 2 - every I/O word over SYSCALL,
+the kernel's compiled uses rebound by the converter, WRITE's buffer on the
+heap - beside fsys 0 (all native) for evolution to weigh.

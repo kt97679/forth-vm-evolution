@@ -79,3 +79,20 @@ What remains native and is I/O: WRITE (EMIT and TYPE are Forth over it), READ,
 READ-LINE, OPEN-FILE, CLOSE-FILE, WRITE-FILE, BYE. OPEN-FILE and CLOSE-FILE
 wait on INCLUDED (compiled against them); WRITE carries the engine's output
 buffer, so moving it costs speed unless the buffer moves to Forth too.
+
+## Built: the gene threads (Iteration 204) - results/pending/threads-after-seed42.patch
+
+The converter files the dictionary into 16, 32 (as built), 64 or 128 chains.
+Counted on the smallest design (results/drafts/threads-profile.py):
+
+| chains | kernel | corpus | parse (held out) | image |
+|---|---|---|---|---|
+| 16 | 6.29M (+17%) | 49.88M (+49%) | 128.47M (+53%) | -120 to -128 bytes |
+| 32 | 5.39M | 33.49M | 83.70M | as before, byte for byte |
+| 64 | 4.91M (-9%) | 23.97M (-28%) | 61.37M (-27%) | +240 to +248 |
+| 128 | 4.66M (-14%) | 19.71M (-41%) | 47.59M (-43%) | +686 to +712 |
+
+The standard suite 14 of 14 as s6 at 16, 64 and 128; run-tests PASS. Two
+faults on the way: the link pass sized links by the dump's 32 chains
+("link does not fit" at every other count), and a stale build after the
+NAME=? revert, caught by the evolver's freshness check.
