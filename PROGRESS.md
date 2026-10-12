@@ -4283,3 +4283,26 @@ adds bytes to every native engine. Open items now: 3 (fsys: READ's editing
 characters - pipes read a byte at a time, so the workloads would not see it -
 and the libraries' shared loops), 7 (replication: the laptop's perf), the JIT
 survey's 1, 5 and 6 (the laptop).
+
+## Iteration 226 - 2026-10-12 - Claude
+
+**The fsys follow-ups (open item 3), as seed 44 runs: the third patch of the
+after-seed-44 batch (results/pending/fsysread-after-seed44.patch).** READ finding
+its editing characters in a Forth loop: not made faster - only a stdin that is a
+file takes that path (a block read, the rest given back), and every workload
+reads its input through a pipe, a byte a read(2) (the owner's rule), so
+evolution would not see it. What it lacked was a check: readline-check.py now
+gives the interpreter its input from a stdin that is a file - CR LF, a
+backspace and a delete inside a line, a line past ACCEPT's room, KEY, no newline
+at the end - every level against native: fsys 3, 4 and 5 as native; shown to
+fail with READ's block path not stopping at the first editing character. The
+libraries' shared loops: READ asks whether stdin seeks as every file is asked
+(FS-SEEKS?, its bit cache), and its own FS-SEEK0 goes - 40 image bytes at fsys 3
+(8,680 -> 8,640 on the smallest of all runs). The rest priced and left: READ's
+and READ-LINE's byte-a-time loops share a few tokens (a helper would save ~4
+bytes); fsys 5's seven give-back wrappers (~100 bytes there) could fold into
+FS-DROP if the converter rebound its compiled uses - a converter change, not
+done. Tested: readline-check PASS on two designs, outbuf-check PASS, run-tests
+PASS, 7 of 7 identical, the 48 seed 43 front designs with fsys 3 or 4 at each
+of fsys 3, 4, 5 alive (144 of 144), the suite at fsys 3 on two designs 0 differ;
+the three patches apply in order on a fresh clone and reproduce the tested files.
