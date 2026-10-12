@@ -3986,3 +3986,77 @@ build stages there. Uploads arrive in `/mnt/user-data/uploads`; deliver to
   `results/pending/` (after seed 43).
 - The Forth collection: `reference/forth-archive/` and
   `results/forth-collection-catalog.md`.
+
+## Iteration 214 - 2026-10-12 - Claude
+
+**Set up from Iteration 213's bundle while seed 43 runs.** The checks as handed
+over: the build 23 s, run-tests PASS (99 s here, not ~4 minutes), 7 of 7 stages
+identical. Iteration 213's environment, corrected forward: install gcc-multilib
+as root and make the clone's directory belong to claude before cloning (HANDOFF-
+PROMPT.md had both; it is rewritten to point to the last HANDOFF entry); a job
+started with `&` dies when its tool call ends - the first run-tests was killed
+silently - so a long job runs under `setsid nohup` and is polled; and one such
+job did not outlive the end of a reply (its log stops there; /tmp kept its
+files). Nothing executable changed between seed 43's commit (9b96930) and 213,
+and a chain pulls once (its second half runs with NEXT_RUN_PULLED=1): a newer
+bundle in ~/Downloads cannot touch a running chain.
+
+**fsys 5 tightened - the after-seed-43 batch's fourth patch
+(results/pending/fsys5fast-after-seed43.patch).** Searched first (prompts/12:
+PROGRESS, GOALS, the fsys notes - bookkeeping, read-ahead, FS-FILL, FS-TAKE,
+6.95): no earlier attempt, only Iteration 211's count. Priced first
+(prompts/10): lab/evolve/fsys-count.py - the profiler's per-address counts
+summed, strace -f -c for the system calls, the same build but for the level:
+counted, nothing removed - reproduced 211's 6,754,946 and 6,947,095 exactly:
+the prize 192,149 dispatches (2.8%), the kernel workload on seed 42's smallest.
+READ-LINE now takes a line whose LF is already in the buffer, within the
+caller's room, at once: one SCAN, one CMOVE, no seek test (an entry holding
+unread bytes belongs to a file that seeks - every open, close and other use
+empties it), no variables, next and end as addresses; the rest goes the general
+way with two variables where there were six. Predicted ~110 dispatches a line
+against fsys 4's ~155; counted, fsys 4 -> 5 (Iteration 211's in brackets):
+
+| design | kernel | corpus |
+|---|---|---|
+| be1620e346, seed 42's smallest | -2.2% (+2.8%) | -0.4% |
+| a0c7010722, without kinput | -2.3% (+2.8%) | -0.4% (+2.2%) |
+| 28677d13b1, seed 42's fastest | -12.5% (+3.8%) | -9.7% (+2.8%) |
+| 9a3de58ebe, the best by Q | +44.8% (+62%) | +21.1% (+33%) |
+
+System calls as in 211 (kernel 4,441 -> 135, corpus 12,755 -> 439); images
+33-53 bytes smaller than 211's fsys 5. Profiled: the seek test 40,700
+dispatches -> 192 - the new path is the one taking the lines.
+
+**Found: the copy, where CMOVE has no opcode.** 9a3de58ebe lists CMOVE among
+its format-10 words but realizes 14 of its 31, and not CMOVE: 90% of its fsys 5
+cost is copying lines out with the kernel's byte loop. A copy a cell at a time
+priced, NOT built: there -28% kernel, -17% corpus; where CMOVE has its opcode
++2.2% to +11.7% and +0.8% to +6.5% - and evolution can give CMOVE its slot
+already (GOALS.md's register; results/drafts/fsys/single-syscall.md).
+
+**lab/evolve/readline-check.py** (in the patch): READ-LINE at fsys 3, 4 and 5
+against native, byte for byte - every kind of line, a 10-character room, a CR
+and its LF on either side of the 4 KB boundary, the position words between
+lines, two files in turn, a number reused, u1 = 0, the end met again, a
+5,000-character line, INCLUDED nested, /dev/stdin opened as a file (no read-
+ahead from a pipe: the next line must be left to the interpreter). PASS on
+three designs. Shown to fail (prompts/15): a planted fault in the new path (a CR
+kept before the LF) and one in the general way (its LF left unconsumed) - each
+caught at fsys 5 alone; and before that on my own wrong expectation ("XX" and
+its LF cover three bytes, not four). **A native fault:** WRITE-LINE's handler
+never gives back the read-ahead (no t_fdrop, where CLOSE-FILE, READ-FILE,
+WRITE-FILE, REPOSITION-FILE, FILE-POSITION and FILE-SIZE all call it), so after
+a READ-LINE on a file opened R/W native writes after the 4 KB it read; fsys 3,
+4 and 5 write at the file position. Judged by the file's bytes, not against
+native. Not fixed: an engine change to every fsys 0 design - open item 8, with
+the other engine findings, the owner's call.
+
+**Tested** (master and patches 1-4): run-tests PASS; 7 of 7 stages identical;
+the gate at fsys 5 on four designs (the corpus, kernel.img byte for byte, far);
+readline-check PASS; outbuf-check.py PASS; the standard suite at fsys 5 14 of
+14 as s6 on two designs, the negative control caught. Verified: the four
+patches apply in order on a fresh clone and reproduce the tested files.
+
+**Open items, Iteration 213's list changed so:** 2 - the batch is four patches.
+3 - fsys 5's bookkeeping done; READ from stdin's editing characters and the
+shared loops remain. 8 - native WRITE-LINE's missing give-back added.

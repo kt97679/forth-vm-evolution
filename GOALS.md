@@ -28,6 +28,9 @@ How it decides things:
 
 ## Resuming in a new chat (Iteration 85)
 
+**Since Iteration 213 the handoff is PROGRESS.md's last HANDOFF entry**, and
+HANDOFF-PROMPT.md the prompt that points to it; this section is older.
+
 Everything a new session needs is in the repository. Upload the newest
 bundle (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet
 analysed (`runs/forth-vm-evolution-*.tar.gz`), and say: "continue from
@@ -858,6 +861,7 @@ the smallest by under ~2%.**
 
 | approach | what decided it | where |
 |---|---|---|
+| fsys 5 copying lines out a cell at a time (FS-MOVE) | priced, not built (Iteration 214): where CMOVE has no opcode, kernel -28% and corpus -17% of fsys 5's dispatches; where it has one, +2.2% to +11.7% and +0.8% to +6.5% - evolution can give CMOVE its opcode instead | `results/drafts/fsys/single-syscall.md` |
 | Variables and constants compiled as literals in code compiled at run time (`rtlit`) | built and measured, rejected (Iteration 59): correct, and the held-out sieve 0.811 of its dispatches - but kernel 0.984 and corpus 1.016, because a COMPILE,8 link that checks every compiled word costs a compiling workload more than it saves; 132 bytes more; selected geomean 1.000 | PROGRESS.md, Iteration 59 |
 | The loop opcodes in code compiled at run time | priced, not built (Iteration 28): 0.1% of kernel's dispatches, 0.8-1% of corpus's, none on fib or parse; 68-70% of the held-out loop's, which building it for would spoil | `results/price-runtime-loops.md` |
 | A reach check for far calls in cv8.4 | measured, not built (Iteration 28): the workloads run code up to 68 KB, the far form reaches 2 MB (one-byte calls) to 4 MB; a check costs every image bytes | `results/price-runtime-loops.md` |

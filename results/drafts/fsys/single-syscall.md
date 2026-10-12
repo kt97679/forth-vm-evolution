@@ -158,3 +158,66 @@ Two faults found on the way, by measuring rather than trusting the gate:
   death fsys 4 and 5 lose what their buffer held, exactly as native, fsys 3
   keeps it; the prompt still shown before a blocking read; a terminal still
   shown at once. The standard suite 14 of 14 at fsys 4 and 5; run-tests PASS.
+
+## fsys 5 tightened (Iteration 214) - results/pending/fsys5fast-after-seed43.patch
+
+What fsys 5 paid for its fewer system calls was bookkeeping in Forth: the seek
+test on every call, six variables set and read, the table indexed by
+multiplication. Now a line whose LF is already in the buffer, within the
+caller's room, is taken at once - one SCAN, one CMOVE, the entry's next moved
+past the LF. No seek test there: an entry holding unread bytes belongs to a
+file that seeks, because every open, close and other use empties it. The
+entry is [next, end, buffer] as addresses (equal: nothing read ahead). The rest
+- the buffer empty or the line running past its end, the room filled, the end
+of the file, an error - goes the general way, with two variables (the entry,
+the room's end) where there were six.
+
+Counted - the profiler's per-address counts summed, system calls by strace -f
+-c; the same build but for the level (dispatches):
+
+| design | workload | fsys 4 | fsys 5, Iteration 211 | fsys 5 now | now against fsys 4 |
+|---|---|---|---|---|---|
+| be1620e346, seed 42's smallest (CMOVE an opcode, SCAN a loop) | kernel | 6,754,946 | 6,947,095 | 6,603,379 | -2.2% |
+| | corpus | 36,862,315 | - | 36,727,255 | -0.4% |
+| a0c7010722, small, without kinput | kernel | 6,737,806 | 6,927,803 | 6,584,073 | -2.3% |
+| | corpus | 36,844,867 | 37,651,483 | 36,701,390 | -0.4% |
+| 28677d13b1, seed 42's fastest (both opcodes) | kernel | 1,386,707 | 1,439,025 | 1,212,698 | -12.5% |
+| | corpus | 4,975,165 | 5,116,693 | 4,494,762 | -9.7% |
+| 9a3de58ebe, the best by Q of all runs (CMOVE the byte loop) | kernel | 1,506,883 | 2,447,468 | 2,182,678 | +44.8% |
+| | corpus | 5,982,061 | 7,970,410 | 7,242,827 | +21.1% |
+
+System calls as in Iteration 211: the kernel workload 4,441 at fsys 4 (2,189
+reads, 2,137 seeks) against 135; the corpus 12,755 against 439. Images: fsys 5
+now 33-53 bytes smaller than Iteration 211's (be1620e346 9,585 -> 9,552,
+a0c7010722 9,512 -> 9,464, 9a3de58ebe 10,240 -> 10,202, 28677d13b1 10,486 ->
+10,433), +576-598 over fsys 4; the engine as before. The counting harness
+(lab/evolve/fsys-count.py, in the patch) first reproduced Iteration 211's
+6,754,946 and 6,947,095 exactly; profiled after, the seek test ran 192
+dispatches where it ran 40,700 - the new path takes the lines.
+
+**The copy.** On 9a3de58ebe 90% of fsys 5's extra dispatches are CMOVE: the
+lines copied out of the buffer by the kernel's byte loop, 11 operations a byte.
+Its genome lists CMOVE among its format-10 words, but it realizes 14 of its 31
+and CMOVE is not one of them. A copy a cell at a time (FS-MOVE: cells while 8
+bytes are left, then CMOVE; 16 operations a cell) priced, NOT built - fsys 5
+with it against fsys 5 now:
+
+| design | kernel | corpus | image |
+|---|---|---|---|
+| be1620e346 (CMOVE an opcode) | +2.2% | +0.8% | +17 |
+| 28677d13b1 (CMOVE an opcode) | +11.7% | +6.5% | +24 |
+| 9a3de58ebe (CMOVE the loop) | -28.3% | -16.7% | +25 |
+
+FS-MOVE costs every design the same 142,302 dispatches on the kernel workload
+and 290,340 on the corpus; it pays only where CMOVE has no opcode, and
+evolution can give CMOVE one (the format-10 list's order) - so it would need a
+gene of its own, for a gain evolution can already reach. The owner's call.
+
+**A native fault found on the way.** lab/evolve/readline-check.py (in the
+patch) judges WRITE-LINE after a READ-LINE on a file opened R/W by the file's
+bytes: fsys 3, 4 and 5 write at the file position (first, XX, ond line,
+third); native writes after the 4 KB it read ahead (first, second line, third,
+XX) - its WRITE-LINE handler never calls t_fdrop, as CLOSE-FILE, READ-FILE,
+WRITE-FILE, REPOSITION-FILE, FILE-POSITION and FILE-SIZE do. Not fixed: an
+engine change to every fsys 0 design, for the owner to decide (with the other
+engine findings - PROGRESS.md, Iteration 213, open item 8).
