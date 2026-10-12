@@ -1,0 +1,67 @@
+diff --git a/forth/file-sysc3.4 b/forth/file-sysc3.4
+index 0b7afbf..d429b89 100644
+--- a/forth/file-sysc3.4
++++ b/forth/file-sysc3.4
+@@ -17,7 +17,20 @@
+ VARIABLE FS-SEEK0  -1 FS-SEEK0 !                 \ stdin seekable: 1, not: 0, unknown: -1
+ VARIABLE FS-P                                    \ the buffer being read into
+ : FS-EDIT? ( c --- f )  DUP 10 = OVER 13 = OR OVER 8 = OR SWAP 127 = OR ;
+-: FS-SEEKS? ( fid --- f )  0 1 8 FS3 0< 0= ;     \ lseek(fid, 0, SEEK_CUR) works
++\ Iteration 208: whether a file can seek, remembered for descriptors 0-63 -
++\ two cells of bits, known and seekable; OPEN-FILE and CLOSE-FILE forget a
++\ descriptor, whose number is used again. READ-LINE's lseek(2) a line gone.
++CREATE FS-SK 0 , 0 ,
++: FS-BIT ( fid --- mask )  1 SWAP LSHIFT ;
++: FS-SEEKS? ( fid --- f )                        \ lseek(fid, 0, SEEK_CUR) works - asked once
++  DUP 64 U< 0= IF 0 1 8 FS3 0< 0= EXIT THEN
++  DUP FS-BIT FS-SK @ AND IF FS-BIT FS-SK CELL+ @ AND 0= 0= EXIT THEN
++  DUP 0 1 8 FS3 0< 0= DUP IF OVER FS-BIT FS-SK CELL+ @ OR FS-SK CELL+ ! THEN
++  SWAP FS-BIT FS-SK @ OR FS-SK ! ;
++: FS-FORGET ( fid --- )
++  DUP 64 U< IF FS-BIT INVERT DUP FS-SK @ AND FS-SK ! FS-SK CELL+ @ AND FS-SK CELL+ ! ELSE DROP THEN ;
++: OPEN-FILE ( c-addr u fam --- fid ior )  OPEN-FILE OVER FS-FORGET ;
++: CLOSE-FILE ( fid --- ior )  DUP FS-FORGET CLOSE-FILE ;
+ : FS-BACK ( fid got k --- k )                    \ the bytes read past k given back
+   2DUP > IF 2DUP - NEGATE >R ROT R> 1 8 FS3 DROP SWAP DROP ELSE SWAP DROP SWAP DROP THEN ;
+ 
+@@ -41,9 +54,7 @@ VARIABLE FS-P                                    \ the buffer being read into
+ 
+ VARIABLE FS-ANY                                  \ READ-LINE: a character read
+ : FS-LF ( got --- k )                            \ the first LF's place in FS-P's bytes, or got
+-  0 BEGIN 2DUP > WHILE
+-    DUP FS-P @ + C@ 10 = IF SWAP DROP EXIT THEN 1+
+-  REPEAT DROP ;
++  FS-P @ OVER 10 SCAN SWAP DROP - ;              \ Iteration 208: SCAN - native under kinput - not a loop here
+ : FS-CR ( u --- u' )                             \ a trailing CR is the line's end too
+   DUP IF DUP 1- FS-P @ + C@ 13 = IF 1- THEN THEN ;
+ : READ-LINE ( c-addr u1 fid --- u2 flag ior )
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 0c32030..4cbadf8 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -532,3 +532,11 @@ for byte; a signal death where native loses output the levels keep), the
+ prompt shown before a blocking read, and a terminal shown at once (native
+ holds it). The workloads print little: fsys 4 is about fsys 3's speed - their
+ cost is READ-LINE's scan and system calls a line, not the output.
++
++## fsys 3 and 4, READ-LINE (Iteration 208)
++
++READ-LINE finds the line's end with SCAN (a native opcode under kinput, the
++kernel's loop otherwise) and asks whether a file can seek once per
++descriptor (0-63; OPEN-FILE and CLOSE-FILE forget it) - a system call a line
++fewer. The fastest design (kinput) went from 27% to 16% slower than fsys 2;
++designs without kinput keep their SCAN loop. ~150 bytes for it.
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 00f7d89..e173544 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -148,7 +148,8 @@ def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words
+     return g.get('fsys', 0) if fsys_on(g) else 0
+ FSYS2_INTERNAL = ('FS-OFL', 'FS-END', 'FS-SAVED')
+ FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
+-FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR')   # Iteration 206
++FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
++                  'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
+ FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
+ FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207
+ 

@@ -12,10 +12,11 @@ applied) with the ones before it, and verified to apply in order.
 | 5 | fsys2-after-seed42.patch | fsys 2, the single-SYSCALL family's stage A: OPEN-, CLOSE-, WRITE-FILE, ALLOCATE, FREE in Forth, the kernel's uses rebound - the smallest 628 bytes smaller (205) - engine: rebuild |
 | 6 | fsys3-after-seed42.patch | fsys 3, stage B: WRITE (unbuffered), READ, READ-LINE (no read-ahead from what cannot seek), BYE in Forth - the smallest 1,217 bytes smaller, the I/O workloads slower (206) - engine: rebuild |
 | 7 | fsys4-after-seed42.patch | fsys 4: fsys 3 with the output buffered off a terminal (Gforth's rule), flushed at the native engine's points; lab/evolve/outbuf-check.py (207) - engine: rebuild |
+| 8 | readline-after-seed42.patch | fsys 3 and 4: READ-LINE's line end by SCAN, the seek test remembered per descriptor (208) |
 
 To apply, on a fresh clone of master:
 
-    for f in shortbranch screen fsys threads fsys2 fsys3 fsys4; do git apply results/pending/$f-after-seed42.patch || break; done
+    for f in shortbranch screen fsys threads fsys2 fsys3 fsys4 readline; do git apply results/pending/$f-after-seed42.patch || break; done
 
 Then the checks as for every batch (results/applied-after-seed41/ORDER.md): the
 reseed only if forth/kernel.4 changed, the stage build, run-tests (bash),

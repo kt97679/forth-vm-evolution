@@ -115,3 +115,21 @@ READ-LINE's: counted on the smallest, fsys 4 adds 3.5M dispatches to the corpus
 (+10%), 1.9M of them FS-LF, the Forth loop that finds the line's end, and
 three system calls a line. The next step for speed is there: SCAN (native
 under kinput) for FS-LF, and the seek test remembered per file.
+
+## READ-LINE faster (Iteration 208) - results/pending/readline-after-seed42.patch
+
+Within the owner's rules (no read-ahead from what cannot seek): the line's end
+found by SCAN - native under kinput, the kernel's loop otherwise - and whether
+a file can seek asked once per descriptor (two cells of bits for 0-63;
+OPEN-FILE and CLOSE-FILE, wrapped, forget a descriptor whose number is used
+again): two system calls a line, not three. Speed against fsys 2 (VM, two
+rounds): the fastest design (kinput) 27% slower -> 16%; the knee 16% -> 13%;
+the smallest 7% -> 12% (within noise; without kinput its SCAN is a loop, the
+dispatches unchanged: corpus 37.11M). ~150 bytes for the cache and wrappers.
+outbuf-check.py PASS; the standard suite 14 of 14 at fsys 3 and 4 (filetest
+opens, closes, reopens and repositions); run-tests PASS.
+
+What would close the rest: read-ahead where the file can seek - the owner's
+rule allows it there - a heap buffer a descriptor, given back by lseek(2)
+before READ-FILE, the positioning words and CLOSE-FILE, as the native engine's
+t_fgetc and t_fdrop do in C: one read(2) for many lines, as native.

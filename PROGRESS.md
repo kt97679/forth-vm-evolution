@@ -3763,3 +3763,13 @@ stderr byte for byte (a SIGFPE death where native loses output 3 and 4 keep),
 the prompt before a blocking read, a terminal shown at once (native holds it).
 Speed about fsys 3: the workloads' I/O cost is READ-LINE's line scan (FS-LF,
 1.9M dispatches of the corpus) and calls a line - the next step.
+
+## Iteration 208 - 2026-10-12 - Claude
+
+**READ-LINE at fsys 3 and 4 faster** - the eighth after-seed-42 patch: the
+line's end by SCAN (native under kinput), whether a file can seek remembered
+per descriptor (OPEN-FILE and CLOSE-FILE forget). The fastest design (kinput)
+went from 27% to 16% slower than fsys 2; designs without kinput gain the
+system call only. The standard suite whole at both levels, outbuf-check.py
+PASS, run-tests PASS. Read-ahead on seekable files - allowed by the owner's
+rule - is what would close the rest.
