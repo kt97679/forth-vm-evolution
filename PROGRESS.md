@@ -3704,3 +3704,15 @@ image +504), the fastest 328, the standard suite 14 of 14 as s6 on all three.
 Two faults found: the dump-making system has no NIP or TUCK (the library had
 stopped after READ-FILE), and my first check of the kernel's uses had hidden
 every line with a stack comment.
+
+## Iteration 203 - 2026-10-11 - Claude
+
+**The loop audit (the owner): results/loop-audit.md.** 42 of the image's 276
+colon definitions loop, 16 never run. Profiled per word on the smallest
+design: the name lookup (NEXT-NFA8, SEARCH-WORDLIST, NAME=?) is ~60% of
+corpus and parse, 22% of the kernel; the loop runtime dominates loop, bubble
+and sieve; FILL 15% of sieve. Most already have a gene that moves them into C.
+Two assumptions refuted on the way (thinhdr is not one chain; FIND skips the
+duplicate FORTH). NAME=? a cell at a time tried and measured - no gain (most
+compares end at the first character), reverted. What would cut the lookup:
+fewer entries a lookup - more chains as a gene, or a lookup cache.
