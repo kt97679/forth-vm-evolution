@@ -58,26 +58,13 @@ index 0000000..84fd023
 +: CLOSE-FILE ( fid --- ior )  FS-DROP 3 FS1 ;   \ its read-ahead dropped, then close(2)
 +: WRITE-FILE ( c-addr u fid --- ior )  FS-DROP FS-WRITE IF 0 ELSE -200 THEN ;
 diff --git a/lab/evolve/README.md b/lab/evolve/README.md
-index 9081137..7841953 100644
+index 5d3d9ec..7841953 100644
 --- a/lab/evolve/README.md
 +++ b/lab/evolve/README.md
-@@ -474,3 +474,29 @@ Its helpers are headerless. A design without the gene builds from the dumps it
- always did: byte for byte as before. Measured: engine -608 bytes and image +504
- (the smallest, total -104), the fastest -328 in all; the standard suite whole
- on fsys=1 designs (ans-check, ANS_SET=fsys=1).
-+
-+## threads (Iteration 204): the dictionary's chains
-+
-+The loop audit (results/loop-audit.md): the name lookup - a walk down one hash
-+chain - was ~60% of corpus and parse on the smallest design. The converter
-+now files the dictionary into N chains (--threads; FORTH-WORDLIST's body its
-+count and N heads; the links sized by the chains they end up on): 0 keeps the
-+dump's 32, 1-3 give 64, 128 and 16. Every lookup path takes the count from the
-+word list (HASH, the native FIND and HASH, WORDLIST copying FORTH-WORDLIST's),
-+so nothing else changes. Counted on the smallest (kernel, corpus, parse):
-+16 chains +17%, +49%, +53% dispatches for 128 bytes less; 64 chains -9%, -28%,
-+-27% for ~240 bytes more; 128 chains -14%, -41%, -43% for ~700. The standard
-+suite whole at 16, 64 and 128; at 32 every image byte for byte as before.
+@@ -487,3 +487,16 @@ so nothing else changes. Counted on the smallest (kernel, corpus, parse):
+ 16 chains +17%, +49%, +53% dispatches for 128 bytes less; 64 chains -9%, -28%,
+ -27% for ~240 bytes more; 128 chains -14%, -41%, -43% for ~700. The standard
+ suite whole at 16, 64 and 128; at 32 every image byte for byte as before.
 +
 +## fsys 2 (Iteration 205): the single-SYSCALL family, stage A
 +
@@ -92,31 +79,11 @@ index 9081137..7841953 100644
 +workload opens its files through the Forth words); the standard suite 14 of 14
 +as s6. Stage B: WRITE with its buffer on the heap, READ, READ-LINE, BYE.
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index e5ab54c..216659f 100644
+index af0d85f..216659f 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
-@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
- # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
- # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
- # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
--LATE = ('fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
-+LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
- HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
- FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
- HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
-@@ -114,6 +114,7 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
-              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
- EXPRESSED['cv8'] += ['jitloop', 'jitinl']
-+EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
- EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
- EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
- EXPRESSED['cv8'] += ['dskew']   # Iteration 183 (the owner: the stacks' place): the data stack 2 KB lower - its top cells off the return stack's page offsets   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
-@@ -140,8 +141,13 @@ RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVE
- # dump), their handlers out of the engine: 27 of 68 primitives never ran in
- # the eight workloads. A design without it builds from the dumps it always did.
- FSYS_INTERNAL = ('FS-BLK', 'FS0', 'FS1', 'FS2', 'FS3', 'FS4', 'FS-DROP', 'FS-WRITE', 'FS-NL', 'FS-MMAP')   # called by file-sysc.4's words only
-+THREADS_N = {1: 64, 2: 128, 3: 16}   # Iteration 204, the gene threads: 0 as built (32 chains)
+@@ -144,6 +144,10 @@ FSYS_INTERNAL = ('FS-BLK', 'FS0', 'FS1', 'FS2', 'FS3', 'FS4', 'FS-DROP', 'FS-WRI
+ THREADS_N = {1: 64, 2: 128, 3: 16}   # Iteration 204, the gene threads: 0 as built (32 chains)
  def fsys_on(g):
      return bool(g.get('fsys')) and g['enc'] == 'cv8'
 +def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words in Forth, 2 the single-SYSCALL family
@@ -126,7 +93,7 @@ index e5ab54c..216659f 100644
  
  def rtloop_on(g):
      """Iteration 41: does this design compile loops at run time with its loop
-@@ -594,7 +600,7 @@ def _build(g, d):
+@@ -596,7 +600,7 @@ def _build(g, d):
      for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
                   ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
          if eff.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
@@ -135,18 +102,16 @@ index e5ab54c..216659f 100644
      if g.get('regpin'): flags.append('-DREGPIN=%d' % g['regpin'])   # Iteration 197: the VM registers pinned
      if g['spec']: flags.append('-DSPEC=1')
      t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
-@@ -670,7 +676,10 @@ def _build(g, d):
+@@ -672,6 +676,8 @@ def _build(g, d):
      hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
      if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
      if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
 +    if fsys_level(g) == 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
 +        hl += FSYS2_INTERNAL; opts += ['--rebind', ','.join(FSYS2_REBIND)]
      if hl: opts += ['--headerless', ','.join(hl)]
-+    if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
+     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
      if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
-     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
-                                                                  # copies (Iteration 38), the dump tool and dead
-@@ -682,7 +691,7 @@ def _build(g, d):
+@@ -685,7 +691,7 @@ def _build(g, d):
      fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
      fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
      fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
@@ -155,18 +120,16 @@ index e5ab54c..216659f 100644
      # Iteration 199: a short branch the tag-2 encoding finds out of range is
      # written to long-branches.json and the conversion fails; converted again
      # with it kept long - the set only grows, so it ends.
-@@ -951,6 +960,10 @@ def mutate(g, rnd):
+@@ -954,6 +960,8 @@ def mutate(g, rnd):
              g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
          elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
              g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
 +        elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
 +            g['fsys'] = rnd.choice([v for v in range(3) if v != g.get('fsys', 0)]); what.append('fsys=%d' % g['fsys'])
-+        elif k == 'threads':          # Iteration 204: 0 as built (32), 1-3 64, 128, 16 chains
-+            g['threads'] = rnd.choice([v for v in range(4) if v != g.get('threads', 0)]); what.append('threads=%d' % g['threads'])
+         elif k == 'threads':          # Iteration 204: 0 as built (32), 1-3 64, 128, 16 chains
+             g['threads'] = rnd.choice([v for v in range(4) if v != g.get('threads', 0)]); what.append('threads=%d' % g['threads'])
          elif k == 'regpin':           # Iteration 197: 0 GCC's choice; 1-3 three assignments
-             g['regpin'] = rnd.choice([v for v in range(4) if v != g.get('regpin', 0)]); what.append('regpin=%d' % g['regpin'])
-         elif k == 'rtloop':           # 0, 1, or 2 (Iteration 190: 2 with its internal words headerless)
-@@ -1400,7 +1413,7 @@ def setup():
+@@ -1405,7 +1413,7 @@ def setup():
      import shutil
      W = os.path.join(O, 'work')
      for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
@@ -175,7 +138,7 @@ index e5ab54c..216659f 100644
          src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
          if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
      for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
-@@ -1411,7 +1424,7 @@ def setup():
+@@ -1416,7 +1424,7 @@ def setup():
                          for e in (('', '-empty') if b == 'k64-bt' else ('',))     # Iteration 101
                          for q in (('', '-kstack') if b == 'k64-bt' else ('',))    # Iteration 116
                          for j in (('', '-jit') if b == 'k64-bt' else ('',))
@@ -184,7 +147,7 @@ index e5ab54c..216659f 100644
          boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
                         + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                         + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
-@@ -1422,6 +1435,7 @@ def setup():
+@@ -1427,6 +1435,7 @@ def setup():
                         + (['kstack.4'] if '-kstack' in name else [])        # Iteration 116: ?STACK8, swapped into ?STACK
                         + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
                         + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
@@ -192,17 +155,16 @@ index e5ab54c..216659f 100644
                         + ['dict-dump-addr.4']) + 'BYE\n'
          out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
          open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
-@@ -1461,6 +1475,8 @@ def random_genome(rnd):
-         elif k == 'rtimm': g[k] = rnd.randrange(3)
+@@ -1467,6 +1476,7 @@ def random_genome(rnd):
          elif k == 'rtloop': g[k] = rnd.randrange(3)        # Iteration 190
          elif k == 'regpin': g[k] = rnd.randrange(4)        # Iteration 197
-+        elif k == 'threads': g[k] = rnd.randrange(4)       # Iteration 204
+         elif k == 'threads': g[k] = rnd.randrange(4)       # Iteration 204
 +        elif k == 'fsys': g[k] = rnd.randrange(3)          # Iteration 205
          elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
          elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
          elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
 diff --git a/tools/layout.py b/tools/layout.py
-index 507719f..1891062 100644
+index ca98c54..1891062 100644
 --- a/tools/layout.py
 +++ b/tools/layout.py
 @@ -185,6 +185,17 @@ words, cells, tokn = G['words'], G['cells'], G['tokn']
@@ -223,68 +185,6 @@ index 507719f..1891062 100644
  align_up, LOOPS, STR = G['align_up'], G['LOOPS'], G['STR']
  code_end = G['code_end']
  
-@@ -555,7 +566,7 @@ def new_body_bytes(w):
-         # [pad][call token][parameter field, CELL aligned]
-         # The pad goes BEFORE the token so the parameter field, which is
-         # the address just past it, stays CELL aligned for `@`.
--        return CELL + (w['e'] - w['s'] - CELL)
-+        return CELL + (w['e'] - w['s'] - CELL) + ((NT_NEW - NT_OLD) * CELL if w['s'] == FW_S0 else 0)   # Iteration 204
-     return w['e'] - w['s']             # opaque: copied verbatim
- 
- # The thread each word belongs to, needed BEFORE placement in bytehdr
-@@ -570,6 +581,9 @@ if not (1 <= _NTH <= 4096):
-     sys.exit("FORTH-WORDLIST declares %r threads" % _NTH)
- 
- 
-+if '--threads' in ARGV:    # Iteration 204: the links are sized by the chains they will be on
-+    _NTH = int(_opt('--threads'))
-+
- def _wl_hash(name):
-     b = name.encode('latin-1')
-     v = len(b) ^ (b[0] << 1)
-@@ -602,6 +616,17 @@ for w in order:
- 
- new_off, off = {}, PROLOGUE
- LINKLEN = {}
-+# Iteration 204, the gene threads (results/loop-audit.md): --threads N - the
-+# dictionary filed into N chains, not the dump's 32: FORTH-WORDLIST's body is
-+# its count and N heads. Lookups walk one chain (the Forth and native HASH and
-+# FIND take the count from the word list, WORDLIST copies FORTH-WORDLIST's),
-+# so N=64 halves the walk for 256 bytes; N=16 saves 128 for longer walks.
-+_FW0 = [w for w in order if w['n'] == 'FORTH-WORDLIST']
-+FW_S0 = _FW0[0]['s'] if _FW0 else None
-+NT_OLD = cells.get(FW_S0 + CELL, 0) if FW_S0 is not None else 0
-+NT_NEW = int(_opt('--threads')) if '--threads' in ARGV else NT_OLD
-+assert NT_NEW and not (NT_NEW & (NT_NEW - 1)) and NT_NEW <= 4096, '--threads: a power of two up to 4096'
-+
- for w in order:
-     if w['s'] in HL:                                 # Iteration 190: the code alone
-         LINKLEN[w['s']] = 0
-@@ -652,6 +677,7 @@ if not FW:
- FW = FW[0]
- FW_PF = FW['s'] + CELL                       # parameter field: [n][heads]
- NTHREADS = cells.get(FW_PF, 0)
-+if NT_NEW != NTHREADS: NTHREADS = NT_NEW; cells[FW_PF] = NT_NEW   # Iteration 204: --threads
- if not (1 <= NTHREADS <= 4096):
-     sys.exit("FORTH-WORDLIST declares %r threads" % NTHREADS)
- 
-@@ -719,7 +745,7 @@ chain_ok = (not broken
- # and would otherwise be copied out of the dump verbatim - with the
- # addresses of the image we were translating FROM. Overwrite them.
- for i, h in enumerate(HEADS):
--    cells[FW_PF + (i + 1) * CELL] = h
-+    if i < NT_OLD: cells[FW_PF + (i + 1) * CELL] = h      # Iteration 204: beyond the dump's heads, the next word's cells - emitted below
- 
- # ---- xts are ADDRESSES, and get relocated --------------------------
- # Iteration 176. `: EXECUTE ( xt --- ) >R ;` is pure Forth, not a
-@@ -1117,6 +1143,7 @@ def emit(path):
-                         vals[2] = remap_pfa_off(vals[2])
-                 elif w['n'] in fixed: vals[0] = fixed[w['n']]
-                 elif w['n'] in SCRUB: vals = [0] * len(vals)
-+                if s0 == FW_S0 and NT_NEW != NT_OLD: vals = [NT_NEW] + list(HEADS)   # Iteration 204: the count, its heads
-                 for v in vals: img += cel(v)
-         if _cm is not None:    # Iteration 88: every word's body - start, end, code or data, name
-             _cm.append('W %d %d %s %s' % (new_off[s0]['body'], new_off[s0]['body'] + new_body_bytes(w), kind[s0], w['n']))
 diff --git a/tools/sod16.py b/tools/sod16.py
 index 0cce029..4acaf92 100644
 --- a/tools/sod16.py
