@@ -1,0 +1,225 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 5fa8e96..e0892b3 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1240,6 +1240,14 @@ static void virtual_machine(void) {
+ #define FSX2(l) &&L_nosys
+ #else
+ #define FSX2(l) &&l
++#endif
++/*  Iteration 206, fsys 3: WRITE, READ, READ-LINE and BYE too (forth/file-
++ *  sysc3.4: unbuffered, no read-ahead from what cannot seek) - the engine's
++ *  I/O is then SYSCALL alone.  */
++#if FSYS >= 3
++#define FSX3(l) &&L_nosys
++#else
++#define FSX3(l) &&l
+ #endif
+     static const void *const dispatch[] = {
+         &&L_noop, &&L_exit, &&L_lit, &&L_branch, &&L_0branch, &&L_drop,
+@@ -1247,9 +1255,9 @@ static void virtual_machine(void) {
+         &&L_cstore, &&L_store, &&L_and, &&L_or, &&L_xor, &&L_fromr,
+         &&L_tor, &&L_rfetch, &&L_eq, &&L_ugt, &&L_gt, &&L_plus,
+         &&L_negate, &&L_lshift, &&L_rshift, &&L_ummult, &&L_umdiv,
+-        &&L_dplus, &&L_write, &&L_read, &&L_bye, &&L_spfetch, &&L_spstore,
++        &&L_dplus, FSX3(L_write), FSX3(L_read), FSX3(L_bye), &&L_spfetch, &&L_spstore,
+         &&L_rpfetch, &&L_rpstore, FSX2(L_openfile), FSX2(L_closefile),
+-        &&L_readline, FSX(L_writeline), FSX(L_readfile), FSX2(L_writefile),
++        FSX3(L_readline), FSX(L_writeline), FSX(L_readfile), FSX2(L_writefile),
+         SYSX(L_system), FSX(L_reposfile), FSX(L_filepos), FSX(L_delfile), FSX(L_filesize),
+         SYSF, SYSX(L_execve), SYSX(L_waitpid), SYSX(L_pipe), SYSX(L_dup2),
+         SYSX(L_getenv), SYSX(L_setenv), SYSX(L_sysexit), SYSX(L_chdir), SYSX(L_getcwd),
+diff --git a/forth/file-sysc3.4 b/forth/file-sysc3.4
+new file mode 100644
+index 0000000..0b7afbf
+--- /dev/null
++++ b/forth/file-sysc3.4
+@@ -0,0 +1,68 @@
++\ file-sysc3.4 - with file-sysc.4 and file-sysc2.4, the terminal and line
++\ words over SYSCALL: WRITE, READ, READ-LINE, BYE (Iteration 206, fsys 3 -
++\ the single-SYSCALL family, stage B). The owner: no buffer for output, and no
++\ read-ahead from stdin, pipes or anything else that cannot seek - bytes read
++\ past the line there are gone for good. So WRITE is one write(2) a call (EMIT
++\ one a character); READ is the engine's t_read (a seekable stdin: a block,
++\ the rest after the line given back by lseek(2); otherwise a byte at a time,
++\ up to an editing character); READ-LINE reads into the caller's own buffer
++\ and seeks back after the line on a file that can seek, a byte at a time on
++\ one that cannot - no state kept between calls. The kernel's compiled uses
++\ (EMIT, TYPE, KEY, ACCEPT, REFILL, INCLUDE-FILE) are rebound to these by the
++\ converter. NIP and TUCK written out: the cell system has neither.
++
++: WRITE ( c-addr u --- )  1 FS-WRITE DROP ;      \ stdout, all of it
++: BYE ( --- )  0 60 FS1 ;                        \ exit(2); SYSCALL flushes first
++
++VARIABLE FS-SEEK0  -1 FS-SEEK0 !                 \ stdin seekable: 1, not: 0, unknown: -1
++VARIABLE FS-P                                    \ the buffer being read into
++: FS-EDIT? ( c --- f )  DUP 10 = OVER 13 = OR OVER 8 = OR SWAP 127 = OR ;
++: FS-SEEKS? ( fid --- f )  0 1 8 FS3 0< 0= ;     \ lseek(fid, 0, SEEK_CUR) works
++: FS-BACK ( fid got k --- k )                    \ the bytes read past k given back
++  2DUP > IF 2DUP - NEGATE >R ROT R> 1 8 FS3 DROP SWAP DROP ELSE SWAP DROP SWAP DROP THEN ;
++
++: FS-UPTO-EDIT ( got --- k )                     \ just past the first editing character, or got
++  0 BEGIN 2DUP > WHILE
++    DUP FS-P @ + C@ FS-EDIT? IF 1+ SWAP DROP EXIT THEN 1+
++  REPEAT DROP ;
++: READ ( c-addr u --- u2 )                       \ what input there is, 0 at its end
++  DUP 0= IF SWAP DROP EXIT THEN
++  OVER FS-P !
++  FS-SEEK0 @ 0< IF 0 FS-SEEKS? IF 1 ELSE 0 THEN FS-SEEK0 ! THEN
++  FS-SEEK0 @ IF
++    0 ROT ROT 0 FS3 DUP 0> 0= IF DROP 0 EXIT THEN
++    0 SWAP DUP FS-UPTO-EDIT FS-BACK EXIT
++  THEN
++  SWAP DROP 0                                    ( u k )
++  BEGIN 2DUP > WHILE
++    0 FS-P @ 2 PICK + 1 0 FS3 1 = 0= IF SWAP DROP EXIT THEN
++    DUP FS-P @ + C@ SWAP 1+ SWAP FS-EDIT? IF SWAP DROP EXIT THEN
++  REPEAT SWAP DROP ;
++
++VARIABLE FS-ANY                                  \ READ-LINE: a character read
++: FS-LF ( got --- k )                            \ the first LF's place in FS-P's bytes, or got
++  0 BEGIN 2DUP > WHILE
++    DUP FS-P @ + C@ 10 = IF SWAP DROP EXIT THEN 1+
++  REPEAT DROP ;
++: FS-CR ( u --- u' )                             \ a trailing CR is the line's end too
++  DUP IF DUP 1- FS-P @ + C@ 13 = IF 1- THEN THEN ;
++: READ-LINE ( c-addr u1 fid --- u2 flag ior )
++  OVER 0= IF DROP 2DROP 0 -1 0 EXIT THEN         \ zero characters: not the end of the file
++  >R OVER FS-P ! 0 FS-ANY !
++  R@ FS-SEEKS? IF                                ( c u1 )
++    R@ ROT ROT 0 FS3                             ( got )
++    DUP 0< IF DROP R> DROP 0 0 -200 EXIT THEN
++    DUP 0> IF -1 FS-ANY ! THEN
++    DUP FS-LF                                    ( got k )
++    2DUP > IF 1+ R> ROT ROT FS-BACK 1- ELSE SWAP DROP R> DROP THEN
++    FS-CR FS-ANY @ 0 EXIT
++  THEN
++  SWAP DROP 0                                    ( u1 k )
++  BEGIN 2DUP > WHILE
++    R@ FS-P @ 2 PICK + 1 0 FS3                   ( u1 k n )
++    DUP 0< IF DROP 2DROP R> DROP 0 0 -200 EXIT THEN
++    0= IF SWAP DROP R> DROP FS-CR FS-ANY @ 0 EXIT THEN
++    -1 FS-ANY !
++    DUP FS-P @ + C@ 10 = IF SWAP DROP R> DROP FS-CR -1 0 EXIT THEN
++    1+
++  REPEAT SWAP DROP R> DROP FS-CR FS-ANY @ 0 ;
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 7841953..0e00a53 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -500,3 +500,18 @@ allocator with them. Measured: the smallest 628 bytes smaller in all, the knee
+ 644, the fastest 1,039; every design through the full gate (the kernel
+ workload opens its files through the Forth words); the standard suite 14 of 14
+ as s6. Stage B: WRITE with its buffer on the heap, READ, READ-LINE, BYE.
++
++## fsys 3 (Iteration 206): the single-SYSCALL family, stage B
++
++WRITE, READ, READ-LINE and BYE in Forth over SYSCALL too (forth/file-
++sysc3.4), as the owner set them: no output buffer (WRITE one write(2) a call,
++EMIT one a character) and no read-ahead from stdin, pipes or anything that
++cannot seek. READ is the engine's t_read in Forth; READ-LINE reads into the
++caller's own buffer and seeks back after the line where the file can seek, a
++byte at a time where it cannot. Their handlers leave the engine; the engine's
++I/O is SYSCALL alone. The converter rebinds a stub-shaped colon word too -
++TYPE is `WRITE ;`, which read_ops took for a primitive stub and left calling
++the handler that was gone. Measured: the smallest 1,217 bytes smaller in all
++(fsys 2: 628), the fastest 1,921; the I/O workloads slower - the kernel
++workload +37-89%, the corpus +23-88% - fib and bubble not; the standard suite
++14 of 14 as s6. Evolution weighs 0 to 3.
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 216659f..3b9f0fb 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -148,6 +148,8 @@ def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words
+     return g.get('fsys', 0) if fsys_on(g) else 0
+ FSYS2_INTERNAL = ('FS-OFL', 'FS-END', 'FS-SAVED')
+ FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
++FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR')   # Iteration 206
++FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
+ 
+ def rtloop_on(g):
+     """Iteration 41: does this design compile loops at run time with its loop
+@@ -676,8 +678,9 @@ def _build(g, d):
+     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
+     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
+     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
+-    if fsys_level(g) == 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
+-        hl += FSYS2_INTERNAL; opts += ['--rebind', ','.join(FSYS2_REBIND)]
++    if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
++        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) == 3 else ())
++        opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) == 3 else ()))]
+     if hl: opts += ['--headerless', ','.join(hl)]
+     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
+     if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
+@@ -691,7 +694,7 @@ def _build(g, d):
+     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+     fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
+-    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2'}.get(fsys_level(g), ''))))
++    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+     # Iteration 199: a short branch the tag-2 encoding finds out of range is
+     # written to long-branches.json and the conversion fails; converted again
+     # with it kept long - the set only grows, so it ends.
+@@ -961,7 +964,7 @@ def mutate(g, rnd):
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
+         elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
+-            g['fsys'] = rnd.choice([v for v in range(3) if v != g.get('fsys', 0)]); what.append('fsys=%d' % g['fsys'])
++            g['fsys'] = rnd.choice([v for v in range(4) if v != g.get('fsys', 0)]); what.append('fsys=%d' % g['fsys'])
+         elif k == 'threads':          # Iteration 204: 0 as built (32), 1-3 64, 128, 16 chains
+             g['threads'] = rnd.choice([v for v in range(4) if v != g.get('threads', 0)]); what.append('threads=%d' % g['threads'])
+         elif k == 'regpin':           # Iteration 197: 0 GCC's choice; 1-3 three assignments
+@@ -1413,7 +1416,7 @@ def setup():
+     import shutil
+     W = os.path.join(O, 'work')
+     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
+-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
++               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
+@@ -1424,7 +1427,7 @@ def setup():
+                         for e in (('', '-empty') if b == 'k64-bt' else ('',))     # Iteration 101
+                         for q in (('', '-kstack') if b == 'k64-bt' else ('',))    # Iteration 116
+                         for j in (('', '-jit') if b == 'k64-bt' else ('',))
+-                        for y in ('', '-fsys', '-fsys2') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
++                        for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
+         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
+                        + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
+                        + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+@@ -1435,7 +1438,8 @@ def setup():
+                        + (['kstack.4'] if '-kstack' in name else [])        # Iteration 116: ?STACK8, swapped into ?STACK
+                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
+                        + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
+-                       + (['file-sysc2.4'] if '-fsys2' in name else [])      # Iteration 205: the rest of the file words (fsys 2)
++                       + (['file-sysc2.4'] if '-fsys2' in name or '-fsys3' in name else [])   # Iteration 205: the rest of the file words (fsys 2)
++                       + (['file-sysc3.4'] if '-fsys3' in name else [])      # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
+                        + ['dict-dump-addr.4']) + 'BYE\n'
+         out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
+         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
+@@ -1476,7 +1480,7 @@ def random_genome(rnd):
+         elif k == 'rtloop': g[k] = rnd.randrange(3)        # Iteration 190
+         elif k == 'regpin': g[k] = rnd.randrange(4)        # Iteration 197
+         elif k == 'threads': g[k] = rnd.randrange(4)       # Iteration 204
+-        elif k == 'fsys': g[k] = rnd.randrange(3)          # Iteration 205
++        elif k == 'fsys': g[k] = rnd.randrange(4)          # Iteration 205; 3: Iteration 206
+         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 4acaf92..0358b0c 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -281,6 +281,12 @@ def read_ops(w):
+     # because locals.4 redefines EXIT and a name test picks the wrong
+     # word.
+     st = stub_ops(w)
++    if st is not None and st[0][1] in REBIND and w['n'] != st[0][1]:
++        # Iteration 206: a colon word shaped like a stub - TYPE is `WRITE ;` -
++        # whose primitive is rebound: a call to the redefinition, not the
++        # handler that left the engine. Its header is the dump's (a colon
++        # word's, not a primitive's), so the run-time compiler calls it.
++        return [('C', REBIND[st[0][1]]), ('P', 'EXIT')]
+     if st is not None:
+         # A PRIMITIVE's body is NOT folded, even though `op EXIT` would
+         # fold: the runtime compiler inlines a primitive by reading the

@@ -3739,3 +3739,14 @@ smallest 628 bytes smaller in all (fsys 1: 104), the fastest 1,039; the full
 gate and the standard suite whole. fsys 0 byte-identical. Patch 5 regenerated
 once: it had carried patch 4's hunks (patch 4 never committed in the working
 tree). Stage B next: WRITE on a heap buffer, READ, READ-LINE, BYE.
+
+## Iteration 206 - 2026-10-12 - Claude
+
+**The single-SYSCALL family, stage B** - the sixth after-seed-42 patch. fsys
+3: WRITE, READ, READ-LINE and BYE in Forth over SYSCALL, as the owner set it -
+no output buffer, no read-ahead from what cannot seek; the engine's I/O is
+SYSCALL alone. The smallest 1,217 bytes smaller in all, the fastest 1,921; the
+I/O workloads slower (kernel +37-89%, corpus +23-88% - the unbuffered output
+and three calls a line), fib and bubble not; the standard suite whole. A
+fault found by instrumenting L_nosys: TYPE (`WRITE ;`) looked like a primitive
+stub and kept the dropped opcode - stub-shaped colon words are rebound now.

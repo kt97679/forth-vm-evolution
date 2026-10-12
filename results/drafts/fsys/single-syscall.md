@@ -52,3 +52,29 @@ TYPE through it, flushed when full, before input is read, before a SYSCALL
 that leaves the process and at BYE; READ and READ-LINE with a read-ahead on
 the heap - READ-LINE is the kernel workload's, so its speed is measured
 against the native; BYE. Then the engine's I/O is SYSCALL alone.
+
+## Stage B built (Iteration 206) - results/pending/fsys3-after-seed42.patch
+
+The owner: no output buffer; no read-ahead from stdin, pipes or anything that
+cannot seek. fsys 3: WRITE one write(2) a call; READ the engine's t_read in
+Forth (a seekable stdin a block and the rest given back, else a byte at a
+time); READ-LINE into the caller's buffer, seeking back where it can, a byte at
+a time where it cannot - no state between calls; BYE exit(2). One fault found:
+TYPE is `WRITE ;`, the shape of a primitive stub, and read_ops returns stubs
+before rebinding - TYPE called the dropped handler (the engine exits 70 at
+L_nosys, silently: found by patching L_nosys to report its address, mapped to
+TYPE). The converter now rebinds stub-shaped colon words too.
+
+| design | fsys 2 total | fsys 3 total | speed 2 -> 3 | kernel | corpus | fib, bubble |
+|---|---|---|---|---|---|---|
+| the smallest | -628 | -1,217 | 1.527 -> 1.675 | 1.37 -> 1.88 | 1.51 -> 1.85 | unchanged |
+| the knee | -644 | -1,193 | 1.040 -> 1.206 | 0.77 -> 1.27 | 0.52 -> 0.85 | unchanged |
+| the fastest | -1,039 | -1,921 | 0.203 -> 0.258 | 0.35 -> 0.66 | 0.25 -> 0.47 | unchanged |
+
+The standard suite 14 of 14 as s6 at fsys 3; the full gate on all three; 7 of
+7 stages identical; run-tests PASS. Where the time goes: the corpus reads its
+pipe a byte at a time as the native engine already did - its slowdown is the
+unbuffered output, a write(2) for each TYPE and EMIT; the kernel workload pays
+three system calls a line in READ-LINE against the native 4 KB read-ahead.
+Within the owner's rules the one cheaper read is fewer calls a line (the
+seek test remembered per file); the output's cost is the buffer's absence.
