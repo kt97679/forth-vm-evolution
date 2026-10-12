@@ -4413,3 +4413,11 @@ naming run-time words. New check: lab/evolve/names-check.py. All checks pass
 (ORDER.md); images +16 bytes, +56 with kfast. **Found, not fixed:** the cell
 headers have the same fault - the kernel's own COMPILE, asks >NAME; s0 crashes
 on `café`. The owner decides on that, and on packed names after this.
+
+## Iteration 233 - 2026-10-12 - Claude
+
+**The owner: fix the UTF-8 fault in the cell-header designs too; capture packed
+names' benefits, do not build them now.** Packed names recorded in GOALS.md's
+register with the plan and the numbers (images ~300-380 bytes fewer before
+~100-150 bytes of code; UTF-8 names unchanged under it; a Cyrillic table would
+cut a program's Cyrillic names ~60%). The cell headers next.
