@@ -275,4 +275,9 @@
 # real (--rebind takes the newest definition), fsys 5 (READ-LINE reading ahead
 # where a file seeks, tightened), the dump guard. Proposed: seed 44, 9 hours
 # like seed 43 (its chain took 8 h 30 min) - the owner's to choose.
-seed 44 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 216 (the owner): 6 hours, not 9. The reserve for the re-measure
+# and the comparison comes from the last chain's times (seed 43's: 1 h 37
+# min, plus a tenth and 10 minutes), so the evolution gets about 4 hours
+# (seed 43: 6 h 51 min); the comparison measures every front again in one
+# session, so the shorter run is judged on equal terms.
+seed 44 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

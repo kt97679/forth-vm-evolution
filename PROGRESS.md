@@ -4104,3 +4104,13 @@ already on master (reverses cleanly).
 (stdin)'s editing characters; the shared loops. 4-9 as listed (8 with native
 WRITE-LINE's missing give-back, Iteration 214). fsys 5's cell-wise copy in
 GOALS.md's register.
+
+## Iteration 216 - 2026-10-12 - Claude
+
+**Seed 44 for 6 hours, not 9 (the owner).** lab/evolve/NEXT-RUN: `seed 44
+tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8`.
+next-run.sh keeps the last chain's re-measure and comparison time (seed 43's:
+18 + 79 minutes) plus a tenth and 10 minutes, so the evolution gets about 4
+hours - seeds 41 and 42 ran 6-hour chains too; the comparison measures every
+front again in one session, so a shorter run is judged on equal terms. Seed
+44's predictions (results/predictions.md, Iteration 215) stand as written.

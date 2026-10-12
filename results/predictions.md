@@ -195,3 +195,6 @@ a file seeks; tightened, Iteration 214), the dump guard.
 4. The crossover share 30-33% again (XOVER 0.25 and remade repeats).
 5. Not small: hypervolume +2% or more, from the small and middle ends' I/O;
    fastest under 5%.
+
+Iteration 216: 6 hours, not 9 (the owner) - about 4 hours of evolution
+against seed 43's 6 h 51 min. The predictions above stand as written.
