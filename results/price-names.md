@@ -42,7 +42,52 @@ LIT32-OP LIT64-OP LIT8-OP LOOP-ALIGN OP, OPERAND-ALIGN W,`), the lookup's own
 standard word among them. Shorter chains too - fewer entries for every
 lookup, and the misses walk whole chains (results/price-lookup-cache.md).
 
-**A candidate for the next batch, not built yet.** As a gene, the list must be
+## Correction (Iteration 223): it does hurt - the standard suite says so
+
+The owner asked whether hiding these names could hurt anything. The gate had
+run on two designs; the standard suite had not. Run on three designs with
+their lists hidden (ans-check.py, through E.build): seed 43's smallest 13 of 14
+files as s6, its fastest 13 of 14, and a JIT design of the middle
+(5f4a21fbdb) 0 of 14 - every file a segmentation fault right after the banner.
+Two causes, found:
+
+- **A library loaded at run time uses an internal name.** The suite's harness
+  INCLUDEs forth/coreext.4, which builds TRAVERSE-WORDLIST from NEXT-NFA8;
+  hidden, `Undefined word TRAVERSE-WORDLIST` in toolstest.fth. The scan had
+  read extend.4, cross.4 and kernel.4 but not coreext.4, locals.4,
+  save-system.4 or the shell's sources; read too, NEXT-NFA8 stays and the tools
+  test matches.
+- **A name reached in a way no source shows.** Bisected over 5f4a21fbdb's 67
+  names: LEAVE8 alone crashes it at the first INCLUDED. LEAVE8 is defined in
+  four overlays (cv8.4, cv8t.4, cv8-fuse-loop.4, cv8-fuse-loopall.4) and
+  POSTPONEd by one; with its header gone the design dies - most likely a table
+  the converter fills by name (rtloop=2's), or the newer of two definitions
+  handing its place to the older. Not yet understood exactly.
+
+So a list derived from what programs here happen to write is not safe, and
+"it costs nothing" was wrong. The bytes are real (-2.7 to -2.8% on the two
+designs that ran), but the only safe form is lists kept by hand per overlay,
+each name's uses understood (by name, by table, by POSTPONE, by redefinition),
+and checked on every gene combination with the gate and the standard suite.
+
+## Inlining them instead (the owner's question)
+
+Priced from the converter's call map (CALLMAP) on the smallest and seed 43's
+fastest design, beyond what hiding the names saves:
+
+- **The 14 opcode constants** (EXIT-OP, BRANCH-OP, ...) are 2-byte bodies; their
+  uses turned into literals and the bodies dropped: ~28 bytes.
+- **Words called from one place** (12 on the smallest, 5 on the fastest),
+  inlined: the call and the EXIT, ~3 bytes each - 36 and 15 bytes.
+- **Words with no call site at all** (5 on the smallest, 54 on the fastest -
+  the CV8 versions of `:`, `IF`, `DO` and the like) are NOT dead: they are
+  reached through another word's header, a table of execution tokens, or
+  POSTPONE - the same ways LEAVE8 is. Nothing to drop without the same proof.
+
+The bytes are in the headers - the name, its length and its link - not in the
+bodies; inlining adds tens of bytes to hiding's hundreds.
+
+**A candidate for the next batch, not built yet - in the hand-kept form only.** As a gene, the list must be
 kept by hand per overlay - as FSYS_INTERNAL and RTLOOP_INTERNAL are - not
 derived from what the tests happen to use: a user program may write any
 standard word. The owner's call whether it is a gene or every design's: it

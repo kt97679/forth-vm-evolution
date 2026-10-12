@@ -4230,3 +4230,20 @@ helpers and constants, NAME=? and NEXT-NFA8 - the smallest of all runs 16,136
 -> 15,688 bytes (-2.8%), seed 43's fastest -936 (-2.7%), both alive; no
 standard word among them. A candidate for the after-seed-44 batch, as lists
 kept by hand per overlay; gene or default, the owner's call.
+
+## Iteration 223 - 2026-10-12 - Claude
+
+**Iteration 222's "costs nothing", corrected: hiding the unused names does hurt**
+(results/price-names.md). The owner asked whether it could; the standard suite
+had not been run. Run on three designs with the lists hidden: 13, 13 and 0 of
+14 files as s6 - the third (5f4a21fbdb, JIT) crashing on every file. Causes:
+coreext.4, INCLUDEd at run time by the suite's harness, builds
+TRAVERSE-WORDLIST from NEXT-NFA8, and the scan had not read it (read, the tools
+test matches); and LEAVE8 alone (bisected) crashes that design at its first
+INCLUDED - defined in four overlays, POSTPONEd by one, reached in a way no
+source scan shows. A derived list is unsafe; only hand-kept, reviewed lists
+per overlay, checked on every gene combination, could carry the -2.7%.
+**Inlining instead** (the owner's question), priced from the call map: the
+opcode constants are 2-byte bodies (~28 bytes as literals), words called once
+~3 bytes each (36 and 15 bytes), and the words no call reaches are not dead -
+reached through headers, tables and POSTPONE. The bytes are in the headers.
