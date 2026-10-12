@@ -160,3 +160,38 @@ whole joint front - **right** (97 of 97).
 4. fsys: 2 to 4 at the small end (600-1,200 bytes), 0 at the fast end (the
    I/O workloads 16-27% slower at 3 and 4 there).
 5. Not small: hypervolume +2% or more.
+
+## Seed 43, scored (Iteration 215)
+
+1. No death from a short branch out of range - **right**: 182 deaths, every one
+   "reach limit at scale 0 - not run".
+2. The screen skips about a third from generation 5 - **wrong**: 18.4% (6,839
+   of 37,088). More designs an hour than seed 42's 3,000 - **right**: 5,667
+   made (4,668 measured) over 6 h 51 min. None of the audited on the final
+   front - **right** (805 audited, 0 there).
+3. threads 64 or 128 on most designs without klookup - **wrong**: never 64 or
+   128 anywhere; 16 chains on 83 of the 90 without klookup and on 121 of all
+   165 - 128 bytes fewer won over the lookup's dispatches. "16, if anywhere, at
+   the smallest end" - wrong too: 48 of the small third, 29 of the fast third.
+4. fsys 2-4 at the small end - **right** (the small third: 3 on 44, 4 on 4, 2 on
+   7); 0 at the fast end - **wrong**: fsys 2 on 49 of the fast third's 55 - it
+   moves only the file words into Forth, so the fast designs pay nothing for
+   its ~1,000 bytes. (fsys 4 ran as fsys 3 with dead bytes in this run.)
+5. Not small, hypervolume +2% or more - **right**: +22.4% (smallest +12.26%,
+   best Q +9.3%, fastest -1.9%).
+
+## Seed 44, predicted (Iteration 215) - the after-seed-43 batch's first run
+
+The batch: --rebind takes the newest redefinition (fsys 4 buffered for real,
+INCLUDED with the forgetting wrappers), fsys 5 (READ-LINE reading ahead where
+a file seeks; tightened, Iteration 214), the dump guard.
+
+1. fsys 4 on 10 or more of the front (seed 43: 4, unbuffered then) - at the
+   small and middle ends, where fsys 3's unbuffered output costs the corpus.
+2. fsys 5 on at least 3 designs, none in the smallest tenth (it is ~600 bytes
+   over fsys 4).
+3. fsys 2 on most of the fast third still; threads 16 on two thirds or more of
+   the front.
+4. The crossover share 30-33% again (XOVER 0.25 and remade repeats).
+5. Not small: hypervolume +2% or more, from the small and middle ends' I/O;
+   fastest under 5%.

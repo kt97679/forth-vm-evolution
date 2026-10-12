@@ -187,13 +187,13 @@ retag = G['retag']
 idx_of, prims, stub_ops = G['idx_of'], G['prims'], G['stub_ops']
 
 # Iteration 205 (fsys 2): --rebind NAMES - each primitive's compiled uses made
-# calls to its Forth redefinition (the last word of the name that is not the
-# primitive's stub), so its handler can leave the engine. Set before any body
+# calls to its Forth redefinition (the newest word of the name - the highest
+# address - that is not the primitive's stub), so its handler can leave the engine. Set before any body
 # is read; a name with no redefinition is left as it was.
 if '--rebind' in ARGV:
     for _n in _opt('--rebind').split(','):
         _defs = [w for w in words if w['n'] == _n and stub_ops(w) is None]
-        if _defs: G['REBIND'][_n] = _defs[-1]['s']
+        if _defs: G['REBIND'][_n] = max(_defs, key=lambda w: w['s'])['s']   # Iteration 211: the NEWEST - the dump lists words newest first
     print('rebind: %s' % ', '.join(sorted(G['REBIND'])))
 
 align_up, LOOPS, STR = G['align_up'], G['LOOPS'], G['STR']

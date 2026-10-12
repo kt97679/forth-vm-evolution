@@ -269,4 +269,10 @@
 # Iteration 210 (the owner): 9 hours - the hours include the re-measure and
 # the comparison's reserve, as for seed 40's 9. The comparison measures every
 # run's front again in one session, so a longer run is judged on equal terms.
-seed 43 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 215: seed 43 not small (smallest +12.26%, hypervolume +22.4%; the
+# Q-best of all runs is its fc09f6373d); the after-seed-43 batch applied (four
+# patches - results/applied-after-seed43/, ORDER.md): fsys 4 buffered for
+# real (--rebind takes the newest definition), fsys 5 (READ-LINE reading ahead
+# where a file seeks, tightened), the dump guard. Proposed: seed 44, 9 hours
+# like seed 43 (its chain took 8 h 30 min) - the owner's to choose.
+seed 44 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

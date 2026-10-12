@@ -25,7 +25,7 @@ args = sys.argv[1:]; sys.argv = ['evolve.py']
 spec = importlib.util.spec_from_file_location('E', os.path.join(HERE, 'evolve.py')); E = importlib.util.module_from_spec(spec); spec.loader.exec_module(E)
 E.setup()
 did = args[0] if args else '0ceb043115'
-LEVELS = (0, 3, 4)
+LEVELS = (0, 3, 4, 5)   # Iteration 211: 5 - read-ahead where a file can seek
 builds = {}
 for v in LEVELS:
     g = dict(E.recorded_genome(did)); g.pop('fsys', None)
@@ -58,10 +58,10 @@ for name, prog in T1.items():
     # Killed by a signal (1 0 / is SIGFPE in every engine here), native loses
     # what its C buffer held - the levels keep it: native's output a prefix of
     # theirs, theirs alike, the same signal. Better than native, not worse.
-    kept = (not ok and ref[0] < 0 and len(set(res.values())) == 1 and all(r[0] == ref[0] and r[1].startswith(ref[1]) for r in res.values()))
+    kept = (not ok and ref[0] < 0 and all(r == ref or (r[0] == ref[0] and r[1].startswith(ref[1])) for r in res.values()))   # each level: native's, or more of it
     fails += not (ok or kept)
-    print('- %-16s %s (status %d, %d bytes)%s' % (name, 'same at fsys 3 and 4' if ok else
-          'killed by signal %d - native lost %d bytes of output, fsys 3 and 4 kept them' % (-ref[0], len(res[3][1]) - len(ref[1])) if kept else 'DIFFERS', ref[0], len(ref[1]),
+    print('- %-16s %s (status %d, %d bytes)%s' % (name, 'same at fsys %s' % ', '.join(map(str, LEVELS[1:])) if ok else
+          'killed by signal %d - native loses what its buffer held; %s' % (-ref[0], ', '.join('fsys %d %s' % (v, 'as native' if res[v] == ref else 'keeps %d bytes more' % (len(res[v][1]) - len(ref[1]))) for v in res)) if kept else 'DIFFERS', ref[0], len(ref[1]),
           '' if ok or kept else ' - ' + '; '.join('fsys %d: status %d, %r' % (v, res[v][0], res[v][1][-80:]) for v in res if res[v] != ref)))
 
 def prompt_first(v):

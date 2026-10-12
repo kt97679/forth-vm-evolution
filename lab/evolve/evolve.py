@@ -142,6 +142,73 @@ RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVE
 # the eight workloads. A design without it builds from the dumps it always did.
 FSYS_INTERNAL = ('FS-BLK', 'FS0', 'FS1', 'FS2', 'FS3', 'FS4', 'FS-DROP', 'FS-WRITE', 'FS-NL', 'FS-MMAP')   # called by file-sysc.4's words only
 THREADS_N = {1: 64, 2: 128, 3: 16}   # Iteration 204, the gene threads: 0 as built (32 chains)
+# Iteration 212 (the owner): a library that does not load whole must stop the
+# run, not fall back. file-sysc5.4 once failed at a remark outside a comment;
+# the definitions before it stood, fsys 3's READ-LINE stood in for fsys 5's
+# under the same name, and every gate passed. So each dump is checked as it is
+# made: (1) its load messages hold no error the kernel prints while loading;
+# (2) every name each loaded file defines is among the dump's words - an error
+# part-way through a file leaves its later names out.
+DUMP_ERRORS = ('Undefined word', 'dictionary full', 'name too long', 'Incomplete control structure',
+               'compile only', 'Not found', 'Error reading file')
+DEFINERS = (':', 'CREATE', 'VARIABLE', 'CONSTANT', '2VARIABLE', '2CONSTANT', 'VALUE', 'DEFER')
+_DEFS = {}
+BASE_NAMES = collections.Counter()                  # the kernel image's own words, by count
+def source_names(path):
+    """The names a Forth source file defines, its comments and strings skipped."""
+    if path not in _DEFS:
+        toks, out = open(path, errors='replace').read().split('\n'), []
+        words = []
+        for line in toks:
+            t = line.split()
+            i = 0
+            while i < len(t):
+                w = t[i]
+                if w == '\\': break                                # to the end of the line
+                if w == '(' or w == '.(':                          # to the closing )
+                    while i < len(t) and not t[i].endswith(')'): i += 1
+                    i += 1; continue
+                if w.upper() in ('S"', '."', 'ABORT"', 'C"'):    # to the closing "
+                    i += 1
+                    while i < len(t) and not t[i].endswith('"'): i += 1
+                    i += 1; continue
+                words.append(w); i += 1
+        inside, k = False, 0                                # in a colon definition a definer is compiled, not run
+        while k < len(words):
+            w = words[k].upper()
+            if inside:
+                if w == ';': inside = False
+            elif w == ':NONAME': inside = True
+            elif w == ':' and k + 1 < len(words): out.append(words[k + 1].upper()); inside = True; k += 1
+            elif w in DEFINERS and k + 1 < len(words): out.append(words[k + 1].upper()); k += 1
+            k += 1
+        _DEFS[path] = out
+    return _DEFS[path]
+def dump_guard(name, boot, out):
+    text = out.replace(b'\r', b'').decode('latin-1')
+    m = re.search(r'^S \d+ \d+', text, re.M)
+    pre, body = (text[:m.start()], text[m.start():]) if m else (text, '')
+    bad = [l.strip() for l in pre.split('\n') if any(e in l for e in DUMP_ERRORS)]
+    have = collections.Counter(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', body, re.M))
+    missing, want = {}, collections.Counter()
+    for f in re.findall(r'S" (\S+)" INCLUDED', boot):
+        src = os.path.join(ROOT, 'forth', f)
+        if os.path.exists(src) and f != 'dict-dump-addr.4':     # the base dump has that one too
+            lost = [n for n in source_names(src) if n not in have]
+            if lost: missing[f] = lost
+            want.update(source_names(src))
+    # A redefinition that failed is invisible by name - the older definition
+    # stands. By count it is not: loaded whole, a dump holds each name as often
+    # as the kernel image (BASE_NAMES) and the loaded files define it.
+    short = ['%s %d of %d' % (n, have[n], BASE_NAMES.get(n, 0) + k) for n, k in want.items() if have[n] < BASE_NAMES.get(n, 0) + k]
+    if short: missing['(definitions by count)'] = short
+    if bad or missing or not body:
+        sys.exit('dump %s did not load whole - the run stops here, not on a fallback:%s%s%s' % (
+            name, ''.join('\n  load message: %s' % b for b in bad[:5]),
+            ''.join(('\n  by count - definitions missing (in the dump, of kernel + files): %s' % ', '.join(v[:8])) if f.startswith('(')
+                    else '\n  forth/%s: %d of its names missing: %s' % (f, len(v), ' '.join(v[:8])) for f, v in missing.items()),
+            '' if body else '\n  no dump records at all'))
+
 def fsys_on(g):
     return bool(g.get('fsys')) and g['enc'] == 'cv8'
 def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words in Forth, 2 the single-SYSCALL family
@@ -152,6 +219,7 @@ FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UP
                   'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
 FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
 FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207
+FSYS5_INTERNAL = ('FS-RT', 'FS-RSIZE', 'FS-RE', 'FS-RESET', 'FS-GIVEBACK', 'FS-E', 'FS-LIM', 'FS-FILL', 'FS-TAKE')   # Iteration 211; 214: FS-LIM for FS-CNT, FS-MAX, FS-ERR
 
 def rtloop_on(g):
     """Iteration 41: does this design compile loops at run time with its loop
@@ -681,7 +749,7 @@ def _build(g, d):
     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
     if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
-        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ()) + (FSYS4_INTERNAL if fsys_level(g) == 4 else ())
+        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ()) + (FSYS4_INTERNAL if fsys_level(g) >= 4 else ()) + (FSYS5_INTERNAL if fsys_level(g) == 5 else ())
         opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) >= 3 else ()))]
     if hl: opts += ['--headerless', ','.join(hl)]
     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
@@ -696,7 +764,7 @@ def _build(g, d):
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
     fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
-    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4'}.get(fsys_level(g), ''))))
+    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.
@@ -966,7 +1034,7 @@ def mutate(g, rnd):
         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
         elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
-            g['fsys'] = rnd.choice([v for v in range(5) if v != g.get('fsys', 0)]); what.append('fsys=%d' % g['fsys'])
+            g['fsys'] = rnd.choice([v for v in range(6) if v != g.get('fsys', 0)]); what.append('fsys=%d' % g['fsys'])
         elif k == 'threads':          # Iteration 204: 0 as built (32), 1-3 64, 128, 16 chains
             g['threads'] = rnd.choice([v for v in range(4) if v != g.get('threads', 0)]); what.append('threads=%d' % g['threads'])
         elif k == 'regpin':           # Iteration 197: 0 GCC's choice; 1-3 three assignments
@@ -1418,9 +1486,11 @@ def setup():
     import shutil
     W = os.path.join(O, 'work')
     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+    base = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+    BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
                                                                     ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
                         for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b != 'k64-self' else ('',))
@@ -1429,7 +1499,7 @@ def setup():
                         for e in (('', '-empty') if b == 'k64-bt' else ('',))     # Iteration 101
                         for q in (('', '-kstack') if b == 'k64-bt' else ('',))    # Iteration 116
                         for j in (('', '-jit') if b == 'k64-bt' else ('',))
-                        for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
+                        for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
@@ -1440,11 +1510,13 @@ def setup():
                        + (['kstack.4'] if '-kstack' in name else [])        # Iteration 116: ?STACK8, swapped into ?STACK
                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
                        + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
-                       + (['file-sysc2.4'] if '-fsys2' in name or '-fsys3' in name or '-fsys4' in name else [])   # Iteration 205: the rest of the file words (fsys 2)
-                       + (['file-sysc3.4'] if '-fsys3' in name or '-fsys4' in name else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
-                       + (['file-sysc4.4'] if '-fsys4' in name else [])      # Iteration 207: the output buffered off a terminal (fsys 4)
+                       + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 205: the rest of the file words (fsys 2)
+                       + (['file-sysc3.4'] if any(k in name for k in ('-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
+                       + (['file-sysc4.4'] if '-fsys4' in name or '-fsys5' in name else [])   # Iteration 207: the output buffered off a terminal (fsys 4)
+                       + (['file-sysc5.4'] if '-fsys5' in name else [])      # Iteration 211: READ-LINE reading ahead where a file can seek (fsys 5)
                        + ['dict-dump-addr.4']) + 'BYE\n'
         out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
+        dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
     os.makedirs(EV, exist_ok=True)
     # The corpus as tools/run-tests.sh feeds it, written here so a fresh
@@ -1483,7 +1555,7 @@ def random_genome(rnd):
         elif k == 'rtloop': g[k] = rnd.randrange(3)        # Iteration 190
         elif k == 'regpin': g[k] = rnd.randrange(4)        # Iteration 197
         elif k == 'threads': g[k] = rnd.randrange(4)       # Iteration 204
-        elif k == 'fsys': g[k] = rnd.randrange(5)          # Iteration 205; 3: 206; 4: 207
+        elif k == 'fsys': g[k] = rnd.randrange(6)          # Iteration 205; 3: 206; 4: 207; 5: 211
         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))

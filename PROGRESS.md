@@ -4060,3 +4060,47 @@ patches apply in order on a fresh clone and reproduce the tested files.
 **Open items, Iteration 213's list changed so:** 2 - the batch is four patches.
 3 - fsys 5's bookkeeping done; READ from stdin's editing characters and the
 shared loops remain. 8 - native WRITE-LINE's missing give-back added.
+
+## Iteration 215 - 2026-10-12 - Claude
+
+**Seed 43 processed - not small; the after-seed-43 batch applied.** Both packs
+at 9b96930b (Iteration 210): tests PASS, the jail PASS, 7 of 7 identical. The
+evolution 02:44-09:34 (6 h 51 min, generations 0-153): 38,796 designs made,
+31,957 measured, 6,839 screened; the chain 8 h 30 min. The comparison's own
+verdict (session 38): fastest -1.9%, smallest +12.26%, memory +4 KB,
+hypervolume +22.4%, best Q +9.3% - not small. The Q-best of all runs is seed
+43's fc09f6373d (0.203 at 25,964 bytes, 180 KB, Q 0.210 of s6's); the smallest
+of all its add5ec8937 (16,136 bytes); the fastest still seed 42's 28677d13b1.
+All 73 designs of the front of all runs are in seed 43's database.
+results/evolve-amd-ryzen-7-pro-8840hs-seed43.md.
+
+From the database: 182 deaths, every one "reach limit at scale 0 - not run"
+(none from a short branch, none on the corpus); the screen skipped 18.4% of
+the children from generation 5, and of the 805 audited none is on the front;
+threads at 16 chains on 121 of the 165 - never 64 or 128: the bytes won over
+the lookup's dispatches; fsys 2 on 84 (49 of the fast third: it moves only the
+file words), 3 on 44 (the small end), 4 on 4 (unbuffered in this run), 0 on 33.
+**The crossover share, verified** (Iteration 213's open item 1): the children
+kept are 31.4% crossover at XOVER 0.25; one try from the final front against
+the run's designs repeats 24.6% of the time mutation-only, 0.5% crossover, and
+the loop remakes repeats - which predicts 30.6%. Predictions scored
+(results/predictions.md): 1 and 5 right, 2 and 4 half, 3 wrong; seed 44's
+written.
+
+**The batch applied** (results/applied-after-seed43/, four patches; no kernel
+change, no reseed): run-tests PASS, 7 of 7 identical. Every front design alive
+with the new code - the run's 165 and the joint front's 73, 175 in all: 175 of
+175 (the corpus, kernel.img byte for byte, far). Audited, since 175 took 201 s:
+the builds are real (0.8-1.6 s each here), the 4 fsys 4 designs' images 8-16
+bytes smaller than recorded - their buffered WRITE bound at last - and the
+fsys 0 and 3 ones byte for byte as recorded. The standard suite on 12 of the
+front (fsys 0, 2, 3 and 4; threads 16 and 32): 0 differ from s6, s6 2,119
+tests, 0 failed, 14 of 14 whole. The pack's results-measured-here.patch is
+already on master (reverses cleanly).
+
+**NEXT-RUN: seed 44, 9 hours like seed 43 - proposed, the owner's to choose.**
+
+**Open items, Iteration 213's list changed so:** 1 and 2 done. 3: READ
+(stdin)'s editing characters; the shared loops. 4-9 as listed (8 with native
+WRITE-LINE's missing give-back, Iteration 214). fsys 5's cell-wise copy in
+GOALS.md's register.

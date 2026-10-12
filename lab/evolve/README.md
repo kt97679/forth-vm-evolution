@@ -540,3 +540,52 @@ kernel's loop otherwise) and asks whether a file can seek once per
 descriptor (0-63; OPEN-FILE and CLOSE-FILE forget it) - a system call a line
 fewer. The fastest design (kinput) went from 27% to 16% slower than fsys 2;
 designs without kinput keep their SCAN loop. ~150 bytes for it.
+
+## fsys 5 (Iteration 211): READ-LINE reading ahead where a file can seek
+
+fsys 4 with READ-LINE reading 4 KB at a time into a heap buffer on a seekable
+descriptor (1-63; never stdin or a pipe - the owner's rule), and every other
+use of the file - READ-FILE, the positioning words, WRITE-FILE, WRITE-LINE,
+CLOSE-FILE - first giving back what was read ahead by lseek(2), as the native
+engine's t_fgetc and t_fdrop did (forth/file-sysc5.4). The state on the heap.
+Measured (VM, noisy): between fsys 4 and native - the fastest design 7%
+behind native (fsys 4: 17%), the corpus nearly native's - for ~630 bytes over
+fsys 4. Also Iteration 211: the converter's --rebind took the OLDEST
+redefinition (the dump lists words newest first), so fsys 4's buffered WRITE
+was never bound and INCLUDED used fsys 2's OPEN-FILE and CLOSE-FILE, not fsys
+3's forgetting wrappers - now the newest, by address.
+
+## The dump guard (Iteration 212, the owner)
+
+A library that does not load whole stops the run at setup, rather than
+letting an older definition of the same name stand in and every gate pass -
+as file-sysc5.4 once did, at a remark outside a comment, with fsys 3's
+READ-LINE answering for fsys 5's. Each dump is checked as it is made: its load
+messages hold none of the kernel's load errors (Undefined word, dictionary
+full, name too long, Incomplete control structure, compile only, Not found,
+Error reading file); every name each loaded file defines is in the dump; and
+each such name is there as often as the bare kernel (one extra load) and the
+loaded files define it - by count, so a failed REdefinition shows though an
+older one of its name stands. Tested: the original remark - stopped, FS-FILL
+and FS-TAKE missing; READ-LINE alone broken - stopped, READ-LINE 2 of 3. All
+2,666 dumps pass (22 files, 286 names).
+
+## fsys 5 tightened (Iteration 214)
+
+fsys 5's READ-LINE cost more dispatches than fsys 4's (the kernel workload on
+seed 42's smallest: 6.95M against 6.76M) - its bookkeeping in Forth: the seek
+test on every call, six variables, the table's index arithmetic. Now a line
+whose LF is already in the buffer, within the caller's room, is taken at once:
+one SCAN, one CMOVE, the entry's next moved past the LF - no seek test (an
+entry holding unread bytes belongs to a file that seeks: every open, close and
+other use empties it) and no variables; next and end are addresses, equal when
+nothing is read ahead. Every other case - the buffer empty or the line running
+past it, the room filled, the end of the file - goes the general way, with two
+variables where there were six. Counted, fsys 4 -> 5: the kernel workload
+-2.2% on the smallest and -12.5% on the fastest (they were +2.8% and +3.8%),
+the corpus -0.4% and -9.7%; 33-53 image bytes fewer than before. A design
+whose CMOVE is the kernel's byte loop (no opcode slot - seed 42's best by Q)
+still pays for copying the lines out: kernel +45%, corpus +21% (+62%, +33%
+before). lab/evolve/readline-check.py runs READ-LINE at fsys 3, 4 and 5
+against native, byte for byte, and judges WRITE-LINE after a line by the
+file's bytes: native's WRITE-LINE does not give back what it read ahead.
