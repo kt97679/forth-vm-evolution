@@ -83,6 +83,18 @@ def _opt(name, default=None):
 CPT = int(_opt('--cpt')) if '--cpt' in ARGV else None   # scale shift S
 DATAPRIMS = '--dataprims' in ARGV
 if '--fold' in ARGV: G['FOLD'] = True
+if '--long-branches' in ARGV:   # Iteration 199: short branches the tag-2 encoding found out of range, kept long
+    import json as _json, os as _osl
+    if _osl.path.exists(_opt('--long-branches')): G['FORCE_LONG'].update(map(tuple, _json.load(open(_opt('--long-branches')))))
+def _short_fails_out():
+    """Iteration 199: out-of-range short branches written (with those kept long already) for the next conversion."""
+    if not G['SHORT_FAILS']: return
+    _all = sorted(set(G['FORCE_LONG']) | set(G['SHORT_FAILS']))
+    if '--long-branches' in ARGV:
+        import json as _json
+        _json.dump([list(x) for x in _all], open(_opt('--long-branches'), 'w'))
+    print('short branch out of range: %d branch(es) - kept long next conversion (%d in all)' % (len(set(G['SHORT_FAILS'])), len(_all)))
+    sys.exit(4)
 if '--fold-set' in ARGV: G['FOLDSET'] = set(_opt('--fold-set').split(','))
 if CPT is not None and CPT > 1: G['ALIGN_TAILS'] = 1 << CPT
 V8 = '--v8' in ARGV
@@ -173,6 +185,17 @@ words, cells, tokn = G['words'], G['cells'], G['tokn']
 read_ops, to_tokens, layout = G['read_ops'], G['to_tokens'], G['layout']
 retag = G['retag']
 idx_of, prims, stub_ops = G['idx_of'], G['prims'], G['stub_ops']
+
+# Iteration 205 (fsys 2): --rebind NAMES - each primitive's compiled uses made
+# calls to its Forth redefinition (the last word of the name that is not the
+# primitive's stub), so its handler can leave the engine. Set before any body
+# is read; a name with no redefinition is left as it was.
+if '--rebind' in ARGV:
+    for _n in _opt('--rebind').split(','):
+        _defs = [w for w in words if w['n'] == _n and stub_ops(w) is None]
+        if _defs: G['REBIND'][_n] = _defs[-1]['s']
+    print('rebind: %s' % ', '.join(sorted(G['REBIND'])))
+
 align_up, LOOPS, STR = G['align_up'], G['LOOPS'], G['STR']
 code_end = G['code_end']
 
@@ -514,7 +537,9 @@ if TAG2_ON:
         print('tag 2 wide: CALL,\'s 3-byte limit patched to 16 KB in %d place(s)' % _hit)
 
 for w in order:
+    G['CUR_WORD'][0] = w['s']          # Iteration 199
     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
+_short_fails_out()
 
 # ---- new sizes ------------------------------------------------------
 def tail_bytes(w):
@@ -541,7 +566,7 @@ def new_body_bytes(w):
         # [pad][call token][parameter field, CELL aligned]
         # The pad goes BEFORE the token so the parameter field, which is
         # the address just past it, stays CELL aligned for `@`.
-        return CELL + (w['e'] - w['s'] - CELL)
+        return CELL + (w['e'] - w['s'] - CELL) + ((NT_NEW - NT_OLD) * CELL if w['s'] == FW_S0 else 0)   # Iteration 204
     return w['e'] - w['s']             # opaque: copied verbatim
 
 # The thread each word belongs to, needed BEFORE placement in bytehdr
@@ -555,6 +580,9 @@ _NTH = cells.get(_FW[0]['s'] + CELL, 0)
 if not (1 <= _NTH <= 4096):
     sys.exit("FORTH-WORDLIST declares %r threads" % _NTH)
 
+
+if '--threads' in ARGV:    # Iteration 204: the links are sized by the chains they will be on
+    _NTH = int(_opt('--threads'))
 
 def _wl_hash(name):
     b = name.encode('latin-1')
@@ -588,6 +616,17 @@ for w in order:
 
 new_off, off = {}, PROLOGUE
 LINKLEN = {}
+# Iteration 204, the gene threads (results/loop-audit.md): --threads N - the
+# dictionary filed into N chains, not the dump's 32: FORTH-WORDLIST's body is
+# its count and N heads. Lookups walk one chain (the Forth and native HASH and
+# FIND take the count from the word list, WORDLIST copies FORTH-WORDLIST's),
+# so N=64 halves the walk for 256 bytes; N=16 saves 128 for longer walks.
+_FW0 = [w for w in order if w['n'] == 'FORTH-WORDLIST']
+FW_S0 = _FW0[0]['s'] if _FW0 else None
+NT_OLD = cells.get(FW_S0 + CELL, 0) if FW_S0 is not None else 0
+NT_NEW = int(_opt('--threads')) if '--threads' in ARGV else NT_OLD
+assert NT_NEW and not (NT_NEW & (NT_NEW - 1)) and NT_NEW <= 4096, '--threads: a power of two up to 4096'
+
 for w in order:
     if w['s'] in HL:                                 # Iteration 190: the code alone
         LINKLEN[w['s']] = 0
@@ -638,6 +677,7 @@ if not FW:
 FW = FW[0]
 FW_PF = FW['s'] + CELL                       # parameter field: [n][heads]
 NTHREADS = cells.get(FW_PF, 0)
+if NT_NEW != NTHREADS: NTHREADS = NT_NEW; cells[FW_PF] = NT_NEW   # Iteration 204: --threads
 if not (1 <= NTHREADS <= 4096):
     sys.exit("FORTH-WORDLIST declares %r threads" % NTHREADS)
 
@@ -705,7 +745,7 @@ chain_ok = (not broken
 # and would otherwise be copied out of the dump verbatim - with the
 # addresses of the image we were translating FROM. Overwrite them.
 for i, h in enumerate(HEADS):
-    cells[FW_PF + (i + 1) * CELL] = h
+    if i < NT_OLD: cells[FW_PF + (i + 1) * CELL] = h      # Iteration 204: beyond the dump's heads, the next word's cells - emitted below
 
 # ---- xts are ADDRESSES, and get relocated --------------------------
 # Iteration 176. `: EXECUTE ( xt --- ) >R ;` is pure Forth, not a
@@ -1041,6 +1081,7 @@ def emit(path):
                 if ws == s0: ops2[j] = ('LITOFF', nv)
             for (ws, j), nv in xt_new.items():
                 if ws == s0: ops2[j] = ('XT', nv)
+            G['CUR_WORD'][0] = s0          # Iteration 199
             if V8: img += bytes(to_tokens(ops2))
             else:
                 for t_ in to_tokens(ops2): img += tk(t_)
@@ -1102,6 +1143,7 @@ def emit(path):
                         vals[2] = remap_pfa_off(vals[2])
                 elif w['n'] in fixed: vals[0] = fixed[w['n']]
                 elif w['n'] in SCRUB: vals = [0] * len(vals)
+                if s0 == FW_S0 and NT_NEW != NT_OLD: vals = [NT_NEW] + list(HEADS)   # Iteration 204: the count, its heads
                 for v in vals: img += cel(v)
         if _cm is not None:    # Iteration 88: every word's body - start, end, code or data, name
             _cm.append('W %d %d %s %s' % (new_off[s0]['body'], new_off[s0]['body'] + new_body_bytes(w), kind[s0], w['n']))
@@ -1441,6 +1483,7 @@ if EMIT:
                 % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]], '\n'.join(_rows)))
             print("wrote vm-jit-ops.h: %d of %d operations translatable; JIT is code %d" % (len(_rows), len(G['t2_names']()), _jc))
 
+_short_fails_out()
 sys.exit(0 if chain_ok and gaps == 0 and not defer_bad and not xt_bad
          and not buf_bad and not untranslated and not bi_bad and not fixed_bad
          and not lit_bad else 1)

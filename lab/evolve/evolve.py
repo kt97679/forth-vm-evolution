@@ -53,7 +53,7 @@ OPERATORS
   selection  NSGA-II: rank by Pareto front, then by crowding, so designs
              that are different survive beside designs that are better
 """
-import collections, hashlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
+import bisect, collections, hashlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 O = os.path.join(ROOT, 'build'); W = os.path.join(O, 'work')
@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
 # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
 # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
-LATE = ('regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
+LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
 FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
@@ -114,6 +114,8 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
 EXPRESSED['cv8'] += ['jitloop', 'jitinl']
+EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
 EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
 EXPRESSED['cv8'] += ['dskew']   # Iteration 183 (the owner: the stacks' place): the data stack 2 KB lower - its top cells off the return stack's page offsets   # sysc retired with Iteration 147: every engine is SYSC   # the after-seed-39 batch: the dormant genes switched on
 BLOCKS = [('sharedcall', 'd256'), ('scale', 'bytehdr', 'doesfar'), ('varcall', 'varslot'),
@@ -134,6 +136,23 @@ LOOP10 = ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
 # (and the converter, which fills the three tables by their names in the
 # dump): rtloop=2 builds them headerless (tools/layout.py --headerless).
 RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVES', 'LOOP-OPS', 'X10-XTS', 'X10-OPS')
+# Iteration 202, the gene fsys (results/drafts/fsys/README.md): six file words
+# and RESIZE in Forth over SYSCALL (forth/file-sysc.4, loaded last in a -fsys
+# dump), their handlers out of the engine: 27 of 68 primitives never ran in
+# the eight workloads. A design without it builds from the dumps it always did.
+FSYS_INTERNAL = ('FS-BLK', 'FS0', 'FS1', 'FS2', 'FS3', 'FS4', 'FS-DROP', 'FS-WRITE', 'FS-NL', 'FS-MMAP')   # called by file-sysc.4's words only
+THREADS_N = {1: 64, 2: 128, 3: 16}   # Iteration 204, the gene threads: 0 as built (32 chains)
+def fsys_on(g):
+    return bool(g.get('fsys')) and g['enc'] == 'cv8'
+def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words in Forth, 2 the single-SYSCALL family
+    return g.get('fsys', 0) if fsys_on(g) else 0
+FSYS2_INTERNAL = ('FS-OFL', 'FS-END', 'FS-SAVED')
+FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
+FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
+                  'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
+FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
+FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207
+
 def rtloop_on(g):
     """Iteration 41: does this design compile loops at run time with its loop
     opcodes (forth/cv8-fuse-loop.4)? The gene, and any of them - each word
@@ -585,6 +604,7 @@ def _build(g, d):
     for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
                  ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
         if eff.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
+    if fsys_on(g): flags.append('-DFSYS=%d' % fsys_level(g))   # Iteration 202: seven handlers out (1); twelve, rebound (2: Iteration 205)
     if g.get('regpin'): flags.append('-DREGPIN=%d' % g['regpin'])   # Iteration 197: the VM registers pinned
     if g['spec']: flags.append('-DSPEC=1')
     t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
@@ -657,8 +677,14 @@ def _build(g, d):
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
-    if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2:   # Iteration 190: cv8-fuse-loop.4's internal words
-        opts += ['--headerless', ','.join(RTLOOP_INTERNAL)]
+    hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
+    if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
+    if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
+    if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
+        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ()) + (FSYS4_INTERNAL if fsys_level(g) == 4 else ())
+        opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) >= 3 else ()))]
+    if hl: opts += ['--headerless', ','.join(hl)]
+    if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
     if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
     if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
                                                                  # copies (Iteration 38), the dump tool and dead
@@ -670,8 +696,15 @@ def _build(g, d):
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
     fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
-    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '')))
-    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--emit-image', img], cwd=W)
+    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4'}.get(fsys_level(g), ''))))
+    # Iteration 199: a short branch the tag-2 encoding finds out of range is
+    # written to long-branches.json and the conversion fails; converted again
+    # with it kept long - the set only grows, so it ends.
+    lb = os.path.join(d, 'long-branches.json')
+    if os.path.exists(lb): os.remove(lb)
+    for _try in range(4):
+        r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--long-branches', lb, '--emit-image', img], cwd=W)
+        if r.returncode != 4: break
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
     # Iteration 13: a format-10 or tiny word whose body the converter could not
@@ -932,6 +965,10 @@ def mutate(g, rnd):
             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
+        elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
+            g['fsys'] = rnd.choice([v for v in range(5) if v != g.get('fsys', 0)]); what.append('fsys=%d' % g['fsys'])
+        elif k == 'threads':          # Iteration 204: 0 as built (32), 1-3 64, 128, 16 chains
+            g['threads'] = rnd.choice([v for v in range(4) if v != g.get('threads', 0)]); what.append('threads=%d' % g['threads'])
         elif k == 'regpin':           # Iteration 197: 0 GCC's choice; 1-3 three assignments
             g['regpin'] = rnd.choice([v for v in range(4) if v != g.get('regpin', 0)]); what.append('regpin=%d' % g['regpin'])
         elif k == 'rtloop':           # 0, 1, or 2 (Iteration 190: 2 with its internal words headerless)
@@ -1040,6 +1077,65 @@ MEM_TOL = float(os.environ.get('EVOLVE_MEM_TOL', 8))
 # generation's ranking (fronts, rank); first_front - the reports' and the
 # carry's, over whole databases - stays exact (compare-fronts measures again).
 SPEED_TOL = float(os.environ.get('EVOLVE_SPEED_TOL', 0.02))
+# Iteration 200 (the owner: pure Python, conservative): the surrogate
+# screen (results/drafts/surrogate-offline.md). A child whose predicted speed
+# and binary + image are both beaten - by SCREEN_MS and SCREEN_MT - by what was
+# measured before its generation is not measured: recorded "screened". The
+# model is additive - one weight per gene value, log speed and log size, fitted
+# by stochastic gradient descent on the earlier generations' living designs
+# every SCREEN_EVERY generations (seed 40 offline: speed within 8.2%, size 1.2%;
+# at 30%/5% a third of the children skipped, 1 of 163 final-front designs
+# lost). One screened child in SCREEN_AUDIT is measured anyway ("screened,
+# audited" in how it was made) - the screen's own check. Deterministic: the
+# fit has its own seed and sees only earlier generations, the audit is chosen
+# by id - a resumed run's replay decides the same. EVOLVE_SCREEN=0: off.
+SCREEN = os.environ.get('EVOLVE_SCREEN', '1') != '0'
+SCREEN_MS, SCREEN_MT = (float(x) for x in os.environ.get('EVOLVE_SCREEN_MARGINS', '0.30,0.05').split(','))
+SCREEN_AUDIT = int(os.environ.get('EVOLVE_SCREEN_AUDIT', 10))
+SCREEN_FROM = int(os.environ.get('EVOLVE_SCREEN_FROM', 5))
+SCREEN_EVERY = int(os.environ.get('EVOLVE_SCREEN_EVERY', 10))
+SCREEN_MIN = int(os.environ.get('EVOLVE_SCREEN_MIN', 1000))
+
+def screen_feats(g):
+    f = []
+    for k, v in express(g).items():
+        if isinstance(v, (list, tuple)): f += ['%s:%s' % (k, json.dumps(x, sort_keys=True)) for x in v]
+        else: f.append('%s=%s' % (k, json.dumps(v, sort_keys=True)))
+    return f
+
+def screen_fit(recs, epochs=12):
+    """The additive model: [(weights, bias) for log speed, for log binary + image]."""
+    data = [(screen_feats(r['genome']), math.log(r['speed']), math.log(ov(r, 'total'))) for r in recs]
+    model = []
+    for t in (1, 2):
+        w = collections.defaultdict(float); b = sum(d[t] for d in data) / len(data)
+        rnd = random.Random(1); idx = list(range(len(data)))
+        for ep in range(epochs):
+            rnd.shuffle(idx); a = 0.02 / (1 + ep * 0.2)
+            for i in idx:
+                fs, y = data[i][0], data[i][t]
+                e = b + sum(w[f] for f in fs) - y
+                for f in fs: w[f] -= a * (e + 1e-5 * w[f])
+                b -= a * e * 0.1
+        model.append((dict(w), b))
+    return model
+
+def screen_predict(model, g):
+    fs = screen_feats(g)
+    return tuple(math.exp(b + sum(w.get(f, 0.0) for f in fs)) for w, b in model)
+
+def screen_stair(recs):
+    """What was measured, as a staircase: speeds ascending, the least size up to each."""
+    sp, tt = [], []
+    for s_, t_ in sorted((r['speed'], ov(r, 'total')) for r in recs):
+        if tt and tt[-1] <= t_: continue
+        sp.append(s_); tt.append(t_)
+    return sp, tt
+
+def screen_beaten(stair, s_, t_):
+    sp, tt = stair; k = bisect.bisect_right(sp, s_ * (1 - SCREEN_MS))
+    return k > 0 and tt[k - 1] <= t_ * (1 - SCREEN_MT)
+
 def dominates(a, b):
     """Design a dominates design b: no worse in all three, better in one -
     memory by more than MEM_TOL, speed by more than SPEED_TOL."""
@@ -1322,17 +1418,18 @@ def setup():
     import shutil
     W = os.path.join(O, 'work')
     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
-    for name, files in [(b + k + f + l + t + e + q + j + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
+    for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
                                                                     ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
                         for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b != 'k64-self' else ('',))
                         for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
                         for e in (('', '-empty') if b == 'k64-bt' else ('',))     # Iteration 101
                         for q in (('', '-kstack') if b == 'k64-bt' else ('',))    # Iteration 116
-                        for j in (('', '-jit') if b == 'k64-bt' else ('',)) if k or f or l or t or e or q or j or b == 'k64-bt']:   # -jit: Iteration 80   # the plain two: build-stages'
+                        for j in (('', '-jit') if b == 'k64-bt' else ('',))
+                        for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
@@ -1342,6 +1439,10 @@ def setup():
                        + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
                        + (['kstack.4'] if '-kstack' in name else [])        # Iteration 116: ?STACK8, swapped into ?STACK
                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
+                       + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
+                       + (['file-sysc2.4'] if '-fsys2' in name or '-fsys3' in name or '-fsys4' in name else [])   # Iteration 205: the rest of the file words (fsys 2)
+                       + (['file-sysc3.4'] if '-fsys3' in name or '-fsys4' in name else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
+                       + (['file-sysc4.4'] if '-fsys4' in name else [])      # Iteration 207: the output buffered off a terminal (fsys 4)
                        + ['dict-dump-addr.4']) + 'BYE\n'
         out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
@@ -1381,6 +1482,8 @@ def random_genome(rnd):
         elif k == 'rtimm': g[k] = rnd.randrange(3)
         elif k == 'rtloop': g[k] = rnd.randrange(3)        # Iteration 190
         elif k == 'regpin': g[k] = rnd.randrange(4)        # Iteration 197
+        elif k == 'threads': g[k] = rnd.randrange(4)       # Iteration 204
+        elif k == 'fsys': g[k] = rnd.randrange(5)          # Iteration 205; 3: 206; 4: 207
         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
@@ -1579,6 +1682,7 @@ def main(argv):
     # database already holds what the first attempt made later - the
     # replay would make different children and fork instead of resuming.
     seen, pending = set(), {}
+    SCR = {'model': None, 'fit': -1}          # Iteration 200: the screen's model and when it was fitted
     def get(g, parents, how, gen):
         """The design's id; asked for, it is evaluated at the next flush()."""
         if REQUIRE and not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71
@@ -1590,6 +1694,28 @@ def main(argv):
         --jobs N - and recorded in the order asked: a generation's children are
         all made before any is needed, so the run decides as it did serially."""
         items = list(pending.items()); pending.clear()
+        gen_now = max((it[1][3] for it in items), default=0)
+        if SCREEN and items and gen_now >= SCREEN_FROM:          # Iteration 200: the screen
+            if SCR['model'] is None or gen_now - SCR['fit'] >= SCREEN_EVERY:
+                recs = [r for r in R.values() if r['status'] == 'ok' and r.get('speed') and ov(r, 'total') and r.get('gen', 0) < gen_now]
+                if len(recs) >= SCREEN_MIN:
+                    SCR['model'], SCR['fit'] = screen_fit(recs), gen_now
+                    print('  the screen: fitted on %d designs at generation %d' % (len(recs), gen_now), flush=True)
+            if SCR['model'] is not None:
+                stair = screen_stair([r for r in R.values() if r['status'] == 'ok' and r.get('speed') and ov(r, 'total') and r.get('gen', 0) < gen_now])
+                keep, n_scr, n_aud = [], 0, 0
+                for i, (g, parents, how, gen) in items:
+                    ps, pt = screen_predict(SCR['model'], canon(g))
+                    if gen >= SCREEN_FROM and screen_beaten(stair, ps, pt):
+                        if int(i, 16) % SCREEN_AUDIT == 0:
+                            n_aud += 1; keep.append((i, (g, parents, how + '; screened, audited', gen))); continue
+                        n_scr += 1
+                        rec = {'status': 'screened', 'pred': [round(ps, 4), round(pt)], 'secs': 0,
+                               'id': i, 'genome': canon(g), 'parents': parents, 'how': how, 'gen': gen}
+                        R[i] = rec; save(rec)
+                    else: keep.append((i, (g, parents, how, gen)))
+                if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
+                items = keep
         args = [(canon(g), ROUNDS) for i, (g, parents, how, gen) in items]
         for (i, (g, parents, how, gen)), rec in zip(items, WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args)):
             rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen)
@@ -1753,8 +1879,10 @@ def report(R):
     hum = {R[i]['how'][10:]: i for i in ok if R[i]['how'].startswith('hand-made')}
     ref = R[hum['s6-cv8b']] if 's6-cv8b' in hum else None
     L = ['# Evolved VM designs', '',
-         '%d designs evaluated, %d alive. Speed is the geometric mean of %s over %s,' %
-         (len(R), len(ok), R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
+         '%d designs evaluated, %d alive%s. Speed is the geometric mean of %s over %s,' %
+         (sum(1 for x in R.values() if x['status'] != 'screened'), len(ok),
+          ', %d screened - not measured (Iteration 200)' % sum(1 for x in R.values() if x['status'] == 'screened') if any(x['status'] == 'screened' for x in R.values()) else '',
+          R[ok[0]].get('unit', ''), ', '.join(WORK_SEL)),
          'relative to s6-cv8b; size is the self-hosting image, binary the stripped engine. %s is held out.' % ', '.join(WORK_HELD),
          'The front is over three objectives, equal (Iteration 75): speed, binary + image, peak memory - memory within %g KB a tie (Iteration 77).' % MEM_TOL, '',
          '', qbest_line(F, R, ref), '',
@@ -1796,8 +1924,12 @@ def report(R):
         L.append('| %s | %.3f | %d | %s |' % (n, R[i]['speed'] / ref['speed'] if ref else 1, R[i]['size'], 'yes' if i in F else 'no'))
     deaths = {}
     for i in R:
-        if R[i]['status'] != 'ok': deaths[R[i]['status']] = deaths.get(R[i]['status'], 0) + 1
+        if R[i]['status'] not in ('ok', 'screened'): deaths[R[i]['status']] = deaths.get(R[i]['status'], 0) + 1
     L += ['', '## Deaths', ''] + ['- %s: %d' % kv for kv in sorted(deaths.items(), key=lambda kv: -kv[1])] + ['']
+    scr = [i for i in R if R[i]['status'] == 'screened']; aud = [i for i in ok if 'screened, audited' in R[i].get('how', '')]
+    if scr or aud:                                      # Iteration 200
+        L += ['## The screen', '', '- not measured, predicted beaten by %d%% in speed and %d%% in binary + image: %d' % (100 * SCREEN_MS, 100 * SCREEN_MT, len(scr)),
+              '- audited (one in %d, measured anyway): %d, of them on the front: %d' % (SCREEN_AUDIT, len(aud), sum(1 for i in aud if i in set(F))), '']
     L += ["## The front's genomes", '', GENOMES_NOTE, ''] + front_records(R, sorted(set(F) | {i for i in rm if i in R}, key=lambda i: R[i]['speed'])) + ['']
     open(os.path.join(EV, 'report.md'), 'w').write('\n'.join(L) + '\n')
     print('\n'.join(L[6:6 + 3 + len(F)] + L[6 + 3 + len(F):6 + 6 + 2 * len(F)]))

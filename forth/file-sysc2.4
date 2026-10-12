@@ -1,0 +1,17 @@
+\ file-sysc2.4 - with file-sysc.4, the rest of the file words over SYSCALL:
+\ OPEN-FILE, CLOSE-FILE, WRITE-FILE (Iteration 205, fsys 2 - the single-
+\ SYSCALL family, results/drafts/fsys/single-syscall.md). The kernel compiled
+\ INCLUDED and SAVE-SYSTEM against the primitives; in a design with fsys 2 the
+\ converter rebinds those uses to these words (tools/layout.py --rebind), so no
+\ handler is left referred to. The results the handlers gave: OPEN-FILE the
+\ descriptor and 200 on failure, CLOSE-FILE close's result, WRITE-FILE -200.
+CREATE FS-OFL 577 , 577 , 0 , 0 , 2 , 2 , 1089 , 1089 , 578 , 578 ,   \ open(2)'s flags by fam - the engine's open_flags
+VARIABLE FS-END  VARIABLE FS-SAVED
+: OPEN-FILE ( c-addr u fam --- fid ior )        \ open(2), mode 0644, the name ended by a 0 a moment
+  CELLS FS-OFL + @ >R
+  OVER + DUP FS-END ! C@ FS-SAVED !  0 FS-END @ C!
+  R> 420 2 FS3
+  FS-SAVED @ FS-END @ C!
+  DUP 0< IF 200 ELSE 0 THEN ;
+: CLOSE-FILE ( fid --- ior )  FS-DROP 3 FS1 ;   \ its read-ahead dropped, then close(2)
+: WRITE-FILE ( c-addr u fid --- ior )  FS-DROP FS-WRITE IF 0 ELSE -200 THEN ;

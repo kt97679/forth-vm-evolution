@@ -1,0 +1,27 @@
+\ file-sysc4.4 - fsys 4: file-sysc3.4's single-SYSCALL I/O with the user
+\ output buffered where Gforth buffers it (Iteration 207, the owner). The
+\ standard leaves buffering open (FLUSH-FILE implies it); Gforth's practice
+\ and its proposal: never buffer the user input device; never buffer the user
+\ output device when it is a terminal; buffer it when it is not - a pipe, a
+\ file (complang.tuwien.ac.at/forth/ansforth-cvs/buffering.html). So WRITE
+\ asks once whether stdout is a terminal (ioctl TCGETS): there it writes at
+\ once, as fsys 3; elsewhere it adds to a 4 KB buffer on the heap - the
+\ dictionary holds only its [address, fill], registered with the engine
+\ (SYSCALL -5), whose t_flush empties it wherever the native engine flushed
+\ its own: before every system call, before a read blocks, at every exit and
+\ fault. A full buffer is flushed by SYSCALL -6. Input stays unbuffered.
+
+CREATE FS-OB 0 , 0 ,                             \ the buffer's address, its fill
+VARIABLE FS-OMODE  0 FS-OMODE !                  \ 0 not yet asked, 1 buffered, 2 a terminal: direct
+4096 CONSTANT FS-OSIZE
+: FS-OINIT ( --- )
+  FS-OSIZE FS-MMAP DUP 0< IF DROP 2 FS-OMODE ! EXIT THEN
+  DUP FS-OB ! 0 FS-OB CELL+ !
+  1 21505 ROT 16 FS3                             \ ioctl(1, TCGETS, the buffer as scratch): 0 on a terminal
+  0= IF 2 ELSE 1 FS-OB -5 FS1 DROP THEN FS-OMODE ! ;
+: WRITE ( c-addr u --- )
+  FS-OMODE @ 0= IF FS-OINIT THEN
+  FS-OMODE @ 2 = IF 1 FS-WRITE DROP EXIT THEN
+  DUP FS-OSIZE > IF -6 FS0 DROP 1 FS-WRITE DROP EXIT THEN
+  DUP FS-OB CELL+ @ + FS-OSIZE > IF -6 FS0 DROP THEN
+  FS-OB @ FS-OB CELL+ @ + SWAP DUP FS-OB CELL+ +! CMOVE ;

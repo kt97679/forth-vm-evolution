@@ -131,3 +131,31 @@ whole joint front - **right** (97 of 97).
 6. At least one front design made "via the attic".
 7. Not small: hypervolume +2% or more - the forms and run-time immediates
    (fib 0.83 on the knee founder) are new trade-offs at the knee.
+
+## Seed 42, scored (Iteration 209)
+
+1. No corpus death with opcall: none at all. Yes.
+2. Short branches out of range about as often as seed 41's 0.2%: 35 of 15,352
+   (0.23%). Yes - fixed in the after-seed-42 batch since.
+3. Crossover a quarter of the children: 33% of those recorded (children
+   repeating a genome already measured are made again, and those are mostly
+   mutation-only ones); mutation-only children most of the final front: 98 of
+   the 133 made in the run. Half.
+4. rtloop=2 more often than rtloop=1 on the front: 56 against 66 (the carried
+   fronts could only have 1). No.
+5. regpin at the fast end if at all: 19 designs, all 0.179-0.187. Yes.
+6. At least one front design via the attic: 8. Yes.
+7. Not small, hypervolume +2% or more: +4.8%. Yes.
+
+## Seed 43, predicted (Iteration 209) - the after-seed-42 batch's first run
+
+1. No death from a short branch out of range (now converted again).
+2. The screen skips about a third of the children from generation 5 on, and
+   the run measures more generations than seed 42's in the same hours; of the
+   audited (measured though screened) none on the final front.
+3. threads: 64 or 128 chains on most of the front's designs without klookup -
+   the corpus 28-41% fewer dispatches - and 16 chains, if anywhere, at the
+   smallest end.
+4. fsys: 2 to 4 at the small end (600-1,200 bytes), 0 at the fast end (the
+   I/O workloads 16-27% slower at 3 and 4 there).
+5. Not small: hypervolume +2% or more.

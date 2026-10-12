@@ -272,6 +272,7 @@ def retag(ops):
     return ops
 
 def read_ops(w):
+    CUR_WORD[0] = w['s']      # Iteration 199: the word, for FORCE_LONG and SHORT_FAILS
     # A PRIMITIVE stub is not threaded code. cross.4's PRIMITIVE emits
     # `"HEADER DUP , ,-T EXIT-TOKEN ,-T`, so the body is exactly
     # [prim-token, EXIT]. Read as code, LIT/BRANCH/?BRANCH swallow that
@@ -280,6 +281,12 @@ def read_ops(w):
     # because locals.4 redefines EXIT and a name test picks the wrong
     # word.
     st = stub_ops(w)
+    if st is not None and st[0][1] in REBIND and w['n'] != st[0][1]:
+        # Iteration 206: a colon word shaped like a stub - TYPE is `WRITE ;` -
+        # whose primitive is rebound: a call to the redefinition, not the
+        # handler that left the engine. Its header is the dump's (a colon
+        # word's, not a primitive's), so the run-time compiler calls it.
+        return [('C', REBIND[st[0][1]]), ('P', 'EXIT')]
     if st is not None:
         # A PRIMITIVE's body is NOT folded, even though `op EXIT` would
         # fold: the runtime compiler inlines a primitive by reading the
@@ -302,6 +309,10 @@ def read_ops(w):
     out = shorten(out) if V8 and PSEUDO10 & set(X_OPS10) else out
     return opcall_rewrite(out) if V8 and OPCALL else out     # Iteration 121: last - the op as it ends up
 
+# Iteration 205 (fsys 2): a primitive's every compiled use made a call to its
+# Forth redefinition - name -> the redefinition's address (layout.py --rebind).
+REBIND = {}
+
 def raw_read(w):
     """A body as the cell image has it, before any rewrite - or None."""
     out, a, end = [], w['s'], code_end(w)
@@ -319,7 +330,7 @@ def raw_read(w):
                 out.append(('BR' if v == BR else 'QBR', cells.get(a + CELL, 0)))
                 a += 2 * CELL
             else:
-                out.append(('P', nm)); a += CELL
+                out.append(('C', REBIND[nm]) if nm in REBIND else ('P', nm)); a += CELL   # Iteration 205: rebound
         else:
             t = a + CELL + v
             if t in BAD: return None          # absolute-address operand
@@ -702,6 +713,20 @@ KEEPNBR = ('DNQBR', 'DNQBRS', 'DUP?NBRANCH', 'DUP?NBRANCH8')
 TB_LONG[KEEPNBR[0]] = KEEPNBR[2]; TB_SHORT[KEEPNBR[1]] = KEEPNBR[3]
 BRK = ('BR', 'QBR', 'LP', 'PLP', 'QDO', 'LV', 'BRS', 'QBRS') + tuple(TB_LONG) + tuple(TB_SHORT) + ('EQIT', 'EQITS')
 PSEUDO10 = {'BRANCH8', '?BRANCH8', '=I?BRANCH', '=I?BRANCH8', 'SWAP+I', 'DUP+I', 'DUP<I', 'I+'} | set(TB_LONG.values()) | set(TB_SHORT.values())   # in X_OPS10 but not kernel words: the short branches, and the fused tests
+# Iteration 199: the branches shorten() sized short but the tag-2 encoding
+# found out of range (it sizes before the tag-2 map: escaped opcodes 1 byte,
+# calls 2 - seed 41: 37 designs dead at -131 to -135). Not asserted: each is
+# recorded (the word, the branch's cell offset - stable from shorten to the
+# encoding), layout.py writes them and fails, and evolve.py converts again
+# with them kept long (layout.py --long-branches). A design that converted
+# before meets none and is byte for byte as it was.
+FORCE_LONG = set()
+CUR_WORD = [None]
+SHORT_FAILS = []
+def _short_ok(o, cell):
+    if -128 <= o <= 127: return o
+    SHORT_FAILS.append((CUR_WORD[0], cell)); return 0
+
 def shorten(ops):
     """BRANCH and ?BRANCH take a one-byte offset wherever it fits. Decided
     on a layout that counts every alignment at its widest, so the real
@@ -711,6 +736,9 @@ def shorten(ops):
     ok = {k: s for k, s, n in (('BR', 'BRS', 'BRANCH8'), ('QBR', 'QBRS', '?BRANCH8'), ('EQIT', 'EQITS', '=I?BRANCH8')) + tuple((v[0], v[1], v[3]) for v in TESTBR.values())
           + ((KEEPNBR[0], KEEPNBR[1], KEEPNBR[3]),) if n in X_OPS10}
     long_ = set()
+    cs0, c0 = [], 0
+    for k, pl in ops: cs0.append(c0); c0 += op_cells(k, pl)
+    long_ |= {j for j in range(len(ops)) if (CUR_WORD[0], cs0[j]) in FORCE_LONG}   # Iteration 199
     while True:
         trial = [(ok[k], pl) if k in ok and j not in long_ else (k, pl) for j, (k, pl) in enumerate(ops)]
         cs, ts, c, t = [], [], 0, 0
@@ -1184,7 +1212,7 @@ def to_bytes_t2(ops):
             tgt = cs[j] + CELL + pl
             if tgt not in c2t: return None
             if k == 'EQITS':
-                o = c2t[tgt] - ts[j]; assert -128 <= o <= 127, "short branch out of range: %d" % o; b.append(o & 0xFF)
+                o = _short_ok(c2t[tgt] - ts[j], cs[j]); b.append(o & 0xFF)
             else: le(c2t[tgt] - ts[j], 2)
             continue
         if k == 'XT': le(pl, CELL); continue
@@ -1210,7 +1238,7 @@ def to_bytes_t2(ops):
             tgt = cs[j] + CELL + pl
             if tgt not in c2t: return None
             o = c2t[tgt] - (ts[j] + t2len(L))           # from the operand, in bytes
-            assert -128 <= o <= 127, "short branch out of range: %d" % o
+            o = _short_ok(o, cs[j])
             b.append(o & 0xFF)
         elif k in BRK:
             tgt = cs[j] + CELL + pl
@@ -1291,14 +1319,14 @@ def to_bytes_v8(ops):
             tgt = cs[j] + CELL + pl
             if tgt not in c2t: return None
             if k == 'EQITS':
-                o = c2t[tgt] - ts[j]; assert -128 <= o <= 127, "short branch out of range: %d" % o; b.append(o & 0xFF)
+                o = _short_ok(c2t[tgt] - ts[j], cs[j]); b.append(o & 0xFF)
             else: le(c2t[tgt] - ts[j], 2)
         elif k in ('BRS', 'QBRS') + tuple(TB_SHORT):
             b.append(X_OPS10[dict({'BRS': 'BRANCH8', 'QBRS': '?BRANCH8'}, **TB_SHORT)[k]])
             tgt = cs[j] + CELL + pl
             if tgt not in c2t: return None
             o = c2t[tgt] - (ts[j] + 1)                # from the operand, in bytes
-            assert -128 <= o <= 127, "short branch out of range: %d" % o
+            o = _short_ok(o, cs[j])
             b.append(o & 0xFF)
         elif k in BRK:
             b.append(idx_of['BRANCH'] if k == 'BR' else idx_of['?BRANCH'] if k == 'QBR' else X_OPS10[TB_LONG[k]] if k in TB_LONG else X_OPS10[LOOPNAME[k]])

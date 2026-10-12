@@ -435,3 +435,108 @@ registers in three assignments (engine/vm-lab.c VMREGS, tools/gen-tos.py).
 Measured on the development VM: the smallest and the small knee +800-930 bytes
 and no faster (the knee 4-7% slower); the fastest JIT design 160-320 bytes
 smaller at equal speed - a point of the front. The laptop decides.
+
+## Short branches kept long (Iteration 199)
+
+The converter decides which branches can be short before the tag-2 map
+exists, with escaped opcodes counted as one byte and calls as two; a loop
+body near 128 bytes could then encode a few bytes past reach - seed 41 lost 37
+designs at -131 to -135. Now the encoding records each such branch (its word,
+its cell offset) instead of asserting, tools/layout.py writes them to
+--long-branches FILE and exits 4, and evolve.py converts again with them kept
+long (up to four times; the set only grows). A design that converted before
+meets none and is byte for byte as it was.
+
+## The surrogate screen (Iteration 200)
+
+A child whose predicted speed and binary + image are both beaten - by 30% and
+5% - by what was measured before its generation is not measured: recorded
+`screened` (not a death; the report counts them apart). The model is
+additive, one weight per gene value, fitted in pure Python on the earlier
+generations' living designs every 10 generations; seed 40 offline: a third of
+the children skipped, 1 of 163 final-front designs lost
+(results/drafts/surrogate-offline.md). One screened child in ten, chosen by
+id, is measured anyway ("screened, audited") - the screen checked as it runs.
+Deterministic, so a resumed run decides the same. Settings: EVOLVE_SCREEN (0
+off), EVOLVE_SCREEN_MARGINS (0.30,0.05), EVOLVE_SCREEN_AUDIT (10),
+EVOLVE_SCREEN_FROM (generation 5), EVOLVE_SCREEN_EVERY (10), EVOLVE_SCREEN_MIN
+(1,000 designs).
+
+## fsys (Iteration 202): file words in Forth, their handlers out
+
+27 of the 68 primitives never ran in the eight workloads (s6 profiled); 17
+were the shell's, in Forth over SYSCALL since Iteration 147. fsys=1 does the
+same for six file words and RESIZE: forth/file-sysc.4 (with ALLOCATE and FREE
+in Forth too, for RESIZE's sake - SAVE-SYSTEM keeps the native pair) is
+loaded last in a -fsys dump, and the engine (FSYS) points the seven dispatch
+entries at L_nosys; SYSCALL -4 drops a file's read-ahead as the handlers did.
+Its helpers are headerless. A design without the gene builds from the dumps it
+always did: byte for byte as before. Measured: engine -608 bytes and image +504
+(the smallest, total -104), the fastest -328 in all; the standard suite whole
+on fsys=1 designs (ans-check, ANS_SET=fsys=1).
+
+## threads (Iteration 204): the dictionary's chains
+
+The loop audit (results/loop-audit.md): the name lookup - a walk down one hash
+chain - was ~60% of corpus and parse on the smallest design. The converter
+now files the dictionary into N chains (--threads; FORTH-WORDLIST's body its
+count and N heads; the links sized by the chains they end up on): 0 keeps the
+dump's 32, 1-3 give 64, 128 and 16. Every lookup path takes the count from the
+word list (HASH, the native FIND and HASH, WORDLIST copying FORTH-WORDLIST's),
+so nothing else changes. Counted on the smallest (kernel, corpus, parse):
+16 chains +17%, +49%, +53% dispatches for 128 bytes less; 64 chains -9%, -28%,
+-27% for ~240 bytes more; 128 chains -14%, -41%, -43% for ~700. The standard
+suite whole at 16, 64 and 128; at 32 every image byte for byte as before.
+
+## fsys 2 (Iteration 205): the single-SYSCALL family, stage A
+
+fsys now takes 0 (every I/O primitive native), 1 (six file words and RESIZE
+in Forth) and 2: OPEN-FILE, CLOSE-FILE, WRITE-FILE, ALLOCATE and FREE too
+(forth/file-sysc2.4, loaded after file-sysc.4 in an -fsys2 dump). The kernel
+compiled INCLUDED and SAVE-SYSTEM against those primitives, so the converter
+rebinds every compiled use to the Forth word (--rebind: ('P', name) becomes a
+call), and the engine (FSYS=2) drops their five handlers - the C runtime's
+allocator with them. Measured: the smallest 628 bytes smaller in all, the knee
+644, the fastest 1,039; every design through the full gate (the kernel
+workload opens its files through the Forth words); the standard suite 14 of 14
+as s6. Stage B: WRITE with its buffer on the heap, READ, READ-LINE, BYE.
+
+## fsys 3 (Iteration 206): the single-SYSCALL family, stage B
+
+WRITE, READ, READ-LINE and BYE in Forth over SYSCALL too (forth/file-
+sysc3.4), as the owner set them: no output buffer (WRITE one write(2) a call,
+EMIT one a character) and no read-ahead from stdin, pipes or anything that
+cannot seek. READ is the engine's t_read in Forth; READ-LINE reads into the
+caller's own buffer and seeks back after the line where the file can seek, a
+byte at a time where it cannot. Their handlers leave the engine; the engine's
+I/O is SYSCALL alone. The converter rebinds a stub-shaped colon word too -
+TYPE is `WRITE ;`, which read_ops took for a primitive stub and left calling
+the handler that was gone. Measured: the smallest 1,217 bytes smaller in all
+(fsys 2: 628), the fastest 1,921; the I/O workloads slower - the kernel
+workload +37-89%, the corpus +23-88% - fib and bubble not; the standard suite
+14 of 14 as s6. Evolution weighs 0 to 3.
+
+## fsys 4 (Iteration 207): the single-SYSCALL family with the output buffered
+
+The owner: a buffered-output level for evolution, with tests that buffering
+breaks nothing. The standard leaves buffering open; Gforth's practice and
+proposal (complang.tuwien.ac.at/forth/ansforth-cvs/buffering.html): never
+buffer input; never buffer output to a terminal; buffer it to a pipe or a
+file. fsys 4 is fsys 3 with WRITE so (forth/file-sysc4.4): it asks once
+(ioctl TCGETS) - on a terminal it writes at once, elsewhere into 4 KB on the
+heap whose [address, fill] the engine knows (SYSCALL -5), so t_flush empties
+it wherever the native engine flushed its own: before every system call,
+before a read blocks, at every exit and fault. lab/evolve/outbuf-check.py
+tests it against native: stdout and stderr on one pipe (ten programs, byte
+for byte; a signal death where native loses output the levels keep), the
+prompt shown before a blocking read, and a terminal shown at once (native
+holds it). The workloads print little: fsys 4 is about fsys 3's speed - their
+cost is READ-LINE's scan and system calls a line, not the output.
+
+## fsys 3 and 4, READ-LINE (Iteration 208)
+
+READ-LINE finds the line's end with SCAN (a native opcode under kinput, the
+kernel's loop otherwise) and asks whether a file can seek once per
+descriptor (0-63; OPEN-FILE and CLOSE-FILE forget it) - a system call a line
+fewer. The fastest design (kinput) went from 27% to 16% slower than fsys 2;
+designs without kinput keep their SCAN loop. ~150 bytes for it.

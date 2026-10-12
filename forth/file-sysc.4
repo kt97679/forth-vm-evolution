@@ -1,0 +1,66 @@
+\ file-sysc.4 - the file and memory words in Forth over the kernel's one
+\ SYSCALL ( block num --- r ): one Linux x86-64 system call, its six arguments
+\ in the block, r its result or -errno (Iteration 202, the gene fsys). Their
+\ handlers in engine/vm-lab.c ran in none of the eight workloads (s6
+\ profiled: 0 dispatches) and cost the smallest design 1,056 engine bytes;
+\ these words have the stack effects and the results those handlers had -
+\ READ-FILE's and WRITE-LINE's ior -200, the positioning words' 200, DELETE-
+\ FILE's -errno, ALLOCATE's 201, RESIZE's 202 with the block kept, FREE's 0.
+\ (NIP and TUCK written out: the cell system that makes the dumps has neither.)
+\ SYSCALL -4 drops a file's read-ahead first, as the handlers did (t_fdrop):
+\ READ-LINE, native still, reads ahead. Every SYSCALL flushes the output
+\ first, as WRITE-LINE's handler did. 64-bit cells; words the kernel has.
+
+CREATE FS-BLK 6 CELLS ALLOT
+: FS0 ( num --- r ) FS-BLK SWAP SYSCALL ;
+: FS1 ( a num --- r ) SWAP FS-BLK ! FS0 ;
+: FS2 ( a b num --- r ) SWAP FS-BLK CELL+ ! FS1 ;
+: FS3 ( a b c num --- r ) SWAP FS-BLK 2 CELLS + ! FS2 ;
+: FS4 ( a b c d num --- r ) SWAP FS-BLK 3 CELLS + ! FS3 ;
+: FS-DROP ( fid --- fid ) DUP -4 FS1 DROP ;      \ its read-ahead dropped
+
+: READ-FILE ( c-addr u1 fid --- u2 ior )         \ read(2) until u1 or the end
+  FS-DROP >R 0                                   ( c u total )
+  BEGIN 2DUP > WHILE
+    R@ 3 PICK 2 PICK + 3 PICK 3 PICK - 0 FS3     ( c u total n )
+    DUP 0= IF DROP R> DROP >R 2DROP R> 0 EXIT THEN
+    DUP 0< IF DROP R> DROP DROP 2DROP 0 -200 EXIT THEN
+    +
+  REPEAT R> DROP >R 2DROP R> 0 ;
+
+: FS-WRITE ( c-addr u fid --- f )                \ write(2) until all of it: true
+  >R BEGIN DUP 0> WHILE                          ( c u )
+    R@ 2 PICK 2 PICK 1 FS3                       ( c u n )
+    DUP 0> 0= IF DROP 2DROP R> DROP 0 EXIT THEN
+    SWAP OVER - >R + R>
+  REPEAT 2DROP R> DROP -1 ;
+CREATE FS-NL 10 C,
+: WRITE-LINE ( c-addr u fid --- ior )
+  DUP >R FS-WRITE IF FS-NL 1 R> FS-WRITE IF 0 ELSE -200 THEN ELSE R> DROP -200 THEN ;
+
+: REPOSITION-FILE ( ud fid --- ior )             \ lseek(2) SEEK_SET
+  FS-DROP SWAP DROP SWAP 0 8 FS3 0< IF 200 ELSE 0 THEN ;
+: FILE-POSITION ( fid --- ud ior )               \ lseek(2) SEEK_CUR
+  FS-DROP 0 1 8 FS3 DUP 0< IF DROP 0 0 200 ELSE 0 0 THEN ;
+: FILE-SIZE ( fid --- ud ior )                   \ to the end and back
+  FS-DROP DUP 0 1 8 FS3 DUP 0< IF 2DROP 0 0 200 EXIT THEN
+  OVER 0 2 8 FS3 >R 0 8 FS3 DROP R>
+  DUP 0< IF DROP 0 0 200 ELSE 0 0 THEN ;
+: DELETE-FILE ( c-addr u --- ior )               \ unlink(2), the name ended by a 0 a moment
+  OVER + DUP C@ >R DUP >R 0 SWAP C! 87 FS1 R> R> SWAP C! ;
+
+: FS-MMAP ( len --- addr|-errno )                \ anonymous, private, read and write
+  FS-BLK >R 0 R@ ! R@ CELL+ ! 3 R@ 2 CELLS + ! 34 R@ 3 CELLS + ! -1 R@ 4 CELLS + ! 0 R> 5 CELLS + !
+  FS-BLK 9 SYSCALL ;
+: ALLOCATE ( u --- a-addr ior )                  \ a cell before the block holds its size
+  DUP 16 + DUP 2 PICK U< IF 2DROP 0 201 EXIT THEN  \ u + 16 wrapped (-1 ALLOCATE): no such block
+  FS-MMAP DUP 0< IF 2DROP 0 201 EXIT THEN
+  SWAP OVER ! 16 + 0 ;
+: FREE ( a-addr --- ior )
+  DUP 0= IF EXIT THEN 16 - DUP @ 16 + 11 FS2 DROP 0 ;
+: RESIZE ( a-addr u --- a-addr' ior )            \ mremap(2), free to move; on failure the block kept
+  OVER 0= IF SWAP DROP ALLOCATE EXIT THEN
+  DUP 16 + OVER U< IF DROP 202 EXIT THEN          \ u + 16 wrapped: fails, the block kept
+  OVER 16 - DUP @ 16 + 2 PICK 16 + 1 25 FS4      ( a u r )
+  DUP 0< IF 2DROP 202 EXIT THEN
+  DUP >R ! DROP R> 16 + 0 ;

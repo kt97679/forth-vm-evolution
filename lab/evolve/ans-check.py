@@ -53,6 +53,7 @@ shutil.copy(os.path.join(T, 'prelude.fth'), os.path.join(CONV, 'prelude.fth'))
 # Iteration 165: the system's own extensions under test too - coreext.4 (the
 # standard words the kernel leaves out) and extend.4 (the search order).
 for _x in ('coreext.4', 'extend.4'): shutil.copy(os.path.join(ROOT, 'forth', _x), os.path.join(CONV, _x))
+ANS_SET = {k: int(v) for k, v in (x.split('=') for x in os.environ.get('ANS_SET', '').split(',') if x)}   # Iteration 202: genes forced, for an A/B of the suite
 core = open(os.path.join(CONV, 'core.fr'), encoding='latin-1').read(); k = core.rindex('S" <<END OF core.fr>>"')
 open(os.path.join(CONV, 'core-control.fr'), 'w', encoding='latin-1').write(core[:k] + 'T{ 1 2 + -> 4 }T\n' + core[k:])
 
@@ -131,6 +132,7 @@ bad = 0
 for did, g in designs:
     d = os.path.join(E.EV, 'ans-' + did); shutil.rmtree(d, ignore_errors=True)
     try:
+        if ANS_SET: g = dict(g, **ANS_SET)        # Iteration 202: a gene forced on every design (ANS_SET=fsys=1)
         g = E.canon(g); eng, img = E.build(g, d); out = run_all(eng, img, E.private_work(d))
     except Exception as e:
         print('| %s | | build failed: %s | |' % (did, str(e)[:60])); bad += 1; continue

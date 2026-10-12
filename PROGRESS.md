@@ -3773,3 +3773,20 @@ went from 27% to 16% slower than fsys 2; designs without kinput gain the
 system call only. The standard suite whole at both levels, outbuf-check.py
 PASS, run-tests PASS. Read-ahead on seekable files - allowed by the owner's
 rule - is what would close the rest.
+
+## Iteration 209 - 2026-10-12 - Claude
+
+**Seed 42 processed - not small.** 15,352 designs in about 5 hours (21:15-
+02:21 with session 37). The comparison judged itself by the five measures
+for the first time: fastest -7.0%, smallest +0.18%, memory +6 KB, hypervolume
++4.8%, best Q +0.5% - not small; by the extremes alone it would have been
+small. The Q-best of all runs is seed 42's 9a3de58ebe (0.211 at 26,472 bytes).
+111 deaths (seed 41: 907), none on the corpus. Predictions: five of seven
+(results/predictions.md); seed 43's written.
+
+**The after-seed-42 batch applied to master** - eight patches
+(results/applied-after-seed42/ORDER.md), no reseed (kernel.4 untouched); the
+laptop's results patch was the same stash as seed 41's, on master already.
+Stages rebuilt, 7 of 7 identical, run-tests PASS, every front design alive
+(101: seed 42's 59 and the joint front's 89), 0 of 12 of seed 42's front
+differing from s6 (2,119 tests). NEXT-RUN: seed 43, 6 hours.

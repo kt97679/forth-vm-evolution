@@ -259,4 +259,11 @@
 # knee kept, crossover 0.25 with linked genes whole, speed ties within 2%, the
 # standard suite whole. New genes, so the stopping rule counts afresh. Seed 42:
 # 6 hours like seed 41 - the process changes against it on equal time.
-seed 42 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 209: seed 42 not small (session 37's own five-measure verdict:
+# hypervolume +4.8%; the Q-best of all runs is seed 42's 9a3de58ebe); the
+# after-seed-42 batch applied (eight patches - results/applied-after-seed42/,
+# ORDER.md): short branches kept long, the surrogate screen, fsys 0-4 (the
+# single-SYSCALL family, buffered and not), threads (16-128 chains), READ-LINE
+# faster. New genes and a new process - the stopping rule counts afresh.
+# Seed 43: 6 hours like seeds 41 and 42.
+seed 43 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

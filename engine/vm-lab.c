@@ -1144,8 +1144,18 @@ NOINLINE_IO static int t_fgetc(int fd) {
     return f->b[f->pos++];
 }
 
+#if FSYS >= 4
+/*  Iteration 207, fsys 4: the Forth output buffer (forth/file-sysc4.4) - its
+ *  [address, fill], registered by SYSCALL -5 - is flushed wherever t_obuf
+ *  is: before every system call, before a read blocks, at every exit, the
+ *  faults' included. The flush points are the native engine's, unchanged.  */
+static UNS64 *g_fbuf;
+#endif
 NOINLINE_IO static void t_flush(void) {
     if (t_olen) { full_write(1, t_obuf, (size_t)t_olen); t_olen = 0; }
+#if FSYS >= 4
+    if (g_fbuf && g_fbuf[1]) { full_write(1, (const void *)(uintptr_t)g_fbuf[0], (size_t)g_fbuf[1]); g_fbuf[1] = 0; }
+#endif
 }
 
 /*  WRITE and READ - primitives 30 and 31, where EMIT and KEY were; the
@@ -1224,20 +1234,45 @@ static void virtual_machine(void) {
 #define SYSF &&L_fork
 #define SYSX(l) &&l
 #endif
+/*  Iteration 202, the gene fsys: six file words and RESIZE in Forth over
+ *  SYSCALL (forth/file-sysc.4, loaded last in the design's dump) - their
+ *  handlers out of the engine, as SYSX's for the shell's words. ALLOCATE and
+ *  FREE stay: SAVE-SYSTEM was compiled against them.  */
+#if FSYS
+#define FSX(l) &&L_nosys
+#else
+#define FSX(l) &&l
+#endif
+/*  Iteration 205, fsys 2 - the single-SYSCALL family: OPEN-FILE, CLOSE-FILE,
+ *  WRITE-FILE, ALLOCATE and FREE too (forth/file-sysc2.4); the kernel's uses
+ *  of them rebound to the Forth words by the converter (--rebind).  */
+#if FSYS >= 2
+#define FSX2(l) &&L_nosys
+#else
+#define FSX2(l) &&l
+#endif
+/*  Iteration 206, fsys 3: WRITE, READ, READ-LINE and BYE too (forth/file-
+ *  sysc3.4: unbuffered, no read-ahead from what cannot seek) - the engine's
+ *  I/O is then SYSCALL alone.  */
+#if FSYS >= 3
+#define FSX3(l) &&L_nosys
+#else
+#define FSX3(l) &&l
+#endif
     static const void *const dispatch[] = {
         &&L_noop, &&L_exit, &&L_lit, &&L_branch, &&L_0branch, &&L_drop,
         &&L_dup, &&L_swap, &&L_rot, &&L_over, &&L_cfetch, &&L_fetch,
         &&L_cstore, &&L_store, &&L_and, &&L_or, &&L_xor, &&L_fromr,
         &&L_tor, &&L_rfetch, &&L_eq, &&L_ugt, &&L_gt, &&L_plus,
         &&L_negate, &&L_lshift, &&L_rshift, &&L_ummult, &&L_umdiv,
-        &&L_dplus, &&L_write, &&L_read, &&L_bye, &&L_spfetch, &&L_spstore,
-        &&L_rpfetch, &&L_rpstore, &&L_openfile, &&L_closefile,
-        &&L_readline, &&L_writeline, &&L_readfile, &&L_writefile,
-        SYSX(L_system), &&L_reposfile, &&L_filepos, &&L_delfile, &&L_filesize,
+        &&L_dplus, FSX3(L_write), FSX3(L_read), FSX3(L_bye), &&L_spfetch, &&L_spstore,
+        &&L_rpfetch, &&L_rpstore, FSX2(L_openfile), FSX2(L_closefile),
+        FSX3(L_readline), FSX(L_writeline), FSX(L_readfile), FSX2(L_writefile),
+        SYSX(L_system), FSX(L_reposfile), FSX(L_filepos), FSX(L_delfile), FSX(L_filesize),
         SYSF, SYSX(L_execve), SYSX(L_waitpid), SYSX(L_pipe), SYSX(L_dup2),
         SYSX(L_getenv), SYSX(L_setenv), SYSX(L_sysexit), SYSX(L_chdir), SYSX(L_getcwd),
         SYSX(L_sysargc), SYSX(L_sysarg), SYSX(L_getpid), SYSX(L_unsetenv),
-        &&L_allocate, &&L_free, &&L_resize, SYSX(L_getpwhome),
+        FSX2(L_allocate), FSX2(L_free), FSX(L_resize), SYSX(L_getpwhome),
         SYSX(L_getfsize), SYSX(L_setfsize),
         /*  LIT32 is not one of kernel.4's primitives. It is appended
          *  past the real ones so the table has no hole - `dispatch[255]`
@@ -2153,6 +2188,16 @@ L_syscall: {
     long num = (long)(INT64)DS0, r;
     const UNS64 *a = (const UNS64 *)(uintptr_t)DS1;
     t_flush();
+#if FSYS
+    /*  -4 (Iteration 202): fid a[0]'s read-ahead dropped, as the native READ-FILE
+     *  and the positioning words did first - file-sysc.4's need it: READ-LINE,
+     *  native, reads ahead.  */
+    if (num == -4) { t_fdrop((int)a[0]); r = 0; } else
+#endif
+#if FSYS >= 4
+    if (num == -5) { g_fbuf = (UNS64 *)(uintptr_t)a[0]; r = 0; } else   /* the Forth output buffer registered */
+    if (num == -6) r = 0; else                                          /* a flush: done on entry, above */
+#endif
     if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
     else {
         if (num == 60 || num == 231) { PROFDUMP; }
