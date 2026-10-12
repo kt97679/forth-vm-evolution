@@ -4306,3 +4306,11 @@ done. Tested: readline-check PASS on two designs, outbuf-check PASS, run-tests
 PASS, 7 of 7 identical, the 48 seed 43 front designs with fsys 3 or 4 at each
 of fsys 3, 4, 5 alive (144 of 144), the suite at fsys 3 on two designs 0 differ;
 the three patches apply in order on a fresh clone and reproduce the tested files.
+
+## Iteration 227 - 2026-10-12 - Claude
+
+**The owner's guidance on words, recorded in GOALS.md ("The aim"):** core words
+in the base kernel; helper words where convenient, in a reasonable balance with
+size - developer friendly, so reusable non-standard words keep their names;
+splitting a long word for understanding, testing and extending counts as a plus
+beside the bytes. The hidden-names entry in the register notes it.

@@ -12,6 +12,14 @@ job - small images, a small and plain engine, few mechanisms, each one
 easy to read and to remove. Speed is welcome where it costs little; it
 does not justify complexity on its own.
 
+**Words in the kernel, and how long they are** (the owner, 2026-10-12,
+Iteration 227): the base kernel holds the core words; helper words are
+welcome where they are convenient, in a reasonable balance with size - this
+is meant to be developer friendly, so a non-standard word that can be reused
+keeps its name and its place. Splitting a long word into several named ones
+is a plus in its own right when it makes the code easier to understand, to
+test and to extend; count that beside the bytes, not after them.
+
 How it decides things:
 - **A mechanism earns its place by measurement**, and goes behind a gene
   so that evolution - and the reader - can see what it buys. If it buys
@@ -861,7 +869,7 @@ the smallest by under ~2%.**
 
 | approach | what decided it | where |
 |---|---|---|
-| The internal words' names hidden (headerless), or the words inlined | priced, deferred by the owner (Iterations 222-223): -2.7 to -2.8% of binary + image on two designs, but a list derived from what programs here write fails the standard suite (coreext.4 builds TRAVERSE-WORDLIST from NEXT-NFA8; LEAVE8 alone crashes a JIT design, reached in a way no source shows) - only hand-kept, reviewed lists per overlay, checked on every gene combination, could be safe; inlining instead saves tens of bytes (the bytes are in the headers) | `results/price-names.md` |
+| The internal words' names hidden (headerless), or the words inlined | priced, deferred by the owner (Iterations 222-223; and Iteration 227's guidance: reusable helpers keep their names - only words of no use outside their overlay could go): -2.7 to -2.8% of binary + image on two designs, but a list derived from what programs here write fails the standard suite (coreext.4 builds TRAVERSE-WORDLIST from NEXT-NFA8; LEAVE8 alone crashes a JIT design, reached in a way no source shows) - only hand-kept, reviewed lists per overlay, checked on every gene combination, could be safe; inlining instead saves tens of bytes (the bytes are in the headers) | `results/price-names.md` |
 | The next keeping forms (OVER C@, DUP C@, ...) | priced again, not built (Iteration 222): the largest, DUP before ?BRANCH (5-6% of the small end's image dispatches), already has its form, listed by 121 of seed 43's front and realised by 28 - the small end is short of one-byte codes, and new forms would queue for them | `results/price-keepforms-next.md` |
 | Packed names, six bits a character | priced, not built (Iteration 222): -292 to -384 bytes before the code to pack and unpack, a kernel change and a reseed; hiding the internal words' names saves more for less | `results/price-names.md` |
 | A name-lookup cache beside the threads gene | priced, not built (Iteration 221): at 16 chains a 16-entry cache cuts the walk 22% (corpus) and 48% (parse); doubling the chains halves it, for bytes evolution already declined at the small end; half the walk is names not found, which a cache cannot serve | `results/price-lookup-cache.md` |
