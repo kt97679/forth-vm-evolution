@@ -4394,3 +4394,22 @@ files. **A correction to Iteration 229:** s6's bare-kernel image dying on any
 input is known and documented (build-stages.sh: "for the size column ONLY. It
 does not boot" - the kernel's own word-list search assumes cell headers);
 confirmed here - the same conversion without --bytehdr runs. Not a defect.
+
+## Iteration 232 - 2026-10-12 - Claude
+
+**UTF-8 word names compile right (the owner asked how they behave; the third
+after-seed-45 patch, results/pending/names-after-seed45.patch).** >NAME finds a
+header by scanning back from the body for bit 7 - the count byte's mark - and
+COMPILE, reads bit 5 there to inline a primitive. With the name between the
+count byte and the body, a UTF-8 byte (bit 7 set) stopped the scan; with bit 5
+set too (BF, A9, A0...) the word read as a primitive: `: суп 5 . ;` ran,
+`: обед суп суп ;` printed nothing, `café` crashed. Byte headers now carry the
+count byte after the name, right before the body: the scan stops there at
+once, whatever the name holds. Three more repairs on the way: REVEAL8 (the
+kernel's REVEAL hashed the name after the count byte - every new word went to
+the wrong thread), the converter's expected THREAD-FIND body (75 of 161 designs
+died "no exact body match" until sod16.py's list matched), the tracer's way of
+naming run-time words. New check: lab/evolve/names-check.py. All checks pass
+(ORDER.md); images +16 bytes, +56 with kfast. **Found, not fixed:** the cell
+headers have the same fault - the kernel's own COMPILE, asks >NAME; s0 crashes
+on `café`. The owner decides on that, and on packed names after this.
