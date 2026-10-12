@@ -1,0 +1,182 @@
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 939098c..303a329 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -675,6 +675,10 @@ static void load_image(const char *name) {
+ 
+     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
+                     & ~(UNS64)(CELL_BYTES - 1));
++#if ENC == 3
++    {   UNS64 t_;                 /* Iteration 229: THROW's body - vm-lab.c's, read past here */
++        if (full_read(fd, (UNS8*)&t_, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); } }
++#endif
+     len = full_read(fd, base, MEMSIZE);
+     close(fd);
+     if (len < 0) {
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 939bce6..f63b07f 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -696,6 +696,23 @@ static const int open_flags[10] = {
+ #define MAX_TAILS 16
+ static UNS64 nwords;
+ static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
++#if ENC == 3
++static UNS64 throw_off;    /* Iteration 229: THROW's body (offset), from the header - 0: none */
++/*  Iteration 229: a zero divisor is -10 THROW (Forth 2012's "division by
++ *  zero"), not the CPU's fault: -10 where the divisor was, then a call to
++ *  THROW, as LSAVE's fallback calls a Forth word. Its dispatch is a macro of
++ *  its own, so a superinstruction that copies UM/MOD's body (gen-super.py)
++ *  does not run its second operation after it, and the cached-top engine
++ *  refills its top first (gen-tos.py redefines DIV0_DISPATCH as FILLNEXT).
++ *  Macros, so UM/MOD stays one line for the generators that read handlers.  */
++#ifndef DIV0_DISPATCH
++#define DIV0_DISPATCH() NEXT()
++#endif
++#define DIV0() do { DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; TRACE_CALL(); DIV0_DISPATCH(); } while (0)
++#define DIV0_CHECK() do { if (!DS0 && throw_off) DIV0(); } while (0)
++#else
++#define DIV0_CHECK() do { } while (0)
++#endif
+ #if ENC == 3 && HOTCALLS
+ static UNS64 hot_tab[32];  /* one-byte calls: image offsets, from the header */
+ #endif
+@@ -798,6 +815,14 @@ static void load_image(const char *name) {
+             exit(2);
+         }
+     }
++#if ENC == 3
++    /*  Iteration 229: THROW's body, written by the converter and by
++     *  SAVE-SYSTEM after the locals block - UM/MOD throws -10 there.  */
++    if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) {
++        write_str(2, "Truncated image header.\n");
++        exit(2);
++    }
++#endif
+ 
+ #if ENC == 3 && HOTCALLS
+     /*  Last in the header: a count byte, then that many 2-byte offsets.  */
+@@ -1998,7 +2023,7 @@ L_negate:  /* negate  */ DS0 = - DS0; NEXT();
+ L_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; NEXT();
+ L_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; NEXT();
+ L_ummult:  /* um*     */ umul(&DS0, &DS1); NEXT();
+-L_umdiv:   /* um/mod  */ udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
++L_umdiv:   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
+ L_dplus:   /* d+      */
+     DS3 += DS1; DS2 += DS0; DS2 += (DS3 < DS1);
+     dsp += 2 * CELL_BYTES;
+diff --git a/forth/cv8-save.4 b/forth/cv8-save.4
+index e639f12..c451379 100644
+--- a/forth/cv8-save.4
++++ b/forth/cv8-save.4
+@@ -73,7 +73,8 @@ CREATE SS-NAME 40 ALLOT
+   S" LSAVE-STACK" SS-PFA  SS-CELL,          \ and its buffer
+   LSAVE-MAX               SS-CELL,          \ its limit
+   S" LSAVE"       SS-FIND START @ - SS-CELL,   \ fallbacks for ABORT" paths
+-  S" LRESTORE"    SS-FIND START @ - SS-CELL, ;
++  S" LRESTORE"    SS-FIND START @ - SS-CELL,
++  S" THROW"       SS-FIND START @ - SS-CELL, ;   \ Iteration 229: UM/MOD's zero divisor throws there
+ 
+ : SS-SCRUB-ALL ( --- )   \ NOT "SS-SCRUB8": that name would make --cv8-compiler
+ \ replace SS-SCRUB itself, and this word calls it - infinite recursion,
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index d292472..c464f63 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -1059,7 +1059,9 @@ VARIABLE HANDLER ( --- a-addr)
+ \ The newest CATCH frame on the return stack, or 0 (Forth 2012, 9.6; the
+ \ standard's reference design). ABORT is -1 THROW, ABORT" -2 THROW, an
+ \ undefined word -13 THROW under a CATCH; with none, THROW does what ABORT
+-\ always did - the same messages, then WARM (Iteration 171).
++\ always did - the same messages, then WARM (Iteration 171). Any other code
++\ uncaught is named first: "Division by zero" for -10, which UM/MOD throws
++\ for a zero divisor (the engine, Iteration 229), "Error n" for the rest.
+ \ The frame keeps the input source too: THROW restores the one in use when
+ \ CATCH began, as the standard has it - an EVALUATE's own restoring is on the
+ \ return stack THROW cuts back (exceptiontest's -13 in three EVALUATEs).
+@@ -1068,7 +1070,9 @@ VARIABLE HANDLER ( --- a-addr)
+   EXECUTE  R> HANDLER !  R> DROP R> DROP R> DROP R> DROP  R> DROP  0 ;
+ : THROW ( k*x n --- k*x | i*x n)
+   ?DUP IF HANDLER @ ?DUP IF RP! R> HANDLER !  R> SID ! R> >IN ! R> #SRC ! R> SRC !
+-          R> SWAP >R SP! DROP R> EXIT THEN WARM THEN ;
++          R> SWAP >R SP! DROP R> EXIT THEN
++      DUP 2 + 2 U< 0= IF DUP -10 = IF ." Division by zero" ELSE ." Error " DUP . THEN CR THEN
++      WARM THEN ;
+ : (ABORT") ( f --- )
+ \ Runtime part of ABORT"
+            IF HANDLER @ IF -2 THROW THEN R> COUNT TYPE SPACE HERE COUNT TYPE CR -2 THROW
+diff --git a/forth/spn-cv8-save.4 b/forth/spn-cv8-save.4
+index b26bf47..77124e7 100644
+--- a/forth/spn-cv8-save.4
++++ b/forth/spn-cv8-save.4
+@@ -19,6 +19,7 @@
+ \     nthreads cell     then that many START-relative thread heads
+ \     ntails   cell     0: DODOES carries its target inline
+ \     locals   5 cells  0: no locals.4 in this system
++\     THROW    cell     its body, START-relative: UM/MOD's zero divisor throws there (229)
+ \     the dictionary, START to HERE
+ \
+ \ The magic is the byte-header stage's, read from its image; COLD's
+@@ -101,6 +102,7 @@ VARIABLE SV-KEEP  VARIABLE SV-BLOB
+   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + SV>COPY @ SV-CELL, LOOP
+   0 SV-CELL,                                  \ ntails
+   5 0 DO 0 SV-CELL, LOOP                      \ locals header
++  ['] THROW START @ - SV-CELL,                \ THROW's body: UM/MOD's zero divisor (Iteration 229)
+   SV-BUF @ SV-LEN @ SV-WRITE
+   SV-FID @ CLOSE-FILE DROP
+   SV-BUF @ FREE DROP ;
+diff --git a/lab/evolve/outbuf-check.py b/lab/evolve/outbuf-check.py
+index 0a8046e..678a59b 100644
+--- a/lab/evolve/outbuf-check.py
++++ b/lab/evolve/outbuf-check.py
+@@ -44,6 +44,10 @@ T1 = {                       # S" ... TYPE, words defined first: ." ABORT" DO LO
+     'file between':     'S" A" TYPE S" outbuf.tmp" W/O CREATE-FILE DROP DUP S" data" ROT WRITE-FILE DROP CLOSE-FILE DROP S" B" TYPE CR BYE',
+     'control chars':    '7 EMIT 8 EMIT 13 EMIT 9 EMIT S" z" TYPE CR BYE',
+     'engine fault':     ': R R ; S" pre " TYPE R',
++    # Iteration 229: a zero divisor is -10 THROW in every division word, caught or not
++    'DIVZERO':          ": T1 1 0 / ; ' T1 CATCH . : T2 7 0 MOD ; ' T2 CATCH . : T3 7 0 /MOD ; ' T3 CATCH . "
++                        ": T4 1 2 0 */ ; ' T4 CATCH . : T5 1 2 0 */MOD ; ' T5 CATCH . : T6 7 0 0 FM/MOD ; ' T6 CATCH . "
++                        ": T7 7 0 0 SM/REM ; ' T7 CATCH . : T8 7 0 0 UM/MOD ; ' T8 CATCH . CR\n1 0 / S\" lost\" TYPE\nS\" after\" TYPE CR BYE",
+ }
+ def run(v, prog):
+     eng, img, pw = builds[v]
+@@ -55,7 +59,11 @@ for name, prog in T1.items():
+     ref = run(0, prog)
+     res = {v: run(v, prog) for v in LEVELS[1:]}
+     ok = all(res[v] == ref for v in res)
+-    # Killed by a signal (1 0 / is SIGFPE in every engine here), native loses
++    # Iteration 229: every division word throws -10 for a zero divisor, at every
++    # level as native: eight -10s, the message for the one not caught, and on.
++    if name == 'DIVZERO':
++        fails += not (ref[1].count(b'-10 ') == 8 and b'Division by zero' in ref[1] and b'after' in ref[1] and b'lost' not in ref[1])
++    # Killed by a signal (the engine fault: a return stack run over), native loses
+     # what its C buffer held - the levels keep it: native's output a prefix of
+     # theirs, theirs alike, the same signal. Better than native, not worse.
+     kept = (not ok and ref[0] < 0 and all(r == ref or (r[0] == ref[0] and r[1].startswith(ref[1])) for r in res.values()))   # each level: native's, or more of it
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index ce70636..70faa9e 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -198,6 +198,8 @@ s = s.replace("static void virtual_machine(void) {\n    VMREGS", """static void
+ #define VMPUSH PUSHT
+ #define SPILL() do { dsp -= CELL_BYTES; CELL(dsp) = tos; } while (0)
+ #define FILLNEXT() do { POPT(); NEXT(); } while (0)
++#undef DIV0_DISPATCH
++#define DIV0_DISPATCH() FILLNEXT()
+ #if ENC == 3
+ #define BROFF(a) ((int16_t)LD16(a))
+ #else
+diff --git a/tools/layout.py b/tools/layout.py
+index b7df732..e530358 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1297,6 +1297,9 @@ def emit(path):
+         lmax_v = [pl for k, pl in info[lmax['s']] if k in ('LIT', 'LITX')][0]
+         hdr += cel(body_of('LSAVE-SP') + CELL) + cel(body_of('LSAVE-STACK') + CELL)
+         hdr += cel(lmax_v) + cel(body_of('LSAVE')) + cel(body_of('LRESTORE'))
++    if V8:             # Iteration 229: THROW's body, for UM/MOD's zero divisor (-10 THROW); 0 if the image has none
++        _thr = [w for w in order if w['n'] == 'THROW']
++        hdr += cel(new_off[_thr[-1]['s']]['body'] if _thr else 0)
+     if HOT:            # last in the header: one-byte calls' targets, as image offsets
+         assert G['VARCALL'], "one-byte calls take far-call prefixes: they need --varcall"
+         _o = [new_target_off(a) for a in HOT]

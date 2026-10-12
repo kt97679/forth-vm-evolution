@@ -4334,3 +4334,25 @@ PASS, 7 of 7 identical, all 165 of seed 43's front designs alive, the standard
 suite 0 of 2 differ; engines +-32 bytes, images unchanged; the four apply in
 order on a fresh clone and reproduce the tested files. load_image is the only
 function the compiler probes page by page (objdump: one probe loop).
+
+## Iteration 229 - 2026-10-12 - Claude
+
+**A zero divisor is -10 THROW (the owner approved; the fifth after-seed-44 patch,
+results/pending/divzero-after-seed44.patch - it changes kernel.4: reseed).** The
+converter writes THROW's body into every CV8 image header, as it writes the
+locals words'; the engine's UM/MOD calls it with -10 where the divisor was -
+through macros, so the handler stays one line for gen-super (a superinstruction
+must not run its second operation after the throw) and gen-tos (the cached top
+refilled first). SAVE-SYSTEM and the SPN save write the cell; spn-cv8.c reads
+it. The kernel's THROW, uncaught, names the code first: "Division by zero" for
+-10, "Error n" for the rest but -1 and -2. outbuf-check.py has a DIVZERO case.
+Checked on every engine kind (multi-state, tail, JIT, cached top, fsys 5) and
+the stages; run-tests PASS, 7 of 7, outbuf-check and readline-check PASS, all
+165 of seed 43's front alive, the suite 0 of 3 differ. Cost: engines +96 to
++192 bytes, images +64 - five times the estimate on the engine side; a slimmer
+form (no message for the header's absence, "Error -10" only) is possible.
+Found on the way: s6's bare-kernel image (s6-cv8b-k64.img) dies on any input -
+on master too, unused by the tests; s6's system image is fine. Also: the owner's
+standing decisions already say "output to a terminal unbuffered" - native's
+buffering of terminal output (Iteration 214) is a defect against them, not a
+question; open.
