@@ -3809,3 +3809,13 @@ it; and --rebind took the OLDEST redefinition, so fsys 4's buffered WRITE was
 never bound since Iteration 207 - seed 43 runs with that (its fsys 4 is fsys
 3 with dead bytes). Fixed; outbuf-check.py now tests real buffering and
 passes; the standard suite whole at fsys 4 and 5; run-tests PASS.
+
+## Iteration 212 - 2026-10-12 - Claude
+
+**The dump guard (the owner)** - the third after-seed-43 patch. Each dump is
+checked as setup makes it: no load error among its messages, every name each
+loaded file defines present, and each present as often as the bare kernel
+and the loaded files define it - the count catches a failed redefinition an
+older definition hides (fsys 5's READ-LINE behind fsys 3's). Tested both ways:
+the original remark stops the run (FS-FILL, FS-TAKE missing); READ-LINE alone
+broken stops it (READ-LINE 2 of 3). All 2,666 dumps pass; 7 of 7 stages.

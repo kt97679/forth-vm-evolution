@@ -1,0 +1,118 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 651ae5a..6c747ff 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -554,3 +554,18 @@ fsys 4. Also Iteration 211: the converter's --rebind took the OLDEST
+ redefinition (the dump lists words newest first), so fsys 4's buffered WRITE
+ was never bound and INCLUDED used fsys 2's OPEN-FILE and CLOSE-FILE, not fsys
+ 3's forgetting wrappers - now the newest, by address.
++
++## The dump guard (Iteration 212, the owner)
++
++A library that does not load whole stops the run at setup, rather than
++letting an older definition of the same name stand in and every gate pass -
++as file-sysc5.4 once did, at a remark outside a comment, with fsys 3's
++READ-LINE answering for fsys 5's. Each dump is checked as it is made: its load
++messages hold none of the kernel's load errors (Undefined word, dictionary
++full, name too long, Incomplete control structure, compile only, Not found,
++Error reading file); every name each loaded file defines is in the dump; and
++each such name is there as often as the bare kernel (one extra load) and the
++loaded files define it - by count, so a failed REdefinition shows though an
++older one of its name stands. Tested: the original remark - stopped, FS-FILL
++and FS-TAKE missing; READ-LINE alone broken - stopped, READ-LINE 2 of 3. All
++2,666 dumps pass (22 files, 286 names).
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 2e8b306..74fcf5a 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -142,6 +142,73 @@ RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVE
+ # the eight workloads. A design without it builds from the dumps it always did.
+ FSYS_INTERNAL = ('FS-BLK', 'FS0', 'FS1', 'FS2', 'FS3', 'FS4', 'FS-DROP', 'FS-WRITE', 'FS-NL', 'FS-MMAP')   # called by file-sysc.4's words only
+ THREADS_N = {1: 64, 2: 128, 3: 16}   # Iteration 204, the gene threads: 0 as built (32 chains)
++# Iteration 212 (the owner): a library that does not load whole must stop the
++# run, not fall back. file-sysc5.4 once failed at a remark outside a comment;
++# the definitions before it stood, fsys 3's READ-LINE stood in for fsys 5's
++# under the same name, and every gate passed. So each dump is checked as it is
++# made: (1) its load messages hold no error the kernel prints while loading;
++# (2) every name each loaded file defines is among the dump's words - an error
++# part-way through a file leaves its later names out.
++DUMP_ERRORS = ('Undefined word', 'dictionary full', 'name too long', 'Incomplete control structure',
++               'compile only', 'Not found', 'Error reading file')
++DEFINERS = (':', 'CREATE', 'VARIABLE', 'CONSTANT', '2VARIABLE', '2CONSTANT', 'VALUE', 'DEFER')
++_DEFS = {}
++BASE_NAMES = collections.Counter()                  # the kernel image's own words, by count
++def source_names(path):
++    """The names a Forth source file defines, its comments and strings skipped."""
++    if path not in _DEFS:
++        toks, out = open(path, errors='replace').read().split('\n'), []
++        words = []
++        for line in toks:
++            t = line.split()
++            i = 0
++            while i < len(t):
++                w = t[i]
++                if w == '\\': break                                # to the end of the line
++                if w == '(' or w == '.(':                          # to the closing )
++                    while i < len(t) and not t[i].endswith(')'): i += 1
++                    i += 1; continue
++                if w.upper() in ('S"', '."', 'ABORT"', 'C"'):    # to the closing "
++                    i += 1
++                    while i < len(t) and not t[i].endswith('"'): i += 1
++                    i += 1; continue
++                words.append(w); i += 1
++        inside, k = False, 0                                # in a colon definition a definer is compiled, not run
++        while k < len(words):
++            w = words[k].upper()
++            if inside:
++                if w == ';': inside = False
++            elif w == ':NONAME': inside = True
++            elif w == ':' and k + 1 < len(words): out.append(words[k + 1].upper()); inside = True; k += 1
++            elif w in DEFINERS and k + 1 < len(words): out.append(words[k + 1].upper()); k += 1
++            k += 1
++        _DEFS[path] = out
++    return _DEFS[path]
++def dump_guard(name, boot, out):
++    text = out.replace(b'\r', b'').decode('latin-1')
++    m = re.search(r'^S \d+ \d+', text, re.M)
++    pre, body = (text[:m.start()], text[m.start():]) if m else (text, '')
++    bad = [l.strip() for l in pre.split('\n') if any(e in l for e in DUMP_ERRORS)]
++    have = collections.Counter(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', body, re.M))
++    missing, want = {}, collections.Counter()
++    for f in re.findall(r'S" (\S+)" INCLUDED', boot):
++        src = os.path.join(ROOT, 'forth', f)
++        if os.path.exists(src) and f != 'dict-dump-addr.4':     # the base dump has that one too
++            lost = [n for n in source_names(src) if n not in have]
++            if lost: missing[f] = lost
++            want.update(source_names(src))
++    # A redefinition that failed is invisible by name - the older definition
++    # stands. By count it is not: loaded whole, a dump holds each name as often
++    # as the kernel image (BASE_NAMES) and the loaded files define it.
++    short = ['%s %d of %d' % (n, have[n], BASE_NAMES.get(n, 0) + k) for n, k in want.items() if have[n] < BASE_NAMES.get(n, 0) + k]
++    if short: missing['(definitions by count)'] = short
++    if bad or missing or not body:
++        sys.exit('dump %s did not load whole - the run stops here, not on a fallback:%s%s%s' % (
++            name, ''.join('\n  load message: %s' % b for b in bad[:5]),
++            ''.join(('\n  by count - definitions missing (in the dump, of kernel + files): %s' % ', '.join(v[:8])) if f.startswith('(')
++                    else '\n  forth/%s: %d of its names missing: %s' % (f, len(v), ' '.join(v[:8])) for f, v in missing.items()),
++            '' if body else '\n  no dump records at all'))
++
+ def fsys_on(g):
+     return bool(g.get('fsys')) and g['enc'] == 'cv8'
+ def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words in Forth, 2 the single-SYSCALL family
+@@ -1422,6 +1489,8 @@ def setup():
+                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
++    base = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
++    BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
+     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
+                                                                     ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
+                         for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b != 'k64-self' else ('',))
+@@ -1447,6 +1516,7 @@ def setup():
+                        + (['file-sysc5.4'] if '-fsys5' in name else [])      # Iteration 211: READ-LINE reading ahead where a file can seek (fsys 5)
+                        + ['dict-dump-addr.4']) + 'BYE\n'
+         out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
++        dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
+         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
+     os.makedirs(EV, exist_ok=True)
+     # The corpus as tools/run-tests.sh feeds it, written here so a fresh

@@ -7,12 +7,13 @@ runs WITHOUT these (it started on Iteration 210's commit).
 |---|---|---|
 | 1 | rebind-after-seed43.patch | --rebind takes the NEWEST redefinition (the dump lists words newest first): fsys 4's buffered WRITE bound at last; INCLUDED uses fsys 3's forgetting OPEN-FILE and CLOSE-FILE (211) |
 | 2 | fsys5-after-seed43.patch | fsys 5: READ-LINE reading ahead where a file can seek, given back before every other use; outbuf-check.py with level 5 (211) |
+| 3 | guard-after-seed43.patch | the dump guard: setup stops when a library does not load whole - load errors, names missing, definitions short by count (212) |
 
 No engine or kernel change: no reseed; the stages rebuild only for the new
 forth/file-sysc5.4 (the evolver's freshness check asks for it).
 
 ```
-for f in rebind fsys5; do git apply results/pending/$f-after-seed43.patch; done
+for f in rebind fsys5 guard; do git apply results/pending/$f-after-seed43.patch; done
 LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate
 ```
 
