@@ -280,4 +280,12 @@
 # min, plus a tenth and 10 minutes), so the evolution gets about 4 hours
 # (seed 43: 6 h 51 min); the comparison measures every front again in one
 # session, so the shorter run is judged on equal terms.
-seed 44 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 230: seed 44 small - the first (hypervolume +0.9%, fastest -0.6%,
+# smallest +0.00%); GOALS.md's rule: two small runs in a row, stop until new
+# genes exist. The after-seed-44 batch applied (five patches -
+# results/applied-after-seed44/, ORDER.md): no new gene - native WRITE-LINE
+# gives back its read-ahead, file-buffer slots apart and the loader's 32 KB
+# local static (16-60 KB less memory a workload), READ's FS-SEEK0 gone, a zero
+# divisor -10 THROW. Proposed: seed 45, 6 hours like seed 44 - the second
+# chance under the rule; the owner's to choose, or to stop for new genes.
+seed 45 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

@@ -44,6 +44,10 @@ T1 = {                       # S" ... TYPE, words defined first: ." ABORT" DO LO
     'file between':     'S" A" TYPE S" outbuf.tmp" W/O CREATE-FILE DROP DUP S" data" ROT WRITE-FILE DROP CLOSE-FILE DROP S" B" TYPE CR BYE',
     'control chars':    '7 EMIT 8 EMIT 13 EMIT 9 EMIT S" z" TYPE CR BYE',
     'engine fault':     ': R R ; S" pre " TYPE R',
+    # Iteration 229: a zero divisor is -10 THROW in every division word, caught or not
+    'DIVZERO':          ": T1 1 0 / ; ' T1 CATCH . : T2 7 0 MOD ; ' T2 CATCH . : T3 7 0 /MOD ; ' T3 CATCH . "
+                        ": T4 1 2 0 */ ; ' T4 CATCH . : T5 1 2 0 */MOD ; ' T5 CATCH . : T6 7 0 0 FM/MOD ; ' T6 CATCH . "
+                        ": T7 7 0 0 SM/REM ; ' T7 CATCH . : T8 7 0 0 UM/MOD ; ' T8 CATCH . CR\n1 0 / S\" lost\" TYPE\nS\" after\" TYPE CR BYE",
 }
 def run(v, prog):
     eng, img, pw = builds[v]
@@ -55,7 +59,11 @@ for name, prog in T1.items():
     ref = run(0, prog)
     res = {v: run(v, prog) for v in LEVELS[1:]}
     ok = all(res[v] == ref for v in res)
-    # Killed by a signal (1 0 / is SIGFPE in every engine here), native loses
+    # Iteration 229: every division word throws -10 for a zero divisor, at every
+    # level as native: eight -10s, the message for the one not caught, and on.
+    if name == 'DIVZERO':
+        fails += not (ref[1].count(b'-10 ') == 8 and b'Division by zero' in ref[1] and b'after' in ref[1] and b'lost' not in ref[1])
+    # Killed by a signal (the engine fault: a return stack run over), native loses
     # what its C buffer held - the levels keep it: native's output a prefix of
     # theirs, theirs alike, the same signal. Better than native, not worse.
     kept = (not ok and ref[0] < 0 and all(r == ref or (r[0] == ref[0] and r[1].startswith(ref[1])) for r in res.values()))   # each level: native's, or more of it

@@ -215,7 +215,7 @@ def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words 
     return g.get('fsys', 0) if fsys_on(g) else 0
 FSYS2_INTERNAL = ('FS-OFL', 'FS-END', 'FS-SAVED')
 FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
-FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
+FSYS3_INTERNAL = ('FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
                   'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
 FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
 FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207

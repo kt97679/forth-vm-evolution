@@ -1297,6 +1297,9 @@ def emit(path):
         lmax_v = [pl for k, pl in info[lmax['s']] if k in ('LIT', 'LITX')][0]
         hdr += cel(body_of('LSAVE-SP') + CELL) + cel(body_of('LSAVE-STACK') + CELL)
         hdr += cel(lmax_v) + cel(body_of('LSAVE')) + cel(body_of('LRESTORE'))
+    if V8:             # Iteration 229: THROW's body, for UM/MOD's zero divisor (-10 THROW); 0 if the image has none
+        _thr = [w for w in order if w['n'] == 'THROW']
+        hdr += cel(new_off[_thr[-1]['s']]['body'] if _thr else 0)
     if HOT:            # last in the header: one-byte calls' targets, as image offsets
         assert G['VARCALL'], "one-byte calls take far-call prefixes: they need --varcall"
         _o = [new_target_off(a) for a in HOT]

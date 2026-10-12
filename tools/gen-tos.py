@@ -198,6 +198,8 @@ s = s.replace("static void virtual_machine(void) {\n    VMREGS", """static void 
 #define VMPUSH PUSHT
 #define SPILL() do { dsp -= CELL_BYTES; CELL(dsp) = tos; } while (0)
 #define FILLNEXT() do { POPT(); NEXT(); } while (0)
+#undef DIV0_DISPATCH
+#define DIV0_DISPATCH() FILLNEXT()
 #if ENC == 3
 #define BROFF(a) ((int16_t)LD16(a))
 #else

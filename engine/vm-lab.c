@@ -696,6 +696,23 @@ static const int open_flags[10] = {
 #define MAX_TAILS 16
 static UNS64 nwords;
 static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
+#if ENC == 3
+static UNS64 throw_off;    /* Iteration 229: THROW's body (offset), from the header - 0: none */
+/*  Iteration 229: a zero divisor is -10 THROW (Forth 2012's "division by
+ *  zero"), not the CPU's fault: -10 where the divisor was, then a call to
+ *  THROW, as LSAVE's fallback calls a Forth word. Its dispatch is a macro of
+ *  its own, so a superinstruction that copies UM/MOD's body (gen-super.py)
+ *  does not run its second operation after it, and the cached-top engine
+ *  refills its top first (gen-tos.py redefines DIV0_DISPATCH as FILLNEXT).
+ *  Macros, so UM/MOD stays one line for the generators that read handlers.  */
+#ifndef DIV0_DISPATCH
+#define DIV0_DISPATCH() NEXT()
+#endif
+#define DIV0() do { DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; TRACE_CALL(); DIV0_DISPATCH(); } while (0)
+#define DIV0_CHECK() do { if (!DS0 && throw_off) DIV0(); } while (0)
+#else
+#define DIV0_CHECK() do { } while (0)
+#endif
 #if ENC == 3 && HOTCALLS
 static UNS64 hot_tab[32];  /* one-byte calls: image offsets, from the header */
 #endif
@@ -705,7 +722,11 @@ static void load_image(const char *name) {
     long len;
     UNS8 magic[8];
     UNS64 head_nfa, ntails, nfa, link, nthreads;
-    UNS64 heads[MAX_THREADS];
+    /*  Iteration 228: static, not on the C stack - 32 KB there, and the
+        compiler's stack-clash protection (Ubuntu's default) probed every page
+        of it at each start: 8 pages of every run's memory, for the 16 to 128
+        heads an image has. In BSS only the pages written count.  */
+    static UNS64 heads[MAX_THREADS];
     UNS64 tail_w[MAX_TAILS], tail_o[MAX_TAILS];
     long i, n;
 
@@ -794,6 +815,14 @@ static void load_image(const char *name) {
             exit(2);
         }
     }
+#if ENC == 3
+    /*  Iteration 229: THROW's body, written by the converter and by
+     *  SAVE-SYSTEM after the locals block - UM/MOD throws -10 there.  */
+    if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) {
+        write_str(2, "Truncated image header.\n");
+        exit(2);
+    }
+#endif
 
 #if ENC == 3 && HOTCALLS
     /*  Last in the header: a count byte, then that many 2-byte offsets.  */
@@ -1118,7 +1147,14 @@ static int  t_olen = 0;
 #ifndef FBUFSZ
 #define FBUFSZ 4096
 #endif
-static struct fbuf { int fd, len, pos, raw; UNS8 b[FBUFSZ]; } t_fb[FBUFN];
+/*  Iteration 225: the slots' state together, their buffers apart. With each
+    buffer inside its slot, t_fslot's scan of the fd fields touched one page a
+    slot - 8 pages (32 KB) at 4 KB buffers, the first time any file was read -
+    and the fbuf gene bought that back with smaller buffers and more read(2).
+    Apart, the scan touches the state's one page; a buffer is touched when its
+    slot reads.  */
+static UNS8 t_fbb[FBUFN][FBUFSZ];
+static struct fbuf { int fd, len, pos, raw; UNS8 *b; } t_fb[FBUFN];
 
 NOINLINE_IO static struct fbuf *t_fslot(int fd) {
     int i, free_ = -1;
@@ -1127,7 +1163,7 @@ NOINLINE_IO static struct fbuf *t_fslot(int fd) {
         if (t_fb[i].fd == 0 && free_ < 0) free_ = i;   /* 0 marks unused */
     }
     if (free_ < 0) return 0;                           /* fall back to raw */
-    t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0;
+    t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0; t_fb[free_].b = t_fbb[free_];
     /* Iteration 104 (relf's READ-LINE): a descriptor that cannot seek - a
        pipe, a FIFO, a terminal - is read a byte at a time: a byte read
        ahead could not be given back, and the other end is shared with
@@ -1987,7 +2023,7 @@ L_negate:  /* negate  */ DS0 = - DS0; NEXT();
 L_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; NEXT();
 L_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; NEXT();
 L_ummult:  /* um*     */ umul(&DS0, &DS1); NEXT();
-L_umdiv:   /* um/mod  */ udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
+L_umdiv:   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
 L_dplus:   /* d+      */
     DS3 += DS1; DS2 += DS0; DS2 += (DS3 < DS1);
     dsp += 2 * CELL_BYTES;
@@ -2055,6 +2091,8 @@ L_readline: { /* c-addr u1 fid --- u2 flag ior */
 }
 L_writeline: { /* c-addr u fid --- ior */
     t_flush();
+    t_fdrop((int)DS0);          /* Iteration 225: what READ-LINE read ahead given back first, as WRITE-FILE does -
+                                   else a line written after a line read lands past the read-ahead */
     int fd = (int)DS0;
     UNS64 addr = DS2, len = DS1;
     long n;

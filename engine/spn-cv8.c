@@ -675,6 +675,10 @@ static void load_image(const char *name) {
 
     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
                     & ~(UNS64)(CELL_BYTES - 1));
+#if ENC == 3
+    {   UNS64 t_;                 /* Iteration 229: THROW's body - vm-lab.c's, read past here */
+        if (full_read(fd, (UNS8*)&t_, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); } }
+#endif
     len = full_read(fd, base, MEMSIZE);
     close(fd);
     if (len < 0) {

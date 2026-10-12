@@ -18,16 +18,22 @@ native, or the check fails. The program reads:
     byte, the LF at the next block's first) and a line longer than it;
   FILE-POSITION, REPOSITION-FILE, READ-FILE and FILE-SIZE between lines -
     each must see the position of the lines read, not of the read-ahead;
-  WRITE-LINE after a line on a file opened R/W - it must land after the
-    line: judged by the file's bytes afterwards, not against native, whose
-    WRITE-LINE does not give back what it read ahead (Iteration 214) - so
-    native writes past its 4 KB read, and is reported, not followed;
+  WRITE-LINE after a line on a file opened R/W - it must land right after
+    the line: judged by the file's bytes, at every level, native included
+    (native's WRITE-LINE gave back nothing it had read ahead until Iteration
+    225, and wrote past its 4 KB read);
   two files read in turn; a descriptor closed and its number used again
     by another file; u1 = 0; the end of a file met again and again;
   INCLUDED nested two deep;
   a pipe opened as a file (/dev/stdin: the program's own input) - a line
     taken from it must leave the next one to the interpreter: no
     read-ahead where a file cannot seek (the owner's rule).
+
+And READ, the interpreter's own input, from a stdin that is a file (Iteration
+226): fsys 3-5's READ reads a block there and gives back what follows the
+first editing character - CR LF lines, a backspace and a delete inside a line,
+a line longer than ACCEPT's room, KEY, and no newline at the end - every
+level byte for byte as native, which reads a block and gives back too.
 """
 import os, sys, shutil, subprocess, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -92,12 +98,18 @@ S" rl4.txt" R/W OPEN-FILE . F !  BUF 200 F @ READ-LINE . . .  S" XX" F @ WRITE-L
 BYE
 '''
 WANT = b'first\nXX\nond line\nthird\n'          # "XX" and its LF over "sec": right after the first line
+STDIN = (b'S" crlf" TYPE CR\r\n1 2 + . CR\r\n'
+         b'S" bacX\x08k" TYPE CR\n'
+         b'S" delY\x7fete" TYPE CR\n'
+         b': L 0 ; ' + b'S" ' + b'x' * 300 + b'" 2DROP S" long" TYPE CR\n'
+         b'KEY EMIT Q CR\n'
+         b'S" end" TYPE')                                # no newline at the end
 
 fails = 0
 for did in IDS:
     g0 = E.recorded_genome(did)
     if g0 is None: sys.exit('no design %s in results/' % did)
-    out, wrote = {}, {}
+    out, wrote, fromfile = {}, {}, {}
     for v in LEVELS:
         g = dict(g0); g.pop('fsys', None)
         if v: g['fsys'] = v
@@ -109,6 +121,10 @@ for did in IDS:
         files(pw)
         subprocess.run([eng, img], cwd=pw, input=WPROG.encode(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
         wrote[v] = open(os.path.join(pw, 'rl4.txt'), 'rb').read()
+        sf = os.path.join(pw, 'rl-stdin.txt'); open(sf, 'wb').write(STDIN)
+        with open(sf, 'rb') as fin:                      # a stdin that seeks
+            r = subprocess.run([eng, img], cwd=pw, stdin=fin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+        fromfile[v] = (r.returncode, r.stdout)
         shutil.rmtree(d, ignore_errors=True)
     ref = out[0]
     lines = ref[1].count(b'\n')
@@ -124,11 +140,17 @@ for did in IDS:
             i = next((k for k in range(min(len(a), len(b))) if a[k] != b[k]), min(len(a), len(b)))
             print('- fsys %d: DIFFERS (status %d) - line %d: native %r, fsys %d %r' % (v, out[v][0], i + 1,
                   a[i][:100] if i < len(a) else b'<none>', v, b[i][:100] if i < len(b) else b'<none>'))
-    for v in LEVELS[1:]:
+    for v in LEVELS:
         fails += wrote[v] != WANT
+    same = [v for v in LEVELS[1:] if fromfile[v] == fromfile[0]]
+    fails += len(same) != len(LEVELS) - 1
+    print('- READ from a stdin that is a file (%d bytes out, status %d): %s' % (len(fromfile[0][1]), fromfile[0][0],
+          'fsys %s as native' % ', '.join(map(str, same)) if len(same) == len(LEVELS) - 1 else
+          'DIFFERS at fsys %s: native %r, %r' % (', '.join(str(v) for v in LEVELS[1:] if v not in same), fromfile[0][1][-120:],
+                                                 [fromfile[v][1][-120:] for v in LEVELS[1:] if v not in same][0])))
     print('- WRITE-LINE after a line (R/W): %s; native %s' % (
           'fsys %s right after the line' % ', '.join(str(v) for v in LEVELS[1:] if wrote[v] == WANT) if all(wrote[v] == WANT for v in LEVELS[1:])
           else 'WRONG at fsys %s: %r' % (', '.join(str(v) for v in LEVELS[1:] if wrote[v] != WANT), [wrote[v] for v in LEVELS[1:] if wrote[v] != WANT][0]),
-          'right after the line too' if wrote[0] == WANT else 'elsewhere (its read-ahead not given back): %r' % wrote[0]))
+          'right after the line too' if wrote[0] == WANT else 'WRONG - elsewhere (its read-ahead not given back): %r' % wrote[0]))
 print('\n%s' % ('PASS' if not fails else 'FAIL - %d' % fails))
 sys.exit(1 if fails else 0)

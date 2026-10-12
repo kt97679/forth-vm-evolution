@@ -14,7 +14,6 @@
 : WRITE ( c-addr u --- )  1 FS-WRITE DROP ;      \ stdout, all of it
 : BYE ( --- )  0 60 FS1 ;                        \ exit(2); SYSCALL flushes first
 
-VARIABLE FS-SEEK0  -1 FS-SEEK0 !                 \ stdin seekable: 1, not: 0, unknown: -1
 VARIABLE FS-P                                    \ the buffer being read into
 : FS-EDIT? ( c --- f )  DUP 10 = OVER 13 = OR OVER 8 = OR SWAP 127 = OR ;
 \ Iteration 208: whether a file can seek, remembered for descriptors 0-63 -
@@ -41,8 +40,7 @@ CREATE FS-SK 0 , 0 ,
 : READ ( c-addr u --- u2 )                       \ what input there is, 0 at its end
   DUP 0= IF SWAP DROP EXIT THEN
   OVER FS-P !
-  FS-SEEK0 @ 0< IF 0 FS-SEEKS? IF 1 ELSE 0 THEN FS-SEEK0 ! THEN
-  FS-SEEK0 @ IF
+  0 FS-SEEKS? IF                                 \ Iteration 226: asked once, as for any file - FS-SEEK0 went
     0 ROT ROT 0 FS3 DUP 0> 0= IF DROP 0 EXIT THEN
     0 SWAP DUP FS-UPTO-EDIT FS-BACK EXIT
   THEN

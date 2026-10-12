@@ -73,7 +73,8 @@ CREATE SS-NAME 40 ALLOT
   S" LSAVE-STACK" SS-PFA  SS-CELL,          \ and its buffer
   LSAVE-MAX               SS-CELL,          \ its limit
   S" LSAVE"       SS-FIND START @ - SS-CELL,   \ fallbacks for ABORT" paths
-  S" LRESTORE"    SS-FIND START @ - SS-CELL, ;
+  S" LRESTORE"    SS-FIND START @ - SS-CELL,
+  S" THROW"       SS-FIND START @ - SS-CELL, ;   \ Iteration 229: UM/MOD's zero divisor throws there
 
 : SS-SCRUB-ALL ( --- )   \ NOT "SS-SCRUB8": that name would make --cv8-compiler
 \ replace SS-SCRUB itself, and this word calls it - infinite recursion,

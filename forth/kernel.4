@@ -1059,7 +1059,9 @@ VARIABLE HANDLER ( --- a-addr)
 \ The newest CATCH frame on the return stack, or 0 (Forth 2012, 9.6; the
 \ standard's reference design). ABORT is -1 THROW, ABORT" -2 THROW, an
 \ undefined word -13 THROW under a CATCH; with none, THROW does what ABORT
-\ always did - the same messages, then WARM (Iteration 171).
+\ always did - the same messages, then WARM (Iteration 171). Any other code
+\ uncaught is named first: "Division by zero" for -10, which UM/MOD throws
+\ for a zero divisor (the engine, Iteration 229), "Error n" for the rest.
 \ The frame keeps the input source too: THROW restores the one in use when
 \ CATCH began, as the standard has it - an EVALUATE's own restoring is on the
 \ return stack THROW cuts back (exceptiontest's -13 in three EVALUATEs).
@@ -1068,7 +1070,9 @@ VARIABLE HANDLER ( --- a-addr)
   EXECUTE  R> HANDLER !  R> DROP R> DROP R> DROP R> DROP  R> DROP  0 ;
 : THROW ( k*x n --- k*x | i*x n)
   ?DUP IF HANDLER @ ?DUP IF RP! R> HANDLER !  R> SID ! R> >IN ! R> #SRC ! R> SRC !
-          R> SWAP >R SP! DROP R> EXIT THEN WARM THEN ;
+          R> SWAP >R SP! DROP R> EXIT THEN
+      DUP 2 + 2 U< 0= IF DUP -10 = IF ." Division by zero" ELSE ." Error " DUP . THEN CR THEN
+      WARM THEN ;
 : (ABORT") ( f --- )
 \ Runtime part of ABORT"
            IF HANDLER @ IF -2 THROW THEN R> COUNT TYPE SPACE HERE COUNT TYPE CR -2 THROW

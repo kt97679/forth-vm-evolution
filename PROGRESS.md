@@ -4356,3 +4356,23 @@ on master too, unused by the tests; s6's system image is fine. Also: the owner's
 standing decisions already say "output to a terminal unbuffered" - native's
 buffering of terminal output (Iteration 214) is a defect against them, not a
 question; open.
+
+## Iteration 230 - 2026-10-12 - Claude
+
+**Seed 44 processed: small, the first** (results/evolve-amd-ryzen-7-pro-8840hs-
+seed44.md). The comparison: fastest -0.6%, smallest +0.00%, memory +0 KB,
+hypervolume +0.9%, best Q -0.2%. Q-best of all runs seed 43's 0af26c8e89 (0.206
+at 25,779, 180 KB, Q 0.211); smallest still add5ec8937, matched by seed 44's
+dde890d478 (16,136); fastest still seed 42's 28677d13b1. Run: 4 h 05 min of
+evolution, generations 0-89, 22,785 made, 18,094 measured, 4,691 screened; 106
+deaths (reach limit), none on the corpus; crossover 32.2% (35.5% late); the
+attic 3,364 children, 7 of 120 on the front; fsys 5 on 15 (from 17,769 bytes;
+the smallest tenth all fsys 3), fsys 4 on 3; threads 16 on 85. Predictions 3 of
+5 (fsys 4 wrong - fsys 5 took its place; "not small" wrong). Seed 45's written.
+The pack's results patch already on master. **The after-seed-44 batch applied**
+(results/applied-after-seed44/, five patches, reseeded for patch 5): run-tests
+PASS, 7 of 7 IDENTICAL, every design of seed 44's front and the joint front
+alive (161 of 161: 120 and 82, 41 in both), the standard suite on 12 of the
+front 0 differ (s6 2,119 tests, 0 failed, 14 of 14 whole). NEXT-RUN: seed 45, 6
+hours, proposed - by GOALS.md's rule a second small run stops the evolution
+until new genes exist; the batch has none. The owner chooses.

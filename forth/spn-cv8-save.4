@@ -19,6 +19,7 @@
 \     nthreads cell     then that many START-relative thread heads
 \     ntails   cell     0: DODOES carries its target inline
 \     locals   5 cells  0: no locals.4 in this system
+\     THROW    cell     its body, START-relative: UM/MOD's zero divisor throws there (229)
 \     the dictionary, START to HERE
 \
 \ The magic is the byte-header stage's, read from its image; COLD's
@@ -101,6 +102,7 @@ VARIABLE SV-KEEP  VARIABLE SV-BLOB
   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + SV>COPY @ SV-CELL, LOOP
   0 SV-CELL,                                  \ ntails
   5 0 DO 0 SV-CELL, LOOP                      \ locals header
+  ['] THROW START @ - SV-CELL,                \ THROW's body: UM/MOD's zero divisor (Iteration 229)
   SV-BUF @ SV-LEN @ SV-WRITE
   SV-FID @ CLOSE-FILE DROP
   SV-BUF @ FREE DROP ;

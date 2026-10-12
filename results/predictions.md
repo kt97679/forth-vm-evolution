@@ -198,3 +198,27 @@ a file seeks; tightened, Iteration 214), the dump guard.
 
 Iteration 216: 6 hours, not 9 (the owner) - about 4 hours of evolution
 against seed 43's 6 h 51 min. The predictions above stand as written.
+
+**Seed 44, scored (Iteration 230): 3 of 5.** (1) fsys 4 on 10 or more - wrong:
+3; fsys 5 took that place (15). (2) fsys 5 on at least 3, none in the smallest
+tenth - right: 15, from 17,769 bytes; the smallest tenth all fsys 3. (3) fsys 2
+on most of the fast third (32 of 40) and threads 16 on two thirds or more (85
+of 120, 71%) - right. (4) Crossover 30-33% - right: 32.2%. (5) Not small -
+wrong: small (hypervolume +0.9%); the fastest under 5% held (-0.6%).
+
+## Seed 45, predicted (Iteration 230) - the after-seed-44 batch's first run
+
+The batch has no new gene: native WRITE-LINE gives back the read-ahead, the
+file buffers' slots apart (24-36 KB less memory with 4 KB buffers), READ's
+FS-SEEK0 gone, the loader's 32 KB local static (32 KB less on every run), a
+zero divisor -10 THROW (+96 to +192 engine bytes, +64 image).
+
+1. Memory on every front design 16-60 KB lower than seed 44 recorded; the
+   comparison measures all runs on the new code, so no run gains by it.
+2. fbuf 0 (4 KB buffers) on more of the native-file designs than fbuf 1 -
+   seed 44 had 23 against 49; the memory reason for small buffers is gone.
+3. fsys 5 on 10 or more again, the smallest tenth still fsys 3.
+4. Small - the second in a row (no new gene to find): hypervolume under 2%,
+   fastest under 5%, smallest under 2%; by the rule, the evolution stops after
+   it until new genes exist.
+5. Crossover 30-36%.
