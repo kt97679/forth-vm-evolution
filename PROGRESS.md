@@ -4135,3 +4135,26 @@ and Paysan, ECOOP 2024) - perf on the laptop first; (6) replication only if
 (5) shows mispredictions; (7) folding literal inputs at compile time
 (Mecrisp's n-foldable). Not borrowed: tracing JITs, a register byte code for
 the interpreter, preserve_none.
+
+## Iteration 218 - 2026-10-12 - Claude
+
+**Stack state in the JIT's translator, priced: results/price-jit-stack.md**
+(the survey's item 1; the owner: proceed). Searched first: FINDINGS-SPN.md
+named it SPN's next step, never attempted. Built to count, not to run: a
+profiling-only switch, `JIT_PRICE` (engine/vm-lab.c, engine/jit.c, evolve.py
+by environment) - the JIT translates as it would, native code never runs, so
+every operation of every translated word is counted and the translator lists
+their stencils and branch targets; lab/evolve/jitstack.py simulates a K-register
+cache with constants, canonical at branches, targets, loops, calls and EXIT,
+costed by each stencil's own machine code (objdump). Checked: four designs'
+engines and images byte for byte as built from Iteration 217's tree, 7 of 7
+stages; the loop's hot word audited operation by operation. **The prize** on the
+fastest design of all runs (the others alike): native instructions -27% fib,
+-27% loop (K=3), -17-21% bubble, -12-14% ackermann, -17-25% kernel, -43-45%
+the held-out sieve; data-stack memory accesses -50 to -100%; the corpus and
+parse barely run translated code. **Into time once**
+(lab/evolve/jitstack-inner.S): the loop's hot word today 1.01-1.03 ns an
+iteration, three cells cached 0.72-0.76 (25-30% less, as the 27% instructions
+said), the loop's index in registers too 0.62-0.65. Estimated: the selection's
+geometric mean ~15% better on JIT designs. Not yet priced: the engine bytes -
+stencil variants or an emitter.

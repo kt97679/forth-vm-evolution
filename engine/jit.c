@@ -204,9 +204,28 @@ static void jit_repoint(UNS64 w, UNS64 ra) {
 static UNS64 jn_w[4096], jn_end[4096];
 static int jn_n;
 #define JITNOTE(w, e) do { if (jn_n < 4096) { jn_w[jn_n] = (w); jn_end[jn_n] = (e); jn_n++; } } while (0)
+#if JIT_PRICE
+/* Iteration 218: every operation of every word translated - where it is, its
+   logical operation (0xFFFD a literal, 0xFFFE a call resolved, 0xFFFF a call
+   to the word itself) and a branch's target - for lab/evolve/jitstack.py. */
+#define JP_N 65536
+static UNS64 jp_w[JP_N], jp_at[JP_N], jp_t[JP_N];
+static unsigned short jp_l[JP_N];
+static int jp_n;
+#define JITPRICE(w, a, l, t) do { if (jp_n < JP_N) { jp_w[jp_n] = (w); jp_at[jp_n] = (a); jp_l[jp_n] = (l); jp_t[jp_n] = (t); jp_n++; } } while (0)
+#endif
 static void jit_dump(int fd) {
     char b[96];
     int i, k, m;
+#if JIT_PRICE
+    for (i = 0; i < JIT_NOPS; i++) if (jit_ops[i].ok) {
+        m = snprintf(b, sizeof b, "L %d %d %d %d %d %d %d %d %d\n", i, jit_ops[i].opnd, jit_ops[i].k, jit_ops[i].n,
+                     jit_ops[i].st[0], jit_ops[i].st[1], jit_ops[i].st[2], jit_ops[i].st[3], jit_ops[i].st[4]); write(fd, b, (size_t)m); }
+    for (i = 0; i < jp_n; i++) {
+        m = snprintf(b, sizeof b, "O %llu %llu %u %llu\n", (unsigned long long)(jp_w[i] - jit_cbase),
+                     (unsigned long long)(jp_at[i] - jit_cbase), jp_l[i], (unsigned long long)(jp_t[i] ? jp_t[i] - jit_cbase : 0));
+        write(fd, b, (size_t)m); }
+#endif
     for (k = 0; k < T2_JONES; k++)
         if (jit_one[k] < (unsigned)JIT_NOPS && jit_ops[jit_one[k]].ok) { m = snprintf(b, sizeof b, "S %d\n", k < 64 ? k : k + 64); write(fd, b, (size_t)m); }
     for (i = 0; i < jn_n; i++) {
@@ -454,6 +473,10 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             p = jit_put(p, s, v, jt, 0);
         }
     }
+#if PROFILE && JIT_PRICE
+    for (i = 0; i < n; i++)
+        JITPRICE(w, at[i], opl[i], (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6) ? arg[i] : 0);
+#endif
     jit_used = off + size;
     return off;
 }

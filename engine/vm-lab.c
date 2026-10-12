@@ -316,6 +316,22 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
 #define CELL(reg) (*(UNS64*)(reg))
 #define BYTE(reg) (*(UNS8*)(reg))
 #if X_JIT
+/*  Iteration 218: JIT_PRICE - a profiling build in which the JIT translates
+ *  as it would but native code never runs: every operation of every word it
+ *  translated is dispatched as bytecode, so the profiler counts it, and the
+ *  translator's dump lists the operations (lab/evolve/jitstack.py). A
+ *  translated word keeps its header, so the translations that follow see what
+ *  they would have seen. Never in a design's engine.  */
+#ifndef JIT_PRICE
+#define JIT_PRICE 0
+#endif
+#if JIT_PRICE
+#define JIT_NATIVE(f) 0                 /* translated, run as bytecode */
+#define JIT_REPOINT(f) ((f) < 2)        /* a translated word keeps its header */
+#else
+#define JIT_NATIVE(f) ((f) > 1)
+#define JIT_REPOINT(f) 1
+#endif
 #include "jit.c"        /* JIT.md (Iteration 80): SPN's stencils, read, copied and patched */
 #endif
 
@@ -1876,7 +1892,7 @@ L_esc:     /*  The escaped band: one more byte selects an OS/libc
 L_x_jit:   { uint32_t f_ = jit_ld32(ip);
              jit_cbase = cbase;
              if (f_ & 0x80000000u) f_ = jit_word(ip - 1, 0);
-             if (f_ > 1) {
+             if (JIT_NATIVE(f_)) {
                  spn_st r_;
                  jit_rp = (ucell)rp;
                  /* the stack in memory here (gen-tos.py spills around a handler it
@@ -1885,7 +1901,7 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
                  r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
                  rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
                  ip = RS; rp += CELL_BYTES;
-             } else { jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
+             } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
 #endif
 L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
 #if ENC == 3
