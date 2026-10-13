@@ -48,6 +48,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
 - `hotsites.py` - hotsites.py ID [--db FILE ...] [--write FILE] - the image's hottest call
+- `gene-table-test.py` - a new gene is one row: a fictional gene works with no code change (Iteration 276)
 - `hotwords.py` - hotwords.py ID [ID ...] [--db FILE ...] [--write FILE] - every word's share
 - `image-ab.py` - image-ab.py ID [ID ...] --env VAR=VALUE [--set GENE=VALUE] [--db FILE] [--rounds N] - a
 - `jitstack-inner-sweep.sh` - jitstack-inner-sweep.sh - lab/evolve/jitstack-inner.{c,S} with every loop head
@@ -659,3 +660,12 @@ the reference profile (lab/evolve/hotwords.py -> hotwords-v1.json: five of seed
 off, 1e-3, 1e-2, every word. On the smallest design -41, -95 and -127 image
 bytes for +0.007%, +0.17% and +1.98% dispatches. Off, every design converts byte
 for byte as before (results/drafts/factor-plan.md, PROGRESS.md Iteration 267).
+
+Iteration 276: the gene table (prompts/17-variants-as-data). A gene is one row,
+`gene(name, values, show, family, late, needs, convert)`, which LATE, EXPRESSED,
+mutate(), random_genome(), express() and the converter's options all read; factor
+is the first such row. The older genes with more than two values keep their
+rules and build code, their values once in GENE_VALUES. Ids, expressions and
+seeded mutations, random draws and crossovers are identical before and after
+(GENES.md, "Adding a gene"); gene-table-test.py checks a fictional gene end to
+end, with a control.

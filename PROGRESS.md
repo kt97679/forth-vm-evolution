@@ -5424,3 +5424,43 @@ and the build, all four of the laptop's checks have now passed on the code
 seed 48 runs. bench/README.md's corpus count brought to 661; the findings,
 GENES.md's iteration notes, the rehearsal and the article keep their 616 - they
 are dated measurements, made when the corpus had 616 cases.
+
+## Iteration 276 - 2026-10-13 - Claude
+
+**Three open items closed (the owner: in the order that seemed right).**
+
+**Why the factor gene's estimate ran ahead of the image: placement.** The
+converter now encodes each changed word before and after the pass and reports
+that, not a sum of operation sizes. On 3456ac1e5e at the cheapest level the
+words' code is 141 bytes smaller and the bodies take 95: 46 before placement,
+and placement gives 5 back (word starts realigned to cells, links resized):
+-41 in the image. Every word factored: 355, 198, 157 before placement, 30
+back, -127. factor-price.py prints the split. The last digit of Iteration 271
+(+0.008% against 267's +0.007%): the dispatch counts are deterministic - two
+full runs here identical on all six workloads, --raw - and the geometric mean is
++0.0075%, on the rounding edge; today's run prints +0.007%.
+
+**The gene table (prompts/17).** A gene is one row - `gene(name, values, show,
+family, late, needs, convert)` - read by LATE, EXPRESSED, mutate(),
+random_genome(), express() and the converter's options; factor is the first,
+its seven touch points one. The thirteen older genes with more than two values
+have their values once, in GENE_VALUES, where mutate() and random_genome() each
+had a copy; their express() rules and build code stay code (open item 4).
+Nothing changed: 2,876 recorded genomes keep ids and expressions; 3,000
+mutations, 1,000 random genomes and 1,000 crossovers, seeded, identical before
+and after (the old evolve.py beside the new; two helpers that read build data
+stubbed alike in both). gene-table-test.py: a fictional gene - values 0, 5, 7,
+the tag only, a converter option - works with no code change (ids, expression,
+90 mutations reaching it, every value drawn, its option), and its control (the
+same row without a rule) is caught.
+
+**The previous chats' scratch trees, sorted**
+(results/drafts/chat-to-iter265/trees/SORTED.md): by the share of the lines
+each tree's patches add that master holds today, 19 reached master, 2 mostly,
+1 added nothing, 10 did not - three of them trivial, seven from Iterations
+231-238 (names, a compressed image, unused stencils), unread. GOALS.md's
+register points to them.
+
+Checked on master with the table: run-tests PASS (the generators: 31 paths -
+factor's two now built through the row's converter option), 7 of 7 IDENTICAL,
+`gate.py --set factor=3` on seed 47's front 124 of 124 alive.

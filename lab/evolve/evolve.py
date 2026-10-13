@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
 # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
 # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler', 'factor')
+LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
 FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
@@ -115,10 +115,35 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+# ---- the gene table (Iteration 276, prompts/17-variants-as-data) -----------
+# A gene is one row: gene(name, values, show, family, late, needs, convert).
+#   values  - what it can be, off first (a late gene's off is 0; default 0/1);
+#   show    - how a mutation names a value (default 'name=value');
+#   family  - the encoding that expresses it (EXPRESSED); late - added after runs
+#             were recorded, so out of a design's identity while off (LATE);
+#   needs   - (g, e) -> true when it is expressed (applied last in express());
+#   convert - g -> the converter's options when it is expressed (build()).
+# mutate() and random_genome() read every gene's values from GENE_VALUES. The
+# genes older than the table keep their rules in express() and their build code,
+# with only their values here (GENE_VALUES.update, before mutate()); a gene that
+# changes the engine still needs its build code. lab/evolve/gene-table-test.py
+# adds a fictional gene and requires it to work with no code change.
+GENE_VALUES, GENE_RULES, GENE_CONVERT = {}, [], []
+def gene(name, values=(0, 1), show=None, family='cv8', late=True, needs=None, convert=None):
+    global LATE
+    values = tuple(values)
+    assert not late or values[0] == 0, 'gene %s: a late gene is off at 0' % name
+    if late and name not in LATE: LATE = LATE + (name,)
+    if family and name not in EXPRESSED[family]: EXPRESSED[family].append(name)
+    GENE_VALUES[name] = (values, show or (lambda v, n=name: '%s=%s' % (n, v)))
+    if needs: GENE_RULES.append((name, needs))
+    if convert: GENE_CONVERT.append((name, convert))
 EXPRESSED['cv8'] += ['jitloop', 'jitinl']
 EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
 EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
-EXPRESSED['cv8'] += ['factor']   # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+     needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
+     convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])])   # no table, no design: a missing file kills it loudly
 EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
 EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation; GCC's goto unfactoring (results/missed-options-2026-10.md)
 # Iteration 262: the compiler - 0 GCC (cc), 1 clang. Offered only where clang is installed: elsewhere
@@ -453,7 +478,6 @@ def express(g):
     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
     if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
     if 'jittail' in e and not jit_on(g): e.pop('jittail')                          # Iteration 246: on the JIT
-    if 'factor' in e and not e.get('tag2'): e.pop('factor')                        # Iteration 267: the tag's 2-byte calls and byte headers
     if 'jitk' in e and (not jit_on(g) or not e['jitk']): e.pop('jitk')            # Iteration 259: on the JIT; 0 is off
     if e.get('compiler'):                                                           # Iteration 262: clang - GCC's own genes do nothing
         for k in GCC_ONLY: e.pop(k, None)
@@ -468,6 +492,8 @@ def express(g):
     if 'tail' in e and not g['tos']: e.pop('tail')                     # made from the cached engine only
     if e.get('tail'):                                                  # one call function, 256-entry table
         e.pop('d256', None); e.pop('sharedcall', None)
+    for k, needs in GENE_RULES:                                        # Iteration 276: the table's rows (gene())
+        if k in e and not needs(g, e): e.pop(k)
     for k in LATE:
         if not e.get(k): e.pop(k, None)                                # see LATE
     return e
@@ -788,7 +814,8 @@ def _build(g, d):
     if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
     if g.get('opbody'): opts.append('--op-bodies')                 # Iteration 92: words an opcode replaced, [opcode EXIT]
-    if express(g).get('factor'): opts += ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])]   # Iteration 267: no table, no design - a missing file kills it loudly
+    for k, conv in GENE_CONVERT:                                  # Iteration 276: the table's rows (gene())
+        if express(g).get(k): opts += conv(g)
     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
@@ -1061,6 +1088,23 @@ def evaluate(g, rounds, keep=False):
 
 
 # ---- variation -------------------------------------------------------------
+GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate() and random_genome() both read them
+    'opt': (('O2', 'O3', 'Os'), lambda v: '-' + v),
+    'scale': ((0, 1, 2, 3), lambda v: 'scale=%d' % v),
+    't2hot': (tuple(range(len(T2HOT))), lambda v: 't2hot=%s' % T2HOT[v]),       # Iteration 71: the tag's ranking, size against speed
+    'hotcalls': (HOTN, lambda v: 'hotcalls=%d' % v),                            # Iteration 14: one-byte calls to 0, 8, 16 or 32 words
+    'hotinl': (HOTINLN, lambda v: 'hotinl=%d' % v),                             # Iteration 92: the 0, 10, 20 or 40 hottest call sites inlined
+    'gotodup': (tuple(range(len(GOTODUPV))), lambda v: 'gotodup=%s' % GOTODUPV[v]),   # Iteration 260: GCC's goto unfactoring
+    'jitk': (JITKV, lambda v: 'jitk=%d' % v),                                    # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
+    'fbuf': (tuple(range(len(FBUFV))), lambda v: 'fbuf=%d' % FBUFV[v]),          # Iteration 115: a file's read-ahead, 4096, 1024, 512
+    'fsys': (tuple(range(6)), lambda v: 'fsys=%d' % v),                         # Iterations 202-211: native, then Forth over SYSCALL, levels 1-5
+    'threads': (tuple(range(4)), lambda v: 'threads=%d' % v),                   # Iteration 204: as built (32), 64, 128, 16 chains
+    'regpin': (tuple(range(4)), lambda v: 'regpin=%d' % v),                     # Iteration 197: GCC's choice, three assignments
+    'rtloop': (tuple(range(3)), lambda v: 'rtloop=%d' % v),                     # Iteration 190: 2 with its internal words headerless
+    'rtimm': (tuple(range(3)), lambda v: 'rtimm=%d' % v),                       # Iteration 175: 2 without pairs
+    'escape': (tuple(range(3)), lambda v: 'escape=%d' % v),                     # Iteration 11: nine more primitives behind it
+})
+
 def mutate(g, rnd):
     g = canon(g); what = []
     for _ in range(rnd.choice([1, 1, 2])):
@@ -1069,36 +1113,9 @@ def mutate(g, rnd):
         if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
         if k == 'enc':
             g['enc'] = rnd.choice([f for f in FAMILIES if f != g['enc']]); what.append('family %s' % g['enc'])
-        elif k == 'opt':
-            g['opt'] = rnd.choice([o for o in ('O2', 'O3', 'Os') if o != g['opt']]); what.append('-' + g['opt'])
-        elif k == 'scale':
-            g['scale'] = rnd.choice([s for s in range(4) if s != g['scale']]); what.append('scale=%d' % g['scale'])
-        elif k == 't2hot':            # Iteration 71: the tag's ranking, size against speed
-            g['t2hot'] = rnd.choice([v for v in range(len(T2HOT)) if v != g.get('t2hot', 0)]); what.append('t2hot=%s' % T2HOT[g['t2hot']])
-        elif k == 'hotcalls':         # Iteration 14: one-byte calls to 0, 8, 16 or 32 of the image's words
-            g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
-        elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
-            g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
-        elif k == 'gotodup':          # Iteration 260: GCC's goto unfactoring - its default, 32, 128
-            g['gotodup'] = rnd.choice([v for v in range(len(GOTODUPV)) if v != g.get('gotodup', 0)]); what.append('gotodup=%s' % GOTODUPV[g['gotodup']])
-        elif k == 'jitk':             # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
-            g['jitk'] = rnd.choice([v for v in JITKV if v != g.get('jitk', 0)]); what.append('jitk=%d' % g['jitk'])
-        elif k == 'factor':           # Iteration 267: 0 off; repeated code in words below 0.1%, below 1% of the dispatches, or in every word
-            g['factor'] = rnd.choice([v for v in range(len(FACTORV)) if v != g.get('factor', 0)]); what.append('factor=%d' % g['factor'])
-        elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
-            g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
-        elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
-            g['fsys'] = rnd.choice([v for v in range(6) if v != g.get('fsys', 0)]); what.append('fsys=%d' % g['fsys'])
-        elif k == 'threads':          # Iteration 204: 0 as built (32), 1-3 64, 128, 16 chains
-            g['threads'] = rnd.choice([v for v in range(4) if v != g.get('threads', 0)]); what.append('threads=%d' % g['threads'])
-        elif k == 'regpin':           # Iteration 197: 0 GCC's choice; 1-3 three assignments
-            g['regpin'] = rnd.choice([v for v in range(4) if v != g.get('regpin', 0)]); what.append('regpin=%d' % g['regpin'])
-        elif k == 'rtloop':           # 0, 1, or 2 (Iteration 190: 2 with its internal words headerless)
-            g['rtloop'] = rnd.choice([v for v in range(3) if v != g.get('rtloop', 0)]); what.append('rtloop=%d' % g['rtloop'])
-        elif k == 'rtimm':            # 0, 1, or 2 (Iteration 175: 2 without pairs)
-            g['rtimm'] = rnd.choice([v for v in range(3) if v != g.get('rtimm', 0)]); what.append('rtimm=%d' % g['rtimm'])
-        elif k == 'escape':           # 0, 1, or 2 (Iteration 11: nine more primitives behind it)
-            g['escape'] = rnd.choice([e for e in range(3) if e != g.get('escape', 0)]); what.append('escape=%d' % g['escape'])
+        elif k in GENE_VALUES and len(GENE_VALUES[k][0]) > 2:      # Iteration 276: a value from the gene table (binary genes flip below)
+            vals, show = GENE_VALUES[k]
+            g[k] = rnd.choice([v for v in vals if v != g.get(k, vals[0])]); what.append(show(g[k]))
         elif k == 'spec':
             s = rnd.choice(SPECS)
             g['spec'] = [x for x in g['spec'] if x != s] if s in g['spec'] else g['spec'] + [s]
@@ -1602,21 +1619,7 @@ def random_genome(rnd):
     g = dict(HUMAN['s6-cv8b']); g['enc'] = rnd.choice(FAMILIES)
     for k in list(EXPRESSED[g['enc']]) + list(CC0):
         v = g.get(k, CC0.get(k))
-        if k == 'opt': g[k] = rnd.choice(['O2', 'O3', 'Os'])
-        elif k == 'scale': g[k] = rnd.randrange(4)
-        elif k == 'escape': g[k] = rnd.randrange(3)
-        elif k == 'rtimm': g[k] = rnd.randrange(3)
-        elif k == 'rtloop': g[k] = rnd.randrange(3)        # Iteration 190
-        elif k == 'regpin': g[k] = rnd.randrange(4)        # Iteration 197
-        elif k == 'threads': g[k] = rnd.randrange(4)       # Iteration 204
-        elif k == 'fsys': g[k] = rnd.randrange(6)          # Iteration 205; 3: 206; 4: 207; 5: 211
-        elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
-        elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
-        elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
-        elif k == 'factor': g[k] = rnd.randrange(len(FACTORV))   # Iteration 267
-        elif k == 'jitk': g[k] = rnd.choice(JITKV)         # Iteration 259
-        elif k == 'gotodup': g[k] = rnd.randrange(len(GOTODUPV))   # Iteration 260
-        elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
+        if k in GENE_VALUES and len(GENE_VALUES[k][0]) > 2: g[k] = rnd.choice(GENE_VALUES[k][0])   # Iteration 276: the gene table
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
         elif k == 'opcall': g[k] = [n for n in OPCALL_POOL if rnd.random() < 0.5]
         elif k in ('ops10', 'supers', 'folds'):

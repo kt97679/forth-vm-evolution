@@ -1,5 +1,27 @@
 # The gene pool: what is in, and what other VMs could add
 
+## Adding a gene - one row (Iteration 276, prompts/17)
+
+A new gene is one call in lab/evolve/evolve.py: `gene(name, values, show, family,
+late, needs, convert)` - its values (off first, 0 for a late gene), how a mutation
+names a value, the family that expresses it, whether it came after runs were
+recorded (so it stays out of a design's identity while off), the rule for when it
+is expressed, and the converter's options when it is. mutate() and
+random_genome() draw from the row's values; express() applies its rule; the
+converter gets its options. A gene that changes the engine still needs its build
+code (engine flags, generators). lab/evolve/gene-table-test.py registers a
+fictional gene and requires it to work with no code change.
+
+Touch points, before and after: factor (a converter gene) took seven - its
+values' constant, LATE, EXPRESSED, an express() rule, a mutate() branch, a
+random_genome() branch, the converter's option; it is one row now (with its
+shares' constant, which the converter's option reads). The thirteen older genes
+with more than two values keep their rules and build code, but their values sit
+once in GENE_VALUES, read by both mutate() and random_genome() - the two copies
+before. Converting them changed nothing: 2,876 recorded genomes keep their ids
+and expressions; 3,000 mutations, 1,000 random genomes and 1,000 crossovers, each
+seeded, came out identical before and after.
+
 ## In the genome now
 
 | genes | from | what they change |

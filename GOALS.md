@@ -101,6 +101,10 @@ results/drafts/goals-snapshots.md.)
 
 ## Rejected or deferred - look here first
 
+Prototype code for some of these may exist only in the scratch trees of the
+chats of Iterations 213-265: results/drafts/chat-to-iter265/trees/SORTED.md lists
+the ten whose work never reached master.
+
 | approach | what decided it | where |
 |---|---|---|
 | The internal words' names hidden (headerless), or the words inlined | priced, deferred by the owner (Iterations 222-223; and Iteration 227's guidance: reusable helpers keep their names - only words of no use outside their overlay could go): -2.7 to -2.8% of binary + image on two designs, but a list derived from what programs here write fails the standard suite (coreext.4 builds TRAVERSE-WORDLIST from NEXT-NFA8; LEAVE8 alone crashes a JIT design, reached in a way no source shows) - only hand-kept, reviewed lists per overlay, checked on every gene combination, could be safe; inlining instead saves tens of bytes (the bytes are in the headers) | `results/price-names.md` |

@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 275.
+- master: Iteration 276.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -124,18 +124,16 @@ About 20 minutes of machine time for build, tests and gates.
 ## Open items (roughly by value)
 
 1. Seed 48: process (above). No batch is pending.
-2. Why the converter's factor estimate runs ahead of the image (31 against 16,
-   147 against 127): explain it or drop the estimate line.
-3. The gene table prompts/17 asks for: a gene touches evolve.py in six places.
-   Convert with every recorded id unchanged, checked over all results files.
-4. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
+2. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
-5. The laptop between runs (timing-sensitive): `perf stat` (IP-update chains,
+3. The laptop between runs (timing-sensitive): `perf stat` (IP-update chains,
    branch misses), `python3 lab/evolve/c-baseline.py`.
-6. The leftovers of the chats of Iterations 213-265 are filed, as found
-   (Iterations 273-274, results/drafts/chat-to-iter265/, README.md and two
-   MANIFEST.md): nothing is missing from them. Not yet done: sorting its trees/
-   for experiments that never reached master.
+4. Older genes into rows, as each is next touched: the gene table (Iteration
+   276) holds every value, but the older genes' express() rules and build code
+   are still code. A new gene is one row (GENES.md, "Adding a gene").
+5. Optional: the ten scratch trees whose work never reached master
+   (results/drafts/chat-to-iter265/trees/SORTED.md) - unread; prototypes for
+   some deferred ideas may be there.
 
 ## Lessons - how faults got in, and the checks that catch them now
 
