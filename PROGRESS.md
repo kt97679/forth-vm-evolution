@@ -4911,3 +4911,23 @@ from written data, no section headers, the 6.17 kernel's exact peak memory.
 The owner's: Clang or GCC 16 for preserve_none. All four after-seed-47 patches:
 run-tests (25 generator paths), 7 of 7, 148 of 148 alive, a fresh clone
 reproduces them.
+
+## Iteration 261 - 2026-10-13 - Claude
+
+**Clang beside GCC, tried (the owner asked whether both can live together).**
+clang 18.1.3 installed on the VM (`apt-get install clang`; the laptop has GCC
+13.3 only). The engine source needs no change for clang: interpreted designs
+built and ran the corpus as they are; the JIT designs failed only on a GCC flag
+clang rejects (-fipa-cp-clone, the ipaclone gene) - with the nine GCC-only
+flags left out they built, and the JIT translated (fib 13-14 ms, as with GCC):
+the stencils' shapes hold. -Oz first failed to link: clang turns memcmp() == 0
+into bcmp, which the runtime lacks - after-seed-47 patch 2 removes the memcmp.
+Engine bytes (3456ac1e5e, fe3c9c3940, 3bb2087f9d): GCC 7,112 / 16,828 / 21,276;
+clang at the designs' own levels 10,256 / 17,868 / 25,788; clang -Oz (patch 2
+applied) 8,624 / 17,772 / 20,396 - larger at the small end, 4% smaller at the
+fast end. So a compiler gene is feasible and the results are design-dependent:
+GCC-only genes (ipaclone, tracer, peel, nogcse, nocrossjump, align1, noreorder,
+gotodup, jitos's optimize attribute, regpin's register variables) unexpressed
+under clang; clang-only ones (-Oz; preserve_none with musttail for the tail
+engine, clang 19+) unexpressed under GCC. Not built: it needs clang on the
+laptop.
