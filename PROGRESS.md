@@ -5192,3 +5192,93 @@ or the compiler gene stays dormant. The comparison is session 42 of
 results/compare-fronts-amd-ryzen-7-pro-8840hs.md; results/progress-by-run.md
 regenerated. The state for a new chat: Iteration 265's HANDOFF and the entries
 after it - seed 48 running at this commit, results/pending empty.
+
+## Iteration 270 - 2026-10-13 - Claude: HANDOFF - start here in a new chat
+
+Read this entry, then Iteration 213's HANDOFF for what it says that is still
+true (what this is, the environment), then `prompts/`. Everything needed is in
+the repository: nothing from this chat or its uploads is - the seed 47 packs
+are processed into results/, and the scripts this chat measured with are
+tracked (below).
+
+### The state now
+
+- master: Iteration 270. The after-seed-47 batch is applied (Iteration 269, six
+  patches: faulttrap, lean-open, jitk, buildgenes, compiler, factor -
+  results/applied-after-seed47/ORDER.md); results/pending does not exist.
+- **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
+  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8`, at Iteration
+  269's commit (9029848) or this one - they differ in documents and two tools
+  only. The first run with jitk, lto, gotodup, compiler (where clang is on the
+  laptop's PATH) and factor; the stopping rule counts afresh. Predictions: the
+  end of results/predictions.md.
+- Seed 47 was small by all five measures (Iteration 269).
+
+### Processing a returned seed (as done for seed 47, Iteration 269)
+
+Iteration 213's ten steps, with the tracked tools; on this VM about 20 minutes
+of machine time for build, tests and gates:
+1. Unpack both packs (they arrive as `..._tar.gz`) into /tmp; tests.log PASS,
+   validate.log 7 IDENTICAL, jail.log PASS, next-run.log times; `git apply -R
+   --check` the pack's results-measured-here.patch (the laptop's stash, on master).
+2. The comparison's "Judging the runs" verdict and the Q-best of all runs.
+3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md`.
+4. Score the predictions and write the next (results/predictions.md).
+5. results/evolve-amd-ryzen-7-pro-8840hs-seedN.md: the verdict and facts, a
+   `---`, then report.md - the gate and ans-check read genomes from it.
+6. Apply the pending batch per its ORDER.md (reseed only when kernel.4 changes),
+   then ONE background chain: build, run-tests (31 generator paths), --validate,
+   `gate.py <results file> <compare pack>/compare-fronts.md` (152 of 152 for
+   seed 47), `ans-check.py --ids <every fourth of the front by size, and its
+   extremes>` (33 designs, 2.5 minutes).
+7. `git mv results/pending results/applied-after-seedN`; the session appended to
+   results/compare-fronts-amd-ryzen-7-pro-8840hs.md ("## Session K - Iteration
+   I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md);
+   `lab/evolve/progress-table.py > results/progress-by-run.md`; NEXT-RUN (the
+   owner's hours, and a comment for the iteration); the PROGRESS entry; commit;
+   `sh tools/make-bundle.sh /mnt/user-data/outputs`; present the bundle.
+
+### The owner's decisions since Iteration 265
+
+- Seed 48: 6 hours. The gene factor's four levels apply the standing rule
+  (trade-offs as genes): its price was counted (Iteration 267) and evolution
+  weighs it.
+
+### Open items (roughly by value)
+
+1. Seed 48: process (above). No batch is pending.
+2. Why the converter's factor estimate runs ahead of the image (31 against 16,
+   147 against 127) - explain it or drop the estimate line.
+3. The gene table prompts/17 asks for: a gene now touches evolve.py in six
+   places. Convert with every recorded id unchanged, checked over all results
+   files before and after.
+4. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
+   what clang engines do on the laptop.
+5. The laptop between runs (timing-sensitive): `perf stat` (IP-update chains,
+   branch misses), `python3 lab/evolve/c-baseline.py`.
+6. The register (GOALS.md "Rejected or deferred"): packed names, hidden names,
+   a compressed image, the stack header, cross.4's fast path - the owner's.
+
+### Lessons added since Iteration 265
+
+- A turn has a budget of tool calls (about fifty here): commit and bundle a
+  checkpoint before long work - twice a turn ended with work only in /tmp
+  (Iterations 267-268).
+- Look in lab/evolve/ before writing a script: image-ab.py already measures an
+  image change on one engine, with --set. A script that produces a recorded
+  figure is tracked: lab/evolve/factor-price.py (267's curve) and gate.py --set
+  (268's forced-gene check) are now; 263's /tmp/factor.py was lost with its chat.
+- A check that had never failed was made to fail first (266: engines-check
+  against 248's fault, reversed). Measure the artifact, not a tool's estimate of
+  it (267: the converter's count against the image's bytes).
+- A first number far below its price is audited by lifting one restriction at a
+  time before anything is concluded (267: the hot-word filter, not the safety
+  rules).
+- When a family of engines is fixed, check that its designs live, not only that
+  they compile (seed 47: 626 tail designs alive, none on the front).
+
+### Where things are (added)
+
+- lab/evolve/hotwords.py and hotwords-v1.json (factor's reference profile),
+  lab/evolve/factor-price.py (factor's price on one design), gate.py --set,
+  results/applied-after-seed47/.

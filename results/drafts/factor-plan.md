@@ -70,3 +70,6 @@ Where the build parted from this plan, and why:
   the uses as they were before factoring - reproducible, near enough.
 - The converter's own estimate runs ahead of the image (31 against 16, 147
   against 127): not explained yet; image bytes are what is measured.
+- /tmp/factor.py (step 2 above) was not kept and was lost with its chat; the
+  pass in tools/layout.py is the method now, and lab/evolve/factor-price.py
+  measures it on a design (Iteration 270).
