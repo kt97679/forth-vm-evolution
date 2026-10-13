@@ -4777,3 +4777,18 @@ never see a crash, so evolution drops it. A handler that only flushes and
 reports, in every engine, would be ~100 bytes (an estimate); the Forth-side
 buffers of fsys 4-5 would still be lost. The owner's call: leave it to the gene,
 or make the minimal handler mandatory as the zero divisor was.
+
+## Iteration 252 - 2026-10-13 - Claude
+
+**A fault handler in every engine (the owner: as most reasonable; the first
+after-seed-47 patch).** Iteration 251's choice, made: mandatory, as the zero
+divisor's THROW was - the objectives never see a crash, so a gene would be
+dropped (guard is), and a program's output surviving its own bad pointer is
+what a developer expects. Without the guard gene the engine now catches SIGSEGV,
+flushes (t_flush - the engine's buffer and fsys 4-5's Forth-side one), reports
+and exits 70. The first form, through the runtime's general sigaction, cost
++384 bytes - nearly guard's own 448; the runtime's new rt_fault fills the
+kernel's struct in place, SIGSEGV alone (the engine maps no file, so no
+SIGBUS), and the handler uses the exit already linked: +128 to +160. Checks:
+run-tests (19 generator paths), validation, the gate 148 of 148, the suite on
+four front designs. Pending in `results/pending/` until seed 47 is processed.
