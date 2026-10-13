@@ -4421,3 +4421,22 @@ names' benefits, do not build them now.** Packed names recorded in GOALS.md's
 register with the plan and the numbers (images ~300-380 bytes fewer before
 ~100-150 bytes of code; UTF-8 names unchanged under it; a Cyrillic table would
 cut a program's Cyrillic names ~60%). The cell headers next.
+
+## Iteration 234 - 2026-10-12 - Claude
+
+**UTF-8 names in the cell-header systems too (the owner approved; the fourth
+after-seed-45 patch, results/pending/cellnames-after-seed45.patch - it changes
+kernel.4: reseed).** The kernel's own COMPILE, asked >NAME for a primitive's
+flag the same way, so s0 (the build host), SOD16, CPT16, s4-s5, pack4/pack8 and
+s7 had the fault - s0 crashed on `café`. Cell headers are now [link cell]
+[zeros][name][count byte], the count byte last, right before the cell-aligned
+body: the kernel's HEADER, SEARCH-WORDLIST (a byte compare), REVEAL, NAME>
+(1+) and a new PRIOR-NFA; cross.4 lays the target's headers the same way; the
+dump tool, the converter's cell path, the SOD16 tables, sod16.4 and the cell
+SPN follow; NAME=? moved into the kernel (one copy in byte images), REVEAL8
+dropped. names-check.py judges all 14 hand-made stages now: all right, as every
+evolved design given. Two faults found and fixed on the way (PRIOR-NFA's name -
+NEXT-NFA collided with the converter's X8 swap and broke s8; LINKC kept the dump
+tool in the images, +662 bytes, until the converter's DUMPTOOL listed it). All
+checks pass (ORDER.md); images +32 bytes, engines unchanged. The after-seed-45
+batch: four patches, one reseed.
