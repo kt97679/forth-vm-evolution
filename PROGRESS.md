@@ -4822,3 +4822,26 @@ the target's cell is the host's, little-endian) cuts the workload's dispatches
 byte-identical kernel. It changes a selection workload - s6 gains most, so every
 design's kernel ratio moves - so it waits as a draft:
 `results/drafts/crossfast.md` and `.patch`.
+
+## Iteration 256 - 2026-10-13 - Claude
+
+**The routine's ad-hoc scripts, tracked.** Steps 3 and 8 of processing a
+returned seed ran from scripts in /tmp, rewritten each time and lost with the
+chat. Now: `lab/evolve/seed-facts.py DB RESULTS` (step 3 - statuses, deaths by
+cause with the gene values a cause's designs share and the living lack, the
+screen, children by how made, the attic, the front's thirds and main genes, the
+repeat rates) and `lab/evolve/gate.py RESULTS COMPARE` (step 8 - the run's front
+and the joint front built and run). On seed 46 the facts tool names the tail
+loss by itself: "died: engine did not compile - 222: shared, and rare among the
+living: tail=1 (222 of 222; alive with it: 0 of 36705)". The routine, for a new
+chat (Iteration 213's ten steps, with these): step 3 `seed-facts.py`; step 7's
+run-tests now builds every generator's path (engines-check, Iteration 249);
+step 8 `gate.py`; step 9 `ans-check.py --ids` (it ran the whole of seed 46's
+front in minutes - all 127 is affordable).
+
+The smallest engine audited for bytes (3456ac1e5e, 7,112): the interpreter
+3,448, main with load_image 791, the dispatch and escape tables 512 each, the
+runtime's wrappers 25-101 each (syscall 101, open 95 - variadic). Nothing
+large to cut without design changes: a 32-bit magic compare instead of memcmp
+(~35 bytes) and a non-variadic open in the runtime (~60) are the visible ones,
+left for a batch that touches load_image anyway.
