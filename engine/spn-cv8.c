@@ -732,9 +732,9 @@ static void load_image(const char *name) {
                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
                 }
                 nfas[n++] = nfa;
-                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+                link = CELL(nfa - CELL_BYTES);
                 if (link == 0) break;
-                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+                nfa = (nfa - CELL_BYTES) + link;
             }
         }
         /*  Insertion sort, ascending. It runs once at load over a few
@@ -749,7 +749,7 @@ static void load_image(const char *name) {
         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
         for (i2 = 0; i2 < n; i2++) {
             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
-            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
+            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
 #if SKIPPAD
             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
 #endif
@@ -775,14 +775,14 @@ static void load_image(const char *name) {
     for (i = 0; i < n; i++) {
         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
         wordtab[n - 1 - i] =
-            nfa + 1; (void)nlen;
+            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
 #if SKIPPAD
         /* skip leading NOOP padding: calls land on the first real token */
         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
 #endif
-        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+        link = CELL(nfa - CELL_BYTES);
         if (link == 0) break;
-        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+        nfa = (nfa - CELL_BYTES) + link;
     }
     for (i = 0; i < ntails; i++) {
         if (tail_w[i] >= (UNS64)n) {

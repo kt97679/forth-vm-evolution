@@ -341,9 +341,25 @@ VARIABLE TW-XT  VARIABLE TW-WID
       DUP >R TW-XT @ EXECUTE 0= IF R> DROP UNLOOP EXIT THEN R> NEXT-NFA8
     REPEAT DROP
   LOOP ;
-: NAME>STRING ( nt --- c-addr u )  DUP C@ 31 AND SWAP OVER - SWAP ;   \ the name before its count byte (232)
+: NAME>STRING ( nt --- c-addr u )  COUNT 31 AND ;
 : NAME>INTERPRET ( nt --- xt )  NAME> ;
 : NAME>COMPILE ( nt --- x xt )  DUP NAME> SWAP C@ 64 AND IF ['] EXECUTE ELSE ['] COMPILE, THEN ;
+\ >NAME (Iteration 244): the name token of the word whose code is xt, looked
+\ for in every word list of the search order; 0 when not there. Here, not in
+\ the kernel: no compiler asks it (PRIMITIVE? and POSTPONE decide without
+\ it), and with no marker byte to scan back for it walks - bytes better spent
+\ only where wanted.
+: >NAME ( xt --- nt | 0 )
+  >R #ORDER @ BEGIN DUP WHILE 1-
+    DUP CELLS CONTEXT + @  DUP @
+    BEGIN DUP WHILE
+      2DUP CELLS + @
+      BEGIN DUP WHILE
+        DUP NAME> R@ = IF >R 2DROP DROP R> R> DROP EXIT THEN
+        NEXT-NFA8
+      REPEAT DROP 1-
+    REPEAT 2DROP
+  REPEAT DROP R> DROP 0 ;
 [THEN]
 \ The eleventh wave (Iteration 194): the locals word set - {: (LOCAL) TO
 \ ENVIRONMENT? - localstest. No kernel hook: the kernel's FIND walks the

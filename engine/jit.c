@@ -369,6 +369,29 @@ static uint32_t jit_word(UNS64 w, int depth) {
     if (f) jit_st32(w + 1, f);
     return f;
 }
+#if JITTAIL
+/*  Iteration 246, the gene jittail (results/price-jit-calls.md): a call to a
+ *  native word whose next operation is EXIT - or a BRANCH, or a chain of them,
+ *  ending at an EXIT - becomes a jump to that word: its ret returns to our
+ *  caller, and tail recursion runs in place. Return addresses are on the
+ *  machine stack, so >R, R> and the loops' parameters are untouched; anything
+ *  else after the call (R>, LOOP, UNLOOP) is not a tail call.  */
+static int jit_tail(int i, int n, const unsigned short *opl, const UNS64 *arg, const UNS64 *at) {
+    int k = i + 1, hops = 0, j;
+    if (!jit_usable(S_BRANCH)) return 0;
+    while (k < n && hops++ < 8) {
+        const struct jit_op *o;
+        if (opl[k] >= 0xFFFD) return 0;
+        o = &jit_ops[opl[k]];
+        if (o->n == 1 && o->st[0] == S_EXIT) return 1;
+        if (!(o->n == 1 && o->st[0] == S_BRANCH && o->opnd >= 6)) return 0;
+        for (j = 0; j < n && at[j] != arg[k]; j++) ;
+        k = j;
+    }
+    return 0;
+}
+#endif
+
 /* The operations from a to end - end 0: find it, a word without a header
    (jitx) - of the word w: a call to w is a call to this code itself. */
 #if JITX
@@ -379,6 +402,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     UNS64 at[JIT_MAXOPS + 1], arg[JIT_MAXOPS], far = 0;
     uint32_t nat[JIT_MAXOPS + 1], size = 0, off;
     unsigned short opl[JIT_MAXOPS];     /* the logical operation; 0xFFFF a call to w, 0xFFFE a call resolved, 0xFFFD a literal */
+#if JITTAIL
+    unsigned char tl[JIT_MAXOPS];       /* Iteration 246: this call is a tail call - a jump */
+#endif
     int n = 0, i, j;
     (void)far;
     if (depth > JIT_DEPTH || !jit_init()) return 0;
@@ -464,7 +490,15 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #if JITX
         if (opl[i] == 0xFFFD) { if (!jit_usable(S_LIT)) return 0; size += (uint32_t)jit_len(S_LIT); continue; }
 #endif
+#if JITTAIL
+        if (opl[i] >= 0xFFFE) {
+            int c = (tl[i] = (unsigned char)jit_tail(i, n, opl, arg, at)) ? S_BRANCH : S_CALL;
+            if (!jit_usable(c)) return 0;
+            size += (uint32_t)jit_len(c); continue;
+        }
+#else
         if (opl[i] >= 0xFFFE) { if (!jit_usable(S_CALL)) return 0; size += (uint32_t)jit_len(S_CALL); continue; }
+#endif
         for (j = 0; j < jit_ops[opl[i]].n; j++) {
             int s = jit_ops[opl[i]].st[j];
             if (!jit_usable(s) || (jit_st[s].njump && jit_ops[opl[i]].opnd < 6)) return 0;
@@ -483,7 +517,13 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         if (opl[i] == 0xFFFD) { jit_put(p, S_LIT, arg[i], 0, 0); continue; }
 #endif
         if (opl[i] >= 0xFFFE) {
+#if JITTAIL
+            UNS64 to = opl[i] == 0xFFFF ? (UNS64)(uintptr_t)(jit_mem + off) : arg[i];
+            if (tl[i]) jit_put(p, S_BRANCH, 0, to, 0);      /* a tail call: a jump */
+            else jit_put(p, S_CALL, 0, 0, to);
+#else
             jit_put(p, S_CALL, 0, 0, opl[i] == 0xFFFF ? (UNS64)(uintptr_t)(jit_mem + off) : arg[i]);
+#endif
             continue;
         }
         o = &jit_ops[opl[i]];

@@ -142,7 +142,7 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
 : COMPILE,16 ( xt --- )
 \ Add the execution semantics of xt to the current definition: a
 \ primitive becomes its opcode token, anything else a call.
-  DUP >NAME C@ 32 AND IF
+  DUP PRIMITIVE? IF
     \ A primitive's translated body is one token holding its opcode -
     \ W@, not @: the cell compiler read a whole cell here because a
     \ token WAS a cell.

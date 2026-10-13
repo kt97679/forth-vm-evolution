@@ -67,7 +67,7 @@ VARIABLE IMM-N  VARIABLE IMM-L  VARIABLE IMM-P
   THEN THEN 0 ;
 : COMPILE,8 ( xt --- )
 \ cv8-fuse.4's, with n + and SWAP n + tried first.
-  DUP >NAME C@ 32 AND IF
+  DUP PRIMITIVE? IF
     DUP C@ ESC-OP = IF
       DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
     ELSE

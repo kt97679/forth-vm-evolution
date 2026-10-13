@@ -33,10 +33,6 @@ VARIABLE TA
 : INIT-NFATAB 8192 CELLS ALLOCATE ABORT" dict-dump: out of memory" NFATAB ! ;
 INIT-NFATAB
 
-\ Iteration 233: [link][zeros][name][count byte] - the link cell is before
-\ the name's area, the area len+1 rounded up to cells, ending at the nfa.
-: LINKC ( nfa --- a )  DUP C@ 31 AND 1+ ALIGNED - 1+ CELLB - ;
-
 : COLLECT ( --- )
 \ Every nfa in every thread, in whatever order the chains give them.
   0 #NFA !
@@ -45,7 +41,7 @@ INIT-NFATAB
     BEGIN NFA @ WHILE
       NFA @ NFATAB @ #NFA @ CELLS + !
       1 #NFA +!
-      NFA @ LINKC DUP @ ?DUP IF + NFA ! ELSE DROP 0 NFA ! THEN
+      NFA @ CELLB - DUP @ ?DUP IF + NFA ! ELSE DROP 0 NFA ! THEN
     REPEAT
   LOOP ;
 
@@ -69,16 +65,16 @@ INIT-NFATAB
   COLLECT SORTNFA
   #NFA @ 0 DO
     NFATAB @ I CELLS + @ NFA !
-    NFA @ 1+ BP !                       \ the body follows the count byte
+    NFA @ DUP C@ 31 AND 1+ ALIGNED + BP !
     \ The body ends where the next word by ADDRESS begins its link cell.
     \ The newest word - first in this descending order - ends at HERE.
-    I 0= IF HERE ELSE NFATAB @ I 1- CELLS + @ LINKC THEN BE !
+    I 0= IF HERE ELSE NFATAB @ I 1- CELLS + @ CELLB - THEN BE !
     \ The raw count byte carries flag bits above the length - bit 5 is
     \ the MACRO flag cross.4's PRIMITIVE sets. TYPE below masks them
     \ off, so without this line an image rebuilt from this dump would
     \ silently lose every flag.
     S" H " TYPE NFA @ . NFA @ C@ . CR
-    S" N " TYPE BP @ . BE @ . NFA @ DUP C@ 31 AND SWAP OVER - SWAP TYPE CR
+    S" N " TYPE BP @ . BE @ . NFA @ 1+ NFA @ C@ 31 AND TYPE CR
     BEGIN BP @ BE @ < WHILE
       S" B " TYPE BP @ . BP @ @ . CR
       BP @ CELLB + BP !

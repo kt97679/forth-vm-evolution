@@ -59,7 +59,7 @@ ALIGN
 \ literal, an operand - stops the fusion, and anything that makes HERE
 \ a branch target clears LAST-OP. The fused byte keeps LAST-OP, and no
 \ fold or pair contains a fused opcode, so it never combines again.
-  DUP >NAME C@ 32 AND IF
+  DUP PRIMITIVE? IF
     DUP C@ ESC-OP = IF
       DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
     ELSE

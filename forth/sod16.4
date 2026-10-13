@@ -93,9 +93,10 @@ VARIABLE SOD16-TA  ( --- a-addr )
 \ 319 and up, past the end of a table with 319 entries, and the engine
 \ jumped through whatever followed it in memory.
 
-\ PRIOR-NFA - the previous word in the chain, or 0 at the end - is the
-\ kernel's since Iteration 233: the link cell sits before the name's area,
-\ the count byte at its end.
+: NEXT-NFA ( nfa --- nfa' )
+\ The previous word in the chain, or 0 at the end. The link is stored
+\ RELATIVE to its own cell, exactly as the engine reads it.
+  1 CELLS - DUP @ DUP 0= IF 2DROP 0 EXIT THEN + ;
 
 : SOD16-COLLECT ( --- )
 \ Every eligible word, from every thread, in whatever order the chains
@@ -109,7 +110,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
         SOD16-TAB @ SOD16-N @ CELLS + !
         1 SOD16-N +!
       ELSE DROP THEN
-      SOD16-NFA @ PRIOR-NFA SOD16-NFA !
+      SOD16-NFA @ NEXT-NFA SOD16-NFA !
     REPEAT
   LOOP ;
 
@@ -182,7 +183,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
   THEN ;
 
 : COMPILE,16 ( xt --- )
-  DUP >NAME C@ 32 AND IF
+  DUP PRIMITIVE? IF
     W@ OP,
   ELSE
     CALL,

@@ -247,3 +247,37 @@ names in byte and cell headers (a reseed), the dispatch table as offsets
 
 Iteration 241: 10 hours, not 6 (the owner) - about 8 hours of evolution
 against seed 45's 3 h 51 min. The predictions above stand as written.
+
+## Seed 46, scored (Iteration 248)
+
+1. jitos on half or more of the front's JIT designs not built -Os - **wrong**:
+   on none of the 45; 33 designs with it lived, none reached the front. The
+   translator's -Os costs translation time on every word the JIT meets, and
+   400-800 bytes do not buy that back at the fast end.
+2. Every design 380-450 bytes smaller than seed 45 recorded - **right**: the
+   smallest 15,872 against 16,296 (-424).
+3. The fast third all JIT with fsys 2; fbuf 0 on most - **right**: the fast
+   third all fsys 2, the JIT on 45 of the front; 4 KB buffers on 66 of 127.
+4. Small - **wrong**: hypervolume +6.4%. With 8 h 10 min of evolution (seed
+   45: 3 h 51 min) the middle filled in - fsys 5 on 17 of the front (seed 45:
+   11).
+5. Crossover 30-35% - **right**: 33.7%.
+
+Three of five. Not predicted, and the run's real news: every tail design died
+("engine did not compile" - the dispatch offsets broke gen-tail.py's engines),
+so seed 46 ran without the gene tail.
+
+## Seed 47, predicted (Iteration 248) - the after-seed-46 batch's first run
+
+The batch: primitives first and PRIMITIVE? by address, the classic header
+layout back, bit 7 of the count byte free, POSTPONE deciding immediacy when it
+compiles, >NAME to coreext.4 (a reseed; images 64-136 bytes smaller); the gene
+jittail (JIT tail calls as jumps: ackermann -16%, +256 engine bytes); the tail
+engines compiling again. Six hours (the owner).
+
+1. tail back on the front: at least one design with it.
+2. jittail on a third or more of the front's JIT designs.
+3. The smallest at least 60 bytes under seed 46's 15,872.
+4. Not small: hypervolume above 2% - jittail moves the fast end, tail the
+   middle.
+5. Crossover 30-37%.

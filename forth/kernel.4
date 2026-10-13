@@ -134,6 +134,64 @@ PRIMITIVE RP@      ( --- a-addr)
 PRIMITIVE RP!      ( a-addr ---)
 \ Set the return stack pointer to a-addr.
 
+PRIMITIVE OPEN-FILE
+PRIMITIVE CLOSE-FILE
+PRIMITIVE READ-LINE
+PRIMITIVE WRITE-LINE
+PRIMITIVE READ-FILE
+PRIMITIVE WRITE-FILE
+PRIMITIVE-SLOT (SYSTEM)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE REPOSITION-FILE
+PRIMITIVE FILE-POSITION
+PRIMITIVE DELETE-FILE
+PRIMITIVE FILE-SIZE
+
+\ Process-control primitives (shell support, see PROGRESS.md). Order
+\ here must match relf.c's dispatch table exactly, since PRIMITIVE
+\ assigns tokens sequentially as each of these lines is processed.
+PRIMITIVE SYSCALL ( block num --- r )  \ one system call, its arguments in the block; the shell's OS words are Forth on it
+PRIMITIVE-SLOT (EXECVE)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (WAITPID)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (PIPE)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (DUP2)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SYS-EXIT)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (CHDIR)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETCWD)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SYS-ARGC)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SYS-ARG)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETPID)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (UNSETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+\ Forth-2012 memory-allocation wordset, backed by the host's own
+\ malloc/free/realloc. This is memory OUTSIDE the image - it does not
+\ consume dictionary space and is not saved by SAVE-SYSTEM. Appended
+\ at the END of this list deliberately: primitive tokens are
+\ 1 + (position-1)*stride, so adding here leaves every existing token
+\ untouched, while inserting anywhere earlier would silently
+\ renumber them (see GOALS.md and PROGRESS.md 2026-09-01).
+PRIMITIVE ALLOCATE  ( u --- a-addr ior )
+PRIMITIVE FREE      ( a-addr --- ior )
+PRIMITIVE RESIZE    ( a-addr u --- a-addr2 ior )
+PRIMITIVE-SLOT (GETPWHOME)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (GETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
+PRIMITIVE-SLOT (SETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
+
+\ Iteration 242: every PRIMITIVE above, together at the start of the
+\ dictionary (the file words, SYSCALL and the memory words moved up from
+\ after BIN; their order - and so every token - unchanged), and the first
+\ word after them a marker: a word is a primitive exactly when its xt is below
+\ (PRIMITIVES-END)'s. COMPILE, asks this instead of reading the primitive
+\ bit through >NAME, whose scan back from the code crossed the name - a
+\ UTF-8 name's bytes (bit 7 set) stopped it, and one with bit 5 set read as
+\ a primitive's count byte. (PRIMITIVES-END) marks the place: a variable,
+\ so the address it gives is the running image's own in every encoding (a
+\ ticked literal here would be the cross-compiler's, START-relative, and the
+\ converter would not know it for an address). Its own xt reads as a
+\ primitive's - it is never compiled.
+VARIABLE (PRIMITIVES-END)
+: PRIMITIVE? ( xt --- flag )  (PRIMITIVES-END) U< ;
+
 \ PART 2: RUNTIME PARTS THE VARIOUS DEFINITION CLASSES.
 
 \ Only VARIABLES (or CREATE) need a runtime part in this system.
@@ -651,48 +709,6 @@ VARIABLE DPL ( --- a-addr)
 \ Modify the R/O W/O or R/W mode so that it applies to binary files.
   1 + ;
 
-PRIMITIVE OPEN-FILE
-PRIMITIVE CLOSE-FILE
-PRIMITIVE READ-LINE
-PRIMITIVE WRITE-LINE
-PRIMITIVE READ-FILE
-PRIMITIVE WRITE-FILE
-PRIMITIVE-SLOT (SYSTEM)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE REPOSITION-FILE
-PRIMITIVE FILE-POSITION
-PRIMITIVE DELETE-FILE
-PRIMITIVE FILE-SIZE
-
-\ Process-control primitives (shell support, see PROGRESS.md). Order
-\ here must match relf.c's dispatch table exactly, since PRIMITIVE
-\ assigns tokens sequentially as each of these lines is processed.
-PRIMITIVE SYSCALL ( block num --- r )  \ one system call, its arguments in the block; the shell's OS words are Forth on it
-PRIMITIVE-SLOT (EXECVE)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (WAITPID)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (PIPE)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (DUP2)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (GETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (SETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (SYS-EXIT)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (CHDIR)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (GETCWD)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (SYS-ARGC)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (SYS-ARG)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (GETPID)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (UNSETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
-\ Forth-2012 memory-allocation wordset, backed by the host's own
-\ malloc/free/realloc. This is memory OUTSIDE the image - it does not
-\ consume dictionary space and is not saved by SAVE-SYSTEM. Appended
-\ at the END of this list deliberately: primitive tokens are
-\ 1 + (position-1)*stride, so adding here leaves every existing token
-\ untouched, while inserting anywhere earlier would silently
-\ renumber them (see GOALS.md and PROGRESS.md 2026-09-01).
-PRIMITIVE ALLOCATE  ( u --- a-addr ior )
-PRIMITIVE FREE      ( a-addr --- ior )
-PRIMITIVE RESIZE    ( a-addr u --- a-addr2 ior )
-PRIMITIVE-SLOT (GETPWHOME)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (GETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
-PRIMITIVE-SLOT (SETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
 
 : CREATE-FILE ( c-addr u mode --- fid ior)
 \ Create a new file with the name starting at c-addr with length u.
@@ -919,42 +935,48 @@ VARIABLE CURRENT ( --- addr)
 \ for the compare's end - not 32 bytes a byte at a time (the audit).
   32 MIN DUP 1+ ALIGNED NAMEBUF +  0 OVER !  0 SWAP 1 CELLS - !  NAMEBUF PLACE ;
 
-\ Iteration 233: a header is [link cell][zeros][name][count byte], then the
-\ body - the count byte LAST, right before the body: the nfa is the count
-\ byte, the name the len bytes before it, the area len+1 rounded up to cells.
-\ >NAME's scan back for bit 7 stops at the count byte at once; before, it
-\ crossed the name, and a UTF-8 byte there (bit 7 set) with bit 5 set read as
-\ a primitive's count byte - COMPILE, inlined garbage.
-: PRIOR-NFA ( nfa --- nfa' )
-\ The word before it in its thread, or 0: the link cell is just before the
-\ name's area (len+1 rounded up to cells, ending at the nfa), relative to
-\ itself. Not NEXT-NFA: the converter would put cv8b.4's NEXT-NFA8 into it,
-\ and --drop-x8 drop the name NEXT-NFA8 that SPN looks up.
-  DUP C@ 31 AND 1+ ALIGNED - 1+ CELLBYTES-TOK - DUP @ DUP IF + ELSE SWAP DROP THEN ;
-: NAME=? ( a1 a2 u --- flag )
-\ The byte headers' compare, the kernel's since Iteration 233 (cv8b.4 had it).
-  BEGIN DUP WHILE
-    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
-    1+ SWAP 1+ SWAP R> 1-
-  REPEAT DROP 2DROP -1 ;
-
 : SEARCH-WORDLIST ( c-addr u wid --- 0 | xt 1 xt -1)
 \ Search the wordlist with address wid for the name c-addr u.
 \ Return 0 if not found, the execution token xt and -1 for non-immediate
-\ words and xt and 1 for immediate words. Iteration 233: the count byte,
-\ then the name before it, a byte at a time.
+\ words and xt and 1 for immediate words.
   ROT ROT
   NAME>BUF
+  \ Pick the thread this name would have been filed under. Everything
+  \ below is unchanged: the chain walk, the cell-at-a-time compare and
+  \ the relative link field are all as they were.
   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP
-  BEGIN DUP WHILE
-    DUP C@ 31 AND NAMEBUF C@ = IF
-      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
-        DUP 1+ SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
-      THEN
+  DUP IF
+  BEGIN
+   \ Mask clears the flag bits within the count byte - which, since cells
+   \ are read native-endian (little-endian on every host targeted so
+   \ far - see GOALS.md phase 5), is the LOW byte of the cell, not the
+   \ high byte the old big-endian-packed mask (1 61 LSHIFT 1 -) assumed.
+   NAMEBUF @ OVER @ -225 AND = \ Compare first cells of names (-225: -1 224 XOR, once).
+           \ Mask off bits 5-7 of name length, these have special purposes.
+   IF
+    NAMEBUF CELL+
+    OVER CELL+
+    CELLBYTES-TOK >R
+    BEGIN
+     OVER @ OVER @ - >R
+     CELL+ SWAP CELL+ SWAP R> R> CELL+ >R \ Compare all of name until different
+    UNTIL
+    R> NAMEBUF C@ 1 + ALIGNED CELL+ = IF \ match to the right length then found
+     SWAP DROP SWAP C@
+     64 AND IF \ determine immediateness of a word from bit 6 of name length.
+      1
+     ELSE
+      -1
+     THEN
+     SWAP CELLBYTES-TOK NEGATE + SWAP EXIT \ Exit with execution token and flag.
     THEN
-    PRIOR-NFA
-  REPEAT ;
-
+    2DROP
+   THEN
+   CELLBYTES-TOK NEGATE + DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
+  UNTIL
+  THEN
+  DROP 0 \ Not found.
+;
 
 : FIND ( c-addr --- c-addr 0| xt 1|xt -1 )
 \ Search all word lists in the search order for the name in the
@@ -1103,14 +1125,9 @@ VARIABLE DICT-MAX ( --- a-addr)
 \ Add as many bytes to the dictionary as needed to align dictionary pointer.
   BEGIN HERE CELLBYTES-TOK 1- AND WHILE 0 C, REPEAT ;
 
-: >NAME ( addr1 --- addr2 )
-\ Convert execution token addr1 (address of code) to address of name.
-  BEGIN 1- DUP C@ 128 AND UNTIL ;
-
 : NAME> ( addr1 --- addr2 )
-\ Convert address of name to address of code: the body follows the count
-\ byte (Iteration 233), on a cell boundary already.
-  1+ ;
+\ Convert address of name to address of code.
+  COUNT 31 AND + ALIGNED ;
 
 : HEADER ( --- )
 \ Create a header for a new definition without a code field.
@@ -1120,26 +1137,20 @@ VARIABLE DICT-MAX ( --- a-addr)
   \ So reserve the cell, remember where it is, and patch it below -
   \ which is what SOD32 does.
   HERE >R 0 ,
+  HERE LAST !         \ Set LAST so definition can be linked by REVEAL
   32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP
                        \ Give warning if existing word redefined.
   DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @
   ?DUP IF R@ - R@ ! THEN    \ link, relative to the link cell itself
   R> DROP
-  \ Iteration 233: [zeros][name][count byte] - the name moved to end just
-  \ before the area's last byte, the gap zeroed, the count byte last (bit 7
-  \ its mark): the nfa, and LAST.
-  C@ DUP >R 1+ ALIGNED                           ( k )         \ R: len
-  HERE 1+  OVER R@ - 1- HERE +  R@               ( k src dst len )
-  2 PICK 2 PICK U< IF CMOVE> ELSE CMOVE THEN     ( k )
-  HERE OVER R@ - 1- 0 FILL
-  HERE OVER + 1- DUP LAST !  R> 128 + SWAP C!
-  ALLOT
+  C@ 1+ ALLOT ALIGN     \ bit 7 no longer marks the count byte (Iteration 244)
+                       \ Allot the name.
 ;
 
 : REVEAL ( --- )
 \ Add the last created definition to the CURRENT wordlist, at the head
 \ of the thread its name hashes to.
-  LAST @ DUP DUP C@ 31 AND SWAP OVER - SWAP CURRENT @ @ HASH   \ the name before its count byte (233)
+  LAST @ DUP COUNT 31 AND CURRENT @ @ HASH
   1+ CELLS CURRENT @ + ! ;
 
 : CREATE ( "ccc" --- )
@@ -1175,7 +1186,7 @@ VARIABLE STATE ( --- a-addr)
 
 : COMPILE, ( xt --- )
 \ Add the execution semantics of the definition xt to the current definition.
-  DUP >NAME C@ 32 AND \ if primitive compile inline
+  DUP PRIMITIVE? \ if primitive compile inline - by address (Iteration 242)
   IF @ , ELSE HERE - CELL- , THEN
 ;
 
@@ -1204,11 +1215,17 @@ VARIABLE 'LEAVE ( --- a-addr)
 \ visible and leave compilation mode.
   ?COMP EXIT-TOK , [ ?CSP REVEAL ; IMMEDIATE
 
+\ >NAME is not in the kernel (Iteration 244): no compiler needs it - COMPILE,
+\ asks PRIMITIVE?, POSTPONE decides immediacy by FIND's flag - and with bit 7
+\ of the count byte free, finding a header from its code means walking the
+\ word lists. coreext.4 has it, beside the name-token words.
 : (POSTPONE) ( --- )
-\ Runtime for POSTPONE.
-\ has inline argument.
+\ Runtime for POSTPONE of a word that is not immediate: compile it.
+\ has inline argument. (Iteration 244: POSTPONE decides immediacy when it
+\ compiles, by FIND's flag; this asked >NAME every time it ran - a scan back
+\ across the name, which a UTF-8 name broke.)
   R> DUP DUP @ + SWAP CELL+ >R
-  DUP >NAME C@ 64 AND IF EXECUTE ELSE COMPILE, THEN
+  COMPILE,
 ;
 
 : : ( "ccc" --- )
@@ -1350,10 +1367,11 @@ VARIABLE POCKET ( --- a-addr )
   -1 THROW ;
 
 : POSTPONE ( "ccc" --- )
-\ Parse the next word delimited by spaces and compile the following runtime.
-\ Runtime: depending on immediateness EXECUTE or compile the execution
-\ semantics of the parsed word.
-  POSTPONE (POSTPONE) ' HERE - , ; IMMEDIATE
+\ Parse the next word and append its compilation semantics: an immediate
+\ word is compiled to run when this definition runs, any other to be
+\ compiled then - by (POSTPONE). Decided here, by FIND's flag (Iteration 244).
+  32 WORD FIND DUP 0= ABORT" Not found"
+  1 = IF COMPILE, ELSE POSTPONE (POSTPONE) HERE - , THEN ; IMMEDIATE
 
 : IMMEDIATE ( --- )
 \ Make last definition immediate, so that it will be executed even in

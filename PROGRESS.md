@@ -4711,3 +4711,37 @@ one instead (and share the set-up with LSAVE's fallback where SPEC loc has
 it): an estimated 30-60 bytes, 0.2-0.4% of the smallest designs' total. Not
 built: small, and it touches the generators' dispatch macros (gen-tos.py,
 gen-super.py) - the owner's call.
+
+## Iteration 248 - 2026-10-13 - Claude
+
+**Seed 46 processed; the after-seed-46 batch applied; seed 47 set for 6 hours
+(the owner).** Both packs clean (tests PASS, 7 of 7 IDENTICAL, the jail PASS).
+The evolution ran 8 h 10 min, generations 0-186, 46,498 designs. The
+comparison's verdict: fastest -1.1%, smallest +0.15%, memory +2 KB,
+hypervolume +6.4%, best Q -3.4% - not small. Predictions three of five (jitos
+on none of the front; not small) - `results/predictions.md`, with seed 47's.
+`results/evolve-amd-ryzen-7-pro-8840hs-seed46.md` has the facts.
+
+**The run's real news: every tail design died** - 222 "engine did not
+compile", all with the gene tail. Iteration 237's dispatch offsets: gen-tail.py
+reads the source after `cc -E`, where its own `#ifndef DISPOFF` guard is
+already gone, so the tail engine's table was differences between functions,
+which C cannot initialize. My gate then had no tail design on the fronts, and
+the suite's tail design was a multi-state one (another generator). Fixed as the
+batch's fourth patch: build_tail preprocesses with -DDISPOFF=0; two of the dead
+designs (cb0545f94f, c1591d9cf8 - the second with jitos) now pass the suite.
+Lesson: an engine change is tested on every generator's engine (tail, tos, msc,
+super, JIT), whether or not the front has one.
+
+Applied in order (results/applied-after-seed46/ORDER.md): primfirst, nobit7,
+jittail, tailfix; reseeded (the cell kernel 27,264 bytes, a fixed point; the
+4-byte kernel identical from both seeds). Build, run-tests PASS, 7 of 7
+IDENTICAL; seed 46's front and the joint front alive with the new code, 148 of
+148 (127 and 72, 51 in both); the suite on 12 of seed 46's front (smallest,
+fastest, least memory, Q-best, and across the fsys levels) and the two tail
+designs: 14 of 14 each, 0 differ from s6 (2,119 tests, 0 failed).
+
+NEXT-RUN: `seed 47 tag2 6h then experiment compare-fronts.py --rounds 6
+--frontier --cpus 2,8`. The state for a new chat: Iteration 243's HANDOFF, with
+seed 47 now the run, the after-seed-46 batch applied, and results/pending
+empty.

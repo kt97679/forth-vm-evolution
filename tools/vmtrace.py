@@ -94,16 +94,13 @@ def named_run(M, eng, img, pw, text, out, cwd=None, probe=None):
     unknown = sorted({t for r in first.values() for t, _ in r['path'] if M.word(t) is None})
     if not unknown: return
     body = re.sub(rb'\n\s*BYE\s*$', b'\n', text.rstrip() + b'\n')
-    # Iteration 232: byte headers carry the count byte AFTER the name (the nfa
-    # is the count byte), cell headers before it - print each its own way.
-    nmp = b'DUP C@ 31 AND SWAP OVER - SWAP TYPE'      # byte and cell headers alike since Iteration 233
-    epi = b''.join(b'CR 777001 . %d . %d START @ + >NAME ' % (a, a) + nmp + b' SPACE\n' for a in unknown)
+    epi = b''   # Iteration 244: no >NAME in the kernel - the walk below names every word compiled past the image
     # and every word compiled past the image, walking each thread with the
     # design's own NEXT-NFA8 and NAME>8 (byte headers - the front and s6):
     # what EXECUTE ran is never a call target, but its name is here
     nm8 = b'NAME>8' if any(w[2] == 'NAME>8' for w in M.words) else b'NAME>'   # a lean --cv8-compiler image: NAME> holds its code
     epi += (b': TRWALK ( lim --- ) FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ BEGIN DUP WHILE DUP ' + nm8 + b' START @ -'
-            b' DUP 3 PICK < IF DROP ELSE CR 777002 . . DUP ' + nmp + b' SPACE THEN NEXT-NFA8 REPEAT DROP LOOP DROP ;\n'
+            b' DUP 3 PICK < IF DROP ELSE CR 777002 . . DUP COUNT 31 AND TYPE SPACE THEN NEXT-NFA8 REPEAT DROP LOOP DROP ;\n'
             b'%d TRWALK\n' % M.words[-1][1])
     r = run(eng, img, pw, body + b'\n' + epi + b'CR BYE\n', out, cwd, probe)
     M.runtime({int(a): n.decode(errors='replace') for a, n in re.findall(rb'77700[12] (\d+) (\S+)', r.stdout)})

@@ -26,7 +26,7 @@
 \ are namebuf's, or 0.
   >R BEGIN DUP WHILE
     DUP C@ 31 AND R@ C@ = IF
-      DUP DUP C@ 31 AND - R@ 1+ R@ C@ NAME=? IF R> DROP EXIT THEN   \ the name before its count byte (232)
+      DUP 1+ R@ 1+ R@ C@ NAME=? IF R> DROP EXIT THEN
     THEN
     NEXT-NFA8
   REPEAT R> DROP ;

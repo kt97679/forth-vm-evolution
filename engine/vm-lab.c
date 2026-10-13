@@ -159,27 +159,25 @@ static char **g_argv;
 #error "TAG2: a call reaches 1 GB from the image base - MEMSIZE at most that"
 #endif
 #if TAG2
-/*  Iteration 232: the nfa is the count byte, AFTER the name; the link ends
- *  just before the name (b__ = nfa - length).
- *  A byte-header link, read backwards from the name: the byte before it
+/*  A byte-header link, read backwards from the name: the byte before it
  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
  *  bits), 10 three (22), 11 four (30) - the bytes below it high to low.  */
-#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1); UNS64 d__; \
+#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
     switch (t__ >> 6) {                                                                   \
     case 0: d__ = t__; break;                                                             \
-    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2); break;                        \
-    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3); break; \
-    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(b__ - 2) << 16)                \
-                   | ((UNS64)BYTE(b__ - 3) << 8) | BYTE(b__ - 4); }                        \
+    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2); break;                        \
+    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; \
+    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
+                   | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
     d__ ? a__ - d__ : 0; })
 #else
 /*  A byte-header link in CV8 (cv8b.4's NEXT-NFA8): its last byte, the one
  *  before the name - below 0x80 seven bits (0 ends the thread), below 0xC0
  *  fourteen, else twenty-two.  */
-#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1);   \
+#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
     t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
-    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2))                        \
-    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3)); })
+    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
+    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })
 #endif
 #ifndef VARCALL
 /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
@@ -905,9 +903,9 @@ static void load_image(const char *name) {
                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
                 }
                 nfas[n++] = nfa;
-                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+                link = CELL(nfa - CELL_BYTES);
                 if (link == 0) break;
-                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+                nfa = (nfa - CELL_BYTES) + link;
             }
         }
         /*  Insertion sort, ascending. It runs once at load over a few
@@ -922,7 +920,7 @@ static void load_image(const char *name) {
         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
         for (i2 = 0; i2 < n; i2++) {
             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
-            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
+            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
 #if SKIPPAD
             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
 #endif
@@ -948,14 +946,14 @@ static void load_image(const char *name) {
     for (i = 0; i < n; i++) {
         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
         wordtab[n - 1 - i] =
-            nfa + 1; (void)nlen;
+            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
 #if SKIPPAD
         /* skip leading NOOP padding: calls land on the first real token */
         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
 #endif
-        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+        link = CELL(nfa - CELL_BYTES);
         if (link == 0) break;
-        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+        nfa = (nfa - CELL_BYTES) + link;
     }
     for (i = 0; i < ntails; i++) {
         if (tail_w[i] >= (UNS64)n) {
@@ -1875,7 +1873,7 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;         
 L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
              UNS8 n_ = BYTE(nb_);
              while (a_) {
-                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
+                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
                  a_ = PREVNFA(a_); }
              DS0 = a_; } NEXT();
 #endif
@@ -1921,7 +1919,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
  *  walk, NAME>8 and the immediate bit.  */
 #if X_FIND
 L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
-            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
 #endif
 /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER

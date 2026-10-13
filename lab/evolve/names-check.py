@@ -34,8 +34,11 @@ PROG = '\n'.join([
     ': суп 8 . ;  обед суп CR',
     "' café EXECUTE CR",
     "' обед EXECUTE ' voilà EXECUTE CR",
+    ': щи 1 ;  LAST @ C@ 128 AND . LAST @ C@ 31 AND . CR',                     # bit 7 of the count byte free (Iteration 244)
+    ': ёж2 12 . ; IMMEDIATE  : w9 POSTPONE ёж2 ;  : w10 w9 ;  w10 CR',             # POSTPONE of an immediate UTF-8 word
+    ': w11 POSTPONE суп ; IMMEDIATE  : w12 w11 w11 ;  w12 CR',                    # ... and of one that is not
     'BYE', '']).encode()
-WANT = ['5 5', '9', '3 3', '4', '6 6', '1', '2', '11', '5 5 8', '9', '5 5 3']
+WANT = ['5 5', '9', '3 3', '4', '6 6', '1', '2', '11', '5 5 8', '9', '5 5 3', '0 4', '12', '8 8']
 def run(eng, img, pw):
     r = subprocess.run([eng, img], cwd=pw, input=PROG, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
     out = r.stdout.replace(b'\r', b'').decode(errors='replace')

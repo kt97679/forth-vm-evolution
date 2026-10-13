@@ -300,4 +300,4 @@
 # min, plus a tenth and 10 minutes), so the evolution gets about 8 hours
 # (seed 45: 3 h 51 min); the comparison measures every front again in one
 # session, so the longer run is judged on equal terms.
-seed 46 tag2 10h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+seed 47 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

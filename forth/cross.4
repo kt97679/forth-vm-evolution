@@ -198,19 +198,14 @@ VARIABLE NAMELEN
   BL WORD COUNT               ( c-addr u )
   2DUP THASH THIS-THREAD !
   DUP NAMELEN !
-  \ Iteration 233: [zeros][name][count byte], as kernel.4's HEADER lays it -
-  \ the count byte last, right before the body: the nfa.
-  NAMELEN @ 1+ 1 CELLS-T 1- + 1 CELLS-T NEGATE AND   ( c-addr u k )
-  SWAP DROP  THERE OVER + 1- >R                       ( c-addr k )  \ R: the nfa
-  THERE SWAP 0 ?DO 0 OVER I + C!-T LOOP DROP          ( c-addr )    \ the area zeroed
-  R@ NAMELEN @ - NAMELEN @ 0 ?DO OVER I + C@ OVER I + C!-T LOOP 2DROP   \ the name before the nfa
-  NAMELEN @ 128 OR R@ C!-T                            \ bit 7: the count byte's mark
+  THERE PLACE-T               \ Place name in target dictionary.
   THIS-THREAD @ CELLS TTHREADS + @ ?DUP IF
     LINKCELL @ - LINKCELL @ !-T    \ relative to the link cell itself
   THEN
-  R@ TLINK !
-  R@ THIS-THREAD @ CELLS TTHREADS + !
-  R> THERE - 1+ ALLOT-T ;
+  THERE TLINK !
+  THERE THIS-THREAD @ CELLS TTHREADS + !
+  NAMELEN @ 1+ ALLOT-T ALIGN-T ;
+      \ (bit 7 of the count byte no longer a marker - Iteration 244)
 
 \ : "HEADER CREATE ALIGN-T ;  \ Alternative for "HEADER in case the target system
                       \ is just an application without headers.
@@ -363,6 +358,19 @@ FORTH DEFINITIONS
   PREVIOUS
 ;
 
+\ The IMMEDIATE bit of the target word whose code is t-xt (Iteration 244):
+\ its header is found along the thread its name hashes to (T-THREAD, set by
+\ POSTPONE) - there is no marker byte to scan back for. 0 when not found.
+VARIABLE T-XT
+VARIABLE T-THREAD
+: TNAME> ( t-nfa --- t-xt )  DUP C@-T 31 AND 1+ + ALIGNED-T ;
+: T-IMMEDIATE? ( t-xt --- flag )
+  T-XT !  T-THREAD @ CELLS TTHREADS + @
+  BEGIN DUP WHILE
+    DUP TNAME> T-XT @ = IF C@-T 64 AND EXIT THEN
+    TARGET-CELL-BYTES @ - DUP @-T DUP IF + ELSE SWAP DROP THEN
+  REPEAT ;
+
 : >BODY-T ( t-addr1 --- t-addr2 ) \ Convert executing token to param address.
   \ NOTE: this is target-address arithmetic and must use CELLS-T, not the
   \ host's CELLS. It only worked before because the host (RelF, 4-byte
@@ -441,7 +449,14 @@ FORWARD (POSTPONE)
 \ delimiters, so an empty string took the rest of the line (kernel.4's ABORT).
 : ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE DUP 1+ >R
       THERE PLACE-T R> ALLOT-T ALIGN-T ;
-: POSTPONE [ TRANSIENT ] (POSTPONE) [ FORTH ] T' THERE - ,-T ;
+\ Iteration 244: a target POSTPONE decides immediacy here, from the target
+\ header's IMMEDIATE bit - an immediate word compiled as a call (it runs when
+\ the definition runs), any other through (POSTPONE), which compiles it. The
+\ kernel's (POSTPONE) no longer asks >NAME at run time (a scan back for a
+\ marked byte, broken by UTF-8 names; bit 7 marks nothing now).
+: POSTPONE >IN @ BL WORD COUNT THASH T-THREAD ! >IN !
+  T' DUP T-IMMEDIATE? IF THERE - CELLBYTES-TOKEN - ,-T
+  ELSE [ TRANSIENT ] (POSTPONE) [ FORTH ] THERE - ,-T THEN ;
 : ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE DUP 1+ >R
       THERE PLACE-T R> ALLOT-T ALIGN-T ;
 

@@ -8,7 +8,7 @@
 \ overlay - whose words begin with their header, so they are left alone.
 
 : COMPILE,8 ( xt --- )
-  DUP >NAME C@ 32 AND 0= IF
+  DUP PRIMITIVE? 0= IF
     DUP C@ EXIT-OP = IF DROP EXIT THEN
   THEN
   COMPILE,8 ;

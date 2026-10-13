@@ -589,3 +589,10 @@ still pays for copying the lines out: kernel +45%, corpus +21% (+62%, +33%
 before). lab/evolve/readline-check.py runs READ-LINE at fsys 3, 4 and 5
 against native, byte for byte, and judges WRITE-LINE after a line by the
 file's bytes: native's WRITE-LINE does not give back what it read ahead.
+
+Iteration 246: the gene jittail (0/1, JIT designs; in LATE, EXPRESSED and the
+JIT's crossover link): the translator turns a call to a native word whose next
+operation is EXIT - or a BRANCH chain to one - into a jump, so tail recursion
+runs in place. Ackermann 15-18% faster on the VM (two of -ack's three calls are
+tail calls), the other selection workloads within noise; +256 engine bytes; off,
+the engine is byte-identical (results/price-jit-calls.md).
