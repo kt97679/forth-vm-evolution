@@ -4502,3 +4502,16 @@ evolution declines at the small end - not built. **Found on the way:** a JIT
 engine's extra bytes are its translator (jit_body 3,456 bytes), which runs once
 per word; compiled -Os it saves 416-800 bytes on JIT engines built -O2/-O3,
 alive - proposed as a gene `jitos`, translation speed the trade.
+
+## Iteration 239 - 2026-10-13 - Claude
+
+**A new gene, `jitos`: the JIT's translator compiled for size (the sixth
+after-seed-45 patch).** engine/jit.c under GCC's optimize ("Os") - a pragma
+around its #include in vm-lab.c - on JIT designs not built -Os. In LATE, so
+every recorded design keeps its id; expressed for CV8; linked with jit, jitx,
+jitloop and jitinl in crossover; GENES.md has its row. On: cc6d168e0a -800
+bytes, 28677d13b1 -416, both alive; an -Os design is the same build and id.
+Mutation reaches it about as often as any binary gene (89 of 4,000). The
+translator runs once per word, so the trade evolution weighs is translation
+speed on the kernel and corpus against the bytes. All checks pass (ORDER.md).
+The after-seed-45 batch: six patches, one reseed (patch 4).

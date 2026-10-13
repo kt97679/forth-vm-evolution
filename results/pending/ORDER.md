@@ -9,8 +9,9 @@ Seed 45 runs at Iteration 230's commit without these. Apply when it is processed
 | 3 | names-after-seed45.patch | UTF-8 word names compile right: byte headers carry the count byte AFTER the name, right before the body, so >NAME's scan back for bit 7 stops at it at once - before, a name's own UTF-8 bytes stopped it, and one with bit 5 set read as a primitive (`: суп 5 . ;` ran, `: обед суп суп ;` printed nothing or crashed). The converter, both byte-header overlays (NEXT-NFA8, NAME>8, HEADER8, SEARCH-WORDLIST8, a new REVEAL8), the fast lookup, NAME>STRING, the engine's link readers and lookup opcodes and their gen-tos/gen-msc copies, the converter's THREAD-FIND body check (sod16.py), the tracer's naming (vmtrace.py), SPN's diagnostic; lab/evolve/names-check.py, new (232) |
 | 4 | cellnames-after-seed45.patch | the same for the CELL headers - s0 (the build host), s1 SOD16, s2-s3 CPT16, s4-s5, the pack4/pack8 stages, s7: [link cell][zeros][name][count byte], the count byte last, right before the cell-aligned body. kernel.4 (HEADER, SEARCH-WORDLIST - a byte compare now, REVEAL, NAME> as 1+, PRIOR-NFA, NAME=? moved here from the byte overlays), cross.4's target headers, the dictionary dump, the converter's cell path, the SOD16 word table in both engines, sod16.4's own walk gone, the cell SPN translator, REVEAL8 dropped (the kernel's REVEAL does it). **Changes kernel.4: reseed after applying** (233) |
 | 5 | dispoff-after-seed45.patch | the CV8 dispatch table in the engine file as 32-bit offsets from L_noop, not 8-byte addresses: made once at start-up into a BSS copy that everything reads as before, so no dispatch pays; 384-448 bytes off every design's engine. 32 bits, not 16: no cap on the interpreter's size (the owner: no limits a developer could hit). The generators read and write the DSP() entry form; gen-tail and the SPN engine keep addresses (237) |
+| 6 | jitos-after-seed45.patch | a new gene, `jitos` (0, 1; JIT designs not built -Os): the JIT's translator, engine/jit.c, compiled for size (GCC's optimize "Os" around its #include) - it runs once per word translated; the stencils are compiled apart. In LATE (recorded designs keep their ids), expressed for CV8, linked with the other JIT genes in crossover (239) |
 
-    for f in tty divzero-spn names cellnames dispoff; do git apply results/pending/$f-after-seed45.patch || break; done
+    for f in tty divzero-spn names cellnames dispoff jitos; do git apply results/pending/$f-after-seed45.patch || break; done
     sh tools/reseed.sh        # patch 4 changes forth/kernel.4
 
 Patch 4 changes the kernel: reseed after applying (tools/reseed.sh), then build. Images unchanged; engines with native output
@@ -64,3 +65,12 @@ suite on four designs (tag2, JIT, multi-state, tail) 14 of 14 each, 0 differ;
 outbuf-check PASS. The five apply in order on a fresh clone and reproduce the
 tested files. A first form converted at every read (+400 bytes of code ate the
 gain); the copy made once is the one kept.
+
+Patch 6, on master and patches 1-6: every recorded id unchanged (the gene off
+leaves a design's identity); jitos on - cc6d168e0a 23,452 -> 22,652 (-800),
+28677d13b1 23,036 -> 22,620 (-416), both alive and new ids; b4bb7d554b, built
+-Os already, the same build and id; mutation turns it on in 89 of 4,000 tries
+from cc6d168e0a. run-tests PASS; 7 of 7 identical; the standard suite with
+jitos on (cc6d168e0a, 28677d13b1) 14 of 14 each, 0 differ; all 161 front
+designs alive with it off. The six apply in order on a fresh clone and
+reproduce the tested files.
