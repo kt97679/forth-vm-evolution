@@ -4792,3 +4792,18 @@ kernel's struct in place, SIGSEGV alone (the engine maps no file, so no
 SIGBUS), and the handler uses the exit already linked: +128 to +160. Checks:
 run-tests (19 generator paths), validation, the gate 148 of 148, the suite on
 four front designs. Pending in `results/pending/` until seed 47 is processed.
+
+## Iteration 254 - 2026-10-13 - Claude
+
+**Factoring repeated code into helper words, priced: not worth it (GOALS.md's
+register).** From the converter's call map of the smallest design (every
+operation and call with its offset, every branch target), each word's body was
+cut into runs with no branch, branch target, EXIT or return-stack word, and
+repeated runs were factored greedily, a helper costing its header (~8 bytes),
+its body and EXIT, each use a 2-byte call. By opcode names alone: 146 bytes
+(0= with ABORT", POSTPONE patterns) - but byte for byte, with the literals and
+inline messages that must match too: 12 bytes, 4 helpers. The image has no
+real repetition left to fold. Also: lab/evolve/progress-table.py and
+results/progress-by-run.md (Iteration 253) keep the per-run extremes behind the
+progress charts; and the standard suite is going over the rest of seed 46's
+front (115 designs) while seed 47 runs.
