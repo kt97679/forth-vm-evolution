@@ -4745,3 +4745,17 @@ NEXT-RUN: `seed 47 tag2 6h then experiment compare-fronts.py --rounds 6
 --frontier --cpus 2,8`. The state for a new chat: Iteration 243's HANDOFF, with
 seed 47 now the run, the after-seed-46 batch applied, and results/pending
 empty.
+
+## Iteration 250 - 2026-10-13 - Claude
+
+**A gene-interaction study, from seed 46's own mutations**
+(`results/gene-interactions-seed46.md`, `lab/evolve/gene-interactions.py`): the
+6,547 single 0/1 flips that change nothing else expressed, each gene's effect
+split by every other gene in the parent. The JIT is a regime - rtloop is 33%
+faster without it and 62% with it, -fno-gcse costs 18% without it and nothing
+with it, interpreter genes are nearly neutral under it; within the interpreter
+interactions are weak (t 6-8, all with ipaclone). The crossover links stand:
+the JIT's genes must inherit together, and the one other synergy, rtloop, is
+fixed already (all 45 JIT designs on the front). The zero-divisor trim stays
+priced and unbuilt: one copy of a short path, shared only by restructuring the
+cached-top engine's spill convention - not worth its risk for 30-60 bytes.
