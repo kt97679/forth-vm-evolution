@@ -36,8 +36,9 @@ How it decides things:
 
 ## Resuming in a new chat (Iteration 85)
 
-**Since Iteration 213 the handoff is PROGRESS.md's last HANDOFF entry**, and
-HANDOFF-PROMPT.md the prompt that points to it; this section is older.
+**Since Iteration 272 the handoff is HANDOFF.md**, kept current (tools/handoff-check.py
+fails when it is behind the state), and HANDOFF-PROMPT.md holds the two messages for
+switching chats (close the old, start the new); this section is older.
 
 Everything a new session needs is in the repository. Upload the newest
 bundle (`forth-vm-evolution-claude-iterN-*.bundle`) and any packs not yet

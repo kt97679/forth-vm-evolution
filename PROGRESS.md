@@ -5298,3 +5298,30 @@ front and the joint front - 152 of 152 alive, the gene's first check on seed
 Iteration 267 recorded, dispatches +0.008% against its +0.007% (the last digit,
 not traced). Nothing from this chat is needed by the next: the packs are in
 results/, the scripts behind recorded figures are tracked.
+
+## Iteration 272 - 2026-10-13 - Claude
+
+**The handoff made hard to lose (the owner asked).** Three ways information went
+missing between chats, each with its fix:
+
+- Work outside the repository: Iteration 263's /tmp/factor.py was lost with its
+  chat; 267-268's work sat in a scratch tree when a turn ran out of tool calls.
+  Now `tools/handoff-check.py` fails on uncommitted work, on a scratch git tree
+  holding changes or commits master does not, and on any script, patch or Forth
+  source in /tmp or /home/claude that matches no tracked file - unless listed in
+  /tmp/handoff-disposable.txt with a reason.
+- A handoff that goes stale: Iteration 265's entry said seed 47 was running after
+  it was processed, and the prompt named that entry by number. Now HANDOFF.md:
+  one self-contained file kept current (what 213, 243, 265 and 270 said,
+  consolidated), the present beside this log's past. The check fails when its
+  "master: Iteration N" is behind the last commit that changed NEXT-RUN,
+  results/pending, an applied batch, a seed's results file or the prompt.
+- Steps in nobody's file: the git identity (Iteration 270 put it in the prompt).
+  HANDOFF-PROMPT.md now holds two messages: one to close the old chat (commit,
+  track or discard, HANDOFF.md, the check, the bundle), one to start the new.
+
+`tools/make-bundle.sh` runs the check and refuses a bundle a new chat could not
+start from; `--checkpoint` makes one mid-work, named ...-checkpoint - not a
+handoff point. From now on chats keep HANDOFF.md current; the HANDOFF entries in
+this log remain its history. The previous chat's machine held one file not in
+the repository (/tmp/factor.py), needed for nothing now: open item 6, optional.
