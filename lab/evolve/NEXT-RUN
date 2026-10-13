@@ -300,4 +300,15 @@
 # min, plus a tenth and 10 minutes), so the evolution gets about 8 hours
 # (seed 45: 3 h 51 min); the comparison measures every front again in one
 # session, so the longer run is judged on equal terms.
-seed 47 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 248: seed 46 not small (hypervolume +6.4%; every tail design died -
+# the dispatch offsets broke gen-tail, fixed); the after-seed-46 batch applied
+# (primitives first, bit 7 free, jittail, the tail fix; reseeded). Seed 47, 6
+# hours (the owner). [This comment written in Iteration 269; 248 left it out.]
+# Iteration 269: seed 47 small by the five measures (hypervolume +1.4%); the
+# after-seed-47 batch applied (six patches - results/applied-after-seed47/,
+# ORDER.md): a fault handler in every engine, memcmp and the variadic open out,
+# and the genes jitk, lto, gotodup, compiler and factor. New genes: the stopping
+# rule counts afresh. The compiler gene is offered only where clang is on the
+# PATH - `clang --version` on the laptop before the run, or it stays dormant.
+# Seed 48, 6 hours (the owner).
+seed 48 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

@@ -618,6 +618,49 @@ static void install_guards(UNS8 *b) {
 }
 #endif
 
+#if !GUARD
+/*  Iteration 252: a fault handler in every engine, not only the guard gene's.
+ *  A runaway pointer (0 @) killed 114 of seed 46's 127 front designs with a
+ *  bare SIGSEGV, and those whose output waited in a buffer for a pipe or a
+ *  file lost it. This one flushes it (t_flush: the engine's buffer and, at
+ *  fsys 4-5, the Forth side's), reports, and exits 70 as guard_trap does; the
+ *  guard gene adds the guard pages, the handler's own stack, and the messages
+ *  that say which stack.  */
+static void t_flush(void);
+static void fault_trap(int sig) {
+    (void)sig;
+    t_flush();
+    write_str(2, "relf: segmentation fault\n");
+    exit(70);
+}
+#if RTLIB
+/*  Without the C library (engine/rt-linux-*.c): the runtime's rt_fault fills the
+ *  kernel's struct itself - sigaction's general conversion cost ~300 bytes.  */
+void rt_fault(void (*h)(int));
+#define install_fault_trap() rt_fault(fault_trap)
+#else
+#include <signal.h>
+static void install_fault_trap(void) {
+    struct sigaction sa;
+    sa.sa_handler = fault_trap;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGSEGV, &sa, (struct sigaction *)0);
+    sigaction(SIGBUS, &sa, (struct sigaction *)0);
+}
+#endif
+#endif
+
+/*  Iteration 257: the engine's opens, through rt_open where the runtime is
+ *  linked - three arguments, no va_list: the C library's variadic open made
+ *  the runtime's set up a register save area (open was 95 bytes).  */
+#if RTLIB
+int rt_open(const char *p, int flags, int mode);
+#define OPEN3(p, f, m) rt_open((p), (f), (m))
+#else
+#define OPEN3(p, f, m) open((p), (f), (m))
+#endif
+
 static void stack_fault(int which) {
     write_str(2, which ? "relf: return stack overflow\n"
                        : "relf: data stack overflow\n");
@@ -742,12 +785,17 @@ static void load_image(const char *name) {
     UNS64 tail_w[MAX_TAILS], tail_o[MAX_TAILS];
     long i, n;
 
-    fd = open(name, O_RDONLY);
+    fd = OPEN3(name, O_RDONLY, 0);
     if (fd < 0) {
         write_str(2, "Cannot open image file.\n");
         exit(2);
     }
-    if (full_read(fd, magic, 8) != 8 || memcmp(magic, IMAGE_MAGIC, 5) != 0) {
+    /* Iteration 257: the magic's first four bytes as one 32-bit compare and the
+     * fifth alone - memcmp, its only caller here, was 42 bytes of every engine */
+    if (full_read(fd, magic, 8) != 8
+        || ((uint32_t)magic[0] | (uint32_t)magic[1] << 8 | (uint32_t)magic[2] << 16 | (uint32_t)magic[3] << 24)
+           != ((uint32_t)IMAGE_MAGIC[0] | (uint32_t)IMAGE_MAGIC[1] << 8 | (uint32_t)IMAGE_MAGIC[2] << 16 | (uint32_t)IMAGE_MAGIC[3] << 24)
+        || magic[4] != IMAGE_MAGIC[4]) {
         write_str(2, "not a RelF image, or built for a different encoding "
                      "or cell width.\n");
         exit(2);
@@ -2095,7 +2143,7 @@ L_openfile: { /* c-addr u fam --- fid ior */
     int fd;
     t = BYTE(DS2 + DS1);
     BYTE(DS2 + DS1) = 0;
-    fd = open((char *)(uintptr_t)DS2, open_flags[DS0], 0644);
+    fd = OPEN3((char *)(uintptr_t)DS2, open_flags[DS0], 0644);
     BYTE(DS2 + DS1) = t;
     DS2 = (UNS64)fd;
     DS1 = (fd >= 0) ? 0 : 200;
@@ -2561,6 +2609,7 @@ int main(int argc, char **argv) {
                                     the guard ("Stack error DROP"); only a
                                     runaway one reaches the guard page */
 #else
+    install_fault_trap();
     g_dsp = STK_END - RSTACK_BYTES - CELL_BYTES - DSKEW;
 #endif
     g_rp_limit  = STK_END - RSTACK_BYTES;

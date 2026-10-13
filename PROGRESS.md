@@ -5161,3 +5161,34 @@ laptop's timing decides the rest, through evolution.
 The batch is six patches now; no reseed. Open: why the converter's estimate
 runs ahead of the image; the gene table prompts/17 asks for (six touch points
 for this gene); seed 47's routine when its packs come.
+
+## Iteration 269 - 2026-10-13 - Claude
+
+**Seed 47 processed; the after-seed-47 batch applied (six patches); seed 48 set
+for 6 hours (the owner).** Both packs clean (tests PASS, 7 of 7 IDENTICAL, the
+jail PASS); the measured-here patch is the laptop's usual stash, already on
+master. The evolution ran 4 h 14 min, generations 0-89, 22,642 designs (18,549
+alive, 3,968 screened). The comparison's verdict: fastest +2.5%, smallest
++0.05%, memory -2 KB, hypervolume +1.4%, best Q -2.1% - small, the first since
+seed 44. Predictions three of five (tail on none of the front; small) -
+results/predictions.md, with seed 48's. results/evolve-amd-ryzen-7-pro-8840hs-
+seed47.md has the facts: no engine or corpus death (125 refused before running),
+626 tail designs alive and none on the front, jittail on 27 of the front's 44
+JIT designs, the smallest 7535695a36 at 15,808 bytes (-64), the fastest
+e141550b9a at 0.164.
+
+Applied in order (results/applied-after-seed47/ORDER.md): faulttrap, lean-open,
+jitk, buildgenes, compiler, factor - no kernel change, no reseed. On master:
+build, run-tests PASS (the generators: 31 paths), 7 of 7 IDENTICAL; the gate
+152 of 152 alive with the new code (seed 47's front 124 and the joint front 77,
+49 in both); the standard suite on 33 of seed 47's front (every fourth by size,
+the smallest, fastest, least memory and the Q-best), 0 differ from s6, its
+negative control caught.
+
+NEXT-RUN: `seed 48 tag2 6h then experiment compare-fronts.py --rounds 6
+--frontier --cpus 2,8`, with the comment Iteration 248 left out. New genes: the
+stopping rule counts afresh. For the laptop: clang on the PATH before the run,
+or the compiler gene stays dormant. The comparison is session 42 of
+results/compare-fronts-amd-ryzen-7-pro-8840hs.md; results/progress-by-run.md
+regenerated. The state for a new chat: Iteration 265's HANDOFF and the entries
+after it - seed 48 running at this commit, results/pending empty.

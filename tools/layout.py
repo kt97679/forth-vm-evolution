@@ -536,10 +536,131 @@ if TAG2_ON:
         assert _hit, 'tag 2 wide: no CALL, holding the 3-byte limit 4194304'
         print('tag 2 wide: CALL,\'s 3-byte limit patched to 16 KB in %d place(s)' % _hit)
 
+# ---- the gene factor (Iteration 267): --factor [--factor-hot FILE] ----------
+# Repeated straight-line code moved into bodies the converter makes and never
+# names (results/drafts/factor-plan.md; Iteration 263 priced it at 154 bytes of
+# the smallest image). A run - two or more whole operations, none of which
+# depends on where it sits (no branch, branch target, inline operand, string,
+# alignment or relocated literal) or on the return stack below it (no EXIT, no
+# RA_WORDS - I, J, EXECUTE, the loop words - no unbalanced >R or R>, no call to
+# a word that reads its caller's return address) - that recurs in cold code
+# becomes one headerless body [run][EXIT] past the end of the image, and each
+# use a call to it: 2 bytes under the tag, against the run's own.
+#
+# A use keeps the run's size in CELLS: the call, then a GAP holding the rest
+# (sod16 op_cells - no bytes in the image). Branches, loop operands, xts, DOES>
+# entries and the relocated literals are all found by old cell offsets or by
+# op adjacency, so every one of them in the word stays right untouched.
+#
+# The compiler's swapped bodies (SRC_OF) take part: their xts resolve from
+# the source word's address plus an old cell offset, which a GAP keeps.
+#
+# Hot words keep their code, by the reference profile (--factor-hot FILE,
+# lab/evolve/hotwords.py: name -> the largest share of the selection
+# workloads' dispatches the word took in the reference designs): a word
+# missing from it, or at --factor-share of the dispatches or more, is left as
+# it is - a use costs a call and a return every time it runs. Counted on the
+# smallest design (3456ac1e5e, Iteration 267): below 0.1% -41 image bytes for
+# +0.007% dispatches; below 1% -95 for +0.17%; every word -127 for +1.98%.
+# Greedy by net bytes, k uses x (len - 2) - (len + 1), with lazy
+# re-evaluation (a run's worth only falls as others take its places).
+import heapq as _hq
+FACTOR_KEYS, FACTOR_RUNS, FACTOR_USES = set(), {}, {}
+FACTOR_HOT = float(_opt('--factor-share') or 1e-3)   # --factor-share X: a word below X of the dispatches is factored
+FACTOR_MAXLEN = 16                        # operations in a run, at most
+if V8 and TAG2_ON and BYTEHDR and '--factor' in ARGV and not _os.environ.get('SOD16_NO_FACTOR'):
+    _hotw = json.load(open(_opt('--factor-hot'))) if '--factor-hot' in ARGV else {}
+    _LRT = set()                          # the locals runtime: a LIT before a call to one is relocated by adjacency
+    for _n in ('L-LSAVE-XT', 'L-L!-XT', 'L-LZERO-XT', 'L-LRESTORE-XT'):
+        _w = [x for x in order if x['n'] == _n]
+        _v = cells.get(_w[0]['s'] + CELL) if _w else None
+        if _v: _LRT.add(START + _v)
+    _NO_P = {'EXIT'} | set(G['RA_WORDS'])
+    _OK = ('P', 'C', 'LIT', 'VF', 'VS', 'LOC', 'SP', 'ADDI', 'EQI', 'SADDI', 'DADDI', 'DLTI')
+    def _safe(ops, j):
+        k, pl = ops[j]
+        if k not in _OK: return False
+        if k == 'P' and pl in _NO_P: return False
+        if k == 'SP' and set(pl) & _NO_P: return False
+        if k == 'C' and (pl in _LRT or G['before_operand'](ops, j) or not G['ra_safe'](pl)): return False
+        if k == 'LIT' and j + 1 < len(ops) and ops[j + 1][0] == 'C' and ops[j + 1][1] in _LRT: return False
+        if j and ops[j - 1][0] == 'OC': return False      # X;CALL's call stays right behind it
+        return True
+    def _rs_ok(run):                      # balanced, and nothing below its own entry: sod16 rs_walk, pairs expanded
+        return G['rs_walk']([('P', x) for k, pl in run for x in ((pl,) if k == 'P' else pl if k == 'SP' else ())], True)
+    _sz = {}
+    def _bytes(op):
+        if op not in _sz: G['OP_CTX'][0] = None; _sz[op] = G['op_bytes'](op[0], op[1], 0)
+        return _sz[op]
+    _tails = set(G['ENTRIES']) | set(TAILS)
+    _segs, _kept = [], 0
+    for w in order:
+        s0 = w['s']
+        if kind[s0] != 'code' or not info[s0] or stub_ops(w) is not None: continue
+        if w['n'] in G['HOT_PATCHED'] or w['n'] in DUMPTOOL or s0 in BSS: continue
+        if any(s0 < e < w['e'] for e in _tails): continue
+        if _hotw.get(w['n'], 1.0) >= FACTOR_HOT: _kept += 1; continue
+        ops = info[s0]
+        cs, tg = G['branch_targets'](ops)
+        j = 0
+        while j < len(ops):
+            if not _safe(ops, j): j += 1; continue
+            i = j; j += 1
+            while j < len(ops) and _safe(ops, j) and cs[j] not in tg: j += 1
+            if j - i >= 2: _segs.append((s0, i, j))
+    _occ = collections.defaultdict(list)
+    for s0, a, b in _segs:
+        ops = info[s0]
+        for i in range(a, b - 1):
+            for j in range(i + 2, min(b, i + FACTOR_MAXLEN) + 1):
+                _occ[tuple(ops[i:j])].append((s0, i))
+    _len = {r: sum(_bytes(x) for x in r) for r, o in _occ.items() if len(o) >= 2}
+    _occ = {r: o for r, o in _occ.items() if r in _len and _len[r] > 2 and _rs_ok(r)}
+    _taken = collections.defaultdict(set)          # word -> op indices now in a chosen use
+    def _free(r):
+        n, out, last = len(r), [], {}
+        for s0, i in _occ[r]:                      # in order: the dump's words, then positions
+            if i < last.get(s0, -1) or any(x in _taken[s0] for x in range(i, i + n)): continue
+            out.append((s0, i)); last[s0] = i + n
+        return out
+    def _worth(r, k): return k * (_len[r] - 2) - (_len[r] + 1)
+    _heap = [(-_worth(r, len(o)), r) for r, o in _occ.items()]
+    _hq.heapify(_heap)
+    _chosen = []
+    while _heap:
+        _v, r = _hq.heappop(_heap)
+        f = _free(r); v = _worth(r, len(f))
+        if v <= 0: continue
+        if _heap and v < -_heap[0][0]: _hq.heappush(_heap, (-v, r)); continue
+        _chosen.append((r, f))
+        for s0, i in f: _taken[s0].update(range(i, i + len(r)))
+    _base = max(w['e'] for w in order) + 4096 * CELL
+    _repl = collections.defaultdict(list)
+    for n_, (r, f) in enumerate(_chosen):
+        key = _base + n_ * 64 * CELL
+        c_ = sum(G['op_cells'](*x) for x in r)
+        w = {'n': '(F%d)' % n_, 's': key, 'e': key + c_ + CELL, 'nfa': key, 'link': key}
+        order.append(w); starts[key] = w
+        kind[key] = 'code'; body = list(r) + [('P', 'EXIT')]
+        info[key] = G['fold_exit'](body) if G['FOLD'] else body
+        FACTOR_KEYS.add(key); FACTOR_RUNS[key] = r; FACTOR_USES[key] = len(f)
+        for s0, i in f: _repl[s0].append((i, len(r), key, c_))
+    for s0, rs in _repl.items():
+        ops = list(info[s0])
+        for i, n, key, c_ in sorted(rs, reverse=True):
+            ops[i:i + n] = [('C', key), ('GAP', c_ - CELL)]
+        info[s0] = ops
+    print('factor: %d bodies, %d uses; %d words kept as hot, %d runs considered' % (len(_chosen), sum(FACTOR_USES.values()), _kept, len(_occ)))
+
 for w in order:
     G['CUR_WORD'][0] = w['s']          # Iteration 199
     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
 _short_fails_out()
+if FACTOR_KEYS:                         # Iteration 267: what the gene factor saved, exactly
+    _bod = sum(len(tok[k]) for k in FACTOR_KEYS)
+    _use = sum(FACTOR_USES[k] * sum(_bytes(x) for x in FACTOR_RUNS[k]) for k in FACTOR_KEYS)
+    print('factor: %d bytes of runs became %d of calls and %d of bodies: %d bytes saved'
+          % (_use, 2 * sum(FACTOR_USES.values()), _bod, _use - 2 * sum(FACTOR_USES.values()) - _bod))
 
 # ---- new sizes ------------------------------------------------------
 def tail_bytes(w):
@@ -547,7 +668,7 @@ def tail_bytes(w):
 
     A PRIMITIVE stub is read by shape, not by walking, so code_end does
     not apply to it and would report its second cell as a tail."""
-    if kind[w['s']] != 'code' or stub_ops(w) is not None: return 0
+    if kind[w['s']] != 'code' or w['s'] in FACTOR_KEYS or stub_ops(w) is not None: return 0
     return w['e'] - code_end(w)
 
 def body_needs_align(w):
@@ -601,6 +722,7 @@ import collections as _co
 _hl_req = [n for n in (_opt('--headerless') or '').split(',') if n]
 _hl_count = _co.Counter(w['n'] for w in order)
 HL = {w['s'] for w in order if w['n'] in _hl_req and _hl_count[w['n']] == 1}
+HL |= FACTOR_KEYS                     # Iteration 267: the gene factor's bodies - code alone, never named
 if _hl_req:
     _kept = [n for n in _hl_req if _hl_count[n] != 1]
     print('headerless: %d words, %d header bytes out%s' % (len(HL),
@@ -664,7 +786,7 @@ if _os.environ.get('SYMMAP'):
         for _w in order:
             _b = new_off[_w['s']]['body']
             _f.write('%d %d %s\n' % (_b, _b + new_body_bytes(_w), _w['n']))
-OLD_HERE = order[-1]['e'] - START
+OLD_HERE = [w for w in order if w['s'] not in FACTOR_KEYS][-1]['e'] - START   # Iteration 267: not a factored body
 
 # ---- recompute the link chains, and re-walk them to prove it --------
 # The word list is HASHED: as many chains as there are threads, each
@@ -1088,7 +1210,7 @@ def emit(path):
             if _cm is not None:
                 _c2t, _, _ts, _, _ = layout(ops2)
                 for _j, (_k, _pl) in enumerate(ops2):
-                    if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS'): continue    # data, not operations
+                    if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS', 'GAP'): continue    # data, not operations; a GAP has no bytes
                     _at = new_off[s0]['body'] + _ts[_j]
                     if _k == 'C':      # tag 2: 01, 10, 11 in the top bits - 2, 3, 4 bytes (Iteration 88)
                         _cm.append('C %d %d %d %d %d %s %s' % (_at, (img[_at] >> 6) + 1 if TAG2_ON else 1 if _pl in G['HOTCALLS'] else 3 if img[_at] >= 0xC0 else 2,
@@ -1353,7 +1475,7 @@ for _s, _o in BSS_OFF.items(): lit_new[(_s, 0)] = _o        # Iteration 44: each
 
 # ---- report ---------------------------------------------------------
 c = collections.Counter(kind.values())
-codeb = sum(w['e'] - w['s'] for w in order if kind[w['s']] == 'code')
+codeb = sum(w['e'] - w['s'] for w in order if kind[w['s']] == 'code' and w['s'] not in FACTOR_KEYS)
 datab = sum(w['e'] - w['s'] for w in order if kind[w['s']] == 'data')
 newcode = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'code')
 tails_kept = [(w['n'], tail_bytes(w)) for w in order if tail_bytes(w)]

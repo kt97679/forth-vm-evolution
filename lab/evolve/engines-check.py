@@ -8,7 +8,7 @@ no check built one - the fronts the gate builds had none. Every variant here is
 s6-cv8b with genes set so that one path is taken: the cached top off, multi-
 state caching (gen-msc.py), tail-call threading (gen-tail.py), superinstructions
 (gen-super.py), op;CALL handlers (gen-opcall.py), format-10 opcodes, the escape
-byte (both widths), the two-bit tag (narrow and wide), the JIT with every JIT
+byte (both widths), the two-bit tag (narrow and wide, and with factored bodies), the JIT with every JIT
 gene (and with jitos, and on the wide tag), and the file-system levels (the
 libraries the converter binds). Values for list genes come from a recorded
 design that has them. A variant the evolver will not express (express() drops
@@ -51,9 +51,23 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('escape byte, wide', dict(escape=2), ['escape']),
     ('two-bit tag', dict(tag2=1), ['tag2']),
     ('two-bit tag, wide', dict(tag2=1, t2wide=1), ['tag2', 't2wide']),
+    ('factored bodies (the tag)', dict(tag2=1, factor=3), ['tag2', 'factor']),        # Iteration 267: the gene factor
+    ('the JIT with factored bodies', dict(JIT, factor=3), ['jit', 'factor']),
     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
+    ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259
+    ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
+    ('link-time optimisation', dict(lto=1), ['lto']),                           # Iteration 260
+    ('the JIT with link-time optimisation', dict(JIT, lto=1), ['jit', 'lto']),
+    ('tail calls with link-time optimisation', dict(tail=1, lto=1), ['tail', 'lto']),
+    ('goto unfactoring 32', dict(gotodup=1), ['gotodup']),
+] + ([                                                                           # Iteration 262: where clang is installed
+    ('clang', dict(compiler=1), ['compiler']),
+    ('clang, the JIT', dict(JIT, compiler=1), ['compiler', 'jit']),
+    ('clang, tail calls (gen-tail)', dict(tail=1, compiler=1), ['compiler', 'tail']),
+    ('clang, -Oz', dict(compiler=1, opt='Os'), ['compiler']),
+] if E.HAVE_CLANG else []) + [
 ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
 
 bad = []

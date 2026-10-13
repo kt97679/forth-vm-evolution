@@ -281,3 +281,33 @@ engines compiling again. Six hours (the owner).
 4. Not small: hypervolume above 2% - jittail moves the fast end, tail the
    middle.
 5. Crossover 30-37%.
+
+## Seed 47, scored (Iteration 269)
+
+1. tail back on the front - **wrong**: 626 designs with tail lived (the engines
+   compile again), none reached the front.
+2. jittail on a third or more of the front's JIT designs - **right**: 27 of 44.
+3. The smallest at least 60 bytes under seed 46's 15,872 - **right**: 15,808
+   (-64), the batch's smaller images.
+4. Not small, hypervolume above 2% - **wrong**: small, +1.4%. Four hours of
+   evolution (seed 46: eight) and one new gene that moves the fast end only.
+5. Crossover 30-37% - **right**: 32.3% (the last fifth 35.4%).
+
+Three of five.
+
+## Seed 48, predicted (Iteration 269) - the after-seed-47 batch's first run
+
+The batch: a fault handler in every engine without guard (+128-160 engine
+bytes), mostly repaid by memcmp and the variadic open leaving the engine (the
+smallest +56 net); the genes jitk (the JIT's stack cache), lto and gotodup (build
+options), compiler (GCC or clang 18 - offered where clang is installed) and
+factor (repeated code in headerless bodies, 0-3). No kernel change. Six hours.
+
+1. factor at 1 or more on at least half of the small third: level 1 is about 50
+   image bytes for +0.007% dispatches.
+2. The smallest at least 30 bytes under seed 47's 15,808: factor (-41 to -127
+   image bytes) and lto (-32 or more) against the fault handler's net +56.
+3. lto on most of the front's GCC-built designs.
+4. compiler=1 (clang) on under a quarter of the front, and on none of the small
+   third: clang's engines are larger at the small end.
+5. Not small: hypervolume above 2% - five new genes.

@@ -95,6 +95,10 @@ int chdir(const char *p)                       { return (int)S(80, p, 0, 0); }
 int unlink(const char *p)                      { return (int)S(87, p, 0, 0); }
 int getrlimit(__rlimit_resource_t r, struct rlimit *l)       { return (int)S(97, r, l, 0); }
 int setrlimit(__rlimit_resource_t r, const struct rlimit *l) { return (int)S(160, r, l, 0); }
+/* Iteration 257: the engine's open (vm-lab.c's OPEN3) - three arguments, so no
+ * va_list and no register save area; the variadic open below stays for any
+ * other caller, and --gc-sections drops it when there is none. */
+int rt_open(const char *p, int flags, int mode) { return (int)S(2, p, flags, mode); }
 int open(const char *p, int flags, ...)
 {
     int mode = 0;
@@ -146,6 +150,15 @@ int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *r
     }
     return (int)r;
 }
+/* Iteration 252: the fault handler's installation in the fewest bytes - the
+ * kernel's struct filled in place, no old action, no mask, SIGSEGV alone (the
+ * engine maps no file, so no SIGBUS). The restorer stays: x86-64 delivers no
+ * signal without SA_RESTORER, though the handler (vm-lab.c's fault_trap)
+ * never returns. */
+void rt_fault(void (*h)(int)) {
+    struct k_sigaction k = { (void *)h, 0x04000000UL, (void *)rt_restorer, 0 };
+    sc(13, 11, (long)&k, 0, 8, 0, 0);
+}
 /* Iteration 119: the stack guard's handler runs on its own stack (a C-stack
  * overflow - the JIT's native recursion - leaves it none) */
 int sigaltstack(const stack_t *restrict ss, stack_t *restrict old) { return (int)ok(sc(131, (long)ss, (long)old, 0, 0, 0, 0)); }
@@ -181,6 +194,8 @@ int memcmp(const void *a, const void *b, size_t n)
     for (; n; n--, p++, q++) if (*p != *q) return *p - *q;
     return 0;
 }
+/* Iteration 262: clang turns memcmp() == 0 into bcmp - the same answer for equal and not */
+int bcmp(const void *a, const void *b, size_t n) { return memcmp(a, b, n); }
 __attribute__((optimize("no-tree-loop-distribute-patterns")))
 size_t strlen(const char *s) { const char *p = s; while (*p) p++; return (size_t)(p - s); }
 static int same(const char *a, const char *b, size_t n) { return memcmp(a, b, n) == 0; }

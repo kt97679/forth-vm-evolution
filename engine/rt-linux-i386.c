@@ -78,6 +78,9 @@ int chdir(const char *p)                       { return (int)S(12, p, 0, 0); }
 int unlink(const char *p)                      { return (int)S(10, p, 0, 0); }
 int getrlimit(__rlimit_resource_t r, struct rlimit *l)       { return (int)S(191, r, l, 0); }   /* ugetrlimit */
 int setrlimit(__rlimit_resource_t r, const struct rlimit *l) { return (int)S(75, r, l, 0); }
+/* Iteration 257: the engine's open (vm-lab.c's OPEN3), three arguments - see
+ * rt-linux-x86_64.c. */
+int rt_open(const char *p, int flags, int mode) { return (int)S(5, p, flags, mode); }
 int open(const char *p, int flags, ...)
 {
     int mode = 0;
@@ -112,6 +115,12 @@ __asm__(".text\n.globl rt_restorer\n.type rt_restorer,@function\nrt_restorer:\n"
 void rt_restorer(void);
 struct k_sigaction { void *handler; unsigned long flags; void *restorer; unsigned long mask[2]; };
 int sigemptyset(sigset_t *s) { unsigned char *p = (unsigned char *)s; for (size_t i = 0; i < sizeof *s; i++) p[i] = 0; return 0; }
+/* Iteration 252: the fault handler's installation in the fewest bytes (see
+ * rt-linux-x86_64.c); i386's rt_sigaction is 174. */
+void rt_fault(void (*h)(int)) {
+    struct k_sigaction k = { (void *)h, 0x04000000UL, (void *)rt_restorer, { 0, 0 } };
+    sc(174, 11, (long)&k, 0, 8, 0, 0);
+}
 int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *restrict old)
 {
     struct k_sigaction k, ko;

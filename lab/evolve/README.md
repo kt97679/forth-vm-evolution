@@ -596,3 +596,23 @@ operation is EXIT - or a BRANCH chain to one - into a jump, so tail recursion
 runs in place. Ackermann 15-18% faster on the VM (two of -ack's three calls are
 tail calls), the other selection workloads within noise; +256 engine bytes; off,
 the engine is byte-identical (results/price-jit-calls.md).
+
+Iteration 259: the gene jitk (0, 2 or 3 cells; JIT designs; in LATE, EXPRESSED and
+the JIT's crossover link): the JIT keeps the top K data-stack cells in fixed
+registers across its copied code. tools/gen-jitk.py generates, per build, the
+variant stencils (16 hot operations x K+1 states) and canonicalisers, and a map
+the translator plans each operation with; anything without a variant, and every
+branch target, runs in state 1. Measured on the VM: mixed (loop -9%, fib +16% at
+K=2); +2.3-2.8 KB of engine. Built so the laptop's evolution measures it.
+
+Iteration 267: the gene factor (0-3; tag-2 designs; in LATE, EXPRESSED, mutation
+and drawing): the converter (tools/layout.py --factor --factor-hot FILE
+--factor-share X) moves repeated straight-line code into headerless bodies the
+image never names - each use a 2-byte call, then a GAP holding the run's old
+cells, so every branch, loop-operand, xt and DOES>-entry offset stays right. A
+word takes part when it is below X of the selection workloads' dispatches in
+the reference profile (lab/evolve/hotwords.py -> hotwords-v1.json: five of seed
+46's front, the JIT off; a word missing from it keeps its code). FACTORV: 0
+off, 1e-3, 1e-2, every word. On the smallest design -41, -95 and -127 image
+bytes for +0.007%, +0.17% and +1.98% dispatches. Off, every design converts byte
+for byte as before (results/drafts/factor-plan.md, PROGRESS.md Iteration 267).

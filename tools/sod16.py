@@ -991,6 +991,7 @@ X_IMM = {'ADDI': 0x78, 'ADDIX': 0x79, 'EQI': 0x7A, 'EQIX': 0x7B}
 def op_cells(k, pl):
     """Size of one operation in the CELL image, in bytes."""
     if k == 'ALN': return 0
+    if k == 'GAP': return pl                        # Iteration 267 (the gene factor): a factored run's cells, no bytes
     if k in ('VF', 'VS'): return 2 * CELL           # call + @/!
     if k in ('ADDI', 'EQI', 'EQIH'): return 3 * CELL        # LIT n + op
     if k in ('ADDIX', 'EQIX'): return 4 * CELL      # ... + EXIT
@@ -1008,6 +1009,7 @@ def op_cells(k, pl):
 def op_bytes(k, pl, t):
     """Size of one operation in the TOKEN image, in bytes, at offset t."""
     if k == 'ALN': return (-t) % pl
+    if k == 'GAP': return 0
     if V8 and TAG2[0]:
         # tag 2: a call by its distance, 4 bytes before an operand; anything
         # else the old size with its opcode re-costed - 1 or 2 bytes by rank
@@ -1080,7 +1082,7 @@ def t2call(v, n):
 def opcode_L(ops, j):
     """The logical opcode of op j - what to_bytes_v8 writes first - or None."""
     k, pl = ops[j]
-    if k in ('C', 'EQIT', 'EQITS', 'XT', 'OPD', 'STR', 'ALN'): return None   # no opcode: a call, an operand
+    if k in ('C', 'EQIT', 'EQITS', 'XT', 'OPD', 'STR', 'ALN', 'GAP'): return None   # no opcode: a call, an operand, a factored run's rest
     if k == 'P':
         if pl in X_OPS10: return X_OPS10[pl]
         if pl in X_TINY: return X_TINY[pl]
@@ -1204,7 +1206,7 @@ def to_bytes_t2(ops):
     for j, (k, pl) in enumerate(ops):
         while len(b) < ts[j]: t2put(b, idx_of['NOOP'])
         assert len(b) == ts[j], "tag-2 layout and emission disagree"
-        if k == 'ALN': continue
+        if k in ('ALN', 'GAP'): continue
         if k == 'C':
             v = V8_CALLTOK[0](pl) if V8_CALLTOK[0] else 0
             b.extend(t2call(v, 4 if before_operand(ops, j) else t2calllen(v))); continue
@@ -1257,7 +1259,7 @@ def to_bytes_v8(ops):
     for j, (k, pl) in enumerate(ops):
         while len(b) < ts[j]: b.append(idx_of['NOOP'])
         assert len(b) == ts[j], "v8 layout and emission disagree"
-        if k == 'ALN': continue
+        if k in ('ALN', 'GAP'): continue
         if k == 'P' and pl in X_OPS10: b.append(X_OPS10[pl])
         elif k == 'P' and pl in X_TINY: b.append(X_TINY[pl])
         elif k == 'P' and pl in ESC_PRIMS:
@@ -1354,8 +1356,8 @@ def to_tokens(ops):
     for j, (k, pl) in enumerate(ops):
         while len(t) * 2 < ts[j]: t.append(idx_of['NOOP'])   # padding
         assert len(t) * 2 == ts[j], "layout and emission disagree"
-        if k == 'ALN':
-            pass                                  # padding already emitted
+        if k in ('ALN', 'GAP'):
+            pass                                  # padding already emitted; a GAP has no bytes
         elif k == 'PX':
             t.append(FOLDBASE + idx_of[pl])
         elif k == 'LITX':

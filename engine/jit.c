@@ -31,6 +31,12 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
        S_DPLUS,                                  /* Iteration 137: the gene jitinl */
 #endif
        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
+#if JITK
+#include "jitk-map.h"                            /* Iteration 259, the gene jitk: tools/gen-jitk.py's */
+#define JIT_NST (S_N + JITK_N)                   /* the variants after the base stencils, spn_ktable's order */
+#else
+#define JIT_NST S_N
+#endif
 
 #define JIT_IMM64 0x5ea1ed5ea1ed5ea1ULL         /* spn-stencils.c's SPN_IMM_VALUE */
 #define JIT_RP64  0x7ea1ed5ea1ed5e77ULL         /* SPN_RP_VALUE */
@@ -41,7 +47,7 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for 
     int len, imm, imm32, rp, tailnext;          /* tailnext: the body ends "jmp NEXT" - dropped */
     int nnext, njump, ncall;                    /* how many holes of each */
 };
-static struct jit_st jit_st[S_N];
+static struct jit_st jit_st[JIT_NST];
 
 static int32_t jit_rel32(const unsigned char *p) { int32_t v; memcpy(&v, p, 4); return v; }
 static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit_rel32(p) == (const unsigned char *)t; }
@@ -55,17 +61,31 @@ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit
 #else
 #define JIT_SCAN_MAX 64
 #endif
+static const unsigned char *jit_addr(int i) {
+#if JITK
+    if (i >= S_N) return (const unsigned char *)spn_ktable[i - S_N];
+#endif
+    return (const unsigned char *)spn_table[i];
+}
 static void jit_scan(void) {
     int i, k;
-    for (i = S_LIT; i < S_N && i < spn_table_len; i++) {
+    for (i = S_LIT; i < JIT_NST; i++) {
         struct jit_st *s = &jit_st[i];
-        const unsigned char *a = spn_table[i], *hi = a + JIT_SCAN_MAX, *end = 0, *p;
+        const unsigned char *a0, *a, *hi, *end = 0, *p;
+        if (i < S_N && i >= spn_table_len) continue;
+        a0 = a = jit_addr(i); hi = a + JIT_SCAN_MAX;
         s->len = -1;
         if (a[0] == 0xF3 && a[1] == 0x0F && a[2] == 0x1E && a[3] == 0xFA) a += 4;     /* endbr64 */
         for (k = 0; k < spn_table_len; k++) {
             const unsigned char *e = spn_table[k];
-            if (e > (const unsigned char *)spn_table[i] && e < hi) hi = e;
+            if (e > a0 && e < hi) hi = e;
         }
+#if JITK
+        for (k = 0; k < spn_ktable_len; k++) {          /* a variant may follow a base stencil */
+            const unsigned char *e = spn_ktable[k];
+            if (e > a0 && e < hi) hi = e;
+        }
+#endif
         if (i == S_EXIT) { for (p = a; p < hi; p++) if (*p == 0xC3) { end = p + 1; break; } }
         else for (p = a; p + 5 <= hi; p++)
             if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
@@ -392,6 +412,51 @@ static int jit_tail(int i, int n, const unsigned short *opl, const UNS64 *arg, c
 }
 #endif
 
+#if JITK
+/*  Iteration 259, the gene jitk: the top K cells in registers across the copied
+ *  code (gen-jitk.py; results/price-jit-stack.md). jitk_cs is the cache state
+ *  while an operation is planned: a base stencil with a variant for it becomes
+ *  the variant (and the state it leaves); any other - control, calls, loops,
+ *  exits - runs in state 1, after the canonicaliser. So does every branch
+ *  target: the operation before it ends in state 1. Both the size pass and the
+ *  copying pass plan each operation here, so they agree byte for byte. A plan
+ *  entry is (stencil, which): which >= 0 the operation's own stencil number,
+ *  -1 a canonicaliser, -2 the call.  */
+static unsigned char jitk_tg[JIT_MAXOPS + 1];   /* operation i is a branch target */
+static int jitk_cs;
+static int jitk_canon(int st[], int wh[], int k) {
+    if (jitk_cs == 1) return k;
+    if (!jitk_canon1[jitk_cs]) return -1;
+    st[k] = S_N + jitk_canon1[jitk_cs] - 1; wh[k] = -1; jitk_cs = 1;
+    return k + 1;
+}
+static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, const UNS64 *at, int st[], int wh[]) {
+    int j, k = 0;
+    struct jit_op lit_op = { 1, 1, 1, 0, { S_LIT, 0, 0, 0, 0 } };
+    const struct jit_op *o = &lit_op;
+    (void)arg; (void)at;
+    if (opl[i] >= 0xFFFE) {                             /* a call: in state 1 */
+        if ((k = jitk_canon(st, wh, 0)) < 0) return -1;
+#if JITTAIL
+        st[k] = jit_tail(i, n, opl, arg, at) ? S_BRANCH : S_CALL;
+#else
+        st[k] = S_CALL;
+#endif
+        wh[k++] = -2; jitk_cs = 1;
+        return k;
+    }
+    if (opl[i] != 0xFFFD) o = &jit_ops[opl[i]];         /* else jitx's literal: S_LIT with its value */
+    for (j = 0; j < o->n; j++) {
+        int s = o->st[j], v = jitk_v1[s][jitk_cs];
+        if (v && jit_usable(S_N + v - 1)) { st[k] = S_N + v - 1; wh[k++] = j; jitk_cs = jitk_vout[v - 1]; continue; }
+        if ((k = jitk_canon(st, wh, k)) < 0) return -1;
+        st[k] = s; wh[k++] = j; jitk_cs = 1;
+    }
+    if (i + 1 < n && jitk_tg[i + 1]) k = jitk_canon(st, wh, k);
+    return k;
+}
+#endif
+
 /* The operations from a to end - end 0: find it, a word without a header
    (jitx) - of the word w: a call to w is a call to this code itself. */
 #if JITX
@@ -485,8 +550,29 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         if (f < 2) return 0;
         arg[i] = (UNS64)(uintptr_t)(jit_mem + f); opl[i] = 0xFFFE;
     }
+#if JITK
+    memset(jitk_tg, 0, (size_t)n + 1);  /* the branch targets: state 1 there */
+    for (i = 0; i < n; i++)
+        if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6) {
+            for (j = 0; j < n && at[j] != arg[i]; j++) ;
+            if (j < n) jitk_tg[j] = 1;
+        }
+    jitk_cs = 1;
+#endif
     for (i = 0; i < n; i++) {           /* sizes, and every stencil usable */
         nat[i] = size;
+#if JITK
+        {
+            int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
+            if (m_ < 0) return 0;
+            for (q_ = 0; q_ < m_; q_++) {
+                int s = st_[q_];
+                if (!jit_usable(s) || (wh_[q_] >= 0 && opl[i] < 0xFFFD && jit_st[s].njump && jit_ops[opl[i]].opnd < 6)) return 0;
+                size += (uint32_t)jit_len(s);
+            }
+            continue;
+        }
+#endif
 #if JITX
         if (opl[i] == 0xFFFD) { if (!jit_usable(S_LIT)) return 0; size += (uint32_t)jit_len(S_LIT); continue; }
 #endif
@@ -508,11 +594,40 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     nat[n] = size;
     off = (jit_used + 15) & ~15u;
     if (off + size > JIT_MEM) return 0;
+#if JITK
+    jitk_cs = 1;
+#endif
     for (i = 0; i < n; i++) {           /* copy and patch */
         unsigned char *p = jit_mem + off + nat[i];
         const struct jit_op *o;
         UNS64 jt = 0;
         int lit = 1;
+#if JITK
+        {
+            int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
+            const struct jit_op *o_ = opl[i] < 0xFFFD ? &jit_ops[opl[i]] : 0;
+            if (m_ < 0) return 0;
+            if (o_ && o_->opnd >= 6) {              /* a branch: to one of this word's operations */
+                for (j = 0; j < n && at[j] != arg[i]; j++) ;
+                if (j == n) return 0;
+                jt = (UNS64)(uintptr_t)(jit_mem + off + nat[j]);
+            }
+            for (q_ = 0; q_ < m_; q_++) {
+                int s = st_[q_];
+                if (wh_[q_] == -2) {                /* the call, or the tail call's jump */
+                    UNS64 to = opl[i] == 0xFFFF ? (UNS64)(uintptr_t)(jit_mem + off) : arg[i];
+                    p = s == S_CALL ? jit_put(p, S_CALL, 0, 0, to) : jit_put(p, S_BRANCH, 0, to, 0);
+                } else if (wh_[q_] == -1) p = jit_put(p, s, 0, 0, 0);       /* a canonicaliser */
+                else {
+                    UNS64 v = o_ ? (UNS64)(INT64)o_->k : arg[i];               /* no o_: jitx's literal */
+                    if (o_ && jit_st[s].imm >= 0 && lit && o_->opnd >= 1 && o_->opnd <= 5) { v = arg[i]; lit = 0; }
+                    p = jit_put(p, s, v, jt, 0);
+                }
+            }
+            (void)o;
+            continue;
+        }
+#endif
 #if JITX
         if (opl[i] == 0xFFFD) { jit_put(p, S_LIT, arg[i], 0, 0); continue; }
 #endif

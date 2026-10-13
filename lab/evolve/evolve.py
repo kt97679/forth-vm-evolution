@@ -89,10 +89,12 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
 # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
 # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail')
+LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler', 'factor')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
 FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+HOTWORDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotwords-v1.json')   # Iteration 267: the gene factor's cold words (hotwords.py)
+FACTORV = (0, 1e-3, 1e-2, 2.0)  # Iteration 267: factor - a word below this share of the reference dispatches is factored (2.0: every word)
 OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: their bodies [opcode EXIT], the gene opbody
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
@@ -116,6 +118,15 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
 EXPRESSED['cv8'] += ['jitloop', 'jitinl']
 EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
 EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
+EXPRESSED['cv8'] += ['factor']   # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
+EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation; GCC's goto unfactoring (results/missed-options-2026-10.md)
+# Iteration 262: the compiler - 0 GCC (cc), 1 clang. Offered only where clang is installed: elsewhere
+# a design with it could not be built. Flags and genes one compiler lacks are not expressed under it.
+HAVE_CLANG = bool(shutil.which('clang'))
+if HAVE_CLANG: EXPRESSED['cv8'] += ['compiler']
+GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto')
+JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
 EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
 EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
 EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
@@ -442,6 +453,11 @@ def express(g):
     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
     if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
     if 'jittail' in e and not jit_on(g): e.pop('jittail')                          # Iteration 246: on the JIT
+    if 'factor' in e and not e.get('tag2'): e.pop('factor')                        # Iteration 267: the tag's 2-byte calls and byte headers
+    if 'jitk' in e and (not jit_on(g) or not e['jitk']): e.pop('jitk')            # Iteration 259: on the JIT; 0 is off
+    if e.get('compiler'):                                                           # Iteration 262: clang - GCC's own genes do nothing
+        for k in GCC_ONLY: e.pop(k, None)
+    elif 'compiler' in e: e.pop('compiler')
     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
@@ -460,7 +476,7 @@ def gid(g):
 
 
 # ---- building and testing one design ------------------------------------
-BUILD_TOOLS = ('cc', 'gcc', 'make', 'sh', 'bash', 'git', 'objcopy', 'objdump', 'size', 'strip', 'ld', 'as', 'cpp', 'nm')
+BUILD_TOOLS = ('cc', 'gcc', 'clang', 'make', 'sh', 'bash', 'git', 'objcopy', 'objdump', 'size', 'strip', 'ld', 'as', 'cpp', 'nm')
 def _kind(cmd):
     """'engine', 'cputime' (about to run one) or None (a build tool, which
     forks: the compiler, the converter). Anything not known to be a tool
@@ -533,7 +549,7 @@ def rt():
     # static engine has no dynamic relocations, and their padding made the
     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
-                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', RTC, '-lgcc',
+                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', RTC, '-lgcc',
                  '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
     # --gc-sections (Iteration 113): the runtime is one object file, so code
     # nothing calls came along - vsnprintf, snprintf, execvp, syscall,
@@ -553,8 +569,16 @@ def bin_size(eng):
     engine.full, for tail_offenders and anyone with nm or gdb."""
     return os.path.getsize(eng)
 
+GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
+def CC(g):
+    """Iteration 262: the compiler the gene names - GCC as cc, or clang."""
+    return 'clang' if express(g).get('compiler') else 'cc'
 def ccflags(g):
-    return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
+    if express(g).get('compiler'):          # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
+        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()]
+    f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
+    if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
+    return f
 
 def tail_offenders(eng):
     """Handlers whose machine code CALLS through an indexed table - a
@@ -580,12 +604,12 @@ def build_tail(g, d, src, flags, eng):
     # preprocessed source, where its own '#ifndef DISPOFF' guard is already gone, so
     # the handlers' table was offsets between functions: no tail design compiled in
     # seed 46 (222 died: engine did not compile)
-    if sh(['cc', '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
+    if sh([CC(g), '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
     wrap = []
     for attempt in range(2):
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
         if r.returncode: raise RuntimeError('died: tail-call generation')
-        if sh(['cc'] + ccflags(g) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+        if sh([CC(g)] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
         bad = tail_offenders(eng)
         if not bad: return
         wrap = sorted(set(wrap) | bad)
@@ -694,6 +718,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
+    if jit_on(g) and express(g).get('jitk'): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils
     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
     if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
@@ -729,7 +754,18 @@ def _build(g, d):
         else:
             jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
                    os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
-            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + jit + rt())
+            if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
+                if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
+                    raise RuntimeError('died: stack-cache generation')
+            lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
+            if lto and jit:                                      # the stencils outside it: the JIT reads their code as compiled
+                objs = []
+                for c in ('spn-stencils.c', 'spn-markers.c'):
+                    o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
+                    r = sh([CC(g)] + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
+                    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+                jit = jit[:4] + objs
+            r = sh([CC(g)] + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
@@ -752,6 +788,7 @@ def _build(g, d):
     if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
     if g.get('opbody'): opts.append('--op-bodies')                 # Iteration 92: words an opcode replaced, [opcode EXIT]
+    if express(g).get('factor'): opts += ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])]   # Iteration 267: no table, no design - a missing file kills it loudly
     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
@@ -1042,6 +1079,12 @@ def mutate(g, rnd):
             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
         elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
+        elif k == 'gotodup':          # Iteration 260: GCC's goto unfactoring - its default, 32, 128
+            g['gotodup'] = rnd.choice([v for v in range(len(GOTODUPV)) if v != g.get('gotodup', 0)]); what.append('gotodup=%s' % GOTODUPV[g['gotodup']])
+        elif k == 'jitk':             # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
+            g['jitk'] = rnd.choice([v for v in JITKV if v != g.get('jitk', 0)]); what.append('jitk=%d' % g['jitk'])
+        elif k == 'factor':           # Iteration 267: 0 off; repeated code in words below 0.1%, below 1% of the dispatches, or in every word
+            g['factor'] = rnd.choice([v for v in range(len(FACTORV)) if v != g.get('factor', 0)]); what.append('factor=%d' % g['factor'])
         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
         elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
@@ -1304,7 +1347,7 @@ def crowding(front, R):
 # dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
 # evaluations: drawn one time in ten (SLOW_GENES).
 XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
-LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
+LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail', 'jitk'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
 SLOW_GENES = ('varcall', 'doesfar')
 ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
 ATTIC_P = float(os.environ.get('EVOLVE_ATTIC_P', 0.1))
@@ -1570,6 +1613,9 @@ def random_genome(rnd):
         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
+        elif k == 'factor': g[k] = rnd.randrange(len(FACTORV))   # Iteration 267
+        elif k == 'jitk': g[k] = rnd.choice(JITKV)         # Iteration 259
+        elif k == 'gotodup': g[k] = rnd.randrange(len(GOTODUPV))   # Iteration 260
         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
         elif k == 'opcall': g[k] = [n for n in OPCALL_POOL if rnd.random() < 0.5]

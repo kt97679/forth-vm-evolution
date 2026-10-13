@@ -271,3 +271,6 @@ const void *const spn_table[] = {
 #endif
 };
 const int spn_table_len = sizeof spn_table / sizeof spn_table[0];
+#if JITK
+#include "spn-jitk.inc"                 /* Iteration 259, the gene jitk: tools/gen-jitk.py writes it */
+#endif
