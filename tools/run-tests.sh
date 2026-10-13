@@ -365,6 +365,18 @@ echo "the tracer (tools/vmtrace.py --self-test):"
 if out=$(python3 "$ROOT/tools/vmtrace.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' s6 "$(printf '%s' "$out" | tail -1 | cut -c17-110)"
 else printf '  %-12s FAIL   %s\n' s6 "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
 
+# The engine generators (Iteration 249): seed 46 lost every design with the
+# gene tail - an engine change broke gen-tail.py's engines and nothing built
+# one before the run. lab/evolve/engines-check.py builds s6-cv8b down every
+# generator's path (gen-msc, gen-tail, gen-super, gen-opcall, format-10, the
+# escape byte, the tag, the JIT and its genes, the fsys levels) and runs the
+# corpus on each - about 90 s, here, before every run.
+echo
+echo "the engine generators (lab/evolve/engines-check.py):"
+if [ "$(uname -m)" != x86_64 ]; then printf '  %-12s SKIP   not x86_64\n' generators
+elif out=$(python3 "$ROOT/lab/evolve/engines-check.py" 2>&1); then printf '  %-12s ok     %s\n' generators "$(printf '%s' "$out" | grep -c ' ok ') paths, each built and its corpus right"
+else printf '  %-12s FAIL   %s\n' generators "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+
 # ---- DELETE-FILE -------------------------------------------------------
 # Iteration 124: DELETE-FILE segfaulted in every engine of the ladder since
 # the baseline - its handler stored unlink's result over the name's address,
