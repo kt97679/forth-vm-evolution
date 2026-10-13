@@ -1,0 +1,12 @@
+build exit 0
+pinned to cpu 0 (it and its sibling 1% busy; BENCH_CPU=N to choose)
+## 28677d13b1 (speed 0.17010182718530484, jitx=1, jitloop=1, jitinl=1)
+
+stencil instructions as copied: lit 3, dup 2, drop 2, swap 3, over 4, rot 5, plus 2, addi 3, eq 5, gt 6, lt 6, xor 2, and 2, negate 1, 0branch 8, branch 1, call 5, exit 3, addi32 1, dup_gti_br 4, tor 7, fromr 8, rfetch 6, fetch 1, store 4, cfetch 1, cstore 4, or 2, ult 3, lshift 5, rshift 5, interp 7, do 9, qdo 16, loop 10, ploop 21, i 6, j 6, unloop 2, leave 3, pick 1, fill 9, dplus 5
+
+| workload | all ops | in translated words: run-time / +kernel | native instructions now | K=2/3: instructions | removed |
+|---|---|---|---|---|---|
+| fib | 56,551,870 | 90.5% / 90.5% | 196,555,210 / 196,555,210 | 126,549,248 / 126,549,248 / 126,549,248 / 126,549,248 | 35.6% / 35.6% / 35.6% / 35.6% |
+| loop | 20,035,747 | 99.9% / 99.9% | 88,132,230 / 88,132,230 | 64,108,170 / 64,108,170 / 52,108,170 / 52,108,170 | 27.3% / 27.3% / 40.9% / 40.9% |
+
+exit 0

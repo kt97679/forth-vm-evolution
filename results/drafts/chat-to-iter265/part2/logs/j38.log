@@ -1,0 +1,4 @@
+pinned to cpu 0 (it and its sibling 100% busy; BENCH_CPU=N to choose)
+/tmp/p13 8720
+pinned to cpu 0 (it and its sibling 100% busy; BENCH_CPU=N to choose)
+/tmp/b45 9382

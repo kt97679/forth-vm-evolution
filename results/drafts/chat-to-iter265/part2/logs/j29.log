@@ -1,0 +1,107 @@
+== build: done before
+== names-check
+Expected, line by line: 5 5 | 9 | 3 3 | 4 | 6 6 | 1 | 2 | 11 | 5 5 8 | 9 | 5 5 3
+
+- s6-cv8b (tag2=0, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=0): right
+- add5ec8937 (tag2=1, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=3): right
+- cc6d168e0a (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=0, tail=0, jit=1, fsys=0): right
+- f20de05a64 (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=1, tail=0, jit=0, fsys=0): right
+- 4a351e360a (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=0, tail=1, jit=0, fsys=2): right
+- dde890d478 (tag2=1, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=3): right
+- s0-cell (cell headers, not judged): status -11, 
+- s5-cv8spec (cell headers, not judged): status 0, 
+
+PASS
+== run-tests
+exit 1: FAIL - see above
+== validate
+7
+== outbuf-check
+exit 0: PASS
+== readline-check
+== gate
+DIED d827d54f60 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 617909c783 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 4d848aea91 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 833075003a died: ops10: no exact body match for ['THREAD-FIND']
+DIED cfee5345ab died: ops10: no exact body match for ['THREAD-FIND']
+DIED 778737c22e died: ops10: no exact body match for ['THREAD-FIND']
+DIED 277e4098f8 died: ops10: no exact body match for ['THREAD-FIND']
+DIED d76e88559b died: ops10: no exact body match for ['THREAD-FIND']
+DIED b4bb7d554b died: ops10: no exact body match for ['THREAD-FIND']
+DIED 0eb6afa5d9 died: ops10: no exact body match for ['THREAD-FIND']
+DIED ca2109397c died: ops10: no exact body match for ['THREAD-FIND']
+DIED c5af9af19a died: ops10: no exact body match for ['THREAD-FIND']
+DIED d562c3ce5a died: ops10: no exact body match for ['THREAD-FIND']
+DIED 0e6e383a88 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 74ae13a8ab died: ops10: no exact body match for ['THREAD-FIND']
+DIED eae7f3f546 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 646a20e039 died: ops10: no exact body match for ['THREAD-FIND']
+DIED db8eb140f7 died: ops10: no exact body match for ['THREAD-FIND']
+DIED b45db1b120 died: ops10: no exact body match for ['THREAD-FIND']
+DIED aa833a58c8 died: ops10: no exact body match for ['THREAD-FIND']
+DIED c5fe428ca8 died: ops10: no exact body match for ['THREAD-FIND']
+DIED fd3f391e48 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 8dd50a88a0 died: ops10: no exact body match for ['THREAD-FIND']
+DIED e566e2711d died: ops10: no exact body match for ['THREAD-FIND']
+DIED f19bfe8c51 died: ops10: no exact body match for ['THREAD-FIND']
+DIED e9074524e8 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 04ac66aa88 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 378ef2f836 died: ops10: no exact body match for ['THREAD-FIND']
+DIED b0c779e6b4 died: ops10: no exact body match for ['THREAD-FIND']
+DIED f79a7a5d45 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 54ef6010dd died: ops10: no exact body match for ['THREAD-FIND']
+DIED 999d92044f died: ops10: no exact body match for ['THREAD-FIND']
+DIED d870cac77e died: ops10: no exact body match for ['THREAD-FIND']
+DIED d9bb851e75 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 63b2e72670 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 6ad933fec3 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 4891ac4085 died: ops10: no exact body match for ['THREAD-FIND']
+DIED da5841bfab died: ops10: no exact body match for ['THREAD-FIND']
+DIED 5eb44de2e5 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 6e4d922938 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 7736a2e7de died: ops10: no exact body match for ['THREAD-FIND']
+DIED 0a72612c47 died: ops10: no exact body match for ['THREAD-FIND']
+DIED a36f4870ec died: ops10: no exact body match for ['THREAD-FIND']
+DIED c083dee1e2 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 06bccd11ed died: ops10: no exact body match for ['THREAD-FIND']
+DIED 6838c1e840 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 6840f8c575 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 65a6e17eda died: ops10: no exact body match for ['THREAD-FIND']
+DIED 39a0d96ef8 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 0e6b336ac5 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 63343f5c90 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 759b067575 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 5e9e07cac0 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 8e9afe3f58 died: ops10: no exact body match for ['THREAD-FIND']
+DIED d2659f9a78 died: ops10: no exact body match for ['THREAD-FIND']
+DIED cf0dac6d90 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 9e96459ec3 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 28677d13b1 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 23d51f6c77 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 5fcdf1d7d5 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 45266dccf5 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 6e328d50fd died: ops10: no exact body match for ['THREAD-FIND']
+DIED ab0b6212a0 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 41382fa462 died: ops10: no exact body match for ['THREAD-FIND']
+DIED b6993ab3ba died: ops10: no exact body match for ['THREAD-FIND']
+DIED 772451e7c3 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 64ab2e95e6 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 092d75b766 died: ops10: no exact body match for ['THREAD-FIND']
+DIED d40a9a0836 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 951c4c4bd1 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 8ee1586665 died: ops10: no exact body match for ['THREAD-FIND']
+DIED 5116aa0812 died: ops10: no exact body match for ['THREAD-FIND']
+DIED f923fda8ab died: ops10: no exact body match for ['THREAD-FIND']
+DIED 039514b30d died: ops10: no exact body match for ['THREAD-FIND']
+DIED 96e5228c8f died: ops10: no exact body match for ['THREAD-FIND']
+alive: 86 of 161 (seed 44 front 120, joint front 82, 41 in both)
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+| dde890d478 | 0 | 14 of 14 | - |
+| add5ec8937 | 0 | 14 of 14 | - |
+| cc6d168e0a | 1 | 14 of 14 | - |
+| f20de05a64 | 0 | 14 of 14 | - |
+| 4a351e360a | 0 | 14 of 14 | - |
+| fc97d8fcf7 | 0 | 14 of 14 | - |
+0 of 6 designs differ from s6 somewhere.

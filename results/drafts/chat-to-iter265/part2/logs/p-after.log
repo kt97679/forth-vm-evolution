@@ -1,0 +1,3 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+d3149e10c6 fbuf=0: fib 116 KB, loop 116 KB, corpus 144 KB, kernel 168 KB
+d3149e10c6 fbuf=2: fib 116 KB, loop 116 KB, corpus 140 KB, kernel 164 KB

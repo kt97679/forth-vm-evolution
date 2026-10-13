@@ -1,0 +1,52 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+## 28677d13b1 (speed 0.17010182718530484, jitx=1, jitloop=1, jitinl=1)
+
+stencils as copied - instructions / of them for the memory stack / data-stack accesses: lit 3/2/1, dup 2/2/1, drop 2/2/1, swap 3/2/2, over 4/3/2, rot 5/3/3, plus 2/1/1, addi 3/0/0, eq 5/1/1, gt 6/1/1, lt 6/1/1, xor 2/1/1, and 2/1/1, negate 1/0/0, 0branch 8/2/2, branch 1/0/0, call 5/1/0, exit 3/0/0, addi32 1/0/0, dup_gti_br 4/0/0, tor 7/2/1, fromr 8/2/1, rfetch 6/2/1, fetch 1/0/0, store 4/3/2, cfetch 1/0/0, cstore 4/3/2, or 2/1/1, ult 3/1/1, lshift 5/2/1, rshift 5/2/1, interp 7/1/0, do 9/3/2, qdo 16/5/5, loop 10/0/0, ploop 21/4/3, i 6/2/1, j 6/2/1, unloop 2/0/0, leave 3/0/0, pick 1/1/1, fill 9/3/3, dplus 5/3/4
+
+Per workload: all operations dispatched; the share in translated words (run-time words / with kernel words); in them, native instructions and data-stack memory accesses now, then with K = 2, 3 cached registers.
+
+| workload | all ops | translated | instructions now | K=2 instructions | K=3 instructions | stack accesses now | K=2 accesses | K=3 accesses |
+|---|---|---|---|---|---|---|---|---|
+  loop: the word at 9400, 20,016,000 operations run
+      9405      4,000 lit                          now  3/1   0/0 RC   0/0 RC
+      9408      4,000 lit                          now  3/1   0/0 RCC   0/0 RCC
+      9410      4,000 do                           now  9/2   6/0 R   6/0 R
+      9411  4,000,000 dup <-                       now  2/1   0/0 RR   0/0 RR
+      9412  4,000,000 i                            now  6/1   5/1 RR   4/0 RRR
+      9413  4,000,000 plus                         now  2/1   1/0 R   1/0 RR
+      9414  4,000,000 xor                          now  2/1   2/1 R   1/0 R
+      9415  4,000,000 loop                         now 10/0   11/0 R   10/0 R
+      9418      4,000 exit                         now  3/0   3/0 R   3/0 R
+  loop: the word at 9427, 8,060 operations run
+      9432         10 lit                          now  3/1   0/0 RC   0/0 RC
+      9434         10 lit                          now  3/1   0/0 RCC   0/0 RCC
+      9437         10 lit                          now  3/1   0/0 RCCC   0/0 RCCC
+      9439         10 do                           now  9/2   9/1 R   9/1 R
+      9440      4,000 call <-                      now  5/0   4/0 R   4/0 R
+      9442      4,000 loop                         now 10/0   10/0 R   10/0 R
+      9445         10 drop                         now  2/1   0/0    0/0 
+      9446         10 exit                         now  3/0   5/1 R   5/1 R
+| loop | 20,035,747 | 99.9% / 99.9% | 88,132,230 / 88,132,230 | 76,092,140 / 76,092,140 (-13.7% / -13.7%) | 64,092,140 / 64,092,140 (-27.3% / -27.3%) | 16,016,060 / 16,016,060 | 8,000,020 / 8,000,020 (-50.1% / -50.1%) | 20 / 20 (-100.0% / -100.0%) |
+  fib: the word at 9398, 51,158,200 operations run
+      9403  5,385,074 dup                          now  2/1   0/0 RR   0/0 RR
+      9404  5,385,074 lit                          now  3/1   0/0 RRC   0/0 RRC
+      9406  5,385,074 lt                           now  6/1   5/0 RR   5/0 RR
+      9407  5,385,074 0branch                      now  8/2   6/0 R   6/0 R
+      9410  2,692,538 drop                         now  2/1   0/0    0/0 
+      9411  2,692,538 lit                          now  3/1   0/0 C   0/0 C
+      9413  2,692,538 branch                       now  1/0   2/0 R   2/0 R
+      9416  2,692,536 dup <-                       now  2/1   0/0 RR   0/0 RR
+      9417  2,692,536 addi                         now  3/0   3/0 RR   3/0 RR
+      9419  2,692,536 call                         now  5/0   6/1 R   6/1 R
+      9421  2,692,536 swap addi                    now  6/2   4/1 RR   4/1 RR
+      9423  2,692,536 call                         now  5/0   6/1 R   6/1 R
+      9425  2,692,536 plus                         now  2/1   2/1 R   2/1 R
+      9426  5,385,074 exit <-                      now  3/0   4/0 R   4/0 R
+  fib: the word at 9435, 8 operations run
+      9440          2 lit                          now  3/1   0/0 RC   0/0 RC
+      9442          2 call                         now  5/0   7/1 R   7/1 R
+      9444          2 drop                         now  2/1   0/0    0/0 
+      9445          2 exit                         now  3/0   5/1 R   5/1 R
+| fib | 56,551,870 | 90.5% / 90.5% | 196,555,210 / 196,555,210 | 142,704,466 / 142,704,466 (-27.4% / -27.4%) | 142,704,466 / 142,704,466 (-27.4% / -27.4%) | 43,080,594 / 43,080,594 | 10,770,148 / 10,770,148 (-75.0% / -75.0%) | 10,770,148 / 10,770,148 (-75.0% / -75.0%) |
+
+exit 0

@@ -1,0 +1,19 @@
+== run-tests
+exit 0: PASS - no regressions
+== validate
+7
+== gate
+alive: 128 of 128 (seed 45 front 105, joint front 66, 43 in both)
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+| c1cc8e127c | 0 | 14 of 14 | - |
+| cc6d168e0a | 1 | 14 of 14 | - |
+| f20de05a64 | 0 | 14 of 14 | - |
+| 4a351e360a | 0 | 14 of 14 | - |
+| 26be0b1ed2 | 1 | 14 of 14 | - |
+| a1b35be27d | 0 | 14 of 14 | - |
+0 of 6 designs differ from s6 somewhere.
+== outbuf-check
+exit 0: PASS
+== readline-check
+exit 0: PASS

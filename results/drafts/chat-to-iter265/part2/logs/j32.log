@@ -1,0 +1,27 @@
+== names-check
+- s6-cv8b (tag2=0, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=0): right
+- add5ec8937 (tag2=1, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=3): right
+- cc6d168e0a (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=0, tail=0, jit=1, fsys=0): right
+- f20de05a64 (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=1, tail=0, jit=0, fsys=0): right
+- 4a351e360a (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=0, tail=1, jit=0, fsys=2): right
+- dde890d478 (tag2=1, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=3): right
+PASS
+== run-tests
+exit 0: PASS - no regressions
+== validate
+7
+== outbuf-check
+exit 0: PASS
+== readline-check
+exit 0: PASS
+== gate
+alive: 161 of 161 (seed 44 front 120, joint front 82, 41 in both)
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+| dde890d478 | 0 | 14 of 14 | - |
+| add5ec8937 | 0 | 14 of 14 | - |
+| cc6d168e0a | 1 | 14 of 14 | - |
+| f20de05a64 | 0 | 14 of 14 | - |
+| 4a351e360a | 0 | 14 of 14 | - |
+| d827d54f60 | 0 | 14 of 14 | - |
+0 of 6 designs differ from s6 somewhere.

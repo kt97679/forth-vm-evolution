@@ -1,0 +1,2 @@
+fault B: readline-check exit 1 - - fsys 5: DIFFERS (status 0) - line 9: native b'0 -1 4 |beta|', fsys 5 b'0 -1 0 ||'
+restored, rebuilt

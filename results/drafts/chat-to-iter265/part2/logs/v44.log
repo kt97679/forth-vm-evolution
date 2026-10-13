@@ -1,0 +1,28 @@
+== build
+exit 0 26 s
+== readline-check
+## be1620e346 - native: status 0, 19045 bytes, 316 lines
+- fsys 3: as native
+- fsys 4: as native
+- fsys 5: as native
+- WRITE-LINE after a line (R/W): fsys 3, 4, 5 right after the line; native right after the line too
+## cc6d168e0a - native: status 0, 19045 bytes, 316 lines
+- fsys 3: as native
+- fsys 4: as native
+- fsys 5: as native
+- WRITE-LINE after a line (R/W): fsys 3, 4, 5 right after the line; native right after the line too
+
+PASS
+exit 0 98 s
+== run-tests
+exit 0 120 s
+== validate
+7
+== outbuf-check
+exit 0 96 s
+== gate, every fsys-0 design of seed 43's front
+fsys 0 front designs alive: 33 of 33
+exit 0 126 s
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+0 of 2 designs differ from s6 somewhere.

@@ -5358,3 +5358,17 @@ My request had asked for Iterations 244-265, but that chat ran from 213: its
 /tmp listing (the manifest's section 5) shows 84 more scripts and sources, of
 Iterations 213-243 (facts43.py, gate44*.py, pages.py, job1-52.sh,
 vm-lab-jitos.c ...), not packed. Asked for (HANDOFF.md, open item 6).
+
+## Iteration 274 - 2026-10-13 - Claude
+
+**The second archive filed, as found: results/drafts/chat-to-iter265/part2/
+(its MANIFEST.md), and an index for both (README.md there).** Every one of the
+85 scripts and sources of that chat's /tmp the first archive lacked (Iterations
+213-243) arrived, with 11 more (source copies with other suffixes, three pk2-*.py
+scripts), 47 job scripts and the 130 logs they wrote; 24 of its 226 files were
+already tracked. Its notes: nothing is gone; elf.py (Iterations 250-251, behind
+GOALS.md's 176 stack-header bytes) belonged in the first archive; names-check.py
+there is the pre-fix copy the tracked tool grew from. It found iterations and
+figures in two earlier transcripts its machine kept in /mnt/transcripts - on
+this machine that directory is empty, so the repository stays the only record
+that carries over. Nothing more is owed by that chat.

@@ -1,0 +1,8 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+  s0-cell     image IDENTICAL to the build's, corpus and kernel workload correct
+  s1-sod16    image IDENTICAL to the build's, corpus and kernel workload correct
+  s2-cpt16    image IDENTICAL to the build's, corpus and kernel workload correct
+  s3-cpt16f   image IDENTICAL to the build's, corpus and kernel workload correct
+  s4-cv8      image IDENTICAL to the build's, corpus and kernel workload correct
+  s5-cv8spec  image IDENTICAL to the build's, corpus and kernel workload correct
+  s6-cv8b     image IDENTICAL to the build's, corpus and kernel workload correct

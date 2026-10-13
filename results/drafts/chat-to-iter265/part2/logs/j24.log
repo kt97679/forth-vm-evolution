@@ -1,0 +1,11 @@
+== reseed
+8-byte kernel: fixed point reached (27336 bytes)
+4-byte kernel: identical from old and new seed (15000 bytes)
+seeds installed; now run tools/build-stages.sh and tools/run-tests.sh
+exit 0
+== build
+
+build complete: /tmp/b44s/build
+== s6 by hand
+Cannot open image file.
+status 2

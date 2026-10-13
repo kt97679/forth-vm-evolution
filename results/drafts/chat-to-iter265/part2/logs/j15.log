@@ -1,0 +1,37 @@
+pinned to cpu 0 (it and its sibling 99% busy; BENCH_CPU=N to choose)
+add5ec8937: 65 names hidden
+5f4a21fbdb: 67 names hidden
+cc6d168e0a: 103 names hidden
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+# The Forth 2012 test suite: hand-made s6, then each design against it (held out)
+
+Hand-made s6 against the suite's expected values - its own tests in each file (core.fr's and the
+helpers' not counted again), failed, and where a file stopped short of its end:
+
+| file | tests | failed | whole file | stopped at |
+|---|---|---|---|---|
+| prelimtest.fth | 23 | 0 | yes |  |
+| core.fr | 638 | 0 | yes |  |
+| coreplustest.fth | 101 | 0 | yes |  |
+| coreexttest.fth | 383 | 0 | yes |  |
+| blocktest.fth | 65 | 0 | yes |  |
+| doubletest.fth | 247 | 0 | yes |  |
+| exceptiontest.fth | 9 | 0 | yes |  |
+| facilitytest.fth | 70 | 0 | yes |  |
+| filetest.fth | 96 | 0 | yes |  |
+| localstest.fth | 50 | 0 | yes |  |
+| memorytest.fth | 198 | 0 | yes |  |
+| toolstest.fth | 63 | 0 | yes |  |
+| searchordertest.fth | 41 | 0 | yes |  |
+| stringtest.fth | 135 | 0 | yes |  |
+
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+
+| design | guard | files as s6 | differing |
+|---|---|---|---|
+| add5ec8937 | 0 | 13 of 14 | toolstest.fth (rc 0) |
+| 5f4a21fbdb | 0 | 0 of 14 | prelimtest.fth (rc -11), core.fr (rc -11), coreplustest.fth (rc -11), coreexttest.fth (rc -11), blocktest.fth (rc -11), doubletest.fth (rc -11), exceptiontest.fth (rc -11), facilitytest.fth (rc -11), filetest.fth (rc -11), localstest.fth (rc -11), memorytest.fth (rc -11), toolstest.fth (rc -11), searchordertest.fth (rc -11), stringtest.fth (rc -11) |
+| cc6d168e0a | 1 | 13 of 14 | toolstest.fth (rc 0) |
+
+3 of 3 designs differ from s6 somewhere.
+exit 1

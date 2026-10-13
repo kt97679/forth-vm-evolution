@@ -1,0 +1,16 @@
+== run-tests
+exit 0: PASS - no regressions
+== validate
+7
+== gate, all 165
+seed 43 front designs alive: 165 of 165
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+0 of 2 designs differ from s6 somewhere.
+== engine sizes (master -> b44s)
+add5ec8937 7488 8640
+d3149e10c6 9860 8489
+cc6d168e0a 23640 10710
+add5ec8937 engine 7456 -> 7488
+d3149e10c6 engine 9828 -> 9860
+cc6d168e0a engine 23672 -> 23640

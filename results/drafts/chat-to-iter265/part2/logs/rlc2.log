@@ -1,0 +1,14 @@
+pinned to cpu 0 (it and its sibling 1% busy; BENCH_CPU=N to choose)
+## be1620e346 - native: status 0, 19045 bytes, 316 lines
+- fsys 3: as native
+- fsys 4: as native
+- fsys 5: as native
+- WRITE-LINE after a line (R/W): WRONG at fsys 3, 4, 5: b'first\nXX\nond line\nthird\n'; native elsewhere (its read-ahead not given back): b'first\nsecond line\nthird\nXX\n'
+## 9a3de58ebe - native: status 0, 19045 bytes, 316 lines
+- fsys 3: as native
+- fsys 4: as native
+- fsys 5: as native
+- WRITE-LINE after a line (R/W): WRONG at fsys 3, 4, 5: b'first\nXX\nond line\nthird\n'; native elsewhere (its read-ahead not given back): b'first\nsecond line\nthird\nXX\n'
+
+FAIL - 6
+exit 1 95 s

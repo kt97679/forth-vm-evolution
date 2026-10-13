@@ -1,0 +1,9 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+be1620e346 fsys 4: image 8954, engine file 8448
+be1620e346 fsys 5: image 9585, engine file 8448
+a0c7010722 fsys 4: image 8888, engine file 8448
+a0c7010722 fsys 5: image 9512, engine file 8448
+9a3de58ebe fsys 4: image 9608, engine file 15796
+9a3de58ebe fsys 5: image 10240, engine file 15796
+28677d13b1 fsys 4: image 9857, engine file 20340
+28677d13b1 fsys 5: image 10486, engine file 20340

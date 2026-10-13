@@ -1,0 +1,9 @@
+base build: build complete: /tmp/base45/build
+before: add5ec8937 7680 8704
+before: d3149e10c6 10088 8553
+before: cc6d168e0a 23868 10774
+before: dde890d478 7680 8704
+after:  add5ec8937 7680 8720
+after:  d3149e10c6 10088 8569
+after:  cc6d168e0a 23900 10830
+after:  dde890d478 7680 8720

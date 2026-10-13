@@ -1,0 +1,28 @@
+== build
+exit 1: failed to save s8-spncv8-s64.img
+== names-check
+- s6-cv8b (tag2=0, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=0): right
+- add5ec8937 (tag2=1, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=3): right
+- cc6d168e0a (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=0, tail=0, jit=1, fsys=0): right
+- f20de05a64 (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=1, tail=0, jit=0, fsys=0): right
+- 4a351e360a (tag2=1, bytehdr=1, kfast=1, klookup=1, msc=0, tail=1, jit=0, fsys=2): right
+- dde890d478 (tag2=1, bytehdr=1, kfast=0, klookup=0, msc=0, tail=0, jit=0, fsys=3): right
+- s0-cell (hand-made stage): right
+- s1-sod16 (hand-made stage): right
+- s2-cpt16 (hand-made stage): right
+- s3-cpt16f (hand-made stage): right
+- s4-cv8 (hand-made stage): right
+- s5-cv8spec (hand-made stage): right
+- s6-cv8b (hand-made stage): right
+- p4-pack4 (hand-made stage): right
+- p8-pack8 (hand-made stage): right
+- s7-spn (hand-made stage): right
+- s7-full (hand-made stage): right
+- s8-spncv8: not built here
+- s8-full: not built here
+- s8-lazy: not built here
+PASS
+== run-tests
+exit 1: FAIL - see above
+== validate
+0

@@ -1,0 +1,11 @@
+== gate
+alive: 161 of 161 (seed 44 front 120, joint front 82, 41 in both)
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+| dde890d478 | 0 | 14 of 14 | - |
+| add5ec8937 | 0 | 14 of 14 | - |
+| cc6d168e0a | 1 | 14 of 14 | - |
+| f20de05a64 | 0 | 14 of 14 | - |
+| 4a351e360a | 0 | 14 of 14 | - |
+| d827d54f60 | 0 | 14 of 14 | - |
+0 of 6 designs differ from s6 somewhere.

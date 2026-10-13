@@ -1,0 +1,14 @@
+== reseed
+exit 0: 4-byte kernel: identical from old and new seed (15212 bytes)
+== build
+exit 0: build complete: /home/claude/forth-vm-evolution/build
+== run-tests
+exit 0: PASS - no regressions
+== validate
+7
+== gate
+alive: 128 of 128 (seed 45 front 105, joint front 66, 43 in both)
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+0 of 12 designs differ from s6 somewhere.
+s6: 14 files, 2119 tests, 0 failed, 14 whole

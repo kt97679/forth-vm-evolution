@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 273.
+- master: Iteration 274.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -130,12 +130,10 @@ About 20 minutes of machine time for build, tests and gates.
    what clang engines do on the laptop.
 5. The laptop between runs (timing-sensitive): `perf stat` (IP-update chains,
    branch misses), `python3 lab/evolve/c-baseline.py`.
-6. The chat that ended at Iteration 265 sent its leftovers (Iteration 273,
-   results/drafts/chat-to-iter265/, MANIFEST.md): the scripts behind Iterations
-   244-265's figures, its check jobs and logs, its scratch trees as patches.
-   Still on its machine, asked for: the 84 scripts of Iterations 213-243. When
-   they come, file them beside it. Its trees/ are not yet sorted for
-   experiments that never reached master.
+6. The leftovers of the chats of Iterations 213-265 are filed, as found
+   (Iterations 273-274, results/drafts/chat-to-iter265/, README.md and two
+   MANIFEST.md): nothing is missing from them. Not yet done: sorting its trees/
+   for experiments that never reached master.
 
 ## Lessons - how faults got in, and the checks that catch them now
 
@@ -162,9 +160,11 @@ About 20 minutes of machine time for build, tests and gates.
   restriction at a time before concluding (267).
 - Look in lab/evolve/ before writing a script (image-ab.py measures an image
   change on one engine). A script that produces a recorded figure is tracked.
-  An old chat can still be asked for its files while its machine lasts (273
-  recovered 263's factor.py so) - but ask the whole range of iterations it ran,
-  and early.
+  An old chat can still be asked for its files while its machine lasts (273-274
+  recovered 263's factor.py and 174 more so) - but ask the whole range of
+  iterations it ran, and early. Transcripts of earlier chats may sit in
+  /mnt/transcripts on one machine (that chat had two) and not on the next (empty
+  here): the repository is the only record that carries over.
 - Information is lost only outside the repository: the handoff check (below)
   fails on uncommitted work, untracked scripts, scratch trees with changes, a
   stale HANDOFF.md.

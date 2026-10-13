@@ -1,0 +1,11 @@
+== run-tests
+exit 0: PASS - no regressions
+== validate
+7
+== ans-check, jitos on
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+| cc6d168e0a | 1 | 14 of 14 | - |
+| 28677d13b1 | 1 | 14 of 14 | - |
+0 of 2 designs differ from s6 somewhere.
+== gate (jitos off)
+alive: 161 of 161 (seed 44 front 120, joint front 82, 41 in both)

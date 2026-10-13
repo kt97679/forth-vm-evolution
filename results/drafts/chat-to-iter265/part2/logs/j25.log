@@ -1,0 +1,24 @@
+== run-tests
+exit 0: PASS - no regressions
+== validate
+7
+== outbuf-check
+exit 0
+- THROW            same at fsys 3, 4, 5 (status 0, 44 bytes)
+- engine fault     same at fsys 3, 4, 5 (status 0, 37 bytes)
+- DIVZERO          same at fsys 3, 4, 5 (status 0, 82 bytes)
+PASS
+== readline-check
+PASS
+== gate
+seed 43 front designs alive: 165 of 165
+== ans-check
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+| add5ec8937 | 0 | 14 of 14 | - |
+| cc6d168e0a | 1 | 14 of 14 | - |
+| f20de05a64 | 0 | 14 of 14 | - |
+0 of 3 designs differ from s6 somewhere.
+== sizes
+add5ec8937 7680 8704
+d3149e10c6 9956 8553
+cc6d168e0a 23736 10774

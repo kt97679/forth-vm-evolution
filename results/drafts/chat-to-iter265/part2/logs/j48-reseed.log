@@ -1,0 +1,3 @@
+8-byte kernel: fixed point reached (27744 bytes)
+4-byte kernel: identical from old and new seed (15212 bytes)
+seeds installed; now run tools/build-stages.sh and tools/run-tests.sh

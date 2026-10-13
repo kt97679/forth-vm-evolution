@@ -1,0 +1,5 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+add5ec8937 (/tmp/b44s): fib 80, loop 84, corpus 108, kernel 132, bubble 88, ackermann 80 KB
+d3149e10c6 (/tmp/b44s): fib 88, loop 88, corpus 108, kernel 144, bubble 92, ackermann 84 KB
+cc6d168e0a (/tmp/b44s): fib 108, loop 108, corpus 184, kernel 180, bubble 132, ackermann 128 KB
+fc09f6373d (/tmp/b44s): fib 104, loop 104, corpus 156, kernel 164, bubble 132, ackermann 128 KB

@@ -1,0 +1,27 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+K=2: 113 stencils, 2,072 bytes (2,880 aligned to 16), 1,507 as copied
+  dup_1     1 instructions, 0 stack accesses, 3 bytes copied
+  swap_2    3 instructions, 0 stack accesses, 9 bytes copied
+  over_2    5 instructions, 1 stack accesses, 17 bytes copied
+  plus_2    1 instructions, 0 stack accesses, 3 bytes copied
+  plus_1    2 instructions, 1 stack accesses, 7 bytes copied
+  plus_i_1  1 instructions, 0 stack accesses, 7 bytes copied
+  i_2       7 instructions, 1 stack accesses, 29 bytes copied
+  store_2   1 instructions, 0 stack accesses, 3 bytes copied
+  lit_2     5 instructions, 1 stack accesses, 24 bytes copied
+  drop_2    1 instructions, 0 stack accesses, 3 bytes copied
+  canon_2   2 instructions, 1 stack accesses, 8 bytes copied
+K=3: 151 stencils, 2,813 bytes (3,920 aligned to 16), 2,058 as copied
+  dup_1     1 instructions, 0 stack accesses, 3 bytes copied
+  swap_2    3 instructions, 0 stack accesses, 9 bytes copied
+  over_2    4 instructions, 0 stack accesses, 12 bytes copied
+  plus_2    1 instructions, 0 stack accesses, 3 bytes copied
+  plus_1    2 instructions, 1 stack accesses, 7 bytes copied
+  plus_i_1  1 instructions, 0 stack accesses, 7 bytes copied
+  i_2       6 instructions, 0 stack accesses, 25 bytes copied
+  store_2   1 instructions, 0 stack accesses, 3 bytes copied
+  lit_2     4 instructions, 0 stack accesses, 19 bytes copied
+  drop_2    1 instructions, 0 stack accesses, 3 bytes copied
+  canon_2   2 instructions, 1 stack accesses, 8 bytes copied
+today, 28677d13b1: 43 stencils, 1,007 bytes (1,328 aligned to 16); the jit_ functions 3,538 bytes; the engine 23,192
+written /tmp/jitvariants.json

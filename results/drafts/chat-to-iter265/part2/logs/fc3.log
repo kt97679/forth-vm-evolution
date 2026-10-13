@@ -1,0 +1,262 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+## be1620e346 (kinput=1, kfast=0, jit=0, escape=0)
+  kernel:
+    fsys 4:   6,754,946 dispatches, I/O words  1,618,589; system calls   4441 (read 2189, lseek 2137, write 75, mmap 10); stdout 1361 bytes
+    fsys 5:   6,603,379 dispatches, I/O words  1,423,399; system calls    135 (read 73, lseek 4, write 15, mmap 13); stdout 1361 bytes
+      SCAN            1,273,653   1,279,693
+      READ-LINE@2             0     105,883
+      READ-LINE          91,922           0
+      FS-SEEKS?          40,700         192
+      FS-BACK            36,285           0
+      FS3                34,600         608
+      FS1                21,674         429
+      FS-CR              20,582         226
+      FS-LF              19,242           0
+      FS0                17,339         343
+      FS-BLK             17,322         332
+      FS-RE                   0      13,032
+      FS-BIT             12,864          72
+      WRITE               9,571       9,571
+      the most changed words, fsys 4 -> 5:
+      READ-LINE@2               0    105,883     105,883
+      READ-LINE            91,922          0     -91,922
+      FS-SEEKS?            40,700        192     -40,508
+      FS-BACK              36,285          0     -36,285
+      NEXT-NFA8           679,380    714,406      35,026
+      FS3                  34,600        608     -33,992
+      FS2                  25,950        456     -25,494
+      FS1                  21,674        429     -21,245
+      FS-CR                20,582        226     -20,356
+      FS-LF                19,242          0     -19,242
+      FS0                  17,339        343     -16,996
+      FS-BLK               17,322        332     -16,990
+      FS-RE                     0     13,032      13,032
+      FS-BIT               12,864         72     -12,792
+  corpus:
+    fsys 4:  36,862,315 dispatches, I/O words  4,439,865; system calls  12755 (read 6152, lseek 5856, write 704, mmap 10); stdout 18518 bytes
+    fsys 5:  36,727,255 dispatches, I/O words  3,894,316; system calls    439 (read 337, lseek 6, write 51, mmap 12); stdout 18518 bytes
+      SCAN            3,374,198   3,384,510
+      READ-LINE@2             0     290,175
+      READ-LINE         251,950           0
+      FS-SEEKS?         111,452         302
+      WRITE             107,482     107,482
+      FS-BACK            99,490           0
+      FS3                96,048       2,728
+      FS1                60,089       1,764
+      FS-CR              57,380         455
+      FS-LF              52,740           0
+      FS0                48,071       1,411
+      FS-BLK             48,050       1,394
+      FS-RE                   0      35,508
+      FS-BIT             35,211         111
+      the most changed words, fsys 4 -> 5:
+      NEXT-NFA8        11,606,854 11,912,910     306,056
+      READ-LINE@2               0    290,175     290,175
+      READ-LINE           251,950          0    -251,950
+      FS-SEEKS?           111,452        302    -111,150
+      SEARCH-WORDLIST   6,437,417  6,547,953     110,536
+      FS-BACK              99,490          0     -99,490
+      FS3                  96,048      2,728     -93,320
+      FS2                  72,036      2,046     -69,990
+      FS1                  60,089      1,764     -58,325
+      FS-CR                57,380        455     -56,925
+      FS-LF                52,740          0     -52,740
+      FS0                  48,071      1,411     -46,660
+      FS-BLK               48,050      1,394     -46,656
+      FS-RE                     0     35,508      35,508
+## a0c7010722 (kinput=0, kfast=0, jit=0, escape=0)
+  kernel:
+    fsys 4:   6,737,806 dispatches, I/O words  1,618,589; system calls   4441 (read 2189, lseek 2137, write 75, mmap 10); stdout 1361 bytes
+    fsys 5:   6,584,073 dispatches, I/O words  1,421,227; system calls    135 (read 73, lseek 4, write 15, mmap 13); stdout 1361 bytes
+      SCAN            1,273,653   1,279,693
+      READ-LINE@2             0     105,883
+      READ-LINE          91,922           0
+      FS-SEEKS?          40,700         192
+      FS-BACK            36,285           0
+      FS3                34,600         608
+      FS1                21,674         429
+      FS-CR              20,582         226
+      FS-LF              19,242           0
+      FS0                17,339         343
+      FS-BLK             17,322         332
+      FS-BIT             12,864          72
+      FS-RE                   0      10,860
+      WRITE               9,571       9,571
+      the most changed words, fsys 4 -> 5:
+      READ-LINE@2               0    105,883     105,883
+      READ-LINE            91,922          0     -91,922
+      FS-SEEKS?            40,700        192     -40,508
+      FS-BACK              36,285          0     -36,285
+      NEXT-NFA8           679,380    714,406      35,026
+      FS3                  34,600        608     -33,992
+      FS2                  25,950        456     -25,494
+      FS1                  21,674        429     -21,245
+      FS-CR                20,582        226     -20,356
+      FS-LF                19,242          0     -19,242
+      FS0                  17,339        343     -16,996
+      FS-BLK               17,322        332     -16,990
+      FS-BIT               12,864         72     -12,792
+      SEARCH-WORDLIST     546,839    559,511      12,672
+  corpus:
+    fsys 4:  36,844,867 dispatches, I/O words  4,439,865; system calls  12755 (read 6152, lseek 5856, write 704, mmap 10); stdout 18518 bytes
+    fsys 5:  36,701,390 dispatches, I/O words  3,888,398; system calls    439 (read 337, lseek 6, write 51, mmap 12); stdout 18518 bytes
+      SCAN            3,374,198   3,384,510
+      READ-LINE@2             0     290,175
+      READ-LINE         251,950           0
+      FS-SEEKS?         111,452         302
+      WRITE             107,482     107,482
+      FS-BACK            99,490           0
+      FS3                96,048       2,728
+      FS1                60,089       1,764
+      FS-CR              57,380         455
+      FS-LF              52,740           0
+      FS0                48,071       1,411
+      FS-BLK             48,050       1,394
+      FS-BIT             35,211         111
+      FS-RE                   0      29,590
+      the most changed words, fsys 4 -> 5:
+      NEXT-NFA8        11,609,528 11,912,910     303,382
+      READ-LINE@2               0    290,175     290,175
+      READ-LINE           251,950          0    -251,950
+      FS-SEEKS?           111,452        302    -111,150
+      SEARCH-WORDLIST   6,437,417  6,547,953     110,536
+      FS-BACK              99,490          0     -99,490
+      FS3                  96,048      2,728     -93,320
+      FS2                  72,036      2,046     -69,990
+      FS1                  60,089      1,764     -58,325
+      FS-CR                57,380        455     -56,925
+      FS-LF                52,740          0     -52,740
+      FS0                  48,071      1,411     -46,660
+      FS-BLK               48,050      1,394     -46,656
+      FS-BIT               35,211        111     -35,100
+## 9a3de58ebe (kinput=1, kfast=1, jit=1, escape=0)
+  kernel:
+    fsys 4:   1,506,883 dispatches, I/O words    322,758; system calls   4442 (read 2189, lseek 2137, write 75, mmap 11); stdout 1361 bytes
+    fsys 5:   2,182,678 dispatches, I/O words    999,398; system calls    136 (read 73, lseek 4, write 15, mmap 14); stdout 1361 bytes
+      CMOVE              18,161     867,717
+      READ-LINE@2             0     103,556
+      READ-LINE          83,372           0
+      FS-SEEKS?          38,557         181
+      FS-BACK            36,285           0
+      FS3                34,600         608
+      FS-CR              18,811         206
+      FS0                17,339         343
+      FS1                17,339         343
+      FS-LF              17,104           0
+      FS-BLK             12,987         246
+      FS-BIT             12,864          72
+      FS-RE                   0      10,860
+      WRITE               8,701       8,701
+      the most changed words, fsys 4 -> 5:
+      CMOVE                18,161    867,717     849,556
+      READ-LINE@2               0    103,556     103,556
+      READ-LINE            83,372          0     -83,372
+      FS-SEEKS?            38,557        181     -38,376
+      FS-BACK              36,285          0     -36,285
+      FS3                  34,600        608     -33,992
+      FS2                  25,950        456     -25,494
+      FS-CR                18,811        206     -18,605
+      FS-LF                17,104          0     -17,104
+      FS1                  17,339        343     -16,996
+      FS0                  17,339        343     -16,996
+      MIN                  20,039     32,923      12,884
+      FS-BIT               12,864         72     -12,792
+      FS-BLK               12,987        246     -12,741
+  corpus:
+    fsys 4:   5,982,061 dispatches, I/O words  1,181,072; system calls  12756 (read 6152, lseek 5856, write 704, mmap 11); stdout 18518 bytes
+    fsys 5:   7,242,827 dispatches, I/O words  2,444,983; system calls    440 (read 337, lseek 6, write 51, mmap 13); stdout 18518 bytes
+      CMOVE             240,235   1,981,505
+      READ-LINE@2             0     283,924
+      READ-LINE         228,515           0
+      FS-SEEKS?         105,585         285
+      FS-BACK            99,490           0
+      WRITE              97,711      97,711
+      FS3                96,048       2,728
+      FS-CR              52,405         415
+      FS0                48,071       1,411
+      FS1                48,071       1,411
+      FS-LF              46,880           0
+      FS-BLK             36,032       1,041
+      FS-BIT             35,211         111
+      FS-RE                   0      29,590
+      the most changed words, fsys 4 -> 5:
+      CMOVE               240,235  1,981,505   1,741,270
+      READ-LINE@2               0    283,924     283,924
+      READ-LINE           228,515          0    -228,515
+      FS-SEEKS?           105,585        285    -105,300
+      FS-BACK              99,490          0     -99,490
+      FS3                  96,048      2,728     -93,320
+      FS2                  72,036      2,046     -69,990
+      FS-CR                52,405        415     -51,990
+      FS-LF                46,880          0     -46,880
+      FS1                  48,071      1,411     -46,660
+      FS0                  48,071      1,411     -46,660
+      MIN                     435     35,665      35,230
+      FS-BIT               35,211        111     -35,100
+      FS-BLK               36,032      1,041     -34,991
+## 28677d13b1 (kinput=1, kfast=1, jit=1, escape=2)
+  kernel:
+    fsys 4:   1,386,707 dispatches, I/O words    294,506; system calls   4447 (read 2189, lseek 2137, write 75, mmap 11); stdout 1361 bytes
+    fsys 5:   1,212,698 dispatches, I/O words    123,652; system calls    141 (read 73, lseek 4, write 15, mmap 14); stdout 1361 bytes
+      READ-LINE@2             0      97,511
+      READ-LINE          76,960           0
+      FS-SEEKS?          38,553         177
+      FS-BACK            36,285           0
+      FS3                34,600         608
+      FS0                17,339         343
+      FS1                17,339         343
+      FS-LF              17,104           0
+      FS-CR              14,902         164
+      FS-BLK             12,987         246
+      FS-BIT             12,864          72
+      FS-RE                   0       8,688
+      WRITE               8,411       8,411
+      FS-SK               2,155          23
+      the most changed words, fsys 4 -> 5:
+      READ-LINE@2               0     97,511      97,511
+      READ-LINE            76,960          0     -76,960
+      FS-SEEKS?            38,553        177     -38,376
+      FS-BACK              36,285          0     -36,285
+      FS3                  34,600        608     -33,992
+      FS2                  25,950        456     -25,494
+      FS-LF                17,104          0     -17,104
+      FS1                  17,339        343     -16,996
+      FS0                  17,339        343     -16,996
+      FS-CR                14,902        164     -14,738
+      2@                        0     13,428      13,428
+      FS-BIT               12,864         72     -12,792
+      FS-BLK               12,987        246     -12,741
+      MIN                  16,675     27,386      10,711
+  corpus:
+    fsys 4:   4,975,165 dispatches, I/O words    909,136; system calls  12761 (read 6152, lseek 5856, write 704, mmap 11); stdout 18518 bytes
+    fsys 5:   4,494,762 dispatches, I/O words    437,489; system calls    445 (read 337, lseek 6, write 51, mmap 13); stdout 18518 bytes
+      READ-LINE@2             0     267,229
+      READ-LINE         210,940           0
+      FS-SEEKS?         105,579         279
+      FS-BACK            99,490           0
+      FS3                96,048       2,728
+      WRITE              94,454      94,454
+      FS0                48,071       1,411
+      FS1                48,071       1,411
+      FS-LF              46,880           0
+      FS-CR              41,570         330
+      FS-BLK             36,032       1,041
+      FS-BIT             35,211         111
+      FS-RE                   0      23,672
+      EMIT               11,184      11,184
+      the most changed words, fsys 4 -> 5:
+      READ-LINE@2               0    267,229     267,229
+      READ-LINE           210,940          0    -210,940
+      FS-SEEKS?           105,579        279    -105,300
+      FS-BACK              99,490          0     -99,490
+      FS3                  96,048      2,728     -93,320
+      FS2                  72,036      2,046     -69,990
+      FS-LF                46,880          0     -46,880
+      FS1                  48,071      1,411     -46,660
+      FS0                  48,071      1,411     -46,660
+      FS-CR                41,570        330     -41,240
+      2@                       60     36,444      36,384
+      FS-BIT               35,211        111     -35,100
+      FS-BLK               36,032      1,041     -34,991
+      MIN                     355     29,651      29,296
+exit 0 103 s

@@ -1,0 +1,30 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+## T1 - stdout and stderr on one pipe, against native
+
+- stderr between   same at fsys 3, 4, 5 (status 0, 26 bytes)
+- over the buffer  same at fsys 3, 4, 5 (status 0, 9027 bytes)
+- long TYPE        same at fsys 3, 4, 5 (status 0, 6021 bytes)
+- no newline, BYE  same at fsys 3, 4, 5 (status 0, 23 bytes)
+- end of input     same at fsys 3, 4, 5 (status 0, 31 bytes)
+- THROW            same at fsys 3, 4, 5 (status 0, 44 bytes)
+- ABORT"           same at fsys 3, 4, 5 (status 0, 28 bytes)
+- file between     same at fsys 3, 4, 5 (status 0, 23 bytes)
+- control chars    same at fsys 3, 4, 5 (status 0, 26 bytes)
+- engine fault     same at fsys 3, 4, 5 (status 0, 37 bytes)
+- DIVZERO          same at fsys 3, 4, 5 (status 0, 82 bytes)
+
+## T2 - the prompt before a blocking read (a pipe)
+
+- fsys 0: the prompt shown while the engine waited, then the key echoed
+- fsys 3: the prompt shown while the engine waited, then the key echoed
+- fsys 4: the prompt shown while the engine waited, then the key echoed
+- fsys 5: the prompt shown while the engine waited, then the key echoed
+
+## T3 - a terminal: output at once (no system call between "A" and "B")
+
+- fsys 0: "A" at 0.00 s, "B" at 0.76 s - native: shown at once
+- fsys 3: "A" at 0.00 s, "B" at 0.76 s - "A" shown before the computation ended
+- fsys 4: "A" at 0.00 s, "B" at 0.80 s - "A" shown before the computation ended
+- fsys 5: "A" at 0.00 s, "B" at 0.82 s - "A" shown before the computation ended
+
+PASS
