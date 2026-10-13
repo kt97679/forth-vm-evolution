@@ -4440,3 +4440,27 @@ NEXT-NFA collided with the converter's X8 swap and broke s8; LINKC kept the dump
 tool in the images, +662 bytes, until the converter's DUMPTOOL listed it). All
 checks pass (ORDER.md); images +32 bytes, engines unchanged. The after-seed-45
 batch: four patches, one reseed.
+
+## Iteration 235 - 2026-10-13 - Claude
+
+**The benchmarks in C - a native baseline (the owner's idea).** bench/c/bench.c
+does exactly the work of fib, loop, sieve, bubble, ackermann and parse
+(BENCH repeated as the long versions do; 64-bit wrapping cells; inputs through
+volatile reads, results printed - the same answers as the Forth: sieve 1899,
+bubble 65505 0, ackermann 253). lab/evolve/c-baseline.py times C -O2 and -O0
+against s6 and given designs with the evolver's own CPU-time wrapper, the
+median of N runs, start-up subtracted. On the VM (noisy, ~10%), as multiples of
+C -O2: s6 27.1x; the fastest of all runs (28677d13b1) 3.9x - loop 1.7x, parse
+1.9x, bubble 3.4x, sieve 3.5x, fib 5.1x, ackermann 16.8x; the knee 4.7x; the
+smallest 29.3x; C -O0 3.2x. Calls and returns are where the fast end is
+furthest from C: ackermann and fib, recursion, 16.8x and 5.1x, against 1.7-3.5x
+for the loops - the outside reviews' return-path ideas aim there.
+results/c-baseline-*.md; the laptop should run it for real numbers.
+
+**The outside reviews triaged** (five models, the owner's brief): new and
+worth pricing - the dispatch table as offsets in the engine file (-768 bytes
+on the smallest, no cost per dispatch: the tag-2 tables are built at start-up),
+dropping stencils a design never uses, a Bloom filter for failed lookups
+(half of all lookup work, Iteration 221); compressing image and engine (-37% and
+-51% with xz) - a question for the owner, as it changes what size means.
+Already ours or not applicable otherwise (GOALS.md register).
