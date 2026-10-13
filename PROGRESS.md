@@ -4859,3 +4859,17 @@ function - GCC warned of an uninitialised mode where it inlined a two-argument
 call: undefined behaviour, replaced by an explicit OPEN3 in the engine. With
 patch 1, engines are +56, 0 and -32 bytes against today (smallest, Q-best,
 fastest). All checks pass (results/pending/ORDER.md).
+
+## Iteration 258 - 2026-10-13 - Claude
+
+**A gap check: options missed so far?** (`results/missed-options-2026-10.md`)
+The inventory (genes, the register's 35 rows, the pricings) against current
+interpreter literature, with an experiment where a gap showed. Found:
+link-time optimisation across the engine and its runtime - 1.0-2.4% off
+engines (-72 to -512 bytes), corpus right, interpreters' speed within noise -
+but it changed the JIT's stencils (the JIT stopped translating: fib 2.5x, loop
+3.9x slower), so a gene would compile spn-stencils.c outside LTO. Clang as a
+compiler (CPython 3.14's tail-calling interpreter needed musttail and
+preserve_none; the laptop and the VM have GCC 13.3, which has neither) - the
+owner's call. Not worth it: -march=x86-64-v3 (sizes mixed), nibble-packed
+operation runs (27 bytes). Everything else checked was covered already.
