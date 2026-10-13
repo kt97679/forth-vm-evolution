@@ -4985,3 +4985,14 @@ where slots allow - against the echo's 283-427 before its handler. No engine
 change; the price is a call and a return where a body is used, so the reference
 profile keeps it off hot code. The next size candidate (GOALS.md's register):
 a converter gene, `factor`.
+
+## Iteration 264 - 2026-10-13 - Claude
+
+**The gene factor, planned (results/drafts/factor-plan.md).** Where the pass
+goes (layout.py, between the token fill and placement), how a factored body
+becomes a word (a synthetic key past the dump, in Iteration 190's headerless
+set, appended after (PRIMITIVES-END)), what stays out (branches and their
+targets, EXITs, the return stack, aligned or relocated operands, words the
+run-time compiler reads, hot words by the reference profile), and the checks.
+Not built yet: the converter keys every map by a word's dump address, and the
+change wants a session of its own rather than the end of this one.
