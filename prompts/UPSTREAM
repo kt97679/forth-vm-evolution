@@ -12,3 +12,10 @@ these, and update this file.
   habr.com/ru/articles/1087928 - an Oberon/RISC5 stack built by AI agents) and
   this project's own failures; 03 step 4 (a disappointing result audited too)
   and step 9 (null rewrites), and a trigger; INDEX and README rows.
+  Iteration 275 (forth-vm-evolution), from the daily switches between chats:
+  07 (the trigger - a session ends without warning, so any turn that changed
+  the repository; why-this-exists; items 9-12 - the present in one checked file,
+  losing work a failing check, closing the old session before opening the new,
+  recovering from a closed one; the check in the artifact), 12 (item 6 - one
+  home for the present), 15 (step 1 - a contaminated harness), INDEX and README
+  rows.

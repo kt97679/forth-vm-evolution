@@ -68,7 +68,10 @@ up with the truth.
    the past and grows; the goals file is the present and should shrink
    as things are done - stale "where things stand" snapshots belong in
    the log or an archive, not in the file people read to decide what
-   to do next.
+   to do next. Give the present exactly one home and let every other
+   document point to it: in forth-vm-evolution the goals file kept 770
+   lines of "where things stand" and "next", the newest 166 iterations
+   old, beside a handoff file that was current - two presents, one wrong.
 
 ## Artifact required
 

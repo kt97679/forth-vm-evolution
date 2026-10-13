@@ -22,7 +22,15 @@ This check fails, naming what would be lost, when:
   6. a file in a scanned directory that could hold work - a script, patch or
      Forth source - matches no tracked file byte for byte;
   7. results/pending exists and its patches and ORDER.md disagree;
-  8. NEXT-RUN has no line to run.
+  8. NEXT-RUN has no line to run;
+  9. a tracked document (.md) is in no index, or an index lists one that is
+     not there (Iteration 275) - the indexes: README.md, results/README.md,
+     prompts/INDEX.md, lab/evolve/README.md and any README.md an index lists.
+     A document is in an index when the index names its path from the root,
+     from the index's directory, or - beside the index - its name without .md
+     (the prompts' ids); a seed's number matches N (seedN, applied-after-seedN);
+  10. a script of the evolver (lab/evolve/*.py, *.sh) is missing from
+      lab/evolve/README.md's tools.
 
 5 and 6 pass for anything listed in the disposable list (--disposable FILE,
 default /tmp/handoff-disposable.txt): per line a path - a file, or a directory
@@ -129,8 +137,40 @@ if os.path.isdir(pd):
 nr = [l.strip() for l in open(os.path.join(ROOT, 'lab', 'evolve', 'NEXT-RUN')) if l.strip() and not l.startswith('#')]
 if not nr: fail(8, 'lab/evolve/NEXT-RUN has no line to run')
 
+# 9. every document indexed; every indexed document there
+_, mdl = git('ls-files', '*.md')
+mds = [m for m in mdl.split('\n') if m]
+idx = ['README.md', 'results/README.md', 'prompts/INDEX.md', 'lab/evolve/README.md']
+for _ in range(3):                       # a README.md an index lists is an index too
+    text = ''.join(open(os.path.join(ROOT, i)).read() for i in idx if os.path.exists(os.path.join(ROOT, i)))
+    idx += [m for m in mds if m.endswith('/README.md') and m not in idx and (m in text or m.split('/', 1)[1] in text)]
+itext = {i: open(os.path.join(ROOT, i)).read() for i in idx if os.path.exists(os.path.join(ROOT, i))}
+def named(m):
+    for i, t in itext.items():
+        d = os.path.dirname(i); rel = os.path.relpath(m, d) if d else m
+        forms = {m, rel, re.sub(r'seed\d+', 'seedN', m), re.sub(r'seed\d+', 'seedN', rel)}
+        if os.path.dirname(m) == d: forms.add(os.path.basename(m)[:-3])
+        if any(f in t for f in forms): return True
+    return m in idx
+for m in mds:
+    if not named(m): fail(9, '%s: in no index - add a line for it to the index of its place' % m)
+for i, t in itext.items():
+    d = os.path.dirname(i)
+    for line in t.split('\n'):
+        if not line.startswith('- '): continue
+        for tok in re.findall(r'`([^`\s]+\.md)`', line):
+            if 'N' in re.sub(r'[^N]', '', tok) and re.search(r'seedN|after-seedN', tok): continue
+            if not (os.path.exists(os.path.join(ROOT, d, tok)) or os.path.exists(os.path.join(ROOT, tok))):
+                fail(9, '%s lists %s, which is not there' % (i, tok))
+
+# 10. every script of the evolver in its README's tools
+_, sl = git('ls-files', 'lab/evolve/*.py', 'lab/evolve/*.sh')
+lr = open(os.path.join(ROOT, 'lab', 'evolve', 'README.md')).read() if os.path.exists(os.path.join(ROOT, 'lab', 'evolve', 'README.md')) else ''
+for sp in [x for x in sl.split('\n') if x]:
+    if '`%s`' % os.path.basename(sp) not in lr: fail(10, '%s: not among lab/evolve/README.md\'s tools' % sp)
+
 if fails:
     print('handoff-check: FAIL - a new chat would lose or misread this:')
     for f in fails: print('  ' + f)
     sys.exit(1)
-print('handoff-check: PASS - master Iteration %s, HANDOFF.md current, nothing outside the repository; NEXT-RUN: %s' % (head_n, nr[0]))
+print('handoff-check: PASS - master Iteration %s, HANDOFF.md current, nothing outside the repository, %d documents indexed; NEXT-RUN: %s' % (head_n, len(mds), nr[0]))

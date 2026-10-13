@@ -5372,3 +5372,45 @@ there is the pre-fix copy the tracked tool grew from. It found iterations and
 figures in two earlier transcripts its machine kept in /mnt/transcripts - on
 this machine that directory is empty, so the repository stays the only record
 that carries over. Nothing more is owed by that chat.
+
+## Iteration 275 - 2026-10-13 - Claude
+
+**The documentation audited (the owner asked): one home per fact, every document
+indexed, the indexes checked.** 187 tracked documents. What changed:
+
+- **GOALS.md, 922 lines to 155.** Three sections were snapshots of the state and
+  the plan, written in Iterations 60-272 and never brought up to date ("Where
+  things stand" stopped at seed 28, Iteration 106; "Next" pointed back at
+  "Resuming in a new chat", Iteration 86). Moved out verbatim to
+  results/drafts/goals-snapshots.md. What was still live stayed in GOALS.md,
+  brought to date: the measures (the selection workloads of Iteration 127, the
+  kernel-only size of Iteration 138), the five-measure rule of Iterations
+  188-189 (the section still stated Iteration 78's three), the conventions (the
+  handoff check, checkpoints, where things are written), the owner's later
+  plans (the Tegra session, the article). The runs/ directory and the VM's four
+  checks were already in RUNNING.md and HANDOFF.md.
+- **Indexes.** README.md's new "Documents" section lists every document once;
+  results/README.md (was: the stage runs and seed 1) every measurement, analysis
+  and per-run record, by topic, with each file's own title; lab/evolve/README.md
+  opens with its 36 tools, each from its own docstring. HANDOFF.md's "Where
+  things are" points to them instead of keeping a list of its own, and its
+  judging rule points to GOALS.md. A new chat now reads GOALS.md too
+  (HANDOFF-PROMPT.md). README.md's corpus count was 616; it is 661.
+- **The handoff check, rules 9 and 10**: every tracked document in an index and
+  every indexed document there; every script of the evolver among its README's
+  tools. On its first run it found two gaps (the second archive's manifest, and
+  its own matching of seedN), fixed.
+- **The VM's fourth check** - lab/evolve/test-jail.py, which the laptop runs
+  before a run - is in HANDOFF.md's routine now; Iteration 269 ran three of the
+  four before seed 48's bundle.
+- **The prompts** (prompts/UPSTREAM, to carry back to relf): 07 - a session ends
+  without warning, so every turn that changed the repository is a possible end;
+  the present in one checked file; losing work a failing check; closing the old
+  session before opening the new; recovering from a closed one, for its whole
+  range. 12 - one home for the present. 15 - a planted fault must trip only its
+  own check (the contaminated first round of Iteration 272). INDEX and README rows.
+
+Left as they are, said so: lab/evolve/README.md and GENES.md both describe each
+gene - the README as history, GENES.md as the reference - and overlap by design;
+PROGRESS.md's old HANDOFF entries are history now; the article (on the
+backburner) predates the evolution's results.

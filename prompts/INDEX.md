@@ -25,7 +25,7 @@ fetched lazily when their trigger conditions are met.
 | `04-expert-review` | publish a technical write-up whose claims have settled | the claims are still moving |
 | `05-reader-review` | publish, after `04` has passed | the claims are still moving |
 | `06-handling-review` | act on any review feedback | never skip |
-| `07-git-handoff` | end a session, or hand work to another machine | the work leaves no artifact |
+| `07-git-handoff` | end a session or hand work to another machine - or end any turn that changed the repository: a session can end without warning | the work leaves no artifact |
 | `08-run-it-elsewhere` | call a suite, build or benchmark green, *or* hand over a script that runs on someone else's machine - above all one that moves or deletes files | the environment ships with the product |
 | `09-baseline-discipline` | re-record a recorded value that changed | nothing is recorded - then ask why not |
 | `10-price-before-refactor` | restructure something that works, on the strength of a profile | the change is required for correctness |

@@ -7,7 +7,7 @@ packed on its machine and filed here unchanged (Iterations 273 and 274):
   first archive: the scripts behind Iterations 241-264's figures, the check jobs
   and their logs, the /tmp patches (all also in the repository), the scratch
   trees as patches with their status.
-- `part2/` (its own `MANIFEST.md`) - the second: every other script and source
+- `part2/` (its own `part2/MANIFEST.md`) - the second: every other script and source
   that chat's /tmp held, Iterations 213-243 (and elf.py, 250-251, missed by the
   first), the logs its job scripts wrote, source copies with other suffixes.
 

@@ -48,7 +48,12 @@ Before calling this green, show that each check carrying the claim can fail.
    thing it guards - flip a comparison, drop a line, return a constant,
    feed the input the change was about - and run the check. It must go red.
    Table: fault, check, caught or not. A check that stays green on a broken
-   thing guards nothing; fix it or stop citing it.
+   thing guards nothing; fix it or stop citing it. Plant each fault from a
+   clean state and confirm that only its own check went red: a fault that
+   trips several, or a reset that does not restore the clean state, means
+   the harness is contaminated and its verdicts are not evidence (files a
+   root shell made inside a user's clone survived its resets and turned
+   later cases red for the wrong reason).
 
 2. CANNOT RUN IS RED. A check that could not execute - missing tool, failed
    build, timeout, zero cases collected - is a failure, never a pass and

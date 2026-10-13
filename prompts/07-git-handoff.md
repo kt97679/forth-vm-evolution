@@ -1,7 +1,10 @@
 # 07 — the repository is the handoff
 
 **Fires when** a session will end and another will continue the work, or
-when work is handed to a person on another machine.
+when work is handed to a person on another machine - and at the end of any
+turn that changed the repository, because a session can end without
+warning: a budget of turns or tool calls runs out, or the person starts a
+new chat.
 
 **Skip when** the work is a single answer in the conversation with no
 artifact.
@@ -36,6 +39,16 @@ files were tracked too, and turned up as modifications on every
 machine with a different Python. And the opposite fault is as easy: an
 ignore rule broad enough to catch `*.img` would have silently dropped
 the one kind of binary the project cannot rebuild without.
+
+A project handed between chats every day (forth-vm-evolution) lost or nearly
+lost work at every switch, and each time to a session boundary nobody had
+announced. A pricing script lived in `/tmp` and went with its chat - recovered
+only because that chat's machine was still up and could be asked. A turn ran
+out of tool calls with a whole feature in a scratch clone and nothing
+committed. The handoff was a log entry that the next chat's prompt named by
+number, and it still said a run was going after the run had been processed.
+And the new chat's setup lacked the commit identity, found only by doing the
+setup.
 
 ## Do this
 
@@ -149,6 +162,37 @@ the one kind of binary the project cannot rebuild without.
    the upgrade itself: the copy they have now, the bundle you are
    sending.
 
+9. **Keep the present in one file, apart from the log, and check that it is
+   current.** A log entry is history the moment the next one is written, and
+   a prompt that names one by number goes stale with it. One handoff file
+   holds the state, the routine, the standing decisions and the open items,
+   and is rewritten, not appended to; a check fails when it is older than the
+   last commit that changed the state. Every other document points to it
+   rather than restating it - two "where things stand" sections disagree.
+
+10. **Make losing work a failing check, not a habit.** Before the bundle,
+    fail on: changes not committed; a scratch clone holding changes or
+    commits the repository does not; any script, patch or source outside the
+    repository that matches no tracked file byte for byte - unless it is
+    declared disposable, with a reason. Run the check from the bundle script,
+    so every bundle handed over is a valid starting point; a safety copy made
+    mid-work is named as one (`-checkpoint`) and is never started from.
+
+11. **Close the old session before opening the new one.** The switch is two
+    messages: to the old session - commit, track or discard what is outside
+    the repository, bring the handoff file up to date, run the check, present
+    the bundle; to the new one - start from the bundle the old one presented
+    last. Test the second by doing it: run its setup, word for word, on a
+    fresh clone. The missing step shows; reading the prompt does not show it.
+
+12. **Recovering from a closed session.** While its machine lasts, ask it for
+    every file it left outside the repository - for the whole range of work it
+    did, not the range you remember (a request scoped to the wrong iterations
+    came back with half) - as found, nothing reconstructed from memory, with a
+    manifest mapping each file to the figure it produced. Transcripts of
+    earlier sessions may be on one machine and not the next: never rely on
+    them.
+
 ## Artifact required
 
 Before ending the session, produce:
@@ -158,4 +202,5 @@ Before ending the session, produce:
 - the bundle command you ran **and** the output of the clone check;
 - the output of `git status --porcelain` after the build and test run:
   empty, or each line explained;
-- one line naming what a future session should pick up first.
+- one line naming what a future session should pick up first;
+- the handoff check's output, and the iteration the handoff file names.
