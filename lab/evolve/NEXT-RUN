@@ -295,4 +295,9 @@
 # UTF-8 names in byte and cell headers, the dispatch table as offsets (384-448
 # bytes off every engine), and a new gene, jitos (the JIT's translator -Os).
 # Proposed: seed 46, 6 hours - the owner's to choose.
-seed 46 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 241 (the owner): 10 hours. The reserve for the re-measure and the
+# comparison comes from the last chain's times (seed 45's: 12 min and 1 h 17
+# min, plus a tenth and 10 minutes), so the evolution gets about 8 hours
+# (seed 45: 3 h 51 min); the comparison measures every front again in one
+# session, so the longer run is judged on equal terms.
+seed 46 tag2 10h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

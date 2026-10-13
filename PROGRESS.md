@@ -4533,3 +4533,11 @@ reseeded): run-tests PASS, 7 of 7 IDENTICAL, every design of seed 45's front and
 the joint front alive (128 of 128), the standard suite on 12 of the front 0
 differ (s6 2,119 tests, 0 failed, 14 of 14 whole). NEXT-RUN: seed 46, 6 hours,
 proposed.
+
+## Iteration 241 - 2026-10-13 - Claude
+
+**Seed 46 for 10 hours (the owner).** NEXT-RUN: `seed 46 tag2 10h then
+experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - about 8 hours
+of evolution after the re-measure's and the comparison's reserve (seed 45's
+chain: 12 min and 1 h 17 min). The first run with jitos, the dispatch-table
+offsets and the UTF-8 name fix. Seed 46's predictions stand.

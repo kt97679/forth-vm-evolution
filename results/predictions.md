@@ -244,3 +244,6 @@ names in byte and cell headers (a reseed), the dispatch table as offsets
 4. Small (hypervolume under 2%): jitos moves the JIT end by ~2% of size at most,
    and the memory landscape has been explored by seed 45.
 5. Crossover 30-35%.
+
+Iteration 241: 10 hours, not 6 (the owner) - about 8 hours of evolution
+against seed 45's 3 h 51 min. The predictions above stand as written.
