@@ -130,7 +130,8 @@ About 20 minutes of machine time for build, tests and gates.
    branch misses), `python3 lab/evolve/c-baseline.py`.
 4. Older genes into rows, as each is next touched: the gene table (Iteration
    276) holds every value, but the older genes' express() rules and build code
-   are still code. A new gene is one row (GENES.md, "Adding a gene").
+   are still code. A new gene is one row (GENES.md, "Adding a gene"); after
+   converting one, `python3 lab/evolve/gene-equiv.py <the commit before>`.
 5. Optional: the ten scratch trees whose work never reached master
    (results/drafts/chat-to-iter265/trees/SORTED.md) - unread; prototypes for
    some deferred ideas may be there.

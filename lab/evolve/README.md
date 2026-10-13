@@ -48,6 +48,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
 - `hotsites.py` - hotsites.py ID [--db FILE ...] [--write FILE] - the image's hottest call
+- `gene-equiv.py` - the evolver's genes behave as they did at an earlier commit: ids, expressions, seeded mutations, draws and crossovers (Iteration 276)
 - `gene-table-test.py` - a new gene is one row: a fictional gene works with no code change (Iteration 276)
 - `hotwords.py` - hotwords.py ID [ID ...] [--db FILE ...] [--write FILE] - every word's share
 - `image-ab.py` - image-ab.py ID [ID ...] --env VAR=VALUE [--set GENE=VALUE] [--db FILE] [--rounds N] - a

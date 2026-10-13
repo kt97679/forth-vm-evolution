@@ -20,7 +20,8 @@ with more than two values keep their rules and build code, but their values sit
 once in GENE_VALUES, read by both mutate() and random_genome() - the two copies
 before. Converting them changed nothing: 2,876 recorded genomes keep their ids
 and expressions; 3,000 mutations, 1,000 random genomes and 1,000 crossovers, each
-seeded, came out identical before and after.
+seeded, came out identical before and after (lab/evolve/gene-equiv.py REV checks any
+later conversion the same way).
 
 ## In the genome now
 

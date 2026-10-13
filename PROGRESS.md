@@ -5464,3 +5464,10 @@ register points to them.
 Checked on master with the table: run-tests PASS (the generators: 31 paths -
 factor's two now built through the row's converter option), 7 of 7 IDENTICAL,
 `gate.py --set factor=3` on seed 47's front 124 of 124 alive.
+
+The handoff check refused the bundle on four scripts in /tmp - its job. The
+equivalence test behind this entry's figures is tracked now, generalised:
+lab/evolve/gene-equiv.py REV (the evolver against itself at an earlier commit,
+read from git; a control reorders one gene's values and must be caught) - run
+against HEAD~1 it reproduced the figures above and caught its control. The
+other three are listed disposable with reasons.
