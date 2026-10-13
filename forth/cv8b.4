@@ -34,6 +34,13 @@
 \ the length of the link depends on which thread the name hashes to.
 \ >NAME is untouched: it scans back from the body for the count byte and
 \ reaches it before the link either way.
+\
+\ Iteration 232: the count byte comes AFTER the name - [link][name][count]
+\ then the body - and the nfa is the count byte. >NAME's scan back from the
+\ body for bit 7 stops at it at once; before, it crossed the name, and a
+\ UTF-8 byte there (bit 7 set) was taken for the count byte - with bit 5,
+\ for a primitive's, and COMPILE, inlined garbage. The name is the len
+\ bytes before the nfa; the link ends just before the name.
 
 0 CV8-SHIFT-V !          \ byte-aligned call targets: base + v
 -1 CV8-DOES-FAR? !       \ ...so DOES> needs the three-byte call form
@@ -55,15 +62,16 @@
 
 : NEXT-NFA8 ( nfa --- nfa' )
 \ The previous word in this thread, or 0 at the end of the chain.
-  DUP 1- C@                                    ( nfa tag )
-  DUP 128 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
-  DUP 192 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
-  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - ;
+  DUP DUP C@ 31 AND -                          ( nfa b )  \ b: the name's first byte
+  DUP 1- C@                                    ( nfa b tag )
+  DUP 128 U< IF SWAP DROP DUP IF - ELSE 2DROP 0 THEN EXIT THEN
+  DUP 192 U< IF 63 AND 8 LSHIFT SWAP 2 - C@ OR - EXIT THEN
+  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR SWAP 3 - C@ OR - ;
 
 \ ---- the header -----------------------------------------------------
 : NAME>8 ( nfa --- xt )
-\ The body follows the name directly. No ALIGNED.
-  COUNT 31 AND + ;
+\ The body follows the count byte directly (Iteration 232). No ALIGNED.
+  1+ ;
 
 : >BODY8 ( xt --- a-addr )
 \ The kernel's >BODY is `CELL+`, which is only right when the body is
@@ -85,21 +93,15 @@ VARIABLE HDR-LEN
   \ on where the nfa lands, which depends on the link's length. Bound it
   \ from above: the nfa is at most HERE+3, so size the link for that and
   \ the real distance always fits.
-  HDR-HEAD @ IF HERE 3 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
-  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
-  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
-  HERE LAST !
-  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
+  HDR-HEAD @ IF HERE 3 + HERE C@ + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
+  \ Iteration 232: the characters up past the link, the link, then the
+  \ count byte after them - the nfa, right before the body.
+  HERE C@ >R  HERE 1+ HERE HDR-LEN @ + R@ CMOVE>
+  HDR-HEAD @ IF HERE HDR-LEN @ + R@ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+  R@ ALLOT  HERE LAST !  R> 128 + C, ;
 
 \ ---- the search -----------------------------------------------------
-: NAME=? ( a1 a2 u --- flag )
-\ BEGIN/WHILE rather than ?DO: the kernel never uses ?DO itself, so the
-\ translator has no case for it, and a word it cannot translate is
-\ copied as data and would run as garbage.
-  BEGIN DUP WHILE
-    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
-    1+ SWAP 1+ SWAP R> 1-
-  REPEAT DROP 2DROP -1 ;
+\ NAME=? ( a1 a2 u --- flag ) is the kernel's since Iteration 233.
 
 : SEARCH-WORDLIST8 ( c-addr u wid --- 0 | xt 1 | xt -1 )
 \ Same contract as the kernel's, byte compare instead of cell compare,
@@ -109,7 +111,7 @@ VARIABLE HDR-LEN
   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP   ( nfa )
   BEGIN DUP WHILE
     DUP C@ 31 AND NAMEBUF C@ = IF
-      DUP 1+ NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
         DUP NAME>8 SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
       THEN
     THEN

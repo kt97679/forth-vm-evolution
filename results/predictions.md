@@ -222,3 +222,25 @@ zero divisor -10 THROW (+96 to +192 engine bytes, +64 image).
    fastest under 5%, smallest under 2%; by the rule, the evolution stops after
    it until new genes exist.
 5. Crossover 30-36%.
+
+**Seed 45, scored (Iteration 240): 4 of 5.** (1) Memory 16-60 KB lower than
+seed 44 recorded, no run gaining by it - right: the front 124-188 KB against
+160-224, memory +4 KB in the comparison. (2) fbuf 0 on more than fbuf 1 - right:
+46 against 14. (3) fsys 5 on 10 or more, the smallest tenth fsys 3 - right: 11,
+all fsys 3. (4) Small, the second in a row - wrong: hypervolume +6.2%, the
+memory landscape moved. (5) Crossover 30-36% - right: 31.5%.
+
+## Seed 46, predicted (Iteration 240) - the after-seed-45 batch's first run
+
+The batch: native terminal output unbuffered, the SPN stages' -10 THROW, UTF-8
+names in byte and cell headers (a reseed), the dispatch table as offsets
+(384-448 bytes off every engine), and a new gene, jitos (the JIT's translator
+-Os, 416-800 bytes off JIT engines built -O2/-O3).
+
+1. jitos on half or more of the front's JIT designs not built -Os.
+2. Every design 380-450 bytes smaller than seed 45 recorded (the offsets); the
+   comparison measures all runs on the new code, so no run gains by that alone.
+3. The fast third still all JIT with fsys 2; fbuf 0 on most native-file designs.
+4. Small (hypervolume under 2%): jitos moves the JIT end by ~2% of size at most,
+   and the memory landscape has been explored by seed 45.
+5. Crossover 30-35%.

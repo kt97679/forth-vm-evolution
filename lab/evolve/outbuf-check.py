@@ -113,9 +113,9 @@ print('\n## T3 - a terminal: output at once (no system call between "A" and "B")
 for v in LEVELS:
     tA, tB = terminal_first(v)
     early = tA is not None and tB is not None and tB - tA > 0.1
-    if v: fails += not early
+    fails += not early                     # native too, since Iteration 231 (the owner's rule: a terminal unbuffered)
     print('- fsys %d: "A" at %s s, "B" at %s s - %s' % (v, '%.2f' % tA if tA is not None else '-', '%.2f' % tB if tB is not None else '-',
           ('"A" shown before the computation ended' if early else 'FAILED: "A" held back') if v else
-          ('native: shown at once' if early else 'native: held until the next flush - its own buffer does not ask whether it is a terminal')))
+          ('native: shown at once' if early else 'FAILED: native held "A" back - its buffer must ask whether it is a terminal')))
 print('\n%s' % ('PASS' if not fails else 'FAIL - %d' % fails))
 sys.exit(1 if fails else 0)

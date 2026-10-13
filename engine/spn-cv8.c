@@ -577,6 +577,16 @@ static const int open_flags[10] = {
 #define MAX_TAILS 16
 static UNS64 nwords;
 static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
+#if ENC == 3
+static UNS64 throw_off;    /* Iteration 231: THROW's body (offset) - UM/MOD's zero divisor, as vm-lab.c */
+#ifndef DIV0_DISPATCH
+#define DIV0_DISPATCH() NEXT()
+#endif
+#define DIV0() do { DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; DIV0_DISPATCH(); } while (0)
+#define DIV0_CHECK() do { if (!DS0 && throw_off) DIV0(); } while (0)
+#else
+#define DIV0_CHECK() do { } while (0)
+#endif
 
 static void load_image(const char *name) {
     int fd;
@@ -676,8 +686,8 @@ static void load_image(const char *name) {
     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
                     & ~(UNS64)(CELL_BYTES - 1));
 #if ENC == 3
-    {   UNS64 t_;                 /* Iteration 229: THROW's body - vm-lab.c's, read past here */
-        if (full_read(fd, (UNS8*)&t_, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); } }
+    /* Iteration 229: THROW's body; Iteration 231: SPN throws there too, as vm-lab.c */
+    if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); }
 #endif
     len = full_read(fd, base, MEMSIZE);
     close(fd);
@@ -722,9 +732,9 @@ static void load_image(const char *name) {
                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
                 }
                 nfas[n++] = nfa;
-                link = CELL(nfa - CELL_BYTES);
+                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
                 if (link == 0) break;
-                nfa = (nfa - CELL_BYTES) + link;
+                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
             }
         }
         /*  Insertion sort, ascending. It runs once at load over a few
@@ -739,7 +749,7 @@ static void load_image(const char *name) {
         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
         for (i2 = 0; i2 < n; i2++) {
             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
-            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
 #if SKIPPAD
             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
 #endif
@@ -765,14 +775,14 @@ static void load_image(const char *name) {
     for (i = 0; i < n; i++) {
         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
         wordtab[n - 1 - i] =
-            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+            nfa + 1; (void)nlen;
 #if SKIPPAD
         /* skip leading NOOP padding: calls land on the first real token */
         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
 #endif
-        link = CELL(nfa - CELL_BYTES);
+        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
         if (link == 0) break;
-        nfa = (nfa - CELL_BYTES) + link;
+        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
     }
     for (i = 0; i < ntails; i++) {
         if (tail_w[i] >= (UNS64)n) {
@@ -1081,6 +1091,9 @@ static void virtual_machine(void) {
 #else
 #define SYSF &&L_fork
 #define SYSX(l) &&l
+#endif
+#ifndef DSP
+#define DSP(l) &&l         /* Iteration 237: the generated tables' entry form - addresses here (vm-lab.c may store offsets) */
 #endif
     static const void *const dispatch[] = {
         &&L_noop, &&L_exit, &&L_lit, &&L_branch, &&L_0branch, &&L_drop,
@@ -1431,7 +1444,7 @@ L_negate:  /* negate  */ DS0 = - DS0; NEXT();
 L_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; NEXT();
 L_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; NEXT();
 L_ummult:  /* um*     */ umul(&DS0, &DS1); NEXT();
-L_umdiv:   /* um/mod  */ udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
+L_umdiv:   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
 L_dplus:   /* d+      */
     DS3 += DS1; DS2 += DS0; DS2 += (DS3 < DS1);
     dsp += 2 * CELL_BYTES;

@@ -86,7 +86,7 @@ for n, ((a, name), nxt) in enumerate(zip(labels, labels[1:] + [(len(rest), None)
 
 # the entry: the old preamble, with label addresses as function names and
 # the label tables as tables of functions; then the first dispatch.
-p = re.sub(r'&&([A-Za-z_]\w*)', r'H_\1', preamble)
+p = re.sub(r'&&([A-Za-z_]\w*)', r'H_\1', preamble.replace('#ifndef DISPOFF', '#undef DISPOFF\n#define DISPOFF 0\n#ifndef DISPOFF'))   # Iteration 237: functions, not offsets
 p = p.replace('static const void *const dispatch[] = {', 'static const hfn dispatch[] = {')
 ESC_N = re.search(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', p)        # 32, or 41 at ESCAPE == 2
 ESC_N = int(ESC_N.group(1)) if ESC_N else 0

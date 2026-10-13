@@ -211,8 +211,8 @@ if START is None:
 # ---- the dictionary, oldest first ----------------------------------
 order = list(reversed(words))          # definition order, as sod16.py numbers
 for w in order:
-    w['nfa']  = w['s'] - align_up(len(w['n']) + 1, CELL)
-    w['link'] = w['nfa'] - CELL
+    w['nfa']  = w['s'] - 1                                        # Iteration 233: the count byte, last
+    w['link'] = w['s'] - align_up(len(w['n']) + 1, CELL) - CELL
 starts = {w['s']: w for w in order}
 num = {w['s']: i for i, w in enumerate(order)}
 
@@ -369,7 +369,7 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD
 # it or (POSTPONE)s it either (cv8.4's FOLD-OP under cv8-fuse.4's), it is
 # reachable not at all. Both leave `order` only where nothing refers to
 # them - checked, not assumed.
-DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')
+DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'LINKC', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')   # LINKC: 233
 if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and not _NO_LEAN:
     _names = [w['n'] for w in order]
     _k = len(_names) - 1 - _names[::-1].index('NFA') if 'NFA' in _names else None
@@ -638,16 +638,20 @@ for w in order:
         pv = _prev_in_thread[w['s']]
         # Bound from above: the nfa lands at most 3 bytes past `off`, so
         # a link sized for that distance always fits the real one.
-        ll = 1 if pv is None else linklen(off + 3 - new_off[pv]['nfa'])
+        ll = 1 if pv is None else linklen(off + 3 + len(w['n']) - new_off[pv]['nfa'])
         LINKLEN[w['s']] = ll
-        new_off[w['s']] = {'link': off}; off += ll
-        new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
+        # Iteration 232: the name, THEN the count byte - the nfa is the count
+        # byte, right before the body, so >NAME's scan back for bit 7 stops
+        # there at once: a name's own bytes (UTF-8) are never crossed.
+        new_off[w['s']] = {'link': off}; off += ll + len(w['n'])
+        new_off[w['s']]['nfa'] = off;   off += 1
         if body_needs_align(w): off = align_up(off, CELL)
         new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
     else:
         new_off[w['s']] = {'link': off}
         off += CELL
-        new_off[w['s']]['nfa']  = off; off += align_up(len(w['n']) + 1, CELL)
+        _k = align_up(len(w['n']) + 1, CELL)                     # Iteration 233: [zeros][name][count]
+        new_off[w['s']]['nfa']  = off + _k - 1; off += _k
         new_off[w['s']]['body'] = off; off += new_body_bytes(w)
 NEW_HERE = off
 if BSS:                                              # Iteration 44: the buffers' place past the image
@@ -1065,7 +1069,8 @@ def emit(path):
             if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
             else:       img += cel(linkval[s0])
             nm = w['n'].encode('latin-1')
-            img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
+            if BYTEHDR: img += nm + bytes([flag.get(w['nfa'], 0x80 | len(nm))])   # Iteration 232: the count byte last
+            else:       img += bytes(align_up(len(nm) + 1, CELL) - 1 - len(nm)) + nm + bytes([flag.get(w['nfa'], 0x80 | len(nm))])   # 233
         # pad to the body: a cell boundary in the classic layout, or only
         # as far as body_needs_align() asked for in the byte layout
         while len(img) < new_off[s0]['body']: img += b'\x00'

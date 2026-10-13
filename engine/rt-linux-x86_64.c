@@ -82,6 +82,7 @@ long syscall(long n, ...)
     return ok(sc(n, a[0], a[1], a[2], a[3], a[4], a[5]));
 }
 int close(int fd)                              { return (int)S(3, fd, 0, 0); }
+int isatty(int fd) { long t[8]; return S(16, fd, 0x5401, t) == 0; }   /* ioctl TCGETS: Iteration 231, a terminal unbuffered */
 off_t lseek(int fd, off_t o, int w)            { return S(8, fd, o, w); }
 int pipe(int fd[2])                            { return (int)S(22, fd, 0, 0); }
 int dup2(int a, int b)                         { return (int)S(33, a, b, 0); }

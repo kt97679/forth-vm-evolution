@@ -159,25 +159,27 @@ static char **g_argv;
 #error "TAG2: a call reaches 1 GB from the image base - MEMSIZE at most that"
 #endif
 #if TAG2
-/*  A byte-header link, read backwards from the name: the byte before it
+/*  Iteration 232: the nfa is the count byte, AFTER the name; the link ends
+ *  just before the name (b__ = nfa - length).
+ *  A byte-header link, read backwards from the name: the byte before it
  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
  *  bits), 10 three (22), 11 four (30) - the bytes below it high to low.  */
-#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
+#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1); UNS64 d__; \
     switch (t__ >> 6) {                                                                   \
     case 0: d__ = t__; break;                                                             \
-    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2); break;                        \
-    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; \
-    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
-                   | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
+    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2); break;                        \
+    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3); break; \
+    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(b__ - 2) << 16)                \
+                   | ((UNS64)BYTE(b__ - 3) << 8) | BYTE(b__ - 4); }                        \
     d__ ? a__ - d__ : 0; })
 #else
 /*  A byte-header link in CV8 (cv8b.4's NEXT-NFA8): its last byte, the one
  *  before the name - below 0x80 seven bits (0 ends the thread), below 0xC0
  *  fourteen, else twenty-two.  */
-#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
+#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1);   \
     t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
-    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
-    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })
+    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2))                        \
+    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3)); })
 #endif
 #ifndef VARCALL
 /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
@@ -332,7 +334,19 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
 #define JIT_NATIVE(f) ((f) > 1)
 #define JIT_REPOINT(f) 1
 #endif
+/*  Iteration 239, the gene jitos: the translator compiled for size. It runs
+ *  once per word translated, not per instruction - jit_body alone is 3.5 KB
+ *  at -O2; -Os takes 400-800 bytes off a JIT engine (results/price-stencils-
+ *  bloom.md). The stencils it copies are compiled apart (spn-stencils.c),
+ *  untouched; translation speed is the trade evolution weighs.  */
+#if JITOS
+#pragma GCC push_options
+#pragma GCC optimize ("Os")
+#endif
 #include "jit.c"        /* JIT.md (Iteration 80): SPN's stencils, read, copied and patched */
+#if JITOS
+#pragma GCC pop_options
+#endif
 #endif
 
 /*
@@ -891,9 +905,9 @@ static void load_image(const char *name) {
                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
                 }
                 nfas[n++] = nfa;
-                link = CELL(nfa - CELL_BYTES);
+                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
                 if (link == 0) break;
-                nfa = (nfa - CELL_BYTES) + link;
+                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
             }
         }
         /*  Insertion sort, ascending. It runs once at load over a few
@@ -908,7 +922,7 @@ static void load_image(const char *name) {
         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
         for (i2 = 0; i2 < n; i2++) {
             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
-            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
 #if SKIPPAD
             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
 #endif
@@ -934,14 +948,14 @@ static void load_image(const char *name) {
     for (i = 0; i < n; i++) {
         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
         wordtab[n - 1 - i] =
-            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+            nfa + 1; (void)nlen;
 #if SKIPPAD
         /* skip leading NOOP padding: calls land on the first real token */
         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
 #endif
-        link = CELL(nfa - CELL_BYTES);
+        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
         if (link == 0) break;
-        nfa = (nfa - CELL_BYTES) + link;
+        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
     }
     for (i = 0; i < ntails; i++) {
         if (tail_w[i] >= (UNS64)n) {
@@ -1223,6 +1237,10 @@ NOINLINE_IO static void t_flush(void) {
  *  that can seek, a block and a seek back to just after the line; from
  *  anything else, a byte per read(2), up to the first character ACCEPT
  *  treats specially - LF, CR, backspace, DEL - or the count asked for.  */
+/*  Iteration 231: output to a terminal is not held (the owner's rule,
+ *  Gforth's: Iteration 202) - descriptor 1 asked once, at the first WRITE,
+ *  as fsys 4's FS-OINIT asks in Forth; a terminal gets each WRITE at once.  */
+static int t_otty = -1;
 NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
     while (n) {
         UNS64 k;
@@ -1232,6 +1250,8 @@ NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
         memcpy(t_obuf + t_olen, p, (size_t)k);
         t_olen += (int)k; p += k; n -= k;
     }
+    if (t_otty < 0) t_otty = isatty(1) == 1;
+    if (t_otty) t_flush();
 }
 
 NOINLINE_IO static int t_getc(void) {     /* READ-LINE on descriptor 0: a byte per read(2) */
@@ -1280,45 +1300,68 @@ static void virtual_machine(void) {
 #if !defined(__x86_64__) && !defined(__i386__)
 #error "the gene sysc: the image's system-call numbers are x86-64 Linux's (i386's mapped)"
 #endif
-#define SYSF &&L_syscall
-#define SYSX(l) &&L_nosys
+#define SYSF DSP(L_syscall)
+#define SYSX(l) DSP(L_nosys)
 #else
-#define SYSF &&L_fork
-#define SYSX(l) &&l
+#define SYSF DSP(L_fork)
+#define SYSX(l) DSP(l)
 #endif
 /*  Iteration 202, the gene fsys: six file words and RESIZE in Forth over
  *  SYSCALL (forth/file-sysc.4, loaded last in the design's dump) - their
  *  handlers out of the engine, as SYSX's for the shell's words. ALLOCATE and
  *  FREE stay: SAVE-SYSTEM was compiled against them.  */
-#if FSYS
-#define FSX(l) &&L_nosys
+/*  Iteration 237: the dispatch table in the file as OFFSETS from L_noop, not
+ *  addresses - 4 bytes an entry, not 8: about 500 bytes off every CV8 engine
+ *  file. At the first entry the addresses are made once, into a copy in BSS
+ *  that everything reads as it read the table before (cv8_tab, esc_tab, the
+ *  tag's t2tab, the dispatch itself), so no dispatch pays for it. A signed 32-bit offset sets no limit an engine can
+ *  reach (16 bits would save 256 more, and cap the interpreter at 32 KB:
+ *  not taken - the owner: no limits a developer could hit). Off with
+ *  -DDISPOFF=0, and where ENC is not 3; gen-tail.py turns it off (its tables
+ *  hold functions). SYSF/SYSX and FSX are table entries, so DSP() too.  */
+#ifndef DISPOFF
+#define DISPOFF (ENC == 3)
+#endif
+#if DISPOFF
+#define DSP(l) (&&l - &&L_noop)
+#define DPTR(o) ((const void *)((const char *)&&L_noop + (o)))
 #else
-#define FSX(l) &&l
+#define DSP(l) &&l
+#define DPTR(p) (p)
+#endif
+#if FSYS
+#define FSX(l) DSP(L_nosys)
+#else
+#define FSX(l) DSP(l)
 #endif
 /*  Iteration 205, fsys 2 - the single-SYSCALL family: OPEN-FILE, CLOSE-FILE,
  *  WRITE-FILE, ALLOCATE and FREE too (forth/file-sysc2.4); the kernel's uses
  *  of them rebound to the Forth words by the converter (--rebind).  */
 #if FSYS >= 2
-#define FSX2(l) &&L_nosys
+#define FSX2(l) DSP(L_nosys)
 #else
-#define FSX2(l) &&l
+#define FSX2(l) DSP(l)
 #endif
 /*  Iteration 206, fsys 3: WRITE, READ, READ-LINE and BYE too (forth/file-
  *  sysc3.4: unbuffered, no read-ahead from what cannot seek) - the engine's
  *  I/O is then SYSCALL alone.  */
 #if FSYS >= 3
-#define FSX3(l) &&L_nosys
+#define FSX3(l) DSP(L_nosys)
 #else
-#define FSX3(l) &&l
+#define FSX3(l) DSP(l)
 #endif
+#if DISPOFF
+    static const int dispatch_o[] = {
+#else
     static const void *const dispatch[] = {
-        &&L_noop, &&L_exit, &&L_lit, &&L_branch, &&L_0branch, &&L_drop,
-        &&L_dup, &&L_swap, &&L_rot, &&L_over, &&L_cfetch, &&L_fetch,
-        &&L_cstore, &&L_store, &&L_and, &&L_or, &&L_xor, &&L_fromr,
-        &&L_tor, &&L_rfetch, &&L_eq, &&L_ugt, &&L_gt, &&L_plus,
-        &&L_negate, &&L_lshift, &&L_rshift, &&L_ummult, &&L_umdiv,
-        &&L_dplus, FSX3(L_write), FSX3(L_read), FSX3(L_bye), &&L_spfetch, &&L_spstore,
-        &&L_rpfetch, &&L_rpstore, FSX2(L_openfile), FSX2(L_closefile),
+#endif
+        DSP(L_noop), DSP(L_exit), DSP(L_lit), DSP(L_branch), DSP(L_0branch), DSP(L_drop),
+        DSP(L_dup), DSP(L_swap), DSP(L_rot), DSP(L_over), DSP(L_cfetch), DSP(L_fetch),
+        DSP(L_cstore), DSP(L_store), DSP(L_and), DSP(L_or), DSP(L_xor), DSP(L_fromr),
+        DSP(L_tor), DSP(L_rfetch), DSP(L_eq), DSP(L_ugt), DSP(L_gt), DSP(L_plus),
+        DSP(L_negate), DSP(L_lshift), DSP(L_rshift), DSP(L_ummult), DSP(L_umdiv),
+        DSP(L_dplus), FSX3(L_write), FSX3(L_read), FSX3(L_bye), DSP(L_spfetch), DSP(L_spstore),
+        DSP(L_rpfetch), DSP(L_rpstore), FSX2(L_openfile), FSX2(L_closefile),
         FSX3(L_readline), FSX(L_writeline), FSX(L_readfile), FSX2(L_writefile),
         SYSX(L_system), FSX(L_reposfile), FSX(L_filepos), FSX(L_delfile), FSX(L_filesize),
         SYSF, SYSX(L_execve), SYSX(L_waitpid), SYSX(L_pipe), SYSX(L_dup2),
@@ -1329,26 +1372,26 @@ static void virtual_machine(void) {
         /*  LIT32 is not one of kernel.4's primitives. It is appended
          *  past the real ones so the table has no hole - `dispatch[255]`
          *  would have read past the end.  */
-        &&L_lit32, &&L_dovar, &&L_dodoes,
+        DSP(L_lit32), DSP(L_dovar), DSP(L_dodoes),
 #if ENC != 3
         /*  LIT64 at 71, the first index past DODOES. Folded opcodes
          *  start at FOLDBASE (128) and calls at 256, so 71..127 is
          *  free space in both 16-bit encodings.  */
-        [71] = &&L_lit64t,
+        [71] = DSP(L_lit64t),
 #endif
 #if ENC == 1
-        [72] = &&L_farcall, [73] = &&L_dodoesf,
+        [72] = DSP(L_farcall), [73] = DSP(L_dodoesf),
 #endif
 #if ENC == 3
-        &&L_lit8, &&L_lit8x,
-        [0x7C] = &&L_lit64, [0x7D] = &&L_esc,
+        DSP(L_lit8), DSP(L_lit8x),
+        [0x7C] = DSP(L_lit64), [0x7D] = DSP(L_esc),
 #endif
 #if ENC == 3 && SPEC
-        [0x60] = &&L_lit0, &&L_lit1, &&L_litm1, &&L_vf, &&L_vs,
-        &&L_lsave, &&L_lrest, &&L_lstore, &&L_lzero,
-        &&L_zeq, &&L_sub, &&L_ne, &&L_zlt, &&L_sgt, &&L_2dup, &&L_2drop,
-        &&L_charp, &&L_onep, &&L_cellp, &&L_cells, &&L_onem, &&L_invert,
-        &&L_count, &&L_aligned, &&L_addi, &&L_addix, &&L_eqi, &&L_eqix,
+        [0x60] = DSP(L_lit0), DSP(L_lit1), DSP(L_litm1), DSP(L_vf), DSP(L_vs),
+        DSP(L_lsave), DSP(L_lrest), DSP(L_lstore), DSP(L_lzero),
+        DSP(L_zeq), DSP(L_sub), DSP(L_ne), DSP(L_zlt), DSP(L_sgt), DSP(L_2dup), DSP(L_2drop),
+        DSP(L_charp), DSP(L_onep), DSP(L_cellp), DSP(L_cells), DSP(L_onem), DSP(L_invert),
+        DSP(L_count), DSP(L_aligned), DSP(L_addi), DSP(L_addix), DSP(L_eqi), DSP(L_eqix),
 #endif
 #if FOLD
 #include "vm-fold-table.h"
@@ -1360,6 +1403,10 @@ static void virtual_machine(void) {
 #include "vm-ops10-table.h"
 #endif
     };
+#if DISPOFF
+    static const void *dispatch[sizeof dispatch_o / sizeof dispatch_o[0]];
+    if (!dispatch[0]) { int d_; for (d_ = 0; d_ < (int)(sizeof dispatch_o / sizeof dispatch_o[0]); d_++) dispatch[d_] = DPTR(dispatch_o[d_]); }
+#endif
 #if ENC == 3 && ESCAPE
     /*  CV8 renumbers the primitive band: the 36 non-escaped primitives
      *  keep kernel.4's order compacted into 0..35, and the 32 escaped
@@ -1828,7 +1875,7 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;         
 L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
              UNS8 n_ = BYTE(nb_);
              while (a_) {
-                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
+                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
                  a_ = PREVNFA(a_); }
              DS0 = a_; } NEXT();
 #endif
@@ -1874,7 +1921,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
  *  walk, NAME>8 and the immediate bit.  */
 #if X_FIND
 L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
-            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
 #endif
 /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER

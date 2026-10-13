@@ -288,4 +288,11 @@
 # local static (16-60 KB less memory a workload), READ's FS-SEEK0 gone, a zero
 # divisor -10 THROW. Proposed: seed 45, 6 hours like seed 44 - the second
 # chance under the rule; the owner's to choose, or to stop for new genes.
-seed 45 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 240: seed 45 NOT small (hypervolume +6.2% - the memory fixes moved
+# the landscape: 4 KB file buffers free); the rule counts afresh. The
+# after-seed-45 batch applied (six patches - results/applied-after-seed45/,
+# reseeded): native terminal output unbuffered, the SPN stages' -10 THROW,
+# UTF-8 names in byte and cell headers, the dispatch table as offsets (384-448
+# bytes off every engine), and a new gene, jitos (the JIT's translator -Os).
+# Proposed: seed 46, 6 hours - the owner's to choose.
+seed 46 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

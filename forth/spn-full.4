@@ -642,10 +642,12 @@ VARIABLE UNDO  VARIABLE #UNDO  0 #UNDO !
 \ map upward: that is definition order, with no sort. Callees are
 \ defined before callers, so callers find them already native.
 VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
-: MARK ( nfa --- )  MBASE @ - 3 RSHIFT MARKS @ + 1 SWAP C! ;
+\ Iteration 233: the count byte is the header's last byte, right before the
+\ body - marked by the BODY (cell-aligned), walked by the kernel's PRIOR-NFA.
+: MARK ( nfa --- )  1+ MBASE @ - 3 RSHIFT MARKS @ + 1 SWAP C! ;
 : MARK-THREAD ( nfa --- )
   BEGIN ?DUP WHILE
-    DUP MARK  CELL- DUP @ DUP IF + ELSE 2DROP 0 THEN
+    DUP MARK  PRIOR-NFA
   REPEAT ;
 : TRANSLATE-ALL ( --- )
   START @ MBASE !  HERE MBASE @ - 3 RSHIFT 1+ 7 + -8 AND MSIZE !
@@ -653,12 +655,12 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
   MARKS @ MSIZE @ 3 RSHIFT 0 CFILL
   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
   MSIZE @ 0 DO
-    MARKS @ I + C@ IF  I CELLS MBASE @ + NAME> TRY-TRANSLATE  THEN
+    MARKS @ I + C@ IF  I CELLS MBASE @ + TRY-TRANSLATE  THEN
   LOOP
   MARKS @ FREE DROP ;
 
 \ ---- reporting ----
-: .NAME ( xt --- )  >NAME COUNT 31 AND TYPE ;
+: .NAME ( xt --- )  >NAME DUP C@ 31 AND SWAP OVER - SWAP TYPE ;   \ the name before its count byte (233)
 : SPN-WHY ( xt --- )   \ why is this word not native?
   DUP @ TOK-ENTER = IF DROP ." native" EXIT THEN
   DUP SHAPE-OK? 0= IF DROP ." not a translatable shape" EXIT THEN

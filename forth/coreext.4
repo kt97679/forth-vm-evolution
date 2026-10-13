@@ -341,7 +341,7 @@ VARIABLE TW-XT  VARIABLE TW-WID
       DUP >R TW-XT @ EXECUTE 0= IF R> DROP UNLOOP EXIT THEN R> NEXT-NFA8
     REPEAT DROP
   LOOP ;
-: NAME>STRING ( nt --- c-addr u )  COUNT 31 AND ;
+: NAME>STRING ( nt --- c-addr u )  DUP C@ 31 AND SWAP OVER - SWAP ;   \ the name before its count byte (232)
 : NAME>INTERPRET ( nt --- xt )  NAME> ;
 : NAME>COMPILE ( nt --- x xt )  DUP NAME> SWAP C@ 64 AND IF ['] EXECUTE ELSE ['] COMPILE, THEN ;
 [THEN]

@@ -4515,3 +4515,21 @@ Mutation reaches it about as often as any binary gene (89 of 4,000). The
 translator runs once per word, so the trade evolution weighs is translation
 speed on the kernel and corpus against the bytes. All checks pass (ORDER.md).
 The after-seed-45 batch: six patches, one reseed (patch 4).
+
+## Iteration 240 - 2026-10-13 - Claude
+
+**Seed 45 processed: not small** (results/evolve-amd-ryzen-7-pro-8840hs-seed45.md).
+The comparison: fastest +0.9%, smallest +0.54%, memory +4 KB, hypervolume +6.2%,
+best Q -1.6%. The after-seed-44 batch's memory fixes moved the landscape - full
+4 KB file buffers now cost no memory, so 46 of the front's native-file designs
+chose them (seed 44: 23) and designs earlier runs dropped as memory-dominated
+returned: the reason Iteration 230 named if it were not small. Q-best of all
+runs seed 44's cc678c891d (0.204 at 26,108, 168 KB). Run: 3 h 51 min, 17,797
+measured, 115 deaths (reach limit), none on the corpus; crossover 31.5%; the
+front 105 (fsys 2 on 53, 3 on 27, 5 on 11; memory 124-188 KB against seed 44's
+160-224). Predictions 4 of 5 ("small" wrong); seed 46's written. **The
+after-seed-45 batch applied** (results/applied-after-seed45/, six patches,
+reseeded): run-tests PASS, 7 of 7 IDENTICAL, every design of seed 45's front and
+the joint front alive (128 of 128), the standard suite on 12 of the front 0
+differ (s6 2,119 tests, 0 failed, 14 of 14 whole). NEXT-RUN: seed 46, 6 hours,
+proposed.

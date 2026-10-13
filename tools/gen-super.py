@@ -22,7 +22,7 @@ for marker in ('#if FOLD', '#if SUPER'):           # the handlers end where the 
 sec = s[s.index("L_noop:"):fend]
 labs = [(m.start(), m.group(1)) for m in re.finditer(r'^(L_\w+):', sec, re.M)]
 tab = s[s.index("static const void *const dispatch[] = {"):]
-order = re.findall(r'&&(L_\w+)', tab[:tab.index("};")])
+order = re.findall(r'(?:&&|DSP\()(L_\w+)', tab[:tab.index("};")])   # DSP(): Iteration 237
 def body(name):
     lab = order[prims.index(name)]
     i = [j for j, (_, l) in enumerate(labs) if l == lab][0]
@@ -36,7 +36,7 @@ for k, (a, b, op) in enumerate(pairs):
     first = body(a).replace('FILLNEXT();', 'POPT(); goto LSB_%d;' % k).replace('NEXT();', 'goto LSB_%d;' % k)
     bodies.append('LS_%d: /* %s %s */\n%sLSB_%d:\n%s' % (k, a, b, first, k, body(b)))
     if 27 <= op < 68: esc.append('cv8_tab[%d] = &&LS_%d;' % (op, k))   # the band ESCAPE frees: 36..67, 27..67 at level 2
-    else: table.append('[%d] = &&LS_%d,' % (op, k))
+    else: table.append('[%d] = DSP(LS_%d),' % (op, k))
 d = os.path.dirname(os.path.abspath(sys.argv[1]))
 open(os.path.join(d, 'vm-super-table.h'), 'w').write('\n'.join(table) + '\n')
 open(os.path.join(d, 'vm-super-esc.h'), 'w').write('\n'.join(esc) + '\n')

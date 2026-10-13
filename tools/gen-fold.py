@@ -13,7 +13,7 @@ fend = s.rindex("#if FOLD", 0, fend) if "#include \"vm-fold-bodies.h\"" in s[fen
 sec = s[s.index("L_noop:"):fend]
 labs = [(m.start(), m.group(1)) for m in re.finditer(r'^(L_\w+):', sec, re.M)]
 tab = s[s.index("static const void *const dispatch[] = {"):]
-order = re.findall(r'&&(L_\w+)', tab[:tab.index("};")])
+order = re.findall(r'(?:&&|DSP\()(L_\w+)', tab[:tab.index("};")])   # DSP(): Iteration 237
 skip = {'L_noop', 'L_exit', 'L_branch', 'L_0branch'}
 copies, entries = [], []
 for i, (pos, lab) in enumerate(labs):
@@ -23,8 +23,8 @@ for i, (pos, lab) in enumerate(labs):
     body = sec[pos:nxt].replace(lab + ':', 'LX' + lab[1:] + ':', 1)
     body = ''.join(l for l in body.splitlines(True) if not l.lstrip().startswith('#'))
     copies.append(body.replace('NEXT();', 'EXITNEXT();'))
-    if V8: entries.append('[73 + %d] = &&LX%s,' % (V8LIST.index(prims[order.index(lab)]), lab[1:]))
-    else: entries.append('[FOLDBASE + %d] = &&LX%s,' % (order.index(lab), lab[1:]))
+    if V8: entries.append('[73 + %d] = DSP(LX%s),' % (V8LIST.index(prims[order.index(lab)]), lab[1:]))
+    else: entries.append('[FOLDBASE + %d] = &&LX%s,' % (order.index(lab), lab[1:]))   # CPT16's table: addresses (DSP is CV8's)
 open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'vm-fold-table.h'), 'w').write('\n'.join(entries) + '\n')
 open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'vm-fold-bodies.h'), 'w').write(''.join(copies))
 print(len(copies), "folded primitives")

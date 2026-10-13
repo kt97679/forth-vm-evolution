@@ -594,10 +594,12 @@ def _expect(n):
                  ('P', 'EXIT')],
         'PLACE': [('C', '2DUP'), ('P', 'C!'), ('C', 'CHAR+'), ('P', 'SWAP'), ('C', 'CMOVE'), ('P', 'EXIT')],
         # Iteration 51: the byte-header thread walk (forth/cv8b-kfast.4)
-        'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 26 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
-                        ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),
+        # Iteration 232: the name before its count byte - DUP DUP C@ 31 AND - where DUP 1+ was
+        'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 31 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
+                        ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 18 * CELL), ('P', 'DUP'), ('P', 'DUP'), ('P', 'C@'),
+                        ('LIT', 31), ('P', 'AND'), ('C', '-'), ('P', 'R@'),
                         ('C', '1+'), ('P', 'R@'), ('P', 'C@'), ('C', 'NAME=?'), ('QBR', 4 * CELL), ('P', 'R>'), ('P', 'DROP'),
-                        ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -27 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+                        ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -32 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
         'CMOVE': [('P', 'DUP'), ('QBR', 21 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'R>'), ('P', '+'), ('P', '>R'),
                   ('P', 'OVER'), ('P', 'C@'), ('P', 'OVER'), ('P', 'C!'), ('LIT', 1), ('LIT', 1), ('P', 'D+'),
                   ('P', 'OVER'), ('P', 'R@'), ('P', '='), ('QBR', -13 * CELL), ('P', 'R>'), ('P', 'DROP'), ('C', '2DROP'),

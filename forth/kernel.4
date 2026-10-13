@@ -919,48 +919,42 @@ VARIABLE CURRENT ( --- addr)
 \ for the compare's end - not 32 bytes a byte at a time (the audit).
   32 MIN DUP 1+ ALIGNED NAMEBUF +  0 OVER !  0 SWAP 1 CELLS - !  NAMEBUF PLACE ;
 
+\ Iteration 233: a header is [link cell][zeros][name][count byte], then the
+\ body - the count byte LAST, right before the body: the nfa is the count
+\ byte, the name the len bytes before it, the area len+1 rounded up to cells.
+\ >NAME's scan back for bit 7 stops at the count byte at once; before, it
+\ crossed the name, and a UTF-8 byte there (bit 7 set) with bit 5 set read as
+\ a primitive's count byte - COMPILE, inlined garbage.
+: PRIOR-NFA ( nfa --- nfa' )
+\ The word before it in its thread, or 0: the link cell is just before the
+\ name's area (len+1 rounded up to cells, ending at the nfa), relative to
+\ itself. Not NEXT-NFA: the converter would put cv8b.4's NEXT-NFA8 into it,
+\ and --drop-x8 drop the name NEXT-NFA8 that SPN looks up.
+  DUP C@ 31 AND 1+ ALIGNED - 1+ CELLBYTES-TOK - DUP @ DUP IF + ELSE SWAP DROP THEN ;
+: NAME=? ( a1 a2 u --- flag )
+\ The byte headers' compare, the kernel's since Iteration 233 (cv8b.4 had it).
+  BEGIN DUP WHILE
+    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
+    1+ SWAP 1+ SWAP R> 1-
+  REPEAT DROP 2DROP -1 ;
+
 : SEARCH-WORDLIST ( c-addr u wid --- 0 | xt 1 xt -1)
 \ Search the wordlist with address wid for the name c-addr u.
 \ Return 0 if not found, the execution token xt and -1 for non-immediate
-\ words and xt and 1 for immediate words.
+\ words and xt and 1 for immediate words. Iteration 233: the count byte,
+\ then the name before it, a byte at a time.
   ROT ROT
   NAME>BUF
-  \ Pick the thread this name would have been filed under. Everything
-  \ below is unchanged: the chain walk, the cell-at-a-time compare and
-  \ the relative link field are all as they were.
   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP
-  DUP IF
-  BEGIN
-   \ Mask clears the flag bits within the count byte - which, since cells
-   \ are read native-endian (little-endian on every host targeted so
-   \ far - see GOALS.md phase 5), is the LOW byte of the cell, not the
-   \ high byte the old big-endian-packed mask (1 61 LSHIFT 1 -) assumed.
-   NAMEBUF @ OVER @ -225 AND = \ Compare first cells of names (-225: -1 224 XOR, once).
-           \ Mask off bits 5-7 of name length, these have special purposes.
-   IF
-    NAMEBUF CELL+
-    OVER CELL+
-    CELLBYTES-TOK >R
-    BEGIN
-     OVER @ OVER @ - >R
-     CELL+ SWAP CELL+ SWAP R> R> CELL+ >R \ Compare all of name until different
-    UNTIL
-    R> NAMEBUF C@ 1 + ALIGNED CELL+ = IF \ match to the right length then found
-     SWAP DROP SWAP C@
-     64 AND IF \ determine immediateness of a word from bit 6 of name length.
-      1
-     ELSE
-      -1
-     THEN
-     SWAP CELLBYTES-TOK NEGATE + SWAP EXIT \ Exit with execution token and flag.
+  BEGIN DUP WHILE
+    DUP C@ 31 AND NAMEBUF C@ = IF
+      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+        DUP 1+ SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
+      THEN
     THEN
-    2DROP
-   THEN
-   CELLBYTES-TOK NEGATE + DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
-  UNTIL
-  THEN
-  DROP 0 \ Not found.
-;
+    PRIOR-NFA
+  REPEAT ;
+
 
 : FIND ( c-addr --- c-addr 0| xt 1|xt -1 )
 \ Search all word lists in the search order for the name in the
@@ -1114,8 +1108,9 @@ VARIABLE DICT-MAX ( --- a-addr)
   BEGIN 1- DUP C@ 128 AND UNTIL ;
 
 : NAME> ( addr1 --- addr2 )
-\ Convert address of name to address of code.
-  COUNT 31 AND + ALIGNED ;
+\ Convert address of name to address of code: the body follows the count
+\ byte (Iteration 233), on a cell boundary already.
+  1+ ;
 
 : HEADER ( --- )
 \ Create a header for a new definition without a code field.
@@ -1125,20 +1120,26 @@ VARIABLE DICT-MAX ( --- a-addr)
   \ So reserve the cell, remember where it is, and patch it below -
   \ which is what SOD32 does.
   HERE >R 0 ,
-  HERE LAST !         \ Set LAST so definition can be linked by REVEAL
   32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP
                        \ Give warning if existing word redefined.
   DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @
   ?DUP IF R@ - R@ ! THEN    \ link, relative to the link cell itself
   R> DROP
-  C@ 1+ HERE C@ 128 + HERE C! ALLOT ALIGN
-                       \ Allot the name and set bit 7 in length byte.
+  \ Iteration 233: [zeros][name][count byte] - the name moved to end just
+  \ before the area's last byte, the gap zeroed, the count byte last (bit 7
+  \ its mark): the nfa, and LAST.
+  C@ DUP >R 1+ ALIGNED                           ( k )         \ R: len
+  HERE 1+  OVER R@ - 1- HERE +  R@               ( k src dst len )
+  2 PICK 2 PICK U< IF CMOVE> ELSE CMOVE THEN     ( k )
+  HERE OVER R@ - 1- 0 FILL
+  HERE OVER + 1- DUP LAST !  R> 128 + SWAP C!
+  ALLOT
 ;
 
 : REVEAL ( --- )
 \ Add the last created definition to the CURRENT wordlist, at the head
 \ of the thread its name hashes to.
-  LAST @ DUP COUNT 31 AND CURRENT @ @ HASH
+  LAST @ DUP DUP C@ 31 AND SWAP OVER - SWAP CURRENT @ @ HASH   \ the name before its count byte (233)
   1+ CELLS CURRENT @ + ! ;
 
 : CREATE ( "ccc" --- )
