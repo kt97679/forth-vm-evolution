@@ -4965,3 +4965,23 @@ preserve_none with musttail is that convention, for the tail engine. So: the
 compiler gene first, preserve_none next (clang 19); if the small end then
 still wants bytes, price an assembly interpreter by writing its dispatch and a
 dozen handlers and extrapolating, before building a family.
+
+## Iteration 263 - 2026-10-13 - Claude
+
+**The two small items revisited.** The zero-divisor throw path's own dispatch
+replaced by a jump into NOOP's (DROP's in the cached-top engine, which pops the
+-10 into the top as FILLNEXT did): engines -64, -32, +32 bytes - noise around a
+15-byte saving, and the smallest got larger; -10 still caught. Not kept.
+
+**The echo instruction, priced against its cheaper cousin.** An echo needs the
+interpreter to know where a replayed fragment ends: a per-dispatch check, or a
+second dispatch table switched in while echoing - a cost on all code, or a
+second copy of every handler. The same bytes are mostly reachable without a new
+opcode: the converter factoring repeated runs into headerless shared bodies
+(Iteration 254's analysis, which found 12 bytes, charged each helper an 8-byte
+header; bodies the converter makes and never names need none). Greedily, on the
+smallest image: 154 bytes with 2-byte calls (40 helpers), 359 with 1-byte calls
+where slots allow - against the echo's 283-427 before its handler. No engine
+change; the price is a call and a return where a body is used, so the reference
+profile keeps it off hot code. The next size candidate (GOALS.md's register):
+a converter gene, `factor`.
