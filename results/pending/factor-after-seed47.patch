@@ -1,3 +1,35 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 45b4464..0cd77c3 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -25,6 +25,7 @@
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+ | the compiler (`compiler`: 0 GCC, 1 clang; Iteration 262; CV8 designs, offered only where clang is installed): every engine compile through clang - -Oz for -Os, only the flags clang knows; GCC's own genes (nogcse, nocrossjump, align1, noreorder, peel, ipaclone, tracer, noinls, gotodup, jitos, regpin, lto) not expressed under it. No source change but a bcmp in the runtime. clang 18 on the VM: engines larger at the small end (3456ac1e5e 7,112 -> 10,256; -Oz 8,624), 4% smaller at the fast end at -Oz (3bb2087f9d 21,276 -> 20,396); the JIT's stencils hold. The way to preserve_none (clang 19+) for the tail engine |
++| repeated code in shared bodies (`factor`: 0, 1, 2, 3; Iteration 267; tag-2 designs): the converter moves runs of whole operations that recur in the image - no branch or branch target, inline operand, string, EXIT, return-stack or loop word, call to a word reading its caller's return address - into headerless bodies past the image's end, each use a 2-byte call; a use keeps the run's old cells as a GAP, so no offset in the word moves. Which words: those below 0.1% (1) or 1% (2) of the reference dispatches (lab/evolve/hotwords-v1.json, lab/evolve/hotwords.py), or every word (3). Counted on 3456ac1e5e: -41 image bytes for +0.007% dispatches, -95 for +0.17%, -127 for +1.98% (kernel and loop +4.3%). No engine change; off, every design converts byte for byte as before |
+ | one-operation words inline on the JIT (`jitinl`: 0, 1; Iteration 137; JIT with jitx; **dormant** until seed 39 has run): a call to a word of one operation and EXIT - 1+, 0=, 1- - is that operation in the caller (not one that branches, ends the word, or touches the return stack or the interpreter), and D+ gets its stencil back. Native call and return were a quarter of a small recursive word's time (2.92 -> 2.21 ns a call); D+ alone (Iteration 130) made -ack native and no faster - with the inlining, ackermann's long run 10.1 -> 5.0 ms (VM), its 12.7 M dispatches native. Gate, answers, the Forth 2012 suite as s6 on five JIT designs with jitloop; off, identical |  |  |
+ | compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index d30d16c..4e072a8 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -604,3 +604,15 @@ variant stencils (16 hot operations x K+1 states) and canonicalisers, and a map
+ the translator plans each operation with; anything without a variant, and every
+ branch target, runs in state 1. Measured on the VM: mixed (loop -9%, fib +16% at
+ K=2); +2.3-2.8 KB of engine. Built so the laptop's evolution measures it.
++
++Iteration 267: the gene factor (0-3; tag-2 designs; in LATE, EXPRESSED, mutation
++and drawing): the converter (tools/layout.py --factor --factor-hot FILE
++--factor-share X) moves repeated straight-line code into headerless bodies the
++image never names - each use a 2-byte call, then a GAP holding the run's old
++cells, so every branch, loop-operand, xt and DOES>-entry offset stays right. A
++word takes part when it is below X of the selection workloads' dispatches in
++the reference profile (lab/evolve/hotwords.py -> hotwords-v1.json: five of seed
++46's front, the JIT off; a word missing from it keeps its code). FACTORV: 0
++off, 1e-3, 1e-2, every word. On the smallest design -41, -95 and -127 image
++bytes for +0.007%, +0.17% and +1.98% dispatches. Off, every design converts byte
++for byte as before (results/drafts/factor-plan.md, PROGRESS.md Iteration 267).
 diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
 index cfeb05c..6268663 100755
 --- a/lab/evolve/engines-check.py

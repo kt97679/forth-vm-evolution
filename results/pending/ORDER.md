@@ -13,11 +13,13 @@ processed:
 | 4 | buildgenes-after-seed47.patch | two build genes: lto (0/1) - the engine and its runtime as one, the JIT's stencils compiled outside it (inside, the JIT stopped translating): -32 to -160 bytes after patch 2; and gotodup (0/1/2) - GCC's max-goto-duplication-insns at its default, 32 or 128: interpreted engines +704 to +800 bytes for a dispatch copied into more handlers, JIT engines unchanged. engines-check grows to 25 paths (260) |
 
 | 5 | compiler-after-seed47.patch | the gene compiler (0 GCC, 1 clang; CV8 designs): every engine compile through clang - -Oz for -Os, only the flags it knows, GCC's own genes (nogcse, nocrossjump, align1, noreorder, peel, ipaclone, tracer, noinls, gotodup, jitos, regpin, lto) not expressed under it; a bcmp in the runtime (clang's memcmp() == 0). **Offered only where clang is installed** - on the laptop: `sudo apt install clang` (clang 18; clang-19 for preserve_none later) before the run, or the gene stays dormant. On the VM: engines larger at the small end, 4% smaller at the fast end at -Oz (262) |
+| 6 | factor-after-seed47.patch | the gene factor (0-3; tag-2 designs): the converter moves repeated straight-line code into headerless bodies past the image's end, each use a 2-byte call and a GAP that keeps the run's old cells, so no offset in the word moves; words below 0.1% (1) or 1% (2) of the reference dispatches (lab/evolve/hotwords-v1.json from lab/evolve/hotwords.py, both added), or every word (3). Image bytes on 14 of seed 46's front: mean -52, -96, -133 at levels 1-3; the smallest -41, -95, -127 for +0.007%, +0.17%, +1.98% dispatches. No engine or kernel change; off, every design converts byte for byte as before. engines-check grows to 31 paths (267-268) |
     git apply results/pending/faulttrap-after-seed47.patch
     git apply results/pending/lean-open-after-seed47.patch
     git apply results/pending/jitk-after-seed47.patch
     git apply results/pending/buildgenes-after-seed47.patch
     git apply results/pending/compiler-after-seed47.patch
+    git apply results/pending/factor-after-seed47.patch
 
 Tested on master: `0 @` with output to a pipe now exits 70 with the output
 kept, on the smallest, the Q-best and the fastest design; run-tests PASS (the
@@ -43,3 +45,12 @@ Patch 5, tested on 1-4 with clang 18 installed: run-tests PASS (the generators:
 29 paths - clang plain, with the JIT, the tail engine, -Oz); 7 of 7; the suite
 on 3456ac1e5e and 3bb2087f9d built with clang, 14 of 14 each, 0 differ. The five
 apply in order on a fresh clone and reproduce the tested files.
+
+Patch 6, tested on 1-5 with clang 18 installed: run-tests PASS (the generators:
+31 paths - the tag and the JIT with factor=3); 7 of 7 identical; names-check
+PASS; with the gene off, 14 front designs of different kinds convert to
+byte-identical images and ids against master's converter; at factor=3 all 127 of
+seed 46's front alive, at 1 and 2 the 14; the suite on 3456ac1e5e at 1, 2 and 3,
+on d1ac6c88d8 and 3bb2087f9d at 3: 14 of 14 each, 0 differ (its negative
+control caught). The six apply in order on a fresh clone and reproduce the
+tested files.

@@ -5140,3 +5140,24 @@ Not yet: run-tests with the two new paths, 7 of 7, names-check, the suite and
 the corpus with the gene on - so a draft, not results/pending. prompts/17: the
 gene touches evolve.py in six places and two constants; the gene table that
 prompt asks for (Iteration 104) is still owed.
+
+## Iteration 268 - 2026-10-13 - Claude
+
+**The gene factor checked and pending: after-seed-47 patch 6
+(results/pending/factor-after-seed47.patch, ORDER.md).** On patches 1-5, clang
+18 installed: run-tests PASS (the generators 31 paths - the tag and the JIT
+with factor=3); 7 of 7 identical; names-check PASS; the suite on 3456ac1e5e at
+factor 1, 2 and 3 and on d1ac6c88d8 and 3bb2087f9d at 3: 14 of 14 each, 0 differ
+(its negative control caught); at factor=3 all 127 of seed 46's front alive, at
+1 and 2 the 14 of different kinds. The six apply in order on a fresh clone and
+reproduce the tested files; the draft is out of results/drafts.
+
+Image bytes against the gene off, 14 of seed 46's front (every kernel overlay,
+fsys levels, engine families, the JIT): level 1 mean -52 (-39 to -74), level 2
+-96 (-67 to -182), level 3 -133 (-88 to -269) - smaller at every level, every
+design. Dispatches were counted on the smallest only (Iteration 267); the
+laptop's timing decides the rest, through evolution.
+
+The batch is six patches now; no reseed. Open: why the converter's estimate
+runs ahead of the image; the gene table prompts/17 asks for (six touch points
+for this gene); seed 47's routine when its packs come.
