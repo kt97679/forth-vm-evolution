@@ -4808,3 +4808,17 @@ results/progress-by-run.md (Iteration 253) keep the per-run extremes behind the
 progress charts; and the standard suite went over the rest of seed 46's front
 on master's code: 115 more designs, 14 of 14 each, 0 differ from s6 - with
 Iteration 248's twelve, all 127 of the front.
+
+## Iteration 255 - 2026-10-13 - Claude
+
+**Where the fast end's speed is held back, and a proposal for the owner.** The
+fastest design's per-workload times against s6: bubble 0.076, loop 0.092, fib
+0.137, corpus 0.189, kernel 0.322, ackermann 0.436 - ackermann (jittail, in
+seed 47) and the kernel workload are the weak ones. The kernel workload,
+profiled without the JIT: 56% of its dispatches in cross.4's own words, mostly
+@-T and !-T moving cells a byte at a time. A fast path (the host's @ and ! when
+the target's cell is the host's, little-endian) cuts the workload's dispatches
+37% (1.73M -> 1.09M) and its time on the fastest JIT design 9%, building a
+byte-identical kernel. It changes a selection workload - s6 gains most, so every
+design's kernel ratio moves - so it waits as a draft:
+`results/drafts/crossfast.md` and `.patch`.
