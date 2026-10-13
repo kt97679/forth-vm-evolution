@@ -7,7 +7,7 @@ result in the project.
 | script | what it runs | who can take part |
 |---|---|---|
 | `kernel-compile.sh` | cross-compile `kernel.4` into a new image | the RelF-descended ladder |
-| `corpus-run.sh` | the shared 616-case ANS CORE corpus | everything, including SOD32 |
+| `corpus-run.sh` | the shared 661-case ANS CORE corpus | everything, including SOD32 |
 | `loop-bench.sh` | `loop.fth`, nested counted loops over stack arithmetic | everything, including SOD32 |
 | `parse-bench.sh` | `parse.fth`, 4000 lines of interpreted arithmetic | everything, including SOD32 |
 
