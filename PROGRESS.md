@@ -4541,3 +4541,22 @@ experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - about 8 hours
 of evolution after the re-measure's and the comparison's reserve (seed 45's
 chain: 12 min and 1 h 17 min). The first run with jitos, the dispatch-table
 offsets and the UTF-8 name fix. Seed 46's predictions stand.
+
+## Iteration 242 - 2026-10-13 - Claude
+
+**Primitives first, and the classic headers back (the owner: primitives belong
+together at the start of the dictionary; the first after-seed-46 patch).** The
+UTF-8 fault was COMPILE, finding the primitive bit through >NAME's scan back
+from the code, across the name. kernel.4's second primitive block (file words,
+SYSCALL and its slots, memory words) now follows RP! - order, so tokens,
+unchanged - then a marker variable, (PRIMITIVES-END), and PRIMITIVE? ( xt ---
+flag ): below the marker. A variable, not a ticked literal: the cross-
+compiler's ['] gives a START-relative number the converter could not know for
+an address (the first try - every primitive read as not one, and the second
+seed crashed). Every COMPILE, asks PRIMITIVE?, so the count byte need not move:
+Iterations 232-234's layout reversed - names are counted strings again, and the
+walk's 6-8% (found in Iteration 241) is gone: the smallest design's corpus
+58.90M dispatches (seed 45's code 58.95M, master 63.43M). names-check PASS on
+every design and all 14 stages; all checks pass (results/pending/ORDER.md).
+Bit 7 of the count byte is now read only by >NAME, which no compiler uses -
+freeing it (an exact >NAME by the dictionary walk) is the next step if wanted.
