@@ -4490,3 +4490,15 @@ read and write a DSP() entry; gen-tail's tables of functions and the SPN engine
 keep addresses. A first form converted at every read and grew the code by 400
 bytes - replaced. All checks pass (ORDER.md). Not taken: the two 16-bit opcode
 maps as 8-bit (would cap the opcode space - the op;CALL codes are 0xFE00+k).
+
+## Iteration 238 - 2026-10-13 - Claude
+
+**The other two outside ideas priced (results/price-stencils-bloom.md).**
+Dropping unused JIT stencils: 50-170 bytes of ~1,000 - not built. A Bloom
+filter for names not found: the lookup is 66% of the smallest design's corpus
+dispatches (69% of parse's, 36% of the kernel's) and misses half its walk, but
+64 chains already cut three quarters of it for about the same bytes, a trade
+evolution declines at the small end - not built. **Found on the way:** a JIT
+engine's extra bytes are its translator (jit_body 3,456 bytes), which runs once
+per word; compiled -Os it saves 416-800 bytes on JIT engines built -O2/-O3,
+alive - proposed as a gene `jitos`, translation speed the trade.
