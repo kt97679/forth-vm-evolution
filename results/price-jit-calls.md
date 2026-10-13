@@ -49,3 +49,16 @@ Recommendation: a gene, jittail (0/1), like the bytecode engines' tail - offered
 to evolution, timed by the laptop. The rest of the gap - the data stack in
 memory between operations - needs a register-allocating translator, a much
 larger step.
+
+## Measured (Iteration 246)
+
+Built as the gene jittail. On 28677d13b1, CPU time, the two engines alternated
+run by run (the VM drifts between runs; a first, short, unalternated try read
+-5%, then +3% - noise): ackermann x2000 15 rounds, medians 379.6 -> 310.2 ms
+(-18%), minima 315.3 -> 266.6 ms (-15%); the selection ackermann -16%; fib, 25
+rounds, 1.007 (no tail calls, as expected); corpus 0.994; loop and bubble
+within noise. So the estimate held for ackermann: about 3% on the speed
+objective's geometric mean for JIT designs. Cost: +256 engine bytes (the first
+form +352 - the tail test inlined twice; now decided once per call and
+remembered). A 3-million-deep tail recursion runs in place, where without the
+gene the native stack overflows.

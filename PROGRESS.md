@@ -4684,3 +4684,18 @@ word followed by EXIT, or a BRANCH chain to it, translated as a jump - would
 remove about 9 of ~35 instructions a -ack call runs (two of its three calls):
 an estimated 15-25% on ackermann, nothing on fib, 3-4% on the geometric mean
 for JIT designs. Proposed as a gene, jittail, for the owner to decide.
+
+## Iteration 246 - 2026-10-13 - Claude
+
+**The gene jittail (the third after-seed-46 patch).** Iteration 245's pricing,
+built: in engine/jit.c a call to a native word followed by EXIT, or by a BRANCH
+chain to one, is translated as S_BRANCH aimed at the callee - its ret returns to
+our caller. The first form cost +352 engine bytes (the tail test inlined in two
+loops); decided once per call and remembered, +256. Timing needed care: short,
+unalternated runs read -5% and then +3%; alternated over 15-25 rounds,
+ackermann is 15-18% faster and fib, corpus, loop, bubble within noise - about
+3% on the speed objective for JIT designs. Checks: the suite 14 of 14 on two JIT
+designs with the gene; a 3-million-deep tail recursion runs in place; builds
+without jitx, without jitloop, with jitos; off, the engine byte-identical. The
+price write-up has the measurement. Lesson: on the VM, time two engines
+alternately, many rounds, before believing a difference.
