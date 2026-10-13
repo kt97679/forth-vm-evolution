@@ -5325,3 +5325,18 @@ start from; `--checkpoint` makes one mid-work, named ...-checkpoint - not a
 handoff point. From now on chats keep HANDOFF.md current; the HANDOFF entries in
 this log remain its history. The previous chat's machine held one file not in
 the repository (/tmp/factor.py), needed for nothing now: open item 6, optional.
+
+The check shown to fail (prompts/15), one planted fault per rule in a throwaway
+clone: an uncommitted change (1), a subject without "Iteration N:" (2),
+HANDOFF.md saying 270 after a state change at 272 (3), the prompt without
+HANDOFF.md (4), a scratch tree with an uncommitted change and with a commit
+master lacks (5), a stray script (6), a pending patch ORDER.md does not apply
+(7), NEXT-RUN without a line (8) - each failed alone, on its own rule; the clean
+clone passed, and so did 5 and 6 with the item listed disposable with a reason;
+a disposable line without a reason failed. (A first round was contaminated by
+its harness - root-owned files in claude's clone survived the resets - and was
+redone.) On this chat's real state it failed as it should: /tmp/fx, the factor
+scratch tree, and eleven files. /tmp/fx-ident.py, behind Iteration 267's 14-of-14
+identity figure, is tracked as results/drafts/image-identity.py; the rest are
+listed disposable with reasons - superseded by factor-price.py and gate.py
+--set, or one-off chains of tracked checks.
