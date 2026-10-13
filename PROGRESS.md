@@ -4996,3 +4996,69 @@ targets, EXITs, the return stack, aligned or relocated operands, words the
 run-time compiler reads, hot words by the reference profile), and the checks.
 Not built yet: the converter keys every map by a word's dump address, and the
 change wants a session of its own rather than the end of this one.
+
+## Iteration 265 - 2026-10-13 - Claude: HANDOFF - start here in a new chat
+
+Read this entry, then Iteration 213's HANDOFF for what it says that is still
+true (what this is, the environment), then `prompts/`. Everything is in the
+repository.
+
+### The state now
+
+- master: Iteration 265. The after-seed-46 batch is applied (Iteration 248).
+- **Seed 47 is RUNNING** on the laptop: `seed 47 tag2 6h then experiment
+  compare-fronts.py --rounds 6 --frontier --cpus 2,8`, at Iteration 248's commit
+  (c0bf29d) - the first run with jittail, tail working again, primitives first,
+  bit 7 free. Predictions: the end of `results/predictions.md`.
+- **The after-seed-47 batch, pending in `results/pending/` (ORDER.md), five
+  patches, no reseed:** (1) faulttrap - a fault handler in every engine without
+  guard; (2) lean-open - memcmp and the variadic open out of the engine; (3)
+  jitk - the JIT's stack cache gene (adds tools/gen-jitk.py); (4) buildgenes -
+  lto and gotodup; (5) compiler - GCC or clang. Checked together on a fresh
+  clone (Iterations 252-262).
+- **The laptop has clang now** (the owner, Iteration 265) - the compiler gene is
+  offered only where `clang` is on the PATH. `apt install clang` on Ubuntu 24.04
+  is clang 18; clang-19 (and 20) exist as packages - preserve_none needs 19+.
+
+### Processing a returned seed
+
+Iteration 213's ten steps, with the tracked tools: step 3
+`python3 lab/evolve/seed-facts.py <pack>/db.jsonl <results file>` (it names a
+death cause's shared genes - seed 46's tail=1 was found that way); step 5 the
+results file first (the gate reads genomes from it); step 7 `run-tests.sh`
+builds every generator's path (lab/evolve/engines-check.py, 29 paths with
+clang); step 8 `python3 lab/evolve/gate.py <results file> <compare pack>/
+compare-fronts.md`; step 9 ans-check on as many of the front as wanted (all 127
+of seed 46's took minutes). Apply the after-seed-47 batch per ORDER.md, then
+`lab/evolve/progress-table.py > results/progress-by-run.md` for the charts.
+
+### The owner's decisions since Iteration 243
+
+- Primitives together at the start; headers link-name-code; bit 7 free; >NAME
+  in coreext.4 (Iterations 242-244). A fault handler mandatory (252).
+- The kernel workload (cross.4) left as it is - a yardstick, not a design (257).
+- Small gains count: size savings are exact - take them; speed ones as genes
+  (261). GNU_STACK kept (251). The echo instruction priced; factoring first.
+- Clang as a gene (262); an assembly engine not now (262's reasoning).
+
+### Open items (roughly by value)
+
+1. Seed 47: process; apply the after-seed-47 batch; NEXT-RUN for seed 48.
+2. Build the gene `factor` (results/drafts/factor-plan.md): repeated code in
+   headerless shared bodies, 154-359 bytes of the smallest image, converter only.
+3. A tail engine with preserve_none + musttail (clang 19+): gen-tail.py's
+   handlers and their table in that convention - after the compiler gene runs.
+4. The laptop, after seed 47 (timing-sensitive, not during a run): `perf stat`
+   (IP-update chains, branch misses); `python3 lab/evolve/c-baseline.py`.
+5. The register (GOALS.md "Rejected or deferred"): packed names, hidden names,
+   compressed image, the stack header, cross.4's fast path - the owner's.
+
+### Lessons added since Iteration 243
+
+- Files for a pending patch are written in the scratch tree, never in master:
+  a stray new file there makes the patch that adds it fail (Iteration 262).
+- An engine change is checked on every generator's engine (engines-check, now in
+  run-tests) - seed 46 lost every tail design to one that was not.
+- On the VM time two engines alternately, many rounds; single runs mislead.
+- A compiler gene must be offered only where the compiler exists, and the jail
+  must know it as a build tool (BUILD_TOOLS).

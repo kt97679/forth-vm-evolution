@@ -4,7 +4,7 @@ Paste the text below into the new chat, with the newest bundle attached
 (forth-vm-evolution-claude-iterN-*.bundle) and the packs of any laptop run not
 yet processed (forth-vm-evolution-*.tar.gz). The state, the routine for a
 returned seed, the owner's standing decisions and the open items are in
-PROGRESS.md's last HANDOFF entry (Iteration 243, which points back to Iteration 213 for
+PROGRESS.md's last HANDOFF entry (Iteration 265, which points back to Iteration 213 for
 what is still true) and the entries after it.
 
 ---
