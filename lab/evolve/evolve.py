@@ -117,33 +117,67 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
 # ---- the gene table (Iteration 276, prompts/17-variants-as-data) -----------
 # A gene is one row: gene(name, values, show, family, late, needs, convert).
-#   values  - what it can be, off first (a late gene's off is 0; default 0/1);
+#   values  - what it can be, off first (a late gene's off is 0); none: 0/1;
 #   show    - how a mutation names a value (default 'name=value');
 #   family  - the encoding that expresses it (EXPRESSED); late - added after runs
 #             were recorded, so out of a design's identity while off (LATE);
 #   needs   - (g, e) -> true when it is expressed (applied last in express());
-#   convert - g -> the converter's options when it is expressed (build()).
+#   convert - g -> the converter's options (build()); it decides itself when -
+#             factor's when expressed, the older flags by the genome, as before.
 # mutate() and random_genome() read every gene's values from GENE_VALUES. The
 # genes older than the table keep their rules in express() and their build code,
 # with only their values here (GENE_VALUES.update, before mutate()); a gene that
 # changes the engine still needs its build code. lab/evolve/gene-table-test.py
 # adds a fictional gene and requires it to work with no code change.
 GENE_VALUES, GENE_RULES, GENE_CONVERT = {}, [], []
-def gene(name, values=(0, 1), show=None, family='cv8', late=True, needs=None, convert=None):
+def gene(name, values=None, show=None, family='cv8', late=True, needs=None, convert=None):
     global LATE
-    values = tuple(values)
-    assert not late or values[0] == 0, 'gene %s: a late gene is off at 0' % name
-    if late and name not in LATE: LATE = LATE + (name,)
-    if family and name not in EXPRESSED[family]: EXPRESSED[family].append(name)
-    GENE_VALUES[name] = (values, show or (lambda v, n=name: '%s=%s' % (n, v)))
+    listed = bool(family) and name in EXPRESSED[family]      # a gene older than its row keeps its place, and its late-ness (Iteration 278)
+    if listed: assert (name in LATE) == bool(late), 'gene %s: listed already, %s LATE - say late=%s' % (name, 'in' if name in LATE else 'not in', name in LATE)
+    elif late and name not in LATE: LATE = LATE + (name,)
+    if family and not listed: EXPRESSED[family].append(name)
+    if values is not None:
+        values = tuple(values)
+        assert not late or values[0] == 0, 'gene %s: a late gene is off at 0' % name
+        GENE_VALUES[name] = (values, show or (lambda v, n=name: '%s=%s' % (n, v)))
     if needs: GENE_RULES.append((name, needs))
     if convert: GENE_CONVERT.append((name, convert))
-EXPRESSED['cv8'] += ['jitloop', 'jitinl']
-EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
-EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
+# The older genes as rows (Iteration 278): their rules in registration order - tag2
+# before the rules that read it; the dispatch cluster (varcall, sharedcall, doesfar,
+# msc, tail, d256), the compiler's, the list genes', two value rewrites and the
+# dormant sysc stay in express() as code. Genes listed above keep their place.
+gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  # nothing to fuse at run time otherwise; older than LATE
+gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
+gene('rtloop', values=range(3), needs=lambda g, e: rtloop_on(g))               # Iteration 41: a loop opcode to use
+gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
+gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
+gene('tfind', needs=lambda g, e: tfind_on(g))                                  # Iteration 52: with kfast
+gene('kinput', needs=lambda g, e: kinput_on(g))                                # Iteration 54: with kfast
+gene('klookup', needs=lambda g, e: klookup_on(g))                              # Iteration 57: with kinput
+gene('jit', needs=lambda g, e: jit_on(g))                                      # Iteration 80: phase 1's conditions
+gene('rtiplus', needs=lambda g, e: rtiplus_on(g))                              # Iteration 60: with rtloopall
+gene('swapi', needs=lambda g, e: swapi_on(g))                                  # Iteration 61: with 'imm'
+gene('tag2', needs=lambda g, e: g['enc'] == 'cv8' and g['bytehdr'])            # Iteration 66: CV8, byte headers - before the rules that read it
+gene('hotcalls', values=HOTN, needs=lambda g, e: e.get('varcall') and not e.get('tag2'))   # far-call prefixes; none under the tag
+gene('t2hot', needs=lambda g, e: e.get('tag2'))                                # Iteration 71: with the tag (values: GENE_VALUES below)
+gene('hotinl', values=HOTINLN, needs=lambda g, e: e.get('tag2'))               # Iteration 92: designs in the tag
+gene('t2wide', needs=lambda g, e: t2wide_on(g))                                # Iteration 95: the tag, not multi-state
+gene('rtempty', needs=lambda g, e: e.get('tag2'))                              # Iteration 101: the tag's run-time compiler
+gene('kstack', needs=lambda g, e: e.get('tag2') and not kinput_on(g))          # Iteration 116: the tag's dumps; kinput has it already
+gene('jitx', needs=lambda g, e: jit_on(g))                                     # Iteration 108: on the JIT
+gene('opbody', needs=lambda g, e: any(w in OPBODY for w, _ in ops10_in(g)),    # Iteration 92: an opcode to point at
+     convert=lambda g: ['--op-bodies'] if g.get('opbody') else [])
+gene('bss', convert=lambda g: ['--bss'] if g.get('bss') else [])               # Iteration 44: scratch buffers out of the file
+gene('thinhdr', convert=lambda g: ['--thin-header'] if g.get('thinhdr') else [])   # Iteration 58: one thread head, not 32
+gene('abortif', convert=lambda g: ['--guard-abort'] if g.get('abortif') else [])   # Iteration 117: ABORT" behind IF ... THEN
+gene('lean', convert=lambda g: ['--drop-x8', '--drop-dumptool'] if g.get('lean') else [])   # Iterations 38-39: build artifacts left out
+gene('jitloop', needs=lambda g, e: jit_on(g))                                  # Iteration 129: on the JIT
+gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
+gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
+gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
 gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
-     convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])])   # no table, no design: a missing file kills it loudly
+     convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
 EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
 EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation; GCC's goto unfactoring (results/missed-options-2026-10.md)
 # Iteration 262: the compiler - 0 GCC (cc), 1 clang. Offered only where clang is installed: elsewhere
@@ -152,6 +186,7 @@ HAVE_CLANG = bool(shutil.which('clang'))
 if HAVE_CLANG: EXPRESSED['cv8'] += ['compiler']
 GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto')
 JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
+gene('jitk', values=JITKV, needs=lambda g, e: jit_on(g) and e['jitk'])   # Iteration 259: on the JIT; 0 is off
 EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
 EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
 EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
@@ -360,6 +395,7 @@ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR',
 def newest_front():
     """(path, records) of the newest run's results file - its front's designs, genomes and
     measures (Iteration 278: c-baseline.py and counters.py choose their designs from it)."""
+    import glob                                   # not among the module's imports
     fs = sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')), key=lambda f: int(re.search(r'seed(\d+)\.md$', f).group(1)) if re.search(r'seed(\d+)\.md$', f) else -1)
     recs = [json.loads(l) for l in open(fs[-1], errors='replace') if l.startswith('{"bin"')]
     return fs[-1], recs
@@ -458,40 +494,14 @@ def express(g):
     if 'opcall' in e:                           # Iteration 121: only those with a slot; none, out of the identity
         e['opcall'] = [x[0] for x in opcall_in(g)]
         if not e['opcall']: e.pop('opcall')
-    if 'rtfuse' in e and not e.get('supers') and not rt_tests(g): e.pop('rtfuse')   # nothing to fuse at run time
-    if 'rtimm' in e and not (overlay(g) and 'imm' in g['spec']): e.pop('rtimm')      # Iteration 37: n + at run time needs both
     if e.get('rtimm') == 2 and g.get('rtfuse') and (supers_in(g) or rt_tests(g)): e['rtimm'] = 1   # Iteration 175: the same build - one id
-    if 'rtloop' in e and not rtloop_on(g): e.pop('rtloop')                         # Iteration 41: with a loop opcode to use
-    if 'rtloopall' in e and not rtloopall_on(g): e.pop('rtloopall')                # Iteration 43: all eight of them
     if e.get('rtloop') == 2 and rtloopall_on(g): e['rtloop'] = 1                   # Iteration 190: loopall's own words - the same build
-    if 'kfast' in e and not kfast_on(g): e.pop('kfast')                            # Iteration 49: byte headers
-    if 'tfind' in e and not tfind_on(g): e.pop('tfind')                            # Iteration 52: with kfast
-    if 'kinput' in e and not kinput_on(g): e.pop('kinput')                         # Iteration 54: with kfast
-    if 'klookup' in e and not klookup_on(g): e.pop('klookup')                      # Iteration 57: with kinput
-    if 'jit' in e and not jit_on(g): e.pop('jit')                                  # Iteration 80: phase 1's conditions
-    if 'rtiplus' in e and not rtiplus_on(g): e.pop('rtiplus')                      # Iteration 60: with rtloopall
-    if 'swapi' in e and not swapi_on(g): e.pop('swapi')                            # Iteration 61: with 'imm'
-    if 'tag2' in e and (g['enc'] != 'cv8' or not g['bytehdr']): e.pop('tag2')     # Iteration 66: CV8, byte headers
-    if e.get('tag2'): e.pop('hotcalls', None)                                      # no hot calls under the tag
-    if 't2hot' in e and not e.get('tag2'): e.pop('t2hot')                          # Iteration 71: with the tag
-    if 'hotinl' in e and not e.get('tag2'): e.pop('hotinl')                        # Iteration 92: designs in the tag
-    if 't2wide' in e and not t2wide_on(g): e.pop('t2wide')                         # Iteration 95: the tag, not multi-state
-    if 'rtempty' in e and not e.get('tag2'): e.pop('rtempty')                      # Iteration 101: the tag's run-time compiler
-    if 'kstack' in e and (not e.get('tag2') or kinput_on(g)): e.pop('kstack')     # Iteration 116: the tag's dumps; kinput has it already
-    if 'jitx' in e and not jit_on(g): e.pop('jitx')                                # Iteration 108: on the JIT
-    if 'jitloop' in e and not jit_on(g): e.pop('jitloop')                          # Iteration 129: on the JIT
     if 'sysc' in e and g['enc'] != 'cv8': e.pop('sysc')                            # Iteration 136: SYSC is vm-lab.c's, build()'s
-    if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
-    if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
-    if 'jittail' in e and not jit_on(g): e.pop('jittail')                          # Iteration 246: on the JIT
-    if 'jitk' in e and (not jit_on(g) or not e['jitk']): e.pop('jitk')            # Iteration 259: on the JIT; 0 is off
     if e.get('compiler'):                                                           # Iteration 262: clang - GCC's own genes do nothing
         for k in GCC_ONLY: e.pop(k, None)
     elif 'compiler' in e: e.pop('compiler')
-    if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
-    if not e.get('varcall'): e.pop('hotcalls', None)                   # they take far-call prefixes
     if 'msc' in e and not g['tos']: e.pop('msc')                       # made from the cached engine only
     if e.get('msc'):                                                   # its own tables; tail calls excluded
         e.pop('d256', None); e.pop('sharedcall', None); e.pop('tail', None)
@@ -816,12 +826,8 @@ def _build(g, d):
     if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
     if t2wide_on(g): opts.append('--tag2-wide')
-    if g.get('bss'): opts.append('--bss')                         # Iteration 44: scratch buffers out of the file
-    if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
-    if g.get('opbody'): opts.append('--op-bodies')                 # Iteration 92: words an opcode replaced, [opcode EXIT]
-    for k, conv in GENE_CONVERT:                                  # Iteration 276: the table's rows (gene())
-        if express(g).get(k): opts += conv(g)
+    for k, conv in GENE_CONVERT: opts += conv(g)                  # Iteration 276-278: the rows' own options (gene())
     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
@@ -834,10 +840,6 @@ def _build(g, d):
         opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) >= 3 else ()))]
     if hl: opts += ['--headerless', ','.join(hl)]
     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
-    if g.get('abortif'): opts.append('--guard-abort')             # Iteration 117: ABORT" behind IF ... THEN
-    if g.get('lean'): opts += ['--drop-x8', '--drop-dumptool']   # build artifacts left out: the compiler's X8
-                                                                 # copies (Iteration 38), the dump tool and dead
-                                                                 # shadowed words (Iteration 39)
     opts += CONVERT_EXTRA
     img = os.path.join(d, 'image.img')
     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
@@ -1098,16 +1100,11 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
     'opt': (('O2', 'O3', 'Os'), lambda v: '-' + v),
     'scale': ((0, 1, 2, 3), lambda v: 'scale=%d' % v),
     't2hot': (tuple(range(len(T2HOT))), lambda v: 't2hot=%s' % T2HOT[v]),       # Iteration 71: the tag's ranking, size against speed
-    'hotcalls': (HOTN, lambda v: 'hotcalls=%d' % v),                            # Iteration 14: one-byte calls to 0, 8, 16 or 32 words
-    'hotinl': (HOTINLN, lambda v: 'hotinl=%d' % v),                             # Iteration 92: the 0, 10, 20 or 40 hottest call sites inlined
     'gotodup': (tuple(range(len(GOTODUPV))), lambda v: 'gotodup=%s' % GOTODUPV[v]),   # Iteration 260: GCC's goto unfactoring
-    'jitk': (JITKV, lambda v: 'jitk=%d' % v),                                    # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
     'fbuf': (tuple(range(len(FBUFV))), lambda v: 'fbuf=%d' % FBUFV[v]),          # Iteration 115: a file's read-ahead, 4096, 1024, 512
     'fsys': (tuple(range(6)), lambda v: 'fsys=%d' % v),                         # Iterations 202-211: native, then Forth over SYSCALL, levels 1-5
     'threads': (tuple(range(4)), lambda v: 'threads=%d' % v),                   # Iteration 204: as built (32), 64, 128, 16 chains
     'regpin': (tuple(range(4)), lambda v: 'regpin=%d' % v),                     # Iteration 197: GCC's choice, three assignments
-    'rtloop': (tuple(range(3)), lambda v: 'rtloop=%d' % v),                     # Iteration 190: 2 with its internal words headerless
-    'rtimm': (tuple(range(3)), lambda v: 'rtimm=%d' % v),                       # Iteration 175: 2 without pairs
     'escape': (tuple(range(3)), lambda v: 'escape=%d' % v),                     # Iteration 11: nine more primitives behind it
 })
 

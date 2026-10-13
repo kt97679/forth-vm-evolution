@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 277.
+- master: Iteration 278.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -130,10 +130,11 @@ About 20 minutes of machine time for build, tests and gates.
    c-baseline.py then experiment counters.py` (RUNNING.md, "Between runs" - perf
    to install once, its paranoid setting each boot); then process the two packs:
    C multiples for the designs, IPC and branch misses (the IP-update loop form).
-4. Older genes into rows, as each is next touched: the gene table (Iteration
-   276) holds every value, but the older genes' express() rules and build code
-   are still code. A new gene is one row (GENES.md, "Adding a gene"); after
-   converting one, `python3 lab/evolve/gene-equiv.py <the commit before>`.
+4. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
+   compiler's switch-off, the list genes, engine flags, shared converter
+   options) - into rows only as each is next touched, each conversion checked
+   with `python3 lab/evolve/gene-equiv.py <the commit before>`. A new gene is
+   one row.
 ## Lessons - how faults got in, and the checks that catch them now
 
 - A passing gate does not prove the intended code ran (a fallback of the same

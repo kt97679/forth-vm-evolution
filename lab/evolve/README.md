@@ -671,3 +671,12 @@ rules and build code, their values once in GENE_VALUES. Ids, expressions and
 seeded mutations, random draws and crossovers are identical before and after
 (GENES.md, "Adding a gene"); gene-table-test.py checks a fictional gene end to
 end, with a control.
+
+Iteration 278: 31 older genes moved into rows - rules, values, five converter
+flags (GENES.md, "Adding a gene", says which and what stays code, and why).
+gene-equiv.py now also judges the 5,000 genomes it makes - mutations, random
+genomes, crossovers - by id and expression, reaching combinations no recorded
+design has; against the commit before, every id, expression and seeded draw the
+same, after it caught rtfuse made late by default (875 ids). counters.py, the
+laptop's hardware counters; c-baseline.py and counters.py pick their designs
+from the newest front (evolve.newest_front).

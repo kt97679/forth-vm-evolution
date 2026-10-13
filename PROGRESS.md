@@ -5495,3 +5495,39 @@ run, so the true statement is that it had never been *recorded* failing -
 Iteration 266's run is the first on record. Also corrected: Iteration 276's
 GOALS.md note that the trees might hold prototypes of deferred ideas - none
 does. HANDOFF.md's open item 5 is closed.
+
+## Iteration 278 - 2026-10-13 - Claude
+
+**The laptop's measurements made runnable (the owner asked what they are).**
+Open item 3 named `perf stat` - no tool did it - and c-baseline.py, which
+`next-run.sh experiment` would have broken: it passes every database as an
+argument, and c-baseline read them as design ids; its default designs dated
+from Iteration 235. Now: lab/evolve/counters.py - perf's user-space cycles,
+instructions, branches and branch misses for the newest front's fastest designs
+with and without the JIT, its smallest, and s6, on the six selection workloads:
+instructions per cycle and misses per thousand instructions - dispatch
+mispredictions against the chain of instruction-pointer updates (Ertl & Paysan;
+the IP-update loop form deferred in Iteration 260; gotodup's question). It
+refuses, saying why, when perf is missing or a counter unreadable - shown here,
+where there is no perf and a Firecracker guest has no counters; its parser
+checked on perf's own output. c-baseline.py ignores database paths; both pick
+their designs from evolve.newest_front(). RUNNING.md, "Between runs": install
+perf once, `sudo sysctl kernel.perf_event_paranoid=2` each boot, then `sh
+lab/evolve/next-run.sh experiment c-baseline.py then experiment counters.py`.
+Running c-baseline as next-run.sh runs it found newest_front without its glob
+import - fixed before any laptop met it.
+
+**31 older genes into rows** (GENES.md, "Adding a gene", says which, and what
+stays code). gene-equiv.py now also judges by id and expression every genome it
+makes - 3,000 mutations, 1,000 random genomes, 1,000 crossovers. Its first run
+against the commit before: 875 recorded designs changed id - all rtfuse=0 leaving
+the identity: gene() put rtfuse, older than LATE, into it by default. Fixed
+(late=False), and gene() now refuses an already-listed gene whose row misstates
+its late-ness. Then: every id, expression and seeded draw the same; the fictional
+gene's test PASS.
+
+Checked: 24 front designs' images byte-identical built before and after the
+conversion (the five converter flags moved; results/drafts/image-identity.py in
+both trees), ids too; c-baseline.py run exactly as next-run.sh runs it, with two
+database paths, picked today's designs itself (e141550b9a, 037722ab8a, the
+smallest) and finished; run-tests PASS (31 generator paths), 7 of 7 IDENTICAL.

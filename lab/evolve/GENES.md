@@ -23,6 +23,22 @@ and expressions; 3,000 mutations, 1,000 random genomes and 1,000 crossovers, eac
 seeded, came out identical before and after (lab/evolve/gene-equiv.py REV checks any
 later conversion the same way).
 
+**Iteration 278: 31 older genes are rows too** - their express() rules, their
+values where they have more than two, and five converter flags (bss, thinhdr,
+opbody, abortif, lean): rtfuse, rtimm, rtloop, rtloopall, kfast, tfind, kinput,
+klookup, jit, rtiplus, swapi, tag2 (registered before the six rules that read it),
+hotcalls, t2hot, hotinl, t2wide, rtempty, kstack, jitx, opbody, bss, thinhdr,
+abortif, lean, jitloop, jitinl, jitos, jittail, jitk, and factor. Still code, each
+for a reason: the dispatch cluster (varcall, sharedcall, doesfar, msc, tail, d256 -
+rules that pop one another), the compiler's switch-off of GCC's own genes, the
+list genes (spec, folds, supers, ops10, opcall), two value rewrites (rtimm and
+rtloop 2 to 1 where the build is the same), the dormant sysc (in no family: a row
+would switch it on), every engine flag, and the converter options several genes
+build together (the tag's, the JIT's, the headerless and rebind lists). gene()
+refuses an already-listed gene whose late-ness its row misstates: rtfuse, older
+than LATE, was put into it by default, and gene-equiv.py caught 875 recorded
+designs changing id - every one rtfuse=0 leaving the identity.
+
 ## In the genome now
 
 | genes | from | what they change |
