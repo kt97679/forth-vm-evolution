@@ -4805,5 +4805,6 @@ its body and EXIT, each use a 2-byte call. By opcode names alone: 146 bytes
 inline messages that must match too: 12 bytes, 4 helpers. The image has no
 real repetition left to fold. Also: lab/evolve/progress-table.py and
 results/progress-by-run.md (Iteration 253) keep the per-run extremes behind the
-progress charts; and the standard suite is going over the rest of seed 46's
-front (115 designs) while seed 47 runs.
+progress charts; and the standard suite went over the rest of seed 46's front
+on master's code: 115 more designs, 14 of 14 each, 0 differ from s6 - with
+Iteration 248's twelve, all 127 of the front.
