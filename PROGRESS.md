@@ -5414,3 +5414,13 @@ Left as they are, said so: lab/evolve/README.md and GENES.md both describe each
 gene - the README as history, GENES.md as the reference - and overlap by design;
 PROGRESS.md's old HANDOFF entries are history now; the article (on the
 backburner) predates the evolution's results.
+
+Rules 9 and 10 shown to fail (prompts/15, each fault planted from a clean state
+in a clone owned by the user claude): a document in no index (9), an index
+entry for a document that is not there (9), an evolver script missing from its
+README's tools (10) - each failed alone on its own rule; the clone passed before
+and after. lab/evolve/test-jail.py on master: PASS - with run-tests, --validate
+and the build, all four of the laptop's checks have now passed on the code
+seed 48 runs. bench/README.md's corpus count brought to 661; the findings,
+GENES.md's iteration notes, the rehearsal and the article keep their 616 - they
+are dated measurements, made when the corpus had 616 cases.
