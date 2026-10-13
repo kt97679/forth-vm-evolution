@@ -5282,3 +5282,19 @@ of machine time for build, tests and gates:
 - lab/evolve/hotwords.py and hotwords-v1.json (factor's reference profile),
   lab/evolve/factor-price.py (factor's price on one design), gate.py --set,
   results/applied-after-seed47/.
+
+## Iteration 271 - 2026-10-13 - Claude
+
+**The handoff checked end to end (the owner asked).** From the Iteration 270
+bundle, with HANDOFF-PROMPT.md's commands as written (in /tmp/hand for
+/home/claude): the packages, the clone, the identity (a test commit carried the
+owner's name, then was reset away), the build, run-tests PASS (31 generator
+paths), 7 of 7 IDENTICAL. The newest HANDOFF a new chat finds is Iteration 270;
+NEXT-RUN is seed 48 for 6 hours.
+
+The chat's tools, run from that clone: `gate.py --set factor=1` on seed 47's
+front and the joint front - 152 of 152 alive, the gene's first check on seed
+47's designs; `factor-price.py 3456ac1e5e --shares 1e-3` - -41 image bytes as
+Iteration 267 recorded, dispatches +0.008% against its +0.007% (the last digit,
+not traced). Nothing from this chat is needed by the next: the packs are in
+results/, the scripts behind recorded figures are tracked.
