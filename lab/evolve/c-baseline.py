@@ -11,7 +11,8 @@ median of N runs; each side's start-up - the engine loading its image and
 the C program starting, measured with no work - subtracted, so what is
 compared is the work. The C built -O2 (the baseline) and -O0 (code no
 optimiser touched); the designs: hand-made s6 (the evolver's unit) and the
-ids given - by default the fastest, the knee and the smallest of all runs.
+ids given - by default the fastest, the knee and the smallest of the newest run's
+front (Iteration 278; database paths, which next-run.sh passes, are ignored).
 
 The table: milliseconds, and each design as a multiple of C -O2's time. On
 the development VM the timing noise is about 10%: a baseline to orient by;
@@ -24,7 +25,11 @@ import evolve as E
 E.setup()
 RUNS = 5
 if '--runs' in args: i = args.index('--runs'); RUNS = int(args[i + 1]); del args[i:i + 2]
-IDS = args or ['28677d13b1', '0af26c8e89', 'add5ec8937']
+IDS = [a for a in args if not a.endswith('.jsonl') and not os.path.exists(a)]   # next-run.sh's experiment passes every database too
+if not IDS:                     # Iteration 278: from the newest run's front - the fastest, the knee (best Q), the smallest
+    _, _recs = E.newest_front()
+    for _r in (min(_recs, key=lambda r: r['speed']), min(_recs, key=lambda r: r['total'] * r['speed'] * r['rss']), min(_recs, key=lambda r: r['total'])):
+        if _r['id'] not in IDS: IDS.append(_r['id'])
 WORKS = ['fib', 'loop', 'sieve', 'bubble', 'ackermann', 'parse']
 PARSE = os.path.join(E.ROOT, 'bench', 'parse.fth')
 D = os.path.join(E.O, 'c-baseline'); os.makedirs(D, exist_ok=True)

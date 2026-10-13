@@ -278,3 +278,25 @@ under honest sizes the fronts grew to ~150-180 designs and a session to
 random genomes (evolve.py --fromzero), no hand-made design, founder or mutant
 of one; hand-made s6 only the yardstick. The first step towards "SOD32 from
 nothing" (results/deep-dive-2.md, section 3).
+
+## Between runs: the laptop's own measurements (Iteration 278)
+
+Two measurements only real hardware can make, timing-sensitive - run them when a
+chain has finished and its packs are sent, before the next run starts, the
+laptop plugged in and nothing else running.
+
+Once: `sudo apt install linux-tools-common linux-tools-$(uname -r)` (perf), and
+after each boot `sudo sysctl kernel.perf_event_paranoid=2` (Ubuntu's default, 4,
+lets perf count nothing). Then one command, two packs to send back:
+
+    sh lab/evolve/next-run.sh experiment c-baseline.py then experiment counters.py
+
+- `c-baseline.py`: the newest front's fastest, knee and smallest designs, and s6,
+  against the same benchmarks written in C (-O2 and -O0) - each as a multiple of
+  C's time. The VM's numbers (results/c-baseline-x86-64.md) are too noisy to keep.
+- `counters.py`: user-space cycles, instructions, branches and branch misses for
+  the fastest designs with and without the JIT, the smallest, and s6, on the six
+  selection workloads - whether the interpreter waits on mispredicted dispatches
+  or on the chain of instruction-pointer updates (Ertl & Paysan; the IP-update
+  loop form deferred in Iteration 260; gotodup's question). It stops, saying
+  why, if perf cannot read a counter.

@@ -357,6 +357,12 @@ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR',
            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI', 'DUP+I': 'X_DUPADDI', 'DUP<I': 'X_DUPLTI',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
            'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+def newest_front():
+    """(path, records) of the newest run's results file - its front's designs, genomes and
+    measures (Iteration 278: c-baseline.py and counters.py choose their designs from it)."""
+    fs = sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')), key=lambda f: int(re.search(r'seed(\d+)\.md$', f).group(1)) if re.search(r'seed(\d+)\.md$', f) else -1)
+    recs = [json.loads(l) for l in open(fs[-1], errors='replace') if l.startswith('{"bin"')]
+    return fs[-1], recs
 def recorded_genome(i):
     """A recorded design's genome, from results/evolve-*.md - None if absent (Iteration 155)."""
     import glob

@@ -126,8 +126,10 @@ About 20 minutes of machine time for build, tests and gates.
 1. Seed 48: process (above). No batch is pending.
 2. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
-3. The laptop between runs (timing-sensitive): `perf stat` (IP-update chains,
-   branch misses), `python3 lab/evolve/c-baseline.py`.
+3. The owner's, between runs: `sh lab/evolve/next-run.sh experiment
+   c-baseline.py then experiment counters.py` (RUNNING.md, "Between runs" - perf
+   to install once, its paranoid setting each boot); then process the two packs:
+   C multiples for the designs, IPC and branch misses (the IP-update loop form).
 4. Older genes into rows, as each is next touched: the gene table (Iteration
    276) holds every value, but the older genes' express() rules and build code
    are still code. A new gene is one row (GENES.md, "Adding a gene"); after

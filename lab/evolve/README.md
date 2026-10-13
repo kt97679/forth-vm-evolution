@@ -40,6 +40,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `c-baseline.py` - c-baseline.py [--runs N] [IDS...] - the Forth designs against the same
 - `callsites.py` - callsites.py ID [ID ...] [--db FILE ...] - a design's calls in the two-bit
 - `compare-fronts.py` - compare-fronts.py DB [DB ...] [--rounds N] [--cpus A,B] - the fronts of
+- `counters.py` - where the cycles go: hardware counters (perf) for the newest front's designs on the selection workloads - the laptop's (Iteration 278)
 - `cpu-noise.py` - cpu-noise.py [--rounds N] [--cpus A,B] [--ids ID,...] [--work W,...] DB [DB ...]
 - `engines-check.py` - engines-check.py - an engine down every generator's path builds, and runs
 - `evolve.py` - evolve.py - evolve VM designs: the faster and the smaller survive
