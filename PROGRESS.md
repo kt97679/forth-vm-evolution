@@ -4759,3 +4759,21 @@ the JIT's genes must inherit together, and the one other synergy, rtloop, is
 fixed already (all 45 JIT designs on the front). The zero-divisor trim stays
 priced and unbuilt: one copy of a short path, shared only by restructuring the
 cached-top engine's spill convention - not worth its risk for 30-60 bytes.
+
+## Iteration 251 - 2026-10-13 - Claude
+
+**The stack header captured, not built (the owner): GOALS.md's register.** And
+the last engine finding of open item 8, measured: output lost when a signal
+kills the engine. A zero divisor is -10 THROW now and UM/MOD's quotient
+overflow cannot trap (udiv reduces the high cell first), so SIGFPE is gone; what
+is left is SIGSEGV - `0 @`, a runaway pointer. The guard gene's handler flushes
+the engine's output and reports (status 70) - but guard is on 13 of seed 46's
+127 front designs: the other 114 die of a bare SIGSEGV, and those whose engine
+buffers output to a pipe or file lose what they wrote before it (fe3c9c3940,
+3bb2087f9d: "before the fault" gone; 3456ac1e5e at fsys 3 writes through and
+keeps it). guard costs 448 bytes on the smallest design, 256 in the middle, none
+at the fast end - it brings guard pages and five messages, and the objectives
+never see a crash, so evolution drops it. A handler that only flushes and
+reports, in every engine, would be ~100 bytes (an estimate); the Forth-side
+buffers of fsys 4-5 would still be lost. The owner's call: leave it to the gene,
+or make the minimal handler mandatory as the zero divisor was.
