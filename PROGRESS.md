@@ -4672,3 +4672,15 @@ owner's choice was invited: keeping it in every image costs about 100-230
 bytes. names-check now checks bit 7 clear (through LAST) and POSTPONE of UTF-8
 words; every check passes (results/pending/ORDER.md). Lesson: when a fix
 removes a reader of a header bit, grep every reader of the word that read it.
+
+## Iteration 245 - 2026-10-13 - Claude
+
+**Calls and returns at the fast end, priced (results/price-jit-calls.md).** The
+JIT already calls with the machine's call and ret (eight instructions a pair,
+returns predicted); its 16.8x C -O2 on ackermann and 5.1x on fib match C -O0
+(13.4x, 5.2x) - the gap is what an optimizing compiler does around calls (tail
+calls into jumps, registers), not the call. A JIT tail call - a call to a native
+word followed by EXIT, or a BRANCH chain to it, translated as a jump - would
+remove about 9 of ~35 instructions a -ack call runs (two of its three calls):
+an estimated 15-25% on ackermann, nothing on fib, 3-4% on the geometric mean
+for JIT designs. Proposed as a gene, jittail, for the owner to decide.
