@@ -566,6 +566,7 @@ if TAG2_ON:
 # re-evaluation (a run's worth only falls as others take its places).
 import heapq as _hq
 FACTOR_KEYS, FACTOR_RUNS, FACTOR_USES = set(), {}, {}
+FACTOR_INWORD = 0                   # Iteration 276: the changed words' code, encoded before minus after
 FACTOR_HOT = float(_opt('--factor-share') or 1e-3)   # --factor-share X: a word below X of the dispatches is factored
 FACTOR_MAXLEN = 16                        # operations in a run, at most
 if V8 and TAG2_ON and BYTEHDR and '--factor' in ARGV and not _os.environ.get('SOD16_NO_FACTOR'):
@@ -645,22 +646,26 @@ if V8 and TAG2_ON and BYTEHDR and '--factor' in ARGV and not _os.environ.get('SO
         info[key] = G['fold_exit'](body) if G['FOLD'] else body
         FACTOR_KEYS.add(key); FACTOR_RUNS[key] = r; FACTOR_USES[key] = len(f)
         for s0, i in f: _repl[s0].append((i, len(r), key, c_))
+    _sf, _cw = list(G['SHORT_FAILS']), G['CUR_WORD'][0]       # measuring must leave no short-branch record
+    def _tlen(s0, ops): G['CUR_WORD'][0] = s0; return len(to_tokens(ops))
+    _before = {s0: _tlen(s0, info[s0]) for s0 in _repl}
     for s0, rs in _repl.items():
         ops = list(info[s0])
         for i, n, key, c_ in sorted(rs, reverse=True):
             ops[i:i + n] = [('C', key), ('GAP', c_ - CELL)]
         info[s0] = ops
+    FACTOR_INWORD = sum(_before[s0] - _tlen(s0, info[s0]) for s0 in _repl)
+    G['SHORT_FAILS'][:] = _sf; G['CUR_WORD'][0] = _cw
     print('factor: %d bodies, %d uses; %d words kept as hot, %d runs considered' % (len(_chosen), sum(FACTOR_USES.values()), _kept, len(_occ)))
 
 for w in order:
     G['CUR_WORD'][0] = w['s']          # Iteration 199
     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
 _short_fails_out()
-if FACTOR_KEYS:                         # Iteration 267: what the gene factor saved, exactly
+if FACTOR_KEYS:                         # Iteration 276: measured, not estimated - each changed word encoded before and after
     _bod = sum(len(tok[k]) for k in FACTOR_KEYS)
-    _use = sum(FACTOR_USES[k] * sum(_bytes(x) for x in FACTOR_RUNS[k]) for k in FACTOR_KEYS)
-    print('factor: %d bytes of runs became %d of calls and %d of bodies: %d bytes saved'
-          % (_use, 2 * sum(FACTOR_USES.values()), _bod, _use - 2 * sum(FACTOR_USES.values()) - _bod))
+    print("factor: the words' code %d bytes smaller (the runs out, the calls and any padding in), the bodies %d: %d bytes before placement"
+          % (FACTOR_INWORD, _bod, FACTOR_INWORD - _bod))
 
 # ---- new sizes ------------------------------------------------------
 def tail_bytes(w):
