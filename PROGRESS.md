@@ -5062,3 +5062,28 @@ of seed 46's took minutes). Apply the after-seed-47 batch per ORDER.md, then
 - On the VM time two engines alternately, many rounds; single runs mislead.
 - A compiler gene must be offered only where the compiler exists, and the jail
   must know it as a build tool (BUILD_TOOLS).
+
+## Iteration 266 - 2026-10-13 - Claude
+
+**Set up from the Iteration 265 bundle; engines-check shown to fail
+(prompts/15).** A fresh VM (one CPU, dash as /bin/sh, the C locale) set up per
+HANDOFF-PROMPT.md, gcc-multilib, clang 18.1.3 and clang-19 installed: the build
+at both widths; run-tests PASS (661 cases on 26 stage runs, every negative
+control caught; the generators 19 paths - master's count, 29 after patch 5
+where clang is installed); 7 of 7 IDENTICAL. The after-seed-47 batch applies in
+order on this master (its ORDER.md says after 252); patch 1 applied twice
+fails.
+
+engines-check (Iteration 249) had never failed: it was written after 248 fixed
+the fault it exists for. On a scratch clone with that fix reversed (`git apply
+-R --include=lab/evolve/evolve.py
+results/applied-after-seed46/tailfix-after-seed46.patch`, then the build):
+"tail calls (gen-tail) DIED died: engine did not compile", FAIL 1 of 19, exit
+1 - seed 46's loss, caught; run-tests reads that exit status. --validate not
+run broken again: its image comparison caught a flipped bit in Iteration 124
+and has not changed since (169 added far=False to its corpus run). Shown red
+by nothing yet, having no control of their own: ext-loops, the tracer's
+self-test, DELETE-FILE, locals, the two saved-image checks.
+
+Noted for seed 48: Iteration 248 set NEXT-RUN's seed 47 line without its
+history comment; it goes in with seed 48's.
