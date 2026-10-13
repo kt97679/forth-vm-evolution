@@ -1,0 +1,699 @@
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index cfeb05c..6268663 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -8,7 +8,7 @@ no check built one - the fronts the gate builds had none. Every variant here is
+ s6-cv8b with genes set so that one path is taken: the cached top off, multi-
+ state caching (gen-msc.py), tail-call threading (gen-tail.py), superinstructions
+ (gen-super.py), op;CALL handlers (gen-opcall.py), format-10 opcodes, the escape
+-byte (both widths), the two-bit tag (narrow and wide), the JIT with every JIT
++byte (both widths), the two-bit tag (narrow and wide, and with factored bodies), the JIT with every JIT
+ gene (and with jitos, and on the wide tag), and the file-system levels (the
+ libraries the converter binds). Values for list genes come from a recorded
+ design that has them. A variant the evolver will not express (express() drops
+@@ -51,6 +51,8 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('escape byte, wide', dict(escape=2), ['escape']),
+     ('two-bit tag', dict(tag2=1), ['tag2']),
+     ('two-bit tag, wide', dict(tag2=1, t2wide=1), ['tag2', 't2wide']),
++    ('factored bodies (the tag)', dict(tag2=1, factor=3), ['tag2', 'factor']),        # Iteration 267: the gene factor
++    ('the JIT with factored bodies', dict(JIT, factor=3), ['jit', 'factor']),
+     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
+     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
+     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 046f438..56d7539 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,10 +89,12 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler')
++LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler', 'factor')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
++HOTWORDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotwords-v1.json')   # Iteration 267: the gene factor's cold words (hotwords.py)
++FACTORV = (0, 1e-3, 1e-2, 2.0)  # Iteration 267: factor - a word below this share of the reference dispatches is factored (2.0: every word)
+ OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: their bodies [opcode EXIT], the gene opbody
+ HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
+ CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
+@@ -116,6 +118,7 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
+ EXPRESSED['cv8'] += ['jitloop', 'jitinl']
+ EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
+ EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
++EXPRESSED['cv8'] += ['factor']   # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+ EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
+ EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation; GCC's goto unfactoring (results/missed-options-2026-10.md)
+ # Iteration 262: the compiler - 0 GCC (cc), 1 clang. Offered only where clang is installed: elsewhere
+@@ -450,6 +453,7 @@ def express(g):
+     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
+     if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
+     if 'jittail' in e and not jit_on(g): e.pop('jittail')                          # Iteration 246: on the JIT
++    if 'factor' in e and not e.get('tag2'): e.pop('factor')                        # Iteration 267: the tag's 2-byte calls and byte headers
+     if 'jitk' in e and (not jit_on(g) or not e['jitk']): e.pop('jitk')            # Iteration 259: on the JIT; 0 is off
+     if e.get('compiler'):                                                           # Iteration 262: clang - GCC's own genes do nothing
+         for k in GCC_ONLY: e.pop(k, None)
+@@ -784,6 +788,7 @@ def _build(g, d):
+     if g.get('thinhdr'): opts.append('--thin-header')             # Iteration 58: one thread head, not 32
+     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
+     if g.get('opbody'): opts.append('--op-bodies')                 # Iteration 92: words an opcode replaced, [opcode EXIT]
++    if express(g).get('factor'): opts += ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])]   # Iteration 267: no table, no design - a missing file kills it loudly
+     if jit_on(g): opts.append('--jit')                             # Iteration 80: vm-jit-ops.h beside the image
+     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
+     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
+@@ -1078,6 +1083,8 @@ def mutate(g, rnd):
+             g['gotodup'] = rnd.choice([v for v in range(len(GOTODUPV)) if v != g.get('gotodup', 0)]); what.append('gotodup=%s' % GOTODUPV[g['gotodup']])
+         elif k == 'jitk':             # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
+             g['jitk'] = rnd.choice([v for v in JITKV if v != g.get('jitk', 0)]); what.append('jitk=%d' % g['jitk'])
++        elif k == 'factor':           # Iteration 267: 0 off; repeated code in words below 0.1%, below 1% of the dispatches, or in every word
++            g['factor'] = rnd.choice([v for v in range(len(FACTORV)) if v != g.get('factor', 0)]); what.append('factor=%d' % g['factor'])
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
+         elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
+@@ -1606,6 +1613,7 @@ def random_genome(rnd):
+         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
++        elif k == 'factor': g[k] = rnd.randrange(len(FACTORV))   # Iteration 267
+         elif k == 'jitk': g[k] = rnd.choice(JITKV)         # Iteration 259
+         elif k == 'gotodup': g[k] = rnd.randrange(len(GOTODUPV))   # Iteration 260
+         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
+diff --git a/lab/evolve/hotwords-v1.json b/lab/evolve/hotwords-v1.json
+new file mode 100644
+index 0000000..03f4ed6
+--- /dev/null
++++ b/lab/evolve/hotwords-v1.json
+@@ -0,0 +1,301 @@
++{
++"!": 3.7e-06,
++"!CALL": 0.00075089,
++"!CSP": 8.546e-05,
++"!W": 0.00012429,
++"#": 0.0010754,
++"#>": 8.01e-05,
++"#FOLD-OPS": 5.86e-06,
++"#S": 0.00054223,
++"'": 2.912e-05,
++"(": 0.00027403,
++"(+LOOP)": 0.07629544,
++"(.\")": 0.00023309,
++"(;CODE)": 0.00029499,
++"(>NUMBER)": 0.0,
++"(?DO)": 5.383e-05,
++"(ABORT\")": 0.00377827,
++"(DO)": 0.00267998,
++"(FIND)": 0.0,
++"(LEAVE)": 2.339e-05,
++"(LOOP)": 0.09587577,
++"(PARSE)": 0.0,
++"(POSTPONE)": 0.00014355,
++"(S\")": 0.00206965,
++"*": 0.00120409,
++"*/": 1.211e-05,
++"*/MOD": 3.418e-05,
++"+": 5.95e-06,
++"+!": 0.0008583,
++"+LOOP": 2.739e-05,
++",": 0.00017983,
++"-": 0.00250362,
++".": 9.46e-06,
++".\"": 1.912e-05,
++"/": 1.466e-05,
++"/MOD": 7.01e-05,
++"0<": 2.7e-06,
++"0=": 0.01368078,
++"0>": 0.00147051,
++"0BRANCH-OP": 1.311e-05,
++"1+": 0.00933975,
++"1-": 0.0129302,
++"2!": 0.01960922,
++"2*": 0.00010687,
++"2/": 1.699e-05,
++"2@": 0.06042934,
++"2DROP": 0.00065536,
++"2DUP": 0.00092599,
++"2OVER": 1.06e-06,
++"2SWAP": 6.3e-06,
++"32,": 0.00010198,
++":": 0.00011395,
++";": 0.00040054,
++"<": 6.8e-06,
++"<#": 4.005e-05,
++"<>": 0.00064942,
++"<BRANCH,": 3.467e-05,
++"<RESOLVE": 4.465e-05,
++"=": 5.1e-06,
++">": 0.02132716,
++">BODY": 1.896e-05,
++">MARK": 7.018e-05,
++">NUMBER": 0.00684779,
++">OP": 0.0,
++">R": 0.0,
++">RESOLVE": 0.00010526,
++"?BRANCH": 0.0,
++"?BRANCH,": 0.00010186,
++"?BRANCH8-OP": 4.3e-07,
++"?COMP": 0.00027823,
++"?CSP": 0.00012209,
++"?DO": 1.35e-06,
++"?DO8": 8.5e-07,
++"?DUP": 0.01190023,
++"?STACK": 0.01466798,
++"@": 5.1e-06,
++"ABORT": 0.0,
++"ABORT\"": 9.43e-06,
++"ABS": 0.00039456,
++"ACC-BYTE": 1.085e-05,
++"ACCEPT": 2.097e-05,
++"AGAIN8": 0.0,
++"ALIGN": 0.00136324,
++"ALIGNED": 1.49e-06,
++"ALLOCATE": 0.0,
++"ALLOT": 0.00125917,
++"AND": 5.1e-06,
++"BEGIN": 9.16e-06,
++"BIN": 1e-07,
++"BL": 0.00252914,
++"BRANCH": 0.0,
++"BRANCH-OP": 3.73e-06,
++"BRANCH8-OP": 1.33e-06,
++"BYE": 3.3e-07,
++"BYTES.": 0.0,
++"C!": 8.5e-07,
++"C,": 0.00450551,
++"C@": 3.4e-06,
++"CALL,": 0.00479925,
++"CATCH": 0.0,
++"CELL+": 2.1e-07,
++"CELL-": 8.66e-06,
++"CELLS": 0.00147009,
++"CHAIN16?": 7.829e-05,
++"CHAR": 1.799e-05,
++"CHAR+": 7.074e-05,
++"CHARS": 0.0046124,
++"CLOSE-FILE": 2.19e-06,
++"CMOVE": 0.04222265,
++"CMOVE>": 0.00608766,
++"COLD": 8.234e-05,
++"COMPILE,": 0.00154903,
++"COMPILE,8": 0.00633166,
++"CONSTANT": 4.275e-05,
++"CONVERT": 0.0,
++"COUNT": 0.00163544,
++"CR": 0.00020506,
++"CREATE": 0.00024328,
++"CREATE-FILE": 7.7e-07,
++"CV8-SHIFT": 0.0,
++"CV8-SHIFT-DEFAULT": 0.0,
++"D+": 0.0,
++"D.": 3.935e-05,
++"DABS": 0.00022934,
++"DECIMAL": 1.8e-06,
++"DELETE-FILE": 0.0,
++"DEPTH": 0.00910568,
++"DICT-LIMIT": 0.00093481,
++"DIGIT?": 0.00564254,
++"DNEGATE": 0.00102264,
++"DO": 7.529e-05,
++"DO8": 5.234e-05,
++"DODOES-OP": 2.682e-05,
++"DOES>": 1.284e-05,
++"DOVAR": 0.0,
++"DOVAR-OP": 3.041e-05,
++"DROP": 1.7e-06,
++"DUP": 3.4e-06,
++"ELSE": 1.682e-05,
++"EMIT": 0.0005697,
++"ESC-OP": 7.258e-05,
++"EVALUATE": 3.569e-05,
++"EXECUTE": 0.00215779,
++"EXIT": 0.0,
++"EXIT-OP": 0.00014711,
++"EXPECT": 0.0,
++"FILE-POSITION": 0.0,
++"FILE-SIZE": 0.0,
++"FILL": 0.01205309,
++"FIND": 0.03641223,
++"FM/MOD": 0.00063986,
++"FOLD-BASE": 0.0,
++"FOLD-DEFAULTS": 0.0,
++"FOLD-OP": 0.00110108,
++"FREE": 0.0,
++"FS-BACK": 0.00371826,
++"FS-BIT": 0.00175918,
++"FS-CR": 0.00212804,
++"FS-DROP": 2.88e-06,
++"FS-EDIT?": 9.534e-05,
++"FS-FORGET": 1.287e-05,
++"FS-LF": 0.00197182,
++"FS-MMAP": 0.0,
++"FS-SEEKS?": 0.00417522,
++"FS-UPTO-EDIT": 0.0,
++"FS-WRITE": 0.0021872,
++"FS0": 0.00208279,
++"FS1": 0.00260352,
++"FS2": 0.00311976,
++"FS3": 0.00415968,
++"FS4": 0.0,
++"HASH": 0.01016413,
++"HEADER": 0.00378993,
++"HERE": 0.00727808,
++"HEX": 1.91e-06,
++"HOLD": 0.00054758,
++"I": 0.06378358,
++"IF": 3.989e-05,
++"IMM+": 0.00090739,
++"IMM-AFTER": 1.188e-05,
++"IMM-AT": 2.34e-05,
++"IMMEDIATE": 1.143e-05,
++"INCLUDE-BUFFER": 8.8e-07,
++"INCLUDE-FILE": 0.00127311,
++"INCLUDED": 3.95e-06,
++"INTERPRET": 0.04834752,
++"INVERT": 1.593e-05,
++"J": 3.275e-05,
++"KEY": 0.0,
++"LEAVE": 9.56e-06,
++"LEAVE8": 4.32e-06,
++"LINK,": 0.00119422,
++"LINK-LEN": 0.00055396,
++"LIT": 0.0,
++"LIT,": 0.00066514,
++"LIT16-OP": 3.56e-06,
++"LIT32-OP": 4.002e-05,
++"LIT64-OP": 4.56e-06,
++"LIT8-OP": 9.952e-05,
++"LITERAL": 0.00065988,
++"LOOP": 4.341e-05,
++"LOOP,": 3.47e-05,
++"LSHIFT": 3.4e-06,
++"M*": 0.00025323,
++"MAX": 1.277e-05,
++"MIN": 0.00479847,
++"MOD": 9.35e-06,
++"MOVE": 5.09e-05,
++"MU/MOD": 0.00095696,
++"NAME=?": 0.01763083,
++"NAME>": 0.00271025,
++"NAME>BUF": 0.00484314,
++"NEGATE": 3.4e-06,
++"NEXT-NFA8": 0.08677358,
++"NOOP": 0.0,
++"NUMBER?": 0.02068858,
++"OP,": 0.0013189,
++"OPEN-FILE": 1.587e-05,
++"OPERAND-ALIGN": 5.19e-06,
++"OR": 2.12e-06,
++"OVER": 8.5e-07,
++"PAD": 8.01e-05,
++"PARSE": 0.00081218,
++"PARSE-WORD": 0.02717099,
++"PICK": 0.00143945,
++"PLACE": 0.00683747,
++"POCKET": 7.89e-06,
++"POSTPONE": 1.297e-05,
++"PRIMITIVE?": 0.0007138,
++"QUERY": 2.55e-06,
++"QUIT": 5.81e-06,
++"R/O": 0.0,
++"R/W": 0.0,
++"R>": 0.0,
++"R@": 0.0,
++"READ": 0.00022998,
++"READ-FILE": 0.0,
++"READ-LINE": 0.00941961,
++"RECURSE": 1.3e-06,
++"REFILL": 0.00691319,
++"REPEAT": 7.98e-06,
++"REPOSITION-FILE": 0.0,
++"RESIZE": 0.0,
++"RESOLVE-LEAVE": 3.047e-05,
++"RESOLVE-LEAVE16": 3.95e-05,
++"RESOLVE-LEAVES": 2.36e-05,
++"REVEAL": 0.0009243,
++"ROLL": 0.0,
++"ROT": 4.2e-07,
++"RP!": 0.0,
++"RP@": 0.0,
++"RSHIFT": 7.65e-06,
++"S\"": 5.634e-05,
++"S>D": 0.00013118,
++"SCAN": 0.07086678,
++"SEARCH-WORDLIST": 0.04832807,
++"SIGN": 1.21e-05,
++"SKIP": 0.00837253,
++"SM/REM": 0.00096076,
++"SMALL-LIT?": 0.00112648,
++"SOURCE": 0.00670031,
++"SOURCE-ID": 0.0023836,
++"SP!": 0.0,
++"SP@": 0.0,
++"SPACE": 2.284e-05,
++"SPACES": 1.943e-05,
++"STRING,": 5.397e-05,
++"SUPER-OP": 0.00327012,
++"SWAP": 1.27e-06,
++"SYSCALL": 0.0,
++"THEN": 2.389e-05,
++"THREAD-FIND": 0.0,
++"THROW": 0.0,
++"TIB": 3.43e-06,
++"TRUE": 4.2e-07,
++"TYPE": 0.00014748,
++"U.": 1.27e-06,
++"U<": 6.37e-06,
++"U>": 0.00244428,
++"UM*": 5.95e-06,
++"UM/MOD": 2.97e-06,
++"UNLOOP": 5.6e-07,
++"UNTIL": 2.17e-06,
++"VARIABLE": 1.061e-05,
++"W,": 0.00103366,
++"W/O": 1e-07,
++"W@": 0.00146696,
++"WARM": 2.82e-06,
++"WHILE": 4.63e-06,
++"WORD": 0.02508092,
++"WRITE": 0.00021857,
++"WRITE-FILE": 1.15e-06,
++"WRITE-LINE": 0.0,
++"X10-OP": 0.00197938,
++"XOR": 2.97e-06,
++"[": 5.9e-06,
++"[']": 6.4e-07,
++"[CHAR]": 7.01e-06,
++"\\": 0.00048093,
++"]": 9.084e-05
++}
+\ No newline at end of file
+diff --git a/lab/evolve/hotwords.py b/lab/evolve/hotwords.py
+new file mode 100644
+index 0000000..e1f1274
+--- /dev/null
++++ b/lab/evolve/hotwords.py
+@@ -0,0 +1,66 @@
++#!/usr/bin/env python3
++"""hotwords.py ID [ID ...] [--db FILE ...] [--write FILE] - every word's share
++of the selection workloads' dispatches, for the gene factor (Iteration 267).
++
++Builds each design with the call map and the profiler, as hotsites.py does -
++with the JIT off, so that a word the JIT would translate still shows what it
++costs in the interpreter - runs the selection workloads, and charges every
++dispatched instruction to the word whose body holds it: a word's SELF cost,
++as tools/attribute.py counts it. Code compiled at run time (the benchmarks'
++own words) is in no body and counts only in the total. A word's weight is its
++mean share over the workloads; over the designs, the largest - a word hot in
++any of them is hot. Every word of every design is listed, those never run at
++0, so a word missing from the file is one no reference design has.
++
++--write keeps the table (lab/evolve/hotwords-v1.json): the converter
++(layout.py --factor --factor-hot FILE) leaves the code of every word missing
++from it, or at FACTOR_HOT of the dispatches or more, as it is.
++"""
++import bisect, collections, glob, json, os, shutil, sys
++HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
++args = sys.argv[1:]; dbs, out = [], None
++while '--db' in args: i = args.index('--db'); dbs.append(args[i + 1]); del args[i:i + 2]
++if '--write' in args: i = args.index('--write'); out = args[i + 1]; del args[i:i + 2]
++if not args: sys.exit(__doc__)
++recs = {}
++for db in dbs or sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*.md'))):
++    for l in open(db, errors='replace'):
++        try: r = json.loads(l)
++        except ValueError: continue
++        if isinstance(r, dict) and 'genome' in r and 'id' in r: recs[r['id']] = r
++missing = [x for x in args if x not in recs]
++if missing: sys.exit('hotwords: no recorded design %s' % ' '.join(missing))
++sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
++E.setup()
++table = {}
++for ident in args:
++    g = E.canon(recs[ident]['genome']); d = os.path.join(E.EV, 'hotwords'); shutil.rmtree(d, ignore_errors=True)
++    g2 = dict(g, tail=0, msc=0, jit=0)            # the interpreter's view, as hotsites.py profiles
++    cm = d + '.map'; os.environ['CALLMAP'] = cm; E.PROFILING[0] = True
++    try: eng, img = E.build(g2, d)
++    finally: E.PROFILING[0] = False; del os.environ['CALLMAP']
++    W = sorted((int(f[1]), int(f[2]), ' '.join(f[4:])) for f in (l.rstrip('\n').split(' ') for l in open(cm)) if f[0] == 'W' and f[3] == 'code')
++    at = [w[0] for w in W]
++    share = collections.Counter({w[2]: 0.0 for w in W})
++    pw = E.private_work(d)
++    for wl in E.WORK_SEL:
++        pf = os.path.join(d, 'p-' + wl)
++        E.sh([eng, img], cwd=pw, inp=E.program(wl), timeout=240, cpu=20, env=dict(os.environ, VMPROF=pf))
++        ipc, tot = collections.Counter(), 0
++        for f in (l.split() for l in open(pf)):
++            if f[0] == 'I': ipc[int(f[1])] += int(f[2]); tot += int(f[2])
++        assert tot, 'hotwords: %s ran nothing on %s' % (ident, wl)
++        for a, n in ipc.items():
++            i = bisect.bisect_right(at, a) - 1
++            if i >= 0 and W[i][0] <= a < W[i][1]: share[W[i][2]] += n / tot / len(E.WORK_SEL)
++    for name, v in share.items(): table[name] = max(table.get(name, 0.0), v)
++    top = share.most_common(8)
++    print('%s: %d code words, %d run; the hottest %s' % (ident, len(W), sum(1 for v in share.values() if v > 0),
++          ', '.join('%s %.1f%%' % (n, 100 * v) for n, v in top)))
++    shutil.rmtree(d, ignore_errors=True); os.path.exists(cm) and os.remove(cm)
++cold = sorted(table.values())
++for t in (1e-5, 1e-4, 1e-3):
++    print('below %g of the dispatches: %d of %d words' % (t, sum(1 for v in cold if v < t), len(cold)))
++if out:
++    json.dump({n: round(v, 8) for n, v in sorted(table.items())}, open(out, 'w'), indent=0, sort_keys=True)
++    print('wrote %s: %d words from %s' % (out, len(table), ' '.join(args)))
+diff --git a/tools/layout.py b/tools/layout.py
+index 5d1a6ba..59a18fb 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -536,10 +536,131 @@ if TAG2_ON:
+         assert _hit, 'tag 2 wide: no CALL, holding the 3-byte limit 4194304'
+         print('tag 2 wide: CALL,\'s 3-byte limit patched to 16 KB in %d place(s)' % _hit)
+ 
++# ---- the gene factor (Iteration 267): --factor [--factor-hot FILE] ----------
++# Repeated straight-line code moved into bodies the converter makes and never
++# names (results/drafts/factor-plan.md; Iteration 263 priced it at 154 bytes of
++# the smallest image). A run - two or more whole operations, none of which
++# depends on where it sits (no branch, branch target, inline operand, string,
++# alignment or relocated literal) or on the return stack below it (no EXIT, no
++# RA_WORDS - I, J, EXECUTE, the loop words - no unbalanced >R or R>, no call to
++# a word that reads its caller's return address) - that recurs in cold code
++# becomes one headerless body [run][EXIT] past the end of the image, and each
++# use a call to it: 2 bytes under the tag, against the run's own.
++#
++# A use keeps the run's size in CELLS: the call, then a GAP holding the rest
++# (sod16 op_cells - no bytes in the image). Branches, loop operands, xts, DOES>
++# entries and the relocated literals are all found by old cell offsets or by
++# op adjacency, so every one of them in the word stays right untouched.
++#
++# The compiler's swapped bodies (SRC_OF) take part: their xts resolve from
++# the source word's address plus an old cell offset, which a GAP keeps.
++#
++# Hot words keep their code, by the reference profile (--factor-hot FILE,
++# lab/evolve/hotwords.py: name -> the largest share of the selection
++# workloads' dispatches the word took in the reference designs): a word
++# missing from it, or at --factor-share of the dispatches or more, is left as
++# it is - a use costs a call and a return every time it runs. Counted on the
++# smallest design (3456ac1e5e, Iteration 267): below 0.1% -41 image bytes for
++# +0.007% dispatches; below 1% -95 for +0.17%; every word -127 for +1.98%.
++# Greedy by net bytes, k uses x (len - 2) - (len + 1), with lazy
++# re-evaluation (a run's worth only falls as others take its places).
++import heapq as _hq
++FACTOR_KEYS, FACTOR_RUNS, FACTOR_USES = set(), {}, {}
++FACTOR_HOT = float(_opt('--factor-share') or 1e-3)   # --factor-share X: a word below X of the dispatches is factored
++FACTOR_MAXLEN = 16                        # operations in a run, at most
++if V8 and TAG2_ON and BYTEHDR and '--factor' in ARGV and not _os.environ.get('SOD16_NO_FACTOR'):
++    _hotw = json.load(open(_opt('--factor-hot'))) if '--factor-hot' in ARGV else {}
++    _LRT = set()                          # the locals runtime: a LIT before a call to one is relocated by adjacency
++    for _n in ('L-LSAVE-XT', 'L-L!-XT', 'L-LZERO-XT', 'L-LRESTORE-XT'):
++        _w = [x for x in order if x['n'] == _n]
++        _v = cells.get(_w[0]['s'] + CELL) if _w else None
++        if _v: _LRT.add(START + _v)
++    _NO_P = {'EXIT'} | set(G['RA_WORDS'])
++    _OK = ('P', 'C', 'LIT', 'VF', 'VS', 'LOC', 'SP', 'ADDI', 'EQI', 'SADDI', 'DADDI', 'DLTI')
++    def _safe(ops, j):
++        k, pl = ops[j]
++        if k not in _OK: return False
++        if k == 'P' and pl in _NO_P: return False
++        if k == 'SP' and set(pl) & _NO_P: return False
++        if k == 'C' and (pl in _LRT or G['before_operand'](ops, j) or not G['ra_safe'](pl)): return False
++        if k == 'LIT' and j + 1 < len(ops) and ops[j + 1][0] == 'C' and ops[j + 1][1] in _LRT: return False
++        if j and ops[j - 1][0] == 'OC': return False      # X;CALL's call stays right behind it
++        return True
++    def _rs_ok(run):                      # balanced, and nothing below its own entry: sod16 rs_walk, pairs expanded
++        return G['rs_walk']([('P', x) for k, pl in run for x in ((pl,) if k == 'P' else pl if k == 'SP' else ())], True)
++    _sz = {}
++    def _bytes(op):
++        if op not in _sz: G['OP_CTX'][0] = None; _sz[op] = G['op_bytes'](op[0], op[1], 0)
++        return _sz[op]
++    _tails = set(G['ENTRIES']) | set(TAILS)
++    _segs, _kept = [], 0
++    for w in order:
++        s0 = w['s']
++        if kind[s0] != 'code' or not info[s0] or stub_ops(w) is not None: continue
++        if w['n'] in G['HOT_PATCHED'] or w['n'] in DUMPTOOL or s0 in BSS: continue
++        if any(s0 < e < w['e'] for e in _tails): continue
++        if _hotw.get(w['n'], 1.0) >= FACTOR_HOT: _kept += 1; continue
++        ops = info[s0]
++        cs, tg = G['branch_targets'](ops)
++        j = 0
++        while j < len(ops):
++            if not _safe(ops, j): j += 1; continue
++            i = j; j += 1
++            while j < len(ops) and _safe(ops, j) and cs[j] not in tg: j += 1
++            if j - i >= 2: _segs.append((s0, i, j))
++    _occ = collections.defaultdict(list)
++    for s0, a, b in _segs:
++        ops = info[s0]
++        for i in range(a, b - 1):
++            for j in range(i + 2, min(b, i + FACTOR_MAXLEN) + 1):
++                _occ[tuple(ops[i:j])].append((s0, i))
++    _len = {r: sum(_bytes(x) for x in r) for r, o in _occ.items() if len(o) >= 2}
++    _occ = {r: o for r, o in _occ.items() if r in _len and _len[r] > 2 and _rs_ok(r)}
++    _taken = collections.defaultdict(set)          # word -> op indices now in a chosen use
++    def _free(r):
++        n, out, last = len(r), [], {}
++        for s0, i in _occ[r]:                      # in order: the dump's words, then positions
++            if i < last.get(s0, -1) or any(x in _taken[s0] for x in range(i, i + n)): continue
++            out.append((s0, i)); last[s0] = i + n
++        return out
++    def _worth(r, k): return k * (_len[r] - 2) - (_len[r] + 1)
++    _heap = [(-_worth(r, len(o)), r) for r, o in _occ.items()]
++    _hq.heapify(_heap)
++    _chosen = []
++    while _heap:
++        _v, r = _hq.heappop(_heap)
++        f = _free(r); v = _worth(r, len(f))
++        if v <= 0: continue
++        if _heap and v < -_heap[0][0]: _hq.heappush(_heap, (-v, r)); continue
++        _chosen.append((r, f))
++        for s0, i in f: _taken[s0].update(range(i, i + len(r)))
++    _base = max(w['e'] for w in order) + 4096 * CELL
++    _repl = collections.defaultdict(list)
++    for n_, (r, f) in enumerate(_chosen):
++        key = _base + n_ * 64 * CELL
++        c_ = sum(G['op_cells'](*x) for x in r)
++        w = {'n': '(F%d)' % n_, 's': key, 'e': key + c_ + CELL, 'nfa': key, 'link': key}
++        order.append(w); starts[key] = w
++        kind[key] = 'code'; body = list(r) + [('P', 'EXIT')]
++        info[key] = G['fold_exit'](body) if G['FOLD'] else body
++        FACTOR_KEYS.add(key); FACTOR_RUNS[key] = r; FACTOR_USES[key] = len(f)
++        for s0, i in f: _repl[s0].append((i, len(r), key, c_))
++    for s0, rs in _repl.items():
++        ops = list(info[s0])
++        for i, n, key, c_ in sorted(rs, reverse=True):
++            ops[i:i + n] = [('C', key), ('GAP', c_ - CELL)]
++        info[s0] = ops
++    print('factor: %d bodies, %d uses; %d words kept as hot, %d runs considered' % (len(_chosen), sum(FACTOR_USES.values()), _kept, len(_occ)))
++
+ for w in order:
+     G['CUR_WORD'][0] = w['s']          # Iteration 199
+     if kind[w['s']] == 'code': tok[w['s']] = to_tokens(info[w['s']])
+ _short_fails_out()
++if FACTOR_KEYS:                         # Iteration 267: what the gene factor saved, exactly
++    _bod = sum(len(tok[k]) for k in FACTOR_KEYS)
++    _use = sum(FACTOR_USES[k] * sum(_bytes(x) for x in FACTOR_RUNS[k]) for k in FACTOR_KEYS)
++    print('factor: %d bytes of runs became %d of calls and %d of bodies: %d bytes saved'
++          % (_use, 2 * sum(FACTOR_USES.values()), _bod, _use - 2 * sum(FACTOR_USES.values()) - _bod))
+ 
+ # ---- new sizes ------------------------------------------------------
+ def tail_bytes(w):
+@@ -547,7 +668,7 @@ def tail_bytes(w):
+ 
+     A PRIMITIVE stub is read by shape, not by walking, so code_end does
+     not apply to it and would report its second cell as a tail."""
+-    if kind[w['s']] != 'code' or stub_ops(w) is not None: return 0
++    if kind[w['s']] != 'code' or w['s'] in FACTOR_KEYS or stub_ops(w) is not None: return 0
+     return w['e'] - code_end(w)
+ 
+ def body_needs_align(w):
+@@ -601,6 +722,7 @@ import collections as _co
+ _hl_req = [n for n in (_opt('--headerless') or '').split(',') if n]
+ _hl_count = _co.Counter(w['n'] for w in order)
+ HL = {w['s'] for w in order if w['n'] in _hl_req and _hl_count[w['n']] == 1}
++HL |= FACTOR_KEYS                     # Iteration 267: the gene factor's bodies - code alone, never named
+ if _hl_req:
+     _kept = [n for n in _hl_req if _hl_count[n] != 1]
+     print('headerless: %d words, %d header bytes out%s' % (len(HL),
+@@ -664,7 +786,7 @@ if _os.environ.get('SYMMAP'):
+         for _w in order:
+             _b = new_off[_w['s']]['body']
+             _f.write('%d %d %s\n' % (_b, _b + new_body_bytes(_w), _w['n']))
+-OLD_HERE = order[-1]['e'] - START
++OLD_HERE = [w for w in order if w['s'] not in FACTOR_KEYS][-1]['e'] - START   # Iteration 267: not a factored body
+ 
+ # ---- recompute the link chains, and re-walk them to prove it --------
+ # The word list is HASHED: as many chains as there are threads, each
+@@ -1088,7 +1210,7 @@ def emit(path):
+             if _cm is not None:
+                 _c2t, _, _ts, _, _ = layout(ops2)
+                 for _j, (_k, _pl) in enumerate(ops2):
+-                    if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS'): continue    # data, not operations
++                    if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS', 'GAP'): continue    # data, not operations; a GAP has no bytes
+                     _at = new_off[s0]['body'] + _ts[_j]
+                     if _k == 'C':      # tag 2: 01, 10, 11 in the top bits - 2, 3, 4 bytes (Iteration 88)
+                         _cm.append('C %d %d %d %d %d %s %s' % (_at, (img[_at] >> 6) + 1 if TAG2_ON else 1 if _pl in G['HOTCALLS'] else 3 if img[_at] >= 0xC0 else 2,
+@@ -1353,7 +1475,7 @@ for _s, _o in BSS_OFF.items(): lit_new[(_s, 0)] = _o        # Iteration 44: each
+ 
+ # ---- report ---------------------------------------------------------
+ c = collections.Counter(kind.values())
+-codeb = sum(w['e'] - w['s'] for w in order if kind[w['s']] == 'code')
++codeb = sum(w['e'] - w['s'] for w in order if kind[w['s']] == 'code' and w['s'] not in FACTOR_KEYS)
+ datab = sum(w['e'] - w['s'] for w in order if kind[w['s']] == 'data')
+ newcode = sum(new_body_bytes(w) for w in order if kind[w['s']] == 'code')
+ tails_kept = [(w['n'], tail_bytes(w)) for w in order if tail_bytes(w)]
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 0358b0c..fbb2eb8 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -991,6 +991,7 @@ X_IMM = {'ADDI': 0x78, 'ADDIX': 0x79, 'EQI': 0x7A, 'EQIX': 0x7B}
+ def op_cells(k, pl):
+     """Size of one operation in the CELL image, in bytes."""
+     if k == 'ALN': return 0
++    if k == 'GAP': return pl                        # Iteration 267 (the gene factor): a factored run's cells, no bytes
+     if k in ('VF', 'VS'): return 2 * CELL           # call + @/!
+     if k in ('ADDI', 'EQI', 'EQIH'): return 3 * CELL        # LIT n + op
+     if k in ('ADDIX', 'EQIX'): return 4 * CELL      # ... + EXIT
+@@ -1008,6 +1009,7 @@ def op_cells(k, pl):
+ def op_bytes(k, pl, t):
+     """Size of one operation in the TOKEN image, in bytes, at offset t."""
+     if k == 'ALN': return (-t) % pl
++    if k == 'GAP': return 0
+     if V8 and TAG2[0]:
+         # tag 2: a call by its distance, 4 bytes before an operand; anything
+         # else the old size with its opcode re-costed - 1 or 2 bytes by rank
+@@ -1080,7 +1082,7 @@ def t2call(v, n):
+ def opcode_L(ops, j):
+     """The logical opcode of op j - what to_bytes_v8 writes first - or None."""
+     k, pl = ops[j]
+-    if k in ('C', 'EQIT', 'EQITS', 'XT', 'OPD', 'STR', 'ALN'): return None   # no opcode: a call, an operand
++    if k in ('C', 'EQIT', 'EQITS', 'XT', 'OPD', 'STR', 'ALN', 'GAP'): return None   # no opcode: a call, an operand, a factored run's rest
+     if k == 'P':
+         if pl in X_OPS10: return X_OPS10[pl]
+         if pl in X_TINY: return X_TINY[pl]
+@@ -1204,7 +1206,7 @@ def to_bytes_t2(ops):
+     for j, (k, pl) in enumerate(ops):
+         while len(b) < ts[j]: t2put(b, idx_of['NOOP'])
+         assert len(b) == ts[j], "tag-2 layout and emission disagree"
+-        if k == 'ALN': continue
++        if k in ('ALN', 'GAP'): continue
+         if k == 'C':
+             v = V8_CALLTOK[0](pl) if V8_CALLTOK[0] else 0
+             b.extend(t2call(v, 4 if before_operand(ops, j) else t2calllen(v))); continue
+@@ -1257,7 +1259,7 @@ def to_bytes_v8(ops):
+     for j, (k, pl) in enumerate(ops):
+         while len(b) < ts[j]: b.append(idx_of['NOOP'])
+         assert len(b) == ts[j], "v8 layout and emission disagree"
+-        if k == 'ALN': continue
++        if k in ('ALN', 'GAP'): continue
+         if k == 'P' and pl in X_OPS10: b.append(X_OPS10[pl])
+         elif k == 'P' and pl in X_TINY: b.append(X_TINY[pl])
+         elif k == 'P' and pl in ESC_PRIMS:
+@@ -1354,8 +1356,8 @@ def to_tokens(ops):
+     for j, (k, pl) in enumerate(ops):
+         while len(t) * 2 < ts[j]: t.append(idx_of['NOOP'])   # padding
+         assert len(t) * 2 == ts[j], "layout and emission disagree"
+-        if k == 'ALN':
+-            pass                                  # padding already emitted
++        if k in ('ALN', 'GAP'):
++            pass                                  # padding already emitted; a GAP has no bytes
+         elif k == 'PX':
+             t.append(FOLDBASE + idx_of[pl])
+         elif k == 'LITX':

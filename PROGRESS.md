@@ -5087,3 +5087,56 @@ self-test, DELETE-FILE, locals, the two saved-image checks.
 
 Noted for seed 48: Iteration 248 set NEXT-RUN's seed 47 line without its
 history comment; it goes in with seed 48's.
+
+## Iteration 267 - 2026-10-13 - Claude
+
+**The gene factor built, as a draft patch (results/drafts/factor-after-seed47-
+draft.patch, on the five after-seed-47 patches); its first number audited; the
+trade-off counted.** tools/layout.py's pass (between the tag's ranking and the
+token fill), sod16.py's GAP, lab/evolve/hotwords.py and hotwords-v1.json, the
+gene in evolve.py, two engines-check paths.
+
+How a use is replaced: the call, then a GAP - an operation of the run's
+remaining cells and no bytes (sod16 op_cells, op_bytes). Branch, loop-operand,
+xt and DOES>-entry offsets are all old cell offsets and the locals literals are
+found by adjacency, so nothing else in the word moves; one call in place of the
+run would have shifted every offset after it (the plan did not say how).
+
+A run: two to sixteen operations, none of them a branch, branch target, inline
+operand, string, alignment, LITOFF, EXIT or RA word (I, J, EXECUTE, the loop
+words), no call to a word that reads its caller's return address (sod16
+ra_safe), neither half of a locals pair, the return stack balanced inside it
+(rs_walk, superinstruction pairs expanded). Left out: primitives, the words
+layout.py patches after reading (HOT_PATCHED), words with a DOES> entry, the
+dump tool's, bss. Greedy by k x (len - 2) - (len + 1), lazily re-evaluated.
+
+The first number - 16 image bytes against Iteration 263's 154 - audited on
+3456ac1e5e by lifting one exclusion at a time (converter estimate / image): as
+built 31 / -16; hot words in 124 / -120; the swapped compiler bodies in 38 /
+-17; both 147 / -127; EXECUTE allowed, no change; calls reading the return
+address allowed (not safe) 150 / -128; the return stack and loop words too (not
+safe) 186 / -173. The hot-word filter was the gap; the safety rules cost 3
+bytes beyond 147. The estimate runs ahead of the image (31 against 16, 147
+against 127) - not explained yet; image bytes are what count.
+
+Hot is a trade-off, counted (the profiler, deterministic; 3456ac1e5e, the six
+selection workloads, geometric mean of dispatches): words below 0.01% of the
+dispatches -17 bytes, +0.001%; below 0.1% -41, +0.007%; below 0.3% -65,
++0.028%; below 1% -95, +0.17%; every word -127, +1.98% (kernel +4.3%, loop
++4.3%, corpus +1.6%, bubble +1.7%). So four levels (FACTORV): 0 off, 1 below
+0.1%, 2 below 1%, 3 every word - evolution weighs it. The swapped compiler
+bodies take part: their xts resolve from the source's address plus an old cell
+offset, which a GAP keeps; corpus and kernel workload right with them.
+
+The reference profile: hotwords.py on five of seed 46's front that hold every
+kernel overlay between them (3456ac1e5e, 5d7c8449aa, f179c75c01, d1ac6c88d8,
+3bb2087f9d, the JIT off): 299 code words, 177 below 0.01%, 221 below 0.1%. A
+word missing from the table keeps its code.
+
+Checked: with the gene off, 14 front designs of different kinds convert to
+byte-identical images and ids, master's converter against the patch's; the
+draft applies after patches 1-5 on a fresh clone and reproduces its six files.
+Not yet: run-tests with the two new paths, 7 of 7, names-check, the suite and
+the corpus with the gene on - so a draft, not results/pending. prompts/17: the
+gene touches evolve.py in six places and two constants; the gene table that
+prompt asks for (Iteration 104) is still owed.
