@@ -1,0 +1,2 @@
+build/ is older than its sources (forth/cv8b.4, forth/cv8bt.4, forth/kernel.4) - after a git pull, build again:
+    LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate

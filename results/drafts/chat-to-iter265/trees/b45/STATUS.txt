@@ -1,0 +1,8 @@
+HEAD 57ef97e scratch: patch 5 (dispoff)
+cloned at dbdf4cb8923b
+2 commits past the clone point
+
+git status --short:
+ M engine/vm-lab.c
+ M lab/evolve/GENES.md
+ M lab/evolve/evolve.py

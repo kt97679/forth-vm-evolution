@@ -1,0 +1,5 @@
+HEAD 4adbdb2 scratch: compiler
+cloned at 7aba7fec4095
+5 commits past the clone point
+
+git status --short:

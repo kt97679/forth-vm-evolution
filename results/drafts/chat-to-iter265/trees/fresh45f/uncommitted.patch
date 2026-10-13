@@ -1,0 +1,1126 @@
+diff --git a/engine/rt-linux-i386.c b/engine/rt-linux-i386.c
+index 870ee23..3ab77bd 100644
+--- a/engine/rt-linux-i386.c
++++ b/engine/rt-linux-i386.c
+@@ -65,6 +65,7 @@ long syscall(long n, ...)
+     return ok(sc(n, a[0], a[1], a[2], a[3], a[4], a[5]));
+ }
+ int close(int fd)                              { return (int)S(6, fd, 0, 0); }
++int isatty(int fd) { long t[16]; return S(54, fd, 0x5401, t) == 0; }   /* ioctl TCGETS: Iteration 231, a terminal unbuffered */
+ off_t lseek(int fd, off_t o, int w)            { return S(19, fd, o, w); }
+ int pipe(int fd[2])                            { return (int)S(42, fd, 0, 0); }
+ int dup2(int a, int b)                         { return (int)S(63, a, b, 0); }
+diff --git a/engine/rt-linux-x86_64.c b/engine/rt-linux-x86_64.c
+index e0a5719..d063875 100644
+--- a/engine/rt-linux-x86_64.c
++++ b/engine/rt-linux-x86_64.c
+@@ -82,6 +82,7 @@ long syscall(long n, ...)
+     return ok(sc(n, a[0], a[1], a[2], a[3], a[4], a[5]));
+ }
+ int close(int fd)                              { return (int)S(3, fd, 0, 0); }
++int isatty(int fd) { long t[8]; return S(16, fd, 0x5401, t) == 0; }   /* ioctl TCGETS: Iteration 231, a terminal unbuffered */
+ off_t lseek(int fd, off_t o, int w)            { return S(8, fd, o, w); }
+ int pipe(int fd[2])                            { return (int)S(22, fd, 0, 0); }
+ int dup2(int a, int b)                         { return (int)S(33, a, b, 0); }
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 303a329..1bcbdf4 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -577,6 +577,16 @@ static const int open_flags[10] = {
+ #define MAX_TAILS 16
+ static UNS64 nwords;
+ static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
++#if ENC == 3
++static UNS64 throw_off;    /* Iteration 231: THROW's body (offset) - UM/MOD's zero divisor, as vm-lab.c */
++#ifndef DIV0_DISPATCH
++#define DIV0_DISPATCH() NEXT()
++#endif
++#define DIV0() do { DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; DIV0_DISPATCH(); } while (0)
++#define DIV0_CHECK() do { if (!DS0 && throw_off) DIV0(); } while (0)
++#else
++#define DIV0_CHECK() do { } while (0)
++#endif
+ 
+ static void load_image(const char *name) {
+     int fd;
+@@ -676,8 +686,8 @@ static void load_image(const char *name) {
+     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
+                     & ~(UNS64)(CELL_BYTES - 1));
+ #if ENC == 3
+-    {   UNS64 t_;                 /* Iteration 229: THROW's body - vm-lab.c's, read past here */
+-        if (full_read(fd, (UNS8*)&t_, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); } }
++    /* Iteration 229: THROW's body; Iteration 231: SPN throws there too, as vm-lab.c */
++    if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); }
+ #endif
+     len = full_read(fd, base, MEMSIZE);
+     close(fd);
+@@ -722,9 +732,9 @@ static void load_image(const char *name) {
+                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+                 }
+                 nfas[n++] = nfa;
+-                link = CELL(nfa - CELL_BYTES);
++                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+                 if (link == 0) break;
+-                nfa = (nfa - CELL_BYTES) + link;
++                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+             }
+         }
+         /*  Insertion sort, ascending. It runs once at load over a few
+@@ -739,7 +749,7 @@ static void load_image(const char *name) {
+         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+         for (i2 = 0; i2 < n; i2++) {
+             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
+-            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
++            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
+ #if SKIPPAD
+             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
+ #endif
+@@ -765,14 +775,14 @@ static void load_image(const char *name) {
+     for (i = 0; i < n; i++) {
+         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
+         wordtab[n - 1 - i] =
+-            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
++            nfa + 1; (void)nlen;
+ #if SKIPPAD
+         /* skip leading NOOP padding: calls land on the first real token */
+         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
+ #endif
+-        link = CELL(nfa - CELL_BYTES);
++        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+         if (link == 0) break;
+-        nfa = (nfa - CELL_BYTES) + link;
++        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+     }
+     for (i = 0; i < ntails; i++) {
+         if (tail_w[i] >= (UNS64)n) {
+@@ -1081,6 +1091,9 @@ static void virtual_machine(void) {
+ #else
+ #define SYSF &&L_fork
+ #define SYSX(l) &&l
++#endif
++#ifndef DSP
++#define DSP(l) &&l         /* Iteration 237: the generated tables' entry form - addresses here (vm-lab.c may store offsets) */
+ #endif
+     static const void *const dispatch[] = {
+         &&L_noop, &&L_exit, &&L_lit, &&L_branch, &&L_0branch, &&L_drop,
+@@ -1431,7 +1444,7 @@ L_negate:  /* negate  */ DS0 = - DS0; NEXT();
+ L_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; NEXT();
+ L_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; NEXT();
+ L_ummult:  /* um*     */ umul(&DS0, &DS1); NEXT();
+-L_umdiv:   /* um/mod  */ udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
++L_umdiv:   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
+ L_dplus:   /* d+      */
+     DS3 += DS1; DS2 += DS0; DS2 += (DS3 < DS1);
+     dsp += 2 * CELL_BYTES;
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index f63b07f..1086146 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -159,25 +159,27 @@ static char **g_argv;
+ #error "TAG2: a call reaches 1 GB from the image base - MEMSIZE at most that"
+ #endif
+ #if TAG2
+-/*  A byte-header link, read backwards from the name: the byte before it
++/*  Iteration 232: the nfa is the count byte, AFTER the name; the link ends
++ *  just before the name (b__ = nfa - length).
++ *  A byte-header link, read backwards from the name: the byte before it
+  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
+  *  bits), 10 three (22), 11 four (30) - the bytes below it high to low.  */
+-#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
++#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1); UNS64 d__; \
+     switch (t__ >> 6) {                                                                   \
+     case 0: d__ = t__; break;                                                             \
+-    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2); break;                        \
+-    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; \
+-    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
+-                   | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
++    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2); break;                        \
++    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3); break; \
++    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(b__ - 2) << 16)                \
++                   | ((UNS64)BYTE(b__ - 3) << 8) | BYTE(b__ - 4); }                        \
+     d__ ? a__ - d__ : 0; })
+ #else
+ /*  A byte-header link in CV8 (cv8b.4's NEXT-NFA8): its last byte, the one
+  *  before the name - below 0x80 seven bits (0 ends the thread), below 0xC0
+  *  fourteen, else twenty-two.  */
+-#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
++#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1);   \
+     t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
+-    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
+-    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })
++    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2))                        \
++    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3)); })
+ #endif
+ #ifndef VARCALL
+ /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
+@@ -332,7 +334,19 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
+ #define JIT_NATIVE(f) ((f) > 1)
+ #define JIT_REPOINT(f) 1
+ #endif
++/*  Iteration 239, the gene jitos: the translator compiled for size. It runs
++ *  once per word translated, not per instruction - jit_body alone is 3.5 KB
++ *  at -O2; -Os takes 400-800 bytes off a JIT engine (results/price-stencils-
++ *  bloom.md). The stencils it copies are compiled apart (spn-stencils.c),
++ *  untouched; translation speed is the trade evolution weighs.  */
++#if JITOS
++#pragma GCC push_options
++#pragma GCC optimize ("Os")
++#endif
+ #include "jit.c"        /* JIT.md (Iteration 80): SPN's stencils, read, copied and patched */
++#if JITOS
++#pragma GCC pop_options
++#endif
+ #endif
+ 
+ /*
+@@ -891,9 +905,9 @@ static void load_image(const char *name) {
+                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+                 }
+                 nfas[n++] = nfa;
+-                link = CELL(nfa - CELL_BYTES);
++                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+                 if (link == 0) break;
+-                nfa = (nfa - CELL_BYTES) + link;
++                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+             }
+         }
+         /*  Insertion sort, ascending. It runs once at load over a few
+@@ -908,7 +922,7 @@ static void load_image(const char *name) {
+         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+         for (i2 = 0; i2 < n; i2++) {
+             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
+-            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
++            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
+ #if SKIPPAD
+             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
+ #endif
+@@ -934,14 +948,14 @@ static void load_image(const char *name) {
+     for (i = 0; i < n; i++) {
+         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
+         wordtab[n - 1 - i] =
+-            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
++            nfa + 1; (void)nlen;
+ #if SKIPPAD
+         /* skip leading NOOP padding: calls land on the first real token */
+         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
+ #endif
+-        link = CELL(nfa - CELL_BYTES);
++        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
+         if (link == 0) break;
+-        nfa = (nfa - CELL_BYTES) + link;
++        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
+     }
+     for (i = 0; i < ntails; i++) {
+         if (tail_w[i] >= (UNS64)n) {
+@@ -1223,6 +1237,10 @@ NOINLINE_IO static void t_flush(void) {
+  *  that can seek, a block and a seek back to just after the line; from
+  *  anything else, a byte per read(2), up to the first character ACCEPT
+  *  treats specially - LF, CR, backspace, DEL - or the count asked for.  */
++/*  Iteration 231: output to a terminal is not held (the owner's rule,
++ *  Gforth's: Iteration 202) - descriptor 1 asked once, at the first WRITE,
++ *  as fsys 4's FS-OINIT asks in Forth; a terminal gets each WRITE at once.  */
++static int t_otty = -1;
+ NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
+     while (n) {
+         UNS64 k;
+@@ -1232,6 +1250,8 @@ NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
+         memcpy(t_obuf + t_olen, p, (size_t)k);
+         t_olen += (int)k; p += k; n -= k;
+     }
++    if (t_otty < 0) t_otty = isatty(1) == 1;
++    if (t_otty) t_flush();
+ }
+ 
+ NOINLINE_IO static int t_getc(void) {     /* READ-LINE on descriptor 0: a byte per read(2) */
+@@ -1280,45 +1300,68 @@ static void virtual_machine(void) {
+ #if !defined(__x86_64__) && !defined(__i386__)
+ #error "the gene sysc: the image's system-call numbers are x86-64 Linux's (i386's mapped)"
+ #endif
+-#define SYSF &&L_syscall
+-#define SYSX(l) &&L_nosys
++#define SYSF DSP(L_syscall)
++#define SYSX(l) DSP(L_nosys)
+ #else
+-#define SYSF &&L_fork
+-#define SYSX(l) &&l
++#define SYSF DSP(L_fork)
++#define SYSX(l) DSP(l)
+ #endif
+ /*  Iteration 202, the gene fsys: six file words and RESIZE in Forth over
+  *  SYSCALL (forth/file-sysc.4, loaded last in the design's dump) - their
+  *  handlers out of the engine, as SYSX's for the shell's words. ALLOCATE and
+  *  FREE stay: SAVE-SYSTEM was compiled against them.  */
++/*  Iteration 237: the dispatch table in the file as OFFSETS from L_noop, not
++ *  addresses - 4 bytes an entry, not 8: about 500 bytes off every CV8 engine
++ *  file. At the first entry the addresses are made once, into a copy in BSS
++ *  that everything reads as it read the table before (cv8_tab, esc_tab, the
++ *  tag's t2tab, the dispatch itself), so no dispatch pays for it. A signed 32-bit offset sets no limit an engine can
++ *  reach (16 bits would save 256 more, and cap the interpreter at 32 KB:
++ *  not taken - the owner: no limits a developer could hit). Off with
++ *  -DDISPOFF=0, and where ENC is not 3; gen-tail.py turns it off (its tables
++ *  hold functions). SYSF/SYSX and FSX are table entries, so DSP() too.  */
++#ifndef DISPOFF
++#define DISPOFF (ENC == 3)
++#endif
++#if DISPOFF
++#define DSP(l) (&&l - &&L_noop)
++#define DPTR(o) ((const void *)((const char *)&&L_noop + (o)))
++#else
++#define DSP(l) &&l
++#define DPTR(p) (p)
++#endif
+ #if FSYS
+-#define FSX(l) &&L_nosys
++#define FSX(l) DSP(L_nosys)
+ #else
+-#define FSX(l) &&l
++#define FSX(l) DSP(l)
+ #endif
+ /*  Iteration 205, fsys 2 - the single-SYSCALL family: OPEN-FILE, CLOSE-FILE,
+  *  WRITE-FILE, ALLOCATE and FREE too (forth/file-sysc2.4); the kernel's uses
+  *  of them rebound to the Forth words by the converter (--rebind).  */
+ #if FSYS >= 2
+-#define FSX2(l) &&L_nosys
++#define FSX2(l) DSP(L_nosys)
+ #else
+-#define FSX2(l) &&l
++#define FSX2(l) DSP(l)
+ #endif
+ /*  Iteration 206, fsys 3: WRITE, READ, READ-LINE and BYE too (forth/file-
+  *  sysc3.4: unbuffered, no read-ahead from what cannot seek) - the engine's
+  *  I/O is then SYSCALL alone.  */
+ #if FSYS >= 3
+-#define FSX3(l) &&L_nosys
++#define FSX3(l) DSP(L_nosys)
+ #else
+-#define FSX3(l) &&l
++#define FSX3(l) DSP(l)
+ #endif
++#if DISPOFF
++    static const int dispatch_o[] = {
++#else
+     static const void *const dispatch[] = {
+-        &&L_noop, &&L_exit, &&L_lit, &&L_branch, &&L_0branch, &&L_drop,
+-        &&L_dup, &&L_swap, &&L_rot, &&L_over, &&L_cfetch, &&L_fetch,
+-        &&L_cstore, &&L_store, &&L_and, &&L_or, &&L_xor, &&L_fromr,
+-        &&L_tor, &&L_rfetch, &&L_eq, &&L_ugt, &&L_gt, &&L_plus,
+-        &&L_negate, &&L_lshift, &&L_rshift, &&L_ummult, &&L_umdiv,
+-        &&L_dplus, FSX3(L_write), FSX3(L_read), FSX3(L_bye), &&L_spfetch, &&L_spstore,
+-        &&L_rpfetch, &&L_rpstore, FSX2(L_openfile), FSX2(L_closefile),
++#endif
++        DSP(L_noop), DSP(L_exit), DSP(L_lit), DSP(L_branch), DSP(L_0branch), DSP(L_drop),
++        DSP(L_dup), DSP(L_swap), DSP(L_rot), DSP(L_over), DSP(L_cfetch), DSP(L_fetch),
++        DSP(L_cstore), DSP(L_store), DSP(L_and), DSP(L_or), DSP(L_xor), DSP(L_fromr),
++        DSP(L_tor), DSP(L_rfetch), DSP(L_eq), DSP(L_ugt), DSP(L_gt), DSP(L_plus),
++        DSP(L_negate), DSP(L_lshift), DSP(L_rshift), DSP(L_ummult), DSP(L_umdiv),
++        DSP(L_dplus), FSX3(L_write), FSX3(L_read), FSX3(L_bye), DSP(L_spfetch), DSP(L_spstore),
++        DSP(L_rpfetch), DSP(L_rpstore), FSX2(L_openfile), FSX2(L_closefile),
+         FSX3(L_readline), FSX(L_writeline), FSX(L_readfile), FSX2(L_writefile),
+         SYSX(L_system), FSX(L_reposfile), FSX(L_filepos), FSX(L_delfile), FSX(L_filesize),
+         SYSF, SYSX(L_execve), SYSX(L_waitpid), SYSX(L_pipe), SYSX(L_dup2),
+@@ -1329,26 +1372,26 @@ static void virtual_machine(void) {
+         /*  LIT32 is not one of kernel.4's primitives. It is appended
+          *  past the real ones so the table has no hole - `dispatch[255]`
+          *  would have read past the end.  */
+-        &&L_lit32, &&L_dovar, &&L_dodoes,
++        DSP(L_lit32), DSP(L_dovar), DSP(L_dodoes),
+ #if ENC != 3
+         /*  LIT64 at 71, the first index past DODOES. Folded opcodes
+          *  start at FOLDBASE (128) and calls at 256, so 71..127 is
+          *  free space in both 16-bit encodings.  */
+-        [71] = &&L_lit64t,
++        [71] = DSP(L_lit64t),
+ #endif
+ #if ENC == 1
+-        [72] = &&L_farcall, [73] = &&L_dodoesf,
++        [72] = DSP(L_farcall), [73] = DSP(L_dodoesf),
+ #endif
+ #if ENC == 3
+-        &&L_lit8, &&L_lit8x,
+-        [0x7C] = &&L_lit64, [0x7D] = &&L_esc,
++        DSP(L_lit8), DSP(L_lit8x),
++        [0x7C] = DSP(L_lit64), [0x7D] = DSP(L_esc),
+ #endif
+ #if ENC == 3 && SPEC
+-        [0x60] = &&L_lit0, &&L_lit1, &&L_litm1, &&L_vf, &&L_vs,
+-        &&L_lsave, &&L_lrest, &&L_lstore, &&L_lzero,
+-        &&L_zeq, &&L_sub, &&L_ne, &&L_zlt, &&L_sgt, &&L_2dup, &&L_2drop,
+-        &&L_charp, &&L_onep, &&L_cellp, &&L_cells, &&L_onem, &&L_invert,
+-        &&L_count, &&L_aligned, &&L_addi, &&L_addix, &&L_eqi, &&L_eqix,
++        [0x60] = DSP(L_lit0), DSP(L_lit1), DSP(L_litm1), DSP(L_vf), DSP(L_vs),
++        DSP(L_lsave), DSP(L_lrest), DSP(L_lstore), DSP(L_lzero),
++        DSP(L_zeq), DSP(L_sub), DSP(L_ne), DSP(L_zlt), DSP(L_sgt), DSP(L_2dup), DSP(L_2drop),
++        DSP(L_charp), DSP(L_onep), DSP(L_cellp), DSP(L_cells), DSP(L_onem), DSP(L_invert),
++        DSP(L_count), DSP(L_aligned), DSP(L_addi), DSP(L_addix), DSP(L_eqi), DSP(L_eqix),
+ #endif
+ #if FOLD
+ #include "vm-fold-table.h"
+@@ -1360,6 +1403,10 @@ static void virtual_machine(void) {
+ #include "vm-ops10-table.h"
+ #endif
+     };
++#if DISPOFF
++    static const void *dispatch[sizeof dispatch_o / sizeof dispatch_o[0]];
++    if (!dispatch[0]) { int d_; for (d_ = 0; d_ < (int)(sizeof dispatch_o / sizeof dispatch_o[0]); d_++) dispatch[d_] = DPTR(dispatch_o[d_]); }
++#endif
+ #if ENC == 3 && ESCAPE
+     /*  CV8 renumbers the primitive band: the 36 non-escaped primitives
+      *  keep kernel.4's order compacted into 0..35, and the 32 escaped
+@@ -1828,7 +1875,7 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
+ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+              UNS8 n_ = BYTE(nb_);
+              while (a_) {
+-                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
++                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
+                  a_ = PREVNFA(a_); }
+              DS0 = a_; } NEXT();
+ #endif
+@@ -1874,7 +1921,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+  *  walk, NAME>8 and the immediate bit.  */
+ #if X_FIND
+ L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+-            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
++            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
+ #endif
+ /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 850ee58..22c907c 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -341,7 +341,7 @@ VARIABLE TW-XT  VARIABLE TW-WID
+       DUP >R TW-XT @ EXECUTE 0= IF R> DROP UNLOOP EXIT THEN R> NEXT-NFA8
+     REPEAT DROP
+   LOOP ;
+-: NAME>STRING ( nt --- c-addr u )  COUNT 31 AND ;
++: NAME>STRING ( nt --- c-addr u )  DUP C@ 31 AND SWAP OVER - SWAP ;   \ the name before its count byte (232)
+ : NAME>INTERPRET ( nt --- xt )  NAME> ;
+ : NAME>COMPILE ( nt --- x xt )  DUP NAME> SWAP C@ 64 AND IF ['] EXECUTE ELSE ['] COMPILE, THEN ;
+ [THEN]
+diff --git a/forth/cross.4 b/forth/cross.4
+index 9a4fc04..5a40f1b 100644
+--- a/forth/cross.4
++++ b/forth/cross.4
+@@ -198,15 +198,19 @@ VARIABLE NAMELEN
+   BL WORD COUNT               ( c-addr u )
+   2DUP THASH THIS-THREAD !
+   DUP NAMELEN !
+-  THERE PLACE-T               \ Place name in target dictionary.
++  \ Iteration 233: [zeros][name][count byte], as kernel.4's HEADER lays it -
++  \ the count byte last, right before the body: the nfa.
++  NAMELEN @ 1+ 1 CELLS-T 1- + 1 CELLS-T NEGATE AND   ( c-addr u k )
++  SWAP DROP  THERE OVER + 1- >R                       ( c-addr k )  \ R: the nfa
++  THERE SWAP 0 ?DO 0 OVER I + C!-T LOOP DROP          ( c-addr )    \ the area zeroed
++  R@ NAMELEN @ - NAMELEN @ 0 ?DO OVER I + C@ OVER I + C!-T LOOP 2DROP   \ the name before the nfa
++  NAMELEN @ 128 OR R@ C!-T                            \ bit 7: the count byte's mark
+   THIS-THREAD @ CELLS TTHREADS + @ ?DUP IF
+     LINKCELL @ - LINKCELL @ !-T    \ relative to the link cell itself
+   THEN
+-  THERE TLINK !
+-  THERE THIS-THREAD @ CELLS TTHREADS + !
+-  THERE C@-T 128 OR THERE C!-T
+-  NAMELEN @ 1+ ALLOT-T ALIGN-T ;
+-      \ Set bit 7 of count byte as a marker.
++  R@ TLINK !
++  R@ THIS-THREAD @ CELLS TTHREADS + !
++  R> THERE - 1+ ALLOT-T ;
+ 
+ \ : "HEADER CREATE ALIGN-T ;  \ Alternative for "HEADER in case the target system
+                       \ is just an application without headers.
+diff --git a/forth/cv8b-kfast.4 b/forth/cv8b-kfast.4
+index 3b31eeb..4c32fe5 100644
+--- a/forth/cv8b-kfast.4
++++ b/forth/cv8b-kfast.4
+@@ -26,7 +26,7 @@
+ \ are namebuf's, or 0.
+   >R BEGIN DUP WHILE
+     DUP C@ 31 AND R@ C@ = IF
+-      DUP 1+ R@ 1+ R@ C@ NAME=? IF R> DROP EXIT THEN
++      DUP DUP C@ 31 AND - R@ 1+ R@ C@ NAME=? IF R> DROP EXIT THEN   \ the name before its count byte (232)
+     THEN
+     NEXT-NFA8
+   REPEAT R> DROP ;
+diff --git a/forth/cv8b.4 b/forth/cv8b.4
+index 109187a..950a63e 100644
+--- a/forth/cv8b.4
++++ b/forth/cv8b.4
+@@ -34,6 +34,13 @@
+ \ the length of the link depends on which thread the name hashes to.
+ \ >NAME is untouched: it scans back from the body for the count byte and
+ \ reaches it before the link either way.
++\
++\ Iteration 232: the count byte comes AFTER the name - [link][name][count]
++\ then the body - and the nfa is the count byte. >NAME's scan back from the
++\ body for bit 7 stops at it at once; before, it crossed the name, and a
++\ UTF-8 byte there (bit 7 set) was taken for the count byte - with bit 5,
++\ for a primitive's, and COMPILE, inlined garbage. The name is the len
++\ bytes before the nfa; the link ends just before the name.
+ 
+ 0 CV8-SHIFT-V !          \ byte-aligned call targets: base + v
+ -1 CV8-DOES-FAR? !       \ ...so DOES> needs the three-byte call form
+@@ -55,15 +62,16 @@
+ 
+ : NEXT-NFA8 ( nfa --- nfa' )
+ \ The previous word in this thread, or 0 at the end of the chain.
+-  DUP 1- C@                                    ( nfa tag )
+-  DUP 128 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
+-  DUP 192 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
+-  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - ;
++  DUP DUP C@ 31 AND -                          ( nfa b )  \ b: the name's first byte
++  DUP 1- C@                                    ( nfa b tag )
++  DUP 128 U< IF SWAP DROP DUP IF - ELSE 2DROP 0 THEN EXIT THEN
++  DUP 192 U< IF 63 AND 8 LSHIFT SWAP 2 - C@ OR - EXIT THEN
++  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR SWAP 3 - C@ OR - ;
+ 
+ \ ---- the header -----------------------------------------------------
+ : NAME>8 ( nfa --- xt )
+-\ The body follows the name directly. No ALIGNED.
+-  COUNT 31 AND + ;
++\ The body follows the count byte directly (Iteration 232). No ALIGNED.
++  1+ ;
+ 
+ : >BODY8 ( xt --- a-addr )
+ \ The kernel's >BODY is `CELL+`, which is only right when the body is
+@@ -85,21 +93,15 @@ VARIABLE HDR-LEN
+   \ on where the nfa lands, which depends on the link's length. Bound it
+   \ from above: the nfa is at most HERE+3, so size the link for that and
+   \ the real distance always fits.
+-  HDR-HEAD @ IF HERE 3 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
+-  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+-  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+-  HERE LAST !
+-  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
++  HDR-HEAD @ IF HERE 3 + HERE C@ + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
++  \ Iteration 232: the characters up past the link, the link, then the
++  \ count byte after them - the nfa, right before the body.
++  HERE C@ >R  HERE 1+ HERE HDR-LEN @ + R@ CMOVE>
++  HDR-HEAD @ IF HERE HDR-LEN @ + R@ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
++  R@ ALLOT  HERE LAST !  R> 128 + C, ;
+ 
+ \ ---- the search -----------------------------------------------------
+-: NAME=? ( a1 a2 u --- flag )
+-\ BEGIN/WHILE rather than ?DO: the kernel never uses ?DO itself, so the
+-\ translator has no case for it, and a word it cannot translate is
+-\ copied as data and would run as garbage.
+-  BEGIN DUP WHILE
+-    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
+-    1+ SWAP 1+ SWAP R> 1-
+-  REPEAT DROP 2DROP -1 ;
++\ NAME=? ( a1 a2 u --- flag ) is the kernel's since Iteration 233.
+ 
+ : SEARCH-WORDLIST8 ( c-addr u wid --- 0 | xt 1 | xt -1 )
+ \ Same contract as the kernel's, byte compare instead of cell compare,
+@@ -109,7 +111,7 @@ VARIABLE HDR-LEN
+   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP   ( nfa )
+   BEGIN DUP WHILE
+     DUP C@ 31 AND NAMEBUF C@ = IF
+-      DUP 1+ NAMEBUF 1+ NAMEBUF C@ NAME=? IF
++      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+         DUP NAME>8 SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
+       THEN
+     THEN
+diff --git a/forth/cv8bt.4 b/forth/cv8bt.4
+index c326894..5006985 100644
+--- a/forth/cv8bt.4
++++ b/forth/cv8bt.4
+@@ -39,6 +39,13 @@
+ \ the length of the link depends on which thread the name hashes to.
+ \ >NAME is untouched: it scans back from the body for the count byte and
+ \ reaches it before the link either way.
++\
++\ Iteration 232: the count byte comes AFTER the name - [link][name][count]
++\ then the body - and the nfa is the count byte. >NAME's scan back from the
++\ body for bit 7 stops at it at once; before, it crossed the name, and a
++\ UTF-8 byte there (bit 7 set) was taken for the count byte - with bit 5,
++\ for a primitive's, and COMPILE, inlined garbage. The name is the len
++\ bytes before the nfa; the link ends just before the name.
+ 
+ 0 CV8-SHIFT-V !          \ byte-aligned call targets: base + v
+ -1 CV8-DOES-FAR? !       \ tag 2: DOES> writes the four-byte call form
+@@ -60,14 +67,14 @@
+ \ The previous word in this thread, or 0 at the end of the chain: the tag
+ \ byte before the name - six bits, and in its top two how many bytes below
+ \ it hold the rest, high to low.
+-  DUP 1- DUP C@ DUP 63 AND SWAP 6 RSHIFT                 ( nfa a d k )
++  DUP DUP C@ 31 AND - 1- DUP C@ DUP 63 AND SWAP 6 RSHIFT  ( nfa a d k )  \ a: the link's last byte, before the name
+   BEGIN DUP WHILE >R 8 LSHIFT SWAP 1- SWAP OVER C@ OR R> 1- REPEAT DROP SWAP DROP
+   ?DUP IF - ELSE DROP 0 THEN ;
+ 
+ \ ---- the header -----------------------------------------------------
+ : NAME>8 ( nfa --- xt )
+-\ The body follows the name directly. No ALIGNED.
+-  COUNT 31 AND + ;
++\ The body follows the count byte directly (Iteration 232). No ALIGNED.
++  1+ ;
+ 
+ : >BODY8 ( xt --- a-addr )
+ \ The kernel's >BODY is `CELL+`, which is only right when the body is
+@@ -89,21 +96,15 @@ VARIABLE HDR-LEN
+   \ on where the nfa lands, which depends on the link's length. Bound it
+   \ from above: the nfa is at most HERE+3, so size the link for that and
+   \ the real distance always fits.
+-  HDR-HEAD @ IF HERE 4 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !    \ tag 2: links up to 4 bytes
+-  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+-  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+-  HERE LAST !
+-  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
++  HDR-HEAD @ IF HERE 4 + HERE C@ + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !    \ tag 2: links up to 4 bytes
++  \ Iteration 232: the characters up past the link, the link, then the
++  \ count byte after them - the nfa, right before the body.
++  HERE C@ >R  HERE 1+ HERE HDR-LEN @ + R@ CMOVE>
++  HDR-HEAD @ IF HERE HDR-LEN @ + R@ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
++  R@ ALLOT  HERE LAST !  R> 128 + C, ;
+ 
+ \ ---- the search -----------------------------------------------------
+-: NAME=? ( a1 a2 u --- flag )
+-\ BEGIN/WHILE rather than ?DO: the kernel never uses ?DO itself, so the
+-\ translator has no case for it, and a word it cannot translate is
+-\ copied as data and would run as garbage.
+-  BEGIN DUP WHILE
+-    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
+-    1+ SWAP 1+ SWAP R> 1-
+-  REPEAT DROP 2DROP -1 ;
++\ NAME=? ( a1 a2 u --- flag ) is the kernel's since Iteration 233.
+ 
+ : SEARCH-WORDLIST8 ( c-addr u wid --- 0 | xt 1 | xt -1 )
+ \ Same contract as the kernel's, byte compare instead of cell compare,
+@@ -113,7 +114,7 @@ VARIABLE HDR-LEN
+   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP   ( nfa )
+   BEGIN DUP WHILE
+     DUP C@ 31 AND NAMEBUF C@ = IF
+-      DUP 1+ NAMEBUF 1+ NAMEBUF C@ NAME=? IF
++      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+         DUP NAME>8 SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
+       THEN
+     THEN
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index c464f63..5950f4b 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -919,48 +919,42 @@ VARIABLE CURRENT ( --- addr)
+ \ for the compare's end - not 32 bytes a byte at a time (the audit).
+   32 MIN DUP 1+ ALIGNED NAMEBUF +  0 OVER !  0 SWAP 1 CELLS - !  NAMEBUF PLACE ;
+ 
++\ Iteration 233: a header is [link cell][zeros][name][count byte], then the
++\ body - the count byte LAST, right before the body: the nfa is the count
++\ byte, the name the len bytes before it, the area len+1 rounded up to cells.
++\ >NAME's scan back for bit 7 stops at the count byte at once; before, it
++\ crossed the name, and a UTF-8 byte there (bit 7 set) with bit 5 set read as
++\ a primitive's count byte - COMPILE, inlined garbage.
++: PRIOR-NFA ( nfa --- nfa' )
++\ The word before it in its thread, or 0: the link cell is just before the
++\ name's area (len+1 rounded up to cells, ending at the nfa), relative to
++\ itself. Not NEXT-NFA: the converter would put cv8b.4's NEXT-NFA8 into it,
++\ and --drop-x8 drop the name NEXT-NFA8 that SPN looks up.
++  DUP C@ 31 AND 1+ ALIGNED - 1+ CELLBYTES-TOK - DUP @ DUP IF + ELSE SWAP DROP THEN ;
++: NAME=? ( a1 a2 u --- flag )
++\ The byte headers' compare, the kernel's since Iteration 233 (cv8b.4 had it).
++  BEGIN DUP WHILE
++    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
++    1+ SWAP 1+ SWAP R> 1-
++  REPEAT DROP 2DROP -1 ;
++
+ : SEARCH-WORDLIST ( c-addr u wid --- 0 | xt 1 xt -1)
+ \ Search the wordlist with address wid for the name c-addr u.
+ \ Return 0 if not found, the execution token xt and -1 for non-immediate
+-\ words and xt and 1 for immediate words.
++\ words and xt and 1 for immediate words. Iteration 233: the count byte,
++\ then the name before it, a byte at a time.
+   ROT ROT
+   NAME>BUF
+-  \ Pick the thread this name would have been filed under. Everything
+-  \ below is unchanged: the chain walk, the cell-at-a-time compare and
+-  \ the relative link field are all as they were.
+   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP
+-  DUP IF
+-  BEGIN
+-   \ Mask clears the flag bits within the count byte - which, since cells
+-   \ are read native-endian (little-endian on every host targeted so
+-   \ far - see GOALS.md phase 5), is the LOW byte of the cell, not the
+-   \ high byte the old big-endian-packed mask (1 61 LSHIFT 1 -) assumed.
+-   NAMEBUF @ OVER @ -225 AND = \ Compare first cells of names (-225: -1 224 XOR, once).
+-           \ Mask off bits 5-7 of name length, these have special purposes.
+-   IF
+-    NAMEBUF CELL+
+-    OVER CELL+
+-    CELLBYTES-TOK >R
+-    BEGIN
+-     OVER @ OVER @ - >R
+-     CELL+ SWAP CELL+ SWAP R> R> CELL+ >R \ Compare all of name until different
+-    UNTIL
+-    R> NAMEBUF C@ 1 + ALIGNED CELL+ = IF \ match to the right length then found
+-     SWAP DROP SWAP C@
+-     64 AND IF \ determine immediateness of a word from bit 6 of name length.
+-      1
+-     ELSE
+-      -1
+-     THEN
+-     SWAP CELLBYTES-TOK NEGATE + SWAP EXIT \ Exit with execution token and flag.
++  BEGIN DUP WHILE
++    DUP C@ 31 AND NAMEBUF C@ = IF
++      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
++        DUP 1+ SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
++      THEN
+     THEN
+-    2DROP
+-   THEN
+-   CELLBYTES-TOK NEGATE + DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
+-  UNTIL
+-  THEN
+-  DROP 0 \ Not found.
+-;
++    PRIOR-NFA
++  REPEAT ;
++
+ 
+ : FIND ( c-addr --- c-addr 0| xt 1|xt -1 )
+ \ Search all word lists in the search order for the name in the
+@@ -1114,8 +1108,9 @@ VARIABLE DICT-MAX ( --- a-addr)
+   BEGIN 1- DUP C@ 128 AND UNTIL ;
+ 
+ : NAME> ( addr1 --- addr2 )
+-\ Convert address of name to address of code.
+-  COUNT 31 AND + ALIGNED ;
++\ Convert address of name to address of code: the body follows the count
++\ byte (Iteration 233), on a cell boundary already.
++  1+ ;
+ 
+ : HEADER ( --- )
+ \ Create a header for a new definition without a code field.
+@@ -1125,20 +1120,26 @@ VARIABLE DICT-MAX ( --- a-addr)
+   \ So reserve the cell, remember where it is, and patch it below -
+   \ which is what SOD32 does.
+   HERE >R 0 ,
+-  HERE LAST !         \ Set LAST so definition can be linked by REVEAL
+   32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP
+                        \ Give warning if existing word redefined.
+   DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @
+   ?DUP IF R@ - R@ ! THEN    \ link, relative to the link cell itself
+   R> DROP
+-  C@ 1+ HERE C@ 128 + HERE C! ALLOT ALIGN
+-                       \ Allot the name and set bit 7 in length byte.
++  \ Iteration 233: [zeros][name][count byte] - the name moved to end just
++  \ before the area's last byte, the gap zeroed, the count byte last (bit 7
++  \ its mark): the nfa, and LAST.
++  C@ DUP >R 1+ ALIGNED                           ( k )         \ R: len
++  HERE 1+  OVER R@ - 1- HERE +  R@               ( k src dst len )
++  2 PICK 2 PICK U< IF CMOVE> ELSE CMOVE THEN     ( k )
++  HERE OVER R@ - 1- 0 FILL
++  HERE OVER + 1- DUP LAST !  R> 128 + SWAP C!
++  ALLOT
+ ;
+ 
+ : REVEAL ( --- )
+ \ Add the last created definition to the CURRENT wordlist, at the head
+ \ of the thread its name hashes to.
+-  LAST @ DUP COUNT 31 AND CURRENT @ @ HASH
++  LAST @ DUP DUP C@ 31 AND SWAP OVER - SWAP CURRENT @ @ HASH   \ the name before its count byte (233)
+   1+ CELLS CURRENT @ + ! ;
+ 
+ : CREATE ( "ccc" --- )
+diff --git a/forth/sod16.4 b/forth/sod16.4
+index 2cac5ba..4208ffe 100644
+--- a/forth/sod16.4
++++ b/forth/sod16.4
+@@ -93,10 +93,9 @@ VARIABLE SOD16-TA  ( --- a-addr )
+ \ 319 and up, past the end of a table with 319 entries, and the engine
+ \ jumped through whatever followed it in memory.
+ 
+-: NEXT-NFA ( nfa --- nfa' )
+-\ The previous word in the chain, or 0 at the end. The link is stored
+-\ RELATIVE to its own cell, exactly as the engine reads it.
+-  1 CELLS - DUP @ DUP 0= IF 2DROP 0 EXIT THEN + ;
++\ PRIOR-NFA - the previous word in the chain, or 0 at the end - is the
++\ kernel's since Iteration 233: the link cell sits before the name's area,
++\ the count byte at its end.
+ 
+ : SOD16-COLLECT ( --- )
+ \ Every eligible word, from every thread, in whatever order the chains
+@@ -110,7 +109,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
+         SOD16-TAB @ SOD16-N @ CELLS + !
+         1 SOD16-N +!
+       ELSE DROP THEN
+-      SOD16-NFA @ NEXT-NFA SOD16-NFA !
++      SOD16-NFA @ PRIOR-NFA SOD16-NFA !
+     REPEAT
+   LOOP ;
+ 
+diff --git a/forth/spn-cv8-decode.4 b/forth/spn-cv8-decode.4
+index 4723cfb..b84ac37 100644
+--- a/forth/spn-cv8-decode.4
++++ b/forth/spn-cv8-decode.4
+@@ -145,7 +145,7 @@ VARIABLE PREV-NFA  VARIABLE #WORDS  VARIABLE #FAIL  VARIABLE #DATA
+   PREV-NFA @ ?DUP IF
+     NAME> WALK                                       ( nfa end )
+     OVER DUP LINK-BYTES - > BAD @ OR TARGETS-OK 0= OR IF
+-      1 #FAIL +!  #FAIL @ 8 < IF PREV-NFA @ COUNT 31 AND TYPE SPACE THEN
++      1 #FAIL +!  #FAIL @ 8 < IF PREV-NFA @ DUP C@ 31 AND SWAP OVER - SWAP TYPE SPACE THEN
+     THEN
+     OP-K @ K-DOVAR = OP-K @ K-DODOES = OR IF 1 #DATA +! THEN
+     1 #WORDS +!
+diff --git a/forth/spn-full.4 b/forth/spn-full.4
+index be91755..0d8a40f 100644
+--- a/forth/spn-full.4
++++ b/forth/spn-full.4
+@@ -642,10 +642,12 @@ VARIABLE UNDO  VARIABLE #UNDO  0 #UNDO !
+ \ map upward: that is definition order, with no sort. Callees are
+ \ defined before callers, so callers find them already native.
+ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
+-: MARK ( nfa --- )  MBASE @ - 3 RSHIFT MARKS @ + 1 SWAP C! ;
++\ Iteration 233: the count byte is the header's last byte, right before the
++\ body - marked by the BODY (cell-aligned), walked by the kernel's PRIOR-NFA.
++: MARK ( nfa --- )  1+ MBASE @ - 3 RSHIFT MARKS @ + 1 SWAP C! ;
+ : MARK-THREAD ( nfa --- )
+   BEGIN ?DUP WHILE
+-    DUP MARK  CELL- DUP @ DUP IF + ELSE 2DROP 0 THEN
++    DUP MARK  PRIOR-NFA
+   REPEAT ;
+ : TRANSLATE-ALL ( --- )
+   START @ MBASE !  HERE MBASE @ - 3 RSHIFT 1+ 7 + -8 AND MSIZE !
+@@ -653,12 +655,12 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
+   MARKS @ MSIZE @ 3 RSHIFT 0 CFILL
+   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
+   MSIZE @ 0 DO
+-    MARKS @ I + C@ IF  I CELLS MBASE @ + NAME> TRY-TRANSLATE  THEN
++    MARKS @ I + C@ IF  I CELLS MBASE @ + TRY-TRANSLATE  THEN
+   LOOP
+   MARKS @ FREE DROP ;
+ 
+ \ ---- reporting ----
+-: .NAME ( xt --- )  >NAME COUNT 31 AND TYPE ;
++: .NAME ( xt --- )  >NAME DUP C@ 31 AND SWAP OVER - SWAP TYPE ;   \ the name before its count byte (233)
+ : SPN-WHY ( xt --- )   \ why is this word not native?
+   DUP @ TOK-ENTER = IF DROP ." native" EXIT THEN
+   DUP SHAPE-OK? 0= IF DROP ." not a translatable shape" EXIT THEN
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 2294d3f..ba6e635 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -19,6 +19,7 @@
+ | the JIT reaches further (`jitx`: 0, 1; Iteration 108; on the JIT): variables as literals, words without the JIT header translated once each, >R/R>/R@ in balanced words, a FILL stencil | results/jit-kernel-words.md (priced) | kernel workload 10% fewer bytecode dispatches, the sieve 99.9% (3.4x faster on the VM); +368 bytes of code (results/jitx.md) |
+ | (+LOOP) and (?DO) native (`jitloop`: 0, 1; Iteration 130; on the JIT; **dormant** - in LATE, not in EXPRESSED, until seed 39 has run): SPN's stencils for both, the scanner reading 160 bytes (its 64 cut both stencils: (+LOOP)'s 87 before either exit, (?DO)'s 76 after its fall-through), both exits required or the word stays bytecode. On the fastest design bubble's dispatches -98.5%, its long run 13.2 -> 7.9 ms (VM), the corpus -1.1%; gate, answers, the Forth 2012 suite as s6 on five JIT designs; off, ids, images and engines identical. D+ priced and left out: -ack native, no faster - the call is the cost |  |  |
+ | one SYSCALL (`sysc`: 0, 1; Iteration 136; CV8 designs - vm-lab.c's; **dormant** - in LATE, not in EXPRESSED, until seed 39 has run): the engine keeps one system call in FORK's slot and drops the shell's other seventeen process and environment primitives and the runtime's environment and getpwnam - none of which a design's image (the kernel) calls; the shell gets them back in Forth from forth/shell-sysc.4 (tests/shell, all 554 assertions, on a SYSC s5 shell: tools/test-sysc-shell.sh). Engines: five JIT designs -3,392 to -3,808 bytes, the smallest of seed 37 -2,880 (its total -14%), tail-call threading -6,568, msc -3,728; every one through the gate; off, ids, images and engines identical |  |  |
++| the JIT's translator compiled for size (`jitos`: 0, 1; Iteration 239; JIT designs not built -Os): engine/jit.c under GCC's optimize ("Os") - it runs once per word translated; the stencils are compiled apart | results/price-stencils-bloom.md: a JIT engine's extra bytes are the translator, jit_body 3.5 KB | -416 to -800 bytes off JIT engines built -O2/-O3; translation speed is the trade |
+ | one-operation words inline on the JIT (`jitinl`: 0, 1; Iteration 137; JIT with jitx; **dormant** until seed 39 has run): a call to a word of one operation and EXIT - 1+, 0=, 1- - is that operation in the caller (not one that branches, ends the word, or touches the return stack or the interpreter), and D+ gets its stencil back. Native call and return were a quarter of a small recursive word's time (2.92 -> 2.21 ns a call); D+ alone (Iteration 130) made -ack native and no faster - with the inlining, ackermann's long run 10.1 -> 5.0 ms (VM), its 12.7 M dispatches native. Gate, answers, the Forth 2012 suite as s6 on five JIT designs with jitloop; off, identical |  |  |
+ | compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c15eaf1..55acf92 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
++LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -114,6 +114,7 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
+              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+ EXPRESSED['cv8'] += ['jitloop', 'jitinl']
++EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
+ EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+ EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
+ EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
+@@ -438,6 +439,7 @@ def express(g):
+     if 'jitloop' in e and not jit_on(g): e.pop('jitloop')                          # Iteration 129: on the JIT
+     if 'sysc' in e and g['enc'] != 'cv8': e.pop('sysc')                            # Iteration 136: SYSC is vm-lab.c's, build()'s
+     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
++    if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
+     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
+     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
+     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+@@ -684,6 +686,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
+     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
++    if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
+     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
+     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
+     if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
+@@ -692,7 +695,7 @@ def _build(g, d):
+     if o10:
+         json.dump(o10, open(os.path.join(d, 'ops10.json'), 'w'))
+         open(os.path.join(os.path.dirname(src), 'vm-ops10-table.h'), 'w').write(
+-            ''.join('[%d] = &&%s,\n' % (op, OPS10_LABEL[w]) for w, op in o10 if not 27 <= op < 68))
++            ''.join('[%d] = DSP(%s),\n' % (op, OPS10_LABEL[w]) for w, op in o10 if not 27 <= op < 68))
+         open(os.path.join(os.path.dirname(src), 'vm-ops10-esc.h'), 'w').write(     # the band ESCAPE frees
+             ''.join('cv8_tab[%d] = &&%s;\n' % (op, OPS10_LABEL[w]) for w, op in o10 if 27 <= op < 68))
+         flags.append('-DOPS10=1')
+@@ -1294,7 +1297,7 @@ def crowding(front, R):
+ # dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
+ # evaluations: drawn one time in ten (SLOW_GENES).
+ XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
+-LINKS = [('jit', 'jitx', 'jitloop', 'jitinl'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
++LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
+ SLOW_GENES = ('varcall', 'doesfar')
+ ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
+ ATTIC_P = float(os.environ.get('EVOLVE_ATTIC_P', 0.1))
+diff --git a/lab/evolve/outbuf-check.py b/lab/evolve/outbuf-check.py
+index 678a59b..6c54aef 100644
+--- a/lab/evolve/outbuf-check.py
++++ b/lab/evolve/outbuf-check.py
+@@ -113,9 +113,9 @@ print('\n## T3 - a terminal: output at once (no system call between "A" and "B")
+ for v in LEVELS:
+     tA, tB = terminal_first(v)
+     early = tA is not None and tB is not None and tB - tA > 0.1
+-    if v: fails += not early
++    fails += not early                     # native too, since Iteration 231 (the owner's rule: a terminal unbuffered)
+     print('- fsys %d: "A" at %s s, "B" at %s s - %s' % (v, '%.2f' % tA if tA is not None else '-', '%.2f' % tB if tB is not None else '-',
+           ('"A" shown before the computation ended' if early else 'FAILED: "A" held back') if v else
+-          ('native: shown at once' if early else 'native: held until the next flush - its own buffer does not ask whether it is a terminal')))
++          ('native: shown at once' if early else 'FAILED: native held "A" back - its buffer must ask whether it is a terminal')))
+ print('\n%s' % ('PASS' if not fails else 'FAIL - %d' % fails))
+ sys.exit(1 if fails else 0)
+diff --git a/tools/dict-dump-addr.4 b/tools/dict-dump-addr.4
+index 6af2c93..f5ca5b9 100644
+--- a/tools/dict-dump-addr.4
++++ b/tools/dict-dump-addr.4
+@@ -33,6 +33,10 @@ VARIABLE TA
+ : INIT-NFATAB 8192 CELLS ALLOCATE ABORT" dict-dump: out of memory" NFATAB ! ;
+ INIT-NFATAB
+ 
++\ Iteration 233: [link][zeros][name][count byte] - the link cell is before
++\ the name's area, the area len+1 rounded up to cells, ending at the nfa.
++: LINKC ( nfa --- a )  DUP C@ 31 AND 1+ ALIGNED - 1+ CELLB - ;
++
+ : COLLECT ( --- )
+ \ Every nfa in every thread, in whatever order the chains give them.
+   0 #NFA !
+@@ -41,7 +45,7 @@ INIT-NFATAB
+     BEGIN NFA @ WHILE
+       NFA @ NFATAB @ #NFA @ CELLS + !
+       1 #NFA +!
+-      NFA @ CELLB - DUP @ ?DUP IF + NFA ! ELSE DROP 0 NFA ! THEN
++      NFA @ LINKC DUP @ ?DUP IF + NFA ! ELSE DROP 0 NFA ! THEN
+     REPEAT
+   LOOP ;
+ 
+@@ -65,16 +69,16 @@ INIT-NFATAB
+   COLLECT SORTNFA
+   #NFA @ 0 DO
+     NFATAB @ I CELLS + @ NFA !
+-    NFA @ DUP C@ 31 AND 1+ ALIGNED + BP !
++    NFA @ 1+ BP !                       \ the body follows the count byte
+     \ The body ends where the next word by ADDRESS begins its link cell.
+     \ The newest word - first in this descending order - ends at HERE.
+-    I 0= IF HERE ELSE NFATAB @ I 1- CELLS + @ CELLB - THEN BE !
++    I 0= IF HERE ELSE NFATAB @ I 1- CELLS + @ LINKC THEN BE !
+     \ The raw count byte carries flag bits above the length - bit 5 is
+     \ the MACRO flag cross.4's PRIMITIVE sets. TYPE below masks them
+     \ off, so without this line an image rebuilt from this dump would
+     \ silently lose every flag.
+     S" H " TYPE NFA @ . NFA @ C@ . CR
+-    S" N " TYPE BP @ . BE @ . NFA @ 1+ NFA @ C@ 31 AND TYPE CR
++    S" N " TYPE BP @ . BE @ . NFA @ DUP C@ 31 AND SWAP OVER - SWAP TYPE CR
+     BEGIN BP @ BE @ < WHILE
+       S" B " TYPE BP @ . BP @ @ . CR
+       BP @ CELLB + BP !
+diff --git a/tools/gen-fold.py b/tools/gen-fold.py
+index d6344cf..3bf252e 100755
+--- a/tools/gen-fold.py
++++ b/tools/gen-fold.py
+@@ -13,7 +13,7 @@ fend = s.rindex("#if FOLD", 0, fend) if "#include \"vm-fold-bodies.h\"" in s[fen
+ sec = s[s.index("L_noop:"):fend]
+ labs = [(m.start(), m.group(1)) for m in re.finditer(r'^(L_\w+):', sec, re.M)]
+ tab = s[s.index("static const void *const dispatch[] = {"):]
+-order = re.findall(r'&&(L_\w+)', tab[:tab.index("};")])
++order = re.findall(r'(?:&&|DSP\()(L_\w+)', tab[:tab.index("};")])   # DSP(): Iteration 237
+ skip = {'L_noop', 'L_exit', 'L_branch', 'L_0branch'}
+ copies, entries = [], []
+ for i, (pos, lab) in enumerate(labs):
+@@ -23,8 +23,8 @@ for i, (pos, lab) in enumerate(labs):
+     body = sec[pos:nxt].replace(lab + ':', 'LX' + lab[1:] + ':', 1)
+     body = ''.join(l for l in body.splitlines(True) if not l.lstrip().startswith('#'))
+     copies.append(body.replace('NEXT();', 'EXITNEXT();'))
+-    if V8: entries.append('[73 + %d] = &&LX%s,' % (V8LIST.index(prims[order.index(lab)]), lab[1:]))
+-    else: entries.append('[FOLDBASE + %d] = &&LX%s,' % (order.index(lab), lab[1:]))
++    if V8: entries.append('[73 + %d] = DSP(LX%s),' % (V8LIST.index(prims[order.index(lab)]), lab[1:]))
++    else: entries.append('[FOLDBASE + %d] = &&LX%s,' % (order.index(lab), lab[1:]))   # CPT16's table: addresses (DSP is CV8's)
+ open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'vm-fold-table.h'), 'w').write('\n'.join(entries) + '\n')
+ open(os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'vm-fold-bodies.h'), 'w').write(''.join(copies))
+ print(len(copies), "folded primitives")
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index e2b46f5..120f7ed 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -125,10 +125,10 @@ SPECS = {
+     'L_x_duplti':       (['a'], ['a', 'c'], 'c = -(UNS64)((INT64)a < (INT64)(int8_t)BYTE(ip)); ip += 1;'),
+     # Iteration 50
+     'L_x_fill':         (['a', 'u', 'c'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { BYTE(a_) = (UNS8)c; a_++; u_--; } }'),
+-    'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
++    'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+     'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+     'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
++    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+     'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
+     'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+     'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = (h_ ^ u) & (t - 1); n = h_; }'),
+@@ -235,7 +235,7 @@ if os.path.exists(sb) and '#if SUPER' in src:
+     prims = [l.split()[1] for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'forth', 'kernel.4'))
+              if l.startswith('PRIMITIVE')]
+     tab = src[src.index('static const void *const dispatch[] = {'):]
+-    order = re.findall(r'&&(L_\w+)', tab[:tab.index('};')])
++    order = re.findall(r'(?:&&|DSP\()(L_\w+)', tab[:tab.index('};')])   # DSP(): Iteration 237
+     for l, a, b in re.findall(r'^(LS_\d+): /\* (\S+) (\S+) \*/', open(sb).read(), re.M):
+         la, lb = order[prims.index(a)], order[prims.index(b)]
+         if la in SPECS and lb in SPECS: specs[l] = compose(SPECS[la], SPECS[lb])
+diff --git a/tools/gen-super.py b/tools/gen-super.py
+index b333668..fcb90d0 100644
+--- a/tools/gen-super.py
++++ b/tools/gen-super.py
+@@ -22,7 +22,7 @@ for marker in ('#if FOLD', '#if SUPER'):           # the handlers end where the
+ sec = s[s.index("L_noop:"):fend]
+ labs = [(m.start(), m.group(1)) for m in re.finditer(r'^(L_\w+):', sec, re.M)]
+ tab = s[s.index("static const void *const dispatch[] = {"):]
+-order = re.findall(r'&&(L_\w+)', tab[:tab.index("};")])
++order = re.findall(r'(?:&&|DSP\()(L_\w+)', tab[:tab.index("};")])   # DSP(): Iteration 237
+ def body(name):
+     lab = order[prims.index(name)]
+     i = [j for j, (_, l) in enumerate(labs) if l == lab][0]
+@@ -36,7 +36,7 @@ for k, (a, b, op) in enumerate(pairs):
+     first = body(a).replace('FILLNEXT();', 'POPT(); goto LSB_%d;' % k).replace('NEXT();', 'goto LSB_%d;' % k)
+     bodies.append('LS_%d: /* %s %s */\n%sLSB_%d:\n%s' % (k, a, b, first, k, body(b)))
+     if 27 <= op < 68: esc.append('cv8_tab[%d] = &&LS_%d;' % (op, k))   # the band ESCAPE frees: 36..67, 27..67 at level 2
+-    else: table.append('[%d] = &&LS_%d,' % (op, k))
++    else: table.append('[%d] = DSP(LS_%d),' % (op, k))
+ d = os.path.dirname(os.path.abspath(sys.argv[1]))
+ open(os.path.join(d, 'vm-super-table.h'), 'w').write('\n'.join(table) + '\n')
+ open(os.path.join(d, 'vm-super-esc.h'), 'w').write('\n'.join(esc) + '\n')
+diff --git a/tools/gen-tail.py b/tools/gen-tail.py
+index c75d796..1a22eb3 100644
+--- a/tools/gen-tail.py
++++ b/tools/gen-tail.py
+@@ -86,7 +86,7 @@ for n, ((a, name), nxt) in enumerate(zip(labels, labels[1:] + [(len(rest), None)
+ 
+ # the entry: the old preamble, with label addresses as function names and
+ # the label tables as tables of functions; then the first dispatch.
+-p = re.sub(r'&&([A-Za-z_]\w*)', r'H_\1', preamble)
++p = re.sub(r'&&([A-Za-z_]\w*)', r'H_\1', preamble.replace('#ifndef DISPOFF', '#undef DISPOFF\n#define DISPOFF 0\n#ifndef DISPOFF'))   # Iteration 237: functions, not offsets
+ p = p.replace('static const void *const dispatch[] = {', 'static const hfn dispatch[] = {')
+ ESC_N = re.search(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', p)        # 32, or 41 at ESCAPE == 2
+ ESC_N = int(ESC_N.group(1)) if ESC_N else 0
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index 70faa9e..6dcab89 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -93,11 +93,11 @@ HOT = {
+  'L_x_duplti':     'PUSHT(tos); tos = -(UNS64)((INT64)tos < (INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();',
+  # Iteration 50: the byte loops as opcodes - three popped, the fourth the top
+  'L_x_fill':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();',
+- 'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } tos = a_; } NEXT();',
++ 'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } tos = a_; } NEXT();',
+  # Iteration 54: the input side - SCAN, SKIP: three in, two out; TABS>BL: two in
+  'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+  'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+- 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
++ 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
+  'L_x_tonumber':   '{ UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();',
+  'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
+  'L_x_hash':       '{ UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 * CELL_BYTES; h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2; tos = (h_ ^ u_) & (t_ - 1); } NEXT();',
+diff --git a/tools/layout.py b/tools/layout.py
+index e530358..8d4d313 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -211,8 +211,8 @@ if START is None:
+ # ---- the dictionary, oldest first ----------------------------------
+ order = list(reversed(words))          # definition order, as sod16.py numbers
+ for w in order:
+-    w['nfa']  = w['s'] - align_up(len(w['n']) + 1, CELL)
+-    w['link'] = w['nfa'] - CELL
++    w['nfa']  = w['s'] - 1                                        # Iteration 233: the count byte, last
++    w['link'] = w['s'] - align_up(len(w['n']) + 1, CELL) - CELL
+ starts = {w['s']: w for w in order}
+ num = {w['s']: i for i, w in enumerate(order)}
+ 
+@@ -369,7 +369,7 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD
+ # it or (POSTPONE)s it either (cv8.4's FOLD-OP under cv8-fuse.4's), it is
+ # reachable not at all. Both leave `order` only where nothing refers to
+ # them - checked, not assumed.
+-DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')
++DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'LINKC', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')   # LINKC: 233
+ if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and not _NO_LEAN:
+     _names = [w['n'] for w in order]
+     _k = len(_names) - 1 - _names[::-1].index('NFA') if 'NFA' in _names else None
+@@ -638,16 +638,20 @@ for w in order:
+         pv = _prev_in_thread[w['s']]
+         # Bound from above: the nfa lands at most 3 bytes past `off`, so
+         # a link sized for that distance always fits the real one.
+-        ll = 1 if pv is None else linklen(off + 3 - new_off[pv]['nfa'])
++        ll = 1 if pv is None else linklen(off + 3 + len(w['n']) - new_off[pv]['nfa'])
+         LINKLEN[w['s']] = ll
+-        new_off[w['s']] = {'link': off}; off += ll
+-        new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
++        # Iteration 232: the name, THEN the count byte - the nfa is the count
++        # byte, right before the body, so >NAME's scan back for bit 7 stops
++        # there at once: a name's own bytes (UTF-8) are never crossed.
++        new_off[w['s']] = {'link': off}; off += ll + len(w['n'])
++        new_off[w['s']]['nfa'] = off;   off += 1
+         if body_needs_align(w): off = align_up(off, CELL)
+         new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
+     else:
+         new_off[w['s']] = {'link': off}
+         off += CELL
+-        new_off[w['s']]['nfa']  = off; off += align_up(len(w['n']) + 1, CELL)
++        _k = align_up(len(w['n']) + 1, CELL)                     # Iteration 233: [zeros][name][count]
++        new_off[w['s']]['nfa']  = off + _k - 1; off += _k
+         new_off[w['s']]['body'] = off; off += new_body_bytes(w)
+ NEW_HERE = off
+ if BSS:                                              # Iteration 44: the buffers' place past the image
+@@ -1065,7 +1069,8 @@ def emit(path):
+             if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
+             else:       img += cel(linkval[s0])
+             nm = w['n'].encode('latin-1')
+-            img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
++            if BYTEHDR: img += nm + bytes([flag.get(w['nfa'], 0x80 | len(nm))])   # Iteration 232: the count byte last
++            else:       img += bytes(align_up(len(nm) + 1, CELL) - 1 - len(nm)) + nm + bytes([flag.get(w['nfa'], 0x80 | len(nm))])   # 233
+         # pad to the body: a cell boundary in the classic layout, or only
+         # as far as body_needs_align() asked for in the byte layout
+         while len(img) < new_off[s0]['body']: img += b'\x00'
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 0358b0c..1f1fd87 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -594,10 +594,12 @@ def _expect(n):
+                  ('P', 'EXIT')],
+         'PLACE': [('C', '2DUP'), ('P', 'C!'), ('C', 'CHAR+'), ('P', 'SWAP'), ('C', 'CMOVE'), ('P', 'EXIT')],
+         # Iteration 51: the byte-header thread walk (forth/cv8b-kfast.4)
+-        'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 26 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
+-                        ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),
++        # Iteration 232: the name before its count byte - DUP DUP C@ 31 AND - where DUP 1+ was
++        'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 31 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
++                        ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 18 * CELL), ('P', 'DUP'), ('P', 'DUP'), ('P', 'C@'),
++                        ('LIT', 31), ('P', 'AND'), ('C', '-'), ('P', 'R@'),
+                         ('C', '1+'), ('P', 'R@'), ('P', 'C@'), ('C', 'NAME=?'), ('QBR', 4 * CELL), ('P', 'R>'), ('P', 'DROP'),
+-                        ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -27 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
++                        ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -32 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+         'CMOVE': [('P', 'DUP'), ('QBR', 21 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'R>'), ('P', '+'), ('P', '>R'),
+                   ('P', 'OVER'), ('P', 'C@'), ('P', 'OVER'), ('P', 'C!'), ('LIT', 1), ('LIT', 1), ('P', 'D+'),
+                   ('P', 'OVER'), ('P', 'R@'), ('P', '='), ('QBR', -13 * CELL), ('P', 'R>'), ('P', 'DROP'), ('C', '2DROP'),
+diff --git a/tools/vmtrace.py b/tools/vmtrace.py
+index af82522..ea3f44e 100644
+--- a/tools/vmtrace.py
++++ b/tools/vmtrace.py
+@@ -94,13 +94,16 @@ def named_run(M, eng, img, pw, text, out, cwd=None, probe=None):
+     unknown = sorted({t for r in first.values() for t, _ in r['path'] if M.word(t) is None})
+     if not unknown: return
+     body = re.sub(rb'\n\s*BYE\s*$', b'\n', text.rstrip() + b'\n')
+-    epi = b''.join(b'CR 777001 . %d . %d START @ + >NAME COUNT 31 AND TYPE SPACE\n' % (a, a) for a in unknown)
++    # Iteration 232: byte headers carry the count byte AFTER the name (the nfa
++    # is the count byte), cell headers before it - print each its own way.
++    nmp = b'DUP C@ 31 AND SWAP OVER - SWAP TYPE'      # byte and cell headers alike since Iteration 233
++    epi = b''.join(b'CR 777001 . %d . %d START @ + >NAME ' % (a, a) + nmp + b' SPACE\n' for a in unknown)
+     # and every word compiled past the image, walking each thread with the
+     # design's own NEXT-NFA8 and NAME>8 (byte headers - the front and s6):
+     # what EXECUTE ran is never a call target, but its name is here
+     nm8 = b'NAME>8' if any(w[2] == 'NAME>8' for w in M.words) else b'NAME>'   # a lean --cv8-compiler image: NAME> holds its code
+     epi += (b': TRWALK ( lim --- ) FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ BEGIN DUP WHILE DUP ' + nm8 + b' START @ -'
+-            b' DUP 3 PICK < IF DROP ELSE CR 777002 . . DUP COUNT 31 AND TYPE SPACE THEN NEXT-NFA8 REPEAT DROP LOOP DROP ;\n'
++            b' DUP 3 PICK < IF DROP ELSE CR 777002 . . DUP ' + nmp + b' SPACE THEN NEXT-NFA8 REPEAT DROP LOOP DROP ;\n'
+             b'%d TRWALK\n' % M.words[-1][1])
+     r = run(eng, img, pw, body + b'\n' + epi + b'CR BYE\n', out, cwd, probe)
+     M.runtime({int(a): n.decode(errors='replace') for a, n in re.findall(rb'77700[12] (\d+) (\S+)', r.stdout)})

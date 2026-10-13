@@ -1,0 +1,13 @@
+HEAD 0470c07 scratch: primfirst
+cloned at bf966d970712
+1 commits past the clone point
+
+git status --short:
+ M forth/cross.4
+ M forth/cv8b.4
+ M forth/cv8bt.4
+ M forth/kernel-seed.img
+ M forth/kernel.4
+ M forth/kernel32-seed.img
+ M lab/evolve/names-check.py
+ M tools/layout.py

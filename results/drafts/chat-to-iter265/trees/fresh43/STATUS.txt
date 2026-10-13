@@ -1,0 +1,13 @@
+HEAD 6b09fab Iteration 213: the handoff - PROGRESS.md's last entry holds the state, the routine, the owner's standing decisions, open items and lessons; the Forth collection's useful items kept in reference/forth-archive (4.8 MB, licence policy kept)
+cloned at 6b09fab0b025
+0 commits past the clone point
+
+git status --short:
+ M lab/evolve/README.md
+ M lab/evolve/evolve.py
+ M lab/evolve/outbuf-check.py
+ M tools/layout.py
+?? forth/file-sysc5.4
+?? lab/evolve/fsys-count.py
+?? lab/evolve/readline-check.py
+?? results/pending/fsys5fast-after-seed43.patch

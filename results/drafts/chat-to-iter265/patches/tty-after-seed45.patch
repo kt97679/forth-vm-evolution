@@ -1,0 +1,64 @@
+diff --git a/engine/rt-linux-i386.c b/engine/rt-linux-i386.c
+index 870ee23..3ab77bd 100644
+--- a/engine/rt-linux-i386.c
++++ b/engine/rt-linux-i386.c
+@@ -65,6 +65,7 @@ long syscall(long n, ...)
+     return ok(sc(n, a[0], a[1], a[2], a[3], a[4], a[5]));
+ }
+ int close(int fd)                              { return (int)S(6, fd, 0, 0); }
++int isatty(int fd) { long t[16]; return S(54, fd, 0x5401, t) == 0; }   /* ioctl TCGETS: Iteration 231, a terminal unbuffered */
+ off_t lseek(int fd, off_t o, int w)            { return S(19, fd, o, w); }
+ int pipe(int fd[2])                            { return (int)S(42, fd, 0, 0); }
+ int dup2(int a, int b)                         { return (int)S(63, a, b, 0); }
+diff --git a/engine/rt-linux-x86_64.c b/engine/rt-linux-x86_64.c
+index e0a5719..d063875 100644
+--- a/engine/rt-linux-x86_64.c
++++ b/engine/rt-linux-x86_64.c
+@@ -82,6 +82,7 @@ long syscall(long n, ...)
+     return ok(sc(n, a[0], a[1], a[2], a[3], a[4], a[5]));
+ }
+ int close(int fd)                              { return (int)S(3, fd, 0, 0); }
++int isatty(int fd) { long t[8]; return S(16, fd, 0x5401, t) == 0; }   /* ioctl TCGETS: Iteration 231, a terminal unbuffered */
+ off_t lseek(int fd, off_t o, int w)            { return S(8, fd, o, w); }
+ int pipe(int fd[2])                            { return (int)S(22, fd, 0, 0); }
+ int dup2(int a, int b)                         { return (int)S(33, a, b, 0); }
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index f63b07f..e06255a 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1223,6 +1223,10 @@ NOINLINE_IO static void t_flush(void) {
+  *  that can seek, a block and a seek back to just after the line; from
+  *  anything else, a byte per read(2), up to the first character ACCEPT
+  *  treats specially - LF, CR, backspace, DEL - or the count asked for.  */
++/*  Iteration 231: output to a terminal is not held (the owner's rule,
++ *  Gforth's: Iteration 202) - descriptor 1 asked once, at the first WRITE,
++ *  as fsys 4's FS-OINIT asks in Forth; a terminal gets each WRITE at once.  */
++static int t_otty = -1;
+ NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
+     while (n) {
+         UNS64 k;
+@@ -1232,6 +1236,8 @@ NOINLINE_IO static void t_write(const UNS8 *p, UNS64 n) {
+         memcpy(t_obuf + t_olen, p, (size_t)k);
+         t_olen += (int)k; p += k; n -= k;
+     }
++    if (t_otty < 0) t_otty = isatty(1) == 1;
++    if (t_otty) t_flush();
+ }
+ 
+ NOINLINE_IO static int t_getc(void) {     /* READ-LINE on descriptor 0: a byte per read(2) */
+diff --git a/lab/evolve/outbuf-check.py b/lab/evolve/outbuf-check.py
+index 678a59b..6c54aef 100644
+--- a/lab/evolve/outbuf-check.py
++++ b/lab/evolve/outbuf-check.py
+@@ -113,9 +113,9 @@ print('\n## T3 - a terminal: output at once (no system call between "A" and "B")
+ for v in LEVELS:
+     tA, tB = terminal_first(v)
+     early = tA is not None and tB is not None and tB - tA > 0.1
+-    if v: fails += not early
++    fails += not early                     # native too, since Iteration 231 (the owner's rule: a terminal unbuffered)
+     print('- fsys %d: "A" at %s s, "B" at %s s - %s' % (v, '%.2f' % tA if tA is not None else '-', '%.2f' % tB if tB is not None else '-',
+           ('"A" shown before the computation ended' if early else 'FAILED: "A" held back') if v else
+-          ('native: shown at once' if early else 'native: held until the next flush - its own buffer does not ask whether it is a terminal')))
++          ('native: shown at once' if early else 'FAILED: native held "A" back - its buffer must ask whether it is a terminal')))
+ print('\n%s' % ('PASS' if not fails else 'FAIL - %d' % fails))
+ sys.exit(1 if fails else 0)

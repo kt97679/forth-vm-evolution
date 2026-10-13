@@ -1,0 +1,6 @@
+HEAD cbc5db9 Iteration 254: the standard suite over all of seed 46's front - 127 of 127, 0 differ
+cloned at cbc5db94873b
+0 commits past the clone point
+
+git status --short:
+ M forth/cross.4

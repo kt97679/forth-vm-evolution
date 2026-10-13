@@ -1,0 +1,5 @@
+HEAD 6437350 Iteration 217: a survey of JITs and VM speed elsewhere (results/drafts/jit-vm-survey.md) - RPyForth's named stack window, CPython's cached-register stencil variants, copy-and-patch, Liftoff, Deegen, IP-update chains; seven items ranked, each with how to price it first
+cloned at 643735057b2b
+0 commits past the clone point
+
+git status --short:

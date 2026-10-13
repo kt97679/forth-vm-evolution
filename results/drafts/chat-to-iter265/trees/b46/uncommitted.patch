@@ -1,0 +1,505 @@
+diff --git a/forth/cross.4 b/forth/cross.4
+index 9a4fc04..af4bc1f 100644
+--- a/forth/cross.4
++++ b/forth/cross.4
+@@ -204,9 +204,8 @@ VARIABLE NAMELEN
+   THEN
+   THERE TLINK !
+   THERE THIS-THREAD @ CELLS TTHREADS + !
+-  THERE C@-T 128 OR THERE C!-T
+   NAMELEN @ 1+ ALLOT-T ALIGN-T ;
+-      \ Set bit 7 of count byte as a marker.
++      \ (bit 7 of the count byte no longer a marker - Iteration 244)
+ 
+ \ : "HEADER CREATE ALIGN-T ;  \ Alternative for "HEADER in case the target system
+                       \ is just an application without headers.
+@@ -359,6 +358,19 @@ FORTH DEFINITIONS
+   PREVIOUS
+ ;
+ 
++\ The IMMEDIATE bit of the target word whose code is t-xt (Iteration 244):
++\ its header is found along the thread its name hashes to (T-THREAD, set by
++\ POSTPONE) - there is no marker byte to scan back for. 0 when not found.
++VARIABLE T-XT
++VARIABLE T-THREAD
++: TNAME> ( t-nfa --- t-xt )  DUP C@-T 31 AND 1+ + ALIGNED-T ;
++: T-IMMEDIATE? ( t-xt --- flag )
++  T-XT !  T-THREAD @ CELLS TTHREADS + @
++  BEGIN DUP WHILE
++    DUP TNAME> T-XT @ = IF C@-T 64 AND EXIT THEN
++    TARGET-CELL-BYTES @ - DUP @-T DUP IF + ELSE SWAP DROP THEN
++  REPEAT ;
++
+ : >BODY-T ( t-addr1 --- t-addr2 ) \ Convert executing token to param address.
+   \ NOTE: this is target-address arithmetic and must use CELLS-T, not the
+   \ host's CELLS. It only worked before because the host (RelF, 4-byte
+@@ -437,7 +449,14 @@ FORWARD (POSTPONE)
+ \ delimiters, so an empty string took the rest of the line (kernel.4's ABORT).
+ : ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE DUP 1+ >R
+       THERE PLACE-T R> ALLOT-T ALIGN-T ;
+-: POSTPONE [ TRANSIENT ] (POSTPONE) [ FORTH ] T' THERE - ,-T ;
++\ Iteration 244: a target POSTPONE decides immediacy here, from the target
++\ header's IMMEDIATE bit - an immediate word compiled as a call (it runs when
++\ the definition runs), any other through (POSTPONE), which compiles it. The
++\ kernel's (POSTPONE) no longer asks >NAME at run time (a scan back for a
++\ marked byte, broken by UTF-8 names; bit 7 marks nothing now).
++: POSTPONE >IN @ BL WORD COUNT THASH T-THREAD ! >IN !
++  T' DUP T-IMMEDIATE? IF THERE - CELLBYTES-TOKEN - ,-T
++  ELSE [ TRANSIENT ] (POSTPONE) [ FORTH ] THERE - ,-T THEN ;
+ : ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE DUP 1+ >R
+       THERE PLACE-T R> ALLOT-T ALIGN-T ;
+ 
+diff --git a/forth/cv8b.4 b/forth/cv8b.4
+index 109187a..d297210 100644
+--- a/forth/cv8b.4
++++ b/forth/cv8b.4
+@@ -89,7 +89,22 @@ VARIABLE HDR-LEN
+   HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+   HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+   HERE LAST !
+-  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
++  HERE C@ 1+ ALLOT ;      \ bit 7 no longer marks the count byte (Iteration 244)
++
++: >NAME8 ( xt --- nfa | 0 )
++\ The kernel's >NAME on byte headers (Iteration 244): the same walk, with
++\ NEXT-NFA8 and NAME>8; the converter puts this body into >NAME.
++  >NAME-XT !
++  #ORDER @ BEGIN DUP WHILE 1-
++    DUP CELLS CONTEXT + @  DUP @
++    BEGIN DUP WHILE
++      2DUP CELLS + @
++      BEGIN DUP WHILE
++        DUP NAME>8 >NAME-XT @ = IF >R 2DROP DROP R> EXIT THEN
++        NEXT-NFA8
++      REPEAT DROP 1-
++    REPEAT 2DROP
++  REPEAT DROP 0 ;
+ 
+ \ ---- the search -----------------------------------------------------
+ : NAME=? ( a1 a2 u --- flag )
+diff --git a/forth/cv8bt.4 b/forth/cv8bt.4
+index c326894..cfa3567 100644
+--- a/forth/cv8bt.4
++++ b/forth/cv8bt.4
+@@ -93,7 +93,22 @@ VARIABLE HDR-LEN
+   HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+   HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+   HERE LAST !
+-  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
++  HERE C@ 1+ ALLOT ;      \ bit 7 no longer marks the count byte (Iteration 244)
++
++: >NAME8 ( xt --- nfa | 0 )
++\ The kernel's >NAME on byte headers (Iteration 244): the same walk, with
++\ NEXT-NFA8 and NAME>8; the converter puts this body into >NAME.
++  >NAME-XT !
++  #ORDER @ BEGIN DUP WHILE 1-
++    DUP CELLS CONTEXT + @  DUP @
++    BEGIN DUP WHILE
++      2DUP CELLS + @
++      BEGIN DUP WHILE
++        DUP NAME>8 >NAME-XT @ = IF >R 2DROP DROP R> EXIT THEN
++        NEXT-NFA8
++      REPEAT DROP 1-
++    REPEAT 2DROP
++  REPEAT DROP 0 ;
+ 
+ \ ---- the search -----------------------------------------------------
+ : NAME=? ( a1 a2 u --- flag )
+diff --git a/forth/kernel-seed.img b/forth/kernel-seed.img
+index b200d062842dd28ef69961e1c65b5ae24235030c..48568fc50a33890fee0b9197219d1ca25fa0ec51 100644
+GIT binary patch
+delta 6990
+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
+
+delta 6745
+zcmZ`-dsN%i9lyV{YZKaPQgunHHi4cIu$G6q0(F+8Ath-k2?<bW)sosra_S20ai`!v
+zftE*bo5Hz&*zTNJXuB5bae_<*Jx=H|bPvI~2|I2E=N#;zu=z;cBm3Up_j^6ZoJ0P&
+z-~0W1zxVsP&tC?nmFVx3)qYpmRxM-99fk&ejiK(<naa8DB8%>vtHx6akgnTd)SWF;
+z`^+Gi^IQCma;KY_fl)4Wk62*9v_*Heq{=63<O`j1ft?P)6{(~BUSWwjREf9R<p;*o
+zJ!aIMaoUA|RR~Eh_F1i9&N$OmNl=wwpM?c;)=^#}L`PILudu~f6EMnIUZk<;&iFU0
+zP^T*2jPh<FKf_Ofy!Rnh%z6=;7SMMP8Wd13H!rd1&X>DN9hELNCZO}YRzUuM+q1Qj
+zO$z8NKP8~59l1NaC2WQ}G{XM$5{vQ^eiJ0;{4R$G^Ck~2Q6pPwfibm9p-usxnvQ`x
+zmO?gupItaN^WajUHv)S7e0r%(xyY4o*r1;c?L}Up_M6mxFSIZ6acE!Q3(!8#&C7(Q
+zW0_5NAy6A|I?BpggmtBlcY@>`A6#aEBqpKl;tR`im8W?6@?52jS1h+EE&RxGn{u3=
+z0^~R!SNjXlZ{g`$fqS$9Z-Ras@6}qARz9Y-Gpbalvw$=k+D`7#*_0?h0&Oclr7KlV
+z@EP4fVIi#)#&)Oe1bi+{*fFdSZPAKcbDPuc@CRU-i6X#n;=f7t*T!2`hzJMOb_Uv3
+zZdmCBB)IZbh|RpJ0NRRG^-2dHTeU}N=jpc;LmRy1O{HTf{Z^X-svdnQ4C~fgKxt5a
+z5c+0=7uv9)6v7%bh(M<Sfdp2IBx|8<=bdVQL~Z9*9|Jsio6zsStr*%lXj^&q?FEot
+z@OF`8KeQcu;r5--_uL_*ozS-P@jI?V+x^WqVN`|j7=$}+6lpIQ3joPB<$`{#NyN}%
+z63L9H$Q&RY++Y@k&No}qkC&*siY5Mmg<*%VQ0$+`pWsJ8_XO{T7P2&pxaOd3<LPTe
+zHWh0`+56Yn0H0hV;xgPRD$#VOS44E@X^16!S1BNa&>rVE?-G^BzFYK<+<g$*>AS^Z
+z(5)4*=dXQVX&*9JEQ$!vdK%hEYdy4%^a~)KOD`2l86t>qhH%-fwj*jglaZ@@pBvUa
+z3p)MlEJ}1}eBE*l*qi)ThoYPqs<o+Ro3cdir=UH-N7Qy&ZEvc$Iokp`6lIIW5za1!
+z{$O?iEWSBF+K0^d)I(%Lo$JA1>yTl?F-3W5s57TjtcJ<l_n{rk6En1scMPf(&M#J;
+z=KcAWNMkKl)xI6+)B&V5dyppfBDL;E>L%K#9z~3G!4ej~h8m=-0%=S=_!x`rMn16<
+zX>$na#KS6$u$l)D=y?=r-9e;{UZk^xo5<0`F2oCo#&MOfsYehW2qMj+aUpU%K>^AW
+zzb;?stzfL@kGP&-LhlnRY2iMxR`Tx`{R(JX`H}lSf$bf9;4S5uq5N+jTml6?Rd`*2
+zss}ect0)~qHy?!JLscIt2B!a^SC;`3EU_qULoFo*Fatv)u6Gr4!itf}9pCjgbR6aV
+zrC)%9UbhX-r*ZdNFj=QO7hvf*wu!~q2`x<Gwt92dhd82bbGc)Oi!tqW<n#H=dZW_J
+z^Vb>EV+bXsmx%=$BZj~Q(ZegY+w$XA5S3ad-$TCL4W~C;Q}O>HKk#d$-F)y?qdAMv
+zD4~5Hp)}09*Bf<x6rCCkx0h=p1FxgJ@ZU&R9S(kXzx9dwdh6r$hhd)8DG){ZJId*{
+zV|FYQ3sICS{rmUrKM+0~K74SK6=d;Wp?>3Kq{Bo*Zy=wI<DFkQ@R5R#0;WaJB&{J_
+zdld~te~#4p5l{23)l6OE_W)t9@onCmNR*;t6a}q#W}v8>iH;DR`Xw5pg~^7g8ngdF
+zT+Tt_1LWKNu4<Q~jK!#)GDxacfMs1mMd{E&j*bx3{~6_Sprj_kV^j?{l`H-sU+v3u
+z6uwLTop6Q23&2h{k`Liz^Afawau@*__tY<tkMbs;E!$4nNojPNq)u;npwdxJ=K>q$
+z<33Am;!Bjy6O}2+(Nly=e)dz;Zv#^hB8$C>JY~+T<PG*tMXrufEMvT>qCmOM2P=#b
+z6Is-!Se}w=+v(lm^OU*nC6iQj7JCIf$u*iqa#`Hbn<zIEF6H_gh)>}7y~)DY5$K`;
+zGBvrZPB;VVk=9HOWoq*?IIi7R=5kcKSY3*|ZVu&e=lR8>VcKs=Gm(z(bFK+&%xEhX
+z$-(}inU%56zKlZ?pYdIROl6F>1S}eRf}aUw>PAOV_7tBC6kGKp$aSYwXEcF0_Z4LE
+zc&XOoyM}-)hn@yBl53fDD2{q9n@~Yd(=ba0Px6XNW8~@<SE;8QZW)p`(!nRK^bmfv
+zs=U%u2G4rp<#LjfHuX7rE2Qy>A>>C1m-h6ua4vbaim)OqL1CvFjMBhaN>|DiN_UFZ
+z=kRCfNIH;b<&{de3-V$o$$k&n@zD4hHNYjwWD!sI84V48Kr>fdWdT_I%*VT{jGj0d
+zw=WVz9tEK%y&^KMPjMFG!77V6PKW!|oo?6$jE&MURm0P(ErvqkuK8U)I3-w=S5zDG
+zO=P)|&d<V^Fiu8z9pN%9lkj93CR^=3uXDSrlEnsb)X>;It)kQa1-TYJv(p$Z{5^70
+zv<oH%kdMzJ)s@#jVLed)y~F!3Ia%l_+GUq_+tdd_52`1%DZ6ii4whCPtTAear}>jL
+zIc7T<zqVUE)*oSgG`Ne8)fhdOO7Mx2AX8m*qJ(~iYI%gqT^3I{wrLiamZ#SmJ)`u@
+zy<CiD<?)b3R()hOMjJy~Z6vD$gonjV9hs$D-%V0kj;P!yc!n?&#W+B;@MVl$PvhJv
+z-nz(cp7cgZNc$7`IA5Loq2CqomQ}kpkR!&kcNJtu$I!goCK?*vGfXA>DN+X?J7nZN
+zyG))sT0vLJyk2oE>dA2*(FrPxmMq6!Knq<oby>(Jv$(R`7_okU?A7&XZr}^#Wtw@E
+zejgorA+nZ7)?!q?7;XD-O8R;#<8{BwS>+G7d}P0QO7#;-%2~5h9cL*$S-*KYm^uQL
+zeouMnz4_!I@d*a1r@%af&wq@#+|nl6(t5cqNH3;twLmg?DJMgPYACY8SI~f*5tPE`
+z=sSovBKhh$8K=5m3XmNhe%O*RPxY`aVlDIzzxZ%Yq>zlpsZ846qV);lyJ#|HHEPKD
+zHOCgOzcPc>k(*HpUItBSNju3+pCXb+d>_8Fw<P5NnPuN^P|-*8%2FK2Kzy_b;p6-f
+zW5i82t(0nM5@J4Ypwj0p7bmm$_0Z%>Di4ap8|ZcTBGP8s`qEw$;bf<0#|~GCM}6oB
+zd$U+B{_LY3gPSglF?wgfpDG)SnufP|+Mcx;CNeCqJ-ZkUzh-)gCi?ldJsa1A=-EAn
+z-(oCA54qS4{-Zsak+#iSyd|(;>u3|m@Zz*~JF*^hdP`i{T{Nq5ZTl#lPISsVM78~x
+zmz)GG;q!E?$~7EDoEO&_3|C9Mt^j<s%+g1HGY{5TA|d*6k`eV#G1`maS?Ju(PCk#G
+z^2x(&iU%2i-i8VZk~fil<1CI}5qKi_*dgowqettH3K98BV^LZUom>~RXc{K@J;6+6
+zp0^Ykc_?UAdU$8hrnvcF(5RUo<~M?wYwGCcmLb_MpbPdPPush3la-$4iSr0+>GHd!
+z>ahCdvwxrUSpCs`Y+@MYvewoM{K>s*HC-R`8>R4p@(F)!Z;oQ;b9-&NK3bJM-27N^
+zWa3{qFzTvylvRDTq?n!#9BHtdN?=+9w=RPB(ZQ2yXCCntNt#tQdW~;dZ_$!E+*TH2
+zq)u|=JWdaTPU5X8a*2l)!Sfcu6Z8y`vFOl#I_snIKkX@ZmQ|IwHf*Wdx)nZy?dPy+
+z@FH2RxsT1$#(hSr`MjR;N|)bs2GuBB*8C^rf52}Zutn<Vb1Stpp+)e9MeqdO$*Fei
+zDf(`7o@~H<dw;T!06B1;49PN#rttHZ`P&CKZmUUwWz~BY!9$DSd6&39l%sRgl@#Tj
+zA)BTz&R+^uub!oy)>=`e{?R_%%h!Z6vt#dJ$TGq_QtNvYaXa1i>SIU4#`y7Yrr$*V
+zvuPUS6&IqtB-3v=jYj0@Xd?ZoKEyR%{4Xrg%fAfgMC4L!-Rbb}0M(Q9gp}se>8)Rv
+zf*S~*A3(G6(9y{7=)+Lv7>l7E`#K(B10<LoM}>wnNaesTl4pH=Aj_jmO-BwBf5maF
+zPH&m`_s)I#>vjr>mx)ciDCF>Fh||HHMUJFGS05UXnNh;5jsi^3Sy6Kq^=5mKj_{e4
+z#x?ef$jNE2Q<y!^@r#ExN368<8c-{#BkKdtAt19i6Rs!Ysq#Y7|0-xoM!J>X>GMBE
+fyQFs;8=-jI^d@zm=TAPq)>LyE^}6WJk=6Y_lb%~k
+
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index 17ff784..09aa5fd 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -1125,14 +1125,30 @@ VARIABLE DICT-MAX ( --- a-addr)
+ \ Add as many bytes to the dictionary as needed to align dictionary pointer.
+   BEGIN HERE CELLBYTES-TOK 1- AND WHILE 0 C, REPEAT ;
+ 
+-: >NAME ( addr1 --- addr2 )
+-\ Convert execution token addr1 (address of code) to address of name.
+-  BEGIN 1- DUP C@ 128 AND UNTIL ;
+ 
+ : NAME> ( addr1 --- addr2 )
+ \ Convert address of name to address of code.
+   COUNT 31 AND + ALIGNED ;
+ 
++VARIABLE >NAME-XT
++: >NAME ( xt --- nfa | 0 )
++\ The header whose code is xt (Iteration 244): looked for along every thread of
++\ every word list in the search order - not by scanning back for a marked byte,
++\ since a name's bytes may be anything (UTF-8). So the count byte's bit 7 marks
++\ nothing and is free. 0 where xt has no header there (a :NONAME, a word list
++\ not searched). No compiler asks it (PRIMITIVE?, Iteration 242): tools do.
++  >NAME-XT !
++  #ORDER @ BEGIN DUP WHILE 1-
++    DUP CELLS CONTEXT + @  DUP @                 ( i wid k )
++    BEGIN DUP WHILE
++      2DUP CELLS + @                             ( i wid k nfa )
++      BEGIN DUP WHILE
++        DUP NAME> >NAME-XT @ = IF >R 2DROP DROP R> EXIT THEN
++        CELLBYTES-TOK - DUP @ DUP IF + ELSE SWAP DROP THEN
++      REPEAT DROP 1-
++    REPEAT 2DROP
++  REPEAT DROP 0 ;
++
+ : HEADER ( --- )
+ \ Create a header for a new definition without a code field.
+   ALIGN
+@@ -1147,7 +1163,7 @@ VARIABLE DICT-MAX ( --- a-addr)
+   DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @
+   ?DUP IF R@ - R@ ! THEN    \ link, relative to the link cell itself
+   R> DROP
+-  C@ 1+ HERE C@ 128 + HERE C! ALLOT ALIGN
++  C@ 1+ ALLOT ALIGN     \ bit 7 no longer marks the count byte (Iteration 244)
+                        \ Allot the name and set bit 7 in length byte.
+ ;
+ 
+@@ -1220,10 +1236,12 @@ VARIABLE 'LEAVE ( --- a-addr)
+   ?COMP EXIT-TOK , [ ?CSP REVEAL ; IMMEDIATE
+ 
+ : (POSTPONE) ( --- )
+-\ Runtime for POSTPONE.
+-\ has inline argument.
++\ Runtime for POSTPONE of a word that is not immediate: compile it.
++\ has inline argument. (Iteration 244: POSTPONE decides immediacy when it
++\ compiles, by FIND's flag; this asked >NAME every time it ran - a scan back
++\ across the name, which a UTF-8 name broke.)
+   R> DUP DUP @ + SWAP CELL+ >R
+-  DUP >NAME C@ 64 AND IF EXECUTE ELSE COMPILE, THEN
++  COMPILE,
+ ;
+ 
+ : : ( "ccc" --- )
+@@ -1365,10 +1383,11 @@ VARIABLE POCKET ( --- a-addr )
+   -1 THROW ;
+ 
+ : POSTPONE ( "ccc" --- )
+-\ Parse the next word delimited by spaces and compile the following runtime.
+-\ Runtime: depending on immediateness EXECUTE or compile the execution
+-\ semantics of the parsed word.
+-  POSTPONE (POSTPONE) ' HERE - , ; IMMEDIATE
++\ Parse the next word and append its compilation semantics: an immediate
++\ word is compiled to run when this definition runs, any other to be
++\ compiled then - by (POSTPONE). Decided here, by FIND's flag (Iteration 244).
++  32 WORD FIND DUP 0= ABORT" Not found"
++  1 = IF COMPILE, ELSE POSTPONE (POSTPONE) HERE - , THEN ; IMMEDIATE
+ 
+ : IMMEDIATE ( --- )
+ \ Make last definition immediate, so that it will be executed even in
+diff --git a/forth/kernel32-seed.img b/forth/kernel32-seed.img
+index 02db7937d3ccd3c1a6794adb8f89a8150c7a6b5a..b89d95614bf8b6555d2c8cf2f82bf4d466cdf7cc 100644
+GIT binary patch
+delta 6259
+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
+RX!>(AlR=asTrOQJ{|$5hdKmx!
+
+delta 6026
+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
+A1^@s6
+
+diff --git a/lab/evolve/names-check.py b/lab/evolve/names-check.py
+index 4af3290..5223b62 100644
+--- a/lab/evolve/names-check.py
++++ b/lab/evolve/names-check.py
+@@ -34,8 +34,11 @@ PROG = '\n'.join([
+     ': суп 8 . ;  обед суп CR',
+     "' café EXECUTE CR",
+     "' обед EXECUTE ' voilà EXECUTE CR",
++    "' суп >NAME C@ 31 AND . ' café >NAME 1+ C@ . ' суп >NAME C@ 128 AND . CR",   # >NAME exact, bit 7 free (Iteration 244)
++    ': ёж2 12 . ; IMMEDIATE  : w9 POSTPONE ёж2 ;  : w10 w9 ;  w10 CR',             # POSTPONE of an immediate UTF-8 word
++    ': w11 POSTPONE суп ; IMMEDIATE  : w12 w11 w11 ;  w12 CR',                    # ... and of one that is not
+     'BYE', '']).encode()
+-WANT = ['5 5', '9', '3 3', '4', '6 6', '1', '2', '11', '5 5 8', '9', '5 5 3']
++WANT = ['5 5', '9', '3 3', '4', '6 6', '1', '2', '11', '5 5 8', '9', '5 5 3', '6 99 0', '12', '8 8']
+ def run(eng, img, pw):
+     r = subprocess.run([eng, img], cwd=pw, input=PROG, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+     out = r.stdout.replace(b'\r', b'').decode(errors='replace')
+diff --git a/tools/layout.py b/tools/layout.py
+index e530358..5d1a6ba 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1065,7 +1065,7 @@ def emit(path):
+             if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
+             else:       img += cel(linkval[s0])
+             nm = w['n'].encode('latin-1')
+-            img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
++            img += bytes([flag.get(w['nfa'], len(nm)) & 0x7F]) + nm      # Iteration 244: bit 7 free, no marker
+         # pad to the body: a cell boundary in the classic layout, or only
+         # as far as body_needs_align() asked for in the byte layout
+         while len(img) < new_off[s0]['body']: img += b'\x00'

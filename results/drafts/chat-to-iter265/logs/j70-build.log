@@ -1,0 +1,61 @@
+host pointer width 8 bytes; building 8-byte and 4-byte cells
+built  sod32 (forth.img 13292 bytes)
+built  s0-cell-64 s0-cell-32
+built  dictionary dumps
+built  relf 9934f3f (reference: its own engine and kernel)
+built  stage engines (1 layout(s) each)
+translating images (pure Python; minutes on a slow machine) ...
+  s1-sod16-64        89736 bytes
+  s1-sod16-32        75804 bytes
+  s2-cpt16-64        89736 bytes
+  s2-cpt16-32        75804 bytes
+  s3-cpt16f-64       89064 bytes
+  s3-cpt16f-32       74968 bytes
+  s4-cv8-64          77560 bytes
+  s4-cv8-32          63428 bytes
+  s5-cv8spec-64      72032 bytes
+  s5-cv8spec-32      57668 bytes
+  s1-sod16-k64       13792 bytes
+  s1-sod16-k32       10960 bytes
+  s2-cpt16-k64       13792 bytes
+  s2-cpt16-k32       10960 bytes
+  s3-cpt16f-k64      13632 bytes
+  s3-cpt16f-k32      10724 bytes
+  s4-cv8-k64         12176 bytes
+  s4-cv8-k32         9228 bytes
+  s5-cv8spec-k64     11776 bytes
+  s5-cv8spec-k32     8820 bytes
+  s6-cv8b-k64        8385 bytes
+  s6-cv8b-k32        7497 bytes
+  s1-sod16-s64       16776 bytes
+  s1-sod16-s32       13364 bytes
+  s2-cpt16-s64       16072 bytes
+  s2-cpt16-s32       12772 bytes
+  s3-cpt16f-s64      15904 bytes
+  s3-cpt16f-s32      12484 bytes
+  s4-cv8-s64         14720 bytes
+  s4-cv8-s32         11164 bytes
+  s5-cv8spec-s64     12560 bytes
+  s5-cv8spec-s32     9400 bytes
+  s6-cv8b-s64        9161 bytes
+  s6-cv8b-s32        8257 bytes
+built  stage images
+built  stage 0 images
+built  s7-spn (107347 bytes)
+built  s7-full, no recipes (96120 bytes)
+built  s8-spncv8 (38560 bytes)
+built  s8-full (24725 bytes)
+built  s8-lazy (32497 bytes)
+stage        runonly_64 runonly_32 selfhost_64 selfhost_32
+sod32                NA         NA         NA      13292
+s0-cell           27264      14976      27264      14976
+p4-pack4          27264      14976      27264      14976
+p8-pack8          27264      14976      27264      14976
+s1-sod16          13792      10960      16776      13364
+s2-cpt16          13792      10960      16072      12772
+s3-cpt16f         13632      10724      15904      12484
+s4-cv8            12176       9228      14720      11164
+s5-cv8spec        11776       8820      12560       9400
+s6-cv8b            8385       7497       9161       8257
+
+build complete: /tmp/ff/build

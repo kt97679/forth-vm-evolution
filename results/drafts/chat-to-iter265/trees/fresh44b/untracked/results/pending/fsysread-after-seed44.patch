@@ -1,0 +1,96 @@
+diff --git a/forth/file-sysc3.4 b/forth/file-sysc3.4
+index d429b89..041c2f9 100644
+--- a/forth/file-sysc3.4
++++ b/forth/file-sysc3.4
+@@ -14,7 +14,6 @@
+ : WRITE ( c-addr u --- )  1 FS-WRITE DROP ;      \ stdout, all of it
+ : BYE ( --- )  0 60 FS1 ;                        \ exit(2); SYSCALL flushes first
+ 
+-VARIABLE FS-SEEK0  -1 FS-SEEK0 !                 \ stdin seekable: 1, not: 0, unknown: -1
+ VARIABLE FS-P                                    \ the buffer being read into
+ : FS-EDIT? ( c --- f )  DUP 10 = OVER 13 = OR OVER 8 = OR SWAP 127 = OR ;
+ \ Iteration 208: whether a file can seek, remembered for descriptors 0-63 -
+@@ -41,8 +40,7 @@ CREATE FS-SK 0 , 0 ,
+ : READ ( c-addr u --- u2 )                       \ what input there is, 0 at its end
+   DUP 0= IF SWAP DROP EXIT THEN
+   OVER FS-P !
+-  FS-SEEK0 @ 0< IF 0 FS-SEEKS? IF 1 ELSE 0 THEN FS-SEEK0 ! THEN
+-  FS-SEEK0 @ IF
++  0 FS-SEEKS? IF                                 \ Iteration 226: asked once, as for any file - FS-SEEK0 went
+     0 ROT ROT 0 FS3 DUP 0> 0= IF DROP 0 EXIT THEN
+     0 SWAP DUP FS-UPTO-EDIT FS-BACK EXIT
+   THEN
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index b6ce4f9..c15eaf1 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -215,7 +215,7 @@ def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words
+     return g.get('fsys', 0) if fsys_on(g) else 0
+ FSYS2_INTERNAL = ('FS-OFL', 'FS-END', 'FS-SAVED')
+ FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
+-FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
++FSYS3_INTERNAL = ('FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
+                   'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
+ FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
+ FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207
+diff --git a/lab/evolve/readline-check.py b/lab/evolve/readline-check.py
+index 10c30de..c1bdd48 100755
+--- a/lab/evolve/readline-check.py
++++ b/lab/evolve/readline-check.py
+@@ -28,6 +28,12 @@ native, or the check fails. The program reads:
+   a pipe opened as a file (/dev/stdin: the program's own input) - a line
+     taken from it must leave the next one to the interpreter: no
+     read-ahead where a file cannot seek (the owner's rule).
++
++And READ, the interpreter's own input, from a stdin that is a file (Iteration
++226): fsys 3-5's READ reads a block there and gives back what follows the
++first editing character - CR LF lines, a backspace and a delete inside a line,
++a line longer than ACCEPT's room, KEY, and no newline at the end - every
++level byte for byte as native, which reads a block and gives back too.
+ """
+ import os, sys, shutil, subprocess, importlib.util
+ HERE = os.path.dirname(os.path.abspath(__file__))
+@@ -92,12 +98,18 @@ S" rl4.txt" R/W OPEN-FILE . F !  BUF 200 F @ READ-LINE . . .  S" XX" F @ WRITE-L
+ BYE
+ '''
+ WANT = b'first\nXX\nond line\nthird\n'          # "XX" and its LF over "sec": right after the first line
++STDIN = (b'S" crlf" TYPE CR\r\n1 2 + . CR\r\n'
++         b'S" bacX\x08k" TYPE CR\n'
++         b'S" delY\x7fete" TYPE CR\n'
++         b': L 0 ; ' + b'S" ' + b'x' * 300 + b'" 2DROP S" long" TYPE CR\n'
++         b'KEY EMIT Q CR\n'
++         b'S" end" TYPE')                                # no newline at the end
+ 
+ fails = 0
+ for did in IDS:
+     g0 = E.recorded_genome(did)
+     if g0 is None: sys.exit('no design %s in results/' % did)
+-    out, wrote = {}, {}
++    out, wrote, fromfile = {}, {}, {}
+     for v in LEVELS:
+         g = dict(g0); g.pop('fsys', None)
+         if v: g['fsys'] = v
+@@ -109,6 +121,10 @@ for did in IDS:
+         files(pw)
+         subprocess.run([eng, img], cwd=pw, input=WPROG.encode(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+         wrote[v] = open(os.path.join(pw, 'rl4.txt'), 'rb').read()
++        sf = os.path.join(pw, 'rl-stdin.txt'); open(sf, 'wb').write(STDIN)
++        with open(sf, 'rb') as fin:                      # a stdin that seeks
++            r = subprocess.run([eng, img], cwd=pw, stdin=fin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
++        fromfile[v] = (r.returncode, r.stdout)
+         shutil.rmtree(d, ignore_errors=True)
+     ref = out[0]
+     lines = ref[1].count(b'\n')
+@@ -126,6 +142,12 @@ for did in IDS:
+                   a[i][:100] if i < len(a) else b'<none>', v, b[i][:100] if i < len(b) else b'<none>'))
+     for v in LEVELS:
+         fails += wrote[v] != WANT
++    same = [v for v in LEVELS[1:] if fromfile[v] == fromfile[0]]
++    fails += len(same) != len(LEVELS) - 1
++    print('- READ from a stdin that is a file (%d bytes out, status %d): %s' % (len(fromfile[0][1]), fromfile[0][0],
++          'fsys %s as native' % ', '.join(map(str, same)) if len(same) == len(LEVELS) - 1 else
++          'DIFFERS at fsys %s: native %r, %r' % (', '.join(str(v) for v in LEVELS[1:] if v not in same), fromfile[0][1][-120:],
++                                                 [fromfile[v][1][-120:] for v in LEVELS[1:] if v not in same][0])))
+     print('- WRITE-LINE after a line (R/W): %s; native %s' % (
+           'fsys %s right after the line' % ', '.join(str(v) for v in LEVELS[1:] if wrote[v] == WANT) if all(wrote[v] == WANT for v in LEVELS[1:])
+           else 'WRONG at fsys %s: %r' % (', '.join(str(v) for v in LEVELS[1:] if wrote[v] != WANT), [wrote[v] for v in LEVELS[1:] if wrote[v] != WANT][0]),

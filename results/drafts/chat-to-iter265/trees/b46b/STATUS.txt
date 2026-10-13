@@ -1,0 +1,6 @@
+HEAD 5bd981a scratch: jittail
+cloned at bf966d970712
+3 commits past the clone point
+
+git status --short:
+ M lab/evolve/evolve.py

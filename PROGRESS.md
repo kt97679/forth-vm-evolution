@@ -5340,3 +5340,21 @@ scratch tree, and eleven files. /tmp/fx-ident.py, behind Iteration 267's 14-of-1
 identity figure, is tracked as results/drafts/image-identity.py; the rest are
 listed disposable with reasons - superseded by factor-price.py and gate.py
 --set, or one-off chains of tracked checks.
+
+## Iteration 273 - 2026-10-13 - Claude
+
+**The previous chat's leftovers filed, as found: results/drafts/chat-to-iter265/
+(the owner asked that chat; its MANIFEST.md).** The chat that ended at
+Iteration 265 still had its machine. It sent 51 scripts mapped to the
+iterations and figures they produced (Iterations 241-264), its check jobs and
+logs (244-262), its 23 /tmp patches (every one already in the repository, byte
+for byte) and its 33 scratch trees as patches with their status. Among them
+/tmp/factor.py - as found it is the exact-bytes version behind 254's 12 bytes;
+the opcode-name version behind 146 was overwritten in place - and factor0.py and
+factor1.py behind 263's 154 and 359. Nothing reconstructed: that chat said so
+file by file. GOALS.md's register row and the factor plan point to them now.
+
+My request had asked for Iterations 244-265, but that chat ran from 213: its
+/tmp listing (the manifest's section 5) shows 84 more scripts and sources, of
+Iterations 213-243 (facts43.py, gate44*.py, pages.py, job1-52.sh,
+vm-lab-jitos.c ...), not packed. Asked for (HANDOFF.md, open item 6).

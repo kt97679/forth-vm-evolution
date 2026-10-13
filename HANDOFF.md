@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 272.
+- master: Iteration 273.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -130,8 +130,12 @@ About 20 minutes of machine time for build, tests and gates.
    what clang engines do on the laptop.
 5. The laptop between runs (timing-sensitive): `perf stat` (IP-update chains,
    branch misses), `python3 lab/evolve/c-baseline.py`.
-6. Optional: Iterations 254 and 263's /tmp/factor.py, if the owner recovers it
-   from that chat - file it in results/drafts/ with its manifest.
+6. The chat that ended at Iteration 265 sent its leftovers (Iteration 273,
+   results/drafts/chat-to-iter265/, MANIFEST.md): the scripts behind Iterations
+   244-265's figures, its check jobs and logs, its scratch trees as patches.
+   Still on its machine, asked for: the 84 scripts of Iterations 213-243. When
+   they come, file them beside it. Its trees/ are not yet sorted for
+   experiments that never reached master.
 
 ## Lessons - how faults got in, and the checks that catch them now
 
@@ -158,6 +162,9 @@ About 20 minutes of machine time for build, tests and gates.
   restriction at a time before concluding (267).
 - Look in lab/evolve/ before writing a script (image-ab.py measures an image
   change on one engine). A script that produces a recorded figure is tracked.
+  An old chat can still be asked for its files while its machine lasts (273
+  recovered 263's factor.py so) - but ask the whole range of iterations it ran,
+  and early.
 - Information is lost only outside the repository: the handoff check (below)
   fails on uncommitted work, untracked scripts, scratch trees with changes, a
   stale HANDOFF.md.
@@ -171,6 +178,8 @@ About 20 minutes of machine time for build, tests and gates.
   gate.py (--set GENE=VALUE), seed-facts.py, ans-check.py, engines-check.py,
   names-check.py, progress-table.py, hotsites.py, hotwords.py, factor-price.py,
   image-ab.py, c-baseline.py, NEXT-RUN, next-run.sh.
+- The previous chat's leftovers, as found: `results/drafts/chat-to-iter265/`
+  (MANIFEST.md maps every script to the iteration and figure it produced).
 - Results: `results/evolve-amd-ryzen-7-pro-8840hs-seed*.md` (each run),
   `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` (every session),
   `results/predictions.md`, `results/progress-by-run.md`, `results/drafts/`

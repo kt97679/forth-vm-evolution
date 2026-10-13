@@ -1,0 +1,177 @@
+diff --git a/engine/rt-linux-i386.c b/engine/rt-linux-i386.c
+index 3ab77bd..b68541f 100644
+--- a/engine/rt-linux-i386.c
++++ b/engine/rt-linux-i386.c
+@@ -78,6 +78,9 @@ int chdir(const char *p)                       { return (int)S(12, p, 0, 0); }
+ int unlink(const char *p)                      { return (int)S(10, p, 0, 0); }
+ int getrlimit(__rlimit_resource_t r, struct rlimit *l)       { return (int)S(191, r, l, 0); }   /* ugetrlimit */
+ int setrlimit(__rlimit_resource_t r, const struct rlimit *l) { return (int)S(75, r, l, 0); }
++/* Iteration 257: the engine's open (vm-lab.c's OPEN3), three arguments - see
++ * rt-linux-x86_64.c. */
++int rt_open(const char *p, int flags, int mode) { return (int)S(5, p, flags, mode); }
+ int open(const char *p, int flags, ...)
+ {
+     int mode = 0;
+@@ -112,6 +115,12 @@ __asm__(".text\n.globl rt_restorer\n.type rt_restorer,@function\nrt_restorer:\n"
+ void rt_restorer(void);
+ struct k_sigaction { void *handler; unsigned long flags; void *restorer; unsigned long mask[2]; };
+ int sigemptyset(sigset_t *s) { unsigned char *p = (unsigned char *)s; for (size_t i = 0; i < sizeof *s; i++) p[i] = 0; return 0; }
++/* Iteration 252: the fault handler's installation in the fewest bytes (see
++ * rt-linux-x86_64.c); i386's rt_sigaction is 174. */
++void rt_fault(void (*h)(int)) {
++    struct k_sigaction k = { (void *)h, 0x04000000UL, (void *)rt_restorer, { 0, 0 } };
++    sc(174, 11, (long)&k, 0, 8, 0, 0);
++}
+ int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *restrict old)
+ {
+     struct k_sigaction k, ko;
+diff --git a/engine/rt-linux-x86_64.c b/engine/rt-linux-x86_64.c
+index d063875..ae32aba 100644
+--- a/engine/rt-linux-x86_64.c
++++ b/engine/rt-linux-x86_64.c
+@@ -95,6 +95,10 @@ int chdir(const char *p)                       { return (int)S(80, p, 0, 0); }
+ int unlink(const char *p)                      { return (int)S(87, p, 0, 0); }
+ int getrlimit(__rlimit_resource_t r, struct rlimit *l)       { return (int)S(97, r, l, 0); }
+ int setrlimit(__rlimit_resource_t r, const struct rlimit *l) { return (int)S(160, r, l, 0); }
++/* Iteration 257: the engine's open (vm-lab.c's OPEN3) - three arguments, so no
++ * va_list and no register save area; the variadic open below stays for any
++ * other caller, and --gc-sections drops it when there is none. */
++int rt_open(const char *p, int flags, int mode) { return (int)S(2, p, flags, mode); }
+ int open(const char *p, int flags, ...)
+ {
+     int mode = 0;
+@@ -146,6 +150,15 @@ int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *r
+     }
+     return (int)r;
+ }
++/* Iteration 252: the fault handler's installation in the fewest bytes - the
++ * kernel's struct filled in place, no old action, no mask, SIGSEGV alone (the
++ * engine maps no file, so no SIGBUS). The restorer stays: x86-64 delivers no
++ * signal without SA_RESTORER, though the handler (vm-lab.c's fault_trap)
++ * never returns. */
++void rt_fault(void (*h)(int)) {
++    struct k_sigaction k = { (void *)h, 0x04000000UL, (void *)rt_restorer, 0 };
++    sc(13, 11, (long)&k, 0, 8, 0, 0);
++}
+ /* Iteration 119: the stack guard's handler runs on its own stack (a C-stack
+  * overflow - the JIT's native recursion - leaves it none) */
+ int sigaltstack(const stack_t *restrict ss, stack_t *restrict old) { return (int)ok(sc(131, (long)ss, (long)old, 0, 0, 0, 0)); }
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 0a70704..2cbcf9b 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -618,6 +618,49 @@ static void install_guards(UNS8 *b) {
+ }
+ #endif
+ 
++#if !GUARD
++/*  Iteration 252: a fault handler in every engine, not only the guard gene's.
++ *  A runaway pointer (0 @) killed 114 of seed 46's 127 front designs with a
++ *  bare SIGSEGV, and those whose output waited in a buffer for a pipe or a
++ *  file lost it. This one flushes it (t_flush: the engine's buffer and, at
++ *  fsys 4-5, the Forth side's), reports, and exits 70 as guard_trap does; the
++ *  guard gene adds the guard pages, the handler's own stack, and the messages
++ *  that say which stack.  */
++static void t_flush(void);
++static void fault_trap(int sig) {
++    (void)sig;
++    t_flush();
++    write_str(2, "relf: segmentation fault\n");
++    exit(70);
++}
++#if RTLIB
++/*  Without the C library (engine/rt-linux-*.c): the runtime's rt_fault fills the
++ *  kernel's struct itself - sigaction's general conversion cost ~300 bytes.  */
++void rt_fault(void (*h)(int));
++#define install_fault_trap() rt_fault(fault_trap)
++#else
++#include <signal.h>
++static void install_fault_trap(void) {
++    struct sigaction sa;
++    sa.sa_handler = fault_trap;
++    sigemptyset(&sa.sa_mask);
++    sa.sa_flags = 0;
++    sigaction(SIGSEGV, &sa, (struct sigaction *)0);
++    sigaction(SIGBUS, &sa, (struct sigaction *)0);
++}
++#endif
++#endif
++
++/*  Iteration 257: the engine's opens, through rt_open where the runtime is
++ *  linked - three arguments, no va_list: the C library's variadic open made
++ *  the runtime's set up a register save area (open was 95 bytes).  */
++#if RTLIB
++int rt_open(const char *p, int flags, int mode);
++#define OPEN3(p, f, m) rt_open((p), (f), (m))
++#else
++#define OPEN3(p, f, m) open((p), (f), (m))
++#endif
++
+ static void stack_fault(int which) {
+     write_str(2, which ? "relf: return stack overflow\n"
+                        : "relf: data stack overflow\n");
+@@ -742,12 +785,17 @@ static void load_image(const char *name) {
+     UNS64 tail_w[MAX_TAILS], tail_o[MAX_TAILS];
+     long i, n;
+ 
+-    fd = open(name, O_RDONLY);
++    fd = OPEN3(name, O_RDONLY, 0);
+     if (fd < 0) {
+         write_str(2, "Cannot open image file.\n");
+         exit(2);
+     }
+-    if (full_read(fd, magic, 8) != 8 || memcmp(magic, IMAGE_MAGIC, 5) != 0) {
++    /* Iteration 257: the magic's first four bytes as one 32-bit compare and the
++     * fifth alone - memcmp, its only caller here, was 42 bytes of every engine */
++    if (full_read(fd, magic, 8) != 8
++        || ((uint32_t)magic[0] | (uint32_t)magic[1] << 8 | (uint32_t)magic[2] << 16 | (uint32_t)magic[3] << 24)
++           != ((uint32_t)IMAGE_MAGIC[0] | (uint32_t)IMAGE_MAGIC[1] << 8 | (uint32_t)IMAGE_MAGIC[2] << 16 | (uint32_t)IMAGE_MAGIC[3] << 24)
++        || magic[4] != IMAGE_MAGIC[4]) {
+         write_str(2, "not a RelF image, or built for a different encoding "
+                      "or cell width.\n");
+         exit(2);
+@@ -2095,7 +2143,7 @@ L_openfile: { /* c-addr u fam --- fid ior */
+     int fd;
+     t = BYTE(DS2 + DS1);
+     BYTE(DS2 + DS1) = 0;
+-    fd = open((char *)(uintptr_t)DS2, open_flags[DS0], 0644);
++    fd = OPEN3((char *)(uintptr_t)DS2, open_flags[DS0], 0644);
+     BYTE(DS2 + DS1) = t;
+     DS2 = (UNS64)fd;
+     DS1 = (fd >= 0) ? 0 : 200;
+@@ -2561,6 +2609,7 @@ int main(int argc, char **argv) {
+                                     the guard ("Stack error DROP"); only a
+                                     runaway one reaches the guard page */
+ #else
++    install_fault_trap();
+     g_dsp = STK_END - RSTACK_BYTES - CELL_BYTES - DSKEW;
+ #endif
+     g_rp_limit  = STK_END - RSTACK_BYTES;
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c515629..c8f84f6 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -533,7 +533,7 @@ def rt():
+     # static engine has no dynamic relocations, and their padding made the
+     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
+     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
+-                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', RTC, '-lgcc',
++                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', RTC, '-lgcc',
+                  '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
+     # --gc-sections (Iteration 113): the runtime is one object file, so code
+     # nothing calls came along - vsnprintf, snprintf, execvp, syscall,
+diff --git a/tools/engine-rt.sh b/tools/engine-rt.sh
+index ff4da75..ebe27fb 100644
+--- a/tools/engine-rt.sh
++++ b/tools/engine-rt.sh
+@@ -18,8 +18,8 @@ case "${ENGINE_RT:-nolibc}" in
+         if [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ]; then
+             RT_FLAGS="-static -no-pie -nostdlib -fno-stack-protector"
+             RT_FLAGS="$RT_FLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+-            RT_FLAGS32="$RT_FLAGS $ROOT/engine/rt-linux-i386.c -lgcc"
+-            RT_FLAGS="$RT_FLAGS $ROOT/engine/rt-linux-x86_64.c -lgcc"
++            RT_FLAGS32="$RT_FLAGS -DRTLIB=1 $ROOT/engine/rt-linux-i386.c -lgcc"
++            RT_FLAGS="$RT_FLAGS -DRTLIB=1 $ROOT/engine/rt-linux-x86_64.c -lgcc"
+         else
+             echo "note: ENGINE_RT=nolibc is for x86-64 Linux; linking with the C library" >&2
+         fi ;;

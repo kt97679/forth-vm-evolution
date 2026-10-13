@@ -1,0 +1,15 @@
+HEAD 34814fc scratch: stackheads
+cloned at 6628c73f7ad3
+4 commits past the clone point
+
+git status --short:
+ M engine/spn-cv8.c
+ M engine/vm-lab.c
+ M forth/cv8-save.4
+ M forth/kernel-seed.img
+ M forth/kernel.4
+ M forth/kernel32-seed.img
+ M forth/spn-cv8-save.4
+ M lab/evolve/outbuf-check.py
+ M tools/gen-tos.py
+ M tools/layout.py

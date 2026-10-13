@@ -1,0 +1,10 @@
+HEAD 85fe50d scratch: nobit7
+cloned at bf966d970712
+2 commits past the clone point
+
+git status --short:
+ M engine/jit.c
+ M engine/vm-lab.c
+ M lab/evolve/GENES.md
+ M lab/evolve/README.md
+ M lab/evolve/evolve.py

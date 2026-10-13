@@ -1,0 +1,7 @@
+== gate
+alive: 128 of 128 (seed 45 front 105, joint front 66, 43 in both)
+== ans-check
+== outbuf-check
+exit 1:     LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate
+== readline-check
+exit 1:     LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate

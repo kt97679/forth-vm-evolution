@@ -1,0 +1,10 @@
+HEAD dbdf4cb Iteration 230: seed 44 processed - small, the first (hypervolume +0.9%); the after-seed-44 batch applied and reseeded (161 of 161 front designs alive, 0 of 12 differ); NEXT-RUN seed 45 6h proposed
+cloned at dbdf4cb8923b
+0 commits past the clone point
+
+git status --short:
+ M engine/rt-linux-i386.c
+ M engine/rt-linux-x86_64.c
+ M engine/spn-cv8.c
+ M engine/vm-lab.c
+ M lab/evolve/outbuf-check.py

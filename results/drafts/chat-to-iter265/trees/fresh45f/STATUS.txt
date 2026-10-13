@@ -1,0 +1,32 @@
+HEAD 1b62ab4 Iteration 238: unused JIT stencils (50-170 bytes) and a Bloom filter (dominated by the threads gene) priced, not built; the JIT translator -Os found: -416 to -800 bytes, proposed as a gene
+cloned at 1b62ab416ce4
+0 commits past the clone point
+
+git status --short:
+ M engine/rt-linux-i386.c
+ M engine/rt-linux-x86_64.c
+ M engine/spn-cv8.c
+ M engine/vm-lab.c
+ M forth/coreext.4
+ M forth/cross.4
+ M forth/cv8b-kfast.4
+ M forth/cv8b.4
+ M forth/cv8bt.4
+ M forth/kernel.4
+ M forth/sod16.4
+ M forth/spn-cv8-decode.4
+ M forth/spn-full.4
+ M lab/evolve/GENES.md
+ M lab/evolve/evolve.py
+ M lab/evolve/outbuf-check.py
+ M tools/dict-dump-addr.4
+ M tools/gen-fold.py
+ M tools/gen-msc.py
+ M tools/gen-super.py
+ M tools/gen-tail.py
+ M tools/gen-tos.py
+ M tools/layout.py
+ M tools/sod16.py
+ M tools/vmtrace.py
+?? lab/evolve/names-check.py
+?? results/pending/jitos-after-seed45.patch

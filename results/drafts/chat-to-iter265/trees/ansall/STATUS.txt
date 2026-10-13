@@ -1,0 +1,6 @@
+HEAD 8953d4c Iteration 253: lab/evolve/progress-table.py and results/progress-by-run.md - every run's extremes, for the progress charts
+cloned at 8953d4c42daa
+0 commits past the clone point
+
+git status --short:
+ M forth/cross.4

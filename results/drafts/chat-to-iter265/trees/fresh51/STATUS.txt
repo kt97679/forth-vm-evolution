@@ -1,0 +1,16 @@
+HEAD 8e430f4 Iteration 258: a gap check against the literature - LTO found (-1.0 to -2.4% engines; stencils must stay out), Clang the owner's call
+cloned at 8e430f412614
+0 commits past the clone point
+
+git status --short:
+ M engine/jit.c
+ M engine/rt-linux-i386.c
+ M engine/rt-linux-x86_64.c
+ M engine/spn-stencils.c
+ M engine/vm-lab.c
+ M lab/evolve/GENES.md
+ M lab/evolve/README.md
+ M lab/evolve/engines-check.py
+ M lab/evolve/evolve.py
+ M tools/engine-rt.sh
+?? tools/gen-jitk.py

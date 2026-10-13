@@ -1,0 +1,415 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 1636ccc..9dcbb3f 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -31,6 +31,12 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
+        S_DPLUS,                                  /* Iteration 137: the gene jitinl */
+ #endif
+        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
++#if JITK
++#include "jitk-map.h"                            /* Iteration 259, the gene jitk: tools/gen-jitk.py's */
++#define JIT_NST (S_N + JITK_N)                   /* the variants after the base stencils, spn_ktable's order */
++#else
++#define JIT_NST S_N
++#endif
+ 
+ #define JIT_IMM64 0x5ea1ed5ea1ed5ea1ULL         /* spn-stencils.c's SPN_IMM_VALUE */
+ #define JIT_RP64  0x7ea1ed5ea1ed5e77ULL         /* SPN_RP_VALUE */
+@@ -41,7 +47,7 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for
+     int len, imm, imm32, rp, tailnext;          /* tailnext: the body ends "jmp NEXT" - dropped */
+     int nnext, njump, ncall;                    /* how many holes of each */
+ };
+-static struct jit_st jit_st[S_N];
++static struct jit_st jit_st[JIT_NST];
+ 
+ static int32_t jit_rel32(const unsigned char *p) { int32_t v; memcpy(&v, p, 4); return v; }
+ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit_rel32(p) == (const unsigned char *)t; }
+@@ -55,17 +61,31 @@ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit
+ #else
+ #define JIT_SCAN_MAX 64
+ #endif
++static const unsigned char *jit_addr(int i) {
++#if JITK
++    if (i >= S_N) return (const unsigned char *)spn_ktable[i - S_N];
++#endif
++    return (const unsigned char *)spn_table[i];
++}
+ static void jit_scan(void) {
+     int i, k;
+-    for (i = S_LIT; i < S_N && i < spn_table_len; i++) {
++    for (i = S_LIT; i < JIT_NST; i++) {
+         struct jit_st *s = &jit_st[i];
+-        const unsigned char *a = spn_table[i], *hi = a + JIT_SCAN_MAX, *end = 0, *p;
++        const unsigned char *a0, *a, *hi, *end = 0, *p;
++        if (i < S_N && i >= spn_table_len) continue;
++        a0 = a = jit_addr(i); hi = a + JIT_SCAN_MAX;
+         s->len = -1;
+         if (a[0] == 0xF3 && a[1] == 0x0F && a[2] == 0x1E && a[3] == 0xFA) a += 4;     /* endbr64 */
+         for (k = 0; k < spn_table_len; k++) {
+             const unsigned char *e = spn_table[k];
+-            if (e > (const unsigned char *)spn_table[i] && e < hi) hi = e;
++            if (e > a0 && e < hi) hi = e;
+         }
++#if JITK
++        for (k = 0; k < spn_ktable_len; k++) {          /* a variant may follow a base stencil */
++            const unsigned char *e = spn_ktable[k];
++            if (e > a0 && e < hi) hi = e;
++        }
++#endif
+         if (i == S_EXIT) { for (p = a; p < hi; p++) if (*p == 0xC3) { end = p + 1; break; } }
+         else for (p = a; p + 5 <= hi; p++)
+             if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
+@@ -392,6 +412,51 @@ static int jit_tail(int i, int n, const unsigned short *opl, const UNS64 *arg, c
+ }
+ #endif
+ 
++#if JITK
++/*  Iteration 259, the gene jitk: the top K cells in registers across the copied
++ *  code (gen-jitk.py; results/price-jit-stack.md). jitk_cs is the cache state
++ *  while an operation is planned: a base stencil with a variant for it becomes
++ *  the variant (and the state it leaves); any other - control, calls, loops,
++ *  exits - runs in state 1, after the canonicaliser. So does every branch
++ *  target: the operation before it ends in state 1. Both the size pass and the
++ *  copying pass plan each operation here, so they agree byte for byte. A plan
++ *  entry is (stencil, which): which >= 0 the operation's own stencil number,
++ *  -1 a canonicaliser, -2 the call.  */
++static unsigned char jitk_tg[JIT_MAXOPS + 1];   /* operation i is a branch target */
++static int jitk_cs;
++static int jitk_canon(int st[], int wh[], int k) {
++    if (jitk_cs == 1) return k;
++    if (!jitk_canon1[jitk_cs]) return -1;
++    st[k] = S_N + jitk_canon1[jitk_cs] - 1; wh[k] = -1; jitk_cs = 1;
++    return k + 1;
++}
++static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, const UNS64 *at, int st[], int wh[]) {
++    int j, k = 0;
++    struct jit_op lit_op = { 1, 1, 1, 0, { S_LIT, 0, 0, 0, 0 } };
++    const struct jit_op *o = &lit_op;
++    (void)arg; (void)at;
++    if (opl[i] >= 0xFFFE) {                             /* a call: in state 1 */
++        if ((k = jitk_canon(st, wh, 0)) < 0) return -1;
++#if JITTAIL
++        st[k] = jit_tail(i, n, opl, arg, at) ? S_BRANCH : S_CALL;
++#else
++        st[k] = S_CALL;
++#endif
++        wh[k++] = -2; jitk_cs = 1;
++        return k;
++    }
++    if (opl[i] != 0xFFFD) o = &jit_ops[opl[i]];         /* else jitx's literal: S_LIT with its value */
++    for (j = 0; j < o->n; j++) {
++        int s = o->st[j], v = jitk_v1[s][jitk_cs];
++        if (v && jit_usable(S_N + v - 1)) { st[k] = S_N + v - 1; wh[k++] = j; jitk_cs = jitk_vout[v - 1]; continue; }
++        if ((k = jitk_canon(st, wh, k)) < 0) return -1;
++        st[k] = s; wh[k++] = j; jitk_cs = 1;
++    }
++    if (i + 1 < n && jitk_tg[i + 1]) k = jitk_canon(st, wh, k);
++    return k;
++}
++#endif
++
+ /* The operations from a to end - end 0: find it, a word without a header
+    (jitx) - of the word w: a call to w is a call to this code itself. */
+ #if JITX
+@@ -485,8 +550,29 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         if (f < 2) return 0;
+         arg[i] = (UNS64)(uintptr_t)(jit_mem + f); opl[i] = 0xFFFE;
+     }
++#if JITK
++    memset(jitk_tg, 0, (size_t)n + 1);  /* the branch targets: state 1 there */
++    for (i = 0; i < n; i++)
++        if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6) {
++            for (j = 0; j < n && at[j] != arg[i]; j++) ;
++            if (j < n) jitk_tg[j] = 1;
++        }
++    jitk_cs = 1;
++#endif
+     for (i = 0; i < n; i++) {           /* sizes, and every stencil usable */
+         nat[i] = size;
++#if JITK
++        {
++            int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
++            if (m_ < 0) return 0;
++            for (q_ = 0; q_ < m_; q_++) {
++                int s = st_[q_];
++                if (!jit_usable(s) || (wh_[q_] >= 0 && opl[i] < 0xFFFD && jit_st[s].njump && jit_ops[opl[i]].opnd < 6)) return 0;
++                size += (uint32_t)jit_len(s);
++            }
++            continue;
++        }
++#endif
+ #if JITX
+         if (opl[i] == 0xFFFD) { if (!jit_usable(S_LIT)) return 0; size += (uint32_t)jit_len(S_LIT); continue; }
+ #endif
+@@ -508,11 +594,40 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+     nat[n] = size;
+     off = (jit_used + 15) & ~15u;
+     if (off + size > JIT_MEM) return 0;
++#if JITK
++    jitk_cs = 1;
++#endif
+     for (i = 0; i < n; i++) {           /* copy and patch */
+         unsigned char *p = jit_mem + off + nat[i];
+         const struct jit_op *o;
+         UNS64 jt = 0;
+         int lit = 1;
++#if JITK
++        {
++            int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
++            const struct jit_op *o_ = opl[i] < 0xFFFD ? &jit_ops[opl[i]] : 0;
++            if (m_ < 0) return 0;
++            if (o_ && o_->opnd >= 6) {              /* a branch: to one of this word's operations */
++                for (j = 0; j < n && at[j] != arg[i]; j++) ;
++                if (j == n) return 0;
++                jt = (UNS64)(uintptr_t)(jit_mem + off + nat[j]);
++            }
++            for (q_ = 0; q_ < m_; q_++) {
++                int s = st_[q_];
++                if (wh_[q_] == -2) {                /* the call, or the tail call's jump */
++                    UNS64 to = opl[i] == 0xFFFF ? (UNS64)(uintptr_t)(jit_mem + off) : arg[i];
++                    p = s == S_CALL ? jit_put(p, S_CALL, 0, 0, to) : jit_put(p, S_BRANCH, 0, to, 0);
++                } else if (wh_[q_] == -1) p = jit_put(p, s, 0, 0, 0);       /* a canonicaliser */
++                else {
++                    UNS64 v = o_ ? (UNS64)(INT64)o_->k : arg[i];               /* no o_: jitx's literal */
++                    if (o_ && jit_st[s].imm >= 0 && lit && o_->opnd >= 1 && o_->opnd <= 5) { v = arg[i]; lit = 0; }
++                    p = jit_put(p, s, v, jt, 0);
++                }
++            }
++            (void)o;
++            continue;
++        }
++#endif
+ #if JITX
+         if (opl[i] == 0xFFFD) { jit_put(p, S_LIT, arg[i], 0, 0); continue; }
+ #endif
+diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
+index 3800ff2..cdb1da2 100644
+--- a/engine/spn-stencils.c
++++ b/engine/spn-stencils.c
+@@ -271,3 +271,6 @@ const void *const spn_table[] = {
+ #endif
+ };
+ const int spn_table_len = sizeof spn_table / sizeof spn_table[0];
++#if JITK
++#include "spn-jitk.inc"                 /* Iteration 259, the gene jitk: tools/gen-jitk.py writes it */
++#endif
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 93f64e7..df10e6a 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -21,6 +21,7 @@
+ | one SYSCALL (`sysc`: 0, 1; Iteration 136; CV8 designs - vm-lab.c's; **dormant** - in LATE, not in EXPRESSED, until seed 39 has run): the engine keeps one system call in FORK's slot and drops the shell's other seventeen process and environment primitives and the runtime's environment and getpwnam - none of which a design's image (the kernel) calls; the shell gets them back in Forth from forth/shell-sysc.4 (tests/shell, all 554 assertions, on a SYSC s5 shell: tools/test-sysc-shell.sh). Engines: five JIT designs -3,392 to -3,808 bytes, the smallest of seed 37 -2,880 (its total -14%), tail-call threading -6,568, msc -3,728; every one through the gate; off, ids, images and engines identical |  |  |
+ | the JIT's translator compiled for size (`jitos`: 0, 1; Iteration 239; JIT designs not built -Os): engine/jit.c under GCC's optimize ("Os") - it runs once per word translated; the stencils are compiled apart | results/price-stencils-bloom.md: a JIT engine's extra bytes are the translator, jit_body 3.5 KB | -416 to -800 bytes off JIT engines built -O2/-O3; translation speed is the trade |
+ | tail calls as jumps on the JIT (`jittail`: 0, 1; Iteration 246; JIT designs): engine/jit.c - a call to a native word whose next operation is EXIT, or a BRANCH chain to one, is translated as a jump to it, so its ret returns to the caller and tail recursion runs in place (no native stack growth). Return addresses are on the machine stack, so >R, R> and loop parameters are untouched. Measured on 28677d13b1 (VM, alternating runs): ackermann 15-18% faster, the other selection workloads within noise; +256 engine bytes. Off: the engine byte-identical (results/price-jit-calls.md) |
++| the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | one-operation words inline on the JIT (`jitinl`: 0, 1; Iteration 137; JIT with jitx; **dormant** until seed 39 has run): a call to a word of one operation and EXIT - 1+, 0=, 1- - is that operation in the caller (not one that branches, ends the word, or touches the return stack or the interpreter), and D+ gets its stencil back. Native call and return were a quarter of a small recursive word's time (2.92 -> 2.21 ns a call); D+ alone (Iteration 130) made -ack native and no faster - with the inlining, ackermann's long run 10.1 -> 5.0 ms (VM), its 12.7 M dispatches native. Gate, answers, the Forth 2012 suite as s6 on five JIT designs with jitloop; off, identical |  |  |
+ | compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 4161701..d30d16c 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -596,3 +596,11 @@ operation is EXIT - or a BRANCH chain to one - into a jump, so tail recursion
+ runs in place. Ackermann 15-18% faster on the VM (two of -ack's three calls are
+ tail calls), the other selection workloads within noise; +256 engine bytes; off,
+ the engine is byte-identical (results/price-jit-calls.md).
++
++Iteration 259: the gene jitk (0, 2 or 3 cells; JIT designs; in LATE, EXPRESSED and
++the JIT's crossover link): the JIT keeps the top K data-stack cells in fixed
++registers across its copied code. tools/gen-jitk.py generates, per build, the
++variant stencils (16 hot operations x K+1 states) and canonicalisers, and a map
++the translator plans each operation with; anything without a variant, and every
++branch target, runs in state 1. Measured on the VM: mixed (loop -9%, fib +16% at
++K=2); +2.3-2.8 KB of engine. Built so the laptop's evolution measures it.
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 5c677ed..783c4f0 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -54,6 +54,8 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
+     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
+     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
++    ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259
++    ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
+ ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
+ 
+ bad = []
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c8f84f6..dca6221 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail')
++LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -116,6 +116,8 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
+ EXPRESSED['cv8'] += ['jitloop', 'jitinl']
+ EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
+ EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
++EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
++JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
+ EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+ EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
+ EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
+@@ -442,6 +444,7 @@ def express(g):
+     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
+     if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
+     if 'jittail' in e and not jit_on(g): e.pop('jittail')                          # Iteration 246: on the JIT
++    if 'jitk' in e and (not jit_on(g) or not e['jitk']): e.pop('jitk')            # Iteration 259: on the JIT; 0 is off
+     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
+     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
+     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+@@ -694,6 +697,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
+     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
+     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
++    if jit_on(g) and express(g).get('jitk'): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils
+     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
+     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
+     if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
+@@ -729,6 +733,9 @@ def _build(g, d):
+         else:
+             jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+                    os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
++            if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
++                if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
++                    raise RuntimeError('died: stack-cache generation')
+             r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + jit + rt())
+             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
+@@ -1042,6 +1049,8 @@ def mutate(g, rnd):
+             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
+         elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
+             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
++        elif k == 'jitk':             # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
++            g['jitk'] = rnd.choice([v for v in JITKV if v != g.get('jitk', 0)]); what.append('jitk=%d' % g['jitk'])
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
+         elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
+@@ -1304,7 +1313,7 @@ def crowding(front, R):
+ # dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
+ # evaluations: drawn one time in ten (SLOW_GENES).
+ XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
+-LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
++LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail', 'jitk'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
+ SLOW_GENES = ('varcall', 'doesfar')
+ ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
+ ATTIC_P = float(os.environ.get('EVOLVE_ATTIC_P', 0.1))
+@@ -1570,6 +1579,7 @@ def random_genome(rnd):
+         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
++        elif k == 'jitk': g[k] = rnd.choice(JITKV)         # Iteration 259
+         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
+         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
+         elif k == 'opcall': g[k] = [n for n in OPCALL_POOL if rnd.random() < 0.5]
+diff --git a/tools/gen-jitk.py b/tools/gen-jitk.py
+new file mode 100644
+index 0000000..59a2fda
+--- /dev/null
++++ b/tools/gen-jitk.py
+@@ -0,0 +1,99 @@
++#!/usr/bin/env python3
++"""gen-jitk.py K OUTDIR - the JIT's stack-cache stencils, for the gene jitk
++(Iteration 259; results/price-jit-stack.md for the design, lab/evolve/
++jitvariants.py for its first pricing).
++
++Static stack caching in the copied code, as Ertl & Gregg's for interpreters and
++CPython 3.15's JIT: the cache state c is how many of the top cells are in
++registers, 0..K, always the same registers - the top in the second argument
++register, the next in the third, the third in the fourth (sp stays in the
++first) - so state 1 is today's (sp, tos), and every stencil without a variant
++runs in it. Each hot data operation gets one stencil per input state: it loads
++from memory the inputs not cached, computes, keeps at most K cells (the deepest
++sent to memory) and continues in the state that leaves. A canonicaliser per
++state brings any state back to 1 - before every stencil without a variant
++(control, calls, loops, exits) and at branch targets, so every join and every
++call sees state 1.
++
++Writes OUTDIR/spn-jitk.inc (the stencils and spn_ktable[], included at the end
++of engine/spn-stencils.c) and OUTDIR/jitk-map.h (for engine/jit.c: each base
++stencil's variant per state, the state each variant leaves, the
++canonicalisers), both under JITK=K.
++"""
++import os, sys
++
++if len(sys.argv) != 3: sys.exit(__doc__)
++K, OUT = int(sys.argv[1]), sys.argv[2]
++assert 2 <= K <= 3, 'K is 2 or 3'
++
++# the base stencil, its inputs (top first) and outputs - engine/spn-stencils.c's semantics exactly
++OPS = [
++    ('S_LIT',    'lit',    0, lambda: ['IMM()']),
++    ('S_DUP',    'dup',    1, lambda a: [a, a]),
++    ('S_DROP',   'drop',   1, lambda a: []),
++    ('S_SWAP',   'swap',   2, lambda a, b: [b, a]),
++    ('S_OVER',   'over',   2, lambda a, b: [b, a, b]),
++    ('S_PLUS',   'plus',   2, lambda a, b: ['(%s + %s)' % (b, a)]),
++    ('S_ADDI',   'addi',   1, lambda a: ['(%s + IMM())' % a]),
++    ('S_EQ',     'eq',     2, lambda a, b: ['-(cell)(%s == %s)' % (b, a)]),
++    ('S_GT',     'gt',     2, lambda a, b: ['-(cell)(%s > %s)' % (b, a)]),
++    ('S_LT',     'lt',     2, lambda a, b: ['-(cell)(%s < %s)' % (b, a)]),
++    ('S_AND',    'and',    2, lambda a, b: ['(%s & %s)' % (b, a)]),
++    ('S_XOR',    'xor',    2, lambda a, b: ['(%s ^ %s)' % (b, a)]),
++    ('S_FETCH',  'fetch',  1, lambda a: ['*(cell *)%s' % a]),
++    ('S_STORE',  'store',  2, lambda a, b: ['@*(cell *)%s = %s;' % (a, b)]),
++    ('S_CFETCH', 'cfetch', 1, lambda a: ['(cell)*(uint8_t *)%s' % a]),
++    ('S_I',      'i',      0, lambda: ['@cell *rr_ = (cell *)*IMM_RP();', 'rr_[0]']),
++]
++REG = ['t0', 't1', 't2']
++
++def variant(name, n_in, fn, c):
++    """The C body of one stencil with c cells cached on entry, and the state it leaves."""
++    body, cached = [], REG[:c]
++    ins = list(cached[:n_in]); k = 0
++    while len(ins) < n_in: body.append('cell m%d = *sp++;' % k); ins.append('m%d' % k); k += 1
++    outs = fn(*ins)
++    body += [o[1:] for o in outs if o.startswith('@')]
++    vals = [o for o in outs if not o.startswith('@')]
++    for i, v in enumerate(vals): body.append('cell v%d = %s;' % (i, v))
++    new = ['v%d' % i for i in range(len(vals))] + cached[n_in:]
++    while len(new) > K: body.append('*--sp = %s;' % new[-1]); new = new[:-1]
++    passed = new + REG[len(new):]
++    return 'SK(stk_%s_%d) { %s GO4(sp, %s); }' % (name, c, ' '.join(body), ', '.join(passed[:3])), len(new)
++
++inc = ['/* gen-jitk.py %d - the stack-cache stencils (Iteration 259). Generated: do not edit. */' % K,
++       'typedef spn_st (*spn_next4_fn)(cell *, cell, cell, cell);',
++       '#define SK(name) __attribute__((noinline, used)) spn_st name(cell *sp, cell t0, cell t1, cell t2)',
++       '/* the next stencil, the cached cells in the third and fourth argument registers: the JIT',
++       '   finds this jump as it finds GO\'s - its target is exactly spn_next */',
++       '#define GO4(sp, a, b, c) return ((spn_next4_fn)(void *)spn_next)(sp, a, b, c)']
++table, vmap, vout = [], {}, []
++for base, name, n_in, fn in OPS:
++    for c in range(K + 1):
++        src, out = variant(name, n_in, fn, c)
++        inc.append(src); vmap[(base, c)] = len(table); table.append('stk_%s_%d' % (name, c)); vout.append(out)
++canon = {}
++for c in range(K + 1):
++    if c == 1: continue
++    if c == 0: inc.append('SK(stk_canon_0) { cell t = *sp++; GO4(sp, t, t1, t2); }')
++    else: inc.append('SK(stk_canon_%d) { %s GO4(sp, t0, t1, t2); }' % (c, ' '.join('*--sp = %s;' % REG[i] for i in range(c - 1, 0, -1))))
++    canon[c] = len(table); table.append('stk_canon_%d' % c); vout.append(1)
++inc.append('const void *const spn_ktable[] = {\n    ' + ',\n    '.join('(const void *)%s' % t for t in table) + '\n};')
++inc.append('const int spn_ktable_len = %d;' % len(table))
++os.makedirs(OUT, exist_ok=True)
++open(os.path.join(OUT, 'spn-jitk.inc'), 'w').write('\n'.join(inc) + '\n')
++
++hdr = ['/* gen-jitk.py %d - the stack-cache map for engine/jit.c (Iteration 259). Generated. */' % K,
++       '#define JITK_K %d' % K, '#define JITK_N %d' % len(table),
++       'extern const void *const spn_ktable[];', 'extern const int spn_ktable_len;',
++       '/* a base stencil\'s variant for each entry state, as index + 1 into spn_ktable (0: none) */',
++       'static const unsigned char jitk_v1[S_N][JITK_K + 1] = {']
++for base, name, n_in, fn in OPS:
++    hdr.append('    [%s] = { %s },' % (base, ', '.join(str(vmap[(base, c)] + 1) for c in range(K + 1))))
++hdr.append('};')
++hdr.append('/* the state each variant leaves */')
++hdr.append('static const unsigned char jitk_vout[JITK_N] = { %s };' % ', '.join(map(str, vout)))
++hdr.append('/* the canonicaliser from each state to state 1, as index + 1 (0: none - state 1 itself) */')
++hdr.append('static const unsigned char jitk_canon1[JITK_K + 1] = { %s };' % ', '.join(str(canon[c] + 1) if c in canon else '0' for c in range(K + 1)))
++open(os.path.join(OUT, 'jitk-map.h'), 'w').write('\n'.join(hdr) + '\n')
++print('gen-jitk: K=%d, %d stencils (%d operations x %d states, %d canonicalisers)' % (K, len(table), len(OPS), K + 1, len(canon)))

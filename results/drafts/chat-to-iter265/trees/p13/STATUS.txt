@@ -1,0 +1,21 @@
+HEAD 8553601 Iteration 233: packed names captured in GOALS.md's register, deferred by the owner; the cell headers' UTF-8 fault next
+cloned at 855360155bfa
+0 commits past the clone point
+
+git status --short:
+ M engine/rt-linux-i386.c
+ M engine/rt-linux-x86_64.c
+ M engine/spn-cv8.c
+ M engine/vm-lab.c
+ M forth/coreext.4
+ M forth/cv8b-kfast.4
+ M forth/cv8b.4
+ M forth/cv8bt.4
+ M forth/spn-cv8-decode.4
+ M lab/evolve/outbuf-check.py
+ M tools/gen-msc.py
+ M tools/gen-tos.py
+ M tools/layout.py
+ M tools/sod16.py
+ M tools/vmtrace.py
+?? lab/evolve/names-check.py

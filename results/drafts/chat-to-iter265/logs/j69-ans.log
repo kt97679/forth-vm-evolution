@@ -1,0 +1,144 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+# The Forth 2012 test suite: hand-made s6, then each design against it (held out)
+
+Hand-made s6 against the suite's expected values - its own tests in each file (core.fr's and the
+helpers' not counted again), failed, and where a file stopped short of its end:
+
+| file | tests | failed | whole file | stopped at |
+|---|---|---|---|---|
+| prelimtest.fth | 23 | 0 | yes |  |
+| core.fr | 638 | 0 | yes |  |
+| coreplustest.fth | 101 | 0 | yes |  |
+| coreexttest.fth | 383 | 0 | yes |  |
+| blocktest.fth | 65 | 0 | yes |  |
+| doubletest.fth | 247 | 0 | yes |  |
+| exceptiontest.fth | 9 | 0 | yes |  |
+| facilitytest.fth | 70 | 0 | yes |  |
+| filetest.fth | 96 | 0 | yes |  |
+| localstest.fth | 50 | 0 | yes |  |
+| memorytest.fth | 198 | 0 | yes |  |
+| toolstest.fth | 63 | 0 | yes |  |
+| searchordertest.fth | 41 | 0 | yes |  |
+| stringtest.fth | 135 | 0 | yes |  |
+
+Negative control - core.fr with one wrong expected value: caught (failed 0 -> 1).
+
+| design | guard | files as s6 | differing |
+|---|---|---|---|
+| 26be0b1ed2 | 1 | 14 of 14 | - |
+| 833075003a | 1 | 14 of 14 | - |
+| cfee5345ab | 1 | 14 of 14 | - |
+| 4cdbeeb0be | 0 | 14 of 14 | - |
+| e16f090cb0 | 0 | 14 of 14 | - |
+| 988e7f3038 | 0 | 14 of 14 | - |
+| 2b25a0836b | 0 | 14 of 14 | - |
+| a699db211c | 0 | 14 of 14 | - |
+| 26a5fb3095 | 0 | 14 of 14 | - |
+| 0eb67f8280 | 0 | 14 of 14 | - |
+| a5f724bdd4 | 0 | 14 of 14 | - |
+| 56beed41b8 | 0 | 14 of 14 | - |
+| eb51655778 | 0 | 14 of 14 | - |
+| 8446f49852 | 0 | 14 of 14 | - |
+| 5b1269f6f7 | 0 | 14 of 14 | - |
+| 14d8c1fb09 | 0 | 14 of 14 | - |
+| 90116c3ca9 | 0 | 14 of 14 | - |
+| bcbc925255 | 0 | 14 of 14 | - |
+| 3da71968b7 | 0 | 14 of 14 | - |
+| 50feea312b | 0 | 14 of 14 | - |
+| 71c7993f07 | 0 | 14 of 14 | - |
+| f48c9a7d6e | 0 | 14 of 14 | - |
+| 70d4d70d52 | 0 | 14 of 14 | - |
+| 2616deb332 | 0 | 14 of 14 | - |
+| 5e6c87c057 | 0 | 14 of 14 | - |
+| 306bc55086 | 0 | 14 of 14 | - |
+| 116732b957 | 0 | 14 of 14 | - |
+| 5d5cdf47c7 | 0 | 14 of 14 | - |
+| 87b7f666dd | 0 | 14 of 14 | - |
+| 729b74d69c | 0 | 14 of 14 | - |
+| dbe1ab5bad | 0 | 14 of 14 | - |
+| c126fbd9ba | 0 | 14 of 14 | - |
+| 327fe8c360 | 0 | 14 of 14 | - |
+| ce42cfc4ab | 0 | 14 of 14 | - |
+| 66543b71e6 | 0 | 14 of 14 | - |
+| d8a21439a4 | 0 | 14 of 14 | - |
+| b1b6c66b00 | 0 | 14 of 14 | - |
+| 4118edae70 | 0 | 14 of 14 | - |
+| d774eb611e | 0 | 14 of 14 | - |
+| 5aadfc4986 | 0 | 14 of 14 | - |
+| 2fc1bd9f41 | 0 | 14 of 14 | - |
+| ea9fb5802f | 0 | 14 of 14 | - |
+| 1e6aae5db7 | 0 | 14 of 14 | - |
+| b2deb65f82 | 1 | 14 of 14 | - |
+| 505c8b22e2 | 1 | 14 of 14 | - |
+| da91054acd | 1 | 14 of 14 | - |
+| daff32af50 | 1 | 14 of 14 | - |
+| 1d8a61ae2d | 1 | 14 of 14 | - |
+| 38fc4a0ab7 | 1 | 14 of 14 | - |
+| 388c684283 | 1 | 14 of 14 | - |
+| 893af62b39 | 1 | 14 of 14 | - |
+| 4fa95abc90 | 1 | 14 of 14 | - |
+| 59bcfb2a5d | 0 | 14 of 14 | - |
+| f1f0cffd26 | 0 | 14 of 14 | - |
+| 0e41d4bb27 | 0 | 14 of 14 | - |
+| d7db0575af | 0 | 14 of 14 | - |
+| cba746336a | 0 | 14 of 14 | - |
+| 53b433b50c | 0 | 14 of 14 | - |
+| eb84d28286 | 0 | 14 of 14 | - |
+| d1ac6c88d8 | 0 | 14 of 14 | - |
+| 392739f36a | 0 | 14 of 14 | - |
+| 7818b8f8a0 | 0 | 14 of 14 | - |
+| 49b131b731 | 0 | 14 of 14 | - |
+| 8d14feece8 | 0 | 14 of 14 | - |
+| 4ffea60bd7 | 0 | 14 of 14 | - |
+| cdc4ee2310 | 0 | 14 of 14 | - |
+| 6f4951bd17 | 0 | 14 of 14 | - |
+| 08bf07b8cf | 0 | 14 of 14 | - |
+| 340a44b24a | 0 | 14 of 14 | - |
+| be3f68c6d0 | 0 | 14 of 14 | - |
+| f1d9875496 | 0 | 14 of 14 | - |
+| 7206c6b31b | 0 | 14 of 14 | - |
+| b05ef0deaa | 0 | 14 of 14 | - |
+| 73db511f13 | 0 | 14 of 14 | - |
+| f179c75c01 | 0 | 14 of 14 | - |
+| be195b7578 | 0 | 14 of 14 | - |
+| b870b519e8 | 0 | 14 of 14 | - |
+| 96db23b471 | 0 | 14 of 14 | - |
+| 858c2d42b7 | 0 | 14 of 14 | - |
+| 95ea5f3680 | 0 | 14 of 14 | - |
+| adf92561fb | 0 | 14 of 14 | - |
+| 06a14cb5b9 | 0 | 14 of 14 | - |
+| 9180f2c84b | 0 | 14 of 14 | - |
+| 81c290df9a | 0 | 14 of 14 | - |
+| 008da9b935 | 0 | 14 of 14 | - |
+| fcde5cce68 | 0 | 14 of 14 | - |
+| 55b8577a17 | 0 | 14 of 14 | - |
+| 36e1140f85 | 0 | 14 of 14 | - |
+| 9c3b2ebc0f | 0 | 14 of 14 | - |
+| e47a84cd35 | 0 | 14 of 14 | - |
+| bb70006cb9 | 0 | 14 of 14 | - |
+| b78160f0f4 | 0 | 14 of 14 | - |
+| 7f433ea032 | 0 | 14 of 14 | - |
+| 51ff404e96 | 0 | 14 of 14 | - |
+| 300873bccd | 0 | 14 of 14 | - |
+| c84b076800 | 0 | 14 of 14 | - |
+| fcf37f1a56 | 0 | 14 of 14 | - |
+| e550de9c49 | 0 | 14 of 14 | - |
+| 110fc62e88 | 0 | 14 of 14 | - |
+| 3dc8884389 | 0 | 14 of 14 | - |
+| ff3a3a1932 | 0 | 14 of 14 | - |
+| c0fddc793a | 0 | 14 of 14 | - |
+| 72220e6220 | 0 | 14 of 14 | - |
+| 4230dd922f | 0 | 14 of 14 | - |
+| 75247dbfb8 | 0 | 14 of 14 | - |
+| c07615d464 | 0 | 14 of 14 | - |
+| f59a840b60 | 0 | 14 of 14 | - |
+| 5d7c8449aa | 0 | 14 of 14 | - |
+| c6426298dd | 0 | 14 of 14 | - |
+| fec65c464a | 0 | 14 of 14 | - |
+| f6dd16b633 | 0 | 14 of 14 | - |
+| d6cafc164f | 0 | 14 of 14 | - |
+| d70b91cc57 | 0 | 14 of 14 | - |
+| 0ebb9c6ccb | 0 | 14 of 14 | - |
+| 207e991ee0 | 0 | 14 of 14 | - |
+
+0 of 115 designs differ from s6 somewhere.

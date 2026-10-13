@@ -1,0 +1,2097 @@
+From 0470c0725c822b9c9b10a78dd0fdb67421a55549 Mon Sep 17 00:00:00 2001
+From: Kirill Timofeev <kt97679@gmail.com>
+Date: Tue, 13 Oct 2026 03:37:06 +0000
+Subject: [PATCH 1/2] scratch: primfirst
+
+---
+ engine/spn-cv8.c        |  12 +--
+ engine/vm-lab.c         |  36 ++++----
+ forth/coreext.4         |   2 +-
+ forth/cpt16.4           |   2 +-
+ forth/cross.4           |  16 ++--
+ forth/cv8-fuse-imm.4    |   2 +-
+ forth/cv8-fuse.4        |   2 +-
+ forth/cv8.4             |   2 +-
+ forth/cv8b-kfast.4      |   2 +-
+ forth/cv8b.4            |  42 +++++----
+ forth/cv8bt.4           |  35 ++++----
+ forth/cv8t-empty.4      |   2 +-
+ forth/cv8t-fuse-imm.4   |   2 +-
+ forth/cv8t-fuse.4       |   2 +-
+ forth/cv8t.4            |   2 +-
+ forth/kernel-seed.img   | Bin 27744 -> 27400 bytes
+ forth/kernel.4          | 185 ++++++++++++++++++++++------------------
+ forth/kernel32-seed.img | Bin 15212 -> 15044 bytes
+ forth/sod16.4           |  11 +--
+ forth/spn-cv8-decode.4  |   2 +-
+ forth/spn-full.4        |  10 +--
+ tools/dict-dump-addr.4  |  12 +--
+ tools/gen-msc.py        |   4 +-
+ tools/gen-tos.py        |   4 +-
+ tools/layout.py         |  21 ++---
+ tools/sod16.py          |   8 +-
+ tools/vmtrace.py        |   7 +-
+ 27 files changed, 208 insertions(+), 217 deletions(-)
+
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 1bcbdf4..df4bada 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -732,9 +732,9 @@ static void load_image(const char *name) {
+                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+                 }
+                 nfas[n++] = nfa;
+-                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
++                link = CELL(nfa - CELL_BYTES);
+                 if (link == 0) break;
+-                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
++                nfa = (nfa - CELL_BYTES) + link;
+             }
+         }
+         /*  Insertion sort, ascending. It runs once at load over a few
+@@ -749,7 +749,7 @@ static void load_image(const char *name) {
+         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+         for (i2 = 0; i2 < n; i2++) {
+             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
+-            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
++            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #if SKIPPAD
+             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
+ #endif
+@@ -775,14 +775,14 @@ static void load_image(const char *name) {
+     for (i = 0; i < n; i++) {
+         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
+         wordtab[n - 1 - i] =
+-            nfa + 1; (void)nlen;
++            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #if SKIPPAD
+         /* skip leading NOOP padding: calls land on the first real token */
+         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
+ #endif
+-        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
++        link = CELL(nfa - CELL_BYTES);
+         if (link == 0) break;
+-        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
++        nfa = (nfa - CELL_BYTES) + link;
+     }
+     for (i = 0; i < ntails; i++) {
+         if (tail_w[i] >= (UNS64)n) {
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 1086146..0a70704 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -159,27 +159,25 @@ static char **g_argv;
+ #error "TAG2: a call reaches 1 GB from the image base - MEMSIZE at most that"
+ #endif
+ #if TAG2
+-/*  Iteration 232: the nfa is the count byte, AFTER the name; the link ends
+- *  just before the name (b__ = nfa - length).
+- *  A byte-header link, read backwards from the name: the byte before it
++/*  A byte-header link, read backwards from the name: the byte before it
+  *  carries the tag - 00 one byte (6 bits; 0 ends the thread), 01 two (14
+  *  bits), 10 three (22), 11 four (30) - the bytes below it high to low.  */
+-#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1); UNS64 d__; \
++#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1); UNS64 d__;                  \
+     switch (t__ >> 6) {                                                                   \
+     case 0: d__ = t__; break;                                                             \
+-    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2); break;                        \
+-    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3); break; \
+-    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(b__ - 2) << 16)                \
+-                   | ((UNS64)BYTE(b__ - 3) << 8) | BYTE(b__ - 4); }                        \
++    case 1: d__ = ((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2); break;                        \
++    case 2: d__ = ((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3); break; \
++    default: d__ = ((UNS64)(t__ & 63) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                \
++                   | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4); }                        \
+     d__ ? a__ - d__ : 0; })
+ #else
+ /*  A byte-header link in CV8 (cv8b.4's NEXT-NFA8): its last byte, the one
+  *  before the name - below 0x80 seven bits (0 ends the thread), below 0xC0
+  *  fourteen, else twenty-two.  */
+-#define PREVNFA(a) ({ UNS64 a__ = (a), b__ = a__ - (BYTE(a__) & 31); UNS8 t__ = BYTE(b__ - 1);   \
++#define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
+     t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
+-    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(b__ - 2))                        \
+-    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(b__ - 2) << 8) | BYTE(b__ - 3)); })
++    : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
++    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })
+ #endif
+ #ifndef VARCALL
+ /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
+@@ -905,9 +903,9 @@ static void load_image(const char *name) {
+                     if (!nfas) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+                 }
+                 nfas[n++] = nfa;
+-                link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
++                link = CELL(nfa - CELL_BYTES);
+                 if (link == 0) break;
+-                nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
++                nfa = (nfa - CELL_BYTES) + link;
+             }
+         }
+         /*  Insertion sort, ascending. It runs once at load over a few
+@@ -922,7 +920,7 @@ static void load_image(const char *name) {
+         if (!wordtab) { write_str(2, "Out of memory building the word table.\n"); exit(2); }
+         for (i2 = 0; i2 < n; i2++) {
+             UNS64 nlen = (*(UNS8*)(uintptr_t)nfas[i2]) & 31;
+-            wordtab[i2] = nfas[i2] + 1; (void)nlen;   /* Iteration 233: the body follows the count byte */
++            wordtab[i2] = nfas[i2] + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #if SKIPPAD
+             while (TOK(wordtab[i2]) == 0) wordtab[i2] += 2;
+ #endif
+@@ -948,14 +946,14 @@ static void load_image(const char *name) {
+     for (i = 0; i < n; i++) {
+         UNS64 nlen = (*(UNS8*)(uintptr_t)nfa) & 31;
+         wordtab[n - 1 - i] =
+-            nfa + 1; (void)nlen;
++            nfa + ((nlen + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #if SKIPPAD
+         /* skip leading NOOP padding: calls land on the first real token */
+         while (TOK(wordtab[n - 1 - i]) == 0) wordtab[n - 1 - i] += 2;
+ #endif
+-        link = CELL(nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES);   /* Iteration 233: the link cell before the name area */
++        link = CELL(nfa - CELL_BYTES);
+         if (link == 0) break;
+-        nfa = (nfa + 1 - ((((*(UNS8*)(uintptr_t)nfa) & 31) + 1 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)) - CELL_BYTES) + link;
++        nfa = (nfa - CELL_BYTES) + link;
+     }
+     for (i = 0; i < ntails; i++) {
+         if (tail_w[i] >= (UNS64)n) {
+@@ -1875,7 +1873,7 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
+ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+              UNS8 n_ = BYTE(nb_);
+              while (a_) {
+-                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
++                 if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
+                  a_ = PREVNFA(a_); }
+              DS0 = a_; } NEXT();
+ #endif
+@@ -1921,7 +1919,7 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+  *  walk, NAME>8 and the immediate bit.  */
+ #if X_FIND
+ L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+-            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
++            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
+ #endif
+ /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 22c907c..850ee58 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -341,7 +341,7 @@ VARIABLE TW-XT  VARIABLE TW-WID
+       DUP >R TW-XT @ EXECUTE 0= IF R> DROP UNLOOP EXIT THEN R> NEXT-NFA8
+     REPEAT DROP
+   LOOP ;
+-: NAME>STRING ( nt --- c-addr u )  DUP C@ 31 AND SWAP OVER - SWAP ;   \ the name before its count byte (232)
++: NAME>STRING ( nt --- c-addr u )  COUNT 31 AND ;
+ : NAME>INTERPRET ( nt --- xt )  NAME> ;
+ : NAME>COMPILE ( nt --- x xt )  DUP NAME> SWAP C@ 64 AND IF ['] EXECUTE ELSE ['] COMPILE, THEN ;
+ [THEN]
+diff --git a/forth/cpt16.4 b/forth/cpt16.4
+index 7b42e9d..bd82f5f 100644
+--- a/forth/cpt16.4
++++ b/forth/cpt16.4
+@@ -142,7 +142,7 @@ VARIABLE CPT-SHIFT-V ( --- a-addr )
+ : COMPILE,16 ( xt --- )
+ \ Add the execution semantics of xt to the current definition: a
+ \ primitive becomes its opcode token, anything else a call.
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     \ A primitive's translated body is one token holding its opcode -
+     \ W@, not @: the cell compiler read a whole cell here because a
+     \ token WAS a cell.
+diff --git a/forth/cross.4 b/forth/cross.4
+index 5a40f1b..9a4fc04 100644
+--- a/forth/cross.4
++++ b/forth/cross.4
+@@ -198,19 +198,15 @@ VARIABLE NAMELEN
+   BL WORD COUNT               ( c-addr u )
+   2DUP THASH THIS-THREAD !
+   DUP NAMELEN !
+-  \ Iteration 233: [zeros][name][count byte], as kernel.4's HEADER lays it -
+-  \ the count byte last, right before the body: the nfa.
+-  NAMELEN @ 1+ 1 CELLS-T 1- + 1 CELLS-T NEGATE AND   ( c-addr u k )
+-  SWAP DROP  THERE OVER + 1- >R                       ( c-addr k )  \ R: the nfa
+-  THERE SWAP 0 ?DO 0 OVER I + C!-T LOOP DROP          ( c-addr )    \ the area zeroed
+-  R@ NAMELEN @ - NAMELEN @ 0 ?DO OVER I + C@ OVER I + C!-T LOOP 2DROP   \ the name before the nfa
+-  NAMELEN @ 128 OR R@ C!-T                            \ bit 7: the count byte's mark
++  THERE PLACE-T               \ Place name in target dictionary.
+   THIS-THREAD @ CELLS TTHREADS + @ ?DUP IF
+     LINKCELL @ - LINKCELL @ !-T    \ relative to the link cell itself
+   THEN
+-  R@ TLINK !
+-  R@ THIS-THREAD @ CELLS TTHREADS + !
+-  R> THERE - 1+ ALLOT-T ;
++  THERE TLINK !
++  THERE THIS-THREAD @ CELLS TTHREADS + !
++  THERE C@-T 128 OR THERE C!-T
++  NAMELEN @ 1+ ALLOT-T ALIGN-T ;
++      \ Set bit 7 of count byte as a marker.
+ 
+ \ : "HEADER CREATE ALIGN-T ;  \ Alternative for "HEADER in case the target system
+                       \ is just an application without headers.
+diff --git a/forth/cv8-fuse-imm.4 b/forth/cv8-fuse-imm.4
+index 41999dc..fe40674 100644
+--- a/forth/cv8-fuse-imm.4
++++ b/forth/cv8-fuse-imm.4
+@@ -55,7 +55,7 @@ VARIABLE LIT-PREV ( --- a-addr )
+ 
+ : COMPILE,8 ( xt --- )
+ \ cv8-fuse.4's, with n + and SWAP n + tried first.
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     DUP C@ 125 = IF
+       DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+     ELSE
+diff --git a/forth/cv8-fuse.4 b/forth/cv8-fuse.4
+index 218578a..776bad1 100644
+--- a/forth/cv8-fuse.4
++++ b/forth/cv8-fuse.4
+@@ -54,7 +54,7 @@ ALIGN
+ \ literal, an operand - stops the fusion, and anything that makes HERE
+ \ a branch target clears LAST-OP. The fused byte keeps LAST-OP, and no
+ \ fold or pair contains a fused opcode, so it never combines again.
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     DUP C@ 125 = IF
+       DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+     ELSE
+diff --git a/forth/cv8.4 b/forth/cv8.4
+index 6aa6e69..8ad18b9 100644
+--- a/forth/cv8.4
++++ b/forth/cv8.4
+@@ -151,7 +151,7 @@ ALIGN
+ : COMPILE,8 ( xt --- )
+ \ Add the execution semantics of xt to the current definition: a
+ \ primitive becomes its opcode byte, anything else a call.
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     \ A primitive's CV8 body is one opcode byte - C@, not @: the cell
+     \ compiler read a whole cell here because a token WAS a cell.
+     \ An escaped primitive's body is [ESC][selector]; inline both bytes
+diff --git a/forth/cv8b-kfast.4 b/forth/cv8b-kfast.4
+index 4c32fe5..3b31eeb 100644
+--- a/forth/cv8b-kfast.4
++++ b/forth/cv8b-kfast.4
+@@ -26,7 +26,7 @@
+ \ are namebuf's, or 0.
+   >R BEGIN DUP WHILE
+     DUP C@ 31 AND R@ C@ = IF
+-      DUP DUP C@ 31 AND - R@ 1+ R@ C@ NAME=? IF R> DROP EXIT THEN   \ the name before its count byte (232)
++      DUP 1+ R@ 1+ R@ C@ NAME=? IF R> DROP EXIT THEN
+     THEN
+     NEXT-NFA8
+   REPEAT R> DROP ;
+diff --git a/forth/cv8b.4 b/forth/cv8b.4
+index 950a63e..109187a 100644
+--- a/forth/cv8b.4
++++ b/forth/cv8b.4
+@@ -34,13 +34,6 @@
+ \ the length of the link depends on which thread the name hashes to.
+ \ >NAME is untouched: it scans back from the body for the count byte and
+ \ reaches it before the link either way.
+-\
+-\ Iteration 232: the count byte comes AFTER the name - [link][name][count]
+-\ then the body - and the nfa is the count byte. >NAME's scan back from the
+-\ body for bit 7 stops at it at once; before, it crossed the name, and a
+-\ UTF-8 byte there (bit 7 set) was taken for the count byte - with bit 5,
+-\ for a primitive's, and COMPILE, inlined garbage. The name is the len
+-\ bytes before the nfa; the link ends just before the name.
+ 
+ 0 CV8-SHIFT-V !          \ byte-aligned call targets: base + v
+ -1 CV8-DOES-FAR? !       \ ...so DOES> needs the three-byte call form
+@@ -62,16 +55,15 @@
+ 
+ : NEXT-NFA8 ( nfa --- nfa' )
+ \ The previous word in this thread, or 0 at the end of the chain.
+-  DUP DUP C@ 31 AND -                          ( nfa b )  \ b: the name's first byte
+-  DUP 1- C@                                    ( nfa b tag )
+-  DUP 128 U< IF SWAP DROP DUP IF - ELSE 2DROP 0 THEN EXIT THEN
+-  DUP 192 U< IF 63 AND 8 LSHIFT SWAP 2 - C@ OR - EXIT THEN
+-  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR SWAP 3 - C@ OR - ;
++  DUP 1- C@                                    ( nfa tag )
++  DUP 128 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
++  DUP 192 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
++  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - ;
+ 
+ \ ---- the header -----------------------------------------------------
+ : NAME>8 ( nfa --- xt )
+-\ The body follows the count byte directly (Iteration 232). No ALIGNED.
+-  1+ ;
++\ The body follows the name directly. No ALIGNED.
++  COUNT 31 AND + ;
+ 
+ : >BODY8 ( xt --- a-addr )
+ \ The kernel's >BODY is `CELL+`, which is only right when the body is
+@@ -93,15 +85,21 @@ VARIABLE HDR-LEN
+   \ on where the nfa lands, which depends on the link's length. Bound it
+   \ from above: the nfa is at most HERE+3, so size the link for that and
+   \ the real distance always fits.
+-  HDR-HEAD @ IF HERE 3 + HERE C@ + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
+-  \ Iteration 232: the characters up past the link, the link, then the
+-  \ count byte after them - the nfa, right before the body.
+-  HERE C@ >R  HERE 1+ HERE HDR-LEN @ + R@ CMOVE>
+-  HDR-HEAD @ IF HERE HDR-LEN @ + R@ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+-  R@ ALLOT  HERE LAST !  R> 128 + C, ;
++  HDR-HEAD @ IF HERE 3 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
++  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
++  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
++  HERE LAST !
++  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
+ 
+ \ ---- the search -----------------------------------------------------
+-\ NAME=? ( a1 a2 u --- flag ) is the kernel's since Iteration 233.
++: NAME=? ( a1 a2 u --- flag )
++\ BEGIN/WHILE rather than ?DO: the kernel never uses ?DO itself, so the
++\ translator has no case for it, and a word it cannot translate is
++\ copied as data and would run as garbage.
++  BEGIN DUP WHILE
++    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
++    1+ SWAP 1+ SWAP R> 1-
++  REPEAT DROP 2DROP -1 ;
+ 
+ : SEARCH-WORDLIST8 ( c-addr u wid --- 0 | xt 1 | xt -1 )
+ \ Same contract as the kernel's, byte compare instead of cell compare,
+@@ -111,7 +109,7 @@ VARIABLE HDR-LEN
+   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP   ( nfa )
+   BEGIN DUP WHILE
+     DUP C@ 31 AND NAMEBUF C@ = IF
+-      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
++      DUP 1+ NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+         DUP NAME>8 SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
+       THEN
+     THEN
+diff --git a/forth/cv8bt.4 b/forth/cv8bt.4
+index 5006985..c326894 100644
+--- a/forth/cv8bt.4
++++ b/forth/cv8bt.4
+@@ -39,13 +39,6 @@
+ \ the length of the link depends on which thread the name hashes to.
+ \ >NAME is untouched: it scans back from the body for the count byte and
+ \ reaches it before the link either way.
+-\
+-\ Iteration 232: the count byte comes AFTER the name - [link][name][count]
+-\ then the body - and the nfa is the count byte. >NAME's scan back from the
+-\ body for bit 7 stops at it at once; before, it crossed the name, and a
+-\ UTF-8 byte there (bit 7 set) was taken for the count byte - with bit 5,
+-\ for a primitive's, and COMPILE, inlined garbage. The name is the len
+-\ bytes before the nfa; the link ends just before the name.
+ 
+ 0 CV8-SHIFT-V !          \ byte-aligned call targets: base + v
+ -1 CV8-DOES-FAR? !       \ tag 2: DOES> writes the four-byte call form
+@@ -67,14 +60,14 @@
+ \ The previous word in this thread, or 0 at the end of the chain: the tag
+ \ byte before the name - six bits, and in its top two how many bytes below
+ \ it hold the rest, high to low.
+-  DUP DUP C@ 31 AND - 1- DUP C@ DUP 63 AND SWAP 6 RSHIFT  ( nfa a d k )  \ a: the link's last byte, before the name
++  DUP 1- DUP C@ DUP 63 AND SWAP 6 RSHIFT                 ( nfa a d k )
+   BEGIN DUP WHILE >R 8 LSHIFT SWAP 1- SWAP OVER C@ OR R> 1- REPEAT DROP SWAP DROP
+   ?DUP IF - ELSE DROP 0 THEN ;
+ 
+ \ ---- the header -----------------------------------------------------
+ : NAME>8 ( nfa --- xt )
+-\ The body follows the count byte directly (Iteration 232). No ALIGNED.
+-  1+ ;
++\ The body follows the name directly. No ALIGNED.
++  COUNT 31 AND + ;
+ 
+ : >BODY8 ( xt --- a-addr )
+ \ The kernel's >BODY is `CELL+`, which is only right when the body is
+@@ -96,15 +89,21 @@ VARIABLE HDR-LEN
+   \ on where the nfa lands, which depends on the link's length. Bound it
+   \ from above: the nfa is at most HERE+3, so size the link for that and
+   \ the real distance always fits.
+-  HDR-HEAD @ IF HERE 4 + HERE C@ + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !    \ tag 2: links up to 4 bytes
+-  \ Iteration 232: the characters up past the link, the link, then the
+-  \ count byte after them - the nfa, right before the body.
+-  HERE C@ >R  HERE 1+ HERE HDR-LEN @ + R@ CMOVE>
+-  HDR-HEAD @ IF HERE HDR-LEN @ + R@ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+-  R@ ALLOT  HERE LAST !  R> 128 + C, ;
++  HDR-HEAD @ IF HERE 4 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !    \ tag 2: links up to 4 bytes
++  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
++  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
++  HERE LAST !
++  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
+ 
+ \ ---- the search -----------------------------------------------------
+-\ NAME=? ( a1 a2 u --- flag ) is the kernel's since Iteration 233.
++: NAME=? ( a1 a2 u --- flag )
++\ BEGIN/WHILE rather than ?DO: the kernel never uses ?DO itself, so the
++\ translator has no case for it, and a word it cannot translate is
++\ copied as data and would run as garbage.
++  BEGIN DUP WHILE
++    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
++    1+ SWAP 1+ SWAP R> 1-
++  REPEAT DROP 2DROP -1 ;
+ 
+ : SEARCH-WORDLIST8 ( c-addr u wid --- 0 | xt 1 | xt -1 )
+ \ Same contract as the kernel's, byte compare instead of cell compare,
+@@ -114,7 +113,7 @@ VARIABLE HDR-LEN
+   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP   ( nfa )
+   BEGIN DUP WHILE
+     DUP C@ 31 AND NAMEBUF C@ = IF
+-      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
++      DUP 1+ NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+         DUP NAME>8 SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
+       THEN
+     THEN
+diff --git a/forth/cv8t-empty.4 b/forth/cv8t-empty.4
+index 12ad1ca..259ffb4 100644
+--- a/forth/cv8t-empty.4
++++ b/forth/cv8t-empty.4
+@@ -8,7 +8,7 @@
+ \ overlay - whose words begin with their header, so they are left alone.
+ 
+ : COMPILE,8 ( xt --- )
+-  DUP >NAME C@ 32 AND 0= IF
++  DUP PRIMITIVE? 0= IF
+     DUP C@ EXIT-OP = IF DROP EXIT THEN
+   THEN
+   COMPILE,8 ;
+diff --git a/forth/cv8t-fuse-imm.4 b/forth/cv8t-fuse-imm.4
+index 845095a..297456c 100644
+--- a/forth/cv8t-fuse-imm.4
++++ b/forth/cv8t-fuse-imm.4
+@@ -67,7 +67,7 @@ VARIABLE IMM-N  VARIABLE IMM-L  VARIABLE IMM-P
+   THEN THEN 0 ;
+ : COMPILE,8 ( xt --- )
+ \ cv8-fuse.4's, with n + and SWAP n + tried first.
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     DUP C@ ESC-OP = IF
+       DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+     ELSE
+diff --git a/forth/cv8t-fuse.4 b/forth/cv8t-fuse.4
+index a651fa4..d39951d 100644
+--- a/forth/cv8t-fuse.4
++++ b/forth/cv8t-fuse.4
+@@ -59,7 +59,7 @@ ALIGN
+ \ literal, an operand - stops the fusion, and anything that makes HERE
+ \ a branch target clears LAST-OP. The fused byte keeps LAST-OP, and no
+ \ fold or pair contains a fused opcode, so it never combines again.
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     DUP C@ ESC-OP = IF
+       DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+     ELSE
+diff --git a/forth/cv8t.4 b/forth/cv8t.4
+index a29bf31..ccc648d 100644
+--- a/forth/cv8t.4
++++ b/forth/cv8t.4
+@@ -149,7 +149,7 @@ ALIGN
+ : COMPILE,8 ( xt --- )
+ \ Add the execution semantics of xt to the current definition: a
+ \ primitive becomes its opcode byte, anything else a call.
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     \ A primitive's CV8 body is one opcode byte - C@, not @: the cell
+     \ compiler read a whole cell here because a token WAS a cell.
+     \ An escaped primitive's body is [ESC][selector]; inline both bytes
+diff --git a/forth/kernel-seed.img b/forth/kernel-seed.img
+index 1b34be7b20a29bedadd127aa6a108e2880685da8..b200d062842dd28ef69961e1c65b5ae24235030c 100644
+GIT binary patch
+literal 27400
+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%0AuFC54t8lA>%FVW
+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
+a_0e+d=&3Vj$77a2;r%9GWPjB}UjGf7Ge(L4
+
+literal 27744
+zcmeHQZB(1*d4B13X4u*V_Q!C}b|T{KSV}@bK0C+IrXV4`w%$b`AqgWj%?xv#pv^Vl
+zIt$((gUx5R75Ej{mxb-dI9q43tqW{zjgvSg`!Z>}nXDfsUAy3}D^9;m)@<7I>bb60
+z;?9xXv^o3J`A2T<uj{^_`}usIS5jhTcu%Qe7@6Nx|55)|(wb(A{L|Xpe_JDw=-Cno
+z$_f<t(@a{4vy_t-nuV>znTlfm%`ty#AoO%q5q*=^pQ{%79^|dW!I;X=BlHt_y%B7W
+zp79DjSewK<{L!-w#q~xkk~rfpu8-_9V`nX)FUZd@0>0C2LJt<iH=DYhK2UwS>vnph
+zdNzF<y}vbhrtda-BN97(>^AyjBz9&{=&$~dE^tm9Ydk$J^k6k<jGdmkoj&F}JtOoJ
+zh4{t?XJ>^TtS0Rbo<1-1cNO%%VLUkdtk7@qH}0EV6#Cl#M*CXLz5ayx^d+Hp{KN5(
+zwI}iP%R+yZ@nc&5iqJd$>W}u8d(XTo^tJSFZ>epG1fPCQ=(p5Ac;D$8LchWMjgFX=
+zFhB8z(BGA>Z_M-u&%P=2PX0>XoHEaplxTx8*cFm^)OV&#=r@?ZGK@#7&r}F~p?^&I
+zR|$Qge@yvTOZ^YfKSnUJ&mS8e2O#si>a^ch)C^vNUiS0jg?4oxJW&BVl3Dyg-0g2M
+zu2MYMc!K&Rw3l}I`YXG-2j7M($78lI52JCg0db`r#G2GKz71FAvBkc<@dR<tL&1FW
+zcJYKimKdJPkB_`c|J59cB!<R>{%)r~j6|&69AX_&mMr7E4nYnoUU$MLaCR5gAy#+7
+zCG;JI^*78GD^b&&N|@uDg?<YB!kY#CWEc;bshr)|im<zw$G5?T=8<0)TAcyU_LM;W
+z1}NLr^k4aSD%i=%B7U4_lgOhQIOU+6XHodKi8x?23B;WKe;*X}BJR&Z?t+~8ZaDb{
+z&1fPt%=z1mdZggT@v?xrvkpH6{VSlvJ(aKTF17CtS<sWxF5>j#E_?qT_P~ymcB9U?
+z3WWTz`-T~x{jezFUq?IDrmO7Z!^FAn<P|W(;XICgCbIwC21nV)ow#iG%i7Iw@bht%
+zeT`#J{C>29_S>9%40kZ%85#$kUr^S63UWz_2el&ZCWSXVz;TVZ9A`-wzSDTiz+?O>
+z;M9{sPh2nLDNxpz{>=L+r+;ljYmojk@M{2-eh`EF+93Cj3P@P@JMqj*(iCu*=W(nj
+z?y%|KXL?4Nrx$j#Cl2)<=p`@Pb9_?|AfvrCtj^mbw3l=R^G5n#<9v48?w+^#vkr3J
+zF#j3kISb11!v19*QN-tZz&xtpR|iTt@nwCeFN6JlwBLPSE`O)K4bU_G9LCEc<bFYC
+zz?TA#^KKAw#${ggCm!t>uMd6|pd`=Yk7`g^CpYq(1f7Ci73hyzr`_MdI57f|_SVF(
+z7kJFC1U%c*0KN^B^#*H`L@H_yy&?1$(9iy`wYSv_juKzaE5@7tzRrtrrTrz~_lY=7
+z`F+~`z&-hOko(mF^hvC*#P0?_CGf6&m-R8+@dCURtWVv*BM#$8oLk>>aMS@f?Ci5H
+z5%2MDJ9bek@Q`!vVO<!9?chF3c}n1Axo+EX?|n{OiN}7tR=9q8YaDx&C(AgrzW{|{
+zwW`O~#0dL|_Jbmyz0P=3ie2|Q_{`^JVSf?hASd2cd%_Dn<Is<M6ZFLC1K&`@?-j_8
+zfwEms-E#WDFz%~%;<CPe*s~tQPYawYTt{vBE}w(541D6zpFH!}*ix@*=e%tp4&(I$
+zk39YN=f_=>eSY%7uNsu+M9S%RwIFVb)p~LO{V)%?^k@Da;1cHw$A^-)_>(8=f%9yU
+zJc{9D;TP1;&!bcDzXUoicnf?#=2I`|BIL|(XF)&vo8u>0hiTZ$b}}CQx98_eQ29Ic
+zO&0O@p&s-<#dB-Cr8Z`^j8vk(29YP*$@Y-vd7k_LaL3{I8Yt^Y`O+KOuvojK{p20&
+z*^bD!G_J8HcfT;gIx;^W)=}B6Qsm9{G0#fG?L#}5uTQjV20Z(f`By+*0vfuh0}<Z?
+zc^T;4><61~x%b2*#<|RQ73XZmSqA?qaEPBoJm$@L=7T-s-r_ke=YQ`Yab$jgSL9y%
+z{$`kU<v3tmp3{kcS7E#Etv#`XdNY3+XMcfxyfNs^hcR5B5O;5WU9<BUBHl9a{Ydzx
+zXz!_l`DPfkgLlejJI9s6Q*oT<V43#@_Bk_Y2HF#*vpz824a`Rc)9jC%LzM-%cB-!z
+z?vugjiOv7i4M`rdwT7`R?{9>{!IP`dYwgzm2BYDV3qpS!^Ezk-tQLRRIsfo^n&*!+
+zpqTgT1?zCgOrGSp=6I?@y`|rN$nD!Qf53E}A6>xj6#eP!cRBO8Gk-aL-SC?S?i%{B
+z3i1`mJ>Z%Db50&c$c&jo8Pqu?>~`kujHo|&vR~M--5K~T3ja}#$Ch?`JdSXF&=2Ou
+z4E}fxbR4t+lzvjr_MFS-8H$91&iM@D>>9>9_jle8vAtc0L%i*IJf+z&*a?5yvw!{Y
+z^MbNn#HswI2C9bMCG56=UlejaH&E_IKE%DdFuxt~6FfKfV*VThUip7)jlU{zw&mx2
+zTs;8{)eC!<$g2kYG{yn*xspGRtNYR&Cs^NZtXpaL(f%Cb<itA~Ppn~H*2A849z)$N
+z_*Z^IH-I=3;B)HW18+Nr8Cb_TkNJGSek(;i`axH*o^&D)#u?2&zo?7+2b}XU(lWTu
+z(|$k4ea_&4!4P=%6YZ`#=jcF-dcov8=W)EuAppm}1%4cq<3sA(pr?Hoc#hAKBK!^E
+zHv@halzB~~Ud+P-J;!?)_$zE*u6d1bTff#}C-Y~X2;)58FkXZ3D`xM7-3?F+v`z4`
+zK8#CT4EL<Wd8hT+6yvwxelQjZhn;nc{lot4#C&0U<ntxxc?#`feQ0+Rap}JX-Vggu
+zG|&US40LCHpR>p3&=lmQ@IMcp<AVFqIPHL21-=s0(Tj6P2hNwuY>%bt!FbG@aXNux
+zfzE)k-Cf`-KuZMA{=ES?^D8#4eK)j68SHDF^Vlx?y|A;7^WJzB`#9rMz9jbd4bBf^
+zm;HWv*bjWRn>_2q_|L8Dd~EZM+K6-hfV*>FU7KIujaY%*dtgYs!uK_?+71Wrr-fal
+z0Iyj+f3kh7@1n4;%|C}JO(bfz)~J3p&wJp&_yzMoUFnA-aWiN4j91t-AyFO1ex+Fx
+zwpz{e4Z`jU##PQP_i8j}_l#fKVIUOX<?^#`XQ%OOyJy;@9rnSP8I8oPgcZ^4z0f7>
+zt~&dr4O2toPo{<4HOwD7zn~d56S^*c+9&Lu{Ca*o<fe{U6SqEOo<An+PNBW=R6O7h
+zhtCZP{qC*jZ)Fk*sQ2P?ZwR}q`TL7KG1ENzrqE|OPGY8=$I~SkaP05Vg1QG(H=<p?
+z>(w1$a9nZx^+8?@%JY%5<M`uzb_qPBX%J72!|Tp^=MMyGI)=wyE3B(wTzBSc4%jxb
+z-%E~pMVwObv!IsH9~b&#;Mu-z@E*`!)GH<IxZbi3Fw6Sz$12XB)Wh9bA7tKq?kScx
+z-#=0>^JYHGn{k;J`=9mTIg;(FU(=SXLq8Ip0;M1KEBY-$KMvXe+6BryO2E4?uNJVc
+zRzc3^H;?cG>(p(6^H+@k^<vezU!~m=)}J&4%zF-UnK$)3?^5r+uIs^m@_}c4SnteN
+zwVi?SD%(qZ*5ys)McnnTXn*3e4kaiU?FO(9u3`V{$2njTc%9I<fu|jDneR>HIW5ln
+zW$<JEU=8{&px<a0`6Ak_3=>xK$<;6CdHVh&(@1{3Qa1>#LknNpTA!==`;#52enZnj
+ze~at5Dq^GB@B4-RRKasm+zOsd3Vq@EBOVK!tQY$I`TLk1N<UO7^rtqFubGURfyBt<
+zTbk$dcN(3`@o>&ruiM(qSZa73^UWDg7|$W#@cB>TjI!PFNP8?`j&MEYyo~BJvg8?m
+z0&<;}cCN94<7*hV(*AX}FJ`KPKzL*Y{>&F_b{6gAJm5T{9n?k@{wPN~`CLlB4D`Js
+z9|s41Aq3{Rs{fa?<1d&;j`SRH9XZ(bX!`KuuE)}c4(1dMz^w-^>*?S^zaZ8{=GzH<
+z2>!ido#g#ZF<joyNImPv{wes}iaG$bI`0LTrwe(^g0gON;60#Tp&tNmfwqAXmpJDk
+z?|)TiM!8Semk6HixB)rq)(=G)<WrzBKklP4zZuxig08K;J9%;3jRV&M$~;HW&q^GB
+z$jZO}V!d3jXI`vR26E#4u<ax+an1vWybnC>N(5i5{%j}PH3dJJS1;riXd9@k|Bsu`
+z7!n-^z6X@~J(aJ!p)Pb|>N%?;5(|Eed6(mPtsM7NDfnmpMFTg0zln99`bEeY*8)#m
+zQu@z8Zy+Dq)1P+q<L6OWAG!Xqzmmvn4f}u>aTss)pLIKA9KXna9(JX`n*?4N?6yOW
+zB0BGVRv>5o%UIu2@LL3>eopA?5tsF#9rF#Lf9_O=C~#NTbbE=n`UTCiE^gS(!;bB{
+z%XyxRhVAzhm8;sX3;8F(Gd~~B(e&T#)W@*L*U&W9^GQ6vGd}xwTEk~6fbRmG0o}y8
+zU=cj?U|ksZshb+8)!$+^x9=HU{=DYlc1LoZ=jc6=SR$008(}M+`1k;DTtK+?A^peW
+z4{6%et?9*1P4_>l>F8scUI0B6)ci(5)2k^>_s2BdxexRaO*^2!p4R;CU)OZouWFjz
+zujxg^e=e%|y`7pqi8!?%*8EcsYubc(yWzk6fR;~yzmnAaZnX0pzE83Z9XF9br-l9T
+z#8Btww$^zA&z*rtYr;$>MtwrB(To3gg6Gy9YV??~5kvU*U_1rdV==QeF}n83*7*DL
+z_hTV{JmlOXS_s(&%JEhL{$)_wNqq=;aQ>m(h97=)sEfqseH-xyVP6Hxdr{(eAgA3p
+zcmw!-;LAYo*3Hj?wTFMB8vkR=-v!0;m$ji6`~aVy{#DDD-_n%xjQ%h;Ec}rMmHGxD
+zF9Dyyx|75Km;On_o5s4v_FUNV{v;Z+BC(p*J^pd#-6rDP4ZaU_4()Njs@t=6Rntkx
+znRhAdm!Ky;rkz2)8g?#F)~5<Q`;YDSK+g7DMEeZ8XFk~Uw)Y@Qu%808K--G&vyj&z
+zZ{}AI`8X)^7{Iu#fSiQ+@jS}>yHPjt#2bK|?XK5l%`#4<hy%6ry?|S&L)`So0{QiI
+z!jFVVeVE^@KkMSgxLC(|WCngI&~l8YIqXkv<g+O3*dFH1IILr5iFTm84gM9Na=cAq
+zzoXqO?1;Aso_M6RuPB1+{zqNGI^eHd)4WT><Gm8&jfr^E@N0lv#`Qto2TB|_c;;6E
+zz6zA%o_g8ee9opl@B7N&UyJ=(v3so6;E+6bdSOR=#$Wme9f^6ez3hi&)F%c1WsH|f
+ztUrs86Q6bsA|BU=%-`#Hw3~%p6{xHO#Lm4{IRrlB!MMzS0eTnoQ{ZX0iSx${<WbD~
+z%%;w35pw1?hj~DM#;Jpy9RGgEIUm?R<Y~|L`q0s|d;CjUU<9qbR-(zd4`sa0ztei=
+zvjU!Zahx$;1@a+b9QspF`8@C}I8aaeEaZKl?^fJ;(GHi0&(C*szPz>l<=A)GU(Ano
+z?=(NQ6W!vhxBI`QC5^4^EzM?Z)GOK_D$xSz&+#+``+l6SoO|<Sjmtbkup0+;W4tzi
+zFNRM&`;k23l2X3<s*ali?yI1F&;_CQVIN?8m>I;o0Ri)tc2ZBfD)`Og`Lzr@pL^7~
+z*Z$n~sH@0+$on@B{OI3=`*Yo0O-_Hc!H)Uyeex{i><78eWYBNYe<%FtZxz8`g#1qa
+zeIk!ufyZ&#kN!vtJ<rF*;=$Z`FGxJrjdh{CT*S#>|4RXA3N-Ui+Jo(v?d0d3SSPRW
+zXWcpeWgcu#1N^8j0WbB%^7v)gGY`h?7P#DJ=CO~+I<r19?vI++jvq2FzE`aLKg#P@
+ze#pEy?gnu0@@~~@2Jt6f&=qHY%|TwQpXGR?ALr9J{5_!TH}>mP5&1jqZ?C`sYlP6A
+zh3B`ni{oGBN8W|!zjP7YGRT=fX$1op@gqKICC+`!pY>aZzXjSR@E!m^3rauMoq4d%
+ztS94Su-~QO-yrZyz|)WVD#-6tzcuV5#AiNmciu}gpUO*H`)3{dRR4=w&U&$(TsP{m
+z9#Y?3BrfYvh6L`$ePKxb2t`<(Gonk{g85xU|Emx8_!EKr_mHPxu=a1-J_Vlg^&;}#
+zBJ%zs@@^z7@vG1=A?R7(DE3X(!7cQZdywys%NOg<tGtgi5}{b6V|WG6A?&wh<UfY~
+zW&7rY-4gPwhCTC*!Y?h_QHQuvzKMHqDfbnzFD)W(Ks@$y1@iKUJj%d(L0KoR+lxiy
+z=OHiutnN70YqAL5_tC$z(9^yieCUccC=aH8JN?mg&tcbZ9CQ87!6QA;SAn`gD`EdL
+z`hBT$k8~63gd6jt?jG&Hc5cT#I^q1y>K^(Y&lvNWgF=38f_fM9tP{F7%g>{XLqB&}
+zw`U!+7tfP7LB}9p2JOG7?ImtE?rGTmI^Z*o5B}_@Y4B69W4pIu-GMl01rjytdud~(
+zpVo09H=e@%U5?LLg)Q}a4j;o~z4JbPuE_IA>1Q-v3V_Uu?J}?s&i}2pW4ofTuM__C
+zE60I);iC5Ig+KMgO+wCg@5VXRFzk=o<-h04cC%l*5#I}1s>5V`tQ&9*)Qf)X59R^4
+zEboi%dNh6Ds2a{)M~=B3d*aZcY22%1UecD#a|7o#9sd5oW!y`pkq_}p!AF6U6gb(!
+zd-}lrCkBAiC2&f>mjb6;;N(9SnfvDQa6NEj9xK@I`hZugE>IiYC=mO74m|5{9M5O!
+z(=hf;?r<;gy#QzfWgY|IWqb@z=Q;h_8#<7YyC7~HUVmY0{rB>IC8R#`s@{h<{g3)g
+ziMU`5uJ6pp1w}XR1-#(fKxxPO&E%ragWs=z-{G#09CRJ+>2V$EIsCZ#>N5O%-_&-j
+zuMhI_=e7L3v4f8ud@OxfeQ4zUE~Oj8{^Y_rr4zIq<Jbd#;%{QTEdO_n$N5WI3HdzY
+z)nOj2eSNF_B5>(9fc|6NT)$^vH}{<OC(rRd4n6Z^{h03*^e*I+LH?7tFDixHf*tYe
+z5w8+@-kU87y9)5!2fI-}DUU*a9`<af3w$@$k1Ft3{)}GCr#0ML$vh|jTGypl#08Au
+z!-AX<{%l7*{8+CAoZHd>7zbs02Efz50elze65b1xfuDFy=V!#seWpJ=k`(7c#wBfo
+zALDWS_d(8hti$A|G(P3>+?j&k0OD4n|EDpZLL#3<*t7j?$2mNg8u~-hBgR`gu3M9A
+z1{Xo=f29TV>%qAlu<EC?EPr#@99w`N+X=nF_bT+ih5Hid)peHoy{Oj2*uW1oz#I-1
+z#35b7^VcdU<-}crocy)#Xgu{XpoIDm_;4lK!MrB6<nhQL@k(I8bu<m0xEqM0#SdSi
+zA8{v92kCbTa`jt=X3QVHLO)UixSN~Wkny&BPgOnSL|UTibN%-_p9|;bLfVi3@m%2h
+zKsi6T4sjffAzl^isP|!CH2zZO(~b2bDe}9B@n^dS;?a}yf1&LGXEd#W-<kX2n~_PO
+zuU&WStCjyy89HEIi?gzh6Bwrozp2oE0QPKG2yyuR`d_pTAL#i=@1cW754sNY96oxa
+z=aB28M~^&l;OG-a>`xl9-nAHiHoU6!FweKdtpx7UcXhz`+NkQoimsl+hmIBC;FzA(
+zb@;#~wuk-0c%`>A&OFY$&iuoCpxrf|$812i`dUXK8fi5>9~;*Joc+=Zp7}0<ZvgdS
+zeVGz|W5}Zoa^~p+-v`QZ<N`l{{iF&!*ZCyc!~CE7if*Sid;efL>dd(P=vUfb*XF8z
+z&E{UK^)m0Z=U&hX+MRRyOZ}RS6~4^Rc`|?IoB5vh>xRD@9Wn+v@or(g&*f?Dd43b^
+zka$t}RRWKC3}2%Z>&*bh3GtuA`mFF1A+z;Getv01?Av1(biVAjH0n#7?VMMJVTR-8
+zi&2p$`(qCAdx0<W?8N+D#d^tjK9SGnpWi;8TI}oUTVo-$KwVx!e{vk~^Yz4MJDND3
+z)fb!8w{>0`1J69!jy2>rhyA@9`7A>|3Au$jh3=5=6~>K50uPyqk<Cx)_QCxpo?OTI
+zRu^KYvp>2}nSoVZuMEc_>NmHc<z=lsM_rHgJaHJGS7U!)FW5gH-ucK28Eu|j7yHVS
+z=vNia{vkf+`>Tv^AU?+l=iMUmYXfE6?a0e`*oJ%Lr8&gy6>*Pa9_8GFk>@v&?<CfR
+zX{;Ok+(Zg-$}eg_<^!?8&v~XrJ`;GZvBl~K_g>)V3wT}{K%8ad$2fDJ)p6z_C$5Y;
+ze^cA_!=81RaMsJ*etent+Vf~<_p{p12fvVr&)+$z6Y+_E%6Z;YU(kz$_n9@hIKR*D
+z%d;I`)Pw7DCwR(fxA2**b>(x(3f9-oXSCiAf7YW4{Ipg(pCe+P5v<?J%>Kc+7t7I}
+zIZy+2s7L(G^BO3Lam0PvjeV1GiNC>lVdQ?0?(#hBSkF%2uYOwNP6L1QTbf@+KP}?|
+zQR4G+!ZG#pC+fr2SE9h@=TTU{QjCLTvCr+q^JzR0vs(Aw@4OFQLVO?cvQS6<zDWc4
+z5cY>v*t6YNxvtuF58U&75_xsw+{AH;>q(>X^SZtLnmG3s&i7YrocKM@*JB@JyEtw_
+zwqE_ai8@7##F_t`4p5Fb93Q@%x8c11WnTPT8=pI($dl*oCCpE@dp~dueX;sdC-PZB
+z``K=oWqr_ZVx6l4-}?=1L3`$N^A#=Uy^A66nMa3ne#s@`e1DvA%W>YO{k4L1NR@&I
+z%VnOINVyKW|3)LNKdos9{=}O=AYE3grNs<d>iKKD?h9JM{^LAv6ZQ9jKL*+W+6Bru
+zk-~M_a68Xo9@r6oVMWJXgq-na!H3Wejwc`F%eYT*3q8-b%%ckS186tpySLo8fA~^4
+z@XB#-k%k}hb^M(AH8w|rso_bi3)El1`s)5bAQDu+Bf5%lodO<zCu1DE1zP_J4O{`f
+z6x0Pd>zsz1@s2zB1S4j=@$&k&wO|0_mhC1k<JMsu6Xyc^t4TeN2Ob((KBsZmPn9AM
+z;_?354gE3X=X+iI|6KfN*MZ-19kjnaW~&%)!kGuQ)KVW7k40l<Vw|`xTde*qT-};S
+zn-)8tuQRaWEL_`a$MG@%d*W)Vtn<CP0qhs-pFV-_0`JB;T?L+>`*VFtBXU2WK3Sp-
+zJ@o(5*8F<U!0)S?-YGuwN4IAAe$)+|m9J}@pKm{$yKg=CsO!m|BkFL6{D>cgJ?qnn
+z{Fo<yM~L>cbHQ#6`w830`L>MlLwOSRF4#-FI_Mif$6z;51Yf>yT17nO&2g2#SIPmK
+z`~2Z{wZ4rdFK?~$6ykOkk#`r7-^9Mm_7JBY_G#dj3ZDH3wJ`@A+EcHy%x0yY-=`i2
+zK)3Lxe7=aB@BbN(_C8@>2K?h+)0wEL83?xr%^LNkf<0#J<GpwwU_1Vw{$y8RFVCSE
+zCecW4EuRSe3C0h~(}8tPu^dtM51{-WwtwgSE$0*O5#&6Z$323SFBFmcipa-=JcNmt
+z!G2y3o^klzg7c>o{^aX%-j?g78_#W3sKY97Isf>6h&Yt5FKI(5pD!ZsFCyo?9C6B!
+zM+EyBSoBHI`Q8w=RfE5i(tBO!vpvvtc;``9Pw&CQuJqvphn{%!VD8J{UI4NG_<3Qr
+z$1C<j=5Y<@UFF`^uKxcF>wm1{u<rca3fD)3F($vbwLUyI-~5c0k6qlVm;NE4ci}#l
+z-#=l!I#E{-0`qw(g!2va%>1E_$NuN}p!5@3{+@{b!k`=TLgquiNp0>tXYI%OtipHr
+zV=Y6=f20i<m-U$xa(=GHg?k^yW4~sWH4fWZjtlXSkZ<BWLmlK9<WIj<=zE1<9iETN
+zP`513n~DwCzth-{dJ(4^Jlj?JXF9)fobP)Phx(<nTF-W2co~z(kMBpuPHDSJ$QO~1
+z7nFFth{JyHLBH|`+MjmxZ-AcpSApkw$OAr_(f+-fWcmJN4Y-a!8sNkDm-=pz#}dXB
+w^W}RXm#|~L{m<wG`cG?G(Q)vQdNpFd(s%9YIdZhyr4t@QKTP6$Rfcx_FUz5@Bme*a
+
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index 5950f4b..17ff784 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -134,6 +134,64 @@ PRIMITIVE RP@      ( --- a-addr)
+ PRIMITIVE RP!      ( a-addr ---)
+ \ Set the return stack pointer to a-addr.
+ 
++PRIMITIVE OPEN-FILE
++PRIMITIVE CLOSE-FILE
++PRIMITIVE READ-LINE
++PRIMITIVE WRITE-LINE
++PRIMITIVE READ-FILE
++PRIMITIVE WRITE-FILE
++PRIMITIVE-SLOT (SYSTEM)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE REPOSITION-FILE
++PRIMITIVE FILE-POSITION
++PRIMITIVE DELETE-FILE
++PRIMITIVE FILE-SIZE
++
++\ Process-control primitives (shell support, see PROGRESS.md). Order
++\ here must match relf.c's dispatch table exactly, since PRIMITIVE
++\ assigns tokens sequentially as each of these lines is processed.
++PRIMITIVE SYSCALL ( block num --- r )  \ one system call, its arguments in the block; the shell's OS words are Forth on it
++PRIMITIVE-SLOT (EXECVE)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (WAITPID)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (PIPE)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (DUP2)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (GETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (SETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (SYS-EXIT)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (CHDIR)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (GETCWD)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (SYS-ARGC)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (SYS-ARG)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (GETPID)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (UNSETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
++\ Forth-2012 memory-allocation wordset, backed by the host's own
++\ malloc/free/realloc. This is memory OUTSIDE the image - it does not
++\ consume dictionary space and is not saved by SAVE-SYSTEM. Appended
++\ at the END of this list deliberately: primitive tokens are
++\ 1 + (position-1)*stride, so adding here leaves every existing token
++\ untouched, while inserting anywhere earlier would silently
++\ renumber them (see GOALS.md and PROGRESS.md 2026-09-01).
++PRIMITIVE ALLOCATE  ( u --- a-addr ior )
++PRIMITIVE FREE      ( a-addr --- ior )
++PRIMITIVE RESIZE    ( a-addr u --- a-addr2 ior )
++PRIMITIVE-SLOT (GETPWHOME)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (GETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
++PRIMITIVE-SLOT (SETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
++
++\ Iteration 242: every PRIMITIVE above, together at the start of the
++\ dictionary (the file words, SYSCALL and the memory words moved up from
++\ after BIN; their order - and so every token - unchanged), and the first
++\ word after them a marker: a word is a primitive exactly when its xt is below
++\ (PRIMITIVES-END)'s. COMPILE, asks this instead of reading the primitive
++\ bit through >NAME, whose scan back from the code crossed the name - a
++\ UTF-8 name's bytes (bit 7 set) stopped it, and one with bit 5 set read as
++\ a primitive's count byte. (PRIMITIVES-END) marks the place: a variable,
++\ so the address it gives is the running image's own in every encoding (a
++\ ticked literal here would be the cross-compiler's, START-relative, and the
++\ converter would not know it for an address). Its own xt reads as a
++\ primitive's - it is never compiled.
++VARIABLE (PRIMITIVES-END)
++: PRIMITIVE? ( xt --- flag )  (PRIMITIVES-END) U< ;
++
+ \ PART 2: RUNTIME PARTS THE VARIOUS DEFINITION CLASSES.
+ 
+ \ Only VARIABLES (or CREATE) need a runtime part in this system.
+@@ -651,48 +709,6 @@ VARIABLE DPL ( --- a-addr)
+ \ Modify the R/O W/O or R/W mode so that it applies to binary files.
+   1 + ;
+ 
+-PRIMITIVE OPEN-FILE
+-PRIMITIVE CLOSE-FILE
+-PRIMITIVE READ-LINE
+-PRIMITIVE WRITE-LINE
+-PRIMITIVE READ-FILE
+-PRIMITIVE WRITE-FILE
+-PRIMITIVE-SLOT (SYSTEM)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE REPOSITION-FILE
+-PRIMITIVE FILE-POSITION
+-PRIMITIVE DELETE-FILE
+-PRIMITIVE FILE-SIZE
+-
+-\ Process-control primitives (shell support, see PROGRESS.md). Order
+-\ here must match relf.c's dispatch table exactly, since PRIMITIVE
+-\ assigns tokens sequentially as each of these lines is processed.
+-PRIMITIVE SYSCALL ( block num --- r )  \ one system call, its arguments in the block; the shell's OS words are Forth on it
+-PRIMITIVE-SLOT (EXECVE)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (WAITPID)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (PIPE)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (DUP2)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (GETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (SETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (SYS-EXIT)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (CHDIR)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (GETCWD)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (SYS-ARGC)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (SYS-ARG)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (GETPID)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (UNSETENV)          \ the shell's, in Forth (forth/shell-sysc.4)
+-\ Forth-2012 memory-allocation wordset, backed by the host's own
+-\ malloc/free/realloc. This is memory OUTSIDE the image - it does not
+-\ consume dictionary space and is not saved by SAVE-SYSTEM. Appended
+-\ at the END of this list deliberately: primitive tokens are
+-\ 1 + (position-1)*stride, so adding here leaves every existing token
+-\ untouched, while inserting anywhere earlier would silently
+-\ renumber them (see GOALS.md and PROGRESS.md 2026-09-01).
+-PRIMITIVE ALLOCATE  ( u --- a-addr ior )
+-PRIMITIVE FREE      ( a-addr --- ior )
+-PRIMITIVE RESIZE    ( a-addr u --- a-addr2 ior )
+-PRIMITIVE-SLOT (GETPWHOME)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (GETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
+-PRIMITIVE-SLOT (SETFSIZE)          \ the shell's, in Forth (forth/shell-sysc.4)
+ 
+ : CREATE-FILE ( c-addr u mode --- fid ior)
+ \ Create a new file with the name starting at c-addr with length u.
+@@ -919,42 +935,48 @@ VARIABLE CURRENT ( --- addr)
+ \ for the compare's end - not 32 bytes a byte at a time (the audit).
+   32 MIN DUP 1+ ALIGNED NAMEBUF +  0 OVER !  0 SWAP 1 CELLS - !  NAMEBUF PLACE ;
+ 
+-\ Iteration 233: a header is [link cell][zeros][name][count byte], then the
+-\ body - the count byte LAST, right before the body: the nfa is the count
+-\ byte, the name the len bytes before it, the area len+1 rounded up to cells.
+-\ >NAME's scan back for bit 7 stops at the count byte at once; before, it
+-\ crossed the name, and a UTF-8 byte there (bit 7 set) with bit 5 set read as
+-\ a primitive's count byte - COMPILE, inlined garbage.
+-: PRIOR-NFA ( nfa --- nfa' )
+-\ The word before it in its thread, or 0: the link cell is just before the
+-\ name's area (len+1 rounded up to cells, ending at the nfa), relative to
+-\ itself. Not NEXT-NFA: the converter would put cv8b.4's NEXT-NFA8 into it,
+-\ and --drop-x8 drop the name NEXT-NFA8 that SPN looks up.
+-  DUP C@ 31 AND 1+ ALIGNED - 1+ CELLBYTES-TOK - DUP @ DUP IF + ELSE SWAP DROP THEN ;
+-: NAME=? ( a1 a2 u --- flag )
+-\ The byte headers' compare, the kernel's since Iteration 233 (cv8b.4 had it).
+-  BEGIN DUP WHILE
+-    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
+-    1+ SWAP 1+ SWAP R> 1-
+-  REPEAT DROP 2DROP -1 ;
+-
+ : SEARCH-WORDLIST ( c-addr u wid --- 0 | xt 1 xt -1)
+ \ Search the wordlist with address wid for the name c-addr u.
+ \ Return 0 if not found, the execution token xt and -1 for non-immediate
+-\ words and xt and 1 for immediate words. Iteration 233: the count byte,
+-\ then the name before it, a byte at a time.
++\ words and xt and 1 for immediate words.
+   ROT ROT
+   NAME>BUF
++  \ Pick the thread this name would have been filed under. Everything
++  \ below is unchanged: the chain walk, the cell-at-a-time compare and
++  \ the relative link field are all as they were.
+   DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP
+-  BEGIN DUP WHILE
+-    DUP C@ 31 AND NAMEBUF C@ = IF
+-      DUP DUP C@ 31 AND - NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+-        DUP 1+ SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
+-      THEN
++  DUP IF
++  BEGIN
++   \ Mask clears the flag bits within the count byte - which, since cells
++   \ are read native-endian (little-endian on every host targeted so
++   \ far - see GOALS.md phase 5), is the LOW byte of the cell, not the
++   \ high byte the old big-endian-packed mask (1 61 LSHIFT 1 -) assumed.
++   NAMEBUF @ OVER @ -225 AND = \ Compare first cells of names (-225: -1 224 XOR, once).
++           \ Mask off bits 5-7 of name length, these have special purposes.
++   IF
++    NAMEBUF CELL+
++    OVER CELL+
++    CELLBYTES-TOK >R
++    BEGIN
++     OVER @ OVER @ - >R
++     CELL+ SWAP CELL+ SWAP R> R> CELL+ >R \ Compare all of name until different
++    UNTIL
++    R> NAMEBUF C@ 1 + ALIGNED CELL+ = IF \ match to the right length then found
++     SWAP DROP SWAP C@
++     64 AND IF \ determine immediateness of a word from bit 6 of name length.
++      1
++     ELSE
++      -1
++     THEN
++     SWAP CELLBYTES-TOK NEGATE + SWAP EXIT \ Exit with execution token and flag.
+     THEN
+-    PRIOR-NFA
+-  REPEAT ;
+-
++    2DROP
++   THEN
++   CELLBYTES-TOK NEGATE + DUP @ DUP ROT ROT + SWAP 0 =  \ Take address of next word from link field until 0
++  UNTIL
++  THEN
++  DROP 0 \ Not found.
++;
+ 
+ : FIND ( c-addr --- c-addr 0| xt 1|xt -1 )
+ \ Search all word lists in the search order for the name in the
+@@ -1108,9 +1130,8 @@ VARIABLE DICT-MAX ( --- a-addr)
+   BEGIN 1- DUP C@ 128 AND UNTIL ;
+ 
+ : NAME> ( addr1 --- addr2 )
+-\ Convert address of name to address of code: the body follows the count
+-\ byte (Iteration 233), on a cell boundary already.
+-  1+ ;
++\ Convert address of name to address of code.
++  COUNT 31 AND + ALIGNED ;
+ 
+ : HEADER ( --- )
+ \ Create a header for a new definition without a code field.
+@@ -1120,26 +1141,20 @@ VARIABLE DICT-MAX ( --- a-addr)
+   \ So reserve the cell, remember where it is, and patch it below -
+   \ which is what SOD32 does.
+   HERE >R 0 ,
++  HERE LAST !         \ Set LAST so definition can be linked by REVEAL
+   32 WORD DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP
+                        \ Give warning if existing word redefined.
+   DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @
+   ?DUP IF R@ - R@ ! THEN    \ link, relative to the link cell itself
+   R> DROP
+-  \ Iteration 233: [zeros][name][count byte] - the name moved to end just
+-  \ before the area's last byte, the gap zeroed, the count byte last (bit 7
+-  \ its mark): the nfa, and LAST.
+-  C@ DUP >R 1+ ALIGNED                           ( k )         \ R: len
+-  HERE 1+  OVER R@ - 1- HERE +  R@               ( k src dst len )
+-  2 PICK 2 PICK U< IF CMOVE> ELSE CMOVE THEN     ( k )
+-  HERE OVER R@ - 1- 0 FILL
+-  HERE OVER + 1- DUP LAST !  R> 128 + SWAP C!
+-  ALLOT
++  C@ 1+ HERE C@ 128 + HERE C! ALLOT ALIGN
++                       \ Allot the name and set bit 7 in length byte.
+ ;
+ 
+ : REVEAL ( --- )
+ \ Add the last created definition to the CURRENT wordlist, at the head
+ \ of the thread its name hashes to.
+-  LAST @ DUP DUP C@ 31 AND SWAP OVER - SWAP CURRENT @ @ HASH   \ the name before its count byte (233)
++  LAST @ DUP COUNT 31 AND CURRENT @ @ HASH
+   1+ CELLS CURRENT @ + ! ;
+ 
+ : CREATE ( "ccc" --- )
+@@ -1175,7 +1190,7 @@ VARIABLE STATE ( --- a-addr)
+ 
+ : COMPILE, ( xt --- )
+ \ Add the execution semantics of the definition xt to the current definition.
+-  DUP >NAME C@ 32 AND \ if primitive compile inline
++  DUP PRIMITIVE? \ if primitive compile inline - by address (Iteration 242)
+   IF @ , ELSE HERE - CELL- , THEN
+ ;
+ 
+diff --git a/forth/kernel32-seed.img b/forth/kernel32-seed.img
+index 4a2b62b1214a1ddf1c5e7cee1e8a6eb7244d032f..02db7937d3ccd3c1a6794adb8f89a8150c7a6b5a 100644
+GIT binary patch
+literal 15044
+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
+WeN|J~bM*Mwp#tX>`SM&fr~el|c8zoZ
+
+literal 15212
+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
+DZTGe%
+
+diff --git a/forth/sod16.4 b/forth/sod16.4
+index 4208ffe..a4ade14 100644
+--- a/forth/sod16.4
++++ b/forth/sod16.4
+@@ -93,9 +93,10 @@ VARIABLE SOD16-TA  ( --- a-addr )
+ \ 319 and up, past the end of a table with 319 entries, and the engine
+ \ jumped through whatever followed it in memory.
+ 
+-\ PRIOR-NFA - the previous word in the chain, or 0 at the end - is the
+-\ kernel's since Iteration 233: the link cell sits before the name's area,
+-\ the count byte at its end.
++: NEXT-NFA ( nfa --- nfa' )
++\ The previous word in the chain, or 0 at the end. The link is stored
++\ RELATIVE to its own cell, exactly as the engine reads it.
++  1 CELLS - DUP @ DUP 0= IF 2DROP 0 EXIT THEN + ;
+ 
+ : SOD16-COLLECT ( --- )
+ \ Every eligible word, from every thread, in whatever order the chains
+@@ -109,7 +110,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
+         SOD16-TAB @ SOD16-N @ CELLS + !
+         1 SOD16-N +!
+       ELSE DROP THEN
+-      SOD16-NFA @ PRIOR-NFA SOD16-NFA !
++      SOD16-NFA @ NEXT-NFA SOD16-NFA !
+     REPEAT
+   LOOP ;
+ 
+@@ -182,7 +183,7 @@ VARIABLE SOD16-TA  ( --- a-addr )
+   THEN ;
+ 
+ : COMPILE,16 ( xt --- )
+-  DUP >NAME C@ 32 AND IF
++  DUP PRIMITIVE? IF
+     W@ OP,
+   ELSE
+     CALL,
+diff --git a/forth/spn-cv8-decode.4 b/forth/spn-cv8-decode.4
+index b84ac37..4723cfb 100644
+--- a/forth/spn-cv8-decode.4
++++ b/forth/spn-cv8-decode.4
+@@ -145,7 +145,7 @@ VARIABLE PREV-NFA  VARIABLE #WORDS  VARIABLE #FAIL  VARIABLE #DATA
+   PREV-NFA @ ?DUP IF
+     NAME> WALK                                       ( nfa end )
+     OVER DUP LINK-BYTES - > BAD @ OR TARGETS-OK 0= OR IF
+-      1 #FAIL +!  #FAIL @ 8 < IF PREV-NFA @ DUP C@ 31 AND SWAP OVER - SWAP TYPE SPACE THEN
++      1 #FAIL +!  #FAIL @ 8 < IF PREV-NFA @ COUNT 31 AND TYPE SPACE THEN
+     THEN
+     OP-K @ K-DOVAR = OP-K @ K-DODOES = OR IF 1 #DATA +! THEN
+     1 #WORDS +!
+diff --git a/forth/spn-full.4 b/forth/spn-full.4
+index 0d8a40f..be91755 100644
+--- a/forth/spn-full.4
++++ b/forth/spn-full.4
+@@ -642,12 +642,10 @@ VARIABLE UNDO  VARIABLE #UNDO  0 #UNDO !
+ \ map upward: that is definition order, with no sort. Callees are
+ \ defined before callers, so callers find them already native.
+ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
+-\ Iteration 233: the count byte is the header's last byte, right before the
+-\ body - marked by the BODY (cell-aligned), walked by the kernel's PRIOR-NFA.
+-: MARK ( nfa --- )  1+ MBASE @ - 3 RSHIFT MARKS @ + 1 SWAP C! ;
++: MARK ( nfa --- )  MBASE @ - 3 RSHIFT MARKS @ + 1 SWAP C! ;
+ : MARK-THREAD ( nfa --- )
+   BEGIN ?DUP WHILE
+-    DUP MARK  PRIOR-NFA
++    DUP MARK  CELL- DUP @ DUP IF + ELSE 2DROP 0 THEN
+   REPEAT ;
+ : TRANSLATE-ALL ( --- )
+   START @ MBASE !  HERE MBASE @ - 3 RSHIFT 1+ 7 + -8 AND MSIZE !
+@@ -655,12 +653,12 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
+   MARKS @ MSIZE @ 3 RSHIFT 0 CFILL
+   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ MARK-THREAD LOOP
+   MSIZE @ 0 DO
+-    MARKS @ I + C@ IF  I CELLS MBASE @ + TRY-TRANSLATE  THEN
++    MARKS @ I + C@ IF  I CELLS MBASE @ + NAME> TRY-TRANSLATE  THEN
+   LOOP
+   MARKS @ FREE DROP ;
+ 
+ \ ---- reporting ----
+-: .NAME ( xt --- )  >NAME DUP C@ 31 AND SWAP OVER - SWAP TYPE ;   \ the name before its count byte (233)
++: .NAME ( xt --- )  >NAME COUNT 31 AND TYPE ;
+ : SPN-WHY ( xt --- )   \ why is this word not native?
+   DUP @ TOK-ENTER = IF DROP ." native" EXIT THEN
+   DUP SHAPE-OK? 0= IF DROP ." not a translatable shape" EXIT THEN
+diff --git a/tools/dict-dump-addr.4 b/tools/dict-dump-addr.4
+index f5ca5b9..6af2c93 100644
+--- a/tools/dict-dump-addr.4
++++ b/tools/dict-dump-addr.4
+@@ -33,10 +33,6 @@ VARIABLE TA
+ : INIT-NFATAB 8192 CELLS ALLOCATE ABORT" dict-dump: out of memory" NFATAB ! ;
+ INIT-NFATAB
+ 
+-\ Iteration 233: [link][zeros][name][count byte] - the link cell is before
+-\ the name's area, the area len+1 rounded up to cells, ending at the nfa.
+-: LINKC ( nfa --- a )  DUP C@ 31 AND 1+ ALIGNED - 1+ CELLB - ;
+-
+ : COLLECT ( --- )
+ \ Every nfa in every thread, in whatever order the chains give them.
+   0 #NFA !
+@@ -45,7 +41,7 @@ INIT-NFATAB
+     BEGIN NFA @ WHILE
+       NFA @ NFATAB @ #NFA @ CELLS + !
+       1 #NFA +!
+-      NFA @ LINKC DUP @ ?DUP IF + NFA ! ELSE DROP 0 NFA ! THEN
++      NFA @ CELLB - DUP @ ?DUP IF + NFA ! ELSE DROP 0 NFA ! THEN
+     REPEAT
+   LOOP ;
+ 
+@@ -69,16 +65,16 @@ INIT-NFATAB
+   COLLECT SORTNFA
+   #NFA @ 0 DO
+     NFATAB @ I CELLS + @ NFA !
+-    NFA @ 1+ BP !                       \ the body follows the count byte
++    NFA @ DUP C@ 31 AND 1+ ALIGNED + BP !
+     \ The body ends where the next word by ADDRESS begins its link cell.
+     \ The newest word - first in this descending order - ends at HERE.
+-    I 0= IF HERE ELSE NFATAB @ I 1- CELLS + @ LINKC THEN BE !
++    I 0= IF HERE ELSE NFATAB @ I 1- CELLS + @ CELLB - THEN BE !
+     \ The raw count byte carries flag bits above the length - bit 5 is
+     \ the MACRO flag cross.4's PRIMITIVE sets. TYPE below masks them
+     \ off, so without this line an image rebuilt from this dump would
+     \ silently lose every flag.
+     S" H " TYPE NFA @ . NFA @ C@ . CR
+-    S" N " TYPE BP @ . BE @ . NFA @ DUP C@ 31 AND SWAP OVER - SWAP TYPE CR
++    S" N " TYPE BP @ . BE @ . NFA @ 1+ NFA @ C@ 31 AND TYPE CR
+     BEGIN BP @ BE @ < WHILE
+       S" B " TYPE BP @ . BP @ @ . CR
+       BP @ CELLB + BP !
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index 120f7ed..6ade63b 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -125,10 +125,10 @@ SPECS = {
+     'L_x_duplti':       (['a'], ['a', 'c'], 'c = -(UNS64)((INT64)a < (INT64)(int8_t)BYTE(ip)); ip += 1;'),
+     # Iteration 50
+     'L_x_fill':         (['a', 'u', 'c'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { BYTE(a_) = (UNS8)c; a_++; u_--; } }'),
+-    'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
++    'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+     'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+     'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
++    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+     'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
+     'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+     'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = (h_ ^ u) & (t - 1); n = h_; }'),
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index 6dcab89..70faa9e 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -93,11 +93,11 @@ HOT = {
+  'L_x_duplti':     'PUSHT(tos); tos = -(UNS64)((INT64)tos < (INT64)(int8_t)BYTE(ip)); ip += 1; NEXT();',
+  # Iteration 50: the byte loops as opcodes - three popped, the fourth the top
+  'L_x_fill':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; while (u_) { BYTE(a_) = (UNS8)c_; a_++; u_--; } } NEXT();',
+- 'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ - n_ + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } tos = a_; } NEXT();',
++ 'L_x_threadfind': '{ UNS64 nb_ = tos, a_ = NOS; dsp += CELL_BYTES; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } tos = a_; } NEXT();',
+  # Iteration 54: the input side - SCAN, SKIP: three in, two out; TABS>BL: two in
+  'L_x_scan':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+  'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+- 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ - m_ + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1; r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
++ 'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
+  'L_x_tonumber':   '{ UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();',
+  'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
+  'L_x_hash':       '{ UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 * CELL_BYTES; h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2; tos = (h_ ^ u_) & (t_ - 1); } NEXT();',
+diff --git a/tools/layout.py b/tools/layout.py
+index 8d4d313..e530358 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -211,8 +211,8 @@ if START is None:
+ # ---- the dictionary, oldest first ----------------------------------
+ order = list(reversed(words))          # definition order, as sod16.py numbers
+ for w in order:
+-    w['nfa']  = w['s'] - 1                                        # Iteration 233: the count byte, last
+-    w['link'] = w['s'] - align_up(len(w['n']) + 1, CELL) - CELL
++    w['nfa']  = w['s'] - align_up(len(w['n']) + 1, CELL)
++    w['link'] = w['nfa'] - CELL
+ starts = {w['s']: w for w in order}
+ num = {w['s']: i for i, w in enumerate(order)}
+ 
+@@ -369,7 +369,7 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD
+ # it or (POSTPONE)s it either (cv8.4's FOLD-OP under cv8-fuse.4's), it is
+ # reachable not at all. Both leave `order` only where nothing refers to
+ # them - checked, not assumed.
+-DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'LINKC', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')   # LINKC: 233
++DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')
+ if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and not _NO_LEAN:
+     _names = [w['n'] for w in order]
+     _k = len(_names) - 1 - _names[::-1].index('NFA') if 'NFA' in _names else None
+@@ -638,20 +638,16 @@ for w in order:
+         pv = _prev_in_thread[w['s']]
+         # Bound from above: the nfa lands at most 3 bytes past `off`, so
+         # a link sized for that distance always fits the real one.
+-        ll = 1 if pv is None else linklen(off + 3 + len(w['n']) - new_off[pv]['nfa'])
++        ll = 1 if pv is None else linklen(off + 3 - new_off[pv]['nfa'])
+         LINKLEN[w['s']] = ll
+-        # Iteration 232: the name, THEN the count byte - the nfa is the count
+-        # byte, right before the body, so >NAME's scan back for bit 7 stops
+-        # there at once: a name's own bytes (UTF-8) are never crossed.
+-        new_off[w['s']] = {'link': off}; off += ll + len(w['n'])
+-        new_off[w['s']]['nfa'] = off;   off += 1
++        new_off[w['s']] = {'link': off}; off += ll
++        new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
+         if body_needs_align(w): off = align_up(off, CELL)
+         new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
+     else:
+         new_off[w['s']] = {'link': off}
+         off += CELL
+-        _k = align_up(len(w['n']) + 1, CELL)                     # Iteration 233: [zeros][name][count]
+-        new_off[w['s']]['nfa']  = off + _k - 1; off += _k
++        new_off[w['s']]['nfa']  = off; off += align_up(len(w['n']) + 1, CELL)
+         new_off[w['s']]['body'] = off; off += new_body_bytes(w)
+ NEW_HERE = off
+ if BSS:                                              # Iteration 44: the buffers' place past the image
+@@ -1069,8 +1065,7 @@ def emit(path):
+             if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
+             else:       img += cel(linkval[s0])
+             nm = w['n'].encode('latin-1')
+-            if BYTEHDR: img += nm + bytes([flag.get(w['nfa'], 0x80 | len(nm))])   # Iteration 232: the count byte last
+-            else:       img += bytes(align_up(len(nm) + 1, CELL) - 1 - len(nm)) + nm + bytes([flag.get(w['nfa'], 0x80 | len(nm))])   # 233
++            img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
+         # pad to the body: a cell boundary in the classic layout, or only
+         # as far as body_needs_align() asked for in the byte layout
+         while len(img) < new_off[s0]['body']: img += b'\x00'
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 1f1fd87..0358b0c 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -594,12 +594,10 @@ def _expect(n):
+                  ('P', 'EXIT')],
+         'PLACE': [('C', '2DUP'), ('P', 'C!'), ('C', 'CHAR+'), ('P', 'SWAP'), ('C', 'CMOVE'), ('P', 'EXIT')],
+         # Iteration 51: the byte-header thread walk (forth/cv8b-kfast.4)
+-        # Iteration 232: the name before its count byte - DUP DUP C@ 31 AND - where DUP 1+ was
+-        'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 31 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
+-                        ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 18 * CELL), ('P', 'DUP'), ('P', 'DUP'), ('P', 'C@'),
+-                        ('LIT', 31), ('P', 'AND'), ('C', '-'), ('P', 'R@'),
++        'THREAD-FIND': [('P', '>R'), ('P', 'DUP'), ('QBR', 26 * CELL), ('P', 'DUP'), ('P', 'C@'), ('LIT', 31), ('P', 'AND'),
++                        ('P', 'R@'), ('P', 'C@'), ('P', '='), ('QBR', 13 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'R@'),
+                         ('C', '1+'), ('P', 'R@'), ('P', 'C@'), ('C', 'NAME=?'), ('QBR', 4 * CELL), ('P', 'R>'), ('P', 'DROP'),
+-                        ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -32 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
++                        ('P', 'EXIT'), ('C', 'NEXT-NFA8'), ('BR', -27 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+         'CMOVE': [('P', 'DUP'), ('QBR', 21 * CELL), ('P', '>R'), ('P', 'OVER'), ('P', 'R>'), ('P', '+'), ('P', '>R'),
+                   ('P', 'OVER'), ('P', 'C@'), ('P', 'OVER'), ('P', 'C!'), ('LIT', 1), ('LIT', 1), ('P', 'D+'),
+                   ('P', 'OVER'), ('P', 'R@'), ('P', '='), ('QBR', -13 * CELL), ('P', 'R>'), ('P', 'DROP'), ('C', '2DROP'),
+diff --git a/tools/vmtrace.py b/tools/vmtrace.py
+index ea3f44e..af82522 100644
+--- a/tools/vmtrace.py
++++ b/tools/vmtrace.py
+@@ -94,16 +94,13 @@ def named_run(M, eng, img, pw, text, out, cwd=None, probe=None):
+     unknown = sorted({t for r in first.values() for t, _ in r['path'] if M.word(t) is None})
+     if not unknown: return
+     body = re.sub(rb'\n\s*BYE\s*$', b'\n', text.rstrip() + b'\n')
+-    # Iteration 232: byte headers carry the count byte AFTER the name (the nfa
+-    # is the count byte), cell headers before it - print each its own way.
+-    nmp = b'DUP C@ 31 AND SWAP OVER - SWAP TYPE'      # byte and cell headers alike since Iteration 233
+-    epi = b''.join(b'CR 777001 . %d . %d START @ + >NAME ' % (a, a) + nmp + b' SPACE\n' for a in unknown)
++    epi = b''.join(b'CR 777001 . %d . %d START @ + >NAME COUNT 31 AND TYPE SPACE\n' % (a, a) for a in unknown)
+     # and every word compiled past the image, walking each thread with the
+     # design's own NEXT-NFA8 and NAME>8 (byte headers - the front and s6):
+     # what EXECUTE ran is never a call target, but its name is here
+     nm8 = b'NAME>8' if any(w[2] == 'NAME>8' for w in M.words) else b'NAME>'   # a lean --cv8-compiler image: NAME> holds its code
+     epi += (b': TRWALK ( lim --- ) FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @ BEGIN DUP WHILE DUP ' + nm8 + b' START @ -'
+-            b' DUP 3 PICK < IF DROP ELSE CR 777002 . . DUP ' + nmp + b' SPACE THEN NEXT-NFA8 REPEAT DROP LOOP DROP ;\n'
++            b' DUP 3 PICK < IF DROP ELSE CR 777002 . . DUP COUNT 31 AND TYPE SPACE THEN NEXT-NFA8 REPEAT DROP LOOP DROP ;\n'
+             b'%d TRWALK\n' % M.words[-1][1])
+     r = run(eng, img, pw, body + b'\n' + epi + b'CR BYE\n', out, cwd, probe)
+     M.runtime({int(a): n.decode(errors='replace') for a, n in re.findall(rb'77700[12] (\d+) (\S+)', r.stdout)})
+-- 
+2.43.0
+
+
+From 85fe50d0d599542946cbfb77e6025c14b0f3f7bd Mon Sep 17 00:00:00 2001
+From: Kirill Timofeev <kt97679@gmail.com>
+Date: Tue, 13 Oct 2026 04:36:38 +0000
+Subject: [PATCH 2/2] scratch: nobit7
+
+---
+ forth/coreext.4           |  16 ++++++++++++++++
+ forth/cross.4             |  25 ++++++++++++++++++++++---
+ forth/cv8b.4              |   2 +-
+ forth/cv8bt.4             |   2 +-
+ forth/kernel-seed.img     | Bin 27400 -> 27264 bytes
+ forth/kernel.4            |  29 ++++++++++++++++-------------
+ forth/kernel32-seed.img   | Bin 15044 -> 14976 bytes
+ forth/spn-full.4          |   8 +++++++-
+ lab/evolve/names-check.py |   5 ++++-
+ tools/layout.py           |   2 +-
+ tools/vmtrace.py          |   2 +-
+ 11 files changed, 69 insertions(+), 22 deletions(-)
+
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 850ee58..700d46b 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -344,6 +344,22 @@ VARIABLE TW-XT  VARIABLE TW-WID
+ : NAME>STRING ( nt --- c-addr u )  COUNT 31 AND ;
+ : NAME>INTERPRET ( nt --- xt )  NAME> ;
+ : NAME>COMPILE ( nt --- x xt )  DUP NAME> SWAP C@ 64 AND IF ['] EXECUTE ELSE ['] COMPILE, THEN ;
++\ >NAME (Iteration 244): the name token of the word whose code is xt, looked
++\ for in every word list of the search order; 0 when not there. Here, not in
++\ the kernel: no compiler asks it (PRIMITIVE? and POSTPONE decide without
++\ it), and with no marker byte to scan back for it walks - bytes better spent
++\ only where wanted.
++: >NAME ( xt --- nt | 0 )
++  >R #ORDER @ BEGIN DUP WHILE 1-
++    DUP CELLS CONTEXT + @  DUP @
++    BEGIN DUP WHILE
++      2DUP CELLS + @
++      BEGIN DUP WHILE
++        DUP NAME> R@ = IF >R 2DROP DROP R> R> DROP EXIT THEN
++        NEXT-NFA8
++      REPEAT DROP 1-
++    REPEAT 2DROP
++  REPEAT DROP R> DROP 0 ;
+ [THEN]
+ \ The eleventh wave (Iteration 194): the locals word set - {: (LOCAL) TO
+ \ ENVIRONMENT? - localstest. No kernel hook: the kernel's FIND walks the
+diff --git a/forth/cross.4 b/forth/cross.4
+index 9a4fc04..af4bc1f 100644
+--- a/forth/cross.4
++++ b/forth/cross.4
+@@ -204,9 +204,8 @@ VARIABLE NAMELEN
+   THEN
+   THERE TLINK !
+   THERE THIS-THREAD @ CELLS TTHREADS + !
+-  THERE C@-T 128 OR THERE C!-T
+   NAMELEN @ 1+ ALLOT-T ALIGN-T ;
+-      \ Set bit 7 of count byte as a marker.
++      \ (bit 7 of the count byte no longer a marker - Iteration 244)
+ 
+ \ : "HEADER CREATE ALIGN-T ;  \ Alternative for "HEADER in case the target system
+                       \ is just an application without headers.
+@@ -359,6 +358,19 @@ FORTH DEFINITIONS
+   PREVIOUS
+ ;
+ 
++\ The IMMEDIATE bit of the target word whose code is t-xt (Iteration 244):
++\ its header is found along the thread its name hashes to (T-THREAD, set by
++\ POSTPONE) - there is no marker byte to scan back for. 0 when not found.
++VARIABLE T-XT
++VARIABLE T-THREAD
++: TNAME> ( t-nfa --- t-xt )  DUP C@-T 31 AND 1+ + ALIGNED-T ;
++: T-IMMEDIATE? ( t-xt --- flag )
++  T-XT !  T-THREAD @ CELLS TTHREADS + @
++  BEGIN DUP WHILE
++    DUP TNAME> T-XT @ = IF C@-T 64 AND EXIT THEN
++    TARGET-CELL-BYTES @ - DUP @-T DUP IF + ELSE SWAP DROP THEN
++  REPEAT ;
++
+ : >BODY-T ( t-addr1 --- t-addr2 ) \ Convert executing token to param address.
+   \ NOTE: this is target-address arithmetic and must use CELLS-T, not the
+   \ host's CELLS. It only worked before because the host (RelF, 4-byte
+@@ -437,7 +449,14 @@ FORWARD (POSTPONE)
+ \ delimiters, so an empty string took the rest of the line (kernel.4's ABORT).
+ : ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE DUP 1+ >R
+       THERE PLACE-T R> ALLOT-T ALIGN-T ;
+-: POSTPONE [ TRANSIENT ] (POSTPONE) [ FORTH ] T' THERE - ,-T ;
++\ Iteration 244: a target POSTPONE decides immediacy here, from the target
++\ header's IMMEDIATE bit - an immediate word compiled as a call (it runs when
++\ the definition runs), any other through (POSTPONE), which compiles it. The
++\ kernel's (POSTPONE) no longer asks >NAME at run time (a scan back for a
++\ marked byte, broken by UTF-8 names; bit 7 marks nothing now).
++: POSTPONE >IN @ BL WORD COUNT THASH T-THREAD ! >IN !
++  T' DUP T-IMMEDIATE? IF THERE - CELLBYTES-TOKEN - ,-T
++  ELSE [ TRANSIENT ] (POSTPONE) [ FORTH ] THERE - ,-T THEN ;
+ : ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE DUP 1+ >R
+       THERE PLACE-T R> ALLOT-T ALIGN-T ;
+ 
+diff --git a/forth/cv8b.4 b/forth/cv8b.4
+index 109187a..0bec9d3 100644
+--- a/forth/cv8b.4
++++ b/forth/cv8b.4
+@@ -89,7 +89,7 @@ VARIABLE HDR-LEN
+   HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+   HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+   HERE LAST !
+-  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
++  HERE C@ 1+ ALLOT ;      \ bit 7 no longer marks the count byte (Iteration 244)
+ 
+ \ ---- the search -----------------------------------------------------
+ : NAME=? ( a1 a2 u --- flag )
+diff --git a/forth/cv8bt.4 b/forth/cv8bt.4
+index c326894..3a63331 100644
+--- a/forth/cv8bt.4
++++ b/forth/cv8bt.4
+@@ -93,7 +93,7 @@ VARIABLE HDR-LEN
+   HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+   HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+   HERE LAST !
+-  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
++  HERE C@ 1+ ALLOT ;      \ bit 7 no longer marks the count byte (Iteration 244)
+ 
+ \ ---- the search -----------------------------------------------------
+ : NAME=? ( a1 a2 u --- flag )
+diff --git a/forth/kernel-seed.img b/forth/kernel-seed.img
+index b200d062842dd28ef69961e1c65b5ae24235030c..279fe0f69893853cb16a91add84da7fc26f849fd 100644
+GIT binary patch
+delta 5993
+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
+
+delta 6153
+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
+
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index 17ff784..bbd9da7 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -1125,10 +1125,6 @@ VARIABLE DICT-MAX ( --- a-addr)
+ \ Add as many bytes to the dictionary as needed to align dictionary pointer.
+   BEGIN HERE CELLBYTES-TOK 1- AND WHILE 0 C, REPEAT ;
+ 
+-: >NAME ( addr1 --- addr2 )
+-\ Convert execution token addr1 (address of code) to address of name.
+-  BEGIN 1- DUP C@ 128 AND UNTIL ;
+-
+ : NAME> ( addr1 --- addr2 )
+ \ Convert address of name to address of code.
+   COUNT 31 AND + ALIGNED ;
+@@ -1147,8 +1143,8 @@ VARIABLE DICT-MAX ( --- a-addr)
+   DUP COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @
+   ?DUP IF R@ - R@ ! THEN    \ link, relative to the link cell itself
+   R> DROP
+-  C@ 1+ HERE C@ 128 + HERE C! ALLOT ALIGN
+-                       \ Allot the name and set bit 7 in length byte.
++  C@ 1+ ALLOT ALIGN     \ bit 7 no longer marks the count byte (Iteration 244)
++                       \ Allot the name.
+ ;
+ 
+ : REVEAL ( --- )
+@@ -1219,11 +1215,17 @@ VARIABLE 'LEAVE ( --- a-addr)
+ \ visible and leave compilation mode.
+   ?COMP EXIT-TOK , [ ?CSP REVEAL ; IMMEDIATE
+ 
++\ >NAME is not in the kernel (Iteration 244): no compiler needs it - COMPILE,
++\ asks PRIMITIVE?, POSTPONE decides immediacy by FIND's flag - and with bit 7
++\ of the count byte free, finding a header from its code means walking the
++\ word lists. coreext.4 has it, beside the name-token words.
+ : (POSTPONE) ( --- )
+-\ Runtime for POSTPONE.
+-\ has inline argument.
++\ Runtime for POSTPONE of a word that is not immediate: compile it.
++\ has inline argument. (Iteration 244: POSTPONE decides immediacy when it
++\ compiles, by FIND's flag; this asked >NAME every time it ran - a scan back
++\ across the name, which a UTF-8 name broke.)
+   R> DUP DUP @ + SWAP CELL+ >R
+-  DUP >NAME C@ 64 AND IF EXECUTE ELSE COMPILE, THEN
++  COMPILE,
+ ;
+ 
+ : : ( "ccc" --- )
+@@ -1365,10 +1367,11 @@ VARIABLE POCKET ( --- a-addr )
+   -1 THROW ;
+ 
+ : POSTPONE ( "ccc" --- )
+-\ Parse the next word delimited by spaces and compile the following runtime.
+-\ Runtime: depending on immediateness EXECUTE or compile the execution
+-\ semantics of the parsed word.
+-  POSTPONE (POSTPONE) ' HERE - , ; IMMEDIATE
++\ Parse the next word and append its compilation semantics: an immediate
++\ word is compiled to run when this definition runs, any other to be
++\ compiled then - by (POSTPONE). Decided here, by FIND's flag (Iteration 244).
++  32 WORD FIND DUP 0= ABORT" Not found"
++  1 = IF COMPILE, ELSE POSTPONE (POSTPONE) HERE - , THEN ; IMMEDIATE
+ 
+ : IMMEDIATE ( --- )
+ \ Make last definition immediate, so that it will be executed even in
+diff --git a/forth/kernel32-seed.img b/forth/kernel32-seed.img
+index 02db7937d3ccd3c1a6794adb8f89a8150c7a6b5a..32ebdcb2e7692daaaccb7d7c1ee357d30c929c9f 100644
+GIT binary patch
+delta 5996
+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
+
+delta 5988
+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
+
+diff --git a/forth/spn-full.4 b/forth/spn-full.4
+index be91755..693692c 100644
+--- a/forth/spn-full.4
++++ b/forth/spn-full.4
+@@ -658,7 +658,13 @@ VARIABLE MARKS  VARIABLE MBASE  VARIABLE MSIZE
+   MARKS @ FREE DROP ;
+ 
+ \ ---- reporting ----
+-: .NAME ( xt --- )  >NAME COUNT 31 AND TYPE ;
++: .NAME ( xt --- )   \ the name, found along FORTH-WORDLIST's threads (no >NAME in the kernel)
++  FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + @
++    BEGIN DUP WHILE
++      2DUP NAME> = IF COUNT 31 AND TYPE DROP UNLOOP EXIT THEN
++      CELL- DUP @ DUP IF + ELSE SWAP DROP THEN
++    REPEAT DROP
++  LOOP . ;
+ : SPN-WHY ( xt --- )   \ why is this word not native?
+   DUP @ TOK-ENTER = IF DROP ." native" EXIT THEN
+   DUP SHAPE-OK? 0= IF DROP ." not a translatable shape" EXIT THEN
+diff --git a/lab/evolve/names-check.py b/lab/evolve/names-check.py
+index 4af3290..8037276 100644
+--- a/lab/evolve/names-check.py
++++ b/lab/evolve/names-check.py
+@@ -34,8 +34,11 @@ PROG = '\n'.join([
+     ': суп 8 . ;  обед суп CR',
+     "' café EXECUTE CR",
+     "' обед EXECUTE ' voilà EXECUTE CR",
++    ': щи 1 ;  LAST @ C@ 128 AND . LAST @ C@ 31 AND . CR',                     # bit 7 of the count byte free (Iteration 244)
++    ': ёж2 12 . ; IMMEDIATE  : w9 POSTPONE ёж2 ;  : w10 w9 ;  w10 CR',             # POSTPONE of an immediate UTF-8 word
++    ': w11 POSTPONE суп ; IMMEDIATE  : w12 w11 w11 ;  w12 CR',                    # ... and of one that is not
+     'BYE', '']).encode()
+-WANT = ['5 5', '9', '3 3', '4', '6 6', '1', '2', '11', '5 5 8', '9', '5 5 3']
++WANT = ['5 5', '9', '3 3', '4', '6 6', '1', '2', '11', '5 5 8', '9', '5 5 3', '0 4', '12', '8 8']
+ def run(eng, img, pw):
+     r = subprocess.run([eng, img], cwd=pw, input=PROG, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+     out = r.stdout.replace(b'\r', b'').decode(errors='replace')
+diff --git a/tools/layout.py b/tools/layout.py
+index e530358..5d1a6ba 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1065,7 +1065,7 @@ def emit(path):
+             if BYTEHDR: img += linkbytes(linkval[s0], LINKLEN[s0])
+             else:       img += cel(linkval[s0])
+             nm = w['n'].encode('latin-1')
+-            img += bytes([flag.get(w['nfa'], 0x80 | len(nm))]) + nm
++            img += bytes([flag.get(w['nfa'], len(nm)) & 0x7F]) + nm      # Iteration 244: bit 7 free, no marker
+         # pad to the body: a cell boundary in the classic layout, or only
+         # as far as body_needs_align() asked for in the byte layout
+         while len(img) < new_off[s0]['body']: img += b'\x00'
+diff --git a/tools/vmtrace.py b/tools/vmtrace.py
+index af82522..0e91a83 100644
+--- a/tools/vmtrace.py
++++ b/tools/vmtrace.py
+@@ -94,7 +94,7 @@ def named_run(M, eng, img, pw, text, out, cwd=None, probe=None):
+     unknown = sorted({t for r in first.values() for t, _ in r['path'] if M.word(t) is None})
+     if not unknown: return
+     body = re.sub(rb'\n\s*BYE\s*$', b'\n', text.rstrip() + b'\n')
+-    epi = b''.join(b'CR 777001 . %d . %d START @ + >NAME COUNT 31 AND TYPE SPACE\n' % (a, a) for a in unknown)
++    epi = b''   # Iteration 244: no >NAME in the kernel - the walk below names every word compiled past the image
+     # and every word compiled past the image, walking each thread with the
+     # design's own NEXT-NFA8 and NAME>8 (byte headers - the front and s6):
+     # what EXECUTE ran is never a call target, but its name is here
+-- 
+2.43.0
+

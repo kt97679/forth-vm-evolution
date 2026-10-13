@@ -1,0 +1,17 @@
+HEAD ea9f79d scratch: names
+cloned at 3f7721730054
+2 commits past the clone point
+
+git status --short:
+ M engine/spn-cv8.c
+ M engine/vm-lab.c
+ M forth/cross.4
+ M forth/cv8b.4
+ M forth/cv8bt.4
+ M forth/kernel.4
+ M forth/sod16.4
+ M forth/spn-full.4
+ M lab/evolve/names-check.py
+ M tools/dict-dump-addr.4
+ M tools/layout.py
+ M tools/vmtrace.py

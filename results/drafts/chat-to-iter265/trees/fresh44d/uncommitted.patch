@@ -1,0 +1,500 @@
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 939098c..303a329 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -675,6 +675,10 @@ static void load_image(const char *name) {
+ 
+     base = (UNS8*)(((UNS64)(uintptr_t)mem + CELL_BYTES - 1)
+                     & ~(UNS64)(CELL_BYTES - 1));
++#if ENC == 3
++    {   UNS64 t_;                 /* Iteration 229: THROW's body - vm-lab.c's, read past here */
++        if (full_read(fd, (UNS8*)&t_, CELL_BYTES) != CELL_BYTES) { write_str(2, "Truncated image header.\n"); exit(2); } }
++#endif
+     len = full_read(fd, base, MEMSIZE);
+     close(fd);
+     if (len < 0) {
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 9651c30..f63b07f 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -696,6 +696,23 @@ static const int open_flags[10] = {
+ #define MAX_TAILS 16
+ static UNS64 nwords;
+ static UNS64 loc_hdr[5];   /* SPEC: lsp, lstk, lmax, lsave, lrestore (offsets) */
++#if ENC == 3
++static UNS64 throw_off;    /* Iteration 229: THROW's body (offset), from the header - 0: none */
++/*  Iteration 229: a zero divisor is -10 THROW (Forth 2012's "division by
++ *  zero"), not the CPU's fault: -10 where the divisor was, then a call to
++ *  THROW, as LSAVE's fallback calls a Forth word. Its dispatch is a macro of
++ *  its own, so a superinstruction that copies UM/MOD's body (gen-super.py)
++ *  does not run its second operation after it, and the cached-top engine
++ *  refills its top first (gen-tos.py redefines DIV0_DISPATCH as FILLNEXT).
++ *  Macros, so UM/MOD stays one line for the generators that read handlers.  */
++#ifndef DIV0_DISPATCH
++#define DIV0_DISPATCH() NEXT()
++#endif
++#define DIV0() do { DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; TRACE_CALL(); DIV0_DISPATCH(); } while (0)
++#define DIV0_CHECK() do { if (!DS0 && throw_off) DIV0(); } while (0)
++#else
++#define DIV0_CHECK() do { } while (0)
++#endif
+ #if ENC == 3 && HOTCALLS
+ static UNS64 hot_tab[32];  /* one-byte calls: image offsets, from the header */
+ #endif
+@@ -705,7 +722,11 @@ static void load_image(const char *name) {
+     long len;
+     UNS8 magic[8];
+     UNS64 head_nfa, ntails, nfa, link, nthreads;
+-    UNS64 heads[MAX_THREADS];
++    /*  Iteration 228: static, not on the C stack - 32 KB there, and the
++        compiler's stack-clash protection (Ubuntu's default) probed every page
++        of it at each start: 8 pages of every run's memory, for the 16 to 128
++        heads an image has. In BSS only the pages written count.  */
++    static UNS64 heads[MAX_THREADS];
+     UNS64 tail_w[MAX_TAILS], tail_o[MAX_TAILS];
+     long i, n;
+ 
+@@ -794,6 +815,14 @@ static void load_image(const char *name) {
+             exit(2);
+         }
+     }
++#if ENC == 3
++    /*  Iteration 229: THROW's body, written by the converter and by
++     *  SAVE-SYSTEM after the locals block - UM/MOD throws -10 there.  */
++    if (full_read(fd, (UNS8*)&throw_off, CELL_BYTES) != CELL_BYTES) {
++        write_str(2, "Truncated image header.\n");
++        exit(2);
++    }
++#endif
+ 
+ #if ENC == 3 && HOTCALLS
+     /*  Last in the header: a count byte, then that many 2-byte offsets.  */
+@@ -1118,7 +1147,14 @@ static int  t_olen = 0;
+ #ifndef FBUFSZ
+ #define FBUFSZ 4096
+ #endif
+-static struct fbuf { int fd, len, pos, raw; UNS8 b[FBUFSZ]; } t_fb[FBUFN];
++/*  Iteration 225: the slots' state together, their buffers apart. With each
++    buffer inside its slot, t_fslot's scan of the fd fields touched one page a
++    slot - 8 pages (32 KB) at 4 KB buffers, the first time any file was read -
++    and the fbuf gene bought that back with smaller buffers and more read(2).
++    Apart, the scan touches the state's one page; a buffer is touched when its
++    slot reads.  */
++static UNS8 t_fbb[FBUFN][FBUFSZ];
++static struct fbuf { int fd, len, pos, raw; UNS8 *b; } t_fb[FBUFN];
+ 
+ NOINLINE_IO static struct fbuf *t_fslot(int fd) {
+     int i, free_ = -1;
+@@ -1127,7 +1163,7 @@ NOINLINE_IO static struct fbuf *t_fslot(int fd) {
+         if (t_fb[i].fd == 0 && free_ < 0) free_ = i;   /* 0 marks unused */
+     }
+     if (free_ < 0) return 0;                           /* fall back to raw */
+-    t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0;
++    t_fb[free_].fd = fd; t_fb[free_].len = t_fb[free_].pos = 0; t_fb[free_].b = t_fbb[free_];
+     /* Iteration 104 (relf's READ-LINE): a descriptor that cannot seek - a
+        pipe, a FIFO, a terminal - is read a byte at a time: a byte read
+        ahead could not be given back, and the other end is shared with
+@@ -1987,7 +2023,7 @@ L_negate:  /* negate  */ DS0 = - DS0; NEXT();
+ L_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; NEXT();
+ L_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; NEXT();
+ L_ummult:  /* um*     */ umul(&DS0, &DS1); NEXT();
+-L_umdiv:   /* um/mod  */ udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
++L_umdiv:   /* um/mod  */ DIV0_CHECK(); udiv(&DS0, &DS1, &DS2); dsp += CELL_BYTES; NEXT();
+ L_dplus:   /* d+      */
+     DS3 += DS1; DS2 += DS0; DS2 += (DS3 < DS1);
+     dsp += 2 * CELL_BYTES;
+@@ -2055,6 +2091,8 @@ L_readline: { /* c-addr u1 fid --- u2 flag ior */
+ }
+ L_writeline: { /* c-addr u fid --- ior */
+     t_flush();
++    t_fdrop((int)DS0);          /* Iteration 225: what READ-LINE read ahead given back first, as WRITE-FILE does -
++                                   else a line written after a line read lands past the read-ahead */
+     int fd = (int)DS0;
+     UNS64 addr = DS2, len = DS1;
+     long n;
+diff --git a/forth/cv8-save.4 b/forth/cv8-save.4
+index e639f12..c451379 100644
+--- a/forth/cv8-save.4
++++ b/forth/cv8-save.4
+@@ -73,7 +73,8 @@ CREATE SS-NAME 40 ALLOT
+   S" LSAVE-STACK" SS-PFA  SS-CELL,          \ and its buffer
+   LSAVE-MAX               SS-CELL,          \ its limit
+   S" LSAVE"       SS-FIND START @ - SS-CELL,   \ fallbacks for ABORT" paths
+-  S" LRESTORE"    SS-FIND START @ - SS-CELL, ;
++  S" LRESTORE"    SS-FIND START @ - SS-CELL,
++  S" THROW"       SS-FIND START @ - SS-CELL, ;   \ Iteration 229: UM/MOD's zero divisor throws there
+ 
+ : SS-SCRUB-ALL ( --- )   \ NOT "SS-SCRUB8": that name would make --cv8-compiler
+ \ replace SS-SCRUB itself, and this word calls it - infinite recursion,
+diff --git a/forth/file-sysc3.4 b/forth/file-sysc3.4
+index d429b89..041c2f9 100644
+--- a/forth/file-sysc3.4
++++ b/forth/file-sysc3.4
+@@ -14,7 +14,6 @@
+ : WRITE ( c-addr u --- )  1 FS-WRITE DROP ;      \ stdout, all of it
+ : BYE ( --- )  0 60 FS1 ;                        \ exit(2); SYSCALL flushes first
+ 
+-VARIABLE FS-SEEK0  -1 FS-SEEK0 !                 \ stdin seekable: 1, not: 0, unknown: -1
+ VARIABLE FS-P                                    \ the buffer being read into
+ : FS-EDIT? ( c --- f )  DUP 10 = OVER 13 = OR OVER 8 = OR SWAP 127 = OR ;
+ \ Iteration 208: whether a file can seek, remembered for descriptors 0-63 -
+@@ -41,8 +40,7 @@ CREATE FS-SK 0 , 0 ,
+ : READ ( c-addr u --- u2 )                       \ what input there is, 0 at its end
+   DUP 0= IF SWAP DROP EXIT THEN
+   OVER FS-P !
+-  FS-SEEK0 @ 0< IF 0 FS-SEEKS? IF 1 ELSE 0 THEN FS-SEEK0 ! THEN
+-  FS-SEEK0 @ IF
++  0 FS-SEEKS? IF                                 \ Iteration 226: asked once, as for any file - FS-SEEK0 went
+     0 ROT ROT 0 FS3 DUP 0> 0= IF DROP 0 EXIT THEN
+     0 SWAP DUP FS-UPTO-EDIT FS-BACK EXIT
+   THEN
+diff --git a/forth/kernel-seed.img b/forth/kernel-seed.img
+index c919483c7a09d8a5b43a936fd67219b2e308a5ef..731cb434637d2c0fffde1b71b93f012cf609b755 100644
+GIT binary patch
+delta 3634
+zcmZ`+U2I!t8UD_>U?<)XwkPeJ7%6cAa-D4RoFYwLE;2if6DM^X$MF&;X&WbMT)P*k
+z2~sq;Njhk8cZ1XS#*9JJYIH8yhMPcfM@vutHj|Cvb{X?3CK(u$8w9v$Oa`rlW54fL
+zsg`;!&g1uaf4=8?zn_zo-xqQp2*!Zh+bc1~q?q>79!K=7@ehxQ>cRD`$L1atD(mCz
+zUwLTJF^=Bi0AebFs7xVdXUM-FQJN)x52Akr(H=rn{fLPm;Ur>q4AB`yOzx@SBCC7@
+ziSRx|^8rL<2r*53A%J#r0<l8ES7^Z0UgYD`h-I>^G;opx@^-L}YTSBcr|wZPC&0Y>
+zQ?P$s4;iNf&MpbmMydL{@eEdD$=__(o)&JyHydT)bGXqaL-@<mV(xA9>w97gv2Vo=
+z&6#JuZT`;e{2_{OB(xHyDE>?C`T0ZhW>lm3;+t3}ts*KkU<2hP|Au_R>gpZ}1Y6sX
+zhs9n)L+T6kjl=S=44Gd2gnAd5W0Y-u3+*Uj`S)nY^N14h9>U5c<PDVnKQy<acfr)x
+zG^}1n`#iZ7N?RtIi(YyU;}SjnyMj*+x@aj_;sWv%&LlY2x5H%pEwa4T9&#rx!bYFP
+zWTzzFQCfeNxd=K>(}05-SN=6t;nJBN%M^&`+R_D#JL2+shqO&w+ZI}A;sVTjEJl^2
+zFHzdk1^Ah#t3&x6W|?UjdA0C|$RB<JNApm64DRUUj{LjmEl{6$*7G-!e_<D;QPwn^
+z)yv%p%1YK{<!LoE<^6p=#<HY|&$xQ{tB?OWyxH$FCO^SJj&%84gKoyk*T6K;Ys}vv
+zy2^HG^S%OG-X=&6NcP+nba9!fKcaoq<97A91FT2_QX~*o6a|U{k|9n+`cq7ZLC52A
+zLz)D1z~RSbu<w?{)OqOKZ4nqu@0J(+G}<G9+5NMT*j#MxK&M%gpL++3gfAnm5c+9F
+z+NyKZ9=>o6?x(@&o?sk9#FuHjIPNFiwwWhD%fqs$YVGkhiKSmbr`M*7Q*dbm=DikC
+z-GG<8mbS{DsUZRPsN3abIhr9Kic8YNZEy2V{a-PfdpRn^XGpl6CRY3eItMMH<3pGk
+zv>2AoVK!e320t8pR!n>Zw+16ErO(iLWF+VcYHOSMCEC~-#?0%}zGlHtpxv7K1-W5)
+zNbcs1|L(4l+F9~&FJ<TdgwaQLc-^j1H?!9Hows3YXjCk&L$`la%&fyp{sl3d2jg(B
+zSU3k0!#+WQGs8PXPZ4fvobx)E0$n;rmxp>5W&*uJ28Ksu*9r+w{Ts*RvrSNEuLV7B
+zZL6~sU2M^77}rl)%^-|4i~f(Hb;Kq})sk%$l3V@^L!Y70!qxjzli&(Ai|Tu@HWINr
+z$;mPpRHS5UT~hJq=m)()fpAbSC5c!UW+Y)}nYPs79XKdInr70V+`{xMwK(+#tUWg;
+zr9MLX_#+B9M?)t28rt^%Ao87)R$*<_*0S<<q^~~PQ~PKpDa`s`<P{LcWYMXDY0M_*
+zp?~Zt9a~3N;S#(scC^)h2~Dm~Bz;lZbd^<T4~-gAq$5us!{jO)581TydpXo>tdKKK
+zPWvkSE7U873(z@k>CVz>e}5zx==b$K!H-7apCsfWB45b-KhWl@RlEwP#;Zf!7?;J&
+zCTxxSOeLBGSKUggJ)01iu(c|iSfWVnD3P5fJG2I;Cg#M%`(T{x6|J{nVzNu8@_RlF
+zrzUM;?gO|vxgh#)!oZ%U*5a#Jk$;(-G+>zSJM~p~aZj%<O*dA018(iHiPlxn?QIg{
+zo6x@3V#=S!8eBBLrL(8u;NFGC@ELUT{$wcp88CRXOX)Ni_l=7F8*p%+Ma&oA_`U@(
+zdk%C{7L)Vi`!l7VqFww83`{+(V|2@?ufU5_O~w?hEZ<6{SK!U5&pXO*VG^g8X@->t
+z@C?p|<&MMyym{hdRAq(Ra8i*QocF9dUsKH7pwQwMDC8K~3=U7rf~WS@SKngcI&4ha
+zB<U0eY6tEi@vAIP`{)P#zFpqudfZR?hx&a%cc6FzTK9KN^K)H4KM$Sjdfxv4zChoD
+z`gk*3-Y<7LR#B4!VVg(gDeGQ8>g@bgFwQ<LIAD2J7M5ynPwlPO-fxRbCtxCCX-U&(
+zm{-x4aG1m;L^GU>G>b(Qu0$+i<uYtVEbWdTqmS=gg|EnI<i(-gHAX!Fod;}-B|5F&
+z8*>E)HAna-7{({kB4EC?jyDjWeFNk9Cg=BwV*`0EJ)J|lNPqGX-_DZc$dSXba(`l+
+z{1O<VPc7<ccDyVjo6B8!9kbJPekIE0{t$J6%cWT`D~-y(o92^PCvyVvJaz%b9yVwn
+zn;TJCjJ^z8(XPc31;#OMyMZb`|1uI>Xe03j>SMj1QT#ojbr%r-ZzB66tV?l5M#`A}
+VHFW6Ve5_e9Q(uyIk!?Wz?EeYV$jbl#
+
+delta 3661
+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
+K%Cc~BNc<05zTDRU
+
+diff --git a/forth/kernel.4 b/forth/kernel.4
+index d292472..c464f63 100644
+--- a/forth/kernel.4
++++ b/forth/kernel.4
+@@ -1059,7 +1059,9 @@ VARIABLE HANDLER ( --- a-addr)
+ \ The newest CATCH frame on the return stack, or 0 (Forth 2012, 9.6; the
+ \ standard's reference design). ABORT is -1 THROW, ABORT" -2 THROW, an
+ \ undefined word -13 THROW under a CATCH; with none, THROW does what ABORT
+-\ always did - the same messages, then WARM (Iteration 171).
++\ always did - the same messages, then WARM (Iteration 171). Any other code
++\ uncaught is named first: "Division by zero" for -10, which UM/MOD throws
++\ for a zero divisor (the engine, Iteration 229), "Error n" for the rest.
+ \ The frame keeps the input source too: THROW restores the one in use when
+ \ CATCH began, as the standard has it - an EVALUATE's own restoring is on the
+ \ return stack THROW cuts back (exceptiontest's -13 in three EVALUATEs).
+@@ -1068,7 +1070,9 @@ VARIABLE HANDLER ( --- a-addr)
+   EXECUTE  R> HANDLER !  R> DROP R> DROP R> DROP R> DROP  R> DROP  0 ;
+ : THROW ( k*x n --- k*x | i*x n)
+   ?DUP IF HANDLER @ ?DUP IF RP! R> HANDLER !  R> SID ! R> >IN ! R> #SRC ! R> SRC !
+-          R> SWAP >R SP! DROP R> EXIT THEN WARM THEN ;
++          R> SWAP >R SP! DROP R> EXIT THEN
++      DUP 2 + 2 U< 0= IF DUP -10 = IF ." Division by zero" ELSE ." Error " DUP . THEN CR THEN
++      WARM THEN ;
+ : (ABORT") ( f --- )
+ \ Runtime part of ABORT"
+            IF HANDLER @ IF -2 THROW THEN R> COUNT TYPE SPACE HERE COUNT TYPE CR -2 THROW
+diff --git a/forth/kernel32-seed.img b/forth/kernel32-seed.img
+index b256289c74aba886061049a11fb1417d0b9e5617..1beae71875088ff617ae7782798d766b4b97e296 100644
+GIT binary patch
+delta 2932
+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
+HQ=$F`yz-1~
+
+delta 2669
+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
+
+diff --git a/forth/spn-cv8-save.4 b/forth/spn-cv8-save.4
+index b26bf47..77124e7 100644
+--- a/forth/spn-cv8-save.4
++++ b/forth/spn-cv8-save.4
+@@ -19,6 +19,7 @@
+ \     nthreads cell     then that many START-relative thread heads
+ \     ntails   cell     0: DODOES carries its target inline
+ \     locals   5 cells  0: no locals.4 in this system
++\     THROW    cell     its body, START-relative: UM/MOD's zero divisor throws there (229)
+ \     the dictionary, START to HERE
+ \
+ \ The magic is the byte-header stage's, read from its image; COLD's
+@@ -101,6 +102,7 @@ VARIABLE SV-KEEP  VARIABLE SV-BLOB
+   FORTH-WORDLIST @ 1+ 1 DO FORTH-WORDLIST I CELLS + SV>COPY @ SV-CELL, LOOP
+   0 SV-CELL,                                  \ ntails
+   5 0 DO 0 SV-CELL, LOOP                      \ locals header
++  ['] THROW START @ - SV-CELL,                \ THROW's body: UM/MOD's zero divisor (Iteration 229)
+   SV-BUF @ SV-LEN @ SV-WRITE
+   SV-FID @ CLOSE-FILE DROP
+   SV-BUF @ FREE DROP ;
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index b6ce4f9..c15eaf1 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -215,7 +215,7 @@ def fsys_level(g):                     # Iteration 205: 0 native, 1 seven words
+     return g.get('fsys', 0) if fsys_on(g) else 0
+ FSYS2_INTERNAL = ('FS-OFL', 'FS-END', 'FS-SAVED')
+ FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
+-FSYS3_INTERNAL = ('FS-SEEK0', 'FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
++FSYS3_INTERNAL = ('FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
+                   'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
+ FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
+ FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207
+diff --git a/lab/evolve/outbuf-check.py b/lab/evolve/outbuf-check.py
+index 0a8046e..678a59b 100644
+--- a/lab/evolve/outbuf-check.py
++++ b/lab/evolve/outbuf-check.py
+@@ -44,6 +44,10 @@ T1 = {                       # S" ... TYPE, words defined first: ." ABORT" DO LO
+     'file between':     'S" A" TYPE S" outbuf.tmp" W/O CREATE-FILE DROP DUP S" data" ROT WRITE-FILE DROP CLOSE-FILE DROP S" B" TYPE CR BYE',
+     'control chars':    '7 EMIT 8 EMIT 13 EMIT 9 EMIT S" z" TYPE CR BYE',
+     'engine fault':     ': R R ; S" pre " TYPE R',
++    # Iteration 229: a zero divisor is -10 THROW in every division word, caught or not
++    'DIVZERO':          ": T1 1 0 / ; ' T1 CATCH . : T2 7 0 MOD ; ' T2 CATCH . : T3 7 0 /MOD ; ' T3 CATCH . "
++                        ": T4 1 2 0 */ ; ' T4 CATCH . : T5 1 2 0 */MOD ; ' T5 CATCH . : T6 7 0 0 FM/MOD ; ' T6 CATCH . "
++                        ": T7 7 0 0 SM/REM ; ' T7 CATCH . : T8 7 0 0 UM/MOD ; ' T8 CATCH . CR\n1 0 / S\" lost\" TYPE\nS\" after\" TYPE CR BYE",
+ }
+ def run(v, prog):
+     eng, img, pw = builds[v]
+@@ -55,7 +59,11 @@ for name, prog in T1.items():
+     ref = run(0, prog)
+     res = {v: run(v, prog) for v in LEVELS[1:]}
+     ok = all(res[v] == ref for v in res)
+-    # Killed by a signal (1 0 / is SIGFPE in every engine here), native loses
++    # Iteration 229: every division word throws -10 for a zero divisor, at every
++    # level as native: eight -10s, the message for the one not caught, and on.
++    if name == 'DIVZERO':
++        fails += not (ref[1].count(b'-10 ') == 8 and b'Division by zero' in ref[1] and b'after' in ref[1] and b'lost' not in ref[1])
++    # Killed by a signal (the engine fault: a return stack run over), native loses
+     # what its C buffer held - the levels keep it: native's output a prefix of
+     # theirs, theirs alike, the same signal. Better than native, not worse.
+     kept = (not ok and ref[0] < 0 and all(r == ref or (r[0] == ref[0] and r[1].startswith(ref[1])) for r in res.values()))   # each level: native's, or more of it
+diff --git a/lab/evolve/readline-check.py b/lab/evolve/readline-check.py
+index fd7e2f1..c1bdd48 100755
+--- a/lab/evolve/readline-check.py
++++ b/lab/evolve/readline-check.py
+@@ -18,16 +18,22 @@ native, or the check fails. The program reads:
+     byte, the LF at the next block's first) and a line longer than it;
+   FILE-POSITION, REPOSITION-FILE, READ-FILE and FILE-SIZE between lines -
+     each must see the position of the lines read, not of the read-ahead;
+-  WRITE-LINE after a line on a file opened R/W - it must land after the
+-    line: judged by the file's bytes afterwards, not against native, whose
+-    WRITE-LINE does not give back what it read ahead (Iteration 214) - so
+-    native writes past its 4 KB read, and is reported, not followed;
++  WRITE-LINE after a line on a file opened R/W - it must land right after
++    the line: judged by the file's bytes, at every level, native included
++    (native's WRITE-LINE gave back nothing it had read ahead until Iteration
++    225, and wrote past its 4 KB read);
+   two files read in turn; a descriptor closed and its number used again
+     by another file; u1 = 0; the end of a file met again and again;
+   INCLUDED nested two deep;
+   a pipe opened as a file (/dev/stdin: the program's own input) - a line
+     taken from it must leave the next one to the interpreter: no
+     read-ahead where a file cannot seek (the owner's rule).
++
++And READ, the interpreter's own input, from a stdin that is a file (Iteration
++226): fsys 3-5's READ reads a block there and gives back what follows the
++first editing character - CR LF lines, a backspace and a delete inside a line,
++a line longer than ACCEPT's room, KEY, and no newline at the end - every
++level byte for byte as native, which reads a block and gives back too.
+ """
+ import os, sys, shutil, subprocess, importlib.util
+ HERE = os.path.dirname(os.path.abspath(__file__))
+@@ -92,12 +98,18 @@ S" rl4.txt" R/W OPEN-FILE . F !  BUF 200 F @ READ-LINE . . .  S" XX" F @ WRITE-L
+ BYE
+ '''
+ WANT = b'first\nXX\nond line\nthird\n'          # "XX" and its LF over "sec": right after the first line
++STDIN = (b'S" crlf" TYPE CR\r\n1 2 + . CR\r\n'
++         b'S" bacX\x08k" TYPE CR\n'
++         b'S" delY\x7fete" TYPE CR\n'
++         b': L 0 ; ' + b'S" ' + b'x' * 300 + b'" 2DROP S" long" TYPE CR\n'
++         b'KEY EMIT Q CR\n'
++         b'S" end" TYPE')                                # no newline at the end
+ 
+ fails = 0
+ for did in IDS:
+     g0 = E.recorded_genome(did)
+     if g0 is None: sys.exit('no design %s in results/' % did)
+-    out, wrote = {}, {}
++    out, wrote, fromfile = {}, {}, {}
+     for v in LEVELS:
+         g = dict(g0); g.pop('fsys', None)
+         if v: g['fsys'] = v
+@@ -109,6 +121,10 @@ for did in IDS:
+         files(pw)
+         subprocess.run([eng, img], cwd=pw, input=WPROG.encode(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
+         wrote[v] = open(os.path.join(pw, 'rl4.txt'), 'rb').read()
++        sf = os.path.join(pw, 'rl-stdin.txt'); open(sf, 'wb').write(STDIN)
++        with open(sf, 'rb') as fin:                      # a stdin that seeks
++            r = subprocess.run([eng, img], cwd=pw, stdin=fin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=60)
++        fromfile[v] = (r.returncode, r.stdout)
+         shutil.rmtree(d, ignore_errors=True)
+     ref = out[0]
+     lines = ref[1].count(b'\n')
+@@ -124,11 +140,17 @@ for did in IDS:
+             i = next((k for k in range(min(len(a), len(b))) if a[k] != b[k]), min(len(a), len(b)))
+             print('- fsys %d: DIFFERS (status %d) - line %d: native %r, fsys %d %r' % (v, out[v][0], i + 1,
+                   a[i][:100] if i < len(a) else b'<none>', v, b[i][:100] if i < len(b) else b'<none>'))
+-    for v in LEVELS[1:]:
++    for v in LEVELS:
+         fails += wrote[v] != WANT
++    same = [v for v in LEVELS[1:] if fromfile[v] == fromfile[0]]
++    fails += len(same) != len(LEVELS) - 1
++    print('- READ from a stdin that is a file (%d bytes out, status %d): %s' % (len(fromfile[0][1]), fromfile[0][0],
++          'fsys %s as native' % ', '.join(map(str, same)) if len(same) == len(LEVELS) - 1 else
++          'DIFFERS at fsys %s: native %r, %r' % (', '.join(str(v) for v in LEVELS[1:] if v not in same), fromfile[0][1][-120:],
++                                                 [fromfile[v][1][-120:] for v in LEVELS[1:] if v not in same][0])))
+     print('- WRITE-LINE after a line (R/W): %s; native %s' % (
+           'fsys %s right after the line' % ', '.join(str(v) for v in LEVELS[1:] if wrote[v] == WANT) if all(wrote[v] == WANT for v in LEVELS[1:])
+           else 'WRONG at fsys %s: %r' % (', '.join(str(v) for v in LEVELS[1:] if wrote[v] != WANT), [wrote[v] for v in LEVELS[1:] if wrote[v] != WANT][0]),
+-          'right after the line too' if wrote[0] == WANT else 'elsewhere (its read-ahead not given back): %r' % wrote[0]))
++          'right after the line too' if wrote[0] == WANT else 'WRONG - elsewhere (its read-ahead not given back): %r' % wrote[0]))
+ print('\n%s' % ('PASS' if not fails else 'FAIL - %d' % fails))
+ sys.exit(1 if fails else 0)
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index ce70636..70faa9e 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -198,6 +198,8 @@ s = s.replace("static void virtual_machine(void) {\n    VMREGS", """static void
+ #define VMPUSH PUSHT
+ #define SPILL() do { dsp -= CELL_BYTES; CELL(dsp) = tos; } while (0)
+ #define FILLNEXT() do { POPT(); NEXT(); } while (0)
++#undef DIV0_DISPATCH
++#define DIV0_DISPATCH() FILLNEXT()
+ #if ENC == 3
+ #define BROFF(a) ((int16_t)LD16(a))
+ #else
+diff --git a/tools/layout.py b/tools/layout.py
+index b7df732..e530358 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1297,6 +1297,9 @@ def emit(path):
+         lmax_v = [pl for k, pl in info[lmax['s']] if k in ('LIT', 'LITX')][0]
+         hdr += cel(body_of('LSAVE-SP') + CELL) + cel(body_of('LSAVE-STACK') + CELL)
+         hdr += cel(lmax_v) + cel(body_of('LSAVE')) + cel(body_of('LRESTORE'))
++    if V8:             # Iteration 229: THROW's body, for UM/MOD's zero divisor (-10 THROW); 0 if the image has none
++        _thr = [w for w in order if w['n'] == 'THROW']
++        hdr += cel(new_off[_thr[-1]['s']]['body'] if _thr else 0)
+     if HOT:            # last in the header: one-byte calls' targets, as image offsets
+         assert G['VARCALL'], "one-byte calls take far-call prefixes: they need --varcall"
+         _o = [new_target_off(a) for a in HOT]

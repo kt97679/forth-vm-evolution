@@ -1,0 +1,21 @@
+kind, info, tok = {}, {}, {}
+for w in order:
+    k, i = classify(w)
+    kind[w['s']], info[w['s']] = k, i
+
+if CV8_COMPILER:
+    # `X8` body becomes `X`'s body, so the image's compiler emits CV8.
+    _by = {}
+    for w in order:
+        _by.setdefault(w['n'], []).append(w)
+    _n, _miss, _unmatched = 0, [], []
+    for w in order:
+        if (len(w['n']) <= len(OVERLAY_SUFFIX)
+                or not w['n'].endswith(OVERLAY_SUFFIX)): continue
+        tgt = w['n'][:-len(OVERLAY_SUFFIX)]
+        if tgt not in _by:
+            _unmatched.append(w['n']); continue
+        dst = _by[tgt][-1]
+        if kind[w['s']] != 'code' or info[w['s']] is None:
+            _miss.append(w['n']); continue
+        kind[dst['s']], info[dst['s']] = 'code', list(info[w['s']])

@@ -1,0 +1,525 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 1636ccc..9dcbb3f 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -31,6 +31,12 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
+        S_DPLUS,                                  /* Iteration 137: the gene jitinl */
+ #endif
+        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
++#if JITK
++#include "jitk-map.h"                            /* Iteration 259, the gene jitk: tools/gen-jitk.py's */
++#define JIT_NST (S_N + JITK_N)                   /* the variants after the base stencils, spn_ktable's order */
++#else
++#define JIT_NST S_N
++#endif
+ 
+ #define JIT_IMM64 0x5ea1ed5ea1ed5ea1ULL         /* spn-stencils.c's SPN_IMM_VALUE */
+ #define JIT_RP64  0x7ea1ed5ea1ed5e77ULL         /* SPN_RP_VALUE */
+@@ -41,7 +47,7 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for
+     int len, imm, imm32, rp, tailnext;          /* tailnext: the body ends "jmp NEXT" - dropped */
+     int nnext, njump, ncall;                    /* how many holes of each */
+ };
+-static struct jit_st jit_st[S_N];
++static struct jit_st jit_st[JIT_NST];
+ 
+ static int32_t jit_rel32(const unsigned char *p) { int32_t v; memcpy(&v, p, 4); return v; }
+ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit_rel32(p) == (const unsigned char *)t; }
+@@ -55,17 +61,31 @@ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit
+ #else
+ #define JIT_SCAN_MAX 64
+ #endif
++static const unsigned char *jit_addr(int i) {
++#if JITK
++    if (i >= S_N) return (const unsigned char *)spn_ktable[i - S_N];
++#endif
++    return (const unsigned char *)spn_table[i];
++}
+ static void jit_scan(void) {
+     int i, k;
+-    for (i = S_LIT; i < S_N && i < spn_table_len; i++) {
++    for (i = S_LIT; i < JIT_NST; i++) {
+         struct jit_st *s = &jit_st[i];
+-        const unsigned char *a = spn_table[i], *hi = a + JIT_SCAN_MAX, *end = 0, *p;
++        const unsigned char *a0, *a, *hi, *end = 0, *p;
++        if (i < S_N && i >= spn_table_len) continue;
++        a0 = a = jit_addr(i); hi = a + JIT_SCAN_MAX;
+         s->len = -1;
+         if (a[0] == 0xF3 && a[1] == 0x0F && a[2] == 0x1E && a[3] == 0xFA) a += 4;     /* endbr64 */
+         for (k = 0; k < spn_table_len; k++) {
+             const unsigned char *e = spn_table[k];
+-            if (e > (const unsigned char *)spn_table[i] && e < hi) hi = e;
++            if (e > a0 && e < hi) hi = e;
+         }
++#if JITK
++        for (k = 0; k < spn_ktable_len; k++) {          /* a variant may follow a base stencil */
++            const unsigned char *e = spn_ktable[k];
++            if (e > a0 && e < hi) hi = e;
++        }
++#endif
+         if (i == S_EXIT) { for (p = a; p < hi; p++) if (*p == 0xC3) { end = p + 1; break; } }
+         else for (p = a; p + 5 <= hi; p++)
+             if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
+@@ -392,6 +412,51 @@ static int jit_tail(int i, int n, const unsigned short *opl, const UNS64 *arg, c
+ }
+ #endif
+ 
++#if JITK
++/*  Iteration 259, the gene jitk: the top K cells in registers across the copied
++ *  code (gen-jitk.py; results/price-jit-stack.md). jitk_cs is the cache state
++ *  while an operation is planned: a base stencil with a variant for it becomes
++ *  the variant (and the state it leaves); any other - control, calls, loops,
++ *  exits - runs in state 1, after the canonicaliser. So does every branch
++ *  target: the operation before it ends in state 1. Both the size pass and the
++ *  copying pass plan each operation here, so they agree byte for byte. A plan
++ *  entry is (stencil, which): which >= 0 the operation's own stencil number,
++ *  -1 a canonicaliser, -2 the call.  */
++static unsigned char jitk_tg[JIT_MAXOPS + 1];   /* operation i is a branch target */
++static int jitk_cs;
++static int jitk_canon(int st[], int wh[], int k) {
++    if (jitk_cs == 1) return k;
++    if (!jitk_canon1[jitk_cs]) return -1;
++    st[k] = S_N + jitk_canon1[jitk_cs] - 1; wh[k] = -1; jitk_cs = 1;
++    return k + 1;
++}
++static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, const UNS64 *at, int st[], int wh[]) {
++    int j, k = 0;
++    struct jit_op lit_op = { 1, 1, 1, 0, { S_LIT, 0, 0, 0, 0 } };
++    const struct jit_op *o = &lit_op;
++    (void)arg; (void)at;
++    if (opl[i] >= 0xFFFE) {                             /* a call: in state 1 */
++        if ((k = jitk_canon(st, wh, 0)) < 0) return -1;
++#if JITTAIL
++        st[k] = jit_tail(i, n, opl, arg, at) ? S_BRANCH : S_CALL;
++#else
++        st[k] = S_CALL;
++#endif
++        wh[k++] = -2; jitk_cs = 1;
++        return k;
++    }
++    if (opl[i] != 0xFFFD) o = &jit_ops[opl[i]];         /* else jitx's literal: S_LIT with its value */
++    for (j = 0; j < o->n; j++) {
++        int s = o->st[j], v = jitk_v1[s][jitk_cs];
++        if (v && jit_usable(S_N + v - 1)) { st[k] = S_N + v - 1; wh[k++] = j; jitk_cs = jitk_vout[v - 1]; continue; }
++        if ((k = jitk_canon(st, wh, k)) < 0) return -1;
++        st[k] = s; wh[k++] = j; jitk_cs = 1;
++    }
++    if (i + 1 < n && jitk_tg[i + 1]) k = jitk_canon(st, wh, k);
++    return k;
++}
++#endif
++
+ /* The operations from a to end - end 0: find it, a word without a header
+    (jitx) - of the word w: a call to w is a call to this code itself. */
+ #if JITX
+@@ -485,8 +550,29 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         if (f < 2) return 0;
+         arg[i] = (UNS64)(uintptr_t)(jit_mem + f); opl[i] = 0xFFFE;
+     }
++#if JITK
++    memset(jitk_tg, 0, (size_t)n + 1);  /* the branch targets: state 1 there */
++    for (i = 0; i < n; i++)
++        if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6) {
++            for (j = 0; j < n && at[j] != arg[i]; j++) ;
++            if (j < n) jitk_tg[j] = 1;
++        }
++    jitk_cs = 1;
++#endif
+     for (i = 0; i < n; i++) {           /* sizes, and every stencil usable */
+         nat[i] = size;
++#if JITK
++        {
++            int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
++            if (m_ < 0) return 0;
++            for (q_ = 0; q_ < m_; q_++) {
++                int s = st_[q_];
++                if (!jit_usable(s) || (wh_[q_] >= 0 && opl[i] < 0xFFFD && jit_st[s].njump && jit_ops[opl[i]].opnd < 6)) return 0;
++                size += (uint32_t)jit_len(s);
++            }
++            continue;
++        }
++#endif
+ #if JITX
+         if (opl[i] == 0xFFFD) { if (!jit_usable(S_LIT)) return 0; size += (uint32_t)jit_len(S_LIT); continue; }
+ #endif
+@@ -508,11 +594,40 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+     nat[n] = size;
+     off = (jit_used + 15) & ~15u;
+     if (off + size > JIT_MEM) return 0;
++#if JITK
++    jitk_cs = 1;
++#endif
+     for (i = 0; i < n; i++) {           /* copy and patch */
+         unsigned char *p = jit_mem + off + nat[i];
+         const struct jit_op *o;
+         UNS64 jt = 0;
+         int lit = 1;
++#if JITK
++        {
++            int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
++            const struct jit_op *o_ = opl[i] < 0xFFFD ? &jit_ops[opl[i]] : 0;
++            if (m_ < 0) return 0;
++            if (o_ && o_->opnd >= 6) {              /* a branch: to one of this word's operations */
++                for (j = 0; j < n && at[j] != arg[i]; j++) ;
++                if (j == n) return 0;
++                jt = (UNS64)(uintptr_t)(jit_mem + off + nat[j]);
++            }
++            for (q_ = 0; q_ < m_; q_++) {
++                int s = st_[q_];
++                if (wh_[q_] == -2) {                /* the call, or the tail call's jump */
++                    UNS64 to = opl[i] == 0xFFFF ? (UNS64)(uintptr_t)(jit_mem + off) : arg[i];
++                    p = s == S_CALL ? jit_put(p, S_CALL, 0, 0, to) : jit_put(p, S_BRANCH, 0, to, 0);
++                } else if (wh_[q_] == -1) p = jit_put(p, s, 0, 0, 0);       /* a canonicaliser */
++                else {
++                    UNS64 v = o_ ? (UNS64)(INT64)o_->k : arg[i];               /* no o_: jitx's literal */
++                    if (o_ && jit_st[s].imm >= 0 && lit && o_->opnd >= 1 && o_->opnd <= 5) { v = arg[i]; lit = 0; }
++                    p = jit_put(p, s, v, jt, 0);
++                }
++            }
++            (void)o;
++            continue;
++        }
++#endif
+ #if JITX
+         if (opl[i] == 0xFFFD) { jit_put(p, S_LIT, arg[i], 0, 0); continue; }
+ #endif
+diff --git a/engine/rt-linux-i386.c b/engine/rt-linux-i386.c
+index 3ab77bd..b68541f 100644
+--- a/engine/rt-linux-i386.c
++++ b/engine/rt-linux-i386.c
+@@ -78,6 +78,9 @@ int chdir(const char *p)                       { return (int)S(12, p, 0, 0); }
+ int unlink(const char *p)                      { return (int)S(10, p, 0, 0); }
+ int getrlimit(__rlimit_resource_t r, struct rlimit *l)       { return (int)S(191, r, l, 0); }   /* ugetrlimit */
+ int setrlimit(__rlimit_resource_t r, const struct rlimit *l) { return (int)S(75, r, l, 0); }
++/* Iteration 257: the engine's open (vm-lab.c's OPEN3), three arguments - see
++ * rt-linux-x86_64.c. */
++int rt_open(const char *p, int flags, int mode) { return (int)S(5, p, flags, mode); }
+ int open(const char *p, int flags, ...)
+ {
+     int mode = 0;
+@@ -112,6 +115,12 @@ __asm__(".text\n.globl rt_restorer\n.type rt_restorer,@function\nrt_restorer:\n"
+ void rt_restorer(void);
+ struct k_sigaction { void *handler; unsigned long flags; void *restorer; unsigned long mask[2]; };
+ int sigemptyset(sigset_t *s) { unsigned char *p = (unsigned char *)s; for (size_t i = 0; i < sizeof *s; i++) p[i] = 0; return 0; }
++/* Iteration 252: the fault handler's installation in the fewest bytes (see
++ * rt-linux-x86_64.c); i386's rt_sigaction is 174. */
++void rt_fault(void (*h)(int)) {
++    struct k_sigaction k = { (void *)h, 0x04000000UL, (void *)rt_restorer, { 0, 0 } };
++    sc(174, 11, (long)&k, 0, 8, 0, 0);
++}
+ int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *restrict old)
+ {
+     struct k_sigaction k, ko;
+diff --git a/engine/rt-linux-x86_64.c b/engine/rt-linux-x86_64.c
+index d063875..ae32aba 100644
+--- a/engine/rt-linux-x86_64.c
++++ b/engine/rt-linux-x86_64.c
+@@ -95,6 +95,10 @@ int chdir(const char *p)                       { return (int)S(80, p, 0, 0); }
+ int unlink(const char *p)                      { return (int)S(87, p, 0, 0); }
+ int getrlimit(__rlimit_resource_t r, struct rlimit *l)       { return (int)S(97, r, l, 0); }
+ int setrlimit(__rlimit_resource_t r, const struct rlimit *l) { return (int)S(160, r, l, 0); }
++/* Iteration 257: the engine's open (vm-lab.c's OPEN3) - three arguments, so no
++ * va_list and no register save area; the variadic open below stays for any
++ * other caller, and --gc-sections drops it when there is none. */
++int rt_open(const char *p, int flags, int mode) { return (int)S(2, p, flags, mode); }
+ int open(const char *p, int flags, ...)
+ {
+     int mode = 0;
+@@ -146,6 +150,15 @@ int sigaction(int sig, const struct sigaction *restrict act, struct sigaction *r
+     }
+     return (int)r;
+ }
++/* Iteration 252: the fault handler's installation in the fewest bytes - the
++ * kernel's struct filled in place, no old action, no mask, SIGSEGV alone (the
++ * engine maps no file, so no SIGBUS). The restorer stays: x86-64 delivers no
++ * signal without SA_RESTORER, though the handler (vm-lab.c's fault_trap)
++ * never returns. */
++void rt_fault(void (*h)(int)) {
++    struct k_sigaction k = { (void *)h, 0x04000000UL, (void *)rt_restorer, 0 };
++    sc(13, 11, (long)&k, 0, 8, 0, 0);
++}
+ /* Iteration 119: the stack guard's handler runs on its own stack (a C-stack
+  * overflow - the JIT's native recursion - leaves it none) */
+ int sigaltstack(const stack_t *restrict ss, stack_t *restrict old) { return (int)ok(sc(131, (long)ss, (long)old, 0, 0, 0, 0)); }
+diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
+index 3800ff2..cdb1da2 100644
+--- a/engine/spn-stencils.c
++++ b/engine/spn-stencils.c
+@@ -271,3 +271,6 @@ const void *const spn_table[] = {
+ #endif
+ };
+ const int spn_table_len = sizeof spn_table / sizeof spn_table[0];
++#if JITK
++#include "spn-jitk.inc"                 /* Iteration 259, the gene jitk: tools/gen-jitk.py writes it */
++#endif
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 0a70704..2cbcf9b 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -618,6 +618,49 @@ static void install_guards(UNS8 *b) {
+ }
+ #endif
+ 
++#if !GUARD
++/*  Iteration 252: a fault handler in every engine, not only the guard gene's.
++ *  A runaway pointer (0 @) killed 114 of seed 46's 127 front designs with a
++ *  bare SIGSEGV, and those whose output waited in a buffer for a pipe or a
++ *  file lost it. This one flushes it (t_flush: the engine's buffer and, at
++ *  fsys 4-5, the Forth side's), reports, and exits 70 as guard_trap does; the
++ *  guard gene adds the guard pages, the handler's own stack, and the messages
++ *  that say which stack.  */
++static void t_flush(void);
++static void fault_trap(int sig) {
++    (void)sig;
++    t_flush();
++    write_str(2, "relf: segmentation fault\n");
++    exit(70);
++}
++#if RTLIB
++/*  Without the C library (engine/rt-linux-*.c): the runtime's rt_fault fills the
++ *  kernel's struct itself - sigaction's general conversion cost ~300 bytes.  */
++void rt_fault(void (*h)(int));
++#define install_fault_trap() rt_fault(fault_trap)
++#else
++#include <signal.h>
++static void install_fault_trap(void) {
++    struct sigaction sa;
++    sa.sa_handler = fault_trap;
++    sigemptyset(&sa.sa_mask);
++    sa.sa_flags = 0;
++    sigaction(SIGSEGV, &sa, (struct sigaction *)0);
++    sigaction(SIGBUS, &sa, (struct sigaction *)0);
++}
++#endif
++#endif
++
++/*  Iteration 257: the engine's opens, through rt_open where the runtime is
++ *  linked - three arguments, no va_list: the C library's variadic open made
++ *  the runtime's set up a register save area (open was 95 bytes).  */
++#if RTLIB
++int rt_open(const char *p, int flags, int mode);
++#define OPEN3(p, f, m) rt_open((p), (f), (m))
++#else
++#define OPEN3(p, f, m) open((p), (f), (m))
++#endif
++
+ static void stack_fault(int which) {
+     write_str(2, which ? "relf: return stack overflow\n"
+                        : "relf: data stack overflow\n");
+@@ -742,12 +785,17 @@ static void load_image(const char *name) {
+     UNS64 tail_w[MAX_TAILS], tail_o[MAX_TAILS];
+     long i, n;
+ 
+-    fd = open(name, O_RDONLY);
++    fd = OPEN3(name, O_RDONLY, 0);
+     if (fd < 0) {
+         write_str(2, "Cannot open image file.\n");
+         exit(2);
+     }
+-    if (full_read(fd, magic, 8) != 8 || memcmp(magic, IMAGE_MAGIC, 5) != 0) {
++    /* Iteration 257: the magic's first four bytes as one 32-bit compare and the
++     * fifth alone - memcmp, its only caller here, was 42 bytes of every engine */
++    if (full_read(fd, magic, 8) != 8
++        || ((uint32_t)magic[0] | (uint32_t)magic[1] << 8 | (uint32_t)magic[2] << 16 | (uint32_t)magic[3] << 24)
++           != ((uint32_t)IMAGE_MAGIC[0] | (uint32_t)IMAGE_MAGIC[1] << 8 | (uint32_t)IMAGE_MAGIC[2] << 16 | (uint32_t)IMAGE_MAGIC[3] << 24)
++        || magic[4] != IMAGE_MAGIC[4]) {
+         write_str(2, "not a RelF image, or built for a different encoding "
+                      "or cell width.\n");
+         exit(2);
+@@ -2095,7 +2143,7 @@ L_openfile: { /* c-addr u fam --- fid ior */
+     int fd;
+     t = BYTE(DS2 + DS1);
+     BYTE(DS2 + DS1) = 0;
+-    fd = open((char *)(uintptr_t)DS2, open_flags[DS0], 0644);
++    fd = OPEN3((char *)(uintptr_t)DS2, open_flags[DS0], 0644);
+     BYTE(DS2 + DS1) = t;
+     DS2 = (UNS64)fd;
+     DS1 = (fd >= 0) ? 0 : 200;
+@@ -2561,6 +2609,7 @@ int main(int argc, char **argv) {
+                                     the guard ("Stack error DROP"); only a
+                                     runaway one reaches the guard page */
+ #else
++    install_fault_trap();
+     g_dsp = STK_END - RSTACK_BYTES - CELL_BYTES - DSKEW;
+ #endif
+     g_rp_limit  = STK_END - RSTACK_BYTES;
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 93f64e7..7b50661 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -21,6 +21,9 @@
+ | one SYSCALL (`sysc`: 0, 1; Iteration 136; CV8 designs - vm-lab.c's; **dormant** - in LATE, not in EXPRESSED, until seed 39 has run): the engine keeps one system call in FORK's slot and drops the shell's other seventeen process and environment primitives and the runtime's environment and getpwnam - none of which a design's image (the kernel) calls; the shell gets them back in Forth from forth/shell-sysc.4 (tests/shell, all 554 assertions, on a SYSC s5 shell: tools/test-sysc-shell.sh). Engines: five JIT designs -3,392 to -3,808 bytes, the smallest of seed 37 -2,880 (its total -14%), tail-call threading -6,568, msc -3,728; every one through the gate; off, ids, images and engines identical |  |  |
+ | the JIT's translator compiled for size (`jitos`: 0, 1; Iteration 239; JIT designs not built -Os): engine/jit.c under GCC's optimize ("Os") - it runs once per word translated; the stencils are compiled apart | results/price-stencils-bloom.md: a JIT engine's extra bytes are the translator, jit_body 3.5 KB | -416 to -800 bytes off JIT engines built -O2/-O3; translation speed is the trade |
+ | tail calls as jumps on the JIT (`jittail`: 0, 1; Iteration 246; JIT designs): engine/jit.c - a call to a native word whose next operation is EXIT, or a BRANCH chain to one, is translated as a jump to it, so its ret returns to the caller and tail recursion runs in place (no native stack growth). Return addresses are on the machine stack, so >R, R> and loop parameters are untouched. Measured on 28677d13b1 (VM, alternating runs): ackermann 15-18% faster, the other selection workloads within noise; +256 engine bytes. Off: the engine byte-identical (results/price-jit-calls.md) |
++| the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
++| link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
++| GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+ | one-operation words inline on the JIT (`jitinl`: 0, 1; Iteration 137; JIT with jitx; **dormant** until seed 39 has run): a call to a word of one operation and EXIT - 1+, 0=, 1- - is that operation in the caller (not one that branches, ends the word, or touches the return stack or the interpreter), and D+ gets its stencil back. Native call and return were a quarter of a small recursive word's time (2.92 -> 2.21 ns a call); D+ alone (Iteration 130) made -ack native and no faster - with the inlining, ackermann's long run 10.1 -> 5.0 ms (VM), its 12.7 M dispatches native. Gate, answers, the Forth 2012 suite as s6 on five JIT designs with jitloop; off, identical |  |  |
+ | compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 4161701..d30d16c 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -596,3 +596,11 @@ operation is EXIT - or a BRANCH chain to one - into a jump, so tail recursion
+ runs in place. Ackermann 15-18% faster on the VM (two of -ack's three calls are
+ tail calls), the other selection workloads within noise; +256 engine bytes; off,
+ the engine is byte-identical (results/price-jit-calls.md).
++
++Iteration 259: the gene jitk (0, 2 or 3 cells; JIT designs; in LATE, EXPRESSED and
++the JIT's crossover link): the JIT keeps the top K data-stack cells in fixed
++registers across its copied code. tools/gen-jitk.py generates, per build, the
++variant stencils (16 hot operations x K+1 states) and canonicalisers, and a map
++the translator plans each operation with; anything without a variant, and every
++branch target, runs in state 1. Measured on the VM: mixed (loop -9%, fib +16% at
++K=2); +2.3-2.8 KB of engine. Built so the laptop's evolution measures it.
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 5c677ed..8125ea9 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -54,6 +54,12 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
+     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
+     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
++    ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259
++    ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
++    ('link-time optimisation', dict(lto=1), ['lto']),                           # Iteration 260
++    ('the JIT with link-time optimisation', dict(JIT, lto=1), ['jit', 'lto']),
++    ('tail calls with link-time optimisation', dict(tail=1, lto=1), ['tail', 'lto']),
++    ('goto unfactoring 32', dict(gotodup=1), ['gotodup']),
+ ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
+ 
+ bad = []
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c515629..67b9722 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail')
++LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -116,6 +116,9 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
+ EXPRESSED['cv8'] += ['jitloop', 'jitinl']
+ EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
+ EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
++EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
++EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation; GCC's goto unfactoring (results/missed-options-2026-10.md)
++JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
+ EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+ EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
+ EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
+@@ -442,6 +445,7 @@ def express(g):
+     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
+     if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
+     if 'jittail' in e and not jit_on(g): e.pop('jittail')                          # Iteration 246: on the JIT
++    if 'jitk' in e and (not jit_on(g) or not e['jitk']): e.pop('jitk')            # Iteration 259: on the JIT; 0 is off
+     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
+     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
+     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+@@ -533,7 +537,7 @@ def rt():
+     # static engine has no dynamic relocations, and their padding made the
+     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
+     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
+-                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', RTC, '-lgcc',
++                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', RTC, '-lgcc',
+                  '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
+     # --gc-sections (Iteration 113): the runtime is one object file, so code
+     # nothing calls came along - vsnprintf, snprintf, execvp, syscall,
+@@ -553,8 +557,11 @@ def bin_size(eng):
+     engine.full, for tail_offenders and anyone with nm or gdb."""
+     return os.path.getsize(eng)
+ 
++GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
+ def ccflags(g):
+-    return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
++    f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
++    if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
++    return f
+ 
+ def tail_offenders(eng):
+     """Handlers whose machine code CALLS through an indexed table - a
+@@ -585,7 +592,7 @@ def build_tail(g, d, src, flags, eng):
+     for attempt in range(2):
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
+         if r.returncode: raise RuntimeError('died: tail-call generation')
+-        if sh(['cc'] + ccflags(g) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
++        if sh(['cc'] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+         bad = tail_offenders(eng)
+         if not bad: return
+         wrap = sorted(set(wrap) | bad)
+@@ -694,6 +701,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
+     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
+     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
++    if jit_on(g) and express(g).get('jitk'): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils
+     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
+     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
+     if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
+@@ -729,7 +737,18 @@ def _build(g, d):
+         else:
+             jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+                    os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
+-            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + jit + rt())
++            if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
++                if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
++                    raise RuntimeError('died: stack-cache generation')
++            lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
++            if lto and jit:                                      # the stencils outside it: the JIT reads their code as compiled
++                objs = []
++                for c in ('spn-stencils.c', 'spn-markers.c'):
++                    o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
++                    r = sh(['cc'] + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
++                    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
++                jit = jit[:4] + objs
++            r = sh(['cc'] + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
+     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
+@@ -1042,6 +1061,10 @@ def mutate(g, rnd):
+             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
+         elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
+             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
++        elif k == 'gotodup':          # Iteration 260: GCC's goto unfactoring - its default, 32, 128
++            g['gotodup'] = rnd.choice([v for v in range(len(GOTODUPV)) if v != g.get('gotodup', 0)]); what.append('gotodup=%s' % GOTODUPV[g['gotodup']])
++        elif k == 'jitk':             # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
++            g['jitk'] = rnd.choice([v for v in JITKV if v != g.get('jitk', 0)]); what.append('jitk=%d' % g['jitk'])
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+             g['fbuf'] = rnd.choice([v for v in range(len(FBUFV)) if v != g.get('fbuf', 0)]); what.append('fbuf=%d' % FBUFV[g['fbuf']])
+         elif k == 'fsys':             # Iteration 205: 0 native, 1 seven words in Forth, 2 every file word
+@@ -1304,7 +1327,7 @@ def crowding(front, R):
+ # dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
+ # evaluations: drawn one time in ten (SLOW_GENES).
+ XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
+-LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
++LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail', 'jitk'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
+ SLOW_GENES = ('varcall', 'doesfar')
+ ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
+ ATTIC_P = float(os.environ.get('EVOLVE_ATTIC_P', 0.1))
+@@ -1570,6 +1593,8 @@ def random_genome(rnd):
+         elif k == 'hotcalls': g[k] = rnd.choice(HOTN)
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
++        elif k == 'jitk': g[k] = rnd.choice(JITKV)         # Iteration 259
++        elif k == 'gotodup': g[k] = rnd.randrange(len(GOTODUPV))   # Iteration 260
+         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
+         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
+         elif k == 'opcall': g[k] = [n for n in OPCALL_POOL if rnd.random() < 0.5]
+diff --git a/tools/engine-rt.sh b/tools/engine-rt.sh
+index ff4da75..ebe27fb 100644
+--- a/tools/engine-rt.sh
++++ b/tools/engine-rt.sh
+@@ -18,8 +18,8 @@ case "${ENGINE_RT:-nolibc}" in
+         if [ "$(uname -s)-$(uname -m)" = Linux-x86_64 ]; then
+             RT_FLAGS="-static -no-pie -nostdlib -fno-stack-protector"
+             RT_FLAGS="$RT_FLAGS -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0"
+-            RT_FLAGS32="$RT_FLAGS $ROOT/engine/rt-linux-i386.c -lgcc"
+-            RT_FLAGS="$RT_FLAGS $ROOT/engine/rt-linux-x86_64.c -lgcc"
++            RT_FLAGS32="$RT_FLAGS -DRTLIB=1 $ROOT/engine/rt-linux-i386.c -lgcc"
++            RT_FLAGS="$RT_FLAGS -DRTLIB=1 $ROOT/engine/rt-linux-x86_64.c -lgcc"
+         else
+             echo "note: ENGINE_RT=nolibc is for x86-64 Linux; linking with the C library" >&2
+         fi ;;

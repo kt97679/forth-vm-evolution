@@ -1,0 +1,5 @@
+== run-tests
+exit 0: PASS - no regressions
+== validate
+7
+== gate

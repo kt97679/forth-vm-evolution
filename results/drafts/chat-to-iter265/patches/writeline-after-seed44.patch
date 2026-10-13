@@ -1,0 +1,46 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 9651c30..7d962eb 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -2055,6 +2055,8 @@ L_readline: { /* c-addr u1 fid --- u2 flag ior */
+ }
+ L_writeline: { /* c-addr u fid --- ior */
+     t_flush();
++    t_fdrop((int)DS0);          /* Iteration 225: what READ-LINE read ahead given back first, as WRITE-FILE does -
++                                   else a line written after a line read lands past the read-ahead */
+     int fd = (int)DS0;
+     UNS64 addr = DS2, len = DS1;
+     long n;
+diff --git a/lab/evolve/readline-check.py b/lab/evolve/readline-check.py
+index fd7e2f1..10c30de 100755
+--- a/lab/evolve/readline-check.py
++++ b/lab/evolve/readline-check.py
+@@ -18,10 +18,10 @@ native, or the check fails. The program reads:
+     byte, the LF at the next block's first) and a line longer than it;
+   FILE-POSITION, REPOSITION-FILE, READ-FILE and FILE-SIZE between lines -
+     each must see the position of the lines read, not of the read-ahead;
+-  WRITE-LINE after a line on a file opened R/W - it must land after the
+-    line: judged by the file's bytes afterwards, not against native, whose
+-    WRITE-LINE does not give back what it read ahead (Iteration 214) - so
+-    native writes past its 4 KB read, and is reported, not followed;
++  WRITE-LINE after a line on a file opened R/W - it must land right after
++    the line: judged by the file's bytes, at every level, native included
++    (native's WRITE-LINE gave back nothing it had read ahead until Iteration
++    225, and wrote past its 4 KB read);
+   two files read in turn; a descriptor closed and its number used again
+     by another file; u1 = 0; the end of a file met again and again;
+   INCLUDED nested two deep;
+@@ -124,11 +124,11 @@ for did in IDS:
+             i = next((k for k in range(min(len(a), len(b))) if a[k] != b[k]), min(len(a), len(b)))
+             print('- fsys %d: DIFFERS (status %d) - line %d: native %r, fsys %d %r' % (v, out[v][0], i + 1,
+                   a[i][:100] if i < len(a) else b'<none>', v, b[i][:100] if i < len(b) else b'<none>'))
+-    for v in LEVELS[1:]:
++    for v in LEVELS:
+         fails += wrote[v] != WANT
+     print('- WRITE-LINE after a line (R/W): %s; native %s' % (
+           'fsys %s right after the line' % ', '.join(str(v) for v in LEVELS[1:] if wrote[v] == WANT) if all(wrote[v] == WANT for v in LEVELS[1:])
+           else 'WRONG at fsys %s: %r' % (', '.join(str(v) for v in LEVELS[1:] if wrote[v] != WANT), [wrote[v] for v in LEVELS[1:] if wrote[v] != WANT][0]),
+-          'right after the line too' if wrote[0] == WANT else 'elsewhere (its read-ahead not given back): %r' % wrote[0]))
++          'right after the line too' if wrote[0] == WANT else 'WRONG - elsewhere (its read-ahead not given back): %r' % wrote[0]))
+ print('\n%s' % ('PASS' if not fails else 'FAIL - %d' % fails))
+ sys.exit(1 if fails else 0)

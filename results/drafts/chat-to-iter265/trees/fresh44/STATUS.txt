@@ -1,0 +1,7 @@
+HEAD 6628c73 Iteration 224: the hidden-names findings captured in GOALS.md's register, deferred by the owner
+cloned at 6628c73f7ad3
+0 commits past the clone point
+
+git status --short:
+ M engine/vm-lab.c
+ M lab/evolve/readline-check.py

@@ -1,0 +1,127 @@
+diff --git a/engine/rt-linux-x86_64.c b/engine/rt-linux-x86_64.c
+index ae32aba..edf3806 100644
+--- a/engine/rt-linux-x86_64.c
++++ b/engine/rt-linux-x86_64.c
+@@ -194,6 +194,8 @@ int memcmp(const void *a, const void *b, size_t n)
+     for (; n; n--, p++, q++) if (*p != *q) return *p - *q;
+     return 0;
+ }
++/* Iteration 262: clang turns memcmp() == 0 into bcmp - the same answer for equal and not */
++int bcmp(const void *a, const void *b, size_t n) { return memcmp(a, b, n); }
+ __attribute__((optimize("no-tree-loop-distribute-patterns")))
+ size_t strlen(const char *s) { const char *p = s; while (*p) p++; return (size_t)(p - s); }
+ static int same(const char *a, const char *b, size_t n) { return memcmp(a, b, n) == 0; }
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 7b50661..45b4464 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -24,6 +24,7 @@
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
+ | link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
+ | GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
++| the compiler (`compiler`: 0 GCC, 1 clang; Iteration 262; CV8 designs, offered only where clang is installed): every engine compile through clang - -Oz for -Os, only the flags clang knows; GCC's own genes (nogcse, nocrossjump, align1, noreorder, peel, ipaclone, tracer, noinls, gotodup, jitos, regpin, lto) not expressed under it. No source change but a bcmp in the runtime. clang 18 on the VM: engines larger at the small end (3456ac1e5e 7,112 -> 10,256; -Oz 8,624), 4% smaller at the fast end at -Oz (3bb2087f9d 21,276 -> 20,396); the JIT's stencils hold. The way to preserve_none (clang 19+) for the tail engine |
+ | one-operation words inline on the JIT (`jitinl`: 0, 1; Iteration 137; JIT with jitx; **dormant** until seed 39 has run): a call to a word of one operation and EXIT - 1+, 0=, 1- - is that operation in the caller (not one that branches, ends the word, or touches the return stack or the interpreter), and D+ gets its stencil back. Native call and return were a quarter of a small recursive word's time (2.92 -> 2.21 ns a call); D+ alone (Iteration 130) made -ack native and no faster - with the inlining, ackermann's long run 10.1 -> 5.0 ms (VM), its 12.7 M dispatches native. Gate, answers, the Forth 2012 suite as s6 on five JIT designs with jitloop; off, identical |  |  |
+ | compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 8125ea9..cfeb05c 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -60,6 +60,12 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT with link-time optimisation', dict(JIT, lto=1), ['jit', 'lto']),
+     ('tail calls with link-time optimisation', dict(tail=1, lto=1), ['tail', 'lto']),
+     ('goto unfactoring 32', dict(gotodup=1), ['gotodup']),
++] + ([                                                                           # Iteration 262: where clang is installed
++    ('clang', dict(compiler=1), ['compiler']),
++    ('clang, the JIT', dict(JIT, compiler=1), ['compiler', 'jit']),
++    ('clang, tail calls (gen-tail)', dict(tail=1, compiler=1), ['compiler', 'tail']),
++    ('clang, -Oz', dict(compiler=1, opt='Os'), ['compiler']),
++] if E.HAVE_CLANG else []) + [
+ ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
+ 
+ bad = []
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 67b9722..046f438 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup')
++LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -118,6 +118,11 @@ EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled f
+ EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
+ EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
+ EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation; GCC's goto unfactoring (results/missed-options-2026-10.md)
++# Iteration 262: the compiler - 0 GCC (cc), 1 clang. Offered only where clang is installed: elsewhere
++# a design with it could not be built. Flags and genes one compiler lacks are not expressed under it.
++HAVE_CLANG = bool(shutil.which('clang'))
++if HAVE_CLANG: EXPRESSED['cv8'] += ['compiler']
++GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto')
+ JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
+ EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+ EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
+@@ -446,6 +451,9 @@ def express(g):
+     if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
+     if 'jittail' in e and not jit_on(g): e.pop('jittail')                          # Iteration 246: on the JIT
+     if 'jitk' in e and (not jit_on(g) or not e['jitk']): e.pop('jitk')            # Iteration 259: on the JIT; 0 is off
++    if e.get('compiler'):                                                           # Iteration 262: clang - GCC's own genes do nothing
++        for k in GCC_ONLY: e.pop(k, None)
++    elif 'compiler' in e: e.pop('compiler')
+     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
+     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
+     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+@@ -464,7 +472,7 @@ def gid(g):
+ 
+ 
+ # ---- building and testing one design ------------------------------------
+-BUILD_TOOLS = ('cc', 'gcc', 'make', 'sh', 'bash', 'git', 'objcopy', 'objdump', 'size', 'strip', 'ld', 'as', 'cpp', 'nm')
++BUILD_TOOLS = ('cc', 'gcc', 'clang', 'make', 'sh', 'bash', 'git', 'objcopy', 'objdump', 'size', 'strip', 'ld', 'as', 'cpp', 'nm')
+ def _kind(cmd):
+     """'engine', 'cputime' (about to run one) or None (a build tool, which
+     forks: the compiler, the converter). Anything not known to be a tool
+@@ -558,7 +566,12 @@ def bin_size(eng):
+     return os.path.getsize(eng)
+ 
+ GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
++def CC(g):
++    """Iteration 262: the compiler the gene names - GCC as cc, or clang."""
++    return 'clang' if express(g).get('compiler') else 'cc'
+ def ccflags(g):
++    if express(g).get('compiler'):          # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
++        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()]
+     f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
+     if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
+     return f
+@@ -587,12 +600,12 @@ def build_tail(g, d, src, flags, eng):
+     # preprocessed source, where its own '#ifndef DISPOFF' guard is already gone, so
+     # the handlers' table was offsets between functions: no tail design compiled in
+     # seed 46 (222 died: engine did not compile)
+-    if sh(['cc', '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
++    if sh([CC(g), '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
+     wrap = []
+     for attempt in range(2):
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
+         if r.returncode: raise RuntimeError('died: tail-call generation')
+-        if sh(['cc'] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
++        if sh([CC(g)] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+         bad = tail_offenders(eng)
+         if not bad: return
+         wrap = sorted(set(wrap) | bad)
+@@ -745,10 +758,10 @@ def _build(g, d):
+                 objs = []
+                 for c in ('spn-stencils.c', 'spn-markers.c'):
+                     o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
+-                    r = sh(['cc'] + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
++                    r = sh([CC(g)] + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
+                     if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+                 jit = jit[:4] + objs
+-            r = sh(['cc'] + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
++            r = sh([CC(g)] + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
+     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']

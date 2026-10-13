@@ -1,0 +1,10 @@
+HEAD 68f504f Iteration 225: the after-seed-44 batch begun (results/pending/) - native WRITE-LINE gives back the read-ahead; the file buffers' slots kept apart from their buffers, 24-36 KB less memory on every workload for designs with full buffers; 117 of 117 native front designs alive, the suite 0 of 2 differ
+cloned at 68f504fdeb84
+0 commits past the clone point
+
+git status --short:
+ M engine/vm-lab.c
+ M forth/file-sysc3.4
+ M lab/evolve/evolve.py
+ M lab/evolve/readline-check.py
+?? results/pending/fsysread-after-seed44.patch

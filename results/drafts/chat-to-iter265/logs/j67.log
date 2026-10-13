@@ -1,0 +1,7 @@
+== run-tests
+exit 0: PASS - no regressions
+  generators   ok     19 paths, each built and its corpus right
+== validate
+7
+== gate
+alive: 148 of 148 (seed 46 front 127, joint front 72, 51 in both)

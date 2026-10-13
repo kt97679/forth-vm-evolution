@@ -1,0 +1,32 @@
+HEAD bf966d9 Iteration 241: seed 46 for 10 hours (the owner) - about 8 hours of evolution after the comparison's reserve
+cloned at bf966d970712
+0 commits past the clone point
+
+git status --short:
+ M engine/spn-cv8.c
+ M engine/vm-lab.c
+ M forth/coreext.4
+ M forth/cpt16.4
+ M forth/cross.4
+ M forth/cv8-fuse-imm.4
+ M forth/cv8-fuse.4
+ M forth/cv8.4
+ M forth/cv8b-kfast.4
+ M forth/cv8b.4
+ M forth/cv8bt.4
+ M forth/cv8t-empty.4
+ M forth/cv8t-fuse-imm.4
+ M forth/cv8t-fuse.4
+ M forth/cv8t.4
+ M forth/kernel-seed.img
+ M forth/kernel.4
+ M forth/kernel32-seed.img
+ M forth/sod16.4
+ M forth/spn-cv8-decode.4
+ M forth/spn-full.4
+ M tools/dict-dump-addr.4
+ M tools/gen-msc.py
+ M tools/gen-tos.py
+ M tools/layout.py
+ M tools/sod16.py
+ M tools/vmtrace.py

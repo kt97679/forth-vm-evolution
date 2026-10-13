@@ -1,0 +1,82 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index ddcfa49..1086146 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -334,7 +334,19 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
+ #define JIT_NATIVE(f) ((f) > 1)
+ #define JIT_REPOINT(f) 1
+ #endif
++/*  Iteration 239, the gene jitos: the translator compiled for size. It runs
++ *  once per word translated, not per instruction - jit_body alone is 3.5 KB
++ *  at -O2; -Os takes 400-800 bytes off a JIT engine (results/price-stencils-
++ *  bloom.md). The stencils it copies are compiled apart (spn-stencils.c),
++ *  untouched; translation speed is the trade evolution weighs.  */
++#if JITOS
++#pragma GCC push_options
++#pragma GCC optimize ("Os")
++#endif
+ #include "jit.c"        /* JIT.md (Iteration 80): SPN's stencils, read, copied and patched */
++#if JITOS
++#pragma GCC pop_options
++#endif
+ #endif
+ 
+ /*
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 2294d3f..ba6e635 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -19,6 +19,7 @@
+ | the JIT reaches further (`jitx`: 0, 1; Iteration 108; on the JIT): variables as literals, words without the JIT header translated once each, >R/R>/R@ in balanced words, a FILL stencil | results/jit-kernel-words.md (priced) | kernel workload 10% fewer bytecode dispatches, the sieve 99.9% (3.4x faster on the VM); +368 bytes of code (results/jitx.md) |
+ | (+LOOP) and (?DO) native (`jitloop`: 0, 1; Iteration 130; on the JIT; **dormant** - in LATE, not in EXPRESSED, until seed 39 has run): SPN's stencils for both, the scanner reading 160 bytes (its 64 cut both stencils: (+LOOP)'s 87 before either exit, (?DO)'s 76 after its fall-through), both exits required or the word stays bytecode. On the fastest design bubble's dispatches -98.5%, its long run 13.2 -> 7.9 ms (VM), the corpus -1.1%; gate, answers, the Forth 2012 suite as s6 on five JIT designs; off, ids, images and engines identical. D+ priced and left out: -ack native, no faster - the call is the cost |  |  |
+ | one SYSCALL (`sysc`: 0, 1; Iteration 136; CV8 designs - vm-lab.c's; **dormant** - in LATE, not in EXPRESSED, until seed 39 has run): the engine keeps one system call in FORK's slot and drops the shell's other seventeen process and environment primitives and the runtime's environment and getpwnam - none of which a design's image (the kernel) calls; the shell gets them back in Forth from forth/shell-sysc.4 (tests/shell, all 554 assertions, on a SYSC s5 shell: tools/test-sysc-shell.sh). Engines: five JIT designs -3,392 to -3,808 bytes, the smallest of seed 37 -2,880 (its total -14%), tail-call threading -6,568, msc -3,728; every one through the gate; off, ids, images and engines identical |  |  |
++| the JIT's translator compiled for size (`jitos`: 0, 1; Iteration 239; JIT designs not built -Os): engine/jit.c under GCC's optimize ("Os") - it runs once per word translated; the stencils are compiled apart | results/price-stencils-bloom.md: a JIT engine's extra bytes are the translator, jit_body 3.5 KB | -416 to -800 bytes off JIT engines built -O2/-O3; translation speed is the trade |
+ | one-operation words inline on the JIT (`jitinl`: 0, 1; Iteration 137; JIT with jitx; **dormant** until seed 39 has run): a call to a word of one operation and EXIT - 1+, 0=, 1- - is that operation in the caller (not one that branches, ends the word, or touches the return stack or the interpreter), and D+ gets its stencil back. Native call and return were a quarter of a small recursive word's time (2.92 -> 2.21 ns a call); D+ alone (Iteration 130) made -ack native and no faster - with the inlining, ackermann's long run 10.1 -> 5.0 ms (VM), its 12.7 M dispatches native. Gate, answers, the Forth 2012 suite as s6 on five JIT designs with jitloop; off, identical |  |  |
+ | compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 03272ce..55acf92 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl')
++LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -114,6 +114,7 @@ EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fo
+              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
+                      'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+ EXPRESSED['cv8'] += ['jitloop', 'jitinl']
++EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
+ EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+ EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
+ EXPRESSED['cv8'] += ['regpin']   # Iteration 197: the VM registers pinned, 0-3 (results/forth-implementations-survey.md)
+@@ -438,6 +439,7 @@ def express(g):
+     if 'jitloop' in e and not jit_on(g): e.pop('jitloop')                          # Iteration 129: on the JIT
+     if 'sysc' in e and g['enc'] != 'cv8': e.pop('sysc')                            # Iteration 136: SYSC is vm-lab.c's, build()'s
+     if 'jitinl' in e and not (jit_on(g) and g.get('jitx')): e.pop('jitinl')        # Iteration 137: in jitx's translator
++    if 'jitos' in e and (not jit_on(g) or g['opt'] == 'Os'): e.pop('jitos')       # Iteration 239: on the JIT; an -Os engine is so already
+     if 'opbody' in e and not any(w in OPBODY for w, _ in ops10_in(g)): e.pop('opbody')   # Iteration 92: an opcode to point at
+     if e.get('varcall'): e.pop('sharedcall', None)                     # forced on: see build()
+     elif 'varcall' in e: e.pop('doesfar', None)                        # forced off: see build()
+@@ -684,6 +686,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
+     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
++    if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
+     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
+     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
+     if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
+@@ -1294,7 +1297,7 @@ def crowding(front, R):
+ # dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
+ # evaluations: drawn one time in ten (SLOW_GENES).
+ XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
+-LINKS = [('jit', 'jitx', 'jitloop', 'jitinl'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
++LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
+ SLOW_GENES = ('varcall', 'doesfar')
+ ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
+ ATTIC_P = float(os.environ.get('EVOLVE_ATTIC_P', 0.1))
