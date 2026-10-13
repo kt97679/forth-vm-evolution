@@ -14,8 +14,11 @@ bundle of the repository, and the packs of any laptop runs not yet processed.
 
 Set up first:
 
-0. As root: `apt-get update -qq && apt-get install -y -qq gcc-multilib` - the
-   build makes 4-byte cells too, as the laptop's does.
+0. As root: `apt-get update -qq && apt-get install -y -qq gcc-multilib clang clang-19`
+   - gcc-multilib because the build makes 4-byte cells too, as the laptop's
+   does; clang because the gene compiler (Iteration 262) is offered only where
+   clang is installed, and designs from seed 48 on may be built with it;
+   clang-19 for preserve_none.
 1. Clone as the user claude, into a directory it owns: `cd /home/claude &&
    mkdir -p forth-vm-evolution && chown claude:claude forth-vm-evolution &&
    runuser -u claude -- git clone /mnt/user-data/uploads/<bundle>
