@@ -4873,3 +4873,41 @@ compiler (CPython 3.14's tail-calling interpreter needed musttail and
 preserve_none; the laptop and the VM have GCC 13.3, which has neither) - the
 owner's call. Not worth it: -march=x86-64-v3 (sizes mixed), nibble-packed
 operation runs (27 bytes). Everything else checked was covered already.
+
+## Iteration 259 - 2026-10-13 - Claude
+
+**The JIT's stack cache, a gene: jitk (the owner; the third after-seed-47
+patch).** The hybrid stack/register design (Iteration 163) was priced twice and
+built where its value was - run-time immediates and the keeping forms (fib
+-36%); its JIT half, keeping the top cells in registers across copied code, was
+deferred for the laptop's sweep (Iteration 219). The research sweep ranked it
+first, so it is built as a gene instead. tools/gen-jitk.py (from Iteration 219's
+jitvariants.py) writes, per build, a stencil for each of 16 hot data operations
+in each cache state 0..K - the top in %rsi, the next in %rdx, the third in %rcx
+- and a canonicaliser per state; engine/jit.c scans them with the base stencils
+(each bounded by both tables) and plans every operation in one function both
+passes share, so sizes and copies agree: a variant where there is one, else the
+canonicaliser and the base stencil; every branch target in state 1. Checks: the
+corpus and hand tests; the suite on three JIT designs at K=2 and 3, 14 of 14, 0
+differ; run-tests (21 generator paths); 7 of 7. +2.3 KB (K=2), +2.8 KB (K=3).
+On the VM: loop -9%, bubble -5%, corpus -4%, ackermann flat, fib +16% at K=2 and
+flat at K=3 - this core disagreed with the papers before; seed 48 measures it
+where it counts.
+
+## Iteration 260 - 2026-10-13 - Claude
+
+**The research sweep's findings, worked through (the owner): two more build
+genes, the rest priced or covered** (`results/missed-options-2026-10.md`,
+GOALS.md's register). Built - the fourth after-seed-47 patch: lto (the engine
+and its runtime as one; the JIT's stencils compiled outside it, or the JIT
+stops translating) - -32 to -160 bytes now that patch 2 took memcmp and the
+variadic open; gotodup (GCC's max-goto-duplication-insns: default, 32, 128) -
+interpreted engines +704-800 bytes for dispatch copied into more handlers, the
+laptop to say whether it predicts better. Priced: the echo instruction - 283-427
+bytes (3.3-4.9%) of the smallest image, new semantics in every engine, the
+owner's call; mutation weighted by regime - ~1.4% of evaluations, not built.
+Deferred: the IP-update loop form (the laptop's timing). Covered: JIT code apart
+from written data, no section headers, the 6.17 kernel's exact peak memory.
+The owner's: Clang or GCC 16 for preserve_none. All four after-seed-47 patches:
+run-tests (25 generator paths), 7 of 7, 148 of 148 alive, a fresh clone
+reproduces them.

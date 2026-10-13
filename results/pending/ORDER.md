@@ -9,8 +9,13 @@ processed:
 
 | 2 | lean-open-after-seed47.patch | two runtime savings that pay for patch 1: the image's magic checked as one 32-bit compare and a byte (memcmp, its only caller, gone: 42 bytes), and the engine's opens through a three-argument rt_open in both runtimes (the C library's variadic open made the runtime's save every argument register: 95 bytes) - libc builds keep open. Engines with both patches against today: 3456ac1e5e 7,112 -> 7,168 (+56), fe3c9c3940 16,828 -> 16,828 (0), 3bb2087f9d 21,308 -> 21,276 (-32). No kernel change (257) |
 
+| 3 | jitk-after-seed47.patch | the gene jitk (0, 2, 3 cells; JIT designs): the JIT keeps the top K data-stack cells in fixed registers across its copied code - tools/gen-jitk.py writes, per build, a variant of 16 hot data stencils for each cache state 0..K and a canonicaliser per state, and the map the translator plans each operation with; control, calls, loops, exits and branch targets run in state 1. Off, the engine is as before (every id stays). Fastest design's engine +2.3 KB (K=2), +2.8 KB (K=3); on the VM loop -9%, bubble -5%, corpus -4%, fib +16% at K=2 and flat at K=3 - the laptop decides (259) |
+| 4 | buildgenes-after-seed47.patch | two build genes: lto (0/1) - the engine and its runtime as one, the JIT's stencils compiled outside it (inside, the JIT stopped translating): -32 to -160 bytes after patch 2; and gotodup (0/1/2) - GCC's max-goto-duplication-insns at its default, 32 or 128: interpreted engines +704 to +800 bytes for a dispatch copied into more handlers, JIT engines unchanged. engines-check grows to 25 paths (260) |
+
     git apply results/pending/faulttrap-after-seed47.patch
     git apply results/pending/lean-open-after-seed47.patch
+    git apply results/pending/jitk-after-seed47.patch
+    git apply results/pending/buildgenes-after-seed47.patch
 
 Tested on master: `0 @` with output to a pipe now exits 70 with the output
 kept, on the smallest, the Q-best and the fastest design; run-tests PASS (the
@@ -23,3 +28,11 @@ stages link the i386 runtime's rt_open); 7 of 7 identical; seed 46's front and
 the joint front alive, 148 of 148; the suite on six front designs 14 of 14
 each, 0 differ; `0 @` still exits 70 with the output kept. Both apply in order
 on a fresh clone and reproduce the tested files.
+
+Patches 3 and 4, tested on 1-2: run-tests PASS (the generators: 21 paths with
+jitk, 25 with lto and gotodup); 7 of 7 identical; the standard suite on three
+JIT designs (3bb2087f9d, fe3c9c3940, cfee5345ab) with jitk at 2 and at 3, 14 of
+14 each, 0 differ; the corpus right with lto on the smallest and the fastest,
+the JIT translating under it; seed 46's front and the joint front alive with
+all four, 148 of 148. The four apply in order on a fresh clone of master and
+reproduce the tested files.

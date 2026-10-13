@@ -1,0 +1,105 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index df10e6a..7b50661 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -22,6 +22,8 @@
+ | the JIT's translator compiled for size (`jitos`: 0, 1; Iteration 239; JIT designs not built -Os): engine/jit.c under GCC's optimize ("Os") - it runs once per word translated; the stencils are compiled apart | results/price-stencils-bloom.md: a JIT engine's extra bytes are the translator, jit_body 3.5 KB | -416 to -800 bytes off JIT engines built -O2/-O3; translation speed is the trade |
+ | tail calls as jumps on the JIT (`jittail`: 0, 1; Iteration 246; JIT designs): engine/jit.c - a call to a native word whose next operation is EXIT, or a BRANCH chain to one, is translated as a jump to it, so its ret returns to the caller and tail recursion runs in place (no native stack growth). Return addresses are on the machine stack, so >R, R> and loop parameters are untouched. Measured on 28677d13b1 (VM, alternating runs): ackermann 15-18% faster, the other selection workloads within noise; +256 engine bytes. Off: the engine byte-identical (results/price-jit-calls.md) |
+ | the JIT's stack cache (`jitk`: 0, 2, 3; Iteration 259; JIT designs): the top K cells stay in fixed registers across the copied code - tools/gen-jitk.py writes a variant of 16 hot data stencils (literal, DUP DROP SWAP OVER, + and immediate +, = > <, AND XOR, @ ! C@, I) for each cache state 0..K and a canonicaliser per state; control, calls, loops, exits and branch targets run in state 1, so every join and call agrees. Static stack caching as Ertl & Gregg's (up to 58% in their interpreter) and CPython's JIT; on the VM's Intel core mixed: loop -9%, bubble -5%, corpus -4%, fib +16% at K=2, flat at K=3 - the laptop decides. +2.3 KB (K=2), +2.8 KB (K=3) on the fastest design's engine |
++| link-time optimisation (`lto`: 0, 1; Iteration 260; CV8 designs): the engine and its runtime compiled as one (-flto), so GCC inlines and drops across them; the JIT's stencils are compiled outside it - LTO changed their code and the JIT stopped translating (fib 2.5x, loop 3.9x slower). Engines -32 (smallest) to -160 bytes (fastest) on top of Iteration 257's runtime savings; speed the laptop's |
++| GCC's computed-goto unfactoring (`gotodup`: 0, 1, 2 - its default 8, 32, 128 instructions; Iteration 260; CV8 designs): `--param max-goto-duplication-insns`. GCC factors computed gotos early and copies the dispatch back into handlers whose block ends in no more than this many instructions; larger values copy more - interpreted engines +704 to +800 bytes at 32-128 (3456ac1e5e, 697f12fecc); JIT engines unchanged. A dispatch per handler predicts better on some cores, a shared one is smaller - the laptop's |
+ | one-operation words inline on the JIT (`jitinl`: 0, 1; Iteration 137; JIT with jitx; **dormant** until seed 39 has run): a call to a word of one operation and EXIT - 1+, 0=, 1- - is that operation in the caller (not one that branches, ends the word, or touches the return stack or the interpreter), and D+ gets its stencil back. Native call and return were a quarter of a small recursive word's time (2.92 -> 2.21 ns a call); D+ alone (Iteration 130) made -ack native and no faster - with the inlining, ackermann's long run 10.1 -> 5.0 ms (VM), its 12.7 M dispatches native. Gate, answers, the Forth 2012 suite as s6 on five JIT designs with jitloop; off, identical |  |  |
+ | compile nothing for a word that does nothing (`rtempty`: 0, 1; Iteration 101; in the tag): forth/cv8t-empty.4, an outermost COMPILE,8 - a word whose body is EXIT alone (CHARS) compiles to nothing | Iteration 89: CHARS, 12.6% of the kernel workload's calls | kernel workload 2.3-4.0% fewer dispatches, +32-40 bytes of image |
+ | the tag without its 3-byte call (`t2wide`: 0, 1; Iteration 95; in the tag, not multi-state): `10xxxxxx` 64 more one-byte codes (127), calls of 2 bytes (16 KB) and 4 (1 GB) | the owner's question on continuation-byte calls; the deep dive's 6 | escapes (4-8% of the dispatches of kernel, parse, corpus) gone, images 121-302 bytes smaller (results/t2wide.md) |
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 783c4f0..8125ea9 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -56,6 +56,10 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
+     ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259
+     ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
++    ('link-time optimisation', dict(lto=1), ['lto']),                           # Iteration 260
++    ('the JIT with link-time optimisation', dict(JIT, lto=1), ['jit', 'lto']),
++    ('tail calls with link-time optimisation', dict(tail=1, lto=1), ['tail', 'lto']),
++    ('goto unfactoring 32', dict(gotodup=1), ['gotodup']),
+ ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
+ 
+ bad = []
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index dca6221..67b9722 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -89,7 +89,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
+ # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
+ # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
+ # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
+-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk')
++LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup')
+ HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
+ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+@@ -117,6 +117,7 @@ EXPRESSED['cv8'] += ['jitloop', 'jitinl']
+ EXPRESSED['cv8'] += ['jitos']   # Iteration 239: the JIT's translator compiled for size (results/price-stencils-bloom.md)
+ EXPRESSED['cv8'] += ['jittail']   # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
+ EXPRESSED['cv8'] += ['jitk']      # Iteration 259: the top K cells in registers in the JIT's code (tools/gen-jitk.py)
++EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation; GCC's goto unfactoring (results/missed-options-2026-10.md)
+ JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
+ EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+ EXPRESSED['cv8'] += ['fsys']   # Iteration 202: file words and RESIZE in Forth, their handlers out
+@@ -556,8 +557,11 @@ def bin_size(eng):
+     engine.full, for tail_offenders and anyone with nm or gdb."""
+     return os.path.getsize(eng)
+ 
++GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
+ def ccflags(g):
+-    return ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
++    f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
++    if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
++    return f
+ 
+ def tail_offenders(eng):
+     """Handlers whose machine code CALLS through an indexed table - a
+@@ -588,7 +592,7 @@ def build_tail(g, d, src, flags, eng):
+     for attempt in range(2):
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
+         if r.returncode: raise RuntimeError('died: tail-call generation')
+-        if sh(['cc'] + ccflags(g) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
++        if sh(['cc'] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+         bad = tail_offenders(eng)
+         if not bad: return
+         wrap = sorted(set(wrap) | bad)
+@@ -736,7 +740,15 @@ def _build(g, d):
+             if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
+                 if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
+                     raise RuntimeError('died: stack-cache generation')
+-            r = sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + jit + rt())
++            lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
++            if lto and jit:                                      # the stencils outside it: the JIT reads their code as compiled
++                objs = []
++                for c in ('spn-stencils.c', 'spn-markers.c'):
++                    o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
++                    r = sh(['cc'] + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
++                    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
++                jit = jit[:4] + objs
++            r = sh(['cc'] + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
+     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
+@@ -1049,6 +1061,8 @@ def mutate(g, rnd):
+             g['hotcalls'] = rnd.choice([v for v in HOTN if v != g.get('hotcalls', 0)]); what.append('hotcalls=%d' % g['hotcalls'])
+         elif k == 'hotinl':           # Iteration 92: inlined at the 0, 10, 20 or 40 hottest call sites
+             g['hotinl'] = rnd.choice([v for v in HOTINLN if v != g.get('hotinl', 0)]); what.append('hotinl=%d' % g['hotinl'])
++        elif k == 'gotodup':          # Iteration 260: GCC's goto unfactoring - its default, 32, 128
++            g['gotodup'] = rnd.choice([v for v in range(len(GOTODUPV)) if v != g.get('gotodup', 0)]); what.append('gotodup=%s' % GOTODUPV[g['gotodup']])
+         elif k == 'jitk':             # Iteration 259: the JIT's stack cache, 0, 2 or 3 cells
+             g['jitk'] = rnd.choice([v for v in JITKV if v != g.get('jitk', 0)]); what.append('jitk=%d' % g['jitk'])
+         elif k == 'fbuf':             # Iteration 115: a file's read-ahead buffer, 4096, 1024 or 512 bytes
+@@ -1580,6 +1594,7 @@ def random_genome(rnd):
+         elif k == 'hotinl': g[k] = rnd.choice(HOTINLN)
+         elif k == 'fbuf': g[k] = rnd.randrange(len(FBUFV))
+         elif k == 'jitk': g[k] = rnd.choice(JITKV)         # Iteration 259
++        elif k == 'gotodup': g[k] = rnd.randrange(len(GOTODUPV))   # Iteration 260
+         elif k == 't2hot': g[k] = rnd.randrange(len(T2HOT))
+         elif k == 'spec': g[k] = [x for x in SPECS if rnd.random() < 0.5]
+         elif k == 'opcall': g[k] = [n for n in OPCALL_POOL if rnd.random() < 0.5]
