@@ -56,8 +56,10 @@ Set up first:
    about six minutes). A turn also has a budget of tool calls (about fifty).
 3. Read HANDOFF.md whole - the state, the routine for a returned seed, the
    owner's decisions, the open items, the lessons, and what every turn does
-   before it ends - then PROGRESS.md's entries after the iteration it names,
-   then prompts/INDEX.md.
+   before it ends - then GOALS.md (the aim, how success is measured, the
+   register of rejected ideas: look there before trying one), then
+   PROGRESS.md's entries after the iteration HANDOFF.md names, then
+   prompts/INDEX.md. README.md's "Documents" section indexes everything else.
 
 Please set up, confirm the checks pass, and tell me what you will do next.
 

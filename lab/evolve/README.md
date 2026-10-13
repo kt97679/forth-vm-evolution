@@ -30,6 +30,49 @@ cycles by itself:
 A design takes a second or two to build and test; 32 x 40 is about an
 hour, less what the database already knows.
 
+## Tools - one line each
+
+What each script here does, from its own first line (Iteration 275). What each gene is:
+GENES.md; running the evolution on the laptop: RUNNING.md; the rest of this file
+is the evolver's development history, phase by phase, then iteration by iteration.
+
+- `ans-check.py` - ans-check.py [--ids A,B,...] [DB ...] - the held-out check (Iteration 119; the
+- `c-baseline.py` - c-baseline.py [--runs N] [IDS...] - the Forth designs against the same
+- `callsites.py` - callsites.py ID [ID ...] [--db FILE ...] - a design's calls in the two-bit
+- `compare-fronts.py` - compare-fronts.py DB [DB ...] [--rounds N] [--cpus A,B] - the fronts of
+- `cpu-noise.py` - cpu-noise.py [--rounds N] [--cpus A,B] [--ids ID,...] [--work W,...] DB [DB ...]
+- `engines-check.py` - engines-check.py - an engine down every generator's path builds, and runs
+- `evolve.py` - evolve.py - evolve VM designs: the faster and the smaller survive
+- `factor-price.py` - factor-price.py ID [--shares 1e-3,1e-2,2] [--db FILE ...] - what the gene
+- `fsys-count.py` - fsys-count.py ID [ID ...] --db FILE [--db FILE] [--levels 4,5] [--works kernel,corpus]
+- `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
+- `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
+- `hotsites.py` - hotsites.py ID [--db FILE ...] [--write FILE] - the image's hottest call
+- `hotwords.py` - hotwords.py ID [ID ...] [--db FILE ...] [--write FILE] - every word's share
+- `image-ab.py` - image-ab.py ID [ID ...] --env VAR=VALUE [--set GENE=VALUE] [--db FILE] [--rounds N] - a
+- `jitstack-inner-sweep.sh` - jitstack-inner-sweep.sh - lab/evolve/jitstack-inner.{c,S} with every loop head
+- `jitstack.py` - jitstack.py ID [ID ...] [--db FILE ...] [--works fib,loop,...] - stack state in
+- `jitvariants.py` - jitvariants.py [ID] [--k 2,3] [--out FILE] - what stack state in the JIT would
+- `loopwords.py` - loopwords.py ID [ID ...] [--db FILE] - the loop words in code compiled at
+- `lucky.py` - lucky.py [--step S] [--sweeps K] [--ids ID,...] DB [DB ...] - is the lucky
+- `names-check.py` - names-check.py [IDS...] - word names in UTF-8, defined and then compiled
+- `next-run.sh` - lab/evolve/next-run.sh [SEED | compare [ROUNDS] | experiment TOOL [ARGS] | none] - the next run on the laptop, in
+- `outbuf-check.py` - outbuf-check.py [ID] - does output buffering break anything? (Iteration 207)
+- `price.py` - price.py ID [ID ...] [--db FILE] - what a fusion could save, before building it
+- `progress-table.py` - progress-table.py - every run's extremes, from its results file (Iteration 253)
+- `readline-check.py` - readline-check.py [ID ...] - READ-LINE at every single-SYSCALL level against
+- `regprice.py` - regprice.py ID|s6 [ID ...] [--db FILE] - the register machine's first
+- `run-spread.py` - run-spread.py [--runs N] [--cpus A,B] [--ids ID,...] DB [DB ...] - every
+- `scan-bodycheck.py` - scan-bodycheck.py [--db FILE] [--old] - which designs lose a word silently
+- `scan.py` - scan.py - every single-gene change of every hand-made design, checked
+- `seed-facts.py` - seed-facts.py DB RESULTS - step 3 of processing a returned seed (Iteration 256)
+- `stackops.py` - stackops.py ID [ID ...] [--db FILE] - a register machine priced by
+- `tag2-rank.py` - tag2-rank.py OUT.json DB ID [ID ...] - the reference ranking
+- `test-jail.py` - test-jail.py - prove that an engine the evolver runs cannot fork
+- `vm-run.sh` - lab/evolve/vm-run.sh SEED [REQ] - a run on the development VM (Iteration 79)
+- `NEXT-RUN` - what the laptop runs next, with every past choice as a comment
+- `hotsites-v1.json`, `tag2-rank-v1.json`, `hotwords-v1.json` - the reference profiles the converter reads (hotinl, the tag's ranking, factor)
+
 ## Phase 1, development VM, CPU time - a first run, 8 x 3
 
 - **It rediscovered the 256-entry dispatch table.** The best design was s6

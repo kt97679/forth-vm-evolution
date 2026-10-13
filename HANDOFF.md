@@ -70,7 +70,9 @@ About 20 minutes of machine time for build, tests and gates.
    when a patch changes `forth/kernel.4`), then ONE background chain: build
    (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`
    (PASS; 31 generator paths), `python3 lab/evolve/evolve.py --validate` (7 of 7
-   IDENTICAL), `python3 lab/evolve/gate.py <results file> <compare
+   IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - the laptop's fourth
+   check; the VM runs all four before a bundle goes to the laptop, Iteration
+   129), `python3 lab/evolve/gate.py <results file> <compare
    pack>/compare-fronts.md` (152 of 152 for seed 47), `python3
    lab/evolve/ans-check.py --ids <every fourth of the front by size, and its
    extremes>` (33 designs, 2.5 minutes; 0 differ, its negative control caught).
@@ -83,9 +85,9 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## The owner's standing decisions
 
-- Judging a run by five measures (Iterations 188-189): fastest, smallest,
-  memory, hypervolume, best Q; small only if all five are; two small runs in a
-  row stop evolution until new genes exist.
+- What each objective measures, how a run is judged and when evolution stops,
+  and that the size is the kernel's (Iterations 75, 127, 138, 188-189):
+  GOALS.md, "Success" - not repeated here.
 - Demote, don't delete: the attic (a tenth of parents); the 8 best by Q always
   survive. The surrogate screen: pure Python, 30%/5%, one screened child in ten
   audited.
@@ -165,27 +167,19 @@ About 20 minutes of machine time for build, tests and gates.
   iterations it ran, and early. Transcripts of earlier chats may sit in
   /mnt/transcripts on one machine (that chat had two) and not on the next (empty
   here): the repository is the only record that carries over.
+- A "where things stand" written anywhere but here goes stale: GOALS.md held
+  770 lines of them, the newest seed 28's (Iteration 275 moved them out).
 - Information is lost only outside the repository: the handoff check (below)
   fails on uncommitted work, untracked scripts, scratch trees with changes, a
   stale HANDOFF.md.
 
 ## Where things are
 
-- The log `PROGRESS.md`; goals and the register `GOALS.md`; conventions
-  `prompts/` (INDEX.md); the new chat's prompt `HANDOFF-PROMPT.md`.
-- The evolver and its tools, `lab/evolve/` (README.md: every gene and process
-  change by iteration; GENES.md: the gene pool): evolve.py, compare-fronts.py,
-  gate.py (--set GENE=VALUE), seed-facts.py, ans-check.py, engines-check.py,
-  names-check.py, progress-table.py, hotsites.py, hotwords.py, factor-price.py,
-  image-ab.py, c-baseline.py, NEXT-RUN, next-run.sh.
-- The previous chat's leftovers, as found: `results/drafts/chat-to-iter265/`
-  (MANIFEST.md maps every script to the iteration and figure it produced).
-- Results: `results/evolve-amd-ryzen-7-pro-8840hs-seed*.md` (each run),
-  `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` (every session),
-  `results/predictions.md`, `results/progress-by-run.md`, `results/drafts/`
-  (designs and negative results), `results/applied-after-seed*/` (batches).
-- The Forth collection: `reference/forth-archive/`,
-  `results/forth-collection-catalog.md`.
+Every document: README.md's "Documents" section. Every measurement, analysis
+and per-run record: results/README.md. Every tool of the evolver:
+lab/evolve/README.md's "Tools". The prompts: prompts/INDEX.md. The leftovers of
+the chats of Iterations 213-265: results/drafts/chat-to-iter265/README.md.
+GOALS.md before Iteration 275: results/drafts/goals-snapshots.md.
 
 ## Before a chat's turn ends - every turn that changed the repository
 

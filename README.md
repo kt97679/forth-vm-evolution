@@ -10,7 +10,7 @@ that does the job; speed where it costs little. `GOALS.md` says how that
 decides things.
 
 Every row of the ladder in `stages/STAGES.md` is a system that builds,
-boots, compiles its own encoding, and passes the same 616-case ANS CORE
+boots, compiles its own encoding, and passes the same 661-case ANS CORE
 corpus. Nothing in the measured tables is modelled.
 
 ## Build and test
@@ -104,15 +104,17 @@ do not show. x86-64 only.
                     (CRLF, CP1251, and multi-line `(` comments - only the
                     last has semantic weight, and that header explains why)
     stages/         what the stages are and how they differ
-    results/        measurements, one file per machine
+    results/        measurements and analyses (results/README.md indexes them)
     lab/            experiments: dispatch/ (dispatch techniques side by
-                    side), evolve/ (evolutionary search; RUNNING.md)
+                    side), evolve/ (evolutionary search; its README.md
+                    lists its tools)
     article/        the write-up: article-en.md for ForthHub,
                     article-ru.md for Habr
     prompts/        reusable prompts for this kind of work, from relf
                     (INDEX.md; the commit in UPSTREAM)
-    GOALS.md        where things stand, what is next, what was rejected
-    PROGRESS.md     the log, one entry per session
+    HANDOFF.md      the present: the state, the routine, the open items
+    GOALS.md        the aim, the measures, conventions, what was rejected
+    PROGRESS.md     the log, one entry per iteration
 
 ## Working on this project
 
@@ -125,9 +127,54 @@ across sessions and handed between machines. Scopes worth stating:
 "which design is best" question; `03-audit-tooling` every figure, since
 all of them come from this repository's own tools; `14`, `04` and `05`
 the article. Before trying an approach, search `GOALS.md` and
-`PROGRESS.md` for it. A handoff is an `Iteration N:` commit, then
-`tools/make-bundle.sh DIR`, which names the bundle by `GOALS.md`'s
-convention and checks that it clones.
+`PROGRESS.md` for it. A new session starts from `HANDOFF.md`; switching
+chats follows `HANDOFF-PROMPT.md`. A handoff is an `Iteration N:` commit,
+then `tools/make-bundle.sh DIR`, which runs `tools/handoff-check.py`, names
+the bundle by `GOALS.md`'s convention and checks that it clones.
+
+## Documents - every one
+
+Each fact lives in one document; the others point to it (GOALS.md,
+Conventions). `tools/handoff-check.py` fails when a tracked document is in none
+of the indexes: this list, `results/README.md` (every measurement and
+analysis), `prompts/INDEX.md` (the prompts), `lab/evolve/README.md` (the
+evolver's tools).
+
+Start and steer:
+- `README.md` - this file: what the project is, building, testing, measuring, the method, the index.
+- `HANDOFF.md` - the present: the state, the routine for a returned seed, the owner's standing decisions, open items, lessons, what every turn does before it ends. A new chat starts here.
+- `HANDOFF-PROMPT.md` - the two messages for switching chats: close the old one, start the new one.
+- `GOALS.md` - the aim, how success is measured and judged, conventions, the owner's later plans, the register of rejected or deferred ideas.
+- `PROGRESS.md` - the log, one entry per iteration, append-only.
+
+The systems and their findings:
+- `stages/STAGES.md` - the ladder: every stage, what it is and how it differs.
+- `FORMAT-TAG2.md` - the two-bit tag, the byte format the evolved designs use: 64 opcodes, a 1 GB code space.
+- `JIT.md` - the lazy JIT as a gene: the plan of Iteration 73 and its phases.
+- `FINDINGS-CELL-WIDTH.md` - every byte of s6-cv8b's image accounted for.
+- `FINDINGS-FOOTPRINT.md` - engines without the C library: start-up and resident memory.
+- `FINDINGS-OUTER-INTERPRETER.md` - The outer interpreter, and a regression RelF inherited by omission.
+- `FINDINGS-PERFORMANCE.md` - Where a kernel compile actually spends its time.
+- `FINDINGS-SPN.md` - SPN, native code from stencils: the design, the measurements, what they do and do not show.
+- `bench/README.md` - The benchmarks: the workloads, the measurement library, per-build bias.
+- `lab/dispatch/README.md` - The fastest C dispatch loop for Forth: dispatch techniques side by side.
+- `tests/ans/README.md` - The Forth 2012 test suite (Iteration 124; first added in Iteration 118).
+
+The evolution:
+- `lab/evolve/README.md` - the evolver: its tools, one line each, then its development history.
+- `lab/evolve/GENES.md` - the gene pool: every gene and what it changes, and the genes priced and not built.
+- `lab/evolve/RUNNING.md` - running the evolution on the laptop: one command, the jail, what is measured, what to send back.
+- `lab/evolve/SEARCH-SPACE.md` - prompts/02 on the gene pool: the axes, and what the pool leaves out.
+- `lab/evolve/SCAN.md` - the mutational scan.
+- `lab/evolve/REHEARSAL.md` - the full-scale rehearsal on the development VM (history).
+- `results/README.md` - every measurement and analysis, and the per-run records, indexed.
+
+The write-up, the prompts, the outside sources:
+- `article/article-en.md`, `article/article-ru.md` - the write-up, for ForthHub and for Habr.
+- `article/AUDIENCE.md` - Who this is for, and what that changes; `article/AUTHOR-STYLE.md` - How kt97679 actually writes, from his 14 Habr articles; `article/REVIEW-PROMPT.md` - the prompt for reviewing a draft; `article/TERMINOLOGY-RU.md` - Russian terminology, fixed before translating.
+- `prompts/INDEX.md` - the prompt library's dispatcher; `prompts/README.md` and `prompts/USAGE.md` describe the library, `prompts/UPSTREAM` what changed here since relf.
+- `reference/forth-archive/README.md` - The owner's Forth collection, kept (Iteration 213); `reference/forth-archive/colorforth-chars.md` - colorForth's packed names, the encoding.
+- `vendor/sod32/README.md`, `vendor/relf/README.md`, `vendor/relf/LICENCE.md` - the vendored upstreams, as they came.
 
 ## Method
 
