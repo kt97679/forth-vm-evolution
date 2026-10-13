@@ -4464,3 +4464,13 @@ dropping stencils a design never uses, a Bloom filter for failed lookups
 (half of all lookup work, Iteration 221); compressing image and engine (-37% and
 -51% with xz) - a question for the owner, as it changes what size means.
 Already ours or not applicable otherwise (GOALS.md register).
+
+## Iteration 236 - 2026-10-13 - Claude
+
+**Compressed image and engine: captured, not built (the owner).** The owner's
+point holds for memory - the code runs decompressed, so memory does not shrink,
+and start-up pays the decompression. On disk it would: a tiny LZSS (a
+~150-300-byte decompressor) takes the smallest design's image 8,704 -> 6,659
+bytes and engine 7,680 -> 4,605 (deflate and xz pack tighter but their
+decompressors are kilobytes). Recorded in GOALS.md's register, with the open
+question whether on-disk bytes that do not run should count as size at all.
