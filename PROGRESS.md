@@ -4845,3 +4845,17 @@ runtime's wrappers 25-101 each (syscall 101, open 95 - variadic). Nothing
 large to cut without design changes: a 32-bit magic compare instead of memcmp
 (~35 bytes) and a non-variadic open in the runtime (~60) are the visible ones,
 left for a batch that touches load_image anyway.
+
+## Iteration 257 - 2026-10-13 - Claude
+
+**The cross.4 fast path left (the owner agreed: it changes the yardstick, not
+the designs - GOALS.md's register), and the fault handler paid for (the second
+after-seed-47 patch).** Iteration 256's audit named two runtime costs; both
+built: the image's magic as one 32-bit compare and a byte, so memcmp - its only
+caller - drops out (42 bytes); the engine's opens through a three-argument
+rt_open (x86-64 and i386 runtimes), so no va_list and no register save area
+(open was 95 bytes). A first form aliased the variadic open to a three-argument
+function - GCC warned of an uninitialised mode where it inlined a two-argument
+call: undefined behaviour, replaced by an explicit OPEN3 in the engine. With
+patch 1, engines are +56, 0 and -32 bytes against today (smallest, Q-best,
+fastest). All checks pass (results/pending/ORDER.md).
