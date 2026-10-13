@@ -4699,3 +4699,15 @@ designs with the gene; a 3-million-deep tail recursion runs in place; builds
 without jitx, without jitloop, with jitos; off, the engine byte-identical. The
 price write-up has the measurement. Lesson: on the VM, time two engines
 alternately, many rounds, before believing a difference.
+
+## Iteration 247 - 2026-10-13 - Claude
+
+**The zero-divisor check, measured (open item 4).** Built with DIV0_CHECK
+emptied, the engines are smaller by 160 bytes (add5ec8937), 96 (cc6d168e0a,
+28677d13b1, f20de05a64) - UM/MOD's test of the divisor and THROW's set-up,
+whose dispatch is inlined (FILLNEXT with the cached top); no superinstruction
+copies it in these designs. A trim would route that dispatch through a shared
+one instead (and share the set-up with LSAVE's fallback where SPEC loc has
+it): an estimated 30-60 bytes, 0.2-0.4% of the smallest designs' total. Not
+built: small, and it touches the generators' dispatch macros (gen-tos.py,
+gen-super.py) - the owner's call.
