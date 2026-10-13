@@ -12,10 +12,12 @@ processed:
 | 3 | jitk-after-seed47.patch | the gene jitk (0, 2, 3 cells; JIT designs): the JIT keeps the top K data-stack cells in fixed registers across its copied code - tools/gen-jitk.py writes, per build, a variant of 16 hot data stencils for each cache state 0..K and a canonicaliser per state, and the map the translator plans each operation with; control, calls, loops, exits and branch targets run in state 1. Off, the engine is as before (every id stays). Fastest design's engine +2.3 KB (K=2), +2.8 KB (K=3); on the VM loop -9%, bubble -5%, corpus -4%, fib +16% at K=2 and flat at K=3 - the laptop decides (259) |
 | 4 | buildgenes-after-seed47.patch | two build genes: lto (0/1) - the engine and its runtime as one, the JIT's stencils compiled outside it (inside, the JIT stopped translating): -32 to -160 bytes after patch 2; and gotodup (0/1/2) - GCC's max-goto-duplication-insns at its default, 32 or 128: interpreted engines +704 to +800 bytes for a dispatch copied into more handlers, JIT engines unchanged. engines-check grows to 25 paths (260) |
 
+| 5 | compiler-after-seed47.patch | the gene compiler (0 GCC, 1 clang; CV8 designs): every engine compile through clang - -Oz for -Os, only the flags it knows, GCC's own genes (nogcse, nocrossjump, align1, noreorder, peel, ipaclone, tracer, noinls, gotodup, jitos, regpin, lto) not expressed under it; a bcmp in the runtime (clang's memcmp() == 0). **Offered only where clang is installed** - on the laptop: `sudo apt install clang` (clang 18; clang-19 for preserve_none later) before the run, or the gene stays dormant. On the VM: engines larger at the small end, 4% smaller at the fast end at -Oz (262) |
     git apply results/pending/faulttrap-after-seed47.patch
     git apply results/pending/lean-open-after-seed47.patch
     git apply results/pending/jitk-after-seed47.patch
     git apply results/pending/buildgenes-after-seed47.patch
+    git apply results/pending/compiler-after-seed47.patch
 
 Tested on master: `0 @` with output to a pipe now exits 70 with the output
 kept, on the smallest, the Q-best and the fastest design; run-tests PASS (the
@@ -36,3 +38,8 @@ JIT designs (3bb2087f9d, fe3c9c3940, cfee5345ab) with jitk at 2 and at 3, 14 of
 the JIT translating under it; seed 46's front and the joint front alive with
 all four, 148 of 148. The four apply in order on a fresh clone of master and
 reproduce the tested files.
+
+Patch 5, tested on 1-4 with clang 18 installed: run-tests PASS (the generators:
+29 paths - clang plain, with the JIT, the tail engine, -Oz); 7 of 7; the suite
+on 3456ac1e5e and 3bb2087f9d built with clang, 14 of 14 each, 0 differ. The five
+apply in order on a fresh clone and reproduce the tested files.

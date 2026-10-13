@@ -4931,3 +4931,37 @@ gotodup, jitos's optimize attribute, regpin's register variables) unexpressed
 under clang; clang-only ones (-Oz; preserve_none with musttail for the tail
 engine, clang 19+) unexpressed under GCC. Not built: it needs clang on the
 laptop.
+
+## Iteration 262 - 2026-10-13 - Claude
+
+**The compiler as a gene (the owner; the fifth after-seed-47 patch).** compiler
+(0 GCC, 1 clang): CC(g) names it at every engine compile - the tail engine's
+preprocessing too, LTO's stencil objects - and ccflags gives clang -Oz for -Os
+and only the flags it knows; express() drops GCC's own genes under clang, so
+they cannot make look-alike designs. Offered only where clang is installed
+(shutil.which at import): a design that names clang cannot be built without
+it. clang is a build tool to the jail (BUILD_TOOLS), or it would be limited as
+an engine. A bcmp in the runtime. Checks: engines-check 29 paths (clang plain,
+JIT, tail, -Oz); run-tests; 7 of 7; the suite on two clang-built designs, 14 of
+14. The laptop needs `sudo apt install clang` before seed 48 for the gene to
+take part.
+
+**A slip caught:** Iteration 260's commit took tools/gen-jitk.py into master
+(created there, then `git add -A`) - so patch 3, which adds it, no longer
+applied: the fresh-clone check of all five found it. Removed from master.
+Lesson: write files for a pending patch in the scratch tree, never in master.
+
+**An assembly engine (the owner asked):** not now. What it could buy is size at
+the small end - the smallest engine's interpreter is 3,448 bytes of GCC -O2,
+~27 a handler with the dispatch copied into each; hand-written handlers sharing
+one dispatch might halve that (an estimate, ~1.5 KB, ~10% of the smallest
+design). What it costs: a family of its own outside every generator - the
+genes work by generating C (gen-tos, gen-msc, gen-tail, gen-super, the folds,
+the JIT's C stencils), so an assembly engine starts with almost none of them,
+and every engine change must be made twice. And the speed side is reachable
+from C: Deegen's interpreter generated through LLVM with the GHC calling
+convention beats LuaJIT's hand-written assembly interpreter by 31% - clang's
+preserve_none with musttail is that convention, for the tail engine. So: the
+compiler gene first, preserve_none next (clang 19); if the small end then
+still wants bytes, price an assembly interpreter by writing its dispatch and a
+dozen handlers and extrapolating, before building a family.
