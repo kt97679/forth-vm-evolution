@@ -4474,3 +4474,19 @@ and start-up pays the decompression. On disk it would: a tiny LZSS (a
 bytes and engine 7,680 -> 4,605 (deflate and xz pack tighter but their
 decompressors are kilobytes). Recorded in GOALS.md's register, with the open
 question whether on-disk bytes that do not run should count as size at all.
+
+## Iteration 237 - 2026-10-13 - Claude
+
+**The dispatch table as offsets (the fifth after-seed-45 patch; the owner: no
+new limits for developers).** Every CV8 engine file carried its dispatch table
+as 128 8-byte addresses. It now holds 32-bit offsets from L_noop; at the first
+entry the addresses are made once into a BSS copy that all the code reads as
+before - cv8_tab, esc_tab, the tag's t2tab, the dispatch - so no dispatch pays.
+384-448 bytes off every design's engine (the smallest of all runs 7,680 ->
+7,240: -2.7% of its binary + image). 32 bits, not 16: 16 would save 256 bytes
+more and cap the interpreter at 32 KB - the kind of limit the owner ruled out.
+The generators (gen-super, gen-fold, gen-msc, and evolve.py's format-10 table)
+read and write a DSP() entry; gen-tail's tables of functions and the SPN engine
+keep addresses. A first form converted at every read and grew the code by 400
+bytes - replaced. All checks pass (ORDER.md). Not taken: the two 16-bit opcode
+maps as 8-bit (would cap the opcode space - the op;CALL codes are 0xFE00+k).
