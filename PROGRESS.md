@@ -4646,3 +4646,29 @@ run-tests after applying a batch; reseed when a patch changes kernel.4.
   `results/c-baseline-x86-64.md`.
 - Batches: `results/applied-after-seed43/` .. `applied-after-seed45/`,
   `results/pending/` (after seed 46).
+
+## Iteration 244 - 2026-10-13 - Claude
+
+**Bit 7 of the count byte freed, and a POSTPONE fault found on the way (the
+second after-seed-46 patch).** With no compiler asking >NAME (Iteration 242),
+its scan for the marker bit was the only reader of bit 7 - but not the only
+user of >NAME: the kernel's (POSTPONE) read the IMMEDIATE bit through it every
+time it ran. So Iteration 242 left a fault: POSTPONE of an immediate word with a
+UTF-8 name (`ёж2`: the scan stops on 0xB6, bit 6 clear) compiled it instead of
+running it. Now POSTPONE decides when it compiles, by FIND's flag, and
+(POSTPONE) only compiles. The kernel's own POSTPONEs are compiled by cross.4,
+whose target POSTPONE now reads the target header's flag: T-IMMEDIATE? walks
+the thread the name hashes to (all 32 threads cost the kernel workload 7.7%,
+one 0.6%). Nothing sets bit 7 any more (HEADER, HEADER8, cross.4's "HEADER, the
+converter masks it).
+
+>NAME itself: exact means a walk of the word lists, so it was measured both
+ways - in the kernel (+32 bytes on byte-header designs, kernel workload +2%) or
+out of it, in coreext.4 beside NAME>STRING and TRAVERSE-WORDLIST (images 64-136
+bytes smaller than patch 1 alone, corpus -0.26%). Out of it: no compiler needs
+it, the standard's name tokens are in coreext.4, and the tracer (TRWALK names
+every word past the image) and the SPN diagnostic walk for themselves. The
+owner's choice was invited: keeping it in every image costs about 100-230
+bytes. names-check now checks bit 7 clear (through LAST) and POSTPONE of UTF-8
+words; every check passes (results/pending/ORDER.md). Lesson: when a fix
+removes a reader of a header bit, grep every reader of the word that read it.
