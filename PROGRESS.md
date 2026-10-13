@@ -4560,3 +4560,89 @@ walk's 6-8% (found in Iteration 241) is gone: the smallest design's corpus
 every design and all 14 stages; all checks pass (results/pending/ORDER.md).
 Bit 7 of the count byte is now read only by >NAME, which no compiler uses -
 freeing it (an exact >NAME by the dictionary walk) is the next step if wanted.
+
+## Iteration 243 - 2026-10-13 - Claude: HANDOFF - start here in a new chat
+
+Read this entry whole, then Iteration 213's HANDOFF for what it says that is
+still true (what this is, the routine for a returned seed, the environment),
+then `prompts/`. Everything needed is in the repository.
+
+### The state now
+
+- master: Iteration 243. The after-seed-45 batch is applied (Iteration 240,
+  `results/applied-after-seed45/ORDER.md`, six patches, reseeded).
+- **Seed 46 is RUNNING** on the laptop: `seed 46 tag2 10h then experiment
+  compare-fronts.py --rounds 6 --frontier --cpus 2,8` (the owner's 10 hours; about
+  8 of evolution), at Iteration 241's commit (bf966d9). The first run with the
+  gene jitos, the dispatch table as offsets, the UTF-8 name fix. Predictions:
+  the end of `results/predictions.md`.
+- The stopping rule counts afresh: seed 44 small, seed 45 not (hypervolume +6.2%
+  - the memory fixes moved the landscape).
+- **The after-seed-46 batch, pending in `results/pending/` (ORDER.md):** (1)
+  primfirst - every PRIMITIVE together at the start of the dictionary,
+  PRIMITIVE? by address in every COMPILE,, the classic [link][count][name]
+  headers back (Iterations 232-234's layout reversed; the walk's 6-8% regained).
+  **It changes kernel.4: reseed after applying.** More may follow (below).
+
+### Processing a returned seed
+
+Iteration 213's ten steps, unchanged, with: the gate script takes the run's front
+and the joint front ("The front of all runs together" in compare-fronts.md);
+`lab/evolve/names-check.py` (every design kind and all 14 stages) belongs with
+run-tests after applying a batch; reseed when a patch changes kernel.4.
+
+### The owner's standing decisions (added since Iteration 213)
+
+- **No limits a developer could hit** (Iteration 237): e.g. 32-bit dispatch
+  offsets, not 16; opcode maps not narrowed to 8 bits.
+- **Developer friendly** (Iteration 227): core words in the kernel, helpers where
+  convenient in balance with size, reusable non-standard words keep their names;
+  splitting a long word for understanding, testing, extending is a plus.
+- **Primitives together at the start of the dictionary** (Iteration 242);
+  headers stay link-name-code (Iteration 243: the walk reads the link at a fixed
+  place).
+- UTF-8 word names must work (Iterations 231-242).
+- A zero divisor is -10 THROW, an uncaught THROW names its code (Iteration 229).
+- Deferred, captured in GOALS.md's register: packed names, hidden internal
+  names, a compressed image (on-disk bytes that do not run - should they count?).
+- Run lengths: seeds 44-45 6 hours, seed 46 10 hours - ask for the next.
+
+### Open items (roughly by value)
+
+1. Seed 46: process (the routine), apply the after-seed-46 batch (reseed).
+2. Bit 7 of the count byte: read now only by >NAME, which no compiler uses -
+   an exact >NAME (the dictionary walk) frees it (the owner wants the bit).
+3. Calls and returns at the fast end: the C baseline (results/c-baseline-*.md)
+   puts the fastest design 16.8x C on ackermann, 5.1x on fib, against 1.7-3.5x on
+   loops - price a cheaper call/return in JIT code by instruction counts.
+4. Trim the zero-divisor cost (+96-192 engine bytes, +64 image).
+5. The laptop's: `sh lab/evolve/jitstack-inner-sweep.sh` (the JIT stack cache,
+   Iteration 219), `perf stat` on IP-update chains and branch misses (Ertl &
+   Paysan), instruction replication, `python3 lab/evolve/c-baseline.py`.
+6. The owner's decisions above; search-method ideas from the outside reviews (a
+   higher-mutation run instead of stopping; a gene-interaction study).
+
+### Lessons added since Iteration 213
+
+- A background job dies when the chat's turn ends - finish and poll within it.
+- Never run two evolver processes on one tree at once (E.setup races on
+  build/evolve/reference).
+- In cross-compiled kernel code `[']` compiles a START-relative number, which the
+  converter cannot know for an address - use a variable's address instead.
+- The converter swaps every X8 body into X: a new kernel word X collides with an
+  overlay's X8 (NEXT-NFA vs NEXT-NFA8) and --drop-x8 then drops X8's name.
+- New dump-tool words must be in layout.py's DUMPTOOL, or the dump tool stays in
+  every image (+662 bytes once).
+- After a header or lookup change, count dispatches (the profiler is
+  deterministic): a "correct" fix cost the small designs 6-8% unseen by the gate.
+- Engine size changes hide in the code: a table halved can come back as code
+  (the first DISPOFF form, +400 bytes) - measure the file, not the table.
+
+### Where things are (added)
+
+- `lab/evolve/names-check.py` (UTF-8 names, all stages), `lab/evolve/c-baseline.py`
+  with `bench/c/bench.c` (the benchmarks in C), `results/price-*.md` (priced
+  ideas: names, lookup cache, stencils and Bloom filter, JIT stack...),
+  `results/c-baseline-x86-64.md`.
+- Batches: `results/applied-after-seed43/` .. `applied-after-seed45/`,
+  `results/pending/` (after seed 46).
