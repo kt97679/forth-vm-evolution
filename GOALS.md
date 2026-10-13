@@ -101,9 +101,8 @@ results/drafts/goals-snapshots.md.)
 
 ## Rejected or deferred - look here first
 
-Prototype code for some of these may exist only in the scratch trees of the
-chats of Iterations 213-265: results/drafts/chat-to-iter265/trees/SORTED.md lists
-the ten whose work never reached master.
+The scratch trees of the chats of Iterations 213-265 hold no prototype of any of
+these (results/drafts/chat-to-iter265/trees/SORTED.md, read in Iteration 277).
 
 | approach | what decided it | where |
 |---|---|---|

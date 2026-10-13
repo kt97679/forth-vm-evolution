@@ -42,3 +42,24 @@ pointer, not a proof: read the patch before relying on it.
 | `p13` | 105 | 29% | 1 | NOT in master - look | 8553601 Iteration 233: packed names captured in GOALS.md's register, d |
 
 In all: 19 in master, 10 NOT in master - look, 2 mostly in master, changed since, 1 nothing added.
+
+## Read (Iteration 277): no lost work
+
+The share above was measured against today's master, which later batches
+rewrote - primfirst (after seed 46) reversed the header layout of Iterations
+232-234 - so "NOT in master" meant "not in master today", not "never applied".
+Measured instead against the batches as applied (results/applied-after-seed4N/),
+and read:
+
+| tree | what it is | where it went |
+|---|---|---|
+| `ansall` | a first draft of cross.4's fast path (@-T and !-T as host cells) | superseded by `ff` |
+| `ff` | cross.4's fast path, as proposed in Iteration 255 | results/drafts/crossfast.patch, line for line; not applied - the kernel workload stays a yardstick (the owner, 257) |
+| `ec` | Iteration 248's tail fix reversed, beside lab/evolve/engines-check.py being written (249) | engines-check is in master; the reversal is the fault it was written against. No job, log or entry records the run |
+| `base45`, `fresh45b`, `p13` | the names patch (UTF-8 names in byte headers), in the making | the after-seed-45 batch, every added line (names-after-seed45.patch the nearest) |
+| `fresh45c`, `fresh45d` | the cell headers' UTF-8 fix (cellnames), in the making | the after-seed-45 batch: 96% and 100% of their lines. fresh45c's other seven are a variant (NAME-AREA, PRIOR-NFA) whose own comment names why it was left: a kernel word beside an overlay's X8 copy - HANDOFF.md's lesson |
+| `fresh45e`, `fresh45f` | the after-seed-45 batch, further on (Iterations 236-238) | the after-seed-45 batch, every added line |
+| `b45`, `b46` ("mostly") | the dispatch offsets; primfirst | the after-seed-45 and after-seed-46 batches (100%, 89%) |
+
+None holds a prototype of an idea in GOALS.md's register, and none holds work
+found nowhere else.

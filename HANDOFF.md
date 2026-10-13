@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 276.
+- master: Iteration 277.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -132,10 +132,6 @@ About 20 minutes of machine time for build, tests and gates.
    276) holds every value, but the older genes' express() rules and build code
    are still code. A new gene is one row (GENES.md, "Adding a gene"); after
    converting one, `python3 lab/evolve/gene-equiv.py <the commit before>`.
-5. Optional: the ten scratch trees whose work never reached master
-   (results/drafts/chat-to-iter265/trees/SORTED.md) - unread; prototypes for
-   some deferred ideas may be there.
-
 ## Lessons - how faults got in, and the checks that catch them now
 
 - A passing gate does not prove the intended code ran (a fallback of the same
@@ -155,6 +151,9 @@ About 20 minutes of machine time for build, tests and gates.
   is fixed, check that its designs live, not only compile (seed 47: 626 alive).
 - A compiler gene is offered only where the compiler exists, and the jail must
   know it as a build tool (BUILD_TOOLS).
+- Judge an old scratch tree against what was applied, not against today's master:
+  later batches rewrite what it held (277: ten trees "not in master" were all
+  applied). "Never failed" means "never recorded failing" - record the run.
 - A check that never failed is made to fail before it is trusted (266:
   engines-check against 248's fault). Measure the artifact, not a tool's
   estimate of it (267). A first number far below its price: lift one

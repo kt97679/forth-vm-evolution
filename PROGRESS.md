@@ -5471,3 +5471,27 @@ lab/evolve/gene-equiv.py REV (the evolver against itself at an earlier commit,
 read from git; a control reorders one gene's values and must be caught) - run
 against HEAD~1 it reproduced the figures above and caught its control. The
 other three are listed disposable with reasons.
+
+## Iteration 277 - 2026-10-13 - Claude
+
+**The ten unmerged scratch trees read (the owner asked): no lost work.**
+Iteration 276 sorted the trees of the chats of Iterations 213-265 by the share
+of their added lines in today's master, and ten came out under half. Measured
+against the batches as applied instead, and read
+(results/drafts/chat-to-iter265/trees/SORTED.md): seven are the after-seed-45
+batch in the making - base45, fresh45b and p13 the names patch, fresh45c and
+fresh45d the cell headers' fix, fresh45e and fresh45f later - every added line
+in that batch but fresh45c's seven, a variant left for the X8 collision its own
+comment names; primfirst (after seed 46) reversed their header layout, which is
+why today's master shares little of them. ff is cross.4's fast path,
+results/drafts/crossfast.patch line for line; ansall its first draft. ec is
+Iteration 248's tail fix reversed beside engines-check.py being written
+(Iteration 249).
+
+**Corrected forward:** Iteration 266 said engines-check "had never failed: it
+was written after 248 fixed the fault it exists for". The tree ec shows that
+chat planted that very fault while writing it; no job, log or entry records the
+run, so the true statement is that it had never been *recorded* failing -
+Iteration 266's run is the first on record. Also corrected: Iteration 276's
+GOALS.md note that the trees might hold prototypes of deferred ideas - none
+does. HANDOFF.md's open item 5 is closed.
