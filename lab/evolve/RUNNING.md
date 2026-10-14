@@ -285,11 +285,18 @@ Two measurements only real hardware can make, timing-sensitive - run them when a
 chain has finished and its packs are sent, before the next run starts, the
 laptop plugged in and nothing else running.
 
-Once: `sudo apt install linux-tools-common linux-tools-$(uname -r)` (perf), and
-after each boot `sudo sysctl kernel.perf_event_paranoid=2` (Ubuntu's default, 4,
-lets perf count nothing). Then one command, two packs to send back:
+Once: `sudo apt install linux-tools-common linux-tools-$(uname -r)` (perf). Then
+one command in a terminal, two packs to send back:
 
-    sh lab/evolve/next-run.sh experiment c-baseline.py then experiment counters.py
+    sh lab/evolve/next-run.sh experiment counters.py then experiment c-baseline.py
+
+counters.py first: Ubuntu's kernel.perf_event_paranoid (4) lets perf count
+nothing, so counters.py asks sudo for your password once as it starts, sets 2 for
+its own run, and restores the old value when it ends - also on an error, Ctrl-C,
+SIGTERM or SIGHUP - saying so on the terminal (Iteration 279; nothing is changed
+globally or saved: a reboot restores it in any case). Stay for that prompt: it
+comes after next-run.sh's own checks, a few minutes in - or run `sudo -v` just
+before, and it will not ask.
 
 - `c-baseline.py`: the newest front's fastest, knee and smallest designs, and s6,
   against the same benchmarks written in C (-O2 and -O0) - each as a multiple of

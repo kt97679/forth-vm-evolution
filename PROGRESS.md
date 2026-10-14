@@ -5531,3 +5531,22 @@ conversion (the five converter flags moved; results/drafts/image-identity.py in
 both trees), ids too; c-baseline.py run exactly as next-run.sh runs it, with two
 database paths, picked today's designs itself (e141550b9a, 037722ab8a, the
 smallest) and finished; run-tests PASS (31 generator paths), 7 of 7 IDENTICAL.
+
+## Iteration 279 - 2026-10-13 - Claude
+
+**perf's setting changed for the measurement only (the owner: linux-tools
+installed, no global sysctl change).** counters.py now raises
+kernel.perf_event_paranoid itself: it reads the value; if above 2 it asks sudo
+once - the prompt and its messages on the terminal, since next-run.sh sends the
+tool's output to files - sets 2, keeps sudo's credentials fresh between designs
+so the restore needs no password, and puts the old value back when it ends,
+reading it back to check: normally, on an error, on Ctrl-C, SIGTERM or SIGHUP.
+A restore that fails is said on the terminal with the command that does it; a
+reboot restores it anyway (the setting is not saved). The chain now runs
+counters.py first, so the prompt comes at the start: `sh lab/evolve/next-run.sh
+experiment counters.py then experiment c-baseline.py` (RUNNING.md).
+lab/evolve/counters-test.py, as root with a stand-in sudo, from Ubuntu's 4: a
+normal end, an error, SIGTERM, SIGHUP, Ctrl-C (2 during, 4 after, exit 143, 129,
+130), the setting already 2 (no sudo), sudo refused at the start (nothing
+changed), a restore that fails (said, with the command) - 8 of 8; the VM's own
+setting put back.
