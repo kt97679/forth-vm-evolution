@@ -8,7 +8,7 @@
 # perf itself first, while someone is here to fix it (Iteration 283): Ubuntu's perf is a
 # wrapper that exits 2 when the tools for the running kernel are not installed - the
 # second laptop try stopped so, in the background, perf's own message lost
-if ! out=$(perf --version 2>&1); then
+if ! out=$("${PERF:-perf}" --version 2>&1); then      # PERF: what next-run.sh found (counters.py --find-perf)
     echo "next-run: perf does not run here:" >&2; echo "$out" | sed -n '1,6s/^/    /p' >&2
     echo "next-run: on Ubuntu: sudo apt install linux-tools-\$(uname -r) - for the kernel running now; nothing started" >&2
     exit 1

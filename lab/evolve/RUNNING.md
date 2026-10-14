@@ -288,8 +288,12 @@ laptop plugged in and nothing else running.
 Once: `sudo apt install linux-tools-common linux-tools-$(uname -r)` (perf) - and again
 after a kernel update: Ubuntu's perf is a wrapper that runs only with the tools of the
 kernel running now, and exits 2 otherwise (Iteration 283: next-run.sh tries it first,
-before it detaches, and shows its words). Then one command in a terminal, two packs
-to send back:
+before it detaches, and shows its words). If that kernel's tools have no perf where
+the wrapper looks - the laptop's OEM 6.17 kernel, its package installed (Iteration
+284) - next-run.sh uses any perf found under /usr/lib (another kernel's does, for
+user-space counts), or the one given as PERF=/path/to/perf in front of the command;
+the table names the perf it used. Then one command in a terminal, two packs to send
+back:
 
     sh lab/evolve/next-run.sh experiment counters.py then experiment c-baseline.py
 

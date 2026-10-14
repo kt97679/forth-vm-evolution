@@ -228,6 +228,8 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # A later step of the chain comes back here detached, with PERF_HOLD_START set.
     case " ${TOOL:-} $THEN " in *" counters.py "*)
         if [ -z "${PERF_HOLD_START:-}" ]; then
+            PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
+            export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain
             PERF_HOLD_START=$RUNS/perf-hold-$(date +%Y%m%d-%H%M%S).start; PERF_HOLD_DONE=${PERF_HOLD_START%.start}.done
             sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" || die "counters.py cannot have perf's counters - nothing started"
             export PERF_HOLD_START PERF_HOLD_DONE

@@ -30,13 +30,39 @@ when and how.
 
     sh lab/evolve/next-run.sh experiment counters.py       a pack to send back
 """
-import atexit, os, platform, shutil, signal, statistics, subprocess, sys, time
+import atexit, glob, os, platform, re, shutil, signal, statistics, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 args = sys.argv[1:]; sys.argv = [sys.argv[0]]
 RUNS = 5
 if '--runs' in args: i = args.index('--runs'); RUNS = int(args[i + 1]); del args[i:i + 2]
 IDS = [a for a in args if not a.endswith('.jsonl') and not os.path.exists(a)]
 EVENTS = ['cycles:u', 'instructions:u', 'branches:u', 'branch-misses:u']
+
+def find_perf():
+    """(path, version, tried): $PERF if it runs; else `perf` on the PATH if it runs; else any
+    perf binary under /usr/lib's linux tools (Iteration 284). Ubuntu's perf is a wrapper that
+    runs only the running kernel's binary, and the laptop's OEM kernel had none, its package
+    installed - for counting user-space events a perf of another version does. The running
+    kernel's first, then the newest. PERF_TOOLS_ROOT moves the search, for the tests."""
+    root = os.environ.get('PERF_TOOLS_ROOT', '/usr/lib')
+    found = glob.glob(os.path.join(root, 'linux-tools*', '*', 'perf')) + glob.glob(os.path.join(root, 'linux-*tools*', 'perf'))
+    num = lambda f: [int(x) for x in re.findall(r'\d+', f)]
+    found.sort(key=lambda f: (platform.release() in f, num(f)), reverse=True)
+    cands = ([os.environ['PERF']] if os.environ.get('PERF') else []) + ([shutil.which('perf')] if shutil.which('perf') else []) + found
+    tried = []
+    for c in dict.fromkeys(cands):
+        try: r = subprocess.run([c, '--version'], capture_output=True, text=True, timeout=20)
+        except OSError as e: tried.append((c, str(e))); continue
+        if r.returncode == 0 and r.stdout.strip(): return c, r.stdout.strip(), tried
+        tried.append((c, ((r.stderr or r.stdout).strip().split('\n') or [''])[0]))
+    return None, None, tried
+
+if '--find-perf' in sys.argv[1:] or '--find-perf' in args:   # next-run.sh asks this in the foreground
+    path, version, tried = find_perf()
+    for c, why in tried: print('counters: %s does not run: %s' % (c, why), file=sys.stderr)
+    if not path: sys.exit('counters: no perf runs here - on Ubuntu: sudo apt install linux-tools-$(uname -r); `find /usr/lib -name perf` shows what is installed')
+    if tried: print('counters: using %s (%s)' % (path, version), file=sys.stderr)
+    print(path); sys.exit(0)
 
 def parse(text):
     """perf stat -x, output -> {event: count}; exits on a counter it could not read."""
@@ -105,8 +131,9 @@ class PerfHold:
         print('counters: kernel.perf_event_paranoid is %s after the measurement (perf-hold.py)' % open(PARANOID).read().strip(), file=sys.stderr)
 
 if __name__ == '__main__':
-    PERF = shutil.which('perf')
-    if not PERF: sys.exit('counters: no perf - on Ubuntu: sudo apt install linux-tools-common linux-tools-$(uname -r)')
+    PERF, PERF_VERSION, _tried = find_perf()
+    for c, why in _tried: print('counters: %s does not run: %s' % (c, why), file=sys.stderr)
+    if not PERF: sys.exit('counters: no perf runs here - on Ubuntu: sudo apt install linux-tools-$(uname -r); `find /usr/lib -name perf` shows what is installed')
     import evolve as E
     E.setup()
     designs = [('s6', dict(E.HUMAN['s6-cv8b']))]
@@ -139,7 +166,7 @@ if __name__ == '__main__':
                 rows.append((name, wl, {e: statistics.median(x[e] for x in runs) for e in EVENTS}))
             shutil.rmtree(d, ignore_errors=True)
     print('# Hardware counters - designs on the selection workloads (lab/evolve/counters.py)\n')
-    print('User-space counts, the median of %d runs. Host: %s, %s.\n' % (RUNS, platform.platform(), platform.processor() or platform.machine()))
+    print('User-space counts, the median of %d runs. Host: %s, %s. Counted by %s (%s).\n' % (RUNS, platform.platform(), platform.processor() or platform.machine(), PERF, PERF_VERSION))
     print('| design | workload | cycles (M) | instructions per cycle | branch misses per 1k instructions | misses per branch |')
     print('|---|---|---|---|---|---|')
     for name, wl, m in rows:

@@ -10,7 +10,8 @@ end, an error, SIGTERM, SIGHUP, Ctrl-C, the setting already 2 (no sudo at all), 
 refused at the start (nothing changed), a restore that fails (said, with the command)
 - Iteration 279's eight; and next-run.sh's chain (Iteration 282): perf-hold.py with
 PerfHold, counters.py killed -9, counters.py never started, perf-hold-start.sh with
-the setting already 2, with no terminal, and in a terminal (script(1)).
+the setting already 2, with no terminal, and in a terminal (script(1)); perf without
+its kernel's tools (Iteration 283); which perf is found (Iteration 284).
 
     sudo python3 lab/evolve/counters-test.py
 """
@@ -104,6 +105,27 @@ try:
     q = subprocess.Popen(['runuser', '-u', 'claude', '--', sys.executable, '-c', holder, S, D, '1'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
     q.stdout.readline(); d = rd(); q.wait(timeout=30)
     case('perf-hold-start.sh in a terminal: sudo once, the helper holds 2, then 4', ok and d == 2 and wait_for(lambda: rd() == 4) and 'restored to 4' in open(L).read())
+    # Iteration 284: which perf - find_perf, as next-run.sh asks it (counters.py --find-perf)
+    import platform
+    TR = tempfile.mkdtemp(prefix='tools-'); os.chmod(TR, 0o755)
+    def fakeperf(path, version):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path, 'w').write('#!/bin/sh\necho "perf version %s"\n' % version); os.chmod(path, 0o755)
+    def find(**env):
+        e = dict(os.environ, PERF_TOOLS_ROOT=TR, FAKE_PERF_BROKEN='1'); e.pop('PERF', None); e.update(env)
+        return subprocess.run([sys.executable, os.path.join(HERE, 'counters.py'), '--find-perf'], env=e, capture_output=True, text=True)
+    r = find()
+    case('no perf runs anywhere: --find-perf fails, says what it tried', r.returncode == 1 and 'not found for kernel' in r.stderr and 'linux-tools-$(uname -r)' in r.stderr)
+    fakeperf(os.path.join(TR, 'linux-tools', '6.8.0-90-generic', 'perf'), '6.8.12')
+    r = find()
+    case("the wrapper without the kernel's tools, another kernel's perf installed: that one", r.returncode == 0 and r.stdout.strip().endswith('6.8.0-90-generic/perf') and 'using' in r.stderr)
+    fakeperf(os.path.join(TR, 'linux-tools', platform.release(), 'perf'), '6.18.1')
+    fakeperf(os.path.join(TR, 'linux-tools', '99.0.0-1-generic', 'perf'), '99.0')
+    r = find()
+    case("the running kernel's perf before a newer one", r.returncode == 0 and platform.release() in r.stdout)
+    fakeperf(os.path.join(TR, 'mine', 'perf'), '7.0')
+    r = find(PERF=os.path.join(TR, 'mine', 'perf'))
+    case('PERF given and running: used first', r.returncode == 0 and r.stdout.strip() == os.path.join(TR, 'mine', 'perf'))
     subprocess.run(['pkill', '-f', r'^[^ ]*python3[^ ]* [^ ]*/perf-hold\.py '], check=False)   # anchored: a bare pattern matches the shell that runs this
     print('PerfAccess and perf-hold: %d of %d cases right' % (sum(ok for _, ok in res), len(res)))
 

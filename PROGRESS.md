@@ -5645,3 +5645,22 @@ counters.py stops before building anything (0 designs) with the same.
 counters-test.py now carries a stand-in perf, working or broken: 15 of 15.
 Unconfirmed until the owner runs `perf --version`: that the tools for the
 laptop's running kernel are what is missing.
+
+## Iteration 284 - 2026-10-14 - Claude
+
+**perf on the laptop: the running kernel's tools have none.** Iteration 283's
+guess confirmed by the owner: `perf --version` - "perf not found for kernel
+6.17.0-1032", the running kernel 6.17.0-1032-oem. apt: linux-tools-6.17.0-1032-oem
+"already the newest version" - installed, and the wrapper still finds no perf where
+it looks (/usr/lib/linux-tools/$(uname -r)/perf); the cloud-tools and "oem"
+meta-packages it names do not exist for that kernel. So counters.py's find_perf
+(also `counters.py --find-perf`, which next-run.sh now asks in the foreground
+and exports as PERF for the whole chain): $PERF if it runs; else `perf` if it
+runs; else any perf binary under /usr/lib's linux tools, the running kernel's
+first, then the newest - for user-space counts another kernel's perf does. Each
+one tried and why it failed is said; the table names the perf used.
+counters-test.py, 19 of 19: no perf anywhere (fails, saying what it tried and
+the apt line), the broken wrapper with another kernel's perf installed (that
+one), the running kernel's before a newer, PERF given (first). Still unknown:
+what the OEM tools package installs, and whether any perf binary is on the
+laptop at all - asked of the owner.
