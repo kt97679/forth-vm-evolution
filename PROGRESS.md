@@ -5550,3 +5550,19 @@ normal end, an error, SIGTERM, SIGHUP, Ctrl-C (2 during, 4 after, exit 143, 129,
 130), the setting already 2 (no sudo), sudo refused at the start (nothing
 changed), a restore that fails (said, with the command) - 8 of 8; the VM's own
 setting put back.
+
+## Iteration 280 - 2026-10-14 - Claude
+
+**Housekeeping while seed 48 runs (the owner asked).** Checked: no tracked file
+an ignore rule matches, no caches, objects or editor debris tracked; 1,321
+tracked files, 26 MB, the history packed to 5.5 MB - everything large is records
+(the comparison history 2.2 MB, the per-seed results, the owner's Forth
+collection), so nothing to delete for size, and deleting would not shrink the
+bundle anyway: the history keeps every version. The living documents scanned
+for paths no tracked file satisfies: of ten, eight point outside the repository
+or are placeholders; two corrected - stages/STAGES.md's ENCODING-COMPARISON.md
+is said to be a note this repository never held (the log does not say whose),
+and GENES.md's tools/test-sysc-shell.sh is said to be gone since Iteration 169,
+run-tests.sh's shell suite running every SYSC shell. The laptop's clone (seed
+47's pack, repo-files.txt): runs/ 125 files, 138 MB - the only copies of each
+run's database; old bundles in ~/Downloads can go, every one but the newest.

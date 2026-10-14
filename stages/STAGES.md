@@ -51,7 +51,8 @@ the article should say so.
 
 `p8-pack8` is not a step on the road to CV8. It is a design that was
 proposed, costed, and rejected in Iteration 157 without ever being
-built - `ENCODING-COMPARISON.md` calls it "tagged byte (8-bit x3/x7)" -
+built - `ENCODING-COMPARISON.md`, an earlier design note this repository
+never held, calls it "tagged byte (8-bit x3/x7)" -
 and it is here because the rejection rested on a synthetic benchmark
 whose author flagged it as the pessimistic case.
 
