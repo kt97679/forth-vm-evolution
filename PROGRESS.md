@@ -5774,3 +5774,20 @@ to lists that already filled their designs' opcode slots, the two words got none
 (ops10_in hands the slots out in the list's order) - so a forced list's members now go
 first, in gate.py and in word-cost.py (now with --set too); and a gate left running
 when the turn ended came back empty. HANDOFF.md has both lessons.
+
+## Iteration 291 - 2026-10-14 - Claude
+
+**The pending 2@ and 2! patch gets the JIT's stencils.** Looking at item 1 of the
+waiting list - the run-time compiler compiling an [opcode EXIT] word's opcode in
+place of the call - showed a fault in the patch itself: jit.c translates a word only
+if every operation in it has SPN stencils ("all or nothing"), and the two new opcodes
+had none. A JIT design taking them would have left every word holding one to the
+interpreter - 2@ and 2! themselves among them, which its JIT had compiled natively
+as colon words - slower, never wrong, so engines-check could not see it. layout.py's
+stencil table now has them: 2@ DUP ADDI FETCH SWAP FETCH, 2! SWAP OVER STORE ADDI
+STORE, CELL+'s ADDI the one constant (8). Checked in a scratch tree: the fastest JIT
+design, 927064f127, 70 of 129 operations translatable with them (69 without);
+engines-check PASS; the gate on seed 49's front, the opcodes first, 172 of 172 (99 JIT
+designs); run-tests PASS. The patch is regenerated and ORDER.md says so. Item 1 itself
+- the converter putting the [opcode EXIT] words among the primitives, so that
+PRIMITIVE? lets COMPILE,8 copy their opcode - is still to do.

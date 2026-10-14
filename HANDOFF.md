@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 290.
+- master: Iteration 291.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
   after-seed-50 batch (Iteration 290): one patch, 2@ and 2! as opcodes.
@@ -131,7 +131,9 @@ About 20 minutes of machine time for build, tests and gates.
 1. Seed 50: process when its packs come. No batch is pending.
 2. Pending, to apply after seed 50: 2@ and 2! as opcodes (results/pending/ORDER.md;
    bubble -25% of its dispatches on c9369657e4). Next on that line: the run-time
-   compiler emitting the opcode for a call to them (bubble's other 2.1 million),
+   compiler emitting the opcode for a call to them (bubble's other 2.1 million) - the
+   converter placing the [opcode EXIT] words among the primitives, where PRIMITIVE?
+   lets COMPILE,8 copy their opcode (Iteration 291's note),
    and NUMBER?'s digit table as a gene.
 3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.

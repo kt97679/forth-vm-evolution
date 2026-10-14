@@ -105,7 +105,7 @@ index 70faa9e..dd3cb6c 100755
   'L_x_qdo':   '{ UNS64 n2_ = tos, n1_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; '
                'if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += BROFF(ip); } NEXT();',
 diff --git a/tools/layout.py b/tools/layout.py
-index 5ba7f4f..258aa22 100644
+index 5ba7f4f..2289d9f 100644
 --- a/tools/layout.py
 +++ b/tools/layout.py
 @@ -418,7 +418,7 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
@@ -117,6 +117,19 @@ index 5ba7f4f..258aa22 100644
  for _n in _OPB:
      if _n not in G['X_OPS10']: continue
      _at = {a: n for a, n in G['ops10_at']().items() if n == _n}
+@@ -1573,7 +1573,11 @@ if EMIT:
+             K = {'lit0': (['LIT'], 0), 'lit1': (['LIT'], 1), 'litm1': (['LIT'], -1), '0=': (['LIT', 'EQ'], 0),
+                  '0<': (['LIT', 'LT'], 0), 'INVERT': (['LIT', 'XOR'], -1), '<>': (['EQ', 'LIT', 'XOR'], -1),
+                  '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
+-                 'CELLS': (['LIT', 'LSHIFT'], 3)}
++                 'CELLS': (['LIT', 'LSHIFT'], 3),
++                 # Iteration 290: 2@ and 2! as opcodes - five stencils each, CELL+'s ADDI the one constant;
++                 # without them a JIT design that takes the opcodes leaves every word holding one to the
++                 # interpreter (jit.c: all or nothing), 2@ and 2! themselves among them
++                 '2@': (['DUP', 'ADDI', 'FETCH', 'SWAP', 'FETCH'], 8), '2!': (['SWAP', 'OVER', 'STORE', 'ADDI', 'STORE'], 8)}
+             O = {'LIT8': (['LIT'], 1), 'LIT': (['LIT'], 2), 'LIT32': (['LIT'], 3), 'LIT64': (['LIT'], 4),
+                  'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5), 'DUP+I': (['DUP', 'ADDI'], 5), 'DUP<I': (['DUP', 'LIT', 'LT'], 5),
+                  'BRANCH': (['BRANCH'], 7), 'BRANCH8': (['BRANCH'], 6), '?BRANCH': (['0BRANCH'], 7),
 diff --git a/tools/sod16.py b/tools/sod16.py
 index fbb2eb8..b9ee86a 100644
 --- a/tools/sod16.py
