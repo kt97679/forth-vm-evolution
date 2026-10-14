@@ -133,7 +133,10 @@ About 20 minutes of machine time for build, tests and gates.
    bubble -25% of its dispatches on c9369657e4). Next on that line: the run-time
    compiler emitting the opcode for a call to them (bubble's other 2.1 million) - the
    converter placing the [opcode EXIT] words among the primitives, where PRIMITIVE?
-   lets COMPILE,8 copy their opcode (Iteration 291's note),
+   lets COMPILE,8 copy their opcode (Iteration 291's note) - only a word defined once
+   (an overlay's later definition must stay found first); every compiler asks
+   PRIMITIVE? (kernel.4, cpt16.4, the cv8 and cv8t overlays - the tag2 ones' inline
+   path still to read), and cv8t-empty.4 asks it the other way round,
    and NUMBER?'s digit table as a gene.
 3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
