@@ -5739,3 +5739,15 @@ its pack, which clean-runs will remove when seed 52 starts. On this master: the 
 standard suite on 37 of the front, 0 differ from s6, its negative control caught.
 NEXT-RUN: `seed 50 tag2 12h then experiment compare-fronts.py --rounds 6 --frontier
 --cpus 2,8`; the comparison is session 43; results/progress-by-run.md regenerated.
+
+## Iteration 289 - 2026-10-14 - Claude
+
+**Seed 50 started (13:49 UTC; the evolution stops 23:55 UTC, "16:55 here" - the
+two-clock message works). Seed 48 left without a record, the owner's choice.** The
+owner had not run what NEXT-RUN called seed 48 as such, he thought that iteration
+the perf measurements' - yet a run went from Oct 13 21:01 UTC to about 03:00,
+archived as runs/archived-20261014-052835, and seed 49's comparison holds it, the
+Q-best of all runs among its designs; seed 49's pack cannot say which seed it ran
+(repo-files.txt lists no runs/). Nothing is re-run: its designs live on in seed 49's
+database and the comparisons; its own pack, results file and predictions' score
+are given up.

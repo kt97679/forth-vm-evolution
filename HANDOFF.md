@@ -41,16 +41,17 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 288.
+- master: Iteration 289.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
-- **Seed 48 has finished; its packs are not processed yet** - they wait on the
-  laptop in runs/. clean-runs keeps the newest eight pack tarballs: seed 48's go
-  when seed 52 starts, so they must come back before. Seed 49's comparison holds
-  seed 48 as an archive (its 4599c1f454 the Q-best of all runs), and its front's
-  genomes sit in seed 49's database as carried records (gate.py --db reads them).
+- **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
+  went from Oct 13 21:01 UTC to about 03:00, its database archived as
+  runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
+  Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
+  as carried records (gate.py --db). Its packs were never sent, the owner unsure
+  which seed it ran; nothing re-runs it. Its predictions stay unscored.
 - Seed 49 processed (Iteration 288): not small, hypervolume +4.0%.
-- **Seed 50 is the laptop's run** (Iteration 288): `seed 50 tag2 12h then experiment
+- **Seed 50 is running** (started 13:49 UTC Oct 14; the evolution stops 23:55 UTC): `seed 50 tag2 12h then experiment
   compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 12 hours, the owner's; the
   same genes a third time. Its predictions: the end of `results/predictions.md`.
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
@@ -126,7 +127,7 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-1. Seed 48 (before seed 52 starts) and seed 50: process each when its packs come. No batch is pending.
+1. Seed 50: process when its packs come. No batch is pending.
 2. A patch, built while seed 50 runs, to apply after it: 2@, 2! and DEPTH into the ops10 pool and opbody
    (results/source-audit-2.md) - hot in bubble and the corpus, reachable by no
    gene: bubble -11% to -28% of its dispatches through opbody, more if the run-time
