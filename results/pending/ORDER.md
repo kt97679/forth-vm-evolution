@@ -9,4 +9,7 @@
 Patch 1, tested on master at Iteration 289, in a scratch tree: the build; engines-check
 PASS, 36 paths; run-tests PASS (the generators 36 paths); gene-equiv.py against HEAD -
 every recorded design's id and expression the same (3,048), and, as a longer pool must,
-243 of 1,000 random genomes and 4 of 3,000 mutations different; word-cost.py as above.
+243 of 1,000 random genomes and 4 of 3,000 mutations different; word-cost.py as above;
+the gate with the two opcodes put first in every design's list and opbody on, seed 49's
+front: 172 of 172 alive, every one expressing them. The patch applies on a fresh clone of
+master after Iteration 290 and reproduces the tested files.

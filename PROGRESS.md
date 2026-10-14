@@ -5751,3 +5751,26 @@ Q-best of all runs among its designs; seed 49's pack cannot say which seed it ra
 (repo-files.txt lists no runs/). Nothing is re-run: its designs live on in seed 49's
 database and the comparisons; its own pack, results file and predictions' score
 are given up.
+
+## Iteration 290 - 2026-10-14 - Claude
+
+**2@ and 2! as opcodes, pending as the after-seed-50 batch's patch 1
+(results/pending/ORDER.md) - the second source audit's finding built.** Their
+handlers in vm-lab.c, gen-tos.py and gen-msc.py (gen-tail.py takes them as it finds
+them; the JIT leaves a word with an opcode it cannot translate to the interpreter),
+their kernel bodies in sod16.py's table as the converter reads them (SOD16_SHOW: 2@
+`DUP CELL+ @ SWAP @`, 2! `SWAP OVER ! CELL+ !`), the pool, the labels and opbody's
+list, five engines-check paths. DEPTH left out: its handler would have to agree with
+the kernel's S0 through ABORT and saved images, for the corpus's few per cent.
+Measured: c9369657e4's bubble 12,759,474 -> 9,572,364 dispatches (-25.0%), its
+corpus -0.3% - about -4.7% on the geometric mean. Checked in a scratch tree:
+engines-check 36 paths and run-tests PASS; gene-equiv.py - every recorded id and
+expression the same, random draws and four mutations different, as a longer pool
+must make them; the gate with the opcodes first in every list, seed 49's front: 172 of
+172 alive. The patch applies on a fresh clone and reproduces the tested files.
+
+On the way, gate.py's --set learned lists, and the first try built nothing: appended
+to lists that already filled their designs' opcode slots, the two words got none
+(ops10_in hands the slots out in the list's order) - so a forced list's members now go
+first, in gate.py and in word-cost.py (now with --set too); and a gate left running
+when the turn ended came back empty. HANDOFF.md has both lessons.

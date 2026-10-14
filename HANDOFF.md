@@ -41,9 +41,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 289.
+- master: Iteration 290.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
-  `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
+  `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
+  after-seed-50 batch (Iteration 290): one patch, 2@ and 2! as opcodes.
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -128,10 +129,10 @@ About 20 minutes of machine time for build, tests and gates.
 ## Open items (roughly by value)
 
 1. Seed 50: process when its packs come. No batch is pending.
-2. A patch, built while seed 50 runs, to apply after it: 2@, 2! and DEPTH into the ops10 pool and opbody
-   (results/source-audit-2.md) - hot in bubble and the corpus, reachable by no
-   gene: bubble -11% to -28% of its dispatches through opbody, more if the run-time
-   compiler emits the opcode. Then perhaps NUMBER?'s digit table as a gene.
+2. Pending, to apply after seed 50: 2@ and 2! as opcodes (results/pending/ORDER.md;
+   bubble -25% of its dispatches on c9369657e4). Next on that line: the run-time
+   compiler emitting the opcode for a call to them (bubble's other 2.1 million),
+   and NUMBER?'s digit table as a gene.
 3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
 4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): on
@@ -178,6 +179,11 @@ About 20 minutes of machine time for build, tests and gates.
   code: counters.py said "exited 2" and kept perf's message to itself (283).
   Try an outside program once, where someone can still fix it, before the work
   goes to the background.
+- Forcing a list gene for a check puts its members first: ops10_in hands a
+  design's opcode slots out in its list's order, and members appended to a full list
+  get none - a check of them that builds nothing (290: the gate's first try).
+- A background job still running when the turn ends is lost: start it early and
+  read it in the same turn (290: a gate's log came back empty).
 - `pkill -f PATTERN` kills the shell running it when PATTERN is in its command
   line - anchor the pattern, or kill by pid (282). Tests sharing one global
   setting run one at a time: run alongside, they made each other's results (282).
