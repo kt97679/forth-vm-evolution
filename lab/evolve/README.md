@@ -36,6 +36,7 @@ What each script here does, from its own first line (Iteration 275). What each g
 GENES.md; running the evolution on the laptop: RUNNING.md; the rest of this file
 is the evolver's development history, phase by phase, then iteration by iteration.
 
+- `missmap.py` - which handlers mispredict: perf record's user-space branch misses on the kernel and corpus workloads, each sample's source line charged to its handler (Iteration 294; the laptop's, between runs)
 - `word-cost.py` - the dispatches each workload spends inside chosen words, on chosen designs - what an opcode for them could save at most (Iteration 281)
 - `ans-check.py` - ans-check.py [--ids A,B,...] [DB ...] - the held-out check (Iteration 119; the
 - `c-baseline.py` - c-baseline.py [--runs N] [IDS...] - the Forth designs against the same

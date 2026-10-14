@@ -226,7 +226,7 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # about to go to the background, where sudo cannot ask: ask now, once, and leave
     # perf-hold.py to hold the setting while counters.py measures (perf-hold-start.sh).
     # A later step of the chain comes back here detached, with PERF_HOLD_START set.
-    case " ${TOOL:-} $THEN " in *" counters.py "*)
+    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)   # Iteration 294: missmap.py too
         if [ -z "${PERF_HOLD_START:-}" ]; then
             PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
             export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain

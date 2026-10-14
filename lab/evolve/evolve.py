@@ -617,10 +617,11 @@ def CC(g):
     return 'clang' if express(g).get('compiler') else 'cc'
 def ccflags(g):
     if express(g).get('compiler'):          # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
-        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()]
+        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()] + _EXTRA_CFLAGS
     f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
     if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
-    return f
+    return f + _EXTRA_CFLAGS
+_EXTRA_CFLAGS = os.environ.get('EVOLVE_CFLAGS', '').split()   # Iteration 294: a measurement's -g (missmap.py) - never the evolution's
 
 def tail_offenders(eng):
     """Handlers whose machine code CALLS through an indexed table - a

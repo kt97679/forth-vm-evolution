@@ -297,6 +297,11 @@ back:
 
     sh lab/evolve/next-run.sh experiment counters.py then experiment c-baseline.py
 
+Iteration 294: which handlers mispredict - `sh lab/evolve/next-run.sh experiment
+missmap.py` (a few minutes; perf as for counters.py, sudo asking before the chain
+detaches). One pack back: its markdown names, for each design on kernel and corpus,
+the handlers with the most branch misses.
+
 Ubuntu's kernel.perf_event_paranoid (4) lets perf count nothing, and next-run.sh's
 chain runs in the background, where sudo cannot ask (Iteration 282: the first try
 failed so). So next-run.sh asks for your password at once, before it detaches,

@@ -72,3 +72,14 @@ cost is an assumption (Zen 4's penalty, 12 to 18 cycles), not a count:
    where the interpreted designs mispredict 0.05-0.09% - deep recursion; most likely returns the
    return-address predictor cannot follow (the JIT's tail calls as jumps, jittail), not looked
    at yet.
+
+## Iteration 294: where to look next
+
+- Which handlers take the interpreter's misses (point 3): lab/evolve/missmap.py, for the
+  laptop between runs - perf record's samples, each charged to its handler.
+- The JIT's ackermann (point 4), read in jit.c: the JIT's code calls and returns with the
+  machine stack's call and ret (an EXIT's stencil ends in ret), and A(3,5) recurses far
+  deeper than the return-address predictor holds - returns beyond its depth mispredict;
+  the interpreted designs return through an indirect jump the history-based predictor
+  follows. No fault: a candidate gene - the JIT's EXIT as pop and jmp - worth perhaps
+  ackermann's share of the misses, a sixth of the geometric mean; not built.

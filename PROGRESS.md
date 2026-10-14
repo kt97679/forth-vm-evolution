@@ -5827,3 +5827,21 @@ engine 14,232 bytes, 14,680 without); run-tests PASS; gene-equiv - recorded ids 
 expressions the same; the gate, tail, clang and tailpn forced on 20 of seed 49's front: 19
 of 19 alive, one unable to express a tail engine. No speed figure: a rough VM timing's
 script ran the engines wrongly, and the VM could not judge it; seed 51 on the laptop will.
+
+## Iteration 294 - 2026-10-14 - Claude
+
+**missmap.py - which handlers mispredict - ready for the laptop; the JIT's ackermann
+misses explained.** For the 9-24% of the interpreter's cycles the counters put down to
+branch misses: perf record samples each design's user-space branch misses on kernel and
+corpus, perf report gives each sample's source line, and the line is charged to the
+handler whose label (L_x:, or a tail engine's H_x) comes last before it; samples outside
+the engine's source - the JIT's code - are counted apart. The engine is built with -g for
+it (evolve.py's EVOLVE_CFLAGS, a measurement's only; debug information changes no
+instruction); perf and the paranoid setting as counters.py's (next-run.sh asks sudo for
+missmap.py too). Tried end to end here with a stand-in perf that runs the engine for
+record and answers report with real label lines of s6's source: exit 0, the samples on
+L_t2call2-4 as placed, the outside line in the JIT's bucket. On the way: evolve.build()
+returns the engine's and image's paths - assumed names were why the two rough timings of
+Iteration 293 ran nothing (exit 2). The JIT's ackermann, read in jit.c: native call and
+ret, A(3,5) deeper than the return predictor - a candidate gene (EXIT as pop and jmp), in
+results/counters-amd-ryzen-7-pro-8840hs.md, not built.

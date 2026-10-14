@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 293.
+- master: Iteration 294.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
   after-seed-50 batch: 2@ and 2! as opcodes (Iteration 290-291), the gene
@@ -71,7 +71,11 @@ About 20 minutes of machine time for build, tests and gates.
 3. The clang tail engine with preserve_none and musttail: pending as the gene tailpn
    (after-seed-50 patch 3; the laptop's clang-20). Seed 51's front will say whether
    tail engines come back with it.
-4. Score the predictions, write the next (`results/predictions.md`).
+4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md):
+   lab/evolve/missmap.py is ready - the owner's, between runs: `sh lab/evolve/next-run.sh
+   experiment missmap.py` - then make the handlers it names branch-light. The JIT's
+   ackermann misses are its native call and ret past the return predictor's depth (read
+   in jit.c, Iteration 294): a candidate gene, EXIT as pop and jmp, not built.
 5. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a
    `---`, then report.md - the gate and ans-check read genomes from it.
 6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
