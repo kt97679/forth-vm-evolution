@@ -5845,3 +5845,29 @@ returns the engine's and image's paths - assumed names were why the two rough ti
 Iteration 293 ran nothing (exit 2). The JIT's ackermann, read in jit.c: native call and
 ret, A(3,5) deeper than the return predictor - a candidate gene (EXIT as pop and jmp), in
 results/counters-amd-ryzen-7-pro-8840hs.md, not built.
+
+## Iteration 295 - 2026-10-14 - Claude
+
+**The gene knumber, pending as the after-seed-50 batch's patch 4: NUMBER? as one
+opcode; counters.py --extra; the IP-update loop form planned, not built.** Pricing the
+digit table first showed it aimed wrong: DIGIT? is under 1% of the corpus where it runs
+at all, and the fast designs convert digits in C already ((>NUMBER), Iteration 57) - but
+NUMBER?'s own Forth around it was 10.1% of c9369657e4's corpus dispatches and 13.3% of
+927064f127's. knumber: forth/cv8b-knumber.4 under a stage tag of its own - a gene, since
+klookup's overlay and forced list would have changed what recorded designs build -
+(NUMBER?), the kernel's NUMBER? with BASE @ and DPL given, its two failure paths 0 0 0
+(only INTERPRET calls it, and aborts or throws), and NUMBER?8; numberq in vm-lab.c, the
+same steps in C with (>NUMBER)'s umul, for the plain, cached-top and multi-state engines;
+the expected body, 170 operations, generated from the converter's own reading. Measured:
+c9369657e4's corpus -10.2% (NUMBER? 10.1% -> 0.9%); 927064f127's corpus -4.9% and its
+kernel +5.3% - its slots full, the opcode displaced a word: evolution weighs it.
+Checked in a scratch tree on patches 1-3: engines-check 47 paths, run-tests, gene-equiv
+(recorded ids and expressions the same), the gate - 55 of 55, every klookup design on seed
+49's front. Patch 1's handlers carry no #if, and need none: three recorded designs build
+byte for byte the same with it.
+
+counters.py --extra EV,EV counts more events, each a column as a share of cycles, an
+event the CPU cannot count n/a (tried with a stand-in perf). results/drafts/iploop-plan
+.md: three explanations of the evolved designs' lower IPC - the IP chain, the stack
+through memory, the front end - and the laptop measurement that tells them apart
+(front- and back-end stalls), then a hand variant; only then a gene.

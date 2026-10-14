@@ -45,7 +45,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
   after-seed-50 batch: 2@ and 2! as opcodes (Iteration 290-291), the gene
-  opinline (Iteration 292), the gene tailpn (Iteration 293).
+  opinline (Iteration 292), the gene tailpn (Iteration 293), the gene knumber
+  (Iteration 295).
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -76,8 +77,10 @@ About 20 minutes of machine time for build, tests and gates.
    experiment missmap.py` - then make the handlers it names branch-light. The JIT's
    ackermann misses are its native call and ret past the return predictor's depth (read
    in jit.c, Iteration 294): a candidate gene, EXIT as pop and jmp, not built.
-5. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a
-   `---`, then report.md - the gate and ans-check read genomes from it.
+5. The IP-update loop form: results/drafts/iploop-plan.md - three explanations of the
+   evolved designs' lower IPC; first the laptop's `counters.py --extra
+   stalled-cycles-frontend:u,stalled-cycles-backend:u` (with missmap.py, between runs),
+   then a hand variant, then perhaps a gene.
 6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
    when a patch changes `forth/kernel.4`), then ONE background chain: build
    (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`
@@ -138,8 +141,9 @@ About 20 minutes of machine time for build, tests and gates.
 1. Seed 50: process when its packs come. No batch is pending.
 2. Pending, to apply after seed 50 (results/pending/ORDER.md): 2@ and 2! as
    opcodes, and the gene opinline - their call gone from code compiled at run time;
-   bubble -41.6% of its dispatches on c9369657e4 with both. Next on that line:
-   NUMBER?'s digit table as a gene.
+   bubble -41.6% of its dispatches on c9369657e4 with both; tailpn; knumber, NUMBER?
+   as one opcode (the corpus -10.2% on c9369657e4) - the digit table was the wrong
+   target: NUMBER?'s own Forth was the cost.
 3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
 4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): on

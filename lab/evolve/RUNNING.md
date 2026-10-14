@@ -302,6 +302,10 @@ missmap.py` (a few minutes; perf as for counters.py, sudo asking before the chai
 detaches). One pack back: its markdown names, for each design on kernel and corpus,
 the handlers with the most branch misses.
 
+Iteration 295: where the cycles stall - `sh lab/evolve/next-run.sh experiment
+counters.py --extra stalled-cycles-frontend:u,stalled-cycles-backend:u` (with
+missmap.py, or after it); results/drafts/iploop-plan.md says what it decides.
+
 Ubuntu's kernel.perf_event_paranoid (4) lets perf count nothing, and next-run.sh's
 chain runs in the background, where sudo cannot ask (Iteration 282: the first try
 failed so). So next-run.sh asks for your password at once, before it detaches,
