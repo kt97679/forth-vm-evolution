@@ -120,6 +120,10 @@ if __name__ == '__main__':
     rows = []
     hold = os.environ.get('PERF_HOLD_START')        # next-run.sh's chain: perf-hold.py holds it; else ask sudo here
     with (PerfHold(hold, os.environ['PERF_HOLD_DONE']) if hold else PerfAccess()) as access:
+        r = subprocess.run([PERF, 'stat', '-x', ',', '-e', ','.join(EVENTS), '--', 'true'], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        if r.returncode: sys.exit('counters: perf does not run here (exit %d) - perf said:\n%s\non Ubuntu: sudo apt install linux-tools-$(uname -r), for the kernel running now'
+                                  % (r.returncode, r.stderr.decode(errors='replace')[-1500:]))
+        parse(r.stderr.decode(errors='replace'))     # Iteration 283: perf tried once on `true` before anything is built
         for name, g in designs:
             access.keep()
             if g is None: sys.exit('counters: no recorded design %s' % name)
@@ -130,7 +134,7 @@ if __name__ == '__main__':
                 for _ in range(RUNS):
                     r = subprocess.run([PERF, 'stat', '-x', ',', '-e', ','.join(EVENTS), '--', eng, img], input=E.program(wl),
                                        cwd=pw, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=600)
-                    if r.returncode: sys.exit('counters: %s on %s exited %d' % (name, wl, r.returncode))
+                    if r.returncode: sys.exit('counters: perf exited %d running %s on %s - perf said:\n%s' % (r.returncode, name, wl, r.stderr.decode(errors='replace')[-1500:]))
                     runs.append(parse(r.stderr.decode(errors='replace')))
                 rows.append((name, wl, {e: statistics.median(x[e] for x in runs) for e in EVENTS}))
             shutil.rmtree(d, ignore_errors=True)

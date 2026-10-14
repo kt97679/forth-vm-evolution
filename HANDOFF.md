@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 282.
+- master: Iteration 283.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -166,6 +166,10 @@ About 20 minutes of machine time for build, tests and gates.
   a terminal - sudo's password - happens before it detaches (282: the first
   counters.py run failed so, after a claim, never read in the code, that the
   tools ran in the foreground). Read how a thing runs before saying how it runs.
+- A failure report carries the failing program's own words, not only its exit
+  code: counters.py said "exited 2" and kept perf's message to itself (283).
+  Try an outside program once, where someone can still fix it, before the work
+  goes to the background.
 - `pkill -f PATTERN` kills the shell running it when PATTERN is in its command
   line - anchor the pattern, or kill by pid (282). Tests sharing one global
   setting run one at a time: run alongside, they made each other's results (282).

@@ -31,6 +31,10 @@ case "$*" in *=4*) [ "${FAKE_REFUSE_RESTORE:-}" ] && exit 1;; esac
 [ -n "${BG:-}" ] && { trap "" HUP; "$@" > /dev/null 2>&1 & exit 0; }   # sudo -b runs it apart from the terminal's foreground group; script(1) closing its pty at once must not hang it up
 exec "$@"
 ''' % LOG); os.chmod(os.path.join(FAKE, 'sudo'), 0o755)
+open(os.path.join(FAKE, 'perf'), 'w').write('''#!/bin/sh
+[ "${FAKE_PERF_BROKEN:-}" ] && { echo "WARNING: perf not found for kernel 6.8.0-87" >&2; echo "  linux-tools-6.8.0-87-generic" >&2; exit 2; }
+echo "perf version 6.8.12"
+'''); os.chmod(os.path.join(FAKE, 'perf'), 0o755); os.chmod(FAKE, 0o755)   # Iteration 283: perf-hold-start.sh tries perf first
 os.environ['PATH'] = FAKE + ':' + os.environ['PATH']
 sys.path.insert(0, HERE); import counters as C
 P = C.PARANOID; rd = lambda: int(open(P).read())
@@ -90,6 +94,10 @@ try:
     case('perf-hold-start.sh, the setting already 2: no sudo, nothing started', r.returncode == 0 and open(LOG).read() == '')
     setp(4); r = subprocess.run(['sh', START_SH, S, D, L], stdin=subprocess.DEVNULL, capture_output=True, text=True)
     case('perf-hold-start.sh with no terminal: refuses, says why', r.returncode == 1 and 'a terminal to ask on' in r.stderr)
+    open(LOG, 'w').close(); os.environ['FAKE_PERF_BROKEN'] = '1'
+    r = subprocess.run(['sh', START_SH, S, D, L], stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    case("perf-hold-start.sh, perf without its kernel's tools: refuses before sudo, with perf's words", r.returncode == 1 and 'not found for kernel' in r.stderr and 'nothing started' in r.stderr and open(LOG).read() == '')
+    del os.environ['FAKE_PERF_BROKEN']
     S, D, L = files('e')
     r = subprocess.run(['script', '-qec', 'sh %s %s %s %s' % (START_SH, S, D, L), '/dev/null'], capture_output=True, text=True)
     ok = r.returncode == 0 and wait_for(lambda: os.path.exists(L))

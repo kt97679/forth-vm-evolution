@@ -5,6 +5,14 @@
 # kernel.perf_event_paranoid (4) refuses, and in the background sudo cannot ask.
 # So sudo asks here, once, and lab/evolve/perf-hold.py is left running as root:
 # it sets 2 only while counters.py measures, and puts the old value back after.
+# perf itself first, while someone is here to fix it (Iteration 283): Ubuntu's perf is a
+# wrapper that exits 2 when the tools for the running kernel are not installed - the
+# second laptop try stopped so, in the background, perf's own message lost
+if ! out=$(perf --version 2>&1); then
+    echo "next-run: perf does not run here:" >&2; echo "$out" | sed -n '1,6s/^/    /p' >&2
+    echo "next-run: on Ubuntu: sudo apt install linux-tools-\$(uname -r) - for the kernel running now; nothing started" >&2
+    exit 1
+fi
 p=$(cat /proc/sys/kernel/perf_event_paranoid)
 [ "$p" -le 2 ] && exit 0                         # counters allowed already: no sudo
 if ! [ -t 0 ] && ! [ -t 1 ]; then

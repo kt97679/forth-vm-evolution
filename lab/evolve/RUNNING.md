@@ -285,8 +285,11 @@ Two measurements only real hardware can make, timing-sensitive - run them when a
 chain has finished and its packs are sent, before the next run starts, the
 laptop plugged in and nothing else running.
 
-Once: `sudo apt install linux-tools-common linux-tools-$(uname -r)` (perf). Then
-one command in a terminal, two packs to send back:
+Once: `sudo apt install linux-tools-common linux-tools-$(uname -r)` (perf) - and again
+after a kernel update: Ubuntu's perf is a wrapper that runs only with the tools of the
+kernel running now, and exits 2 otherwise (Iteration 283: next-run.sh tries it first,
+before it detaches, and shows its words). Then one command in a terminal, two packs
+to send back:
 
     sh lab/evolve/next-run.sh experiment counters.py then experiment c-baseline.py
 

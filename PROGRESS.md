@@ -5622,3 +5622,26 @@ each other moved the one global setting under each other and killed each other's
 helper; the stand-in sudo let a pty's hang-up kill its child before it ran,
 where real sudo -b keeps the command apart from the terminal's foreground group.
 HANDOFF.md's lessons have the first two.
+
+## Iteration 283 - 2026-10-14 - Claude
+
+**counters.py's second laptop try: the setting held and restored, perf itself
+failed - and its words were lost.** The owner's log: sudo asked before the chain
+detached, the checks passed again, perf-hold.py raised and restored the setting
+("kernel.perf_event_paranoid is 4 after the measurement") - Iteration 282's fix
+works on the laptop. Then "s6 on kernel exited 2": perf's very first run. Not the
+engine or the workload - run-tests and --validate had run s6 on the kernel
+workload minutes before - but perf: Ubuntu's perf is a wrapper that exits 2,
+printing which package to install, when the tools for the running kernel are
+missing; counters.py captured that message and reported only the code.
+
+Now perf is tried first: perf-hold-start.sh runs `perf --version` in the
+foreground, before sudo or anything detaches, and on a failure shows perf's own
+lines and `sudo apt install linux-tools-$(uname -r)` - nothing started;
+counters.py runs `perf stat` on `true` before it builds any design, and every
+perf failure it reports carries perf's own output. Shown with a stand-in for
+Ubuntu's wrapper: perf-hold-start.sh refuses before sudo with perf's words;
+counters.py stops before building anything (0 designs) with the same.
+counters-test.py now carries a stand-in perf, working or broken: 15 of 15.
+Unconfirmed until the owner runs `perf --version`: that the tools for the
+laptop's running kernel are what is missing.
