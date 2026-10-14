@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 284.
+- master: Iteration 285.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -130,12 +130,16 @@ About 20 minutes of machine time for build, tests and gates.
    compiler emits the opcode. Then perhaps NUMBER?'s digit table as a gene.
 3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
-4. The owner's, between runs: `sh lab/evolve/next-run.sh experiment counters.py
-   then experiment c-baseline.py` (RUNNING.md, "Between runs" - perf installed;
-   sudo asks at once, before the chain detaches; perf-hold.py holds the setting
-   only while counters.py measures); then process the two packs:
-   C multiples for the designs, IPC and branch misses (the IP-update loop form).
-5. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
+4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): on
+   kernel and corpus the evolved designs lose an estimated 9-24% of their cycles to
+   branch misses, s6 1-3%. Next: which handlers - perf record on branch-misses:u
+   against the unstripped engine (engine.full), a laptop measurement like counters.py
+   - then make them branch-light. Also there: the JIT mispredicts 1.5% of ackermann's
+   branches (returns, probably - jittail).
+5. The IP-update loop form (deferred in Iteration 260): the counters leave it open -
+   dispatch predicted on compute work, yet the evolved interpreted designs run at a
+   lower IPC than s6. A gene to build when its turn comes.
+6. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
    compiler's switch-off, the list genes, engine flags, shared converter
    options) - into rows only as each is next touched, each conversion checked
    with `python3 lab/evolve/gene-equiv.py <the commit before>`. A new gene is

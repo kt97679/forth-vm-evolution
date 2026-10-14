@@ -68,7 +68,9 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `price-stencils-bloom.md` - Three ideas from the outside reviews, priced (Iteration 238).
 - `syscall-pricing.md` - One SYSCALL - priced (Iteration 132).
 - `jit-kernel-words.md` - Kernel words made native, priced (Iteration 103).
-- `c-baseline-x86-64.md` - The Forth designs against the same benchmarks in C (lab/evolve/c-baseline.py).
+- `c-baseline-x86-64.md` - The Forth designs against the same benchmarks in C (lab/evolve/c-baseline.py) - the VM's, too noisy to keep.
+- `c-baseline-amd-ryzen-7-pro-8840hs.md` - The designs against the same benchmarks in C, on the laptop (Iteration 285): the fastest 3.7x C -O2.
+- `counters-amd-ryzen-7-pro-8840hs.md` - Hardware counters on the laptop (Iteration 285): dispatch predicted on compute work; the interpreter's work mispredicts on evolved designs, 9-24% of its cycles.
 
 ## The Forth sources, and other Forths
 

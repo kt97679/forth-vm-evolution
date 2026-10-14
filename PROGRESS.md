@@ -5664,3 +5664,28 @@ the apt line), the broken wrapper with another kernel's perf installed (that
 one), the running kernel's before a newer, PERF given (first). Still unknown:
 what the OEM tools package installs, and whether any perf binary is on the
 laptop at all - asked of the owner.
+
+## Iteration 285 - 2026-10-14 - Claude
+
+**The laptop's two measurements, in (the owner).** Both packs clean (tests PASS,
+7 of 7, the jail PASS); perf 6.8.12, found by counters.py's search past Ubuntu's
+wrapper (the OEM kernel's tools have none), counted on kernel 6.17 - the owner's
+check showed it would; the setting 2 only while counters.py measured (05:13:50-
+05:14:54), 4 after.
+
+results/c-baseline-amd-ryzen-7-pro-8840hs.md: the fastest design (e141550b9a)
+3.7x C -O2 on the geometric mean (2.8-5.1x), the knee 4.2x, s6 24.2x, the
+smallest 29.1x - and 50x on parse, held out, where it has none of the parsing and
+lookup operations; the engines start as fast as C.
+
+results/counters-amd-ryzen-7-pro-8840hs.md: on compute work (fib, loop, bubble,
+ackermann) every interpreted design mispredicts at most 0.54 per thousand
+instructions - dispatch is predicted; yet the evolved interpreted designs run at
+1.7-2.9 IPC to s6's 2.75-3.9: something serial - the IP chain or the stack through
+memory, which four counters cannot split - so the IP-update loop form stays open.
+New: on kernel and corpus the evolved designs mispredict 3.5-9.1 per thousand
+instructions to s6's 0.4-0.7 - an estimated 9-24% of their cycles at 12-18 a miss,
+s6's 1-3% - most likely the C operations evolution chose for that work, whose
+loop exits depend on the data; which handlers is the next laptop measurement.
+And the JIT mispredicts 1.5% of ackermann's branches - returns, probably. HANDOFF.md:
+the owner's item done; items 4 and 5 new.
