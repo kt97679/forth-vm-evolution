@@ -5566,3 +5566,26 @@ and GENES.md's tools/test-sysc-shell.sh is said to be gone since Iteration 169,
 run-tests.sh's shell suite running every SYSC shell. The laptop's clone (seed
 47's pack, repo-files.txt): runs/ 125 files, 138 MB - the only copies of each
 run's database; old bundles in ~/Downloads can go, every one but the newest.
+
+## Iteration 281 - 2026-10-14 - Claude
+
+**The Forth sources audited again (the owner asked): one missed opportunity,
+priced; size nothing new** (results/source-audit-2.md). Searched, not recalled:
+each hot word of the five-design profile against what a gene can reach. 2@, 2!
+and DEPTH reach nothing - in no ops10 pool, tiny family or opbody list, though
+Iteration 131 counted on "the opcode genes" for 2@ and 2!. Counted exactly with
+a new tool, lab/evolve/word-cost.py: in bubble, 2@ and 2! take 16.3% of the
+dispatches on s6, 16.1% on the smallest, 41.6% on c9369657e4 (seed 47's fastest
+without the JIT); DEPTH 0.8%, 0.5%, 5.2% of the corpus. bench/bubble.fth's inner
+loop calls 2@ three times and 2! once; tester.fr DEPTH ten times - code compiled
+at run time, so through opbody's [opcode EXIT] two thirds of it: bubble -11% to
+-28%, about -5% of c9369657e4's geometric mean in dispatches. A patch for after
+seed 48 (HANDOFF.md, item 2). Rechecked and standing: the lookup (threads,
+klookup), the loop and scan words (ops10), > 0= 1+ 1- (tiny), INTERPRET's
+control flow; NUMBER?'s digit table, rejected in 144 for its 256 bytes, reopens
+as a possible gene under "trade-offs as genes". Size: the smallest image is
+32% headers and padding (2,765 of 8,696 bytes) - the register's packed and
+hidden names, the owner's; its largest bodies are needed words; 42 words never
+run (672 bytes) are error paths and file words. prompts/02: fifteen recalled
+optimizations, every one already built, priced or in the register; the search
+found the one new.

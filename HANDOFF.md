@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 280.
+- master: Iteration 281.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -124,14 +124,18 @@ About 20 minutes of machine time for build, tests and gates.
 ## Open items (roughly by value)
 
 1. Seed 48: process (above). No batch is pending.
-2. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
+2. After seed 48, a patch: 2@, 2! and DEPTH into the ops10 pool and opbody
+   (results/source-audit-2.md) - hot in bubble and the corpus, reachable by no
+   gene: bubble -11% to -28% of its dispatches through opbody, more if the run-time
+   compiler emits the opcode. Then perhaps NUMBER?'s digit table as a gene.
+3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
-3. The owner's, between runs: `sh lab/evolve/next-run.sh experiment counters.py
+4. The owner's, between runs: `sh lab/evolve/next-run.sh experiment counters.py
    then experiment c-baseline.py` (RUNNING.md, "Between runs" - perf installed;
    counters.py raises perf_event_paranoid's limit for its own run under sudo and
    restores it); then process the two packs:
    C multiples for the designs, IPC and branch misses (the IP-update loop form).
-4. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
+5. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
    compiler's switch-off, the list genes, engine flags, shared converter
    options) - into rows only as each is next touched, each conversion checked
    with `python3 lab/evolve/gene-equiv.py <the commit before>`. A new gene is
