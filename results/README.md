@@ -12,6 +12,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `predictions.md` - the predictions written before each run, then scored.
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
+- `drafts/knumber-wip.patch` - the gene knumber (NUMBER? as one opcode), on patches 1-3 of the after-seed-50 batch, while its checks run (Iteration 295): it moves to results/pending once they pass.
 - `pending/ORDER.md` - the batch waiting to be applied after the run now on the laptop, while there is one: the order, and how each patch was tested (results/pending/ moves to applied-after-seedN/ when applied).
 
 ## How the search works, and how runs are judged

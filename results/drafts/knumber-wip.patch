@@ -1,0 +1,257 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 61f471e..4afa5f7 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1326,6 +1326,37 @@ NOINLINE_IO static UNS64 t_read(UNS8 *p, UNS64 n) {
+     return k;
+ }
+ 
++#if X_NUMBERQ
++/*  Iteration 295, the gene knumber: NUMBER? - cv8b-knumber.4's (NUMBER?), step for
++    step: a 'c' literal; DPL -1; a sign before or after the prefixes $ # %, each
++    tested in turn as the Forth tests them; (>NUMBER)'s loop in that base, uppercase
++    digits only; a point sets DPL to the digits after it; 0 0 0 on failure. */
++static UNS64 numberq(UNS64 a, UNS64 base, UNS64 dpl, UNS64 *lo, UNS64 *hi) {
++    INT64 n = BYTE(a); UNS64 s = a + 1, b = base, lo_ = 0, hi_ = 0; int neg;
++    if (n == 3 && BYTE(s) == 39 && BYTE(s + 2) == 39) { CELL(dpl) = (UNS64)-1; *lo = BYTE(s + 1); *hi = 0; return (UNS64)-1; }
++    CELL(dpl) = (UNS64)-1;
++    neg = BYTE(s) == 45; if (neg) { n--; s++; }
++    if (BYTE(s) == 36) { b = 16; n--; s++; }
++    if (BYTE(s) == 35) { b = 10; n--; s++; }
++    if (BYTE(s) == 37) { b = 2; n--; s++; }
++    if (!neg && BYTE(s) == 45) { neg = 1; n--; s++; }
++    if (n <= 0) { *lo = *hi = 0; return 0; }
++    for (;;) {
++        while (n) {
++            INT64 d_ = (INT64)BYTE(s) - 48; UNS64 ph_, pl_;
++            if (d_ < 0 || (d_ > 9 && d_ < 17)) break;
++            if (d_ > 9) d_ -= 7;
++            if (!(d_ < (INT64)b)) break;
++            ph_ = lo_; pl_ = b; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++;
++            s++; n--;
++        }
++        if (n) { if (BYTE(s) == 46) { n--; CELL(dpl) = (UNS64)n; s++; } else { *lo = *hi = 0; return 0; } }
++        if (!n) break;
++    }
++    if (neg) { hi_ = ~hi_ + (lo_ == 0); lo_ = -lo_; }
++    *lo = lo_; *hi = hi_; return (UNS64)-1;
++}
++#endif
+ static void virtual_machine(void) {
+     VMREGS
+ #if ENC == 1
+@@ -1981,6 +2012,9 @@ L_x_tonumber: { UNS64 b_ = DS0, u_ = DS1, a_ = DS2, hi_ = CELL(dsp + 3 * CELL_BY
+             while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; }
+             dsp += CELL_BYTES; DS0 = u_; DS1 = a_; DS2 = hi_; CELL(dsp + 3 * CELL_BYTES) = lo_; } NEXT();
+ #endif
++#if X_NUMBERQ
++L_x_numberq: { UNS64 p_ = DS0, b_ = DS1, a_ = DS2, lo_, hi_, f_ = numberq(a_, b_, p_, &lo_, &hi_); DS2 = lo_; DS1 = hi_; DS0 = f_; } NEXT();   /* (NUMBER?) */
++#endif
+ #if X_PLACE
+ L_x_place: { UNS64 d_ = DS0, n_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
+              BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();
+diff --git a/forth/cv8b-knumber.4 b/forth/cv8b-knumber.4
+new file mode 100644
+index 0000000..23acf26
+--- /dev/null
++++ b/forth/cv8b-knumber.4
+@@ -0,0 +1,36 @@
++\ cv8b-knumber.4 - NUMBER? in one dispatch (Iteration 295), for the
++\ byte-header system with klookup; loaded after cv8b-klookup.4 for designs
++\ with the gene knumber. X8 words: the kernel's word gets the body.
++\
++\ On seed 49's fastest designs NUMBER?'s own Forth, around (>NUMBER) - an
++\ opcode since Iteration 57 - was 10-13% of the corpus's dispatches
++\ (lab/evolve/word-cost.py). (NUMBER?) is NUMBER? with BASE @ and DPL
++\ given, for the opcode; its Forth body is the kernel's NUMBER?, step for
++\ step, reading BASE and DPL itself - but for its two failure paths, which
++\ leave 0 0 0, where the kernel's left c-addr u 0 or ud c-addr u 0:
++\ NUMBER?'s one caller, INTERPRET, aborts or throws on the 0, and a
++\ throw's CATCH restores the stack's depth, so no caller sees which.
++
++: (NUMBER?) ( c-addr base dpl --- d f )
++  2DROP
++  DUP C@ 3 = IF DUP 1+ C@ 39 = OVER 3 + C@ 39 = AND IF -1 DPL ! 2 + C@ 0 -1 EXIT THEN THEN
++  -1 DPL !
++  BASE @ >R
++  COUNT
++  OVER C@ 45 = DUP >R IF    -1 + SWAP 1 + SWAP THEN
++  OVER C@ 36 = IF 16 BASE ! -1 + SWAP 1 + SWAP THEN
++  OVER C@ 35 = IF 10 BASE ! -1 + SWAP 1 + SWAP THEN
++  OVER C@ 37 = IF  2 BASE ! -1 + SWAP 1 + SWAP THEN
++  R@ 0= IF OVER C@ 45 = IF R> DROP -1 >R -1 + SWAP 1 + SWAP THEN THEN
++  DUP  0 > 0= IF  2DROP R> DROP R> BASE ! 0 0 0 EXIT THEN
++  >R >R 0 0 R> R>
++  BEGIN
++   >NUMBER
++   DUP IF OVER C@ 46 = IF -1 + DUP DPL ! SWAP 1 + SWAP ELSE
++         2DROP 2DROP R> DROP R> BASE ! 0 0 0 EXIT THEN
++       THEN
++  DUP 0= UNTIL 2DROP R> IF DNEGATE THEN
++  R> BASE ! -1 ;
++
++: NUMBER?8 ( c-addr --- d f )
++  BASE @ DPL (NUMBER?) ;
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 473d34d..0c3698a 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -51,6 +51,7 @@ designs changing id - every one rtfuse=0 leaving the identity.
+ | 2@ and 2! in `ops10`, and in `opbody`'s list (Iteration 290): the double-cell fetch and store, six dispatches a call each as kernel colon words, one as an opcode - bubble's inner loop calls them at run time (2@ three times, 2! once), the corpus's tester too: 16-42% of bubble's dispatches inside them (results/source-audit-2.md). Code compiled at run time calls the words, so opbody's [opcode EXIT] bodies carry the saving there | this lab: word-cost.py | bubble -11% to -28% of its dispatches, priced |
+ | the [opcode EXIT] words among the primitives (`opinline`: 0, 1; Iteration 292): placed before (PRIMITIVES-END), where PRIMITIVE? asks by address, so the run-time compiler copies their opcode in place of a call - code compiled at run time (bubble's 2@ and 2!) saves the call and the EXIT. A word defined once only; a design with no [opcode EXIT] word does not express it. For a JIT design it can cost: an inlined opcode with no stencil leaves its word to the interpreter | this lab: word-cost.py | c9369657e4 with 2@ 2! and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%; -41.6% from 12,759,474 before 2@ 2!) |
+ | the tail-call engine with preserve_none and musttail (`tailpn`: 0, 1; Iteration 293): clang 19+'s calling convention that saves no register on every handler, and musttail on every handler-to-handler call (tools/gen-tail.py --preserve-none) - CPython 3.14's tail-call interpreter. Built with the newest clang here that takes them (clang_pn(): clang-20 on the owner's laptop); expressed only on a clang tail engine, only where such a clang is installed | CPython 3.14; this lab: engines-check | s6's engine 14,232 bytes, 14,680 without (no register saved) - speed for the laptop's runs to judge |
++| NUMBER? as one opcode (`knumber`: 0, 1; Iteration 295): forth/cv8b-knumber.4, after klookup's overlay - (NUMBER?), the kernel's NUMBER? with BASE @ and DPL given (its failures 0 0 0: only INTERPRET calls it, and aborts or throws), and NUMBER?8, whose body NUMBER? takes; the opcode's C (numberq, vm-lab.c) is the same steps. Put first in the design's format-10 list, so it takes a slot from the last word there. Expressed only with klookup | this lab: word-cost.py | c9369657e4's corpus 4,529,779 -> 4,067,754 dispatches (-10.2%, NUMBER? 10.1% -> 0.9%); 927064f127, its slots full: the corpus -4.9%, the kernel +5.3% - the word it displaced |
+ | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+ | an operation and the call after it (`opcall`: a list, Iteration 121; the tag, computed goto): `X;CALL` opcodes of their own (0xFE00 + k), X's handler then a direct jump into the call | results/docs-reuse.md (Koopman) | fastest: parse -3.8%, corpus -3.4%, kernel -1.6% of dispatches for +768 bytes of engine (16 ops); results/opcall.md |
+ | ABORT" guarded (`abortif`: 0, 1; Iteration 117): the converter puts every (ABORT") call behind ?BRANCH and -1, as gforth and lbForth compile ABORT" | results/forth-sources.md | parse -5.6%, corpus -3.0%, kernel -1.0% of dispatches on the fastest design for 56 bytes; errors unchanged |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index b5b6821..9dcddd2 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -704,3 +704,8 @@ preserve_none on every handler of the tail-call engine and musttail on every
+ handler-to-handler call, built with clang_pn(), the newest clang here that takes
+ them. A versioned clang (clang-19, clang-20) is a build tool now, not jailed as an
+ engine: the jail's no-new-process rule had kept its driver from the linker.
++
++Iteration 295: the gene knumber - NUMBER? as one opcode, for klookup designs:
++forth/cv8b-knumber.4 ((NUMBER?) and NUMBER?8, a stage tag -knumber of its own), the
++handler's C in one helper (numberq) for the plain, cached-top and multi-state engines,
++its kernel body as the converter reads it in sod16.py's table. Five engines-check paths.
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index f3e2dac..1b8816c 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -77,6 +77,10 @@ VARIANTS += [(n.replace('2@ 2! opcodes', '2@ 2! inlined'), dict(g, opinline=1),
+              for n, g, need in list(VARIANTS) if n.endswith('2@ 2! opcodes')]
+ if E.clang_pn():   # Iteration 293: where a clang 19+ is installed
+     VARIANTS += [('clang %s, tail calls with preserve_none' % E.clang_pn(), dict(tail=1, compiler=1, tailpn=1), ['compiler', 'tail', 'tailpn'])]
++KN = dict(kfast=1, kinput=1, klookup=1, knumber=1)   # Iteration 295: NUMBER? as one opcode, on every engine family
++VARIANTS += [('klookup, knumber', dict(KN), ['knumber']), ('klookup, knumber, cached top off', dict(KN, tos=0), ['knumber']),
++             ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']), ('klookup, knumber, tail calls', dict(KN, tail=1), ['knumber', 'tail']),
++             ('klookup, knumber, the JIT', dict(KN, **JIT), ['knumber', 'jit'])]
+ for name, genes, must in VARIANTS:
+     g = E.canon(dict(S6, **genes))
+     ex = E.express(g)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index ec02c23..3358076 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -186,6 +186,9 @@ gene('opinline', needs=lambda g, e: any(w in OPB_BASE or (e.get('opbody') and w
+ # --preserve-none) - CPython 3.14's tail-call interpreter. Built with clang_pn(), the newest clang
+ # that takes them; expressed only on a clang tail engine, and only where such a clang is here.
+ gene('tailpn', needs=lambda g, e: e.get('tail') and e.get('compiler') and bool(clang_pn()))
++# Iteration 295: NUMBER? as one opcode (forth/cv8b-knumber.4, after klookup's overlay) - on seed 49's
++# fastest designs its own Forth was 10-13% of the corpus's dispatches. Expressed only with klookup.
++gene('knumber', needs=lambda g, e: klookup_on(g))
+ gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
+      convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
+@@ -349,6 +352,10 @@ def kinput_on(g):
+     format-10 names: one switch, as tfind - a design with kfast."""
+     return kfast_on(g) and bool(g.get('kinput'))
+ KLOOKUP = ['(FIND)', '(>NUMBER)']
++def knumber_on(g):
++    """Iteration 295: NUMBER? as one opcode - forth/cv8b-knumber.4, after klookup's overlay."""
++    return bool(klookup_on(g) and g.get('knumber'))
++
+ def klookup_on(g):
+     """Iteration 57: the whole lookup - forth/cv8b-klookup.4 ((FIND), FIND8)
+     and (FIND) first among the format-10 names: a design with kinput."""
+@@ -409,14 +416,14 @@ OPS10_LABEL = {'2@': 'L_x_2fetch', '2!': 'L_x_2store',   # Iteration 290
+                'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8',
+                'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi', 'DUP+I': 'L_x_dupaddi', 'DUP<I': 'L_x_duplti',
+                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
+-               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
++               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(NUMBER?)': 'L_x_numberq', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
+ # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
+ X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
+            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
+            'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR',
+            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI', 'DUP+I': 'X_DUPADDI', 'DUP<I': 'X_DUPLTI',
+            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
+-           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
++           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(NUMBER?)': 'X_NUMBERQ', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+ def newest_front():
+     """(path, records) of the newest run's results file - its front's designs, genomes and
+     measures (Iteration 278: c-baseline.py and counters.py choose their designs from it)."""
+@@ -460,6 +467,8 @@ def ops10_order(g, iplus):
+         ws = ws[:1 if tfind_on(g) else 0] + KINPUT + [w for w in ws[1 if tfind_on(g) else 0:] if w not in KINPUT]
+     ws = [w for w in ws if w not in KLOOKUP or klookup_on(g)]                      # Iteration 57: klookup's words
+     if klookup_on(g): ws = KLOOKUP + [w for w in ws if w not in KLOOKUP]           # Iteration 57: first of all
++    ws = [w for w in ws if w != '(NUMBER?)']                                       # Iteration 295: knumber's, after them
++    if knumber_on(g): ws = ['(NUMBER?)'] + ws                                      # first: the gene is the opcode
+     ws = [w for w in ws if w != 'I+' or iplus]                                     # Iteration 60: rtiplus's
+     if iplus: ws = ['I+'] + [w for w in ws if w != 'I+']                           # Iteration 60: sure of a slot
+     if swapi_on(g): ws = ['SWAP+I'] + [w for w in ws if w != 'SWAP+I']             # Iteration 61: sure of a slot
+@@ -877,7 +886,7 @@ def _build(g, d):
+     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+     fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
+-    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
++    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
+     # Iteration 199: a short branch the tag-2 encoding finds out of range is
+     # written to long-branches.json and the conversion fails; converted again
+     # with it kept long - the set only grows, so it ends.
+@@ -1589,7 +1598,7 @@ def setup():
+     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
+     import shutil
+     W = os.path.join(O, 'work')
+-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
++    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+@@ -1597,14 +1606,14 @@ def setup():
+     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
+     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
+                                                                     ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
+-                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b != 'k64-self' else ('',))
++                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != 'k64-self' else ('',))
+                         for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
+                         for t in (('', '-iplus') if l == '-loopall' else ('',))
+                         for e in (('', '-empty') if b == 'k64-bt' else ('',))     # Iteration 101
+                         for q in (('', '-kstack') if b == 'k64-bt' else ('',))    # Iteration 116
+                         for j in (('', '-jit') if b == 'k64-bt' else ('',))
+                         for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
+-        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
++        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
+                        + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
+                        + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+                        + (['cv8-fuse-loopall.4'] if '-loopall' in name
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index e41aa2d..c144ced 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -132,6 +132,7 @@ SPECS = {
+     'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+     'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+     'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
++    'L_x_numberq':      (['a', 'b', 'p'], ['lo', 'hi', 'f'], '{ UNS64 lo_, hi_, f_ = numberq(a, b, p, &lo_, &hi_); lo = lo_; hi = hi_; f = f_; }'),   # Iteration 295: (NUMBER?)
+     'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+     'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = (h_ ^ u) & (t - 1); n = h_; }'),
+     'L_x_place':        (['s', 'n', 'd'], [], '{ UNS64 d_ = d, s_ = s, n_ = n; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } }'),
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index dd3cb6c..9f61a2b 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -99,6 +99,7 @@ HOT = {
+  'L_x_skip':       '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES); dsp += CELL_BYTES; if (c_ == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c_) { a_++; u_--; } NOS = a_; tos = u_; } NEXT();',
+  'L_x_find':       '{ UNS64 n_ = tos, ctx_ = NOS, nb_ = CELL(dsp + CELL_BYTES), c_ = CELL(dsp + 2 * CELL_BYTES), x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } dsp += 2 * CELL_BYTES; NOS = x_; tos = r_; } NEXT();',
+  'L_x_tonumber':   '{ UNS64 b_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), hi_ = CELL(dsp + 2 * CELL_BYTES), lo_ = CELL(dsp + 3 * CELL_BYTES); while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } dsp += CELL_BYTES; tos = u_; NOS = a_; CELL(dsp + CELL_BYTES) = hi_; CELL(dsp + 2 * CELL_BYTES) = lo_; } NEXT();',
++ 'L_x_numberq': '{ UNS64 p_ = tos, b_ = NOS, a_ = CELL(dsp + CELL_BYTES), lo_, hi_; tos = numberq(a_, b_, p_, &lo_, &hi_); CELL(dsp + CELL_BYTES) = lo_; NOS = hi_; } NEXT();',   # Iteration 295: (NUMBER?)
+  'L_x_parse':      '{ UNS64 c_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), p_ = a_, s_; if (c_ == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c_) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c_) { p_++; u_--; } } CELL(dsp + CELL_BYTES) = s_; NOS = p_ - s_; tos = (p_ - a_) + (u_ ? 1 : 0); } NEXT();',
+  'L_x_hash':       '{ UNS64 t_ = tos, u_ = NOS, a_ = CELL(dsp + CELL_BYTES), h_; dsp += 2 * CELL_BYTES; h_ = (UNS64)BYTE(a_) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(a_ + 1) << 2; tos = (h_ ^ u_) & (t_ - 1); } NEXT();',
+  'L_x_place':      '{ UNS64 d_ = tos, n_ = NOS, s_ = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } } NEXT();',
+diff --git a/tools/sod16.py b/tools/sod16.py
+index b9ee86a..9f7e564 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -581,6 +581,8 @@ def _expect(n):
+                    ('P', 'DROP'), ('P', 'R>'), ('P', 'DROP'), ('P', 'ROT'), ('P', 'DROP'), ('P', 'EXIT'), ('P', 'DROP'),
+                    ('P', 'R>'), ('BR', -29 * CELL), ('P', 'R>'), ('P', 'DROP'), ('P', 'EXIT')],
+         # Iteration 57: klookup's (>NUMBER) - the kernel's >NUMBER after a DROP
++        # Iteration 295: (NUMBER?), cv8b-knumber.4's - as the converter reads it (SOD16_SHOW), the gene knumber
++        '(NUMBER?)': [('C', '2DROP'), ('P', 'DUP'), ('P', 'C@'), ('LIT', 3), ('P', '='), ('QBR', 31 * CELL), ('P', 'DUP'), ('C', '1+'), ('P', 'C@'), ('LIT', 39), ('P', '='), ('P', 'OVER'), ('LIT', 3), ('P', '+'), ('P', 'C@'), ('LIT', 39), ('P', '='), ('P', 'AND'), ('QBR', 14 * CELL), ('LIT', -1), ('C', 'DPL'), ('P', '!'), ('LIT', 2), ('P', '+'), ('P', 'C@'), ('LIT', 0), ('LIT', -1), ('P', 'EXIT'), ('LIT', -1), ('C', 'DPL'), ('P', '!'), ('C', 'BASE'), ('P', '@'), ('P', '>R'), ('C', 'COUNT'), ('P', 'OVER'), ('P', 'C@'), ('LIT', 45), ('P', '='), ('P', 'DUP'), ('P', '>R'), ('QBR', 9 * CELL), ('LIT', -1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('P', 'OVER'), ('P', 'C@'), ('LIT', 36), ('P', '='), ('QBR', 13 * CELL), ('LIT', 16), ('C', 'BASE'), ('P', '!'), ('LIT', -1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('P', 'OVER'), ('P', 'C@'), ('LIT', 35), ('P', '='), ('QBR', 13 * CELL), ('LIT', 10), ('C', 'BASE'), ('P', '!'), ('LIT', -1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('P', 'OVER'), ('P', 'C@'), ('LIT', 37), ('P', '='), ('QBR', 13 * CELL), ('LIT', 2), ('C', 'BASE'), ('P', '!'), ('LIT', -1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('P', 'R@'), ('C', '0='), ('QBR', 21 * CELL), ('P', 'OVER'), ('P', 'C@'), ('LIT', 45), ('P', '='), ('QBR', 14 * CELL), ('P', 'R>'), ('P', 'DROP'), ('LIT', -1), ('P', '>R'), ('LIT', -1), ('P', '+'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('P', 'DUP'), ('LIT', 0), ('C', '>'), ('C', '0='), ('QBR', 14 * CELL), ('C', '2DROP'), ('P', 'R>'), ('P', 'DROP'), ('P', 'R>'), ('C', 'BASE'), ('P', '!'), ('LIT', 0), ('LIT', 0), ('LIT', 0), ('P', 'EXIT'), ('P', '>R'), ('P', '>R'), ('LIT', 0), ('LIT', 0), ('P', 'R>'), ('P', 'R>'), ('C', '>NUMBER'), ('P', 'DUP'), ('QBR', 35 * CELL), ('P', 'OVER'), ('P', 'C@'), ('LIT', 46), ('P', '='), ('QBR', 14 * CELL), ('LIT', -1), ('P', '+'), ('P', 'DUP'), ('C', 'DPL'), ('P', '!'), ('P', 'SWAP'), ('LIT', 1), ('P', '+'), ('P', 'SWAP'), ('BR', 15 * CELL), ('C', '2DROP'), ('C', '2DROP'), ('P', 'R>'), ('P', 'DROP'), ('P', 'R>'), ('C', 'BASE'), ('P', '!'), ('LIT', 0), ('LIT', 0), ('LIT', 0), ('P', 'EXIT'), ('P', 'DUP'), ('C', '0='), ('QBR', -41 * CELL), ('C', '2DROP'), ('P', 'R>'), ('QBR', 2 * CELL), ('C', 'DNEGATE'), ('P', 'R>'), ('C', 'BASE'), ('P', '!'), ('LIT', -1), ('P', 'EXIT')],
+         '(>NUMBER)': [('P', 'DROP'), ('P', 'DUP'), ('QBR', 41 * CELL), ('LIT', -1), ('P', '+'), ('P', '>R'), ('C', 'COUNT'),
+                       ('C', 'DIGIT?'), ('C', '0='), ('QBR', 9 * CELL), ('P', 'R>'), ('C', '1+'), ('P', 'SWAP'), ('LIT', -1),
+                       ('P', '+'), ('P', 'SWAP'), ('P', 'EXIT'), ('P', 'SWAP'), ('P', '>R'), ('P', '>R'), ('P', 'SWAP'),

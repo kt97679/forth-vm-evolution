@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 294.
+- master: Iteration 295.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
   after-seed-50 batch: 2@ and 2! as opcodes (Iteration 290-291), the gene
