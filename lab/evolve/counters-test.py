@@ -5,10 +5,12 @@ it, however the measurement ends (Iteration 279; the owner: no global change).
 Run as root on a scratch machine - it writes the setting, and puts the machine's own
 value back at the end whatever happens. A stand-in sudo, made here in a temporary
 directory, runs its command (FAKE_REFUSE_V: it refuses -v; FAKE_REFUSE_RESTORE: it
-refuses to write 4). From 4, Ubuntu's default, eight cases: a normal end, an error,
-SIGTERM, SIGHUP, Ctrl-C, the setting already 2 (no sudo at all), sudo refused at the
-start (nothing changed), a restore that fails (said, with the command). Iteration
-279 on the development VM: 8 of 8.
+refuses to write 4; -b runs it in the background). From 4, Ubuntu's default: a normal
+end, an error, SIGTERM, SIGHUP, Ctrl-C, the setting already 2 (no sudo at all), sudo
+refused at the start (nothing changed), a restore that fails (said, with the command)
+- Iteration 279's eight; and next-run.sh's chain (Iteration 282): perf-hold.py with
+PerfHold, counters.py killed -9, counters.py never started, perf-hold-start.sh with
+the setting already 2, with no terminal, and in a terminal (script(1)).
 
     sudo python3 lab/evolve/counters-test.py
 """
@@ -21,10 +23,12 @@ echo "sudo $*" >> %s
 while [ $# -gt 0 ]; do case "$1" in
   -v) [ "${FAKE_REFUSE_V:-}" ] && exit 1; [ $# -eq 1 ] && exit 0; shift;;
   -n) shift;;
+  -b) BG=1; shift;;
   *) break;;
 esac; done
 [ $# -eq 0 ] && exit 0
 case "$*" in *=4*) [ "${FAKE_REFUSE_RESTORE:-}" ] && exit 1;; esac
+[ -n "${BG:-}" ] && { trap "" HUP; "$@" > /dev/null 2>&1 & exit 0; }   # sudo -b runs it apart from the terminal's foreground group; script(1) closing its pty at once must not hang it up
 exec "$@"
 ''' % LOG); os.chmod(os.path.join(FAKE, 'sudo'), 0o755)
 os.environ['PATH'] = FAKE + ':' + os.environ['PATH']
@@ -60,7 +64,40 @@ try:
     r = subprocess.run([sys.executable, '-c', "import sys; sys.path.insert(0, 'lab/evolve'); import counters as C\nwith C.PerfAccess(): pass"], capture_output=True, text=True)
     case('a restore that fails: says so, with the command', rd() == 2 and 'COULD NOT RESTORE' in r.stderr and 'sudo sysctl kernel.perf_event_paranoid=4' in r.stderr)
     del os.environ['FAKE_REFUSE_RESTORE']; setp(4)
-    print('PerfAccess: %d of %d cases right' % (sum(ok for _, ok in res), len(res)))
+    # Iteration 282: next-run.sh's chain - perf-hold.py as root, counters.py's PerfHold as the user
+    import time
+    HOLD = os.path.join(HERE, 'perf-hold.py'); W = tempfile.mkdtemp(prefix='hold-'); os.chmod(W, 0o777)
+    def files(tag): return os.path.join(W, tag + '.start'), os.path.join(W, tag + '.done'), os.path.join(W, tag + '.log')
+    def wait_for(cond, t=15):
+        for _ in range(int(t * 10)):
+            if cond(): return True
+            time.sleep(0.1)
+        return False
+    holder = "import sys, time; a = sys.argv[1:]; sys.path.insert(0, %r); import counters as C\nwith C.PerfHold(a[0], a[1]): print('in', flush=True); time.sleep(float(a[2]))" % HERE   # counters.py takes sys.argv as it imports
+    setp(4); S, D, L = files('a'); h = subprocess.Popen([sys.executable, HOLD, S, D, L, '30', '30'])
+    p = subprocess.Popen(['runuser', '-u', 'claude', '--', sys.executable, '-c', holder, S, D, '1'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    p.stdout.readline(); d = rd(); p.wait(timeout=30); h.wait(timeout=30)
+    case('the chain: perf-hold.py and PerfHold - 2 during, 4 after', d == 2 and rd() == 4 and 'restored to 4' in open(L).read())
+    S, D, L = files('b'); h = subprocess.Popen([sys.executable, HOLD, S, D, L, '30', '30'])
+    p = subprocess.Popen(['runuser', '-u', 'claude', '--', sys.executable, '-c', holder, S, D, '60'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    p.stdout.readline(); d = rd(); os.kill(int(open(S).read().split()[0]), signal.SIGKILL); h.wait(timeout=30)   # the pid it announced: no pattern that could match this test's own shell
+    case('the chain: counters.py killed -9 - perf-hold.py sees it gone, 4 after', d == 2 and rd() == 4)
+    S, D, L = files('c'); h = subprocess.run([sys.executable, HOLD, S, D, L, '3', '30'], timeout=30)
+    case('the chain failed before counters.py: perf-hold.py gives up, nothing changed', rd() == 4 and 'did not start - nothing changed' in open(L).read())
+    START_SH = os.path.join(HERE, 'perf-hold-start.sh')
+    setp(2); open(LOG, 'w').close(); S, D, L = files('d')
+    r = subprocess.run(['sh', START_SH, S, D, L], stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    case('perf-hold-start.sh, the setting already 2: no sudo, nothing started', r.returncode == 0 and open(LOG).read() == '')
+    setp(4); r = subprocess.run(['sh', START_SH, S, D, L], stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    case('perf-hold-start.sh with no terminal: refuses, says why', r.returncode == 1 and 'a terminal to ask on' in r.stderr)
+    S, D, L = files('e')
+    r = subprocess.run(['script', '-qec', 'sh %s %s %s %s' % (START_SH, S, D, L), '/dev/null'], capture_output=True, text=True)
+    ok = r.returncode == 0 and wait_for(lambda: os.path.exists(L))
+    q = subprocess.Popen(['runuser', '-u', 'claude', '--', sys.executable, '-c', holder, S, D, '1'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    q.stdout.readline(); d = rd(); q.wait(timeout=30)
+    case('perf-hold-start.sh in a terminal: sudo once, the helper holds 2, then 4', ok and d == 2 and wait_for(lambda: rd() == 4) and 'restored to 4' in open(L).read())
+    subprocess.run(['pkill', '-f', r'^[^ ]*python3[^ ]* [^ ]*/perf-hold\.py '], check=False)   # anchored: a bare pattern matches the shell that runs this
+    print('PerfAccess and perf-hold: %d of %d cases right' % (sum(ok for _, ok in res), len(res)))
 
 finally:
     setp(ORIG)

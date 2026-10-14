@@ -64,6 +64,8 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `next-run.sh` - lab/evolve/next-run.sh [SEED | compare [ROUNDS] | experiment TOOL [ARGS] | none] - the next run on the laptop, in
 - `outbuf-check.py` - outbuf-check.py [ID] - does output buffering break anything? (Iteration 207)
 - `price.py` - price.py ID [ID ...] [--db FILE] - what a fusion could save, before building it
+- `perf-hold.py` - root's half of counters.py's counters in next-run.sh's chain: sets kernel.perf_event_paranoid 2 only while counters.py measures, then restores it (Iteration 282)
+- `perf-hold-start.sh` - next-run.sh's foreground step before its chain detaches: sudo asks once, perf-hold.py is left holding (Iteration 282)
 - `progress-table.py` - progress-table.py - every run's extremes, from its results file (Iteration 253)
 - `readline-check.py` - readline-check.py [ID ...] - READ-LINE at every single-SYSCALL level against
 - `regprice.py` - regprice.py ID|s6 [ID ...] [--db FILE] - the register machine's first

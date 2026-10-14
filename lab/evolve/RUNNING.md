@@ -290,13 +290,15 @@ one command in a terminal, two packs to send back:
 
     sh lab/evolve/next-run.sh experiment counters.py then experiment c-baseline.py
 
-counters.py first: Ubuntu's kernel.perf_event_paranoid (4) lets perf count
-nothing, so counters.py asks sudo for your password once as it starts, sets 2 for
-its own run, and restores the old value when it ends - also on an error, Ctrl-C,
-SIGTERM or SIGHUP - saying so on the terminal (Iteration 279; nothing is changed
-globally or saved: a reboot restores it in any case). Stay for that prompt: it
-comes after next-run.sh's own checks, a few minutes in - or run `sudo -v` just
-before, and it will not ask.
+Ubuntu's kernel.perf_event_paranoid (4) lets perf count nothing, and next-run.sh's
+chain runs in the background, where sudo cannot ask (Iteration 282: the first try
+failed so). So next-run.sh asks for your password at once, before it detaches,
+and leaves lab/evolve/perf-hold.py running as root: it changes nothing until
+counters.py starts measuring, sets 2, and puts the old value back the moment
+counters.py ends - normally, on an error, or killed even with kill -9 - logging
+each step in runs/perf-hold.log. If the chain stops before counters.py, it gives
+up after four hours having changed nothing. Nothing is saved: a reboot restores
+the setting in any case. Run in a terminal by itself, counters.py asks sudo there.
 
 - `c-baseline.py`: the newest front's fastest, knee and smallest designs, and s6,
   against the same benchmarks written in C (-O2 and -O0) - each as a multiple of

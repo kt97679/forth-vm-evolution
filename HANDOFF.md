@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 281.
+- master: Iteration 282.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
@@ -132,8 +132,8 @@ About 20 minutes of machine time for build, tests and gates.
    what clang engines do on the laptop.
 4. The owner's, between runs: `sh lab/evolve/next-run.sh experiment counters.py
    then experiment c-baseline.py` (RUNNING.md, "Between runs" - perf installed;
-   counters.py raises perf_event_paranoid's limit for its own run under sudo and
-   restores it); then process the two packs:
+   sudo asks at once, before the chain detaches; perf-hold.py holds the setting
+   only while counters.py measures); then process the two packs:
    C multiples for the designs, IPC and branch misses (the IP-update loop form).
 5. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
    compiler's switch-off, the list genes, engine flags, shared converter
@@ -162,6 +162,13 @@ About 20 minutes of machine time for build, tests and gates.
 - Judge an old scratch tree against what was applied, not against today's master:
   later batches rewrite what it held (277: ten trees "not in master" were all
   applied). "Never failed" means "never recorded failing" - record the run.
+- next-run.sh's chain runs detached (nohup, stdin /dev/null): anything that needs
+  a terminal - sudo's password - happens before it detaches (282: the first
+  counters.py run failed so, after a claim, never read in the code, that the
+  tools ran in the foreground). Read how a thing runs before saying how it runs.
+- `pkill -f PATTERN` kills the shell running it when PATTERN is in its command
+  line - anchor the pattern, or kill by pid (282). Tests sharing one global
+  setting run one at a time: run alongside, they made each other's results (282).
 - A check that never failed is made to fail before it is trusted (266:
   engines-check against 248's fault). Measure the artifact, not a tool's
   estimate of it (267). A first number far below its price: lift one

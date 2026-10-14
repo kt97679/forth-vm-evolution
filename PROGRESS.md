@@ -5589,3 +5589,36 @@ hidden names, the owner's; its largest bodies are needed words; 42 words never
 run (672 bytes) are error paths and file words. prompts/02: fifteen recalled
 optimizations, every one already built, priced or in the register; the search
 found the one new.
+
+## Iteration 282 - 2026-10-14 - Claude
+
+**counters.py's first laptop run failed, safely; the chain fixed.** The owner ran
+`next-run.sh experiment counters.py then experiment c-baseline.py`: build,
+run-tests (31 generator paths), 7 of 7 IDENTICAL and the jail all passed at
+Iteration 281's code; then sudo, asked from inside the chain, "unable to read
+password: Input/output error", and counters.py stopped saying "nothing changed" -
+the setting untouched, c-baseline.py never started. The cause: next-run.sh runs
+its chain detached (nohup, stdin /dev/null, an orphaned job); Iteration 279 had
+said the tools ran in the foreground, from a grep that found no nohup - wrong.
+
+Now next-run.sh, before it detaches, when counters.py is in the chain and the
+setting is above 2, runs lab/evolve/perf-hold-start.sh: sudo asks once, at once,
+and lab/evolve/perf-hold.py is left as root (sudo -b; hang-ups ignored from the
+fork, a session of its own). It changes nothing until counters.py writes its pid;
+sets 2; restores when counters.py says done or its process is gone (kill -9
+included), after two hours at most; gives up unchanged if counters.py never
+starts within four. counters.py's PerfHold speaks that protocol in the chain;
+run in a terminal it still asks sudo itself (PerfAccess). Shown:
+counters-test.py 14 of 14 (the eight of 279, and the chain - the helper with
+PerfHold, kill -9, a chain that failed first, perf-hold-start.sh with the setting
+already 2, with no terminal, in a terminal by script(1)); and counters.py itself
+end to end, for the first time anywhere, as the chain runs it - detached, no
+terminal, a stand-in perf: every design built and run, its table written, the
+setting 2 for eight seconds (04:05:54-04:06:02) and 4 after.
+
+Three faults of mine on the way, each caught: `pkill -f perf-hold.py` killed the
+shell running it, its pattern in that shell's command line; tests run alongside
+each other moved the one global setting under each other and killed each other's
+helper; the stand-in sudo let a pty's hang-up kill its child before it ran,
+where real sudo -b keeps the command apart from the terminal's foreground group.
+HANDOFF.md's lessons have the first two.

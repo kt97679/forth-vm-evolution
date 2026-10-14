@@ -222,6 +222,17 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     [ "$MODE" = experiment ] && say "nothing will be archived or removed"
     [ -z "$THEN" ] || say "then, when this has finished and packed: $THEN"
     [ -z "${RESERVE:-}" ] || say "the evolution stops at $(date -d @"$UNTIL" +%H:%M) - $(( RESERVE / 60 )) min kept for the re-measure${THEN:+ and the comparison} ($([ -s "$PT" ] && echo "as the last chain took" || echo "seed 38's times"))"
+    # Iteration 282: counters.py needs perf's user-space counters, and the chain is
+    # about to go to the background, where sudo cannot ask: ask now, once, and leave
+    # perf-hold.py to hold the setting while counters.py measures (perf-hold-start.sh).
+    # A later step of the chain comes back here detached, with PERF_HOLD_START set.
+    case " ${TOOL:-} $THEN " in *" counters.py "*)
+        if [ -z "${PERF_HOLD_START:-}" ]; then
+            PERF_HOLD_START=$RUNS/perf-hold-$(date +%Y%m%d-%H%M%S).start; PERF_HOLD_DONE=${PERF_HOLD_START%.start}.done
+            sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" || die "counters.py cannot have perf's counters - nothing started"
+            export PERF_HOLD_START PERF_HOLD_DONE
+        fi;;
+    esac
     NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
     say "going on in the background; follow it with"
     echo "    tail -f $RUN/next-run.log"

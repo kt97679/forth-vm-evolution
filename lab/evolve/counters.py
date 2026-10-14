@@ -18,16 +18,19 @@ Database paths, which next-run.sh's experiment passes, are not designs: ignored.
 It needs perf - on Ubuntu, once: `sudo apt install linux-tools-common
 linux-tools-$(uname -r)` - and user-space counters, which Ubuntu's default
 kernel.perf_event_paranoid (4) refuses. So, for its own run only (Iteration 279,
-the owner: not changed globally), it asks sudo once at its start, sets 2, and
-puts the old value back when it ends - normally, on an error, on Ctrl-C, on
+the owner: not changed globally): run in a terminal, it asks sudo once at its
+start, sets 2, and puts the old value back when it ends - normally, on an error, on Ctrl-C, on
 SIGTERM or SIGHUP - and reads the setting back to check. If the restore fails it
 says so, on the terminal, with the command that does it; a reboot restores it
 too (the setting is not saved). A counter perf cannot read stops the tool: no
-figure from nothing. lab/evolve/RUNNING.md, "Between runs", says when and how.
+figure from nothing. In next-run.sh's chain, which runs in the background where
+sudo cannot ask, next-run.sh asks before it detaches and leaves perf-hold.py to
+hold the setting (Iteration 282). lab/evolve/RUNNING.md, "Between runs", says
+when and how.
 
     sh lab/evolve/next-run.sh experiment counters.py       a pack to send back
 """
-import atexit, os, platform, shutil, signal, statistics, subprocess, sys
+import atexit, os, platform, shutil, signal, statistics, subprocess, sys, time
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 args = sys.argv[1:]; sys.argv = [sys.argv[0]]
 RUNS = 5
@@ -83,6 +86,24 @@ class PerfAccess:
         self.restore(); sys.exit(128 + signum)
     def __exit__(self, *exc): self.restore()
 
+class PerfHold:
+    """In next-run.sh's chain (Iteration 282): root's perf-hold.py, started where sudo could
+    ask, sets the counters while this measures - announce, wait for it, say done."""
+    def __init__(self, start, done): self.start, self.done = start, done
+    def __enter__(self):
+        with open(self.start, 'w') as f: f.write('%d\n' % os.getpid())
+        for _ in range(60):
+            if int(open(PARANOID).read()) <= 2: return self
+            time.sleep(0.5)
+        self.__exit__(); sys.exit('counters: perf-hold.py did not set kernel.perf_event_paranoid (see runs/perf-hold.log) - nothing measured')
+    def keep(self): pass
+    def __exit__(self, *exc):
+        with open(self.done, 'w') as f: f.write('done\n')
+        for _ in range(20):
+            if int(open(PARANOID).read()) > 2: break
+            time.sleep(0.25)
+        print('counters: kernel.perf_event_paranoid is %s after the measurement (perf-hold.py)' % open(PARANOID).read().strip(), file=sys.stderr)
+
 if __name__ == '__main__':
     PERF = shutil.which('perf')
     if not PERF: sys.exit('counters: no perf - on Ubuntu: sudo apt install linux-tools-common linux-tools-$(uname -r)')
@@ -97,7 +118,8 @@ if __name__ == '__main__':
         for r in picks:
             if r['id'] not in [d[0] for d in designs]: designs.append((r['id'], r['genome']))
     rows = []
-    with PerfAccess() as access:
+    hold = os.environ.get('PERF_HOLD_START')        # next-run.sh's chain: perf-hold.py holds it; else ask sudo here
+    with (PerfHold(hold, os.environ['PERF_HOLD_DONE']) if hold else PerfAccess()) as access:
         for name, g in designs:
             access.keep()
             if g is None: sys.exit('counters: no recorded design %s' % name)
