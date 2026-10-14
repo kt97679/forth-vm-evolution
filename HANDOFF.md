@@ -41,12 +41,17 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 286.
+- master: Iteration 287.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 has finished; its packs are not processed yet** - they wait on the
   laptop in runs/ (inside clean-runs' newest eight pack tarballs). Its predictions,
   and the routine above, when they come.
+- Seed 49's pack will carry a results-measured-here.patch that is NOT the usual
+  stash: c-baseline.py, run on the laptop at f607d18fb, wrote its numbers over
+  results/c-baseline-x86-64.md (the VM's). They are filed already, as
+  results/c-baseline-amd-ryzen-7-pro-8840hs.md (Iteration 285): leave that hunk out.
+  Since Iteration 287 c-baseline.py names its file by the CPU, as results/ does.
 - **Seed 49 is the laptop's run** (Iteration 286): `seed 49 tag2 8h then experiment
   compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 8 hours, the owner's; the
   same genes as seed 48. Its predictions were written before seed 48's results

@@ -67,7 +67,11 @@ for w in WORKS:
 g = {k: statistics.geometric_mean([rows[w][k] / rows[w]['C -O2'] for w in WORKS]) for k in cols[1:]}
 out.append('| geometric mean, x C -O2 | 1 | ' + ' | '.join('%.1fx' % g[k] for k in cols[1:]) + ' |')
 print('\n'.join(out))
-host = re.sub(r'[^a-z0-9]+', '-', (platform.processor() or platform.machine()).lower()).strip('-')
+# the machine by its CPU, as results/ names it (Iteration 287): platform.processor() is
+# 'x86_64' on any Linux PC, so the laptop wrote over the VM's c-baseline-x86-64.md
+try: _model = next(l.split(':', 1)[1] for l in open('/proc/cpuinfo') if l.startswith('model name')).split(' w/')[0]
+except (OSError, StopIteration): _model = platform.machine()
+host = re.sub(r'[^a-z0-9]+', '-', _model.lower()).strip('-')
 open(os.path.join(E.ROOT, 'results', 'c-baseline-%s.md' % host), 'w').write(
     '# The Forth designs against the same benchmarks in C (lab/evolve/c-baseline.py)\n\n'
     'Milliseconds of CPU time, the median of %d runs, start-up subtracted; each design also as a multiple of C -O2. '

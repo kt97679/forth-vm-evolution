@@ -5701,3 +5701,16 @@ from the processing; it runs the same genes as seed 48 (no batch between), longe
 NEXT-RUN: `seed 49 tag2 8h then experiment compare-fronts.py --rounds 6 --frontier
 --cpus 2,8`. Its predictions are written now, before its run and without seed 48's
 results (results/predictions.md). The 2@, 2! and DEPTH patch moves to after seed 49.
+
+## Iteration 287 - 2026-10-14 - Claude
+
+**Seed 49 started (the owner) - and two small confusions it showed.**
+`the evolution stops at 04:34` looked like a stop before the start: next-run.sh
+prints that one time in local time (the laptop's: US Pacific) where every log line
+and file name is UTC - 04:34 Pacific is 11:34 UTC, 8 hours less the 113 minutes
+kept, from 05:28 UTC. Now it says both. And next-run.sh stashed
+results/c-baseline-x86-64.md: c-baseline.py named its file by platform.processor(),
+'x86_64' on any Linux PC, so the laptop wrote over the VM's. Now it names it by the
+CPU's model, as results/ does (on the laptop: c-baseline-amd-ryzen-7-pro-8840hs.md,
+the file Iteration 285 filed). Seed 49's results-measured-here.patch will carry that
+hunk; HANDOFF.md says to leave it out.

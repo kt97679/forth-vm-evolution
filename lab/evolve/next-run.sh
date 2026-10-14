@@ -221,7 +221,7 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     [ "$MODE" = fresh ] && say "the previous run's outputs will be moved to $RUNS/archived-..."
     [ "$MODE" = experiment ] && say "nothing will be archived or removed"
     [ -z "$THEN" ] || say "then, when this has finished and packed: $THEN"
-    [ -z "${RESERVE:-}" ] || say "the evolution stops at $(date -d @"$UNTIL" +%H:%M) - $(( RESERVE / 60 )) min kept for the re-measure${THEN:+ and the comparison} ($([ -s "$PT" ] && echo "as the last chain took" || echo "seed 38's times"))"
+    [ -z "${RESERVE:-}" ] || say "the evolution stops at $(date -u -d @"$UNTIL" +%H:%M) UTC ($(date -d @"$UNTIL" +%H:%M) here) - $(( RESERVE / 60 )) min kept for the re-measure${THEN:+ and the comparison} ($([ -s "$PT" ] && echo "as the last chain took" || echo "seed 38's times"))"
     # Iteration 282: counters.py needs perf's user-space counters, and the chain is
     # about to go to the background, where sudo cannot ask: ask now, once, and leave
     # perf-hold.py to hold the setting while counters.py measures (perf-hold-start.sh).
