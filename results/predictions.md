@@ -322,3 +322,25 @@ lto, gotodup, compiler, factor - their first run was 48), for 8 hours.
 2. factor at 1 or more on at least half of the small third.
 3. lto on most of the front's GCC-built designs.
 4. Crossover 30-37%, as every run since seed 44.
+
+## Seed 49, scored (Iteration 288)
+
+1. Small, hypervolume under 2% - **wrong**: not small, +4.0%. The gene set's second
+   run still found the fast end: 0.128 in the run, the best Q 0.204.
+2. factor at 1 or more on at least half of the small third - **right**: 56 of 57,
+   and at level 3 (every word) on 46 of them.
+3. lto on most of the front's GCC-built designs - **right**: 111 of 154.
+4. Crossover 30-37% - **right**: 33.1% (the last fifth 36.5%).
+
+Three of four. Seed 48's predictions are still unscored: its packs have not come.
+
+## Seed 50, predicted (Iteration 288)
+
+Twelve hours (the owner), the same genes as seeds 48 and 49 - the third run of the
+set.
+
+1. Not small: hypervolume above 2% - the set still yielded 4.0% in six hours.
+2. factor at 3 on most of the front (96 of 172 in seed 49).
+3. compiler=1 (clang) on under a quarter of the front (18 of 172).
+4. The smallest at least 30 bytes under seed 49's 15,672.
+5. Crossover 30-37%.

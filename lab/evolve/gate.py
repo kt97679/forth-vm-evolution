@@ -16,12 +16,18 @@ from their results files, as everywhere (E.recorded_genome).
     Iteration 268 checked factor=3 on seed 46's front with a script in /tmp). A
     design that does not express the forced value is counted apart, not built.
 
+    --db FILE (any number): genomes from a run's database too, for designs no
+    results file holds yet (Iteration 288: seed 48's pack had not come back, its
+    front in seed 49's database as carried records).
+
 Until Iteration 256 this lived in /tmp, rewritten each time.
 """
 import json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-args = sys.argv[1:]; force = {}
+args = sys.argv[1:]; force = {}; dbs = []
+while '--db' in args:
+    i = args.index('--db'); dbs.append(args[i + 1]); del args[i:i + 2]
 while '--set' in args:
     i = args.index('--set'); k, v = args[i + 1].split('=', 1); del args[i:i + 2]
     try: force[k] = json.loads(v)
@@ -36,10 +42,16 @@ run = [json.loads(l)['id'] for l in open(results) if l.startswith('{"bin"')]
 line = [l for l in open(compare).read().split('\n') if l.startswith('The front of all runs together')]
 joint = re.findall(r'\b([0-9a-f]{10}) [0-9.]+ at', line[0]) if line else []
 ids = list(dict.fromkeys(run + joint)); bad = apart = 0
+DBG = {}
+for db in dbs:
+    for l in open(db, errors='replace'):
+        try: r = json.loads(l)
+        except ValueError: continue
+        if isinstance(r, dict) and 'id' in r and 'genome' in r: DBG.setdefault(r['id'], r['genome'])
 for did in ids:
     d = os.path.join(E.EV, 'gate')
     try:
-        g = E.recorded_genome(did)
+        g = E.recorded_genome(did) or DBG.get(did)
         if g is None: raise RuntimeError('no recorded genome')
         g = dict(E.canon(g), **force)
         if any(E.express(g).get(k) != v for k, v in force.items()): apart += 1; continue

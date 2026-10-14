@@ -5714,3 +5714,28 @@ results/c-baseline-x86-64.md: c-baseline.py named its file by platform.processor
 CPU's model, as results/ does (on the laptop: c-baseline-amd-ryzen-7-pro-8840hs.md,
 the file Iteration 285 filed). Seed 49's results-measured-here.patch will carry that
 hunk; HANDOFF.md says to leave it out.
+
+## Iteration 288 - 2026-10-14 - Claude
+
+**Seed 49 processed; seed 50 set for 12 hours (the owner).** Both packs clean (tests
+PASS, the generators 31 paths, 7 of 7 IDENTICAL, the jail PASS); the measured-here
+patch the laptop's usual stash (it reverse-applies) and the c-baseline-x86-64.md
+hunk left out, as Iteration 287 said. The evolution ran 6 h 03 min, generations
+0-146, 36,868 designs (28,022 alive, 8,643 screened); 203 deaths, all refused
+before running. The comparison's verdict: fastest -4.1%, smallest +0.00%, memory
+-4 KB, hypervolume +4.0%, best Q -3.9% - not small. The Q-best of all runs is seed
+48's 4599c1f454 (Q 0.216); in the run the fastest 0.128, the smallest 15,672 (-136
+under seed 47's), the least memory 116 KB, the least of any run. Seed 48's genes
+took the front: factor on 161 of 172 (level 3 on 96; on 56 of the small third's
+57), lto on 111 of the 154 GCC-built, clang on 18, jitk 3 on 23 JIT designs,
+gotodup on 24. Predictions three of four (not small, where "small" was said);
+seed 50's written.
+
+Seed 48's packs have still not come back. Its database is in this comparison as an
+archive and its front's genomes in seed 49's as carried records, so gate.py now
+takes --db FILE for genomes no results file holds yet; its results file waits for
+its pack, which clean-runs will remove when seed 52 starts. On this master: the gate
+220 of 220 alive (seed 49's front 172, the joint front 109, 61 in both); the
+standard suite on 37 of the front, 0 differ from s6, its negative control caught.
+NEXT-RUN: `seed 50 tag2 12h then experiment compare-fronts.py --rounds 6 --frontier
+--cpus 2,8`; the comparison is session 43; results/progress-by-run.md regenerated.

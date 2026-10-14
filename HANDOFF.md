@@ -41,21 +41,18 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 287.
+- master: Iteration 288.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
 - **Seed 48 has finished; its packs are not processed yet** - they wait on the
-  laptop in runs/ (inside clean-runs' newest eight pack tarballs). Its predictions,
-  and the routine above, when they come.
-- Seed 49's pack will carry a results-measured-here.patch that is NOT the usual
-  stash: c-baseline.py, run on the laptop at f607d18fb, wrote its numbers over
-  results/c-baseline-x86-64.md (the VM's). They are filed already, as
-  results/c-baseline-amd-ryzen-7-pro-8840hs.md (Iteration 285): leave that hunk out.
-  Since Iteration 287 c-baseline.py names its file by the CPU, as results/ does.
-- **Seed 49 is the laptop's run** (Iteration 286): `seed 49 tag2 8h then experiment
-  compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 8 hours, the owner's; the
-  same genes as seed 48. Its predictions were written before seed 48's results
-  (the end of `results/predictions.md`).
+  laptop in runs/. clean-runs keeps the newest eight pack tarballs: seed 48's go
+  when seed 52 starts, so they must come back before. Seed 49's comparison holds
+  seed 48 as an archive (its 4599c1f454 the Q-best of all runs), and its front's
+  genomes sit in seed 49's database as carried records (gate.py --db reads them).
+- Seed 49 processed (Iteration 288): not small, hypervolume +4.0%.
+- **Seed 50 is the laptop's run** (Iteration 288): `seed 50 tag2 12h then experiment
+  compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 12 hours, the owner's; the
+  same genes a third time. Its predictions: the end of `results/predictions.md`.
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
   all runs (session 42): seed 43's 19510c7689.
 
@@ -129,8 +126,8 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-1. Seeds 48 and 49: process each when its packs come (above). No batch is pending.
-2. A patch, to apply after seed 49: 2@, 2! and DEPTH into the ops10 pool and opbody
+1. Seed 48 (before seed 52 starts) and seed 50: process each when its packs come. No batch is pending.
+2. A patch, built while seed 50 runs, to apply after it: 2@, 2! and DEPTH into the ops10 pool and opbody
    (results/source-audit-2.md) - hot in bubble and the corpus, reachable by no
    gene: bubble -11% to -28% of its dispatches through opbody, more if the run-time
    compiler emits the opcode. Then perhaps NUMBER?'s digit table as a gene.

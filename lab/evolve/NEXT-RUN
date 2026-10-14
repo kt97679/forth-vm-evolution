@@ -315,4 +315,7 @@
 # came back (they wait in runs/, inside clean-runs' newest eight); no batch since
 # seed 48, so the same genes, given longer. 2@, 2! and DEPTH as opcodes come
 # after (results/source-audit-2.md).
-seed 49 tag2 8h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 288: seed 49 not small (hypervolume +4.0%; the fastest 0.128 in the
+# run, the least memory of any, 116 KB); seed 48's packs still to come. Seed 50, 12
+# hours (the owner) - the same genes a third time; 2@, 2! and DEPTH after it.
+seed 50 tag2 12h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
