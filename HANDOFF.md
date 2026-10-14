@@ -41,10 +41,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 291.
+- master: Iteration 292.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
-  after-seed-50 batch (Iteration 290): one patch, 2@ and 2! as opcodes.
+  after-seed-50 batch: 2@ and 2! as opcodes (Iteration 290-291), and the gene
+  opinline (Iteration 292).
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -129,15 +130,10 @@ About 20 minutes of machine time for build, tests and gates.
 ## Open items (roughly by value)
 
 1. Seed 50: process when its packs come. No batch is pending.
-2. Pending, to apply after seed 50: 2@ and 2! as opcodes (results/pending/ORDER.md;
-   bubble -25% of its dispatches on c9369657e4). Next on that line: the run-time
-   compiler emitting the opcode for a call to them (bubble's other 2.1 million) - the
-   converter placing the [opcode EXIT] words among the primitives, where PRIMITIVE?
-   lets COMPILE,8 copy their opcode (Iteration 291's note) - only a word defined once
-   (an overlay's later definition must stay found first); every compiler asks
-   PRIMITIVE? (kernel.4, cpt16.4, the cv8 and cv8t overlays - the tag2 ones' inline
-   path still to read), and cv8t-empty.4 asks it the other way round,
-   and NUMBER?'s digit table as a gene.
+2. Pending, to apply after seed 50 (results/pending/ORDER.md): 2@ and 2! as
+   opcodes, and the gene opinline - their call gone from code compiled at run time;
+   bubble -41.6% of its dispatches on c9369657e4 with both. Next on that line:
+   NUMBER?'s digit table as a gene.
 3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
    what clang engines do on the laptop.
 4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): on

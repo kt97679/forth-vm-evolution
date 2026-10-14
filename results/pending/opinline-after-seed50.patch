@@ -1,0 +1,83 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 0808ba3..1b17b44 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -49,6 +49,7 @@ designs changing id - every one rtfuse=0 leaving the identity.
+ | superinstructions: primitive pairs as single opcodes, drawn from the parent's own hottest pairs (`design_pairs`, profiled per design), in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
+ | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
+ | 2@ and 2! in `ops10`, and in `opbody`'s list (Iteration 290): the double-cell fetch and store, six dispatches a call each as kernel colon words, one as an opcode - bubble's inner loop calls them at run time (2@ three times, 2! once), the corpus's tester too: 16-42% of bubble's dispatches inside them (results/source-audit-2.md). Code compiled at run time calls the words, so opbody's [opcode EXIT] bodies carry the saving there | this lab: word-cost.py | bubble -11% to -28% of its dispatches, priced |
++| the [opcode EXIT] words among the primitives (`opinline`: 0, 1; Iteration 292): placed before (PRIMITIVES-END), where PRIMITIVE? asks by address, so the run-time compiler copies their opcode in place of a call - code compiled at run time (bubble's 2@ and 2!) saves the call and the EXIT. A word defined once only; a design with no [opcode EXIT] word does not express it. For a JIT design it can cost: an inlined opcode with no stencil leaves its word to the interpreter | this lab: word-cost.py | c9369657e4 with 2@ 2! and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%; -41.6% from 12,759,474 before 2@ 2!) |
+ | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+ | an operation and the call after it (`opcall`: a list, Iteration 121; the tag, computed goto): `X;CALL` opcodes of their own (0xFE00 + k), X's handler then a direct jump into the call | results/docs-reuse.md (Koopman) | fastest: parse -3.8%, corpus -3.4%, kernel -1.6% of dispatches for +768 bytes of engine (16 ops); results/opcall.md |
+ | ABORT" guarded (`abortif`: 0, 1; Iteration 117): the converter puts every (ABORT") call behind ?BRANCH and -1, as gforth and lbForth compile ABORT" | results/forth-sources.md | parse -5.6%, corpus -3.0%, kernel -1.0% of dispatches on the fastest design for 56 bytes; errors unchanged |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 58bed0e..ab551d5 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -692,3 +692,8 @@ their kernel bodies in sod16.py's table as the converter reads them (SOD16_SHOW)
+ Five engines-check paths carry them: s6, the cached top off, multi-state, tail
+ calls, the JIT. word-cost.py and gate.py take --set; a list adds its members to a
+ design's own. The audit that found them: results/source-audit-2.md.
++
++Iteration 292: the gene opinline - the [opcode EXIT] words placed among the
++primitives (layout.py --op-inline), so PRIMITIVE?, asking by address, lets every
++run-time COMPILE, copy their opcode: code compiled at run time stops calling them.
++Five engines-check paths carry it, on the 2@ and 2! ones.
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index bd65277..33f5bec 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -73,6 +73,8 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+ bad = []
+ VARIANTS += [(n + ', 2@ 2! opcodes', dict(g, ops10=list(g.get('ops10') or []) + ['2@', '2!'], opbody=1), need + ['ops10'])   # Iteration 290
+              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
++VARIANTS += [(n.replace('2@ 2! opcodes', '2@ 2! inlined'), dict(g, opinline=1), need + ['opinline'])   # Iteration 292
++             for n, g, need in list(VARIANTS) if n.endswith('2@ 2! opcodes')]
+ for name, genes, must in VARIANTS:
+     g = E.canon(dict(S6, **genes))
+     ex = E.express(g)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 341e4dd..c8ca085 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -175,6 +175,13 @@ gene('jitloop', needs=lambda g, e: jit_on(g))                                  #
+ gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
+ gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
+ gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
++# Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
++# compiler copy their opcode in place of a call (tools/layout.py --op-inline). It matters only
++# where a design has such a word: an expressed format-10 opcode of layout.py's base list, or,
++# opbody on, of OPBODY. Keep OPB_BASE as layout.py's _OPB before --op-bodies.
++OPB_BASE = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')
++gene('opinline', needs=lambda g, e: any(w in OPB_BASE or (e.get('opbody') and w in OPBODY) for w in (e.get('ops10') or [])),
++     convert=lambda g: ['--op-inline'] if express(g).get('opinline') else [])
+ gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
+      convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
+diff --git a/tools/layout.py b/tools/layout.py
+index 2289d9f..00083ee 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -425,6 +425,22 @@ for _n in _OPB:
+     _w = [w for w in order if w['s'] in _at]
+     if _w: kind[_w[-1]['s']], info[_w[-1]['s']] = 'code', [('P', _n), ('P', 'EXIT')]
+ 
++# ---- the [opcode EXIT] words among the primitives (Iteration 292): --op-inline ----
++# PRIMITIVE? asks by address - below (PRIMITIVES-END) - so placed there, a word the loop
++# above made [opcode EXIT] is compiled at run time as its opcode, not called: every
++# COMPILE, copies a primitive's body (the cv8 and cv8t overlays one byte, or the escape's
++# two; cpt16's one token), so code compiled at run time - bubble's 2@ and 2! - saves the
++# call and the EXIT. Only a word defined once: a later definition of a name must stay the
++# one FIND finds, and this moves the word to the dictionary's start.
++if '--op-inline' in ARGV:
++    _nm = [w['n'] for w in order]
++    if '(PRIMITIVES-END)' in _nm:
++        _k = _nm.index('(PRIMITIVES-END)')
++        _mv = [w for w in order[_k + 1:] if kind[w['s']] == 'code' and info[w['s']] == [('P', w['n']), ('P', 'EXIT')] and _nm.count(w['n']) == 1]
++        _ids = {id(w) for w in _mv}
++        order = order[:_k] + _mv + [w for w in order[_k:] if id(w) not in _ids]
++        print('op-inline: %d word(s) among the primitives: %s' % (len(_mv), ' '.join(w['n'] for w in _mv) or '-'))
++
+ # ---- one-byte calls (Iteration 14): --hotcalls N --------------------
+ # The targets with the most call sites in the image's code take the bytes
+ # 0xE0-0xFF, through a table in the header (2 bytes an entry). Chosen here,

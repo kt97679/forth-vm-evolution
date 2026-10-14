@@ -5791,3 +5791,21 @@ engines-check PASS; the gate on seed 49's front, the opcodes first, 172 of 172 (
 designs); run-tests PASS. The patch is regenerated and ORDER.md says so. Item 1 itself
 - the converter putting the [opcode EXIT] words among the primitives, so that
 PRIMITIVE? lets COMPILE,8 copy their opcode - is still to do.
+
+## Iteration 292 - 2026-10-14 - Claude
+
+**The gene opinline, pending as the after-seed-50 batch's patch 2: the [opcode EXIT]
+words compiled as their opcode at run time.** PRIMITIVE? asks by address - below
+(PRIMITIVES-END) - and every COMPILE, copies a primitive's body: the cv8 and cv8t
+overlays one byte or the escape's two, cpt16 one token; cv8t-empty.4's PRIMITIVE? 0=
+leaves primitives alone. So layout.py --op-inline places the words its [opcode EXIT]
+loop made - the base list, and opbody's - before the marker, a word defined once only (a
+later definition of a name must stay the one FIND finds). A gene, late, off at 0: moving
+the base list's words unasked would change what recorded designs build under their ids.
+It is expressed only where a design has such a word. Measured on c9369657e4 with patch
+1's opcodes and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%), 0 left inside
+2@ and 2! - -41.6% from the 12,759,474 before patch 1, as the audit priced; the corpus
+-0.2%. Checked in a scratch tree on patch 1: engines-check 41 paths PASS (five with
+opinline), run-tests PASS, gene-equiv - recorded ids and expressions identical, every
+made genome different (a new gene's key); the gate, seed 49's front with both opcodes
+first and both genes on: 172 of 172.

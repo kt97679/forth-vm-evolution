@@ -1,10 +1,12 @@
-# The after-seed-50 batch - apply in this order (against master after Iteration 290)
+# The after-seed-50 batch - apply in this order (against master after Iteration 292)
 
 | # | patch | what it does |
 |---|---|---|
 | 1 | twocell-after-seed50.patch | 2@ and 2! as opcodes: in the ops10 pool and opbody's list - their handlers in engine/vm-lab.c, tools/gen-tos.py and tools/gen-msc.py (gen-tail.py takes them as it finds them; the JIT leaves a word with an opcode it does not translate to the interpreter), their kernel bodies in tools/sod16.py's table as the converter reads them (SOD16_SHOW), evolve.py's OPS10_POOL, OPS10_LABEL and OPBODY, layout.py's _OPB, and for the JIT their SPN stencils in layout.py's table - five each, CELL+'s ADDI the one constant (without them a JIT design that took the opcodes would leave every word holding one to the interpreter: jit.c's all or nothing); five more engines-check paths (s6, the cached top off, multi-state, tail calls, the JIT, each with the two opcodes). bubble's inner loop and the corpus's tester call these words at run time (results/source-audit-2.md). Measured on c9369657e4, seed 47's fastest design without the JIT: bubble 12,759,474 -> 9,572,364 dispatches (-25.0%), the corpus -0.3%: about -4.7% on the selection's geometric mean. DEPTH left out: its handler would have to agree with the kernel's S0 exactly. No kernel change: no reseed. |
+| 2 | opinline-after-seed50.patch | The gene opinline (late, 0 and 1; Iteration 292): the [opcode EXIT] words - layout.py's base list, and opbody's - placed among the primitives, before (PRIMITIVES-END), where PRIMITIVE? asks by address, so every run-time COMPILE, copies their opcode in place of a call. A word defined once only. Expressed only where a design has such a word. Measured on c9369657e4 with patch 1's opcodes and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%; -41.6% from the 12,759,474 before patch 1), the corpus -0.2% - with patch 1 about -8.6% on the selection's geometric mean. For a JIT design it can cost (an inlined opcode without a stencil leaves its word to the interpreter): evolution judges. |
 
     git apply results/pending/twocell-after-seed50.patch
+    git apply results/pending/opinline-after-seed50.patch
 
 Patch 1, tested on master at Iteration 289, in a scratch tree: the build; engines-check
 PASS, 36 paths; run-tests PASS (the generators 36 paths); gene-equiv.py against HEAD -
@@ -17,3 +19,11 @@ the fastest JIT design 927064f127 with them translatable - 70 of its 129 operati
 without; the gate on seed 49's front again 172 of 172 (99 JIT designs); run-tests PASS.
 The patch applies on a fresh clone of master after Iteration 291 and reproduces the tested
 files.
+
+Patch 2, tested on patch 1 in a scratch tree (Iteration 292): the build; engines-check
+PASS, 41 paths - five more, patch 1's five with opinline on; run-tests PASS; gene-equiv.py
+against patch 1 - every recorded design's id and expression the same (3,048), every made
+genome different, as a new gene's key must make them; word-cost.py as above; the gate with
+2@ and 2! first, opbody and opinline on, seed 49's front: 172 of 172 alive, every one
+expressing it. Patches 1 and 2 apply in turn on a fresh clone of master after Iteration
+292 and reproduce the tested files.
