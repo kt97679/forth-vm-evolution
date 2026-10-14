@@ -41,11 +41,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 292.
+- master: Iteration 293.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
-  after-seed-50 batch: 2@ and 2! as opcodes (Iteration 290-291), and the gene
-  opinline (Iteration 292).
+  after-seed-50 batch: 2@ and 2! as opcodes (Iteration 290-291), the gene
+  opinline (Iteration 292), the gene tailpn (Iteration 293).
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -68,7 +68,9 @@ About 20 minutes of machine time for build, tests and gates.
    `results-measured-here.patch` (the laptop's stash, already on master).
 2. The comparison's "Judging the runs": fastest, smallest, memory (+-8 KB),
    hypervolume, best Q - small only if all five are. The Q-best of all runs.
-3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md`.
+3. The clang tail engine with preserve_none and musttail: pending as the gene tailpn
+   (after-seed-50 patch 3; the laptop's clang-20). Seed 51's front will say whether
+   tail engines come back with it.
 4. Score the predictions, write the next (`results/predictions.md`).
 5. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a
    `---`, then report.md - the gate and ans-check read genomes from it.

@@ -1,0 +1,134 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 1b17b44..473d34d 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -50,6 +50,7 @@ designs changing id - every one rtfuse=0 leaving the identity.
+ | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
+ | 2@ and 2! in `ops10`, and in `opbody`'s list (Iteration 290): the double-cell fetch and store, six dispatches a call each as kernel colon words, one as an opcode - bubble's inner loop calls them at run time (2@ three times, 2! once), the corpus's tester too: 16-42% of bubble's dispatches inside them (results/source-audit-2.md). Code compiled at run time calls the words, so opbody's [opcode EXIT] bodies carry the saving there | this lab: word-cost.py | bubble -11% to -28% of its dispatches, priced |
+ | the [opcode EXIT] words among the primitives (`opinline`: 0, 1; Iteration 292): placed before (PRIMITIVES-END), where PRIMITIVE? asks by address, so the run-time compiler copies their opcode in place of a call - code compiled at run time (bubble's 2@ and 2!) saves the call and the EXIT. A word defined once only; a design with no [opcode EXIT] word does not express it. For a JIT design it can cost: an inlined opcode with no stencil leaves its word to the interpreter | this lab: word-cost.py | c9369657e4 with 2@ 2! and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%; -41.6% from 12,759,474 before 2@ 2!) |
++| the tail-call engine with preserve_none and musttail (`tailpn`: 0, 1; Iteration 293): clang 19+'s calling convention that saves no register on every handler, and musttail on every handler-to-handler call (tools/gen-tail.py --preserve-none) - CPython 3.14's tail-call interpreter. Built with the newest clang here that takes them (clang_pn(): clang-20 on the owner's laptop); expressed only on a clang tail engine, only where such a clang is installed | CPython 3.14; this lab: engines-check | s6's engine 14,232 bytes, 14,680 without (no register saved) - speed for the laptop's runs to judge |
+ | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+ | an operation and the call after it (`opcall`: a list, Iteration 121; the tag, computed goto): `X;CALL` opcodes of their own (0xFE00 + k), X's handler then a direct jump into the call | results/docs-reuse.md (Koopman) | fastest: parse -3.8%, corpus -3.4%, kernel -1.6% of dispatches for +768 bytes of engine (16 ops); results/opcall.md |
+ | ABORT" guarded (`abortif`: 0, 1; Iteration 117): the converter puts every (ABORT") call behind ?BRANCH and -1, as gforth and lbForth compile ABORT" | results/forth-sources.md | parse -5.6%, corpus -3.0%, kernel -1.0% of dispatches on the fastest design for 56 bytes; errors unchanged |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index ab551d5..502c34e 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -697,3 +697,9 @@ Iteration 292: the gene opinline - the [opcode EXIT] words placed among the
+ primitives (layout.py --op-inline), so PRIMITIVE?, asking by address, lets every
+ run-time COMPILE, copy their opcode: code compiled at run time stops calling them.
+ Five engines-check paths carry it, on the 2@ and 2! ones.
++
++Iteration 293: the gene tailpn - gen-tail.py --preserve-none: clang 19+'s
++preserve_none on every handler of the tail-call engine and musttail on every
++handler-to-handler call, built with clang_pn(), the newest clang here that takes
++them. A versioned clang (clang-19, clang-20) is a build tool now, not jailed as an
++engine: the jail's no-new-process rule had kept its driver from the linker.
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 33f5bec..f3e2dac 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -75,6 +75,8 @@ VARIANTS += [(n + ', 2@ 2! opcodes', dict(g, ops10=list(g.get('ops10') or []) +
+              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+ VARIANTS += [(n.replace('2@ 2! opcodes', '2@ 2! inlined'), dict(g, opinline=1), need + ['opinline'])   # Iteration 292
+              for n, g, need in list(VARIANTS) if n.endswith('2@ 2! opcodes')]
++if E.clang_pn():   # Iteration 293: where a clang 19+ is installed
++    VARIANTS += [('clang %s, tail calls with preserve_none' % E.clang_pn(), dict(tail=1, compiler=1, tailpn=1), ['compiler', 'tail', 'tailpn'])]
+ for name, genes, must in VARIANTS:
+     g = E.canon(dict(S6, **genes))
+     ex = E.express(g)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c8ca085..0ca1668 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -182,6 +182,10 @@ gene('jittail', needs=lambda g, e: jit_on(g))                                  #
+ OPB_BASE = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')
+ gene('opinline', needs=lambda g, e: any(w in OPB_BASE or (e.get('opbody') and w in OPBODY) for w in (e.get('ops10') or [])),
+      convert=lambda g: ['--op-inline'] if express(g).get('opinline') else [])
++# Iteration 293: clang 19+'s preserve_none and musttail in the tail-call engine (tools/gen-tail.py
++# --preserve-none) - CPython 3.14's tail-call interpreter. Built with clang_pn(), the newest clang
++# that takes them; expressed only on a clang tail engine, and only where such a clang is here.
++gene('tailpn', needs=lambda g, e: e.get('tail') and e.get('compiler') and bool(clang_pn()))
+ gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
+      convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
+@@ -190,6 +194,18 @@ EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation
+ # Iteration 262: the compiler - 0 GCC (cc), 1 clang. Offered only where clang is installed: elsewhere
+ # a design with it could not be built. Flags and genes one compiler lacks are not expressed under it.
+ HAVE_CLANG = bool(shutil.which('clang'))
++_CLANG_PN = None
++def clang_pn():
++    """The newest clang here that takes preserve_none and musttail (19 and later), or ''
++    - asked once, by compiling a line (Iteration 293, the gene tailpn)."""
++    global _CLANG_PN
++    if _CLANG_PN is None:
++        _CLANG_PN = ''
++        src = 'typedef void (__attribute__((preserve_none)) *f)(long);\n__attribute__((preserve_none)) void g(long a) { extern f h; __attribute__((musttail)) return h(a); }\n'
++        for c in ('clang-22', 'clang-21', 'clang-20', 'clang-19', 'clang'):
++            if shutil.which(c) and subprocess.run([c, '-x', 'c', '-c', '-o', os.devnull, '-'], input=src.encode(), capture_output=True).returncode == 0:
++                _CLANG_PN = c; break
++    return _CLANG_PN
+ if HAVE_CLANG: EXPRESSED['cv8'] += ['compiler']
+ GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto')
+ JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
+@@ -536,7 +552,9 @@ def _kind(cmd):
+     if len(cmd) > i + 3 and os.path.basename(str(cmd[i])) == 'setarch': i += 3   # setarch ARCH -R (Iteration 24)
+     exe = os.path.basename(str(cmd[i])) if len(cmd) > i else ''
+     if exe == os.path.basename(CPUT): return 'cputime'
+-    return None if exe in BUILD_TOOLS or exe.startswith('python') else 'engine'
++    # clang-19 and the like - the gene tailpn's compiler (Iteration 293) - a build tool too: jailed as an
++    # engine, no new process, its driver could not start the linker
++    return None if exe in BUILD_TOOLS or exe.startswith(('python', 'clang-')) else 'engine'
+ def _contain(cpu, kind=None):
+     """In the child: a CPU-time limit - SIGXCPU at cpu seconds - and for an
+     engine, the jail: no new processes (RLIMIT_NPROC 0), at most 1 GB of
+@@ -623,6 +641,7 @@ def bin_size(eng):
+ GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
+ def CC(g):
+     """Iteration 262: the compiler the gene names - GCC as cc, or clang."""
++    if express(g).get('tailpn'): return clang_pn()       # Iteration 293: clang 19+, for preserve_none
+     return 'clang' if express(g).get('compiler') else 'cc'
+ def ccflags(g):
+     if express(g).get('compiler'):          # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
+@@ -658,7 +677,8 @@ def build_tail(g, d, src, flags, eng):
+     if sh([CC(g), '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
+     wrap = []
+     for attempt in range(2):
+-        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
++        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
++               + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
+         if r.returncode: raise RuntimeError('died: tail-call generation')
+         if sh([CC(g)] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+         bad = tail_offenders(eng)
+diff --git a/tools/gen-tail.py b/tools/gen-tail.py
+index 1a22eb3..6b398d6 100644
+--- a/tools/gen-tail.py
++++ b/tools/gen-tail.py
+@@ -1,6 +1,7 @@
+ #!/usr/bin/env python3
+ """gen-tail.py PREPROCESSED.c OUT.c [--wrap L_a,L_b,...] - tail-call
+-threading for the CV8 engine.
++threading for the CV8 engine. --preserve-none (Iteration 293, the gene tailpn,
++clang 19+): preserve_none on every handler, musttail on every tail call.
+ 
+ Input: the top-of-stack engine (vm-lab-tos.c, after gen-fold / gen-super),
+ preprocessed for one design with -DDISPATCH256=1 (cc -E -P), so every
+@@ -107,5 +108,17 @@ head = ('typedef void (*hfn)(%s);\n'
+         + ''.join('static void H_%s(%s);\n' % (n, ARGS) for n in names))
+ head = head.replace('ESC_FTAB_N', str(max(ESC_N, 32)))   # 32 as ever at level 1; 41 at level 2
+ if TAG2: head += 'static hfn t2tab[256], t2esc[256];\n'
+-open(sys.argv[2], 'w').write(pre + head + ''.join(funcs) + entry + post)
++body = ''.join(funcs)
++if '--preserve-none' in sys.argv:
++    # Iteration 293, the gene tailpn: clang 19+'s preserve_none on every handler - no register is
++    # callee-saved, so the state stays in registers through the chain, nothing spilled - and
++    # musttail on every handler-to-handler call, so none can become a call (CPython 3.14's form).
++    # The entry, an ordinary C function, only calls into the chain: no musttail there.
++    PN = '__attribute__((preserve_none))'
++    head = head.replace('typedef void (*hfn)(', 'typedef void (%s *hfn)(' % PN, 1)
++    head = head.replace('static void H_', 'static %s void H_' % PN)
++    body = body.replace('static void H_', 'static %s void H_' % PN)
++    body = re.sub(r'(?<![\w.])return (htab\[t\]|esc_ftab\[t\]|t2tab\[t\]|t2esc\[t\]|H_\w+|f_)\((ip, dsp, rp, tos, t|tc_ip, tc_dsp, tc_rp, tc_tos, tc_t)\);',
++                  r'__attribute__((musttail)) return \1(\2);', body)
++open(sys.argv[2], 'w').write(pre + head + body + entry + post)
+ print('%d handlers as functions, %d wrapped' % (len(names), len(WRAP & set(names))))

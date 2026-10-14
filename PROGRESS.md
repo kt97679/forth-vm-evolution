@@ -5809,3 +5809,21 @@ It is expressed only where a design has such a word. Measured on c9369657e4 with
 opinline), run-tests PASS, gene-equiv - recorded ids and expressions identical, every
 made genome different (a new gene's key); the gate, seed 49's front with both opcodes
 first and both genes on: 172 of 172.
+
+## Iteration 293 - 2026-10-14 - Claude
+
+**The gene tailpn, pending as the after-seed-50 batch's patch 3: the tail-call engine
+with clang 19+'s preserve_none and musttail** (the owner: clang-20 on the laptop). gen-tail
+.py --preserve-none marks the handler type and every handler preserve_none and every
+handler-to-handler call musttail - not the entry, an ordinary C function that only calls
+in; evolve.py's clang_pn() finds the newest clang that compiles a line of both (clang-19
+here), CC() takes it for a tailpn design, and the gene is expressed only on a clang tail
+engine, only where such a clang is. The first try "did not compile" - yet tail.c compiled
+by hand, and so did the exact command: the jail. A program not in BUILD_TOOLS is run as an
+engine, with no new process allowed, so clang-19's driver could not start the linker; a
+versioned clang is a build tool now. Checked in a scratch tree on patches 1 and 2:
+engines-check 42 paths PASS, the new one clang-19's (225 preserve_none, 223 musttail; s6's
+engine 14,232 bytes, 14,680 without); run-tests PASS; gene-equiv - recorded ids and
+expressions the same; the gate, tail, clang and tailpn forced on 20 of seed 49's front: 19
+of 19 alive, one unable to express a tail engine. No speed figure: a rough VM timing's
+script ran the engines wrongly, and the VM could not judge it; seed 51 on the laptop will.
