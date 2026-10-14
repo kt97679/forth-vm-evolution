@@ -311,3 +311,14 @@ factor (repeated code in headerless bodies, 0-3). No kernel change. Six hours.
 4. compiler=1 (clang) on under a quarter of the front, and on none of the small
    third: clang's engines are larger at the small end.
 5. Not small: hypervolume above 2% - five new genes.
+
+## Seed 49, predicted (Iteration 286) - written before seed 48's results were seen
+
+Seed 49 starts before seed 48's packs are processed, so these are written without
+them - seed 48's own predictions wait to be scored. The same genes as seed 48 (jitk,
+lto, gotodup, compiler, factor - their first run was 48), for 8 hours.
+
+1. Small: hypervolume under 2% - the second run of a gene set, and no new gene.
+2. factor at 1 or more on at least half of the small third.
+3. lto on most of the front's GCC-built designs.
+4. Crossover 30-37%, as every run since seed 44.

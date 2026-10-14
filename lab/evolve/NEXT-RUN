@@ -311,4 +311,8 @@
 # rule counts afresh. The compiler gene is offered only where clang is on the
 # PATH - `clang --version` on the laptop before the run, or it stays dormant.
 # Seed 48, 6 hours (the owner).
-seed 48 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 286: seed 49, 8 hours (the owner) - started before seed 48's packs
+# came back (they wait in runs/, inside clean-runs' newest eight); no batch since
+# seed 48, so the same genes, given longer. 2@, 2! and DEPTH as opcodes come
+# after (results/source-audit-2.md).
+seed 49 tag2 8h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

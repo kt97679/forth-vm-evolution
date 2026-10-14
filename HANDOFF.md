@@ -41,15 +41,16 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 285.
+- master: Iteration 286.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`); `results/pending` does not exist.
-- **Seed 48 is the laptop's next run** (or running): `seed 48 tag2 6h then
-  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8`, at Iteration
-  269's commit (9029848) or a later one - the differences since are documents
-  and tools. The first run with jitk, lto, gotodup, compiler (where clang is on
-  the laptop's PATH) and factor; the stopping rule counts afresh. Predictions:
-  the end of `results/predictions.md`.
+- **Seed 48 has finished; its packs are not processed yet** - they wait on the
+  laptop in runs/ (inside clean-runs' newest eight pack tarballs). Its predictions,
+  and the routine above, when they come.
+- **Seed 49 is the laptop's run** (Iteration 286): `seed 49 tag2 8h then experiment
+  compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 8 hours, the owner's; the
+  same genes as seed 48. Its predictions were written before seed 48's results
+  (the end of `results/predictions.md`).
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
   all runs (session 42): seed 43's 19510c7689.
 
@@ -123,8 +124,8 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-1. Seed 48: process (above). No batch is pending.
-2. After seed 48, a patch: 2@, 2! and DEPTH into the ops10 pool and opbody
+1. Seeds 48 and 49: process each when its packs come (above). No batch is pending.
+2. A patch, to apply after seed 49: 2@, 2! and DEPTH into the ops10 pool and opbody
    (results/source-audit-2.md) - hot in bubble and the corpus, reachable by no
    gene: bubble -11% to -28% of its dispatches through opbody, more if the run-time
    compiler emits the opcode. Then perhaps NUMBER?'s digit table as a gene.

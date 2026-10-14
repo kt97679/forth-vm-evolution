@@ -5689,3 +5689,15 @@ s6's 1-3% - most likely the C operations evolution chose for that work, whose
 loop exits depend on the data; which handlers is the next laptop measurement.
 And the JIT mispredicts 1.5% of ackermann's branches - returns, probably. HANDOFF.md:
 the owner's item done; items 4 and 5 new.
+
+## Iteration 286 - 2026-10-14 - Claude
+
+**Seed 49 set for 8 hours (the owner), before seed 48 is processed.** Seed 48 has
+finished on the laptop; its packs have not come back yet, and they are safe there:
+clean-runs.sh removes pack tarballs only past the newest eight, and the laptop has
+made two since (the counters and C-baseline packs), seed 49 and its comparison two
+more. Seed 49 carries its fronts from the laptop's own archives, so it needs nothing
+from the processing; it runs the same genes as seed 48 (no batch between), longer.
+NEXT-RUN: `seed 49 tag2 8h then experiment compare-fronts.py --rounds 6 --frontier
+--cpus 2,8`. Its predictions are written now, before its run and without seed 48's
+results (results/predictions.md). The 2@, 2! and DEPTH patch moves to after seed 49.
