@@ -12,7 +12,8 @@ from their results files, as everywhere (E.recorded_genome).
     -> alive: 148 of 148 (the run's front 127, the joint front 72, 51 in both)
 
     --set GENE=VALUE (any number of them): the gene forced on every design
-    before it is built - a new gene's check across the fronts (Iteration 270;
+    before it is built - a list's members put first, ahead of the design's own,
+    so they take its opcode slots (Iteration 290) - a new gene's check across the fronts (Iteration 270;
     Iteration 268 checked factor=3 on seed 46's front with a script in /tmp). A
     design that does not express the forced value is counted apart, not built.
 
@@ -53,8 +54,11 @@ for did in ids:
     try:
         g = E.recorded_genome(did) or DBG.get(did)
         if g is None: raise RuntimeError('no recorded genome')
-        g = dict(E.canon(g), **force)
-        if any(E.express(g).get(k) != v for k, v in force.items()): apart += 1; continue
+        g = dict(E.canon(g))
+        for k, v in force.items():          # Iteration 290: a list's members go first, then the design's own - so they
+            g[k] = v + [x for x in (g.get(k) or []) if x not in v] if isinstance(v, list) else v   # take the slots (ops10_in)
+        e_ = E.express(g)
+        if any((not set(v) <= set(e_.get(k) or [])) if isinstance(v, list) else e_.get(k) != v for k, v in force.items()): apart += 1; continue
         eng, img = E.build(E.canon(g), d); E.alive(eng, img, E.private_work(d))
     except Exception as e:
         bad += 1; print('DIED', did, str(e)[:120], flush=True)

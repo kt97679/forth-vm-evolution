@@ -10,11 +10,17 @@ the opcode's (the words it calls keep their own costs). Exact counts: the price 
 measured here, not on the laptop's clock. `s6` names the hand-made s6.
 
     python3 lab/evolve/word-cost.py s6,7535695a36 2@,2!,DEPTH
+    python3 lab/evolve/word-cost.py --set 'ops10=["2@","2!"]' --set opbody=1 c9369657e4 2@,2!
 """
 import bisect, collections, glob, json, os, shutil, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
-if len(sys.argv) != 3: sys.exit(__doc__)
-ids, words = sys.argv[1].split(','), sys.argv[2].split(',')
+args = sys.argv[1:]; force = {}
+while '--set' in args:                  # Iteration 290: a gene forced on every design, as gate.py --set
+    i = args.index('--set'); k, v = args[i + 1].split('=', 1); del args[i:i + 2]
+    try: force[k] = json.loads(v)
+    except ValueError: force[k] = v
+if len(args) != 2: sys.exit(__doc__)
+ids, words = args[0].split(','), args[1].split(',')
 sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
 E.setup()
 print('| design | workload | dispatches | ' + ' | '.join('in %s' % w for w in words) + ' | all of them |')
@@ -23,6 +29,7 @@ for ident in ids:
     g = dict(E.HUMAN['s6-cv8b']) if ident == 's6' else E.recorded_genome(ident)
     if g is None: sys.exit('word-cost: no recorded design %s' % ident)
     g = dict(E.canon(g), jit=0, tail=0, msc=0)
+    for k_, v_ in force.items(): g[k_] = v_ + [x for x in (g.get(k_) or []) if x not in v_] if isinstance(v_, list) else v_   # a list's members first: they take the slots
     d = os.path.join(E.EV, 'word-cost'); shutil.rmtree(d, ignore_errors=True)
     cm = d + '.map'; os.environ['CALLMAP'] = cm; E.PROFILING[0] = True
     try: eng, img = E.build(g, d)
