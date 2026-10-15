@@ -63,6 +63,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `loopwords.py` - loopwords.py ID [ID ...] [--db FILE] - the loop words in code compiled at
 - `lucky.py` - lucky.py [--step S] [--sweeps K] [--ids ID,...] DB [DB ...] - is the lucky
 - `names-check.py` - names-check.py [IDS...] - word names in UTF-8, defined and then compiled
+- `chainctl.py` - a chain of runs as one thing (Iteration 313): next-run.sh's status, monitor and stop; the one archive a chain makes, whatever happened; progress lines; a crashed chain archived at the next start, root's files given back
 - `next-run.sh` - lab/evolve/next-run.sh [SEED | compare [ROUNDS] | experiment TOOL [ARGS] | none] - the next run on the laptop, in
 - `outbuf-check.py` - outbuf-check.py [ID] - does output buffering break anything? (Iteration 207)
 - `price.py` - price.py ID [ID ...] [--db FILE] - what a fusion could save, before building it

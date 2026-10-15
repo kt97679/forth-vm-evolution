@@ -6167,3 +6167,26 @@ every time. Tested in a scratch tree: both designs live (3 2 1, the corpus right
 with the two regressions, run-tests, the gate 252 of 252; three JIT designs' speed unchanged -
 one that looked 40% slower on loop from 2 rounds measured 0.043 on master and with the fix,
 twice, from 5.
+
+## Iteration 313 - 2026-10-15 - Claude
+
+**The new runner, its chain layer built (results/drafts/runner-protocol.md, "Built so far").**
+lab/evolve/chainctl.py and nine edits to next-run.sh; each step's own logic unchanged. A chain
+- every step of a NEXT-RUN line - is one session (setsid) with one directory: its line,
+commit, session, status, a line a step, the one log, and packs/. `next-run.sh status`,
+`monitor` (read only) and `stop` (TERM, then KILL after 60 s, and packed). One archive at the
+end, whatever happened: forth-vm-evolution-chain-HEAD-HOST-TIME[-STATUS].tar.gz, .partial
+until whole. A measurement that fails does not stop what follows; a seed run's failure skips
+the comparison, recorded. The tests, validation and jail once a chain. A progress line every 5
+minutes during the evolution. At start: a chain that ended without finishing archived as
+interrupted, stale partial archives removed, root-owned files given back with sudo in the
+foreground.
+
+Tested on the VM in a scratch clone with two stand-in tools: a failure going on (one archive,
+done-some-failed, the failed tool's own error kept - after a design gap the first test showed:
+a later success had packed as plain done); checks once (23 s, the tests not run again); status
+and monitor; stop in the middle of a build (five processes, none after; a stopped step first
+recorded FAILED - now STOPPED); a crash, every process killed -9 - archived as interrupted by
+the next start. A bug found by reading before testing: the pack line's expansion gave a path
+"chain.log" plus the chain's path. Not yet: the seed step under the chain (a miniature seed
+chain), the root-owned files path; perf-hold for every measurement; the remote checks.

@@ -19,6 +19,14 @@
 #     sh lab/evolve/next-run.sh experiment cpu-noise.py --rounds 20
 #                                       # any tracked tool in lab/evolve/, given every
 #                                       # database here; nothing archived (Iteration 23)
+#     sh lab/evolve/next-run.sh status  # where the chain is - its step, its progress
+#     sh lab/evolve/next-run.sh monitor # its one log, followed until it ends (read only)
+#     sh lab/evolve/next-run.sh stop    # the chain ended - and its archive made all the same
+#
+# Iteration 313: every step of a line ("A then B") is one chain - one session, one
+# log, and at the end one archive in RUNS, forth-vm-evolution-chain-*.tar.gz, with
+# every step's pack and the logs of any that failed (lab/evolve/chainctl.py). A
+# measurement that fails does not stop what follows it; the tests run once a chain.
 #
 # It pulls first and then runs the copy in the repository, so a newer
 # bundle brings its own script. After the pull it goes on in the
@@ -48,6 +56,11 @@ BUNDLES=${BUNDLES:-$HOME/Downloads}
 RUNS=${RUNS:-$REPO/runs}       # Iteration 84 (the owner): in the clone, ignored by git - all in one place
 POP=${POP:-32}; GENS=${GENS:-40}; ROUNDS=${ROUNDS:-3}; REMEASURE=${REMEASURE:-6}
 JOBS=${JOBS:-4}; UNTIL=                 # Iteration 99: four workers, each on its own core
+# Iteration 313: the chain's commands (lab/evolve/chainctl.py) - where it is, its one log
+# followed, or the chain ended and still packed. Nothing pulled, nothing started.
+case "${1:-}" in
+    status|monitor|stop) exec python3 "$REPO/lab/evolve/chainctl.py" "$1" "$RUNS" ;;
+esac
 
 # Iteration 79: the archived databases, oldest first by their archive name
 # (a UTC timestamp) - the laptop's, in $RUNS, and the odd seeds' run on the
@@ -81,6 +94,15 @@ running() { pgrep -f 'lab/evolve/evolve.py' >/dev/null 2>&1; }
 # ---- 1. the newest bundle, fast-forward only; then this script as pulled
 if [ -z "${NEXT_RUN_PULLED:-}" ]; then
     running && die "an evolution is running already (pgrep -f lab/evolve/evolve.py) - let it finish"
+    # Iteration 313: one chain at a time; and before anything starts, what an earlier one left -
+    # a chain that ended without finishing archived as interrupted, root's files given back, here,
+    # where sudo can still ask
+    python3 lab/evolve/chainctl.py alive "$RUNS" 2>/dev/null && die "a chain is running - sh lab/evolve/next-run.sh status, monitor or stop"
+    rc=0; python3 lab/evolve/chainctl.py recover "$RUNS" "$REPO" || rc=$?
+    if [ "$rc" = 3 ]; then
+        say "giving them back to $(id -un) - sudo asks once"
+        sudo chown -R "$(id -u):$(id -g)" $(find "$REPO" -xdev -uid 0) || die "root's files in $REPO not given back - nothing started"
+    fi
     b=$(ls -t "$BUNDLES"/forth-vm-evolution*.bundle 2>/dev/null | sed 1q)
     [ -n "$b" ] || die "no forth-vm-evolution*.bundle in $BUNDLES"
     # Iteration 18: tools/bench-laptop.sh writes its measurements into tracked
@@ -235,12 +257,25 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
             export PERF_HOLD_START PERF_HOLD_DONE
         fi;;
     esac
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO nohup sh "$0" "$@" >> "$RUN/next-run.log" 2>&1 < /dev/null &
-    say "going on in the background; follow it with"
-    echo "    tail -f $RUN/next-run.log"
+    # Iteration 313: a chain - every step of the line - is one session, one directory, one log
+    # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
+    if [ -z "${NEXT_RUN_CHAIN:-}" ]; then
+        NEXT_RUN_CHAIN=$RUNS/chain-$(date -u +%Y%m%d-%H%M%S)
+        mkdir -p "$NEXT_RUN_CHAIN/packs"
+        echo "$*${THEN:+ then $THEN}" > "$NEXT_RUN_CHAIN/line"; echo "$HEAD" > "$NEXT_RUN_CHAIN/head"
+        echo running > "$NEXT_RUN_CHAIN/status"; : > "$NEXT_RUN_CHAIN/steps"
+        export NEXT_RUN_CHAIN
+        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+        say "going on in the background, as one chain - watch it with"
+        echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
+        exit 0
+    fi
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
     exit 0
 fi
 MODE=$NEXT_RUN_DETACHED
+CHAIN=${NEXT_RUN_CHAIN:-}; CHAINLOG=${CHAIN:+$CHAIN/chain.log}
+[ -z "$CHAIN" ] || [ -s "$CHAIN/sid" ] || ps -o sid= -p $$ | tr -d ' ' > "$CHAIN/sid"
 mkdir -p "$RUNS"
 exec 9> "$RUNS/.lock"
 flock -n 9 || die "another run holds $RUNS/.lock - two runs would measure each other"
@@ -271,12 +306,44 @@ fi
 RUNS="$RUNS" sh tools/clean-runs.sh --held 2>&1 | while read -r l; do say "$l"; done || true
 running && die "an evolution is running already - let it finish"
 step() { echo; echo "== $(date -u +%H:%M:%S) $*"; }
-trap 'echo; echo "next-run: FAILED in the step above - $RUN/next-run.log"' EXIT
+# Iteration 313: a step that fails is recorded, its logs kept in the chain. A measurement's
+# failure does not cost what follows it; a seed run's does - the comparison after it would
+# measure a run that did not finish. Stopped (chainctl.py stop): nothing follows. Either way
+# the chain is packed - the one archive, whatever happened.
+failed() {
+    trap - EXIT
+    echo; echo "next-run: FAILED in the step above"
+    [ -n "$CHAIN" ] || exit 1
+    F=$CHAIN/packs/failed-${NAME:-seed$SEED}-$(date -u +%H%M%S); mkdir -p "$F"
+    for f in "$RUN"/*.log "$RUN"/*.md evolve.log; do [ ! -f "$f" ] || cp "$f" "$F/" 2>/dev/null || true; done
+    if [ "$(sed 1q "$CHAIN/status" 2>/dev/null)" = stopping ]; then
+        echo "STOPPED $WANT" >> "$CHAIN/steps"
+        [ -z "$THEN" ] || echo "skipped: $THEN - the chain was stopped" >> "$CHAIN/steps"
+        python3 lab/evolve/chainctl.py pack "$CHAIN" stopped; exit 1
+    fi
+    echo "FAILED $WANT" >> "$CHAIN/steps"
+    if [ "$KIND" = experiment ] && [ -n "$THEN" ]; then
+        say "a failed lab/evolve/$TOOL does not stop what follows it"
+        then_next
+    fi
+    [ -z "$THEN" ] || echo "skipped: $THEN - after a failed seed run" >> "$CHAIN/steps"
+    python3 lab/evolve/chainctl.py pack "$CHAIN" failed
+    exit 1
+}
+trap failed EXIT
+trap 'exit 143' TERM INT HUP                # dash runs no EXIT trap on a signal without these
 step "$WANT - $MODE"
 
 checks() {   # build/ made current, then everything that must pass before a measurement
     LAYOUTS=1 bash tools/build-stages.sh > "$RUN/build.log" 2>&1 || { tail -20 "$RUN/build.log"; exit 1; }
     tail -1 "$RUN/build.log"
+    # Iteration 313: the tests, the validation and the jail once a chain - its code does not
+    # change after the pull; a later step keeps the first one's logs, and only builds.
+    if [ -n "${NEXT_RUN_CHECKED:-}" ] && [ "${NEXT_RUN_CHECKED%%:*}" = "$HEAD" ]; then
+        for f in tests validate jail; do cp "${NEXT_RUN_CHECKED#*:}/$f.log" "$RUN/" 2>/dev/null || true; done
+        step "tests, the hand-made stages, the jail - passed in this chain's first step at $HEAD, not run again"
+        return 0
+    fi
     step "tests"
     bash tools/run-tests.sh > "$RUN/tests.log" 2>&1 || { tail -30 "$RUN/tests.log"; exit 1; }
     tail -1 "$RUN/tests.log"
@@ -289,6 +356,7 @@ checks() {   # build/ made current, then everything that must pass before a meas
     step "the jail"
     python3 lab/evolve/test-jail.py > "$RUN/jail.log" 2>&1 || { cat "$RUN/jail.log"; exit 1; }
     tail -1 "$RUN/jail.log"
+    NEXT_RUN_CHECKED=$HEAD:$RUN; export NEXT_RUN_CHECKED
 }
 
 if [ "$MODE" = experiment ]; then
@@ -325,14 +393,15 @@ if [ "$MODE" = experiment ]; then
     for f in "$NAME.md" "$NAME.log" build.log tests.log validate.log jail.log; do cp "$RUN/$f" "$K/"; done
     lscpu > "$K/lscpu.txt" 2>&1 || true
     { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT"; } > "$K/machine.txt"
-    cp "$RUN/next-run.log" "$K/next-run.log"
+    cp "${CHAINLOG:-$RUN/next-run.log}" "$K/next-run.log"   # Iteration 313: the chain's log so far
     repo_files "$K"                            # Iteration 85: the clone, listed
-    P=$RUNS/forth-vm-evolution-$NAME-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
+    P=${CHAIN:-$RUNS}${CHAIN:+/packs}/forth-vm-evolution-$NAME-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
     tar -czf "$P" -C "$RUN" pack
     rm -rf "$K"
     trap - EXIT
-    echo
-    say "DONE - send $P"
+    echo; say "this step DONE - $(basename "$P"), in the chain's archive"
+    [ -z "$CHAIN" ] || echo "ok $WANT - $(basename "$P")" >> "$CHAIN/steps"
+    if [ -z "$THEN" ] && [ -n "$CHAIN" ]; then st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed; python3 lab/evolve/chainctl.py pack "$CHAIN" $st; exit 0; fi
     then_next
     exit 0
 fi
@@ -394,8 +463,11 @@ else
 fi
 if [ -n "${REQ:-}" ]; then set -- "$@" --require "$REQ"; say "every design of the run in the two-bit tag"; fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
+python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
+TICK=$!
 python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} "$@" >> evolve.log 2>&1 \
-    || { tail -20 evolve.log; exit 1; }
+    || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
+kill $TICK 2>/dev/null || true
 tail -3 evolve.log
 step "the front, measured again - $REMEASURE rounds"
 T0=$(date +%s)
@@ -415,12 +487,13 @@ s=$(git stash list | grep 'next-run: results/' | cut -d: -f1 || true)
 if [ -n "$s" ]; then
     for x in $s; do echo "# $x: $(git log -1 --format=%s "$x")"; git stash show -p "$x"; done > "$K/results-measured-here.patch"
 fi
-cp "$RUN/next-run.log" "$K/next-run.log"
+cp "${CHAINLOG:-$RUN/next-run.log}" "$K/next-run.log"   # Iteration 313: the chain's log so far
 repo_files "$K"                                # Iteration 85: the clone, listed
-P=$RUNS/forth-vm-evolution-seed$SEED-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
+P=${CHAIN:-$RUNS}${CHAIN:+/packs}/forth-vm-evolution-seed$SEED-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
 tar -czf "$P" -C "$RUN" pack
 rm -rf "$K"
 trap - EXIT
-echo
-say "DONE - send $P"
+echo; say "this step DONE - $(basename "$P"), in the chain's archive"
+[ -z "$CHAIN" ] || echo "ok $WANT - $(basename "$P")" >> "$CHAIN/steps"
+if [ -z "$THEN" ] && [ -n "$CHAIN" ]; then st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed; python3 lab/evolve/chainctl.py pack "$CHAIN" $st; exit 0; fi
 then_next

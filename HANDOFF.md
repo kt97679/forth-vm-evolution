@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 312.
+- master: Iteration 313.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -173,6 +173,12 @@ About 20 minutes of machine time for build, tests and gates.
    short; now 160 in every build, every branching stencil must show its exits, and
    lab/evolve/regressions.json keeps the two designs as engines-check paths. The whole
    story: results/drafts/jit-loop-crash.md.
+0b. The new runner (results/drafts/runner-protocol.md, "Built so far", Iteration 313): the
+   chain layer is in next-run.sh with lab/evolve/chainctl.py - one session, one log, one
+   archive (forth-vm-evolution-chain-*.tar.gz: send that), status/monitor/stop, a failure not
+   costing the rest, checks once, crash recovery; tested with stand-in tools. Before seed 53:
+   a miniature seed chain (the ticker, a fresh seed's rebuild), the root-owned files path,
+   perf-hold for every measurement, the remote checks.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

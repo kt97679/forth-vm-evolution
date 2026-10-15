@@ -166,3 +166,36 @@ the Tegra's own builds prove too slow.
   would - including a host unreachable and a host whose build fails: the chain goes on,
   the archive says so.
 - After each: no root-owned file under the clone.
+
+## Built so far (Iteration 313)
+
+lab/evolve/chainctl.py and next-run.sh's chain layer - each step's own logic unchanged:
+
+- **One chain, one session**: the first step makes RUNS/chain-TIME/ (line, head, sid, status,
+  steps, chain.log, packs/) and detaches under setsid; every later step detaches inside it.
+- **status / monitor / stop**: `sh lab/evolve/next-run.sh status|monitor|stop`. stop TERMs the
+  session, KILLs after 60 s, and packs; a stopped step is recorded STOPPED.
+- **One archive**: RUNS/forth-vm-evolution-chain-HEAD-HOST-TIME[-STATUS].tar.gz, written as
+  .partial and renamed - every step's pack, every failed step's logs, the chain's log. STATUS:
+  none (done), done-some-failed, failed, stopped, interrupted.
+- **A failed step does not cost the rest**: after a failed measurement the chain goes on;
+  after a failed seed run the comparison is skipped (recorded) and the chain packed.
+- **Checks once a chain**: the tests, validation and jail in the first step; a later step builds
+  and keeps the first one's logs.
+- **Progress**: a line every 5 minutes during the evolution (chainctl.py ticker).
+- **Recovery at start**: a chain that ended without finishing archived as interrupted; stale
+  .partial files removed; root-owned files in the clone listed and given back with sudo, in the
+  foreground, before anything starts.
+
+Tested on the VM, a scratch clone with its own bundle and two stand-in tools: a chain whose first
+step failed went on, its second step's pack and the first one's logs - its tool's own error among
+them - in one archive, done-some-failed; the second step built only, the tests not run again;
+status during and after; monitor on a finished chain; stop in the middle of the build - five
+processes, none after, stopped, archived; a crash - every process killed -9, the status left
+"running" - archived as interrupted by the next start, which then ran.
+
+**Not yet tested**: the seed step's chain changes (the ticker, a fresh seed's rebuild after the
+first step's checks) - a miniature seed chain before seed 53; the root-owned files path.
+**Not yet built**: perf-hold holding for every measurement of a chain and chowning what it makes;
+the remote checks (dream.lan, rage.lan) started and gathered by the chain.
+
