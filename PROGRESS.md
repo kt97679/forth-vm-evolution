@@ -6020,3 +6020,13 @@ runner: start, status, stop; the start's recovery; the trap that always archives
 (written as .partial and renamed); root that chowns and watches the chain; the tests
 (a miniature chain, a stop in mid-run, a kill -9 as a crash). prompts/08 item 15 and
 its why; UPSTREAM; HANDOFF's decision and open item 0.
+
+## Iteration 304 - 2026-10-15 - Claude
+
+**A monitor command (the owner).** next-run.sh monitor follows the chain's log from its
+start, read-only - Ctrl-C ends the watching, never the run - and ends by itself when the
+chain does, with how it ended and where the archive is. It asks for two things the
+current runner lacks: one log for the whole chain (each step writes its own today), and
+progress lines in the seed run (five-minutely: generation, designs, the front, the time
+left), so the hours of evolution do not show as silence. Each command names the others.
+results/drafts/runner-protocol.md, prompts/08 item 16, UPSTREAM, HANDOFF.

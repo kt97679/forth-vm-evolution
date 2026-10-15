@@ -120,6 +120,12 @@ find. Most fixes are one line in the harness.
     logs, removes what was half written (write archives under a
     temporary name and rename), restores what it changed, and gives back
     files a privileged helper made.
+16. **Where it is, without knowing where it lives.** A status that says
+    whether it runs, its step and since when, and a monitor that follows
+    its one log - read-only: interrupting the monitor never stops the
+    run. During a long quiet step, the run writes a progress line now and
+    then, so following it shows progress, not silence. Each command's
+    output names the others.
 
 ## Artifact required
 
@@ -139,5 +145,5 @@ kind.
 
 For a run handed over: the one command; the archive's contents by step,
 logs included; what a failed step leaves in it; and which steps need
-privileges, and how they get them; how to stop it, and what the next start
-repairs after a crash.
+privileges, and how they get them; how to see where it is, how to stop it,
+and what the next start repairs after a crash.

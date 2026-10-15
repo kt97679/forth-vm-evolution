@@ -7,7 +7,8 @@ done by a root helper forked at the start that polls for its condition and chown
 it creates; the code pulled once; the checks once per chain; the measurements first.
 And (Iteration 303): a clear way to stop a run; cleanup on every exit, so an
 interrupted run leaves nothing half done; and at every start, a cleanup of what an
-earlier run left when the machine crashed or the run was killed.
+earlier run left when the machine crashed or the run was killed. And (Iteration 304):
+status and stop, and a monitor that follows the run's progress.
 
 This is the specification lab/evolve/next-run.sh is rebuilt to (HANDOFF.md, open item 0).
 
@@ -32,9 +33,16 @@ This is the specification lab/evolve/next-run.sh is rebuilt to (HANDOFF.md, open
 - `sh lab/evolve/next-run.sh` - start NEXT-RUN's chain (or a chain given on the
   command line). Everything below happens.
 - `sh lab/evolve/next-run.sh status` - whether a chain runs, its step, since when, its log.
+- `sh lab/evolve/next-run.sh monitor` - follow the chain's log as it grows, from its
+  start: read-only - Ctrl-C ends the watching, never the run. It ends by itself when
+  the chain does, saying how (finished, failed at a step, stopped) and where the
+  archive is. With no chain running, the last one's ending and archive.
 - `sh lab/evolve/next-run.sh stop` - stop the running chain: SIGTERM to every process
   descending from the chain's leader (the process tree by parent links - the engines'
   and builds' own sessions included), 30 s to go, then SIGKILL; the chain's trap packs.
+
+The start, status, monitor and stop all name the others in what they print, so the
+next command is always on the screen.
 
 ## The start, in the foreground - the owner there
 
@@ -52,7 +60,11 @@ This is the specification lab/evolve/next-run.sh is rebuilt to (HANDOFF.md, open
   cache events) on the front that just finished; the seed run (fresh or resumed, as
   now); the comparison. A failed step is recorded and the next runs unless it needs the
   failed one's output (the comparison needs the seed run's database).
-- Each step's output in its own log, in the chain's directory.
+- One log for the whole chain - every step appends to it, so monitor follows one
+  file - and each step's own output also in its own log, in the chain's directory.
+- During the seed run, a progress line in the chain's log every five minutes: the
+  generation, designs measured, the front's size, the time left before the evolution
+  stops - so a monitor shows the hours of evolution, not silence.
 
 ## The end, always - a trap on EXIT, TERM, INT and HUP
 
@@ -93,4 +105,6 @@ This is the specification lab/evolve/next-run.sh is rebuilt to (HANDOFF.md, open
   stopped, nothing staged left, the lock free.
 - kill -9 of the whole tree, a crash: the next start finds it, packs it, resumes the
   seed run.
+- monitor through a whole miniature chain: it shows each step and the progress lines,
+  ends by itself with the archive's path; Ctrl-C in it leaves the chain running.
 - After each: no root-owned file under the clone.
