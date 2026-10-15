@@ -5942,3 +5942,11 @@ ackermann -7.7%, the kernel +5.5% and the corpus +8.7% for the two words they pu
 a full list. Checked in a scratch tree on patch 1: engines-check, run-tests, gene-equiv
 (recorded ids and expressions the same), the gate - 187 of 187 on seed 50's front. The
 gate had finished as the last turn ended; its log said so.
+
+**?STACK, looked at and deferred.** It was worked on twice already - kinput's ?STACK8
+(Iteration 54) and kstack's (Iteration 116), one unsigned compare on DEPTH, in Forth -
+and what is left is about a dozen dispatches a check, 7.4% of 658ed9b9f8's corpus. An
+opcode given S0 @ would take most of it, about 1% of the geometric mean, at the price of an
+overlay tag on every design (the stage dumps doubled) and of reproducing DEPTH exactly -
+SP@ is PUSH(dsp + CELL_BYTES), its value dsp before the push because the macro moves dsp
+first. HANDOFF.md item 5a: worth it if seed 51 shows the corpus still weighs.

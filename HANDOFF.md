@@ -89,9 +89,15 @@ About 20 minutes of machine time for build, tests and gates.
    `sh lab/evolve/next-run.sh experiment counters.py --extra stalled-cycles-frontend:u,
    ic_tag_hit_miss.instruction_cache_miss:u,op_cache_hit_miss.op_cache_miss:u` (the
    owner's perf names Zen 4's events so) - and missmap.py again, each its own command.
-5a. ?STACK as an opcode (results/source-audit-3.md): 7.4% of the corpus's dispatches on
-   seed 50's fastest design without the JIT. It needs the stack's base, as DEPTH does:
-   an overlay's wrapper giving it S0 @, as knumber gives NUMBER? BASE @ - a gene.
+5a. ?STACK as an opcode - deferred (Iteration 299, results/source-audit-3.md): 7.4% of the
+   corpus's dispatches on seed 50's fastest design without the JIT, about a dozen a check
+   - INTERPRET checks after every word it executes. Twice worked on already, in Forth:
+   kinput's ?STACK8 (Iteration 54) and kstack's (116), one unsigned compare on DEPTH. One
+   opcode, given S0 @ by an overlay's wrapper, would save most of it - about 1% of the
+   geometric mean - but: a new overlay tag for every design doubles the stage dumps each
+   build makes, and it must reproduce DEPTH exactly (SP@ is PUSH(dsp + CELL_BYTES): the
+   macro moves dsp first, so the value is dsp as it was; an off-by-one misses a one-cell
+   underflow). Worth it if seed 51 shows the corpus still weighs.
 6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
    when a patch changes `forth/kernel.4`), then ONE background chain: build
    (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`
