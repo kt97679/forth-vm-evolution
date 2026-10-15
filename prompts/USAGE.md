@@ -49,7 +49,7 @@ artifact, not for a claim:
 | `05` | the first three places a reader stopped |
 | `06` | a per-finding accepted/rejected line with reasons |
 | `07` | the log entry, a commit message body, and the bundle's clone check |
-| `08` | one line per environmental assumption: its value here, and whether the harness depends on it; for a script that deletes there, the listing it was tested against |
+| `08` | one line per environmental assumption: its value here, and whether the harness depends on it; for a script that deletes there, the listing it was tested against ; for a run handed over, the one command, the archive's contents with every log, what a failed step leaves, how privileged steps get their privileges |
 | `09` | per changed value: old, new, one sentence of cause, and a verdict |
 | `10` | the prize measured before the change, what it displaces, and the achieved value beside it after |
 | `11` | the name, expected and actual values in the output itself; or a local reproduction |

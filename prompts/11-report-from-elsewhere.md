@@ -23,6 +23,9 @@ what the output carried, not by how hard the bug was.
 - A step failed under `set -e` inside `output=$(...)`, which exits
   before the next line can read the status, so the log ended after the
   last passing step and said nothing at all.
+- `counters: s6 on kernel exited 2` - perf's own message, which named the
+  missing package, had been captured and dropped. A second round to ask
+  for it.
 
 The one report that resolved in a single round contained the assertion
 name, the expected value and the actual value. It was fixed in ten
@@ -48,13 +51,16 @@ When writing output someone will send back:
    Capture the status locally (`|| status=$?`) and print what you have.
 6. **Grep for failures precisely.** `error` matches `no errors`;
    `FAIL` matches `FAILED: 0`.
+7. **Send everything in one archive, logs included.** Results and every
+   log the run wrote, made even when a step failed: then the evidence is
+   already there, and nobody chooses which file to send.
 
 When reading one:
 
-7. **The actual value usually names the cause.** A default where a
+8. **The actual value usually names the cause.** A default where a
    custom value was expected means it never arrived. A right answer one
    line down means something else wrote to the same stream.
-8. **Reproduce before fixing**, even for a machine you do not have: a
+9. **Reproduce before fixing**, even for a machine you do not have: a
    changed shebang, a forced environment variable, an artificial load.
    If the reproduction gives the reporter's exact numbers, the fix can
    be verified without them.

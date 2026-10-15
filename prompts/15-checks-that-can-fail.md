@@ -74,6 +74,14 @@ Before calling this green, show that each check carrying the claim can fail.
 5. KEEP THE FAULTS. Planted faults that were caught become permanent
    negative tests where they are cheap: the check must stay able to fail
    after the next refactoring too.
+6. A STAND-IN REFUSES WHAT THE REAL ONE REFUSES. A fake tool, service or
+   privilege in a test - a stand-in perf, a stand-in sudo - is part of the
+   check: it must fail where the real one fails, and behave as the real one
+   does, or name each difference. A stand-in perf that invented source
+   lines hid that the real one, given a stripped binary, finds none - the
+   first run on the real machine attributed nothing; a stand-in sudo let a
+   hang-up kill the command it backgrounded, where the real one keeps it
+   apart - a failure the real thing would never give.
 ```
 
 ## Artifact required

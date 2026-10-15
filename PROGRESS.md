@@ -5989,3 +5989,19 @@ jump. counters.py with Zen 4's cache events: on compute work the caches hardly m
 0.2 a thousand instructions) while the front end stalls half the cycles - the dispatch's
 taken indirect jump itself; fewer dispatches is the lever, alignment not (alignhot, applied,
 unlikely to pay). Next for seed 53: a branch-light (FIND) chain walk, as a gene.
+
+## Iteration 302 - 2026-10-15 - Claude
+
+**The collaboration protocol, agreed with the owner, and captured in the prompts
+library.** One command on the laptop, one archive back with every step's results and
+every log; made even when a step fails, a failed step not costing the others;
+privileges asked at the start, and anything needing them later done by a root helper
+forked at the start that polls for its condition and chowns what it creates (the
+owner's rule: no root-owned files in his home); the code pulled once; the checks once
+per chain; the measurements first. HANDOFF.md: a standing decision, and open item 0 to
+build it. prompts/: 08 - what comes back from the other machine, items 11-14 (one
+archive with every log; privileges at the start and the forked helper; the code pinned;
+a failed step not costing the others) and the artifact; 11 - the dropped perf message,
+item 7 (everything in one archive); 15 - step 6, a stand-in refuses what the real one
+refuses (the stand-in perf that invented source lines; the stand-in sudo that let a
+hang-up kill its child). INDEX, README, USAGE rows; UPSTREAM, to carry back to relf.

@@ -27,14 +27,14 @@ describe are ones any measurement or write-up project can reproduce.
 | [06-handling-review](06-handling-review.md) | when review feedback arrives | accepting wrong criticism, rejecting right criticism, silent drift |
 | [07-git-handoff](07-git-handoff.md) | when a session ends or work changes hands, and at the end of any turn that changed the repository | knowledge that lived only in the conversation or outside the repository; a handoff that went stale; a deliverable nobody tested |
 | [08-run-it-elsewhere](08-run-it-elsewhere.md) | before calling a suite portable | a harness that measures its own environment; a script that deletes what it never saw |
-| [09-baseline-discipline](09-baseline-discipline.md) | when a recorded value changes | a check quietly converted into a record of whatever happened last |
+| [09-baseline-discipline](09-baseline-discipline.md) | when a recorded value changes | a check quietly converted into a record of whatever happened last ; privileges asked where no one can answer; results back in pieces |
 | [10-price-before-refactor](10-price-before-refactor.md) | before restructuring working code | paying for a prize nobody measured; a proxy metric mistaken for time |
 | [11-report-from-elsewhere](11-report-from-elsewhere.md) | when writing or reading a remote failure report | a round trip spent asking what the output should have said |
-| [12-progress-log](12-progress-log.md) | before trying an approach, and when any attempt ends | re-deriving and re-paying for an idea that was already tried and rejected |
+| [12-progress-log](12-progress-log.md) | before trying an approach, and when any attempt ends | re-deriving and re-paying for an idea that was already tried and rejected ; a log left on the other machine |
 | [13-severity-first](13-severity-first.md) | when working a list of failures | a segfault weighed the same as a reworded message; crashes found only by accident |
 | [14-audience-research](14-audience-research.md) | before drafting for a venue, and before choosing where to publish | writing for an imagined reader; a venue's known failure modes met only after publishing (added at Iteration 553 from kt97679/minimal-cpu-design, where it is 07) |
 | [15-checks-that-can-fail](15-checks-that-can-fail.md) | before calling anything green | checks that cannot fail: a skipped check counted as passed, a verdict read off a log line, a suite that never takes the changed path, a test harness whose leftovers turn other cases red |
-| [16-premortem](16-premortem.md) | before building a plan of more than a day | a plan attacked only after it is built; a promised gain above its own ceiling; "nobody has done this" |
+| [16-premortem](16-premortem.md) | before building a plan of more than a day | a plan attacked only after it is built; a promised gain above its own ceiling; "nobody has done this" ; a stand-in kinder than the tool it replaces |
 | [17-variants-as-data](17-variants-as-data.md) | before adding a third variant by hand | every new variant touching many places, copies drifting apart
 
 ## The two that mattered most
