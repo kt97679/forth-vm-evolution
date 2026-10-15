@@ -13,7 +13,6 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
 - `drafts/iploop-plan.md` - The IP-update loop form: three explanations of the evolved designs' lower IPC, and the laptop measurement that decides between them before anything is built (Iteration 295).
-- `pending/ORDER.md` - the batch waiting to be applied after the run now on the laptop, while there is one: the order, and how each patch was tested (results/pending/ moves to applied-after-seedN/ when applied).
 
 ## How the search works, and how runs are judged
 
