@@ -6232,3 +6232,18 @@ prebuilt path then measured the laptop's binaries and was gathered. stop with a 
 mid-build: its process group killed (by pid file - a pkill by name would match its own shell),
 the directory removed; a stopped chain's pack with a host still running: 1 s, no wait,
 cleaned. Before the first real run: ssh keys from the laptop to both hosts.
+
+## Iteration 316 - 2026-10-15 - Claude
+
+**The gene bfind begun - THREAD-FIND's and (FIND)'s walk branch-light; in progress, not on
+master (results/drafts/bfind-wip.patch, HANDOFF item 0c).** Per candidate the walk had a
+data-dependent length test, a byte loop entered on equal lengths, and PREVNFA's switch on the
+link's form (1-4 bytes in TAG2, 1-3 in CV8). bfind: the count and first seven characters as one
+masked 64-bit compare - almost always unequal, so predicted - the rest of a longer name only on
+a match; the link read without a branch (the four bytes ending at its tag as one word, shifted
+by its length). Expressed when (FIND) or THREAD-FIND is a format-10 opcode: on seed 52's front
+(FIND) on 61 designs, THREAD-FIND on 67, never both - klookup's (FIND) walks itself. The first
+build failed: the helpers stood above BYTE and UNS64's definitions; moved below, not yet built.
+Three slips of mine on the way, none in the gene: a test filter that wanted both words; a
+`< /dev/null` that replaced a heredoc script, so two "checks" ran nothing; git run as root on
+claude's repository, refused, and `set -e` ending the command there.

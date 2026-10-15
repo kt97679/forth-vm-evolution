@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 315.
+- master: Iteration 316.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -182,6 +182,17 @@ About 20 minutes of machine time for build, tests and gates.
    remote/HOST.md. Processing a chain: unpack it, then each step's pack as before; read
    remote/*.md - the cross-machine rankings - with the seed. Left before seed 53: the
    branch-light (FIND) gene.
+0c. The gene bfind, in progress (results/drafts/bfind-wip.patch, Iteration 316 - master does
+   not have it): THREAD-FIND's and (FIND)'s walk branch-light - a candidate's count and first
+   seven characters as one masked 64-bit compare, the rest only on a match; the link read
+   without a branch on its form (TAG2: the 4 bytes ending at its tag, shifted by 8 x (3 - tag);
+   CV8: 1 + (t >= 128) + (t >= 192) bytes); a name over 31 never found, as in the loops.
+   Expressed when (FIND) or THREAD-FIND is a format-10 opcode (klookup designs have (FIND),
+   tfind ones THREAD-FIND - never both). The originals untouched under #if !BFIND. State: the
+   first build failed - the helpers stood before BYTE and UNS64; moved below them in the patch,
+   not yet built. Next: apply in a scratch tree, LAYOUTS=1 build-stages, the four cases (a seed
+   52 klookup and a tfind design, TAG2; s6 + kfast tfind and s6 + kfast kinput klookup, CV8) on
+   the corpus; gene-equiv; engines-check paths; run-tests; the gate; a timing A/B; then pending.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

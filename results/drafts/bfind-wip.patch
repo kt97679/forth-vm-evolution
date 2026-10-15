@@ -1,0 +1,116 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 1200f5b..c42c95c 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -315,6 +315,44 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
+ 
+ #define CELL(reg) (*(UNS64*)(reg))
+ #define BYTE(reg) (*(UNS8*)(reg))
++#if BFIND
++/*  Iteration 316, the gene bfind: THREAD-FIND's and (FIND)'s walk with fewer branches to
++ *  mispredict ((FIND) was 9-13% of the interpreter-heavy runs' mispredictions,
++ *  results/missmap-amd-ryzen-7-pro-8840hs.md). A candidate's count byte and first seven
++ *  characters are one masked 64-bit compare - almost always unequal, so predicted - and the
++ *  rest of a longer name is compared only on a match; a link is read without a branch on its
++ *  form: the four bytes ending at its tag as one word, shifted by its length. The same walk
++ *  as PREVNFA's and the loops' below: the same word found, or none.  */
++static inline UNS64 bf_ld64(UNS64 a) { uint64_t x; memcpy(&x, (const void *)(uintptr_t)a, 8); return x; }
++static inline uint32_t bf_ld32(UNS64 a) { uint32_t x; memcpy(&x, (const void *)(uintptr_t)a, 4); return x; }
++#if TAG2
++static inline UNS64 bf_prev(UNS64 a) {          /* tag t: t+1 bytes, the top one's 6 bits */
++    uint32_t w = bf_ld32(a - 4); UNS64 d = (UNS64)((w & 0x3FFFFFFFu) >> (8 * (3 - (w >> 30))));
++    return d ? a - d : 0;
++}
++#else
++static inline UNS64 bf_prev(UNS64 a) {          /* below 0x80 one byte, 7 bits; below 0xC0 two, 14; else three, 22 */
++    uint32_t w = bf_ld32(a - 4); unsigned t = w >> 24, l = 1 + (t >= 128) + (t >= 192);
++    UNS64 d = (UNS64)(w >> (8 * (4 - l))) & ((1u << (8 * l - 2 + (l == 1))) - 1);
++    return (d || l > 1) ? a - d : 0;
++}
++#endif
++static inline UNS64 bf_walk(UNS64 a, UNS64 nb) {    /* THREAD-FIND: the nfa whose name is nb's, or 0 */
++    unsigned m = BYTE(nb), c = m < 7 ? m : 7, k;
++    UNS64 M, sig;
++    if (m > 31) return 0;                           /* a count has five bits: never equal there either */
++    M = 0x1Fu | ((c ? ((1ULL << (8 * c)) - 1) : 0) << 8);
++    sig = bf_ld64(nb) & M;
++    while (a) {
++        if ((bf_ld64(a) & M) == sig) {
++            for (k = 7; k < m && BYTE(a + 1 + k) == BYTE(nb + 1 + k); k++) ;
++            if (k >= m) return a;
++        }
++        a = bf_prev(a);
++    }
++    return 0;
++}
++#endif
+ #if X_JIT
+ /*  Iteration 218: JIT_PRICE - a profiling build in which the JIT translates
+  *  as it would but native code never runs: every operation of every word it
+@@ -1953,6 +1991,9 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
+  *  bytes (NAME=?), then the link back - NEXT-NFA8's three forms. ~20
+  *  dispatches a candidate word in Forth; 37-63% of kernel, parse, corpus.  */
+ #if X_THREADFIND
++#if BFIND
++L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES; DS0 = bf_walk(a_, nb_); } NEXT();
++#else
+ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+              UNS8 n_ = BYTE(nb_);
+              while (a_) {
+@@ -1960,6 +2001,7 @@ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+                  a_ = PREVNFA(a_); }
+              DS0 = a_; } NEXT();
+ #endif
++#endif
+ /*  Iteration 54: the input side - SCAN and SKIP ( c-addr u c --- c-addr' u' ),
+  *  the kernel's character loops, and TABS>BL ( c-addr u --- ), REFILL's tab
+  *  loop (forth/cv8b-kinput.4): a character at a time, as the loops; the
+@@ -2001,10 +2043,16 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
+  *  the name to NAMEBUF (32 MIN, PLACE), HASH, the thread's head, THREAD-FIND's
+  *  walk, NAME>8 and the immediate bit.  */
+ #if X_FIND
++#if BFIND
++L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
++            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); a_ = bf_walk(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
++            dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
++#else
+ L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+             if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
+ #endif
++#endif
+ /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER
+  *  with BASE @ given (klookup's >NUMBER8): DIGIT?'s test exactly - '0'-'9',
+  *  nothing between '9' and 'A', then A on, below base (signed) - and ud*base
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 842de5c..fe4c040 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -54,6 +54,7 @@ designs changing id - every one rtfuse=0 leaving the identity.
+ | the tail-call engine with preserve_none and musttail (`tailpn`: 0, 1; Iteration 293): clang 19+'s calling convention that saves no register on every handler, and musttail on every handler-to-handler call (tools/gen-tail.py --preserve-none) - CPython 3.14's tail-call interpreter. Built with the newest clang here that takes them (clang_pn(): clang-20 on the owner's laptop); expressed only on a clang tail engine, only where such a clang is installed | CPython 3.14; this lab: engines-check | s6's engine 14,232 bytes, 14,680 without (no register saved) - speed for the laptop's runs to judge |
+ | NUMBER? as one opcode (`knumber`: 0, 1; Iteration 295): forth/cv8b-knumber.4, after klookup's overlay - (NUMBER?), the kernel's NUMBER? with BASE @ and DPL given (its failures 0 0 0: only INTERPRET calls it, and aborts or throws), and NUMBER?8, whose body NUMBER? takes; the opcode's C (numberq, vm-lab.c) is the same steps. Put first in the design's format-10 list, so it takes a slot from the last word there. Expressed only with klookup | this lab: word-cost.py | c9369657e4's corpus 4,529,779 -> 4,067,754 dispatches (-10.2%, NUMBER? 10.1% -> 0.9%); 927064f127, its slots full: the corpus -4.9%, the kernel +5.3% - the word it displaced |
+ | handler entries aligned (`alignhot`: off, 32:11, 32, 64; Iteration 298): GCC's -falign-jumps, -falign-labels and -falign-functions - a computed goto's target, or a tail engine's function, on a fetch window's start; 32:11 only where it costs at most 10 bytes. The laptop's counters put the evolved interpreted designs' front end at half their cycles on compute work, and align1 only takes alignment away. GCC only; not with align1 or alignfn | this lab: counters.py --extra | the engine: s6 +1,280 bytes at 32:11, +5,216 at 32, +12,192 at 64; 658ed9b9f8 +1,216, +4,448, +10,976 - speed for the laptop's runs to judge |
++| the dictionary walk branch-light (`bfind`; Iteration 316): THREAD-FIND's and (FIND)'s candidates compared as one masked 64-bit word - count and first seven characters - and the link read without a branch on its form; expressed when either is a format-10 opcode of the design | engine/vm-lab.c BFIND |
+ | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+ | an operation and the call after it (`opcall`: a list, Iteration 121; the tag, computed goto): `X;CALL` opcodes of their own (0xFE00 + k), X's handler then a direct jump into the call | results/docs-reuse.md (Koopman) | fastest: parse -3.8%, corpus -3.4%, kernel -1.6% of dispatches for +768 bytes of engine (16 ops); results/opcall.md |
+ | ABORT" guarded (`abortif`: 0, 1; Iteration 117): the converter puts every (ABORT") call behind ?BRANCH and -1, as gforth and lbForth compile ABORT" | results/forth-sources.md | parse -5.6%, corpus -3.0%, kernel -1.0% of dispatches on the fastest design for 56 bytes; errors unchanged |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 3648abf..8007ad0 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -195,6 +195,7 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
+ ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
+ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
+      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
++gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
+ gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
+      convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
+@@ -803,6 +804,7 @@ def _build(g, d):
+     if t2: flags.append('-DTAG2=1')
+     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
+     if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
++    if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
+     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
