@@ -36,6 +36,8 @@ fetched lazily when their trigger conditions are met.
 | `15-checks-that-can-fail` | call a check, test or suite green, rely on a check you just added, or report "all checks pass" | the check was shown to fail on a broken input since it last changed |
 | `16-premortem` | start a plan of more than a day, above all one meant to prove a claim | the plan is one step whose failure is cheap and visible |
 | `17-variants-as-data` | add one more variant (a machine, a backend, a gene) by editing several places | there will only ever be two |
+| `18-does-it-generalize` | call the winners of a long search or optimisation better - selected on fixed benchmarks, on one machine | the workloads are the product's own, on the machine it ships on |
+| `19-address-by-name` | edit or read one part of a structured document by script or pattern - a list item, a table row, a column | the document is regenerated from data each time |
 
 ## The one that is hardest to self-apply
 

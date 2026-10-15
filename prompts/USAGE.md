@@ -55,6 +55,12 @@ artifact, not for a claim:
 | `11` | the name, expected and actual values in the output itself; or a local reproduction |
 | `12` | the search for a prior attempt, and the log entry saying how this one ended |
 | `13` | every failure classed, the order they will be worked in, and each crash's reproducer |
+| `14` | a named-audience note: who is there, what the venue punishes, the metric optimised, its formatting mechanics |
+| `15` | a mutation table - each injected fault, the check meant to catch it, caught or not - and checks that cannot run counted as failures |
+| `16` | an objections table per reviewer, a ceiling for every claimed gain, the revised plan with its stopping points |
+| `17` | the variant as one data record, the shared code that reads it, a test with a fictional extra variant |
+| `18` | per round the held-out rank correlation and the flattered designs; per other machine the same binaries' rank correlation; speed against program size |
+| `19` | for each structured edit, the name it was found by, the count showing it occurs once, the changed unit read back with its neighbours |
 
 If a response says the prompt was considered but shows none of these, the
 prompt was not applied.

@@ -36,6 +36,8 @@ describe are ones any measurement or write-up project can reproduce.
 | [15-checks-that-can-fail](15-checks-that-can-fail.md) | before calling anything green | checks that cannot fail: a skipped check counted as passed, a verdict read off a log line, a suite that never takes the changed path, a test harness whose leftovers turn other cases red; a stand-in kinder than the tool it replaces |
 | [16-premortem](16-premortem.md) | before building a plan of more than a day | a plan attacked only after it is built; a promised gain above its own ceiling; "nobody has done this" |
 | [17-variants-as-data](17-variants-as-data.md) | before adding a third variant by hand | every new variant touching many places, copies drifting apart
+| [18-does-it-generalize](18-does-it-generalize.md) | before trusting what a long search found | winners flattered by the benchmarks they were picked on, tuned to one CPU, tested only on programs that fit every cache |
+| [19-address-by-name](19-address-by-name.md) | before a script edits or reads part of a structured document | a numbered item edited in the wrong list, a table row given its neighbour's text, a column read by position |
 
 ## The two that mattered most
 

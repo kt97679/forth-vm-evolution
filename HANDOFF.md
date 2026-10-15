@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 308.
+- master: Iteration 309.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -210,7 +210,8 @@ About 20 minutes of machine time for build, tests and gates.
 - Edit a numbered item by its own text, never by `index('\n4. ')`: this file's
   routine is numbered too, and comes first - Iterations 293-299 wrote open items over
   the routine's steps 3-5, and left the open items themselves stale (found and
-  restored from Iteration 292's text at 300).
+  restored from Iteration 292's text at 300). Now prompts/19-address-by-name, with
+  the three other faults of the same week.
 - A passing gate does not prove the intended code ran (a fallback of the same
   name answered twice): profile and look for the new words; the dump guard
   stops a run whose libraries do not load whole.

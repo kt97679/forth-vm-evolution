@@ -6094,3 +6094,20 @@ other suggestion) means a second target in the evolver's build; native builds fi
 by the first run, cross-building if they are too slow. On the VM again - no evidence, but
 the same shape - the smallest design's ratio to s6 was the laptop's (1.473, 1.480) and the
 JIT designs' doubled (0.254, 0.129).
+
+## Iteration 309 - 2026-10-15 - Claude
+
+**Two new prompts (the owner: capture the reusable ideas).** 18-does-it-generalize, from
+Iterations 305-308: a search finds what its benchmarks reward, on the machine it ran on -
+held-out workloads looked at every round (rank correlation 0.94, and a group of designs
+the selection flatters 2.5-2.7 times), a held-out machine measured with the same binaries,
+a design counted only where it expresses the same, the program grown past the caches, the
+checks run alongside the search under a time limit, a perfect number distrusted (the 0.999
+read from the wrong column). 19-address-by-name, from four faults of one week with one
+cause - a part of a document found by where it was: open items edited in the routine's
+numbered list, a table row's end counted into the next row, a held-out column read by
+position, an insertion with no place to go - find by heading, item text or header; scope
+the search; one match or stop; read the changed unit back with its neighbours; name the
+edges. The index tables edited as 19 says - each by its anchor, unique, read back - and
+USAGE's table, which stopped at 13, completed for 14-19 from each prompt's own "produces"
+line. UPSTREAM, to carry back to relf.
