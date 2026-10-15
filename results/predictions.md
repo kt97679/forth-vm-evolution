@@ -395,3 +395,5 @@ The after-seed-51 batch: alignhot; > and 0= as opcodes.
 3. > or 0= expressed on at least 10 of the front - the JIT designs, as with 2@.
 4. opinline on at least a third of the front (64 of 162 in seed 51).
 5. Crossover 30-38%.
+
+(Iteration 301: seed 52 runs 6 hours, the owner's, not the 10 these were written for; they stand.)

@@ -324,5 +324,5 @@
 # 297 - 12 when its predictions were written).
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
-# afresh. Seed 52, 10 hours - seed 51's, for the owner to confirm.
-seed 52 tag2 10h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# afresh. Seed 52, 6 hours (the owner, Iteration 301).
+seed 52 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

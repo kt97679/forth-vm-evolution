@@ -135,3 +135,47 @@ missmap.py's first laptop run (pack forth-vm-evolution-missmap-126cd85c9-fury-20
 023127) attributed nothing: every sample without a source line. evolve.build() strips the
 engine it measures and keeps the full one as engine.full; missmap.py ran the stripped one.
 It runs engine.full now - the same code at the same addresses, with -g's lines.
+
+## Iteration 301: not the caches
+
+counters.py --extra with Zen 4's instruction-cache and op-cache misses (per 1k instructions;
+pack forth-vm-evolution-counters-4282d4e17-fury-20261015-140010), seed 51's front:
+
+| design | workload | cycles (M) | instructions per cycle | branch misses per 1k instructions | misses per branch | stalled-cycles-frontend:u, of cycles | ic_tag_hit_miss.instruction_cache_miss:u, per 1k instructions | op_cache_hit_miss.op_cache_miss:u, per 1k instructions |
+|---|---|---|---|---|---|---|---|---|
+| s6 | kernel | 33.2 | 2.31 | 0.84 | 0.39% | 43.1% | 0.33 | 0.47 |
+| s6 | fib | 215.3 | 3.51 | 0.41 | 0.19% | 22.7% | 0.35 | 0.03 |
+| s6 | corpus | 166.2 | 2.34 | 0.50 | 0.23% | 44.7% | 0.15 | 0.43 |
+| s6 | loop | 352.3 | 3.23 | 0.01 | 0.01% | 26.6% | 0.02 | 0.03 |
+| s6 | bubble | 144.3 | 2.77 | 0.20 | 0.09% | 34.2% | 0.14 | 0.06 |
+| s6 | ackermann | 58.8 | 2.80 | 0.11 | 0.05% | 30.5% | 0.06 | 0.07 |
+| f7a7740238 | kernel | 10.9 | 1.84 | 4.17 | 1.86% | 31.1% | 0.58 | 1.13 |
+| f7a7740238 | fib | 40.9 | 4.75 | 0.06 | 0.06% | 4.1% | 0.01 | 0.02 |
+| f7a7740238 | corpus | 38.7 | 2.35 | 2.85 | 1.43% | 32.3% | 0.40 | 0.71 |
+| f7a7740238 | loop | 11.9 | 5.23 | 0.14 | 0.11% | 1.1% | 0.04 | 0.04 |
+| f7a7740238 | bubble | 8.5 | 5.05 | 0.34 | 0.38% | 5.8% | 0.06 | 0.19 |
+| f7a7740238 | ackermann | 17.3 | 2.90 | 2.60 | 1.75% | 10.3% | 0.07 | 0.13 |
+| a124348f83 | kernel | 15.0 | 1.43 | 7.25 | 4.26% | 45.4% | 0.36 | 0.53 |
+| a124348f83 | fib | 135.6 | 2.50 | 0.55 | 0.37% | 18.0% | 0.04 | 0.01 |
+| a124348f83 | corpus | 31.8 | 2.05 | 3.37 | 1.72% | 34.0% | 0.27 | 0.48 |
+| a124348f83 | loop | 47.9 | 2.81 | 0.06 | 0.04% | 0.5% | 0.03 | 0.04 |
+| a124348f83 | bubble | 56.6 | 1.79 | 0.33 | 0.25% | 51.1% | 0.07 | 0.15 |
+| a124348f83 | ackermann | 36.5 | 3.01 | 0.12 | 0.09% | 26.4% | 0.04 | 0.07 |
+| 0285b1954f | kernel | 64.7 | 1.29 | 8.31 | 4.14% | 55.9% | 0.81 | 1.82 |
+| 0285b1954f | fib | 183.0 | 3.11 | 0.21 | 0.11% | 27.4% | 0.04 | 0.02 |
+| 0285b1954f | corpus | 373.1 | 1.48 | 3.99 | 1.93% | 54.1% | 0.61 | 1.31 |
+| 0285b1954f | loop | 379.4 | 2.55 | 0.03 | 0.01% | 36.9% | 0.02 | 0.02 |
+| 0285b1954f | bubble | 151.7 | 2.09 | 0.33 | 0.18% | 45.9% | 0.15 | 0.06 |
+| 0285b1954f | ackermann | 62.5 | 2.19 | 0.21 | 0.11% | 46.4% | 0.04 | 0.08 |
+
+- **On compute work the caches hardly miss**: the fastest design without the JIT (a124348f83)
+  stalls in the front end 51.1% of bubble's cycles with 0.07 instruction-cache and 0.15
+  op-cache misses per thousand instructions; the smallest 46.4% of ackermann's with 0.04 and
+  0.08. Mispredictions there are low too. What is left is the dispatch itself: a taken
+  indirect jump every few instructions, each ending a fetch block even when predicted. The
+  JIT's native code, without them, stalls 1-6%.
+- So the front end's lever is fewer dispatches - superinstructions, more words as opcodes, the
+  JIT - and not alignment: alignhot (applied after seed 51) is unlikely to pay, as the
+  evolution's taking alignment away from most designs (align1) already said.
+- The interpreter's work (kernel, corpus) misses more in both caches (0.27-0.81 and 0.48-1.82
+  per thousand) and mispredicts most (results/missmap-amd-ryzen-7-pro-8840hs.md).

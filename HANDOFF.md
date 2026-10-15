@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 300.
+- master: Iteration 301.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -56,9 +56,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   300; the fastest +4.9% - the JIT designs took 2@ - hypervolume +1.7%).
 - **The after-seed-51 batch is applied** (Iteration 300 - results/applied-after-seed51/
   ORDER.md): alignhot; > and 0= as opcodes. New genes: the stopping rule counts afresh.
-- **Seed 52 is the laptop's next run** (Iteration 300): `seed 52 tag2 10h then
-  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 10 hours, seed 51's,
-  for the owner to confirm. Before it, between runs: missmap.py, and counters.py with
+- **Seed 52 is the laptop's next run** (Iteration 300): `seed 52 tag2 6h then
+  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 6 hours, the
+  owner's (Iteration 301). Before it, between runs: missmap.py, and counters.py with
   Zen 4's cache events (item 5), each its own command. Its predictions: the end of
   `results/predictions.md`.
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
@@ -143,18 +143,18 @@ About 20 minutes of machine time for build, tests and gates.
    engine back. A new opcode costs an interpreted design a slot of its full format-10
    list. Seed 52 shows > and 0=, and alignhot (which only 20 of seed 50's 187 could
    take).
-3. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): the
-   first missmap.py run attributed nothing - it ran the stripped engine; it runs
-   engine.full now (Iteration 297). Run it again between runs; then make the handlers it
-   names branch-light. The JIT's ackermann misses: native ret past the return
-   predictor's depth - a candidate gene, not built.
-4. The front end (Iteration 297): the evolved interpreted designs stall there about
-   half their cycles on compute work (s6 18-36%, the JIT 1-6%) - the IP-update loop form
-   set aside (results/drafts/iploop-plan.md). The gene alignhot applied after seed
-   51 (Iteration 300; results/applied-after-seed51/ORDER.md). Between runs, which part of the front end:
-   `sh lab/evolve/next-run.sh experiment counters.py --extra stalled-cycles-frontend:u,
-   ic_tag_hit_miss.instruction_cache_miss:u,op_cache_hit_miss.op_cache_miss:u` (the
-   owner's perf names Zen 4's events so) - and missmap.py again, each its own command.
+3. The interpreter's mispredictions (results/missmap-amd-ryzen-7-pro-8840hs.md, Iteration
+   301): (FIND) in C the largest single source on kernel and corpus, 9-13% - its chain
+   walk; the fast designs all took 16 threads, the fewest. A gene for its walk made
+   branch-light (a name's length and first characters compared as one word) is the next
+   to try. Calls and returns 15-25% - one shared jump predicting where the program goes.
+   The JIT's ackermann misses: native ret past the return predictor's depth - a
+   candidate gene, not built.
+4. The front end (Iterations 297, 301): the evolved interpreted designs stall there half
+   their cycles on compute work - not the caches (under 0.2 misses a thousand
+   instructions): the dispatch's taken indirect jump itself. The lever is fewer
+   dispatches (superinstructions, opcodes, the JIT); alignhot, applied after seed 51, is
+   unlikely to pay. The IP-update loop form set aside (results/drafts/iploop-plan.md).
 5. ?STACK as an opcode - deferred (Iteration 299, results/source-audit-3.md): 7.4% of the
    corpus's dispatches on seed 50's fastest design without the JIT, about a dozen a check
    - INTERPRET checks after every word it executes. Twice worked on already, in Forth:

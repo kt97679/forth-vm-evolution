@@ -72,6 +72,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `c-baseline-x86-64.md` - The Forth designs against the same benchmarks in C (lab/evolve/c-baseline.py) - the VM's, too noisy to keep.
 - `c-baseline-amd-ryzen-7-pro-8840hs.md` - The designs against the same benchmarks in C, on the laptop (Iteration 285): the fastest 3.7x C -O2.
 - `counters-amd-ryzen-7-pro-8840hs.md` - Hardware counters on the laptop (Iteration 285): dispatch predicted on compute work; the interpreter's work mispredicts on evolved designs, 9-24% of its cycles.
+- `missmap-amd-ryzen-7-pro-8840hs.md` - Branch misses by handler on the laptop (Iteration 301): (FIND)'s C 9-13%, calls and returns 15-25%.
 
 ## The Forth sources, and other Forths
 

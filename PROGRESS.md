@@ -5977,3 +5977,15 @@ by `index('\n3. ')` and the like - and the routine, numbered too, comes first: i
 3-5 had been overwritten with open-item text, and the open items left stale since 290.
 The routine's steps restored from Iteration 292's text; the open items rebuilt from the
 texts the edits had written; a lesson added.
+
+## Iteration 301 - 2026-10-15 - Claude
+
+**The two measurements before seed 52, and seed 52 set to 6 hours (the owner).** missmap.py,
+running engine.full at last, on seed 51's front (results/missmap-amd-ryzen-7-pro-8840hs.md):
+(FIND) in C the largest single source of the interpreter's misses, 9-13% on kernel and
+corpus - its chain walk, the fast designs all with the fewest threads (16); calls and returns
+15-25%; the JIT design's runtime C about 20%; s6's L_t2bad most likely GCC's merged dispatch
+jump. counters.py with Zen 4's cache events: on compute work the caches hardly miss (under
+0.2 a thousand instructions) while the front end stalls half the cycles - the dispatch's
+taken indirect jump itself; fewer dispatches is the lever, alignment not (alignhot, applied,
+unlikely to pay). Next for seed 53: a branch-light (FIND) chain walk, as a gene.

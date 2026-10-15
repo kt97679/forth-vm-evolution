@@ -50,3 +50,10 @@ compute work - the IP-update loop form (1) is not what bounds them, and is set a
 Next, the front end's parts: Zen 4's instruction-cache, op-cache and instruction-TLB
 events (counters.py --extra, their names from `perf list` on the laptop), and a gene
 aligning handler entries to 32 or 64 bytes.
+
+## And the front end's part (Iteration 301)
+
+Not the caches: on compute work the instruction cache and the op cache miss under 0.2 times a
+thousand instructions while the front end stalls half the cycles. The dispatch's taken
+indirect jump - every few instructions, predicted or not - is what the front end waits on;
+the remedy is fewer of them, not a different loop form.
