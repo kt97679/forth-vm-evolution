@@ -24,8 +24,10 @@ SIGTERM or SIGHUP - and reads the setting back to check. If the restore fails it
 says so, on the terminal, with the command that does it; a reboot restores it
 too (the setting is not saved). A counter perf cannot read stops the tool: no
 figure from nothing. --extra EV,EV (Iteration 295) counts more events, each a
-column as a share of cycles - stalled-cycles-frontend:u and -backend:u split a low IPC
-into fetching and waiting; one this CPU cannot count is n/a. In next-run.sh's chain, which runs in the background where
+column - a stalled-cycles event as a share of cycles (they split a low IPC into fetching
+and waiting), any other per 1k instructions (Iteration 298: Zen 4's
+ic_tag_hit_miss.instruction_cache_miss:u, op_cache_hit_miss.op_cache_miss:u); one this
+CPU cannot count is n/a. In next-run.sh's chain, which runs in the background where
 sudo cannot ask, next-run.sh asks before it detaches and leaves perf-hold.py to
 hold the setting (Iteration 282). lab/evolve/RUNNING.md, "Between runs", says
 when and how.
@@ -175,9 +177,10 @@ if __name__ == '__main__':
     print('# Hardware counters - designs on the selection workloads (lab/evolve/counters.py)\n')
     print('User-space counts, the median of %d runs. Host: %s, %s. Counted by %s (%s).\n' % (RUNS, platform.platform(), platform.processor() or platform.machine(), PERF, PERF_VERSION))
     X = ALL[len(EVENTS):]
-    print('| design | workload | cycles (M) | instructions per cycle | branch misses per 1k instructions | misses per branch |' + ''.join(' %s, of cycles |' % e for e in X))
+    stall = lambda e: e.startswith('stalled-cycles')   # Iteration 298: a stall a share of cycles, any other event per 1k instructions
+    print('| design | workload | cycles (M) | instructions per cycle | branch misses per 1k instructions | misses per branch |' + ''.join(' %s, %s |' % (e, 'of cycles' if stall(e) else 'per 1k instructions') for e in X))
     print('|---|---|---|---|---|---|' + '---|' * len(X))
     for name, wl, m in rows:
         c, i, b, bm = (m[e] for e in EVENTS)
         print('| %s | %s | %.1f | %.2f | %.2f | %.2f%% |' % (name, wl, c / 1e6, i / c, 1000.0 * bm / i, 100.0 * bm / b)
-              + ''.join(' n/a |' if m[e] is None else ' %.1f%% |' % (100.0 * m[e] / c) for e in X))
+              + ''.join(' n/a |' if m[e] is None else ' %.1f%% |' % (100.0 * m[e] / c) if stall(e) else ' %.2f |' % (1000.0 * m[e] / i) for e in X))
