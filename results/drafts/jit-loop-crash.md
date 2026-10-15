@@ -41,6 +41,16 @@ another program.
   words' format-10 opcodes, with folds, in tag2's encoding. The likeliest fault: (LOOP)'s
   branch operand decoded by the JIT in a form the run-time compiler did not write it in -
   a jump to a wrong address on the first iteration. Unconfirmed.
+- **Not an escape pair**: in the crashing design all three are one-byte opcodes - (DO) 95,
+  I 88, (LOOP) 87 (vm-ops10-table.h) - so an operand misread after a two-byte opcode is
+  ruled out. And folds' part is indirect: reverted, the loop words are not format-10
+  opcodes at all, and the faulty path is never taken -
+  as recorded     folds=['@', 'XOR', 'LSHIFT', 'C@', 'AND', 'DROP', '!', 'U<', 'SWAP', '+', 'C!', 'LIT']: the loop words expressed in format-10: ['(LOOP)', 'I', '(DO)'] (of 13 words)
+  folds reverted  folds=['+', '=', '!', '@', 'LSHIFT', 'RSHIFT', 'C@', 'C!', 'AND', 'OR', 'XOR', 'LIT', '<', 'U<', 'OVER', 'DROP', 'DUP', 'SWAP', 'ROT', '>R', 'R>', 'R@', 'NEGATE']: the loop words expressed in format-10: none (of 2 words)
+- So the fault is in the JIT's translation of a run-time-compiled DO I LOOP whose loop
+  words are one-byte format-10 opcodes - (LOOP)'s branch operand (the JIT's operand kind
+  7) or the loop's frame on the return stack. Next: dump GD1's compiled bytes and the
+  JIT's translation of it, against the same loop compiled with the loop words as calls.
 
 ## Next
 

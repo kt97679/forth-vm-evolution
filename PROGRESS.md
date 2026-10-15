@@ -6128,3 +6128,13 @@ differ from s6 by does; the corpus output ends inside the loop tests (16 lines o
 older JIT fault, most likely, reached now. results/drafts/jit-loop-crash.md keeps the two
 genomes, what is known and the next steps; HANDOFF item 0a. NEXT-RUN: seed 53, the same
 genes, 6 hours as a placeholder - the owner's hours, and whether to wait for new genes.
+
+**The JIT fault, narrowed further (Iteration 310).** A segmentation fault (the engine's
+handler, exit 70) on the corpus's first loop test, `: GD1 DO I LOOP ; 4 1 GD1` - a
+micro-program reproduces it in milliseconds. It needs (DO), I and (LOOP) as format-10
+opcodes: dropping any one stops it, dropping any of the design's ten other words does not.
+They are one-byte opcodes (95, 88, 87) - my guess of a misread operand after an escape
+pair was wrong; and folds' part is indirect - reverted, the loop words are not format-10
+opcodes at all. Left: the JIT's translation of that run-time-compiled loop (results/drafts/
+jit-loop-crash.md).
+

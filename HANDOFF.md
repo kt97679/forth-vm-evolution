@@ -167,8 +167,10 @@ About 20 minutes of machine time for build, tests and gates.
    the runner, and its ssh side for the remote checks.
 0a. A JIT fault (results/drafts/jit-loop-crash.md, Iteration 310): two of seed 52's
    designs die in the corpus's loop tests, both JIT designs; the JIT off they live, and
-   reverting any one of folds, ops10, rtloop or tag2 makes them live. The genomes and the
-   next steps are in the draft. Before the next batch: find it, fix it, and add the
+   reverting any one of folds, ops10, rtloop or tag2 makes them live. Narrowed: a segfault
+   on `: GD1 DO I LOOP ; 4 1 GD1`, needing (DO), I and (LOOP) as one-byte format-10
+   opcodes (folds only decides whether they are). The genomes and the next step are in
+   the draft. Before the next batch: find it, fix it, and add the
    engines-check path that would have caught it.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
