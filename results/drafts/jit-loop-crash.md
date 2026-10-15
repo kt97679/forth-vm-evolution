@@ -23,12 +23,29 @@ another program.
 - All four genes are older than the batches applied since seed 47: most likely a latent
   fault that evolution reached now, not one a recent batch made.
 
+## Narrowed (Iteration 310, later)
+
+- **How it stops**: a segmentation fault - the engine's fault handler says
+  "relf: segmentation fault", exit status 70.
+- **The test**: the loop section's first - `{ 4 1 GD1 -> 1 2 3 }` with
+  `: GD1 DO I LOOP ;`. A micro-program reproduces it in milliseconds:
+
+      : GD1 DO I LOOP ;
+      4 1 GD1 . . . CR
+      BYE
+
+- **The format-10 words it needs**: (DO), I and (LOOP) - dropping any one of the three
+  from the first design's list stops the crash; dropping any of its other ten expressed
+  words (SWAP+I THREAD-FIND ?BRANCH8 BRANCH8 (+LOOP) +! SKIP UNLOOP (LEAVE) PLACE) does not.
+- So: the JIT translating a DO I LOOP compiled at run time (rtloop) as the three loop
+  words' format-10 opcodes, with folds, in tag2's encoding. The likeliest fault: (LOOP)'s
+  branch operand decoded by the JIT in a form the run-time compiler did not write it in -
+  a jump to a wrong address on the first iteration. Unconfirmed.
+
 ## Next
 
-1. Which test: run the loop section's tests one at a time; the engine's exit status
-   (signal, or a Forth abort).
-2. Which format-10 words: drop them one at a time from the design's list.
-3. Then jit.c's translation of that loop opcode with a folded operand; a fix, the two
+1. (done) Which test; 2. (done) which format-10 words.
+3. jit.c's translation of that loop opcode with a folded operand; a fix, the two
    designs alive, and an engines-check path with jit, rtloop, folds, tag2 and the words
    found - which today's 57 paths lack.
 
