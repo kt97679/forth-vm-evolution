@@ -6030,3 +6030,18 @@ current runner lacks: one log for the whole chain (each step writes its own toda
 progress lines in the seed run (five-minutely: generation, designs, the front, the time
 left), so the hours of evolution do not show as silence. Each command names the others.
 results/drafts/runner-protocol.md, prompts/08 item 16, UPSTREAM, HANDOFF.
+
+## Iteration 305 - 2026-10-15 - Claude
+
+**Generalization - the owner's three concerns: this CPU, small programs, and whether
+bigger code would do much worse.** Measured now: the held-out workload. lab/evolve/
+heldout.py (columns by their header's name - a first inline try read "re-measured", the
+selection's own speed measured again, and gave 0.999; the error caught before it was
+reported): on seeds 49-51 the selection speed and sieve's agree with Spearman 0.939-0.943,
+the fastest keep their places, and a steady group of designs is 2.5-2.7 times better on
+the selection than on sieve. Not measured: any CPU but the laptop's - every selection's
+speed is Zen 4's - and any program much larger than the cross-compiler and the test suite;
+the counters' cache misses under 0.2 a thousand instructions on compute work say the hot
+code fits. results/generalization.md: what carries to any CPU and what may not, and the two
+checks to build - a held-out workload whose footprint grows, and the joint front on a
+second CPU. heldout.py in the processing routine; HANDOFF item 5b.

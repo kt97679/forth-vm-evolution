@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 304.
+- master: Iteration 305.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -75,6 +75,8 @@ About 20 minutes of machine time for build, tests and gates.
    hypervolume, best Q - small only if all five are. The Q-best of all runs.
 3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md` - every late gene
    on the front, and the format-10 words, since Iteration 299.
+   Then `python3 lab/evolve/heldout.py results/evolve-...-seedN.md` - the held-out
+   check (Iteration 305): Spearman about 0.94 on seeds 49-51; say if it falls.
 4. Score the predictions, write the next (`results/predictions.md`).
 5. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a
    `---`, then report.md - the gate and ans-check read genomes from it.
@@ -183,6 +185,12 @@ About 20 minutes of machine time for build, tests and gates.
    build makes, and it must reproduce DEPTH exactly (SP@ is PUSH(dsp + CELL_BYTES): the
    macro moves dsp first, so the value is dsp as it was; an off-by-one misses a one-cell
    underflow). Worth it if seed 51 shows the corpus still weighs.
+5b. Generalization (results/generalization.md, Iteration 305): the selection measured on
+   one CPU, with small programs. Two checks to build: a held-out workload whose code
+   footprint grows (generated programs of N words, hot and run once, and a
+   compile-heavy one) - each front design's time per dispatch against N; and the joint
+   front measured on a second CPU (an Intel x86, the Tegra session) - its ranking
+   against the laptop's.
 6. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
    compiler's switch-off, the list genes, engine flags, shared converter
    options) - into rows only as each is next touched, each conversion checked
