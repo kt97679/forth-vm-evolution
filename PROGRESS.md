@@ -6111,3 +6111,20 @@ the search; one match or stop; read the changed unit back with its neighbours; n
 edges. The index tables edited as 19 says - each by its anchor, unique, read back - and
 USAGE's table, which stopped at 13, completed for 14-19 from each prompt's own "produces"
 line. UPSTREAM, to carry back to relf.
+
+## Iteration 310 - 2026-10-15 - Claude
+
+**Seed 52 processed - small - and a JIT fault it found.** Both packs clean (tests PASS,
+57 generator paths, 7 of 7, the jail PASS); the measured-here patch the stash again. The
+evolution 3 h 19 min, 15,246 designs measured, 4,440 screened. The verdict: fastest +1.8%,
+smallest +0.00%, memory +0 KB, hypervolume +0.5%, best Q -1.9% - small. The batch's genes
+barely taken: alignhot on none of the front, > on 3, 0= on none; 2@ on 77. heldout.py: 0.937,
+the ten fastest by selection the ten fastest on sieve. Predictions four of five.
+
+Two designs died on the corpus - the first in these runs. Reproduced here: with the JIT
+off both live; opinline and opbody are innocent (my first guess, wrong); reverting any one
+of folds, ops10, rtloop or tag2 makes each live, and nothing else of the 26-28 genes they
+differ from s6 by does; the corpus output ends inside the loop tests (16 lines of 788). An
+older JIT fault, most likely, reached now. results/drafts/jit-loop-crash.md keeps the two
+genomes, what is known and the next steps; HANDOFF item 0a. NEXT-RUN: seed 53, the same
+genes, 6 hours as a placeholder - the owner's hours, and whether to wait for new genes.

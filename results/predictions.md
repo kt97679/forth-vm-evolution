@@ -397,3 +397,25 @@ The after-seed-51 batch: alignhot; > and 0= as opcodes.
 5. Crossover 30-38%.
 
 (Iteration 301: seed 52 runs 6 hours, the owner's, not the 10 these were written for; they stand.)
+
+## Seed 52, scored (Iteration 310)
+
+1. Small - **right**: hypervolume +0.5%.
+2. alignhot on fewer than 10 of the front - **right**: on none.
+3. > or 0= expressed on at least 10 of the front - **wrong**: > on 3, 0= on none.
+4. opinline on at least a third of the front - **right**: 70 of 164.
+5. Crossover 30-38% - **right**: 31.9%.
+
+Four of five. The new opcodes again taken by few; alignhot by none - as the counters said,
+the front end waits on the dispatch itself, not on where code is aligned.
+
+## Seed 53, predicted (Iteration 310)
+
+The same genes as seed 52, a second time - no batch between.
+
+1. Small - and with seed 52's, two small runs in a row: the stopping rule's end of this gene
+   set.
+2. alignhot still on none of the front.
+3. 2@ on at least 77 of the front again (77 in seed 52).
+4. Held out: Spearman with sieve between 0.92 and 0.95.
+5. Crossover 30-38%.

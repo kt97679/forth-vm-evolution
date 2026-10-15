@@ -322,7 +322,9 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 310: seed 52 small; seed 53 the same genes - its hours, and whether to wait for new
+# genes, the owner's (the stopping rule ends this gene set if seed 53 is small too).
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-seed 52 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+seed 53 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

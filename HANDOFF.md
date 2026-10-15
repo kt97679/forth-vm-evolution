@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 309.
+- master: Iteration 310.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -52,8 +52,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
   as carried records (gate.py --db). Its packs were never sent, the owner unsure
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- Seeds 49-51 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (Iteration
-  300; the fastest +4.9% - the JIT designs took 2@ - hypervolume +1.7%).
+- Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
+  small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
+  0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
 - **The after-seed-51 batch is applied** (Iteration 300 - results/applied-after-seed51/
   ORDER.md): alignhot; > and 0= as opcodes. New genes: the stopping rule counts afresh.
 - **Seed 52 is the laptop's next run** (Iteration 300): `seed 52 tag2 6h then
@@ -164,6 +165,11 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
+0a. A JIT fault (results/drafts/jit-loop-crash.md, Iteration 310): two of seed 52's
+   designs die in the corpus's loop tests, both JIT designs; the JIT off they live, and
+   reverting any one of folds, ops10, rtloop or tag2 makes them live. The genomes and the
+   next steps are in the draft. Before the next batch: find it, fix it, and add the
+   engines-check path that would have caught it.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took
