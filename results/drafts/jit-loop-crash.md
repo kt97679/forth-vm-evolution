@@ -1,4 +1,4 @@
-# A JIT fault seed 52 found: two designs die in the corpus's loop tests (Iteration 310)
+# A JIT fault seed 52 found: two designs die in the corpus's loop tests (Iterations 310-312, fixed)
 
 Seed 52's database holds two designs that died on the corpus - the first such deaths in
 these runs: b21c6f6763 and 171214ba65, both with the JIT. The evolution's correctness
@@ -75,6 +75,24 @@ another program.
 3. jit.c's translation of that loop opcode with a folded operand; a fix, the two
    designs alive, and an engines-check path with jit, rtloop, folds, tag2 and the words
    found - which today's 57 paths lack.
+
+## Found and fixed (Iteration 312)
+
+**The cause:** engine/jit.c reads a stencil "up to the next table function, or this far" -
+JIT_SCAN_MAX, 160 bytes with jitloop and 64 without - and takes its end at the last jump to
+the NEXT or JUMP marker inside that window. This design's (LOOP) stencil, st_loop, is 72 bytes
+(nm -S on engine.full; with its own optimisation level and align1): read in 64, the scan found
+the fall-through jump to NEXT and missed the loop-back jump to JUMP, so the stencil was recorded
+short and with no jump hole - and its conditional branch inside pointed past the copied bytes.
+jit_usable() checked both exits for (+LOOP) and (?DO) only, and only with jitloop: the short
+(LOOP) went through. The design with jitloop on lived with the same 72-byte st_loop - read in
+160. ("tos off" lived only because jit_on() needs tos: no JIT at all - my reading of that
+probe as a cached-top fault was wrong.)
+
+**The fix** (results/pending/jitscan-after-seed52.patch): 160 in every build; every branching
+stencil must show both exits (BRANCH and LEAVE their jump) or is not used, in every build;
+lab/evolve/regressions.json, the two designs, built and run on the corpus by engines-check every
+time. Both live; 59 paths, run-tests, the gate 252 of 252; no speed lost.
 
 ## The two genomes
 

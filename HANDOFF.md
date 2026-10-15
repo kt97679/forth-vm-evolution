@@ -41,11 +41,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 311.
+- master: Iteration 312.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
-  300); `results/pending` does not exist.
+  300); `results/pending` holds the after-seed-52 batch (Iteration 312): the JIT fix.
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -168,13 +168,11 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
-0a. A JIT fault (results/drafts/jit-loop-crash.md, Iteration 310): two of seed 52's
-   designs die in the corpus's loop tests, both JIT designs; the JIT off they live, and
-   reverting any one of folds, ops10, rtloop or tag2 makes them live. Narrowed: a segfault
-   on `: GD1 DO I LOOP ; 4 1 GD1`, needing (DO), I and (LOOP) as one-byte format-10
-   opcodes (folds only decides whether they are), jitloop off and tos on - the compiled
-   code checked right. Next: the JIT's loop translation without jitloop (the draft). Before the next batch: find it, fix it, and add the
-   engines-check path that would have caught it.
+0a. The JIT fault seed 52 found - fixed, pending (results/pending/ORDER.md, Iteration 312):
+   jit.c read a stencil 64 bytes without jitloop, and a 72-byte (LOOP) stencil was copied
+   short; now 160 in every build, every branching stencil must show its exits, and
+   lab/evolve/regressions.json keeps the two designs as engines-check paths. The whole
+   story: results/drafts/jit-loop-crash.md.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

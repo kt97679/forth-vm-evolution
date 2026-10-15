@@ -1,0 +1,484 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 9dcbb3f..f7826cf 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -56,11 +56,11 @@ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit
+    far. 64 cut (+LOOP)'s stencil (87 bytes since Iteration 125's rule) before
+    either exit, and (?DO)'s (76) after its fall-through, before its skip -
+    neither was mapped until the gene jitloop, which reads further. */
+-#if JITLOOP
++/* Iteration 312: 160 in every build - jitloop-less builds read 64, and seed 52 found a design
++   whose (LOOP) stencil was 72 bytes there: read to its fall-through, its loop-back missed,
++   copied short, a segmentation fault on the corpus's first loop. The end is the last jump to
++   NEXT or JUMP, which only stencils make, and the next table function still bounds a scan. */
+ #define JIT_SCAN_MAX 160
+-#else
+-#define JIT_SCAN_MAX 64
+-#endif
+ static const unsigned char *jit_addr(int i) {
+ #if JITK
+     if (i >= S_N) return (const unsigned char *)spn_ktable[i - S_N];
+@@ -168,12 +168,13 @@ static int jit_init(void) {
+ }
+ /* A stencil the translator may use: read, and no call hole unless CALL. */
+ static int jit_usable(int s) {
+-#if JITLOOP
+-    /* Iteration 129: (+LOOP) and (?DO) have two exits - on, and to their
+-       branch target. A stencil read without both holes would jump nowhere,
+-       so it is not used: slower, never wrong. */
+-    if ((s == S_PLOOP || s == S_QDO) && (jit_st[s].nnext < 1 || jit_st[s].njump != 1)) return 0;
+-#endif
++    /* Iterations 129, 312: a stencil with two exits - on, and to its branch target - read
++       without both holes would jump nowhere, so it is not used: slower, never wrong. Every
++       build, every branching stencil - Iteration 129 checked (+LOOP) and (?DO) only, and
++       only with jitloop, and a (LOOP) read short (seed 52) went through. */
++    if ((s == S_0BRANCH || s == S_LOOP || s == S_PLOOP || s == S_QDO || s == S_DUP_GTI_BR)
++        && (jit_st[s].nnext < 1 || jit_st[s].njump != 1)) return 0;
++    if ((s == S_BRANCH || s == S_LEAVE) && jit_st[s].njump != 1) return 0;
+     return jit_st[s].len > 0 && jit_st[s].ncall == (s == S_CALL) && jit_st[s].njump <= 1;
+ }
+ static int jit_len(int s) { return jit_st[s].len - (jit_st[s].tailnext ? 5 : 0); }
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 24c7b31..97686ca 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -719,3 +719,9 @@ designs stalling in; GCC only, not with align1 or alignfn. Five engines-check pa
+ Iteration 299: > and 0= join the ops10 pool and opbody's list (handlers L_x_gt and
+ L_x_zeq; their kernel bodies were in sod16.py's table already). Five engines-check
+ paths, with opinline. The audit that found them: results/source-audit-3.md.
++
++Iteration 312: lab/evolve/regressions.json - designs that once failed, each its whole
++recorded genome and why; engines-check builds every one and runs it on the corpus, so a
++fault found once stays a test. The first two: seed 52's JIT designs whose (LOOP) stencil
++was read short (jit.c's scan, 64 bytes without jitloop; now 160 in every build, and every
++branching stencil must show both its exits or is not used).
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index a37aaa8..0dff091 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -86,6 +86,10 @@ VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot
+              ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot']), ('aligned to 64, tail calls', dict(alignhot=3, tail=1), ['alignhot', 'tail'])]
+ VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops10') or []), opbody=1, opinline=1), need + ['ops10', 'opinline'])   # Iteration 299
+              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
++# Iteration 312: designs that once failed (lab/evolve/regressions.json) - each the whole recorded
++# genome, built and run on the corpus every time: a fault found once stays a test.
++VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
++             for r in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'regressions.json')))]
+ for name, genes, must in VARIANTS:
+     g = E.canon(dict(S6, **genes))
+     ex = E.express(g)
+diff --git a/lab/evolve/regressions.json b/lab/evolve/regressions.json
+new file mode 100644
+index 0000000..8061668
+--- /dev/null
++++ b/lab/evolve/regressions.json
+@@ -0,0 +1,408 @@
++[
++ {
++  "genome": {
++   "abortif": 0,
++   "align1": 1,
++   "alignfn": 0,
++   "alignhot": 2,
++   "bss": 1,
++   "bytehdr": 1,
++   "compiler": 0,
++   "d256": 0,
++   "doesfar": 1,
++   "dskew": 1,
++   "enc": "cv8",
++   "escape": 0,
++   "factor": 3,
++   "fbuf": 0,
++   "fold": 1,
++   "folds": [
++    "@",
++    "XOR",
++    "LSHIFT",
++    "C@",
++    "AND",
++    "DROP",
++    "!",
++    "U<",
++    "SWAP",
++    "+",
++    "C!",
++    "LIT"
++   ],
++   "fsys": 2,
++   "gotodup": 0,
++   "guard": 0,
++   "hotcalls": 32,
++   "hotinl": 10,
++   "ipaclone": 1,
++   "jit": 1,
++   "jitinl": 1,
++   "jitk": 0,
++   "jitloop": 0,
++   "jitos": 0,
++   "jittail": 0,
++   "jitx": 1,
++   "kfast": 1,
++   "kinput": 0,
++   "klookup": 0,
++   "knumber": 0,
++   "kstack": 0,
++   "lean": 1,
++   "lto": 1,
++   "msc": 0,
++   "nocet": 1,
++   "nocrossjump": 0,
++   "nogcse": 0,
++   "noinls": 0,
++   "noreorder": 0,
++   "opbody": 1,
++   "opcall": [
++    "0="
++   ],
++   "opinline": 1,
++   "ops10": [
++    "?BRANCH8",
++    "BRANCH8",
++    "(LOOP)",
++    "I",
++    "(+LOOP)",
++    "TABS>BL",
++    "+!",
++    "SKIP",
++    "UNLOOP",
++    "(LEAVE)",
++    "(>NUMBER)",
++    "PLACE",
++    "(DO)",
++    "THREAD-FIND",
++    ">?BRANCH8",
++    "J",
++    "?NBRANCH8",
++    "<>?BRANCH8",
++    "0<?BRANCH",
++    "OVER?BRANCH",
++    "=?BRANCH8",
++    ">?BRANCH",
++    "(?DO)",
++    "EXECUTE",
++    "SCAN",
++    "HASH",
++    "<>?BRANCH",
++    "SWAP+I",
++    "DUP?BRANCH",
++    "0<?BRANCH8"
++   ],
++   "opt": "Os",
++   "peel": 1,
++   "regpin": 0,
++   "rtempty": 0,
++   "rtfuse": 1,
++   "rtimm": 1,
++   "rtiplus": 0,
++   "rtloop": 2,
++   "rtloopall": 1,
++   "scale": 0,
++   "sharedcall": 0,
++   "skippad": 0,
++   "spec": [
++    "loc",
++    "var",
++    "tiny",
++    "small",
++    "imm"
++   ],
++   "supers": [
++    [
++     "R@",
++     "@"
++    ],
++    [
++     "C@",
++     "@"
++    ],
++    [
++     "<",
++     ">R"
++    ],
++    [
++     "+",
++     "R>"
++    ],
++    [
++     "R>",
++     "DUP"
++    ],
++    [
++     "NEGATE",
++     "NEGATE"
++    ],
++    [
++     "ROT",
++     "ROT"
++    ],
++    [
++     "DUP",
++     "R@"
++    ],
++    [
++     "U<",
++     "+"
++    ],
++    [
++     "<",
++     "+"
++    ],
++    [
++     "@",
++     ">R"
++    ],
++    [
++     "SWAP",
++     "R>"
++    ],
++    [
++     "C!",
++     "DROP"
++    ],
++    [
++     "DUP",
++     ">R"
++    ],
++    [
++     "C@",
++     "OR"
++    ],
++    [
++     "C@",
++     "="
++    ],
++    [
++     "DUP",
++     "C@"
++    ]
++   ],
++   "swapi": 1,
++   "sysc": 0,
++   "t2hot": 1,
++   "t2wide": 1,
++   "tag2": 1,
++   "tail": 0,
++   "tailpn": 1,
++   "tfind": 1,
++   "thinhdr": 1,
++   "threads": 3,
++   "tos": 1,
++   "tracer": 0,
++   "varcall": 1,
++   "varslot": 0
++  },
++  "id": "b21c6f6763",
++  "seed": 52,
++  "why": "a (LOOP) stencil read short without jitloop: a segfault in the first loop test (Iteration 312)"
++ },
++ {
++  "genome": {
++   "abortif": 0,
++   "align1": 0,
++   "alignfn": 1,
++   "alignhot": 2,
++   "bss": 1,
++   "bytehdr": 1,
++   "compiler": 0,
++   "d256": 0,
++   "doesfar": 1,
++   "dskew": 1,
++   "enc": "cv8",
++   "escape": 0,
++   "factor": 3,
++   "fbuf": 0,
++   "fold": 1,
++   "folds": [
++    "@",
++    "SWAP",
++    "+",
++    "AND",
++    "DROP",
++    "OR",
++    "LIT",
++    "!",
++    "LSHIFT",
++    "RSHIFT"
++   ],
++   "fsys": 2,
++   "gotodup": 0,
++   "guard": 0,
++   "hotcalls": 8,
++   "hotinl": 0,
++   "ipaclone": 0,
++   "jit": 1,
++   "jitinl": 0,
++   "jitk": 0,
++   "jitloop": 0,
++   "jitos": 0,
++   "jittail": 0,
++   "jitx": 1,
++   "kfast": 1,
++   "kinput": 1,
++   "klookup": 0,
++   "knumber": 0,
++   "kstack": 0,
++   "lean": 1,
++   "lto": 0,
++   "msc": 0,
++   "nocet": 1,
++   "nocrossjump": 0,
++   "nogcse": 0,
++   "noinls": 0,
++   "noreorder": 0,
++   "opbody": 1,
++   "opcall": [
++    "@"
++   ],
++   "opinline": 1,
++   "ops10": [
++    "?BRANCH8",
++    "(LOOP)",
++    "I",
++    "(+LOOP)",
++    "(DO)",
++    "(LEAVE)",
++    "+!",
++    ">?BRANCH8",
++    "<?BRANCH",
++    "=?BRANCH8",
++    "?NBRANCH8",
++    ">?BRANCH",
++    "0<?BRANCH8",
++    "DUP?BRANCH8",
++    "PLACE",
++    "?DUP",
++    "<?BRANCH8",
++    "OVER?BRANCH8",
++    "(?DO)",
++    "?NBRANCH",
++    "<>?BRANCH8",
++    "<>?BRANCH",
++    "=I?BRANCH",
++    "EXECUTE",
++    "FILL",
++    "BRANCH8",
++    "SCAN",
++    "HASH",
++    "(>NUMBER)",
++    "TABS>BL",
++    "=I?BRANCH8"
++   ],
++   "opt": "Os",
++   "peel": 1,
++   "regpin": 0,
++   "rtempty": 0,
++   "rtfuse": 0,
++   "rtimm": 1,
++   "rtiplus": 0,
++   "rtloop": 2,
++   "rtloopall": 0,
++   "scale": 0,
++   "sharedcall": 1,
++   "skippad": 0,
++   "spec": [
++    "loc",
++    "tiny",
++    "small",
++    "imm"
++   ],
++   "supers": [
++    [
++     "DUP",
++     ">R"
++    ],
++    [
++     "C@",
++     "@"
++    ],
++    [
++     "C@",
++     "OR"
++    ],
++    [
++     "DROP",
++     "UM*"
++    ],
++    [
++     "NEGATE",
++     "NEGATE"
++    ],
++    [
++     "RSHIFT",
++     "@"
++    ],
++    [
++     "DUP",
++     "R@"
++    ],
++    [
++     "R>",
++     "="
++    ],
++    [
++     "ROT",
++     "ROT"
++    ],
++    [
++     "@",
++     "RSHIFT"
++    ],
++    [
++     "C@",
++     "DUP"
++    ],
++    [
++     "+",
++     "DROP"
++    ],
++    [
++     "DUP",
++     "C@"
++    ],
++    [
++     "<",
++     "+"
++    ],
++    [
++     "XOR",
++     "C!"
++    ],
++    [
++     "R>",
++     "U<"
++    ],
++    [
++     "C@",
++     ">R"
++    ],
++    [
++     "@",
++     ">R"
++    ]
++   ],
++   "swapi": 1,
++   "sysc": 0,
++   "t2hot": 1,
++   "t2wide": 1,
++   "tag2": 1,
++   "tail": 0,
++   "tailpn": 0,
++   "tfind": 1,
++   "thinhdr": 1,
++   "threads": 3,
++   "tos": 1,
++   "tracer": 0,
++   "varcall": 1,
++   "varslot": 0
++  },
++  "id": "171214ba65",
++  "seed": 52,
++  "why": "the same fault as b21c6f6763 (Iteration 312)"
++ }
++]
+\ No newline at end of file

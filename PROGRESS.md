@@ -6149,3 +6149,21 @@ off, the micro-program prints 3 2 1. On seed 52's front 88 of the 89 JIT designs
 jitloop; the evolution had kept out of a region where designs die, and the two deaths are
 where it went back in. Next: the JIT's loop translation without jitloop, and the cached top
 across it (results/drafts/jit-loop-crash.md). NEXT-RUN says paused.
+
+## Iteration 312 - 2026-10-15 - Claude
+
+**The JIT fault fixed, pending as the after-seed-52 batch.** The cause: jit.c read each
+stencil at most 64 bytes in a build without jitloop (160 with it), taking the stencil's end
+at the last jump to NEXT or JUMP in that window; the dead design's st_loop is 72 bytes (nm -S
+on engine.full), so the scan found the fall-through and missed the loop-back - a (LOOP)
+stencil recorded short, with no jump hole, its inner branch pointing past the copy. The
+both-exits check covered (+LOOP) and (?DO) only, and only with jitloop. The design with
+jitloop on lived with the same st_loop, read in 160; and "tos off" lived because without tos
+there is no JIT at all (jit_on) - my Iteration 311 reading of that probe was wrong. The fix:
+160 in every build; every branching stencil - 0BRANCH, (LOOP), (+LOOP), (?DO), DUP n > ?BRANCH
+both exits, BRANCH and LEAVE their jump - or not used, every build; and lab/evolve/
+regressions.json, designs that once failed, which engines-check builds and runs on the corpus
+every time. Tested in a scratch tree: both designs live (3 2 1, the corpus right), 59 paths
+with the two regressions, run-tests, the gate 252 of 252; three JIT designs' speed unchanged -
+one that looked 40% slower on loop from 2 rounds measured 0.043 on master and with the fix,
+twice, from 5.
