@@ -1,0 +1,74 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 0c3698a..7ac5434 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -52,6 +52,7 @@ designs changing id - every one rtfuse=0 leaving the identity.
+ | the [opcode EXIT] words among the primitives (`opinline`: 0, 1; Iteration 292): placed before (PRIMITIVES-END), where PRIMITIVE? asks by address, so the run-time compiler copies their opcode in place of a call - code compiled at run time (bubble's 2@ and 2!) saves the call and the EXIT. A word defined once only; a design with no [opcode EXIT] word does not express it. For a JIT design it can cost: an inlined opcode with no stencil leaves its word to the interpreter | this lab: word-cost.py | c9369657e4 with 2@ 2! and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%; -41.6% from 12,759,474 before 2@ 2!) |
+ | the tail-call engine with preserve_none and musttail (`tailpn`: 0, 1; Iteration 293): clang 19+'s calling convention that saves no register on every handler, and musttail on every handler-to-handler call (tools/gen-tail.py --preserve-none) - CPython 3.14's tail-call interpreter. Built with the newest clang here that takes them (clang_pn(): clang-20 on the owner's laptop); expressed only on a clang tail engine, only where such a clang is installed | CPython 3.14; this lab: engines-check | s6's engine 14,232 bytes, 14,680 without (no register saved) - speed for the laptop's runs to judge |
+ | NUMBER? as one opcode (`knumber`: 0, 1; Iteration 295): forth/cv8b-knumber.4, after klookup's overlay - (NUMBER?), the kernel's NUMBER? with BASE @ and DPL given (its failures 0 0 0: only INTERPRET calls it, and aborts or throws), and NUMBER?8, whose body NUMBER? takes; the opcode's C (numberq, vm-lab.c) is the same steps. Put first in the design's format-10 list, so it takes a slot from the last word there. Expressed only with klookup | this lab: word-cost.py | c9369657e4's corpus 4,529,779 -> 4,067,754 dispatches (-10.2%, NUMBER? 10.1% -> 0.9%); 927064f127, its slots full: the corpus -4.9%, the kernel +5.3% - the word it displaced |
++| handler entries aligned (`alignhot`: off, 32:11, 32, 64; Iteration 298): GCC's -falign-jumps, -falign-labels and -falign-functions - a computed goto's target, or a tail engine's function, on a fetch window's start; 32:11 only where it costs at most 10 bytes. The laptop's counters put the evolved interpreted designs' front end at half their cycles on compute work, and align1 only takes alignment away. GCC only; not with align1 or alignfn | this lab: counters.py --extra | the engine: s6 +1,280 bytes at 32:11, +5,216 at 32, +12,192 at 64; 658ed9b9f8 +1,216, +4,448, +10,976 - speed for the laptop's runs to judge |
+ | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+ | an operation and the call after it (`opcall`: a list, Iteration 121; the tag, computed goto): `X;CALL` opcodes of their own (0xFE00 + k), X's handler then a direct jump into the call | results/docs-reuse.md (Koopman) | fastest: parse -3.8%, corpus -3.4%, kernel -1.6% of dispatches for +768 bytes of engine (16 ops); results/opcall.md |
+ | ABORT" guarded (`abortif`: 0, 1; Iteration 117): the converter puts every (ABORT") call behind ?BRANCH and -1, as gforth and lbForth compile ABORT" | results/forth-sources.md | parse -5.6%, corpus -3.0%, kernel -1.0% of dispatches on the fastest design for 56 bytes; errors unchanged |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 9dcddd2..56028a3 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -709,3 +709,7 @@ Iteration 295: the gene knumber - NUMBER? as one opcode, for klookup designs:
+ forth/cv8b-knumber.4 ((NUMBER?) and NUMBER?8, a stage tag -knumber of its own), the
+ handler's C in one helper (numberq) for the plain, cached-top and multi-state engines,
+ its kernel body as the converter reads it in sod16.py's table. Five engines-check paths.
++
++Iteration 298: the gene alignhot - GCC's -falign-jumps/-labels/-functions at 32:11, 32
++or 64 bytes, for the front end the laptop's counters found the evolved interpreted
++designs stalling in; GCC only, not with align1 or alignfn. Five engines-check paths.
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 1b8816c..0ca6b72 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -81,6 +81,9 @@ KN = dict(kfast=1, kinput=1, klookup=1, knumber=1)   # Iteration 295: NUMBER? as
+ VARIANTS += [('klookup, knumber', dict(KN), ['knumber']), ('klookup, knumber, cached top off', dict(KN, tos=0), ['knumber']),
+              ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']), ('klookup, knumber, tail calls', dict(KN, tail=1), ['knumber', 'tail']),
+              ('klookup, knumber, the JIT', dict(KN, **JIT), ['knumber', 'jit'])]
++VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot=1), ['alignhot']),   # Iteration 298
++             ('handler entries aligned to 32', dict(alignhot=2), ['alignhot']), ('handler entries aligned to 64', dict(alignhot=3), ['alignhot']),
++             ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot']), ('aligned to 64, tail calls', dict(alignhot=3, tail=1), ['alignhot', 'tail'])]
+ for name, genes, must in VARIANTS:
+     g = E.canon(dict(S6, **genes))
+     ex = E.express(g)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 3358076..0f1b7c0 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -189,6 +189,12 @@ gene('tailpn', needs=lambda g, e: e.get('tail') and e.get('compiler') and bool(c
+ # Iteration 295: NUMBER? as one opcode (forth/cv8b-knumber.4, after klookup's overlay) - on seed 49's
+ # fastest designs its own Forth was 10-13% of the corpus's dispatches. Expressed only with klookup.
+ gene('knumber', needs=lambda g, e: klookup_on(g))
++# Iteration 298: the laptop's counters - the evolved interpreted designs stall in the front end half their
++# cycles on compute work (results/counters-amd-ryzen-7-pro-8840hs.md); align1 only takes alignment away.
++# GCC's -falign-jumps/-labels/-functions at 32 or 64 bytes: Zen 4's fetch window and op-cache line.
++ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
++gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
++     needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
+ gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
+      convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
+@@ -210,7 +216,7 @@ def clang_pn():
+                 _CLANG_PN = c; break
+     return _CLANG_PN
+ if HAVE_CLANG: EXPRESSED['cv8'] += ['compiler']
+-GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto')
++GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto', 'alignhot')
+ JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
+ gene('jitk', values=JITKV, needs=lambda g, e: jit_on(g) and e['jitk'])   # Iteration 259: on the JIT; 0 is off
+ EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
+@@ -657,6 +663,9 @@ def ccflags(g):
+         return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()] + _EXTRA_CFLAGS
+     f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
+     if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
++    if g.get('alignhot'): f += ['-falign-jumps=%s' % ALIGNV[g['alignhot']], '-falign-labels=%s' % ALIGNV[g['alignhot']],
++                                '-falign-functions=%s' % ALIGNV[g['alignhot']]]   # Iteration 298: a handler's entry - a computed goto's
++                                # target, or a tail engine's function - on a fetch window's start
+     return f + _EXTRA_CFLAGS
+ _EXTRA_CFLAGS = os.environ.get('EVOLVE_CFLAGS', '').split()   # Iteration 294: a measurement's -g (missmap.py) - never the evolution's
+ 

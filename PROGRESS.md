@@ -5906,3 +5906,19 @@ missmap.py attributed nothing - every sample without a source line: build() stri
 engine and keeps engine.full, and the tool ran the stripped one. It runs engine.full now,
 tried against a stand-in perf that refuses a stripped engine. Nothing found asks for a
 change before seed 51; seed 51 set to 10 hours (the owner).
+
+## Iteration 298 - 2026-10-15 - Claude
+
+**Seed 51 started (10 hours); the gene alignhot pending for after it; counters.py
+--extra per 1k instructions.** The owner's `perf list` gave Zen 4's names
+(ic_tag_hit_miss.instruction_cache_miss, op_cache_hit_miss.op_cache_miss,
+de_src_op_disp.op_cache); counters.py --extra now gives a stalled-cycles event as a share of
+cycles and any other per 1k instructions - the next between-runs measurement asks which
+part of the front end the evolved interpreted designs wait on. alignhot - GCC's
+-falign-jumps, -labels, -functions at 32:11, 32 or 64 - is the cheap lever on it: GCC's
+labels align every branch target, so full alignment costs much (s6's engine +5,216 bytes
+at 32, +12,192 at 64), 32:11 - only where it costs at most 10 bytes - +1,280. Checked in a
+scratch tree: engines-check 52 paths, run-tests, gene-equiv (3,235 recorded ids and
+expressions the same), the gate at 64 on seed 50's front: 20 of 20 - the other 167 build
+with clang or carry align1 or alignfn: evolution has taken alignment away on most of the
+front. A new batch, results/pending: applied after seed 51.

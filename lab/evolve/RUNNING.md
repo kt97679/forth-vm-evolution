@@ -306,6 +306,11 @@ Iteration 295: where the cycles stall - `sh lab/evolve/next-run.sh experiment
 counters.py --extra stalled-cycles-frontend:u,stalled-cycles-backend:u` (with
 missmap.py, or after it); results/drafts/iploop-plan.md says what it decides.
 
+Iteration 298: which part of the front end - `sh lab/evolve/next-run.sh experiment
+counters.py --extra stalled-cycles-frontend:u,ic_tag_hit_miss.instruction_cache_miss:u,
+op_cache_hit_miss.op_cache_miss:u` (Zen 4's names, from `perf list`): the cache events per
+1k instructions.
+
 Ubuntu's kernel.perf_event_paranoid (4) lets perf count nothing, and next-run.sh's
 chain runs in the background, where sudo cannot ask (Iteration 282: the first try
 failed so). So next-run.sh asks for your password at once, before it detaches,

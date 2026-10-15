@@ -41,10 +41,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 297.
+- master: Iteration 298.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
-  results/applied-after-seed50/ORDER.md); `results/pending` does not exist.
+  results/applied-after-seed50/ORDER.md); `results/pending` holds the after-seed-51 batch (Iteration 298): the gene
+  alignhot.
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -83,9 +84,11 @@ About 20 minutes of machine time for build, tests and gates.
    predictor's depth - a candidate gene, not built.
 5. The front end (Iteration 297): the evolved interpreted designs stall there about
    half their cycles on compute work (s6 18-36%, the JIT 1-6%) - the IP-update loop form
-   set aside (results/drafts/iploop-plan.md). Next: which part - counters.py --extra with
-   Zen 4's instruction-cache, op-cache and instruction-TLB events (names from `perf
-   list` on the laptop) - and a gene aligning handler entries to 32 or 64 bytes.
+   set aside (results/drafts/iploop-plan.md). Pending for after seed 51: the gene
+   alignhot (results/pending/ORDER.md). Between runs, which part of the front end:
+   `sh lab/evolve/next-run.sh experiment counters.py --extra stalled-cycles-frontend:u,
+   ic_tag_hit_miss.instruction_cache_miss:u,op_cache_hit_miss.op_cache_miss:u` (the
+   owner's perf names Zen 4's events so) - and missmap.py again, each its own command.
 6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
    when a patch changes `forth/kernel.4`), then ONE background chain: build
    (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`
@@ -143,8 +146,7 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-1. Seed 51: process when its packs come; and the two measurements' packs (missmap.py,
-   counters.py --extra) - item 4 and item 5 below. No batch is pending.
+1. Seed 51: process when its packs come, then apply results/pending (alignhot).
 2. Pending, to apply after seed 50 (results/pending/ORDER.md): 2@ and 2! as
    opcodes, and the gene opinline - their call gone from code compiled at run time;
    bubble -41.6% of its dispatches on c9369657e4 with both; tailpn; knumber, NUMBER?
