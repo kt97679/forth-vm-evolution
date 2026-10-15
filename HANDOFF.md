@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 302.
+- master: Iteration 303.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -105,7 +105,10 @@ About 20 minutes of machine time for build, tests and gates.
   start that polls for its condition, and chowns every file it creates - no
   root-owned files in the owner's home. The code is pulled once, at the start; the
   checks (build, tests, validate, jail) run once per chain. Measurements run at the
-  chain's start, on the front that just finished. (prompts/08 items 11-14.)
+  chain's start, on the front that just finished. A clear stop (`next-run.sh stop`),
+  cleanup on every exit, and at every start a repair of what a crashed or killed run
+  left (Iteration 303). (prompts/08 items 11-15; the specification:
+  results/drafts/runner-protocol.md.)
 - What each objective measures, how a run is judged and when evolution stops,
   and that the size is the kernel's (Iterations 75, 127, 138, 188-189):
   GOALS.md, "Success" - not repeated here.
@@ -144,13 +147,12 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-0. The protocol above, built (Iteration 302's agreement): next-run.sh pulling once,
-   checking once, the measurements first in one step (perf-hold.py held for several,
-   chowning what it makes), every step run even after another failed, and one archive
-   at the end with every log and the runner's own; tried here end to end in miniature
-   (a few-minute seed run, the comparison, a stand-in perf that refuses what the real
-   one refuses) before the laptop relies on it; each step's own pack kept in runs/
-   for the first real use.
+0. The protocol above, built to results/drafts/runner-protocol.md - its commands
+   (start, status, stop), the start's recovery, the end's trap and one archive, root
+   that chowns and watches the chain - and tried here as it says (a miniature chain;
+   stop in mid-run; a kill -9 as a crash) before the laptop relies on it. Each step's
+   own pack kept in runs/ for the first real use. Fix with it: perf-hold.py creates
+   runs/perf-hold.log as root today.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

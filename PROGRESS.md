@@ -6005,3 +6005,18 @@ a failed step not costing the others) and the artifact; 11 - the dropped perf me
 item 7 (everything in one archive); 15 - step 6, a stand-in refuses what the real one
 refuses (the stand-in perf that invented source lines; the stand-in sudo that let a
 hang-up kill its child). INDEX, README, USAGE rows; UPSTREAM, to carry back to relf.
+
+## Iteration 303 - 2026-10-15 - Claude
+
+**The protocol's stop and cleanup (the owner): a clear way to stop a run, cleanup on
+every exit, and at every start a repair of what a crashed or killed run left.** Read
+first in next-run.sh: it detaches with plain nohup, no session of its own, and the
+evolver starts every engine and build with start_new_session=True - a signal to the
+runner's process group would miss them, so a stop goes by the process tree; the flock
+dies with its holder; the state file already makes stop-then-start a resume of the seed
+run; and perf-hold.py creates runs/perf-hold.log as root - a root-owned file in the
+owner's home, against his rule. results/drafts/runner-protocol.md specifies the rebuilt
+runner: start, status, stop; the start's recovery; the trap that always archives
+(written as .partial and renamed); root that chowns and watches the chain; the tests
+(a miniature chain, a stop in mid-run, a kill -9 as a crash). prompts/08 item 15 and
+its why; UPSTREAM; HANDOFF's decision and open item 0.

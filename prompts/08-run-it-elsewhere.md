@@ -50,7 +50,11 @@ chain stopped. Chained after another, a second measurement failed,
 because the helper holding its privilege held for one. Every step of a
 chain fetched the newest code, so a version dropped in mid-run would
 have changed the code between steps. And a failed step stopped the
-chain with the earlier steps' results still on the laptop.
+chain with the earlier steps' results still on the laptop. There was no
+way to stop a run but finding its processes by hand - and the evolver
+started every engine in a session of its own, so killing the runner's
+process group would have left them running. And the privileged helper
+created its log as root, in the owner's home.
 
 ## Do this
 
@@ -107,6 +111,15 @@ find. Most fixes are one line in the harness.
     step fetches a newer version mid-run.
 14. **A failed step does not cost the others.** Steps that do not need
     its output still run; what exists is packed.
+15. **A stop, and a start that repairs.** A run handed over has one
+    documented way to stop it, which ends every process it started -
+    children that took sessions of their own included, so stop by the
+    process tree, not the process group - and still leaves the archive,
+    saying it was stopped. And every start first finds what an earlier
+    run left when the machine crashed or the run was killed: packs its
+    logs, removes what was half written (write archives under a
+    temporary name and rename), restores what it changed, and gives back
+    files a privileged helper made.
 
 ## Artifact required
 
@@ -126,4 +139,5 @@ kind.
 
 For a run handed over: the one command; the archive's contents by step,
 logs included; what a failed step leaves in it; and which steps need
-privileges, and how they get them.
+privileges, and how they get them; how to stop it, and what the next start
+repairs after a crash.
