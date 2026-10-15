@@ -41,27 +41,26 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 299.
+- master: Iteration 300.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
-  results/applied-after-seed50/ORDER.md); `results/pending` holds the after-seed-51 batch: the gene alignhot (Iteration
-  298), > and 0= as opcodes (Iteration 299).
+  results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
+  300); `results/pending` does not exist.
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
   Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
   as carried records (gate.py --db). Its packs were never sent, the owner unsure
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- Seed 49 processed (Iteration 288): not small, hypervolume +4.0%. Seed 50 processed
-  (Iteration 296): small, +0.4% - the third run of seed 48's genes.
-- **The after-seed-50 batch is applied** (Iteration 296, four patches -
-  results/applied-after-seed50/ORDER.md): 2@ and 2! as opcodes, opinline, tailpn,
-  knumber. New genes: the stopping rule counts afresh.
-- **Seed 51 is the laptop's next run** (Iteration 296): `seed 51 tag2 10h then
-  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 10 hours, the
-  owner's (12 when its predictions were written). Before it, the owner runs missmap.py and counters.py --extra (each its own
-  command - perf-hold.py holds the setting for one measurement a chain). Its
-  predictions: the end of `results/predictions.md`.
+- Seeds 49-51 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (Iteration
+  300; the fastest +4.9% - the JIT designs took 2@ - hypervolume +1.7%).
+- **The after-seed-51 batch is applied** (Iteration 300 - results/applied-after-seed51/
+  ORDER.md): alignhot; > and 0= as opcodes. New genes: the stopping rule counts afresh.
+- **Seed 52 is the laptop's next run** (Iteration 300): `seed 52 tag2 10h then
+  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 10 hours, seed 51's,
+  for the owner to confirm. Before it, between runs: missmap.py, and counters.py with
+  Zen 4's cache events (item 5), each its own command. Its predictions: the end of
+  `results/predictions.md`.
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
   all runs (session 42): seed 43's 19510c7689.
 
@@ -74,30 +73,11 @@ About 20 minutes of machine time for build, tests and gates.
    `results-measured-here.patch` (the laptop's stash, already on master).
 2. The comparison's "Judging the runs": fastest, smallest, memory (+-8 KB),
    hypervolume, best Q - small only if all five are. The Q-best of all runs.
-3. The clang tail engine with preserve_none and musttail: pending as the gene tailpn
-   (after-seed-50 patch 3; the laptop's clang-20). Seed 51's front will say whether
-   tail engines come back with it.
-4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): the
-   first missmap.py run attributed nothing - it ran the stripped engine; it runs
-   engine.full now (Iteration 297). Run it again between runs; then make the handlers it
-   names branch-light. The JIT's ackermann misses: native ret past the return
-   predictor's depth - a candidate gene, not built.
-5. The front end (Iteration 297): the evolved interpreted designs stall there about
-   half their cycles on compute work (s6 18-36%, the JIT 1-6%) - the IP-update loop form
-   set aside (results/drafts/iploop-plan.md). Pending for after seed 51: the gene
-   alignhot (results/pending/ORDER.md). Between runs, which part of the front end:
-   `sh lab/evolve/next-run.sh experiment counters.py --extra stalled-cycles-frontend:u,
-   ic_tag_hit_miss.instruction_cache_miss:u,op_cache_hit_miss.op_cache_miss:u` (the
-   owner's perf names Zen 4's events so) - and missmap.py again, each its own command.
-5a. ?STACK as an opcode - deferred (Iteration 299, results/source-audit-3.md): 7.4% of the
-   corpus's dispatches on seed 50's fastest design without the JIT, about a dozen a check
-   - INTERPRET checks after every word it executes. Twice worked on already, in Forth:
-   kinput's ?STACK8 (Iteration 54) and kstack's (116), one unsigned compare on DEPTH. One
-   opcode, given S0 @ by an overlay's wrapper, would save most of it - about 1% of the
-   geometric mean - but: a new overlay tag for every design doubles the stage dumps each
-   build makes, and it must reproduce DEPTH exactly (SP@ is PUSH(dsp + CELL_BYTES): the
-   macro moves dsp first, so the value is dsp as it was; an off-by-one misses a one-cell
-   underflow). Worth it if seed 51 shows the corpus still weighs.
+3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md` - every late gene
+   on the front, and the format-10 words, since Iteration 299.
+4. Score the predictions, write the next (`results/predictions.md`).
+5. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a
+   `---`, then report.md - the gate and ans-check read genomes from it.
 6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
    when a patch changes `forth/kernel.4`), then ONE background chain: build
    (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`
@@ -155,32 +135,47 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-1. Seed 51: process when its packs come, then apply results/pending (alignhot; > and
-   0=). seed-facts.py now reports every late gene and the format-10 words on the front
+1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
-2. Pending, to apply after seed 50 (results/pending/ORDER.md): 2@ and 2! as
-   opcodes, and the gene opinline - their call gone from code compiled at run time;
-   bubble -41.6% of its dispatches on c9369657e4 with both; tailpn; knumber, NUMBER?
-   as one opcode (the corpus -10.2% on c9369657e4) - the digit table was the wrong
-   target: NUMBER?'s own Forth was the cost.
-3. A tail engine with preserve_none + musttail (clang 19+), once seed 48 shows
-   what clang engines do on the laptop.
-4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): on
-   kernel and corpus the evolved designs lose an estimated 9-24% of their cycles to
-   branch misses, s6 1-3%. Next: which handlers - perf record on branch-misses:u
-   against the unstripped engine (engine.full), a laptop measurement like counters.py
-   - then make them branch-light. Also there: the JIT mispredicts 1.5% of ackermann's
-   branches (returns, probably - jittail).
-5. The IP-update loop form (deferred in Iteration 260): the counters leave it open -
-   dispatch predicted on compute work, yet the evolved interpreted designs run at a
-   lower IPC than s6. A gene to build when its turn comes.
+2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took
+   opinline on 64 of 162; 2@ on the JIT designs - five of the six fastest - but on 8 of
+   the 69 without the JIT; knumber on 8 of 69 klookup designs; tailpn brought no tail
+   engine back. A new opcode costs an interpreted design a slot of its full format-10
+   list. Seed 52 shows > and 0=, and alignhot (which only 20 of seed 50's 187 could
+   take).
+3. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): the
+   first missmap.py run attributed nothing - it ran the stripped engine; it runs
+   engine.full now (Iteration 297). Run it again between runs; then make the handlers it
+   names branch-light. The JIT's ackermann misses: native ret past the return
+   predictor's depth - a candidate gene, not built.
+4. The front end (Iteration 297): the evolved interpreted designs stall there about
+   half their cycles on compute work (s6 18-36%, the JIT 1-6%) - the IP-update loop form
+   set aside (results/drafts/iploop-plan.md). The gene alignhot applied after seed
+   51 (Iteration 300; results/applied-after-seed51/ORDER.md). Between runs, which part of the front end:
+   `sh lab/evolve/next-run.sh experiment counters.py --extra stalled-cycles-frontend:u,
+   ic_tag_hit_miss.instruction_cache_miss:u,op_cache_hit_miss.op_cache_miss:u` (the
+   owner's perf names Zen 4's events so) - and missmap.py again, each its own command.
+5. ?STACK as an opcode - deferred (Iteration 299, results/source-audit-3.md): 7.4% of the
+   corpus's dispatches on seed 50's fastest design without the JIT, about a dozen a check
+   - INTERPRET checks after every word it executes. Twice worked on already, in Forth:
+   kinput's ?STACK8 (Iteration 54) and kstack's (116), one unsigned compare on DEPTH. One
+   opcode, given S0 @ by an overlay's wrapper, would save most of it - about 1% of the
+   geometric mean - but: a new overlay tag for every design doubles the stage dumps each
+   build makes, and it must reproduce DEPTH exactly (SP@ is PUSH(dsp + CELL_BYTES): the
+   macro moves dsp first, so the value is dsp as it was; an off-by-one misses a one-cell
+   underflow). Worth it if seed 51 shows the corpus still weighs.
 6. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
    compiler's switch-off, the list genes, engine flags, shared converter
    options) - into rows only as each is next touched, each conversion checked
    with `python3 lab/evolve/gene-equiv.py <the commit before>`. A new gene is
    one row.
+
 ## Lessons - how faults got in, and the checks that catch them now
 
+- Edit a numbered item by its own text, never by `index('\n4. ')`: this file's
+  routine is numbered too, and comes first - Iterations 293-299 wrote open items over
+  the routine's steps 3-5, and left the open items themselves stale (found and
+  restored from Iteration 292's text at 300).
 - A passing gate does not prove the intended code ran (a fallback of the same
   name answered twice): profile and look for the new words; the dump guard
   stops a run whose libraries do not load whole.

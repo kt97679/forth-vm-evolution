@@ -709,3 +709,11 @@ Iteration 295: the gene knumber - NUMBER? as one opcode, for klookup designs:
 forth/cv8b-knumber.4 ((NUMBER?) and NUMBER?8, a stage tag -knumber of its own), the
 handler's C in one helper (numberq) for the plain, cached-top and multi-state engines,
 its kernel body as the converter reads it in sod16.py's table. Five engines-check paths.
+
+Iteration 298: the gene alignhot - GCC's -falign-jumps/-labels/-functions at 32:11, 32
+or 64 bytes, for the front end the laptop's counters found the evolved interpreted
+designs stalling in; GCC only, not with align1 or alignfn. Five engines-check paths.
+
+Iteration 299: > and 0= join the ops10 pool and opbody's list (handlers L_x_gt and
+L_x_zeq; their kernel bodies were in sod16.py's table already). Five engines-check
+paths, with opinline. The audit that found them: results/source-audit-3.md.

@@ -86,6 +86,8 @@ SPECS = {
     'L_x_plusstore': (['x', 'a'], [], 'CELL(a) += x;'),
     'L_x_2fetch':    (['a'], ['x1', 'x2'], '{ UNS64 a_ = a; x1 = CELL(a_ + CELL_BYTES); x2 = CELL(a_); }'),   # Iteration 290: 2@
     'L_x_2store':    (['x1', 'x2', 'a'], [], '{ UNS64 a_ = a; CELL(a_) = x2; CELL(a_ + CELL_BYTES) = x1; }'),   # 2!
+    'L_x_gt':        (['a', 'b'], ['c'], 'c = -(UNS64)((INT64)a > (INT64)b);'),   # Iteration 299: >
+    'L_x_zeq':       (['a'], ['f'], 'f = -(UNS64)(a == 0);'),   # 0=
     'L_x_do':        (['a', 'b'], [], 'RPUSH(a); RPUSH(b);'),
     'L_x_execute':   (['x'], [], 'RPUSH(ip); ip = x;'),
     'L_x_unloop':    ([], [], 'rp += 2 * CELL_BYTES;'),

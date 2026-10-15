@@ -95,7 +95,7 @@ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (resu
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
 HOTWORDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotwords-v1.json')   # Iteration 267: the gene factor's cold words (hotwords.py)
 FACTORV = (0, 1e-3, 1e-2, 2.0)  # Iteration 267: factor - a word below this share of the reference dispatches is factored (2.0: every word)
-OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!')   # Iteration 92: their bodies [opcode EXIT], the gene opbody; 290: 2@ 2!
+OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!', '>', '0=')   # Iteration 92: their bodies [opcode EXIT], the gene opbody; 290: 2@ 2!
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -189,6 +189,12 @@ gene('tailpn', needs=lambda g, e: e.get('tail') and e.get('compiler') and bool(c
 # Iteration 295: NUMBER? as one opcode (forth/cv8b-knumber.4, after klookup's overlay) - on seed 49's
 # fastest designs its own Forth was 10-13% of the corpus's dispatches. Expressed only with klookup.
 gene('knumber', needs=lambda g, e: klookup_on(g))
+# Iteration 298: the laptop's counters - the evolved interpreted designs stall in the front end half their
+# cycles on compute work (results/counters-amd-ryzen-7-pro-8840hs.md); align1 only takes alignment away.
+# GCC's -falign-jumps/-labels/-functions at 32 or 64 bytes: Zen 4's fetch window and op-cache line.
+ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
+gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
+     needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
 gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
      convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
@@ -210,7 +216,7 @@ def clang_pn():
                 _CLANG_PN = c; break
     return _CLANG_PN
 if HAVE_CLANG: EXPRESSED['cv8'] += ['compiler']
-GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto')
+GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto', 'alignhot')
 JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
 gene('jitk', values=JITKV, needs=lambda g, e: jit_on(g) and e['jitk'])   # Iteration 259: on the JIT; 0 is off
 EXPRESSED['cv8'] += ['threads']   # Iteration 204: the dictionary in 16, 32, 64 or 128 chains (results/loop-audit.md)
@@ -403,8 +409,9 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
               '(PARSE)', 'HASH', 'PLACE',                # Iteration 54: ((PARSE): kinput's)
               '(FIND)', '(>NUMBER)',                     # Iteration 57: the lookup, numbers (klookup's)
               'I+',
-              '2@', '2!']   # Iteration 290: bubble's and the corpus's double-cell words (results/source-audit-2.md)                                      # Iteration 60: I then + in run-time code (rtiplus's)
-OPS10_LABEL = {'2@': 'L_x_2fetch', '2!': 'L_x_2store',   # Iteration 290
+              '2@', '2!',   # Iteration 290: bubble's and the corpus's double-cell words (results/source-audit-2.md)
+              '>', '0=']   # Iteration 299: bubble's compare, ackermann's test (results/source-audit-3.md)                                      # Iteration 60: I then + in run-time code (rtiplus's)
+OPS10_LABEL = {'2@': 'L_x_2fetch', '2!': 'L_x_2store', '>': 'L_x_gt', '0=': 'L_x_zeq',   # Iteration 290
                '+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
                '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
@@ -657,6 +664,9 @@ def ccflags(g):
         return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()] + _EXTRA_CFLAGS
     f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
     if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
+    if g.get('alignhot'): f += ['-falign-jumps=%s' % ALIGNV[g['alignhot']], '-falign-labels=%s' % ALIGNV[g['alignhot']],
+                                '-falign-functions=%s' % ALIGNV[g['alignhot']]]   # Iteration 298: a handler's entry - a computed goto's
+                                # target, or a tail engine's function - on a fetch window's start
     return f + _EXTRA_CFLAGS
 _EXTRA_CFLAGS = os.environ.get('EVOLVE_CFLAGS', '').split()   # Iteration 294: a measurement's -g (missmap.py) - never the evolution's
 

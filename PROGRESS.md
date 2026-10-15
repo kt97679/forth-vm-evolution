@@ -5950,3 +5950,30 @@ opcode given S0 @ would take most of it, about 1% of the geometric mean, at the 
 overlay tag on every design (the stage dumps doubled) and of reproducing DEPTH exactly -
 SP@ is PUSH(dsp + CELL_BYTES), its value dsp before the push because the macro moves dsp
 first. HANDOFF.md item 5a: worth it if seed 51 shows the corpus still weighs.
+
+## Iteration 300 - 2026-10-15 - Claude
+
+**Seed 51 processed - small, the fastest +4.9% - the after-seed-51 batch applied, and
+HANDOFF.md's routine repaired.** Both packs clean (tests PASS, the generators 47 paths, 7
+of 7, the jail PASS); the measured-here patch the laptop's stash again. The evolution ran
+7 h 32 min of the owner's 10 hours, 34,690 designs measured, 10,684 screened, 217 deaths
+all refused before running. The verdict: fastest +4.9% (just under its 5%), smallest
++0.00%, memory +0 KB, hypervolume +1.7%, best Q +0.8% - small; the Q-best of all runs
+seed 51's f6b175f69c (Q 0.216). What the first run of the after-seed-50 batch took
+(seed-facts.py, generic since 299): opinline on 64 of 162; 2@ on 52 - the JIT designs,
+five of the six fastest (the JIT translates it since 291), but 8 of the 69 without the JIT;
+knumber 8 of 69 klookup designs; tailpn and tail engines none. Predictions two of six -
+every miss on how widely a new gene would be taken: a full format-10 list makes a new
+opcode cost an interpreted design a slot.
+
+The batch - alignhot; > and 0= - applied, then on master: run-tests PASS (57 generator
+paths), the gate 241 of 241 (seed 51's front 162, the joint front 131), ans-check 0 of 35
+differ. NEXT-RUN: `seed 52 tag2 10h then experiment compare-fronts.py --rounds 6
+--frontier --cpus 2,8` - 10 hours, seed 51's, for the owner to confirm; the comparison is
+session 45; its predictions written.
+
+HANDOFF.md, found broken while updating it: from Iteration 293 my edits found open items
+by `index('\n3. ')` and the like - and the routine, numbered too, comes first: its steps
+3-5 had been overwritten with open-item text, and the open items left stale since 290.
+The routine's steps restored from Iteration 292's text; the open items rebuilt from the
+texts the edits had written; a lesson added.

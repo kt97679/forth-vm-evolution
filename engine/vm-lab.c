@@ -1830,6 +1830,8 @@ L_x_plusstore: { UNS64 a_ = DS0; CELL(a_) += DS1; dsp += 2 * CELL_BYTES; } NEXT(
 L_x_qdup:      if (DS0) { UNS64 v_ = DS0; PUSH(v_); } NEXT();                    /* ?DUP    */
 L_x_2fetch:    { UNS64 a_ = DS0; DS0 = CELL(a_ + CELL_BYTES); PUSH(CELL(a_)); } NEXT();   /* 2@ (Iteration 290) */
 L_x_2store:    { UNS64 a_ = DS0; CELL(a_) = DS1; CELL(a_ + CELL_BYTES) = DS2; dsp += 3 * CELL_BYTES; } NEXT(); /* 2! */
+L_x_gt:        { INT64 b_ = (INT64)DS0, a_ = (INT64)DS1; dsp += CELL_BYTES; DS0 = -(UNS64)(a_ > b_); } NEXT();   /* > (Iteration 299) */
+L_x_zeq:       DS0 = -(UNS64)(DS0 == 0); NEXT();                                  /* 0= */
 L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; TRACE_CALL(); } NEXT();    /* EXECUTE */
 L_x_i:         PUSH(RS); NEXT();                                                    /* I       */
 L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */

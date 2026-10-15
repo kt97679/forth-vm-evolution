@@ -369,3 +369,29 @@ format-10 pool, opinline, tailpn, knumber.
 6. Crossover 30-37%.
 
 (Iteration 297: seed 51 runs 10 hours, the owner's change after these were written; they stand.)
+
+## Seed 51, scored (Iteration 300)
+
+1. Not small: new genes - **wrong**: small, though the fastest moved +4.9%, just under
+   its 5%.
+2. knumber on at least half of the front's klookup designs - **wrong**: 8 of 69. Put
+   first, it pushes a word out of a full list; mostly not worth it.
+3. opinline on at least a quarter of the front - **right**: 64 of 162.
+4. A tail engine on the front again, with tailpn - **wrong**: none.
+5. 2@ or 2! on a quarter of the designs without the JIT - **wrong**: 8 of 69. The JIT
+   designs took 2@ - five of the six fastest.
+6. Crossover 30-37% - **right**: 34.6%.
+
+Two of six: every miss on how widely a new gene would be taken. The slots of a full
+format-10 list are the price an interpreted design pays for a new opcode.
+
+## Seed 52, predicted (Iteration 300)
+
+The after-seed-51 batch: alignhot; > and 0= as opcodes.
+
+1. Small: alignhot reaches few designs (20 of seed 50's 187 could take it), and > and 0=
+   compete for the same slots 2@ did.
+2. alignhot on fewer than 10 of the front.
+3. > or 0= expressed on at least 10 of the front - the JIT designs, as with 2@.
+4. opinline on at least a third of the front (64 of 162 in seed 51).
+5. Crossover 30-38%.

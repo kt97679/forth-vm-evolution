@@ -112,6 +112,8 @@ HOT = {
  'L_x_plusstore': '{ UNS64 a_ = tos; CELL(a_) += NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',
  'L_x_2fetch': '{ UNS64 a_ = tos; tos = CELL(a_ + CELL_BYTES); PUSHT(CELL(a_)); } NEXT();',   # Iteration 290: 2@
  'L_x_2store': '{ UNS64 a_ = tos; CELL(a_) = NOS; CELL(a_ + CELL_BYTES) = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; } NEXT();',   # 2!
+ 'L_x_gt': 'tos = -(UNS64)((INT64)NOS > (INT64)tos); dsp += CELL_BYTES; NEXT();',   # Iteration 299: >
+ 'L_x_zeq': 'tos = -(UNS64)(tos == 0); NEXT();',   # 0=
  'L_x_do':    '{ RPUSH(NOS); RPUSH(tos); tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',
  'L_x_qdo':   '{ UNS64 n2_ = tos, n1_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; '
               'if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += BROFF(ip); } NEXT();',

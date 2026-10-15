@@ -418,7 +418,7 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
 # Only these two, which never look at their caller's return address (I J
 # UNLOOP (DO) do), and only where the design has them: no recorded design.
 _OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')   # TABS>BL gone: Iteration 148     # Iteration 54: the input side's too
-if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!')   # Iteration 92: the gene opbody; 290: 2@ 2!
+if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!', '>', '0=')   # Iteration 92: the gene opbody; 290: 2@ 2!
 for _n in _OPB:
     if _n not in G['X_OPS10']: continue
     _at = {a: n for a, n in G['ops10_at']().items() if n == _n}
