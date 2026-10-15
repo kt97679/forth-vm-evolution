@@ -59,7 +59,7 @@ def misses(eng, img, wl, pw, srcdir, perf):
         if r.returncode: sys.exit('missmap: perf report exited %d - perf said:\n%s' % (r.returncode, r.stderr[-1500:]))
         for l in r.stdout.splitlines():
             m = REPORT.match(l)
-            if m: got[handler(srcdir, m.group(3), int(m.group(4))) or '(not the engine\'s source: the JIT\'s code)'] += int(m.group(2))
+            if m: got[handler(srcdir, m.group(3), int(m.group(4))) or '(no line in the engine\'s source: the JIT\'s code, or unresolved)'] += int(m.group(2))
             elif re.match(r'^\s*[\d.]+%\s+\d+\s+\S', l): got['(no source line)'] += int(l.split()[1])
     return got
 
@@ -86,6 +86,9 @@ if __name__ == '__main__':
             access.keep()
             d = os.path.join(E.EV, 'missmap-' + name.replace(' ', ''))
             eng, img = E.build(E.canon(g), d); pw = E.private_work(d)     # build() says where they are
+            if os.path.exists(eng + '.full'): eng += '.full'   # the same code with its symbols and -g's lines: build() strips
+                                                              # the engine it measures (Iteration 297: the first laptop run's
+                                                              # samples all came back without a source line)
             for wl in WORKLOADS:
                 got = misses(eng, img, wl, pw, d, PERF)
                 tot = sum(got.values()) or 1

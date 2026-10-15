@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 296.
+- master: Iteration 297.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md); `results/pending` does not exist.
@@ -56,9 +56,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **The after-seed-50 batch is applied** (Iteration 296, four patches -
   results/applied-after-seed50/ORDER.md): 2@ and 2! as opcodes, opinline, tailpn,
   knumber. New genes: the stopping rule counts afresh.
-- **Seed 51 is the laptop's next run** (Iteration 296): `seed 51 tag2 12h then
-  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 12 hours, the
-  owner's. Before it, the owner runs missmap.py and counters.py --extra (each its own
+- **Seed 51 is the laptop's next run** (Iteration 296): `seed 51 tag2 10h then
+  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 10 hours, the
+  owner's (12 when its predictions were written). Before it, the owner runs missmap.py and counters.py --extra (each its own
   command - perf-hold.py holds the setting for one measurement a chain). Its
   predictions: the end of `results/predictions.md`.
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
@@ -76,15 +76,16 @@ About 20 minutes of machine time for build, tests and gates.
 3. The clang tail engine with preserve_none and musttail: pending as the gene tailpn
    (after-seed-50 patch 3; the laptop's clang-20). Seed 51's front will say whether
    tail engines come back with it.
-4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md):
-   lab/evolve/missmap.py is ready - the owner's, between runs: `sh lab/evolve/next-run.sh
-   experiment missmap.py` - then make the handlers it names branch-light. The JIT's
-   ackermann misses are its native call and ret past the return predictor's depth (read
-   in jit.c, Iteration 294): a candidate gene, EXIT as pop and jmp, not built.
-5. The IP-update loop form: results/drafts/iploop-plan.md - three explanations of the
-   evolved designs' lower IPC; first the laptop's `counters.py --extra
-   stalled-cycles-frontend:u,stalled-cycles-backend:u` (with missmap.py, between runs),
-   then a hand variant, then perhaps a gene.
+4. The interpreter's mispredictions (results/counters-amd-ryzen-7-pro-8840hs.md): the
+   first missmap.py run attributed nothing - it ran the stripped engine; it runs
+   engine.full now (Iteration 297). Run it again between runs; then make the handlers it
+   names branch-light. The JIT's ackermann misses: native ret past the return
+   predictor's depth - a candidate gene, not built.
+5. The front end (Iteration 297): the evolved interpreted designs stall there about
+   half their cycles on compute work (s6 18-36%, the JIT 1-6%) - the IP-update loop form
+   set aside (results/drafts/iploop-plan.md). Next: which part - counters.py --extra with
+   Zen 4's instruction-cache, op-cache and instruction-TLB events (names from `perf
+   list` on the laptop) - and a gene aligning handler entries to 32 or 64 bytes.
 6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
    when a patch changes `forth/kernel.4`), then ONE background chain: build
    (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`

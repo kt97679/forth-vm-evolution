@@ -367,3 +367,5 @@ format-10 pool, opinline, tailpn, knumber.
 5. 2@ or 2! among the format-10 words of at least a quarter of the front's designs
    without the JIT.
 6. Crossover 30-37%.
+
+(Iteration 297: seed 51 runs 10 hours, the owner's change after these were written; they stand.)

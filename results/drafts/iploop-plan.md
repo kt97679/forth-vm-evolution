@@ -39,3 +39,14 @@ measurement not made yet.
    A drop says 1; none says 2.
 3. Only then a gene: dispatch prefetch in the generators (1), or more of the stack in
    registers (2) - or neither (3).
+
+## The measurement, made (Iteration 297)
+
+Front-end stalls, as a share of cycles (results/counters-amd-ryzen-7-pro-8840hs.md):
+the fastest interpreted design 48.9% on fib and 56.8% on bubble, the smallest 48-56%,
+s6 18-36%, the JIT's code 1-6%; back-end stalls not countable on this CPU. Explanation
+3, the front end, holds at least half the cycles of the evolved interpreted designs on
+compute work - the IP-update loop form (1) is not what bounds them, and is set aside.
+Next, the front end's parts: Zen 4's instruction-cache, op-cache and instruction-TLB
+events (counters.py --extra, their names from `perf list` on the laptop), and a gene
+aligning handler entries to 32 or 64 bytes.

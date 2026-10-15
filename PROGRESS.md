@@ -5891,3 +5891,18 @@ the joint front 128), ans-check 0 of 35 differ. New genes: the stopping rule cou
 afresh. NEXT-RUN: `seed 51 tag2 12h then experiment compare-fronts.py --rounds 6
 --frontier --cpus 2,8`; its predictions written; the comparison is session 44. Before
 seed 51 the owner runs missmap.py and counters.py --extra, each its own command.
+
+## Iteration 297 - 2026-10-15 - Claude
+
+**The two laptop measurements before seed 51: the front end, and a missmap.py that ran
+the wrong binary.** counters.py --extra (front- and back-end stalls; this CPU counts only
+the front end's): the evolved interpreted designs stall in the front end about half
+their cycles on compute work - the fastest without the JIT 48.9% on fib, 56.8% on bubble,
+mispredicting 0.16 and 0.39 a thousand there; the smallest 48-56%; s6 18-36%; the JIT
+1-6%. The IP-update loop form, a back-end chain, is not what bounds them: set aside
+(results/drafts/iploop-plan.md). Next: which part of the front end (Zen 4's cache and TLB
+events), and a gene aligning handler entries - align1 only takes alignment away.
+missmap.py attributed nothing - every sample without a source line: build() strips the
+engine and keeps engine.full, and the tool ran the stripped one. It runs engine.full now,
+tried against a stand-in perf that refuses a stripped engine. Nothing found asks for a
+change before seed 51; seed 51 set to 10 hours (the owner).

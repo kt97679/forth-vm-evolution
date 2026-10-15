@@ -83,3 +83,55 @@ cost is an assumption (Zen 4's penalty, 12 to 18 cycles), not a count:
   the interpreted designs return through an indirect jump the history-based predictor
   follows. No fault: a candidate gene - the JIT's EXIT as pop and jmp - worth perhaps
   ackermann's share of the misses, a sixth of the geometric mean; not built.
+
+## Iteration 297: where the cycles stall
+
+counters.py --extra stalled-cycles-frontend:u,stalled-cycles-backend:u on the laptop
+(pack forth-vm-evolution-counters-126cd85c9-fury-20261015-023821), the newest front then
+seed 50's: s6, e23b0e4770 (fastest with the JIT), 658ed9b9f8 (fastest without),
+4c2b4e4485 (smallest). This CPU and perf 6.8 count front-end stalls - cycles the
+dispatch had no operation to take - but not back-end ones (n/a).
+
+| design | workload | cycles (M) | instructions per cycle | branch misses per 1k instructions | misses per branch | stalled-cycles-frontend:u, of cycles | stalled-cycles-backend:u, of cycles |
+|---|---|---|---|---|---|---|---|
+| s6 | kernel | 31.7 | 2.46 | 0.69 | 0.31% | 42.5% | n/a |
+| s6 | fib | 196.5 | 3.84 | 0.43 | 0.20% | 18.0% | n/a |
+| s6 | corpus | 158.6 | 2.47 | 0.46 | 0.21% | 42.7% | n/a |
+| s6 | loop | 342.8 | 3.31 | 0.01 | 0.00% | 27.1% | n/a |
+| s6 | bubble | 145.3 | 2.76 | 0.21 | 0.09% | 36.0% | n/a |
+| s6 | ackermann | 58.0 | 2.82 | 0.10 | 0.04% | 33.0% | n/a |
+| e23b0e4770 | kernel | 9.8 | 2.27 | 3.62 | 2.22% | 32.7% | n/a |
+| e23b0e4770 | fib | 38.5 | 5.11 | 0.05 | 0.05% | 3.4% | n/a |
+| e23b0e4770 | corpus | 33.6 | 2.15 | 3.22 | 1.88% | 34.4% | n/a |
+| e23b0e4770 | loop | 12.5 | 5.50 | 0.12 | 0.10% | 1.1% | n/a |
+| e23b0e4770 | bubble | 11.5 | 4.62 | 0.25 | 0.25% | 6.0% | n/a |
+| e23b0e4770 | ackermann | 15.2 | 3.57 | 2.56 | 1.75% | 11.7% | n/a |
+| 658ed9b9f8 | kernel | 15.7 | 1.63 | 7.49 | 3.77% | 48.9% | n/a |
+| 658ed9b9f8 | fib | 190.5 | 2.30 | 0.16 | 0.08% | 48.9% | n/a |
+| 658ed9b9f8 | corpus | 34.8 | 1.71 | 6.99 | 3.54% | 46.1% | n/a |
+| 658ed9b9f8 | loop | 46.7 | 3.35 | 0.05 | 0.03% | 0.5% | n/a |
+| 658ed9b9f8 | bubble | 62.7 | 1.96 | 0.39 | 0.22% | 56.8% | n/a |
+| 658ed9b9f8 | ackermann | 46.8 | 2.81 | 0.10 | 0.06% | 35.8% | n/a |
+| 4c2b4e4485 | kernel | 63.5 | 1.35 | 8.33 | 4.26% | 54.4% | n/a |
+| 4c2b4e4485 | fib | 191.2 | 2.99 | 0.21 | 0.11% | 28.4% | n/a |
+| 4c2b4e4485 | corpus | 382.8 | 1.45 | 4.01 | 1.95% | 55.8% | n/a |
+| 4c2b4e4485 | loop | 510.0 | 1.89 | 0.02 | 0.01% | 53.6% | n/a |
+| 4c2b4e4485 | bubble | 178.2 | 1.79 | 0.30 | 0.16% | 55.9% | n/a |
+| 4c2b4e4485 | ackermann | 66.0 | 2.09 | 0.20 | 0.11% | 48.2% | n/a |
+
+- **The evolved interpreted designs are front-end bound on compute work**: 658ed9b9f8
+  stalls in the front end 48.9% of its cycles on fib and 56.8% on bubble, where it
+  mispredicts 0.16 and 0.39 branches per thousand instructions - waiting for code, not
+  recovering from a wrong guess; the smallest 48-56% nearly everywhere; s6 18-36%. The
+  JIT's native code hardly stalls there (1.1-6.0%) and runs 4.6-5.5 instructions a cycle.
+- So the IP-update loop form - a back-end chain - is not what bounds them
+  (results/drafts/iploop-plan.md, its explanation 3, the front end). Next: which part of
+  the front end - Zen 4's own events for the instruction cache, the op cache and the
+  instruction TLB, through counters.py --extra - and, as a gene, handler entries aligned
+  to 32 or 64 bytes (align1 only takes alignment away).
+- loop is the exception: tiny, its loops opcodes - 0.5% and 1.1% front-end stalls.
+
+missmap.py's first laptop run (pack forth-vm-evolution-missmap-126cd85c9-fury-20261015-
+023127) attributed nothing: every sample without a source line. evolve.build() strips the
+engine it measures and keeps the full one as engine.full; missmap.py ran the stripped one.
+It runs engine.full now - the same code at the same addresses, with -g's lines.
