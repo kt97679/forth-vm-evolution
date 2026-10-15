@@ -52,6 +52,23 @@ another program.
   7) or the loop's frame on the return stack. Next: dump GD1's compiled bytes and the
   JIT's translation of it, against the same loop compiled with the loop words as calls.
 
+## The condition (Iteration 311)
+
+- **The compiled code is right.** GD1's bytes, dumped without running it (a BEGIN WHILE
+  loop, no DO): (DO), I, (LOOP) and the operand 254 255 - a 16-bit -2 from the operand's
+  own address, pointing back at I - then EXIT. The JIT's kind 7 is exactly that: the
+  operand is not the fault.
+- **The JIT's loop support decides it**: with jitloop on, the micro-program prints 3 2 1;
+  with the cached top of stack off (tos 0), 3 2 1. The crash needs jit, the loop words as
+  one-byte format-10 opcodes in code compiled at run time (rtloop; folds only decides
+  whether they are opcodes), **jitloop off and tos on**.
+- On seed 52's front, 88 of the 89 JIT designs have jitloop: the evolution had kept out
+  of this region because designs in it die - the two deaths are where it went back in.
+- So the fault is in the JIT's translation of a loop without jitloop's support, with the
+  top of the stack cached - the likeliest mechanism, a cached top not kept consistent
+  across the loop's operations. Next: jit.c and the converter's table - what (DO), I and
+  (LOOP) translate to without --jitloop, and how the cached top is passed across them.
+
 ## Next
 
 1. (done) Which test; 2. (done) which format-10 words.

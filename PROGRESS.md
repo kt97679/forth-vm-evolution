@@ -6138,3 +6138,14 @@ pair was wrong; and folds' part is indirect - reverted, the loop words are not f
 opcodes at all. Left: the JIT's translation of that run-time-compiled loop (results/drafts/
 jit-loop-crash.md).
 
+
+## Iteration 311 - 2026-10-15 - Claude
+
+**Seed runs paused (the owner, agreeing): the JIT fault first, then the new runner with the
+remote checks, then the (FIND) gene.** The fault's condition found: GD1's compiled bytes
+are right - (DO), I, (LOOP) and a 16-bit -2 back to I, the JIT's operand kind 7 exactly -
+and the crash needs jitloop off and the top of the stack cached: with jitloop on, or tos
+off, the micro-program prints 3 2 1. On seed 52's front 88 of the 89 JIT designs carry
+jitloop; the evolution had kept out of a region where designs die, and the two deaths are
+where it went back in. Next: the JIT's loop translation without jitloop, and the cached top
+across it (results/drafts/jit-loop-crash.md). NEXT-RUN says paused.
