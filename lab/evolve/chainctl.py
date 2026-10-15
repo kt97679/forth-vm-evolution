@@ -196,7 +196,9 @@ def cmd_pack(chain, status):
 
 
 def evolution_progress(repo):
-    lines = last_lines(os.path.join(repo, 'build/evolve/evolve.log'), 200)
+    # next-run.sh appends the evolution's output to evolve.log at the clone's top (Iteration 313's
+    # ticker read build/evolve/'s, and said "no generation yet" through a whole run)
+    lines = last_lines(os.path.join(repo, 'evolve.log'), 200) or last_lines(os.path.join(repo, 'build/evolve/evolve.log'), 200)
     gen = next((l.strip() for l in reversed(lines) if l.strip().startswith('generation ')), '')
     try:
         with open(os.path.join(repo, 'build/evolve/db.jsonl'), 'rb') as f: n = sum(1 for _ in f)
@@ -205,6 +207,7 @@ def evolution_progress(repo):
 
 
 def cmd_ticker(pid, until, every=300):
+    every = int(os.environ.get('TICK_EVERY', every))      # a test's shorter interval
     repo = os.getcwd()
     while True:
         for _ in range(every):

@@ -24,4 +24,4 @@ echo "next-run: it is set to 2 only while counters.py measures, and put back aft
 sudo -v || { echo "next-run: sudo refused - nothing started" >&2; exit 1; }
 # HUP ignored from the fork on (an ignored signal stays ignored across exec), then a session of
 # its own: a terminal closing as this returns - a race on a busy machine - cannot end the hold
-sudo -n -b sh -c 'trap "" HUP; exec setsid python3 "$0" "$@" < /dev/null > /dev/null 2>&1' "$(cd "$(dirname "$0")" && pwd)/perf-hold.py" "$1" "$2" "$3" || { echo "next-run: perf-hold.py did not start - nothing started" >&2; exit 1; }
+sudo -n -b sh -c 'trap "" HUP; exec setsid python3 "$0" "$@" < /dev/null > /dev/null 2>&1' "$(cd "$(dirname "$0")" && pwd)/perf-hold.py" "$1" "$2" "$3" ${4:+"$4"} || { echo "next-run: perf-hold.py did not start - nothing started" >&2; exit 1; }

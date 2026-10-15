@@ -6190,3 +6190,22 @@ recorded FAILED - now STOPPED); a crash, every process killed -9 - archived as i
 the next start. A bug found by reading before testing: the pack line's expansion gave a path
 "chain.log" plus the chain's path. Not yet: the seed step under the chain (a miniature seed
 chain), the root-owned files path; perf-hold for every measurement; the remote checks.
+
+## Iteration 314 - 2026-10-15 - Claude
+
+**The runner: the seed path tested, root's files, perf-hold for every measurement.** A
+miniature chain of the real shape on the VM - a measurement step, `seed 99 tag2 nocarry`
+(population 4, 2 generations), a comparison step: done, one archive; the fresh seed archived
+the previous records and rebuilt in 22 s, the tests kept from the first step; its pack has every
+file the processing reads. The test found a fault: the ticker read build/evolve/evolve.log,
+next-run.sh writes the clone's own - "no generation yet" through the run; fixed, and checked
+against the test's log. Root-owned files: found, sudo refused, nothing started; given back, the
+start went on (a second chain, which also tested the changed detach and stop).
+
+perf-hold.py now takes the chain's directory: it holds for each measurement in turn, the old
+value back after each, and ends when the chain does - its status final or its session gone; it
+gives its log to the directory's owner after every line, and counters.py's PerfHold clears an
+earlier measurement's DONE. The chain's directory is made before perf-hold starts. Tested for
+real on the VM: two measurements, 2 during each and 3 after; the chain done - the helper gone;
+the chain killed with its status left running - gone too; the log claude's. Left before seed
+53: the remote checks.

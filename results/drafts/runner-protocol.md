@@ -194,8 +194,22 @@ status during and after; monitor on a finished chain; stop in the middle of the 
 processes, none after, stopped, archived; a crash - every process killed -9, the status left
 "running" - archived as interrupted by the next start, which then ran.
 
-**Not yet tested**: the seed step's chain changes (the ticker, a fresh seed's rebuild after the
-first step's checks) - a miniature seed chain before seed 53; the root-owned files path.
-**Not yet built**: perf-hold holding for every measurement of a chain and chowning what it makes;
-the remote checks (dream.lan, rage.lan) started and gathered by the chain.
+**Tested too (Iteration 314)**: a miniature chain of the real shape - a measurement step, then
+`seed 99 tag2 nocarry` (population 4, 2 generations), then a comparison step: the fresh seed
+archived the previous records, rebuilt in 22 s without the tests (the first step's kept), its
+ticker's lines through the run, its pack - every file the processing reads - and both other
+steps' in one archive, done. The ticker read the wrong evolve.log (build/evolve/'s; next-run.sh
+writes the clone's top-level one) and said "no generation yet" through the run - found by this
+test, fixed. Root-owned files: one planted in a clone - found, sudo refused (the VM's claude
+has none), "nothing started", no chain made; given back by hand, the start went on.
+
+**perf-hold for every measurement (Iteration 314)**: with the chain's directory it holds for
+each measurement in turn - the old value back after each, START and DONE cleared - and ends
+when the chain does (its status final, or its session gone); its log given to the directory's
+owner after every line. The chain's directory is now made before perf-hold is started, so it
+can watch it. Tested for real on the VM (the setting writable as root): 3, then 2 during each
+of two measurements and 3 after each; the chain marked done - the helper gone; a chain killed
+with its status left running - the helper gone; its log owned by claude both times.
+
+**Not yet built**: the remote checks (dream.lan, rage.lan) started and gathered by the chain.
 

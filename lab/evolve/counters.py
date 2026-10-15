@@ -126,6 +126,8 @@ class PerfHold:
     ask, sets the counters while this measures - announce, wait for it, say done."""
     def __init__(self, start, done): self.start, self.done = start, done
     def __enter__(self):
+        try: os.remove(self.done)                   # Iteration 314: an earlier measurement's, in a chain
+        except OSError: pass
         with open(self.start, 'w') as f: f.write('%d\n' % os.getpid())
         for _ in range(60):
             if int(open(PARANOID).read()) <= 2: return self

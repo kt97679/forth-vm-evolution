@@ -248,23 +248,27 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # about to go to the background, where sudo cannot ask: ask now, once, and leave
     # perf-hold.py to hold the setting while counters.py measures (perf-hold-start.sh).
     # A later step of the chain comes back here detached, with PERF_HOLD_START set.
-    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)   # Iteration 294: missmap.py too
-        if [ -z "${PERF_HOLD_START:-}" ]; then
-            PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
-            export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain
-            PERF_HOLD_START=$RUNS/perf-hold-$(date +%Y%m%d-%H%M%S).start; PERF_HOLD_DONE=${PERF_HOLD_START%.start}.done
-            sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" || die "counters.py cannot have perf's counters - nothing started"
-            export PERF_HOLD_START PERF_HOLD_DONE
-        fi;;
-    esac
-    # Iteration 313: a chain - every step of the line - is one session, one directory, one log
-    # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
+    # Iteration 314: the chain's directory made before anything is left behind it - perf-hold
+    # watches it for the chain's end; the first detach is the one before the session file exists
     if [ -z "${NEXT_RUN_CHAIN:-}" ]; then
         NEXT_RUN_CHAIN=$RUNS/chain-$(date -u +%Y%m%d-%H%M%S)
         mkdir -p "$NEXT_RUN_CHAIN/packs"
         echo "$*${THEN:+ then $THEN}" > "$NEXT_RUN_CHAIN/line"; echo "$HEAD" > "$NEXT_RUN_CHAIN/head"
         echo running > "$NEXT_RUN_CHAIN/status"; : > "$NEXT_RUN_CHAIN/steps"
         export NEXT_RUN_CHAIN
+    fi
+    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)   # Iteration 294: missmap.py too
+        if [ -z "${PERF_HOLD_START:-}" ]; then
+            PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
+            export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain
+            PERF_HOLD_START=$RUNS/perf-hold-$(date +%Y%m%d-%H%M%S).start; PERF_HOLD_DONE=${PERF_HOLD_START%.start}.done
+            sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" || die "counters.py cannot have perf's counters - nothing started"
+            export PERF_HOLD_START PERF_HOLD_DONE
+        fi;;
+    esac
+    # Iteration 313: a chain - every step of the line - is one session, one directory, one log
+    # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
+    if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
         NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
         say "going on in the background, as one chain - watch it with"
         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
