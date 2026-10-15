@@ -86,6 +86,17 @@ for name, part in (('the small third', fs[:third]), ('the middle', fs[third:-thi
 for k in ('jit', 'jitx', 'jitloop', 'jitinl', 'jittail', 'jitos', 'tail', 'msc', 'tos', 'tag2', 'guard', 'rtloop', 'fbuf'):
     c = collections.Counter(val(ex(r), k) for r in fr)
     print('  %-8s on the front: %s' % (k, ', '.join('%s %d' % kv for kv in sorted(c.items()))))
+# Iteration 299: every other late gene the front carries - a new gene needs no line here (seeds
+# 48-50's factor, lto, clang, jitk, gotodup were counted by hand) - and the format-10 words it expresses
+SHOWN = {'jit', 'jitx', 'jitloop', 'jitinl', 'jittail', 'jitos', 'tail', 'msc', 'tos', 'tag2', 'guard', 'rtloop', 'fbuf', 'fsys', 'threads', 'klookup'}
+off = []
+for k in [k for k in E.LATE if k not in SHOWN] + [k for k in ('compiler', 'align1', 'alignfn', 'nogcse', 'noreorder') if k not in E.LATE]:
+    c = collections.Counter(val(ex(r), k) for r in fr)          # val() gives strings: '0' is off
+    if set(c) == {'0'}: off.append(k); continue
+    print('  %-8s on the front: %s' % (k, ', '.join('%s %d' % kv for kv in sorted(c.items()))))
+if off: print('  at 0 on every design of the front: %s' % ', '.join(off))
+w = collections.Counter(x for r in fr for x in (ex(r).get('ops10') or []))
+print('  format-10 words expressed on the front (of %d designs): %s' % (len(fr), ', '.join('%s %d' % kv for kv in w.most_common())))
 
 seen = set(R); rnd = random.Random(len(R)); par = [r['id'] for r in fr]
 rep = {'mutation-only': [0, 0], 'crossover': [0, 0]}; t0 = time.time()

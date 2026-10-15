@@ -1,0 +1,114 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 4afa5f7..1200f5b 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1830,6 +1830,8 @@ L_x_plusstore: { UNS64 a_ = DS0; CELL(a_) += DS1; dsp += 2 * CELL_BYTES; } NEXT(
+ L_x_qdup:      if (DS0) { UNS64 v_ = DS0; PUSH(v_); } NEXT();                    /* ?DUP    */
+ L_x_2fetch:    { UNS64 a_ = DS0; DS0 = CELL(a_ + CELL_BYTES); PUSH(CELL(a_)); } NEXT();   /* 2@ (Iteration 290) */
+ L_x_2store:    { UNS64 a_ = DS0; CELL(a_) = DS1; CELL(a_ + CELL_BYTES) = DS2; dsp += 3 * CELL_BYTES; } NEXT(); /* 2! */
++L_x_gt:        { INT64 b_ = (INT64)DS0, a_ = (INT64)DS1; dsp += CELL_BYTES; DS0 = -(UNS64)(a_ > b_); } NEXT();   /* > (Iteration 299) */
++L_x_zeq:       DS0 = -(UNS64)(DS0 == 0); NEXT();                                  /* 0= */
+ L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; TRACE_CALL(); } NEXT();    /* EXECUTE */
+ L_x_i:         PUSH(RS); NEXT();                                                    /* I       */
+ L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 7ac5434..842de5c 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -49,6 +49,7 @@ designs changing id - every one rtfuse=0 leaving the identity.
+ | superinstructions: primitive pairs as single opcodes, drawn from the parent's own hottest pairs (`design_pairs`, profiled per design), in the slots folds and specialisations leave free | gforth's prims2x, relf S3, this lab's pair profile | one dispatch instead of two, and one byte instead of two; folds, specialisations and pairs compete for the same opcodes |
+ | format-10 opcodes (`ops10`): `EXECUTE`, `I`, `(DO)`, `+!`, `?DUP`, `UNLOOP`, `J`, and the loop words with an operand, `(LOOP)`, `(?DO)`, `(+LOOP)`, `(LEAVE)` - kernel colon words - and the short branches `?BRANCH8`, `BRANCH8` as opcodes, from the free slots before the pairs, each only where its compiled body is exactly the definition the engine implements | relf's format 10 | a call and a return become one dispatch; the words compete with pairs and folds for slots |
+ | 2@ and 2! in `ops10`, and in `opbody`'s list (Iteration 290): the double-cell fetch and store, six dispatches a call each as kernel colon words, one as an opcode - bubble's inner loop calls them at run time (2@ three times, 2! once), the corpus's tester too: 16-42% of bubble's dispatches inside them (results/source-audit-2.md). Code compiled at run time calls the words, so opbody's [opcode EXIT] bodies carry the saving there | this lab: word-cost.py | bubble -11% to -28% of its dispatches, priced |
++| > and 0= in `ops10`, and in `opbody`'s list (Iteration 299): the compare and the test as opcodes - > is `SWAP <` (the engine's L_gt is <, its name historical), 0= is `0 =`; code compiled at run time calls them: bubble's compare 11.7% of its dispatches, ackermann's test 7.7%, on seed 50's fastest design without the JIT (results/source-audit-3.md). The JIT translates both (GT; LIT and EQ) | this lab: hotwords.py, word-cost.py | 658ed9b9f8 with them first, opbody and opinline: bubble -11.7%, ackermann -7.7% - and, its slots full, the kernel +5.5% and the corpus +8.7% for the words they displaced: evolution places them |
+ | the [opcode EXIT] words among the primitives (`opinline`: 0, 1; Iteration 292): placed before (PRIMITIVES-END), where PRIMITIVE? asks by address, so the run-time compiler copies their opcode in place of a call - code compiled at run time (bubble's 2@ and 2!) saves the call and the EXIT. A word defined once only; a design with no [opcode EXIT] word does not express it. For a JIT design it can cost: an inlined opcode with no stencil leaves its word to the interpreter | this lab: word-cost.py | c9369657e4 with 2@ 2! and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%; -41.6% from 12,759,474 before 2@ 2!) |
+ | the tail-call engine with preserve_none and musttail (`tailpn`: 0, 1; Iteration 293): clang 19+'s calling convention that saves no register on every handler, and musttail on every handler-to-handler call (tools/gen-tail.py --preserve-none) - CPython 3.14's tail-call interpreter. Built with the newest clang here that takes them (clang_pn(): clang-20 on the owner's laptop); expressed only on a clang tail engine, only where such a clang is installed | CPython 3.14; this lab: engines-check | s6's engine 14,232 bytes, 14,680 without (no register saved) - speed for the laptop's runs to judge |
+ | NUMBER? as one opcode (`knumber`: 0, 1; Iteration 295): forth/cv8b-knumber.4, after klookup's overlay - (NUMBER?), the kernel's NUMBER? with BASE @ and DPL given (its failures 0 0 0: only INTERPRET calls it, and aborts or throws), and NUMBER?8, whose body NUMBER? takes; the opcode's C (numberq, vm-lab.c) is the same steps. Put first in the design's format-10 list, so it takes a slot from the last word there. Expressed only with klookup | this lab: word-cost.py | c9369657e4's corpus 4,529,779 -> 4,067,754 dispatches (-10.2%, NUMBER? 10.1% -> 0.9%); 927064f127, its slots full: the corpus -4.9%, the kernel +5.3% - the word it displaced |
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 56028a3..8624833 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -713,3 +713,7 @@ its kernel body as the converter reads it in sod16.py's table. Five engines-chec
+ Iteration 298: the gene alignhot - GCC's -falign-jumps/-labels/-functions at 32:11, 32
+ or 64 bytes, for the front end the laptop's counters found the evolved interpreted
+ designs stalling in; GCC only, not with align1 or alignfn. Five engines-check paths.
++
++Iteration 299: > and 0= join the ops10 pool and opbody's list (handlers L_x_gt and
++L_x_zeq; their kernel bodies were in sod16.py's table already). Five engines-check
++paths, with opinline. The audit that found them: results/source-audit-3.md.
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 0ca6b72..a37aaa8 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -84,6 +84,8 @@ VARIANTS += [('klookup, knumber', dict(KN), ['knumber']), ('klookup, knumber, ca
+ VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot=1), ['alignhot']),   # Iteration 298
+              ('handler entries aligned to 32', dict(alignhot=2), ['alignhot']), ('handler entries aligned to 64', dict(alignhot=3), ['alignhot']),
+              ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot']), ('aligned to 64, tail calls', dict(alignhot=3, tail=1), ['alignhot', 'tail'])]
++VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops10') or []), opbody=1, opinline=1), need + ['ops10', 'opinline'])   # Iteration 299
++             for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+ for name, genes, must in VARIANTS:
+     g = E.canon(dict(S6, **genes))
+     ex = E.express(g)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 0f1b7c0..3648abf 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -95,7 +95,7 @@ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (resu
+ HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
+ HOTWORDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotwords-v1.json')   # Iteration 267: the gene factor's cold words (hotwords.py)
+ FACTORV = (0, 1e-3, 1e-2, 2.0)  # Iteration 267: factor - a word below this share of the reference dispatches is factored (2.0: every word)
+-OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!')   # Iteration 92: their bodies [opcode EXIT], the gene opbody; 290: 2@ 2!
++OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!', '>', '0=')   # Iteration 92: their bodies [opcode EXIT], the gene opbody; 290: 2@ 2!
+ HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
+ CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
+            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
+@@ -409,8 +409,9 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
+               '(PARSE)', 'HASH', 'PLACE',                # Iteration 54: ((PARSE): kinput's)
+               '(FIND)', '(>NUMBER)',                     # Iteration 57: the lookup, numbers (klookup's)
+               'I+',
+-              '2@', '2!']   # Iteration 290: bubble's and the corpus's double-cell words (results/source-audit-2.md)                                      # Iteration 60: I then + in run-time code (rtiplus's)
+-OPS10_LABEL = {'2@': 'L_x_2fetch', '2!': 'L_x_2store',   # Iteration 290
++              '2@', '2!',   # Iteration 290: bubble's and the corpus's double-cell words (results/source-audit-2.md)
++              '>', '0=']   # Iteration 299: bubble's compare, ackermann's test (results/source-audit-3.md)                                      # Iteration 60: I then + in run-time code (rtiplus's)
++OPS10_LABEL = {'2@': 'L_x_2fetch', '2!': 'L_x_2store', '>': 'L_x_gt', '0=': 'L_x_zeq',   # Iteration 290
+                '+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
+                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
+                '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+index c144ced..6e267c7 100644
+--- a/tools/gen-msc.py
++++ b/tools/gen-msc.py
+@@ -86,6 +86,8 @@ SPECS = {
+     'L_x_plusstore': (['x', 'a'], [], 'CELL(a) += x;'),
+     'L_x_2fetch':    (['a'], ['x1', 'x2'], '{ UNS64 a_ = a; x1 = CELL(a_ + CELL_BYTES); x2 = CELL(a_); }'),   # Iteration 290: 2@
+     'L_x_2store':    (['x1', 'x2', 'a'], [], '{ UNS64 a_ = a; CELL(a_) = x2; CELL(a_ + CELL_BYTES) = x1; }'),   # 2!
++    'L_x_gt':        (['a', 'b'], ['c'], 'c = -(UNS64)((INT64)a > (INT64)b);'),   # Iteration 299: >
++    'L_x_zeq':       (['a'], ['f'], 'f = -(UNS64)(a == 0);'),   # 0=
+     'L_x_do':        (['a', 'b'], [], 'RPUSH(a); RPUSH(b);'),
+     'L_x_execute':   (['x'], [], 'RPUSH(ip); ip = x;'),
+     'L_x_unloop':    ([], [], 'rp += 2 * CELL_BYTES;'),
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index 9f61a2b..f4d5d7e 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -112,6 +112,8 @@ HOT = {
+  'L_x_plusstore': '{ UNS64 a_ = tos; CELL(a_) += NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',
+  'L_x_2fetch': '{ UNS64 a_ = tos; tos = CELL(a_ + CELL_BYTES); PUSHT(CELL(a_)); } NEXT();',   # Iteration 290: 2@
+  'L_x_2store': '{ UNS64 a_ = tos; CELL(a_) = NOS; CELL(a_ + CELL_BYTES) = CELL(dsp + CELL_BYTES); tos = CELL(dsp + 2 * CELL_BYTES); dsp += 3 * CELL_BYTES; } NEXT();',   # 2!
++ 'L_x_gt': 'tos = -(UNS64)((INT64)NOS > (INT64)tos); dsp += CELL_BYTES; NEXT();',   # Iteration 299: >
++ 'L_x_zeq': 'tos = -(UNS64)(tos == 0); NEXT();',   # 0=
+  'L_x_do':    '{ RPUSH(NOS); RPUSH(tos); tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; } NEXT();',
+  'L_x_qdo':   '{ UNS64 n2_ = tos, n1_ = NOS; tos = CELL(dsp + CELL_BYTES); dsp += 2 * CELL_BYTES; '
+               'if (n1_ != n2_) { RPUSH(n1_); RPUSH(n2_); ip += 2; } else ip += BROFF(ip); } NEXT();',
+diff --git a/tools/layout.py b/tools/layout.py
+index 00083ee..13d7d87 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -418,7 +418,7 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
+ # Only these two, which never look at their caller's return address (I J
+ # UNLOOP (DO) do), and only where the design has them: no recorded design.
+ _OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')   # TABS>BL gone: Iteration 148     # Iteration 54: the input side's too
+-if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!')   # Iteration 92: the gene opbody; 290: 2@ 2!
++if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!', '>', '0=')   # Iteration 92: the gene opbody; 290: 2@ 2!
+ for _n in _OPB:
+     if _n not in G['X_OPS10']: continue
+     _at = {a: n for a, n in G['ops10_at']().items() if n == _n}

@@ -41,11 +41,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 298.
+- master: Iteration 299.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
-  results/applied-after-seed50/ORDER.md); `results/pending` holds the after-seed-51 batch (Iteration 298): the gene
-  alignhot.
+  results/applied-after-seed50/ORDER.md); `results/pending` holds the after-seed-51 batch: the gene alignhot (Iteration
+  298), > and 0= as opcodes (Iteration 299).
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -89,6 +89,9 @@ About 20 minutes of machine time for build, tests and gates.
    `sh lab/evolve/next-run.sh experiment counters.py --extra stalled-cycles-frontend:u,
    ic_tag_hit_miss.instruction_cache_miss:u,op_cache_hit_miss.op_cache_miss:u` (the
    owner's perf names Zen 4's events so) - and missmap.py again, each its own command.
+5a. ?STACK as an opcode (results/source-audit-3.md): 7.4% of the corpus's dispatches on
+   seed 50's fastest design without the JIT. It needs the stack's base, as DEPTH does:
+   an overlay's wrapper giving it S0 @, as knumber gives NUMBER? BASE @ - a gene.
 6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
    when a patch changes `forth/kernel.4`), then ONE background chain: build
    (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`
@@ -146,7 +149,9 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-1. Seed 51: process when its packs come, then apply results/pending (alignhot).
+1. Seed 51: process when its packs come, then apply results/pending (alignhot; > and
+   0=). seed-facts.py now reports every late gene and the format-10 words on the front
+   (Iteration 299) - seed 51's predictions are scored from it.
 2. Pending, to apply after seed 50 (results/pending/ORDER.md): 2@ and 2! as
    opcodes, and the gene opinline - their call gone from code compiled at run time;
    bubble -41.6% of its dispatches on c9369657e4 with both; tailpn; knumber, NUMBER?

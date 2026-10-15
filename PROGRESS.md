@@ -5922,3 +5922,23 @@ scratch tree: engines-check 52 paths, run-tests, gene-equiv (3,235 recorded ids 
 expressions the same), the gate at 64 on seed 50's front: 20 of 20 - the other 167 build
 with clang or carry align1 or alignfn: evolution has taken alignment away on most of the
 front. A new batch, results/pending: applied after seed 51.
+
+## Iteration 299 - 2026-10-15 - Claude
+
+**While seed 51 runs: seed-facts.py reports every gene; source audit 3; > and 0= pending
+as the after-seed-51 batch's patch 2.** seed-facts.py printed a fixed list of thirteen
+genes - seeds 48-50's factor, lto, clang, jitk and gotodup were counted by hand - and now
+prints every late gene the front carries (val() gives strings: '0' is off; the genes off
+on every design on one line) and every format-10 word with the designs expressing it.
+Audit 3 (results/source-audit-3.md; hotwords.py and word-cost.py, exact counts, seed 50's
+fastest, smallest and Q-best designs): 2@, 2! and NUMBER? at the top, all handled by the
+batch applied before seed 51; new, > 11.7% of bubble's dispatches and 0= 7.7% of
+ackermann's on 658ed9b9f8 - kernel colon words the benchmarks' compiled code calls - and
+?STACK 7.4% of the corpus's, which needs S0 as DEPTH does: a gene for later. > and 0= as
+pool words and opbody's: handlers L_x_gt and L_x_zeq (the engine's L_gt is <, the name
+historical); their kernel bodies were in sod16.py's table already, and the JIT has
+stencils for both. With them first, opbody and opinline, on 658ed9b9f8: bubble -11.7%,
+ackermann -7.7%, the kernel +5.5% and the corpus +8.7% for the two words they pushed out of
+a full list. Checked in a scratch tree on patch 1: engines-check, run-tests, gene-equiv
+(recorded ids and expressions the same), the gate - 187 of 187 on seed 50's front. The
+gate had finished as the last turn ended; its log said so.

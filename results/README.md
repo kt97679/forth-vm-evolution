@@ -87,6 +87,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `word-audit.md` - Every word, audited - the sources and the weights (Iteration 131).
 - `word-audit-plan.md` - Every word, audited against other Forths - the plan, and what is still to build (Iteration 127).
 - `source-audit-2.md` - The Forth sources audited again - missed speed and size (Iteration 281): 2@, 2! and DEPTH, hot and reachable by no gene.
+- `source-audit-3.md` - Source audit 3 (Iteration 299): where seed 50's fastest designs still dispatch - > and 0= built, ?STACK for later.
 - `loop-audit.md` - The loops in the Forth sources - an audit (Iteration 203, the owner).
 
 ## The stage ladder, measured on machines
