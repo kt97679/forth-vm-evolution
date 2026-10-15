@@ -6215,3 +6215,20 @@ to build"): lab/evolve/REMOTES a line a host, remote-checks.sh start/gather/stop
 xcheck.py from the chain - sampled from the previous front, run in parallel with the seed run
 under its own deadline, gathered before the one archive, never costing the chain; tested with a
 stand-in ssh and scp that refuse what the real ones do. Built next.
+
+## Iteration 315 - 2026-10-15 - Claude
+
+**The remote checks built and tested - the runner complete.** lab/evolve/REMOTES (dream.lan
+prebuilt 24 designs 3 rounds 30 minutes; rage.lan native 12, 2, 90, --no-jit --gcc-only) and
+lab/evolve/remote-checks.sh probe/start/gather/stop around xcheck.py; hooked into next-run.sh
+(probe in the first step's foreground, start in the seed step before the evolution) and into
+chainctl.py (gather in pack - every chain's end - and stop). Tested on the VM with stand-in ssh
+and scp that refuse what the real ones do: a seed chain with a missing host (skipped, said at
+start), a native host (cloned, built, measured, gathered), a prebuilt host - which failed on
+the host: evolve.py's setup refuses an incomplete build/, so prebuilt needs the stages built
+too; my design said it needed nothing, and dream's first run would have failed. Recorded with
+its reason, the chain done all the same; fixed - every host builds the stages - and the
+prebuilt path then measured the laptop's binaries and was gathered. stop with a host
+mid-build: its process group killed (by pid file - a pkill by name would match its own shell),
+the directory removed; a stopped chain's pack with a host still running: 1 s, no wait,
+cleaned. Before the first real run: ssh keys from the laptop to both hosts.

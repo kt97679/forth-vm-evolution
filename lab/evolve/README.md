@@ -65,6 +65,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `names-check.py` - names-check.py [IDS...] - word names in UTF-8, defined and then compiled
 - `chainctl.py` - a chain of runs as one thing (Iteration 313): next-run.sh's status, monitor and stop; the one archive a chain makes, whatever happened; progress lines; a crashed chain archived at the next start, root's files given back
 - `next-run.sh` - lab/evolve/next-run.sh [SEED | compare [ROUNDS] | experiment TOOL [ARGS] | none] - the next run on the laptop, in
+- `remote-checks.sh` - the previous front measured on other machines alongside a seed chain (Iteration 315): the hosts in lab/evolve/REMOTES; probe at start, start before the evolution, gathered into the chain's archive as remote/HOST.md, stopped with the chain; never costs it
 - `outbuf-check.py` - outbuf-check.py [ID] - does output buffering break anything? (Iteration 207)
 - `price.py` - price.py ID [ID ...] [--db FILE] - what a fusion could save, before building it
 - `perf-hold.py` - root's half of counters.py's counters in next-run.sh's chain: sets kernel.perf_event_paranoid 2 only while counters.py measures, then restores it (Iteration 282)

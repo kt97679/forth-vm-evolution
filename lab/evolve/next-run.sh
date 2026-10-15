@@ -256,6 +256,8 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
         echo "$*${THEN:+ then $THEN}" > "$NEXT_RUN_CHAIN/line"; echo "$HEAD" > "$NEXT_RUN_CHAIN/head"
         echo running > "$NEXT_RUN_CHAIN/status"; : > "$NEXT_RUN_CHAIN/steps"
         export NEXT_RUN_CHAIN
+        # Iteration 315: the remote checks' hosts tried here, where it is seen (lab/evolve/REMOTES)
+        case " $* $THEN " in *" seed "*) sh lab/evolve/remote-checks.sh probe "$NEXT_RUN_CHAIN" || true ;; esac
     fi
     case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)   # Iteration 294: missmap.py too
         if [ -z "${PERF_HOLD_START:-}" ]; then
@@ -466,6 +468,10 @@ else
     set --
 fi
 if [ -n "${REQ:-}" ]; then set -- "$@" --require "$REQ"; say "every design of the run in the two-bit tag"; fi
+if [ -n "$CHAIN" ] && [ -s "$CHAIN/remote/hosts" ] && ! ls "$CHAIN"/remote/*/until > /dev/null 2>&1; then
+    step "the remote checks started - the previous front, measured there alongside (lab/evolve/REMOTES)"
+    sh lab/evolve/remote-checks.sh start "$CHAIN" || true          # Iteration 315: never costs the run
+fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
 python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
 TICK=$!

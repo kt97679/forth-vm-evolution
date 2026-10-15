@@ -163,6 +163,7 @@ def cmd_stop(runs):
         while time.time() - t < wait and members(c): time.sleep(1)
     left = members(c)
     if left: print('  still alive after KILL: %s' % ', '.join(str(p) for p, a in left))
+    remote('stop', c)
     if not read(c, 'archive') or state(c) == 'stopping':
         pack(c, 'stopped')
     print('  stopped; send %s' % read(c, 'archive'))
@@ -171,9 +172,19 @@ def cmd_stop(runs):
 
 # ---- next-run.sh's
 
+REMOTE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'remote-checks.sh')
+
+
+def remote(cmd, chain, nowait=False):
+    """Iteration 315: the remote checks' end - gathered before the one archive, stopped with the chain."""
+    if os.path.isdir(os.path.join(chain, 'remote')) and os.path.exists(REMOTE):
+        subprocess.run(['sh', REMOTE, cmd, chain] + (['nowait'] if nowait else []))
+
+
 def pack(chain, status):
     """The one archive: everything in the chain directory, whatever happened."""
     runs = os.path.dirname(chain)
+    remote('gather', chain, nowait=status in ('stopped', 'interrupted'))
     head = read(chain, 'head') or 'unknown'
     rest = read(chain, 'status').splitlines()[1:]
     write(chain, 'status', '\n'.join([status] + rest))

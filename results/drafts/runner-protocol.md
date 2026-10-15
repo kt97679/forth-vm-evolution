@@ -250,3 +250,27 @@ which refuse what the real ones refuse (prompt 15) - an unknown host exits 255 a
 missing remote file fails scp; a chain with one host answering and one not; stop with a host
 running; an interrupted chain cleaned at the next start. The processing routine then reads
 CHAIN/remote/*.md - the cross-machine rankings - with every seed.
+
+## The remote checks - built and tested (Iteration 315)
+
+lab/evolve/REMOTES and remote-checks.sh as designed above, with one change the test forced:
+**every host builds the stages, prebuilt too** - evolve.py's setup refuses an incomplete
+build/, and the test's prebuilt host failed so; dream would have on its first run. Hooks:
+probe in the first step's foreground (chains with a seed step); start in the seed step, after
+its rebuild and before the evolution; gather in chainctl.py's pack - the one place every chain
+ends - without waiting for a stopped or interrupted chain, and stop in chainctl.py's stop. A
+host's run is stopped by its process group (its pid file), not by name: a pkill -f matching
+the work directory would match the remote shell running it.
+
+Tested on the VM with a stand-in ssh and scp (HOST a directory; an unknown host exits 255 as
+ssh does, a missing file fails scp): a seed chain with three hosts - one not there, skipped at
+start in the foreground; a native one, cloned, built, measured, gathered into remote/hostb.md;
+a prebuilt one, failed on the host (the fault above), recorded with its reason - the chain done
+all the same, the hosts' directories removed. Then the prebuilt path fixed: built, measured
+the laptop's binaries ("prebuilt": true), gathered. stop with a host mid-build: its two
+processes gone, nothing gathered, its directory removed. chainctl.py's pack of a stopped chain
+with a host still running: 1 s, no waiting, the host's run killed, its directory removed.
+
+**Before the first real run**: the laptop reaches dream.lan and rage.lan with ssh keys, no
+password (BatchMode) - probe says so at start if not; the hosts have git, python3, gcc, make.
+
