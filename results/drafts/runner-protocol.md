@@ -213,3 +213,40 @@ with its status left running - the helper gone; its log owned by claude both tim
 
 **Not yet built**: the remote checks (dream.lan, rage.lan) started and gathered by the chain.
 
+
+## The remote checks - the design to build (Iteration 314)
+
+xcheck.py does the measuring (sample, host run, report); what is left is driving it from the
+chain. **lab/evolve/REMOTES** (tracked, as NEXT-RUN) - a line a host:
+
+    # host       how       designs  rounds  minutes  sample options
+    dream.lan    prebuilt  24       3       30
+    rage.lan     native    12       2       90       --no-jit --gcc-only
+
+**lab/evolve/remote-checks.sh start | gather | stop | clean CHAIN**, called by next-run.sh:
+
+1. **At start, in the foreground** (first step): each host tried, `ssh -o BatchMode=yes -o
+   ConnectTimeout=5 HOST true` - one unreachable is said there, and skipped; nothing waits on it.
+2. **start** - after the first step's checks: the sample from the newest archived front (the
+   previous run's report): `xcheck.py --sample REPORT designs.json --n N [OPTIONS]`, and for
+   prebuilt `--bundle bins.tar.gz` (the laptop's builds, no -march: dream measures these very
+   binaries); `git bundle create repo.bundle HEAD`; all copied to HOST:fve-xcheck/CHAIN-NAME/;
+   there, detached (setsid nohup) - clone the bundle, for native build the stages, then
+   `xcheck.py designs.json out.json --rounds R --until EPOCH [--prebuilt bins]`, then DONE.
+   EPOCH = start + minutes: the host stops measuring itself, kept what it has. State in
+   CHAIN/remote/HOST.state.
+3. **In parallel** with the seed run - the hosts' load is not the laptop's.
+4. **gather** - at the chain's end, before the one archive (the last step, failed() and stop
+   alike): out.json and the host's log copied back to CHAIN/remote/HOST/; `xcheck.py --report`
+   into CHAIN/remote/HOST.md; the host's work directory removed - results only come back.
+5. **stop** - chainctl.py stop also ends the hosts' runs (pkill by the work directory's name).
+6. **clean** - at start, after recovery: an interrupted chain's work directories on the hosts
+   ended and removed.
+7. **Never costs the chain**: an unreachable host, a failed build there, a copy that fails -
+   a line in CHAIN/steps ("remote dream.lan: FAILED - why"), nothing else.
+
+**Tests** (on the VM): a stand-in ssh and scp in PATH mapping HOST:path to a directory a host,
+which refuse what the real ones refuse (prompt 15) - an unknown host exits 255 as ssh does, a
+missing remote file fails scp; a chain with one host answering and one not; stop with a host
+running; an interrupted chain cleaned at the next start. The processing routine then reads
+CHAIN/remote/*.md - the cross-machine rankings - with every seed.

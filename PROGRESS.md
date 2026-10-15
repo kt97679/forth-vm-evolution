@@ -6209,3 +6209,9 @@ earlier measurement's DONE. The chain's directory is made before perf-hold start
 real on the VM: two measurements, 2 during each and 3 after; the chain done - the helper gone;
 the chain killed with its status left running - gone too; the log claude's. Left before seed
 53: the remote checks.
+
+The remote checks designed (results/drafts/runner-protocol.md, "The remote checks - the design
+to build"): lab/evolve/REMOTES a line a host, remote-checks.sh start/gather/stop/clean driving
+xcheck.py from the chain - sampled from the previous front, run in parallel with the seed run
+under its own deadline, gathered before the one archive, never costing the chain; tested with a
+stand-in ssh and scp that refuse what the real ones do. Built next.
