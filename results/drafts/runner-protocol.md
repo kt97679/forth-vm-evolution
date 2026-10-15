@@ -108,12 +108,25 @@ there only the designs without the JIT are themselves. Both are idle during runs
 have GCC but neither clang nor perf (the owner, Iteration 307): a design built with clang
 (compiler, tailpn) is not itself on them, so the sample keeps to GCC-built designs.
 
+The owner's suggestion (Iteration 308) - the laptop's binaries to dream, and builds for
+the Tegra made on the laptop - taken for dream: no build uses -march or -mtune (the x86-64
+baseline, the JIT's stencils too), and the engines are static with raw system calls, so
+the laptop's engines and images run on dream unchanged. xcheck.py --sample --bundle builds
+the sampled designs and s6 on the laptop into one tarball (four designs and s6: 70 KB);
+dream measures those very binaries (--prebuilt) - a ranking that moves there moved for
+the microarchitecture alone, clang-built and JIT designs included, and dream builds
+nothing. For rage, native builds first (GCC 16, no JIT, 4-byte cells): they work now,
+and the first run times them. Cross-building on the laptop - a second target in the
+evolver's build (4-byte cells, the C library, a cross compiler, no JIT) and the laptop's
+cross toolchain (gcc-arm-linux-gnueabihf; tools/arm-qemu-check.sh did it for SPN) - if
+the Tegra's own builds prove too slow.
+
 - **When:** in every chain, right after the checks, alongside the seed run - on the
   front that just finished, as the measurements are. The remote machines do the work;
   the laptop only copies, polls by ssh and fetches - nothing that moves its timings.
   So they add no hours to a chain.
 - **What:** on dream, a sample of 24 designs of the joint front - the 6 fastest, 6
-  about the best Q, the 6 smallest, 6 between - and s6; the six selection workloads and
+  about the best Q, the 6 smallest, 6 between - and s6, as the laptop built them; the six selection workloads and
   sieve; 3 rounds. On rage, 12 designs without the JIT, and s6; 2 rounds. Each design's
   speed against s6 there; the Spearman correlation with the laptop's speeds for the same
   designs, as heldout.py gives it for workloads; where the laptop's fastest rank there;

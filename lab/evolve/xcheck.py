@@ -19,6 +19,17 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       the geometric mean of the selection workloads' ratios, the held-out ones apart.
       At --until it stops measuring and keeps what it has. A progress line a design.
 
+  xcheck.py --sample RESULTS.md OUT.json --bundle BIN.tar.gz [...]
+      the same, and the designs built here - each engine and image, and s6's, in one
+      tarball - for a host of the same architecture (dream.lan, x86-64): it measures
+      these very binaries (--prebuilt), so a ranking that moves there moved for the
+      machine alone, and a design built with clang is itself there without clang. The
+      builds use no -march or -mtune: the x86-64 baseline (Iteration 307).
+
+  xcheck.py DESIGNS.json OUT.json --prebuilt DIR [...]
+      on the host, the bundle unpacked into DIR: no expression to compare and nothing
+      to build - the binary is the design; s6 is the shipped one.
+
   xcheck.py --report OUT.json
       on the laptop: the host's speeds against the laptop's for the designs measured on
       both - the Spearman rank correlation, where the laptop's fastest rank there, the
@@ -74,7 +85,7 @@ if '--report' in ARGS:
 
 # ---- --sample: the designs to measure elsewhere, picked on the laptop ----
 if '--sample' in ARGS:
-    src = opt('--sample'); n = int(opt('--n', '24')); nojit = opt('--no-jit', flag=True); gcc = opt('--gcc-only', flag=True)
+    src = opt('--sample'); n = int(opt('--n', '24')); nojit = opt('--no-jit', flag=True); gcc = opt('--gcc-only', flag=True); bundle = opt('--bundle')
     if len(ARGS) != 1: sys.exit(__doc__)
     out = ARGS[0]
     sys.argv = [sys.argv[0]]; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
@@ -113,10 +124,22 @@ if '--sample' in ARGS:
     if rest and k > 0: take([rest[int(j * (len(rest) - 1) / max(1, k - 1))] for j in range(k)], k)   # between, evenly
     json.dump([{'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot} for i, sp, tot, e in pick], open(out, 'w'), indent=1)
     print('xcheck: %d designs sampled from %d eligible (%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', out))
+    if bundle:
+        import tarfile
+        E.setup()
+        stage = os.path.join(E.EV, 'xcheck-bundle'); shutil.rmtree(stage, ignore_errors=True)
+        def put(name, eng, img):
+            os.makedirs(os.path.join(stage, name)); shutil.copy2(eng, os.path.join(stage, name, 'engine')); shutil.copy2(img, os.path.join(stage, name, 'image'))
+        put('s6', E.REF[0], E.REF[1])
+        for i, *_ in pick:
+            eng, img = E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
+        with tarfile.open(bundle + '.partial', 'w:gz') as t: t.add(stage, arcname='bin')
+        os.replace(bundle + '.partial', bundle)
+        print('xcheck: %d designs and s6 built into %s (%d KB)' % (len(pick), bundle, os.path.getsize(bundle) // 1024))
     sys.exit(0)
 
 # ---- the host's run ----
-rounds = int(opt('--rounds', '3')); until = float(opt('--until', '0')) or None
+rounds = int(opt('--rounds', '3')); until = float(opt('--until', '0')) or None; pre = opt('--prebuilt')
 if len(ARGS) != 2: sys.exit(__doc__)
 src, out = ARGS
 sys.argv = [sys.argv[0]]; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
@@ -138,9 +161,17 @@ print('xcheck: %s, %s, %s cores; %s' % (env['host'], env['cpu'], env['cores'], e
 D = json.load(open(src))
 E.setup()
 WS = E.WORK_SEL + E.WORK_HELD + E.WORK_FAR
+R['prebuilt'] = bool(pre)
 try:
-    s6 = E.canon(E.HUMAN['s6-cv8b']); d = os.path.join(E.EV, 'xcheck-s6')
-    eng, img = E.build(s6, d); E.alive(eng, img, E.private_work(d)); R['s6_ok'] = True
+    if pre:                                   # the laptop's binaries: s6 the shipped one, the reference too
+        eng, img = os.path.join(pre, 's6', 'engine'), os.path.join(pre, 's6', 'image')
+        shutil.rmtree(os.path.join(E.EV, 'xcheck-s6-pre'), ignore_errors=True)   # a run before this one's (private_work refuses it)
+        E.REF = (eng, img, E.private_work(os.path.join(E.EV, 'xcheck-s6-pre')))
+        E.alive(eng, img, E.REF[2])
+    else:
+        s6 = E.canon(E.HUMAN['s6-cv8b']); d = os.path.join(E.EV, 'xcheck-s6'); shutil.rmtree(d, ignore_errors=True)
+        eng, img = E.build(s6, d); E.alive(eng, img, E.private_work(d))
+    R['s6_ok'] = True
     print('xcheck: s6 built and alive', flush=True)
 except Exception as ex:
     R['s6_why'] = str(ex)[:300]; save(); print('xcheck: s6 failed - %s' % R['s6_why'], flush=True); sys.exit(1)
@@ -150,13 +181,15 @@ for k, x in enumerate(D, 1):
     R['designs'].append(rec)
     if until and time.time() > until: rec['why'] = 'the time limit'; save(); continue
     g = E.canon(x['genome']); e = norm(E.express(g))
-    if e != x['expressed']:
+    if not pre and e != x['expressed']:
         diff = sorted(set(k_ for k_ in set(e) | set(x['expressed']) if e.get(k_) != x['expressed'].get(k_)))
         rec['why'] = 'not itself here: %s' % ', '.join(diff); save()
         print('xcheck: %d/%d %s not itself here (%s)' % (k, len(D), x['id'], ', '.join(diff)), flush=True); continue
     try:
-        d = os.path.join(E.EV, 'xcheck-' + x['id'])
-        eng, img = E.build(g, d); pw = E.private_work(d); E.alive(eng, img, pw)
+        d = os.path.join(E.EV, 'xcheck-' + x['id']); shutil.rmtree(d, ignore_errors=True)   # an earlier run's: a design recurs
+        if pre: eng, img = os.path.join(pre, x['id'], 'engine'), os.path.join(pre, x['id'], 'image')
+        else: eng, img = E.build(g, d)
+        pw = E.private_work(d); E.alive(eng, img, pw)
         m = E.measure(eng, img, pw, WS, rounds)
         ratios = m[0] if isinstance(m, tuple) else m
         rec['ratios'] = {w: ratios[w] for w in WS if w in ratios}

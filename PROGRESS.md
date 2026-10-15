@@ -6076,3 +6076,21 @@ one given a false expression on purpose and reported "not itself here (compiler)
 measured, the report made. The VM's numbers are no evidence - virtual, one core, not quiet -
 but on it the fast designs ran 1.8-1.9 times slower relative to s6 than on the laptop, and
 the small ones slightly faster: what dream will show properly.
+
+## Iteration 308 - 2026-10-15 - Claude
+
+**The laptop's binaries to dream (the owner's suggestion).** No build uses -march or
+-mtune - the x86-64 baseline, the JIT's stencils too - and the engines are static with raw
+system calls: the laptop's engines and images run on the i7-6700 unchanged. So
+xcheck.py --sample --bundle builds the sampled designs and s6 on the laptop into one
+tarball (four and s6: 70 KB), and --prebuilt measures those very binaries on the host:
+what moves there moves for the microarchitecture alone, clang-built designs are themselves
+without clang, and dream builds nothing. Tried here with the VM as both: three clang-built
+JIT designs and the smallest measured from the bundle. It found a fault first: a design's
+directory left by an earlier run (a design recurs from run to run) made private_work
+refuse it - each directory is now cleared before use, and the rerun, the old directory
+still there, measured 4 of 4. For the Tegra, cross-building on the laptop (the owner's
+other suggestion) means a second target in the evolver's build; native builds first, timed
+by the first run, cross-building if they are too slow. On the VM again - no evidence, but
+the same shape - the smallest design's ratio to s6 was the laptop's (1.473, 1.480) and the
+JIT designs' doubled (0.254, 0.129).
