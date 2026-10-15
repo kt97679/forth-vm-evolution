@@ -6058,3 +6058,21 @@ on a 32-bit host a design builds with 4-byte cells and the C library, and the JI
 express there. Each check a hard limit, its host's environment and a feasibility check on
 first contact, a host that fails skipped and named; the Spearman correlation with the
 laptop's speeds, as heldout.py does for workloads. Part of open item 0.
+
+## Iteration 307 - 2026-10-15 - Claude
+
+**xcheck.py - the remote checks' measuring side - and the hosts' facts (the owner): dream
+and rage idle during runs, GCC on both, neither clang nor perf.** So a design built with
+clang (compiler, tailpn) is not itself there, and on 32-bit rage neither is a JIT design.
+xcheck.py reuses the evolver's own steps rather than copying them - E.build, E.alive,
+E.measure (the design and s6 back to back each round), the comparison's geometric mean of
+the selection's ratios: --sample picks a front's designs that can be themselves on the
+host (the fastest, about the best Q, the smallest, between); the host's run records its
+environment, checks s6, and for each design compares its expression there with the
+laptop's before building, checking and measuring it, keeping what it has at --until;
+--report gives the Spearman correlation with the laptop's speeds, where the laptop's
+fastest rank, and the designs that moved most. Tried here, the VM as the host: 8 sampled,
+one given a false expression on purpose and reported "not itself here (compiler)", 7
+measured, the report made. The VM's numbers are no evidence - virtual, one core, not quiet -
+but on it the fast designs ran 1.8-1.9 times slower relative to s6 than on the laptop, and
+the small ones slightly faster: what dream will show properly.

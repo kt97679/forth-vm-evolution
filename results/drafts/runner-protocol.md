@@ -104,7 +104,9 @@ threads, x86-64) - a different microarchitecture, the check against tuning to Ze
 and **rage.lan**, an NVIDIA Tegra (ARMv7, 32-bit, 4 cores, Gentoo, GCC 16.2;
 results/armv7-tegra.md) - a different instruction set. On a 32-bit host a design builds
 with 4-byte cells and the C library, and the JIT does not express (jit_on: x86-64 only):
-there only the designs without the JIT are themselves.
+there only the designs without the JIT are themselves. Both are idle during runs, and
+have GCC but neither clang nor perf (the owner, Iteration 307): a design built with clang
+(compiler, tailpn) is not itself on them, so the sample keeps to GCC-built designs.
 
 - **When:** in every chain, right after the checks, alongside the seed run - on the
   front that just finished, as the measurements are. The remote machines do the work;
@@ -126,7 +128,7 @@ there only the designs without the JIT are themselves.
   and a feasibility check - s6 built there and the corpus right. A host that fails is
   reported unusable, with why, and skipped: a remote never stops or fails the chain.
 - **How:** the laptop copies the chain's bundle to each host, which fetches it into
-  ~/fve-xcheck at the chain's commit and runs lab/evolve/xcheck.py (to be written) under
+  ~/fve-xcheck at the chain's commit and runs lab/evolve/xcheck.py (written, Iteration 307) under
   setsid, with its own log and progress lines; the laptop polls, and at the chain's end
   fetches results and logs into the archive. Each check pins to its host's least busy
   core and records the load - the hosts are to be left idle during a run.

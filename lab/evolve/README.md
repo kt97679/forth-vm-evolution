@@ -79,6 +79,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `tag2-rank.py` - tag2-rank.py OUT.json DB ID [ID ...] - the reference ranking
 - `test-jail.py` - test-jail.py - prove that an engine the evolver runs cannot fork
 - `vm-run.sh` - lab/evolve/vm-run.sh SEED [REQ] - a run on the development VM (Iteration 79)
+- `xcheck.py` - the front measured on another machine: --sample picks designs on the laptop, the host's run builds, checks and measures them against s6 there, --report compares the rankings (Iteration 307)
 - `NEXT-RUN` - what the laptop runs next, with every past choice as a comment
 - `hotsites-v1.json`, `tag2-rank-v1.json`, `hotwords-v1.json` - the reference profiles the converter reads (hotinl, the tag's ranking, factor)
 

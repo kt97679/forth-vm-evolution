@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 306.
+- master: Iteration 307.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -159,6 +159,9 @@ About 20 minutes of machine time for build, tests and gates.
    stop in mid-run; a kill -9 as a crash) before the laptop relies on it. Each step's
    own pack kept in runs/ for the first real use. Fix with it: perf-hold.py creates
    runs/perf-hold.log as root today.
+   Done of it: lab/evolve/xcheck.py (Iteration 307) - sample, the host's run and the
+   report, tried here; the hosts (dream, rage) idle, GCC only, no clang or perf. To do:
+   the runner, and its ssh side for the remote checks.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took
