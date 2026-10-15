@@ -5871,3 +5871,23 @@ event the CPU cannot count n/a (tried with a stand-in perf). results/drafts/iplo
 .md: three explanations of the evolved designs' lower IPC - the IP chain, the stack
 through memory, the front end - and the laptop measurement that tells them apart
 (front- and back-end stalls), then a hand variant; only then a gene.
+
+## Iteration 296 - 2026-10-15 - Claude
+
+**Seed 50 processed - small - and the after-seed-50 batch applied; seed 51 set for 12
+hours (the owner).** Both packs clean (tests PASS, the generators 31 paths, 7 of 7, the
+jail PASS); the measured-here patch the laptop's stash again, the c-baseline-x86-64.md
+hunk left out. The evolution ran 10 h 03 min, 47,033 designs measured (46,744 alive),
+14,337 screened; 289 deaths, all refused before running. The verdict: fastest -0.1%,
+smallest +0.16%, memory -2 KB, hypervolume +0.4%, best Q +0.2% - small, the third run
+of seed 48's genes; the Q-best of all runs now this run's ed821c2edc (Q 0.216). The
+front 187: factor on 174 (level 3 on 121), lto on 117 of 159 GCC-built, clang 28, jitk
+48, gotodup 24, the JIT on 109; the smallest 15,647 (-25), the least memory 116 KB again.
+Predictions three of five (not small, and 30 bytes off the smallest, were wrong).
+
+The batch - 2@ and 2! as opcodes, opinline, tailpn, knumber - applied in order, then on
+master: run-tests PASS (47 generator paths), the gate 266 of 266 (seed 50's front 187,
+the joint front 128), ans-check 0 of 35 differ. New genes: the stopping rule counts
+afresh. NEXT-RUN: `seed 51 tag2 12h then experiment compare-fronts.py --rounds 6
+--frontier --cpus 2,8`; its predictions written; the comparison is session 44. Before
+seed 51 the owner runs missmap.py and counters.py --extra, each its own command.

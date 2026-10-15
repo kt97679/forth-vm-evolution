@@ -318,4 +318,7 @@
 # Iteration 288: seed 49 not small (hypervolume +4.0%; the fastest 0.128 in the
 # run, the least memory of any, 116 KB); seed 48's packs still to come. Seed 50, 12
 # hours (the owner) - the same genes a third time; 2@, 2! and DEPTH after it.
-seed 50 tag2 12h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+# Iteration 296: seed 50 small (hypervolume +0.4%; the third run of its genes). The
+# after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
+# new genes, the stopping rule counts afresh. Seed 51, 12 hours (the owner).
+seed 51 tag2 12h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

@@ -95,7 +95,7 @@ FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (resu
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
 HOTWORDS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotwords-v1.json')   # Iteration 267: the gene factor's cold words (hotwords.py)
 FACTORV = (0, 1e-3, 1e-2, 2.0)  # Iteration 267: factor - a word below this share of the reference dispatches is factored (2.0: every word)
-OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: their bodies [opcode EXIT], the gene opbody
+OPBODY = ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!')   # Iteration 92: their bodies [opcode EXIT], the gene opbody; 290: 2@ 2!
 HOTN = (0, 8, 16, 32)          # one-byte calls (Iteration 14): how many of the image's own words
 CV8 = dict(tos=1, scale=3, bytehdr=0, spec=SPECS, sharedcall=1, doesfar=0, varcall=1, varslot=1,
            d256=0, guard=0, folds=HOT, skippad=0, fold=1, supers=[], rtfuse=0, ops10=[], escape=0, tail=0, msc=0)
@@ -175,6 +175,20 @@ gene('jitloop', needs=lambda g, e: jit_on(g))                                  #
 gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
 gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
 gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
+# Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
+# compiler copy their opcode in place of a call (tools/layout.py --op-inline). It matters only
+# where a design has such a word: an expressed format-10 opcode of layout.py's base list, or,
+# opbody on, of OPBODY. Keep OPB_BASE as layout.py's _OPB before --op-bodies.
+OPB_BASE = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')
+gene('opinline', needs=lambda g, e: any(w in OPB_BASE or (e.get('opbody') and w in OPBODY) for w in (e.get('ops10') or [])),
+     convert=lambda g: ['--op-inline'] if express(g).get('opinline') else [])
+# Iteration 293: clang 19+'s preserve_none and musttail in the tail-call engine (tools/gen-tail.py
+# --preserve-none) - CPython 3.14's tail-call interpreter. Built with clang_pn(), the newest clang
+# that takes them; expressed only on a clang tail engine, and only where such a clang is here.
+gene('tailpn', needs=lambda g, e: e.get('tail') and e.get('compiler') and bool(clang_pn()))
+# Iteration 295: NUMBER? as one opcode (forth/cv8b-knumber.4, after klookup's overlay) - on seed 49's
+# fastest designs its own Forth was 10-13% of the corpus's dispatches. Expressed only with klookup.
+gene('knumber', needs=lambda g, e: klookup_on(g))
 gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
      convert=lambda g: ['--factor', '--factor-hot', HOTWORDS, '--factor-share', repr(FACTORV[g['factor']])] if express(g).get('factor') else [])   # no table, no design: a missing file kills it loudly
@@ -183,6 +197,18 @@ EXPRESSED['cv8'] += ['lto', 'gotodup']   # Iteration 260: link-time optimisation
 # Iteration 262: the compiler - 0 GCC (cc), 1 clang. Offered only where clang is installed: elsewhere
 # a design with it could not be built. Flags and genes one compiler lacks are not expressed under it.
 HAVE_CLANG = bool(shutil.which('clang'))
+_CLANG_PN = None
+def clang_pn():
+    """The newest clang here that takes preserve_none and musttail (19 and later), or ''
+    - asked once, by compiling a line (Iteration 293, the gene tailpn)."""
+    global _CLANG_PN
+    if _CLANG_PN is None:
+        _CLANG_PN = ''
+        src = 'typedef void (__attribute__((preserve_none)) *f)(long);\n__attribute__((preserve_none)) void g(long a) { extern f h; __attribute__((musttail)) return h(a); }\n'
+        for c in ('clang-22', 'clang-21', 'clang-20', 'clang-19', 'clang'):
+            if shutil.which(c) and subprocess.run([c, '-x', 'c', '-c', '-o', os.devnull, '-'], input=src.encode(), capture_output=True).returncode == 0:
+                _CLANG_PN = c; break
+    return _CLANG_PN
 if HAVE_CLANG: EXPRESSED['cv8'] += ['compiler']
 GCC_ONLY = ('nogcse', 'nocrossjump', 'align1', 'noreorder', 'peel', 'ipaclone', 'tracer', 'noinls', 'gotodup', 'jitos', 'regpin', 'lto')
 JITKV = (0, 2, 3)                 # Iteration 259: the stack cache's size, cells - 0 off
@@ -326,6 +352,10 @@ def kinput_on(g):
     format-10 names: one switch, as tfind - a design with kfast."""
     return kfast_on(g) and bool(g.get('kinput'))
 KLOOKUP = ['(FIND)', '(>NUMBER)']
+def knumber_on(g):
+    """Iteration 295: NUMBER? as one opcode - forth/cv8b-knumber.4, after klookup's overlay."""
+    return bool(klookup_on(g) and g.get('knumber'))
+
 def klookup_on(g):
     """Iteration 57: the whole lookup - forth/cv8b-klookup.4 ((FIND), FIND8)
     and (FIND) first among the format-10 names: a design with kinput."""
@@ -372,8 +402,10 @@ OPS10_POOL = ['EXECUTE', 'I', '(DO)', '+!', '?DUP', 'UNLOOP', 'J', '(LOOP)', '(?
               'SCAN', 'SKIP',                            # Iteration 54: the input side (TABS>BL went, Iteration 148; kinput's)
               '(PARSE)', 'HASH', 'PLACE',                # Iteration 54: ((PARSE): kinput's)
               '(FIND)', '(>NUMBER)',                     # Iteration 57: the lookup, numbers (klookup's)
-              'I+']                                      # Iteration 60: I then + in run-time code (rtiplus's)
-OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
+              'I+',
+              '2@', '2!']   # Iteration 290: bubble's and the corpus's double-cell words (results/source-audit-2.md)                                      # Iteration 60: I then + in run-time code (rtiplus's)
+OPS10_LABEL = {'2@': 'L_x_2fetch', '2!': 'L_x_2store',   # Iteration 290
+               '+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execute', 'I': 'L_x_i',
                'J': 'L_x_j', 'UNLOOP': 'L_x_unloop', '(DO)': 'L_x_do', '(LOOP)': 'L_x_loop',
                '(?DO)': 'L_x_qdo', '(+LOOP)': 'L_x_ploop', '(LEAVE)': 'L_x_leave',
                '?BRANCH8': 'L_x_qbr8', 'BRANCH8': 'L_x_br8', '?NBRANCH': 'L_x_nqbr', '?NBRANCH8': 'L_x_nqbr8',
@@ -384,14 +416,14 @@ OPS10_LABEL = {'+!': 'L_x_plusstore', '?DUP': 'L_x_qdup', 'EXECUTE': 'L_x_execut
                'DUP?BRANCH': 'L_x_dupbr', 'DUP?BRANCH8': 'L_x_dupbr8', 'OVER?BRANCH': 'L_x_overbr', 'OVER?BRANCH8': 'L_x_overbr8',
                'DUP?NBRANCH': 'L_x_dupnbr', 'DUP?NBRANCH8': 'L_x_dupnbr8', 'SWAP+I': 'L_x_swapaddi', 'DUP+I': 'L_x_dupaddi', 'DUP<I': 'L_x_duplti',
                'FILL': 'L_x_fill', 'CMOVE': 'L_x_cmove', 'THREAD-FIND': 'L_x_threadfind',
-               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
+               'SCAN': 'L_x_scan', 'SKIP': 'L_x_skip', '(PARSE)': 'L_x_parse', 'HASH': 'L_x_hash', 'PLACE': 'L_x_place', '(NUMBER?)': 'L_x_numberq', '(FIND)': 'L_x_find', '(>NUMBER)': 'L_x_tonumber', 'I+': 'L_x_iplus'}
 # Iteration 12's handlers are compiled only where a design has them (engine/vm-lab.c)
 X_MACRO = {'<>?BRANCH': 'X_NEBR', '<>?BRANCH8': 'X_NEBR', '>?BRANCH': 'X_SGTBR', '>?BRANCH8': 'X_SGTBR',
            '0<?BRANCH': 'X_ZLTBR', '0<?BRANCH8': 'X_ZLTBR', '=I?BRANCH': 'X_EQIBR', '=I?BRANCH8': 'X_EQIBR',
            'DUP?BRANCH': 'X_DUPBR', 'DUP?BRANCH8': 'X_DUPBR', 'OVER?BRANCH': 'X_OVERBR', 'OVER?BRANCH8': 'X_OVERBR',
            'DUP?NBRANCH': 'X_DUPNBR', 'DUP?NBRANCH8': 'X_DUPNBR', 'SWAP+I': 'X_SWAPADDI', 'DUP+I': 'X_DUPADDI', 'DUP<I': 'X_DUPLTI',
            'FILL': 'X_FILL', 'CMOVE': 'X_CMOVE', 'THREAD-FIND': 'X_THREADFIND',
-           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
+           'SCAN': 'X_SCAN', 'SKIP': 'X_SKIP', '(PARSE)': 'X_PARSE', 'HASH': 'X_HASH', 'PLACE': 'X_PLACE', '(NUMBER?)': 'X_NUMBERQ', '(FIND)': 'X_FIND', '(>NUMBER)': 'X_TONUMBER', 'I+': 'X_IPLUS'}
 def newest_front():
     """(path, records) of the newest run's results file - its front's designs, genomes and
     measures (Iteration 278: c-baseline.py and counters.py choose their designs from it)."""
@@ -435,6 +467,8 @@ def ops10_order(g, iplus):
         ws = ws[:1 if tfind_on(g) else 0] + KINPUT + [w for w in ws[1 if tfind_on(g) else 0:] if w not in KINPUT]
     ws = [w for w in ws if w not in KLOOKUP or klookup_on(g)]                      # Iteration 57: klookup's words
     if klookup_on(g): ws = KLOOKUP + [w for w in ws if w not in KLOOKUP]           # Iteration 57: first of all
+    ws = [w for w in ws if w != '(NUMBER?)']                                       # Iteration 295: knumber's, after them
+    if knumber_on(g): ws = ['(NUMBER?)'] + ws                                      # first: the gene is the opcode
     ws = [w for w in ws if w != 'I+' or iplus]                                     # Iteration 60: rtiplus's
     if iplus: ws = ['I+'] + [w for w in ws if w != 'I+']                           # Iteration 60: sure of a slot
     if swapi_on(g): ws = ['SWAP+I'] + [w for w in ws if w != 'SWAP+I']             # Iteration 61: sure of a slot
@@ -527,7 +561,9 @@ def _kind(cmd):
     if len(cmd) > i + 3 and os.path.basename(str(cmd[i])) == 'setarch': i += 3   # setarch ARCH -R (Iteration 24)
     exe = os.path.basename(str(cmd[i])) if len(cmd) > i else ''
     if exe == os.path.basename(CPUT): return 'cputime'
-    return None if exe in BUILD_TOOLS or exe.startswith('python') else 'engine'
+    # clang-19 and the like - the gene tailpn's compiler (Iteration 293) - a build tool too: jailed as an
+    # engine, no new process, its driver could not start the linker
+    return None if exe in BUILD_TOOLS or exe.startswith(('python', 'clang-')) else 'engine'
 def _contain(cpu, kind=None):
     """In the child: a CPU-time limit - SIGXCPU at cpu seconds - and for an
     engine, the jail: no new processes (RLIMIT_NPROC 0), at most 1 GB of
@@ -614,6 +650,7 @@ def bin_size(eng):
 GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
 def CC(g):
     """Iteration 262: the compiler the gene names - GCC as cc, or clang."""
+    if express(g).get('tailpn'): return clang_pn()       # Iteration 293: clang 19+, for preserve_none
     return 'clang' if express(g).get('compiler') else 'cc'
 def ccflags(g):
     if express(g).get('compiler'):          # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
@@ -650,7 +687,8 @@ def build_tail(g, d, src, flags, eng):
     if sh([CC(g), '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
     wrap = []
     for attempt in range(2):
-        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else []))
+        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
+               + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
         if r.returncode: raise RuntimeError('died: tail-call generation')
         if sh([CC(g)] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
         bad = tail_offenders(eng)
@@ -848,7 +886,7 @@ def _build(g, d):
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
     fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
-    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
+    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.
@@ -1560,7 +1598,7 @@ def setup():
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
     W = os.path.join(O, 'work')
-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8-fuse-iplus.4',
+    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
@@ -1568,14 +1606,14 @@ def setup():
     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
                                                                     ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
-                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup') if b != 'k64-self' else ('',))
+                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != 'k64-self' else ('',))
                         for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
                         for e in (('', '-empty') if b == 'k64-bt' else ('',))     # Iteration 101
                         for q in (('', '-kstack') if b == 'k64-bt' else ('',))    # Iteration 116
                         for j in (('', '-jit') if b == 'k64-bt' else ('',))
                         for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
-        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else [])
+        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
                        + (['cv8-fuse-loopall.4'] if '-loopall' in name

@@ -41,22 +41,26 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 295.
+- master: Iteration 296.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
-  `results/applied-after-seed47/ORDER.md`). `results/pending` holds the
-  after-seed-50 batch: 2@ and 2! as opcodes (Iteration 290-291), the gene
-  opinline (Iteration 292), the gene tailpn (Iteration 293), the gene knumber
-  (Iteration 295).
+  `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
+  results/applied-after-seed50/ORDER.md); `results/pending` does not exist.
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
   Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
   as carried records (gate.py --db). Its packs were never sent, the owner unsure
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- Seed 49 processed (Iteration 288): not small, hypervolume +4.0%.
-- **Seed 50 is running** (started 13:49 UTC Oct 14; the evolution stops 23:55 UTC): `seed 50 tag2 12h then experiment
-  compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 12 hours, the owner's; the
-  same genes a third time. Its predictions: the end of `results/predictions.md`.
+- Seed 49 processed (Iteration 288): not small, hypervolume +4.0%. Seed 50 processed
+  (Iteration 296): small, +0.4% - the third run of seed 48's genes.
+- **The after-seed-50 batch is applied** (Iteration 296, four patches -
+  results/applied-after-seed50/ORDER.md): 2@ and 2! as opcodes, opinline, tailpn,
+  knumber. New genes: the stopping rule counts afresh.
+- **Seed 51 is the laptop's next run** (Iteration 296): `seed 51 tag2 12h then
+  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 12 hours, the
+  owner's. Before it, the owner runs missmap.py and counters.py --extra (each its own
+  command - perf-hold.py holds the setting for one measurement a chain). Its
+  predictions: the end of `results/predictions.md`.
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
   all runs (session 42): seed 43's 19510c7689.
 
@@ -138,7 +142,8 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-1. Seed 50: process when its packs come. No batch is pending.
+1. Seed 51: process when its packs come; and the two measurements' packs (missmap.py,
+   counters.py --extra) - item 4 and item 5 below. No batch is pending.
 2. Pending, to apply after seed 50 (results/pending/ORDER.md): 2@ and 2! as
    opcodes, and the gene opinline - their call gone from code compiled at run time;
    bubble -41.6% of its dispatches on c9369657e4 with both; tailpn; knumber, NUMBER?

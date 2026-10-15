@@ -418,12 +418,28 @@ if V8 and CV8_COMPILER and '--bss' in ARGV and not _os.environ.get('SOD16_NO_BSS
 # Only these two, which never look at their caller's return address (I J
 # UNLOOP (DO) do), and only where the design has them: no recorded design.
 _OPB = ('FILL', 'CMOVE', 'SCAN', 'SKIP', '(PARSE)', 'HASH', 'PLACE')   # TABS>BL gone: Iteration 148     # Iteration 54: the input side's too
-if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP')   # Iteration 92: the gene opbody
+if '--op-bodies' in ARGV: _OPB += ('(FIND)', '(>NUMBER)', 'THREAD-FIND', '+!', '?DUP', '2@', '2!')   # Iteration 92: the gene opbody; 290: 2@ 2!
 for _n in _OPB:
     if _n not in G['X_OPS10']: continue
     _at = {a: n for a, n in G['ops10_at']().items() if n == _n}
     _w = [w for w in order if w['s'] in _at]
     if _w: kind[_w[-1]['s']], info[_w[-1]['s']] = 'code', [('P', _n), ('P', 'EXIT')]
+
+# ---- the [opcode EXIT] words among the primitives (Iteration 292): --op-inline ----
+# PRIMITIVE? asks by address - below (PRIMITIVES-END) - so placed there, a word the loop
+# above made [opcode EXIT] is compiled at run time as its opcode, not called: every
+# COMPILE, copies a primitive's body (the cv8 and cv8t overlays one byte, or the escape's
+# two; cpt16's one token), so code compiled at run time - bubble's 2@ and 2! - saves the
+# call and the EXIT. Only a word defined once: a later definition of a name must stay the
+# one FIND finds, and this moves the word to the dictionary's start.
+if '--op-inline' in ARGV:
+    _nm = [w['n'] for w in order]
+    if '(PRIMITIVES-END)' in _nm:
+        _k = _nm.index('(PRIMITIVES-END)')
+        _mv = [w for w in order[_k + 1:] if kind[w['s']] == 'code' and info[w['s']] == [('P', w['n']), ('P', 'EXIT')] and _nm.count(w['n']) == 1]
+        _ids = {id(w) for w in _mv}
+        order = order[:_k] + _mv + [w for w in order[_k:] if id(w) not in _ids]
+        print('op-inline: %d word(s) among the primitives: %s' % (len(_mv), ' '.join(w['n'] for w in _mv) or '-'))
 
 # ---- one-byte calls (Iteration 14): --hotcalls N --------------------
 # The targets with the most call sites in the image's code take the bytes
@@ -1573,7 +1589,11 @@ if EMIT:
             K = {'lit0': (['LIT'], 0), 'lit1': (['LIT'], 1), 'litm1': (['LIT'], -1), '0=': (['LIT', 'EQ'], 0),
                  '0<': (['LIT', 'LT'], 0), 'INVERT': (['LIT', 'XOR'], -1), '<>': (['EQ', 'LIT', 'XOR'], -1),
                  '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
-                 'CELLS': (['LIT', 'LSHIFT'], 3)}
+                 'CELLS': (['LIT', 'LSHIFT'], 3),
+                 # Iteration 290: 2@ and 2! as opcodes - five stencils each, CELL+'s ADDI the one constant;
+                 # without them a JIT design that takes the opcodes leaves every word holding one to the
+                 # interpreter (jit.c: all or nothing), 2@ and 2! themselves among them
+                 '2@': (['DUP', 'ADDI', 'FETCH', 'SWAP', 'FETCH'], 8), '2!': (['SWAP', 'OVER', 'STORE', 'ADDI', 'STORE'], 8)}
             O = {'LIT8': (['LIT'], 1), 'LIT': (['LIT'], 2), 'LIT32': (['LIT'], 3), 'LIT64': (['LIT'], 4),
                  'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5), 'DUP+I': (['DUP', 'ADDI'], 5), 'DUP<I': (['DUP', 'LIT', 'LT'], 5),
                  'BRANCH': (['BRANCH'], 7), 'BRANCH8': (['BRANCH'], 6), '?BRANCH': (['0BRANCH'], 7),

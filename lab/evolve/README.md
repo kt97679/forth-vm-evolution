@@ -685,3 +685,27 @@ design has; against the commit before, every id, expression and seeded draw the
 same, after it caught rtfuse made late by default (875 ids). counters.py, the
 laptop's hardware counters; c-baseline.py and counters.py pick their designs
 from the newest front (evolve.newest_front).
+
+Iteration 290: 2@ and 2! join the ops10 pool and opbody's list - the handlers in
+vm-lab.c, gen-tos.py and gen-msc.py (gen-tail.py takes them as it finds them; the
+JIT, meeting an opcode it does not translate, leaves the word to the interpreter),
+their kernel bodies in sod16.py's table as the converter reads them (SOD16_SHOW).
+Five engines-check paths carry them: s6, the cached top off, multi-state, tail
+calls, the JIT. word-cost.py and gate.py take --set; a list adds its members to a
+design's own. The audit that found them: results/source-audit-2.md.
+
+Iteration 292: the gene opinline - the [opcode EXIT] words placed among the
+primitives (layout.py --op-inline), so PRIMITIVE?, asking by address, lets every
+run-time COMPILE, copy their opcode: code compiled at run time stops calling them.
+Five engines-check paths carry it, on the 2@ and 2! ones.
+
+Iteration 293: the gene tailpn - gen-tail.py --preserve-none: clang 19+'s
+preserve_none on every handler of the tail-call engine and musttail on every
+handler-to-handler call, built with clang_pn(), the newest clang here that takes
+them. A versioned clang (clang-19, clang-20) is a build tool now, not jailed as an
+engine: the jail's no-new-process rule had kept its driver from the linker.
+
+Iteration 295: the gene knumber - NUMBER? as one opcode, for klookup designs:
+forth/cv8b-knumber.4 ((NUMBER?) and NUMBER?8, a stage tag -knumber of its own), the
+handler's C in one helper (numberq) for the plain, cached-top and multi-state engines,
+its kernel body as the converter reads it in sod16.py's table. Five engines-check paths.

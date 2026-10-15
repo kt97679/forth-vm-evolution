@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """gen-tail.py PREPROCESSED.c OUT.c [--wrap L_a,L_b,...] - tail-call
-threading for the CV8 engine.
+threading for the CV8 engine. --preserve-none (Iteration 293, the gene tailpn,
+clang 19+): preserve_none on every handler, musttail on every tail call.
 
 Input: the top-of-stack engine (vm-lab-tos.c, after gen-fold / gen-super),
 preprocessed for one design with -DDISPATCH256=1 (cc -E -P), so every
@@ -107,5 +108,17 @@ head = ('typedef void (*hfn)(%s);\n'
         + ''.join('static void H_%s(%s);\n' % (n, ARGS) for n in names))
 head = head.replace('ESC_FTAB_N', str(max(ESC_N, 32)))   # 32 as ever at level 1; 41 at level 2
 if TAG2: head += 'static hfn t2tab[256], t2esc[256];\n'
-open(sys.argv[2], 'w').write(pre + head + ''.join(funcs) + entry + post)
+body = ''.join(funcs)
+if '--preserve-none' in sys.argv:
+    # Iteration 293, the gene tailpn: clang 19+'s preserve_none on every handler - no register is
+    # callee-saved, so the state stays in registers through the chain, nothing spilled - and
+    # musttail on every handler-to-handler call, so none can become a call (CPython 3.14's form).
+    # The entry, an ordinary C function, only calls into the chain: no musttail there.
+    PN = '__attribute__((preserve_none))'
+    head = head.replace('typedef void (*hfn)(', 'typedef void (%s *hfn)(' % PN, 1)
+    head = head.replace('static void H_', 'static %s void H_' % PN)
+    body = body.replace('static void H_', 'static %s void H_' % PN)
+    body = re.sub(r'(?<![\w.])return (htab\[t\]|esc_ftab\[t\]|t2tab\[t\]|t2esc\[t\]|H_\w+|f_)\((ip, dsp, rp, tos, t|tc_ip, tc_dsp, tc_rp, tc_tos, tc_t)\);',
+                  r'__attribute__((musttail)) return \1(\2);', body)
+open(sys.argv[2], 'w').write(pre + head + body + entry + post)
 print('%d handlers as functions, %d wrapped' % (len(names), len(WRAP & set(names))))

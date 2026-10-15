@@ -1326,6 +1326,37 @@ NOINLINE_IO static UNS64 t_read(UNS8 *p, UNS64 n) {
     return k;
 }
 
+#if X_NUMBERQ
+/*  Iteration 295, the gene knumber: NUMBER? - cv8b-knumber.4's (NUMBER?), step for
+    step: a 'c' literal; DPL -1; a sign before or after the prefixes $ # %, each
+    tested in turn as the Forth tests them; (>NUMBER)'s loop in that base, uppercase
+    digits only; a point sets DPL to the digits after it; 0 0 0 on failure. */
+static UNS64 numberq(UNS64 a, UNS64 base, UNS64 dpl, UNS64 *lo, UNS64 *hi) {
+    INT64 n = BYTE(a); UNS64 s = a + 1, b = base, lo_ = 0, hi_ = 0; int neg;
+    if (n == 3 && BYTE(s) == 39 && BYTE(s + 2) == 39) { CELL(dpl) = (UNS64)-1; *lo = BYTE(s + 1); *hi = 0; return (UNS64)-1; }
+    CELL(dpl) = (UNS64)-1;
+    neg = BYTE(s) == 45; if (neg) { n--; s++; }
+    if (BYTE(s) == 36) { b = 16; n--; s++; }
+    if (BYTE(s) == 35) { b = 10; n--; s++; }
+    if (BYTE(s) == 37) { b = 2; n--; s++; }
+    if (!neg && BYTE(s) == 45) { neg = 1; n--; s++; }
+    if (n <= 0) { *lo = *hi = 0; return 0; }
+    for (;;) {
+        while (n) {
+            INT64 d_ = (INT64)BYTE(s) - 48; UNS64 ph_, pl_;
+            if (d_ < 0 || (d_ > 9 && d_ < 17)) break;
+            if (d_ > 9) d_ -= 7;
+            if (!(d_ < (INT64)b)) break;
+            ph_ = lo_; pl_ = b; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++;
+            s++; n--;
+        }
+        if (n) { if (BYTE(s) == 46) { n--; CELL(dpl) = (UNS64)n; s++; } else { *lo = *hi = 0; return 0; } }
+        if (!n) break;
+    }
+    if (neg) { hi_ = ~hi_ + (lo_ == 0); lo_ = -lo_; }
+    *lo = lo_; *hi = hi_; return (UNS64)-1;
+}
+#endif
 static void virtual_machine(void) {
     VMREGS
 #if ENC == 1
@@ -1797,6 +1828,8 @@ L_x_plusstore: { UNS64 a_ = DS0; CELL(a_) += DS1; dsp += 2 * CELL_BYTES; } NEXT(
 /* ?DUP: the value first - one PUSH lowers dsp before it evaluates x,
    so PUSH(DS0) would copy the new, empty slot onto itself.  */
 L_x_qdup:      if (DS0) { UNS64 v_ = DS0; PUSH(v_); } NEXT();                    /* ?DUP    */
+L_x_2fetch:    { UNS64 a_ = DS0; DS0 = CELL(a_ + CELL_BYTES); PUSH(CELL(a_)); } NEXT();   /* 2@ (Iteration 290) */
+L_x_2store:    { UNS64 a_ = DS0; CELL(a_) = DS1; CELL(a_ + CELL_BYTES) = DS2; dsp += 3 * CELL_BYTES; } NEXT(); /* 2! */
 L_x_execute:   { UNS64 x_ = DS0; dsp += CELL_BYTES; RPUSH(ip); ip = x_; TRACE_CALL(); } NEXT();    /* EXECUTE */
 L_x_i:         PUSH(RS); NEXT();                                                    /* I       */
 L_x_j:         PUSH(CELL(rp + 2 * CELL_BYTES)); NEXT();                             /* J       */
@@ -1978,6 +2011,9 @@ L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTE
 L_x_tonumber: { UNS64 b_ = DS0, u_ = DS1, a_ = DS2, hi_ = CELL(dsp + 3 * CELL_BYTES), lo_ = CELL(dsp + 4 * CELL_BYTES);
             while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; }
             dsp += CELL_BYTES; DS0 = u_; DS1 = a_; DS2 = hi_; CELL(dsp + 3 * CELL_BYTES) = lo_; } NEXT();
+#endif
+#if X_NUMBERQ
+L_x_numberq: { UNS64 p_ = DS0, b_ = DS1, a_ = DS2, lo_, hi_, f_ = numberq(a_, b_, p_, &lo_, &hi_); DS2 = lo_; DS1 = hi_; DS0 = f_; } NEXT();   /* (NUMBER?) */
 #endif
 #if X_PLACE
 L_x_place: { UNS64 d_ = DS0, n_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;

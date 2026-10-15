@@ -344,3 +344,26 @@ set.
 3. compiler=1 (clang) on under a quarter of the front (18 of 172).
 4. The smallest at least 30 bytes under seed 49's 15,672.
 5. Crossover 30-37%.
+
+## Seed 50, scored (Iteration 296)
+
+1. Not small, hypervolume above 2% - **wrong**: small, +0.4%; the gene set's third run.
+2. factor at 3 on most of the front - **right**: 121 of 187.
+3. compiler=1 (clang) on under a quarter - **right**: 28 of 187.
+4. The smallest at least 30 bytes under seed 49's 15,672 - **wrong**: 15,647, 25 under.
+5. Crossover 30-37% - **right**: 35.2%.
+
+Three of five.
+
+## Seed 51, predicted (Iteration 296)
+
+Twelve hours (the owner), the first run with the after-seed-50 batch: 2@ and 2! in the
+format-10 pool, opinline, tailpn, knumber.
+
+1. Not small: new genes.
+2. knumber on at least half of the front's klookup designs.
+3. opinline on at least a quarter of the front.
+4. A tail engine on the front again, with tailpn - none on seeds 49 and 50's.
+5. 2@ or 2! among the format-10 words of at least a quarter of the front's designs
+   without the JIT.
+6. Crossover 30-37%.

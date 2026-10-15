@@ -71,6 +71,16 @@ VARIANTS = [                                     # (name, genes set on s6, genes
 ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
 
 bad = []
+VARIANTS += [(n + ', 2@ 2! opcodes', dict(g, ops10=list(g.get('ops10') or []) + ['2@', '2!'], opbody=1), need + ['ops10'])   # Iteration 290
+             for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+VARIANTS += [(n.replace('2@ 2! opcodes', '2@ 2! inlined'), dict(g, opinline=1), need + ['opinline'])   # Iteration 292
+             for n, g, need in list(VARIANTS) if n.endswith('2@ 2! opcodes')]
+if E.clang_pn():   # Iteration 293: where a clang 19+ is installed
+    VARIANTS += [('clang %s, tail calls with preserve_none' % E.clang_pn(), dict(tail=1, compiler=1, tailpn=1), ['compiler', 'tail', 'tailpn'])]
+KN = dict(kfast=1, kinput=1, klookup=1, knumber=1)   # Iteration 295: NUMBER? as one opcode, on every engine family
+VARIANTS += [('klookup, knumber', dict(KN), ['knumber']), ('klookup, knumber, cached top off', dict(KN, tos=0), ['knumber']),
+             ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']), ('klookup, knumber, tail calls', dict(KN, tail=1), ['knumber', 'tail']),
+             ('klookup, knumber, the JIT', dict(KN, **JIT), ['knumber', 'jit'])]
 for name, genes, must in VARIANTS:
     g = E.canon(dict(S6, **genes))
     ex = E.express(g)
