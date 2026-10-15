@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 305.
+- master: Iteration 306.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -110,7 +110,10 @@ About 20 minutes of machine time for build, tests and gates.
   chain's start, on the front that just finished. `next-run.sh status`, `monitor` (a
   read-only follower of the chain's one log, with progress lines in the seed run) and
   `stop` (Iterations 303-304); cleanup on every exit, and at every start a repair of
-  what a crashed or killed run left (Iteration 303). (prompts/08 items 11-16; the specification:
+  what a crashed or killed run left (Iteration 303). Remote checks on dream.lan (Intel
+  i7-6700, Skylake) and rage.lan (Tegra, ARMv7, 32-bit), by ssh from the laptop,
+  alongside each seed run on the front that just finished - adding no hours
+  (Iteration 306). (prompts/08 items 11-16; the specification:
   results/drafts/runner-protocol.md.)
 - What each objective measures, how a run is judged and when evolution stops,
   and that the size is the kernel's (Iterations 75, 127, 138, 188-189):
@@ -189,8 +192,8 @@ About 20 minutes of machine time for build, tests and gates.
    one CPU, with small programs. Two checks to build: a held-out workload whose code
    footprint grows (generated programs of N words, hot and run once, and a
    compile-heavy one) - each front design's time per dispatch against N; and the joint
-   front measured on a second CPU (an Intel x86, the Tegra session) - its ranking
-   against the laptop's.
+   front measured on a second CPU - now planned: the remote checks on dream.lan and
+   rage.lan, part of item 0 (results/drafts/runner-protocol.md).
 6. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
    compiler's switch-off, the list genes, engine flags, shared converter
    options) - into rows only as each is next touched, each conversion checked

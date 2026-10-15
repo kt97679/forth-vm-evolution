@@ -6045,3 +6045,16 @@ the counters' cache misses under 0.2 a thousand instructions on compute work say
 code fits. results/generalization.md: what carries to any CPU and what may not, and the two
 checks to build - a held-out workload whose footprint grows, and the joint front on a
 second CPU. heldout.py in the processing routine; HANDOFF item 5b.
+
+## Iteration 306 - 2026-10-15 - Claude
+
+**Two more machines for the generalization check (the owner): dream.lan, an Intel Core
+i7-6700 (Skylake), and rage.lan, the Tegra (ARMv7, 32-bit) - both reached from the laptop
+by ssh, both slower.** The plan, in results/drafts/runner-protocol.md: remote checks
+alongside every seed run, on the front that just finished, so they add no hours - dream
+24 designs of the joint front and s6, the selection workloads and sieve, 3 rounds (about
+20-30 minutes, estimated); rage 12 designs without the JIT and s6, 2 rounds (1-1.5 hours) -
+on a 32-bit host a design builds with 4-byte cells and the C library, and the JIT does not
+express there. Each check a hard limit, its host's environment and a feasibility check on
+first contact, a host that fails skipped and named; the Spearman correlation with the
+laptop's speeds, as heldout.py does for workloads. Part of open item 0.

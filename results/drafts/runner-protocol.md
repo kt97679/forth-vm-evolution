@@ -96,6 +96,46 @@ next command is always on the screen.
   exits - restoring - when the chain's leader is gone, as well as when its own time
   runs out.
 
+## Remote checks - the front on two other machines (Iteration 306)
+
+The owner's machines, both reached from the laptop by ssh without a password, both
+slower than the laptop: **dream.lan**, an Intel Core i7-6700 (Skylake, 4 cores and 8
+threads, x86-64) - a different microarchitecture, the check against tuning to Zen 4;
+and **rage.lan**, an NVIDIA Tegra (ARMv7, 32-bit, 4 cores, Gentoo, GCC 16.2;
+results/armv7-tegra.md) - a different instruction set. On a 32-bit host a design builds
+with 4-byte cells and the C library, and the JIT does not express (jit_on: x86-64 only):
+there only the designs without the JIT are themselves.
+
+- **When:** in every chain, right after the checks, alongside the seed run - on the
+  front that just finished, as the measurements are. The remote machines do the work;
+  the laptop only copies, polls by ssh and fetches - nothing that moves its timings.
+  So they add no hours to a chain.
+- **What:** on dream, a sample of 24 designs of the joint front - the 6 fastest, 6
+  about the best Q, the 6 smallest, 6 between - and s6; the six selection workloads and
+  sieve; 3 rounds. On rage, 12 designs without the JIT, and s6; 2 rounds. Each design's
+  speed against s6 there; the Spearman correlation with the laptop's speeds for the same
+  designs, as heldout.py gives it for workloads; where the laptop's fastest rank there;
+  the designs that move most, with their genes.
+- **Time:** estimated, to be replaced by the first run's own times - dream 20-30
+  minutes (the stages built once a commit, 24 designs built, the measurements), rage
+  1-1.5 hours (the image translation is pure Python, "minutes on a slow machine"). Both
+  well inside a 6-hour seed run. Each has a hard limit - when the laptop's evolution
+  stops; what is finished by then is packed, the rest named as not measured.
+- **First contact, automatic:** each host's environment into the archive (uname, cc,
+  clang and python3 versions, /bin/sh, the locale, free disk, cores, the CPU governor)
+  and a feasibility check - s6 built there and the corpus right. A host that fails is
+  reported unusable, with why, and skipped: a remote never stops or fails the chain.
+- **How:** the laptop copies the chain's bundle to each host, which fetches it into
+  ~/fve-xcheck at the chain's commit and runs lab/evolve/xcheck.py (to be written) under
+  setsid, with its own log and progress lines; the laptop polls, and at the chain's end
+  fetches results and logs into the archive. Each check pins to its host's least busy
+  core and records the load - the hosts are to be left idle during a run.
+- **Stop and recovery:** `next-run.sh stop` stops the remote checks too (ssh, their
+  process group); a start's recovery clears what a crashed chain left on them; status
+  and monitor show their progress.
+- **Results:** results/xcheck-<host>.md, a section a run - over runs, which genes'
+  worth differs by machine.
+
 ## Tested here before the laptop relies on it
 
 - A chain in miniature - a few-minute seed run, the comparison at one round, the
@@ -107,4 +147,7 @@ next command is always on the screen.
   seed run.
 - monitor through a whole miniature chain: it shows each step and the progress lines,
   ends by itself with the archive's path; Ctrl-C in it leaves the chain running.
+- The remote checks with a stand-in ssh and scp that run a second clone here, as a host
+  would - including a host unreachable and a host whose build fails: the chain goes on,
+  the archive says so.
 - After each: no root-owned file under the clone.

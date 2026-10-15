@@ -95,6 +95,9 @@ results/drafts/goals-snapshots.md.)
    (mk-spn-cv8-image.sh; s8-*-32 on an ARM host), and bench-laptop.sh
    skips SPN off x86-64. Then one sitting: tools/arm-qemu-check.sh
    natively, the stage ladder timed, SPN against the interpreter.
+   (Iteration 306: the remote checks of the protocol - results/drafts/runner-
+   protocol.md - make rage.lan a regular measurement host for the front's designs
+   without the JIT; this session stays for the stage ladder and SPN.)
 2. **The article - on the backburner** (the owner, Iteration 48):
    `article/`; prompts/14-audience-research before drafting for Habr and
    ForthHub, 04 and 05 before publishing.
