@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 324.
+- master: Iteration 325.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -170,20 +170,24 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
-0. The Tegra (rage.lan, ARMv7, 32-bit) as a remote check - the owner wants it: running only on
-   the laptop is the skew they feared (Iteration 324). The way: 8-byte cells on a 32-bit host,
-   engine/vm-lab.c's and relf.c's CELL64 (results/drafts/cell64-wip.patch; master without it) -
-   UNS64 64-bit there, cells and pointers through uintptr_t, CELL with no alignment assumed
-   (ARMv7's LDRD faults off 4 bytes); evolve.py's CCV(g)/cc()/cell64(): EVOLVE_CC for another
-   compiler, -DCELL64=1 on a 4-byte-pointer host or EVOLVE_CELL64=1 - on a 64-bit host nothing
-   changes. Tested here so far: x86-64 builds unchanged (build-stages clean); the s6 reference
-   with gcc -m32 -DCELL64=1 fails on one thing only - __int128 (UM*, UM/MOD: 64x64->128), not
-   on 32-bit targets: portable 32-bit-halves code in CELL64 mode is next. Then: the corpus as a
-   32-bit x86 engine (gcc -m32 runs here; its addresses pass 2 GB - signedness shows), then ARMv7
-   (arm-linux-gnueabihf-gcc + qemu-arm, run through a wrapper: no binfmt here), then remote-
-   checks.sh: rage back, native, the laptop's build products shipped (k64 dumps, vm-lab-tos.c) in
-   place of build-stages, its sample without jit, sysc, regpin and clang; and a script the owner
-   can run on rage directly for quick feedback.
+0. The Tegra (rage.lan, ARMv7) and 32-bit x86 as remote checks - the owner's: running only on
+   the laptop is the skew they feared, and a 32-bit x86 check would show skew sooner (Iterations
+   324-325). 8-byte cells on a 32-bit host: results/drafts/cell64-wip.patch (master without it;
+   apply it in a scratch tree, rebuild). In it: engine/vm-lab.c's and relf.c's CELL64 (UNS64 64-bit
+   on a 32-bit host, CELL unaligned-safe, UM* and UM/MOD in 32-bit halves - no __int128 there);
+   the system-call table for 32-bit hosts - the shell's calls and now the file overlays' (read,
+   write, open, close, lseek, munmap, mremap, ioctl, exit, unlink; mmap through libc's mmap2),
+   i386 and ARM EABI (exit_group 252 / 248), SYSC's guard now admitting ARM - every engine is SYSC;
+   results zero-extended unless -4095..-1 (addresses past 2 GB); evolve.py's CCV/cc/cell64
+   (EVOLVE_CC, EVOLVE_CELL64) and EVOLVE_CC's compiler not jailed in sh(). On a 64-bit host nothing
+   changes. Tested: build-stages clean (both widths); **32-bit x86 with 8-byte cells - 14 of 14
+   alive** (s6; b926dd6bc8, whose fsys failed until the file calls were mapped; 12 across seed 53's
+   front, fsys 1-5). Next: ARM under qemu-arm (the harness: wrap each engine to run qemu-arm -L
+   /usr/arm-linux-gnueabihf, and lift the jail for it - qemu reserves more than its 1 GB; the
+   production jail stays); then the checks: dream's second line (32-bit x86, the laptop's static
+   -m32 binaries, prebuilt32), rage native (the laptop's build products shipped: k64 dumps,
+   vm-lab-tos.c), checks on one host serialized by flock, each deadline from its own start; the
+   sample without jit, clang, tailpn, regpin; a script for the owner to run on rage.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept

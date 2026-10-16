@@ -6343,3 +6343,18 @@ ELF it built. Tests here: gcc -m32 runs, ARM under qemu-arm (no binfmt: a wrappe
 the cross compiler removed /usr/include/asm, which broke the 32-bit stages - restored, noted in
 HANDOFF's setup. x86-64 builds unchanged. The s6 reference at -m32 -DCELL64=1: one error -
 __int128 (UM*, UM/MOD), which 32-bit targets lack. Next: those in 32-bit halves, then the corpus.
+
+## Iteration 325 - 2026-10-16 - Claude
+
+**32-bit x86 with 8-byte cells works - 14 of 14 designs alive; the owner adds a 32-bit x86 check
+to the runs (results/drafts/cell64-wip.patch, HANDOFF item 0).** UM* and UM/MOD in 32-bit halves
+(no __int128 on 32-bit targets) - s6 built as a 32-bit engine and right on the corpus. One design
+of seed 53's front died on the kernel workload; the bisect, all 27 genes: fsys alone. The cause:
+the image's system-call numbers are x86-64's, and the table mapping them for 32-bit hosts held
+only the shell's calls (Iteration 141) - none of the file overlays' (read, write, open, close,
+lseek, mmap...); my first guess, varargs, was wrong (every argument is cast to long). Mapped for
+i386 and 32-bit ARM, mmap through libc, results zero-extended unless an errno - an address past
+2 GB is no error. And every engine is SYSC (Iteration 147): its guard stopped every design on
+ARM, which rage met first. Then 14 of 14 at -m32: s6, the fsys design, twelve across the front.
+ARM's first try: the cross compiler jailed by sh() as an engine (no new processes) - EVOLVE_CC's
+compiler is a build tool now, as clang-19 became. The ARM run under qemu-arm next.
