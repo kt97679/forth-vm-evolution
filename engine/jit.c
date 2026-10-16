@@ -150,6 +150,20 @@ static unsigned char *jit_mem;
 static uint32_t jit_used = 16;             /* offsets 0 and 1 mean: not native */
 static ucell jit_rp;                    /* the return stack while native code runs: IMM_RP */
 static UNS64 jit_cbase;                 /* the image base: calls are offsets from it */
+#if JITLOG
+/*  Iteration 340: why a word is left to the interpreter (lab/evolve/jitleft.py --why) - a build for
+ *  the analysis only: each refusal written "R word address why" (image offsets) to the file JITLOG
+ *  names. why: 1 an operation the decoder has no mapping for, 2 the return stack's order, 3 a
+ *  stencil not usable, 4 a callee not translated (address: the callee), 5 the JIT's memory full.  */
+#include <stdio.h>
+#include <stdlib.h>
+static UNS64 jitlog_at; static int jitlog_why;
+static void jitlog_refused(UNS64 w) {
+    static FILE *f; const char *p;
+    if (!f && (p = getenv("JITLOG")) != NULL) f = fopen(p, "a");
+    if (f) { fprintf(f, "R %lu %lu %d\n", (unsigned long)(w - jit_cbase), (unsigned long)(jitlog_at - jit_cbase), jitlog_why); fflush(f); }
+}
+#endif
 
 static uint32_t jit_ld32(UNS64 a) {
     return (uint32_t)BYTE(a) | (uint32_t)BYTE(a + 1) << 8 | (uint32_t)BYTE(a + 2) << 16 | (uint32_t)BYTE(a + 3) << 24;
@@ -387,6 +401,9 @@ static uint32_t jit_word(UNS64 w, int depth) {
     JITNOTE(w, end);
     jit_st32(w + 1, 0);                 /* meanwhile, and if it fails: not native */
     f = jit_body(w, w + 5, end, depth);
+#if JITLOG
+    if (!f) jitlog_refused(w);
+#endif
     if (f) jit_st32(w + 1, f);
     return f;
 }
@@ -480,6 +497,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     for (; a < end; n++) {
 #endif
         UNS8 b = BYTE(a);
+#if JITLOG
+        jitlog_at = a; jitlog_why = 1;
+#endif
         if (n >= JIT_MAXOPS) return 0;
         at[n] = a;
         if (T2_CALL(b)) {               /* a call of 2, 3 or 4 bytes (2 or 4: t2wide) */
@@ -515,6 +535,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     {   int d = 0;                      /* the return stack in order: never below the entry, at it at every EXIT */
         for (i = 0; i < n; i++) {
             if (opl[i] == 0xFFFF) continue;
+#if JITLOG
+            jitlog_at = at[i]; jitlog_why = 2;
+#endif
             for (j = 0; j < jit_ops[opl[i]].n; j++) {
                 int s = jit_ops[opl[i]].st[j];
                 if (s == S_TOR) d++;
@@ -542,11 +565,18 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         else {                                      /* a word without the header: translated once */
             uint32_t *k = jit_kslot(arg[i]);
             if (!k) return 0;
-            if (*k & 0x80000000u) { *k = 1; *k = jit_body(arg[i], arg[i], 0, depth + 1); }
+            if (*k & 0x80000000u) { *k = 1; *k = jit_body(arg[i], arg[i], 0, depth + 1);
+#if JITLOG
+                if (!*k) jitlog_refused(arg[i]);
+#endif
+            }
             f = *k;
         }
 #else
         else return 0;
+#endif
+#if JITLOG
+        if (f < 2) { jitlog_at = arg[i]; jitlog_why = 4; }
 #endif
         if (f < 2) return 0;
         arg[i] = (UNS64)(uintptr_t)(jit_mem + f); opl[i] = 0xFFFE;
@@ -562,6 +592,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #endif
     for (i = 0; i < n; i++) {           /* sizes, and every stencil usable */
         nat[i] = size;
+#if JITLOG
+        jitlog_at = at[i]; jitlog_why = 3;
+#endif
 #if JITK
         {
             int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
@@ -594,6 +627,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     }
     nat[n] = size;
     off = (jit_used + 15) & ~15u;
+#if JITLOG
+    if (off + size > JIT_MEM) { jitlog_at = w; jitlog_why = 5; }
+#endif
     if (off + size > JIT_MEM) return 0;
 #if JITK
     jitk_cs = 1;

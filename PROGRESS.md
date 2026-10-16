@@ -6535,3 +6535,15 @@ so the corpus's - each run once or a few times - stay below what makes the JIT t
 is the outer interpreter: INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK. Two genes to look for: the
 outer interpreter made translatable (which operation keeps each out - next), and when the JIT
 translates code compiled at run time (results/drafts/next-genes.md).
+
+## Iteration 340 - 2026-10-16 - Claude
+
+**Why the JIT leaves what it leaves - jitleft.py --why, and the next genes named.** engine/jit.c
+gained a -DJITLOG=1 build (analysis only: a normal JIT engine byte-identical) logging each refusal -
+the operation, the return stack's order, a stencil, a callee, the memory - and jitleft.py --why
+follows each word through refused callees to the root. On seed 55's fastest JIT design: 62.6% of
+what the JIT leaves was **never tried** - the outer interpreter (INTERPRET, PARSE-WORD, REFILL,
+?STACK) is the image's own code, and the JIT tries only words with its header (those compiled at run
+time) and their callees: not blocked, not a candidate. The rest: operations with no mapping - vf
+(5.1%: WORD, HERE), UM* (1.8%: *), WRITE, vs, 0<?BRANCH8, SP@, DUP?BRANCH8, UM/MOD. The genes: the
+image's words as JIT candidates (the large one), and stencils for those operations (small ones).

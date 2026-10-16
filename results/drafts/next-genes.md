@@ -89,3 +89,49 @@ set to at[n] in the decode loop and at[i] in the later loops, and jit_body's cal
 building so, and naming each refused operation from the call map's O lines (address, kind, opcode,
 name). Then the counts: which operations keep INTERPRET, PARSE-WORD, WORD, REFILL out - each a
 stencil to write, a gene.
+
+## Why each word is left - jitleft.py --why (Iteration 340)
+
+engine/jit.c logs each refusal in a -DJITLOG=1 build only (a normal JIT engine byte-identical: c549c0677c,
+112c1292f2df before and after); jitleft.py --why follows each word's refusal through refused callees to
+the root. Seed 55's fastest JIT design, c549c0677c:
+
+What is left, by word (the mean share over the workloads), beside the word's share of the JIT-off work:
+
+- (compiled at run time)    21.0% of what is left;  67.3% of the work, JIT off
+- INTERPRET                 15.0% of what is left;   5.2% of the work, JIT off; left: never tried
+- PARSE-WORD                 8.8% of what is left;   2.7% of the work, JIT off; left: never tried
+- COLD                       7.5% of what is left;   0.0% of the work, JIT off; left: never tried
+- ?STACK                     3.5% of what is left;   1.5% of the work, JIT off; left: never tried
+- REFILL                     3.5% of what is left;   0.7% of the work, JIT off; left: never tried
+- C,                         2.3% of what is left;   0.5% of the work, JIT off; left: never tried
+- WORD                       2.1% of what is left;   1.1% of the work, JIT off; left: no mapping for vf
+- HERE                       1.8% of what is left;   0.6% of the work, JIT off; left: no mapping for vf
+- CMOVE>                     1.8% of what is left;   0.6% of the work, JIT off; left: never tried
+- *                          1.8% of what is left;   0.2% of the work, JIT off; left: no mapping for UM*
+- SUPER-OP                   1.7% of what is left;   0.6% of the work, JIT off; left: never tried
+
+The root operations, by the share of what is left behind them:
+
+-  62.6%  never tried
+-   5.1%  no mapping for vf
+-   1.8%  no mapping for UM*
+-   0.9%  no mapping for @4431
+-   0.8%  no mapping for WRITE
+-   0.5%  no mapping for vs
+-   0.5%  no mapping for 0<?BRANCH8
+-   0.3%  no mapping for SP@
+-   0.3%  no mapping for DUP?BRANCH8
+-   0.2%  no mapping for UM/MOD
+
+**The reading.** 62.6% of what is left was **never tried**: INTERPRET, PARSE-WORD, COLD, ?STACK, REFILL,
+C,, CMOVE> - the JIT translates a word on its first call through a JIT header, which the run-time
+compiler gives the words it compiles, and a callee when translated code reaches it; the image's own
+words have no header, and the outer interpreter is the top-level loop, never called from translated
+code. Not a missing stencil: **not a candidate at all**. Then the operations with no mapping: vf (a
+fused variable fetch: WORD, HERE - 5.1%), UM* (* - 1.8%), WRITE, vs (a fused variable store),
+0<?BRANCH8, SP@, DUP?BRANCH8, UM/MOD.
+
+**The genes**: (1) the image's words JIT candidates - translated on their first call as run-time words
+are (or the outer interpreter and its callees at start) - the large lever; (2) stencils for vf, vs,
+UM*, UM/MOD and the fused branches - small ones, each.
