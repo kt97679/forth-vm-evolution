@@ -6512,3 +6512,15 @@ death (1390 = 6 mod 8) - now taken only where reachable; that design converts an
 two-width scratch run: 13 of 20 with speed32; left, 5 mid-word targets (DOES> tails, aligned only for
 S > 1) and a CPT16 one, and the corpus death at 4-byte cells. Next: their S, then the tails, then the
 corpus death's bisect.
+
+## Iteration 338 - 2026-10-16 - Claude
+
+**Selecting at both widths - built, tested, pending as the after-seed-56 batch.** The last two
+32-bit failures of the scratch runs: the converter's ordinary-header padding of Iteration 337 made
+images convert but run-time definitions (aligned to the cell) out of a scale-3 call's reach - 7
+corpus deaths; taken back out, and the 32-bit build caps the call scale at 2 instead (nothing is
+8-aligned at 4-byte cells). And the cell family copied s0-cell-s64.img at any width - a 4-byte engine
+refused it before printing a byte. Then 20 of 20 designs with speed32. NEXT-RUN's word `widths`; the
+report's 32-bit column and seed-facts' lines from the data; compare-fronts still at 64 bits. 64 bits
+unchanged: six designs byte-identical, gene-equiv PASS over 4,096 genomes, run-tests, validate 7 of
+7, the gate on seed 55's front.

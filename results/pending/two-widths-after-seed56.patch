@@ -1,5 +1,23 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index f9aab57..527bc02 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -727,3 +727,13 @@ recorded genome and why; engines-check builds every one and runs it on the corpu
+ fault found once stays a test. The first two: seed 52's JIT designs whose (LOOP) stencil
+ was read short (jit.c's scan, 64 bytes without jitloop; now 160 in every build, and every
+ branching stencil must show both its exits or is not used).
++
++Iteration 338: selecting at both widths (results/drafts/two-width-selection.md). `evolve.py
++--widths 8,4` - each design that passes screening is also measured as a 32-bit x86 engine at 4-byte
++cells on this machine (gcc -m32; its JIT off - a JIT design judged at 32 bits by the interpreter
++under it - and its call scale at most 2, cell-aligned calls being the 32-bit build's), and that
++speed32 is a fourth objective on the front beside speed, size and memory; without the flag nothing
++changes. NEXT-RUN's word for it: `widths` (seed N tag2 6h widths). The report shows a 32-bit speed
++column and seed-facts.py two-width lines whenever the records carry speed32. compare-fronts.py still
++judges runs at 64 bits - its five measures, comparable with every earlier session.
++
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 2973e17..8fdd4eb 100644
+index 2973e17..5c382f4 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
 @@ -634,11 +634,65 @@ def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix:
@@ -69,6 +87,15 @@ index 2973e17..8fdd4eb 100644
  
  def cc():
      """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit
+@@ -966,7 +1020,7 @@ def build_other(g, d):
+     if g['enc'] == 'cell':
+         if sh(cc() + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')] + rt()).returncode:
+             raise RuntimeError('died: engine did not compile')
+-        shutil.copy(os.path.join(O, 's0-cell-s64.img'), img); return eng, img
++        shutil.copy(os.path.join(O, 's0-cell-s%d.img' % (8 * cellw())), img); return eng, img   # Iteration 338: the image of its width
+     src = os.path.join(d, 'vm.c'); shutil.copy(os.path.join(O, 'vm-lab.c'), src)
+     if g['enc'] == 'sod16':
+         flags = ['-DENC=1', '-DREG=1', '-DSCALE=1'] + (['-DSKIPPAD=1'] if g['skippad'] else [])
 @@ -1166,6 +1220,7 @@ def evaluate(g, rounds, keep=False):
          rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
          rec['mem'] = dict(LAST_RSS)
@@ -152,7 +179,7 @@ index 2973e17..8fdd4eb 100644
      bad = [a for a in argv if a.startswith('-') and a not in known]
      if bad:
          # Iteration 4: `--help`, unrecognised, started a full run that wrote
-@@ -1868,7 +1939,7 @@ def main(argv):
+@@ -1868,14 +1939,14 @@ def main(argv):
          DB = os.path.abspath(argv[argv.index('--db') + 1])
      def opt(name, default):
          return type(default)(argv[argv.index(name) + 1]) if name in argv else default
@@ -161,6 +188,110 @@ index 2973e17..8fdd4eb 100644
      if '--validate' in argv:
          ok = True
          for name, g in HUMAN.items():
+             d = os.path.join(EV, 'validate-' + name)
+             try:
+                 eng, img = build(g, d)
+-                same = open(img, 'rb').read() == open(os.path.join(O, name + '-s64.img'), 'rb').read()
++                same = open(img, 'rb').read() == open(os.path.join(O, name + '-s%d.img' % (8 * cellw())), 'rb').read()   # Iteration 338
+                 pw = private_work(d); alive(eng, img, pw, far=False)   # Iteration 158: run-tests.sh judges them far
+                 print('  %-11s image %s the build\'s, corpus and kernel workload correct' % (name, 'IDENTICAL to' if same else 'DIFFERENT from'))
+                 ok &= same
+@@ -2104,6 +2175,7 @@ def qbest_line(F, R, ref):
+             'binary + image %s, memory %d KB%s.' % (i, x['speed'] / (ref['speed'] if ref else 1), format(ov(x, 'total'), ','), x['rss'], rel))
+ 
+ def report(R):
++    if any('speed32' in r for r in R.values()): TWO_WIDTHS[0] = True     # Iteration 338: a two-width run's front, four objectives
+     ok = [i for i in R if R[i]['status'] == 'ok']
+     if not ok: nothing_alive(R); return
+     F = first_front(ok, R)
+@@ -2120,6 +2192,8 @@ def report(R):
+          '## The Pareto front', '',
+          '| design | speed | re-measured | image | binary | binary + image | memory KB | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
+          '|---|---|---|---|---|---|---|---|---|---|']
++    tw = TWO_WIDTHS[0]                         # Iteration 338: the 32-bit speed beside the speed, when the run has it
++    if tw: L[-2] = L[-2].replace('| speed | re-measured |', '| speed | 32-bit speed | re-measured |'); L[-1] += '---|'
+     def diff(g):
+         if not ref: return ''
+         g, r = express(g), express(ref['genome']); out = []
+@@ -2142,7 +2216,7 @@ def report(R):
+         bn = format(x['bin'], ',') if x.get('bin') else '-'
+         tt = format(x['total'], ',') if x.get('total') else '-'
+         rm_ = format(x['rss'], ',') if x.get('rss') else '-'
+-        L.append('| %s | %.3f | %s | %s | %s | %s | %s | %.3f | %s | %s |' % (i, rs, again, format(x['size'], ','), bn, tt, rm_, rl, diff(x['genome']), x['how'][:60]))
++        L.append(('| %s | %.3f |' + (' %s |' if tw else '') + ' %s | %s | %s | %s | %s | %.3f | %s | %s |') % ((i, rs) + ((('%.3f' % x['speed32']) if x.get('speed32') is not None else '-',) if tw else ()) + (again, format(x['size'], ','), bn, tt, rm_, rl, diff(x['genome']), x['how'][:60])))
+     L += ['', '## How the front came about', '']
+     for i in sorted(F, key=lambda i: R[i]['speed']):
+         chain, j = [], i
+diff --git a/lab/evolve/next-run.sh b/lab/evolve/next-run.sh
+index e2c1730..a0930a4 100755
+--- a/lab/evolve/next-run.sh
++++ b/lab/evolve/next-run.sh
+@@ -148,7 +148,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
+     [ -n "$THEN" ] || return 0
+     echo; say "then: $THEN"
+     exec 9>&-
+-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO
++    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO NEXT_RUN_WIDTHS
+     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
+ }
+ # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
+@@ -156,7 +156,11 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
+ # a fresh search find what the carried runs, each starting from the last
+ # fronts, missed? It travels to the detached run in the environment, as THEN.
+ NOCARRY=${NEXT_RUN_NOCARRY:-}
++WIDTHS=${NEXT_RUN_WIDTHS:-}
+ case " $* " in *" nocarry "*) NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx nocarry) ;; esac
++# Iteration 338: "widths" - select at both widths (evolve.py --widths 8,4: each design also measured
++# as a 32-bit x86 engine at 4-byte cells here, its JIT off - speed32 a fourth objective)
++case " $* " in *" widths "*) WIDTHS=1; set -- $(printf '%s\n' "$@" | grep -vx widths) ;; esac
+ # Iteration 115 (the owner): "fromzero" - nocarry and more: the first
+ # generation all random genomes, no hand-made design or founder in it.
+ FROMZERO=${NEXT_RUN_FROMZERO:-}
+@@ -271,12 +275,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
+     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
+     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
+     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
+-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
++        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_WIDTHS=$WIDTHS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+         say "going on in the background, as one chain - watch it with"
+         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
+         exit 0
+     fi
+-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
++    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_WIDTHS=$WIDTHS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+     exit 0
+ fi
+ MODE=$NEXT_RUN_DETACHED
+@@ -475,7 +479,7 @@ fi
+ step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
+ python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
+ TICK=$!
+-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} "$@" >> evolve.log 2>&1 \
++python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${WIDTHS:+--widths 8,4} "$@" >> evolve.log 2>&1 \
+     || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
+ kill $TICK 2>/dev/null || true
+ tail -3 evolve.log
+diff --git a/lab/evolve/seed-facts.py b/lab/evolve/seed-facts.py
+index 3921a85..d0421cf 100755
+--- a/lab/evolve/seed-facts.py
++++ b/lab/evolve/seed-facts.py
+@@ -74,6 +74,16 @@ front = [json.loads(l)['id'] for l in open(results) if l.startswith('{"bin"')]
+ fr = [R[i] for i in front if i in R]
+ print('\nthe front: %d designs (%d not in the db); by how made: %s; via the attic %d' % (
+     len(front), len(front) - len(fr), dict(collections.Counter(kind(r['how']) for r in fr)), sum('via the attic' in (r['how'] or '') for r in fr)))
++f32 = [r for r in fr if 'speed32' in r]          # Iteration 338: a two-width run (evolve.py --widths 8,4)
++if f32:
++    have = [r for r in f32 if r.get('speed32') is not None]
++    print('  two widths: %d of the front with a 32-bit speed, %d without' % (len(have), len(f32) - len(have)))
++    if len(have) >= 4:
++        n = len(have); rk = lambda v: {i: k for k, i in enumerate(sorted(range(n), key=lambda i: v[i]))}
++        ra, rb = rk([r['speed'] for r in have]), rk([r['speed32'] for r in have])
++        print('  speed against the 32-bit speed, over them: Spearman %.3f' % (1 - 6 * sum((ra[i] - rb[i]) ** 2 for i in range(n)) / (n * (n * n - 1))))
++    if have:
++        b = min(have, key=lambda r: r['speed32']); print('  the fastest at 32 bits: %s %.3f (at 64 bits %.3f)' % (b['id'], b['speed32'], b['speed']))
+ fs = sorted((r for r in fr if r.get('total')), key=lambda r: r['total'])
+ third = max(1, len(fs) // 3)
+ for name, part in (('the small third', fs[:third]), ('the middle', fs[third:-third]), ('the fast third', fs[-third:])):
 diff --git a/tools/layout.py b/tools/layout.py
 index 6beaabc..a1092ad 100644
 --- a/tools/layout.py

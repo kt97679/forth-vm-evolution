@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 337.
+- master: Iteration 338.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -188,15 +188,12 @@ About 20 minutes of machine time for build, tests and gates.
    32-bit one (no JIT, GCC only, the same designs), so 64 against 32 bits on one machine; seed 55's
    two samples shared 8 designs, nearly all slow and within 5%. Then: what in the evolved designs
    costs at 32 bits (register pressure on i386's 8 registers, 4-byte cells) - genes for both.
-0c. Selecting at both widths - in progress (results/drafts/two-width-selection.md, "Built so far";
-   results/drafts/two-width-wip.patch, Iteration 336): evolve.py --widths 8,4 runs through - speed32
-   on 12 of 20 designs in its first run. Before it is selected on: the converter's "call target not
-   8-aligned" (4 of the 8 without speed32 - and seed 54's one death at 8-byte cells, the same
-   assertion: results/drafts/convert-align-death.md - fixed in the draft, Iteration 337: word starts
-   aligned to the call scale, SKIPPAD's shortcut only where reachable; left: the ordinary-header
-   path, whose bodies align only implicitly to the cell - the scale-3 failures), a corpus
-   death at 4-byte cells to bisect; then
-   compare-fronts, seed-facts, the report, NEXT-RUN's word for it.
+0c. Selecting at both widths - **pending, the after-seed-56 batch** (results/pending/ORDER.md,
+   Iterations 336-338): evolve.py --widths 8,4 (NEXT-RUN's word: widths) - speed32, each design's
+   interpreter as a 32-bit x86 engine at 4-byte cells, a fourth objective; 20 of 20 designs with
+   speed32 in the scratch run; 64 bits unchanged (byte-identical, gene-equiv PASS, the gate). The
+   converter's alignment fixed with it (seed 54's converter death lives). After seed 56: apply, and
+   NEXT-RUN with widths - the owner's hours.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept

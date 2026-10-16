@@ -79,3 +79,16 @@ Two faults, both "call target ... not aligned", both scaled calls (--cpt S reach
   aligns a body only implicitly, to CELL. Next: pad that path's name so the body lands on CALIGN (at
   8-byte cells CALIGN is the cell: unchanged); then bisect the corpus death (a9a65d6057, enc cell).
 
+## Built (Iteration 338)
+
+- **The call scale at 4-byte cells**: the header padding of Iteration 337 let the images convert,
+  but 7 designs then died on the corpus - run-time definitions align to the cell, and scale 3's
+  8-byte units missed them. Taken back out; instead the 32-bit build of a design caps its scale at
+  2 - nothing is 8-aligned at 4-byte cells; cell-aligned calls are its 32-bit form, as no JIT is.
+- **The cell family's image**: build_other copied s0-cell-s64.img at any width - a 4-byte engine
+  refused it, nothing printed (a9a65d6057); now the image of its width (and --validate's likewise).
+- The scratch two-width run (population 4, one generation): **20 of 20 designs with speed32**.
+- next-run.sh's word `widths`; the report's 32-bit column and seed-facts' lines, from the data;
+  compare-fronts unchanged (64 bits: comparable with every earlier session) - a 32-bit section for
+  it later.
+
