@@ -209,8 +209,26 @@ index af4bc1f..7ad1276 100644
      DUP 1 TARGET-CELL-BYTES @ 3 LSHIFT 1 - LSHIFT AND IF
        -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT OR
      THEN
+diff --git a/lab/evolve/REMOTES b/lab/evolve/REMOTES
+index 781c7de..b0617d2 100644
+--- a/lab/evolve/REMOTES
++++ b/lab/evolve/REMOTES
+@@ -5,7 +5,12 @@
+ # needs them). minutes: the host's deadline, from start.
+ #
+ # host       how       designs  rounds  minutes  sample options
+-dream.lan    prebuilt  24       3       30
++dream.lan    prebuilt    24     3       30
++dream.lan    prebuilt32  24     3       30       --cell 4
++rage.lan     native      12     2       90       --cell 4
++#   Iteration 331: dream.lan's second check - 32-bit x86 at 4-byte cells, the laptop's static -m32
++#   builds and the 4-byte references (dream has no 32-bit compiler); rage.lan back - native, at
++#   its own 4-byte cells (Iterations 326-330). One host's checks run one after another.
+ # rage.lan  native    12       2       90       --no-jit --gcc-only
+ #   Iteration 322: out - a 32-bit host builds 4-byte cells only (build-stages.sh: "8-byte cells
+ #   DISABLED"), and every evolved design is an 8-byte-cell one (evolve.py needs the k64 dumps,
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 8007ad0..6abfc37 100644
+index 8007ad0..2973e17 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
 @@ -571,7 +571,8 @@ def _kind(cmd):
@@ -254,7 +272,23 @@ index 8007ad0..6abfc37 100644
  RTC = os.path.join(ROOT, 'engine', 'rt-linux-x86_64.c')
  def rt():
      """Iteration 75 (the owner): every engine WITHOUT the C library - its
-@@ -701,7 +726,7 @@ def build_tail(g, d, src, flags, eng):
+@@ -631,11 +656,14 @@ def rt():
+     fl = ['-fno-asynchronous-unwind-tables']
+     u = os.uname()
+     if PROFILING[0] or os.environ.get('EVOLVE_LIBC') == '1' or (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
++    # Iteration 331: building 32-bit x86 here (EVOLVE_CC with -m32) - the i386 runtime, static
++    # as the x86-64 one: a 32-bit check's binaries run where no 32-bit C library is (dream.lan)
++    rtc = os.path.join(ROOT, 'engine', 'rt-linux-i386.c') if '-m32' in os.environ.get('EVOLVE_CC', '').split() else RTC
+     # Iteration 82: and without page alignment (-n), RELRO or a build-id - a
+     # static engine has no dynamic relocations, and their padding made the
+     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
+     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
+-                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', RTC, '-lgcc',
++                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', rtc, '-lgcc',
+                  '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
+     # --gc-sections (Iteration 113): the runtime is one object file, so code
+     # nothing calls came along - vsnprintf, snprintf, execvp, syscall,
+@@ -701,7 +729,7 @@ def build_tail(g, d, src, flags, eng):
          r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
                 + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
          if r.returncode: raise RuntimeError('died: tail-call generation')
@@ -263,7 +297,7 @@ index 8007ad0..6abfc37 100644
          bad = tail_offenders(eng)
          if not bad: return
          wrap = sorted(set(wrap) | bad)
-@@ -855,10 +880,10 @@ def _build(g, d):
+@@ -855,10 +883,10 @@ def _build(g, d):
                  objs = []
                  for c in ('spn-stencils.c', 'spn-markers.c'):
                      o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
@@ -276,7 +310,7 @@ index 8007ad0..6abfc37 100644
              if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
      if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
      opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
-@@ -898,14 +923,14 @@ def _build(g, d):
+@@ -898,14 +926,14 @@ def _build(g, d):
      fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
      fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
      fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
@@ -293,7 +327,7 @@ index 8007ad0..6abfc37 100644
          if r.returncode != 4: break
      if r.returncode or not os.path.exists(img):
          raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
-@@ -936,26 +961,26 @@ def build_other(g, d):
+@@ -936,26 +964,26 @@ def build_other(g, d):
      """The cell engine (relf.c, its image as built), SOD16 and CPT16."""
      eng = os.path.join(d, 'engine'); img = os.path.join(d, 'image.img')
      if g['enc'] == 'cell':
@@ -325,7 +359,7 @@ index 8007ad0..6abfc37 100644
      if r.returncode or not os.path.exists(img):
          raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
      return eng, img
-@@ -1584,7 +1609,7 @@ def stale_build():
+@@ -1584,7 +1612,7 @@ def stale_build():
      a git pull without a rebuild. The evolver builds every design from the
      engine source the build generated (vm-lab-tos.c) and from its dumps:
      stale, the newer genes die for reasons that are not theirs."""
@@ -334,7 +368,7 @@ index 8007ad0..6abfc37 100644
      if not all(os.path.exists(f) for f in made): return ['(build/ is incomplete)']
      when = min(os.path.getmtime(f) for f in made)
      srcs = [os.path.join(ROOT, 'engine', 'vm-lab.c'), os.path.join(ROOT, 'tools', 'gen-tos.py'),
-@@ -1604,7 +1629,7 @@ def setup():
+@@ -1604,7 +1632,7 @@ def setup():
          sys.exit('build/ is older than its sources (%s%s) - after a git pull, build again:\n'
                   '    LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate'
                   % (', '.join(newer[:4]), ', ...' if len(newer) > 4 else ''))
@@ -343,7 +377,7 @@ index 8007ad0..6abfc37 100644
          if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
      # The CV8 compiler with table-driven folds and run-time fusion
      # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
-@@ -1614,20 +1639,20 @@ def setup():
+@@ -1614,20 +1642,20 @@ def setup():
                 'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
          src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
          if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
@@ -374,7 +408,7 @@ index 8007ad0..6abfc37 100644
                         + (['cv8-fuse-loopall.4'] if '-loopall' in name
                         else ['cv8-fuse-loop.4'] if '-loop' in name else [])
                         + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
-@@ -1640,7 +1665,7 @@ def setup():
+@@ -1640,7 +1668,7 @@ def setup():
                         + (['file-sysc4.4'] if '-fsys4' in name or '-fsys5' in name else [])   # Iteration 207: the output buffered off a terminal (fsys 4)
                         + (['file-sysc5.4'] if '-fsys5' in name else [])      # Iteration 211: READ-LINE reading ahead where a file can seek (fsys 5)
                         + ['dict-dump-addr.4']) + 'BYE\n'
@@ -383,7 +417,7 @@ index 8007ad0..6abfc37 100644
          dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
          open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
      os.makedirs(EV, exist_ok=True)
-@@ -1649,9 +1674,20 @@ def setup():
+@@ -1649,9 +1677,20 @@ def setup():
      with open(CORPUS, 'wb') as f:
          f.write(open(os.path.join(ROOT, 'tests', 'corpus', 'core.fth'), 'rb').read())
          f.write(b'\nS" CORPUS-REACHED-END" TYPE CR\nBYE\n')
@@ -406,6 +440,211 @@ index 8007ad0..6abfc37 100644
      UNIT = 'median ' + ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'   # median: Iteration 25
      UNIT += ', long workloads (Iteration 100)'
      long_files()
+@@ -1659,7 +1698,13 @@ def setup():
+     # the reference every measurement is paired with: hand-made s6
+     global REF
+     rd = os.path.join(EV, 'reference'); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)
+-    re_, ri = build(canon(HUMAN['s6-cv8b']), rd); rp = private_work(rd)
++    # Iteration 331: a check's host may be handed its reference built (EVOLVE_PREBUILT_REF, a
++    # directory with engine and image - xcheck's prebuilt s6), when it cannot build one itself:
++    # dream.lan has no 32-bit C compiler, and its 32-bit check measures the laptop's binaries
++    pre_ref = os.environ.get('EVOLVE_PREBUILT_REF')
++    if pre_ref: os.makedirs(rd, exist_ok=True); re_, ri = os.path.join(pre_ref, 'engine'), os.path.join(pre_ref, 'image')
++    else: re_, ri = build(canon(HUMAN['s6-cv8b']), rd)
++    rp = private_work(rd)
+     REF = (re_, ri, rp)
+     POOL = foldable()
+ 
+diff --git a/lab/evolve/remote-checks.sh b/lab/evolve/remote-checks.sh
+index fdd0250..e971019 100644
+--- a/lab/evolve/remote-checks.sh
++++ b/lab/evolve/remote-checks.sh
+@@ -42,54 +42,67 @@ start)
+     rep=$(ls -d "$(dirname "$CHAIN")"/archived-*/build/evolve/report.md 2>/dev/null | sort | tail -1)
+     [ -n "$rep" ] || { note all "no archived front to sample - skipped"; exit 0; }
+     git -C "$REPO" bundle create "$R/repo.bundle" HEAD > /dev/null 2>&1 || { note all "git bundle failed - skipped"; exit 0; }
++    # Iteration 331: a check is a host and a mode - dream.lan has two (64-bit and 32-bit x86) -
++    # each with its own directories; one host's checks run one after another (run.sh waits on the
++    # host's lock), each deadline from its own start; the laptop waits at most their sum
++    : > "$R/queued"
+     conf | while read -r host how n rounds minutes opts; do
+         grep -qx "$host" "$R/hosts" || continue
+-        H=$R/$host; mkdir -p "$H"
+-        until=$(( $(date +%s) + minutes * 60 ))
++        CHK=$host-$how; H=$R/$CHK; RD=$RDIR/$how; mkdir -p "$H"
++        before=$(awk -v h="$host" '$1 == h {s += $2} END {print s + 0}' "$R/queued"); echo "$host $minutes" >> "$R/queued"
++        until=$(( $(date +%s) + (before + minutes) * 60 ))
+         set -- --n "$n" $opts
+-        [ "$how" = prebuilt ] && set -- "$@" --bundle "$H/bins.tar.gz"
++        case $how in prebuilt|prebuilt32) set -- "$@" --bundle "$H/bins.tar.gz" ;; esac
+         (cd "$REPO" && python3 lab/evolve/xcheck.py --sample "$rep" "$H/designs.json" "$@") > "$H/sample.log" 2>&1 \
+-            || { note "$host" "FAILED - the sample (remote/$host/sample.log)"; continue; }
++            || { note "$CHK" "FAILED - the sample (remote/$CHK/sample.log)"; continue; }
+         rm -rf "$REPO"/build/evolve/xcheck-b-* "$REPO/build/evolve/xcheck-bundle"
+         cat > "$H/run.sh" << RUN
+ #!/bin/sh
+-# $host's check of $(basename "$CHAIN") (lab/evolve/remote-checks.sh): $how, $rounds rounds, until $(date -u -d @$until +%H:%M) UTC
++# $CHK's check of $(basename "$CHAIN") (lab/evolve/remote-checks.sh): $how, $rounds rounds, $minutes minutes from its start
+ cd "\$(dirname "\$0")" || exit 1
+ W=\$(pwd); echo \$\$ > "\$W/pid"
+ fail() { echo "\$*" > "\$W/FAILED"; echo 1 > "\$W/DONE"; exit 1; }
++exec 9> "\$W/../.lock"; flock 9 || fail "the host's lock"          # one check at a time on a host
++UNTIL=\$(( \$(date +%s) + $minutes * 60 ))
+ git clone -q "\$W/repo.bundle" "\$W/repo" || fail "the clone of the bundle failed"
+ cd "\$W/repo" || fail "no clone"
+ PRE=
+ LAYOUTS=1 bash tools/build-stages.sh > "\$W/build.log" 2>&1 || fail "build-stages.sh failed (build.log)"
+-if [ $how = prebuilt ]; then mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin"; fi
+-python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds --until $until \$PRE > "\$W/xcheck.log" 2>&1 || fail "xcheck.py failed (xcheck.log)"
++case $how in prebuilt|prebuilt32) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
++if [ $how = prebuilt32 ]; then              # the 4-byte references this host cannot make
++    cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-self.txt build/k32-b.txt || fail "the 4-byte references did not install"
++    export EVOLVE_CELL=4 EVOLVE_PREBUILT_REF="\$W/bins/bin/s6"
++fi
++python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds --until \$UNTIL \$PRE > "\$W/xcheck.log" 2>&1 || fail "xcheck.py failed (xcheck.log)"
+ echo 0 > "\$W/DONE"
+ RUN
+-        files="$R/repo.bundle $H/designs.json $H/run.sh"; [ "$how" = prebuilt ] && files="$files $H/bins.tar.gz"
+-        if $SSH $O "$host" "mkdir -p $RDIR" < /dev/null > "$H/ssh.log" 2>&1 \
+-            && $SCP -q $O $files "$host:$RDIR/" >> "$H/ssh.log" 2>&1 \
+-            && $SSH $O "$host" "cd $RDIR && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1; then
+-            echo "$until" > "$H/until"
+-            note "$host" "started - $(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(len(d.get("designs", d)) if isinstance(d, dict) else len(d))' "$H/designs.json" 2>/dev/null || echo ?) designs, $how, until $(date -u -d @$until +%H:%M) UTC"
+-        else note "$host" "FAILED - copying or starting there (remote/$host/ssh.log)"; fi
++        files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32) files="$files $H/bins.tar.gz" ;; esac
++        if $SSH $O "$host" "mkdir -p $RD" < /dev/null > "$H/ssh.log" 2>&1 \
++            && $SCP -q $O $files "$host:$RD/" >> "$H/ssh.log" 2>&1 \
++            && $SSH $O "$host" "cd $RD && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1; then
++            echo "$until" > "$H/until"; echo "$host $RD" > "$H/where"
++            note "$CHK" "started - $(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(len(d.get("designs", d)) if isinstance(d, dict) else len(d))' "$H/designs.json" 2>/dev/null || echo ?) designs, $how, $minutes minutes from its start (done by $(date -u -d @$until +%H:%M) UTC)"
++        else note "$CHK" "FAILED - copying or starting there (remote/$CHK/ssh.log)"; fi
+     done ;;
+ stop)
+     for H in "$R"/*/; do
+-        [ -f "$H/until" ] || continue; host=$(basename "$H")
+-        $SSH $O "$host" "[ -f $RDIR/pid ] && kill -TERM -\$(cat $RDIR/pid) 2>/dev/null; true" < /dev/null > /dev/null 2>&1 \
+-            && note "$host" "stopped" || note "$host" "could not be reached to stop"
++        [ -f "$H/until" ] || continue; CHK=$(basename "$H"); read -r host RD < "$H/where"
++        $SSH $O "$host" "[ -f $RD/pid ] && kill -TERM -\$(cat $RD/pid) 2>/dev/null; true" < /dev/null > /dev/null 2>&1 \
++            && note "$CHK" "stopped" || note "$CHK" "could not be reached to stop"
+     done ;;
+ gather)
+     for H in "$R"/*/; do
+-        [ -f "$H/until" ] || continue; host=$(basename "$H"); until=$(cat "$H/until")
++        [ -f "$H/until" ] || continue; CHK=$(basename "$H"); until=$(cat "$H/until"); read -r host RD < "$H/where"
+         if [ -z "$NOWAIT" ]; then
+-            while [ "$(date +%s)" -lt $(( until + 300 )) ] && ! $SSH $O "$host" "[ -f $RDIR/DONE ]" < /dev/null > /dev/null 2>&1; do sleep 30; done
++            while [ "$(date +%s)" -lt $(( until + 300 )) ] && ! $SSH $O "$host" "[ -f $RD/DONE ]" < /dev/null > /dev/null 2>&1; do sleep 30; done
+         fi
+-        for f in out.json run.log xcheck.log build.log FAILED DONE; do $SCP -q $O "$host:$RDIR/$f" "$H/" > /dev/null 2>&1 || true; done
+-        $SSH $O "$host" "[ -f $RDIR/pid ] && kill -TERM -\$(cat $RDIR/pid) 2>/dev/null; rm -rf $RDIR" < /dev/null > /dev/null 2>&1 || true
+-        if [ -s "$H/out.json" ] && (cd "$REPO" && python3 lab/evolve/xcheck.py --report "$H/out.json") > "$R/$host.md" 2> "$H/report.log"; then
+-            note "$host" "gathered - remote/$host.md$( [ -f "$H/FAILED" ] && echo ", though: $(cat "$H/FAILED")")"
+-        else note "$host" "FAILED - no results$( [ -f "$H/FAILED" ] && echo ": $(cat "$H/FAILED")") (remote/$host/)"; fi
++        for f in out.json run.log xcheck.log build.log FAILED DONE; do $SCP -q $O "$host:$RD/$f" "$H/" > /dev/null 2>&1 || true; done
++        $SSH $O "$host" "[ -f $RD/pid ] && kill -TERM -\$(cat $RD/pid) 2>/dev/null; rm -rf $RD" < /dev/null > /dev/null 2>&1 || true
++        if [ -s "$H/out.json" ] && (cd "$REPO" && python3 lab/evolve/xcheck.py --report "$H/out.json") > "$R/$CHK.md" 2> "$H/report.log"; then
++            note "$CHK" "gathered - remote/$CHK.md$( [ -f "$H/FAILED" ] && echo ", though: $(cat "$H/FAILED")")"
++        else note "$CHK" "FAILED - no results$( [ -f "$H/FAILED" ] && echo ": $(cat "$H/FAILED")") (remote/$CHK/)"; fi
++    done
++    for host in $(cat "$R/hosts" 2>/dev/null); do $SSH $O "$host" "rmdir $RDIR 2>/dev/null; rm -f $RDIR/.lock; rmdir $RDIR 2>/dev/null; true" < /dev/null > /dev/null 2>&1 || true
+     done ;;
+ *) echo "remote-checks.sh: no command $CMD" >&2; exit 2 ;;
+ esac
+diff --git a/lab/evolve/xcheck.py b/lab/evolve/xcheck.py
+index 69f2f99..144f41c 100755
+--- a/lab/evolve/xcheck.py
++++ b/lab/evolve/xcheck.py
+@@ -35,7 +35,7 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
+       both - the Spearman rank correlation, where the laptop's fastest rank there, the
+       designs that moved most - as markdown.
+ """
+-import json, math, os, platform, re, shutil, subprocess, sys, time
++import struct, json, math, os, platform, re, shutil, subprocess, sys, time
+ 
+ ARGS = sys.argv[1:]
+ def opt(name, default=None, flag=False):
+@@ -63,6 +63,7 @@ if '--report' in ARGS:
+     R = json.load(open(opt('--report')))
+     env = R.get('env', {})
+     print('## %s - %s\n' % (env.get('host', '?'), env.get('cpu', '?')))
++    print('%s-endian, %s-byte cells - measured on the host (Iteration 331)\n' % (env.get('byteorder', '?'), env.get('cell', '?')))   # Iteration 331
+     print('%s, %s; %s; Python %s; measured %s, %d round(s) a design.\n' % (
+         env.get('machine', '?'), env.get('kernel', '?'), env.get('cc', '?'), env.get('python', '?'), R.get('when', '?'), R.get('rounds', 0)))
+     if not R.get('s6_ok'):
+@@ -86,6 +87,14 @@ if '--report' in ARGS:
+ # ---- --sample: the designs to measure elsewhere, picked on the laptop ----
+ if '--sample' in ARGS:
+     src = opt('--sample'); n = int(opt('--n', '24')); nojit = opt('--no-jit', flag=True); gcc = opt('--gcc-only', flag=True); bundle = opt('--bundle')
++    # Iteration 331: --cell 4 - a 32-bit check (the owner: 32-bit x86 and the Tegra, at native
++    # 4-byte cells). The sample built here as 32-bit x86 at 4-byte cells (gcc -m32, static), each
++    # design taken only if it builds and lives so - no JIT, no clang - and with --bundle the
++    # 4-byte references a 64-bit-only host cannot make (build32/: the 32-bit cell engine, its
++    # image, the base k32 dumps).
++    cell4 = opt('--cell', '8') == '4'
++    if cell4:
++        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = gcc = True
+     if len(ARGS) != 1: sys.exit(__doc__)
+     out = ARGS[0]
+     sys.argv = [sys.argv[0]]; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
+@@ -110,11 +119,22 @@ if '--sample' in ARGS:
+         if nojit and e.get('jit'): continue
+         if gcc and (e.get('compiler') or e.get('tailpn')): continue
+         ok.append((i, sp, tot, e))
+-    pick = []
++    pick = []; built = {}
++    if cell4: E.setup()
++    def good(i):
++        """Iteration 331: at --cell 4, a design only if it builds and lives as a 32-bit engine here."""
++        if not cell4: return True
++        if i not in built:
++            try:
++                eng, img = E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); E.alive(eng, img, E.private_work(os.path.join(E.EV, 'xcheck-b-' + i)))
++                built[i] = (eng, img)
++            except Exception as ex:
++                built[i] = None; print('xcheck: %s left out at 4-byte cells - %s' % (i, str(ex)[:90]), flush=True)
++        return built[i] is not None
+     def take(seq, k):
+         for x in seq:
+             if k <= 0: break
+-            if x[0] not in [p[0] for p in pick]: pick.append(x); k -= 1
++            if x[0] not in [p[0] for p in pick] and good(x[0]): pick.append(x); k -= 1
+     q = n // 4
+     take(sorted(ok, key=lambda x: x[1]), q)                          # the fastest
+     take(sorted(ok, key=lambda x: x[1] * x[2]), q)                   # about the best Q (speed x size)
+@@ -123,16 +143,19 @@ if '--sample' in ARGS:
+     k = n - len(pick)
+     if rest and k > 0: take([rest[int(j * (len(rest) - 1) / max(1, k - 1))] for j in range(k)], k)   # between, evenly
+     json.dump([{'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot} for i, sp, tot, e in pick], open(out, 'w'), indent=1)
+-    print('xcheck: %d designs sampled from %d eligible (%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', out))
++    print('xcheck: %d designs sampled from %d eligible (%s%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', ', at 4-byte cells, each alive so' if cell4 else '', out))
+     if bundle:
+         import tarfile
+-        E.setup()
++        if not cell4: E.setup()
+         stage = os.path.join(E.EV, 'xcheck-bundle'); shutil.rmtree(stage, ignore_errors=True)
+         def put(name, eng, img):
+             os.makedirs(os.path.join(stage, name)); shutil.copy2(eng, os.path.join(stage, name, 'engine')); shutil.copy2(img, os.path.join(stage, name, 'image'))
+         put('s6', E.REF[0], E.REF[1])
+         for i, *_ in pick:
+-            eng, img = E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
++            eng, img = built[i] if cell4 else E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
++        if cell4:
++            os.makedirs(os.path.join(stage, 'build32'))
++            for f in ('s0-cell-32', 's0-cell-s32.img', 'k32-self.txt', 'k32-b.txt'): shutil.copy2(os.path.join(E.O, f), os.path.join(stage, 'build32', f))
+         with tarfile.open(bundle + '.partial', 'w:gz') as t: t.add(stage, arcname='bin')
+         os.replace(bundle + '.partial', bundle)
+         print('xcheck: %d designs and s6 built into %s (%d KB)' % (len(pick), bundle, os.path.getsize(bundle) // 1024))
+@@ -154,7 +177,8 @@ cpu = next((l.split(':', 1)[1].strip() for l in readf('/proc/cpuinfo').split('\n
+ env = {'host': platform.node(), 'cpu': cpu, 'machine': platform.machine(), 'kernel': platform.release(), 'cc': first(['cc', '--version']),
+        'clang': first(['clang', '--version']), 'python': platform.python_version(), 'sh': os.path.realpath('/bin/sh'),
+        'locale': os.environ.get('LC_ALL') or os.environ.get('LANG') or '', 'cores': os.cpu_count(), 'free_gb': round(shutil.disk_usage('.').free / 2 ** 30, 1),
+-       'governor': readf('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'), 'load': readf('/proc/loadavg')}
++       'governor': readf('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'), 'load': readf('/proc/loadavg'),
++       'byteorder': sys.byteorder, 'cell': int(os.environ.get('EVOLVE_CELL') or (4 if struct.calcsize('P') == 4 else 8))}   # Iteration 331: measured, not assumed
+ R = {'env': env, 'when': time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime()), 'rounds': rounds, 'designs': [], 's6_ok': False}
+ def save(): json.dump(R, open(out + '.partial', 'w'), indent=1); os.replace(out + '.partial', out)
+ print('xcheck: %s, %s, %s cores; %s' % (env['host'], env['cpu'], env['cores'], env['cc']), flush=True)
 diff --git a/tools/layout.py b/tools/layout.py
 index 13d7d87..6beaabc 100644
 --- a/tools/layout.py
