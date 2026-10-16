@@ -1,0 +1,123 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 522eb49..151aef6 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -195,6 +195,7 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
+ ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
+ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
+      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
++gene('jitimg', values=(0, 1, 2), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter, 2 every plain code word
+ gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
+ gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
+      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
+@@ -966,6 +967,7 @@ def _build(g, d):
+     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
+     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
+     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
++    if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
+     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
+     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
+     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
+diff --git a/lab/evolve/jitleft.py b/lab/evolve/jitleft.py
+index 99e9a46..8641899 100644
+--- a/lab/evolve/jitleft.py
++++ b/lab/evolve/jitleft.py
+@@ -15,6 +15,7 @@ that was itself refused down to the root - named from the call map's O lines.
+ import bisect, collections, glob, json, os, shutil, sys
+ HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
+ WHY = '--why' in sys.argv
++SET = dict(a[6:].split('=', 1) for a in sys.argv if a.startswith('--set='))   # Iteration 341: --set=gene=value, a design varied
+ args = [a for a in sys.argv[1:] if not a.startswith('--')]
+ dbs = [sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == '--db']
+ args = [a for a in args if a not in dbs]
+@@ -62,7 +63,7 @@ def by_word(W, c):
+     return s
+ 
+ for ident in args:
+-    g = E.canon(recs[ident]['genome'])
++    g = E.canon(dict(E.canon(recs[ident]['genome']), **{k: int(v) for k, v in SET.items()}))
+     if not E.express(g).get('jit'): print('%s: no JIT - nothing for the JIT to leave' % ident); continue
+     W0, off, _, _ = profile(dict(g, jit=0), os.path.join(E.EV, 'jitleft-off'))
+     W1, on, OPS, refused = profile(g, os.path.join(E.EV, 'jitleft-on'), WHY)
+diff --git a/tools/layout.py b/tools/layout.py
+index a1092ad..5b2e278 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -707,11 +707,38 @@ def cfd(s):
+     word at 4-byte cells (opcode + the 4-byte DOES> call), one cell otherwise."""
+     return align_up(5, CELL) if (TAG2_ON and DATAPRIMS and info.get(s) is not None) else CELL
+ 
++# Iteration 341, the gene jitimg (results/drafts/next-genes.md): the image's own words JIT
++# candidates - each given the header a word compiled at run time gets (forth/cv8t-jit.4): [the JIT
++# opcode][its bytecode's length | 2^31], translated on its first call or left bytecode (the length
++# word 0). 1: the outer interpreter - the words jitleft.py found left (INTERPRET, PARSE-WORD, ...);
++# 2: every code word. Only plain ones: no inline aligned data, no tail, not headerless, and nothing
++# that lands inside them - the body's address unchanged (the kernel finds it from the name), the
++# header its first five bytes, the tokens after.
++JITIMG = int(_opt('--jitimg')) if '--jitimg' in ARGV else 0
++JITIMG_OUTER = ('INTERPRET', 'PARSE-WORD', 'REFILL', 'WORD', '?STACK', 'C,', 'HERE', 'CMOVE>', 'PARSE',
++                '(PARSE)', 'SOURCE', 'COMPILE,', 'LITERAL', 'NUMBER?', '(NUMBER?)', '>NUMBER', 'FIND', 'COUNT')
++JH = set()
++def _jitimg_pick():
++    if not (JITIMG and G.get('JIT_ON')): return
++    refs = set()
++    for w in order:
++        for k, pl in ((info[w['s']] or []) if kind[w['s']] == 'code' else []):
++            if k in ('C', 'XT') and isinstance(pl, int): refs.add(pl)
++        if kind[w['s']] == 'data' and isinstance(cells.get(w['s']), int): refs.add(cells.get(w['s']))
++    for w in order:
++        s0 = w['s']
++        if kind[s0] != 'code' or s0 in HL or tail_bytes(w): continue
++        if JITIMG == 1 and w['n'] not in JITIMG_OUTER: continue
++        if any(k in ('OPD', 'XT', 'STR', 'ALN') for k, _ in (info[s0] or [])): continue
++        if any(s0 < r < w['e'] for r in refs): continue
++        JH.add(s0)
++
+ def new_body_bytes(w):
+     if kind[w['s']] == 'code':
++        jh = 5 if w['s'] in JH else 0          # Iteration 341: the JIT header
+         if BYTEHDR:
+-            return len(tok[w['s']]) * UB + tail_bytes(w)
+-        return align_up(len(tok[w['s']]) * UB, CELL) + tail_bytes(w)
++            return jh + len(tok[w['s']]) * UB + tail_bytes(w)
++        return align_up(jh + len(tok[w['s']]) * UB, CELL) + tail_bytes(w)
+     if info[w['s']] is not None:
+         # [pad][call token][parameter field, CELL aligned]
+         # The pad goes BEFORE the token so the parameter field, which is
+@@ -783,6 +810,8 @@ assert NT_NEW and not (NT_NEW & (NT_NEW - 1)) and NT_NEW <= 4096, '--threads: a
+ # S = 3, half the word starts were unreachable ("call target ... not 8-aligned"). The scale gene's
+ # S is 0-3: at 8-byte cells this is the cell, as before.
+ CALIGN = max(CELL, 1 << CPT) if CPT else CELL
++_jitimg_pick()                                   # Iteration 341: which words get the JIT header
++if JITIMG and __import__('os').environ.get('JITIMG_REPORT'): print('jitimg %d: %d words given the JIT header: %s' % (JITIMG, len(JH), ' '.join(sorted(w['n'] for w in order if w['s'] in JH)[:40])), file=__import__('sys').stderr)
+ for w in order:
+     if w['s'] in HL:                                 # Iteration 190: the code alone
+         LINKLEN[w['s']] = 0
+@@ -1242,6 +1271,10 @@ def emit(path):
+             for (ws, j), nv in xt_new.items():
+                 if ws == s0: ops2[j] = ('XT', nv)
+             G['CUR_WORD'][0] = s0          # Iteration 199
++            jh = 5 if s0 in JH else 0           # Iteration 341: the JIT header first, as a run-time word's
++            if jh:
++                _tb = bytes(to_tokens(ops2)) if V8 else b''.join(tk(t_) for t_ in to_tokens(ops2))
++                img += bytes([T2MAP['one'][G['T2_JIT']]]) + (len(_tb) | 0x80000000).to_bytes(4, 'little')
+             if V8: img += bytes(to_tokens(ops2))
+             else:
+                 for t_ in to_tokens(ops2): img += tk(t_)
+@@ -1249,14 +1282,14 @@ def emit(path):
+                 _c2t, _, _ts, _, _ = layout(ops2)
+                 for _j, (_k, _pl) in enumerate(ops2):
+                     if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS', 'GAP'): continue    # data, not operations; a GAP has no bytes
+-                    _at = new_off[s0]['body'] + _ts[_j]
++                    _at = new_off[s0]['body'] + jh + _ts[_j]
+                     if _k == 'C':      # tag 2: 01, 10, 11 in the top bits - 2, 3, 4 bytes (Iteration 88)
+                         _cm.append('C %d %d %d %d %d %s %s' % (_at, (img[_at] >> 6) + 1 if TAG2_ON else 1 if _pl in G['HOTCALLS'] else 3 if img[_at] >= 0xC0 else 2,
+                                    new_target_off(_pl), _pl, 1 if G['before_operand'](ops2, _j) else 0, w['n'], _tname(_pl)))
+                     else:              # Iteration 88: and the operation's name, design-independent (sod16 t2_names)
+                         _cm.append('O %d %s %d %s' % (_at, _k, img[_at], _NM.get(G['opcode_L'](ops2, _j), _k)))
+                 for _c in sorted(G['branch_targets'](ops2)[1]):      # Iteration 88: where branches land
+-                    if _c in _c2t: _cm.append('T %d' % (new_off[s0]['body'] + _c2t[_c]))
++                    if _c in _c2t: _cm.append('T %d' % (new_off[s0]['body'] + jh + _c2t[_c]))
+             if not BYTEHDR:
+                 while len(img) % CELL: img += b'\x00'
+             # Unheadered tail, with its builtin entries relocated.

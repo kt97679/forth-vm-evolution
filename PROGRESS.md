@@ -6547,3 +6547,14 @@ what the JIT leaves was **never tried** - the outer interpreter (INTERPRET, PARS
 time) and their callees: not blocked, not a candidate. The rest: operations with no mapping - vf
 (5.1%: WORD, HERE), UM* (1.8%: *), WRITE, vs, 0<?BRANCH8, SP@, DUP?BRANCH8, UM/MOD. The genes: the
 image's words as JIT candidates (the large one), and stencils for those operations (small ones).
+
+## Iteration 341 - 2026-10-16 - Claude
+
+**The gene jitimg built - and the next blocker found (results/drafts/jitimg-wip.patch).** Built on
+top of the pending two-width batch (both change the converter): the image's plain code words given
+the JIT header run-time words get. Level 1 (the outer interpreter's words) alive, 64 bytes larger;
+level 2 (every plain word) dies on the corpus - to bisect. jitleft.py --why --set=jitimg=1: kernel
+54.7% left to the interpreter (55.9%), "never tried" 48.1% of it (62.6%); PARSE-WORD now tried and
+refused for vf - the engine's getstatic, VARIABLE @ fused - which keeps WORD and HERE out too, and
+which the JIT has no stencil for; INTERPRET still excluded (its inline aligned data). So jitimg pays
+only with stencils for vf and vs: next.

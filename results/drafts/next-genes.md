@@ -159,3 +159,23 @@ words, converted from the dump, have no such header: never candidates. **The con
   kernel and corpus against jitimg 0; and gene-equiv - a new gene, ids unchanged.
 - Then the small ones: stencils for vf, vs, UM*, UM/MOD, 0<?BRANCH8, DUP?BRANCH8, SP@ (jitleft --why's
   list) - each a jit_ops mapping in the converter's JIT tables and a stencil in the SPN set.
+
+## jitimg - first measurements (Iteration 341, results/drafts/jitimg-wip.patch: on top of the pending
+## two-width batch)
+
+Built: the converter writes the run-time words' JIT header for the image's plain code words (no
+inline aligned data, no tail, nothing landing inside them); jitleft.py --set=gene=value varies a
+recorded design. Seed 55's fastest JIT design, c549c0677c:
+- jitimg 0: alive, image 9,547 bytes; **jitimg 1: alive, 9,611 bytes** (a dozen headers);
+  **jitimg 2: died on the corpus** - some word must not be entered through a header (copied by
+  inlining, or compared as an identity): to bisect.
+- jitleft --why at jitimg 1: kernel 54.7% left (55.9% before), corpus 99.7%; "never tried" 48.1% of
+  what is left (62.6%). PARSE-WORD now tried - and refused: **no mapping for vf**, as WORD and HERE.
+  INTERPRET, ?STACK, REFILL still never tried - excluded by the rule (inline aligned data, XT
+  literals or strings, most likely).
+- **vf** is the engine's getstatic (L_vf: a variable's address from an inline slot, its cell
+  pushed - VARIABLE @ fused); **vs** its store. The JIT has no stencil for either - and the outer
+  interpreter reads >IN, STATE, BASE so. **Next: stencils for vf and vs** (a jit_ops mapping with
+  the slot operand, an SPN stencil each) - jitimg pays only with them; then headers for words with
+  aligned data (the token stream's alignment kept: NOP padding the JIT maps, or layout() told the
+  stream's start), then jitimg 2's corpus death.
