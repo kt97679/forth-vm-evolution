@@ -6390,3 +6390,18 @@ reseed.sh makes even the 4-byte seed there. The lead: its name hash or T-IMMEDIA
 assuming 64-bit wraparound. (2) tag2 at 4-byte cells: the converter refuses it ("64-bit cells for
 now - a DOES> body's 4-byte call must fit its first cell"), and every design on the fronts has tag2.
 Both are real ports; the draft patch (results/drafts/cell32-wip.patch) is unchanged.
+
+## Iteration 328 - 2026-10-16 - Claude
+
+**The cross compiler on a 32-bit host - fixed: a 32-bit Forth now builds the 4-byte kernel,
+byte-identical to kernel32-seed.img.** POSTPONE (DO)'s crash, followed into T-IMMEDIATE?'s thread
+walk and its @-T: the sign extension ran "when the target cell is narrower than this host's own",
+says its comment - the code said narrower than 8. On a 32-bit host building the 4-byte kernel it
+extended anyway, and -1 32 LSHIFT on a 4-byte cell is a full-width shift, which x86 masks to
+nothing: every negative link read -1, and the walk ran into unmapped memory. The fix, [ 1 CELLS ]
+LITERAL, is invisible on a 64-bit host - the same HERE after the cross compiler (4,344,888), the
+same kernel-seed.img - and on the 32-bit cell engine the whole 4-byte kernel built, 14,976 bytes,
+identical to the seed a 64-bit host makes. Next: tag2 at 4-byte cells - the converter writes a
+CREATE'd word's first cell as opcode + 4-byte call (5 bytes); the port is a two-cell code field
+there, agreed between the converter, the engine's DOVAR and DODOES, the run-time compiler's CREATE
+and >BODY, and the kernel's - FORMAT-TAG2.md's "left: 32-bit cells - before the Tegra".

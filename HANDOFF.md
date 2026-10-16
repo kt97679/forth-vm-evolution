@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 327.
+- master: Iteration 328.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -187,19 +187,23 @@ About 20 minutes of machine time for build, tests and gates.
    cell; [IF] is not in the kernel to make the source width-conditional, and the 64-bit images
    must not change). Tested (Iteration 327): build-stages clean; setup at EVOLVE_CELL=4 makes all
    3,314 k32 variants in 127 s - every overlay loads at 32 bits. Two blockers found:
-   (1) the 4-byte kernel workload - a 32-bit Forth running cross32.4 - segfaults: s6 at -m32, and
-   the hand-made 32-bit cell engine too (not an s6 bug); extend.4 and cross32.4's definitions
-   (lines 1-549) run clean; bisecting kernel.4, the first crashing line is 1296, the target's DO,
-   and of its body `POSTPONE (DO)` alone (POSTPONE DUP does not). cross.4's POSTPONE is
-   `... THASH T-THREAD ! ... T' DUP T-IMMEDIATE? ...`; T' is `ALSO TARGET ' >BODY @` - (DO)'s shadow
-   in TARGET, made when kernel.4 defined the primitive. The lead: THASH or T-IMMEDIATE?'s walk of the
-   name's thread assuming a 64-bit host (a hash on 64-bit wraparound). A 64-bit host has always run
-   cross.4 - reseed.sh makes even the 4-byte seed so. Repro in seconds: s0-cell-32 kernel32-seed.img,
-   extend.4 + cross32.4's lines 1-549 + kernel.4's 1-1291 + `: T1 POSTPONE (DO) ;`.
-   (2) tag2 at 4-byte cells: tools/layout.py refuses it outright - "--tag2: 64-bit cells for now -
-   a DOES> body's 4-byte call must fit its first cell" - and every design of the fronts has tag2:
-   read FORMAT-TAG2.md and the engine's tag2 DOES> to port it. Then the sweep at 4 bytes, ARM under
-   qemu-arm, and the checks - dream's 32-bit line, rage native; each host's byte order recorded.
+   (1) SOLVED (Iteration 328): cross.4's @-T sign-extended when the target cell was narrower
+   than 8 - a 64-bit host taken for granted, as its own comment says it should be the host's:
+   on a 32-bit host, -1 32 LSHIFT is a full-width shift (x86 masks it: -1 left), every negative
+   link became -1. Now [ 1 CELLS ] LITERAL - on a 64-bit host the same compiled code (HERE after
+   the cross compiler 4,344,888 before and after) and kernel-seed.img identical; on the 32-bit
+   cell engine the 4-byte kernel built and byte-identical to kernel32-seed.img (14,976 bytes).
+   In the draft (forth/cross.4).
+   (2) tag2 at 4-byte cells (next): tools/layout.py:1275 writes a CREATE'd word's first cell as
+   the DODOES/DOVAR opcode (1 byte) + the 4-byte call a later DOES> fills + CELL-5 padding - 5
+   bytes, which a 4-byte cell cannot hold. A 3-byte call will not do (reach 4 MB - the corpus's
+   far test compiles past it; t2wide has no 3-byte call). The design: at 4-byte tag2 a two-cell
+   code field (opcode, call, 3 bytes padding = 8), the body at the next cell - 32-bit only, the
+   64-bit images untouched. It must agree in four places: the converter (line 1275, and every body
+   address it computes - CVARS' CV8-DOES-RESERVE, line 1313), the engine's DOVAR and DODOES under
+   TAG2 (the body address), the run-time compiler's CREATE and >BODY (forth/cv8t.4, cv8bt.4), and
+   the kernel's >BODY. FORMAT-TAG2.md left it so: "Left: 32-bit cells ... - before the Tegra".
+   Then the sweep at 4 bytes, ARM under qemu-arm, the checks.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept
