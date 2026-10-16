@@ -1,4 +1,4 @@
-# The after-seed-52 batch - apply in this order (against master after Iteration 312)
+# The after-seed-52 batch - applied (Iteration 318), in this order
 
 | # | patch | what it does |
 |---|---|---|
@@ -35,3 +35,9 @@ where it pays, and missmap on the laptop can count its mispredictions directly.
 
 Both patches apply on a fresh clone of master after Iteration 317, in this order, and reproduce
 the tested files.
+
+**Applied on master at Iteration 318**, both patches in order: build-stages; run-tests PASS, 63
+engine paths, each built and its corpus right - the two regressions and the four bfind paths
+among them; validate 7 of 7 IDENTICAL; the gate 252 of 252 alive (seed 52's front 164, the
+joint front 130, 42 in both).
+

@@ -315,6 +315,44 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
 
 #define CELL(reg) (*(UNS64*)(reg))
 #define BYTE(reg) (*(UNS8*)(reg))
+#if BFIND
+/*  Iteration 316, the gene bfind: THREAD-FIND's and (FIND)'s walk with fewer branches to
+ *  mispredict ((FIND) was 9-13% of the interpreter-heavy runs' mispredictions,
+ *  results/missmap-amd-ryzen-7-pro-8840hs.md). A candidate's count byte and first seven
+ *  characters are one masked 64-bit compare - almost always unequal, so predicted - and the
+ *  rest of a longer name is compared only on a match; a link is read without a branch on its
+ *  form: the four bytes ending at its tag as one word, shifted by its length. The same walk
+ *  as PREVNFA's and the loops' below: the same word found, or none.  */
+static inline UNS64 bf_ld64(UNS64 a) { uint64_t x; memcpy(&x, (const void *)(uintptr_t)a, 8); return x; }
+static inline uint32_t bf_ld32(UNS64 a) { uint32_t x; memcpy(&x, (const void *)(uintptr_t)a, 4); return x; }
+#if TAG2
+static inline UNS64 bf_prev(UNS64 a) {          /* tag t: t+1 bytes, the top one's 6 bits */
+    uint32_t w = bf_ld32(a - 4); UNS64 d = (UNS64)((w & 0x3FFFFFFFu) >> (8 * (3 - (w >> 30))));
+    return d ? a - d : 0;
+}
+#else
+static inline UNS64 bf_prev(UNS64 a) {          /* below 0x80 one byte, 7 bits; below 0xC0 two, 14; else three, 22 */
+    uint32_t w = bf_ld32(a - 4); unsigned t = w >> 24, l = 1 + (t >= 128) + (t >= 192);
+    UNS64 d = (UNS64)(w >> (8 * (4 - l))) & ((1u << (8 * l - 2 + (l == 1))) - 1);
+    return (d || l > 1) ? a - d : 0;
+}
+#endif
+static inline UNS64 bf_walk(UNS64 a, UNS64 nb) {    /* THREAD-FIND: the nfa whose name is nb's, or 0 */
+    unsigned m = BYTE(nb), c = m < 7 ? m : 7, k;
+    UNS64 M, sig;
+    if (m > 31) return 0;                           /* a count has five bits: never equal there either */
+    M = 0x1Fu | ((c ? ((1ULL << (8 * c)) - 1) : 0) << 8);
+    sig = bf_ld64(nb) & M;
+    while (a) {
+        if ((bf_ld64(a) & M) == sig) {
+            for (k = 7; k < m && BYTE(a + 1 + k) == BYTE(nb + 1 + k); k++) ;
+            if (k >= m) return a;
+        }
+        a = bf_prev(a);
+    }
+    return 0;
+}
+#endif
 #if X_JIT
 /*  Iteration 218: JIT_PRICE - a profiling build in which the JIT translates
  *  as it would but native code never runs: every operation of every word it
@@ -1954,10 +1992,14 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;         
  *  dispatches a candidate word in Forth; 37-63% of kernel, parse, corpus.  */
 #if X_THREADFIND
 L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+#if BFIND
+             a_ = bf_walk(a_, nb_);                 /* Iteration 316: the gene bfind */
+#else
              UNS8 n_ = BYTE(nb_);
              while (a_) {
                  if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
                  a_ = PREVNFA(a_); }
+#endif
              DS0 = a_; } NEXT();
 #endif
 /*  Iteration 54: the input side - SCAN and SKIP ( c-addr u c --- c-addr' u' ),
@@ -2002,7 +2044,11 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
  *  walk, NAME>8 and the immediate bit.  */
 #if X_FIND
 L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
+#if BFIND
+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); a_ = bf_walk(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: the gene bfind */
+#else
             if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
+#endif
             dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
 #endif
 /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER

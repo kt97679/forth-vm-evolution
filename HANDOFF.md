@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 317.
+- master: Iteration 318.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -52,9 +52,13 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
   as carried records (gate.py --db). Its packs were never sent, the owner unsure
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- **Seed runs are paused** (the owner, Iteration 311) until the JIT fault is fixed, the new
-  runner with the remote checks is built, and the (FIND) gene exists - so the next run tests
-  new material. NEXT-RUN keeps seed 53 for then.
+- **Seed 53 is next** (Iteration 318): the after-seed-52 batch applied - the JIT fix (a short
+  stencil read; results/drafts/jit-loop-crash.md) and the gene bfind; the runner rebuilt
+  (results/drafts/runner-protocol.md): one chain, one archive, status/monitor/stop, remote checks
+  on dream.lan and rage.lan (lab/evolve/REMOTES). The owner: ssh keys from the laptop to both hosts
+  (no password); then `sh lab/evolve/next-run.sh`, `... monitor` to watch, and send the one
+  forth-vm-evolution-chain-*.tar.gz. Processing it: unpack, then each step's pack as before; read
+  remote/*.md with the seed.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
@@ -168,23 +172,6 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
-0a. The JIT fault seed 52 found - fixed, pending (results/pending/ORDER.md, Iteration 312):
-   jit.c read a stencil 64 bytes without jitloop, and a 72-byte (LOOP) stencil was copied
-   short; now 160 in every build, every branching stencil must show its exits, and
-   lab/evolve/regressions.json keeps the two designs as engines-check paths. The whole
-   story: results/drafts/jit-loop-crash.md.
-0b. The new runner - built (results/drafts/runner-protocol.md, Iterations 313-315): next-run.sh's
-   chain layer with lab/evolve/chainctl.py - one session, one log, one archive (send
-   forth-vm-evolution-chain-*.tar.gz), status/monitor/stop, a failure not costing the rest,
-   checks once, crash recovery, root's files given back, perf-hold for every measurement - and
-   the remote checks (lab/evolve/REMOTES, remote-checks.sh): the previous front measured on
-   dream.lan (prebuilt) and rage.lan (native) alongside the seed run, gathered as
-   remote/HOST.md. Processing a chain: unpack it, then each step's pack as before; read
-   remote/*.md - the cross-machine rankings - with the seed. Left before seed 53: the
-   branch-light (FIND) gene.
-0c. The gene bfind - pending as patch 2 of the after-seed-52 batch (results/pending/ORDER.md,
-   Iteration 317): verified - four cases, 63 engine paths, the forced 32 of seed 52's front,
-   ids unchanged; no speed seen on the VM (its predictor is not the laptop's).
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

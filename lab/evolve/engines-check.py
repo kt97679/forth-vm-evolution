@@ -86,6 +86,16 @@ VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot
              ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot']), ('aligned to 64, tail calls', dict(alignhot=3, tail=1), ['alignhot', 'tail'])]
 VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops10') or []), opbody=1, opinline=1), need + ['ops10', 'opinline'])   # Iteration 299
              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+# Iteration 316: the gene bfind - THREAD-FIND's and (FIND)'s walk branch-light - with each of
+# the two words, in each link form (CV8's 1-3 bytes, TAG2's 1-4)
+VARIANTS += [('bfind: THREAD-FIND, CV8', {'kfast': 1, 'tfind': 1, 'bfind': 1}, ['bfind']),
+             ('bfind: (FIND), CV8', {'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1}, ['bfind']),
+             ('bfind: THREAD-FIND, TAG2', {'tag2': 1, 'kfast': 1, 'tfind': 1, 'bfind': 1}, ['bfind']),
+             ('bfind: (FIND), TAG2', {'tag2': 1, 'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1}, ['bfind'])]
+# Iteration 312: designs that once failed (lab/evolve/regressions.json) - each the whole recorded
+# genome, built and run on the corpus every time: a fault found once stays a test.
+VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
+             for r in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'regressions.json')))]
 for name, genes, must in VARIANTS:
     g = E.canon(dict(S6, **genes))
     ex = E.express(g)

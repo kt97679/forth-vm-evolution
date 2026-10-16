@@ -56,11 +56,11 @@ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit
    far. 64 cut (+LOOP)'s stencil (87 bytes since Iteration 125's rule) before
    either exit, and (?DO)'s (76) after its fall-through, before its skip -
    neither was mapped until the gene jitloop, which reads further. */
-#if JITLOOP
+/* Iteration 312: 160 in every build - jitloop-less builds read 64, and seed 52 found a design
+   whose (LOOP) stencil was 72 bytes there: read to its fall-through, its loop-back missed,
+   copied short, a segmentation fault on the corpus's first loop. The end is the last jump to
+   NEXT or JUMP, which only stencils make, and the next table function still bounds a scan. */
 #define JIT_SCAN_MAX 160
-#else
-#define JIT_SCAN_MAX 64
-#endif
 static const unsigned char *jit_addr(int i) {
 #if JITK
     if (i >= S_N) return (const unsigned char *)spn_ktable[i - S_N];
@@ -168,12 +168,13 @@ static int jit_init(void) {
 }
 /* A stencil the translator may use: read, and no call hole unless CALL. */
 static int jit_usable(int s) {
-#if JITLOOP
-    /* Iteration 129: (+LOOP) and (?DO) have two exits - on, and to their
-       branch target. A stencil read without both holes would jump nowhere,
-       so it is not used: slower, never wrong. */
-    if ((s == S_PLOOP || s == S_QDO) && (jit_st[s].nnext < 1 || jit_st[s].njump != 1)) return 0;
-#endif
+    /* Iterations 129, 312: a stencil with two exits - on, and to its branch target - read
+       without both holes would jump nowhere, so it is not used: slower, never wrong. Every
+       build, every branching stencil - Iteration 129 checked (+LOOP) and (?DO) only, and
+       only with jitloop, and a (LOOP) read short (seed 52) went through. */
+    if ((s == S_0BRANCH || s == S_LOOP || s == S_PLOOP || s == S_QDO || s == S_DUP_GTI_BR)
+        && (jit_st[s].nnext < 1 || jit_st[s].njump != 1)) return 0;
+    if ((s == S_BRANCH || s == S_LEAVE) && jit_st[s].njump != 1) return 0;
     return jit_st[s].len > 0 && jit_st[s].ncall == (s == S_CALL) && jit_st[s].njump <= 1;
 }
 static int jit_len(int s) { return jit_st[s].len - (jit_st[s].tailnext ? 5 : 0); }

@@ -322,9 +322,10 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
-# Iteration 311: PAUSED (the owner) - no run until the JIT fault is fixed, the new runner
-# with the remote checks is built and the (FIND) gene exists. Seed 53 then, its hours the
-# owner's.
+# Iteration 318: seed 53 - the after-seed-52 batch applied (the JIT fix, the gene bfind),
+# the new runner (one chain, one archive; status, monitor, stop) and the remote checks on the
+# hosts in lab/evolve/REMOTES. Its hours the owner's: 6 as seed 52's until said.
+# Iteration 311: paused (the owner) until the JIT fix, the new runner and the (FIND) gene.
 # Iteration 310: seed 52 small; seed 53 the same genes.
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count

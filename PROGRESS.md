@@ -6261,3 +6261,14 @@ all 63 passed. On the VM no speed past the noise either way (kernel 0.951 for a 
 perhaps a small cost) - the gene is for the laptop's predictor. My slips this turn: a test
 script's syntax; a pkill -f matching its own command line - the pitfall remote-checks.sh was
 built around. Both patches apply in order on a fresh clone and reproduce the tested files.
+
+## Iteration 318 - 2026-10-16 - Claude
+
+**The after-seed-52 batch applied - seed 53 is next.** The JIT fix (a stencil read short in a
+build without jitloop; regressions.json and its engines-check paths) and the gene bfind, in
+order, on master: run-tests PASS with 63 engine paths, validate 7 of 7, the gate 252 of 252
+(results/applied-after-seed52/ORDER.md). With the new runner and the remote checks in, NEXT-RUN
+is seed 53 again - 6 hours until the owner says, the comparison after; the pause lifted. Its
+predictions revised (results/predictions.md): the Iteration 310 ones assumed the same genes; now
+no corpus deaths, bfind on at least 20, small, dream's ranking at least 0.90 and rage's lower,
+crossover 30-38%. Before the run: ssh keys from the laptop to dream.lan and rage.lan.

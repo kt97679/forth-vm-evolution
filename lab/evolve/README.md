@@ -721,3 +721,9 @@ designs stalling in; GCC only, not with align1 or alignfn. Five engines-check pa
 Iteration 299: > and 0= join the ops10 pool and opbody's list (handlers L_x_gt and
 L_x_zeq; their kernel bodies were in sod16.py's table already). Five engines-check
 paths, with opinline. The audit that found them: results/source-audit-3.md.
+
+Iteration 312: lab/evolve/regressions.json - designs that once failed, each its whole
+recorded genome and why; engines-check builds every one and runs it on the corpus, so a
+fault found once stays a test. The first two: seed 52's JIT designs whose (LOOP) stencil
+was read short (jit.c's scan, 64 bytes without jitloop; now 160 in every build, and every
+branching stencil must show both its exits or is not used).

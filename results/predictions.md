@@ -419,3 +419,18 @@ The same genes as seed 52, a second time - no batch between.
 3. 2@ on at least 77 of the front again (77 in seed 52).
 4. Held out: Spearman with sieve between 0.92 and 0.95.
 5. Crossover 30-38%.
+
+## Seed 53, predicted again (Iteration 318)
+
+The Iteration 310 predictions assumed the same genes a second time; the after-seed-52 batch is
+applied since - the JIT fix and the gene bfind - and the remote checks run alongside. These
+replace them:
+
+1. No design dies on the corpus (seed 52: 2 - the JIT fault, fixed).
+2. bfind on at least 20 of the front - of ~130 that can express it.
+3. Small: hypervolume within +2%.
+4. The remote checks: dream.lan's ranking of the sample against the laptop's, Spearman at least
+   0.90 (the same binaries, another x86-64); rage.lan's lower than dream's (another
+   architecture, its own builds, no JIT).
+5. Crossover 30-38%.
+
