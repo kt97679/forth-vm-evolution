@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 326.
+- master: Iteration 327.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -185,12 +185,21 @@ About 20 minutes of machine time for build, tests and gates.
    legacy layout (personality ADDR_COMPAT_LAYOUT, then one execve) - so ALLOCATE's mmap lands
    below 2 GB, where file-sysc.4's 0< reads it right (an address past 2 GB is a negative 4-byte
    cell; [IF] is not in the kernel to make the source width-conditional, and the 64-bit images
-   must not change). Tested so far: build-stages clean; the 32-bit dump that ran out of memory
-   (k32-self-fsys) now whole by hand. Next: setup at EVOLVE_CELL=4 (every k32 variant), s6 and the
-   seed-53 sweep at 4-byte cells (the 4-byte kernel workload is new: a 4-byte host has never run
-   cross.4 before), then ARM under qemu-arm (no binfmt: run through a wrapper; the re-exec fails
-   there, and qemu maps low anyway); then the checks - dream's 32-bit line (the laptop's -m32
-   builds), rage native; each host's byte order recorded.
+   must not change). Tested (Iteration 327): build-stages clean; setup at EVOLVE_CELL=4 makes all
+   3,314 k32 variants in 127 s - every overlay loads at 32 bits. Two blockers found:
+   (1) the 4-byte kernel workload - a 32-bit Forth running cross32.4 - segfaults: s6 at -m32, and
+   the hand-made 32-bit cell engine too (not an s6 bug); extend.4 and cross32.4's definitions
+   (lines 1-549) run clean; bisecting kernel.4, the first crashing line is 1296, the target's DO,
+   and of its body `POSTPONE (DO)` alone (POSTPONE DUP does not). cross.4's POSTPONE is
+   `... THASH T-THREAD ! ... T' DUP T-IMMEDIATE? ...`; T' is `ALSO TARGET ' >BODY @` - (DO)'s shadow
+   in TARGET, made when kernel.4 defined the primitive. The lead: THASH or T-IMMEDIATE?'s walk of the
+   name's thread assuming a 64-bit host (a hash on 64-bit wraparound). A 64-bit host has always run
+   cross.4 - reseed.sh makes even the 4-byte seed so. Repro in seconds: s0-cell-32 kernel32-seed.img,
+   extend.4 + cross32.4's lines 1-549 + kernel.4's 1-1291 + `: T1 POSTPONE (DO) ;`.
+   (2) tag2 at 4-byte cells: tools/layout.py refuses it outright - "--tag2: 64-bit cells for now -
+   a DOES> body's 4-byte call must fit its first cell" - and every design of the fronts has tag2:
+   read FORMAT-TAG2.md and the engine's tag2 DOES> to port it. Then the sweep at 4 bytes, ARM under
+   qemu-arm, and the checks - dream's 32-bit line, rage native; each host's byte order recorded.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept

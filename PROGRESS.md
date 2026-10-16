@@ -6376,3 +6376,17 @@ and with the 64-bit images to stay the same, the engines keep such memory below 
 host - Linux's legacy layout, set at start and re-executed once (raw system calls: the runtimes
 without the C library have no wrappers). The dump then whole: 342 names. Endianness: all hosts
 little-endian; cross.4 says images are native-endian - no parameter needed.
+
+## Iteration 327 - 2026-10-16 - Claude
+
+**The 32-bit layer at 4-byte cells: the variants made, two blockers found (HANDOFF item 0).** Setup at
+EVOLVE_CELL=4: all 3,314 k32 variant dumps in 127 s, every overlay loading at 32 bits. Then 0 of 14
+designs alive, for two reasons. (1) The 4-byte kernel workload: a 32-bit Forth running the cross
+compiler segfaults - s6 at -m32 and the hand-made 32-bit cell engine alike, so not a design's bug.
+extend.4 and cross32.4's definitions run clean; bisecting kernel.4 by line (a cut that leaves it
+compiling hangs instead of crashing - counted as no crash), the first crashing line is the target's
+DO, and in it `POSTPONE (DO)` alone. The cross compiler has only ever run on a 64-bit host -
+reseed.sh makes even the 4-byte seed there. The lead: its name hash or T-IMMEDIATE?'s thread walk
+assuming 64-bit wraparound. (2) tag2 at 4-byte cells: the converter refuses it ("64-bit cells for
+now - a DOES> body's 4-byte call must fit its first cell"), and every design on the fronts has tag2.
+Both are real ports; the draft patch (results/drafts/cell32-wip.patch) is unchanged.
