@@ -3,8 +3,10 @@
 | # | patch | what it does |
 |---|---|---|
 | 1 | two-widths-after-seed56.patch | **Selecting at both widths** (the owner, Iterations 336-338; results/drafts/two-width-selection.md). evolve.py --widths 8,4: setup at 4-byte cells first (setup_widths: its own reference, kernel reference and k32 variants under width-suffixed paths), then as always; each design passing screening also measured as a 32-bit x86 engine at 4-byte cells (eval32: its JIT off, its call scale at most 2, a round fewer, the selection's workloads) - speed32, a fourth objective in dominates() and crowding(); none, with why32, if it does not build or live so. NEXT-RUN's word: widths. The report's 32-bit column and seed-facts' two-width lines from the data. **The converter's call alignment** (tools/layout.py): bodies aligned to max(cell, 2^scale) - the cell at 8-byte cells; SKIPPAD's shortcut only where a scaled call reaches it - seed 54's converter death (a2c8d50d0a) converts and lives. **The cell family's image** by width (and --validate's). No gene; ids unchanged. compare-fronts still judges at 64 bits. |
+| 2 | jit-genes-after-seed56.patch | **Two JIT genes** (Iterations 339-343; results/drafts/next-genes.md): **jitimg** (0/1) - the image's words JIT candidates: the converter gives the outer interpreter's plain code words (INTERPRET, PARSE-WORD, WORD, ...; no inline aligned data, nothing landing inside them) the header run-time words get - [the JIT opcode][length \| 2^31] - translated on their first call or left bytecode; (2, every plain word, killed on the corpus: not offered). **jitvar** - vf and vs (getstatic, putstatic) given the JIT as a literal of the slot's address then @ or !: two operand kinds in jit.c's decoder under JITVAR, no new stencil. jitleft.py --set=gene=value. On top of patch 1 (tools/layout.py's CALIGN). |
 
     git apply results/pending/two-widths-after-seed56.patch
+    git apply results/pending/jit-genes-after-seed56.patch
 
 Tested on master at Iteration 338 (results/drafts/two-width-selection.md, "Built so far", "Built"):
 - **64 bits unchanged**: six recorded designs of seed 55's front - engines and images byte-identical
@@ -19,3 +21,13 @@ Tested on master at Iteration 338 (results/drafts/two-width-selection.md, "Built
 
 To use it: NEXT-RUN "seed N tag2 Hh widths ..." - each design costs about one more build and
 measurement, so fewer designs an hour.
+
+Patch 2 tested on master with patch 1 (Iteration 343): off, six designs of seed 55's front -
+engines and images byte-identical to patch 1's; gene-equiv.py: ids and expressions of all 4,096
+recorded genomes unchanged (the operators' draws differ, as a new gene makes them); run-tests PASS,
+**66 engine paths** - three new: jitimg with jitvar, jitvar at varslot 0 and 1; validate 7 of 7;
+**forced: 16 of 16 JIT designs of seed 55's front alive with jitimg 1 and jitvar**; the gate 248 of
+248. jitleft --why on c549c0677c with both: INTERPRET tried (refused for PLACE), PARSE-WORD and WORD
+refused for (PARSE) - the next step is helper calls (results/drafts/next-genes.md). On a fresh clone
+the two patches apply in order and reproduce the tested files.
+

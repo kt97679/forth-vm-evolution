@@ -6570,3 +6570,14 @@ refused, one step on. The next blockers are C primitives - PLACE, (PARSE), (FIND
 cannot be: translating the outer interpreter needs helper calls, native code calling a primitive's C;
 the JIT has none, its handlers labels in one threaded function. jitimg and jitvar saved as one draft
 (results/drafts/jit-genes-wip.patch).
+
+## Iteration 343 - 2026-10-16 - Claude
+
+**jitimg and jitvar pending - patch 2 of the after-seed-56 batch - and helper calls designed.** The
+owner approved both steps. jitimg offered at 0 and 1 (2 killed on the corpus); three engine paths -
+jitimg with jitvar, jitvar at each slot encoding - 66 in all; off, six designs byte-identical; forced
+on, 16 of 16 JIT designs of seed 55's front alive; the gate 248 of 248. Helper calls designed: the
+stencils' ABI (spn_st f(cell *sp, cell tos)) lets a C function be called from native code as a
+stencil is; spn-stencils.c's function-pointer hole (IMM_FN) and one stencil, CALLC, calling through
+it; jit.c to patch that hole as it patches the literal's; the converter's table with the helper's
+address for the linker; first h_place, written from PLACE's handler. Next turn: build it.

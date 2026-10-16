@@ -18,8 +18,22 @@ index 51b940a..7dffac6 100644
              default: return 0;
              }
  #if JITX
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index beaebc9..4427ccf 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -54,6 +54,9 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('factored bodies (the tag)', dict(tag2=1, factor=3), ['tag2', 'factor']),        # Iteration 267: the gene factor
+     ('the JIT with factored bodies', dict(JIT, factor=3), ['jit', 'factor']),
+     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
++    ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
++    ('the JIT, jitvar, varslot 0', dict(JIT, jitvar=1, varslot=0), ['jitvar']),
++    ('the JIT, jitvar, varslot 1', dict(JIT, jitvar=1, varslot=1), ['jitvar']),
+     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
+     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
+     ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 522eb49..40e7ce8 100644
+index 522eb49..6b7d981 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
 @@ -195,6 +195,8 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
@@ -27,7 +41,7 @@ index 522eb49..40e7ce8 100644
  gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
       needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
 +gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
-+gene('jitimg', values=(0, 1, 2), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter, 2 every plain code word
++gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
  gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
  gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
       needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers

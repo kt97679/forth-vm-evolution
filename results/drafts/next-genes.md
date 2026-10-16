@@ -197,3 +197,37 @@ c549c0677c with jitvar, and with jitimg 1 and jitvar: both alive. jitleft --why,
   INTERPRET needs **helper calls** - native code calling a primitive's C and coming back - which the
   JIT does not have (the handlers are labels of one threaded function, not functions). The large
   step of the staircase; jitimg and jitvar pay in full only after it.
+
+## Helper calls - the design (Iteration 343, approved by the owner: "yes, please proceed")
+
+Two ways: **per-primitive helpers** (a C function a primitive, with the stencils' signature, called
+from native code) or **interpreter re-entry** (native code calling back into the interpreter for
+whatever it cannot translate - which would also end the cascade: a refused callee refuses its
+callers). Re-entry is the more powerful and the riskier (a re-entrant threaded interpreter with a
+cached TOS, THROW across native frames, the fault handler); helpers first - bounded, measurable
+step by step, and they show whether translating the outer interpreter pays before re-entry is tried.
+
+The machinery is nearly there:
+- **The ABI**: every stencil is `spn_st f(cell *sp, cell tos)` returning {sp, tos} (engine/spn-abi.h);
+  a helper with that signature is callable from a stencil as it is.
+- **Function holes**: spn-stencils.c has IMM_FN() - a 64-bit function-pointer hole, magic
+  SPN_FN_VALUE 0x6ea1ed5ea1ed5e66 (used by SPN's st_interp); jit.c patches only the literal's
+  (JIT_IMM64 0x5ea1ed5ea1ed5ea1) - it learns the second.
+- **One stencil**: `S(st_callc) { spn_st r = ((spn_fn)IMM_FN())(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }`
+  - appended to spn_table[] and jit.c's S_ list at the same place; position-independent (the call
+  through a register, the address in the hole - not a relative call the copy would break).
+- **The table**: the converter's JIT entries take a symbolic constant - 'PLACE': (['CALLC'],
+  '&h_place') - written into vm-jit-ops.h as `(INT64)(uintptr_t)&h_place`, the linker's address.
+- **The helpers**, under -DJITHELP (a gene; without it nothing compiled): the C primitives that
+  block the outer interpreter, first PLACE - its handler (vm-lab.c L_x_place, ( s n d -- )):
+
+      spn_st h_place(cell *sp, cell tos) {
+          unsigned char *d = (unsigned char *)(uintptr_t)tos; ucell n = (ucell)sp[0];
+          const unsigned char *s = (const unsigned char *)(uintptr_t)sp[1];
+          *d++ = (unsigned char)n; while (n--) *d++ = *s++;
+          return SPN_ST(sp + 3, sp[2]);
+      }
+
+  then (PARSE), and whatever jitleft --why names next: one helper, one measurement, each step.
+  Written by hand from each handler at first; generated from the handlers' source (macro shims, as
+  gen-tos.py rewrites them) if there come to be many.
