@@ -6308,3 +6308,14 @@ rounds, scaled to 6) about 2 hours, so the evolution about 7 - against seed 53's
 Seed 52's comparison at 6 rounds took 1 h 53 min, more than that scaling says: the chain may run
 past 9 hours by some minutes. rage.lan's check is left failing (recorded, harmless) until item 0
 is fixed properly - its sample must leave out designs with sysc too, not only its stages.
+
+## Iteration 322 - 2026-10-16 - Claude
+
+**rage.lan out of the remote checks - it cannot build the evolved designs at all.** Its first
+check failed in build-stages.sh on relf.c's sysc guard, but the same log said why no fix there
+would do: "8-byte cells DISABLED: this is a 32-bit host". Every evolved design is an 8-byte-cell
+one - evolve.py's build needs the k64 dumps, made by running s0-cell-64 - and relf.c's cell width
+is the host's pointer width. My REMOTES plan ("native, no JIT") missed it, as did the planning
+that chose rage. REMOTES keeps rage's line commented with the reason; another architecture wants
+a 64-bit host (aarch64: native, --no-jit). A configuration change: on master, read by the next
+chain.

@@ -6,4 +6,9 @@
 #
 # host       how       designs  rounds  minutes  sample options
 dream.lan    prebuilt  24       3       30
-rage.lan     native    12       2       90       --no-jit --gcc-only
+# rage.lan  native    12       2       90       --no-jit --gcc-only
+#   Iteration 322: out - a 32-bit host builds 4-byte cells only (build-stages.sh: "8-byte cells
+#   DISABLED"), and every evolved design is an 8-byte-cell one (evolve.py needs the k64 dumps,
+#   made by running s0-cell-64): rage cannot build them at all; its first check failed on the
+#   way there (relf.c's sysc guard). Another architecture needs a 64-bit one - aarch64, say:
+#   native, --no-jit (the JIT is x86-64's).

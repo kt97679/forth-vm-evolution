@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 321.
+- master: Iteration 322.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -54,8 +54,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
 - **Seed 53 processed** (Iteration 320): small (+0.3%), the first chain through the new runner -
   done, one archive. No corpus deaths; bfind on 17 of 172; heldout 0.948. The remote checks:
-  dream.lan Spearman 0.959 (results/xcheck-dream-seed53.md); rage.lan failed - build-stages.sh
-  (open item 0). NEXT-RUN: seed 54, the same genes, 9 hours (the owner, Iteration 321), the
+  dream.lan Spearman 0.959 (results/xcheck-dream-seed53.md); rage.lan failed - it cannot build
+  8-byte cells at all (out of REMOTES, Iteration 322; open item 0). NEXT-RUN: seed 54, the same genes, 9 hours (the owner, Iteration 321), the
   comparison at 6 rounds.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
@@ -170,11 +170,10 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
-0. rage.lan's check (Iteration 320): build-stages.sh fails on ARMv7 - relf.c:505's #error "the gene
-   sysc: the image's system-call numbers are x86-64 Linux's (i386's mapped)": a stage compiled
-   with sysc (shell-sysc.4 in SHELL_BOOT and SELF_BOOT). build-stages.sh already skips the CPU-time
-   tool and the 64-bit builds off x86-64; the sysc stage needs the same, and evolve.py's build/
-   check must count such a build complete. Then rage's native check can run.
+0. Another architecture for the remote checks (Iteration 322): rage.lan is out of REMOTES - a
+   32-bit host builds only 4-byte cells, and every evolved design is an 8-byte-cell one; the
+   sysc error its first check met was only the first of the walls. A 64-bit non-x86 host
+   (aarch64), native and --no-jit, would be the check; the owner's, if there is one.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

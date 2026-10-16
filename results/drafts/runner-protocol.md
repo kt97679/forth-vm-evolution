@@ -274,3 +274,12 @@ with a host still running: 1 s, no waiting, the host's run killed, its directory
 **Before the first real run**: the laptop reaches dream.lan and rage.lan with ssh keys, no
 password (BatchMode) - probe says so at start if not; the hosts have git, python3, gcc, make.
 
+## rage.lan out (Iteration 322)
+
+Its first real check (seed 53's chain) failed in build-stages.sh, and the log said why the
+check could never have run: "8-byte cells DISABLED: this is a 32-bit host". Every evolved design
+is an 8-byte-cell one (evolve.py's build needs the k64 dumps, which come from running
+s0-cell-64), and relf.c takes its cell width from the host's pointers. The plan's "native, no
+JIT" missed it, and so did the earlier planning that chose rage. Out of REMOTES with the reason;
+another architecture wants a 64-bit host - aarch64, native, --no-jit.
+
