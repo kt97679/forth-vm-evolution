@@ -1,8 +1,8 @@
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 2973e17..4eb4a1f 100644
+index 2973e17..8fdd4eb 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
-@@ -634,11 +634,60 @@ def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix:
+@@ -634,11 +634,65 @@ def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix:
  def S0(): return os.path.join(O, 's0-cell-%d' % (8 * cellw()))   # the cell engine that makes them
  def KIMG(): return 'kernel.img' if cellw() == 8 else 'kernel32.img'
  
@@ -42,7 +42,12 @@ index 2973e17..4eb4a1f 100644
 +def eval32(g, rounds):
 +    """Iteration 336: speed32 - the design, its JIT off, as a 32-bit x86 engine at 4-byte cells,
 +    over the selection's workloads, a round fewer; none (and why) if it does not build or live so."""
-+    g32 = canon(dict(g, jit=0)); d32 = os.path.join(EV, 'ind32-' + gid(g)); out = {}
++    # Iteration 337: and its call scale at most 2 - at 4-byte cells nothing is 8-aligned, scale 3's
++    # unit: run-time definitions align to the cell, and a scaled call missed them (the corpus died).
++    # A 32-bit build of the design takes cell-aligned calls, as it takes no JIT.
++    g32 = dict(g, jit=0)
++    if (g32.get('scale') or 0) > 2: g32['scale'] = 2
++    g32 = canon(g32); d32 = os.path.join(EV, 'ind32-' + gid(g)); out = {}
 +    try:
 +        with at_width(WIDTH4):
 +            eng, img = build(g32, d32); pw = private_work(d32)
@@ -64,7 +69,7 @@ index 2973e17..4eb4a1f 100644
  
  def cc():
      """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit
-@@ -1166,6 +1215,7 @@ def evaluate(g, rounds, keep=False):
+@@ -1166,6 +1220,7 @@ def evaluate(g, rounds, keep=False):
          rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
          rec['mem'] = dict(LAST_RSS)
          rec['unit'] = UNIT
@@ -72,7 +77,7 @@ index 2973e17..4eb4a1f 100644
      except RuntimeError as e:
          rec['status'] = str(e)
      except subprocess.TimeoutExpired:
-@@ -1285,6 +1335,12 @@ def borrow(g, donor, rnd):
+@@ -1285,6 +1340,12 @@ def borrow(g, donor, rnd):
  # image, peak memory. A record from before (no binary, no memory measured)
  # falls back to its image size and no memory: its own run's two.
  OBJECTIVES = ('speed', 'total', 'rss')
@@ -85,7 +90,7 @@ index 2973e17..4eb4a1f 100644
  # Iteration 77: memory within MEM_TOL KB counts as a tie. Seed 18's
  # session: 18 of the front's 39 were there by memory alone, every one a
  # page or less (2-4 KB) from a design faster and smaller - the noise of the
-@@ -1359,11 +1415,18 @@ def screen_beaten(stair, s_, t_):
+@@ -1359,11 +1420,18 @@ def screen_beaten(stair, s_, t_):
  
  def dominates(a, b):
      """Design a dominates design b: no worse in all three, better in one -
@@ -107,7 +112,7 @@ index 2973e17..4eb4a1f 100644
      if k == 'total': return r.get('total', r['size'])
      if k == 'rss': return r.get('rss') or 0
      return r[k]
-@@ -1419,7 +1482,7 @@ def first_front(ids, R):
+@@ -1419,7 +1487,7 @@ def first_front(ids, R):
  
  def crowding(front, R):
      cd = {i: 0.0 for i in front}
@@ -116,7 +121,7 @@ index 2973e17..4eb4a1f 100644
          s = sorted(front, key=lambda i: ov(R[i], k)); lo, hi = ov(R[s[0]], k), ov(R[s[-1]], k)
          cd[s[0]] = cd[s[-1]] = float('inf')
          for j in range(1, len(s) - 1):
-@@ -1688,7 +1751,7 @@ def setup():
+@@ -1688,7 +1756,7 @@ def setup():
          if c32 == c4: sys.exit('cannot retarget cross.4 to 4-byte cells (tools/reseed.sh has the same check)')
          open(os.path.join(W, 'cross32.4'), 'w').write(c32)
          KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross32.4" INCLUDED\n'
@@ -125,7 +130,7 @@ index 2973e17..4eb4a1f 100644
      with open(CORPUS, 'rb') as f:
          REF_CORPUS = sh([S0(), os.path.join(O, 's0-cell-s%d.img' % (8 * cellw()))], cwd=W, inp=f.read()).stdout
      UNIT = 'median ' + ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'   # median: Iteration 25
-@@ -1697,7 +1760,7 @@ def setup():
+@@ -1697,7 +1765,7 @@ def setup():
      PIN[:] = quiet_cpu()
      # the reference every measurement is paired with: hand-made s6
      global REF
@@ -134,7 +139,7 @@ index 2973e17..4eb4a1f 100644
      # Iteration 331: a check's host may be handed its reference built (EVOLVE_PREBUILT_REF, a
      # directory with engine and image - xcheck's prebuilt s6), when it cannot build one itself:
      # dream.lan has no 32-bit C compiler, and its 32-bit check measures the laptop's binaries
-@@ -1856,8 +1919,11 @@ def main(argv):
+@@ -1856,8 +1924,11 @@ def main(argv):
      if '-h' in argv or '--help' in argv:
          print(__doc__); return
      known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
@@ -147,7 +152,7 @@ index 2973e17..4eb4a1f 100644
      bad = [a for a in argv if a.startswith('-') and a not in known]
      if bad:
          # Iteration 4: `--help`, unrecognised, started a full run that wrote
-@@ -1868,7 +1934,7 @@ def main(argv):
+@@ -1868,7 +1939,7 @@ def main(argv):
          DB = os.path.abspath(argv[argv.index('--db') + 1])
      def opt(name, default):
          return type(default)(argv[argv.index(name) + 1]) if name in argv else default
