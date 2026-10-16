@@ -6429,3 +6429,19 @@ address below 4 GB there anyway. The harness wraps each ARM engine for qemu and,
 lifts sh()'s jail (qemu maps past its 1 GB) and multiplies the CPU limits. What qemu cannot say:
 whether a Cortex-A9 faults on an unaligned 64-bit load - the Tegra's own run will. Next: the
 checks - dream's 32-bit line and rage native - and the batch through run-tests and the gate.
+
+## Iterations 331-332 - 2026-10-16 - Claude
+
+**The 32-bit checks wired, tested, and pending as the after-seed-54 batch.** dream.lan cannot link a
+32-bit binary ("4-byte cells DISABLED" in its build log), so its 32-bit check measures the laptop's:
+-m32 builds linked with the static i386 runtime, run where no 32-bit library is; and the 4-byte
+references it cannot make (the 32-bit cell engine and its image, the base k32 dumps), shipped in
+the bundle; setup() takes the shipped s6 (EVOLVE_PREBUILT_REF). xcheck --sample --cell 4 takes a
+design only once it builds and lives as a 32-bit engine on the laptop. remote-checks.sh runs several
+checks a host, one after another under the host's lock (flock on a descriptor in run.sh itself, so
+stop still kills its group), each deadline from its own start. Every host's byte order and cell
+width recorded - measured, not assumed. Tested with stand-in hosts: 64-bit prebuilt, 32-bit
+prebuilt (after a bug of mine: `; rp = private_work(rd)` left on the else branch's line), a simulated
+32-bit native host - all measured and gathered, the lock holding the second check back. Then 64 bits
+proven unchanged: six designs' engines and images byte-identical against a clean clone, gene-equiv
+PASS with every operator draw, run-tests 63 paths, validate 7 of 7, the gate 245 of 245.

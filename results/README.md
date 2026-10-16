@@ -12,10 +12,10 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `predictions.md` - the predictions written before each run, then scored.
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
+- `pending/ORDER.md` - the batch waiting to be applied after the run now on the laptop, while there is one: the order, and how each patch was tested (results/pending/ moves to applied-after-seedN/ when applied).
 - `drafts/runner-protocol.md` - The runner's protocol, the owner's requirements as a specification (Iterations 302-303): one command, one archive with every log, a clean stop, recovery at every start.
 - `xcheck-dream-seed53.md` - The first remote check (Iteration 320): seed 52's front on dream.lan (i7-6700), the laptop's binaries - Spearman 0.959, the laptop's six fastest its first six; the JIT designs' lead over s6 smaller there.
 - `drafts/next-genes.md` - The search for the genes after seed 54 (Iteration 323): price.py on seed 53's fastest interpreted designs - calls and returns the largest share, their genes in place, pairs diminishing; next, jitleft.py - what the JIT leaves to the interpreter.
-- `drafts/cell32-wip.patch` - the 32-bit checks at native 4-byte cells (Iterations 324-326), in progress: HANDOFF item 0.
 - `drafts/jit-loop-crash.md` - A JIT fault seed 52 found (Iteration 310): two designs die in the corpus's loop tests; the trigger narrowed to jit with folds, ops10, rtloop and tag2; the genomes.
 - `drafts/iploop-plan.md` - The IP-update loop form: three explanations of the evolved designs' lower IPC, and the laptop measurement that decides between them before anything is built (Iteration 295).
 
