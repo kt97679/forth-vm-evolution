@@ -32,3 +32,23 @@ carry. The owner: select at both widths. The laptop runs 32-bit x86 itself, nati
 Settle 1 and 2 with the owner; then evolve.py's evaluation (the 32-bit build and measurement after
 screening), the front with four objectives, compare-fronts, seed-facts, the progress table; tests -
 gene-equiv (no id changes), an evolution of a few generations at both widths, compare-fronts on it.
+
+## Built so far (Iteration 336 - results/drafts/two-width-wip.patch; master without it)
+
+The owner agreed: the JIT designs judged at 32 bits by their interpreter; speed32 a fourth objective.
+In evolve.py: --widths 8,4; setup_widths() runs setup at 4-byte cells first (its reference, kernel
+reference and k32 variants, under width-suffixed paths) and keeps REF, KREF, REF_CORPUS, KERNEL_IN
+in WIDTH4, then setup as always; at_width() swaps those and the build's environment in and out;
+eval32() measures the design with jit=0 as a 32-bit x86 engine, over the selection's workloads, a
+round fewer, after the 64-bit measurement - speed32, or none and why32; dominates() and crowding()
+take speed32 with --widths (none the worst: 1e9); CCV() gives clang -m32 too. Off, nothing changes.
+
+**The first run** (a scratch clone, population 4, one generation, one round): it ran through; 20
+designs, all alive at 64 bits; 12 with speed32, 8 without, and why: four "call target ... not
+8-aligned" in the converter (and "v8 call target ... not a[ligned]") - the assertion that killed one
+of seed 54's designs at 8-byte cells, at 4 far more often (code aligned to 4 there, and a call
+encoding counting targets in 8-byte units); one corpus death at 4-byte cells. Both are faults to fix
+before speed32 is selected on - else the selection pushes away from those encodings for a
+converter's limit, not the design's. Then: compare-fronts (speed32 on its fronts too), seed-facts,
+the report, next-run.sh's word for it (NEXT-RUN "widths"), the gate at both widths.
+

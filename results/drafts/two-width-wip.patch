@@ -1,0 +1,158 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 2973e17..4eb4a1f 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -634,11 +634,60 @@ def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix:
+ def S0(): return os.path.join(O, 's0-cell-%d' % (8 * cellw()))   # the cell engine that makes them
+ def KIMG(): return 'kernel.img' if cellw() == 8 else 'kernel32.img'
+ 
++W4_ENV = {'EVOLVE_CELL': '4', 'EVOLVE_CC': 'gcc -m32'}
++KERNEL_IN64 = None
++
++class at_width:
++    """Iteration 336: evaluate at 4-byte cells - the build's environment and setup's four width-
++    dependent globals swapped in (build, alive and measure read them at call time), then put back."""
++    def __init__(self, ctx): self.ctx = ctx
++    def __enter__(self):
++        g = globals(); self.saved = {k: g[k] for k in ('REF', 'KREF', 'REF_CORPUS', 'KERNEL_IN')}
++        self.env = {k: os.environ.get(k) for k in W4_ENV}
++        os.environ.update(W4_ENV); g.update(self.ctx)
++    def __exit__(self, *_):
++        globals().update(self.saved)
++        for k, v in self.env.items():
++            if v is None: os.environ.pop(k, None)
++            else: os.environ[k] = v
++
++def setup_widths():
++    """Iteration 336: setup at 4-byte cells first (its own reference, kernel reference and k32
++    variants), kept in WIDTH4; then setup as always - the run's own width, 8."""
++    global KERNEL_IN64
++    if TWO_WIDTHS[0]:
++        KERNEL_IN64 = KERNEL_IN
++        env = {k: os.environ.get(k) for k in W4_ENV}; os.environ.update(W4_ENV)
++        try:
++            setup(); WIDTH4.update(REF=REF, KREF=KREF, REF_CORPUS=REF_CORPUS, KERNEL_IN=KERNEL_IN)
++        finally:
++            for k, v in env.items():
++                if v is None: os.environ.pop(k, None)
++                else: os.environ[k] = v
++            globals()['KERNEL_IN'] = KERNEL_IN64
++    setup()
++
++def eval32(g, rounds):
++    """Iteration 336: speed32 - the design, its JIT off, as a 32-bit x86 engine at 4-byte cells,
++    over the selection's workloads, a round fewer; none (and why) if it does not build or live so."""
++    g32 = canon(dict(g, jit=0)); d32 = os.path.join(EV, 'ind32-' + gid(g)); out = {}
++    try:
++        with at_width(WIDTH4):
++            eng, img = build(g32, d32); pw = private_work(d32)
++            alive(eng, img, pw, far=not hand_made(g32))
++            t, raw = measure(eng, img, pw, WORK_SEL, max(1, rounds - 1))
++        out['speed32'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL)); out['t32'] = t
++    except (RuntimeError, subprocess.TimeoutExpired) as e:
++        out['speed32'] = None; out['why32'] = str(e)[:200]
++    shutil.rmtree(d32, ignore_errors=True)
++    return out
++
+ def CCV(g):
+     """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
+     designs keep clang: the Tegra has none, and its sample is GCC's)."""
+     c = CC(g)
+-    return (os.environ['EVOLVE_CC'].split() if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc') else [c])
++    if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc'): return os.environ['EVOLVE_CC'].split()
++    return [c] + (['-m32'] if '-m32' in os.environ.get('EVOLVE_CC', '').split() else [])   # Iteration 336: clang at 32 bits too
+ 
+ def cc():
+     """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit
+@@ -1166,6 +1215,7 @@ def evaluate(g, rounds, keep=False):
+         rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
+         rec['mem'] = dict(LAST_RSS)
+         rec['unit'] = UNIT
++        if TWO_WIDTHS[0]: rec.update(eval32(g, rounds))       # Iteration 336: the 32-bit measurement, after the 64-bit one
+     except RuntimeError as e:
+         rec['status'] = str(e)
+     except subprocess.TimeoutExpired:
+@@ -1285,6 +1335,12 @@ def borrow(g, donor, rnd):
+ # image, peak memory. A record from before (no binary, no memory measured)
+ # falls back to its image size and no memory: its own run's two.
+ OBJECTIVES = ('speed', 'total', 'rss')
++# Iteration 336 (the owner, results/drafts/two-width-selection.md): --widths 8,4 - each design also
++# measured as a 32-bit x86 engine at 4-byte cells, here (gcc -m32: the laptop runs it), its JIT off -
++# a JIT design is judged at 32 bits by the interpreter under its JIT - and speed32 a fourth objective
++# on the front, not folded into speed: a weakness at one width does not hide behind the other.
++TWO_WIDTHS = [False]
++WIDTH4 = {}                 # REF, KREF, REF_CORPUS, KERNEL_IN at 4-byte cells (setup_widths)
+ # Iteration 77: memory within MEM_TOL KB counts as a tie. Seed 18's
+ # session: 18 of the front's 39 were there by memory alone, every one a
+ # page or less (2-4 KB) from a design faster and smaller - the noise of the
+@@ -1359,11 +1415,18 @@ def screen_beaten(stair, s_, t_):
+ 
+ def dominates(a, b):
+     """Design a dominates design b: no worse in all three, better in one -
+-    memory by more than MEM_TOL, speed by more than SPEED_TOL."""
++    memory by more than MEM_TOL, speed by more than SPEED_TOL. With --widths 8,4,
++    speed32 a fourth, with speed's tolerance."""
+     s, t, m = (ov(a, k) for k in OBJECTIVES); s2, t2, m2 = (ov(b, k) for k in OBJECTIVES)
+-    return (s <= s2 * (1 + SPEED_TOL) and t <= t2 and m <= m2 + MEM_TOL
+-            and (s < s2 * (1 - SPEED_TOL) or t < t2 or m < m2 - MEM_TOL))
++    if not TWO_WIDTHS[0]:
++        return (s <= s2 * (1 + SPEED_TOL) and t <= t2 and m <= m2 + MEM_TOL
++                and (s < s2 * (1 - SPEED_TOL) or t < t2 or m < m2 - MEM_TOL))
++    w, w2 = ov(a, 'speed32'), ov(b, 'speed32')
++    return (s <= s2 * (1 + SPEED_TOL) and t <= t2 and m <= m2 + MEM_TOL and w <= w2 * (1 + SPEED_TOL)
++            and (s < s2 * (1 - SPEED_TOL) or t < t2 or m < m2 - MEM_TOL or w < w2 * (1 - SPEED_TOL)))
+ def ov(r, k):
++    if k == 'speed32':                  # Iteration 336: none (no 32-bit build, or not alive there) - the worst
++        v = r.get('speed32'); return v if v is not None else 1e9
+     if k == 'total': return r.get('total', r['size'])
+     if k == 'rss': return r.get('rss') or 0
+     return r[k]
+@@ -1419,7 +1482,7 @@ def first_front(ids, R):
+ 
+ def crowding(front, R):
+     cd = {i: 0.0 for i in front}
+-    for k in OBJECTIVES:
++    for k in OBJECTIVES + (('speed32',) if TWO_WIDTHS[0] else ()):
+         s = sorted(front, key=lambda i: ov(R[i], k)); lo, hi = ov(R[s[0]], k), ov(R[s[-1]], k)
+         cd[s[0]] = cd[s[-1]] = float('inf')
+         for j in range(1, len(s) - 1):
+@@ -1688,7 +1751,7 @@ def setup():
+         if c32 == c4: sys.exit('cannot retarget cross.4 to 4-byte cells (tools/reseed.sh has the same check)')
+         open(os.path.join(W, 'cross32.4'), 'w').write(c32)
+         KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross32.4" INCLUDED\n'
+-    KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, KIMG()), KREF)
++    KREF = os.path.join(EV, 'kernel-ref%s.img' % ('32' if cellw() == 4 else '')); shutil.copy(os.path.join(W, KIMG()), KREF)   # 336: one a width
+     with open(CORPUS, 'rb') as f:
+         REF_CORPUS = sh([S0(), os.path.join(O, 's0-cell-s%d.img' % (8 * cellw()))], cwd=W, inp=f.read()).stdout
+     UNIT = 'median ' + ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'   # median: Iteration 25
+@@ -1697,7 +1760,7 @@ def setup():
+     PIN[:] = quiet_cpu()
+     # the reference every measurement is paired with: hand-made s6
+     global REF
+-    rd = os.path.join(EV, 'reference'); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)
++    rd = os.path.join(EV, 'reference' + ('32' if cellw() == 4 else '')); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)   # 336: one a width
+     # Iteration 331: a check's host may be handed its reference built (EVOLVE_PREBUILT_REF, a
+     # directory with engine and image - xcheck's prebuilt s6), when it cannot build one itself:
+     # dream.lan has no 32-bit C compiler, and its 32-bit check measures the laptop's binaries
+@@ -1856,8 +1919,11 @@ def main(argv):
+     if '-h' in argv or '--help' in argv:
+         print(__doc__); return
+     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
+-             '--jobs', '--until', '--fromzero'}
++             '--jobs', '--until', '--fromzero', '--widths'}
+     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
++    if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
++        if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
++        TWO_WIDTHS[0] = True
+     bad = [a for a in argv if a.startswith('-') and a not in known]
+     if bad:
+         # Iteration 4: `--help`, unrecognised, started a full run that wrote
+@@ -1868,7 +1934,7 @@ def main(argv):
+         DB = os.path.abspath(argv[argv.index('--db') + 1])
+     def opt(name, default):
+         return type(default)(argv[argv.index(name) + 1]) if name in argv else default
+-    setup()
++    setup_widths()                         # Iteration 336: setup() itself, unless --widths 8,4
+     if '--validate' in argv:
+         ok = True
+         for name, g in HUMAN.items():

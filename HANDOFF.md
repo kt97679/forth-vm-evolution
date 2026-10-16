@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 335.
+- master: Iteration 336.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -188,9 +188,12 @@ About 20 minutes of machine time for build, tests and gates.
    32-bit one (no JIT, GCC only, the same designs), so 64 against 32 bits on one machine; seed 55's
    two samples shared 8 designs, nearly all slow and within 5%. Then: what in the evolved designs
    costs at 32 bits (register pressure on i386's 8 registers, 4-byte cells) - genes for both.
-0c. A converter death (results/drafts/convert-align-death.md, Iteration 333): one of seed 54's
-   41,406, "call target 1390 not 8-aligned" - reproduce, bisect its genes, fix; the genome then to
-   lab/evolve/regressions.json.
+0c. Selecting at both widths - in progress (results/drafts/two-width-selection.md, "Built so far";
+   results/drafts/two-width-wip.patch, Iteration 336): evolve.py --widths 8,4 runs through - speed32
+   on 12 of 20 designs in its first run. Before it is selected on: the converter's "call target not
+   8-aligned" (4 of the 8 without speed32 - and seed 54's one death at 8-byte cells, the same
+   assertion: results/drafts/convert-align-death.md), a corpus death at 4-byte cells to bisect; then
+   compare-fronts, seed-facts, the report, NEXT-RUN's word for it.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept

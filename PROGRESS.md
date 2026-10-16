@@ -6487,3 +6487,16 @@ widths drafted (results/drafts/two-width-selection.md): a design's interpreter m
 cells on the laptop as a second speed objective - the JIT designs judged at 32 bits by the
 interpreter under their JIT; not one combined score, which would let a weakness hide. Its decisions
 are the owner's before it is built - after seed 56 starts.
+
+## Iteration 336 - 2026-10-16 - Claude
+
+**Selecting at both widths, begun - the first two-width evolution ran through (results/drafts/
+two-width-wip.patch).** The owner agreed to the draft's decisions: the JIT designs judged at 32 bits
+by the interpreter under their JIT, speed32 a fourth objective. evolve.py --widths 8,4: setup at
+4-byte cells first, its four width-dependent globals kept and swapped in by at_width() for each
+design's 32-bit measurement (the design, jit off, as a 32-bit x86 engine, after its 64-bit one);
+dominance and crowding with speed32. A scratch run - population 4, one generation - gave 20 designs,
+all alive at 64 bits, 12 with speed32. The other 8 say what the 32-bit measurement is for: four
+converter assertions ("call target ... not 8-aligned") - the one that killed a design of seed 54's
+at 8-byte cells, far more often at 4 - and a corpus death at 4-byte cells. Faults to fix before the
+selection leans on speed32, or it would steer away from call encodings for the converter's sake.
