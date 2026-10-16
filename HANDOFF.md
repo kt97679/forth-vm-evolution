@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 325.
+- master: Iteration 326.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -170,24 +170,27 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
-0. The Tegra (rage.lan, ARMv7) and 32-bit x86 as remote checks - the owner's: running only on
-   the laptop is the skew they feared, and a 32-bit x86 check would show skew sooner (Iterations
-   324-325). 8-byte cells on a 32-bit host: results/drafts/cell64-wip.patch (master without it;
-   apply it in a scratch tree, rebuild). In it: engine/vm-lab.c's and relf.c's CELL64 (UNS64 64-bit
-   on a 32-bit host, CELL unaligned-safe, UM* and UM/MOD in 32-bit halves - no __int128 there);
-   the system-call table for 32-bit hosts - the shell's calls and now the file overlays' (read,
-   write, open, close, lseek, munmap, mremap, ioctl, exit, unlink; mmap through libc's mmap2),
-   i386 and ARM EABI (exit_group 252 / 248), SYSC's guard now admitting ARM - every engine is SYSC;
-   results zero-extended unless -4095..-1 (addresses past 2 GB); evolve.py's CCV/cc/cell64
-   (EVOLVE_CC, EVOLVE_CELL64) and EVOLVE_CC's compiler not jailed in sh(). On a 64-bit host nothing
-   changes. Tested: build-stages clean (both widths); **32-bit x86 with 8-byte cells - 14 of 14
-   alive** (s6; b926dd6bc8, whose fsys failed until the file calls were mapped; 12 across seed 53's
-   front, fsys 1-5). Next: ARM under qemu-arm (the harness: wrap each engine to run qemu-arm -L
-   /usr/arm-linux-gnueabihf, and lift the jail for it - qemu reserves more than its 1 GB; the
-   production jail stays); then the checks: dream's second line (32-bit x86, the laptop's static
-   -m32 binaries, prebuilt32), rage native (the laptop's build products shipped: k64 dumps,
-   vm-lab-tos.c), checks on one host serialized by flock, each deadline from its own start; the
-   sample without jit, clang, tailpn, regpin; a script for the owner to run on rage.
+0. The Tegra (rage.lan, ARMv7) and 32-bit x86 as remote checks - at native cell width, the owner's
+   rule (Iteration 326): 8-byte cells on a 64-bit host, 4 on a 32-bit one; the 8-byte-cells-on-
+   32-bit mode dropped. One Forth source, cross.4's TARGET-CELL-BYTES, gives both kernels
+   (kernel-seed.img, kernel32-seed.img - tools/reseed.sh); little-endian throughout, as all the
+   hosts are. The draft: results/drafts/cell32-wip.patch (master without it). In it: evolve.py's
+   cellw() (4 on a 4-byte-pointer host, or EVOLVE_CELL=4 with EVOLVE_CC='gcc -m32' here) and
+   everything from it - the k32- variant dumps from s0-cell-32 and kernel32.img with the same
+   overlays, the converter's width, the corpus reference (s0-cell-s32.img), the kernel workload
+   at 4 bytes (cross.4 retargeted as reseed.sh does it, against kernel32-seed.img: a 4-byte host
+   cannot build the 8-byte kernel); EVOLVE_CC/CCV and EVOLVE_CC's compiler not jailed; in both
+   engines, the system-call table for 32-bit hosts (the file overlays' calls, ARM's exit_group,
+   ARM through SYSC's guard, mmap through the library) and, at start on a 32-bit host, Linux's
+   legacy layout (personality ADDR_COMPAT_LAYOUT, then one execve) - so ALLOCATE's mmap lands
+   below 2 GB, where file-sysc.4's 0< reads it right (an address past 2 GB is a negative 4-byte
+   cell; [IF] is not in the kernel to make the source width-conditional, and the 64-bit images
+   must not change). Tested so far: build-stages clean; the 32-bit dump that ran out of memory
+   (k32-self-fsys) now whole by hand. Next: setup at EVOLVE_CELL=4 (every k32 variant), s6 and the
+   seed-53 sweep at 4-byte cells (the 4-byte kernel workload is new: a 4-byte host has never run
+   cross.4 before), then ARM under qemu-arm (no binfmt: run through a wrapper; the re-exec fails
+   there, and qemu maps low anyway); then the checks - dream's 32-bit line (the laptop's -m32
+   builds), rage native; each host's byte order recorded.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept

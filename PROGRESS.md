@@ -6358,3 +6358,21 @@ i386 and 32-bit ARM, mmap through libc, results zero-extended unless an errno - 
 ARM, which rage met first. Then 14 of 14 at -m32: s6, the fsys design, twelve across the front.
 ARM's first try: the cross compiler jailed by sh() as an engine (no new processes) - EVOLVE_CC's
 compiler is a build tool now, as clang-19 became. The ARM run under qemu-arm next.
+
+## Iteration 326 - 2026-10-16 - Claude
+
+**Native cell width for the 32-bit checks - the owner's rule (results/drafts/cell32-wip.patch).**
+The owner asked why a 32-bit build had 8-byte cells: it should have 4. Right - and a universal cell
+would cost either the 32-bit hosts (double-word arithmetic) or the 64-bit ones (offsets for every
+address, WebAssembly's way - every design on the laptop changed). Nothing was lost: one Forth
+source, cross.4's TARGET-CELL-BYTES, gives both kernels; what was always 64-bit only is the
+evolver's layer - its kernel variants, made in setup from kernel.img alone. The 8-byte-cells mode
+dropped; evolve.py's cellw() makes the variants, the converter's width and the references follow
+the host's width; the kernel workload at 4 bytes builds the 4-byte kernel, as reseed.sh does.
+The first 32-bit variant dump failed: "out of memory" - file-sysc.4's ALLOCATE maps with mmap,
+which on 32-bit x86 returns an address past 2 GB, a negative 4-byte cell, and the overlay tests
+results with 0<. Not the port: the overlays were written for 64 bits. Without [IF] in the kernel,
+and with the 64-bit images to stay the same, the engines keep such memory below 2 GB on a 32-bit
+host - Linux's legacy layout, set at start and re-executed once (raw system calls: the runtimes
+without the C library have no wrappers). The dump then whole: 342 names. Endianness: all hosts
+little-endian; cross.4 says images are native-endian - no parameter needed.
