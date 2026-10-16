@@ -6329,3 +6329,17 @@ and rtempty are their genes already; more pairs priced at 8-21% but measured bef
 (their overlap, the slots); triples negligible. My idea of fusing returns was folds, which
 exists. The frontier is the JIT's: a word it cannot translate whole stays interpreted, and no
 tool counts what that leaves - jitleft.py is next. rage.lan out of REMOTES earlier this turn.
+
+## Iteration 324 - 2026-10-16 - Claude
+
+**The Tegra back, as the owner wants - 8-byte cells on a 32-bit host, begun
+(results/drafts/cell64-wip.patch, HANDOFF item 0).** Running only on the laptop is the skew they
+feared; rage is the check that differs most. The engines tied the cell to the pointer
+(UINTPTR_MAX); CELL64 keeps it 64-bit on a 32-bit host, cells and pointers through uintptr_t,
+CELL unaligned-safe for ARMv7. evolve.py: CCV(g) - the real compile of every evolved design
+names the gene's compiler through CC(g), not cc: my first hooks were in build_other, the old
+encodings', and my first "32-bit" test printed success over a 64-bit engine - it now checks the
+ELF it built. Tests here: gcc -m32 runs, ARM under qemu-arm (no binfmt: a wrapper); installing
+the cross compiler removed /usr/include/asm, which broke the 32-bit stages - restored, noted in
+HANDOFF's setup. x86-64 builds unchanged. The s6 reference at -m32 -DCELL64=1: one error -
+__int128 (UM*, UM/MOD), which 32-bit targets lack. Next: those in 32-bit halves, then the corpus.

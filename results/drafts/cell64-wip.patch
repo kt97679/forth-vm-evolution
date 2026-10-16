@@ -1,0 +1,141 @@
+diff --git a/engine/relf.c b/engine/relf.c
+index d20f3bd..7345e64 100644
+--- a/engine/relf.c
++++ b/engine/relf.c
+@@ -67,6 +67,16 @@ typedef uint64_t UNS64; /* the VM's cell type - 8 bytes on this host */
+ typedef int64_t  INT64;
+ #define CELL_BYTES 8
+ #define CELL_SHIFT 3     /* log2(CELL_BYTES): primitive dispatch stride */
++#elif UINTPTR_MAX == 0xFFFFFFFFUL && CELL64
++/* Iteration 324 (the owner: the Tegra, a 32-bit ARM, as a check): 8-byte cells on a 32-bit
++ * host - the evolved designs are all 8-byte-cell ones. A cell holds an address zero-extended;
++ * cells and pointers meet through uintptr_t, and a cell is read and written with no alignment
++ * assumed (CELL below: ARMv7's LDRD faults off a 4-byte boundary, and operands sit at any
++ * byte). Only built so: every 64-bit host's engine is what it was. */
++typedef uint64_t UNS64; /* the VM's cell type - 8 bytes, on a 32-bit host */
++typedef int64_t  INT64;
++#define CELL_BYTES 8
++#define CELL_SHIFT 3
+ #elif UINTPTR_MAX == 0xFFFFFFFFUL
+ typedef uint32_t UNS64; /* the VM's cell type - 4 bytes on this host */
+ typedef int32_t  INT64;
+@@ -124,8 +134,14 @@ typedef int32_t  INT64;
+  *  there's only one access path.
+  */
+ 
++#if CELL64 && UINTPTR_MAX == 0xFFFFFFFFUL
++typedef uint64_t __attribute__((aligned(1), may_alias)) UNS64U;   /* Iteration 324: any alignment */
++#define CELL(reg) (*(UNS64U*)(uintptr_t)(reg))
++#define BYTE(reg) (*(UNS8*)(uintptr_t)(reg))
++#else
+ #define CELL(reg) (*(UNS64*)(reg))
+ #define BYTE(reg) (*(UNS8*)(reg))
++#endif
+ 
+ /*
+  *  Macroses for stack access
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 7d6bd68..2d3a27d 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -208,6 +208,16 @@ typedef uint64_t UNS64; /* the VM's cell type - 8 bytes on this host */
+ typedef int64_t  INT64;
+ #define CELL_BYTES 8
+ #define CELL_SHIFT 3     /* log2(CELL_BYTES): primitive dispatch stride */
++#elif UINTPTR_MAX == 0xFFFFFFFFUL && CELL64
++/* Iteration 324 (the owner: the Tegra, a 32-bit ARM, as a check): 8-byte cells on a 32-bit
++ * host - the evolved designs are all 8-byte-cell ones. A cell holds an address zero-extended;
++ * cells and pointers meet through uintptr_t, and a cell is read and written with no alignment
++ * assumed (CELL below: ARMv7's LDRD faults off a 4-byte boundary, and operands sit at any
++ * byte). Only built so: every 64-bit host's engine is what it was. */
++typedef uint64_t UNS64; /* the VM's cell type - 8 bytes, on a 32-bit host */
++typedef int64_t  INT64;
++#define CELL_BYTES 8
++#define CELL_SHIFT 3
+ #elif UINTPTR_MAX == 0xFFFFFFFFUL
+ typedef uint32_t UNS64; /* the VM's cell type - 4 bytes on this host */
+ typedef int32_t  INT64;
+@@ -313,8 +323,14 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
+  *  there's only one access path.
+  */
+ 
++#if CELL64 && UINTPTR_MAX == 0xFFFFFFFFUL
++typedef uint64_t __attribute__((aligned(1), may_alias)) UNS64U;   /* Iteration 324: any alignment */
++#define CELL(reg) (*(UNS64U*)(uintptr_t)(reg))
++#define BYTE(reg) (*(UNS8*)(uintptr_t)(reg))
++#else
+ #define CELL(reg) (*(UNS64*)(reg))
+ #define BYTE(reg) (*(UNS8*)(reg))
++#endif
+ #if BFIND
+ /*  Iteration 316, the gene bfind: THREAD-FIND's and (FIND)'s walk with fewer branches to
+  *  mispredict ((FIND) was 9-13% of the interpreter-heavy runs' mispredictions,
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 8007ad0..da6f92b 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -620,6 +620,24 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
+     if p.returncode == -signal.SIGXCPU: raise subprocess.TimeoutExpired(cmd, cpu)
+     return subprocess.CompletedProcess(cmd, p.returncode, out, err)
+ 
++def CCV(g):
++    """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
++    designs keep clang: the Tegra has none, and its sample is GCC's), and CELL64 on a 32-bit host."""
++    c = CC(g)
++    return (os.environ['EVOLVE_CC'].split() if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc') else [c]) + cell64()
++
++def cc():
++    """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit
++    host tested here; arm-linux-gnueabihf-gcc: the Tegra's). Unset, cc - as always."""
++    return os.environ.get('EVOLVE_CC', 'cc').split()
++
++def cell64():
++    """Iteration 324: 8-byte cells on a 32-bit host (engine/vm-lab.c's CELL64) - the evolved
++    designs are all 8-byte-cell ones. On a host whose pointers are 4 bytes (the Tegra's Python),
++    or with EVOLVE_CELL64=1; on a 64-bit host nothing - its engines are what they were."""
++    import struct
++    return ['-DCELL64=1'] if struct.calcsize('P') == 4 or os.environ.get('EVOLVE_CELL64') == '1' else []
++
+ RTC = os.path.join(ROOT, 'engine', 'rt-linux-x86_64.c')
+ def rt():
+     """Iteration 75 (the owner): every engine WITHOUT the C library - its
+@@ -701,7 +719,7 @@ def build_tail(g, d, src, flags, eng):
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
+                + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
+         if r.returncode: raise RuntimeError('died: tail-call generation')
+-        if sh([CC(g)] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
++        if sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+         bad = tail_offenders(eng)
+         if not bad: return
+         wrap = sorted(set(wrap) | bad)
+@@ -855,10 +873,10 @@ def _build(g, d):
+                 objs = []
+                 for c in ('spn-stencils.c', 'spn-markers.c'):
+                     o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
+-                    r = sh([CC(g)] + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
++                    r = sh(CCV(g) + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
+                     if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+                 jit = jit[:4] + objs
+-            r = sh([CC(g)] + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
++            r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
+     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
+@@ -936,7 +954,7 @@ def build_other(g, d):
+     """The cell engine (relf.c, its image as built), SOD16 and CPT16."""
+     eng = os.path.join(d, 'engine'); img = os.path.join(d, 'image.img')
+     if g['enc'] == 'cell':
+-        if sh(['cc'] + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')] + rt()).returncode:
++        if sh(cc() + ccflags(g) + cell64() + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')] + rt()).returncode:
+             raise RuntimeError('died: engine did not compile')
+         shutil.copy(os.path.join(O, 's0-cell-s64.img'), img); return eng, img
+     src = os.path.join(d, 'vm.c'); shutil.copy(os.path.join(O, 'vm-lab.c'), src)
+@@ -953,7 +971,7 @@ def build_other(g, d):
+                 raise RuntimeError('died: fold generation')
+             flags.append('-DFOLD=1'); opts += ['--dataprims', '--fold', '--fold-set', folds]
+         opts += ['--compiler-overlay', '16']
+-    if sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + rt()).returncode:
++    if sh(cc() + ccflags(g) + cell64() + flags + ['-o', eng, src] + rt()).returncode:
+         raise RuntimeError('died: engine did not compile')
+     r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
+     if r.returncode or not os.path.exists(img):
