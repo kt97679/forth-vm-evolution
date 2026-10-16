@@ -20,6 +20,8 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `drafts/two-width-selection.md` - Selecting at both widths, the skew in the evolution itself (Iteration 335, a draft): a design's interpreter measured at 4-byte cells as a second speed objective; the decisions for the owner.
 - `drafts/convert-align-death.md` - A converter death seed 54 found (Iteration 333): "call target 1390 not 8-aligned", one design of 41,406 - not yet looked into; its genome.
 - `xcheck-dream-seed53.md` - The first remote check (Iteration 320): seed 52's front on dream.lan (i7-6700), the laptop's binaries - Spearman 0.959, the laptop's six fastest its first six; the JIT designs' lead over s6 smaller there.
+- `drafts/jit-genes-fixed.patch` - Pending patch 2 corrected (Iteration 344): jitvar's literal from the slot kinds - replaces it once re-verified.
+- `drafts/jithelp-wip.patch` - Helper calls in progress (Iteration 344): st_callc, h_place - to re-cut against the corrected patch 2.
 - `drafts/next-genes.md` - The search for the genes after seed 54 (Iteration 323): price.py on seed 53's fastest interpreted designs - calls and returns the largest share, their genes in place, pairs diminishing; next, jitleft.py - what the JIT leaves to the interpreter.
 - `drafts/jit-loop-crash.md` - A JIT fault seed 52 found (Iteration 310): two designs die in the corpus's loop tests; the trigger narrowed to jit with folds, ops10, rtloop and tag2; the genomes.
 - `drafts/iploop-plan.md` - The IP-update loop form: three explanations of the evolved designs' lower IPC, and the laptop measurement that decides between them before anything is built (Iteration 295).

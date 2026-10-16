@@ -231,3 +231,22 @@ The machinery is nearly there:
   then (PARSE), and whatever jitleft --why names next: one helper, one measurement, each step.
   Written by hand from each handler at first; generated from the handlers' source (macro shims, as
   gen-tos.py rewrites them) if there come to be many.
+
+## Helper calls built - and a latent bug in patch 2 found (Iteration 344)
+
+**The latent bug**: jit.c fills a literal hole from the decoded operand only for operand kinds 1-5;
+jitvar's slot kinds are 8 and 9, so a translated vf would push k (0) and fetch from address 0. No
+test caught it because no word with vf was translated yet (each refused for something else) - it
+would have struck exactly when helper calls unblocked them. Fixed: JIT_LITOPND(o) - with JITVAR the
+slot kinds too; without, **the original tokens exactly** (a first version with parentheses changed
+three of seed 55's JIT designs' engines - `a && b && (c && d)` is another tree than `a && b && c && d`
+to GCC; builds proved deterministic, so it was that). results/drafts/jit-genes-fixed.patch is patch 2
+corrected: it replaces results/pending/jit-genes-after-seed56.patch once re-verified (identity of the
+token-exact form against patch 1 still to run; the parenthesized form passed run-tests, validate 7/7).
+
+**Helper calls** (results/drafts/jithelp-wip.patch - cut against patch 2 with the parenthesized
+macro: re-cut against jit-genes-fixed.patch before staging): st_callc (IMM_FN, called through a
+register) and jit.c's function hole, jit_op's fn, h_place - all under JITHELP; the converter's rows
+carry the helper. c549c0677c with jitimg 1, jitvar, jithelp: built, alive. jitleft --why: **INTERPRET
+past PLACE - now stopped at COUNT**; PARSE-WORD at (PARSE). COUNT needs no helper: DUP 1+ SWAP C@ - a
+table entry ['DUP', 'ADDI', 'SWAP', 'CFETCH'] with k 1. Then (PARSE)'s helper.

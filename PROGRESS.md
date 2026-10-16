@@ -6581,3 +6581,15 @@ stencils' ABI (spn_st f(cell *sp, cell tos)) lets a C function be called from na
 stencil is; spn-stencils.c's function-pointer hole (IMM_FN) and one stencil, CALLC, calling through
 it; jit.c to patch that hole as it patches the literal's; the converter's table with the helper's
 address for the linker; first h_place, written from PLACE's handler. Next turn: build it.
+
+## Iteration 344 - 2026-10-16 - Claude
+
+**Helper calls work - and a latent bug in pending patch 2, found before it shipped.** Building the
+helper calls meant reading how jit.c fills literal holes: only for operand kinds 1-5, while jitvar's
+slots are 8 and 9 - a translated vf would have fetched from address 0. Latent, since no word with vf
+was translated yet; it would have struck as soon as helpers unblocked one. Fixed with a macro that,
+without JITVAR, is the original tokens exactly (a parenthesized first form changed three JIT designs'
+engines: GCC built a different && tree; builds proved deterministic). The helper calls: st_callc
+through spn-stencils.c's function hole, jit.c patching it, h_place from PLACE's handler - all under
+JITHELP. With them INTERPRET gets past PLACE and stops at COUNT - which is DUP 1+ SWAP C@, a table
+entry. Drafts saved; the corrected patch 2 to re-verify and stage before the batch is applied.
