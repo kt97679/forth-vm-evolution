@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 318.
+- master: Iteration 319.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -52,7 +52,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
   as carried records (gate.py --db). Its packs were never sent, the owner unsure
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- **Seed 53 is next** (Iteration 318): the after-seed-52 batch applied - the JIT fix (a short
+- **Seed 53 is next** (Iteration 318; 3 hours, the comparison at 3 rounds - Iteration 319): the after-seed-52 batch applied - the JIT fix (a short
   stencil read; results/drafts/jit-loop-crash.md) and the gene bfind; the runner rebuilt
   (results/drafts/runner-protocol.md): one chain, one archive, status/monitor/stop, remote checks
   on dream.lan and rage.lan (lab/evolve/REMOTES). The owner: ssh keys from the laptop to both hosts

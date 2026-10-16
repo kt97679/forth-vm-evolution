@@ -6272,3 +6272,12 @@ is seed 53 again - 6 hours until the owner says, the comparison after; the pause
 predictions revised (results/predictions.md): the Iteration 310 ones assumed the same genes; now
 no corpus deaths, bfind on at least 20, small, dream's ranking at least 0.90 and rage's lower,
 crossover 30-38%. Before the run: ssh keys from the laptop to dream.lan and rage.lan.
+
+## Iteration 319 - 2026-10-16 - Claude
+
+**Seed 53 for 3 hours (the owner).** Seed 52's laptop phases: the evolution 3 h 19 min, the
+re-measure 19 min, the comparison 1 h 53 min at 6 rounds on 2 CPUs. At 3 hours with the
+comparison unchanged, the reserve (the last chain's phases, a tenth and 10 minutes more) would
+hit its cap of 60%: the evolution ~72 min and the chain ~3.5 h all the same. So the comparison
+at 3 rounds - ~1 h, its verdict noisier: the evolution ~1.5 h, the chain ~3 h. NEXT-RUN: seed 53
+tag2 3h then experiment compare-fronts.py --rounds 3 --frontier --cpus 2,8.
