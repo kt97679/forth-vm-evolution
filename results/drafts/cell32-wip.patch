@@ -398,3 +398,86 @@ index 8007ad0..6abfc37 100644
      UNIT = 'median ' + ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'   # median: Iteration 25
      UNIT += ', long workloads (Iteration 100)'
      long_files()
+diff --git a/tools/layout.py b/tools/layout.py
+index 13d7d87..6beaabc 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -134,8 +134,11 @@ if TAG2_ON and not (V8 and CPT == 0):
+ # bytes 0x80-0xBF become 64 more one-byte codes (127 with 0x00-0x3E)
+ T2WIDE_ON = TAG2_ON and '--tag2-wide' in ARGV
+ G['T2WIDE'] = T2WIDE_ON
+-if TAG2_ON and CELL != 8:
+-    sys.exit("--tag2: 64-bit cells for now - a DOES> body's 4-byte call must fit its first cell")
++# Iteration 329: tag 2 at 4-byte cells too (FORMAT-TAG2.md's "left: 32-bit cells - before the
++# Tegra"). A CREATE'd word's code field is [DOVAR or DODOES][the 4 bytes a DOES> call needs]
++# padded to a cell - 5 bytes, align_up(5, CELL): 8 at both widths, so at 8-byte cells nothing
++# changes, and at 4 it is two cells. The engine already finds the parameter field at
++# align(body + 5) (DOVAR's and DODOES's TAG2 branches), as CREATE8 reserves and >BODY8 computes.
+ 
+ 
+ def linklen(d):
+@@ -699,6 +702,11 @@ def body_needs_align(w):
+     return any(k in ('OPD', 'XT', 'STR', 'ALN') for k, _ in (info[w['s']] or []))
+ 
+ 
++def cfd(s):
++    """Iteration 329: the code field's bytes of data word s - two cells for a tag-2 CREATE'd
++    word at 4-byte cells (opcode + the 4-byte DOES> call), one cell otherwise."""
++    return align_up(5, CELL) if (TAG2_ON and DATAPRIMS and info.get(s) is not None) else CELL
++
+ def new_body_bytes(w):
+     if kind[w['s']] == 'code':
+         if BYTEHDR:
+@@ -708,7 +716,7 @@ def new_body_bytes(w):
+         # [pad][call token][parameter field, CELL aligned]
+         # The pad goes BEFORE the token so the parameter field, which is
+         # the address just past it, stays CELL aligned for `@`.
+-        return CELL + (w['e'] - w['s'] - CELL) + ((NT_NEW - NT_OLD) * CELL if w['s'] == FW_S0 else 0)   # Iteration 204
++        return cfd(w['s']) + (w['e'] - w['s'] - CELL) + ((NT_NEW - NT_OLD) * CELL if w['s'] == FW_S0 else 0)   # Iteration 204; 329: cfd
+     return w['e'] - w['s']             # opaque: copied verbatim
+ 
+ # The thread each word belongs to, needed BEFORE placement in bytehdr
+@@ -979,7 +987,7 @@ def remap_pfa_off(off):
+     """old START-relative parameter-field offset -> new one, or None."""
+     w = pfa_at.get(off)
+     if w and w['s'] in BSS_OFF: return BSS_OFF[w['s']]              # Iteration 44: past the image
+-    return new_off[w['s']]['body'] + CELL if w else None
++    return new_off[w['s']]['body'] + cfd(w['s']) if w else None
+ 
+ bufs = 0
+ for w in order:
+@@ -1127,7 +1135,7 @@ def v8val(target):
+     return off >> CPT
+ if V8: G['V8_CALLTOK'][0] = v8val
+ def v8pfa(target):
+-    off = BSS_OFF[target] if target in BSS_OFF else new_off[target]['body'] + CELL   # [DOVAR][pad] is one cell
++    off = BSS_OFF[target] if target in BSS_OFF else new_off[target]['body'] + cfd(target)   # [DOVAR][pad]: one cell, two at tag 2 and 4-byte cells
+     assert off % (1 << CPT) == 0 and (off >> CPT) < (1 << 23)
+     return off >> CPT
+ def v8loc(old):
+@@ -1265,14 +1273,14 @@ def emit(path):
+             else:
+                 if DATAPRIMS and n in DOVAR:
+                     # [DOVAR][pad][PFA]: the primitive pushes ALIGNED(ip)
+-                    img += (bytes([T2MAP['one'][G['V8_DOVAR']]]) + b'\x00' * (CELL - 1)) if TAG2_ON \
++                    img += (bytes([T2MAP['one'][G['V8_DOVAR']]]) + b'\x00' * (cfd(s0) - 1)) if TAG2_ON \
+                         else (bytes([69]) + b'\x00' * (CELL - 1)) if V8 else (tk(DOVARP) + b'\x00' * (CELL - 2))
+                 elif DATAPRIMS:
+                     # [DODOES][tail][pad][PFA]: pushes ALIGNED(ip) as the
+                     # return address the tail's R> expects, jumps to tail
+                     # tag 2: always the 4-byte call - DODOES finds the parameter
+                     # field at align(body + 5), as CREATE reserves (FORMAT-TAG2.md)
+-                    img += (bytes([T2MAP['one'][G['V8_DODOES']]]) + G['t2call'](v8val(n), 4) + b'\x00' * (CELL - 5)) if TAG2_ON \
++                    img += (bytes([T2MAP['one'][G['V8_DODOES']]]) + G['t2call'](v8val(n), 4) + b'\x00' * (cfd(s0) - 5)) if TAG2_ON \
+                         else (bytes([70]) + callbytes(n) + b'\x00' * (CELL - 3)) if V8 else (tk(DODOES) + tk(calltok_addr(n)) + b'\x00' * (CELL - 4))
+                 else:
+                     img += b'\x00' * (CELL - 2)     # pad BEFORE the token
+@@ -1319,7 +1327,7 @@ def emit(path):
+     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
+     for w in order:
+         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
+-        at, op = new_off[w['s']]['body'] + CELL, G['cv8_op']   # [DOVAR][pad], then the data
++        at, op = new_off[w['s']]['body'] + cfd(w['s']), G['cv8_op']   # [DOVAR][pad], then the data
+         if w['n'] in CVARS:
+             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
+         elif w['n'] == 'FOLD-OPS':

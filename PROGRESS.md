@@ -6405,3 +6405,16 @@ identical to the seed a 64-bit host makes. Next: tag2 at 4-byte cells - the conv
 CREATE'd word's first cell as opcode + 4-byte call (5 bytes); the port is a two-cell code field
 there, agreed between the converter, the engine's DOVAR and DODOES, the run-time compiler's CREATE
 and >BODY, and the kernel's - FORMAT-TAG2.md's "left: 32-bit cells - before the Tegra".
+
+## Iteration 329 - 2026-10-16 - Claude
+
+**tag2 at 4-byte cells - and 32-bit x86 at native 4-byte cells: 14 of 14 designs alive.** The
+converter refused tag2 below 8-byte cells: a CREATE'd word's first cell held the DOVAR or DODOES
+opcode and the 4 bytes a DOES> call needs - 5 bytes. The engine (DOVAR's and DODOES's TAG2
+branches) and the run-time compiler (CREATE8, >BODY8) already put the body at align(body + 5);
+only the converter assumed one cell. cfd(): align_up(5, CELL) - 8 at both widths, so the 64-bit
+images are the same bytes (3 of 3, old converter against new) and at 4-byte cells the code field
+is two cells - at the seven places that size it or find its body. Then the sweep at 4-byte cells
+as 32-bit x86 engines: s6 and 13 of seed 53's front, every one tag2 - the corpus right, and each
+rebuilt the 4-byte kernel byte for byte with its own run of the cross compiler (Iteration 328's
+fix). The draft patch (results/drafts/cell32-wip.patch) now carries tools/layout.py too. Next: ARM.

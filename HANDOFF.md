@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 328.
+- master: Iteration 329.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -194,16 +194,20 @@ About 20 minutes of machine time for build, tests and gates.
    the cross compiler 4,344,888 before and after) and kernel-seed.img identical; on the 32-bit
    cell engine the 4-byte kernel built and byte-identical to kernel32-seed.img (14,976 bytes).
    In the draft (forth/cross.4).
-   (2) tag2 at 4-byte cells (next): tools/layout.py:1275 writes a CREATE'd word's first cell as
-   the DODOES/DOVAR opcode (1 byte) + the 4-byte call a later DOES> fills + CELL-5 padding - 5
-   bytes, which a 4-byte cell cannot hold. A 3-byte call will not do (reach 4 MB - the corpus's
-   far test compiles past it; t2wide has no 3-byte call). The design: at 4-byte tag2 a two-cell
-   code field (opcode, call, 3 bytes padding = 8), the body at the next cell - 32-bit only, the
-   64-bit images untouched. It must agree in four places: the converter (line 1275, and every body
-   address it computes - CVARS' CV8-DOES-RESERVE, line 1313), the engine's DOVAR and DODOES under
-   TAG2 (the body address), the run-time compiler's CREATE and >BODY (forth/cv8t.4, cv8bt.4), and
-   the kernel's >BODY. FORMAT-TAG2.md left it so: "Left: 32-bit cells ... - before the Tegra".
-   Then the sweep at 4 bytes, ARM under qemu-arm, the checks.
+   (2) SOLVED (Iteration 329): tag2 at 4-byte cells - tools/layout.py's cfd(): a CREATE'd word's
+   code field align_up(5, CELL) under tag2 (8 at both widths: at 8-byte cells the same bytes, at 4
+   two cells), at every place that sized it or found its body (new_body_bytes, remap_pfa_off, the
+   call target, the compiler variables' slot, both paddings); the refusal gone. The engine and the
+   run-time compiler already found the body at align(body + 5). 64-bit tag2 images byte-identical
+   (3 of 3 of seed 53's front, old converter against new).
+   **32-bit x86 at 4-byte cells: 14 of 14 alive** - s6 and 13 of seed 53's front, tag2 all, fsys
+   1-5: the corpus right and the 4-byte kernel reproduced, by the design's own cross compiler.
+   Next: ARM under qemu-arm (a harness: each engine wrapped to run qemu-arm -L
+   /usr/arm-linux-gnueabihf; the jail lifted for qemu in the harness only - it maps more than the
+   jail's 1 GB); then the checks - dream's 32-bit line (the laptop's static -m32 builds, prebuilt),
+   rage native (the laptop's build products shipped: the k32 dumps, vm-lab-tos.c), one host's
+   checks serialized, each deadline from its start, each host's byte order recorded; then the
+   batch: run-tests, gene-equiv, the gate - and xcheck's sample without jit, clang, tailpn.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept
