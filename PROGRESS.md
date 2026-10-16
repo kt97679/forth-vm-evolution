@@ -6281,3 +6281,21 @@ comparison unchanged, the reserve (the last chain's phases, a tenth and 10 minut
 hit its cap of 60%: the evolution ~72 min and the chain ~3.5 h all the same. So the comparison
 at 3 rounds - ~1 h, its verdict noisier: the evolution ~1.5 h, the chain ~3 h. NEXT-RUN: seed 53
 tag2 3h then experiment compare-fronts.py --rounds 3 --frontier --cpus 2,8.
+
+## Iteration 320 - 2026-10-16 - Claude
+
+**Seed 53 processed - small - the first chain through the new runner.** One archive, status
+done: both hosts answered at start; seed 53 and its comparison packed in it; dream's results
+gathered; rage's recorded as failed with its reason - the chain unharmed, as designed. The
+ticker's lines through the run. Both packs clean (63 paths, 7 of 7, the jail). The verdict at 3
+rounds: fastest -5.8% (80 minutes of evolution), smallest +0.00%, memory -4 KB, hypervolume
++0.3%, best Q -5.3% - small. No corpus deaths (the JIT fix); bfind on 17 of 172; heldout 0.948.
+Predictions three right, one wrong (bfind 17, not 20), one half (rage no data).
+
+**The first remote check** (results/xcheck-dream-seed53.md): dream.lan, an i7-6700, measuring 24
+of seed 52's front from the laptop's binaries - Spearman 0.959 with the laptop, the laptop's six
+fastest its first six; the slow designs the same against s6 on both (1.01-1.02), the JIT
+designs' lead smaller there - 0.128 of s6's time on the laptop, 0.223 on dream. rage.lan failed:
+build-stages.sh compiles a stage with the gene sysc, x86-64's system calls, which relf.c refuses
+on ARM - my plan assumed the stages built everywhere (HANDOFF item 0). NEXT-RUN: seed 54, the
+same genes, 3 hours.

@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 319.
+- master: Iteration 320.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -52,13 +52,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
   as carried records (gate.py --db). Its packs were never sent, the owner unsure
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- **Seed 53 is next** (Iteration 318; 3 hours, the comparison at 3 rounds - Iteration 319): the after-seed-52 batch applied - the JIT fix (a short
-  stencil read; results/drafts/jit-loop-crash.md) and the gene bfind; the runner rebuilt
-  (results/drafts/runner-protocol.md): one chain, one archive, status/monitor/stop, remote checks
-  on dream.lan and rage.lan (lab/evolve/REMOTES). The owner: ssh keys from the laptop to both hosts
-  (no password); then `sh lab/evolve/next-run.sh`, `... monitor` to watch, and send the one
-  forth-vm-evolution-chain-*.tar.gz. Processing it: unpack, then each step's pack as before; read
-  remote/*.md with the seed.
+- **Seed 53 processed** (Iteration 320): small (+0.3%), the first chain through the new runner -
+  done, one archive. No corpus deaths; bfind on 17 of 172; heldout 0.948. The remote checks:
+  dream.lan Spearman 0.959 (results/xcheck-dream-seed53.md); rage.lan failed - build-stages.sh
+  (open item 0). NEXT-RUN: seed 54, the same genes, 3 hours.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
@@ -172,6 +169,11 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
+0. rage.lan's check (Iteration 320): build-stages.sh fails on ARMv7 - relf.c:505's #error "the gene
+   sysc: the image's system-call numbers are x86-64 Linux's (i386's mapped)": a stage compiled
+   with sysc (shell-sysc.4 in SHELL_BOOT and SELF_BOOT). build-stages.sh already skips the CPU-time
+   tool and the 64-bit builds off x86-64; the sysc stage needs the same, and evolve.py's build/
+   check must count such a build complete. Then rage's native check can run.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

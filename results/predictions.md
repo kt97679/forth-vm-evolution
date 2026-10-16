@@ -434,3 +434,24 @@ replace them:
    architecture, its own builds, no JIT).
 5. Crossover 30-38%.
 
+## Seed 53, scored (Iteration 320)
+
+1. No corpus deaths - **right**: none (27 refused before running).
+2. bfind on at least 20 of the front - **wrong**: 17 of 172, after an evolution of 80 minutes.
+3. Small, hypervolume within +2% - **right**: +0.3%.
+4. dream's Spearman at least 0.90, rage's lower - **half**: dream 0.959; rage no data (its
+   build-stages.sh failed: a stage with sysc).
+5. Crossover 30-38% - **right**: 31.3%.
+
+Three right, one wrong, one half.
+
+## Seed 54, predicted (Iteration 320)
+
+The same genes as seed 53, 3 hours again.
+
+1. Small - with seed 53's, two small in a row: the stopping rule's end of this gene set.
+2. bfind on more of the front than seed 53's 17.
+3. No corpus deaths.
+4. dream's Spearman, if it runs again, between 0.93 and 0.98.
+5. Crossover 30-38%.
+

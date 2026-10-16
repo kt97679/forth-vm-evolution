@@ -322,6 +322,8 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 320: seed 53 small (the first of this gene set); seed 54 the same genes, 3 hours as
+# the owner's last - a small one ends the gene set (the stopping rule).
 # Iteration 319 (the owner): 3 hours. Seed 52's laptop phases: the re-measure 19 min, the
 # comparison 1 h 53 min at 6 rounds - with 6 the reserve would hit its 60% cap, the evolution
 # get ~72 min and the chain run ~3.5 h; at 3 rounds the comparison takes ~1 h, the evolution
@@ -334,4 +336,4 @@
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-seed 53 tag2 3h then experiment compare-fronts.py --rounds 3 --frontier --cpus 2,8
+seed 54 tag2 3h then experiment compare-fronts.py --rounds 3 --frontier --cpus 2,8
