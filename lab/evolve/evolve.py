@@ -571,7 +571,8 @@ def _kind(cmd):
     if exe == os.path.basename(CPUT): return 'cputime'
     # clang-19 and the like - the gene tailpn's compiler (Iteration 293) - a build tool too: jailed as an
     # engine, no new process, its driver could not start the linker
-    return None if exe in BUILD_TOOLS or exe.startswith(('python', 'clang-')) else 'engine'
+    # Iteration 325: and EVOLVE_CC's compiler (arm-linux-gnueabihf-gcc for the Tegra) - jailed, its driver could not start cc1
+    return None if exe in BUILD_TOOLS or exe.startswith(('python', 'clang-')) or exe == os.path.basename(cc()[0]) else 'engine'
 def _contain(cpu, kind=None):
     """In the child: a CPU-time limit - SIGXCPU at cpu seconds - and for an
     engine, the jail: no new processes (RLIMIT_NPROC 0), at most 1 GB of
@@ -620,6 +621,30 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
     if p.returncode == -signal.SIGXCPU: raise subprocess.TimeoutExpired(cmd, cpu)
     return subprocess.CompletedProcess(cmd, p.returncode, out, err)
 
+def cellw():
+    """Iteration 326 (the owner: 8-byte cells on a 64-bit host, 4 on a 32-bit one): the cell width
+    of what this run builds - the host's own (8 on the laptop and dream, 4 on the Tegra), or
+    EVOLVE_CELL (4: 32-bit x86 built here, with EVOLVE_CC='gcc -m32'). Everything width-dependent
+    follows it: the kernel dumps (k64-/k32-), the engine and kernel image that make them, the
+    converter's width, the references."""
+    import struct
+    v = os.environ.get('EVOLVE_CELL')
+    return int(v) if v in ('4', '8') else (4 if struct.calcsize('P') == 4 else 8)
+def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix: k64 or k32
+def S0(): return os.path.join(O, 's0-cell-%d' % (8 * cellw()))   # the cell engine that makes them
+def KIMG(): return 'kernel.img' if cellw() == 8 else 'kernel32.img'
+
+def CCV(g):
+    """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
+    designs keep clang: the Tegra has none, and its sample is GCC's)."""
+    c = CC(g)
+    return (os.environ['EVOLVE_CC'].split() if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc') else [c])
+
+def cc():
+    """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit
+    host tested here; arm-linux-gnueabihf-gcc: the Tegra's). Unset, cc - as always."""
+    return os.environ.get('EVOLVE_CC', 'cc').split()
+
 RTC = os.path.join(ROOT, 'engine', 'rt-linux-x86_64.c')
 def rt():
     """Iteration 75 (the owner): every engine WITHOUT the C library - its
@@ -631,11 +656,14 @@ def rt():
     fl = ['-fno-asynchronous-unwind-tables']
     u = os.uname()
     if PROFILING[0] or os.environ.get('EVOLVE_LIBC') == '1' or (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
+    # Iteration 331: building 32-bit x86 here (EVOLVE_CC with -m32) - the i386 runtime, static
+    # as the x86-64 one: a 32-bit check's binaries run where no 32-bit C library is (dream.lan)
+    rtc = os.path.join(ROOT, 'engine', 'rt-linux-i386.c') if '-m32' in os.environ.get('EVOLVE_CC', '').split() else RTC
     # Iteration 82: and without page alignment (-n), RELRO or a build-id - a
     # static engine has no dynamic relocations, and their padding made the
     # binary move in 4 KB steps (s6: 29,456 bytes, 22,200 without)
     return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
-                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', RTC, '-lgcc',
+                 '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', rtc, '-lgcc',
                  '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
     # --gc-sections (Iteration 113): the runtime is one object file, so code
     # nothing calls came along - vsnprintf, snprintf, execvp, syscall,
@@ -701,7 +729,7 @@ def build_tail(g, d, src, flags, eng):
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
                + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
         if r.returncode: raise RuntimeError('died: tail-call generation')
-        if sh([CC(g)] + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+        if sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
         bad = tail_offenders(eng)
         if not bad: return
         wrap = sorted(set(wrap) | bad)
@@ -855,10 +883,10 @@ def _build(g, d):
                 objs = []
                 for c in ('spn-stencils.c', 'spn-markers.c'):
                     o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
-                    r = sh([CC(g)] + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
+                    r = sh(CCV(g) + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
                     if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
                 jit = jit[:4] + objs
-            r = sh([CC(g)] + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+            r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
             if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
@@ -898,14 +926,14 @@ def _build(g, d):
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
     fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
-    dump = os.path.join(O, ('k64-bt%s.txt' if t2 else 'k64-b%s.txt' if g['bytehdr'] else 'k64-self%s.txt') % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
+    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.
     lb = os.path.join(d, 'long-branches.json')
     if os.path.exists(lb): os.remove(lb)
     for _try in range(4):
-        r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, '8'] + opts + ['--long-branches', lb, '--emit-image', img], cwd=W)
+        r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), dump, str(cellw())] + opts + ['--long-branches', lb, '--emit-image', img], cwd=W)
         if r.returncode != 4: break
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
@@ -936,26 +964,26 @@ def build_other(g, d):
     """The cell engine (relf.c, its image as built), SOD16 and CPT16."""
     eng = os.path.join(d, 'engine'); img = os.path.join(d, 'image.img')
     if g['enc'] == 'cell':
-        if sh(['cc'] + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')] + rt()).returncode:
+        if sh(cc() + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')] + rt()).returncode:
             raise RuntimeError('died: engine did not compile')
         shutil.copy(os.path.join(O, 's0-cell-s64.img'), img); return eng, img
     src = os.path.join(d, 'vm.c'); shutil.copy(os.path.join(O, 'vm-lab.c'), src)
     if g['enc'] == 'sod16':
         flags = ['-DENC=1', '-DREG=1', '-DSCALE=1'] + (['-DSKIPPAD=1'] if g['skippad'] else [])
-        dump, opts = 'k64-s16.txt', (['--skip-pad'] if g['skippad'] else []) + ['--compiler-overlay', '16']
+        dump, opts = KW() + '-s16.txt', (['--skip-pad'] if g['skippad'] else []) + ['--compiler-overlay', '16']
     else:
         sc = max(1, g['scale'])
         flags = ['-DENC=2', '-DREG=1', '-DSCALE=%d' % sc] + (['-DSKIPPAD=1'] if g['skippad'] else [])
-        dump, opts = 'k64-cpt.txt', ['--cpt', str(sc)] + (['--skip-pad'] if g['skippad'] else [])
+        dump, opts = KW() + '-cpt.txt', ['--cpt', str(sc)] + (['--skip-pad'] if g['skippad'] else [])
         if g['fold']:
             folds = ','.join(g['folds'])
             if sh(['python3', os.path.join(ROOT, 'tools', 'gen-fold.py'), src, folds]).returncode:
                 raise RuntimeError('died: fold generation')
             flags.append('-DFOLD=1'); opts += ['--dataprims', '--fold', '--fold-set', folds]
         opts += ['--compiler-overlay', '16']
-    if sh(['cc'] + ccflags(g) + flags + ['-o', eng, src] + rt()).returncode:
+    if sh(cc() + ccflags(g) + flags + ['-o', eng, src] + rt()).returncode:
         raise RuntimeError('died: engine did not compile')
-    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), '8'] + opts + ['--emit-image', img], cwd=W)
+    r = sh(['python3', os.path.join(ROOT, 'tools', 'layout.py'), os.path.join(O, dump), str(cellw())] + opts + ['--emit-image', img], cwd=W)
     if r.returncode or not os.path.exists(img):
         raise RuntimeError('died: image did not convert' + (why(r) if r.returncode else ' (exit 0, no image written)'))
     return eng, img
@@ -1584,7 +1612,7 @@ def stale_build():
     a git pull without a rebuild. The evolver builds every design from the
     engine source the build generated (vm-lab-tos.c) and from its dumps:
     stale, the newer genes die for reasons that are not theirs."""
-    made = [os.path.join(O, f) for f in ('vm-lab-tos.c', 'k64-self.txt', 'k64-b.txt')]
+    made = [os.path.join(O, f) for f in ('vm-lab-tos.c', KW() + '-self.txt', KW() + '-b.txt')]
     if not all(os.path.exists(f) for f in made): return ['(build/ is incomplete)']
     when = min(os.path.getmtime(f) for f in made)
     srcs = [os.path.join(ROOT, 'engine', 'vm-lab.c'), os.path.join(ROOT, 'tools', 'gen-tos.py'),
@@ -1604,7 +1632,7 @@ def setup():
         sys.exit('build/ is older than its sources (%s%s) - after a git pull, build again:\n'
                  '    LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate'
                  % (', '.join(newer[:4]), ', ...' if len(newer) > 4 else ''))
-    for need in (CPUT, os.path.join(O, 'k64-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
+    for need in (CPUT, os.path.join(O, KW() + '-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
         if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
     # The CV8 compiler with table-driven folds and run-time fusion
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
@@ -1614,20 +1642,20 @@ def setup():
                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
-    base = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+    base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
-    for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in (('k64-self', ['cv8.4']), ('k64-b', ['cv8.4', 'cv8b.4']),
-                                                                    ('k64-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
-                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != 'k64-self' else ('',))
+    for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-self', ['cv8.4']), (KW() + '-b', ['cv8.4', 'cv8b.4']),
+                                                                    (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
+                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != KW() + '-self' else ('',))
                         for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
-                        for e in (('', '-empty') if b == 'k64-bt' else ('',))     # Iteration 101
-                        for q in (('', '-kstack') if b == 'k64-bt' else ('',))    # Iteration 116
-                        for j in (('', '-jit') if b == 'k64-bt' else ('',))
-                        for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == 'k64-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
+                        for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
+                        for q in (('', '-kstack') if b == KW() + '-bt' else ('',))    # Iteration 116
+                        for j in (('', '-jit') if b == KW() + '-bt' else ('',))
+                        for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
-                       + ([('cv8t-fuse.4' if name.startswith('k64-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
-                       + ([('cv8t-fuse-imm.4' if name.startswith('k64-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+                       + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
+                       + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
                        + (['cv8-fuse-loopall.4'] if '-loopall' in name
                        else ['cv8-fuse-loop.4'] if '-loop' in name else [])
                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
@@ -1640,7 +1668,7 @@ def setup():
                        + (['file-sysc4.4'] if '-fsys4' in name or '-fsys5' in name else [])   # Iteration 207: the output buffered off a terminal (fsys 4)
                        + (['file-sysc5.4'] if '-fsys5' in name else [])      # Iteration 211: READ-LINE reading ahead where a file can seek (fsys 5)
                        + ['dict-dump-addr.4']) + 'BYE\n'
-        out = subprocess.run([os.path.join(O, 's0-cell-64'), 'kernel.img'], input=boot.encode(), cwd=W, capture_output=True).stdout
+        out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
         dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
         open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
     os.makedirs(EV, exist_ok=True)
@@ -1649,9 +1677,20 @@ def setup():
     with open(CORPUS, 'wb') as f:
         f.write(open(os.path.join(ROOT, 'tests', 'corpus', 'core.fth'), 'rb').read())
         f.write(b'\nS" CORPUS-REACHED-END" TYPE CR\nBYE\n')
-    KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, 'kernel.img'), KREF)
+    if cellw() == 4:
+        # Iteration 326: at 4-byte cells the kernel workload builds the 4-byte kernel - as
+        # tools/reseed.sh makes kernel32-seed.img: cross.4 with its one width line retargeted. A
+        # 4-byte host cannot build the 8-byte kernel (cross.4 leaves a narrow host's high bytes
+        # zero), and the reference is the kernel of the design's own width.
+        global KERNEL_IN
+        c4 = open(os.path.join(ROOT, 'forth', 'cross.4')).read()
+        c32 = re.sub(r'(?m)^8 TARGET-CELL-BYTES !', '4 TARGET-CELL-BYTES !', c4)
+        if c32 == c4: sys.exit('cannot retarget cross.4 to 4-byte cells (tools/reseed.sh has the same check)')
+        open(os.path.join(W, 'cross32.4'), 'w').write(c32)
+        KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross32.4" INCLUDED\n'
+    KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, KIMG()), KREF)
     with open(CORPUS, 'rb') as f:
-        REF_CORPUS = sh([os.path.join(O, 's0-cell-64'), os.path.join(O, 's0-cell-s64.img')], cwd=W, inp=f.read()).stdout
+        REF_CORPUS = sh([S0(), os.path.join(O, 's0-cell-s%d.img' % (8 * cellw()))], cwd=W, inp=f.read()).stdout
     UNIT = 'median ' + ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'   # median: Iteration 25
     UNIT += ', long workloads (Iteration 100)'
     long_files()
@@ -1659,7 +1698,13 @@ def setup():
     # the reference every measurement is paired with: hand-made s6
     global REF
     rd = os.path.join(EV, 'reference'); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)
-    re_, ri = build(canon(HUMAN['s6-cv8b']), rd); rp = private_work(rd)
+    # Iteration 331: a check's host may be handed its reference built (EVOLVE_PREBUILT_REF, a
+    # directory with engine and image - xcheck's prebuilt s6), when it cannot build one itself:
+    # dream.lan has no 32-bit C compiler, and its 32-bit check measures the laptop's binaries
+    pre_ref = os.environ.get('EVOLVE_PREBUILT_REF')
+    if pre_ref: os.makedirs(rd, exist_ok=True); re_, ri = os.path.join(pre_ref, 'engine'), os.path.join(pre_ref, 'image')
+    else: re_, ri = build(canon(HUMAN['s6-cv8b']), rd)
+    rp = private_work(rd)
     REF = (re_, ri, rp)
     POOL = foldable()
 

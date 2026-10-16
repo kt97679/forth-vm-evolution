@@ -117,9 +117,12 @@ whatever format keeps images small.
 - **T5 proof** - **done, Iterations 67-70, but 32-bit cells**: alive in
   all four engine forms, the differential tests identical, calls and
   links past 4 MB right; the price +5.4-5.8% size and +2-3% dispatches
-  on the front (Iteration 69). Left: 32-bit cells (the converter refuses
-  them under the tag: a DOES> body's 4-byte call does not fit a 4-byte
-  first cell) - before the Tegra. The plan: decision 9 and the price,
+  on the front (Iteration 69). 32-bit cells - **done, Iteration 329**: a CREATE'd word's code field
+  is align_up(5, CELL) - opcode and the 4-byte call - 8 bytes at both widths, so
+  the 64-bit images are the same bytes and at 4-byte cells it is two cells
+  (tools/layout.py's cfd(); the engine and CREATE8/>BODY8 already found the
+  body at align(body + 5)). 32-bit x86 and ARMv7 (qemu-arm) designs alive at
+  4-byte cells (Iterations 329-330) - before the Tegra, as asked. The plan: decision 9 and the price,
   counted on the VM: size and
   dispatches of the current front re-encoded, design by design.
 - **Iteration 95: the wide variant, the gene `t2wide`** (results/t2wide.md):

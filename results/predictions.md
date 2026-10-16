@@ -455,3 +455,24 @@ The same genes as seed 53 - 9 hours, the owner's (Iteration 321), the comparison
 4. dream's Spearman, if it runs again, between 0.93 and 0.98.
 5. Crossover 30-38%.
 
+## Seed 54, scored (Iteration 333)
+
+1. Small - **right**: +1.1%; with seed 53's, two small in a row.
+2. bfind on more of the front than 17 - **right**: 67 of 195.
+3. No corpus deaths - **right** (one converter death, a new kind - results/drafts/convert-align-death.md).
+4. dream's Spearman between 0.93 and 0.98 - **right**: 0.941.
+5. Crossover 30-38% - **right**: 34.4%.
+
+Five of five.
+
+## Seed 55, predicted (Iteration 333)
+
+The same genes a third time - the stopping rule's end of them, run all the same for the checks: the
+first with dream.lan's 32-bit x86 check and the Tegra back (the after-seed-54 batch), 6 hours.
+
+1. Small.
+2. bfind on at least 60 of the front.
+3. dream.lan 64-bit: Spearman 0.92-0.98.
+4. dream.lan 32-bit x86: Spearman with the laptop below dream's 64-bit one - skew toward 64-bit.
+5. The Tegra: at least 6 of its 12 designs measured, its Spearman below the 32-bit x86 one's.
+

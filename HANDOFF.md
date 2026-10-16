@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 332.
+- master: Iteration 333.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -52,11 +52,13 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
   as carried records (gate.py --db). Its packs were never sent, the owner unsure
   which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- **Seed 53 processed** (Iteration 320): small (+0.3%), the first chain through the new runner -
-  done, one archive. No corpus deaths; bfind on 17 of 172; heldout 0.948. The remote checks:
-  dream.lan Spearman 0.959 (results/xcheck-dream-seed53.md); rage.lan failed - it cannot build
-  8-byte cells at all (out of REMOTES, Iteration 322; open item 0). NEXT-RUN: seed 54, the same genes, 9 hours (the owner, Iteration 321), the
-  comparison at 6 rounds.
+- **Seeds 53-54 processed** (Iteration 333): 53 small (+0.3%, 80 minutes of evolution), 54 small
+  (+1.1%, fastest +3.6%, 6 h 47 min) - two small in a row: the stopping rule's end of these genes.
+  bfind on 67 of seed 54's 195 (17 in seed 53) - kept by the laptop's selection; no corpus deaths;
+  heldout 0.953; dream.lan Spearman 0.941 (seed 53: 0.959). Predictions 5 of 5. One converter
+  death, a new kind (open item 0c). The after-seed-54 batch applied: the 32-bit checks.
+- **Seed 55 is next** (the owner: 6 hours) - the same genes a third time, run for the checks: dream's
+  64-bit and 32-bit x86 checks and the Tegra native at 4-byte cells, the first run of all four.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
@@ -170,13 +172,13 @@ About 20 minutes of machine time for build, tests and gates.
    measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
    natively first. To do:
    the runner, and its ssh side for the remote checks.
-0. The 32-bit checks at native cell width - **pending, the after-seed-54 batch** (results/pending/
-   ORDER.md, Iterations 324-332): dream.lan's second check, 32-bit x86 at 4-byte cells (the laptop's
-   static builds and the 4-byte references), and rage.lan back, native at its own 4-byte cells.
-   64 bits unchanged (six designs' engines and images byte-identical, gene-equiv PASS, run-tests, the
-   gate 245 of 245); 32-bit x86 14 of 14 alive, ARMv7 under qemu 5 of 5; the checks tested with
-   stand-in hosts. Apply after seed 54 is processed; seed 55 is the Tegra's first real check -
-   alignment, which qemu cannot fault, is its to say.
+0. The 32-bit checks (Iterations 324-333) - applied after seed 54 (results/applied-after-seed54/):
+   seed 55 is their first real run. Read remote/*.md: dream.lan-prebuilt, -prebuilt32, rage.lan-native
+   - each with its byte order and cell width. The Tegra's first native build and run: alignment
+   (qemu cannot fault it), its build-stages at 4-byte cells, and its 90 minutes.
+0c. A converter death (results/drafts/convert-align-death.md, Iteration 333): one of seed 54's
+   41,406, "call target 1390 not 8-aligned" - reproduce, bisect its genes, fix; the genome then to
+   lab/evolve/regressions.json.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
    build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept

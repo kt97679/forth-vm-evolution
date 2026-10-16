@@ -42,54 +42,67 @@ start)
     rep=$(ls -d "$(dirname "$CHAIN")"/archived-*/build/evolve/report.md 2>/dev/null | sort | tail -1)
     [ -n "$rep" ] || { note all "no archived front to sample - skipped"; exit 0; }
     git -C "$REPO" bundle create "$R/repo.bundle" HEAD > /dev/null 2>&1 || { note all "git bundle failed - skipped"; exit 0; }
+    # Iteration 331: a check is a host and a mode - dream.lan has two (64-bit and 32-bit x86) -
+    # each with its own directories; one host's checks run one after another (run.sh waits on the
+    # host's lock), each deadline from its own start; the laptop waits at most their sum
+    : > "$R/queued"
     conf | while read -r host how n rounds minutes opts; do
         grep -qx "$host" "$R/hosts" || continue
-        H=$R/$host; mkdir -p "$H"
-        until=$(( $(date +%s) + minutes * 60 ))
+        CHK=$host-$how; H=$R/$CHK; RD=$RDIR/$how; mkdir -p "$H"
+        before=$(awk -v h="$host" '$1 == h {s += $2} END {print s + 0}' "$R/queued"); echo "$host $minutes" >> "$R/queued"
+        until=$(( $(date +%s) + (before + minutes) * 60 ))
         set -- --n "$n" $opts
-        [ "$how" = prebuilt ] && set -- "$@" --bundle "$H/bins.tar.gz"
+        case $how in prebuilt|prebuilt32) set -- "$@" --bundle "$H/bins.tar.gz" ;; esac
         (cd "$REPO" && python3 lab/evolve/xcheck.py --sample "$rep" "$H/designs.json" "$@") > "$H/sample.log" 2>&1 \
-            || { note "$host" "FAILED - the sample (remote/$host/sample.log)"; continue; }
+            || { note "$CHK" "FAILED - the sample (remote/$CHK/sample.log)"; continue; }
         rm -rf "$REPO"/build/evolve/xcheck-b-* "$REPO/build/evolve/xcheck-bundle"
         cat > "$H/run.sh" << RUN
 #!/bin/sh
-# $host's check of $(basename "$CHAIN") (lab/evolve/remote-checks.sh): $how, $rounds rounds, until $(date -u -d @$until +%H:%M) UTC
+# $CHK's check of $(basename "$CHAIN") (lab/evolve/remote-checks.sh): $how, $rounds rounds, $minutes minutes from its start
 cd "\$(dirname "\$0")" || exit 1
 W=\$(pwd); echo \$\$ > "\$W/pid"
 fail() { echo "\$*" > "\$W/FAILED"; echo 1 > "\$W/DONE"; exit 1; }
+exec 9> "\$W/../.lock"; flock 9 || fail "the host's lock"          # one check at a time on a host
+UNTIL=\$(( \$(date +%s) + $minutes * 60 ))
 git clone -q "\$W/repo.bundle" "\$W/repo" || fail "the clone of the bundle failed"
 cd "\$W/repo" || fail "no clone"
 PRE=
 LAYOUTS=1 bash tools/build-stages.sh > "\$W/build.log" 2>&1 || fail "build-stages.sh failed (build.log)"
-if [ $how = prebuilt ]; then mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin"; fi
-python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds --until $until \$PRE > "\$W/xcheck.log" 2>&1 || fail "xcheck.py failed (xcheck.log)"
+case $how in prebuilt|prebuilt32) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
+if [ $how = prebuilt32 ]; then              # the 4-byte references this host cannot make
+    cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-self.txt build/k32-b.txt || fail "the 4-byte references did not install"
+    export EVOLVE_CELL=4 EVOLVE_PREBUILT_REF="\$W/bins/bin/s6"
+fi
+python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds --until \$UNTIL \$PRE > "\$W/xcheck.log" 2>&1 || fail "xcheck.py failed (xcheck.log)"
 echo 0 > "\$W/DONE"
 RUN
-        files="$R/repo.bundle $H/designs.json $H/run.sh"; [ "$how" = prebuilt ] && files="$files $H/bins.tar.gz"
-        if $SSH $O "$host" "mkdir -p $RDIR" < /dev/null > "$H/ssh.log" 2>&1 \
-            && $SCP -q $O $files "$host:$RDIR/" >> "$H/ssh.log" 2>&1 \
-            && $SSH $O "$host" "cd $RDIR && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1; then
-            echo "$until" > "$H/until"
-            note "$host" "started - $(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(len(d.get("designs", d)) if isinstance(d, dict) else len(d))' "$H/designs.json" 2>/dev/null || echo ?) designs, $how, until $(date -u -d @$until +%H:%M) UTC"
-        else note "$host" "FAILED - copying or starting there (remote/$host/ssh.log)"; fi
+        files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32) files="$files $H/bins.tar.gz" ;; esac
+        if $SSH $O "$host" "mkdir -p $RD" < /dev/null > "$H/ssh.log" 2>&1 \
+            && $SCP -q $O $files "$host:$RD/" >> "$H/ssh.log" 2>&1 \
+            && $SSH $O "$host" "cd $RD && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1; then
+            echo "$until" > "$H/until"; echo "$host $RD" > "$H/where"
+            note "$CHK" "started - $(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(len(d.get("designs", d)) if isinstance(d, dict) else len(d))' "$H/designs.json" 2>/dev/null || echo ?) designs, $how, $minutes minutes from its start (done by $(date -u -d @$until +%H:%M) UTC)"
+        else note "$CHK" "FAILED - copying or starting there (remote/$CHK/ssh.log)"; fi
     done ;;
 stop)
     for H in "$R"/*/; do
-        [ -f "$H/until" ] || continue; host=$(basename "$H")
-        $SSH $O "$host" "[ -f $RDIR/pid ] && kill -TERM -\$(cat $RDIR/pid) 2>/dev/null; true" < /dev/null > /dev/null 2>&1 \
-            && note "$host" "stopped" || note "$host" "could not be reached to stop"
+        [ -f "$H/until" ] || continue; CHK=$(basename "$H"); read -r host RD < "$H/where"
+        $SSH $O "$host" "[ -f $RD/pid ] && kill -TERM -\$(cat $RD/pid) 2>/dev/null; true" < /dev/null > /dev/null 2>&1 \
+            && note "$CHK" "stopped" || note "$CHK" "could not be reached to stop"
     done ;;
 gather)
     for H in "$R"/*/; do
-        [ -f "$H/until" ] || continue; host=$(basename "$H"); until=$(cat "$H/until")
+        [ -f "$H/until" ] || continue; CHK=$(basename "$H"); until=$(cat "$H/until"); read -r host RD < "$H/where"
         if [ -z "$NOWAIT" ]; then
-            while [ "$(date +%s)" -lt $(( until + 300 )) ] && ! $SSH $O "$host" "[ -f $RDIR/DONE ]" < /dev/null > /dev/null 2>&1; do sleep 30; done
+            while [ "$(date +%s)" -lt $(( until + 300 )) ] && ! $SSH $O "$host" "[ -f $RD/DONE ]" < /dev/null > /dev/null 2>&1; do sleep 30; done
         fi
-        for f in out.json run.log xcheck.log build.log FAILED DONE; do $SCP -q $O "$host:$RDIR/$f" "$H/" > /dev/null 2>&1 || true; done
-        $SSH $O "$host" "[ -f $RDIR/pid ] && kill -TERM -\$(cat $RDIR/pid) 2>/dev/null; rm -rf $RDIR" < /dev/null > /dev/null 2>&1 || true
-        if [ -s "$H/out.json" ] && (cd "$REPO" && python3 lab/evolve/xcheck.py --report "$H/out.json") > "$R/$host.md" 2> "$H/report.log"; then
-            note "$host" "gathered - remote/$host.md$( [ -f "$H/FAILED" ] && echo ", though: $(cat "$H/FAILED")")"
-        else note "$host" "FAILED - no results$( [ -f "$H/FAILED" ] && echo ": $(cat "$H/FAILED")") (remote/$host/)"; fi
+        for f in out.json run.log xcheck.log build.log FAILED DONE; do $SCP -q $O "$host:$RD/$f" "$H/" > /dev/null 2>&1 || true; done
+        $SSH $O "$host" "[ -f $RD/pid ] && kill -TERM -\$(cat $RD/pid) 2>/dev/null; rm -rf $RD" < /dev/null > /dev/null 2>&1 || true
+        if [ -s "$H/out.json" ] && (cd "$REPO" && python3 lab/evolve/xcheck.py --report "$H/out.json") > "$R/$CHK.md" 2> "$H/report.log"; then
+            note "$CHK" "gathered - remote/$CHK.md$( [ -f "$H/FAILED" ] && echo ", though: $(cat "$H/FAILED")")"
+        else note "$CHK" "FAILED - no results$( [ -f "$H/FAILED" ] && echo ": $(cat "$H/FAILED")") (remote/$CHK/)"; fi
+    done
+    for host in $(cat "$R/hosts" 2>/dev/null); do $SSH $O "$host" "rmdir $RDIR 2>/dev/null; rm -f $RDIR/.lock; rmdir $RDIR 2>/dev/null; true" < /dev/null > /dev/null 2>&1 || true
     done ;;
 *) echo "remote-checks.sh: no command $CMD" >&2; exit 2 ;;
 esac

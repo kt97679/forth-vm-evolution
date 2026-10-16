@@ -91,7 +91,12 @@ CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
   \ those high bytes properly extended to compare correctly against
   \ host -1 - otherwise RESOLVE's BEGIN/WHILE loop never sees them as
   \ equal and walks off the end of the chain into unrelated memory.
-  TARGET-CELL-BYTES @ 8 < IF
+  \ Iteration 328: narrower than this host's own, as said - it read "8 <", a 64-bit host
+  \ taken for granted: on a 32-bit host building the 4-byte kernel it extended anyway, and
+  \ -1 32 LSHIFT on a 4-byte cell is a full-width shift (x86 masks it to 0, -1 is left):
+  \ every negative link became -1, and POSTPONE's thread walk crashed. [ 1 CELLS ] LITERAL
+  \ compiles the very literal 8 did on a 64-bit host.
+  TARGET-CELL-BYTES @ [ 1 CELLS ] LITERAL < IF
     DUP 1 TARGET-CELL-BYTES @ 3 LSHIFT 1 - LSHIFT AND IF
       -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT OR
     THEN

@@ -67,20 +67,37 @@
 #endif
 #if SYSC
 #include <errno.h>      /* SYSCALL's -errno (Iteration 141) */
+#if defined(__i386__) || defined(__arm__)
+#include <sys/mman.h>   /* Iteration 325: mmap through the C library */
 #endif
-#if SYSC && defined(__i386__)
-/* The image's numbers are x86-64 Linux's; i386's for the calls the shell's
+#endif
+#if SYSC && (defined(__i386__) || defined(__arm__))
+/* The image's numbers are x86-64 Linux's; i386's (and, Iteration 325, 32-bit ARM's) for the calls the shell's
    overlay makes (forth/shell-sysc.4; Iteration 141). Any other: ENOSYS. */
 static long sysc_i386(long n)
 {
     switch (n) {
     case 39: return 20;   case 57: return 2;    case 33: return 63;   case 80: return 12;
-    case 231: return 252; case 79: return 183;  case 61: return 114;  case 22: return 42;
-    case 97: return 191;  case 160: return 75;  case 59: return 11;   default: return -1;
+#if defined(__arm__)
+    case 231: return 248;                       /* exit_group: ARM's is not i386's */
+#else
+    case 231: return 252;
+#endif
+    case 79: return 183;  case 61: return 114;  case 22: return 42;
+    case 97: return 191;  case 160: return 75;  case 59: return 11;
+    /* Iteration 325: the file overlays' (forth/file-sysc*.4) - read, write, open, close,
+       lseek, munmap, ioctl, mremap, exit, unlink; mmap goes through the C library (mmap2) */
+    case 0: return 3;     case 1: return 4;     case 2: return 5;     case 3: return 6;
+    case 8: return 19;    case 11: return 91;   case 16: return 54;   case 25: return 163;
+    case 60: return 1;    case 87: return 10;   default: return -1;
     }
 }
 #endif
 #include <unistd.h>
+#include <sys/mman.h>
+#ifndef MAP_32BIT
+#define MAP_32BIT 0      /* Iteration 329: x86's alone - on a 32-bit ARM host every address is below 4 GB anyway */
+#endif
 #include <pwd.h>
 #include <sys/resource.h>
 #include <fcntl.h>
@@ -1412,8 +1429,8 @@ static void virtual_machine(void) {
     const UNS64 cbase = (UNS64)(uintptr_t)base - (256u << SCALE);
 #endif
 #if SYSC
-#if !defined(__x86_64__) && !defined(__i386__)
-#error "the gene sysc: the image's system-call numbers are x86-64 Linux's (i386's mapped)"
+#if !defined(__x86_64__) && !defined(__i386__) && !defined(__arm__)
+#error "the gene sysc: the image's system-call numbers are x86-64 Linux's (i386's and 32-bit ARM's mapped)"
 #endif
 #define SYSF DSP(L_syscall)
 #define SYSX(l) DSP(L_nosys)
@@ -2432,12 +2449,19 @@ L_syscall: {
     if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
     else {
         if (num == 60 || num == 231) { PROFDUMP; }
-#if defined(__i386__)
+#if defined(__i386__) || defined(__arm__)
+        if (num == 9) {                                        /* Iteration 325: mmap, as mmap2 under the C library */
+            void *m_ = mmap((void *)(uintptr_t)a[0], (size_t)a[1], (int)a[2], (int)a[3], (int)a[4], (off_t)a[5]);
+            r = m_ == MAP_FAILED ? -1 : (long)(uintptr_t)m_; goto sysc_done;
+        }
         num = sysc_i386(num);
         if (num < 0) r = -38;                                  /* ENOSYS */
         else
 #endif
         r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
+#if defined(__i386__) || defined(__arm__)
+      sysc_done:
+#endif
         if (r == -1) r = -(long)errno;
     }
     DS1 = (UNS64)(INT64)r;
@@ -2672,6 +2696,20 @@ L_resize: /* a-addr u --- a-addr' ior */
  */
 
 int main(int argc, char **argv) {
+#if defined(__i386__) || defined(__arm__)
+    /*  Iteration 326: on a 32-bit host, the memory the image maps (ALLOCATE's mmap, RESIZE's
+     *  mremap) below 2 GB: past it, a 4-byte cell holding the address is negative, and the file
+     *  overlays test a system call's result with 0< (forth/file-sysc.4) - a good allocation read
+     *  as a failure. Linux's legacy layout (setarch -L) maps bottom-up from 1 GB: set it and run
+     *  again, once - an exec, not a new process. If the exec fails (qemu-arm without binfmt,
+     *  whose guest maps low anyway), on as we are. A 64-bit engine is what it was.  */
+    {   /* raw calls - 136 personality, 11 execve, the same on i386 and 32-bit ARM - as the
+           C-library-less runtimes have neither wrapper; 0x0200000 is ADDR_COMPAT_LAYOUT */
+        long p_ = syscall(136, 0xffffffffUL);
+        if (p_ >= 0 && !(p_ & 0x0200000L) && syscall(136, (unsigned long)p_ | 0x0200000UL) >= 0)
+            syscall(11, "/proc/self/exe", argv, environ);
+    }
+#endif
     if (argc < 2) {
         write_str(2, "Usage: relf <filename>\n");
         return 1;

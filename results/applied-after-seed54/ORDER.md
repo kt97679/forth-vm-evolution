@@ -1,4 +1,4 @@
-# The after-seed-54 batch - apply in this order (against master after Iteration 332)
+# The after-seed-54 batch - applied (Iteration 333)
 
 | # | patch | what it does |
 |---|---|---|
@@ -28,3 +28,8 @@ Tested in master's working tree (Iterations 324-331):
 
 Before seed 55: nothing more from the owner - ssh keys to dream.lan and rage.lan as before. The
 Tegra's first real check is seed 55's: native builds there, its byte order recorded, alignment met.
+
+**Applied on master at Iteration 333**: build-stages; run-tests PASS, 63 engine paths; validate 7 of
+7 IDENTICAL; the gate 259 of 259 alive (seed 54's front 195, the joint front 125, 61 in both) - a
+front the batch was not developed against.
+

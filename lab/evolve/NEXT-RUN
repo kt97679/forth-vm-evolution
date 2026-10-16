@@ -322,6 +322,10 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 333 (the owner): seed 55, 6 hours - the same genes a third time (seeds 53 and 54 small:
+# the stopping rule's end of them), run for the checks: the first with dream.lan's 32-bit x86
+# check and the Tegra back (the after-seed-54 batch). The comparison at 6 rounds; the reserve from
+# seed 54's phases (the re-measure 24 min, the comparison 1 h 18 min) ~2 h: the evolution ~4 h.
 # Iteration 321 (the owner): 9 hours - the comparison back to 6 rounds; the reserve, from seed
 # 53's phases, ~2 h: the evolution ~7 h (seed 52's 6-round comparison took 1 h 53 min - the chain
 # may run some minutes past 9 h). rage.lan's check fails again until item 0 is fixed - recorded.
@@ -339,4 +343,4 @@
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-seed 54 tag2 9h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+seed 55 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

@@ -35,7 +35,7 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       both - the Spearman rank correlation, where the laptop's fastest rank there, the
       designs that moved most - as markdown.
 """
-import json, math, os, platform, re, shutil, subprocess, sys, time
+import struct, json, math, os, platform, re, shutil, subprocess, sys, time
 
 ARGS = sys.argv[1:]
 def opt(name, default=None, flag=False):
@@ -63,6 +63,7 @@ if '--report' in ARGS:
     R = json.load(open(opt('--report')))
     env = R.get('env', {})
     print('## %s - %s\n' % (env.get('host', '?'), env.get('cpu', '?')))
+    print('%s-endian, %s-byte cells - measured on the host (Iteration 331)\n' % (env.get('byteorder', '?'), env.get('cell', '?')))   # Iteration 331
     print('%s, %s; %s; Python %s; measured %s, %d round(s) a design.\n' % (
         env.get('machine', '?'), env.get('kernel', '?'), env.get('cc', '?'), env.get('python', '?'), R.get('when', '?'), R.get('rounds', 0)))
     if not R.get('s6_ok'):
@@ -86,6 +87,14 @@ if '--report' in ARGS:
 # ---- --sample: the designs to measure elsewhere, picked on the laptop ----
 if '--sample' in ARGS:
     src = opt('--sample'); n = int(opt('--n', '24')); nojit = opt('--no-jit', flag=True); gcc = opt('--gcc-only', flag=True); bundle = opt('--bundle')
+    # Iteration 331: --cell 4 - a 32-bit check (the owner: 32-bit x86 and the Tegra, at native
+    # 4-byte cells). The sample built here as 32-bit x86 at 4-byte cells (gcc -m32, static), each
+    # design taken only if it builds and lives so - no JIT, no clang - and with --bundle the
+    # 4-byte references a 64-bit-only host cannot make (build32/: the 32-bit cell engine, its
+    # image, the base k32 dumps).
+    cell4 = opt('--cell', '8') == '4'
+    if cell4:
+        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = gcc = True
     if len(ARGS) != 1: sys.exit(__doc__)
     out = ARGS[0]
     sys.argv = [sys.argv[0]]; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
@@ -110,11 +119,22 @@ if '--sample' in ARGS:
         if nojit and e.get('jit'): continue
         if gcc and (e.get('compiler') or e.get('tailpn')): continue
         ok.append((i, sp, tot, e))
-    pick = []
+    pick = []; built = {}
+    if cell4: E.setup()
+    def good(i):
+        """Iteration 331: at --cell 4, a design only if it builds and lives as a 32-bit engine here."""
+        if not cell4: return True
+        if i not in built:
+            try:
+                eng, img = E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); E.alive(eng, img, E.private_work(os.path.join(E.EV, 'xcheck-b-' + i)))
+                built[i] = (eng, img)
+            except Exception as ex:
+                built[i] = None; print('xcheck: %s left out at 4-byte cells - %s' % (i, str(ex)[:90]), flush=True)
+        return built[i] is not None
     def take(seq, k):
         for x in seq:
             if k <= 0: break
-            if x[0] not in [p[0] for p in pick]: pick.append(x); k -= 1
+            if x[0] not in [p[0] for p in pick] and good(x[0]): pick.append(x); k -= 1
     q = n // 4
     take(sorted(ok, key=lambda x: x[1]), q)                          # the fastest
     take(sorted(ok, key=lambda x: x[1] * x[2]), q)                   # about the best Q (speed x size)
@@ -123,16 +143,19 @@ if '--sample' in ARGS:
     k = n - len(pick)
     if rest and k > 0: take([rest[int(j * (len(rest) - 1) / max(1, k - 1))] for j in range(k)], k)   # between, evenly
     json.dump([{'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot} for i, sp, tot, e in pick], open(out, 'w'), indent=1)
-    print('xcheck: %d designs sampled from %d eligible (%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', out))
+    print('xcheck: %d designs sampled from %d eligible (%s%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', ', at 4-byte cells, each alive so' if cell4 else '', out))
     if bundle:
         import tarfile
-        E.setup()
+        if not cell4: E.setup()
         stage = os.path.join(E.EV, 'xcheck-bundle'); shutil.rmtree(stage, ignore_errors=True)
         def put(name, eng, img):
             os.makedirs(os.path.join(stage, name)); shutil.copy2(eng, os.path.join(stage, name, 'engine')); shutil.copy2(img, os.path.join(stage, name, 'image'))
         put('s6', E.REF[0], E.REF[1])
         for i, *_ in pick:
-            eng, img = E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
+            eng, img = built[i] if cell4 else E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
+        if cell4:
+            os.makedirs(os.path.join(stage, 'build32'))
+            for f in ('s0-cell-32', 's0-cell-s32.img', 'k32-self.txt', 'k32-b.txt'): shutil.copy2(os.path.join(E.O, f), os.path.join(stage, 'build32', f))
         with tarfile.open(bundle + '.partial', 'w:gz') as t: t.add(stage, arcname='bin')
         os.replace(bundle + '.partial', bundle)
         print('xcheck: %d designs and s6 built into %s (%d KB)' % (len(pick), bundle, os.path.getsize(bundle) // 1024))
@@ -154,7 +177,8 @@ cpu = next((l.split(':', 1)[1].strip() for l in readf('/proc/cpuinfo').split('\n
 env = {'host': platform.node(), 'cpu': cpu, 'machine': platform.machine(), 'kernel': platform.release(), 'cc': first(['cc', '--version']),
        'clang': first(['clang', '--version']), 'python': platform.python_version(), 'sh': os.path.realpath('/bin/sh'),
        'locale': os.environ.get('LC_ALL') or os.environ.get('LANG') or '', 'cores': os.cpu_count(), 'free_gb': round(shutil.disk_usage('.').free / 2 ** 30, 1),
-       'governor': readf('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'), 'load': readf('/proc/loadavg')}
+       'governor': readf('/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'), 'load': readf('/proc/loadavg'),
+       'byteorder': sys.byteorder, 'cell': int(os.environ.get('EVOLVE_CELL') or (4 if struct.calcsize('P') == 4 else 8))}   # Iteration 331: measured, not assumed
 R = {'env': env, 'when': time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime()), 'rounds': rounds, 'designs': [], 's6_ok': False}
 def save(): json.dump(R, open(out + '.partial', 'w'), indent=1); os.replace(out + '.partial', out)
 print('xcheck: %s, %s, %s cores; %s' % (env['host'], env['cpu'], env['cores'], env['cc']), flush=True)
