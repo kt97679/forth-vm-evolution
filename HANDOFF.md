@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 341.
+- master: Iteration 342.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -202,7 +202,9 @@ About 20 minutes of machine time for build, tests and gates.
    header; the gene jitimg designed (results/drafts/next-genes.md): the converter writes the header
    run-time words get - built (results/drafts/jitimg-wip.patch, Iteration 341): level 1 alive, little
    gained yet - PARSE-WORD tried and refused for vf (getstatic); INTERPRET excluded (aligned data).
-   Next: stencils for vf and vs; then headers for aligned words; then level 2's corpus death.
+   jitvar built too (Iteration 342; results/drafts/jit-genes-wip.patch): INTERPRET now tried, refused for
+   PLACE; PARSE-WORD, WORD for (PARSE) - C primitives: the next step is helper calls in the JIT (native
+   code calling a primitive's C) - a large one; the owner's call.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

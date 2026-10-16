@@ -179,3 +179,21 @@ recorded design. Seed 55's fastest JIT design, c549c0677c:
   the slot operand, an SPN stencil each) - jitimg pays only with them; then headers for words with
   aligned data (the token stream's alignment kept: NOP padding the JIT maps, or layout() told the
   stream's start), then jitimg 2's corpus death.
+
+## jitvar - vf and vs given the JIT, and the staircase's next step (Iteration 342; results/drafts/
+## jit-genes-wip.patch - jitimg and jitvar, against master and the pending two-width batch)
+
+jitvar: vf (getstatic) and vs (putstatic) as a literal of the slot's address, then @ or ! - the JIT's
+tables (O['vf'] = (['LIT', 'FETCH'], 8|9)), and two operand kinds in jit.c's decoder under JITVAR (the
+16-bit slot; VARSLOT's 2-3 bytes): jit_cbase + (v << SCALE), as the engine's SLOT(). No new stencil.
+c549c0677c with jitvar, and with jitimg 1 and jitvar: both alive. jitleft --why, both on:
+
+- INTERPRET **tried** - refused: no mapping for **PLACE**; PARSE-WORD and WORD: no mapping for
+  **(PARSE)**; HERE: no usable stencil for EXIT (to look into); "never tried" 32.9% of what is left
+  (62.6% before jitimg, 48.1% with it). The totals unchanged - kernel 54.7%, corpus 99.7% left: the
+  words are still refused, one step on.
+- **The next blockers are C primitives** - PLACE, (PARSE), and so (FIND), SCAN, SKIP...: the format-10
+  words evolution moved into the engine's C for speed. A stencil cannot be a C loop: translating
+  INTERPRET needs **helper calls** - native code calling a primitive's C and coming back - which the
+  JIT does not have (the handlers are labels of one threaded function, not functions). The large
+  step of the staircase; jitimg and jitvar pay in full only after it.

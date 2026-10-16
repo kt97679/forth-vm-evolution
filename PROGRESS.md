@@ -6558,3 +6558,15 @@ level 2 (every plain word) dies on the corpus - to bisect. jitleft.py --why --se
 refused for vf - the engine's getstatic, VARIABLE @ fused - which keeps WORD and HERE out too, and
 which the JIT has no stencil for; INTERPRET still excluded (its inline aligned data). So jitimg pays
 only with stencils for vf and vs: next.
+
+## Iteration 342 - 2026-10-16 - Claude
+
+**jitvar - vf and vs given the JIT - and where the staircase leads.** vf (getstatic) and vs
+(putstatic) mapped as a literal of the slot's address then @ or ! - no new stencil; two operand kinds
+in jit.c's decoder under JITVAR (no other engine changes). With jitimg 1, both alive; jitleft --why:
+INTERPRET now tried (refused for PLACE), PARSE-WORD and WORD refused for (PARSE), "never tried" down to
+32.9% of what is left from 62.6% - but the totals unmoved (kernel 54.7% left): each word still
+refused, one step on. The next blockers are C primitives - PLACE, (PARSE), (FIND) - which a stencil
+cannot be: translating the outer interpreter needs helper calls, native code calling a primitive's C;
+the JIT has none, its handlers labels in one threaded function. jitimg and jitvar saved as one draft
+(results/drafts/jit-genes-wip.patch).
