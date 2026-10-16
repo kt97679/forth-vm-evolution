@@ -1,5 +1,5 @@
 diff --git a/engine/vm-lab.c b/engine/vm-lab.c
-index 1200f5b..c42c95c 100644
+index 1200f5b..7d6bd68 100644
 --- a/engine/vm-lab.c
 +++ b/engine/vm-lab.c
 @@ -315,6 +315,44 @@ static UNS64 *wordtab;          /* absolute body addresses, malloc'd */
@@ -47,41 +47,33 @@ index 1200f5b..c42c95c 100644
  #if X_JIT
  /*  Iteration 218: JIT_PRICE - a profiling build in which the JIT translates
   *  as it would but native code never runs: every operation of every word it
-@@ -1953,6 +1991,9 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
-  *  bytes (NAME=?), then the link back - NEXT-NFA8's three forms. ~20
+@@ -1954,10 +1992,14 @@ L_x_cmove: { UNS64 u_ = DS0, d_ = DS1, s_ = DS2; dsp += 3 * CELL_BYTES;
   *  dispatches a candidate word in Forth; 37-63% of kernel, parse, corpus.  */
  #if X_THREADFIND
-+#if BFIND
-+L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES; DS0 = bf_walk(a_, nb_); } NEXT();
-+#else
  L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
++#if BFIND
++             a_ = bf_walk(a_, nb_);                 /* Iteration 316: the gene bfind */
++#else
               UNS8 n_ = BYTE(nb_);
               while (a_) {
-@@ -1960,6 +2001,7 @@ L_x_threadfind: { UNS64 nb_ = DS0, a_ = DS1; dsp += CELL_BYTES;
+                  if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }
                   a_ = PREVNFA(a_); }
++#endif
               DS0 = a_; } NEXT();
  #endif
-+#endif
  /*  Iteration 54: the input side - SCAN and SKIP ( c-addr u c --- c-addr' u' ),
-  *  the kernel's character loops, and TABS>BL ( c-addr u --- ), REFILL's tab
-  *  loop (forth/cv8b-kinput.4): a character at a time, as the loops; the
-@@ -2001,10 +2043,16 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
-  *  the name to NAMEBUF (32 MIN, PLACE), HASH, the thread's head, THREAD-FIND's
+@@ -2002,7 +2044,11 @@ L_x_hash:  { UNS64 t_ = DS0, u_ = DS1, a_ = DS2, h_; dsp += 2 * CELL_BYTES;
   *  walk, NAME>8 and the immediate bit.  */
  #if X_FIND
-+#if BFIND
-+L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
-+            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); a_ = bf_walk(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
-+            dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
-+#else
  L_x_find: { UNS64 n_ = DS0, ctx_ = DS1, nb_ = DS2, c_ = CELL(dsp + 3 * CELL_BYTES), x_ = c_, r_ = 0;
++#if BFIND
++            if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); a_ = bf_walk(a_, nb_); if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }   /* Iteration 316: the gene bfind */
++#else
              if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } }
++#endif
              dsp += 2 * CELL_BYTES; DS1 = x_; DS0 = r_; } NEXT();
  #endif
-+#endif
  /*  (>NUMBER) ( ud c-addr u base --- ud2 c-addr2 u2 ) - the kernel's >NUMBER
-  *  with BASE @ given (klookup's >NUMBER8): DIGIT?'s test exactly - '0'-'9',
-  *  nothing between '9' and 'A', then A on, below base (signed) - and ud*base
 diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
 index 842de5c..fe4c040 100644
 --- a/lab/evolve/GENES.md
@@ -94,6 +86,23 @@ index 842de5c..fe4c040 100644
  | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
  | an operation and the call after it (`opcall`: a list, Iteration 121; the tag, computed goto): `X;CALL` opcodes of their own (0xFE00 + k), X's handler then a direct jump into the call | results/docs-reuse.md (Koopman) | fastest: parse -3.8%, corpus -3.4%, kernel -1.6% of dispatches for +768 bytes of engine (16 ops); results/opcall.md |
  | ABORT" guarded (`abortif`: 0, 1; Iteration 117): the converter puts every (ABORT") call behind ?BRANCH and -1, as gforth and lbForth compile ABORT" | results/forth-sources.md | parse -5.6%, corpus -3.0%, kernel -1.0% of dispatches on the fastest design for 56 bytes; errors unchanged |
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 0dff091..beaebc9 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -86,6 +86,12 @@ VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot
+              ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot']), ('aligned to 64, tail calls', dict(alignhot=3, tail=1), ['alignhot', 'tail'])]
+ VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops10') or []), opbody=1, opinline=1), need + ['ops10', 'opinline'])   # Iteration 299
+              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
++# Iteration 316: the gene bfind - THREAD-FIND's and (FIND)'s walk branch-light - with each of
++# the two words, in each link form (CV8's 1-3 bytes, TAG2's 1-4)
++VARIANTS += [('bfind: THREAD-FIND, CV8', {'kfast': 1, 'tfind': 1, 'bfind': 1}, ['bfind']),
++             ('bfind: (FIND), CV8', {'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1}, ['bfind']),
++             ('bfind: THREAD-FIND, TAG2', {'tag2': 1, 'kfast': 1, 'tfind': 1, 'bfind': 1}, ['bfind']),
++             ('bfind: (FIND), TAG2', {'tag2': 1, 'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1}, ['bfind'])]
+ # Iteration 312: designs that once failed (lab/evolve/regressions.json) - each the whole recorded
+ # genome, built and run on the corpus every time: a fault found once stays a test.
+ VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
 index 3648abf..8007ad0 100644
 --- a/lab/evolve/evolve.py

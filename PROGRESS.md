@@ -6247,3 +6247,17 @@ build failed: the helpers stood above BYTE and UNS64's definitions; moved below,
 Three slips of mine on the way, none in the gene: a test filter that wanted both words; a
 `< /dev/null` that replaced a heredoc script, so two "checks" ran nothing; git run as root on
 claude's repository, refused, and `set -e` ending the command there.
+
+## Iteration 317 - 2026-10-15 - Claude
+
+**bfind verified and pending - the after-seed-52 batch complete (results/pending/ORDER.md).**
+Built on patch 1 in a scratch tree, as the batch applies in order. The four cases right on the
+corpus; gene-equiv against patch 1: every recorded genome's id and expression the same (its
+FAIL the operator draws, as for any new gene); run-tests, 63 paths with four for bfind; validate
+7 of 7; 32 of seed 52's front forced to bfind - 32 alive. The first form - each handler's label
+twice, under #if/#else - broke the multi-state generator (5 of 63 paths), which would have
+broken every msc design with the gene off; one label each, the condition inside the body, and
+all 63 passed. On the VM no speed past the noise either way (kernel 0.951 for a (FIND) design,
+perhaps a small cost) - the gene is for the laptop's predictor. My slips this turn: a test
+script's syntax; a pkill -f matching its own command line - the pitfall remote-checks.sh was
+built around. Both patches apply in order on a fresh clone and reproduce the tested files.
