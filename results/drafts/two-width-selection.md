@@ -73,6 +73,9 @@ Two faults, both "call target ... not aligned", both scaled calls (--cpt S reach
     b0aa079d67 enc cv8 scale 3 tag2 None - died: image did not convert (AssertionError: v8 call target 916 not al
     3cfd650b67 enc cv8 scale 3 tag2 None - died: image did not convert (AssertionError: v8 call target 8492 not a
 
-  To check: their S - if 1, tails need aligning at 4-byte cells too (at 8 not, to keep the 64-bit
-  images); then bisect the corpus death.
+  **Checked: every one is scale 3, not 1** - my tail hypothesis was wrong. Their targets are 4 mod 8
+  (8492, 9780): word starts at 4-byte cells. The two align_up(off, CALIGN) changed are the HL and the
+  byte-header paths; the third - ordinary headers (link cell, name padded to a cell, body after) -
+  aligns a body only implicitly, to CELL. Next: pad that path's name so the body lands on CALIGN (at
+  8-byte cells CALIGN is the cell: unchanged); then bisect the corpus death (a9a65d6057, enc cell).
 

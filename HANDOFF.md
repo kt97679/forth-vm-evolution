@@ -193,7 +193,8 @@ About 20 minutes of machine time for build, tests and gates.
    on 12 of 20 designs in its first run. Before it is selected on: the converter's "call target not
    8-aligned" (4 of the 8 without speed32 - and seed 54's one death at 8-byte cells, the same
    assertion: results/drafts/convert-align-death.md - fixed in the draft, Iteration 337: word starts
-   aligned to the call scale, SKIPPAD's shortcut only where reachable; mid-word tails left), a corpus
+   aligned to the call scale, SKIPPAD's shortcut only where reachable; left: the ordinary-header
+   path, whose bodies align only implicitly to the cell - the scale-3 failures), a corpus
    death at 4-byte cells to bisect; then
    compare-fronts, seed-facts, the report, NEXT-RUN's word for it.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
