@@ -1,4 +1,4 @@
-# The after-seed-55 batch - apply in this order (against master after Iteration 334)
+# The after-seed-55 batch - applied (Iteration 335)
 
 | # | patch | what it does |
 |---|---|---|
@@ -11,3 +11,7 @@ arm-linux-gnueabihf-gcc with build-stages.sh's flags (-I build; spn-cv8 -DSCALE)
 pack4.c stopped the Tegra; build-stages.sh's 16 64-bit binaries hashed before and after - all
 identical; run-tests PASS; validate 7 of 7 IDENTICAL. Not testable here: build-stages.sh run whole
 on ARM - the Tegra's next check is that; qemu-arm has no binfmt here to run it under.
+
+**Applied on master at Iteration 335**: build-stages; run-tests PASS, 63 engine paths; validate 7 of
+7 IDENTICAL; the gate 248 of 248 alive (seed 55's front 168, the joint front 133, 53 in both).
+

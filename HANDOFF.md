@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 334.
+- master: Iteration 335.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -62,7 +62,12 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   dream.lan 64-bit Spearman 0.940; **32-bit x86 at 4-byte cells 0.694** - the laptop's six fastest
   interpreted designs 8th-13th there, their lead over s6 about halved (results/xcheck-dream-seed55.md).
   The Tegra failed again - four hand-made engines kept x86's sysc guard: the after-seed-55 batch
-  (results/pending/ORDER.md). NEXT-RUN: none - the next run is the owner's word or new genes'.
+  (results/pending/ORDER.md).
+- **Seed 56 is next** (the owner, Iteration 335: 6 hours, and both): the after-seed-55 batch applied -
+  the Tegra's four engines; dream.lan's prebuilt64 check (--from prebuilt32: the same designs at 64
+  bits - the width alone, on one machine). Then **selecting at both widths**
+  (results/drafts/two-width-selection.md): a design's interpreter at 4-byte cells as a second speed
+  objective - its decisions for the owner first.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).

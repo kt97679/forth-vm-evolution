@@ -12,10 +12,10 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `predictions.md` - the predictions written before each run, then scored.
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
-- `pending/ORDER.md` - the batch waiting to be applied after the run now on the laptop, while there is one: the order, and how each patch was tested (results/pending/ moves to applied-after-seedN/ when applied).
 - `drafts/runner-protocol.md` - The runner's protocol, the owner's requirements as a specification (Iterations 302-303): one command, one archive with every log, a clean stop, recovery at every start.
 - `xcheck-dream-seed55.md` - The first check at both widths (Iteration 334): dream.lan 64-bit Spearman 0.940; 32-bit x86 at 4-byte cells 0.694 - the laptop's six fastest interpreted designs 8th-13th there: the skew the owner feared.
 - `xcheck-dream-seed54.md` - The second remote check (Iteration 333): seed 53's front on dream.lan - Spearman 0.941, the laptop's six fastest ranked 3 4 2 10 1 5 there.
+- `drafts/two-width-selection.md` - Selecting at both widths, the skew in the evolution itself (Iteration 335, a draft): a design's interpreter measured at 4-byte cells as a second speed objective; the decisions for the owner.
 - `drafts/convert-align-death.md` - A converter death seed 54 found (Iteration 333): "call target 1390 not 8-aligned", one design of 41,406 - not yet looked into; its genome.
 - `xcheck-dream-seed53.md` - The first remote check (Iteration 320): seed 52's front on dream.lan (i7-6700), the laptop's binaries - Spearman 0.959, the laptop's six fastest its first six; the JIT designs' lead over s6 smaller there.
 - `drafts/next-genes.md` - The search for the genes after seed 54 (Iteration 323): price.py on seed 53's fastest interpreted designs - calls and returns the largest share, their genes in place, pairs diminishing; next, jitleft.py - what the JIT leaves to the interpreter.

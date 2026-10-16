@@ -93,6 +93,10 @@ if '--sample' in ARGS:
     # 4-byte references a 64-bit-only host cannot make (build32/: the 32-bit cell engine, its
     # image, the base k32 dumps).
     cell4 = opt('--cell', '8') == '4'
+    # Iteration 335: --ids FILE - exactly another check's designs (its designs.json), at this width:
+    # the same designs at 64 bits and at 32 on one host, the width alone (seed 55's two samples
+    # shared 8 designs, nearly all slow)
+    idsf = opt('--ids'); ids = [d['id'] for d in json.load(open(idsf))] if idsf else None
     if cell4:
         os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = gcc = True
     if len(ARGS) != 1: sys.exit(__doc__)
@@ -135,13 +139,18 @@ if '--sample' in ARGS:
         for x in seq:
             if k <= 0: break
             if x[0] not in [p[0] for p in pick] and good(x[0]): pick.append(x); k -= 1
-    q = n // 4
-    take(sorted(ok, key=lambda x: x[1]), q)                          # the fastest
-    take(sorted(ok, key=lambda x: x[1] * x[2]), q)                   # about the best Q (speed x size)
-    take(sorted(ok, key=lambda x: x[2]), q)                          # the smallest
-    rest = sorted([x for x in ok if x[0] not in [p[0] for p in pick]], key=lambda x: x[1])
-    k = n - len(pick)
-    if rest and k > 0: take([rest[int(j * (len(rest) - 1) / max(1, k - 1))] for j in range(k)], k)   # between, evenly
+    if ids is not None:
+        byid = {x[0]: x for x in ok}
+        for i in ids:
+            if i in byid and good(i): pick.append(byid[i])
+    else:
+        q = n // 4
+        take(sorted(ok, key=lambda x: x[1]), q)                          # the fastest
+        take(sorted(ok, key=lambda x: x[1] * x[2]), q)                   # about the best Q (speed x size)
+        take(sorted(ok, key=lambda x: x[2]), q)                          # the smallest
+        rest = sorted([x for x in ok if x[0] not in [p[0] for p in pick]], key=lambda x: x[1])
+        k = n - len(pick)
+        if rest and k > 0: take([rest[int(j * (len(rest) - 1) / max(1, k - 1))] for j in range(k)], k)   # between, evenly
     json.dump([{'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot} for i, sp, tot, e in pick], open(out, 'w'), indent=1)
     print('xcheck: %d designs sampled from %d eligible (%s%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', ', at 4-byte cells, each alive so' if cell4 else '', out))
     if bundle:

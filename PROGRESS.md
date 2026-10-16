@@ -6473,3 +6473,17 @@ again: build-stages.sh compiles four hand-made engines the 32-bit work had not p
 first); ported now - each compiles for ARM with build-stages' flags, the 16 64-bit binaries are
 identical, run-tests and validate pass - pending as the after-seed-55 batch. bfind on 80 of 168,
 heldout 0.959, predictions four of five (the Tegra's). NEXT-RUN: none - the stopping rule.
+
+## Iteration 335 - 2026-10-16 - Claude
+
+**Seed 56 for 6 hours, and both of the owner's: the run, then selecting at both widths.** The
+after-seed-55 batch applied - the Tegra's four engines (run-tests, validate 7 of 7, the gate 248 of
+248). dream.lan gets a third check, prebuilt64 --from prebuilt32: xcheck --sample --ids takes exactly
+the 32-bit check's designs and builds them at 64 bits, so the next run measures the same designs at
+both widths on one machine - the width alone, which seed 55's two samples (8 designs in common,
+nearly all slow) could not. Tested with stand-in hosts: the two samples the same ids, both measured,
+one after the other under the host's lock, 4-byte and 8-byte cells recorded. Selecting at both
+widths drafted (results/drafts/two-width-selection.md): a design's interpreter measured at 4-byte
+cells on the laptop as a second speed objective - the JIT designs judged at 32 bits by the
+interpreter under their JIT; not one combined score, which would let a weakness hide. Its decisions
+are the owner's before it is built - after seed 56 starts.

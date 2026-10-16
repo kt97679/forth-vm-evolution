@@ -51,8 +51,13 @@ start)
         CHK=$host-$how; H=$R/$CHK; RD=$RDIR/$how; mkdir -p "$H"
         before=$(awk -v h="$host" '$1 == h {s += $2} END {print s + 0}' "$R/queued"); echo "$host $minutes" >> "$R/queued"
         until=$(( $(date +%s) + (before + minutes) * 60 ))
+        case " $opts " in *" --from "*)                               # Iteration 335: another check's designs
+            frm=$(printf '%s\n' $opts | awk 'p {print; exit} $1 == "--from" {p = 1}')
+            [ -s "$R/$host-$frm/designs.json" ] || { note "$CHK" "FAILED - its pair $host-$frm sampled nothing"; continue; }
+            opts=$(printf ' %s' $opts | sed "s| --from $frm| --ids $R/$host-$frm/designs.json|") ;;
+        esac
         set -- --n "$n" $opts
-        case $how in prebuilt|prebuilt32) set -- "$@" --bundle "$H/bins.tar.gz" ;; esac
+        case $how in prebuilt|prebuilt32|prebuilt64) set -- "$@" --bundle "$H/bins.tar.gz" ;; esac
         (cd "$REPO" && python3 lab/evolve/xcheck.py --sample "$rep" "$H/designs.json" "$@") > "$H/sample.log" 2>&1 \
             || { note "$CHK" "FAILED - the sample (remote/$CHK/sample.log)"; continue; }
         rm -rf "$REPO"/build/evolve/xcheck-b-* "$REPO/build/evolve/xcheck-bundle"
@@ -68,7 +73,7 @@ git clone -q "\$W/repo.bundle" "\$W/repo" || fail "the clone of the bundle faile
 cd "\$W/repo" || fail "no clone"
 PRE=
 LAYOUTS=1 bash tools/build-stages.sh > "\$W/build.log" 2>&1 || fail "build-stages.sh failed (build.log)"
-case $how in prebuilt|prebuilt32) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
+case $how in prebuilt|prebuilt32|prebuilt64) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
 if [ $how = prebuilt32 ]; then              # the 4-byte references this host cannot make
     cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-self.txt build/k32-b.txt || fail "the 4-byte references did not install"
     export EVOLVE_CELL=4 EVOLVE_PREBUILT_REF="\$W/bins/bin/s6"
@@ -76,7 +81,7 @@ fi
 python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds --until \$UNTIL \$PRE > "\$W/xcheck.log" 2>&1 || fail "xcheck.py failed (xcheck.log)"
 echo 0 > "\$W/DONE"
 RUN
-        files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32) files="$files $H/bins.tar.gz" ;; esac
+        files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32|prebuilt64) files="$files $H/bins.tar.gz" ;; esac
         if $SSH $O "$host" "mkdir -p $RD" < /dev/null > "$H/ssh.log" 2>&1 \
             && $SCP -q $O $files "$host:$RD/" >> "$H/ssh.log" 2>&1 \
             && $SSH $O "$host" "cd $RD && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1; then
