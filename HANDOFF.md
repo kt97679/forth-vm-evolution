@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 338.
+- master: Iteration 339.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -194,10 +194,12 @@ About 20 minutes of machine time for build, tests and gates.
    speed32 in the scratch run; 64 bits unchanged (byte-identical, gene-equiv PASS, the gate). The
    converter's alignment fixed with it (seed 54's converter death lives). After seed 56: apply, and
    NEXT-RUN with widths - the owner's hours.
-0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
-   mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -
-   build jitleft.py: what the JIT leaves to the interpreter, by word and the operation that kept
-   each out; new stencils for those as genes. And a missmap A/B for bfind as a chain's first step.
+0b. The next genes (results/drafts/next-genes.md, Iterations 323, 339): lab/evolve/jitleft.py
+   measured it - the JIT leaves kernel 56% and corpus 99.7% to the interpreter (fib, loop,
+   ackermann translated whole): the outer interpreter - INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK -
+   and the corpus's run-once words. Next: a JITLOG build naming the operation that keeps each word
+   out (the plan in the draft), then stencils for them - genes; and the JIT's threshold for code
+   compiled at run time.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

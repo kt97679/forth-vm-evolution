@@ -76,3 +76,16 @@ under whatever makes the JIT translate. What carries the rest: the outer interpr
 PARSE-WORD, WORD, REFILL has no stencil (next: the blockers, word by word); (2) when the JIT
 translates code compiled at run time - its threshold, for compile-and-run-once work. With selection
 at both widths, (1) counts twice: a JIT design's interpreter is its 32-bit speed.
+
+## Next: why each word is left - a JITLOG build (planned, Iteration 339)
+
+engine/jit.c's jit_body(w, a, end, depth) decodes a word into opl[] with each operation's address in
+at[n] and refuses at its first untranslatable point - 17 `return 0`s; the commonest in the decode
+loop: `if (L >= JIT_NOPS || !jit_ops[L].ok) return 0;` (an operation with no mapping), the later
+ones in loops over i (jit_usable(s) refusals - a stencil read short, a branch it cannot place). The
+plan, under -DJITLOG=1 only (a normal build's text the same - no 64-bit change): a static last-address
+set to at[n] in the decode loop and at[i] in the later loops, and jit_body's caller writing
+"R word address why" to a file named by an environment variable when it refuses; jitleft.py --why
+building so, and naming each refused operation from the call map's O lines (address, kind, opcode,
+name). Then the counts: which operations keep INTERPRET, PARSE-WORD, WORD, REFILL out - each a
+stencil to write, a gene.
