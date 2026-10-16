@@ -6418,3 +6418,14 @@ is two cells - at the seven places that size it or find its body. Then the sweep
 as 32-bit x86 engines: s6 and 13 of seed 53's front, every one tag2 - the corpus right, and each
 rebuilt the 4-byte kernel byte for byte with its own run of the cross compiler (Iteration 328's
 fix). The draft patch (results/drafts/cell32-wip.patch) now carries tools/layout.py too. Next: ARM.
+
+## Iteration 330 - 2026-10-16 - Claude
+
+**ARMv7 at native 4-byte cells: 5 of 5 alive under qemu-arm.** s6 and four tag2 designs of seed
+53's front, built by arm-linux-gnueabihf-gcc as EABI5 engines, run through qemu-arm: the corpus
+right and the 4-byte kernel rebuilt byte for byte. One fix: MAP_32BIT is x86's - 32-bit x86's
+headers have it, which is why -m32 compiled - and ARM's do not; 0 where the host has none, every
+address below 4 GB there anyway. The harness wraps each ARM engine for qemu and, in itself only,
+lifts sh()'s jail (qemu maps past its 1 GB) and multiplies the CPU limits. What qemu cannot say:
+whether a Cortex-A9 faults on an unaligned 64-bit load - the Tegra's own run will. Next: the
+checks - dream's 32-bit line and rage native - and the batch through run-tests and the gate.

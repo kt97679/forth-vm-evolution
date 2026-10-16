@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 329.
+- master: Iteration 330.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -202,9 +202,13 @@ About 20 minutes of machine time for build, tests and gates.
    (3 of 3 of seed 53's front, old converter against new).
    **32-bit x86 at 4-byte cells: 14 of 14 alive** - s6 and 13 of seed 53's front, tag2 all, fsys
    1-5: the corpus right and the 4-byte kernel reproduced, by the design's own cross compiler.
-   Next: ARM under qemu-arm (a harness: each engine wrapped to run qemu-arm -L
-   /usr/arm-linux-gnueabihf; the jail lifted for qemu in the harness only - it maps more than the
-   jail's 1 GB); then the checks - dream's 32-bit line (the laptop's static -m32 builds, prebuilt),
+   **ARMv7 under qemu-arm at 4-byte cells: 5 of 5 alive** (Iteration 329) - s6 and 4 tag2 designs,
+   the corpus and the 4-byte kernel; one fix on the way: MAP_32BIT, x86's alone, 0 where the
+   host has none (every address is below 4 GB on a 32-bit host). The harness (not kept in the
+   repository): each ARM engine wrapped to run qemu-arm -L /usr/arm-linux-gnueabihf, sh()'s jail
+   lifted and its CPU limits times ten in the harness only - qemu maps past the jail's 1 GB. qemu
+   does not fault an unaligned 64-bit load as a Cortex-A9 can: alignment is the Tegra's to say.
+   Next: the checks - dream's 32-bit line (the laptop's static -m32 builds, prebuilt),
    rage native (the laptop's build products shipped: the k32 dumps, vm-lab-tos.c), one host's
    checks serialized, each deadline from its start, each host's byte order recorded; then the
    batch: run-tests, gene-equiv, the gate - and xcheck's sample without jit, clang, tailpn.

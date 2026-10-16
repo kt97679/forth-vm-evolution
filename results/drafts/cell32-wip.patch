@@ -93,10 +93,10 @@ index d20f3bd..8c3324f 100644
          write_str(2, "Usage: relf <filename>\n");
          return 1;
 diff --git a/engine/vm-lab.c b/engine/vm-lab.c
-index 7d6bd68..88e42ca 100644
+index 7d6bd68..2122fa1 100644
 --- a/engine/vm-lab.c
 +++ b/engine/vm-lab.c
-@@ -67,16 +67,29 @@
+@@ -67,20 +67,37 @@
  #endif
  #if SYSC
  #include <errno.h>      /* SYSCALL's -errno (Iteration 141) */
@@ -130,7 +130,15 @@ index 7d6bd68..88e42ca 100644
      }
  }
  #endif
-@@ -1412,8 +1425,8 @@ static void virtual_machine(void) {
+ #include <unistd.h>
++#include <sys/mman.h>
++#ifndef MAP_32BIT
++#define MAP_32BIT 0      /* Iteration 329: x86's alone - on a 32-bit ARM host every address is below 4 GB anyway */
++#endif
+ #include <pwd.h>
+ #include <sys/resource.h>
+ #include <fcntl.h>
+@@ -1412,8 +1429,8 @@ static void virtual_machine(void) {
      const UNS64 cbase = (UNS64)(uintptr_t)base - (256u << SCALE);
  #endif
  #if SYSC
@@ -141,7 +149,7 @@ index 7d6bd68..88e42ca 100644
  #endif
  #define SYSF DSP(L_syscall)
  #define SYSX(l) DSP(L_nosys)
-@@ -2432,12 +2445,19 @@ L_syscall: {
+@@ -2432,12 +2449,19 @@ L_syscall: {
      if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
      else {
          if (num == 60 || num == 231) { PROFDUMP; }
@@ -162,7 +170,7 @@ index 7d6bd68..88e42ca 100644
          if (r == -1) r = -(long)errno;
      }
      DS1 = (UNS64)(INT64)r;
-@@ -2672,6 +2692,20 @@ L_resize: /* a-addr u --- a-addr' ior */
+@@ -2672,6 +2696,20 @@ L_resize: /* a-addr u --- a-addr' ior */
   */
  
  int main(int argc, char **argv) {
