@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 339.
+- master: Iteration 340.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -198,8 +198,9 @@ About 20 minutes of machine time for build, tests and gates.
    measured it - the JIT leaves kernel 56% and corpus 99.7% to the interpreter (fib, loop,
    ackermann translated whole): the outer interpreter - INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK -
    and the corpus's run-once words. Next: a JITLOG build naming the operation that keeps each word
-   out (the plan in the draft), then stencils for them - genes; and the JIT's threshold for code
-   compiled at run time.
+   out - done, Iteration 340: --why. 62.6% of what is left is never tried - the image's words have no JIT
+   header; the gene jitimg designed (results/drafts/next-genes.md): the converter writes the header
+   run-time words get. Then stencils for vf, vs, UM*, UM/MOD and fused branches.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

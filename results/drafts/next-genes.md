@@ -135,3 +135,27 @@ fused variable fetch: WORD, HERE - 5.1%), UM* (* - 1.8%), WRITE, vs (a fused var
 **The genes**: (1) the image's words JIT candidates - translated on their first call as run-time words
 are (or the outer interpreter and its callees at start) - the large lever; (2) stencils for vf, vs,
 UM*, UM/MOD and the fused branches - small ones, each.
+
+## The gene jitimg - the image's words as JIT candidates (designed, Iteration 340)
+
+The JIT's protocol (forth/cv8t-jit.4, JIT.md, Iteration 80): a colon word compiled at run time begins
+[JIT opcode][4 bytes] - the body's length with bit 31 set until its first call; then the engine
+(vm-lab.c: `if (f_ & 0x80000000u) f_ = jit_word(ip - 1, 0);`) translates it and writes back the native
+code's offset, or 0 - it stays bytecode, and each call after falls through to the body. The image's
+words, converted from the dump, have no such header: never candidates. **The converter can write it**
+- the engine needs nothing new.
+
+- **jitimg** (expressed only with jit): 0 none, as now; 1 the outer interpreter - the words jitleft.py
+  measured left (INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK, C,, HERE, CMOVE> ...), a fixed list as
+  opbody's; 2 every code word. The cost: 5 bytes a word given the header (~2 KB at 2) and, for a word
+  the JIT refuses, one more dispatch a call (the header's opcode falls through) - the size objective
+  and the speed weigh it: a gene, not a decision.
+- **tools/layout.py**: for those words new_body_bytes + 5 on every layout path (HL, byte headers,
+  ordinary); the emission of [JIT_CODE][len | 0x80000000, little end first] before the body; mid-word
+  targets (tails) and the call map's W and O lines shifted by 5; the body's xt the header's address
+  (a call lands on the opcode, as a run-time word's does).
+- **Proof**: the JITLOG build's jitleft.py --why with jitimg 1 and 2 - INTERPRET and its callees tried,
+  translated or refused for a named operation; the corpus and kernel through alive(); the speed of
+  kernel and corpus against jitimg 0; and gene-equiv - a new gene, ids unchanged.
+- Then the small ones: stencils for vf, vs, UM*, UM/MOD, 0<?BRANCH8, DUP?BRANCH8, SP@ (jitleft --why's
+  list) - each a jit_ops mapping in the converter's JIT tables and a stencil in the SPN set.
