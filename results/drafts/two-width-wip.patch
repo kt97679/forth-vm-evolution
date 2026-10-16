@@ -156,3 +156,48 @@ index 2973e17..4eb4a1f 100644
      if '--validate' in argv:
          ok = True
          for name, g in HUMAN.items():
+diff --git a/tools/layout.py b/tools/layout.py
+index 6beaabc..a1092ad 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -778,11 +778,16 @@ NT_OLD = cells.get(FW_S0 + CELL, 0) if FW_S0 is not None else 0
+ NT_NEW = int(_opt('--threads')) if '--threads' in ARGV else NT_OLD
+ assert NT_NEW and not (NT_NEW & (NT_NEW - 1)) and NT_NEW <= 4096, '--threads: a power of two up to 4096'
+ 
++# Iteration 337: a body's start is a call's target, and a scaled call (--cpt S) reaches only
++# multiples of 2^S - so bodies align to that, if it is more than a cell: at 4-byte cells with
++# S = 3, half the word starts were unreachable ("call target ... not 8-aligned"). The scale gene's
++# S is 0-3: at 8-byte cells this is the cell, as before.
++CALIGN = max(CELL, 1 << CPT) if CPT else CELL
+ for w in order:
+     if w['s'] in HL:                                 # Iteration 190: the code alone
+         LINKLEN[w['s']] = 0
+         new_off[w['s']] = {'link': off, 'nfa': off}
+-        if not BYTEHDR or body_needs_align(w): off = align_up(off, CELL)
++        if not BYTEHDR or body_needs_align(w): off = align_up(off, CALIGN)
+         new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
+         continue
+     if BYTEHDR:
+@@ -793,7 +798,7 @@ for w in order:
+         LINKLEN[w['s']] = ll
+         new_off[w['s']] = {'link': off}; off += ll
+         new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
+-        if body_needs_align(w): off = align_up(off, CELL)
++        if body_needs_align(w): off = align_up(off, CALIGN)
+         new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
+     else:
+         new_off[w['s']] = {'link': off}
+@@ -1112,8 +1117,12 @@ def new_target_off(target):
+         # A data body is [NOOP pad][call token][parameter field]. The pad
+         # exists only to align the parameter field; a call may land on
+         # the token itself and skip executing the NOOPs.
++        # Iteration 337: ... where a scaled call can reach it - else the body itself, its pad run:
++        # at CPT >= 2 body + CELL - 2 is never reachable (seed 54's one converter death, "call
++        # target 1390 not 8-aligned": 1390 = 6 mod 8)
+         if (SKIPPAD and not DATAPRIMS and kind[target] == 'data'
+-                and info[target] is not None):
++                and info[target] is not None
++                and (CPT is None or (new_off[target]['body'] + CELL - 2) % (1 << CPT) == 0)):
+             return new_off[target]['body'] + CELL - 2
+         return new_off[target]['body']
+     h = [x for x in order if x['s'] < target < x['e']][0]

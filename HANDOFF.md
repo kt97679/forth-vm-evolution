@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 336.
+- master: Iteration 337.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -192,7 +192,9 @@ About 20 minutes of machine time for build, tests and gates.
    results/drafts/two-width-wip.patch, Iteration 336): evolve.py --widths 8,4 runs through - speed32
    on 12 of 20 designs in its first run. Before it is selected on: the converter's "call target not
    8-aligned" (4 of the 8 without speed32 - and seed 54's one death at 8-byte cells, the same
-   assertion: results/drafts/convert-align-death.md), a corpus death at 4-byte cells to bisect; then
+   assertion: results/drafts/convert-align-death.md - fixed in the draft, Iteration 337: word starts
+   aligned to the call scale, SKIPPAD's shortcut only where reachable; mid-word tails left), a corpus
+   death at 4-byte cells to bisect; then
    compare-fronts, seed-facts, the report, NEXT-RUN's word for it.
 0b. The next genes (results/drafts/next-genes.md, Iteration 323): the interpreted designs' levers
    mostly in the genes already (price.py on seed 53's fastest); the JIT designs are the frontier -

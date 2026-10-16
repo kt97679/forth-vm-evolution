@@ -52,3 +52,27 @@ before speed32 is selected on - else the selection pushes away from those encodi
 converter's limit, not the design's. Then: compare-fronts (speed32 on its fronts too), seed-facts,
 the report, next-run.sh's word for it (NEXT-RUN "widths"), the gate at both widths.
 
+## The converter's alignment (Iteration 337 - in the draft patch)
+
+Two faults, both "call target ... not aligned", both scaled calls (--cpt S reaches multiples of 2^S):
+- **Word starts at 4-byte cells**: bodies aligned to CELL (4), S = 3 needs 8 - now CALIGN = max(CELL,
+  2^S): at 8-byte cells (S 0-3) the cell, as before. The second scratch run: those gone.
+- **SKIPPAD's shortcut** (the CPT16 family: a call to a data word lands past its NOOP pad at body +
+  CELL - 2) is unreachable for S >= 2 - **seed 54's converter death** (1390 = 6 mod 8); now only where
+  reachable, else the body itself. a2c8d50d0a (results/drafts/convert-align-death.md) converts and
+  lives. Only designs that died change.
+- **Left**: mid-word targets - DOES> tails, ALIGN_TAILS = 2^S only for S > 1 (layout.py:99); the second
+  scratch run (population 4, seed 99: results/drafts/two-width-scratch-db.jsonl) still had 5 "v8 call
+  target ... not aligned" and 1 CPT16 one, and 1 corpus death, at 4-byte cells. The designs:
+
+    a9a65d6057 enc cell scale None tag2 None - died: corpus
+    d113518703 enc cpt16 scale 3 tag2 None - died: image did not convert (AssertionError: call target 9780 not 8-al
+    18a2c3e300 enc cv8 scale 3 tag2 None - died: image did not convert (AssertionError: v8 call target 8492 not a
+    31f61139fa enc cv8 scale 3 tag2 None - died: image did not convert (AssertionError: v8 call target 8076 not a
+    8f9272d24b enc cv8 scale 3 tag2 None - died: image did not convert (AssertionError: v8 call target 8452 not a
+    b0aa079d67 enc cv8 scale 3 tag2 None - died: image did not convert (AssertionError: v8 call target 916 not al
+    3cfd650b67 enc cv8 scale 3 tag2 None - died: image did not convert (AssertionError: v8 call target 8492 not a
+
+  To check: their S - if 1, tails need aligning at 4-byte cells too (at 8 not, to keep the 64-bit
+  images); then bisect the corpus death.
+

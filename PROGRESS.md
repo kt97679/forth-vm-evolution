@@ -6500,3 +6500,15 @@ all alive at 64 bits, 12 with speed32. The other 8 say what the 32-bit measureme
 converter assertions ("call target ... not 8-aligned") - the one that killed a design of seed 54's
 at 8-byte cells, far more often at 4 - and a corpus death at 4-byte cells. Faults to fix before the
 selection leans on speed32, or it would steer away from call encodings for the converter's sake.
+
+## Iteration 337 - 2026-10-16 - Claude
+
+**The converter's call alignment, two of its faults fixed (in results/drafts/two-width-wip.patch).**
+Both "call target ... not aligned" assertions are scaled calls (--cpt S reaching multiples of 2^S).
+Word starts: bodies aligned to the cell, 4 at 4-byte cells, where S = 3 wants 8 - now aligned to
+max(cell, 2^S), the same at 8-byte cells. SKIPPAD's shortcut (the CPT16 family's call landing past a
+data word's pad, body + CELL - 2) is never reachable for S >= 2: that was seed 54's one converter
+death (1390 = 6 mod 8) - now taken only where reachable; that design converts and lives. The second
+two-width scratch run: 13 of 20 with speed32; left, 5 mid-word targets (DOES> tails, aligned only for
+S > 1) and a CPT16 one, and the corpus death at 4-byte cells. Next: their S, then the tails, then the
+corpus death's bisect.
