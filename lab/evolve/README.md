@@ -56,6 +56,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gene-equiv.py` - the evolver's genes behave as they did at an earlier commit: ids, expressions, seeded mutations, draws and crossovers (Iteration 276)
 - `gene-table-test.py` - a new gene is one row: a fictional gene works with no code change (Iteration 276)
 - `hotwords.py` - hotwords.py ID [ID ...] [--db FILE ...] [--write FILE] - every word's share
+- `jitleft.py` - what the JIT leaves to the interpreter (Iteration 339): each JIT design profiled with the JIT off and on - the dispatches left, by workload, and the words that carry them
 - `image-ab.py` - image-ab.py ID [ID ...] --env VAR=VALUE [--set GENE=VALUE] [--db FILE] [--rounds N] - a
 - `jitstack-inner-sweep.sh` - jitstack-inner-sweep.sh - lab/evolve/jitstack-inner.{c,S} with every loop head
 - `jitstack.py` - jitstack.py ID [ID ...] [--db FILE ...] [--works fib,loop,...] - stack state in

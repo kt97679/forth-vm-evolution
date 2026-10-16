@@ -33,3 +33,46 @@ JIT design with the profiler (as hotwords.py, the JIT on): the dispatches left a
 the JIT did not translate; by word, and for each hot word the operation that kept it out. New
 stencils for those operations are genes. And bfind's effect on the laptop's predictor (missmap,
 a design with and without it) can be a chain's first measurement.
+
+## What the JIT leaves to the interpreter (Iteration 339) - lab/evolve/jitleft.py
+
+Seed 55's two fastest JIT designs (c549c0677c, c708e864b7) profiled with the JIT off and on, on this
+VM. Both alike:
+
+### c549c0677c
+
+| workload | dispatches, JIT off | left by the JIT | left |
+|---|---|---|---|
+| kernel | 2,032,355 | 1,136,217 | 55.9% |
+| fib | 59,245,391 | 9,767 | 0.0% |
+| corpus | 3,714,212 | 3,703,940 | 99.7% |
+| loop | 20,033,411 | 9,566 | 0.0% |
+| bubble | 7,131,570 | 148,624 | 2.1% |
+| ackermann | 17,557,699 | 17,136 | 0.1% |
+
+What is left, by word (the mean share over the workloads), beside the word's share of the JIT-off work:
+
+- (compiled at run time)    21.0% of what is left;  67.3% of the work, JIT off
+- INTERPRET                 15.0% of what is left;   5.2% of the work, JIT off
+- PARSE-WORD                 8.8% of what is left;   2.7% of the work, JIT off
+- COLD                       7.5% of what is left;   0.0% of the work, JIT off
+- ?STACK                     3.5% of what is left;   1.5% of the work, JIT off
+- REFILL                     3.5% of what is left;   0.7% of the work, JIT off
+- C,                         2.3% of what is left;   0.5% of the work, JIT off
+- WORD                       2.1% of what is left;   1.1% of the work, JIT off
+- HERE                       1.8% of what is left;   0.6% of the work, JIT off
+- CMOVE>                     1.8% of what is left;   0.6% of the work, JIT off
+- *                          1.8% of what is left;   0.2% of the work, JIT off
+- SUPER-OP                   1.7% of what is left;   0.6% of the work, JIT off
+
+
+**The reading**: fib, loop and ackermann are translated whole (0.0-0.1% left), bubble nearly
+(2%); **kernel is 56% interpreted and corpus 99.7%**. The benchmarks' own words are compiled at run
+time and translated (fib, loop) - so the corpus's run-time words, run once or a few times each, stay
+under whatever makes the JIT translate. What carries the rest: the outer interpreter - INTERPRET
+(15% of what is left), PARSE-WORD (8.8%), REFILL, WORD, ?STACK - and compiling words (C, HERE).
+
+**Two genes to look for**: (1) the outer interpreter translatable - which operation in INTERPRET,
+PARSE-WORD, WORD, REFILL has no stencil (next: the blockers, word by word); (2) when the JIT
+translates code compiled at run time - its threshold, for compile-and-run-once work. With selection
+at both widths, (1) counts twice: a JIT design's interpreter is its 32-bit speed.

@@ -6524,3 +6524,14 @@ refused it before printing a byte. Then 20 of 20 designs with speed32. NEXT-RUN'
 report's 32-bit column and seed-facts' lines from the data; compare-fronts still at 64 bits. 64 bits
 unchanged: six designs byte-identical, gene-equiv PASS over 4,096 genomes, run-tests, validate 7 of
 7, the gate on seed 55's front.
+
+## Iteration 339 - 2026-10-16 - Claude
+
+**What the JIT leaves to the interpreter - lab/evolve/jitleft.py, and the next genes' direction.**
+Each JIT design profiled with the JIT off (all its dispatches) and on (what the JIT left: translated
+words dispatch nothing). Seed 55's two fastest: fib, loop and ackermann translated whole, bubble 98%;
+**kernel 56% interpreted, corpus 99.7%**. The benchmarks' run-time words are translated (fib, loop),
+so the corpus's - each run once or a few times - stay below what makes the JIT translate. The rest
+is the outer interpreter: INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK. Two genes to look for: the
+outer interpreter made translatable (which operation keeps each out - next), and when the JIT
+translates code compiled at run time (results/drafts/next-genes.md).
