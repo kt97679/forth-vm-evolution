@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 320.
+- master: Iteration 321.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -55,7 +55,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **Seed 53 processed** (Iteration 320): small (+0.3%), the first chain through the new runner -
   done, one archive. No corpus deaths; bfind on 17 of 172; heldout 0.948. The remote checks:
   dream.lan Spearman 0.959 (results/xcheck-dream-seed53.md); rage.lan failed - build-stages.sh
-  (open item 0). NEXT-RUN: seed 54, the same genes, 3 hours.
+  (open item 0). NEXT-RUN: seed 54, the same genes, 9 hours (the owner, Iteration 321), the
+  comparison at 6 rounds.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).

@@ -447,10 +447,10 @@ Three right, one wrong, one half.
 
 ## Seed 54, predicted (Iteration 320)
 
-The same genes as seed 53, 3 hours again.
+The same genes as seed 53 - 9 hours, the owner's (Iteration 321), the comparison at 6 rounds.
 
 1. Small - with seed 53's, two small in a row: the stopping rule's end of this gene set.
-2. bfind on more of the front than seed 53's 17.
+2. bfind on more of the front than seed 53's 17 - seven hours of evolution, not 80 minutes.
 3. No corpus deaths.
 4. dream's Spearman, if it runs again, between 0.93 and 0.98.
 5. Crossover 30-38%.

@@ -6299,3 +6299,12 @@ designs' lead smaller there - 0.128 of s6's time on the laptop, 0.223 on dream. 
 build-stages.sh compiles a stage with the gene sysc, x86-64's system calls, which relf.c refuses
 on ARM - my plan assumed the stages built everywhere (HANDOFF item 0). NEXT-RUN: seed 54, the
 same genes, 3 hours.
+
+## Iteration 321 - 2026-10-16 - Claude
+
+**Seed 54 for 9 hours (the owner).** The comparison back to 6 rounds - with 9 hours there is
+room: the reserve from seed 53's phases (the re-measure 16 min, the comparison 44 min at 3
+rounds, scaled to 6) about 2 hours, so the evolution about 7 - against seed 53's 80 minutes.
+Seed 52's comparison at 6 rounds took 1 h 53 min, more than that scaling says: the chain may run
+past 9 hours by some minutes. rage.lan's check is left failing (recorded, harmless) until item 0
+is fixed properly - its sample must leave out designs with sysc too, not only its stages.
