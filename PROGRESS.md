@@ -6319,3 +6319,13 @@ is the host's pointer width. My REMOTES plan ("native, no JIT") missed it, as di
 that chose rage. REMOTES keeps rage's line commented with the reason; another architecture wants
 a 64-bit host (aarch64: native, --no-jit). A configuration change: on master, read by the next
 chain.
+
+## Iteration 323 - 2026-10-16 - Claude
+
+**Where the dispatches go now - the search for the next genes begun (results/drafts/
+next-genes.md).** price.py on seed 53's three fastest interpreted designs: calls and returns
+the largest share of dispatches (21-37% outside loop), but folds, tail, hotinl, factor, opinline
+and rtempty are their genes already; more pairs priced at 8-21% but measured before at 0.2-2.4%
+(their overlap, the slots); triples negligible. My idea of fusing returns was folds, which
+exists. The frontier is the JIT's: a word it cannot translate whole stays interpreted, and no
+tool counts what that leaves - jitleft.py is next. rage.lan out of REMOTES earlier this turn.
