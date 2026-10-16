@@ -6459,3 +6459,17 @@ is 27th on sieve. dream.lan: Spearman 0.941, the laptop's six fastest 3 4 2 10 1
 five of five. Then the after-seed-54 batch applied - run-tests, validate 7 of 7, the gate 259 of 259
 on seed 54's own front. Seed 55 (the owner: 6 hours) runs the same genes a third time, for the
 checks: the laptop, dream.lan at 64 and at 32 bits, and the Tegra - all four, for the first time.
+
+## Iteration 334 - 2026-10-16 - Claude
+
+**Seed 55 processed - small, the third of these genes - and the first checks at both widths: the
+skew the owner feared, measured.** dream.lan at 64 bits agrees with the laptop at Spearman 0.940;
+at 32-bit x86 with 4-byte cells (the laptop's static builds of 24 interpreted designs), 0.694, the
+laptop's six fastest 8th to 13th there. The slow designs keep their place; the fast ones lose about
+half their lead over s6 (one: 0.368 of s6's time on the laptop, 0.700 there). It mixes machine and
+width - the two samples shared only 8 designs, nearly all slow and within 5% of each other, their
+ranks noise - so the next check takes the 64-bit sample from the 32-bit one's pool. The Tegra failed
+again: build-stages.sh compiles four hand-made engines the 32-bit work had not ported (pack4.c
+first); ported now - each compiles for ARM with build-stages' flags, the 16 64-bit binaries are
+identical, run-tests and validate pass - pending as the after-seed-55 batch. bfind on 80 of 168,
+heldout 0.959, predictions four of five (the Tegra's). NEXT-RUN: none - the stopping rule.

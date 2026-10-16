@@ -476,3 +476,13 @@ first with dream.lan's 32-bit x86 check and the Tegra back (the after-seed-54 ba
 4. dream.lan 32-bit x86: Spearman with the laptop below dream's 64-bit one - skew toward 64-bit.
 5. The Tegra: at least 6 of its 12 designs measured, its Spearman below the 32-bit x86 one's.
 
+## Seed 55, scored (Iteration 334)
+
+1. Small - **right**: +0.4%; the third small run of these genes.
+2. bfind on at least 60 of the front - **right**: 80 of 168.
+3. dream.lan 64-bit Spearman 0.92-0.98 - **right**: 0.940.
+4. dream.lan 32-bit x86 Spearman below the 64-bit one's - **right**: 0.694 - by far.
+5. The Tegra: at least 6 of 12 measured - **wrong**: its build-stages.sh failed (four engines unported).
+
+Four of five.
+
