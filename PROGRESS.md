@@ -6771,3 +6771,16 @@ branch, which rewinds a just-compiled 0= as PEEP-VAR rewinds a call. relf-ab.sh:
 test passes (both engines and widths, images reproducing, the shell suites). relf-pairs.py on the
 patched shell: 385,963 runs of the new opcode, 2.10 % fewer dispatches. Its time, about 1 %, is under
 this VM's noise - the laptop's to measure.
+
+## Iteration 361 - 2026-10-17 - Claude
+
+**The second patch for relf: `var @ +` as one opcode - and what the dispatch count caught that the
+test suite could not.** VAR@+ (spec 0x71, a slot operand): the variable added to the top of the stack;
+kernel.4's peephole rewrites a just-compiled VAR@'s opcode byte in place when + follows it, nothing
+between (NO-PEEP forgets the VAR@, as a branch landing there must). The first version passed relf's
+whole suite, but its count came out 336,000 dispatches above the fusions' arithmetic: 167,966 more
+calls and as many EXITs. kernel.4's inliner knows its slot opcodes by number (100, 101) and so had
+stopped inlining every small word that now held VAR@+. Taught the new opcode, the inliner made calls
+fewer than before (40,428 fewer): words shortened by the fusion now fit its limits. Both patches:
+relf's whole make test passes; the realistic script 4.74 % fewer dispatches (the arithmetic exact to
+48); this VM leaning faster, fn's ratio 0.933 with its interval below 1 - the laptop to confirm.

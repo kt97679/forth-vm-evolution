@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 360.
+- master: Iteration 361.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -79,6 +79,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   budget (359): VAR@ VAR@, VAR@ +, 0= ?BRANCH net ~9.4 % of dispatches for the coldest three slots.
   **The first patch for relf** (360, results/relf-patches/zeq-qbranch.patch): 0= ?BRANCH fused - relf's
   whole make test passes, 2.10 % fewer dispatches; its time for the laptop: tools/relf-ab.sh there.
+  The second (361, var-fetch-plus.patch): `var @ +` fused, the inliner taught it; both pass, 4.74 % fewer
+  dispatches; this VM leaning faster (fn 0.933). Both for the laptop to time.
 - **Seed 57 next** (the owner, Iteration 355: one 12-hour run, not two of 6 - each run's fixed part
   with two widths about 3 h 40 min): the first run selecting at both widths, with jitimg and jitvar;
   the comparison at both widths. The reserve knows --widths now (164 min; the evolution ~8 h 20 min).

@@ -55,7 +55,12 @@ compiler's constants and inlining for the kernel's own words.
    **Iteration 360, the first: `0= ?BRANCH`** (results/relf-patches/): one opcode 0=?BRANCH, fused by
    kernel.4's IF and WHILE - **relf's whole make test passes**; the realistic script **2.10 % fewer
    dispatches**; its time within this VM's noise - for the laptop (`sh tools/relf-ab.sh -r 30 -s 4
-   results/relf-patches/zeq-qbranch.patch`). Next: VAR@ + and VAR@ VAR@; UNTIL's branch.
+   results/relf-patches/zeq-qbranch.patch`). **Iteration 361, the second: `var @ +`** (VAR@+, its opcode
+   rewritten in place by kernel.4's peephole; the inliner taught it - a first version lost the inlining
+   of small words that held it, 167,966 calls, caught only by the count): both patches pass relf's whole
+   make test; **4.74 % fewer dispatches** on the realistic script; this VM leaning faster (fn 0.933, its
+   interval below 1) - the laptop to confirm. Next: VAR@ VAR@ (a two-slot format the image tools must
+   learn); UNTIL's branch.
 4. Classify this lab's genes by what relf would pay to adopt one (C engine only; image format;
    kernel words; x86-only) - a relf profile for the search; and relf's shell workloads in it.
 5. This lab's 32-bit engines built -fno-pie -no-pie, as relf's are (its two-width measurements

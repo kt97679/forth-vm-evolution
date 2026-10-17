@@ -1,0 +1,113 @@
+diff -ruN rq0/engine/cv8.c rq/engine/cv8.c
+--- a/engine/cv8.c	2026-10-17 16:40:28.564445917 +0000
++++ b/engine/cv8.c	2026-10-17 16:40:28.577952726 +0000
+@@ -932,6 +932,7 @@
+ L_lit1: PUSHT(1); NEXT();
+ L_litm1: PUSHT(~(UNS64)0); NEXT();
+ L_vf: { UNS64 a = SLOT(); PUSHT(CELL(a)); } NEXT();
++L_vfplus: { UNS64 a = SLOT(); tos += CELL(a); } NEXT();  /* `var @ +` as one (forth-vm-evolution, for relf's ledger 716) */
+ L_vs: { UNS64 a = SLOT(); CELL(a) = tos; POPT(); } NEXT();
+ L_lsave: { UNS64 a = SLOT();
+     if (lsave_sp >= LSAVE_MAX) { VMPUSH(1); goto locals_failed; }
+diff -ruN rq0/engine/opcodes.tab rq/engine/opcodes.tab
+--- a/engine/opcodes.tab	2026-10-17 16:40:28.564664118 +0000
++++ b/engine/opcodes.tab	2026-10-17 16:40:28.578138483 +0000
+@@ -78,6 +78,7 @@
+ tiny      0x6E    >           L_sgt           -
+ tiny      0x6F    2DUP        L_2dup          -
+ tiny      0x70    2DROP       L_2drop         -
++spec      0x71    VAR@+       L_vfplus        slot
+ tiny      0x72    1+          L_onep          -
+ tiny      0x73    CELL+       L_cellp         -
+ tiny      0x74    CELLS       L_cells         -
+diff -ruN rq0/engine/relfasm64.4 rq/engine/relfasm64.4
+--- a/engine/relfasm64.4	2026-10-17 16:40:28.564867623 +0000
++++ b/engine/relfasm64.4	2026-10-17 16:40:28.578308694 +0000
+@@ -6,7 +6,7 @@
+ \ asm:fixpoint). The tables are relfasm-ops.4, from opcodes.tab.
+ S" forth/extend.4" INCLUDED  S" forth/asm64.4" INCLUDED
+ ALSO ASSEMBLER
+-LABEL L_0branch LABEL L_zeq0branch LABEL L_0branch8 LABEL L_2drop LABEL L_2dup LABEL L_access LABEL L_addi
++LABEL L_0branch LABEL L_zeq0branch LABEL L_vfplus LABEL L_0branch8 LABEL L_2drop LABEL L_2dup LABEL L_access LABEL L_addi
+ LABEL wild_jump LABEL L_allocate LABEL L_and LABEL L_atxt LABEL L_badesc LABEL L_badop LABEL L_branch
+ LABEL L_branch8 LABEL L_bye LABEL L_cellp LABEL L_cells LABEL L_cfetch LABEL L_chdir
+ LABEL L_chmod LABEL L_closedir LABEL L_closefile LABEL L_compare LABEL L_count LABEL L_cputimes
+@@ -761,6 +761,10 @@
+ rax [ rdx ] mov,
+ rax PUSHT,
+ NEXT,
++\ `var @ +` as one (forth-vm-evolution, for relf's ledger 716): the variable added to the top
++L_vfplus L:  SLOT,
++r12 [ rdx ] add,
++NEXT,
+ L_vs L:  SLOT,
+ [ rdx ] r12 mov,
+ POPT,
+diff -ruN rq0/forth/kernel.4 rq/forth/kernel.4
+--- a/forth/kernel.4	2026-10-17 16:40:28.565126223 +0000
++++ b/forth/kernel.4	2026-10-17 16:40:28.591610399 +0000
+@@ -1389,6 +1389,10 @@
+ \ Where the last literal starts, or 0...
+ VARIABLE LAST-LITV ( --- a-addr )
+ \ ...and its value.
++VARIABLE LAST-VF ( --- a-addr )
++\ Where the last VAR@ starts, or 0 - VAR@+'s (forth-vm-evolution, for relf's ledger 716)...
++VARIABLE LAST-VF-END ( --- a-addr )
++\ ...and where its slot ends.
+ VARIABLE LAST-CALL ( --- a-addr )
+ \ Where the last call starts, or 0...
+ VARIABLE LAST-CALLXT ( --- a-addr )
+@@ -1403,7 +1407,7 @@
+ \ not one of the halves, calls NO-PEEP. `;` folds a final operation and
+ \ its EXIT into one opcode under the same rule.
+ : NO-PEEP ( --- )
+-  0 LAST-OP ! 0 LAST-LIT ! 0 LAST-CALL ! ;
++  0 LAST-OP ! 0 LAST-LIT ! 0 LAST-CALL ! 0 LAST-VF ! ;
+ 
+ : REWIND ( a-addr --- )
+ \ Discard everything compiled from a-addr to HERE.
+@@ -1497,7 +1501,17 @@
+   DUP [OP] @ = IF DROP 100 ELSE
+   [OP] ! = IF 101 ELSE 0 EXIT THEN THEN
+   LAST-CALL @ REWIND LAST-CALLXT @ >R NO-PEEP
+-  OP, R> 4 + ALIGNED SLOT, -1 ;   \ >BODY, which is defined later
++  DUP 100 = IF HERE LAST-VF ! THEN
++  OP, R> 4 + ALIGNED SLOT, HERE LAST-VF-END ! -1 ;   \ >BODY, which is defined later
++
++: PEEP-VFPLUS ( op --- f )
++\ `var @ +`: a + right after a VAR@ - nothing between, no branch landing there (NO-PEEP forgets
++\ the VAR@) - becomes VAR@+ (113): the VAR@'s opcode rewritten in place, its slot kept, a slot being
++\ an offset from itself (forth-vm-evolution, for relf's ledger 716).
++  [OP] + = 0= IF 0 EXIT THEN
++  LAST-VF @ 0= IF 0 EXIT THEN
++  LAST-VF-END @ HERE = 0= IF 0 EXIT THEN
++  113 LAST-VF @ C! NO-PEEP -1 ;
+ 
+ : DOES-FETCH? ( xt --- f )
+ \ Is xt a `CREATE ... DOES> @ ;` word - a buffer from pool.4's BUFFER:,
+@@ -1544,7 +1558,7 @@
+   DUP 26 = IF DROP 5 + EXIT THEN                     \ LIT32
+   DUP 125 = IF DROP 9 + EXIT THEN                    \ LIT64
+   DUP 29 = OVER 121 = OR OVER 123 = OR IF DROP 2 + EXIT THEN   \ LIT8 ADDI EQI
+-  DUP 100 = OVER 101 = OR IF                         \ VAR@ VAR!: a slot of two bytes, or three
++  DUP 100 = OVER 101 = OR OVER 113 = OR IF           \ VAR@ VAR! VAR@+: a slot of two bytes, or three
+     DROP DUP 1+ C@ 128 AND IF 4 ELSE 3 THEN + EXIT THEN
+   DUP 126 = IF                                       \ ESC: any selector but RP@ and RP!
+     DROP DUP 1+ C@ DUP 72 = SWAP 73 = OR IF DROP 0 ELSE 2 + THEN EXIT THEN
+@@ -1585,7 +1599,7 @@
+   OVER + SWAP
+   BEGIN 2DUP SWAP U< WHILE
+     DUP INL-OP
+-    OVER C@ DUP 100 = SWAP 101 = OR IF
++    OVER C@ DUP 100 = OVER 101 = OR SWAP 113 = OR IF   \ VAR@+ too (forth-vm-evolution): a slot, re-aimed
+       OVER C@ C,  OVER 1+ SLOT@ SLOT,
+     ELSE
+       2DUP SWAP - >R  OVER HERE R@ MOVE  R> ALLOT
+@@ -1604,6 +1618,7 @@
+     ELSE
+       C@ DUP PEEP-IMM IF DROP EXIT THEN
+       DUP PEEP-VAR IF DROP EXIT THEN
++      DUP PEEP-VFPLUS IF DROP EXIT THEN
+       NO-PEEP HERE LAST-OP ! OP,
+     THEN
+   ELSE
