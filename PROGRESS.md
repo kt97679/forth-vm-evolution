@@ -6784,3 +6784,16 @@ stopped inlining every small word that now held VAR@+. Taught the new opcode, th
 fewer than before (40,428 fewer): words shortened by the fusion now fit its limits. Both patches:
 relf's whole make test passes; the realistic script 4.74 % fewer dispatches (the arithmetic exact to
 48); this VM leaning faster, fn's ratio 0.933 with its interval below 1 - the laptop to confirm.
+
+## Iteration 362 - 2026-10-17 - Claude
+
+**The third patch for relf: `a @ b @` as one opcode - 6.41 % fewer dispatches with all three.** 2VAR@
+carries two slots, a new operand format that relf's image tools (image-audit.py, superinst.py,
+opcodes.py) and its inliner had to learn - the lesson of VAR@+ applied first. Its first version passed
+relf's whole suite and never fired: CALL, begins with NO-PEEP, which since VAR@+ also forgot the last
+VAR@, so compiling the call to b erased the first fetch before @ arrived. CALL, now keeps it; a real
+call moves HERE past it, a branch target still clears it. Then: 2VAR@ about 329,000 times, VAR@+ a
+little less (some `a @ b @ +` now 2VAR@ +, no loss), and calls fewer again - the realistic script
+18,401,921 dispatches to 17,221,555, the arithmetic exact to 23. relf's whole make test passes; this VM
+times realistic at 0.944 and arith at 0.947, both intervals below 1. Passing tests show a fusion safe;
+only the count shows it happens. All three now the laptop's to time.

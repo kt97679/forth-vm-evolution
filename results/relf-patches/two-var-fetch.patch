@@ -1,0 +1,155 @@
+diff -ruN rq0/engine/cv8.c rq/engine/cv8.c
+--- a/engine/cv8.c	2026-10-17 16:50:57.096132477 +0000
++++ b/engine/cv8.c	2026-10-17 17:01:52.001907011 +0000
+@@ -933,6 +933,7 @@
+ L_litm1: PUSHT(~(UNS64)0); NEXT();
+ L_vf: { UNS64 a = SLOT(); PUSHT(CELL(a)); } NEXT();
+ L_vfplus: { UNS64 a = SLOT(); tos += CELL(a); } NEXT();  /* `var @ +` as one (forth-vm-evolution, for relf's ledger 716) */
++L_2vf: { UNS64 a = SLOT(); PUSHT(CELL(a)); a = SLOT(); PUSHT(CELL(a)); } NEXT();  /* `a @ b @` as one: two slots (forth-vm-evolution, for relf's ledger 716) */
+ L_vs: { UNS64 a = SLOT(); CELL(a) = tos; POPT(); } NEXT();
+ L_lsave: { UNS64 a = SLOT();
+     if (lsave_sp >= LSAVE_MAX) { VMPUSH(1); goto locals_failed; }
+diff -ruN rq0/engine/opcodes.tab rq/engine/opcodes.tab
+--- a/engine/opcodes.tab	2026-10-17 16:50:57.096099095 +0000
++++ b/engine/opcodes.tab	2026-10-17 16:50:57.251705432 +0000
+@@ -83,6 +83,7 @@
+ tiny      0x73    CELL+       L_cellp         -
+ tiny      0x74    CELLS       L_cells         -
+ tiny      0x75    1-          L_onem          -
++spec      0x76    2VAR@       L_2vf           slot2
+ tiny      0x77    COUNT       L_count         -
+ spec      0x79    ADDI        L_addi          i8
+ spec      0x7B    EQI         L_eqi           i8
+diff -ruN rq0/engine/relfasm64.4 rq/engine/relfasm64.4
+--- a/engine/relfasm64.4	2026-10-17 16:50:57.096006814 +0000
++++ b/engine/relfasm64.4	2026-10-17 16:50:57.253544525 +0000
+@@ -6,7 +6,7 @@
+ \ asm:fixpoint). The tables are relfasm-ops.4, from opcodes.tab.
+ S" forth/extend.4" INCLUDED  S" forth/asm64.4" INCLUDED
+ ALSO ASSEMBLER
+-LABEL L_0branch LABEL L_zeq0branch LABEL L_vfplus LABEL L_0branch8 LABEL L_2drop LABEL L_2dup LABEL L_access LABEL L_addi
++LABEL L_0branch LABEL L_zeq0branch LABEL L_vfplus LABEL L_2vf LABEL L_0branch8 LABEL L_2drop LABEL L_2dup LABEL L_access LABEL L_addi
+ LABEL wild_jump LABEL L_allocate LABEL L_and LABEL L_atxt LABEL L_badesc LABEL L_badop LABEL L_branch
+ LABEL L_branch8 LABEL L_bye LABEL L_cellp LABEL L_cells LABEL L_cfetch LABEL L_chdir
+ LABEL L_chmod LABEL L_closedir LABEL L_closefile LABEL L_compare LABEL L_count LABEL L_cputimes
+@@ -765,6 +765,14 @@
+ L_vfplus L:  SLOT,
+ r12 [ rdx ] add,
+ NEXT,
++\ `a @ b @` as one (forth-vm-evolution, for relf's ledger 716): two slots, two pushes
++L_2vf L:  SLOT,
++rax [ rdx ] mov,
++rax PUSHT,
++SLOT,
++rax [ rdx ] mov,
++rax PUSHT,
++NEXT,
+ L_vs L:  SLOT,
+ [ rdx ] r12 mov,
+ POPT,
+diff -ruN rq0/forth/kernel.4 rq/forth/kernel.4
+--- a/forth/kernel.4	2026-10-17 16:50:57.096498025 +0000
++++ b/forth/kernel.4	2026-10-17 16:56:30.866992800 +0000
+@@ -1479,7 +1479,8 @@
+ \ A call to the body at a-addr: its offset from the image base, two
+ \ bytes if it fits 14 bits, else three. The call scale is 0, because
+ \ bodies are not aligned (CV8.md 2.4).
+-  NO-PEEP HERE LAST-CALL ! DUP LAST-CALLXT !
++  LAST-VF @ NO-PEEP LAST-VF !   \ a VAR@ just before is kept: `a @ b @` - PEEP-VAR rewinds this call (forth-vm-evolution)
++  HERE LAST-CALL ! DUP LAST-CALLXT !
+   START @ -
+   DUP 16384 < IF DUP 8 RSHIFT 128 OR C, 255 AND C,
+   ELSE DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C, THEN ;
+@@ -1500,8 +1501,12 @@
+   LAST-CALLXT @ C@ DOVAR-TOK = 0= IF DROP 0 EXIT THEN
+   DUP [OP] @ = IF DROP 100 ELSE
+   [OP] ! = IF 101 ELSE 0 EXIT THEN THEN
+-  LAST-CALL @ REWIND LAST-CALLXT @ >R NO-PEEP
+-  DUP 100 = IF HERE LAST-VF ! THEN
++  LAST-CALL @ REWIND LAST-CALLXT @ >R
++  LAST-VF @ DUP IF LAST-VF-END @ HERE = 0= IF DROP 0 THEN THEN   \ a VAR@ ending right here, or 0
++  NO-PEEP
++  OVER 100 = OVER AND IF        \ `a @ b @`: the first VAR@ becomes 2VAR@ (118), the second's slot after
++    118 SWAP C! DROP R> 4 + ALIGNED SLOT, -1 EXIT THEN     \ its own (forth-vm-evolution); no VAR@+ after
++  DROP DUP 100 = IF HERE LAST-VF ! THEN
+   OP, R> 4 + ALIGNED SLOT, HERE LAST-VF-END ! -1 ;   \ >BODY, which is defined later
+ 
+ : PEEP-VFPLUS ( op --- f )
+@@ -1558,6 +1563,8 @@
+   DUP 26 = IF DROP 5 + EXIT THEN                     \ LIT32
+   DUP 125 = IF DROP 9 + EXIT THEN                    \ LIT64
+   DUP 29 = OVER 121 = OR OVER 123 = OR IF DROP 2 + EXIT THEN   \ LIT8 ADDI EQI
++  DUP 118 = IF                                       \ 2VAR@: two slots, each of two bytes or three
++    DROP DUP 1+ DUP C@ 128 AND IF 3 ELSE 2 THEN + DUP C@ 128 AND IF 3 ELSE 2 THEN + SWAP DROP EXIT THEN
+   DUP 100 = OVER 101 = OR OVER 113 = OR IF           \ VAR@ VAR! VAR@+: a slot of two bytes, or three
+     DROP DUP 1+ C@ 128 AND IF 4 ELSE 3 THEN + EXIT THEN
+   DUP 126 = IF                                       \ ESC: any selector but RP@ and RP!
+@@ -1599,11 +1606,13 @@
+   OVER + SWAP
+   BEGIN 2DUP SWAP U< WHILE
+     DUP INL-OP
+-    OVER C@ DUP 100 = OVER 101 = OR SWAP 113 = OR IF   \ VAR@+ too (forth-vm-evolution): a slot, re-aimed
++    OVER C@ 118 = IF                                   \ 2VAR@ (forth-vm-evolution): both slots re-aimed
++      OVER C@ C,  OVER 1+ SLOT@ SLOT,  OVER 1+ DUP C@ 128 AND IF 3 ELSE 2 THEN + SLOT@ SLOT,
++    ELSE OVER C@ DUP 100 = OVER 101 = OR SWAP 113 = OR IF   \ VAR@+ too (forth-vm-evolution): a slot, re-aimed
+       OVER C@ C,  OVER 1+ SLOT@ SLOT,
+     ELSE
+       2DUP SWAP - >R  OVER HERE R@ MOVE  R> ALLOT
+-    THEN
++    THEN THEN
+     SWAP DROP
+   REPEAT 2DROP ;
+ 
+diff -ruN rq0/tools/image-audit.py rq/tools/image-audit.py
+--- a/tools/image-audit.py	2026-10-17 16:50:57.152255101 +0000
++++ b/tools/image-audit.py	2026-10-17 16:50:57.255198824 +0000
+@@ -54,7 +54,7 @@
+ FMT = _opcodes.formats()
+ LITOP, NOOPOP, ESCOP = _opcodes.number('LIT'), _opcodes.number('NOOP'), _opcodes.number('ESC')
+ # the opcodes with a variable-slot operand, from opcodes.tab
+-SLOTOPS = {n for n, f in _opcodes.formats().items() if f == 'slot'}
++SLOTOPS = {n for n, f in _opcodes.formats().items() if f in ('slot', 'slot2')}
+ CALLS=[]; SLOTS=[]; S = collections.Counter(); hist = collections.defaultdict(list)
+ OPS = collections.Counter(); ESCS = collections.Counter()
+ def s16(v): return v - 65536 if v >= 32768 else v
+@@ -91,6 +91,16 @@
+         elif f == 'u64': S['LIT64'] += 1; ip += 9; continue
+         elif f == 'i8': ip += 2
+         elif f == 'sel': ip += 2; S['ESC'] += 1; continue
++        elif f == 'slot2':                                 # two slots, each from itself: 2VAR@ (forth-vm-evolution)
++            p = ip + 1
++            for _k in range(2):
++                if img[p] & 0x80:
++                    v = ((img[p] & 0x7F) << 16) | img[p+1] << 8 | img[p+2]; v = (v ^ 0x400000) - 0x400000
++                    S['slot far'] += 1; SLOTS.append((ip, p+3, p + v)); p += 3
++                else:
++                    v = (img[p] << 8) | img[p+1]; v = (v ^ 0x4000) - 0x4000
++                    S['slot near'] += 1; SLOTS.append((ip, p+2, p + v)); p += 2
++            ip = p
+         elif f == 'slot':
+             if img[ip+1] & 0x80:
+                 v = ((img[ip+1] & 0x7F) << 16) | img[ip+2] << 8 | img[ip+3]
+diff -ruN rq0/tools/opcodes.py rq/tools/opcodes.py
+--- a/tools/opcodes.py	2026-10-17 16:50:57.154088370 +0000
++++ b/tools/opcodes.py	2026-10-17 16:50:57.255386046 +0000
+@@ -38,7 +38,7 @@
+ def formats(path=None):
+     """opcode number -> the operand after it: the table's fifth column
+     (Iteration 533) - '-', 'u8', 'i8', 'u16', 'i32', 'u64', 'b8', 'b16',
+-    'slot', 'sel' or 'data'. Escape selectors are not opcodes, and have
++    'slot', 'slot2' (two slots: 2VAR@), 'sel' or 'data'. Escape selectors are not opcodes, and have
+     no entry."""
+     out = {}
+     for line in open(path or os.path.join(ROOT, 'engine/opcodes.tab')):
+diff -ruN rq0/tools/superinst.py rq/tools/superinst.py
+--- a/tools/superinst.py	2026-10-17 16:50:57.154724973 +0000
++++ b/tools/superinst.py	2026-10-17 16:50:57.255303084 +0000
+@@ -125,6 +125,8 @@
+             key = 'ESC:' + escname.get(img[ip + 1], '?'); ip += 2
+         elif f == 'slot':
+             ip += 4 if img[ip + 1] & 0x80 else 3
++        elif f == 'slot2':                       # 2VAR@ (forth-vm-evolution): two slots
++            p = ip + 1; p += 3 if img[p] & 0x80 else 2; p += 3 if img[p] & 0x80 else 2; ip = p
+         elif f == 'call':
+             ln = 2 if op < 0xC0 else 3
+             t = ((op & 63) << 8) | img[ip + 1] if ln == 2 else ((op & 63) << 16) | img[ip + 1] << 8 | img[ip + 2]

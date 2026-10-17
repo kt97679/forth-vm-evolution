@@ -12,6 +12,8 @@ import os, sys, re, subprocess, tempfile, shutil, contextlib, io, array, collect
 LAB = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 work = tempfile.mkdtemp(prefix='relf-pairs-'); R = os.path.join(work, 'relf')
 shutil.copytree(os.environ.get('RELF_TREE') or os.path.join(LAB, 'vendor', 'relf', 'tree'), R, symlinks=True); os.chdir(R)   # RELF_TREE: another relf (a patched one: Iteration 360)
+if os.environ.get('RELF_TREE'):          # a patched relf: its images rebuilt first, as relf-ab.sh does (relf's make does not)
+    subprocess.run(['make', '-s', 'images', 'IMAGES_FORCE=1'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 subprocess.run(['make', '-s', 'relfsh64'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 def patch(text, old, new):
     n = text.count(old)
