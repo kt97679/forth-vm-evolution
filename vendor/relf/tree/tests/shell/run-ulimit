@@ -1,0 +1,51 @@
+#!/bin/sh
+# tests/shell/run-ulimit - ulimit over the whole set of resources
+# (Iteration 308). Not a differential case: the limits themselves differ
+# from machine to machine, so each check is against dash on THIS machine
+# or against a value this shell just set.
+. "$(dirname "$0")/lib.sh"
+case "$THIS_SH" in /*) SH=$THIS_SH ;; *) SH=$(pwd)/$THIS_SH ;; esac
+
+# dash keeps a limit in rlim_t, which is 64 bits even in a 32-bit
+# process; this shell keeps it in a CELL, which is 4 bytes in the
+# 4-byte-cell build. A limit above 2 GB therefore cannot be read back
+# exactly there - an ARM board's 3.4 GB memlock came out as 4294319080
+# (Iteration 397). Compared only where the value fits, and the
+# limitation is recorded in GOALS.md rather than papered over.
+cell_max=$($SH -c 'echo $((0x7FFFFFFF))' 2>/dev/null)
+# The comparison loop needs dash; the rest of this file does not
+# (Iteration 399).
+for opt in $([ "${HAVE_DASH:-0}" = 1 ] && echo -f -t -d -s -c -m -n -l -v); do
+    want=$(dash -c "ulimit $opt" 2>/dev/null)
+    got=$($SH -c "ulimit $opt" 2>&1)
+    case $want in
+        unlimited|'') ;;
+        *[!0-9]*) ;;
+        *) if [ "$want" -gt 2097152 ] 2>/dev/null; then
+               # kilobytes, so the byte value is over 2 GB: out of reach
+               # of a 4-byte cell. Skip rather than assert the wrap.
+               continue
+           fi ;;
+    esac
+    [ -n "$want" ] && assert_output_equals "ulimit $opt reads what dash reads" "$want" "$got"
+done
+
+assert_output_equals "a limit can be lowered and read back" "100" \
+  "$($SH -c 'ulimit -n 100; ulimit -n' 2>&1)"
+assert_output_equals "-S sets the soft limit only" "50" \
+  "$($SH -c 'ulimit -S -n 50; ulimit -n' 2>&1)"
+# The hard limit is whatever this machine's is - read with dash where
+# there is one, and with this shell itself otherwise, which still checks
+# that lowering the SOFT limit left the hard one alone (Iteration 399).
+hard_n=$([ "${HAVE_DASH:-0}" = 1 ] && dash -c 'ulimit -H -n' || $SH -c 'ulimit -H -n')
+assert_output_equals "... and leaves the hard one" "$hard_n" \
+  "$($SH -c 'ulimit -S -n 50; ulimit -H -n' 2>&1)"
+assert_output_equals "-f counts 512-byte blocks" "10" \
+  "$($SH -c 'ulimit -f 10; ulimit -f' 2>&1)"
+assert_output_equals "a lowered limit is inherited" "100" \
+  "$($SH -c 'ulimit -n 100; '"$SH"' -c "ulimit -n"' 2>&1)"
+assert_output_equals "an unknown option is refused" "2" \
+  "$($SH -c 'ulimit -Z 2>/dev/null; echo $?' 2>&1)"
+assert_output_equals "with no option it reports -f" "$($SH -c 'ulimit -f')" \
+  "$($SH -c 'ulimit' 2>&1)"
+report

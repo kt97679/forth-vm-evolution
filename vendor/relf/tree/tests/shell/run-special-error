@@ -1,0 +1,258 @@
+#!/bin/sh
+# tests/shell/run-special-error - XCU 2.8.1: an error in a special
+# builtin ends a non-interactive shell (Iteration 376). Not a
+# differential case, because tests/diff compares against bash, which
+# applies this rule only in POSIX mode; dash, mrsh and yash's POSIX
+# suite all agree with what is checked here.
+. "$(dirname "$0")/lib.sh"
+
+check() {   # check NAME SCRIPT EXPECTED-OUTPUT
+    got=$(printf '%s\n' "$2" | "$THIS_SH" 2>/dev/null)
+    assert_output_equals "$1" "$3" "$got"
+}
+
+check "shift past the end stops the script" \
+      'set -- a; shift 5; echo REACHED' ""
+check "assigning to a readonly stops it" \
+      'readonly R=1; R=2; echo REACHED' ""
+check "an invalid option to set stops it" \
+      'set -q; echo REACHED' ""
+check "unset of a readonly stops it" \
+      'readonly R=1; unset R; echo REACHED' ""
+check "a syntax error in eval stops it" \
+      'eval fi; echo REACHED' ""
+check "an unset parameter with ? stops it" \
+      'unset a; echo ${a?}; echo REACHED' ""
+
+# ... but a non-zero STATUS from a special builtin is not an error of
+# the builtin, and the shell carries on.
+check "eval false is not an error of eval" \
+      'eval false; echo REACHED' "REACHED"
+check "a false in a dot script is not an error of dot" \
+      'echo false > /tmp/relf-376-dot.sh; . /tmp/relf-376-dot.sh; echo REACHED; rm -f /tmp/relf-376-dot.sh' \
+      "REACHED"
+check "an ordinary builtin error does not stop it" \
+      'cd /no/such/dir; echo REACHED' "REACHED"
+check "a failed external command does not stop it" \
+      'nosuchcommand-xyz; echo REACHED' "REACHED"
+
+# Inside a subshell it is the subshell that ends.
+check "a subshell absorbs it" \
+      '(set -- a; shift 5) 2>/dev/null; echo REACHED' "REACHED"
+check "... and reports a non-zero status" \
+      '(set -- a; shift 5) 2>/dev/null; [ $? -ne 0 ] && echo NONZERO' "NONZERO"
+
+# XCU 2.9.1: an assignment before a SPECIAL builtin persists after it,
+# while one before any other command does not (Iteration 379).
+check "an assignment before : persists" \
+      'v=keep; v=tmp :; echo "$v"' "tmp"
+check "... before eval too" \
+      'v=keep; v=tmp eval echo x; echo "$v"' "x
+tmp"
+check "... and before export" \
+      'v=keep; v=tmp export w=1; echo "$v$w"' "tmp1"
+check "but not before an ordinary builtin" \
+      'v=keep; v=tmp cd .; echo "$v"' "keep"
+check "nor before an external command" \
+      'v=keep; v=tmp /bin/true; echo "$v"' "keep"
+check "nor before a function" \
+      'f() { :; }; v=keep; v=tmp f; echo "$v"' "keep"
+
+# A redirection that fails on a special builtin is an error in that
+# builtin, so it ends the shell too (Iteration 383).
+check "a failed redirection on : stops the script" \
+      ': < /nonexistent; echo REACHED' ""
+check "... on eval as well" \
+      'eval echo x < /nonexistent; echo REACHED' ""
+check "a subshell absorbs that too" \
+      '( : < /nonexistent ) 2>/dev/null; echo REACHED' "REACHED"
+check "an ordinary builtin carries on" \
+      'cd / < /nonexistent 2>/dev/null; echo REACHED' "REACHED"
+check "and so does an external command" \
+      '/bin/true < /nonexistent 2>/dev/null; echo REACHED' "REACHED"
+
+# An assignment that failed means the command does not run at all: a
+# non-interactive shell has already ended, and an interactive one skips
+# it rather than running it without the assignment (Iteration 383).
+got=$(printf 'readonly a=1\na=2 set\necho reached\n' | "$THIS_SH" -i +m 2>/dev/null)
+assert_output_equals "a failed assignment skips the command" "reached" "$got"
+# break and continue need a positive count (Iteration 421, from yash).
+# The count was clamped to 1, so `break 0` quietly broke one loop; now it
+# is an error, and a special builtin's error ends the shell.
+out=$("$THIS_SH" -c 'for i in 1; do break 0; done; echo after' 2>&1); st=$?
+assert_output_contains "break 0 is reported" "bad number" "$out"
+assert_output_equals "... and ends a non-interactive shell" "2" "$st"
+out=$("$THIS_SH" -c 'for i in 1 2; do continue abc; done; echo after' 2>&1)
+assert_output_contains "continue abc is reported" "bad number" "$out"
+out=$("$THIS_SH" -c 'for i in 1 2; do for j in a b; do break 2; done; echo no; done; echo ok' 2>&1)
+assert_output_equals "a valid count still works" "ok" "$out"
+# `command` takes a special builtin's special properties away (XCU
+# command; Iteration 424, from busybox's ash-vars/readonly1): its error
+# is reported and the shell goes on, where without `command` it ends.
+out=$("$THIS_SH" -c 'readonly x=1; command eval x=2; echo "after:$?"' 2>/dev/null)
+assert_output_equals "command eval on a readonly variable goes on" "after:2" "$out"
+out=$("$THIS_SH" -c 'command shift 5; echo "after:$?"' 2>/dev/null)
+assert_output_equals "command shift past the end goes on" "after:2" "$out"
+out=$("$THIS_SH" -c 'readonly x=1; eval x=2; echo NOT-REACHED' 2>/dev/null)
+assert_output_equals "... while bare eval still ends the shell" "" "$out"
+# An arithmetic error is an expansion error, and ends a non-interactive
+# shell with status 2 (XCU 2.8.1; Iteration 427, found by the fuzzer as
+# a script that ran on past one into an infinite loop).
+out=$("$THIS_SH" -c 'echo $((1/0)); echo after' 2>/dev/null); st=$?
+assert_output_equals "division by zero ends the shell" "" "$out"
+assert_output_equals "... with status 2" "2" "$st"
+out=$("$THIS_SH" -c 'x=$((5%0)); echo after' 2>/dev/null); st=$?
+assert_output_equals "a remainder by zero in an assignment ends it too" "" "$out"
+assert_output_equals "... with status 2" "2" "$st"
+out=$("$THIS_SH" -c 'echo $(( 1 ? 2 : 1/0 )); echo ok' 2>&1)
+assert_output_equals "... but a branch not taken is not an error" "2
+ok" "$out"
+# The dot builtin (Iteration 432, yash dot-p.tst): $? inside the script
+# starts as the status before it, an empty file gives 0, and a file that
+# cannot be read ends a non-interactive shell - but not under `command`.
+# (No `cd`: run-all passes THIS_SH as a relative path.)
+dd=$(mktemp -d); printf 'echo $?\n(exit 3)\n' > "$dd/f1"; : > "$dd/empty"
+out=$("$THIS_SH" -c '(exit 5); . "$1"/f1; echo "st=$?"' sh "$dd")
+assert_output_equals "the dot script sees the status before it" "5
+st=3" "$out"
+out=$("$THIS_SH" -c '(exit 1); . "$1"/empty; echo "st=$?"' sh "$dd")
+assert_output_equals "an empty dot script gives 0" "st=0" "$out"
+out=$("$THIS_SH" -c '. "$1"/nosuch; echo reached' sh "$dd" 2>/dev/null); st=$?
+assert_output_equals "a missing dot script ends the shell" "" "$out"
+assert_output_equals "... with status 2" "2" "$st"
+out=$("$THIS_SH" -c 'command . "$1"/nosuch; echo "reached:$?"' sh "$dd" 2>/dev/null)
+assert_output_equals "... but not under command" "reached:2" "$out"
+rm -rf "$dd"
+# Only a variable can be assigned by ${name:=word}: a positional or a
+# special parameter is an error that ends the shell, as in dash (bash
+# warns and goes on). Iteration 434, yash param-p.tst:198, :202.
+out=$("$THIS_SH" -c 'echo ${1:=x}; echo after' 2>&1)
+assert_output_contains "\${1:=x} is an error" "bad variable name" "$out"
+case $out in *after*) reached=yes ;; *) reached=no ;; esac
+assert_output_equals "... that ends the shell" "no" "$reached"
+out=$("$THIS_SH" -c 'set -- a; echo ${1:=x}; echo after' 2>&1)
+assert_output_equals "... but not when nothing would be assigned" "a
+after" "$out"
+# `command exec` with nothing to run keeps its redirections, as exec does
+# (Iteration 438, yash command-p.tst:42); with a command it still replaces
+# the shell.
+out=$("$THIS_SH" -c 'command exec 3<<END
+here
+END
+cat <&3' 2>&1)
+assert_output_equals "command exec 3<<END keeps fd 3" "here" "$out"
+out=$("$THIS_SH" -c 'command exec echo replaced; echo not-reached' 2>&1)
+assert_output_equals "command exec CMD still replaces the shell" "replaced" "$out"
+# An operator with no operand is an arithmetic error - $((1 +)), $((-)),
+# $((--)), $(( () )) - and ends the shell; a blank expression is still 0
+# (Iteration 440, yash arith-p.tst:367).
+for e in '1 +' '-' '--' '()' '1+()'; do
+    out=$("$THIS_SH" -c "echo \$(($e)); echo reached" 2>/dev/null)
+    assert_output_equals "\$(($e)) is an error that ends the shell" "" "$out"
+done
+out=$("$THIS_SH" -c 'x=5; echo $(( )) $((--x)) $((x++)) $x' 2>&1)
+assert_output_equals "... while blank, --x and x++ still work" "0 4 4 5" "$out"
+# Traps and wait (Iteration 447, busybox ash-signals/continue_and_trap1
+# and signal1): a trap runs even while a continue is in flight, and a
+# wait a trapped signal interrupts returns 128+n.
+out=$("$THIS_SH" -c 'trap "echo T; exit" INT; (sleep 0.2; kill -INT $$) & while true; do continue; done' 2>&1)
+assert_output_equals "a trap runs in a loop that only continues" "T" "$out"
+out=$("$THIS_SH" -c 'trap "echo a" USR1; sleep 0.4 & (sleep 0.1; kill -USR1 $$) & wait %1; echo "wait=$?"' 2>&1)
+assert_output_equals "an interrupted wait returns 128+n" "a
+wait=138" "$out"
+out=$("$THIS_SH" -c 'sleep 0.1 & wait %1; echo "plain=$?"; wait 999999; echo "nochild=$?"' 2>&1)
+assert_output_equals "... while a plain wait is 0 and no such child is 127" "plain=0
+nochild=127" "$out"
+# A trap runs BETWEEN commands, not inside one (Iteration 448, busybox
+# ash-signals/return_in_trap1): a signal that arrives while the shell
+# waits for a foreground child is taken up after it finishes.
+out=$("$THIS_SH" -c 'trap "echo Trap" USR1; (kill -s USR1 $$; echo b:$?; exit 3); echo d:$?' 2>&1)
+assert_output_equals "the child finishes before its trap runs" "b:0
+Trap
+d:3" "$out"
+# $! is the LAST process of a background pipeline (Iteration 449, yash
+# param-p.tst:452): a signal sent to it reaches the stage that traps it.
+out=$("$THIS_SH" -c '{ sleep 0.4; } | { trap "echo TRAPPED; exit 0" USR1; sleep 0.4; } & sleep 0.15; kill -s USR1 $!; wait $!; echo "st=$?"' 2>&1)
+assert_output_equals "a signal to \$! reaches the last stage" "TRAPPED
+st=0" "$out"
+out=$("$THIS_SH" -c '(exit 3) | (exit 4) & wait $!; echo "last=$?"' 2>&1)
+assert_output_equals "... and its status is the pipeline's" "last=4" "$out"
+# A foreground command killed by a signal is reported, as dash and bash
+# report it - though bash's wording carries the script, line and pid, so
+# this is not a differential case (Iteration 458, busybox
+# ash-signals/catch, signal_read2, subshell). INT and PIPE are silent.
+# The inner shell is the one under test, passed as $0: `sh` is bash on
+# some hosts, and bash IGNORES SIGQUIT when it is not interactive, so
+# nothing died and nothing was reported - this passed here and failed on
+# a Gentoo machine where /bin/sh is bash (Iteration 465).
+out=$("$THIS_SH" -c 'for s in HUP TERM USR2 INT PIPE; do "$0" -c "kill -$s \$\$"; done' "$THIS_SH" 2>&1)
+assert_output_equals "a signal that kills a command is named" "Hangup
+Terminated
+User defined signal 2" "$out"
+out=$("$THIS_SH" -c '( "$0" -c "kill -TERM \$\$" ); "$0" -c "kill -HUP \$\$" | cat; v=$("$0" -c "kill -QUIT \$\$"); echo "end"' "$THIS_SH" 2>&1)
+assert_output_equals "... in a subshell, a pipeline and a command substitution" "Terminated
+Hangup
+Quit
+end" "$out"
+# Another signal's trap may run INSIDE a trap, between its commands, and
+# the outer trap's `exit` still uses the status it was entered with
+# (Iteration 468, busybox ash-misc/exitcode_trap6). The same signal waits
+# until the trap is done, so a trap that sends its own signal is bounded
+# - dash recurses on that until it crashes.
+out=$("$THIS_SH" -c 'trap "echo INT" INT; trap "kill -INT \$\$; exit" TERM; kill $$ & (sleep 0.3; exit 42)' 2>&1; echo "st=$?")
+assert_output_equals "a nested trap runs, and exit keeps the outer status" "INT
+st=42" "$out"
+out=$("$THIS_SH" -c 'trap "echo A; kill -USR2 \$\$; echo B" USR1; trap "echo inner" USR2; kill -USR1 $$; echo end' 2>&1)
+assert_output_equals "... in order, between the outer trap's commands" "A
+inner
+B
+end" "$out"
+# `wait` on a job that has already finished returns its status, as dash
+# does; bash drops the job and says "no such job", 127 (Iteration 470).
+out=$("$THIS_SH" -c '( (exit 5) & sleep 0.2; wait %%; echo "st=$?" )' 2>&1)
+assert_output_equals "wait %% on a job already finished keeps its status" "st=5" "$out"
+# An assignment before a special builtin persists (XCU 2.14), and it is
+# applied AFTER the words are expanded, so the word's own side effect is
+# overwritten (Iteration 480). dash and `bash --posix` agree; plain bash,
+# which the differential suite runs, does not persist it at all.
+out=$("$THIS_SH" -c 'x=1; x=2 : $((x+=10)); echo "$x"' 2>&1)
+assert_output_equals "a special builtin's assignment is applied after its words" "2" "$out"
+# A regular builtin's redirections are performed BEFORE its assignments
+# are expanded (XCU 2.9.1 step 3 before step 4; Iteration 482, stage 2 of
+# EXPANSION-ORDER.md). dash agrees; bash expands the assignment first.
+d=$(mktemp -d)
+out=$(cd "$d" && "$THIS_SH" -c 'v=$(test -e q && echo yes >r || echo no >r) 3>q true; cat r' 2>&1)
+assert_output_equals "a builtin's redirection is performed before its assignment" "yes" "$out"
+out=$(cd "$d" && rm -f f2 && "$THIS_SH" -c 'a=$(cat f2) 3>|$(echo f2) true; echo "st=$?"' 2>&1)
+assert_output_equals "... so an assignment may read the file it creates (yash simple-p.tst:18)" "st=0" "$out"
+rm -rf "$d"
+# A descriptor above 9 is inherited by a command the shell runs (Iteration
+# 483): the child closed 10..63 before exec, so `exec 10>lock; flock 10`
+# found no descriptor 10. Descriptor 200 is the control - outside that
+# range, it was always inherited, and must stay so. The child here is
+# this shell, given as $0, so the check needs neither /proc nor a host
+# shell that takes two-digit descriptors. Without the fix the first of
+# these fails and the second passes, which is what was checked.
+d=$(mktemp -d)
+out=$("$THIS_SH" -c 'exec 23>"$1/f"; "$0" -c "echo via-23 >&23"; exec 23>&-; cat "$1/f"' "$THIS_SH" "$d" 2>&1)
+assert_output_equals "a child inherits descriptor 23" "via-23" "$out"
+out=$("$THIS_SH" -c 'exec 200>"$1/g"; "$0" -c "echo via-200 >&200"; exec 200>&-; cat "$1/g"' "$THIS_SH" "$d" 2>&1)
+assert_output_equals "... and descriptor 200, outside the old range" "via-200" "$out"
+rm -rf "$d"
+# A script's own descriptor at 64 or above survives the shell's saving of
+# redirected descriptors (Iteration 486): the copies were made by dup2 onto
+# fixed slots, 64 + i, and the restore then closed those slots. They are
+# now the lowest FREE descriptors from 64 up, close-on-exec.
+d=$(mktemp -d)
+out=$("$THIS_SH" -c 'exec 65>"$1/f"; echo x 3>/dev/null 4>/dev/null >/dev/null; echo after >&65; exec 65>&-; cat "$1/f"' sh "$d" 2>&1)
+assert_output_equals "a descriptor at 65 outlives a command with two redirections" "after" "$out"
+# The copies are close-on-exec, so a command run inside the redirection
+# sees none of them. Descriptor 2 is open, so its save makes a real copy;
+# the check is for anything at 64 or above, where the copies live - the
+# redirections' own descriptors are rightly inherited and not counted.
+if [ -d /proc/self/fd ]; then
+    leaked=$("$THIS_SH" -c '{ ls /proc/self/fd | awk "\$1 >= 64" | wc -l; } 2>/dev/null' 2>&1)
+    assert_output_equals "... and a command inside redirections sees none of the copies" "0" "$(echo $leaked)"
+fi
+rm -rf "$d"
+report

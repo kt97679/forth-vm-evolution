@@ -1,0 +1,120 @@
+#!/bin/sh
+# tests/shell/run-coverage-gaps - paths no test reached (Iteration 553).
+# tools/coverage.py, extended to every source file, found 67 colon words
+# never entered: most run only while an image is built, but these are
+# reached at run time and were checked by nothing - the search order and
+# other words of extend.4 and the kernel that the forth builtin offers
+# (A20: every name stays so that it can), prompt escapes, and a glob
+# with a backslash. Each is checked for its value, not only that it ran.
+. "$(dirname "$0")/lib.sh"
+f() { "$THIS_SH" -c "forth '$1'" 2>&1 < /dev/null; }
+
+# the search order (extend.4)
+out=$(f 'VOCABULARY V1  ALSO V1 DEFINITIONS  : HI 42 . ;  PREVIOUS DEFINITIONS  ALSO V1 HI PREVIOUS')
+assert_output_contains "a word defined in a vocabulary is found through it" "42" "$out"
+out=$(f 'VOCABULARY V2  ALSO V2 DEFINITIONS  : HO 7 ;  ONLY FORTH  HO')
+assert_output_contains "ONLY FORTH leaves the vocabulary out of the search" "HO" "$out"
+out=$(f ': N GET-ORDER DUP >R 0 ?DO DROP LOOP R> ;  N  ALSO FORTH N  SWAP - .')
+assert_output_contains "ALSO adds one word list to the order" "1 " "$out"
+out=$(f 'VARIABLE WL  WORDLIST WL !  GET-ORDER WL @ SWAP 1+ SET-ORDER  DEFINITIONS : W3 3 . ;  PREVIOUS DEFINITIONS  W3')
+assert_output_contains "a word in a WORDLIST is hidden once it leaves the order" "W3" "$out"
+out=$(f 'ROOT-WORDLIST 0= .')
+assert_output_contains "ROOT-WORDLIST gives a word list" "0 " "$out"
+
+# control structures and memory (extend.4)
+out=$(f ': C CASE 1 OF 10 ENDOF 2 OF 20 ENDOF 99 SWAP ENDCASE ;  1 C . 2 C . 3 C .')
+assert_output_contains "CASE chooses, and falls through to its default" "10 20 99" "$out"
+out=$(f 'CREATE B 4 ALLOT  B 4 255 FILL  B 2 ERASE  B C@ . B 3 + C@ .')
+assert_output_contains "ERASE zeroes only what it is given" "0 255" "$out"
+out=$(f ': MY-IF [COMPILE] IF ; IMMEDIATE  : T 1 MY-IF 5 . THEN ;  T')
+assert_output_contains "[COMPILE] compiles an immediate word" "5 " "$out"
+out=$(f 'S" NO-SUCH-QUERY" ENVIRONMENT? .')
+assert_output_contains "ENVIRONMENT? answers false to what it does not know" "0 " "$out"
+
+# the kernel
+out=$(f '1 2 3 2 ROLL . . .')
+assert_output_contains "ROLL brings the third item up" "1 3 2" "$out"
+out=$(f ': T 0 BEGIN 1+ DUP 3 = IF EXIT THEN AGAIN ;  T .')
+assert_output_contains "AGAIN loops until EXIT" "3 " "$out"
+out=$(f '.( printed-as-read)')
+assert_output_contains ".( prints its text" "printed-as-read" "$out"
+out=$(f '100 CELL- CELL+ .')
+assert_output_contains "CELL- undoes CELL+" "100 " "$out"
+out=$(f ': T 0 0 S" 123x" DROP 1- CONVERT C@ EMIT SPACE D. ;  T')
+assert_output_contains "CONVERT reads digits and stops at the first other" "x 123" "$out"
+t=$(mktemp -d)
+# ABORT" and ABORT inside `forth`: the command fails, the shell goes on
+# (A24, run-forth-errors has the rest)
+out=$("$THIS_SH" -c "forth ': T 1 ABORT\" boom\" ;  T'; echo after; forth ': T2 ABORT ;  T2'; echo still" 2>&1 < /dev/null)
+assert_output_contains "ABORT\" reports its message" "boom" "$out"
+assert_output_contains "the shell goes on after ABORT\"" "after" "$out"
+assert_output_contains "the shell goes on after ABORT" "still" "$out"
+# WRITE-LINE, in a definition: >R and R@ interpreted would use the
+# interpreter's own return stack (my first version did, and crashed)
+out=$(f ": T S\" $t/w\" W/O BIN CREATE-FILE DROP >R  S\" first\" R@ WRITE-LINE DROP  S\" second\" R@ WRITE-LINE DROP  R> CLOSE-FILE DROP ;  T")
+assert_output_contains "WRITE-LINE writes each line and its end" "first second" "$(cat "$t/w" | tr '\n' ' ')"
+
+# prompt escapes, which -i prints even without a terminal
+h=$(hostname); hs=${h%%.*}
+out=$(echo exit | PS1='[\h|\H|\101|\\]' "$THIS_SH" -i 2>&1)
+assert_output_contains "prompt: \\h, \\H, octal and backslash" "[$hs|$h|A|\\]" "$out"
+out=$(cd /tmp && echo exit | HOME=/tmp PS1='[\w]' "$THIS_SH" -i 2>&1)
+assert_output_contains "prompt: \\w shows HOME as ~" "[~]" "$out"
+out=$(echo exit | PS1='[\t|\T|\@|\A|\d]' "$THIS_SH" -i 2>&1 | head -1)
+case $out in
+  \[[0-2][0-9]:[0-5][0-9]:[0-5][0-9]\|[0-1][0-9]:[0-5][0-9]:[0-5][0-9]\|*\|[0-2][0-9]:[0-5][0-9]\|???\ ???\ [\ 0-9][0-9]\]*) r=ok ;;
+  *) r="unexpected: $out" ;;
+esac
+assert_output_contains "prompt: \\t \\T \\@ \\A \\d have their forms" "ok" "$r"
+
+# \D{format}: strftime's conversions, in UTC like everything here (A16)
+out=$(echo exit | PS1='[\D{%Y|%e|%A|%B|%F}]' "$THIS_SH" -i 2>&1 | head -1)
+assert_output_contains "prompt: \\D{} gives date -u's fields" "$(date -u +'[%Y|%e|%A|%B|%F]')" "$out"
+
+# a backslash that comes from an expansion, in a glob and in case
+# (GLOB-MARK-BACKSLASH): the answers are dash's and bash's, compared
+# when this was written
+t2=$(mktemp -d) && cd "$t2" && : > 'a*b' && : > axb
+out=$("$THIS_SH" -c 'p="a\*b"; echo $p; case "a*b" in $p) echo m1;; *) echo n1;; esac' 2>&1 < /dev/null)
+assert_output_equals "an expanded backslash in a glob and a case pattern" "a\*b m1" "$(echo $out)"
+cd / && rm -rf "$t2"
+
+# Iteration 557: three paths the 554 checks were meant to reach and did
+# not - coverage said so. \D{%T} is PD-HMS; a backslash in ${x:+...}'s
+# alternate value, emitted a character at a time, is GLOB-MARK-BACKSLASH
+# (the 554 check's backslash came from a variable, another path); a line
+# over 1 MB reaches DRAIN-LINE through `read`, not through a script.
+out=$(echo exit | PS1='[\D{%T}]' "$THIS_SH" -i 2>&1 | head -1)
+case $out in \[[0-2][0-9]:[0-5][0-9]:[0-5][0-9]\]*) r=ok ;; *) r="unexpected: $out" ;; esac
+assert_output_contains "prompt: \\D{%T} is HH:MM:SS" "ok" "$r"
+t3=$(mktemp -d) && cd "$t3" && : > 'a*b' && : > axb
+out=$("$THIS_SH" -c 'x=1; echo ${x:+a\*b}; echo "${x:+a\*b}"; echo ${x:+a*b}' 2>&1 < /dev/null)
+# (joined with paste, not `echo $out`: unquoted, the harness's own shell
+# globbed a*b against these very files - my first version of this check)
+assert_output_equals "a backslash in \${x:+...} escapes in the glob (dash's answers)" "a*b a\*b a*b axb" "$(echo "$out" | paste -sd' ' -)"
+printf 'x%02097200d\nsecond\n' 0 > long.txt
+out=$("$THIS_SH" -c '{ read -r a; echo r1=$?; read -r b; echo r2=$? $b; } < long.txt' 2>&1 < /dev/null)
+assert_output_contains "read: a line over 1 MB is refused" "line too long" "$out"
+assert_output_contains "with status 1" "r1=1" "$out"
+assert_output_contains "and the rest of it drained: the next read gets the next line" "r2=0 second" "$out"
+cd / && rm -rf "$t3"
+
+# A 2 MB literal word arrives whole (Iteration 558). Written to kill a
+# mutant tools/mutate.py found surviving - + for - in LITERAL-FITS?, so
+# that every literal "fits" - and it did not kill it: the token buffer is
+# sized to the whole line first, so a literal from the line always fits,
+# the check's "no" is unreachable from a script, and that mutant is
+# equivalent. Kept for what it does check: a word this long, exactly.
+t4=$(mktemp -d)
+printf 'echo %02097200d | wc -c\n' 0 > "$t4/big.sh"
+out=$("$THIS_SH" "$t4/big.sh" 2>&1 < /dev/null)
+assert_output_contains "a 2 MB literal word arrives whole" "2097201" "$out"
+rm -rf "$t4"
+
+# a glob with a backslash matches its character literally
+cd "$t" && : > 'a*b' && : > axb
+out=$("$THIS_SH" -c 'echo a\*b; echo a*b' 2>&1)
+assert_output_contains "a backslashed * in a glob is literal" "a*b" "$(echo "$out" | head -1)"
+assert_output_contains "an unescaped * still matches" "a*b axb" "$(echo "$out" | tail -1)"
+cd / && rm -rf "$t"
+report

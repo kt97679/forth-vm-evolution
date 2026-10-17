@@ -1,0 +1,65 @@
+#!/bin/sh
+# tests/shell/run-long-line - lines longer than the 256 characters this
+# shell's buffers start at (Iterations 248, 249).
+#
+# They used to be cut at 256, and the tail read as the next line - so the
+# tail of `echo <250 characters>Z echo INJECTED` ran as a command nobody
+# wrote. Iteration 248 made that an error; 249 made the buffers grow, so
+# a long line simply runs, and 252 lifted the limit on values. What is
+# still limited, and must be REPORTED rather than silently wrong, is
+# tested here too: the kernel's limit on an exec's arguments. (Until
+# Iteration 265 a line past 1 MB was refused; scripts are no longer read
+# by lines.)
+. "$(dirname "$0")/lib.sh"
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+
+pad() { head -c "$2" /dev/zero | tr '\0' "$1"; }
+
+# The exploit shape: one echo, whatever its length.
+printf 'echo start\necho %sZ echo INJECTED\necho end\n' "$(pad a 250)" > "$t/inject.sh"
+out=$("$THIS_SH" "$t/inject.sh" 2>&1)
+assert_output_equals "a long line runs whole, and its tail is not a command" "start
+$(pad a 250)Z echo INJECTED
+end" "$out"
+out=$("$THIS_SH" < "$t/inject.sh" 2>/dev/null)
+assert_output_equals "the same through stdin" "start
+$(pad a 250)Z echo INJECTED
+end" "$out"
+
+# Well past any old limit, in a script, on stdin and under -c.
+printf 'echo %s | wc -c\n' "$(pad b 50000)" > "$t/big.sh"
+out=$("$THIS_SH" "$t/big.sh" 2>&1 | tr -d ' ')
+assert_output_equals "a 50,000-character line runs" "50001" "$out"
+out=$("$THIS_SH" < "$t/big.sh" 2>/dev/null | tr -d ' ')
+assert_output_equals "a 50,000-character line runs from stdin" "50001" "$out"
+out=$("$THIS_SH" -c "echo $(pad c 3000) | wc -c" 2>&1 | tr -d ' ')
+assert_output_equals "a 3,000-character -c command runs" "3001" "$out"
+
+# A 1.1 MB argument reaches the command, and the kernel refuses the exec:
+# reported, status 126, and the script goes on - as bash and dash do.
+{ printf '/bin/echo '; pad d 1100000; printf '\necho "after st=$?"\n'; } > "$t/huge.sh"
+out=$("$THIS_SH" "$t/huge.sh" 2>/dev/null)
+assert_output_equals "an argument list too long for exec: status 126, and the script goes on" "after st=126" "$out"
+err=$("$THIS_SH" "$t/huge.sh" 2>&1 >/dev/null)
+assert_output_contains "and it is reported on stderr" "argument list too long" "$err"
+
+# A variable's value has no fixed limit since Iteration 252. At 255
+# characters, until then, a longer value was dropped - and until 249 the
+# variable kept its PREVIOUS value instead.
+printf 'a=first\nb=%s\necho "${#b} st=$?"\n' "$(pad e 300)" > "$t/val.sh"
+out=$("$THIS_SH" "$t/val.sh" 2>&1)
+assert_output_equals "a 300-character value is kept whole" "300 st=0" "$out"
+printf 'b=%s\necho "${#b}"\n' "$(pad f 20000)" > "$t/val20k.sh"
+out=$("$THIS_SH" "$t/val20k.sh" 2>&1)
+assert_output_equals "a 20,000-character value is kept whole" "20000" "$out"
+
+# read takes the whole line, whatever its length, and the next read gets
+# the NEXT line.
+out=$({ echo first; pad g 3000; printf '\nshort\n'; } | "$THIS_SH" -c 'read p; echo "p=[$p]"; read x; echo "st=$? ${#x}"; read y; echo "y=[$y]"' 2>&1)
+assert_output_equals "read: a long line is read whole" "p=[first]
+st=0 3000
+y=[short]" "$out"
+out=$({ pad h 2000; printf ' %s\n' "$(pad i 2000)"; } | "$THIS_SH" -c 'read x y; echo "${#x} ${#y}"' 2>&1)
+assert_output_equals "read: a long line splits into long fields" "2000 2000" "$out"
+
+report

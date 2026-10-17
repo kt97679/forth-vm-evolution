@@ -1,0 +1,202 @@
+#!/bin/sh
+# tests/shell/run-options - set -e -u -x -f -n and -o, $-, `.`, exec,
+# type and hash (Iteration 270). Each line runs in a shell of its own,
+# since -e and -u end it. The expected output, options.expected, is
+# dash's where bash and dash agree; where they do not, this shell does
+# what bash does: an invalid `set` option, a missing `.` file and a
+# failed exec redirection report and go on (dash exits 2), and `.` passes
+# its arguments (dash 0.5.12 ignores them). `type` of a missing name is
+# dash's: on stdout, status 127.
+. "$(dirname "$0")/lib.sh"
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+here=$(cd "$(dirname "$0")" && pwd)
+case "$THIS_SH" in /*) SH=$THIS_SH ;; *) SH=$(pwd)/$THIS_SH ;; esac
+cat > "$t/dotfile.sh" <<'DOT'
+echo "in dot: $# [$1]"
+dotvar=set-in-dot
+return 3
+echo not-reached
+DOT
+cd "$t" || exit 1
+run() { printf '%s => ' "$1"; "$SH" -c "$1" 2>/dev/null; echo "st=$?"; }
+{
+run 'set -e; false; echo no'
+run 'set -e; false || true; echo yes1'
+run 'set -e; if false; then :; fi; echo yes2'
+run 'set -e; while false; do :; done; echo yes3'
+run 'set -e; ! true; echo yes4'
+run 'set -e; false && true; echo yes5'
+run 'set -e; { false && true; }; echo yes6'
+run 'set -e; f() { false && true; }; f; echo no7'
+run 'set -e; (false); echo no8'
+run 'set -e; x=$(false); echo no9'
+run 'set -e; false | true; echo yes10'
+run 'set -e; true | false; echo no11'
+run 'set -e; set +e; false; echo yes12'
+run 'set -o errexit; false; echo no13'
+run 'set -u; echo $nosuch; echo no14'
+run 'set -u; echo ${nosuch}; echo no15'
+run 'set -u; echo ${nosuch-dflt}; echo yes16'
+run 'set -u; echo "$@" ok17'
+run 'set -u; x=1; echo $x ok18'
+run 'set -f; echo /tm*; set +f; echo /tm*'
+run 'set -n; echo no19'
+run 'set -- a b; set -e; echo "$# $1 $2"'
+run 'set a b c; echo $#; set --; echo $#'
+run 'set -e -u; echo ok20'
+run 'set -eu; echo ok21'
+run 'set -q; echo after'
+run 'set -eu; case $- in *e*u*|*u*e*) echo has-eu;; esac'
+run 'set -x; x=1; echo "$x" a  b 2>&1'
+run 'set -o | grep -c " off"; set -e; set -o | grep errexit; set +o | grep errexit'
+# -b / notify: accepted, reported in $-, and cleared again (Iteration 386)
+run 'set -b; echo "[$-]"; set +b; echo "[$-]"'
+run 'set -o notify; echo "[$-]"; set +o notify; echo "[$-]"'
+run '. ./dotfile.sh x y; echo "st=$? $dotvar $#"'
+run 'set -- p q; . ./dotfile.sh; echo "st=$? $# $1"'
+# A dot script that cannot be read ends a non-interactive shell, status
+# 2, as in dash: `.` is a special builtin (Iteration 432; it was status 1
+# and the shell went on).
+run '. ./nosuchfile; echo "after st=$?"'
+run 'exec 3>fd3.txt; echo via3 >&3; exec 3>&-; cat fd3.txt'
+run 'exec /bin/echo replaced; echo no'
+run 'exec nosuchcmd; echo no'
+run 'type if; type echo; f() { :; }; type f; alias ll="ls -l"; type ll; type sh'
+run 'type nosuch; echo $?'
+run 'hash -r; hash; hash sh; hash; hash nosuch; echo $?'
+} > "$t/out" 2>&1
+sed "s|$(command -v sh)|SH-PATH|" "$t/out" > "$t/out2"
+assert_output_equals "set, \$-, ., exec, type and hash" "$(cat "$here/options.expected")" "$(cat "$t/out2")"
+cd "$here"   # the cases above ran in $t; THIS_SH may be relative to here
+# set -v echoes each line once, as it is read - a command that spans
+# lines too, in a file and on standard input (Iteration 439, yash
+# option-p.tst:366, :384).
+printf 'echo 1\nif true; then\necho 2\nfi\necho a; echo b\n' > "$t/verb.sh"
+want='echo 1
+if true; then
+echo 2
+fi
+echo a; echo b'
+out=$("$THIS_SH" -v "$t/verb.sh" 2>&1 >/dev/null)
+assert_output_equals "set -v on a file: each line once" "$want" "$out"
+out=$("$THIS_SH" -v < "$t/verb.sh" 2>&1 >/dev/null)
+assert_output_equals "set -v on standard input: each line once" "$want" "$out"
+# Aliases (Iteration 444, yash alias-p.tst:173, :510): a reserved word in
+# its place is never one, and an alias that vanishes after | && || leaves
+# the command still owed - on the next line if need be.
+cat > "$t/al.sh" <<'AL'
+alias if=: then=: else=: fi=: do=: done=:
+if true; then echo then; else echo else; fi
+for a in A; do echo $a; done
+alias a=
+echo foo | a
+tr a-z A-Z
+true && a
+echo after-and
+AL
+out=$(echo x | "$THIS_SH" "$t/al.sh" 2>&1)
+assert_output_equals "reserved words are not aliases; a vanished alias leaves the command owed" "then
+A
+FOO
+after-and" "$out"
+# An alias whose value ends in a blank makes the next word a candidate,
+# and the SAME alias may be that word (Iteration 452, yash
+# alias-p.tst:480). Not a differential case: bash does not expand aliases
+# in a script unless expand_aliases is set.
+cat > "$t/al452.sh" <<'AL'
+alias d='echo ' g='echo '
+d g x
+d d x
+d g g x
+d d d x
+AL
+out=$("$THIS_SH" "$t/al452.sh" 2>&1)
+assert_output_equals "the same alias again after a trailing blank" "echo x
+echo x
+echo echo x
+echo echo x" "$out"
+# An alias name may hold characters a variable name may not, and a line
+# continuation inside one joins (Iteration 453, yash alias-p.tst:576,
+# :536).
+cat > "$t/al453.sh" <<'AL'
+alias Aa0_!%,@=echo
+Aa0_!%,@ ok
+alias eeee=echo
+ee\
+e\
+e joined
+AL
+out=$("$THIS_SH" "$t/al453.sh" 2>&1)
+assert_output_equals "alias names: odd characters, and continuations in them" "ok
+joined" "$out"
+# A candidate word - one that follows an alias whose value ends in a
+# blank - is expanded WHEREVER it stands, not only among a simple
+# command's own words (Iteration 454, yash alias-p.tst:380, :439). A
+# candidacy reaches the next word, never across a newline.
+cat > "$t/al454.sh" <<'AL'
+alias c='case a in ' a=b p='(a)'
+c a) echo 1-1;; a) echo 1-2;; esac
+c p echo 2; esac
+alias f='f ' q='()'
+f q
+{ echo F; }
+f
+alias e='echo ' g='echo '
+e g x
+g g y
+AL
+out=$("$THIS_SH" "$t/al454.sh" 2>&1)
+assert_output_equals "a candidate in a case pattern, a function's parentheses, and on the next line" "1-2
+2
+F
+echo x
+echo y" "$out"
+# An alias whose value CONTINUES the construct around it - a closing
+# esac, a parenthesis, a here-document operator - leaves a command with
+# no words, which is not an error (Iteration 455, yash alias-p.tst:249,
+# :359). An empty command with no alias behind it still is.
+cat > "$t/al455.sh" <<'AL'
+alias c='case a in a) :' e='
+ esac </dev/null | cat -'
+c X; echo A; e
+alias l='
+(
+' r='
+)
+'
+v=A
+l echo subshell; v=B; r
+echo $v
+AL
+out=$("$THIS_SH" "$t/al455.sh" 2>&1)
+assert_output_equals "an alias that continues the construct around it" "A
+subshell
+A" "$out"
+out=$("$THIS_SH" -c 'echo A; ; echo B' 2>&1)
+assert_output_contains "... while a bare ; is still an error" "syntax error" "$out"
+# A reserved word is not alias-expanded WHERE ONE WOULD BE (Iteration
+# 462, yash alias-p.tst:298). After `for` the next word is a name, so an
+# alias expands there; the `in` that follows the name stays the keyword.
+cat > "$t/al462.sh" <<'AL'
+alias f=' for ' w=' in ' in=' x '
+f w in 1 2; do echo "x=[$x] w=[$w] in=[$in]"; done
+alias if=: then=: fi=:
+if true; then echo kept; fi
+AL
+out=$("$THIS_SH" "$t/al462.sh" 2>&1)
+assert_output_equals "an alias in the name position of a for loop" "x=[1] w=[] in=[]
+x=[2] w=[] in=[]
+kept" "$out"
+# $- shows s when the commands come from standard input, m with job
+# control or set -m, i when interactive (Iteration 713, GOALS.md 6b) -
+# dash's `si` for `echo 'echo $-' | dash -i`
+out=$(echo 'echo "[$-]"' | "$THIS_SH" 2>&1)
+assert_output_equals "\$- has s for a script on standard input" "[s]" "$out"
+out=$(echo 'echo "[$-]"' | "$THIS_SH" -i 2>/dev/null | tail -1)
+assert_output_equals "\$- has s and i for -i with a pipe" "[si]" "$out"
+out=$(echo 'echo "[$-] $#"' | "$THIS_SH" -s a b 2>&1)
+assert_output_equals "\$- has s for -s" "[s] 2" "$out"
+out=$("$THIS_SH" -c 'echo "[$-]"; set -m; echo "[$-]"' 2>&1)
+assert_output_equals "\$- has no s or i for -c, and m after set -m" "[]
+[m]" "$out"
+report

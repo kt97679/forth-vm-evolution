@@ -33,9 +33,18 @@ compiler's constants and inlining for the kernel's own words.
 
 1. **Done**: vendor/relf follows relf master (tools/update-relf.sh, default origin/master; the
    sources under vendor/relf/tree, building and running there); LICENCE.md GPLv2 only.
-2. **Next**: an A/B harness - relf built from vendor/relf/tree with a candidate patch, against
-   unpatched, by bench-vm.py on relf's shell workloads; then the ledger's candidates one by one,
-   fused pairs first (this lab's supers and folds genes name the pairs evolution kept).
+2. **Done (Iteration 357): tools/relf-ab.sh** - A, vendor/relf/tree as vendored; B, with candidate
+   patches (images rebuilt when the instruction map, kernel.4 or cross.4 change); B must fail nothing
+   in relf's own `make test` that A passes (A's failures recorded once per vendored commit - here,
+   none: relf passes its whole suite on this VM); then relf's bench-vm.py on loop, fn, str, arith,
+   realistic, start. vendor/relf/tree now carries relf's tests and examples (what make test needs).
+   **The noise floor here** (A against A, 12 rounds, SCALE=2): medians 0.98-1.06, 95 % intervals
+   about +-10 % (start +-30 %) - this VM gates correctness and shows large effects; the ledger's
+   candidates (1.5-5 % of dispatches each) are the laptop's to measure (relf's own reports are).
+   **Next**: tools/relf-pairs.py - the realistic script's adjacent instruction pairs by count (relf's
+   profile.py counts per instruction address; with its image decoding, a pair whose first does not
+   transfer control and whose second is no jump target runs as often as its second) - the fused
+   pairs to try, ranked; then the ledger's candidates as patches through relf-ab.sh.
 3. Classify this lab's genes by what relf would pay to adopt one (C engine only; image format;
    kernel words; x86-only) - a relf profile for the search; and relf's shell workloads in it.
 4. This lab's 32-bit engines built -fno-pie -no-pie, as relf's are (its two-width measurements

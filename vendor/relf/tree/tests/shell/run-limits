@@ -1,0 +1,92 @@
+#!/bin/sh
+# tests/shell/run-limits - fixed limits must be DIAGNOSED, not silently
+# exceeded and not left to crash (Iteration 90).
+. "$(dirname "$0")/lib.sh"
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+
+printf 'r() {\n  n=$1\n  if [ $n -gt 0 ]\n  then\n    r $((n-1))\n  fi\n}\nr 10\necho ok10\n' > "$t/a.sh"
+out=$(timeout 15 "$THIS_SH" "$t/a.sh" 2>&1)
+assert_output_contains "ordinary recursion works" "ok10" "$out"
+
+printf 'r() {\n  n=$1\n  if [ $n -gt 0 ]\n  then\n    r $((n-1))\n  fi\n}\nr 60\necho survived\n' > "$t/b.sh"
+out=$(timeout 20 "$THIS_SH" "$t/b.sh" 2>&1)
+assert_output_contains "deep recursion is diagnosed" "recursion too deep" "$out"
+assert_output_contains "and the shell survives it"   "survived"           "$out"
+
+# the shell-variable table held 32 and reported the 33rd (Iteration 90);
+# since Iteration 252 it grows, so 40 variables are simply 40 variables
+{ i=0; while [ $i -lt 40 ]; do echo "v$i=$i"; i=$((i+1)); done; echo 'echo "done $v0 $v32 $v39"'; } > "$t/c.sh"
+out=$(timeout 15 "$THIS_SH" "$t/c.sh" 2>&1)
+assert_output_equals "the variable table grows past 32" "done 0 32 39" "$out"
+assert_output_contains "and execution continues"           "done" "$out"
+# A variable name that does not fit (64 bytes) is refused with status
+# 2. Until Iteration 252 its copy failed silently and the assignment
+# went to the PREVIOUS assignment's variable: here, x.
+long=$(head -c 70 /dev/zero | tr '\0' n)
+printf 'x=5\n%s=1\necho "st=$? x=$x"\n' "$long" > "$t/name.sh"
+out=$(timeout 10 "$THIS_SH" "$t/name.sh" 2>/dev/null)
+assert_output_equals "a too-long name is refused and touches nothing else" "st=2 x=5" "$out"
+err=$(timeout 10 "$THIS_SH" "$t/name.sh" 2>&1 >/dev/null)
+assert_output_equals "a too-long name is reported" "shell: variable name too long" "$err"
+
+# An alias value is still 255 characters: reported, never left stale.
+printf 'alias a1=first\nalias a1="%s"\necho "st=$?"\n' "$(head -c 300 /dev/zero | tr '\0' q)" > "$t/alias.sh"
+out=$(timeout 10 "$THIS_SH" "$t/alias.sh" 2>&1)
+assert_output_contains "a too-long alias value is reported" "value too long" "$out"
+
+# `set` alone with almost no shell variables (Iteration 272: its sort loop
+# ran `0 1 ?DO` and crashed). Since Iteration 318 the shell sets PPID at
+# startup, so the table is never quite empty; the point of the case is
+# that `set` survives a table of one.
+# `env -i` is the point of the case - an almost empty variable table.
+# It once also wiped RELF_BIN and RELF_IMG, which were how the suite
+# told the relfsh script WHICH engine to run, and so tested the wrong
+# width (Iteration 398); since 506 THIS_SH is a binary that carries its
+# own engine and image, and nothing needs passing.
+out=$(env -i "$THIS_SH" -c 'set; echo "st=$?"' 2>&1 | tail -1)
+# Only the last line: since Iteration 422 the shell also sets IFS and
+# OPTIND at startup, as POSIX asks, so the table holds three variables,
+# and IFS's value spans lines. What matters is that `set` finished.
+assert_output_equals "set with an almost empty table" "st=0" "$out"
+
+
+# The function and alias tables grow (Iteration 419). They were 16 and
+# 32 entries, fixed, and the next definition was refused with "too many
+# functions" - a shell library defines dozens. A hundred of each, and a
+# removal from the middle of the function table, which compacts it.
+out=$("$THIS_SH" -c '
+i=1; while [ $i -le 100 ]; do eval "f$i() { echo f$i; }"; i=$((i+1)); done
+f1; f17; f100; unset -f f50; f51
+i=1; while [ $i -le 100 ]; do alias a$i=true; i=$((i+1)); done
+alias a100' 2>&1)
+assert_output_equals "a hundred functions and a hundred aliases" "f1
+f17
+f100
+f51
+a100='true'" "$out"
+# A long command name (Iteration 421, found by tools/crashfuzz.py). The
+# PATH search built "dir/name" into a 256-byte buffer with no bound, and a
+# name of 250 characters ran it into the next buffer and a segfault.
+long=$(printf '%1000s' '' | tr ' ' q)
+out=$("$THIS_SH" -c "$long; echo status=\$?" 2>/dev/null)
+assert_output_equals "a 1000-character command name is merely not found" "status=127" "$out"
+out=$("$THIS_SH" -c "command -v $long; echo status=\$?" 2>/dev/null)
+assert_output_equals "... and command -v says so too, as dash does" "status=127" "$out"
+# From the crash fuzzer (Iteration 426). printf and kill with no
+# arguments printed their usage and fell through: the EXIT after it had
+# been swallowed by a `\` comment in Iteration 357, and printf then
+# segfaulted formatting nothing. And the job table grew two of its five
+# arrays, so the 65th background job wrote past the other three.
+out=$("$THIS_SH" -c 'printf; echo "after:$?"' 2>/dev/null)
+assert_output_equals "printf with no arguments reports and goes on" "after:2" "$out"
+out=$("$THIS_SH" -c 'kill; echo "after:$?"' 2>/dev/null)
+assert_output_equals "kill with no arguments reports and goes on" "after:2" "$out"
+out=$("$THIS_SH" -c 'i=0; while [ $i -lt 300 ]; do : & i=$((i+1)); done; wait; echo "done $i"' 2>&1)
+assert_output_equals "three hundred background jobs" "done 300" "$out"
+# A builtin whose output cannot be written fails (Iteration 436, yash
+# redir-p.tst:302): echo and printf to a closed stdout return 1.
+out=$("$THIS_SH" -c 'echo foo >&-; echo "st=$?" >&2' 2>&1)
+assert_output_contains "echo to a closed stdout fails" "st=1" "$out"
+out=$("$THIS_SH" -c 'printf "x\n" >&-; echo "st=$?" >&2' 2>&1)
+assert_output_contains "printf to a closed stdout fails" "st=1" "$out"
+report

@@ -1,0 +1,66 @@
+#!/bin/sh
+# tests/shell/run-read - the `read` builtin (Iteration 54)
+. "$(dirname "$0")/lib.sh"
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+
+printf 'read x y\necho "x=[$x] y=[$y]"\nread rest\necho "rest=[$rest]"\nread z\necho "eof=$?"\n' > "$t/a.sh"
+out=$(printf 'a b  c d\n  second   line  \n' | "$THIS_SH" "$t/a.sh" 2>/dev/null)
+assert_output_contains "first field, and last var takes the rest" "x=[a] y=[b  c d]" "$out"
+assert_output_contains "leading and trailing blanks trimmed"      "rest=[second   line]" "$out"
+assert_output_contains "read at EOF returns 1"                    "eof=1" "$out"
+
+printf 'read -r a\necho "a=[$a]"\n' > "$t/b.sh"
+out=$(printf 'hello world\n' | "$THIS_SH" "$t/b.sh" 2>/dev/null)
+assert_output_contains "-r is accepted" "a=[hello world]" "$out"
+
+# an empty line is not EOF
+printf 'read a\necho "st=$? a=[$a]"\n' > "$t/c.sh"
+out=$(printf '\nx\n' | "$THIS_SH" "$t/c.sh" 2>/dev/null)
+assert_output_contains "an empty line reads successfully" "st=0 a=[]" "$out"
+
+# read inside a while loop, consuming the pipe rather than the script
+printf 'while read line\ndo\n  echo "got:$line"\ndone\necho fin\n' > "$t/d.sh"
+out=$(printf 'p\nq\n' | "$THIS_SH" "$t/d.sh" 2>/dev/null)
+assert_output_contains "while read: first line"  "got:p" "$out"
+assert_output_contains "while read: second line" "got:q" "$out"
+assert_output_contains "while read: terminates"  "fin"   "$out"
+
+# ---- read must not consume more than the line it returns ------------
+# POSIX: "the shell shall read the input... such that the file offset
+# is positioned at the first byte after the line read". A shell that
+# reads ahead into a buffer takes input away from whatever runs next -
+# the failure is invisible to every test that only checks what the
+# SHELL got, which is why this checks what a CHILD gets afterwards.
+#
+# Regression: the engine gained a 4096-byte stdin buffer, and `read x`
+# then swallowed the whole pipe. `cat` saw nothing, while dash left it
+# two lines. Caught only when someone asked whether the buffer could
+# cause trouble with two input sources.
+
+printf 'read x\necho "shell:$x"\ncat\n' > "$t/e.sh"
+out=$(printf 'l1\nl2\nl3\n' | "$THIS_SH" "$t/e.sh" 2>/dev/null)
+assert_output_contains "read takes one line from a pipe"        "shell:l1" "$out"
+assert_output_contains "a pipe's remainder is left for a child" "l2"       "$out"
+assert_output_contains "the child gets ALL of the remainder"    "l3"       "$out"
+
+# Same, from a seekable file: here POSIX is stricter still, because the
+# shell can and must seek back to where the line ended.
+printf 'm1\nm2\nm3\n' > "$t/in.txt"
+out=$("$THIS_SH" "$t/e.sh" < "$t/in.txt" 2>/dev/null)
+assert_output_contains "read takes one line from a file"        "shell:m1" "$out"
+assert_output_contains "a file's remainder is left for a child" "m2"       "$out"
+assert_output_contains "the child gets ALL of the file remainder" "m3"     "$out"
+
+# The last variable's remainder (Iteration 422, from busybox's
+# many_ifs): trailing IFS whitespace goes, and a remainder that is ONE
+# field closed by a single non-whitespace delimiter loses the delimiter
+# too. Each pair below is what dash and bash give.
+for pair in '::|()()' 'a:b:|(a)(b)' 'a:b::|(a)(b::)' 'a:b:c:|(a)(b:c:)' \
+            'a: :|(a)()' 'a:b :|(a)(b)' 'a:b: |(a)(b)'; do
+    input=${pair%|*}; want=${pair#*|}
+    got=$(printf '%s\n' "$input" | "$THIS_SH" -c 'IFS=": " read x y; printf "(%s)(%s)" "$x" "$y"')
+    assert_output_equals "read remainder: $input" "$want" "$got"
+done
+got=$(printf '%s\n' 'a:b\:' | "$THIS_SH" -c 'IFS=: read x y; printf "(%s)(%s)" "$x" "$y"')
+assert_output_equals "an escaped delimiter is text, and stays" "(a)(b:)" "$got"
+report

@@ -1,0 +1,31 @@
+#!/bin/sh
+# tests/interactive/run - the interactive cases, on a pseudo-terminal.
+# THIS_SH selects the shell (default ../../relfsh); --record SHELL
+# rewrites expected/ from that shell, which is how they were taken from
+# dash. Needs python3 for pty.fork; the other suites do not.
+here=$(cd "$(dirname "$0")" && pwd)
+# The transcript cases, then the ^R checks: those are assertions rather
+# than transcripts, since dash - which the transcripts are recorded from
+# - has no ^R to record (Iteration 409). A failed probe turns into a
+# failed case in the summary line tests/verify reads.
+out=$(python3 "$here/run_cases.py" "$@"); rc=$?
+if [ $# -eq 0 ]; then
+    probe=$(python3 "$here/search-probe.py" 2>&1); prc=$?
+    # TAB completion, the same way (Iteration 410)
+    probe2=$(python3 "$here/complete-probe.py" 2>&1); prc2=$?
+    # wide and zero-width characters' columns (Iteration 604)
+    probe3=$(python3 "$here/width-probe.py" 2>&1); prc3=$?
+    # ^C around INCLUDED (Iteration 617)
+    probe4=$(python3 "$here/include-probe.py" 2>&1); prc4=$?
+    # the prompt expanded once, and ^C's races at it (Iteration 712)
+    probe5=$(python3 "$here/prompt-probe.py" 2>&1); prc5=$?
+    probe=$(printf '%s\n%s\n%s\n%s\n%s\n' "$probe" "$probe2" "$probe3" "$probe4" "$probe5"); prc=$((prc + prc2 + prc3 + prc4 + prc5))
+    printf '%s\n' "$probe" | grep '^FAIL' || true
+    if [ "$prc" -ne 0 ]; then
+        out=$(printf '%s\n' "$out" | awk -v n="$prc" '
+            /^[0-9]+ passed, [0-9]+ failed/ { $3 = $3 + n; $1 = $1 } { print }')
+        rc=1
+    fi
+fi
+printf '%s\n' "$out"
+exit $rc

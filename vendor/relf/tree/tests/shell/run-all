@@ -1,0 +1,67 @@
+#!/bin/sh
+# tests/shell/run-all - runs every run-* test file in this directory
+# against $THIS_SH (default: ../../relfsh, i.e. the repo's own
+# default 8-byte-cell build). See lib.sh for the THIS_SH convention.
+#
+# To test the 4-byte-cell (i386) build instead, point THIS_SH at
+# the shell binary for that width, relfsh or relfsh32 - see tests/run_tests.sh
+# for how the full suite does this.
+# The suite's own stdin is closed: a case that runs this shell without
+# redirecting stdin would otherwise inherit the TERMINAL and wait there
+# for ever - which is what `make verify` did on a real checkout, while
+# in a container, where stdin is /dev/null, it had never once hung
+# (Iteration 392). The interactive pty harness makes its own terminal
+# and is unaffected.
+exec < /dev/null
+# Every assert_* a test file calls must exist in lib.sh. A call to one
+# that does not prints "not found" on stderr and counts nothing, so the
+# assertion silently never exists - Iteration 434 wrote one
+# (`assert_output_not_contains`) and the file reported one assertion
+# fewer, and passed.
+here_=$(cd "$(dirname "$0")" && pwd)
+undefined_=$(for f_ in "$here_"/run-*; do [ "$f_" = "$here_/run-all" ] || cat "$f_"; done |
+    grep -v '^[[:space:]]*#' | grep -o 'assert_[a-z][a-z_]*' | sort -u | while read -r a; do
+    grep -q "^$a *()" "$here_/lib.sh" || echo "$a"
+done)
+if [ -n "$undefined_" ]; then
+    echo "tests/shell: assertions used but not defined in lib.sh: $undefined_"
+    echo "tests/shell: 1 test file(s) had failures"
+    exit 1
+fi
+# Byte order and byte classes for every shell this suite runs: pathname
+# expansion sorts by LC_COLLATE, `[a-z]` is a collation range and
+# `[[:alpha:]]` is a locale's own idea of a letter. This shell has no
+# locale support - it is always the C locale - so a suite that compares
+# it with another shell, or with recorded output, has to say which
+# locale it means. A checkout in en_US.UTF-8 saw the difference
+# (Iterations 390 and 393).
+LC_ALL=C
+export LC_ALL
+# A preload library the loader cannot use prints a line to stderr on
+# every exec - Ubuntu and Mint set one system-wide (libgtk3-nocsd), and
+# it cannot be loaded into the 32-bit engine at all. The tests capture
+# stderr, so that line became part of what they compared, and every
+# i386 assertion failed with the right answer one line down
+# (Iteration 396). No test here wants a preload.
+unset LD_PRELOAD
+set -u
+cd "$(dirname "$0")" || exit 1
+
+TOTAL_FAILED=0
+for t in run-*; do
+    case "$t" in
+        run-all|*.orig|*~) continue ;;
+    esac
+    [ -f "$t" ] && [ -x "$t" ] || continue
+    if ! ./"$t"; then
+        TOTAL_FAILED=$((TOTAL_FAILED + 1))
+    fi
+done
+
+if [ "$TOTAL_FAILED" -eq 0 ]; then
+    echo "tests/shell: all test files passed"
+    exit 0
+else
+    echo "tests/shell: $TOTAL_FAILED test file(s) had failures"
+    exit 1
+fi

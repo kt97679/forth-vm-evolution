@@ -1,0 +1,30 @@
+\ tests/native/kernel-inline.4 - small colon words inlined (Iteration 646):
+\ results through words that inline, nest, and do not - native and CV8 must
+\ print the same; and natively the marker on what can be copied.
+VARIABLE BASEV  100 BASEV !
+: X@ ( off --- x )  BASEV @ + ;
+: XF@ ( a b --- x )  1+ CELLS + X@ ;
+: USE  5 X@ .  2 3 XF@ .  7 X@ X@ . ;
+USE CR
+: HASIF ( n --- m )  DUP 0< IF NEGATE THEN 1+ ;
+: USE2  -4 HASIF .  4 HASIF . ;
+USE2 CR
+: RS ( n --- n )  >R R> 2 * ;
+: USE3  21 RS . ;
+USE3 CR
+: TWICE ( xt --- )  DUP EXECUTE EXECUTE ;
+: INC  BASEV @ 1+ BASEV ! ;
+: USE4  ['] INC TWICE  BASEV @ . ;
+USE4 CR
+\ (651) bodies with internal jumps, inlined since 651
+: CNTUP ( n --- m )  0 BEGIN 1+ 2DUP = UNTIL SWAP DROP ;
+: SUMTO ( n --- s )  0 SWAP 0 ?DO I + LOOP ;
+: FIRST>3 ( n --- i )  -1 SWAP 0 ?DO I 3 > IF DROP I LEAVE THEN LOOP ;
+: SGN ( n --- s )  DUP 0< IF DROP -1 ELSE 0 > IF 1 ELSE 0 THEN THEN ;   \ no 0> in the bare kernel
+: USE5  5 CNTUP .  10 SUMTO .  0 SUMTO .  9 FIRST>3 .  2 FIRST>3 .
+  -7 SGN .  0 SGN .  7 SGN .  -3 SGN 0< IF 11 ELSE 22 THEN . ;
+USE5 CR
+: USE6  3 0 DO I SGN 2 SUMTO + . LOOP ;
+USE6 CR
+.( end) CR   \ the last line: verify's native_cmp wants it (656)
+BYE

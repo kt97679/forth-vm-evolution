@@ -1,0 +1,161 @@
+#!/bin/sh
+# tests/shell/run-invocation - how the shell may be started: -c with and
+# without a name, -s with and without operands, a script, and standard
+# input (Iteration 375). `-s` and the longer `-c` form were missing, and
+# a harness that feeds a script on stdin with arguments got nothing at
+# all - most of yash's POSIX suite is written that way.
+. "$(dirname "$0")/lib.sh"
+case "$THIS_SH" in /*) SH=$THIS_SH ;; *) SH=$(pwd)/$THIS_SH ;; esac
+
+assert_output_equals "-s reads standard input" "hi" \
+  "$(echo 'echo hi' | "$SH" -s 2>&1)"
+assert_output_equals "-s -- takes operands as parameters" "[a][b]" \
+  "$(echo 'echo "[$1][$2]"' | "$SH" -s -- a b 2>&1)"
+assert_output_equals "-s takes operands without --" "[x]" \
+  "$(echo 'echo "[$1]"' | "$SH" -s x y 2>&1)"
+assert_output_equals "-s counts its parameters" "2" \
+  "$(echo 'echo $#' | "$SH" -s -- a b 2>&1)"
+assert_output_equals "-c with a name sets \$0" "name arg" \
+  "$("$SH" -c 'echo "$0 $1"' name arg 2>&1)"
+assert_output_equals "-c alone still works" "plain" \
+  "$("$SH" -c 'echo plain' 2>&1)"
+assert_output_equals "standard input without -s" "piped" \
+  "$(echo 'echo piped' | "$SH" 2>&1)"
+assert_output_equals "a script file still takes parameters" "s1 s2" \
+  "$(printf 'echo "$1 $2"\n' > /tmp/relf-375.sh; "$SH" /tmp/relf-375.sh s1 s2 2>&1; rm -f /tmp/relf-375.sh)"
+assert_output_equals "-s with no operands has none" "0" \
+  "$(echo 'echo $#' | "$SH" -s 2>&1)"
+
+# Option letters may be combined and repeated, `-o name` takes the next
+# argument, and `--` ends them (Iteration 377).
+assert_output_equals "combined -es takes an operand" "a" \
+  "$(echo 'echo $1' | "$SH" -es a 2>&1)"
+assert_output_equals "-s after another option still reads stdin" "1" \
+  "$(echo 'set -- x; shift 0 && echo $#' | "$SH" -es 2>&1)"
+assert_output_equals "-e from the command line is in effect" "" \
+  "$(echo 'false; echo REACHED' | "$SH" -se 2>&1)"
+assert_output_equals "-f from the command line turns globbing off" '/no-such*' \
+  "$(echo 'echo /no-such*' | "$SH" -sf 2>&1)"
+assert_output_equals "-o name sets an option" "" \
+  "$(echo 'false; echo REACHED' | "$SH" -s -o errexit 2>&1)"
+assert_output_equals "+o name clears one" "REACHED" \
+  "$(echo 'false; echo REACHED' | "$SH" -s -o errexit +o errexit 2>&1)"
+assert_output_equals "-u from the command line is in effect" "" \
+  "$(echo 'echo ${nosuchvar}; echo REACHED' | "$SH" -su 2>/dev/null)"
+assert_output_equals "a lone -- ends the options" "[-x]" \
+  "$(echo 'echo "[$1]"' | "$SH" -s -- -x 2>&1)"
+
+# A prompt is expanded before it is written (XCU 2.5.3): parameters,
+# command substitutions and arithmetic. bash's own escapes - \u, \h,
+# \w, \[ - are bash's, and are left alone here as they are by dash
+# (Iteration 389).
+# PS1 is set INSIDE the shell rather than handed to it in the
+# environment, and the LAST prompt is the one checked - the first is
+# written before the assignment runs. Passing it in the environment
+# works only where /bin/sh is dash: bash, running a non-interactive
+# script, clears PS1 before exec'ing anything, so the wrapper lost it on
+# a Gentoo box and this shell printed its default (Iteration 400).
+last_prompt() {   # the prompts after the assignment, default one removed
+    # The first prompt is written before the assignment runs, so it is
+    # the shell's default `$ `; everything after it is what PS1 made.
+    printf '%s\nexit\n' "$1" | "$SH" -i 2>&1 >/dev/null | sed 's/^\$ //'
+}
+assert_output_equals "PS1 expands a command substitution" "[S] " \
+  "$(last_prompt "PS1='[\$(echo S)] '")"
+assert_output_equals "PS1 expands parameters and arithmetic" "d5 " \
+  "$(last_prompt "PS1='\${x-d}\$((2+3)) '")"
+# bash's escapes are decoded (Iteration 412). This assertion used to say
+# the opposite - "PS1 leaves bash's escapes alone", as dash does - and a
+# user's byobu prompt printed as a line of escape codes is what changed
+# the decision.
+assert_output_equals "PS1 decodes \\u and \\W" "someone [tmp] " \
+  "$(cd /tmp && USER=someone last_prompt 'PS1='"'"'\u [\W] '"'"'')"
+assert_output_equals "\\[ \\] leave only what they enclose" "$(printf '\033[1mB\033[0m ')" \
+  "$(last_prompt 'PS1='"'"'\[\e[1m\]B\[\e[0m\] '"'"'')"
+# \$ follows the EFFECTIVE uid, not $USER (Iteration 417): USER is set
+# to the opposite answer, so this passes only if it is ignored - as root
+# here, and as an ordinary user on anyone else's machine.
+if [ "$(id -u)" = 0 ]; then want_dollar='#'; liar=someone; else want_dollar='$'; liar=root; fi
+assert_output_equals "\\$ follows the effective uid, not USER" "$want_dollar " \
+  "$(USER=$liar last_prompt 'PS1='"'"'\$ '"'"'')"
+# The time and date escapes (Iteration 417), against date(1) read on
+# either side, so a minute ticking over between the readings cannot fail
+# it.
+# UTC: relf keeps no time zone (QUESTIONS.md A16, Iteration 544), so the
+# prompt's time is compared with date -u; with date it failed on every
+# machine outside UTC, fury's first.
+before=$(LC_ALL=C date -u '+%a %b %d %H:%M')
+got=$(last_prompt 'PS1='"'"'\d \A'"'"'')
+after=$(LC_ALL=C date -u '+%a %b %d %H:%M')
+if [ "$got" = "$before" ] || [ "$got" = "$after" ]; then ok_dt=yes; else ok_dt="[$got] vs [$before]"; fi
+assert_output_equals "\\d and \\A agree with date" yes "$ok_dt"
+case $(last_prompt 'PS1='"'"'\t|\T|\@'"'"'') in
+    [0-2][0-9]:[0-5][0-9]:[0-5][0-9]'|'[01][0-9]:[0-5][0-9]:[0-5][0-9]'|'[01][0-9]:[0-5][0-9]' '[AP]M) ok_t=yes ;;
+    *) ok_t=no ;;
+esac
+assert_output_equals "\\t \\T \\@ have their shapes" yes "$ok_t"
+assert_output_equals "an unknown escape is left as it was" '\q ' \
+  "$(last_prompt 'PS1='"'"'\q '"'"'')"
+assert_output_equals "a continued line still parses with a live PS2" "[a
+b]" \
+  "$(printf 'x="a\nb"\necho "[$x]"\n' | PS2='p$(echo Q)> ' "$SH" -i 2>/dev/null)"
+# PS4 holding an expansion, under set -x (Iteration 421, found by
+# tools/crashfuzz.py). It was expanded while the traced command's own
+# words were in the expansion buffers, and ANY expansion in it - even a
+# plain variable - crashed the next traced command. 391's test assigned
+# PS4 in double quotes, so the stored value had nothing left to expand.
+out=$("$THIS_SH" -c 'foo=Q; PS4='"'"'[$foo] '"'"'; set -x; echo hi; echo there' 2>&1)
+assert_output_equals "PS4 with a variable, under set -x" "[Q] echo hi
+hi
+[Q] echo there
+there" "$out"
+out=$("$THIS_SH" -c 'foo=XY; PS4='"'"'${foo#X} '"'"'; set -x; echo hi' 2>&1)
+assert_output_equals "... with a trim" "Y echo hi
+hi" "$out"
+out=$("$THIS_SH" -c 'PS4='"'"'+ $(echo L): '"'"'; set -x; x=1; echo $x' 2>&1)
+assert_output_equals "... with a command substitution, not traced itself" "+ L: x=1
++ L: echo 1
+1" "$out"
+out=$("$THIS_SH" -c 'PS4='"'"'[$?] '"'"'; set -x; false; echo after' 2>&1)
+assert_output_equals "... and \$? as of the command before" "[0] false
+[1] echo after
+after" "$out"
+# A lone `-` after the options is ignored (XCU sh), and $0 is the name
+# the shell was invoked by, passed by relfsh as RELF_ARGV0 and not
+# inherited (Iteration 435, yash startup-p.tst:79, :155, :160).
+out=$("$THIS_SH" -c - 'echo OK' 2>&1)
+assert_output_equals "sh -c - CMD ignores the -" "OK" "$out"
+printf 'echo "[$1]"\n' > "${TMPDIR:-/tmp}/inv435.$$"
+out=$("$THIS_SH" - "${TMPDIR:-/tmp}/inv435.$$" arg 2>&1)
+assert_output_equals "sh - FILE ARG ignores the -" "[arg]" "$out"
+rm -f "${TMPDIR:-/tmp}/inv435.$$"
+out=$(echo 'echo "${0##*/}"' | "$THIS_SH" -s 2>&1)
+assert_output_equals "\$0 under -s is the invocation name" "${THIS_SH##*/}" "$out"
+out=$("$THIS_SH" -c 'env | grep -c "^RELF_ARGV0="' 2>&1)
+assert_output_equals "... which nothing the shell starts inherits" "0" "$out"
+# ... but after `--`, a `-` is an operand: `sh -s -- -` has $1 = "-"
+# (dash). 435 skipped it there too, and broke yash's test-p.tst (436).
+out=$(echo 'echo "[$#][$1]"' | "$THIS_SH" -s -- - 2>&1)
+assert_output_equals "sh -s -- - keeps the -" "[1][-]" "$out"
+# cd's options: every letter of every word, the last -L or -P winning;
+# `--` ends them (Iteration 441, yash cd-p.tst:354).
+# The link is two levels deep, so link/.. differs: physically real, logically
+# the top - a one-level link cannot tell the two modes apart.
+d441=$(mktemp -d); mkdir -p "$d441/real/sub" "$d441/real/dev" "$d441/dev"; ln -s real/sub "$d441/link"
+for pair in '-P -L -PL:/dev' '-LP:/real/dev' '-PL:/dev' '-L -P:/real/dev'; do
+    opts=${pair%:*}; want=${pair#*:}
+    got=$("$THIS_SH" -c "cd \"\$1\" && cd $opts link/../dev && echo \"\${PWD#\$1}\"" sh "$(cd "$d441" && pwd -P)" 2>&1)
+    assert_output_equals "cd $opts" "$want" "$got"
+done
+rm -rf "$d441"
+# command's options, alone or combined, -p with any of them (Iteration
+# 443, yash command-p.tst:275, :280).
+out=$("$THIS_SH" -c 'PATH=; command -pv cat' 2>&1)
+case $out in */cat) got=found ;; *) got="[$out]" ;; esac
+assert_output_equals "command -pv finds cat along the default PATH" "found" "$got"
+out=$("$THIS_SH" -c 'PATH=; command -p -v cat >/dev/null; echo "st=$?"' 2>&1)
+assert_output_equals "... and -p -v does too" "st=0" "$out"
+out=$("$THIS_SH" -c 'unset PATH; command -p echo x; echo "[${PATH-unset}]"' 2>&1)
+assert_output_equals "an unset PATH is unset again afterwards" "x
+[unset]" "$out"
+report

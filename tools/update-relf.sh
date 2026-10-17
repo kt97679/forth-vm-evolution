@@ -10,7 +10,8 @@
 # the commit it resolves to is recorded in vendor/relf/UPSTREAM, so every
 # measurement says which relf it was. Iteration 356: and relf's sources under
 # vendor/relf/tree - engine, Forth, shell, tools, benchmarks, the shell's VM
-# benchmarks (tests/bench-vm), the Makefile and the CV8 documents - enough to
+# benchmarks and its test suites (tests - make test, the adoption gate; Iteration
+# 357), the Makefile and the CV8 documents - enough to
 # build relf, change it and measure the change with its own bench-vm.py.
 set -e
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -23,7 +24,7 @@ for f in engine/cv8.c engine/cv8-ops.h engine/opcodes.tab forth/kernel64.img for
     cp "$T/relf/$f" "$D/$(basename "$f")"
 done
 rm -rf "$D/tree"; mkdir -p "$D/tree"
-git -C "$T/relf" archive HEAD engine forth shell tools bench tests/bench-vm Makefile README.md docs/GOALS.md docs/CV8.md docs/CV8-LEDGER.md | tar -x -C "$D/tree"
+git -C "$T/relf" archive HEAD engine forth shell tools bench tests examples Makefile README.md docs/GOALS.md docs/CV8.md docs/CV8-LEDGER.md | tar -x -C "$D/tree"
 # relf's licence is GPL version 2 only; its README's Licence section, verbatim.
 awk '/^## Licen[cs]e/{f=1} f&&/^## /&&!/^## Licen[cs]e/{exit} f' "$T/relf/README.md" > "$D/LICENCE.md"
 [ -s "$D/LICENCE.md" ] || { echo "no Licence section in relf's README"; exit 1; }

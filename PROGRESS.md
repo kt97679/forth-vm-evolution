@@ -6725,3 +6725,15 @@ names what it wants from this lab: XF@ and XV@, DEFER, (+LOOP), PICK and fused p
 instructions, measured on its shell. relf already has the instrument (bench-vm.py: paired CPU time
 with bootstrap intervals) and the workloads (loop, fn, str, arith, realistic, start). LICENCE.md:
 GPLv2 only, as relf's and SOD32's. RELF.md: the adoption criteria and the plan.
+
+## Iteration 357 - 2026-10-17 - Claude
+
+**The A/B harness for relf - tools/relf-ab.sh - and this VM's noise floor.** A is the vendored relf;
+B, the same with a candidate patch (its images rebuilt when the instruction map, kernel.4 or cross.4
+change). B must fail nothing in relf's own make test that A passes - a regression gate, A's failures
+recorded once per vendored commit; then relf's bench-vm.py on its six shell workloads. Getting there
+vendored relf's tests and examples too (make test's first run here failed only for examples/ left
+out); with them relf passes its whole suite on this VM. The noise floor, A against A, twelve rounds:
+medians within 6 % of 1, intervals about 10 % wide either side (start, 30 %) - so this VM gates
+correctness and large effects, and the ledger's candidates, 1.5-5 % of dispatches each, must be
+measured on the laptop, as relf's own reports were. Next: the realistic script's instruction pairs.

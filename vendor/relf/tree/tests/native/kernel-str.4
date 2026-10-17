@@ -1,0 +1,64 @@
+\ tests/native/kernel-str.4 - the string primitives native-rt.4 makes fast
+\ (Iteration 644): CSTRLEN at every length to 20 and every alignment to 7,
+\ SCAN found, not found, empty, at every length and position - against CV8:
+\ native, CV8-asm and CV8-C print the same. Only failures and "ok" print.
+CREATE SB 96 ALLOT
+: MK ( n off --- z )  SB 8 + + >R  R@ OVER 97 FILL  0 R@ ROT + C!  R> ;
+: T-CSTR  21 0 DO 8 0 DO  J I MK CSTRLEN J = 0= IF ." cstrlen-bad " J . I . THEN
+  LOOP LOOP ." cstrlen-ok" CR ;
+T-CSTR
+VARIABLE END   \ not >R: in a loop, I and J would not be the loop's then
+: T-SCAN  21 0 DO  I 0 ?DO  J 3 MK J 2DUP + END !  OVER I + 98 SWAP C!  98 SCAN
+    J I - = 0= IF ." scan-u-bad " J . I . THEN  END @ J - I + = 0= IF ." scan-a-bad " J . I . THEN
+  LOOP LOOP ." scan-ok" CR ;
+T-SCAN
+: T-NONE  21 0 DO  I 5 MK I 2DUP + END ! 98 SCAN 0= 0= IF ." none-u-bad " I . THEN
+  END @ = 0= IF ." none-a-bad " I . THEN  LOOP ." none-ok" CR ;
+T-NONE
+SB 0 98 SCAN . SB - . CR
+S" hello=world" 61 SCAN . DROP CR
+\ (647) COMPARE at every length to 12, a difference at every position,
+\ either sign, prefixes; MOVE at every size to 20, overlapping both ways
+CREATE CA 32 ALLOT  CREATE CB2 32 ALLOT
+VARIABLE SUM
+: T-CMP  0 SUM !  13 0 DO  CA 32 97 FILL  CB2 32 97 FILL
+    CA I CB2 I COMPARE SUM +!  I 0 ?DO
+      CA I + 98 SWAP C!  CA J CB2 J COMPARE 3 * SUM +!
+      CB2 I + 99 SWAP C!  CA J CB2 J COMPARE 5 * SUM +!  CA I + 97 SWAP C!  CB2 I + 97 SWAP C!
+    LOOP  CA I CB2 I 1+ COMPARE 7 * SUM +!  CA I 1+ CB2 I COMPARE 11 * SUM +!
+  LOOP  SUM @ . ." compare" CR ;
+T-CMP
+: FILLSEQ ( a n --- )  0 ?DO I 1+ OVER I + C! LOOP DROP ;
+: CK ( a n --- s )  0 SWAP 0 ?DO OVER I + C@ I 1+ * + LOOP SWAP DROP ;   \ no NIP in the bare kernel
+: T-MOVE  0 SUM !  21 0 DO  CA 32 FILLSEQ  CA CA 3 + I MOVE  CA 32 CK SUM +!
+    CA 32 FILLSEQ  CA 3 + CA I MOVE  CA 32 CK SUM +!
+    CA 32 FILLSEQ  CA CB2 I MOVE  CB2 I CK SUM +!  LOOP  SUM @ . ." move" CR ;
+T-MOVE
+\ (652) CSTRLEN where a string's first eight bytes reach a page's end:
+\ at -8 the one-load path exactly at its limit, at -7 to -1 the careful
+\ way, every length to 10, against a count in Forth
+CREATE PG 8200 ALLOT
+: PAGE-END ( --- a )  PG 4096 + -4096 AND ;
+: SLOW-LEN ( a --- u )  0 BEGIN 2DUP + C@ WHILE 1+ REPEAT SWAP DROP ;
+: T-PAGE  0 SUM !  9 1 DO  11 0 DO
+    PAGE-END J - DUP 24 65 FILL  DUP I + 0 SWAP C!
+    DUP CSTRLEN SWAP SLOW-LEN = IF 1 SUM +! THEN
+  LOOP LOOP  SUM @ . ." page" CR ;
+T-PAGE
+\ (654) SCAN where a string's first eight bytes reach a page's end, from 8
+\ bytes before it to 1 - every length to 10, a c at every place to 10, past
+\ the string's end too, where it must not be found, or none - against a
+\ byte loop in Forth, 1056 cases; and an empty string at address 0, which
+\ must not be read. Written for a one-load path, built and reverted at 654:
+\ guards, which the byte loop passes too
+VARIABLE OFF
+: SLOW-SCAN ( a u --- a' u' )   \ the first 98, or the end and 0
+  BEGIN DUP WHILE OVER C@ 98 = IF EXIT THEN SWAP 1+ SWAP 1- REPEAT ;
+: T-SPAGE  0 SUM !  9 1 DO  I OFF !  11 0 DO  12 0 DO
+    PAGE-END OFF @ - DUP 24 97 FILL  I 11 < IF DUP I + 98 SWAP C! THEN
+    DUP J 98 SCAN  ROT J SLOW-SCAN  ROT = >R = R> AND IF 1 SUM +! THEN
+  LOOP LOOP LOOP  SUM @ . ." spage" CR ;
+T-SPAGE
+0 0 98 SCAN . . CR
+.( end) CR   \ the last line: verify's native_cmp wants it (656)
+BYE

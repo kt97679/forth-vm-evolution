@@ -1,0 +1,77 @@
+#!/bin/sh
+# tests/shell/run-builtins2 - shift, readonly, command -v (Iteration 51)
+. "$(dirname "$0")/lib.sh"
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+
+printf 'set a b c\nshift\necho "1=$1 n=$#"\nshift 2\necho "after=$#"\n' > "$t/a.sh"
+out=$("$THIS_SH" "$t/a.sh" 2>/dev/null)
+assert_output_contains "shift drops the first parameter" "1=b n=2"  "$out"
+assert_output_contains "shift n drops n"                 "after=0"  "$out"
+
+# Since Iteration 376 an error in a special builtin ends a
+# non-interactive shell (XCU 2.8.1), so the script stops at the `shift`
+# and its status is the shell's.
+printf 'shift 5\necho "st=$?"\n' > "$t/b.sh"
+out=$("$THIS_SH" "$t/b.sh" 2>/dev/null); st=$?
+assert_output_equals "shift past the end ends the script" "" "$out"
+assert_output_equals "... with a non-zero status" "yes" "$([ "$st" -ne 0 ] && echo yes)"
+
+# An assignment to a readonly variable is one of those errors too, so
+# the script ends there; the ordinary assignment is checked separately.
+printf 'readonly R=1\nR=2\necho "R=$R"\n' > "$t/c.sh"
+out=$("$THIS_SH" "$t/c.sh" 2>/dev/null)
+assert_output_equals "assigning to a readonly ends the script" "" "$out"
+printf 'W=1\nW=2\necho "W=$W"\n' > "$t/c2.sh"
+out=$("$THIS_SH" "$t/c2.sh" 2>/dev/null)
+assert_output_contains "ordinary variables still assign" "W=2" "$out"
+
+printf 'V=7\nreadonly V\n(V=8) 2>/dev/null\necho "V=$V"\n' > "$t/d.sh"
+out=$("$THIS_SH" "$t/d.sh" 2>/dev/null)
+assert_output_contains "readonly NAME marks an existing variable" "V=7" "$out"
+
+printf 'command -v cd\ncommand -v nosuchthing\necho "st=$?"\n' > "$t/e.sh"
+out=$("$THIS_SH" "$t/e.sh" 2>/dev/null)
+assert_output_contains "command -v finds a builtin"     "cd"   "$out"
+assert_output_contains "command -v fails on a nonword"  "st=1" "$out"
+
+printf 'f() {\n  echo x\n}\ncommand -v f\n' > "$t/f.sh"
+out=$("$THIS_SH" "$t/f.sh" 2>/dev/null)
+assert_output_contains "command -v finds a function" "f" "$out"
+printf 'readonly p=b\nq=notro\nreadonly -p\n' > "$t/g.sh"
+out=$("$THIS_SH" "$t/g.sh" 2>/dev/null)
+# quoted since Iteration 569, as dash writes it: unquoted, a value
+# with a blank did not read back in (run-round-trips)
+assert_output_contains "readonly -p lists a read-only variable" "readonly p='b'" "$out"
+TESTS_RUN=$((TESTS_RUN + 1))
+case "$out" in *notro*) TESTS_FAILED=$((TESTS_FAILED+1)); echo "FAIL: readonly -p listed an ordinary variable";; esac
+
+printf 'readonly r=1\nreadonly\n' > "$t/h.sh"
+out=$("$THIS_SH" "$t/h.sh" 2>/dev/null)
+assert_output_contains "bare 'readonly' lists them too" "readonly r='1'" "$out"
+
+# readonly on an unset name (Iteration 603): the name is read-only and
+# the variable stays unset, as POSIX has it and dash does. Before, the
+# mark was lost and Y=1 went through.
+ro_run() { printf '%s\n' "$1" > "$t/ro.sh"; "$THIS_SH" "$t/ro.sh" 2>&1; }
+out=$(ro_run 'readonly Y; echo "unset:${Y+set}"; Y=1; echo after')
+assert_output_contains "readonly Y: still unset" "unset:" "$out"
+assert_output_contains "readonly Y: Y=1 refused" "is read only" "$out"
+case $out in *after*) assert_output_equals "readonly Y: Y=1 ends the script, as dash" "ended" "$out" ;;
+             *) assert_output_equals "readonly Y: Y=1 ends the script, as dash" "ended" "ended" ;; esac
+out=$(ro_run 'readonly Y; readonly -p')
+assert_output_contains "readonly -p lists it, with no value" "readonly Y" "$out"
+out=$(ro_run 'readonly Y; unset Y; echo after')
+assert_output_contains "readonly Y: unset refused" "is read only" "$out"
+# read and getopts are regular builtins: a read-only name is status 2,
+# and the script goes on - for a set read-only variable too, which ended
+# the script before
+printf 'readonly Y\nread Y <<EOF\nv\nEOF\necho "read: $?"\n' > "$t/ro1.sh"
+out=$("$THIS_SH" "$t/ro1.sh" 2>&1)
+assert_output_contains "read on a read-only name: status 2, and on" "read: 2" "$out"
+printf 'Y=1; readonly Y\nread Y <<EOF\nv\nEOF\necho "read: $? $Y"\n' > "$t/ro2.sh"
+out=$("$THIS_SH" "$t/ro2.sh" 2>&1)
+assert_output_contains "read on a set read-only name: status 2, unchanged" "read: 2 1" "$out"
+out=$(ro_run 'readonly o; getopts a o -a; echo "getopts: $?"')
+assert_output_contains "getopts on a read-only name: status 2" "getopts: 2" "$out"
+
+report

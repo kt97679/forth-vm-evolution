@@ -1,0 +1,350 @@
+#!/bin/sh
+# tests/portability - the scaffolding, not the shell.
+#
+# Added at Iteration 391, after two reports from a real checkout that
+# this project's own suites could not have caught:
+#
+#   - `make test` ran a #!/bin/bash script with `sh`, which works only
+#     where /bin/sh is bash (Iteration 390);
+#   - a differential case failed in a UTF-8 locale and passed in C,
+#     because pathname expansion sorts by LC_COLLATE and this shell
+#     sorts bytes (Iteration 390).
+#
+# Both are properties of the scripts and the Makefile rather than of the
+# shell, so nothing was watching them. This is what watches them.
+#
+# Prints one line per check and a count; exits non-zero if any failed.
+# A preload library the loader cannot use prints a line to stderr on
+# every exec - Ubuntu and Mint set one system-wide (libgtk3-nocsd), and
+# it cannot be loaded into the 32-bit engine at all. The tests capture
+# stderr, so that line became part of what they compared, and every
+# i386 assertion failed with the right answer one line down
+# (Iteration 396). No test here wants a preload.
+unset LD_PRELOAD
+cd "$(dirname "$0")/.." || exit 2
+problems=0
+checked=0
+TMPP=$(mktemp -d)
+trap 'rm -rf "$TMPP"' EXIT INT TERM
+
+say() { printf '%-58s %s\n' "$1" "$2"; }
+bad() { problems=$((problems + 1)); say "$1" "PROBLEM: $2"; }
+ok()  { checked=$((checked + 1)); [ -n "${VERBOSE:-}" ] && say "$1" ok; return 0; }
+
+# ------------------------------------------------------------------
+# 1. Every script parses under the interpreter its shebang names.
+# ------------------------------------------------------------------
+for f in tests/run_tests.sh tests/verify tests/sizes tests/bench \
+         tests/diff/run-all tests/matrix/run tests/shell/run-all \
+         tests/posix/run.sh tests/mrsh-suite/run.sh tests/portability \
+         tools/*.sh prompts/*.sh; do  # relfsh is a binary since 506; 19's template since 664
+    [ -f "$f" ] || continue
+    case $(head -1 "$f") in
+        '#!/bin/bash'|'#!'*bash) interp=bash ;;
+        '#!/bin/sh'|'#!'*sh)     interp=sh ;;
+        *) bad "$f" "no shebang"; continue ;;
+    esac
+    if [ "$interp" = sh ]; then
+        # Checked with dash when there is one: a #!/bin/sh script that
+        # only parses under bash is the fault reported at Iteration 390.
+        checker=$(command -v dash || command -v sh)
+    else
+        checker=$(command -v bash)
+    fi
+    if [ -z "$checker" ]; then
+        say "$f" "skipped: no $interp"
+    elif "$checker" -n "$f" 2>/dev/null; then
+        ok "$f ($interp syntax)"
+    else
+        bad "$f" "does not parse under $checker, though its shebang says $interp"
+    fi
+done
+
+# ------------------------------------------------------------------
+# 2. The Makefile runs each script the way its shebang asks.
+# ------------------------------------------------------------------
+if [ -f Makefile ]; then
+    # Recipe lines only - lines starting with a tab - so that a comment
+    # ABOUT the mistake is not read as the mistake (which is what the
+    # first version of this check did). The interpreter is the first
+    # word of the recipe, after any `@`.
+    awk '
+        /^\t/ {
+            line = $0
+            sub(/^\t@?/, "", line)
+            split(line, w, /[ \t]+/)
+            interp = w[1]
+            if (interp != "sh" && interp != "bash") next
+            script = w[2]
+            if (script == "") next
+            print interp, script
+        }
+    ' Makefile > "$TMPP/recipes"
+    while read -r interp script; do
+        [ -f "$script" ] || continue
+        case $(head -1 "$script") in *bash) want=bash ;; *) want=sh ;; esac
+        if [ "$want" = bash ] && [ "$interp" != bash ]; then
+            bad "Makefile: $interp $script" "that script needs bash"
+        else
+            ok "Makefile: $interp $script"
+        fi
+    done < "$TMPP/recipes"
+fi
+
+# ------------------------------------------------------------------
+# 2b. Every suite closes its own stdin.
+#
+# A case that runs the shell without redirecting stdin inherits whatever
+# the suite inherited. From a container that is /dev/null and nothing
+# happens; from a terminal it is the terminal, and the suite waits there
+# for ever. `make verify` did exactly that on a real checkout
+# (Iteration 392).
+# ------------------------------------------------------------------
+for f in tests/run_tests.sh tests/verify tests/diff/run-all \
+         tests/matrix/run tests/shell/run-all; do
+    if grep -q '^exec < /dev/null' "$f"; then
+        ok "$f closes its stdin"
+    else
+        bad "$f" "does not close its stdin: a stray read would wait on the terminal"
+    fi
+done
+
+# ------------------------------------------------------------------
+# 2c. And the suites finish when stdin never delivers, which is what a
+#     terminal looks like until someone types. Cheap version: the
+#     differential suite, under a pipe that stays open.
+# ------------------------------------------------------------------
+# The two dynamic checks below run whole suites again - under a
+# terminal-like stdin, and in a second locale. That is minutes of work
+# and it competes with whatever else is running, so from inside
+# tests/verify they are skipped: a timing-sensitive check that shares a
+# machine with the suite it is timing reported a problem once and none
+# the next time, and the baseline recorded the flake (Iteration 408).
+# `make portability` runs them.
+if [ -n "${PORTABILITY_QUICK:-}" ]; then
+    say "the dynamic re-runs" "skipped (PORTABILITY_QUICK); run 'make portability'"
+elif [ -x ./relfsh ] && command -v timeout >/dev/null 2>&1 &&
+   command -v mkfifo >/dev/null 2>&1; then
+    # A pipe with a writer that never writes, which is what a terminal
+    # is until someone types. The writer is killed straight after, or
+    # this check would sit waiting for its own stand-in.
+    # The allowance is measured, not guessed: an ARMv7 board takes
+    # longer than a 200-second timeout and reported "did not finish",
+    # which was this check's clock rather than the suite's behaviour
+    # (Iteration 399). Five times a normal run, and never less than 300s.
+    t0=$(date +%s)
+    sh tests/diff/run-all >/dev/null 2>&1 || true
+    normal=$(( $(date +%s) - t0 ))
+    allow=$(( normal * 5 )); [ "$allow" -lt 300 ] && allow=300
+    mkfifo "$TMPP/tty" 2>/dev/null
+    sleep $(( allow + 60 )) > "$TMPP/tty" &
+    writer=$!
+    if timeout "$allow" sh tests/diff/run-all < "$TMPP/tty" >/dev/null 2>&1; then
+        ok "the differential suite finishes with a terminal-like stdin"
+    else
+        bad "terminal-like stdin" "the differential suite did not finish"
+    fi
+    kill "$writer" 2>/dev/null
+    wait "$writer" 2>/dev/null
+fi
+
+# ------------------------------------------------------------------
+# 2d. The shell suite gives the same answer in somebody else's
+#     environment.
+#
+# A test that asserts `${#HOME}` is 5 is asserting that the machine's
+# HOME is /root. That one passed here for 395 iterations and failed the
+# first time anyone else ran it. This runs the whole suite again with a
+# HOME, USER and PATH that are not this machine's, and requires the same
+# result (Iteration 395).
+# ------------------------------------------------------------------
+if [ -x ./relfsh ]; then
+    here=$(cd tests/shell && THIS_SH="$PWD/../../relfsh" sh ./run-all 2>&1 | tail -1)
+    there=$(cd tests/shell && HOME=/home/nobody-at-all USER=nobody LOGNAME=nobody \
+            TERM=dumb THIS_SH="$PWD/../../relfsh" sh ./run-all 2>&1 | tail -1)
+    if [ "$here" = "$there" ]; then
+        ok "tests/shell reads the same in a foreign environment"
+    else
+        bad "environment independence" "here '$here', elsewhere '$there'"
+    fi
+fi
+
+# ------------------------------------------------------------------
+# 3. The comparing suites pin the locale.
+#
+# Pathname expansion sorts by LC_COLLATE and character classes are a
+# locale's own; this shell has neither, so a suite that compares it with
+# another shell has to say which locale it means.
+# ------------------------------------------------------------------
+for f in tests/diff/run-all tests/matrix/run tests/shell/run-all \
+         tests/posix/run.sh tests/run_tests.sh tests/verify; do
+    if grep -q '^LC_ALL=C' "$f" && grep -q '^export LC_ALL' "$f"; then
+        ok "$f pins LC_ALL"
+    else
+        bad "$f" "compares two shells without pinning LC_ALL"
+    fi
+    # A preload the loader cannot use writes to stderr on every exec,
+    # and these suites capture stderr (Iteration 396).
+    if grep -q '^unset LD_PRELOAD' "$f"; then
+        ok "$f clears LD_PRELOAD"
+    else
+        bad "$f" "captures stderr without clearing LD_PRELOAD"
+    fi
+done
+
+# ... and the suite survives one being set, which is the point.
+if [ -x ./relfsh ] && [ -f /tmp/relf-preload-probe.so ]; then
+    # Whole outputs kept, so a difference can NAME its case: Iteration
+    # 444 saw "clean 1 failed, preloaded 0 failed" - the intermittent
+    # differential case of Iteration 429, caught a second time - and only
+    # the summary lines had been kept, so it could not be told which.
+    a_all=$(sh tests/diff/run-all 2>&1); a=$(printf '%s\n' "$a_all" | tail -1)
+    b_all=$(LD_PRELOAD=/tmp/relf-preload-probe.so sh tests/diff/run-all 2>&1); b=$(printf '%s\n' "$b_all" | tail -1)
+    if [ "$a" = "$b" ]; then
+        ok "the differential suite ignores a hostile LD_PRELOAD"
+    else
+        bad "LD_PRELOAD" "clean '$a', preloaded '$b'"
+        printf '%s\n' "$a_all" | grep '^FAIL: ' | sed 's/^/    clean run: /'
+        printf '%s\n' "$b_all" | grep '^FAIL: ' | sed 's/^/    preloaded run: /'
+    fi
+fi
+
+# ------------------------------------------------------------------
+# 4. The differential suite gives the same answer in another locale.
+#
+# The point of the pin, tested rather than asserted. Skipped when the
+# machine has only one locale.
+# ------------------------------------------------------------------
+alt=""
+[ -z "${PORTABILITY_QUICK:-}" ] &&
+  alt=$(locale -a 2>/dev/null | grep -iE 'utf-?8' | grep -viE '^(C|POSIX)' | head -1)
+[ -z "$alt" ] && alt=$(locale -a 2>/dev/null | grep -i 'utf' | head -1)
+if [ -n "$alt" ] && [ -x ./relfsh ]; then
+    # The runs' failures are printed when they differ (Iteration 614): a
+    # case failed once in C.utf8 and not in C, and the summaries said no
+    # more than that - not which case, so not whether locale or chance.
+    ao=$(LC_ALL=C tests/diff/run-all 2>&1); a=$(printf '%s\n' "$ao" | tail -1)
+    bo=$(LC_ALL=$alt tests/diff/run-all 2>&1); b=$(printf '%s\n' "$bo" | tail -1)
+    if [ "$a" = "$b" ]; then
+        ok "the differential suite reads the same in $alt"
+    else
+        bad "locale independence" "C says '$a', $alt says '$b'"
+        printf '%s\n' "$ao" | grep -A8 '^FAIL' | sed 's/^/    C: /' | head -20
+        printf '%s\n' "$bo" | grep -A8 '^FAIL' | sed "s/^/    $alt: /" | head -20
+    fi
+else
+    say "locale independence" "skipped: no second locale installed"
+fi
+
+# ------------------------------------------------------------------
+# 4b. A broken source file fails the build, loudly.
+#
+# Iteration 409's first build aborted a definition near the top of
+# edit.4, which left the shell's main word undefined - and SAVE-SYSTEM
+# wrote an image anyway, booting into the bare Forth prompt, while
+# `make` reported success. The wrapper now asks a new image to be a
+# shell before installing it (Iteration 410). Tested in a scratch copy
+# of the tree, so an interrupted run cannot leave these sources broken.
+# ------------------------------------------------------------------
+case $(getconf LONG_BIT 2>/dev/null) in
+    32) e=relf32 k=forth/kernel32.img o=kernel32-shell.img ;;
+    *)  e=relf64 k=forth/kernel64.img o=kernel64-shell.img ;;
+esac
+if [ -x "./$e" ] && [ -f "$k" ]; then
+    scratch=$(mktemp -d)
+    # BOTH images, and the marker that says which is native: the first
+    # version copied only kernel64.img, so on a 32-bit host the wrapper
+    # reached for kernel32.img, found nothing, and failed for the wrong
+    # reason - which this check then reported as the build accepting a
+    # broken source. It was width-blind, on an ARMv7 board, the week
+    # after nine faults of exactly that shape (Iteration 412).
+    srcs=$(sed -n 's/^SHELL_SOURCES *= *//p' Makefile)
+    # The layout recreated, since the sources moved into forth/ and
+    # shell/ (Iteration 555): flattened, their paths named nothing.
+    for f in "$e" "$k" tools/build-shell-image.sh $srcs; do
+        mkdir -p "$scratch/$(dirname "$f")" && cp "$f" "$scratch/$f" 2>/dev/null
+    done
+    printf ': BROKEN-ON-PURPOSE ( --- ) 2>R ;\n' | cat - "$scratch/shell/edit.4" > "$scratch/e" &&
+        mv "$scratch/e" "$scratch/shell/edit.4"
+    # The native pair, as the Makefile builds it (Iteration 506: the build
+    # moved from the relfsh script into tools/build-shell-image.sh).
+    msg=$(cd "$scratch" && sh tools/build-shell-image.sh "./$e" $k $o $srcs </dev/null 2>&1 >/dev/null)
+    rc=$?
+    if [ "$rc" != 0 ] && echo "$msg" | grep -q 'Undefined word' &&
+       [ ! -f "$scratch/kernel64-shell.img" ] && [ ! -f "$scratch/kernel32-shell.img" ]; then
+        ok "a broken source fails the build and says why"
+    else
+        bad "the image build" "a broken source was accepted (status $rc): $(echo "$msg" | head -2 | tr '\n' ' ')"
+    fi
+    rm -rf "$scratch"
+fi
+
+# ------------------------------------------------------------------
+# 5. The bundle this project hands over can be pulled.
+# ------------------------------------------------------------------
+if command -v git >/dev/null 2>&1 && [ -d .git ]; then
+    w=$(mktemp -d)
+    # the branch checked out, not master (Iteration 586): a clone made
+    # as the articles' Try it has it - git clone -b article-2026 - has no
+    # local master, and this failed there. 582 fixed tests/verify's copy
+    # of this check and missed this one; the eighth review found it.
+    b=$(git symbolic-ref -q --short HEAD)
+    if git bundle create "$w/t.bundle" HEAD $b >/dev/null 2>&1 &&
+       git clone -q "$w/t.bundle" "$w/clone" >/dev/null 2>&1 &&
+       [ "$(git rev-parse HEAD)" = "$(git -C "$w/clone" rev-parse HEAD)" ]; then
+        ok "a bundle of HEAD can be cloned"
+    else
+        bad "git bundle" "cannot be cloned - check that HEAD is included"
+    fi
+    rm -rf "$w"
+fi
+
+# ------------------------------------------------------------------
+# 5b. The opcode map has one source (Iteration 518): opcodes.tab. The
+#     engine's tables are generated from it; kernel.4's PRIMITIVE and
+#     OPCODE lines and cross.4's and shadow.4's constants must agree.
+# ------------------------------------------------------------------
+if msg=$(sh tools/gen-opcodes.sh --check 2>&1); then
+    ok "the opcode map agrees with engine/opcodes.tab everywhere"
+else
+    bad "opcode map" "$(echo "$msg" | head -3 | tr '\n' ' ')"
+fi
+
+# ------------------------------------------------------------------
+# 6. The ignore file, both ways (Iteration 413, prompts/07 item 7).
+#
+# A tracked file that an ignore rule matches is a trap for whoever next
+# deletes and re-adds it. And an untracked file after the suites have
+# run is something a build or a test generates that nobody decided
+# about - which is how two compiled engines and three .pyc files came
+# to be committed here in the first place.
+# ------------------------------------------------------------------
+if command -v git >/dev/null 2>&1 && [ -d .git ]; then
+    hidden=$(git ls-files -ci --exclude-standard 2>/dev/null)
+    if [ -z "$hidden" ]; then
+        ok "no tracked file is matched by an ignore rule"
+    else
+        bad ".gitignore" "a rule matches tracked files: $(echo $hidden | head -c 120)"
+    fi
+    # Judged only on a tree with no work in progress. The workflow here
+    # verifies BEFORE committing, so mid-change a new source file is
+    # untracked because it is new, not because a build made it - the
+    # first version of this check flagged the test case being written,
+    # and the baseline recorded the flag (Iteration 413). On a clean
+    # checkout, which is what someone who has just pulled is running,
+    # an untracked file after the suites can only be something they
+    # generated.
+    stray=$(git status --porcelain 2>/dev/null | sed -n 's/^?? //p')
+    wip=$(git status --porcelain --untracked-files=no 2>/dev/null |
+          grep -v -e 'kernel64-shell.img$' -e 'kernel32-shell.img$' -e 'tests/BASELINE$')
+    if [ -n "$wip" ]; then
+        say "untracked files" "not judged: the tree has uncommitted changes"
+    elif [ -z "$stray" ]; then
+        ok "nothing the build or the suites generate is left untracked"
+    else
+        bad "untracked files" "$(echo $stray | head -c 160) - ignore them or add them"
+    fi
+fi
+
+echo "portability: $checked checks, $problems problem(s)"
+[ "$problems" -eq 0 ]

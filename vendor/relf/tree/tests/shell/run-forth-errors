@@ -1,0 +1,208 @@
+#!/bin/sh
+# tests/shell/run-forth-errors - a Forth error fails its command only
+# (A24, Iteration 554). Before, the kernel's errors went to WARM: both
+# stacks cleared, and Forth's own read loop restarted on the shell's
+# input - a script's remaining lines were read as Forth, an interactive
+# user was left at a bare Forth prompt, a redirection stayed in force,
+# and the message went to standard output. Now every builtin runs under
+# CATCH: $? is 1, the message is on standard error, the next command runs.
+. "$(dirname "$0")/lib.sh"
+t=$(mktemp -d)
+run() { "$THIS_SH" -c "$1" 2>&1 < /dev/null; }
+
+out=$("$THIS_SH" -c "forth 'XYZ'; echo s=\$?" 2>/dev/null < /dev/null)
+assert_output_equals "an undefined word: status 1, the next command runs" "s=1" "$out"
+out=$("$THIS_SH" -c "forth 'XYZ'" 2>&1 >/dev/null < /dev/null)
+assert_output_contains "the message is on standard error" "Undefined word XYZ" "$out"
+out=$("$THIS_SH" -c "x=\$(forth 'XYZ'); echo \"[\$x]\"" 2>/dev/null < /dev/null)
+assert_output_equals "a command substitution captures no error text" "[]" "$out"
+
+out=$(run "forth ': T 1 ABORT\" boom\" ;  T'; echo s=\$?")
+assert_output_contains "ABORT\" prints its message" "boom" "$out"
+assert_output_contains "ABORT\" fails the command" "s=1" "$out"
+out=$(run "forth 'ABORT'; echo s=\$?")
+assert_output_equals "ABORT fails silently" "s=1" "$out"
+out=$(run "forth '5 THROW'; echo s=\$?")
+assert_output_contains "an uncaught THROW is reported with its code" "uncaught exception 5" "$out"
+assert_output_contains "an uncaught THROW fails the command" "s=1" "$out"
+out=$(run "forth \": T 7 THROW ;  ' T CONSTANT XT-T  : U XT-T CATCH . ;  U\"; echo s=\$?")
+assert_output_contains "a THROW caught in Forth is Forth's business" "7 s=0" "$(echo $out)"
+
+out=$(run "forth ': BAD XYZ ;'; forth ': GOOD 7 . ;  GOOD'; forth 'BAD'")
+assert_output_contains "after an error inside :, compiling has stopped" "7" "$out"
+assert_output_contains "the half-built word cannot be found" "Undefined word BAD" "$out"
+out=$(run "forth '1 2 3 XYZ'; for i in a b; do echo \$i; done; f() { echo in-f; }; f")
+assert_output_contains "the stacks are as they were: loops still run" "a b" "$(echo $out)"
+assert_output_contains "and functions" "in-f" "$out"
+out=$(run "forth 'XYZ' > $t/o; echo visible")
+assert_output_contains "the builtin's redirection is undone" "visible" "$out"
+out=$(run "forth \": MYB 1 ABORT\\\" mine\\\" ;  ' MYB S\\\" myb\\\" BUILTIN\"; myb; echo s=\$?")
+assert_output_contains "a builtin Forth registered fails the same way" "s=1" "$out"
+
+out=$(run "set -e; forth 'XYZ'; echo not-reached")
+case $out in *not-reached*) r=ran ;; *) r=stopped ;; esac
+assert_output_equals "set -e stops at a failing forth" "stopped" "$r"
+out=$(run "if forth 'XYZ'; then echo yes; else echo no; fi")
+assert_output_contains "if sees the failure" "no" "$out"
+out=$(run "forth 'XYZ' || echo failed")
+assert_output_contains "|| sees the failure" "failed" "$out"
+out=$(run "forth '1 DROP' && echo fine")
+assert_output_contains "success is still 0" "fine" "$out"
+
+out=$(printf "forth 'XYZ'\necho next\n" | PS1='$ ' "$THIS_SH" -i 2>&1)
+assert_output_contains "interactive: the next line runs" "next" "$out"
+case $out in *OK*) r="Forth's prompt" ;; *) r="the shell's" ;; esac
+assert_output_equals "interactive: the prompt stays the shell's" "the shell's" "$r"
+# Traps (Iteration 556, Q21): the CPU's, which no CATCH saw - a zero
+# divisor or a bad address killed the shell. Now a THROW, -10 or -9.
+out=$(run "forth '1 0 /'; echo s=\$?")
+assert_output_contains "a zero divisor: the message" "relf: division by zero" "$out"
+assert_output_contains "a zero divisor fails the command only" "s=1" "$out"
+out=$(run "forth '5 0 0 UM/MOD'; echo s=\$?")
+assert_output_contains "UM/MOD by zero too" "s=1" "$out"
+out=$(run "forth '0 @ DROP'; echo s=\$?; for i in a b; do echo \$i; done")
+assert_output_contains "a bad address: the message" "invalid memory address" "$out"
+assert_output_contains "a bad address fails the command only" "s=1" "$out"
+assert_output_contains "and the shell's state survives it" "a b" "$(echo $out)"
+out=$(run "forth \": T 1 0 / ;  ' T CONSTANT XT-T  : U XT-T CATCH . ;  U\"; echo s=\$?")
+assert_output_contains "a trap inside Forth's own CATCH is caught there, as -10" "-10 s=0" "$(echo $out)"
+
+# Compile-only words (Q20): interpreted, >R and its kind reached the
+# interpreter's own return stack. A list of execution tokens, no names.
+out=$(run "forth '1 >R'; echo s=\$?")
+assert_output_contains ">R interpreted is refused" "compile only >R" "$out"
+assert_output_contains "and fails the command" "s=1" "$out"
+out=$(run "forth ': T 5 >R R> . ;  T'")
+assert_output_contains ">R in a definition is as before" "5" "$out"
+out=$(run "forth ': RDROP R> DROP ; COMPILE-ONLY  RDROP'; echo s=\$?")
+assert_output_contains "COMPILE-ONLY extends the list at run time" "compile only RDROP" "$out"
+# (A colon RDROP cannot serve here: inside it, R> takes its own return
+# address - my first version of this check did that, and Q21 turned the
+# crash into a failed command.)
+out=$(run "forth ': TWICE DUP + ; COMPILE-ONLY  : T 3 TWICE . ;  T'")
+assert_output_contains "a word marked so still compiles" "6" "$out"
+
+# A name longer than 31 characters: the count byte keeps five bits of
+# length, and such a name was stored mod 32 - found by its first letters.
+out=$(run "forth ': ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ;'; echo s=\$?")
+assert_output_contains "a name of 36 characters is refused" "name too long" "$out"
+assert_output_contains "and the command fails" "s=1" "$out"
+out=$(run "forth ': ABCDEFGHIJKLMNOPQRSTUVWXYZ01234 3 . ;  ABCDEFGHIJKLMNOPQRSTUVWXYZ01234'")
+assert_output_contains "a name of 31 characters is fine" "3" "$out"
+# An unbalanced stack (Iteration 582, the Habr review): a word that
+# returned with cells left over or taken ended the shell - silently on
+# relfasm64. Now it is put back and the command fails; the shell goes on.
+out=$(run "forth '1 2 3'; echo s=\$?; forth '2 3 + .'")
+assert_output_contains "cells left over: the message" "stack changed by +3 cells" "$out"
+assert_output_contains "cells left over: status 1, the shell goes on" "s=1" "$out"
+assert_output_contains "and the next forth command works" "5" "$out"
+# Cells taken at the prompt of forth are ?STACK's since Iteration 589:
+# S0 is the command's own stack, so the first cell too many is "Stack
+# error". Before, ?STACK counted from the stack's true base, below the
+# executor's cells and the padding - 19 DROPs ended the shell with 70,
+# as the interpreter's next push wrote over the executor's cells.
+out=$(run "forth 'DROP DROP DROP'; echo s=\$?; for i in a b; do printf \$i; done")
+assert_output_equals "cells taken at the prompt: Stack error, the state survives" "Stack error DROP
+s=1
+ab" "$out"
+out=$(run "forth '$(printf 'DROP %.0s' $(seq 1 19))'; echo s=\$?; for i in a b; do printf \$i; done")
+assert_output_contains "nineteen DROPs fail the command only" "s=1
+ab" "$out"
+out=$(run "forth '$(printf 'DROP %.0s' $(seq 1 1000))'; echo s=\$?")
+assert_output_contains "a thousand DROPs too" "s=1" "$out"
+out=$(run "forth '$(printf '. %.0s' $(seq 1 20))'; echo s=\$?; for i in a b; do printf \$i; done")
+assert_output_contains "twenty dots too" "s=1
+ab" "$out"
+out=$(run "forth 'DEPTH . CR' '1 2 DEPTH . CR 2DROP'")
+assert_output_equals "DEPTH counts this command's cells only" "0 
+2 " "$out"
+# ... while a builtin loaded from Forth runs with no interpreter between
+# its words, and RUN-CAUGHT's check reports what it took (582)
+printf '%s\n' ": TAKE3 DROP DROP DROP ;  ' TAKE3 S\" take3\" BUILTIN" > "$t/take3.4"
+out=$(run "forth 'S\" $t/take3.4\" INCLUDED'; take3; echo s=\$?; for i in a b; do printf \$i; done")
+assert_output_equals "cells taken by a loaded builtin: reported, the state survives" "forth: stack changed by -3 cells; restored
+s=1
+ab" "$out"
+out=$(run "forth ': D16 16 0 DO DROP LOOP ;' D16; echo s=\$?")
+assert_output_contains "sixteen cells taken - the padding - are harmless" "s=1" "$out"
+printf '%s\n' ": BAD 1 2 ;  ' BAD S\" bad\" BUILTIN" > "$t/bad.4"
+out=$(run "forth 'S\" $t/bad.4\" INCLUDED'; bad; echo s=\$?")
+assert_output_contains "a builtin loaded from Forth is checked too" "stack changed by +2 cells" "$out"
+assert_output_contains "and fails its command only" "s=1" "$out"
+out=$(run "forth '1 2 +'; echo s=\$?")
+assert_output_contains "one cell left over is imbalance too" "stack changed by +1 cells" "$out"
+out=$(run "forth '1 2 + DROP'; echo s=\$?")
+assert_output_equals "a balanced command is untouched" "s=0" "$out"
+
+# Stack overflow (Iteration 586, the eighth review): a runaway recursion
+# or push loop ended the shell - 70 on the C engine, and on relfasm64,
+# which had no guard pages, a crash on the dictionary it overwrote. Now
+# a guard page's trap is a THROW: -5 or -3, the command fails, the shell
+# and its state go on. A data stack underflow past the executor's cells
+# reaches the return stack's guard and fails the same way.
+out=$(run "forth ': X RECURSE ; X'; echo s=\$?; for i in a b; do printf \$i; done")
+assert_output_contains "a runaway recursion: the message" "return stack overflow" "$out"
+assert_output_contains "a runaway recursion fails its command only" "s=1
+ab" "$out"
+out=$(run "forth ': P BEGIN 0 AGAIN ; P'; echo s=\$?; forth '2 3 + .'")
+assert_output_contains "a runaway push: the message" "data stack overflow" "$out"
+assert_output_contains "a runaway push fails its command only" "s=1" "$out"
+assert_output_contains "and the next forth command works" "5" "$out"
+out=$(run "forth ': D40 40 0 DO DROP LOOP ;' D40; echo s=\$?; for i in a b; do printf \$i; done")
+assert_output_contains "forty cells taken: Stack error, in the gap since 595" "Stack error D40" "$out"
+assert_output_contains "forty cells taken fail the command only" "s=1
+ab" "$out"
+# ... and a runaway underflow past the whole gap still reaches the
+# return stack's guard page, and fails the same way
+out=$(run "forth ': D5K 5000 0 DO DROP LOOP ;' D5K; echo s=\$?; for i in a b; do printf \$i; done")
+assert_output_contains "five thousand cells taken: the guard's message" "data stack underflow" "$out"
+assert_output_contains "five thousand cells taken fail the command only" "s=1
+ab" "$out"
+
+# Failing INCLUDEDs (Iteration 591, the tenth review): a THROW out of an
+# included file left INCLUDE-POINTER advanced and the file open, and
+# about twenty such failures ran the file's lines past INCLUDE-BUFFER
+# into the image - the shell died. Now each one is restored and closed.
+printf '%s\n' ': Y DROP DROP DROP ;' 'Y' > "$t/bad.4"
+printf '%s\n' "S\" $t/bad.4\" INCLUDED" > "$t/nest.4"
+out=$(run "i=0; while [ \$i -lt 40 ]; do forth 'S\" $t/bad.4\" INCLUDED' 'S\" $t/nest.4\" INCLUDED' >/dev/null 2>&1; forth 'S\" $t/none.4\" INCLUDED' 2>/dev/null; i=\$((i+1)); done; forth 'S\" $t/none.4\" INCLUDED' 2>/dev/null; echo s=\$?; forth 'S\" $t/take3.4\" INCLUDED' 'DEPTH . CR'; echo alive")
+assert_output_contains "120 failing INCLUDEDs: a missing file still fails" "s=1" "$out"
+assert_output_contains "and a good INCLUDED works after them, the shell alive" "0 
+alive" "$out"
+
+# The include buffer's bound (Iteration 593, the eleventh review): a
+# file that includes itself, or one INCLUDED from a forth command longer
+# than 260 characters, still ran the lines past INCLUDE-BUFFER and the
+# shell died; a file included from an EVALUATE wrote over the including
+# file's live line. Now too deep is an error of its command only.
+printf '%s\n' ': GOODWORD 11 ;' > "$t/good.4"
+printf '%s\n' "S\" $t/self.4\" INCLUDED" > "$t/self.4"
+out=$(run "forth 'S\" $t/self.4\" INCLUDED'; echo s=\$?; forth 'S\" $t/good.4\" INCLUDED' 'GOODWORD . DEPTH . CR'; echo alive")
+assert_output_contains "a file that includes itself: the message" "includes nested too deep" "$out"
+assert_output_contains "a file that includes itself fails its command only" "s=1" "$out"
+assert_output_contains "and a good INCLUDED works after it" "11 0 
+alive" "$out"
+printf '\\ %s\n' "$(printf '%254s' '' | tr ' ' x)" > "$t/long.4"
+out=$(run "forth '$(printf '%300s' '') S\" $t/long.4\" INCLUDED'; echo s=\$?; forth 'S\" $t/good.4\" INCLUDED GOODWORD .'")
+assert_output_equals "a long forth command, an INCLUDED of a long line, and the next command" "s=0
+11 " "$out"
+printf '%s\n' ": INC S\" $t/good.4\" INCLUDED ;" 'S" INC" EVALUATE GOODWORD .' > "$t/ev.4"
+out=$(run "forth 'S\" $t/ev.4\" INCLUDED'; echo s=\$?")
+assert_output_contains "an INCLUDED from an EVALUATE leaves the including line whole" "11 s=0" "$out"
+
+# A recursion through the shell (Iteration 602): Forth runs shell text
+# that runs forth again, without end. Each forth command's 16 KB gap was
+# taken in one jump, which cleared the data stack's 4 KB guard page after
+# a dozen levels - pushes then wrote into the dictionary, and a stray
+# segmentation fault followed. Now the gap checks for room first.
+out=$(run "forth ': RCB S\" forth RCB\" TREE-RUN-TEXT ; RCB' 2>&1; forth 'DEPTH . CR'; for i in a b; do printf \$i; done; echo")
+assert_output_contains "a recursion through the shell: data stack overflow" "data stack overflow" "$out"
+assert_output_contains "and the shell whole after it" "0 
+ab" "$out"
+case $out in
+    *segmentation*) assert_output_equals "and no stray fault after it" "no fault" "$out" ;;
+    *) assert_output_equals "and no stray fault after it" "no fault" "no fault" ;;
+esac
+
+rm -rf "$t"
+report

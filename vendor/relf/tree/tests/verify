@@ -1,0 +1,796 @@
+#!/bin/sh
+# tests/verify - one command that checks everything and compares the
+# result against tests/BASELINE, so "did I break something" is a
+# yes/no rather than four suites and a paragraph of prose.
+#
+# Written in Iteration 148, to freeze the shell before engine work
+# starts. The engine change it froze for touched the engine, cross.4,
+# save-system.4 and every position-independence assumption in the
+# system, and ended with relf.c replaced by cv8.c (Iteration 243).
+# What makes that survivable is a signal that is trusted: every
+# number below must be exactly what BASELINE says, and any
+# difference - better or worse - is reported and fails the run.
+#
+# A CHANGED line is not automatically a defect. Fixing one of the 21
+# known POSIX failures will change a number, and the right response is
+# to update BASELINE in the same commit as the fix, so the file always
+# records what the tree actually does.
+#
+#   tests/verify              check everything
+#   tests/verify --update     rewrite BASELINE from this run
+#
+# Not included: tests/bench. It takes minutes, and single runs on
+# ordinary hardware differ by more than most changes do - see
+# PROGRESS.md's Iteration 129 entry for the method it needs instead.
+
+# The suite's own stdin is closed: a case that runs this shell without
+# redirecting stdin would otherwise inherit the TERMINAL and wait there
+# for ever - which is what `make verify` did on a real checkout, while
+# in a container, where stdin is /dev/null, it had never once hung
+# (Iteration 392). The interactive pty harness makes its own terminal
+# and is unaffected.
+# Every row in a zone that is not UTC (Iteration 544). relf keeps no
+# time zone (QUESTIONS.md A16); a check that assumed the local zone WAS
+# UTC passed on every UTC machine - this one included - and failed only
+# on the user's (fury). UTC-9 is a POSIX TZ string: date needs no zone
+# file for it, so it works everywhere.
+TZ=UTC-9; export TZ
+# Nor anything else of the caller's that changes how a shell behaves
+# (Iteration 550): the user's exported PS1 reached one suite on fury and
+# failed every prompt assertion in it (tests/shell/lib.sh says more).
+unset PS1 PS2 PS4 ENV CDPATH
+exec < /dev/null
+# Byte order and byte classes for every shell this suite runs: pathname
+# expansion sorts by LC_COLLATE, `[a-z]` is a collation range and
+# `[[:alpha:]]` is a locale's own idea of a letter. This shell has no
+# locale support - it is always the C locale - so a suite that compares
+# it with another shell, or with recorded output, has to say which
+# locale it means. A checkout in en_US.UTF-8 saw the difference
+# (Iterations 390 and 393).
+LC_ALL=C
+export LC_ALL
+# A preload library the loader cannot use prints a line to stderr on
+# every exec - Ubuntu and Mint set one system-wide (libgtk3-nocsd), and
+# it cannot be loaded into the 32-bit engine at all. The tests capture
+# stderr, so that line became part of what they compared, and every
+# i386 assertion failed with the right answer one line down
+# (Iteration 396). No test here wants a preload.
+unset LD_PRELOAD
+cd "$(dirname "$0")/.." || exit 1
+BASE=tests/BASELINE
+UPDATE=0
+[ "$1" = "--update" ] && UPDATE=1
+OUT=$(mktemp) || exit 1
+trap 'rm -f "$OUT"' EXIT INT TERM
+
+emit() { printf '%s %s\n' "$1" "$2" >> "$OUT"; }
+
+# ---------------------------------------------------------------
+# 1. Reproducible build. A rebuild of the shell images must be byte
+#    for byte the one the last build made, or the build is
+#    nondeterministic - as it was before Iteration 148, when SS-SCRUB
+#    did not know about shadow.4's scratch variables or #TIB. The
+#    images were tracked until Iteration 489; now `image-sum:` records a
+#    checksum of each, which is what compares another machine's build
+#    with this one's.
+# ---------------------------------------------------------------
+echo "== reproducible build =="
+# Since 489 the shell images are not committed, so "before" is the one
+# the last build made here - and a fresh clone has none, so it builds
+# one first, to have something to compare the rebuild with.
+for i in kernel64-shell.img kernel32-shell.img; do
+    [ -e "$i" ] || make -s "$i" >/dev/null 2>&1
+    [ -e "$i" ] && cp "$i" "/tmp/verify-was-$i"
+done
+rm -f kernel64-shell.img kernel32-shell.img
+# The rebuild is its own step since Iteration 506. Until then the relfsh
+# script rebuilt a missing image the first time the suite ran it, so the
+# test run below did it as a side effect; relfsh is a binary now, with
+# its image inside, and nothing else would - the first verification of
+# the binary recorded every image row as `missing`, which was caught
+# before it was committed.
+make -s shell-images shells >/dev/null 2>&1
+# run_tests.sh uses bash arrays and 'local'; it is not a POSIX script.
+bash tests/run_tests.sh > /tmp/verify-run.log 2>&1
+RT=$?
+for i in kernel64-shell.img kernel32-shell.img; do
+    if [ -e "/tmp/verify-was-$i" ] && [ -e "$i" ]; then
+        if cmp -s "/tmp/verify-was-$i" "$i"; then emit "rebuild:$i" reproduces
+        else emit "rebuild:$i" DIFFERS; fi
+    else
+        emit "rebuild:$i" missing
+    fi
+    rm -f "/tmp/verify-was-$i"
+done
+# The checksum of each rebuilt image (POSIX cksum: CRC and length). With
+# the images no longer committed, this is what compares a build on
+# another machine with the one recorded here: the ARMv7 board's 4-byte
+# image must come out byte for byte the same as an x86-64 host's.
+for i in kernel64-shell.img kernel32-shell.img; do
+    if [ -e "$i" ]; then emit "image-sum:$i" "$(cksum < "$i" | tr -s ' ' | tr ' ' '/')"
+    else emit "image-sum:$i" missing; fi
+done
+
+# ---------------------------------------------------------------
+# 1b. Reproducible from a DIFFERENT PATH, which is the property the
+#     check above cannot see. Building twice in the same directory
+#     cannot distinguish "the build leaks nothing" from "both builds
+#     leaked the same thing" - and leaking the build path is the
+#     specific failure save-system.4's header describes, where the
+#     first prebuilt image carried the machine's directory and the
+#     builder's PID. So SS-SCRUB's whole reason for existing was
+#     untested until this check.
+#
+#     It also guards the input line limit - 80 columns until Iteration
+#     514, 256 since. QUERY reads with `TIB 256 ACCEPT`, so an over-long
+#     line loses its tail silently;
+#     relfsh's bootstrap used to interpolate $DIR into every line and
+#     so stopped building past a ~36-character repository path, with
+#     the PID's digit count deciding the exact cliff. A deliberately
+#     long path here fails if that ever comes back.
+# ---------------------------------------------------------------
+# Longer than a whole input line, so a build that interpolated the path
+# into one would fail here: over 256 characters since the limit was
+# raised (514), in two components, since one may not exceed 255 bytes.
+CROSS=/tmp/relf-verify-crosspath-deliberately-long-directory-name-to-exceed-a-whole-input-line-$(printf '%0110d' 0 | tr 0 x)/second-component-$(printf '%0110d' 0 | tr 0 y)
+rm -rf "${CROSS%/*}"          # both components: the path is two since 514
+if mkdir -p "$CROSS" 2>/dev/null; then
+    # The shell's sources are the Makefile's SHELL_SOURCES, not a list of
+    # this check's own. Its own copy lacked edit.4 from Iteration 303, so
+    # the build here failed: the check reported DIFFERS, then `missing`,
+    # and each was re-recorded into BASELINE as if it were the answer,
+    # until Iteration 498 noticed that `missing` was what every machine
+    # said. Since 506 the build is tools/build-shell-image.sh's, run here
+    # as the Makefile runs it, with relative names.
+    srcs=$(sed -n 's/^SHELL_SOURCES *= *//p' Makefile)
+    # The layout recreated, not flattened, since the sources moved into
+    # forth/ and shell/ (Iteration 555): relative names, as in the tree.
+    for f in relf64 forth/kernel64.img tools/build-shell-image.sh $srcs; do
+        [ -e "$f" ] && mkdir -p "$CROSS/$(dirname "$f")" && cp "$f" "$CROSS/$f"
+    done
+    ( cd "$CROSS" && rm -f kernel64-shell.img &&
+      sh tools/build-shell-image.sh ./relf64 forth/kernel64.img kernel64-shell.img $srcs ) >/dev/null 2>&1
+    if [ -s "$CROSS/kernel64-shell.img" ] && [ -e kernel64-shell.img ]; then
+        if cmp -s "$CROSS/kernel64-shell.img" kernel64-shell.img
+        then emit crosspath:kernel64-shell.img reproduces
+        else emit crosspath:kernel64-shell.img DIFFERS; fi
+    else
+        emit crosspath:kernel64-shell.img missing
+    fi
+    rm -rf "${CROSS%/*}"
+else
+    emit crosspath:kernel64-shell.img skipped
+fi
+
+# ---------------------------------------------------------------
+# 2. Core, shell and differential suites, both cell widths.
+# ---------------------------------------------------------------
+echo "== core, shell, differential =="
+width_state() {  # width_state WIDTH-LABEL MARKER-PATTERN
+    # A half that was skipped reports `skipped`, not 0: on a 32-bit host
+    # the 8-byte half cannot run at all, and on a host without a 32-bit
+    # toolchain the 4-byte half cannot. Either is a fact about the
+    # machine (Iterations 394, 398). The marker patterns tolerate the
+    # `, i386` the CROSS build adds, since the same width is native
+    # elsewhere.
+    if grep -q "SKIP: .*$1" /tmp/verify-run.log ||
+       grep -q 'SKIP: gcc -m32 not available' /tmp/verify-run.log ||
+       grep -q 'SKIP: the i386 engine cannot run here' /tmp/verify-run.log ||
+       grep -q 'SKIP: this host is 32-bit' /tmp/verify-run.log; then
+        case $1 in
+            '8-byte cells') grep -q 'SKIP: this host is 32-bit' /tmp/verify-run.log && { echo skipped; return; } ;;
+            '4-byte cells') grep -qE 'SKIP: (gcc -m32|the i386 engine)' /tmp/verify-run.log && { echo skipped; return; } ;;
+        esac
+    fi
+    grep -c "$2" /tmp/verify-run.log
+}
+
+emit core:8byte  "$(width_state '8-byte cells' 'PASS (8-byte cells):')"
+emit shell:8byte "$(width_state '8-byte cells' 'PASS (8-byte cells shell')"
+# A host without a 32-bit toolchain skips the i386 half, and that is a
+# property of the machine rather than of this shell: `skipped` says so,
+# where a bare 0 looked like a failure (Iteration 394).
+emit core:4byte  "$(width_state '4-byte cells' 'PASS (4-byte cells\(, i386\)\?):')"
+emit shell:4byte "$(width_state '4-byte cells' 'PASS (4-byte cells\(, i386\)\? shell')"
+emit ext:8byte    "$(width_state '8-byte cells' 'PASS (8-byte cells extension suites)')"
+emit ext:4byte    "$(width_state '4-byte cells' 'PASS (4-byte cells\(, i386\)\? extension suites)')"
+emit io:8byte     "$(width_state '8-byte cells' 'PASS (8-byte cells I/O suite)')"
+emit io:4byte     "$(width_state '4-byte cells' 'PASS (4-byte cells\(, i386\)\? I/O suite)')"
+# Part of the 8-byte half, so `skipped` where that half is (Iteration 404).
+emit core:okmarkers "$(if grep -q 'SKIP: this host is 32-bit' /tmp/verify-run.log; then echo skipped; else sed -n 's/.*PASS (8-byte cells): \([0-9]*\) OK.*/\1/p' /tmp/verify-run.log | head -1; fi)"
+# Both base images are now regenerated from cross.4 + kernel.4 on every
+# run and compared against the committed artifacts. The 8-byte one is
+# the fixpoint the bootstrap rests on: it is simultaneously the image
+# the cross-compiler PRODUCES and the image it RUNS ON. Nothing checked
+# it before Iteration 155, so "cross.4 still produces what we ship" was
+# unverified for the width the project develops on - the width the
+# engine work is about to change.
+emit image:8byte-fixpoint "$(sed -n 's/.*IMAGE-FIXPOINT (8-byte cells[^)]*): \(.*\) ==/\1/p' /tmp/verify-run.log | head -1)"
+# The 8-byte image built by a 4-byte engine (Iteration 415). On a 32-bit
+# host image:8byte-fixpoint above IS this check, and there is no i386
+# half to run it again, so it reads `skipped` there.
+widening=$(sed -n 's/.*IMAGE-FIXPOINT (8-byte cells, from a 4-byte host): \(.*\) ==/\1/p' /tmp/verify-run.log | head -1)
+emit image:widening "${widening:-skipped}"
+narrow=$(sed -n 's/.*IMAGE-FIXPOINT (4-byte cells, from a 4-byte host): \(.*\) ==/\1/p' /tmp/verify-run.log | head -1)
+emit image:narrow-host "${narrow:-skipped}"
+emit image:4byte-fixpoint "$(sed -n 's/.*IMAGE-FIXPOINT (4-byte cells[^)]*): \(.*\) ==/\1/p' /tmp/verify-run.log | head -1)"
+emit diff:failed "$(sed -n 's/.*differential case(s), \([0-9]*\) failed.*/\1/p' /tmp/verify-run.log | head -1)"
+# WHICH case, not only how many (Iteration 429). A recording run once
+# captured `diff:failed 1` that the check run did not reproduce, and the
+# log that named the case was overwritten by the check run itself, so a
+# flaky case could not be told from a real one. The names go into this
+# script's own output, which the caller keeps.
+grep '^FAIL: ' /tmp/verify-run.log | sed 's/^/  diff: /' | head -20
+emit shell:assertions "$(bash tests/shell/run-all 2>/dev/null | awk '{s+=$1} END {print s+0}')"
+# The forth builtin's errors, at random (Iteration 595): each case makes
+# errors the Forth system detects - stack under- and overflow, THROW,
+# division by zero, bad addresses, includes that fail or nest - and then
+# checks the shell is alive and whole. 100 cases, a fixed seed; the
+# review rounds 586-593 each found such a crash by hand.
+if command -v python3 >/dev/null 2>&1; then
+    # the failures' details into the log, as the pty suite's (Iteration 605):
+    # a rare one, seen once, kept only its count
+    fz=$(timeout 280 python3 tools/forthfuzz.py 100 595 ./relfsh 2>&1)
+    printf '%s\n' "$fz" | grep -A14 '^FAIL' | sed 's/^/  forthfuzz: /' >&2
+    emit forthfuzz:failures "$(printf '%s\n' "$fz" | sed -n 's/.*cases, \([0-9]*\) failures.*/\1/p')"
+else emit forthfuzz:failures skipped; fi
+# ^C at random moments, on a pseudo-terminal (Iteration 598): Forth
+# loops and includes, a loaded builtin, shell loops, pipelines, $(...),
+# cat and read, a trap; then the shell must be back and whole.
+if command -v python3 >/dev/null 2>&1; then
+    # the failures' details into the log, as the pty suite's (Iteration 605):
+    # a rare one, seen once, kept only its count
+    fz=$(timeout 280 python3 tools/intrfuzz.py 20 598 ./relfsh 2>&1)
+    printf '%s\n' "$fz" | grep -A14 '^FAIL' | sed 's/^/  intrfuzz: /' >&2
+    emit intrfuzz:failures "$(printf '%s\n' "$fz" | sed -n 's/.*cases, \([0-9]*\) failures.*/\1/p')"
+else emit intrfuzz:failures skipped; fi
+emit shell:files "$(ls tests/shell/run-* 2>/dev/null | wc -l | tr -d ' ')"
+
+# ---------------------------------------------------------------
+# 3. The two acceptance suites.
+# ---------------------------------------------------------------
+echo "== mrsh and posix =="
+M=$(bash tests/mrsh-suite/run.sh 2>&1 | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\1 \2/p')
+emit mrsh:passed "$(echo "$M" | cut -d' ' -f1)"
+emit mrsh:failed "$(echo "$M" | cut -d' ' -f2)"
+P=$(sh tests/posix/run.sh 2>&1 | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed, \([0-9]*\) inconclusive.*/\1 \2 \3/p')
+emit posix:passed       "$(echo "$P" | cut -d' ' -f1)"
+emit posix:failed       "$(echo "$P" | cut -d' ' -f2)"
+emit posix:inconclusive "$(echo "$P" | cut -d' ' -f3)"
+
+echo "== interactive (a pseudo-terminal) =="
+IOUT=$(sh tests/interactive/run 2>&1)
+I=$(echo "$IOUT" | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed, \([0-9]*\) known-divergent.*/\1 \2 \3/p')
+# Which pty cases failed, and what they saw: a count alone says nothing
+# from a machine I cannot look at (Iteration 400).
+# Six lines, not two: a pty transcript's `want` and `got` are several
+# lines each, and two of them showed neither (Iteration 406).
+echo "$IOUT" | grep -A14 '^FAIL' | sed 's/^/  interactive: /' >&2 || true
+emit interactive:passed    "$(echo "$I" | cut -d' ' -f1)"
+emit interactive:failed    "$(echo "$I" | cut -d' ' -f2)"
+emit interactive:divergent "$(echo "$I" | cut -d' ' -f3)"
+emit posix:cases "$(ls tests/posix/cases/*.sh 2>/dev/null | wc -l | tr -d ' ')"
+
+# tests/parse: the command-tree parser (Iteration 263), its trees and its
+# syntax verdicts against dash -n.
+PR=$(sh tests/parse/run 2>&1 | sed -n 's/^== \([0-9]*\) passed, \([0-9]*\) encoded, \([0-9]*\) failed; verdicts: \([0-9]*\) agree, \([0-9]*\) disagree ==$/\1 \2 \3 \4 \5/p')
+emit parse:passed           "$(echo "$PR" | cut -d' ' -f1)"
+emit parse:encoded          "$(echo "$PR" | cut -d' ' -f2)"
+emit parse:failed           "$(echo "$PR" | cut -d' ' -f3)"
+emit parse:verdicts-agree   "$(echo "$PR" | cut -d' ' -f4)"
+emit parse:verdicts-differ  "$(echo "$PR" | cut -d' ' -f5)"
+
+# Unreachable definitions in the shell's sources (tools/dead-words.py):
+# Iteration 265 removed 343 of them with the line-based shell; none should
+# come back unnoticed.
+emit shell:dead-words "$(python3 tools/dead-words.py shell/shell.4 shell/tree.4 2>/dev/null | grep -c .)"
+# Tests that run the host's `sh` where they mean the shell under test
+# (tools/lint-tests.py, Iteration 477): 465's assertion passed here and
+# failed on a machine whose sh is bash. 0 is the only right answer.
+emit shell:host-sh-tests "$(python3 tools/lint-tests.py 2>/dev/null | grep -c 'runs the host sh')"
+
+# tests/matrix: every construct in every context, and the syntax errors,
+# against bash and dash (Iteration 262). A regression - a case that fails
+# and is not in KNOWN-FAILING - is reported whatever the totals say.
+M=$(sh tests/matrix/run 2>&1)
+MS=$(echo "$M" | sed -n 's/^== \([0-9]*\) passed, \([0-9]*\) failed, \([0-9]*\) inconclusive; \([0-9]*\) regressions, \([0-9]*\) fixed ==$/\1 \2 \3 \4 \5/p')
+# Which reference shells the matrix could use. A run against bash and
+# dash and a run against bash alone are different measurements, and the
+# counts are only comparable within one (Iteration 399).
+MATRIX_REFS_USED=$(echo "$M" | sed -n 's/^== matrix references: \(.*\) ==/\1/p' | head -1)
+emit matrix:refs "$MATRIX_REFS_USED"
+emit matrix:passed       "$(echo "$MS" | cut -d' ' -f1)"
+emit matrix:failed       "$(echo "$MS" | cut -d' ' -f2)"
+emit matrix:inconclusive "$(echo "$MS" | cut -d' ' -f3)"
+emit matrix:regressions  "$(echo "$MS" | cut -d' ' -f4)"
+emit matrix:known-failing "$(wc -l < tests/matrix/KNOWN-FAILING | tr -d ' ')"
+
+# ---------------------------------------------------------------
+# 3b. The assembly engine (Iteration 525; ASM-ENGINE.md). x86-64 only:
+#     elsewhere every row is `skipped`, which is a fact about the host
+#     and not compared. What made it "complete" at 523, checked on every
+#     run: the kernels and the shell image it builds are byte-identical
+#     to cv8.c's; its CORE-suite output is cv8.c's, byte for byte; and
+#     the shell on it - relfshasm64, one static file - passes the
+#     differential, shell and pty suites as relfsh64 does.
+# ---------------------------------------------------------------
+echo "== the assembly engine =="
+# Every row this section emits on x86-64, emitted as skipped elsewhere. A
+# row missing here is MISSING on any other machine: asm:forthfuzz (597),
+# then native:str, native:fold and native:inline (644-646, found at 655).
+# The second time is a check (prompts/15): verify:skip-rows below names
+# any row the section emitted that this list lacks.
+SKIP_ROWS="asm:kernels asm:shell-image asm:core asm:diff:failed asm:shell
+asm:interactive:failed asm:fixpoint asm:fuzz-mismatches
+asm:forthfuzz:failures asm:intrfuzz:failures docs:sizes native:n1a
+native:prims native:headers native:kernel-cut native:compiler
+native:core native:kernel-bytes native:os native:os-ported
+native:signals native:shell-run native:shell-diff:failed
+native:shell-forth-errors:failed native:shell-bytes native:shell
+native:interactive:failed native:mrsh:failed native:posix:failed
+native:forthfuzz:failures native:intrfuzz:failures size:asm-engine
+size:asm-shell native:str native:locals native:cmpbr native:memop native:slit native:peep native:data native:ctab native:inl native:short native:data-bytes native:self-built native:fold native:inline
+verify:skip-rows"
+SKIP_FROM=$(wc -l < "$OUT")
+# The native kernel's comparison rows (Iteration 656, prompts/15): a
+# test's own code failing - a word the bare kernel lacks (647: NIP; 651:
+# 0>), a print word mistyped (654), a line longer than the 256 bytes the
+# kernel reads (655) - fails alike on every engine, and a comparison of
+# the two outputs passed with the cases unrun, four times. A row is
+# `broken` now when either output holds one of the kernel's compile-time
+# errors, or does not end with the test's own last line, `end`.
+native_cmp() {   # row file
+    cv=$(timeout 20 ./relfasm64 forth/kernel64.img < "$2" 2>&1 | tr -d '\r' | grep -v 'Welcome\|^OK')
+    na=$(timeout 20 ./native-kernel < "$2" 2>&1 | tr -d '\r' | grep -v 'Welcome\|^OK')
+    bad=$(printf '%s\n%s\n' "$cv" "$na" | grep -e 'Undefined word' -e 'compile only' -e 'Incomplete control structure' -e 'Not found' | head -3)
+    if [ -n "$bad" ] || [ "$(printf '%s\n' "$cv" | tail -1)" != end ] || [ "$(printf '%s\n' "$na" | tail -1)" != end ]; then
+        emit "$1" broken
+        { [ -z "$bad" ] || printf '%s\n' "$bad"; echo "last lines: asm [$(printf '%s\n' "$cv" | tail -1)] native [$(printf '%s\n' "$na" | tail -1)]"; } | sed "s|^|  $1: |" >&2
+    elif [ "$cv" = "$na" ]; then emit "$1" same
+    else emit "$1" differ; fi
+}
+if [ "$(uname -m)" = x86_64 ] && make -s relfasm64 relfshasm64 >/dev/null 2>&1; then
+    kern=reproduces
+    for bytes in 8 4; do
+        case $bytes in 8) img=forth/kernel64.img ;; 4) img=forth/kernel32.img ;; esac
+        wd=$(mktemp -d)
+        cp forth/extend.4 forth/cross.4 forth/cross-core.4 forth/kernel.4 forth/kernel64.img relfasm64 "$wd/"
+        [ $bytes != 8 ] && sed -i "s/^8 TARGET-CELL-BYTES !\$/$bytes TARGET-CELL-BYTES !/" "$wd/cross.4"
+        ( cd "$wd" && printf 'S" extend.4" INCLUDED\nS" cross.4" INCLUDED\nBYE\n' |
+          timeout 120 ./relfasm64 kernel64.img > boot.log 2>&1 )
+        cmp -s "$wd/built.img" "$img" || kern=DIFFERS
+        rm -rf "$wd"
+    done
+    emit asm:kernels "$kern"
+    srcs=$(sed -n 's/^SHELL_SOURCES *= *//p' Makefile)
+    rm -f /tmp/verify-asm-shell.img
+    sh tools/build-shell-image.sh ./relfasm64 forth/kernel64.img /tmp/verify-asm-shell.img $srcs >/dev/null 2>&1
+    if cmp -s /tmp/verify-asm-shell.img kernel64-shell.img
+    then emit asm:shell-image reproduces
+    else emit asm:shell-image DIFFERS; fi
+    if command -v python3 >/dev/null 2>&1; then
+        # the failures' details into the log, as the pty suite's (Iteration 605):
+        # a rare one, seen once, kept only its count
+        fz=$(timeout 280 python3 tools/forthfuzz.py 100 595 ./relfshasm64 2>&1)
+        printf '%s\n' "$fz" | grep -A14 '^FAIL' | sed 's/^/  asm:forthfuzz: /' >&2
+        emit asm:forthfuzz:failures "$(printf '%s\n' "$fz" | sed -n 's/.*cases, \([0-9]*\) failures.*/\1/p')"
+    else emit asm:forthfuzz:failures skipped; fi
+    if command -v python3 >/dev/null 2>&1; then
+        # the failures' details into the log, as the pty suite's (Iteration 605):
+        # a rare one, seen once, kept only its count
+        fz=$(timeout 280 python3 tools/intrfuzz.py 20 598 ./relfshasm64 2>&1)
+        printf '%s\n' "$fz" | grep -A14 '^FAIL' | sed 's/^/  asm:intrfuzz: /' >&2
+        emit asm:intrfuzz:failures "$(printf '%s\n' "$fz" | sed -n 's/.*cases, \([0-9]*\) failures.*/\1/p')"
+    else emit asm:intrfuzz:failures skipped; fi
+    rm -f /tmp/verify-asm-shell.img
+    tf="tests/tester.fr $(ls tests/*.fth | tr '\n' ' ')"
+    { cat $tf; echo BYE; } | timeout 60 ./relfasm64 forth/kernel64.img > /tmp/verify-asm-core.out 2>&1
+    { cat $tf; echo BYE; } | timeout 60 ./relf64 forth/kernel64.img > /tmp/verify-c-core.out 2>&1
+    if cmp -s /tmp/verify-asm-core.out /tmp/verify-c-core.out
+    then emit asm:core identical
+    else emit asm:core DIFFERS; fi
+    rm -f /tmp/verify-asm-core.out /tmp/verify-c-core.out
+    AD=$(THIS_SH="$PWD/relfshasm64" timeout 300 tests/diff/run-all 2>&1 | tail -1)
+    emit asm:diff:failed "$(echo "$AD" | sed -n 's/.*, \([0-9]*\) failed.*/\1/p')"
+    if ( cd tests/shell && THIS_SH="$PWD/../../relfshasm64" timeout 600 ./run-all ) >/tmp/verify-asm-shell.log 2>&1
+    then emit asm:shell 1
+    else emit asm:shell 0
+        # which file and which assertion - fury's first report said only
+        # "0" (Iteration 542), and the cause had to be found by guessing
+        grep -E '^FAIL:|[1-9][0-9]* failed \(' /tmp/verify-asm-shell.log | head -6 | sed 's/^/  asm shell: /'
+    fi
+    rm -f /tmp/verify-asm-shell.log
+    # the whole output kept, not only its summary: a failure names its case
+    # (Iteration 560 - a verify run said "1" and nothing else, as 542's did)
+    THIS_SH="$PWD/relfshasm64" timeout 300 sh tests/interactive/run > /tmp/verify-asm-int.log 2>&1
+    AP=$(tail -1 /tmp/verify-asm-int.log)
+    emit asm:interactive:failed "$(echo "$AP" | sed -n 's/.*passed, \([0-9]*\) failed.*/\1/p')"
+    grep -E '^ *FAIL' /tmp/verify-asm-int.log | head -4 | sed 's/^/  asm interactive: /'
+    rm -f /tmp/verify-asm-int.log
+    # The engine rebuilds itself (SELF-HOSTING.md M4, M5): make built
+    # relfasm64 with relf from relfasm64.4; run on the same program, that
+    # engine must write itself again, identical.
+    rm -f relfasm64.forth
+    cp relfasm64 relfasm64.forth
+    if [ -x relfasm64.forth ]; then
+        mv relfasm64.forth /tmp/verify-gen1
+        timeout 120 /tmp/verify-gen1 forth/kernel64.img < engine/relfasm64.4 >/dev/null 2>&1
+        if cmp -s relfasm64.forth /tmp/verify-gen1
+        then emit asm:fixpoint reproduces
+        else emit asm:fixpoint DIFFERS; fi
+        rm -f /tmp/verify-gen1
+        # The assembler against GNU as on random instructions (Iteration
+        # 566, tools/asm-fuzz.py): the corpus holds it to the shapes the
+        # engine uses; this to every width and addressing mode, where it
+        # had assembled memory push, pop and xchg - silently - as register
+        # ones. 0 is the only right answer; refusals are not counted.
+        if command -v as >/dev/null 2>&1; then
+            emit asm:fuzz-mismatches "$(timeout 280 python3 tools/asm-fuzz.py 300 566 2>/dev/null | sed -n 's/.*, \([0-9]*\) MISMATCH.*/\1/p')"
+        fi
+    else
+        emit asm:fixpoint DIFFERS
+    fi
+    rm -f relfasm64.forth
+    # The native back end's pipeline (Iteration 610, docs/NATIVE.md N1a):
+    # forth/native.4 compiles a small program to x86-64 code; it prints 169
+    if make -s native-n1a >/dev/null 2>&1; then emit native:n1a "$(./native-n1a 2>&1)"
+    else emit native:n1a "not built"; fi
+    # N1b (Iteration 611): the primitives, native against CV8 on the same test
+    if make -s native-n1b >/dev/null 2>&1; then
+        cv=$(./relf64 forth/kernel64.img < tests/native/cv8-prims.4 2>&1 | tr -d '\r' | sed -n '/^<<</,/^>>>/p')
+        na=$(./native-n1b 2>&1)
+        if [ -n "$cv" ] && [ "$cv" = "$na" ]; then emit native:prims same; else emit native:prims differ; fi
+    else emit native:prims "not built"; fi
+    # N1c-1b (Iteration 616): headers in CV8's format over native bodies; a
+    # native walker decodes the threads - the names it finds, sorted
+    if make -s native-n1c >/dev/null 2>&1; then
+        emit native:headers "$(./native-n1c 2>&1 | tr ' ' '\n' | grep . | sort | tr '\n' ' ' | sed 's/ $//')"
+    else emit native:headers "not built"; fi
+    # N1c-1c (Iteration 618): kernel.4's parts 0-3, native, against CV8's kernel
+    if make -s native-k3 >/dev/null 2>&1; then
+        cv=$(./relf64 forth/kernel64.img < tests/native/cv8-kernel-cut.4 2>&1 | tr -d '\r' | sed -n '/^<<</,/^>>>/p')
+        na=$(./native-k3 2>&1 | tr -d '\r')
+        if [ -n "$cv" ] && [ "$cv" = "$na" ]; then emit native:kernel-cut same; else emit native:kernel-cut differ; fi
+    else emit native:kernel-cut "not built"; fi
+    # N1c-2 (Iteration 623): the native kernel's own compiler at run time
+    if make -s native-k9 >/dev/null 2>&1; then
+        cv=$(./relf64 forth/kernel64.img < tests/native/cv8-kernel-rc.4 2>&1 | tr -d '\r' | sed -n '/^<<</,/^>>>/p')
+        na=$(timeout 10 ./native-k9 2>&1 | tr -d '\r')
+        if [ -n "$cv" ] && [ "$cv" = "$na" ]; then emit native:compiler same; else emit native:compiler differ; fi
+    else emit native:compiler "not built"; fi
+    # N1c-3 (Iteration 624): the native kernel boots to its prompt; Hayes'
+    # CORE suite on it and on CV8's bare kernel: the same output, line for line
+    if make -s native-kernel >/dev/null 2>&1; then
+        cv=$({ cat tests/tester.fr; echo BYE; } | timeout 60 ./relf64 forth/kernel64.img 2>&1 | tr -d '\r')
+        na=$({ cat tests/tester.fr; echo BYE; } | timeout 60 ./native-kernel 2>&1 | tr -d '\r')
+        if [ -n "$cv" ] && [ "$cv" = "$na" ]; then emit native:core same; else emit native:core differ; fi
+        emit native:kernel-bytes "$(wc -c < native-kernel | tr -d ' ')"
+        # (Iteration 670) N4: the native kernel built by itself - its own build
+        # script hosted by the native kernel - the same, byte for byte, as CV8 builds it
+        emit native:self-built "$(sh tools/native-self-build.sh 2>&1 | head -1)"
+        # N2 (Iteration 634): the system-call primitives native-os.4 takes from
+        # relfasm64.4's handlers, at the kernels' prompts - native and CV8's asm
+        # engine, the handlers' other user, must print the same
+        native_cmp native:os tests/native/kernel-os.4
+        emit native:os-ported "$(python3 tools/gen-native-os.py /dev/null --report | sed -n 1p | awk '{print $2}' | tr -d ':')"
+        # (Iteration 636) SIGNAL-ACTION: the throw route, caught signals, a refusal
+        native_cmp native:signals tests/native/kernel-sig.4
+        # (Iteration 644) the string primitives native-rt.4 makes fast, against CV8
+        native_cmp native:str tests/native/kernel-str.4
+        # (Iteration 655) shadow.4's locals, which SLOT, lays natively as groups
+        native_cmp native:locals tests/native/kernel-locals.4
+        # (Iteration 661) a compare of two cells, or of one with 0, fused with its branch
+        native_cmp native:cmpbr tests/native/kernel-cmpbr.4
+        # (Iteration 662) a VARIABLE's fetch folded into the operation after it
+        native_cmp native:memop tests/native/kernel-memop.4
+        # (Iteration 666) S" in a definition laid inline
+        native_cmp native:slit tests/native/kernel-slit.4
+        # (Iteration 669) pushes the next word takes straight back, folded
+        native_cmp native:peep tests/native/kernel-peep.4
+        # (Iteration 672) CREATE's data in its own region; HERE back to code at a definition
+        native_cmp native:data tests/native/kernel-data.4
+        # (Iteration 676) CTABLE-FIND, the variable scan's primitive, against the engines'
+        native_cmp native:ctab tests/native/kernel-ctab.4
+        # (Iteration 683) CV8's inlining, the native kernel its oracle
+        native_cmp native:inl tests/native/kernel-inl.4
+        # (Iteration 693) forward branches laid short, CV8 the oracle
+        native_cmp native:short tests/native/kernel-short.4
+        # (Iteration 645) stores folded into the address before them
+        native_cmp native:fold tests/native/kernel-fold.4
+        # (Iteration 646) small colon words inlined: results through words that
+        # inline, nest, and do not
+        native_cmp native:inline tests/native/kernel-inline.4
+        # (Iteration 637) the shell's own sources loaded into the native kernel and
+        # run through TREE-RUN-TEXT - expansions, functions, loops, a pipeline
+        cv=$(./relfasm64 forth/kernel64.img < tests/native/shell-run.4 2>&1 | tr -d '\r' | grep -v '^OK$\|^$\|Welcome\|Redefining')
+        na=$(timeout 60 ./native-kernel < tests/native/shell-run.4 2>&1 | tr -d '\r' | grep -v '^OK$\|^$\|Welcome\|Redefining')
+        if [ -n "$cv" ] && [ "$cv" = "$na" ]; then emit native:shell-run same; else emit native:shell-run differ; fi
+        # (Iteration 638) the native shell, saved: the differential suite's failures,
+        # and run-forth-errors' (14 known at 638 - the fault traps, not native yet)
+        if make -s relfsh-native >/dev/null 2>&1; then
+            emit native:shell-diff:failed "$(THIS_SH=$PWD/relfsh-native timeout 300 tests/diff/run-all 2>&1 | tail -1 | awk '{print $4}')"
+            emit native:shell-forth-errors:failed "$(THIS_SH=$PWD/relfsh-native timeout 60 sh tests/shell/run-forth-errors 2>&1 | tail -1 | awk '{print $3}')"
+            emit native:shell-bytes "$(wc -c < relfsh-native | tr -d ' ')"
+            # (Iteration 672) the data segment: CREATE's data, out of the code
+            emit native:data-bytes "$(od -An -t u8 -j 152 -N 8 relfsh-native | tr -d ' ')"
+            # (Iteration 640) the main shell suite, as asm:shell runs it
+            if ( cd tests/shell && THIS_SH="$PWD/../../relfsh-native" timeout 600 ./run-all ) >/tmp/verify-native-shell.log 2>&1
+            then emit native:shell 1
+            else emit native:shell 0
+                grep -E '^FAIL:|[1-9][0-9]* failed \(' /tmp/verify-native-shell.log | head -6 | sed 's/^/  native shell: /'
+            fi
+            rm -f /tmp/verify-native-shell.log
+            # (Iteration 641) every other suite CV8's shells pass: the
+            # pseudo-terminal suite, mrsh, posix, and both fuzzers
+            NI=$(THIS_SH="$PWD/relfsh-native" timeout 300 sh tests/interactive/run 2>&1 | tail -1)
+            emit native:interactive:failed "$(echo "$NI" | sed -n 's/.* \([0-9]*\) failed.*/\1/p')"
+            NM=$(RELFSH="$PWD/relfsh-native" timeout 300 bash tests/mrsh-suite/run.sh 2>&1 | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\2/p')
+            emit native:mrsh:failed "$NM"
+            NP=$(RELFSH="$PWD/relfsh-native" timeout 300 sh tests/posix/run.sh 2>&1 | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\2/p')
+            emit native:posix:failed "$NP"
+            emit native:forthfuzz:failures "$(timeout 280 python3 tools/forthfuzz.py 100 595 ./relfsh-native 2>&1 | tail -1 | sed -n 's/.*cases, \([0-9]*\) failures.*/\1/p')"
+            emit native:intrfuzz:failures "$(timeout 280 python3 tools/intrfuzz.py 20 598 ./relfsh-native 2>&1 | tail -1 | sed -n 's/.*cases, \([0-9]*\) failures.*/\1/p')"
+        else emit native:shell-diff:failed "not built"; emit native:shell-forth-errors:failed "not built"; emit native:shell-bytes "not built"; emit native:data-bytes "not built"; emit native:shell "not built"
+            for k in native:interactive:failed native:mrsh:failed native:posix:failed native:forthfuzz:failures native:intrfuzz:failures; do emit "$k" "not built"; done; fi
+    else emit native:core "not built"; emit native:kernel-bytes "not built"
+         emit native:os "not built"; emit native:os-ported "not built"; emit native:signals "not built"; emit native:str "not built"; emit native:locals "not built"; emit native:cmpbr "not built"; emit native:memop "not built"; emit native:slit "not built"; emit native:peep "not built"; emit native:data "not built"; emit native:ctab "not built"; emit native:inl "not built"; emit native:short "not built"; emit native:self-built "not built"; emit native:fold "not built"; emit native:inline "not built"; emit native:shell-run "not built"
+         emit native:shell-diff:failed "not built"; emit native:shell-forth-errors:failed "not built"; emit native:shell-bytes "not built"; emit native:shell "not built"
+            for k in native:interactive:failed native:mrsh:failed native:posix:failed native:forthfuzz:failures native:intrfuzz:failures; do emit "$k" "not built"; done; fi
+    emit size:asm-engine "$(wc -c < relfasm64 | tr -d ' ')"
+    emit size:asm-shell "$(wc -c < relfshasm64 | tr -d ' ')"
+    # The sizes the README and both articles quote, against the files
+    # (Iteration 601): the README said 138,052 from 587 to 600 while the
+    # shell grew, and nothing noticed. Commas for the English, none for
+    # the Russian.
+    ds=$(wc -c < relfshasm64 | tr -d ' '); de=$(wc -c < relfasm64 | tr -d ' ')
+    commas() { echo "$1" | awk '{n=$0; s=""; while (length(n) > 3) { s="," substr(n, length(n)-2) s; n=substr(n, 1, length(n)-3) } print n s}'; }
+    dsc=$(commas "$ds"); dec=$(commas "$de")
+    if grep -q "one static file of $dsc bytes" README.md && grep -q "$dec bytes of x86-64" README.md &&
+       grep -q "one static file of $dsc bytes" docs/ARTICLE-forthhub.md && grep -q "$dec bytes of x86-64" docs/ARTICLE-forthhub.md &&
+       grep -q "размером $ds байт" docs/ARTICLE-habr.md && grep -q "движок: $de байт" docs/ARTICLE-habr.md; then
+        emit docs:sizes current
+    else emit docs:sizes stale; fi
+    missing=$(tail -n +$((SKIP_FROM + 1)) "$OUT" | awk '{print $1}' | while read -r k; do
+        case " $(echo $SKIP_ROWS) " in *" $k "*) ;; *) printf '%s,' "$k" ;; esac; done)
+    emit verify:skip-rows "${missing:-complete}"
+else
+    # asm:forthfuzz:failures too (Iteration 597): 595 added the row only
+    # where the engine runs, and an ARMv7 verify reported it MISSING
+    for k in $SKIP_ROWS; do
+        emit "$k" skipped
+    done
+fi
+
+# ---------------------------------------------------------------
+# 3c. Another Forth builds the kernels (Iteration 542). gforth, running
+#     cross.4 unmodified, lays down both kernel images byte for byte: a
+#     diverse double-compile - the seeds owe nothing to relf's own
+#     compiler. Where gforth is not installed the row is `skipped`.
+# ---------------------------------------------------------------
+echo "== another Forth =="
+if command -v gforth >/dev/null 2>&1; then
+    ddc=reproduces
+    for bytes in 8 4; do
+        case $bytes in 8) img=forth/kernel64.img ;; 4) img=forth/kernel32.img ;; esac
+        wd=$(mktemp -d)
+        cp forth/cross.4 forth/cross-core.4 forth/kernel.4 "$wd/"
+        [ $bytes != 8 ] && sed -i "s/^8 TARGET-CELL-BYTES !\$/$bytes TARGET-CELL-BYTES !/" "$wd/cross.4"
+        ( cd "$wd" && timeout 120 gforth cross.4 -e bye >/dev/null 2>&1 )
+        cmp -s "$wd/built.img" "$img" || ddc=DIFFERS
+        rm -rf "$wd"
+    done
+    emit ddc:gforth "$ddc"
+else
+    emit ddc:gforth skipped
+fi
+
+# ---------------------------------------------------------------
+# 4. Sizes. Cheap, and the number the engine work is chasing.
+# ---------------------------------------------------------------
+echo "== sizes =="
+S=$(sh tests/sizes 2>/dev/null)
+# tests/sizes prints one section per word size, with the row simply
+# labelled "shell.4" inside each - so track which section we are in.
+emit size:x86_64 "$(echo "$S" | awk '/^== x86-64/{s=1} /^== i386/{s=0} s && /^shell.4 /{print $5; exit}')"
+emit size:i386   "$(echo "$S" | awk '/^== i386/{s=1} /^== not a shell/{s=0} s && /^shell.4 /{print $5; exit}')"
+# The parts separately (Iteration 272): the totals above move in 4 KB
+# steps whenever the stripped engine crosses a page, which hides what
+# changed. The engine's code (size's text), and each shell image.
+emit size:engine-code-x86_64 "$([ -x relf64 ] && size relf64 2>/dev/null | awk 'NR==2 {print $1}' || echo missing)"
+emit size:engine-code-i386   "$([ -x relf32 ] && size relf32 2>/dev/null | awk 'NR==2 {print $1}' || echo missing)"
+emit size:image-x86_64       "$([ -f kernel64-shell.img ] && wc -c < kernel64-shell.img | tr -d ' ' || echo missing)"
+# `missing` rather than a shell error on stderr and an empty value: the
+# i386 half is skipped wherever there is no 32-bit toolchain, and that
+# is a normal state, not a broken one (Iteration 394).
+emit size:image-i386         "$([ -f kernel32-shell.img ] && wc -c < kernel32-shell.img | tr -d ' ' || echo missing)"
+
+# ---------------------------------------------------------------
+# The scaffolding (Iteration 391)
+# ---------------------------------------------------------------
+# Shebangs against interpreters, the locale pins, and the bundle. Two
+# reports from a real checkout found faults here that no suite watched.
+# The native sources' lint (Iteration 632): words defined inside a word
+# list section and named in source, and words used above their
+# definition - each slip made more than once (prompts/15-repeat-slip) -
+# and its negative controls, the four slips rebuilt, each to be caught.
+emit native:lint "$(python3 tools/native-lint.py 2>/dev/null | tail -1 | awk '{print $2}')"
+emit native:lint-self-test "$(python3 tools/native-lint.py --self-test 2>/dev/null | tail -1 | awk '{print $3"/"$5}')"
+# The log's closed volumes (Iteration 631): docs/progress/, a hundred
+# iterations each; every volume but the newest is closed and never
+# changes - a wrong entry is corrected forward, in the current volume. A
+# new row when a volume closes is the one expected change.
+newest=$(ls docs/progress/*.md 2>/dev/null | sort | tail -1)
+for v in $(ls docs/progress/*.md 2>/dev/null | sort); do
+    [ "$v" = "$newest" ] && continue
+    emit "progress:$(basename "$v" .md)" "$(cksum < "$v" | awk '{print $1, $2}')"
+done
+echo "== the scaffolding ==" >&2
+PORTABILITY_QUICK=1 sh tests/portability > /tmp/verify-portability.log 2>&1 || true
+emit portability:problems "$(awk '/^portability:/ {print $4+0}' /tmp/verify-portability.log)"
+# The count alone is no use from another machine: a report saying
+# `portability:problems 1` names nothing (Iteration 398).
+grep -i -e 'PROBLEM' -e 'clean run:' -e 'preloaded run:' /tmp/verify-portability.log |
+    sed 's/^/  portability: /' >&2 || true
+
+# Which compiler produced the binaries whose sizes are recorded below.
+# The size lines mean nothing across toolchains, and this is how the
+# comparison knows (Iteration 393).
+CC_ID=$(${CC:-cc} --version 2>/dev/null | head -1)
+emit toolchain:cc "$CC_ID"
+# The flags matter as much as the compiler: a checkout reported a binary
+# 35 KB larger with the SAME compiler string and the same `size` output
+# for its code, which is what an exported CFLAGS - or a distribution's
+# default hardening - does. Recorded so the size lines can tell "this
+# project changed" from "this machine builds differently"
+# (Iteration 396).
+emit toolchain:cflags "${CFLAGS:-<unset>}"
+
+# ---------------------------------------------------------------
+# The deliverable itself (Iteration 369)
+# ---------------------------------------------------------------
+# Every session hands over a git bundle, and for 368 iterations none of
+# them could be pulled: `git bundle create FILE master TAG` writes those
+# refs and no HEAD, while `git pull FILE` asks for HEAD. The suites said
+# nothing, because nothing tested the thing being handed over. This
+# builds a bundle, clones it, and checks the clone has the same commit.
+#
+# With the branch checked out, not master (Iteration 582, the Habr
+# review): a `git clone -b article-2026`, as the articles' Try it has
+# it, has no local master, the bundle could not be made, and a reader's
+# `make verify` failed on this line alone.
+echo "== the bundle ==" >&2
+bwork=$(mktemp -d)
+bbranch=$(git symbolic-ref -q --short HEAD)
+if git bundle create "$bwork/t.bundle" HEAD $bbranch >/dev/null 2>&1 &&
+   git clone -q "$bwork/t.bundle" "$bwork/clone" >/dev/null 2>&1 &&
+   [ "$(git rev-parse HEAD)" = "$(git -C "$bwork/clone" rev-parse HEAD)" ]; then
+    emit bundle:pullable 1
+else
+    emit bundle:pullable 0
+fi
+rm -rf "$bwork"
+
+# ---------------------------------------------------------------
+# Compare, or record.
+# ---------------------------------------------------------------
+sort -o "$OUT" "$OUT"
+if [ "$UPDATE" = 1 ]; then
+    cp "$OUT" "$BASE"
+    echo ""
+    echo "BASELINE updated:"
+    sed 's/^/  /' "$BASE"
+    exit 0
+fi
+if [ ! -e "$BASE" ]; then
+    echo "no $BASE - run: tests/verify --update" >&2
+    exit 2
+fi
+
+# Some of what this records is a property of the CODE and some is a
+# property of the MACHINE. A byte size depends on the compiler that
+# produced the binary; whether a POSIX case is inconclusive depends on
+# whether the reference shells installed here agree about it. Comparing
+# those against a baseline recorded elsewhere reports a difference that
+# is true and useless - which is what a checkout on another machine saw
+# (Iteration 393).
+#
+# So the size lines are compared only when the toolchain matches the one
+# the baseline was recorded with, and the inconclusive counts are
+# reported without being counted as a difference. `failed` and `passed`
+# stay strict everywhere.
+machine_dependent() {
+    case $1 in
+        size:*)
+            [ "$CC_ID" = "$(awk '$1=="toolchain:cc" {sub(/^toolchain:cc /,""); print}' "$BASE")" ] &&
+            [ "${CFLAGS:-<unset>}" = "$(awk '$1=="toolchain:cflags" {sub(/^toolchain:cflags /,""); print}' "$BASE")" ] &&
+            return 1
+            return 0 ;;
+        # `passed` is `cases` minus `inconclusive` minus `failed`, and
+        # the first two of those are already compared - strictly for
+        # cases and failed, not at all for inconclusive, which counts
+        # what the REFERENCE shells disagree about. Comparing `passed`
+        # as well just repeats the machine's answer (Iteration 396).
+        posix:inconclusive|matrix:inconclusive|posix:passed) return 0 ;;
+        # Three shell-test files skip without dash, and the parse
+        # verdicts are a comparison against `dash -n`: both counts say
+        # what the machine could compare, not what the shell does
+        # (Iteration 404). `shell:files` and `parse:failed` stay strict.
+        parse:verdicts-agree|parse:verdicts-differ)
+            command -v dash >/dev/null 2>&1 && return 1
+            return 0 ;;
+        # How many checks RAN, which depends on the machine in more ways
+        # than one: three files need dash, and run-ulimit skips a
+        # comparison whose limit exceeds a cell - an Ubuntu box with 3.4
+        # GB of lockable memory runs one fewer than this one
+        # (Iteration 405). What matters is that none FAILED, and
+        # shell:4byte, shell:8byte and shell:files say that.
+        shell:assertions) return 0 ;;
+        matrix:refs) return 0 ;;
+        matrix:passed|matrix:failed|matrix:known-failing|matrix:regressions)
+            [ "$MATRIX_REFS_USED" = "$(awk '$1=="matrix:refs" {sub(/^[^ ]+[ ]/,""); print}' "$BASE")" ] && return 1
+            return 0 ;;
+        toolchain:cc|toolchain:cflags) return 0 ;;
+        # A 32-bit host builds no 8-byte pair at all, and every row that
+        # measures one is then a fact about the machine rather than about
+        # this shell. They report 0 rather than `missing`, so the rule
+        # below does not catch them, and an ARMv7 box reported five of
+        # them CHANGED with nothing wrong (Iteration 465).
+        core:8byte|ext:8byte|io:8byte|shell:8byte|image:8byte-fixpoint)
+            [ -f kernel64-shell.img ] && return 1
+            return 0 ;;
+        # `skipped` and `missing` are what a host without a 32-bit
+        # toolchain reports; they are facts about the host.
+        *) if [ "$2" = skipped ] || [ "$2" = missing ]; then return 0; fi
+           return 1 ;;
+    esac
+}
+
+echo ""
+bad=0
+while read -r k v; do
+    # The rest of the line, not just the second field: a value may hold
+    # spaces (the compiler's version string does).
+    want=$(awk -v k="$k" '$1==k {sub(/^[^ ]+[ ]/,""); print}' "$BASE")
+    if [ -z "$want" ]; then
+        printf 'NEW      %-22s %s\n' "$k" "$v"; bad=1
+    elif [ "$want" = "$v" ]; then
+        printf 'ok       %-22s %s\n' "$k" "$v"
+    # The widening cross-compile was labelled `known` from Iteration 404
+    # until 415 fixed it. A DIFFERS there is a regression now, and is
+    # reported as one.
+    elif machine_dependent "$k" "$v"; then
+        printf 'machine  %-22s %s (baseline %s, not compared here)\n' "$k" "$v" "$want"
+    else
+        printf 'CHANGED  %-22s %s (baseline %s)\n' "$k" "$v" "$want"; bad=1
+    fi
+done < "$OUT"
+while read -r k v; do
+    awk -v k="$k" '$1==k {f=1} END {exit !f}' "$OUT" || {
+        printf 'MISSING  %-22s (baseline %s)\n' "$k" "$v"; bad=1; }
+done < "$BASE"
+
+echo ""
+if [ "$RT" != 0 ]; then
+    echo "tests/run_tests.sh exited $RT. The last lines of its log:"
+    echo ""
+    # Printed here rather than pointed at: a report from another machine
+    # is only as useful as what it contains (Iteration 393).
+    # Not a loose grep: `no errors` matched the old pattern, so a
+    # passing line was reported as the failure (Iteration 394).
+    # With the lines that follow them: a bare `FAIL: PS1 expands a
+    # command substitution` says nothing from another machine, where
+    # the expected and actual values are the whole story
+    # (Iteration 399).
+    grep -nE -A6 '^FAIL' /tmp/verify-run.log | tail -40 | sed 's/^/    /'
+    grep -nE '^SKIP|No such file|Permission denied|command not found' \
+        /tmp/verify-run.log | tail -8 | sed 's/^/    /'
+    echo "    --- last 25 lines ---"
+    tail -25 /tmp/verify-run.log | sed 's/^/    /'
+    echo ""
+    echo "    (the whole log is /tmp/verify-run.log)"
+    bad=1
+fi
+if [ "$bad" = 0 ]; then echo "VERIFIED: everything matches $BASE"
+else echo "DIFFERENCES ABOVE. If they are intended, commit the fix and"
+     echo "tests/verify --update together."; fi
+exit "$bad"

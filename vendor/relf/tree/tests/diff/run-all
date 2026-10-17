@@ -1,0 +1,101 @@
+#!/bin/sh
+# tests/diff/run-all - differential tests: every script in cases/ is run
+# through relfsh AND through a reference shell, and their stdout and
+# exit status must match.
+#
+# Why this exists alongside tests/shell/: those assert expectations
+# written by hand, and twice those expectations were simply wrong about
+# POSIX ("set -- -- -x" in Iteration 61, an unquoted multi-line command
+# substitution in 67) - the shell was right and the test was not. Here
+# nothing is hand-written but the input, so that class of mistake
+# cannot occur.
+#
+# Bash's own test files are NOT vendored: bash is GPLv3 and this
+# project is GPLv2 (see GOALS.md), which is a licence incompatibility,
+# and its tests exercise bash extensions this shell deliberately does
+# not have. Using bash as a live oracle has neither problem.
+set -u
+THIS_SH="${THIS_SH:-./relfsh}"
+REF_SH="${REF_SH:-/bin/bash}"
+# A differential suite compares two shells, so it has to fix the things
+# that are locale-dependent in BOTH of them: which characters are in
+# `[[:alpha:]]`, whether `[a-z]` matches `Z`, and above all the ORDER
+# pathname expansion returns its matches in, which POSIX ties to
+# LC_COLLATE. This shell sorts in byte order - it has no locale support
+# at all - so the suite asks the reference for byte order too. Without
+# this, cases that glob passed in the C locale and failed in a UTF-8 one
+# (Iteration 390, reported from a user's machine).
+LC_ALL=C
+# The suite's own stdin is closed: a case that runs this shell without
+# A preload library the loader cannot use prints a line to stderr on
+# every exec - Ubuntu and Mint set one system-wide (libgtk3-nocsd), and
+# it cannot be loaded into the 32-bit engine at all. The tests capture
+# stderr, so that line became part of what they compared, and every
+# i386 assertion failed with the right answer one line down
+# (Iteration 396). No test here wants a preload.
+unset LD_PRELOAD
+# redirecting stdin would otherwise inherit the TERMINAL and wait there
+# for ever - which is what `make verify` did on a real checkout, while
+# in a container, where stdin is /dev/null, it had never once hung
+# (Iteration 392). The interactive pty harness makes its own terminal
+# and is unaffected.
+exec < /dev/null
+export LC_ALL
+
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT INT TERM
+
+dir=$(dirname "$0")/cases
+run=0; failed=0
+
+if [ ! -x "$REF_SH" ]; then
+    echo "tests/diff: no reference shell at $REF_SH - skipping"
+    exit 0
+fi
+
+for c in "$dir"/*.sh; do
+    [ -e "$c" ] || continue
+    run=$((run + 1))
+    # Each case runs in a scratch directory of its own. A case that
+    # creates files relative to the current directory - or one run by a
+    # half-built shell, where `$d` does not expand and `mkdir $d` makes
+    # a directory called `$d` - cannot litter the tree that way
+    # (Iteration 368: one such directory had been sitting in the
+    # repository root).
+    work=$(mktemp -d)
+    case $THIS_SH in /*) sh_abs=$THIS_SH ;; *) sh_abs=$PWD/$THIS_SH ;; esac
+    case $c in /*) case_abs=$c ;; *) case_abs=$PWD/$c ;; esac
+    got=$(cd "$work" && timeout 10 "$sh_abs" "$case_abs" </dev/null 2>/dev/null); gs=$?
+    want=$(cd "$work" && timeout 10 "$REF_SH" "$case_abs" </dev/null 2>/dev/null); ws=$?
+    rm -rf "$work"
+    if [ "$got" != "$want" ] || [ "$gs" != "$ws" ]; then
+        failed=$((failed + 1))
+        echo "FAIL: $(basename "$c")  (status $gs, want $ws)"
+        # The first SIX lines of each used to be printed, which said
+        # nothing whenever a case agreed for six lines and diverged on
+        # the seventh - and most of them do (Iteration 390). A real diff
+        # instead, and a byte dump when the two sides look identical,
+        # which is what a trailing space or a CR looks like from here.
+        printf '%s\n' "$want" > "$TMP/want"
+        printf '%s\n' "$got"  > "$TMP/got"
+        if command -v diff >/dev/null 2>&1; then
+            echo "    (- is $REF_SH, + is this shell)"
+            diff -u "$TMP/want" "$TMP/got" | sed -n '3,20p' | sed 's/^/    /'
+        else
+            printf '%s\n' "$want" | sed 's/^/    want: /' | head -10
+            printf '%s\n' "$got"  | sed 's/^/    got:  /' | head -10
+        fi
+        if [ "$(cat "$TMP/want")" = "$(cat "$TMP/got")" ] 2>/dev/null; then
+            echo "    (the text matches: the difference is invisible)"
+        fi
+        if cmp -s "$TMP/want" "$TMP/got"; then
+            :
+        elif [ "$(tr -d '[:space:]' < "$TMP/want")" = "$(tr -d '[:space:]' < "$TMP/got")" ]; then
+            echo "    (only whitespace differs - first 3 lines as bytes:)"
+            head -3 "$TMP/want" | od -c | sed 's/^/    want /' | head -4
+            head -3 "$TMP/got"  | od -c | sed 's/^/    got  /' | head -4
+        fi
+    fi
+done
+echo "$run differential case(s), $failed failed"
+[ "$failed" -eq 0 ]

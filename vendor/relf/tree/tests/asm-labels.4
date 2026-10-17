@@ -1,0 +1,23 @@
+\ tests/asm-labels.4 - one-pass labels (SELF-HOSTING.md M1): the program of
+\ tests/asm-labels.S, which tools/asm-test.py assembles with GNU as and
+\ compares, byte for byte. Every kind of jump: back to a local label,
+\ forward to one, forward to a named one, and a NEAR forward one.
+S" forth/extend.4" INCLUDED  S" forth/asm64.4" INCLUDED
+ALSO ASSEMBLER
+: nop, 144 C,A ;
+4194304 1024 ASM-BUFFER               \ 0x400000, where ld puts the reference
+LABEL done  LABEL farther  LABEL table
+eax eax xor,
+1 L:  eax inc,  eax 10 # cmp,  1 B jne,
+eax eax test,  2 F jz,
+edi 42 # mov,  done jmp,
+2 L:  edi 1 # mov,
+done L:  eax 60 # mov,
+: NOPS 0 DO nop, LOOP ;
+NEAR farther jmp,  200 NOPS
+farther L:  syscall,
+[ rax *8 table ] qword-ptr jmp,  nop,   \ a forward label in a memory operand
+table L:  0 Q,A
+END-ASM
+: DUMP CR ." BYTES " THERE @ ABUF @ ?DO I C@ . LOOP CR ;  DUMP
+BYE

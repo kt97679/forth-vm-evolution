@@ -1,0 +1,28 @@
+#!/bin/sh
+# tests/shell/run-export - `export -p` and `export` with no operands
+# (Iteration 318), against dash's format. Not a differential case: bash
+# prints `declare -x NAME="value"` where dash and this shell print
+# `export NAME='value'`.
+. "$(dirname "$0")/lib.sh"
+
+# Everything below quotes dash's exact wording, so without dash there is
+# nothing to compare against (Iteration 399).
+if [ "${HAVE_DASH:-0}" != 1 ]; then
+    echo "SKIP ($(basename "$0")): dash is not installed; its wording is what these compare against"
+    report
+    exit 0
+fi
+case "$THIS_SH" in /*) SH=$THIS_SH ;; *) SH=$(pwd)/$THIS_SH ;; esac
+
+assert_output_equals "export -p lists a variable as dash does" \
+  "$(FOO=bar dash -c 'export FOO; export -p | grep "^export FOO="')" \
+  "$(FOO=bar $SH -c 'export FOO; export -p | grep "^export FOO="' 2>&1)"
+assert_output_equals "export with no operands lists too" \
+  "$(FOO=bar dash -c 'export FOO; export | grep "^export FOO="')" \
+  "$(FOO=bar $SH -c 'export FOO; export | grep "^export FOO="' 2>&1)"
+assert_output_equals "a quote in the value is escaped as dash escapes it" \
+  "$(dash -c 'V="it'\''s"; export V; export -p | grep "^export V="')" \
+  "$($SH -c 'V="it'\''s"; export V; export -p | grep "^export V="' 2>&1)"
+assert_output_equals "the listing is not empty" "yes" \
+  "$($SH -c 'export -p | grep -q "^export " && echo yes' 2>&1)"
+report
