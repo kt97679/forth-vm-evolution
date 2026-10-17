@@ -4,9 +4,11 @@
 |---|---|---|
 | 1 | two-widths-after-seed56.patch | **Selecting at both widths** (the owner, Iterations 336-338; results/drafts/two-width-selection.md). evolve.py --widths 8,4: setup at 4-byte cells first (setup_widths: its own reference, kernel reference and k32 variants under width-suffixed paths), then as always; each design passing screening also measured as a 32-bit x86 engine at 4-byte cells (eval32: its JIT off, its call scale at most 2, a round fewer, the selection's workloads) - speed32, a fourth objective in dominates() and crowding(); none, with why32, if it does not build or live so. NEXT-RUN's word: widths. The report's 32-bit column and seed-facts' two-width lines from the data. **The converter's call alignment** (tools/layout.py): bodies aligned to max(cell, 2^scale) - the cell at 8-byte cells; SKIPPAD's shortcut only where a scaled call reaches it - seed 54's converter death (a2c8d50d0a) converts and lives. **The cell family's image** by width (and --validate's). No gene; ids unchanged. compare-fronts still judges at 64 bits. |
 | 2 | jit-genes-after-seed56.patch | **Two JIT genes** (Iterations 339-343; results/drafts/next-genes.md): **jitimg** (0/1) - the image's words JIT candidates: the converter gives the outer interpreter's plain code words (INTERPRET, PARSE-WORD, WORD, ...; no inline aligned data, nothing landing inside them) the header run-time words get - [the JIT opcode][length \| 2^31] - translated on their first call or left bytecode; (2, every plain word, killed on the corpus: not offered). **jitvar** - vf and vs (getstatic, putstatic) given the JIT as a literal of the slot's address then @ or !: two operand kinds in jit.c's decoder under JITVAR, no new stencil. jitleft.py --set=gene=value. On top of patch 1 (tools/layout.py's CALIGN). |
+| 3 | compare-widths-after-seed56.patch | **The comparison at both widths** (Iteration 352): compare-fronts.py --widths 8,4 sets up both widths and, after its rounds, measures each design's interpreter as a 32-bit engine at 4-byte cells (eval32, half the rounds); a section "At 32 bits": each run's fastest there against all the others', and its 64-bit fastest at 32 bits - so a two-width run is judged at 32 bits too. Without the flag, setup() itself: unchanged. On top of patch 1 (eval32, setup_widths). |
 
     git apply results/pending/two-widths-after-seed56.patch
     git apply results/pending/jit-genes-after-seed56.patch
+    git apply results/pending/compare-widths-after-seed56.patch
 
 Tested on master at Iteration 338 (results/drafts/two-width-selection.md, "Built so far", "Built"):
 - **64 bits unchanged**: six recorded designs of seed 55's front - engines and images byte-identical
@@ -38,4 +40,10 @@ the helper calls. JIT_LITOPND(o): with JITVAR the slot kinds too; without, the o
 exactly. Re-verified: six designs byte-identical to patch 1's (a first, parenthesized form changed
 three JIT engines - GCC built `a && b && (c && d)` differently from the flat chain; builds proved
 deterministic); run-tests 66 paths, validate 7 of 7, forced 16 of 16, the gate 248 of 248.
+
+Patch 3 tested (Iteration 352): two small databases (the two-width scratch run's, halved) compared
+with --rounds 2 --widths 8,4 - s6 at 32 bits against itself 1.005; each run's fastest at 32 bits and
+its gain against the other; status 0. Without --widths the setup is setup() itself (setup_widths()
+calls only it). To use it, NEXT-RUN's comparison: experiment compare-fronts.py --rounds 6 --widths 8,4
+--frontier --cpus 2,8 - about half again its time (each design built and measured at 32 bits too).
 

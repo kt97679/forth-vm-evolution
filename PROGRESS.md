@@ -6665,3 +6665,14 @@ with every callee address bounded. All variants pass the corpus and the kernel. 
 and dream.lan's paired check - the same designs at 64 and 32 bits. The pending batch (selecting at
 both widths, jitimg and jitvar) is applied after it; the JIT drafts (helper calls, re-entry) wait,
 parked - their payoff so far unmeasurable (kernel 54.6% left against 55.9%).
+
+## Iteration 352 - 2026-10-17 - Claude
+
+**While seed 56 runs: why designs lose at 32 bits, and the comparison at both widths.** Thirty of
+seed 55's front measured here at both widths (each design's interpreter): r = 32-bit / 64-bit speed,
+each against s6 at its width - median 1.30, up to 2.44. Knockouts, one gene at a time, on the fastest
+and on one from the slow end: the two-bit tag (tag2) helps at 64 bits and hurts at 32 (without it the
+fastest is 22% faster at 32); the compiler gene's 35% is 64-bit only; and fsys 3 - the Forth file
+layer over SYSCALL - is the slow design's whole 32-bit loss (2x). Two of these read like engine
+inefficiencies at 4-byte cells rather than trade-offs (results/drafts/skew-32.md). And compare-fronts
+--widths 8,4: a section "At 32 bits", tested on two small databases - pending as patch 3.

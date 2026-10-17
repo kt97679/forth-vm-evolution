@@ -22,6 +22,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `xcheck-dream-seed53.md` - The first remote check (Iteration 320): seed 52's front on dream.lan (i7-6700), the laptop's binaries - Spearman 0.959, the laptop's six fastest its first six; the JIT designs' lead over s6 smaller there.
 - `drafts/jithelp-wip.patch` - Helper calls in progress (Iterations 344-345), against the pending batch: st_callc, h_place, h_parse, COUNT's entry.
 - `drafts/jitre-wip.patch` - Interpreter re-entry in progress (Iteration 346), against the pending batch and jithelp-wip.patch: builds; crashes on its first run - to bisect.
+- `drafts/skew-32.md` - Why designs lose at 32 bits (Iteration 352): thirty of seed 55's front at both widths and gene knockouts - tag2 and fsys 3 the causes, compiler's gain 64-bit only; the data in drafts/skew-32-*.jsonl.
 - `drafts/next-genes.md` - The search for the genes after seed 54 (Iteration 323): price.py on seed 53's fastest interpreted designs - calls and returns the largest share, their genes in place, pairs diminishing; next, jitleft.py - what the JIT leaves to the interpreter.
 - `drafts/jit-loop-crash.md` - A JIT fault seed 52 found (Iteration 310): two designs die in the corpus's loop tests; the trigger narrowed to jit with folds, ops10, rtloop and tag2; the genomes.
 - `drafts/iploop-plan.md` - The IP-update loop form: three explanations of the evolved designs' lower IPC, and the laptop measurement that decides between them before anything is built (Iteration 295).

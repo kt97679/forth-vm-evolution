@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 351.
+- master: Iteration 352.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -194,6 +194,9 @@ About 20 minutes of machine time for build, tests and gates.
    speed32 in the scratch run; 64 bits unchanged (byte-identical, gene-equiv PASS, the gate). The
    converter's alignment fixed with it (seed 54's converter death lives). After seed 56: apply, and
    NEXT-RUN with widths - the owner's hours.
+   Patch 3 (Iteration 352): the comparison at 32 bits too (--widths 8,4). And why designs lose at
+   32 bits (results/drafts/skew-32.md): knockouts name tag2 and fsys 3 (engine-side, to read as bugs)
+   and the compiler gene's 64-bit-only gain.
 0b. The next genes (results/drafts/next-genes.md, Iterations 323, 339): lab/evolve/jitleft.py
    measured it - the JIT leaves kernel 56% and corpus 99.7% to the interpreter (fib, loop,
    ackermann translated whole): the outer interpreter - INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK -
