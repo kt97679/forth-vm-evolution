@@ -6976,3 +6976,22 @@ verdict: the seed reports below, and HANDOFF.md's standing decisions.
 - `results/drafts/fsys/` - 5 files
 - `results/pending/` - 2 files
 - `results/relf-patches/` - 5 files
+
+## Iteration 367 - 2026-10-17 - Claude
+
+**The supers gene: a misnamed pool in every tag-2 design, and no slots in nearly all.** design_pairs
+profiles a design and gives the supers gene its pool of hot pairs, naming each profiled code as a
+plain CV8 opcode - but a tag-2 design profiles its own one-byte codes, assigned through a per-design
+table (vm-tag2-one.h; t2hot orders it hot first), the identity for 5 codes of 128 in seed 56's fastest
+(a0a0277bf2). So since tag2 (Iteration 66) every tag-2 design's pool was its codes misread: "OR DROP"
+at 5.12 % was DUP and a specialisation; wide codes 128-191 were dropped. It cost little speed by
+accident: superinstructions' slots go first to format-10 words - the fastest lists 17 pairs and builds
+none - and across seeds 55-56 only 4 and 6 of 168 and 187 front designs built any (71 and 94), all
+misread pairs (NEGATE NEGATE, DROP UM*, XOR C!): engine bytes for nothing. Really there, among fusable
+primitives: + XOR at 3.80 % of 105,295,516 dispatches, then 0.25 % and less. The fix names the codes
+through the table and keeps the wide ones: its pool for a0a0277bf2 is the hand count's, and the same
+genome without the tag - named right all along - gives the same ten pairs. Pending after seed 57
+(results/pending/tag2-pairs-after-seed57.patch, ORDER.md's second); the finding in
+results/drafts/supers-tag2.md. Open for the owner: whether pairs should compete with format-10 words
+for the slots by value. Found by the generic pair analysis proposed at Iteration 365 - which turned
+out to exist already (price.py, design_pairs), so the work was auditing it rather than building it.
