@@ -322,6 +322,9 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 351 (the owner): seed 56 first, 10 hours - the comparison at 6 rounds and the re-measure
+# about 2 h (seeds 54-55), so about 8 h of evolution; master as it is (the Tegra's engines, dream's
+# paired check) - the pending batch after it, the JIT drafts parked until then.
 # Iteration 335 (the owner): seed 56, 6 hours - the same genes a fourth time, for the checks: the
 # Tegra's engines ported (the after-seed-55 batch), and dream.lan's prebuilt64 measuring the 32-bit
 # check's own designs at 64 bits - the width alone. Selecting at both widths is next
@@ -349,4 +352,4 @@
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-seed 56 tag2 6h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8
+seed 56 tag2 10h then experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8

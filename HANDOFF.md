@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 350.
+- master: Iteration 351.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -63,7 +63,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   interpreted designs 8th-13th there, their lead over s6 about halved (results/xcheck-dream-seed55.md).
   The Tegra failed again - four hand-made engines kept x86's sysc guard: the after-seed-55 batch
   (results/pending/ORDER.md).
-- **Seed 56 is next** (the owner, Iteration 335: 6 hours, and both): the after-seed-55 batch applied -
+- **Seed 56 is next** (the owner, Iteration 351: 10 hours, first - the JIT drafts wait for it; Iteration 335: both): the after-seed-55 batch applied -
   the Tegra's four engines; dream.lan's prebuilt64 check (--from prebuilt32: the same designs at 64
   bits - the width alone, on one machine). Then **selecting at both widths**
   (results/drafts/two-width-selection.md): a design's interpreter at 4-byte cells as a second speed

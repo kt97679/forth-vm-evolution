@@ -6657,3 +6657,11 @@ in the data after a (.") - and jit_rtouch had trusted callees it could not read.
 with every callee address bounded. All variants pass the corpus and the kernel. But jitleft: kernel
 54.6% left to the interpreter against 55.9% with none of the four, corpus 99.6% - INTERPRET stops at
 (FIND), PARSE-WORD at +!, operations without a stencil, which re-entry for callees does not reach.
+
+## Iteration 351 - 2026-10-17 - Claude
+
+**Seed 56 first, 10 hours (the owner).** NEXT-RUN: seed 56 tag2 10h, the comparison at 6 rounds - about
+8 hours of evolution after the reserve. Master as it is: the Tegra's engines (applied after seed 55)
+and dream.lan's paired check - the same designs at 64 and 32 bits. The pending batch (selecting at
+both widths, jitimg and jitvar) is applied after it; the JIT drafts (helper calls, re-entry) wait,
+parked - their payoff so far unmeasurable (kernel 54.6% left against 55.9%).
