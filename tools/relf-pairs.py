@@ -25,9 +25,14 @@ open(os.path.join(work, 'prof.c'), 'w').write(src)
 subprocess.run(['cc', '-O2', '-I', os.path.join(R, 'engine'), '-o', engine, os.path.join(work, 'prof.c')], check=True)
 shell = os.path.join(work, 'relfsh')
 subprocess.run(['sh', 'tools/embed.sh', engine, 'kernel64-shell.img', shell], check=True)
-command = (sys.argv[1] if len(sys.argv) > 1 else './relfsh tests/bench-vm/realistic.sh').replace('./relfsh', shell)
+# Iteration 358: several COMMANDs counted together (--all: the five shell scripts of tests/bench-vm)
+args = sys.argv[1:]
+if args == ['--all']: args = ['./relfsh tests/bench-vm/%s.sh' % w for w in ('realistic', 'loop', 'fn', 'str', 'arith')]
+commands = [a.replace('./relfsh', shell) for a in (args or ['./relfsh tests/bench-vm/realistic.sh'])]
 open(counts, 'wb').write(bytes(SLOTS * 4))
-r = subprocess.run(command, shell=True, env=dict(os.environ, THIS_SH=shell, RELFSH=shell), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+for command in commands:
+    r = subprocess.run(command, shell=True, env=dict(os.environ, THIS_SH=shell, RELFSH=shell), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+command = '; '.join(commands)
 audit = open('tools/image-audit.py').read()
 audit = patch(audit, "    ip = xt; far_target = xt\n    while ip < end:\n        op = img[ip]",
                      "    ip = xt; far_target = xt\n    while ip < end:\n        op = img[ip]\n        INS.append((name, ip, op, img[ip + 1] if op == ESCOP else None))")
@@ -58,4 +63,21 @@ print('\nthe instructions run most:')
 for n, v in single.most_common(15): print('  %12s  %5.1f %%  %s' % (format(v, ','), 100 * v / total, n))
 print('\nthe adjacent pairs run most (the first not transferring control) - fusion candidates:')
 for (a, b), v in pairs.most_common(25): print('  %12s  %5.1f %%  %s %s' % (format(v, ','), 100 * v / total, a, b))
+# Iteration 358: relf's 64 one-byte opcodes (QUESTIONS.md A15) - a fused instruction takes the slot of
+# an operation that then runs escaped, a dispatch more each time: the k-th best pair against the k-th
+# coldest one-byte operation, the net its saving
+one = {}
+for l in open('engine/opcodes.tab'):
+    f = l.split()
+    if len(f) >= 3 and f[1].startswith('0x') and f[0] not in ('escaped',) and not f[0].startswith('#'): one[f[2]] = f[0]
+# not to displace: ESC itself; DOVAR and DODOES - data words' code fields, run each time a variable or a
+# CREATE'd word is, but in no code body, so uncounted here; NOOP - the alignment pad
+cold = sorted((single.get(n, 0), n) for n in one if n not in ('ESC', 'DOVAR', 'DODOES', 'NOOP'))
+print('\nthe %d one-byte operations, the coldest first (ESC, DOVAR, DODOES and NOOP kept - see above):' % len(one))
+print('  ' + ', '.join('%s %s' % (n, format(v, ',')) for v, n in cold[:16]))
+print('\nthe budget: each candidate pair displacing the next coldest one-byte operation into the escape band')
+cum = 0
+for k, ((a, b), v) in enumerate(pairs.most_common(12)):
+    dv, dn = cold[k]; net = v - dv; cum += net
+    print('  %2d  %-22s %5.2f %%  displaces %-12s %5.3f %%  net %5.2f %%  together %5.2f %%' % (k + 1, a + ' ' + b, 100 * v / total, dn, 100 * dv / total, 100 * net / total, 100 * cum / total))
 shutil.rmtree(work, ignore_errors=True)

@@ -6748,3 +6748,13 @@ profile. VAR@ - a variable fetched in one dispatch - is 15.2 % of them; the pair
 had fused pairs and gave them up at its Iteration 536 (QUESTIONS.md A15) to bring its one-byte
 opcodes to 64, the two-bit tag's prerequisite. So each candidate is a trade within that budget: its
 pair's dispatches against those of the operation it pushes into the escape band.
+
+## Iteration 359 - 2026-10-17 - Claude
+
+**The budget for relf's fused instructions.** tools/relf-pairs.py --all counts the five shell scripts
+together and sets each candidate against relf's 64 one-byte opcodes: the k-th best pair takes the k-th
+coldest operation's slot, that operation then escaped. The coldest cost almost nothing (LIT64 0.03 %,
+?BRANCH8 0.04 %, R@ 0.13 %), so the nets are nearly the pairs: VAR@ VAR@ 4.42 %, VAR@ + 2.81 %, 0=
+?BRANCH 2.18 % - the top three about 9.4 % of all dispatches, twelve about 18. A first count had
+offered DOVAR and DODOES as the coldest: they are data words' code fields, run each time a variable
+is but outside any code body, so uncounted - kept, with NOOP, out of the trade.

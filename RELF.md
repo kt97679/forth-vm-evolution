@@ -46,9 +46,12 @@ compiler's constants and inlining for the kernel's own words.
    3.1 %, 0= ?BRANCH 2.3 %, + @ 1.8 % - the top ten about 18 %. **The constraint** (relf's QUESTIONS.md
    A15): 64 one-byte opcodes, kept for the two-bit tag; fused pairs went at 536 for it. A new fused
    instruction displaces an operation to the escape band (a dispatch more where it runs); one in the
-   escape band saves nothing. **Next**: the budget's arithmetic - the one-byte operations by count, the
-   coldest to give up, each candidate's net; then the best as a patch (cv8.c, opcodes.tab, the
-   compilers' peephole, relfasm64.4) through relf-ab.sh.
+   escape band saves nothing. **The budget (Iteration 359; --all, the five scripts)**: VAR@ VAR@ 4.45 % for
+   LIT64's slot (0.03 %), VAR@ + 2.85 % for ?BRANCH8's (0.04 %), 0= ?BRANCH 2.31 % for R@'s (0.13 %) - the
+   top three net about 9.4 % of dispatches (chains overlapping, less). **Next**: those three as one patch
+   to relf - opcodes.tab (the three displaced to the escape band, their slots reused), cv8.c's handlers
+   (VAR@ VAR@ two slot operands; VAR@ + one), the compilers' peephole (cross.4's PEEP-VAR, kernel.4's
+   run-time compiler), relfasm64.4's handlers - through relf-ab.sh's gate here, measured on the laptop.
 4. Classify this lab's genes by what relf would pay to adopt one (C engine only; image format;
    kernel words; x86-only) - a relf profile for the search; and relf's shell workloads in it.
 5. This lab's 32-bit engines built -fno-pie -no-pie, as relf's are (its two-width measurements
