@@ -7141,3 +7141,22 @@ for the path no run has taken since Iteration 71: seed 56's front made plain CV8
 10 built and alive, JIT and not; a miniature run in seed 58's configuration (8 a generation, 1
 generation, both widths) - 24 of 24 alive, speed32 on all, 18 plain and 6 tag-2 (one turned on by
 mutation), four encodings. This bundle goes to ~/Downloads only after seed 57's chain has finished.
+
+## Iteration 375 - 2026-10-17 - Claude
+
+**Ready for the first two-width run's processing.** The stopping rule judged runs at 64 bits only -
+its five measures, the hypervolume three-dimensional - so seed 57, the first run selected for speed at
+32 bits, could be judged small while its gain there went uncounted: what Iteration 188's rule was made
+against ("a small size increase for a big speed gain is a gain - do not lock such out"). Proposed,
+for the owner to confirm (GOALS.md): a run selected at both widths is small only if its fastest at 32
+bits moved under 5% too; the 3-D hypervolume kept, comparable with every earlier run.
+compare-fronts.py's 32-bit section now prints the verdict at both widths, for the run being judged
+only, as its 64-bit table does. Tested end to end on two three-design runs from seeds 55 and 56, the
+first try not judging at all: two databases outside the archive both labelled "this clone: db.jsonl",
+so each run's "others" were empty - the test's layout, not the patch; laid out as an archived run and
+the current one, the current judged not small at both widths (its 32-bit fastest +24.5%), the archived
+"(an earlier run)" in both tables. Seed 57's own comparison runs on its commit, before this: its
+verdict at both widths by hand from its "At 32 bits" table. And lab/evolve/gene-usage.py - Iteration
+372's audit as a tool, an absent gene counted as off; one group, or two by their difference: it
+reproduces the audit exactly, and finds consecutive carried runs (55, 56) differing by up to 17 points
+a gene - the scale for reading seed 58 against the carried line.

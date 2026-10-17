@@ -200,6 +200,7 @@ def _hv(pts, lo, ref, n=100000):
 _ok = [i for i in speed if i != CAL and rss.get(i)]
 _lp = {i: (math.log(speed[i]), math.log(tot[i]), math.log(rss[i])) for i in _ok}
 _q = lambda i: speed[i] * tot[i] * rss[i]
+VERDICT64 = {}
 if len(_lp) > 1 and len(runs) > 1:
     _lo = tuple(min(v[k] for v in _lp.values()) for k in range(3)); _ref = tuple(max(v[k] for v in _lp.values()) + 0.05 for k in range(3))
     print('\n## Judging the runs (Iteration 188)\n')
@@ -218,6 +219,7 @@ if len(_lp) > 1 and len(runs) > 1:
         hg = h1 / h0 - 1 if h0 else float('nan')
         qg = min(map(_q, rest)) / min(map(_q, mine)) - 1
         small = fg < .05 and sg < .02 and mg < 8 and hg < .02 and qg < .02
+        VERDICT64[label] = small                    # Iteration 375: the 32-bit section's verdict builds on it
         print('| %s | %+.1f%% | %+.2f%% | %+d KB | %+.1f%% | %+.1f%% | %s |' % (label, 100 * fg, 100 * sg, mg, 100 * hg, 100 * qg, ('small' if small else 'not small') if label.startswith('this clone') else '(an earlier run: what it still holds)'))
     _qb = min(_ok, key=_q)
     _rel = ' - Q %.3f of s6\'s' % (_q(_qb) / (speed[CAL] * tot[CAL] * rss[CAL])) if CAL in speed and rss.get(CAL) and CAL in tot else ''
@@ -229,17 +231,21 @@ if WIDTHS:                                    # Iteration 352: the speed32 objec
         sp32[i] = E.eval32(rec[i][0], r32).get('speed32'); say('32 bits: %d of %d %s %s' % (k + 1, len(speed), i, sp32[i]))
     print('\n## At 32 bits (Iteration 352)\n')
     print("Each design's interpreter as a 32-bit x86 engine at 4-byte cells (its JIT off, its call scale at most 2), "
-          "%d round(s), against hand-made s6 at 32 bits%s; a run's fastest there against all the others'.\n"
+          "%d round(s), against hand-made s6 at 32 bits%s; a run's fastest there against all the others'. "
+          "A run is small at both widths only if its five 64-bit measures are small and its fastest at 32 bits "
+          "is under 5%% too (Iteration 375: a new objective's gain counts, as Iteration 188's rule meant).\n"
           % (r32, (' (itself %.3f)' % sp32[CAL]) if sp32.get(CAL) else ''))
-    print('| run | fastest at 32 bits | against the others | its 64-bit fastest, at 32 bits | no 32-bit build |')
-    print('|---|---|---|---|---|')
+    print('| run | fastest at 32 bits | against the others | its 64-bit fastest, at 32 bits | no 32-bit build | verdict at both widths |')
+    print('|---|---|---|---|---|---|')
     for label, ids in runs:
         mine = [i for i in ids if sp32.get(i)]; rest = [i for l2, ids2 in runs if l2 != label for i in ids2 if sp32.get(i)]
-        if not mine: print('| %s | - | - | - | %d |' % (label, len(ids))); continue
+        if not mine: print('| %s | - | - | - | %d | - |' % (label, len(ids))); continue
         f32 = min(mine, key=lambda i: sp32[i]); g32 = (min(sp32[i] for i in rest) / sp32[f32] - 1) if rest else 0.0
         f64 = min((i for i in ids if i in speed), key=lambda i: speed[i], default=None)
-        print('| %s | %.3f (%s) | %+.1f%% | %s | %d |' % (label, sp32[f32], f32, 100 * g32,
-              ('%.3f (%s)' % (sp32[f64], f64)) if f64 and sp32.get(f64) else '-', sum(1 for i in ids if not sp32.get(i))))
+        v = ('-' if label not in VERDICT64 or not rest else ('small' if VERDICT64[label] and g32 < .05 else 'not small')) \
+            if label.startswith('this clone') else '(an earlier run)'     # as the 64-bit table: the new run is judged
+        print('| %s | %.3f (%s) | %+.1f%% | %s | %d | %s |' % (label, sp32[f32], f32, 100 * g32,
+              ('%.3f (%s)' % (sp32[f64], f64)) if f64 and sp32.get(f64) else '-', sum(1 for i in ids if not sp32.get(i)), v))
 if len(cpus) > 1:
     a, b = cpus[0], cpus[1]
     ids = sorted(i for i in S[a] if i != CAL)

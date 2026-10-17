@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 374.
+- master: Iteration 375.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -224,6 +224,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    - 32-bit engines not PIE, superinstruction pairs named right), so **seed 58 starts when seed 57's chain
    ends**: NEXT-RUN's `seed 58 12h widths nocarry then experiment compare-fronts.py ...` - the test of
    item 4c. This bundle into ~/Downloads only after seed 57's chain has finished (each step pulls the newest).
+   Seed 57's verdict: its comparison runs on its own commit, before the verdict at both widths (Iteration
+   375) - apply it by hand from its "At 32 bits" table: small only if the five are and its fastest at 32
+   bits moved under 5%. From seed 58 the comparison prints it.
 1. **Superinstructions after seed 58** (results/drafts/supers-tag2.md; decided at 368): with the pool
    named right, do front designs build real pairs, and do they buy anything? If not, the gene comes out
    of tag-2 designs - a mechanism that buys nothing comes out (GOALS.md).
@@ -265,6 +268,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    **Seed 58 is both at once** (the owner, Iteration 374): from scratch and without the requirement, at
    both widths. Back in the carried region with tag2 chosen: neither concern holds. Elsewhere: a
    follow-up run separates them (nocarry with tag2, or carried without).
+   Reading it in genes: `python3 lab/evolve/gene-usage.py <seed 58's db> --vs results/evolve-*-seed5[3-7].md`
+   - two consecutive carried runs (seeds 55, 56) differ by up to 17 points a gene: the scale to read it by.
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

@@ -64,7 +64,10 @@ all the others, measured again in one session - its fastest, smallest and
 least-memory designs, the hypervolume in log space, and the best Q (binary +
 image x run time x memory). A run is small only if all five are: fastest
 under 5%, smallest under 2%, memory under 8 KB, hypervolume under 2%, best Q
-under 2%. Two small runs in a row: stop - the gene set has converged - until
+under 2%. A run selected at both widths (--widths 8,4) is small only if its fastest at 32 bits
+is under 5% too - a gain on a new objective counts, as Iteration 188 meant for any (proposed at
+Iteration 375, for the owner to confirm; compare-fronts.py's 32-bit section gives the verdict at
+both widths). Two small runs in a row: stop - the gene set has converged - until
 new genes exist; new genes start the count afresh. (How the rule came about:
 results/weighing.md and PROGRESS.md; the section as it stood before:
 results/drafts/goals-snapshots.md.)

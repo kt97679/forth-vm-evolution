@@ -23,4 +23,4 @@ seed 57**: it is the first run selected at both widths, and tag2 costs 36 % at 3
 (results/drafts/skew-32.md) - the off side of an always-on gene may come back there. After seed 57
 (and 58, for supers): the review - each never-chosen mechanism removed or kept by the owner, each
 always-on gene frozen or kept as a gene. Method: this file's counts come from express() over the seed
-reports' front records; rerun for later seeds the same way.
+reports' front records - lab/evolve/gene-usage.py since Iteration 375, which reproduces them exactly.
