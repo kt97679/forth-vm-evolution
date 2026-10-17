@@ -6593,3 +6593,13 @@ engines: GCC built a different && tree; builds proved deterministic). The helper
 through spn-stencils.c's function hole, jit.c patching it, h_place from PLACE's handler - all under
 JITHELP. With them INTERPRET gets past PLACE and stops at COUNT - which is DUP 1+ SWAP C@, a table
 entry. Drafts saved; the corrected patch 2 to re-verify and stage before the batch is applied.
+
+## Iteration 345 - 2026-10-17 - Claude
+
+**Pending patch 2 corrected and re-verified; the helper calls two steps further.** The token-exact
+JIT_LITOPND re-verified - six designs byte-identical to patch 1's, the three the parenthesized form
+had changed among them; the behavioural checks (66 engine paths, validate 7 of 7, forced 16 of 16, the
+gate 248 of 248) hold for it, the JITVAR expansion being the same - and it replaces the pending patch
+2. The helper-call draft re-cut against it, with h_parse and COUNT as a table entry: with all three
+JIT genes the design lives, and INTERPRET gets past PLACE and COUNT to (FIND), PARSE-WORD past (PARSE)
+to +!. +! is five lines; (FIND) reads the engine's own internals - the hard step.

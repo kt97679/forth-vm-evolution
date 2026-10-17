@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 344.
+- master: Iteration 345.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -205,10 +205,10 @@ About 20 minutes of machine time for build, tests and gates.
    jitimg (0/1) and jitvar pending as patch 2 of the after-seed-56 batch (Iteration 343: forced 16 of
    16 JIT designs alive, 66 engine paths). INTERPRET now tried, refused for PLACE; PARSE-WORD, WORD for
    (PARSE) - C primitives: **helper calls next** (the owner approved; the design in the draft).
-   **Iteration 344: pending patch 2 has a latent bug** (jitvar's literal: k, 0, for the slot kinds) -
-   results/drafts/jit-genes-fixed.patch corrects it; re-verify (identity vs patch 1, run-tests, forced
-   gate, gate) and replace the pending patch BEFORE applying the batch. Helper calls built
-   (results/drafts/jithelp-wip.patch): INTERPRET past PLACE, now at COUNT (a table entry).
+   Iteration 345: pending patch 2's latent jitvar bug fixed and re-verified (byte-identical off; 66
+   paths; forced 16/16; gate 248/248) - the pending patch replaced. Helper calls (results/drafts/
+   jithelp-wip.patch): PLACE, (PARSE), COUNT - INTERPRET now at (FIND), PARSE-WORD at +!. (FIND) needs
+   the engine's internals: the hard step.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

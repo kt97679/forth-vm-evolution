@@ -31,3 +31,11 @@ recorded genomes unchanged (the operators' draws differ, as a new gene makes the
 refused for (PARSE) - the next step is helper calls (results/drafts/next-genes.md). On a fresh clone
 the two patches apply in order and reproduce the tested files.
 
+**Patch 2 corrected (Iteration 345)**: jit.c filled a literal hole from the decoded operand only for
+operand kinds 1-5, and jitvar's slot kinds are 8 and 9 - a translated vf would have pushed k (0) and
+fetched from address 0: latent, no word with vf being translated yet; found reading the emitter for
+the helper calls. JIT_LITOPND(o): with JITVAR the slot kinds too; without, the original tokens
+exactly. Re-verified: six designs byte-identical to patch 1's (a first, parenthesized form changed
+three JIT engines - GCC built `a && b && (c && d)` differently from the flat chain; builds proved
+deterministic); run-tests 66 paths, validate 7 of 7, forced 16 of 16, the gate 248 of 248.
+
