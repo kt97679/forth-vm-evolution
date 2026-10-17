@@ -6820,3 +6820,13 @@ and guard pages already. relf-ab.sh learned make variables for B alone (RELF_AB_
 and to measure the shells it built: relf's make test rebuilt relf64 without the variable (an rbx count
 of 98, against 434 pinned, gave it away); the shell measured had embedded the right engine, now by
 construction. This lab's offer to relf is at its instructions' level, measured on its terms.
+
+## Iteration 365 - 2026-10-17 - Claude
+
+**The order of the work, from the owner: a generic Forth first.** This lab builds a generic Forth,
+with no optimization for relf's shell. First the best generic designs, found on this lab's own
+workloads; then how they fit relf and its shell; only then relf tuned for its shell - and relf too
+kept as generic as possible. Recorded as a standing decision (HANDOFF) and at the head of RELF.md.
+Iterations 357-364 went ahead of it: the three fusion patches were chosen from the shell's dispatch
+profile - parked as phase-3 reference, their laptop timing optional. The relf profile for the search
+and the port list from it are dropped; the tools stay for phases 2 and 3.

@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 364.
+- master: Iteration 365.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -70,7 +70,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   the VM's 2x was its own slow 32-bit system calls; the five fastest at 64 bits lose most (r 1.7), one
   lineage (klookup, kinput, rtimm 2, swapi; no regpin). **The after-seed-56 batch applied**: selecting
   at both widths, jitimg and jitvar, the comparison at 32 bits - the gate 268 of 268.
-- **This lab is RelF's base** (the owner, Iteration 356; RELF.md): vendor/relf follows relf master with
+- **This lab is RelF's base - as a generic Forth first** (the owner, Iterations 356 and 365; RELF.md;
+  the relf patches of 360-362 parked as phase-3 reference, their laptop timing optional): vendor/relf follows relf master with
   its sources (vendor/relf/tree); relf's ledger asks this lab about XF@/XV@, DEFER, (+LOOP), PICK and
   fused pairs for CV8, measured on relf's shell workloads (bench-vm.py). tools/relf-ab.sh, the A/B harness,
   done (Iteration 357): relf's make test as a regression gate, then bench-vm.py; this VM's noise floor
@@ -139,6 +140,10 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## The owner's standing decisions
 
+- **A generic Forth first (Iteration 365).** This lab builds a generic Forth, with no optimization
+  for relf's shell: (1) the best generic designs, found here on this lab's own workloads; (2) then how
+  they fit relf and its shell; (3) only then relf tuned for its shell - and relf too kept as generic
+  as possible. Nothing is selected by relf's shell profile (RELF.md, the order of the work).
 - **One command, one archive (Iteration 302).** The laptop runs one script and gets
   one archive to send back: every step's results and every log, so a failure is
   diagnosable without a second round; made at the end even when a step failed, and a

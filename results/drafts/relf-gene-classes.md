@@ -22,5 +22,5 @@ Notes:
 - Was: **the cheap class is where to look first**: each a change to cv8.c's build or code alone, testable at
   once on relf's own shell with tools/relf-ab.sh - compiler (clang against gcc: Iteration 352's knockouts
   found its 35 % 64-bit-only on this lab's fastest design), regpin, alignhot (hot handlers aligned), d256
-  (one 256-entry table, no opcode-or-call test), sharedcall. A relf profile for the search: these and
-  the kernel class free, the dear class priced by its trade, the JIT class off.
+  (one 256-entry table, no opcode-or-call test), sharedcall. (Dropped, Iteration 365 - the search stays generic, RELF.md: a relf profile for the search: these and
+  the kernel class free, the dear class priced by its trade, the JIT class off.)

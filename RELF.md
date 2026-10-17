@@ -7,6 +7,19 @@ it. RelF runs one byte-coded image on two engines: CV8 (engine/cv8.c, portable C
 gforth must agree; every change is built and tested at both cell widths. Its real workload is the
 shell (relfsh). It also has a native back end (Forth to x86-64), whose CV8 counterpart is this lab's.
 
+## The order of the work (the owner, Iteration 365) - it governs everything below
+
+This lab builds a **generic Forth**: its designs, its genes and its measurements are not tuned for
+relf's shell. The order: **(1)** find the best generic Forth designs here, on this lab's own generic
+workloads; **(2)** then see how they fit relf and relf's shell; **(3)** only then, from that
+experience, tune relf for its shell specifically - and even there the owner would rather relf stay
+as generic as possible. So nothing in this lab is selected by relf's shell profile, and relf's shell
+workloads are not an objective of the search.
+
+Iterations 357-364 went ahead of this order: the three fusion patches (results/relf-patches/) were
+chosen from the shell's dispatch profile - phase-3 material, parked as reference. The tools stay for
+phases 2 and 3: the vendored tree, tools/relf-ab.sh (relf's gate and benchmarks), tools/relf-pairs.py.
+
 ## What relf asks of this lab
 
 relf's Iteration 716 (vendor/relf/tree/docs/CV8-LEDGER.md), from CV8's profile of the realistic shell
@@ -14,6 +27,10 @@ script (18.4 million dispatches, 10.2 % calls and returns): not done in CV8 - **
 of dispatches), DEFER (2.5), (+LOOP) (1.7), PICK (1.5), fused pairs (some 8 %)** - "all of them new
 instructions, so forth-vm-evolution's to inform"; and, outside the instruction set, the cross
 compiler's constants and inlining for the kernel's own words.
+
+Under the order above (Iteration 365): where these are generic Forth questions - DEFER, (+LOOP),
+PICK, fused pairs - this lab answers them in its generic search, on its own workloads; relf's shell
+profile says only where relf would look first, in phase 2.
 
 ## How a result reaches relf - the adoption criteria
 
@@ -70,7 +87,9 @@ compiler's constants and inlining for the kernel's own words.
    cv8.c; d256 and guard pages relf has. This lab's offer to relf is at the instruction level.
    Was: classify this lab's genes by what relf would pay to adopt one (C engine only; image format;
    kernel words; x86-only) - a relf profile for the search; and relf's shell workloads in it.
+   **The relf profile for the search: dropped (Iteration 365)** - the search stays generic.
 5. **Pending after seed 57 (Iteration 363; results/pending/ORDER.md)**: this lab's 32-bit engines built -fno-pie -no-pie, as relf's are (its two-width measurements
    otherwise pessimistic: a register spent on the PIC base, Iteration 353).
-6. A port list from knockouts on the best relf-profile design, each item measured on relf's
-   workloads, ported as a patch passing relf's gates.
+6. **Dropped (Iteration 365)**: a port list from the best relf-profile design - there is no relf
+   profile. Phase 2 instead: the best generic designs' mechanisms, each measured on relf's terms
+   (relf-ab.sh), when this lab has found them.

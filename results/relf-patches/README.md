@@ -1,5 +1,9 @@
 # Patches for relf, from this lab (RELF.md)
 
+**Parked (Iteration 365)**: these were chosen from relf's shell profile, ahead of the owner's order
+(RELF.md: a generic Forth first; relf's shell only in phase 3). Kept as reference and experience;
+timing them on the laptop is optional, not an open item.
+
 Each a patch against vendor/relf/tree (relf master as vendored, vendor/relf/UPSTREAM), applied and
 measured by tools/relf-ab.sh: relf's own make test as a regression gate, then its bench-vm.py.
 
