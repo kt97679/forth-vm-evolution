@@ -6603,3 +6603,15 @@ gate 248 of 248) hold for it, the JITVAR expansion being the same - and it repla
 2. The helper-call draft re-cut against it, with h_parse and COUNT as a table entry: with all three
 JIT genes the design lives, and INTERPRET gets past PLACE and COUNT to (FIND), PARSE-WORD past (PARSE)
 to +!. +! is five lines; (FIND) reads the engine's own internals - the hard step.
+
+## Iteration 346 - 2026-10-17 - Claude
+
+**Interpreter re-entry built - and its first run crashes.** Modelled on SPN's spn_interp: jit_interp
+spills the stack, pushes a sentinel, runs a nested virtual_machine() under the compiler's own setjmp
+(no libc in an engine: the C library's would not link); the sentinel is a fake JIT word whose native
+code is a trampoline that longjmps back - no new opcode. The JIT calls it through SPN's st_interp,
+as an ordinary operation the converter adds (INTERP), so a refused callee no longer refuses its
+caller. It builds and links; the design dies with the fault handler's exit 70 right after the banner.
+Until now no word with a helper call, an interpreted call or vf had ever run natively - so this is
+the first execution of all of them. Next turn: bisect them one at a time; QUIT - RP!, CATCH - the
+likeliest. The draft saved (results/drafts/jitre-wip.patch).

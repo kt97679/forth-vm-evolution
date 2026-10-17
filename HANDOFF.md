@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 345.
+- master: Iteration 346.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -209,6 +209,9 @@ About 20 minutes of machine time for build, tests and gates.
    paths; forced 16/16; gate 248/248) - the pending patch replaced. Helper calls (results/drafts/
    jithelp-wip.patch): PLACE, (PARSE), COUNT - INTERPRET now at (FIND), PARSE-WORD at +!. (FIND) needs
    the engine's internals: the hard step.
+   Interpreter re-entry built (Iteration 346, the owner approved; results/drafts/jitre-wip.patch):
+   links, crashes after the banner on its first run - the first native run of helpers, interpreted
+   calls and vf alike. Next: bisect each mechanism alone; QUIT (RP!, CATCH) the likeliest.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took

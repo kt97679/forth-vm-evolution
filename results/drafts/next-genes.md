@@ -262,3 +262,27 @@ still 54.7% left: each word refused one step on. Next: +! - a helper, five lines
 reads the engine's internals (the thread table, the header layout) in vm.c, not the JIT's object:
 the helper needs those exported to it - or interpreter re-entry instead.
 
+
+## Interpreter re-entry - built, crashes on its first run (Iteration 346; results/drafts/
+## jitre-wip.patch, against the pending batch and jithelp-wip.patch)
+
+As SPN's spn_interp: vm-lab.c's jit_interp(sp, tos, body) spills the stack (the top where dsp points
+- gen-tos.py's virtual_machine fills its TOS from there on entry), pushes a sentinel return address,
+runs a nested virtual_machine() from the body under __builtin_setjmp (the C library's setjmp cannot
+link: an engine has no libc). The sentinel is [the JIT opcode][2]: a "word" whose native code, at
+offset 2 of the JIT's memory (offsets below 16 are never native), is a trampoline to jit_leave,
+which __builtin_longjmps back with the stack - L_x_jit spills it on the way, no new opcode. The JIT
+calls it through SPN's st_interp; the converter adds one row no bytecode maps to, INTERP (operand
+kind 4: arg[i] fills the body hole), and a refused callee becomes that operation instead of refusing
+its caller - every existing code path handles it as an ordinary operation. The gene jitre (needs
+jithelp: its function holes).
+
+**First run**: c549c0677c with jitimg 1, jitvar, jithelp, jitre - built and linked; **died: corpus**,
+exit 70 (the fault handler) after the banner, before the first OK. Until jitre, no word holding a
+helper call, an interpreted call, or vf was ever run natively - each still refused one step on - so
+this is the first execution of all of them: the cause may be any. Likeliest: QUIT, now translatable,
+runs right after the banner - it resets the return stack (RP!) and sets up CATCH, and a CATCH frame
+in native code cannot be returned to by a THROW in the nested interpreter. **Next**: bisect - (1)
+CALLC, h_place, h_parse, COUNT and vf each on a small word compiled at run time, run natively; (2) a
+JITLOG run naming the word translated last before the fault; (3) the JIT refusing words with RP!,
+CATCH or a return-stack trick (as JITX refuses unbalanced >R) - then jitre again.
