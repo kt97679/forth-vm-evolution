@@ -6647,3 +6647,13 @@ callees no longer stopping their callers, the decoder read past (S") into its st
 refuses a caller whose callee pops the caller's return address. The test programs now give the
 JIT-off output exactly, status 0, and the log shows the helper words really translated - last
 turn's claim, now with its evidence. Next: (PARSE)'s header again, the corpus, the gates, the speed.
+
+## Iteration 350 - 2026-10-17 - Claude
+
+**All four JIT genes run correctly together - and have not yet moved the numbers.** The kernel
+workload's fault, reported by the crashing build's own handler and mapped with nm, was in the
+translator: with refused callees no longer ending a translation, it went on to decoded garbage calls
+in the data after a (.") - and jit_rtouch had trusted callees it could not read. Now conservative,
+with every callee address bounded. All variants pass the corpus and the kernel. But jitleft: kernel
+54.6% left to the interpreter against 55.9% with none of the four, corpus 99.6% - INTERPRET stops at
+(FIND), PARSE-WORD at +!, operations without a stencil, which re-entry for callees does not reach.

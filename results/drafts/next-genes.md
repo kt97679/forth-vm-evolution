@@ -354,3 +354,23 @@ literal), not by index.
 - **Next**: (PARSE)'s image header (jitimg 1 + jithelp) - to re-check now; the corpus and the kernel
   with re-entry; the engine paths, the forced gate; then jitleft --why: does the outer interpreter
   translate, and do kernel and corpus get faster.
+
+## All four JIT genes run correctly - and do not yet move the numbers (Iteration 350)
+
+The kernel workload faulted with all four on (jitimg 1, jitvar, jithelp, jitre); a scratch fault report
+for the build that crashes (the lab's runtime given SA_SIGINFO; the instruction pointer mapped by `nm`
+on engine.full - engines are not position-independent) put it **in jit_body**: the translator itself.
+With refused callees no longer ending a translation, the callees loop went on to the calls the decoder
+had made of the data after a call to (.") and its kind - garbage targets; one unmapped. jit_rtouch had
+called "safe" any callee with an operation it did not know. Now: unknown before EXIT, or no EXIT in 64
+operations - refused (to be safe); and a callee address outside the image refuses its caller. Variants:
+jitvar+jithelp+jitre, the same + jitimg 1, and jitimg 1 without jitre - **all alive** (the corpus, the
+kernel). (PARSE)'s header no longer breaks anything (Iteration 347's failure is gone).
+
+**jitleft --why, all four on (c549c0677c)**: kernel 54.6% left to the interpreter (55.9% with none of
+them), corpus 99.6% (99.7%); fib, loop, ackermann 0.0-0.1% as before. INTERPRET refused for **(FIND)**,
+PARSE-WORD and WORD for **+!** - operations without a mapping, which re-entry (for callees) cannot help.
+"Never tried" 29.8% of what is left (62.6% before jitimg). Every mechanism correct; the outer
+interpreter still interpreted. Left: +! (a helper, five lines), (FIND) (the engine's internals), or op
+thunks - any unmapped operation run by the interpreter (needs every operation's length from the
+converter). Whether it pays is unmeasured: INTERPRET is 5.2% of the JIT-off work.

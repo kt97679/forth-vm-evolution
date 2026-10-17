@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 349.
+- master: Iteration 350.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -214,7 +214,9 @@ About 20 minutes of machine time for build, tests and gates.
    (PARSE)'s image header breaks the compiler's inlining (fix: no header on one-operation words);
    **Re-entry works** (Iteration 349): JIT_L_INTERP had been 0xFFFE, the translator's "call resolved"
    marker - fixed; jit_rtouch keeps (S")'s inline data from being decoded. Snippets identical to the
-   JIT off; the helper words verified translated. Next: (PARSE)'s header, the corpus, the gates, speed.
+   JIT off; the helper words verified translated. Iteration 350: all four JIT genes alive together
+   (jit_rtouch conservative; callee addresses bounded) - but kernel 54.6% left (55.9%): INTERPRET at
+   (FIND), PARSE-WORD at +! - operations, which re-entry cannot help. The owner's call: on, or park.
 1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
    (Iteration 299) - seed 51's predictions are scored from it.
 2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took
