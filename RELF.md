@@ -64,9 +64,11 @@ compiler's constants and inlining for the kernel's own words.
    the count): all three pass relf's whole make test; **6.41 % fewer dispatches**; this VM: realistic
    0.944 and arith 0.947, both intervals below 1. Next: UNTIL's branch; then the trade within relf's 64
    one-byte opcodes (A15) if relf takes these: R@, ?BRANCH8, LIT64 to the escape band.
-4. Classify this lab's genes by what relf would pay to adopt one (C engine only; image format;
+4. **Done (Iteration 363), a first pass: results/drafts/relf-gene-classes.md** - the cheap class (C engine
+   only: compiler, regpin, d256, alignhot, sharedcall...) testable now on relf's shell with relf-ab.sh.
+   Was: classify this lab's genes by what relf would pay to adopt one (C engine only; image format;
    kernel words; x86-only) - a relf profile for the search; and relf's shell workloads in it.
-5. This lab's 32-bit engines built -fno-pie -no-pie, as relf's are (its two-width measurements
+5. **Pending after seed 57 (Iteration 363; results/pending/ORDER.md)**: this lab's 32-bit engines built -fno-pie -no-pie, as relf's are (its two-width measurements
    otherwise pessimistic: a register spent on the PIC base, Iteration 353).
 6. A port list from knockouts on the best relf-profile design, each item measured on relf's
    workloads, ported as a patch passing relf's gates.

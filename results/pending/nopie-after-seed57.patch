@@ -1,0 +1,22 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 6b7d981..4aaf926 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -636,7 +636,7 @@ def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix:
+ def S0(): return os.path.join(O, 's0-cell-%d' % (8 * cellw()))   # the cell engine that makes them
+ def KIMG(): return 'kernel.img' if cellw() == 8 else 'kernel32.img'
+ 
+-W4_ENV = {'EVOLVE_CELL': '4', 'EVOLVE_CC': 'gcc -m32'}
++W4_ENV = {'EVOLVE_CELL': '4', 'EVOLVE_CC': 'gcc -m32 -fno-pie -no-pie'}   # Iteration 363: as relf builds its 32-bit engine - no PIC base register
+ KERNEL_IN64 = None
+ 
+ class at_width:
+@@ -694,7 +694,7 @@ def CCV(g):
+     designs keep clang: the Tegra has none, and its sample is GCC's)."""
+     c = CC(g)
+     if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc'): return os.environ['EVOLVE_CC'].split()
+-    return [c] + (['-m32'] if '-m32' in os.environ.get('EVOLVE_CC', '').split() else [])   # Iteration 336: clang at 32 bits too
++    return [c] + (['-m32', '-fno-pie', '-no-pie'] if '-m32' in os.environ.get('EVOLVE_CC', '').split() else [])   # Iteration 336: clang at 32 bits too; 363: not PIE, as relf's
+ 
+ def cc():
+     """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit

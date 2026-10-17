@@ -6797,3 +6797,14 @@ little less (some `a @ b @ +` now 2VAR@ +, no loss), and calls fewer again - the
 18,401,921 dispatches to 17,221,555, the arithmetic exact to 23. relf's whole make test passes; this VM
 times realistic at 0.944 and arith at 0.947, both intervals below 1. Passing tests show a fusion safe;
 only the count shows it happens. All three now the laptop's to time.
+
+## Iteration 363 - 2026-10-17 - Claude
+
+**A pause in the fusions, the genes classed for relf, and 32-bit engines as relf builds them.** On the
+three-patch shell the remaining pairs are a flat field near 1 % each, no `0=` left before UNTIL's
+branch - so no fourth opcode until the laptop times the three (each further one buys about 1 % and
+spends a slot of relf's 64). This lab's genes classed by what relf would pay: C engine only (compiler,
+regpin, d256, alignhot, sharedcall... - testable at once on relf's shell), opcode set or image format
+(dear: both engines, the compilers, the tools, A15's trade), kernel words, and the JIT (not for CV8).
+And this lab's 32-bit engines built -fno-pie -no-pie, as relf's are: three designs alive, plain
+executables - pending after seed 57, so its own speed32 stays comparable with itself.
