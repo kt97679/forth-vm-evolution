@@ -322,6 +322,9 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 355 (the owner): seed 57, one 12-hour run (not two of 6: each run's fixed part - the checks
+# prepared, the re-measure, the comparison - about 3 h 40 min with two widths, so two runs would
+# evolve 4.6 h against one's 8.3). The reserve now knows --widths' comparison takes half again.
 # Iteration 354: none - the owner's hours for seed 57, the first run selecting at both widths, with
 # the new genes jitimg and jitvar (the after-seed-56 batch, applied). Its line, the hours filled in:
 #   seed 57 tag2 <H>h widths then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8
@@ -357,4 +360,4 @@
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-none
+seed 57 tag2 12h widths then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8

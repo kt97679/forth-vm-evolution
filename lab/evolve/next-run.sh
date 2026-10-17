@@ -204,7 +204,10 @@ reserve() {        # seconds to keep for what follows the evolution
     case " $THEN " in *compare-fronts.py*)
         tr_=$(printf '%s\n' "$THEN" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); tr_=${tr_:-10}
         tc_=$(printf '%s\n' "$THEN" | sed -n 's/.*--cpus \([0-9,]*\).*/\1/p' | tr ',' '\n' | grep -c .); [ "$tc_" -gt 0 ] || tc_=1
-        r=$(( r + cs * tr_ * tc_ / (cr * cc) )) ;;
+        c_=$(( cs * tr_ * tc_ / (cr * cc) ))
+        # Iteration 355: --widths 8,4 - each design measured at 32 bits too: half again (Iteration 352)
+        case " $THEN " in *" --widths "*) c_=$(( c_ * 3 / 2 )) ;; esac
+        r=$(( r + c_ )) ;;
     esac
     r=$(( r * 11 / 10 + 600 ))
     [ "$r" -le $(( HOURS * 3600 * 6 / 10 )) ] || r=$(( HOURS * 3600 * 6 / 10 ))
@@ -395,7 +398,9 @@ if [ "$MODE" = experiment ]; then
     if [ "$TOOL" = compare-fronts.py ]; then                      # Iteration 152: the next chain's reserve
         cr_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); cr_=${cr_:-10}
         cc_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--cpus \([0-9,]*\).*/\1/p' | tr ',' '\n' | grep -c .); [ "$cc_" -gt 0 ] || cc_=1
-        phase_record compare $(( $(date +%s) - T0 )) "$cr_" "$cc_"
+        t_=$(( $(date +%s) - T0 ))
+        case " $TARGS " in *" --widths "*) t_=$(( t_ * 2 / 3 )) ;; esac   # Iteration 355: kept as one width's
+        phase_record compare "$t_" "$cr_" "$cc_"
     fi
     grep -m2 -E 'Calibration|front of all runs' "$RUN/$NAME.md" || true
     step "packed to send back"

@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 354.
+- master: Iteration 355.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -70,8 +70,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   the VM's 2x was its own slow 32-bit system calls; the five fastest at 64 bits lose most (r 1.7), one
   lineage (klookup, kinput, rtimm 2, swapi; no regpin). **The after-seed-56 batch applied**: selecting
   at both widths, jitimg and jitvar, the comparison at 32 bits - the gate 268 of 268.
-- **Seed 57 next - the owner's hours** (NEXT-RUN none until then; its line in NEXT-RUN's comments):
-  the first run selecting at both widths, with the new genes.
+- **Seed 57 next** (the owner, Iteration 355: one 12-hour run, not two of 6 - each run's fixed part
+  with two widths about 3 h 40 min): the first run selecting at both widths, with jitimg and jitvar;
+  the comparison at both widths. The reserve knows --widths now (164 min; the evolution ~8 h 20 min).
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).

@@ -6704,3 +6704,13 @@ hardware also settled the VM's doubt: fsys 3 keeps its place at 32 bits (r 1.00)
 the five fastest, one lineage (the C kernel primitives klookup and kinput among its marks). The batch
 - two-width selection, jitimg and jitvar, the comparison at 32 bits - applied: 66 engine paths, the
 gate 268 of 268 on seed 56's front. NEXT-RUN: none, for the owner's hours.
+
+## Iteration 355 - 2026-10-17 - Claude
+
+**Seed 57: one 12-hour run (the owner).** Asked one run of 12 hours or two runs of 12 in all: one -
+each run's fixed part, from seed 56's timeline (57 min before the evolution: the tests and four remote
+checks prepared; the re-measure; the comparison), is about 3 h 40 min with two widths, so two runs
+would evolve about 4.6 hours against one's 8.3, at 1.86 times each design's cost. NEXT-RUN: seed 57
+tag2 12h widths, the comparison with --widths 8,4. And the reserve learned --widths: the comparison's
+share half again (164 minutes against 121 with seed 56's timings), its recorded time kept as one
+width's so the next chain's estimate holds either way.
