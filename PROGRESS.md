@@ -6714,3 +6714,14 @@ would evolve about 4.6 hours against one's 8.3, at 1.86 times each design's cost
 tag2 12h widths, the comparison with --widths 8,4. And the reserve learned --widths: the comparison's
 share half again (164 minutes against 121 with seed 56's timings), its recorded time kept as one
 width's so the next chain's estimate holds either way.
+
+## Iteration 356 - 2026-10-17 - Claude
+
+**This lab is RelF's base (the owner) - re-anchored on relf.** relf master (8ec0e75, its Iteration
+718) is vendored with its sources (vendor/relf/tree: engine, Forth, shell, tools, the shell's VM
+benchmarks, the CV8 documents) - tools/update-relf.sh now follows master, where relf's CV8 work is;
+the copy builds here and runs relf's realistic shell script. relf's own ledger (its Iteration 716)
+names what it wants from this lab: XF@ and XV@, DEFER, (+LOOP), PICK and fused pairs for CV8 - new
+instructions, measured on its shell. relf already has the instrument (bench-vm.py: paired CPU time
+with bootstrap intervals) and the workloads (loop, fn, str, arith, realistic, start). LICENCE.md:
+GPLv2 only, as relf's and SOD32's. RELF.md: the adoption criteria and the plan.

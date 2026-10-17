@@ -1,0 +1,475 @@
+\ kernel-native.4 - the native kernel's back end (docs/NATIVE.md, N1c-2;
+\ Iteration 623 begins it): the words of kernel.4's part 9 that lay CV8's
+\ code, for x86-64 - what the native kernel's own compiler uses when it
+\ compiles at run time. forth/native-cross.4 skips kernel.4's definitions
+\ of these names and compiles this file after part 9; a common word's
+\ call to one before it is a forward call, resolved here.
+\
+\ The target has no assembler: these lay the machine code's bytes with
+\ C, - the same instruction sequences native.4's templates lay at cross
+\ time. The data stack: its top in rbx, the rest under rbp. A created
+\ word's body is 24 bytes - push the data's address, a ret at 15, nops -
+\ the data at the next 64-byte boundary, a line of its own - data written
+\ beside code is self-modifying code to the processor (NATIVE.md 9); DOES>
+\ puts a jump where the ret is, and >BODY reads the address in the mov. An inline
+\ primitive's body begins EB 01 len: COMPILE, copies its len bytes.
+CROSS-COMPILE
+
+\ ---- laying bytes --------------------------------------------------------------
+: ,4 ( n --- )   DUP C, 8 RSHIFT DUP C, 8 RSHIFT DUP C, 8 RSHIFT C, ;
+: !4 ( n a-addr --- )
+  >R  DUP R@ C!  8 RSHIFT DUP R@ 1+ C!  8 RSHIFT DUP R@ 2 + C!  8 RSHIFT R> 3 + C! ;
+: @4 ( a-addr --- n )   \ unsigned
+  DUP C@  OVER 1+ C@ 8 LSHIFT OR  OVER 2 + C@ 16 LSHIFT OR  SWAP 3 + C@ 24 LSHIFT OR ;
+: PUSH, ( --- )   73 C, 131 C, 239 C, 8 C,  73 C, 137 C, 31 C, ;  \ sub r15,8  mov [r15],rbx
+: POPF, ( --- )   \ the top into rax, the stack popped, rax tested
+  72 C, 137 C, 216 C,  73 C, 139 C, 31 C,  73 C, 131 C, 199 C, 8 C,  72 C, 133 C, 192 C, ;
+\ (693) Every relative field a definition lays - a call, a branch - goes
+\ in a table (RT+), allocated for the definition and freed at its end, so
+\ that a forward branch can be laid short when it is resolved: the code
+\ it skips moved back the 3 or 4 bytes saved, and every recorded field
+\ that move breaks re-aimed (REL-FIX, native-rt.4). 692's first try had
+\ no table, so it shortened only branches that skipped nothing relative:
+\ 605 of 2,933, and the shrinker cost what it saved.
+VARIABLE RT-AT      \ the table: field, target, width - three cells an entry
+VARIABLE RT-N       \ entries in it
+VARIABLE RT-FULL    \ set: no room left, this definition's branches stay long
+VARIABLE LAST-LEAVE \ where the last LEAVE's link was laid - pending, so a move must not pass it
+VARIABLE SHORT-OFF  \ set: forward branches stay long (starts at 0: the cross compiler lays it)
+VARIABLE LAST-ALIGN \ (714) the last loop start padded to 16: a move must not pass it
+VARIABLE PADS       \ (714) bytes of padding laid in this definition
+: RT+ ( f t w --- )   \ a relative field laid at f, aimed at t, w bytes wide
+  RT-AT @ 0= IF  12288 ALLOCATE IF  DROP -1 RT-FULL !  ELSE  RT-AT !  THEN  THEN
+  RT-N @ 511 > RT-AT @ 0= OR IF  DROP 2DROP  -1 RT-FULL !  EXIT  THEN
+  RT-AT @ RT-N @ RT-PUT  1 RT-N +! ;
+: RT-DONE ( --- )   RT-AT @ ?DUP IF FREE DROP THEN  0 RT-AT !  0 RT-N !  0 RT-FULL !  0 LAST-LEAVE !
+  0 LAST-ALIGN !  0 PADS ! ;
+: REL, ( addr --- )   HERE OVER 4 RT+  HERE 4 + - ,4 ;       \ rel32 to addr, from the end of the field
+: RDROP16, ( --- )   72 C, 131 C, 196 C, 16 C, ;                         \ add rsp,16
+
+\ ---- the back end proper ---------------------------------------------------------
+: NO-PEEP ;                                   \ no peephole optimiser natively, yet
+VARIABLE DDP         \ (672) the other pointer: data's while code is laid, code's while data is
+VARIABLE IN-DATA     \ HERE is data's: from CREATE to the next definition
+: EXIT, ( --- )   195 C, ;                    \ ret
+\ Inlining (646): a colon definition whose body is copyable - no call, no
+\ jump, no ret before its end, nothing of the return stack - is laid by `;`
+\ with the primitives' marker, EB 01 len, so COMPILE, copies it inline.
+\ Copyable because position-independent: a jump inside a definition is
+\ relative and stays inside it - both ends move together, when `;`
+\ shifts the body three bytes for the marker and when COMPILE, copies it
+\ (651; 646 refused any jump). A call is relative to code outside, a ret
+\ before the end would return from the caller, the return stack's words
+\ may reach the caller's return address: those still make it uncopyable.
+VARIABLE INL-OK      \ the definition being compiled can still be copied
+VARIABLE BODY-AT     \ where its body begins
+: CALL, ( xt --- )   0 INL-OK !  232 C, REL, ;     \ call rel32
+VARIABLE LIT-AT       \ where the last short literal's push began (628)
+VARIABLE LIT-VAL      \ and its value
+VARIABLE LIT-END      \ and where it ended: 13 bytes on, or 15 (687)
+VARIABLE FOLD-BARRIER \ the last place a jump lands: nothing before it is rewound
+: LIT, ( x --- )   \ push it, in the shortest load that holds it (687)
+  \ mov ebx,imm32 (5 bytes, zero-extended) for 0 to 2^32-1; mov rbx,imm32
+  \ (7, sign-extended) for a negative that fits; movabs (10) else. The
+  \ folds take a short literal's value as a sign-extended imm32, so those
+  \ from 2^31 on are laid unfoldable. The 7-byte form was all of them
+  \ until 687: 5,691 loads, 16.6 KB of the shell (NATIVE.md 14).
+  \ (692) 0 by xor ebx,ebx (2 bytes): it sets the flags, which no fold
+  \ reads across a literal - FRESH-CMP? and its kin want the compare to be
+  \ the last thing laid - and the processor takes it as a zeroing, with no
+  \ wait on rbx. Judged at 690 inside the A/B's floor, which the user
+  \ rules "not slower" (692). -1 by or rbx,-1 was left out: or reads rbx,
+  \ so a TRUE would wait on the cell under it (fn 1.028).
+  DUP 0= IF  DROP  HERE LIT-AT !  0 LIT-VAL !  PUSH,  49 C, 219 C,  HERE LIT-END !  EXIT  THEN
+  DUP 0< 0= OVER 2147483648 < AND IF  HERE LIT-AT !  DUP LIT-VAL !  PUSH,  187 C, ,4  HERE LIT-END !  EXIT  THEN
+  DUP 0< 0= OVER 4294967296 < AND IF  PUSH,  187 C, ,4  0 LIT-AT !  EXIT  THEN
+  DUP -2147483648 < 0= OVER 0< AND IF  HERE LIT-AT !  DUP LIT-VAL !  PUSH,  72 C, 199 C, 195 C, ,4  HERE LIT-END !  EXIT  THEN
+  PUSH,  72 C, 187 C, ,  0 LIT-AT ! ;
+: MARK-TARGET ( --- )   HERE FOLD-BARRIER ! ;   \ a jump lands here
+: FRESH-LIT? ( --- f )   \ the last thing laid is a short literal, no jump into it
+  LIT-AT @ ?DUP IF  LIT-END @ HERE =  SWAP FOLD-BARRIER @ < 0= AND  ELSE 0 THEN ;
+: OP-IMM, ( modrm --- )   \ the literal unlaid; op rbx,imm32 in its place
+  LIT-AT @ HERE - ALLOT  0 LIT-AT !  72 C, 129 C, C,  LIT-VAL @ ,4 ;
+VARIABLE LAST-XT    \ the primitive COMPILE, last copied (669), or -2 for I
+VARIABLE LAST-AT    \ where its code began
+VARIABLE LAST-END   \ and ended: fresh while that is still HERE
+: FRESH-LAST? ( xt --- f )   \ was xt the last thing laid, no jump landing since?
+  LAST-XT @ =  LAST-END @ HERE = AND  LAST-AT @ FOLD-BARRIER @ < 0= AND ;
+: UNLAST, ( --- )   LAST-AT @ HERE - ALLOT  0 LAST-XT ! ;
+VARIABLE DUP-LAID   \ where COMPILE, last laid an inline DUP (629)
+VARIABLE OVER-LAID  \ and an inline OVER
+VARIABLE CMP-AT     \ a folded compare's cmp: where it began, 0 none
+VARIABLE CMP-CC     \ its setcc's condition
+VARIABLE CMP-END    \ where its flag's sequence ended
+VARIABLE DUP-AT     \ a DUP laid right before its literal: where, else 0
+: CMP-IMM, ( setcc --- )   \ cmp rbx,imm32; setcc al; movzx rbx,al; neg rbx
+  DUP CMP-CC !
+  DUP-LAID @ 7 + LIT-AT @ =  DUP-LAID @ FOLD-BARRIER @ < 0= AND
+  IF DUP-LAID @ ELSE 0 THEN DUP-AT !
+  LIT-AT @ CMP-AT !
+  251 OP-IMM,  15 C, C, 192 C,  72 C, 15 C, 182 C, 216 C,  72 C, 247 C, 219 C,
+  HERE CMP-END ! ;
+: LOAD-ABS, ( --- )   \ the literal an address: unlaid; push, then load from it
+  LIT-AT @ HERE - ALLOT  0 LIT-AT !  PUSH, ;
+: OVER-OP, ( opcode --- )   \ the OVER unlaid; op rbx,[rbp] in its place (629)
+  OVER-LAID @ HERE - ALLOT  0 OVER-LAID !  73 C, C, 31 C, ;
+: OVER-OP? ( xt --- xt 0 | -1 )   \ OVER then + - AND OR XOR: one instruction
+  OVER-LAID @ 11 + HERE =  OVER-LAID @ FOLD-BARRIER @ < 0= AND  0= IF 0 EXIT THEN
+  DUP ['] + = IF DROP 3 OVER-OP, -1 EXIT THEN
+  DUP ['] - = IF DROP 43 OVER-OP, -1 EXIT THEN
+  DUP ['] AND = IF DROP 35 OVER-OP, -1 EXIT THEN
+  DUP ['] OR = IF DROP 11 OVER-OP, -1 EXIT THEN
+  DUP ['] XOR = IF DROP 51 OVER-OP, -1 EXIT THEN
+  0 ;
+VARIABLE LOAD-AT      \ a VARIABLE's fetch just laid - push, mov rbx,[a] - where it began (662)
+VARIABLE LOAD-END     \ where it ended
+VARIABLE LOAD-ADDR    \ the address it loads
+: UNLIT, ( --- )   LIT-AT @ HERE - ALLOT  0 LIT-AT ! ;          \ the literal unlaid (645)
+: POP, ( --- )   73 C, 139 C, 31 C,  73 C, 131 C, 199 C, 8 C, ;   \ mov rbx,[r15]  add r15,8
+: FOLD ( xt --- xt 0 | -1 )   \ (628) a literal then +, -, AND, OR, XOR, =, <, >,
+  \ @ or C@: one instruction with the literal as its operand
+  FRESH-LIT? 0= IF 0 EXIT THEN
+  DUP ['] + = IF DROP 195 OP-IMM, -1 EXIT THEN
+  DUP ['] - = IF DROP 235 OP-IMM, -1 EXIT THEN
+  DUP ['] AND = IF DROP 227 OP-IMM, -1 EXIT THEN
+  DUP ['] OR = IF DROP 203 OP-IMM, -1 EXIT THEN
+  DUP ['] XOR = IF DROP 243 OP-IMM, -1 EXIT THEN
+  DUP ['] = = IF DROP 148 CMP-IMM, -1 EXIT THEN
+  DUP ['] < = IF DROP 156 CMP-IMM, -1 EXIT THEN
+  DUP ['] > = IF DROP 159 CMP-IMM, -1 EXIT THEN
+  DUP ['] @ = IF DROP LIT-AT @ >R  LOAD-ABS,  72 C, 139 C, 28 C, 37 C,  LIT-VAL @ ,4
+    R> LOAD-AT !  LIT-VAL @ LOAD-ADDR !  HERE LOAD-END !  -1 EXIT THEN
+  DUP ['] C@ = IF DROP LOAD-ABS,  72 C, 15 C, 182 C, 28 C, 37 C,  LIT-VAL @ ,4 -1 EXIT THEN
+  \ and a literal address then ! C! +! (645): the store to it, the value
+  \ already the top once the literal is unlaid - a VARIABLE's update in one
+  \ instruction and a pop, where it was a push, a load and a store
+  DUP ['] ! = IF DROP UNLIT,  72 C, 137 C, 28 C, 37 C,  LIT-VAL @ ,4  POP, -1 EXIT THEN
+  DUP ['] C! = IF DROP UNLIT,  136 C, 28 C, 37 C,  LIT-VAL @ ,4  POP, -1 EXIT THEN
+  DUP ['] +! = IF DROP UNLIT,  72 C, 1 C, 28 C, 37 C,  LIT-VAL @ ,4  POP, -1 EXIT THEN
+  0 ;
+\ A compare of two cells, or of one with 0, followed by IF WHILE or UNTIL
+\ (661): its flag was made - setcc, neg - popped and tested, 629 fused
+\ only a compare with a literal. ?BRANCH, now unlays the copied compare
+\ and lays the cmp or test, the pops by mov and lea, which keep the
+\ flags, and the jump taken when it is false. The jcc is read from the
+\ primitive's own setcc - not when its code is not the shape expected.
+VARIABLE CMP2-AT     \ a compare just copied: where it began, 0 none
+VARIABLE CMP2-END    \ where it ended
+VARIABLE CMP2-JCC    \ 0F's second byte for the jump taken when it is false
+VARIABLE CMP2-CELLS  \ how many cells it compares: 2, or 1 with 0
+: SETCC-AT ( xt offset --- jcc true | false )   \ 0F 9x C3 there: jcc-not 8x^1
+  SWAP 3 + +  DUP C@ 15 = OVER 2 + C@ 195 = AND IF 1+ C@ 1 XOR 16 - TRUE ELSE DROP 0 THEN ;
+: CMP2? ( xt --- jcc cells true | false )
+  DUP ['] 0< = IF DROP 137 1 TRUE EXIT THEN                      \ sar rbx,63: jns
+  DUP ['] 0= = IF 8 SETCC-AT IF 1 TRUE ELSE 0 THEN EXIT THEN  \ test, sete: jne
+  DUP ['] = = OVER ['] < = OR OVER ['] > = OR OVER ['] U< = OR OVER ['] <> = OR
+  IF 16 SETCC-AT IF 2 TRUE ELSE 0 THEN EXIT THEN  DROP 0 ;
+\ A VARIABLE's fetch folded into the operation after it (662): `X @ +` laid
+\ push, mov rbx,[X], then the add's load and pop of the cell just pushed - a
+\ round trip through memory, which priced at 11-15 % of every workload
+\ (one more at every push, A/B). Now + - AND OR XOR take [X] as their
+\ operand, = < > U< <> compare with it - the flag made as before, or the
+\ branch after it fused (kind 0: the cmp laid, one cell to pop) - and >R
+\ pushes it straight from memory. Never across a jump's target.
+: FRESH-LOAD? ( --- f )   LOAD-AT @ DUP IF  LOAD-END @ HERE =  SWAP FOLD-BARRIER @ < 0= AND  THEN ;
+: MEM-OP, ( op --- )   \ the fetch unlaid; op rbx,[X] in its place
+  LOAD-AT @ HERE - ALLOT  0 LOAD-AT !  72 C, C, 28 C, 37 C,  LOAD-ADDR @ ,4 ;
+: MFOLD ( xt --- xt 0 | -1 )
+  FRESH-LOAD? 0= IF 0 EXIT THEN
+  DUP ['] + = IF DROP 3 MEM-OP, -1 EXIT THEN
+  DUP ['] - = IF DROP 43 MEM-OP, -1 EXIT THEN
+  DUP ['] AND = IF DROP 35 MEM-OP, -1 EXIT THEN
+  DUP ['] OR = IF DROP 11 MEM-OP, -1 EXIT THEN
+  DUP ['] XOR = IF DROP 51 MEM-OP, -1 EXIT THEN
+  DUP ['] >R = IF DROP  LOAD-AT @ HERE - ALLOT  0 LOAD-AT !         \ push qword [X]
+    255 C, 52 C, 37 C,  LOAD-ADDR @ ,4  0 INL-OK !  -1 EXIT THEN
+  DUP CMP2? IF  2 = IF  CMP2-JCC !  DROP  59 MEM-OP,                \ cmp rbx,[X]
+      HERE CMP2-AT !  0 CMP2-CELLS !                                 \ mov ebx,0  setcc bl  neg rbx
+      187 C, 0 ,4  15 C, CMP2-JCC @ 1 XOR 16 + C, 195 C,  72 C, 247 C, 219 C,
+      HERE CMP2-END !  -1 EXIT  THEN  DROP  THEN
+  0 ;
+\ Pushes their next word takes straight back (669), from one build's
+\ count of what follows each push (NATIVE.md 12): R> DROP is add rsp,8;
+\ DUP >R is push rbx; R@ + is add rbx,[rsp]; I + is add rbx,r14 - no
+\ cell to the data stack and back. In ?BRANCH,, ?DUP DUP and DUP 0= or
+\ DUP 0< before IF WHILE UNTIL: test rbx,rbx and the jump.
+: PAIR, ( xt --- xt 0 | -1 )
+  DUP ['] DROP = IF  ['] R> FRESH-LAST? IF DROP UNLAST,  72 C, 131 C, 196 C, 8 C,  -1 EXIT THEN THEN
+  DUP ['] >R = IF  ['] DUP FRESH-LAST? IF DROP UNLAST,  83 C,  0 INL-OK !  -1 EXIT THEN THEN
+  DUP ['] + = IF  ['] R@ FRESH-LAST? IF DROP UNLAST,  72 C, 3 C, 28 C, 36 C,  -1 EXIT THEN
+                  -2 FRESH-LAST? IF DROP UNLAST,  76 C, 1 C, 243 C,  -1 EXIT THEN THEN
+  0 ;
+: LIT-WORD? ( xt --- x true | xt false )   \ (627) code that only pushes a
+  \ constant and returns - a CONSTANT, a VARIABLE, a CREATE no DOES> has
+  \ patched, `: FIVE 5 ;` - push rbx, mov rbx imm32 or movabs imm64, ret
+  \ (697) the push is 7 bytes since the data stack is r15: sub r15,8;
+  \ mov [r15],rbx - 49 83 EF 08 49 89 1F, read as 56 bits
+  DUP @ 72057594037927935 AND 8876671053562697 = 0= IF 0 EXIT THEN
+  DUP 7 + C@ 187 = OVER 12 + C@ 195 = AND IF  8 + @4  TRUE EXIT THEN    \ mov ebx,imm32 (687)
+  DUP 7 + C@ 49 = OVER 8 + C@ 219 = AND OVER 9 + C@ 195 = AND IF  DROP 0 TRUE EXIT THEN   \ xor ebx,ebx (692)
+  DUP 7 + C@ 72 = 0= IF 0 EXIT THEN
+  DUP 8 + C@ 199 = OVER 9 + C@ 195 = AND OVER 14 + C@ 195 = AND IF
+    10 + @4  DUP 2147483647 > IF 4294967296 - THEN  TRUE EXIT THEN   \ sign-extended
+  DUP 8 + C@ 187 = OVER 17 + C@ 195 = AND IF  9 + @  TRUE EXIT THEN
+  0 ;
+: COMPILE, ( xt --- )   \ an inline primitive's code, copied; a pushing word's
+  \ push, inline (627); a literal folded into the operation after it (628);
+  \ anything else, called
+  FOLD IF EXIT THEN
+  MFOLD IF EXIT THEN
+  PAIR, IF EXIT THEN
+  OVER-OP? IF EXIT THEN
+  DUP C@ 235 = OVER 1+ C@ 1 = AND IF
+    DUP ['] DUP = IF HERE DUP-LAID ! THEN  DUP ['] OVER = IF HERE OVER-LAID ! THEN
+    DUP ['] EXIT = OVER ['] >R = OR OVER ['] R> = OR OVER ['] R@ = OR
+    OVER ['] RP@ = OR OVER ['] RP! = OR IF 0 INL-OK ! THEN      \ not copyable (646)
+    DUP CMP2? IF CMP2-CELLS ! CMP2-JCC ! HERE CMP2-AT ! ELSE 0 CMP2-AT ! THEN
+    DUP LAST-XT !  HERE LAST-AT !
+    DUP 2 + C@ >R  3 + HERE R@ CMOVE  R> ALLOT  HERE CMP2-END !  HERE LAST-END !  EXIT  THEN
+  LIT-WORD? IF LIT, EXIT THEN
+  CALL, ;
+
+\ forward and backward jumps: a 4-byte field, patched when its target comes
+: >MARK ( --- a-addr )   HERE 0 ,4 ;
+: SHORT-OK? ( a-addr --- f )   \ the branch whose rel32 field is at a-addr, laid short?
+  \ Not over a padded loop start (714): the move would undo its alignment.
+  DUP HERE SHORT-FITS?  OVER 4 + LAST-LEAVE @ > AND  SWAP 4 + LAST-ALIGN @ > AND
+  RT-FULL @ SHORT-OFF @ OR 0= AND ;
+VARIABLE SH-MOVED   \ what the last >RESOLVE moved the code back by: 0, 3 or 4
+: SHORTEN ( a-addr --- )   \ (695) SHORT-MOVE does the work, in assembly
+  >R RT-AT @ RT-N @ R> HERE SHORT-MOVE  SH-MOVED !  SWAP HERE - ALLOT  HERE 1 RT+
+  MARK-TARGET  0 LIT-AT !  0 CMP-AT !  0 CMP2-AT !  0 DUP-AT !
+  0 LAST-XT !  0 LAST-END !  0 DUP-LAID !  0 OVER-LAID !  0 LOAD-AT !  0 LOAD-END ! ;
+: >RESOLVE ( a-addr --- )
+  0 SH-MOVED !  DUP SHORT-OK? IF SHORTEN EXIT THEN
+  MARK-TARGET  DUP HERE 4 RT+  HERE OVER 4 + - SWAP !4 ;
+: BACK, ( addr --- )   REL, ;
+
+: JCC-NOT ( setcc --- jcc )   \ the jump taken when the comparison is false
+  DUP 148 = IF DROP 133 EXIT THEN          \ sete -> jne
+  DUP 156 = IF DROP 141 EXIT THEN          \ setl -> jge
+  DROP 142 ;                               \ setg -> jle
+: FRESH-CMP? ( --- f )   CMP-AT @ DUP IF  CMP-END @ HERE =  SWAP FOLD-BARRIER @ < 0= AND  THEN ;
+: FRESH-CMP2? ( --- f )   CMP2-AT @ DUP IF  CMP2-END @ HERE =  SWAP FOLD-BARRIER @ < 0= AND  THEN ;
+: CMP2-BRANCH, ( --- )   \ (661) the compare unlaid: cmp or test, the pops, jcc
+  CMP2-CELLS @ 1 =  DUP-LAID @ 7 + CMP2-AT @ = AND  DUP-LAID @ FOLD-BARRIER @ < 0= AND IF
+    DUP-LAID @ HERE - ALLOT  0 DUP-LAID !                 \ (669) DUP 0= IF: test, the jump
+    72 C, 133 C, 219 C,  15 C, CMP2-JCC @ C,  0 CMP2-AT !  EXIT THEN
+  CMP2-AT @ HERE - ALLOT
+  CMP2-CELLS @ 2 = IF
+    73 C, 139 C, 7 C,  72 C, 57 C, 216 C,              \ mov rax,[rbp]  cmp rax,rbx
+    73 C, 139 C, 95 C, 8 C,  77 C, 141 C, 127 C, 16 C,       \ mov rbx,[rbp+8]  lea rbp,[rbp+16]
+  ELSE
+    CMP2-CELLS @ IF  72 C, 133 C, 219 C,  THEN               \ test rbx,rbx; kind 0 (662): cmp laid
+    73 C, 139 C, 31 C,  77 C, 141 C, 127 C, 8 C,        \ mov rbx,[rbp]  lea rbp,[rbp+8]
+  THEN  15 C, CMP2-JCC @ C,  0 CMP2-AT ! ;
+: ?BRANCH, ( --- )   \ the flag popped and tested, the jump taken if false; after a
+  \ compare just laid, the compare's own flags (629): DUP lit < IF is cmp, jge
+  FRESH-CMP? IF
+    DUP-AT @ ?DUP IF  HERE - ALLOT  72 C, 129 C, 251 C, LIT-VAL @ ,4       \ no copy made
+    ELSE  CMP-AT @ 7 + HERE - ALLOT                                         \ keep the cmp;
+      73 C, 139 C, 31 C,  77 C, 141 C, 127 C, 8 C,  THEN               \ pop by mov, lea
+    15 C, CMP-CC @ JCC-NOT C,
+  ELSE  FRESH-CMP2? IF CMP2-BRANCH, ELSE
+    ['] ?DUP FRESH-LAST? IF  UNLAST,                    \ (669) test, jnz past the drop
+      72 C, 133 C, 219 C,  117 C, HERE DUP 13 + 1 RT+ 12 C,  73 C, 139 C, 31 C,  77 C, 141 C, 127 C, 8 C,  233 C,   \ (693) the jnz recorded
+    ELSE ['] DUP FRESH-LAST? IF  UNLAST,  72 C, 133 C, 219 C,  15 C, 132 C,    \ test, jz
+    ELSE POPF,  15 C, 132 C,  THEN THEN  THEN  THEN
+  0 CMP-AT ! ;
+: IF      ?COMP  ?BRANCH, >MARK ; IMMEDIATE
+: THEN    ?COMP  >RESOLVE ; IMMEDIATE
+: ELSE    ?COMP  233 C, >MARK  SWAP >RESOLVE  SH-MOVED @ - ; IMMEDIATE      \ jmp
+\ (693) the IF is resolved after ELSE's jmp is laid, so a shortened IF
+\ moves that jmp's pending field back with the code: its address follows
+\ (714) A loop's start padded to 16 bytes with nops, as compilers align
+\ loops: 708 saw bench.4's loop go from 7 ms to 15 on fury when the
+\ kernel's shrinking moved it across a 16-byte line - the speed of a hot
+\ loop was left to where the code before it happened to end. The pad is
+\ laid where the loop is entered by falling in, run once per entry. It is
+\ recorded in the relative-field table as width 0 (inert to SHORT-MOVE),
+\ a forward branch laid before it stays long (SHORT-OK?), and a body that
+\ would be copied in place of its calls without its pads loses them
+\ (STRIP-PADS): an inlined copy lands anywhere, and the pads would only
+\ have made it too long to copy.
+15 CONSTANT LOOP-ALIGN-MAX   \ the most padding a loop start takes; 0 for none
+: NOP, ( n --- )   \ one nop instruction of n bytes, 1 to 8
+  DUP 2 = OVER 6 = OR IF 102 C, 1- THEN           \ 66: 2 is 66 90, 6 is 66 and the 5
+  DUP 1 = IF DROP 144 C, EXIT THEN                 \ 90
+  15 C, 31 C,                                      \ 0F 1F
+  DUP 3 = IF DROP 0 C, EXIT THEN                   \ 0F 1F 00
+  DUP 4 = IF DROP 64 C, 0 C, EXIT THEN             \ 0F 1F 40 00
+  DUP 5 = IF DROP 68 C, 0 C, 0 C, EXIT THEN        \ 0F 1F 44 00 00
+  7 = IF 128 C, 0 ,4 ELSE 132 C, 0 C, 0 ,4 THEN ;  \ 0F 1F 80 d32, 0F 1F 84 00 d32
+: ALIGN-LOOP ( --- )   \ the loop start that comes next, to 16 bytes
+  HERE NEGATE 15 AND  DUP 0=  OVER LOOP-ALIGN-MAX > OR  RT-FULL @ OR IF DROP EXIT THEN
+  DUP PADS +!  HERE OVER 0 RT+                     \ the pad: at, length, width 0
+  DUP 8 > IF 8 NOP, 8 - THEN NOP,  HERE LAST-ALIGN ! ;
+: RT-ENTRY ( i --- a-addr )   24 * RT-AT @ + ;
+VARIABLE GAP-P   VARIABLE GAP-K
+: FOLLOW ( a --- a' )   DUP GAP-P @ GAP-K @ + < 0= IF GAP-K @ - THEN ;   \ where it went
+: GAP-OUT ( p k --- )   \ k bytes at p taken out: the code after moved back, re-aimed
+  GAP-K !  GAP-P !
+  GAP-P @ GAP-K @ +  GAP-P @  HERE GAP-P @ - GAP-K @ -  CMOVE  GAP-K @ NEGATE ALLOT
+  RT-N @ 0 ?DO
+    I RT-ENTRY  DUP @ FOLLOW OVER !
+    DUP 16 + @ IF                                  \ a field: its target followed, rewritten
+      DUP 8 + @ FOLLOW OVER 8 + !
+      DUP 8 + @  OVER @ -  OVER 16 + @ -           ( e disp )
+      OVER 16 + @ 1 = IF OVER @ C! ELSE OVER @ !4 THEN
+    THEN DROP
+  LOOP ;
+: STRIP-PADS ( --- )   \ every pad taken out, the last first
+  RT-N @ BEGIN DUP WHILE 1-
+    DUP RT-ENTRY  DUP 16 + @ 0= IF
+      DUP 8 + @ ?DUP IF  OVER @ SWAP GAP-OUT  0 SWAP 8 + !  ELSE DROP THEN
+    ELSE DROP THEN
+  REPEAT DROP  0 PADS ! ;
+: BEGIN   ?COMP  ALIGN-LOOP MARK-TARGET HERE ; IMMEDIATE
+: UNTIL   ?COMP  ?BRANCH, BACK, ; IMMEDIATE
+: AGAIN   ?COMP  233 C, BACK, ; IMMEDIATE
+: WHILE   ?COMP  POSTPONE IF  SWAP ; IMMEDIATE
+: REPEAT  ?COMP  POSTPONE AGAIN  POSTPONE THEN ; IMMEDIATE
+
+\ counted loops, in registers (630): r14 the index, r13 the limit (r15
+\ until 696, which frees r15 for the data stack: a base needing no
+\ displacement byte - NATIVE.md 14); DO
+\ saves the enclosing loop's pair on the return stack and the loop's end
+\ puts it back - so a loop is `inc r14; cmp r14,r13; jne`, nothing in
+\ memory, and a word called in a loop keeps the caller's loop as it was.
+\ J is the pair saved last: [rsp]. A LEAVE is a jump to the loop's end,
+\ where the pair is restored; 'LEAVE holds the newest one's field, and
+\ each field, until patched, the distance back to the one before it.
+: LEAVE-LINK, ( --- )
+  'LEAVE @ ?DUP IF HERE SWAP - ELSE 0 THEN  HERE 'LEAVE !  ,4  HERE LAST-LEAVE ! ;   \ (693)
+: RESOLVE-LEAVE ( outer --- )   \ every LEAVE of this loop: here; 'LEAVE as it was
+  'LEAVE @ BEGIN ?DUP WHILE
+    DUP @4 >R  DUP >RESOLVE  R> ?DUP IF - ELSE DROP 0 THEN
+  REPEAT  'LEAVE ! ;
+: LOOP-ENTER, ( --- )   \ push r13  push r14  mov r13,[rbp]  mov r14,rbx  mov rbx,[rbp+8]  add rbp,16
+  65 C, 85 C,  65 C, 86 C,  77 C, 139 C, 47 C,  73 C, 137 C, 222 C,
+  73 C, 139 C, 95 C, 8 C,  73 C, 131 C, 199 C, 16 C, ;
+: LOOP-EXIT, ( outer --- )   \ the LEAVEs here; pop r14  pop r13
+  RESOLVE-LEAVE  65 C, 94 C, 65 C, 93 C, ;
+: DO   ?COMP  LOOP-ENTER,  'LEAVE @  0 'LEAVE !  ALIGN-LOOP MARK-TARGET HERE ; IMMEDIATE
+: ?DO  ?COMP  LOOP-ENTER,  'LEAVE @  0 'LEAVE !
+  77 C, 57 C, 238 C,  15 C, 132 C, LEAVE-LINK,          \ cmp r14,r13  je the end: a LEAVE
+  ALIGN-LOOP MARK-TARGET HERE ; IMMEDIATE
+: LOOP  ?COMP   \ inc r14  cmp r14,r13  jne back
+  73 C, 255 C, 198 C,  77 C, 57 C, 238 C,  15 C, 133 C, BACK,  LOOP-EXIT, ; IMMEDIATE
+: +LOOP  ?COMP   \ native.4's crossing test, by signs, on r14 and r13
+  72 C, 137 C, 216 C,  73 C, 139 C, 31 C,  73 C, 131 C, 199 C, 8 C,   \ n into rax, popped
+  76 C, 137 C, 242 C,  76 C, 41 C, 234 C,  73 C, 1 C, 198 C,             \ rdx=i-lim  i+=n
+  73 C, 137 C, 208 C,  73 C, 1 C, 192 C,  73 C, 49 C, 208 C,  72 C, 49 C, 194 C,
+  73 C, 33 C, 208 C,  15 C, 137 C, BACK,  LOOP-EXIT, ; IMMEDIATE
+: LEAVE   ?COMP  233 C, LEAVE-LINK, ; IMMEDIATE
+: I       ?COMP  HERE LAST-AT !  PUSH,  76 C, 137 C, 243 C,         \ mov rbx,r14
+  HERE LAST-END !  -2 LAST-XT ! ; IMMEDIATE
+: J       ?COMP  PUSH,  72 C, 139 C, 28 C, 36 C, ; IMMEDIATE   \ mov rbx,[rsp]
+: UNLOOP  ?COMP  65 C, 94 C, 65 C, 93 C, ; IMMEDIATE           \ pop r14  pop r13
+
+\ shadow.4's locals (637): shadow.4 lays them with OP, and SLOT, - CV8's
+\ locals opcodes on a variable - so natively OP, records the operation and
+\ SLOT, lays its code: LSAVE and LRESTORE inline, L! and LZERO inline. Only
+\ these four: nothing else lays CV8 opcodes with them.
+\ (655) LSAVE and LRESTORE come in runs - a definition's saves at its
+\ entry, its restores at each exit - and a run is laid as one group: the
+\ save stack's count read once into rcx, one bounds check for the run, two
+\ instructions a slot through rax, the count updated once. They were a
+\ call each, the count loaded, checked and stored again for every slot.
+\ A group grows as SLOT, lays the next of its run: the count's update,
+\ laid last, is unlaid, the slot laid, the update laid again, the check's
+\ immediate patched - never across a jump's target, which would move.
+\ Its checks jump to (L-OVER) and (L-UNDER), outside the body: a body
+\ with locals is not copyable, as with the calls.
+VARIABLE PENDING-OP
+VARIABLE GRP-AT     \ where the group being laid began
+VARIABLE GRP-OP     \ its op: 102, saves, or 103, restores
+VARIABLE GRP-N      \ its slots so far
+VARIABLE GRP-END    \ HERE when it was laid: the next slot extends it only there
+: OP, ( op --- )   PENDING-OP ! ;
+: GRP-START, ( op --- )   \ mov rcx,[count]  cmp rcx,imm32  ja (L-OVER) | jb (L-UNDER)
+  HERE GRP-AT !  DUP GRP-OP !  0 GRP-N !
+  72 C, 139 C, 12 C, 37 C,  LSAVE-SP ,4   72 C, 129 C, 249 C, 0 ,4
+  15 C,  102 = IF 135 C, ['] (L-OVER) ELSE 130 C, ['] (L-UNDER) THEN  REL, ;
+: GRP-SLOT, ( a-addr --- )   \ a save: mov rax,[a]  mov [rcx*8+stack+8n],rax;
+  \ a restore, the newest first: mov rax,[rcx*8+stack-8(n+1)]  mov [a],rax
+  GRP-OP @ 102 = IF
+    72 C, 139 C, 4 C, 37 C, ,4   72 C, 137 C, 4 C, 205 C,  LSAVE-STK GRP-N @ CELLS + ,4
+  ELSE
+    72 C, 139 C, 4 C, 205 C,  LSAVE-STK GRP-N @ 1+ CELLS - ,4   72 C, 137 C, 4 C, 37 C, ,4
+  THEN  1 GRP-N +! ;
+: GRP-END, ( --- )   \ add | sub qword [count],n - and the check's immediate:
+  \ a save overflows past LSAVE_MAX - n, a restore underflows below n
+  72 C, 131 C,  GRP-OP @ 102 = IF 4 ELSE 44 THEN C,  37 C,  LSAVE-SP ,4  GRP-N @ C,
+  GRP-OP @ 102 = IF LSAVE-LIM GRP-N @ - ELSE GRP-N @ THEN  GRP-AT @ 11 + !4
+  HERE GRP-END !  0 INL-OK ! ;
+: LGROUP, ( a-addr op --- )
+  DUP GRP-OP @ =  GRP-END @ HERE = AND  FOLD-BARRIER @ GRP-AT @ > 0= AND
+  IF  DROP  -9 ALLOT  ELSE  GRP-START,  THEN  GRP-SLOT,  GRP-END, ;
+: SLOT, ( a-addr --- )
+  PENDING-OP @  0 PENDING-OP !
+  DUP 102 = OVER 103 = OR IF LGROUP, EXIT THEN
+  DUP 104 = IF DROP 72 C, 137 C, 28 C, 37 C, ,4                   \ mov [a],rbx
+    73 C, 139 C, 31 C,  73 C, 131 C, 199 C, 8 C, EXIT THEN    \ the top popped
+  DUP 105 = IF DROP 72 C, 199 C, 4 C, 37 C, ,4  0 ,4 EXIT THEN     \ mov qword [a],0
+  TRUE ABORT" native: OP, and SLOT, lay only shadow.4's locals" ;
+
+\ CATCH, keeping a register loop's pair across it: kernel.4's, bracketed
+: CATCH0 ( i*x xt --- j*x 0 | i*x n )   CATCH ;
+: CATCH ( i*x xt --- j*x 0 | i*x n )   (SAVE-LOOP) CATCH0 (RESTORE-LOOP) ;
+
+\ ---- definitions ----------------------------------------------------------------
+\ (672) CREATE's data in a region of its own (NATIVE.md 13): DP and DDP
+\ trade places, so HERE ALLOT , and C, lay data after a CREATE and code
+\ once a definition begins - and DICT-LIMIT, through the runtime's cell,
+\ is data's limit or code's. 626 had the data on the code's next line:
+\ every page of the code with a variable on it written, and padding.
+: DATA-SWAP ( --- )   DP @  DDP @ DP !  DDP ! ;
+: DATA-ON ( --- )   IN-DATA @ 0= IF  DATA-SWAP  -1 IN-DATA !  DATA-TOP DLIMIT-CELL !  THEN ;
+: DATA-OFF ( --- )   IN-DATA @ IF  DATA-SWAP  0 IN-DATA !  0 DLIMIT-CELL !  THEN ;
+: DATA-ALIGN ( --- )   DATA-OFF ;
+: DATA-BASE ( --- addr )   DATA-START ;     \ where data's region begins, for SAVE-SYSTEM
+: :  ( "name" --- )   DATA-ALIGN !CSP HEADER ]  HERE BODY-AT !  -1 INL-OK !  RT-DONE ;
+32 CONSTANT INL-LIMIT   \ (700) the longest body copied in place of a call - GOALS.md 10's first knob
+: INLINE-MARK ( --- )   \ a copyable body of 1 to INL-LIMIT bytes: moved up three, marked
+  PADS @ IF  INL-OK @  HERE BODY-AT @ - PADS @ - INL-LIMIT 1+ < AND  IF STRIP-PADS THEN  THEN
+  HERE BODY-AT @ - DUP 0 > OVER INL-LIMIT 1+ < AND INL-OK @ AND IF
+    >R  BODY-AT @ DUP 3 + R@ MOVE  3 ALLOT
+    235 BODY-AT @ C!  1 BODY-AT @ 1+ C!  R> BODY-AT @ 2 + C!
+  ELSE DROP THEN ;
+: ;  ( --- )   ?COMP  INLINE-MARK  EXIT, [ ?CSP REVEAL  RT-DONE ; IMMEDIATE
+: RECURSE ( --- )   ?COMP  LAST @ NAME> CALL, ; IMMEDIATE
+: CREATE ( "name" --- )   \ the 17-byte stub (698); the data in data's region (672)
+  \ push, mov ebx,data (5 bytes, zero-extended: data's region is below
+  \ 2^31), ret - where DOES> lays its jmp - and four nops for the jmp's
+  \ rest. Was 24 bytes, then 23 with 697's push: 967 stubs in the shell.
+  DATA-OFF  HEADER REVEAL  DDP @ 7 + -8 AND DUP DDP !
+  PUSH,  187 C,  ,4  195 C,  4 0 DO 144 C, LOOP  DATA-ON ;
+: >BODY ( xt --- a-addr )   8 + @4 ;           \ the address in the stub's mov (698)
+: CONSTANT ( x "name" --- )   DATA-ALIGN HEADER REVEAL  LIT, EXIT, ;
+: (;CODE) ( --- )   \ the last created word jumps to what follows the call to this,
+  \ the data's address pushed already; R> ends the defining word
+  R> LAST @ NAME> 12 +  233 OVER C!  1+ SWAP OVER 4 + - SWAP !4 ;
+\ S" in a definition (666): the string's bytes jumped over, and its address
+\ by a rip-relative lea, then its length - where (S") was a call whose ret
+\ went to the byte after the string, so the return predictor missed every
+\ one. Position-independent: a body with a string literal can be moved and
+\ inlined. 2 or 5 bytes of jmp, the bytes, 27 of pushes; (S") was 6 and
+\ the bytes. ." and ABORT" keep their runtimes: they print, or abort.
+: SLIT, ( c-addr u --- )
+  DUP 128 < OVER 1 <> AND IF 235 C, DUP C, ELSE 233 C, DUP ,4 THEN   \ jmp over the bytes
+  \ - never jmp +1, EB 01: at a body's start that reads as the inline
+  \ marker, and COMPILE, copied a body beginning `S" !"` for code (666)
+  HERE >R  2DUP HERE SWAP MOVE  DUP ALLOT  SWAP DROP  MARK-TARGET   \ the bytes; the jmp lands here
+  73 C, 131 C, 239 C, 16 C,  73 C, 137 C, 95 C, 8 C,      \ sub rbp,16  mov [rbp+8],rbx
+  72 C, 141 C, 5 C,  R> HERE 4 + - ,4                     \ lea rax,[rip - back to the bytes]
+  73 C, 137 C, 7 C,                                 \ mov [rbp],rax
+  187 C, ,4 ;                                             \ mov ebx,u
+: S"  ( "ccc<quote>" --- )
+  STATE @ IF 34 PARSE SLIT,
+          ELSE 34 PARSE POCKET PLACE POCKET COUNT THEN ; IMMEDIATE
+: DOES> ( --- )   ?COMP  POSTPONE (;CODE) ; IMMEDIATE
+: POSTPONE ( "name" --- )
+  ?COMP  BL WORD FIND  ?DUP 0= ABORT" not found"
+  0< IF  LIT,  ['] COMPILE, CALL,  ELSE  COMPILE,  THEN ; IMMEDIATE
+END-CROSS

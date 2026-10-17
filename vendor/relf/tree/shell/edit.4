@@ -1,0 +1,821 @@
+\ edit.4 - the interactive line editor (Iteration 303)
+\
+\ Until now an interactive line came from the terminal driver in its
+\ cooked mode: it could be typed and backspaced over, and nothing else.
+\ An arrow key arrived as three bytes and was inserted into the command,
+\ so `echo hi` with a cursor correction ran as `echo h^[[Di`. There was
+\ no history at all.
+\
+\ With TERM-RAW (Iteration 303's engine primitive) the shell reads one
+\ byte at a time and does the editing itself: the arrow keys, the usual
+\ control characters, and a history the up and down arrows walk.
+\
+\ Everything is written to fd 2, where the prompt goes, so that a piped
+\ stdout still carries only what the script printed.
+
+DEFER RUN-TRAP-CALL              \ shell.4's RUN-TRAP, for an interrupted read
+VARIABLE CMD-START?              \ the next line begins a command: PS1, else PS2
+                                 \ (declared here: tree.4 loads after this)
+LINE-MAX BUFFER: ED-BUF          \ the line being edited
+VARIABLE ED-LEN
+VARIABLE ED-POS                  \ the cursor, 0 .. ED-LEN
+VARIABLE ED-PROMPT-LEN
+VARIABLE ED-SIGNAL               \ a signal seen while waiting for a key
+VARIABLE ED-AHEAD                \ a key read after a signal, + 1; 0: none (600)
+VARIABLE ED-DONE                 \ 0 editing, 1 accepted, 2 cancelled, 3 end of input
+2 BUFFER: ED-KEY
+
+\ History: every line of the session, however many and however long.
+\
+\ It was 32 slots of 256 bytes - 8 KB, fixed - so the 33rd command
+\ pushed the 1st out and a line over 255 characters was silently
+\ truncated, which is the shape of line a person most wants back
+\ (Iteration 408). Now the text goes into one growing arena, entries
+\ NUL-terminated end to end, with a growing array of offsets beside
+\ it. Memory is what was actually typed: a thousand commands of fifty
+\ characters is fifty kilobytes.
+1024 BUFFER: HIST-TEXT            \ the lines, NUL-terminated, end to end
+64 CELLS BUFFER: HIST-OFF         \ where each one starts in HIST-TEXT
+VARIABLE HIST-TEXT#              \ bytes used in HIST-TEXT
+VARIABLE HIST#                   \ how many lines are stored
+VARIABLE HIST-VIEW               \ which one is shown; HIST# means "the new line"
+VARIABLE HIST-SAVED-LEN          \ the new line, kept while history is walked
+LINE-MAX BUFFER: HIST-SAVED      \ grown with the line it saves
+
+: HIST-SLOT ( i --- addr )   \ the i-th line, NUL-terminated
+  CELLS HIST-OFF + @ HIST-TEXT + ;
+
+: HIST-NEXT ( 0 --- n )   DROP HIST# @ 1+ ;   \ for the prompt's \! and \#
+' HIST-NEXT IS HIST-NEXT-CALL
+
+: HIST-ADD ( c-addr u --- )   \ the newest line
+  DUP 0= IF 2DROP EXIT THEN
+  \ Both buffers grow BEFORE any address into them is taken: growing
+  \ one moves it.
+  HIST-TEXT# @ OVER + 1+ ENSURE-BUFFER HIST-TEXT
+  HIST# @ 1+ CELLS ENSURE-BUFFER HIST-OFF
+  HIST-TEXT# @ HIST# @ CELLS HIST-OFF + !    ( c-addr u )
+  DUP >R
+  HIST-TEXT HIST-TEXT# @ + SWAP MOVE         \ the length is on the return stack
+  0 HIST-TEXT HIST-TEXT# @ + R@ + C!       \ the terminator
+  R> 1+ HIST-TEXT# +!
+  HIST# @ 1+ HIST# ! ;
+
+\ ---- the screen ----
+
+: ED-OUT ( c-addr u --- )   ERR-TYPE ;
+: ED-CH ( c --- )   ED-KEY C!  ED-KEY 1 ED-OUT ;
+
+: ED-CSI ( --- )   27 ED-CH  91 ED-CH ;
+
+: ED-NUM ( n --- )   \ a small decimal, for a control sequence
+  0 <# #S #> ED-OUT ;
+
+VARIABLE ED-COL   \ the cursor's column, counted from the prompt's start (574)
+
+: ED-BACK ( n --- )   ?DUP IF ED-CSI ED-NUM 68 ED-CH THEN ;   \ n columns left
+\ UTF-8 (Iteration 575): the buffer stays bytes, but a character is its
+\ lead byte and the 10xxxxxx bytes after it - the cursor moves over, and
+\ Backspace and Delete take, whole characters, and a character is one
+\ column. It moved and deleted single bytes: after `echo привет` the
+\ cursor stood at column 19, not 13, and one Backspace took half of т,
+\ which then went into the command. Wide East Asian characters (two
+\ columns) and combining marks (none) are not told apart - that wants a
+\ width table this editor does not have.
+: ED-CONT? ( c --- f )   192 AND 128 = ;          \ a continuation byte
+: ED-COLS ( c-addr u --- n )   \ its columns: each character's width (604)
+  0 ROT ROT OVER + SWAP ?DO I C@ ED-CONT? 0= IF I CHAR-COLS + THEN LOOP ;
+: ED-PREV ( i --- i' )   \ the start of the character before byte i
+  BEGIN DUP 0> WHILE 1- DUP ED-BUF + C@ ED-CONT? 0= IF EXIT THEN REPEAT ;
+: ED-NEXT ( i --- i' )   \ past the character at byte i
+  DUP ED-LEN @ < IF
+    1+ BEGIN DUP ED-LEN @ < IF DUP ED-BUF + C@ ED-CONT? ELSE 0 THEN WHILE 1+ REPEAT
+  THEN ;
+: ED-OUT+ ( c-addr u --- )   2DUP ED-COLS ED-COL +!  ED-OUT ;   \ ... and counted
+
+: ED-REDRAW ( --- )
+  \ From the prompt's start, not column 0 (Iteration 574): the prompt is
+  \ drawn where the cursor stood, and each redraw goes back to it by the
+  \ columns the cursor has moved since. A \r here wiped out output that
+  \ ended without a newline - `forth '2 3 + .'` showed no 5, `printf x`
+  \ no x; dash and bash leave it, the prompt after it, and so does this.
+  ED-COL @ ED-BACK
+  CMD-START? @ IF SH-PROMPT1 ELSE SH-PROMPT2 THEN     \ as expanded once for this line (712)
+  ED-BUF ED-LEN @ ED-OUT
+  ED-CSI 75 ED-CH                            \ erase to end of line
+  ED-BUF ED-POS @ + ED-LEN @ ED-POS @ - ED-COLS ED-BACK   \ back to the cursor: columns (575)
+  ED-PROMPT-LEN @ ED-BUF ED-POS @ ED-COLS + ED-COL ! ;
+
+\ ---- editing ----
+
+: ED-INSERT ( c --- )
+  \ The line grows as it is typed rather than stopping at LINE-MAX.
+  \ 256 characters is not many for a shell line - a pipeline with two
+  \ absolute paths reaches it - and the old behaviour was to drop the
+  \ keystroke silently (Iteration 408). Grown BEFORE any address into
+  \ the buffer is taken, since growing moves it.
+  ED-LEN @ 2 + ENSURE-BUFFER ED-BUF
+  ED-BUF ED-POS @ + DUP 1+                   ( c src dst )
+  ED-LEN @ ED-POS @ - MOVE                   \ make room
+  ED-BUF ED-POS @ + C!
+  1 ED-LEN +!  1 ED-POS +! ;
+
+: ED-BACKSPACE ( --- )   \ the whole character before the cursor (575)
+  ED-POS @ 0= IF EXIT THEN
+  ED-POS @ DUP ED-PREV TUCK - >R             ( start )  ( R: its bytes )
+  ED-BUF ED-POS @ +  OVER ED-BUF +           ( start src dst )
+  ED-LEN @ ED-POS @ - MOVE
+  ED-POS !  R> NEGATE ED-LEN +! ;
+
+: ED-DELETE ( --- )   \ the character under the cursor - all its bytes (575)
+  ED-POS @ ED-LEN @ < 0= IF EXIT THEN
+  ED-POS @ ED-NEXT ED-POS @ - >R             ( )  ( R: its bytes )
+  ED-BUF ED-POS @ + R@ +  ED-BUF ED-POS @ +  ( src dst )
+  ED-LEN @ ED-POS @ - R@ - MOVE
+  R> NEGATE ED-LEN +! ;
+
+\ The kill buffer and the word keys (Iteration 568, A30). What C-k, C-u,
+\ C-w, M-d and M-Backspace cut is kept, for C-y to put back - one entry,
+\ each kill replacing it; readline keeps a ring, but one is what is
+\ missed without it. An empty kill leaves it alone, so C-y still has
+\ something. Words as readline has them: letters and digits for the M-
+\ keys, anything between blanks for C-w. tools/editor-vs-bash.py found
+\ these keys missing (567) and holds them to bash's answers.
+LINE-MAX BUFFER: ED-KILLED       \ grows: see ED-BUF
+VARIABLE ED-KILLED#
+VARIABLE ED-K0
+VARIABLE ED-K1
+VARIABLE ED-KILLING      \ this key killed: the next kill adds to it
+VARIABLE ED-WAS-KILLING  \ the key before killed
+
+: ED-KILL ( from to --- )   \ cut [from,to) into the kill buffer
+  \ Kills in a row are one entry, as readline has it: C-w C-w and then
+  \ C-y puts both words back. A kill that starts before the cursor goes
+  \ in front of what is there, one at the cursor after it.
+  ED-K1 !  ED-K0 !
+  ED-K1 @ ED-K0 @ - DUP 0> 0= IF DROP EXIT THEN   ( n )
+  ED-WAS-KILLING @ 0= IF 0 ED-KILLED# ! THEN
+  ED-KILLED# @ OVER + 1+ ENSURE-BUFFER ED-KILLED
+  ED-K0 @ ED-POS @ < IF
+    ED-KILLED  OVER ED-KILLED +  ED-KILLED# @ MOVE     \ make room in front
+    ED-BUF ED-K0 @ +  ED-KILLED  2 PICK MOVE
+  ELSE
+    ED-BUF ED-K0 @ +  ED-KILLED ED-KILLED# @ +  2 PICK MOVE
+  THEN
+  ED-KILLED# +!  -1 ED-KILLING !
+  ED-BUF ED-K1 @ +  ED-BUF ED-K0 @ +  ED-LEN @ ED-K1 @ -  MOVE
+  ED-K0 @ ED-K1 @ - ED-LEN +!
+  ED-K0 @ ED-POS ! ;
+
+: ED-KILL-TO-END ( --- )   ED-POS @ ED-LEN @ ED-KILL ;
+
+: ED-KILL-LINE ( --- )   0 ED-LEN @ ED-KILL  0 ED-POS ! ;
+
+: ED-AT ( i --- c )   ED-BUF + C@ ;
+: ED-WORD-CHAR? ( c --- f )   \ letters and digits - and every byte of a
+  \ UTF-8 character, so a Cyrillic word is a word to M-b and M-f (575)
+  DUP 128 < 0= IF DROP -1 EXIT THEN
+  DUP 48 58 WITHIN  OVER 65 91 WITHIN OR  SWAP 97 123 WITHIN OR ;
+: ED-BLANK? ( c --- f )   DUP 32 = SWAP 9 = OR ;
+
+: ED-FWD-WORD ( --- i )   \ to the end of the next word
+  ED-POS @
+  BEGIN DUP ED-LEN @ < IF DUP ED-AT ED-WORD-CHAR? 0= ELSE 0 THEN WHILE 1+ REPEAT
+  BEGIN DUP ED-LEN @ < IF DUP ED-AT ED-WORD-CHAR? ELSE 0 THEN WHILE 1+ REPEAT ;
+
+: ED-BACK-WORD ( --- i )   \ to the start of this word, or the last
+  ED-POS @
+  BEGIN DUP 0> IF DUP 1- ED-AT ED-WORD-CHAR? 0= ELSE 0 THEN WHILE 1- REPEAT
+  BEGIN DUP 0> IF DUP 1- ED-AT ED-WORD-CHAR? ELSE 0 THEN WHILE 1- REPEAT ;
+
+: ED-BACK-BLANKWORD ( --- i )   \ C-w's: back over blanks, then non-blanks
+  ED-POS @
+  BEGIN DUP 0> IF DUP 1- ED-AT ED-BLANK? ELSE 0 THEN WHILE 1- REPEAT
+  BEGIN DUP 0> IF DUP 1- ED-AT ED-BLANK? 0= ELSE 0 THEN WHILE 1- REPEAT ;
+
+: ED-YANK ( --- )   \ C-y: put back what the last kill took
+  ED-KILLED# @ 0 ?DO ED-KILLED I + C@ ED-INSERT LOOP ;
+
+: ED-META ( c --- )   \ ESC and a letter: M-b M-f M-d M-Backspace
+  DUP 98 = OVER 66 = OR IF DROP ED-BACK-WORD ED-POS ! EXIT THEN
+  DUP 102 = OVER 70 = OR IF DROP ED-FWD-WORD ED-POS ! EXIT THEN
+  DUP 100 = OVER 68 = OR IF DROP ED-POS @ ED-FWD-WORD ED-KILL EXIT THEN
+  DUP 127 = OVER 8 = OR IF DROP ED-BACK-WORD ED-POS @ ED-KILL EXIT THEN
+  DROP ;
+
+: ED-SET-LINE ( c-addr u --- )   \ replace what is being edited
+  DUP 2 + ENSURE-BUFFER ED-BUF
+  DUP ED-LEN !  DUP ED-POS !
+  ED-BUF SWAP MOVE ;
+
+\ ---- history ----
+
+: ED-HIST-UP ( --- )
+  HIST-VIEW @ 0= IF EXIT THEN
+  HIST-VIEW @ HIST# @ = IF                   \ leaving the new line: keep it
+    ED-LEN @ 2 + ENSURE-BUFFER HIST-SAVED
+    ED-BUF HIST-SAVED ED-LEN @ MOVE  ED-LEN @ HIST-SAVED-LEN !
+  THEN
+  HIST-VIEW @ 1- DUP HIST-VIEW !
+  HIST-SLOT DUP CSTRLEN ED-SET-LINE ;
+
+: ED-HIST-DOWN ( --- )
+  HIST-VIEW @ HIST# @ < 0= IF EXIT THEN
+  HIST-VIEW @ 1+ DUP HIST-VIEW !
+  DUP HIST# @ = IF
+    DROP HIST-SAVED HIST-SAVED-LEN @ ED-SET-LINE
+  ELSE
+    HIST-SLOT DUP CSTRLEN ED-SET-LINE
+  THEN ;
+
+\ ---- keys ----
+
+: ED-GET-BYTE ( --- c | -1 )
+  \ Waits in short polls rather than in a blocking read, so a signal is
+  \ noticed between them. Relying on the read failing with EINTR did not
+  \ work (Iteration 313 measured it: the signal arrives and the handler
+  \ runs, but the read carries on), and a shell that ignores ^C at its
+  \ prompt is worse than one that answers it 10 ms later.
+  \
+  \ And a key read after a ^C is the next line's (Iteration 600, the
+  \ intermittent intr-at-prompt). The poll looks for a signal, then for
+  \ a key: a shell descheduled between the two - under load - found both
+  \ a ^C and the key typed after it, and read the key first, into the
+  \ line the ^C abandoned: `e^C`, then `cho after`. The kernel runs the
+  \ handler before the read returns, so a signal still pending right
+  \ after it came first: the key is kept (ED-AHEAD, the byte + 1) for
+  \ the next line, and the ^C is acted on.
+  ED-AHEAD @ ?DUP IF 0 ED-AHEAD ! 1- EXIT THEN
+  BEGIN
+    SIGNALS-PENDING ?DUP IF ED-SIGNAL ! -1 EXIT THEN
+    KEY? IF
+      ED-KEY 1 0 READ-SOME DUP 1 = IF
+        DROP
+        SIGNALS-PENDING ?DUP IF ED-SIGNAL !  ED-KEY C@ 1+ ED-AHEAD !  -1 EXIT THEN
+        ED-KEY C@ EXIT
+      THEN
+      DROP -1 EXIT                             \ end of input
+    THEN
+    5 MS
+  AGAIN ;
+
+: ED-HOME ( --- )   0 ED-POS ! ;
+: ED-END  ( --- )   ED-LEN @ ED-POS ! ;
+
+VARIABLE ED-CSI-P                \ the first numeric parameter of a sequence
+
+: ED-ESCAPE ( --- )   \ ESC [ params final, or ESC O final
+  \ The whole sequence is read, parameters and all, and then acted on.
+  \ The old reader took ONE byte after `ESC [`, which covered xterm's
+  \ `ESC [ H` and `ESC [ F` - and nothing else. Home and End are
+  \ `ESC [ 1 ~` and `ESC [ 4 ~` under screen, tmux (so byobu) and the
+  \ Linux console, `ESC [ 7 ~` and `ESC [ 8 ~` under rxvt; and a
+  \ sequence with a parameter, like ^-right's `ESC [ 1 ; 5 C`, left its
+  \ tail to be typed into the line as text. Reported by a user whose
+  \ Home and End did nothing (Iteration 412).
+  ED-GET-BYTE DUP 91 = OVER 79 = OR IF DROP ELSE ED-META EXIT THEN
+  0 ED-CSI-P !
+  BEGIN ED-GET-BYTE DUP 48 58 WITHIN WHILE          \ the first parameter
+    48 -  ED-CSI-P @ 10 * +  ED-CSI-P !
+  REPEAT
+  BEGIN DUP 59 = OVER 48 58 WITHIN OR WHILE         \ any further ones
+    DROP ED-GET-BYTE
+  REPEAT                                            ( final )
+  DUP 126 = IF DROP                                 \ ESC [ n ~
+    ED-CSI-P @
+    DUP 1 = OVER 7 = OR IF DROP ED-HOME EXIT THEN
+    DUP 4 = OVER 8 = OR IF DROP ED-END EXIT THEN
+    3 = IF ED-DELETE THEN EXIT
+  THEN
+  DUP 65 = IF DROP ED-HIST-UP        EXIT THEN      \ up
+  DUP 66 = IF DROP ED-HIST-DOWN      EXIT THEN      \ down
+  DUP 67 = IF DROP
+    ED-POS @ ED-NEXT ED-POS ! EXIT THEN                 \ right: a character (575)
+  DUP 68 = IF DROP
+    ED-POS @ ED-PREV ED-POS ! EXIT THEN                 \ left: a character (575)
+  DUP 72 = IF DROP ED-HOME EXIT THEN                \ home, xterm
+  70 = IF ED-END THEN ;                             \ end, xterm
+
+\ ---- completion: TAB ----
+\
+\ Iteration 410. The word under the cursor is completed as a path:
+\ everything up to its last `/` names a directory (`.` if there is no
+\ slash), the rest is a prefix, and the directory's entries that begin
+\ with it are the candidates. One candidate is inserted whole, with `/`
+\ after a directory and a space after anything else. Several insert
+\ what they all share; when they share nothing more than was typed,
+\ TAB lists them and the line is redrawn under the list. No candidate
+\ rings the bell. Dot-files are offered only to a prefix that starts
+\ with a dot, as every shell does, and `.` and `..` never.
+\
+\ A completed name is typed into the line with its special characters
+\ escaped - a file called `my notes` comes back as `my\ notes` -
+\ because an unescaped completion would break the line it completed.
+\
+\ In command position - first on the line, after `;` `|` `&` `(`, or
+\ after a word like `then` or `do` - a word with no slash completes as
+\ a command instead: the builtins, and the executables on PATH
+\ (Iteration 414). A word that already holds escaped characters -
+\ `my\ n` - is unescaped before it is matched (Iteration 418). Not yet:
+\ a word inside quotes. Aliases and functions complete as commands too
+\ (Iteration 419).
+
+VARIABLE CMP-START               \ where the word under the cursor begins
+VARIABLE CMP-Q                   \ the quote the cursor is inside: 0, ' or "
+VARIABLE CMP-SL                  \ where the name part begins in CMP-W
+VARIABLE CMP-HASSLASH            \ the word names a directory as well
+VARIABLE CMP-W#
+256 BUFFER: CMP-W                \ the word, its quoting removed
+VARIABLE CMP-N                   \ how many candidates
+VARIABLE CMP-USED                \ bytes used in CMP-BUF
+VARIABLE CMP-LCP                 \ how many leading bytes they all share
+VARIABLE CMP-K
+VARIABLE CMP-PN
+VARIABLE CMP-CMD?                \ completing a command name, not a path
+VARIABLE CMP-P0
+VARIABLE CMP-P1
+1024 BUFFER: CMP-BUF             \ the candidates, NUL-terminated, end to end
+256 BUFFER: CMP-DIR              \ the directory to read
+256 BUFFER: CMP-PATH             \ directory and candidate, for FILE-MODE
+64 CELLS BUFFER: CMP-IDX         \ the candidates, sorted, for the listing
+CREATE CMP-PATH-NM  CSTR," PATH"
+
+VARIABLE CMP-PFX#
+256 BUFFER: CMP-PFX              \ the name part as typed, backslashes removed
+
+: CMP-ESCAPED? ( i --- flag )   \ an odd run of backslashes ends just before i
+  0 SWAP
+  BEGIN DUP 0> IF DUP 1- ED-BUF + C@ 92 = ELSE 0 THEN WHILE
+    1- SWAP 1+ SWAP
+  REPEAT
+  DROP 1 AND ;
+
+: CMP-WORD-FROM ( i --- start )   \ back from i to an unescaped blank
+  \ A blank after an odd run of backslashes is part of the word: TAB
+  \ turns `my` into `my\ notes`, and TAB after `my\ n` must see one
+  \ word, not `n` after a separator (Iteration 418).
+  BEGIN DUP 0> WHILE
+    DUP 1- ED-BUF + C@ DUP 32 = SWAP 9 = OR IF
+      DUP 1- CMP-ESCAPED? 0= IF EXIT THEN
+    THEN
+    1-
+  REPEAT ;
+
+
+
+
+: CMP-PREV ( i --- j )   \ the last non-blank before i, or -1
+  BEGIN
+    1- DUP 0< IF EXIT THEN
+    DUP ED-BUF + C@ DUP 32 = SWAP 9 = OR 0=
+  UNTIL ;
+
+: CMP-W-ADD ( c --- )   CMP-W CMP-W# @ + C!  1 CMP-W# +! ;
+: CMP-AT ( i --- c )   ED-BUF + C@ ;
+
+: CMP-STEP-SQ ( i --- i' )   \ inside '...': only ' ends it
+  DUP CMP-AT 39 = IF 0 CMP-Q ! ELSE DUP CMP-AT CMP-W-ADD THEN 1+ ;
+
+: CMP-STEP-DQ ( i --- i' )   \ inside "...": \ escapes only " \ $ `
+  DUP CMP-AT 34 = IF 0 CMP-Q ! 1+ EXIT THEN
+  DUP CMP-AT 92 = IF
+    DUP 1+ ED-POS @ < IF
+      DUP 1+ CMP-AT DUP 34 = OVER 92 = OR OVER 36 = OR SWAP 96 = OR IF
+        1+ DUP CMP-AT CMP-W-ADD 1+ EXIT
+      THEN
+    THEN
+  THEN
+  DUP CMP-AT CMP-W-ADD 1+ ;
+
+: CMP-SEPARATOR? ( c --- flag )   \ ends a word when it is not quoted
+  DUP 32 = OVER 9 = OR  OVER 59 = OR  OVER 124 = OR  OVER 38 = OR
+  OVER 40 = OR  OVER 41 = OR  OVER 60 = OR  SWAP 62 = OR ;
+
+: CMP-STEP-UQ ( i --- i' )   \ outside quotes
+  DUP CMP-AT CMP-SEPARATOR? IF 1+ DUP CMP-START !  0 CMP-W# ! EXIT THEN
+  DUP CMP-AT DUP 39 = SWAP 34 = OR IF DUP CMP-AT CMP-Q ! 1+ EXIT THEN
+  DUP CMP-AT 92 = IF
+    1+ DUP ED-POS @ < IF DUP CMP-AT CMP-W-ADD 1+ THEN EXIT
+  THEN
+  DUP CMP-AT CMP-W-ADD 1+ ;
+
+: CMP-SCAN ( --- )   \ CMP-START, CMP-Q, and the word with its quoting removed
+  \ Forward from the start of the line, following the quoting rules,
+  \ rather than back from the cursor to a blank: a blank inside quotes
+  \ or after a backslash does not end the word, and `;` `|` `&` `(` `)`
+  \ `<` `>` do even without a blank - so `"my n`, `my\ n` and `ls;zq`
+  \ are all seen as the shell would see them (Iteration 420).
+  0 CMP-START !  0 CMP-Q !  0 CMP-W# !
+  ED-POS @ 2 + ENSURE-BUFFER CMP-W
+  0 BEGIN DUP ED-POS @ < WHILE
+    CMP-Q @ 39 = IF CMP-STEP-SQ ELSE
+    CMP-Q @ 34 = IF CMP-STEP-DQ ELSE CMP-STEP-UQ THEN THEN
+  REPEAT
+  DROP ;
+
+: CMP-SPLIT ( --- )   \ the directory in CMP-DIR, the name part in CMP-PFX
+  CMP-SCAN
+  0 CMP-SL !  0 CMP-HASSLASH !
+  CMP-W# @ 0 ?DO CMP-W I + C@ 47 = IF I 1+ CMP-SL !  -1 CMP-HASSLASH ! THEN LOOP
+  CMP-HASSLASH @ IF
+    CMP-SL @ 2 + ENSURE-BUFFER CMP-DIR
+    CMP-W CMP-DIR CMP-SL @ MOVE  0 CMP-DIR CMP-SL @ + C!
+  ELSE
+    46 CMP-DIR C!  0 CMP-DIR 1+ C!
+  THEN
+  CMP-W# @ CMP-SL @ - CMP-PFX# !
+  CMP-PFX# @ 2 + ENSURE-BUFFER CMP-PFX
+  CMP-W CMP-SL @ +  CMP-PFX  CMP-PFX# @ MOVE
+  0 CMP-PFX CMP-PFX# @ + C! ;
+
+: CMP-PREFIX ( --- c-addr u )   CMP-PFX CMP-PFX# @ ;   \ unescaped
+
+: CMP-AFTER-KEYWORD? ( --- flag )   \ the word before is one a command follows
+  CMP-START @ CMP-PREV DUP 0< IF DROP 0 EXIT THEN  1+     ( end )
+  DUP CMP-WORD-FROM                                        ( end start )
+  TUCK -  SWAP ED-BUF +  SWAP                              ( c-addr u )
+  2DUP S" if"    STR= IF 2DROP -1 EXIT THEN
+  2DUP S" then"  STR= IF 2DROP -1 EXIT THEN
+  2DUP S" else"  STR= IF 2DROP -1 EXIT THEN
+  2DUP S" elif"  STR= IF 2DROP -1 EXIT THEN
+  2DUP S" do"    STR= IF 2DROP -1 EXIT THEN
+  2DUP S" while" STR= IF 2DROP -1 EXIT THEN
+  2DUP S" until" STR= IF 2DROP -1 EXIT THEN
+  S" !" STR= ;
+
+: CMP-COMMAND? ( --- flag )   \ the word names a command: first, and no slash
+  CMP-HASSLASH @ IF 0 EXIT THEN
+  CMP-START @ CMP-PREV DUP 0< IF DROP -1 EXIT THEN        \ first on the line
+  ED-BUF + C@                                              \ after ; | & (
+  DUP 59 = OVER 124 = OR OVER 38 = OR SWAP 40 = OR IF -1 EXIT THEN
+  CMP-AFTER-KEYWORD? ;
+
+: CMP-MATCH? ( c-addr u --- flag )   \ a name that begins with the prefix
+  OVER C@ 46 = IF                             \ a dot-file, or . or ..
+    DUP 1 = IF 2DROP 0 EXIT THEN
+    DUP 2 = IF OVER 1+ C@ 46 = IF 2DROP 0 EXIT THEN THEN
+    CMP-PREFIX NIP 0= IF 2DROP 0 EXIT THEN
+    CMP-PREFIX DROP C@ 46 <> IF 2DROP 0 EXIT THEN
+  THEN
+  DUP CMP-PREFIX NIP < IF 2DROP 0 EXIT THEN
+  DROP CMP-PREFIX NIP  CMP-PREFIX COMPARE 0= ;
+
+: CMP-NTH ( i --- c-addr )   CMP-BUF SWAP 0 ?DO DUP CSTRLEN + 1+ LOOP ;
+
+VARIABLE CMP-EXTRA               \ candidates counted beyond the stored ones
+VARIABLE CMP-XLCP                \ ... and how much of the first they share
+
+\ Past this many, candidates are COUNTED rather than stored: nothing is
+\ listed past it (bash asks before listing more than 100), so the only
+\ things still needed are how many there are and what they all share.
+\ Counting skips the duplicate check and the execute-bit test - the
+\ two costs that grow with PATH - which on an ARMv7 board made TAB on
+\ an empty line slow enough to fail a pty check waiting 0.3 s for it
+\ (Iteration 416). Folding a name that is not executable, or is a
+\ duplicate, into the shared prefix can only make it shorter, so the
+\ insertion stays safe; the count says "about".
+100 CONSTANT CMP-STORE
+
+: CMP-HAVE? ( c-addr u --- flag )   \ already a candidate
+  \ One walk down the buffer. It called CMP-NTH for each candidate -
+  \ itself a walk - so every addition cost the square of the count and
+  \ collecting cost its cube: TAB on an empty command word, which
+  \ offers everything on PATH, did not finish (Iteration 414).
+  CMP-BUF  CMP-N @ 0 ?DO                       ( a u p )
+    >R 2DUP R@ DUP CSTRLEN STR= IF 2DROP R> DROP -1 UNLOOP EXIT THEN
+    R> DUP CSTRLEN + 1+
+  LOOP
+  DROP 2DROP 0 ;
+
+: CMP-SHARED ( a b --- n )   \ leading bytes two NUL-terminated names share
+  0 CMP-K !
+  BEGIN
+    OVER CMP-K @ + C@  OVER CMP-K @ + C@
+    OVER = SWAP 0<> AND
+  WHILE
+    1 CMP-K +!
+  REPEAT
+  2DROP CMP-K @ ;
+
+: CMP-ADD ( c-addr u --- )   \ a candidate, if it matches and is new
+  2DUP CMP-MATCH? 0= IF 2DROP EXIT THEN
+  CMP-N @ CMP-STORE < 0= IF                   \ counted, not stored
+    DROP CMP-BUF SWAP CMP-SHARED CMP-XLCP @ MIN CMP-XLCP !
+    1 CMP-EXTRA +!  EXIT
+  THEN
+  2DUP CMP-HAVE? IF 2DROP EXIT THEN
+  \ Grown before the address is taken: growing moves it.
+  DUP CMP-USED @ + 2 + ENSURE-BUFFER CMP-BUF
+  DUP >R  CMP-BUF CMP-USED @ + SWAP MOVE
+  0 CMP-BUF CMP-USED @ R@ + + C!
+  R> 1+ CMP-USED +!  1 CMP-N +! ;
+
+: CMP-BUILD-PATH ( name --- )   \ CMP-PATH: CMP-DIR/name, NUL-terminated
+  DUP CSTRLEN CMP-DIR CSTRLEN + 3 + ENSURE-BUFFER CMP-PATH
+  CMP-DIR CMP-PATH CMP-DIR CSTRLEN MOVE
+  CMP-DIR CSTRLEN CMP-PN !
+  CMP-PATH CMP-PN @ 1- + C@ 47 <> IF 47 CMP-PATH CMP-PN @ + C!  1 CMP-PN +! THEN
+  DUP CSTRLEN >R  CMP-PATH CMP-PN @ + R@ MOVE  R> CMP-PN +!
+  0 CMP-PATH CMP-PN @ + C! ;
+
+: CMP-IS-DIR? ( name --- flag )
+  CMP-BUILD-PATH  CMP-PATH -1 FILE-MODE 61440 AND 16384 = ;
+
+: CMP-IS-EXEC? ( name --- flag )   \ a regular file with an execute bit
+  CMP-BUILD-PATH  CMP-PATH -1 FILE-MODE
+  DUP 61440 AND 32768 =  SWAP 73 AND 0<>  AND ;
+
+: CMP-COLLECT-DIR ( --- )   \ CMP-DIR's matching entries
+  CMP-DIR OPEN-DIR ?DUP 0= IF EXIT THEN       ( dirp )
+  BEGIN DUP READ-DIR ?DUP WHILE               ( dirp name )
+    CMP-CMD? @ IF
+      DUP DUP CSTRLEN CMP-MATCH? IF
+        \ The execute-bit test only while candidates are still stored.
+        CMP-N @ CMP-STORE < IF
+          DUP CMP-IS-EXEC? IF DUP CSTRLEN CMP-ADD ELSE DROP THEN
+        ELSE DUP CSTRLEN CMP-ADD THEN
+      ELSE DROP THEN
+    ELSE
+      DUP CSTRLEN CMP-ADD
+    THEN
+  REPEAT
+  CLOSE-DIR ;
+
+: CMP-COLLECT-PATH ( --- )   \ every directory on PATH; empty means .
+  CMP-PATH-NM LOOKUP-VAR ?DUP 0= IF EXIT THEN  CMP-P0 !
+  BEGIN
+    CMP-P0 @ BEGIN DUP C@ DUP 0<> SWAP 58 <> AND WHILE 1+ REPEAT  CMP-P1 !
+    CMP-P1 @ CMP-P0 @ - ?DUP IF CMP-P0 @ SWAP ELSE S" ." THEN     ( c-addr u )
+    DUP 2 + ENSURE-BUFFER CMP-DIR
+    DUP >R  CMP-DIR SWAP MOVE  0 CMP-DIR R> + C!
+    CMP-COLLECT-DIR
+    CMP-P1 @ C@ 0<>
+  WHILE
+    CMP-P1 @ 1+ CMP-P0 !
+  REPEAT ;
+
+: CMP-COLLECT-BUILTINS ( --- )   \ the list the builtin index is built from
+  BUILTIN-LIST @
+  BEGIN ?DUP WHILE
+    START @ +                                 ( entry )
+    DUP BI-ENTRY-NAME OVER 2 CELLS + @ CMP-ADD
+    @
+  REPEAT ;
+
+\ Two loops rather than one taking an execution token: `['] X` compiles
+\ X's ABSOLUTE address into the image, and the 8-byte engine is loaded
+\ somewhere different on every run, so the first version - one loop and
+\ an EXECUTE - jumped into nothing and TAB segfaulted. The 4-byte engine
+\ is built -no-pie at a fixed address, so it passed there, which is the
+\ only reason this was not caught at once (Iteration 419). FORTH-STYLE.md
+\ section 6: never compile an absolute address that outlives the build.
+: CMP-COLLECT-ALIASES ( --- )
+  ALIAS-COUNT @ 0 ?DO
+    I ALIAS-NAME-SLOT DUP CSTRLEN ?DUP IF CMP-ADD ELSE DROP THEN
+  LOOP ;
+
+: CMP-COLLECT-FUNCS ( --- )
+  FUNC-COUNT @ 0 ?DO
+    I FUNC-NAME-SLOT DUP CSTRLEN ?DUP IF CMP-ADD ELSE DROP THEN
+  LOOP ;
+
+: CMP-COLLECT ( --- )   \ the candidates, into CMP-BUF
+  0 CMP-N !  0 CMP-USED !  0 CMP-EXTRA !  65535 CMP-XLCP !
+  CMP-COMMAND? DUP CMP-CMD? !
+  IF
+    \ The shell's own names first - aliases and functions, which are
+    \ commands as much as anything on PATH (Iteration 419) - then the
+    \ builtins, then PATH. The duplicate check drops an overlap.
+    CMP-COLLECT-ALIASES CMP-COLLECT-FUNCS
+    CMP-COLLECT-BUILTINS CMP-COLLECT-PATH
+  ELSE
+    CMP-COLLECT-DIR
+  THEN ;
+
+: CMP-COMMON ( --- )   \ CMP-LCP, over every candidate, in one walk
+  CMP-BUF DUP CSTRLEN CMP-LCP !
+  CMP-BUF DUP CSTRLEN + 1+                     ( first next )
+  CMP-N @ 1 ?DO
+    2DUP CMP-SHARED CMP-LCP @ MIN CMP-LCP !
+    DUP CSTRLEN + 1+
+  LOOP
+  2DROP
+  CMP-XLCP @ CMP-LCP @ MIN CMP-LCP ! ;        \ and the counted ones
+
+: CMP-SPECIAL? ( c --- flag )   \ a character the shell would read specially
+  DUP 32 = OVER 9 = OR
+  OVER 33 37 WITHIN OR  OVER 38 43 WITHIN OR  OVER 59 61 WITHIN OR
+  OVER 62 64 WITHIN OR  OVER 91 94 WITHIN OR  OVER 96 = OR
+  SWAP 123 127 WITHIN OR ;
+
+: CMP-PUT ( c --- )   \ one character, escaped for the quoting in force
+  CMP-Q @ 39 = IF                              \ '...': a ' must become '\''
+    DUP 39 = IF DROP 39 ED-INSERT 92 ED-INSERT 39 ED-INSERT 39 ED-INSERT EXIT THEN
+    ED-INSERT EXIT
+  THEN
+  CMP-Q @ 34 = IF                              \ "...": only " \ $ ` need it
+    DUP 34 = OVER 92 = OR OVER 36 = OR OVER 96 = OR IF 92 ED-INSERT THEN
+    ED-INSERT EXIT
+  THEN
+  DUP CMP-SPECIAL? IF 92 ED-INSERT THEN ED-INSERT ;
+
+: CMP-INSERT ( c-addr u --- )   \ typed into the line, escaped as it must be
+  0 ?DO DUP I + C@ CMP-PUT LOOP DROP ;
+
+: CMP-FINISH ( --- )   \ after a single candidate
+  \ A directory gets `/` and any quote stays open, so TAB can carry on
+  \ inside it; anything else closes the quote and gets a blank.
+  CMP-CMD? @ 0= IF 0 CMP-NTH CMP-IS-DIR? IF 47 ED-INSERT EXIT THEN THEN
+  CMP-Q @ ?DUP IF ED-INSERT THEN
+  32 ED-INSERT ;
+
+: CMP-LESS? ( j --- flag )   \ entry j sorts before entry j-1
+  DUP CELLS CMP-IDX + @ DUP CSTRLEN
+  ROT 1- CELLS CMP-IDX + @ DUP CSTRLEN
+  COMPARE 0< ;
+
+: CMP-SWAP-IDX ( j --- )   \ entries j and j-1 change places
+  CELLS CMP-IDX +  DUP @  OVER 1 CELLS - @  2 PICK !  SWAP 1 CELLS - ! ;
+
+: CMP-SORT ( --- )   \ CMP-IDX: the candidates in byte order
+  CMP-N @ CELLS ENSURE-BUFFER CMP-IDX
+  CMP-BUF  CMP-N @ 0 ?DO DUP CMP-IDX I CELLS + !  DUP CSTRLEN + 1+ LOOP  DROP
+  CMP-N @ 1 ?DO
+    I BEGIN DUP 0> IF DUP CMP-LESS? ELSE 0 THEN WHILE
+      DUP CMP-SWAP-IDX 1-
+    REPEAT
+    DROP
+  LOOP ;
+
+: CMP-LIST ( --- )   \ the candidates, sorted, under the line
+  \ Sorted, as every shell lists them - they were in directory order,
+  \ which is no order at all - and capped: TAB on an empty command
+  \ word offers everything on PATH, which is thousands of names that
+  \ nobody reads (Iteration 414).
+  10 ED-CH
+  CMP-EXTRA @ IF
+    S" about " ED-OUT  CMP-N @ CMP-EXTRA @ + N>STR DUP CSTRLEN ED-OUT
+    S"  candidates - type more to narrow them" ED-OUT 10 ED-CH  0 ED-COL ! EXIT
+  THEN
+  CMP-SORT
+  CMP-N @ 0 ?DO CMP-IDX I CELLS + @ DUP CSTRLEN ED-OUT S"   " ED-OUT LOOP
+  10 ED-CH  0 ED-COL ! ;                     \ the next prompt starts a line (574)
+
+: ED-COMPLETE ( --- )
+  CMP-SPLIT CMP-COLLECT
+  CMP-N @ 0= IF 7 ED-CH EXIT THEN             \ nothing: the bell
+  CMP-COMMON
+  CMP-PREFIX NIP                              ( typed )
+  CMP-LCP @ OVER > IF                         \ more is shared than was typed
+    0 CMP-NTH OVER +  CMP-LCP @ ROT -  CMP-INSERT
+    CMP-N @ 1 = CMP-EXTRA @ 0= AND IF CMP-FINISH THEN
+    EXIT
+  THEN
+  DROP
+  CMP-N @ 1 = CMP-EXTRA @ 0= AND IF CMP-FINISH EXIT THEN   \ typed in full
+  CMP-LIST ;
+
+\ ---- reverse incremental history search: ^R ----
+\
+\ Iteration 409, asked for by a user of the shell once history held
+\ the whole session (408): what is the point of keeping every line if
+\ the only way back is the up arrow, one at a time.
+\
+\ ^R starts it, with readline's own prompt, `(reverse-i-search)'pat': `
+\ followed by the newest history line containing the pattern. Each
+\ printable key extends the pattern; ^R again steps to the next older
+\ match; backspace shortens it; ^G restores what was being typed. Any
+\ other control key - RETURN, an arrow, ^A, ^E - accepts the match
+\ into the line and is THEN acted on, which is readline's rule and why
+\ RETURN runs the found command at once.
+
+VARIABLE ED-SEARCHING             \ -1 while a search is under way
+VARIABLE ED-SEARCH-HIT            \ the matching history entry, or -1
+VARIABLE ED-SEARCH-FAIL           \ -1 when the pattern matches nothing
+VARIABLE ED-SEARCH-LEN
+VARIABLE ED-SEARCH-ORIG-LEN
+64 BUFFER: ED-SEARCH-PAT          \ grown as the pattern is typed
+LINE-MAX BUFFER: ED-SEARCH-ORIG   \ the line as it was when ^R was pressed
+
+VARIABLE ED-PAT-A
+VARIABLE ED-PAT-U
+
+: ED-CONTAINS? ( c-addr u pat u2 --- flag )   \ pat occurs in c-addr u
+  \ The pattern in variables rather than on the return stack: this
+  \ kernel has no 2>R, and the first version of this word used it,
+  \ which left ED-LINE undefined and the shell image booting into the
+  \ bare Forth prompt instead (Iteration 409).
+  ED-PAT-U !  ED-PAT-A !
+  ED-PAT-U @ 0= IF 2DROP -1 EXIT THEN
+  BEGIN DUP ED-PAT-U @ < 0= WHILE              ( a u )
+    OVER ED-PAT-U @ ED-PAT-A @ ED-PAT-U @ COMPARE 0= IF 2DROP -1 EXIT THEN
+    1 /STRING
+  REPEAT
+  2DROP 0 ;
+
+: ED-SEARCH-FROM ( i --- )   \ the newest entry at or before i holding the pattern
+  BEGIN DUP 0< 0= WHILE
+    DUP HIST-SLOT DUP CSTRLEN ED-SEARCH-PAT ED-SEARCH-LEN @ ED-CONTAINS? IF
+      ED-SEARCH-HIT !  0 ED-SEARCH-FAIL !  EXIT
+    THEN
+    1-
+  REPEAT
+  DROP -1 ED-SEARCH-FAIL ! ;              \ the last good match stays shown
+
+: ED-SEARCH-BEGIN ( --- )
+  ED-LEN @ 2 + ENSURE-BUFFER ED-SEARCH-ORIG
+  ED-BUF ED-SEARCH-ORIG ED-LEN @ MOVE  ED-LEN @ ED-SEARCH-ORIG-LEN !
+  0 ED-SEARCH-LEN !  -1 ED-SEARCH-HIT !  0 ED-SEARCH-FAIL !
+  -1 ED-SEARCHING ! ;
+
+: ED-SEARCH-ACCEPT ( --- )   \ the match becomes the line being edited
+  ED-SEARCH-HIT @ 0< 0= IF
+    ED-SEARCH-HIT @ DUP HIST-VIEW !           \ the arrows walk on from here
+    HIST-SLOT DUP CSTRLEN ED-SET-LINE
+  THEN
+  0 ED-SEARCHING ! ;
+
+: ED-SEARCH-CANCEL ( --- )   \ ^G: as if ^R had never been pressed
+  ED-SEARCH-ORIG ED-SEARCH-ORIG-LEN @ ED-SET-LINE
+  0 ED-SEARCHING ! ;
+
+: ED-SEARCH-REDRAW ( --- )   \ from the prompt's start, as ED-REDRAW (574)
+  ED-COL @ ED-BACK  0 ED-COL !
+  ED-SEARCH-FAIL @ IF S" (failed reverse-i-search)'" ELSE S" (reverse-i-search)'" THEN
+  ED-OUT+
+  ED-SEARCH-PAT ED-SEARCH-LEN @ ED-OUT+
+  S" ': " ED-OUT+
+  ED-SEARCH-HIT @ 0< 0= IF ED-SEARCH-HIT @ HIST-SLOT DUP CSTRLEN ED-OUT+ THEN
+  ED-CSI 75 ED-CH ;                          \ erase to end of line
+
+: ED-KEY-ACT ( c --- )
+  DUP 10 = OVER 13 = OR IF DROP 1 ED-DONE ! EXIT THEN
+  DUP 27 = IF DROP ED-ESCAPE EXIT THEN
+  DUP 127 = OVER 8 = OR IF DROP ED-BACKSPACE EXIT THEN
+  DUP 1 = IF DROP 0 ED-POS ! EXIT THEN            \ ^A
+  DUP 5 = IF DROP ED-LEN @ ED-POS ! EXIT THEN     \ ^E
+  DUP 2 = IF DROP ED-POS @ ED-PREV ED-POS ! EXIT THEN   \ ^B
+  DUP 6 = IF DROP ED-POS @ ED-NEXT ED-POS ! EXIT THEN \ ^F
+  DUP 11 = IF DROP ED-KILL-TO-END EXIT THEN       \ ^K
+  DUP 21 = IF DROP ED-KILL-LINE EXIT THEN         \ ^U
+  DUP 4 = IF DROP                                 \ ^D: end of input if empty
+    ED-LEN @ 0= IF 3 ED-DONE ! ELSE ED-DELETE THEN EXIT THEN
+  DUP 3 = IF DROP 2 ED-DONE ! EXIT THEN           \ ^C
+  DUP 12 = IF DROP EXIT THEN                      \ ^L: redraw, which happens anyway
+  DUP 18 = IF DROP ED-SEARCH-BEGIN EXIT THEN      \ ^R: search the history
+  DUP 9 = IF DROP ED-COMPLETE EXIT THEN           \ TAB: complete the word
+  DUP 23 = IF DROP ED-BACK-BLANKWORD ED-POS @ ED-KILL EXIT THEN   \ ^W
+  DUP 25 = IF DROP ED-YANK EXIT THEN              \ ^Y
+  DUP 32 < IF DROP EXIT THEN                      \ other control characters
+  ED-INSERT ;
+
+: ED-SEARCH-KEY ( c --- )
+  DUP 18 = IF DROP                                \ ^R: the next older match
+    ED-SEARCH-HIT @ 0> IF ED-SEARCH-HIT @ 1- ED-SEARCH-FROM THEN EXIT THEN
+  DUP 7 = IF DROP ED-SEARCH-CANCEL EXIT THEN      \ ^G
+  DUP 127 = OVER 8 = OR IF DROP                   \ backspace: a shorter pattern
+    ED-SEARCH-LEN @ 0= IF EXIT THEN
+    -1 ED-SEARCH-LEN +!
+    ED-SEARCH-LEN @ IF HIST# @ 1- ED-SEARCH-FROM
+    ELSE -1 ED-SEARCH-HIT !  0 ED-SEARCH-FAIL ! THEN EXIT THEN
+  DUP 32 < IF ED-SEARCH-ACCEPT ED-KEY-ACT EXIT THEN   \ accept, then act
+  ED-SEARCH-LEN @ 2 + ENSURE-BUFFER ED-SEARCH-PAT
+  ED-SEARCH-PAT ED-SEARCH-LEN @ + C!  1 ED-SEARCH-LEN +!
+  ED-SEARCH-HIT @ 0< IF HIST# @ 1- ELSE ED-SEARCH-HIT @ THEN ED-SEARCH-FROM ;
+
+: ED-LINE ( --- c-addr u flag )   \ flag: -1 a line, 0 end of input
+  0 ED-LEN !  0 ED-POS !  0 ED-DONE !  0 ED-SEARCHING !
+  HIST# @ HIST-VIEW !  0 HIST-SAVED-LEN !
+  \ The prompt's WIDTH, not its length: an escape sequence in it takes
+  \ bytes and no columns, and the cursor arithmetic is in columns
+  \ (Iteration 412). Expanded here once for the line and its redraws
+  \ (712); a continuation line's PS2 was expanded at its command's start.
+  CMD-START? @ IF SH-PROMPT-PREPARE PS1-WIDTH @ ELSE PS2-WIDTH @ THEN ED-PROMPT-LEN !
+  0 ED-COL !                                 \ the prompt starts where we are (574)
+  ED-REDRAW
+  BEGIN ED-DONE @ 0= WHILE
+    ED-GET-BYTE DUP -1 = IF
+      DROP
+      \ A read cut short by a signal is not end of input: ^C cancels the
+      \ line, and dash writes a newline before its next prompt
+      \ (Iteration 312).
+      ED-SIGNAL @ ?DUP IF
+        0 ED-SIGNAL !
+        RUN-TRAP-CALL  2 ED-DONE !              \ ^C: the line is abandoned
+        0 INT-SEEN? !                           \ handled here, not at the prompt
+      ELSE
+        3 ED-DONE !                             \ the terminal closed
+      THEN
+    ELSE
+      ED-KILLING @ ED-WAS-KILLING !  0 ED-KILLING !   \ kills in a row
+      ED-SEARCHING @ IF ED-SEARCH-KEY ELSE ED-KEY-ACT THEN
+      ED-SEARCHING @ IF ED-SEARCH-REDRAW ELSE ED-REDRAW THEN
+    THEN
+  REPEAT
+  \ With ECHO off nothing shows ^C, which the terminal driver prints for
+  \ a shell in cooked mode; the editor prints it (Iteration 312).
+  ED-DONE @ 2 = IF 94 ED-CH 67 ED-CH THEN
+  10 ED-CH                                      \ the newline the user typed
+  ED-DONE @ 3 = IF ED-BUF 0 0 EXIT THEN
+  ED-DONE @ 2 = IF ED-BUF 0 -1 EXIT THEN        \ ^C: an empty line
+  ED-BUF ED-LEN @ 2DUP HIST-ADD -1 ;

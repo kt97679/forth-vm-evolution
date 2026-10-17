@@ -1,0 +1,193 @@
+\ pool.4 - buffers that live outside the image and are allocated on
+\ first use.
+\
+\ Why: `CREATE name n ALLOT` reserves n bytes of *dictionary* at
+\ compile time, so every byte ends up in a saved image whether or not
+\ it is ever used. Measured on the first prebuilt shell image
+\ (Iteration 40): 253,528 bytes total, of which 135,576 were CREATE'd
+\ buffers and 77.3% of the whole file was zeros. One buffer,
+\ POS-PARAMS-SAVE, was 73,728 bytes - 29% of the image - and entirely
+\ empty. See PROGRESS.md's Iteration 41 entry.
+\
+\   BUFFER: ( size "name" --- )
+\
+\ declares a buffer of `size` bytes. The name behaves exactly like a
+\ CREATE'd one - executing it pushes the buffer's address - so a call
+\ site never changes. What changes is when and where the space comes
+\ from:
+\
+\   - nothing but a three-cell descriptor goes in the dictionary, so a
+\     saved image carries the declaration but not the space;
+\   - the space is ALLOCATEd from the host heap on FIRST USE, so a
+\     buffer that is declared but never touched costs nothing at all
+\     at runtime either;
+\   - the memory is outside the image entirely, so buffer sizes no
+\     longer trade against dictionary space.
+\
+\ Descriptor layout, at the body address DOES> hands back:
+\
+\   +0  ptr     the ALLOCATEd address; 0 only between RESET-BUFFERS
+\               and the next ALLOC-BUFFERS
+\   +1  size    in bytes
+\   +2  link    offset of the previously declared buffer's body, 0 at
+\               the end of the chain - an OFFSET from START, not an
+\               address, so it survives being saved and reloaded
+\               (Iteration 40's lesson: anything stored or compiled
+\               that names a location must be position-independent)
+\
+\ The pointer is at +0 deliberately: the whole runtime cost of a
+\ buffer reference is then `DOES> @`, one fetch on top of what a
+\ CREATE'd name costs. The original layout put the pointer at +2 and
+\ allocated lazily, so every reference ran a store, three fetches, an
+\ add and a branch - about ten threaded operations where CREATE costs
+\ one. Iteration 129 measured that at 13% of the loop benchmark and
+\ reverted the one conversion it had tried. Allocating eagerly and
+\ putting the pointer first is what makes the conversion affordable.
+\
+\ A linked list rather than a table, so there is no fixed maximum
+\ number of buffers to pick and get wrong.
+\
+\ The pointer is process-local and meaningless after a save/reload,
+\ which is what RESET-BUFFERS is for: SAVE-SYSTEM calls it so an image
+\ is written with every buffer back in its "not yet allocated" state.
+\ That also means SAVE-SYSTEM discards buffer *contents* - fine for
+\ its actual use (build a fresh image and exit) and documented rather
+\ than silent.
+
+BASE @  DECIMAL
+
+VARIABLE BUF-LIST   0 BUF-LIST !
+\ The ARENA the buffers are carved from at boot (Iteration 551): ONE
+\ allocation, so one header - allocated one by one, every buffer's
+\ header touched the page it began on, and 136 of them packed together
+\ made nearly every page of their span resident, used or not. Carved,
+\ a buffer's pages are touched when it is used: 64 kB of the shell's
+\ 268 resident, idle. Blocks carved from it are never FREEd one by one.
+VARIABLE ARENA   0 ARENA !   VARIABLE ARENA-END   0 ARENA-END !
+: IN-ARENA? ( addr --- f )   \ kernel words only: pool.4 loads on the bare
+  DUP ARENA @ U< 0= SWAP ARENA-END @ U< AND ;   \ kernel (tests/shadow.fth)
+VARIABLE BUF-BODY
+VARIABLE BUF-SIZE
+VARIABLE BUF-PTR
+
+
+: BUF-ALLOC ( body --- )   \ give one descriptor its space
+  DUP @ 0= IF
+    \ Round up to a whole cell - once so that a zero fill a cell at a
+    \ time could not overrun (there is none since 551); kept, since the
+    \ buffers after it stay cell-aligned. A few bytes of slack per buffer is nothing
+    \ against the heap and the sizes are not all cell multiples.
+    DUP CELL+ @ CELL+ 1- [ 1 CELLS 1- ] LITERAL INVERT AND BUF-SIZE !
+    BUF-SIZE @ ALLOCATE ABORT" BUFFER: out of memory"
+    BUF-PTR !
+    \ Zero, as CREATE ... ALLOT space starts: ALLOCATE's memory is,
+    \ since Iteration 551 - so no fill here, which touched every page of
+    \ every buffer at boot: 40 kB of the shell's 308 resident, idle.
+    BUF-PTR @ SWAP !
+  ELSE DROP THEN ;
+
+: BUFFER: ( size "name" --- )
+  CREATE
+    HERE BUF-BODY !
+    0 ,                           \ pointer
+    ,                             \ size
+    BUF-LIST @ ,                  \ link to the previous declaration
+    BUF-BODY @ START @ - BUF-LIST !
+    BUF-BODY @ BUF-ALLOC          \ eagerly, so a reference is one fetch
+  DOES> ( --- addr )
+    @ ;
+
+\ ==================================================================
+\ Growing a buffer (Iteration 249)
+\ ==================================================================
+\ BUF-ENSURE gives a buffer at least u bytes, keeping its contents: a
+\ new block of at least twice the old size, the contents copied over,
+\ the descriptor updated. The old block is NOT freed. Code holds
+\ absolute addresses into these buffers - shell.4's ARGV points into
+\ its token buffers - and a freed block could be reused under them.
+\ So the old block goes on a retired list, and stays readable exactly
+\ as long as today's rule already says such a pointer is worth
+\ anything: until the next command. BUF-FREE-RETIRED releases the list,
+\ and must be called only where nothing can still point into a retired
+\ block - shell.4 calls it between top-level commands. Doubling keeps
+\ what is retired below the size of the buffer that replaced it.
+\
+\ The list nodes are separate two-cell blocks [next][block], so a
+\ retired buffer's own bytes are never touched.
+
+VARIABLE BUF-RETIRED   0 BUF-RETIRED !    \ first node, or 0
+
+: BUF-ROUND ( u --- u' )   \ up to a whole number of cells
+  CELL+ 1- [ 1 CELLS 1- ] LITERAL INVERT AND ;
+
+: BUF-RETIRE ( addr --- )
+  2 CELLS ALLOCATE ABORT" BUFFER: out of memory"   ( addr node )
+  SWAP OVER CELL+ !
+  BUF-RETIRED @ OVER !
+  BUF-RETIRED ! ;
+
+: BUF-FREE-RETIRED ( --- )
+  BUF-RETIRED @
+  BEGIN ?DUP WHILE
+    DUP CELL+ @ FREE DROP
+    DUP @ SWAP FREE DROP
+  REPEAT
+  0 BUF-RETIRED ! ;
+
+: BUF-ENSURE ( u body --- )
+\ Make the buffer described at body hold at least u bytes.
+  2DUP CELL+ @ > 0= IF 2DROP EXIT THEN        \ already big enough
+  SWAP OVER CELL+ @ 2* MAX BUF-ROUND          ( body n )
+  DUP ALLOCATE ABORT" BUFFER: out of memory"  ( body n a )
+  2 PICK @ ?DUP IF                            ( body n a old )
+    DUP 2 PICK 5 PICK CELL+ @ MOVE
+    DUP IN-ARENA? IF DROP ELSE BUF-RETIRE THEN   \ carved: left, not freed
+  THEN
+  2 PICK !  SWAP CELL+ ! ;
+
+\ The two words shell code uses, both IMMEDIATE, taking the buffer's
+\ name at compile time. They compile its descriptor as an offset from
+\ START and add START back when they run: ['] would compile an
+\ absolute address, which is wrong the moment a saved image reloads
+\ somewhere else.
+: BUF-BODY, ( "name" --- )
+  ' >BODY START @ - POSTPONE LITERAL POSTPONE START POSTPONE @ POSTPONE + ;
+
+: BUFFER-BODY ( --- body )  ( compiling: "name" --- )
+  BUF-BODY, ; IMMEDIATE
+
+: ENSURE-BUFFER ( u --- )   ( compiling: "name" --- )
+  BUF-BODY, POSTPONE BUF-ENSURE ; IMMEDIATE
+
+: BUFFER-SIZE ( --- u )     ( compiling: "name" --- )
+  BUF-BODY, POSTPONE CELL+ POSTPONE @ ; IMMEDIATE
+
+: ALLOC-BUFFERS ( --- )
+  \ Give every declared buffer its space. Called at boot, because
+  \ RESET-BUFFERS zeroed every pointer before the image was written -
+  \ a heap address means nothing after a save and reload. A turnkey
+  \ image must call this before touching any buffer; shell.4's MAIN
+  \ does it first thing.
+  0 BUF-LIST @ BEGIN DUP WHILE                 \ their total, rounded
+    START @ + DUP CELL+ @ BUF-ROUND ROT + SWAP  2 CELLS + @ REPEAT DROP
+  DUP ALLOCATE ABORT" BUFFER: out of memory"  DUP ARENA !  + ARENA-END !
+  ARENA @ BUF-LIST @ BEGIN DUP WHILE           \ each carved from the arena
+    START @ + 2DUP ! DUP CELL+ @ BUF-ROUND ROT + SWAP  2 CELLS + @ REPEAT 2DROP ;
+
+: RESET-BUFFERS ( --- )
+  \ Release every allocated buffer and mark it unallocated again.
+  \ Called by SAVE-SYSTEM before writing, so a saved image never
+  \ contains a stale heap address - and, incidentally, so two builds
+  \ of identical sources produce identical images.
+  BUF-FREE-RETIRED
+  BUF-LIST @
+  BEGIN DUP WHILE
+    START @ +                     ( body )
+    DUP @ ?DUP IF DUP IN-ARENA? IF DROP ELSE FREE DROP THEN THEN
+    DUP 0 SWAP !
+    2 CELLS + @                   ( link of the previous declaration )
+  REPEAT DROP
+  ARENA @ ?DUP IF FREE DROP THEN  0 ARENA !  0 ARENA-END ! ;   \ once
+
+
+BASE !

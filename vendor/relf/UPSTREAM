@@ -1,5 +1,5 @@
 url     https://github.com/kt97679/relf
-rev     origin/article-2026
-commit  9934f3f2303fb0597be4012251438549cbc97a25
-date    2026-10-01
-subject Iteration 602: Forth calling back into the shell - the gap checks for room above the data stack's guard, which nested forth commands jumped over; forthfuzz tries callbacks; 139,036 bytes, 1,079 assertions
+rev     origin/master
+commit  8ec0e75396c4d767b404d6f183b7f60b2759bf43
+date    2026-10-06
+subject Iteration 718: argument passing with Forth kept - 88.7 % of call sites pass one cell or none, 64 % keep at most one cell alive across the call; the stack's bytes a third in straight code, a quarter beside branches, a third beside calls; options A-D and their mapping onto 32-bit code; master only

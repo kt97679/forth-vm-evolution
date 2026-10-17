@@ -1,0 +1,86 @@
+\ tools/dict-report.4 - walk the dictionary and print one line per
+\ word: header bytes, body bytes, name. Used by Iteration 129 to find
+\ out where a shell image's bytes actually go.
+\
+\ Header layout, from kernel.4's HEADER (and cross.4's "HEADER): a
+\ 1-3 byte link holding the distance back to the previous name field
+\ in the same thread, tag byte last; then a count byte with bit 7 set
+\ as a marker; then the name, unpadded; then the body. kernel.4's
+\ PREV-NFA decodes the link. FORTH-WORDLIST is a HASHED word list -
+\ [thread count][head 0..n-1] - not a single chain, so no one chain
+\ reaches every word and no chain is in address order.
+\
+\ Body extent is computed as "start of the next word BY ADDRESS's
+\ link, minus the end of this word's name field", which works
+\ because the dictionary is laid down strictly upward. That is why
+\ this collects every nfa from all 32 threads and sorts them by
+\ address descending before walking: following a single chain would
+\ visit a third of the dictionary and compute every body extent
+\ against the wrong neighbour.
+\
+\ Usage (i386 build shown; the same works for 8-byte cells):
+\   printf 'S" forth/pool.4" INCLUDED\nS" forth/shadow.4" INCLUDED\n\
+\           S" shell/shell.4" INCLUDED\nS" tools/dict-report.4" INCLUDED\n' \
+\     | ./relf32 kernel32.img
+\
+\ A body's bytes include the padding a data body carries before its
+\ parameter field. The bytes before the first word - the two boot
+\ calls and the locals cells - belong to no word, so TOTALHERE exceeds
+\ the sum of the lines by exactly that much.
+
+BASE @ DECIMAL
+VARIABLE NFA
+VARIABLE NFATAB
+VARIABLE #NFA
+VARIABLE TA
+VARIABLE BE
+: CELLB 1 CELLS ;
+
+\ ABORT" is compile-only, so this has to be a definition rather than a
+\ line typed at the interpreter.
+: INIT-NFATAB 8192 CELLS ALLOCATE ABORT" dict-report: out of memory" NFATAB ! ;
+INIT-NFATAB
+
+: COLLECT ( --- )
+\ Every nfa in every thread, in whatever order the chains give them.
+  0 #NFA !
+  FORTH-WORDLIST @ 1+ 1 DO
+    FORTH-WORDLIST I CELLS + @ NFA !
+    BEGIN NFA @ WHILE
+      NFA @ NFATAB @ #NFA @ CELLS + !
+      1 #NFA +!
+      NFA @ PREV-NFA NFA !
+    REPEAT
+  LOOP ;
+
+: LINKBYTES ( nfa --- n )   \ the length of the link in front of nfa
+  1- C@ DUP 128 U< IF DROP 1 ELSE 192 U< IF 2 ELSE 3 THEN THEN ;
+: SWAPC ( a --- )
+  TA !
+  TA @ @ TA @ CELLB + @
+  TA @ ! TA @ CELLB + ! ;
+
+: SORTNFA ( --- )
+\ Descending by address. A bubble sort: it runs once over a few hundred
+\ entries and the clarity is worth more than the cycles.
+  #NFA @ 1- 0 DO
+    #NFA @ 1- 0 DO
+      NFATAB @ I CELLS +
+      DUP @ OVER CELLB + @ < IF SWAPC ELSE DROP THEN
+    LOOP
+  LOOP ;
+
+: WALK
+  COLLECT SORTNFA
+  #NFA @ 0 DO
+    NFATAB @ I CELLS + @ NFA !
+    \ The newest word by address - first in this order - ends at HERE.
+    \ Anything else ends where the next word's link begins.
+    I 0= IF HERE ELSE NFATAB @ I 1- CELLS + @ DUP LINKBYTES - THEN BE !
+    NFA @ C@ 31 AND 1+ NFA @ LINKBYTES +
+    BE @  NFA @ NAME> -
+    S" W " TYPE SWAP . . NFA @ 1+ NFA @ C@ 31 AND TYPE CR
+  LOOP ;
+WALK
+S" TOTALHERE " TYPE HERE START @ - . CR
+BASE ! BYE

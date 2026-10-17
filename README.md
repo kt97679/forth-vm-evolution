@@ -145,6 +145,8 @@ Start and steer:
 - `HANDOFF.md` - the present: the state, the routine for a returned seed, the owner's standing decisions, open items, lessons, what every turn does before it ends. A new chat starts here.
 - `HANDOFF-PROMPT.md` - the two messages for switching chats: close the old one, start the new one.
 - `GOALS.md` - the aim, how success is measured and judged, conventions, the owner's later plans, the register of rejected or deferred ideas.
+- `RELF.md` - this lab and RelF, the project it is the base of (Iteration 356): what relf asks of it, the adoption criteria, the plan.
+- `LICENCE.md` - GPLv2 only, as RelF and SOD32.
 - `PROGRESS.md` - the log, one entry per iteration, append-only.
 
 The systems and their findings:

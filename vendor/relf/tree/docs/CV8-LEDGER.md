@@ -1,0 +1,382 @@
+# CV8-LEDGER.md - what each change to CV8 gained, and what it cost
+
+Since Iteration 679, at the user's asking: CV8 - the bytecode engine and
+its two engines, C and assembly, and the shell they run - takes back what
+the native back end learned, item by item, and each item is entered here
+with its gain and its cost, so the whole is visible: what we are getting,
+and what it costs us. The native shell is the baseline: CV8's distance
+from relf's fastest is the last row of every measurement.
+
+## How a row is measured
+
+`tools/cv8-ledger.py BASE` builds BASE in a scratch worktree and measures
+the checkout against it on this VM, interleaved: the asm engine's shell
+and the C engine's on tools/bench-vm.py's five workloads (SCALE=5; a
+ratio under 1 is faster), each engine on bench/langs/bench.4's seven
+kernels (best of 3 a round, alternated; their geometric mean), the
+engines', shells' and images' bytes, and the asm engine's shell as times
+the native shell. A fury pack confirms a batch, as for the native back
+end (prompts/19): VM ratios choose, fury's report claims.
+
+**The noise floor (679):** the unchanged tree against itself, 5 rounds -
+the asm shell 0.997-1.046, the C shell 0.939-1.075, bench.4 0.97-1.06. A
+difference under 5 % on the shell, or 4 % on bench.4, is not a gain at 5
+rounds; rows that claim less use more rounds.
+
+## The baseline (Iteration 678)
+
+CV8 as it stands, against the native shell. Fury at 676 (times dash):
+
+| | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine's shell | 27.8 | 34.6 | 30.0 | 35.1 | 41.6 |
+| C engine's shell | 28.7 | 35.4 | 30.5 | 37.3 | 41.9 |
+| native shell | 2.88 | 3.50 | 2.89 | 3.67 | 3.83 |
+| asm shell, times native | 9.7 | 9.9 | 10.4 | 9.6 | 10.9 |
+
+On the VM (679's run): the asm shell 13.7, 11.9, 11.8, 12.3, 12.0 times
+native. bench.4 on fury: native 0.13 of the asm engine's time, 0.13 of
+the C engine's. Bytes: relfasm64 15,856, relf64 45,360, relfshasm64
+141,844, relfsh64 171,348, kernel64.img 9,840, kernel64-shell.img 125,972.
+
+## The items (from 678's reply, in order)
+
+1. The asm engine's string primitives - CSTRLEN, SCAN, MOVE, COMPARE,
+   FILL - without the microcoded rep and repne instructions for short
+   strings, as native-rt.4's since 644, 647 and 652. The asm engine only:
+   the C engine calls the C library's.
+2. `(S")` as an engine instruction: a string literal in one dispatch,
+   where the colon word took a call, five instructions and a return.
+3. Grouped saves and restores of locals: one instruction a run, where
+   each local took one.
+4. Inlining small colon words (OPTIMIZATIONS.md S6).
+
+## Entries
+
+(one per item, newest last: what was built, the ledger's block, the cost
+in bytes and source, and fury's figures when a pack has them)
+
+### 679, item 1: the asm engine's string primitives - built, measured, reverted
+
+Built: native-rt.4's MOVE (a byte loop under 16), COMPARE (eight bytes at
+a time, then a byte loop), SCAN (a byte loop) and CSTRLEN (one load where
+the first eight bytes lie in one page, else aligned eight at a time)
+ported into relfasm64.4's handlers - native's rbx and rbp are the asm
+engine's r12 and r13 - in place of repne scasb, rep movsb and repe cmpsb.
+FILL was native's already. The engines' outputs the same on
+tests/native/kernel-str.4 and the other string tests.
+
+| shell, SCALE=5, 7 rounds | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine, against 678 | 1.020 | 1.015 | 1.029 | 1.006 | 1.058 |
+| C engine, unchanged: the noise | 1.025 | 0.989 | 0.907 | 1.028 | 0.962 |
+
+bench.4: the asm engine's geomean 1.001. Cost: relfasm64 +216 bytes.
+
+**Got nothing; reverted.** Natively the same routines were 6-14 % of the
+profile because everything around them had become fast; in CV8 a dozen
+dispatches surround each call, and the microcoded instructions' slow
+start is lost among them. The lesson for the items after it: the native
+back end's profile prices native code, not CV8 - each item is priced on
+CV8 itself, by doing its work twice, before it is built.
+
+### 680, items 2-4 priced on CV8 - by doing each one's work twice
+
+Each priced before building, on CV8 itself (679's lesson), the work done
+twice with behaviour unchanged, A/B against 679's shells, 9 rounds:
+
+| shell, SCALE=5 | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| 2: every string literal twice - asm | 1.038 | 1.026 | 0.981 | 1.031 | 1.019 |
+| 2: the same - C | 0.969 | 1.005 | 0.979 | 0.955 | 0.968 |
+| 3: every local saved and restored twice - asm | 0.990 | 0.997 | 1.025 | 1.032 | 1.037 |
+| 3: the same - C | 0.997 | 1.003 | 0.992 | 1.015 | 1.044 |
+| 4: an extra call and return at every call - asm | 1.337 | 1.391 | 1.317 | 1.373 | 1.368 |
+| 4: the same - C | 1.375 | 1.332 | 1.413 | 1.390 | 1.334 |
+
+**Item 2, `(S")` as an instruction: not built.** All of a string
+literal's runtime, done twice, is inside the noise: an instruction that
+saved part of it could not be seen.
+**Item 3, grouped locals: not built,** for the same reason.
+**Item 4, inlining small colon words: next.** One more call and return
+at every call site costs a third of CV8's time on every workload, on both
+engines: calls and returns are where CV8 spends, and inlining the small
+words removes some of them outright. How many depends on how many of the
+calls executed go to words small enough to copy - the first thing to
+count before it is built. (Item 4's first pricing build used ['] in
+kernel.4, which the cross compiler refuses; the images were not rebuilt,
+and its A/B compared two copies of one shell - noise, caught by their
+equal sizes and the failed build's status. Rebuilt with POSTPONE, guarded
+against its own recursion.)
+
+### 681, item 4 stage a: a constant's use compiled as its literal
+
+First, how many calls are there to inline? tools/profile.py's
+PROFILE_CALLS=1, new: every call site's dispatches summed by the word it
+calls, on the realistic script. 1,849,354 calls, a call and an EXIT each:
+18.2 % of 20.3 million dispatches. Calls to words of at most 2
+instructions, EXIT included: 16.7 %; 3: 39.3 %; 4: 52.4 %; 6: 69.1 %.
+The most called: X@ 9.2 % (4 instructions), * 5.1 (3), NIP 4.8 (3), XF@
+4.6 (5); and among the 2-instruction words, constants - SHVAR-NAME-MAX,
+ENC-CTL, WF-QUOTED, T-SIMPLE: CV8's CONSTANT is HEADER REVEAL LIT, EXIT,
+a call each time it is used.
+
+Built: kernel.4's COMPILE, compiles a word whose body is one literal and
+EXIT - LIT-LEN knows the five literal forms - as that literal: the word
+EXECUTEd at compile time, its value LIT,'d. The word stays for ' and
+EXECUTE; nothing patches a constant's body later (checked). The native
+cross compiler skips the two new helpers, as the other CV8 back-end
+words: the native kernel is byte for byte the same, and builds itself.
+
+Calls on the realistic script 1,849,354 -> 1,545,820 (-16.4 %), calls to
+2-instruction words 308,387 -> 4,850, dispatches 20.3 -> 19.6 million.
+
+| 7 rounds, against 680 | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine's shell | 0.998 | 0.949 | 0.957 | 1.005 | 0.936 |
+| C engine's shell | 0.957 | 0.943 | 0.970 | 0.968 | 0.951 |
+| asm shell, times native | 12.3 | 12.2 | 12.1 | 11.7 | 12.0 |
+
+bench.4: the asm engine's geomean 0.936 (matrix 0.791, bubble 0.864,
+sieve 0.919), the C engine's 0.958 - its kernels' constants are laid as
+literals now too. **Cost:** the kernel image +104 bytes (the two
+helpers); the shells -272 bytes - a literal is shorter than a call.
+**Got:** 3-6 % on the shells (at the noise floor's edge, both engines
+agreeing), 4-6 % on bench.4.
+
+**Fury at 681** (its pack, 682; times dash, against 676's run): the C
+engine's shell loop 27.2 (28.7), fn 34.1 (35.4), str 28.2 (30.5), arith
+34.4 (37.3), realistic 37.4 (41.9) - ratios 0.89-0.96, implied 0.92-0.99;
+the asm engine's 27.6, 34.8, 28.4, 35.1, 39.3 - ratios 0.95-1.01, inside
+fury's noise. The C engine's gain is claimed there; the asm engine's is
+not, yet.
+
+### 683, item 4 stage b: small straight words inlined
+
+Built: kernel.4's COMPILE, decodes the word it is asked to call
+(INLINE-LEN): at most four instructions before its EXIT and at most 12
+bytes, each one that means the same anywhere - operand-free stack,
+arithmetic and memory opcodes, literals, ADDI and EQI, VAR@ and VAR!,
+ESC primitives but RP@ and RP!, and calls, unless the called word begins
+R> or R@ ((S") and (POSTPONE) take their return address and data follows
+the call). No branch, no return-stack word, no locals, no data word. Such
+a body is laid in place of the call (INLINE-COPY), each instruction as it
+is - calls are offsets from START, the same anywhere - but VAR@ and VAR!,
+whose slots are offsets from the operand itself: SLOT@ reads one back,
+SLOT, lays it again from its new place. The first build copied slots as
+they were: the 4-byte image's cross-compile, run by the new 8-byte image,
+crashed, and `VARIABLE V : T5 V @ ; : T6 T5 1+ ;` printed garbage. Then
+U> - extend.4's, not the kernel's - stopped the cross compiler.
+
+tests/native/kernel-inl.4 (verify's native:inl): near and far slots (the
+three-byte form, past 16 KB), nesting, words that must stay calls - S"
+inside, R@, a branch - constants, ESC, EXECUTE; the native kernel, which
+does not inline this way, is the oracle, and CV8's engines print what it
+prints.
+
+Calls on the realistic script 1,545,820 -> 863,539 (-44 %); dispatches
+19.6 -> 18.3 million; calls to words of at most five instructions 4,823.
+
+| 7 rounds, against 682 | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine's shell | 0.896 | 0.929 | 0.948 | 0.940 | 0.901 |
+| C engine's shell | 0.939 | 0.926 | 0.938 | 0.953 | 0.953 |
+| asm shell, times native | 12.3 | 11.5 | 11.6 | 11.2 | 10.4 |
+
+bench.4: asm 0.939 (matrix 0.810, fannkuch 0.807), C 0.944. **Cost:** the
+shells +3,600 bytes (+2.5 %), the kernel image +504 (the inliner).
+**Got:** 5-10 % on the asm shell, 5-7 % on the C shell, 6 % on bench.4.
+A size-neutral variant - only bodies no longer than the call - is a
+candidate for GOALS.md 10's search.
+
+### 684, item 4: the inliner's limits, two ways from 683's
+
+After 683 the most called words were XF@ and XV@ (9.8 and 5.1 % of the
+calls left), seven instructions now - X@ inlined into them made them too
+big to inline in turn - then PICK, (S"), SHVAR-NAME-SLOT, STOP?, six
+each. The limits became two constants, INL-MAXI and INL-MAXB, and each
+was moved and measured against 683 (four instructions, 12 bytes):
+
+| 7 rounds, against 683 | loop | fn | str | arith | realistic | shells' bytes |
+|---|---:|---:|---:|---:|---:|---:|
+| 6 and 16, asm | 0.977 | 0.999 | 1.014 | 1.021 | 0.979 | +3,544 |
+| 6 and 16, C | 1.004 | 0.981 | 0.982 | 0.994 | 0.982 | |
+| 4 and 6, asm | 1.007 | 0.967 | 1.018 | 0.991 | 0.990 | -424 |
+| 4 and 6, C | 1.004 | 0.971 | 1.002 | 0.999 | 0.993 | |
+
+Six and 16 took 27 % more of the calls away - 863,533 -> 626,110 - and
+bought nothing measurable for 3,544 bytes: rejected. Four and 6 bytes
+kept 683's time (calls 872,256, 1 % more than 683's) and gave back 424
+of its 3,600 bytes: **kept.** The most called word, X@, is 5 bytes; the
+gain is in the very smallest words. bench.4: 0.997 both ways.
+
+## Items 1-4 together (685)
+
+The tree at 684 against 678's, the ledger's whole run, 9 rounds - what
+the four items got CV8, and what they cost:
+
+Measured on vm, a4a92c1 against 07d457c, 9 rounds:
+
+| shell, SCALE=5 | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine, against base | 0.907 | 0.896 | 0.923 | 0.915 | 0.874 |
+| C engine, against base | 0.922 | 0.908 | 0.905 | 0.899 | 0.880 |
+| asm engine, times native | 11.784 | 11.051 | 11.555 | 11.222 | 10.828 |
+
+| engine, bench.4 | fib | loop | sieve | bubble | matrix | fannkuch | collatz | geomean |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| asm engine, against base | 0.993 | 1.003 | 0.901 | 0.863 | 0.642 | 0.820 | 0.985 | 0.878 |
+| C engine, against base | 1.002 | 1.010 | 0.897 | 0.967 | 0.686 | 0.809 | 0.975 | 0.899 |
+
+| bytes | relfasm64 | relf64 | relfshasm64 | relfsh64 | forth/kernel64.img | kernel64-shell.img |
+|---|---:|---:|---:|---:|---:|---:|
+| base | 15856 | 45360 | 141844 | 171348 | 9840 | 125972 |
+| now | 15856 | 45360 | 144748 | 174252 | 10480 | 128876 |
+| change | +0 | +0 | +2904 | +2904 | +640 | +2904 |
+
+**Got:** the asm engine's shell 8-13 % faster on every workload, the C
+engine's 8-12 %; bench.4 12 % and 10 % (matrix 36 %). The asm shell
+from 11.8-13.7 times the native shell's time (679) to 10.8-11.8.
+**Cost:** the shells +2,904 bytes (2.0 %), the kernel image +640; the
+engines unchanged. All of it from item 4: constants as literals (681),
+small bodies copied in place of calls (683), the limits tuned (684).
+Items 1-3 were built and reverted, or priced and not built - their cost
+nothing. Fury's confirmation of 683-684 is the next pack's.
+
+### 701, GOALS.md 10 on CV8: the inliner's limits swept
+
+The user's idea 10 for CV8: faster without a larger image. Its knobs
+here are 683's two limits, INL-MAXI and INL-MAXB (684 left them at 4
+instructions and 6 bytes). Each pair against 700's tree by the ledger, 7
+rounds:
+
+| limits (instructions, bytes) | shells' bytes | asm shell: loop fn str arith realistic | C shell |
+|---|---:|---|---|
+| 4, 5 | -1,520 | 0.992 1.048 1.005 1.015 0.998 | 0.994 1.010 1.013 1.037 1.008 |
+| **3, 6** | **-1,648** | 1.001 1.000 1.012 0.969 1.012; 11 rounds 0.973 0.996 0.990 1.016 1.006 | 0.980 1.050 1.002 1.026 1.020; 0.982-1.037 |
+| 3, 5 | -1,728 | 1.007 1.047 1.012 1.036 1.015 | 0.999 1.014 1.003 1.043 1.025 |
+| 5, 8 | +1,960 | 0.990 1.008 1.006 0.987 0.954 | 0.991 1.000 0.966 1.008 0.994 |
+
+Nothing came out faster at the same size or less: 5 and 8 may be a
+little faster on realistic, but it is 1,960 bytes larger, which the
+condition rules out. 3 and 6 is smaller by 1,648 bytes with every
+workload inside the ledger's noise in two runs: **kept.** A fourth
+instruction bought bytes, not time. The shells: asm 144,748 -> 143,100,
+C x86-64 168,012 -> 166,364, i386 150,196 -> 148,584.
+
+**Fury at 702** (its pack, 703; times dash, against 681's run). Item 4's
+inlining (683, 684) and 701's limit, with 702's factoring:
+
+| shell | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine, 681 | 27.6 | 34.8 | 28.4 | 35.1 | 39.3 |
+| asm engine, 702 | 25.6 | 31.8 | 28.2 | 34.8 | 38.4 |
+| asm, implied time | 0.930 | 0.914 | 0.957 | 0.959 | 0.931 |
+| C engine, 681 | 27.2 | 34.1 | 28.2 | 34.4 | 37.4 |
+| C engine, 702 | 25.4 | 31.4 | 27.6 | 33.0 | 37.8 |
+| C, implied time | 0.937 | 0.919 | 0.943 | 0.928 | 0.962 |
+
+Both CV8 shells 4-9 % faster on fury, as the VM's ledger said of 683
+(5-10 %) - claimed. With 676 and 681 before them, the asm engine's shell
+since 672: loop 29.3 -> 25.6, fn 36.6 -> 31.8, arith 38.7 -> 34.8,
+realistic 41.9 -> 38.4 times dash. A run at 691 in the same pack (c6aaf26)
+agrees: asm 25.0, 31.9, 26.6, 34.2, 37.8. bench.4's single runs on fury
+moved both ways (the asm engine's sieve 315 -> 429 ms, its fib 74 -> 51)
+- too few runs to read; the shell's interleaved runs are the claim.
+
+### 709, ARGV-ADD's eight arrays priced - not redesigned
+
+The user chose the redesign of CV8's hottest data structures, and
+ARGV-ADD first: 4.8 % of the realistic script's dispatches, filling
+eight parallel arrays - ARGV, ARGV-NODES, and six byte flags - for each
+argument, 57 references to them across the shell. Priced before
+building, on CV8 itself, by doing its stores' work again with behaviour
+unchanged - each of the eight read back and written - against 708's
+tree, 9 rounds:
+
+| shell | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine, all of ARGV-ADD's stores twice | 1.014 | 1.019 | 1.021 | 1.009 | 1.020 |
+| C engine, the same | 1.033 | 1.036 | 1.017 | 1.022 | 1.024 |
+
+The whole of that work is 1-3.5 % of CV8's time; a redesign that halved
+it would gain 1-2 %, under what the ledger resolves, for a change to 57
+places. Not built. CV8's profile is flat now - NAME-HASH 4.8 %, ARGV-ADD
+4.8, EXPAND-WORDS 4.2, EW-ENTRY 4.0, FIND-SHVAR 3.6, XF@ 3.2, VALID-NAME?
+2.6, DEFER 2.5 - and its dispatches are cheap ones: no one structure
+holds a share a redesign could show.
+
+### 710, the tree readers priced - the next candidate
+
+XF@ and XV@ - 3.2 % and 1.7 % of the realistic script's dispatches, each
+a call to `1+ CELLS + X@` or `2 + CELLS + X@` (too long for 701's
+inliner) - priced the same way: each read done twice, behaviour
+unchanged, against 709's tree, 9 rounds:
+
+| shell | loop | fn | str | arith | realistic |
+|---|---:|---:|---:|---:|---:|
+| asm engine, XF@ and XV@ twice | 1.030 | 1.044 | 1.027 | 1.027 | 1.013 |
+| C engine, the same | 1.010 | 1.022 | 1.023 | 1.035 | 1.034 |
+
+Their bodies' work is 1-4.5 %, and a call and an EXIT besides at every
+use. As engine primitives - a node's field and a vector's item fetched
+in one dispatch, as CTABLE-FIND (676) made the variable scan - they
+could give back most of both: 676's kind of gain, at the edge of what
+the ledger resolves. Not begun; the user's to choose.
+
+### 716, the native back end's improvements against CV8 - the whole list
+
+The user asked whether everything applicable from the native back end
+is in CV8. Each native rule or change (NATIVE.md 9, 11-15; the log
+600-715), and where CV8 stands. Shares are from CV8's profile of the
+realistic script at 715 (bench/reports/cv8-profile-realistic-716.txt):
+18.4 million dispatches, 934,905 calls - a call and its EXIT, 10.2 % of
+them.
+
+**In CV8 already.** A constant's use as its literal (native 627; CV8
+681). Small words copied in place of their calls (native 646, 651;
+CV8 683-684, its limits swept at 701 as native's were at 700). A
+variable's fetch or store in one dispatch (native 707's fetch-then-op;
+CV8's VAR@ and VAR! long before, and BUFFER:'s since 260). A literal
+folded into + and = (native 628; CV8's ADD-IMM8 and EQ-IMM8, 8-bit). The
+variable scan as a primitive (676, all three engines). The top of the
+stack in a register (the asm engine's r12). Written data apart from code
+(native 626: the asm engine's BSS is 64 KB past its code, a segment never
+written; the C engine's by its toolchain). Short encodings (native
+687-699): CV8's own design - two- and three-byte calls, BRANCH8 and
+0BRANCH8, LIT0 and its kin, LIT16.
+
+**Tried in CV8, worth nothing there.** The string primitives without
+rep and repne (native 644-652; CV8 679: inside the noise, reverted). The
+hash as a primitive (678, all engines: reverted). A string literal's
+runtime and grouped locals (680: their work done twice was inside the
+noise).
+
+**Applicable, not done - by what they would take away:**
+
+| native | CV8 now | share of the realistic script's dispatches |
+|---|---|---:|
+| direct reads of a tree's fields (628's @ from an address) | XF@, XV@ colon words of 7 | 4.9 % (710 priced) |
+| DEFER's call inline (a jump in the stub) | DEFER, a colon word | 2.5 % |
+| +LOOP inline code (630) | (+LOOP), a colon word of 29 | 1.7 % |
+| PICK inline | PICK, a colon word of 6 | 1.5 % |
+| compares fused with IF/WHILE/UNTIL, OVER with an op, DUP 0= IF, more ops taking a literal (628, 629, 661-669, 705-707) | one dispatch each: fused pairs given up at 536 (QUESTIONS.md A15) | about 8 % of dispatches were pairs when they went |
+| the kernel's own code folded and inlined by its cross compiler (627, 705-707) | cross.4 has PEEP-IMM and PEEP-VAR, not 681's constants or 683's inlining | not priced |
+| a CREATE'd word's address pushed inline (627) | a call when not followed by @ or ! | not among the most called: small |
+| DO loops in registers (630) | (LOOP) keeps its counter at [r15] | small: the dispatch dominates |
+| loop starts aligned (714) | bytecode is data; the asm engine's handlers are not aligned | not measured |
+| `LIT n -` - native folds it | not folded: ADD-IMM8 with -n would do it, no new opcode | small |
+| a separate data region (672, 674) | data among the bytecode | memory, not speed |
+
+The first five rows are instructions or fused instructions: the engines'
+instruction set, which forth-vm-evolution is searching (paused for it
+since 711). The cross compiler's constants and inlining, the address
+push, `LIT n -`, the handlers' alignment and the data region are not -
+they could go now, the first three priced first, by doing their work
+twice.
+
+**Not applicable:** what native does to machine code itself - literals
+and branches at their shortest (687-699: CV8 was born short), 0 by xor
+(690), the data stack's register (697), the CREATE stub's bytes (698),
+the deferred push (704) and arguments in registers (675) - a stack
+machine's bytecode has no registers to allocate.

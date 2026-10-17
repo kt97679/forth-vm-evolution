@@ -1286,6 +1286,17 @@ L_scan: SPILL(); { /* c-addr1 u1 c --- c-addr2 u2 : from the first c, or the end
 L_cstrlen: SPILL(); /* c-addr --- u : a NUL-terminated string's length */
     DS0 = (UNS64)strlen((const char *)(uintptr_t)DS0);
     FILLNEXT();
+L_ctablefind: SPILL(); { /* c-addr table count width --- i | -1 (Iteration 676): the first */
+    /* of count NUL-terminated names, width bytes apart, that is c-addr's */
+    /* not t: NEXT's own opcode variable is t */
+    const char *name = (const char *)(uintptr_t)DS3, *e = (const char *)(uintptr_t)DS2;
+    INT64 n = (INT64)DS1, w = (INT64)DS0, i, r = -1;
+    for (i = 0; i < n; i++, e += w)
+        if (e[0] == name[0] && strcmp(e, name) == 0) { r = i; break; }
+    DS3 = (UNS64)r;
+    dsp += 3 * CELL_BYTES;
+    FILLNEXT();
+}
 /*  Directories, for pathname expansion (Iteration 267): libc's
  *  opendir/readdir/closedir. READ-DIR's name is valid until the next
  *  READ-DIR on that directory.  */
@@ -1340,7 +1351,12 @@ L_sigaction: SPILL(); { /* signo action --- ior : 0 default, 1 ignore,
         sa.sa_handler = act == 1 ? SIG_IGN
                       : (act == 2 || act == 3) ? sig_catch
                       : act == 4 ? sig_int_throw : SIG_DFL;   /* 571 */
-        sig_flag[sig] = 0;
+        /*  A caught signal not yet taken is kept when the signal stays
+         *  caught (Iteration 606): the forth builtin's switch to the
+         *  throw route erased a ^C that came just before it, and an
+         *  endless Forth loop then ran on (tools/intrfuzz.py). To default
+         *  or ignore, it means nothing any more.  */
+        if (act < 2) sig_flag[sig] = 0;
         DS1 = sigaction(sig, &sa, (struct sigaction *)0) ? (UNS64)(INT64)-errno : 0;
     }
     dsp += CELL_BYTES;

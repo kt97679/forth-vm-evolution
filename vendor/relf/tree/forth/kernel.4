@@ -1,0 +1,2052 @@
+\ This is the file kernel.4, included by the cross compiler to build
+\ machine-idependent binary image for RelF (Relative Forth).
+\ Based on SOD32 by L.C. Benschop
+\ Copyright 2001 - 2005, Kirill Timofeev, kt97679@gmail.com
+\ The program is released under the GNU General Public License version 2.
+\ There is NO WARRANTY.
+
+CROSS-COMPILE
+
+\ PART 0: BOOT VECTORS.
+
+COLD \ call to cold start location: the engine starts executing here,
+     \ with the image's base address on the data stack.
+WARM \ call to warm start location.
+LOCALS-CELLS \ one cell at image offset 8, for the engine's locals
+     \ opcodes: shadow.4 fills it in when it loads (CV8.md
+     \ 6.3), and SAVE-SYSTEM saves them with the rest of the image.
+
+\ PART 1: LOW-LEVEL PRIMITIVES
+
+PRIMITIVE NOOP  ( --- )
+\ Do nothing
+
+PRIMITIVE EXIT  ( --- )
+\ Leave high-level definition
+
+PRIMITIVE LIT    ( --- lit)
+\ Push literal on the stack (literal number is in-line).
+
+PRIMITIVE BRANCH ( --- )
+\ Unconditional jump (with inline argument)
+
+PRIMITIVE ?BRANCH ( --- )
+\ Conditional jump (with inline argument)
+
+PRIMITIVE DROP   ( x ---)
+\ Discard the top item on the stack.
+
+PRIMITIVE DUP    ( x --- x x )
+\ Duplicate the top cell on the stack.
+
+PRIMITIVE SWAP  ( x1 x2 --- x2 x1 )
+\ Swap the two top items on the stack.
+
+PRIMITIVE ROT   ( x1 x2 x3 --- x2 x3 x1 )
+\ Rotate the three top items on the stack.
+
+PRIMITIVE OVER   ( x1 x2 --- x1 x2 x1)
+\ Copy the second cell of the stack.
+
+PRIMITIVE C@      ( c-addr --- c)
+\ Fetch character c at c-addr.
+
+PRIMITIVE @       ( a-addr --- x)
+\ Fetch cell x at a-addr.
+
+PRIMITIVE C!      ( c c-addr --- )
+\ Store character c at c-addr
+
+PRIMITIVE !       ( x a-addr --- )
+\ Store cell x at a-addr
+
+PRIMITIVE AND     ( x1 x2 --- x3)
+\ Bitwise and of the top two cells on the stack.
+
+PRIMITIVE OR      ( x1 x2 --- x3)
+\ Bitwise or of the top two cells on the stack.
+
+PRIMITIVE XOR     ( x1 x2 --- x3)
+\ Bitwise exclusive or of the top two cells on the stack.
+
+PRIMITIVE R>     ( --- x)
+\ Pop the top of the return stack and place it on the stack.
+
+PRIMITIVE >R     ( x ---)
+\ Push x on the return stack.
+
+PRIMITIVE R@     ( --- x)
+\ x is a copy of the top of the return stack.
+
+PRIMITIVE =    ( x1 x2 --- f)
+\ f is true if and only if x1 equals x2.
+
+PRIMITIVE U<      ( u1 u2 ---- f)
+\ f is true if and only if unsigned number u1 is less than u2.
+
+PRIMITIVE <      ( n1 n2 --- f)
+\ f is true if and only if signed number n1 is less than n2.
+
+PRIMITIVE +       ( w1 w2 --- w3)
+\ Add the top two numbers on the stack.
+
+PRIMITIVE UM*     ( u1 u2 --- ud )
+\ Multiply two unsigned numbers, giving double result.
+
+PRIMITIVE SP@      ( --- a-addr)
+\ Return the address of the stack pointer (before SP@ was executed).
+
+\ The OS/libc primitives: 3.2% of static sites and 0.006% of
+\ dispatches, so they sit behind ESC + a selector byte and leave the
+\ one-byte opcodes to the words that matter (CV8.md 2.2).
+\ Every primitive must be declared before the first definition that
+\ compiles anything: the synthetic opcodes are numbered from the total.
+ESCAPED
+
+PRIMITIVE BYE  ( ---)
+\ Terminate the execution of Forth, return to host OS.
+
+PRIMITIVE OPEN-FILE
+PRIMITIVE CLOSE-FILE
+PRIMITIVE SYSTEM
+PRIMITIVE REPOSITION-FILE
+PRIMITIVE FILE-POSITION
+PRIMITIVE DELETE-FILE
+PRIMITIVE FILE-SIZE
+
+\ Process-control primitives (shell support, see PROGRESS.md). Order
+\ here must match cv8.c's dispatch table exactly, since PRIMITIVE
+\ assigns opcodes sequentially as each of these lines is processed.
+PRIMITIVE FORK      ( --- pid )
+PRIMITIVE EXECVE    ( argv-addr path-addr --- ior )   \ ior: -errno
+PRIMITIVE WAITPID   ( pid --- status ior )
+PRIMITIVE PIPE      ( --- fd-read fd-write ior )
+PRIMITIVE DUP2      ( oldfd newfd --- ior )
+PRIMITIVE GETENV    ( c-addr --- addr )
+PRIMITIVE SETENV    ( value-addr name-addr --- ior )
+PRIMITIVE SYS-EXIT  ( n --- )
+PRIMITIVE CHDIR     ( c-addr --- ior )
+PRIMITIVE GETCWD    ( addr max-len --- len ior )
+PRIMITIVE SYS-ARGC  ( --- n )
+PRIMITIVE SYS-ARG   ( n --- c-addr )
+PRIMITIVE GETPID    ( --- pid )
+PRIMITIVE UNSETENV  ( c-addr --- ior )
+\ Forth-2012 memory-allocation wordset, backed by the host's own
+\ malloc/free/realloc. This is memory OUTSIDE the image - it does not
+\ consume dictionary space and is not saved by SAVE-SYSTEM. Appended
+\ at the END of this list deliberately: opcodes are positions, so
+\ adding here leaves every existing one untouched, while inserting
+\ anywhere earlier would silently renumber them.
+PRIMITIVE ALLOCATE  ( u --- a-addr ior )
+\ The memory is zero (Iteration 551), as calloc's: fresh from the system
+\ it is already, and stays untouched - resident only when used.
+PRIMITIVE FREE      ( a-addr --- ior )
+PRIMITIVE RESIZE    ( a-addr u --- a-addr2 ior )
+PRIMITIVE GETPWHOME ( c-addr --- addr | 0 )
+PRIMITIVE GETFSIZE  ( --- n )
+PRIMITIVE SETFSIZE  ( n --- ior )
+\ read(2) and write(2), once each: n is the count transferred, or a
+\ NEGATIVE errno. Everything that reads or writes a descriptor is
+\ Forth on top of these two - KEY, ACCEPT, READ-FILE, READ-LINE,
+\ WRITE-FILE, WRITE-LINE - so the policy about buffering and about
+\ which errors to retry is in one place, visible (Iteration 245). Both
+\ flush the engine's terminal output buffer first, which keeps a
+\ prompt ahead of the input it asks for and TYPE's output in order
+\ with every other write.
+PRIMITIVE READ      ( c-addr u fd --- n )
+PRIMITIVE WRITE     ( c-addr u fd --- n )
+\ poll(2), once: n structs pollfd at a-addr, waiting ms milliseconds
+\ (-1: for ever). n' is the number ready, 0 on timeout, or a negative
+\ errno. Flushes terminal output first, like READ. See FD-POLL.
+PRIMITIVE POLL      ( a-addr n ms --- n' )
+\ The terminal on fd a byte at a time without echo (flag true), or back
+\ as it was (flag false): 0 or a negative errno. Ctrl-C still works, and
+\ the engine puts the terminal back on every way out. See KEY?.
+PRIMITIVE RAW-MODE  ( fd flag --- ior )
+\ Memory and strings, from libc (Iteration 260): these five were
+\ byte-at-a-time threaded loops, and the shell spends a quarter of its
+\ dispatches in string loops. COMPARE answers -1, 0 or 1; CSTRLEN is the
+\ length of a NUL-terminated string, the shell's and the OS's currency.
+PRIMITIVE MOVE      ( c-addr1 c-addr2 u --- )
+PRIMITIVE FILL      ( c-addr u c --- )
+PRIMITIVE COMPARE   ( c-addr1 u1 c-addr2 u2 --- n )
+PRIMITIVE SCAN      ( c-addr1 u1 c --- c-addr2 u2 )
+PRIMITIVE CSTRLEN   ( c-addr --- u )
+PRIMITIVE ISATTY    ( fd --- flag )   \ Iteration 264
+\ Directories, for the shell's pathname expansion (Iteration 267).
+PRIMITIVE OPEN-DIR  ( c-addr --- dirp | 0 )   \ a NUL-terminated path
+PRIMITIVE READ-DIR  ( dirp --- c-addr | 0 )   \ the next name, NUL-terminated
+PRIMITIVE CLOSE-DIR ( dirp --- )
+PRIMITIVE ACCESS    ( c-addr mode --- ior )   \ access(2), mode 1 = X_OK (Iteration 269)
+\ Iteration 271: for the shell's kill, umask, times and trap.
+PRIMITIVE KILL      ( pid sig --- ior )
+PRIMITIVE UMASK     ( mask --- old )
+PRIMITIVE CPU-TIMES ( --- user sys child-user child-sys )   \ milliseconds
+PRIMITIVE SIGNAL-ACTION ( signo action --- ior )   \ 0 default, 1 ignore, 2 catch
+PRIMITIVE SIGNALS-PENDING ( --- signo | 0 )        \ lowest caught signal, cleared
+PRIMITIVE TERM-RAW     ( fd --- ior )   \ Iteration 303: the line editor
+PRIMITIVE TERM-RESTORE ( fd --- ior )
+PRIMITIVE FILE-KIND     ( c-addr --- kind )   \ Iteration 307: 0 none, 1 regular, 2 dir, 3 other
+PRIMITIVE GETRLIMIT     ( resource --- soft hard ior )   \ Iteration 308
+PRIMITIVE SETRLIMIT     ( soft hard resource --- ior )
+PRIMITIVE WAIT-NOHANG   ( --- pid status )   \ 0 0 if nothing has finished
+PRIMITIVE GETPPID       ( --- pid )          \ Iteration 318: $PPID
+PRIMITIVE ENV-AT        ( i --- c-addr | 0 ) \ environ[i], for `export -p`
+PRIMITIVE SETPGID       ( pid pgid --- ior )     \ Iteration 320: job control
+PRIMITIVE TCSETPGRP     ( fd pgid --- ior )
+PRIMITIVE TCGETPGRP     ( fd --- pgid | -1 )
+PRIMITIVE WAIT-JOB      ( pid --- pid' status )  \ reports a stop as well
+PRIMITIVE FILE-MODE     ( c-addr follow? --- mode )  \ Iteration 378: st_mode, 0 if none
+\ follow? 0 lstat's mode, -1 stat's; 1 and 2 the inode and device (573)
+PRIMITIVE LOCAL-TIME    ( --- sec min hour mday mon year wday )  \ Iteration 417
+PRIMITIVE DUP-FROM      ( fd floor --- fd' | -1 )  \ Iteration 486: F_DUPFD_CLOEXEC
+PRIMITIVE TCP-LISTEN    ( port loopback? --- fd ior )  \ Iteration 505: forth-shell-examples
+PRIMITIVE TCP-ACCEPT    ( fd --- fd' ior )
+PRIMITIVE TCP-CONNECT   ( c-addr port --- fd ior )  \ a dotted IPv4 address
+
+\ Escaped since Iteration 539, from the direct band: the least executed
+\ of the one-byte primitives, moved so that 64 one-byte opcodes remain
+\ (QUESTIONS.md A15). Each use is ESC and a selector now - a byte and a
+\ dispatch more, on operations that run under 0.05% of the time.
+PRIMITIVE NEGATE  ( n1 --- -n1)
+\ Negate top number on the stack.
+
+PRIMITIVE LSHIFT ( x1 u --- x2)
+\ Shift x1 left by u bits, zeros are added to the right.
+
+PRIMITIVE RSHIFT ( x1 u --- x2)
+\ Shift x1 right by u bits, zeros are added to the left.
+
+PRIMITIVE UM/MOD ( ud u1 --- urem uquot)
+\ Divide the unsigned double number ud by u1, giving unsigned quotient
+\ and remainder.
+
+PRIMITIVE D+ ( d1 d2 --- d3)
+\ Add the double numbers d1 and d2.
+
+PRIMITIVE TYPE ( c-addr u --- )
+\ Output u characters starting at c-addr to the terminal.
+
+PRIMITIVE SP!      ( a-addr ---)
+\ Set the stack pointer to a-addr.
+
+PRIMITIVE RP@      ( --- a-addr)
+\ Return the address of the return stack pointer.
+
+PRIMITIVE RP!      ( a-addr ---)
+\ Set the return stack pointer to a-addr.
+PRIMITIVE DICT-LIMIT  ( --- a-addr )
+\ Where the dictionary must end: the data stack's floor, at the top of
+\ the engine's 4 MB (Iteration 545). UNUSED and ALLOT are built on it.
+PRIMITIVE CHMOD  ( c-addr u mode --- ior )
+\ Set a file's permission bits (Iteration 546): relf writes its own
+\ engine, which has to be executable (SELF-HOSTING.md M1, M4). After
+\ DICT-LIMIT: a primitive's number is its place here - declared first
+\ at first, the two swapped selectors, and the checker said so.
+PRIMITIVE TRAP-XT!  ( xt --- )
+\ The word the engine runs on a trap - a zero divisor, a bad address -
+\ on fresh stacks with the code on top (Iteration 556, Q21): extend.4's
+\ TRAPPED, registered by COLD from TRAP-ENTRY.
+PRIMITIVE CTABLE-FIND  ( c-addr table count width --- i | -1 )
+\ The first of count NUL-terminated names width bytes apart that is
+\ c-addr's, or -1: the shell's variable scan, a Forth loop until 676 -
+\ 5-14 % of the native shell's time, 3-6 % of CV8's (660's price).
+
+
+\ PART 2: RUNTIME PARTS THE VARIOUS DEFINITION CLASSES.
+
+\ None: DOVAR and DODOES are opcodes of their own. A data body is
+\ [DOVAR][pad to a cell][parameter field], and a DOES> body is
+\ [DODOES][call to the tail][pad][parameter field].
+
+\ The kernel words the engine implements as opcodes (CV8.md
+\ 6.4). Declared like primitives, so COMPILE, inlines them; their
+\ meaning is in cv8.c. They are declared here, before anything uses
+\ them, and not where their Forth definitions used to be.
+106 OPCODE 0=      ( x --- f )           \ true iff x is 0
+107 OPCODE -       ( w1 w2 --- w3 )      \ w1 minus w2
+108 OPCODE <>      ( x1 x2 --- f )
+109 OPCODE 0<      ( n --- f )
+110 OPCODE >       ( n1 n2 --- f )       \ signed
+111 OPCODE 2DUP    ( d --- d d )
+112 OPCODE 2DROP   ( d --- )
+114 OPCODE 1+      ( w1 --- w2 )
+: CHAR+ ( c-addr1 --- c-addr2 )  1+ ;   \ an opcode until 539
+115 OPCODE CELL+   ( a-addr1 --- a-addr2 )
+116 OPCODE CELLS   ( n1 --- n2 )
+117 OPCODE 1-      ( w1 --- w2 )
+119 OPCODE COUNT   ( c-addr1 --- c-addr2 c )
+: INVERT ( x1 --- x2 )  -1 XOR ;      \ an opcode until 539
+: ALIGNED ( c-addr --- a-addr )      \ an opcode until 539
+\ Up to a cell boundary. CELL+ and CELLS are the engine's, so this is
+\ right at either cell width, as the opcode was.
+  CELL+ 1- -1 CELLS AND ;
+
+\ PART 3: SIMPLE DEFINITIONS
+
+\ This is a large class of words, which would be written in machine code
+\ on most non-native code systems. Many contain just a few words, so they
+\ are implemented as macros.
+
+\ This category contains simple arithmetic and compare words, the runtime
+\ parts of DO LOOP  and string related words etc, many on which are
+\ dependent on each other, so they are in a less than logical order to
+\ avoid large numbers of forward references.
+
+
+
+
+
+
+: EMIT ( c --- )
+\ Output the character c to the terminal.
+\
+\ No buffer: the character is already in memory, on the data stack,
+\ and SP@ is its address. TYPE reads one byte from there and DROP
+\ removes it. A VARIABLE for this cost a dictionary header and a cell
+\ in every image to hold a byte that was already sitting in one.
+\
+\ Little-endian only, since the low byte of the cell has to be the one
+\ at SP@ - which this system is anyway, by GOALS.md's non-goals and by
+\ the image format. Checked on both engines, including the one that
+\ caches the top of stack in a register: TYPE spills it below SP@'s
+\ result, so the address stays good.
+   SP@ 1 TYPE DROP ;
+
+
+: CR  ( --- )
+\ Output a newline to the terminal.
+   13 EMIT 10 EMIT ;
+
+VARIABLE START \ holds absolute address of the system address space
+
+VARIABLE BOOT
+\ Turnkey hook, 0 in a plain kernel image. When nonzero it holds the
+\ execution token of a word to run at startup, stored as an OFFSET
+\ from START rather than an absolute address - so it survives being
+\ written to disk and reloaded at a different address, and COLD adds
+\ START back when it runs it rather than relocating it in place (which
+\ would make the value absolute and so wrong if the image were saved
+\ again). Set via save-system.4's SET-BOOT; see PROGRESS.md's
+\ Iteration 40 entry for why this exists - a prebuilt shell image
+\ boots straight into shell.4's MAIN, skipping both the banner and
+\ ~253ms of recompiling shell.4 on every single invocation.
+
+-1 CONSTANT TRUE
+
+VARIABLE S0 ( --- a-addr)
+\ Variable that holds the bottom address of the stack.
+
+VARIABLE R0 ( --- a-addr)
+\ Variable that holds the bottom address of the return stack.
+
+: DEPTH ( --- n )
+\ n is the number of cells on the stack (before DEPTH was executed).
+  SP@ S0 @ SWAP - CELLSHIFT-TOK RSHIFT ;
+
+
+
+\ The next few words manipulate addresses in a system-independent way.
+\ Use CHAR+ instead of 1+ and it will be portable to systems where you
+\ have to add something different from 1.
+
+
+: CHARS ( n1 --- n2)
+\ n2 is the number of address units occupied by n1 characters.
+; \ A no-op.
+
+
+
+: CELL- ( a-addr1 --- a-addr2)
+\ a-addr2 is the address of the previous cell before a-addr1.
+   CELLBYTES-TOK - ;
+
+\ The DO LOOP related words use the return stack. The top of the
+\ return stack is the loop counter (I) and the next cell is the limit.
+
+\ (LOOP) and (+LOOP) are followed by a branch back to the loop's start,
+\ and (?DO) by a branch to its exit (Iteration 258; each was followed by
+\ an inline cell until then). They decide by where they RETURN: into the
+\ branch, to take it, or past it. The branch is two bytes or three.
+\ These words are called 'subroutines', not macros.
+
+\ To access the loop parameters on the return stack, the DO LOOP words must
+\ first pop their OWN return address!
+
+: SKIP-BRANCH ( a --- a' )
+\ Past the branch instruction at a.
+  DUP C@ BRANCH8-TOK = IF 2 ELSE 3 THEN + ;
+
+: (DO)   ( n1 n2 ---)
+\ Runtime part of DO.
+  R> ROT ROT SWAP >R >R >R ;
+69 OPCODE (?DO)   ( n1 n2 --- )         \ runtime part of ?DO
+\ An empty loop falls into the branch to the exit; any other is entered
+\ past it, the limit and counter on the return stack. An opcode since
+\ Iteration 530; nothing in cross.4 refers to it, so nothing calls it.
+67 OPCODE I       ( --- n )             \ the innermost DO LOOP's counter
+\ An opcode since Iteration 530; the colon word was R> R@ SWAP >R, its
+\ own return address lifted out of the way. As an opcode there is none:
+\ the counter is at the top of the return stack. It must never be
+\ CALLED, only inlined - which COMPILE, does for an OPCODE word; a
+\ forward reference in cross.4 would call it (see 529).
+
+: J  ( --- n)
+\ Return the counter (index) of the next loop outer to the innermost DO LOOP
+  RP@ CELLBYTES-TOK CELLBYTES-TOK CELLBYTES-TOK + + + @ ;
+
+: UNLOOP ( --- )
+\ Remove one set of loop parameters from the return stack. LEAVE is this
+\ and a branch to the loop's exit.
+   R> R> R> 2DROP >R ;
+
+68 OPCODE (LOOP)  ( --- )               \ runtime part of LOOP
+\ Add 1 to the counter; at the limit, drop the parameters and step over
+\ the branch back, else fall into it. An opcode since Iteration 530.
+\ cross.4's LOOP emits it directly (LOOP-OP): a forward reference would
+\ CALL it, and the call's return address would sit where the counter
+\ belongs - which is how the first attempt failed (529).
+
+: (+LOOP) ( n ---)
+\ Runtime part of +LOOP
+\ Very similar to (LOOP), but the compare condition is different.
+\ With x = index - limit, the loop has crossed the boundary between
+\ limit-1 and limit exactly when x changes sign AND x and the step n
+\ have opposite signs:  ((x XOR x+n) AND (x XOR n)) < 0.
+\ That is the signed-overflow test on the biased index x+MIN-INT,
+\ computed without storing the bias, so (DO), I, J and the rest are
+\ unchanged. The previous test used only the first half - "x changed
+\ sign" - which also fires when x wraps from MAX-INT to MIN-INT, so a
+\ step of a 256th of the cell range stopped half way (Iteration 243;
+\ coreplustest.fth, seven cases).
+     R> SWAP R>              \ ret n index
+     2DUP + ROT ROT          \ ret index' n index
+     R@ -                    \ ret index' n x
+     2DUP XOR >R             \ ret index' n x        R: x^n limit
+     DUP ROT +               \ ret index' x x'
+     XOR R> AND 0 <          \ ret index' crossed?
+     IF R> 2DROP SKIP-BRANCH >R
+     ELSE >R >R THEN ;
+
+
+
+: (.") ( --- )
+\ Runtime part of ."
+\ This expects an in-line counted string.
+  R> COUNT 2DUP TYPE + >R ;
+
+: (S")  ( --- c-addr u )
+\ Runtime part of S"
+\ It returns address and length of an in-line counted string.
+  R> COUNT 2DUP + >R ;
+
+32 CONSTANT BL ( --- 32 )
+\ Constant 32, the blank character
+
+: PICK  ( u --- x)
+\ place a copy of stack cell number u on the stack. 0 PICK is DUP, 1 PICK
+\ is OVER etc.
+  1 + CELLS SP@ + @ ;
+
+
+
+
+: 2* ( w1 --- w2)
+\ Multiply w1 by 2.
+  1 LSHIFT ;
+
+: 2/  ( n1 --- n2)
+\ Divide signed number n1 by 2.
+  \ Written as a computed mask (1 SIGNSHIFT-TOK LSHIFT), not a literal:
+  \ the cross-compiler's host may itself have narrower cells than the
+  \ target - see PROGRESS.md - and the shift amount itself depends on
+  \ TARGET-CELL-BYTES (63 for 8-byte cells, 31 for 4-byte).
+  DUP 1 SIGNSHIFT-TOK LSHIFT AND SWAP 1 RSHIFT OR ;
+
+65 OPCODE +!      ( w a-addr --- )      \ add w to the cell at a-addr
+\ An opcode since Iteration 528, the first in the band 0x41-0x60. As a
+\ colon word it was DUP @ ROT + SWAP ! - six dispatches a use, and the
+\ shell's workloads use it 4.3 million times in 516 million dispatches
+\ (tools/superinst.py, 527).
+
+\ Double numbers occupy two cells in memory and on the stack.
+\ The most significant half on the number is in the first memory
+\ cell or in the top cell on the stack (which is also the first address).
+
+: 2@ ( a-addr --- d )
+\ Fetch double number d at a-addr.
+   DUP CELL+ @ SWAP @ ;
+
+: 2! ( d a-addr --- )
+\ Store the double number d at a-addr.
+   DUP >R ! R> CELL+ ! ;
+
+66 OPCODE ?DUP    ( n --- 0 | n n )     \ duplicate the top cell if nonzero
+\ An opcode since Iteration 529; the colon word was DUP IF DUP THEN.
+
+: MIN ( n1 n2 --- n3)
+\ n3 is the minimum of n1 and n2.
+   2DUP > IF SWAP THEN DROP ;
+
+: MAX ( n1 n2 --- n3)
+\ n3 is the maximum of n1 and n2.
+   2DUP < IF SWAP THEN DROP ;
+
+: DNEGATE ( d1 --- d2)
+\ Negate the top double number on the stack.
+   >R NEGATE R> NEGATE OVER 0= 0=  + ;
+
+: ABS ( n --- u)
+\ u is the absolute value of n.
+   DUP 0< IF NEGATE THEN ;
+
+: DABS ( d --- ud)
+\ ud is the absolute value of d.
+   DUP 0< IF DNEGATE THEN ;
+
+: SM/REM ( d n1 --- nrem nquot )
+\ Divide signed double number d by single number n1, giving quotient and
+\ remainder. Round towards zero, remainder has same sign as dividend.
+  2DUP  XOR >R OVER >R \ Push signs of quot and rem.
+  ABS >R DABS R>
+  UM/MOD
+  SWAP R> 0< IF NEGATE THEN SWAP
+  R> 0< IF NEGATE THEN ;
+
+: FM/MOD ( d n1 --- nrem nquot )
+\ Divide signed double number d by single number n1, giving quotient and
+\ remainder. Round always down (floored division),
+\ remainder has same sign as divisor.
+  DUP >R 2DUP XOR >R
+  SM/REM
+  OVER R> 0< AND IF SWAP R@ + SWAP 1 - THEN R> DROP ;
+
+: M* ( n1 n2 --- d )
+\ Multiply the signed numbers n1 and n2, giving the signed double number d.
+  2DUP  XOR >R ABS SWAP ABS UM* R> 0< IF DNEGATE THEN ;
+
+: * ( w1 w2 --- w3)
+\ Multiply single numbers, signed or unsigned give the same result.
+  UM* DROP ;
+
+: */MOD ( n1 n2 n3 --- nrem nquot)
+\ Multiply signed numbers n1 by n2 and divide by n3, giving quotient and
+\ remainder. Intermediate result is double.
+  >R M* R> FM/MOD ;
+
+: */    ( n1 n2 n3 --- n4 )
+\ Multiply signed numbers n1 by n2 and divide by n3, giving quotient n4.
+\ Intermediate result is double.
+  */MOD SWAP DROP ;
+
+: S>D  ( n --- d)
+\ Convert single number to double number.
+   DUP 0< ;
+
+: /MOD  ( n1 n2 --- nrem nquot)
+\ Divide signed number n1 by n2, giving quotient and remainder.
+   SWAP S>D ROT FM/MOD ;
+
+: / ( n1 n2 --- n3)
+\ n3 is n1 divided by n2.
+ /MOD SWAP DROP ;
+
+: MOD ( n1 n2 --- n3)
+\ n3 is the remainder of n1 and n2.
+  /MOD DROP ;
+
+70 OPCODE EXECUTE ( xt --- )            \ execute the word with token xt
+\ An opcode since Iteration 531: a call to the token on the stack. It was
+\ the colon word >R ; - the token pushed as a return address for EXIT to
+\ jump to - two dispatches where this is one, and the return stack as
+\ deep while xt runs either way, which CATCH and THROW rely on. Unlike
+\ the loop words it reads nothing from the return stack, so it is right
+\ whether inlined or called.
+
+71 OPCODE @XT     ( a-addr --- xt )      \ an xt kept as an offset from START
+\ An xt stored in memory is kept as an offset from START, the image's
+\ address, so that it means the same after a save and a reload at another
+\ address (FORTH-STYLE.md 12). An opcode since Iteration 531 - every
+\ deferred word's call goes through it - where it was shadow.4's colon
+\ word @ START @ + ; the engine adds the image base it already holds.
+: !XT ( xt a-addr --- )  SWAP START @ - SWAP ! ;   \ its inverse
+
+\ PART 4: NUMERIC OUTPUT WORDS.
+
+VARIABLE BASE ( --- a-addr)
+\ Variable that contains the numerical conversion base.
+
+VARIABLE DP   ( --- a-addr)
+\ Variable that contains the dictionary pointer. New space is allocated
+\ from the address in DP
+
+VARIABLE HLD ( --- a-addr)
+\ Variable that holds the address of the numerical output conversion
+\ character.
+
+VARIABLE DPL ( --- a-addr)
+\ Variable that holds the decimal point location for numerical conversion.
+
+: DECIMAL ( --- )
+\ Set numerical conversion to decimal.
+  10 BASE ! ;
+
+: HEX     ( --- )
+\ Set numerical conversion to hexadecimal.
+  16 BASE ! ;
+
+: SPACE  ( ---)
+\ Output a space to the terminal.
+  BL EMIT ;
+
+: SPACES ( u --- )
+\ Output u spaces to the terminal.
+  BEGIN DUP WHILE SPACE 1- REPEAT DROP ;
+
+: HERE ( --- c-addr )
+\ The address of the dictionary pointer. New space is allocated here.
+  DP @ ;
+
+: PAD ( --- c-addr )
+\ The address of a scratch pad area. Right below this address there is
+\ the numerical conversion buffer.
+  \ 84 was enough headroom for a 32-bit-cell double number in base 2 (65
+  \ digits). With 8-byte cells a double number can need up to 129 digits
+  \ in base 2, so this is widened accordingly; see GOALS.md.
+  DP @ 160 + ;
+
+: MU/MOD ( ud u --- urem udquot )
+\ Divide unsigned double number ud by u and return a double quotient and
+\ a single remainder.
+  >R 0 R@ UM/MOD R> SWAP >R UM/MOD R> 
+;
+
+\ The numerical conversion buffer starts right below PAD and grows down.
+\ Characters are added to it from right to left, as as the div/mod algorithm
+\ to convert numbers to an arbitrary base produces the digits from right to
+\ left.
+
+: HOLD ( c ---)
+\ Insert character c into the numerical conversion buffer.
+  -1 HLD +! HLD @ C! ;
+
+: # ( ud1 --- ud2)
+\ Extract the rightmost digit of ud1 and put it into the numerical
+\ conversion buffer.
+  BASE @ MU/MOD ROT DUP 9 > IF 7 + THEN 48 + HOLD ;
+
+: #S ( ud --- 0 0 )
+\ Convert ud by repeated use of # until ud is zero.
+  BEGIN # 2DUP OR 0= UNTIL ;
+
+: SIGN ( n ---)
+\ Insert a - sign in the numerical conversion buffer if n is negative.
+  0< IF 45 HOLD THEN ;
+
+: <# ( --- )
+\ Reset the numerical conversion buffer.
+  PAD HLD ! ;
+
+: #> ( ud --- addr u )
+\ Discard ud and give the address and length of the numerical conversion
+\ buffer.
+  2DROP HLD @ PAD OVER - ;
+
+: D. ( d --- )
+\ Type the double number d to the terminal.
+  SWAP OVER DABS <# #S ROT SIGN #> TYPE SPACE ;
+
+: U. ( u ---)
+\ Type the unsigned number u to the terminal.
+  0 D. ;
+
+: . ( n ---)
+\ Type the signed number n to the terminal.
+  S>D D. ;
+
+\ PART 5: MEMORY BLOCK MOVE AND RELATED WORDS.
+
+: CMOVE ( c-addr1 c-addr2 u --- )
+\ Copy u bytes starting at c-addr1 to c-addr2, proceeding in ascending
+\ order.
+   DUP IF >R
+   BEGIN
+    OVER C@ SWAP DUP >R C! R> 1 + SWAP 1 + SWAP
+    R> -1 + DUP >R 0=
+   UNTIL
+   R>
+   THEN
+   2DROP DROP
+;
+
+: CMOVE> ( c-addr1 c-addr2 u --- )
+\ Copy a block of u bytes starting at c-addr1 to c-addr2, proceeding in
+\ descending order.
+   DUP IF >R R@ + -1 + SWAP R@ + -1 + SWAP
+   BEGIN
+    OVER C@ SWAP DUP >R C! R> -1 + SWAP -1 + SWAP
+    R> -1 + DUP >R 0=
+   UNTIL
+   R>
+   THEN
+   2DROP DROP
+;
+
+\ It's here because it needs CMOVE>
+: ROLL ( u ---)
+\  Move stack cell number u to the top. 1 ROLL is SWAP, 2 ROLL is ROT etc.
+  1 + CELLS DUP SP@ + CELL+ @ SWAP
+  SP@ CELL+ DUP CELL+ ROT MOVE DROP ;
+
+
+
+: 2OVER ( d1 d2 --- d1 d2 d1)
+\ Take a copy of the second double number of the stack and push it on the
+\ stack.
+  03 PICK 03 PICK ;
+
+: 2SWAP ( d1 d2 --- d2 d1)
+\ Swap the top two double numbers on the stack. It was `3 ROLL 3 ROLL`,
+\ and ROLL moves the stack a byte at a time: 41% of the dispatches in
+\ the shell's loop benchmark were those bytes (Iteration 260).
+  ROT >R ROT R> ;
+
+\ PART 6: FILE ACCESS WORDS.
+
+00 CONSTANT W/O ( --- mode)
+\ Read only file access mode.
+
+02 CONSTANT R/O ( --- mode)
+\ Write only file access mode.
+
+04 CONSTANT R/W ( --- mode)
+\ Read write file access mode.
+
+06 CONSTANT A/O ( --- mode)
+10 CONSTANT X/O ( --- mode)   \ create, but not over an existing file
+\ Write only, append (create if missing, never truncate) file access
+\ mode - added for shell.4's ">>" redirection (see PROGRESS.md,
+\ Iteration 7); none of the three modes above create a missing file
+\ without also truncating it if it already exists.
+
+: BIN ( mode1 --- mode2)
+\ Modify the R/O W/O or R/W mode so that it applies to binary files.
+  1 + ;
+
+
+: CREATE-FILE ( c-addr u mode --- fid ior)
+\ Create a new file with the name starting at c-addr with length u,
+\ truncating any that exists, and open it in the given mode. Return
+\ the file-ID and the IO result (ior=0 if success). W/O and A/O keep
+\ their own OPEN-FILE modes; R/O and R/W use the engine's read-write
+\ create modes, 8 and 9 (cv8.c's open_flags). Until Iteration 245 this
+\ masked every mode to W/O, and a file created R/W was write-only.
+  DUP 2 U< 0= OVER 6 U< AND IF 1 AND 8 + THEN OPEN-FILE ;
+
+\ : READ-LINE >R OVER R> READ-FILE >R OVER + SWAP 
+\ BEGIN WHILE REPEAT 
+\ R> ;
+
+\ PART 7: SOURCE INPUT WORDS.
+
+VARIABLE TIB ( --- addr)
+\ is the standard terminal input buffer.
+256 CHARS-T ALLOT-T   \ 256 columns since Iteration 514; 80 until then
+
+VARIABLE #TIB ( --- addr)
+\ This variable holds the number of characters in the terminal input buffer.
+
+VARIABLE >IN  ( --- addr)
+\ This variable holds an index in the current input source where the next word
+\ will be parsed.
+
+VARIABLE SID  ( --- addr)
+\ This variable holds the source i.d. returned by SOURCE-ID.
+
+VARIABLE SRC  ( --- addr)
+\ This variable holds the address of the current input source.
+
+VARIABLE #SRC ( --- addr)
+\ This variable holds the length of the current input source.
+
+
+: READ-SOME ( c-addr u fd --- n )
+\ One read(2), retried when a signal interrupted it (EINTR, 4): n bytes,
+\ 0 at end of file, or a negative errno.
+  BEGIN >R 2DUP R@ READ DUP -4 = WHILE DROP R> REPEAT
+  R> DROP >R 2DROP R> ;
+
+: READ-FILE ( c-addr u1 fid --- u2 ior )
+\ Read u1 characters, fewer only at end of file. read(2) returns less
+\ than asked for on a pipe or a terminal, so this loops. ior is 0 or a
+\ negative errno.
+  >R 0 >R                                ( c-addr u1  R: fid got )
+  BEGIN DUP WHILE
+    2DUP R> R@ SWAP >R READ-SOME         ( c-addr u1 n )
+    DUP 0< IF >R 2DROP R> R> SWAP R> DROP EXIT THEN
+    DUP 0= IF DROP 2DROP R> 0 R> DROP EXIT THEN
+    R> OVER + >R
+    ROT OVER + ROT ROT -
+  REPEAT
+  2DROP R> 0 R> DROP ;
+
+: WRITE-FILE ( c-addr u fid --- ior )
+\ Write all u characters, looping over short writes. ior is 0, a
+\ negative errno, or -1 if write(2) made no progress.
+  >R
+  BEGIN DUP WHILE
+    2DUP R@ WRITE                        ( c-addr u n )
+    DUP -4 = IF DROP ELSE
+      DUP 0 > 0= IF >R 2DROP R> DUP 0= + R> DROP EXIT THEN
+      ROT OVER + ROT ROT -
+    THEN
+  REPEAT
+  2DROP R> DROP 0 ;
+
+: WRITE-LINE ( c-addr u fid --- ior )
+\ Write the string and a newline. The newline is the 10 on the stack,
+\ written from where SP@ says it is, as EMIT does.
+  DUP >R WRITE-FILE ?DUP IF R> DROP EXIT THEN
+  10 SP@ 1 R> WRITE-FILE SWAP DROP ;
+
+VARIABLE RL-NEWLINE?   \ did the line just read end at a newline
+
+: RL-END ( c-addr p nl? flag ior --- u2 flag ior )
+\ READ-LINE's result from its end pointer p. When the line ended at a
+\ newline (nl?), a CR just before it is part of the terminator: CRLF
+\ files read as plain lines. A line cut short by the buffer keeps a
+\ trailing CR, because nothing says it is the end: stripping it made a
+\ full buffer look one short, and a caller growing its buffer took the
+\ line for finished (Iteration 249).
+  >R >R >R OVER -
+  R> DUP RL-NEWLINE? !                   \ the shell's `read` needs this
+  IF DUP IF 2DUP + 1- C@ 13 = IF 1- THEN THEN THEN
+  SWAP DROP R> R> ;
+
+: RL-BYTES ( c-addr u1 fid --- u2 flag ior )
+\ READ-LINE a byte at a time, for a descriptor that cannot seek: a
+\ byte read past the newline could not be given back, and a pipe or a
+\ terminal is shared with whatever runs next.
+  >R OVER + OVER                         ( c-addr end p  R: fid )
+  BEGIN 2DUP - WHILE
+    DUP 1 R@ READ-SOME                   ( c-addr end p n )
+    DUP 1 = IF
+      DROP DUP C@ 10 = IF SWAP DROP -1 -1 0 R> DROP RL-END EXIT THEN
+      1+
+    ELSE
+      \ 0 is end of file, below 0 an error; the flag says whether this
+      \ line got any characters before it.
+      >R SWAP DROP 2DUP - 0= 0=          ( c-addr p any  R: fid n )
+      0 SWAP R> R> DROP                  ( c-addr p 0 any n )
+      DUP 0< 0= IF DROP 0 THEN
+      RL-END EXIT
+    THEN
+  REPEAT
+  SWAP DROP 0 -1 0 R> DROP RL-END ;
+
+: READ-LINE ( c-addr u1 fid --- u2 flag ior )
+\ Read a line of at most u1 characters; the newline ends it and is not
+\ stored. flag is false only at end of file.
+\
+\ No buffer. A descriptor that can seek is read a block at a time, and
+\ whatever was read past the newline is given back by seeking to just
+\ after it - so the file offset is always exactly where the reader has
+\ consumed to, and nothing else needs to know a read happened. That is
+\ what the engine's read-ahead pool achieved with a table, an LRU and
+\ seek-back on eviction (until Iteration 245). Anything else is read a
+\ byte at a time: see RL-BYTES.
+  OVER 0= IF 2DROP DROP 0 -1 0 EXIT THEN   \ zero characters: not EOF
+  DUP FILE-POSITION IF 2DROP RL-BYTES EXIT THEN
+  >R >R >R                               ( c-addr u1  R: hi lo fid )
+  OVER SWAP R@ READ-FILE                 ( c-addr n ior )
+  ?DUP IF >R DROP DUP 0 -1 R> R> DROP R> R> 2DROP RL-END EXIT THEN
+  DUP 0= IF DROP DUP 0 0 0 R> DROP R> R> 2DROP RL-END EXIT THEN
+  2DUP 10 SCAN SWAP DROP                 ( c-addr n rest )
+  DUP >R - R>                            ( c-addr i rest )
+  DUP 0= 0= ROT ROT                      ( c-addr nl? i rest )
+  1 > IF                                 \ read past the newline: give it back
+    R> R> R>                             ( c-addr nl? i fid lo hi )
+    3 PICK 1+ 0 D+ ROT REPOSITION-FILE   ( c-addr nl? i ior )
+  ELSE
+    R> R> R> 2DROP DROP 0                ( c-addr nl? i 0 )
+  THEN
+  >R ROT DUP ROT + ROT -1 R> RL-END ;
+
+: W! ( w a-addr --- )
+\ Store the low 16 bits of w at a-addr, little-endian.
+  2DUP C! SWAP 8 RSHIFT SWAP 1+ C! ;
+
+: W@ ( a-addr --- w )
+\ Fetch an unsigned 16-bit little-endian value.
+  DUP C@ SWAP 1+ C@ 8 LSHIFT OR ;
+
+: FD-POLL ( fd events ms --- revents | 0 | -errno )
+\ poll(2) on one descriptor: the events that occurred, 0 on timeout, or
+\ a negative errno. events and revents are poll(2)'s bits; POLLIN is 1.
+\
+\ The struct pollfd - an int fd, then short events and short revents,
+\ eight bytes, checked by cv8.c at build time - is laid out in two
+\ cells pushed onto the data stack for the purpose and found with SP@,
+\ as KEY finds its byte. No variable, so the word is reentrant, which a
+\ multitasker will need.
+  >R >R >R 0 0 SP@ R> R> R>            ( 0 0 p fd events ms )
+  >R 2 PICK 4 + W!                     ( 0 0 p fd )
+  DUP 2 PICK W! 16 RSHIFT OVER 2 + W!  ( 0 0 p )
+  DUP 1 R> POLL                        ( 0 0 p n )
+  DUP 0 > IF DROP 6 + W@ ELSE SWAP DROP THEN
+  >R 2DROP R> ;
+
+: FD-WAIT ( fd events --- revents )
+\ Wait for one of events on fd, however long it takes: the events that
+\ occurred, or 0 if poll(2) itself failed. A signal is retried.
+  BEGIN 2DUP -1 FD-POLL DUP -4 = WHILE DROP REPEAT
+  >R 2DROP R> 0 MAX ;
+
+: KEY ( --- c )
+\ Receive one character from the terminal.
+\
+\ One byte, unbuffered, straight off descriptor 0 - which is what
+\ gforth, SPF and lbForth all do, and what dash does for its `read`
+\ builtin. No buffer, and no buffer is possible: descriptor 0 is
+\ INHERITED, shared with every child, and a byte read ahead is a byte
+\ taken from whatever runs next. The engine used to hold 4096 bytes of
+\ it, and `read x; cat` swallowed the whole pipe - see
+\ tests/shell/run-read. Reading into the cell the 0 just pushed, via
+\ SP@, for the same reason EMIT does.
+\
+\ End of input exits, which is not decoration: without it a shell
+\ reading a script off stdin spun on read(0,"",1)=0 forever (GOALS.md's
+\ Bug 3).
+\
+\ A failed read WAITS, once, for descriptor 0 to become readable, then
+\ tries again; a second failure exits. That covers a non-blocking
+\ descriptor with nothing typed yet (EAGAIN, where ANS KEY must wait
+\ and this used to exit), without knowing EAGAIN's value, which is 11
+\ on Linux and 35 on the BSDs. A real error - stdin a directory, a
+\ terminal gone - leaves the descriptor "readable", so the retry fails
+\ at once and KEY exits rather than spinning. No shared state changes:
+\ fcntl could have made the descriptor blocking, but the flag belongs
+\ to every process sharing it (Iteration 246).
+  0                                    ( waited? )
+  BEGIN
+    0 SP@ 1 0 READ-SOME                ( waited? c n )
+    DUP 1 = IF DROP SWAP DROP EXIT THEN
+    0= ROT OR IF BYE THEN              ( c )
+    DROP 0 1 FD-WAIT 1 AND 0= IF BYE THEN
+    -1
+  0 UNTIL ;
+
+: KEY? ( --- flag )
+\ Is a character available from the terminal, now? Also true at end of
+\ input or on an error, where KEY would not wait either. On a terminal
+\ in its usual line mode the system sees nothing until Enter; after
+\ `0 -1 RAW-MODE` it sees each key as it is typed.
+  0 1 0 FD-POLL 0= 0= ;
+
+: MS ( u --- )
+\ Wait at least u milliseconds: poll(2) on no descriptors. A signal can
+\ end the wait early; nothing in this system installs a handler.
+  0 0 ROT POLL DROP ;
+
+: ACCEPT ( c-addr n1 --- n2 )
+\ Read a line from the terminal into a buffer at c-addr of length n1;
+\ n2 is the number of characters read. Backspace and DEL erase one
+\ character if there is one, CR and LF end the line and are not
+\ stored, and a character that would overflow the buffer is dropped.
+\
+\ ANS requires this to WAIT for a line terminator, which is why it
+\ cannot be the non-blocking read; that is READ-STDIN, and the standard's
+\ own answer for "read whatever is ready" is KEY? - which this system
+\ does not have yet.
+  >R 0
+  BEGIN
+   KEY DUP 8 = OVER 127 = OR
+   IF
+     DROP DUP IF 1- THEN
+   ELSE
+     DUP 10 = OVER 13 = OR
+     IF
+      DROP SWAP DROP R> DROP EXIT
+     ELSE
+      OVER R@ - IF
+       >R OVER OVER + R> SWAP C! 1+
+      ELSE
+       DROP
+      THEN
+     THEN
+   THEN
+  0 UNTIL
+;
+
+: QUERY ( --- )
+\ Read a line from the terminal into the terminal input buffer.
+  TIB 256 ACCEPT #TIB ! ;
+
+: SOURCE ( --- addr len)
+\ Return the address and length of the current input source.
+   SRC @ #SRC @ ;
+
+: SOURCE-ID ( --- sid)
+\ Return the i.d. of the current source i.d., 0 for terminal, -1
+\ for EVALUATE and positive number for INCLUDE file.
+   SID @ ;
+
+: REFILL ( --- f)
+\ Refill the current input source when it is exhausted. f is
+\ true if it was successfully refilled.
+  SOURCE-ID -1 = IF
+   0 \ Not refillable for EVALUATE
+  ELSE
+   SOURCE-ID IF
+    SRC @ 256 SOURCE-ID READ-LINE ABORT" Error reading file"
+    SWAP #SRC ! 0 >IN !
+    #SRC @ IF SOURCE OVER + SWAP 
+    BEGIN 2DUP - WHILE DUP C@ 9 = IF BL OVER C! THEN 1+ REPEAT 2DROP THEN
+    \ Change tabs to space.
+    \ flag from READ-LINE is returned (no success at EOF)
+   ELSE
+    QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
+   THEN
+  THEN
+;
+
+: SKIP ( c-addr1 u1 c --- c-addr2 u2 )
+\ Find the first character not equal to c in the string c-addr1 u1
+\ c-addr2 u2 is the remaining part of the string starting with the
+\ nonmatching char. It is a zero-length string if no other chars found.
+  BEGIN
+   OVER
+  WHILE
+   ROT DUP C@ >R OVER R> -
+   IF
+    ROT ROT DROP EXIT
+   THEN
+   1+ ROT ROT SWAP 1- SWAP
+  REPEAT DROP
+;
+
+: PARSE ( c --- c-addr u )
+\ Parse ccc delimited by c from the input source and step past the
+\ delimiter. Leading delimiters are NOT skipped - that is WORD's job,
+\ and the standard's. Until Iteration 245 this skipped them, as SOD32's
+\ does, so S" " took the closing quote for a leading delimiter and
+\ swallowed the rest of the line as the string.
+  >R SOURCE SWAP >IN @ + SWAP >IN @ -   ( a n )
+  OVER SWAP R> SCAN                     ( a a2 n2 )
+  IF 1 >IN +! THEN
+  OVER - DUP >IN +! ;
+
+: PLACE ( addr len c-addr --- )
+\ Place the string starting at addr with length len at c-addr as
+\ a counted string.
+  2DUP C! CHAR+ SWAP CMOVE ;
+
+: WORD ( c --- addr )
+\ Skip leading c, parse to the next c, and leave the result as a
+\ counted string at HERE, followed by a blank.
+  >R SOURCE SWAP >IN @ + SWAP >IN @ -   ( a n )
+  R@ SKIP DROP SOURCE DROP - >IN !
+  R> PARSE HERE PLACE HERE BL HERE COUNT + C! ;
+
+\ PART 8: INTERPRETER HELPER WORDS
+
+\ First we need FIND and related words.
+
+\ Each word list is hashed into threads, each a linked list of
+\ definitions, newest first; a search walks only the thread its name
+\ hashes to (see HASH). Names are compared a byte at a time; they are
+\ not padded to a cell (Iteration 243).
+
+\ Dictionary definitions are built as follows:
+\
+\ LINK field: 1-3 bytes, the distance back to the name field of the
+\             previous word in the same thread; see PREV-NFA.
+\ NAME field: counted string of at most 31 characters, not padded.
+\             bits 5-7 of length byte have special meaning.
+\                   7 is always set to mark start of name ( for >NAME)
+\                   6 is set if the word is immediate.
+\                   5 is set if the word is a macro.
+\ CODE field: the byte after the name, is execution token for word.
+\             here the executable code for the word starts. Not aligned.
+\ PARAMETER field: (body) Contains the data of variables etc.; always
+\             cell-aligned, at align(xt+4) - see CREATE.
+
+VARIABLE NAMEBUF ( --- a-addr)
+\ An aligned buffer that holds a copy of the name that is searched.
+28 ALLOT-T
+
+VARIABLE WORDLISTS ( --- a-addr)
+\ Head of the chain of wordlists OTHER than FORTH-WORDLIST: the
+\ START-relative offset of the most recently created one, or 0.
+\
+\ Each such wordlist carries the offset of the next in a link cell
+\ immediately BEFORE its count cell, so the chain costs one cell per
+\ wordlist and needs no table and no limit. Offsets, not addresses, so
+\ the chain itself never needs relocating - only the thread heads
+\ inside each wordlist do.
+\
+\ COLD relocates every wordlist on this chain and SAVE-SYSTEM
+\ unrelocates the same walk. Before it existed both knew about exactly
+\ one wordlist, which was complete for as long as there WAS one: the
+\ moment extend.4 was loaded into a saved image, ROOT-WORDLIST and
+\ every VOCABULARY kept the builder's absolute addresses, and two
+\ identical builds differed in eight cells by exactly the ASLR delta.
+
+VARIABLE FORTH-WORDLIST ( --- addr)
+\ A hashed word list, laid out as SOD32's is: cell 0 holds the number
+\ of threads and cells 1..n the head of each thread.
+\
+\ RelF carried this structure over from SOD32 as a SINGLE cell - "a
+\ pointer to the last definition" - which made every lookup a linear
+\ scan of the whole dictionary. Measured on bench/parse.fth that cost
+\ 8.05 million dictionary entries visited against SOD32's 397 thousand,
+\ and about 81% of every operation the system executed. See
+\ FINDINGS-OUTER-INTERPRETER.md.
+32 CELLS-T ALLOT-T
+
+VARIABLE LAST ( --- addr)
+\ This variable holds a pointer to the last definition created.
+
+VARIABLE CONTEXT 28 ALLOT-T ( --- a-addr)
+\ This variable holds the addresses of up to 8 word lists that are
+\ in the search order.
+
+VARIABLE #ORDER ( --- addr)
+\ This variable holds the number of word list that are in the search order.
+
+VARIABLE CURRENT ( --- addr)
+\ This variable holds the address of the word list to which new definitions
+\ are added.
+
+: HASH ( c-addr u #threads --- n )
+\ SOD32's hash, unchanged: the length and the first two characters.
+\ It must agree EXACTLY with cross.4's THASH, which threads the
+\ dictionary of the image being built, or a word would be filed under
+\ one thread and looked for under another.
+  >R OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
+   THEN XOR
+  R> 1- AND ;
+
+: >NAME ( addr1 --- addr2 )
+\ Convert execution token addr1 (address of code) to address of name:
+\ the count byte is the only header byte with bit 7 set that is reached
+\ scanning back from the body, since names are 7-bit.
+  BEGIN 1- DUP C@ 128 AND UNTIL ;
+
+: NAME> ( addr1 --- addr2 )
+\ Convert address of name to address of code: the body follows the
+\ name directly.
+  COUNT 31 AND + ;
+
+: NAME>BUF ( c-addr u ---)
+\ Move the name c-addr u to the buffer NAMEBUF.
+  NAMEBUF 32 0 FILL 32 MIN NAMEBUF PLACE ;
+
+\ A dictionary header is [link][count][name][body], with nothing
+\ padded. The link is the distance BACK from this word's name field to
+\ the previous one in the same thread, 1-3 bytes with the tag byte
+\ LAST, so it is read backward from the name field:
+\     tag < 128           d = tag                                 7 bits
+\     128 <= tag < 192    d = (tag AND 63) << 8 OR [nfa-2]        14 bits
+\     tag >= 192          d = (tag AND 63) << 16 OR [nfa-2] << 8
+\                           OR [nfa-3]                            22 bits
+\ and d = 0 ends the thread (CV8.md 4.2). Until Iteration 243 the
+\ link was a cell and names were padded to one.
+
+: PREV-NFA ( nfa --- nfa' | 0 )
+\ The name field of the previous word in this thread, or 0.
+  DUP 1- C@                                    ( nfa tag )
+  DUP 128 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
+  DUP 192 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
+  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - ;
+
+: NAME=? ( a1 a2 u --- f )
+\ Are the u bytes at a1 and a2 equal?
+  BEGIN DUP WHILE
+    >R OVER C@ OVER C@ = 0= IF R> DROP 2DROP 0 EXIT THEN
+    1+ SWAP 1+ SWAP R> 1-
+  REPEAT DROP 2DROP -1 ;
+
+: SEARCH-WORDLIST ( c-addr u wid --- 0 | xt 1 xt -1)
+\ Search the wordlist with address wid for the name c-addr u.
+\ Return 0 if not found, the execution token xt and -1 for non-immediate
+\ words and xt and 1 for immediate words. Only the thread the name
+\ hashes to is walked.
+  ROT ROT NAME>BUF
+  DUP >R NAMEBUF COUNT R@ @ HASH 1+ CELLS + @ R> DROP   ( nfa | 0 )
+  BEGIN DUP WHILE
+    \ Bits 5-7 of the count byte are flags, not length.
+    DUP C@ 31 AND NAMEBUF C@ = IF
+      DUP 1+ NAMEBUF 1+ NAMEBUF C@ NAME=? IF
+        DUP NAME> SWAP C@ 64 AND IF 1 ELSE -1 THEN EXIT
+      THEN
+    THEN
+    PREV-NFA
+  REPEAT ;
+
+: FIND ( c-addr --- c-addr 0| xt 1|xt -1 )
+\ Search all word lists in the search order for the name in the
+\ counted string at c-addr. If not found return the name address and 0.
+\ If found return the execution token xt and -1 if the word is non-immediate
+\ and 1 if the word is immediate.
+  #ORDER @ DUP 1 > IF
+   CONTEXT #ORDER @ 1- CELLS + DUP @ SWAP CELLBYTES-TOK - @ =
+  ELSE 0 THEN
+  IF 1- THEN \ If last wordlist is double, don't search it twice.
+  BEGIN
+   DUP
+  WHILE
+   1- >R
+   DUP COUNT
+   R@ CELLS CONTEXT + @ SEARCH-WORDLIST
+   DUP
+   IF
+    R> DROP ROT DROP EXIT \ Exit if found.
+   THEN
+   DROP R>
+  REPEAT
+;
+
+\ The following words are related to numeric input.
+
+: DIGIT? ( c -- 0| c--- n -1)
+\ Convert character c to its digit value n and return true if c is a
+\ digit in the current base. Otherwise return false.
+  48 - DUP 0< IF DROP 0 EXIT THEN
+  DUP 9 > OVER 17 < AND IF DROP 0 EXIT THEN
+  DUP 9 > IF 7 - THEN
+  DUP BASE @ < 0= IF DROP 0 EXIT THEN
+  -1
+;
+
+: >NUMBER ( ud1 c-addr1 u1 --- ud2 c-addr2 u2 )
+\ Convert the string at c-addr with length u1 to binary, multiplying ud1
+\ by the number in BASE and adding the digit value to it for each digit.
+\ c-addr2 u2 is the remainder of the string starting at the first character
+\ that is no digit.
+  BEGIN
+   DUP
+  WHILE
+   -1 + >R
+   COUNT DIGIT? 0=
+   IF
+    R> 1+ SWAP -1 + SWAP  EXIT
+   THEN
+   SWAP >R
+   >R
+   SWAP BASE @ UM* ROT BASE @ * 0 SWAP D+ \ Multiply ud by base.
+   R> 0 D+                                \ Add new digit.
+   R> R>
+  REPEAT
+;
+
+: CONVERT ( ud1 c-addr1 --- ud2 c-addr2)
+\ Convert the string starting at c-addr1 + 1 to binary. c-addr2 is the
+\ address of the first non-digit. Digits are added into ud1 as in >NUMBER.
+\ It began at c-addr1 - 1, not + 1 (`-1 +` for `1+`), and so converted
+\ nothing: no test ever ran it, until coverage showed that (Iteration 554).
+  1+ -1 >NUMBER DROP ;
+
+: NUMBER? ( c-addr ---- d f)
+\ Convert the counted string at c-addr to a double binary number.
+\ f is true if and only if the conversion was successful. DPL contains
+\ -1 if there was no point in the number, else the position of the point
+\ from the right. Special prefixes: # means decimal, $ means hex.
+  -1 DPL !
+  BASE @ >R
+  COUNT
+  OVER C@ 45 = DUP >R IF    -1 + SWAP 1 + SWAP THEN \ Get any - sign
+  OVER C@ 36 = IF 16 BASE ! -1 + SWAP 1 + SWAP THEN   \ $ sign for hex.
+  OVER C@ 35 = IF 10 BASE ! -1 + SWAP 1 + SWAP THEN   \ # sign for decimal
+  DUP  0 > 0= IF  R> DROP R> BASE ! 0 EXIT THEN   \ Length 0 or less?
+  >R >R 0 0 R> R>
+  BEGIN
+   >NUMBER
+   DUP IF OVER C@ 46 = IF -1 + DUP DPL ! SWAP 1 + SWAP ELSE \ handle point.
+         R> DROP R> BASE ! 0 EXIT THEN   \ Error if anything but point
+       THEN
+  DUP 0= UNTIL 2DROP R> IF DNEGATE THEN
+  R> BASE ! -1
+;
+
+\ PART 9: THE COMPILER
+
+VARIABLE HANDLER ( --- a-addr )
+\ The innermost CATCH's frame on the return stack, or 0. CATCH and THROW
+\ were extend.4's until Iteration 554, where the kernel's own errors -
+\ every ABORT", "Undefined word" among them - could not reach them: they
+\ went straight to WARM. The shell's builtins now run under CATCH, so a
+\ Forth error fails that one command (A24) instead of dropping the shell
+\ into Forth's own read loop. WARM sets this back to 0.
+
+: CATCH ( i*x xt --- j*x 0 | i*x n )
+\ Run xt; if it THROWs n, come back here with the stacks as they were.
+  SP@ >R  HANDLER @ >R  RP@ HANDLER !
+  EXECUTE
+  R> HANDLER !  R> DROP  0 ;
+
+: (THROW) ( k*x n --- i*x n )
+\ n nonzero: back to the innermost CATCH - or, with none, WARM.
+  HANDLER @ 0= IF DROP WARM THEN
+  HANDLER @ RP!  R> HANDLER !  R> SWAP >R  SP! DROP R> ;
+
+: THROW ( k*x n --- k*x | i*x n )
+  ?DUP IF (THROW) THEN ;
+
+VARIABLE TRAP-ENTRY ( --- a-addr )
+\ The trap word, as an offset from START, or 0 (Iteration 556, Q21):
+\ extend.4 sets it to TRAPPED, and COLD hands it to the engine with
+\ TRAP-XT! in every process an image saved since then starts. Without
+\ it, a trap ends the process as it did - with status 70 now.
+
+VARIABLE ECHAR-BUF ( --- a-addr )
+
+: ETYPE ( c-addr u --- )
+\ Type to standard error (Iteration 554): an error message on standard
+\ output ended up in `x=$(forth 'bad')`, as if it were the result.
+  2 WRITE-FILE DROP ;
+
+: ECHAR ( c --- )  ECHAR-BUF C!  ECHAR-BUF 1 ETYPE ;
+
+: (ABORT") ( f --- )
+\ Runtime part of ABORT": the message and the word being read, to
+\ standard error; then -2 THROW - to a CATCH if there is one.
+           IF R> COUNT ETYPE 32 ECHAR HERE COUNT ETYPE 10 ECHAR -2 (THROW)
+           ELSE R> COUNT + >R THEN ;
+
+
+: UNUSED ( --- u )
+\ The room left in the dictionary, up to the data stack (Forth 2012).
+  DICT-LIMIT HERE - ;
+
+: ALLOT ( n --- )
+\ Allot n extra bytes of memory, starting at HERE to the dictionary.
+\ Checked since Iteration 545: past DICT-LIMIT it ran into the stacks.
+  DUP UNUSED > ABORT" dictionary full" DP +! ;
+
+: , ( x --- )
+\ Append cell x to the dictionary at HERE.
+  HERE ! 1 CELLS ALLOT ;
+
+: C, ( n --- )
+\ Append character c to the dictionary at HERE.
+  HERE C! 1 ALLOT ;
+
+: ALIGN ( --- )
+\ Add as many bytes to the dictionary as needed to align dictionary pointer.
+  BEGIN HERE CELLBYTES-TOK 1- AND WHILE 0 C, REPEAT ;
+
+: LINK-LEN ( d --- n )
+\ The bytes a link of distance d needs.
+  DUP 128 U< IF DROP 1 EXIT THEN
+  16384 U< IF 2 ELSE 3 THEN ;
+
+: LINK, ( d n --- )
+\ Append a link of exactly n bytes, tag byte last.
+  DUP 1 = IF DROP C, EXIT THEN
+  2 = IF DUP 255 AND C, 8 RSHIFT 128 OR C, EXIT THEN
+  DUP 255 AND C, DUP 8 RSHIFT 255 AND C, 16 RSHIFT 192 OR C, ;
+
+VARIABLE HDR-HEAD ( --- a-addr )
+VARIABLE HDR-LEN  ( --- a-addr )
+
+: HEADER ( --- )
+\ Create a header for a new definition without a code field. Refused
+\ within 4 KB of the dictionary's end (545): that margin is what covers
+\ the , and C, of the definition after it, which are not checked. The name
+\ is parsed first - WORD leaves it counted at HERE - because the link
+\ depends on the thread the name hashes to. The link's length depends
+\ on the distance, which depends on where the name lands, which
+\ depends on the link's length: bound it from above by sizing for a
+\ name at HERE+3, so the real distance always fits. Then the name is
+\ moved up and the link written into the gap.
+  UNUSED 4096 < ABORT" dictionary full"
+  32 WORD DUP C@ 31 > ABORT" name too long"   \ the count byte's low five bits
+  DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP DROP
+  HERE COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @ HDR-HEAD !
+  HDR-HEAD @ IF HERE 3 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !
+  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+  HERE LAST !             \ Set LAST so the definition can be linked by REVEAL
+  HERE C@ 1+ HERE C@ 128 + HERE C! ALLOT ;
+                          \ Allot the name and set bit 7 in the count byte.
+
+: REVEAL ( --- )
+\ Add the last created definition to the CURRENT wordlist, at the head
+\ of the thread its name hashes to.
+  LAST @ DUP COUNT 31 AND CURRENT @ @ HASH
+  1+ CELLS CURRENT @ + ! ;
+
+
+
+: OP, ( n --- )
+\ Append one opcode byte.
+  C, ;
+
+VARIABLE LAST-OP ( --- a-addr )
+\ Where the last foldable operation starts, or 0.
+VARIABLE LAST-LIT ( --- a-addr )
+\ Where the last literal starts, or 0...
+VARIABLE LAST-LITV ( --- a-addr )
+\ ...and its value.
+VARIABLE LAST-CALL ( --- a-addr )
+\ Where the last call starts, or 0...
+VARIABLE LAST-CALLXT ( --- a-addr )
+\ ...and its target.
+
+\ The compiler rewrites four two-operation patterns into one opcode
+\ (CV8.md 6): `LIT n +` and `LIT n =` into ADDI/EQI, and
+\ `var @` and `var !` into VAR@/VAR!. It remembers where the last
+\ literal and the last call started, and the second half of a pattern
+\ rewinds HERE over the first. NOTHING MAY BRANCH BETWEEN THE TWO, so
+\ everything that makes HERE a branch target, or emits anything that is
+\ not one of the halves, calls NO-PEEP. `;` folds a final operation and
+\ its EXIT into one opcode under the same rule.
+: NO-PEEP ( --- )
+  0 LAST-OP ! 0 LAST-LIT ! 0 LAST-CALL ! ;
+
+: REWIND ( a-addr --- )
+\ Discard everything compiled from a-addr to HERE.
+  HERE - ALLOT ;
+
+: W, ( n --- )
+\ Append a 16-bit little-endian operand.
+  DUP 255 AND C, 8 RSHIFT 255 AND C, ;
+
+: SLOT, ( a-addr --- )
+\ A slot operand naming a-addr, compiled right after its opcode: the
+\ offset from the operand itself, two bytes big-endian if it fits 15
+\ signed bits, else three with the top bit set - 23 signed bits. It was
+\ the offset from START until Iteration 259, and half of the shell's
+\ slots needed the long form; from here nine in ten are short.
+  HERE -
+  DUP -4194304 < OVER 4194303 > OR ABORT" slot beyond reach"
+  DUP -16384 < OVER 16383 > OR IF
+    DUP 16 RSHIFT 127 AND 128 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C,
+  ELSE
+    DUP 8 RSHIFT 127 AND C, 255 AND C,
+  THEN ;
+
+VARIABLE STATE ( --- a-addr)
+\ Variable that holds the compiler state, 0 is interpreting 1 is compiling.
+
+: ]  ( --- )
+\ Start compilation mode.
+  1 STATE ! ;
+
+: [  ( --- )
+\ Leave compilation mode.
+  0 STATE ! ; IMMEDIATE
+
+: LIT, ( n --- )
+\ Append a literal in the narrowest form that holds it.
+  NO-PEEP HERE LAST-LIT ! DUP LAST-LITV !
+  DUP 0 = IF DROP 97 OP, EXIT THEN              \ push 0
+  DUP 1 = IF DROP 98 OP, EXIT THEN              \ push 1
+  DUP -1 = IF DROP 99 OP, EXIT THEN             \ push -1
+  DUP 256 U< IF HERE LAST-OP ! LIT8-TOK OP, C, EXIT THEN
+  DUP 65536 U< IF HERE LAST-OP ! [OP] LIT OP, W, EXIT THEN
+  CELLBYTES-TOK 4 = IF LIT32-TOK OP, DUP W, 16 RSHIFT W, EXIT THEN
+  \ A 64-bit cell holds values a signed 32-bit field cannot: the field
+  \ holds -2^31 .. 2^31-1. Both bounds are COMPUTED rather than written.
+  \ They were the literals 2147483648 and 4294967296, which a 4-byte host
+  \ cross-compiling this file cannot hold - they wrap to -2147483648 and
+  \ 0 - so an 8-byte image built on an ARMv7 board had a LITERAL that
+  \ tested the wrong range. They were the only two literals, of 388,
+  \ whose value depended on the host (Iteration 415). The 4-byte case
+  \ leaves above, so `1 31 LSHIFT 2*` is only ever computed where it is
+  \ 2^32.
+  DUP 1 31 LSHIFT +  1 31 LSHIFT 2*  U< IF
+    LIT32-TOK OP, DUP W, 16 RSHIFT W, EXIT
+  THEN
+  125 OP, DUP DUP W, 16 RSHIFT W, 32 RSHIFT DUP W, 16 RSHIFT W, ;
+
+: LITERAL ( n --- )
+\ Add a literal to the current definition.
+  LIT, ; IMMEDIATE
+
+: EXIT, ( --- )
+\ Append a return. Until Iteration 538 it was folded into the last
+\ operation where that had a "then EXIT" form - 22 opcodes and their
+\ handlers, given up for simplicity (QUESTIONS.md A15).
+  [OP] EXIT OP, NO-PEEP ;
+
+: CALL, ( a-addr --- )
+\ A call to the body at a-addr: its offset from the image base, two
+\ bytes if it fits 14 bits, else three. The call scale is 0, because
+\ bodies are not aligned (CV8.md 2.4).
+  NO-PEEP HERE LAST-CALL ! DUP LAST-CALLXT !
+  START @ -
+  DUP 16384 < IF DUP 8 RSHIFT 128 OR C, 255 AND C,
+  ELSE DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C, THEN ;
+
+: PEEP-IMM ( op --- f )
+\ Rewrite `LIT n +` or `LIT n =` just compiled, if op completes it.
+  LAST-LIT @ 0= IF DROP 0 EXIT THEN
+  LAST-LITV @ 128 + 256 U< 0= IF DROP 0 EXIT THEN
+  DUP [OP] + = IF DROP 121 ELSE
+  [OP] = = IF 123 ELSE 0 EXIT THEN THEN
+  LAST-LIT @ REWIND LAST-LITV @ >R NO-PEEP
+  HERE LAST-OP ! OP, R> 255 AND C, -1 ;
+
+: PEEP-VAR ( op --- f )
+\ Rewrite `var @` or `var !` just compiled, where var is a plain data
+\ word: its body starts with DOVAR, so its parameter field is fixed.
+  LAST-CALL @ 0= IF DROP 0 EXIT THEN
+  LAST-CALLXT @ C@ DOVAR-TOK = 0= IF DROP 0 EXIT THEN
+  DUP [OP] @ = IF DROP 100 ELSE
+  [OP] ! = IF 101 ELSE 0 EXIT THEN THEN
+  LAST-CALL @ REWIND LAST-CALLXT @ >R NO-PEEP
+  OP, R> 4 + ALIGNED SLOT, -1 ;   \ >BODY, which is defined later
+
+: DOES-FETCH? ( xt --- f )
+\ Is xt a `CREATE ... DOES> @ ;` word - a buffer from pool.4's BUFFER:,
+\ say? Its body is DODOES and a far call to the tail, and DOES> starts
+\ every tail with R> (DODOES leaves the parameter field on the return
+\ stack), so this tail is R> @ EXIT.
+  DUP C@ DODOES-TOK = 0= IF DROP 0 EXIT THEN
+  1+ DUP C@ 63 AND 16 LSHIFT OVER 1+ C@ 8 LSHIFT OR SWAP 2 + C@ OR
+  START @ +
+  DUP C@ [OP] R> = 0= IF DROP 0 EXIT THEN
+  1+ DUP C@ [OP] @ =  SWAP 1+ C@ [OP] EXIT =  AND ;
+
+: LIT-LEN ( op --- n )   \ a literal's length, its opcode included, or 0 (681)
+  DUP 97 = OVER 98 = OR OVER 99 = OR IF DROP 1 EXIT THEN
+  DUP LIT8-TOK = IF DROP 2 EXIT THEN
+  DUP [OP] LIT = IF DROP 3 EXIT THEN
+  DUP LIT32-TOK = IF DROP 5 EXIT THEN
+  125 = IF 9 EXIT THEN  0 ;
+
+: CONST-WORD? ( xt --- f )   \ its body one literal, then EXIT: a constant's (681)
+  DUP C@ LIT-LEN ?DUP IF + C@ [OP] EXIT = ELSE DROP 0 THEN ;
+
+\ (683) Inlining, item 4 stage b (CV8-LEDGER.md): a call to a small
+\ straight-line word - at most four instructions before its EXIT, at
+\ most 6 bytes since 684 - is replaced by a copy of its body. Calls and returns
+\ were 18 % of the realistic script's dispatches (681), half of them to
+\ words that small. A body is copied as it is, so it may hold only what
+\ means the same anywhere: no branch (offsets would point elsewhere - not
+\ yet), no return-stack word (it would find the caller's frame), no
+\ locals (they are frames too), no data word; a call is copied, unless
+\ its word begins R> or R@ - (S") and (POSTPONE) take their return
+\ address, and data follows the call.
+: INL-PLAIN? ( op --- f )   \ an operand-free opcode that means the same anywhere
+  DUP 5 - 12 U<  OVER 20 - 6 U< OR  OVER 65 - 2 U< OR  OVER 70 - 2 U< OR
+  OVER 97 - 3 U< OR  OVER 106 - 7 U< OR  OVER 114 - 4 U< OR  SWAP 119 = OR ;
+
+: INL-OP ( a --- a' )   \ past one instruction a copied body may hold, or 0
+  DUP C@  DUP 128 AND IF                             \ a call: two bytes, or three
+    DUP 64 AND IF  63 AND 16 LSHIFT  OVER 1+ C@ 8 LSHIFT OR  OVER 2 + C@ OR  3
+    ELSE  63 AND 8 LSHIFT  OVER 1+ C@ OR  2  THEN
+    SWAP START @ + C@  DUP 17 = SWAP 19 = OR IF 2DROP 0 EXIT THEN  + EXIT
+  THEN
+  DUP 2 = IF DROP 3 + EXIT THEN                      \ LIT, two bytes
+  DUP 26 = IF DROP 5 + EXIT THEN                     \ LIT32
+  DUP 125 = IF DROP 9 + EXIT THEN                    \ LIT64
+  DUP 29 = OVER 121 = OR OVER 123 = OR IF DROP 2 + EXIT THEN   \ LIT8 ADDI EQI
+  DUP 100 = OVER 101 = OR IF                         \ VAR@ VAR!: a slot of two bytes, or three
+    DROP DUP 1+ C@ 128 AND IF 4 ELSE 3 THEN + EXIT THEN
+  DUP 126 = IF                                       \ ESC: any selector but RP@ and RP!
+    DROP DUP 1+ C@ DUP 72 = SWAP 73 = OR IF DROP 0 ELSE 2 + THEN EXIT THEN
+  INL-PLAIN? IF 1+ ELSE DROP 0 THEN ;
+
+: SLOT@ ( a --- a-addr )   \ the address the slot operand at a names (683)
+  \ SLOT,'s two forms read back: big-endian, from the operand itself -
+  \ fifteen signed bits, or twenty-three with the first byte's top bit set
+  DUP C@ 128 AND IF
+    DUP C@ 127 AND 16 LSHIFT  OVER 1+ C@ 8 LSHIFT OR  OVER 2 + C@ OR
+    DUP 4194304 AND IF 8388608 - THEN
+  ELSE
+    DUP C@ 8 LSHIFT  OVER 1+ C@ OR
+    DUP 16384 AND IF 32768 - THEN
+  THEN + ;
+
+\ (684) The limits, measured: 683's four and 12 bytes against six and
+\ 16 - calls a further 27 % fewer, the shells 3,544 bytes larger, the
+\ time the same - and against four and 6 bytes: the time the same, the
+\ shells 424 bytes smaller. X@, the most called, is 5 bytes.
+\ (701) Swept again, against 4 and 6, by the ledger (GOALS.md 10): 4 and
+\ 5 bytes -1,520 bytes of shell, 3 and 5 -1,728 but fn and arith up 4 %,
+\ 5 and 8 +1,960, 3 and 6 -1,648 with every workload inside the noise
+\ in two runs: kept. A fourth instruction paid for itself only in bytes.
+3 CONSTANT INL-MAXI    \ at most this many instructions before the EXIT
+6 CONSTANT INL-MAXB    \ and at most this many bytes
+
+: INLINE-LEN ( xt --- u )   \ a small straight body's bytes before its EXIT, or 0
+  DUP INL-MAXI 1+
+  BEGIN DUP WHILE
+    OVER C@ 1 = IF  DROP SWAP -  DUP INL-MAXB 1+ U< 0= IF DROP 0 THEN  EXIT  THEN
+    1- SWAP INL-OP  DUP 0= IF DROP 2DROP 0 EXIT THEN  SWAP
+  REPEAT DROP 2DROP 0 ;
+
+: INLINE-COPY ( xt u --- )   \ the body's instructions laid here (683)
+  \ as they are, but a slot: its offset is from the operand itself, so a
+  \ VAR@ or VAR! is laid again, its slot aimed from where it is now
+  OVER + SWAP
+  BEGIN 2DUP SWAP U< WHILE
+    DUP INL-OP
+    OVER C@ DUP 100 = SWAP 101 = OR IF
+      OVER C@ C,  OVER 1+ SLOT@ SLOT,
+    ELSE
+      2DUP SWAP - >R  OVER HERE R@ MOVE  R> ALLOT
+    THEN
+    SWAP DROP
+  REPEAT 2DROP ;
+
+: COMPILE, ( xt --- )
+\ Add the execution semantics of xt to the current definition. A word
+\ with the MACRO bit is a primitive or an opcode word: its body starts
+\ with its opcode, or with ESC and a selector, and that is inlined.
+\ Anything else is a call.
+  DUP >NAME C@ 32 AND IF
+    DUP C@ 126 = IF
+      NO-PEEP DUP C@ OP, 1+ C@ OP,
+    ELSE
+      C@ DUP PEEP-IMM IF DROP EXIT THEN
+      DUP PEEP-VAR IF DROP EXIT THEN
+      NO-PEEP HERE LAST-OP ! OP,
+    THEN
+  ELSE
+    \ (681) A constant - a body of one literal and EXIT - compiles to its
+    \ value, laid as a literal: one dispatch where the call, the literal
+    \ and the return were three. Its word stays, for ' and EXECUTE.
+    DUP CONST-WORD? IF EXECUTE LIT, EXIT THEN
+    \ A word whose DOES> part is `@ ;` compiles to VAR@ on its data
+    \ field: one dispatch where the call, the DOES> prologue, the fetch
+    \ and the return were four - 6.7% of the shell's loop was that, for
+    \ its buffers (Iteration 260).
+    DUP DOES-FETCH? IF
+      NO-PEEP 100 OP, 4 + ALIGNED SLOT, NO-PEEP EXIT
+    THEN
+    \ (683) a small straight word: its body, copied, in place of the call
+    DUP INLINE-LEN ?DUP IF  NO-PEEP INLINE-COPY NO-PEEP EXIT  THEN
+    CALL,
+  THEN ;
+
+VARIABLE CSP ( --- a-addr )
+\ This variable is used for stack checking between : and ;
+
+VARIABLE 'LEAVE ( --- a-addr)
+\ This variable is used for LEAVE address resolution.
+
+: !CSP ( --- )
+\ Store current stack pointer in CSP.
+   SP@ CSP ! ;
+
+: ?CSP ( --- )
+\ Check that stack pointer is equal to value contained in CSP.
+   SP@ CSP @ - ABORT" Incomplete control structure" ;
+
+: ?COMP ( --- )
+\ Refuse a word that lays down code, outside a definition (Iteration 552).
+\ IF, DO and their kind compile branches at HERE: interpreted, they did
+\ so silently - a loop at the top level of a file ran nothing and left
+\ its operands behind, three times in one session of writing tests.
+  STATE @ 0= ABORT" compile only" ;
+
+: ; ( --- )
+\ Finish the current definition by adding a return to it, make it
+\ visible and leave compilation mode.
+  ?COMP
+  EXIT, [ ?CSP REVEAL ; IMMEDIATE
+
+: CREATE ( "ccc" --- )
+\ Create a definition that returns its parameter field address when
+\ executed. Storage can be added to it with ALLOT. The body is
+\ [DOVAR][three bytes][pad to a cell]: DOES> overwrites the front with
+\ [DODOES][three-byte call], and the parameter field, which the engine
+\ computes as align(body+4), does not move.
+  HEADER REVEAL NO-PEEP DOVAR-TOK OP, 0 C, 0 C, 0 C, ALIGN ;
+
+: VARIABLE ( "ccc" --- )
+\ Create a variable where 1 cell can be stored. When executed it
+\ returns the address.
+  CREATE 0 , ;
+
+: CONSTANT ( x "ccc" ---)
+\ Create a definition that returns x when executed.
+  HEADER REVEAL LIT, EXIT, ;
+
+: OPERAND3@ ( a --- u )   \ a three-byte operand, high byte first
+  DUP C@ 16 LSHIFT OVER 1+ C@ 8 LSHIFT OR SWAP 2 + C@ OR ;
+
+: (POSTPONE) ( --- )
+\ Followed by the xt to compile, three bytes from START (Iteration 258:
+\ it was a cell relative to itself, aligned).
+  R> DUP 3 + >R OPERAND3@ START @ +
+  DUP >NAME C@ 64 AND IF EXECUTE ELSE COMPILE, THEN
+;
+
+: : ( "ccc" --- )
+\ Start a new definition, enter compilation mode.
+  !CSP HEADER ] ;
+
+: >MARK ( --- a-addr )
+\ Emit a placeholder branch operand and leave its address. A branch
+\ operand is a signed 16-bit offset from the operand itself.
+  NO-PEEP HERE 0 W, ;
+
+: >RESOLVE ( a-addr --- )
+\ Patch the operand at a-addr so its branch lands on HERE.
+  NO-PEEP HERE OVER - SWAP 2DUP C! 1+ SWAP 8 RSHIFT SWAP C! ;
+
+: BACK, ( dest op16 op8 --- )
+\ Compile a backward branch to dest. Its distance is known, so it takes
+\ the one-byte-offset form when that reaches - nine backward branches
+\ in ten (Iteration 258). Both offsets count from the operand.
+  NO-PEEP ROT HERE 1+ -                 ( op16 op8 off )
+  DUP -128 < IF
+    SWAP DROP SWAP OP, W,
+  ELSE
+    SWAP OP, C, DROP
+  THEN NO-PEEP ;
+
+: BEGIN ( --- x )
+\ Start a BEGIN UNTIL or BEGIN WHILE REPEAT loop.
+  ?COMP
+  NO-PEEP HERE ; IMMEDIATE
+
+: UNTIL ( x --- )
+\ Form a loop with matching BEGIN.
+\ Runtime: A flag is take from the stack
+\ each time UNTIL is encountered and the loop iterates until it is nonzero.
+  ?COMP
+  [OP] ?BRANCH 0BRANCH8-TOK BACK, ; IMMEDIATE
+
+: AGAIN ( x --- )
+\ End a BEGIN AGAIN loop: branch back unconditionally.
+  ?COMP
+  [OP] BRANCH BRANCH8-TOK BACK, ; IMMEDIATE
+
+: IF    ( --- x)
+\ Start an IF THEN or IF ELSE THEN construction.
+\ Runtime: At IF a flag is taken from
+\ the stack and if it is true the part between IF and ELSE is executed,
+\ otherwise the part between ELSE and THEN. If there is no ELSE, the part
+\ between IF and THEN is executed only if flag is true.
+  ?COMP
+  NO-PEEP [OP] ?BRANCH OP, >MARK ; IMMEDIATE
+
+: THEN ( x ---)
+\ End an IF THEN or IF ELSE THEN construction.
+  ?COMP
+  >RESOLVE ; IMMEDIATE
+
+: ELSE ( x1 --- x2)
+\ part of IF ELSE THEN construction.
+  ?COMP
+  NO-PEEP [OP] BRANCH OP, >MARK SWAP >RESOLVE ; IMMEDIATE
+
+: WHILE  ( x1 --- x2 x1 )
+\ part of BEGIN WHILE REPEAT construction.
+\ Runtime: At WHILE a flag is taken from the stack. If it is false,
+\  the program jumps out of the loop, otherwise the part between WHILE
+\  and REPEAT is executed and the loop iterates to BEGIN.
+  ?COMP
+  POSTPONE IF SWAP ; IMMEDIATE
+
+: REPEAT ( x1 x2 --- )
+\ part of BEGIN WHILE REPEAT construction.
+  ?COMP
+  [OP] BRANCH BRANCH8-TOK BACK, >RESOLVE ; IMMEDIATE
+
+VARIABLE POCKET ( --- a-addr )
+\ Buffer for S" strings that are interpreted.
+  252 ALLOT-T
+
+: '  ( "ccc" --- xt)
+\ Find the word with name ccc and return its execution token.
+  32 WORD FIND 0= ABORT" Not found" ;
+
+: ['] ( "ccc" ---)
+\ Compile the execution token of the word with name ccc as a literal.
+  ' LITERAL ; IMMEDIATE
+
+: CHAR ( "ccc" --- c)
+\ Return the first character of "ccc".
+  BL WORD 1 + C@ ;
+
+: [CHAR] ( "ccc" --- )
+\ Compile the first character of "ccc" as a literal.
+  CHAR LITERAL ; IMMEDIATE
+
+: DO ( --- x)
+\ Start a DO LOOP.
+\ Runtime: ( n1 n2 --- ) start a loop with initial count n2 and
+\ limit n1.
+  ?COMP
+  POSTPONE (DO) NO-PEEP 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+
+: LEAVE-LINK, ( --- )
+\ The operand of a branch to the loop's exit, not known yet. Until the
+\ loop ends, the operands of its ?DO and LEAVEs form a chain from 'LEAVE,
+\ each holding the distance back to the one before (0 ends it).
+  'LEAVE @ ?DUP IF HERE SWAP - ELSE 0 THEN
+  HERE 'LEAVE ! W, ;
+
+: ?DO ( --- x )
+\ Start a ?DO LOOP.
+\ Runtime: ( n1 n2 --- ) start a loop with initial count n2 and
+\ limit n1. Exit immediately if n1 = n2.
+  ?COMP
+  POSTPONE (?DO) [OP] BRANCH OP, 'LEAVE @ 0 'LEAVE ! LEAVE-LINK,
+  NO-PEEP HERE ; IMMEDIATE
+
+: LEAVE ( --- )
+\ Runtime: leave the matching DO LOOP immediately - drop the loop and
+\ branch to its exit.
+  ?COMP
+  POSTPONE UNLOOP [OP] BRANCH OP, LEAVE-LINK, NO-PEEP ; IMMEDIATE
+
+: RESOLVE-LEAVE ( --- )
+\ Point every branch in the chain at HERE, the loop's exit.
+  'LEAVE @
+  BEGIN ?DUP WHILE
+    DUP W@ ?DUP IF OVER SWAP - ELSE 0 THEN     ( a next )
+    SWAP >RESOLVE
+  REPEAT ;
+
+: LOOP  ( x --- )
+\ End a DO LOOP.
+\ Runtime: Add 1 to the count and if it is equal to the limit leave the loop.
+  ?COMP
+  POSTPONE (LOOP) [OP] BRANCH BRANCH8-TOK BACK,
+  RESOLVE-LEAVE 'LEAVE ! NO-PEEP ; IMMEDIATE
+
+: +LOOP ( x --- )
+\ End a DO +LOOP
+\ Runtime: ( n ---) Add n to the count and exit if this crosses the
+\ boundary between limit-1 and limit.
+  ?COMP
+  POSTPONE (+LOOP) [OP] BRANCH BRANCH8-TOK BACK,
+  RESOLVE-LEAVE 'LEAVE ! NO-PEEP ; IMMEDIATE
+
+: RECURSE ( --- )
+\ Compile a call to the current (not yet finished) definition.
+  ?COMP
+  LAST @ NAME> CALL, ; IMMEDIATE
+
+: STRING, ( c-addr u --- )
+\ A counted string in the code, unpadded: the code is bytes, and the
+\ runtimes return to the byte after it (Iteration 258).
+  DUP C, HERE OVER ALLOT SWAP MOVE ;
+
+: ."  ( "ccc<quote>" --- )
+\ Parse a string delimited by " and compile the following runtime semantics.
+\ Runtime: type that string.
+   POSTPONE (.") 34 PARSE STRING, ; IMMEDIATE
+
+
+: S"  ( "ccc<quote>" --- )
+\ Parse a string delimited by " and compile the following runtime semantics.
+\ Runtime: ( --- c-addr u) Return start address and length of that string.
+  STATE @ IF POSTPONE (S") 34 PARSE STRING,
+             ELSE 34 PARSE POCKET PLACE POCKET COUNT THEN ; IMMEDIATE
+
+: ABORT"  ( "ccc<quote>" --- )
+\ Parse a string delimited by " and compile the following runtime semantics.
+\ Runtime: ( f --- ) if f is nonzero, print the string and abort program.
+  POSTPONE (ABORT") 34 PARSE STRING, ; IMMEDIATE
+
+: ABORT ( --- )
+\ Abort unconditionally without a message: -1 THROW, as Forth 2012 has
+\ it. It was `1 ABORT" "`, which printed a space and the last word read.
+  -1 (THROW) ;
+
+: POSTPONE ( "ccc" --- )
+  POSTPONE (POSTPONE) ' START @ -
+  DUP 16 RSHIFT 255 AND C, DUP 8 RSHIFT 255 AND C, 255 AND C,
+  NO-PEEP ; IMMEDIATE
+
+: IMMEDIATE ( --- )
+\ Make last definition immediate, so that it will be executed even in
+\ compilation mode.
+  LAST @ DUP C@ 64 OR SWAP C! ;
+
+: .( ( "ccc<rparen>" --- )
+\ Print up to the next ), as the text is read (Forth 2012; Iteration 552).
+  41 PARSE TYPE ; IMMEDIATE
+
+: ( ( "ccc<rparen>" --- )
+\ Comment till next ).
+  BEGIN
+    41 DUP PARSE + C@ = 0=
+\    [CHAR] ) DUP PARSE + C@ = 0=
+  WHILE
+    REFILL 0= IF EXIT THEN
+  REPEAT
+; IMMEDIATE
+
+: \
+\ Comment till end of line.
+  SOURCE >IN ! DROP ; IMMEDIATE
+
+: >BODY ( xt --- a-addr)
+\ Convert execution token to parameter field address: past DOVAR or
+\ DODOES and three bytes, aligned. See CREATE.
+  4 + ALIGNED ;
+
+: (;CODE) ( --- )
+\ Runtime for DOES>: make the last created word call the code after
+\ the call to this word, and end the defining word (R> discards its
+\ return address). The body becomes [DODOES][three-byte call to the
+\ tail], in the room CREATE left. Always the far form: at a call scale
+\ of 0 the near form reaches only 16 KB.
+  R> LAST @ NAME>                     ( tail xt )
+  DODOES-TOK OVER C! 1+ SWAP          ( a-addr tail )
+  START @ -                           ( a-addr v )
+  2DUP 255 AND SWAP 2 + C!
+  2DUP 8 RSHIFT 255 AND SWAP 1+ C!
+  16 RSHIFT 192 OR SWAP C! ;
+
+: DOES>  ( --- )
+\ Word that contains DOES> will change the behavior of the last created
+\ word such that it pushes its parameter field address onto the stack
+\ and then executes whatever comes after DOES>. DODOES leaves the
+\ parameter field on the return stack for the tail's R>.
+  ?COMP
+  POSTPONE (;CODE) NO-PEEP POSTPONE R> ; IMMEDIATE
+
+\ PART 10: TOP LEVEL OF INTERPRETER
+
+: ?STACK ( ---)
+\ Check for stack over/underflow and abort with an error if needed.
+  DEPTH DUP 0< SWAP 10000 > OR ABORT" Stack error" ;
+
+VARIABLE CO-LIST ( --- a-addr )
+\ Compile-only words, by identity (Iteration 556, Q20): >R and its kind,
+\ interpreted, reach the interpreter's own return stack, and relf
+\ crashed. A header has no spare bit for this - the count byte's low five
+\ bits are the length, the top three are taken - so a list instead, of
+\ execution tokens: no names stored, a node per word - [next][xt], both
+\ offsets from START, so a saved image needs no relocating - in the
+\ dictionary, growing at run time. extend.4 marks >R R> R@ I EXIT.
+
+: COMPILE-ONLY-XT ( xt --- )
+\ Refuse xt when interpreted, from now on.
+  HERE CO-LIST @ , SWAP START @ - ,  START @ - CO-LIST ! ;
+
+: COMPILE-ONLY ( --- )
+\ Make the last definition compile-only, as IMMEDIATE makes it immediate.
+  LAST @ NAME> COMPILE-ONLY-XT ;
+
+: CO? ( xt --- f )
+\ Is xt compile-only? The list is short, and walked only when a word is
+\ interpreted - compiled code never asks.
+  START @ -  CO-LIST @
+  BEGIN DUP WHILE
+    START @ +  2DUP CELL+ @ = IF 2DROP -1 EXIT THEN
+    @
+  REPEAT SWAP DROP ;
+
+: INTERPRET ( ---)
+\ Interpret words from the current source until the input source is exhausted.
+  BEGIN
+   32 WORD DUP C@
+  WHILE
+   FIND DUP
+   IF
+    -1 = STATE @ AND
+    IF
+     COMPILE,
+    ELSE
+     STATE @ 0= IF DUP CO? ABORT" compile only" THEN
+     EXECUTE
+    THEN
+   ELSE DROP
+    NUMBER? 0= ABORT" Undefined word" DROP
+    STATE @ IF LITERAL THEN
+   THEN  ?STACK
+  REPEAT   DROP
+;
+
+: EVALUATE ( c-addr u --- )
+\ Evaluate the string c-addr u as if it were typed on the terminal.
+  SID @ >R SRC @ >R #SRC @ >R  >IN @ >R
+  #SRC ! SRC ! 0 >IN ! -1 SID ! INTERPRET
+  R> >IN ! R> #SRC ! R> SRC ! R> SID ! ;
+
+VARIABLE INCLUDE-BUFFER ( --- a-addr)
+\ This is the buffer where the lines of included files are stored.
+508 ALLOT-T
+
+VARIABLE INCLUDE-POINTER ( --- a-addr)
+\ This variable holds the address where the included line is stored.
+
+: INCLUDE-FILE ( fid --- )
+\ Read lines from the file identified by fid and interpret them.
+\ INCLUDE and EVALUATE nest in arbitrary order.
+  INCLUDE-POINTER @ >R SID @ >R SRC @ >R #SRC @ >R >IN @ >R
+  #SRC @ INCLUDE-POINTER +! INCLUDE-POINTER @ SRC !
+  SID !
+  BEGIN
+   REFILL
+  WHILE
+   INTERPRET
+  REPEAT
+  R> >IN ! R> #SRC ! R> SRC ! R> SID ! R> INCLUDE-POINTER !
+;
+
+: INCLUDED  ( c-addr u ---- )
+\ Open the file with name c-addr u and interpret all lines contained in it.
+  R/O OPEN-FILE ABORT" Can't open include file"
+  DUP >R INCLUDE-FILE
+  R> CLOSE-FILE DROP
+;
+
+: QUIT ( --- )
+\ This word resets the return stack, resets the compiler state, the include
+\ buffer and then it reads and interprets terminal input.
+  R0 @ RP! [
+  TIB SRC ! 0 SID !
+  INCLUDE-BUFFER INCLUDE-POINTER !
+  BEGIN
+   REFILL DROP INTERPRET STATE @ 0= IF ." OK" THEN CR
+  0 UNTIL
+;
+
+: WARM ( ---)
+\ This word is called when an error occurs. Clears the stacks, sets
+\ BASE to decimal, closes the files and resets the search order - and,
+\ since Iteration 554, forgets every CATCH frame, which the reset of the
+\ return stack has just destroyed.
+  0 HANDLER !  R0 @ RP! S0 @ SP! DECIMAL
+  2 #ORDER !
+  FORTH-WORDLIST CONTEXT !
+  FORTH-WORDLIST CONTEXT CELL+ !
+  FORTH-WORDLIST CURRENT !
+  QUIT ;
+
+: RELOCATE-WORDLIST ( wid --- )
+\ Add START to every thread head of one wordlist.
+\
+\ Cell 0 is the thread COUNT and must not be touched; an empty thread
+\ is 0 and must STAY 0, or it becomes a pointer to the image base.
+\ SAVE-SYSTEM's SS-UNRELOCATE-WORDLIST is this in reverse and the two
+\ have to agree.
+  DUP @ 1+ 1 DO
+    DUP I CELLS + DUP @ ?DUP IF START @ + SWAP ! ELSE DROP THEN
+  LOOP DROP ;
+
+: COLD ( --- )
+\ The first word that is called at the start of Forth.
+  START ! START @ DP +!
+  FORTH-WORDLIST RELOCATE-WORDLIST
+  \ ...and every other wordlist, down the chain WORDLIST built.
+  WORDLISTS @
+  BEGIN ?DUP WHILE
+    START @ + DUP RELOCATE-WORDLIST
+    1 CELLS - @
+  REPEAT
+  SP@ S0 !
+  RP@ CELL+ R0 ! \ Initialize variables SO and RO
+  TRAP-ENTRY @ ?DUP IF START @ + TRAP-XT! THEN   \ 556: traps THROW
+  BOOT @ ?DUP IF START @ + EXECUTE THEN
+  \ A turnkey image's own boot word normally never returns (shell.4's
+  \ MAIN either exits or runs its own read-eval loop). If one does
+  \ return, fall through to the ordinary interactive behavior rather
+  \ than doing something surprising.
+  ." Welcome to Forth " CR
+  WARM ;
+
+END-CROSS

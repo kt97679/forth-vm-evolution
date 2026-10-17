@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 355.
+- master: Iteration 356.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -70,6 +70,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   the VM's 2x was its own slow 32-bit system calls; the five fastest at 64 bits lose most (r 1.7), one
   lineage (klookup, kinput, rtimm 2, swapi; no regpin). **The after-seed-56 batch applied**: selecting
   at both widths, jitimg and jitvar, the comparison at 32 bits - the gate 268 of 268.
+- **This lab is RelF's base** (the owner, Iteration 356; RELF.md): vendor/relf follows relf master with
+  its sources (vendor/relf/tree); relf's ledger asks this lab about XF@/XV@, DEFER, (+LOOP), PICK and
+  fused pairs for CV8, measured on relf's shell workloads (bench-vm.py). Next: the A/B harness.
 - **Seed 57 next** (the owner, Iteration 355: one 12-hour run, not two of 6 - each run's fixed part
   with two widths about 3 h 40 min): the first run selecting at both widths, with jitimg and jitvar;
   the comparison at both widths. The reserve knows --widths now (164 min; the evolution ~8 h 20 min).

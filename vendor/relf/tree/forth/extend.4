@@ -1,0 +1,142 @@
+\ This file contains different extensions for basic kernel.
+\ Based on SOD32 by L.C. Benschop
+\ Copyright 2001 - 2005, Kirill Timofeev, kt97679@gmail.com
+\ The program is released under the GNU General Public License version 2.
+\ There is NO WARRANTY.
+
+\ COMPARE is a kernel primitive since Iteration 260 (memcmp).
+
+\ ---- ANS EXCEPTION: CATCH and THROW (Iteration 263) ----------------
+\ The reference implementation from the standard. HANDLER holds the
+\ return-stack address of the innermost CATCH's frame: the saved data
+\ stack pointer and the previous handler. THROW with a nonzero code
+\ restores both stacks to that frame and returns from its CATCH with
+\ the code; CATCH returns 0 when the word finished normally. THROW
+\ with no CATCH around it aborts, as the stub it replaces did.
+\
+\ A word THROWn through must not hold shadow.4 locals: SHADOW{ restores
+\ them on its own exits only, and THROW takes none of those.
+\ CATCH, THROW and HANDLER moved to the kernel in Iteration 554, so that
+\ the kernel's own errors reach them.
+
+\ ---- ANS CORE EXT ---------------------------------------------------
+\ This file is loaded twice: by the cross-compile host, before cross.4,
+\ and into the shell image by relfsh before SAVE-SYSTEM. One copy, two
+\ consumers - the `forth` builtin gets a standard Forth rather than a
+\ near-standard one, and it costs nothing at startup because the image
+\ is prebuilt.
+\
+\ Every word here has a test in tests/coreext.fth. That is the rule
+\ that retired 0> and U> from kernel.4 at Iteration 220: they were
+\ unused AND untested, so they could have been wrong for years.
+
+: NIP ( x1 x2 --- x2 )    SWAP DROP ;
+: TUCK ( x1 x2 --- x2 x1 x2 )  SWAP OVER ;
+: 0<> ( x --- f )         0= 0= ;
+: 0> ( n --- f )          0 > ;
+: U> ( u1 u2 --- f )      SWAP U< ;
+: WITHIN ( x lo hi --- f ) OVER - >R - R> U< ;
+: ERASE ( c-addr u --- )  0 FILL ;
+
+\ TRUE is already in kernel.4; only FALSE was missing.
+ 0 CONSTANT FALSE ( --- f )
+
+
+: [COMPILE] ( "ccc" --- )
+\ Compile the next word even if it is immediate.
+  ' COMPILE, ; IMMEDIATE
+
+\ CASE ... OF ... ENDOF ... ENDCASE, built on IF/ELSE/THEN as the
+\ standard's own appendix does. CASE leaves a 0 to mark the bottom of
+\ the ENDOF chain; ENDCASE unwinds it.
+: CASE ( --- 0 )   0 ; IMMEDIATE
+: OF ( --- x )     POSTPONE OVER POSTPONE = POSTPONE IF POSTPONE DROP ; IMMEDIATE
+: ENDOF ( x1 --- x2 )  POSTPONE ELSE ; IMMEDIATE
+: ENDCASE ( 0 x1 .. xn --- )
+  POSTPONE DROP
+  BEGIN ?DUP WHILE POSTPONE THEN REPEAT ; IMMEDIATE
+
+: ENVIRONMENT? ( c-addr u --- false | i*x true )
+\ CORE, not CORE EXT, and it was the one CORE word missing. No
+\ environment query is answered, which the standard permits: "If the
+\ query is not recognised, return false."
+  2DROP FALSE ;
+
+: GET-ORDER ( --- w1 w2 ... wn n )
+\ Return all wordlists in the search order, followed by the count.
+  #ORDER @ 0 ?DO CONTEXT I CELLS + @ LOOP #ORDER @ ;
+
+: SET-ORDER ( w1 w2 ... wn n --- )
+\ Set the search order to the n wordlists given on the stack.
+  #ORDER ! 0 #ORDER @ 1- DO CONTEXT I CELLS + ! -1 +LOOP ;
+
+: ALSO ( --- )
+\ Duplicate the last wordlist in the search order.
+  CONTEXT #ORDER @ CELLS + DUP CELL- @ SWAP ! 1 #ORDER +! ;
+
+: PREVIOUS ( --- )
+\ Remove the last wordlist from search order.
+   -1 #ORDER +! ;
+
+: WORDLIST ( --- wid)
+\ Make a new wordlist and give its address.
+\ A wordlist is [thread count][head 0..n-1], the same shape as
+\ FORTH-WORDLIST, whose count is taken as the authority so there is one
+\ place that decides how many threads a wordlist has. This stayed a
+\ single cell when the threads went in, and the symptom was that the
+\ system passed the whole CORE suite and then could not cross-compile
+\ itself: the vocabularies cross.4 uses were one cell each and
+\ SEARCH-WORDLIST read a chain head as a thread count.
+\ A link cell goes in FRONT of the count, holding the offset of the
+\ previously created wordlist, so COLD and SAVE-SYSTEM can walk every
+\ wordlist rather than knowing about FORTH-WORDLIST alone. The wid is
+\ still the address of the COUNT cell, so nothing that uses a wid
+\ changes.
+  \ ALIGN first: dictionary bodies are not padded, so HERE after a
+  \ colon definition is not aligned, and these are cells read with @.
+  ALIGN WORDLISTS @ ,
+  HERE DUP START @ - WORDLISTS !
+  FORTH-WORDLIST @ ,
+  HERE FORTH-WORDLIST @ CELLS DUP ALLOT 0 FILL ;
+
+: DEFINITIONS  ( --- )
+\ Set the definitions wordlist to the last wordlist in the search order.
+  CONTEXT #ORDER @ 1- CELLS + @ CURRENT ! ;
+
+: FORTH ( --- )
+\ REplace the last wordlist in the search order with FORTH-WORDLIST
+  FORTH-WORDLIST CONTEXT #ORDER @ 1- CELLS + ! ;
+
+WORDLIST START @ -
+CONSTANT ROOT-WORDLIST-OFFSET ( --- off )
+\ Minimal wordlist for ONLY, held as a START-relative OFFSET.
+\
+\ A wid is an absolute address, and an absolute address stored in the
+\ dictionary survives SAVE-SYSTEM unchanged and is then wrong - the
+\ image reloads at a different base. Storing the offset and adding
+\ START at use costs one add and makes the image reproducible; keeping
+\ the address made two identical builds differ.
+
+: ROOT-WORDLIST ( --- wid )   ROOT-WORDLIST-OFFSET START @ + ;
+
+: ONLY ( --- )
+\ Set the search order to the minimal wordlist.
+  1 #ORDER ! ROOT-WORDLIST CONTEXT ! ;
+
+: VOCABULARY ( --- )
+\ Make a definition that will replace the last word in the search order
+\ by its wordlist.
+\ The wordlist is stored as a START-relative OFFSET for the same
+\ reason ROOT-WORDLIST is, and DOES> adds START back.
+  WORDLIST START @ - CREATE  ,
+  DOES> >R
+  GET-ORDER SWAP DROP R> @ START @ + SWAP SET-ORDER ;
+
+ROOT-WORDLIST CURRENT !
+: FORTH FORTH ;
+: ALSO ALSO ;
+: ONLY ONLY ;
+: PREVIOUS PREVIOUS ;
+: DEFINITIONS DEFINITIONS ;
+DEFINITIONS
+\ Fill the ROOT wordlist.

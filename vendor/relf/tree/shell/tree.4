@@ -1,0 +1,4028 @@
+\ tree.4 - the shell's lexer and parser: a complete command at a time,
+\ into a tree. Stage A of the command-tree plan (Iteration 263; in git at 9513df0): the tree
+\ is built and printed, not yet executed. Loaded after shell.4.
+\
+\ Words here are called recursively - `$(...)` is lexed by parsing its
+\ contents - and a syntax error unwinds with THROW (extend.4). So no word
+\ in this file uses shadow.4's SHADOW{ locals, which THROW would leave
+\ unrestored: per-call state lives on the data and return stacks, and
+\ globals hold only the current token and the input.
+
+\ ==================================================================
+\ The tree arena
+\ ==================================================================
+\ A growable buffer addressed by OFFSETS, so it may move while it grows.
+\ A node is a type cell followed by field cells. Offset 0 is never a
+\ node (the arena starts with a zero cell), so 0 means "none".
+
+1 CONSTANT T-WORD       \ fields: text, flags
+2 CONSTANT T-VEC        \ fields: count, items...
+3 CONSTANT T-LIST       \ fields: vec of (and-or, separator) pairs
+4 CONSTANT T-ANDOR      \ fields: vec of pipeline, op, pipeline, ...
+5 CONSTANT T-PIPE       \ fields: bang, vec of commands
+6 CONSTANT T-SIMPLE     \ fields: vec of (tag, node) pairs
+7 CONSTANT T-SUBSHELL   \ fields: redirs, body
+8 CONSTANT T-GROUP      \ fields: redirs, body
+9 CONSTANT T-IF         \ fields: redirs, vec of cond/body, else
+10 CONSTANT T-WHILE     \ fields: redirs, cond, body
+11 CONSTANT T-UNTIL     \ fields: redirs, cond, body
+12 CONSTANT T-FOR       \ fields: redirs, name, words (0: "$@"), body
+13 CONSTANT T-CASE      \ fields: redirs, word, vec of items
+14 CONSTANT T-CASEITEM  \ fields: vec of patterns, body (0: none)
+15 CONSTANT T-FUNCDEF   \ fields: redirs, name, body
+16 CONSTANT T-REDIR     \ fields: fd (-1: default), op, word, here-doc text
+
+\ SIMPLE item tags
+0 CONSTANT I-ASSIGN
+1 CONSTANT I-WORD
+2 CONSTANT I-REDIR
+
+\ word flags
+1 CONSTANT WF-QUOTED     \ some part is quoted or escaped
+2 CONSTANT WF-NAME-Q     \ the first character is a quote or backslash
+4 CONSTANT WF-EXPAND     \ contains $ or `
+8 CONSTANT WF-SPECIAL    \ contains ~ * ? or a closed [...] (Iterations 266, 267)
+16 CONSTANT WF-BRACKET   \ scanning: a [ was seen
+32 CONSTANT WF-ENC-SIMPLE \ its encoding holds only what Stage B expands
+64 CONSTANT WF-AT-PARAM   \ it holds $@ or $*, whose fields are its own
+
+256 BUFFER: TREE-BUF
+VARIABLE TREE-TOP
+
+: TREE-RESET ( --- )   0 TREE-BUF !  1 CELLS TREE-TOP ! ;
+: TREE-ALLOT ( n --- off )   \ n bytes, zeroed, at an aligned offset
+  ALIGNED TREE-TOP @ SWAP                   ( off n )
+  2DUP + DUP ENSURE-BUFFER TREE-BUF TREE-TOP !
+  OVER TREE-BUF + SWAP 0 FILL ;
+: T@ ( off --- x )   TREE-BUF + @ ;
+: T! ( x off --- )   TREE-BUF + ! ;
+: NODE ( type nfields --- off )
+  1+ CELLS TREE-ALLOT  TUCK T! ;
+: F@ ( off i --- x )   1+ CELLS + T@ ;
+: F! ( x off i --- )   1+ CELLS + T! ;
+: TSTR ( off --- c-addr )   TREE-BUF + ;   \ a string's address, for now
+
+\ The vector builder: items are pushed on a stack of cells and made into
+\ a T-VEC node in one piece. Builders nest - a vector is built while an
+\ outer one is still open - so each remembers its base.
+256 BUFFER: VEC-BUF
+VARIABLE VEC-TOP
+
+: >VEC ( x --- )
+  VEC-TOP @ 1+ CELLS ENSURE-BUFFER VEC-BUF
+  VEC-BUF VEC-TOP @ CELLS + !  1 VEC-TOP +! ;
+: VEC-MARK ( --- base )   VEC-TOP @ ;
+: VEC> ( base --- off )
+  VEC-TOP @ OVER -                          ( base n )
+  DUP 2 + CELLS TREE-ALLOT                  ( base n off )
+  T-VEC OVER T!  2DUP CELL+ T!              ( base n off )
+  SWAP 0 ?DO                                ( base off )
+    OVER I + CELLS VEC-BUF + @
+    OVER I 2 + CELLS + T!
+  LOOP
+  SWAP VEC-TOP ! ;
+: V# ( vec --- n )   CELL+ T@ ;
+: V@ ( vec i --- x )   2 + CELLS + T@ ;
+
+\ ==================================================================
+\ The input
+\ ==================================================================
+\ A whole text (a script file, a -c string, eval's or $(...)'s text), or
+\ standard input, read a line at a time when the lexer needs more - a
+\ shell must not read past the line it is running, since the commands
+\ it runs may read the rest (Iteration 264). The lexer never looks past
+\ a newline it has not yet returned, so a command runs before the next
+\ line is asked for.
+VARIABLE SRC-ADDR
+VARIABLE SRC-LEN
+VARIABLE SRC-POS
+VARIABLE SRC-LINE
+VARIABLE SRC-STDIN?     \ reading standard input
+VARIABLE SRC-EOF?       \ ... and it has ended
+\ INTERACTIVE? is declared in shell.4, which loads first and needs it
+\ for SPECIAL-ERROR (Iteration 376).
+
+: BLANK-RUN? ( c-addr u --- f )   \ nothing but spaces and tabs, or nothing
+  \ (aliases' AL-BLANK? was a copy with a redundant empty test: a
+  \ zero-length ?DO never runs; Iteration 510)
+  OVER + SWAP ?DO
+    I C@ DUP 32 <> SWAP 9 <> AND IF UNLOOP 0 EXIT THEN
+  LOOP -1 ;
+\ alias state (see TRY-ALIAS)
+VARIABLE RESERVED-HERE?   \ a reserved word would be one in this position
+VARIABLE NO-ALIAS?
+VARIABLE ALIAS-NEXT?     \ a value ended in a blank: the word at ALIAS-NEXT-AT is a candidate
+VARIABLE ALIAS-NEXT-AT
+VARIABLE SRC-SPLICED     \ the heap block a splice copied the source into, or 0
+16 CONSTANT MAX-ALIAS-NEST
+CREATE AL-ACTIVE  MAX-ALIAS-NEST 2* CELLS ALLOT   \ (alias, end offset) pairs
+VARIABLE AL-ACTIVE#
+LINE-MAX BUFFER: STDIN-TEXT
+
+VARIABLE VERBOSE-FROM   \ where the line just read begins in STDIN-TEXT
+
+: VERBOSE-ECHO ( --- )   \ set -v: the line as it was read (Iteration 305)
+  \ Only the line just read. This wrote the whole buffer, which holds
+  \ every line of a command still being parsed, so each line of an `if`
+  \ spanning three was echoed up to three times (Iteration 439, yash
+  \ option-p.tst:366, :384).
+  OPT-VERBOSE @ 0= IF EXIT THEN
+  STDIN-TEXT VERBOSE-FROM @ +  SRC-LEN @ VERBOSE-FROM @ -  ERR-TYPE ;
+
+: EDIT-LINE ( --- f )   \ one edited line, into the source buffer
+  0 TERM-RAW DROP
+  ED-LINE                                    ( c-addr u flag )
+  0 TERM-RESTORE DROP
+  0= IF 2DROP -1 SRC-EOF? ! 0 EXIT THEN      ( c-addr u )
+  DUP SRC-LEN @ + 2 + ENSURE-BUFFER STDIN-TEXT
+  DUP >R  STDIN-TEXT SRC-LEN @ +  SWAP MOVE  \ the length stays on R
+  \ Blank, not empty (Iteration 567): a line of spaces made the next
+  \ prompt PS2 - found against bash's editor by tools/editor-vs-bash.py.
+  \ The reader without the editor had it right, with BLANK-RUN?, already.
+  STDIN-TEXT SRC-LEN @ + R@ BLANK-RUN?  CMD-START? @ AND 0= IF 0 CMD-START? ! THEN
+  SRC-LEN @ R> +
+  10 OVER STDIN-TEXT + C!  1+ SRC-LEN !
+  STDIN-TEXT SRC-ADDR !  VERBOSE-ECHO  -1 ;
+
+: REFILL-STDIN ( --- f )   \ one more line of standard input, or false
+  SRC-EOF? @ IF 0 EXIT THEN
+  SRC-LEN @ VERBOSE-FROM !                   \ the new line starts here
+  \ At a terminal the line is edited here (edit.4, Iteration 303): the
+  \ arrow keys, the usual control characters, and a history the up and
+  \ down arrows walk. Elsewhere the terminal driver's cooked mode reads
+  \ it, as before.
+  \ Only at a real terminal: `-i` with a pipe on standard input still
+  \ prompts, but there is nothing to edit (Iteration 306).
+  \ what finished since the last prompt, as both references report it
+  \ ^C while a command ran: the terminal echoed it, and dash starts the
+  \ next prompt on a fresh line (Iteration 315).
+  INT-SEEN? @ INTERACTIVE? @ AND IF ERR-NL 0 INT-SEEN? ! THEN
+  \ a ^C stopped the last command line (Iteration 571): its status is
+  \ 130, as dash's and bash's, and the next line starts clean
+  INTERRUPT-PENDING? @ IF 0 INTERRUPT-PENDING? ! 130 LAST-STATUS ! THEN
+  INTERACTIVE? @ CMD-START? @ AND IF JOB-NOTICES JOB-NOTICES-DONE THEN
+  INTERACTIVE? @ 0 ISATTY AND IF EDIT-LINE EXIT THEN
+  \ not a terminal, so nothing to edit - but `-i` still prompts
+  INTERACTIVE? @ IF CMD-START? @ IF SH-PROMPT ELSE SH-PROMPT2 THEN THEN
+  CMD-START? @ >R                            \ were we starting a command
+  SRC-LEN @ >R                               \ where this line begins
+  SRC-LEN @ BUFFER-BODY STDIN-TEXT 0 READ-LINE-INTO     ( u flag )
+  0= IF
+    DROP R> DROP R> DROP
+    \ A signal interrupted the read rather than ending the input: cancel
+    \ the line and prompt afresh, as an interactive shell does for ^C.
+    INTERACTIVE? @ IF
+      SIGNALS-PENDING ?DUP IF
+        RUN-TRAP-CALL  ERR-NL
+        0 SRC-LEN !  0 SRC-POS !  -1 CMD-START? !
+        RECURSE EXIT
+      THEN
+    THEN
+    -1 SRC-EOF? !
+    INTERACTIVE? @ IF ERR-NL THEN            \ ^D leaves the line unfinished
+    0 EXIT
+  THEN
+  \ A blank line typed at a command's start does not begin a
+  \ continuation: prompt with PS1 again, as both references do.
+  R> R>                                      ( u start was-start )
+  >R  STDIN-TEXT +  OVER                     ( u addr u; was-start on R )
+  BLANK-RUN?  R> AND                         ( u blank-and-was-start )
+  0= IF 0 CMD-START? ! THEN                  ( u )
+  SRC-LEN @ + DUP 2 + ENSURE-BUFFER STDIN-TEXT
+  10 OVER STDIN-TEXT + C!  1+ SRC-LEN !
+  STDIN-TEXT SRC-ADDR !
+  VERBOSE-ECHO  -1 ;
+
+: SRC-C ( i --- c | -1 )   \ the character i past the position
+  BEGIN
+    DUP SRC-POS @ + SRC-LEN @ < 0=
+  WHILE
+    SRC-STDIN? @ 0= IF DROP -1 EXIT THEN
+    REFILL-STDIN 0= IF DROP -1 EXIT THEN
+  REPEAT
+  SRC-POS @ + SRC-ADDR @ + C@ ;
+
+: SRC-SKIP ( n --- )
+  0 ?DO
+    SRC-POS @ SRC-LEN @ < IF
+      SRC-POS @ SRC-ADDR @ + C@ 10 = IF 1 SRC-LINE +! THEN
+      1 SRC-POS +!
+    THEN
+  LOOP ;
+
+\ ==================================================================
+\ Errors
+\ ==================================================================
+\ A syntax error is reported and THROWn; the complete command is lost.
+1 CONSTANT E-SYNTAX
+
+: SYNTAX ( c-addr u --- )
+  S" shell: syntax error at line " ERR-TYPE
+  SRC-LINE @ N>STR DUP CSTRLEN ERR-TYPE
+  S" : " ERR-TYPE ERR-TYPE ERR-NL
+  E-SYNTAX THROW ;
+
+\ ==================================================================
+\ Tokens
+\ ==================================================================
+1 CONSTANT K-WORD
+2 CONSTANT K-NEWLINE
+3 CONSTANT K-EOF
+4 CONSTANT K-OP
+5 CONSTANT K-IONUM
+
+1 CONSTANT OP-SEMI       2 CONSTANT OP-AMP        3 CONSTANT OP-PIPE
+4 CONSTANT OP-AND        5 CONSTANT OP-OR         6 CONSTANT OP-DSEMI
+7 CONSTANT OP-LPAREN     8 CONSTANT OP-RPAREN
+9 CONSTANT OP-LESS      10 CONSTANT OP-GREAT     11 CONSTANT OP-DGREAT
+12 CONSTANT OP-LESSAND  13 CONSTANT OP-GREATAND  14 CONSTANT OP-LESSGREAT
+15 CONSTANT OP-DLESS    16 CONSTANT OP-DLESSDASH 17 CONSTANT OP-CLOBBER
+
+VARIABLE TK-KIND
+VARIABLE TK-OP
+VARIABLE TK-START
+VARIABLE TK-END
+VARIABLE TK-FLAGS
+VARIABLE TK-VALID?
+
+: TK-TEXT ( --- c-addr u )   SRC-ADDR @ TK-START @ +  TK-END @ TK-START @ - ;
+
+: BLANK? ( c --- f )   DUP 32 = SWAP 9 = OR ;
+: OP-CHAR? ( c --- f )
+  DUP 59 = OVER 38 = OR OVER 124 = OR OVER 40 = OR
+  OVER 41 = OR OVER 60 = OR SWAP 62 = OR ;
+
+\ ---- here-documents waiting for their bodies ----
+256 BUFFER: HD-PEND
+VARIABLE HD-PEND#
+VARIABLE HDS-I     \ setting the pending list aside for a nested parse
+256 BUFFER: HD-TEXT
+VARIABLE HD-TEXT#
+
+: HD-ADD ( redir --- )
+  HD-PEND# @ 1+ CELLS ENSURE-BUFFER HD-PEND
+  HD-PEND HD-PEND# @ CELLS + !  1 HD-PEND# +! ;
+: HD-APPEND ( c-addr u --- )
+  HD-TEXT# @ OVER + 1+ ENSURE-BUFFER HD-TEXT
+  HD-TEXT HD-TEXT# @ + SWAP DUP HD-TEXT# +! MOVE ;
+
+DEFER PARSE-SUBLIST   \ for $(...): parse a compound list up to `)`
+
+\ ---- words encoded while they are scanned ----
+\ the expansion plan's Stage A (Iteration 274). The scanners below already
+\ walk every construct with the right rules; each now also writes the
+\ word's encoded form into ENC-BUF, which TOKEN-WORD copies into the
+\ tree. Every control sequence starts with ENC-CTL, so a literal run is
+\ one SCAN and one MOVE for the expander to come; a literal ENC-CTL byte
+\ in the text is written twice.
+129 CONSTANT ENC-CTL
+0 CONSTANT ENC-END        \ ends a run, a name, a word or an expression
+1 CONSTANT ENC-SQ         \ a single-quoted run: nothing inside is special
+2 CONSTANT ENC-DQ         \ a double-quoted run: expansions still apply
+3 CONSTANT ENC-ESC        \ one quoted character follows
+4 CONSTANT ENC-VAR        \ an operator byte, a NUL-terminated name,
+                          \ and for the operator forms a word and ENC-END
+5 CONSTANT ENC-ARITH      \ $((...)): the expression, raw, then ENC-END
+6 CONSTANT ENC-CMDSUB     \ one byte: which substitution of this word
+7 CONSTANT ENC-TILDE      \ a position byte, the user name, ENC-END
+
+\ ENC-VAR's operator byte
+0 CONSTANT EV-PLAIN
+1 CONSTANT EV-LENGTH
+2 CONSTANT EV-DEFAULT
+3 CONSTANT EV-ASSIGN
+4 CONSTANT EV-ERROR
+5 CONSTANT EV-ALT
+8 CONSTANT EV-COLON       \ added to the four above: the : forms
+16 CONSTANT EV-TRIM-PRE
+17 CONSTANT EV-TRIM-PRE-LONG
+18 CONSTANT EV-TRIM-SUF
+19 CONSTANT EV-TRIM-SUF-LONG
+
+\ ENC-TILDE's position byte: the expander expands the first always, the
+\ others only in an assignment word
+0 CONSTANT ET-START
+1 CONSTANT ET-AFTER-EQ
+2 CONSTANT ET-AFTER-COLON
+
+1024 BUFFER: ENC-BUF
+VARIABLE ENC#
+VARIABLE ENC-MUTE         \ inside a raw region: the codes are not written
+VARIABLE ENC-SUBS         \ command substitutions recorded so far
+VARIABLE ENC-BASE         \ where this word's encoding starts in ENC-BUF
+VARIABLE ENC-COMPLEX?     \ this word holds what Stage B cannot expand yet
+VARIABLE ENC-SUB-BASE     \ ... and its first substitution slot: the words
+                          \ inside a $(...) are lexed too, and append here
+
+: ENC-PUT ( c --- )       \ unconditionally
+  ENC# @ 1+ ENSURE-BUFFER ENC-BUF  ENC-BUF ENC# @ + C!  1 ENC# +! ;
+: ENC-C, ( c --- )        ENC-MUTE @ IF DROP EXIT THEN ENC-PUT ;
+: ENC-CODE, ( code --- )  ENC-MUTE @ IF DROP EXIT THEN ENC-CTL ENC-PUT ENC-PUT ;
+: ENC-LIT, ( c --- )      \ a literal byte of the word's text
+  ENC-MUTE @ IF DROP EXIT THEN
+  DUP ENC-CTL = IF ENC-CTL ENC-PUT THEN ENC-PUT ;
+\ Each command substitution in a word is recorded once - the ones nested
+\ inside another's text belong to it - as the source range of its text,
+\ which TOKEN-WORD copies into the tree.
+VARIABLE SCAN-IN-DQ?   \ the scanner is inside double quotes
+64 BUFFER: ENC-SUB-DQ     \ each substitution: was it inside double quotes?
+64 BUFFER: ENC-SUB-POS    \ (start, end) source positions, a pair each
+256 BUFFER: ENC-SUB-NODES   \ the parsed subtree of each substitution, or 0
+: ENC-SUB-NODE! ( node --- )   \ for the one ENC-SUB-BEGIN just recorded
+  ENC-MUTE @ 1 > IF DROP EXIT THEN           \ nested in another's text
+  ENC-SUBS @ 1+ CELLS ENSURE-BUFFER ENC-SUB-NODES
+  ENC-SUB-NODES ENC-SUBS @ 1- CELLS + ! ;
+
+: ENC-SUB-BEGIN ( --- )   \ before muting: at the start of the text
+  ENC-MUTE @ IF EXIT THEN
+  -1 ENC-COMPLEX? !
+  ENC-CMDSUB ENC-CODE,  ENC-SUBS @ ENC-SUB-BASE @ - ENC-C,
+  ENC-SUBS @ 1+ 2* CELLS ENSURE-BUFFER ENC-SUB-POS
+  SRC-POS @ ENC-SUB-POS ENC-SUBS @ 2* CELLS + !
+  ENC-SUBS @ 1+ CELLS ENSURE-BUFFER ENC-SUB-NODES
+  0 ENC-SUB-NODES ENC-SUBS @ CELLS + !       \ a backquote has no subtree
+  ENC-SUBS @ 1+ CELLS ENSURE-BUFFER ENC-SUB-DQ
+  SCAN-IN-DQ? @ ENC-SUB-DQ ENC-SUBS @ CELLS + !
+  1 ENC-SUBS +! ;
+: ENC-SUB-END ( --- )     \ after unmuting: past the closing ) or `
+  ENC-MUTE @ IF EXIT THEN
+  SRC-POS @ 1- ENC-SUB-POS ENC-SUBS @ 1- 2* 1+ CELLS + ! ;
+
+: ENC-WORD-ESCAPE ( --- )   \ a backslash outside quotes: it quotes
+  \ whatever follows. Used for the word of a `${...}` when the
+  \ expansion is not itself inside double quotes - that word took the
+  \ double-quote rule before, so `${x:+a\*b}` kept its backslash
+  \ (Iteration 371).
+  1 SRC-C
+  DUP -1 = IF DROP 92 ENC-LIT, 1 SRC-SKIP EXIT THEN
+  DUP 10 = IF DROP 2 SRC-SKIP EXIT THEN                \ a continuation
+  ENC-ESC ENC-CODE, ENC-C,
+  2 SRC-SKIP ;
+
+: ENC-DQ-ESCAPE ( --- )   \ a backslash inside double quotes
+  1 SRC-C
+  DUP -1 = IF DROP 92 ENC-LIT, 1 SRC-SKIP EXIT THEN
+  DUP 10 = IF DROP 2 SRC-SKIP EXIT THEN                \ a continuation
+  DUP 34 = OVER 92 = OR OVER 36 = OR OVER 96 = OR IF
+    ENC-ESC ENC-CODE, ENC-C,
+  ELSE
+    92 ENC-LIT, ENC-LIT,                               \ both stay
+  THEN
+  2 SRC-SKIP ;
+
+\ ---- scanning a word ----
+VARIABLE TILDE-AT-START?   \ the scanner is at a ${} word's first character
+DEFER SCAN-TILDE-CALL   \ SCAN-TILDE-PREFIX, defined after SCAN-BRACE
+VARIABLE BRACE-VALUE-WORD?   \ ... and this ${} word is a value, not a pattern
+DEFER SCAN-DOLLAR
+
+: SCAN-SQUOTE ( --- )     \ at ': to past the closing '
+  1 SRC-SKIP
+  ENC-SQ ENC-CODE,
+  BEGIN
+    0 SRC-C DUP -1 = IF DROP S" unterminated single quote" SYNTAX THEN
+    DUP 39 <> IF ENC-LIT, ELSE DROP THEN
+    1 SRC-SKIP
+    -1 SRC-C 39 =
+  UNTIL
+  ENC-END ENC-CODE, ;
+
+\ $'...' - POSIX.1-2024's dollar-single-quotes (Iteration 474): a
+\ single-quoted string in which a backslash escape stands for the byte it
+\ names. Encoded exactly as a single-quoted run, so nothing past the
+\ scanner knows it was ever anything else. A \0 ends the string's bytes,
+\ as bash has it; an escape POSIX does not define keeps its backslash.
+VARIABLE DSQ-NUL?
+VARIABLE DSQ-V
+VARIABLE DSQ-N
+: DSQ-EMIT ( c --- )
+  DSQ-NUL? @ IF DROP EXIT THEN
+  DUP 0= IF DROP -1 DSQ-NUL? ! EXIT THEN
+  ENC-LIT, ;
+: DSQ-HEX? ( c --- n | -1 )
+  DUP 48 58 WITHIN IF 48 - EXIT THEN
+  DUP 97 103 WITHIN IF 87 - EXIT THEN
+  DUP 65 71 WITHIN IF 55 - EXIT THEN
+  DROP -1 ;
+: DSQ-ESCAPE ( c --- )   \ the character after a backslash, already skipped
+  DUP 110 = IF DROP 10 DSQ-EMIT EXIT THEN
+  DUP 116 = IF DROP 9 DSQ-EMIT EXIT THEN
+  DUP 114 = IF DROP 13 DSQ-EMIT EXIT THEN
+  DUP 97 = IF DROP 7 DSQ-EMIT EXIT THEN
+  DUP 98 = IF DROP 8 DSQ-EMIT EXIT THEN
+  DUP 101 = IF DROP 27 DSQ-EMIT EXIT THEN
+  DUP 102 = IF DROP 12 DSQ-EMIT EXIT THEN
+  DUP 118 = IF DROP 11 DSQ-EMIT EXIT THEN
+  DUP 92 = OVER 39 = OR OVER 34 = OR IF DSQ-EMIT EXIT THEN
+  DUP 99 = IF                                 \ \cX: the control character
+    DROP 0 SRC-C DUP -1 = IF DROP EXIT THEN
+    1 SRC-SKIP
+    DUP 92 = IF 0 SRC-C 92 = IF 1 SRC-SKIP THEN THEN
+    31 AND DSQ-EMIT EXIT
+  THEN
+  DUP 120 = IF                                \ \xHH: one or two hex digits
+    DROP 0 DSQ-V !  0 DSQ-N !
+    BEGIN DSQ-N @ 2 < IF 0 SRC-C DSQ-HEX? DUP 0< 0= ELSE 0 0 THEN WHILE
+      DSQ-V @ 16 * + DSQ-V !  1 SRC-SKIP  1 DSQ-N +!
+    REPEAT DROP
+    DSQ-N @ 0= IF 92 DSQ-EMIT 120 DSQ-EMIT EXIT THEN
+    DSQ-V @ DSQ-EMIT EXIT
+  THEN
+  DUP 48 56 WITHIN IF                         \ \ooo: one to three octal digits
+    48 - DSQ-V !  0 DSQ-N !
+    BEGIN DSQ-N @ 2 < IF 0 SRC-C DUP 48 56 WITHIN ELSE 0 0 THEN WHILE
+      48 - DSQ-V @ 8 * + DSQ-V !  1 SRC-SKIP  1 DSQ-N +!
+    REPEAT DROP
+    DSQ-V @ 255 AND DSQ-EMIT EXIT
+  THEN
+  92 DSQ-EMIT DSQ-EMIT ;
+: SCAN-DOLLAR-SQUOTE ( --- )   \ at $': to past the closing '
+  2 SRC-SKIP  0 DSQ-NUL? !
+  ENC-SQ ENC-CODE,
+  BEGIN
+    0 SRC-C DUP -1 = IF DROP S" unterminated single quote" SYNTAX THEN
+    DUP 39 = IF DROP 1 SRC-SKIP ENC-END ENC-CODE, EXIT THEN
+    DUP 92 = IF
+      DROP 1 SRC-SKIP
+      0 SRC-C DUP -1 = IF DROP S" unterminated single quote" SYNTAX THEN
+      1 SRC-SKIP DSQ-ESCAPE
+    ELSE
+      DSQ-EMIT 1 SRC-SKIP
+    THEN
+  AGAIN ;
+
+: SCAN-BACKQUOTE ( --- )  \ at `: to past the closing `
+  1 SRC-SKIP
+  ENC-SUB-BEGIN
+  1 ENC-MUTE +!
+  BEGIN
+    0 SRC-C
+    DUP -1 = IF DROP S" unterminated backquote" SYNTAX THEN
+    DUP 92 = IF DROP 2 SRC-SKIP 0 ELSE
+    96 = IF 1 SRC-SKIP -1 ELSE 1 SRC-SKIP 0 THEN THEN
+  UNTIL
+  -1 ENC-MUTE +!
+  ENC-SUB-END ;
+
+: SCAN-DQUOTE ( --- )     \ at ": to past the closing "
+  1 SRC-SKIP
+  SCAN-IN-DQ? @ >R  -1 SCAN-IN-DQ? !
+  ENC-DQ ENC-CODE,
+  BEGIN
+    0 SRC-C
+    DUP -1 = IF DROP S" unterminated double quote" SYNTAX THEN
+    DUP 34 = IF DROP 1 SRC-SKIP -1 ELSE
+    DUP 92 = IF DROP ENC-DQ-ESCAPE 0 ELSE
+    DUP 96 = IF DROP SCAN-BACKQUOTE 0 ELSE
+    36 = IF SCAN-DOLLAR 0 ELSE 0 SRC-C ENC-LIT, 1 SRC-SKIP 0
+    THEN THEN THEN THEN
+  UNTIL
+  R> SCAN-IN-DQ? !
+  ENC-END ENC-CODE, ;
+
+: SCAN-ARITH ( --- )      \ at $((: to past the matching ))
+  3 SRC-SKIP
+  ENC-ARITH ENC-CODE,  -1 ENC-COMPLEX? !
+  \ The expression is encoded like a word (Iteration 286): POSIX expands
+  \ parameters and command substitutions in it before it is evaluated,
+  \ and it used to reach the evaluator as written.
+  2
+  BEGIN
+    0 SRC-C
+    DUP -1 = IF DROP S" unterminated arithmetic expansion" SYNTAX THEN
+    DUP 40 = IF DROP 1+ 40 ENC-LIT, 1 SRC-SKIP ELSE
+    DUP 41 = IF DROP 1- DUP 1 > IF 41 ENC-LIT, THEN 1 SRC-SKIP ELSE
+    DUP 36 = IF DROP SCAN-DOLLAR ELSE
+    DUP 39 = IF DROP SCAN-SQUOTE ELSE
+    DUP 34 = IF DROP SCAN-DQUOTE ELSE
+    96 = IF SCAN-BACKQUOTE ELSE
+      \ a line continuation inside the expression is not part of it
+      0 SRC-C 92 = 1 SRC-C 10 = AND IF
+        2 SRC-SKIP
+      ELSE
+        0 SRC-C ENC-LIT, 1 SRC-SKIP
+      THEN
+    THEN THEN THEN THEN THEN THEN
+    DUP 0=
+  UNTIL DROP
+  ENC-END ENC-CODE, ;
+
+: SCAN-CMDSUB ( --- )     \ at $(: parse the contents, to past the )
+  2 SRC-SKIP
+  ENC-SUB-BEGIN
+  1 ENC-MUTE +!
+  \ The contents are a program: parse it, which is the only way to find
+  \ the right `)` past a case pattern's. The tree it builds is thrown
+  \ away; the token being scanned is saved around it.
+  \ The words inside are lexed too, and each resets the encoding buffer:
+  \ this word's encoding so far is kept across the parse (Iteration 274).
+  ENC# @ >R  ENC-SUBS @ >R  ENC-MUTE @ >R  ENC-BASE @ >R  ENC-SUB-BASE @ >R
+  ENC-COMPLEX? @ >R
+  \ The tree it builds is kept now (Iteration 283): the child runs it
+  \ instead of parsing the text again. TREE-TOP is not wound back.
+  TK-START @ >R  TK-FLAGS @ >R  VEC-TOP @ >R  NO-ALIAS? @ >R
+  \ A here-document still waiting for its body belongs to the command
+  \ AROUND this substitution, not to what is inside it: in
+  \ `cat <<OUTER; echo "$(cat <<INNER` the inner parse reached the end
+  \ of the line, read the pending list, and took INNER's lines as
+  \ OUTER's body - after which the `)` was never found (Iteration 461,
+  \ yash cmdsub-p.tst:139). Set aside for the nested parse, with the
+  \ count pushed last so the restore knows how many to take back. The
+  \ index is a global and may be used again by the parse between these
+  \ two loops, which is safe: neither loop spans it.
+  0 HDS-I !
+  BEGIN HDS-I @ HD-PEND# @ < WHILE
+    HD-PEND HDS-I @ CELLS + @ >R  1 HDS-I +!
+  REPEAT
+  HD-PEND# @ >R
+  0 HD-PEND# !
+  0 TK-VALID? !  -1 NO-ALIAS? !
+  PARSE-SUBLIST                              ( node )
+  ENC-SUB-NODE!
+  R> HD-PEND# !
+  HD-PEND# @ HDS-I !
+  BEGIN HDS-I @ 0 > WHILE
+    -1 HDS-I +!  R> HD-PEND HDS-I @ CELLS + !
+  REPEAT
+  R> NO-ALIAS? !  R> VEC-TOP !  R> TK-FLAGS !  R> TK-START !
+  R> ENC-COMPLEX? !
+  R> ENC-SUB-BASE !  R> ENC-BASE !  R> ENC-MUTE !  R> ENC-SUBS !  R> ENC# !
+  -1 ENC-MUTE +!
+  ENC-SUB-END ;
+
+: SPECIAL-PARAM? ( c --- f )   \ NAME-CHAR? comes from shell.4
+  DUP 64 = OVER 42 = OR OVER 35 = OR OVER 63 = OR OVER 36 = OR
+  OVER 33 = OR SWAP 45 = OR ;
+
+\ ---- line continuation inside $ constructs (Iteration 429) ----
+\ A backslash-newline goes before anything else is read (XCU 2.2.1), so
+\ `$a\` newline `d` is `$ad` and `$\` newline `(` is `$(`. Word TEXT
+\ drops continuations already (TOKEN-WORD); the encoder did not, because
+\ the dispatch below reads fixed offsets from the `$` and the name loops
+\ stop at the backslash - `$a\`+newline+`d` read as `$a` then `d`, and
+\ `${a\`+newline+`d}` was a syntax error. busybox var_unbackslash1,
+\ yash quote-p.tst.
+: SKIP-CONTINUATIONS ( --- )   \ past any backslash-newline at the position
+  BEGIN 0 SRC-C 92 = IF 1 SRC-C 10 = ELSE 0 THEN WHILE 2 SRC-SKIP REPEAT ;
+
+: SRC-CONT-AT? ( k --- f )   \ a backslash-newline just after the character at k
+  DUP 1+ SRC-C 92 = IF 2 + SRC-C 10 = ELSE DROP 0 THEN ;
+
+: SRC-CONT-BEFORE ( k --- )   \ move that continuation in front of the character
+  \ In the source itself, so every fixed-offset test after it sees the
+  \ characters joined, and the continuation is still in the text for
+  \ TOKEN-WORD to drop. The address is taken AFTER SRC-C, which may
+  \ refill standard input and move the buffer.
+  DUP SRC-C                                   ( k c )
+  SWAP SRC-POS @ + SRC-ADDR @ +               ( c addr )
+  92 OVER C!  10 OVER 1+ C!  2 + C! ;
+
+: DOLLAR-JOIN ( --- )   \ at a $: continuations out of the way of the dispatch
+  BEGIN
+    0 SRC-CONT-AT? IF
+      0 SRC-CONT-BEFORE  2 SRC-SKIP  -1     \ $\nl... -> \nl$..., and past it
+    ELSE
+      1 SRC-C 40 = IF                        \ $(\nl( -> $\nl((, then as above
+        1 SRC-CONT-AT? IF 1 SRC-CONT-BEFORE -1 ELSE 0 THEN
+      ELSE 0 THEN
+    THEN
+  0= UNTIL ;
+
+: SCAN-BRACE-NAME ( --- )   \ ${ ... : the name, or a special parameter
+  SKIP-CONTINUATIONS
+  0 SRC-C SPECIAL-PARAM? IF
+    0 SRC-C DUP 64 = OVER 42 = OR IF WF-AT-PARAM TK-FLAGS @ OR TK-FLAGS ! THEN
+    ENC-C, 1 SRC-SKIP EXIT
+  THEN
+  BEGIN SKIP-CONTINUATIONS 0 SRC-C DUP -1 <> SWAP NAME-CHAR? AND WHILE
+    0 SRC-C ENC-C, 1 SRC-SKIP
+  REPEAT ;
+
+: SCAN-BRACE-OP ( --- op )   \ the operator after the name, or EV-PLAIN
+  SKIP-CONTINUATIONS
+  0 SRC-C 125 = IF EV-PLAIN EXIT THEN
+  0 SRC-C 58 = IF                        \ the : forms
+    \ A continuation may stand between the `:` and its operator, and
+    \ between the two characters of `##` and `%%`: `${f:\`+newline+`+x}`
+    \ is `${f:+x}` (Iteration 460, yash quote-p.tst:301). Only the
+    \ operator's FIRST character was reached past one.
+    1 SRC-SKIP  SKIP-CONTINUATIONS
+    0 SRC-C
+    DUP 45 = IF DROP 1 SRC-SKIP EV-DEFAULT EV-COLON + EXIT THEN
+    DUP 61 = IF DROP 1 SRC-SKIP EV-ASSIGN EV-COLON + EXIT THEN
+    DUP 63 = IF DROP 1 SRC-SKIP EV-ERROR EV-COLON + EXIT THEN
+    43 = IF 1 SRC-SKIP EV-ALT EV-COLON + EXIT THEN
+    EV-DEFAULT EV-COLON + EXIT                         \ ${x:} - as ${x:-}
+  THEN
+  0 SRC-C
+  DUP 45 = IF DROP 1 SRC-SKIP EV-DEFAULT EXIT THEN
+  DUP 61 = IF DROP 1 SRC-SKIP EV-ASSIGN EXIT THEN
+  DUP 63 = IF DROP 1 SRC-SKIP EV-ERROR EXIT THEN
+  DUP 43 = IF DROP 1 SRC-SKIP EV-ALT EXIT THEN
+  DUP 35 = IF
+    DROP 1 SRC-SKIP  SKIP-CONTINUATIONS
+    0 SRC-C 35 = IF 1 SRC-SKIP EV-TRIM-PRE-LONG ELSE EV-TRIM-PRE THEN EXIT
+  THEN
+  37 = IF
+    1 SRC-SKIP  SKIP-CONTINUATIONS
+    0 SRC-C 37 = IF 1 SRC-SKIP EV-TRIM-SUF-LONG ELSE EV-TRIM-SUF THEN EXIT
+  THEN
+  EV-PLAIN ;
+
+: SCAN-BRACE ( --- )      \ at ${: to past the matching }
+  2 SRC-SKIP
+  \ A continuation straight after the `${` must not hide a `#`:
+  \ `${\`+newline+`#3}` is the length of $3 (Iteration 445, busybox
+  \ ash-parsing/bkslash_newline4; the rest of the braces since 429).
+  SKIP-CONTINUATIONS
+  ENC-VAR ENC-CODE,
+  \ `${#}` is the count and `${#name}` a length, but `${#+word}` names
+  \ the parameter `#` with an operator after it (Iteration 339).
+  \ `${#}` is the count, `${#name}` a length, `${#+word}` the parameter
+  \ `#` with an operator - and `${#?}` is the LENGTH of `$?`, since what
+  \ follows the `?` is the closing brace rather than a word
+  \ (Iterations 339, 356).
+  \ And `${#:-word}` and the other colon forms are the parameter `#` too:
+  \ `${#:=x}` printed `0:=x}` (Iteration 434, yash param-p.tst:268).
+  0 SRC-C 35 = 1 SRC-C 125 <> AND 1 SRC-C -1 <> AND
+  \ `#` and `%` join them: `${##1}` is `$#` without a leading 1, and
+  \ `${##x}` is `$#` itself - while `${##}`, with the brace right after,
+  \ is the LENGTH of `$#`, which is what the test below the operators
+  \ decides (Iteration 457, busybox ash-vars/param_expand_len).
+  1 SRC-C DUP 43 = OVER 45 = OR OVER 61 = OR OVER 63 = OR
+  OVER 35 = OR SWAP 37 = OR
+  2 SRC-C 125 <> AND
+  1 SRC-C 58 =  2 SRC-C DUP 43 = OVER 45 = OR OVER 61 = OR SWAP 63 = OR  AND  OR
+  0= AND IF
+    1 SRC-SKIP  EV-LENGTH ENC-C,  SCAN-BRACE-NAME  0 ENC-C,
+    0 SRC-C 125 = IF 1 SRC-SKIP THEN EXIT
+  THEN
+  \ the operator is only known after the name, so the name is written to
+  \ one side and the operator byte goes in first
+  ENC# @ >R  0 ENC-C,                     \ the operator's place
+  SCAN-BRACE-NAME
+  SCAN-BRACE-OP DUP R> ENC-BUF + C!       ( op )
+  \ Inside double quotes a single quote is literal text in a VALUE word
+  \ - `"${x:+'b c' d}"` is one field with the quotes in it - while in a
+  \ trim PATTERN it still quotes, so `"${x##*'*'}"` matches a literal
+  \ star. Both references agree on the pair (Iteration 363).
+  \ the value operators are below EV-TRIM-PRE, with or without their
+  \ colon; masking the colon off first mapped the trims into that range
+  DUP EV-TRIM-PRE < SCAN-IN-DQ? @ AND BRACE-VALUE-WORD? !
+  DUP EV-PLAIN <> OVER EV-LENGTH <> AND IF -1 ENC-COMPLEX? ! THEN
+  0 ENC-C,                                \ the name's end
+  EV-PLAIN <> IF                          \ a word follows, up to the }
+    \ A `~` at the START of that word is a tilde prefix, as it is at the
+    \ start of any other word: `HOME=/foo; echo ${a-~}` prints /foo in
+    \ dash and bash, and printed `~` here (Iteration 381). Inside double
+    \ quotes it stays literal - but only in a VALUE word, `"${a-~}"`: a
+    \ trim's pattern is a context of its own, and `"${a#~}"` strips the
+    \ home directory in dash (Iteration 442, yash param-p.tst:324).
+    \ BRACE-VALUE-WORD?, set just above, is exactly "a value word inside
+    \ double quotes".
+    0 SRC-C 126 = BRACE-VALUE-WORD? @ 0= AND IF
+      -1 TILDE-AT-START? !  SCAN-TILDE-CALL  0 TILDE-AT-START? !
+    THEN
+    BEGIN
+      0 SRC-C
+      DUP -1 = IF DROP S" unterminated parameter expansion" SYNTAX THEN
+      DUP 125 = IF DROP -1 ELSE
+      DUP 92 = IF DROP
+        SCAN-IN-DQ? @ IF ENC-DQ-ESCAPE ELSE ENC-WORD-ESCAPE THEN 0
+      ELSE
+      \ A nested ${...} sets BRACE-VALUE-WORD? for ITS word, and it was
+      \ not put back, so after `"${x+''}"` inside a trim's pattern the
+      \ pattern's own '' read as two quote characters, not as quoting:
+      \ `x="''''"; echo "${x#"${x+''}"''}"` printed nothing where dash
+      \ and bash print '' (Iteration 445, busybox quote_in_varexp1).
+      DUP 36 = IF DROP BRACE-VALUE-WORD? @ >R SCAN-DOLLAR R> BRACE-VALUE-WORD? ! 0 ELSE
+      DUP 39 = BRACE-VALUE-WORD? @ 0= AND IF DROP SCAN-SQUOTE 0 ELSE
+      DUP 34 = IF DROP BRACE-VALUE-WORD? @ >R SCAN-DQUOTE R> BRACE-VALUE-WORD? ! 0 ELSE
+      96 = IF SCAN-BACKQUOTE 0 ELSE
+        0 SRC-C ENC-LIT, 1 SRC-SKIP 0
+      THEN THEN THEN THEN THEN THEN
+    UNTIL
+    ENC-END ENC-CODE,
+  THEN
+  0 SRC-C 125 = IF 1 SRC-SKIP ELSE S" unterminated parameter expansion" SYNTAX THEN ;
+
+: SCAN-DOLLAR-IMPL ( --- )           \ at $
+  DOLLAR-JOIN
+  WF-EXPAND TK-FLAGS @ OR TK-FLAGS !
+  1 SRC-C 40 = IF
+    2 SRC-C 40 = IF SCAN-ARITH ELSE SCAN-CMDSUB THEN EXIT
+  THEN
+  1 SRC-C 123 = IF SCAN-BRACE EXIT THEN
+  \ $name, $1, $@ and the rest: the name is taken here, so the word's
+  \ own loop does not see it again
+  1 SRC-C DUP SPECIAL-PARAM? SWAP 48 - 10 U< OR IF
+    1 SRC-SKIP
+    0 SRC-C DUP 64 = OVER 42 = OR IF WF-AT-PARAM TK-FLAGS @ OR TK-FLAGS ! THEN
+    DROP
+    ENC-VAR ENC-CODE,  EV-PLAIN ENC-C,  0 SRC-C ENC-C,  1 SRC-SKIP
+    0 ENC-C, EXIT
+  THEN
+  1 SRC-C NAME-CHAR? IF
+    1 SRC-SKIP
+    ENC-VAR ENC-CODE,  EV-PLAIN ENC-C,
+    BEGIN SKIP-CONTINUATIONS 0 SRC-C DUP -1 <> SWAP NAME-CHAR? AND WHILE
+      0 SRC-C ENC-C,  1 SRC-SKIP
+    REPEAT
+    0 ENC-C, EXIT
+  THEN
+  36 ENC-LIT,  1 SRC-SKIP ;
+' SCAN-DOLLAR-IMPL IS SCAN-DOLLAR
+
+: TILDE-CLASS ( --- class | -1 )   \ where this ~ stands in the word
+  \ A `${...}` word's first character counts as a word start, so
+  \ `${a-~}` expands the tilde even though the character before it is
+  \ the operator (Iteration 381).
+  TILDE-AT-START? @ IF ET-START EXIT THEN
+  SRC-POS @ TK-START @ = IF ET-START EXIT THEN
+  -1 SRC-C DUP 61 = IF DROP ET-AFTER-EQ EXIT THEN
+  58 = IF ET-AFTER-COLON EXIT THEN
+  -1 ;
+: TILDE-PREFIX? ( --- f )
+  \ A tilde prefix runs to the first unquoted / or the word's end, and is
+  \ expanded only if nothing in it is quoted (XCU 2.6.1): `~"/stuff"` is
+  \ literal, as dash has it (Iteration 277).
+  1
+  BEGIN
+    DUP SRC-C DUP -1 <> IF DUP NAME-CHAR? OVER 45 = OR SWAP 46 = OR ELSE DROP 0 THEN
+  WHILE 1+ REPEAT
+  SRC-C
+  DUP 39 = OVER 34 = OR OVER 92 = OR OVER 36 = OR SWAP 96 = OR 0= ;
+
+: SCAN-TILDE-PREFIX ( --- )   \ at ~ : its user name, up to / or the word's end
+  TILDE-CLASS DUP 0< TILDE-PREFIX? 0= OR IF
+    DROP 126 ENC-LIT, 1 SRC-SKIP EXIT
+  THEN
+  ENC-TILDE ENC-CODE,  ENC-C,  -1 ENC-COMPLEX? !
+  1 SRC-SKIP
+  BEGIN
+    0 SRC-C DUP -1 <> IF
+      DUP NAME-CHAR? OVER 45 = OR SWAP 46 = OR
+    ELSE DROP 0 THEN
+  WHILE
+    0 SRC-C ENC-C,  1 SRC-SKIP
+  REPEAT
+  ENC-END ENC-CODE, ;
+' SCAN-TILDE-PREFIX IS SCAN-TILDE-CALL
+
+
+: SCAN-WORD ( --- )       \ at a word's first character
+  SRC-POS @ TK-START !  0 TK-FLAGS !
+  ENC# @ ENC-BASE !  ENC-SUBS @ ENC-SUB-BASE !  0 ENC-MUTE !  0 ENC-COMPLEX? !
+  0 SRC-C DUP 39 = OVER 34 = OR SWAP 92 = OR IF WF-NAME-Q TK-FLAGS ! THEN
+  BEGIN
+    0 SRC-C
+    DUP -1 = OVER BLANK? OR OVER 10 = OR OVER OP-CHAR? OR IF
+      DROP -1
+    ELSE DUP 92 = IF
+      \ A backslash-newline is a line continuation, not quoting: marking
+      \ the word quoted made `i\` + newline + `f` fail to read as the
+      \ reserved word `if`, since a quoted word is never reserved
+      \ (Iteration 338).
+      DROP
+      1 SRC-C DUP -1 = IF
+        DROP 92 ENC-LIT,  WF-QUOTED TK-FLAGS @ OR TK-FLAGS !
+      ELSE
+        DUP 10 = IF
+          DROP
+        ELSE
+          WF-QUOTED TK-FLAGS @ OR TK-FLAGS !
+          ENC-ESC ENC-CODE, ENC-C,
+        THEN
+      THEN
+      1 SRC-C -1 = IF 1 ELSE 2 THEN SRC-SKIP 0
+    ELSE DUP 39 = IF
+      DROP WF-QUOTED TK-FLAGS @ OR TK-FLAGS !  SCAN-SQUOTE 0
+    ELSE DUP 34 = IF
+      DROP WF-QUOTED TK-FLAGS @ OR TK-FLAGS !  SCAN-DQUOTE 0
+    ELSE DUP 96 = IF
+      DROP WF-EXPAND TK-FLAGS @ OR TK-FLAGS !  SCAN-BACKQUOTE 0
+    ELSE 36 = IF
+      \ `$'` opens a dollar-single-quoted string here, unquoted; inside
+      \ double quotes it is a dollar and a quote, which is why this is
+      \ not in SCAN-DOLLAR (Iteration 474).
+      1 SRC-C 39 = IF
+        WF-QUOTED TK-FLAGS @ OR TK-FLAGS !  SCAN-DOLLAR-SQUOTE 0
+      ELSE
+        SCAN-DOLLAR 0
+      THEN
+    ELSE
+      \ A [ is a pattern character only if a ] closes it (XCU 2.13.1):
+      \ `[` and `]` alone, the test command, stay literal.
+      0 SRC-C DUP 126 = OVER 42 = OR SWAP 63 = OR IF
+        WF-SPECIAL TK-FLAGS @ OR TK-FLAGS !
+      THEN
+      0 SRC-C 91 = IF WF-BRACKET TK-FLAGS @ OR TK-FLAGS ! THEN
+      0 SRC-C 93 = TK-FLAGS @ WF-BRACKET AND 0<> AND IF
+        WF-SPECIAL TK-FLAGS @ OR TK-FLAGS !
+      THEN
+      0 SRC-C 126 = IF
+        SCAN-TILDE-PREFIX                    \ takes the ~ and the name
+      ELSE
+        0 SRC-C ENC-LIT, 1 SRC-SKIP
+      THEN
+      0
+    THEN THEN THEN THEN THEN THEN
+  UNTIL
+  ENC-COMPLEX? @ 0= IF WF-ENC-SIMPLE TK-FLAGS @ OR TK-FLAGS ! THEN
+  SRC-POS @ TK-END ! ;
+
+VARIABLE IOD-A  VARIABLE IOD-U  VARIABLE IOD-I  VARIABLE IOD-D
+
+: IONUM-TEXT? ( c-addr u --- f )   \ digits, with line continuations among them
+  IOD-U !  IOD-A !  0 IOD-I !  0 IOD-D !
+  BEGIN IOD-I @ IOD-U @ < WHILE
+    IOD-A @ IOD-I @ + C@ 92 =
+    IOD-I @ 1+ IOD-U @ < AND
+    IF IOD-A @ IOD-I @ 1+ + C@ 10 = ELSE 0 THEN
+    IF 2 IOD-I +!
+    ELSE
+      IOD-A @ IOD-I @ + C@ 48 - 9 U> IF 0 EXIT THEN
+      1 IOD-D +!  1 IOD-I +!
+    THEN
+  REPEAT
+  IOD-D @ 0<> ;
+
+: SRC-C-PAST-CONT ( --- c )   \ the next character, line continuations skipped
+  \ The second character is probed only when the first is a backslash:
+  \ SRC-C asks for more input past the end (Iteration 334).
+  0
+  BEGIN
+    DUP SRC-C 92 = IF DUP 1+ SRC-C 10 = ELSE 0 THEN
+  WHILE 2 + REPEAT
+  SRC-C ;
+
+VARIABLE OP-LA   \ offset of the operator's second character
+VARIABLE OP-LA3  \ ... and of a third, for `<<-`
+
+: OP-LA-INIT ( --- )
+  \ A backslash-newline between the two characters of an operator is a
+  \ line continuation, so `&\` newline `&` is `&&` (Iteration 332).
+  \ The second character is only looked at when the first is a
+  \ backslash: SRC-C asks for MORE INPUT when it reads past the end, so
+  \ probing both unconditionally made an interactive `cmd &` prompt for
+  \ a continuation line (Iteration 334).
+  1 OP-LA !
+  BEGIN
+    OP-LA @ SRC-C 92 = IF OP-LA @ 1+ SRC-C 10 = ELSE 0 THEN
+  WHILE
+    2 OP-LA +!
+  REPEAT ;
+
+: SCAN-OP ( --- )         \ at an operator character
+  K-OP TK-KIND !
+  OP-LA-INIT
+  0 SRC-C OP-LA @ SRC-C
+  OVER 59 = IF NIP 59 = IF OP-DSEMI 2 ELSE OP-SEMI 1 THEN ELSE
+  OVER 38 = IF NIP 38 = IF OP-AND 2 ELSE OP-AMP 1 THEN ELSE
+  OVER 124 = IF NIP 124 = IF OP-OR 2 ELSE OP-PIPE 1 THEN ELSE
+  OVER 40 = IF 2DROP OP-LPAREN 1 ELSE
+  OVER 41 = IF 2DROP OP-RPAREN 1 ELSE
+  OVER 60 = IF NIP
+    \ `<<-` may have a continuation between its second and third
+    \ characters too: `cat <<\` + newline + `- EOF` is `<<-`
+    \ (Iteration 369).
+    DUP 60 = IF DROP
+      OP-LA @ 1+ OP-LA3 !
+      BEGIN
+        OP-LA3 @ SRC-C 92 = IF OP-LA3 @ 1+ SRC-C 10 = ELSE 0 THEN
+      WHILE
+        2 OP-LA3 +!
+      REPEAT
+      OP-LA3 @ SRC-C 45 = IF OP-DLESSDASH 3 ELSE OP-DLESS 2 THEN
+    ELSE
+    DUP 38 = IF DROP OP-LESSAND 2 ELSE
+    62 = IF OP-LESSGREAT 2 ELSE OP-LESS 1 THEN THEN THEN
+  ELSE NIP
+    DUP 62 = IF DROP OP-DGREAT 2 ELSE
+    DUP 38 = IF DROP OP-GREATAND 2 ELSE
+    124 = IF OP-CLOBBER 2 ELSE OP-GREAT 1 THEN THEN THEN
+  THEN THEN THEN THEN THEN THEN
+  \ plus any continuation skipped, in either gap
+  DUP 3 = IF
+    DROP OP-LA3 @ 1+
+  ELSE
+    DUP 1 > IF OP-LA @ 1- + THEN
+  THEN
+  SRC-SKIP TK-OP ! ;
+
+\ ---- reading the bodies ----
+VARIABLE SQ-SQ?   \ inside single quotes
+VARIABLE SQ-DQ?   \ inside double quotes
+
+CREATE SQ-ONE 2 ALLOT
+: HD-APPEND-CHAR ( c --- )   SQ-ONE C!  SQ-ONE 1 HD-APPEND ;
+
+: STRIP-QUOTES ( c-addr u --- )   \ the delimiter, into HD-TEXT
+  \ Quote removal, not "drop every quote character": a backslash keeps
+  \ the character after it, and inside double quotes it keeps ITSELF
+  \ unless what follows is one of the four it can quote there. This
+  \ dropped every backslash, so `<<"\name"` waited for `name` and
+  \ swallowed the rest of the script (Iteration 369).
+  0 HD-TEXT# !  0 SQ-SQ? !  0 SQ-DQ? !
+  OVER + SWAP                                ( end cur )
+  BEGIN 2DUP U> WHILE
+    DUP C@                                   ( end cur c )
+    DUP 39 = SQ-DQ? @ 0= AND IF
+      DROP SQ-SQ? @ 0= SQ-SQ? !
+    ELSE DUP 34 = SQ-SQ? @ 0= AND IF
+      DROP SQ-DQ? @ 0= SQ-DQ? !
+    ELSE DUP 92 = SQ-SQ? @ 0= AND IF
+      DROP
+      1+                                     \ past the backslash
+      2DUP U> IF
+        DUP C@                               ( end cur c2 )
+        SQ-DQ? @ IF
+          DUP 34 = OVER 92 = OR OVER 36 = OR OVER 96 = OR 0= IF
+            92 HD-APPEND-CHAR                \ it quotes nothing here
+          THEN
+        THEN
+        DROP DUP 1 HD-APPEND
+      ELSE
+        92 HD-APPEND-CHAR                    \ a trailing backslash
+      THEN
+    ELSE
+      DROP DUP 1 HD-APPEND                   \ the character at cur
+    THEN THEN THEN
+    1+
+  REPEAT 2DROP ;
+
+VARIABLE HD-DELIM
+VARIABLE HD-DELIM#
+VARIABLE HR-NODE
+VARIABLE HR-DASH?
+
+: HD-STORE ( --- off )   \ HD-TEXT, NUL-terminated, into the tree
+  HD-TEXT# @ 1+ TREE-ALLOT  HD-TEXT OVER TSTR HD-TEXT# @ MOVE ;
+
+\ A here-document's body: the lines after the command, up to one that is
+\ exactly the delimiter (quotes removed; leading tabs stripped for <<-).
+\ The body is stored raw; whether it is expanded is the word's business.
+VARIABLE HDB-N
+: HD-LINE-CONTINUES? ( c-addr u --- f )   \ ends with an unescaped backslash
+  0 HDB-N !
+  BEGIN DUP 0 > WHILE
+    2DUP + 1- C@ 92 = 0= IF 2DROP HDB-N @ 1 AND 0<> EXIT THEN
+    1 HDB-N +!  1-
+  REPEAT 2DROP HDB-N @ 1 AND 0<> ;
+
+VARIABLE HD-CONT?     \ the line before this one ended in a continuation
+VARIABLE HD-QUOTED?   \ the delimiter was quoted, so the body is literal
+
+: READ-HEREDOC ( redir --- )
+  DUP HR-NODE !  1 F@ OP-DLESSDASH = HR-DASH? !
+  HR-NODE @ 2 F@ 0 F@ TSTR DUP CSTRLEN 2DUP STRIP-QUOTES
+  \ Quote removal shortens a quoted delimiter, which is how a literal
+  \ body is told here from one that expands (Iteration 464).
+  NIP HD-TEXT# @ <> HD-QUOTED? !
+  HD-TEXT# @ HD-DELIM# !  HD-STORE HD-DELIM !
+  0 HD-TEXT# !  0 HD-CONT? !
+  BEGIN 0 SRC-C -1 <> WHILE
+    \ `<<-` strips the tabs that start a LOGICAL line, and a continued
+    \ line does not start one: both references keep the tab in `x\` +
+    \ newline + tab + `EOF` (Iteration 464).
+    HR-DASH? @ HD-CONT? @ 0= AND IF
+      BEGIN 0 SRC-C 9 = WHILE 1 SRC-SKIP REPEAT
+    THEN
+    SRC-POS @
+    BEGIN 0 SRC-C DUP -1 <> SWAP 10 <> AND WHILE 1 SRC-SKIP REPEAT
+    DUP SRC-ADDR @ +  SRC-POS @ ROT -       ( c-addr u )
+    1 SRC-SKIP
+    \ A line that the one before it continued into is not a delimiter:
+    \ with an unquoted delimiter `c\` + newline + `EOF` is body text
+    \ reading `cEOF`, and the EOF after THAT ends the document. The
+    \ first was taken as the terminator here, which left the second to
+    \ be run as a command (Iteration 464, busybox
+    \ ash-heredoc/heredoc_backslash1).
+    HD-CONT? @ 0= IF
+      2DUP HD-DELIM @ TSTR HD-DELIM# @ COMPARE 0= IF
+        2DROP HD-STORE HR-NODE @ 3 F! EXIT
+      THEN
+    THEN
+    HD-QUOTED? @ 0= IF 2DUP HD-LINE-CONTINUES? ELSE 0 THEN HD-CONT? !
+    HD-APPEND  SH-NL 1 HD-APPEND
+  REPEAT
+  \ end of input before the delimiter: the body is what was read
+  HD-STORE HR-NODE @ 3 F! ;
+
+: READ-HEREDOCS ( --- )
+  HD-PEND# @ 0 ?DO HD-PEND I CELLS + @ READ-HEREDOC LOOP
+  0 HD-PEND# ! ;
+
+\ ---- the lexer ----
+: LEX ( --- )
+  BEGIN
+    0 SRC-C DUP BLANK? IF DROP 1 SRC-SKIP 0 ELSE
+    92 = IF 1 SRC-C 10 = IF 2 SRC-SKIP 0 ELSE -1 THEN ELSE -1 THEN THEN
+  UNTIL
+  0 SRC-C 35 = IF
+    BEGIN 0 SRC-C DUP -1 <> SWAP 10 <> AND WHILE 1 SRC-SKIP REPEAT
+  THEN
+  0 SRC-C
+  DUP -1 = IF DROP K-EOF TK-KIND ! EXIT THEN
+  DUP 10 = IF DROP 1 SRC-SKIP K-NEWLINE TK-KIND ! READ-HEREDOCS EXIT THEN
+  OP-CHAR? IF SCAN-OP EXIT THEN
+  SCAN-WORD K-WORD TK-KIND !
+  \ ... and a line continuation may stand inside the number or between
+  \ it and the operator: `3\`+newline+`>f` redirects fd 3, and the 3 was
+  \ left as an argument (Iteration 456, yash quote-p.tst:225).
+  SRC-C-PAST-CONT DUP 60 = SWAP 62 = OR TK-TEXT IONUM-TEXT? AND IF
+    K-IONUM TK-KIND !
+  THEN ;
+
+DEFER EXPAND-ALIASES-CALL   \ EXPAND-ALIASES, defined below
+
+: ALIAS-NEXT-BLANKS? ( --- f )   \ only blanks between the alias's value and here
+  \ A candidacy reaches the next WORD, not the next line: `c c` at the
+  \ end of a line left one standing, and it was taken up by the first
+  \ word of the line after (Iteration 454).
+  ALIAS-NEXT-AT @
+  BEGIN
+    DUP TK-START @ <
+  WHILE
+    DUP SRC-ADDR @ + C@ DUP 32 = OVER 9 = OR SWAP 92 = OR 0= IF DROP 0 EXIT THEN
+    1+
+  REPEAT DROP -1 ;
+VARIABLE IN-ALIAS-CHECK?   \ PEEK is already looking at a candidate
+
+: PEEK ( --- )
+  TK-VALID? @ 0= IF LEX -1 TK-VALID? ! THEN
+  \ A word that follows an alias whose value ended in a blank is a
+  \ candidate WHEREVER it stands (XCU 2.3.1): a case pattern, a
+  \ here-document delimiter, the word after `for`, the parentheses of a
+  \ function definition. SIMPLE-ITEM checked it, so only a simple
+  \ command's own words were candidates - `alias f=' for ' w=' in '`
+  \ made `f w in 1` a syntax error where dash runs the loop (Iteration
+  \ 454, yash alias-p.tst:232, :249, :298, :359, :380, :395, :404,
+  \ :411, :439, :453).
+  ALIAS-NEXT? @ IN-ALIAS-CHECK? @ 0= AND IF
+    TK-START @ ALIAS-NEXT-AT @ < 0= ALIAS-NEXT-BLANKS? AND IF
+      -1 IN-ALIAS-CHECK? !
+      0 ALIAS-NEXT? !  EXPAND-ALIASES-CALL
+      0 IN-ALIAS-CHECK? !
+    THEN
+  THEN ;
+: NEXT ( --- )   PEEK 0 TK-VALID? ! ;
+: KIND? ( k --- f )   PEEK TK-KIND @ = ;
+: OP? ( op --- f )   PEEK TK-KIND @ K-OP = SWAP TK-OP @ = AND ;
+64 BUFFER: KW-JOINED
+VARIABLE KW-J
+VARIABLE KW-P
+VARIABLE KW-END
+
+: KW-JOIN ( c-addr u --- c-addr u )
+  \ The token's text is the raw source, so a line continuation inside a
+  \ word is still in it: `i\` + newline + `f` reads as four characters
+  \ and never matched `if` (Iteration 338). Joined here, and only when a
+  \ backslash is actually present.
+  2DUP 92 SCAN NIP 0= IF EXIT THEN
+  2DUP + KW-END !  DROP KW-P !
+  0 KW-J !
+  BEGIN KW-P @ KW-END @ < KW-J @ 63 < AND WHILE
+    KW-P @ C@ 92 = KW-P @ 1+ KW-END @ < AND
+    IF KW-P @ 1+ C@ 10 = ELSE 0 THEN
+    IF
+      2 KW-P +!
+    ELSE
+      KW-P @ C@ KW-JOINED KW-J @ + C!  1 KW-J +!  1 KW-P +!
+    THEN
+  REPEAT
+  KW-JOINED KW-J @ ;
+
+: KW? ( c-addr u --- f )   \ this unquoted word?
+  PEEK TK-KIND @ K-WORD = TK-FLAGS @ WF-QUOTED AND 0= AND IF
+    TK-TEXT KW-JOIN COMPARE 0=
+  ELSE 2DROP 0 THEN ;
+: LINEBREAK ( --- )   BEGIN K-NEWLINE KIND? WHILE NEXT REPEAT ;
+
+\ A word node from the current token. Its text drops backslash-newline
+\ pairs outside single quotes - the one change the lexer makes to a word.
+VARIABLE TW-DST
+VARIABLE TW-SQ
+VARIABLE TW-DQ
+VARIABLE TW-I
+
+: TW-PUT ( c --- )   TW-DST @ C!  1 TW-DST +! ;
+: TW-C ( i --- c )   SRC-ADDR @ + C@ ;
+
+VARIABLE CST-I
+VARIABLE CST-END
+VARIABLE CST-BQ?   \ the text is a backquoted substitution's
+VARIABLE CST-DQ?   \ ... and it stood inside double quotes
+VARIABLE CST-DST
+: COPY-SRC-TEXT ( from to --- soff )   \ into the tree, NUL-terminated
+  2DUP SWAP - 1+ TREE-ALLOT >R
+  CST-END !  CST-I !
+  R@ TSTR CST-DST !
+  BEGIN CST-I @ CST-END @ < WHILE
+    CST-I @ SRC-ADDR @ + C@
+    DUP 92 = CST-I @ 1+ CST-END @ < AND
+    IF
+      CST-I @ 1+ SRC-ADDR @ + C@ 10 = IF
+        DROP 2 CST-I +!
+      ELSE
+        \ In the backquoted form a backslash keeps its meaning except
+        \ before ` \ or $, where it goes (XCU 2.6.3). Without this, a
+        \ nested `\`...\`` reached the child still escaped and ran as
+        \ literal text (Iteration 300).
+        CST-BQ? @ IF
+          \ Inside backquotes a backslash is removed only before ` \ or
+          \ $ (Iteration 300). The re-fetch below belongs INSIDE that
+          \ test: outside it, every other backslash pushed a second
+          \ character and left the first on the stack, so a backquote
+          \ containing any other escape overflowed it (Iteration 348).
+          \ And before `"` when the backquotes stand inside double quotes,
+          \ whose own escape that is: "`echo \"1\"`" runs echo "1" and
+          \ prints 1, in dash and yash; it printed "1" (Iteration 438,
+          \ yash cmdsub-p.tst:79).
+          CST-I @ 1+ SRC-ADDR @ + C@                ( c next )
+          DUP 34 = CST-DQ? @ AND >R
+          DUP 96 = OVER 92 = OR SWAP 36 = OR R> OR IF     ( c )
+            DROP  1 CST-I +!
+            CST-I @ SRC-ADDR @ + C@
+          THEN
+        THEN
+        CST-DST @ C!  1 CST-DST +!  1 CST-I +!
+      THEN
+    ELSE
+      CST-DST @ C!  1 CST-DST +!  1 CST-I +!
+    THEN
+  REPEAT
+  0 CST-DST @ C!
+  R> ;
+
+VARIABLE TW-ENC-OFF
+VARIABLE TW-ENC-LEN
+VARIABLE TW-SUBS-VEC
+VARIABLE TW-SUB-NODES
+: TOKEN-WORD-ENC ( --- )   \ the encoding and each substitution's text
+  ENC# @ ENC-BASE @ - TW-ENC-LEN !
+  TW-ENC-LEN @ IF
+    TW-ENC-LEN @ TREE-ALLOT DUP TW-ENC-OFF !
+    TSTR  TW-ENC-LEN @ >R  ENC-BUF ENC-BASE @ + SWAP R> MOVE
+  ELSE
+    0 TW-ENC-OFF !
+  THEN
+  VEC-MARK
+  ENC-SUBS @ ENC-SUB-BASE @ ?DO
+    ENC-SUB-NODES I CELLS + @ 0= CST-BQ? !   \ no subtree: a backquote
+    ENC-SUB-DQ I CELLS + @ CST-DQ? !
+    ENC-SUB-POS I 2* CELLS + @
+    ENC-SUB-POS I 2* 1+ CELLS + @
+    COPY-SRC-TEXT >VEC
+    0 CST-BQ? !  0 CST-DQ? !
+  LOOP
+  VEC> TW-SUBS-VEC !
+  VEC-MARK
+  ENC-SUBS @ ENC-SUB-BASE @ ?DO ENC-SUB-NODES I CELLS + @ >VEC LOOP
+  VEC> TW-SUB-NODES !
+  ENC-BASE @ ENC# !  ENC-SUB-BASE @ ENC-SUBS ! ;
+
+: TOKEN-WORD ( --- node )
+  TK-END @ TK-START @ - 1+ TREE-ALLOT       ( soff )
+  DUP TSTR TW-DST !  0 TW-SQ !  0 TW-DQ !  TK-START @ TW-I !
+  BEGIN TW-I @ TK-END @ < WHILE
+    TW-I @ TW-C
+    DUP 39 = TW-DQ @ 0= AND IF TW-SQ @ 0= TW-SQ ! THEN
+    DUP 34 = TW-SQ @ 0= AND IF TW-DQ @ 0= TW-DQ ! THEN
+    DUP 92 = TW-SQ @ 0= AND TW-I @ 1+ TK-END @ < AND IF
+      TW-I @ 1+ TW-C 10 = IF
+        DROP                                \ a continuation: dropped
+      ELSE
+        TW-PUT TW-I @ 1+ TW-C TW-PUT        \ an escape: both kept
+      THEN
+      2 TW-I +!
+    ELSE
+      TW-PUT 1 TW-I +!
+    THEN
+  REPEAT
+  TOKEN-WORD-ENC
+  T-WORD 6 NODE  TUCK 0 F!  TK-FLAGS @ OVER 1 F!
+  TW-ENC-OFF @ OVER 2 F!  TW-ENC-LEN @ OVER 3 F!  TW-SUBS-VEC @ OVER 4 F!
+  TW-SUB-NODES @ OVER 5 F! ;
+
+\ ==================================================================
+\ The parser: XCU 2.10's grammar, by recursive descent
+\ ==================================================================
+128 BUFFER: MSG-BUF
+VARIABLE MSG#
+: MSG+ ( c-addr u --- )   \ append to the message being built
+  DUP MSG# @ + 1+ ENSURE-BUFFER MSG-BUF
+  MSG-BUF MSG# @ + SWAP DUP MSG# +! MOVE ;
+
+: EXPECT-KW ( c-addr u --- )
+  2DUP KW? IF 2DROP NEXT EXIT THEN
+  0 MSG# !  S" expected '" MSG+  MSG+  S" '" MSG+
+  MSG-BUF MSG# @ SYNTAX ;
+: EXPECT-OP ( op c-addr u --- )   ROT OP? IF 2DROP NEXT ELSE SYNTAX THEN ;
+
+
+: CLOSER? ( --- f )   \ a token that ends a compound list
+  \ An alias may expand to a reserved word, and `}` after a `;` is in
+  \ command position, so `alias c='}'` closes a group (XCU 2.3.1).
+  \ Substitution happened only where a COMMAND was about to be parsed,
+  \ so the closer was tested before it (Iteration 388). Deferred
+  \ because EXPAND-ALIASES is defined further down.
+  EXPAND-ALIASES-CALL
+  K-EOF KIND? OP-RPAREN OP? OR OP-DSEMI OP? OR IF -1 EXIT THEN
+  S" then" KW? S" else" KW? OR S" elif" KW? OR S" fi" KW? OR
+  S" do" KW? OR S" done" KW? OR S" esac" KW? OR S" }" KW? OR ;
+
+256 BUFFER: AL-NAME-BUF
+
+VARIABLE AL-NEW-I     \ the expansion being spliced: recorded after it
+VARIABLE AL-NEW-END
+VARIABLE ANC-LEN
+VARIABLE ANC-I
+VARIABLE ANC-OUT
+VARIABLE ANC-SRC   \ TK-TEXT gives address AND length: the address, once
+: AL-NAME-COPY ( len --- )   \ the token's text into AL-NAME-BUF, joined
+  ANC-LEN !  0 ANC-I !  0 ANC-OUT !
+  TK-TEXT DROP ANC-SRC !
+  BEGIN ANC-I @ ANC-LEN @ < WHILE
+    ANC-SRC @ ANC-I @ + C@ 92 =
+    ANC-I @ 1+ ANC-LEN @ < AND
+    IF ANC-SRC @ ANC-I @ 1+ + C@ 10 = ELSE 0 THEN
+    IF 2 ANC-I +!
+    ELSE
+      ANC-SRC @ ANC-I @ + C@  AL-NAME-BUF ANC-OUT @ + C!
+      1 ANC-OUT +!  1 ANC-I +!
+    THEN
+  REPEAT
+  0 AL-NAME-BUF ANC-OUT @ + C! ;
+
+: NAME-TOKEN? ( --- f )   \ an unquoted word that is a valid name
+  K-WORD KIND? TK-FLAGS @ WF-QUOTED AND 0= AND 0= IF 0 EXIT THEN
+  TK-TEXT VALID-NAME? IF -1 EXIT THEN
+  \ A line continuation may stand inside the name: `f\`+newline+`n() {
+  \ echo A; }` defines fn, and this read the raw text, called it no
+  \ name, and the `(` after it had nowhere to go (Iteration 457, yash
+  \ quote-p.tst:209). Looked at only when a backslash is there at all,
+  \ as KW-JOIN does for reserved words.
+  TK-TEXT 92 SCAN NIP 0= IF 0 EXIT THEN
+  TK-END @ TK-START @ - DUP 2 + ENSURE-BUFFER AL-NAME-BUF
+  AL-NAME-COPY
+  AL-NAME-BUF DUP CSTRLEN VALID-NAME? ;
+
+: ASSIGN-TOKEN? ( --- f )   \ NAME=... with the name unquoted
+  K-WORD KIND? 0= IF 0 EXIT THEN
+  TK-FLAGS @ WF-NAME-Q AND IF 0 EXIT THEN
+  TK-TEXT 61 SCAN NIP                       ( rest )
+  DUP 0= IF EXIT THEN
+  TK-END @ TK-START @ - SWAP -              ( namelen )
+  SRC-ADDR @ TK-START @ + SWAP VALID-NAME? ;
+
+\ ---- aliases (XCU 2.3.1) ----
+\ An unquoted word in command position that names an alias is replaced,
+\ in the source text itself, by the alias's value, which is then lexed
+\ as if it had been written there. An alias is not expanded again
+\ inside its own expansion; a value ending in a blank makes the next
+\ word a candidate too. Not while finding where a $(...) ends - its
+\ text is parsed again when it runs (Iteration 264).
+
+
+: AL-ENTRY ( k --- addr )   2* CELLS AL-ACTIVE + ;
+: AL-EXPIRE ( --- )         \ drop the expansions the lexer has left
+  0  AL-ACTIVE# @ 0 ?DO
+    I AL-ENTRY CELL+ @ TK-START @ > IF
+      I AL-ENTRY OVER AL-ENTRY 2 CELLS MOVE  1+
+    THEN
+  LOOP AL-ACTIVE# ! ;
+: AL-ACTIVE? ( i --- f )
+  AL-ACTIVE# @ 0 ?DO
+    DUP I AL-ENTRY @ = IF DROP UNLOOP -1 EXIT THEN
+  LOOP DROP 0 ;
+: AL-SHIFT ( delta --- )    \ the expansions around the token grow or shrink
+  ALIAS-NEXT-AT @ TK-START @ > IF DUP ALIAS-NEXT-AT +! THEN
+  AL-ACTIVE# @ 0 ?DO
+    I AL-ENTRY CELL+ @ TK-START @ > IF DUP I AL-ENTRY CELL+ +! THEN
+  LOOP DROP ;
+
+\ Replace the current token's text with c-addr u, and lex it next.
+: SPLICE ( c-addr u --- )
+  DUP TK-END @ TK-START @ - - >R            ( a u  R: delta )
+  SRC-LEN @ R@ +                            ( a u newlen )
+  SRC-STDIN? @ IF
+    DUP 1+ ENSURE-BUFFER STDIN-TEXT
+    STDIN-TEXT TK-END @ +  DUP R@ +  SRC-LEN @ TK-END @ -  MOVE
+    STDIN-TEXT SRC-ADDR !
+  ELSE
+    DUP 1 MAX ALLOCATE DROP                 ( a u newlen blk )
+    SRC-ADDR @ OVER TK-START @ MOVE
+    SRC-ADDR @ TK-END @ +  OVER TK-END @ + R@ +  SRC-LEN @ TK-END @ -  MOVE
+    SRC-SPLICED @ ?DUP IF FREE DROP THEN
+    DUP SRC-SPLICED !  SRC-ADDR !
+  THEN
+  SRC-LEN !
+  SRC-ADDR @ TK-START @ + SWAP MOVE
+  R> AL-SHIFT
+  TK-START @ SRC-POS !  0 TK-VALID? ! ;
+
+VARIABLE ALIAS-VANISHED?   \ an alias expanded to nothing, or to blanks
+VARIABLE EMPTY-VIA-ALIAS?  \ the command just parsed was such an alias, and nothing else
+VARIABLE ALIAS-EXPANDED-HERE?  \ an alias was expanded while parsing this command
+VARIABLE PIPE-FIRST-OWED?  \ PARSE-PIPELINE's first command follows && or ||
+
+: TRY-ALIAS ( --- f )   \ the current token was an alias, and is replaced
+  NO-ALIAS? @ IF 0 EXIT THEN
+  K-WORD KIND? 0= IF 0 EXIT THEN
+  TK-FLAGS @ WF-QUOTED AND IF 0 EXIT THEN
+  AL-EXPIRE
+  TK-END @ TK-START @ - DUP 2 + ENSURE-BUFFER AL-NAME-BUF
+  \ ... with its line continuations out: `ee\`+newline+`e\`+newline+`e`
+  \ is the name `eeee` (Iteration 453, yash alias-p.tst:536). The raw
+  \ source text was looked up, backslashes and all, and found nothing.
+  AL-NAME-COPY
+  \ A reserved word in its place is never an alias (XCU 2.3.1): with
+  \ `alias if=: then=: fi=:`, `if true; then echo x; fi` still runs the
+  \ if - here it became `: true; : echo x; :`, and printed nothing
+  \ (Iteration 444, yash alias-p.tst:510).
+  \ ... where one would BE a reserved word. After `for`, the next word
+  \ is a name, so `alias in=' x '` expands there and `f w in 1` becomes
+  \ `for x in 1` in dash, while the `in` that follows the name stays the
+  \ keyword (Iteration 462, yash alias-p.tst:298). Refusing everywhere
+  \ stopped the chain one alias early.
+  AL-NAME-BUF RESERVED-WORD? RESERVED-HERE? @ AND IF 0 EXIT THEN
+  AL-NAME-BUF FIND-ALIAS
+  DUP 0< IF DROP 0 EXIT THEN
+  DUP AL-ACTIVE? IF DROP 0 EXIT THEN
+  AL-ACTIVE# @ MAX-ALIAS-NEST < 0= IF DROP 0 EXIT THEN
+  DUP ALIAS-VALUE-SLOT DUP CSTRLEN          ( i a u )
+  2DUP + 1- C@ OVER 0<> AND DUP 32 = SWAP 9 = OR IF
+    \ where the name ends: SPLICE moves it to where the value ends
+    -1 ALIAS-NEXT? !  TK-END @ ALIAS-NEXT-AT !
+  THEN
+  \ A value that is empty or all blanks leaves no command behind, which
+  \ PARSE-SIMPLE has to be told about (Iteration 382).
+  2DUP BLANK-RUN? IF -1 ALIAS-VANISHED? ! THEN
+  \ Recorded AFTER the splice. SPLICE shifts every active expansion that
+  \ ends past this token, and this one was already in the table, so its
+  \ end moved too - by the difference between the value and the name -
+  \ and covered the word after it. The same alias then read as still
+  \ active there and was not expanded: `alias d='echo '` made `d d x`
+  \ into `echo d x`, where dash has `echo echo x` (Iteration 452, yash
+  \ alias-p.tst:480). TK-START does not move, so the end is the same
+  \ number either side of the splice.
+  ROT AL-NEW-I !                            ( a u )
+  DUP TK-START @ + AL-NEW-END !
+  SPLICE
+  AL-NEW-I @ AL-ACTIVE# @ AL-ENTRY !
+  AL-NEW-END @ AL-ACTIVE# @ AL-ENTRY CELL+ !
+  1 AL-ACTIVE# +!
+  -1 ALIAS-EXPANDED-HERE? !
+  -1 ;
+: EXPAND-ALIASES ( --- )   BEGIN PEEK TRY-ALIAS 0= UNTIL ;
+' EXPAND-ALIASES IS EXPAND-ALIASES-CALL
+
+DEFER PARSE-AND-OR
+DEFER PARSE-COMMAND
+
+: SEPARATOR ( --- sep | -1 )   \ ; 0, & 1, or none
+  OP-SEMI OP? IF NEXT 0 EXIT THEN
+  OP-AMP OP? IF NEXT 1 EXIT THEN
+  -1 ;
+
+: LIST-NODE ( vec --- node )   T-LIST 1 NODE TUCK 0 F! ;
+
+: PARSE-COMPOUND-LIST ( empty-ok? --- node )
+  LINEBREAK
+  CLOSER? IF
+    0= IF S" empty command list" SYNTAX THEN
+    VEC-MARK VEC> LIST-NODE EXIT
+  THEN DROP
+  VEC-MARK
+  BEGIN
+    PARSE-AND-OR >VEC
+    SEPARATOR DUP 0< IF
+      DROP 0 >VEC
+      K-NEWLINE KIND? 0= IF CLOSER? 0= IF
+        S" unexpected token" SYNTAX
+      THEN THEN
+    ELSE >VEC THEN
+    LINEBREAK
+    CLOSER?
+  UNTIL
+  VEC> LIST-NODE ;
+
+: PARSE-SUBLIST-IMPL ( --- )   \ the contents of $(...), up to its )
+  -1 PARSE-COMPOUND-LIST                     ( node )
+  OP-RPAREN S" expected ')' to end a command substitution" EXPECT-OP ;
+' PARSE-SUBLIST-IMPL IS PARSE-SUBLIST
+
+: PARSE-COMPLETE ( --- node )   \ a list up to a newline or the end
+  VEC-MARK
+  BEGIN
+    PARSE-AND-OR >VEC
+    SEPARATOR DUP 0< IF DROP 0 >VEC -1 ELSE
+      >VEC K-NEWLINE KIND? K-EOF KIND? OR
+    THEN
+  UNTIL
+  K-NEWLINE KIND? K-EOF KIND? OR 0= IF S" unexpected token" SYNTAX THEN
+  VEC> LIST-NODE ;
+
+: PARSE-COMMAND-OWED ( --- node )   \ after | && ||, where a command is owed
+  \ An alias that vanishes there leaves the command still owed, and
+  \ newlines may come before it, as after the operator itself: with
+  \ `alias a=`, `echo foo | a` and then `cat` on the next line is `echo
+  \ foo | cat` in dash. Here the pipeline ended with an empty command, and
+  \ cat ran on its own (Iteration 444, yash alias-p.tst:173). At the start
+  \ of a line a vanished alias is still a line with no command (382).
+  BEGIN
+    0 EMPTY-VIA-ALIAS? !  PARSE-COMMAND
+    EMPTY-VIA-ALIAS? @
+  WHILE DROP LINEBREAK REPEAT ;
+
+: PARSE-PIPELINE ( --- node )
+  PIPE-FIRST-OWED? @ >R  0 PIPE-FIRST-OWED? !
+  0 S" !" KW? IF NEXT DROP -1 THEN
+  VEC-MARK R> IF PARSE-COMMAND-OWED ELSE PARSE-COMMAND THEN >VEC
+  BEGIN OP-PIPE OP? WHILE NEXT LINEBREAK PARSE-COMMAND-OWED >VEC REPEAT
+  VEC>                                      ( bang vec )
+  T-PIPE 2 NODE  TUCK 1 F!  TUCK 0 F! ;
+
+: PARSE-AND-OR-IMPL ( --- node )
+  VEC-MARK PARSE-PIPELINE >VEC
+  BEGIN OP-AND OP? OP-OR OP? OR WHILE
+    OP-AND OP? IF 1 ELSE 2 THEN >VEC
+    NEXT LINEBREAK -1 PIPE-FIRST-OWED? ! PARSE-PIPELINE >VEC
+  REPEAT
+  VEC> T-ANDOR 1 NODE TUCK 0 F! ;
+' PARSE-AND-OR-IMPL IS PARSE-AND-OR
+
+\ ---- redirections ----
+: REDIR-START? ( --- f )
+  K-IONUM KIND? IF -1 EXIT THEN
+  K-OP KIND? 0= IF 0 EXIT THEN
+  TK-OP @ OP-LESS < 0= TK-OP @ OP-CLOBBER > 0= AND ;
+
+VARIABLE T2N
+: TEXT>N ( c-addr u --- n )
+  \ Anything that is not a digit is passed over, so a line continuation
+  \ inside an IO number does not corrupt it (Iteration 456).
+  0 T2N !
+  OVER + SWAP ?DO
+    I C@ 48 - DUP 9 U> IF DROP ELSE T2N @ 10 * + T2N ! THEN
+  LOOP T2N @ ;
+
+: PARSE-REDIRECT ( --- node )
+  -1 K-IONUM KIND? IF DROP TK-TEXT TEXT>N NEXT THEN   ( fd )
+  REDIR-START? 0= K-OP KIND? 0= OR IF S" expected a redirection" SYNTAX THEN
+  TK-OP @ NEXT                              ( fd op )
+  K-WORD KIND? 0= IF S" expected a word after a redirection" SYNTAX THEN
+  T-REDIR 4 NODE                            ( fd op node )
+  TUCK 1 F!  TUCK 0 F!
+  TOKEN-WORD OVER 2 F!  NEXT
+  DUP 1 F@ DUP OP-DLESS = SWAP OP-DLESSDASH = OR IF DUP HD-ADD THEN ;
+
+: PARSE-REDIRS ( node --- node )   \ a compound command's redirections
+  REDIR-START? IF
+    VEC-MARK BEGIN PARSE-REDIRECT >VEC REDIR-START? 0= UNTIL
+    VEC> OVER 0 F!
+  THEN ;
+
+256 BUFFER: JOIN-BUF
+VARIABLE JOIN#
+: JOIN-C, ( c --- )
+  JOIN# @ 2 + ENSURE-BUFFER JOIN-BUF  JOIN-BUF JOIN# @ + C!  1 JOIN# +! ;
+: JOIN-S, ( c-addr u --- )
+  DUP JOIN# @ + 2 + ENSURE-BUFFER JOIN-BUF
+  JOIN-BUF JOIN# @ + SWAP DUP JOIN# +! MOVE ;
+: JOIN-ARGV-FROM ( i0 --- c-addr u )   \ ARGV's words from i0, space-joined
+  0 JOIN# !
+  ARGC @ OVER ?DO
+    I OVER > IF 32 JOIN-C, THEN
+    I ARGV@ DUP CSTRLEN JOIN-S,
+  LOOP DROP
+  0 JOIN-C,  -1 JOIN# +!                    \ NUL-terminated, not counted
+  \ With no words at all that leaves -1, which a caller then takes for a
+  \ length: a here-document whose body expanded to nothing handed -1 to
+  \ the writer and hung (Iteration 343).
+  JOIN# @ 0< IF 0 JOIN# ! THEN
+  JOIN-BUF JOIN# @ ;
+: JOIN-ARGV ( --- c-addr u )   0 JOIN-ARGV-FROM ;
+
+\ ---- simple commands ----
+VARIABLE SI-PREFIX?   \ an assignment or redirection came before this word
+
+: SIMPLE-ITEM ( words --- words' done? )
+  ALIAS-NEXT? @ IF
+    PEEK TK-START @ ALIAS-NEXT-AT @ < 0= IF 0 ALIAS-NEXT? ! EXPAND-ALIASES THEN
+  THEN
+  \ A word is still in COMMAND NAME position after the assignments and
+  \ redirections that precede it, so `>/dev/null e args` and
+  \ `a=A s args` both expand an alias named `e` or `s` (XCU 2.3.1).
+  \ Expansion happened once, at the start of the command, so neither
+  \ did - and neither does dash (Iteration 382). An assignment is not a
+  \ command name, so it is not expanded.
+  DUP 0= SI-PREFIX? @ AND IF
+    PEEK K-WORD KIND? ASSIGN-TOKEN? 0= AND IF EXPAND-ALIASES THEN
+  THEN
+  PEEK
+  REDIR-START? IF -1 SI-PREFIX? ! I-REDIR >VEC PARSE-REDIRECT >VEC 0 EXIT THEN
+  K-WORD KIND? 0= IF -1 EXIT THEN
+  DUP 0= ASSIGN-TOKEN? AND IF -1 SI-PREFIX? ! I-ASSIGN ELSE 1+ I-WORD THEN
+  >VEC TOKEN-WORD >VEC NEXT 0 ;
+
+: HAS-REDIR? ( items --- f )   \ any redirection among a simple command's items
+  0 SWAP DUP V# 0 ?DO
+    DUP I V@ I-REDIR = IF NIP -1 SWAP LEAVE THEN
+  2 +LOOP DROP ;
+
+: PARSE-SIMPLE ( first-word | 0 --- node )
+  SRC-LINE @ >R                              \ where it begins, for $LINENO
+  VEC-MARK SWAP                              ( base first )
+  ?DUP IF I-WORD >VEC >VEC 1 ELSE 0 THEN     ( base words )
+  0 SI-PREFIX? !
+  BEGIN SIMPLE-ITEM UNTIL DROP               ( base )
+  \ An alias may expand to nothing at all - `alias a=` and then a line
+  \ holding just `a` - and that is not an error: the line holds no
+  \ command, and the exit status is left alone. Only then, though:
+  \ `echo A; ; echo B` and `if; then ...` must stay errors, which is
+  \ what ALIAS-VANISHED? is for (Iteration 382).
+  \ ... and an alias whose value CONTINUES the construct around it is
+  \ the same shape: `alias e='`+newline+`esac'` closes the case it stands
+  \ in, and the command it was read as holds no words. The parse had
+  \ entered a simple command by the time PEEK expanded it, so this said
+  \ "expected a command" where dash runs the case (Iteration 455, yash
+  \ alias-p.tst:359). An expansion here is what makes it not an error;
+  \ `echo A; ; echo B` and `if; then` have none, and still are.
+  DUP VEC-TOP @ = IF
+    ALIAS-VANISHED? @ ALIAS-EXPANDED-HERE? @ OR 0= IF
+      S" expected a command" SYNTAX
+    THEN
+    -1 EMPTY-VIA-ALIAS? !
+  THEN
+  \ Cleared when the command is parsed, not when one starts: the list
+  \ parser peeks the next token - expanding the alias - BEFORE entering
+  \ PARSE-SIMPLE, so a reset at the start wiped the very flag that peek
+  \ had just set (Iteration 455).
+  0 ALIAS-EXPANDED-HERE? !
+  \ field 1: has redirections - decided here, so running the command
+  \ skips looking for them (Iteration 266)
+  VEC> DUP HAS-REDIR?                        ( vec f )
+  \ field 2: the line the command began on, which EXEC-SIMPLE makes
+  \ $LINENO (Iteration 475)
+  T-SIMPLE 3 NODE  TUCK 1 F!  TUCK 0 F!  R> OVER 2 F! ;
+
+\ ---- compound commands ----
+: PARSE-GROUP ( --- node )
+  NEXT 0 PARSE-COMPOUND-LIST S" }" EXPECT-KW
+  T-GROUP 2 NODE TUCK 1 F! ;
+
+: PARSE-SUBSHELL ( --- node )
+  NEXT 0 PARSE-COMPOUND-LIST
+  OP-RPAREN S" expected ')'" EXPECT-OP
+  T-SUBSHELL 2 NODE TUCK 1 F! ;
+
+: PARSE-IF ( --- node )
+  NEXT VEC-MARK
+  0 PARSE-COMPOUND-LIST >VEC  S" then" EXPECT-KW  0 PARSE-COMPOUND-LIST >VEC
+  BEGIN S" elif" KW? WHILE
+    NEXT 0 PARSE-COMPOUND-LIST >VEC  S" then" EXPECT-KW  0 PARSE-COMPOUND-LIST >VEC
+  REPEAT
+  S" else" KW? IF NEXT 0 PARSE-COMPOUND-LIST ELSE 0 THEN   ( base else )
+  S" fi" EXPECT-KW
+  >R VEC> R>                                ( vec else )
+  T-IF 3 NODE  TUCK 2 F!  TUCK 1 F! ;
+
+: PARSE-LOOP ( type --- node )   \ while or until
+  NEXT
+  0 PARSE-COMPOUND-LIST  S" do" EXPECT-KW
+  0 PARSE-COMPOUND-LIST  S" done" EXPECT-KW   ( type cond body )
+  ROT 3 NODE  TUCK 2 F!  TUCK 1 F! ;
+
+: PARSE-FOR ( --- node )
+  NEXT
+  0 RESERVED-HERE? !                        \ the name is a name, not a keyword
+  NAME-TOKEN? 0= IF S" expected a name after 'for'" SYNTAX THEN
+  TOKEN-WORD                                ( name )
+  -1 RESERVED-HERE? !
+  NEXT
+  OP-SEMI OP? IF
+    NEXT 0                                  ( name 0 )
+  ELSE
+    LINEBREAK
+    S" in" KW? IF
+      NEXT VEC-MARK
+      BEGIN K-WORD KIND? WHILE TOKEN-WORD >VEC NEXT REPEAT
+      VEC>                                  ( name words )
+      OP-SEMI OP? IF NEXT ELSE
+        K-NEWLINE KIND? IF NEXT ELSE S" expected ';' or a newline" SYNTAX THEN
+      THEN
+    ELSE 0 THEN
+  THEN
+  LINEBREAK S" do" EXPECT-KW
+  0 PARSE-COMPOUND-LIST  S" done" EXPECT-KW   ( name words body )
+  T-FOR 4 NODE  TUCK 3 F!  TUCK 2 F!  TUCK 1 F! ;
+
+: PARSE-CASE-ITEM ( --- item )
+  OP-LPAREN OP? IF NEXT THEN
+  VEC-MARK
+  BEGIN
+    K-WORD KIND? 0= IF S" expected a pattern" SYNTAX THEN
+    TOKEN-WORD >VEC NEXT
+    OP-PIPE OP?
+  WHILE NEXT REPEAT
+  VEC>                                      ( pats )
+  OP-RPAREN S" expected ')' after a pattern" EXPECT-OP
+  LINEBREAK
+  OP-DSEMI OP? S" esac" KW? OR IF 0 ELSE -1 PARSE-COMPOUND-LIST THEN
+  T-CASEITEM 2 NODE  TUCK 1 F!  TUCK 0 F!
+  OP-DSEMI OP? IF NEXT LINEBREAK ELSE
+    S" esac" KW? 0= IF S" expected ';;' or 'esac'" SYNTAX THEN
+  THEN ;
+
+: PARSE-CASE ( --- node )
+  NEXT
+  K-WORD KIND? 0= IF S" expected a word after 'case'" SYNTAX THEN
+  TOKEN-WORD NEXT                           ( word )
+  LINEBREAK S" in" EXPECT-KW LINEBREAK
+  VEC-MARK
+  BEGIN S" esac" KW? 0= WHILE
+    K-EOF KIND? IF S" expected 'esac'" SYNTAX THEN
+    PARSE-CASE-ITEM >VEC
+  REPEAT
+  NEXT VEC>                                 ( word items )
+  T-CASE 3 NODE  TUCK 2 F!  TUCK 1 F! ;
+
+: COMPOUND-START? ( --- f )
+  OP-LPAREN OP? S" {" KW? OR S" if" KW? OR S" while" KW? OR
+  S" until" KW? OR S" for" KW? OR S" case" KW? OR ;
+
+: PARSE-COMPOUND ( --- node )
+  OP-LPAREN OP? IF PARSE-SUBSHELL ELSE
+  S" {" KW? IF PARSE-GROUP ELSE
+  S" if" KW? IF PARSE-IF ELSE
+  S" while" KW? IF T-WHILE PARSE-LOOP ELSE
+  S" until" KW? IF T-UNTIL PARSE-LOOP ELSE
+  S" for" KW? IF PARSE-FOR ELSE
+  PARSE-CASE
+  THEN THEN THEN THEN THEN THEN
+  PARSE-REDIRS ;
+
+: PARSE-FUNCDEF ( name --- node )
+  NEXT OP-RPAREN S" expected ')' after '('" EXPECT-OP
+  LINEBREAK
+  COMPOUND-START? 0= IF S" a function body must be a compound command" SYNTAX THEN
+  \ The body's nodes are all allocated while it is parsed, so they are
+  \ the arena range [start, end): defining the function copies it.
+  TREE-TOP @ >R
+  PARSE-COMPOUND                            ( name body )
+  T-FUNCDEF 5 NODE  TUCK 2 F!  TUCK 1 F!
+  R> OVER 3 F!  TREE-TOP @ OVER 4 F! ;
+
+: PARSE-COMMAND-IMPL ( --- node )
+  0 ALIAS-NEXT? !  0 ALIAS-VANISHED? !
+  EXPAND-ALIASES
+  K-EOF KIND? IF S" unexpected end of input" SYNTAX THEN
+  COMPOUND-START? IF PARSE-COMPOUND EXIT THEN
+  CLOSER? IF S" unexpected token" SYNTAX THEN
+  K-WORD KIND? IF
+    NAME-TOKEN? IF
+      TOKEN-WORD NEXT                       ( w )
+      OP-LPAREN OP? IF PARSE-FUNCDEF EXIT THEN
+      PARSE-SIMPLE EXIT
+    THEN
+  THEN
+  0 PARSE-SIMPLE ;
+' PARSE-COMMAND-IMPL IS PARSE-COMMAND
+
+\ ==================================================================
+\ Printing a tree
+\ ==================================================================
+DEFER PRINT-NODE
+
+: .STR ( off --- )   \ quoted, with " \ and newline escaped
+  34 EMIT
+  TSTR DUP CSTRLEN OVER + SWAP ?DO
+    I C@ DUP 10 = IF DROP 92 EMIT 110 EMIT ELSE
+    DUP 34 = OVER 92 = OR IF 92 EMIT THEN EMIT THEN
+  LOOP
+  34 EMIT ;
+
+\ ---- the encoded form, readably (tree-dump; Iteration 274) ----
+VARIABLE ENC-SHOW?        \ tree-dump prints encodings too
+VARIABLE PE-I
+VARIABLE PE-A
+VARIABLE PE-N
+: .OP-NAME ( op --- )
+  DUP EV-PLAIN = IF DROP S" plain" TYPE EXIT THEN
+  DUP EV-LENGTH = IF DROP S" length" TYPE EXIT THEN
+  DUP EV-TRIM-PRE = IF DROP S" #" TYPE EXIT THEN
+  DUP EV-TRIM-PRE-LONG = IF DROP S" ##" TYPE EXIT THEN
+  DUP EV-TRIM-SUF = IF DROP S" %" TYPE EXIT THEN
+  DUP EV-TRIM-SUF-LONG = IF DROP S" %%" TYPE EXIT THEN
+  DUP EV-COLON AND IF S" :" TYPE THEN
+  EV-COLON 1- AND
+  DUP EV-DEFAULT = IF DROP 45 EMIT EXIT THEN
+  DUP EV-ASSIGN = IF DROP 61 EMIT EXIT THEN
+  DUP EV-ERROR = IF DROP 63 EMIT EXIT THEN
+  EV-ALT = IF 43 EMIT EXIT THEN
+  S" ?op" TYPE ;
+: PE-C ( --- c )   PE-A @ PE-I @ + C@ ;
+: PRINT-ENC ( word --- )
+  DUP 3 F@ ?DUP 0= IF DROP DROP EXIT THEN
+  PE-N !  DUP 2 F@ TSTR PE-A !
+  S"  enc<" TYPE
+  0 PE-I !
+  BEGIN PE-I @ PE-N @ < WHILE
+    PE-C ENC-CTL = IF
+      1 PE-I +!
+      PE-C
+      DUP ENC-CTL = IF DROP 91 EMIT PE-C EMIT 93 EMIT ELSE
+      DUP ENC-END = IF DROP S" >" TYPE ELSE
+      DUP ENC-SQ = IF DROP S" sq<" TYPE ELSE
+      DUP ENC-DQ = IF DROP S" dq<" TYPE ELSE
+      DUP ENC-ESC = IF DROP 1 PE-I +! S" esc(" TYPE PE-C EMIT 41 EMIT ELSE
+      DUP ENC-VAR = IF
+        DROP 1 PE-I +! S" var(" TYPE PE-C .OP-NAME 44 EMIT
+        1 PE-I +!                            \ the name, NUL-terminated
+        BEGIN PE-I @ PE-N @ < IF PE-C ELSE 0 THEN WHILE PE-C EMIT 1 PE-I +! REPEAT
+        62 EMIT
+      ELSE
+      DUP ENC-ARITH = IF DROP S" arith<" TYPE ELSE
+      DUP ENC-CMDSUB = IF DROP 1 PE-I +! S" sub" TYPE PE-C 48 + EMIT ELSE
+      DUP ENC-TILDE = IF DROP 1 PE-I +! S" tilde" TYPE PE-C 48 + EMIT 40 EMIT ELSE
+        DROP S" ?code" TYPE
+      THEN THEN THEN THEN THEN THEN THEN THEN THEN
+      1 PE-I +!
+    ELSE
+      PE-C EMIT  1 PE-I +!
+    THEN
+  REPEAT
+  S" >" TYPE
+  DUP 4 F@ ?DUP IF
+    DUP V# 0 ?DO
+      S"  sub" TYPE I 48 + EMIT S" =<" TYPE
+      DUP I V@ .STR S" >" TYPE
+    LOOP DROP
+  THEN DROP ;
+
+: .SP ( --- )   32 EMIT ;
+: .VEC ( vec --- )   \ items, space-separated
+  DUP V# 0 ?DO .SP DUP I V@ PRINT-NODE LOOP DROP ;
+: .REDIRS ( node --- )   0 F@ ?DUP IF .VEC THEN ;
+: .OP ( op --- )
+  CASE
+    OP-LESS OF ." <" ENDOF        OP-GREAT OF ." >" ENDOF
+    OP-DGREAT OF ." >>" ENDOF     OP-LESSAND OF ." <&" ENDOF
+    OP-GREATAND OF ." >&" ENDOF   OP-LESSGREAT OF ." <>" ENDOF
+    OP-DLESS OF ." <<" ENDOF      OP-DLESSDASH OF ." <<-" ENDOF
+    OP-CLOBBER OF ." >|" ENDOF
+  ENDCASE ;
+
+: PRINT-NODE-IMPL ( node --- )
+  ?DUP 0= IF ." ()" EXIT THEN
+  DUP T@ CASE
+  T-WORD OF DUP 0 F@ .STR  ENC-SHOW? @ IF PRINT-ENC ELSE DROP THEN ENDOF
+  T-VEC OF ." [" .VEC ."  ]" ENDOF
+  T-LIST OF
+    ." (list"
+    0 F@ DUP V# 0 ?DO
+      .SP DUP I V@ PRINT-NODE
+      DUP I 1+ V@ IF ."  &" THEN
+    2 +LOOP DROP ." )"
+  ENDOF
+  T-ANDOR OF
+    0 F@ DUP V# 1 = IF 0 V@ PRINT-NODE ELSE
+      ." (and-or"
+      DUP V# 0 ?DO
+        .SP DUP I V@ PRINT-NODE
+        I 1+ OVER V# < IF DUP I 1+ V@ 1 = IF ."  &&" ELSE ."  ||" THEN THEN
+      2 +LOOP DROP ." )"
+    THEN
+  ENDOF
+  T-PIPE OF
+    DUP 0 F@ 0= OVER 1 F@ V# 1 = AND IF
+      1 F@ 0 V@ PRINT-NODE
+    ELSE
+      ." (pipe" DUP 0 F@ IF ."  !" THEN 1 F@ .VEC ." )"
+    THEN
+  ENDOF
+  T-SIMPLE OF
+    ." (simple"
+    0 F@ DUP V# 0 ?DO
+      DUP I V@ CASE
+        I-ASSIGN OF ."  (assign " ENDOF
+        I-REDIR OF .SP ENDOF
+        .SP
+      ENDCASE
+      DUP I 1+ V@ PRINT-NODE
+      DUP I V@ I-ASSIGN = IF ." )" THEN
+    2 +LOOP DROP ." )"
+  ENDOF
+  T-SUBSHELL OF ." (subshell " DUP 1 F@ PRINT-NODE .REDIRS ." )" ENDOF
+  T-GROUP OF ." (group " DUP 1 F@ PRINT-NODE .REDIRS ." )" ENDOF
+  T-IF OF
+    ." (if"
+    DUP 1 F@ DUP V# 0 ?DO
+      .SP DUP I V@ PRINT-NODE .SP DUP I 1+ V@ PRINT-NODE
+    2 +LOOP DROP
+    DUP 2 F@ ?DUP IF ."  (else " PRINT-NODE ." )" THEN
+    .REDIRS ." )"
+  ENDOF
+  T-WHILE OF ." (while " DUP 1 F@ PRINT-NODE .SP DUP 2 F@ PRINT-NODE .REDIRS ." )" ENDOF
+  T-UNTIL OF ." (until " DUP 1 F@ PRINT-NODE .SP DUP 2 F@ PRINT-NODE .REDIRS ." )" ENDOF
+  T-FOR OF
+    ." (for " DUP 1 F@ PRINT-NODE
+    DUP 2 F@ ?DUP IF .SP PRINT-NODE ELSE ."  $@" THEN
+    .SP DUP 3 F@ PRINT-NODE .REDIRS ." )"
+  ENDOF
+  T-CASE OF ." (case " DUP 1 F@ PRINT-NODE DUP 2 F@ .VEC .REDIRS ." )" ENDOF
+  T-CASEITEM OF ." (item " DUP 0 F@ PRINT-NODE .SP 1 F@ PRINT-NODE ." )" ENDOF
+  T-FUNCDEF OF ." (function " DUP 1 F@ PRINT-NODE .SP DUP 2 F@ PRINT-NODE .REDIRS ." )" ENDOF
+  T-REDIR OF
+    ." (redir "
+    DUP 0 F@ DUP 0< IF DROP ELSE . THEN
+    DUP 1 F@ .OP .SP DUP 2 F@ PRINT-NODE
+    DUP 3 F@ ?DUP IF ."  (body " .STR ." )" THEN
+    DROP ." )"
+  ENDOF
+  ." (?)"
+  ENDCASE ;
+' PRINT-NODE-IMPL IS PRINT-NODE
+
+: PARSE-INIT ( c-addr u --- )
+  SRC-LEN !  SRC-ADDR !  0 SRC-POS !  1 SRC-LINE !  0 SRC-STDIN? !
+  0 SRC-SPLICED !  0 AL-ACTIVE# !  0 NO-ALIAS? !  -1 RESERVED-HERE? !  0 ALIAS-NEXT? !
+  0 TK-VALID? !  0 VEC-TOP !  0 HD-PEND# !  TREE-RESET ;
+
+\ ==================================================================
+\ Stage B: executing the tree (Iteration 264)
+\ ==================================================================
+\ Node offsets are relative to EXEC-BASE: the arena being executed - the
+\ parse arena, or a function's own copy of its body. The parse arena can
+\ move when eval parses during execution; a base saved before that still
+\ reads the old block, which pool.4 keeps until the next top-level
+\ command.
+\
+\ A simple command is laid out in ARGV the way the line-based path laid
+\ it out - its assignments, words and redirections as raw words, each
+\ redirection as an optional one-digit descriptor word, an operator word
+\ and a target - so expansion, assignment, redirection and dispatch are
+\ the same code for both paths until the old one is deleted.
+
+VARIABLE EXEC-BASE
+: X@ ( off --- x )   EXEC-BASE @ + @ ;
+: XF@ ( node i --- x )   1+ CELLS + X@ ;
+: XV# ( vec --- n )   CELL+ X@ ;
+: XV@ ( vec i --- x )   2 + CELLS + X@ ;
+: XSTR ( off --- c-addr )   EXEC-BASE @ + ;
+
+DEFER EXEC   ( node --- )
+DEFER EXEC-FINAL-CALL   ( node --- )
+
+: STOP? ( --- f )   \ a return, break, continue - or a ^C (571)
+  RETURN-PENDING? @ LOOP-CONTROL-PENDING? @ OR INTERRUPT-PENDING? @ OR ;
+
+\ set -e (Iteration 270). A failing pipeline ends the shell, except
+\ while ERR-IGNORE is up: in an if, while or until condition, in any
+\ but the last element of an && / || list, and under `!` (XCU 2.8.1,
+\ set -e). A compound command's own status does not count - its
+\ pipelines were checked as they ran - but a function call's does.
+VARIABLE ERR-IGNORE
+: ERREXIT-CHECK ( --- )
+  LAST-STATUS @ IF
+    OPT-ERREXIT @ ERR-IGNORE @ 0= AND IF LAST-STATUS @ SHELL-EXIT THEN
+  THEN ;
+: EXEC-IGNORING ( node --- )   1 ERR-IGNORE +!  EXEC  -1 ERR-IGNORE +! ;
+
+\ set -u: an unset parameter fails the command, and ends a
+\ non-interactive shell with status 2 (dash).
+: EXPANSION-OK? ( --- f )
+  UNSET-FATAL? @ IF
+    0 UNSET-FATAL? !
+    INTERACTIVE? @ 0= IF 2 SHELL-EXIT THEN
+    0 EXPANSION-FAILED? !  1 LAST-STATUS !  0 EXIT
+  THEN
+  EXPANSION-FAILED? @ IF 1 LAST-STATUS !  0 EXIT THEN
+  -1 ;
+
+\ A node that is one foreground simple command and nothing else: a
+\ process with only that left to do execs it instead of forking
+\ (EXEC-LAST? in shell.4; Iteration 269).
+VARIABLE WANT-EXEC?
+: ONE-SIMPLE? ( node --- f )
+  BEGIN
+    DUP X@ T-LIST = IF
+      0 XF@ DUP XV# 2 = OVER 1 XV@ 0= AND IF 0 XV@ ELSE DROP 0 EXIT THEN
+    ELSE DUP X@ T-ANDOR = IF
+      0 XF@ DUP XV# 1 = IF 0 XV@ ELSE DROP 0 EXIT THEN
+    ELSE DUP X@ T-PIPE = IF
+      DUP 0 XF@ 0= OVER 1 XF@ XV# 1 = AND IF 1 XF@ 0 XV@ ELSE DROP 0 EXIT THEN
+    ELSE
+      X@ T-SIMPLE = EXIT
+    THEN THEN THEN
+  AGAIN ;
+: WAIT-STATUS ( pid --- status )
+  WAITPID-UNINTERRUPTED DROP REPORT-SIGNAL-DEATH WAIT->STATUS ;
+
+\ ---- simple commands ----
+CREATE W-DIGITS  48 C, 0 C, 49 C, 0 C, 50 C, 0 C, 51 C, 0 C, 52 C, 0 C,
+                 53 C, 0 C, 54 C, 0 C, 55 C, 0 C, 56 C, 0 C, 57 C, 0 C,
+CREATE W-LT     CSTR," <"
+CREATE W-GT     CSTR," >"
+CREATE W-DGT    CSTR," >>"
+CREATE W-GTAND  CSTR," >&"
+CREATE W-LTAND  CSTR," <&"
+CREATE W-LTGT   CSTR," <>"   \ <> : reading and writing (Iteration 298)
+CREATE W-GTPIPE CSTR," >|"   \ >| : truncate even under set -C (305)
+CREATE W-DLT    CSTR," <<"
+CREATE W-DLTD   CSTR," <<-"
+
+VARIABLE ARGV-NODE-NEXT   \ the node of the word being added, if it has one
+
+VARIABLE ARGV-FORCE-LITERAL?   \ a synthesised word with nothing to expand
+
+VARIABLE ARGV-ASSIGN-NEXT   \ the parser tagged this word an assignment
+VARIABLE ARGV-RTGT-NEXT     \ ... or tagged it a redirection's target
+VARIABLE ARGV-IONUM-NEXT    \ ... or the descriptor it read for one
+
+: ARGV-ADD ( c-addr flags --- )
+  ARGC @ ROOM-FOR-ARG? 0= IF 2DROP -1 ARGS-OVERFLOW? ! EXIT THEN
+  ARGC @ 0= IF 0 ARGV-NONLITERAL ! THEN     \ a fresh command's count
+  DUP WF-QUOTED WF-EXPAND OR WF-SPECIAL OR AND 0=
+  ARGV-FORCE-LITERAL? @ OR  0 ARGV-FORCE-LITERAL? !
+  DUP 0= IF 1 ARGV-NONLITERAL +! THEN       \ EXPAND-WORDS reads it
+  ARGV-LITERAL ARGC @ + C!
+  DUP WF-QUOTED AND 0= 0= ARGV-QUOTED ARGC @ + C!
+  WF-NAME-Q AND 0= 0= ARGV-NAME-QUOTED ARGC @ + C!
+  ARGV ARGC @ CELLS + !
+  ARGV-NODE-NEXT @ ARGV-NODES ARGC @ CELLS + !  0 ARGV-NODE-NEXT !
+  ARGV-ASSIGN-NEXT @ ARGV-ASSIGN ARGC @ + C!    0 ARGV-ASSIGN-NEXT !
+  ARGV-RTGT-NEXT @ ARGV-REDIR-TGT ARGC @ + C!   0 ARGV-RTGT-NEXT !
+  ARGV-IONUM-NEXT @ ARGV-IONUM ARGC @ + C!      0 ARGV-IONUM-NEXT !
+  ARGC @ 1+ ARGC !  0 ARGV ARGC @ CELLS + ! ;
+\ ==================================================================
+\ Expanding a word from its encoding (the expansion plan's Stage B)
+\ ==================================================================
+\ Iteration 275, the first step: literal runs (copied whole), quoted
+\ runs, quoted characters and plain parameters. A word whose encoding
+\ holds anything else - an operator form, arithmetic, a command
+\ substitution, a tilde - is declined, and EXPAND-WORDS scans it as
+\ before, so both paths run side by side until Stage C.
+VARIABLE XE-P             \ where the walk is, in the encoded bytes
+VARIABLE XE-END           \ ... and where they end
+VARIABLE XE-SPECIAL?      \ the word may hold unquoted pattern characters
+VARIABLE XE-SUBS          \ its command substitutions' texts
+VARIABLE XE-SUB-NODES     \ ... and their parsed subtrees, where there are any
+\ XE-NOSPLIT? is declared in shell.4, whose emitters read it (Iteration 471).
+VARIABLE XE-IN-WORD?      \ inside ${x:-word}: even its literal text is split
+VARIABLE XE-PERCHAR?      \ this word holds $@ or $*, whose fields are its own:
+                          \ everything in it is emitted a character at a time,
+                          \ as the scanning path did, and no regions are kept
+VARIABLE XR-START
+VARIABLE XP-OP
+VARIABLE XP-LEN
+VARIABLE XP-NAME          \ where the name is, in the encoding
+
+: XE-C ( --- c )        XE-P @ C@ ;
+
+DEFER XE-LIT-REGION ( c-addr u --- )   \ literal text as a region: below
+: XE-LIT-RUN ( --- )   \ the literal bytes up to the next control byte
+  XE-P @ XR-START !
+  BEGIN XE-P @ XE-END @ < IF XE-C ENC-CTL <> ELSE 0 THEN WHILE 1 XE-P +! REPEAT
+  XE-IN-WORD? @ IF
+    \ A substituted word is an expansion result: split, literal text
+    \ too. As a REGION, like the expansions beside it, so XE-SPLIT
+    \ splits all of them in order. It was split here, a character at a
+    \ time, while the expansions' regions were split at the end of the
+    \ word - two splitters in one word - so `${a+$b $c}` with b='x y'
+    \ and c='p q' made the blank's field before $b's second one and
+    \ gave x p y q (Iterations 430-431, yash fsplit-p.tst). A word with
+    \ $@ in it splits per character throughout, so it keeps that.
+    XE-PERCHAR? @ IF
+      XE-P @ XR-START @ ?DO I C@ EMIT-EXPANDED-CHAR LOOP
+    ELSE
+      XR-START @  XE-P @ XR-START @ -  XE-LIT-REGION
+    THEN
+  ELSE
+  XE-SPECIAL? @ IF
+    XE-P @ XR-START @ ?DO I C@ GLOB-MARK EMIT-TOK-CHAR LOOP
+  ELSE
+    XR-START @  XE-P @ XR-START @ -  EMIT-RUN
+  THEN THEN ;
+
+: XE-QUOTED-RUN ( --- )   \ inside '...': literal to the run's end
+  XE-P @ XR-START !
+  BEGIN XE-P @ XE-END @ < IF XE-C ENC-CTL <> ELSE 0 THEN WHILE 1 XE-P +! REPEAT
+  PATTERN-CAPTURE? @ IF
+    XE-P @ XR-START @ ?DO I C@ EMIT-QUOTED LOOP
+  ELSE
+    XR-START @  XE-P @ XR-START @ -  EMIT-RUN
+  THEN ;
+
+: XE-QUOTED-TEXT ( c-addr u --- )   \ quoted text: literal in a trim's pattern
+  PATTERN-CAPTURE? @ IF
+    0 ?DO DUP I + C@ EMIT-QUOTED LOOP DROP
+  ELSE
+    EMIT-RUN
+  THEN ;
+
+\ ---- splitting by regions (the expansion plan; Iteration 278) ----
+\ An unquoted expansion's result is copied whole and its output range
+\ recorded; when the word is done, the field splitting runs once over
+\ those ranges (dash's recordregion/ifsbreakup). Pattern characters
+\ inside a region are found with SCAN - the engine's memchr - rather
+\ than tested one at a time on the way out.
+\ Where quoting contributed, as offsets: an empty quoted part leaves no
+\ characters, so this is all the splitter has to tell `""$b` from
+\ leading whitespace. One offset was not enough - `"$e"$b"$e"` has an
+\ empty field at each end and the later quote hid the earlier one.
+16 CONSTANT MAX-QUOTE-MARKS
+MAX-QUOTE-MARKS CELLS BUFFER: XQ-MARKS
+VARIABLE XQ-N
+
+: XQ-MARK ( --- )   \ quoting happened at the current output position
+  IFS-SPLIT-PENDING? @ IF
+    -1 QUOTE-IN-RUN? !
+  ELSE
+    -1 QUOTE-BEFORE-RUN? !
+  THEN
+  XQ-N @ MAX-QUOTE-MARKS < IF
+    TOK-OUT @ OUT-BASE - XQ-MARKS XQ-N @ CELLS + !  1 XQ-N +!
+  THEN ;
+
+VARIABLE XQ-FROM
+VARIABLE XQ-TO
+
+: XQ-BETWEEN? ( from to --- f )   \ any quoting in this span, ends included
+  \ Written with variables after the stack version answered wrongly and
+  \ cost two sessions: PICK counts from the top, and the operands it
+  \ reached were not the ones the comment claimed (Iteration 364).
+  XQ-TO !  XQ-FROM !
+  XQ-N @ 0 ?DO
+    XQ-MARKS I CELLS + @
+    DUP XQ-FROM @ < 0=  SWAP XQ-TO @ > 0=  AND IF -1 UNLOOP EXIT THEN
+  LOOP 0 ;
+256 BUFFER: XE-REGIONS     \ (start, end) output offsets, a pair each
+VARIABLE XE-REG#
+VARIABLE XE-REG-START
+
+: XE-REGION-BEGIN ( --- )
+  TOK-OUT @ OUT-BASE - XE-REG-START ! ;
+VARIABLE XM-CH
+VARIABLE XM-A
+VARIABLE XM-U
+: XE-MARK-DASH ( char --- )   \ marked, but not a reason to glob
+  XM-CH !
+  XM-A @ XM-U @
+  BEGIN DUP WHILE
+    2DUP XM-CH @ SCAN                         ( a u a2 u2 )
+    DUP 0= IF
+      2DROP 2DROP 0 0
+    ELSE
+      OVER OUT-BASE - GLOB-MARK-DASH
+      SWAP 1+ SWAP 1-
+      2SWAP 2DROP
+    THEN
+  REPEAT 2DROP ;
+
+: XE-MARK-CHAR ( char --- )   \ every one of them in the region, by SCAN
+  XM-CH !
+  XM-A @ XM-U @
+  BEGIN DUP WHILE
+    2DUP XM-CH @ SCAN                         ( a u a2 u2 )
+    DUP 0= IF
+      2DROP 2DROP 0 0
+    ELSE
+      OVER OUT-BASE - GLOB-MARK-OFF
+      SWAP 1+ SWAP 1-
+      2SWAP 2DROP
+    THEN
+  REPEAT 2DROP ;
+: XE-MARK-PATTERNS ( from to --- )
+  OVER - DUP 0= IF 2DROP EXIT THEN
+  XM-U !  OUT-BASE + XM-A !
+  42 XE-MARK-CHAR  63 XE-MARK-CHAR  91 XE-MARK-CHAR
+  \ `-` and `]` are marked here too, so an unquoted expansion's dash is
+  \ a live range - `x=-9; echo f[0$x]` is `f[0-9]` - while a quoted one
+  \ stays a member (Iteration 370). They go through GLOB-MARK-DASH,
+  \ which does not count them as a reason to expand the word.
+  \ A backslash is marked the same way: live in a pattern, where it
+  \ escapes the next character, but no reason to glob (Iteration 428;
+  \ shell.4's GLOB-MARK-BACKSLASH is the per-character path).
+  \ `!` and `^` too: right after a `[` either one negates the set, so a
+  \ live one must be told apart from a quoted one, and no mark was ever
+  \ recorded for them either way (Iteration 463, busybox
+  \ ash-quoting/quoted_punct).
+  45 XE-MARK-DASH  93 XE-MARK-DASH  92 XE-MARK-DASH
+  33 XE-MARK-DASH  94 XE-MARK-DASH ;
+
+: XE-REGION-END ( --- )
+  TOK-OUT @ OUT-BASE - XE-REG-START @ = IF EXIT THEN
+  XE-REG# @ 1+ 2* CELLS ENSURE-BUFFER XE-REGIONS
+  XE-REG-START @ XE-REGIONS XE-REG# @ 2* CELLS + !
+  TOK-OUT @ OUT-BASE - XE-REGIONS XE-REG# @ 2* 1+ CELLS + !
+  1 XE-REG# +!
+  XE-REG-START @ TOK-OUT @ OUT-BASE - XE-MARK-PATTERNS ;
+
+: (XE-LIT-REGION) ( c-addr u --- )   XE-REGION-BEGIN  EMIT-RUN  XE-REGION-END ;
+' (XE-LIT-REGION) IS XE-LIT-REGION
+
+: XE-VALUE ( c-addr --- )   \ a parameter's value: split when unquoted
+  IN-DQ-CONTEXT? @ IF DUP CSTRLEN XE-QUOTED-TEXT EXIT THEN
+  XE-NOSPLIT? @ IF DUP CSTRLEN EMIT-RUN EXIT THEN   \ captured, but not quoted
+  XE-PERCHAR? @ IF TYPE0-TO-TOK-SPLIT EXIT THEN
+  XE-REGION-BEGIN  DUP CSTRLEN EMIT-RUN  XE-REGION-END ;
+
+256 BUFFER: XW-BUF        \ an operator form's word, expanded
+VARIABLE XW-LEN
+DEFER XE-REGION-CALL      ( --- )   \ items until a region's end
+DEFER XE-DQ-REGION        ( --- )
+
+VARIABLE XSK-WORD?   \ the parameter being skipped has a word of its own
+
+: XE-SKIP-WORD ( --- )   \ past an operator form's word, expanding nothing
+  \ A nested parameter with an operator has a word of its own, ended by
+  \ its own ENC-END, and only its operator and name were skipped - so
+  \ that END closed the OUTER word: `a=a; echo ${a-x${a-x}x}b}` printed
+  \ axb} for ab} (Iteration 434, yash param-p.tst:151). Every operator
+  \ but the plain and the length forms has a word.
+  1 >R                                       \ nesting of ENC-END
+  BEGIN XE-P @ XE-END @ < R@ 0 > AND WHILE
+    XE-C ENC-CTL = IF
+      1 XE-P +!
+      XE-C
+      DUP ENC-CTL = IF DROP ELSE
+      DUP ENC-END = IF DROP R> 1- >R ELSE
+      DUP ENC-ESC = IF DROP 1 XE-P +! ELSE
+      \ A tilde is ended by an END as well: `${a-~/p}` stopped the skip at
+      \ the tilde and printed the rest (434).
+      DUP ENC-SQ = OVER ENC-DQ = OR OVER ENC-ARITH = OR OVER ENC-TILDE = OR IF DROP R> 1+ >R ELSE
+      DUP ENC-VAR = IF
+        DROP 1 XE-P +!                       \ the operator byte
+        XE-C DUP EV-PLAIN <> SWAP EV-LENGTH <> AND XSK-WORD? !
+        BEGIN XE-P @ XE-END @ < IF XE-C ELSE 0 THEN WHILE 1 XE-P +! REPEAT
+        \ ... to the name's NUL, which the common step below skips. This
+        \ skipped it here too, and the common step then took the first
+        \ byte of the nested word - harmless for a literal, but the
+        \ ENC-CTL of a further nested item hid that item, so a second
+        \ level of nesting still ended the skip early (434).
+        XSK-WORD? @ IF R> 1+ >R THEN         \ its word ends with its own END
+      ELSE
+      ENC-CMDSUB = IF 1 XE-P +! THEN
+      THEN THEN THEN THEN THEN
+      1 XE-P +!
+    ELSE 1 XE-P +! THEN
+  REPEAT
+  R> DROP ;
+
+: XE-WORD-ASIDE ( --- )   \ the word after a parameter, into XW-BUF
+  \ The text is emitted into the output and then taken back out, so any
+  \ glob marks recorded while emitting it point at offsets the real
+  \ expansion will reuse: `f[0"$((-9))"]` marked the `-` of the
+  \ arithmetic SOURCE, and the `-` of its result then landed on that
+  \ offset and read as a live range (Iteration 371). The marks are
+  \ rewound with the text.
+  \ So are the split regions and the quote records, which are bound to
+  \ output offsets in the same way - the same bug, a second time: since
+  \ 431 a braced word's literal text is a region, and capturing the
+  \ `708` of `${a+"$((708))"}` left one over the offsets where the
+  \ arithmetic RESULT then went, which XE-SPLIT split at IFS=0 into 7 and
+  \ 8 (Iteration 440, yash fsplit-p.tst:36).
+  \ And whether the word had quotes: quoting INSIDE a trim's pattern or
+  \ an assignment's word does not make the word AROUND it a quoted one,
+  \ so `${z#"*"}` with z empty is no field at all, where it was an empty
+  \ one - found by tools/difffuzz.py in its first real run, 365 shrunk
+  \ scripts that were nearly all this (Iteration 471).
+  XE-REG# @ >R  XQ-N @ >R
+  GLOB-MARKS# @ >R  GLOB-META# @ >R
+  TOK-WAS-QUOTED? @ >R
+  TOK-OUT @ OUT-BASE - >R                    \ on the stack: one of these nests
+  XE-REGION-CALL                             \ stops at the word's end
+  TOK-OUT @ OUT-BASE - R@ -                  ( length )
+  DUP 1+ ENSURE-BUFFER XW-BUF
+  XW-LEN !
+  OUT-BASE R@ +  XW-BUF  XW-LEN @ MOVE
+  0 XW-BUF XW-LEN @ + C!
+  OUT-BASE R> + TOK-OUT !                    \ taken back out of the output
+  R> TOK-WAS-QUOTED? !
+  R> GLOB-META# !  R> GLOB-MARKS# !
+  R> XQ-N !  R> XE-REG# ! ;
+
+VARIABLE XP-VAL
+
+: XE-VALUE-N ( c-addr u --- )   \ part of a value: split when unquoted
+  IN-DQ-CONTEXT? @ IF XE-QUOTED-TEXT EXIT THEN
+  XE-NOSPLIT? @ IF EMIT-RUN EXIT THEN
+  XE-PERCHAR? @ IF 0 ?DO DUP I + C@ EMIT-EXPANDED-CHAR LOOP DROP EXIT THEN
+  XE-REGION-BEGIN  EMIT-RUN  XE-REGION-END ;
+
+: XE-WORD-ASIDE-SAFE ( pattern? --- )   \ the word may hold another of these
+  XP-NAME @ >R  XP-OP @ >R  XP-VAL @ >R
+  PATTERN-CAPTURE? @ >R  PATTERN-CAPTURE? !
+  \ the enclosing double quotes do not reach inside the word: `"${x#*}"`
+  \ still has a pattern (XCU 2.6.2; CAPTURE-BRACED-WORD does the same)
+  IN-DQ-CONTEXT? @ >R  0 IN-DQ-CONTEXT? !
+  XE-NOSPLIT? @ >R  -1 XE-NOSPLIT? !
+  XE-WORD-ASIDE
+  R> XE-NOSPLIT? !
+  R> IN-DQ-CONTEXT? !
+  R> PATTERN-CAPTURE? !
+  R> XP-VAL !  R> XP-OP !  R> XP-NAME ! ;
+
+: XE-WORD-INLINE ( --- )   \ ${x:-word}: into the output, and split
+  XE-IN-WORD? @ >R  -1 XE-IN-WORD? !
+  XE-REGION-CALL
+  R> XE-IN-WORD? ! ;
+
+32 BUFFER: SP-BUF
+
+: SP-NUMBER ( n --- c-addr )   \ into SP-BUF, NUL-terminated
+  DUP 0< >R ABS 0 <# #S R> IF 45 HOLD THEN #>
+  DUP >R SP-BUF SWAP MOVE  0 SP-BUF R> + C!
+  SP-BUF ;
+
+: SPECIAL-PARAM-VALUE ( c-addr --- c-addr' | 0 )
+  \ `$`, `?`, `#`, `!` and `-` have values that LOOKUP-VAR knows nothing
+  \ about, so `${$+set}` and `${?+set}` read as unset (Iteration 339).
+  DUP CSTRLEN 1 <> IF DROP 0 EXIT THEN
+  C@
+  DUP 36 = IF DROP SHELL-PID @ SP-NUMBER EXIT THEN
+  DUP 63 = IF DROP LAST-STATUS @ SP-NUMBER EXIT THEN
+  DUP 35 = IF DROP POS-PARAM-COUNT @ SP-NUMBER EXIT THEN
+  DUP 33 = IF DROP BG-PID @ ?DUP IF SP-NUMBER ELSE 0 THEN EXIT THEN
+  DROP 0 ;
+
+: XE-PARAM-OP ( --- )   \ the operator forms: defaults, assign, error, trims
+  XP-NAME @ LOOKUP-VAR XP-VAL !               \ the name is in the encoding
+  XP-VAL @ 0= IF XP-NAME @ SPECIAL-PARAM-VALUE XP-VAL ! THEN
+  XP-OP @ EV-TRIM-PRE < IF                   \ - = ? + , with or without :
+    XP-OP @ EV-COLON AND IF
+      \ unset or empty counts. ?DUP left the 0 here when it was unset,
+      \ and the extra cell corrupted whatever ran next (Iteration 277).
+      XP-VAL @ DUP 0= IF DROP -1 ELSE C@ 0= THEN
+    ELSE
+      XP-VAL @ 0=
+    THEN
+    XP-OP @ EV-COLON 1- AND                  ( unset? op )
+    DUP EV-ALT = IF
+      DROP IF XE-SKIP-WORD ELSE XE-WORD-INLINE THEN EXIT
+    THEN
+    DUP EV-DEFAULT = IF
+      DROP IF XE-WORD-INLINE ELSE XE-SKIP-WORD XP-VAL @ XE-VALUE THEN EXIT
+    THEN
+    DUP EV-ASSIGN = IF
+      DROP IF
+        \ Only a variable can be assigned: `${1:=x}` and `${*:=x}` are
+        \ errors that end a non-interactive shell, as in dash; they set
+        \ a variable called `1` here (Iteration 434, yash param-p.tst:198
+        \ and :202).
+        XP-NAME @ C@ DUP NAME-CHAR? SWAP 48 - 10 U< 0= AND 0= IF
+          XE-SKIP-WORD
+          S" shell: " ERR-TYPE XP-NAME @ ERR-CSTR S" : bad variable name" ERR-TYPE ERR-NL
+          -1 UNSET-FATAL? !  -1 EXPANSION-FAILED? !  EXIT
+        THEN
+        0 XE-WORD-ASIDE-SAFE
+        XP-NAME @ XW-BUF SET-SHVAR
+        XW-BUF XE-VALUE
+      ELSE XE-SKIP-WORD XP-VAL @ XE-VALUE THEN EXIT
+    THEN
+    EV-ERROR = IF
+      IF
+        0 XE-WORD-ASIDE-SAFE
+        S" shell: " ERR-TYPE XP-NAME @ ERR-CSTR S" : " ERR-TYPE
+        XW-LEN @ IF XW-BUF ERR-CSTR ELSE S" parameter not set" ERR-TYPE THEN
+        ERR-NL
+        \ `${x?}` ends a non-interactive shell, as `set -u` does (XCU
+        \ 2.6.2). This reported the error and carried on, so a script
+        \ using it as a guard ran everything after it (Iteration 376).
+        -1 UNSET-FATAL? !
+        -1 EXPANSION-FAILED? !
+      ELSE XE-SKIP-WORD XP-VAL @ XE-VALUE THEN
+    ELSE DROP THEN EXIT
+  THEN
+  \ the trims: the word is the pattern, in which quoted pattern
+  \ characters are literal (Iteration 273)
+  -1 XE-WORD-ASIDE-SAFE
+  XP-NAME @ LOOKUP-VAR XP-VAL !               \ it may have moved
+  \ ... and a special parameter is in none of the variables, so a trim
+  \ of one came out empty: `${##x}` is `$#` without a leading x, which
+  \ is `$#` itself (Iteration 457, busybox ash-vars/param_expand_len).
+  \ The branch above has this fallback; this one had lost it.
+  XP-VAL @ 0= IF XP-NAME @ SPECIAL-PARAM-VALUE XP-VAL ! THEN
+  \ `set -u` applies to the trim operators too: only the forms that
+  \ handle an unset parameter themselves - `-`, `+`, `=`, `?` and their
+  \ `:` variants - are exempt (XCU 2.6.2). This exited quietly
+  \ (Iteration 379).
+  XP-VAL @ 0= IF XP-NAME @ XP-LEN @ NOUNSET-CHECK EXIT THEN
+  XW-BUF XW-LEN @  XP-VAL @ DUP CSTRLEN
+  XP-OP @ EV-TRIM-SUF < 0=  XP-OP @ 1 AND 0<>
+  -1 GM-ESCAPES? !  FIND-TRIM-LEN  0 GM-ESCAPES? !   ( match-len | -1 )
+  DUP -1 = IF
+    DROP XP-VAL @ XE-VALUE EXIT
+  THEN
+  XP-OP @ EV-TRIM-SUF < 0= IF
+    XP-VAL @ DUP CSTRLEN ROT - XE-VALUE-N
+  ELSE
+    XP-VAL @ OVER + SWAP XP-VAL @ CSTRLEN SWAP - XE-VALUE-N
+  THEN ;
+
+: XE-PARAM ( --- )   \ at the operator byte
+  XE-C XP-OP !  1 XE-P +!
+  XE-P @ DUP XP-NAME !                       \ NUL-terminated in the encoding
+  XE-END @ OVER - 0 SCAN DROP                ( name end )
+  DUP XP-NAME @ - XP-LEN !
+  XE-END @ < IF XP-NAME @ XP-LEN @ + 1+ ELSE XE-END @ THEN XE-P !
+  XP-LEN @ 1 = XP-OP @ EV-PLAIN = AND IF
+    XP-NAME @ C@
+    DUP 64 = IF DROP -1 EMIT-ALL-POS-PARAMS EXIT THEN
+    DUP 42 = IF DROP 0 EMIT-ALL-POS-PARAMS EXIT THEN
+    DUP 35 = IF DROP POS-PARAM-COUNT @ EMIT-DECIMAL EXIT THEN
+    DUP 63 = IF DROP LAST-STATUS @ EMIT-DECIMAL EXIT THEN
+    DUP 36 = IF DROP SHELL-PID @ EMIT-DECIMAL EXIT THEN
+    DUP 33 = IF DROP BG-PID @ EMIT-DECIMAL EXIT THEN
+    DUP 45 = IF DROP EMIT-OPTION-FLAGS EXIT THEN
+    DROP
+  THEN
+  XP-OP @ EV-LENGTH = IF
+    \ ${#*} and ${#@} count the positional parameters (XCU 2.6.2); this
+    \ looked them up as ordinary names and printed 0 (Iteration 328).
+    XP-LEN @ 1 = IF
+      XP-NAME @ C@ DUP 42 = SWAP 64 = OR IF
+        POS-PARAM-COUNT @ N>STR XE-VALUE EXIT
+      THEN
+    THEN
+    \ `${#?}` is the length of `$?`, and so for the other specials: the
+    \ lookup here only knew ordinary variables and answered 0
+    \ (Iteration 356).
+    XP-NAME @ LOOKUP-VAR ?DUP 0= IF XP-NAME @ SPECIAL-PARAM-VALUE THEN
+    DUP 0= IF DROP XP-NAME @ XP-LEN @ NOUNSET-CHECK 0 ELSE CSTRLEN THEN
+    \ Through XE-VALUE, like any other expansion result, so an unquoted
+    \ length is field-split: `a=abcdefghijkl; IFS=1; printf "[%s]" ${#a}`
+    \ is [][2] in dash and was [12] here (Iteration 450, busybox
+    \ ash-vars/var_wordsplit_ifs2). The digits went out as literal text.
+    N>STR XE-VALUE EXIT
+  THEN
+  XP-OP @ EV-PLAIN = IF
+    XP-NAME @ LOOKUP-VAR ?DUP IF
+      XE-VALUE
+    ELSE
+      XP-NAME @ XP-LEN @ NOUNSET-CHECK
+    THEN EXIT
+  THEN
+  XE-PARAM-OP ;
+
+: XE-ARITH ( --- )   \ the expression, expanded, then evaluated
+  0 XE-WORD-ASIDE-SAFE              \ into XW-BUF: not split, not globbed
+  \ The RESULT is a region like any other unquoted expansion, so a
+  \ minus sign in it is a live range: `f[0$((-9))]` is `f[0-9]` while
+  \ `f[0"$((-9))"]` is three characters (Iteration 371).
+  IN-DQ-CONTEXT? @ IF
+    XW-BUF XW-LEN @ AE-EVAL EMIT-DECIMAL
+  ELSE
+    XE-REGION-BEGIN
+    XW-BUF XW-LEN @ AE-EVAL EMIT-DECIMAL
+    XE-REGION-END
+  THEN ;
+
+VARIABLE XC-PC   \ PATTERN-CAPTURE?, set aside while a substitution emits
+
+: XC-PATTERN-RAW ( --- )   \ an UNQUOTED substitution in a pattern emits raw
+  \ Its output is pattern text - `${w#$(echo '*')b}` strips the shortest
+  \ prefix matching *b - but it was emitted as quoted text, which in a
+  \ pattern capture escapes every special character, so the * was
+  \ literal (Iteration 442, yash param-p.tst:359). Quoted, it stays
+  \ escaped: `${w#"$(echo '*')b"}` matches a literal *b.
+  PATTERN-CAPTURE? @ XC-PC !
+  IN-DQ-CONTEXT? @ IF EXIT THEN
+  0 PATTERN-CAPTURE? ! ;
+: XC-PATTERN-BACK ( --- )   XC-PC @ PATTERN-CAPTURE? ! ;
+
+: XE-CMDSUB ( --- )   \ substitution number XE-C of this word
+  XE-C                                       ( n )
+  1 XE-P +!
+  XE-SUBS @ ?DUP 0= IF DROP EXIT THEN         ( n vec )
+  SWAP                                        ( vec n )
+  DUP 2 PICK XV# < IF
+    \ the subtree the lexer parsed, if this one has it (Iteration 283)
+    XE-SUB-NODES @ ?DUP IF
+      OVER XV@ ?DUP IF                       ( vec n node )
+        CMDSUB-NODE !  2DROP
+        XE-NOSPLIT? @ IN-DQ-CONTEXT? @ OR XE-PERCHAR? @ 0= AND IF
+          XC-PATTERN-RAW
+          IN-DQ-CONTEXT? @ >R  -1 IN-DQ-CONTEXT? !
+          RUN-CMDSUB-JOB-CALL  R> IN-DQ-CONTEXT? !
+          XC-PATTERN-BACK
+        ELSE
+          XE-PERCHAR? @ IF
+            RUN-CMDSUB-JOB-CALL
+          ELSE
+            IN-DQ-CONTEXT? @ >R  -1 IN-DQ-CONTEXT? !
+            XE-REGION-BEGIN  RUN-CMDSUB-JOB-CALL  XE-REGION-END
+            R> IN-DQ-CONTEXT? !
+          THEN
+        THEN
+        EXIT
+      THEN
+    THEN
+    XV@ XSTR DUP CSTRLEN
+    XE-NOSPLIT? @ IN-DQ-CONTEXT? @ OR IF     \ captured or quoted: not split
+      XC-PATTERN-RAW
+      IN-DQ-CONTEXT? @ >R  -1 IN-DQ-CONTEXT? !
+      RUN-CMDSUB-TEXT  R> IN-DQ-CONTEXT? !
+      XC-PATTERN-BACK
+    ELSE
+      XE-PERCHAR? @ IF
+        RUN-CMDSUB-TEXT                        \ splits as it emits
+      ELSE
+        \ unquoted: its output is one region, split with the rest
+        IN-DQ-CONTEXT? @ >R  -1 IN-DQ-CONTEXT? !
+        XE-REGION-BEGIN  RUN-CMDSUB-TEXT  XE-REGION-END
+        R> IN-DQ-CONTEXT? !
+      THEN
+    THEN
+  ELSE 2DROP THEN ;
+
+: XE-TILDE ( --- )   \ a tilde prefix: its class, then the user name
+  XE-C                                       ( class )
+  1 XE-P +!
+  XE-P @                            ( class addr )
+  BEGIN XE-P @ XE-END @ < IF XE-C ENC-CTL <> ELSE 0 THEN WHILE 1 XE-P +! REPEAT
+  XE-P @ OVER -                     ( class addr u )
+  XE-P @ XE-END @ < IF 2 XE-P +! THEN
+  2 PICK ET-START <> TOKEN-IS-ASSIGN-PREFIX? 0= AND IF
+    \ ~ after = or : counts only in an assignment: the text as it stands
+    ROT DROP 126 EMIT-TOK-CHAR EMIT-RUN EXIT
+  THEN
+  ROT DROP                                   ( addr u )
+  \ The result is as if quoted (XCU 2.6.1): not split, not a pattern.
+  \ It was emitted through the splitting path, so HOME='/p/with  space'
+  \ made `~` two words (Iteration 435, yash tilde-p.tst:218).
+  DUP IF
+    2DUP PASSWD-HOME ?DUP IF
+      >R 2DROP R> DUP CSTRLEN EMIT-RUN
+    ELSE
+      126 EMIT-TOK-CHAR EMIT-RUN             \ no such user: as written
+    THEN
+  ELSE
+    2DROP
+    S" HOME" ENVNAMBUF SWAP MOVE  0 ENVNAMBUF 4 + C!
+    ENVNAMBUF LOOKUP-VAR ?DUP IF DUP CSTRLEN EMIT-RUN ELSE 126 EMIT-TOK-CHAR THEN
+  THEN ;
+
+: XE-SQ-REGION ( --- )   \ '...': literal bytes until the run's end
+  BEGIN XE-P @ XE-END @ < WHILE
+    XE-C ENC-CTL = IF
+      1 XE-P +!
+      XE-C ENC-CTL = IF ENC-CTL EMIT-TOK-CHAR 1 XE-P +! ELSE 1 XE-P +! EXIT THEN
+    ELSE
+      XE-QUOTED-RUN
+    THEN
+  REPEAT ;
+
+: XE-ITEM ( --- end? )   \ one item; true if it ended the enclosing region
+  XE-C ENC-CTL <> IF
+    IN-DQ-CONTEXT? @ IF XE-QUOTED-RUN ELSE XE-LIT-RUN THEN  0 EXIT
+  THEN
+  1 XE-P +!
+  XE-C
+  DUP ENC-CTL = IF DROP ENC-CTL GLOB-MARK EMIT-TOK-CHAR 1 XE-P +!  0 EXIT THEN
+  DUP ENC-END = IF DROP 1 XE-P +!  -1 EXIT THEN
+  DUP ENC-SQ = IF DROP 1 XE-P +!  -1 TOK-WAS-QUOTED? !
+    XQ-MARK  XE-SQ-REGION  0 EXIT THEN
+  DUP ENC-DQ = IF DROP 1 XE-P +!  -1 TOK-WAS-QUOTED? !
+    XQ-MARK  XE-DQ-REGION  0 EXIT THEN
+  DUP ENC-ESC = IF
+    DROP 1 XE-P +!  -1 TOK-WAS-QUOTED? !  XE-C EMIT-QUOTED  1 XE-P +!  0 EXIT
+  THEN
+  DUP ENC-VAR = IF DROP 1 XE-P +!  XE-PARAM  0 EXIT THEN
+  DUP ENC-ARITH = IF DROP 1 XE-P +!  XE-ARITH  0 EXIT THEN
+  DUP ENC-CMDSUB = IF DROP 1 XE-P +!  XE-CMDSUB  0 EXIT THEN
+  ENC-TILDE = IF 1 XE-P +!  XE-TILDE THEN  0 ;
+
+: XE-REGION ( --- )   \ items until the region's end
+  BEGIN XE-P @ XE-END @ < WHILE XE-ITEM IF EXIT THEN REPEAT ;
+' XE-REGION IS XE-REGION-CALL
+
+: XE-DQ-REGION-IMPL ( --- )
+  IN-DQ-CONTEXT? @ >R  -1 IN-DQ-CONTEXT? !
+  XE-REGION
+  R> IN-DQ-CONTEXT? ! ;
+' XE-DQ-REGION-IMPL IS XE-DQ-REGION
+
+: XE-WALK ( --- )   BEGIN XE-P @ XE-END @ < WHILE XE-ITEM DROP REPEAT ;
+
+VARIABLE XS-FS
+VARIABLE XS-WSP
+VARIABLE XS-PEND?
+
+: XS-CLOSE ( nul-off next-off --- )   \ end the field here, start one there
+  SWAP OUT-BASE + 0 SWAP C!
+  ARGC @ ROOM-FOR-ARG? IF
+    ARGC @ 1+ ARGC !
+    OUT-BASE + ARGV ARGC @ CELLS + !
+    0 ARGV-QUOTED ARGC @ + C!  0 ARGV-NAME-QUOTED ARGC @ + C!
+  ELSE
+    DROP -1 ARGS-OVERFLOW? !
+  THEN ;
+
+VARIABLE XS-PREV          \ where the text after the last region begins
+: XS-CONTENT-AT ( off --- )   \ content here: any pending whitespace ends a field
+  XS-PEND? @ IF
+    XS-WSP @ SWAP DUP XS-FS !  XS-CLOSE
+    0 XS-PEND? !
+  ELSE DROP THEN ;
+
+: XS-REGION-SPLIT ( from to --- )   \ the state machine, over one region
+  SWAP ?DO
+    OUT-BASE I + C@
+    DUP IFS-CHAR? IF
+      DUP 32 = OVER 9 = OR SWAP 10 = OR IF
+        I XS-FS @ > IF
+          XS-PEND? @ 0= IF
+            I XS-WSP !  -1 XS-PEND? !
+          ELSE
+            \ Quoting inside a run of whitespace breaks it in two, with
+            \ an empty field between: `${x:+b '' c}` is three fields,
+            \ not two (Iteration 364).
+            XS-WSP @ 1+ I XQ-BETWEEN? IF      \ strictly after its first blank
+              XS-WSP @  I DUP XS-FS !  XS-CLOSE
+              I XS-WSP !
+            THEN
+          THEN
+        ELSE
+          \ Leading whitespace is absorbed - unless quoting contributed
+          \ to this field before it, in which case the field is empty
+          \ but real: `"$e"$b` is an empty argument and then `b`
+          \ (Iteration 361). Real, and then a delimiter like any other:
+          \ PENDING, so it ends the field only if content follows. This
+          \ closed the field and opened the next at once, so `${x:+'' }`,
+          \ once a braced word's literal text became a region, made two
+          \ empty fields rather than one (Iteration 431).
+          XS-FS @ I XQ-BETWEEN? IF
+            I XS-WSP !  -1 XS-PEND? !
+          ELSE
+            I 1+ DUP XS-FS !  OUT-BASE + ARGV ARGC @ CELLS + !
+          THEN
+        THEN
+      ELSE                                   \ ends one field, even an empty one
+        XS-PEND? @ IF XS-WSP @ ELSE I THEN
+        I 1+ DUP XS-FS !  XS-CLOSE
+        0 XS-PEND? !
+      THEN
+    ELSE
+      DROP I XS-CONTENT-AT
+    THEN
+  LOOP ;
+
+: XE-SPLIT ( start-off --- )   \ XCU 2.6.5, over the recorded regions only
+  XE-REG# @ 0= IF DROP EXIT THEN
+  XE-PERCHAR? @ IF DROP EXIT THEN
+  TOKEN-IS-ASSIGN-PREFIX? IF DROP EXIT THEN   \ an assignment is not split
+  DUP XS-FS !  DUP XS-PREV !  DROP
+  0 XS-PEND? !
+  XE-REG# @ 0 ?DO
+    XE-REGIONS I 2* CELLS + @                ( start )
+    DUP XS-PREV @ > IF XS-PREV @ XS-CONTENT-AT THEN   \ text before this region
+    XE-REGIONS I 2* 1+ CELLS + @             ( start end )
+    DUP XS-PREV !
+    XS-REGION-SPLIT
+  LOOP
+  XS-PEND? @ IF
+    TOK-OUT @ OUT-BASE - XS-PREV @ > IF
+      XS-PREV @ XS-CONTENT-AT                \ text after the last region
+    ELSE
+      \ Trailing whitespace is dropped - unless quoting came after it
+      \ and left nothing: `$b"$e"` ends with an empty field, not with
+      \ the whitespace trimmed away (Iteration 361).
+      \ AFTER it: from one past its first blank. A quote is recorded at
+      \ the offset of the character that follows it, so a quoted empty
+      \ just BEFORE the whitespace has the whitespace's own offset, and
+      \ counting it made `""${x:+ }` two fields (Iteration 431).
+      XS-WSP @ 1+ TOK-OUT @ OUT-BASE - XQ-BETWEEN? IF
+        XS-WSP @  TOK-OUT @ OUT-BASE -  XS-CLOSE
+      ELSE
+        XS-WSP @ OUT-BASE + TOK-OUT !
+      THEN
+    THEN
+  THEN ;
+
+: XE-TRY ( node --- )   \ the word, from its encoding
+  ?DUP 0= IF EXIT THEN                      \ no node: an empty word
+  DUP 3 XF@ ?DUP 0= IF DROP EXIT THEN       \ nothing to expand
+  OVER 2 XF@ XSTR                            ( node len addr )
+  SWAP OVER + XE-END !  XE-P !               ( node )
+  DUP 4 XF@ XE-SUBS !
+  DUP 5 XF@ XE-SUB-NODES !
+  DUP 1 XF@ WF-AT-PARAM AND 0<> XE-PERCHAR? !
+  1 XF@ WF-SPECIAL AND 0<> XE-SPECIAL? !
+  0 XE-REG# !
+  0 XQ-N !
+  0 IN-DQ-CONTEXT? !
+  TOK-OUT @ OUT-BASE - >R
+  XE-WALK
+  0 IN-DQ-CONTEXT? !
+  R> XE-SPLIT ;
+' XQ-BETWEEN? IS QUOTED-BETWEEN?
+' XE-TRY IS ENC-EXPAND-CALL
+: XE-NOSPLIT-ON  ( --- )   -1 XE-NOSPLIT? ! ;
+: XE-NOSPLIT-OFF ( --- )    0 XE-NOSPLIT? ! ;
+' XE-NOSPLIT-ON  IS NOSPLIT-ON
+' XE-NOSPLIT-OFF IS NOSPLIT-OFF
+
+: ADD-WORD ( word --- )
+  DUP ARGV-NODE-NEXT !
+  DUP 0 XF@ XSTR SWAP 1 XF@                 ( c-addr flags )
+  OVER CSTRLEN 1 = 2 PICK C@ 48 - 10 U< AND OVER WF-QUOTED AND 0= AND IF
+    \ a lone digit goes in quoted, as `"2"`, so a following > is not read
+    \ as `2>`; the encoding says plain 2, so that word keeps to the old
+    \ path (Iteration 275)
+    \ plain text, marked quoted so a following > is not read as `2>`,
+    \ and literal so neither expander touches it (Iteration 281)
+    DROP C@ 48 - 2* W-DIGITS + WF-QUOTED  0 ARGV-NODE-NEXT !
+    -1 ARGV-FORCE-LITERAL? !
+  THEN
+  ARGV-ADD ;
+
+: OP>WORD ( op --- c-addr )
+  DUP OP-LESSGREAT = IF DROP W-LTGT EXIT THEN   \ was handed over as `<`
+  DUP OP-LESS = IF DROP W-LT EXIT THEN
+  DUP OP-CLOBBER = IF DROP W-GTPIPE EXIT THEN   \ `>|` keeps its identity
+  DUP OP-GREAT = IF DROP W-GT EXIT THEN
+  DUP OP-DGREAT = IF DROP W-DGT EXIT THEN
+  DUP OP-GREATAND = IF DROP W-GTAND EXIT THEN
+  DUP OP-LESSAND = IF DROP W-LTAND EXIT THEN
+  OP-DLESS = IF W-DLT ELSE W-DLTD THEN ;
+
+64 BUFFER: FDW-BUF   \ the digits of descriptors of two or more
+VARIABLE FDW#
+VARIABLE FDW-N
+
+: FD>WORD ( fd --- c-addr )   \ its digits, as a word of this command's
+  N>STR
+  DUP CSTRLEN 1+ FDW-N !
+  FDW# @ FDW-N @ + ENSURE-BUFFER FDW-BUF
+  FDW-BUF FDW# @ +                          ( src dst )
+  DUP >R  FDW-N @ MOVE
+  FDW-N @ FDW# +!
+  R> ;
+
+: ADD-REDIR ( redir --- )
+  \ A descriptor of two digits or more gets its digits written out; the
+  \ table below holds one-character words only, and anything from 10 up
+  \ was DROPPED, which left the redirection with no descriptor at all -
+  \ so `exec 23>file` redirected stdout and `echo x >&23` then said
+  \ "bad file descriptor" where bash writes x (Iteration 466, busybox
+  \ ash-redir/redir2). dash refuses two digits outright; bash and this
+  \ shell take them.
+  DUP 0 XF@ DUP 0< 0= IF
+    DUP 10 < IF 2* W-DIGITS + ELSE FD>WORD THEN
+    1 ARGV-IONUM-NEXT !                     \ this word IS the descriptor
+    0 ARGV-ADD
+  ELSE DROP THEN
+  DUP 1 XF@ OP>WORD 0 ARGV-ADD
+  1 ARGV-RTGT-NEXT !                         \ the target is not field-split
+  2 XF@ ADD-WORD ;
+
+\ A here-document's body, into HEREDOC-BUF. With an unquoted delimiter
+\ it is expanded as a double-quoted word would be, except that `"` is
+\ not special (XCU 2.7.4) - so each `"` is escaped first, and a `\`
+\ before one is doubled. Done before the command's words are laid out,
+\ since expanding uses ARGV (Iteration 264).
+256 BUFFER: HDX-BUF
+VARIABLE HDX#
+: HDX-C, ( c --- )
+  HDX# @ 2 + ENSURE-BUFFER HDX-BUF  HDX-BUF HDX# @ + C!  1 HDX# +! ;
+
+: HEREDOC-SET ( c-addr u --- )
+  \ One buffer held one here-document, so a command with two of them -
+  \ `cmd <<A 3<<B` - ran both from whichever was prepared last
+  \ (Iteration 351). Each is appended to the pool and remembered by
+  \ offset and length, in the order they are prepared, which is the
+  \ order the redirections are applied in.
+  HD-N @ MAX-HEREDOCS < 0= IF 2DROP EXIT THEN
+  HD-POOL# @ OVER + 1+ ENSURE-BUFFER HEREDOC-BUF
+  DUP HD-LENS HD-N @ CELLS + !
+  HD-POOL# @ HD-OFFS HD-N @ CELLS + !
+  DUP >R  HEREDOC-BUF HD-POOL# @ +  SWAP MOVE
+  R> HD-POOL# +!
+  1 HD-N +!
+  \ the last one prepared is still the one a single here-document uses
+  HD-LENS HD-N @ 1- CELLS + @ HEREDOC-LEN ! ;
+
+DEFER ENCODE-TEXT-CALL   ( c-addr u --- node )   \ defined with the source nesting
+
+VARIABLE HDX-P
+VARIABLE HDX-END
+VARIABLE HDX-DEPTH
+
+: HDX-SUB-VERBATIM ( --- )   \ at "$(": copy through the matching ')'
+  36 HDX-C, 40 HDX-C,  2 HDX-P +!
+  1 HDX-DEPTH !
+  BEGIN
+    HDX-P @ HDX-END @ < HDX-DEPTH @ 0 > AND
+  WHILE
+    HDX-P @ C@ DUP 40 = IF 1 HDX-DEPTH +! THEN
+    DUP 41 = IF -1 HDX-DEPTH +! THEN
+    HDX-C,  1 HDX-P +!
+  REPEAT ;
+
+: HDX-TICK-VERBATIM ( --- )   \ at a backquote: copy through its partner
+  \ A backslash and what follows it are copied as a PAIR, so an escaped
+  \ backquote inside is the command's, not the end (POSIX 2.6.3; the
+  \ lexer's SCAN-BACKQUOTE does so). Copying to the first backquote,
+  \ ncurses's configure lost the rest of a here-document at a sed script
+  \ holding one, and wrote a broken config.status (Iteration 565). The
+  \ copy is lexed inside the double quotes the body is wrapped in, where a
+  \ backslash-quote in backquotes becomes a quote - as dash has it in a
+  \ here-document too, whose body expands as if in double quotes (I first
+  \ kept it, and printed "x" where dash printed x).
+  96 HDX-C,  1 HDX-P +!
+  BEGIN HDX-P @ HDX-END @ < IF HDX-P @ C@ 96 <> ELSE 0 THEN WHILE
+    HDX-P @ C@ 92 = HDX-P @ 1+ HDX-END @ < AND IF
+      92 HDX-C,  1 HDX-P +!
+    THEN
+    HDX-P @ C@ HDX-C,  1 HDX-P +!
+  REPEAT
+  HDX-P @ HDX-END @ < IF 96 HDX-C,  1 HDX-P +! THEN ;
+
+: HDX-BRACE-VERBATIM ( --- )   \ at "${": copy through the matching '}'
+  36 HDX-C, 123 HDX-C,  2 HDX-P +!
+  1 HDX-DEPTH !
+  BEGIN
+    HDX-P @ HDX-END @ < HDX-DEPTH @ 0 > AND
+  WHILE
+    HDX-P @ C@ DUP 123 = IF 1 HDX-DEPTH +! THEN
+    DUP 125 = IF -1 HDX-DEPTH +! THEN
+    HDX-C,  1 HDX-P +!
+  REPEAT ;
+
+: HDX-BODY ( c-addr u --- )
+  \ The body is handed to the expander as one double-quoted word, so its
+  \ own quotes are escaped - but a command substitution inside it is
+  \ shell code, and escaping ITS quotes made `$(echo "x")` print "x"
+  \ (Iteration 332). Substitutions are copied through untouched.
+  \ A ${...} is copied through too: its word is shell text, and escaping
+  \ its quotes made `${foo%"oo"}` a pattern with quote characters in it,
+  \ so foooo stayed foooo (Iteration 436, yash redir-p.tst:335). And an
+  \ escape the body honours - \$ \\ \` - is copied as a pair, so an
+  \ escaped `\${` is never taken for one.
+  OVER + HDX-END !  HDX-P !
+  BEGIN HDX-P @ HDX-END @ < WHILE
+    HDX-P @ C@ 92 = HDX-P @ 1+ HDX-END @ < AND
+    IF HDX-P @ 1+ C@ DUP 36 = OVER 92 = OR SWAP 96 = OR ELSE 0 THEN
+    IF
+      HDX-P @ C@ HDX-C,  HDX-P @ 1+ C@ HDX-C,  2 HDX-P +!
+    ELSE
+    HDX-P @ C@ 36 = HDX-P @ 1+ HDX-END @ < AND
+    IF HDX-P @ 1+ C@ 123 = ELSE 0 THEN
+    IF
+      HDX-BRACE-VERBATIM
+    ELSE
+    HDX-P @ C@ 36 = HDX-P @ 1+ HDX-END @ < AND
+    IF HDX-P @ 1+ C@ 40 = ELSE 0 THEN
+    IF
+      HDX-SUB-VERBATIM
+    ELSE
+      HDX-P @ C@ 96 = IF
+        HDX-TICK-VERBATIM
+      ELSE
+        HDX-P @ C@ 34 = IF 92 HDX-C, 34 HDX-C, ELSE
+          HDX-P @ C@ 92 = HDX-P @ 1+ HDX-END @ < AND
+          IF HDX-P @ 1+ C@ 34 = ELSE 0 THEN
+          IF 92 HDX-C, 92 HDX-C, ELSE HDX-P @ C@ HDX-C, THEN
+        THEN
+        1 HDX-P +!
+      THEN
+    THEN THEN THEN
+  REPEAT ;
+
+DEFER EXPAND-DQ-TEXT-INNER   ( c-addr u --- c-addr' u' )
+
+: EXPAND-DQ-TEXT-SAFE ( c-addr u --- c-addr' u' )
+  \ ... and the same from inside a parse, which is where a PS2 prompt is
+  \ written: the word it builds is allocated in the tree the parser is
+  \ still filling, so the allocation pointer, the command's words and
+  \ the base the expander reads nodes from all have to be put back
+  \ (Iteration 389). A here-document is expanded at execution time and
+  \ needs none of this.
+  \ Nothing to expand, nothing to disturb: the common case, and the one
+  \ that matters, since the default prompts hold no expansions at all.
+  2DUP 36 SCAN NIP 0= >R  2DUP 96 SCAN NIP 0= R> AND IF EXIT THEN
+  TREE-TOP @ >R  EXEC-BASE @ >R  ARGC @ >R  ARGV @ >R
+  TOK-OUT @ >R  TOK-POS @ >R  TOK-END @ >R
+  EXPAND-DQ-TEXT-INNER
+  R> TOK-END !  R> TOK-POS !  R> TOK-OUT !
+  R> ARGV !  R> ARGC !  R> EXEC-BASE !  R> TREE-TOP ! ;
+
+: EXPAND-DQ-TEXT-INNER-IMPL ( c-addr u --- c-addr' u' )
+  \ Text expanded as if it stood inside double quotes: parameters,
+  \ command substitutions and arithmetic, and nothing else - no
+  \ splitting, no pathname expansion. A here-document body is exactly
+  \ this, and so is a prompt (XCU 2.5.3), which is why it is a word of
+  \ its own since Iteration 389.
+  0 HDX# !  34 HDX-C,
+  HDX-BODY
+  34 HDX-C,  0 HDX-C,
+  \ The text is now a double-quoted word: lex it, so it has an encoding
+  \ like any other word (Iteration 281). Its node is in TREE-BUF, which
+  \ is what EXEC-BASE must be while it is expanded.
+  0 ARGC !  0 ARGV !
+  HDX-BUF HDX# @ 1- ENCODE-TEXT-CALL
+  EXEC-BASE @ >R  TREE-BUF EXEC-BASE !
+  ADD-WORD
+  -1 NO-GLOB? ! EXPAND-WORDS 0 NO-GLOB? !
+  R> EXEC-BASE !
+  JOIN-ARGV ;
+' EXPAND-DQ-TEXT-INNER-IMPL IS EXPAND-DQ-TEXT-INNER
+' EXPAND-DQ-TEXT-SAFE IS EXPAND-DQ-TEXT-CALL
+
+: PREPARE-HEREDOC ( redir --- )
+  DUP 3 XF@ 0= IF DROP EXIT THEN
+  DUP 2 XF@ 1 XF@ WF-QUOTED AND IF
+    3 XF@ XSTR DUP CSTRLEN HEREDOC-SET EXIT
+  THEN
+  3 XF@ XSTR DUP CSTRLEN EXPAND-DQ-TEXT-INNER HEREDOC-SET ;
+
+: HEREDOCS-RESET ( --- )   \ a fresh command: its own pool
+  0 HD-N !  0 HD-POOL# !  0 HD-USE ! ;
+
+: PREPARE-HEREDOCS ( redirs-vec --- )
+  HEREDOCS-RESET
+  DUP XV# 0 ?DO DUP I XV@ PREPARE-HEREDOC LOOP DROP ;
+: PREPARE-SIMPLE-HEREDOCS ( items-vec --- )
+  HEREDOCS-RESET
+  DUP XV# 0 ?DO
+    DUP I XV@ I-REDIR = IF DUP I 1+ XV@ PREPARE-HEREDOC THEN
+  2 +LOOP DROP ;
+
+: TOO-MANY? ( --- f )   \ words were dropped: refuse rather than run short
+  ARGS-OVERFLOW? @ DUP IF
+    0 ARGS-OVERFLOW? !
+    S" shell: too many arguments" ERR-TYPE ERR-NL  1 LAST-STATUS !
+  THEN ;
+
+: STAGE2-ELIGIBLE? ( --- f )   \ a regular builtin: its redirections are the shell's
+  ARGC @ EW-PENDING# @ > 0= IF 0 EXIT THEN
+  EW-PENDING# @ ARGV@
+  DUP SPECIAL-BUILTIN? IF DROP 0 EXIT THEN
+  DUP S" command" ROT STR0= IF DROP 0 EXIT THEN   \ it runs other commands
+  DUP FIND-FUNC -1 <> IF DROP 0 EXIT THEN        \ a function of that name runs
+  FIND-BUILTIN-CALL 0<> ;
+
+: EXPAND-AND-RUN ( --- )   \ ARGV's raw words: what the line path does next
+  WANT-EXEC? @  0 WANT-EXEC? !  >R          \ taken now, so nothing nested sees it
+  TOO-MANY? IF R> DROP EXIT THEN
+  0 CMDSUB-RAN? !
+  \ Where the command has redirections, EXPAND-WORDS may set its
+  \ assignments aside for after them (Iteration 482, below).
+  NO-REDIRS? @ 0= EW-DEFER? !  0 EW-PENDING# !
+  EXPAND-WORDS
+  0 EW-DEFER? !
+  TOO-MANY? IF R> DROP EXIT THEN
+  EXPANSION-OK? 0= IF R> DROP EXIT THEN
+  \ The redirections come out of ARGV FIRST. They travel as words -
+  \ operator, target and any fd number - so counting the assignment
+  \ prefix before removing them stopped at a LEADING redirection, and
+  \ `</dev/null foo=bar echo hi` ran `foo=bar` as the command
+  \ (Iteration 385). RUN-EXPANDED did this, and is told not to repeat it.
+  NO-REDIRS? @ IF 0 REDIR-N ! ELSE PARSE-REDIRECTIONS THEN
+  -1 REDIRS-PARSED? !
+  \ XCU 2.9.1, step 3 before step 4 (Iteration 482, EXPANSION-ORDER.md
+  \ stage 2): where the shell performs a command's redirections itself -
+  \ a regular builtin - they are performed BEFORE its assignments are
+  \ expanded, so `a=$(cat f2) 3>|$(echo f2) true` finds f2 there (yash
+  \ simple-p.tst:18). BEGIN-REDIRECT's undo record waits on the stack,
+  \ under a flag, until the command is done; the builtin's own
+  \ BEGIN-REDIRECT then has nothing left to do. For anything else the
+  \ assignments come back at once, in stage 1's order.
+  EW-PENDING# @ IF
+    STAGE2-ELIGIBLE? IF
+      BEGIN-REDIRECT
+      REDIR-FAILED? @ IF
+        1 LAST-STATUS !  END-REDIRECT  0 EW-PENDING# !  R> DROP EXIT
+      THEN
+      EXPAND-PENDING  0 REDIR-N !  -1
+    ELSE EXPAND-PENDING 0 THEN
+  ELSE 0 THEN                                ( [undo] early? )
+  PREFIX-COUNT ARGC @ = IF XTRACE-ARGV THEN    \ set -x: an assignment-only command
+  TRY-ASSIGNMENT-CALL IF
+    R> DROP
+    CMDSUB-RAN? @ IF CMDSUB-STATUS @ LAST-STATUS ! THEN
+    APPLY-BARE-REDIRS  0 REDIRS-PARSED? !
+    IF END-REDIRECT THEN
+    EXIT
+  THEN
+  \ A command that expanded to NOTHING takes the status of its last
+  \ command substitution, the same rule as an assignment-only command
+  \ (XCU 2.9.1): `$(false)` alone is 1, and answered 0 here
+  \ (Iteration 379).
+  ARGC @ 0= IF
+    R> DROP
+    CMDSUB-RAN? @ IF CMDSUB-STATUS @ LAST-STATUS ! ELSE 0 LAST-STATUS ! THEN
+    APPLY-BARE-REDIRS  0 REDIRS-PARSED? !
+    IF END-REDIRECT THEN
+    EXIT
+  THEN
+  R> EXEC-LAST? !                           \ set after expansion: see RUN-EXTERNAL
+  PREFIX-COUNT ?DUP IF
+    0 ASSIGNED-HERE? !
+    \ Remembered here because TEMP-ASSIGN takes the prefixes out of the
+    \ argument list: after it, a command like `var=ok > f` has no words
+    \ left to count (Iteration 350).
+    DUP RE-PREFIX !
+    \ Whether this is a special builtin has to be decided BEFORE the
+    \ command runs, since `eval` replaces ARGV with what it evaluates -
+    \ and read at PREFIX-COUNT, because the assignments are still in
+    \ front of the command name at this point.
+    ARGC @ PREFIX-COUNT > IF PREFIX-COUNT ARGV@ SPECIAL-BUILTIN? ELSE 0 THEN >R
+    0 VALUE-FAILED? !
+    TEMP-ASSIGN >R
+    \ An assignment that failed - a readonly variable - means the
+    \ command does not run at all. A non-interactive shell has already
+    \ ended by now (SPECIAL-ERROR); interactively it carries on, and
+    \ carried on into the command, which `a=2 set` then made obvious by
+    \ listing every variable (Iteration 383).
+    VALUE-FAILED? @ 0= IF RUN-EXPANDED THEN
+    \ ... unless the command turned out to be assignments and
+    \ redirections only, in which case they are the shell's own
+    \ (Iteration 349).
+    \ Assignments before a SPECIAL builtin persist (XCU 2.9.1), so
+    \ `X=1 : ; echo $X` prints 1. This shell undid them like any other
+    \ command's, which is bash's behaviour outside POSIX mode; the
+    \ evidence that decided GOALS.md 5k in Iteration 376 decides this
+    \ too (Iteration 379).
+    \ The return stack holds the record, and below it whether the
+    \ command was a special builtin.
+    R> R>                                 ( record special? )
+    ASSIGNED-HERE? @ OR                   ( record keep? )
+    IF DROP ELSE TEMP-RESTORE THEN
+  ELSE
+    0 RE-PREFIX !
+    RUN-EXPANDED
+  THEN
+  IF END-REDIRECT THEN                       \ the early redirections, undone
+  0 EXEC-LAST? ! ;
+
+: EXEC-SIMPLE ( node --- )
+  DUP 2 XF@ CUR-LINENO !                    \ $LINENO (Iteration 475)
+  \ A command with no items at all is one an alias expanded away. It
+  \ runs nothing and leaves the exit status alone, so `false` followed
+  \ by a line holding only a blank alias still reports 1
+  \ (Iteration 382).
+  DUP 0 XF@ XV# 0= IF DROP EXIT THEN
+  XTRACE-PREPARE                           \ PS4, before the words (421)
+  DUP 1 XF@ DUP 0= NO-REDIRS? !
+  IF DUP 0 XF@ PREPARE-SIMPLE-HEREDOCS THEN
+  0 ARGC !  0 ARGV !  0 FDW# !
+  0 XF@ DUP XV# 0 ?DO
+    DUP I XV@ I-ASSIGN = 1 AND ARGV-ASSIGN-NEXT !
+    DUP I 1+ XV@  OVER I XV@ I-REDIR = IF ADD-REDIR ELSE ADD-WORD THEN
+  2 +LOOP DROP
+  EXPAND-AND-RUN ;
+
+\ A compound command's redirections, expanded into the REDIR tables.
+: REDIR-SETUP ( node --- )
+  0 ARGC !  0 ARGV !  0 REDIR-N !  0 FDW# !
+  0 XF@ ?DUP IF
+    DUP PREPARE-HEREDOCS
+    0 ARGC !  0 ARGV !  0 FDW# !
+    DUP XV# 0 ?DO DUP I XV@ ADD-REDIR LOOP DROP
+    EXPAND-WORDS PARSE-REDIRECTIONS
+  THEN ;
+
+\ ---- lists, and-or, pipelines ----
+128 BUFFER: BG-TEXT-BUF
+VARIABLE BG-T
+
+CREATE DEV-NULL-NAME CSTR," /dev/null"
+
+: BG-STDIN-NULL ( --- )   \ standard input of an asynchronous command
+  DEV-NULL-NAME DUP CSTRLEN R/O OPEN-FILE IF DROP EXIT THEN
+  DUP 0 DUP2 DROP
+  DUP 0 <> IF CLOSE-FILE DROP ELSE DROP THEN ;
+
+: BG-TEXT ( node --- c-addr )   \ the command's words, for the job notice
+  0 BG-T !  0 BG-TEXT-BUF C!
+  \ `cmd &` hands EXEC-BG an and-or, not the command; walk down to the
+  \ simple command. The vector is field 0 of an and-or but field 1 of a
+  \ pipeline, whose field 0 is the `!` flag - reading field 0 for both
+  \ is why Iteration 309's notices came out with no command text.
+  \ Written with BEGIN/WHILE rather than DO/LEAVE: two LEAVEs with the
+  \ node still on the stack left the interactive shell exiting after the
+  \ first background job.
+  BEGIN
+    DUP 0<> IF DUP X@ T-SIMPLE <> ELSE 0 THEN
+  WHILE
+    DUP X@ T-PIPE = 1 AND XF@                ( vec )
+    DUP XV# 1 = IF 0 XV@ ELSE DROP 0 THEN
+  REPEAT
+  DUP 0= IF DROP BG-TEXT-BUF EXIT THEN
+  DUP X@ T-SIMPLE = 0= IF DROP BG-TEXT-BUF EXIT THEN
+  0 XF@ DUP XV# 0 ?DO
+    DUP I XV@ I-REDIR = 0= IF
+      DUP I 1+ XV@ 0 XF@ XSTR                ( vec text )
+      DUP CSTRLEN                            ( vec text u )
+      BG-T @ IF 32 BG-TEXT-BUF BG-T @ + C! 1 BG-T +! THEN
+      DUP BG-T @ + 126 > IF 2DROP ELSE
+        DUP >R  BG-TEXT-BUF BG-T @ +  SWAP MOVE  R> BG-T +!
+      THEN
+    THEN
+  2 +LOOP DROP
+  0 BG-TEXT-BUF BG-T @ + C!
+  BG-TEXT-BUF ;
+
+: EXEC-BG ( node --- )
+  DUP BG-TEXT JOB-TEXT-NEXT !                \ recorded before the fork
+  FORK DUP 0= IF
+    DROP CHILD-RESET-TRAPS
+    JOB-CONTROL? @ IF 0 0 SETPGID DROP THEN    \ the job gets its own group
+    \ An asynchronous command reads /dev/null unless it redirects its
+    \ own input (XCU 2.9.3), so `cat &` finishes instead of competing
+    \ with the shell for the terminal - or, in a script, swallowing the
+    \ rest of the file (Iteration 355).
+    BG-STDIN-NULL
+    EXEC-FINAL-CALL LAST-STATUS @ SHELL-EXIT
+  THEN
+  DUP BG-PID !  JOB-ADD  DROP  0 LAST-STATUS ! ;
+
+: EXEC-LIST ( node --- )
+  0 XF@ DUP XV# 0 ?DO
+    STOP? IF LEAVE THEN
+    DUP I XV@  OVER I 1+ XV@ IF EXEC-BG ELSE EXEC THEN
+  2 +LOOP DROP ;
+
+: EXEC-ANDOR ( node --- )
+  0 XF@
+  DUP XV# 1 = IF 0 XV@ EXEC EXIT THEN
+  DUP 0 XV@ EXEC-IGNORING                    \ not the last: set -e ignored
+  DUP XV# 1 ?DO
+    STOP? IF LEAVE THEN
+    DUP I XV@ 1 =  LAST-STATUS @ 0=  = IF
+      DUP I 1+ XV@
+      I 2 + 2 PICK XV# < IF EXEC-IGNORING ELSE EXEC THEN
+    THEN
+  2 +LOOP DROP ;
+
+VARIABLE PS-VEC
+VARIABLE PS-N
+VARIABLE STAGES-FINAL?   \ this process has nothing to do after the pipeline
+VARIABLE PS-FINAL?       \ ... as this RUN-STAGES found it
+VARIABLE PS-FAIL         \ the status of the last stage that failed
+VARIABLE PS-PREV
+VARIABLE PS-RD
+VARIABLE PS-WR
+
+: CLOSE-FD ( fd --- )   DUP 0< IF DROP ELSE CLOSE-FILE DROP THEN ;
+
+\ Stages run in children, so these globals are never in use twice in one
+\ process.
+: RUN-STAGES ( vec --- )
+  DUP PS-VEC !  XV# PS-N !  -1 PS-PREV !
+  \ Not with pipefail either: a last stage run in place leaves nobody to
+  \ collect the other stages' statuses (Iteration 473).
+  STAGES-FINAL? @ OPT-PIPEFAIL @ 0= AND PS-FINAL? !  0 STAGES-FINAL? !   \ not for a nested pipeline
+  PS-N @ 1+ GROW-ARGS
+  PS-N @ 0 ?DO
+    I PS-N @ 1- < IF PIPE DROP PS-WR ! PS-RD ! ELSE -1 PS-WR ! -1 PS-RD ! THEN
+    PS-FINAL? @ I PS-N @ 1- = AND IF          \ the last stage, here
+      PS-PREV @ 0< 0= IF PS-PREV @ 0 DUP2 DROP PS-PREV @ CLOSE-FD THEN
+      PS-VEC @ I XV@ EXEC-FINAL-CALL
+      LAST-STATUS @ SHELL-EXIT
+    THEN
+    FORK DUP 0= IF
+      DROP CHILD-RESET-TRAPS
+      PS-PREV @ 0< 0= IF PS-PREV @ 0 DUP2 DROP PS-PREV @ CLOSE-FD THEN
+      PS-WR @ 0< 0= IF PS-WR @ 1 DUP2 DROP PS-WR @ CLOSE-FD PS-RD @ CLOSE-FD THEN
+      PS-VEC @ I XV@ EXEC-FINAL-CALL
+      LAST-STATUS @ SHELL-EXIT
+    THEN
+    PIPE-PIDS I CELLS + !
+    PS-PREV @ CLOSE-FD  PS-WR @ CLOSE-FD
+    PS-RD @ PS-PREV !
+  LOOP
+  0 PS-FAIL !
+  PS-N @ 0 ?DO
+    PIPE-PIDS I CELLS + @ WAIT-STATUS
+    DUP IF DUP PS-FAIL ! THEN                \ the last that failed, for pipefail
+    I PS-N @ 1- = IF LAST-STATUS ! ELSE DROP THEN
+  LOOP
+  OPT-PIPEFAIL @ IF PS-FAIL @ LAST-STATUS ! THEN ;
+
+: EXEC-PIPE ( node --- )
+  DUP 0 XF@ IF                               \ ! pipeline: set -e ignored
+    1 ERR-IGNORE +!
+    DUP 1 XF@ DUP XV# 1 = IF 0 XV@ EXEC ELSE RUN-STAGES THEN
+    -1 ERR-IGNORE +!
+    DROP LAST-STATUS @ 0= IF 1 ELSE 0 THEN LAST-STATUS !  EXIT
+  THEN
+  1 XF@ DUP XV# 1 = IF
+    0 XV@ DUP EXEC CHECK-TRAPS
+    X@ DUP T-SIMPLE = SWAP T-SUBSHELL = OR IF ERREXIT-CHECK THEN
+  ELSE
+    RUN-STAGES CHECK-TRAPS ERREXIT-CHECK
+  THEN ;
+
+\ ---- compound commands ----
+: EXEC-SUBSHELL ( node --- )
+  FORK DUP 0= IF
+    DROP CHILD-RESET-TRAPS
+    DUP REDIR-SETUP APPLY-REDIRECTIONS
+    REDIR-FAILED? @ IF 1 SYS-EXIT THEN
+    1 XF@ EXEC-FINAL-CALL LAST-STATUS @ SHELL-EXIT
+  THEN
+  NIP WAIT-STATUS LAST-STATUS ! ;
+
+: EXEC-IF ( node --- )
+  DUP 1 XF@                                 ( node vec )
+  DUP XV# 0 ?DO
+    DUP I XV@ EXEC-IGNORING
+    STOP? IF 2DROP UNLOOP EXIT THEN
+    LAST-STATUS @ 0= IF I 1+ XV@ EXEC DROP UNLOOP EXIT THEN
+  2 +LOOP DROP
+  2 XF@ ?DUP IF EXEC ELSE 0 LAST-STATUS ! THEN ;
+
+\ After a loop body: consume a break or continue aimed at this loop.
+\ Leaves true when the loop must stop.
+: LOOP-AFTER-BODY ( --- stop? )
+  INTERRUPT-PENDING? @ IF -1 EXIT THEN          \ ^C: no loop survives it (571)
+  RETURN-PENDING? @ IF -1 EXIT THEN
+  LOOP-CONTROL-PENDING? @ IF
+    \ `break n` and `continue n` pass through n-1 loops on their way out
+    \ (Iteration 329): each one stops and leaves the request standing.
+    LOOP-LEVEL @ 1- LOOP-LEVEL !
+    LOOP-LEVEL @ 0 > IF -1 EXIT THEN
+    0 LOOP-CONTROL-PENDING? !
+    LOOP-BREAK? @ IF 0 LOOP-BREAK? ! -1 EXIT THEN
+  THEN 0 ;
+
+VARIABLE LP-STOP?   \ a break (or a return) in the loop's condition
+
+: EXEC-LOOP ( node until? --- )
+  LOOP-DEPTH @ 1+ LOOP-DEPTH !
+  0 >R                                      \ the loop's status
+  BEGIN
+    \ A break or continue in the CONDITION belongs to this loop: break
+    \ leaves it and the script goes on, continue evaluates the condition
+    \ again. Only the body consulted LOOP-AFTER-BODY, so the request was
+    \ left standing, escaped the loop, and ended a non-interactive shell
+    \ as a break outside one: `while break; do :; done; echo after`
+    \ printed nothing where dash prints after (Iteration 446, busybox
+    \ ash-signals/continue_and_trap1).
+    \ Once round the loop is a place a trap may run, wherever the body
+    \ left off: a `continue` returns through the list executor without
+    \ reaching the check after a pipeline, so `while true; do continue;
+    \ done` never saw a signal and no trap ever ran (Iteration 446,
+    \ busybox ash-signals/continue_and_trap1).
+    CHECK-TRAPS
+    0 LP-STOP? !
+    BEGIN
+      OVER 1 XF@ EXEC-IGNORING
+      LOOP-CONTROL-PENDING? @ 0= IF -1 ELSE LOOP-AFTER-BODY DUP LP-STOP? ! THEN
+      CHECK-TRAPS                             \ after the request is consumed
+    UNTIL
+    LP-STOP? @ IF 0 ELSE
+      STOP? IF 0 ELSE LAST-STATUS @ 0= OVER XOR THEN
+    THEN                                    ( node until? run? )
+  WHILE
+    OVER 2 XF@ EXEC
+    R> DROP LAST-STATUS @ >R
+    LOOP-AFTER-BODY IF 2DROP R> LAST-STATUS ! LOOP-DEPTH @ 1- LOOP-DEPTH ! EXIT THEN
+  REPEAT
+  \ A `return` in the CONDITION leaves its own status, which the loop's
+  \ saved one used to overwrite: `while return 2; do :; done` reported 0
+  \ (Iteration 342).
+  2DROP RETURN-PENDING? @ IF R> DROP ELSE R> LAST-STATUS ! THEN
+  LOOP-DEPTH @ 1- LOOP-DEPTH ! ;
+
+\ for: the words are expanded once, and copied out of ARGV, which the
+\ body will overwrite.
+: ARGV>BLOCK ( --- block n )   \ ARGV's words, NUL-separated, in a heap block
+  0 ARGC @ 0 ?DO I ARGV@ CSTRLEN 1+ + LOOP
+  1 MAX ALLOCATE DROP DUP
+  ARGC @ 0 ?DO
+    I ARGV@ DUP CSTRLEN 1+ >R OVER R@ MOVE R> +
+  LOOP DROP
+  ARGC @ ;
+
+: EXEC-FOR ( node --- )
+  DUP 2 XF@ ?DUP IF
+    0 ARGC !  0 ARGV !
+    DUP XV# 0 ?DO DUP I XV@ ADD-WORD LOOP DROP
+    EXPAND-WORDS
+    EXPANSION-OK? 0= IF DROP EXIT THEN
+  ELSE
+    \ no `in`: the positional parameters
+    0 ARGC !  0 ARGV !
+    POS-PARAM-COUNT @ 0 ?DO I POS-PARAM-SLOT 1 ARGV-ADD LOOP
+  THEN
+  ARGV>BLOCK                                ( node block n )
+  LOOP-DEPTH @ 1+ LOOP-DEPTH !
+  0 LAST-STATUS !
+  OVER SWAP 0 ?DO                           ( node block p )
+    2 PICK 1 XF@ 0 XF@ XSTR OVER SET-SHVAR-A     \ exported under set -a (432)
+    2 PICK 3 XF@ EXEC
+    DUP CSTRLEN 1+ +
+    LOOP-AFTER-BODY IF LEAVE THEN
+  LOOP DROP
+  FREE DROP DROP
+  LOOP-DEPTH @ 1- LOOP-DEPTH ! ;
+
+\ case: the word and each pattern are expanded without field splitting -
+\ joined back if they split.
+: EXPAND-ONE ( word --- c-addr u quoted? )   \ no pathname expansion
+  \ The case subject - this word's only caller - is not field-split
+  \ either, and for the same reason as the pattern: it was, and the
+  \ fields were joined back with single blanks, so `g='a  b'; case $g
+  \ in 'a  b')` did not match (Iteration 423).
+  0 ARGC !  0 ARGV !  1 ARGV-RTGT-NEXT !  ADD-WORD
+  -1 NO-GLOB? ! EXPAND-WORDS 0 NO-GLOB? !
+  ARGC @ IF 0 ARGV-QUOTED@ ELSE 0 THEN >R JOIN-ARGV R> ;
+
+256 BUFFER: CASE-TEXT
+VARIABLE CASE-TEXT#
+
+: PATTERN-MATCHES? ( pattern --- f )
+  \ The glob marks say which metacharacters were unquoted - the literal
+  \ fast path records them too since Iteration 341 - so the pattern can
+  \ be built with the quoted ones escaped and matched with escapes on.
+  \ A partly quoted pattern then keeps both halves: `a\*b*` matches
+  \ `a*bc` and not `axbc`. Before this a pattern with any quoting in it
+  \ was compared literally, right for `a\*` by accident and wrong for
+  \ `[\q]`.
+  \ A case pattern is not field-split (XCU 2.9.4.3: tilde, parameter,
+  \ command and arithmetic expansion, and quote removal - nothing else),
+  \ so the word goes in tagged as a redirection target is, which is the
+  \ one tag that means exactly that: expanded without splitting, and
+  \ never dropped when empty. It was split, so a pattern whose value
+  \ began or ended with a blank, or held a non-blank IFS character, lost
+  \ them - `v=' '; case ' ' in $v)` did not match - and `a b` matched
+  \ only because its two fields were joined back with a space. Found
+  \ through busybox's many_ifs, whose driver skips table rows with
+  \ exactly this construct (Iteration 423).
+  0 ARGC !  0 ARGV !  1 ARGV-RTGT-NEXT !  ADD-WORD
+  -1 NO-GLOB? ! EXPAND-WORDS 0 NO-GLOB? !
+  \ Only a pattern with quoting in it needs the marks: without any, the
+  \ text is the pattern and the old path is exactly right.
+  ARGC @ 1 = IF 0 ARGV-QUOTED@ ELSE 0 THEN IF
+    \ The marks describe text in the expansion buffer, and only there.
+    \ A lone digit is not: ADD-WORD swaps it for a static string and
+    \ flags it QUOTED - meaning "an ordinary word, not a descriptor",
+    \ for the redirection scan - so this branch took it for a quoted
+    \ pattern and read a mark table nothing had filled in. `case x in
+    \ 2)` was a segmentation fault; `case $x in 2)` matched only
+    \ because the expansion before it had left marks lying about.
+    \ Text that is not in the buffer is matched as the text it is
+    \ (Iteration 421; found by yash's case-p.tst, located with gdb and
+    \ tools/image-where.py).
+    \ Asking first whether there IS a buffer: OUT-BASE is `OUT-BODY @ @`,
+    \ and OUT-BODY stays 0 until something has actually been expanded -
+    \ the first version of this test crashed at the same instruction.
+    OUT-BODY @ IF 0 ARGV@ OUT-BASE TOK-OUT @ WITHIN ELSE 0 THEN 0= IF
+      0 ARGV@ DUP CSTRLEN CASE-TEXT CASE-TEXT# @ COMPARE 0= EXIT
+    THEN
+    0 ARGV@ DUP CSTRLEN PATTERN-FROM-MARKS
+    -1 GM-ESCAPES? !
+    CASE-TEXT CASE-TEXT# @ GLOB-MATCH
+    0 GM-ESCAPES? !
+  ELSE
+    ARGC @ IF 0 ARGV-QUOTED@ ELSE 0 THEN >R JOIN-ARGV R>
+    \ A pattern with no quoting in it can only have got a backslash from
+    \ an expansion, and in a pattern that backslash escapes the next
+    \ character, as dash and bash have it: `b='a\*b'; case 'a*b' in
+    \ $b)` matches (Iteration 424, busybox's glob_bkslash_in_var and
+    \ yash's quote-p.tst). It was matched with escapes off.
+    IF CASE-TEXT CASE-TEXT# @ COMPARE 0=
+    ELSE -1 GM-ESCAPES? !  CASE-TEXT CASE-TEXT# @ GLOB-MATCH  0 GM-ESCAPES? ! THEN
+  THEN ;
+
+: EXEC-CASE ( node --- )
+  DUP 1 XF@ EXPAND-ONE DROP                 ( node a u )
+  DUP 1+ ENSURE-BUFFER CASE-TEXT
+  DUP CASE-TEXT# !  CASE-TEXT SWAP MOVE
+  \ `$?` stands until a body runs; `case` itself only sets it when no
+  \ pattern matched, which the reset here used to hide (Iteration 329).
+  2 XF@ DUP XV# 0 ?DO                       ( items )
+    DUP I XV@                               ( items item )
+    DUP 0 XF@ DUP XV# 0 ?DO                 ( items item pats )
+      DUP I XV@ PATTERN-MATCHES? IF
+        DROP 1 XF@ ?DUP IF EXEC ELSE 0 LAST-STATUS ! THEN
+        DROP UNLOOP UNLOOP EXIT
+      THEN
+    LOOP 2DROP
+  LOOP DROP
+  0 LAST-STATUS ! ;                          \ nothing matched
+
+\ Functions: the body's range of the arena is copied into a block of its
+\ own, and run with EXEC-BASE pointing so that its offsets land in it.
+MAX-FUNCS CELLS BUFFER: FT-BLOCK
+MAX-FUNCS CELLS BUFFER: FT-BASE
+MAX-FUNCS CELLS BUFFER: FT-NODE
+CREATE NO-TEXT CSTR," "
+
+: FT-SHIFT ( i --- i )   \ move row i+1 down to i, for `unset -f`
+  DUP 1+ CELLS FT-BLOCK + @  OVER CELLS FT-BLOCK + !
+  DUP 1+ CELLS FT-BASE  + @  OVER CELLS FT-BASE  + !
+  DUP 1+ CELLS FT-NODE  + @  OVER CELLS FT-NODE  + ! ;
+
+' FT-SHIFT IS FT-SHIFT-CALL
+
+: FT-GROW ( cap --- )   \ this file's three rows of the function table
+  DUP CELLS ENSURE-BUFFER FT-BLOCK
+  DUP CELLS ENSURE-BUFFER FT-BASE
+  CELLS ENSURE-BUFFER FT-NODE ;
+
+' FT-GROW IS FUNC-GROW-CALL
+
+: EXEC-FUNCDEF ( node --- )
+  DUP 1 XF@ 0 XF@ XSTR NO-TEXT 0 SET-FUNC
+  DUP 1 XF@ 0 XF@ XSTR FIND-FUNC            ( node i )
+  DUP 0< IF 2DROP 1 LAST-STATUS ! EXIT THEN
+  OVER 4 XF@ 2 PICK 3 XF@ -                 ( node i len )
+  DUP 1 MAX ALLOCATE DROP                   ( node i len block )
+  3 PICK 3 XF@ XSTR OVER 3 PICK MOVE NIP    ( node i block )
+  OVER CELLS FT-BLOCK + DUP @ ?DUP IF BUF-RETIRE THEN
+  OVER SWAP !                               ( node i block )
+  2 PICK 3 XF@ -  OVER CELLS FT-BASE + !    ( node i )
+  CELLS FT-NODE + SWAP 2 XF@ SWAP !
+  0 LAST-STATUS ! ;
+
+: TREE-RUN-FUNC ( i --- )
+  FUNC-DEPTH @ MAX-POS-PARAM-DEPTH < 0= IF
+    DROP S" shell: function recursion too deep" ERR-TYPE ERR-NL
+    1 LAST-STATUS ! EXIT
+  THEN
+  DUP CELLS FT-BLOCK + @ 0= IF DROP 0 LAST-STATUS ! EXIT THEN
+  FUNC-DEPTH @ SAVE-POS-PARAMS
+  SET-POS-PARAMS-FROM-ARGV
+  FUNC-DEPTH @ 1+ FUNC-DEPTH !
+  EXEC-BASE @ >R  LOCALS# @ >R
+  DUP CELLS FT-BASE + @ EXEC-BASE !
+  CELLS FT-NODE + @ EXEC
+  R> LOCALS-RESTORE                           \ `local` variables (Iteration 271)
+  R> EXEC-BASE !
+  0 RETURN-PENDING? !
+  FUNC-DEPTH @ 1- FUNC-DEPTH !
+  FUNC-DEPTH @ RESTORE-POS-PARAMS ;
+
+: EXEC-BARE ( node --- )   \ a compound command, its redirections applied
+  DUP X@
+  DUP T-IF = IF DROP EXEC-IF EXIT THEN
+  DUP T-WHILE = IF DROP 0 EXEC-LOOP EXIT THEN
+  DUP T-UNTIL = IF DROP -1 EXEC-LOOP EXIT THEN
+  DUP T-FOR = IF DROP EXEC-FOR EXIT THEN
+  DUP T-CASE = IF DROP EXEC-CASE EXIT THEN
+  DROP 1 XF@ EXEC ;                         \ a group
+
+: EXEC-COMPOUND ( node --- )
+  DUP 0 XF@ 0= IF EXEC-BARE EXIT THEN
+  DUP REDIR-SETUP
+  >R BEGIN-REDIRECT R>
+  REDIR-FAILED? @ IF DROP 1 LAST-STATUS ! ELSE EXEC-BARE THEN
+  END-REDIRECT ;
+
+: EXEC-IMPL ( node --- )
+  ?DUP 0= IF EXIT THEN
+  STOP? IF DROP EXIT THEN
+  \ set -n: a non-interactive shell reads commands and runs none
+  OPT-NOEXEC @ IF INTERACTIVE? @ 0= IF DROP EXIT THEN THEN
+  DUP X@
+  DUP T-SIMPLE = IF DROP EXEC-SIMPLE EXIT THEN
+  DUP T-LIST = IF DROP EXEC-LIST EXIT THEN
+  DUP T-ANDOR = IF DROP EXEC-ANDOR EXIT THEN
+  DUP T-PIPE = IF DROP EXEC-PIPE EXIT THEN
+  DUP T-SUBSHELL = IF DROP EXEC-SUBSHELL EXIT THEN
+  DUP T-FUNCDEF = IF DROP EXEC-FUNCDEF EXIT THEN
+  DROP EXEC-COMPOUND ;
+' EXEC-IMPL IS EXEC
+
+: ONE-PIPELINE ( node --- pipe | 0 )   \ the node IS one pipeline, or holds one
+  DUP X@ T-PIPE = IF EXIT THEN
+  DUP X@ T-ANDOR = IF 0 XF@ DUP XV# 1 = IF 0 XV@ EXIT THEN DROP 0 EXIT THEN
+  DROP 0 ;
+
+: EXEC-FINAL ( node --- )   \ the last thing this process does
+  \ ... so the last stage of a pipeline runs HERE rather than in a child
+  \ of this process: a background pipeline's $! is then the LAST
+  \ process, as POSIX and dash have it, and `kill $!` reaches the stage
+  \ that matters. It was the wrapper subshell, whose traps are the
+  \ default ones, so the signal killed it and left the stages running
+  \ (Iteration 449, yash param-p.tst:452). Only when the pipeline is the
+  \ whole of what is left: in `a | b && c | d`, `a | b` is not.
+  DUP ONE-PIPELINE ?DUP IF
+    DUP 0 XF@ 0= SWAP 1 XF@ XV# 1 > AND STAGES-FINAL? !
+  ELSE 0 STAGES-FINAL? ! THEN
+  DUP ONE-SIMPLE? WANT-EXEC? !  EXEC  0 WANT-EXEC? !  0 STAGES-FINAL? ! ;
+' EXEC-FINAL IS EXEC-FINAL-CALL
+
+\ ---- running a source ----
+: PARSE-ONE ( --- node | 0 )   \ the next complete command, or 0 at the end
+  LINEBREAK
+  K-EOF KIND? IF 0 EXIT THEN
+  PARSE-COMPLETE
+  K-NEWLINE KIND? IF NEXT THEN ;
+VARIABLE PARSE-ONE-XT
+' PARSE-ONE PARSE-ONE-XT !XT
+
+VARIABLE NESTED?   \ running eval's or $(...)'s text, not the shell's input
+VARIABLE EXIT-AFTER?   \ this process ends when this source does: its last command may exec
+VARIABLE SRC-DEPTH     \ nested sources: eval's and $(...)'s
+
+: AT-END-OF-SOURCE? ( --- f )
+  \ Only blanks, newlines and comments left in a whole-text source. Not
+  \ found by lexing: that could report the NEXT command's syntax error
+  \ before this one runs, and outside the CATCH that reports it.
+  TK-VALID? @ IF TK-KIND @ K-EOF = EXIT THEN
+  SRC-POS @
+  BEGIN DUP SRC-LEN @ < WHILE
+    SRC-ADDR @ OVER + C@
+    DUP 32 = OVER 9 = OR OVER 10 = OR IF DROP 1+ ELSE
+    35 = IF
+      BEGIN DUP SRC-LEN @ < IF SRC-ADDR @ OVER + C@ 10 <> ELSE 0 THEN WHILE 1+ REPEAT
+    ELSE DROP 0 EXIT THEN THEN
+  REPEAT DROP -1 ;
+
+: SKIP-INPUT ( --- )   \ after an interactive syntax error: drop the line
+  SRC-LEN @ SRC-POS !  0 TK-VALID? !  0 HD-PEND# ! ;
+
+\ Parse and execute complete commands until the source ends. A syntax
+\ error ends a non-interactive shell with status 2 (XCU 2.8.1); an
+\ interactive one drops the rest of the line; eval's text returns 2.
+VARIABLE EVAL-ACTIVE?   \ inside `eval`: a syntax error is the shell's
+
+VARIABLE VERBOSE-UPTO   \ the source up to here has been echoed by set -v
+
+: VERBOSE-THROUGH ( from --- )   \ echo from `from` to the end of its line
+  DUP                                                  ( start end )
+  BEGIN
+    DUP SRC-LEN @ < IF DUP SRC-ADDR @ + C@ 10 <> ELSE 0 THEN
+  WHILE 1+ REPEAT
+  DUP 1+ VERBOSE-UPTO !
+  OVER - SWAP SRC-ADDR @ + SWAP                        ( addr len )
+  ERR-TYPE ERR-NL ;
+
+: VERBOSE-REST ( --- )   \ after a parse: the further lines it consumed
+  OPT-VERBOSE @ 0= IF EXIT THEN
+  NESTED? @ IF EXIT THEN
+  SRC-STDIN? @ IF EXIT THEN
+  BEGIN
+    VERBOSE-UPTO @ SRC-POS @ <  VERBOSE-UPTO @ SRC-LEN @ < AND
+  WHILE
+    VERBOSE-UPTO @ VERBOSE-THROUGH
+  REPEAT ;
+
+: VERBOSE-LINE ( --- )
+  \ `set -v` writes each line of input to standard error as the shell
+  \ reads it (XCU `set`). The option was accepted and reported in `$-`
+  \ and did nothing at all until Iteration 386.
+  \
+  \ Printed where the next COMMAND is about to be parsed rather than
+  \ where the lexer crosses a newline: by the time a newline is
+  \ crossed, the command before it has not run yet, so `set -v` on the
+  \ first line would miss the second. Here the line before has already
+  \ executed, which is dash's order.
+  \ ... and a command that spans lines has the lines after its first
+  \ printed by VERBOSE-REST once it is parsed, before it runs: only the
+  \ first line of a `for` or an `if` in a script file was echoed
+  \ (Iteration 439). VERBOSE-UPTO says how far has been printed, so a
+  \ line holding two commands is printed once. Standard input is echoed
+  \ as it is read, by REFILL-STDIN.
+  OPT-VERBOSE @ 0= IF EXIT THEN
+  NESTED? @ IF EXIT THEN
+  SRC-STDIN? @ IF EXIT THEN
+  SRC-POS @ SRC-LEN @ < 0= IF EXIT THEN
+  SRC-POS @ VERBOSE-UPTO @ < IF EXIT THEN              \ printed already
+  SRC-POS @ VERBOSE-THROUGH ;
+
+: TREE-RUN ( --- )
+  BEGIN
+    CHECK-TRAPS
+    NESTED? @ 0= IF
+      BUF-FREE-RETIRED
+      SRC-STDIN? @ IF SRC-POS @ SRC-LEN @ = IF 0 SRC-POS ! 0 SRC-LEN ! 0 AL-ACTIVE# ! THEN THEN
+      TREE-RESET  -1 CMD-START? !
+    THEN
+    VERBOSE-LINE
+    PARSE-ONE-XT @XT CATCH
+    ?DUP IF
+      DROP 2 LAST-STATUS !
+      \ A syntax error inside `eval` ends a non-interactive shell, as
+      \ one at the top level does: `eval fi; echo reached` printed
+      \ `reached` here and prints nothing in dash (XCU 2.8.1, and eval
+      \ is a special builtin). Other nesting - a command substitution's
+      \ own parse - is a child, and returning is right there
+      \ (Iteration 376).
+      NESTED? @ IF
+        EVAL-ACTIVE? @ INTERACTIVE? @ 0= AND IF 2 SHELL-EXIT THEN
+        EXIT
+      THEN
+      INTERACTIVE? @ 0= IF 2 SHELL-EXIT THEN
+      SKIP-INPUT 0
+    ELSE
+      ?DUP 0= IF EXIT THEN
+      VERBOSE-REST
+      TREE-BUF EXEC-BASE !
+      \ the source's last command, in a process that ends with it
+      EXIT-AFTER? @ SRC-DEPTH @ 0= AND SRC-STDIN? @ 0= AND IF
+        AT-END-OF-SOURCE? IF EXEC-FINAL ELSE EXEC THEN
+      ELSE
+        EXEC
+      THEN
+      -1
+    THEN DROP
+  AGAIN ;
+
+\ A nested source - eval's text, $(...)'s - saves the shell's on the data
+\ stack: the nested work leaves the stack as it found it, a THROW too.
+: SOURCE@ ( --- x*19 )
+  SRC-ADDR @ SRC-LEN @ SRC-POS @ SRC-LINE @ SRC-STDIN? @
+  TK-VALID? @ TK-KIND @ TK-OP @ TK-START @ TK-END @
+  TK-FLAGS @ NESTED? @ TREE-TOP @ EXEC-BASE @ HD-PEND#  @
+  SRC-SPLICED @ AL-ACTIVE# @ NO-ALIAS? @ ALIAS-NEXT? @ ;
+: SOURCE! ( x*19 --- )
+  ALIAS-NEXT? ! NO-ALIAS? ! AL-ACTIVE# ! SRC-SPLICED !
+  HD-PEND# ! EXEC-BASE ! TREE-TOP ! NESTED? ! TK-FLAGS !
+  TK-END ! TK-START ! TK-OP ! TK-KIND ! TK-VALID? !
+  SRC-STDIN? ! SRC-LINE ! SRC-POS ! SRC-LEN ! SRC-ADDR ! ;
+: NEST-SOURCE ( c-addr u --- )
+  SRC-LEN !  SRC-ADDR !  0 SRC-POS !  1 SRC-LINE !  0 SRC-STDIN? !
+  0 TK-VALID? !  0 HD-PEND# !  -1 NESTED? !
+  0 SRC-SPLICED !  0 AL-ACTIVE# !  0 ALIAS-NEXT? ! ;
+: END-SOURCE ( --- )   SRC-SPLICED @ ?DUP IF FREE DROP THEN ;
+
+: ENCODE-TEXT ( c-addr u --- node )   \ lex it as one word, for its encoding
+  >R >R SOURCE@ R> R>  NEST-SOURCE
+  SCAN-WORD TOKEN-WORD
+  >R  END-SOURCE SOURCE!  R> ;
+
+' ENCODE-TEXT IS ENCODE-TEXT-CALL
+
+: TREE-RUN-TEXT ( c-addr u --- )
+  >R >R SOURCE@ R> R>  NEST-SOURCE
+  1 SRC-DEPTH +!  TREE-RUN  -1 SRC-DEPTH +!
+  END-SOURCE SOURCE! ;
+
+\ Where a $(...) whose text starts at c-addr ends: the length of its
+\ text, without the closing paren. Found by parsing it; if it does not
+\ parse, all of it.
+VARIABLE SUBLIST-XT
+' PARSE-SUBLIST SUBLIST-XT !XT
+: TREE-EVAL ( --- )   \ eval's arguments, joined with spaces
+  0 LAST-STATUS !
+  ARGC @ 2 < IF EXIT THEN
+  1 JOIN-ARGV-FROM                          ( a u )
+  DUP 1 MAX ALLOCATE DROP                   ( a u block )
+  DUP >R SWAP DUP >R MOVE R> R>             ( u block )
+  EVAL-ACTIVE? @ >R  -1 EVAL-ACTIVE? !
+  SWAP OVER >R TREE-RUN-TEXT R> FREE DROP
+  R> EVAL-ACTIVE? ! ;
+
+: TREE-CMDSUB ( --- )   \ in the child: a parsed subtree, or text
+  \ The word the substitution sits in is the PARENT's business: its
+  \ context does not reach the commands inside. A `case` subject is not
+  \ field-split (Iteration 423), and that leaked in, so `case "$(printf
+  \ %s $v)"` with v a blank left $v unsplit and the subject was " "
+  \ where dash and bash have "" (Iteration 471, found by
+  \ tools/difffuzz.py). A redirection target's joining (458) likewise.
+  0 XE-NOSPLIT? !  0 REDIR-TARGET-WORD? !
+  CMDSUB-NODE @ ?DUP IF
+    EXEC-FINAL-CALL  LAST-STATUS @ SHELL-EXIT
+  THEN
+  \ The line path's length counts a NUL after the text; up to it only.
+  \ The child ends with this text, so its last command may exec: the text
+  \ runs as the child's top-level source, not as a nested one.
+  CMDSUB-LINE-BUF CMDSUB-LINES-LEN @ 0 SCAN DROP CMDSUB-LINE-BUF -
+  CMDSUB-LINE-BUF SWAP
+  -1 EXIT-AFTER? !  -1 SRC-DEPTH +!
+  TREE-RUN-TEXT
+  LAST-STATUS @ SHELL-EXIT ;
+
+: READ-WHOLE-FILE ( c-addr --- addr u | 0 0 )
+  DUP CSTRLEN R/O OPEN-FILE IF DROP 0 0 EXIT THEN
+  >R R@ FILE-SIZE 2DROP
+  DUP 1+ ALLOCATE DROP
+  2DUP SWAP R@ READ-FILE 2DROP  R> CLOSE-FILE DROP
+  SWAP ;
+
+' RUN-TRAP IS RUN-TRAP-CALL
+' TREE-RUN-FUNC IS RUN-FUNC-BODY-CALL
+' TREE-CMDSUB IS RUN-CMDSUB-CHILD-CALL
+' TREE-EVAL IS TREE-EVAL-CALL
+: TREE-RUN-CSTR ( c-addr --- )   DUP CSTRLEN TREE-RUN-TEXT ;
+' TREE-RUN-CSTR IS TRAP-RUN-CALL
+
+\ Startup files (Iteration 504). A login shell - `-l`, or a name that
+\ begins with `-` - reads /etc/profile and then $HOME/.profile, as dash
+\ and ash do, even for -c; an interactive shell then reads the file that
+\ $ENV names, after parameter expansion (XCU 2.5.3, ENV). A file that
+\ cannot be read is passed over in silence, as dash passes it. The words
+\ that do it follow DO-DOT, which they call, at the end of this file.
+VARIABLE LOGIN?
+DEFER READ-PROFILES-CALL   ( --- )
+DEFER READ-ENV-FILE-CALL   ( --- )
+
+VARIABLE SA-I        \ how far through relf's own arguments the scan is
+VARIABLE SA-MODE     \ 0: a script or standard input; 1: -c; 2: -s
+VARIABLE SA-ON?      \ this option word turns options on, or off
+VARIABLE SA-P        \ the letter being applied
+VARIABLE SA-DONE?    \ `--` seen: the rest are operands
+
+: SA-OPT-WORD? ( c-addr --- f )   \ `-x` or `+x`, but not `-` or `+` alone
+  DUP C@ DUP 45 = SWAP 43 = OR SWAP 1+ C@ 0<> AND ;
+
+: SA-APPLY-LETTERS ( c-addr --- )   \ every letter of one option word
+  DUP C@ 45 = SA-ON? !
+  1+ SA-P !
+  BEGIN SA-P @ C@ ?DUP WHILE
+    DUP 99 = IF DROP 1 SA-MODE ! ELSE          \ -c
+    DUP 115 = IF DROP 2 SA-MODE ! ELSE         \ -s
+    DUP 105 = IF DROP -1 INTERACTIVE? ! ELSE   \ -i
+    DUP 108 = IF DROP -1 LOGIN? ! ELSE         \ -l: a login shell
+      OPT-LETTER ?DUP IF SA-ON? @ SWAP ! THEN
+    THEN THEN THEN THEN
+    1 SA-P +!
+  REPEAT ;
+
+: SHELL-PARSE-ARGS ( --- )
+  \ The shell's own command line, as XCU `sh` describes it: option
+  \ letters may be combined and repeated (`sh -es a`), `-o name` takes
+  \ the next argument, `--` ends them, and what is left is a script and
+  \ its parameters, or operands for `-c` or `-s`. This was four exact
+  \ string comparisons until Iteration 377, so `-es` was read as a file
+  \ name - which is how yash's suite starts most of its cases.
+  0 SA-I !  0 SA-MODE !  0 SA-DONE? !
+  BEGIN
+    SA-DONE? @ 0=  SA-I @ SYS-ARGC < AND
+    IF SA-I @ SYS-ARG SA-OPT-WORD? ELSE 0 THEN
+  WHILE
+    SA-I @ SYS-ARG                             ( a )
+    DUP S" --" ROT STR0= IF
+      DROP -1 SA-DONE? !
+    ELSE
+      DUP 1+ C@ 111 = OVER 2 + C@ 0= AND IF    \ `-o name` or `+o name`
+        DUP C@ 45 = >R                         \ the on/off flag, aside
+        DROP
+        SA-I @ 1+ SYS-ARGC < IF
+          1 SA-I +!
+          SA-I @ SYS-ARG OPT-NAME ?DUP IF R> SWAP ! ELSE R> DROP THEN
+        ELSE R> DROP THEN
+      ELSE
+        SA-APPLY-LETTERS
+      THEN
+    THEN
+    1 SA-I +!
+  REPEAT
+  \ A lone `-` after the options is the first operand, and ignored (XCU
+  \ sh): `sh -c - 'echo OK'` runs `echo OK`. It was run as a command
+  \ called `-` (Iteration 435, yash startup-p.tst:155, :160).
+  \ Not after `--`, which ended the options: there `-` is an operand,
+  \ and `sh -s -- -` has $1 = "-" (dash). Skipping it there too broke
+  \ yash's test-p.tst, which passes its expressions that way, and was
+  \ caught by the next run of that suite (Iteration 436).
+  SA-DONE? @ 0= SA-I @ SYS-ARGC < AND IF
+    S" -" SA-I @ SYS-ARG STR0= IF 1 SA-I +! THEN
+  THEN ;
+
+: INTERACTIVE-SETUP ( --- )
+  \ An interactive shell survives INT, QUIT and TERM (XCU 2.11). They
+  \ are caught rather than ignored, so the programs it runs get them as
+  \ usual - exec resets a caught signal, not an ignored one (Iteration 271).
+  2 3 SIGNAL-ACTION DROP  3 2 SIGNAL-ACTION DROP  15 2 SIGNAL-ACTION DROP
+  \ Job control: the shell takes its own process group and the terminal,
+  \ so a job can be handed the terminal and taken back (Iteration 320).
+  \ Only at a terminal - a pipe has no foreground.
+  0 ISATTY IF
+    -1 JOB-CONTROL? !  -1 OPT-MONITOR !
+    GETPID DUP SHELL-PGID !  0 SWAP SETPGID DROP
+    0 SHELL-PGID @ TCSETPGRP DROP
+    \ An interactive shell ignores these: without them ^Z would stop the
+    \ shell itself, since it is the foreground group now. A job started
+    \ with & still gets its own group and can be stopped.
+    20 1 SIGNAL-ACTION DROP  21 1 SIGNAL-ACTION DROP  22 1 SIGNAL-ACTION DROP
+  THEN ;
+
+: RUN-STDIN ( --- )   \ commands from standard input
+  -1 OPT-STDIN !                               \ $- shows s (713)
+  INTERACTIVE? @ IF INTERACTIVE-SETUP READ-ENV-FILE-CALL THEN
+  0 0 PARSE-INIT  -1 SRC-STDIN? !  STDIN-TEXT SRC-ADDR !
+  TREE-RUN LAST-STATUS @ SHELL-EXIT ;
+
+: RUN-SOURCES ( --- )   \ -c, a script, or standard input
+  0 OPT-STDIN !  0 NESTED? !  0 INTERACTIVE? !  0 SRC-EOF? !  0 EXIT-AFTER? !  0 SRC-DEPTH !
+  0 LOGIN? !
+  SHELL-PARSE-ARGS
+  LOGIN? @  SHELL-NAME @ C@ 45 =  OR IF READ-PROFILES-CALL THEN
+  SA-MODE @ 1 = IF                             \ -c command [name [args]]
+    SA-I @ SYS-ARGC < 0= IF
+      S" shell: -c requires an argument" ERR-TYPE ERR-NL  2 SHELL-EXIT
+    THEN
+    SA-I @ 1+ SYS-ARGC < IF
+      SA-I @ 1+ SYS-ARG SHELL-NAME !
+      SA-I @ 2 + SET-POS-PARAMS-FROM-SYS-ARGS-AT
+    THEN
+    SA-I @ SYS-ARG DUP CSTRLEN PARSE-INIT
+    -1 EXIT-AFTER? !
+    TREE-RUN LAST-STATUS @ SHELL-EXIT
+  THEN
+  SA-MODE @ 2 = IF                             \ -s [args]
+    SA-I @ SET-POS-PARAMS-FROM-SYS-ARGS-AT
+    RUN-STDIN
+  THEN
+  SA-I @ SYS-ARGC < IF                         \ a script and its parameters
+    SA-I @ 1+ SET-POS-PARAMS-FROM-SYS-ARGS-AT
+    SA-I @ SYS-ARG SHELL-NAME !                \ $0 is the script (XCU 2.5.1)
+    SA-I @ SYS-ARG READ-WHOLE-FILE
+    OVER 0= IF 2DROP 127 SYS-EXIT THEN
+    PARSE-INIT
+    -1 EXIT-AFTER? !
+    TREE-RUN LAST-STATUS @ SHELL-EXIT
+  THEN
+  INTERACTIVE? @ 0= IF 0 ISATTY INTERACTIVE? ! THEN
+  RUN-STDIN ;
+
+32 BUFFER: PPID-BUF
+CREATE ARGV0-NM  CSTR," RELF_ARGV0"
+CREATE IFS-DEFAULT  32 C, 9 C, 10 C, 0 C,   \ space, tab, newline
+CREATE OPTIND-NM    CSTR," OPTIND"
+CREATE OPTIND-ONE   CSTR," 1"
+
+CREATE DASH-PATH  CSTR," /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+: MAIN ( --- )   \ the shell image's boot word
+  ALLOC-BUFFERS
+  ENV-CHANGED     \ an image knows nothing of the environment it runs in (650)
+  DEFAULT-SHELL-NAME SHELL-NAME !            \ $0 until a script names itself
+  \ ... or the name the shell was invoked by, which only the wrapper
+  \ knows: relfsh passes its own $0 as RELF_ARGV0, and it is taken out of
+  \ the environment here so that nothing this shell starts inherits it.
+  \ `sh -s` and an interactive shell had $0 = "sh" (Iteration 435, yash
+  \ startup-p.tst:79; dash gives its own argv[0]).
+  ARGV0-NM GETENV ?DUP IF
+    DUP CSTRLEN 1+ DUP ALLOCATE DROP DUP >R SWAP MOVE R> SHELL-NAME !
+    ARGV0-NM UNSETENV DROP
+  THEN
+  GETPID SHELL-PID !
+  \ $PPID, which POSIX sets at startup and this shell never did
+  GETPPID 0 <# #S #> PPID-BUF SWAP DUP >R MOVE  0 PPID-BUF R> + C!
+  PPID-NM PPID-BUF SET-SHVAR
+  INIT-PWD                                   \ XCU 2.5.3 (Iteration 573)
+  \ IFS and OPTIND, which POSIX also sets at startup and this shell left
+  \ unset (Iteration 422, from yash's fsplit-p.tst and getopts-p.tst).
+  \ An unset IFS still splits on blanks, so nothing looked wrong - until
+  \ the everyday `old=$IFS; IFS=:; ...; IFS=$old` restored it EMPTY and
+  \ turned field splitting off for the rest of the script. An IFS from
+  \ the environment is replaced, as dash and bash replace it.
+  IFS-NM IFS-DEFAULT SET-SHVAR
+  OPTIND-NM OPTIND-ONE SET-SHVAR
+  \ PATH, where the environment gave none (Iteration 561, A28): dash's
+  \ default, set and not exported, as dash sets it. With `env -i` this
+  \ shell found no command at all; POSIX leaves an unset PATH to the
+  \ implementation. An `unset PATH` later leaves it unset, as in dash.
+  PATH-NM LOOKUP-VAR 0= IF PATH-NM DASH-PATH SET-SHVAR THEN
+  0 BODY-ARENA-BASE !  0 BODY-ARENA-SIZE !  0 BODY-ARENA-TOP !
+  2 #ORDER !
+  FORTH-WORDLIST CONTEXT !
+  FORTH-WORDLIST CONTEXT CELL+ !
+  FORTH-WORDLIST CURRENT !
+  TIB SRC !  0 SID !
+  INCLUDE-BUFFER INCLUDE-POINTER !  0 INCLUDE-LINE# !   \ 593
+  HERE USER-XT-FLOOR !   \ 595: what is defined from here on is loaded
+  0 SHVAR-INDEX-OK? !
+     \ its buffer is new: build it on the first lookup
+  RUN-SOURCES ;
+
+\ ==================================================================
+\ Entry: parse a text, printing each complete command's tree
+\ ==================================================================
+
+: DUMP-PROGRAM ( --- )
+  \ Each command's tree is dropped after printing - back to where the
+  \ arena was, since the tree path may be executing the caller's tree.
+  TREE-TOP @ >R
+  BEGIN
+    LINEBREAK
+    K-EOF KIND? 0=
+  WHILE
+    R@ TREE-TOP !
+    PARSE-COMPLETE PRINT-NODE CR
+    K-NEWLINE KIND? IF NEXT THEN
+  REPEAT
+  R> TREE-TOP ! ;
+
+\ tree-dump FILE: print FILE's trees; status 0, or 2 at a syntax error.
+\ A development builtin for Stage A (tests/parse).
+\ An xt kept as an offset from START (shadow.4's !XT): ['] would compile
+\ an absolute address, wrong once the saved image loads elsewhere.
+VARIABLE DUMP-XT
+' DUMP-PROGRAM DUMP-XT !XT
+
+: DO-TREE-DUMP ( --- )
+  0 ENC-SHOW? !
+  ARGC @ 2 > IF
+    1 ARGV@ S" -e" ROT STR0= IF -1 ENC-SHOW? ! DROP-ARGV0 THEN
+  THEN
+  ARGC @ 2 < IF 2 LAST-STATUS ! EXIT THEN
+  1 ARGV@ READ-WHOLE-FILE                   ( buf size | 0 0 )
+  OVER 0= IF 2DROP 2 LAST-STATUS ! EXIT THEN
+  SWAP                                      ( size buf )
+  2DUP SWAP                                 ( size buf buf size )
+  >R >R SOURCE@ R> R> NEST-SOURCE           \ a source of its own
+  DUMP-XT @XT CATCH IF 2 ELSE 0 THEN >R
+  END-SOURCE SOURCE!
+  R> LAST-STATUS !
+  NIP FREE DROP ;
+' DO-TREE-DUMP S" tree-dump" BUILTIN
+
+\ ==================================================================
+\ `.` and `type` (Iteration 270)
+\ ==================================================================
+: DOT-SEARCH ( name --- path | 0 )   \ a readable file along PATH, in PATHBUF
+  CC-CURRENT-PATH -1 PATH-SEARCH ;
+
+\ ---- a file with no #! line (Iteration 433) ----
+CREATE PROC-CMDLINE  CSTR," /proc/self/cmdline"
+CREATE PROC-EXE      CSTR," /proc/self/exe"
+CREATE BIN-SH        CSTR," /bin/sh"
+64 CELLS BUFFER: SCRIPT-ARGV
+4096 CONSTANT CMDLINE-MAX
+CMDLINE-MAX 1+ BUFFER: CMDLINE-BUF   \ allocated when first used, not in the image:
+                                     \ CREATE ... ALLOT put 4 KB of zeros in both (433)
+
+: READ-CMDLINE ( --- addr u | 0 0 )   \ this process's argv, NUL-separated
+  \ READ, not sized: /proc files report size 0, and READ-WHOLE-FILE,
+  \ which asks FILE-SIZE, read nothing - so the first version of this
+  \ ran every such script with /bin/sh (Iteration 433).
+  PROC-CMDLINE DUP CSTRLEN R/O OPEN-FILE IF DROP 0 0 EXIT THEN
+  >R  CMDLINE-BUF CMDLINE-MAX R@ READ-FILE  R> CLOSE-FILE DROP   ( u ior )
+  IF DROP 0 0 EXIT THEN
+  0 CMDLINE-BUF 2 PICK + C!
+  CMDLINE-BUF SWAP ;
+
+: SCRIPT-BINARY? ( path --- f )   \ a NUL in its first 80 bytes
+  \ ENOEXEC also means a binary for another machine; running that as a
+  \ script would print garbage, so it is reported as bash reports it.
+  READ-WHOLE-FILE                              ( addr u | 0 0 )
+  OVER 0= IF 2DROP 0 EXIT THEN
+  OVER SWAP 80 MIN 0 SCAN NIP 0<>              ( addr f )
+  SWAP FREE DROP ;
+
+VARIABLE CE-N
+: CMDLINE-ENTRIES ( addr u --- n )   \ how many NUL-terminated strings
+  0 CE-N !  OVER + SWAP ?DO I C@ 0= IF 1 CE-N +! THEN LOOP  CE-N @ ;
+: CMDLINE-NTH ( addr n --- c-addr )   \ the n-th of them
+  0 ?DO DUP CSTRLEN 1+ + LOOP ;
+
+: SCRIPT-ARGS! ( first --- )   \ ARGV[1..] into SCRIPT-ARGV from `first` on
+  ARGC @ 1 ?DO  I ARGV@  OVER I 1- + CELLS SCRIPT-ARGV + !  LOOP
+  ARGC @ 1- + CELLS SCRIPT-ARGV +  0 SWAP ! ;
+
+: (EXEC-AS-SCRIPT) ( path --- )
+  \ Run it with THIS shell - re-executed through /proc/self/exe with the
+  \ arguments it began with, as below - so the script sees the same
+  \ shell; and failing that with /bin/sh, which is what dash does.
+  DUP SCRIPT-BINARY? IF DROP -8 NOTE-EXEC-ERR EXIT THEN
+  ARGC @ 4 + CELLS ENSURE-BUFFER SCRIPT-ARGV
+  READ-CMDLINE                                 ( path addr u | path 0 0 )
+  OVER IF
+    \ This process began as the engine and an image, or - since Iteration
+    \ 506 - as a binary carrying its image: its own leading arguments are
+    \ those beyond the program's SYS-ARGC. The script re-runs the same
+    \ way, through /proc/self/exe, with the script where the program's
+    \ arguments begin. Until 506 the image was assumed to be argv[1]; in
+    \ a binary that is the user's first argument, and a script with no
+    \ #! line under `relfsh -c` re-executed itself forever.
+    OVER SWAP CMDLINE-ENTRIES SYS-ARGC -       ( path addr base )
+    DUP 1 3 WITHIN IF
+      DUP 0 ?DO  OVER I CMDLINE-NTH  SCRIPT-ARGV I CELLS + !  LOOP
+      2 PICK OVER CELLS SCRIPT-ARGV + !        \ the script
+      DUP 1+ SCRIPT-ARGS!
+      SCRIPT-ARGV PROC-EXE EXECVE DROP         \ returns only if it failed
+    THEN
+  THEN 2DROP                                   ( path )
+  BIN-SH SCRIPT-ARGV !
+  DUP SCRIPT-ARGV CELL+ !
+  2 SCRIPT-ARGS!
+  SCRIPT-ARGV BIN-SH EXECVE DROP
+  DROP -8 NOTE-EXEC-ERR ;
+' (EXEC-AS-SCRIPT) IS EXEC-AS-SCRIPT
+
+: DOT-FIND ( name --- path | 0 )
+  \ A name with a slash is itself; otherwise the first readable file
+  \ along PATH, and then the current directory (bash; dash stops at PATH).
+  DUP DUP CSTRLEN HAS-SLASH? IF EXIT THEN
+  DUP DOT-SEARCH ?DUP IF NIP EXIT THEN
+  DUP 4 ACCESS 0= IF EXIT THEN
+  DROP 0 ;
+
+: DOT-TEXT-EMPTY? ( addr u --- f )   \ only blanks and comments: no command
+  BEGIN DUP WHILE
+    OVER C@ DUP 32 = OVER 9 = OR SWAP 10 = OR IF
+      1 /STRING
+    ELSE OVER C@ 35 = IF
+      BEGIN DUP IF OVER C@ 10 <> ELSE 0 THEN WHILE 1 /STRING REPEAT
+    ELSE 2DROP 0 EXIT THEN THEN
+  REPEAT 2DROP -1 ;
+
+: DO-DOT ( --- )
+  \ `.` is a special builtin: a file it cannot find or read ends a
+  \ non-interactive shell (XCU 2.8.1), and under `command` does not.
+  \ This set status 1 and went on (Iteration 432, yash dot-p.tst).
+  ARGC @ 2 < IF
+    S" shell: .: filename argument required" ERR-TYPE ERR-NL  2 SPECIAL-ERROR EXIT
+  THEN
+  1 ARGV@ DOT-FIND ?DUP 0= IF
+    S" shell: .: " ERR-TYPE 1 ARGV@ ERR-CSTR S" : not found" ERR-TYPE ERR-NL
+    2 SPECIAL-ERROR EXIT
+  THEN
+  READ-WHOLE-FILE                             ( addr u | 0 0 )
+  OVER 0= IF
+    2DROP S" shell: .: cannot read " ERR-TYPE 1 ARGV@ ERR-CSTR ERR-NL
+    2 SPECIAL-ERROR EXIT
+  THEN
+  \ arguments after the file are its positional parameters while it runs
+  ARGC @ 2 > DUP >R IF
+    FUNC-DEPTH @ MAX-POS-PARAM-DEPTH < 0= IF
+      R> DROP DROP FREE DROP
+      S" shell: .: nested too deep" ERR-TYPE ERR-NL  1 LAST-STATUS ! EXIT
+    THEN
+    DROP-ARGV0
+    FUNC-DEPTH @ SAVE-POS-PARAMS  SET-POS-PARAMS-FROM-ARGV
+    FUNC-DEPTH @ 1+ FUNC-DEPTH !
+  THEN
+  1 DOT-DEPTH +!
+  \ $? inside the script starts as the status before `.` - `(exit 5);
+  \ . ./f` where f says `echo $?` prints 5. It was reset to 0 here. A
+  \ file with no command in it still gives 0, as POSIX asks (432).
+  2DUP DOT-TEXT-EMPTY? IF 0 LAST-STATUS ! THEN
+  OVER >R TREE-RUN-TEXT R> FREE DROP
+  -1 DOT-DEPTH +!
+  0 RETURN-PENDING? !
+  R> IF FUNC-DEPTH @ 1- FUNC-DEPTH !  FUNC-DEPTH @ RESTORE-POS-PARAMS THEN ;
+
+: KEYWORD? ( c-addr --- f )
+  >R
+  S" if" R@ STR0=  S" then" R@ STR0= OR  S" else" R@ STR0= OR
+  S" elif" R@ STR0= OR  S" fi" R@ STR0= OR  S" case" R@ STR0= OR
+  S" esac" R@ STR0= OR  S" for" R@ STR0= OR  S" while" R@ STR0= OR
+  S" until" R@ STR0= OR  S" do" R@ STR0= OR  S" done" R@ STR0= OR
+  S" in" R@ STR0= OR  S" {" R@ STR0= OR  S" }" R@ STR0= OR
+  S" !" R@ STR0= OR
+  R> DROP ;
+
+: TYPE-ONE ( c-addr --- found? )   \ dash's wording
+  DUP DUP CSTRLEN TYPE
+  DUP KEYWORD? IF DROP S"  is a shell keyword" TYPE CR -1 EXIT THEN
+  DUP FIND-ALIAS DUP 0< 0= IF
+    NIP S"  is an alias for " TYPE ALIAS-VALUE-SLOT DUP CSTRLEN TYPE CR -1 EXIT
+  THEN DROP
+  DUP FIND-FUNC -1 <> IF DROP S"  is a shell function" TYPE CR -1 EXIT THEN
+  DUP FIND-BUILTIN-CALL IF DROP S"  is a shell builtin" TYPE CR -1 EXIT THEN
+  DUP DUP CSTRLEN HAS-SLASH? IF
+    DUP 1 ACCESS 0= IF S"  is " TYPE DUP CSTRLEN TYPE CR -1 EXIT THEN
+    DROP S" : not found" TYPE CR 0 EXIT
+  THEN
+  LOCATE-COMMAND ?DUP IF S"  is " TYPE DUP CSTRLEN TYPE CR -1 EXIT THEN
+  S" : not found" TYPE CR 0 ;
+
+: DO-TYPE ( --- )
+  0 LAST-STATUS !
+  ARGC @ 1 ?DO
+    I ARGV@ TYPE-ONE 0= IF 127 LAST-STATUS ! THEN
+  LOOP ;
+
+' DO-DOT S" ." BUILTIN
+' DO-TYPE S" type" BUILTIN
+
+\ ---- startup files (Iteration 504) ----
+CREATE STARTUP-DOT-NM   CSTR," ."
+CREATE ETC-PROFILE-NM   CSTR," /etc/profile"
+CREATE DOT-PROFILE-NM   CSTR," /.profile"
+CREATE ENV-NM           CSTR," ENV"
+4096 BUFFER: STARTUP-PATH
+
+: SOURCE-STARTUP-FILE ( path --- )   \ as `.` would run it, if it can be read
+  DUP 4 ACCESS IF DROP EXIT THEN              \ R_OK: missing is not an error
+  ARGV CELL+ !  STARTUP-DOT-NM ARGV !  0 ARGV 2 CELLS + !  2 ARGC !
+  DO-DOT ;          \ $? is the file's last status afterwards, as in dash
+
+: STARTUP-PATH-FROM ( c-addr u --- )   \ into STARTUP-PATH, NUL-terminated
+  4095 MIN DUP >R STARTUP-PATH SWAP MOVE  0 STARTUP-PATH R> + C! ;
+
+: READ-PROFILES ( --- )   \ a login shell's /etc/profile, then $HOME/.profile
+  ETC-PROFILE-NM SOURCE-STARTUP-FILE
+  HOMEBUF-NM LOOKUP-VAR ?DUP 0= IF EXIT THEN
+  DUP CSTRLEN DUP 4000 < 0= IF 2DROP EXIT THEN
+  DUP >R STARTUP-PATH SWAP MOVE
+  DOT-PROFILE-NM DUP CSTRLEN 1+ STARTUP-PATH R> + SWAP MOVE
+  STARTUP-PATH SOURCE-STARTUP-FILE ;
+
+: READ-ENV-FILE ( --- )   \ an interactive shell's $ENV, parameter-expanded
+  ENV-NM LOOKUP-VAR ?DUP 0= IF EXIT THEN
+  DUP C@ 0= IF DROP EXIT THEN
+  DUP CSTRLEN EXPAND-DQ-TEXT-SAFE STARTUP-PATH-FROM
+  STARTUP-PATH SOURCE-STARTUP-FILE ;
+
+' READ-PROFILES IS READ-PROFILES-CALL
+' READ-ENV-FILE IS READ-ENV-FILE-CALL
+
+\ What the build learned of its own environment - an assignment run while
+\ loading notes a name as not there (SHVAR-NOENV, Iteration 650) - is
+\ forgotten before the image is saved: else the image's bytes follow the
+\ build's environment (verify: rebuild:kernel32-shell.img DIFFERS).
+ENV-CHANGED
