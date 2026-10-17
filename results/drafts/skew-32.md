@@ -37,3 +37,27 @@ than their work needs - worth reading as engine bugs (the tag's call decode, cba
 layer's 64-bit arithmetic, the system call's mapping) before leaving them to the selection. The
 compiler's 64-bit-only gain is the selection's to weigh - speed32 makes it visible to it. Selecting at
 both widths (the pending batch) will push against tag2, fsys 3, escape and supers at 32 bits.
+
+## tag2 at 32 bits, looked into (Iteration 353)
+
+- **Confirmed**: c549c0677c's interpreter, three times three rounds each: with tag2 0.399 at 64 bits and
+  **0.682** at 32 (0.669-0.696); tag2 as s6's 0.475 and **0.503** (0.480-0.534). tag2 is 16% faster
+  at 64 bits and **36% slower at 32**.
+- **In every operation's dispatch, not the calls**: by workload, tag2's time over without it at 32
+  bits - loop 1.53 (a counted loop, almost no calls), bubble 1.38, fib 1.35, ackermann 1.29, corpus
+  1.12, kernel 0.87; at 64 bits 0.74-1.11. (The per-workload ratios move a lot between runs on the
+  VM - loop 1.53 once, 2.28 the next; the design's total is steady.)
+- **Not the cell type**: UNS64 is uint32_t on a 32-bit host - the VM's registers and cells shrink.
+- **Not the PIC register**: the 32-bit engines are position-independent (Ubuntu's gcc default) - the
+  dispatch adds a base register to every table address (`lea 0x57098(,%edx,4),%eax; add %ebp,%eax;
+  jmp *(%eax)`), one of i386's seven registers spent; built -fno-pie, tag2 over without it at 32 bits
+  1.25 (1.24 before): not tag2's own cost. (It may cost every 32-bit design alike - unseen in ratios
+  against an s6 built the same way; worth a measure of absolute times.)
+- Next, if it is pursued: the hot handlers' code (loop's) in the two 32-bit engines side by side.
+
+## What selecting at both widths costs (Iteration 353)
+
+Five designs of seed 55's front, three rounds, best of two passes: one width 15.7 s, both 29.2 s -
+**x1.86 the evaluation time, 46% fewer designs an hour** (the draft guessed 1.2-1.5x: the 32-bit pass
+repeats the build, the corpus and kernel check and the measurement). A run with `widths` wants nearly
+twice the hours for the same search.

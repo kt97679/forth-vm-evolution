@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 352.
+- master: Iteration 353.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -197,6 +197,8 @@ About 20 minutes of machine time for build, tests and gates.
    Patch 3 (Iteration 352): the comparison at 32 bits too (--widths 8,4). And why designs lose at
    32 bits (results/drafts/skew-32.md): knockouts name tag2 and fsys 3 (engine-side, to read as bugs)
    and the compiler gene's 64-bit-only gain.
+   Iteration 353: tag2's 32-bit cost confirmed (36%), in dispatch, not the cell type nor the PIC
+   register; selecting at both widths costs x1.86 the evaluation time - nearly twice the hours.
 0b. The next genes (results/drafts/next-genes.md, Iterations 323, 339): lab/evolve/jitleft.py
    measured it - the JIT leaves kernel 56% and corpus 99.7% to the interpreter (fib, loop,
    ackermann translated whole): the outer interpreter - INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK -

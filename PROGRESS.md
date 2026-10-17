@@ -6676,3 +6676,12 @@ fastest is 22% faster at 32); the compiler gene's 35% is 64-bit only; and fsys 3
 layer over SYSCALL - is the slow design's whole 32-bit loss (2x). Two of these read like engine
 inefficiencies at 4-byte cells rather than trade-offs (results/drafts/skew-32.md). And compare-fronts
 --widths 8,4: a section "At 32 bits", tested on two small databases - pending as patch 3.
+
+## Iteration 353 - 2026-10-17 - Claude
+
+**tag2 at 32 bits, and what two widths cost.** tag2's cost at 32 bits holds up - three repeats: 16%
+faster at 64 bits, 36% slower at 32. It lies in every operation's dispatch (the counted loop loses
+most), not in the call path; the cell type shrinks with the host, so not that; and the 32-bit engines'
+position-independent code (a base register spent in every dispatch) is real but not tag2's own cost -
+built -fno-pie, the ratio did not move. And selecting at both widths costs x1.86 the evaluation time
+(the draft guessed 1.2-1.5): a two-width run needs nearly twice the hours.
