@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 369.
+- master: Iteration 370.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -226,6 +226,12 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
    build: a held-out workload whose code footprint grows - generated programs of N words, hot and run
    once, and a compile-heavy one - each front design's time per dispatch against N.
+   **The generator is built** (Iteration 370: lab/evolve/footprint-gen.py - N words in levels, a
+   table of their tokens, a checksum; --defs-only for the compile phase): checksums agree on s6 and
+   seed 56's fastest (its JIT on) at N = 100, 1,000, 10,000, 30,000. Next: the experiment step for the
+   laptop - a sample of the front, each N full and --defs-only, repeated; time per call (run phase)
+   and per word (compile phase), each against s6 - with --calls at least 40 N, as below 30,000's
+   definitions (41 s on s6 here) swamp a fixed 200,000 calls.
 3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; helper calls and
    re-entry parked (results/drafts/jithelp-wip.patch, jitre-wip.patch) - the kernel still 54.6% left to
    the interpreter, INTERPRET stopping at (FIND) and PARSE-WORD at +!, operations re-entry cannot help.

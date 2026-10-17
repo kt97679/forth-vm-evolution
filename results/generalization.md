@@ -43,3 +43,17 @@ a JIT design would pay its translation on code run once. None of that is measure
 check: a held-out workload whose code footprint grows - generated programs of N words,
 N from hundreds to tens of thousands, run hot and run once, and a compile-heavy one -
 each front design's time per dispatch against N.
+
+**Iteration 370: the generator** - lab/evolve/footprint-gen.py: N colon definitions in L levels (a word
+calls one of the level below, by a test on its argument - chains of at most L, a shallow return stack
+at any N), a table of every word's token, and a driver running it round-robin for --calls calls; prints
+a checksum. --defs-only stops after the table: the run phase is the full program's time less it.
+Checked here: s6 and seed 56's fastest (a0a0277bf2, its JIT on) give the same checksums at N = 100,
+1,000, 10,000 and 30,000, both variants. Single runs on the development VM, only for scale: s6 defines
+10,000 words in 3.4 s and 30,000 in 41 s (its dictionary searched linearly - quadratic); the fastest,
+0.31 s and 3.0 s (hashed, still superlinear). The run phase grows with N too - 200,000 calls: s6 about
+0.03 s at N = 100 and 0.14 s at 10,000; the fastest 0.01 s and 0.06 s - the footprint the plan
+expected. At 30,000 the definitions swamp a fixed 200,000 calls (the difference within the noise of
+two 40-second runs), so the experiment scales --calls with N (at least 40 N): time per call is the
+measure, and cycling a footprint past the caches keeps the code cold however often each word runs.
+

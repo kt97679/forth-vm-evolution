@@ -7034,3 +7034,19 @@ out - that was the start; loop was selected from Iteration 41 (sieve held out), 
 is kernel, fib, corpus, loop, bubble, ackermann, with sieve and parse held out (git: 467dc55, 7814967).
 Both corrected. HANDOFF's open items rewritten to the state now - the old list still called the runner,
 the 32-bit follow-ups and the two-width batch to-dos, and seed 52 next.
+
+## Iteration 370 - 2026-10-17 - Claude
+
+**The footprint workload's generator** (lab/evolve/footprint-gen.py; results/generalization.md,
+section 3 and its Iteration 370 note): selection measures small programs whose hot code fits, so a
+held-out program whose code footprint grows - N words in levels, each calling one of the level below
+(chains of at most 8, any N), a table of their tokens run round-robin, a checksum; --defs-only for the
+compile phase. Its first version had two faults the validation caught: `7 AND +` takes two cells (now
+`DUP 7 AND +`, every operation one cell in, one out), and the table was only in the full variant, so
+the subtraction measured N dictionary lookups, not the run - read from timings that did not fit (N =
+100 and 10,000 making the same 200,000 calls 35 times apart). And my first comparison matched the
+interpreter's closing OK, not the checksum. Fixed: s6 and seed 56's fastest, its JIT on, agree at N =
+100, 1,000, 10,000 and 30,000 (55,288, 4,166, 24,548, 6,157). Rough single runs here: compile time
+quadratic on s6 (10,000 words 3.4 s, 30,000 41 s), superlinear on the hashed fastest (0.31 s, 3.0
+s); the run phase slowing with N on both (s6 0.03 to 0.14 s for 200,000 calls from N = 100 to 10,000)
+- the footprint effect, to be measured on the laptop with --calls scaled to N.
