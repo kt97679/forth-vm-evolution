@@ -6626,3 +6626,13 @@ the JIT opcode, with a header there. And re-entry faults even in the simplest ca
 so not QUIT; one hazard fixed on the way (an interpreted callee entered at its header repointed its
 "caller", the sentinel), not enough. gdb cannot run the engine; next, its fault handler made to print
 the faulting address.
+
+## Iteration 348 - 2026-10-17 - Claude
+
+**The re-entry fault located - and a doubt about last turn's proof.** gdb cannot run these engines;
+their own fault handler, given SA_SIGINFO in a scratch build (the lab's runtime installs it), printed
+the faulting rip, the landmarks and the native code's bytes. Execution jumped into the dictionary:
+U1's bytecode called as machine code. The disassembly shows why - U1's native code is an ordinary
+S_CALL stencil aimed at a bytecode address, not the interpreter call: some path sends a refused
+callee to S_CALL past the rewrite. And if helper stencils compile alike, last turn's "helper calls
+proven" may only mean those words ran as bytecode - to check with JITLOG before it is claimed again.

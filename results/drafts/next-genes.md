@@ -305,3 +305,28 @@ A snippet of run-time words, each variant's output against the same design with 
   or without address randomisation). **Next**: the fault handler (guard_trap) made to print the
   faulting rip and address (the signal's ucontext), in a scratch build - then the trampoline, the
   stencil, or the nested interpreter.
+
+## The re-entry fault, located (Iteration 348)
+
+gdb cannot run an engine (status 1, no output); the engine's own fault handler can say where. In a
+scratch build (never for a design): engines link the lab's runtime (-DRTLIB=1), whose rt_fault
+installs a one-argument handler without SA_SIGINFO; with 0x04000004 (SA_SIGINFO) and a three-
+argument wrapper, the handler printed the rip (ucontext + 40, gregs[16]), the fault address, the
+landmarks, and the native code's bytes - disassembled with
+`objdump -D -b binary -mi386:x86-64 --adjust-vma=16`. The minimal case
+(`: S1 S" hello world" ; : U1 S1 TYPE ; : T6 U1 ;  T6`):
+
+- rip = fault address = jit_mem + 0x10295a: execution jumped there - the dictionary, mapped right
+  after the JIT's 1 MB: **U1's bytecode, called as machine code**.
+- The sentinel [0c 02 00 00 00] and the trampoline (movabs rax, jit_leave; jmp rax) are right.
+- The native code: at 0x10 `push rax; call 0x10295a; mov rax,rdi; mov rdx,rsi; pop rax; jmp ...`,
+  then EXIT - **the ordinary S_CALL stencil**, not st_interp (x86-64's IMM_FN is a movabs of
+  0x6ea1ed5ea1ed5e66: an st_interp would show the movabs and a call through the register); at 0x30
+  T6: a tail jump to 0x10, then EXIT. So U1 was translated as a native call to a bytecode address,
+  bypassing the `f < 2 -> INTERP` rewrite - some path sends a refused callee to S_CALL: jit_inl1's
+  one-operation inlining, or the JITK emission loop's own treatment of calls. **Next**: read those
+  paths; JITLOG the translation of U1 and T6. Also: whether the bisection's helper words were
+  translated at all - "identical" proves nothing if they ran as bytecode; check with JITLOG before
+  calling the helpers proven.
+- A change kept in the scratch work (to carry into the draft): st_interp known by its holes (a
+  function and a literal), not by index - JITK's stencil variants have other indices.
