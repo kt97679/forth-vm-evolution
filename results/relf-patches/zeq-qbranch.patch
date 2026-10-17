@@ -1,0 +1,78 @@
+diff -ruN rp0/engine/cv8.c rp/engine/cv8.c
+--- a/engine/cv8.c	2026-10-17 16:23:07.748859268 +0000
++++ b/engine/cv8.c	2026-10-17 16:23:07.809843425 +0000
+@@ -1058,6 +1058,7 @@
+ L_branch8:  ip += (int8_t)BYTE(ip); NEXT();
+ L_0branch8: t = tos; POPT(); if (t) ip += 1; else ip += (int8_t)BYTE(ip); NEXT();
+ L_0branch: t = tos; POPT(); if (t) ip += 2; else ip += BROFF(ip); NEXT();
++L_zeq0branch: t = tos; POPT(); if (!t) ip += 2; else ip += BROFF(ip); NEXT();  /* `0= ?BRANCH` as one: branches when the flag is not zero (forth-vm-evolution, for relf's ledger 716) */
+ L_drop: POPT(); NEXT();
+ L_dup: PUSHT(tos); NEXT();
+ L_swap: t = NOS; NOS = tos; tos = t; NEXT();
+diff -ruN rp0/engine/opcodes.tab rp/engine/opcodes.tab
+--- a/engine/opcodes.tab	2026-10-17 16:23:07.748979492 +0000
++++ b/engine/opcodes.tab	2026-10-17 16:23:07.809494271 +0000
+@@ -61,6 +61,7 @@
+ tiny      0x45    (?DO)       L_qdo           -
+ tiny      0x46    EXECUTE     L_execute       -
+ tiny      0x47    @XT         L_atxt          -
++spec      0x60    0=?BRANCH   L_zeq0branch    b16
+ spec      0x61    push0       L_lit0          -
+ spec      0x62    push1       L_lit1          -
+ spec      0x63    push-1      L_litm1         -
+diff -ruN rp0/engine/relfasm64.4 rp/engine/relfasm64.4
+--- a/engine/relfasm64.4	2026-10-17 16:23:07.749000016 +0000
++++ b/engine/relfasm64.4	2026-10-17 16:23:07.811197068 +0000
+@@ -6,7 +6,7 @@
+ \ asm:fixpoint). The tables are relfasm-ops.4, from opcodes.tab.
+ S" forth/extend.4" INCLUDED  S" forth/asm64.4" INCLUDED
+ ALSO ASSEMBLER
+-LABEL L_0branch LABEL L_0branch8 LABEL L_2drop LABEL L_2dup LABEL L_access LABEL L_addi
++LABEL L_0branch LABEL L_zeq0branch LABEL L_0branch8 LABEL L_2drop LABEL L_2dup LABEL L_access LABEL L_addi
+ LABEL wild_jump LABEL L_allocate LABEL L_and LABEL L_atxt LABEL L_badesc LABEL L_badop LABEL L_branch
+ LABEL L_branch8 LABEL L_bye LABEL L_cellp LABEL L_cells LABEL L_cfetch LABEL L_chdir
+ LABEL L_chmod LABEL L_closedir LABEL L_closefile LABEL L_compare LABEL L_count LABEL L_cputimes
+@@ -558,6 +558,16 @@
+ r14 2 # add,
+ NEXT,
+ 1 L:  rax [ r14 ] word-ptr movsx,
++r14 rax add,
++NEXT,
++\ `0= ?BRANCH` as one (forth-vm-evolution, for relf's ledger 716): branches when the flag is not zero
++L_zeq0branch L:  rax r12 mov,
++POPT,
++rax rax test,
++1 F jnz,
++r14 2 # add,
++NEXT,
++1 L:  rax [ r14 ] word-ptr movsx,
+ r14 rax add,
+ NEXT,
+ L_drop L:  POPT,
+diff -ruN rp0/forth/kernel.4 rp/forth/kernel.4
+--- a/forth/kernel.4	2026-10-17 16:23:07.749659810 +0000
++++ b/forth/kernel.4	2026-10-17 16:23:07.811904170 +0000
+@@ -1718,6 +1718,14 @@
+   ?COMP
+   [OP] BRANCH BRANCH8-TOK BACK, ; IMMEDIATE
+ 
++: IF-BRANCH, ( --- )
++\ IF's branch (and WHILE's: POSTPONE IF). A 0= just compiled - the last foldable operation, at
++\ HERE - 1 - and this ?BRANCH become one opcode, 0=?BRANCH (96), which branches when its flag is not
++\ zero; 106 is 0='s opcode (forth-vm-evolution, for relf's ledger 716 - its RELF.md has the budget).
++  LAST-OP @ ?DUP IF DUP HERE 1- = SWAP C@ 106 = AND ELSE 0 THEN
++  IF LAST-OP @ REWIND NO-PEEP 96 OP, EXIT THEN
++  NO-PEEP [OP] ?BRANCH OP, ;
++
+ : IF    ( --- x)
+ \ Start an IF THEN or IF ELSE THEN construction.
+ \ Runtime: At IF a flag is taken from
+@@ -1725,7 +1733,7 @@
+ \ otherwise the part between ELSE and THEN. If there is no ELSE, the part
+ \ between IF and THEN is executed only if flag is true.
+   ?COMP
+-  NO-PEEP [OP] ?BRANCH OP, >MARK ; IMMEDIATE
++  IF-BRANCH, >MARK ; IMMEDIATE
+ 
+ : THEN ( x ---)
+ \ End an IF THEN or IF ELSE THEN construction.

@@ -11,7 +11,7 @@ the second is also a jump target). GPLv2 only, as relf (much of this is profile.
 import os, sys, re, subprocess, tempfile, shutil, contextlib, io, array, collections
 LAB = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 work = tempfile.mkdtemp(prefix='relf-pairs-'); R = os.path.join(work, 'relf')
-shutil.copytree(os.path.join(LAB, 'vendor', 'relf', 'tree'), R); os.chdir(R)
+shutil.copytree(os.environ.get('RELF_TREE') or os.path.join(LAB, 'vendor', 'relf', 'tree'), R, symlinks=True); os.chdir(R)   # RELF_TREE: another relf (a patched one: Iteration 360)
 subprocess.run(['make', '-s', 'relfsh64'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 def patch(text, old, new):
     n = text.count(old)

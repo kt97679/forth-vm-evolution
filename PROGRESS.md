@@ -6758,3 +6758,16 @@ coldest operation's slot, that operation then escaped. The coldest cost almost n
 ?BRANCH 2.18 % - the top three about 9.4 % of all dispatches, twelve about 18. A first count had
 offered DOVAR and DODOES as the coldest: they are data words' code fields, run each time a variable
 is but outside any code body, so uncounted - kept, with NOOP, out of the trade.
+
+## Iteration 360 - 2026-10-17 - Claude
+
+**The first instruction-set patch for relf: `0= ?BRANCH` as one opcode - correct by relf's own suite,
+2.1 % fewer dispatches.** Placed by relf's own rules: direct primitives are numbered by kernel.4's
+PRIMITIVE order, so a new one would renumber the synthetic band; spec opcodes stand at explicit
+numbers and the peephole emits them by number (PEEP-VAR's 100 and 101) - so 0=?BRANCH is spec 0x60,
+b16. Four files: its row in opcodes.tab (both engines' tables generated from it), the C handler
+(?BRANCH's, the test inverted), the assembly handler (jz to jnz), and kernel.4's IF-BRANCH, - IF's
+branch, which rewinds a just-compiled 0= as PEEP-VAR rewinds a call. relf-ab.sh: relf's whole make
+test passes (both engines and widths, images reproducing, the shell suites). relf-pairs.py on the
+patched shell: 385,963 runs of the new opcode, 2.10 % fewer dispatches. Its time, about 1 %, is under
+this VM's noise - the laptop's to measure.
