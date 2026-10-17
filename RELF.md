@@ -1,6 +1,7 @@
 # RELF.md - this lab and RelF
 
-**The immediate goal of this project is to be the base of RelF** (the owner, Iteration 356):
+**This project's aim is simplicity and minimalism** (GOALS.md; the owner, Iteration 72), and **its
+immediate goal is to be the base of RelF** (the owner, Iteration 356):
 <https://github.com/kt97679/relf> - Relative Forth, a self-hosting Forth and a POSIX shell written in
 it. RelF runs one byte-coded image on two engines: CV8 (engine/cv8.c, portable C) and relfasm64
 (x86-64, assembled by relf itself); `cross.4` compiles `kernel.4` into the images byte for byte, and
@@ -14,7 +15,9 @@ relf's shell. The order: **(1)** find the best generic Forth designs here, on th
 workloads; **(2)** then see how they fit relf and relf's shell; **(3)** only then, from that
 experience, tune relf for its shell specifically - and even there the owner would rather relf stay
 as generic as possible. So nothing in this lab is selected by relf's shell profile, and relf's shell
-workloads are not an objective of the search.
+workloads are not an objective of the search. And in every phase the aim stays GOALS.md's - simplicity
+and minimalism: what reaches relf is what earned its place by measurement in a generic design, in the
+simplest form that does the job (the owner, Iteration 368).
 
 Iterations 357-364 went ahead of this order: the three fusion patches (results/relf-patches/) were
 chosen from the shell's dispatch profile - phase-3 material, parked as reference. The tools stay for

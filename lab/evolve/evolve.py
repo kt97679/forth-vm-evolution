@@ -41,7 +41,10 @@ FITNESS, both minimised and kept as a Pareto front, so nothing is traded:
          counters can be read, CPU time otherwise - over kernel, fib, parse
          and corpus, every program loaded from a FILE (standard input would
          measure read() calls, not engines)
-  size   bytes of the self-hosting image
+  size   bytes of the engine plus the self-hosting image ('total': since
+         Iteration 75; before it, the image alone) - with speed, memory
+         (rss) and, under --widths 8,4, speed at 4-byte cells: the
+         objectives of dominates(). The aim behind them: GOALS.md.
 loop is HELD OUT: never selected on, reported for the survivors, so a
 design tuned to the four does not pass unnoticed.
 

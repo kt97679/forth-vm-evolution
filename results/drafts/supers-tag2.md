@@ -30,6 +30,10 @@ specialisations, format-10 words) have taken the rest.
 
 **The fix** (results/pending/tag2-pairs-after-seed57.patch): codes named through the table, wide codes
 kept. Tested: the fixed pool of a0a0277bf2 is the hand count's; the same genome without the tag - named
-right all along - gives the same ten pairs. **Open, for the owner**: format-10 words claim every slot
-first; whether pairs should compete for slots by value (+ XOR at 3.8 % against the weakest ops10 word)
-is a design question for after seed 57.
+right all along - gives the same ten pairs. **Decided (Iteration 368; the owner left it to the lab): no new mechanism - GOALS.md's rule.** A
+slot allocation by value would profile every design in evaluation and tie the genome to its profile:
+complexity, for one pair at 3.8 % of dispatches. The search can already make the trade: a pair listed
+first lies dormant, free to drift, until a mutation drops a format-10 word - which then weighs the
+word against the pair in one step. With the fix, the pool is right. **After seed 58, measured**: if
+no front design builds a real pair, or a knockout shows superinstructions buy nothing, the supers
+gene comes out of tag-2 designs - a mechanism that buys nothing comes out (rtlit, Iteration 59).

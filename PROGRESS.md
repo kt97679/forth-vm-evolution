@@ -6856,12 +6856,17 @@ the raw archives by their directory. From now on each iteration names the files 
 **Where the methods are**: lab/evolve/evolve.py's header - the genes (with each gene() definition's
 comment, the iteration that made it), the operators, and the objectives: speed, the geometric mean of
 end-to-end time (cycles where the hardware counters can be read, CPU time otherwise) over kernel, fib,
-parse and corpus, each program loaded from a file; size, the self-hosting image's bytes; loop held
-out, never selected on; since Iteration 354 (--widths 8,4) speed at 4-byte cells a fourth. The
+parse and corpus, each program loaded from a file; size, the engine's plus the image's bytes (since
+Iteration 75 - corrected at 368: this said the image's alone, as evolve.py's header did); memory (rss);
+loop held out, never selected on; since Iteration 354 (--widths 8,4) speed at 4-byte cells a fourth. The
 machines: results/amd-ryzen-8840hs.md (the laptop, every run) and results/armv7-tegra.md, dream.lan in
 the cross-machine checks below, lab/evolve/REMOTES for how each is checked. The run-by-run extremes for
 charts: results/progress-by-run.md (lab/evolve/progress-table.py). The stopping rule and every run's
 verdict: the seed reports below, and HANDOFF.md's standing decisions.
+
+**The aim, and the findings consolidated** (added at Iteration 368): GOALS.md - the aim, simplicity and
+minimalism (Iteration 72), how success is measured, the conventions and the register of what was
+rejected; the consolidated findings in the root documents: FINDINGS-CELL-WIDTH.md, FINDINGS-FOOTPRINT.md, FINDINGS-OUTER-INTERPRETER.md, FINDINGS-PERFORMANCE.md, FINDINGS-SPN.md, FORMAT-TAG2.md, JIT.md. The article's argument starts there; this log is their evidence, iteration by iteration.
 
 **The files no entry had named** - named here, by kind, each with its own title:
 
@@ -6995,3 +7000,19 @@ genome without the tag - named right all along - gives the same ten pairs. Pendi
 results/drafts/supers-tag2.md. Open for the owner: whether pairs should compete with format-10 words
 for the slots by value. Found by the generic pair analysis proposed at Iteration 365 - which turned
 out to exist already (price.py, design_pairs), so the work was auditing it rather than building it.
+
+## Iteration 368 - 2026-10-17 - Claude
+
+**The aim restated where a new chat reads first: simplicity and minimalism.** GOALS.md has made it the
+project's main goal since Iteration 72 - the smallest, simplest system that does the job; small images,
+a small and plain engine, few mechanisms, each easy to read and to remove; speed where it costs little,
+never as a reason for complexity - and README.md opens with it. But HANDOFF's "What this is" described
+the search and its objectives without it, and a summary written from there (Iteration 365's) left it
+out; the owner asked that it be explicit. Now HANDOFF opens with it, RELF.md puts it above relf ("in
+every phase the aim stays GOALS.md's"), and evolve.py's header says what size is: the engine's plus the
+image's bytes since Iteration 75 - its "the self-hosting image" predated that, and Iteration 366's
+methods note had repeated it (corrected there, and pointed to GOALS.md and the FINDINGS documents).
+The supers question, left to the lab by the owner, decided by GOALS.md's own rule: no new slot
+mechanism (it would tie each genome to its profile, for one pair at 3.8 % of dispatches); the fixed
+pool lets the search weigh a pair against a format-10 word in one mutation; after seed 58, if
+superinstructions still buy nothing, the gene comes out of tag-2 designs, as rtlit did.
