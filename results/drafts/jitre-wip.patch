@@ -1,5 +1,5 @@
 diff --git a/engine/jit.c b/engine/jit.c
-index 1beb235..4843245 100644
+index 1beb235..ae75c05 100644
 --- a/engine/jit.c
 +++ b/engine/jit.c
 @@ -199,6 +199,16 @@ static const unsigned short jit_esc[256] = {
@@ -48,13 +48,16 @@ index 1beb235..4843245 100644
  #endif
      if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, 8); }
      return dst + n;
-@@ -640,6 +663,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+@@ -640,6 +663,12 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
  #endif
  #if JITLOG
          if (f < 2) { jitlog_at = arg[i]; jitlog_why = 4; }
 +#endif
 +#if JITRE
-+        if (f < 2) { opl[i] = JIT_L_INTERP; continue; }   /* Iteration 346: interpreted, not refused - arg[i] its body */
++        if (f < 2) {                                      /* Iteration 346: interpreted, not refused - arg[i] its body */
++            if (BYTE(arg[i]) == JIT_CODE) arg[i] += 5;      /* 347: past the header - entered at it, L_x_jit would repoint the "caller", the sentinel */
++            opl[i] = JIT_L_INTERP; continue;
++        }
  #endif
          if (f < 2) return 0;
          arg[i] = (UNS64)(uintptr_t)(jit_mem + f); opl[i] = 0xFFFE;

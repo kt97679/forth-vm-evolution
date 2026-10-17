@@ -6615,3 +6615,14 @@ caller. It builds and links; the design dies with the fault handler's exit 70 ri
 Until now no word with a helper call, an interpreted call or vf had ever run natively - so this is
 the first execution of all of them. Next turn: bisect them one at a time; QUIT - RP!, CATCH - the
 likeliest. The draft saved (results/drafts/jitre-wip.patch).
+
+## Iteration 347 - 2026-10-17 - Claude
+
+**The bisection: helper calls proven, two faults named.** Run-time words, each variant's output
+against the JIT off: with jitvar and jithelp, identical - PLACE's and (PARSE)'s helpers and COUNT run
+natively and right. With image headers, exactly one of the outer interpreter's 18 words breaks it,
+(PARSE): a one-operation word, which the compiler inlines by copying its body's first operation -
+the JIT opcode, with a header there. And re-entry faults even in the simplest case, startup fine -
+so not QUIT; one hazard fixed on the way (an interpreted callee entered at its header repointed its
+"caller", the sentinel), not enough. gdb cannot run the engine; next, its fault handler made to print
+the faulting address.

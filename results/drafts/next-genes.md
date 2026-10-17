@@ -286,3 +286,22 @@ in native code cannot be returned to by a THROW in the nested interpreter. **Nex
 CALLC, h_place, h_parse, COUNT and vf each on a small word compiled at run time, run natively; (2) a
 JITLOG run naming the word translated last before the fault; (3) the JIT refusing words with RP!,
 CATCH or a return-stack trick (as JITX refuses unbalanced >R) - then jitre again.
+
+## The bisection (Iteration 347)
+
+A snippet of run-time words, each variant's output against the same design with the JIT off
+(c549c0677c; T2 calls PLACE, T3 COUNT, T4 (PARSE), T6 a callee the JIT refuses):
+- **jitvar + jithelp (run-time words only): identical** - PLACE's and (PARSE)'s helpers and COUNT's
+  entry run natively and right. The helper calls are proven.
+- **jitimg 1 + jitvar + jithelp: broken** - one header at a time over the outer interpreter's 18
+  words, exactly one breaks it: **(PARSE)**. A one-operation word, which the compiler inlines by
+  copying the operation at its body's start - with the header there, it copies the JIT opcode. Fix
+  (to make): the converter gives no header to a word whose body is one operation and EXIT.
+- **+ jitre: T6 faults** ("relf: segmentation fault", status 70) even in the simplest case, startup
+  fine (so not QUIT). One hazard fixed on the way: entered at its header, an interpreted callee runs
+  L_x_jit, which for a word left bytecode repoints its caller's call - found from the return address,
+  here the sentinel: patching the bytes before it. The callee is now entered past the header (in the
+  draft) - not sufficient: T6 still faults. gdb could not run the engine (status 1, no output, with
+  or without address randomisation). **Next**: the fault handler (guard_trap) made to print the
+  faulting rip and address (the signal's ucontext), in a scratch build - then the trampoline, the
+  stencil, or the nested interpreter.
