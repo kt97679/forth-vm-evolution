@@ -6737,3 +6737,14 @@ out); with them relf passes its whole suite on this VM. The noise floor, A again
 medians within 6 % of 1, intervals about 10 % wide either side (start, 30 %) - so this VM gates
 correctness and large effects, and the ledger's candidates, 1.5-5 % of dispatches each, must be
 measured on the laptop, as relf's own reports were. Next: the realistic script's instruction pairs.
+
+## Iteration 358 - 2026-10-17 - Claude
+
+**relf's realistic shell script, instruction by instruction and pair by pair - and the constraint
+that frames relf's request.** tools/relf-pairs.py runs relf's own counting engine (its profile.py's)
+and decodes the shell image, recording every instruction: 18,401,921 dispatches, agreeing with relf's
+profile. VAR@ - a variable fetched in one dispatch - is 15.2 % of them; the pairs are led by VAR@ VAR@
+(4.2 %) and VAR@ + (3.1 %), then 0= ?BRANCH (2.3 %) and + @ (1.8 %); the top ten about 18 %. But relf
+had fused pairs and gave them up at its Iteration 536 (QUESTIONS.md A15) to bring its one-byte
+opcodes to 64, the two-bit tag's prerequisite. So each candidate is a trade within that budget: its
+pair's dispatches against those of the operation it pushes into the escape band.

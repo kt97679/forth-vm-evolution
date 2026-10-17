@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 357.
+- master: Iteration 358.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -74,7 +74,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   its sources (vendor/relf/tree); relf's ledger asks this lab about XF@/XV@, DEFER, (+LOOP), PICK and
   fused pairs for CV8, measured on relf's shell workloads (bench-vm.py). tools/relf-ab.sh, the A/B harness,
   done (Iteration 357): relf's make test as a regression gate, then bench-vm.py; this VM's noise floor
-  +-10 % - the candidates' small effects are the laptop's to measure. Next: tools/relf-pairs.py.
+  +-10 % - the candidates' small effects are the laptop's to measure. tools/relf-pairs.py (Iteration
+  358): VAR@ 15.2 %, its pairs lead; relf's 64 one-byte opcodes (A15) make each candidate a trade.
 - **Seed 57 next** (the owner, Iteration 355: one 12-hour run, not two of 6 - each run's fixed part
   with two widths about 3 h 40 min): the first run selecting at both widths, with jitimg and jitvar;
   the comparison at both widths. The reserve knows --widths now (164 min; the evolution ~8 h 20 min).
