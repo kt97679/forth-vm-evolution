@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 365.
+- master: Iteration 366.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -140,6 +140,10 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## The owner's standing decisions
 
+- **An article from the findings - a goal, deprioritized (Iteration 366).** Revisited when the
+  best designs are found, and written from PROGRESS.md: so every iteration has its entry, with its
+  numbers, and **names every file it adds** under results/ (PROGRESS.md, Iteration 366: the audit and
+  the index of what no entry had named).
 - **A generic Forth first (Iteration 365).** This lab builds a generic Forth, with no optimization
   for relf's shell: (1) the best generic designs, found here on this lab's own workloads; (2) then how
   they fit relf and its shell; (3) only then relf tuned for its shell - and relf too kept as generic

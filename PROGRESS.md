@@ -3677,7 +3677,7 @@ database), the held-out check 0 of 12 of seed 41's front differing from s6
 (2,119 tests, the suite whole). NEXT-RUN: seed 42, 6 hours - the process
 changes against seed 41 on equal time.
 
-## Iteration 199 - 2026-10-11 - Claude
+## Iterations 199-202 - 2026-10-11 - Claude
 
 **Seed 41's 37 converter deaths fixed.** The converter decides which
 branches can be short before the tag-2 map exists (escaped opcodes 1 byte,
@@ -3697,7 +3697,10 @@ skips the same third of children, losing 1 of 163 front designs (the forest
 none); at 20%/2% it is overconfident (46 lost) - it cannot see gene
 interactions. Parents predict poorly (25.7%): a child is not like its parents.
 The choice is the owner's: the forest with scikit-learn, or the additive model
-at the conservative margins only.
+at the conservative margins only. (Iteration 200, the second after-seed-42
+patch: the additive model's screen, at 30%/5%, one child in ten audited -
+results/applied-after-seed42/screen-after-seed42.patch. Iteration 201 had no
+commit of its own; this entry, re-headed at Iteration 366, covers 199-202.)
 
 **The gene fsys built** - the third after-seed-42 patch. Six file words and
 RESIZE in Forth over SYSCALL in an -fsys dump, their seven handlers out of the
@@ -4746,6 +4749,12 @@ NEXT-RUN: `seed 47 tag2 6h then experiment compare-fronts.py --rounds 6
 seed 47 now the run, the after-seed-46 batch applied, and results/pending
 empty.
 
+## Iteration 249 - 2026-10-13 - Claude (entry written at Iteration 366, from its commit)
+
+**lab/evolve/engines-check.py**: s6 taken down every engine generator's path (19), each built and
+its corpus run; part of run-tests, so a broken generator stops the laptop before a run rather than
+costing the run's tail, as seed 46's was lost.
+
 ## Iteration 250 - 2026-10-13 - Claude
 
 **A gene-interaction study, from seed 46's own mutations**
@@ -4792,6 +4801,11 @@ kernel's struct in place, SIGSEGV alone (the engine maps no file, so no
 SIGBUS), and the handler uses the exit already linked: +128 to +160. Checks:
 run-tests (19 generator paths), validation, the gate 148 of 148, the suite on
 four front designs. Pending in `results/pending/` until seed 47 is processed.
+
+## Iteration 253 - 2026-10-13 - Claude (entry written at Iteration 366, from its commit)
+
+**lab/evolve/progress-table.py and results/progress-by-run.md**: every run's extremes (fastest,
+smallest and the rest, run by run) in one table - the data behind the progress charts.
 
 ## Iteration 254 - 2026-10-13 - Claude
 
@@ -6830,3 +6844,135 @@ kept as generic as possible. Recorded as a standing decision (HANDOFF) and at th
 Iterations 357-364 went ahead of it: the three fusion patches were chosen from the shell's dispatch
 profile - parked as phase-3 reference, their laptop timing optional. The relf profile for the search
 and the port list from it are dropped; the tools stay for phases 2 and 3.
+
+## Iteration 366 - 2026-10-17 - Claude
+
+**An article from the findings: a goal, deprioritized** (the owner): revisited when the best designs
+are found, and to be written from this log - so this log must hold, or name, everything it needs.
+Audited: every iteration from 1 has its entry now (199's re-headed to 199-202, which it covered; 249
+and 253 written from their commits); every file under results/ is named here or in an earlier entry,
+the raw archives by their directory. From now on each iteration names the files it adds.
+
+**Where the methods are**: lab/evolve/evolve.py's header - the genes (with each gene() definition's
+comment, the iteration that made it), the operators, and the objectives: speed, the geometric mean of
+end-to-end time (cycles where the hardware counters can be read, CPU time otherwise) over kernel, fib,
+parse and corpus, each program loaded from a file; size, the self-hosting image's bytes; loop held
+out, never selected on; since Iteration 354 (--widths 8,4) speed at 4-byte cells a fourth. The
+machines: results/amd-ryzen-8840hs.md (the laptop, every run) and results/armv7-tegra.md, dream.lan in
+the cross-machine checks below, lab/evolve/REMOTES for how each is checked. The run-by-run extremes for
+charts: results/progress-by-run.md (lab/evolve/progress-table.py). The stopping rule and every run's
+verdict: the seed reports below, and HANDOFF.md's standing decisions.
+
+**The files no entry had named** - named here, by kind, each with its own title:
+
+**Seed reports - each run's verdict, front and facts**:
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed1.md` - Evolution on the Ryzen 7 PRO 8840HS - the first run
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed2.md` - Evolution on the Ryzen 7 PRO 8840HS - seed 2
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed6.md` - Seed 6 on the AMD Ryzen 7 PRO 8840HS (Iteration 36)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed7.md` - Seed 7 on the AMD Ryzen 7 PRO 8840HS (Iteration 40)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed8.md` - Seed 8 on the AMD Ryzen 7 PRO 8840HS (Iteration 42)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed9.md` - Seed 9 on the AMD Ryzen 7 PRO 8840HS (Iteration 45)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed10.md` - Seed 10 on the AMD Ryzen 7 PRO 8840HS (Iteration 47)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed11.md` - Seed 11 on the AMD Ryzen 7 PRO 8840HS (Iteration 52)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed12.md` - Seed 12 on the AMD Ryzen 7 PRO 8840HS (Iteration 53)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed13.md` - Seed 13 on the AMD Ryzen 7 PRO 8840HS (Iteration 56)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed14.md` - Seed 14 on the AMD Ryzen 7 PRO 8840HS (Iteration 62)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed15.md` - Seed 15 on the AMD Ryzen 7 PRO 8840HS (Iteration 63)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed16.md` - Seed 16 on the AMD Ryzen 7 PRO 8840HS (Iteration 72)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed17.md` - Seed 17 on the AMD Ryzen 7 PRO 8840HS (Iteration 76)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed18.md` - Seed 18 on the AMD Ryzen 7 PRO 8840HS (Iteration 77)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed19.md` - Seed 19 on the AMD Ryzen 7 PRO 8840HS (Iteration 78)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed20.md` - Seed 20 on the AMD Ryzen 7 PRO 8840HS (Iteration 79)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed21.md` - Seed 21 on the AMD Ryzen 7 PRO 8840HS (Iteration 82)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed22.md` - Seed 22 on the AMD Ryzen 7 PRO 8840HS (Iteration 83)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed23.md` - Seed 23 on the AMD Ryzen 7 PRO 8840HS (Iteration 86)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed30.md` - Seed 30 on the AMD Ryzen 7 PRO 8840HS - the first run with jitx (Iteration 109)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed36.md` - Seed 36 on the AMD Ryzen 7 PRO 8840HS - from scratch: the anchoring test (Iteration 123)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed40.md` - Seed 40 on the AMD Ryzen 7 PRO 8840HS - the batch's first run: the JIT genes, half the time of the best before (Iteratio
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed41.md` - Seed 41 on the AMD Ryzen 7 PRO 8840HS - small: the JIT genes spread, the gene set converging (Iteration 198)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed42.md` - Seed 42 on the AMD Ryzen 7 PRO 8840HS - not small: the knee moved (Iteration 209)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed44.md` - Seed 44 on the AMD Ryzen 7 PRO 8840HS - small, the first: fsys 5 found its place at the small end (Iteration 230)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed47.md` - Seed 47 on the AMD Ryzen 7 PRO 8840HS - small: every measure inside the rule, hypervolume +1.4% (Iteration 269)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed49.md` - Seed 49 on the AMD Ryzen 7 PRO 8840HS - not small: hypervolume +4.0% (Iteration 288)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed50.md` - Seed 50 on the AMD Ryzen 7 PRO 8840HS - small: hypervolume +0.4% (Iteration 296)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed51.md` - Seed 51 on the AMD Ryzen 7 PRO 8840HS - small, the fastest +4.9% (Iteration 300)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed52.md` - Seed 52 on the AMD Ryzen 7 PRO 8840HS - small (Iteration 310)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed53.md` - Seed 53 on the AMD Ryzen 7 PRO 8840HS - small (Iteration 320)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed54.md` - Seed 54 on the AMD Ryzen 7 PRO 8840HS - small (Iteration 333)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed55.md` - Seed 55 on the AMD Ryzen 7 PRO 8840HS - small; the first run checked at 32 bits (Iteration 334)
+- `results/evolve-amd-ryzen-7-pro-8840hs-seed56.md` - Seed 56 on the AMD Ryzen 7 PRO 8840HS - small; the first run checked on four machines (Iteration 354)
+
+**What each gene is worth - knockouts**:
+- `results/evolve-knockout-amd-ryzen-7-pro-8840hs.md` - What each gene is worth - knockouts on the Ryzen 7 PRO 8840HS
+
+**Cross-machine checks**:
+- `results/xcheck-dream-seed54.md` - dream.lan's check of seed 53's front, during seed 54 (Iteration 333)
+- `results/xcheck-dream-seed55.md` - dream.lan's checks of seed 54's front, during seed 55 (Iteration 334)
+- `results/xcheck-seed56.md` - The checks of seed 55's front during seed 56 - four machines (Iteration 354)
+
+**Machines and their measurements**:
+- `results/amd-ryzen-7-pro-8840hs-x86_64-run1.md` - Results
+- `results/amd-ryzen-7-pro-8840hs-x86_64-run2.md` - Results
+- `results/amd-ryzen-8840hs.md` - AMD Ryzen 7 PRO 8840HS, 16 cores
+- `results/armv7-tegra.md` - ARMv7 (NVIDIA Tegra), 4 cores, Gentoo
+- `results/spn-amd-ryzen-7-pro-8840hs-x86_64.md` - SPN measurements: AMD Ryzen 7 PRO 8840HS w/ Radeon 780M Graphics
+
+**Drafts - scripts, patches and data behind the analyses**:
+- `results/drafts/callrel-draft.patch` - a patch
+- `results/drafts/founder-variants-iter187.txt` - a measurement's raw output
+- `results/drafts/frontmeasures.py` - a script
+- `results/drafts/gp-credit.py` - a script
+- `results/drafts/gp-linkage.py` - a script
+- `results/drafts/hybprice-iter172.txt` - a measurement's raw output
+- `results/drafts/hybprice.py` - a script: hybprice: the hybrid stack/register design priced on every executed dispatch,
+- `results/drafts/hybprice3-iter173.txt` - a measurement's raw output
+- `results/drafts/hybprice3.py` - a script: hybprice: the hybrid stack/register design priced on every executed dispatch,
+- `results/drafts/jithelp-wip.patch` - a patch
+- `results/drafts/loop-audit-chains.py` - a script
+- `results/drafts/loop-audit-inventory.py` - a script
+- `results/drafts/loop-audit-profile.py` - a script
+- `results/drafts/opcall-repro.py` - a script
+- `results/drafts/pgo-draft.patch` - a patch
+- `results/drafts/regprice-iter178.txt` - a measurement's raw output
+- `results/drafts/relf-gene-classes.md` - This lab's genes, by what relf would pay to adopt one (Iteration 363; RELF.md item 4)
+- `results/drafts/skew-32-front.jsonl` - data, one JSON record per line
+- `results/drafts/skew-32-knockouts.jsonl` - data, one JSON record per line
+- `results/drafts/surrogate-additive.py` - a script
+- `results/drafts/surrogate-parents.py` - a script
+- `results/drafts/surrogate-replay.py` - a script
+- `results/drafts/surrogate-train.py` - a script
+- `results/drafts/threads-profile.py` - a script
+- `results/drafts/two-width-scratch-db.jsonl` - data, one JSON record per line
+
+**Gene studies and analyses**:
+- `results/bss.md` - Scratch buffers out of the image file: the gene `bss`
+- `results/dropx8.md` - The compiler's X8 copies, dropped: the gene `dropx8`
+- `results/fused-keep-tests.md` - Tests that keep their value: DUP ?BRANCH and OVER ?BRANCH
+- `results/jit-kernel-words.md` - Kernel words made native, priced (Iteration 103)
+- `results/kfast.md` - The Forth sources: where the dispatches go, and the gene `kfast`
+- `results/lean.md` - Build artifacts left out of the image: the gene `lean`
+- `results/price-hotcalls-seed3-front.md` - One-byte calls through a table of hot words - priced on seed 3's front
+- `results/relf-pairs-realistic.md` - relf's realistic shell script, by instruction and by adjacent pair (Iteration 358)
+- `results/rtimm.md` - n + and SWAP n + in code compiled at run time: the gene `rtimm`
+- `results/rtloopall.md` - rtloop for a design with all eight loop opcodes: the gene `rtloopall`
+
+**Archives, named by directory**:
+- `results/applied-after-seed39/` - the batch applied after seed 39: ORDER.md names each patch, its order and its tests (15 files)
+- `results/applied-after-seed40/` - the batch applied after seed 40: ORDER.md names each patch, its order and its tests (6 files)
+- `results/applied-after-seed41/` - the batch applied after seed 41: ORDER.md names each patch, its order and its tests (27 files)
+- `results/applied-after-seed42/` - the batch applied after seed 42: ORDER.md names each patch, its order and its tests (9 files)
+- `results/applied-after-seed43/` - the batch applied after seed 43: ORDER.md names each patch, its order and its tests (5 files)
+- `results/applied-after-seed44/` - the batch applied after seed 44: ORDER.md names each patch, its order and its tests (6 files)
+- `results/applied-after-seed45/` - the batch applied after seed 45: ORDER.md names each patch, its order and its tests (7 files)
+- `results/applied-after-seed46/` - the batch applied after seed 46: ORDER.md names each patch, its order and its tests (5 files)
+- `results/applied-after-seed47/` - the batch applied after seed 47: ORDER.md names each patch, its order and its tests (7 files)
+- `results/applied-after-seed50/` - the batch applied after seed 50: ORDER.md names each patch, its order and its tests (5 files)
+- `results/applied-after-seed51/` - the batch applied after seed 51: ORDER.md names each patch, its order and its tests (3 files)
+- `results/applied-after-seed52/` - the batch applied after seed 52: ORDER.md names each patch, its order and its tests (3 files)
+- `results/applied-after-seed54/` - the batch applied after seed 54: ORDER.md names each patch, its order and its tests (2 files)
+- `results/applied-after-seed55/` - the batch applied after seed 55: ORDER.md names each patch, its order and its tests (2 files)
+- `results/applied-after-seed56/` - the batch applied after seed 56: ORDER.md names each patch, its order and its tests (4 files)
+- `results/drafts/chat-to-iter265/` - the earlier chat's working material to Iteration 265: logs, scripts, jobs, patches (457 files)
+- `results/drafts/fsys/` - 5 files
+- `results/pending/` - 2 files
+- `results/relf-patches/` - 5 files
