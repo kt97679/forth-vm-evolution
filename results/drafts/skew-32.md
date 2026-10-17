@@ -61,3 +61,23 @@ Five designs of seed 55's front, three rounds, best of two passes: one width 15.
 **x1.86 the evaluation time, 46% fewer designs an hour** (the draft guessed 1.2-1.5x: the 32-bit pass
 repeats the build, the corpus and kernel check and the measurement). A run with `widths` wants nearly
 twice the hours for the same search.
+
+## fsys 3 at 32 bits - mostly this VM's artifact (Iteration 353, a correction)
+
+By workload, fsys 3 over s6's (native) file layer at 32 bits: **kernel 6.64x, corpus 4.60x** - the two
+that read files - the rest 1.06-1.32; at 64 bits kernel 1.09, corpus 1.49. strace on the kernel
+workload: fsys 3 makes the same calls at both widths - read 2236 and 2238, **lseek 2184**, write 292 -
+against the native layer's 212 reads: file-sysc3.4's READ-LINE reads a block and seeks back past the
+line, two system calls a line (by design; an earlier reading "lseek only at 32 bits" was strace -c's
+table sorted by time, not count). So the work is the same; **each 32-bit system call costs more**.
+
+How much more, here: 200,000 getpid calls - **64-bit syscall 0.09 us, 32-bit int $0x80 12.49 us,
+about 140 times**. This VM is a sandboxed microVM (Linux 6.18.44-fc, built by builder@sandboxing),
+where the 32-bit entry is pathologically slow; on real hardware it costs perhaps two or three times
+the 64-bit one. So **fsys 3's 2x at 32 bits, measured here, is mostly the VM** - on the laptop, dream
+and the Tegra it should be far smaller (seed 56's dream.lan 32-bit check, real hardware, will say).
+And every 32-bit ratio measured on this VM is inflated where a workload makes system calls (kernel,
+corpus: files read, output written) - in favour of designs making fewer of them than s6.
+
+**tag2's cost stands**: its largest share is the counted loop, which makes no system calls - a CPU
+effect, not the VM's. The laptop's own two-width selection measures on real hardware: not affected.

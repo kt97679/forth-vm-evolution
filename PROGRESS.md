@@ -6685,3 +6685,10 @@ most), not in the call path; the cell type shrinks with the host, so not that; a
 position-independent code (a base register spent in every dispatch) is real but not tag2's own cost -
 built -fno-pie, the ratio did not move. And selecting at both widths costs x1.86 the evaluation time
 (the draft guessed 1.2-1.5): a two-width run needs nearly twice the hours.
+**And a correction.** fsys 3's 2x at 32 bits looked like a file layer seeking at 4-byte cells; strace
+counted the same calls at both widths (a read and a seek back for every line, by design) - my first
+reading had taken strace's time-sorted table for counts. The difference is each call's cost, and
+here that is the VM: a microbenchmark puts a 32-bit int $0x80 at 12.49 us against 0.09 us for a
+64-bit syscall - 140 times, where real hardware has two or three. So fsys 3's 32-bit penalty measured
+on this VM is mostly the VM's; every 32-bit ratio measured here is inflated where a workload makes
+system calls. tag2's cost stands - it sits in a loop that makes none.

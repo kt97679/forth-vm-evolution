@@ -199,6 +199,8 @@ About 20 minutes of machine time for build, tests and gates.
    and the compiler gene's 64-bit-only gain.
    Iteration 353: tag2's 32-bit cost confirmed (36%), in dispatch, not the cell type nor the PIC
    register; selecting at both widths costs x1.86 the evaluation time - nearly twice the hours.
+   And a correction: this VM's 32-bit system calls cost 140x its 64-bit ones (12.49 against 0.09 us) -
+   fsys 3's 32-bit penalty measured here is mostly the VM; tag2's (in a loop without calls) stands.
 0b. The next genes (results/drafts/next-genes.md, Iterations 323, 339): lab/evolve/jitleft.py
    measured it - the JIT leaves kernel 56% and corpus 99.7% to the interpreter (fib, loop,
    ackermann translated whole): the outer interpreter - INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK -
