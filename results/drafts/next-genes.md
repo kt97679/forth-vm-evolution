@@ -330,3 +330,27 @@ landmarks, and the native code's bytes - disassembled with
   calling the helpers proven.
 - A change kept in the scratch work (to carry into the draft): st_interp known by its holes (a
   function and a literal), not by index - JITK's stencil variants have other indices.
+
+## Interpreter re-entry works (Iteration 349)
+
+The located fault had a one-line cause: **JIT_L_INTERP was 65534 - 0xFFFE, the translator's own
+marker for "a call resolved"**. The converter took max(t2_names()) + 1, and t2_names holds a special
+key at 65533 beside the operations (0-130); so every interpreted call was emitted as an ordinary
+native call to its argument - a bytecode address (the disassembly: st_call's exact bytes, its call
+aimed at S1 + 5, its tail jump at TYPE). Now the first index above the operations, asserted below
+the markers (and jit_ops no longer 65,535 entries).
+
+With re-entry a refused callee no longer stops its caller's translation - so the decoder read on
+past a call to (S") into its inline string, the bytes taken for calls. jit_rtouch: a callee that reads
+or pops the return stack below its own entry (R> or R@ with no >R before - its caller's return
+address) refuses its caller, as before. And st_interp is known by its holes (a function and a
+literal), not by index.
+
+- The minimal program (S1 with a string, U1 calling S1 and TYPE, T6 calling U1): S1 refused for
+  (S") (why 4), U1 translated with two interpreted calls, T6 calling U1 natively - **output identical
+  to the JIT off**, status 0; with T2 (PLACE's helper), T3 (COUNT), T4 ((PARSE)'s helper) - identical.
+- **The helper words translated, verified**: the log shows T2, T3, T4 given native code (0x10, 0x70,
+  0x80) - last turn's "proven" now is.
+- **Next**: (PARSE)'s image header (jitimg 1 + jithelp) - to re-check now; the corpus and the kernel
+  with re-entry; the engine paths, the forced gate; then jitleft --why: does the outer interpreter
+  translate, and do kernel and corpus get faster.

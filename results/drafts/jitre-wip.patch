@@ -1,5 +1,5 @@
 diff --git a/engine/jit.c b/engine/jit.c
-index 1beb235..ae75c05 100644
+index 1beb235..e1d645a 100644
 --- a/engine/jit.c
 +++ b/engine/jit.c
 @@ -199,6 +199,16 @@ static const unsigned short jit_esc[256] = {
@@ -19,7 +19,19 @@ index 1beb235..ae75c05 100644
  static ucell jit_rp;                    /* the return stack while native code runs: IMM_RP */
  static UNS64 jit_cbase;                 /* the image base: calls are offsets from it */
  #if JITLOG
-@@ -228,6 +238,13 @@ static int jit_init(void) {
+@@ -209,6 +219,11 @@ static UNS64 jit_cbase;                 /* the image base: calls are offsets fro
+ #include <stdio.h>
+ #include <stdlib.h>
+ static UNS64 jitlog_at; static int jitlog_why;
++static void jitlog_note(int c, UNS64 a, UNS64 b, UNS64 v) {    /* scratch */
++    static FILE *f; const char *p;
++    if (!f && (p = getenv("JITLOG")) != NULL) f = fopen(p, "a");
++    if (f) { fprintf(f, "%c %lx %lx %lx\n", c, (unsigned long)(a - jit_cbase), (unsigned long)(b - jit_cbase), (unsigned long)v); fflush(f); }
++}
+ static void jitlog_refused(UNS64 w) {
+     static FILE *f; const char *p;
+     if (!f && (p = getenv("JITLOG")) != NULL) f = fopen(p, "a");
+@@ -228,6 +243,13 @@ static int jit_init(void) {
          void *m = mmap(0, JIT_MEM, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
          jit_scan();
          if (m == MAP_FAILED) state = -1; else { jit_mem = m; state = 1; }
@@ -33,7 +45,7 @@ index 1beb235..ae75c05 100644
      }
      return state == 1;
  }
-@@ -258,7 +275,13 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+@@ -258,7 +280,13 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
      }
      if (t->imm >= 0) memcpy(dst + t->imm, &val, 8);
  #if JITHELP
@@ -41,19 +53,62 @@ index 1beb235..ae75c05 100644
 +    if (t->fn >= 0) {                                  /* a helper call: its value is the helper */
 +        UNS64 fv_ = val;
 +#if JITRE
-+        if (t == &jit_st[S_INTERP]) fv_ = (UNS64)(uintptr_t)jit_interp;   /* the body is the value; the function the interpreter */
++        if (t->imm >= 0) fv_ = (UNS64)(uintptr_t)jit_interp;   /* 348: st_interp by its holes - a function and a literal (st_callc has only the first); by index it would miss JITK's variants */
 +#endif
 +        memcpy(dst + t->fn, &fv_, 8);
 +    }
  #endif
      if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, 8); }
      return dst + n;
-@@ -640,6 +663,12 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+@@ -457,6 +485,7 @@ static uint32_t jit_word(UNS64 w, int depth) {
+     f = jit_body(w, w + 5, end, depth);
+ #if JITLOG
+     if (!f) jitlog_refused(w);
++    jitlog_note('T', w, w, f);
+ #endif
+     if (f) jit_st32(w + 1, f);
+     return f;
+@@ -529,6 +558,32 @@ static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, co
+ }
+ #endif
+ 
++#if JITRE
++/* Iteration 349: does the word at a read or pop the return stack below its own entry - its caller's
++   return address (a (S") reading the string after its call)? Then its caller cannot be translated past
++   the call: what follows the call is data. Read to its EXIT, an operation unknown, or 64 operations. */
++static int jit_rtouch(UNS64 a) {
++    int d = 0, n_, j;
++    if (BYTE(a) == JIT_CODE) a += 5;
++    for (n_ = 0; n_ < 64; n_++) {
++        UNS8 b = BYTE(a);
++        if (T2_CALL(b)) { a += (UNS64)T2_CALLW(b); continue; }
++        {   unsigned L = jit_one[T2_ONEIX(b)]; a++;
++            if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
++            if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 0;
++            for (j = 0; j < jit_ops[L].n; j++) {
++                int s = jit_ops[L].st[j];
++                if (s == S_TOR) d++;
++                else if (s == S_FROMR || s == S_RFETCH) { if (!d) return 1; if (s == S_FROMR) d--; }
++            }
++            switch (jit_ops[L].opnd) { case 1: case 5: case 6: a += 1; break; case 2: case 7: a += 2; break;
++                case 3: a += 4; break; case 4: a += 8; break; default: break; }
++            if (jit_ends(L)) return 0;
++        }
++    }
++    return 0;
++}
++#endif
+ /* The operations from a to end - end 0: find it, a word without a header
+    (jitx) - of the word w: a call to w is a call to this code itself. */
+ #if JITX
+@@ -640,6 +695,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
  #endif
  #if JITLOG
          if (f < 2) { jitlog_at = arg[i]; jitlog_why = 4; }
++        jitlog_note('C', w, arg[i], f);                 /* scratch: each callee's decision */
 +#endif
 +#if JITRE
++        if (f < 2 && jit_rtouch(arg[i])) return 0;        /* 349: it pops its caller's return address - (S")'s inline data: refused, as before */
 +        if (f < 2) {                                      /* Iteration 346: interpreted, not refused - arg[i] its body */
 +            if (BYTE(arg[i]) == JIT_CODE) arg[i] += 5;      /* 347: past the header - entered at it, L_x_jit would repoint the "caller", the sentinel */
 +            opl[i] = JIT_L_INTERP; continue;
@@ -123,16 +178,17 @@ index a955bfc..c66dd69 100644
      if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
      if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
 diff --git a/tools/layout.py b/tools/layout.py
-index ff7016b..aa38bcb 100644
+index ff7016b..9751951 100644
 --- a/tools/layout.py
 +++ b/tools/layout.py
-@@ -1681,11 +1681,16 @@ if EMIT:
+@@ -1681,11 +1681,17 @@ if EMIT:
                  if _dj and len(_dj[0]) <= 5:
                      _rows.append('[%d] = {1, %d, %d, %d, {%s}%s},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
                                   ', '.join('S_' + s for s in _dj[0]) or '0', (', (void *)' + JITHELPERS[_nm]) if _nm in JITHELPERS else (', 0' if JITHELPERS else ''), _nm.replace('*/', '* /')))
 +            _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
 +            if '--jitre' in ARGV:
-+                _li = max(G['t2_names']().keys()) + 1
++                _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
++                assert _li < 0xFFFD, 'jitre: no index for INTERP'
 +                _rows.append('[%d] = {1, 1, 4, 0, {S_INTERP}%s},  /* an interpreted call (jitre) */' % (_li, ', 0' if JITHELPERS else ''))
 +                _lint = '#define JIT_L_INTERP %d\n' % _li
              _jc = T2MAP['one'][G['T2_JIT']]

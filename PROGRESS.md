@@ -6636,3 +6636,14 @@ U1's bytecode called as machine code. The disassembly shows why - U1's native co
 S_CALL stencil aimed at a bytecode address, not the interpreter call: some path sends a refused
 callee to S_CALL past the rewrite. And if helper stencils compile alike, last turn's "helper calls
 proven" may only mean those words ran as bytecode - to check with JITLOG before it is claimed again.
+
+## Iteration 349 - 2026-10-17 - Claude
+
+**Interpreter re-entry works.** A scratch log of every callee decision and every translation, and
+the stencils compiled by hand and disassembled, closed it: the converter numbered the INTERP row
+max(t2_names()) + 1 = 0xFFFE - the translator's marker for "a call resolved" - so every interpreted
+call became a native call into bytecode. Now numbered just above the operations. With refused
+callees no longer stopping their callers, the decoder read past (S") into its string; jit_rtouch
+refuses a caller whose callee pops the caller's return address. The test programs now give the
+JIT-off output exactly, status 0, and the log shows the helper words really translated - last
+turn's claim, now with its evidence. Next: (PARSE)'s header again, the corpus, the gates, the speed.
