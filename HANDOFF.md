@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 370.
+- master: Iteration 371.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -232,6 +232,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    laptop - a sample of the front, each N full and --defs-only, repeated; time per call (run phase)
    and per word (compile phase), each against s6 - with --calls at least 40 N, as below 30,000's
    definitions (41 s on s6 here) swamp a fixed 200,000 calls.
+   **The experiment is built** (Iteration 371: lab/evolve/footprint.py - the chain's `experiment
+   footprint.py`; defaults --sample 12 --sizes 100,1000,10000,30000 --rounds 5, about 20 minutes on the
+   laptop by this VM's scale). Proposed for the chain after seed 57's processing, the owner's hours:
+   `seed 58 tag2 12h widths then experiment footprint.py then experiment compare-fronts.py ...`.
 3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; helper calls and
    re-entry parked (results/drafts/jithelp-wip.patch, jitre-wip.patch) - the kernel still 54.6% left to
    the interpreter, INTERPRET stopping at (FIND) and PARSE-WORD at +!, operations re-entry cannot help.

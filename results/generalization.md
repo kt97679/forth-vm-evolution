@@ -57,3 +57,13 @@ expected. At 30,000 the definitions swamp a fixed 200,000 calls (the difference 
 two 40-second runs), so the experiment scales --calls with N (at least 40 N): time per call is the
 measure, and cycling a footprint past the caches keeps the code cold however often each word runs.
 
+**Iteration 371: the experiment** - lab/evolve/footprint.py, run by the chain as `experiment footprint.py`
+over every run's database (the newest run's front taken): K designs sampled from fastest to slowest by
+selection speed, each built and passed through alive(); every program, full and definitions-only, timed
+in rounds with s6 once per round, size and variant (at 30,000 words s6 costs most of a round), s6 first
+in even rounds and last in odd; medians; checksums against s6's, a design that differs reported and not
+ranked. Reports s6's time per word and per call, each design's run and compile ratios to s6, and the
+Spearman correlation of selection speed with the run ratio at each N. Tried end to end here (2 designs,
+N = 100 and 1,000, 2 rounds): s6's run phase 157.5 ns a call at N = 100 and 274.9 at 1,000; seed 56's
+sampled fastest 0.280 and 0.234 of s6's - the pipeline, not yet the measurement.
+

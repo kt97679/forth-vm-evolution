@@ -7050,3 +7050,17 @@ interpreter's closing OK, not the checksum. Fixed: s6 and seed 56's fastest, its
 quadratic on s6 (10,000 words 3.4 s, 30,000 41 s), superlinear on the hashed fastest (0.31 s, 3.0
 s); the run phase slowing with N on both (s6 0.03 to 0.14 s for 200,000 calls from N = 100 to 10,000)
 - the footprint effect, to be measured on the laptop with --calls scaled to N.
+
+## Iteration 371 - 2026-10-17 - Claude
+
+**The footprint experiment** (lab/evolve/footprint.py; results/generalization.md): the chain's
+`experiment footprint.py` - a sample of the newest run's front timed on footprint-gen.py's programs of
+N words, full and definitions-only, in rounds with hand-made s6 (once per round, size and variant: at
+30,000 words it costs most of a round), its order alternating; medians; checksums checked against s6's;
+each design's run and compile phases against s6's, and at each N the rank agreement of the selection's
+speed with the run phase's. Two faults found in trying it: the unit - METRIC is CPU time unless
+EVOLVE_METRIC=cycles, so a match is not cycles - and the re-measure lookup, which for a file not named
+db*.jsonl derived the file's own name and read markdown as JSON (compare-fronts.py's loader assumes the
+chain's names; this one checks). End to end on 2 designs, N = 100 and 1,000, 2 rounds: s6's run phase
+157.5 ns a call at N = 100, 274.9 at 1,000 - the footprint effect, seen even here; the sampled fastest
+0.280 and 0.234 of s6. Proposed for the chain after seed 57: `then experiment footprint.py`.
