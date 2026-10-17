@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 372.
+- master: Iteration 373.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -251,9 +251,15 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    (results/drafts/iploop-plan.md).
 4b. **The simplicity review, after seed 57** (results/drafts/gene-usage-53-56.md, Iteration 372): over
    seeds 53-56's 722 front designs, msc, scale and tail never on; eight genes under 10% of every front;
-   twelve on in every design (tag2's off side the whole plain CV8 encoding). Seed 57's two widths
-   first - an off side may return at 32 bits - then each never-chosen mechanism out or kept, each
-   always-on gene frozen or kept: the owner's call, by GOALS.md's measure.
+   ten on in every design by choice - tag2 and bytehdr too, but imposed (--require tag2, every run since
+   Iteration 71), not chosen. Seed 57's two widths first, and the anchoring and constraint tests
+   (item 4c) before any gene is frozen - freezing would make an anchoring permanent. Then each
+   never-chosen mechanism out or kept, each always-on gene frozen or kept: the owner's call.
+4c. **Is the search anchored?** (the owner's question, Iteration 373). Two tests for the owner's
+   hours, after seed 57: the anchoring test again with today's genes - `seed 58 tag2 12h widths
+   nocarry` (or fromzero), its front against the carried ones by compare-fronts.py; seed 36 (Iteration
+   123, 2 h 40 min) found no anchoring with the genes of then. And the constraint test - a run without
+   `tag2`, so the search may choose the encoding; tag2 costs 36% at 32 bits (results/drafts/skew-32.md).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

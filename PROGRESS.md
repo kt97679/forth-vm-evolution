@@ -7108,3 +7108,20 @@ default is absent from an expression - and called compiler=1 universal (GCC is 5
 caught by a contradiction with express()'s own rule, before anything was written. The evidence for
 a simplicity review after seed 57, whose two widths may bring an off side back.
 
+
+## Iteration 373 - 2026-10-17 - Claude
+
+**Is the search stuck in a local optimum? (the owner's question) - and a correction.** Iteration
+372's audit listed tag2 and bytehdr as on in all 722 front designs, as the search's choice. They are
+imposed: every run since Iteration 71 is `seed N tag2`, evolve.py's --require tag2, which sets both
+on every CV8 design - the plain CV8 encoding has not been searched with today's genes since then.
+Corrected in results/drafts/gene-usage-53-56.md and HANDOFF before the simplicity review could rely
+on it. The question has three answers here: a true local optimum is possible - four small runs in a
+row, ten genes fixed by choice, the fastest from one lineage, every run carrying the last fronts, and
+the screen skipping children predicted worse (a valley's first steps) - against the attic (lost gene
+values kept and fed back), borrowing (whole blocks across a valley), dormant genes, and seed 36's
+from-scratch run (Iteration 123), which reached the carried runs' region and not past it, with the
+genes of then; a constraint - tag2 required, at 32 bits a 36% cost; and blind spots - the
+superinstructions misnamed for 300 iterations (367). Proposed for the owner's hours after seed 57
+(HANDOFF 4c): the anchoring test again (nocarry or fromzero) and a run without the tag2 requirement;
+the simplicity review's freezing after them - a frozen gene would make an anchoring permanent.
