@@ -28,7 +28,7 @@ fusable pairs - primitives among the first 33, no control flow - named through i
 3.80 %, then SWAP OVER and OVER ! 0.25 % each, the rest below 0.1 %. Its other fusions (folds,
 specialisations, format-10 words) have taken the rest.
 
-**The fix** (results/pending/tag2-pairs-after-seed57.patch): codes named through the table, wide codes
+**The fix** (results/applied-after-seed57/tag2-pairs-after-seed57.patch): codes named through the table, wide codes
 kept. Tested: the fixed pool of a0a0277bf2 is the hand count's; the same genome without the tag - named
 right all along - gives the same ten pairs. **Decided (Iteration 368; the owner left it to the lab): no new mechanism - GOALS.md's rule.** A
 slot allocation by value would profile every design in evaluation and tie the genome to its profile:

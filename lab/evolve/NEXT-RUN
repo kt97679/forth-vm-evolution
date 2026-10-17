@@ -322,6 +322,15 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 374 (the owner): seed 58 is the anchoring and constraint test (HANDOFF item 4c) - from
+# scratch (nocarry: the hand-made designs and founders, no earlier front) and without the tag2
+# requirement (every run since Iteration 71 had it), at both widths: does a fresh, unconstrained search
+# come back to the carried runs' region, and choose tag2 by itself? The comparison then measures its
+# front beside the carried ones. The after-seed-57 batch is applied already (non-PIE 32-bit engines,
+# superinstruction pairs named right). Checked here: seed 56's front made plain CV8 - 10 of 10 alive;
+# a miniature run in this configuration - 24 of 24 alive, both widths, 18 plain and 6 tag-2, four
+# encodings. 12 hours like seed 57; the hours are the owner's. Pull this bundle only after seed 57's
+# chain has finished - every step of a chain pulls the newest bundle first.
 # Iteration 355 (the owner): seed 57, one 12-hour run (not two of 6: each run's fixed part - the checks
 # prepared, the re-measure, the comparison - about 3 h 40 min with two widths, so two runs would
 # evolve 4.6 h against one's 8.3). The reserve now knows --widths' comparison takes half again.
@@ -360,4 +369,4 @@
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-seed 57 tag2 12h widths then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8
+seed 58 12h widths nocarry then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8

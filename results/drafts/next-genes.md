@@ -253,7 +253,7 @@ table entry ['DUP', 'ADDI', 'SWAP', 'CFETCH'] with k 1. Then (PARSE)'s helper.
 
 ## Helper calls, the next steps (Iteration 345)
 
-Patch 2 corrected and re-verified (results/pending/ORDER.md). The helper-call draft re-cut against it
+Patch 2 corrected and re-verified (results/applied-after-seed57/ORDER.md). The helper-call draft re-cut against it
 (results/drafts/jithelp-wip.patch), with h_parse ((PARSE): ( a u c -- s len adv )) and COUNT as the
 table entry DUP ADDI(1) SWAP CFETCH. c549c0677c with jitimg 1, jitvar, jithelp: alive. jitleft --why:
 **INTERPRET past PLACE and COUNT - now at (FIND)**; **PARSE-WORD past (PARSE) - now at +!**. kernel

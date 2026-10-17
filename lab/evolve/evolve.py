@@ -642,7 +642,7 @@ def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix:
 def S0(): return os.path.join(O, 's0-cell-%d' % (8 * cellw()))   # the cell engine that makes them
 def KIMG(): return 'kernel.img' if cellw() == 8 else 'kernel32.img'
 
-W4_ENV = {'EVOLVE_CELL': '4', 'EVOLVE_CC': 'gcc -m32'}
+W4_ENV = {'EVOLVE_CELL': '4', 'EVOLVE_CC': 'gcc -m32 -fno-pie -no-pie'}   # Iteration 363: as relf builds its 32-bit engine - no PIC base register
 KERNEL_IN64 = None
 
 class at_width:
@@ -700,7 +700,7 @@ def CCV(g):
     designs keep clang: the Tegra has none, and its sample is GCC's)."""
     c = CC(g)
     if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc'): return os.environ['EVOLVE_CC'].split()
-    return [c] + (['-m32'] if '-m32' in os.environ.get('EVOLVE_CC', '').split() else [])   # Iteration 336: clang at 32 bits too
+    return [c] + (['-m32', '-fno-pie', '-no-pie'] if '-m32' in os.environ.get('EVOLVE_CC', '').split() else [])   # Iteration 336: clang at 32 bits too; 363: not PIE, as relf's
 
 def cc():
     """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit
@@ -826,6 +826,15 @@ def design_pairs(g, n=24):
     PROFILING[0] = True
     try:
         eng, img = build(dict(g, tail=0, msc=0), d)     # the stream, not the dispatch, decides the pairs
+        # Iteration 366: a tag-2 design profiles its own one-byte codes, which t2hot orders hot first -
+        # named through its table (vm-tag2-one.h), not as plain opcodes: until now every tag-2 design's
+        # pool was its codes misread (OR DROP for DUP and a specialisation), and wide codes 128-191 lost.
+        hp = os.path.join(d, 'vm-tag2-one.h')
+        one = [int(x) for x in re.findall(r'-?\d+', open(hp).read())] if g.get('tag2') and os.path.exists(hp) else None
+        def op_of(code):
+            if one is None: return code if code < 128 else None
+            i = code if code < 64 else code - 64 if 128 <= code < 192 else None
+            return one[i] if i is not None and i < len(one) else None
         pw = private_work(d); share = collections.Counter()
         for w in WORK_SEL:
             pf = os.path.join(d, 'prof-' + w)
@@ -835,7 +844,8 @@ def design_pairs(g, n=24):
                 m = re.match(r'^(\d+) (\d+) (\d+)$', line)
                 if m:
                     a, b, k = map(int, m.groups()); total += k
-                    if a < 128 and b < 128 and prim(a) and prim(b): c[(prim(a), prim(b))] += k
+                    oa, ob = op_of(a), op_of(b)
+                    if oa is not None and ob is not None and prim(oa) and prim(ob): c[(prim(oa), prim(ob))] += k
             for pr, k in c.items(): share[pr] += k / max(total, 1)
         if share: pool = [list(pr) for pr, _ in share.most_common(n)]
     except Exception:

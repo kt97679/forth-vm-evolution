@@ -3562,7 +3562,7 @@ again), RESTORE-INPUT repositions and reads it again - coreext.4 only. On s6:
 the owner's decision on a kernel hook). 0 of 12 front designs differ from s6.
 The sixteenth after-seed-41 patch: coreext-w10-after-seed41.patch.
 
-Also: results/pending/ORDER.md - the sixteen patches' order and the checks
+Also: results/applied-after-seed57/ORDER.md - the sixteen patches' order and the checks
 after; the callrel draft rebased onto them (results/drafts/
 callrel-draft-rebased16.patch), its fixed point planned as two converter runs
 (results/drafts/callrel.md).
@@ -3577,7 +3577,7 @@ in all, interpreted designs 10-17% slower (a flag tested on every call). Kept
 as a draft (results/drafts/callrel-draft-twopass.patch), not in the batch.
 **Found on the way:** the batch carries no binaries - after applying it, the
 reseed must come first, or every stage is built from the old kernel (every
-tag-2 design died "dictionary full" on a fresh clone). results/pending/ORDER.md
+tag-2 design died "dictionary full" on a fresh clone). results/applied-after-seed57/ORDER.md
 corrected: reseed (27,120 bytes, as tested), then the build and the checks.
 
 **Locals need no kernel hook.** The kernel's FIND walks the search order, so a
@@ -3807,7 +3807,7 @@ screen now per hour (seed 42: ~3,000 designs an hour).
 ## Iteration 211 - 2026-10-12 - Claude
 
 **fsys 5 - read-ahead where a file can seek - and a converter fault found.**
-The after-seed-43 batch begun (results/pending/ORDER.md). fsys 5: READ-LINE
+The after-seed-43 batch begun (results/applied-after-seed57/ORDER.md). fsys 5: READ-LINE
 reads 4 KB ahead on seekable descriptors (never stdin or pipes), given back
 before every other use; measured between fsys 4 and native. On the way, two
 faults: file-sysc5.4 did not load (remarks outside comments) and the gate hid
@@ -3884,7 +3884,7 @@ rss). The owner, Kirill Timofeev, runs the seeds on his laptop (AMD Ryzen 7 PRO
    tools find genomes through these files.
 6. The pack's `results-measured-here.patch` has so far been the same laptop
    stash every time, already on master: check with `git apply -R --check`.
-7. Apply the pending batch per `results/pending/ORDER.md` (reseed first with
+7. Apply the pending batch per `results/applied-after-seed57/ORDER.md` (reseed first with
    `tools/reseed.sh` only if a patch changes `forth/kernel.4`), then
    `LAYOUTS=1 bash tools/build-stages.sh`, `bash tools/run-tests.sh` (PASS),
    `python3 lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL).
@@ -4560,7 +4560,7 @@ seed crashed). Every COMPILE, asks PRIMITIVE?, so the count byte need not move:
 Iterations 232-234's layout reversed - names are counted strings again, and the
 walk's 6-8% (found in Iteration 241) is gone: the smallest design's corpus
 58.90M dispatches (seed 45's code 58.95M, master 63.43M). names-check PASS on
-every design and all 14 stages; all checks pass (results/pending/ORDER.md).
+every design and all 14 stages; all checks pass (results/applied-after-seed57/ORDER.md).
 Bit 7 of the count byte is now read only by >NAME, which no compiler uses -
 freeing it (an exact >NAME by the dictionary walk) is the next step if wanted.
 
@@ -4673,7 +4673,7 @@ it, the standard's name tokens are in coreext.4, and the tracer (TRWALK names
 every word past the image) and the SPN diagnostic walk for themselves. The
 owner's choice was invited: keeping it in every image costs about 100-230
 bytes. names-check now checks bit 7 clear (through LAST) and POSTPONE of UTF-8
-words; every check passes (results/pending/ORDER.md). Lesson: when a fix
+words; every check passes (results/applied-after-seed57/ORDER.md). Lesson: when a fix
 removes a reader of a header bit, grep every reader of the word that read it.
 
 ## Iteration 245 - 2026-10-13 - Claude
@@ -4872,7 +4872,7 @@ rt_open (x86-64 and i386 runtimes), so no va_list and no register save area
 function - GCC warned of an uninitialised mode where it inlined a two-argument
 call: undefined behaviour, replaced by an explicit OPEN3 in the engine. With
 patch 1, engines are +56, 0 and -32 bytes against today (smallest, Q-best,
-fastest). All checks pass (results/pending/ORDER.md).
+fastest). All checks pass (results/applied-after-seed57/ORDER.md).
 
 ## Iteration 258 - 2026-10-13 - Claude
 
@@ -5769,7 +5769,7 @@ are given up.
 ## Iteration 290 - 2026-10-14 - Claude
 
 **2@ and 2! as opcodes, pending as the after-seed-50 batch's patch 1
-(results/pending/ORDER.md) - the second source audit's finding built.** Their
+(results/applied-after-seed57/ORDER.md) - the second source audit's finding built.** Their
 handlers in vm-lab.c, gen-tos.py and gen-msc.py (gen-tail.py takes them as it finds
 them; the JIT leaves a word with an opcode it cannot translate to the interpreter),
 their kernel bodies in sod16.py's table as the converter reads them (SOD16_SHOW: 2@
@@ -6264,7 +6264,7 @@ claude's repository, refused, and `set -e` ending the command there.
 
 ## Iteration 317 - 2026-10-15 - Claude
 
-**bfind verified and pending - the after-seed-52 batch complete (results/pending/ORDER.md).**
+**bfind verified and pending - the after-seed-52 batch complete (results/applied-after-seed57/ORDER.md).**
 Built on patch 1 in a scratch tree, as the batch applies in order. The four cases right on the
 corpus; gene-equiv against patch 1: every recorded genome's id and expression the same (its
 FAIL the operator draws, as for any new gene); run-tests, 63 paths with four for bfind; validate
@@ -6997,7 +6997,7 @@ misread pairs (NEGATE NEGATE, DROP UM*, XOR C!): engine bytes for nothing. Reall
 primitives: + XOR at 3.80 % of 105,295,516 dispatches, then 0.25 % and less. The fix names the codes
 through the table and keeps the wide ones: its pool for a0a0277bf2 is the hand count's, and the same
 genome without the tag - named right all along - gives the same ten pairs. Pending after seed 57
-(results/pending/tag2-pairs-after-seed57.patch, ORDER.md's second); the finding in
+(results/applied-after-seed57/tag2-pairs-after-seed57.patch, ORDER.md's second); the finding in
 results/drafts/supers-tag2.md. Open for the owner: whether pairs should compete with format-10 words
 for the slots by value. Found by the generic pair analysis proposed at Iteration 365 - which turned
 out to exist already (price.py, design_pairs), so the work was auditing it rather than building it.
@@ -7125,3 +7125,19 @@ genes of then; a constraint - tag2 required, at 32 bits a 36% cost; and blind sp
 superinstructions misnamed for 300 iterations (367). Proposed for the owner's hours after seed 57
 (HANDOFF 4c): the anchoring test again (nocarry or fromzero) and a run without the tag2 requirement;
 the simplicity review's freezing after them - a frozen gene would make an anchoring permanent.
+
+## Iteration 374 - 2026-10-17 - Claude
+
+**Seed 58 set as the anchoring and constraint test (the owner's go).** `seed 58 12h widths nocarry then
+experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`: from scratch (the
+hand-made designs and founders, no earlier front) and without the tag2 requirement every run since
+Iteration 71 has had, at both widths - back in the carried region with tag2 chosen by the search
+itself, and neither concern holds; elsewhere, a follow-up separates anchoring from the constraint.
+So that seed 58 can start when seed 57's chain ends, the after-seed-57 batch is applied now, before
+seed 57's processing (its one condition - seed 57 run on the code before it - holds): non-PIE 32-bit
+engines and superinstruction pairs named right; run-tests.sh PASS; moved to
+results/applied-after-seed57/, its citations carried by step 7's command (its first use). Two checks
+for the path no run has taken since Iteration 71: seed 56's front made plain CV8 (tag2 off) - 10 of
+10 built and alive, JIT and not; a miniature run in seed 58's configuration (8 a generation, 1
+generation, both widths) - 24 of 24 alive, speed32 on all, 18 plain and 6 tag-2 (one turned on by
+mutation), four encodings. This bundle goes to ~/Downloads only after seed 57's chain has finished.

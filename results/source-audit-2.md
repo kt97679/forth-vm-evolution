@@ -107,7 +107,7 @@ standing rule reopens; the headers' 32% (the register).
 
 ## Built (Iteration 290): the after-seed-50 batch, patch 1
 
-2@ and 2! as opcodes, in the ops10 pool and opbody's list (results/pending/ORDER.md);
+2@ and 2! as opcodes, in the ops10 pool and opbody's list (results/applied-after-seed57/ORDER.md);
 DEPTH left out - its handler would have to agree with the kernel's S0 exactly, through
 ABORT and saved images. Measured with word-cost.py on c9369657e4, the opcodes added:
 bubble 12,759,474 -> 9,572,364 dispatches (-25.0%), the corpus 4,529,779 -> 4,516,324

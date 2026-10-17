@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 373.
+- master: Iteration 374.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -69,7 +69,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   dream.lan 64-bit Spearman 0.940; **32-bit x86 at 4-byte cells 0.694** - the laptop's six fastest
   interpreted designs 8th-13th there, their lead over s6 about halved (results/xcheck-dream-seed55.md).
   The Tegra failed again - four hand-made engines kept x86's sysc guard: the after-seed-55 batch
-  (results/pending/ORDER.md).
+  (results/applied-after-seed57/ORDER.md).
 - **Seed 56 processed** (Iteration 354): small (+1.3%; fastest -4.1%) - the fourth of these genes.
   **The first run checked on four machines**: the Tegra's first native run (ARMv7) - Spearman 0.944;
   dream.lan 64-bit 0.917, 32-bit 0.833, the same designs at 64 bits 0.977 - on one machine 64 against
@@ -93,10 +93,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   arith 0.947 (both significant). All three for the laptop to time (results/relf-patches/README.md).
   Iteration 363: no more fusions until the laptop times these (the rest ~1 % each, each a slot of A15's
   64); this lab's genes classed for relf (results/drafts/relf-gene-classes.md); 32-bit engines not PIE,
-  pending after seed 57 (results/pending/ORDER.md).
+  pending after seed 57 (results/applied-after-seed57/ORDER.md).
   Iteration 367: the supers gene's pool misnamed for every tag-2 design since Iteration 66, and the
   gene inert in ~97% of the fronts (its slots taken by ops10): the fix pending after seed 57
-  (results/drafts/supers-tag2.md; results/pending/ORDER.md, patch 2). Decided at 368: no new slot
+  (results/drafts/supers-tag2.md; results/applied-after-seed57/ORDER.md, patch 2). Decided at 368: no new slot
   mechanism; after seed 58, if superinstructions still buy nothing, the gene comes out of tag-2 designs.
   Iteration 364: the cheap class measured on relf's shell - clang, -Os, pinned registers: none faster
   (results/relf-patches/README.md); relf-ab.sh takes RELF_AB_MAKE_B and measures the shells it built.
@@ -220,8 +220,10 @@ Rewritten at Iteration 369 to the state now (the list before it: git, the commit
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
 0. **Seed 57** - the first run selected at both widths (--widths 8,4): process when its archive comes,
-   with its cross-machine checks; then apply results/pending/ORDER.md (patch 1: 32-bit engines not PIE,
-   as relf builds them; patch 2: superinstruction pairs named right in tag-2 designs) and run seed 58.
+   with its cross-machine checks. Its batch is applied already (Iteration 374: results/applied-after-seed57/
+   - 32-bit engines not PIE, superinstruction pairs named right), so **seed 58 starts when seed 57's chain
+   ends**: NEXT-RUN's `seed 58 12h widths nocarry then experiment compare-fronts.py ...` - the test of
+   item 4c. This bundle into ~/Downloads only after seed 57's chain has finished (each step pulls the newest).
 1. **Superinstructions after seed 58** (results/drafts/supers-tag2.md; decided at 368): with the pool
    named right, do front designs build real pairs, and do they buy anything? If not, the gene comes out
    of tag-2 designs - a mechanism that buys nothing comes out (GOALS.md).
@@ -260,6 +262,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    nocarry` (or fromzero), its front against the carried ones by compare-fronts.py; seed 36 (Iteration
    123, 2 h 40 min) found no anchoring with the genes of then. And the constraint test - a run without
    `tag2`, so the search may choose the encoding; tag2 costs 36% at 32 bits (results/drafts/skew-32.md).
+   **Seed 58 is both at once** (the owner, Iteration 374): from scratch and without the requirement, at
+   both widths. Back in the carried region with tag2 chosen: neither concern holds. Elsewhere: a
+   follow-up run separates them (nocarry with tag2, or carried without).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.
