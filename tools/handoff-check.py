@@ -139,7 +139,7 @@ if not nr: fail(8, 'lab/evolve/NEXT-RUN has no line to run')
 
 # 9. every document indexed; every indexed document there
 _, mdl = git('ls-files', '*.md')
-mds = [m for m in mdl.split('\n') if m]
+mds = [m for m in mdl.split('\n') if m and not m.startswith('vendor/relf/tree/')]   # Iteration 356: relf's own documents, indexed by relf's README
 idx = ['README.md', 'results/README.md', 'prompts/INDEX.md', 'lab/evolve/README.md']
 for _ in range(3):                       # a README.md an index lists is an index too
     text = ''.join(open(os.path.join(ROOT, i)).read() for i in idx if os.path.exists(os.path.join(ROOT, i)))
