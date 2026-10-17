@@ -14,12 +14,12 @@ processed:
 
 | 5 | compiler-after-seed47.patch | the gene compiler (0 GCC, 1 clang; CV8 designs): every engine compile through clang - -Oz for -Os, only the flags it knows, GCC's own genes (nogcse, nocrossjump, align1, noreorder, peel, ipaclone, tracer, noinls, gotodup, jitos, regpin, lto) not expressed under it; a bcmp in the runtime (clang's memcmp() == 0). **Offered only where clang is installed** - on the laptop: `sudo apt install clang` (clang 18; clang-19 for preserve_none later) before the run, or the gene stays dormant. On the VM: engines larger at the small end, 4% smaller at the fast end at -Oz (262) |
 | 6 | factor-after-seed47.patch | the gene factor (0-3; tag-2 designs): the converter moves repeated straight-line code into headerless bodies past the image's end, each use a 2-byte call and a GAP that keeps the run's old cells, so no offset in the word moves; words below 0.1% (1) or 1% (2) of the reference dispatches (lab/evolve/hotwords-v1.json from lab/evolve/hotwords.py, both added), or every word (3). Image bytes on 14 of seed 46's front: mean -52, -96, -133 at levels 1-3; the smallest -41, -95, -127 for +0.007%, +0.17%, +1.98% dispatches. No engine or kernel change; off, every design converts byte for byte as before. engines-check grows to 31 paths (267-268) |
-    git apply results/pending/faulttrap-after-seed47.patch
-    git apply results/pending/lean-open-after-seed47.patch
-    git apply results/pending/jitk-after-seed47.patch
-    git apply results/pending/buildgenes-after-seed47.patch
-    git apply results/pending/compiler-after-seed47.patch
-    git apply results/pending/factor-after-seed47.patch
+    git apply results/applied-after-seed47/faulttrap-after-seed47.patch
+    git apply results/applied-after-seed47/lean-open-after-seed47.patch
+    git apply results/applied-after-seed47/jitk-after-seed47.patch
+    git apply results/applied-after-seed47/buildgenes-after-seed47.patch
+    git apply results/applied-after-seed47/compiler-after-seed47.patch
+    git apply results/applied-after-seed47/factor-after-seed47.patch
 
 Tested on master: `0 @` with output to a pipe now exits 70 with the output
 kept, on the smallest, the Q-best and the fastest design; run-tests PASS (the

@@ -6,9 +6,9 @@
 | 2 | jit-genes-after-seed56.patch | **Two JIT genes** (Iterations 339-343; results/drafts/next-genes.md): **jitimg** (0/1) - the image's words JIT candidates: the converter gives the outer interpreter's plain code words (INTERPRET, PARSE-WORD, WORD, ...; no inline aligned data, nothing landing inside them) the header run-time words get - [the JIT opcode][length \| 2^31] - translated on their first call or left bytecode; (2, every plain word, killed on the corpus: not offered). **jitvar** - vf and vs (getstatic, putstatic) given the JIT as a literal of the slot's address then @ or !: two operand kinds in jit.c's decoder under JITVAR, no new stencil. jitleft.py --set=gene=value. On top of patch 1 (tools/layout.py's CALIGN). |
 | 3 | compare-widths-after-seed56.patch | **The comparison at both widths** (Iteration 352): compare-fronts.py --widths 8,4 sets up both widths and, after its rounds, measures each design's interpreter as a 32-bit engine at 4-byte cells (eval32, half the rounds); a section "At 32 bits": each run's fastest there against all the others', and its 64-bit fastest at 32 bits - so a two-width run is judged at 32 bits too. Without the flag, setup() itself: unchanged. On top of patch 1 (eval32, setup_widths). |
 
-    git apply results/pending/two-widths-after-seed56.patch
-    git apply results/pending/jit-genes-after-seed56.patch
-    git apply results/pending/compare-widths-after-seed56.patch
+    git apply results/applied-after-seed56/two-widths-after-seed56.patch
+    git apply results/applied-after-seed56/jit-genes-after-seed56.patch
+    git apply results/applied-after-seed56/compare-widths-after-seed56.patch
 
 Tested on master at Iteration 338 (results/drafts/two-width-selection.md, "Built so far", "Built"):
 - **64 bits unchanged**: six recorded designs of seed 55's front - engines and images byte-identical

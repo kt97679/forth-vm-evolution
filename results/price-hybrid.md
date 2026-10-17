@@ -72,7 +72,7 @@ the design's own compiler writes). Seed 40's smallest, 0ceb043115, carries
 rtimm=1 - unexpressed: it waited on the pair-fusion overlay, itself waiting on
 rtfuse and on pairs the design has no slots for - three mutations away, each
 priced alone. So the first step is not new opcodes but **rtimm=2**: the
-overlay for immediates without pairs (results/pending/rtimm2-after-seed41.patch;
+overlay for immediates without pairs (results/applied-after-seed41/rtimm2-after-seed41.patch;
 on a design with pairs and rtfuse it is rtimm=1, one id).
 
 On 0ceb043115: +662 bytes of image; fib -13.6% of its dispatches; kernel,
@@ -109,7 +109,7 @@ the 47 with pairs and rtfuse are rtimm=1). The held-out check: 14 of 14 files
 as s6 on the two it took - ans-check keeps only its database's front, and
 picked 2 of the 8 given (both JIT designs); the interpreted ones are not yet
 checked by the suite - to do before the batch is applied.
-results/pending/keepforms-after-seed41.patch, after rtimm2-after-seed41.patch.
+results/applied-after-seed41/keepforms-after-seed41.patch, after rtimm2-after-seed41.patch.
 
 ## Iteration 178: checked, founded, and the tail
 
@@ -117,7 +117,7 @@ The held-out check on eight front designs with rtimm=2 and the keeping forms -
 six interpreted, two JIT, chosen through a remeasure file beside the database
 (ans-check checks what it lists): 14 of 14 files as s6 on all eight. A founder
 for the run after seed 41 - seed 40's smallest with rtimm=2, DUP+I and DUP<I
-(results/pending/founder-after-seed41.patch). regprice.py takes CALLMAP's names
+(results/applied-after-seed41/founder-after-seed41.patch). regprice.py takes CALLMAP's names
 now (regprice-names-after-seed41.patch); on s6's image code it saves corpus and
 parse 20.3%, kernel 18.1%, bubble 15.9% - and shows the next target: return-stack
 moves no form absorbs, 41% of loop's image dispatches, 30% of sieve's, 23% of
@@ -161,7 +161,7 @@ LOOP-ALIGN is set, and the converter sets it for JIT designs alone - (LOOP)'s
 untouched. Seed 40's smallest: loop 96.15 M -> 88.14 M dispatches (-8.3%),
 bubble -3.4%, sieve -6.9%, no NOOP executed; alive. All 218 of seed 40's front
 designs alive; the held-out suite on six interpreted designs as s6; run-tests
-PASS; 7 of 7 stages identical. results/pending/loopalign-after-seed41.patch.
+PASS; 7 of 7 stages identical. results/applied-after-seed41/loopalign-after-seed41.patch.
 
 ## The return stack, priced - and rtloop inert on a tag-2 design (Iteration 186)
 

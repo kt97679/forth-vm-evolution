@@ -27,7 +27,7 @@ about 1%.
 **The gene dskew** (0, 1): 1 starts the data stack 2 KB lower - no kernel
 change (COLD takes S0 from where the stack starts), a late gene (every
 recorded id kept: 218 of 218), mutation reaches it. Pending after seed 41:
-results/pending/dskew-after-seed41.patch. Found on the way: a hand-made
+results/applied-after-seed41/dskew-after-seed41.patch. Found on the way: a hand-made
 genome reached the engine flags without the late gene's default - eff[k] a
 KeyError, three stages failing validate; eff.get(k) now.
 
@@ -64,6 +64,6 @@ IDENTICAL, the jail; all 218 front designs alive. Grown past the old 16 MB:
 both evolved designs tried took 32 MB and ran a word defined there (HERE 33.5
 MB above START) and refused 300 MB more; s6 refused to link a word across the
 32 MB gap ("link out of reach" - its byte headers' links are short, Iteration
-158), cleanly. results/pending/stacksep-after-seed41.patch. Made the default
+158), cleanly. results/applied-after-seed41/stacksep-after-seed41.patch. Made the default
 for the cv8 family, not a gene: no workload outgrows 16 MB, so evolution
 could not see what it is for.

@@ -12,10 +12,10 @@ Seed 46 runs at Iteration 241's commit without these. Apply when it is processed
 
 | 4 | tailfix-after-seed46.patch | the tail engines compile again: build_tail preprocesses with -DDISPOFF=0. gen-tail.py reads the preprocessed source, where its own '#ifndef DISPOFF' guard (Iteration 237) is already resolved - so the handlers' table was offsets between functions, which C cannot initialize: every tail design of seed 46 died (222, "engine did not compile"). Found processing seed 46 (248) |
 
-    git apply results/pending/primfirst-after-seed46.patch
-    git apply results/pending/nobit7-after-seed46.patch
-    git apply results/pending/jittail-after-seed46.patch
-    git apply results/pending/tailfix-after-seed46.patch
+    git apply results/applied-after-seed46/primfirst-after-seed46.patch
+    git apply results/applied-after-seed46/nobit7-after-seed46.patch
+    git apply results/applied-after-seed46/jittail-after-seed46.patch
+    git apply results/applied-after-seed46/tailfix-after-seed46.patch
     sh tools/reseed.sh
 
 Tested on master and the patch, reseeded (fixed point; the 4-byte kernel

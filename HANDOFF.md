@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 371.
+- master: Iteration 372.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -142,7 +142,10 @@ About 20 minutes of machine time for build, tests and gates.
    pack>/compare-fronts.md` (152 of 152 for seed 47), `python3
    lab/evolve/ans-check.py --ids <every fourth of the front by size, and its
    extremes>` (33 designs, 2.5 minutes; 0 differ, its negative control caught).
-7. `git mv results/pending results/applied-after-seedN`; append the session to
+7. `git mv results/pending results/applied-after-seedN`, and the documents citing the moved files
+   follow them (Iteration 372: 62 citations had been left at results/pending/):
+   `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
+   (N the seed: the current pending/ is the next batch's and keeps its name); append the session to
    `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
    Iteration I: seed N and seeds ...", the verdict line, then the pack's
    compare-fronts.md); `python3 lab/evolve/progress-table.py >

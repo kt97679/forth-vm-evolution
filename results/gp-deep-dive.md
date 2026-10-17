@@ -166,7 +166,7 @@ deep-parameter sweep. Replication and PGO as genes after that.
 - Liou, Forrest, Wu, GEVO (NSGA-II over LLVM-IR edits; epistasis) - arxiv.org/abs/2004.08140, arxiv.org/abs/2208.12350
 - Jin, Surrogate-assisted evolutionary computation, 2011; Liu et al., SAEAs for expensive combinatorial optimization, 2024
 
-## Adopted (Iteration 197) - results/pending/gp-process-after-seed41.patch
+## Adopted (Iteration 197) - results/applied-after-seed41/gp-process-after-seed41.patch
 
 The four cheap changes, for seed 42 to test against seed 41: crossover 0.25
 (EVOLVE_XOVER); LINKS - the JIT's four genes, tos/tail/msc, escape/rtloopall,

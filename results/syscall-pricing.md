@@ -98,7 +98,7 @@ reseed; tools/test-sysc-shell.sh into run-tests.sh.
 
 ## The kernel part, built (Iteration 147)
 
-results/pending/syscall-after-seed39.patch, after the batch's other four:
+results/applied-after-seed39/syscall-after-seed39.patch, after the batch's other four:
 PRIMITIVE-SLOT in cross.4; SYSCALL in FORK's slot and seventeen reserved slots
 in kernel.4 (positions kept - checked against master's list one by one); the
 converter's escaped band and the evolver's NOFOLD renamed in place; SYSC by

@@ -89,7 +89,7 @@ jit_usable() checked both exits for (+LOOP) and (?DO) only, and only with jitloo
 160. ("tos off" lived only because jit_on() needs tos: no JIT at all - my reading of that
 probe as a cached-top fault was wrong.)
 
-**The fix** (results/pending/jitscan-after-seed52.patch): 160 in every build; every branching
+**The fix** (results/applied-after-seed52/jitscan-after-seed52.patch): 160 in every build; every branching
 stencil must show both exits (BRANCH and LEAVE their jump) or is not used, in every build;
 lab/evolve/regressions.json, the two designs, built and run on the corpus by engines-check every
 time. Both live; 59 paths, run-tests, the gate 252 of 252; no speed lost.

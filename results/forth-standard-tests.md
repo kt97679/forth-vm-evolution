@@ -234,7 +234,7 @@ seed39.patch, the batch's fourteenth; coreext's, regenerated.
 On s6: 1,599 tests (991 before the extension), 6 failed - all filetest's, one
 bug: CREATE-FILE could not make a file to read and write.
 
-## Waves four to six (Iteration 170) - results/pending/coreext-after-seed40.patch
+## Waves four to six (Iteration 170) - results/applied-after-seed40/coreext-after-seed40.patch
 
 coreext.4: CS-PICK CS-ROLL SLITERAL M*/ RESIZE-FILE MARKER, FORTH-WORDLIST and
 SET-ORDER in the root wordlist (ONLY's minimum order must hold them), VALUE
@@ -272,7 +272,7 @@ what its own : writes, so coreexttest's COMPILE, test failed on every one.
 mends RECURSE in :NONAME (LAST is the definition) and retires the held-back
 fix. Its first form failed ;'s depth check (: took the depth before the xt).
 With these: s6 1,817 tests, 0 failed; seed 39's 186 front designs, 0 differ -
-results/pending/coreext-after-seed40.patch (the check's table beside it).
+results/applied-after-seed40/coreext-after-seed40.patch (the check's table beside it).
 
 **The exception wordset in the kernel** - results/pending/exceptions-after-
 seed40.patch, after the coreext patch: HANDLER, CATCH and THROW (the
@@ -285,7 +285,7 @@ before. exceptiontest whole; s6 1,821 tests, 0 failed; reseeded (the 8-byte
 kernel 26,904 bytes), run-tests, 7 of 7 IDENTICAL, the jail; 186 alive and 0
 of 186 differ from s6.
 
-## The seventh wave (Iteration 181) - results/pending/coreext-w7-after-seed41.patch
+## The seventh wave (Iteration 181) - results/applied-after-seed41/coreext-w7-after-seed41.patch
 
 SYNONYM (immediacy carried), INCLUDE REQUIRED REQUIRE (INCLUDED wrapped to note
 each file it loads), SAVE-INPUT RESTORE-INPUT (the same source; otherwise true,
@@ -299,7 +299,7 @@ their case, like CHAR's. On s6: 1,862 tests, 0 failed. Stopping at: DEFER
 (coreexttest), S\" (filetest), TRAVERSE-WORDLIST (toolstest), SUBSTITUTE
 (stringtest), BLOCK, {:.
 
-## The eighth wave (Iteration 182) - results/pending/coreext-w8-after-seed41.patch
+## The eighth wave (Iteration 182) - results/applied-after-seed41/coreext-w8-after-seed41.patch
 
 DEFER DEFER@ DEFER! IS ACTION-OF; S\" with the standard's escapes; REPLACES
 and SUBSTITUTE; HOLDS; and S" interpreted into two transient buffers in turn,
@@ -314,7 +314,7 @@ among them. Stopping at: X32X32 (coreexttest's own word - something before it),
 SI_INC (filetest, after that RESTORE-INPUT), TRAVERSE-WORDLIST (walks headers,
 whose layout differs by design - held back), BLOCK, {:.
 
-## coreexttest whole (Iteration 183) - results/pending/ansupper-sq-after-seed41.patch
+## coreexttest whole (Iteration 183) - results/applied-after-seed41/ansupper-sq-after-seed41.patch
 
 Its stop at "X32X32" was a word made of string text: line 767 nests an escaped
 string in an escaped string, and tools/ans-upper.py ended an S\" string at its
@@ -325,7 +325,7 @@ coreexttest: 383 tests, 0 failed, the whole file. On s6: 1,989 tests, 1 failed
 whole. Held out with the ten pending patches: 0 of seed 40's 218 front designs
 differ from s6.
 
-## Blocks and TRAVERSE-WORDLIST (Iteration 186) - results/pending/coreext-w9-after-seed41.patch
+## Blocks and TRAVERSE-WORDLIST (Iteration 186) - results/applied-after-seed41/coreext-w9-after-seed41.patch
 
 The block word set over blocks.fb in the working directory (1024 bytes a
 block, opened R/W or created - CREATE-FILE R/W since Iteration 168): two
@@ -346,7 +346,7 @@ On s6: 2,068 tests, 1 failed (RESTORE-INPUT across a file's lines). Whole
 files: twelve of fourteen - left filetest (that test, then SI_INC after it)
 and localstest ({:, locals).
 
-## RESTORE-INPUT across a file's lines; filetest whole (Iteration 192) - results/pending/coreext-w10-after-seed41.patch
+## RESTORE-INPUT across a file's lines; filetest whole (Iteration 192) - results/applied-after-seed41/coreext-w10-after-seed41.patch
 
 filetest's stop at SI_INC was the harness, not the system: SI_INC, SI1 and S$
 are coreexttest's, and upstream's runtests.fth includes coreexttest first in
@@ -367,7 +367,7 @@ of fourteen files whole - left localstest ({:, locals: the kernel's name lookup
 needs a hook - the owner's decision). Held out: 0 of 12 of seed 40's front
 designs (one in eighteen) differ from s6, 14 of 14 files each.
 
-## Locals; the suite whole (Iteration 194) - results/pending/coreext-w11-after-seed41.patch
+## Locals; the suite whole (Iteration 194) - results/applied-after-seed41/coreext-w11-after-seed41.patch
 
 The locals word set in coreext.4, with no kernel change (results/drafts/
 locals-plan.md): the kernel's FIND walks the search order, so the names of the

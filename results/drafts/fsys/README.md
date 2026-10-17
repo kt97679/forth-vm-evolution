@@ -37,7 +37,7 @@ FSYS in the engine points the seven dispatch entries at L_nosys. Then:
 images byte-identical at fsys=0, alive and smaller at fsys=1, the standard
 suite whole on fsys=1 designs, and the seven's exact saving.
 
-## Built (Iteration 202) - results/pending/fsys-after-seed42.patch
+## Built (Iteration 202) - results/applied-after-seed42/fsys-after-seed42.patch
 
 The gene fsys: every dump variant has an -fsys twin with file-sysc.4 loaded
 last (before the dump tool); FSYS points seven dispatch entries at L_nosys;

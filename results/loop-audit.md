@@ -80,7 +80,7 @@ READ-LINE, OPEN-FILE, CLOSE-FILE, WRITE-FILE, BYE. OPEN-FILE and CLOSE-FILE
 wait on INCLUDED (compiled against them); WRITE carries the engine's output
 buffer, so moving it costs speed unless the buffer moves to Forth too.
 
-## Built: the gene threads (Iteration 204) - results/pending/threads-after-seed42.patch
+## Built: the gene threads (Iteration 204) - results/applied-after-seed42/threads-after-seed42.patch
 
 The converter files the dictionary into 16, 32 (as built), 64 or 128 chains.
 Counted on the smallest design (results/drafts/threads-profile.py):

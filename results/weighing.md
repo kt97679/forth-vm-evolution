@@ -40,7 +40,7 @@ designs a percent larger).
 
 ## Adopted (Iteration 189) - the owner: yes to all three, and do not filter out designs with potential - demote the worst rather than promote the best
 
-`results/pending/weighing-after-seed41.patch` (the thirteenth of the batch):
+`results/applied-after-seed41/weighing-after-seed41.patch` (the thirteenth of the batch):
 
 - **Demote, don't delete.** Survival kept the best 256 of 512 and deleted the
   rest - a design one step from something excellent was gone for good. Now a

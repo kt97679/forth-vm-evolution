@@ -109,11 +109,11 @@ change: sizes and speeds before the batch are not comparable with those after (I
 the five reproduce the tested tree exactly; the single-SYSCALL model is the fifth).
 
 *After seed 39 has run, together (the owner agreed)*: the NAME>BUF patch
-(results/pending/namebuf-after-seed39.patch - s6's yardstick moves) and
-the parsing patch (results/pending/parsing-after-seed39.patch - tab-free parsing, its C
+(results/applied-after-seed39/namebuf-after-seed39.patch - s6's yardstick moves) and
+the parsing patch (results/applied-after-seed39/parsing-after-seed39.patch - tab-free parsing, its C
 operations in three places and the converter's expected bodies; after NAME>BUF), the
 single-SYSCALL model's kernel part (results/syscall-pricing.md), the
-libc-free default (results/pending/nolibc-default-after-seed39.patch: the
+libc-free default (results/applied-after-seed39/nolibc-default-after-seed39.patch: the
 tests on the runtime the evolver measures, at both widths), the
 dormant genes jitloop, jitinl and sysc into EXPRESSED, tools/test-sysc-shell.sh and
 tools/test-ext-loops.sh into run-tests.sh; then a run with them.

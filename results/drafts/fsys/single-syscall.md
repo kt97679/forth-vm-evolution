@@ -29,7 +29,7 @@ standard suite at 2; output and input interleaved exactly as before (the
 corpus's ACCEPT, the tester's prompts); the engine's bytes saved and the
 image's added, measured; then evolution weighs 0, 1 and 2 on the laptop.
 
-## Stage A built (Iteration 205) - results/pending/fsys2-after-seed42.patch
+## Stage A built (Iteration 205) - results/applied-after-seed42/fsys2-after-seed42.patch
 
 fsys 2: OPEN-FILE, CLOSE-FILE, WRITE-FILE (forth/file-sysc2.4 - the open(2)
 flags read from the engine's own table, so they cannot drift), ALLOCATE and
@@ -53,7 +53,7 @@ that leaves the process and at BYE; READ and READ-LINE with a read-ahead on
 the heap - READ-LINE is the kernel workload's, so its speed is measured
 against the native; BYE. Then the engine's I/O is SYSCALL alone.
 
-## Stage B built (Iteration 206) - results/pending/fsys3-after-seed42.patch
+## Stage B built (Iteration 206) - results/applied-after-seed42/fsys3-after-seed42.patch
 
 The owner: no output buffer; no read-ahead from stdin, pipes or anything that
 cannot seek. fsys 3: WRITE one write(2) a call; READ the engine's t_read in
@@ -79,7 +79,7 @@ three system calls a line in READ-LINE against the native 4 KB read-ahead.
 Within the owner's rules the one cheaper read is fewer calls a line (the
 seek test remembered per file); the output's cost is the buffer's absence.
 
-## The buffered level (Iteration 207) - results/pending/fsys4-after-seed42.patch
+## The buffered level (Iteration 207) - results/applied-after-seed42/fsys4-after-seed42.patch
 
 The owner: a buffered-output level beside the unbuffered one, with tests that
 buffering breaks nothing; unsure how EMIT should be buffered. What is expected:
@@ -116,7 +116,7 @@ READ-LINE's: counted on the smallest, fsys 4 adds 3.5M dispatches to the corpus
 three system calls a line. The next step for speed is there: SCAN (native
 under kinput) for FS-LF, and the seek test remembered per file.
 
-## READ-LINE faster (Iteration 208) - results/pending/readline-after-seed42.patch
+## READ-LINE faster (Iteration 208) - results/applied-after-seed42/readline-after-seed42.patch
 
 Within the owner's rules (no read-ahead from what cannot seek): the line's end
 found by SCAN - native under kinput, the kernel's loop otherwise - and whether
@@ -159,7 +159,7 @@ Two faults found on the way, by measuring rather than trusting the gate:
   keeps it; the prompt still shown before a blocking read; a terminal still
   shown at once. The standard suite 14 of 14 at fsys 4 and 5; run-tests PASS.
 
-## fsys 5 tightened (Iteration 214) - results/pending/fsys5fast-after-seed43.patch
+## fsys 5 tightened (Iteration 214) - results/applied-after-seed43/fsys5fast-after-seed43.patch
 
 What fsys 5 paid for its fewer system calls was bookkeeping in Forth: the seek
 test on every call, six variables set and read, the table indexed by

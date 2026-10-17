@@ -241,7 +241,7 @@ would have struck exactly when helper calls unblocked them. Fixed: JIT_LITOPND(o
 slot kinds too; without, **the original tokens exactly** (a first version with parentheses changed
 three of seed 55's JIT designs' engines - `a && b && (c && d)` is another tree than `a && b && c && d`
 to GCC; builds proved deterministic, so it was that). results/drafts/jit-genes-fixed.patch is patch 2
-corrected: it replaces results/pending/jit-genes-after-seed56.patch once re-verified (identity of the
+corrected: it replaces results/applied-after-seed56/jit-genes-after-seed56.patch once re-verified (identity of the
 token-exact form against patch 1 still to run; the parenthesized form passed run-tests, validate 7/7).
 
 **Helper calls** (results/drafts/jithelp-wip.patch - cut against patch 2 with the parenthesized

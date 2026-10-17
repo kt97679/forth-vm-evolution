@@ -53,7 +53,7 @@ found. But the pattern holds: every gene whose removal fixed a design changes
 how many operations compete for the 63 base codes, moving the X;CALL in.
 
 **Contained:** X;CALL only where its code is in the base band; elsewhere the
-plain operation (tools/layout.py, results/pending/opcall-band-after-seed41.patch).
+plain operation (tools/layout.py, results/applied-after-seed41/opcall-band-after-seed41.patch).
 All five dead designs right; all 48 of seed 40's front designs with opcall
 alive; 7 of 7 stages identical. The root cause stays open.
 
@@ -80,4 +80,4 @@ always followed by its call. The containment is out: every band open again.
 
 Checked: all five dead designs right with every band (corpus); all 25 opcall
 designs of seed 40's front and the five alive through the full gate (30 of 30);
-run-tests PASS. results/pending/opcall-fix-after-seed41.patch, the fifteenth.
+run-tests PASS. results/applied-after-seed41/opcall-fix-after-seed41.patch, the fifteenth.

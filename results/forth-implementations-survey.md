@@ -86,7 +86,7 @@ modules - another target.
 
 ## Built and measured (Iteration 197)
 
-**regpin** (results/pending/regpin-after-seed41.patch): VMREGS pinned in three
+**regpin** (results/applied-after-seed41/regpin-after-seed41.patch): VMREGS pinned in three
 assignments over rbx and r12-r15, tos with them (tools/gen-tos.py). All twelve
 builds (three designs x regpin 0-3) pass the gate; hand-made stages identical.
 On the development VM's GCC: the smallest +800-928 bytes in all and ~1% slower

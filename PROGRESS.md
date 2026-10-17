@@ -2753,7 +2753,7 @@ the runtime 3,400 - ~3-3.5 KB net smaller for every design if built
 ## Iteration 133 - 2026-10-10 - Claude
 
 **The owner's go: NAME>BUF into the kernel after seed 39, SYSCALL built as a
-gene.** NAME>BUF waits as results/pending/namebuf-after-seed39.patch (it
+gene.** NAME>BUF waits as results/applied-after-seed39/namebuf-after-seed39.patch (it
 applies to master; not applied - seeds 38 and 39 run the same code).
 **SYSCALL, phase 1 - the engine half** (the gene sysc, not yet wired into
 the evolver). A design's image is the kernel only - the evolver never loads
@@ -3345,7 +3345,7 @@ carried rtimm, unexpressed behind the pair overlay, rtfuse and pairs it has no
 slots for. rtimm=2 gives it the immediates overlay alone: +662 bytes, fib
 -13.6% of its dispatches, the compile-heavy workloads +0.4-1.1%. All 218 of
 seed 40's front designs alive with it; the held-out check clean on the two
-checked. Pending after seed 41: results/pending/rtimm2-after-seed41.patch.
+checked. Pending after seed 41: results/applied-after-seed41/rtimm2-after-seed41.patch.
 Next on it: the forms the price asks for - `-` and `<` immediates, DUP n <.
 
 ## Iteration 176 - 2026-10-11 - Claude
@@ -3357,7 +3357,7 @@ they did nothing (found by probing what the run-time compiler wrote). On seed
 40's smallest with rtimm=2: fib 59.27 M -> 37.74 M dispatches for +726 bytes;
 218 of 218 front designs alive with them; the held-out check clean on the two
 ans-check took (it keeps its database's front - the rest to check). Pending
-after seed 41, after rtimm2: results/pending/keepforms-after-seed41.patch.
+after seed 41, after rtimm2: results/applied-after-seed41/keepforms-after-seed41.patch.
 
 ## Iteration 177 - 2026-10-11 - Claude
 
@@ -3396,7 +3396,7 @@ X;CALL of the five dead designs had its code outside the base one-byte band
 converter now writes X;CALL only in the base band: all five right, all 48 of
 seed 40's opcall front designs alive. The mechanism outside the band is still
 unexplained - a containment, recorded as such. Pending after seed 41, fifth:
-results/pending/opcall-band-after-seed41.patch.
+results/applied-after-seed41/opcall-band-after-seed41.patch.
 
 **And the loops' padding (Iteration 180):** LOOP8's NOOPs sit inside the loop
 body - every iteration, not "once per loop" as the comment has it: 8.4% of the
@@ -3688,7 +3688,7 @@ token for one), layout.py writes them (--long-branches) and exits 4, and
 evolve.py converts again with them kept long. All 37 of seed 41's dead genomes
 alive with the batch's code; the smallest's and the knee's images byte for
 byte as before; 7 of 7 stages identical; run-tests PASS. The first
-after-seed-42 patch (results/pending/shortbranch-after-seed42.patch).
+after-seed-42 patch (results/applied-after-seed42/shortbranch-after-seed42.patch).
 
 **The surrogate without scikit-learn** (results/drafts/surrogate-offline.md):
 a pure-Python additive model (22 s to fit) predicts speed within 8.2% and size
@@ -4005,7 +4005,7 @@ and a chain pulls once (its second half runs with NEXT_RUN_PULLED=1): a newer
 bundle in ~/Downloads cannot touch a running chain.
 
 **fsys 5 tightened - the after-seed-43 batch's fourth patch
-(results/pending/fsys5fast-after-seed43.patch).** Searched first (prompts/12:
+(results/applied-after-seed43/fsys5fast-after-seed43.patch).** Searched first (prompts/12:
 PROGRESS, GOALS, the fsys notes - bookkeeping, read-ahead, FS-FILL, FS-TAKE,
 6.95): no earlier attempt, only Iteration 211's count. Priced first
 (prompts/10): lab/evolve/fsys-count.py - the profiler's per-address counts
@@ -4290,7 +4290,7 @@ survey's 1, 5 and 6 (the laptop).
 ## Iteration 226 - 2026-10-12 - Claude
 
 **The fsys follow-ups (open item 3), as seed 44 runs: the third patch of the
-after-seed-44 batch (results/pending/fsysread-after-seed44.patch).** READ finding
+after-seed-44 batch (results/applied-after-seed44/fsysread-after-seed44.patch).** READ finding
 its editing characters in a Forth loop: not made faster - only a stdin that is a
 file takes that path (a block read, the rest given back), and every workload
 reads its input through a pipe, a byte a read(2) (the owner's rule), so
@@ -4321,7 +4321,7 @@ beside the bytes. The hidden-names entry in the register notes it.
 ## Iteration 228 - 2026-10-12 - Claude
 
 **The fourth after-seed-44 patch: 32 KB of stack nobody used, on every run of
-every design** (results/pending/stackheads-after-seed44.patch; open item 7, the
+every design** (results/applied-after-seed44/stackheads-after-seed44.patch; open item 7, the
 engine's constants swept by memory). Found by reading which pages a design
 still has present after a workload (/proc/pid/pagemap, mapped to the engine's
 symbols): 9-11 pages of C stack in a libc-free engine. load_image keeps
@@ -4341,7 +4341,7 @@ function the compiler probes page by page (objdump: one probe loop).
 ## Iteration 229 - 2026-10-12 - Claude
 
 **A zero divisor is -10 THROW (the owner approved; the fifth after-seed-44 patch,
-results/pending/divzero-after-seed44.patch - it changes kernel.4: reseed).** The
+results/applied-after-seed44/divzero-after-seed44.patch - it changes kernel.4: reseed).** The
 converter writes THROW's body into every CV8 image header, as it writes the
 locals words'; the engine's UM/MOD calls it with -10 where the divisor was -
 through macros, so the handler stays one line for gen-super (a superinstruction
@@ -4401,7 +4401,7 @@ confirmed here - the same conversion without --bytehdr runs. Not a defect.
 ## Iteration 232 - 2026-10-12 - Claude
 
 **UTF-8 word names compile right (the owner asked how they behave; the third
-after-seed-45 patch, results/pending/names-after-seed45.patch).** >NAME finds a
+after-seed-45 patch, results/applied-after-seed45/names-after-seed45.patch).** >NAME finds a
 header by scanning back from the body for bit 7 - the count byte's mark - and
 COMPILE, reads bit 5 there to inline a primitive. With the name between the
 count byte and the body, a UTF-8 byte (bit 7 set) stopped the scan; with bit 5
@@ -4428,7 +4428,7 @@ cut a program's Cyrillic names ~60%). The cell headers next.
 ## Iteration 234 - 2026-10-12 - Claude
 
 **UTF-8 names in the cell-header systems too (the owner approved; the fourth
-after-seed-45 patch, results/pending/cellnames-after-seed45.patch - it changes
+after-seed-45 patch, results/applied-after-seed45/cellnames-after-seed45.patch - it changes
 kernel.4: reseed).** The kernel's own COMPILE, asked >NAME for a primitive's
 flag the same way, so s0 (the build host), SOD16, CPT16, s4-s5, pack4/pack8 and
 s7 had the fault - s0 crashed on `café`. Cell headers are now [link cell]
@@ -5158,7 +5158,7 @@ prompt asks for (Iteration 104) is still owed.
 ## Iteration 268 - 2026-10-13 - Claude
 
 **The gene factor checked and pending: after-seed-47 patch 6
-(results/pending/factor-after-seed47.patch, ORDER.md).** On patches 1-5, clang
+(results/applied-after-seed47/factor-after-seed47.patch, ORDER.md).** On patches 1-5, clang
 18 installed: run-tests PASS (the generators 31 paths - the tag and the JIT
 with factor=3); 7 of 7 identical; names-check PASS; the suite on 3456ac1e5e at
 factor 1, 2 and 3 and on d1ac6c88d8 and 3bb2087f9d at 3: 14 of 14 each, 0 differ
@@ -7064,3 +7064,32 @@ db*.jsonl derived the file's own name and read markdown as JSON (compare-fronts.
 chain's names; this one checks). End to end on 2 designs, N = 100 and 1,000, 2 rounds: s6's run phase
 157.5 ns a call at N = 100, 274.9 at 1,000 - the footprint effect, seen even here; the sampled fastest
 0.280 and 0.234 of s6. Proposed for the chain after seed 57: `then experiment footprint.py`.
+
+## Iteration 372 - 2026-10-17 - Claude
+
+**Housekeeping: the tests green, and every document's citations checked.** run-tests.sh: PASS, no
+regressions, after Iterations 361-371's changes. Then every path cited in the 222 tracked documents
+(not the vendored relf, not the chat-to-iter265 archive): 1,618 citations, 120 distinct ones naming no
+file. 62 were patches cited at results/pending/ after the routine had moved them to their
+applied-after-seedN/ directory - the move never carried the citations along; rewritten (16 of them
+had a copy in the chat-to-iter265 archive too - the applied one taken), and HANDOFF's step 7 now
+carries them with one command. Of the rest, all explained, none in a current document wrong: prompts
+cited by number (prompts/01 for prompts/01-problem-framing.md - the convention), names wrapped across
+a line, placeholders (seedN, spn-HOST), prose (corpus/parse/kernel), relf's own paths in RELF.md
+(engine/cv8.c, bench/langs/bench.4 - vendor/relf/tree), and a plan's never-made directory
+(FORMAT-TAG2.md's forth/tag2/, "the plan was"). I had first called the prompts missing - they are
+tracked; checked before changing anything. Eleven files cited here were deleted when superseded;
+each is in git, before the commit that deleted it (git show COMMIT^:PATH):
+
+| deleted | by | where it went |
+|---|---|---|
+| results/drafts/bfind-wip.patch | dabaa3b (Iteration 317) | the after-seed-52 batch, patch 2 |
+| results/drafts/cell64-wip.patch | ec9eb72 (326) | the 32-bit checks at native 4-byte cells |
+| results/drafts/cell32-wip.patch | 450e77a (332) | the 32-bit checks, pending, then applied after seed 55 |
+| results/drafts/two-width-wip.patch | dca350b (338) | selection at both widths, applied after seed 56 |
+| results/drafts/jitimg-wip.patch | 507a86c (342) | jitimg and jitvar, then the jit-genes patch |
+| results/drafts/jit-genes-wip.patch | f7f1c8d (343) | the after-seed-56 batch, patch 2 |
+| results/drafts/jit-genes-fixed.patch | 0f781e9 (345) | patch 2 corrected - applied-after-seed56/ |
+| results/drafts/coreext-after-seed40-draft.patch, recurse-noname.md | 5b30490 (171) | the standard's words, ready |
+| results/pending/skipscan-after-seed39.patch | 6e5afed (145) | tab-free parsing, its replacement |
+| tools/sysc-xform.py, tools/test-sysc-shell.sh | 23e66f3 (169) | the after-seed-39 batch applied; run-tests.sh's shell suite |

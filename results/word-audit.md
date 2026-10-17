@@ -220,7 +220,7 @@ would stay a tab. kinput's TABS>BL operation already serves evolved designs.
 The owner: a tab is a space to the parser, as the standard allows - no need to
 make it one. And nothing in this repository's sources holds a single tab: the
 pass REFILL made over every line (7.3% of s6's kernel workload) never changed
-a byte here. **results/pending/parsing-after-seed39.patch replaces the SKIP/SCAN
+a byte here. **results/applied-after-seed39/parsing-after-seed39.patch replaces the SKIP/SCAN
 patch**, eight files:
 
 - the kernel: SKIP and SCAN by `1 -1 D+`, a space delimiter taking every
@@ -299,7 +299,7 @@ lookup and the parsing - so the profiles say what runs, not the source: 2SWAP
 cost 5 dispatches in its own bytes and ~150 in ROLL and CMOVE>; ALIGNED, called
 by every inline string in the source, ran 5 times in all eight workloads.
 
-**Built** - results/pending/audit-after-seed39.patch, the batch's ninth:
+**Built** - results/applied-after-seed39/audit-after-seed39.patch, the batch's ninth:
 - INTERPRET checks the stack where it can have changed - after a word executes,
   after a number is interpreted - not after a word or a number compiled.
 - CMOVE, CMOVE> and FILL by D+: 11, 11 and 10 operations a byte, not 19, 19
