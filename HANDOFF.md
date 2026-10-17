@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 376.
+- master: Iteration 377.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -275,7 +275,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    generalization test; a disagreement diagnosed (noise, width, gene) before it is weighed; the final
    generic choice by the geometric mean over machine classes with a veto; and the blind spot tested -
    xcheck samples only the laptop's front, so a design good on the Tegra and rejected by the laptop is
-   never seen: a sample of rejected designs measured elsewhere. Classes, weights, margin: the owner's.
+   never seen: a sample of rejected designs measured elsewhere. **Decided (the owner, Iteration 377):
+   three classes, equal** (GOALS.md); the margin proposed 25%. **The test is built** (xcheck --rejected;
+   REMOTES: the Tegra 4 of 16, dream at 32 bits 6 of 30) - it runs in seed 58's chain, on what seed 57
+   rejected: the report's line "Rejected by the laptop's selection, measured here" answers it.
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

@@ -7175,3 +7175,21 @@ other machines its generalization test; a disagreement diagnosed before weighed 
 width separated from the architecture, knockouts on both; the final generic choice by the geometric
 mean over machine classes, each class once, with a veto; an architecture-specific mechanism a build
 choice only if large and simple; and the blind spot tested - rejected designs measured elsewhere.
+
+## Iteration 377 - 2026-10-17 - Claude
+
+**Three classes of machine, equal (the owner) - and the blind spot's test built.** GOALS.md now says how
+the best generic designs are chosen across machines: x86-64, x86 at 32 bits and ARMv7, equal - the
+geometric mean of their speeds over the classes, each once, with a veto (none more than a margin behind
+its class's best; 25% proposed) - selection staying on the laptop at both widths, the other machines
+its test. Since xcheck.py sampled only the laptop's front, a design good elsewhere and rejected here
+could never be seen; now `--sample ... --rejected K` takes K of the n from the run's db.jsonl beside
+its report: living designs off the front, within its speed span, spread by speed, under the same
+filters (no JIT, GCC only, built and alive at 4-byte cells for a 32-bit host); the flag is carried
+through the host's records (it had built each record afresh) and through --ids (dream's paired
+64-bit check takes the 32-bit check's designs - from the front only, before); the report marks them
+and says how many ran faster there than the front's median and fastest. Tested on a fake archive from
+seed 56 (half its front as the front, all 187 in the database): 5 front and 3 rejected sampled, all 8
+through --ids, and a fake host result with one rejected design the fastest there - reported by name.
+REMOTES: the Tegra 16 designs, 4 rejected, 120 minutes; dream at 32 bits 30, 6 rejected, 40 minutes,
+its paired 64-bit check the same 30. They run in seed 58's chain, on what seed 57 rejected.

@@ -3,12 +3,16 @@
 
 Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md):
 
-  xcheck.py --sample RESULTS.md OUT.json [--n 24] [--no-jit] [--gcc-only]
+  xcheck.py --sample RESULTS.md OUT.json [--n 24] [--no-jit] [--gcc-only] [--rejected K]
       on the laptop: designs of a front, to measure elsewhere - the fastest, those
       about the best Q (speed times binary + image), the smallest, and some between,
       a quarter each - with each design's genome, its expression here and its speed
       here. --no-jit and --gcc-only keep to the designs that can be themselves on a
-      host without the JIT (32-bit) or without clang.
+      host without the JIT (32-bit) or without clang. --rejected K (Iteration 377): K of the n
+      are designs the laptop's selection REJECTED - living, off the front, within its speed span,
+      from the run's db.jsonl beside RESULTS.md, spread by speed - so a design good there and
+      rejected here can be seen at all (results/drafts/cross-machine-weighing.md); marked in the
+      report, with how many ran faster there than the front's median and fastest.
 
   xcheck.py DESIGNS.json OUT.json [--rounds N] [--until EPOCH]
       on the host, in a clone at the same commit, its stages built: the host's
@@ -81,12 +85,19 @@ if '--report' in ARGS:
     mv = sorted(d, key=lambda x: x['speed_here'] / x['speed'])
     print('| design | laptop | here | here / laptop |\n|---|---|---|---|')
     for x in mv[:3] + mv[-3:]:
-        print('| %s | %.3f | %.3f | %.2f |' % (x['id'], x['speed'], x['speed_here'], x['speed_here'] / x['speed']))
+        print('| %s%s | %.3f | %.3f | %.2f |' % (x['id'], ' (rejected)' if x.get('rejected') else '', x['speed'], x['speed_here'], x['speed_here'] / x['speed']))
+    rj = [x for x in d if x.get('rejected')]; fr = [x for x in d if not x.get('rejected')]
+    if rj and fr:                                                       # Iteration 377: the owner's question, measured
+        fh = sorted(x['speed_here'] for x in fr); med, best = fh[len(fh) // 2], fh[0]
+        am = [x['id'] for x in rj if x['speed_here'] < med]; ab = [x['id'] for x in rj if x['speed_here'] < best]
+        print('\n**Rejected by the laptop\'s selection, measured here: %d** - faster here than the front\'s median: %d%s; '
+              'than its fastest: %d%s.' % (len(rj), len(am), (' (%s)' % ', '.join(am)) if am else '', len(ab), (' (%s)' % ', '.join(ab)) if ab else ''))
     sys.exit(0)
 
 # ---- --sample: the designs to measure elsewhere, picked on the laptop ----
 if '--sample' in ARGS:
     src = opt('--sample'); n = int(opt('--n', '24')); nojit = opt('--no-jit', flag=True); gcc = opt('--gcc-only', flag=True); bundle = opt('--bundle')
+    nrej = int(opt('--rejected', '0'))                                # Iteration 377: designs the selection rejected
     # Iteration 331: --cell 4 - a 32-bit check (the owner: 32-bit x86 and the Tegra, at native
     # 4-byte cells). The sample built here as 32-bit x86 at 4-byte cells (gcc -m32, static), each
     # design taken only if it builds and lives so - no JIT, no clang - and with --bundle the
@@ -96,7 +107,7 @@ if '--sample' in ARGS:
     # Iteration 335: --ids FILE - exactly another check's designs (its designs.json), at this width:
     # the same designs at 64 bits and at 32 on one host, the width alone (seed 55's two samples
     # shared 8 designs, nearly all slow)
-    idsf = opt('--ids'); ids = [d['id'] for d in json.load(open(idsf))] if idsf else None
+    idsf = opt('--ids'); idsd = json.load(open(idsf)) if idsf else None; ids = [d['id'] for d in idsd] if idsf else None
     if cell4:
         os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = gcc = True
     if len(ARGS) != 1: sys.exit(__doc__)
@@ -139,11 +150,18 @@ if '--sample' in ARGS:
         for x in seq:
             if k <= 0: break
             if x[0] not in [p[0] for p in pick] and good(x[0]): pick.append(x); k -= 1
+    rejected = set()
     if ids is not None:
         byid = {x[0]: x for x in ok}
+        for x in idsd:                                                   # Iteration 377: a rejected design, from the file itself
+            if x['id'] not in byid and x.get('rejected') and 'genome' in x:
+                e = E.express(E.canon(x['genome'])); gen[x['id']] = x['genome']
+                if not (nojit and e.get('jit')) and not (gcc and (e.get('compiler') or e.get('tailpn'))):
+                    byid[x['id']] = (x['id'], x['speed'], x.get('total'), e); rejected.add(x['id'])
         for i in ids:
             if i in byid and good(i): pick.append(byid[i])
     else:
+        n_all = n; n = n - nrej if nrej > 0 else n
         q = n // 4
         take(sorted(ok, key=lambda x: x[1]), q)                          # the fastest
         take(sorted(ok, key=lambda x: x[1] * x[2]), q)                   # about the best Q (speed x size)
@@ -151,7 +169,25 @@ if '--sample' in ARGS:
         rest = sorted([x for x in ok if x[0] not in [p[0] for p in pick]], key=lambda x: x[1])
         k = n - len(pick)
         if rest and k > 0: take([rest[int(j * (len(rest) - 1) / max(1, k - 1))] for j in range(k)], k)   # between, evenly
-    json.dump([{'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot} for i, sp, tot, e in pick], open(out, 'w'), indent=1)
+        if nrej > 0:                                                     # Iteration 377: the rejected, from the run's database
+            dbp = os.path.join(os.path.dirname(os.path.abspath(src)), 'db.jsonl'); span = max((x[1] for x in ok), default=0); pool = []
+            if not os.path.exists(dbp): print('xcheck: --rejected: no %s - none sampled' % dbp, flush=True)
+            else:
+                for l in open(dbp):
+                    try: r = json.loads(l)
+                    except ValueError: continue
+                    i = r.get('id')
+                    if r.get('status') != 'ok' or i in rows or 'genome' not in r or r.get('speed') is None or r['speed'] > span: continue
+                    e = E.express(E.canon(r['genome']))
+                    if nojit and e.get('jit'): continue
+                    if gcc and (e.get('compiler') or e.get('tailpn')): continue
+                    gen[i] = r['genome']; pool.append((i, r['speed'], r.get('total', r.get('size')), e))
+                pool.sort(key=lambda x: x[1]); before = len(pick)
+                if pool: take([pool[int(j * (len(pool) - 1) / max(1, nrej - 1))] for j in range(min(nrej, len(pool)))], nrej)
+                rejected = {x[0] for x in pick[before:]}
+        n = n_all
+    json.dump([dict({'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot}, **({'rejected': True} if i in rejected else {})) for i, sp, tot, e in pick], open(out, 'w'), indent=1)
+    if rejected: print('xcheck: %d of them rejected by the laptop\'s selection (Iteration 377)' % len(rejected), flush=True)
     print('xcheck: %d designs sampled from %d eligible (%s%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', ', at 4-byte cells, each alive so' if cell4 else '', out))
     if bundle:
         import tarfile
@@ -211,6 +247,7 @@ except Exception as ex:
 save()
 for k, x in enumerate(D, 1):
     rec = {'id': x['id'], 'speed': x['speed'], 'total': x.get('total')}
+    if x.get('rejected'): rec['rejected'] = True                      # Iteration 377: carried to the report
     R['designs'].append(rec)
     if until and time.time() > until: rec['why'] = 'the time limit'; save(); continue
     g = E.canon(x['genome']); e = norm(E.express(g))

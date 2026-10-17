@@ -32,4 +32,7 @@ the laptop rejects is never measured elsewhere - however good it would be there.
    population, not its front - measured on the Tegra and dream. Any that rank far higher there than on
    the laptop are the owner's scenario, real; none, and the laptop's selection stands for the others.
 
-Open for the owner: which classes count, and equally; the veto's margin.
+**Decided (the owner, Iteration 377): the three classes, equal** - recorded in GOALS.md. Open: the veto's
+margin (25% proposed). **The blind spot's test is built** (Iteration 377): xcheck.py --sample ... --rejected K,
+set in lab/evolve/REMOTES for the Tegra (4 of 16) and dream at 32 bits (6 of 30, and its paired 64-bit
+check) - from seed 58's chain, its checks of seed 57's front and of designs seed 57 rejected.

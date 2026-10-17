@@ -6,9 +6,13 @@
 #
 # host       how       designs  rounds  minutes  sample options
 dream.lan    prebuilt    24     3       30
-dream.lan    prebuilt32  24     3       30       --cell 4
-dream.lan    prebuilt64  24     3       30       --from prebuilt32
-rage.lan     native      12     2       90       --cell 4
+dream.lan    prebuilt32  30     3       40       --cell 4 --rejected 6
+dream.lan    prebuilt64  30     3       40       --from prebuilt32
+rage.lan     native      16     2       120      --cell 4 --rejected 4
+#   Iteration 377 (the owner: three classes of machine, equal): designs the laptop REJECTED measured
+#   too (xcheck --rejected K) on the two classes not the laptop's own - the Tegra (ARMv7), 4 of 16, and
+#   dream at 32 bits, 6 of 30, its paired 64-bit check taking the same 30 - so a design good there and
+#   rejected here can be seen at all (results/drafts/cross-machine-weighing.md).
 #   Iteration 331: dream.lan's second check - 32-bit x86 at 4-byte cells, the laptop's static -m32
 #   builds and the 4-byte references (dream has no 32-bit compiler); rage.lan back - native, at
 #   its own 4-byte cells (Iterations 326-330). One host's checks run one after another.

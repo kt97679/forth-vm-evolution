@@ -59,6 +59,14 @@ How each is measured:
   8 KB is a tie** (Iteration 77): designs differ by a few pages; a JIT's buffer
   or a leak, tens of KB, still decides.
 
+**Across machines** (the owner, Iteration 377; results/drafts/cross-machine-weighing.md): the best generic
+designs are chosen for **three classes of machine, equal** - x86-64, x86 at 32 bits, ARMv7 - by the
+geometric mean of their speeds over the classes, each class once, with a veto: none more than a margin
+behind the best of its class (25% proposed). Selection stays on the laptop, at both widths; the other
+machines test it, designs it rejected included (xcheck --rejected). A disagreement is diagnosed - measured
+again, the width separated from the architecture, knockouts on both - before it is weighed; a mechanism
+that helps one class and hurts another is a per-architecture build choice only if large and simple.
+
 **Judging a run, and when to stop** (Iterations 78, 188-189): each run against
 all the others, measured again in one session - its fastest, smallest and
 least-memory designs, the hypervolume in log space, and the best Q (binary +
