@@ -38,15 +38,18 @@ reference kernel byte for byte. Anything else dies, and the cause is kept.
 
 FITNESS, both minimised and kept as a Pareto front, so nothing is traded:
   speed  geometric mean of the end-to-end time - cycles where the hardware
-         counters can be read, CPU time otherwise - over kernel, fib, parse
-         and corpus, every program loaded from a FILE (standard input would
+         counters can be read, CPU time otherwise - over the selection
+         workloads, WORK_SEL: kernel, fib, corpus, loop, bubble, ackermann
+         (since Iteration 127; until 41 kernel, fib, parse, corpus; from 41
+         with loop), every program loaded from a FILE (standard input would
          measure read() calls, not engines)
   size   bytes of the engine plus the self-hosting image ('total': since
          Iteration 75; before it, the image alone) - with speed, memory
          (rss) and, under --widths 8,4, speed at 4-byte cells: the
          objectives of dominates(). The aim behind them: GOALS.md.
-loop is HELD OUT: never selected on, reported for the survivors, so a
-design tuned to the four does not pass unnoticed.
+WORK_HELD is HELD OUT: never selected on, reported for the survivors, so a
+design tuned to the selection does not pass unnoticed - sieve and parse
+since Iteration 127 (loop until 41, sieve from 41).
 
 OPERATORS
   mutation   a gene flipped or nudged; a fold added, removed or swapped

@@ -6855,10 +6855,11 @@ the raw archives by their directory. From now on each iteration names the files 
 
 **Where the methods are**: lab/evolve/evolve.py's header - the genes (with each gene() definition's
 comment, the iteration that made it), the operators, and the objectives: speed, the geometric mean of
-end-to-end time (cycles where the hardware counters can be read, CPU time otherwise) over kernel, fib,
-parse and corpus, each program loaded from a file; size, the engine's plus the image's bytes (since
+end-to-end time (cycles where the hardware counters can be read, CPU time otherwise) over the
+selection workloads - kernel, fib, corpus, loop, bubble, ackermann since Iteration 127 (kernel, fib,
+parse, corpus until 41; loop added at 41) - each program loaded from a file (corrected at 369); size, the engine's plus the image's bytes (since
 Iteration 75 - corrected at 368: this said the image's alone, as evolve.py's header did); memory (rss);
-loop held out, never selected on; since Iteration 354 (--widths 8,4) speed at 4-byte cells a fourth. The
+held out, never selected on: sieve and parse since 127 (loop until 41, sieve from 41); since Iteration 354 (--widths 8,4) speed at 4-byte cells a fourth. The
 machines: results/amd-ryzen-8840hs.md (the laptop, every run) and results/armv7-tegra.md, dream.lan in
 the cross-machine checks below, lab/evolve/REMOTES for how each is checked. The run-by-run extremes for
 charts: results/progress-by-run.md (lab/evolve/progress-table.py). The stopping rule and every run's
@@ -7016,3 +7017,20 @@ The supers question, left to the lab by the owner, decided by GOALS.md's own rul
 mechanism (it would tie each genome to its profile, for one pair at 3.8 % of dispatches); the fixed
 pool lets the search weigh a pair against a format-10 word in one mutation; after seed 58, if
 superinstructions still buy nothing, the gene comes out of tag-2 designs, as rtlit did.
+
+## Iteration 369 - 2026-10-17 - Claude
+
+**Dormant list genes are by design; the methods' workloads corrected; the open items rewritten.** After
+the supers finding, every list gene audited for entries that never take effect. Format-10 words: about
+half are listed past their slots - seed 55, 5,110 listed and 2,492 built; seed 56, 5,714 and 2,858 -
+mostly compare-and-branch fusions (>?BRANCH, U<?BRANCH8, ?NBRANCH...) left in the tail by selection.
+Not a fault: a mutation inserts a word at a random place (the search can promote any), and express()
+keeps only what is built - a design's identity, and what seed-facts.py counts (its expressed ops10 equal
+ops10_in on all 187 of seed 56's front) - so past adoption claims stand; dormant entries are a neutral
+reservoir. I had suspected the reports; checked before changing anything, the suspicion was unfounded.
+The supers naming (367) stays the one real fault. Two documents had the selection workloads wrong:
+evolve.py's header and Iteration 366's methods note said kernel, fib, parse and corpus with loop held
+out - that was the start; loop was selected from Iteration 41 (sieve held out), and since 127 selection
+is kernel, fib, corpus, loop, bubble, ackermann, with sieve and parse held out (git: 467dc55, 7814967).
+Both corrected. HANDOFF's open items rewritten to the state now - the old list still called the runner,
+the 32-bit follow-ups and the two-width batch to-dos, and seed 52 next.

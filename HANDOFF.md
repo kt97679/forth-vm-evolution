@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 368.
+- master: Iteration 369.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -213,100 +213,49 @@ About 20 minutes of machine time for build, tests and gates.
 
 ## Open items (roughly by value)
 
-0. The protocol above, built to results/drafts/runner-protocol.md - its commands
-   (start, status, monitor, stop), the start's recovery, the end's trap and one archive, root
-   that chowns and watches the chain - and tried here as it says (a miniature chain;
-   stop in mid-run; a kill -9 as a crash) before the laptop relies on it. Each step's
-   own pack kept in runs/ for the first real use. Fix with it: perf-hold.py creates
-   runs/perf-hold.log as root today.
-   Done of it: lab/evolve/xcheck.py (Iteration 307) - sample, the host's run and the
-   report, tried here; the hosts (dream, rage) idle, GCC only, no clang or perf. dream
-   measures the laptop's own binaries (--bundle, --prebuilt; Iteration 308); rage builds
-   natively first. To do:
-   the runner, and its ssh side for the remote checks.
-0. The 32-bit checks - their first run (seed 55): dream.lan 32-bit x86 Spearman 0.694 against the
-   laptop, 64-bit 0.940 - the skew, measured. Two follow-ups: (a) the Tegra - the pending batch
-   ports the sysc guard to pack4.c, pack8.c, spn.c, spn-cv8.c (build-stages.sh compiles them; it
-   stopped at pack4.c); (b) the width alone - a 64-bit check on dream from the same pool as the
-   32-bit one (no JIT, GCC only, the same designs), so 64 against 32 bits on one machine; seed 55's
-   two samples shared 8 designs, nearly all slow and within 5%. Then: what in the evolved designs
-   costs at 32 bits (register pressure on i386's 8 registers, 4-byte cells) - genes for both.
-0c. Selecting at both widths - **pending, the after-seed-56 batch** (results/pending/ORDER.md,
-   Iterations 336-338): evolve.py --widths 8,4 (NEXT-RUN's word: widths) - speed32, each design's
-   interpreter as a 32-bit x86 engine at 4-byte cells, a fourth objective; 20 of 20 designs with
-   speed32 in the scratch run; 64 bits unchanged (byte-identical, gene-equiv PASS, the gate). The
-   converter's alignment fixed with it (seed 54's converter death lives). After seed 56: apply, and
-   NEXT-RUN with widths - the owner's hours.
-   Patch 3 (Iteration 352): the comparison at 32 bits too (--widths 8,4). And why designs lose at
-   32 bits (results/drafts/skew-32.md): knockouts name tag2 and fsys 3 (engine-side, to read as bugs)
-   and the compiler gene's 64-bit-only gain.
-   Iteration 353: tag2's 32-bit cost confirmed (36%), in dispatch, not the cell type nor the PIC
-   register; selecting at both widths costs x1.86 the evaluation time - nearly twice the hours.
-   And a correction: this VM's 32-bit system calls cost 140x its 64-bit ones (12.49 against 0.09 us) -
-   fsys 3's 32-bit penalty measured here is mostly the VM; tag2's (in a loop without calls) stands.
-0b. The next genes (results/drafts/next-genes.md, Iterations 323, 339): lab/evolve/jitleft.py
-   measured it - the JIT leaves kernel 56% and corpus 99.7% to the interpreter (fib, loop,
-   ackermann translated whole): the outer interpreter - INTERPRET, PARSE-WORD, REFILL, WORD, ?STACK -
-   and the corpus's run-once words. Next: a JITLOG build naming the operation that keeps each word
-   out - done, Iteration 340: --why. 62.6% of what is left is never tried - the image's words have no JIT
-   header; the gene jitimg designed (results/drafts/next-genes.md): the converter writes the header
-   run-time words get - built (results/drafts/jitimg-wip.patch, Iteration 341): level 1 alive, little
-   gained yet - PARSE-WORD tried and refused for vf (getstatic); INTERPRET excluded (aligned data).
-   jitimg (0/1) and jitvar pending as patch 2 of the after-seed-56 batch (Iteration 343: forced 16 of
-   16 JIT designs alive, 66 engine paths). INTERPRET now tried, refused for PLACE; PARSE-WORD, WORD for
-   (PARSE) - C primitives: **helper calls next** (the owner approved; the design in the draft).
-   Iteration 345: pending patch 2's latent jitvar bug fixed and re-verified (byte-identical off; 66
-   paths; forced 16/16; gate 248/248) - the pending patch replaced. Helper calls (results/drafts/
-   jithelp-wip.patch): PLACE, (PARSE), COUNT - INTERPRET now at (FIND), PARSE-WORD at +!. (FIND) needs
-   the engine's internals: the hard step.
-   Interpreter re-entry built (Iteration 346, the owner approved; results/drafts/jitre-wip.patch):
-   links, crashes on its first run. Bisected (Iteration 347): helper calls and COUNT right natively;
-   (PARSE)'s image header breaks the compiler's inlining (fix: no header on one-operation words);
-   **Re-entry works** (Iteration 349): JIT_L_INTERP had been 0xFFFE, the translator's "call resolved"
-   marker - fixed; jit_rtouch keeps (S")'s inline data from being decoded. Snippets identical to the
-   JIT off; the helper words verified translated. Iteration 350: all four JIT genes alive together
-   (jit_rtouch conservative; callee addresses bounded) - but kernel 54.6% left (55.9%): INTERPRET at
-   (FIND), PARSE-WORD at +! - operations, which re-entry cannot help. The owner's call: on, or park.
-1. Seed 52: process when its packs come; and the two measurements' packs. seed-facts.py now reports every late gene and the format-10 words on the front
-   (Iteration 299) - seed 51's predictions are scored from it.
-2. What the batches applied after seeds 50 and 51 do (Iteration 300): seed 51 took
-   opinline on 64 of 162; 2@ on the JIT designs - five of the six fastest - but on 8 of
-   the 69 without the JIT; knumber on 8 of 69 klookup designs; tailpn brought no tail
-   engine back. A new opcode costs an interpreted design a slot of its full format-10
-   list. Seed 52 shows > and 0=, and alignhot (which only 20 of seed 50's 187 could
-   take).
-3. The interpreter's mispredictions (results/missmap-amd-ryzen-7-pro-8840hs.md, Iteration
-   301): (FIND) in C the largest single source on kernel and corpus, 9-13% - its chain
-   walk; the fast designs all took 16 threads, the fewest. A gene for its walk made
-   branch-light (a name's length and first characters compared as one word) is the next
-   to try. Calls and returns 15-25% - one shared jump predicting where the program goes.
-   The JIT's ackermann misses: native ret past the return predictor's depth - a
-   candidate gene, not built.
-4. The front end (Iterations 297, 301): the evolved interpreted designs stall there half
-   their cycles on compute work - not the caches (under 0.2 misses a thousand
-   instructions): the dispatch's taken indirect jump itself. The lever is fewer
-   dispatches (superinstructions, opcodes, the JIT); alignhot, applied after seed 51, is
-   unlikely to pay. The IP-update loop form set aside (results/drafts/iploop-plan.md).
-5. ?STACK as an opcode - deferred (Iteration 299, results/source-audit-3.md): 7.4% of the
-   corpus's dispatches on seed 50's fastest design without the JIT, about a dozen a check
-   - INTERPRET checks after every word it executes. Twice worked on already, in Forth:
-   kinput's ?STACK8 (Iteration 54) and kstack's (116), one unsigned compare on DEPTH. One
-   opcode, given S0 @ by an overlay's wrapper, would save most of it - about 1% of the
-   geometric mean - but: a new overlay tag for every design doubles the stage dumps each
-   build makes, and it must reproduce DEPTH exactly (SP@ is PUSH(dsp + CELL_BYTES): the
-   macro moves dsp first, so the value is dsp as it was; an off-by-one misses a one-cell
-   underflow). Worth it if seed 51 shows the corpus still weighs.
-5b. Generalization (results/generalization.md, Iteration 305): the selection measured on
-   one CPU, with small programs. Two checks to build: a held-out workload whose code
-   footprint grows (generated programs of N words, hot and run once, and a
-   compile-heavy one) - each front design's time per dispatch against N; and the joint
-   front measured on a second CPU - now planned: the remote checks on dream.lan and
-   rage.lan, part of item 0 (results/drafts/runner-protocol.md).
-6. The genes still code (GENES.md, "Adding a gene": the dispatch cluster, the
-   compiler's switch-off, the list genes, engine flags, shared converter
-   options) - into rows only as each is next touched, each conversion checked
-   with `python3 lab/evolve/gene-equiv.py <the commit before>`. A new gene is
-   one row.
+Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
+under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
+
+0. **Seed 57** - the first run selected at both widths (--widths 8,4): process when its archive comes,
+   with its cross-machine checks; then apply results/pending/ORDER.md (patch 1: 32-bit engines not PIE,
+   as relf builds them; patch 2: superinstruction pairs named right in tag-2 designs) and run seed 58.
+1. **Superinstructions after seed 58** (results/drafts/supers-tag2.md; decided at 368): with the pool
+   named right, do front designs build real pairs, and do they buy anything? If not, the gene comes out
+   of tag-2 designs - a mechanism that buys nothing comes out (GOALS.md).
+2. **Generalization** (results/generalization.md, Iteration 305): selection is measured on small
+   programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
+   build: a held-out workload whose code footprint grows - generated programs of N words, hot and run
+   once, and a compile-heavy one - each front design's time per dispatch against N.
+3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; helper calls and
+   re-entry parked (results/drafts/jithelp-wip.patch, jitre-wip.patch) - the kernel still 54.6% left to
+   the interpreter, INTERPRET stopping at (FIND) and PARSE-WORD at +!, operations re-entry cannot help.
+   The owner's call: on, or park for good.
+4. **Fewer dispatches - the front end's lever** (Iterations 297, 301): the evolved interpreted designs
+   stall on the dispatch's indirect jump, not the caches. Superinstructions were that lever on paper,
+   and in tag-2 designs never in fact (item 1). Calls and returns are 15-25% of mispredictions; the
+   JIT's ackermann misses past the return predictor's depth - a candidate gene, not built
+   (results/missmap-amd-ryzen-7-pro-8840hs.md). The IP-update loop form set aside
+   (results/drafts/iploop-plan.md).
+5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
+   geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
+   than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.
+6. **relf, phases 2 and 3** (RELF.md): after the best generic designs - how they fit relf and its shell;
+   the shell-profile patches (results/relf-patches/) parked for then, their laptop timing optional.
+7. **The article** - deprioritized (the owner's standing decision): written from PROGRESS.md when the
+   best designs are found.
+8. **The genes still code** (lab/evolve/GENES.md, "Adding a gene") - into table rows only as each is
+   next touched, each conversion checked with `python3 lab/evolve/gene-equiv.py <the commit before>`.
+
+Done since the list before (pointers, not repeats): the runner protocol and its remote checks
+(Iterations 302-315: lab/evolve/chainctl.py, lab/evolve/xcheck.py); the 32-bit checks and their
+follow-ups (seeds 55-56, Iterations 334-354: the Tegra, the width alone on dream); selection at both
+widths (applied at 354; seed 57 runs it); (FIND)'s branch-light walk (bfind, Iteration 316); seeds
+52-56 processed.
+
+Not an item - **dormant list genes are by design** (checked at 369): about half of the front's
+format-10 words (ops10) are listed past their slots and not built, as are nearly all superinstruction
+pairs; express() keeps only what is built - a design's identity, and what lab/evolve/seed-facts.py
+counts - so dormant entries are a neutral reservoir a mutation can promote, not a fault in the reports.
 
 ## Lessons - how faults got in, and the checks that catch them now
 
