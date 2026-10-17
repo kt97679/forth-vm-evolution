@@ -16,7 +16,10 @@ Notes:
   (results/relf-pairs-realistic.md), as the three patches of Iterations 360-362 are.
 - relf already has a part of several: the top of stack in a register (tos), variable slots (varslot),
   an inliner with swept limits (hotinl's ground), CTABLE-FIND (klookup's ground).
-- **The cheap class is where to look first**: each a change to cv8.c's build or code alone, testable at
+- **Measured (Iteration 364; results/relf-patches/README.md): the cheap class does not transfer** -
+  clang, -Os and pinned registers are each no faster for relf's cv8.c on its shell; d256 and guard
+  pages it has already. Its genes belong to this lab's designs' whole combinations.
+- Was: **the cheap class is where to look first**: each a change to cv8.c's build or code alone, testable at
   once on relf's own shell with tools/relf-ab.sh - compiler (clang against gcc: Iteration 352's knockouts
   found its 35 % 64-bit-only on this lab's fastest design), regpin, alignhot (hot handlers aligned), d256
   (one 256-entry table, no opcode-or-call test), sharedcall. A relf profile for the search: these and

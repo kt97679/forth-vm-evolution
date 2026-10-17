@@ -1,0 +1,47 @@
+diff -ruN rr0/engine/cv8.c rr/engine/cv8.c
+--- a/engine/cv8.c	2026-10-17 17:20:30.707727392 +0000
++++ b/engine/cv8.c	2026-10-17 17:20:30.736493659 +0000
+@@ -270,6 +270,31 @@
+ #else
+ #define VMREGS UNS64 ip = g_ip, rp = g_rp, dsp = g_dsp, t; const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
+ #endif
++#if defined(REGPIN) && REGPIN && defined(__x86_64__)
++/*  The VM registers pinned to callee-saved machine registers, in one of three
++ *  assignments (forth-vm-evolution's gene regpin, its Iteration 197; Gforth's
++ *  explicit register allocation): -DREGPIN=1, 2 or 3. GCC keeps a local register
++ *  variable in its register where it can. Off unless asked for.  */
++#undef VMREGS
++#if GUARD
++#define VMREGS_LIMITS
++#else
++#define VMREGS_LIMITS const UNS64 dsp_limit = g_dsp_limit, rp_limit = g_rp_limit;
++#endif
++#if REGPIN == 1
++#define VMREGS register UNS64 ip asm("rbx") = g_ip; register UNS64 rp asm("r12") = g_rp; \
++               register UNS64 dsp asm("r13") = g_dsp; UNS64 t; VMREGS_LIMITS
++#define TOSREG "r14"
++#elif REGPIN == 2
++#define VMREGS register UNS64 ip asm("r12") = g_ip; register UNS64 rp asm("r13") = g_rp; \
++               register UNS64 dsp asm("r14") = g_dsp; UNS64 t; VMREGS_LIMITS
++#define TOSREG "r15"
++#else
++#define VMREGS register UNS64 ip asm("r15") = g_ip; register UNS64 rp asm("r14") = g_rp; \
++               register UNS64 dsp asm("rbx") = g_dsp; UNS64 t; VMREGS_LIMITS
++#define TOSREG "r12"
++#endif
++#endif
+ 
+ /*  Floors for the two stacks, both set once in main() and never
+  *  changed. Kept as plain variables rather than recomputed from base
+@@ -840,7 +865,11 @@
+ 
+ static void virtual_machine(void) {
+     VMREGS
++#ifdef TOSREG
++    register UNS64 tos asm(TOSREG) = CELL(dsp); dsp += CELL_BYTES;   /* fill; pinned (REGPIN) */
++#else
+     UNS64 tos = CELL(dsp); dsp += CELL_BYTES;       /* fill */
++#endif
+ #define NOS CELL(dsp)
+ #define PUSHT(x) do { UNS64 v_ = (x); dsp -= CELL_BYTES;         \
+         STACK_CHECK(dsp < dsp_limit, 0)                              \

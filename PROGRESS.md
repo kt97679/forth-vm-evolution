@@ -6808,3 +6808,15 @@ regpin, d256, alignhot, sharedcall... - testable at once on relf's shell), opcod
 (dear: both engines, the compilers, the tools, A15's trade), kernel words, and the JIT (not for CV8).
 And this lab's 32-bit engines built -fno-pie -no-pie, as relf's are: three designs alive, plain
 executables - pending after seed 57, so its own speed32 stays comparable with itself.
+
+## Iteration 364 - 2026-10-17 - Claude
+
+**This lab's cheap genes on relf's shell: none transfers.** The C-engine-only class, each through
+relf's whole make test and timed on its shell: clang 3-5 % slower on four workloads; pinned registers
+mixed (str 6 % slower, arith 4 % faster); -Os 2-5 % slower, three workloads significantly - though
+clang and -Os are what every fastest design of seeds 55-56 chose. They belong to those designs' whole
+combinations; relf's cv8.c is tuned with gcc -O2 by its own hundreds of iterations, and it has d256
+and guard pages already. relf-ab.sh learned make variables for B alone (RELF_AB_MAKE_B, passed whole)
+and to measure the shells it built: relf's make test rebuilt relf64 without the variable (an rbx count
+of 98, against 434 pinned, gave it away); the shell measured had embedded the right engine, now by
+construction. This lab's offer to relf is at its instructions' level, measured on its terms.

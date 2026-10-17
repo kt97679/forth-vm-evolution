@@ -6,7 +6,9 @@
 # B must pass relf's `make test` and a shell's `echo ok` before it is measured. Then relf's
 # tools/bench-vm.py - paired, interleaved CPU time, medians with bootstrap intervals - on its shell
 # workloads (default loop fn str arith realistic start), A first: each ratio is B's time over A's.
-# No PATCH: B is A again - the noise floor.
+# No PATCH: B is A again - the noise floor. RELF_AB_MAKE_B: make variables for B alone (Iteration 364),
+# a build-only candidate with no PATCH - RELF_AB_MAKE_B='CC=clang' is relf's engine built by clang; one
+# assignment, passed whole: RELF_AB_MAKE_B='CFLAGS=-O2 -Wall -DREGPIN=1'.
 set -e
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 ROUNDS=20; SCALE=2; WL="loop fn str arith realistic start"
@@ -19,10 +21,13 @@ for p in "$@"; do
     (cd "$T/B" && patch -s -p1 < "$p") || { echo "relf-ab: $p does not apply to vendor/relf/tree"; exit 1; }
     grep -q '^+++ .*\(engine/opcodes.tab\|forth/kernel.4\|forth/cross.4\)' "$p" && images=1
 done
-echo "relf-ab: A vendor/relf/tree ($(sed -n 's/^commit  \(.......\).*/\1/p' "$ROOT/vendor/relf/UPSTREAM")); B with ${*:-nothing - the noise floor}"
+echo "relf-ab: A vendor/relf/tree ($(sed -n 's/^commit  \(.......\).*/\1/p' "$ROOT/vendor/relf/UPSTREAM")); B with ${*:-no patch}${RELF_AB_MAKE_B:+, make $RELF_AB_MAKE_B}$([ -z "$*$RELF_AB_MAKE_B" ] && echo " - the noise floor")"
 (cd "$T/A" && make -s relfsh64 > "$T/A.make" 2>&1) || { echo "relf-ab: A does not build"; tail -5 "$T/A.make"; exit 1; }
-if [ -n "$images" ]; then (cd "$T/B" && make -s images IMAGES_FORCE=1 > "$T/B.images" 2>&1) || { echo "relf-ab: B's images do not build"; tail -5 "$T/B.images"; exit 1; }; fi
-(cd "$T/B" && make -s relfsh64 > "$T/B.make" 2>&1) || { echo "relf-ab: B does not build"; tail -5 "$T/B.make"; exit 1; }
+if [ -n "$images" ]; then (cd "$T/B" && make -s ${RELF_AB_MAKE_B:+"$RELF_AB_MAKE_B"} images IMAGES_FORCE=1 > "$T/B.images" 2>&1) || { echo "relf-ab: B's images do not build"; tail -5 "$T/B.images"; exit 1; }; fi
+(cd "$T/B" && make -s ${RELF_AB_MAKE_B:+"$RELF_AB_MAKE_B"} relfsh64 > "$T/B.make" 2>&1) || { echo "relf-ab: B does not build"; tail -5 "$T/B.make"; exit 1; }
+# The shells measured are the ones built here, set aside: relf's make test may rebuild relf64 without
+# RELF_AB_MAKE_B (Iteration 364 saw it), and a later relfsh64 would embed that one.
+cp "$T/A/relfsh64" "$T/A.relfsh64"; cp "$T/B/relfsh64" "$T/B.relfsh64"
 # The gate is regression, not perfection: B may fail only what A fails (relf's suite has network and
 # terminal tests a host may not allow). A's failures recorded once for the vendored commit.
 AF=$ROOT/build/relf-ab-$(sed -n 's/^commit  \(.......\).*/\1/p' "$ROOT/vendor/relf/UPSTREAM").fails
@@ -31,7 +36,8 @@ if [ ! -f "$AF" ]; then
     grep '^FAIL' "$T/A.test" | sort -u > "$AF"
     echo "relf-ab: A's own make test here: $(wc -l < "$AF") failing check(s), recorded in $AF"
 fi
-(cd "$T/B" && make -s test > "$T/B.test" 2>&1) || true
+(cd "$T/B" && make -s ${RELF_AB_MAKE_B:+"$RELF_AB_MAKE_B"} test > "$T/B.test" 2>&1) || true
+cp "$T/A.relfsh64" "$T/A/relfsh64"; cp "$T/B.relfsh64" "$T/B/relfsh64"   # the shells built above, measured
 grep '^FAIL' "$T/B.test" | sort -u > "$T/B.fails"
 NEW=$(comm -13 "$AF" "$T/B.fails")
 [ -z "$NEW" ] || { echo "relf-ab: B fails what A passes:"; echo "$NEW" | head -10; exit 1; }

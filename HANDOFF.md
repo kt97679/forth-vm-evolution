@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 363.
+- master: Iteration 364.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -86,6 +86,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Iteration 363: no more fusions until the laptop times these (the rest ~1 % each, each a slot of A15's
   64); this lab's genes classed for relf (results/drafts/relf-gene-classes.md); 32-bit engines not PIE,
   pending after seed 57 (results/pending/ORDER.md).
+  Iteration 364: the cheap class measured on relf's shell - clang, -Os, pinned registers: none faster
+  (results/relf-patches/README.md); relf-ab.sh takes RELF_AB_MAKE_B and measures the shells it built.
 - **Seed 57 next** (the owner, Iteration 355: one 12-hour run, not two of 6 - each run's fixed part
   with two widths about 3 h 40 min): the first run selecting at both widths, with jitimg and jitvar;
   the comparison at both widths. The reserve knows --widths now (164 min; the evolution ~8 h 20 min).

@@ -28,3 +28,24 @@ slot (0.13 % of dispatches) by tools/relf-pairs.py's budget. UNTIL's backward br
 CALL, begins with NO-PEEP, which (since VAR@+) also forgot the last VAR@, so the call to b in `a @ b @`
 erased the memory of the first fetch before @ came. Passing tests prove a fusion safe, not that it
 happens: each patch is counted too (tools/relf-pairs.py with RELF_TREE on the harness's B).
+
+## Build-only candidates: this lab's cheap genes on relf's shell (Iteration 364)
+
+The C-engine-only class of results/drafts/relf-gene-classes.md, each measured through the whole gate
+(`RELF_AB_MAKE_B`, make variables for B alone; the shells measured are the ones built, set aside
+before relf's make test - which rebuilds relf64 without them - and checked: B's engine text, or its
+use of the pinned register). This VM, 12 rounds at SCALE=2, B's time over relf's:
+
+| candidate | gate | loop | fn | str | arith | realistic | start |
+|---|---|---|---|---|---|---|---|
+| CC=clang (18, against gcc 13) | passes | 1.054 | 1.044 | **1.044** | 1.036 | 0.995 | 1.003 |
+| REGPIN=1 (`regpin.patch` + -DREGPIN=1: ip rbx, rp r12, dsp r13, tos r14) | passes | 1.024 | 1.006 | **1.059** | **0.956** | 1.002 | 0.982 |
+| CFLAGS=-Os (engine text 25,574 bytes, from 26,519) | passes | **1.046** | **1.022** | 1.046 | 0.992 | **1.019** | 1.033 |
+
+(bold: the interval excludes 1.) **None of them transfers**: clang and -Os, what every one of this
+lab's fastest designs of seeds 55-56 chose, are slower for relf's cv8.c - they belong to those designs'
+whole combination of genes, not to engines at large; relf's cv8.c has been tuned with gcc -O2 through
+hundreds of its iterations. Two more need no test: relf dispatches through a 256-entry table already
+(d256) and guards its stacks with pages already (GUARD 1). What this lab can give relf is at the
+level of its instructions, measured on its terms - the three patches above.
+

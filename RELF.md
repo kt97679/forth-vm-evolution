@@ -66,6 +66,8 @@ compiler's constants and inlining for the kernel's own words.
    one-byte opcodes (A15) if relf takes these: R@, ?BRANCH8, LIT64 to the escape band.
 4. **Done (Iteration 363), a first pass: results/drafts/relf-gene-classes.md** - the cheap class (C engine
    only: compiler, regpin, d256, alignhot, sharedcall...) testable now on relf's shell with relf-ab.sh.
+   **Tested (Iteration 364): none transfers** - clang, -Os, pinned registers no faster for relf's
+   cv8.c; d256 and guard pages relf has. This lab's offer to relf is at the instruction level.
    Was: classify this lab's genes by what relf would pay to adopt one (C engine only; image format;
    kernel words; x86-only) - a relf profile for the search; and relf's shell workloads in it.
 5. **Pending after seed 57 (Iteration 363; results/pending/ORDER.md)**: this lab's 32-bit engines built -fno-pie -no-pie, as relf's are (its two-width measurements
