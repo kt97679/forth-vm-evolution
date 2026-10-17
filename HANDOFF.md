@@ -41,7 +41,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 353.
+- master: Iteration 354.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -63,11 +63,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   interpreted designs 8th-13th there, their lead over s6 about halved (results/xcheck-dream-seed55.md).
   The Tegra failed again - four hand-made engines kept x86's sysc guard: the after-seed-55 batch
   (results/pending/ORDER.md).
-- **Seed 56 is next** (the owner, Iteration 351: 10 hours, first - the JIT drafts wait for it; Iteration 335: both): the after-seed-55 batch applied -
-  the Tegra's four engines; dream.lan's prebuilt64 check (--from prebuilt32: the same designs at 64
-  bits - the width alone, on one machine). Then **selecting at both widths**
-  (results/drafts/two-width-selection.md): a design's interpreter at 4-byte cells as a second speed
-  objective - its decisions for the owner first.
+- **Seed 56 processed** (Iteration 354): small (+1.3%; fastest -4.1%) - the fourth of these genes.
+  **The first run checked on four machines**: the Tegra's first native run (ARMv7) - Spearman 0.944;
+  dream.lan 64-bit 0.917, 32-bit 0.833, the same designs at 64 bits 0.977 - on one machine 64 against
+  32 bits 0.854: the skew is the width's. On real hardware fsys 3 keeps its place at 32 bits (r 1.00) -
+  the VM's 2x was its own slow 32-bit system calls; the five fastest at 64 bits lose most (r 1.7), one
+  lineage (klookup, kinput, rtimm 2, swapi; no regpin). **The after-seed-56 batch applied**: selecting
+  at both widths, jitimg and jitvar, the comparison at 32 bits - the gate 268 of 268.
+- **Seed 57 next - the owner's hours** (NEXT-RUN none until then; its line in NEXT-RUN's comments):
+  the first run selecting at both widths, with the new genes.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).

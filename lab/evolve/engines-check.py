@@ -54,6 +54,9 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('factored bodies (the tag)', dict(tag2=1, factor=3), ['tag2', 'factor']),        # Iteration 267: the gene factor
     ('the JIT with factored bodies', dict(JIT, factor=3), ['jit', 'factor']),
     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
+    ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
+    ('the JIT, jitvar, varslot 0', dict(JIT, jitvar=1, varslot=0), ['jitvar']),
+    ('the JIT, jitvar, varslot 1', dict(JIT, jitvar=1, varslot=1), ['jitvar']),
     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
     ('the JIT on the wide tag', dict(JIT, t2wide=1), ['jit', 't2wide']),
     ('the JIT, a 2-cell stack cache', dict(JIT, jitk=2), ['jit', 'jitk']),      # Iteration 259

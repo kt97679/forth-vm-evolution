@@ -119,6 +119,16 @@ static void jit_scan(void) {
  *  return stack, through jit_rp.  */
 #include <sys/mman.h>
 struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; };
+/* Iteration 344: an operand that fills the first literal hole - kinds 1-5, and with jitvar the slot
+   kinds 8 and 9 (without them vf's literal took k, 0: a fetch from 0 - latent while no word with vf
+   was translated). Without JITVAR the very expression it was. */
+#if JITVAR
+#define JIT_LITOPND(o) (((o)->opnd >= 1 && (o)->opnd <= 5) || (o)->opnd >= 8)
+#else
+/* the original tokens exactly - unparenthesized: a && b && (c && d) is another tree than a && b &&
+   c && d, and GCC compiled three of seed 55's JIT designs differently from it */
+#define JIT_LITOPND(o) o->opnd >= 1 && o->opnd <= 5
+#endif
 #include "vm-jit-ops.h"                 /* jit_ops[], JIT_CODE: this design's */
 #define JIT_NOPS ((int)(sizeof jit_ops / sizeof jit_ops[0]))
 #ifndef T2_ESC
@@ -521,6 +531,15 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             case 5: arg[n] = (UNS64)(INT64)(int8_t)BYTE(a); a += 1; break;
             case 6: arg[n] = a + (UNS64)(INT64)(int8_t)BYTE(a); a += 1; break;
             case 7: arg[n] = a + (UNS64)(INT64)(int16_t)LD16(a); a += 2; break;
+#if JITVAR
+            /* Iteration 342, the gene jitvar: a variable's slot - vf and vs (getstatic, putstatic) as
+               a literal of the address, then @ or ! - the address the engine's SLOT() makes */
+            case 8: arg[n] = jit_cbase + ((UNS64)LD16(a) << SCALE); a += 2; break;
+            case 9: { UNS64 t_ = BYTE(a);       /* VARSLOT: two bytes, or three with the top bit */
+                if (t_ & 0x80) { t_ = ((t_ & 0x7F) << 16) | ((UNS64)BYTE(a + 1) << 8) | BYTE(a + 2); a += 3; }
+                else { t_ = (t_ << 8) | BYTE(a + 1); a += 2; }
+                arg[n] = jit_cbase + (t_ << SCALE); } break;
+#endif
             default: return 0;
             }
 #if JITX
@@ -657,7 +676,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                 } else if (wh_[q_] == -1) p = jit_put(p, s, 0, 0, 0);       /* a canonicaliser */
                 else {
                     UNS64 v = o_ ? (UNS64)(INT64)o_->k : arg[i];               /* no o_: jitx's literal */
-                    if (o_ && jit_st[s].imm >= 0 && lit && o_->opnd >= 1 && o_->opnd <= 5) { v = arg[i]; lit = 0; }
+                    if (o_ && jit_st[s].imm >= 0 && lit && JIT_LITOPND(o_)) { v = arg[i]; lit = 0; }
                     p = jit_put(p, s, v, jt, 0);
                 }
             }
@@ -687,7 +706,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         for (j = 0; j < o->n; j++) {    /* the operand's value fills the first literal hole; k the rest */
             int s = o->st[j];
             UNS64 v = (UNS64)(INT64)o->k;
-            if (jit_st[s].imm >= 0 && lit && o->opnd >= 1 && o->opnd <= 5) { v = arg[i]; lit = 0; }
+            if (jit_st[s].imm >= 0 && lit && JIT_LITOPND(o)) { v = arg[i]; lit = 0; }
             p = jit_put(p, s, v, jt, 0);
         }
     }

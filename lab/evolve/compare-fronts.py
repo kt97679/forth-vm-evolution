@@ -31,6 +31,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 args = sys.argv[1:]; rounds = 10; cpuarg = None
 if '--rounds' in args: i = args.index('--rounds'); rounds = int(args[i + 1]); del args[i:i + 2]
 if '--cpus' in args: i = args.index('--cpus'); cpuarg = args[i + 1]; del args[i:i + 2]
+WIDTHS = '--widths' in args                # Iteration 352: and each design's interpreter at 4-byte cells
+if WIDTHS:
+    i = args.index('--widths')
+    if args[i + 1] != '8,4': sys.exit('--widths: 8,4 only')
+    del args[i:i + 2]
 # Iteration 114: --frontier - of each run, its front thinned to one design per
 # box of 1% speed, 64 bytes and the 8 KB memory tie, plus its three bests:
 # what the stopping rule needs exactly, and the front of all runs at the
@@ -42,7 +47,7 @@ if FRONTIER: args.remove('--frontier')
 if not args or any(a.startswith('-') for a in args): sys.exit(__doc__)
 dbs = [os.path.abspath(a) for a in args]
 sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
-E.setup()
+E.TWO_WIDTHS[0] = WIDTHS; E.setup_widths()   # Iteration 352: setup() itself without --widths
 home = os.path.expanduser('~')
 def say(*a): print(*a, file=sys.stderr, flush=True)
 
@@ -218,6 +223,23 @@ if len(_lp) > 1 and len(runs) > 1:
     _rel = ' - Q %.3f of s6\'s' % (_q(_qb) / (speed[CAL] * tot[CAL] * rss[CAL])) if CAL in speed and rss.get(CAL) and CAL in tot else ''
     print('\nThe Q-best design of all runs (the knee): %s, speed %.3f at %s bytes, %s KB%s - %s.'
           % (_qb, speed[_qb], format(tot[_qb], ','), format(rss[_qb], ','), _rel, next(l for l, ids in runs if _qb in ids)))
+if WIDTHS:                                    # Iteration 352: the speed32 objective's own measure, across the runs
+    r32 = max(1, rounds // 2); sp32 = {}
+    for k, i in enumerate(sorted(speed)):
+        sp32[i] = E.eval32(rec[i][0], r32).get('speed32'); say('32 bits: %d of %d %s %s' % (k + 1, len(speed), i, sp32[i]))
+    print('\n## At 32 bits (Iteration 352)\n')
+    print("Each design's interpreter as a 32-bit x86 engine at 4-byte cells (its JIT off, its call scale at most 2), "
+          "%d round(s), against hand-made s6 at 32 bits%s; a run's fastest there against all the others'.\n"
+          % (r32, (' (itself %.3f)' % sp32[CAL]) if sp32.get(CAL) else ''))
+    print('| run | fastest at 32 bits | against the others | its 64-bit fastest, at 32 bits | no 32-bit build |')
+    print('|---|---|---|---|---|')
+    for label, ids in runs:
+        mine = [i for i in ids if sp32.get(i)]; rest = [i for l2, ids2 in runs if l2 != label for i in ids2 if sp32.get(i)]
+        if not mine: print('| %s | - | - | - | %d |' % (label, len(ids))); continue
+        f32 = min(mine, key=lambda i: sp32[i]); g32 = (min(sp32[i] for i in rest) / sp32[f32] - 1) if rest else 0.0
+        f64 = min((i for i in ids if i in speed), key=lambda i: speed[i], default=None)
+        print('| %s | %.3f (%s) | %+.1f%% | %s | %d |' % (label, sp32[f32], f32, 100 * g32,
+              ('%.3f (%s)' % (sp32[f64], f64)) if f64 and sp32.get(f64) else '-', sum(1 for i in ids if not sp32.get(i))))
 if len(cpus) > 1:
     a, b = cpus[0], cpus[1]
     ids = sorted(i for i in S[a] if i != CAL)

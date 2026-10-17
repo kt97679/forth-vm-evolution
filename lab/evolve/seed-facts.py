@@ -74,6 +74,16 @@ front = [json.loads(l)['id'] for l in open(results) if l.startswith('{"bin"')]
 fr = [R[i] for i in front if i in R]
 print('\nthe front: %d designs (%d not in the db); by how made: %s; via the attic %d' % (
     len(front), len(front) - len(fr), dict(collections.Counter(kind(r['how']) for r in fr)), sum('via the attic' in (r['how'] or '') for r in fr)))
+f32 = [r for r in fr if 'speed32' in r]          # Iteration 338: a two-width run (evolve.py --widths 8,4)
+if f32:
+    have = [r for r in f32 if r.get('speed32') is not None]
+    print('  two widths: %d of the front with a 32-bit speed, %d without' % (len(have), len(f32) - len(have)))
+    if len(have) >= 4:
+        n = len(have); rk = lambda v: {i: k for k, i in enumerate(sorted(range(n), key=lambda i: v[i]))}
+        ra, rb = rk([r['speed'] for r in have]), rk([r['speed32'] for r in have])
+        print('  speed against the 32-bit speed, over them: Spearman %.3f' % (1 - 6 * sum((ra[i] - rb[i]) ** 2 for i in range(n)) / (n * (n * n - 1))))
+    if have:
+        b = min(have, key=lambda r: r['speed32']); print('  the fastest at 32 bits: %s %.3f (at 64 bits %.3f)' % (b['id'], b['speed32'], b['speed']))
 fs = sorted((r for r in fr if r.get('total')), key=lambda r: r['total'])
 third = max(1, len(fs) // 3)
 for name, part in (('the small third', fs[:third]), ('the middle', fs[third:-third]), ('the fast third', fs[-third:])):

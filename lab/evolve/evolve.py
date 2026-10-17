@@ -195,6 +195,8 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
 ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
 gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
+gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
 gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
 gene('factor', values=range(len(FACTORV)),       # Iteration 267: repeated cold code in headerless shared bodies (results/drafts/factor-plan.md)
      needs=lambda g, e: e.get('tag2'),            # the tag's 2-byte calls and byte headers
@@ -634,11 +636,65 @@ def KW(): return 'k%d' % (8 * cellw())                      # the dumps' prefix:
 def S0(): return os.path.join(O, 's0-cell-%d' % (8 * cellw()))   # the cell engine that makes them
 def KIMG(): return 'kernel.img' if cellw() == 8 else 'kernel32.img'
 
+W4_ENV = {'EVOLVE_CELL': '4', 'EVOLVE_CC': 'gcc -m32'}
+KERNEL_IN64 = None
+
+class at_width:
+    """Iteration 336: evaluate at 4-byte cells - the build's environment and setup's four width-
+    dependent globals swapped in (build, alive and measure read them at call time), then put back."""
+    def __init__(self, ctx): self.ctx = ctx
+    def __enter__(self):
+        g = globals(); self.saved = {k: g[k] for k in ('REF', 'KREF', 'REF_CORPUS', 'KERNEL_IN')}
+        self.env = {k: os.environ.get(k) for k in W4_ENV}
+        os.environ.update(W4_ENV); g.update(self.ctx)
+    def __exit__(self, *_):
+        globals().update(self.saved)
+        for k, v in self.env.items():
+            if v is None: os.environ.pop(k, None)
+            else: os.environ[k] = v
+
+def setup_widths():
+    """Iteration 336: setup at 4-byte cells first (its own reference, kernel reference and k32
+    variants), kept in WIDTH4; then setup as always - the run's own width, 8."""
+    global KERNEL_IN64
+    if TWO_WIDTHS[0]:
+        KERNEL_IN64 = KERNEL_IN
+        env = {k: os.environ.get(k) for k in W4_ENV}; os.environ.update(W4_ENV)
+        try:
+            setup(); WIDTH4.update(REF=REF, KREF=KREF, REF_CORPUS=REF_CORPUS, KERNEL_IN=KERNEL_IN)
+        finally:
+            for k, v in env.items():
+                if v is None: os.environ.pop(k, None)
+                else: os.environ[k] = v
+            globals()['KERNEL_IN'] = KERNEL_IN64
+    setup()
+
+def eval32(g, rounds):
+    """Iteration 336: speed32 - the design, its JIT off, as a 32-bit x86 engine at 4-byte cells,
+    over the selection's workloads, a round fewer; none (and why) if it does not build or live so."""
+    # Iteration 337: and its call scale at most 2 - at 4-byte cells nothing is 8-aligned, scale 3's
+    # unit: run-time definitions align to the cell, and a scaled call missed them (the corpus died).
+    # A 32-bit build of the design takes cell-aligned calls, as it takes no JIT.
+    g32 = dict(g, jit=0)
+    if (g32.get('scale') or 0) > 2: g32['scale'] = 2
+    g32 = canon(g32); d32 = os.path.join(EV, 'ind32-' + gid(g)); out = {}
+    try:
+        with at_width(WIDTH4):
+            eng, img = build(g32, d32); pw = private_work(d32)
+            alive(eng, img, pw, far=not hand_made(g32))
+            t, raw = measure(eng, img, pw, WORK_SEL, max(1, rounds - 1))
+        out['speed32'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL)); out['t32'] = t
+    except (RuntimeError, subprocess.TimeoutExpired) as e:
+        out['speed32'] = None; out['why32'] = str(e)[:200]
+    shutil.rmtree(d32, ignore_errors=True)
+    return out
+
 def CCV(g):
     """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
     designs keep clang: the Tegra has none, and its sample is GCC's)."""
     c = CC(g)
-    return (os.environ['EVOLVE_CC'].split() if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc') else [c])
+    if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc'): return os.environ['EVOLVE_CC'].split()
+    return [c] + (['-m32'] if '-m32' in os.environ.get('EVOLVE_CC', '').split() else [])   # Iteration 336: clang at 32 bits too
 
 def cc():
     """Iteration 324: the C compiler - EVOLVE_CC to build for another host (gcc -m32: a 32-bit
@@ -832,6 +888,7 @@ def _build(g, d):
     if t2: flags.append('-DTAG2=1')
     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
     if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
+    if jit_on(g) and express(g).get('jitvar'): flags.append('-DJITVAR=1')   # Iteration 342: the slot operand's decoding
     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
@@ -912,6 +969,8 @@ def _build(g, d):
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
+    if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
+    if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
@@ -967,7 +1026,7 @@ def build_other(g, d):
     if g['enc'] == 'cell':
         if sh(cc() + ccflags(g) + ['-Wall', '-o', eng, os.path.join(ROOT, 'engine', 'relf.c')] + rt()).returncode:
             raise RuntimeError('died: engine did not compile')
-        shutil.copy(os.path.join(O, 's0-cell-s64.img'), img); return eng, img
+        shutil.copy(os.path.join(O, 's0-cell-s%d.img' % (8 * cellw())), img); return eng, img   # Iteration 338: the image of its width
     src = os.path.join(d, 'vm.c'); shutil.copy(os.path.join(O, 'vm-lab.c'), src)
     if g['enc'] == 'sod16':
         flags = ['-DENC=1', '-DREG=1', '-DSCALE=1'] + (['-DSKIPPAD=1'] if g['skippad'] else [])
@@ -1167,6 +1226,7 @@ def evaluate(g, rounds, keep=False):
         rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
         rec['mem'] = dict(LAST_RSS)
         rec['unit'] = UNIT
+        if TWO_WIDTHS[0]: rec.update(eval32(g, rounds))       # Iteration 336: the 32-bit measurement, after the 64-bit one
     except RuntimeError as e:
         rec['status'] = str(e)
     except subprocess.TimeoutExpired:
@@ -1286,6 +1346,12 @@ def borrow(g, donor, rnd):
 # image, peak memory. A record from before (no binary, no memory measured)
 # falls back to its image size and no memory: its own run's two.
 OBJECTIVES = ('speed', 'total', 'rss')
+# Iteration 336 (the owner, results/drafts/two-width-selection.md): --widths 8,4 - each design also
+# measured as a 32-bit x86 engine at 4-byte cells, here (gcc -m32: the laptop runs it), its JIT off -
+# a JIT design is judged at 32 bits by the interpreter under its JIT - and speed32 a fourth objective
+# on the front, not folded into speed: a weakness at one width does not hide behind the other.
+TWO_WIDTHS = [False]
+WIDTH4 = {}                 # REF, KREF, REF_CORPUS, KERNEL_IN at 4-byte cells (setup_widths)
 # Iteration 77: memory within MEM_TOL KB counts as a tie. Seed 18's
 # session: 18 of the front's 39 were there by memory alone, every one a
 # page or less (2-4 KB) from a design faster and smaller - the noise of the
@@ -1360,11 +1426,18 @@ def screen_beaten(stair, s_, t_):
 
 def dominates(a, b):
     """Design a dominates design b: no worse in all three, better in one -
-    memory by more than MEM_TOL, speed by more than SPEED_TOL."""
+    memory by more than MEM_TOL, speed by more than SPEED_TOL. With --widths 8,4,
+    speed32 a fourth, with speed's tolerance."""
     s, t, m = (ov(a, k) for k in OBJECTIVES); s2, t2, m2 = (ov(b, k) for k in OBJECTIVES)
-    return (s <= s2 * (1 + SPEED_TOL) and t <= t2 and m <= m2 + MEM_TOL
-            and (s < s2 * (1 - SPEED_TOL) or t < t2 or m < m2 - MEM_TOL))
+    if not TWO_WIDTHS[0]:
+        return (s <= s2 * (1 + SPEED_TOL) and t <= t2 and m <= m2 + MEM_TOL
+                and (s < s2 * (1 - SPEED_TOL) or t < t2 or m < m2 - MEM_TOL))
+    w, w2 = ov(a, 'speed32'), ov(b, 'speed32')
+    return (s <= s2 * (1 + SPEED_TOL) and t <= t2 and m <= m2 + MEM_TOL and w <= w2 * (1 + SPEED_TOL)
+            and (s < s2 * (1 - SPEED_TOL) or t < t2 or m < m2 - MEM_TOL or w < w2 * (1 - SPEED_TOL)))
 def ov(r, k):
+    if k == 'speed32':                  # Iteration 336: none (no 32-bit build, or not alive there) - the worst
+        v = r.get('speed32'); return v if v is not None else 1e9
     if k == 'total': return r.get('total', r['size'])
     if k == 'rss': return r.get('rss') or 0
     return r[k]
@@ -1420,7 +1493,7 @@ def first_front(ids, R):
 
 def crowding(front, R):
     cd = {i: 0.0 for i in front}
-    for k in OBJECTIVES:
+    for k in OBJECTIVES + (('speed32',) if TWO_WIDTHS[0] else ()):
         s = sorted(front, key=lambda i: ov(R[i], k)); lo, hi = ov(R[s[0]], k), ov(R[s[-1]], k)
         cd[s[0]] = cd[s[-1]] = float('inf')
         for j in range(1, len(s) - 1):
@@ -1689,7 +1762,7 @@ def setup():
         if c32 == c4: sys.exit('cannot retarget cross.4 to 4-byte cells (tools/reseed.sh has the same check)')
         open(os.path.join(W, 'cross32.4'), 'w').write(c32)
         KERNEL_IN = b'S" extend.4" INCLUDED\nS" cross32.4" INCLUDED\n'
-    KREF = os.path.join(EV, 'kernel-ref.img'); shutil.copy(os.path.join(W, KIMG()), KREF)
+    KREF = os.path.join(EV, 'kernel-ref%s.img' % ('32' if cellw() == 4 else '')); shutil.copy(os.path.join(W, KIMG()), KREF)   # 336: one a width
     with open(CORPUS, 'rb') as f:
         REF_CORPUS = sh([S0(), os.path.join(O, 's0-cell-s%d.img' % (8 * cellw()))], cwd=W, inp=f.read()).stdout
     UNIT = 'median ' + ('cycles' if os.environ.get('EVOLVE_METRIC') == 'cycles' else 'cpu time') + ' / hand-made s6'   # median: Iteration 25
@@ -1698,7 +1771,7 @@ def setup():
     PIN[:] = quiet_cpu()
     # the reference every measurement is paired with: hand-made s6
     global REF
-    rd = os.path.join(EV, 'reference'); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)
+    rd = os.path.join(EV, 'reference' + ('32' if cellw() == 4 else '')); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd)   # 336: one a width
     # Iteration 331: a check's host may be handed its reference built (EVOLVE_PREBUILT_REF, a
     # directory with engine and image - xcheck's prebuilt s6), when it cannot build one itself:
     # dream.lan has no 32-bit C compiler, and its 32-bit check measures the laptop's binaries
@@ -1857,8 +1930,11 @@ def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
-             '--jobs', '--until', '--fromzero'}
+             '--jobs', '--until', '--fromzero', '--widths'}
     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
+    if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
+        if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
+        TWO_WIDTHS[0] = True
     bad = [a for a in argv if a.startswith('-') and a not in known]
     if bad:
         # Iteration 4: `--help`, unrecognised, started a full run that wrote
@@ -1869,14 +1945,14 @@ def main(argv):
         DB = os.path.abspath(argv[argv.index('--db') + 1])
     def opt(name, default):
         return type(default)(argv[argv.index(name) + 1]) if name in argv else default
-    setup()
+    setup_widths()                         # Iteration 336: setup() itself, unless --widths 8,4
     if '--validate' in argv:
         ok = True
         for name, g in HUMAN.items():
             d = os.path.join(EV, 'validate-' + name)
             try:
                 eng, img = build(g, d)
-                same = open(img, 'rb').read() == open(os.path.join(O, name + '-s64.img'), 'rb').read()
+                same = open(img, 'rb').read() == open(os.path.join(O, name + '-s%d.img' % (8 * cellw())), 'rb').read()   # Iteration 338
                 pw = private_work(d); alive(eng, img, pw, far=False)   # Iteration 158: run-tests.sh judges them far
                 print('  %-11s image %s the build\'s, corpus and kernel workload correct' % (name, 'IDENTICAL to' if same else 'DIFFERENT from'))
                 ok &= same
@@ -2105,6 +2181,7 @@ def qbest_line(F, R, ref):
             'binary + image %s, memory %d KB%s.' % (i, x['speed'] / (ref['speed'] if ref else 1), format(ov(x, 'total'), ','), x['rss'], rel))
 
 def report(R):
+    if any('speed32' in r for r in R.values()): TWO_WIDTHS[0] = True     # Iteration 338: a two-width run's front, four objectives
     ok = [i for i in R if R[i]['status'] == 'ok']
     if not ok: nothing_alive(R); return
     F = first_front(ok, R)
@@ -2121,6 +2198,8 @@ def report(R):
          '## The Pareto front', '',
          '| design | speed | re-measured | image | binary | binary + image | memory KB | %s (held out) | genes, where they differ from s6-cv8b | how it was made |' % WORK_HELD[0],
          '|---|---|---|---|---|---|---|---|---|---|']
+    tw = TWO_WIDTHS[0]                         # Iteration 338: the 32-bit speed beside the speed, when the run has it
+    if tw: L[-2] = L[-2].replace('| speed | re-measured |', '| speed | 32-bit speed | re-measured |'); L[-1] += '---|'
     def diff(g):
         if not ref: return ''
         g, r = express(g), express(ref['genome']); out = []
@@ -2143,7 +2222,7 @@ def report(R):
         bn = format(x['bin'], ',') if x.get('bin') else '-'
         tt = format(x['total'], ',') if x.get('total') else '-'
         rm_ = format(x['rss'], ',') if x.get('rss') else '-'
-        L.append('| %s | %.3f | %s | %s | %s | %s | %s | %.3f | %s | %s |' % (i, rs, again, format(x['size'], ','), bn, tt, rm_, rl, diff(x['genome']), x['how'][:60]))
+        L.append(('| %s | %.3f |' + (' %s |' if tw else '') + ' %s | %s | %s | %s | %s | %.3f | %s | %s |') % ((i, rs) + ((('%.3f' % x['speed32']) if x.get('speed32') is not None else '-',) if tw else ()) + (again, format(x['size'], ','), bn, tt, rm_, rl, diff(x['genome']), x['how'][:60])))
     L += ['', '## How the front came about', '']
     for i in sorted(F, key=lambda i: R[i]['speed']):
         chain, j = [], i

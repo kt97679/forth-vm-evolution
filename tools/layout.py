@@ -707,11 +707,38 @@ def cfd(s):
     word at 4-byte cells (opcode + the 4-byte DOES> call), one cell otherwise."""
     return align_up(5, CELL) if (TAG2_ON and DATAPRIMS and info.get(s) is not None) else CELL
 
+# Iteration 341, the gene jitimg (results/drafts/next-genes.md): the image's own words JIT
+# candidates - each given the header a word compiled at run time gets (forth/cv8t-jit.4): [the JIT
+# opcode][its bytecode's length | 2^31], translated on its first call or left bytecode (the length
+# word 0). 1: the outer interpreter - the words jitleft.py found left (INTERPRET, PARSE-WORD, ...);
+# 2: every code word. Only plain ones: no inline aligned data, no tail, not headerless, and nothing
+# that lands inside them - the body's address unchanged (the kernel finds it from the name), the
+# header its first five bytes, the tokens after.
+JITIMG = int(_opt('--jitimg')) if '--jitimg' in ARGV else 0
+JITIMG_OUTER = ('INTERPRET', 'PARSE-WORD', 'REFILL', 'WORD', '?STACK', 'C,', 'HERE', 'CMOVE>', 'PARSE',
+                '(PARSE)', 'SOURCE', 'COMPILE,', 'LITERAL', 'NUMBER?', '(NUMBER?)', '>NUMBER', 'FIND', 'COUNT')
+JH = set()
+def _jitimg_pick():
+    if not (JITIMG and G.get('JIT_ON')): return
+    refs = set()
+    for w in order:
+        for k, pl in ((info[w['s']] or []) if kind[w['s']] == 'code' else []):
+            if k in ('C', 'XT') and isinstance(pl, int): refs.add(pl)
+        if kind[w['s']] == 'data' and isinstance(cells.get(w['s']), int): refs.add(cells.get(w['s']))
+    for w in order:
+        s0 = w['s']
+        if kind[s0] != 'code' or s0 in HL or tail_bytes(w): continue
+        if JITIMG == 1 and w['n'] not in JITIMG_OUTER: continue
+        if any(k in ('OPD', 'XT', 'STR', 'ALN') for k, _ in (info[s0] or [])): continue
+        if any(s0 < r < w['e'] for r in refs): continue
+        JH.add(s0)
+
 def new_body_bytes(w):
     if kind[w['s']] == 'code':
+        jh = 5 if w['s'] in JH else 0          # Iteration 341: the JIT header
         if BYTEHDR:
-            return len(tok[w['s']]) * UB + tail_bytes(w)
-        return align_up(len(tok[w['s']]) * UB, CELL) + tail_bytes(w)
+            return jh + len(tok[w['s']]) * UB + tail_bytes(w)
+        return align_up(jh + len(tok[w['s']]) * UB, CELL) + tail_bytes(w)
     if info[w['s']] is not None:
         # [pad][call token][parameter field, CELL aligned]
         # The pad goes BEFORE the token so the parameter field, which is
@@ -778,11 +805,18 @@ NT_OLD = cells.get(FW_S0 + CELL, 0) if FW_S0 is not None else 0
 NT_NEW = int(_opt('--threads')) if '--threads' in ARGV else NT_OLD
 assert NT_NEW and not (NT_NEW & (NT_NEW - 1)) and NT_NEW <= 4096, '--threads: a power of two up to 4096'
 
+# Iteration 337: a body's start is a call's target, and a scaled call (--cpt S) reaches only
+# multiples of 2^S - so bodies align to that, if it is more than a cell: at 4-byte cells with
+# S = 3, half the word starts were unreachable ("call target ... not 8-aligned"). The scale gene's
+# S is 0-3: at 8-byte cells this is the cell, as before.
+CALIGN = max(CELL, 1 << CPT) if CPT else CELL
+_jitimg_pick()                                   # Iteration 341: which words get the JIT header
+if JITIMG and __import__('os').environ.get('JITIMG_REPORT'): print('jitimg %d: %d words given the JIT header: %s' % (JITIMG, len(JH), ' '.join(sorted(w['n'] for w in order if w['s'] in JH)[:40])), file=__import__('sys').stderr)
 for w in order:
     if w['s'] in HL:                                 # Iteration 190: the code alone
         LINKLEN[w['s']] = 0
         new_off[w['s']] = {'link': off, 'nfa': off}
-        if not BYTEHDR or body_needs_align(w): off = align_up(off, CELL)
+        if not BYTEHDR or body_needs_align(w): off = align_up(off, CALIGN)
         new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
         continue
     if BYTEHDR:
@@ -793,7 +827,7 @@ for w in order:
         LINKLEN[w['s']] = ll
         new_off[w['s']] = {'link': off}; off += ll
         new_off[w['s']]['nfa'] = off;   off += len(w['n']) + 1
-        if body_needs_align(w): off = align_up(off, CELL)
+        if body_needs_align(w): off = align_up(off, CALIGN)
         new_off[w['s']]['body'] = off;  off += new_body_bytes(w)
     else:
         new_off[w['s']] = {'link': off}
@@ -1112,8 +1146,12 @@ def new_target_off(target):
         # A data body is [NOOP pad][call token][parameter field]. The pad
         # exists only to align the parameter field; a call may land on
         # the token itself and skip executing the NOOPs.
+        # Iteration 337: ... where a scaled call can reach it - else the body itself, its pad run:
+        # at CPT >= 2 body + CELL - 2 is never reachable (seed 54's one converter death, "call
+        # target 1390 not 8-aligned": 1390 = 6 mod 8)
         if (SKIPPAD and not DATAPRIMS and kind[target] == 'data'
-                and info[target] is not None):
+                and info[target] is not None
+                and (CPT is None or (new_off[target]['body'] + CELL - 2) % (1 << CPT) == 0)):
             return new_off[target]['body'] + CELL - 2
         return new_off[target]['body']
     h = [x for x in order if x['s'] < target < x['e']][0]
@@ -1233,6 +1271,10 @@ def emit(path):
             for (ws, j), nv in xt_new.items():
                 if ws == s0: ops2[j] = ('XT', nv)
             G['CUR_WORD'][0] = s0          # Iteration 199
+            jh = 5 if s0 in JH else 0           # Iteration 341: the JIT header first, as a run-time word's
+            if jh:
+                _tb = bytes(to_tokens(ops2)) if V8 else b''.join(tk(t_) for t_ in to_tokens(ops2))
+                img += bytes([T2MAP['one'][G['T2_JIT']]]) + (len(_tb) | 0x80000000).to_bytes(4, 'little')
             if V8: img += bytes(to_tokens(ops2))
             else:
                 for t_ in to_tokens(ops2): img += tk(t_)
@@ -1240,14 +1282,14 @@ def emit(path):
                 _c2t, _, _ts, _, _ = layout(ops2)
                 for _j, (_k, _pl) in enumerate(ops2):
                     if _k in ('ALN', 'XT', 'OPD', 'STR', 'EQIT', 'EQITS', 'GAP'): continue    # data, not operations; a GAP has no bytes
-                    _at = new_off[s0]['body'] + _ts[_j]
+                    _at = new_off[s0]['body'] + jh + _ts[_j]
                     if _k == 'C':      # tag 2: 01, 10, 11 in the top bits - 2, 3, 4 bytes (Iteration 88)
                         _cm.append('C %d %d %d %d %d %s %s' % (_at, (img[_at] >> 6) + 1 if TAG2_ON else 1 if _pl in G['HOTCALLS'] else 3 if img[_at] >= 0xC0 else 2,
                                    new_target_off(_pl), _pl, 1 if G['before_operand'](ops2, _j) else 0, w['n'], _tname(_pl)))
                     else:              # Iteration 88: and the operation's name, design-independent (sod16 t2_names)
                         _cm.append('O %d %s %d %s' % (_at, _k, img[_at], _NM.get(G['opcode_L'](ops2, _j), _k)))
                 for _c in sorted(G['branch_targets'](ops2)[1]):      # Iteration 88: where branches land
-                    if _c in _c2t: _cm.append('T %d' % (new_off[s0]['body'] + _c2t[_c]))
+                    if _c in _c2t: _cm.append('T %d' % (new_off[s0]['body'] + jh + _c2t[_c]))
             if not BYTEHDR:
                 while len(img) % CELL: img += b'\x00'
             # Unheadered tail, with its builtin entries relocated.
@@ -1614,6 +1656,8 @@ if EMIT:
                  '<>?BRANCH': (['EQ', 'LIT', 'EQ', '0BRANCH'], 7), '<>?BRANCH8': (['EQ', 'LIT', 'EQ', '0BRANCH'], 6)}
             if '--jitloop' in ARGV:   # Iteration 129, the gene jitloop: SPN's (+LOOP) and (?DO) stencils, a branch operand as (LOOP)'s
                 O.update({'(+LOOP)': (['PLOOP'], 7), '(?DO)': (['QDO'], 7)})
+            if '--jitvar' in ARGV:    # Iteration 342, the gene jitvar: vf and vs - a literal of the slot's address, then @ or !
+                O['vf'] = (['LIT', 'FETCH'], 9 if G['VARSLOT'] else 8); O['vs'] = (['LIT', 'STORE'], 9 if G['VARSLOT'] else 8)
             if '--jitinl' in ARGV:    # Iteration 137, the gene jitinl: D+'s stencil (spn-stencils.c, JITINL)
                 S1.update({'D+': ['DPLUS']})
             def _jd(nm):

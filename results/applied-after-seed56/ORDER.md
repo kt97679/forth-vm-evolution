@@ -1,4 +1,4 @@
-# The after-seed-56 batch - apply in this order (against master after Iteration 338)
+# The after-seed-56 batch - applied (Iteration 354)
 
 | # | patch | what it does |
 |---|---|---|
@@ -46,4 +46,8 @@ with --rounds 2 --widths 8,4 - s6 at 32 bits against itself 1.005; each run's fa
 its gain against the other; status 0. Without --widths the setup is setup() itself (setup_widths()
 calls only it). To use it, NEXT-RUN's comparison: experiment compare-fronts.py --rounds 6 --widths 8,4
 --frontier --cpus 2,8 - about half again its time (each design built and measured at 32 bits too).
+
+**Applied on master at Iteration 354**, the three patches in order: build-stages; run-tests PASS, 66
+engine paths; validate 7 of 7 IDENTICAL; the gate 268 of 268 alive (seed 56's front 187, the joint
+front 136, 55 in both) - a front none of the three was developed against.
 

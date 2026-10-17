@@ -15,6 +15,7 @@ that was itself refused down to the root - named from the call map's O lines.
 import bisect, collections, glob, json, os, shutil, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
 WHY = '--why' in sys.argv
+SET = dict(a[6:].split('=', 1) for a in sys.argv if a.startswith('--set='))   # Iteration 341: --set=gene=value, a design varied
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 dbs = [sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == '--db']
 args = [a for a in args if a not in dbs]
@@ -62,7 +63,7 @@ def by_word(W, c):
     return s
 
 for ident in args:
-    g = E.canon(recs[ident]['genome'])
+    g = E.canon(dict(E.canon(recs[ident]['genome']), **{k: int(v) for k, v in SET.items()}))
     if not E.express(g).get('jit'): print('%s: no JIT - nothing for the JIT to leave' % ident); continue
     W0, off, _, _ = profile(dict(g, jit=0), os.path.join(E.EV, 'jitleft-off'))
     W1, on, OPS, refused = profile(g, os.path.join(E.EV, 'jitleft-on'), WHY)

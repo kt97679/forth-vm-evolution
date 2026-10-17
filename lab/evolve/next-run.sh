@@ -148,7 +148,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
     [ -n "$THEN" ] || return 0
     echo; say "then: $THEN"
     exec 9>&-
-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO
+    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO NEXT_RUN_WIDTHS
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
 }
 # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
@@ -156,7 +156,11 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
 # a fresh search find what the carried runs, each starting from the last
 # fronts, missed? It travels to the detached run in the environment, as THEN.
 NOCARRY=${NEXT_RUN_NOCARRY:-}
+WIDTHS=${NEXT_RUN_WIDTHS:-}
 case " $* " in *" nocarry "*) NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx nocarry) ;; esac
+# Iteration 338: "widths" - select at both widths (evolve.py --widths 8,4: each design also measured
+# as a 32-bit x86 engine at 4-byte cells here, its JIT off - speed32 a fourth objective)
+case " $* " in *" widths "*) WIDTHS=1; set -- $(printf '%s\n' "$@" | grep -vx widths) ;; esac
 # Iteration 115 (the owner): "fromzero" - nocarry and more: the first
 # generation all random genomes, no hand-made design or founder in it.
 FROMZERO=${NEXT_RUN_FROMZERO:-}
@@ -271,12 +275,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_WIDTHS=$WIDTHS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
         say "going on in the background, as one chain - watch it with"
         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
         exit 0
     fi
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_WIDTHS=$WIDTHS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
     exit 0
 fi
 MODE=$NEXT_RUN_DETACHED
@@ -475,7 +479,7 @@ fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
 python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
 TICK=$!
-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} "$@" >> evolve.log 2>&1 \
+python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${WIDTHS:+--widths 8,4} "$@" >> evolve.log 2>&1 \
     || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
 kill $TICK 2>/dev/null || true
 tail -3 evolve.log

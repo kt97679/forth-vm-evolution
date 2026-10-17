@@ -42,7 +42,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `ans-check.py` - ans-check.py [--ids A,B,...] [DB ...] - the held-out check (Iteration 119; the
 - `c-baseline.py` - c-baseline.py [--runs N] [IDS...] - the Forth designs against the same
 - `callsites.py` - callsites.py ID [ID ...] [--db FILE ...] - a design's calls in the two-bit
-- `compare-fronts.py` - compare-fronts.py DB [DB ...] [--rounds N] [--cpus A,B] - the fronts of
+- `compare-fronts.py` - compare-fronts.py DB [DB ...] [--rounds N] [--cpus A,B] - the fronts of; Iteration 352: --widths 8,4 - and each design's interpreter at 4-byte cells (eval32), a section "At 32 bits": each run's fastest there against the others'
 - `counters-test.py` - counters.py leaves kernel.perf_event_paranoid as it found it, however the run ends: eight cases, a stand-in sudo; as root on a scratch machine (Iteration 279)
 - `counters.py` - where the cycles go: hardware counters (perf) for the newest front's designs on the selection workloads - the laptop's (Iteration 278)
 - `cpu-noise.py` - cpu-noise.py [--rounds N] [--cpus A,B] [--ids ID,...] [--work W,...] DB [DB ...]
@@ -728,3 +728,13 @@ recorded genome and why; engines-check builds every one and runs it on the corpu
 fault found once stays a test. The first two: seed 52's JIT designs whose (LOOP) stencil
 was read short (jit.c's scan, 64 bytes without jitloop; now 160 in every build, and every
 branching stencil must show both its exits or is not used).
+
+Iteration 338: selecting at both widths (results/drafts/two-width-selection.md). `evolve.py
+--widths 8,4` - each design that passes screening is also measured as a 32-bit x86 engine at 4-byte
+cells on this machine (gcc -m32; its JIT off - a JIT design judged at 32 bits by the interpreter
+under it - and its call scale at most 2, cell-aligned calls being the 32-bit build's), and that
+speed32 is a fourth objective on the front beside speed, size and memory; without the flag nothing
+changes. NEXT-RUN's word for it: `widths` (seed N tag2 6h widths). The report shows a 32-bit speed
+column and seed-facts.py two-width lines whenever the records carry speed32. compare-fronts.py still
+judges runs at 64 bits - its five measures, comparable with every earlier session.
+

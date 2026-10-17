@@ -6692,3 +6692,15 @@ here that is the VM: a microbenchmark puts a 32-bit int $0x80 at 12.49 us agains
 64-bit syscall - 140 times, where real hardware has two or three. So fsys 3's 32-bit penalty measured
 on this VM is mostly the VM's; every 32-bit ratio measured here is inflated where a workload makes
 system calls. tag2's cost stands - it sits in a loop that makes none.
+
+## Iteration 354 - 2026-10-17 - Claude
+
+**Seed 56 processed, and the after-seed-56 batch applied.** Small (hypervolume +1.3%, the fastest
+4.1% behind the old front's), the fourth run of these genes. But the checks: all four machines
+gathered for the first time. The Tegra's first native run, ARMv7 with 4-byte cells: Spearman 0.944 -
+the laptop's ranking carries to another architecture. dream.lan's paired check put the same designs
+at 64 bits (0.977) and 32 (0.833): on one machine Spearman 0.854 - the skew is the width's. Real
+hardware also settled the VM's doubt: fsys 3 keeps its place at 32 bits (r 1.00). Those that lose are
+the five fastest, one lineage (the C kernel primitives klookup and kinput among its marks). The batch
+- two-width selection, jitimg and jitvar, the comparison at 32 bits - applied: 66 engine paths, the
+gate 268 of 268 on seed 56's front. NEXT-RUN: none, for the owner's hours.
