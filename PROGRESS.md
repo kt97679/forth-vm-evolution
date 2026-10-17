@@ -7093,3 +7093,18 @@ each is in git, before the commit that deleted it (git show COMMIT^:PATH):
 | results/drafts/coreext-after-seed40-draft.patch, recurse-noname.md | 5b30490 (171) | the standard's words, ready |
 | results/pending/skipscan-after-seed39.patch | 6e5afed (145) | tab-free parsing, its replacement |
 | tools/sysc-xform.py, tools/test-sysc-shell.sh | 23e66f3 (169) | the after-seed-39 batch applied; run-tests.sh's shell suite |
+
+Then two more checks, the same iteration. **The consolidated findings documents predate the search**:
+FINDINGS-CELL-WIDTH (2026-09-13), -PERFORMANCE (09-29) and -FOOTPRINT (09-30) are the hand-made VM's,
+before Iteration 1; -OUTER-INTERPRETER stops at Iteration 4, -SPN at 31, JIT.md at 108 (missing
+jitloop, jitinl, jittail, jitk, jitimg, jitvar and the parked drafts); only FORMAT-TAG2.md is recent
+(333). Neither the superinstruction finding (367) nor the workloads' correction (369) touches them.
+So the search's own findings, Iterations 1-372, are consolidated nowhere yet - this log, the seed
+reports and the drafts hold them: for the article, that consolidation is part of the work. And **what
+the search chose** (results/drafts/gene-usage-53-56.md): every gene over seeds 53-56's 722 front
+designs - msc, scale and tail never on; eight genes under 10% of every front; twelve on in every
+design; the JIT on 445, clang on 181. My first count read only the values present - a gene at its
+default is absent from an expression - and called compiler=1 universal (GCC is 541 of the 722);
+caught by a contradiction with express()'s own rule, before anything was written. The evidence for
+a simplicity review after seed 57, whose two widths may bring an off side back.
+

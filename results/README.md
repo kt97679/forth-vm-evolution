@@ -20,6 +20,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `xcheck-dream-seed55.md` - The first check at both widths (Iteration 334): dream.lan 64-bit Spearman 0.940; 32-bit x86 at 4-byte cells 0.694 - the laptop's six fastest interpreted designs 8th-13th there: the skew the owner feared.
 - `xcheck-dream-seed54.md` - The second remote check (Iteration 333): seed 53's front on dream.lan - Spearman 0.941, the laptop's six fastest ranked 3 4 2 10 1 5 there.
 - `drafts/two-width-scratch-db.jsonl` - The second two-width scratch run's database (Iteration 337): its designs without speed32, to reproduce.
+- `drafts/gene-usage-53-56.md` - What the search chose (Iteration 372): every gene on the fronts of seeds 53-56 (722 designs) - never on (msc, scale, tail), rarely on, on everywhere; the evidence for the simplicity review after seed 57.
 - `drafts/supers-tag2.md` - The supers gene in tag-2 designs (Iteration 367): its pool misnamed since Iteration 66 (codes read as plain opcodes), the gene inert in ~97% of the fronts (its slots taken by format-10 words); the fix pending after seed 57.
 - `drafts/relf-gene-classes.md` - This lab's genes by what relf would pay to adopt one (Iteration 363): C engine only, opcode set or image format, kernel words, x86-64 JIT.
 - `drafts/two-width-selection.md` - Selecting at both widths, the skew in the evolution itself (Iteration 335, a draft): a design's interpreter measured at 4-byte cells as a second speed objective; the decisions for the owner.

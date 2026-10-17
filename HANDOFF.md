@@ -249,6 +249,11 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    JIT's ackermann misses past the return predictor's depth - a candidate gene, not built
    (results/missmap-amd-ryzen-7-pro-8840hs.md). The IP-update loop form set aside
    (results/drafts/iploop-plan.md).
+4b. **The simplicity review, after seed 57** (results/drafts/gene-usage-53-56.md, Iteration 372): over
+   seeds 53-56's 722 front designs, msc, scale and tail never on; eight genes under 10% of every front;
+   twelve on in every design (tag2's off side the whole plain CV8 encoding). Seed 57's two widths
+   first - an off side may return at 32 bits - then each never-chosen mechanism out or kept, each
+   always-on gene frozen or kept: the owner's call, by GOALS.md's measure.
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.
