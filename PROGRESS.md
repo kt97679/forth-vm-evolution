@@ -7160,3 +7160,18 @@ verdict at both widths by hand from its "At 32 bits" table. And lab/evolve/gene-
 372's audit as a tool, an absent gene counted as off; one group, or two by their difference: it
 reproduces the audit exactly, and finds consecutive carried runs (55, 56) differing by up to 17 points
 a gene - the scale for reading seed 58 against the carried line.
+
+## Iteration 376 - 2026-10-17 - Claude
+
+**The verdict at both widths confirmed (the owner); weighing results across machines - a proposal.**
+GOALS.md now records the rule as the owner's. Then his question: what if a design does very well on the
+Tegra and badly on the laptop? Seed 55's four-machine check (results/xcheck-seed56.md): at one width
+the machines agree on the order (Spearman 0.944 with the Tegra, 0.917 with dream at 64 bits, 0.977 for
+the paired designs) and differ in how much the fast designs win (the fastest ~1.45x slower on the Tegra
+than on the laptop, slow ones ~1.2x); the width reorders more (0.833). But the scenario cannot be seen
+as things are: xcheck.py samples the laptop's front, so a design the laptop rejects is never measured
+elsewhere. Proposed (results/drafts/cross-machine-weighing.md): selection stays on the laptop, the
+other machines its generalization test; a disagreement diagnosed before weighed - measured again, the
+width separated from the architecture, knockouts on both; the final generic choice by the geometric
+mean over machine classes, each class once, with a veto; an architecture-specific mechanism a build
+choice only if large and simple; and the blind spot tested - rejected designs measured elsewhere.

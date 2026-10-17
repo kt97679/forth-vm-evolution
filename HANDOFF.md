@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 375.
+- master: Iteration 376.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -270,6 +270,12 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    follow-up run separates them (nocarry with tag2, or carried without).
    Reading it in genes: `python3 lab/evolve/gene-usage.py <seed 58's db> --vs results/evolve-*-seed5[3-7].md`
    - two consecutive carried runs (seeds 55, 56) differ by up to 17 points a gene: the scale to read it by.
+4d. **Weighing results across machines** (the owner's question, Iteration 376;
+   results/drafts/cross-machine-weighing.md - proposed): selection on the laptop, other machines as the
+   generalization test; a disagreement diagnosed (noise, width, gene) before it is weighed; the final
+   generic choice by the geometric mean over machine classes with a veto; and the blind spot tested -
+   xcheck samples only the laptop's front, so a design good on the Tegra and rejected by the laptop is
+   never seen: a sample of rejected designs measured elsewhere. Classes, weights, margin: the owner's.
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

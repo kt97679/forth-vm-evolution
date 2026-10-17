@@ -741,5 +741,5 @@ changes. NEXT-RUN's word for it: `widths` (seed N tag2 6h widths). The report sh
 column and seed-facts.py two-width lines whenever the records carry speed32. compare-fronts.py still
 judges runs at 64 bits - its five measures, comparable with every earlier session. Since Iteration
 375 its 32-bit section adds the verdict at both widths for the run being judged: the five, and its
-fastest at 32 bits under 5% against the others' (GOALS.md, proposed for the owner to confirm).
+fastest at 32 bits under 5% against the others' (GOALS.md; the owner confirmed it, Iteration 376).
 
