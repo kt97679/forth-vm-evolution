@@ -322,6 +322,11 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 387: still none - seed 59 runs. The after-seed-59 batch now holds four patches, among them
+# "noevolved" (nocarry without the founders from earlier runs' records - the clean anchoring test). Proposed for
+# seed 60, after the batch is applied at seed 59's processing:
+#   seed 60 tag2 12h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8
+# Into ~/Downloads only after seed 59's chain has finished.
 # Iteration 385: seed 59 is running, started from the Iteration 384 bundle. This bundle adds the after-
 # seed-59 batch (results/pending: opcall only where the tag is built; a failed tool's first error, not ld's
 # last line) and the supers knockout - none, so pulled after seed 59's chain has finished it only pulls; seed

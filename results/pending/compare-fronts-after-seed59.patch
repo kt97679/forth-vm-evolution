@@ -1,0 +1,32 @@
+diff --git a/lab/evolve/compare-fronts.py b/lab/evolve/compare-fronts.py
+index cfe11f0..811ed7c 100644
+--- a/lab/evolve/compare-fronts.py
++++ b/lab/evolve/compare-fronts.py
+@@ -92,6 +92,8 @@ for db in dbs:
+         keep = {box[k] for k in ks if not any(o != k and o[0] <= k[0] and o[1] <= k[1] and o[2] <= k[2] for o in ks)}
+         keep |= {min(ids, key=lambda i: sp[i]), min(ids, key=lambda i: R[i]['total']),
+                  min(ids, key=lambda i: (R[i].get('rss', 0), sp[i]))}
++        s32 = [i for i in ids if R[i].get('speed32')]            # Iteration 387 (review 386, 4d): and the 32-bit
++        if s32: keep.add(min(s32, key=lambda i: R[i]['speed32']))   # fastest - the verdict at both widths reads it
+         n0 = len(ids); ids = [i for i in ids if i in keep]
+         how += ', %d of %d: one per box of 1%% speed, 64 bytes, 8 KB, and the bests' % (len(ids), n0)
+     kept = sum(1 for i in ids if carried_from(R[i]))
+@@ -206,7 +208,8 @@ if len(_lp) > 1 and len(runs) > 1:
+     print('\n## Judging the runs (Iteration 188)\n')
+     print('Each run against all the others: its extremes, and two front-wide measures - the hypervolume in log space and the best Q '
+           '(binary + image x run time x memory). A run is small only if all five are: fastest under 5%, smallest under 2%, '
+-          'memory under 8 KB, hypervolume under 2%, best Q under 2%.\n')
++          'memory under 8 KB, hypervolume under 2%, best Q under 2%. A positive figure is the run AHEAD of all the others '
++          '(Iteration 387: read backwards at 384).\n')
+     print('| run | fastest | smallest | memory | hypervolume | best Q | verdict |')
+     print('|---|---|---|---|---|---|---|')
+     for label, ids in runs:
+@@ -231,7 +234,7 @@ if WIDTHS:                                    # Iteration 352: the speed32 objec
+         sp32[i] = E.eval32(rec[i][0], r32).get('speed32'); say('32 bits: %d of %d %s %s' % (k + 1, len(speed), i, sp32[i]))
+     print('\n## At 32 bits (Iteration 352)\n')
+     print("Each design's interpreter as a 32-bit x86 engine at 4-byte cells (its JIT off, its call scale at most 2), "
+-          "%d round(s), against hand-made s6 at 32 bits%s; a run's fastest there against all the others'. "
++          "%d round(s), against hand-made s6 at 32 bits%s; a run's fastest there against all the others' (a positive figure: the run ahead). "
+           "A run is small at both widths only if its five 64-bit measures are small and its fastest at 32 bits "
+           "is under 5%% too (Iteration 375: a new objective's gain counts, as Iteration 188's rule meant).\n"
+           % (r32, (' (itself %.3f)' % sp32[CAL]) if sp32.get(CAL) else ''))

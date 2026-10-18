@@ -7413,3 +7413,32 @@ at the measured rate of 0.71%; tag-2 share 48.0% screened, 46.7% not.
 Files: results/review-methodology-386.md, lab/evolve/review-checks.py (new); HANDOFF.md (the review, item 0's
 decision, item 0e the proposals, a lesson, the stale bullet out), results/predictions.md (seed 59's prediction
 1 reworded), lab/evolve/README.md, results/README.md.
+
+## Iteration 387 - 2026-10-18 - Claude
+
+**While seed 59 runs: the review's switch built - `noevolved`, the clean anchoring test - and two of its fixes;
+the after-seed-59 batch now four patches.** The owner asked what else could be done while waiting.
+
+`noevolved` (next-run.sh) and `--noevolved` (evolve.py), pending patch 3: nocarry, and no founder drawn from an
+earlier run's record - seed 37's fastest and seed 40's knee, two thirds of seed 58's ancestry (Iteration 386) -
+left out; the hand-made designs and the founders built from them kept: the anchoring test as seed 36 ran it.
+Opt-in. Tested: next-run.sh's keyword block run alone - the keyword in either place gives NOEVOLVED=1 and
+NOCARRY=1, nocarry and fromzero unchanged, the detached chain's environment path set, the resume key "seed 60 tag2
+noevolved nocarry at ..." so it never resumes a nocarry run; evolve.py --pop 8 --gens 0 --rounds 1 --noevolved
+--require tag2: both founders reported left out, generation 0 the 7 hand-made designs and 8 founders built from
+them, the best start the s6 + JIT founder at 0.81 against seed 37's 0.174 under nocarry; exit 0. Proposed for seed
+60 (the owner's hours), after the batch is applied at seed 59's processing: `seed 60 tag2 12h widths noevolved
+then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`.
+
+compare-fronts.py, pending patch 4: the verdict's sign labelled in both sections (a positive figure is the run
+ahead - review 4a); --frontier keeps each run's 32-bit fastest beside its 64-bit bests (review 4d). Tested: the
+thinning block of the old file and the new on three designs - the 64-bit fastest, the smallest, a 32-bit
+specialist dominated at 64 bits: the old kept two, the new all three.
+
+The batch, all four applied in a scratch clone: run-tests PASS - no regressions; validate 7 of 7 IDENTICAL; test-jail PASS; on a
+fresh clone the four apply in order and reproduce the three tested files byte for byte. Five files this work
+had written as root (seed 58's records, the knockout's tool and record, ORDER.md) handed back to claude - git
+keeps no owner, so no bundle carried it; it blocked edits only.
+
+Files: results/pending/noevolved-after-seed59.patch, results/pending/compare-fronts-after-seed59.patch (new);
+results/pending/ORDER.md, HANDOFF.md, lab/evolve/NEXT-RUN (still none).

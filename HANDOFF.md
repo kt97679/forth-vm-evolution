@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 386.
+- master: Iteration 387.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -114,8 +114,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Not separated: whether starting fresh helped too (seed 59). gate 264 of 264; ans-check 0 of 44 differ; predictions 4 of 5 as written;
   held out 0.883 (two encodings on one front). results/evolve-amd-ryzen-7-pro-8840hs-seed58.md,
   results/xcheck-seed58.md (seed 57's front: the Tegra 0.973, dream 0.959, at 32 bits 0.875).
-- **The after-seed-59 batch waits in results/pending/** (Iteration 385, ORDER.md): the two faults of open item 0d,
-  both in lab/evolve/evolve.py - opcall only where the tag is built, and a failed tool's first error in its record.
+- **The after-seed-59 batch waits in results/pending/** (Iterations 385 and 387, ORDER.md - four patches): the two
+  faults of open item 0d (opcall only where the tag is built; a failed tool's first error in its record), the
+  `noevolved` switch for a clean anchoring test, and compare-fronts' verdict sign labelled and 32-bit fastest kept.
   Tested in a scratch clone (before and after; run-tests, validate, jail) and checked to apply in order on a fresh
   clone. Apply after seed 59's processing.
 - **The methodology review (Iteration 386; results/review-methodology-386.md, every figure from
@@ -253,16 +254,17 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 
 0. **Seed 59 - the owner's decision first** (the review, section 1): keep it as a replicate of seed 58 (the
    same founders; the requirement the designed difference, and ~55 minutes more evolution), the anchoring test
-   the run after - which needs an opt-in switch, not yet built, leaving out the two evolved founders (fromzero
-   starts too far down: in miniature 2 of 16 designs tag-2, require() tagging only CV8 designs) - or stop it and
-   wait for the switch. As set, **seed 59** - the anchoring test, separated (item 4c): from scratch with the tag-2 requirement, both widths,
+   the run after, with the switch now built (Iteration 387, pending patch 3; fromzero starts too far down: in
+   miniature 2 of 16 designs tag-2, require() tagging only CV8 designs) - proposed, the hours the owner's:
+   `seed 60 tag2 12h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus
+   2,8`, after the batch is applied at seed 59's processing. As set, **seed 59** - the anchoring test, separated (item 4c): from scratch with the tag-2 requirement, both widths,
    12 h (the owner). Process it: against seed 58 the constraint alone, against seeds 53-57 anchoring alone; score
    its predictions; read the probes' lines in every host's report - the first numbers for the Tegra's slow copy
    (Iterations 379-381: the copy's KB/s, the connection, the load); and the checks of seed 58's front, the first
    with plain-CV8 designs - does the plain encoding's 32-bit lead hold on the Tegra?
 0e. **The review's proposals** (results/review-methodology-386.md, section 6; the owner's calls): the verdict
    per CPU, small only where both agree; re-measure before admitting to the fast end; top-end agreement beside
-   every Spearman; the verdict table's sign labelled and the 32-bit fastest kept by --frontier (one line each);
+   every Spearman; the verdict table's sign labelled and the 32-bit fastest kept by --frontier (done, pending patch 4);
    replicates for configuration questions; "converged within the requirement" in verdicts.
 0d. **Two faults the free encoding found** (Iteration 384) - **fixed in the after-seed-59 batch** (Iteration 385):
    (a) is all three of seed 58's compile deaths (clang's "3 errors generated." too: its third), opcall_on()
