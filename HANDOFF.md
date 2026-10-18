@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 380.
+- master: Iteration 381.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -114,6 +114,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   owner measured `ssh rage.lan true` at 0.24 s (Iteration 380): not the connection's setup - the copy's
   throughput, 7 MB in ~38 min to the Tegra (~3 KB/s) and ~3 min a check to dream; to test, `time scp` of a
   few MB to each host. The run no longer waits for it either way.
+  **Probes** (Iteration 381, the owner): each connection timed at the probe, each copy timed with its
+  bytes, and each host's load at its check's start (CPUs, load average, the busiest processes) and every
+  30 s while it runs - appended to the host's report (remote/HOST-HOW.md) at gather. From seed 59's chain.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).

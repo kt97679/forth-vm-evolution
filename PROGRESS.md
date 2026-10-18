@@ -7245,3 +7245,18 @@ dream's copies about 3 minutes each - a network matter on the owner's side, test
 of a few MB to each host. The fix of 379 stands as it is: the run no longer waits for the copying,
 whatever its cause. Seed 58 runs on (its evolution after the old path's copies); this bundle goes to
 ~/Downloads only after seed 58's chain has finished.
+
+## Iteration 381 - 2026-10-18 - Claude
+
+**Probes for the remote checks (the owner's suggestion).** Iteration 379's diagnosis was a guess for
+want of numbers; now remote-checks.sh records them. probe: each host's connection timed ("answers in
+203 ms"; remote/connect). The background launcher: each check's three steps timed and its bytes counted -
+"copied 8.1 MB in 0m 01s (8150 KB/s); mkdir 206 ms, start 205 ms" in its started line and
+remote/HOST-HOW/transfer.txt. run.sh on the host: at its start the CPUs, the load average and the five
+busiest processes (load-start.txt), then the load average every 30 s until the check ends (load.log), in
+its process group so stop and gather end it too. gather: both brought back and summed up at the end of
+the host's report - the copy, the connection, and the load while the check ran (mean, peak, CPUs, the
+busiest at its start): a remote measurement's noise readable beside it. Tested end to end with stand-ins
+- an ssh taking 0.2 s and running the command in a fake host's directory, an scp copying there for real
+- the generated run.sh run on the "host" for 70 s (cloning the bundle, building its stages: 4 samples,
+0.00 to 0.83), then gather with a fabricated out.json: the report ended with both lines. From seed 59.
