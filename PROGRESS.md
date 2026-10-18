@@ -7602,3 +7602,14 @@ evolver, or a change of evolver would read as run-to-run spread. Predictions for
 
 Files: results/pending/fastgate-after-seed62.patch (renamed), results/pending/ORDER.md, lab/evolve/review-checks.py
 (spread), lab/evolve/NEXT-RUN (comment), results/predictions.md, HANDOFF.md, results/README.md, lab/evolve/README.md.
+
+## Iteration 394 - 2026-10-18 - Claude
+
+**Context economy (the owner: can a chat last longer?).** What tools print stays in the chat; this one spent most
+on full reports and logs, on the pending-batch cycle (five times, about eight calls each) and on long replies.
+tools/batch-check.sh (new): the pending batch tested as it will be applied - a fresh clone, ORDER.md's patches,
+the build, run-tests, validate, jail - logs under /tmp/batch-check, one line out; the patched clone removed on
+success (a scratch tree the handoff check flags). Run on the after-seed-62 batch: 1 patch applied, run-tests
+PASS, validate 7 of 7 IDENTICAL, jail PASS - in three calls. HANDOFF's lessons hold the practices.
+
+Files: tools/batch-check.sh (new), HANDOFF.md.

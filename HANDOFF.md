@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 393.
+- master: Iteration 394.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -248,7 +248,7 @@ About 20 minutes of machine time for build, tests and gates.
 - Deferred, the owner's call (GOALS.md's register): packed names, hidden
   internal names, a compressed image, the stack header, cross.4's fast path.
 - Every patch: tested, then verified to apply in order on a fresh clone and to
-  reproduce the tested files; batches wait in `results/pending/` with ORDER.md.
+  reproduce the tested files; batches wait in `results/pending/` with ORDER.md. `tools/batch-check.sh` runs that test (Iteration 394).
 - Run lengths are the owner's - ask for each run's hours (seed 48: 6).
 
 ## Open items (roughly by value)
@@ -376,6 +376,11 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 - On Ubuntu gcc-arm-linux-gnueabihf and gcc-multilib cannot both be installed: the first removes the second,
   and /usr/include/asm with it - every 32-bit build fails until gcc-multilib is back (Iteration 391, the ARM
   compiler installed at 390 for a cross build). After any apt install, build before trusting the tree.
+- **Context economy** (Iteration 394; the owner asked how a chat lasts longer): what tools print stays in the
+  chat. Logs to files and one line printed (`| tail -1`, a summary file); a recurring cycle as a script -
+  `tools/batch-check.sh` tests the pending batch as it will be applied (fresh clone, ORDER.md's patches, build,
+  run-tests, validate, jail) in one line, three calls where it took eight; after the first reading, grep or a
+  view range, not whole files; one wait loop per background job; replies short - the files hold the detail.
 - Read what a configuration does before naming the experiment: `nocarry` was called "from scratch" for seeds
   58 and 59, and evolve.py puts two evolved designs in every generation 0 but fromzero's (Iteration 386: two
   thirds of seed 58's ancestry). Likewise a requirement (tag2, and bytehdr with it) belongs in every verdict
