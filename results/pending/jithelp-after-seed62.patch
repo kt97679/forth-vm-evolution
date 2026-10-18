@@ -1,0 +1,196 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 17c00d6..1beb235 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -29,6 +29,9 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
+ #endif
+ #if JITINL
+        S_DPLUS,                                  /* Iteration 137: the gene jitinl */
++#endif
++#if JITHELP
++       S_CALLC,                                  /* Iteration 344: the gene jithelp */
+ #endif
+        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
+ #if JITK
+@@ -39,6 +42,7 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
+ #endif
+ 
+ #define JIT_IMM64 0x5ea1ed5ea1ed5ea1ULL         /* spn-stencils.c's SPN_IMM_VALUE */
++#define JIT_FN64 0x6ea1ed5ea1ed5e66ULL          /* spn-stencils.c's SPN_FN_VALUE: a helper's address (jithelp) */
+ #define JIT_RP64  0x7ea1ed5ea1ed5e77ULL         /* SPN_RP_VALUE */
+ #define JIT_IMM32 0x3c1a5e77U                   /* IMM32 */
+ 
+@@ -46,6 +50,9 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for
+     const unsigned char *src;
+     int len, imm, imm32, rp, tailnext;          /* tailnext: the body ends "jmp NEXT" - dropped */
+     int nnext, njump, ncall;                    /* how many holes of each */
++#if JITHELP
++    int fn;                                     /* Iteration 344: the function hole's offset, or -1 */
++#endif
+ };
+ static struct jit_st jit_st[JIT_NST];
+ 
+@@ -91,10 +98,17 @@ static void jit_scan(void) {
+             if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
+         if (!end) continue;
+         s->src = a; s->len = (int)(end - a); s->imm = s->imm32 = s->rp = -1;
++#if JITHELP
++        s->fn = -1;
++#endif
+         s->nnext = s->njump = s->ncall = 0;
+         for (p = a; p < end; p++) {
+             uint64_t v; uint32_t w;
+-            if (p + 8 <= end) { memcpy(&v, p, 8); if (v == JIT_IMM64) s->imm = (int)(p - a); if (v == JIT_RP64) s->rp = (int)(p - a); }
++            if (p + 8 <= end) { memcpy(&v, p, 8); if (v == JIT_IMM64) s->imm = (int)(p - a); if (v == JIT_RP64) s->rp = (int)(p - a);
++#if JITHELP
++                if (v == JIT_FN64) s->fn = (int)(p - a);
++#endif
++            }
+             if (p + 4 <= end) {
+                 memcpy(&w, p, 4); if (w == JIT_IMM32) s->imm32 = (int)(p - a);
+                 if (jit_relto(p, spn_table[J_NEXT])) s->nnext++;
+@@ -118,7 +132,34 @@ static void jit_scan(void) {
+  *  stack's call and ret; loops and the return stack use the engine's
+  *  return stack, through jit_rp.  */
+ #include <sys/mman.h>
++#if JITHELP
++struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; void *fn; };
++/* Iteration 344, the gene jithelp: the C primitives the outer interpreter stops at, as functions
++   with the stencils' signature - called from native code through st_callc. Each the handler's own
++   work (vm-lab.c), on the stencils' stack: tos in a register, sp[0] the item below. */
++#include "spn-abi.h"
++static spn_st h_place(cell *sp, cell tos) {            /* PLACE ( s n d -- ): vm-lab.c L_x_place */
++    unsigned char *d = (unsigned char *)(uintptr_t)tos; ucell n = (ucell)sp[0];
++    const unsigned char *s = (const unsigned char *)(uintptr_t)sp[1];
++    *d++ = (unsigned char)n; while (n--) *d++ = *s++;
++    return SPN_ST(sp + 3, sp[2]);
++}
++static spn_st h_parse(cell *sp, cell tos) {            /* (PARSE) ( a u c -- s len adv ): vm-lab.c L_x_parse */
++    ucell c = (ucell)tos, u = (ucell)sp[0];
++    const unsigned char *a = (const unsigned char *)(uintptr_t)sp[1], *p = a, *s;
++    if (c == 32) {                                      /* a space: any control character too */
++        while (u && *p <= 32) { p++; u--; } s = p;
++        while (u && *p > 32) { p++; u--; }
++    } else {
++        while (u && (ucell)*p == c) { p++; u--; } s = p;
++        while (u && (ucell)*p != c) { p++; u--; }
++    }
++    sp[1] = (cell)(uintptr_t)s; sp[0] = (cell)(p - s);
++    return SPN_ST(sp, (cell)((p - a) + (u ? 1 : 0)));
++}
++#else
+ struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; };
++#endif
+ /* Iteration 344: an operand that fills the first literal hole - kinds 1-5, and with jitvar the slot
+    kinds 8 and 9 (without them vf's literal took k, 0: a fetch from 0 - latent while no word with vf
+    was translated). Without JITVAR the very expression it was. */
+@@ -216,6 +257,9 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+         if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
+     }
+     if (t->imm >= 0) memcpy(dst + t->imm, &val, 8);
++#if JITHELP
++    if (t->fn >= 0) memcpy(dst + t->fn, &val, 8);     /* a helper call: its value is the helper */
++#endif
+     if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, 8); }
+     return dst + n;
+ }
+@@ -676,6 +720,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+                 } else if (wh_[q_] == -1) p = jit_put(p, s, 0, 0, 0);       /* a canonicaliser */
+                 else {
+                     UNS64 v = o_ ? (UNS64)(INT64)o_->k : arg[i];               /* no o_: jitx's literal */
++#if JITHELP
++                    if (o_ && o_->fn) v = (UNS64)(uintptr_t)o_->fn;
++#endif
+                     if (o_ && jit_st[s].imm >= 0 && lit && JIT_LITOPND(o_)) { v = arg[i]; lit = 0; }
+                     p = jit_put(p, s, v, jt, 0);
+                 }
+@@ -706,6 +753,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         for (j = 0; j < o->n; j++) {    /* the operand's value fills the first literal hole; k the rest */
+             int s = o->st[j];
+             UNS64 v = (UNS64)(INT64)o->k;
++#if JITHELP
++            if (o->fn) v = (UNS64)(uintptr_t)o->fn;
++#endif
+             if (jit_st[s].imm >= 0 && lit && JIT_LITOPND(o)) { v = arg[i]; lit = 0; }
+             p = jit_put(p, s, v, jt, 0);
+         }
+diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
+index cdb1da2..81ab662 100644
+--- a/engine/spn-stencils.c
++++ b/engine/spn-stencils.c
+@@ -239,6 +239,12 @@ S(st_fill)   { unsigned char *p = (unsigned char *)sp[1]; cell n = *sp;
+ S(st_write) { spn_io_fn f = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
+ S(st_read)  { spn_io_fn f = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
+ #endif
++#if JITHELP
++/* Iteration 344, the gene jithelp: a C helper with the stencils' own signature, its address in the
++   function hole - called through a register, so the stencil copies anywhere; outside the I/O
++   stencils' own condition */
++S(st_callc) { spn_st r = ((spn_fn)IMM_FN())(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }
++#endif
+ const void *const spn_table[] = {
+     (const void *)spn_next, (const void *)spn_jump, (const void *)spn_call,
+     (const void *)st_lit, (const void *)st_dup, (const void *)st_drop,
+@@ -261,6 +267,9 @@ const void *const spn_table[] = {
+ #if JITINL
+     (const void *)st_dplus,      /* Iteration 137: after fill, so the others keep their numbers */
+ #endif
++#if JITHELP
++    (const void *)st_callc,      /* Iteration 344: last, so the others keep their numbers */
++#endif
+ #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
+     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
+     (const void *)st_uge_br, (const void *)st_ge_br, (const void *)st_nei_br,
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 6b7d981..a955bfc 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -195,6 +195,7 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
+ ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
+ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
+      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
++gene('jithelp', needs=lambda g, e: jit_on(g))   # Iteration 344: the C primitives the outer interpreter stops at, called from native code (st_callc)
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+ gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
+ gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
+@@ -889,6 +890,7 @@ def _build(g, d):
+     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
+     if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
+     if jit_on(g) and express(g).get('jitvar'): flags.append('-DJITVAR=1')   # Iteration 342: the slot operand's decoding
++    if jit_on(g) and express(g).get('jithelp'): flags.append('-DJITHELP=1')   # Iteration 344: st_callc and the helpers
+     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
+     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+@@ -971,6 +973,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
+     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
+     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
++    if jit_on(g) and express(g).get('jithelp'): opts.append('--jithelp')   # Iteration 344: C primitives called from native code
+     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
+     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
+     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
+diff --git a/tools/layout.py b/tools/layout.py
+index 6653c5a..ff7016b 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1656,6 +1656,9 @@ if EMIT:
+                  '<>?BRANCH': (['EQ', 'LIT', 'EQ', '0BRANCH'], 7), '<>?BRANCH8': (['EQ', 'LIT', 'EQ', '0BRANCH'], 6)}
+             if '--jitloop' in ARGV:   # Iteration 129, the gene jitloop: SPN's (+LOOP) and (?DO) stencils, a branch operand as (LOOP)'s
+                 O.update({'(+LOOP)': (['PLOOP'], 7), '(?DO)': (['QDO'], 7)})
++            JITHELPERS = {'PLACE': 'h_place', '(PARSE)': 'h_parse'} if '--jithelp' in ARGV else {}   # Iterations 344-345, the gene jithelp: C primitives called from native code
++            for _h in JITHELPERS: K[_h] = (['CALLC'], 0)
++            if JITHELPERS: K['COUNT'] = (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1)   # Iteration 345: ( a -- a+1 u ) - stencils it has
+             if '--jitvar' in ARGV:    # Iteration 342, the gene jitvar: vf and vs - a literal of the slot's address, then @ or !
+                 O['vf'] = (['LIT', 'FETCH'], 9 if G['VARSLOT'] else 8); O['vs'] = (['LIT', 'STORE'], 9 if G['VARSLOT'] else 8)
+             if '--jitinl' in ARGV:    # Iteration 137, the gene jitinl: D+'s stencil (spn-stencils.c, JITINL)
+@@ -1676,8 +1679,8 @@ if EMIT:
+             for _x, _nm in sorted(G['t2_names']().items()):
+                 _dj = _jd(_nm)        # (not _d: that is the directory the headers go to)
+                 if _dj and len(_dj[0]) <= 5:
+-                    _rows.append('[%d] = {1, %d, %d, %d, {%s}},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
+-                                 ', '.join('S_' + s for s in _dj[0]) or '0', _nm.replace('*/', '* /')))
++                    _rows.append('[%d] = {1, %d, %d, %d, {%s}%s},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
++                                 ', '.join('S_' + s for s in _dj[0]) or '0', (', (void *)' + JITHELPERS[_nm]) if _nm in JITHELPERS else (', 0' if JITHELPERS else ''), _nm.replace('*/', '* /')))
+             _jc = T2MAP['one'][G['T2_JIT']]
+             open(_os.path.join(_d, 'vm-jit-ops.h'), 'w').write(
+                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'

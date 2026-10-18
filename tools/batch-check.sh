@@ -6,7 +6,9 @@
 # in ORDER.md's order (its "git apply results/pending/X.patch" lines), the stages built, then run-tests,
 # validate and the jail test. Every log under OUT (default /tmp/batch-check); one line on stdout and in
 # OUT/summary. Testing the applied fresh clone itself is also the check that the patches apply in order and
-# reproduce what was tested. Run it as the user that builds (not root), detached if it must outlive a call:
+# reproduce what was tested. It tests what is COMMITTED - the clone sees nothing uncommitted: commit the batch
+# first, and check the line's commit and patch count (Iteration 397: a run before the commit tested 1 patch of 3).
+# Run it as the user that builds (not root), detached if it must outlive a call:
 #   setsid nohup sh tools/batch-check.sh > /dev/null 2>&1 &   ... then: cat /tmp/batch-check/summary
 set -u
 REPO=$(cd "$(dirname "$0")/.." && pwd); OUT=${1:-/tmp/batch-check}

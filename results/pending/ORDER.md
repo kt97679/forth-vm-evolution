@@ -8,8 +8,12 @@ evolver of seeds 53-59: a change of evolver between them would be read as run-to
 | # | patch | what it does |
 |---|---|---|
 | 1 | fastgate-after-seed62.patch | evolve.py: a child whose speed is under the fast gate - 5% above the 20th fastest design alive so far - is measured again, the same rounds on the engine as built, and its speed is the geometric mean of the two (speed1 and speed2 kept in its record; memory and size the first measurement's). The fast end's in-run speeds were ~10% optimistic, designs admitted on lucky draws (a 3% noise, the best of thousands); twice the rounds where admission is decided. `--fastgate N` sets the 20; 0 turns it off. |
+| 2 | jithelp-after-seed62.patch | The gene jithelp (Iteration 344's draft, results/drafts/jithelp-wip.patch, unchanged): the C primitives the outer interpreter stops at, called from native code (st_call). The owner, Iteration 397: try it - out again if the fronts show it useless. |
+| 3 | jitre-after-seed62.patch | The gene jitre (Iteration 346's draft, results/drafts/jitre-wip.patch, unchanged; needs jithelp): a callee the JIT cannot translate run by the interpreter from native code, not refused. The same decision. |
 
     git apply results/pending/fastgate-after-seed62.patch
+    git apply results/pending/jithelp-after-seed62.patch
+    git apply results/pending/jitre-after-seed62.patch
 
 Its cost, from seed 58's evaluations replayed through the gate: 1,121 of 24,885 measured children (4.5%) under
 it, their evaluations 4.4% of the evaluation time - an upper bound on the added time, the second measurement
@@ -25,3 +29,11 @@ the geometric mean of its two and of its workloads' figures, its memory the firs
 
 With it applied: run-tests.sh PASS - no regressions; evolve.py --validate 7 of 7 IDENTICAL; test-jail.py PASS. On a fresh clone of
 master it applies, and lab/evolve/evolve.py is then byte for byte the tested file.
+
+The second and third, at Iteration 397: applied in order after the first on a fresh clone, cleanly. Seed 58's
+fastest, 1b5ac698ce, built with jithelp, jitre, jitimg and jitvar on: both expressed, alive, 40,565 bytes against
+its recorded 36,021 (the design as recorded rebuilt to exactly that). What they buy, by jitleft.py's deterministic
+counts - the dispatches the JIT leaves to the interpreter, without and with: kernel 989,120 / 987,090 (53.7% /
+53.6%), corpus 4,057,836 / 4,054,591, bubble 151,968 / 129,788 (2.0% / 1.7%), fib, loop and ackermann unchanged
+or nearly. Little, as Iteration 346 had found (INTERPRET stops at (FIND), PARSE-WORD at +!); a 1-round timing
+here (0.2369 / 0.2044) is inside this VM's noise. The search weighs them; the fronts after seed 62 decide.

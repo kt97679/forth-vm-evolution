@@ -564,3 +564,11 @@ own fronts at generations 40, 80 and 133 differ by 5-6 points of gene usage betw
 4. Should one run end 5% faster or 2% smaller than the others at the common generation, runs of one start can stop
    in different places by chance - the case for an escape mechanism (an island or immigrants) after them.
 
+## The footprint step after seed 62, and jithelp and jitre from seed 63 - predicted (Iteration 397)
+
+1. footprint.py on seed 62's front (HANDOFF item 2): each sampled design's time per call against s6 within 2x
+   of itself from N = 100 to 30,000 words - the selection's small programs no artifact of a small footprint - and
+   the compile phase per word within 2x of s6's.
+2. jithelp and jitre (the owner: try them) on under 10% of seed 63's front: by jitleft.py they buy little (the
+   kernel's interpreted share 53.7% to 53.6%) for 4.5 KB - if so, out again after it.
+

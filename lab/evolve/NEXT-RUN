@@ -17,7 +17,8 @@
 # of its own start, 6 hours each, each its own command - a chain of two seeds has never run, and both would
 # write the remote checks' same directories:
 #   sh lab/evolve/next-run.sh seed 61 tag2 6h widths noevolved
-#   sh lab/evolve/next-run.sh seed 62 tag2 6h widths noevolved      (when seed 61's has finished)
+#   sh lab/evolve/next-run.sh seed 62 tag2 6h widths noevolved then experiment footprint.py   (when seed 61's has finished;
+#     footprint.py, the owner at Iteration 397: item 2, about 20 minutes - an experiment step takes no reserve)
 # No comparison in them: a comparison later in a chain takes its reserve from every seed before it. Read by
 # review-checks.py spread at one generation (results/predictions.md). The fast gate waits until after seed 62.
 # Iteration 389 (the owner: 12 hours): seed 60, the anchoring test made clean - noevolved (nocarry, and no

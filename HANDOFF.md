@@ -48,15 +48,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 396.
+- master: Iteration 397.
 - **The runs**: seed 59 running (`seed 59 tag2 12h widths nocarry`, Iteration 384's bundle - seed 58's replicate with
   the tag-2 requirement the designed difference, the same evolved founders); then seed 60 (NEXT-RUN's line, 12 h,
   `noevolved` - the clean anchoring test); then seeds 61 and 62 (6 h each, seed 60's start - the replicates; their two
-  commands in NEXT-RUN's comment). Predictions for all four: the end of results/predictions.md.
+  commands in NEXT-RUN's comment, seed 62's ending `then experiment footprint.py` - item 2, the owner at 397). Predictions for all four: the end of results/predictions.md.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
-  kept, its speed from both CPUs). Pending: the after-seed-62 batch, the fast gate - apply it only at seed 62's
-  processing, so seeds 60-62 run one evolver.
+  kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
+  jitre (the owner, 397: try them) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 58** (Iteration 384): not small at either width, by its gains - free of the tag-2
   requirement, plain CV8 took the small end (-10.5% bytes) and 32 bits (+21.5%). Every run's extremes:
   results/progress-by-run.md.
@@ -169,8 +169,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 
 0. **Seeds 59-62** (the state, above), each by the routine. Seed 60 answers the anchoring question (read by
    results/review-methodology-386.md, 3c: a gain anywhere is evidence of anchoring, none is not); seeds 61-62 how far
-   runs of one start spread. Then the fast gate: seed 63 its first run - `review-checks.py curse` on its report shows
-   whether the fast end's optimism falls from seed 58's 1.112.
+   runs of one start spread. Then the after-seed-62 batch: seed 63 its first run - `review-checks.py curse` on its report
+   shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's and jitre's share of its front
+   whether they stay (the owner: out again if useless).
 0d. **The Tegra's link failures** (seed 57's 5405c5b1d9 and df0c11fd98, and a rejected design): not regpin (inert on
    ARM), not lto (it built there three times); seed 60's chain checks seed 59's front with the new why() - a
    recurrence will name its cause. Not reproducible here: a cross build needs Iteration 330's qemu harness, untracked.
@@ -188,10 +189,11 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    footprint.py`; defaults --sample 12 --sizes 100,1000,10000,30000 --rounds 5, about 20 minutes on the
    laptop by this VM's scale). Proposed for the chain after seed 57's processing, the owner's hours:
    `seed 58 tag2 12h widths then experiment footprint.py then experiment compare-fronts.py ...`.
-3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; helper calls and
-   re-entry parked (results/drafts/jithelp-wip.patch, jitre-wip.patch) - the kernel still 54.6% left to
-   the interpreter, INTERPRET stopping at (FIND) and PARSE-WORD at +!, operations re-entry cannot help.
-   The owner's call: on, or park for good.
+   **Scheduled** (the owner, Iteration 397): after seed 62, in its command (NEXT-RUN's comment).
+3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; **jithelp and jitre to be tried**
+   (the owner, Iteration 397) - in the after-seed-62 batch. jitleft.py's counts say they buy little (the kernel's
+   share left to the interpreter 53.7% to 53.6%, bubble's 2.0% to 1.7%; 4.5 KB more): out if the fronts do not use
+   them (results/pending/ORDER.md has the evidence).
 4. **Fewer dispatches - the front end's lever** (Iterations 297, 301): the evolved interpreted designs
    stall on the dispatch's indirect jump, not the caches. Superinstructions were that lever on paper,
    and in tag-2 designs never in fact (the standing decisions: superinstructions). Calls and returns are 15-25% of mispredictions; the
