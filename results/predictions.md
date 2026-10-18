@@ -548,3 +548,19 @@ Read by section 3c of the review: a gain anywhere is evidence of anchoring; none
    A gain past a bar (hypervolume or best Q beyond 2%, or the fastest beyond 5%) would be evidence of it.
 5. The same structure from a different lineage: bss, lean and thinhdr on every design of its front, as on every
    front since seed 53.
+
+## Seeds 61 and 62, predicted (Iteration 393) - the replicates
+
+Two runs of seed 60's start (`tag2 6h widths noevolved`), other seeds, each its own command after seed 60: how far
+runs of one start spread - the owner's local-minimum question (results/convergence-seed58.md, source 3). Compared
+with seed 60 at one generation, the earliest last of the three (`review-checks.py spread`); for scale, seed 58's
+own fronts at generations 40, 80 and 133 differ by 5-6 points of gene usage between neighbours.
+
+1. One basin: at the common generation the three fronts' fastest within 5% of each other, their smallest within 2%,
+   their hypervolumes within 3%.
+2. Tuned differently, not built differently: gene usage between any two at most 8 points apart on average, and the
+   genes every tag-2 front carries (bss, lean, thinhdr) on all three.
+3. No collapse in any: diversity holding as in seed 58 (`review-checks.py progress`).
+4. Should one run end 5% faster or 2% smaller than the others at the common generation, runs of one start can stop
+   in different places by chance - the case for an escape mechanism (an island or immigrants) after them.
+

@@ -14,6 +14,11 @@ results/review-methodology-386.md), each reproducible:
                            generation: the best speed and the smallest binary + image so far (size exact, so a
                            late gain in it is no noise), the generations of the last gains, and diversity - the
                            mean share of genes two designs of a generation differ in, and the encodings alive
+  spread DB[@G] DB[@G] ... runs from one start compared at one generation (Iteration 393: the replicates of the
+                           owner's local-minimum question) - each database cut at generation G (default: the
+                           earliest last generation of them all), its front's fastest, smallest, least memory,
+                           best Q and hypervolume (log space, one reference for all), and how far apart their
+                           fronts' gene usage lies (the mean difference in points, every built gene)
   verdicts COMPARE.md      every session's verdict (Iteration 188's five measures) rebuilt from its own tables -
                            checked against the printed one - then from each CPU alone: does "small" depend on
                            which CPU is asked? (Iteration 388) - and from both, each design's speed the
@@ -231,4 +236,51 @@ elif check == 'progress':
           % (len(gain_sz), gain_sz[-1][0] if gain_sz else -1, last, len(late), sum(b for _, b in late)))
     print('the best speed gained 2%% or more in %d generations; the last at generation %d (%s)' % (len(gain_sp), gain_sp[-1][0] if gain_sp else -1,
           ', '.join('%d: %.1f%%' % (g, 100 * x) for g, x in gain_sp[-5:])))
+elif check == 'spread':
+    import math, os
+    import numpy as np
+    sys_args = sys.argv[2:]; sys.argv = ['x']
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
+    def hv(pts, lo, ref, n=100000):     # compare-fronts.py's _hv, its numpy path, verbatim
+        P = [p for p in pts if not any(all(q[k] <= p[k] for k in range(3)) and q != p for q in pts)]
+        rng = np.random.default_rng(1); S = np.asarray(lo) + rng.random((n, 3)) * (np.asarray(ref) - np.asarray(lo))
+        hit = np.zeros(n, bool)
+        for p in P: hit |= (S >= np.asarray(p)).all(axis=1)
+        return hit.mean()
+    runs = []
+    for a in sys_args:
+        path, _, g = a.partition('@'); R = db(path)
+        ok = [d for d in R.values() if d.get('status') == 'ok' and d.get('speed') and d.get('total') and d.get('rss')]
+        runs.append([a, ok, int(g) if g else None, max(d.get('gen', 0) for d in ok)])
+    G0 = min(r[3] for r in runs)
+    s6 = {k: json.dumps(v, sort_keys=True) for k, v in E.express(E.canon(E.HUMAN['s6-cv8b'])).items()}   # 'on' = differs from s6
+    out = []
+    for name, ok, g, last in runs:
+        G = g if g is not None else G0; ds = [d for d in ok if d.get('gen', 0) <= G]
+        pts = {d['id']: (d['speed'], d['total'], d['rss']) for d in ds}
+        fr = [i for i in pts if not any(all(pts[j][k] <= pts[i][k] for k in range(3)) and pts[j] != pts[i] for j in pts)]
+        use = collections.Counter()
+        exs = {d['id']: {k: json.dumps(v, sort_keys=True) for k, v in E.express(E.canon(d['genome'])).items()} for d in ds if d['id'] in set(fr)}
+        for e in exs.values():
+            for k, v in e.items():
+                if v != s6.get(k): use[k] += 1
+        q = min(pts[i][0] * pts[i][1] * pts[i][2] for i in fr)
+        s32 = min((d['speed32'] for d in ds if d['id'] in set(fr) and d.get('speed32')), default=None)
+        out.append(dict(name=name, G=G, n=len(ds), fr=fr, pts=pts, use={k: v / len(fr) for k, v in use.items()}, q=q, s32=s32))
+    allp = [tuple(math.log(x) for x in o['pts'][i]) for o in out for i in o['fr']]
+    lo = tuple(min(p[k] for p in allp) for k in range(3)); ref = tuple(max(p[k] for p in allp) + 0.05 for k in range(3))
+    print('| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |\n|---|---|---|---|---|---|---|---|---|---|')
+    for o in out:
+        P = [o['pts'][i] for i in o['fr']]
+        print('| %s | %d | %d | %d | %.4f | %s | %.0f | %.5g | %.4f | %s |' % (o['name'], o['G'], o['n'], len(o['fr']), min(p[0] for p in P),
+              format(min(p[1] for p in P), ','), min(p[2] for p in P), o['q'], hv([tuple(math.log(x) for x in p) for p in P], lo, ref),
+              '%.4f' % o['s32'] if o['s32'] else '-'))
+    print('\ngene usage on the fronts, how far apart - the mean difference in points over every built gene (two runs of one start; for scale, seeds 55 and 56 differed by up to 17 points in a gene):')
+    for i in range(len(out)):
+        for j in range(i + 1, len(out)):
+            ks = set(out[i]['use']) | set(out[j]['use'])
+            d = [abs(out[i]['use'].get(k, 0) - out[j]['use'].get(k, 0)) for k in ks]
+            top = sorted(ks, key=lambda k: -abs(out[i]['use'].get(k, 0) - out[j]['use'].get(k, 0)))[:5]
+            print('  %s - %s: mean %.1f points; the most: %s' % (out[i]['name'], out[j]['name'], 100 * sum(d) / len(d),
+                  ', '.join('%s %+.0f' % (k, 100 * (out[j]['use'].get(k, 0) - out[i]['use'].get(k, 0))) for k in top)))
 else: sys.exit(__doc__)

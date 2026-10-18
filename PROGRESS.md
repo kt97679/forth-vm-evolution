@@ -7551,7 +7551,7 @@ it. Nothing committed was touched - the full checks ran at 389, and nothing was 
 back with apt-get install gcc-multilib (which took the ARM compiler out: the two cannot both be installed);
 HANDOFF-PROMPT's optional ARM tools now say so, and HANDOFF's lessons.
 
-Files: results/pending/ORDER.md, results/pending/fastgate-after-seed60.patch (new); HANDOFF.md, HANDOFF-PROMPT.md.
+Files: results/pending/ORDER.md, results/pending/fastgate-after-seed62.patch (new); HANDOFF.md, HANDOFF-PROMPT.md.
 
 ## Iteration 392 - 2026-10-18 - Claude
 
@@ -7578,3 +7578,27 @@ Proposed (the owner's): after seed 60, the check and gene-usage.py on seeds 58-6
 
 Files: results/convergence-seed58.md (new); lab/evolve/review-checks.py (progress), HANDOFF.md (item 4c, the
 routine), results/README.md, lab/evolve/README.md.
+
+## Iteration 393 - 2026-10-18 - Claude
+
+**The replicates queued (the owner: yes) - seeds 61 and 62, seed 60's start, 6 hours each - and the tool to read
+them; the fast gate moved to after seed 62.**
+
+Seeds 61 and 62: `tag2 6h widths noevolved`, other seeds, each its own command when the one before has finished
+(NEXT-RUN's comment; HANDOFF item 0). Not one chain: a chain of two seeds has never run - next-run.sh carries a
+chain's steps in one directory, and both seed steps would write the remote checks' same per-host directories; a
+night is a lot to bet on a path never taken. No comparison in them either: a comparison anywhere later in a chain
+reserves its time in every seed step before it, which would cut each replicate's evolution. They are read instead
+from their databases at one generation, which is fairer anyway - runs never end at one generation.
+
+review-checks.py spread (new): databases cut at one generation, each front's fastest, smallest, least memory, best
+Q and hypervolume (log space, one reference for all), and the fronts' gene usage apart in points. Tested on seed 58
+cut at generations 40, 80 and 133: every measure better at each later cut, as it must be (fastest 0.1258, 0.1220,
+0.1179; smallest 14,368, 14,202, 14,146; hypervolume 0.563, 0.598, 0.611), and gene usage drifting 5-6 points
+between neighbours - the scale against which two replicates are read.
+
+The after-seed-60 batch (the fast gate) renamed after-seed-62 - its file and its citations: seeds 60-62 must run one
+evolver, or a change of evolver would read as run-to-run spread. Predictions for 61 and 62 written.
+
+Files: results/pending/fastgate-after-seed62.patch (renamed), results/pending/ORDER.md, lab/evolve/review-checks.py
+(spread), lab/evolve/NEXT-RUN (comment), results/predictions.md, HANDOFF.md, results/README.md, lab/evolve/README.md.

@@ -1,14 +1,15 @@
-# The after-seed-60 batch - apply in this order (against master after Iteration 391)
+# The after-seed-62 batch - apply in this order (against master after Iteration 393)
 
 Prepared at Iteration 391 while seed 59 ran: re-measuring designs before they enter the fast end (the owner,
-Iteration 391; results/review-methodology-386.md, 2a). Waits for seed 60's processing so that seed 60 - the
-anchoring test - runs on the same evolver as seeds 53-59.
+Iteration 391; results/review-methodology-386.md, 2a). Waits for seed 62's processing (Iteration 393: renamed
+from after-seed-60) so that seed 60 - the anchoring test - and seeds 61-62, its replicates, all run on the
+evolver of seeds 53-59: a change of evolver between them would be read as run-to-run spread.
 
 | # | patch | what it does |
 |---|---|---|
-| 1 | fastgate-after-seed60.patch | evolve.py: a child whose speed is under the fast gate - 5% above the 20th fastest design alive so far - is measured again, the same rounds on the engine as built, and its speed is the geometric mean of the two (speed1 and speed2 kept in its record; memory and size the first measurement's). The fast end's in-run speeds were ~10% optimistic, designs admitted on lucky draws (a 3% noise, the best of thousands); twice the rounds where admission is decided. `--fastgate N` sets the 20; 0 turns it off. |
+| 1 | fastgate-after-seed62.patch | evolve.py: a child whose speed is under the fast gate - 5% above the 20th fastest design alive so far - is measured again, the same rounds on the engine as built, and its speed is the geometric mean of the two (speed1 and speed2 kept in its record; memory and size the first measurement's). The fast end's in-run speeds were ~10% optimistic, designs admitted on lucky draws (a 3% noise, the best of thousands); twice the rounds where admission is decided. `--fastgate N` sets the 20; 0 turns it off. |
 
-    git apply results/pending/fastgate-after-seed60.patch
+    git apply results/pending/fastgate-after-seed62.patch
 
 Its cost, from seed 58's evaluations replayed through the gate: 1,121 of 24,885 measured children (4.5%) under
 it, their evaluations 4.4% of the evaluation time - an upper bound on the added time, the second measurement

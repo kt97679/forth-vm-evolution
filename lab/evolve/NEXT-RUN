@@ -322,6 +322,13 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 393 (the owner: the replicates, queued after seed 60): when seed 60's chain has finished, two runs
+# of its own start, 6 hours each, each its own command - a chain of two seeds has never run, and both would
+# write the remote checks' same directories:
+#   sh lab/evolve/next-run.sh seed 61 tag2 6h widths noevolved
+#   sh lab/evolve/next-run.sh seed 62 tag2 6h widths noevolved      (when seed 61's has finished)
+# No comparison in them: a comparison later in a chain takes its reserve from every seed before it. Read by
+# review-checks.py spread at one generation (results/predictions.md). The fast gate waits until after seed 62.
 # Iteration 389 (the owner: 12 hours): seed 60, the anchoring test made clean - noevolved (nocarry, and no
 # founder from an earlier run's record: the hand-made designs and the founders built from them), the tag-2
 # requirement, both widths. The after-seed-59 batch is applied ahead of seed 59's processing
