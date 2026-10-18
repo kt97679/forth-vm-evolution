@@ -7235,3 +7235,13 @@ stand-ins sleeping 4 s a call: start returned after its 50 s of sampling (the se
 --rejected 2, scanning seed 57's 32,567 records), the copies done 30 s later in the background, both
 checks noted started. About 40-50 minutes more evolution a 12-hour chain, from seed 59's; seed 58
 started on the old path.
+
+## Iteration 380 - 2026-10-18 - Claude
+
+**The Tegra's 38 minutes were not the SSH connection.** The owner timed `ssh rage.lan true`: 0.24 s - so
+Iteration 379's guess, slow connection setup (sshd's reverse DNS or GSSAPI), is wrong. The copy's
+throughput is what remains: seed 57's 7 MB bundle took about 38 minutes to the Tegra (~3 KB/s) and
+dream's copies about 3 minutes each - a network matter on the owner's side, testable with `time scp`
+of a few MB to each host. The fix of 379 stands as it is: the run no longer waits for the copying,
+whatever its cause. Seed 58 runs on (its evolution after the old path's copies); this bundle goes to
+~/Downloads only after seed 58's chain has finished.

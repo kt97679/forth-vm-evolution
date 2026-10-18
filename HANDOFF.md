@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 379.
+- master: Iteration 380.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -111,8 +111,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   seed 57's run waited 52 minutes (the sampling 14, dream's three copies ~3 each, the Tegra's 38 - for a
   7 MB bundle). Now only the sampling comes first; remote/launch.sh copies and starts in the background,
   one SSH connection a host (ControlMaster). From seed 59's chain; seed 58 started on the old path. The
-  owner may check the hosts' SSH: `time ssh rage.lan true` - seconds a connection would point at sshd
-  (UseDNS, GSSAPI), not the bandwidth.
+  owner measured `ssh rage.lan true` at 0.24 s (Iteration 380): not the connection's setup - the copy's
+  throughput, 7 MB in ~38 min to the Tegra (~3 KB/s) and ~3 min a check to dream; to test, `time scp` of a
+  few MB to each host. The run no longer waits for it either way.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
