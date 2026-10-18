@@ -73,7 +73,10 @@ the last ten sessions (120-150 designs): the fronts grew dense, many designs wit
 over its fastest third, **0.529 over its fastest tenth** - where selection chooses. A front spanning speeds
 0.12 to 1.5 (JIT and not, two encodings) ranks well on anything; the same holds for the remote checks'
 headline Spearman (0.96-0.97). Their line "the laptop's six fastest, their rank here" is the informative one
-(dream at 32 bits, seed 57's front: 1 2 3 10 15 14).
+(dream at 32 bits, seed 57's front: 1 2 3 10 15 14). **Weighed at Iteration 390** (heldout.py now prints both):
+seed 57's fastest tenth ranks at -0.141 held out, no agreement at all - yet its pick is only 3.0% slower held out
+than the held-out fastest (seed 58: 4.5%). The top designs are near-tied: noise shuffles equals, and the regret
+is the measure of what it costs.
 
 **2e. 32-bit numbers do not compare across sessions.** The non-PIE patch (applied at 374) rebuilt every 32-bit
 engine and s6's between sessions 51 and 52: seed 57's 32-bit fastest, 1a3cfe3e03, was 0.337 in session 51 and

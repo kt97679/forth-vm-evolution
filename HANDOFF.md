@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 389.
+- master: Iteration 390.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -160,7 +160,7 @@ About 20 minutes of machine time for build, tests and gates.
    its per-CPU lines show how far noise moves it (Iterations 388-389, results/verdict-audit-388.md).
 3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md` - every late gene
    on the front, and the format-10 words, since Iteration 299.
-   Then `python3 lab/evolve/heldout.py results/evolve-...-seedN.md` - the held-out
+   Then `python3 lab/evolve/heldout.py results/evolve-...-seedN.md` - the held-out (its top-end lines, Iteration 390: the Spearman over the fastest third and tenth, and the regret)
    check (Iteration 305): Spearman about 0.94 on seeds 49-51; say if it falls.
 4. Score the predictions, write the next (`results/predictions.md`).
 5. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a
@@ -266,7 +266,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 0d. **Two faults the free encoding found** (Iteration 384) - **fixed in the after-seed-59 batch** (Iteration 385):
    (a) is all three of seed 58's compile deaths (clang's "3 errors generated." too: its third), opcall_on()
    asking for tag2 without bytehdr, unlike jit_on() and t2wide_on(); (b) why() keeps the first error now. The
-   ARM link failure itself (regpin=1, lto=1) waits for its own words from the next Tegra check. As found:
+   ARM link failure itself: not regpin (inert on ARM - its engine code is x86-64 only) nor lto - on the Tegra
+   lto=1 built three times, lto=1 with regpin=1 once (dfd14a3b70); not reproduced here (a cross build stops at
+   the x86 runtime without Iteration 330's harness). Seed 60's chain checks seed 59's front with the new why():
+   a recurrence will name its cause (Iteration 390). As found:
    (a) tag-2 with bytehdr=0 and opcall does not compile - `L_t2call4` used but not defined (vm-opcall-bodies.h;
    2 of seed 58's designs, both by a mutation to bytehdr=0), a combination require() held off (it sets tag2 and
    bytehdr together); (b) on the Tegra three of seed 57's designs did not link, two of them front designs with

@@ -7500,3 +7500,28 @@ Files: results/applied-after-seed59/ (moved from results/pending; both-cpus-afte
 lab/evolve/compare-fronts.py, evolve.py, next-run.sh (the batch); lab/evolve/review-checks.py (the both-CPU line);
 results/verdict-audit-388.md (the rule's section), results/predictions.md (seed 60), GOALS.md, HANDOFF.md,
 lab/evolve/NEXT-RUN, results/README.md (the pending line out).
+
+## Iteration 390 - 2026-10-18 - Claude
+
+**While seed 59 runs: two of the review's findings turned into tools, and the Tegra's link failure narrowed.**
+
+heldout.py (the review, 2d): beside the whole front's Spearman, the fastest third's and tenth's, and the regret -
+how much slower held out the selection's fastest is than the held-out fastest. Seed 58: 0.883 / 0.866 / 0.529, the
+figures of review-checks.py; regret +4.5% (d79a57826d against 1b5ac698ce). Seed 57: 0.946 over the front but
+-0.141 over its fastest tenth - no agreement at all at the top - and a regret of only +3.0%: the top designs are
+near-tied, noise shuffling equals. 2d weighed accordingly in the review; step 3 of the routine reads the new lines.
+
+tools/handoff-check.py, rule 11 (the review, 4c): a "**Seed N is the laptop's next run**" or "**Seed N is set**"
+for another N than NEXT-RUN's line, or more than one seed running, fails the check. Made to fail first: "Seed 52
+is the laptop's next run" injected into a scratch copy - rule 11 named it against NEXT-RUN's seed 60; master's
+own HANDOFF raises nothing.
+
+The Tegra's link failure (open item 0d): not regpin - its engine code is x86-64 only, inert on ARM - and not lto:
+of seed 57's designs measured there, lto=1 built three times and lto=1 with regpin=1 once (dfd14a3b70). A cross
+build here (arm-linux-gnueabihf-gcc 13, installed on this VM; EVOLVE_CC) stops earlier, at the x86 runtime -
+Iteration 330's qemu harness is not tracked - but showed the new why() at work: "rt-linux-x86_64.c:59:5: error:
+unknown register name 'rcx' in 'asm'", the first error with its file's name. Seed 60's chain checks seed 59's
+front on the Tegra with that why(): a recurrence will name its cause.
+
+Files: lab/evolve/heldout.py, tools/handoff-check.py (rule 11), HANDOFF.md (routine step 3, item 0d),
+results/review-methodology-386.md (2d weighed), lab/evolve/README.md.

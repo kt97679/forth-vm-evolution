@@ -39,6 +39,9 @@ Scanned by default: /tmp and /home/claude, each one level deep for files, two
 for git trees. The tests' own leftovers (/tmp/relf-run-*) are ignored.
 
     python3 tools/handoff-check.py        PASS, or FAIL and what would be lost
+  11. HANDOFF.md names a run NEXT-RUN does not - a "**Seed N is the laptop's next run**" or "**Seed N is
+     set**" for another N than NEXT-RUN's line - or more than one seed as running (Iteration 390: "Seed 52 is
+     the laptop's next run" stood from Iteration 300 to 386).
 """
 import glob, hashlib, os, re, subprocess, sys
 
@@ -168,6 +171,15 @@ _, sl = git('ls-files', 'lab/evolve/*.py', 'lab/evolve/*.sh')
 lr = open(os.path.join(ROOT, 'lab', 'evolve', 'README.md')).read() if os.path.exists(os.path.join(ROOT, 'lab', 'evolve', 'README.md')) else ''
 for sp in [x for x in sl.split('\n') if x]:
     if '`%s`' % os.path.basename(sp) not in lr: fail(10, '%s: not among lab/evolve/README.md\'s tools' % sp)
+
+# 11. HANDOFF.md's runs agree with NEXT-RUN
+_hd = open(os.path.join(ROOT, 'HANDOFF.md')).read() if os.path.exists(os.path.join(ROOT, 'HANDOFF.md')) else ''
+_nm = re.match(r'seed (\d+)\b', nr[0]) if nr else None
+for _m in re.finditer(r"\*\*Seed (\d+) is (the laptop's next run|set)\*\*", _hd):
+    if not _nm or _m.group(1) != _nm.group(1):
+        fail(11, 'HANDOFF.md says "Seed %s is %s", but NEXT-RUN runs: %s' % (_m.group(1), _m.group(2), nr[0] if nr else 'nothing'))
+_run = sorted({_m.group(1) for _m in re.finditer(r"\*\*Seed (\d+) is running\*\*", _hd)}, key=int)
+if len(_run) > 1: fail(11, 'HANDOFF.md says seeds %s are running - one at most' % ', '.join(_run))
 
 if fails:
     print('handoff-check: FAIL - a new chat would lose or misread this:')
