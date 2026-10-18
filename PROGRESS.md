@@ -7613,3 +7613,19 @@ success (a scratch tree the handoff check flags). Run on the after-seed-62 batch
 PASS, validate 7 of 7 IDENTICAL, jail PASS - in three calls. HANDOFF's lessons hold the practices.
 
 Files: tools/batch-check.sh (new), HANDOFF.md.
+
+## Iteration 395 - 2026-10-18 - Claude
+
+**The tools audited (the owner: does shorter output break anything?) - nothing downstream broken, batch-check.sh
+fixed; and process-seed.sh for the chat that processes seeds 59-62.** results/tools-audit-394.md.
+
+Every code change since Iteration 383, each changed output traced to what reads it: none breaks. batch-check.sh
+did - it exited 0 on a failed test and removed the patched clone after a failure; now PASS only if every check
+says so in its own words and by its exit status, else FAIL, exit 1, the clone kept - five cases tested with stub
+tools, and the real batch PASS. compare-fronts.py run end to end here (--cpus 0,0, --widths, --frontier): exit 0,
+its new text, the 32-bit specialist kept. lab/evolve/process-seed.sh (new): the routine's reading steps on a
+chain archive, about a screen of summary - on seed 58's archive it reproduced Iteration 384's findings; HANDOFF's
+routine starts with it. Two traps of this VM noted: git as root in claude's tree, pkill -f matching its caller.
+
+Files: results/tools-audit-394.md, lab/evolve/process-seed.sh (new); tools/batch-check.sh, HANDOFF.md,
+lab/evolve/README.md, results/README.md.

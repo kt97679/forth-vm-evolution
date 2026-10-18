@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 394.
+- master: Iteration 395.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -148,6 +148,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   all runs (session 42): seed 43's 19510c7689.
 
 ## Processing a returned seed (as done for seed 47, Iteration 269)
+
+**First** (Iteration 395): `sh lab/evolve/process-seed.sh <the chain archive>` as claude - it unpacks, runs the
+pack's checks, the verdict as printed and from both CPUs, seed-facts, heldout, progress and the remote checks'
+agreement, every output in a file under /tmp/process and about a screen in /tmp/process/summary.md: read that,
+and the files only where it points (results/tools-audit-394.md tested it on seed 58's archive).
 
 About 20 minutes of machine time for build, tests and gates.
 
@@ -376,6 +381,10 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 - On Ubuntu gcc-arm-linux-gnueabihf and gcc-multilib cannot both be installed: the first removes the second,
   and /usr/include/asm with it - every 32-bit build fails until gcc-multilib is back (Iteration 391, the ARM
   compiler installed at 390 for a cross build). After any apt install, build before trusting the tree.
+- A shortened output must still say pass or fail in so many words, and its exit status must agree: batch-check.sh
+  at first exited 0 on a failed test (Iteration 395, results/tools-audit-394.md). And two traps of this VM: git run
+  as root in a tree claude owns refuses it as unsafe; `pkill -f PATTERN` kills the calling shell when PATTERN is in
+  its own command line.
 - **Context economy** (Iteration 394; the owner asked how a chat lasts longer): what tools print stays in the
   chat. Logs to files and one line printed (`| tail -1`, a summary file); a recurring cycle as a script -
   `tools/batch-check.sh` tests the pending batch as it will be applied (fresh clone, ORDER.md's patches, build,
