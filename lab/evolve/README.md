@@ -42,6 +42,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gene-usage.py` - the genes fronts use, an absent gene counted as off: one group, or two side by side by their difference (--vs) - seed 58 against the carried runs, a review's evidence (Iteration 375)
 - `missmap.py` - which handlers mispredict: perf record's user-space branch misses on the kernel and corpus workloads, each sample's source line charged to its handler (Iteration 294; the laptop's, between runs)
 - `word-cost.py` - the dispatches each workload spends inside chosen words, on chosen designs - what an opcode for them could save at most (Iteration 281)
+- `supers-knockout.py` - do superinstruction pairs buy anything: a front's designs that build pairs, each built as it is and with its supers gene emptied - the profiler's dispatches over the selection workloads and binary + image, with a control and the sizes checked against the records (Iteration 385; results/supers-knockout-seed58.md)
 - `ans-check.py` - ans-check.py [--ids A,B,...] [DB ...] - the held-out check (Iteration 119; the
 - `c-baseline.py` - c-baseline.py [--runs N] [IDS...] - the Forth designs against the same
 - `callsites.py` - callsites.py ID [ID ...] [--db FILE ...] - a design's calls in the two-bit

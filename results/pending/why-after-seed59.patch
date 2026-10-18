@@ -1,0 +1,29 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index a29eba1..feced5b 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -859,11 +859,21 @@ def design_pairs(g, n=24):
+     json.dump(PAIRS_CACHE, open(tmp, 'w')); os.replace(tmp, cache)
+     return pool
+ 
++WHY_GENERIC = ('collect2: error: ld returned', 'lto-wrapper: fatal error', 'compilation terminated')
+ def why(r):
+-    """The last line a failed tool printed, for the record."""
++    """A failed tool's own words, for the record. Iteration 385 (open item 0d b): the first error, not
++    the last - a link failure's last line is always ld's generic 'returned 1 exit status', which hid
++    the Tegra's three; where only the generic lines say error, the line before them, the linker's own;
++    paths cut to their file names, so the words fit. A Python traceback keeps its exception line."""
+     lines = [l for l in (r.stderr or b'').decode(errors='replace').splitlines() + (r.stdout or b'').decode(errors='replace').splitlines() if l.strip()]
+-    err = [l for l in lines if 'rror' in l or 'ssert' in l] or lines
+-    return (' (%s)' % err[-1].strip()[:120]) if err else ' (exit %d)' % r.returncode
++    err = [l for l in lines if ('rror' in l or 'ssert' in l) and not any(x in l for x in WHY_GENERIC)]
++    exc = [l for l in lines if re.match(r'[A-Za-z_][\w.]*(Error|Exception)\b', l)]
++    if exc and any(l.startswith('Traceback') for l in lines): err = [exc[-1]]   # Python: its exception, last
++    if not err:
++        gen = [i for i, l in enumerate(lines) if any(x in l for x in WHY_GENERIC)]
++        err = [lines[gen[0] - 1]] if gen and gen[0] > 0 else lines
++    if not err: return ' (exit %d)' % r.returncode
++    return ' (%s)' % re.sub(r'(?:/[^\s:/()]+)+/([^\s:/()]+)', r'\1', err[0].strip())[:160]
+ 
+ T2RANK = os.path.join(ROOT, 'lab', 'evolve', 'tag2-rank-v1.json')   # the reference ranking (Iteration 66)
+ # Iteration 71: t2hot - the tag's one-byte codes, hot first above this weight,

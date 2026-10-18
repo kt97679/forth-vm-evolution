@@ -1,0 +1,14 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index ce7a961..a29eba1 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -508,7 +508,8 @@ OPCALL_POOL = {'DROP': 'L_drop', 'AND': 'L_and', '@': 'L_fetch', '>R': 'L_tor',
+ def opcall_on(g):
+     """The tag's computed-goto engines: the tail-call and multi-state
+     generators rewrite handlers their own way."""
+-    return g['enc'] == 'cv8' and bool(g.get('tag2')) and not g.get('tail') and not g.get('msc')
++    return (g['enc'] == 'cv8' and bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 385: the tag as the build
++            and not g.get('tail') and not g.get('msc'))                         # has it - tag2 without byte headers is no tag
+ def opcall_avail(g):
+     o10 = {w for w, _ in ops10_in(g)}
+     return [n for n in OPCALL_POOL if (n not in ('0=', '1+') or 'tiny' in g['spec']) and (n not in ('(PARSE)', 'PLACE') or n in o10)]

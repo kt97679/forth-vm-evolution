@@ -48,11 +48,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 384.
+- master: Iteration 385.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
-  300); `results/pending` holds the after-seed-52 batch (Iteration 312): the JIT fix.
+  300); the after-seed-52 batch at Iteration 318 (the JIT fix); `results/pending` holds the after-seed-59 batch (Iteration 385).
 - **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
   went from Oct 13 21:01 UTC to about 03:00, its database archived as
   runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
@@ -114,7 +114,12 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Not separated: whether starting fresh helped too (seed 59). gate 264 of 264; ans-check 0 of 44 differ; predictions 4 of 5 as written;
   held out 0.883 (two encodings on one front). results/evolve-amd-ryzen-7-pro-8840hs-seed58.md,
   results/xcheck-seed58.md (seed 57's front: the Tegra 0.973, dream 0.959, at 32 bits 0.875).
-- **Seed 59 is the laptop's next run** (NEXT-RUN; the owner's 12 hours): `seed 59 tag2 12h widths nocarry then
+- **The after-seed-59 batch waits in results/pending/** (Iteration 385, ORDER.md): the two faults of open item 0d,
+  both in lab/evolve/evolve.py - opcall only where the tag is built, and a failed tool's first error in its record.
+  Tested in a scratch clone (before and after; run-tests, validate, jail) and checked to apply in order on a fresh
+  clone. Apply after seed 59's processing.
+- **Seed 59 is running** (started from the Iteration 384 bundle; 385's bundle has NEXT-RUN none - into ~/Downloads
+  only after seed 59's chain has finished). Its line (the owner's 12 hours): `seed 59 tag2 12h widths nocarry then
   experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the anchoring test as first
   specified (Iteration 373), separating the two concerns of item 4c, and the first chain on the new remote path
   (below). Its predictions: the end of results/predictions.md.
@@ -250,16 +255,19 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    its predictions; read the probes' lines in every host's report - the first numbers for the Tegra's slow copy
    (Iterations 379-381: the copy's KB/s, the connection, the load); and the checks of seed 58's front, the first
    with plain-CV8 designs - does the plain encoding's 32-bit lead hold on the Tegra?
-0d. **Two faults the free encoding found** (Iteration 384), both before the next run without the requirement:
+0d. **Two faults the free encoding found** (Iteration 384) - **fixed in the after-seed-59 batch** (Iteration 385):
+   (a) is all three of seed 58's compile deaths (clang's "3 errors generated." too: its third), opcall_on()
+   asking for tag2 without bytehdr, unlike jit_on() and t2wide_on(); (b) why() keeps the first error now. The
+   ARM link failure itself (regpin=1, lto=1) waits for its own words from the next Tegra check. As found:
    (a) tag-2 with bytehdr=0 and opcall does not compile - `L_t2call4` used but not defined (vm-opcall-bodies.h;
    2 of seed 58's designs, both by a mutation to bytehdr=0), a combination require() held off (it sets tag2 and
    bytehdr together); (b) on the Tegra three of seed 57's designs did not link, two of them front designs with
    regpin=1 and lto=1 - and xcheck kept only ld's last line, not the failing program's own words (lesson, 283).
-1. **Superinstructions after seed 58** (results/drafts/supers-tag2.md; decided at 368): with the pool
-   named right, do front designs build real pairs, and do they buy anything? If not, the gene comes out
-   of tag-2 designs - a mechanism that buys nothing comes out (GOALS.md). **Seed 58, the first half** (Iteration
-   384): with the pool named right, 73 of its front's 74 tag-2 designs build pairs (before: inert in ~97%). The
-   second half next: do they buy anything - the pairs knocked out, dispatch counts here, time on the laptop.
+1. **Superinstructions - answered (Iteration 385): they buy something, so the gene stays in tag-2 designs**
+   (the rule of 368; results/supers-knockout-seed58.md, lab/evolve/supers-knockout.py). Seed 58: 73 of 74 tag-2
+   front designs build pairs; over 19 knocked out, 0.9% fewer dispatches at the median (to 2.5%), -1,024 to +719
+   bytes (smaller with pairs in 6). Under 1% of time, inside selection's 2% speed tie - its time the laptop's to
+   measure, if wanted (evolve.py --knockout). 2 of 19 carry pairs that never execute (+112, +216 bytes).
 2. **Generalization** (results/generalization.md, Iteration 305): selection is measured on small
    programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
    build: a held-out workload whose code footprint grows - generated programs of N words, hot and run

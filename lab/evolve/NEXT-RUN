@@ -322,6 +322,10 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 385: seed 59 is running, started from the Iteration 384 bundle. This bundle adds the after-
+# seed-59 batch (results/pending: opcall only where the tag is built; a failed tool's first error, not ld's
+# last line) and the supers knockout - none, so pulled after seed 59's chain has finished it only pulls; seed
+# 60 is set when seed 59's packs are processed. Into ~/Downloads only after seed 59's chain has finished.
 # Iteration 384 (the owner: 12 hours, and the run to answer his concerns): seed 58 processed - from
 # scratch and free of the tag-2 requirement it passed every carried run at the small end (-10.5% bytes), in
 # hypervolume (+11.1%) and at 32 bits (+21.5%), all by plain-CV8 designs, and came within 3.4% at the 64-bit
@@ -384,4 +388,4 @@
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-seed 59 tag2 12h widths nocarry then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8
+none

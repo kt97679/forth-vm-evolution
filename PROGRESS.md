@@ -7336,3 +7336,43 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed58.md and results/xcheck-seed58
 results/predictions.md (seed 58 scored, seed 59 predicted), results/compare-fronts-amd-ryzen-7-pro-8840hs.md
 (Session 52), results/progress-by-run.md, results/README.md (its per-seed line, stale at "seeds 1-47", now
 1-58), lab/evolve/NEXT-RUN, HANDOFF.md.
+
+## Iteration 385 - 2026-10-18 - Claude
+
+**While seed 59 runs: the superinstructions question answered - they buy something, the gene stays - and
+seed 58's two faults fixed, the after-seed-59 batch.** The owner asked what could be done while seed 59
+runs; three items needed only this VM.
+
+Item 1 (results/drafts/supers-tag2.md; the rule decided at 368). lab/evolve/supers-knockout.py, new: a
+front's designs that build pairs, each built as it is and with its supers gene emptied - the profiler's
+dispatches over the six selection workloads (deterministic, so this VM's noise does not enter) and binary +
+image - with a control and every as-built size checked against its record (all equal). Over 19 of seed 58's
+73 tag-2 designs with pairs (every fourth by size, and the extremes): dispatch ratio median 0.9907 (0.9748 to
+1.0000), the most at the small end (the 642ec43577 family, 2.4%); bytes -1,024 to +719 (median +216), the
+design smaller with its pairs in 6. The control, d1e2c6b7de, unchanged. So not "buy nothing": the gene
+stays. Under 1% of time, inside selection's 2% speed tie; 2 of the 19 (14ec7cd739, d79a57826d) carry pairs
+that never execute, +216 and +112 bytes, each dominated by its own knockout. results/supers-knockout-seed58.md.
+
+Open item 0d (a): opcall_on() asked for tag2 but not bytehdr - unlike jit_on() and t2wide_on(), and the
+build, which makes the tag only with byte headers - so tag2=1 with bytehdr=0 built OPCALL into an engine
+without the tag, its CALLNEXT() jumping to L_t2call4. Reproduced with seed 58's 8259be4f90 at bytehdr=0: it
+died with clang's "3 errors generated." - seed 58's third compile death, the same fault; fixed, it builds and
+runs fib; the design as recorded builds to its record's bytes before and after; all 1,093 front genomes of
+seeds 53-58 express the same. (b): why() kept the last error line - for a link failure always ld's generic
+one, all the Tegra's three said - and cut 120 characters, mostly path. Now the first error, the linker's own
+line where only the generic ones say error, paths cut to file names, 160 characters; its test over synthetic
+compile, link, LTO and Python failures caught the first draft giving a traceback's source line (assert ok)
+for its exception - fixed, a Python traceback keeps its exception. The ARM link failure itself waits for its
+own words from the next Tegra check.
+
+Both in results/pending/ (ORDER.md: opcall-bytehdr-after-seed59.patch, why-after-seed59.patch), tested in a
+scratch clone: run-tests PASS, validate 7 of 7 IDENTICAL, test-jail PASS; on a fresh clone they apply in
+order and reproduce the tested evolve.py byte for byte. Applied after seed 59's processing.
+
+NEXT-RUN none: seed 59 runs from the Iteration 384 bundle, and this one goes to ~/Downloads only after its
+chain has finished. (next-run.sh pulls only at an invocation's start and refuses while a chain is alive, but
+holding the bundle costs nothing.)
+
+Files: lab/evolve/supers-knockout.py, results/supers-knockout-seed58.md, results/pending/ORDER.md,
+results/pending/opcall-bytehdr-after-seed59.patch, results/pending/why-after-seed59.patch (new);
+HANDOFF.md, lab/evolve/NEXT-RUN, lab/evolve/README.md, results/README.md.
