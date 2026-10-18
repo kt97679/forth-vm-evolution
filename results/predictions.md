@@ -508,3 +508,25 @@ Its remote checks measure seed 57's front - and, first, designs seed 57 rejected
 5. The Tegra's rejected designs (4 of 16, from seed 57): none faster there than the fastest front
    design sampled - the rank agreement (0.944) holding for designs the laptop rejected.
 
+
+## Seed 58, scored (Iteration 384)
+
+The anchoring and constraint test: nocarry, no tag2 requirement, both widths (results/evolve-amd-ryzen-7-pro-8840hs-seed58.md). **4 of 5 as written.**
+
+1. **Met.** Its fastest at 64 bits 3.4% behind the others' best in the same session (52917e2595, 0.131) - inside 3-15%, and far nearer than seed 36's 12% after 2 h 40 min.
+2. **Missed.** Tag-2 on **43%** of its front (74 of 171), not 60%. The miss is the finding: tag-2 takes the fast end (53 of the fastest 57), plain CV8 the whole small third (57 of 57).
+3. **Met**, widely: plain CV8 on 57% of the front (predicted at least 10%), and the fastest at 32 bits plain (d55f05136f).
+4. **Met as written, not like for like.** 0.310 against seed 57's recorded 0.337 - 8% faster, inside the band; but in the same session seed 57's best measured 0.377, so the run is 21.5% ahead - outside what the prediction meant.
+5. **Met.** No rejected design of seed 57's faster on the Tegra than the front's fastest (3 measured, 0 past it, 2 past the median); the rank agreement 0.973 (seed 56's front: 0.881).
+
+Not predicted, and the run's main result: **it passed every carried run at the small end** (14,146 bytes against 15,633: +10.5%), **in hypervolume (+11.1%) and at 32 bits (+21.5%)**, all three by plain-CV8 designs - territory the requirement kept the carried runs out of. The predictions expected a from-scratch run to trail; it trailed only at the 64-bit fast end (-3.4%) and on best Q (-5.3%).
+
+## Seed 59, predicted (Iteration 384) - the anchoring test, separated
+
+`seed 59 tag2 12h widths nocarry`: from scratch as seed 58, but with the tag-2 requirement - the anchoring test as first specified (Iteration 373). Against seed 58 it isolates the constraint; against the carried runs (seeds 53-57, all tag-2) it isolates anchoring. The first chain on Iteration 379's remote path, with Iteration 381's probes.
+
+1. **Not anchored**: by the five 64-bit measures against all the others, small - a fresh tag-2 search finds nothing the carried runs and seed 58 had not (fastest within 5%, smallest and hypervolume under 2%). If instead it passes the carried tag-2 runs somewhere by more than 2%, they were anchored.
+2. Its smallest about the carried tag-2 runs' (15,633 bytes, within 3%) - at least 7% larger than seed 58's plain-CV8 14,146: seed 58's small end was the encoding's, not the fresh start's.
+3. Its fastest at 32 bits at least 15% behind seed 58's 0.310 (a tag-2 design at 32 bits; seed 57's best 0.377 in seed 58's session) - so not small at both widths only if this is wrong.
+4. No `L_t2call4` deaths: the requirement holds bytehdr on (require() sets tag2=1, bytehdr=1), and both of seed 58's were tag-2 designs with bytehdr=0.
+5. The run starts within 20 minutes of the remote checks' start (the sampling alone; seed 58 waited 55 minutes, seed 57 52), and every host's report ends with the probes' lines - the copy timed with its bytes, the connection, the load; the Tegra's copy again a few KB/s unless the network changed.

@@ -7283,3 +7283,56 @@ with a repository tool to reproduce it (jitleft.py's table, kernel 54.6%) - exce
 seed 53's ccf55ad2f5 (a scratch look at Iteration 310), never recorded: reproducible with
 lab/evolve/price.py from the genome in results/evolve-amd-ryzen-7-pro-8840hs-seed53.md. Left: three
 tool caches not of this work, listed in /tmp/handoff-disposable.txt.
+
+## Iteration 384 - 2026-10-18 - Claude
+
+**Seed 58 processed - from scratch and free of the tag-2 requirement, it passed every carried run at the
+small end, at 32 bits and in hypervolume; seed 59 (the owner: 12 hours) separates anchoring from the
+constraint.** A new chat, set up by HANDOFF-PROMPT.md: build, run-tests PASS, validate 7 of 7 IDENTICAL,
+test-jail PASS on this VM. The archive (chain-20261018-031219, at c49de1703): both packs and four remote
+reports, status done; the pack's tests PASS, validate 7 IDENTICAL, jail PASS. Its
+results-measured-here.patch is two old stashes of the laptop's benchmark files (Oct 4 and Oct 14) that apply
+neither way to master - the laptop's local re-measurements, not seed 58's; left out.
+
+The verdict (Session 52): at 64 bits fastest -3.4%, smallest +10.51%, memory +4 KB, hypervolume +11.1%, best
+Q -5.3%; at 32 bits +21.5% - not small at either width, by its gains. A positive figure is the run ahead: its
+smallest, 09de03f091, is 14,146 bytes against every other run's 15,633 (the per-run minimum in the session's
+table). This chat's first reading, in its summary to the owner, took the sign the other way; the per-run
+minimum caught it before anything was committed, and HANDOFF's lessons now say so. The front of 171: the small
+third 57 of 57 plain CV8, the middle 36 plain and 21 tag-2, the fast third 53 of 57 tag-2; the fastest at 64
+bits tag-2 (1b5ac698ce), the fastest at 32 bits (d55f05136f) and the smallest plain. The search tried 18,153
+plain designs and 16,021 tag-2. So the constraint concern holds - the requirement kept the carried runs out
+of the small end and the 32-bit end - and anchoring is not separated by this run. gene-usage.py against seeds
+53-57: the structure the same, the tuning different (dskew -30, opcall -28, rtiplus +23, d256 +22, regpin -21,
+bfind -21, opt +20, lto -19, abortif +19). seed-facts: speed against 32-bit speed over the front, Spearman
+0.573. heldout.py: sieve 0.883 (seeds 53-57: 0.946-0.963). Item 1's first half: with the pool named right, 73
+of the front's 74 tag-2 designs build superinstruction pairs (before: inert in ~97%).
+
+Predictions 4 of 5 as written: 2 missed (tag-2 on 43% of the front, not 60%); 4 met only as written (0.310
+against seed 57's recorded 0.337, but 21.5% ahead of its 0.377 in the same session). The remote checks, of
+seed 57's front and first its rejected designs (xcheck --rejected, item 4d): the Tegra 0.973, dream 0.959,
+dream at 32 bits 0.875; no rejected design faster on any host than the front's fastest. The old remote path
+held seed 58's evolution back 55 minutes (the checks 03:17:26, the run 04:12:39). Two faults (open item 0d):
+2 designs did not compile, `L_t2call4` used but not defined - both tag-2 with opcall `>R`, made by a mutation
+to bytehdr=0, which require() never allowed (it sets tag2 and bytehdr together); and on the Tegra three of
+seed 57's designs did not link, two of them front designs with regpin=1 and lto=1, xcheck keeping only ld's
+last line.
+
+The gates at this commit: gate.py alive 264 of 264 (the run's front 171, the joint front 129, 36 in both);
+ans-check on 44 designs (every fourth of the front by size, and its extremes) - 0 differ, its negative control
+caught (failed 0 -> 1).
+
+Seed 59 (NEXT-RUN), the owner asking for 12 hours and a run that answers his concerns: `seed 59 tag2 12h widths
+nocarry then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the anchoring test
+as first specified at Iteration 373 (from scratch with tag2): against seed 58 the constraint alone, against
+seeds 53-57 anchoring alone. And the first chain on Iteration 379's remote path with 381's probes: lab/evolve
+unchanged since 381's end-to-end test but for NEXT-RUN, both scripts pass dash -n; so the copying no longer
+holds the evolution back, and every host's report ends with the copy's KB/s, the connection and the load - the
+first real numbers for the Tegra's slow copy. Its checks measure seed 58's front, the first with plain-CV8
+designs. next-run.sh's reserve covers the re-measure and the comparison only, so the footprint experiment
+(item 2) stays out of a 12-hour chain. Its predictions are written (results/predictions.md).
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed58.md and results/xcheck-seed58.md (new);
+results/predictions.md (seed 58 scored, seed 59 predicted), results/compare-fronts-amd-ryzen-7-pro-8840hs.md
+(Session 52), results/progress-by-run.md, results/README.md (its per-seed line, stale at "seeds 1-47", now
+1-58), lab/evolve/NEXT-RUN, HANDOFF.md.

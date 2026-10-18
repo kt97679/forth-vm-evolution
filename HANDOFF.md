@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 383.
+- master: Iteration 384.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -106,14 +106,23 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Q-best of all runs its 9d47925af2 (Q 0.213); jitvar on none of its 200, jitimg on 5; held out 0.946.
   results/evolve-amd-ryzen-7-pro-8840hs-seed57.md, results/xcheck-seed57.md (seed 56's front: dream
   0.980, at 32 bits 0.713, the Tegra 0.881).
-- **Seed 58 has run, not processed** (its chain 03:12 - about 14:45 UTC Oct 18, at c49de1703): the anchoring
-  and constraint test. This chat closed before its archive came (Iteration 383); the next chat starts with
-  it. NEXT-RUN is `none` until seed 58 is processed - its outcome chooses seed 59's run.
+- **Seed 58 processed (Iteration 384): not small at either width - by its gains.** From scratch and free of
+  the tag-2 requirement (item 4c), it passed every carried run at the small end (09de03f091, 14,146 bytes against
+  15,633: +10.5%), in hypervolume (+11.1%) and at 32 bits (d55f05136f, 0.310: +21.5%) - all plain-CV8 designs -
+  and came within 3.4% at the 64-bit fast end (tag-2) and 5.3% on best Q. Its front by encoding: the small third
+  57 of 57 plain CV8, the fast third 53 of 57 tag-2 - the requirement had cost the small end and the 32-bit end.
+  Not separated: whether starting fresh helped too (seed 59). gate 264 of 264; ans-check 0 of 44 differ; predictions 4 of 5 as written;
+  held out 0.883 (two encodings on one front). results/evolve-amd-ryzen-7-pro-8840hs-seed58.md,
+  results/xcheck-seed58.md (seed 57's front: the Tegra 0.973, dream 0.959, at 32 bits 0.875).
+- **Seed 59 is the laptop's next run** (NEXT-RUN; the owner's 12 hours): `seed 59 tag2 12h widths nocarry then
+  experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the anchoring test as first
+  specified (Iteration 373), separating the two concerns of item 4c, and the first chain on the new remote path
+  (below). Its predictions: the end of results/predictions.md.
 - **The run no longer waits for the network** (Iteration 379, the owner noticed): remote-checks.sh start
   ran in the seed step before the evolution, copying and starting each host's check synchronously -
   seed 57's run waited 52 minutes (the sampling 14, dream's three copies ~3 each, the Tegra's 38 - for a
   7 MB bundle). Now only the sampling comes first; remote/launch.sh copies and starts in the background,
-  one SSH connection a host (ControlMaster). From seed 59's chain; seed 58 started on the old path. The
+  one SSH connection a host (ControlMaster). From seed 59's chain - its first real use; seed 58 started on the old path and waited 55 minutes (the checks 03:17:26, the run 04:12:39). The
   owner measured `ssh rage.lan true` at 0.24 s (Iteration 380): not the connection's setup - the copy's
   throughput, 7 MB in ~38 min to the Tegra (~3 KB/s) and ~3 min a check to dream; to test, `time scp` of a
   few MB to each host. The run no longer waits for it either way.
@@ -236,15 +245,21 @@ About 20 minutes of machine time for build, tests and gates.
 Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
-0. **Seed 58** - the anchoring and constraint test (item 4c), run as `seed 58 12h widths nocarry
-   then experiment compare-fronts.py ...` - from scratch, no tag2 requirement, both widths; its batch
-   applied (results/applied-after-seed57/). Its archive comes with the next chat; process it: score its predictions
-   (results/predictions.md - the first since seed 55's: none were written for 56 and 57); its comparison
-   prints the verdict at both widths; read its genes with gene-usage.py against seeds 53-57, and the
-   remote checks' line "Rejected by the laptop's selection, measured here" (item 4d).
+0. **Seed 59** - the anchoring test, separated (item 4c): from scratch with the tag-2 requirement, both widths,
+   12 h (the owner). Process it: against seed 58 the constraint alone, against seeds 53-57 anchoring alone; score
+   its predictions; read the probes' lines in every host's report - the first numbers for the Tegra's slow copy
+   (Iterations 379-381: the copy's KB/s, the connection, the load); and the checks of seed 58's front, the first
+   with plain-CV8 designs - does the plain encoding's 32-bit lead hold on the Tegra?
+0d. **Two faults the free encoding found** (Iteration 384), both before the next run without the requirement:
+   (a) tag-2 with bytehdr=0 and opcall does not compile - `L_t2call4` used but not defined (vm-opcall-bodies.h;
+   2 of seed 58's designs, both by a mutation to bytehdr=0), a combination require() held off (it sets tag2 and
+   bytehdr together); (b) on the Tegra three of seed 57's designs did not link, two of them front designs with
+   regpin=1 and lto=1 - and xcheck kept only ld's last line, not the failing program's own words (lesson, 283).
 1. **Superinstructions after seed 58** (results/drafts/supers-tag2.md; decided at 368): with the pool
    named right, do front designs build real pairs, and do they buy anything? If not, the gene comes out
-   of tag-2 designs - a mechanism that buys nothing comes out (GOALS.md).
+   of tag-2 designs - a mechanism that buys nothing comes out (GOALS.md). **Seed 58, the first half** (Iteration
+   384): with the pool named right, 73 of its front's 74 tag-2 designs build pairs (before: inert in ~97%). The
+   second half next: do they buy anything - the pairs knocked out, dispatch counts here, time on the laptop.
 2. **Generalization** (results/generalization.md, Iteration 305): selection is measured on small
    programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
    build: a held-out workload whose code footprint grows - generated programs of N words, hot and run
@@ -283,7 +298,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    `tag2`, so the search may choose the encoding; tag2 costs 36% at 32 bits (results/drafts/skew-32.md).
    **Seed 58 is both at once** (the owner, Iteration 374): from scratch and without the requirement, at
    both widths. Back in the carried region with tag2 chosen: neither concern holds. Elsewhere: a
-   follow-up run separates them (nocarry with tag2, or carried without).
+   follow-up run separates them (nocarry with tag2, or carried without). **Seed 58's answer** (Iteration 384):
+   elsewhere - the constraint concern holds (plain CV8 took the small end and 32 bits, where the requirement
+   kept the carried runs out); anchoring not separated. Seed 59 is the follow-up: nocarry with tag2. Neither tag2
+   nor bytehdr is a gene to freeze (item 4b): free, the search chooses by objective.
    Reading it in genes: `python3 lab/evolve/gene-usage.py <seed 58's db> --vs results/evolve-*-seed5[3-7].md`
    - two consecutive carried runs (seeds 55, 56) differ by up to 17 points a gene: the scale to read it by.
 4d. **Weighing results across machines** (the owner's question, Iteration 376;
@@ -291,7 +309,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    generalization test; a disagreement diagnosed (noise, width, gene) before it is weighed; the final
    generic choice by the geometric mean over machine classes with a veto; and the blind spot tested -
    xcheck samples only the laptop's front, so a design good on the Tegra and rejected by the laptop is
-   never seen: a sample of rejected designs measured elsewhere. **Decided (the owner, Iteration 377):
+   never seen: a sample of rejected designs measured elsewhere. **First run in seed 58's chain** (Iteration 384, seed 57's
+   rejected designs): none faster on any host than the front's fastest - no blind spot by this sample
+   (results/xcheck-seed58.md). **Decided (the owner, Iteration 377):
    three classes, equal** (GOALS.md); the margin proposed 25%. **The test is built** (xcheck --rejected;
    REMOTES: the Tegra 4 of 16, dream at 32 bits 6 of 30) - it runs in seed 58's chain, on what seed 57
    rejected: the report's line "Rejected by the laptop's selection, measured here" answers it.
@@ -318,6 +338,9 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 
 ## Lessons - how faults got in, and the checks that catch them now
 
+- In "Judging the runs" a positive figure is the run AHEAD of all the others: seed 58's smallest +10.51%
+  is its design 10.5% smaller, not larger - Iteration 384 first read it backwards, and caught it by the
+  per-run minimum (14,146 against 15,633). Check a verdict's direction against the table before writing it.
 - Edit a numbered item by its own text, never by `index('\n4. ')`: this file's
   routine is numbered too, and comes first - Iterations 293-299 wrote open items over
   the routine's steps 3-5, and left the open items themselves stale (found and
