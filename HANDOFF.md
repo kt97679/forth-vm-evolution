@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 377.
+- master: Iteration 378.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -100,9 +100,12 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   mechanism; after seed 58, if superinstructions still buy nothing, the gene comes out of tag-2 designs.
   Iteration 364: the cheap class measured on relf's shell - clang, -Os, pinned registers: none faster
   (results/relf-patches/README.md); relf-ab.sh takes RELF_AB_MAKE_B and measures the shells it built.
-- **Seed 57 next** (the owner, Iteration 355: one 12-hour run, not two of 6 - each run's fixed part
-  with two widths about 3 h 40 min): the first run selecting at both widths, with jitimg and jitvar;
-  the comparison at both widths. The reserve knows --widths now (164 min; the evolution ~8 h 20 min).
+- **Seed 57 processed (Iteration 378): small at 64 bits, not small at both widths** - the first run
+  selected for speed at 32 bits: its 32-bit fastest 0.337 of s6 (1a3cfe3e03), 20.3% ahead of every
+  earlier run's; the first verdict by the owner's two-width rule (Iteration 376), applied by hand. The
+  Q-best of all runs its 9d47925af2 (Q 0.213); jitvar on none of its 200, jitimg on 5; held out 0.946.
+  results/evolve-amd-ryzen-7-pro-8840hs-seed57.md, results/xcheck-seed57.md (seed 56's front: dream
+  0.980, at 32 bits 0.713, the Tegra 0.881). **Seed 58 next**: the anchoring and constraint test.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
@@ -219,14 +222,12 @@ About 20 minutes of machine time for build, tests and gates.
 Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
-0. **Seed 57** - the first run selected at both widths (--widths 8,4): process when its archive comes,
-   with its cross-machine checks. Its batch is applied already (Iteration 374: results/applied-after-seed57/
-   - 32-bit engines not PIE, superinstruction pairs named right), so **seed 58 starts when seed 57's chain
-   ends**: NEXT-RUN's `seed 58 12h widths nocarry then experiment compare-fronts.py ...` - the test of
-   item 4c. This bundle into ~/Downloads only after seed 57's chain has finished (each step pulls the newest).
-   Seed 57's verdict: its comparison runs on its own commit, before the verdict at both widths (Iteration
-   375) - apply it by hand from its "At 32 bits" table: small only if the five are and its fastest at 32
-   bits moved under 5%. From seed 58 the comparison prints it.
+0. **Seed 58** - the anchoring and constraint test (item 4c): NEXT-RUN's `seed 58 12h widths nocarry
+   then experiment compare-fronts.py ...` - from scratch, no tag2 requirement, both widths; its batch
+   applied (results/applied-after-seed57/). Process when its archive comes: score its predictions
+   (results/predictions.md - the first since seed 55's: none were written for 56 and 57); its comparison
+   prints the verdict at both widths; read its genes with gene-usage.py against seeds 53-57, and the
+   remote checks' line "Rejected by the laptop's selection, measured here" (item 4d).
 1. **Superinstructions after seed 58** (results/drafts/supers-tag2.md; decided at 368): with the pool
    named right, do front designs build real pairs, and do they buy anything? If not, the gene comes out
    of tag-2 designs - a mechanism that buys nothing comes out (GOALS.md).
@@ -254,7 +255,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    JIT's ackermann misses past the return predictor's depth - a candidate gene, not built
    (results/missmap-amd-ryzen-7-pro-8840hs.md). The IP-update loop form set aside
    (results/drafts/iploop-plan.md).
-4b. **The simplicity review, after seed 57** (results/drafts/gene-usage-53-56.md, Iteration 372): over
+4b. **The simplicity review, after seed 58** (results/drafts/gene-usage-53-56.md, Iteration 372; seed 57
+   added jitvar never taken, jitimg on 5 of 200): over
    seeds 53-56's 722 front designs, msc, scale and tail never on; eight genes under 10% of every front;
    ten on in every design by choice - tag2 and bytehdr too, but imposed (--require tag2, every run since
    Iteration 71), not chosen. Seed 57's two widths first, and the anchoring and constraint tests

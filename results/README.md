@@ -16,6 +16,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `relf-patches/README.md` - Patches for relf from this lab (Iteration 360): each with its gate, its dispatch count and its time; the first, 0= ?BRANCH fused.
 - `relf-pairs-realistic.md` - relf's realistic shell script by instruction and by adjacent pair (Iteration 358): VAR@ 15.2 %, VAR@ VAR@ 4.2 %, VAR@ + 3.1 %; relf's 64 one-byte opcodes (A15) as the constraint.
 - `xcheck-seed56.md` - The first run checked on four machines (Iteration 354): the Tegra's first native run (ARMv7, Spearman 0.944), dream.lan at 64 bits, at 32, and the same designs at 64 - the skew the width's, not the machine's.
+- `xcheck-seed57.md` - The checks of seed 56's front during seed 57 (Iteration 378): dream 64-bit Spearman 0.980; at 32 bits 0.713, the same designs at 64 bits 0.949 - the width's skew again; the Tegra 0.881.
 - `xcheck-dream-seed55.md` - The first check at both widths (Iteration 334): dream.lan 64-bit Spearman 0.940; 32-bit x86 at 4-byte cells 0.694 - the laptop's six fastest interpreted designs 8th-13th there: the skew the owner feared.
 - `xcheck-dream-seed54.md` - The second remote check (Iteration 333): seed 53's front on dream.lan - Spearman 0.941, the laptop's six fastest ranked 3 4 2 10 1 5 there.
 - `drafts/two-width-scratch-db.jsonl` - The second two-width scratch run's database (Iteration 337): its designs without speed32, to reproduce.

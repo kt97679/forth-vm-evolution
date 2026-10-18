@@ -7193,3 +7193,26 @@ seed 56 (half its front as the front, all 187 in the database): 5 front and 3 re
 through --ids, and a fake host result with one rejected design the fastest there - reported by name.
 REMOTES: the Tegra 16 designs, 4 rejected, 120 minutes; dream at 32 bits 30, 6 rejected, 40 minutes,
 its paired 64-bit check the same 30. They run in seed 58's chain, on what seed 57 rejected.
+
+## Iteration 378 - 2026-10-18 - Claude
+
+**Seed 57 processed - small at 64 bits, not small at both widths: the first run selected for speed at
+32 bits.** Its chain (`seed 57 tag2 12h widths ...`, commit d1d1a44e6) ran 11 h 52 min: the evolution
+8 h 22 min, 32,567 designs over 128 generations, 24,104 alive, 23,480 of them with a 32-bit speed (the
+chain's recorded line lacks `widths` - next-run.sh consumes the word; the database shows the selection
+ran). By the five 64-bit measures: fastest +3.9%, smallest +0.00%, memory +0 KB, hypervolume +2.0%,
+best Q +1.2% - small; its fastest at 32 bits 0.337 of s6 (1a3cfe3e03), +20.3% against every earlier
+run's (seed 56's 0.405) - **not small** by the owner's two-width rule (Iteration 376), applied by hand,
+the comparison predating it: by the old rule the fifth small run in a row. The front: 200 designs, the
+two speeds' Spearman over it 0.717 - 32-bit specialists kept now (the 32-bit fastest is 0.332 at 64
+bits) - while its genes moved no further from seeds 53-56's than consecutive runs do (gene-usage.py:
+the largest difference dskew, 17 points). The Q-best of all runs: its 9d47925af2 (Q 0.213). jitvar on
+none of the 200, jitimg on 5. Held out: sieve 0.946. The checks of seed 56's front: dream 0.980, at 32
+bits 0.713 and the same designs at 64 bits 0.949 (the width again), the Tegra 0.881. Gates on master
+(the after-seed-57 batch applied at 374): tests PASS, 7 of 7 IDENTICAL, the jail PASS, the gate 274 of
+274 (the run's front 200, the joint front 124), ans-check 0 of 51 differ (its negative control caught);
+the laptop's stash on master but for the c-baseline-x86-64.md hunk, left out as since seed 49. No
+predictions had been written for seeds 56 and 57 - step 4 skipped twice; seed 58's written now, before
+it starts. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed57.md, results/xcheck-seed57.md; session 51
+appended to results/compare-fronts-amd-ryzen-7-pro-8840hs.md; results/progress-by-run.md regenerated;
+results/predictions.md. Seed 58 next, as set at Iteration 374.

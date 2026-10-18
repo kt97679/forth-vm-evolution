@@ -486,3 +486,25 @@ first with dream.lan's 32-bit x86 check and the Tegra back (the after-seed-54 ba
 
 Four of five.
 
+## Seeds 56 and 57: none written
+
+Seed 56's processing (Iteration 354) wrote no predictions for seed 57, and none were written for seed
+56 itself - step 4 of the routine skipped twice; noticed at Iteration 378, too late to predict either
+honestly. Seed 58's are written before it starts.
+
+## Seed 58, predicted (Iteration 378)
+
+The anchoring and constraint test (HANDOFF 4c): 12 hours from scratch (nocarry: the hand-made designs
+and founders) without the tag2 requirement every run since Iteration 71 has had, selected at both
+widths; the after-seed-57 batch applied (non-PIE 32-bit engines, superinstruction pairs named right).
+Its remote checks measure seed 57's front - and, first, designs seed 57 rejected (xcheck --rejected).
+
+1. Its fastest at 64 bits 3-15% behind the carried runs' best (seed 57's 0.128): from scratch, as seed
+   36 ended 12% behind after 2 h 40 min.
+2. The search chooses tag2 itself on at least 60% of its front.
+3. But not everywhere: at least 10% of the front plain CV8 (tag2 off), and its fastest at 32 bits one
+   of them - tag2 costs 36% at 32 bits (results/drafts/skew-32.md).
+4. Its fastest at 32 bits within 10% of seed 57's 0.337, either side.
+5. The Tegra's rejected designs (4 of 16, from seed 57): none faster there than the fastest front
+   design sampled - the rank agreement (0.944) holding for designs the laptop rejected.
+

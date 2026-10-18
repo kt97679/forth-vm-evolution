@@ -322,6 +322,8 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 378: seed 57 processed - small at 64 bits, not small at both widths (its 32-bit fastest
+# 20.3% ahead). Seed 58 as set at Iteration 374, unchanged; its predictions in results/predictions.md.
 # Iteration 374 (the owner): seed 58 is the anchoring and constraint test (HANDOFF item 4c) - from
 # scratch (nocarry: the hand-made designs and founders, no earlier front) and without the tag2
 # requirement (every run since Iteration 71 had it), at both widths: does a fresh, unconstrained search
