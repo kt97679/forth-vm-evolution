@@ -525,7 +525,7 @@ Not predicted, and the run's main result: **it passed every carried run at the s
 
 `seed 59 tag2 12h widths nocarry`: from scratch as seed 58, but with the tag-2 requirement - the anchoring test as first specified (Iteration 373). Against seed 58 it isolates the constraint; against the carried runs (seeds 53-57, all tag-2) it isolates anchoring. The first chain on Iteration 379's remote path, with Iteration 381's probes.
 
-1. **Not anchored**: by the five 64-bit measures against all the others, small - a fresh tag-2 search finds nothing the carried runs and seed 58 had not (fastest within 5%, smallest and hypervolume under 2%). If instead it passes the carried tag-2 runs somewhere by more than 2%, they were anchored.
+1. By the five 64-bit measures against all the others, small (fastest within 5%, smallest and hypervolume under 2%). Reworded at Iteration 386 (results/review-methodology-386.md): read as "no evidence of anchoring at this search budget", not "not anchored" - a fresh run finding nothing shows little - and weaker still because nocarry keeps two evolved founders, about two thirds of seed 58's ancestry. If it passes the carried tag-2 runs somewhere by more than 2%, that is evidence of anchoring.
 2. Its smallest about the carried tag-2 runs' (15,633 bytes, within 3%) - at least 7% larger than seed 58's plain-CV8 14,146: seed 58's small end was the encoding's, not the fresh start's.
 3. Its fastest at 32 bits at least 15% behind seed 58's 0.310 (a tag-2 design at 32 bits; seed 57's best 0.377 in seed 58's session) - so not small at both widths only if this is wrong.
 4. No `L_t2call4` deaths: the requirement holds bytehdr on (require() sets tag2=1, bytehdr=1), and both of seed 58's were tag-2 designs with bytehdr=0.

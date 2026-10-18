@@ -7376,3 +7376,40 @@ holding the bundle costs nothing.)
 Files: lab/evolve/supers-knockout.py, results/supers-knockout-seed58.md, results/pending/ORDER.md,
 results/pending/opcall-bytehdr-after-seed59.patch, results/pending/why-after-seed59.patch (new);
 HANDOFF.md, lab/evolve/NEXT-RUN, lab/evolve/README.md, results/README.md.
+
+## Iteration 386 - 2026-10-18 - Claude
+
+**A review of the methodology, workflows and logic - the owner's request; results/review-methodology-386.md.**
+Each suspicion checked against the code or the data before it was written down; every figure reproduced by
+lab/evolve/review-checks.py (new: pedigree, curse, cpus, screen).
+
+The finding that bears on the running seed 59: `nocarry` is not from scratch. Every run but fromzero puts two
+evolved designs in generation 0 (evolve.py, Iterations 155 and 178): seed 37's fastest, starting seed 58 at
+speed 0.174, and seed 40's knee. By expected pedigree share (every listed parent weighted equally), seed 37's
+fastest is 55.0% of seed 58's fastest third and 48.7-49.4% of the rest, seed 40's knee 11.3-17.0%: one design in
+140 half the front's ancestry. So seed 58's "within 3.4% of the carried fast end" is largely inherited, and
+seed 59, with the same founders, cannot answer the anchoring question; the constraint finding stands (both
+founders are tag-2, the plain encoding came from the hand-made and random side). fromzero, tested here in
+miniature (--pop 8 --gens 1 --fromzero --require tag2 --widths 8,4), runs - exit 0, both widths, no hand-made
+design or founder in generation 0 - but only 2 of its 16 designs were tag-2: require() tags only designs
+already CV8, and random genomes mostly draw other encodings, at 1.2-2.0 times s6 - too far down for a fair 12
+hours. The clean test needs an opt-in switch leaving out the evolved founders (what seed 36 was), not built.
+
+Measurement: the fast end's in-run speeds are optimistic - re-measured / in-run, the fastest tenth 1.112 (all
+17 between 1.073 and 1.142), the fastest third 1.081, the middle 1.032, the slowest third 0.991: selection on
+noise, the 2% speed tie inside ~10%. Session 52's verdict measures from each CPU alone: "fastest" moves up to
+5.4 points between the CPUs, "best Q" up to 6.2, seed 57's best Q +3.5% on cpu 2 and -0.4% on cpu 8 - the 2%
+bars inside the noise. The front of all runs from the two CPUs: 80-100% of members in common while fronts held
+under 20 designs, 46-65% in the last ten sessions. Held out, seed 58: Spearman 0.883 over the front, 0.866 over
+its fastest third, 0.529 over its fastest tenth. 1a3cfe3e03 at 32 bits: 0.337 in session 51, 0.400 in session
+52, built and measured both times - the non-PIE rebuild between them: 32-bit numbers do not compare across
+sessions. Logic: "converged" was said of the tag-2 subspace; one run per configuration; the anchoring test
+asymmetric (seed 59's prediction 1 reworded); the supers gain under selection's resolution. Workflow: the
+verdict's sign unlabelled (read backwards at 384); one reader for code, outputs and predictions; HANDOFF's
+stale "Seed 52 is the laptop's next run" (removed); --frontier keeping the 64-bit bests, not the 32-bit one
+(latent). Cleared: the surrogate screen - 0 of 968 audited screened children on the final front, 6.9 expected
+at the measured rate of 0.71%; tag-2 share 48.0% screened, 46.7% not.
+
+Files: results/review-methodology-386.md, lab/evolve/review-checks.py (new); HANDOFF.md (the review, item 0's
+decision, item 0e the proposals, a lesson, the stale bullet out), results/predictions.md (seed 59's prediction
+1 reworded), lab/evolve/README.md, results/README.md.

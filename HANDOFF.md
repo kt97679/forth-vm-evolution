@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 385.
+- master: Iteration 386.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -118,6 +118,12 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   both in lab/evolve/evolve.py - opcall only where the tag is built, and a failed tool's first error in its record.
   Tested in a scratch clone (before and after; run-tests, validate, jail) and checked to apply in order on a fresh
   clone. Apply after seed 59's processing.
+- **The methodology review (Iteration 386; results/review-methodology-386.md, every figure from
+  lab/evolve/review-checks.py)**: `nocarry` is not from scratch - two evolved founders (seed 37's fastest, seed
+  40's knee) are about two thirds of seed 58's front's ancestry, so seed 59 cannot answer the anchoring question;
+  the in-run speeds of the fast end ~10% optimistic (winner's curse); the verdict's 2% bars inside the noise
+  (best Q moves 6.2 points between the two CPUs of one session); front membership between CPUs 46-65%; whole-front
+  Spearman hides the top end (sieve 0.53 over the fastest tenth). The surrogate screen checked and cleared.
 - **Seed 59 is running** (started from the Iteration 384 bundle; 385's bundle has NEXT-RUN none - into ~/Downloads
   only after seed 59's chain has finished). Its line (the owner's 12 hours): `seed 59 tag2 12h widths nocarry then
   experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the anchoring test as first
@@ -139,11 +145,6 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
 - **The after-seed-51 batch is applied** (Iteration 300 - results/applied-after-seed51/
   ORDER.md): alignhot; > and 0= as opcodes. New genes: the stopping rule counts afresh.
-- **Seed 52 is the laptop's next run** (Iteration 300): `seed 52 tag2 6h then
-  experiment compare-fronts.py --rounds 6 --frontier --cpus 2,8` - 6 hours, the
-  owner's (Iteration 301). Before it, between runs: missmap.py, and counters.py with
-  Zen 4's cache events (item 5), each its own command. Its predictions: the end of
-  `results/predictions.md`.
 - Seed 47 was small by all five measures (Iteration 269). The Q-best design of
   all runs (session 42): seed 43's 19510c7689.
 
@@ -250,11 +251,19 @@ About 20 minutes of machine time for build, tests and gates.
 Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
-0. **Seed 59** - the anchoring test, separated (item 4c): from scratch with the tag-2 requirement, both widths,
+0. **Seed 59 - the owner's decision first** (the review, section 1): keep it as a replicate of seed 58 (the
+   same founders; the requirement the designed difference, and ~55 minutes more evolution), the anchoring test
+   the run after - which needs an opt-in switch, not yet built, leaving out the two evolved founders (fromzero
+   starts too far down: in miniature 2 of 16 designs tag-2, require() tagging only CV8 designs) - or stop it and
+   wait for the switch. As set, **seed 59** - the anchoring test, separated (item 4c): from scratch with the tag-2 requirement, both widths,
    12 h (the owner). Process it: against seed 58 the constraint alone, against seeds 53-57 anchoring alone; score
    its predictions; read the probes' lines in every host's report - the first numbers for the Tegra's slow copy
    (Iterations 379-381: the copy's KB/s, the connection, the load); and the checks of seed 58's front, the first
    with plain-CV8 designs - does the plain encoding's 32-bit lead hold on the Tegra?
+0e. **The review's proposals** (results/review-methodology-386.md, section 6; the owner's calls): the verdict
+   per CPU, small only where both agree; re-measure before admitting to the fast end; top-end agreement beside
+   every Spearman; the verdict table's sign labelled and the 32-bit fastest kept by --frontier (one line each);
+   replicates for configuration questions; "converged within the requirement" in verdicts.
 0d. **Two faults the free encoding found** (Iteration 384) - **fixed in the after-seed-59 batch** (Iteration 385):
    (a) is all three of seed 58's compile deaths (clang's "3 errors generated." too: its third), opcall_on()
    asking for tag2 without bytehdr, unlike jit_on() and t2wide_on(); (b) why() keeps the first error now. The
@@ -346,6 +355,10 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 
 ## Lessons - how faults got in, and the checks that catch them now
 
+- Read what a configuration does before naming the experiment: `nocarry` was called "from scratch" for seeds
+  58 and 59, and evolve.py puts two evolved designs in every generation 0 but fromzero's (Iteration 386: two
+  thirds of seed 58's ancestry). Likewise a requirement (tag2, and bytehdr with it) belongs in every verdict
+  it shaped - "converged" was said of the constrained space.
 - In "Judging the runs" a positive figure is the run AHEAD of all the others: seed 58's smallest +10.51%
   is its design 10.5% smaller, not larger - Iteration 384 first read it backwards, and caught it by the
   per-run minimum (14,146 against 15,633). Check a verdict's direction against the table before writing it.
