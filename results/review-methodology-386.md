@@ -58,6 +58,11 @@ each CPU alone on the same designs (`cpus ... 52`): "fastest against the others"
 between the two CPUs (seed 58: -3.8% / +1.6%), "best Q" by up to 6.2 (the run archived 2026-10-17 02:48: -5.8% / +0.4%), and
 **seed 57's best Q is +3.5% on cpu 2 and -0.4% on cpu 8** - over the 2% bar on one, under it on the other.
 The stopping rule (two small runs in a row) stands on these bars; they were set without a noise estimate.
+**Audited at Iteration 388** (results/verdict-audit-388.md): all 16 sessions since the rule, rebuilt and
+recomputed per CPU - the two CPUs agree in 14; the two that do not (seeds 50 and 51) were each followed at
+once by new genes, so no decision turned on them, and the rule's recent end (seeds 53-55) holds on both. The
+noise is real, the past verdicts mostly clear of it. And the verdict reads cpu 2 alone: compare-fronts takes
+the session's speed from the first CPU, cpu 8's half of the session feeding only the agreement section.
 
 **2c. Which designs are "on the front of all runs" is largely noise now.** The fronts computed from the two
 CPUs of one session share 80-100% of their members while fronts held under 20 designs, and only 46-65% in
@@ -101,7 +106,9 @@ reach less than the carried runs' hundreds. "Small, so not anchored" (results/pr
 fewer dispatches at the median - measured at 64 bits with the JIT on only - which is under 1% of time: below
 the 2% speed tie and far below the fast end's ~10% in-run noise (2a). Selection cannot see that gain; the gene
 persists on its bytes (smaller in 6 of 19) and by drift. Whether a mechanism selection cannot see earns its
-place is the owner's question, not answered by "it buys something".
+place is the owner's question, not answered by "it buys something". **Measured at Iteration 388 with the JIT
+off** (the interpreter, as at 32 bits): 0.27% at the median, and a byte cost in every design (+24 to +735) -
+the JIT build's savings were layout. The evidence now leans to "buys nothing selection can see".
 
 ## 4. Workflow
 
@@ -139,8 +146,9 @@ Latent: in session 52 seed 57's 32-bit fastest was kept. One line.
 
 1. Seed 59: keep it as a replicate of seed 58, and build the switch that leaves out the evolved founders for
    the anchoring test after it - or stop it and wait for the switch (section 1).
-2. The verdict per CPU: compute the five measures on each CPU alone, and call a measure small or not only
-   where both agree - "undecided" otherwise (2b). Changes no measurement, only what the rule may conclude.
+2. The session's speed from both CPUs (each design's two speeds combined), and the verdict per CPU printed
+   beside it - a disagreement called undecided (2b; the audit of 388). Until then the processing routine runs
+   `review-checks.py verdicts` on each new session.
 3. Re-measure before admitting to the fast end: a design entering the front's fastest tenth measured again
    (more rounds) before it counts - or more rounds in-run there (2a).
 4. Top-end agreement beside every Spearman: the fastest tenth's Spearman, or the regret - how much slower

@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 387.
+- master: Iteration 388.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -157,7 +157,10 @@ About 20 minutes of machine time for build, tests and gates.
    `jail.log` PASS, `next-run.log` times; `git apply -R --check` the pack's
    `results-measured-here.patch` (the laptop's stash, already on master).
 2. The comparison's "Judging the runs": fastest, smallest, memory (+-8 KB),
-   hypervolume, best Q - small only if all five are. The Q-best of all runs.
+   hypervolume, best Q - small only if all five are; a positive figure is the run AHEAD. The Q-best of all
+   runs. Then `python3 lab/evolve/review-checks.py verdicts results/compare-fronts-amd-ryzen-7-pro-8840hs.md`
+   after the session is appended (step 7): the verdict from each CPU alone - the printed one reads cpu 2 only;
+   if the CPUs disagree, say the verdict is undecided by noise (Iteration 388, results/verdict-audit-388.md).
 3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md` - every late gene
    on the front, and the format-10 words, since Iteration 299.
    Then `python3 lab/evolve/heldout.py results/evolve-...-seedN.md` - the held-out
@@ -262,8 +265,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    its predictions; read the probes' lines in every host's report - the first numbers for the Tegra's slow copy
    (Iterations 379-381: the copy's KB/s, the connection, the load); and the checks of seed 58's front, the first
    with plain-CV8 designs - does the plain encoding's 32-bit lead hold on the Tegra?
-0e. **The review's proposals** (results/review-methodology-386.md, section 6; the owner's calls): the verdict
-   per CPU, small only where both agree; re-measure before admitting to the fast end; top-end agreement beside
+0e. **The review's proposals** (results/review-methodology-386.md, section 6; the owner's calls): the session's
+   speed from both CPUs and the verdict per CPU beside it (audited at 388: 14 of 16 past verdicts agree between
+   the CPUs, no decision turned on the two that do not; results/verdict-audit-388.md); re-measure before admitting to the fast end; top-end agreement beside
    every Spearman; the verdict table's sign labelled and the 32-bit fastest kept by --frontier (done, pending patch 4);
    replicates for configuration questions; "converged within the requirement" in verdicts.
 0d. **Two faults the free encoding found** (Iteration 384) - **fixed in the after-seed-59 batch** (Iteration 385):
@@ -274,7 +278,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    2 of seed 58's designs, both by a mutation to bytehdr=0), a combination require() held off (it sets tag2 and
    bytehdr together); (b) on the Tegra three of seed 57's designs did not link, two of them front designs with
    regpin=1 and lto=1 - and xcheck kept only ld's last line, not the failing program's own words (lesson, 283).
-1. **Superinstructions - answered (Iteration 385): they buy something, so the gene stays in tag-2 designs**
+1. **Superinstructions - nearly nothing; the rule's word is the owner's (Iterations 385, 388)**. With the JIT off
+   (388, the interpreter as at 32 bits): 0.27% fewer dispatches at the median, at best 0.9%, and +24 to +735
+   bytes in every design - the JIT build's byte savings were layout. Below selection's 2% tie either way: by
+   GOALS.md the gene comes out of tag-2 designs unless the owner counts this as "something". At 385:
    (the rule of 368; results/supers-knockout-seed58.md, lab/evolve/supers-knockout.py). Seed 58: 73 of 74 tag-2
    front designs build pairs; over 19 knocked out, 0.9% fewer dispatches at the median (to 2.5%), -1,024 to +719
    bytes (smaller with pairs in 6). Under 1% of time, inside selection's 2% speed tie - its time the laptop's to

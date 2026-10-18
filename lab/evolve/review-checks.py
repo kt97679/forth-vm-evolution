@@ -10,6 +10,9 @@ results/review-methodology-386.md), each reproducible:
   cpus COMPARE.md N        session N's verdict measures (fastest, best Q, against all the other runs) computed
                            from each CPU alone - how far one CPU's noise moves them - and the front membership
                            agreement between the two CPUs in every session that printed it
+  verdicts COMPARE.md      every session's verdict (Iteration 188's five measures) rebuilt from its own tables -
+                           checked against the printed one - then from each CPU alone: does "small" depend on
+                           which CPU is asked? (Iteration 388)
   screen DB RESULTS.md     the surrogate screen's audit: screened children measured anyway that reached the
                            final front, against the base rate; the tag-2 share screened and not
 """
@@ -121,4 +124,66 @@ elif check == 'screen':
           % (on(aud), len(aud), on(meas), len(meas), 100 * on(meas) / len(meas), len(aud) * on(meas) / len(meas)))
     t2 = lambda ds: 100 * sum(1 for d in ds if (d.get('genome') or {}).get('tag2')) / max(1, len(ds))
     print('tag-2 share: screened (status or audited) %.1f%%, measured unscreened %.1f%%' % (t2([d for d in kids if d.get('status') == 'screened'] + aud), t2(meas)))
+elif check == 'verdicts':
+    import math
+    import numpy as np
+    def hv(pts, lo, ref, n=100000):     # compare-fronts.py's _hv, its numpy path, verbatim
+        P = [p for p in pts if not any(all(q[k] <= p[k] for k in range(3)) and q != p for q in pts)]
+        rng = np.random.default_rng(1); S = np.asarray(lo) + rng.random((n, 3)) * (np.asarray(ref) - np.asarray(lo))
+        hit = np.zeros(n, bool)
+        for p in P: hit |= (S >= np.asarray(p)).all(axis=1)
+        return hit.mean()
+    def measures(main, speed):
+        ids = [d for d in main if d in speed]
+        lp = {d: (math.log(speed[d]), math.log(main[d][1]), math.log(main[d][2])) for d in ids}
+        lo = tuple(min(v[k] for v in lp.values()) for k in range(3)); ref = tuple(max(v[k] for v in lp.values()) + 0.05 for k in range(3))
+        out = {}
+        for r in sorted({main[d][0] for d in ids}):
+            mine = [d for d in ids if main[d][0] == r]; rest = [d for d in ids if main[d][0] != r]
+            q = lambda d: speed[d] * main[d][1] * main[d][2]
+            fg = min(speed[d] for d in rest) / min(speed[d] for d in mine) - 1
+            sg = min(main[d][1] for d in rest) / min(main[d][1] for d in mine) - 1
+            mg = min(main[d][2] for d in rest) - min(main[d][2] for d in mine)
+            h0 = hv([lp[d] for d in rest], lo, ref); hg = hv([lp[d] for d in rest + mine], lo, ref) / h0 - 1
+            qg = min(map(q, rest)) / min(map(q, mine)) - 1
+            out[r] = (fg, sg, mg, hg, qg, fg < .05 and sg < .02 and mg < 8 and hg < .02 and qg < .02)
+        return out
+    fmt = lambda m: '%+.1f%% %+.2f%% %+d KB %+.1f%% %+.1f%%' % (100 * m[0], 100 * m[1], m[2], 100 * m[3], 100 * m[4])
+    word = lambda b: 'small' if b else 'not small'
+    rows = []
+    for sec in re.split(r'(?m)^(?=## Session \d+ )', open(sys.argv[2]).read()):
+        m = re.match(r'## Session (\d+) - Iteration (\d+)', sec)
+        if not m or '## Judging the runs' not in sec or '| design | speed cpu 2 | speed cpu 8 | ratio |' not in sec: continue
+        L = sec.split('\n')
+        h = next(k for k, l in enumerate(L) if l.startswith('| run | design | speed now'))
+        hd = [x.strip() for x in L[h].split('|')]; ci = {c: hd.index(c) for c in ('run', 'design', 'speed now', 'binary + image', 'memory KB')}
+        main, now = {}, {}
+        for l in L[h + 2:]:
+            if not l.startswith('|'): break
+            f = [x.strip() for x in l.split('|')]
+            if 'db.jsonl' not in f[ci['run']]: continue
+            try:
+                main[f[ci['design']]] = (f[ci['run']].split(':')[0], int(f[ci['binary + image']].replace(',', '')), float(f[ci['memory KB']]))
+                now[f[ci['design']]] = float(f[ci['speed now']])
+            except ValueError: pass
+        k0 = next(k for k, l in enumerate(L) if l.startswith('| design | speed cpu 2 | speed cpu 8 | ratio |')); c2, c8 = {}, {}
+        for l in L[k0 + 2:]:
+            f = [x.strip() for x in l.split('|')]
+            if len(f) < 5 or not re.fullmatch(r'[0-9a-f]{10}', f[1] or ''): break
+            c2[f[1]], c8[f[1]] = float(f[2]), float(f[3])
+        j0 = next(k for k, l in enumerate(L) if l.startswith('| run | fastest | smallest | memory | hypervolume | best Q | verdict |'))
+        pr = next(([x.strip() for x in l.split('|')] for l in L[j0 + 2:] if l.startswith('| this clone')), None)
+        if not pr or 'this clone' not in {v[0] for v in main.values()}: continue
+        a, b2, b8 = (measures(main, sp)['this clone'] for sp in (now, c2, c8))
+        rows.append((int(m.group(1)), int(m.group(2)), pr[7], a, b2, b8, len(main), len(set(c2) & set(main))))
+        print('session %s (Iteration %s), %d designs, %d on both CPUs' % (m.group(1), m.group(2), len(main), len(set(c2) & set(main))))
+        print('  printed      %s  %s' % ('  '.join(pr[2:7]), pr[7]))
+        print('  rebuilt      %s  %s' % (fmt(a), word(a[5])))
+        print('  cpu 2 alone  %s  %s' % (fmt(b2), word(b2[5])))
+        print('  cpu 8 alone  %s  %s' % (fmt(b8), word(b8[5])), flush=True)
+    print('\n| session | iteration | printed | rebuilt | cpu 2 alone | cpu 8 alone | the CPUs agree |\n|---|---|---|---|---|---|---|')
+    for sn, it, p_, a, b2, b8, n, nb in rows:
+        print('| %d | %d | %s | %s | %s | %s | %s |' % (sn, it, p_, word(a[5]), word(b2[5]), word(b8[5]), 'yes' if b2[5] == b8[5] else '**no**'))
+    agree = sum(1 for r in rows if r[4][5] == r[5][5]); rep_ = sum(1 for r in rows if word(r[3][5]) == r[2])
+    print('\n%d sessions: the printed verdict rebuilt in %d; the two CPUs alone agree in %d.' % (len(rows), rep_, agree))
 else: sys.exit(__doc__)

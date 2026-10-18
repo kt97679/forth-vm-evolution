@@ -7442,3 +7442,30 @@ keeps no owner, so no bundle carried it; it blocked edits only.
 
 Files: results/pending/noevolved-after-seed59.patch, results/pending/compare-fronts-after-seed59.patch (new);
 results/pending/ORDER.md, HANDOFF.md, lab/evolve/NEXT-RUN (still none).
+
+## Iteration 388 - 2026-10-18 - Claude
+
+**While seed 59 runs, the owner leaving the choice to this lab: the verdicts audited for noise, and the
+superinstruction knockout repeated with the JIT off.**
+
+The verdicts (results/verdict-audit-388.md; `review-checks.py verdicts`, new): every session since the
+five-measure rule - 16 - rebuilt from its own tables with compare-fronts' hypervolume copied verbatim, then
+computed from cpu 2 alone and cpu 8 alone. 15 printed verdicts rebuilt exactly; the 16th, session 45 (seed 51),
+printed "fastest +4.9%" against the 5% bar and rebuilt +5.1% from three-decimal speeds - a knife edge. The CPUs
+agree in 14: session 44 (seed 50) small on cpu 2, not on cpu 8 (best Q +0.2% / +2.1%); session 45 small by 0.1
+points of cpu 2's fastest, cpu 8 +0.7%. Both were followed at once by new genes, so no decision turned on
+them; the rule's recent end (seeds 53-55) holds on both CPUs. Found on the way: the verdict reads cpu 2 alone -
+compare-fronts takes the session's speed from the first CPU (`c0 = cpus[0]`), cpu 8's half of every session
+feeding only the agreement section. The review's 2b tempered accordingly; proposed (the owner's): the speed
+from both CPUs, the per-CPU verdicts beside it; until then step 2 of the processing routine runs the check.
+
+Superinstructions with the JIT off (supers-knockout.py --set=jit=0, the option new; 10 of seed 58's tag-2
+designs and the control): the interpreter, as at 32 bits - dispatch ratio median 0.9973 (at best 0.9913),
+against 0.9907 with the JIT on; and a byte cost in every design, +24 to +735 (median +240), where the JIT build
+had shown savings to -1,024 - exactly 1 KB, its layout's. Control unchanged; d79a57826d's pairs never run.
+Below selection's 2% tie either way: by GOALS.md the gene comes out of tag-2 designs unless the owner counts
+this as something (HANDOFF item 1, rewritten).
+
+Files: results/verdict-audit-388.md (new); lab/evolve/review-checks.py (verdicts), lab/evolve/supers-knockout.py
+(--set), results/supers-knockout-seed58.md (the JIT-off section), results/review-methodology-386.md (2b, 3d, the
+second proposal), HANDOFF.md (routine step 2, items 0e and 1), results/README.md, lab/evolve/README.md.

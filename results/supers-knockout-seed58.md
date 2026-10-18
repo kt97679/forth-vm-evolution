@@ -51,3 +51,33 @@ d79a57826d (+112), dispatches unchanged: each dominated by its own knockout, a m
 Over the 19 designs that build pairs: dispatch ratio median 0.9907, range 0.9748-1.0000; bytes the pairs cost median +216, range -1024 to +719.
 
 Size check: every design as it is built to the bytes its record holds.
+
+## With the JIT off - the interpreter alone, as at 32 bits (Iteration 388)
+
+The same knockout with every design varied to jit=0 (`supers-knockout.py ... --every 8 --set=jit=0`): the
+interpreter that runs at 32 bits, where there is no JIT. **The pairs save less, and always cost bytes**:
+dispatch ratio median 0.9973 (0.27%; at best 0.9913), against 0.9907 with the JIT on - the benchmarks' own
+words, compiled at run time and never fused, are now in every count; and +24 to +735 bytes (median +240) in
+every design - the JIT build's savings (to -1,024, exactly 1 KB) were its layout's, not the pairs'. The
+control unchanged; d79a57826d's pairs still never run.
+
+
+73 tag-2 designs of the front build pairs; 10 measured (every 8-th by size, the extremes), and d1e2c6b7de, building none, as the control. Dispatches summed over kernel, fib, corpus, loop, bubble, ackermann; a ratio below 1 is pairs saving dispatches.
+
+| design | pairs built | binary + image | without pairs | bytes the pairs cost | dispatches | without pairs | ratio, geometric mean over workloads | largest saving |
+|---|---|---|---|---|---|---|---|---|
+| 642ec43577 | >R C!; SWAP R>; DROP !; DUP >R; @ RSHIFT; OVER C@; < +; R@ @; C@ >R | 18,871 | 18,455 | +416 | 119,960,399 | 120,399,006 | 0.9916 | corpus 0.9692 |
+| 17c5d098fa | >R C!; SWAP R>; DROP !; DUP >R; @ RSHIFT; OVER C@; < +; R@ @; C@ >R | 19,010 | 18,595 | +415 | 119,431,745 | 119,870,348 | 0.9913 | corpus 0.9679 |
+| c878b6904e | < +; >R OVER; R> =; DUP R@; C@ DUP; ROT ROT; DUP @ | 19,493 | 19,191 | +302 | 114,084,326 | 114,166,406 | 0.9976 | corpus 0.9908 |
+| 032b7f295f | SWAP R>; DROP !; DUP >R; DUP C@; C@ OR | 19,734 | 19,494 | +240 | 111,212,144 | 111,369,800 | 0.9955 | corpus 0.9808 |
+| 603da58d39 | DROP !; DUP >R; R> = | 20,553 | 20,369 | +184 | 111,099,793 | 111,158,757 | 0.9973 | corpus 0.9882 |
+| bb76117b80 | >R C!; SWAP R>; DROP !; DUP >R | 20,040 | 19,800 | +240 | 111,385,069 | 111,492,365 | 0.9966 | corpus 0.9874 |
+| a5bcfa57fb | >R C!; SWAP R>; DROP !; DUP >R; >R >R; C@ OR; @ RSHIFT; ROT ROT; OVER C@; RSHIFT <; R@ @; ROT >R; ROT DUP; >R OVER; OVER R> | 20,656 | 19,921 | +735 | 113,436,134 | 113,704,053 | 0.9921 | corpus 0.9673 |
+| a239400b79 | DUP C@; @ RSHIFT; < + | 21,121 | 21,097 | +24 | 106,901,075 | 106,959,999 | 0.9975 | corpus 0.9878 |
+| 52917e2595 | R> =; C@ OR; ROT ROT; DUP R@ | 21,481 | 21,281 | +200 | 105,071,452 | 105,074,826 | 0.9998 | kernel 0.9991 |
+| d79a57826d | DROP !; R> =; C@ OR | 24,257 | 24,145 | +112 | 104,334,944 | 104,334,944 | 1.0000 | kernel 1.0000 |
+| d1e2c6b7de (control) | none | 20,811 | 20,811 | +0 | 103,913,344 | 103,913,344 | 1.0000 | kernel 1.0000 |
+
+Over the 10 designs that build pairs: dispatch ratio median 0.9973, range 0.9913-1.0000; bytes the pairs cost median +240, range +24 to +735.
+
+Size check skipped: the designs varied (jit=0).
