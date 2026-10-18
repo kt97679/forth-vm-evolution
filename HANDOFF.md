@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 388.
+- master: Iteration 389.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -114,17 +114,13 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Not separated: whether starting fresh helped too (seed 59). gate 264 of 264; ans-check 0 of 44 differ; predictions 4 of 5 as written;
   held out 0.883 (two encodings on one front). results/evolve-amd-ryzen-7-pro-8840hs-seed58.md,
   results/xcheck-seed58.md (seed 57's front: the Tegra 0.973, dream 0.959, at 32 bits 0.875).
-- **The after-seed-59 batch waits in results/pending/** (Iterations 385 and 387, ORDER.md - four patches): the two
-  faults of open item 0d (opcall only where the tag is built; a failed tool's first error in its record), the
-  `noevolved` switch for a clean anchoring test, and compare-fronts' verdict sign labelled and 32-bit fastest kept.
-  Tested in a scratch clone (before and after; run-tests, validate, jail) and checked to apply in order on a fresh
-  clone. Apply after seed 59's processing.
-- **The methodology review (Iteration 386; results/review-methodology-386.md, every figure from
-  lab/evolve/review-checks.py)**: `nocarry` is not from scratch - two evolved founders (seed 37's fastest, seed
-  40's knee) are about two thirds of seed 58's front's ancestry, so seed 59 cannot answer the anchoring question;
-  the in-run speeds of the fast end ~10% optimistic (winner's curse); the verdict's 2% bars inside the noise
-  (best Q moves 6.2 points between the two CPUs of one session); front membership between CPUs 46-65%; whole-front
-  Spearman hides the top end (sieve 0.53 over the fastest tenth). The surrogate screen checked and cleared.
+- **The after-seed-59 batch is applied** (Iteration 389, ahead of seed 59's processing - its chain pulled its code
+  at its start; results/applied-after-seed59/ORDER.md, five patches): opcall only where the tag is built; a failed
+  tool's first error in its record; `noevolved`; compare-fronts' verdict sign labelled and 32-bit fastest kept; and
+  the session's speed from both CPUs, their geometric mean (the owner, 389). No pending batch.
+- **Seed 60 is set** (NEXT-RUN; the owner's 12 hours): `seed 60 tag2 12h widths noevolved then experiment
+  compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the clean anchoring test. The owner starts it
+  when seed 59's chain has finished, with this bundle; seed 59's archive is processed alongside.
 - **Seed 59 is running** (started from the Iteration 384 bundle; 385's bundle has NEXT-RUN none - into ~/Downloads
   only after seed 59's chain has finished). Its line (the owner's 12 hours): `seed 59 tag2 12h widths nocarry then
   experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the anchoring test as first
@@ -159,8 +155,9 @@ About 20 minutes of machine time for build, tests and gates.
 2. The comparison's "Judging the runs": fastest, smallest, memory (+-8 KB),
    hypervolume, best Q - small only if all five are; a positive figure is the run AHEAD. The Q-best of all
    runs. Then `python3 lab/evolve/review-checks.py verdicts results/compare-fronts-amd-ryzen-7-pro-8840hs.md`
-   after the session is appended (step 7): the verdict from each CPU alone - the printed one reads cpu 2 only;
-   if the CPUs disagree, say the verdict is undecided by noise (Iteration 388, results/verdict-audit-388.md).
+   after the session is appended (step 7): from seed 60's session on, the printed verdict reads both CPUs (the owner,
+   389); for one printed by older code (seed 59's) the check's "both CPUs" line is the verdict by that rule, and
+   its per-CPU lines show how far noise moves it (Iterations 388-389, results/verdict-audit-388.md).
 3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md` - every late gene
    on the front, and the format-10 words, since Iteration 299.
    Then `python3 lab/evolve/heldout.py results/evolve-...-seedN.md` - the held-out
@@ -255,18 +252,14 @@ About 20 minutes of machine time for build, tests and gates.
 Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
-0. **Seed 59 - the owner's decision first** (the review, section 1): keep it as a replicate of seed 58 (the
-   same founders; the requirement the designed difference, and ~55 minutes more evolution), the anchoring test
-   the run after, with the switch now built (Iteration 387, pending patch 3; fromzero starts too far down: in
-   miniature 2 of 16 designs tag-2, require() tagging only CV8 designs) - proposed, the hours the owner's:
-   `seed 60 tag2 12h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus
-   2,8`, after the batch is applied at seed 59's processing. As set, **seed 59** - the anchoring test, separated (item 4c): from scratch with the tag-2 requirement, both widths,
-   12 h (the owner). Process it: against seed 58 the constraint alone, against seeds 53-57 anchoring alone; score
-   its predictions; read the probes' lines in every host's report - the first numbers for the Tegra's slow copy
-   (Iterations 379-381: the copy's KB/s, the connection, the load); and the checks of seed 58's front, the first
-   with plain-CV8 designs - does the plain encoding's 32-bit lead hold on the Tegra?
+0. **Seed 59's archive, and seed 60.** Process seed 59 when its archive comes - the batch already applied (step 6:
+   no batch to apply; its checks on master) - and judge it by the owner's rule of 389: its comparison ran the
+   older code (cpu 2 only), so the "both CPUs" line of `review-checks.py verdicts` is its verdict. It is a
+   replicate of seed 58 with the requirement as the designed difference (the same evolved founders, ~55 minutes
+   more evolution). Seed 60 (noevolved, 12 h) is the clean anchoring test: its predictions at the end of
+   results/predictions.md, read by the review's 3c - a gain anywhere is evidence of anchoring, none is not.
 0e. **The review's proposals** (results/review-methodology-386.md, section 6; the owner's calls): the session's
-   speed from both CPUs and the verdict per CPU beside it (audited at 388: 14 of 16 past verdicts agree between
+   speed from both CPUs - **done, the owner's (389)**, the per-CPU verdicts from review-checks.py (audited at 388: 14 of 16 past verdicts agree between
    the CPUs, no decision turned on the two that do not; results/verdict-audit-388.md); re-measure before admitting to the fast end; top-end agreement beside
    every Spearman; the verdict table's sign labelled and the 32-bit fastest kept by --frontier (done, pending patch 4);
    replicates for configuration questions; "converged within the requirement" in verdicts.
@@ -278,10 +271,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    2 of seed 58's designs, both by a mutation to bytehdr=0), a combination require() held off (it sets tag2 and
    bytehdr together); (b) on the Tegra three of seed 57's designs did not link, two of them front designs with
    regpin=1 and lto=1 - and xcheck kept only ld's last line, not the failing program's own words (lesson, 283).
-1. **Superinstructions - nearly nothing; the rule's word is the owner's (Iterations 385, 388)**. With the JIT off
-   (388, the interpreter as at 32 bits): 0.27% fewer dispatches at the median, at best 0.9%, and +24 to +735
-   bytes in every design - the JIT build's byte savings were layout. Below selection's 2% tie either way: by
-   GOALS.md the gene comes out of tag-2 designs unless the owner counts this as "something". At 385:
+1. **Superinstructions - kept for now (the owner, Iteration 389)**, though they buy nearly nothing. With the JIT
+   off (388, the interpreter as at 32 bits): 0.27% fewer dispatches at the median, at best 0.9%, and +24 to +735
+   bytes in every design - the JIT build's byte savings were layout; below selection's 2% tie either way. At 385:
    (the rule of 368; results/supers-knockout-seed58.md, lab/evolve/supers-knockout.py). Seed 58: 73 of 74 tag-2
    front designs build pairs; over 19 knocked out, 0.9% fewer dispatches at the median (to 2.5%), -1,024 to +719
    bytes (smaller with pairs in 6). Under 1% of time, inside selection's 2% speed tie - its time the laptop's to

@@ -148,7 +148,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
     [ -n "$THEN" ] || return 0
     echo; say "then: $THEN"
     exec 9>&-
-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO NEXT_RUN_WIDTHS
+    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
 }
 # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
@@ -165,6 +165,12 @@ case " $* " in *" widths "*) WIDTHS=1; set -- $(printf '%s\n' "$@" | grep -vx wi
 # generation all random genomes, no hand-made design or founder in it.
 FROMZERO=${NEXT_RUN_FROMZERO:-}
 case " $* " in *" fromzero "*) FROMZERO=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx fromzero) ;; esac
+# Iteration 387 (the methodology review, results/review-methodology-386.md, section 1): "noevolved" -
+# nocarry, and no founder drawn from an earlier run's record either (seed 37's fastest, seed 40's knee:
+# two thirds of seed 58's ancestry): the hand-made designs and the founders built from them - the
+# anchoring test as seed 36 ran it, before those founders existed.
+NOEVOLVED=${NEXT_RUN_NOEVOLVED:-}
+case " $* " in *" noevolved "*) NOEVOLVED=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx noevolved) ;; esac
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
@@ -233,7 +239,7 @@ fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
-WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOCARRY:+ nocarry} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
 if [ "$KIND" = experiment ]; then
     NAME=${TOOL%.py}
     RUN=$RUNS/$NAME-$HEAD
@@ -278,12 +284,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_WIDTHS=$WIDTHS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
         say "going on in the background, as one chain - watch it with"
         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
         exit 0
     fi
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_WIDTHS=$WIDTHS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
     exit 0
 fi
 MODE=$NEXT_RUN_DETACHED
@@ -484,7 +490,7 @@ fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
 python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
 TICK=$!
-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${WIDTHS:+--widths 8,4} "$@" >> evolve.log 2>&1 \
+python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} "$@" >> evolve.log 2>&1 \
     || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
 kill $TICK 2>/dev/null || true
 tail -3 evolve.log

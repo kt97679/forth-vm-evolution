@@ -133,3 +133,34 @@ session 52 (Iteration 384), 433 designs, 433 on both CPUs
 | 52 | 384 | not small | not small | not small | not small | yes |
 
 16 sessions: the printed verdict rebuilt in 15; the two CPUs alone agree in 14.
+
+## Under the owner's rule of Iteration 389 - the speed from both CPUs
+
+The owner chose to judge by both CPUs (each design's speed the geometric mean of its two; applied in
+compare-fronts.py at 389). The same 16 sessions by that rule (`review-checks.py verdicts`, its "both CPUs"
+line): **15 give the printed verdict**. The one that changes is session 44, seed 50 - small as printed (cpu 2),
+not small from both: best Q +2.7%, more than either CPU alone (+0.2% and +2.1%), as a minimum over designs
+need not lie between its per-CPU values - a different design can become each side's best. No decision turned
+on it: the after-seed-50 batch's new genes followed at once. Seed 51's knife edge reads small. Seed 58's
+fastest, from both CPUs, is 0.4% behind the others', not 3.4%.
+
+| session | iteration | printed | rebuilt | cpu 2 alone | cpu 8 alone | the CPUs agree | both CPUs (the rule from 389) |
+|---|---|---|---|---|---|---|---|
+| 37 | 209 | not small | not small | not small | not small | yes | not small |
+| 38 | 215 | not small | not small | not small | not small | yes | not small |
+| 39 | 230 | small | small | small | small | yes | small |
+| 40 | 240 | not small | not small | not small | not small | yes | not small |
+| 41 | 248 | not small | not small | not small | not small | yes | not small |
+| 42 | 269 | small | small | small | small | yes | small |
+| 43 | 288 | not small | not small | not small | not small | yes | not small |
+| 44 | 296 | small | small | small | not small | **no** | not small |
+| 45 | 300 | small | not small | not small | small | **no** | small |
+| 46 | 310 | small | small | small | small | yes | small |
+| 47 | 320 | small | small | small | small | yes | small |
+| 48 | 333 | small | small | small | small | yes | small |
+| 49 | 334 | small | small | small | small | yes | small |
+| 50 | 354 | small | small | small | small | yes | small |
+| 51 | 378 | small | small | small | small | yes | small |
+| 52 | 384 | not small | not small | not small | not small | yes | not small |
+
+16 sessions: the printed verdict rebuilt in 15; the two CPUs alone agree in 14; both CPUs give the printed verdict in 15.

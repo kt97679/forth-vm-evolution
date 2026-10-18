@@ -508,7 +508,8 @@ OPCALL_POOL = {'DROP': 'L_drop', 'AND': 'L_and', '@': 'L_fetch', '>R': 'L_tor', 
 def opcall_on(g):
     """The tag's computed-goto engines: the tail-call and multi-state
     generators rewrite handlers their own way."""
-    return g['enc'] == 'cv8' and bool(g.get('tag2')) and not g.get('tail') and not g.get('msc')
+    return (g['enc'] == 'cv8' and bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 385: the tag as the build
+            and not g.get('tail') and not g.get('msc'))                         # has it - tag2 without byte headers is no tag
 def opcall_avail(g):
     o10 = {w for w, _ in ops10_in(g)}
     return [n for n in OPCALL_POOL if (n not in ('0=', '1+') or 'tiny' in g['spec']) and (n not in ('(PARSE)', 'PLACE') or n in o10)]
@@ -858,11 +859,21 @@ def design_pairs(g, n=24):
     json.dump(PAIRS_CACHE, open(tmp, 'w')); os.replace(tmp, cache)
     return pool
 
+WHY_GENERIC = ('collect2: error: ld returned', 'lto-wrapper: fatal error', 'compilation terminated')
 def why(r):
-    """The last line a failed tool printed, for the record."""
+    """A failed tool's own words, for the record. Iteration 385 (open item 0d b): the first error, not
+    the last - a link failure's last line is always ld's generic 'returned 1 exit status', which hid
+    the Tegra's three; where only the generic lines say error, the line before them, the linker's own;
+    paths cut to their file names, so the words fit. A Python traceback keeps its exception line."""
     lines = [l for l in (r.stderr or b'').decode(errors='replace').splitlines() + (r.stdout or b'').decode(errors='replace').splitlines() if l.strip()]
-    err = [l for l in lines if 'rror' in l or 'ssert' in l] or lines
-    return (' (%s)' % err[-1].strip()[:120]) if err else ' (exit %d)' % r.returncode
+    err = [l for l in lines if ('rror' in l or 'ssert' in l) and not any(x in l for x in WHY_GENERIC)]
+    exc = [l for l in lines if re.match(r'[A-Za-z_][\w.]*(Error|Exception)\b', l)]
+    if exc and any(l.startswith('Traceback') for l in lines): err = [exc[-1]]   # Python: its exception, last
+    if not err:
+        gen = [i for i, l in enumerate(lines) if any(x in l for x in WHY_GENERIC)]
+        err = [lines[gen[0] - 1]] if gen and gen[0] > 0 else lines
+    if not err: return ' (exit %d)' % r.returncode
+    return ' (%s)' % re.sub(r'(?:/[^\s:/()]+)+/([^\s:/()]+)', r'\1', err[0].strip())[:160]
 
 T2RANK = os.path.join(ROOT, 'lab', 'evolve', 'tag2-rank-v1.json')   # the reference ranking (Iteration 66)
 # Iteration 71: t2hot - the tag's one-byte codes, hot first above this weight,
@@ -1946,7 +1957,7 @@ def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
-             '--jobs', '--until', '--fromzero', '--widths'}
+             '--jobs', '--until', '--fromzero', '--noevolved', '--widths'}
     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
     if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
         if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
@@ -2051,6 +2062,7 @@ def main(argv):
     # design, no founder, nothing carried, no mutant of a hand-made one (the
     # seeded fill). Hand-made s6 stays the yardstick, outside the population.
     FROMZERO = '--fromzero' in argv
+    NOEVOLVED = '--noevolved' in argv   # Iteration 387: no founder drawn from an earlier run's record (results/review-methodology-386.md, 1)
     if FROMZERO:
         pop = []
         while len(pop) < N:
@@ -2074,9 +2086,9 @@ def main(argv):
     # tree can make, from hand-made s6; crossover lends their genes on.
     if not FROMZERO:
         pop += [get(dict(HUMAN['s6-cv8b'], jit=1, jitx=1, jitloop=1, jitinl=1), [], 'founder: s6-cv8b + the JIT, jitx, jitloop, jitinl', 0)]
-        f37 = recorded_genome('38446e6c09')
+        f37 = None if NOEVOLVED else recorded_genome('38446e6c09')
         if f37: pop += [get(dict(f37, jitloop=1, jitinl=1), [], "founder: seed 37's fastest (38446e6c09) + jitloop, jitinl", 0)]
-        else: print("  founder: seed 37's fastest not in results/ - left out", flush=True)
+        else: print("  founder: seed 37's fastest %s - left out" % ('evolved, and --noevolved' if NOEVOLVED else 'not in results/'), flush=True)
     # Iteration 178: the hybrid's first forms - run-time immediates without pairs
     # (rtimm=2) and the keeping forms (DUP+I, DUP<I) - three mutations from seed
     # 40's smallest, whose fib they take -36% (results/price-hybrid.md): a founder
@@ -2087,10 +2099,10 @@ def main(argv):
         # smallest and 28% faster, the best Q there (the smallest's the worst);
         # the forms push out only HASH and SKIP, compile-time words, where on
         # 903b231e0d (Q 0.63) they would push out (LOOP).
-        f40 = recorded_genome('d99e3d9ed9')
+        f40 = None if NOEVOLVED else recorded_genome('d99e3d9ed9')
         if f40: pop += [get(dict(f40, rtimm=2, ops10=['DUP+I', 'DUP<I'] + [w for w in f40.get('ops10', []) if w not in ('DUP+I', 'DUP<I')]), [],
                             "founder: seed 40's small-end knee (d99e3d9ed9) + rtimm=2, DUP+I, DUP<I", 0)]
-        else: print("  founder: seed 40's small-end knee not in results/ - left out", flush=True)
+        else: print("  founder: seed 40's small-end knee %s - left out" % ('evolved, and --noevolved' if NOEVOLVED else 'not in results/'), flush=True)
     # Iteration 46 (the owner): the earlier runs' fronts carried into this one,
     # so what one run found the next starts from - seed 9 lost the fast end
     # seed 8 had (Iteration 45). --carry DB,DB,...: each database's own front,

@@ -12,7 +12,6 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `predictions.md` - the predictions written before each run, then scored.
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
-- `pending/ORDER.md` - the batch waiting to be applied after the next seed's processing: its patches' order and how each was tested (now the after-seed-59 batch, Iteration 385: opcall only where the tag is built; a failed tool's first error).
 - `drafts/runner-protocol.md` - The runner's protocol, the owner's requirements as a specification (Iterations 302-303): one command, one archive with every log, a clean stop, recovery at every start.
 - `relf-patches/README.md` - Patches for relf from this lab (Iteration 360): each with its gate, its dispatch count and its time; the first, 0= ?BRANCH fused.
 - `relf-pairs-realistic.md` - relf's realistic shell script by instruction and by adjacent pair (Iteration 358): VAR@ 15.2 %, VAR@ VAR@ 4.2 %, VAR@ + 3.1 %; relf's 64 one-byte opcodes (A15) as the constraint.

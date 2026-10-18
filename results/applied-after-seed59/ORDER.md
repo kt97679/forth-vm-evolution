@@ -1,4 +1,9 @@
-# The after-seed-59 batch - apply in this order (against master after Iteration 385)
+# The after-seed-59 batch - apply in this order (against master after Iteration 388)
+
+**Applied at Iteration 389** - ahead of seed 59's processing, as the owner chose seed 60 (`noevolved`, 12 hours)
+to start when seed 59's chain ends: the batch's condition, that seed 59 run on the code before it, holds - its
+chain pulled its code at its start (Iteration 384's bundle). run-tests, validate and jail on master with all five:
+the result at the end.
 
 Prepared at Iterations 385 and 387, while seed 59 ran: the two faults the free encoding found in seed 58
 (HANDOFF open item 0d), and from the methodology review (results/review-methodology-386.md) the switch for a
@@ -12,11 +17,13 @@ the tag-2 requirement, which holds bytehdr on, so the first fault cannot occur i
 | 2 | why-after-seed59.patch | why(), a failed tool's words in its died record: the first error, not the last (a link failure's last line is always ld's generic one - all the Tegra's three of seed 57's said only that); where only the generic lines say error, the linker's own line before them; paths cut to their file names, so the words fit 160 characters; a Python traceback keeps its exception line. |
 | 3 | noevolved-after-seed59.patch | `noevolved` (next-run.sh) and `--noevolved` (evolve.py): nocarry, and no founder drawn from an earlier run's record - seed 37's fastest and seed 40's knee left out, the hand-made designs and the founders built from them kept: the anchoring test as seed 36 ran it, before those founders existed (review, section 1: they are two thirds of seed 58's ancestry). Opt-in: nothing changes without it. |
 | 4 | compare-fronts-after-seed59.patch | The verdict's sign labelled in both sections - a positive figure is the run ahead (review 4a: read backwards at 384); and --frontier keeps each run's 32-bit fastest beside its 64-bit bests, as the verdict at both widths reads it (review 4d: latent, a 32-bit specialist dominated at 64 bits could be dropped). |
+| 5 | both-cpus-after-seed59.patch | The session's speed from both CPUs - each design's per-CPU speeds, and each workload's ratio, combined by their geometric mean - so the verdict, the fronts, the Q-best and the gate's joint front read both (the owner, Iteration 389; results/verdict-audit-388.md: the first CPU's alone until now). One CPU: unchanged. The per-CPU numbers stay in the section comparing the two. The 32-bit section is measured on one CPU, as before. |
 
-    git apply results/pending/opcall-bytehdr-after-seed59.patch
-    git apply results/pending/why-after-seed59.patch
-    git apply results/pending/noevolved-after-seed59.patch
-    git apply results/pending/compare-fronts-after-seed59.patch
+    git apply results/applied-after-seed59/opcall-bytehdr-after-seed59.patch
+    git apply results/applied-after-seed59/why-after-seed59.patch
+    git apply results/applied-after-seed59/noevolved-after-seed59.patch
+    git apply results/applied-after-seed59/compare-fronts-after-seed59.patch
+    git apply results/applied-after-seed59/both-cpus-after-seed59.patch
 
 Tested at Iteration 385, in a scratch clone of master at 31b591c:
 
@@ -51,3 +58,10 @@ new all three.
 All four applied: run-tests.sh PASS - no regressions; evolve.py --validate 7 of 7 IDENTICAL; test-jail.py PASS. On a fresh clone of
 master the four apply in this order, and lab/evolve/evolve.py, next-run.sh and compare-fronts.py are then byte for
 byte the tested files.
+
+The fifth, tested at Iteration 389 in a scratch clone with patches 1-4 applied: the new block run on per-CPU
+ratios - two CPUs: the speed the geometric mean of the two (0.435588 of 0.447214 and 0.424264), each
+workload's ratio likewise, and the speed the geometric mean of those; one CPU: the speed unchanged.
+
+On master with all five applied (Iteration 389): run-tests.sh PASS - no regressions; evolve.py --validate 7 of 7 IDENTICAL;
+test-jail.py PASS. The three files byte for byte those tested in the scratch clones.

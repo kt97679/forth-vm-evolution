@@ -92,6 +92,8 @@ for db in dbs:
         keep = {box[k] for k in ks if not any(o != k and o[0] <= k[0] and o[1] <= k[1] and o[2] <= k[2] for o in ks)}
         keep |= {min(ids, key=lambda i: sp[i]), min(ids, key=lambda i: R[i]['total']),
                  min(ids, key=lambda i: (R[i].get('rss', 0), sp[i]))}
+        s32 = [i for i in ids if R[i].get('speed32')]            # Iteration 387 (review 386, 4d): and the 32-bit
+        if s32: keep.add(min(s32, key=lambda i: R[i]['speed32']))   # fastest - the verdict at both widths reads it
         n0 = len(ids); ids = [i for i in ids if i in keep]
         how += ', %d of %d: one per box of 1%% speed, 64 bytes, 8 KB, and the bests' % (len(ids), n0)
     kept = sum(1 for i in ids if carried_from(R[i]))
@@ -133,12 +135,18 @@ E.PIN[:] = pin0
 med = statistics.median
 T = {c: {i: {w: med(times[(i, w, 'd', c)]) / med(times[(i, w, 'r', c)]) for w in E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR)} for i, *_ in live} for c in cpus}
 S = {c: {i: math.exp(sum(math.log(T[c][i][w]) for w in E.WORK_SEL) / len(E.WORK_SEL)) for i in T[c]} for c in cpus}
-c0 = cpus[0]; t, speed = T[c0], S[c0]
+# Iteration 389 (the owner): the session's speed from every CPU measured - a design's per-CPU speeds, and each
+# workload's ratio, combined by their geometric mean; until now the first CPU's alone, the second's half of the
+# session feeding only the comparison of the two below (results/verdict-audit-388.md). One CPU: as before.
+c0 = cpus[0]; _gm = lambda xs: math.exp(sum(math.log(x) for x in xs) / len(xs))
+t = {i: {w: _gm([T[c][i][w] for c in cpus]) for w in T[c0][i]} for i in T[c0]}
+speed = {i: _gm([S[c][i] for c in cpus]) for i in S[c0]}
 
 cal = speed.get(CAL)
 print('# Fronts measured again in one session\n')
-print('%d rounds, the median of them; every design paired with hand-made s6 on the same CPU (%s); designs built with this commit.\n'
-      % (rounds, ', '.join('the pinned one' if c is None else 'cpu %d' % c for c in cpus)))
+print('%d rounds, the median of them; every design paired with hand-made s6 on the same CPU (%s); designs built with this commit.%s\n'
+      % (rounds, ', '.join('the pinned one' if c is None else 'cpu %d' % c for c in cpus),
+         " A design's speed is the geometric mean of its speeds on these CPUs, and the verdict reads it (Iteration 389)." if len(cpus) > 1 else ''))
 if cal is None: print('**No calibration: hand-made s6 did not build or pass the gate.**\n')
 else:
     print('**Calibration: hand-made s6 against itself %.3f** (%s).%s\n' % (cal, ', '.join('%s %.3f' % (w, t[CAL][w]) for w in E.WORK_SEL + (E.WORK_HELD + E.WORK_FAR)),
@@ -206,7 +214,8 @@ if len(_lp) > 1 and len(runs) > 1:
     print('\n## Judging the runs (Iteration 188)\n')
     print('Each run against all the others: its extremes, and two front-wide measures - the hypervolume in log space and the best Q '
           '(binary + image x run time x memory). A run is small only if all five are: fastest under 5%, smallest under 2%, '
-          'memory under 8 KB, hypervolume under 2%, best Q under 2%.\n')
+          'memory under 8 KB, hypervolume under 2%, best Q under 2%. A positive figure is the run AHEAD of all the others '
+          '(Iteration 387: read backwards at 384).\n')
     print('| run | fastest | smallest | memory | hypervolume | best Q | verdict |')
     print('|---|---|---|---|---|---|---|')
     for label, ids in runs:
@@ -231,7 +240,7 @@ if WIDTHS:                                    # Iteration 352: the speed32 objec
         sp32[i] = E.eval32(rec[i][0], r32).get('speed32'); say('32 bits: %d of %d %s %s' % (k + 1, len(speed), i, sp32[i]))
     print('\n## At 32 bits (Iteration 352)\n')
     print("Each design's interpreter as a 32-bit x86 engine at 4-byte cells (its JIT off, its call scale at most 2), "
-          "%d round(s), against hand-made s6 at 32 bits%s; a run's fastest there against all the others'. "
+          "%d round(s), against hand-made s6 at 32 bits%s; a run's fastest there against all the others' (a positive figure: the run ahead). "
           "A run is small at both widths only if its five 64-bit measures are small and its fastest at 32 bits "
           "is under 5%% too (Iteration 375: a new objective's gain counts, as Iteration 188's rule meant).\n"
           % (r32, (' (itself %.3f)' % sp32[CAL]) if sp32.get(CAL) else ''))

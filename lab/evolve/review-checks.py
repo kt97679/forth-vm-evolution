@@ -12,7 +12,8 @@ results/review-methodology-386.md), each reproducible:
                            agreement between the two CPUs in every session that printed it
   verdicts COMPARE.md      every session's verdict (Iteration 188's five measures) rebuilt from its own tables -
                            checked against the printed one - then from each CPU alone: does "small" depend on
-                           which CPU is asked? (Iteration 388)
+                           which CPU is asked? (Iteration 388) - and from both, each design's speed the
+                           geometric mean of its two: the owner's rule from Iteration 389
   screen DB RESULTS.md     the surrogate screen's audit: screened children measured anyway that reached the
                            final front, against the base rate; the tag-2 share screened and not
 """
@@ -174,16 +175,18 @@ elif check == 'verdicts':
         j0 = next(k for k, l in enumerate(L) if l.startswith('| run | fastest | smallest | memory | hypervolume | best Q | verdict |'))
         pr = next(([x.strip() for x in l.split('|')] for l in L[j0 + 2:] if l.startswith('| this clone')), None)
         if not pr or 'this clone' not in {v[0] for v in main.values()}: continue
-        a, b2, b8 = (measures(main, sp)['this clone'] for sp in (now, c2, c8))
-        rows.append((int(m.group(1)), int(m.group(2)), pr[7], a, b2, b8, len(main), len(set(c2) & set(main))))
+        a, b2, b8, bb = (measures(main, sp)['this clone'] for sp in (now, c2, c8, {d: math.sqrt(c2[d] * c8[d]) for d in c2 if d in c8}))
+        rows.append((int(m.group(1)), int(m.group(2)), pr[7], a, b2, b8, len(main), len(set(c2) & set(main)), bb))
         print('session %s (Iteration %s), %d designs, %d on both CPUs' % (m.group(1), m.group(2), len(main), len(set(c2) & set(main))))
         print('  printed      %s  %s' % ('  '.join(pr[2:7]), pr[7]))
         print('  rebuilt      %s  %s' % (fmt(a), word(a[5])))
         print('  cpu 2 alone  %s  %s' % (fmt(b2), word(b2[5])))
-        print('  cpu 8 alone  %s  %s' % (fmt(b8), word(b8[5])), flush=True)
-    print('\n| session | iteration | printed | rebuilt | cpu 2 alone | cpu 8 alone | the CPUs agree |\n|---|---|---|---|---|---|---|')
-    for sn, it, p_, a, b2, b8, n, nb in rows:
-        print('| %d | %d | %s | %s | %s | %s | %s |' % (sn, it, p_, word(a[5]), word(b2[5]), word(b8[5]), 'yes' if b2[5] == b8[5] else '**no**'))
+        print('  cpu 8 alone  %s  %s' % (fmt(b8), word(b8[5])))
+        print('  both CPUs    %s  %s' % (fmt(bb), word(bb[5])), flush=True)
+    print('\n| session | iteration | printed | rebuilt | cpu 2 alone | cpu 8 alone | the CPUs agree | both CPUs (the rule from 389) |\n|---|---|---|---|---|---|---|---|')
+    for sn, it, p_, a, b2, b8, n, nb, bb in rows:
+        print('| %d | %d | %s | %s | %s | %s | %s | %s |' % (sn, it, p_, word(a[5]), word(b2[5]), word(b8[5]), 'yes' if b2[5] == b8[5] else '**no**', word(bb[5])))
     agree = sum(1 for r in rows if r[4][5] == r[5][5]); rep_ = sum(1 for r in rows if word(r[3][5]) == r[2])
-    print('\n%d sessions: the printed verdict rebuilt in %d; the two CPUs alone agree in %d.' % (len(rows), rep_, agree))
+    same = sum(1 for r in rows if r[8][5] == (r[2] == 'small'))
+    print('\n%d sessions: the printed verdict rebuilt in %d; the two CPUs alone agree in %d; both CPUs give the printed verdict in %d.' % (len(rows), rep_, agree, same))
 else: sys.exit(__doc__)

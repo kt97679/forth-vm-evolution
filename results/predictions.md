@@ -530,3 +530,21 @@ Not predicted, and the run's main result: **it passed every carried run at the s
 3. Its fastest at 32 bits at least 15% behind seed 58's 0.310 (a tag-2 design at 32 bits; seed 57's best 0.377 in seed 58's session) - so not small at both widths only if this is wrong.
 4. No `L_t2call4` deaths: the requirement holds bytehdr on (require() sets tag2=1, bytehdr=1), and both of seed 58's were tag-2 designs with bytehdr=0.
 5. The run starts within 20 minutes of the remote checks' start (the sampling alone; seed 58 waited 55 minutes, seed 57 52), and every host's report ends with the probes' lines - the copy timed with its bytes, the connection, the load; the Tegra's copy again a few KB/s unless the network changed.
+
+## Seed 60, predicted (Iteration 389) - the anchoring test, clean
+
+`seed 60 tag2 12h widths noevolved`: from the hand-made designs and the founders built from them, no design from
+an earlier run's record (the review, results/review-methodology-386.md, section 1), the tag-2 requirement, both
+widths; the after-seed-59 batch applied; judged in a session whose verdict reads both CPUs (the owner, 389).
+Read by section 3c of the review: a gain anywhere is evidence of anchoring; none is no evidence at this budget.
+
+1. Its fastest at 64 bits 5-15% behind the best of the others in its session - it starts at 0.81 of s6 (the s6 +
+   JIT founder), where seed 58 started at 0.174 from seed 37's design; seed 36, fresh before those founders
+   existed, ended 12% behind after 2 h 40 min.
+2. Its smallest within 3% of the carried tag-2 runs' (15,633 bytes), and at least 7% above seed 58's plain-CV8
+   14,146: the requirement keeps it from the plain small end.
+3. Its fastest at 32 bits at least 15% behind seed 58's 0.310 in the same session - a tag-2 interpreter.
+4. Small at both widths, read from both CPUs: no gain beyond the bars - so no evidence of anchoring at 12 hours.
+   A gain past a bar (hypervolume or best Q beyond 2%, or the fastest beyond 5%) would be evidence of it.
+5. The same structure from a different lineage: bss, lean and thinhdr on every design of its front, as on every
+   front since seed 53.

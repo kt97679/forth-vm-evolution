@@ -7373,8 +7373,8 @@ NEXT-RUN none: seed 59 runs from the Iteration 384 bundle, and this one goes to 
 chain has finished. (next-run.sh pulls only at an invocation's start and refuses while a chain is alive, but
 holding the bundle costs nothing.)
 
-Files: lab/evolve/supers-knockout.py, results/supers-knockout-seed58.md, results/pending/ORDER.md,
-results/pending/opcall-bytehdr-after-seed59.patch, results/pending/why-after-seed59.patch (new);
+Files: lab/evolve/supers-knockout.py, results/supers-knockout-seed58.md, results/applied-after-seed59/ORDER.md,
+results/applied-after-seed59/opcall-bytehdr-after-seed59.patch, results/applied-after-seed59/why-after-seed59.patch (new);
 HANDOFF.md, lab/evolve/NEXT-RUN, lab/evolve/README.md, results/README.md.
 
 ## Iteration 386 - 2026-10-18 - Claude
@@ -7440,8 +7440,8 @@ fresh clone the four apply in order and reproduce the three tested files byte fo
 had written as root (seed 58's records, the knockout's tool and record, ORDER.md) handed back to claude - git
 keeps no owner, so no bundle carried it; it blocked edits only.
 
-Files: results/pending/noevolved-after-seed59.patch, results/pending/compare-fronts-after-seed59.patch (new);
-results/pending/ORDER.md, HANDOFF.md, lab/evolve/NEXT-RUN (still none).
+Files: results/applied-after-seed59/noevolved-after-seed59.patch, results/applied-after-seed59/compare-fronts-after-seed59.patch (new);
+results/applied-after-seed59/ORDER.md, HANDOFF.md, lab/evolve/NEXT-RUN (still none).
 
 ## Iteration 388 - 2026-10-18 - Claude
 
@@ -7469,3 +7469,34 @@ this as something (HANDOFF item 1, rewritten).
 Files: results/verdict-audit-388.md (new); lab/evolve/review-checks.py (verdicts), lab/evolve/supers-knockout.py
 (--set), results/supers-knockout-seed58.md (the JIT-off section), results/review-methodology-386.md (2b, 3d, the
 second proposal), HANDOFF.md (routine step 2, items 0e and 1), results/README.md, lab/evolve/README.md.
+
+## Iteration 389 - 2026-10-18 - Claude
+
+**The owner's three decisions: superinstructions kept for now; the verdict from both CPUs; seed 60, 12 hours.**
+
+The verdict from both CPUs: compare-fronts.py takes the session's speed - and so the verdict, the fronts, the
+Q-best and the gate's joint front - as each design's geometric mean over the CPUs measured, where it had read the
+first CPU alone (results/verdict-audit-388.md). Each workload's ratio is combined likewise; one CPU is unchanged;
+the per-CPU numbers stay in the section comparing the two, and the 32-bit section is measured on one CPU as
+before. Tested on per-CPU ratios: two CPUs give the geometric mean (0.435588 of 0.447214 and 0.424264), the
+workloads' ratios agree with it, one CPU is unchanged. GOALS.md's judging paragraph says so. review-checks.py
+verdicts gained the rule's own line: the 16 sessions since Iteration 188 by it - 15 give the printed verdict;
+session 44 (seed 50) turns not small (best Q +2.7% from both, against +0.2% and +2.1% alone - a minimum over
+designs need not lie between its per-CPU values), on which no decision turned; seed 58's fastest, from both
+CPUs, is 0.4% behind the others, not 3.4%. Seed 59's comparison runs the older code: its verdict by the new rule
+is that line, at processing.
+
+The after-seed-59 batch - five patches with this one (results/applied-after-seed59/ORDER.md) - applied ahead of
+seed 59's processing, as at Iteration 374: seed 59's chain pulled its code at its start, so it runs on the code
+before the batch. On master with all five: run-tests PASS - no regressions, validate 7 of 7 IDENTICAL, test-jail PASS; the three
+changed files byte for byte those tested in the scratch clones. results/pending moved, its citations followed.
+
+Seed 60 (NEXT-RUN, the owner's 12 hours): `seed 60 tag2 12h widths noevolved then experiment compare-fronts.py
+--rounds 6 --widths 8,4 --frontier --cpus 2,8` - the clean anchoring test, the first comparison judged from both
+CPUs; to start when seed 59's chain has finished. Its predictions written (results/predictions.md), read by the
+review's 3c. Superinstructions: kept for now (the owner), HANDOFF item 1 records why it was asked.
+
+Files: results/applied-after-seed59/ (moved from results/pending; both-cpus-after-seed59.patch new);
+lab/evolve/compare-fronts.py, evolve.py, next-run.sh (the batch); lab/evolve/review-checks.py (the both-CPU line);
+results/verdict-audit-388.md (the rule's section), results/predictions.md (seed 60), GOALS.md, HANDOFF.md,
+lab/evolve/NEXT-RUN, results/README.md (the pending line out).

@@ -169,3 +169,6 @@ and the best Q (binary + image x run time x memory) under 2%. A run that moves
 the front's middle - +1% size for -25% time - is not small.
 compare-fronts.py prints the five per run ("Judging the runs") and names the
 Q-best design of all runs; evolve.py's report names its own.
+The comparison measures every design on two CPUs; since Iteration 389 (the owner) a design's speed there - and
+so the verdict - is the geometric mean of the two, where it had been the first CPU's alone
+(results/verdict-audit-388.md).
