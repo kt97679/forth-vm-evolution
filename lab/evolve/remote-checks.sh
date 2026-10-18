@@ -9,21 +9,24 @@
 #   incomplete build/, and the test's prebuilt host failed so; the first run would have on dream)
 #   start   in the seed step, before the evolution: a sample of the previous front
 #           (xcheck.py --sample, and for prebuilt the laptop's binaries), the commit as a
-#           bundle, copied to HOST:fve-xcheck/CHAIN/ and run there detached, to a deadline
+#           bundle, copied to HOST:fve-xcheck/CHAIN/ and run there detached, to a deadline.
+#           Iteration 379: only the sampling before the evolution (it builds on the laptop's
+#           CPUs, which the run's timings need); the copying and starting go to remote/launch.sh,
+#           in the background - seed 57's run waited 52 minutes for them, 38 of it the Tegra's
 #   gather  at the chain's end (chainctl.py pack): each host's results copied back,
 #           xcheck.py --report into CHAIN/remote/HOST.md, the host's directory removed - a
 #           host not done waits until its own deadline, unless nowait (stopped, interrupted)
 #   stop    each host's run ended - by its process group, not by name
 #
 # Never costs the chain: whatever fails is a line in CHAIN/steps and the next host goes on.
-# SSH and SCP may name stand-ins (the tests).
+# SSH and SCP may name stand-ins (the tests), and REMOTES_FILE the hosts' file (Iteration 379).
 set -u
 CMD=${1:-}; CHAIN=${2:-}; NOWAIT=${3:-}
 [ -n "$CMD" ] && [ -d "$CHAIN" ] || { echo "usage: remote-checks.sh probe|start|gather|stop CHAIN [nowait]" >&2; exit 2; }
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
-CONF=$REPO/lab/evolve/REMOTES
+CONF=${REMOTES_FILE:-$REPO/lab/evolve/REMOTES}
 SSH=${SSH:-ssh}; SCP=${SCP:-scp}
-O="-o BatchMode=yes -o ConnectTimeout=10"
+O="-o BatchMode=yes -o ConnectTimeout=10 -o ControlMaster=auto -o ControlPath=/tmp/fve-ssh-%C -o ControlPersist=120"   # 379: one connection a host
 R=$CHAIN/remote
 RDIR=fve-xcheck/$(basename "$CHAIN")
 note() { echo "remote $1: $2" >> "$CHAIN/steps"; echo "next-run: remote $1: $2"; }
@@ -46,11 +49,14 @@ start)
     # each with its own directories; one host's checks run one after another (run.sh waits on the
     # host's lock), each deadline from its own start; the laptop waits at most their sum
     : > "$R/queued"
+    L=$R/launch.sh                                                   # Iteration 379: the copying, in the background
+    printf '#!/bin/sh\n# the copying and starting of %s'"'"'s checks (remote-checks.sh start, Iteration 379)\n' "$(basename "$CHAIN")" > "$L"
+    printf 'note() { echo "remote $1: $2" >> "%s/steps"; echo "next-run: remote $1: $2"; }\n' "$CHAIN" >> "$L"
     conf | while read -r host how n rounds minutes opts; do
         grep -qx "$host" "$R/hosts" || continue
         CHK=$host-$how; H=$R/$CHK; RD=$RDIR/$how; mkdir -p "$H"
         before=$(awk -v h="$host" '$1 == h {s += $2} END {print s + 0}' "$R/queued"); echo "$host $minutes" >> "$R/queued"
-        until=$(( $(date +%s) + (before + minutes) * 60 ))
+        offset=$(( (before + minutes) * 60 ))                         # 379: the deadline counted from the start
         case " $opts " in *" --from "*)                               # Iteration 335: another check's designs
             frm=$(printf '%s\n' $opts | awk 'p {print; exit} $1 == "--from" {p = 1}')
             [ -s "$R/$host-$frm/designs.json" ] || { note "$CHK" "FAILED - its pair $host-$frm sampled nothing"; continue; }
@@ -82,13 +88,21 @@ python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds 
 echo 0 > "\$W/DONE"
 RUN
         files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32|prebuilt64) files="$files $H/bins.tar.gz" ;; esac
-        if $SSH $O "$host" "mkdir -p $RD" < /dev/null > "$H/ssh.log" 2>&1 \
-            && $SCP -q $O $files "$host:$RD/" >> "$H/ssh.log" 2>&1 \
-            && $SSH $O "$host" "cd $RD && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1; then
-            echo "$until" > "$H/until"; echo "$host $RD" > "$H/where"
-            note "$CHK" "started - $(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(len(d.get("designs", d)) if isinstance(d, dict) else len(d))' "$H/designs.json" 2>/dev/null || echo ?) designs, $how, $minutes minutes from its start (done by $(date -u -d @$until +%H:%M) UTC)"
-        else note "$CHK" "FAILED - copying or starting there (remote/$CHK/ssh.log)"; fi
-    done ;;
+        ndes=$(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(len(d.get("designs", d)) if isinstance(d, dict) else len(d))' "$H/designs.json" 2>/dev/null || echo '?')
+        cat >> "$L" << LAUNCH
+if $SSH $O "$host" "mkdir -p $RD" < /dev/null > "$H/ssh.log" 2>&1 \\
+    && $SCP -q $O $files "$host:$RD/" >> "$H/ssh.log" 2>&1 \\
+    && $SSH $O "$host" "cd $RD && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1; then
+    echo \$(( \$(date +%s) + $offset )) > "$H/until"; echo "$host $RD" > "$H/where"
+    note "$CHK" "started - $ndes designs, $how, $minutes minutes from its start (copied in the background)"
+else note "$CHK" "FAILED - copying or starting there (remote/$CHK/ssh.log)"; fi
+LAUNCH
+    done
+    if [ -s "$L" ] && grep -q '^if ' "$L"; then                   # 379: the run does not wait for the network
+        : > "$R/launched"
+        nohup sh "$L" >> "$CHAIN/chain.log" 2>&1 < /dev/null &
+        echo "next-run: remote checks sampled - copied and started in the background (remote/launch.sh); the run starts now"
+    fi ;;
 stop)
     for H in "$R"/*/; do
         [ -f "$H/until" ] || continue; CHK=$(basename "$H"); read -r host RD < "$H/where"

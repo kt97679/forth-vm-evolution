@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 378.
+- master: Iteration 379.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -106,6 +106,13 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Q-best of all runs its 9d47925af2 (Q 0.213); jitvar on none of its 200, jitimg on 5; held out 0.946.
   results/evolve-amd-ryzen-7-pro-8840hs-seed57.md, results/xcheck-seed57.md (seed 56's front: dream
   0.980, at 32 bits 0.713, the Tegra 0.881). **Seed 58 next**: the anchoring and constraint test.
+- **The run no longer waits for the network** (Iteration 379, the owner noticed): remote-checks.sh start
+  ran in the seed step before the evolution, copying and starting each host's check synchronously -
+  seed 57's run waited 52 minutes (the sampling 14, dream's three copies ~3 each, the Tegra's 38 - for a
+  7 MB bundle). Now only the sampling comes first; remote/launch.sh copies and starts in the background,
+  one SSH connection a host (ControlMaster). From seed 59's chain; seed 58 started on the old path. The
+  owner may check the hosts' SSH: `time ssh rage.lan true` - seconds a connection would point at sshd
+  (UseDNS, GSSAPI), not the bandwidth.
 - Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
   small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
   0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).

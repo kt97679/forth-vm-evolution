@@ -7216,3 +7216,22 @@ predictions had been written for seeds 56 and 57 - step 4 skipped twice; seed 58
 it starts. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed57.md, results/xcheck-seed57.md; session 51
 appended to results/compare-fronts-amd-ryzen-7-pro-8840hs.md; results/progress-by-run.md regenerated;
 results/predictions.md. Seed 58 next, as set at Iteration 374.
+
+## Iteration 379 - 2026-10-18 - Claude
+
+**The run no longer waits for the network (the owner's observation).** Seed 58's monitor showed dream
+busy and the laptop idle. The chain called remote-checks.sh start synchronously before the evolution,
+and start sampled, copied and started each host's check in turn - "never costs the run", but it did:
+in seed 57's chain the checks started at 14:51 and the run at 15:43. Its files' times: the sampling
+done by 15:05:52 (14 minutes, the laptop's CPUs); dream's three copies 2 min 50 s, 3 min 06 s, 2 min
+58 s; the Tegra's 37 min 44 s - for a 7 MB repository bundle, three SSH connections a check: slow
+connection setup more likely than bandwidth (the owner's to check: `time ssh rage.lan true`). Now the
+sampling alone comes before the run - it builds designs on the laptop, and the run's timings need its
+CPUs - and the copying and starting go to remote/launch.sh in the background, its notes to the chain
+log, each laptop-side deadline from the check's own start, one SSH connection a host (ControlMaster,
+ControlPath /tmp/fve-ssh-%C); a "launched" marker keeps a resumed chain from launching twice
+(next-run.sh); REMOTES_FILE names a hosts' file for tests. Tested with two fake hosts and ssh/scp
+stand-ins sleeping 4 s a call: start returned after its 50 s of sampling (the second host's with
+--rejected 2, scanning seed 57's 32,567 records), the copies done 30 s later in the background, both
+checks noted started. About 40-50 minutes more evolution a 12-hour chain, from seed 59's; seed 58
+started on the old path.
