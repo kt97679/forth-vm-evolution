@@ -1,0 +1,69 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 35d3020..198409b 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1229,7 +1229,18 @@ def reach_lethal(g):
+     the third run's fork bomb (Iteration 10). At scale 1 (2^15) 13 of 18
+     lived: those still run - jailed."""
+     return g['enc'] == 'cv8' and g.get('scale', 0) == 0 and not (g.get('varcall') and g.get('doesfar'))
+-def evaluate(g, rounds, keep=False):
++FASTGATE = [20, 1.05]   # Iteration 391 (the owner): the fast end measured twice - fast_gate(), evaluate(); --fastgate N
++def fast_gate(R):
++    """The speed under which a child is measured twice: 5% above the FASTGATE[0]-th fastest design alive so
++    far - the fast end, and the noise band around it. The fast end's in-run speeds were ~10% optimistic
++    (results/review-methodology-386.md, 2a): designs admitted on lucky draws, a 3% noise the best of
++    thousands. None while fewer are alive, or with --fastgate 0."""
++    n = FASTGATE[0]
++    if not n: return None
++    sp = sorted(r['speed'] for r in R.values() if r.get('status') == 'ok' and r.get('speed'))
++    return sp[n - 1] * FASTGATE[1] if len(sp) >= n else None
++
++def evaluate(g, rounds, keep=False, gate=None):
+     # Build what the identity names: canon(g), as express() and gid() see it.
+     # Built raw, a mutation that turned on byte headers in a design with
+     # scaled calls was refused by the converter (--bytehdr wants --cpt 0) -
+@@ -1253,6 +1264,11 @@ def evaluate(g, rounds, keep=False):
+         rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
+         rec['mem'] = dict(LAST_RSS)
+         rec['unit'] = UNIT
++        if gate and rec['speed'] < gate:   # Iteration 391: under the fast gate, measured again - the same rounds,
++            t2, raw2 = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)   # the engine as built; memory the first's
++            rec['speed1'] = rec['speed']; rec['speed2'] = math.exp(sum(math.log(t2[w]) for w in WORK_SEL) / len(WORK_SEL))
++            rec['t'] = t = {w: math.sqrt(t[w] * t2[w]) for w in t}; rec['raw'] = {w: math.sqrt(raw[w] * raw2[w]) for w in raw}
++            rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))   # = sqrt(speed1 x speed2)
+         if TWO_WIDTHS[0]: rec.update(eval32(g, rounds))       # Iteration 336: the 32-bit measurement, after the 64-bit one
+     except RuntimeError as e:
+         rec['status'] = str(e)
+@@ -1957,7 +1973,7 @@ def main(argv):
+     if '-h' in argv or '--help' in argv:
+         print(__doc__); return
+     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
+-             '--jobs', '--until', '--fromzero', '--noevolved', '--widths'}
++             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate'}
+     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
+     if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
+         if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
+@@ -2009,6 +2025,7 @@ def main(argv):
+             json.dump(out, open(path, 'w'))
+         report(R); return
+     N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
++    FASTGATE[0] = opt('--fastgate', FASTGATE[0])          # Iteration 391: 0, off
+     JOBS, UNTIL = opt('--jobs', 1), opt('--until', 0)        # Iteration 99: workers on their own cores; a deadline
+     R = load()
+     if JOBS > 1: start_pool(JOBS)
+@@ -2051,12 +2068,13 @@ def main(argv):
+                     else: keep.append((i, (g, parents, how, gen)))
+                 if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
+                 items = keep
+-        args = [(canon(g), ROUNDS) for i, (g, parents, how, gen) in items]
++        gate = fast_gate(R)                                   # Iteration 391
++        args = [(canon(g), ROUNDS, False, gate) for i, (g, parents, how, gen) in items]
+         for (i, (g, parents, how, gen)), rec in zip(items, WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args)):
+             rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen)
+             R[i] = rec; save(rec)
+             print('    %s %-24s %s' % (i, rec['status'] if rec['status'] != 'ok' else
+-                  'speed %.4g size %d' % (rec['speed'], rec['size']), how[:70]), flush=True)
++                  'speed %.4g size %d%s' % (rec['speed'], rec['size'], ' twice %.4g/%.4g' % (rec['speed1'], rec['speed2']) if 'speed1' in rec else ''), how[:70]), flush=True)
+     # Iteration 115 (the owner: "sod32 from nothing"): --fromzero - the first
+     # generation all random genomes, uniform over the whole space: no hand-made
+     # design, no founder, nothing carried, no mutant of a hand-made one (the

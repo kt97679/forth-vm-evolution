@@ -7525,3 +7525,30 @@ front on the Tegra with that why(): a recurrence will name its cause.
 
 Files: lab/evolve/heldout.py, tools/handoff-check.py (rule 11), HANDOFF.md (routine step 3, item 0d),
 results/review-methodology-386.md (2d weighed), lab/evolve/README.md.
+
+## Iteration 391 - 2026-10-18 - Claude
+
+**The fast gate - designs re-measured before they enter the fast end (the owner) - built and tested, pending
+after seed 60; and the ARM cross-compiler found to break the 32-bit build.**
+
+The owner judged re-measuring a good idea; it waits for seed 60's processing so the anchoring test runs on the
+evolver of seeds 53-59. evolve.py: a child whose speed is under the gate - 1.05 x the 20th fastest design alive
+so far - is measured again with the same rounds on the engine as built, and its speed is the geometric mean of
+the two (speed1 and speed2 kept; memory and size the first measurement's); `--fastgate N` sets the 20, 0 turns
+it off. Why: a 3% noise and thousands of candidates make the best-looking ~11% optimistic (seed 58's fastest
+tenth, re-measured / in-run 1.112). Cost, seed 58 replayed through the gate generation by generation: 1,121 of
+24,885 measured children (4.5%) under it, their evaluations 4.4% of the time - an upper bound, the second
+measurement with no build and no 32-bit pass. Tested: fast_gate() over 30 designs 1.05 x the 20th fastest, None
+with fewer and with 0; a miniature run (--pop 6 --gens 2 --rounds 1 --fastgate 3) measured 3 of 28 designs
+twice - 524fef96b3 0.2264 then 0.2547, 12.5% apart - each speed exactly the geometric mean of its two and of its
+workloads' figures, memory the first's, generation 0 once; run-tests PASS - no regressions, validate 7 of 7 IDENTICAL, test-jail
+PASS; on a fresh clone the patch reproduces the tested file. The 32-bit fast end not gated, a later step if the
+first run with this shows it worth it - seed 61, read by `review-checks.py curse`.
+
+The first build for it failed: "asm/errno.h: No such file or directory". Installing gcc-arm-linux-gnueabihf at
+Iteration 390 had removed gcc-multilib (apt's history: "Remove: gcc-multilib:amd64"), and /usr/include/asm with
+it. Nothing committed was touched - the full checks ran at 389, and nothing was built natively between. Put
+back with apt-get install gcc-multilib (which took the ARM compiler out: the two cannot both be installed);
+HANDOFF-PROMPT's optional ARM tools now say so, and HANDOFF's lessons.
+
+Files: results/pending/ORDER.md, results/pending/fastgate-after-seed60.patch (new); HANDOFF.md, HANDOFF-PROMPT.md.

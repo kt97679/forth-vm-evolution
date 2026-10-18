@@ -40,7 +40,9 @@ Set up first:
    preserve_none.
    Then `[ -e /usr/include/asm ] || ln -s x86_64-linux-gnu/asm /usr/include/asm`
    - the 32-bit builds' asm/ headers, where only gcc-13-multilib came in (Iteration 382).
-   Optional, for tools/arm-qemu-check.sh only: `gcc-arm-linux-gnueabihf qemu-user`.
+   Optional, for tools/arm-qemu-check.sh only: `gcc-arm-linux-gnueabihf qemu-user` - but on Ubuntu it
+   REMOVES gcc-multilib, and /usr/include/asm with it: every 32-bit build then fails (Iteration 391).
+   Afterwards `apt-get install gcc-multilib` puts them back (and takes the ARM compiler out).
 1. Clone as the user claude, into a directory it owns: `cd /home/claude &&
    mkdir -p forth-vm-evolution && chown claude:claude forth-vm-evolution &&
    runuser -u claude -- git clone /mnt/user-data/uploads/<bundle>

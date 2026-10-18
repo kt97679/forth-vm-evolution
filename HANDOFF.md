@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 390.
+- master: Iteration 391.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -117,7 +117,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **The after-seed-59 batch is applied** (Iteration 389, ahead of seed 59's processing - its chain pulled its code
   at its start; results/applied-after-seed59/ORDER.md, five patches): opcall only where the tag is built; a failed
   tool's first error in its record; `noevolved`; compare-fronts' verdict sign labelled and 32-bit fastest kept; and
-  the session's speed from both CPUs, their geometric mean (the owner, 389). No pending batch.
+  the session's speed from both CPUs, their geometric mean (the owner, 389). **The after-seed-60 batch waits in
+  results/pending** (Iteration 391): the fast gate - a child under 1.05 x the 20th fastest so far measured twice,
+  its speed the geometric mean (the owner) - applied at seed 60's processing, so seed 60 runs the evolver of 53-59.
 - **Seed 60 is set** (NEXT-RUN; the owner's 12 hours): `seed 60 tag2 12h widths noevolved then experiment
   compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the clean anchoring test. The owner starts it
   when seed 59's chain has finished, with this bundle; seed 59's archive is processed alongside.
@@ -258,9 +260,12 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    replicate of seed 58 with the requirement as the designed difference (the same evolved founders, ~55 minutes
    more evolution). Seed 60 (noevolved, 12 h) is the clean anchoring test: its predictions at the end of
    results/predictions.md, read by the review's 3c - a gain anywhere is evidence of anchoring, none is not.
+   At seed 60's processing apply the after-seed-60 batch (the fast gate); seed 61 is the first run with it -
+   `review-checks.py curse` on its report shows whether the fast end's optimism falls (seed 58's fastest tenth:
+   1.112).
 0e. **The review's proposals** (results/review-methodology-386.md, section 6; the owner's calls): the session's
    speed from both CPUs - **done, the owner's (389)**, the per-CPU verdicts from review-checks.py (audited at 388: 14 of 16 past verdicts agree between
-   the CPUs, no decision turned on the two that do not; results/verdict-audit-388.md); re-measure before admitting to the fast end; top-end agreement beside
+   the CPUs, no decision turned on the two that do not; results/verdict-audit-388.md); re-measure before admitting to the fast end - **built, the owner's (391)**: the fast gate, pending after seed 60; top-end agreement beside
    every Spearman; the verdict table's sign labelled and the 32-bit fastest kept by --frontier (done, pending patch 4);
    replicates for configuration questions; "converged within the requirement" in verdicts.
 0d. **Two faults the free encoding found** (Iteration 384) - **fixed in the after-seed-59 batch** (Iteration 385):
@@ -359,6 +364,9 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 
 ## Lessons - how faults got in, and the checks that catch them now
 
+- On Ubuntu gcc-arm-linux-gnueabihf and gcc-multilib cannot both be installed: the first removes the second,
+  and /usr/include/asm with it - every 32-bit build fails until gcc-multilib is back (Iteration 391, the ARM
+  compiler installed at 390 for a cross build). After any apt install, build before trusting the tree.
 - Read what a configuration does before naming the experiment: `nocarry` was called "from scratch" for seeds
   58 and 59, and evolve.py puts two evolved designs in every generation 0 but fromzero's (Iteration 386: two
   thirds of seed 58's ancestry). Likewise a requirement (tag2, and bytehdr with it) belongs in every verdict
