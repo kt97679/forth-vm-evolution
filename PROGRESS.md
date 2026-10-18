@@ -7649,3 +7649,20 @@ stray, in "Rejected or deferred" - and Iteration 389 had put the owner's both-CP
 rule: now one statement, in Success, with it. No file is listed twice in an index; every listed tool exists.
 
 Files: HANDOFF.md, lab/evolve/NEXT-RUN, GOALS.md.
+
+## Iteration 397 - 2026-10-18 - Claude
+
+**The owner's three decisions: footprint.py after seed 62; jithelp and jitre tried; the new mechanism (item 4) in
+the next chat.** The footprint experiment (item 2) ends seed 62's command in NEXT-RUN's comment - an experiment
+step takes no reserve, so the replicates stay alike. jithelp and jitre (Iterations 344 and 346's drafts) join the
+after-seed-62 batch unchanged: they apply after the fast gate on a fresh clone; seed 58's 1b5ac698ce built with
+them expresses both and lives, 40,565 bytes against its recorded 36,021. What they buy, by jitleft.py's
+deterministic counts: little - the kernel's dispatches left to the interpreter 989,120 to 987,090 (53.7% to 53.6%),
+bubble's 151,968 to 129,788, the rest unchanged or nearly; a 1-round timing here (0.2369 to 0.2044) sits in this
+VM's noise. Kept as the owner chose, the evidence in ORDER.md; seed 63's front decides. batch-check.sh's first run
+on the batch tested 1 patch of 3: it clones what is committed, and the two were not - its line said so (the
+commit, the count), its header says so now; committed, all three PASS (run-tests, validate 7 of 7, jail).
+Predictions for the footprint step and the two genes written.
+
+Files: results/pending/jithelp-after-seed62.patch, results/pending/jitre-after-seed62.patch (new);
+results/pending/ORDER.md, lab/evolve/NEXT-RUN (comment), results/predictions.md, HANDOFF.md, tools/batch-check.sh.

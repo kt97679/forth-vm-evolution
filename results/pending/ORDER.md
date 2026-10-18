@@ -37,3 +37,5 @@ counts - the dispatches the JIT leaves to the interpreter, without and with: ker
 53.6%), corpus 4,057,836 / 4,054,591, bubble 151,968 / 129,788 (2.0% / 1.7%), fib, loop and ackermann unchanged
 or nearly. Little, as Iteration 346 had found (INTERPRET stops at (FIND), PARSE-WORD at +!); a 1-round timing
 here (0.2369 / 0.2044) is inside this VM's noise. The search weighs them; the fronts after seed 62 decide.
+
+All three, tools/batch-check.sh at Iteration 397: PASS - 3 patch(es) applied to a fresh clone of 6268b51 Iteration 397: the owner's decisions - foo; run-tests: PASS - no regressions (exit 0); validate: 7 of 7 IDENTICAL (exit 0); jail: PASS (exit 0)
