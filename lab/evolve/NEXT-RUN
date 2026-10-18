@@ -322,6 +322,9 @@
 # after-seed-50 batch applied - 2@ and 2! as opcodes, opinline, tailpn, knumber:
 # new genes, the stopping rule counts afresh. Seed 51, 10 hours (the owner, Iteration
 # 297 - 12 when its predictions were written).
+# Iteration 383: seed 58's chain has run (03:12-~14:45 UTC Oct 18), not yet processed - this chat closes,
+# its archive goes to the next. none: pulling this bundle runs nothing; seed 59's run is chosen when
+# seed 58 is processed - the anchoring and constraint test decides what it should be.
 # Iteration 378: seed 57 processed - small at 64 bits, not small at both widths (its 32-bit fastest
 # 20.3% ahead). Seed 58 as set at Iteration 374, unchanged; its predictions in results/predictions.md.
 # Iteration 374 (the owner): seed 58 is the anchoring and constraint test (HANDOFF item 4c) - from
@@ -371,4 +374,4 @@
 # Iteration 300: seed 51 small (the fastest +4.9%, the JIT designs taking 2@). The
 # after-seed-51 batch applied - alignhot, > and 0= as opcodes: new genes, the count
 # afresh. Seed 52, 6 hours (the owner, Iteration 301).
-seed 58 12h widths nocarry then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8
+none

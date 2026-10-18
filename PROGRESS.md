@@ -7270,3 +7270,16 @@ build-stages.sh need neither the ARM tools nor the link - the prompt suffices fo
 guarded line now makes the link where it is missing, and the ARM tools are named as optional (for
 tools/arm-qemu-check.sh). The handoff check passes; seed 58 runs; the next chat starts with seed 58's
 archive and this bundle.
+
+## Iteration 383 - 2026-10-18 - Claude
+
+**This chat closes; seed 58's archive goes to the next.** Seed 58's chain (the anchoring and constraint
+test, at c49de1703) ran 03:12 to about 14:45 UTC; the owner takes its archive to a new chat. NEXT-RUN is
+`none` (next-run.sh: pulled, and stopping) - seed 59's run is chosen when seed 58 is processed, its
+outcome deciding it. /tmp cleared of everything this work wrote: unpacked packs and chain archives
+(results in results/), logs, relf's test temporaries, compiler temporaries, and scratch files each
+identical to a repository file (hotwords.py, hotwords-v1.json, factor.patch) or recorded in PROGRESS.md
+with a repository tool to reproduce it (jitleft.py's table, kernel 54.6%) - except price.py's table for
+seed 53's ccf55ad2f5 (a scratch look at Iteration 310), never recorded: reproducible with
+lab/evolve/price.py from the genome in results/evolve-amd-ryzen-7-pro-8840hs-seed53.md. Left: three
+tool caches not of this work, listed in /tmp/handoff-disposable.txt.

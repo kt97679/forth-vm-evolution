@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 382.
+- master: Iteration 383.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -105,7 +105,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   earlier run's; the first verdict by the owner's two-width rule (Iteration 376), applied by hand. The
   Q-best of all runs its 9d47925af2 (Q 0.213); jitvar on none of its 200, jitimg on 5; held out 0.946.
   results/evolve-amd-ryzen-7-pro-8840hs-seed57.md, results/xcheck-seed57.md (seed 56's front: dream
-  0.980, at 32 bits 0.713, the Tegra 0.881). **Seed 58 next**: the anchoring and constraint test.
+  0.980, at 32 bits 0.713, the Tegra 0.881).
+- **Seed 58 has run, not processed** (its chain 03:12 - about 14:45 UTC Oct 18, at c49de1703): the anchoring
+  and constraint test. This chat closed before its archive came (Iteration 383); the next chat starts with
+  it. NEXT-RUN is `none` until seed 58 is processed - its outcome chooses seed 59's run.
 - **The run no longer waits for the network** (Iteration 379, the owner noticed): remote-checks.sh start
   ran in the seed step before the evolution, copying and starting each host's check synchronously -
   seed 57's run waited 52 minutes (the sampling 14, dream's three copies ~3 each, the Tegra's 38 - for a
@@ -233,9 +236,9 @@ About 20 minutes of machine time for build, tests and gates.
 Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
-0. **Seed 58** - the anchoring and constraint test (item 4c): NEXT-RUN's `seed 58 12h widths nocarry
+0. **Seed 58** - the anchoring and constraint test (item 4c), run as `seed 58 12h widths nocarry
    then experiment compare-fronts.py ...` - from scratch, no tag2 requirement, both widths; its batch
-   applied (results/applied-after-seed57/). Process when its archive comes: score its predictions
+   applied (results/applied-after-seed57/). Its archive comes with the next chat; process it: score its predictions
    (results/predictions.md - the first since seed 55's: none were written for 56 and 57); its comparison
    prints the verdict at both widths; read its genes with gene-usage.py against seeds 53-57, and the
    remote checks' line "Rejected by the laptop's selection, measured here" (item 4d).
