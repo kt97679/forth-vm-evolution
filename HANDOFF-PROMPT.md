@@ -38,6 +38,9 @@ Set up first:
    makes 4-byte cells too, as the laptop's does; clang because the gene
    compiler is offered only where clang is installed; clang-19 for
    preserve_none.
+   Then `[ -e /usr/include/asm ] || ln -s x86_64-linux-gnu/asm /usr/include/asm`
+   - the 32-bit builds' asm/ headers, where only gcc-13-multilib came in (Iteration 382).
+   Optional, for tools/arm-qemu-check.sh only: `gcc-arm-linux-gnueabihf qemu-user`.
 1. Clone as the user claude, into a directory it owns: `cd /home/claude &&
    mkdir -p forth-vm-evolution && chown claude:claude forth-vm-evolution &&
    runuser -u claude -- git clone /mnt/user-data/uploads/<bundle>

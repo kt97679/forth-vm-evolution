@@ -7260,3 +7260,13 @@ busiest at its start): a remote measurement's noise readable beside it. Tested e
 - an ssh taking 0.2 s and running the command in a fake host's directory, an scp copying there for real
 - the generated run.sh run on the "host" for 70 s (cloning the bundle, building its stages: 4 samples,
 0.00 to 0.83), then gather with a fabricated out.json: the report ended with both lines. From seed 59.
+
+## Iteration 382 - 2026-10-18 - Claude
+
+**The new-chat prompt checked against this VM, before a switch.** HANDOFF-PROMPT.md's setup installs
+gcc-multilib, clang and clang-19; this VM has gcc-13-multilib (gcc-multilib itself not installed) and an
+asm/ header link made by hand, and the ARM cross tools and qemu-user besides. run-tests.sh and
+build-stages.sh need neither the ARM tools nor the link - the prompt suffices for the routine - but a
+guarded line now makes the link where it is missing, and the ARM tools are named as optional (for
+tools/arm-qemu-check.sh). The handoff check passes; seed 58 runs; the next chat starts with seed 58's
+archive and this bundle.
