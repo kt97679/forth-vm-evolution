@@ -10,6 +10,10 @@ results/review-methodology-386.md), each reproducible:
   cpus COMPARE.md N        session N's verdict measures (fastest, best Q, against all the other runs) computed
                            from each CPU alone - how far one CPU's noise moves them - and the front membership
                            agreement between the two CPUs in every session that printed it
+  progress DB              is the search stuck? (Iteration 392, the owner's worry of a local minimum) - by
+                           generation: the best speed and the smallest binary + image so far (size exact, so a
+                           late gain in it is no noise), the generations of the last gains, and diversity - the
+                           mean share of genes two designs of a generation differ in, and the encodings alive
   verdicts COMPARE.md      every session's verdict (Iteration 188's five measures) rebuilt from its own tables -
                            checked against the printed one - then from each CPU alone: does "small" depend on
                            which CPU is asked? (Iteration 388) - and from both, each design's speed the
@@ -189,4 +193,42 @@ elif check == 'verdicts':
     agree = sum(1 for r in rows if r[4][5] == r[5][5]); rep_ = sum(1 for r in rows if word(r[3][5]) == r[2])
     same = sum(1 for r in rows if r[8][5] == (r[2] == 'small'))
     print('\n%d sessions: the printed verdict rebuilt in %d; the two CPUs alone agree in %d; both CPUs give the printed verdict in %d.' % (len(rows), rep_, agree, same))
+elif check == 'progress':
+    _db = sys.argv[2]
+    import random
+    sys.argv = ['x']; sys.path.insert(0, __import__('os').path.dirname(__import__('os').path.abspath(__file__))); import evolve as E
+    R = db(sys.argv[2] if len(sys.argv) > 2 else _db); kids = collections.defaultdict(list)
+    for d in R.values():
+        if d.get('status') == 'ok' and d.get('speed') and d.get('total'): kids[d.get('gen', 0)].append(d)
+    G = sorted(kids); best = small = b32 = None; gain_sz, gain_sp = [], []
+    keys = sorted({k for d in R.values() for k in (d.get('genome') or {})})
+    memo = {}
+    def ex(d):      # what is built: express(), each value as text
+        if d['id'] not in memo: memo[d['id']] = {k: json.dumps(v, sort_keys=True) for k, v in E.express(E.canon(d['genome'])).items()}
+        return memo[d['id']]
+    def diversity(ds, n=300):
+        """the mean share of built genes two designs differ in (a gene built in one and not the other differs)"""
+        if len(ds) < 2: return float('nan')
+        rnd = random.Random(1); t = 0
+        for a, b in (rnd.sample(ds, 2) for _ in range(n)):
+            A, B = ex(a), ex(b); ks = set(A) | set(B); t += sum(A.get(k) != B.get(k) for k in ks) / len(ks)
+        return t / n
+    fam = lambda ds, t2: [d for d in ds if (ex(d).get('tag2') not in (None, '0', 'null', 'false')) == t2]
+    print('| generation | alive | best speed so far | smallest so far | best 32-bit so far | diversity: all / tag-2 family / plain family | encodings alive (enc/tag2: designs) |\n|---|---|---|---|---|---|---|')
+    for g in G:
+        ds = kids[g]; sp = min(d['speed'] for d in ds); sz = min(d['total'] for d in ds)
+        s32 = min((d['speed32'] for d in ds if d.get('speed32')), default=None)
+        if best is not None and sp < best * 0.98: gain_sp.append((g, best / sp - 1))
+        if small is not None and sz < small: gain_sz.append((g, small - sz))
+        best = sp if best is None else min(best, sp); small = sz if small is None else min(small, sz)
+        b32 = s32 if b32 is None else (min(b32, s32) if s32 else b32)
+        if g in (G[0], G[-1]) or g % 10 == 0:
+            enc = collections.Counter('%s/%s' % ((d.get('genome') or {}).get('enc'), (d.get('genome') or {}).get('tag2', 0)) for d in ds)
+            print('| %d | %d | %.4f | %s | %s | %.3f / %.3f / %.3f | %s |' % (g, len(ds), best, format(small, ','), '%.4f' % b32 if b32 else '-',
+                  diversity(ds), diversity(fam(ds, True)), diversity(fam(ds, False)), ', '.join('%s: %d' % kv for kv in enc.most_common(4))))
+    last = G[-1]; late = [x for x in gain_sz if x[0] > last * 2 // 3]
+    print('\nthe smallest binary + image (exact) gained in %d generations; the last at generation %d of %d; in the last third %d gains, %d bytes in all'
+          % (len(gain_sz), gain_sz[-1][0] if gain_sz else -1, last, len(late), sum(b for _, b in late)))
+    print('the best speed gained 2%% or more in %d generations; the last at generation %d (%s)' % (len(gain_sp), gain_sp[-1][0] if gain_sp else -1,
+          ', '.join('%d: %.1f%%' % (g, 100 * x) for g, x in gain_sp[-5:])))
 else: sys.exit(__doc__)

@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 391.
+- master: Iteration 392.
 - The after-seed-47 batch is applied (Iteration 269, six patches -
   `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
   results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
@@ -162,6 +162,8 @@ About 20 minutes of machine time for build, tests and gates.
    its per-CPU lines show how far noise moves it (Iterations 388-389, results/verdict-audit-388.md).
 3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md` - every late gene
    on the front, and the format-10 words, since Iteration 299.
+   Then `python3 lab/evolve/review-checks.py progress <pack>/db.jsonl` (Iteration 392): diversity by generation
+   and the last gains - say if diversity falls or the gains stop early, the signs of a search stuck.
    Then `python3 lab/evolve/heldout.py results/evolve-...-seedN.md` - the held-out (its top-end lines, Iteration 390: the Spearman over the fastest third and tenth, and the regret)
    check (Iteration 305): Spearman about 0.94 on seeds 49-51; say if it falls.
 4. Score the predictions, write the next (`results/predictions.md`).
@@ -327,7 +329,11 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    follow-up run separates them (nocarry with tag2, or carried without). **Seed 58's answer** (Iteration 384):
    elsewhere - the constraint concern holds (plain CV8 took the small end and 32 bits, where the requirement
    kept the carried runs out); anchoring not separated. Seed 59 is the follow-up: nocarry with tag2. Neither tag2
-   nor bytehdr is a gene to freeze (item 4b): free, the search chooses by objective.
+   nor bytehdr is a gene to freeze (item 4b): free, the search chooses by objective. **The owner's worry of a
+   local minimum, mapped** (Iteration 392, results/convergence-seed58.md): five sources, each its own test -
+   a constraint (seed 58: real), the carry (seed 60), one start for every run (seeds 58-60's three starts;
+   replicates proposed), collapse inside a run (seed 58: none - diversity holds and rises, gains to generation
+   130), the gene set's edge (only new mechanisms pass it).
    Reading it in genes: `python3 lab/evolve/gene-usage.py <seed 58's db> --vs results/evolve-*-seed5[3-7].md`
    - two consecutive carried runs (seeds 55, 56) differ by up to 17 points a gene: the scale to read it by.
 4d. **Weighing results across machines** (the owner's question, Iteration 376;

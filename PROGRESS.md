@@ -7552,3 +7552,29 @@ back with apt-get install gcc-multilib (which took the ARM compiler out: the two
 HANDOFF-PROMPT's optional ARM tools now say so, and HANDOFF's lessons.
 
 Files: results/pending/ORDER.md, results/pending/fastgate-after-seed60.patch (new); HANDOFF.md, HANDOFF-PROMPT.md.
+
+## Iteration 392 - 2026-10-18 - Claude
+
+**The owner's worry of a local minimum (Iteration 373, asked again): mapped to its sources, and seed 58 seen
+from inside - no collapse.** results/convergence-seed58.md.
+
+Five sources, five tests: a constraint fencing off a region (seed 58: real - the plain-CV8 small and 32-bit
+ends); the carry anchoring (seed 60, noevolved); every run starting from the same human designs (not ruled out
+by seed 60; seeds 58, 59 and 60 start three ways; replicates proposed); the search collapsing inside a run
+(measured here); the gene set's edge (no search setting passes it - new mechanisms do).
+
+review-checks.py progress (new): by generation, the best speed and the smallest binary + image so far, the
+best 32-bit, diversity - the mean share of built genes (express()) two designs differ in, overall and in each
+encoding family - and the encodings alive. Seed 58: diversity holds and rises, 0.47-0.56 overall, the tag-2
+family 0.35-0.47 rising to the end, the plain family 0.46-0.53; both encodings to the last generation. The raw
+genome's diversity (0.09 at generation 0) was first read and set aside - unbuilt genes drift freely, so what is
+built is the measure. Gains: the smallest (exact) in 21 generations, the last at 130 of 133 (40 bytes in the
+last third); the 32-bit best to 120; speed's large steps at generations 5 and 15 (22.9%, 3.6%), then under 2%
+each to 100. Diminishing returns, not a stall. Step 3 of the processing routine now runs the check on every
+returned seed.
+
+Proposed (the owner's): after seed 60, the check and gene-usage.py on seeds 58-60; replicates if the hours allow
+(two shorter noevolved runs, different seeds); escape mechanisms only if those show runs stuck.
+
+Files: results/convergence-seed58.md (new); lab/evolve/review-checks.py (progress), HANDOFF.md (item 4c, the
+routine), results/README.md, lab/evolve/README.md.
