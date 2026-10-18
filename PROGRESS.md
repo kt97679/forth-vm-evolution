@@ -7629,3 +7629,23 @@ routine starts with it. Two traps of this VM noted: git as root in claude's tree
 
 Files: results/tools-audit-394.md, lab/evolve/process-seed.sh (new); tools/batch-check.sh, HANDOFF.md,
 lab/evolve/README.md, results/README.md.
+
+## Iteration 396 - 2026-10-18 - Claude
+
+**Housekeeping: the documents made orthogonal (the owner).** Each document one role - HANDOFF the state, the
+routine, open items and lessons; PROGRESS the history; GOALS the aims and rules; NEXT-RUN the next run and why;
+results/ the evidence and its index - and each fact in one of them.
+
+HANDOFF.md 478 lines to 332: the state section from sixteen bullets, nine of them history (seeds 47-57, old
+batches - in PROGRESS already), to five current ones; "a generic Forth first" was there and in the standing
+decisions - now only there; the routine rebuilt around process-seed.sh (its steps 1-3 had described by hand what
+the script does), pointing to GOALS.md for the rule it restated, its stale step - reverse-applying the laptop's
+measured-here patch, which Iteration 384 found cannot apply - gone, the citations' sed kept word for word; open
+items 0, 0d, 0e, 1, 4b-4d condensed to status and pointers (0e's proposals all done or queued; superinstructions,
+the owner's decision, moved to the standing decisions). NEXT-RUN 409 lines to 36: 93 iterations' comments, history,
+out (git log keeps them) - and its grammar, which only those comments and next-run.sh's code had (nocarry,
+fromzero, noevolved, widths), stated once in its header. GOALS.md stated the verdict rule twice - the second copy
+stray, in "Rejected or deferred" - and Iteration 389 had put the owner's both-CPU decision into that copy, not the
+rule: now one statement, in Success, with it. No file is listed twice in an index; every listed tool exists.
+
+Files: HANDOFF.md, lab/evolve/NEXT-RUN, GOALS.md.

@@ -48,151 +48,54 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 395.
-- The after-seed-47 batch is applied (Iteration 269, six patches -
-  `results/applied-after-seed47/ORDER.md`). The after-seed-50 batch is applied too (Iteration 296,
-  results/applied-after-seed50/ORDER.md), and the after-seed-51 batch (Iteration
-  300); the after-seed-52 batch at Iteration 318 (the JIT fix); `results/pending` holds the after-seed-59 batch (Iteration 385).
-- **Seed 48 has no record of its own, by the owner's choice** (Iteration 289): a run
-  went from Oct 13 21:01 UTC to about 03:00, its database archived as
-  runs/archived-20261014-052835 - in seed 49's comparison, which credits it with the
-  Q-best of all runs (4599c1f454); its front's genomes are in seed 49's database
-  as carried records (gate.py --db). Its packs were never sent, the owner unsure
-  which seed it ran; nothing re-runs it. Its predictions stay unscored.
-- **Seeds 53-54 processed** (Iteration 333): 53 small (+0.3%, 80 minutes of evolution), 54 small
-  (+1.1%, fastest +3.6%, 6 h 47 min) - two small in a row: the stopping rule's end of these genes.
-  bfind on 67 of seed 54's 195 (17 in seed 53) - kept by the laptop's selection; no corpus deaths;
-  heldout 0.953; dream.lan Spearman 0.941 (seed 53: 0.959). Predictions 5 of 5. One converter
-  death, a new kind (open item 0c). The after-seed-54 batch applied: the 32-bit checks.
-- **Seed 55 processed** (Iteration 334): small (+0.4%) - the third small run of these genes: the
-  stopping rule's end. bfind on 80 of 168; heldout 0.959. **The first checks at both widths**:
-  dream.lan 64-bit Spearman 0.940; **32-bit x86 at 4-byte cells 0.694** - the laptop's six fastest
-  interpreted designs 8th-13th there, their lead over s6 about halved (results/xcheck-dream-seed55.md).
-  The Tegra failed again - four hand-made engines kept x86's sysc guard: the after-seed-55 batch
-  (results/applied-after-seed57/ORDER.md).
-- **Seed 56 processed** (Iteration 354): small (+1.3%; fastest -4.1%) - the fourth of these genes.
-  **The first run checked on four machines**: the Tegra's first native run (ARMv7) - Spearman 0.944;
-  dream.lan 64-bit 0.917, 32-bit 0.833, the same designs at 64 bits 0.977 - on one machine 64 against
-  32 bits 0.854: the skew is the width's. On real hardware fsys 3 keeps its place at 32 bits (r 1.00) -
-  the VM's 2x was its own slow 32-bit system calls; the five fastest at 64 bits lose most (r 1.7), one
-  lineage (klookup, kinput, rtimm 2, swapi; no regpin). **The after-seed-56 batch applied**: selecting
-  at both widths, jitimg and jitvar, the comparison at 32 bits - the gate 268 of 268.
-- **This lab is RelF's base - as a generic Forth first** (the owner, Iterations 356 and 365; RELF.md;
-  the relf patches of 360-362 parked as phase-3 reference, their laptop timing optional): vendor/relf follows relf master with
-  its sources (vendor/relf/tree); relf's ledger asks this lab about XF@/XV@, DEFER, (+LOOP), PICK and
-  fused pairs for CV8, measured on relf's shell workloads (bench-vm.py). tools/relf-ab.sh, the A/B harness,
-  done (Iteration 357): relf's make test as a regression gate, then bench-vm.py; this VM's noise floor
-  +-10 % - the candidates' small effects are the laptop's to measure. tools/relf-pairs.py (Iteration
-  358): VAR@ 15.2 %, its pairs lead; relf's 64 one-byte opcodes (A15) make each candidate a trade. The
-  budget (359): VAR@ VAR@, VAR@ +, 0= ?BRANCH net ~9.4 % of dispatches for the coldest three slots.
-  **The first patch for relf** (360, results/relf-patches/zeq-qbranch.patch): 0= ?BRANCH fused - relf's
-  whole make test passes, 2.10 % fewer dispatches; its time for the laptop: tools/relf-ab.sh there.
-  The second (361, var-fetch-plus.patch): `var @ +` fused, the inliner taught it; both pass, 4.74 % fewer
-  dispatches; this VM leaning faster (fn 0.933). The third (362, two-var-fetch.patch): `a @ b @` fused
-  (2VAR@; CALL, keeps the last VAR@); all three pass, 6.41 % fewer dispatches; this VM realistic 0.944,
-  arith 0.947 (both significant). All three for the laptop to time (results/relf-patches/README.md).
-  Iteration 363: no more fusions until the laptop times these (the rest ~1 % each, each a slot of A15's
-  64); this lab's genes classed for relf (results/drafts/relf-gene-classes.md); 32-bit engines not PIE,
-  pending after seed 57 (results/applied-after-seed57/ORDER.md).
-  Iteration 367: the supers gene's pool misnamed for every tag-2 design since Iteration 66, and the
-  gene inert in ~97% of the fronts (its slots taken by ops10): the fix pending after seed 57
-  (results/drafts/supers-tag2.md; results/applied-after-seed57/ORDER.md, patch 2). Decided at 368: no new slot
-  mechanism; after seed 58, if superinstructions still buy nothing, the gene comes out of tag-2 designs.
-  Iteration 364: the cheap class measured on relf's shell - clang, -Os, pinned registers: none faster
-  (results/relf-patches/README.md); relf-ab.sh takes RELF_AB_MAKE_B and measures the shells it built.
-- **Seed 57 processed (Iteration 378): small at 64 bits, not small at both widths** - the first run
-  selected for speed at 32 bits: its 32-bit fastest 0.337 of s6 (1a3cfe3e03), 20.3% ahead of every
-  earlier run's; the first verdict by the owner's two-width rule (Iteration 376), applied by hand. The
-  Q-best of all runs its 9d47925af2 (Q 0.213); jitvar on none of its 200, jitimg on 5; held out 0.946.
-  results/evolve-amd-ryzen-7-pro-8840hs-seed57.md, results/xcheck-seed57.md (seed 56's front: dream
-  0.980, at 32 bits 0.713, the Tegra 0.881).
-- **Seed 58 processed (Iteration 384): not small at either width - by its gains.** From scratch and free of
-  the tag-2 requirement (item 4c), it passed every carried run at the small end (09de03f091, 14,146 bytes against
-  15,633: +10.5%), in hypervolume (+11.1%) and at 32 bits (d55f05136f, 0.310: +21.5%) - all plain-CV8 designs -
-  and came within 3.4% at the 64-bit fast end (tag-2) and 5.3% on best Q. Its front by encoding: the small third
-  57 of 57 plain CV8, the fast third 53 of 57 tag-2 - the requirement had cost the small end and the 32-bit end.
-  Not separated: whether starting fresh helped too (seed 59). gate 264 of 264; ans-check 0 of 44 differ; predictions 4 of 5 as written;
-  held out 0.883 (two encodings on one front). results/evolve-amd-ryzen-7-pro-8840hs-seed58.md,
-  results/xcheck-seed58.md (seed 57's front: the Tegra 0.973, dream 0.959, at 32 bits 0.875).
-- **The after-seed-59 batch is applied** (Iteration 389, ahead of seed 59's processing - its chain pulled its code
-  at its start; results/applied-after-seed59/ORDER.md, five patches): opcall only where the tag is built; a failed
-  tool's first error in its record; `noevolved`; compare-fronts' verdict sign labelled and 32-bit fastest kept; and
-  the session's speed from both CPUs, their geometric mean (the owner, 389). **The after-seed-62 batch waits in
-  results/pending** (Iterations 391, 393): the fast gate - a child under 1.05 x the 20th fastest so far measured twice,
-  its speed the geometric mean (the owner) - applied at seed 62's processing, so seeds 60-62 run the evolver of 53-59.
-- **Seed 60 is set** (NEXT-RUN; the owner's 12 hours): `seed 60 tag2 12h widths noevolved then experiment
-  compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the clean anchoring test. The owner starts it
-  when seed 59's chain has finished, with this bundle; seed 59's archive is processed alongside.
-- **Seed 59 is running** (started from the Iteration 384 bundle; 385's bundle has NEXT-RUN none - into ~/Downloads
-  only after seed 59's chain has finished). Its line (the owner's 12 hours): `seed 59 tag2 12h widths nocarry then
-  experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8` - the anchoring test as first
-  specified (Iteration 373), separating the two concerns of item 4c, and the first chain on the new remote path
-  (below). Its predictions: the end of results/predictions.md.
-- **The run no longer waits for the network** (Iteration 379, the owner noticed): remote-checks.sh start
-  ran in the seed step before the evolution, copying and starting each host's check synchronously -
-  seed 57's run waited 52 minutes (the sampling 14, dream's three copies ~3 each, the Tegra's 38 - for a
-  7 MB bundle). Now only the sampling comes first; remote/launch.sh copies and starts in the background,
-  one SSH connection a host (ControlMaster). From seed 59's chain - its first real use; seed 58 started on the old path and waited 55 minutes (the checks 03:17:26, the run 04:12:39). The
-  owner measured `ssh rage.lan true` at 0.24 s (Iteration 380): not the connection's setup - the copy's
-  throughput, 7 MB in ~38 min to the Tegra (~3 KB/s) and ~3 min a check to dream; to test, `time scp` of a
-  few MB to each host. The run no longer waits for it either way.
-  **Probes** (Iteration 381, the owner): each connection timed at the probe, each copy timed with its
-  bytes, and each host's load at its check's start (CPUs, load average, the busiest processes) and every
-  30 s while it runs - appended to the host's report (remote/HOST-HOW.md) at gather. From seed 59's chain.
-- Seeds 49-52 processed: 49 not small (+4.0%), 50 small (+0.4%), 51 small (+1.7%), 52
-  small (Iteration 310: +0.5%; 2@ on 77 of the front, > on 3, alignhot on none; heldout
-  0.937). Seed 52's database: two designs dead on the corpus - a JIT fault (open item 0a).
-- **The after-seed-51 batch is applied** (Iteration 300 - results/applied-after-seed51/
-  ORDER.md): alignhot; > and 0= as opcodes. New genes: the stopping rule counts afresh.
-- Seed 47 was small by all five measures (Iteration 269). The Q-best design of
-  all runs (session 42): seed 43's 19510c7689.
+- master: Iteration 396.
+- **The runs**: seed 59 running (`seed 59 tag2 12h widths nocarry`, Iteration 384's bundle - seed 58's replicate with
+  the tag-2 requirement the designed difference, the same evolved founders); then seed 60 (NEXT-RUN's line, 12 h,
+  `noevolved` - the clean anchoring test); then seeds 61 and 62 (6 h each, seed 60's start - the replicates; their two
+  commands in NEXT-RUN's comment). Predictions for all four: the end of results/predictions.md.
+- **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
+  where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
+  kept, its speed from both CPUs). Pending: the after-seed-62 batch, the fast gate - apply it only at seed 62's
+  processing, so seeds 60-62 run one evolver.
+- **The latest processed: seed 58** (Iteration 384): not small at either width, by its gains - free of the tag-2
+  requirement, plain CV8 took the small end (-10.5% bytes) and 32 bits (+21.5%). Every run's extremes:
+  results/progress-by-run.md.
+- **The remote checks**: from seed 59's chain the copying runs in the background and each host's report ends with
+  the probes' lines - the connection, the copy's KB/s, the load (Iterations 379-381); seed 59's archive is their
+  first real use.
+- **The method since Iteration 386** (results/review-methodology-386.md, its proposals all done or queued; the
+  follow-ups verdict-audit-388.md, convergence-seed58.md, tools-audit-394.md): the verdict from both CPUs, the fast
+  gate, heldout's top-end lines, review-checks.py's progress and spread, process-seed.sh and batch-check.sh.
 
-## Processing a returned seed (as done for seed 47, Iteration 269)
+## Processing a returned seed
 
-**First** (Iteration 395): `sh lab/evolve/process-seed.sh <the chain archive>` as claude - it unpacks, runs the
-pack's checks, the verdict as printed and from both CPUs, seed-facts, heldout, progress and the remote checks'
-agreement, every output in a file under /tmp/process and about a screen in /tmp/process/summary.md: read that,
-and the files only where it points (results/tools-audit-394.md tested it on seed 58's archive).
-
-About 20 minutes of machine time for build, tests and gates.
-
-1. Unpack both packs into /tmp; `tests.log` PASS, `validate.log` 7 IDENTICAL,
-   `jail.log` PASS, `next-run.log` times; `git apply -R --check` the pack's
-   `results-measured-here.patch` (the laptop's stash, already on master).
-2. The comparison's "Judging the runs": fastest, smallest, memory (+-8 KB),
-   hypervolume, best Q - small only if all five are; a positive figure is the run AHEAD. The Q-best of all
-   runs. Then `python3 lab/evolve/review-checks.py verdicts results/compare-fronts-amd-ryzen-7-pro-8840hs.md`
-   after the session is appended (step 7): from seed 60's session on, the printed verdict reads both CPUs (the owner,
-   389); for one printed by older code (seed 59's) the check's "both CPUs" line is the verdict by that rule, and
-   its per-CPU lines show how far noise moves it (Iterations 388-389, results/verdict-audit-388.md).
-3. `python3 lab/evolve/seed-facts.py <pack>/db.jsonl <pack>/report.md` - every late gene
-   on the front, and the format-10 words, since Iteration 299.
-   Then `python3 lab/evolve/review-checks.py progress <pack>/db.jsonl` (Iteration 392): diversity by generation
-   and the last gains - say if diversity falls or the gains stop early, the signs of a search stuck.
-   Then `python3 lab/evolve/heldout.py results/evolve-...-seedN.md` - the held-out (its top-end lines, Iteration 390: the Spearman over the fastest third and tenth, and the regret)
-   check (Iteration 305): Spearman about 0.94 on seeds 49-51; say if it falls.
-4. Score the predictions, write the next (`results/predictions.md`).
-5. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a
-   `---`, then report.md - the gate and ans-check read genomes from it.
-6. Apply the pending batch per its ORDER.md (reseed with `tools/reseed.sh` only
-   when a patch changes `forth/kernel.4`), then ONE background chain: build
-   (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh`
-   (PASS; 31 generator paths), `python3 lab/evolve/evolve.py --validate` (7 of 7
-   IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - the laptop's fourth
-   check; the VM runs all four before a bundle goes to the laptop, Iteration
-   129), `python3 lab/evolve/gate.py <results file> <compare
-   pack>/compare-fronts.md` (152 of 152 for seed 47), `python3
-   lab/evolve/ans-check.py --ids <every fourth of the front by size, and its
-   extremes>` (33 designs, 2.5 minutes; 0 differ, its negative control caught).
-7. `git mv results/pending results/applied-after-seedN`, and the documents citing the moved files
-   follow them (Iteration 372: 62 citations had been left at results/pending/):
+1. `sh lab/evolve/process-seed.sh <the chain archive>` as claude (Iteration 395): every output in a file under
+   /tmp/process, about a screen in /tmp/process/summary.md - read that, the files only where it points. It covers
+   the pack's own checks (tests PASS, validate 7 IDENTICAL, jail PASS; its results-measured-here.patch is the
+   laptop's own re-measures, not applied), the verdict as printed and from both CPUs, seed-facts.py, heldout.py,
+   review-checks.py progress and the remote checks' agreement.
+2. Judge it. The verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
+   by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
+   positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
+   (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
+   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all.
+3. Score the predictions, write the next (`results/predictions.md`).
+4. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a `---`, then report.md - the gate and
+   ans-check read genomes from it; results/xcheck-seedN.md from the remote reports.
+5. A batch due now (its ORDER.md says when): `tools/batch-check.sh` first (one line), then apply it (reseed with
+   `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
+   files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
+   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS), `python3
+   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive), `python3 lab/evolve/ans-check.py
+   --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
+   minutes.
+6. The records. A batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
+   (Iteration 372: 62 had been left behind):
    `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
-   (N the seed: the current pending/ is the next batch's and keeps its name); append the session to
-   `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
-   Iteration I: seed N and seeds ...", the verdict line, then the pack's
-   compare-fronts.md); `python3 lab/evolve/progress-table.py >
-   results/progress-by-run.md`; NEXT-RUN (the owner's hours, and a comment for
-   the iteration); this file; a PROGRESS entry; then "Before a chat's turn ends".
+   (N the seed). The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
+   Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
+   lab/evolve/progress-table.py > results/progress-by-run.md`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
+   chat's turn ends".
 
 ## The owner's standing decisions
 
@@ -256,46 +159,21 @@ About 20 minutes of machine time for build, tests and gates.
   reproduce the tested files; batches wait in `results/pending/` with ORDER.md. `tools/batch-check.sh` runs that test (Iteration 394).
 - Run lengths are the owner's - ask for each run's hours (seed 48: 6).
 
+- **Superinstructions kept for now** (Iteration 389), though they buy nearly nothing: 0.27% of dispatches with the
+  JIT off, 0.9% with it on, bytes either way (results/supers-knockout-seed58.md).
+
 ## Open items (roughly by value)
 
 Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
-0. **Seed 59's archive, and seed 60.** Process seed 59 when its archive comes - the batch already applied (step 6:
-   no batch to apply; its checks on master) - and judge it by the owner's rule of 389: its comparison ran the
-   older code (cpu 2 only), so the "both CPUs" line of `review-checks.py verdicts` is its verdict. It is a
-   replicate of seed 58 with the requirement as the designed difference (the same evolved founders, ~55 minutes
-   more evolution). Seed 60 (noevolved, 12 h) is the clean anchoring test: its predictions at the end of
-   results/predictions.md, read by the review's 3c - a gain anywhere is evidence of anchoring, none is not.
-   **Then the replicates** (the owner, Iteration 393): seeds 61 and 62, seed 60's start, 6 hours each, each its own
-   command (NEXT-RUN's comment has them) - processed with `review-checks.py spread <60's db> <61's> <62's>` at one
-   generation, their predictions at the end of results/predictions.md. At seed 62's processing apply the
-   after-seed-62 batch (the fast gate; do not apply it before); seed 63 is the first run with it -
-   `review-checks.py curse` on its report shows whether the fast end's optimism falls (seed 58's fastest tenth:
-   1.112).
-0e. **The review's proposals** (results/review-methodology-386.md, section 6; the owner's calls): the session's
-   speed from both CPUs - **done, the owner's (389)**, the per-CPU verdicts from review-checks.py (audited at 388: 14 of 16 past verdicts agree between
-   the CPUs, no decision turned on the two that do not; results/verdict-audit-388.md); re-measure before admitting to the fast end - **built, the owner's (391)**: the fast gate, pending after seed 60; top-end agreement beside
-   every Spearman; the verdict table's sign labelled and the 32-bit fastest kept by --frontier (done, pending patch 4);
-   replicates for configuration questions; "converged within the requirement" in verdicts.
-0d. **Two faults the free encoding found** (Iteration 384) - **fixed in the after-seed-59 batch** (Iteration 385):
-   (a) is all three of seed 58's compile deaths (clang's "3 errors generated." too: its third), opcall_on()
-   asking for tag2 without bytehdr, unlike jit_on() and t2wide_on(); (b) why() keeps the first error now. The
-   ARM link failure itself: not regpin (inert on ARM - its engine code is x86-64 only) nor lto - on the Tegra
-   lto=1 built three times, lto=1 with regpin=1 once (dfd14a3b70); not reproduced here (a cross build stops at
-   the x86 runtime without Iteration 330's harness). Seed 60's chain checks seed 59's front with the new why():
-   a recurrence will name its cause (Iteration 390). As found:
-   (a) tag-2 with bytehdr=0 and opcall does not compile - `L_t2call4` used but not defined (vm-opcall-bodies.h;
-   2 of seed 58's designs, both by a mutation to bytehdr=0), a combination require() held off (it sets tag2 and
-   bytehdr together); (b) on the Tegra three of seed 57's designs did not link, two of them front designs with
-   regpin=1 and lto=1 - and xcheck kept only ld's last line, not the failing program's own words (lesson, 283).
-1. **Superinstructions - kept for now (the owner, Iteration 389)**, though they buy nearly nothing. With the JIT
-   off (388, the interpreter as at 32 bits): 0.27% fewer dispatches at the median, at best 0.9%, and +24 to +735
-   bytes in every design - the JIT build's byte savings were layout; below selection's 2% tie either way. At 385:
-   (the rule of 368; results/supers-knockout-seed58.md, lab/evolve/supers-knockout.py). Seed 58: 73 of 74 tag-2
-   front designs build pairs; over 19 knocked out, 0.9% fewer dispatches at the median (to 2.5%), -1,024 to +719
-   bytes (smaller with pairs in 6). Under 1% of time, inside selection's 2% speed tie - its time the laptop's to
-   measure, if wanted (evolve.py --knockout). 2 of 19 carry pairs that never execute (+112, +216 bytes).
+0. **Seeds 59-62** (the state, above), each by the routine. Seed 60 answers the anchoring question (read by
+   results/review-methodology-386.md, 3c: a gain anywhere is evidence of anchoring, none is not); seeds 61-62 how far
+   runs of one start spread. Then the fast gate: seed 63 its first run - `review-checks.py curse` on its report shows
+   whether the fast end's optimism falls from seed 58's 1.112.
+0d. **The Tegra's link failures** (seed 57's 5405c5b1d9 and df0c11fd98, and a rejected design): not regpin (inert on
+   ARM), not lto (it built there three times); seed 60's chain checks seed 59's front with the new why() - a
+   recurrence will name its cause. Not reproducible here: a cross build needs Iteration 330's qemu harness, untracked.
 2. **Generalization** (results/generalization.md, Iteration 305): selection is measured on small
    programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
    build: a held-out workload whose code footprint grows - generated programs of N words, hot and run
@@ -316,45 +194,21 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    The owner's call: on, or park for good.
 4. **Fewer dispatches - the front end's lever** (Iterations 297, 301): the evolved interpreted designs
    stall on the dispatch's indirect jump, not the caches. Superinstructions were that lever on paper,
-   and in tag-2 designs never in fact (item 1). Calls and returns are 15-25% of mispredictions; the
+   and in tag-2 designs never in fact (the standing decisions: superinstructions). Calls and returns are 15-25% of mispredictions; the
    JIT's ackermann misses past the return predictor's depth - a candidate gene, not built
    (results/missmap-amd-ryzen-7-pro-8840hs.md). The IP-update loop form set aside
    (results/drafts/iploop-plan.md).
-4b. **The simplicity review, after seed 58** (results/drafts/gene-usage-53-56.md, Iteration 372; seed 57
-   added jitvar never taken, jitimg on 5 of 200): over
-   seeds 53-56's 722 front designs, msc, scale and tail never on; eight genes under 10% of every front;
-   ten on in every design by choice - tag2 and bytehdr too, but imposed (--require tag2, every run since
-   Iteration 71), not chosen. Seed 57's two widths first, and the anchoring and constraint tests
-   (item 4c) before any gene is frozen - freezing would make an anchoring permanent. Then each
-   never-chosen mechanism out or kept, each always-on gene frozen or kept: the owner's call.
-4c. **Is the search anchored?** (the owner's question, Iteration 373). Two tests for the owner's
-   hours, after seed 57: the anchoring test again with today's genes - `seed 58 tag2 12h widths
-   nocarry` (or fromzero), its front against the carried ones by compare-fronts.py; seed 36 (Iteration
-   123, 2 h 40 min) found no anchoring with the genes of then. And the constraint test - a run without
-   `tag2`, so the search may choose the encoding; tag2 costs 36% at 32 bits (results/drafts/skew-32.md).
-   **Seed 58 is both at once** (the owner, Iteration 374): from scratch and without the requirement, at
-   both widths. Back in the carried region with tag2 chosen: neither concern holds. Elsewhere: a
-   follow-up run separates them (nocarry with tag2, or carried without). **Seed 58's answer** (Iteration 384):
-   elsewhere - the constraint concern holds (plain CV8 took the small end and 32 bits, where the requirement
-   kept the carried runs out); anchoring not separated. Seed 59 is the follow-up: nocarry with tag2. Neither tag2
-   nor bytehdr is a gene to freeze (item 4b): free, the search chooses by objective. **The owner's worry of a
-   local minimum, mapped** (Iteration 392, results/convergence-seed58.md): five sources, each its own test -
-   a constraint (seed 58: real), the carry (seed 60), one start for every run (seeds 58-60's three starts;
-   replicates proposed), collapse inside a run (seed 58: none - diversity holds and rises, gains to generation
-   130), the gene set's edge (only new mechanisms pass it).
-   Reading it in genes: `python3 lab/evolve/gene-usage.py <seed 58's db> --vs results/evolve-*-seed5[3-7].md`
-   - two consecutive carried runs (seeds 55, 56) differ by up to 17 points a gene: the scale to read it by.
-4d. **Weighing results across machines** (the owner's question, Iteration 376;
-   results/drafts/cross-machine-weighing.md - proposed): selection on the laptop, other machines as the
-   generalization test; a disagreement diagnosed (noise, width, gene) before it is weighed; the final
-   generic choice by the geometric mean over machine classes with a veto; and the blind spot tested -
-   xcheck samples only the laptop's front, so a design good on the Tegra and rejected by the laptop is
-   never seen: a sample of rejected designs measured elsewhere. **First run in seed 58's chain** (Iteration 384, seed 57's
-   rejected designs): none faster on any host than the front's fastest - no blind spot by this sample
-   (results/xcheck-seed58.md). **Decided (the owner, Iteration 377):
-   three classes, equal** (GOALS.md); the margin proposed 25%. **The test is built** (xcheck --rejected;
-   REMOTES: the Tegra 4 of 16, dream at 32 bits 6 of 30) - it runs in seed 58's chain, on what seed 57
-   rejected: the report's line "Rejected by the laptop's selection, measured here" answers it.
+4b. **The simplicity review** (results/drafts/gene-usage-53-56.md, Iteration 372): never-chosen mechanisms - msc,
+   scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call, after seed
+   60's anchoring answer (freezing would make an anchoring permanent). Not tag2 or bytehdr: free, the search chooses
+   by objective (seed 58).
+4c. **A local minimum?** (the owner, Iterations 373 and 392; results/convergence-seed58.md maps five sources to their
+   tests): a constraint - real (seed 58); the carry - seed 60; one start for every run - seeds 58-62; collapse inside
+   a run - none in seed 58; the gene set's edge - only new mechanisms pass it (item 4). Gene usage against seeds 53-57
+   by gene-usage.py; two consecutive carried runs differ by up to 17 points a gene.
+4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
+   machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
+   none faster on any host than the front's fastest (results/xcheck-seed58.md).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.
