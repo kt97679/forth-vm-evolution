@@ -48,10 +48,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 406.
-- **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Next seed 61
-  (NEXT-RUN's line, 11 h - the owner, 406), then seed 62 (6 h, its command in NEXT-RUN's comment, ending `then
-  experiment footprint.py` - item 2, the owner at 397): the replicates, seed 60's start. Predictions for all: the end of
+- master: Iteration 407.
+- **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
+  (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); NEXT-RUN none until the
+  owner gives seed 62's hours (its command in NEXT-RUN's comment, ending `then experiment footprint.py` - item 2, the
+  owner at 397): the replicates, seed 60's start. Predictions for all: the end of
   results/predictions.md.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
@@ -190,8 +191,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 0d. **The Tegra's build failures - named** (Iteration 406, results/xcheck-seed60.md): not the linker but the
    assembler, `bad immediate value for offset (5224)`. Every one of the 14 that failed in seeds 58-60's chains has
    alignhot 32 or 64, every one of the 28 that built 0 or 1 - most likely GCC's ARM literal pools placed without the
-   padding that alignment adds, a load then past its 4 KB reach (the fsys lead was a correlate). Proposed, not built:
-   alignhot left out of an ARM build, as the JIT is of a 32-bit one - the owner's call.
+   padding that alignment adds, a load then past its 4 KB reach (the fsys lead was a correlate). Built (Iteration 407, the
+   owner): alignhot left out of a 32-bit ARM build (evolve.py's ccflags, ARM32), as the JIT is of a 32-bit one - in master,
+   the laptop's and dream's builds unchanged; seed 62's chain is the first to check it on the Tegra.
 2. **Generalization** (results/generalization.md, Iteration 305): selection is measured on small
    programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
    build: a held-out workload whose code footprint grows - generated programs of N words, hot and run
@@ -236,6 +238,13 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
    machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
    none faster on any host than the front's fastest (results/xcheck-seed58.md).
+4e. **Mechanisms not yet genes** (Iteration 407: lab/evolve/GENES.md's "Not yet" and the open items). A register
+   machine - stack-to-register translation, priced at Iterations 29 and 32 as the largest prize (38-50% of the front's
+   dispatches moves or lone literals); only its first stage's patterns live on, as folds and specialisations.
+   Translation to direct threading at load (gforth's hybrid, Wasm3's M3): the compact image expanded at start. The
+   interpreter's returns predicted - calls and returns 15-25% of its mispredictions (results/missmap-*.md); the JIT's
+   is built (jitret). The search's own escape - islands or immigrants - after the replicates (Iteration 393's
+   prediction 4). Priced out: indirect threading (Iteration 29); deferred: ?STACK (item 5).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

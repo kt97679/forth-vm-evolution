@@ -7892,3 +7892,25 @@ evolution, past seed 60's 138 generations, so the replicates read at one generat
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed60.md, results/xcheck-seed60.md (new); results/compare-fronts-amd-
 ryzen-7-pro-8840hs.md, results/predictions.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN,
 HANDOFF.md.
+
+## Iteration 407 - 2026-10-19 - Claude
+
+**The Tegra's builds fixed in master: alignhot left out of a 32-bit ARM build; the genes not yet built, listed; the
+latest results' action items.** Seed 61 started (the owner, 16:26, from Iteration 406's bundle at ed674ec - 11 hours).
+
+The fix (the owner: yes): evolve.py's ccflags adds alignhot's -falign-jumps, -labels and -functions only off 32-bit ARM
+(ARM32: the host's machine armv*) - all 14 of seeds 58-60's Tegra failures, the assembler's bad immediate offset, had
+alignhot 32 or 64. Checked here: with alignhot 64 the x86 flags keep it and an ARM32 build's lose it, the rest the
+same; run-tests PASS and validate 7 of 7 IDENTICAL at this commit. In master, not the pending batch: it changes no
+x86 build, so seeds 60-62 still evolve with one evolver; seed 62's chain is the first to try it on the Tegra (the
+prediction in results/predictions.md).
+
+The inventory (the owner: are all the genes in?): not yet - a register machine (the largest prize priced), translation
+to direct threading at load, the interpreter's return prediction, and the search's own escape (islands, immigrants) -
+HANDOFF item 4e. Action items from seed 60: the simplicity review (4b) is now the owner's to call - the anchoring answer
+is in; the tag-2 requirement's cost (11% above the small end, seeds 59 and 60) for seed 63's command; dream's 32-bit
+ranking (0.370, and -0.257 against the laptop's own 32-bit speeds, over 6) wants a larger sample before it is read.
+
+NEXT-RUN: none until the owner gives seed 62's hours - so this bundle, pulled, cannot start seed 61 again.
+
+Files: lab/evolve/evolve.py, lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF.md.

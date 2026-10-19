@@ -751,12 +751,17 @@ def CC(g):
     """Iteration 262: the compiler the gene names - GCC as cc, or clang."""
     if express(g).get('tailpn'): return clang_pn()       # Iteration 293: clang 19+, for preserve_none
     return 'clang' if express(g).get('compiler') else 'cc'
+ARM32 = os.uname().machine.startswith('arm')   # Iteration 407: a 32-bit ARM host - the Tegra (armv7l)
 def ccflags(g):
     if express(g).get('compiler'):          # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
         return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()] + _EXTRA_CFLAGS
     f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
     if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
-    if g.get('alignhot'): f += ['-falign-jumps=%s' % ALIGNV[g['alignhot']], '-falign-labels=%s' % ALIGNV[g['alignhot']],
+    # Iteration 407 (open item 0d): not on 32-bit ARM - there GCC places the engine's literal pools without the padding
+    # these alignments add, and a load lands past its 4 KB reach: the assembler's 'bad immediate value for offset', all
+    # 14 of seeds 58-60's Tegra failures alignhot 32 or 64, all 28 that built 0 or 1. Left out of that build, as the JIT
+    # of a 32-bit one; the laptop's and dream's builds as before.
+    if g.get('alignhot') and not ARM32: f += ['-falign-jumps=%s' % ALIGNV[g['alignhot']], '-falign-labels=%s' % ALIGNV[g['alignhot']],
                                 '-falign-functions=%s' % ALIGNV[g['alignhot']]]   # Iteration 298: a handler's entry - a computed goto's
                                 # target, or a tail engine's function - on a fetch window's start
     return f + _EXTRA_CFLAGS

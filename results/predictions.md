@@ -629,3 +629,9 @@ seed 60's 138 generations; Iteration 393's predictions for the replicates stand,
 1. Its chain's Tegra (checking seed 60's front): every design that fails to build there has alignhot 32 or 64, the
    assembler's bad immediate offset; every one with alignhot 0 or 1 builds.
 2. At 32 bits the same two death classes, bfind without tos and tail, and no other.
+
+## Seed 62's chain on the Tegra - predicted (Iteration 407)
+
+With alignhot left out of a 32-bit ARM build (master, Iteration 407), every design of seed 61's front sampled for the
+Tegra builds there - none fails on the assembler's bad immediate offset. Seed 61's own chain, at ed674ec, checks seed 60's
+front without the fix: its failures there alignhot 32 or 64 (Iteration 406's prediction 1).
