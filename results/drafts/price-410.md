@@ -73,3 +73,13 @@ alive with and without it (results/drafts/iplustag-alive-412.py). batch-check, t
 
 Next, the same question for the rest of that table: on the tag a pair whose fused opcode is escaped is dropped too -
 how many of a front design's run-time pairs survive there.
+
+## The rest of the table (Iteration 413): nothing else dropped
+
+The converter instrumented to report its run-time pair table on the tag - the entries it keeps and the ones it drops
+for an escaped opcode (results/drafts/t2pairs-instrument-413.patch, LAYOUT_T2PAIRS) - and 24 of seed 60's front built
+with the after-seed-62 batch, every seventh by speed (results/drafts/t2pairs-413.py). 21 build no run-time pair table:
+rtfuse off, or no overlay to carry one - the JIT designs among them compile their hot code natively. The 3 with rtfuse
+(ea9c6e26f3, f488dd96e1, 8452b72e8c) carry 4, 1 and 3 entries, and the tag keeps every one. I+'s was the only entry
+lost so - the one opcode the image's own code never uses. Run-time fusion is rare on this front and its tables small,
+as the standing decision on superinstructions on the tag would lead one to expect: nothing further to fix here.

@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 412.
+- master: Iteration 413.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -253,7 +253,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    workload (kernel 21%, corpus 24%, loop 40%, bubble 46%, ackermann 19%). The lead: I, the loop index - 20% of loop's
    dispatches, 26% of bubble's - whose fusion rtiplus was expressed but never fired on the two-bit tag (411) - fixed
    (412, patch 11): I+ escaped on the tag, so its entry in the run-time fuser's table was dropped; pinned to one byte,
-   the loop's dispatches fall 20%. Next: how many of a tag-2 design's other run-time pairs the table drops so. The search's own escape - islands or immigrants - after the replicates (Iteration 393's
+   the loop's dispatches fall 20%. And the rest of the table (413): none dropped -
+   24 of seed 60's front sampled, 3 with a run-time table (1-4 entries each), every entry kept. The search's own escape - islands or immigrants - after the replicates (Iteration 393's
    prediction 4). Priced out: indirect threading (Iteration 29); deferred: ?STACK (item 5).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism

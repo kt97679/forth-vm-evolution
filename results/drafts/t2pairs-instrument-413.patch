@@ -1,0 +1,24 @@
+diff --git a/tools/layout.py b/tools/layout.py
+index ec933e5..bd3780c 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1437,6 +1437,7 @@ def emit(path):
+             if '--rtfuse' in ARGV and 'I+' in G['X_OPS10'] and 'I' in G['X_OPS10']:
+                 tests = [(G['X_OPS10']['I'], op('+')[0], G['X_OPS10']['I+'])] + tests
+             pairs = pairs[:24 - len(tests)]      # the table's room (forth/cv8-fuse.4); the rest fused in the image only
++            G['_ST_LABELS'] = [('I+' if e[2] == G['X_OPS10'].get('I+', -1) else 'test') for e in tests] + ['%s %s' % (a, b) for (a, b), f in pairs]   # Iteration 413: a measurement's
+             data = bytes([len(tests) + len(pairs)] + [x for e in tests for x in e]
+                          + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
+             assert len(data) <= 73, "superinstruction table overflows"
+@@ -1450,6 +1451,11 @@ def emit(path):
+             elif w['n'] == 'FOLD-TABLE': data = bytes([0])
+             elif w['n'] == 'SUPER-TABLE':
+                 _t = [tuple(data[1 + 3 * i:4 + 3 * i]) for i in range(data[0])]
++                _keep = [all(x in T2MAP['one'] for x in e) for e in _t]
++                if _os.environ.get('LAYOUT_T2PAIRS'):   # Iteration 413: which run-time pairs the tag keeps
++                    _l = G.get('_ST_LABELS', ['?'] * len(_t))
++                    open(_os.environ['LAYOUT_T2PAIRS'], 'w').write('entries %d kept %d\nkept: %s\ndropped: %s\n' % (len(_t), sum(_keep),
++                        ', '.join(l for l, k in zip(_l, _keep) if k), ', '.join(l for l, k in zip(_l, _keep) if not k)))
+                 _t = [tuple(T2MAP['one'][x] for x in e) for e in _t if all(x in T2MAP['one'] for x in e)]
+                 data = bytes([len(_t)] + [x for e in _t for x in e])
+             elif w['n'] == 'LOOPTAB':

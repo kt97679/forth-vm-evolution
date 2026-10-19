@@ -8011,3 +8011,19 @@ design (results/drafts/price-410.md, "Fixed").
 
 Files: results/drafts/iplustag-alive-412.py, results/pending/iplustag-after-seed62.patch (new); results/drafts/
 price-410.md, results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 413 - 2026-10-19 - Claude
+
+**The tag drops no other run-time pair: I+ was the only one.** The owner: proceed - the follow-up of 412. The converter
+instrumented in a scratch clone to report its run-time pair table on the tag, kept and dropped (results/drafts/
+t2pairs-instrument-413.patch); 24 of seed 60's front built with the after-seed-62 batch, every seventh by speed
+(results/drafts/t2pairs-413.py). 21 build no run-time pair table - rtfuse off, or no overlay to carry one; the 3 with
+rtfuse carry 4, 1 and 3 entries, all kept. I+'s entry was the only casualty: the one opcode the image's own code never
+uses. Run-time fusion is rare on the front and its tables small - nothing further to fix (results/drafts/price-410.md).
+
+What remains waits for the runs: seed 61's archive (the replicates' second, the Tegra still failing as predicted), seed
+62's (the Tegra fix's first test, dream's larger 32-bit sample, the replicates read together, the eleven-patch batch
+applied), then seed 63, free of the tag-2 requirement.
+
+Files: results/drafts/t2pairs-413.py, results/drafts/t2pairs-instrument-413.patch (new); results/drafts/price-410.md,
+HANDOFF.md.
