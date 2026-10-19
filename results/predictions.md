@@ -572,3 +572,13 @@ own fronts at generations 40, 80 and 133 differ by 5-6 points of gene usage betw
 2. jithelp and jitre (the owner: try them) on under 10% of seed 63's front: by jitleft.py they buy little (the
    kernel's interpreted share 53.7% to 53.6%) for 4.5 KB - if so, out again after it.
 
+
+## Seed 59, scored (Iteration 398)
+
+Seed 58's start with the tag-2 requirement (results/evolve-amd-ryzen-7-pro-8840hs-seed59.md). **3 met, 1 met but for a clause, 1 missed.**
+
+1. **Met.** Small by the five 64-bit measures, from both CPUs and from each alone. Read by the review's 3c: no evidence of anchoring at this budget - and with seed 58's evolved founders, little weight either way.
+2. **Met.** Its smallest 15,915 bytes: 1.8% above the carried tag-2 runs' 15,633, 12.5% above seed 58's plain-CV8 14,146.
+3. **Missed.** Its fastest at 32 bits 0.344, 11% behind seed 58's 0.310 - not the 15% predicted.
+4. **Met.** No L_t2call4 death - no compile death at all at 64 bits.
+5. **Met but for its last clause.** The run six minutes after the checks started (seed 58: 55); every report ends with the probes. But the Tegra's copy ran at 7,219 KB/s, not a few KB/s: its long wait is its own build.

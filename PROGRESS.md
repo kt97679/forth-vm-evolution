@@ -7666,3 +7666,33 @@ Predictions for the footprint step and the two genes written.
 
 Files: results/pending/jithelp-after-seed62.patch, results/pending/jitre-after-seed62.patch (new);
 results/pending/ORDER.md, lab/evolve/NEXT-RUN (comment), results/predictions.md, HANDOFF.md, tools/batch-check.sh.
+
+## Iteration 398 - 2026-10-19 - Claude
+
+**Seed 59 processed - small at both widths, the tag-2 requirement's cost replicated; the probes answer the network
+question; a fifth of its front dies on the corpus at 32 bits.** By process-seed.sh first (its summary: 79 lines).
+
+Seed 59 - seed 58's start with the requirement the designed difference - from both CPUs: fastest +1.2%, smallest
+-11.12%, memory -4 KB, hypervolume +0.4%, best Q -4.1%, small on each CPU alone too; at 32 bits -9.2%. Against seed
+58 the small end +12.5% (15,915 bytes), 32 bits +11% (0.344), the 64-bit fast end alike: the requirement costs those
+two ends and only them. From inside: diversity holds (0.516), but the gains stopped at generation 88 of 143 (seed
+58, free, to 130). Held out 0.909, its fastest tenth 0.123, the regret +8.7%. Predictions: 3 met, 1 met but for a
+clause, 1 missed (32 bits 11% behind seed 58, not 15%).
+
+The new remote path's first chain: the evolution six minutes after the checks (seed 58: 55; 8 h 55 min of
+evolution against 8 h 01). The probes: every copy 8.2-8.6 MB in 0-1 s (the Tegra 7,219 KB/s); the Tegra's long wait
+is its own start, about 36 minutes - its build - which Iteration 380 had put on the copy. The checks of seed 58's
+front: dream 0.959 / 0.963, at 32 bits 0.651, the Tegra 0.709 - against the laptop's 64-bit speeds, which rank a
+two-encoding front poorly at 32 bits (open item 0g); no rejected design faster than the front's fastest anywhere.
+
+The fault (open item 0f): 34 of the front's 171 "died: corpus" as 32-bit engines - all jit=1, scale=0, tos=0; 2,057
+in the database, and 326 that did not compile at 32 bits. Their 64-bit engines are sound, and a missing 32-bit
+speed counts as the worst (Iteration 336), so they hold the front by their 64-bit objectives. Seed 58's front had
+none. The fault for the next chat; whether a design wrong on one machine class is dead, the owner's.
+
+Gates at this commit: gate.py alive 289 of 289 (the run's front 171, the joint front 122, 4 in both); ans-check on
+44 - 0 differ, its negative control caught.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed59.md, results/xcheck-seed59.md (new); results/predictions.md,
+results/compare-fronts-amd-ryzen-7-pro-8840hs.md (Session 53), results/progress-by-run.md, results/README.md,
+HANDOFF.md.

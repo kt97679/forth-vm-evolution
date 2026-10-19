@@ -48,21 +48,22 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 397.
-- **The runs**: seed 59 running (`seed 59 tag2 12h widths nocarry`, Iteration 384's bundle - seed 58's replicate with
-  the tag-2 requirement the designed difference, the same evolved founders); then seed 60 (NEXT-RUN's line, 12 h,
-  `noevolved` - the clean anchoring test); then seeds 61 and 62 (6 h each, seed 60's start - the replicates; their two
-  commands in NEXT-RUN's comment, seed 62's ending `then experiment footprint.py` - item 2, the owner at 397). Predictions for all four: the end of results/predictions.md.
+- master: Iteration 398.
+- **The runs**: seed 59 processed (Iteration 398); next seed 60 (NEXT-RUN's line, 12 h, `noevolved` - the clean
+  anchoring test), then seeds 61 and 62 (6 h each, seed 60's start - the replicates; their commands in NEXT-RUN's
+  comment, seed 62's ending `then experiment footprint.py` - item 2, the owner at 397). Predictions for all: the end of
+  results/predictions.md.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
   jitre (the owner, 397: try them) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
-- **The latest processed: seed 58** (Iteration 384): not small at either width, by its gains - free of the tag-2
-  requirement, plain CV8 took the small end (-10.5% bytes) and 32 bits (+21.5%). Every run's extremes:
-  results/progress-by-run.md.
-- **The remote checks**: from seed 59's chain the copying runs in the background and each host's report ends with
-  the probes' lines - the connection, the copy's KB/s, the load (Iterations 379-381); seed 59's archive is their
-  first real use.
+- **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
+  requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
+  requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
+  bits. Every run's extremes: results/progress-by-run.md.
+- **The remote checks**: on Iteration 379's path since seed 59 - the evolution six minutes after the checks (seed
+  58: 55), and the probes answered the owner's question of 379-381: the copies take a second (the Tegra 7,219 KB/s);
+  the Tegra's long wait is its own build, about 36 minutes, now in the background.
 - **The method since Iteration 386** (results/review-methodology-386.md, its proposals all done or queued; the
   follow-ups verdict-audit-388.md, convergence-seed58.md, tools-audit-394.md): the verdict from both CPUs, the fast
   gate, heldout's top-end lines, review-checks.py's progress and spread, process-seed.sh and batch-check.sh.
@@ -167,11 +168,19 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 Rewritten at Iteration 369 to the state now (the list before it: git, the commit before Iteration 369);
 under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.md): a generic Forth first.
 
-0. **Seeds 59-62** (the state, above), each by the routine. Seed 60 answers the anchoring question (read by
+0. **Seeds 60-62** (the state, above), each by the routine. Seed 60 answers the anchoring question (read by
    results/review-methodology-386.md, 3c: a gain anywhere is evidence of anchoring, none is not); seeds 61-62 how far
    runs of one start spread. Then the after-seed-62 batch: seed 63 its first run - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's and jitre's share of its front
    whether they stay (the owner: out again if useless).
+0f. **A fifth of seed 59's front dies on the corpus at 32 bits** (Iteration 398): 34 of 171, why32 "died: corpus",
+   all jit=1, scale=0, tos=0 - 2,057 such in its database, and 326 that did not compile at 32 bits; their 64-bit
+   engines sound. Find the fault (a tag-2 design without tos, as a 32-bit engine: which corpus case fails, and why).
+   And a question for the owner: a design wrong on one machine class - dead, or (as now, Iteration 336) only the
+   slowest there, kept on the front by its 64-bit objectives?
+0g. **The 32-bit hosts compared against the laptop's 64-bit speeds** (xcheck.py, its Spearman over 'speed'): for a run
+   selected at both widths the laptop's 32-bit speed is the one to compare (seed 59's checks of seed 58's front: 0.651
+   and 0.709, a two-encoding front ranking differently at 32 bits). A diagnostic, no run waits for it.
 0d. **The Tegra's link failures** (seed 57's 5405c5b1d9 and df0c11fd98, and a rejected design): not regpin (inert on
    ARM), not lto (it built there three times); seed 60's chain checks seed 59's front with the new why() - a
    recurrence will name its cause. Not reproducible here: a cross build needs Iteration 330's qemu harness, untracked.
