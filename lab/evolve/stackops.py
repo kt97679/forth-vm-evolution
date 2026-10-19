@@ -69,7 +69,7 @@ for did in args:
         by = collections.Counter()
         for line in open(pf):
             f = line.split()
-            if f[0] in ('I', 'C'): continue
+            if not f or not f[0].isdigit(): continue   # Iteration 410: I, C, and the profiler's later T (triples) and O lines - not pairs
             a, b, k = int(f[0]), int(f[1]), int(f[2])
             if a == 0x7D or 128 <= b <= 255: continue       # not dispatches (Iteration 13)
             by['call' if b == 256 else name(b)] += k

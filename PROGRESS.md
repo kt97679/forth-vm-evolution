@@ -7951,3 +7951,23 @@ asked then. Predictions for it and the freeze: results/predictions.md.
 
 Files: results/drafts/frozen-check-409.py, results/pending/frozen-after-seed62.patch (new); results/drafts/simplicity-
 proposal-408.md, results/pending/ORDER.md, results/predictions.md, lab/evolve/NEXT-RUN, HANDOFF.md.
+
+## Iteration 410 - 2026-10-19 - Claude
+
+**Two levers for the interpreted designs priced on seed 60's front: handler replication not worth building, the
+register machine's prize shrunk to 0-39% a workload, and a cheaper lead found** (results/drafts/price-410.md). The owner:
+proceed with the remaining items - my pick, the interpreter's return prediction, priced before building.
+
+Handler replication (copies of EXIT and the call handlers, each its own indirect jump): from the laptop's counters,
+compute work mispredicts at most 0.54 a thousand instructions; kernel and corpus lose 6.8-23.6% of their cycles to misses,
+calls and returns 15-25% of those. Removing every one: the six workloads' geometric mean 0.4-1.6% at most - and no
+dispatch removed, where the front end waits on the jump itself (Iteration 301). Not built.
+
+The register machine (stackops.py - its profile parse fixed: the profiler's T and O lines are not pairs): of seed 60's
+three fastest interpreted designs' dispatches, moves and lone literals are kernel 11-13%, fib 7-14%, corpus 12-15%,
+loop 20%, bubble 39%, ackermann 0.1% - seed 5's were 38-50%. Its first stage (regprice.py) saves 3.8-8.1% of the image's
+code on kernel, corpus and parse, and nothing of fib, loop and bubble, whose code is compiled at run time. The lead: R>
+in those run-time-compiled loops, 20-26% of loop's and bubble's dispatches - a run-time fusion's target, cheaper than a
+register machine; priced next.
+
+Files: results/drafts/price-410.md (new); lab/evolve/stackops.py, results/README.md, HANDOFF.md.
