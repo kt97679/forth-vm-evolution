@@ -10,10 +10,12 @@ evolver of seeds 53-59: a change of evolver between them would be read as run-to
 | 1 | fastgate-after-seed62.patch | evolve.py: a child whose speed is under the fast gate - 5% above the 20th fastest design alive so far - is measured again, the same rounds on the engine as built, and its speed is the geometric mean of the two (speed1 and speed2 kept in its record; memory and size the first measurement's). The fast end's in-run speeds were ~10% optimistic, designs admitted on lucky draws (a 3% noise, the best of thousands); twice the rounds where admission is decided. `--fastgate N` sets the 20; 0 turns it off. |
 | 2 | jithelp-after-seed62.patch | The gene jithelp (Iteration 344's draft, results/drafts/jithelp-wip.patch, unchanged): the C primitives the outer interpreter stops at, called from native code (st_call). The owner, Iteration 397: try it - out again if the fronts show it useless. |
 | 3 | jitre-after-seed62.patch | The gene jitre (Iteration 346's draft, results/drafts/jitre-wip.patch, unchanged; needs jithelp): a callee the JIT cannot translate run by the interpreter from native code, not refused. The same decision. |
+| 4 | bfind32-after-seed62.patch | Open item 0f (Iteration 399, results/bfind32-fault-399.md): bf_walk's signature and its mask 64 bits at either width - they were UNS64, the cell, 4 bytes at 4-byte cells, so a name of 4 to 7 characters matched the newest of its length and first three (seed 59: 34 of its front dead on the corpus at 32 bits). engines-check.py: the four bfind variants at tos 0 - on s6's TOS engine they had built no bf_walk - and at 4-byte cells too. No 64-bit engine changes: UNS64 is uint64_t there. |
 
     git apply results/pending/fastgate-after-seed62.patch
     git apply results/pending/jithelp-after-seed62.patch
     git apply results/pending/jitre-after-seed62.patch
+    git apply results/pending/bfind32-after-seed62.patch
 
 Its cost, from seed 58's evaluations replayed through the gate: 1,121 of 24,885 measured children (4.5%) under
 it, their evaluations 4.4% of the evaluation time - an upper bound on the added time, the second measurement
