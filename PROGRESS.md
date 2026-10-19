@@ -7914,3 +7914,25 @@ ranking (0.370, and -0.257 against the laptop's own 32-bit speeds, over 6) wants
 NEXT-RUN: none until the owner gives seed 62's hours - so this bundle, pulled, cannot start seed 61 again.
 
 Files: lab/evolve/evolve.py, lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF.md.
+
+## Iteration 408 - 2026-10-19 - Claude
+
+**Seed 62 at 11 hours queued; dream's 32-bit sample made real; the simplicity review proposed; the tag-2 question for
+seed 63 put.** The owner: 11 hours for seed 62 too, and proceed with the open items.
+
+NEXT-RUN: `seed 62 tag2 11h widths noevolved then experiment footprint.py`, for when seed 61's chain has finished.
+
+dream's 32-bit check measured 10 designs, 4 of them rejected ones: a 4-byte sample took GCC's designs without the JIT
+only, and seed 59's front is half JIT and two-thirds clang - 6 eligible of 171. A prebuilt sample is built on the
+laptop, where clang builds 32-bit engines (Iteration 336): xcheck --sample now keeps GCC-only for a host that builds the
+designs itself (the Tegra) alone. On seed 60's front here: 109 eligible, 10 sampled for --n 12 - 7 clang, 3 GCC - and
+their binaries built (REMOTES asks dream for 30).
+
+The simplicity review (item 4b, the owner's to call now that seed 60 found no anchoring): over seeds 53-60's fronts,
+1,431 designs, bytehdr, doesfar, thinhdr and varcall are on in every design, bss and lean in all but one and two; msc,
+scale and tail in none, tail for a fault. Proposed: freeze the six, remove msc and scale, judge tail after seed 63
+(results/drafts/simplicity-proposal-408.md, results/drafts/gene-usage-53-60.md). And seed 63's command: with the tag-2
+requirement or free - seeds 59-60 ended 11-12% above seed 58's free small end.
+
+Files: results/drafts/simplicity-proposal-408.md, results/drafts/gene-usage-53-60.md (new); lab/evolve/xcheck.py,
+lab/evolve/REMOTES, lab/evolve/NEXT-RUN, results/predictions.md, results/README.md, HANDOFF.md.

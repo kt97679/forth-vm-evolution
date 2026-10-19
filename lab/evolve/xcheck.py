@@ -126,7 +126,10 @@ if '--sample' in ARGS:
     # shared 8 designs, nearly all slow)
     idsf = opt('--ids'); idsd = json.load(open(idsf)) if idsf else None; ids = [d['id'] for d in idsd] if idsf else None
     if cell4:
-        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = gcc = True
+        # Iteration 408: GCC only where the host builds the designs itself (native - the Tegra has no clang); a
+        # prebuilt sample (--bundle) is built here, where clang builds 32-bit engines too (Iteration 336) - so
+        # clang's designs are taken: with them out, dream's 32-bit check of seed 59's front had 6 eligible of 171.
+        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = True; gcc = gcc or not bundle
     if len(ARGS) != 1: sys.exit(__doc__)
     out = ARGS[0]
     sys.argv = [sys.argv[0]]; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E

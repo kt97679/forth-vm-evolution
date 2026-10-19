@@ -635,3 +635,12 @@ seed 60's 138 generations; Iteration 393's predictions for the replicates stand,
 With alignhot left out of a 32-bit ARM build (master, Iteration 407), every design of seed 61's front sampled for the
 Tegra builds there - none fails on the assembler's bad immediate offset. Seed 61's own chain, at ed674ec, checks seed 60's
 front without the fix: its failures there alignhot 32 or 64 (Iteration 406's prediction 1).
+
+## Seed 62 at 11 hours, and its chain's dream at 32 bits - predicted (Iteration 408)
+
+`seed 62 tag2 11h widths noevolved then experiment footprint.py` (the owner: 11 hours, as seed 61): about 10.5 hours of
+evolution; Iteration 393's predictions for the replicates read at the common generation of seeds 60-62.
+
+1. Its chain's dream at 32 bits (checking seed 61's front, clang's designs now eligible): at least 20 designs measured
+   there, where seed 60's chain measured 10, 4 of them rejected ones.
+2. footprint.py's step ends with its tables written - as it did here on seed 59's database (Iteration 403).

@@ -9,6 +9,8 @@ dream.lan    prebuilt    24     3       30
 dream.lan    prebuilt32  30     3       40       --cell 4 --rejected 6
 dream.lan    prebuilt64  30     3       40       --from prebuilt32
 rage.lan     native      16     2       120      --cell 4 --rejected 4
+#   Iteration 408: prebuilt32's sample takes clang's designs too (xcheck --sample: GCC only where the host builds
+#   them itself) - with them out, seed 60's chain sent dream 6 eligible of seed 59's 171; seed 60's front, 109.
 #   Iteration 377 (the owner: three classes of machine, equal): designs the laptop REJECTED measured
 #   too (xcheck --rejected K) on the two classes not the laptop's own - the Tegra (ARMv7), 4 of 16, and
 #   dream at 32 bits, 6 of 30, its paired 64-bit check taking the same 30 - so a design good there and
