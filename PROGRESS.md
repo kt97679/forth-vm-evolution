@@ -7936,3 +7936,18 @@ requirement or free - seeds 59-60 ended 11-12% above seed 58's free small end.
 
 Files: results/drafts/simplicity-proposal-408.md, results/drafts/gene-usage-53-60.md (new); lab/evolve/xcheck.py,
 lab/evolve/REMOTES, lab/evolve/NEXT-RUN, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 409 - 2026-10-19 - Claude
+
+**The simplicity review built, pending as patch 10; seed 63 to run free of the tag-2 requirement** (the owner: yes to
+both). evolve.py's FROZEN holds bytehdr, doesfar, thinhdr, varcall, bss and lean on and msc and scale at 0 in every
+design the search makes - require() at get(), now always, not only under a requirement - and mutation no longer picks
+them; hand-made designs keep their own, so s6 and the stages are unchanged. GENES.md says so above its rows.
+
+Rehearsed: a short free run here with patches 1-10 (pop 16, one round, both widths, noevolved, no tag-2 requirement), to generation 13: 222 designs, 7 hand-made; status {'ok': 222}; 32-bit failures none; designs the search made off a frozen value: 0 - no reach-limit death (seed 60: 247), varcall and doesfar being on. batch-check, the ten: PASS - 10 patches on a fresh clone of 50942b8: run-tests PASS (engines-check 86 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Seed 63's command waits for seed 62's processing (NEXT-RUN's comment): free of the requirement - its hours and start
+asked then. Predictions for it and the freeze: results/predictions.md.
+
+Files: results/drafts/frozen-check-409.py, results/pending/frozen-after-seed62.patch (new); results/drafts/simplicity-
+proposal-408.md, results/pending/ORDER.md, results/predictions.md, lab/evolve/NEXT-RUN, HANDOFF.md.

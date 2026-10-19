@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 408.
+- master: Iteration 409.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -57,8 +57,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
-  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) bfind built in TOS designs (402), the gene jitret (404) and GCC's 32-bit t2call tail call (405; the
-  batch rehearsed, results/rehearsal-405.md) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) bfind built in TOS designs (402), the gene jitret (404), GCC's 32-bit t2call tail call (405; the batch rehearsed,
+  results/rehearsal-405.md) and the simplicity review's freeze (409) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -172,8 +172,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 
 0. **Seeds 60-62** (the state, above), each by the routine. Seed 60 answered the anchoring question (Iteration 406; results/review-methodology-386.md,
    3c): small at both widths, no gain past a bar - no evidence of anchoring at 12 hours; seeds 61-62 how far
-   runs of one start spread. Then the after-seed-62 batch: seed 63 its first run - with or without the tag-2 requirement, the owner's (408:
-   seeds 59-60 ended 11-12% above seed 58's free small end; seed 63 free is also like-for-like with seed 58's curse figure) - `review-checks.py curse` on its report
+   runs of one start spread. Then the after-seed-62 batch: seed 63 its first run, free of the tag-2 requirement (the owner, 409: seeds
+   59-60 ended 11-12% above seed 58's free small end; free, it is like-for-like with seed 58's curse figure) - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).
 0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every
@@ -227,8 +227,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    (patch 8, results/jitret-404.md) - here ackermann -26%, bubble and loop +6-9%; seed 63's fronts decide.
 4b. **The simplicity review** (results/drafts/gene-usage-53-56.md, Iteration 372): never-chosen mechanisms - msc,
    scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call - seed 60's
-   anchoring answer is in (406: none found at 12 hours). Proposed (408, results/drafts/simplicity-proposal-408.md): freeze
-   bytehdr, doesfar, thinhdr, varcall, bss and lean; remove msc and scale; tail after seed 63. Not tag2 or bytehdr: free, the search chooses
+   anchoring answer is in (406: none found at 12 hours). Approved and built (the owner, 409; results/drafts/simplicity-proposal-408.md):
+   bytehdr, doesfar, thinhdr, varcall, bss and lean frozen on, msc and scale at 0 - pending patch 10; tail after seed 63;
+   jitos and nogcse watched. Not tag2 or bytehdr: free, the search chooses
    by objective (seed 58). And bfind, inert in every TOS design (Iteration 399): built there from
    the after-seed-62 batch (402, patch 7). And tail, on no front of seeds 53-58: since seed 57 every tail design was
    the slowest at 32 bits for a fault (Iteration 400) - judge it again after seed 63. Seed 59's front: msc, scale and tail 0% too

@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 409 (the owner): seed 63, after seed 62's processing and the after-seed-62 batch (ten patches), free of the
+# tag-2 requirement - its hours and start to be asked then.
 # Iteration 408 (the owner: 11 hours for seed 62 too): this line is seed 62, for when seed 61's chain has finished -
 # 11 h like seed 61, then footprint.py (item 2, an experiment step: no reserve). The three replicates read at one generation.
 # Iteration 407: seed 61 running (the owner, 16:26, from Iteration 406's bundle at ed674ec - 11 h). This line none

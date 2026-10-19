@@ -644,3 +644,11 @@ evolution; Iteration 393's predictions for the replicates read at the common gen
 1. Its chain's dream at 32 bits (checking seed 61's front, clang's designs now eligible): at least 20 designs measured
    there, where seed 60's chain measured 10, 4 of them rejected ones.
 2. footprint.py's step ends with its tables written - as it did here on seed 59's database (Iteration 403).
+
+## Seed 63 and the freeze - predicted (Iteration 409)
+
+Seed 63, free of the tag-2 requirement, the after-seed-62 batch applied (its hours and start the owner's, then).
+
+1. No design refused at the reach limit (seed 60: 247) - varcall and doesfar are on in every design the search makes.
+2. Every design of its front holds the frozen values; none has msc or scale.
+3. Its smallest within 2% of seed 58's 14,146 bytes - free of the requirement, the plain small end comes back.
