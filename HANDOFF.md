@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 403.
+- master: Iteration 404.
 - **The runs**: seed 60's evolution done (the owner's log, 13:12), its chain in compare-fronts (12 h, `noevolved` - the clean
   anchoring test); next seed 61 (NEXT-RUN's line, 6 h) when seed 60's chain has finished, then seed 62 (6 h, its command
   in NEXT-RUN's comment, ending `then experiment footprint.py` - item 2, the owner at 397): the replicates, seed 60's start. Predictions for all: the end of
@@ -56,7 +56,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
-  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) and bfind built in TOS designs (402) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) bfind built in TOS designs (402) and the gene jitret (404) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -171,7 +171,7 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 0. **Seeds 60-62** (the state, above), each by the routine. Seed 60 answers the anchoring question (read by
    results/review-methodology-386.md, 3c: a gain anywhere is evidence of anchoring, none is not); seeds 61-62 how far
    runs of one start spread. Then the after-seed-62 batch: seed 63 its first run - `review-checks.py curse` on its report
-   shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's and jitre's share of its front
+   shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).
 0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every
    32-bit failure of seeds 58 and 59 classified - none a design that cannot exist there. Bugs, fixed in the after-seed-62
@@ -216,8 +216,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    JIT's ackermann misses past the return predictor's depth - a candidate gene, not built
    (results/missmap-amd-ryzen-7-pro-8840hs.md). The IP-update loop form set aside
    (results/drafts/iploop-plan.md). The return candidate sized (Iteration 403): the JIT's EXIT is a stencil ending at its
-   first ret (jit.c reads 0xC3); the gene would be a second EXIT stencil, a pop and an indirect jmp - not built, the
-   owner's call.
+   first ret (jit.c reads 0xC3); built (the owner, Iteration 404): the gene jitret, EXIT's ret made pop %rcx; jmp *%rcx
+   (patch 8, results/jitret-404.md) - here ackermann -26%, bubble and loop +6-9%; seed 63's fronts decide.
 4b. **The simplicity review** (results/drafts/gene-usage-53-56.md, Iteration 372): never-chosen mechanisms - msc,
    scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call, after seed
    60's anchoring answer (freezing would make an anchoring permanent). Not tag2 or bytehdr: free, the search chooses

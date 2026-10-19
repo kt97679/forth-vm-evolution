@@ -67,3 +67,7 @@ builds and lives at both widths. With all six applied: PASS - 6 patches on a fre
 The seventh, tested at Iteration 402: on master s6 with THREAD-FIND builds the same engine with bfind as without it; with
 patches 1-7 the engines differ at 8- and 4-byte cells (THREAD-FIND on CV8, (FIND) on the two-bit tag), all alive, and
 the same design built twice without bfind is identical. With all seven applied: PASS - 7 patches on a fresh clone of befd1b6: run-tests PASS (engines-check 83 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+The eighth, tested at Iteration 404: the JIT design with jitret built, alive, its engine not the one without; measured
+here against s6 on the six workloads, ackermann -26%, fib 0, bubble +9%, loop +6% (results/jitret-404.md). With all
+eight applied: PASS - 8 patches on a fresh clone of c397f25: run-tests PASS (engines-check 84 paths), validate 7 of 7 IDENTICAL, jail PASS.

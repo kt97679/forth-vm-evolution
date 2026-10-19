@@ -7822,3 +7822,20 @@ Waiting on data: 0d (seed 60's chain names the Tegra's link error), 4b and 4c (s
 61-62), 3 and the batch (seed 63). Deferred by standing decisions: 5, 6, 7.
 
 Files: results/drafts/gene-usage-53-59.md (new); lab/evolve/process-seed.sh, HANDOFF.md.
+
+## Iteration 404 - 2026-10-19 - Claude
+
+**The gene jitret, pending as patch 8: the JIT's EXIT as a pop and an indirect jump, not ret** (the owner: try it).
+A ret is predicted by the return predictor, the last 32 or so calls, and the JIT's ackermann nests past 250. With
+jitret, EXIT's stencil (mov, mov, ret) is copied with its ret made pop %rcx; jmp *%rcx - rcx free at a return, the
+state in rax and rdx; the same address and stack pointer as ret (engine/jit.c, at the stencils' scan). evolve.py: the
+gene (needs the JIT) and -DJITRET=1; engines-check: the JIT with jitret.
+
+Measured here (an Intel Xeon, one CPU - rough; the laptop's Zen 4 predicts otherwise), engines-check's JIT design with
+and without it against s6, 7 rounds: ackermann 0.464 to 0.343 (-26%), fib 0.329 to 0.329, bubble 0.947 to 1.032 (+9%),
+loop 1.149 to 1.213 (+6%), corpus 1.272 to 1.232, kernel 1.049 to 1.077 - the six about 3% faster
+(results/jitret-404.md, results/drafts/jitret-404.py). A trade-off, so a gene: seed 63's fronts decide, on the
+laptop's predictors. batch-check, the eight: PASS - 8 patches on a fresh clone of c397f25: run-tests PASS (engines-check 84 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Files: results/jitret-404.md, results/drafts/jitret-404.py, results/pending/jitret-after-seed62.patch (new);
+results/pending/ORDER.md, results/README.md, HANDOFF.md.
