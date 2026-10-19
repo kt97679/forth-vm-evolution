@@ -7795,3 +7795,30 @@ The Tegra: all eight link failures of seeds 58-59's chains have fsys on, 5 of th
 Files: results/xcheck32-402.md, results/drafts/bfindtos-402.py, results/drafts/fail64-reach-402.py,
 results/drafts/xcheck-fails-402.py, results/pending/bfindtos-after-seed62.patch (new); lab/evolve/xcheck.py,
 results/bfind32-fault-399.md, results/fail32-400.md, results/pending/ORDER.md, results/README.md, HANDOFF.md.
+
+## Iteration 403 - 2026-10-19 - Claude
+
+**The other open items, while seed 60's chain compares: processing compares 4-byte hosts at 32 bits by itself;
+footprint.py runs end to end; seed 59 read for items 4b and 4c; item 4's return candidate sized.**
+
+Item 0g, closed: process-seed.sh re-reports every 4-byte host with xcheck --laptop32 against the checked run's
+results file - on seed 59's archive its summary gives dream at 32 bits 0.650 and the Tegra 0.857 beside the old lines.
+
+Item 2: footprint.py, scheduled after seed 62, run here on seed 59's database (2 designs, N = 100 and 1,000, one round):
+built, timed against s6, its tables written, exit 0 - the chain step will run.
+
+Item 4b: seed 59's front has msc, scale and tail at 0%, as seeds 53-58 (results/drafts/gene-usage-53-59.md). Item 4c:
+seed 59 does not collapse - the tag-2 family's diversity 0.45-0.52 to the last generation - but it stopped gaining:
+the smallest last improved at generation 88 of 143, the best speed's last 2% gain at 81 (review-checks.py progress);
+seed 58 was still gaining when it stopped. Its front against seeds 53-58's: rtloopall +56 points, escape +54, supers
++53, guard +48, compiler +35, tos -39 - a run without the carry ends elsewhere; seed 60 (no evolved founders) is the
+clean test.
+
+Item 4, the return candidate sized: the JIT's EXIT is a copy-and-patch stencil that ends at its first ret (jit.c reads
+0xC3); "EXIT as pop and jmp" would be a second EXIT stencil and a gene choosing it - x86-64 only, worth it only where
+calls nest deeper than the return predictor (the JIT's ackermann). Not built: the owner's call.
+
+Waiting on data: 0d (seed 60's chain names the Tegra's link error), 4b and 4c (seed 60's anchoring answer, seeds
+61-62), 3 and the batch (seed 63). Deferred by standing decisions: 5, 6, 7.
+
+Files: results/drafts/gene-usage-53-59.md (new); lab/evolve/process-seed.sh, HANDOFF.md.

@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 402.
+- master: Iteration 403.
 - **The runs**: seed 60's evolution done (the owner's log, 13:12), its chain in compare-fronts (12 h, `noevolved` - the clean
   anchoring test); next seed 61 (NEXT-RUN's line, 6 h) when seed 60's chain has finished, then seed 62 (6 h, its command
   in NEXT-RUN's comment, ending `then experiment footprint.py` - item 2, the owner at 397): the replicates, seed 60's start. Predictions for all: the end of
@@ -183,8 +183,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    dead on every machine. Open: the Tegra's link
    failures (item 0d - seed 60's chain records their first error).
 0g. **The 32-bit hosts against the laptop's 32-bit speeds** - done (Iteration 402, results/xcheck32-402.md):
-   `xcheck.py --report OUT.json --laptop32 <the checked run's results/evolve-*.md>`; use it in processing for every 4-byte
-   host. Seed 59's checks of seed 58's front: the Tegra 0.709 against the 64-bit speeds, 0.857 against the 32-bit; dream
+   `xcheck.py --report OUT.json --laptop32 <the checked run's results/evolve-*.md>`; process-seed.sh runs it for every 4-byte
+   host (Iteration 403). Seed 59's checks of seed 58's front: the Tegra 0.709 against the 64-bit speeds, 0.857 against the 32-bit; dream
    at 32 bits 0.651 and 0.650 - for dream the machine, not the width (item 4d).
 0d. **The Tegra's link failures** (seed 57's 5405c5b1d9 and df0c11fd98, and a rejected design): not regpin (inert on
    ARM), not lto (it built there three times); seed 60's chain checks seed 59's front with the new why() - a
@@ -205,6 +205,7 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    laptop by this VM's scale). Proposed for the chain after seed 57's processing, the owner's hours:
    `seed 58 tag2 12h widths then experiment footprint.py then experiment compare-fronts.py ...`.
    **Scheduled** (the owner, Iteration 397): after seed 62, in its command (NEXT-RUN's comment).
+   Run end to end here at Iteration 403 on seed 59's database (2 designs, N = 100 and 1,000, a round): it works.
 3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; **jithelp and jitre to be tried**
    (the owner, Iteration 397) - in the after-seed-62 batch. jitleft.py's counts say they buy little (the kernel's
    share left to the interpreter 53.7% to 53.6%, bubble's 2.0% to 1.7%; 4.5 KB more): out if the fronts do not use
@@ -214,17 +215,22 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    and in tag-2 designs never in fact (the standing decisions: superinstructions). Calls and returns are 15-25% of mispredictions; the
    JIT's ackermann misses past the return predictor's depth - a candidate gene, not built
    (results/missmap-amd-ryzen-7-pro-8840hs.md). The IP-update loop form set aside
-   (results/drafts/iploop-plan.md).
+   (results/drafts/iploop-plan.md). The return candidate sized (Iteration 403): the JIT's EXIT is a stencil ending at its
+   first ret (jit.c reads 0xC3); the gene would be a second EXIT stencil, a pop and an indirect jmp - not built, the
+   owner's call.
 4b. **The simplicity review** (results/drafts/gene-usage-53-56.md, Iteration 372): never-chosen mechanisms - msc,
    scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call, after seed
    60's anchoring answer (freezing would make an anchoring permanent). Not tag2 or bytehdr: free, the search chooses
    by objective (seed 58). And bfind, inert in every TOS design (Iteration 399): built there from
    the after-seed-62 batch (402, patch 7). And tail, on no front of seeds 53-58: since seed 57 every tail design was
-   the slowest at 32 bits for a fault (Iteration 400) - judge it again after seed 63.
+   the slowest at 32 bits for a fault (Iteration 400) - judge it again after seed 63. Seed 59's front: msc, scale and tail 0% too
+   (Iteration 403, results/drafts/gene-usage-53-59.md).
 4c. **A local minimum?** (the owner, Iterations 373 and 392; results/convergence-seed58.md maps five sources to their
    tests): a constraint - real (seed 58); the carry - seed 60; one start for every run - seeds 58-62; collapse inside
    a run - none in seed 58; the gene set's edge - only new mechanisms pass it (item 4). Gene usage against seeds 53-57
-   by gene-usage.py; two consecutive carried runs differ by up to 17 points a gene.
+   by gene-usage.py; two consecutive carried runs differ by up to 17 points a gene. Seed 59 (Iteration 403): no collapse - the tag-2 family's diversity 0.45-0.52 to
+   the end - but no gain in its last third (smallest last at generation 88 of 143, speed's last 2% at 81); its front's
+   genes against seeds 53-58's differ by up to 56 points (rtloopall, escape, supers, guard on; tos off).
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
    machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
    none faster on any host than the front's fastest (results/xcheck-seed58.md).
