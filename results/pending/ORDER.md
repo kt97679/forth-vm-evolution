@@ -12,12 +12,14 @@ evolver of seeds 53-59: a change of evolver between them would be read as run-to
 | 3 | jitre-after-seed62.patch | The gene jitre (Iteration 346's draft, results/drafts/jitre-wip.patch, unchanged; needs jithelp): a callee the JIT cannot translate run by the interpreter from native code, not refused. The same decision. |
 | 4 | bfind32-after-seed62.patch | Open item 0f (Iteration 399, results/bfind32-fault-399.md): bf_walk's signature and its mask 64 bits at either width - they were UNS64, the cell, 4 bytes at 4-byte cells, so a name of 4 to 7 characters matched the newest of its length and first three (seed 59: 34 of its front dead on the corpus at 32 bits). engines-check.py: the four bfind variants at tos 0 - on s6's TOS engine they had built no bf_walk - and at 4-byte cells too. No 64-bit engine changes: UNS64 is uint64_t there. |
 | 5 | tail32-after-seed62.patch | Iteration 400 (results/fail32-400.md): no tail design had ever built at 4-byte cells (seed 58: 401 of 401 "engine did not compile"). build_tail preprocessed with CC(g), EVOLVE_CC's -m32 left out - an x86-64 engine (8-byte cells, __int128) for gcc -m32 - now CCV(g), and each of its failures keeps the tool's first error (why(r), as build's); behind it, the i386/ARM SYSCALL's local label sysc_done, which gen-tail.py took for a handler, gone (the same branches without it - no 64-bit change). tail_offenders reads i386's call forms too: it read only x86-64's, so clang's calls went unseen and its engine grew the C stack and died on the corpus - now it fails as it is, 'tail calls not jumps', clang making i386's dispatches jumps only under musttail (tailpn). engines-check: the tail variants at 4-byte cells too, but that one. |
+| 6 | musttail-after-seed62.patch | Iteration 401 (results/fail32-400.md): musttail on every clang tail engine, not only with preserve_none (tailpn) - gen-tail.py --musttail. A tail engine is right only if every dispatch is a jump: at 8-byte cells clang's optimizer made them, at 4-byte cells (the five on the stack) none - seeds 58 and 59's 160 clang tail designs without tailpn failed there. tailpn is preserve_none alone now, the trade-off; musttail is the guarantee. GCC's left to its optimizer, which makes them at both widths (its musttail needs GCC 15). engines-check: clang's tail variant at 4-byte cells too. |
 
     git apply results/pending/fastgate-after-seed62.patch
     git apply results/pending/jithelp-after-seed62.patch
     git apply results/pending/jitre-after-seed62.patch
     git apply results/pending/bfind32-after-seed62.patch
     git apply results/pending/tail32-after-seed62.patch
+    git apply results/pending/musttail-after-seed62.patch
 
 Its cost, from seed 58's evaluations replayed through the gate: 1,121 of 24,885 measured children (4.5%) under
 it, their evaluations 4.4% of the evaluation time - an upper bound on the added time, the second measurement

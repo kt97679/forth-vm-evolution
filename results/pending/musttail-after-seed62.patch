@@ -1,0 +1,52 @@
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 61ac9d7..7f6dad0 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -120,10 +120,9 @@ for name, genes, must in VARIANTS:
+ # front (bfind, no tos) died on the corpus at 32 bits, and nothing here built bfind at 4-byte cells.
+ # Iteration 400: and every tail-call engine - preprocessed for x86-64 and compiled for i386 (__int128), then the i386
+ # SYSCALL's local label taken for a handler: no tail design had ever built at 4-byte cells (seed 58: 401 of 401).
+-# Not clang's tail engine without preserve_none: at 4-byte cells clang makes none of its dispatches jumps without
+-# musttail - 'tail calls not jumps' (Iteration 400, results/fail32-400.md); with preserve_none and musttail it lives.
+-V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS
+-       if 'bfind' in must or ('tail' in must and not (genes.get('compiler') and not genes.get('tailpn')))]
++# Iteration 401: clang's tail engine without preserve_none too - musttail is now on every clang tail engine; without it,
++# at 4-byte cells clang made none of its dispatches jumps ('tail calls not jumps', results/fail32-400.md).
++V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'tail' in must]
+ for name, genes, must in V32:
+     g = E.canon(dict(S6, **dict(genes, jit=0)))
+     d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index d90e2e7..1d0b815 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -799,7 +799,7 @@ def build_tail(g, d, src, flags, eng):
+     wrap = []
+     for attempt in range(2):
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
+-               + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
++               + (['--preserve-none'] if express(g).get('tailpn') else ['--musttail'] if express(g).get('compiler') else []))   # 401: every clang engine's calls jumps   # Iteration 293
+         if r.returncode: raise RuntimeError('died: tail-call generation' + why(r))
+         r = sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt())
+         if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+diff --git a/tools/gen-tail.py b/tools/gen-tail.py
+index 6b398d6..c168730 100644
+--- a/tools/gen-tail.py
++++ b/tools/gen-tail.py
+@@ -2,6 +2,8 @@
+ """gen-tail.py PREPROCESSED.c OUT.c [--wrap L_a,L_b,...] - tail-call
+ threading for the CV8 engine. --preserve-none (Iteration 293, the gene tailpn,
+ clang 19+): preserve_none on every handler, musttail on every tail call.
++--musttail (Iteration 401): musttail alone, for clang's engine without
++preserve_none - at 4-byte cells clang makes no dispatch a jump without it.
+ 
+ Input: the top-of-stack engine (vm-lab-tos.c, after gen-fold / gen-super),
+ preprocessed for one design with -DDISPATCH256=1 (cc -E -P), so every
+@@ -118,6 +120,7 @@ if '--preserve-none' in sys.argv:
+     head = head.replace('typedef void (*hfn)(', 'typedef void (%s *hfn)(' % PN, 1)
+     head = head.replace('static void H_', 'static %s void H_' % PN)
+     body = body.replace('static void H_', 'static %s void H_' % PN)
++if '--preserve-none' in sys.argv or '--musttail' in sys.argv:   # Iteration 401: musttail alone too (--musttail)
+     body = re.sub(r'(?<![\w.])return (htab\[t\]|esc_ftab\[t\]|t2tab\[t\]|t2esc\[t\]|H_\w+|f_)\((ip, dsp, rp, tos, t|tc_ip, tc_dsp, tc_rp, tc_tos, tc_t)\);',
+                   r'__attribute__((musttail)) return \1(\2);', body)
+ open(sys.argv[2], 'w').write(pre + head + body + entry + post)
