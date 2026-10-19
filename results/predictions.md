@@ -600,3 +600,7 @@ The fault of results/bfind32-fault-399.md, its fix waiting for seed 62's process
 2. Seed 60's: the same two classes at 32 bits, and no other.
 3. Seed 63 (patches 4 and 5): no 32-bit corpus death for bfind; tail designs measured at 32 bits, but clang's without
    preserve_none, which fail as "tail calls not jumps".
+
+Checked at Iteration 401 (seed 59's archive): prediction 1 of Iteration 400 held - 326 all tail (GCC 168, clang 86,
+clang with preserve_none 72), 2,057 all bfind without tos. Prediction 3, revised for patch 6: seed 63 measures every
+tail design at 32 bits, clang's without preserve_none among them.

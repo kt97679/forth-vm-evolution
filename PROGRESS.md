@@ -7751,3 +7751,22 @@ absence from fronts since seed 57 is partly this fault.
 Files: results/fail32-400.md, results/drafts/fail32-classify-400.py, results/drafts/fail32-tail-400.py,
 results/drafts/fail32-tailerr-400.py, results/pending/tail32-after-seed62.patch (new); results/pending/ORDER.md,
 results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 401 - 2026-10-19 - Claude
+
+**Seed 59's 32-bit failures: Iteration 400's classes, as predicted; and musttail on every clang tail engine (pending,
+patch 6).** Seed 59's archive (chain-31b591c59): 2,057 "died: corpus" at 32 bits, all bfind without tos; 326 "engine
+did not compile", all tail - GCC 168, clang with preserve_none 72, clang without 86 (results/drafts/
+fail32-tailsplit-401.py). None of the 24,802 measured has either.
+
+The owner asked for a view on the 160 clang tail designs without musttail (seeds 58-59). Decided: musttail on every
+clang tail engine at both widths (gen-tail.py --musttail) - the guarantee a tail engine needs, not a trade-off; the
+trade-off in tailpn is preserve_none, which stays a gene; musttail exists on i386, so the 32-bit engine need not differ
+from the 64-bit one; GCC's left to its optimizer, which makes the jumps at both widths. With patches 1-6, seed 59's
+a973c305bc and 0136e7294a (clang, no tailpn) and f510231b27 (GCC) live at 4-byte cells (fail32-tail-400.py with the
+label seed59), and engines-check's clang tail variant lives at both widths. batch-check, the six: PASS - 6 patches on a fresh clone of de0b64f: run-tests PASS (engines-check 79 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+No 32-bit failure of seeds 58-59 was a design that cannot exist there: bugs, and one missing guarantee.
+
+Files: results/drafts/fail32-tailsplit-401.py, results/pending/musttail-after-seed62.patch (new); results/fail32-400.md,
+results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.

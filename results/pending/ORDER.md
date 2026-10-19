@@ -55,3 +55,7 @@ and 272c47406f died at 4-byte cells on `'__int128' is not supported`; with the p
 H_sysc_done (clang) or a link failure (GCC); with the label gone, all three live, as do engines-check's GCC tail
 variants and clang's with preserve_none - clang's without it died on the corpus, unseen calls; with i386's call forms
 read, it fails as "tail calls not jumps". With all five applied: PASS - 5 patches on a fresh clone of 0092bee: run-tests PASS (engines-check 78 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+The sixth, tested at Iteration 401: with patches 1-6, seed 59's clang tail designs a973c305bc and 0136e7294a (no
+tailpn) and its GCC one f510231b27 live at 4-byte cells, and engines-check's clang tail variant without preserve_none
+builds and lives at both widths. With all six applied: PASS - 6 patches on a fresh clone of de0b64f: run-tests PASS (engines-check 79 paths), validate 7 of 7 IDENTICAL, jail PASS.

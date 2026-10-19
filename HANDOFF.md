@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 400.
+- master: Iteration 401.
 - **The runs**: seed 60 running (the owner started it from Iteration 398's bundle: 12 h, `noevolved` - the clean
   anchoring test); next seed 61 (NEXT-RUN's line, 6 h) when seed 60's chain has finished, then seed 62 (6 h, its command
   in NEXT-RUN's comment, ending `then experiment footprint.py` - item 2, the owner at 397): the replicates, seed 60's start. Predictions for all: the end of
@@ -56,7 +56,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
-  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) and the tail engines' (400) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400) and musttail on every clang tail engine (401) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -173,15 +173,14 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    runs of one start spread. Then the after-seed-62 batch: seed 63 its first run - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's and jitre's share of its front
    whether they stay (the owner: out again if useless).
-0f. **Why designs fail at 32 bits** (Iterations 399-400; results/bfind32-fault-399.md, results/fail32-400.md): all
-   819 of seed 58's 32-bit failures classified. 745 bugs, fixed in the after-seed-62 batch: bfind's walk (418, patch
-   4) and the tail engine built for x86-64 and compiled for i386 (327, patch 5). 74 the designs' own: clang's tail
-   engine without musttail, whose i386 dispatches clang makes no jumps - the owner's choice: the slowest there, or a
-   32-bit build with musttail for clang (as the JIT is left out, 336). The owner (400): understand why each fails
-   before ruling. Proposed: no design dead for a machine class - a bug fixed, a mechanism impossible there left out of
-   that class's build; until a class is classified, the slowest there (336). Still to classify: seed 59's (its archive
-   is chain-31b591c59; predicted the same classes) and the Tegra's link failures (item 0d - seed 60's chain records
-   their first error).
+0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every
+   32-bit failure of seeds 58 and 59 classified - none a design that cannot exist there. Bugs, fixed in the after-seed-62
+   batch: bfind's walk (418 + 2,057, patch 4); the tail engine built for x86-64 and compiled for i386 (patch 5). A
+   missing guarantee: clang's tail engine without musttail, whose i386 dispatches clang made no jumps (74 + 86) -
+   musttail on every clang tail engine (401, patch 6; the owner asked for a view). The owner (400): understand why each
+   fails before ruling. Proposed: no design dead for a machine class - a bug fixed, a mechanism impossible there left out
+   of that class's build (as the JIT, 336); until a class is classified, the slowest there (336). Open: the Tegra's link
+   failures (item 0d - seed 60's chain records their first error).
 0g. **The 32-bit hosts compared against the laptop's 64-bit speeds** (xcheck.py, its Spearman over 'speed'): for a run
    selected at both widths the laptop's 32-bit speed is the one to compare (seed 59's checks of seed 58's front: 0.651
    and 0.709, a two-encoding front ranking differently at 32 bits). A diagnostic, no run waits for it.
