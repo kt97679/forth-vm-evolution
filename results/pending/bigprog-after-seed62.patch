@@ -1,0 +1,252 @@
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 8076002..988cba0 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -1403,6 +1403,9 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+ #if VARCALL
+     if (BYTE(ip) & 0x40) {
+         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
++#if DOESFAR
++        t <<= (CELL_BYTES == 8 ? 3 : 2) - SCALE;  /* Iteration 416: a far DOES> call counts cells - its tail is aligned */
++#endif
+         RPUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     } else {
+         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index bd1f35a..a915308 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -194,7 +194,9 @@ static char **g_argv;
+ #define PREVNFA(a) ({ UNS64 a__ = (a); UNS8 t__ = BYTE(a__ - 1);                               \
+     t__ < 128 ? (t__ ? a__ - t__ : 0)                                                     \
+     : t__ < 192 ? a__ - (((UNS64)(t__ & 63) << 8) | BYTE(a__ - 2))                        \
+-    : a__ - (((UNS64)(t__ & 63) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)); })
++    : t__ < 224 ? a__ - (((UNS64)(t__ & 31) << 16) | ((UNS64)BYTE(a__ - 2) << 8) | BYTE(a__ - 3)) \
++    : a__ - (((UNS64)(t__ & 31) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                     \
++             | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4)); })   /* 416: a fourth form, 29 bits */
+ #endif
+ #ifndef VARCALL
+ /*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
+@@ -351,9 +353,10 @@ static inline UNS64 bf_prev(UNS64 a) {          /* tag t: t+1 bytes, the top one
+     return d ? a - d : 0;
+ }
+ #else
+-static inline UNS64 bf_prev(UNS64 a) {          /* below 0x80 one byte, 7 bits; below 0xC0 two, 14; else three, 22 */
+-    uint32_t w = bf_ld32(a - 4); unsigned t = w >> 24, l = 1 + (t >= 128) + (t >= 192);
+-    UNS64 d = (UNS64)(w >> (8 * (4 - l))) & ((1u << (8 * l - 2 + (l == 1))) - 1);
++static inline UNS64 bf_prev(UNS64 a) {          /* below 0x80 one byte, 7 bits; below 0xC0 two, 14; below 0xE0 three, 21; else four, 29 (416) */
++    static const uint32_t bf_mask[5] = { 0, 0x7F, 0x3FFF, 0x1FFFFF, 0x1FFFFFFF };
++    uint32_t w = bf_ld32(a - 4); unsigned t = w >> 24, l = 1 + (t >= 128) + (t >= 192) + (t >= 224);
++    UNS64 d = (UNS64)(w >> (8 * (4 - l))) & bf_mask[l];
+     return (d || l > 1) ? a - d : 0;
+ }
+ #endif
+@@ -2186,6 +2189,9 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+ #if VARCALL
+     if (BYTE(ip) & 0x40) {
+         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
++#if DOESFAR
++        t <<= (CELL_BYTES == 8 ? 3 : 2) - SCALE;  /* Iteration 416: a far DOES> call counts cells - its tail is aligned */
++#endif
+         RPUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     } else {
+         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
+diff --git a/forth/cv8.4 b/forth/cv8.4
+index 8ad18b9..8d2a2cb 100644
+--- a/forth/cv8.4
++++ b/forth/cv8.4
+@@ -133,20 +133,32 @@ ALIGN
+   LOOP 0 ;
+ 
+ \ ---- calls ----------------------------------------------------------
+-: CALL, ( a-addr --- )
+-\ Append a call to the body at a-addr: a scaled offset from the image
+-\ base, near (2 bytes) if it fits in 14 bits, far (3 bytes) otherwise.
++: CALL1, ( a-addr --- )
++\ Iteration 416: a call in reach, as CALL, decides - a scaled offset from
++\ the image base, near (2 bytes) in 14 bits, far (3 bytes) in 21.
+   0 LAST-OP !
+   START @ - CV8-SHIFT RSHIFT
+-  DUP 16384 < IF
+-    DUP 8 RSHIFT 128 OR C, 255 AND C,
+-  ELSE
+-    \ 21 bits: the far form's first byte is 0xC0-0xDF where one-byte hot
+-    \ calls hold 0xE0-0xFF, so past them a call is refused, not truncated
+-    \ into some other target (Iteration 158).
+-    DUP 2097152 U< 0= CV8-VARCALL-V @ 0= OR IF -1 ABORT" call out of reach" THEN
+-    DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C,
+-  THEN ;
++  DUP 16384 < IF DUP 8 RSHIFT 128 OR C, 255 AND C, EXIT THEN
++  DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C, ;
++
++: FAR, ( a-addr --- )
++\ Iteration 416: a call past the far form's reach - 2 MB of code at scale
++\ 0, where byte headers put every design - as the body's address, a
++\ literal, then EXECUTE: any distance. EXECUTE compiled as COMPILE,8
++\ would: its opcode where it is a primitive, else a call - the kernel's
++\ is a colon word. Slower, and only past 2 MB.
++  LIT,  S" EXECUTE" CONTEXT @ SEARCH-WORDLIST 0= ABORT" no EXECUTE"
++  DUP PRIMITIVE? IF DUP C@ 125 = IF DUP C@ OP, 1+ C@ OP, ELSE C@ OP, THEN ELSE CALL1, THEN
++  0 LAST-OP ! ;
++
++: CALL, ( a-addr --- )
++\ Append a call to the body at a-addr: a scaled offset from the image
++\ base, near (2 bytes) if it fits in 14 bits, far (3 bytes) in 21 - the
++\ far form's first byte is 0xC0-0xDF where one-byte hot calls hold
++\ 0xE0-0xFF, so past them a call is not truncated into some other target
++\ (Iteration 158): FAR, compiles it (Iteration 416).
++  DUP START @ - CV8-SHIFT RSHIFT DUP 16384 < SWAP 2097152 U< CV8-VARCALL-V @ AND OR
++  IF CALL1, ELSE FAR, THEN ;
+ 
+ : COMPILE,8 ( xt --- )
+ \ Add the execution semantics of xt to the current definition: a
+@@ -282,7 +294,9 @@ ALIGN
+ \ word up there had its target silently truncated and jumped into the
+ \ data stack. The far form is three bytes, which is why CREATE has to
+ \ reserve a matching amount - see CV8-DOES-RESERVE.
+-  START @ - CV8-SHIFT RSHIFT        ( a-addr v )
++  \ Iteration 416: the far form counts CELLS - a DOES> tail is ALIGNED - so its 22 bits reach 32 MB at
++  \ 8-byte cells, 16 at 4, where call-scale units reached 4 MB at scale 0.
++  START @ -  CV8-DOES-FAR? @ IF CV8-SHIFT-DEFAULT ELSE CV8-SHIFT THEN RSHIFT        ( a-addr v )
+   CV8-DOES-FAR? @ IF
+     2DUP 255 AND SWAP 2 + C!
+     2DUP 8 RSHIFT 255 AND SWAP 1+ C!
+@@ -310,7 +324,7 @@ ALIGN
+   \ HERE is the tail every child will call, in the form CV8-DOES-FAR?
+   \ selects - out of its reach, the defining word is refused here, before a
+   \ child exists to be left half made (Iteration 158).
+-  HERE START @ - CV8-SHIFT RSHIFT CV8-DOES-FAR? @ IF 2097152 ELSE 16384 THEN U< 0=
++  HERE START @ - CV8-DOES-FAR? @ IF CV8-SHIFT-DEFAULT RSHIFT 4194304 ELSE CV8-SHIFT RSHIFT 16384 THEN U< 0=   \ 416: cells
+   IF -1 ABORT" DOES> out of reach" THEN
+   POSTPONE R> ; IMMEDIATE
+ 
+diff --git a/forth/cv8b.4 b/forth/cv8b.4
+index 0bec9d3..6430799 100644
+--- a/forth/cv8b.4
++++ b/forth/cv8b.4
+@@ -42,23 +42,26 @@
+ \ ---- the link -------------------------------------------------------
+ : LINK-LEN ( d --- n )
+   DUP 128 U< IF DROP 1 EXIT THEN
+-  \ Three bytes hold 22 bits: past 4 MB a link is refused, not cut short -
+-  \ a cut link broke the thread and later words went missing (Iteration 158).
+-  DUP 4194304 U< 0= IF -1 ABORT" link out of reach" THEN
+-  16384 U< IF 2 ELSE 3 THEN ;
++  \ Iteration 416: four forms - a tag below 0x80 one byte, below 0xC0 two (14
++  \ bits), below 0xE0 three (21), else four (29: 512 MB); past them a link is
++  \ refused, not cut short - a cut link broke the thread (Iteration 158).
++  DUP 536870912 U< 0= IF -1 ABORT" link out of reach" THEN
++  DUP 16384 U< IF DROP 2 EXIT THEN  2097152 U< IF 3 ELSE 4 THEN ;
+ 
+ : LINK, ( d n --- )
+ \ Append a link of exactly n bytes, tag byte last.
+   DUP 1 = IF DROP C, EXIT THEN
+   DUP 2 = IF DROP DUP 255 AND C, 8 RSHIFT 128 OR C, EXIT THEN
+-  DROP DUP 255 AND C, DUP 8 RSHIFT 255 AND C, 16 RSHIFT 192 OR C, ;
++  DUP 3 = IF DROP DUP 255 AND C, DUP 8 RSHIFT 255 AND C, 16 RSHIFT 192 OR C, EXIT THEN
++  DROP DUP 255 AND C, DUP 8 RSHIFT 255 AND C, DUP 16 RSHIFT 255 AND C, 24 RSHIFT 224 OR C, ;   \ 416
+ 
+ : NEXT-NFA8 ( nfa --- nfa' )
+ \ The previous word in this thread, or 0 at the end of the chain.
+   DUP 1- C@                                    ( nfa tag )
+   DUP 128 U< IF DUP IF - ELSE 2DROP 0 THEN EXIT THEN
+   DUP 192 U< IF 63 AND 8 LSHIFT OVER 2 - C@ OR - EXIT THEN
+-  63 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - ;
++  DUP 224 U< IF 31 AND 16 LSHIFT OVER 2 - C@ 8 LSHIFT OR OVER 3 - C@ OR - EXIT THEN
++  31 AND 24 LSHIFT OVER 2 - C@ 16 LSHIFT OR OVER 3 - C@ 8 LSHIFT OR OVER 4 - C@ OR - ;   \ 416: four bytes
+ 
+ \ ---- the header -----------------------------------------------------
+ : NAME>8 ( nfa --- xt )
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 2e41e12..891018b 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -17,7 +17,7 @@ longer be taken is news too.
+ 
+     python3 lab/evolve/engines-check.py        PASS, or FAIL and what died
+ """
+-import glob, json, os, shutil, sys
++import contextlib, glob, json, os, shutil, sys
+ 
+ HERE = os.path.dirname(os.path.abspath(__file__))
+ ROOT = os.path.dirname(os.path.dirname(HERE))
+@@ -143,6 +143,27 @@ for name, genes, must in V32:
+         print('  %-32s ok     engine %6d, image %6d bytes' % (name, os.path.getsize(eng), os.path.getsize(img)), flush=True)
+     except Exception as e:
+         bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
++# Iteration 416 (the owner: programs past 4 MB): calls across 4.9 MB of dictionary, links past the three-byte form,
++# a DOES> child far from its word and a DOES> word far out - on s6 (plain CV8, where the call reached 2 MB, the link
++# 4 MB and DOES> 2 MB), on the two-bit tag, and at 4-byte cells (results/drafts/bigprog-416.py).
++BIGFILL = ''.join(': F%02d %d ;  49152 ALLOT\n' % (i, i) for i in range(100))
++BIG = [(': A0 1 ;\n: MK CREATE , DOES> @ 1+ ;\nVARIABLE V0  5 V0 !\n' + BIGFILL + ": B1 A0 1+ ;\n: B2 B1 B1 + ;\n7 MK C7\n"
++        ": B3 C7 V0 @ + ;\nVARIABLE V1  42 V1 !\n: B4 V1 @ B2 + ;\n' B4 CONSTANT XT4\n: B5 XT4 EXECUTE 1+ ;\n"
++        ": B6 B5 B3 + F50 + F99 + ;\nB6 . CR\nBYE\n", '209'),
++       (BIGFILL + ': MK2 CREATE , DOES> @ 2 + ;\n3 MK2 D3\nD3 . CR\nBYE\n', '5')]
++VBIG = [('past 4 MB, s6', {}, 8), ('past 4 MB, the two-bit tag', {'tag2': 1}, 8), ('past 4 MB, s6 at 4-byte cells', {'jit': 0}, 4)]
++for name, genes, w in VBIG:
++    d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
++    try:
++        with (E.at_width(E.WIDTH4) if w == 4 else contextlib.nullcontext()):
++            eng, img = E.build(E.canon(dict(S6, **genes)), d); pw = E.private_work(d)
++            for prog, want in BIG:
++                r = E.sh([eng, img], cwd=pw, inp=prog.encode(), timeout=120, cpu=60)
++                got = [l.strip() for l in (r.stdout or b'').decode(errors='replace').replace('\r', '').splitlines() if l.strip() not in ('', 'OK')]
++                if want not in got: raise RuntimeError('wanted %s, got %s' % (want, ' / '.join(got[-2:])[:80]))
++        print('  %-32s ok     two programs past 4 MB' % name, flush=True)
++    except Exception as e:
++        bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
+ shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)
+-print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS) + len(V32), '; '.join(bad)))
++print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS) + len(V32) + len(VBIG), '; '.join(bad)))
+ sys.exit(1 if bad else 0)
+diff --git a/tools/layout.py b/tools/layout.py
+index ec933e5..87d7a96 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -143,7 +143,8 @@ G['T2WIDE'] = T2WIDE_ON
+ 
+ def linklen(d):
+     if TAG2_ON: return 1 if d < 64 else 2 if d < (1 << 14) else 3 if d < (1 << 22) else 4
+-    return 1 if d < 128 else (2 if d < 16384 else 3)
++    assert d < (1 << 29), 'link %d out of reach' % d                                  # Iteration 416: four forms
++    return 1 if d < 128 else 2 if d < 16384 else 3 if d < (1 << 21) else 4
+ 
+ 
+ def linkbytes(d, n):
+@@ -154,7 +155,8 @@ def linkbytes(d, n):
+         return bytes([(d >> (8 * i)) & 0xFF for i in range(n - 1)] + [((n - 1) << 6) | (d >> (8 * (n - 1)))])
+     if n == 1: return bytes([d])
+     if n == 2: return bytes([d & 0xFF, 0x80 | (d >> 8)])
+-    return bytes([d & 0xFF, (d >> 8) & 0xFF, 0xC0 | (d >> 16)])
++    if n == 3: assert d < (1 << 21); return bytes([d & 0xFF, (d >> 8) & 0xFF, 0xC0 | (d >> 16)])
++    return bytes([d & 0xFF, (d >> 8) & 0xFF, (d >> 16) & 0xFF, 0xE0 | (d >> 24)])   # Iteration 416: 29 bits
+ if '--spec' in ARGV: G['SPEC'].update(_opt('--spec').split(','))
+ if '--escape' in ARGV:
+     G['ESCAPE'] = True
+@@ -1190,6 +1192,17 @@ def v8loc(old):
+     return n2 >> CPT
+ G['V8_PFA'][0] = v8pfa
+ G['V8_LOC'][0] = v8loc
++def _v8_dodoes(n):
++    # Iteration 416: a DOES> word's code field - [DODOES][call][pad] to a cell. A far call (3 bytes) counts CELLS, as the
++    # engine's DODOES reads it with DOESFAR - a DOES> tail is aligned - so 22 bits reach 32 MB, 16 at 4-byte cells.
++    v = v8val(n)
++    if G['VARCALL'] and v >= (1 << 14) and '--does-far' in ARGV:
++        vb = v << (CPT or 0); assert vb % CELL == 0, 'a DOES> tail not cell-aligned'
++        vc = vb // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
++        b = bytes([0xC0 | (vc >> 16), (vc >> 8) & 0xFF, vc & 0xFF])
++    else: b = callbytes(n)
++    assert 1 + len(b) <= CELL, 'a DOES> call longer than its code field'
++    return bytes([70]) + b + b'\x00' * (CELL - 1 - len(b))
+ def callbytes(target):
+     if V8 and TAG2_ON:
+         v = v8val(target); return G['t2call'](v, G['t2calllen'](v))
+@@ -1329,7 +1342,7 @@ def emit(path):
+                     # tag 2: always the 4-byte call - DODOES finds the parameter
+                     # field at align(body + 5), as CREATE reserves (FORMAT-TAG2.md)
+                     img += (bytes([T2MAP['one'][G['V8_DODOES']]]) + G['t2call'](v8val(n), 4) + b'\x00' * (cfd(s0) - 5)) if TAG2_ON \
+-                        else (bytes([70]) + callbytes(n) + b'\x00' * (CELL - 3)) if V8 else (tk(DODOES) + tk(calltok_addr(n)) + b'\x00' * (CELL - 4))
++                        else _v8_dodoes(n) if V8 else (tk(DODOES) + tk(calltok_addr(n)) + b'\x00' * (CELL - 4))
+                 else:
+                     img += b'\x00' * (CELL - 2)     # pad BEFORE the token
+                     img += tk(calltok_addr(n))
