@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 399: seed 60 started (the owner, from Iteration 398's bundle - 12 h). This line is seed 61, for when
+# seed 60's chain has finished; seed 62's command below. The bfind fix (open item 0f) waits in the after-seed-62 batch.
 # Iteration 393 (the owner: the replicates, queued after seed 60): when seed 60's chain has finished, two runs
 # of its own start, 6 hours each, each its own command - a chain of two seeds has never run, and both would
 # write the remote checks' same directories:
@@ -34,4 +36,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 60 tag2 12h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8
+seed 61 tag2 6h widths noevolved

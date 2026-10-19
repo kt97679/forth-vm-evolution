@@ -7696,3 +7696,30 @@ Gates at this commit: gate.py alive 289 of 289 (the run's front 171, the joint f
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed59.md, results/xcheck-seed59.md (new); results/predictions.md,
 results/compare-fronts-amd-ryzen-7-pro-8840hs.md (Session 53), results/progress-by-run.md, results/README.md,
 HANDOFF.md.
+
+## Iteration 399 - 2026-10-19 - Claude
+
+**Open item 0f found: bfind's walk compared three characters at 4-byte cells; the fix, and a check that fails
+without it, wait in the after-seed-62 batch.** Seed 60 started (the owner, from Iteration 398's bundle, 12 h). The
+setup here: run-tests PASS, validate 7 of 7 IDENTICAL.
+
+The separator on seed 59's front: the 34 dead at 32 bits all express bfind without tos; of the 44 alive with jit=1,
+scale=0, tos=0, 43 have bfind 0 and the other does not express it. The cause: bf_walk's signature, its mask and
+bf_ld64's result were UNS64 - the cell, uint32_t at 4-byte cells - so the count and three characters were compared,
+and a name of 4 to 7 characters matched the newest of its length and first three (one thread, by the hash). The
+corpus case: line 254, `{ 1 2 2DUP -> 1 2 1 2 }` - the tester's CELLS answered by another of CELL+ CELL- CELL,; a
+single result round-trips at the same wrong place, and 2DUP's is the corpus's first test with more than one.
+Rebuilt here as eval32 builds them, 708757c03f and 686ae7cd5f died so on master's engine and live with the three
+declarations uint64_t (no 64-bit engine changes: UNS64 is uint64_t there).
+
+The check that missed it: engines-check's four bfind variants sat on s6, a TOS design, whose THREAD-FIND and (FIND)
+are gen-tos.py's own bodies - no bf_walk at either width (all four alive at 4-byte cells on the faulty engine). In
+the patch they set tos 0 and run at 4-byte cells too: on the faulty engine all four die at 2DUP's test; with the fix
+they live - batch-check, the four patches: PASS - 4 patches on a fresh clone of 0165837: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS. Found with it: bfind is inert in every TOS design - 42 of seed 59's
+front carry it unbuilt (item 4b).
+
+NEXT-RUN: seed 61 (6 h), for when seed 60's chain has finished, as the owner queued at 393. Predictions: the remote
+checks of seed 59's front will see the same deaths at 32 bits; seed 63 none.
+
+Files: results/bfind32-fault-399.md, results/drafts/bfind32-repro-399.py, results/pending/bfind32-after-seed62.patch
+(new); results/pending/ORDER.md, results/predictions.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.

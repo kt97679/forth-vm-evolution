@@ -48,15 +48,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 398.
-- **The runs**: seed 59 processed (Iteration 398); next seed 60 (NEXT-RUN's line, 12 h, `noevolved` - the clean
-  anchoring test), then seeds 61 and 62 (6 h each, seed 60's start - the replicates; their commands in NEXT-RUN's
-  comment, seed 62's ending `then experiment footprint.py` - item 2, the owner at 397). Predictions for all: the end of
+- master: Iteration 399.
+- **The runs**: seed 60 running (the owner started it from Iteration 398's bundle: 12 h, `noevolved` - the clean
+  anchoring test); next seed 61 (NEXT-RUN's line, 6 h) when seed 60's chain has finished, then seed 62 (6 h, its command
+  in NEXT-RUN's comment, ending `then experiment footprint.py` - item 2, the owner at 397): the replicates, seed 60's start. Predictions for all: the end of
   results/predictions.md.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
-  jitre (the owner, 397: try them) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -173,11 +173,11 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    runs of one start spread. Then the after-seed-62 batch: seed 63 its first run - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's and jitre's share of its front
    whether they stay (the owner: out again if useless).
-0f. **A fifth of seed 59's front dies on the corpus at 32 bits** (Iteration 398): 34 of 171, why32 "died: corpus",
-   all jit=1, scale=0, tos=0 - 2,057 such in its database, and 326 that did not compile at 32 bits; their 64-bit
-   engines sound. Find the fault (a tag-2 design without tos, as a 32-bit engine: which corpus case fails, and why).
-   And a question for the owner: a design wrong on one machine class - dead, or (as now, Iteration 336) only the
-   slowest there, kept on the front by its 64-bit objectives?
+0f. **Seed 59's 32-bit corpus deaths - found** (Iteration 399, results/bfind32-fault-399.md): bf_walk's signature
+   in the cell type, three characters compared at 4-byte cells. The fix, and a 4-byte check in engines-check (its bfind
+   variants, on s6's TOS engine, had built no walk), wait in the after-seed-62 batch: seeds 60-62 keep the fault, one
+   evolver. Still open: the 326 that did not compile at 32 bits (the next archive's database), and the owner's
+   question - a design wrong on one machine class: dead, or (as now, Iteration 336) only the slowest there?
 0g. **The 32-bit hosts compared against the laptop's 64-bit speeds** (xcheck.py, its Spearman over 'speed'): for a run
    selected at both widths the laptop's 32-bit speed is the one to compare (seed 59's checks of seed 58's front: 0.651
    and 0.709, a two-encoding front ranking differently at 32 bits). A diagnostic, no run waits for it.
@@ -212,7 +212,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4b. **The simplicity review** (results/drafts/gene-usage-53-56.md, Iteration 372): never-chosen mechanisms - msc,
    scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call, after seed
    60's anchoring answer (freezing would make an anchoring permanent). Not tag2 or bytehdr: free, the search chooses
-   by objective (seed 58).
+   by objective (seed 58). And bfind, inert in every TOS design (Iteration 399): its walk into
+   gen-tos.py's bodies, or the gene needing tos 0.
 4c. **A local minimum?** (the owner, Iterations 373 and 392; results/convergence-seed58.md maps five sources to their
    tests): a constraint - real (seed 58); the carry - seed 60; one start for every run - seeds 58-62; collapse inside
    a run - none in seed 58; the gene set's edge - only new mechanisms pass it (item 4). Gene usage against seeds 53-57
@@ -243,6 +244,9 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 
 ## Lessons - how faults got in, and the checks that catch them now
 
+- A gene's check must build the gene's code: engines-check's bfind variants sat on s6, whose TOS engine never takes
+  the bfind walk, and passed from Iteration 316 to 399 while the walk was wrong at 4-byte cells (seed 59: 34 of the
+  front dead at 32 bits). And UNS64 is the cell, not 64 bits: a fixed-width value takes uint64_t (Iteration 399).
 - On Ubuntu gcc-arm-linux-gnueabihf and gcc-multilib cannot both be installed: the first removes the second,
   and /usr/include/asm with it - every 32-bit build fails until gcc-multilib is back (Iteration 391, the ARM
   compiler installed at 390 for a cross build). After any apt install, build before trusting the tree.

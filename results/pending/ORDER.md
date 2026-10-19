@@ -41,3 +41,7 @@ or nearly. Little, as Iteration 346 had found (INTERPRET stops at (FIND), PARSE-
 here (0.2369 / 0.2044) is inside this VM's noise. The search weighs them; the fronts after seed 62 decide.
 
 All three, tools/batch-check.sh at Iteration 397: PASS - 3 patch(es) applied to a fresh clone of 6268b51 Iteration 397: the owner's decisions - foo; run-tests: PASS - no regressions (exit 0); validate: 7 of 7 IDENTICAL (exit 0); jail: PASS (exit 0)
+
+The fourth, tested at Iteration 399 (results/bfind32-fault-399.md): seed 59's 708757c03f and 686ae7cd5f, built as
+eval32 builds them, died on the corpus at 2DUP's test on master's engine and live with the fix; engines-check's four
+bfind variants at tos 0 and 4-byte cells died the same way on master's engine. With all four applied: PASS - 4 patches on a fresh clone of 0165837: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.

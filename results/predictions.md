@@ -582,3 +582,13 @@ Seed 58's start with the tag-2 requirement (results/evolve-amd-ryzen-7-pro-8840h
 3. **Missed.** Its fastest at 32 bits 0.344, 11% behind seed 58's 0.310 - not the 15% predicted.
 4. **Met.** No L_t2call4 death - no compile death at all at 64 bits.
 5. **Met but for its last clause.** The run six minutes after the checks started (seed 58: 55); every report ends with the probes. But the Tegra's copy ran at 7,219 KB/s, not a few KB/s: its long wait is its own build.
+
+
+## Seed 60's chain and the bfind fault - predicted (Iteration 399)
+
+The fault of results/bfind32-fault-399.md, its fix waiting for seed 62's processing.
+
+1. The remote checks of seed 59's front (seed 60's chain): every sampled design expressing bfind without tos dies
+   on the corpus at 32 bits - dream at 32 bits and the Tegra - and lives at dream's 64 bits.
+2. Seed 60's database: every why32 "died: corpus" is a design expressing bfind without tos.
+3. Seed 63, the first run with the fix: no why32 "died: corpus" among designs expressing bfind.
