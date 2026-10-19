@@ -7723,3 +7723,31 @@ checks of seed 59's front will see the same deaths at 32 bits; seed 63 none.
 
 Files: results/bfind32-fault-399.md, results/drafts/bfind32-repro-399.py, results/pending/bfind32-after-seed62.patch
 (new); results/pending/ORDER.md, results/predictions.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
+
+## Iteration 400 - 2026-10-19 - Claude
+
+**Every 32-bit failure of seed 58 classified: 745 bugs (fixes pending, patches 4 and 5), 74 the designs' own.** The
+archive sent as seed 59's is seed 58's chain (commit c49de17, Iteration 378's bundle); seed 59's is chain-31b591c59.
+The owner, on dead or slowest: understand why each design fails - inapplicable there, or a bug that can be fixed.
+
+Seed 58's database: 24,831 evaluated at 32 bits, 819 failed. "died: corpus", 418 - every one bfind expressed without
+tos, none of the 24,012 measured: Iteration 399's fault. "engine did not compile", 401 - every one tail, none of the
+measured: build_tail preprocessed with cc and compiled with gcc -m32, so the engine was the x86-64 one, 8-byte cells
+and __int128; behind it the i386/ARM SYSCALL's local label sysc_done, which gen-tail.py rewrote as a call to a handler
+that does not exist; behind that, tail_offenders read only x86-64's call forms, so clang's undetected calls grew the
+C stack (died on the corpus). Patch 5: preprocessing by CCV(g); the branches without the label; i386's call forms read
+(x86-64's as before - no 64-bit change); each tail failure with its tool's first error; engines-check's tail variants
+at 4-byte cells. With it seed 58's three sampled tail designs and the GCC and preserve_none variants live at 32 bits;
+clang's tail engine without musttail fails as "tail calls not jumps" - clang makes no i386 dispatch a jump without
+it. Of the 401: GCC 227 and clang with preserve_none 100 live (by these samples), clang without it 74, the designs'
+own. batch-check, the five patches: PASS - 5 patches on a fresh clone of 0092bee: run-tests PASS (engines-check 78 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Proposed (results/fail32-400.md): no design dead for a machine class - a failure there is a bug to fix, or a
+mechanism that cannot exist there, left out of that class's build as the JIT is (336); until classified, the slowest
+there. The 74: the slowest at 32 bits, or a 32-bit build with musttail for clang - the owner's. The Tegra's three link
+failures in this archive keep only collect2's last line: seed 60's chain records the first error. Item 4b: tail's
+absence from fronts since seed 57 is partly this fault.
+
+Files: results/fail32-400.md, results/drafts/fail32-classify-400.py, results/drafts/fail32-tail-400.py,
+results/drafts/fail32-tailerr-400.py, results/pending/tail32-after-seed62.patch (new); results/pending/ORDER.md,
+results/predictions.md, results/README.md, HANDOFF.md.

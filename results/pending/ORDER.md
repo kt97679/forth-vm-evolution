@@ -47,3 +47,9 @@ All three, tools/batch-check.sh at Iteration 397: PASS - 3 patch(es) applied to 
 The fourth, tested at Iteration 399 (results/bfind32-fault-399.md): seed 59's 708757c03f and 686ae7cd5f, built as
 eval32 builds them, died on the corpus at 2DUP's test on master's engine and live with the fix; engines-check's four
 bfind variants at tos 0 and 4-byte cells died the same way on master's engine. With all four applied: PASS - 4 patches on a fresh clone of 0165837: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.
+
+The fifth, tested at Iteration 400 (results/fail32-400.md): on master, seed 58's tail designs 9483791a8e, 4bdb2d8bb3
+and 272c47406f died at 4-byte cells on `'__int128' is not supported`; with the preprocessing by CCV(g), on undeclared
+H_sysc_done (clang) or a link failure (GCC); with the label gone, all three live, as do engines-check's GCC tail
+variants and clang's with preserve_none - clang's without it died on the corpus, unseen calls; with i386's call forms
+read, it fails as "tail calls not jumps". With all five applied: PASS - 5 patches on a fresh clone of 0092bee: run-tests PASS (engines-check 78 paths), validate 7 of 7 IDENTICAL, jail PASS.

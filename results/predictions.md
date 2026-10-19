@@ -592,3 +592,11 @@ The fault of results/bfind32-fault-399.md, its fix waiting for seed 62's process
    on the corpus at 32 bits - dream at 32 bits and the Tegra - and lives at dream's 64 bits.
 2. Seed 60's database: every why32 "died: corpus" is a design expressing bfind without tos.
 3. Seed 63, the first run with the fix: no why32 "died: corpus" among designs expressing bfind.
+
+## Seed 59's 32-bit failures, seed 60's, and seed 63 - predicted (Iteration 400)
+
+1. Seed 59's database (its archive chain-31b591c59): its 326 "engine did not compile" at 32 bits all tail designs;
+   its 2,057 "died: corpus" all bfind expressed without tos.
+2. Seed 60's: the same two classes at 32 bits, and no other.
+3. Seed 63 (patches 4 and 5): no 32-bit corpus death for bfind; tail designs measured at 32 bits, but clang's without
+   preserve_none, which fail as "tail calls not jumps".
