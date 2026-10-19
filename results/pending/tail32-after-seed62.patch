@@ -1,0 +1,64 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index d82ee9b..400fdcf 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -2477,16 +2477,11 @@ L_syscall: {
+ #if defined(__i386__) || defined(__arm__)
+         if (num == 9) {                                        /* Iteration 325: mmap, as mmap2 under the C library */
+             void *m_ = mmap((void *)(uintptr_t)a[0], (size_t)a[1], (int)a[2], (int)a[3], (int)a[4], (off_t)a[5]);
+-            r = m_ == MAP_FAILED ? -1 : (long)(uintptr_t)m_; goto sysc_done;
+-        }
+-        num = sysc_i386(num);
+-        if (num < 0) r = -38;                                  /* ENOSYS */
++            r = m_ == MAP_FAILED ? -1 : (long)(uintptr_t)m_;   /* Iteration 400: no local label - gen-tail.py took */
++        } else if ((num = sysc_i386(num)) < 0) r = -38;        /* sysc_done for a handler. ENOSYS */
+         else
+ #endif
+         r = syscall(num, (long)a[0], (long)a[1], (long)a[2], (long)a[3], (long)a[4], (long)a[5]);
+-#if defined(__i386__) || defined(__arm__)
+-      sysc_done:
+-#endif
+         if (r == -1) r = -(long)errno;
+     }
+     DS1 = (UNS64)(INT64)r;
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index ff03315..c7987b3 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -118,7 +118,9 @@ for name, genes, must in VARIANTS:
+ # a 32-bit x86 engine, the JIT off. bf_walk read its 8-byte signature into UNS64, which is the cell - 4 bytes
+ # there - so a name of 4 to 7 characters matched the newest of its length and first three: 34 of seed 59's
+ # front (bfind, no tos) died on the corpus at 32 bits, and nothing here built bfind at 4-byte cells.
+-V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must]
++# Iteration 400: and every tail-call engine - preprocessed for x86-64 and compiled for i386 (__int128), then the i386
++# SYSCALL's local label taken for a handler: no tail design had ever built at 4-byte cells (seed 58: 401 of 401).
++V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'tail' in must]
+ for name, genes, must in V32:
+     g = E.canon(dict(S6, **dict(genes, jit=0)))
+     d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index fe61618..77a1980 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -788,13 +788,18 @@ def build_tail(g, d, src, flags, eng):
+     # preprocessed source, where its own '#ifndef DISPOFF' guard is already gone, so
+     # the handlers' table was offsets between functions: no tail design compiled in
+     # seed 46 (222 died: engine did not compile)
+-    if sh([CC(g), '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
++    # Iteration 400: preprocessed by the compiler that builds it - CC(g) alone at 4-byte cells (EVOLVE_CC's -m32 left
++    # out) made the x86-64 engine, 8-byte cells and __int128, for gcc -m32 to compile: every tail design died at 32 bits
++    # (seed 58: 401 of 401 'engine did not compile', results/fail32-400.md).
++    r = sh(CCV(g) + ['-E', '-P'] + fl + ['-o', pp, src])
++    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))   # Iteration 400: its first error, as build's
+     wrap = []
+     for attempt in range(2):
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
+                + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
+-        if r.returncode: raise RuntimeError('died: tail-call generation')
+-        if sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
++        if r.returncode: raise RuntimeError('died: tail-call generation' + why(r))
++        r = sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt())
++        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+         bad = tail_offenders(eng)
+         if not bad: return
+         wrap = sorted(set(wrap) | bad)
