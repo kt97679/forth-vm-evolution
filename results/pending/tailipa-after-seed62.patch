@@ -1,0 +1,31 @@
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 6371ca8..2e41e12 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -44,6 +44,7 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('cached top off', dict(tos=0), []),
+     ('multi-state (gen-msc)', dict(msc=1), ['msc']),
+     ('tail calls (gen-tail)', dict(tail=1), ['tail']),
++    ('tail calls on the two-bit tag', dict(tag2=1, tail=1), ['tail', 'tag2']),     # Iteration 405: t2call's path, at 4-byte cells too
+     ('superinstructions (gen-super)', dict(supers=donor('supers')), ['supers']),
+     ('op;CALL (gen-opcall)', dict(tag2=1, opcall=donor('opcall')), ['opcall']),
+     ('format-10 opcodes', dict(ops10=donor('ops10')), ['ops10']),
+diff --git a/tools/gen-tail.py b/tools/gen-tail.py
+index c168730..0a888fa 100644
+--- a/tools/gen-tail.py
++++ b/tools/gen-tail.py
+@@ -123,5 +123,14 @@ if '--preserve-none' in sys.argv:
+ if '--preserve-none' in sys.argv or '--musttail' in sys.argv:   # Iteration 401: musttail alone too (--musttail)
+     body = re.sub(r'(?<![\w.])return (htab\[t\]|esc_ftab\[t\]|t2tab\[t\]|t2esc\[t\]|H_\w+|f_)\((ip, dsp, rp, tos, t|tc_ip, tc_dsp, tc_rp, tc_tos, tc_t)\);',
+                   r'__attribute__((musttail)) return \1(\2);', body)
++# Iteration 405: at 32-bit x86 GCC gives a static function reached only by direct calls - the two-bit tag's shared call
++# path, t2call - a convention of its own, arguments in registers: its incoming stack then too small for the five a
++# dispatch passes on the stack, and its tail call stays a call ("tail calls not jumps (t2call)" - the rehearsal of the
++# after-seed-62 batch). noipa keeps every handler's convention the declared one; empty for clang and off i386, so no
++# other engine changes.
++head = ('#if defined(__i386__) && defined(__GNUC__) && !defined(__clang__)\n#define TC_NOIPA __attribute__((noipa))\n'
++        '#else\n#define TC_NOIPA\n#endif\n') + head
++head = re.sub(r'static ((?:__attribute__\(\(preserve_none\)\) )?)void H_', r'static TC_NOIPA \1void H_', head)
++body = re.sub(r'static ((?:__attribute__\(\(preserve_none\)\) )?)void H_', r'static TC_NOIPA \1void H_', body)
+ open(sys.argv[2], 'w').write(pre + head + body + entry + post)
+ print('%d handlers as functions, %d wrapped' % (len(names), len(WRAP & set(names))))
