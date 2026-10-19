@@ -22,7 +22,7 @@ index d82ee9b..400fdcf 100644
      }
      DS1 = (UNS64)(INT64)r;
 diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
-index ff03315..19114e7 100755
+index ff03315..61ac9d7 100755
 --- a/lab/evolve/engines-check.py
 +++ b/lab/evolve/engines-check.py
 @@ -118,7 +118,12 @@ for name, genes, must in VARIANTS:
@@ -32,18 +32,30 @@ index ff03315..19114e7 100755
 -V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must]
 +# Iteration 400: and every tail-call engine - preprocessed for x86-64 and compiled for i386 (__int128), then the i386
 +# SYSCALL's local label taken for a handler: no tail design had ever built at 4-byte cells (seed 58: 401 of 401).
-+# Not clang's tail engine without preserve_none: at 4-byte cells it builds and dies on the corpus (Iteration 400, open -
-+# results/fail32-400.md); with preserve_none and musttail it lives.
++# Not clang's tail engine without preserve_none: at 4-byte cells clang makes none of its dispatches jumps without
++# musttail - 'tail calls not jumps' (Iteration 400, results/fail32-400.md); with preserve_none and musttail it lives.
 +V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS
 +       if 'bfind' in must or ('tail' in must and not (genes.get('compiler') and not genes.get('tailpn')))]
  for name, genes, must in V32:
      g = E.canon(dict(S6, **dict(genes, jit=0)))
      d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index fe61618..77a1980 100644
+index fe61618..d90e2e7 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
-@@ -788,13 +788,18 @@ def build_tail(g, d, src, flags, eng):
+@@ -773,7 +773,10 @@ def tail_offenders(eng):
+     for line in out.splitlines():
+         m = re.match(r'^[0-9a-f]+ <([^>]+)>:', line)
+         if m: fn = m.group(1); continue
+-        if fn and re.match(r'[HI]_', fn) and re.search(r'call +\*\(%\w+,%\w+,8\)', line):
++        # Iteration 400: i386's forms too - a 4-byte table, absolute or based, or the pointer loaded first: matched
++        # only as x86-64's, clang's calls at 4-byte cells went unseen, unwrapped, and its engine died on the corpus.
++        # x86-64's own form is matched as it was: no 64-bit engine changes.
++        if fn and re.match(r'[HI]_', fn) and re.search(r'call +\*\(%\w+,%\w+,8\)|call +\*(0x[0-9a-f]+)?\((%e\w+)?,%e\w+,4\)|call +\*%e[a-z]{2}\b', line):
+             bad.add(re.sub(r'^[HI]_', '', fn).split('.')[0])
+     return bad
+ 
+@@ -788,13 +791,18 @@ def build_tail(g, d, src, flags, eng):
      # preprocessed source, where its own '#ifndef DISPOFF' guard is already gone, so
      # the handlers' table was offsets between functions: no tail design compiled in
      # seed 46 (222 died: engine did not compile)
