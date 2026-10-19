@@ -662,3 +662,8 @@ of its front, where seeds 53-60 had 4%.
 
 `then experiment review-checks.py spread` after footprint.py: its pack's table reads seeds 58-62 at one generation,
 and Iteration 393's replicate predictions are scored from it.
+
+## Seed 63 and programs past 4 MB - noted (Iteration 416)
+
+Patch 12 adds 184 bytes to every plain-CV8 image: Iteration 409's prediction 3 (its smallest within 2% of seed 58's
+14,146) now carries that 1.3% - read it so.

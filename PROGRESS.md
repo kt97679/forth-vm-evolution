@@ -8058,3 +8058,21 @@ archive carries it. HANDOFF.md's state names the files a new chat needs - the un
 its commit - and HANDOFF-PROMPT.md asks for them.
 
 Files: lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF-PROMPT.md, HANDOFF.md.
+
+## Iteration 416 - 2026-10-19 - Claude
+
+**Programs past 4 MB on every design: plain CV8's three reaches extended (pending, patch 12).** The owner: yes, make
+sure programs larger than 4 MB are supported. Two test programs - calls across 4.9 MB of dictionary with a DOES> child
+far out (big1, 209), and a DOES> word past 4 MB (big2, 5). On master the two-bit tag ran both; plain CV8 refused both:
+at byte headers its call reached 2 MB (21 bits - not the 4 MB I had said), its header link 4 MB, its DOES> call 2 MB.
+
+The fix: a call past reach as the body's address and EXECUTE (cv8.4's FAR,, CALL1, the forms in reach); a fourth link
+form, 0xE0-0xFF and 29 bits, with every shorter link as before (cv8b.4, the engine's PREVNFA and bf_prev, the
+converter); the far DOES> call in cells - 32 MB at 8-byte cells, 16 at 4 (cv8.4, the engine's and SPN's DODOES, the
+converter). Two tries failed on the way: NIP, which this kernel lacks - the overlay did not compile, and build-stages.sh
+built on (open, HANDOFF 0h) - and EXECUTE compiled as a primitive, which here is a colon word. Now big1 209 and big2 5 on
+s6, seed 58's 09de03f091, seed 60's 4ac602c8bd and 5ee5c38165, and s6 at 4-byte cells; engines-check runs both on s6, the
+tag and 4-byte cells. Cost: +184 bytes a plain-CV8 image (s6 9,161 to 9,345). batch-check, the twelve: PASS - 12 patches on a fresh clone of 911e26a: run-tests PASS (engines-check 89 paths, the programs past 4 MB among them), validate 7 of 7 IDENTICAL, jail PASS.
+
+Files: results/bigprog-416.md, results/drafts/bigprog-gen-416.py, results/drafts/bigprog-416.py, results/pending/
+bigprog-after-seed62.patch (new); results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.

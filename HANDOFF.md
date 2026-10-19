@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 415.
+- master: Iteration 416.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -64,7 +64,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
   jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) bfind built in TOS designs (402), the gene jitret (404), GCC's 32-bit t2call tail call (405; the batch rehearsed,
-  results/rehearsal-405.md) the simplicity review's freeze (409) and I+ on the two-bit tag (412) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  results/rehearsal-405.md) the simplicity review's freeze (409) I+ on the two-bit tag (412) and programs past 4 MB on plain CV8 (416) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -209,6 +209,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    padding that alignment adds, a load then past its 4 KB reach (the fsys lead was a correlate). Built (Iteration 407, the
    owner): alignhot left out of a 32-bit ARM build (evolve.py's ccflags, ARM32), as the JIT is of a 32-bit one - in master,
    the laptop's and dream's builds unchanged; seed 62's chain is the first to check it on the Tegra.
+0h. **Programs past 4 MB** (the owner, Iterations 415-416, results/bigprog-416.md): supported by every design from the
+   after-seed-62 batch (patch 12) - plain CV8's call, link and DOES> reaches extended, the two-bit tag's already 1 GB;
+   engines-check runs two such programs. Cost: +184 bytes a plain-CV8 image. Open: tools/build-stages.sh builds on when
+   an overlay fails to compile (an undefined word left a crashing s6) - it should stop.
 2. **Generalization** (results/generalization.md, Iteration 305): selection is measured on small
    programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
    build: a held-out workload whose code footprint grows - generated programs of N words, hot and run
