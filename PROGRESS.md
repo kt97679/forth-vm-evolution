@@ -7770,3 +7770,28 @@ No 32-bit failure of seeds 58-59 was a design that cannot exist there: bugs, and
 
 Files: results/drafts/fail32-tailsplit-401.py, results/pending/musttail-after-seed62.patch (new); results/fail32-400.md,
 results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 402 - 2026-10-19 - Claude
+
+**The open items while seed 60's chain compares: bfind built in TOS designs (pending, patch 7); xcheck against the
+laptop's 32-bit speeds (item 0g); seed 59's 64-bit deaths classified; a lead on the Tegra's link failures.** The
+owner's log: seed 60's evolution done at 13:12 (generation 138, 34,522 designs), its chain in compare-fronts.
+
+bfind in TOS designs: a name's walk is one macro, NAME_WALK - bf_walk's in a bfind design, else the plain loop - taken
+by THREAD-FIND, (FIND) and gen-tos.py's TOS bodies of them. On master s6 with THREAD-FIND builds the same engine with
+bfind as without; with the patch they differ at both widths, for THREAD-FIND on CV8 and (FIND) on the two-bit tag, all
+alive, and a design built twice without bfind is identical (results/drafts/bfindtos-402.py). engines-check: two bfind
+variants on s6 itself, checked built - the engine not the same without bfind. batch-check, the seven: PASS - 7 patches on a fresh clone of befd1b6: run-tests PASS (engines-check 83 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Item 0g: xcheck.py --report --laptop32 FILE compares a 4-byte host with the laptop's own 32-bit speeds too; nothing
+changes without it. Seed 59's checks of seed 58's front: the Tegra 0.709 to 0.857, dream at 32 bits 0.651 to 0.650 -
+for dream the machine, not the width (results/xcheck32-402.md).
+
+At 64 bits seed 59's only deaths are the reach limit's 188 - CV8 at scale 0 without both varcall and doesfar, calls
+that cannot span the image, not run: the designs' own (results/fail32-400.md, results/drafts/fail64-reach-402.py).
+The Tegra: all eight link failures of seeds 58-59's chains have fsys on, 5 of the 24 measured - a lead for item 0d
+(results/drafts/xcheck-fails-402.py); seed 60's chain records the linker's first error.
+
+Files: results/xcheck32-402.md, results/drafts/bfindtos-402.py, results/drafts/fail64-reach-402.py,
+results/drafts/xcheck-fails-402.py, results/pending/bfindtos-after-seed62.patch (new); lab/evolve/xcheck.py,
+results/bfind32-fault-399.md, results/fail32-400.md, results/pending/ORDER.md, results/README.md, HANDOFF.md.

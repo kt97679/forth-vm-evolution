@@ -61,3 +61,7 @@ read, it fails as "tail calls not jumps". With all five applied: PASS - 5 patche
 The sixth, tested at Iteration 401: with patches 1-6, seed 59's clang tail designs a973c305bc and 0136e7294a (no
 tailpn) and its GCC one f510231b27 live at 4-byte cells, and engines-check's clang tail variant without preserve_none
 builds and lives at both widths. With all six applied: PASS - 6 patches on a fresh clone of de0b64f: run-tests PASS (engines-check 79 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+The seventh, tested at Iteration 402: on master s6 with THREAD-FIND builds the same engine with bfind as without it; with
+patches 1-7 the engines differ at 8- and 4-byte cells (THREAD-FIND on CV8, (FIND) on the two-bit tag), all alive, and
+the same design built twice without bfind is identical. With all seven applied: PASS - 7 patches on a fresh clone of befd1b6: run-tests PASS (engines-check 83 paths), validate 7 of 7 IDENTICAL, jail PASS.

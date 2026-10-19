@@ -48,15 +48,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 401.
-- **The runs**: seed 60 running (the owner started it from Iteration 398's bundle: 12 h, `noevolved` - the clean
+- master: Iteration 402.
+- **The runs**: seed 60's evolution done (the owner's log, 13:12), its chain in compare-fronts (12 h, `noevolved` - the clean
   anchoring test); next seed 61 (NEXT-RUN's line, 6 h) when seed 60's chain has finished, then seed 62 (6 h, its command
   in NEXT-RUN's comment, ending `then experiment footprint.py` - item 2, the owner at 397): the replicates, seed 60's start. Predictions for all: the end of
   results/predictions.md.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
-  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400) and musttail on every clang tail engine (401) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) and bfind built in TOS designs (402) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -179,14 +179,17 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    missing guarantee: clang's tail engine without musttail, whose i386 dispatches clang made no jumps (74 + 86) -
    musttail on every clang tail engine (401, patch 6; the owner asked for a view). The owner (400): understand why each
    fails before ruling. Proposed: no design dead for a machine class - a bug fixed, a mechanism impossible there left out
-   of that class's build (as the JIT, 336); until a class is classified, the slowest there (336). Open: the Tegra's link
+   of that class's build (as the JIT, 336); until a class is classified, the slowest there (336). At 64 bits (402) seed 59's one death class, the reach limit (188), is the designs' own -
+   dead on every machine. Open: the Tegra's link
    failures (item 0d - seed 60's chain records their first error).
-0g. **The 32-bit hosts compared against the laptop's 64-bit speeds** (xcheck.py, its Spearman over 'speed'): for a run
-   selected at both widths the laptop's 32-bit speed is the one to compare (seed 59's checks of seed 58's front: 0.651
-   and 0.709, a two-encoding front ranking differently at 32 bits). A diagnostic, no run waits for it.
+0g. **The 32-bit hosts against the laptop's 32-bit speeds** - done (Iteration 402, results/xcheck32-402.md):
+   `xcheck.py --report OUT.json --laptop32 <the checked run's results/evolve-*.md>`; use it in processing for every 4-byte
+   host. Seed 59's checks of seed 58's front: the Tegra 0.709 against the 64-bit speeds, 0.857 against the 32-bit; dream
+   at 32 bits 0.651 and 0.650 - for dream the machine, not the width (item 4d).
 0d. **The Tegra's link failures** (seed 57's 5405c5b1d9 and df0c11fd98, and a rejected design): not regpin (inert on
    ARM), not lto (it built there three times); seed 60's chain checks seed 59's front with the new why() - a
-   recurrence will name its cause. Not reproducible here: a cross build needs Iteration 330's qemu harness, untracked.
+   recurrence will name its cause. A lead (Iteration 402, results/xcheck32-402.md): all eight link failures of
+   seeds 58-59's chains have fsys on, 5 of the 24 measured. Not reproducible here: a cross build needs Iteration 330's qemu harness, untracked.
 2. **Generalization** (results/generalization.md, Iteration 305): selection is measured on small
    programs. The second CPU is done (the remote checks: dream.lan at both widths, the Tegra); still to
    build: a held-out workload whose code footprint grows - generated programs of N words, hot and run
@@ -215,8 +218,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4b. **The simplicity review** (results/drafts/gene-usage-53-56.md, Iteration 372): never-chosen mechanisms - msc,
    scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call, after seed
    60's anchoring answer (freezing would make an anchoring permanent). Not tag2 or bytehdr: free, the search chooses
-   by objective (seed 58). And bfind, inert in every TOS design (Iteration 399): its walk into
-   gen-tos.py's bodies, or the gene needing tos 0. And tail, on no front of seeds 53-58: since seed 57 every tail design was
+   by objective (seed 58). And bfind, inert in every TOS design (Iteration 399): built there from
+   the after-seed-62 batch (402, patch 7). And tail, on no front of seeds 53-58: since seed 57 every tail design was
    the slowest at 32 bits for a fault (Iteration 400) - judge it again after seed 63.
 4c. **A local minimum?** (the owner, Iterations 373 and 392; results/convergence-seed58.md maps five sources to their
    tests): a constraint - real (seed 58); the carry - seed 60; one start for every run - seeds 58-62; collapse inside

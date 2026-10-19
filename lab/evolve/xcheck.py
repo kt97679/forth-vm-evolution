@@ -38,6 +38,8 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       on the laptop: the host's speeds against the laptop's for the designs measured on
       both - the Spearman rank correlation, where the laptop's fastest rank there, the
       designs that moved most - as markdown.
+      --laptop32 FILE (Iteration 402): the laptop's records, so a 4-byte host is compared against
+      their 32-bit speeds too.
 """
 import struct, json, math, os, platform, re, shutil, subprocess, sys, time
 
@@ -64,6 +66,7 @@ def norm(e):
 
 # ---- --report: the laptop's speeds against the host's ----
 if '--report' in ARGS:
+    L32 = opt('--laptop32')                                             # Iteration 402: see below
     R = json.load(open(opt('--report')))
     env = R.get('env', {})
     print('## %s - %s\n' % (env.get('host', '?'), env.get('cpu', '?')))
@@ -81,6 +84,20 @@ if '--report' in ARGS:
     rh = ranks([x['speed_here'] for x in d])
     top = sorted(range(len(d)), key=lambda i: d[i]['speed'])[:6]
     print('**%d designs measured on both: Spearman %.3f** between the laptop\'s speeds and this host\'s.\n' % (len(d), rho))
+    # Iteration 402 (open item 0g): --laptop32 FILE - the laptop's records (a results/evolve-*.md's front lines, or a
+    # db.jsonl): for a run selected at both widths, a 4-byte host is compared against their speed32 as well - the laptop's
+    # own 32-bit speeds, a two-encoding front ranking differently at 32 bits. Without it, as before.
+    if L32:
+        s32 = {}
+        for line in open(L32):
+            if line.startswith('{'):
+                try: r = json.loads(line)
+                except ValueError: continue
+                if r.get('id') and r.get('speed32') is not None: s32[r['id']] = r['speed32']
+        d32 = [x for x in d if x['id'] in s32]
+        if len(d32) >= 3:
+            print('**Against the laptop\'s 32-bit speeds** (%d of them, --laptop32): Spearman %.3f.\n' % (len(d32), spearman([s32[x['id']] for x in d32], [x['speed_here'] for x in d32])))
+        else: print('Against the laptop\'s 32-bit speeds: %d of the designs have one (--laptop32) - too few to rank.\n' % len(d32))
     print('The laptop\'s six fastest, their rank here (of %d): %s.\n' % (len(d), ' '.join(str(rh[i] + 1) for i in top)))
     mv = sorted(d, key=lambda x: x['speed_here'] / x['speed'])
     print('| design | laptop | here | here / laptop |\n|---|---|---|---|')

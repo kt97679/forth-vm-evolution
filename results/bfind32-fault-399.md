@@ -45,3 +45,13 @@ archive's can say whether they are another fault.
 the opcodes) while nothing built differs: 42 of seed 59's front carry it so, and gene-usage counts read it as
 used. Either the TOS bodies take the walk (gen-tos.py), or the gene needs tos 0 - an honest identity. Open: HANDOFF
 item 4b, the simplicity review.
+
+## Iteration 402: bfind built in TOS designs
+
+The second finding fixed (results/pending/bfindtos-after-seed62.patch). A name's walk down a thread is one macro,
+NAME_WALK (engine/vm-lab.c) - bf_walk's in a bfind design, else the plain loop - taken by THREAD-FIND and (FIND) and by
+gen-tos.py's TOS bodies of them. On master, s6 with THREAD-FIND as an opcode builds the same engine, byte for byte,
+with bfind and without it. With the patch the two differ, at 8- and 4-byte cells, for THREAD-FIND on CV8 and (FIND) on
+the two-bit tag alike, and all live; the same design built twice without bfind is identical, so the difference is the
+gene's (results/drafts/bfindtos-402.py). engines-check: those two variants on s6 itself, each checked built - its engine
+not the same without bfind - which fails on master. batch-check, the seven: PASS - 7 patches on a fresh clone of befd1b6: run-tests PASS (engines-check 83 paths), validate 7 of 7 IDENTICAL, jail PASS.
