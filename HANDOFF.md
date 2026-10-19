@@ -48,12 +48,18 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 414.
+- master: Iteration 415.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
   seed 60's start. Predictions for all: the end of
   results/predictions.md.
+- **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
+  processed - seed 61's will be `forth-vm-evolution-chain-ed674ec37-fury-<date>_tar.gz` (started from Iteration 406's
+  bundle), seed 62's from the bundle it starts from. Nothing else: seed 62's chain runs the replicates' comparison
+  itself, and seed 60's archive (`forth-vm-evolution-chain-bcb34da3e-fury-20261019-153349_tar.gz`) is wanted only if that
+  step failed. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
+  (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
@@ -81,8 +87,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
    positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
    (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
-   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all - about 8 minutes for three
-   databases here, so in the background (results/drafts/preflight-414.md).
+   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all - seed 62's chain runs it on
+   the laptop over seeds 58-62 (its review-checks pack, Iteration 415); here, about 8 minutes for three databases, in
+   the background (results/drafts/preflight-414.md).
 3. Score the predictions, write the next (`results/predictions.md`).
 4. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a `---`, then report.md - the gate and
    ans-check read genomes from it; results/xcheck-seedN.md from the remote reports.

@@ -23,8 +23,9 @@ Tell me what the check made you track or throw away.
 
 ## 2. To the new chat
 
-Attach the bundle the old chat presented last, and the packs of any laptop run
-not yet processed (forth-vm-evolution-*_tar.gz).
+Attach the bundle the old chat presented last, the packs of any laptop run
+not yet processed (forth-vm-evolution-*_tar.gz), and any archive HANDOFF.md's
+"Files a new chat needs" names (Iteration 415).
 
 ---
 

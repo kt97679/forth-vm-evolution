@@ -657,3 +657,8 @@ Seed 63, free of the tag-2 requirement, the after-seed-62 batch applied (its hou
 
 With patch 11, rtiplus works on tag-2 designs (loop's dispatches -20% on 4ac602c8bd). Seed 63: rtiplus on more than 10%
 of its front, where seeds 53-60 had 4%.
+
+## Seed 62's chain, its last step - predicted (Iteration 415)
+
+`then experiment review-checks.py spread` after footprint.py: its pack's table reads seeds 58-62 at one generation,
+and Iteration 393's replicate predictions are scored from it.

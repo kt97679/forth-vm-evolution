@@ -8043,3 +8043,18 @@ the one thing the routine missed - results/README.md's pending/ORDER.md line; st
 proposed for the owner: seed 60's shape without the requirement, with the comparison - its hours his.
 
 Files: results/drafts/preflight-414.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 415 - 2026-10-19 - Claude
+
+**The handoff made self-sufficient for the processing ahead.** The owner: the previous chat is still open if a file is
+needed from it - none is: its last bundle (Iteration 398) passed the handoff check, nothing outside the repository, and
+every archive since came from the laptop. And make sure the next handoff misses nothing.
+
+One gap: seed 62's processing compares the replicates (review-checks.py spread) over seeds 60-62's databases, and those
+live on the laptop, not in the repository - a new chat would have needed seed 60's and 61's archives again. Seed 62's
+chain now runs the comparison itself, on the laptop over seeds 58-62 (NEXT-RUN: `... then experiment footprint.py then
+experiment review-checks.py spread` - an experiment step gets this run's database and the newest four archived), so its
+archive carries it. HANDOFF.md's state names the files a new chat needs - the unprocessed chain archives, seed 61's by
+its commit - and HANDOFF-PROMPT.md asks for them.
+
+Files: lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF-PROMPT.md, HANDOFF.md.
