@@ -32,3 +32,31 @@ and only the image's code: fib, loop and bubble run code compiled at run time (0
 where the compiler would have to emit the register forms too. **The lead it leaves**: R> in the run-time-compiled loops
 of loop and bubble (20-26% of their dispatches) and DROP, ROT - a run-time fusion's target (the rt* genes' family),
 cheaper than a register machine; to be priced next.
+
+## Corrected (Iteration 411): the register machine's table, and its lead
+
+**The table above is wrong**: stackops.py named each opcode by the old one-byte layout, and seed 60's designs - escape 2,
+the two-bit tag - number theirs otherwise. The converter's own map (CALLMAP) for 4ac602c8bd: the opcode stackops called
+R> is I, its < is DUP, its NEGATE SWAP, its LSHIFT XOR, its DROP LIT8 (results/drafts/opnames-411.py). stackops.py now
+names an opcode by the converter's map first. Again, the same three designs:
+
+| workload | the bound | the largest movers |
+|---|---|---|
+| kernel | 20-22% | ROT 6%, DUP 3%, >R 3%, SWAP 2% |
+| fib | 7-14% | literals 7% |
+| corpus | 24% | SWAP 4%, ROT 4%, DUP 3%, I 3% |
+| loop | 40% | DUP 20%, I 20% |
+| bubble | 46% | I 26%, literals 14%, SWAP 6% |
+| ackermann | 19% | DUP 10%, SWAP 10% |
+| sieve (held out) | 28% | ROT 7%, DUP 7%, I 4% |
+| parse (held out) | 23% | SWAP 5%, >R 3-5%, ROT 3% |
+
+So the prize is larger than the first table said, and **there is no R> lead: it is I**, the loop index - 20% of loop's
+dispatches and 26% of bubble's. Its fusion exists: the gene rtiplus (Iteration 60) compiles I + as I+ at run time - and
+on 4ac602c8bd it does nothing. With rtiplus on, I+ gets its opcode slot and the overlay its kernel variant
+(k64-bt-...-loopall-iplus), yet the loop's dispatches stay 20,032,046 against 20,031,683, I still 4,000,038 of them
+(results/drafts/rtiplus-count-411.py): on the two-bit tag the fusion never fires - an expressed gene with no effect,
+as bfind was on the cached top. (A timing of the two here, results/drafts/rtiplus-time-411.py, said -5.5% on the
+geometric mean - with -19% on ackermann, where nothing differs: this VM's noise and layout, not the gene; a dispatch
+count is the measure to trust here.) **The lead now**: make I+ fire on the two-bit tag - cv8-fuse-iplus.4 was written
+for cv8-fuse.4, and a tag-2 kernel loads cv8t-fuse.4 - or, failing that, rtiplus needing a design off the tag.

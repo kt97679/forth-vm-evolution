@@ -44,6 +44,7 @@ for did in args:
         if op in sup: return sup[op]
         if op in o10: return o10[op]
         if op >= 128: return 'call'
+        if op in CONV: return CONV[op]                                 # Iteration 411
         if op in FIXED: return FIXED[op]
         if 73 <= op < 73 + len(folds): return folds[op - 73] + ';EXIT'
         if g.get('escape') == 2: i = op if op < 27 else None
@@ -56,9 +57,17 @@ for did in args:
         if all(p in MOVE for p in parts): return 'move'
         if n in LIT: return 'literal'
         return 'work'
-    d = os.path.join(E.EV, 'stackops'); shutil.rmtree(d, ignore_errors=True); E.PROFILING[0] = True
+    d = os.path.join(E.EV, 'stackops'); shutil.rmtree(d, ignore_errors=True); os.makedirs(d); E.PROFILING[0] = True
+    cm = os.path.join(d, 'callmap'); os.environ['CALLMAP'] = cm      # Iteration 411: the converter's own names
     try: eng, img = E.build(dict(g, tail=0, msc=0), d)
-    finally: E.PROFILING[0] = False
+    finally: E.PROFILING[0] = False; os.environ.pop('CALLMAP', None)
+    # Iteration 411: name() maps an opcode by the old one-byte layout, wrong for an escape-2 design on the two-bit tag
+    # (4ac602c8bd: I named R>, DUP <, SWAP NEGATE, LIT8 DROP) - the converter's map names every opcode the image's code
+    # uses; the layout only the rest (Iteration 410's table had read it so: results/drafts/price-410.md, corrected).
+    CONV = {}
+    for l in (open(cm) if os.path.exists(cm) else []):
+        f = l.split()
+        if f and f[0] == 'O' and len(f) >= 5: CONV.setdefault(int(f[3]), f[4])
     pw = E.private_work(d)
     print('## %s - %s bytes\n' % (did, format(recs[did]['size'], ',')))
     print('| workload | dispatches | moves only | literals alone | bound on what registers remove | the biggest movers |')

@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 410.
+- master: Iteration 411.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -249,8 +249,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    Translation to direct threading at load (gforth's hybrid, Wasm3's M3): the compact image expanded at start. The
    interpreter's returns predicted - priced (410, results/drafts/price-410.md): handler replication at most 0.4-1.6%
    of the geometric mean, and no dispatch fewer - not built; the JIT's is built (jitret). The register machine re-priced
-   there: its bound on seed 60's front 0-39% a workload (kernel 12%, corpus 15%, loop 20%, bubble 39%); the lead, R> in
-   run-time-compiled loops (20-26% of loop's and bubble's dispatches) - a run-time fusion, priced next. The search's own escape - islands or immigrants - after the replicates (Iteration 393's
+   there, corrected at 411 (stackops.py named a two-bit-tag design's opcodes by the old layout): its bound 7-46% a
+   workload (kernel 21%, corpus 24%, loop 40%, bubble 46%, ackermann 19%). The lead: I, the loop index - 20% of loop's
+   dispatches, 26% of bubble's - whose fusion rtiplus is expressed but never fires on the two-bit tag (411): fix it
+   (cv8-fuse-iplus.4 with cv8t-fuse.4), or make the gene need a design off the tag. The search's own escape - islands or immigrants - after the replicates (Iteration 393's
    prediction 4). Priced out: indirect threading (Iteration 29); deferred: ?STACK (item 5).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism

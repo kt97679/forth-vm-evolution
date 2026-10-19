@@ -7971,3 +7971,25 @@ in those run-time-compiled loops, 20-26% of loop's and bubble's dispatches - a r
 register machine; priced next.
 
 Files: results/drafts/price-410.md (new); lab/evolve/stackops.py, results/README.md, HANDOFF.md.
+
+## Iteration 411 - 2026-10-19 - Claude
+
+**Iteration 410's register-machine table corrected, its "R> lead" a mislabel of I; and rtiplus, I + fused at run time,
+found inert on the two-bit tag** (results/drafts/price-410.md, "Corrected"). The owner: proceed with the remaining
+items - the lead's pricing.
+
+Pricing it, the loop's dispatches named by the converter's own map (CALLMAP) disagreed with stackops.py's: on
+4ac602c8bd - escape 2, the two-bit tag - the opcode named R> is I, < is DUP, NEGATE SWAP, LSHIFT XOR, DROP LIT8.
+stackops.py now names by the converter's map first. The bound again, seed 60's three fastest interpreted designs:
+kernel 20-22%, fib 7-14%, corpus 24%, loop 40%, bubble 46%, ackermann 19% - larger than 410's, and its largest single
+mover is I: 20% of loop's dispatches, 26% of bubble's.
+
+I + has a fusion already, rtiplus (Iteration 60). On 4ac602c8bd with it on, I+ takes its opcode slot and the kernel
+variant k64-bt-...-loopall-iplus loads the overlay - and the loop's dispatches are unchanged: 20,032,046 against
+20,031,683, I still 4,000,038. On the two-bit tag the fusion never fires: expressed, not built, as bfind was under tos.
+A timing of the two on this VM said -5.5% on the six workloads' mean, with -19% on ackermann, which nothing changed:
+noise and layout - the dispatch count is the measure here. The lead: make I+ fire on the tag (cv8-fuse-iplus.4 was
+written for cv8-fuse.4; a tag-2 kernel loads cv8t-fuse.4), or rtiplus needing a design off it.
+
+Files: results/drafts/opnames-411.py, results/drafts/rtiplus-count-411.py, results/drafts/rtiplus-time-411.py (new);
+lab/evolve/stackops.py, results/drafts/price-410.md, results/README.md, HANDOFF.md.
