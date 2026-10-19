@@ -8027,3 +8027,19 @@ applied), then seed 63, free of the tag-2 requirement.
 
 Files: results/drafts/t2pairs-413.py, results/drafts/t2pairs-instrument-413.patch (new); results/drafts/price-410.md,
 HANDOFF.md.
+
+## Iteration 414 - 2026-10-19 - Claude
+
+**The project reviewed for what can be done while seeds 61-62 run: the processing steps to come, tried first.** The
+owner: review the project. What remains is the runs' (seeds 61-63) or the owner's; the tools those steps use were not
+all tried, so each ran here on what is in hand (results/drafts/preflight-414.md).
+
+review-checks.py spread, on seeds 58-60's databases: it works - 466 s for three, so in the background. At generation
+133: fastest 0.118, 0.117, 0.111; smallest 14,146, 15,915, 15,938; seeds 59 and 60, both on the tag, 13.6 points of
+gene usage apart on average - many settings, one performance. review-checks.py curse on seed 60: the fast end's
+optimism 1.066, already below seed 58's 1.112 without the fast gate - seed 63 is read against both. The batch's
+application, dry-run in a scratch clone: the eleven apply, the move and the citations' sed work, and handoff-check named
+the one thing the routine missed - results/README.md's pending/ORDER.md line; step 6 says so now. And seed 63's command,
+proposed for the owner: seed 60's shape without the requirement, with the comparison - its hours his.
+
+Files: results/drafts/preflight-414.md (new); results/README.md, HANDOFF.md.

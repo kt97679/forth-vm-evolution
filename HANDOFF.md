@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 413.
+- master: Iteration 414.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -81,7 +81,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
    positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
    (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
-   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all.
+   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all - about 8 minutes for three
+   databases here, so in the background (results/drafts/preflight-414.md).
 3. Score the predictions, write the next (`results/predictions.md`).
 4. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a `---`, then report.md - the gate and
    ans-check read genomes from it; results/xcheck-seedN.md from the remote reports.
@@ -95,7 +96,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 6. The records. A batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
    (Iteration 372: 62 had been left behind):
    `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
-   (N the seed). The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
+   (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
+   run: handoff-check names it). The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
    Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
    lab/evolve/progress-table.py > results/progress-by-run.md`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
    chat's turn ends".
@@ -173,7 +175,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 0. **Seeds 60-62** (the state, above), each by the routine. Seed 60 answered the anchoring question (Iteration 406; results/review-methodology-386.md,
    3c): small at both widths, no gain past a bar - no evidence of anchoring at 12 hours; seeds 61-62 how far
    runs of one start spread. Then the after-seed-62 batch: seed 63 its first run, free of the tag-2 requirement (the owner, 409: seeds
-   59-60 ended 11-12% above seed 58's free small end; free, it is like-for-like with seed 58's curse figure) - `review-checks.py curse` on its report
+   59-60 ended 11-12% above seed 58's free small end; free, it is like-for-like with seed 58's curse figure - and
+   seed 60's own, 1.066, is already below seed 58's 1.112). Proposed (414): seed 60's shape without the requirement -
+   `seed 63 <hours> widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
+   a verdict against seeds 59-62 - its hours the owner's - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).
 0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every
@@ -237,7 +242,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4c. **A local minimum?** (the owner, Iterations 373 and 392; results/convergence-seed58.md maps five sources to their
    tests): a constraint - real (seed 58); the carry - none found (seed 60, 406); one start for every run - seeds 58-62; collapse inside
    a run - none in seed 58; the gene set's edge - only new mechanisms pass it (item 4). Gene usage against seeds 53-57
-   by gene-usage.py; two consecutive carried runs differ by up to 17 points a gene. Seed 59 (Iteration 403): no collapse - the tag-2 family's diversity 0.45-0.52 to
+   by gene-usage.py; two consecutive carried runs differ by up to 17 points a gene. Seeds 59 and 60, two starts on the tag, 13.6 points apart on average at generation
+   133 while within 6% in speed and 0.2% in size - many settings, one performance (414). Seed 59 (Iteration 403): no collapse - the tag-2 family's diversity 0.45-0.52 to
    the end - but no gain in its last third (smallest last at generation 88 of 143, speed's last 2% at 81); its front's
    genes against seeds 53-58's differ by up to 56 points (rtloopall, escape, supers, guard on; tos off).
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
