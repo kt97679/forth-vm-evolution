@@ -1,0 +1,17 @@
+diff --git a/tools/layout.py b/tools/layout.py
+index 9751951..ec933e5 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -505,6 +505,12 @@ if TAG2_ON:
+     # unfused, and an escaped form costs the two dispatches it saves)
+     if any(x['n'] == 'IMM-OPS' for x in order):
+         _pin += [G['X_OPS10'][n] for n in ('DUP+I', 'DUP<I') if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
++    # Iteration 412: rtiplus's I+ - the run-time fuser's (I, +) -> I+ entry in SUPER-TABLE, which on the tag holds
++    # one-byte codes as the loop tables do - pinned where it is in the table: escaped, the entry was dropped and the
++    # fusion never fired (seed 60's 4ac602c8bd: the loop's I, a fifth of its dispatches, unfused with rtiplus on).
++    if ('--rtfuse' in ARGV and any(x['n'] == 'SUPER-TABLE' for x in order) and 'I+' in G['X_OPS10'] and 'I' in G['X_OPS10']
++            and G['X_OPS10']['I+'] not in _pin):
++        _pin += [G['X_OPS10']['I+']]
+     assert all(p in _names for p in _pin), [p for p in _pin if p not in _names]
+     # --tag2-hot W: an operation weighing at least W in the reference is hot -
+     # ranked first, by weight; the rest by how often the image uses it. 0:
