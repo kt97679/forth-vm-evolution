@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 404.
+- master: Iteration 405.
 - **The runs**: seed 60's evolution done (the owner's log, 13:12), its chain in compare-fronts (12 h, `noevolved` - the clean
   anchoring test); next seed 61 (NEXT-RUN's line, 6 h) when seed 60's chain has finished, then seed 62 (6 h, its command
   in NEXT-RUN's comment, ending `then experiment footprint.py` - item 2, the owner at 397): the replicates, seed 60's start. Predictions for all: the end of
@@ -56,7 +56,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
-  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) bfind built in TOS designs (402) and the gene jitret (404) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) bfind built in TOS designs (402), the gene jitret (404) and GCC's 32-bit t2call tail call (405; the
+  batch rehearsed, results/rehearsal-405.md) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -257,6 +258,9 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 
 ## Lessons - how faults got in, and the checks that catch them now
 
+- A rehearsal reaches what a test of variants does not: the tail variants were built on s6, not on the two-bit tag, and
+  t2call's path, which only a tag2 design has, kept its tail call a call at 32 bits under GCC (Iteration 405). Before the
+  laptop runs a batch, evaluate a run's front with its genes on, and evolve a short run, in a scratch clone.
 - Two steps of one build must target one machine: build_tail preprocessed with cc and compiled with gcc -m32, so every
   tail design failed at 32 bits from Iteration 336 to 400, read as a design that does not build there; and a machine-
   code reader written for x86-64 (tail_offenders) saw nothing at i386. A generator path is checked at each machine

@@ -7839,3 +7839,27 @@ laptop's predictors. batch-check, the eight: PASS - 8 patches on a fresh clone o
 
 Files: results/jitret-404.md, results/drafts/jitret-404.py, results/pending/jitret-after-seed62.patch (new);
 results/pending/ORDER.md, results/README.md, HANDOFF.md.
+
+## Iteration 405 - 2026-10-19 - Claude
+
+**The after-seed-62 batch rehearsed: every new mechanism alive on real designs and in a short run; one new 32-bit
+failure, GCC's t2call tail call on the two-bit tag, fixed as patch 9** (results/rehearsal-405.md). The owner: yes.
+
+The batch's eight patches in a scratch clone, built. Targeted - 13 of seed 59's front designs, evaluated as a run does
+at both widths: 4 JIT designs with jithelp, jitre and jitret alive; 3 tos designs with bfind (now built) alive; seed
+59's 3 that died at 32 bits (bfind, no tos) alive there, 0.44-0.49; clang tail engines with and without preserve_none
+alive; a GCC tail engine on the two-bit tag alive at 64 bits, at 32 "tail calls not jumps (t2call)". A short run (pop
+16, one round, tag2, both widths, noevolved), stopped with the session at generation 21: 330 designs, 322 alive at both
+widths, 8 refused by the reach limit, no 32-bit failure; jitret in 51, jithelp in 4, GCC tail in 4, clang tail in 6,
+all alive.
+
+The failure: t2call, the two-bit tag's shared call path, a static function reached only by jumps - GCC at i386 gave it
+a local convention, arguments in registers, so its incoming stack could not hold the five arguments of the next
+dispatch: call *%eax in H_t2call. The same pattern keeping the declared convention is a jmp with the design's own flags
+(results/drafts/sibcall-i386-405.c). Patch 9: every handler noipa on 32-bit GCC (TC_NOIPA in gen-tail.py, empty
+elsewhere); engines-check builds tail calls on the two-bit tag at both widths. With it seed 59's three with a GCC tail
+engine on the tag live at both widths, 32-bit 0.813, 0.821, 0.874. batch-check, the nine: PASS - 9 patches on a fresh clone of 789364b: run-tests PASS (engines-check 86 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Files: results/rehearsal-405.md, results/drafts/rehearsal-targeted-405.py, results/drafts/rehearsal-db-405.py,
+results/drafts/tailipa-405.py, results/drafts/t2call-build-405.py, results/drafts/sibcall-i386-405.c,
+results/pending/tailipa-after-seed62.patch (new); results/pending/ORDER.md, results/README.md, HANDOFF.md.

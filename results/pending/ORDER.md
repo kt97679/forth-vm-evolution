@@ -73,3 +73,7 @@ the same design built twice without bfind is identical. With all seven applied: 
 The eighth, tested at Iteration 404: the JIT design with jitret built, alive, its engine not the one without; measured
 here against s6 on the six workloads, ackermann -26%, fib 0, bubble +9%, loop +6% (results/jitret-404.md). With all
 eight applied: PASS - 8 patches on a fresh clone of c397f25: run-tests PASS (engines-check 84 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+The ninth, found and tested at Iteration 405 by the batch's rehearsal (results/rehearsal-405.md): seed 59's cd9d470f51
+with a GCC tail engine on the two-bit tag died at 32 bits as "tail calls not jumps (t2call)" with patches 1-8; with
+patch 9 it and two more live at both widths. With all nine applied: PASS - 9 patches on a fresh clone of 789364b: run-tests PASS (engines-check 86 paths), validate 7 of 7 IDENTICAL, jail PASS.
