@@ -7863,3 +7863,32 @@ engine on the tag live at both widths, 32-bit 0.813, 0.821, 0.874. batch-check, 
 Files: results/rehearsal-405.md, results/drafts/rehearsal-targeted-405.py, results/drafts/rehearsal-db-405.py,
 results/drafts/tailipa-405.py, results/drafts/t2call-build-405.py, results/drafts/sibcall-i386-405.c,
 results/pending/tailipa-after-seed62.patch (new); results/pending/ORDER.md, results/README.md, HANDOFF.md.
+
+## Iteration 406 - 2026-10-19 - Claude
+
+**Seed 60 processed - the anchoring test, clean: small at both widths, so no evidence of anchoring at 12 hours; the
+Tegra's build failures named; seed 61 next at 11 hours** (the owner). From the hand-made designs and the founders built
+from them alone, with the tag-2 requirement, at both widths: 34,598 designs in 8 h 50 min of evolution, generations
+0-138. The verdict from both CPUs: fastest +3.6%, smallest -11.20%, memory -4 KB, hypervolume +0.4%, best Q -5.3% -
+small; on each CPU alone too (cpu 2 +2.4%, cpu 8 +3.3%); at 32 bits its fastest 0.325, 3.5% behind - small at both
+widths. It reached the carried runs' fast end and passed it under the bar; it stayed 11% above seed 58's plain small
+end, the requirement's cost (results/evolve-amd-ryzen-7-pro-8840hs-seed60.md; results/compare-fronts-amd-ryzen-7-pro-
+8840hs.md, Session 54). heldout: sieve 0.958, the pick's regret +1.5%. Diversity 0.48 to the end, the smallest still
+gaining at generation 136. Predictions: 2 met, 1 met but for a clause (lean on 165 of 167), 2 missed - both better than
+predicted (its fastest ahead, not 5-15% behind; at 32 bits 4.8% behind seed 58, not 15%). At 32 bits its deaths are the
+two classes the pending batch fixes, no other: 1,042 bfind without tos, 484 tail.
+
+The remote checks of seed 59's front (results/xcheck-seed60.md): dream 0.941 and 0.721, at 32 bits 0.370; the Tegra
+built 4 of 10. Its six failures named by the why() of 389: the assembler's `bad immediate value for offset (5224)`, every
+one with alignhot 64; across seeds 58-60's chains all 14 failures have alignhot 32 or 64, all 28 that built 0 or 1 -
+most likely GCC's ARM literal pools placed without alignment's padding (item 0d; leaving alignhot out of an ARM build
+proposed, the owner's).
+
+Gates at this commit: build; run-tests PASS; validate 7 of 7 IDENTICAL; the jail PASS; gate.py: alive: 279 of 279 (the run's front 167, the joint front 120, 8 in both); ans-check: 0 of 43 designs differ from s6 somewhere. (its negative control caught).
+
+NEXT-RUN: `seed 61 tag2 11h widths noevolved` - 11 hours, the owner's, without a comparison step: about 10.5 hours of
+evolution, past seed 60's 138 generations, so the replicates read at one generation lose nothing of seed 60's.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed60.md, results/xcheck-seed60.md (new); results/compare-fronts-amd-
+ryzen-7-pro-8840hs.md, results/predictions.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN,
+HANDOFF.md.

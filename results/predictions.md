@@ -604,3 +604,28 @@ The fault of results/bfind32-fault-399.md, its fix waiting for seed 62's process
 Checked at Iteration 401 (seed 59's archive): prediction 1 of Iteration 400 held - 326 all tail (GCC 168, clang 86,
 clang with preserve_none 72), 2,057 all bfind without tos. Prediction 3, revised for patch 6: seed 63 measures every
 tail design at 32 bits, clang's without preserve_none among them.
+
+## Seed 60, scored (Iteration 406)
+
+The anchoring test, clean (results/evolve-amd-ryzen-7-pro-8840hs-seed60.md). **2 met, 1 met but for a clause, 2 missed -
+both missed better than predicted.**
+
+1. **Missed, better.** Its fastest at 64 bits +3.6% ahead of the others (both CPUs), not 5-15% behind: from s6 and the
+   JIT founder it reached the carried runs' fast end in 12 hours.
+2. **Met.** Its smallest 15,930 bytes: 1.9% above the carried tag-2 runs' 15,633, 12.6% above seed 58's plain 14,146.
+3. **Missed, better.** Its fastest at 32 bits 0.325, 4.8% behind seed 58's 0.310 - not 15%.
+4. **Met.** Small at both widths, from both CPUs and each alone: no gain past a bar - no evidence of anchoring at 12 hours.
+5. **Met but for a clause.** bss and thinhdr on every design of its front; lean on 165 of 167.
+
+Iteration 399's: 1 untested - none of the ten designs each host was sent expresses bfind without tos; 2 met - 1,042 of
+1,042 32-bit corpus deaths are. Iteration 400's 2 met: at 32 bits the two classes - 1,042 bfind without tos, 484 tail
+(GCC 161, clang 255, clang with preserve_none 68) - and no other.
+
+## Seed 61's length, and its chain's Tegra - predicted (Iteration 406)
+
+`seed 61 tag2 11h widths noevolved` (the owner: 11 hours): no comparison step, so about 10.5 hours of evolution - past
+seed 60's 138 generations; Iteration 393's predictions for the replicates stand, read at the common generation.
+
+1. Its chain's Tegra (checking seed 60's front): every design that fails to build there has alignhot 32 or 64, the
+   assembler's bad immediate offset; every one with alignhot 0 or 1 builds.
+2. At 32 bits the same two death classes, bfind without tos and tail, and no other.
