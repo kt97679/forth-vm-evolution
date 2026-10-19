@@ -16,6 +16,7 @@ evolver of seeds 53-59: a change of evolver between them would be read as run-to
 | 7 | bfindtos-after-seed62.patch | Iteration 402: bfind built in TOS designs. A name's walk down a thread is one macro, NAME_WALK (engine/vm-lab.c) - bf_walk's in a bfind design, else the plain loop - taken by THREAD-FIND and (FIND) and by tools/gen-tos.py's TOS bodies of them, which, written before the gene, had the plain walk: bfind was inert in every TOS design (42 of seed 59's front carry it so). engines-check: two bfind variants on s6 itself (tos), each checked built - its engine not the same without bfind - at 8 bytes, and alive at both widths. |
 | 8 | jitret-after-seed62.patch | Iteration 404 (the owner: try it): the gene jitret - the JIT's EXIT leaves a native word by pop %rcx; jmp *%rcx, not ret (engine/jit.c, EXIT's stencil copied with its ret so made). ret is predicted by the return predictor, the last 32 or so calls; the JIT's ackermann nests past 250. An indirect jmp is predicted by its targets' history. A gene: the search weighs it on every workload. engines-check: the JIT with jitret. |
 | 9 | tailipa-after-seed62.patch | Iteration 405, found by the batch's rehearsal: at 32-bit x86 GCC gave the two-bit tag's shared call path, t2call - a static function reached only by direct calls - a convention of its own, arguments in registers, so its incoming stack was too small for the five a dispatch passes and its tail call stayed a call: every GCC tail design with tag2 "tail calls not jumps (t2call)" at 32 bits (GCC 13.3, the laptop's). gen-tail.py: every handler noipa there (TC_NOIPA, empty for clang and off i386 - no other engine changes). engines-check: tail calls on the two-bit tag, at both widths. |
+| 10 | frozen-after-seed62.patch | Iteration 409 (the owner: the simplicity review, results/drafts/simplicity-proposal-408.md): genes the search no longer varies - bytehdr, doesfar, thinhdr, varcall, bss and lean held on, msc and scale at 0, in every design the search makes (evolve.py's FROZEN, applied by require() at get(), now always; mutation no longer picks them). Hand-made designs keep their own, so s6 and the stages are unchanged; with varcall and doesfar on, no reach-limit deaths. tail not frozen: judged after seed 63. |
 
     git apply results/pending/fastgate-after-seed62.patch
     git apply results/pending/jithelp-after-seed62.patch
@@ -26,6 +27,7 @@ evolver of seeds 53-59: a change of evolver between them would be read as run-to
     git apply results/pending/bfindtos-after-seed62.patch
     git apply results/pending/jitret-after-seed62.patch
     git apply results/pending/tailipa-after-seed62.patch
+    git apply results/pending/frozen-after-seed62.patch
 
 Its cost, from seed 58's evaluations replayed through the gate: 1,121 of 24,885 measured children (4.5%) under
 it, their evaluations 4.4% of the evaluation time - an upper bound on the added time, the second measurement

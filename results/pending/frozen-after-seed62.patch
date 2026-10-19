@@ -1,0 +1,72 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index fe4c040..5c9eb94 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -41,6 +41,11 @@ designs changing id - every one rtfuse=0 leaving the identity.
+ 
+ ## In the genome now
+ 
++**Frozen (Iteration 409, the owner - the simplicity review, results/drafts/simplicity-proposal-408.md):** bytehdr,
++doesfar, thinhdr, varcall, bss and lean on, msc and scale at 0, in every design the search makes (evolve.py's FROZEN,
++applied by require(); mutation no longer picks them). Hand-made designs keep their own values. Their rows below stay
++as the record of what each does.
++
+ | genes | from | what they change |
+ |---|---|---|
+ | family: `cell`, `sod16`, `cpt16`, `cv8` | this ladder (RelF, SOD16, CPT16, CV8) | the encoding; dormant genes switch on when a lineage changes family |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c93f027..29fa8b4 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -899,7 +899,15 @@ T2HOT = [0.02, 0.0, 0.05, 100.0]
+ # Iteration 71: --require tag2 - every design of the run, the hand-made
+ # references excepted, in the two-bit tag (with byte headers)
+ REQUIRE = []
++# Iteration 409 (the owner: the simplicity review, results/drafts/simplicity-proposal-408.md): genes the search no longer
++# varies. On in every front design of seeds 53-60 (1,431 - bss and lean in all but one and two), so frozen on: bytehdr,
++# doesfar, thinhdr, varcall, bss, lean; on in none, with no fault behind it, so removed: msc and scale, held at 0. Every
++# design the search makes carries these values (require, at get()); a hand-made design keeps its own, so s6 and the
++# stages are unchanged. With varcall and doesfar on, no design dies at the reach limit any more (reach_lethal). Not
++# tail - a fault hid it until the after-seed-62 batch; judged after seed 63.
++FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0}
+ def require(g):
++    if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+     return g
+ 
+@@ -1315,7 +1323,7 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
+ def mutate(g, rnd):
+     g = canon(g); what = []
+     for _ in range(rnd.choice([1, 1, 2])):
+-        pool = EXPRESSED[g['enc']] + list(CC0) + ['enc'] * (1 if rnd.random() < 0.2 else 0)
++        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if x not in FROZEN] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's
+         k = rnd.choice(pool)
+         if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
+         if k == 'enc':
+@@ -2058,7 +2066,7 @@ def main(argv):
+     SCR = {'model': None, 'fit': -1}          # Iteration 200: the screen's model and when it was fitted
+     def get(g, parents, how, gen):
+         """The design's id; asked for, it is evaluated at the next flush()."""
+-        if REQUIRE and not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71
++        if not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71; 409: FROZEN, always
+         i = gid(g); seen.add(i)
+         if i not in R and i not in pending: pending[i] = (g, parents, how, gen)
+         return i
+@@ -2105,7 +2113,7 @@ def main(argv):
+     if FROMZERO:
+         pop = []
+         while len(pop) < N:
+-            g = random_genome(rnd); g = require(g) if REQUIRE else g
++            g = random_genome(rnd); g = require(g)
+             pop.append(get(g, [], 'random', 0))
+         print('  from zero: %d random genomes' % len(pop), flush=True)
+     pop = pop if FROMZERO else [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
+@@ -2159,7 +2167,7 @@ def main(argv):
+                 if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
+             label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
+             for i in first_front(list(C), C):
+-                g = canon(require(C[i]['genome'])) if REQUIRE else canon(C[i]['genome'])
++                g = canon(require(C[i]['genome']))
+                 if gid(g) in have: continue
+                 # re-encoded (--require), it is a new design: this run's, not its origin's
+                 have.add(gid(g)); carried.append((g, ('tag 2 of %s: %s' if gid(g) != i else 'carried from %s: %s') % (label, i)))
