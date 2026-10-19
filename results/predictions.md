@@ -652,3 +652,8 @@ Seed 63, free of the tag-2 requirement, the after-seed-62 batch applied (its hou
 1. No design refused at the reach limit (seed 60: 247) - varcall and doesfar are on in every design the search makes.
 2. Every design of its front holds the frozen values; none has msc or scale.
 3. Its smallest within 2% of seed 58's 14,146 bytes - free of the requirement, the plain small end comes back.
+
+## rtiplus on the two-bit tag - predicted (Iteration 412)
+
+With patch 11, rtiplus works on tag-2 designs (loop's dispatches -20% on 4ac602c8bd). Seed 63: rtiplus on more than 10%
+of its front, where seeds 53-60 had 4%.

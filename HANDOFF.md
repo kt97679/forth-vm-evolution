@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 411.
+- master: Iteration 412.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -58,7 +58,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
   kept, its speed from both CPUs). Pending: the after-seed-62 batch - the fast gate, and the genes jithelp and
   jitre (the owner, 397: try them), and the bfind fix at 4-byte cells (399, item 0f) the tail engines' (400), musttail on every clang tail engine (401) bfind built in TOS designs (402), the gene jitret (404), GCC's 32-bit t2call tail call (405; the batch rehearsed,
-  results/rehearsal-405.md) and the simplicity review's freeze (409) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
+  results/rehearsal-405.md) the simplicity review's freeze (409) and I+ on the two-bit tag (412) - apply it only at seed 62's processing, so seeds 60-62 run one evolver.
 - **The latest processed: seed 59** (Iteration 398): small at both widths - seed 58's start with the tag-2
   requirement, its cost replicated (the small end +12.5%, 32 bits +11%, the 64-bit fast end alike); within the
   requirement the gains stopped at generation 88 of 143. Seed 58 (384), free: plain CV8 took the small end and 32
@@ -251,8 +251,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    of the geometric mean, and no dispatch fewer - not built; the JIT's is built (jitret). The register machine re-priced
    there, corrected at 411 (stackops.py named a two-bit-tag design's opcodes by the old layout): its bound 7-46% a
    workload (kernel 21%, corpus 24%, loop 40%, bubble 46%, ackermann 19%). The lead: I, the loop index - 20% of loop's
-   dispatches, 26% of bubble's - whose fusion rtiplus is expressed but never fires on the two-bit tag (411): fix it
-   (cv8-fuse-iplus.4 with cv8t-fuse.4), or make the gene need a design off the tag. The search's own escape - islands or immigrants - after the replicates (Iteration 393's
+   dispatches, 26% of bubble's - whose fusion rtiplus was expressed but never fired on the two-bit tag (411) - fixed
+   (412, patch 11): I+ escaped on the tag, so its entry in the run-time fuser's table was dropped; pinned to one byte,
+   the loop's dispatches fall 20%. Next: how many of a tag-2 design's other run-time pairs the table drops so. The search's own escape - islands or immigrants - after the replicates (Iteration 393's
    prediction 4). Priced out: indirect threading (Iteration 29); deferred: ?STACK (item 5).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism

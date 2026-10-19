@@ -60,3 +60,16 @@ as bfind was on the cached top. (A timing of the two here, results/drafts/rtiplu
 geometric mean - with -19% on ackermann, where nothing differs: this VM's noise and layout, not the gene; a dispatch
 count is the measure to trust here.) **The lead now**: make I+ fire on the two-bit tag - cv8-fuse-iplus.4 was written
 for cv8-fuse.4, and a tag-2 kernel loads cv8t-fuse.4 - or, failing that, rtiplus needing a design off the tag.
+
+## Fixed (Iteration 412): I+ on the two-bit tag
+
+The cause: on the tag the run-time fuser's SUPER-TABLE holds one-byte codes, and the converter drops an entry with an
+escaped one (tools/layout.py). I+, never used by the image's own code, ranks low and was escaped - so rtiplus's (I, +)
+-> I+ entry was dropped, and the fusion never fired. The fix (results/pending/iplustag-after-seed62.patch, the batch's
+eleventh): I+ pinned to a one-byte code where the table carries it, as Iteration 176 pinned IMM-OPS's keeping forms.
+On 4ac602c8bd with rtiplus on (the batch to patch 11, results/drafts/rtiplus-count-411.py on that tree): the loop's
+dispatches 20,031,683 to 16,032,016, -20.0%, I's 4,000,036 to 37; bubble unchanged, its I not before a +. Built and
+alive with and without it (results/drafts/iplustag-alive-412.py). batch-check, the eleven: PASS - 11 patches on a fresh clone of ba83322: run-tests PASS (engines-check 86 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Next, the same question for the rest of that table: on the tag a pair whose fused opcode is escaped is dropped too -
+how many of a front design's run-time pairs survive there.

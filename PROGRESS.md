@@ -7993,3 +7993,21 @@ written for cv8-fuse.4; a tag-2 kernel loads cv8t-fuse.4), or rtiplus needing a 
 
 Files: results/drafts/opnames-411.py, results/drafts/rtiplus-count-411.py, results/drafts/rtiplus-time-411.py (new);
 lab/evolve/stackops.py, results/drafts/price-410.md, results/README.md, HANDOFF.md.
+
+## Iteration 412 - 2026-10-19 - Claude
+
+**rtiplus fires on the two-bit tag: I+ pinned to a one-byte code (pending, patch 11) - the loop's dispatches -20%.** The
+owner: proceed - fix I+ on the tag.
+
+The cause, in tools/layout.py: on the tag the run-time fuser's SUPER-TABLE holds one-byte codes, and an entry with an
+escaped opcode is dropped. I+ is never used by the image's own code, ranks low, and was escaped - so the (I, +) -> I+
+entry went, and cv8-fuse-iplus.4's hook found nothing to fuse. Pinned where the table carries it, as Iteration 176
+pinned IMM-OPS's keeping forms. On seed 60's 4ac602c8bd with rtiplus on and the batch to patch 11: the loop's
+dispatches 20,031,683 to 16,032,016, I's 4,000,036 to 37; bubble unchanged (its I is not before a +); built and alive
+both ways. batch-check, the eleven: PASS - 11 patches on a fresh clone of ba83322: run-tests PASS (engines-check 86 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Next: on the tag a run-time pair whose fused opcode is escaped is dropped the same way - how many survive for a front
+design (results/drafts/price-410.md, "Fixed").
+
+Files: results/drafts/iplustag-alive-412.py, results/pending/iplustag-after-seed62.patch (new); results/drafts/
+price-410.md, results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
