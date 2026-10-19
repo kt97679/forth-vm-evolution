@@ -1,0 +1,66 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 81429a6..b385221 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -74,6 +74,15 @@ static const unsigned char *jit_addr(int i) {
+ #endif
+     return (const unsigned char *)spn_table[i];
+ }
++#if JITRET && defined(__x86_64__)
++/*  Iteration 404, the gene jitret: EXIT leaves a native word by a pop and an indirect jmp, not ret. A ret
++ *  is predicted by the return predictor, a stack of the last 32 or so calls: recursion deeper than that -
++ *  the JIT's ackermann nests past 250 - mispredicts every return beyond it. An indirect jmp is predicted as
++ *  any jump is, by the history of its targets. rcx is free at a return: the state comes back in rax and
++ *  rdx, and no caller keeps anything in rcx across a call. EXIT's stencil (mov, mov, ret) is copied with
++ *  its ret made pop %rcx; jmp *%rcx. Correct where ret is - the same address, the same stack pointer.  */
++static unsigned char jit_exit_jmp[32];
++#endif
+ static void jit_scan(void) {
+     int i, k;
+     for (i = S_LIT; i < JIT_NST; i++) {
+@@ -117,6 +126,13 @@ static void jit_scan(void) {
+             }
+         }
+         s->tailnext = end - 5 >= a && end[-5] == 0xE9 && jit_relto(end - 4, spn_table[J_NEXT]);
++#if JITRET && defined(__x86_64__)
++        if (i == S_EXIT && s->len >= 1 && s->len + 2 <= (int)sizeof jit_exit_jmp && s->src[s->len - 1] == 0xC3) {
++            memcpy(jit_exit_jmp, s->src, (size_t)s->len - 1);
++            memcpy(jit_exit_jmp + s->len - 1, "\x59\xFF\xE1", 3);           /* pop %rcx; jmp *%rcx */
++            s->src = jit_exit_jmp; s->len += 2;
++        }
++#endif
+     }
+ }
+ 
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index f27a794..6371ca8 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -55,6 +55,7 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT with factored bodies', dict(JIT, factor=3), ['jit', 'factor']),
+     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
+     ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
++    ('the JIT, jitret', dict(JIT, jitret=1), ['jitret']),                       # Iteration 404: EXIT as pop and jmp
+     ('the JIT, jitvar, varslot 0', dict(JIT, jitvar=1, varslot=0), ['jitvar']),
+     ('the JIT, jitvar, varslot 1', dict(JIT, jitvar=1, varslot=1), ['jitvar']),
+     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 1d0b815..88ce185 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -203,6 +203,7 @@ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGN
+      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
+ gene('jithelp', needs=lambda g, e: jit_on(g))   # Iteration 344: the C primitives the outer interpreter stops at, called from native code (st_callc)
+ gene('jitre', needs=lambda g, e: jit_on(g) and e.get('jithelp'))   # Iteration 346: a callee the JIT cannot translate interpreted, not refusing its caller (jit_interp)
++gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+ gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
+ gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
+@@ -936,6 +937,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
+     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
+     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
++    if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
+     if jit_on(g) and express(g).get('jitk'): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils
+     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
+     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
