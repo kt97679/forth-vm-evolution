@@ -112,7 +112,9 @@ Ordered by how much diversity they add for the work.
    stays compact; at start the engine expands it into handler addresses with
    operands, so each dispatch skips the decode. A gene any family could
    carry: compact on disk, fast in memory, at a start-up cost - exactly the
-   trade the fitness weighs.
+   trade the fitness weighs. *Priced at Iteration 440
+   (results/drafts/price-dthread-440.md): about 3% faster at best (the dispatch
+   lab: fib -5.5%, loop +8.9%, sieve -12.4%), a third more memory - not built.*
 4. **relf's format 10** - in the genome: the words, the loop words, the
    short branches and the escape. Not taken: @XT, a fused @ EXECUTE -
    relf's kernel calls through vectors, and this one has no `@ EXECUTE`

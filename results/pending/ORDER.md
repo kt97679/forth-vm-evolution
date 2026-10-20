@@ -47,6 +47,8 @@ turns the run-time loop compiler on, and escape on where a tag-2 design has too 
 still weighs it: the words take slots from others. Tested: of seed 62's 4,462 measured genomes carrying rtloopall
 blocked, the repair makes it express in 4,370; four of them, repaired, built and lived with rtloopall on; a short
 evolution with the repair always on (16 designs, 3 generations) - 64 of 64 alive, its repaired child among them.
+**The four together, batch-checked (Iteration 440):** a fresh clone of 3922f6d with the four applied - run-tests PASS,
+validate 7 of 7 IDENTICAL, jail PASS.
 
 ## When
 

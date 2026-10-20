@@ -733,3 +733,9 @@ footprint.py --fastest on seed 64's front: its 16 fastest at 100 and 10,000 word
 whole front (Spearman 0.783 at 10,000); within the fastest - speeds a few percent apart - the order at 10,000 words
 agrees with the selection's only weakly: Spearman under 0.6 over the 16. If so, the top reorders at large footprints,
 and a gate or a selection workload (results/drafts/footprint-gate-435.md) is worth the owner's weighing.
+
+## The rtloopall repair, from seed 64 - predicted (Iteration 440)
+
+Patch 4 of the after-seed-63 batch (mutation meets rtloopall's prerequisite). Seed 64: rtloopall expressed in at least
+30% of the genomes that set it (seed 62: 92 of 5,819, 1.6%), and on at least 20% of its front (seeds 58-62: 55, 65, 28,
+42, 1%) - no longer to chance; rtiplus, behind it, on at least 5% of the front.

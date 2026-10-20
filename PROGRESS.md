@@ -8515,3 +8515,25 @@ sharedcall dead under the tag by design, back in the free seed 63; tail and tail
 Mechanisms not yet genes: direct threading at load the one never priced - its pricing proposed.
 
 Files: results/audit-genes-designs-439.md, results/drafts/audit-genes-439.out (new); results/README.md, HANDOFF.md.
+
+## Iteration 440 - 2026-10-20 - Claude
+
+**The audit's two follow-ups: the rtloopall repair built as patch 4 of the pending batch; direct threading at load
+priced - not worth building** (the owner: proceed with 1 and 2).
+
+The repair (results/pending/loopall-repair-after-seed63.patch): evolve.py's mutation, when it turns rtloopall on - or,
+one child in four (EVOLVE_LOOP_REPAIR), when a child carries it blocked - puts the missing loop words first in the
+format-10 list and turns the run-time loop compiler on. Tried on seed 62's blocked genomes first, it unblocked two in
+three: the rest were tag-2 designs without escape, 2-4 format-10 slots, too few for eight - so the repair turns escape on
+there too (escape and rtloopall are linked already). Then 4,370 of the 4,462 measured genomes carrying rtloopall blocked
+express it; four repaired ones built and lived with it on; a short evolution with the repair always on (16 designs, 3
+generations) - 64 of 64 alive, the repaired child among them. The four pending patches batch-checked together on
+3922f6d: run-tests PASS, validate 7 of 7, jail PASS. Seed 64 is the first run with it; predicted.
+
+Direct threading at load (results/drafts/price-dthread-440.md): the dispatch lab's own comparison - fib -5.5%, loop
++8.9%, sieve -12.4%, about 3% on the geometric mean - one table load saved, the jump's misprediction the same; the
+image expanded to addresses about +58 KB on seed 62's front, a third of the memory objective; and a new engine path
+the size of the tail engines. Not built; GENES.md's "Not yet" carries the price.
+
+Files: results/pending/loopall-repair-after-seed63.patch, results/drafts/price-dthread-440.md (new);
+results/pending/ORDER.md, lab/evolve/GENES.md, results/predictions.md, results/README.md, HANDOFF.md.

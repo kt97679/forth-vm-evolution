@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 439.
+- master: Iteration 440.
 - **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
   (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
   0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
@@ -291,7 +291,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4b2. **Reachability - the audit's finding** (Iteration 439, results/audit-genes-designs-439.md): rtloopall needs all eight
    loop words in the format-10 list; in seed 62 only 92 of the 5,819 genomes that set it could express it (J, UNLOOP,
    (LEAVE) missing), its front share 1-65% run to run, rtiplus blocked behind it. Proposed: a repair - rtloopall turned
-   on puts the missing loop words first in the list - a patch after seed 63, the owner's call. The audit's other
+   on puts the missing loop words first in the list - **built (440, the owner): patch 4 of results/pending/** (with
+   rtloop on, and escape where a tag-2 design has 2-4 slots), applied with the batch at seed 63's processing; it makes
+   rtloopall express in 4,370 of seed 62's 4,462 blocked genomes. Seed 64 the first run with it. The audit's other
    checks found the pipeline sound: the screen costs about 9 front-quality designs a run; the tail kinds build at 32 bits.
 4c. **A local minimum?** (the owner, Iterations 373 and 392; results/convergence-seed58.md maps five sources to their
    tests): a constraint - real (seed 58); the carry - none found (seed 60, 406); one start for every run - seeds 58-62; collapse inside
@@ -329,7 +331,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    results/drafts/price-410.md). I, the loop index, fused on the tag since patch 11 (412-413: I+ pinned to one byte;
    every run-time table entry kept). Translation to direct threading at load (gforth's hybrid, Wasm3's M3): the compact
    image expanded at start. The interpreter's returns predicted - priced (410): handler replication at most 0.4-1.6% of
-   the geometric mean, no dispatch fewer - not built; the JIT's is built (jitret). The search's own escape - islands or
+   the geometric mean, no dispatch fewer - not built; the JIT's is built (jitret). Direct threading at load priced
+   (440, results/drafts/price-dthread-440.md): about 3% faster at best, about +58 KB - a third of the memory objective -
+   and a new engine path: not built. The search's own escape - islands or
    immigrants - after the replicates (Iteration 393's prediction 4). Priced out: indirect threading (Iteration 29);
    deferred: ?STACK (item 5).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
