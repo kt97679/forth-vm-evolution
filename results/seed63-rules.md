@@ -7,7 +7,7 @@ written: the rule for taking a gene out. It is revised below, with the evidence;
 several votes and no keep vote make a gene a candidate - "The gene votes" below, in place of 431's gene rule.
 Where a rule's outcome is a change, it is proposed to the owner, not made.
 
-Seed 63 is the after-seed-62 batch's first run (its 13 patches), free of the tag-2 requirement, 11 hours with a
+Seed 63 is the after-seed-62 batch's first run (its 13 patches), free of the tag-2 requirement, 10 hours (the owner, Iteration 434) with a
 comparison against seeds 59-62 at both widths (HANDOFF.md, item 0).
 
 ## The rules
@@ -19,7 +19,7 @@ comparison against seeds 59-62 at both widths (HANDOFF.md, item 0).
 | 3 | The fast gate (patch 1) | review-checks.py curse: the fastest tenth's re-measured / in-run, median | 0.98 to 1.05: it works | 1.05-1.066: partly; above 1.066 (seeds 58, 60, 61: 1.112, 1.066, 1.095): its threshold revisited; under 0.98: too harsh - in-run speeds now pessimistic, good designs undercounted - revisited |
 | 4 | The freeze (patch 10) | seed-facts.py; the front's expressed genomes | no design refused at the reach limit; every front design holds bytehdr, doesfar, thinhdr, varcall, bss and lean on, msc and scale 0 | any exception: a fault in patch 10, fixed before seed 64 |
 | 5 | 32-bit correctness (patches 4-6, 9) | review-checks.py fail32 | no failure of a known cause | a known cause: a regression, fixed before seed 64; "not a known cause": investigated |
-| 6 | The small end | the front's smallest | at most 14,535 bytes: seed 58's 14,146 within 2%, and patch 12's 104 bytes | above: the frozen genes' bytes at the small end examined first |
+| 6 | The small end | the front's smallest | at most 14,535 bytes: seed 58's 14,146 within 2%, and patch 12's 104 bytes | above: first read at a common generation with seed 58 (review-checks.py spread) - seed 63 evolves about 6 3/4 hours, some 100 generations, where seed 58 had 14,146 by its 133rd - then the frozen genes' bytes at the small end examined |
 | 7 | I+ on the two-bit tag (patch 11) | the share of the front with rtiplus | above 10% (Iteration 412's prediction; seeds 53-60: 4%) | below: noted - the search's choice, no fault |
 | 8 | The tail engines (HANDOFF item 4b) | the gene votes below - seeds 63-65 its first fair runs, the 32-bit fixes (patches 5, 6, 9) applied | kept unless the votes make it a candidate | a candidate: as 2 (gen-tail.py and build_tail removed last) |
 | 9 | The rtimm=2 / rtfuse overlap (item 4b, Iteration 423) | the front's designs with rtimm=2, rtfuse off and built pairs or fused tests | none: proposed - rtfuse governs (rtimm=2 passes --rtfuse only with rtfuse on) | some: no change |

@@ -48,13 +48,13 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 433.
+- master: Iteration 434.
 - **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
   (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
   0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
   **The after-seed-62 batch applied** (13 patches, results/applied-after-seed62/ORDER.md; batch-check PASS); the
-  after-seed-63 batch is results/pending/ now, applied at seed 63's processing. Next seed 63 (NEXT-RUN's line, 11 h -
-  the owner, 426): the batch's first run, free of the tag-2 requirement, with a comparison; its decisions by
+  after-seed-63 batch is results/pending/ now, applied at seed 63's processing. Next seed 63 (NEXT-RUN's line, 10 h -
+  the owner, 434): the batch's first run, free of the tag-2 requirement, with a comparison; its decisions by
   results/seed63-rules.md, its gene votes the ledger's first; its chain also runs the Tegra's rebuild test and the head
   to head (REMOTES' --also lists - seed 62's chain ran from Iteration 425's bundle, before both).
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
@@ -195,10 +195,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    3c): small at both widths, no gain past a bar - no evidence of anchoring at 12 hours; seeds 61-62 how far
    runs of one start spread. Then the after-seed-62 batch: seed 63 its first run, free of the tag-2 requirement (the owner, 409: seeds
    59-60 ended 11-12% above seed 58's free small end; free, it is like-for-like with seed 58's curse figure - and
-   seed 60's own, 1.066, is already below seed 58's 1.112). **Planned: 11 hours (the owner, Iteration 426)** - seed 60's shape without the
+   seed 60's own, 1.066, is already below seed 58's 1.112). **Planned: 10 hours (the owner, Iteration 434; 11 at 426)** - seed 60's shape without the
    requirement, NEXT-RUN's line at seed 62's processing:
-   `seed 63 11h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
-   a verdict against seeds 59-62. The comparison is reserved from the 11 hours (next-run.sh's reserve()): about 7 3/4
+   `seed 63 10h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
+   a verdict against seeds 59-62. The comparison is reserved from the 10 hours (next-run.sh's reserve()): about 6 3/4
    hours of evolution (seed 60, 12 hours with the same step: 8 h 50). **Its decisions by results/seed63-rules.md**,
    written before its results (the owner, 430), checked against losing good designs and adopted (431); genes by
    votes, not by rule (432: results/gene-votes.md, appended from seed 63's processing on) - `review-checks.py curse` on its report

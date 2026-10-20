@@ -8411,3 +8411,13 @@ NEXT-RUN: seed 63's line; results/progress-by-run.md regenerated.
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed62.md, results/xcheck-seed62.md (new); results/applied-after-seed62/
 (the batch); results/pending/ (the after-seed-63 batch); the 13 patches' files; lab/evolve/NEXT-RUN, lab/evolve/REMOTES,
 results/predictions.md, results/progress-by-run.md, results/README.md, HANDOFF.md.
+
+## Iteration 434 - 2026-10-20 - Claude
+
+**Seed 63 at 10 hours** (the owner): NEXT-RUN `seed 63 10h widths noevolved then experiment compare-fronts.py --rounds 6
+--widths 8,4 --frontier --cpus 2,8`. The comparison is reserved from the hours, so about 6 3/4 hours of evolution -
+some 100 generations at seed 62's pace (155 in 10 h 20). results/seed63-rules.md's rule 6 (the small end at most 14,535
+bytes) gains a first step for a shorter run: if above, read at a common generation with seed 58 (review-checks.py
+spread), which had 14,146 by its 133rd, before the frozen genes' bytes are examined.
+
+Files: lab/evolve/NEXT-RUN, results/seed63-rules.md, HANDOFF.md.
