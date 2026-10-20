@@ -245,6 +245,12 @@ dump() { # dump ENGINE IMAGE OUTFILE BOOTSCRIPT
     # cell width that does not exist on this host disappears cleanly.
     runnable "$1" || return 0
     ( cd "$W" && printf "$4" | "$1" "$2" ) | tr -d '\r' > "$O/$3"
+    # Iteration 417: the load messages before the dump hold no error the kernel prints while loading - evolve.py's
+    # DUMP_ERRORS, as its dump_guard checks a design's kernel variants. An overlay that did not compile (NIP, which
+    # this kernel lacks - Iteration 416) had left a dump, then an s6 that crashed, and the build went on.
+    _e=$(sed -n '/^S [0-9][0-9]* [0-9][0-9]*/q;p' "$O/$3" | grep -e 'Undefined word' -e 'dictionary full' -e 'name too long' \
+         -e 'Incomplete control structure' -e 'compile only' -e 'Not found' -e 'Error reading file' | head -3)
+    [ -z "$_e" ] || { echo "build-stages: $3 - an overlay did not load: $_e"; exit 1; }
 }
 SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 SELF_BOOT='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" cv8-save.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'

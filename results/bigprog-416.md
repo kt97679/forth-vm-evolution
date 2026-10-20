@@ -10,7 +10,7 @@ a DOES> defining word past 4 MB (answer 5). Run by results/drafts/bigprog-416.py
 bits - the one-byte hot calls hold the top first bytes; the 4 MB I first told the owner was wrong), a header link 4 MB
 (22 bits) - a gap like `CREATE BUF 5000000 ALLOT` broke it - and a DOES> call 2 MB.
 
-**The fix** (results/pending/bigprog-after-seed62.patch, the batch's twelfth). Calls: past reach, the body's address as a
+**The fix** (results/applied-after-seed62/bigprog-after-seed62.patch, the batch's twelfth). Calls: past reach, the body's address as a
 literal and EXECUTE (cv8.4's FAR,; CALL1, the forms in reach) - any distance. A first try compiled EXECUTE as a
 primitive's opcode; in this kernel it is a colon word, and what followed a far call went missing - FAR, compiles it as
 COMPILE,8 would. Links: a fourth form, tags 0xE0-0xFF, four bytes, 29 bits (512 MB); the three-byte form keeps

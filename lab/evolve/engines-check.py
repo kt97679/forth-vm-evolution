@@ -10,21 +10,21 @@ state caching (gen-msc.py), tail-call threading (gen-tail.py), superinstructions
 (gen-super.py), op;CALL handlers (gen-opcall.py), format-10 opcodes, the escape
 byte (both widths), the two-bit tag (narrow and wide, and with factored bodies), the JIT with every JIT
 gene (and with jitos, and on the wide tag), and the file-system levels (the
-libraries the converter binds). Values for list genes come from a recorded
+libraries the converter binds); the bfind walks at 4-byte cells too (Iteration 399). Values for list genes come from a recorded
 design that has them. A variant the evolver will not express (express() drops
 a gene the others rule out) is reported and fails the check: a path that can no
 longer be taken is news too.
 
     python3 lab/evolve/engines-check.py        PASS, or FAIL and what died
 """
-import glob, json, os, shutil, sys
+import contextlib, glob, json, os, shutil, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.argv = ['x']; sys.path.insert(0, HERE)
 import evolve as E
 
-E.setup()
+E.TWO_WIDTHS[0] = True; E.setup_widths(); E.TWO_WIDTHS[0] = False   # Iteration 399: the 4-byte references too
 S6 = dict(E.HUMAN['s6-cv8b'])
 
 def donor(gene):
@@ -44,6 +44,7 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('cached top off', dict(tos=0), []),
     ('multi-state (gen-msc)', dict(msc=1), ['msc']),
     ('tail calls (gen-tail)', dict(tail=1), ['tail']),
+    ('tail calls on the two-bit tag', dict(tag2=1, tail=1), ['tail', 'tag2']),     # Iteration 405: t2call's path, at 4-byte cells too
     ('superinstructions (gen-super)', dict(supers=donor('supers')), ['supers']),
     ('op;CALL (gen-opcall)', dict(tag2=1, opcall=donor('opcall')), ['opcall']),
     ('format-10 opcodes', dict(ops10=donor('ops10')), ['ops10']),
@@ -55,6 +56,7 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('the JIT with factored bodies', dict(JIT, factor=3), ['jit', 'factor']),
     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
     ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
+    ('the JIT, jitret', dict(JIT, jitret=1), ['jitret']),                       # Iteration 404: EXIT as pop and jmp
     ('the JIT, jitvar, varslot 0', dict(JIT, jitvar=1, varslot=0), ['jitvar']),
     ('the JIT, jitvar, varslot 1', dict(JIT, jitvar=1, varslot=1), ['jitvar']),
     ('the JIT, translator -Os', dict(JIT, jitos=1), ['jit', 'jitos']),
@@ -91,10 +93,16 @@ VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops1
              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
 # Iteration 316: the gene bfind - THREAD-FIND's and (FIND)'s walk branch-light - with each of
 # the two words, in each link form (CV8's 1-3 bytes, TAG2's 1-4)
-VARIANTS += [('bfind: THREAD-FIND, CV8', {'kfast': 1, 'tfind': 1, 'bfind': 1}, ['bfind']),
-             ('bfind: (FIND), CV8', {'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1}, ['bfind']),
-             ('bfind: THREAD-FIND, TAG2', {'tag2': 1, 'kfast': 1, 'tfind': 1, 'bfind': 1}, ['bfind']),
-             ('bfind: (FIND), TAG2', {'tag2': 1, 'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1}, ['bfind'])]
+# Iteration 399: tos 0 - a TOS engine's THREAD-FIND and (FIND) are tools/gen-tos.py's own bodies, the plain walk:
+# on s6 (tos 1) these four had built no bf_walk at all, at either width.
+VARIANTS += [('bfind: THREAD-FIND, CV8', {'kfast': 1, 'tfind': 1, 'bfind': 1, 'tos': 0}, ['bfind']),
+             ('bfind: (FIND), CV8', {'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1, 'tos': 0}, ['bfind']),
+             ('bfind: THREAD-FIND, TAG2', {'tag2': 1, 'kfast': 1, 'tfind': 1, 'bfind': 1, 'tos': 0}, ['bfind']),
+             ('bfind: (FIND), TAG2', {'tag2': 1, 'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1, 'tos': 0}, ['bfind'])]
+# Iteration 402: and on s6 itself, a TOS design - gen-tos.py's bodies now take the engine's NAME_WALK, so bfind is built
+# there too (it had not been, Iteration 399); checked built below, the engine not the same without it.
+VARIANTS += [('bfind: THREAD-FIND, CV8, tos', {'kfast': 1, 'tfind': 1, 'bfind': 1}, ['bfind']),
+             ('bfind: (FIND), TAG2, tos', {'tag2': 1, 'kfast': 1, 'kinput': 1, 'klookup': 1, 'bfind': 1}, ['bfind'])]
 # Iteration 312: designs that once failed (lab/evolve/regressions.json) - each the whole recorded
 # genome, built and run on the corpus every time: a fault found once stays a test.
 VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
@@ -109,9 +117,53 @@ for name, genes, must in VARIANTS:
     try:
         eng, img = E.build(g, d)
         E.alive(eng, img, E.private_work(d))
+        if name.endswith(', tos') and 'bfind' in must:   # Iteration 402: built, not only expressed
+            d0 = d + '-0'; shutil.rmtree(d0, ignore_errors=True); e0, _ = E.build(E.canon(dict(g, bfind=0)), d0)
+            if open(e0, 'rb').read() == open(eng, 'rb').read(): raise RuntimeError('bfind inert: the same engine without it')
+            shutil.rmtree(d0, ignore_errors=True)
         print('  %-32s ok     engine %6d, image %6d bytes' % (name, os.path.getsize(eng), os.path.getsize(img)), flush=True)
     except Exception as e:
         bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
+# Iteration 399 (HANDOFF open item 0f): the bfind variants at 4-byte cells too, built as eval32 builds a design -
+# a 32-bit x86 engine, the JIT off. bf_walk read its 8-byte signature into UNS64, which is the cell - 4 bytes
+# there - so a name of 4 to 7 characters matched the newest of its length and first three: 34 of seed 59's
+# front (bfind, no tos) died on the corpus at 32 bits, and nothing here built bfind at 4-byte cells.
+# Iteration 400: and every tail-call engine - preprocessed for x86-64 and compiled for i386 (__int128), then the i386
+# SYSCALL's local label taken for a handler: no tail design had ever built at 4-byte cells (seed 58: 401 of 401).
+# Iteration 401: clang's tail engine without preserve_none too - musttail is now on every clang tail engine; without it,
+# at 4-byte cells clang made none of its dispatches jumps ('tail calls not jumps', results/fail32-400.md).
+V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'tail' in must]
+for name, genes, must in V32:
+    g = E.canon(dict(S6, **dict(genes, jit=0)))
+    d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
+    try:
+        with E.at_width(E.WIDTH4):
+            eng, img = E.build(g, d)
+            E.alive(eng, img, E.private_work(d))
+        print('  %-32s ok     engine %6d, image %6d bytes' % (name, os.path.getsize(eng), os.path.getsize(img)), flush=True)
+    except Exception as e:
+        bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
+# Iteration 416 (the owner: programs past 4 MB): calls across 4.9 MB of dictionary, links past the three-byte form,
+# a DOES> child far from its word and a DOES> word far out - on s6 (plain CV8, where the call reached 2 MB, the link
+# 4 MB and DOES> 2 MB), on the two-bit tag, and at 4-byte cells (results/drafts/bigprog-416.py).
+BIGFILL = ''.join(': F%02d %d ;  49152 ALLOT\n' % (i, i) for i in range(100))
+BIG = [(': A0 1 ;\n: MK CREATE , DOES> @ 1+ ;\nVARIABLE V0  5 V0 !\n' + BIGFILL + ": B1 A0 1+ ;\n: B2 B1 B1 + ;\n7 MK C7\n"
+        ": B3 C7 V0 @ + ;\nVARIABLE V1  42 V1 !\n: B4 V1 @ B2 + ;\n' B4 CONSTANT XT4\n: B5 XT4 EXECUTE 1+ ;\n"
+        ": B6 B5 B3 + F50 + F99 + ;\nB6 . CR\nBYE\n", '209'),
+       (BIGFILL + ': MK2 CREATE , DOES> @ 2 + ;\n3 MK2 D3\nD3 . CR\nBYE\n', '5')]
+VBIG = [('past 4 MB, s6', {}, 8), ('past 4 MB, the two-bit tag', {'tag2': 1}, 8), ('past 4 MB, s6 at 4-byte cells', {'jit': 0}, 4)]
+for name, genes, w in VBIG:
+    d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
+    try:
+        with (E.at_width(E.WIDTH4) if w == 4 else contextlib.nullcontext()):
+            eng, img = E.build(E.canon(dict(S6, **genes)), d); pw = E.private_work(d)
+            for prog, want in BIG:
+                r = E.sh([eng, img], cwd=pw, inp=prog.encode(), timeout=120, cpu=60)
+                got = [l.strip() for l in (r.stdout or b'').decode(errors='replace').replace('\r', '').splitlines() if l.strip() not in ('', 'OK')]
+                if want not in got: raise RuntimeError('wanted %s, got %s' % (want, ' / '.join(got[-2:])[:80]))
+        print('  %-32s ok     two programs past 4 MB' % name, flush=True)
+    except Exception as e:
+        bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
 shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)
-print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS), '; '.join(bad)))
+print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS) + len(V32) + len(VBIG), '; '.join(bad)))
 sys.exit(1 if bad else 0)

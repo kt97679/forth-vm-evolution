@@ -7551,7 +7551,7 @@ it. Nothing committed was touched - the full checks ran at 389, and nothing was 
 back with apt-get install gcc-multilib (which took the ARM compiler out: the two cannot both be installed);
 HANDOFF-PROMPT's optional ARM tools now say so, and HANDOFF's lessons.
 
-Files: results/pending/ORDER.md, results/pending/fastgate-after-seed62.patch (new); HANDOFF.md, HANDOFF-PROMPT.md.
+Files: results/applied-after-seed62/ORDER.md, results/applied-after-seed62/fastgate-after-seed62.patch (new); HANDOFF.md, HANDOFF-PROMPT.md.
 
 ## Iteration 392 - 2026-10-18 - Claude
 
@@ -7600,7 +7600,7 @@ between neighbours - the scale against which two replicates are read.
 The after-seed-60 batch (the fast gate) renamed after-seed-62 - its file and its citations: seeds 60-62 must run one
 evolver, or a change of evolver would read as run-to-run spread. Predictions for 61 and 62 written.
 
-Files: results/pending/fastgate-after-seed62.patch (renamed), results/pending/ORDER.md, lab/evolve/review-checks.py
+Files: results/applied-after-seed62/fastgate-after-seed62.patch (renamed), results/applied-after-seed62/ORDER.md, lab/evolve/review-checks.py
 (spread), lab/evolve/NEXT-RUN (comment), results/predictions.md, HANDOFF.md, results/README.md, lab/evolve/README.md.
 
 ## Iteration 394 - 2026-10-18 - Claude
@@ -7664,8 +7664,8 @@ on the batch tested 1 patch of 3: it clones what is committed, and the two were 
 commit, the count), its header says so now; committed, all three PASS (run-tests, validate 7 of 7, jail).
 Predictions for the footprint step and the two genes written.
 
-Files: results/pending/jithelp-after-seed62.patch, results/pending/jitre-after-seed62.patch (new);
-results/pending/ORDER.md, lab/evolve/NEXT-RUN (comment), results/predictions.md, HANDOFF.md, tools/batch-check.sh.
+Files: results/applied-after-seed62/jithelp-after-seed62.patch, results/applied-after-seed62/jitre-after-seed62.patch (new);
+results/applied-after-seed62/ORDER.md, lab/evolve/NEXT-RUN (comment), results/predictions.md, HANDOFF.md, tools/batch-check.sh.
 
 ## Iteration 398 - 2026-10-19 - Claude
 
@@ -7721,8 +7721,8 @@ front carry it unbuilt (item 4b).
 NEXT-RUN: seed 61 (6 h), for when seed 60's chain has finished, as the owner queued at 393. Predictions: the remote
 checks of seed 59's front will see the same deaths at 32 bits; seed 63 none.
 
-Files: results/bfind32-fault-399.md, results/drafts/bfind32-repro-399.py, results/pending/bfind32-after-seed62.patch
-(new); results/pending/ORDER.md, results/predictions.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
+Files: results/bfind32-fault-399.md, results/drafts/bfind32-repro-399.py, results/applied-after-seed62/bfind32-after-seed62.patch
+(new); results/applied-after-seed62/ORDER.md, results/predictions.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
 
 ## Iteration 400 - 2026-10-19 - Claude
 
@@ -7749,7 +7749,7 @@ failures in this archive keep only collect2's last line: seed 60's chain records
 absence from fronts since seed 57 is partly this fault.
 
 Files: results/fail32-400.md, results/drafts/fail32-classify-400.py, results/drafts/fail32-tail-400.py,
-results/drafts/fail32-tailerr-400.py, results/pending/tail32-after-seed62.patch (new); results/pending/ORDER.md,
+results/drafts/fail32-tailerr-400.py, results/applied-after-seed62/tail32-after-seed62.patch (new); results/applied-after-seed62/ORDER.md,
 results/predictions.md, results/README.md, HANDOFF.md.
 
 ## Iteration 401 - 2026-10-19 - Claude
@@ -7768,8 +7768,8 @@ label seed59), and engines-check's clang tail variant lives at both widths. batc
 
 No 32-bit failure of seeds 58-59 was a design that cannot exist there: bugs, and one missing guarantee.
 
-Files: results/drafts/fail32-tailsplit-401.py, results/pending/musttail-after-seed62.patch (new); results/fail32-400.md,
-results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+Files: results/drafts/fail32-tailsplit-401.py, results/applied-after-seed62/musttail-after-seed62.patch (new); results/fail32-400.md,
+results/applied-after-seed62/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
 
 ## Iteration 402 - 2026-10-19 - Claude
 
@@ -7793,8 +7793,8 @@ The Tegra: all eight link failures of seeds 58-59's chains have fsys on, 5 of th
 (results/drafts/xcheck-fails-402.py); seed 60's chain records the linker's first error.
 
 Files: results/xcheck32-402.md, results/drafts/bfindtos-402.py, results/drafts/fail64-reach-402.py,
-results/drafts/xcheck-fails-402.py, results/pending/bfindtos-after-seed62.patch (new); lab/evolve/xcheck.py,
-results/bfind32-fault-399.md, results/fail32-400.md, results/pending/ORDER.md, results/README.md, HANDOFF.md.
+results/drafts/xcheck-fails-402.py, results/applied-after-seed62/bfindtos-after-seed62.patch (new); lab/evolve/xcheck.py,
+results/bfind32-fault-399.md, results/fail32-400.md, results/applied-after-seed62/ORDER.md, results/README.md, HANDOFF.md.
 
 ## Iteration 403 - 2026-10-19 - Claude
 
@@ -7837,8 +7837,8 @@ loop 1.149 to 1.213 (+6%), corpus 1.272 to 1.232, kernel 1.049 to 1.077 - the si
 (results/jitret-404.md, results/drafts/jitret-404.py). A trade-off, so a gene: seed 63's fronts decide, on the
 laptop's predictors. batch-check, the eight: PASS - 8 patches on a fresh clone of c397f25: run-tests PASS (engines-check 84 paths), validate 7 of 7 IDENTICAL, jail PASS.
 
-Files: results/jitret-404.md, results/drafts/jitret-404.py, results/pending/jitret-after-seed62.patch (new);
-results/pending/ORDER.md, results/README.md, HANDOFF.md.
+Files: results/jitret-404.md, results/drafts/jitret-404.py, results/applied-after-seed62/jitret-after-seed62.patch (new);
+results/applied-after-seed62/ORDER.md, results/README.md, HANDOFF.md.
 
 ## Iteration 405 - 2026-10-19 - Claude
 
@@ -7862,7 +7862,7 @@ engine on the tag live at both widths, 32-bit 0.813, 0.821, 0.874. batch-check, 
 
 Files: results/rehearsal-405.md, results/drafts/rehearsal-targeted-405.py, results/drafts/rehearsal-db-405.py,
 results/drafts/tailipa-405.py, results/drafts/t2call-build-405.py, results/drafts/sibcall-i386-405.c,
-results/pending/tailipa-after-seed62.patch (new); results/pending/ORDER.md, results/README.md, HANDOFF.md.
+results/applied-after-seed62/tailipa-after-seed62.patch (new); results/applied-after-seed62/ORDER.md, results/README.md, HANDOFF.md.
 
 ## Iteration 406 - 2026-10-19 - Claude
 
@@ -7949,8 +7949,8 @@ Rehearsed: a short free run here with patches 1-10 (pop 16, one round, both widt
 Seed 63's command waits for seed 62's processing (NEXT-RUN's comment): free of the requirement - its hours and start
 asked then. Predictions for it and the freeze: results/predictions.md.
 
-Files: results/drafts/frozen-check-409.py, results/pending/frozen-after-seed62.patch (new); results/drafts/simplicity-
-proposal-408.md, results/pending/ORDER.md, results/predictions.md, lab/evolve/NEXT-RUN, HANDOFF.md.
+Files: results/drafts/frozen-check-409.py, results/applied-after-seed62/frozen-after-seed62.patch (new); results/drafts/simplicity-
+proposal-408.md, results/applied-after-seed62/ORDER.md, results/predictions.md, lab/evolve/NEXT-RUN, HANDOFF.md.
 
 ## Iteration 410 - 2026-10-19 - Claude
 
@@ -8009,8 +8009,8 @@ both ways. batch-check, the eleven: PASS - 11 patches on a fresh clone of ba8332
 Next: on the tag a run-time pair whose fused opcode is escaped is dropped the same way - how many survive for a front
 design (results/drafts/price-410.md, "Fixed").
 
-Files: results/drafts/iplustag-alive-412.py, results/pending/iplustag-after-seed62.patch (new); results/drafts/
-price-410.md, results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+Files: results/drafts/iplustag-alive-412.py, results/applied-after-seed62/iplustag-after-seed62.patch (new); results/drafts/
+price-410.md, results/applied-after-seed62/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
 
 ## Iteration 413 - 2026-10-19 - Claude
 
@@ -8075,7 +8075,7 @@ s6, seed 58's 09de03f091, seed 60's 4ac602c8bd and 5ee5c38165, and s6 at 4-byte 
 tag and 4-byte cells. Cost: +184 bytes a plain-CV8 image (s6 9,161 to 9,345). batch-check, the twelve: PASS - 12 patches on a fresh clone of 911e26a: run-tests PASS (engines-check 89 paths, the programs past 4 MB among them), validate 7 of 7 IDENTICAL, jail PASS.
 
 Files: results/bigprog-416.md, results/drafts/bigprog-gen-416.py, results/drafts/bigprog-416.py, results/pending/
-bigprog-after-seed62.patch (new); results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+bigprog-after-seed62.patch (new); results/applied-after-seed62/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
 
 ## Iteration 417 - 2026-10-19 - Claude
 
@@ -8092,8 +8092,8 @@ all plain CV8, sampled - 8 of 8 alive at both widths; a short free run to genera
 batch-check, the thirteen: PASS - 13 patches on a fresh clone of 1a37de3: run-tests PASS (engines-check 89 paths), validate 7 of 7 IDENTICAL, jail PASS.
 
 Files: results/rehearsal-417.md, results/drafts/rehearsal-417.py, results/drafts/rehearsal-db-417.py, results/drafts/
-farcall-tests-417.py, results/pending/dumpcheck-after-seed62.patch (new); results/pending/bigprog-after-seed62.patch,
-results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+farcall-tests-417.py, results/applied-after-seed62/dumpcheck-after-seed62.patch (new); results/applied-after-seed62/bigprog-after-seed62.patch,
+results/applied-after-seed62/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
 
 ## Iteration 418 - 2026-10-20 - Claude
 
@@ -8212,7 +8212,7 @@ both-423-checks.py (new); results/wip-regmachine/rtimm-lean-422.patch (the condi
 ## Iteration 424 - 2026-10-20 - Claude
 
 **The two cheaper run-time compilers queued as the after-seed-63 batch, rehearsed with the after-seed-62 batch**
-(results/pending-after-seed63/ORDER.md). The owner: queue both for the after-seed-63 batch.
+(results/pending/ORDER.md). The owner: queue both for the after-seed-63 batch.
 
 On a clone of master with the thirteen after-seed-62 patches applied, rtloop-lean applied as made; rtimm-lean did not:
 one hunk - its headerless line - met the batch's changes there, and was placed by hand, the patch's changed lines the
@@ -8222,7 +8222,7 @@ on: +551 bytes at 64 bits, +511 at 32); 36 front designs with rtimm=2 or the loo
 (rehearsal-424.out). They wait one run - seed 63 judges the after-seed-62 batch - and the processing routine (step 6)
 now says how a queued batch becomes results/pending/ once the one before it is applied.
 
-Files: results/pending-after-seed63/ORDER.md, rtimm-lean-after-seed63.patch, rtloop-lean-after-seed63.patch,
+Files: results/pending/ORDER.md, rtimm-lean-after-seed63.patch, rtloop-lean-after-seed63.patch,
 rehearsal-424.out (new); results/README.md, results/wip-regmachine/README.md, HANDOFF.md.
 
 ## Iteration 425 - 2026-10-20 - Claude

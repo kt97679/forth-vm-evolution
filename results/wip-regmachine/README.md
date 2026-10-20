@@ -219,7 +219,7 @@ the same in every variant at both widths. The two patches apply to master alone 
 ## Next (as of 423)
 
 1. ~~The two patches wait here for the owner~~ - queued at Iteration 424 as the after-seed-63 batch
-   (results/pending-after-seed63/ORDER.md), rehearsed with the after-seed-62 batch; the copies here stay as made.
+   (results/pending/ORDER.md), rehearsed with the after-seed-62 batch; the copies here stay as made.
 2. The loop compiler's remaining bytes are its forms' (DO8, ?DO8, LEAVE8, LOOP8...): little left to trim without
    changing what it compiles.
 3. A general register stage only if a later workload shows move-heavy code these do not reach.

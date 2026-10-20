@@ -41,6 +41,11 @@ designs changing id - every one rtfuse=0 leaving the identity.
 
 ## In the genome now
 
+**Frozen (Iteration 409, the owner - the simplicity review, results/drafts/simplicity-proposal-408.md):** bytehdr,
+doesfar, thinhdr, varcall, bss and lean on, msc and scale at 0, in every design the search makes (evolve.py's FROZEN,
+applied by require(); mutation no longer picks them). Hand-made designs keep their own values. Their rows below stay
+as the record of what each does.
+
 | genes | from | what they change |
 |---|---|---|
 | family: `cell`, `sod16`, `cpt16`, `cv8` | this ladder (RelF, SOD16, CPT16, CV8) | the encoding; dormant genes switch on when a lineage changes family |

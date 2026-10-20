@@ -23,7 +23,7 @@ characters with CELL+, CELL- and CELL, - so another of them answered for it. A s
 back at the same wrong place and passes; 2DUP's is the corpus's first test with more than one result (none of the
 253 lines before it has two), and its four overlap.
 
-**The fix** (results/pending/bfind32-after-seed62.patch): the signature, the mask and bf_ld64's result uint64_t at
+**The fix** (results/applied-after-seed62/bfind32-after-seed62.patch): the signature, the mask and bf_ld64's result uint64_t at
 either width. With it both designs live at 32 bits - the corpus and the kernel workload, as eval32 runs them
 (results/drafts/bfind32-repro-399.py).
 
@@ -48,7 +48,7 @@ item 4b, the simplicity review.
 
 ## Iteration 402: bfind built in TOS designs
 
-The second finding fixed (results/pending/bfindtos-after-seed62.patch). A name's walk down a thread is one macro,
+The second finding fixed (results/applied-after-seed62/bfindtos-after-seed62.patch). A name's walk down a thread is one macro,
 NAME_WALK (engine/vm-lab.c) - bf_walk's in a bfind design, else the plain loop - taken by THREAD-FIND and (FIND) and by
 gen-tos.py's TOS bodies of them. On master, s6 with THREAD-FIND as an opcode builds the same engine, byte for byte,
 with bfind and without it. With the patch the two differ, at 8- and 4-byte cells, for THREAD-FIND on CV8 and (FIND) on

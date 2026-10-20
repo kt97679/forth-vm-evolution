@@ -5,7 +5,7 @@ ret (engine/jit.c). A ret is predicted by the return predictor, a stack of the l
 than that mispredicts every return beyond it - the JIT's ackermann nests past 250 (Iteration 294's reading of jit.c).
 An indirect jmp is predicted as any jump is, by the history of its targets.
 
-**The gene** (results/pending/jitret-after-seed62.patch, patch 8 of the after-seed-62 batch): with jitret, EXIT's
+**The gene** (results/applied-after-seed62/jitret-after-seed62.patch, patch 8 of the after-seed-62 batch): with jitret, EXIT's
 stencil - mov, mov, ret: the state handed back in rax and rdx - is copied with its ret made `pop %rcx; jmp *%rcx`.
 rcx is free at a return: no result is in it, and no caller keeps anything in it across a call. The same address and
 the same stack pointer as ret, so correct wherever ret is; x86-64 only, as the JIT. Off by default; the search weighs it.

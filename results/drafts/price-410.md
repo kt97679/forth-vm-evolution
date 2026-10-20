@@ -65,7 +65,7 @@ for cv8-fuse.4, and a tag-2 kernel loads cv8t-fuse.4 - or, failing that, rtiplus
 
 The cause: on the tag the run-time fuser's SUPER-TABLE holds one-byte codes, and the converter drops an entry with an
 escaped one (tools/layout.py). I+, never used by the image's own code, ranks low and was escaped - so rtiplus's (I, +)
--> I+ entry was dropped, and the fusion never fired. The fix (results/pending/iplustag-after-seed62.patch, the batch's
+-> I+ entry was dropped, and the fusion never fired. The fix (results/applied-after-seed62/iplustag-after-seed62.patch, the batch's
 eleventh): I+ pinned to a one-byte code where the table carries it, as Iteration 176 pinned IMM-OPS's keeping forms.
 On 4ac602c8bd with rtiplus on (the batch to patch 11, results/drafts/rtiplus-count-411.py on that tree): the loop's
 dispatches 20,031,683 to 16,032,016, -20.0%, I's 4,000,036 to 37; bubble unchanged, its I not before a +. Built and

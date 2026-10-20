@@ -21,6 +21,6 @@ the batch's tests, then rehearsed (results/rehearsal-405.md's way).
 
 ## Approved and built (Iteration 409)
 
-The owner: yes. results/pending/frozen-after-seed62.patch, the after-seed-62 batch's tenth: evolve.py's FROZEN - the six
+The owner: yes. results/applied-after-seed62/frozen-after-seed62.patch, the after-seed-62 batch's tenth: evolve.py's FROZEN - the six
 on, msc and scale at 0 - applied by require() to every design the search makes (now always, not only under a
 requirement), and mutation no longer picks them; hand-made designs keep their own. Rehearsed: a short free run here with patches 1-10 (pop 16, one round, both widths, noevolved, no tag-2 requirement), to generation 13: 222 designs, 7 hand-made; status {'ok': 222}; 32-bit failures none; designs the search made off a frozen value: 0 (results/drafts/frozen-check-409.py) - and no reach-limit death, where seed 60 had 247. batch-check, the ten: PASS - 10 patches on a fresh clone of 50942b8: run-tests PASS (engines-check 86 paths), validate 7 of 7 IDENTICAL, jail PASS.

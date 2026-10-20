@@ -239,6 +239,12 @@ S(st_fill)   { unsigned char *p = (unsigned char *)sp[1]; cell n = *sp;
 S(st_write) { spn_io_fn f = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
 S(st_read)  { spn_io_fn f = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
 #endif
+#if JITHELP
+/* Iteration 344, the gene jithelp: a C helper with the stencils' own signature, its address in the
+   function hole - called through a register, so the stencil copies anywhere; outside the I/O
+   stencils' own condition */
+S(st_callc) { spn_st r = ((spn_fn)IMM_FN())(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }
+#endif
 const void *const spn_table[] = {
     (const void *)spn_next, (const void *)spn_jump, (const void *)spn_call,
     (const void *)st_lit, (const void *)st_dup, (const void *)st_drop,
@@ -260,6 +266,9 @@ const void *const spn_table[] = {
 #endif
 #if JITINL
     (const void *)st_dplus,      /* Iteration 137: after fill, so the others keep their numbers */
+#endif
+#if JITHELP
+    (const void *)st_callc,      /* Iteration 344: last, so the others keep their numbers */
 #endif
 #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,

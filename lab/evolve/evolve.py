@@ -201,6 +201,9 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
 ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
 gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
+gene('jithelp', needs=lambda g, e: jit_on(g))   # Iteration 344: the C primitives the outer interpreter stops at, called from native code (st_callc)
+gene('jitre', needs=lambda g, e: jit_on(g) and e.get('jithelp'))   # Iteration 346: a callee the JIT cannot translate interpreted, not refusing its caller (jit_interp)
+gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
 gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
 gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
 gene('bfind', needs=lambda g, e: any(w in (e.get('ops10') or []) for w in ('THREAD-FIND', '(FIND)')))   # Iteration 316: the walk branch-light
@@ -776,7 +779,10 @@ def tail_offenders(eng):
     for line in out.splitlines():
         m = re.match(r'^[0-9a-f]+ <([^>]+)>:', line)
         if m: fn = m.group(1); continue
-        if fn and re.match(r'[HI]_', fn) and re.search(r'call +\*\(%\w+,%\w+,8\)', line):
+        # Iteration 400: i386's forms too - a 4-byte table, absolute or based, or the pointer loaded first: matched
+        # only as x86-64's, clang's calls at 4-byte cells went unseen, unwrapped, and its engine died on the corpus.
+        # x86-64's own form is matched as it was: no 64-bit engine changes.
+        if fn and re.match(r'[HI]_', fn) and re.search(r'call +\*\(%\w+,%\w+,8\)|call +\*(0x[0-9a-f]+)?\((%e\w+)?,%e\w+,4\)|call +\*%e[a-z]{2}\b', line):
             bad.add(re.sub(r'^[HI]_', '', fn).split('.')[0])
     return bad
 
@@ -791,13 +797,18 @@ def build_tail(g, d, src, flags, eng):
     # preprocessed source, where its own '#ifndef DISPOFF' guard is already gone, so
     # the handlers' table was offsets between functions: no tail design compiled in
     # seed 46 (222 died: engine did not compile)
-    if sh([CC(g), '-E', '-P'] + fl + ['-o', pp, src]).returncode: raise RuntimeError('died: engine did not compile')
+    # Iteration 400: preprocessed by the compiler that builds it - CC(g) alone at 4-byte cells (EVOLVE_CC's -m32 left
+    # out) made the x86-64 engine, 8-byte cells and __int128, for gcc -m32 to compile: every tail design died at 32 bits
+    # (seed 58: 401 of 401 'engine did not compile', results/fail32-400.md).
+    r = sh(CCV(g) + ['-E', '-P'] + fl + ['-o', pp, src])
+    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))   # Iteration 400: its first error, as build's
     wrap = []
     for attempt in range(2):
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
-               + (['--preserve-none'] if express(g).get('tailpn') else []))   # Iteration 293
-        if r.returncode: raise RuntimeError('died: tail-call generation')
-        if sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt()).returncode: raise RuntimeError('died: engine did not compile')
+               + (['--preserve-none'] if express(g).get('tailpn') else ['--musttail'] if express(g).get('compiler') else []))   # 401: every clang engine's calls jumps   # Iteration 293
+        if r.returncode: raise RuntimeError('died: tail-call generation' + why(r))
+        r = sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt())
+        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
         bad = tail_offenders(eng)
         if not bad: return
         wrap = sorted(set(wrap) | bad)
@@ -888,7 +899,15 @@ T2HOT = [0.02, 0.0, 0.05, 100.0]
 # Iteration 71: --require tag2 - every design of the run, the hand-made
 # references excepted, in the two-bit tag (with byte headers)
 REQUIRE = []
+# Iteration 409 (the owner: the simplicity review, results/drafts/simplicity-proposal-408.md): genes the search no longer
+# varies. On in every front design of seeds 53-60 (1,431 - bss and lean in all but one and two), so frozen on: bytehdr,
+# doesfar, thinhdr, varcall, bss, lean; on in none, with no fault behind it, so removed: msc and scale, held at 0. Every
+# design the search makes carries these values (require, at get()); a hand-made design keeps its own, so s6 and the
+# stages are unchanged. With varcall and doesfar on, no design dies at the reach limit any more (reach_lethal). Not
+# tail - a fault hid it until the after-seed-62 batch; judged after seed 63.
+FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0}
 def require(g):
+    if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
     return g
 
@@ -921,6 +940,8 @@ def _build(g, d):
     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
     if jit_on(g): flags.append('-DX_JIT=1')        # Iteration 81: its opcode needs no format-10 slot
     if jit_on(g) and express(g).get('jitvar'): flags.append('-DJITVAR=1')   # Iteration 342: the slot operand's decoding
+    if jit_on(g) and express(g).get('jithelp'): flags.append('-DJITHELP=1')   # Iteration 344: st_callc and the helpers
+    if jit_on(g) and express(g).get('jitre'): flags.append('-DJITRE=1')       # Iteration 346: jit_interp
     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
@@ -929,6 +950,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
+    if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
     if jit_on(g) and express(g).get('jitk'): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils
     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
@@ -1003,6 +1025,8 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
+    if jit_on(g) and express(g).get('jithelp'): opts.append('--jithelp')   # Iteration 344: C primitives called from native code
+    if jit_on(g) and express(g).get('jitre'): opts.append('--jitre')       # Iteration 346: native code calling bytecode
     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
@@ -1234,7 +1258,18 @@ def reach_lethal(g):
     the third run's fork bomb (Iteration 10). At scale 1 (2^15) 13 of 18
     lived: those still run - jailed."""
     return g['enc'] == 'cv8' and g.get('scale', 0) == 0 and not (g.get('varcall') and g.get('doesfar'))
-def evaluate(g, rounds, keep=False):
+FASTGATE = [20, 1.05]   # Iteration 391 (the owner): the fast end measured twice - fast_gate(), evaluate(); --fastgate N
+def fast_gate(R):
+    """The speed under which a child is measured twice: 5% above the FASTGATE[0]-th fastest design alive so
+    far - the fast end, and the noise band around it. The fast end's in-run speeds were ~10% optimistic
+    (results/review-methodology-386.md, 2a): designs admitted on lucky draws, a 3% noise the best of
+    thousands. None while fewer are alive, or with --fastgate 0."""
+    n = FASTGATE[0]
+    if not n: return None
+    sp = sorted(r['speed'] for r in R.values() if r.get('status') == 'ok' and r.get('speed'))
+    return sp[n - 1] * FASTGATE[1] if len(sp) >= n else None
+
+def evaluate(g, rounds, keep=False, gate=None):
     # Build what the identity names: canon(g), as express() and gid() see it.
     # Built raw, a mutation that turned on byte headers in a design with
     # scaled calls was refused by the converter (--bytehdr wants --cpt 0) -
@@ -1258,6 +1293,11 @@ def evaluate(g, rounds, keep=False):
         rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
         rec['mem'] = dict(LAST_RSS)
         rec['unit'] = UNIT
+        if gate and rec['speed'] < gate:   # Iteration 391: under the fast gate, measured again - the same rounds,
+            t2, raw2 = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)   # the engine as built; memory the first's
+            rec['speed1'] = rec['speed']; rec['speed2'] = math.exp(sum(math.log(t2[w]) for w in WORK_SEL) / len(WORK_SEL))
+            rec['t'] = t = {w: math.sqrt(t[w] * t2[w]) for w in t}; rec['raw'] = {w: math.sqrt(raw[w] * raw2[w]) for w in raw}
+            rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))   # = sqrt(speed1 x speed2)
         if TWO_WIDTHS[0]: rec.update(eval32(g, rounds))       # Iteration 336: the 32-bit measurement, after the 64-bit one
     except RuntimeError as e:
         rec['status'] = str(e)
@@ -1283,7 +1323,7 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
 def mutate(g, rnd):
     g = canon(g); what = []
     for _ in range(rnd.choice([1, 1, 2])):
-        pool = EXPRESSED[g['enc']] + list(CC0) + ['enc'] * (1 if rnd.random() < 0.2 else 0)
+        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if x not in FROZEN] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's
         k = rnd.choice(pool)
         if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
         if k == 'enc':
@@ -1962,7 +2002,7 @@ def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
-             '--jobs', '--until', '--fromzero', '--noevolved', '--widths'}
+             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate'}
     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
     if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
         if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
@@ -2014,6 +2054,7 @@ def main(argv):
             json.dump(out, open(path, 'w'))
         report(R); return
     N, G, ROUNDS, rnd = opt('--pop', 16), opt('--gens', 10), opt('--rounds', 3), random.Random(opt('--seed', 1))
+    FASTGATE[0] = opt('--fastgate', FASTGATE[0])          # Iteration 391: 0, off
     JOBS, UNTIL = opt('--jobs', 1), opt('--until', 0)        # Iteration 99: workers on their own cores; a deadline
     R = load()
     if JOBS > 1: start_pool(JOBS)
@@ -2025,7 +2066,7 @@ def main(argv):
     SCR = {'model': None, 'fit': -1}          # Iteration 200: the screen's model and when it was fitted
     def get(g, parents, how, gen):
         """The design's id; asked for, it is evaluated at the next flush()."""
-        if REQUIRE and not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71
+        if not how.startswith('hand-made'): g = canon(require(g))   # Iteration 71; 409: FROZEN, always
         i = gid(g); seen.add(i)
         if i not in R and i not in pending: pending[i] = (g, parents, how, gen)
         return i
@@ -2056,12 +2097,13 @@ def main(argv):
                     else: keep.append((i, (g, parents, how, gen)))
                 if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
                 items = keep
-        args = [(canon(g), ROUNDS) for i, (g, parents, how, gen) in items]
+        gate = fast_gate(R)                                   # Iteration 391
+        args = [(canon(g), ROUNDS, False, gate) for i, (g, parents, how, gen) in items]
         for (i, (g, parents, how, gen)), rec in zip(items, WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args)):
             rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen)
             R[i] = rec; save(rec)
             print('    %s %-24s %s' % (i, rec['status'] if rec['status'] != 'ok' else
-                  'speed %.4g size %d' % (rec['speed'], rec['size']), how[:70]), flush=True)
+                  'speed %.4g size %d%s' % (rec['speed'], rec['size'], ' twice %.4g/%.4g' % (rec['speed1'], rec['speed2']) if 'speed1' in rec else ''), how[:70]), flush=True)
     # Iteration 115 (the owner: "sod32 from nothing"): --fromzero - the first
     # generation all random genomes, uniform over the whole space: no hand-made
     # design, no founder, nothing carried, no mutant of a hand-made one (the
@@ -2071,7 +2113,7 @@ def main(argv):
     if FROMZERO:
         pop = []
         while len(pop) < N:
-            g = random_genome(rnd); g = require(g) if REQUIRE else g
+            g = random_genome(rnd); g = require(g)
             pop.append(get(g, [], 'random', 0))
         print('  from zero: %d random genomes' % len(pop), flush=True)
     pop = pop if FROMZERO else [get(g, [], 'hand-made ' + n, 0) for n, g in HUMAN.items()]
@@ -2125,7 +2167,7 @@ def main(argv):
                 if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
             label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
             for i in first_front(list(C), C):
-                g = canon(require(C[i]['genome'])) if REQUIRE else canon(C[i]['genome'])
+                g = canon(require(C[i]['genome']))
                 if gid(g) in have: continue
                 # re-encoded (--require), it is a new design: this run's, not its origin's
                 have.add(gid(g)); carried.append((g, ('tag 2 of %s: %s' if gid(g) != i else 'carried from %s: %s') % (label, i)))

@@ -143,7 +143,8 @@ G['T2WIDE'] = T2WIDE_ON
 
 def linklen(d):
     if TAG2_ON: return 1 if d < 64 else 2 if d < (1 << 14) else 3 if d < (1 << 22) else 4
-    return 1 if d < 128 else (2 if d < 16384 else 3)
+    assert d < (1 << 29), 'link %d out of reach' % d                                  # Iteration 416: four forms
+    return 1 if d < 128 else 2 if d < 16384 else 3 if d < (1 << 21) else 4
 
 
 def linkbytes(d, n):
@@ -154,7 +155,8 @@ def linkbytes(d, n):
         return bytes([(d >> (8 * i)) & 0xFF for i in range(n - 1)] + [((n - 1) << 6) | (d >> (8 * (n - 1)))])
     if n == 1: return bytes([d])
     if n == 2: return bytes([d & 0xFF, 0x80 | (d >> 8)])
-    return bytes([d & 0xFF, (d >> 8) & 0xFF, 0xC0 | (d >> 16)])
+    if n == 3: assert d < (1 << 21); return bytes([d & 0xFF, (d >> 8) & 0xFF, 0xC0 | (d >> 16)])
+    return bytes([d & 0xFF, (d >> 8) & 0xFF, (d >> 16) & 0xFF, 0xE0 | (d >> 24)])   # Iteration 416: 29 bits
 if '--spec' in ARGV: G['SPEC'].update(_opt('--spec').split(','))
 if '--escape' in ARGV:
     G['ESCAPE'] = True
@@ -505,6 +507,12 @@ if TAG2_ON:
     # unfused, and an escaped form costs the two dispatches it saves)
     if any(x['n'] == 'IMM-OPS' for x in order):
         _pin += [G['X_OPS10'][n] for n in ('DUP+I', 'DUP<I') if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
+    # Iteration 412: rtiplus's I+ - the run-time fuser's (I, +) -> I+ entry in SUPER-TABLE, which on the tag holds
+    # one-byte codes as the loop tables do - pinned where it is in the table: escaped, the entry was dropped and the
+    # fusion never fired (seed 60's 4ac602c8bd: the loop's I, a fifth of its dispatches, unfused with rtiplus on).
+    if ('--rtfuse' in ARGV and any(x['n'] == 'SUPER-TABLE' for x in order) and 'I+' in G['X_OPS10'] and 'I' in G['X_OPS10']
+            and G['X_OPS10']['I+'] not in _pin):
+        _pin += [G['X_OPS10']['I+']]
     assert all(p in _names for p in _pin), [p for p in _pin if p not in _names]
     # --tag2-hot W: an operation weighing at least W in the reference is hot -
     # ranked first, by weight; the rest by how often the image uses it. 0:
@@ -1184,6 +1192,17 @@ def v8loc(old):
     return n2 >> CPT
 G['V8_PFA'][0] = v8pfa
 G['V8_LOC'][0] = v8loc
+def _v8_dodoes(n):
+    # Iteration 416: a DOES> word's code field - [DODOES][call][pad] to a cell. A far call (3 bytes) counts CELLS, as the
+    # engine's DODOES reads it with DOESFAR - a DOES> tail is aligned - so 22 bits reach 32 MB, 16 at 4-byte cells.
+    v = v8val(n)
+    if G['VARCALL'] and v >= (1 << 14) and '--does-far' in ARGV:
+        vb = v << (CPT or 0); assert vb % CELL == 0, 'a DOES> tail not cell-aligned'
+        vc = vb // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
+        b = bytes([0xC0 | (vc >> 16), (vc >> 8) & 0xFF, vc & 0xFF])
+    else: b = callbytes(n)
+    assert 1 + len(b) <= CELL, 'a DOES> call longer than its code field'
+    return bytes([70]) + b + b'\x00' * (CELL - 1 - len(b))
 def callbytes(target):
     if V8 and TAG2_ON:
         v = v8val(target); return G['t2call'](v, G['t2calllen'](v))
@@ -1323,7 +1342,7 @@ def emit(path):
                     # tag 2: always the 4-byte call - DODOES finds the parameter
                     # field at align(body + 5), as CREATE reserves (FORMAT-TAG2.md)
                     img += (bytes([T2MAP['one'][G['V8_DODOES']]]) + G['t2call'](v8val(n), 4) + b'\x00' * (cfd(s0) - 5)) if TAG2_ON \
-                        else (bytes([70]) + callbytes(n) + b'\x00' * (CELL - 3)) if V8 else (tk(DODOES) + tk(calltok_addr(n)) + b'\x00' * (CELL - 4))
+                        else _v8_dodoes(n) if V8 else (tk(DODOES) + tk(calltok_addr(n)) + b'\x00' * (CELL - 4))
                 else:
                     img += b'\x00' * (CELL - 2)     # pad BEFORE the token
                     img += tk(calltok_addr(n))
@@ -1656,6 +1675,9 @@ if EMIT:
                  '<>?BRANCH': (['EQ', 'LIT', 'EQ', '0BRANCH'], 7), '<>?BRANCH8': (['EQ', 'LIT', 'EQ', '0BRANCH'], 6)}
             if '--jitloop' in ARGV:   # Iteration 129, the gene jitloop: SPN's (+LOOP) and (?DO) stencils, a branch operand as (LOOP)'s
                 O.update({'(+LOOP)': (['PLOOP'], 7), '(?DO)': (['QDO'], 7)})
+            JITHELPERS = {'PLACE': 'h_place', '(PARSE)': 'h_parse'} if '--jithelp' in ARGV else {}   # Iterations 344-345, the gene jithelp: C primitives called from native code
+            for _h in JITHELPERS: K[_h] = (['CALLC'], 0)
+            if JITHELPERS: K['COUNT'] = (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1)   # Iteration 345: ( a -- a+1 u ) - stencils it has
             if '--jitvar' in ARGV:    # Iteration 342, the gene jitvar: vf and vs - a literal of the slot's address, then @ or !
                 O['vf'] = (['LIT', 'FETCH'], 9 if G['VARSLOT'] else 8); O['vs'] = (['LIT', 'STORE'], 9 if G['VARSLOT'] else 8)
             if '--jitinl' in ARGV:    # Iteration 137, the gene jitinl: D+'s stencil (spn-stencils.c, JITINL)
@@ -1676,13 +1698,19 @@ if EMIT:
             for _x, _nm in sorted(G['t2_names']().items()):
                 _dj = _jd(_nm)        # (not _d: that is the directory the headers go to)
                 if _dj and len(_dj[0]) <= 5:
-                    _rows.append('[%d] = {1, %d, %d, %d, {%s}},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
-                                 ', '.join('S_' + s for s in _dj[0]) or '0', _nm.replace('*/', '* /')))
+                    _rows.append('[%d] = {1, %d, %d, %d, {%s}%s},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
+                                 ', '.join('S_' + s for s in _dj[0]) or '0', (', (void *)' + JITHELPERS[_nm]) if _nm in JITHELPERS else (', 0' if JITHELPERS else ''), _nm.replace('*/', '* /')))
+            _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
+            if '--jitre' in ARGV:
+                _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
+                assert _li < 0xFFFD, 'jitre: no index for INTERP'
+                _rows.append('[%d] = {1, 1, 4, 0, {S_INTERP}%s},  /* an interpreted call (jitre) */' % (_li, ', 0' if JITHELPERS else ''))
+                _lint = '#define JIT_L_INTERP %d\n' % _li
             _jc = T2MAP['one'][G['T2_JIT']]
             open(_os.path.join(_d, 'vm-jit-ops.h'), 'w').write(
                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
-                '#define JIT_CODE %d\n#define JIT_DOVAR %d\nstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
-                % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]], '\n'.join(_rows)))
+                '#define JIT_CODE %d\n#define JIT_DOVAR %d\n%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
+                % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]], _lint, '\n'.join(_rows)))
             print("wrote vm-jit-ops.h: %d of %d operations translatable; JIT is code %d" % (len(_rows), len(G['t2_names']()), _jc))
 
 _short_fails_out()

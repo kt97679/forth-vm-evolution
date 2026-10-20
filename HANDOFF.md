@@ -106,9 +106,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    (Iteration 372: 62 had been left behind):
    `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
    (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
-   run: handoff-check names it). **A batch queued behind it** (results/pending-after-seed63/, Iteration 424): then
+   run: handoff-check names it). **A batch queued behind it** (results/pending/, Iteration 424): then
    `git mv results/pending-after-seed63 results/pending`, its paths (its ORDER.md, results/README.md) from
-   pending-after-seed63/ to pending/, and `sh tools/batch-check.sh` against the new master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
+   pending/ to pending/, and `sh tools/batch-check.sh` against the new master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
    Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
    lab/evolve/progress-table.py > results/progress-by-run.md`; the gene votes, from seed 63 on (Iteration 432): `python3
    lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
@@ -255,7 +255,7 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; **jithelp and jitre to be tried**
    (the owner, Iteration 397) - in the after-seed-62 batch. jitleft.py's counts say they buy little (the kernel's
    share left to the interpreter 53.7% to 53.6%, bubble's 2.0% to 1.7%; 4.5 KB more): out if the fronts do not use
-   them (results/pending/ORDER.md has the evidence) - by results/seed63-rules.md's gene rule (431): three runs
+   them (results/applied-after-seed62/ORDER.md has the evidence) - by results/seed63-rules.md's gene rule (431): three runs
    (seeds 63-65), a dependence test, frozen off for a run before the code goes.
 4. **Fewer dispatches - the front end's lever** (Iterations 297, 301): the evolved interpreted designs
    stall on the dispatch's indirect jump, not the caches. Superinstructions were that lever on paper,
@@ -298,7 +298,7 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    operands (`+` and `<` the most), on the tag little beyond I+ - but the forms that take them largely exist as genes
    (rtimm's immediates, the loop compiler, I+), and what keeps the small end from them is their bytes, not their reach.
    No general stage unless a later workload shows move-heavy code these miss; two of the forms made cheaper instead -
-   the after-seed-63 batch (results/pending-after-seed63/ORDER.md). Its bound on the front: 7-46% a workload (410-411,
+   the after-seed-63 batch (results/pending/ORDER.md). Its bound on the front: 7-46% a workload (410-411,
    results/drafts/price-410.md). I, the loop index, fused on the tag since patch 11 (412-413: I+ pinned to one byte;
    every run-time table entry kept). Translation to direct threading at load (gforth's hybrid, Wasm3's M3): the compact
    image expanded at start. The interpreter's returns predicted - priced (410): handler replication at most 0.4-1.6% of

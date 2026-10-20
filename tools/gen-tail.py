@@ -2,6 +2,8 @@
 """gen-tail.py PREPROCESSED.c OUT.c [--wrap L_a,L_b,...] - tail-call
 threading for the CV8 engine. --preserve-none (Iteration 293, the gene tailpn,
 clang 19+): preserve_none on every handler, musttail on every tail call.
+--musttail (Iteration 401): musttail alone, for clang's engine without
+preserve_none - at 4-byte cells clang makes no dispatch a jump without it.
 
 Input: the top-of-stack engine (vm-lab-tos.c, after gen-fold / gen-super),
 preprocessed for one design with -DDISPATCH256=1 (cc -E -P), so every
@@ -118,7 +120,17 @@ if '--preserve-none' in sys.argv:
     head = head.replace('typedef void (*hfn)(', 'typedef void (%s *hfn)(' % PN, 1)
     head = head.replace('static void H_', 'static %s void H_' % PN)
     body = body.replace('static void H_', 'static %s void H_' % PN)
+if '--preserve-none' in sys.argv or '--musttail' in sys.argv:   # Iteration 401: musttail alone too (--musttail)
     body = re.sub(r'(?<![\w.])return (htab\[t\]|esc_ftab\[t\]|t2tab\[t\]|t2esc\[t\]|H_\w+|f_)\((ip, dsp, rp, tos, t|tc_ip, tc_dsp, tc_rp, tc_tos, tc_t)\);',
                   r'__attribute__((musttail)) return \1(\2);', body)
+# Iteration 405: at 32-bit x86 GCC gives a static function reached only by direct calls - the two-bit tag's shared call
+# path, t2call - a convention of its own, arguments in registers: its incoming stack then too small for the five a
+# dispatch passes on the stack, and its tail call stays a call ("tail calls not jumps (t2call)" - the rehearsal of the
+# after-seed-62 batch). noipa keeps every handler's convention the declared one; empty for clang and off i386, so no
+# other engine changes.
+head = ('#if defined(__i386__) && defined(__GNUC__) && !defined(__clang__)\n#define TC_NOIPA __attribute__((noipa))\n'
+        '#else\n#define TC_NOIPA\n#endif\n') + head
+head = re.sub(r'static ((?:__attribute__\(\(preserve_none\)\) )?)void H_', r'static TC_NOIPA \1void H_', head)
+body = re.sub(r'static ((?:__attribute__\(\(preserve_none\)\) )?)void H_', r'static TC_NOIPA \1void H_', body)
 open(sys.argv[2], 'w').write(pre + head + body + entry + post)
 print('%d handlers as functions, %d wrapped' % (len(names), len(WRAP & set(names))))

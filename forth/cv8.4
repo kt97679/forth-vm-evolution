@@ -133,20 +133,25 @@ ALIGN
   LOOP 0 ;
 
 \ ---- calls ----------------------------------------------------------
+: (FAR) ( a-addr --- )
+\ Iteration 416: a call past reach - the target's address, compiled as a
+\ literal before this word, goes to the return stack and EXIT goes there:
+\ the target runs and returns to the caller, as a call would.
+  >R ;
+
 : CALL, ( a-addr --- )
 \ Append a call to the body at a-addr: a scaled offset from the image
-\ base, near (2 bytes) if it fits in 14 bits, far (3 bytes) otherwise.
+\ base, near (2 bytes) if it fits in 14 bits, far (3 bytes) in 21 - the
+\ far form's first byte is 0xC0-0xDF where one-byte hot calls hold
+\ 0xE0-0xFF, so past them a call is not truncated into some other target
+\ (Iteration 158). Past them, Iteration 416: the address, then (FAR).
   0 LAST-OP !
-  START @ - CV8-SHIFT RSHIFT
-  DUP 16384 < IF
-    DUP 8 RSHIFT 128 OR C, 255 AND C,
-  ELSE
-    \ 21 bits: the far form's first byte is 0xC0-0xDF where one-byte hot
-    \ calls hold 0xE0-0xFF, so past them a call is refused, not truncated
-    \ into some other target (Iteration 158).
-    DUP 2097152 U< 0= CV8-VARCALL-V @ 0= OR IF -1 ABORT" call out of reach" THEN
-    DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C,
-  THEN ;
+  DUP START @ - CV8-SHIFT RSHIFT                            ( a-addr v )
+  DUP 16384 < IF SWAP DROP DUP 8 RSHIFT 128 OR C, 255 AND C, EXIT THEN
+  DUP 2097152 U< CV8-VARCALL-V @ AND IF
+    SWAP DROP DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C, EXIT
+  THEN
+  DROP LIT, POSTPONE (FAR) ;
 
 : COMPILE,8 ( xt --- )
 \ Add the execution semantics of xt to the current definition: a
@@ -282,7 +287,9 @@ ALIGN
 \ word up there had its target silently truncated and jumped into the
 \ data stack. The far form is three bytes, which is why CREATE has to
 \ reserve a matching amount - see CV8-DOES-RESERVE.
-  START @ - CV8-SHIFT RSHIFT        ( a-addr v )
+  \ Iteration 416: the far form counts CELLS - a DOES> tail is ALIGNED - so its 22 bits reach 32 MB at
+  \ 8-byte cells, 16 at 4, where call-scale units reached 4 MB at scale 0.
+  START @ -  CV8-DOES-FAR? @ IF CV8-SHIFT-DEFAULT ELSE CV8-SHIFT THEN RSHIFT        ( a-addr v )
   CV8-DOES-FAR? @ IF
     2DUP 255 AND SWAP 2 + C!
     2DUP 8 RSHIFT 255 AND SWAP 1+ C!
@@ -310,7 +317,7 @@ ALIGN
   \ HERE is the tail every child will call, in the form CV8-DOES-FAR?
   \ selects - out of its reach, the defining word is refused here, before a
   \ child exists to be left half made (Iteration 158).
-  HERE START @ - CV8-SHIFT RSHIFT CV8-DOES-FAR? @ IF 2097152 ELSE 16384 THEN U< 0=
+  HERE START @ - CV8-DOES-FAR? @ IF CV8-SHIFT-DEFAULT RSHIFT 4194304 ELSE CV8-SHIFT RSHIFT 16384 THEN U< 0=   \ 416: cells
   IF -1 ABORT" DOES> out of reach" THEN
   POSTPONE R> ; IMMEDIATE
 

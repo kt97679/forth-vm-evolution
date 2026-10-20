@@ -1403,6 +1403,9 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
 #if VARCALL
     if (BYTE(ip) & 0x40) {
         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
+#if DOESFAR
+        t <<= (CELL_BYTES == 8 ? 3 : 2) - SCALE;  /* Iteration 416: a far DOES> call counts cells - its tail is aligned */
+#endif
         RPUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
     } else {
         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
