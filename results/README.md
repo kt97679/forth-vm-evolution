@@ -12,7 +12,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `predictions.md` - the predictions written before each run, then scored.
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
-- `seed63-rules.md` - Seed 63's decisions, the rules written before its results (Iteration 430): eleven rules - the JIT genes and tail by "used" (10% of the front or one of its fastest tenth), the fast gate by the fast end's optimism, the freeze, 32-bit failures, the small end, I+, the rtimm/rtfuse overlap.
+- `seed63-rules.md` - Seed 63's decisions, the rules written before its results (Iterations 430-431, adopted): ten rules and the gene rule - a gene out only after three runs unused, no front design depending on it, frozen off for a run first; checked against losing good designs (a one-run rule would have marked jitimg, jitvar, jitos, rtimm and opcall out in turn; the freeze loses nothing).
 - `candidates-generic.md` - Designs kept by id that no front holds (Iteration 430): bf439eb307's record, for xcheck --also - the candidates for the best design across the machine classes.
 - `pending-after-seed63/ORDER.md` - the batch queued behind it (Iteration 424, the owner's word): the cheaper run-time immediates and loop table from results/wip-regmachine/, rehearsed with the after-seed-62 batch (its rehearsal-424.out); it becomes results/pending/ once the after-seed-62 batch is applied.
 - `pending/ORDER.md` - the batch waiting to be applied at the next seed's processing: its patches' order and how each was tested (now the after-seed-62 batch, Iterations 391 and 393: the fast gate).

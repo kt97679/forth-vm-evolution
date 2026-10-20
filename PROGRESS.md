@@ -8338,3 +8338,24 @@ written.
 
 Files: results/seed63-rules.md, results/candidates-generic.md (new); lab/evolve/xcheck.py, lab/evolve/review-checks.py,
 lab/evolve/process-seed.sh, lab/evolve/REMOTES, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 431 - 2026-10-20 - Claude
+
+**Seed 63's rules checked against losing good designs - one would have; revised, and adopted** (results/seed63-rules.md).
+The owner: double-check the rules lose no potentially good designs; if not, use them.
+
+The gene rule as written at 430 judged one run ("used": 10% of the front, or one of its fastest tenth). Seeds 58-61's
+fronts show a run's shares swing too much: it would have marked jitimg out after seed 61, jitvar after 59 and 61, jitos
+after 58, 60 and 61, rtimm after 58 and 61, opcall after 59 and 60 - each among the fastest designs in another run; the
+replicates 60 and 61 alone differ by 12% against 6% (jitvar) and 2% against 30% (opcall). Revised: a gene is proposed
+out only if, over its first three runs (seeds 63-65), it is never on 10% of the front nor in a fastest or smallest
+tenth, and a dependence test - every front design carrying it rebuilt without it - shows nothing lost (under 2% a
+workload, under 1% in bytes); then frozen off for a run, the code kept, and removed only if that run's comparison
+shows no loss. The fast gate's rule gained a lower bound (under 0.98: too harsh).
+
+The others checked: the freeze - four of seeds 56-61's 1,050 front designs broke it, none in a smallest tenth; rebuilt
+with the frozen value all four live and are smaller (-120 to -2,370 bytes), the largest speed effect seed 60's
+4ac602c8bd with lean, kernel +1.25% in dispatches, the rest within 0.31%. The rtimm/rtfuse proposal removes no
+behaviour (rtfuse on gives the same). The rest only measure. Adopted.
+
+Files: results/seed63-rules.md, results/README.md, HANDOFF.md.

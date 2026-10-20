@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 430.
+- master: Iteration 431.
 - **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
   measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
   places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
@@ -198,7 +198,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    `seed 63 11h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
    a verdict against seeds 59-62. The comparison is reserved from the 11 hours (next-run.sh's reserve()): about 7 3/4
    hours of evolution (seed 60, 12 hours with the same step: 8 h 50). **Its decisions by results/seed63-rules.md**,
-   written before its results (the owner, 430) - `review-checks.py curse` on its report
+   written before its results (the owner, 430), checked against losing good designs and adopted (431) - a gene
+   proposed out only after three runs, with a dependence test, reversibly - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).
 0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every
@@ -253,7 +254,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 3. **The JIT genes** (results/drafts/next-genes.md): jitimg and jitvar applied; **jithelp and jitre to be tried**
    (the owner, Iteration 397) - in the after-seed-62 batch. jitleft.py's counts say they buy little (the kernel's
    share left to the interpreter 53.7% to 53.6%, bubble's 2.0% to 1.7%; 4.5 KB more): out if the fronts do not use
-   them (results/pending/ORDER.md has the evidence).
+   them (results/pending/ORDER.md has the evidence) - by results/seed63-rules.md's gene rule (431): three runs
+   (seeds 63-65), a dependence test, frozen off for a run before the code goes.
 4. **Fewer dispatches - the front end's lever** (Iterations 297, 301): the evolved interpreted designs
    stall on the dispatch's indirect jump, not the caches. Superinstructions were that lever on paper,
    and in tag-2 designs never in fact (the standing decisions: superinstructions). Calls and returns are 15-25% of mispredictions; the
@@ -265,7 +267,7 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4b. **The simplicity review** (results/drafts/gene-usage-53-56.md, Iteration 372): never-chosen mechanisms - msc,
    scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call - seed 60's
    anchoring answer is in (406: none found at 12 hours). Approved and built (the owner, 409; results/drafts/simplicity-proposal-408.md):
-   bytehdr, doesfar, thinhdr, varcall, bss and lean frozen on, msc and scale at 0 - pending patch 10; tail after seed 63;
+   bytehdr, doesfar, thinhdr, varcall, bss and lean frozen on, msc and scale at 0 - pending patch 10; tail by results/seed63-rules.md's gene rule (seeds 63-65);
    with it the overlap 423 found: rtimm=2 passes --rtfuse, so a design's built pairs and fused tests fuse at run time
    with rtfuse off (five of seed 60's front rely on it) - document it, or let rtfuse govern: the owner's call;
    jitos and nogcse watched. Not tag2 or bytehdr: free, the search chooses
