@@ -8224,3 +8224,25 @@ now says how a queued batch becomes results/pending/ once the one before it is a
 
 Files: results/pending-after-seed63/ORDER.md, rtimm-lean-after-seed63.patch, rtloop-lean-after-seed63.patch,
 rehearsal-424.out (new); results/README.md, results/wip-regmachine/README.md, HANDOFF.md.
+
+## Iteration 425 - 2026-10-20 - Claude
+
+**Seed 61 processed: seed 60's first replicate landed at seed 60's ends** (results/evolve-amd-ryzen-7-pro-8840hs-seed61.md).
+`seed 61 tag2 11h widths noevolved` at ed674ec37: 37,813 designs in 10 h 17 min of evolution, generations 0-151. No
+verdict - no comparison step. By each run's own measures: fastest 3cee75bc70 0.110 (seed 60: 0.111), smallest
+37d5da9011 15,907 bytes (15,930); at 32 bits 0.344 (0.325). Its Q-best 2a2b350006 reads Q 0.188 of s6's, under seed 57's
+0.209, but s6's figures move with the code; by the raw numbers it equals seed 57's e6b5f1749e within 0.4%. Front 154,
+all tag-2; tos 125, the JIT 72. heldout 0.951, the pick's regret +3.0%; fast-end optimism 1.095 at the fastest tenth;
+diversity 0.486; the smallest still gaining at generation 142, the speed's last 2% at 75. At 32 bits 1,780 corpus
+deaths, all bfind without tos, and 368 compile failures, all tail - the classes the after-seed-62 batch fixes.
+
+The pack's checks PASS; on master: tests PASS, validate 7 of 7 IDENTICAL, jail PASS, the gate 154 of 154 alive (with no
+comparison pack, `/dev/null` in its place - written into the routine), ans-check 0 of 40 differ, its negative control
+caught. Its chain's remote checks of seed 60's front (results/xcheck-seed61.md): dream 0.863/0.910/0.929, the Tegra
+0.991 - all 16 built; none of seed 60's front carries alignhot above 1, so the Tegra fix stays untested by chains (seed
+61's front: alignhot 0 everywhere). Predictions scored - the length and the 32-bit classes right, the Tegra's consistent
+with its failure half untested; seed 62's ends predicted from the two replicates. results/progress-by-run.md
+regenerated. No compare-fronts session: no comparison step.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed61.md, results/xcheck-seed61.md (new); results/predictions.md,
+results/progress-by-run.md, results/README.md, HANDOFF.md.

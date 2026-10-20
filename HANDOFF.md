@@ -48,15 +48,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 424.
-- **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
-  (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
-  line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
-  seed 60's start. Predictions for all: the end of
+- master: Iteration 425.
+- **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
+  measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
+  places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
+  `experiment footprint.py`, item 2, and the replicates' spread), seed 60's start again. Predictions for all: the end of
   results/predictions.md.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 61's will be `forth-vm-evolution-chain-ed674ec37-fury-<date>_tar.gz` (started from Iteration 406's
-  bundle), seed 62's from the bundle it starts from. Nothing else: seed 62's chain runs the replicates' comparison
+  processed - seed 62's, named from the bundle it starts from (seed 61's, `forth-vm-evolution-chain-ed674ec37-fury-
+  20261020-031220_tar.gz`, processed at 425). Nothing else: seed 62's chain runs the replicates' comparison
   itself, and seed 60's archive (`forth-vm-evolution-chain-bcb34da3e-fury-20261019-153349_tar.gz`) is wanted only if that
   step failed. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
@@ -97,7 +97,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
    files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
    lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS), `python3
-   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive), `python3 lab/evolve/ans-check.py
+   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: `/dev/null`
+   in its place gates the run's front alone - seed 61, Iteration 425), `python3 lab/evolve/ans-check.py
    --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
    minutes.
 6. The records. A batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow

@@ -667,3 +667,27 @@ and Iteration 393's replicate predictions are scored from it.
 
 Patch 12 adds 184 bytes to every plain-CV8 image: Iteration 409's prediction 3 (its smallest within 2% of seed 58's
 14,146) now carries that 1.3% - read it so. (Iteration 417: 104 bytes, 0.7%, with (FAR).)
+
+## Seed 61, scored (Iteration 425)
+
+Iteration 406's predictions for it:
+
+- **Its length: about 10.5 hours of evolution, past seed 60's 138 generations - right.** 10 h 17 min, generations
+  0-151.
+- **1. Its chain's Tegra, checking seed 60's front: every failure alignhot 32 or 64, every design with alignhot 0 or 1
+  built - consistent, its failure half untested.** All 16 built (seed 60's chain: six failures); the twelve from seed
+  60's front all carry alignhot 0 - no design there carries more, so none could fail that way. The same holds for
+  Iteration 407's prediction for seed 62's chain: seed 61's front has alignhot 0 on every design, so the 32-bit ARM fix
+  will build what it samples without being put to the test.
+- **2. At 32 bits the same two death classes, and no other - right.** 1,780 died on the corpus, all bfind without tos;
+  368 did not compile, all tail (GCC 181, clang 172, clang with preserve_none 15).
+- Iteration 393's predictions for the replicates are read at the common generation of seeds 60-62 - by seed 62's chain
+  (review-checks.py spread, Iteration 415).
+
+## Seed 62's ends, after two replicates - predicted (Iteration 425)
+
+Seeds 60 and 61, the same setup, landed at the same ends by their own measures: fastest 0.111 and 0.110, smallest
+15,930 and 15,907 bytes. Seed 62, the same setup again:
+
+1. Its fastest within 3% of 0.110 and its smallest within 0.5% of 15,907 bytes, by its own measures.
+2. At 32 bits the same two death classes and no other - the batch that fixes them comes after it.
