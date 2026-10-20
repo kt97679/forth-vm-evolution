@@ -666,4 +666,4 @@ and Iteration 393's replicate predictions are scored from it.
 ## Seed 63 and programs past 4 MB - noted (Iteration 416)
 
 Patch 12 adds 184 bytes to every plain-CV8 image: Iteration 409's prediction 3 (its smallest within 2% of seed 58's
-14,146) now carries that 1.3% - read it so.
+14,146) now carries that 1.3% - read it so. (Iteration 417: 104 bytes, 0.7%, with (FAR).)

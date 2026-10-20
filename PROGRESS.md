@@ -8076,3 +8076,21 @@ tag and 4-byte cells. Cost: +184 bytes a plain-CV8 image (s6 9,161 to 9,345). ba
 
 Files: results/bigprog-416.md, results/drafts/bigprog-gen-416.py, results/drafts/bigprog-416.py, results/pending/
 bigprog-after-seed62.patch (new); results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 417 - 2026-10-19 - Claude
+
+**The final batch rehearsed on plain CV8; patch 12 leaner; patch 13, the stage build stops on an overlay that does not
+load** (results/rehearsal-417.md). The owner: proceed - all three.
+
+Patch 12's far call is now (FAR) - the target's address to the return stack, EXIT goes there - in place of EXECUTE looked
+up by name: the callee sees its caller's return address, and a plain-CV8 image costs 104 bytes, not 184 (s6 9,161 to
+9,265). Patch 13: tools/build-stages.sh checks each dump's load messages for evolve.py's DUMP_ERRORS - a clean build
+passes, and cv8b.4 given `: ZZX 1 NIP ;` stops it: "an overlay did not load: Undefined word NIP".
+
+Rehearsed with all thirteen: the far-call tests and the programs past 4 MB right on s6 at both widths; seed 58's front,
+all plain CV8, sampled - 8 of 8 alive at both widths; a short free run to generation 7: designs 127 | by encoding {'cell': 1, 'sod16': 1, 'cpt16': 4, 'cv8': 112, 'tag2': 9} | status {'ok': 127} | 32-bit failures none | off a frozen value 0.
+batch-check, the thirteen: PASS - 13 patches on a fresh clone of 1a37de3: run-tests PASS (engines-check 89 paths), validate 7 of 7 IDENTICAL, jail PASS.
+
+Files: results/rehearsal-417.md, results/drafts/rehearsal-417.py, results/drafts/rehearsal-db-417.py, results/drafts/
+farcall-tests-417.py, results/pending/dumpcheck-after-seed62.patch (new); results/pending/bigprog-after-seed62.patch,
+results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
