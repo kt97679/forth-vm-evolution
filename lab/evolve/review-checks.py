@@ -23,10 +23,14 @@ results/review-methodology-386.md), each reproducible:
                            checked against the printed one - then from each CPU alone: does "small" depend on
                            which CPU is asked? (Iteration 388) - and from both, each design's speed the
                            geometric mean of its two: the owner's rule from Iteration 389
+  fail32 DB                the run's 32-bit failures by cause (Iteration 427: seed 61's, classed by hand at 425) -
+                           died on the corpus with bfind and no tos, or no engine from the tail engine (by
+                           compiler), the causes the after-seed-62 batch fixes (from seed 63 on, any is a
+                           regression); anything else by its message, "not a known cause" - look
   screen DB RESULTS.md     the surrogate screen's audit: screened children measured anyway that reached the
                            final front, against the base rate; the tag-2 share screened and not
 """
-import collections, json, re, sys
+import collections, json, os, re, sys
 if len(sys.argv) < 3: sys.exit(__doc__)
 sys.setrecursionlimit(100000)
 
@@ -283,4 +287,24 @@ elif check == 'spread':
             top = sorted(ks, key=lambda k: -abs(out[i]['use'].get(k, 0) - out[j]['use'].get(k, 0)))[:5]
             print('  %s - %s: mean %.1f points; the most: %s' % (out[i]['name'], out[j]['name'], 100 * sum(d) / len(d),
                   ', '.join('%s %+.0f' % (k, 100 * (out[j]['use'].get(k, 0) - out[i]['use'].get(k, 0))) for k in top)))
+elif check == 'fail32':
+    path = sys.argv[2]; sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
+    c = collections.Counter(); n = ok = 0
+    for l in open(path, errors='replace'):
+        try: r = json.loads(l)
+        except ValueError: continue
+        if r.get('speed32') is not None: ok += 1
+        w = r.get('why32')
+        if not w: continue
+        n += 1
+        try: g = E.canon(r['genome']); e = E.express(g)
+        except Exception as x: c[(w, 'genome unreadable (%s)' % str(x)[:50])] += 1; continue
+        k = None
+        if 'corpus' in w and e.get('bfind') and not e.get('tos'): k = 'bfind without tos'
+        elif 'compile' in w and e.get('tail'): k = 'tail, %s%s' % ('clang' if g.get('compiler') else 'GCC', ' with preserve_none' if e.get('tailpn') else '')
+        c[(w, k or 'not a known cause - look')] += 1
+    print('at 32 bits: %d designs measured, %d failed' % (ok, n))
+    for (w, k), m in sorted(c.items(), key=lambda kv: -kv[1]): print('  %6d  %s - %s' % (m, w, k))
+    known = sum(m for (w, k), m in c.items() if k.startswith(('bfind', 'tail')))
+    print('the known causes: %d of %d (fixed by the after-seed-62 batch: from seed 63 on, any is a regression)' % (known, n))
 else: sys.exit(__doc__)

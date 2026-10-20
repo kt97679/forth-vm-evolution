@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256).
+"""gate.py RESULTS [COMPARE] - step 8 of processing a returned seed (Iteration 256).
 
 Every design of the run's front (RESULTS: results/evolve-<machine>-seedN.md, the
 records the pack's report.md carries) and of the joint front (COMPARE: the
@@ -33,14 +33,14 @@ while '--set' in args:
     i = args.index('--set'); k, v = args[i + 1].split('=', 1); del args[i:i + 2]
     try: force[k] = json.loads(v)
     except ValueError: force[k] = v
-if len(args) != 2: sys.exit(__doc__)
-results, compare = args
+if len(args) not in (1, 2): sys.exit(__doc__)
+results, compare = args[0], (args[1] if len(args) == 2 else None)   # Iteration 427: a run with no comparison step - its front alone
 sys.argv = ['x']; sys.path.insert(0, HERE)
 import evolve as E
 
 E.setup()
 run = [json.loads(l)['id'] for l in open(results) if l.startswith('{"bin"')]
-line = [l for l in open(compare).read().split('\n') if l.startswith('The front of all runs together')]
+line = [l for l in open(compare).read().split('\n') if l.startswith('The front of all runs together')] if compare else []
 joint = re.findall(r'\b([0-9a-f]{10}) [0-9.]+ at', line[0]) if line else []
 ids = list(dict.fromkeys(run + joint)); bad = apart = 0
 DBG = {}

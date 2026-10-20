@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 426.
+- master: Iteration 427.
 - **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
   measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
   places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
@@ -82,7 +82,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    /tmp/process, about a screen in /tmp/process/summary.md - read that, the files only where it points. It covers
    the pack's own checks (tests PASS, validate 7 IDENTICAL, jail PASS; its results-measured-here.patch is the
    laptop's own re-measures, not applied), the verdict as printed and from both CPUs, seed-facts.py, heldout.py,
-   review-checks.py progress and the remote checks' agreement.
+   review-checks.py progress, curse (the fast end's optimism) and fail32 (the 32-bit failures by cause - Iteration 427)
+   and the remote checks' agreement.
 2. Judge it. The verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
    by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
    positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
@@ -97,8 +98,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
    files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
    lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS), `python3
-   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: `/dev/null`
-   in its place gates the run's front alone - seed 61, Iteration 425), `python3 lab/evolve/ans-check.py
+   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
+   out, the run's front alone - Iteration 427), `python3 lab/evolve/ans-check.py
    --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
    minutes.
 6. The records. A batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
@@ -213,7 +214,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    alignhot 32 or 64, every one of the 28 that built 0 or 1 - most likely GCC's ARM literal pools placed without the
    padding that alignment adds, a load then past its 4 KB reach (the fsys lead was a correlate). Built (Iteration 407, the
    owner): alignhot left out of a 32-bit ARM build (evolve.py's ccflags, ARM32), as the JIT is of a 32-bit one - in master,
-   the laptop's and dream's builds unchanged; seed 62's chain is the first to check it on the Tegra.
+   the laptop's and dream's builds unchanged; seed 62's chain is the first to check it on the Tegra - **but it cannot**
+   (425): seed 60's and 61's fronts carry alignhot 0 on every design, and the chains check the front before - so
+   nothing they sample fails that way. Close it as moot, or one directed check of an alignhot-32 design on the
+   Tegra: the owner's call.
 0h. **Programs past 4 MB** (the owner, Iterations 415-416, results/bigprog-416.md): supported by every design from the
    after-seed-62 batch (patch 12) - plain CV8's call, link and DOES> reaches extended, the two-bit tag's already 1 GB;
    engines-check runs two such programs. Cost: +104 bytes a plain-CV8 image (417: the far call by (FAR)). The stage build now
@@ -250,6 +254,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    scale, tail, on no front of seeds 53-58 - out or kept; always-on genes frozen or kept: the owner's call - seed 60's
    anchoring answer is in (406: none found at 12 hours). Approved and built (the owner, 409; results/drafts/simplicity-proposal-408.md):
    bytehdr, doesfar, thinhdr, varcall, bss and lean frozen on, msc and scale at 0 - pending patch 10; tail after seed 63;
+   with it the overlap 423 found: rtimm=2 passes --rtfuse, so a design's built pairs and fused tests fuse at run time
+   with rtfuse off (five of seed 60's front rely on it) - document it, or let rtfuse govern: the owner's call;
    jitos and nogcse watched. Not tag2 or bytehdr: free, the search chooses
    by objective (seed 58). And bfind, inert in every TOS design (Iteration 399): built there from
    the after-seed-62 batch (402, patch 7). And tail, on no front of seeds 53-58: since seed 57 every tail design was
@@ -265,29 +271,19 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
    machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
    none faster on any host than the front's fastest (results/xcheck-seed58.md).
-4e. **Mechanisms not yet genes** (Iteration 407: lab/evolve/GENES.md's "Not yet" and the open items). A register
-   machine - stack-to-register translation, priced at Iterations 29 and 32 as the largest prize (38-50% of the front's
-   dispatches moves or lone literals); only its first stage's patterns live on, as folds and specialisations.
-   Translation to direct threading at load (gforth's hybrid, Wasm3's M3): the compact image expanded at start. The
-   interpreter's returns predicted - priced (410, results/drafts/price-410.md): handler replication at most 0.4-1.6%
-   of the geometric mean, and no dispatch fewer - not built; the JIT's is built (jitret). The register machine re-priced
-   there, corrected at 411 (stackops.py named a two-bit-tag design's opcodes by the old layout): its bound 7-46% a
-   workload (kernel 21%, corpus 24%, loop 40%, bubble 46%, ackermann 19%). The lead: I, the loop index - 20% of loop's
-   dispatches, 26% of bubble's - whose fusion rtiplus was expressed but never fired on the two-bit tag (411) - fixed
-   (412, patch 11): I+ escaped on the tag, so its entry in the run-time fuser's table was dropped; pinned to one byte,
-   the loop's dispatches fall 20%. And the rest of the table (413): none dropped -
-   24 of seed 60's front sampled, 3 with a run-time table (1-4 entries each), every entry kept. The search's own escape - islands or immigrants - after the replicates (Iteration 393's
-   prediction 4). Priced out: indirect threading (Iteration 29); deferred: ?STACK (item 5). **In progress (418): the register machine, in results/wip-regmachine/** - kept
-   apart (nothing there runs; to a run only through the gates and the owner). 419: on plain CV8 `+` and `<` take most of
-   the operands in; the project's own forms already cover much (its loop compiler: loop -79%, bubble -62% for 465 bytes on
-   the smallest design). 420: the immediates without
-   pairs exist (rtimm=2, Iteration 175): fib -13.6% for 608 bytes; the loop compiler -79% loop for 465 - the forms are
-   there, their bytes keep the small end from them. 421: all image bytes - rtimm=2 carries the pair lookup (140 bytes) with
-   no pairs; rtloop=2 (headerless internals) is +361. 422-423: two patches there, not in any batch -
-   rtimm-lean-422.patch (rtimm=2 +240 bytes instead of +608, fib -13.6%; its condition fixed at 423) and
-   rtloop-lean-423.patch (the loop table in 16 bits: -56 bytes a design); together the smallest design gets both for
-   +543 instead of 1,119. **Queued at 424 (the owner): results/pending-after-seed63/**, rehearsed with the
-   after-seed-62 batch - tests, validate, jail PASS, both widths, 36 front designs alive.
+4e. **Mechanisms not yet genes** (Iteration 407: lab/evolve/GENES.md's "Not yet" and the open items). **The register
+   machine - parked** (418-424, results/wip-regmachine/README.md): priced at Iterations 29 and 32 as the largest prize;
+   re-priced on code as it runs, on plain CV8 a fifth to a third of most workloads' dispatches could be taken in as
+   operands (`+` and `<` the most), on the tag little beyond I+ - but the forms that take them largely exist as genes
+   (rtimm's immediates, the loop compiler, I+), and what keeps the small end from them is their bytes, not their reach.
+   No general stage unless a later workload shows move-heavy code these miss; two of the forms made cheaper instead -
+   the after-seed-63 batch (results/pending-after-seed63/ORDER.md). Its bound on the front: 7-46% a workload (410-411,
+   results/drafts/price-410.md). I, the loop index, fused on the tag since patch 11 (412-413: I+ pinned to one byte;
+   every run-time table entry kept). Translation to direct threading at load (gforth's hybrid, Wasm3's M3): the compact
+   image expanded at start. The interpreter's returns predicted - priced (410): handler replication at most 0.4-1.6% of
+   the geometric mean, no dispatch fewer - not built; the JIT's is built (jitret). The search's own escape - islands or
+   immigrants - after the replicates (Iteration 393's prediction 4). Priced out: indirect threading (Iteration 29);
+   deferred: ?STACK (item 5).
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

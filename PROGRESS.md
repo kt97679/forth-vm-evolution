@@ -8255,3 +8255,20 @@ is reserved from the 11 hours, so about 7 3/4 hours of evolution - seed 60 at 12
 Seed 62's line stays as it is, 11 hours. A summary of the runs for the owner, no new files.
 
 Files: HANDOFF.md.
+
+## Iteration 427 - 2026-10-20 - Claude
+
+**The processing tools do what seed 61's processing did by hand.** The owner: proceed with the open action items' two
+tool fixes. review-checks.py fail32 DB: a run's 32-bit failures by cause - died on the corpus with bfind and no tos, no
+engine from the tail engine (by compiler), the causes the after-seed-62 batch fixes, anything else by its message as
+"not a known cause"; on seed 61's database it gives Iteration 425's hand count exactly (2,148 of 2,148 known: 1,780,
+181, 172, 15). process-seed.sh's summary now carries review-checks.py curse (the fast end's optimism) and fail32 -
+checked on seed 61's archive. gate.py RESULTS [COMPARE]: with no comparison pack it gates the run's front alone (seed
+61's: 154 of 154 alive), in place of 425's /dev/null. From seed 63 on, a known cause in fail32 is a regression.
+
+HANDOFF.md: the routine's steps 1 and 5 name them; item 4e rewritten - the register machine parked, with what 418-424
+found, in place of the old "largest prize" and the work's running notes; item 4b carries the rtimm=2/rtfuse overlap
+(423) as the owner's call beside tail after seed 63; item 0d says the chains cannot test the Tegra fix while the fronts
+carry alignhot 0 (425) - moot, or one directed check: the owner's call.
+
+Files: lab/evolve/review-checks.py, lab/evolve/process-seed.sh, lab/evolve/gate.py, HANDOFF.md.

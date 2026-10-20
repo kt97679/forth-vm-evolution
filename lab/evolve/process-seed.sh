@@ -3,7 +3,7 @@
 #
 # HANDOFF's "Processing a returned seed", steps 1-3, the parts that only read and run: unpack the archive and its
 # packs; the seed pack's own checks; the verdict as printed and from both CPUs (review-checks.py verdicts);
-# seed-facts.py, heldout.py, review-checks.py progress; the remote checks' agreement lines. Every output in a file
+# seed-facts.py, heldout.py, review-checks.py progress, curse and fail32 (Iteration 427); the remote checks' agreement lines. Every output in a file
 # under OUT (default /tmp/process); a summary of about a screen in OUT/summary.md - read that, and the files only
 # where it points. Interpreting, the predictions, the records and the gates stay the chat's.
 # Run it as the user that builds (it imports the evolver, which refuses root).
@@ -30,6 +30,10 @@ if [ -n "$SP" ]; then
     p ""; p "## heldout.py (heldout.txt)"; p '```'; head -4 heldout.txt >> "$S"; p '```'
     python3 "$EV/review-checks.py" progress "$SP/db.jsonl" > progress.txt 2>&1
     p ""; p "## review-checks.py progress (progress.txt) - the last generation and the gains"; p '```'; tail -4 progress.txt >> "$S"; p '```'
+    python3 "$EV/review-checks.py" curse "$SP/report.md" > curse.txt 2>&1        # Iteration 427: done by hand until seed 61
+    p ""; p "## review-checks.py curse (curse.txt) - the fast end's optimism, re-measured / in-run"; p '```'; head -3 curse.txt >> "$S"; p '```'
+    python3 "$EV/review-checks.py" fail32 "$SP/db.jsonl" > fail32.txt 2>&1
+    p ""; p "## review-checks.py fail32 (fail32.txt) - the 32-bit failures by cause"; p '```'; head -8 fail32.txt >> "$S"; p '```'
 fi
 if [ -n "$CP" ]; then
     F=$CP/compare-fronts.md
