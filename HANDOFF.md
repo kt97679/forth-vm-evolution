@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 437.
+- master: Iteration 438.
 - **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
   (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
   0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
@@ -200,7 +200,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    `seed 63 10h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
    a verdict against seeds 59-62. The comparison is reserved from the 10 hours (next-run.sh's reserve()): about 6 3/4
    hours of evolution (seed 60, 12 hours with the same step: 8 h 50). **Its decisions by results/seed63-rules.md**,
-   written before its results (the owner, 430), checked against losing good designs and adopted (431); genes by
+   written before its results (the owner, 430), checked against losing good designs and adopted (431), measured by
+   review-checks.py rules in process-seed.sh's summary (438); genes by
    votes, not by rule (432: results/gene-votes.md, appended from seed 63's processing on) - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).

@@ -8478,3 +8478,20 @@ validate 7 of 7 IDENTICAL, jail PASS. Aligned: the footprint check from seed 64'
 prediction moved with it.
 
 Files: lab/evolve/NEXT-RUN, results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 438 - 2026-10-20 - Claude
+
+**Seed 63's rules measure themselves** (the owner: proceed). review-checks.py rules RESULTS.md [--db DB] [--ledger
+FILE] [--seed N]: results/seed63-rules.md's ten rules, one line each - what was measured, the rule, and PASS,
+ATTENTION (the rule's "then" applies), PROPOSE, NOTED or SEE (another step reads it): the JIT genes' and tail's votes
+with the ledger's three-run tally, the fast gate's optimism, the freeze (front designs off a frozen value, and the
+reach limit's refusals from the database), 32-bit failures by known cause, the small end, I+'s share, the
+rtimm/rtfuse overlap's count. process-seed.sh's summary carries it.
+
+A dry run on seed 62 (before the batch, the tag-2 requirement on) - in the rules file: the fast gate 1.066, the freeze
+broken by 9 front designs with 219 refusals at the reach limit, 1,966 32-bit failures of known causes, the small end
+15,897 bytes - each an ATTENTION the batch or the free setup answers; I+ 0% noted; the JIT genes and tail not
+candidates (one run); and three of seed 62's front designs rely on the rtimm=2/rtfuse overlap - so rule 9, had it
+applied there, would change nothing.
+
+Files: lab/evolve/review-checks.py, lab/evolve/process-seed.sh, results/seed63-rules.md, HANDOFF.md.

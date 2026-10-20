@@ -49,6 +49,26 @@ fold, sharedcall, tail, msc, hotcalls, tailpn, alignhot (12 of 12 each; scale an
 already); jitimg, jitvar, jitos and opcall not - each was in a fastest tenth in one of them, which the one-run rule of
 430 would have missed.
 
+**Measured by `review-checks.py rules`** (Iteration 438) - each rule's line: what was measured, the rule, and PASS,
+ATTENTION (its "then" applies), PROPOSE, NOTED, or SEE (another step of the routine reads it); process-seed.sh's
+summary carries it. A dry run on seed 62 - before the batch, the tag-2 requirement on - shows what the rules guard
+against, every ATTENTION there one the batch or the free setup answers:
+
+| # | what | measured | rule | |
+|---|---|---|---|---|
+| 1 | The verdict | compare-fronts - process-seed.sh's verdict section | the 5% bar | **SEE** |
+| 2 | jithelp | 0% of the front; in the fastest, smallest, best-Q tenth 0, 0, 0; 4 of 4 removal votes, over 1 run(s) 4 | kept unless a candidate: 11 of 12 over three runs, no keep vote | **PASS** |
+| 2 | jitre | 0% of the front; in the fastest, smallest, best-Q tenth 0, 0, 0; 4 of 4 removal votes, over 1 run(s) 4 | kept unless a candidate: 11 of 12 over three runs, no keep vote | **PASS** |
+| 2 | jitret | 0% of the front; in the fastest, smallest, best-Q tenth 0, 0, 0; 4 of 4 removal votes, over 1 run(s) 4 | kept unless a candidate: 11 of 12 over three runs, no keep vote | **PASS** |
+| 3 | The fast gate | the fastest tenth re-measured / in-run: median 1.066 (18 designs) | 0.98-1.05 works | **ATTENTION** |
+| 4 | The freeze | front designs off a frozen value: bss off 8, thinhdr off 1; refused at the reach limit: 219 | none and none | **ATTENTION** |
+| 5 | 32-bit correctness | failures of a known cause 1966, of another 0 | none of a known cause | **ATTENTION** |
+| 6 | The small end | the front's smallest 15,897 bytes | at most 14,535 | **ATTENTION** |
+| 7 | I+ (rtiplus) | 0% of the front (0 designs) | above 10% | **NOTED** |
+| 8 | tail | 0% of the front; in the fastest, smallest, best-Q tenth 0, 0, 0; 4 of 4 removal votes, over 1 run(s) 4 | kept unless a candidate | **PASS** |
+| 9 | The rtimm=2 / rtfuse overlap | front designs relying on it: 3 | none: rtfuse to govern - proposed; some: no change | **PASS** |
+| 10 | Programs past 4 MB | the routine's run-tests and corpus | pass | **SEE** |
+
 Not a seed 63 rule: the best design across the machine classes is read at seed 62's processing (review-checks.py
 generic over its chain's remote checks: three candidates asked for by id - results/candidates-generic.md); the generic
 design is chosen when the owner asks for one (GOALS.md).

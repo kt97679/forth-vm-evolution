@@ -38,6 +38,11 @@ results/review-methodology-386.md), each reproducible:
                            of its smallest, of its best-Q tenth - and with a ledger (results/gene-votes.md) the
                            tally over the last three runs: a keep vote when it was in any such tenth; a
                            candidate at 11 of 12 votes and no keep vote. --append adds the run to the ledger
+  rules RESULTS.md [--db DB] [--ledger FILE] [--seed N]
+                           results/seed63-rules.md's ten rules, measured (Iteration 438): one line each - what
+                           was measured, the rule, and PASS, ATTENTION (the rule's "then" applies), PROPOSE,
+                           NOTED or SEE (another step of the routine reads it); --db for the reach limit and the
+                           32-bit failures, --ledger (results/gene-votes.md) for the genes' three-run tallies
   screen DB RESULTS.md     the surrogate screen's audit: screened children measured anyway that reached the
                            final front, against the base rate; the tag-2 share screened and not
 """
@@ -406,4 +411,87 @@ elif check == 'votes':
         elif not keep and votes >= 6: near.append('%s (%d of %d)' % (g, votes, 4 * len(rs)))
     print('over the last %d runs in the ledger (%s): candidates - %s; no keep vote and half the votes or more - %s'
           % (len(last), ', '.join(map(str, last)), ', '.join(cand) or 'none', ', '.join(near) or 'none'))
+elif check == 'rules':
+    args = sys.argv[2:]; opts = {}
+    for key in ('--db', '--ledger', '--seed'):
+        if key in args: i = args.index(key); opts[key] = args[i + 1]; del args[i:i + 2]
+    path = args[0]
+    m = re.search(r'seed(\d+)', os.path.basename(path)); seed = int(opts.get('--seed') or (m.group(1) if m else 0))
+    sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
+    cols = None; tab = {}; gen = {}
+    for l in open(path, errors='replace'):
+        if l.startswith('| design | speed |'): cols = [c.strip() for c in l.strip().strip('|').split('|')]; continue
+        if cols and re.match(r'\| [0-9a-f]{10} \|', l):
+            c = [x.strip() for x in l.strip().strip('|').split('|')]; tab.setdefault(c[0], dict(zip(cols, c)))
+        if l.startswith('{"'):
+            try: r = json.loads(l)
+            except ValueError: continue
+            if r.get('id') and 'genome' in r: gen.setdefault(r['id'], r['genome'])
+    def num(v):
+        try: return float(str(v).replace(',', ''))
+        except ValueError: return None
+    ids = [i for i in tab if i in gen]; n = len(ids); k = max(1, n // 10)
+    sp = {i: num(tab[i].get('re-measured', '')) or num(tab[i].get('speed', '')) or 9e9 for i in ids}
+    by = {i: num(tab[i].get('binary + image', '')) or 9e9 for i in ids}
+    mem = {i: num(tab[i].get('memory KB', '')) or 9e9 for i in ids}
+    fast = set(sorted(ids, key=sp.get)[:k]); small = set(sorted(ids, key=by.get)[:k])
+    bestq = set(sorted(ids, key=lambda i: sp[i] * by[i] * mem[i])[:k])
+    cg = {i: E.canon(gen[i]) for i in ids}; ex = {i: E.express(cg[i]) for i in ids}
+    out = []
+    led = collections.defaultdict(list)
+    if opts.get('--ledger') and os.path.exists(opts['--ledger']):
+        for l in open(opts['--ledger']):
+            c = [x.strip() for x in l.strip().strip('|').split('|')]
+            if len(c) == 7 and c[0].isdigit() and int(c[0]) != seed: led[c[1]].append((int(c[0]), int(c[3]), int(c[4]), int(c[5]), int(c[6])))
+    def gene_line(g):
+        on = set(i for i in ids if ex[i].get(g)); share = 100.0 * len(on) / n if n else 0.0
+        f, sm_, q = len(on & fast), len(on & small), len(on & bestq); v = (share < 10) + (f == 0) + (sm_ == 0) + (q == 0)
+        runs = sorted(led[g])[-2:] + [(seed, f, sm_, q, v)]
+        keep = any(r[1] or r[2] or r[3] for r in runs); tv = sum(r[4] for r in runs)
+        cand = len(runs) == 3 and not keep and tv >= 11
+        return ('%.0f%% of the front; in the fastest, smallest, best-Q tenth %d, %d, %d; %d of 4 removal votes, over %d run(s) %d%s'
+                % (share, f, sm_, q, v, len(runs), tv, ' - a candidate' if cand else ('; a keep vote' if keep else ''))), cand
+    out.append((1, 'The verdict', "compare-fronts - process-seed.sh's verdict section", 'the 5% bar', 'SEE'))
+    for g in ('jithelp', 'jitre', 'jitret'):
+        t, cand = gene_line(g); out.append((2, g, t, 'kept unless a candidate: 11 of 12 over three runs, no keep vote', 'ATTENTION' if cand else 'PASS'))
+    rows = sorted(front_rows(path), key=lambda r: r['sp']); kk = max(1, len(rows) // 10)
+    if rows:
+        r = sorted(x['rem'] / x['sp'] for x in rows[:kk]); med = r[len(r) // 2]
+        out.append((3, 'The fast gate', 'the fastest tenth re-measured / in-run: median %.3f (%d designs)' % (med, kk),
+                    '0.98-1.05 works', 'PASS' if 0.98 <= med <= 1.05 else 'ATTENTION'))
+    frz = getattr(E, 'FROZEN', None) or {}; bad = collections.Counter()
+    for i in ids:
+        for g, val in frz.items():
+            if (ex[i].get(g) or 0) != val: bad['%s %s' % (g, 'off' if val else 'on')] += 1
+    reach = known = other = None
+    if opts.get('--db'):
+        reach = known = other = 0
+        for l in open(opts['--db'], errors='replace'):
+            if 'reach limit' not in l and '"why32"' not in l: continue
+            try: r = json.loads(l)
+            except ValueError: continue
+            if 'reach limit' in str(r.get('status', '')): reach += 1
+            w = r.get('why32')
+            if w:
+                g = E.canon(r['genome']); e = E.express(g)
+                if ('corpus' in w and e.get('bfind') and not e.get('tos')) or ('compile' in w and e.get('tail')): known += 1
+                else: other += 1
+    out.append((4, 'The freeze', 'front designs off a frozen value: %s; refused at the reach limit: %s'
+                % (', '.join('%s %d' % kv for kv in sorted(bad.items())) or 'none', 'give --db' if reach is None else reach),
+                'none and none', 'SEE' if reach is None and not bad else ('PASS' if not bad and not reach else 'ATTENTION')))
+    out.append((5, '32-bit correctness', 'give --db' if known is None else 'failures of a known cause %d, of another %d' % (known, other),
+                'none of a known cause', 'SEE' if known is None else ('PASS' if known == 0 and other == 0 else 'ATTENTION')))
+    sm = min(by.values()) if by else None
+    out.append((6, 'The small end', "the front's smallest %s bytes" % ('{:,}'.format(int(sm)) if sm else '-'), 'at most 14,535',
+                'PASS' if sm and sm <= 14535 else 'ATTENTION'))
+    on = sum(1 for i in ids if ex[i].get('rtiplus')); share = 100.0 * on / n if n else 0.0
+    out.append((7, 'I+ (rtiplus)', '%.0f%% of the front (%d designs)' % (share, on), 'above 10%', 'PASS' if share > 10 else 'NOTED'))
+    t, cand = gene_line('tail'); out.append((8, 'tail', t, 'kept unless a candidate', 'ATTENTION' if cand else 'PASS'))
+    ov = [i for i in ids if E.rtimm2(cg[i]) and not ex[i].get('rtfuse') and (E.supers_in(cg[i]) or E.rt_tests(cg[i]))]
+    out.append((9, 'The rtimm=2 / rtfuse overlap', 'front designs relying on it: %d' % len(ov), 'none: rtfuse to govern - proposed; some: no change',
+                'PROPOSE' if not ov else 'PASS'))
+    out.append((10, 'Programs past 4 MB', "the routine's run-tests and corpus", 'pass', 'SEE'))
+    print('seed %d, %d front designs - results/seed63-rules.md\'s rules, measured (review-checks.py rules)' % (seed, n))
+    print('| # | what | measured | rule | |'); print('|---|---|---|---|---|')
+    for r in out: print('| %s | %s | %s | %s | **%s** |' % r)
 else: sys.exit(__doc__)
