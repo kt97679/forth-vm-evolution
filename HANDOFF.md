@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 436.
+- master: Iteration 437.
 - **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
   (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
   0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
@@ -250,8 +250,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    small programs flatter the fast end at large footprints; a footprint workload in the selection, or this as a
    held-out check each run - the owner's call: **priced (435, results/drafts/footprint-gate-435.md)** - a held-out check
    about 10 minutes a run (recommended first), a fast-end gate 1-2% of a run, a selection workload some 30% of its
-   generations. **The held-out check in the chain (436, the owner)**: footprint.py --fastest (the front's 16 fastest, at
-   100 and 10,000 words, 3 rounds) after seed 63's comparison - in NEXT-RUN's line; from seed 64 on, every line. (Before it: next, the experiment step for the
+   generations. **The held-out check in the chain (the owner, 435-437)**: footprint.py --fastest (the front's 16 fastest,
+   at 100 and 10,000 words, 3 rounds, about 15 minutes) - from seed 64's line on, every seed line: seed 63's processing
+   writes `then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3` into it. Not in seed 63 -
+   its 10 hours as set (437; 436 had put it there). (Before it: next, the experiment step for the
    laptop - a sample of the front, each N full and --defs-only, repeated; time per call (run phase)
    and per word (compile phase), each against s6 - with --calls at least 40 N, as below 30,000's
    definitions (41 s on s6 here) swamp a fixed 200,000 calls.

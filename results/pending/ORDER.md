@@ -34,7 +34,8 @@ built and alive, one of them lean.
 (EVOLVE_MIGRATE=2): each island ranked and bred alone, migrants at generations 2 and 4 (2-3 an island), the attic fed
 from every island's demoted designs (6, 19, 23, 26), the fast gate re-measuring as usual, the report written
 (results/drafts/islands-smoke-436.log); and the same with one island, two generations - the generation and attic
-lines as before (islands-smoke-436-one.log).
+lines as before (islands-smoke-436-one.log). **The three together, batch-checked (Iteration 437):** a fresh clone of
+28a0066 with the three applied - run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.
 
 ## When
 

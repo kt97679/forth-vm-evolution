@@ -8463,3 +8463,18 @@ ends `then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rou
 
 Files: results/pending/islands-after-seed63.patch, results/drafts/islands-smoke-436.log, islands-smoke-436-one.log (new);
 lab/evolve/footprint.py, lab/evolve/NEXT-RUN, results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 437 - 2026-10-20 - Claude
+
+**Islands and the footprint check, checked and aligned with what the owner approved.** The owner: proceed with both
+(435's offer: islands built kept apart; the footprint check in the chain from seed 64 on). Iteration 436's work was
+already in the repository - an earlier pass at this request whose reply never reached the conversation: islands as
+patch 3 of the pending batch (off by default - the word "islands" in a seed line - so the first run that can use them
+is seed 64), footprint.py --fastest, and the held-out check put after seed 63's comparison, 15 minutes past its 10
+hours. Checked: the smoke runs' logs (four islands ranked and bred alone, migrants at generations 2 and 4; one island
+as before); the pending batch's three patches batch-checked together on a fresh clone of 28a0066 - run-tests PASS,
+validate 7 of 7 IDENTICAL, jail PASS. Aligned: the footprint check from seed 64's line on, as approved - out of seed
+63's line, which stays at the owner's 10 hours; seed 63's processing writes it into seed 64's (HANDOFF item 2); its
+prediction moved with it.
+
+Files: lab/evolve/NEXT-RUN, results/pending/ORDER.md, results/predictions.md, HANDOFF.md.

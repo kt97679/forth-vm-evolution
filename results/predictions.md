@@ -727,9 +727,9 @@ Seed 62's chain ran from Iteration 425's bundle (017b7ca97).
 - **Iterations 428 and 430, the Tegra's rebuild test and the head to head: not run** - after the bundle the chain ran
   from; both are in seed 63's chain, their predictions with them.
 
-## The held-out footprint check after seed 63 - predicted (Iteration 436)
+## The held-out footprint check, from seed 64's chain - predicted (Iteration 436; moved to seed 64 at 437)
 
-footprint.py --fastest on seed 63's front: its 16 fastest at 100 and 10,000 words. Seed 62's reading spread over its
+footprint.py --fastest on seed 64's front: its 16 fastest at 100 and 10,000 words. Seed 62's reading spread over its
 whole front (Spearman 0.783 at 10,000); within the fastest - speeds a few percent apart - the order at 10,000 words
 agrees with the selection's only weakly: Spearman under 0.6 over the 16. If so, the top reorders at large footprints,
 and a gate or a selection workload (results/drafts/footprint-gate-435.md) is worth the owner's weighing.
