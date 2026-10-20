@@ -1,0 +1,36 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 29fa8b4..23483a8 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -353,6 +353,20 @@ def rtloopall_on(g):
+     # seed 18. I+ assumed to claim its slot whenever rtiplus is asked for.
+     got = [w for w, _ in zip(ops10_order(g, bool(g.get('rtiplus'))), super_slots(g))]
+     return all(n in got for n in LOOP10)
++LOOP_REPAIR = float(os.environ.get('EVOLVE_LOOP_REPAIR', 0.25))
++def rtloopall_repair(g):
++    """Iteration 440 (results/audit-genes-designs-439.md): rtloopall's prerequisite met - the loop words missing from
++    the format-10 list put first, where they get slots, and the run-time loop compiler on. In seed 62 only 92 of 5,819
++    genomes setting rtloopall could express it (J, UNLOOP and (LEAVE) missing): eight entries at once, three of them
++    worth little alone; and a tag-2 design without escape has 2-4 format-10 slots, too few for eight - escape on
++    then (rtloopall and escape are linked already, LINKS). The search still weighs it: the words take slots from others."""
++    fixed = []
++    missing = [n for n in LOOP10 if n not in g.get('ops10', [])]
++    if missing: g['ops10'] = missing + [w for w in g.get('ops10', []) if w not in missing]; fixed.append('+ops ' + ' '.join(missing))
++    elif not rtloopall_on(g): g['ops10'] = list(LOOP10) + [w for w in g['ops10'] if w not in LOOP10]; fixed.append('loop ops first')
++    if not g.get('rtloop'): g['rtloop'] = 1; fixed.append('rtloop=1')
++    if not rtloopall_on(g) and not g.get('escape'): g['escape'] = 1; fixed.append('escape=1')   # the slots: 2-4 without it on the tag
++    return fixed
+ def kfast_on(g):
+     """Iteration 49: kernel words made faster for the byte-header system
+     (forth/cv8b-kfast.4) - a byte-header CV8 design with the gene. (A
+@@ -1375,6 +1389,10 @@ def mutate(g, rnd):
+                 what.append('fold %s->%s' % (p, q))
+         else:
+             g[k] ^= 1; what.append('%s=%d' % (k, g[k]))
++    # Iteration 440: rtloopall turned on, or carried blocked (one child in four), gets its prerequisite
++    if g['enc'] == 'cv8' and g.get('rtloopall') and not rtloopall_on(g) and ('rtloopall=1' in what or rnd.random() < LOOP_REPAIR):
++        fixed = rtloopall_repair(g)
++        if fixed: what.append('rtloopall repaired (%s)' % ', '.join(fixed))
+     return g, 'mutation: ' + ', '.join(what or ['(none)'])
+ 
+ def crossover(a, b, rnd):

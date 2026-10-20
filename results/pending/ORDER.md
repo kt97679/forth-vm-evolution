@@ -15,6 +15,7 @@ batch, and these change bytes the search weighs.
     git apply results/pending/rtimm-lean-after-seed63.patch
     git apply results/pending/rtloop-lean-after-seed63.patch
     git apply results/pending/islands-after-seed63.patch
+    git apply results/pending/loopall-repair-after-seed63.patch
 
 ## How each was tested
 
@@ -36,6 +37,16 @@ from every island's demoted designs (6, 19, 23, 26), the fast gate re-measuring 
 (results/drafts/islands-smoke-436.log); and the same with one island, two generations - the generation and attic
 lines as before (islands-smoke-436-one.log). **The three together, batch-checked (Iteration 437):** a fresh clone of
 28a0066 with the three applied - run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.
+
+**Patch 4, loopall-repair-after-seed63.patch - added at Iteration 440 (the owner; results/audit-genes-designs-439.md).**
+The audit's one real rejection: rtloopall needs all eight loop words in the format-10 list (and slots for them); in
+seed 62 only 92 of the 5,819 genomes setting it could express it, its front share 1-65% run to run, rtiplus blocked
+behind it. evolve.py's mutation now meets the prerequisite: when it turns rtloopall on - or, one child in four
+(EVOLVE_LOOP_REPAIR), when a child carries it blocked - rtloopall_repair puts the missing loop words first in the list,
+turns the run-time loop compiler on, and escape on where a tag-2 design has too few slots (2-4 without it). The search
+still weighs it: the words take slots from others. Tested: of seed 62's 4,462 measured genomes carrying rtloopall
+blocked, the repair makes it express in 4,370; four of them, repaired, built and lived with rtloopall on; a short
+evolution with the repair always on (16 designs, 3 generations) - 64 of 64 alive, its repaired child among them.
 
 ## When
 
