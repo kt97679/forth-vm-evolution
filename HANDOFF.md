@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 428.
+- master: Iteration 429.
 - **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
   measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
   places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
@@ -115,6 +115,12 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The owner's standing decisions
 
+- **The Tegra compiles for itself, in parallel, never slowing a run** (Iteration 429). No cross-compiling on the laptop
+  (its ARM cross-compilers would displace gcc-multilib, which the 32-bit selection needs), and no phone (Termux) host:
+  too much effort for the result (428). The Tegra builds natively with its GCC - so it checks GCC designs without the
+  JIT - with REMOTES' minutes "run": the whole of the evolution's time, never past it; every check's deadline is capped
+  at the evolution's end (remote-checks.sh, RUN_UNTIL), so the chain never waits on a host. Its only cost to the
+  laptop: its sample, made before the evolution - about 2 minutes (20 designs, each built and alive at 32 bits here).
 - **An article from the findings - a goal, deprioritized (Iteration 366).** Revisited when the
   best designs are found, and written from PROGRESS.md: so every iteration has its entry, with its
   numbers, and **names every file it adds** under results/ (PROGRESS.md, Iteration 366: the audit and
@@ -219,7 +225,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    nothing they sample fails that way. **The directed check is set (the owner, 428): seed 62's chain** - REMOTES' rage
    line asks for four of the 14 by id (xcheck --also): two alignhot 32 that failed at the link, two alignhot 64 that
    failed in the assembler. At seed 62's processing: the report's "Asked for by id" line (process-seed.sh's summary
-   shows it) - all four built closes the item; then --also out of REMOTES and the minutes back to 120.
+   shows it) - all four built closes the item; then --also out of REMOTES (its minutes stay "run", 429). 429 fixed the
+   lookup: 428's --also looked for genomes beside the sampled report - in a chain the archived run's report.md, where
+   no results file lies - and would have left all four out; it reads the repository's results now. **Seed 62 must
+   start from Iteration 429's bundle or later.**
 0h. **Programs past 4 MB** (the owner, Iterations 415-416, results/bigprog-416.md): supported by every design from the
    after-seed-62 batch (patch 12) - plain CV8's call, link and DOES> reaches extended, the two-bit tag's already 1 GB;
    engines-check runs two such programs. Cost: +104 bytes a plain-CV8 image (417: the far call by (FAR)). The stage build now

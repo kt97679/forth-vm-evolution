@@ -13,7 +13,8 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       from the run's db.jsonl beside RESULTS.md, spread by speed - so a design good there and
       rejected here can be seen at all (results/drafts/cross-machine-weighing.md); marked in the
       report, with how many ran faster there than the front's median and fastest. --also ID,ID...
-      (Iteration 428): designs asked for by id, from any results/evolve-*.md beside RESULTS.md, after the
+      (Iteration 428): designs asked for by id, from the repository's results/evolve-*.md (and any beside
+      RESULTS.md - Iteration 429: in a chain RESULTS.md is the archived run's report.md), after the
       sample - the Tegra's rebuild test of the designs that once failed there (open item 0d); marked
       'asked', reported apart and kept out of the agreement, which is about this front.
 
@@ -220,7 +221,9 @@ if '--sample' in ARGS:
     if also:                                                             # Iteration 428: after the sample, by id
         import glob
         recs = {}
-        for f in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(src)), 'evolve-*-seed*.md'))):
+        # Iteration 429: the repository's results first - in a chain src is runs/archived-*/build/evolve/report.md,
+        # where no results file lies (428's lookup looked only beside it, and would have found none there)
+        for f in sorted(glob.glob(os.path.join(E.ROOT, 'results', 'evolve-*-seed*.md'))) + sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(src)), 'evolve-*-seed*.md'))):
             for l in open(f):
                 if l.startswith('{"'):
                     try: r = json.loads(l)

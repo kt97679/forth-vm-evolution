@@ -18,6 +18,11 @@
 #           host not done waits until its own deadline, unless nowait (stopped, interrupted)
 #   stop    each host's run ended - by its process group, not by name
 #
+# Iteration 429 (the owner: the Tegra slow, its checks in parallel with everything, never slowing it): with
+# RUN_UNTIL (next-run.sh's evolution deadline, epoch seconds) no check's deadline lies past the evolution's end
+# less 5 minutes - so gather, after the re-measure, never waits on a host; minutes "run" in REMOTES - all the time
+# the evolution has left (after the host's earlier checks); a check with under 15 minutes left is skipped.
+#
 # Iteration 381 (the owner): probes - each host's connection timed, each check's copy timed with
 # its bytes (remote/HOST-HOW/transfer.txt), and the host's load at the check's start and every 30 s
 # while it runs (load-start.txt, load.log): both appended to the host's report by gather.
@@ -60,7 +65,13 @@ start)
     conf | while read -r host how n rounds minutes opts; do
         grep -qx "$host" "$R/hosts" || continue
         CHK=$host-$how; H=$R/$CHK; RD=$RDIR/$how; mkdir -p "$H"
-        before=$(awk -v h="$host" '$1 == h {s += $2} END {print s + 0}' "$R/queued"); echo "$host $minutes" >> "$R/queued"
+        before=$(awk -v h="$host" '$1 == h {s += $2} END {print s + 0}' "$R/queued")
+        if [ -n "${RUN_UNTIL:-}" ] && [ "${RUN_UNTIL:-0}" -gt 0 ]; then   # Iteration 429: never past the evolution's end
+            left=$(( (RUN_UNTIL - $(date +%s)) / 60 - 5 - before ))
+            if [ "$minutes" = run ] || [ "$minutes" -gt "$left" ]; then minutes=$left; fi
+            [ "$minutes" -ge 15 ] || { note "$host-$how" "skipped - $minutes minutes left before the evolution's end"; continue; }
+        elif [ "$minutes" = run ]; then minutes=120; fi                # no deadline given: as before
+        echo "$host $minutes" >> "$R/queued"
         offset=$(( (before + minutes) * 60 ))                         # 379: the deadline counted from the start
         case " $opts " in *" --from "*)                               # Iteration 335: another check's designs
             frm=$(printf '%s\n' $opts | awk 'p {print; exit} $1 == "--from" {p = 1}')

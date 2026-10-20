@@ -8292,3 +8292,25 @@ of two of the sample and the four at 4-byte cells on this x86 machine - all six 
 from this bundle or a later one. Predicted: all four build there.
 
 Files: lab/evolve/xcheck.py, lab/evolve/process-seed.sh, lab/evolve/REMOTES, results/predictions.md, HANDOFF.md.
+
+## Iteration 429 - 2026-10-20 - Claude
+
+**The Tegra in parallel with everything, never slowing a run; and a fix to 428's rebuild test.** The owner: no
+cross-compiling on the laptop; the Tegra compiles with its own GCC; it is slow, so its builds and runs in parallel with
+all the rest, never slowing them. As it stood, the Tegra's check already ran beside the evolution (started in the
+background, Iteration 379), and gather waited on a host only until its own deadline - 2-2 1/2 hours into a 10 1/2-hour
+run, long past by then. Now a guarantee rather than a margin: next-run.sh hands remote-checks.sh the evolution's
+deadline (RUN_UNTIL); no check's deadline lies past it less 5 minutes, a check with under 15 minutes left is skipped,
+and REMOTES' minutes "run" means all the time the evolution leaves - the Tegra's line takes it, so it never cuts itself
+short and the chain never waits. Its one cost to the laptop is its sample, made before the evolution so as not to
+disturb the run's timings: 137 s here for its exact line (12 of the front, 4 rejected, 4 asked for), each built and
+alive at 32 bits - about 2 minutes of the 11 hours.
+
+The test with stand-in hosts (SSH and SCP stand-ins, a chain-like archived front with its database) found a bug in
+428: --also looked for the asked designs' genomes beside the sampled report - in a chain the archived run's report.md,
+where no results file lies - so seed 62's chain would have left all four out, saying so only in a sample log. It reads
+the repository's results now: the stand-in chain took 2 of 2 asked, 1 rejected, and its deadlines came out right -
+"run" 54 minutes with an hour left, 600 capped to 52. Seed 62 must start from this bundle or later. The owner's
+decisions recorded: the Tegra compiles for itself; no cross-compiling on the laptop; no phone host (428).
+
+Files: lab/evolve/remote-checks.sh, lab/evolve/next-run.sh, lab/evolve/xcheck.py, lab/evolve/REMOTES, HANDOFF.md.
