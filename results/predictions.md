@@ -691,6 +691,12 @@ Four of the 14 designs that failed to build on the Tegra in seeds 58-60's chains
 the assembler). With alignhot left out of a 32-bit ARM build (Iteration 407): all four build and are measured there. If
 one fails, the alignment was not the whole cause - its error, recorded in full since Iteration 389's why(), says what is.
 
+## The best design across the machine classes, head to head in seed 62's chain - predicted (Iteration 430)
+
+bf439eb307, 11e5884401 and ad56a8e0fd asked for by id on dream (32 and 64 bits) and the Tegra; review-checks.py generic
+at processing. 1. All three rank above every design of seed 61's front measured on all three classes. 2. The best of
+the three passes the 25% veto, and its mean is under 0.5 (bf439eb307's in seed 61's chain: 0.455).
+
 ## Seed 62's ends, after two replicates - predicted (Iteration 425)
 
 Seeds 60 and 61, the same setup, landed at the same ends by their own measures: fastest 0.111 and 0.110, smallest

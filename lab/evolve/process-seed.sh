@@ -3,7 +3,8 @@
 #
 # HANDOFF's "Processing a returned seed", steps 1-3, the parts that only read and run: unpack the archive and its
 # packs; the seed pack's own checks; the verdict as printed and from both CPUs (review-checks.py verdicts);
-# seed-facts.py, heldout.py, review-checks.py progress, curse and fail32 (Iteration 427); the remote checks' agreement lines. Every output in a file
+# seed-facts.py, heldout.py, review-checks.py progress, curse and fail32 (Iteration 427); the remote checks' agreement lines,
+# and review-checks.py generic - the best design across the machine classes (Iteration 430). Every output in a file
 # under OUT (default /tmp/process); a summary of about a screen in OUT/summary.md - read that, and the files only
 # where it points. Interpreting, the predictions, the records and the gates stay the chat's.
 # Run it as the user that builds (it imports the evolver, which refuses root).
@@ -54,5 +55,7 @@ if ls "$C"/remote/*.md > /dev/null 2>&1; then
         [ -f "$o" ] && [ -n "$L32" ] && grep -q '"cell": *4' "$o" || continue
         python3 "$EV/xcheck.py" --report "$o" --laptop32 "$L32" 2>/dev/null | grep -E '32-bit speeds' | sed "s|^|$(basename "$(dirname "$o")").md, --laptop32 $(basename "$L32"): |" | cut -c1-220 >> "$S"
     done; p '```'
+    python3 "$EV/review-checks.py" generic "$C/remote" > generic.txt 2>&1      # Iteration 430: the three classes
+    p ""; p "## review-checks.py generic (generic.txt) - the best design across the three machine classes"; p '```'; head -14 generic.txt | cut -c1-200 >> "$S"; p '```'
 fi
 echo "process-seed: $(wc -l < "$S") lines in $S; the rest in $OUT"

@@ -16,7 +16,8 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       (Iteration 428): designs asked for by id, from the repository's results/evolve-*.md (and any beside
       RESULTS.md - Iteration 429: in a chain RESULTS.md is the archived run's report.md), after the
       sample - the Tegra's rebuild test of the designs that once failed there (open item 0d); marked
-      'asked', reported apart and kept out of the agreement, which is about this front.
+      'asked', reported apart and kept out of the agreement, which is about this front. Iteration 430: genomes
+      from results/candidates-*.md too, and a paired check (--from) takes its pair's asked designs.
 
   xcheck.py DESIGNS.json OUT.json [--rounds N] [--until EPOCH]
       on the host, in a clone at the same commit, its stages built: the host's
@@ -181,14 +182,14 @@ if '--sample' in ARGS:
         for x in seq:
             if k <= 0: break
             if x[0] not in [p[0] for p in pick] and good(x[0]): pick.append(x); k -= 1
-    rejected = set()
+    rejected = set(); asked = set()
     if ids is not None:
         byid = {x[0]: x for x in ok}
         for x in idsd:                                                   # Iteration 377: a rejected design, from the file itself
-            if x['id'] not in byid and x.get('rejected') and 'genome' in x:
+            if x['id'] not in byid and (x.get('rejected') or x.get('asked')) and 'genome' in x:   # 430: and one asked for by id
                 e = E.express(E.canon(x['genome'])); gen[x['id']] = x['genome']
                 if not (nojit and e.get('jit')) and not (gcc and (e.get('compiler') or e.get('tailpn'))):
-                    byid[x['id']] = (x['id'], x['speed'], x.get('total'), e); rejected.add(x['id'])
+                    byid[x['id']] = (x['id'], x['speed'], x.get('total'), e); (asked if x.get('asked') else rejected).add(x['id'])
         for i in ids:
             if i in byid and good(i): pick.append(byid[i])
     else:
@@ -217,13 +218,13 @@ if '--sample' in ARGS:
                 if pool: take([pool[int(j * (len(pool) - 1) / max(1, nrej - 1))] for j in range(min(nrej, len(pool)))], nrej)
                 rejected = {x[0] for x in pick[before:]}
         n = n_all
-    asked = set()
     if also:                                                             # Iteration 428: after the sample, by id
         import glob
         recs = {}
         # Iteration 429: the repository's results first - in a chain src is runs/archived-*/build/evolve/report.md,
         # where no results file lies (428's lookup looked only beside it, and would have found none there)
-        for f in sorted(glob.glob(os.path.join(E.ROOT, 'results', 'evolve-*-seed*.md'))) + sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(src)), 'evolve-*-seed*.md'))):
+        # Iteration 430: and results/candidates-*.md - designs kept by id that no front holds (a rejected one's genome)
+        for f in sorted(glob.glob(os.path.join(E.ROOT, 'results', 'evolve-*-seed*.md'))) + sorted(glob.glob(os.path.join(E.ROOT, 'results', 'candidates-*.md'))) + sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(src)), 'evolve-*-seed*.md'))):
             for l in open(f):
                 if l.startswith('{"'):
                     try: r = json.loads(l)

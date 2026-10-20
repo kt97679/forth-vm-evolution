@@ -27,6 +27,11 @@ results/review-methodology-386.md), each reproducible:
                            died on the corpus with bfind and no tos, or no engine from the tail engine (by
                            compiler), the causes the after-seed-62 batch fixes (from seed 63 on, any is a
                            regression); anything else by its message, "not a known cause" - look
+  generic REMOTE_DIR       the best design across the machine classes (Iteration 430; GOALS.md, Iteration 377): a
+                           chain's remote checks (CHAIN/remote), the designs measured on x86-64, 32-bit x86 and
+                           ARMv7 - each class once, prebuilt64 for x86-64 where there is one - ranked by the
+                           geometric mean of their speeds against s6 there; vetoed: more than 25% behind the
+                           class's best of them (GOALS.md's margin)
   screen DB RESULTS.md     the surrogate screen's audit: screened children measured anyway that reached the
                            final front, against the base rate; the tag-2 share screened and not
 """
@@ -307,4 +312,34 @@ elif check == 'fail32':
     for (w, k), m in sorted(c.items(), key=lambda kv: -kv[1]): print('  %6d  %s - %s' % (m, w, k))
     known = sum(m for (w, k), m in c.items() if k.startswith(('bfind', 'tail')))
     print('the known causes: %d of %d (fixed by the after-seed-62 batch: from seed 63 on, any is a regression)' % (known, n))
+elif check == 'generic':
+    import glob, math
+    rd = sys.argv[2]; cls = {}
+    for f in sorted(glob.glob(os.path.join(rd, '*', 'out.json'))):
+        name = os.path.basename(os.path.dirname(f))
+        try: o = json.load(open(f))
+        except (OSError, ValueError): continue
+        m = str((o.get('env') or {}).get('machine', ''))
+        c = 'ARMv7' if m.startswith('arm') else 'x86-32' if (o.get('cell') == 4 or name.endswith('32')) else 'x86-64'
+        if c == 'x86-64' and c in cls and not name.endswith('64'): continue      # prebuilt64, prebuilt32's pair, first
+        cls[c] = (name, {x['id']: x for x in o.get('designs', []) if x.get('speed_here') is not None})
+    need = ('x86-64', 'x86-32', 'ARMv7')
+    if not all(k in cls for k in need): print('generic: the classes measured - %s; all three needed' % (', '.join(sorted(cls)) or 'none')); sys.exit(0)
+    common = set.intersection(*[set(cls[k][1]) for k in need])
+    if not common: print('generic: no design measured on all three classes'); sys.exit(0)
+    best = {k: min(cls[k][1][i]['speed_here'] for i in common) for k in need}
+    rows = []
+    for i in common:
+        s = [cls[k][1][i]['speed_here'] for k in need]; gm = math.exp(sum(math.log(v) for v in s) / 3)
+        veto = [k for k, v in zip(need, s) if v > 1.25 * best[k]]
+        xs = [cls[k][1][i] for k in need]
+        kind = 'asked' if any(x.get('asked') for x in xs) else 'rejected' if any(x.get('rejected') for x in xs) else 'front'
+        rows.append((gm, i, s, veto, kind, xs[0].get('speed'), xs[0].get('total')))
+    rows.sort()
+    print('across the machine classes - %s: %d designs measured on all three, by the geometric mean of their speeds (each against s6 there); veto: more than 25%% behind the class\'s best of them'
+          % ('; '.join('%s %s' % (k, cls[k][0]) for k in need), len(rows)))
+    print('| design | kind | x86-64 | x86-32 | ARMv7 | mean | veto | laptop | bytes |')
+    print('|---|---|---|---|---|---|---|---|---|')
+    for gm, i, s, veto, kind, lap, tot in rows:
+        print('| %s | %s | %.3f | %.3f | %.3f | **%.3f** | %s | %s | %s |' % (i, kind, s[0], s[1], s[2], gm, ', '.join(veto) or '-', '%.3f' % lap if lap else '-', '{:,}'.format(tot) if tot else '-'))
 else: sys.exit(__doc__)

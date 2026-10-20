@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 429.
+- master: Iteration 430.
 - **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
   measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
   places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
@@ -197,7 +197,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    requirement, NEXT-RUN's line at seed 62's processing:
    `seed 63 11h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
    a verdict against seeds 59-62. The comparison is reserved from the 11 hours (next-run.sh's reserve()): about 7 3/4
-   hours of evolution (seed 60, 12 hours with the same step: 8 h 50) - `review-checks.py curse` on its report
+   hours of evolution (seed 60, 12 hours with the same step: 8 h 50). **Its decisions by results/seed63-rules.md**,
+   written before its results (the owner, 430) - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).
 0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every
@@ -279,6 +280,13 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    133 while within 6% in speed and 0.2% in size - many settings, one performance (414). Seed 59 (Iteration 403): no collapse - the tag-2 family's diversity 0.45-0.52 to
    the end - but no gain in its last third (smallest last at generation 88 of 143, speed's last 2% at 81); its front's
    genes against seeds 53-58's differ by up to 56 points (rtloopall, escape, supers, guard on; tos off).
+4d. **The best design across the machine classes - measured head to head in seed 62's chain** (the owner, Iteration
+   430): bf439eb307 (seed 60, rejected by its selection - its record in results/candidates-generic.md), 11e5884401 and
+   ad56a8e0fd (seed 58's front) asked for by id on dream at 32 and 64 bits and on the Tegra (REMOTES); review-checks.py
+   generic - now in process-seed.sh's summary - ranks every design measured on all three classes by the geometric mean
+   of its speeds, vetoing one more than 25% behind a class's best. On seed 61's chain: bf439eb307 0.455, every front
+   design measured on all three vetoed (0.780 and slower). At seed 62's processing: read it, then the --also lists out
+   of REMOTES (the Tegra's rebuild test's with them).
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
    machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
    none faster on any host than the front's fastest (results/xcheck-seed58.md).

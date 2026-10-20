@@ -8314,3 +8314,27 @@ the repository's results now: the stand-in chain took 2 of 2 asked, 1 rejected, 
 decisions recorded: the Tegra compiles for itself; no cross-compiling on the laptop; no phone host (428).
 
 Files: lab/evolve/remote-checks.sh, lab/evolve/next-run.sh, lab/evolve/xcheck.py, lab/evolve/REMOTES, HANDOFF.md.
+
+## Iteration 430 - 2026-10-20 - Claude
+
+**The best design across the machine classes set to be measured head to head in seed 62's chain; seed 63's decision
+rules written before its results** (the owner: proceed with both).
+
+Head to head: bf439eb307 (seed 60, rejected by its selection; its record now in results/candidates-generic.md),
+11e5884401 and ad56a8e0fd (seed 58's front) asked for by id on dream's 32-bit check, its 64-bit pair and the Tegra
+(REMOTES). xcheck.py: --also reads results/candidates-*.md too, and a paired check (--from) carries its pair's asked
+designs (it carried only rejected ones). review-checks.py generic REMOTE_DIR ranks every design measured on x86-64,
+32-bit x86 and ARMv7 by the geometric mean of its speeds, vetoing one more than 25% behind a class's best (GOALS.md);
+process-seed.sh's summary carries it. On seed 61's chain: 14 designs on all three, bf439eb307 first at 0.455, every
+front design vetoed (0.780 and slower). A stand-in chain start (SSH and SCP stand-ins, seed 61's archived front):
+dream's 32-bit sample took 3 of 3 asked, its 64-bit pair the same four designs with binaries built, the Tegra's 2
+asked with a rejected one - its minutes "run" 170 with three hours left.
+
+Rules: results/seed63-rules.md - eleven, each with its measure, threshold and consequence: the JIT genes and tail kept
+if "used" (10% of the front, or one of its fastest tenth), else proposed out; the fast gate by the fastest tenth's
+optimism (at most 1.05 works); the freeze, 32-bit failures and programs past 4 MB as correctness; the small end at most
+14,535 bytes; I+ above 10%; the rtimm/rtfuse overlap by its count on the front. Prediction for the head to head
+written.
+
+Files: results/seed63-rules.md, results/candidates-generic.md (new); lab/evolve/xcheck.py, lab/evolve/review-checks.py,
+lab/evolve/process-seed.sh, lab/evolve/REMOTES, results/predictions.md, results/README.md, HANDOFF.md.
