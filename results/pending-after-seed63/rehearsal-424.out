@@ -1,0 +1,25 @@
+# The after-seed-63 batch rehearsed on master (Iteration 423) with the after-seed-62 batch applied first (Iteration 424)
+
+## build-stages, run-tests, validate, test-jail
+build rc=0
+tests rc=0 PASS - no regressions
+validate rc=0 7 of 7 IDENTICAL
+jail rc=0 PASS
+
+## both-423-checks.py, 64-bit then 32-bit
+cell width 8 bytes, dumps k64
+as it is          lean False 14258 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2           lean True  14498 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=1          lean False 14667 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=2          lean False 14563 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2 rtloop=2  lean True  14809 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+cell width 4 bytes, dumps k32
+as it is          lean False 13974 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2           lean True  14202 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=1          lean False 14347 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=2          lean False 14255 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2 rtloop=2  lean True  14485 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+
+## front designs (seeds 58 and 60) with rtimm=2 or the loop compiler
+cell width 8
+36 of 301 designs with rtimm=2 or the loop compiler (all 6 with rtimm=2, every 10th of the rest): 36 alive, 0 failed, 1 lean

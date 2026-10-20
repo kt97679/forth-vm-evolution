@@ -1,0 +1,120 @@
+diff --git a/forth/cv8-imm.4 b/forth/cv8-imm.4
+new file mode 100644
+index 0000000..5276f22
+--- /dev/null
++++ b/forth/cv8-imm.4
+@@ -0,0 +1,55 @@
++\ cv8-imm.4 - the run-time immediates alone: rtimm=2 in a plain-CV8 design with no pairs to fuse
++\ (results/wip-regmachine/README.md, Iteration 422 - work in progress, not in any run). cv8-fuse-imm.4's
++\ forms - n + as ADDI n, SWAP n + as SWAP+I n - over the kernel's own compiler, without cv8-fuse.4: its
++\ pair lookup (SUPER-TABLE, SUPER-OP) and its copy of the fold table, which a design with no pairs
++\ carries for nothing. LAST-OP, and the folds at ;, are the kernel's (cv8.4), which clears LAST-OP at
++\ every branch resolution; BEGIN clears it here as cv8-fuse.4's does, so no literal fuses across a loop's
++\ start. IMM-OPS, LIT-PREV, SMALL-LIT? and IMM+ are built headerless.
++CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C,   \ Iteration 176: DUP+I DUP<I DUP <
++ALIGN
++VARIABLE LIT-PREV ( --- a-addr )
++\ The primitive emitted straight before the last literal, or 0.
++
++: SMALL-LIT? ( a --- n -1 | 0 )
++\ The literal at a, ending at HERE, if ADDI's signed byte holds it: LIT8
++\ 0-127, or LIT32 -128 to -1 (a negative is never narrower).
++  DUP C@ LIT8-OP = IF
++    DUP 2 + HERE = IF 1+ C@ DUP 128 < IF -1 EXIT THEN THEN DROP 0 EXIT
++  THEN
++  DUP C@ LIT32-OP = IF DUP 5 + HERE = IF
++    DUP 2 + C@ 255 = OVER 3 + C@ 255 = AND OVER 4 + C@ 255 = AND
++    OVER 1+ C@ 128 < 0= AND IF 1+ C@ 256 - -1 EXIT THEN
++  THEN THEN DROP 0 ;
++
++: LITERAL8 ( n --- )
++\ cv8.4's, and a literal ADDI can hold stays in LAST-OP.
++  LAST-OP @ DUP IF DUP 1+ HERE = AND THEN LIT-PREV !
++  HERE SWAP LIT,
++  IMM-OPS C@ IF DUP SMALL-LIT? IF DROP LAST-OP ! EXIT THEN THEN DROP ; IMMEDIATE
++
++: IMM+ ( xt --- xt 0 | -1 )
++\ xt is + and a literal ADDI holds is straight before it: ADDI n in its
++\ place - or SWAP+I n where a plain SWAP came straight before the literal.
++  IMM-OPS C@ 0= IF 0 EXIT THEN
++  DUP C@ IMM-OPS 2 + C@ <> IF 0 EXIT THEN
++  LAST-OP @ ?DUP 0= IF 0 EXIT THEN
++  DUP SMALL-LIT? 0= IF DROP 0 EXIT THEN
++  ROT DROP SWAP
++  LIT-PREV @ ?DUP IF DUP C@ IMM-OPS 3 + C@ = IMM-OPS 1+ C@ 0= 0= AND IF
++    SWAP DROP HERE - ALLOT IMM-OPS 1+ C@ OP, C, 0 LAST-OP ! -1 EXIT
++  THEN DROP THEN
++  HERE - ALLOT IMM-OPS C@ OP, C, 0 LAST-OP ! -1 ;
++
++\ COMPILE,8 as cv8-fuse-imm.4's, without the pair lookup.
++: COMPILE,8 ( xt --- )
++  DUP PRIMITIVE? IF
++    DUP C@ 125 = IF
++      DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
++    ELSE
++      IMM+ IF EXIT THEN
++      C@ HERE LAST-OP ! OP,
++    THEN
++  ELSE
++    CALL,
++  THEN ;
++: BEGIN8 ( --- a-addr )   ?COMP 0 LAST-OP ! HERE ; IMMEDIATE
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 29fa8b4..7cf4920 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -400,6 +400,12 @@ def rtimm2(g):
+     cv8t-fuse-imm.4). Seed 40's small designs carried rtimm=1 unexpressed: it
+     waited on pairs and rtfuse, three mutations away (results/price-hybrid.md)."""
+     return g['enc'] == 'cv8' and g.get('rtimm') == 2 and 'imm' in g['spec']
++RTIMM_LEAN_INTERNAL = ('IMM-OPS', 'LIT-PREV', 'SMALL-LIT?', 'IMM+')
++def rtimm_lean(g):
++    """Iteration 422 (results/wip-regmachine/README.md): rtimm=2 in a plain-CV8 design with nothing else
++    for the run-time fuser to do - no pairs, no fused tests - builds forth/cv8-imm.4 alone, not
++    cv8-fuse.4 under cv8-fuse-imm.4 (rtimm=2 passes --rtfuse: built pairs and tests fuse, rtfuse or not)."""
++    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2')
+ RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
+ def rt_tests(g):
+     """The fused tests this design has opcodes for - with rtfuse, its
+@@ -1029,6 +1035,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitre'): opts.append('--jitre')       # Iteration 346: native code calling bytecode
+     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
+     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
++    if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
+     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
+     if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
+         hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ()) + (FSYS4_INTERNAL if fsys_level(g) >= 4 else ()) + (FSYS5_INTERNAL if fsys_level(g) == 5 else ())
+@@ -1038,6 +1045,7 @@ def _build(g, d):
+     opts += CONVERT_EXTRA
+     img = os.path.join(d, 'image.img')
+     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
++    if rtimm_lean(g): fuse = '-lit'                                                                   # Iteration 422: no pair lookup
+     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
+     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+@@ -1784,7 +1792,7 @@ def setup():
+     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
+     import shutil
+     W = os.path.join(O, 'work')
+-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
++    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+@@ -1793,7 +1801,7 @@ def setup():
+     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-self', ['cv8.4']), (KW() + '-b', ['cv8.4', 'cv8b.4']),
+                                                                     (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
+                         for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != KW() + '-self' else ('',))
+-                        for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
++                        for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
+                         for t in (('', '-iplus') if l == '-loopall' else ('',))
+                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
+                         for q in (('', '-kstack') if b == KW() + '-bt' else ('',))    # Iteration 116
+@@ -1802,6 +1810,7 @@ def setup():
+         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
+                        + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
+                        + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
++                       + (['cv8-imm.4'] if '-lit' in name else [])     # Iteration 422: the immediates alone
+                        + (['cv8-fuse-loopall.4'] if '-loopall' in name
+                        else ['cv8-fuse-loop.4'] if '-loop' in name else [])
+                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])

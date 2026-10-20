@@ -8208,3 +8208,19 @@ patches apply to master alone and together; master's code is unchanged.
 
 Files: results/wip-regmachine/rtloop-lean-423.patch, rtloop-lean-423.out, rtloop-lean-423-checks.py, both-423.out,
 both-423-checks.py (new); results/wip-regmachine/rtimm-lean-422.patch (the condition), README.md, HANDOFF.md.
+
+## Iteration 424 - 2026-10-20 - Claude
+
+**The two cheaper run-time compilers queued as the after-seed-63 batch, rehearsed with the after-seed-62 batch**
+(results/pending-after-seed63/ORDER.md). The owner: queue both for the after-seed-63 batch.
+
+On a clone of master with the thirteen after-seed-62 patches applied, rtloop-lean applied as made; rtimm-lean did not:
+one hunk - its headerless line - met the batch's changes there, and was placed by hand, the patch's changed lines the
+same. Then the rehearsal: the stages built, run-tests PASS, validate 7 of 7 IDENTICAL, test-jail PASS; seed 58's
+smallest at 64 and 32 bits in five variants, the corpus right and fifteen run-time compiles the same in every one (both
+on: +551 bytes at 64 bits, +511 at 32); 36 front designs with rtimm=2 or the loop compiler built and alive, one lean
+(rehearsal-424.out). They wait one run - seed 63 judges the after-seed-62 batch - and the processing routine (step 6)
+now says how a queued batch becomes results/pending/ once the one before it is applied.
+
+Files: results/pending-after-seed63/ORDER.md, rtimm-lean-after-seed63.patch, rtloop-lean-after-seed63.patch,
+rehearsal-424.out (new); results/README.md, results/wip-regmachine/README.md, HANDOFF.md.

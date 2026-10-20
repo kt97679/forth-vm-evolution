@@ -12,6 +12,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `predictions.md` - the predictions written before each run, then scored.
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
+- `pending-after-seed63/ORDER.md` - the batch queued behind it (Iteration 424, the owner's word): the cheaper run-time immediates and loop table from results/wip-regmachine/, rehearsed with the after-seed-62 batch (its rehearsal-424.out); it becomes results/pending/ once the after-seed-62 batch is applied.
 - `pending/ORDER.md` - the batch waiting to be applied at the next seed's processing: its patches' order and how each was tested (now the after-seed-62 batch, Iterations 391 and 393: the fast gate).
 - `drafts/runner-protocol.md` - The runner's protocol, the owner's requirements as a specification (Iterations 302-303): one command, one archive with every log, a clean stop, recovery at every start.
 - `relf-patches/README.md` - Patches for relf from this lab (Iteration 360): each with its gate, its dispatch count and its time; the first, 0= ?BRANCH fused.

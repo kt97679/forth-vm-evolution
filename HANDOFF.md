@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 423.
+- master: Iteration 424.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -104,7 +104,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    (Iteration 372: 62 had been left behind):
    `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
    (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
-   run: handoff-check names it). The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
+   run: handoff-check names it). **A batch queued behind it** (results/pending-after-seed63/, Iteration 424): then
+   `git mv results/pending-after-seed63 results/pending`, its paths (its ORDER.md, results/README.md) from
+   pending-after-seed63/ to pending/, and `sh tools/batch-check.sh` against the new master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
    Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
    lab/evolve/progress-table.py > results/progress-by-run.md`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
    chat's turn ends".
@@ -281,7 +283,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    no pairs; rtloop=2 (headerless internals) is +361. 422-423: two patches there, not in any batch -
    rtimm-lean-422.patch (rtimm=2 +240 bytes instead of +608, fib -13.6%; its condition fixed at 423) and
    rtloop-lean-423.patch (the loop table in 16 bits: -56 bytes a design); together the smallest design gets both for
-   +543 instead of 1,119; tests PASS, validate IDENTICAL, both widths - for a batch only with the owner's approval.
+   +543 instead of 1,119. **Queued at 424 (the owner): results/pending-after-seed63/**, rehearsed with the
+   after-seed-62 batch - tests, validate, jail PASS, both widths, 36 front designs alive.
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.
