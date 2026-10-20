@@ -8134,3 +8134,19 @@ Next there: rtimm without that coupling, measured on fib - before any new engine
 
 Files: results/wip-regmachine/coverage-419.py, coverage-419.out, existing-419.py, existing-419.out,
 existing-419-first.out (new); results/wip-regmachine/README.md, HANDOFF.md.
+
+## Iteration 420 - 2026-10-20 - Claude
+
+**The immediates measured as they already exist: the gains are there gene by gene; what keeps the small end from them is
+their bytes** (results/wip-regmachine/README.md). The owner: proceed - rtimm freed from built pairs, measured on fib.
+Correction first: 419 said rtimm waited on built pairs; Iteration 175 freed it already - rtimm=2, the immediates with no
+pairs. So this measures it.
+
+existing-420.py, seed 58's smallest design: rtimm=2 - fib -13.6% (`-1 +` and `SWAP -2 +` fused), +608 bytes; DUP<I built
+in CMOVE's place adds nothing to fib and costs kernel 9.4% and corpus 6.5% (a format-10 slot is dear); the loop compiler,
+-79% loop and -62% bubble for 465 bytes, with the immediates +1,119. The forms a register stage was priced for are there;
+their bytes (3-4% of the smallest design each) are why the small end goes without, and a register stage would cost bytes
+the same way. Next in the work directory: where those bytes go, then a lean immediates-only overlay and a lean loop
+compiler, measured against these rows.
+
+Files: results/wip-regmachine/existing-420.py, existing-420.out (new); results/wip-regmachine/README.md, HANDOFF.md.

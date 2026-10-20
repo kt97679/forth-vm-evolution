@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 419.
+- master: Iteration 420.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -275,7 +275,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    prediction 4). Priced out: indirect threading (Iteration 29); deferred: ?STACK (item 5). **In progress (418): the register machine, in results/wip-regmachine/** - kept
    apart (nothing there runs; to a run only through the gates and the owner). 419: on plain CV8 `+` and `<` take most of
    the operands in; the project's own forms already cover much (its loop compiler: loop -79%, bubble -62% for 465 bytes on
-   the smallest design) - next, rtimm freed from its coupling to built pairs, measured on fib.
+   the smallest design). 420: the immediates without
+   pairs exist (rtimm=2, Iteration 175): fib -13.6% for 608 bytes; the loop compiler -79% loop for 465 - the forms are
+   there, their bytes keep the small end from them. Next there: where those bytes go, and lean versions.
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

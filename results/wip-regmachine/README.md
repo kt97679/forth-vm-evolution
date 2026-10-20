@@ -91,11 +91,36 @@ format-10 words and pushed others out of their slots - kernel and corpus +4-13%:
 - **Loop and bubble are the loop compiler's**, already in reach: the search takes it on the larger plain designs and
   leaves it on the smallest for its bytes - the small end trades speed for size by definition, and a register stage
   would meet the same refusal there.
-- **fib's share is the immediates'** (`DUP 2 <`): rtimm has the forms, but needs the run-time fuser, which needs built
-  pairs - a coupling, not a cost. Freeing rtimm from it is a small, testable change: the next step here.
+- **fib's share is the immediates'** (`DUP 2 <`, `-1 +`, `SWAP -2 +`): rtimm has the forms. (419 said it needed built
+  pairs; wrong - Iteration 175 freed it already: rtimm=2, the immediates without pairs. Measured in 420, below.)
 - **kernel's and corpus's** share is spread (11-27%), mostly the image's own code - stage 1's converter-side plan, which
   on today's tag-2 designs prices at 4-8%.
 
 So a general register stage would add less than its first pricing suggested: what remains after the forms in place is
-kernel's and corpus's spread share and fib's. Proposed next: rtimm without its pair coupling, measured on fib, as a
-patch here - before any new engine form.
+kernel's and corpus's spread share and fib's. Next: the immediates as they exist, measured on fib (420, below).
+
+## The immediates, and what the forms in place cost (Iteration 420, existing-420.py, its output existing-420.out)
+
+Seed 58's smallest design (14,146 bytes; it builds 9 of the 31 format-10 words it lists), each variant against it:
+
+| variant | bytes | fib | loop | bubble | kernel | corpus |
+|---|---|---|---|---|---|---|
+| rtimm=2 - the immediates, no pairs (Iteration 175) | +608 | -13.6% | 0 | 0 | +0.7% | +0.9% |
+| and DUP<I built, in CMOVE's place | +656 | -13.6% | 0 | 0 | +9.4% | +6.5% |
+| and the loop compiler (rtloop) | +1,119 | -13.6% | -79.1% | -61.9% | +9.9% | +6.5% |
+| the loop compiler alone | +465 | 0 | -79.1% | -62.0% | +0.5% | +0.1% |
+
+fib's `-1 +` and `SWAP -2 +` fuse (ADDI, SWAP+I): -13.6%. DUP<I adds nothing to fib here, and a slot given up costs kernel
+and corpus 6-9% - a slot is dear. The loop compiler takes loop and bubble down by two-thirds to four-fifths.
+
+**What it says.** The gains a register stage was priced for are mostly there already, gene by gene - and they cost
+bytes: 465 for the loop compiler, 608 for the immediates, 3-4% of the smallest design each. That, not their reach, is why
+the small end goes without them; a register stage would cost bytes the same way. **The lever is the bytes**: a run-time
+compiler that costs a hundred bytes instead of five or six hundred would be worth taking even at the small end.
+
+## Next
+
+1. Where the 608 and the 465 bytes go - which overlay words, the fuser's general machinery or the forms themselves.
+2. A lean immediates-only overlay (and a lean loop compiler), prototyped here as a patch, its bytes and its dispatches
+   measured against these rows.
+3. A general register stage only if a later workload shows move-heavy code these do not reach.
