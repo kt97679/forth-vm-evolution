@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 425.
+- master: Iteration 426.
 - **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
   measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
   places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
@@ -186,9 +186,11 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    3c): small at both widths, no gain past a bar - no evidence of anchoring at 12 hours; seeds 61-62 how far
    runs of one start spread. Then the after-seed-62 batch: seed 63 its first run, free of the tag-2 requirement (the owner, 409: seeds
    59-60 ended 11-12% above seed 58's free small end; free, it is like-for-like with seed 58's curse figure - and
-   seed 60's own, 1.066, is already below seed 58's 1.112). Proposed (414): seed 60's shape without the requirement -
-   `seed 63 <hours> widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
-   a verdict against seeds 59-62 - its hours the owner's - `review-checks.py curse` on its report
+   seed 60's own, 1.066, is already below seed 58's 1.112). **Planned: 11 hours (the owner, Iteration 426)** - seed 60's shape without the
+   requirement, NEXT-RUN's line at seed 62's processing:
+   `seed 63 11h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
+   a verdict against seeds 59-62. The comparison is reserved from the 11 hours (next-run.sh's reserve()): about 7 3/4
+   hours of evolution (seed 60, 12 hours with the same step: 8 h 50) - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).
 0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every

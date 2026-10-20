@@ -8246,3 +8246,12 @@ regenerated. No compare-fronts session: no comparison step.
 
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed61.md, results/xcheck-seed61.md (new); results/predictions.md,
 results/progress-by-run.md, results/README.md, HANDOFF.md.
+
+## Iteration 426 - 2026-10-20 - Claude
+
+**Seed 63 planned at 11 hours** (the owner): `seed 63 11h widths noevolved then experiment compare-fronts.py --rounds 6
+--widths 8,4 --frontier --cpus 2,8`, written into NEXT-RUN at seed 62's processing (HANDOFF.md, item 0). Its comparison
+is reserved from the 11 hours, so about 7 3/4 hours of evolution - seed 60 at 12 hours with the same step evolved 8 h 50.
+Seed 62's line stays as it is, 11 hours. A summary of the runs for the owner, no new files.
+
+Files: HANDOFF.md.
