@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 422.
+- master: Iteration 423.
 - **The runs**: seed 60 processed (Iteration 406): small at both widths - no evidence of anchoring. Seed 61 running
   (the owner started it 16:26 from Iteration 406's bundle, ed674ec: 11 h, no comparison step); next seed 62 (NEXT-RUN's
   line, 11 h - the owner, 408 - then `experiment footprint.py`, item 2) when seed 61's chain has finished: the replicates,
@@ -278,9 +278,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    the smallest design). 420: the immediates without
    pairs exist (rtimm=2, Iteration 175): fib -13.6% for 608 bytes; the loop compiler -79% loop for 465 - the forms are
    there, their bytes keep the small end from them. 421: all image bytes - rtimm=2 carries the pair lookup (140 bytes) with
-   no pairs; rtloop=2 (headerless internals) is +361. 422: the cheaper rtimm=2 built as a patch there
-   (rtimm-lean-422.patch, not in any batch): +240 bytes instead of +608 for the same fib -13.6%; tests PASS, validate
-   IDENTICAL - for a batch only with the owner's approval.
+   no pairs; rtloop=2 (headerless internals) is +361. 422-423: two patches there, not in any batch -
+   rtimm-lean-422.patch (rtimm=2 +240 bytes instead of +608, fib -13.6%; its condition fixed at 423) and
+   rtloop-lean-423.patch (the loop table in 16 bits: -56 bytes a design); together the smallest design gets both for
+   +543 instead of 1,119; tests PASS, validate IDENTICAL, both widths - for a batch only with the owner's approval.
 5. **?STACK as an opcode - deferred** (Iteration 299, results/source-audit-3.md): about 1% of the
    geometric mean, for a new overlay tag in every design and DEPTH reproduced exactly - more mechanism
    than it buys, by GOALS.md's measure, unless the corpus comes to weigh more.

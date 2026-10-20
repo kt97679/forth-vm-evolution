@@ -1,0 +1,10 @@
+cell 8 as it is  14146 bytes | L1..L6: 45 18 7 5 0 10 75
+cell 8 rtloop=1  14555 bytes | L1..L6: 45 18 7 5 0 10 75
+cell 8 rtloop=2  14451 bytes | L1..L6: 45 18 7 5 0 10 75
+cell 4 as it is  14146 bytes | L1..L6: 45 18 7 5 0 10 75
+cell 4 rtloop=1  14555 bytes | L1..L6: 45 18 7 5 0 10 75
+cell 4 rtloop=2  14451 bytes | L1..L6: 45 18 7 5 0 10 75
+rtloop=2 dispatches against as it is: kernel +0.9%, fib +0.0%, corpus -0.5%, loop -79.1%, bubble -62.0%, ackermann +0.0%
+front designs with the loop compiler: 301 alive, 0 failed; bytes against their records: min -56, median -48, max +0
+
+# with the patch: run-tests PASS - no regressions; evolve.py --validate: 7 of 7 IDENTICAL

@@ -8185,3 +8185,26 @@ unchanged: the patch was taken with git diff and the tree restored; it applies t
 
 Files: results/wip-regmachine/rtimm-lean-422.patch, rtimm-lean-422.out, rtimm-lean-422-measure.py,
 rtimm-lean-422-checks.py, rtimm-lean-422-front.py (new); results/wip-regmachine/README.md, HANDOFF.md.
+
+## Iteration 423 - 2026-10-20 - Claude
+
+**A fix to the cheaper rtimm=2, and a leaner loop table - both patches in the work directory, checked at both widths for
+real** (results/wip-regmachine/README.md). The owner: continue.
+
+Fix: rtimm=2 passes --rtfuse, so the full overlay fuses a design's built pairs and tests rtfuse or not; 422's rtimm_lean
+asked only about rtfuse, and would have taken that fusion from a plain design with pairs and rtfuse off. It now asks for
+no pairs and no tests at all; the designs measured had neither, so 422's numbers stand. The five front designs it left
+alone are tag-2 designs with fused tests - no tag-2 lean version would apply; not built.
+
+rtloop-lean-423.patch: the loop compiler's X10-XTS as three 16-bit offsets, no range check (forth/cv8-fuse-loop.4,
+tools/layout.py). -56 bytes on seed 58's smallest (rtloop=2 +361 -> +305), dispatches unchanged; 301 front designs with
+the loop compiler rebuilt, all alive, median -48 bytes; run-time compiles of I, J, UNLOOP EXIT, ?DO, LEAVE, +LOOP right;
+run-tests PASS, validate 7 of 7 IDENTICAL.
+
+Correction: 422's "cell 4" checks built 64-bit again - the width is EVOLVE_CELL's, not the genome's. Both patches applied
+together and checked at 64 and, with EVOLVE_CELL=4 and gcc -m32, at 32 bits: the corpus and fifteen run-time compiles
+right in every variant; both on the smallest design +543 bytes at 64 bits (+511 at 32), where the two cost 1,119. The
+patches apply to master alone and together; master's code is unchanged.
+
+Files: results/wip-regmachine/rtloop-lean-423.patch, rtloop-lean-423.out, rtloop-lean-423-checks.py, both-423.out,
+both-423-checks.py (new); results/wip-regmachine/rtimm-lean-422.patch (the condition), README.md, HANDOFF.md.

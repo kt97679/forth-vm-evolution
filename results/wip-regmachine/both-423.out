@@ -1,0 +1,13 @@
+# both patches applied, the smallest design; 64-bit, then 32-bit (EVOLVE_CELL=4, gcc -m32) - both-423-checks.py
+cell width 8 bytes, dumps k64
+as it is          lean False 14146 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2           lean True  14386 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=1          lean False 14555 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=2          lean False 14451 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2 rtloop=2  lean True  14689 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+cell width 4 bytes, dumps k32
+as it is          lean False 13858 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2           lean True  14086 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=1          lean False 14231 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtloop=2          lean False 14139 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75
+rtimm=2 rtloop=2  lean True  14369 bytes, corpus ok | 31 12 5 10 2 12 5 7 45 18 7 5 0 10 75

@@ -162,9 +162,9 @@ designs keep the full overlay. 68 lines added. No new gene value: the same forms
 The same cut in fib for 61% fewer bytes; with the cheaper loop compiler, loop, bubble and fib for 599 bytes where the
 two at their old cost were 1,119.
 
-**Checked.** The corpus and kernel workload at both cell widths; run-time compiles of a literal before BEGIN, `n +`,
-`SWAP n +`, a loop and a branch give the same numbers with and without the immediates, at both widths
-(rtimm-lean-422-checks.py); every seed 58 and 60 front design with rtimm=2 rebuilt (rtimm-lean-422-front.py): 6, one
+**Checked.** The corpus and kernel workload; run-time compiles of a literal before BEGIN, `n +`, `SWAP n +`, a loop
+and a branch give the same numbers with and without the immediates (rtimm-lean-422-checks.py - *its "cell 4" rows were
+64-bit builds again: the width is EVOLVE_CELL's, not the genome's; checked at 32 bits for real in 423, below*); every seed 58 and 60 front design with rtimm=2 rebuilt (rtimm-lean-422-front.py): 6, one
 lean (-392 bytes against its record), five not (tag 2 or pairs) and byte-identical to their records, none failing;
 run-tests PASS; validate: the hand-made stages IDENTICAL.
 
@@ -172,10 +172,54 @@ run-tests PASS; validate: the hand-made stages IDENTICAL.
 as of Iteration 422 (`git apply`, then `LAYOUTS=1 bash tools/build-stages.sh`). To reach a run it would join a pending
 batch with the owner's approval, rehearsed with the others there - once seed 62's batch is applied, rebased onto it.
 
-## Next
+## Next (as of 422)
 
 1. The five front designs it leaves alone: tag 2 or pairs - a tag-2 version (cv8t-imm.4) if tag-2 designs carry rtimm=2
    with nothing else to fuse.
 2. The loop compiler past rtloop=2: X10-OP and X10-XTS look its opcodes up at run time (103 bytes); constants written by
    the converter might do.
+3. A general register stage only if a later workload shows move-heavy code these do not reach.
+
+## Iteration 423: a fix to 422's patch, the five left alone, and a leaner loop table
+
+**422's condition, fixed.** rtimm=2 passes the converter --rtfuse, so the full overlay fuses whatever pairs and tests a
+design builds, rtfuse or not. rtimm_lean asked only about rtfuse: a plain design with built pairs or fused tests and
+rtfuse off would have gone lean and lost that run-time fusion - slower, not wrong. It now asks for no built pairs and no
+fused tests at all. The designs measured had neither (checked), so 422's numbers stand.
+
+**The five left alone** are all seed 60's tag-2 designs with four or five fused tests (two with pairs too), compiled at
+run time by the full overlay: a tag-2 lean version would not apply to any of them - not built.
+
+**The loop table, leaner (rtloop-lean-423.patch).** forth/cv8-fuse-loop.4's X10-XTS held the lowest and highest image
+offset of I, J and UNLOOP and then each one's, in cells; X10-OP checked the range before looking. Now three 16-bit
+offsets (tools/layout.py writes them, asserting they fit), looked through at each compile with no range check - a
+missing word's entry is 0, its opcode 0, as before. Compile-time only; the code compiled is the same.
+
+| seed 58's smallest | bytes before | after | dispatches with rtloop=2 |
+|---|---|---|---|
+| rtloop=1 | +465 | +409 | |
+| rtloop=2 | +361 | +305 | loop -79.1%, bubble -62.0% (unchanged), kernel +0.9%, corpus -0.5% |
+
+Every seed 58 and 60 front design with the loop compiler rebuilt: 301, all alive, -56 to 0 bytes against their records
+(median -48; the loopall designs use their own overlay). Run-time compiles of I, nested J, UNLOOP EXIT, ?DO, LEAVE and
++LOOP give the right numbers. run-tests PASS; validate 7 of 7 IDENTICAL (rtloop-lean-423.out,
+rtloop-lean-423-checks.py).
+
+**Both patches together, and 32 bits for real** (both-423-checks.py, both-423.out): applied together, the smallest design
+built at 64 bits and - with EVOLVE_CELL=4 and gcc -m32 - at 32: the corpus right and all fifteen run-time compile checks
+the same in every variant at both widths. The two patches apply to master alone and together.
+
+| seed 58's smallest, both patches | 64-bit bytes | 32-bit bytes |
+|---|---|---|
+| as it is | 14,146 | 13,858 |
+| rtimm=2 (lean) | +240 | +228 |
+| rtloop=2 | +305 | +281 |
+| both | **+543** (1,119 for the two before) | +511 |
+
+## Next (as of 423)
+
+1. The two patches wait here for the owner: to join a batch they would be rehearsed with it - after seed 62's batch is
+   applied, rebased onto it.
+2. The loop compiler's remaining bytes are its forms' (DO8, ?DO8, LEAVE8, LOOP8...): little left to trim without
+   changing what it compiles.
 3. A general register stage only if a later workload shows move-heavy code these do not reach.

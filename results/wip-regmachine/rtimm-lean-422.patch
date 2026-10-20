@@ -71,8 +71,8 @@ index 5d44afa..53c5812 100644
 +def rtimm_lean(g):
 +    """Iteration 422 (results/wip-regmachine/README.md): rtimm=2 in a plain-CV8 design with nothing else
 +    for the run-time fuser to do - no pairs, no fused tests - builds forth/cv8-imm.4 alone, not
-+    cv8-fuse.4 under cv8-fuse-imm.4: the same forms without the pair lookup."""
-+    return rtimm2(g) and not (g.get('rtfuse') and (supers_in(g) or rt_tests(g))) and not express(g).get('tag2')
++    cv8-fuse.4 under cv8-fuse-imm.4 (rtimm=2 passes --rtfuse: built pairs and tests fuse, rtfuse or not)."""
++    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2')
  RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
  def rt_tests(g):
      """The fused tests this design has opcodes for - with rtfuse, its
