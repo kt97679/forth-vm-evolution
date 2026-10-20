@@ -84,8 +84,8 @@ k = max(1, min(a.sample, len(order)))
 pick = sorted({order[round(j * (len(order) - 1) / max(1, k - 1))] for j in range(k)}, key=lambda i: sp[i])
 if a.fastest: pick = order[:k]                        # Iteration 436: the fastest k, the held-out check's
 print('# Footprint: does the front\'s speed hold as the code grows? (lab/evolve/footprint.py)\n')
-print('Front: %s, %s (%d designs); sampled %d by selection speed' + (' - the fastest' if a.fastest else '') + ', fastest to slowest. Sizes %s; calls %d a word,'
-      ' at least 200,000; %d rounds, medians.\n' % (db, how, len(order), len(pick), ', '.join(map(str, SIZES)), a.calls_per_word, a.rounds))
+print(('Front: %s, %s (%d designs); sampled %d by selection speed' + (' - the fastest' if a.fastest else '') + ', fastest to slowest. Sizes %s; calls %d a word,'
+       ' at least 200,000; %d rounds, medians.\n') % (db, how, len(order), len(pick), ', '.join(map(str, SIZES)), a.calls_per_word, a.rounds))
 scratch = os.path.join(E.EV, 'footprint'); shutil.rmtree(scratch, ignore_errors=True); os.makedirs(scratch)
 progs = {}
 for n in SIZES:
