@@ -1,0 +1,15 @@
+setup 103s
+as it is                   lean False alive None | 14146 bytes (+0) | kernel +0.0%, fib +0.0%, corpus +0.0%, loop +0.0%, bubble +0.0%, ackermann +0.0%
+rtimm=2 lean               lean True alive None | 14386 bytes (+240) | kernel +0.2%, fib -13.6%, corpus +0.1%, loop +0.0%, bubble +0.0%, ackermann +0.0%
+rtimm=2 lean + rtloop=2    lean True alive None | 14745 bytes (+599) | kernel +0.4%, fib -13.6%, corpus -0.7%, loop -79.1%, bubble -62.0%, ackermann +0.0%
+
+# compile checks (rtimm-lean-422-checks.py: T2 a literal before BEGIN -> 31, T3 n + -> 12 5, T4 SWAP n + -> 10 2, T5 a loop -> 12, T6 branches -> 5 7)
+cell 8 as it is      lean False alive None -> 31 12 5 10 2 12 5 7
+cell 8 rtimm=2 lean  lean True alive None -> 31 12 5 10 2 12 5 7
+cell 4 as it is      lean False alive None -> 31 12 5 10 2 12 5 7
+cell 4 rtimm=2 lean  lean True alive None -> 31 12 5 10 2 12 5 7
+(alive None: the corpus and the kernel workload matched - alive() raises otherwise)
+
+# with the patch: run-tests PASS - no regressions; evolve.py --validate: the hand-made stages IDENTICAL
+6 front designs with rtimm=2 expressed
+lean 1 (bytes against the record: -392), not lean and unchanged 5, failures 0

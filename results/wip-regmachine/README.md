@@ -133,11 +133,49 @@ from the converter's map:
   image. Hiding the internal ones was priced (-2.7 to -2.8%, Iterations 222-223) and deferred by the owner - reusable
   helpers keep their names (Iteration 227): only an overlay's own internal words may go, as rtloop=2 does.
 
-## Next
+## Next (as of 421)
 
 1. **A cheaper rtimm=2**, as rtloop=2 is to rtloop: the overlay without the pair lookup when there are no pairs (-140),
    its internal words headerless (about -90) - 608 toward 380 bytes for fib's -13.6%. Prototyped here as a patch and
    measured against these rows.
 2. The loop compiler past rtloop=2: X10-OP and X10-XTS look its opcodes up at run time (103 bytes); constants written by
    the converter, as LOOP-OPS is, might do.
+3. A general register stage only if a later workload shows move-heavy code these do not reach.
+
+## A cheaper rtimm=2 - built, as a patch here (Iteration 422, rtimm-lean-422.patch)
+
+**What it is.** forth/cv8-imm.4: rtimm=2's forms - `n +` as ADDI n, `SWAP n +` as SWAP+I n - over the kernel's own
+compiler, without cv8-fuse.4: no pair lookup, no copy of the fold table (the kernel folds at `;` itself). BEGIN clears
+LAST-OP, as cv8-fuse.4's does, so no literal fuses across a loop's start; the kernel clears it at every branch
+resolution. Its four internal words are built headerless. lab/evolve/evolve.py: a kernel variant `-lit`, chosen by
+rtimm_lean(g) - rtimm=2 in a plain-CV8 design with nothing else for the fuser to do (no pairs, no fused tests). Tag-2
+designs keep the full overlay. 68 lines added. No new gene value: the same forms, fewer bytes.
+
+**Measured** (rtimm-lean-422-measure.py; the output rtimm-lean-422.out), seed 58's smallest design:
+
+| variant | bytes | fib | loop | bubble | kernel | corpus |
+|---|---|---|---|---|---|---|
+| rtimm=2 as it is (420) | +608 | -13.6% | 0 | 0 | +0.7% | +0.9% |
+| **rtimm=2 lean** | **+240** | -13.6% | 0 | 0 | +0.2% | +0.1% |
+| rtimm=2 lean and rtloop=2 | +599 | -13.6% | -79.1% | -62.0% | +0.4% | -0.7% |
+
+The same cut in fib for 61% fewer bytes; with the cheaper loop compiler, loop, bubble and fib for 599 bytes where the
+two at their old cost were 1,119.
+
+**Checked.** The corpus and kernel workload at both cell widths; run-time compiles of a literal before BEGIN, `n +`,
+`SWAP n +`, a loop and a branch give the same numbers with and without the immediates, at both widths
+(rtimm-lean-422-checks.py); every seed 58 and 60 front design with rtimm=2 rebuilt (rtimm-lean-422-front.py): 6, one
+lean (-392 bytes against its record), five not (tag 2 or pairs) and byte-identical to their records, none failing;
+run-tests PASS; validate: the hand-made stages IDENTICAL.
+
+**Status.** A patch here, not in any batch: master's code is unchanged and the runs do not see it. It applies to master
+as of Iteration 422 (`git apply`, then `LAYOUTS=1 bash tools/build-stages.sh`). To reach a run it would join a pending
+batch with the owner's approval, rehearsed with the others there - once seed 62's batch is applied, rebased onto it.
+
+## Next
+
+1. The five front designs it leaves alone: tag 2 or pairs - a tag-2 version (cv8t-imm.4) if tag-2 designs carry rtimm=2
+   with nothing else to fuse.
+2. The loop compiler past rtloop=2: X10-OP and X10-XTS look its opcodes up at run time (103 bytes); constants written by
+   the converter might do.
 3. A general register stage only if a later workload shows move-heavy code these do not reach.

@@ -8166,3 +8166,22 @@ Next in the work directory: a cheaper rtimm=2 - no pair lookup without pairs, in
 380 bytes, prototyped as a patch and measured.
 
 Files: results/wip-regmachine/bytes-421.py, bytes-421.out (new); results/wip-regmachine/README.md, HANDOFF.md.
+
+## Iteration 422 - 2026-10-20 - Claude
+
+**A cheaper rtimm=2, built as a patch in the work directory: the same forms for 240 bytes instead of 608**
+(results/wip-regmachine/rtimm-lean-422.patch; README.md there). The owner: proceed.
+
+forth/cv8-imm.4 carries rtimm=2's forms (`n +` as ADDI n, `SWAP n +` as SWAP+I n) over the kernel's own compiler, without
+cv8-fuse.4's pair lookup and its copy of the fold table; BEGIN clears LAST-OP as the fuser's does; its internal words
+are headerless. evolve.py builds it, as a kernel variant `-lit`, for rtimm=2 in a plain-CV8 design with no pairs and no
+fused tests; tag-2 designs keep the full overlay. On seed 58's smallest design: +240 bytes, fib -13.6% as before; with
+rtloop=2, +599 for fib, loop -79% and bubble -62%, where the two at their old cost were 1,119.
+
+Checked: the corpus at both widths; run-time compiles - a literal before BEGIN, `n +`, `SWAP n +`, a loop, a branch -
+the same numbers with and without, at both widths; the seed 58 and 60 front designs with rtimm=2 rebuilt, one lean
+(-392 bytes), five unchanged and byte-identical to their records; run-tests PASS; validate IDENTICAL. Master's code is
+unchanged: the patch was taken with git diff and the tree restored; it applies to master as of this iteration.
+
+Files: results/wip-regmachine/rtimm-lean-422.patch, rtimm-lean-422.out, rtimm-lean-422-measure.py,
+rtimm-lean-422-checks.py, rtimm-lean-422-front.py (new); results/wip-regmachine/README.md, HANDOFF.md.
