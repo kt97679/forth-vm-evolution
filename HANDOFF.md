@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 427.
+- master: Iteration 428.
 - **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
   measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
   places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
@@ -216,8 +216,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    owner): alignhot left out of a 32-bit ARM build (evolve.py's ccflags, ARM32), as the JIT is of a 32-bit one - in master,
    the laptop's and dream's builds unchanged; seed 62's chain is the first to check it on the Tegra - **but it cannot**
    (425): seed 60's and 61's fronts carry alignhot 0 on every design, and the chains check the front before - so
-   nothing they sample fails that way. Close it as moot, or one directed check of an alignhot-32 design on the
-   Tegra: the owner's call.
+   nothing they sample fails that way. **The directed check is set (the owner, 428): seed 62's chain** - REMOTES' rage
+   line asks for four of the 14 by id (xcheck --also): two alignhot 32 that failed at the link, two alignhot 64 that
+   failed in the assembler. At seed 62's processing: the report's "Asked for by id" line (process-seed.sh's summary
+   shows it) - all four built closes the item; then --also out of REMOTES and the minutes back to 120.
 0h. **Programs past 4 MB** (the owner, Iterations 415-416, results/bigprog-416.md): supported by every design from the
    after-seed-62 batch (patch 12) - plain CV8's call, link and DOES> reaches extended, the two-bit tag's already 1 GB;
    engines-check runs two such programs. Cost: +104 bytes a plain-CV8 image (417: the far call by (FAR)). The stage build now

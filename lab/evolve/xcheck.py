@@ -12,7 +12,10 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       are designs the laptop's selection REJECTED - living, off the front, within its speed span,
       from the run's db.jsonl beside RESULTS.md, spread by speed - so a design good there and
       rejected here can be seen at all (results/drafts/cross-machine-weighing.md); marked in the
-      report, with how many ran faster there than the front's median and fastest.
+      report, with how many ran faster there than the front's median and fastest. --also ID,ID...
+      (Iteration 428): designs asked for by id, from any results/evolve-*.md beside RESULTS.md, after the
+      sample - the Tegra's rebuild test of the designs that once failed there (open item 0d); marked
+      'asked', reported apart and kept out of the agreement, which is about this front.
 
   xcheck.py DESIGNS.json OUT.json [--rounds N] [--until EPOCH]
       on the host, in a clone at the same commit, its stages built: the host's
@@ -75,10 +78,16 @@ if '--report' in ARGS:
         env.get('machine', '?'), env.get('kernel', '?'), env.get('cc', '?'), env.get('python', '?'), R.get('when', '?'), R.get('rounds', 0)))
     if not R.get('s6_ok'):
         print('**Not usable: hand-made s6 - %s.**' % R.get('s6_why', '?')); sys.exit(0)
-    d = [x for x in R['designs'] if x.get('speed_here') is not None]
+    d = [x for x in R['designs'] if x.get('speed_here') is not None and not x.get('asked')]
     for x in R['designs']:
-        if x.get('speed_here') is None: print('- %s not measured: %s' % (x['id'], x.get('why', '?')))
+        if x.get('speed_here') is None and not x.get('asked'): print('- %s not measured: %s' % (x['id'], x.get('why', '?')))
     print()
+    A = [x for x in R['designs'] if x.get('asked')]                   # Iteration 428: apart from the agreement
+    if A:
+        print('**Asked for by id** (--also, Iteration 428 - the rebuild test of designs that once failed here): %d of %d built and measured here.\n'
+              % (sum(1 for x in A if x.get('speed_here') is not None), len(A)))
+        for x in A: print('- %s %s' % (x['id'], 'speed %.3f here' % x['speed_here'] if x.get('speed_here') is not None else 'not measured: %s' % x.get('why', '?')))
+        print()
     if len(d) < 3: print('Too few measured to rank (%d).' % len(d)); sys.exit(0)
     rho = spearman([x['speed'] for x in d], [x['speed_here'] for x in d])
     rh = ranks([x['speed_here'] for x in d])
@@ -115,6 +124,7 @@ if '--report' in ARGS:
 if '--sample' in ARGS:
     src = opt('--sample'); n = int(opt('--n', '24')); nojit = opt('--no-jit', flag=True); gcc = opt('--gcc-only', flag=True); bundle = opt('--bundle')
     nrej = int(opt('--rejected', '0'))                                # Iteration 377: designs the selection rejected
+    also = [i for i in (opt('--also') or '').split(',') if i]         # Iteration 428: designs asked for by id
     # Iteration 331: --cell 4 - a 32-bit check (the owner: 32-bit x86 and the Tegra, at native
     # 4-byte cells). The sample built here as 32-bit x86 at 4-byte cells (gcc -m32, static), each
     # design taken only if it builds and lives so - no JIT, no clang - and with --bundle the
@@ -206,7 +216,27 @@ if '--sample' in ARGS:
                 if pool: take([pool[int(j * (len(pool) - 1) / max(1, nrej - 1))] for j in range(min(nrej, len(pool)))], nrej)
                 rejected = {x[0] for x in pick[before:]}
         n = n_all
-    json.dump([dict({'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot}, **({'rejected': True} if i in rejected else {})) for i, sp, tot, e in pick], open(out, 'w'), indent=1)
+    asked = set()
+    if also:                                                             # Iteration 428: after the sample, by id
+        import glob
+        recs = {}
+        for f in sorted(glob.glob(os.path.join(os.path.dirname(os.path.abspath(src)), 'evolve-*-seed*.md'))):
+            for l in open(f):
+                if l.startswith('{"'):
+                    try: r = json.loads(l)
+                    except ValueError: continue
+                    if r.get('id') in also and 'genome' in r: recs.setdefault(r['id'], r)
+        for i in also:
+            if i in [p[0] for p in pick]: continue
+            r = recs.get(i)
+            if not r: print('xcheck: --also %s: in no results file here - left out' % i, flush=True); continue
+            e = E.express(E.canon(r['genome'])); gen[i] = r['genome']
+            if (nojit and e.get('jit')) or (gcc and (e.get('compiler') or e.get('tailpn'))):
+                print('xcheck: --also %s: not itself on this host (the JIT or clang) - left out' % i, flush=True); continue
+            if not good(i): continue
+            pick.append((i, r.get('speed') or 0.0, r.get('total'), e)); asked.add(i)
+        print('xcheck: %d of %d asked for by id (--also, Iteration 428)' % (len(asked), len(also)), flush=True)
+    json.dump([dict({'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot}, **({'rejected': True} if i in rejected else {}), **({'asked': True} if i in asked else {})) for i, sp, tot, e in pick], open(out, 'w'), indent=1)
     if rejected: print('xcheck: %d of them rejected by the laptop\'s selection (Iteration 377)' % len(rejected), flush=True)
     print('xcheck: %d designs sampled from %d eligible (%s%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', ', at 4-byte cells, each alive so' if cell4 else '', out))
     if bundle:
@@ -268,6 +298,7 @@ save()
 for k, x in enumerate(D, 1):
     rec = {'id': x['id'], 'speed': x['speed'], 'total': x.get('total')}
     if x.get('rejected'): rec['rejected'] = True                      # Iteration 377: carried to the report
+    if x.get('asked'): rec['asked'] = True                            # Iteration 428: so is a design asked for by id
     R['designs'].append(rec)
     if until and time.time() > until: rec['why'] = 'the time limit'; save(); continue
     g = E.canon(x['genome']); e = norm(E.express(g))

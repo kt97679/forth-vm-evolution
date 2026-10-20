@@ -684,6 +684,13 @@ Iteration 406's predictions for it:
 - Iteration 393's predictions for the replicates are read at the common generation of seeds 60-62 - by seed 62's chain
   (review-checks.py spread, Iteration 415).
 
+## The Tegra's rebuild test in seed 62's chain - predicted (Iteration 428)
+
+Four of the 14 designs that failed to build on the Tegra in seeds 58-60's chains, asked for by id (REMOTES, xcheck
+--also): ce937eca6d and 5405c5b1d9 (alignhot 32, failed at the link), 3a5638f18d and cd9d470f51 (alignhot 64, failed in
+the assembler). With alignhot left out of a 32-bit ARM build (Iteration 407): all four build and are measured there. If
+one fails, the alignment was not the whole cause - its error, recorded in full since Iteration 389's why(), says what is.
+
 ## Seed 62's ends, after two replicates - predicted (Iteration 425)
 
 Seeds 60 and 61, the same setup, landed at the same ends by their own measures: fastest 0.111 and 0.110, smallest

@@ -8272,3 +8272,23 @@ found, in place of the old "largest prize" and the work's running notes; item 4b
 carry alignhot 0 (425) - moot, or one directed check: the owner's call.
 
 Files: lab/evolve/review-checks.py, lab/evolve/process-seed.sh, lab/evolve/gate.py, HANDOFF.md.
+
+## Iteration 428 - 2026-10-20 - Claude
+
+**The Tegra's rebuild test, part of seed 62's chain** (the owner: do it as part of the next run). xcheck.py --sample
+learned --also ID,ID...: designs asked for by id, their genomes from the results files beside the checked one, sampled
+after the regular sample, passed through the same filters (itself on that host; at 4-byte cells built and alive here
+first), marked 'asked'; the host carries the mark; the report lists them apart - "Asked for by id: N of M built and
+measured here" - and keeps them out of the agreement, which is about the checked front; process-seed.sh's summary greps
+the line. REMOTES' rage line asks for four of the 14 failures: ce937eca6d and 5405c5b1d9 (alignhot 32, the linker's
+error in seeds 58-59's chains), 3a5638f18d and cd9d470f51 (alignhot 64, the assembler's in seed 60's) - every one of
+the 14 is alignhot 32 or 64, and the two failure messages split with the alignment and the chain; 40 minutes more
+(160). Three of the 14 have no genome in the repository (369ef14956, ade7c2acb9, fb73c9be4a: rejected designs, in the
+laptop's databases only).
+
+Tested here: the sample at 4-byte cells with the four asked for (4 of 4 taken, after 12 of seed 61's front); a host run
+of two of the sample and the four at 4-byte cells on this x86 machine - all six built and measured, the report's
+"Asked for by id" section 4 of 4, the agreement left to the other two. The Tegra itself is the test: seed 62 must start
+from this bundle or a later one. Predicted: all four build there.
+
+Files: lab/evolve/xcheck.py, lab/evolve/process-seed.sh, lab/evolve/REMOTES, results/predictions.md, HANDOFF.md.

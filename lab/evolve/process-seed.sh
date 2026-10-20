@@ -47,7 +47,7 @@ if [ -n "$CP" ]; then
 fi
 if ls "$C"/remote/*.md > /dev/null 2>&1; then
     p ""; p "## The remote checks (their reports in $C/remote)"; p '```'
-    grep -HiE 'spearman|rejected by' "$C"/remote/*.md | sed "s|$C/remote/||" | cut -c1-200 >> "$S"
+    grep -HiE 'spearman|rejected by|asked for by id' "$C"/remote/*.md | sed "s|$C/remote/||" | cut -c1-200 >> "$S"
     # Iteration 403 (item 0g): a 4-byte host against the laptop's own 32-bit speeds too - those of the run it checked
     N=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null); L32=$(ls "$REPO"/results/evolve-*-seed$((${N:-1} - 1)).md 2>/dev/null | head -1)
     for o in "$C"/remote/*/out.json; do

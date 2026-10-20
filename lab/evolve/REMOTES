@@ -8,7 +8,12 @@
 dream.lan    prebuilt    24     3       30
 dream.lan    prebuilt32  30     3       40       --cell 4 --rejected 6
 dream.lan    prebuilt64  30     3       40       --from prebuilt32
-rage.lan     native      16     2       120      --cell 4 --rejected 4
+rage.lan     native      16     2       160      --cell 4 --rejected 4 --also ce937eca6d,5405c5b1d9,3a5638f18d,cd9d470f51
+#   Iteration 428 (the owner): seed 62's chain only - the Tegra rebuilds four of the 14 designs that failed to build
+#   there in seeds 58-60's chains (open item 0d), asked for by id after its sample (xcheck --also): ce937eca6d and
+#   5405c5b1d9 (alignhot 32, the linker's error), 3a5638f18d and cd9d470f51 (alignhot 64, the assembler's). With
+#   alignhot left out of a 32-bit ARM build (Iteration 407) all four should build; 40 minutes more for them. At seed
+#   62's processing: --also out, the minutes back to 120.
 #   Iteration 408: prebuilt32's sample takes clang's designs too (xcheck --sample: GCC only where the host builds
 #   them itself) - with them out, seed 60's chain sent dream 6 eligible of seed 59's 171; seed 60's front, 109.
 #   Iteration 377 (the owner: three classes of machine, equal): designs the laptop REJECTED measured
