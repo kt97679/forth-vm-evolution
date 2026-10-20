@@ -30,7 +30,5 @@ built and alive, one of them lean.
 
 ## When
 
-At seed 62's processing, once the after-seed-62 batch is applied (HANDOFF.md, the processing routine's step 6): `git mv
-results/pending-after-seed63 results/pending`, its paths in this file and results/README.md from pending/ to
-pending/, and `sh tools/batch-check.sh` against the new master. Applied at seed 63's processing, as the routine applies
-any batch.
+Moved into results/pending/ at seed 62's processing (Iteration 433), once the after-seed-62 batch was applied, and
+batch-checked against that master; applied at seed 63's processing, as the routine applies any batch.

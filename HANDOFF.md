@@ -48,17 +48,18 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 432.
-- **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
-  measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
-  places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
-  `experiment footprint.py`, item 2, and the replicates' spread), seed 60's start again. Predictions for all: the end of
-  results/predictions.md.
+- master: Iteration 433.
+- **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
+  (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
+  0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
+  **The after-seed-62 batch applied** (13 patches, results/applied-after-seed62/ORDER.md; batch-check PASS); the
+  after-seed-63 batch is results/pending/ now, applied at seed 63's processing. Next seed 63 (NEXT-RUN's line, 11 h -
+  the owner, 426): the batch's first run, free of the tag-2 requirement, with a comparison; its decisions by
+  results/seed63-rules.md, its gene votes the ledger's first; its chain also runs the Tegra's rebuild test and the head
+  to head (REMOTES' --also lists - seed 62's chain ran from Iteration 425's bundle, before both).
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 62's, named from the bundle it starts from (seed 61's, `forth-vm-evolution-chain-ed674ec37-fury-
-  20261020-031220_tar.gz`, processed at 425). Nothing else: seed 62's chain runs the replicates' comparison
-  itself, and seed 60's archive (`forth-vm-evolution-chain-bcb34da3e-fury-20261019-153349_tar.gz`) is wanted only if that
-  step failed. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
+  processed - seed 63's, named from the bundle it starts from (seed 62's, `forth-vm-evolution-chain-017b7ca97-fury-
+  20261020-153456_tar.gz`, processed at 433). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
@@ -106,9 +107,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    (Iteration 372: 62 had been left behind):
    `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
    (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
-   run: handoff-check names it). **A batch queued behind it** (results/pending/, Iteration 424): then
-   `git mv results/pending-after-seed63 results/pending`, its paths (its ORDER.md, results/README.md) from
-   pending/ to pending/, and `sh tools/batch-check.sh` against the new master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
+   run: handoff-check names it). A batch queued behind it moves into results/pending/ the same way - its folder
+   renamed, its paths followed (done at 433: the after-seed-63 batch) - and `sh tools/batch-check.sh` runs against the new
+   master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
    Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
    lab/evolve/progress-table.py > results/progress-by-run.md`; the gene votes, from seed 63 on (Iteration 432): `python3
    lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
@@ -225,13 +226,13 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    owner): alignhot left out of a 32-bit ARM build (evolve.py's ccflags, ARM32), as the JIT is of a 32-bit one - in master,
    the laptop's and dream's builds unchanged; seed 62's chain is the first to check it on the Tegra - **but it cannot**
    (425): seed 60's and 61's fronts carry alignhot 0 on every design, and the chains check the front before - so
-   nothing they sample fails that way. **The directed check is set (the owner, 428): seed 62's chain** - REMOTES' rage
+   nothing they sample fails that way. **The directed check is set (the owner, 428): seed 63's chain** (seed 62's ran from
+   Iteration 425's bundle, before it) - REMOTES' rage
    line asks for four of the 14 by id (xcheck --also): two alignhot 32 that failed at the link, two alignhot 64 that
-   failed in the assembler. At seed 62's processing: the report's "Asked for by id" line (process-seed.sh's summary
+   failed in the assembler. At seed 63's processing: the report's "Asked for by id" line (process-seed.sh's summary
    shows it) - all four built closes the item; then --also out of REMOTES (its minutes stay "run", 429). 429 fixed the
    lookup: 428's --also looked for genomes beside the sampled report - in a chain the archived run's report.md, where
-   no results file lies - and would have left all four out; it reads the repository's results now. **Seed 62 must
-   start from Iteration 429's bundle or later.**
+   no results file lies - and would have left all four out; it reads the repository's results now.
 0h. **Programs past 4 MB** (the owner, Iterations 415-416, results/bigprog-416.md): supported by every design from the
    after-seed-62 batch (patch 12) - plain CV8's call, link and DOES> reaches extended, the two-bit tag's already 1 GB;
    engines-check runs two such programs. Cost: +104 bytes a plain-CV8 image (417: the far call by (FAR)). The stage build now
@@ -242,7 +243,12 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    once, and a compile-heavy one - each front design's time per dispatch against N.
    **The generator is built** (Iteration 370: lab/evolve/footprint-gen.py - N words in levels, a
    table of their tokens, a checksum; --defs-only for the compile phase): checksums agree on s6 and
-   seed 56's fastest (its JIT on) at N = 100, 1,000, 10,000, 30,000. Next: the experiment step for the
+   seed 56's fastest (its JIT on) at N = 100, 1,000, 10,000, 30,000. **footprint.py ran** (433, seed 62's chain,
+   12 of its front): the selection's order holds, weakening - Spearman 0.951 at N = 100, 0.783 at 10,000 and 30,000 -
+   but each design's time per call against s6 moves 1.6-3.8 times across N: the fast designs about 4x s6's speed at
+   100-1,000 words, 1.1-1.5x at 10,000 (s6 itself falls off a cliff at 30,000: 154 to 464 ns a call). The selection's
+   small programs flatter the fast end at large footprints; a footprint workload in the selection, or this as a
+   held-out check each run - the owner's call. (Before it: next, the experiment step for the
    laptop - a sample of the front, each N full and --defs-only, repeated; time per call (run phase)
    and per word (compile phase), each against s6 - with --calls at least 40 N, as below 30,000's
    definitions (41 s on s6 here) swamp a fixed 200,000 calls.
@@ -283,14 +289,20 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    133 while within 6% in speed and 0.2% in size - many settings, one performance (414). Seed 59 (Iteration 403): no collapse - the tag-2 family's diversity 0.45-0.52 to
    the end - but no gain in its last third (smallest last at generation 88 of 143, speed's last 2% at 81); its front's
    genes against seeds 53-58's differ by up to 56 points (rtloopall, escape, supers, guard on; tos off).
+   **The replicates, answered** (433; seed 62's chain's review-checks.py spread at generation 133): seeds 60, 61 and
+   62 - one start - smallest 15,938, 15,939 and 15,929 bytes (0.06%), hypervolume within 0.7%, fastest 0.1111, 0.1108
+   and 0.1164 (5.05%); gene usage 7.5-11.8 points apart a pair. One basin at the small end; at the fast end runs of one
+   start stop about 5% apart by chance - Iteration 393's prediction 4's condition: the case for an escape mechanism
+   (islands or immigrants, item 4e) at the fast end. The owner's call.
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
    machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
    none faster on any host than the front's fastest (results/xcheck-seed58.md).
-   **The best design across the classes - head to head in seed 62's chain** (the owner, Iteration 430): bf439eb307 (seed 60, rejected by its selection - its record in results/candidates-generic.md), 11e5884401 and
+   **The best design across the classes - head to head in seed 63's chain** (the owner, Iteration 430; seed 62's
+   chain ran from 425's bundle, before it): bf439eb307 (seed 60, rejected by its selection - its record in results/candidates-generic.md), 11e5884401 and
    ad56a8e0fd (seed 58's front) asked for by id on dream at 32 and 64 bits and on the Tegra (REMOTES); review-checks.py
    generic - now in process-seed.sh's summary - ranks every design measured on all three classes by the geometric mean
    of its speeds, vetoing one more than 25% behind a class's best. On seed 61's chain: bf439eb307 0.455, every front
-   design measured on all three vetoed (0.780 and slower). At seed 62's processing: read it, then the --also lists out
+   design measured on all three vetoed (0.780 and slower). At seed 63's processing: read it, then the --also lists out
    of REMOTES (the Tegra's rebuild test's with them).
 4e. **Mechanisms not yet genes** (Iteration 407: lab/evolve/GENES.md's "Not yet" and the open items). **The register
    machine - parked** (418-424, results/wip-regmachine/README.md): priced at Iterations 29 and 32 as the largest prize;

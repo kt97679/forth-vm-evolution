@@ -48,4 +48,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 62 tag2 11h widths noevolved then experiment footprint.py then experiment review-checks.py spread
+seed 63 11h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8

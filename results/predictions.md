@@ -704,3 +704,25 @@ Seeds 60 and 61, the same setup, landed at the same ends by their own measures: 
 
 1. Its fastest within 3% of 0.110 and its smallest within 0.5% of 15,907 bytes, by its own measures.
 2. At 32 bits the same two death classes and no other - the batch that fixes them comes after it.
+
+## Seed 62, scored (Iteration 433)
+
+Seed 62's chain ran from Iteration 425's bundle (017b7ca97).
+
+- **Iteration 393, the replicates** (seeds 60-62 at their common generation, 133): 1. one basin - right at the small
+  end (15,938, 15,939, 15,929 bytes: 0.06%) and in hypervolume (0.7%); the fastest at the edge, 5.05% (0.1108 to
+  0.1164) - just past 5%. 2. tuned differently, at most 8 points of gene usage apart - wrong for two pairs of three
+  (60-61 7.5, 61-62 9.6, 60-62 11.8); bss, lean and thinhdr on all three - but for 8 of seed 62's fast designs with bss
+  off and one with thinhdr off. 3. no collapse - right (diversity 0.488). 4. its condition met at the fast end: two
+  runs ended 5% faster than the third - the case for an escape mechanism, the owner's call.
+- **Iteration 397.1, footprint.py: each design within 2x of itself from 100 to 30,000 words - wrong**: 10 of 12 moved
+  1.6-3.8 times; the order held (Spearman 0.951 to 0.783).
+- **Iteration 407, the Tegra: every design of seed 61's front built - right**, its failure half untested (alignhot 0
+  on every design of that front).
+- **Iteration 408: about 10.5 hours - right** (10 h 20 min); 1. dream at 32 bits at least 20 designs - right (26);
+  2. footprint.py's tables written - right.
+- **Iteration 415: the spread's table over seeds 58-62 at one generation - right** (133).
+- **Iteration 425: 1. smallest within 0.5% of 15,907 - right (15,897); fastest within 3% of 0.110 - wrong (0.116,
+  +5.5%). 2. at 32 bits the same two classes - right** (1,966 failures, all known).
+- **Iterations 428 and 430, the Tegra's rebuild test and the head to head: not run** - after the bundle the chain ran
+  from; both are in seed 63's chain, their predictions with them.

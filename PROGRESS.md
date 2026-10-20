@@ -8377,3 +8377,37 @@ fastest tenth in one of the three.
 
 Files: results/gene-votes.md (new); lab/evolve/review-checks.py, lab/evolve/process-seed.sh, results/seed63-rules.md,
 results/README.md, HANDOFF.md.
+
+## Iteration 433 - 2026-10-20 - Claude
+
+**Seed 62 processed: seed 60's second replicate - its small end where theirs is, its fast end 5% behind; the replicates
+and the footprint answered; the after-seed-62 batch applied** (results/evolve-amd-ryzen-7-pro-8840hs-seed62.md).
+`seed 62 tag2 11h widths noevolved then experiment footprint.py then experiment review-checks.py spread` at 017b7ca97 -
+Iteration 425's bundle, so without 428-432's Tegra rebuild test and head to head, which move to seed 63's chain
+(REMOTES' comments say so). 38,837 designs in 10 h 20 min, generations 0-155; no verdict, no comparison step.
+
+Its ends by its own measures: fastest 0.116 (seeds 60, 61: 0.111, 0.110), smallest 15,897 bytes (15,930, 15,907), at
+32 bits 0.315 (the best of the three). Front 192, all tag-2; heldout 0.973 (the best yet), regret +1.6%; fast-end
+optimism 1.066; Q-best f30818656b, Q 0.204 of s6's. At 32 bits 1,966 failures, all known causes. Remote checks of seed
+61's front (results/xcheck-seed62.md): dream 0.943, 0.958, 0.945; the Tegra 0.847, all 16 built; two rejected designs
+faster than the front's fastest there.
+
+**The replicates** (review-checks.py spread over seeds 58-62 at generation 133): seeds 60-62 within 0.06% at the small
+end and 0.7% in hypervolume, 5.05% at the fastest - one basin at the small end, about 5% of chance at the fast end:
+Iteration 393's prediction 4's condition, the case for an escape mechanism - the owner's call (HANDOFF item 4c).
+**footprint.py** (12 of the front, 100-30,000 words): the order holds, weakening (Spearman 0.951 to 0.783), but the fast
+designs' lead over s6 shrinks from about 4x to 1.1-1.5x at 10,000 words - the small selection programs flatter the
+fast end; a footprint workload or a held-out check - the owner's call (item 2). The freeze against seed 62's front: 8
+fast designs with bss off and one with thinhdr off; with bss on each is 1,056 bytes smaller and alive.
+
+**The after-seed-62 batch applied**: batch-check PASS on a8cf8a1 (13 patches; tests, validate 7 of 7, jail); applied,
+git mv to results/applied-after-seed62/ with its citations; the after-seed-63 batch moved into results/pending/ (its
+paths followed; one routine sentence the path substitution had garbled rewritten). On the new master: the build, run-
+tests PASS, validate 7 of 7 IDENTICAL, jail PASS, the gate 192 of 192 alive with the frozen values, ans-check 0 of 49
+differ (its negative control caught) - the first background chain stopped silently after the jail, its last three
+steps run again - and the queued batch's batch-check PASS on 3b12b75. Predictions scored (9 right, 4 wrong, 2 not run);
+NEXT-RUN: seed 63's line; results/progress-by-run.md regenerated.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed62.md, results/xcheck-seed62.md (new); results/applied-after-seed62/
+(the batch); results/pending/ (the after-seed-63 batch); the 13 patches' files; lab/evolve/NEXT-RUN, lab/evolve/REMOTES,
+results/predictions.md, results/progress-by-run.md, results/README.md, HANDOFF.md.
