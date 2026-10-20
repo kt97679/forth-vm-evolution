@@ -280,16 +280,15 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    133 while within 6% in speed and 0.2% in size - many settings, one performance (414). Seed 59 (Iteration 403): no collapse - the tag-2 family's diversity 0.45-0.52 to
    the end - but no gain in its last third (smallest last at generation 88 of 143, speed's last 2% at 81); its front's
    genes against seeds 53-58's differ by up to 56 points (rtloopall, escape, supers, guard on; tos off).
-4d. **The best design across the machine classes - measured head to head in seed 62's chain** (the owner, Iteration
-   430): bf439eb307 (seed 60, rejected by its selection - its record in results/candidates-generic.md), 11e5884401 and
+4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
+   machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
+   none faster on any host than the front's fastest (results/xcheck-seed58.md).
+   **The best design across the classes - head to head in seed 62's chain** (the owner, Iteration 430): bf439eb307 (seed 60, rejected by its selection - its record in results/candidates-generic.md), 11e5884401 and
    ad56a8e0fd (seed 58's front) asked for by id on dream at 32 and 64 bits and on the Tegra (REMOTES); review-checks.py
    generic - now in process-seed.sh's summary - ranks every design measured on all three classes by the geometric mean
    of its speeds, vetoing one more than 25% behind a class's best. On seed 61's chain: bf439eb307 0.455, every front
    design measured on all three vetoed (0.780 and slower). At seed 62's processing: read it, then the --also lists out
    of REMOTES (the Tegra's rebuild test's with them).
-4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
-   machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
-   none faster on any host than the front's fastest (results/xcheck-seed58.md).
 4e. **Mechanisms not yet genes** (Iteration 407: lab/evolve/GENES.md's "Not yet" and the open items). **The register
    machine - parked** (418-424, results/wip-regmachine/README.md): priced at Iterations 29 and 32 as the largest prize;
    re-priced on code as it runs, on plain CV8 a fifth to a third of most workloads' dispatches could be taken in as
