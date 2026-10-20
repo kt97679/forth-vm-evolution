@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""footprint.py DB [DB ...] [--sample K] [--sizes N,N,...] [--rounds R] [--calls-per-word C]
+"""footprint.py DB [DB ...] [--sample K] [--fastest] [--sizes N,N,...] [--rounds R] [--calls-per-word C]
+
+--fastest (Iteration 436, results/drafts/footprint-gate-435.md): the K fastest designs of the front, not K spread
+over it - the held-out check after each run: do the fastest on small programs stay the fastest at 10,000 words?
 - does the front's speed hold as a program's code footprint grows? (Iteration 371;
 results/generalization.md, section 3)
 
@@ -27,6 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
 ap.add_argument('dbs', nargs='+')
 ap.add_argument('--sample', type=int, default=12)
+ap.add_argument('--fastest', action='store_true')   # Iteration 436
 ap.add_argument('--sizes', default='100,1000,10000,30000')
 ap.add_argument('--rounds', type=int, default=5)
 ap.add_argument('--calls-per-word', type=int, default=40)
@@ -78,8 +82,9 @@ R, sp, how = load(db)
 order = sorted(sp, key=lambda i: sp[i])
 k = max(1, min(a.sample, len(order)))
 pick = sorted({order[round(j * (len(order) - 1) / max(1, k - 1))] for j in range(k)}, key=lambda i: sp[i])
+if a.fastest: pick = order[:k]                        # Iteration 436: the fastest k, the held-out check's
 print('# Footprint: does the front\'s speed hold as the code grows? (lab/evolve/footprint.py)\n')
-print('Front: %s, %s (%d designs); sampled %d by selection speed, fastest to slowest. Sizes %s; calls %d a word,'
+print('Front: %s, %s (%d designs); sampled %d by selection speed' + (' - the fastest' if a.fastest else '') + ', fastest to slowest. Sizes %s; calls %d a word,'
       ' at least 200,000; %d rounds, medians.\n' % (db, how, len(order), len(pick), ', '.join(map(str, SIZES)), a.calls_per_word, a.rounds))
 scratch = os.path.join(E.EV, 'footprint'); shutil.rmtree(scratch, ignore_errors=True); os.makedirs(scratch)
 progs = {}

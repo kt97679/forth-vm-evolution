@@ -1,0 +1,123 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 29fa8b4..b6c17ff 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1259,6 +1259,8 @@ def reach_lethal(g):
+     lived: those still run - jailed."""
+     return g['enc'] == 'cv8' and g.get('scale', 0) == 0 and not (g.get('varcall') and g.get('doesfar'))
+ FASTGATE = [20, 1.05]   # Iteration 391 (the owner): the fast end measured twice - fast_gate(), evaluate(); --fastgate N
++ISLANDS = [int(os.environ.get('EVOLVE_ISLANDS', 1))]   # Iteration 436 (results/drafts/escape-mechanism-435.md): --islands K
++MIGRATE = [int(os.environ.get('EVOLVE_MIGRATE', 10))]  # generations between migrations, a ring
+ def fast_gate(R):
+     """The speed under which a child is measured twice: 5% above the FASTGATE[0]-th fastest design alive so
+     far - the fast end, and the noise band around it. The fast end's in-run speeds were ~10% optimistic
+@@ -2002,7 +2004,8 @@ def main(argv):
+     if '-h' in argv or '--help' in argv:
+         print(__doc__); return
+     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
+-             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate'}
++             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate', '--islands'}
++    if '--islands' in argv: ISLANDS[0] = int(argv[argv.index('--islands') + 1])   # Iteration 436
+     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
+     if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
+         if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
+@@ -2178,18 +2181,13 @@ def main(argv):
+         pop.append(get(g, [], 'seeded ' + how, 0))
+     flush()
+     attic = []   # Iteration 188: demoted designs with genes the population lost
+-    for gen in range(1, G + 1):
+-        if UNTIL and time.time() >= UNTIL:
+-            print('  the deadline (--until): no generation %d' % gen, flush=True); break
+-        live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
+-        order, rk, cd = rank(live, R)
++    def breed(live, rk, cd, count, gen):   # Iteration 436: one island's children (all of them with one island)
++        kids = []
+         def pick():
+             if attic and rnd.random() < ATTIC_P: return rnd.choice(attic)   # Iteration 188
+             a, b = rnd.sample(live, 2) if len(live) > 1 else (live[0], live[0])
+             return a if (rk[a], -cd[a]) <= (rk[b], -cd[b]) else b
+-        kids = []
+-        print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
+-        for _ in range(N):
++        for _ in range(count):
+             p1, p2 = pick(), pick()
+             same = [i for i in live if i != p1 and R[i]['genome']['enc'] == R[p1]['genome']['enc']]
+             if same and rnd.random() < 0.8: p2 = rnd.choice(same)   # mostly within the species
+@@ -2206,13 +2204,49 @@ def main(argv):
+                     g, h = mutate(g, rnd); how = (how + '; ' if how else '') + h
+                 if gid(g) not in seen: break
+             kids.append(get(g, parents, how + ('; via the attic' if set(parents) & set(attic) else ''), gen))
+-        flush()
+-        live = [i for i in dict.fromkeys(pop + kids) if R[i]['status'] == 'ok']
++        return kids
++    def survive(members, kids, n, qkeep):   # Iteration 436: survival within one island (the population, with one)
++        live = [i for i in dict.fromkeys(members + kids) if R[i]['status'] == 'ok']
+         order = rank(live, R)[0]
+         best_of = [next(i for i in order if R[i]['genome']['enc'] == f) for f in FAMILIES
+                    if any(R[i]['genome']['enc'] == f for i in order)]   # no family dies out by crowding
+-        qbest = sorted((i for i in order if R[i].get('rss')), key=lambda i: qual(R[i]))[:Q_KEEP]   # the knee survives
+-        pop = list(dict.fromkeys(best_of + qbest + order))[:max(N, len(best_of) + len(qbest))]
++        qbest = sorted((i for i in order if R[i].get('rss')), key=lambda i: qual(R[i]))[:qkeep]   # the knee survives
++        return list(dict.fromkeys(best_of + qbest + order))[:max(n, len(best_of) + len(qbest))], order
++    def migrants(members):   # Iteration 436: an island's two fastest and its best by Q
++        al = [i for i in members if R[i]['status'] == 'ok']
++        fast = sorted(al, key=lambda i: R[i].get('speed') or 9e9)[:2]
++        return list(dict.fromkeys(fast + sorted((i for i in al if R[i].get('rss')), key=lambda i: qual(R[i]))[:1]))
++    isl = []
++    for gen in range(1, G + 1):
++        if UNTIL and time.time() >= UNTIL:
++            print('  the deadline (--until): no generation %d' % gen, flush=True); break
++        if ISLANDS[0] <= 1:
++            live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
++            order, rk, cd = rank(live, R)
++            print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
++            kids = breed(live, rk, cd, N, gen)
++            flush()
++            pop, order = survive(pop, kids, N, Q_KEEP)
++        else:   # Iteration 436 (results/drafts/escape-mechanism-435.md): islands, each ranked and bred alone
++            k = ISLANDS[0]; n = max(2, N // k)
++            if not isl: isl = [list(dict.fromkeys(pop))[j::k] for j in range(k)]
++            made = []
++            for j in range(k):
++                live = [i for i in dict.fromkeys(isl[j]) if R[i]['status'] == 'ok'] or [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok'][:2]
++                order, rk, cd = rank(live, R)
++                print('  generation %d, island %d: %d alive, front %d' % (gen, j, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
++                made.append(breed(live, rk, cd, n, gen))
++            flush()
++            pool = list(dict.fromkeys([i for members in isl for i in members] + [i for kids in made for i in kids]))   # for the attic
++            for j in range(k): isl[j] = survive(isl[j], made[j], n, max(1, Q_KEEP // k))[0]
++            if gen % MIGRATE[0] == 0:   # a ring: each island's migrants join the next, which keeps its best n
++                moving = [migrants(isl[j]) for j in range(k)]
++                for j in range(k):
++                    t = (j + 1) % k
++                    isl[t] = survive(isl[t], [i for i in moving[j] if i not in isl[t]], n, max(1, Q_KEEP // k))[0]
++                print('  generation %d: migrants %s' % (gen, ' '.join('%d>%d %d' % (j, (j + 1) % k, len(moving[j])) for j in range(k))), flush=True)
++            pop = list(dict.fromkeys(i for members in isl for i in members))
++            order = rank([i for i in pool if R[i]['status'] == 'ok'], R)[0]   # every candidate, as with one: the demoted reach the attic
+         attic = attic_of(order, pop, attic, R) if ATTIC else []
+         print('  the attic: %d designs, %d gene values no survivor has' % (len(attic),
+               len(set(g for i in attic for g in genes_of(R[i])) - set(g for i in pop for g in genes_of(R[i])))), flush=True)
+diff --git a/lab/evolve/next-run.sh b/lab/evolve/next-run.sh
+index 2ff30eb..baaa7fa 100755
+--- a/lab/evolve/next-run.sh
++++ b/lab/evolve/next-run.sh
+@@ -171,6 +171,10 @@ case " $* " in *" fromzero "*) FROMZERO=1; NOCARRY=1; set -- $(printf '%s\n' "$@
+ # anchoring test as seed 36 ran it, before those founders existed.
+ NOEVOLVED=${NEXT_RUN_NOEVOLVED:-}
+ case " $* " in *" noevolved "*) NOEVOLVED=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx noevolved) ;; esac
++# Iteration 436 (the owner; results/drafts/escape-mechanism-435.md): "islands" - the population in four islands, each
++# ranked and bred alone, a ring of migrants every 10 generations (evolve.py --islands 4).
++ISLANDS=
++case " $* " in *" islands "*) ISLANDS=4; set -- $(printf '%s\n' "$@" | grep -vx islands) ;; esac
+ case "${1:-none}" in
+     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
+     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
+@@ -490,7 +494,7 @@ fi
+ step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
+ python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
+ TICK=$!
+-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} "$@" >> evolve.log 2>&1 \
++python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} ${ISLANDS:+--islands "$ISLANDS"} "$@" >> evolve.log 2>&1 \
+     || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
+ kill $TICK 2>/dev/null || true
+ tail -3 evolve.log

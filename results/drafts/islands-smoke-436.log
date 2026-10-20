@@ -1,0 +1,141 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+2 workers, on cpus 0 (shared: fewer cores than workers)
+    a9a65d6057 speed 1.496 size 27264   hand-made s0-cell
+    e97f72d39e speed 1.749 size 16776   hand-made s1-sod16
+    99d582de7d speed 1.257 size 16072   hand-made s2-cpt16
+    d113518703 speed 1.302 size 15904   hand-made s3-cpt16f
+    18a2c3e300 speed 1.332 size 14736   hand-made s4-cv8
+    31f61139fa speed 0.9815 size 12592  hand-made s5-cv8spec
+    40e755e2ae speed 0.9661 size 9265   hand-made s6-cv8b
+    68d47e90f3 speed 1.354 size 8751    founder: s4-cv8 + 24 pairs, run-time fusion
+    885e48cc6e speed 1.013 size 7953    founder: s6-cv8b + 2 pairs
+    912bad6160 speed 1.051 size 8334    founder: s6-cv8b + 2 pairs, run-time fusion
+    66bdb5b3b3 speed 1.286 size 8062    founder: s4-cv8 + format-10 opcodes + 20 pairs
+    8123f8c86f speed 1.024 size 7945    founder: s6-cv8b + EXECUTE, I as opcodes
+    dda6c6d477 speed 1.026 size 7644    founder: s6-cv8b + escape, 7 words, 24 pairs
+    68ac6b97da speed 0.941 size 7964    founder: s6-cv8b + escape, all format-10 opcodes, pairs, tests fused a
+    6805bb941a speed 0.9696 size 7953   founder: s6-cv8b + the JIT, jitx, jitloop, jitinl
+    6b3b5bbc96 speed 0.2145 size 8448   founder: seed 37's fastest (38446e6c09) + jitloop, jitinl
+    45d51ccbea speed 1.02 size 8250     founder: seed 40's small-end knee (d99e3d9ed9) + rtimm=2, DUP+I, DUP<I
+  generation 1, island 0: 5 alive, front 1
+  generation 1, island 1: 4 alive, front 2
+  generation 1, island 2: 4 alive, front 1
+  generation 1, island 3: 4 alive, front 2
+    52cba46b26 speed 1.305 size 7574    crossover; mutation: gotodup=128
+    84ba6704be speed 1.171 size 7929    crossover; borrowed hotcalls from a9a65d6057; mutation: varslot=0
+    ac43587ff9 speed 1.056 size 7644    mutation: dskew=1
+    20bb9f07bd speed 1.001 size 7644    mutation: kstack=1, peel=1
+    eb94611501 speed 0.9866 size 7969   crossover; mutation: noreorder=1
+    08cbceba45 speed 1.094 size 8334    mutation: nogcse=1
+    63321f88de speed 0.9718 size 8334   mutation: guard=1, hotinl=10
+    003d03b2e2 speed 0.9648 size 7964   mutation: noreorder=1
+    371913e25d speed 1.046 size 7963    borrowed folds+supers from 99d582de7d; mutation: kfast=1
+    9980c26008 speed 1.397 size 8062    mutation: jitos=1, gotodup=128
+    ce6761ab09 speed 1.055 size 7969    crossover; borrowed rtfuse+rtimm from 99d582de7d; mutation: kstack=1, 
+    ac0f1758dd speed 1.275 size 8062    mutation: varslot=1
+    844d2dbaeb speed 0.199 size 8448    mutation: jitvar=1
+    cafbfbd810 speed 0.203 size 8448    mutation: noreorder=0
+    2c6153829f speed 0.955 size 8266    crossover; mutation: klookup=0
+    13409540b9 speed 0.9974 size 7945   mutation: d256=1
+  the attic: 6 designs, 20 gene values no survivor has
+  generation 2, island 0: 4 alive, front 2
+  generation 2, island 1: 4 alive, front 2
+  generation 2, island 2: 4 alive, front 1
+  generation 2, island 3: 4 alive, front 2
+    a0c0c42dfc speed 1.305 size 7795    crossover; mutation: jit=0
+    9fecd90cc3 speed 1.124 size 7953    crossover; mutation: ipaclone=1, noinls=1; via the attic
+    af9ed52b34 speed 1.137 size 8607    crossover; mutation: noreorder=0
+    0c2d3fb96f speed 1.351 size 7574    mutation: +fold <, t2hot=0.05
+    486c70e1f8 speed 1.042 size 8358 twice 1.048/1.036 crossover; mutation: rtiplus=1
+    82ba8e1751 speed 1.011 size 8665 twice 0.9798/1.044 mutation: rtimm=1
+    1a24c24c39 speed 0.961 size 7964 twice 0.9135/1.011 mutation: jitvar=1, lto=1
+    9ea75c7218 speed 0.9442 size 8083 twice 0.9914/0.8992 crossover; mutation: jitret=1
+    34af137730 speed 1.01 size 7953 twice 1.035/0.9858 mutation: noreorder=1, opbody=1
+    836412bbc2 speed 1.124 size 7953    mutation: align1=1
+    63a0ca5803 speed 0.9991 size 8173 twice 0.9706/1.028 borrowed rtempty from 13409540b9; mutation: -spec small; via the attic
+    19b4638faa speed 1.355 size 15904   mutation: noreorder=1, -O3
+    5a7f5b4703 speed 0.2019 size 8448 twice 0.2006/0.2031 crossover; mutation: alignfn=0
+    ccfbabe4cf speed 1.011 size 8502 twice 0.9927/1.029 borrowed opbody from d113518703; mutation: fsys=1; via the attic
+    08b453d3fe speed 0.1902 size 8448 twice 0.1945/0.186 crossover; mutation: guard=0
+  generation 2: migrants 0>1 2 1>2 3 2>3 2 3>0 2
+  the attic: 19 designs, 41 gene values no survivor has
+  generation 3, island 0: 4 alive, front 2
+  generation 3, island 1: 4 alive, front 2
+  generation 3, island 2: 4 alive, front 2
+  generation 3, island 3: 4 alive, front 2
+    b4823550c5 speed 0.9921 size 7953 twice 1.011/0.9736 mutation: guard=1; via the attic
+    c88374f8d6 speed 0.2276 size 8496 twice 0.2355/0.22 crossover; borrowed opt+nogcse+nocrossjump+nocet+align1+noreorder+peel
+    4b0fb8c6df speed 0.2211 size 8448 twice 0.2201/0.2221 mutation: jitinl=0
+    19f010e058 speed 0.2055 size 8448 twice 0.2105/0.2007 borrowed opt+nogcse+nocrossjump+nocet+align1+noreorder+peel+ipaclone+t
+    42ed2f2543 speed 1.573 size 8383    crossover; borrowed opbody from eb94611501; mutation: jitk=2; via the 
+    917383f58c speed 1.122 size 7713    crossover; borrowed rtfuse+rtimm from 08cbceba45; mutation: nocrossjum
+    b69f1bcd85 speed 1.043 size 8665 twice 1.039/1.048 crossover; borrowed noinls from 13409540b9; mutation: super C! R>->R> 
+    995ffd50b2 speed 1.014 size 8350 twice 1.009/1.02 mutation: klookup=1, escape=1
+    6831959cbc speed 1.426 size 9451    mutation: gotodup=128, fsys=4
+    f5a57fff37 speed 1.018 size 7953 twice 1.041/0.9949 mutation: nocet=1, dskew=1
+    b84070974d speed 1.066 size 7953    crossover; mutation: jitre=1, knumber=1
+    a6b0e218f7 speed 0.9983 size 8041 twice 0.9815/1.015 mutation: abortif=1
+    35e2fecbba speed 0.9574 size 7953 twice 0.9857/0.93 borrowed hotinl from ac43587ff9; mutation: jitloop=1, alignfn=1; via t
+    0ef5ed42b8 speed 0.2184 size 8448 twice 0.2062/0.2314 mutation: jithelp=1
+    d895917911 speed 0.4815 size 8392 twice 0.484/0.4791 mutation: alignhot=32:11, escape=0
+    004c4873ac speed 0.6838 size 8648 twice 0.7039/0.6643 crossover; borrowed kfast+tfind+kinput+klookup from 08cbceba45; mutati
+  the attic: 23 designs, 46 gene values no survivor has
+  generation 4, island 0: 4 alive, front 2
+  generation 4, island 1: 4 alive, front 2
+  generation 4, island 2: 4 alive, front 3
+  generation 4, island 3: 4 alive, front 2
+    0ecd446133 speed 0.1938 size 8400 twice 0.1872/0.2006 mutation: abortif=0
+    21dd3f95f9 speed 0.4784 size 8184 twice 0.4873/0.4696 crossover; mutation: rtempty=1
+    1b2bf98b29 speed 0.1947 size 8576 twice 0.1959/0.1935 mutation: opbody=0, jitret=1
+    cd3709e67a speed 1.027 size 8250    mutation: ipaclone=0, tail=1
+    76563d0e86 speed 1.278 size 8110    mutation: tag2=0
+    843926ae55 speed 1.011 size 8250 twice 1.007/1.015 mutation: bfind=1
+    fc9382d096 speed 0.986 size 8334 twice 1.002/0.9699 borrowed bss+thinhdr from 31f61139fa; mutation: varslot=0; via the att
+    b5ed6d8b99 speed 0.9925 size 8334 twice 1.008/0.9774 borrowed alignfn from 917383f58c; mutation: hotinl=20; via the attic
+    fe40800a39 speed 0.9323 size 7953 twice 0.9034/0.9621 borrowed escape+ops10+supers from 885e48cc6e; mutation: gotodup=32; vi
+    acf039d46e speed 0.9792 size 7953 twice 0.9916/0.967 crossover; mutation: hotinl=20, t2hot=0.05
+    546cb0afe1 speed 1.51 size 9435     crossover; borrowed folds+supers from 004c4873ac; mutation: jithelp=1,
+    32a8aaf4ee speed 0.7405 size 7984 twice 0.7252/0.7561 crossover; mutation: tag2=1
+    628a4a924a speed 0.2 size 8464 twice 0.1927/0.2075 mutation: fbuf=512, knumber=1
+    83d692b397 speed 0.785 size 7818 twice 0.7622/0.8085 crossover; mutation: alignhot=32
+    32e45690b2 speed 0.2051 size 8448 twice 0.2003/0.21 mutation: lto=1
+    1f633b269d speed 1.234 size 8751    mutation: alignfn=1; via the attic
+  generation 4: migrants 0>1 2 1>2 3 2>3 2 3>0 3
+  the attic: 26 designs, 46 gene values no survivor has
+
+The Q-best design (binary + image x run time x memory - the knee; information): 32e45690b2, speed 0.212, binary + image 30,844, memory 160 KB - Q 0.336 of s6-cv8b's.
+
+## The Pareto front
+
+| design | speed | re-measured | image | binary | binary + image | memory KB | sieve (held out) | genes, where they differ from s6-cv8b | how it was made |
+|---|---|---|---|---|---|---|---|---|---|
+| 08b453d3fe | 0.197 | - | 8,448 | 23,196 | 31,644 | 188 | 0.147 | nocet=1; align1=1; tracer=1; -! -= -@ -NEGATE -OR -ROT -XOR; 13 pairs: >R C!, SWAP R>, DROP !, DUP >R, ...; rtfuse=1; ops10=(FIND),(>NUMBER),THREAD-FIND,SCAN,SKIP,FILL,(PARSE),HASH,PLACE,?BRANCH8,UNLOOP,BRANCH8,(LOOP),I,CMOVE,(+LOOP),DUP?BRANCH,DUP?NBRANCH,=I?BRANCH,J,0<?BRANCH8,SWAP+I,(DO),?NBRANCH8,OVER?BRANCH8,<?BRANCH,0<?BRANCH,(LEAVE),EXECUTE,<?BRANCH8,(?DO),+!,DUP?NBRANCH8,?DUP,<>?BRANCH,=?BRANCH8,DUP?BRANCH8; escape=2; rtimm=1; rtloop=1; rtloopall=1; bss=1; kfast=1; tfind=1; kinput=1; klookup=1; thinhdr=1; tag2=1; jit=1; hotinl=20; opbody=1; t2wide=1; jitx=1; alignfn=1; noinls=1; abortif=1; jitloop=1; jitinl=1 | crossover; mutation: guard=0 |
+| 0ecd446133 | 0.201 | - | 8,400 | 22,844 | 31,244 | 184 | 0.112 | nocet=1; align1=1; noreorder=1; tracer=1; guard=1; -! -= -@ -NEGATE -OR -ROT -XOR; 13 pairs: >R C!, SWAP R>, DROP !, DUP >R, ...; rtfuse=1; ops10=(FIND),(>NUMBER),THREAD-FIND,SCAN,SKIP,FILL,(PARSE),HASH,PLACE,?BRANCH8,UNLOOP,BRANCH8,(LOOP),I,CMOVE,(+LOOP),DUP?BRANCH,DUP?NBRANCH,=I?BRANCH,J,0<?BRANCH8,SWAP+I,(DO),?NBRANCH8,OVER?BRANCH8,<?BRANCH,0<?BRANCH,(LEAVE),EXECUTE,<?BRANCH8,(?DO),+!,DUP?NBRANCH8,?DUP,<>?BRANCH,=?BRANCH8,DUP?BRANCH8; escape=2; rtimm=1; rtloop=1; rtloopall=1; bss=1; kfast=1; tfind=1; kinput=1; klookup=1; thinhdr=1; tag2=1; jit=1; hotinl=20; opbody=1; t2wide=1; jitx=1; alignfn=1; noinls=1; jitloop=1; jitinl=1; jitvar=1 | mutation: abortif=0 |
+| 32e45690b2 | 0.212 | - | 8,448 | 22,396 | 30,844 | 160 | 0.111 | nocet=1; align1=1; noreorder=1; tracer=1; guard=1; -! -= -@ -NEGATE -OR -ROT -XOR; 13 pairs: >R C!, SWAP R>, DROP !, DUP >R, ...; rtfuse=1; ops10=(FIND),(>NUMBER),THREAD-FIND,SCAN,SKIP,FILL,(PARSE),HASH,PLACE,?BRANCH8,UNLOOP,BRANCH8,(LOOP),I,CMOVE,(+LOOP),DUP?BRANCH,DUP?NBRANCH,=I?BRANCH,J,0<?BRANCH8,SWAP+I,(DO),?NBRANCH8,OVER?BRANCH8,<?BRANCH,0<?BRANCH,(LEAVE),EXECUTE,<?BRANCH8,(?DO),+!,DUP?NBRANCH8,?DUP,<>?BRANCH,=?BRANCH8,DUP?BRANCH8; escape=2; rtimm=1; rtloop=1; rtloopall=1; bss=1; kfast=1; tfind=1; kinput=1; klookup=1; thinhdr=1; tag2=1; jit=1; hotinl=20; opbody=1; t2wide=1; jitx=1; alignfn=1; noinls=1; abortif=1; jitloop=1; jitinl=1; jitvar=1; lto=1 | mutation: lto=1 |
+| 4b0fb8c6df | 0.229 | - | 8,448 | 22,260 | 30,708 | 180 | 0.140 | nocet=1; align1=1; noreorder=1; tracer=1; guard=1; -! -= -@ -NEGATE -OR -ROT -XOR; 13 pairs: >R C!, SWAP R>, DROP !, DUP >R, ...; rtfuse=1; ops10=(FIND),(>NUMBER),THREAD-FIND,SCAN,SKIP,FILL,(PARSE),HASH,PLACE,?BRANCH8,UNLOOP,BRANCH8,(LOOP),I,CMOVE,(+LOOP),DUP?BRANCH,DUP?NBRANCH,=I?BRANCH,J,0<?BRANCH8,SWAP+I,(DO),?NBRANCH8,OVER?BRANCH8,<?BRANCH,0<?BRANCH,(LEAVE),EXECUTE,<?BRANCH8,(?DO),+!,DUP?NBRANCH8,?DUP,<>?BRANCH,=?BRANCH8,DUP?BRANCH8; escape=2; rtimm=1; rtloop=1; rtloopall=1; bss=1; kfast=1; tfind=1; kinput=1; klookup=1; thinhdr=1; tag2=1; jit=1; hotinl=20; opbody=1; t2wide=1; jitx=1; alignfn=1; noinls=1; abortif=1; jitloop=1; jitvar=1 | mutation: jitinl=0 |
+| 21dd3f95f9 | 0.495 | - | 8,184 | 20,700 | 28,884 | 184 | 0.752 | nocet=1; align1=1; noreorder=1; peel=1; tracer=1; spec=loc,tiny,small,imm; -= -C@ -NEGATE -OR -OVER -R@ -ROT -SWAP -U< -XOR; ops10=THREAD-FIND,DUP+I,DUP<I,+!,?BRANCH8,CMOVE,BRANCH8,?DUP,UNLOOP,SCAN,(LOOP),SKIP; rtloop=1; bss=1; kfast=1; tfind=1; thinhdr=1; tag2=1; t2hot=2; jit=1; hotinl=20; opbody=1; t2wide=1; rtempty=1; jitx=1; alignfn=1; noinls=1; abortif=1; jitloop=1; jitinl=1 | crossover; mutation: rtempty=1 |
+| 32a8aaf4ee | 0.766 | - | 7,984 | 20,636 | 28,620 | 184 | 1.084 | bss=1; thinhdr=1; tag2=1; jit=1; jitx=1; jitloop=1; jitinl=1 | crossover; mutation: tag2=1 |
+| 83d692b397 | 0.813 | - | 7,818 | 16,616 | 24,434 | 156 | 0.802 | nocet=1; ops10=THREAD-FIND,=I?BRANCH; bss=1; kfast=1; tfind=1; thinhdr=1; tag2=1; opbody=1; alignfn=1; noinls=1 | crossover; mutation: alignhot=32 |
+| fe40800a39 | 0.965 | - | 7,953 | 12,552 | 20,505 | 136 | 1.129 | nocet=1; 2 pairs: DUP >R, C! R>; rtfuse=0; bss=1; thinhdr=1; gotodup=1; dskew=1 | borrowed escape+ops10+supers from 885e48cc6e; mutation: goto |
+| acf039d46e | 1.014 | - | 7,953 | 12,360 | 20,313 | 140 | 1.013 | nocet=1; bss=1; thinhdr=1 | crossover; mutation: hotinl=20, t2hot=0.05 |
+| 13409540b9 | 1.032 | - | 7,945 | 11,848 | 19,793 | 144 | 0.960 | d256=1; ops10=EXECUTE,I; bss=1; thinhdr=1 | mutation: d256=1 |
+| 843926ae55 | 1.046 | - | 8,250 | 10,768 | 19,018 | 140 | 1.469 | opt=Os; nocet=1; align1=1; noreorder=1; peel=1; ipaclone=1; tracer=1; tos=0; spec=loc,tiny,small,imm; varslot=0; -= -C! -DUP -OR -OVER -R> -R@ -ROT -SWAP -XOR; ops10=SWAP+I,THREAD-FIND,DUP+I,DUP<I,+!,?BRANCH8,CMOVE,BRANCH8,?DUP,UNLOOP,SCAN,(LOOP); rtimm=2; bss=1; kfast=1; tfind=1; thinhdr=1; swapi=1; tag2=1; t2hot=2; opbody=1; t2wide=1; fbuf=1; bfind=1 | mutation: bfind=1 |
+| 45d51ccbea | 1.056 | - | 8,250 | 10,736 | 18,986 | 136 | 1.458 | opt=Os; nocet=1; align1=1; noreorder=1; peel=1; ipaclone=1; tracer=1; tos=0; spec=loc,tiny,small,imm; varslot=0; -= -C! -DUP -OR -OVER -R> -R@ -ROT -SWAP -XOR; ops10=SWAP+I,THREAD-FIND,DUP+I,DUP<I,+!,?BRANCH8,CMOVE,BRANCH8,?DUP,UNLOOP,SCAN,(LOOP); rtimm=2; bss=1; kfast=1; tfind=1; thinhdr=1; swapi=1; tag2=1; t2hot=2; opbody=1; t2wide=1; fbuf=1 | founder: seed 40's small-end knee (d99e3d9ed9) + rtimm=2, DU |
+| 52cba46b26 | 1.351 | - | 7,574 | 11,024 | 18,598 | 136 | 1.253 | opt=Os; nocet=1; noreorder=1; ipaclone=1; tracer=1; tos=0; -! -+ -< -C! -C@ -LIT -R> -R@; ops10=SWAP+I,+!,?BRANCH8,UNLOOP,(LOOP),HASH,SKIP,<?BRANCH8,(?DO),(DO); bss=1; kfast=1; thinhdr=1; swapi=1; tag2=1; t2wide=1; fbuf=1; gotodup=2 | crossover; mutation: gotodup=128 |
+| 0c2d3fb96f | 1.399 | - | 7,574 | 10,992 | 18,566 | 136 | 1.391 | opt=Os; nocet=1; noreorder=1; ipaclone=1; tracer=1; tos=0; -! -+ -C! -C@ -LIT -R> -R@; ops10=SWAP+I,+!,?BRANCH8,UNLOOP,(LOOP),HASH,SKIP,<?BRANCH8,(?DO); bss=1; kfast=1; thinhdr=1; swapi=1; tag2=1; t2hot=2; t2wide=1; fbuf=1; gotodup=2 | mutation: +fold <, t2hot=0.05 |
+| 6831959cbc | 1.476 | - | 9,451 | 7,864 | 17,315 | 136 | 1.559 | align1=1; bss=1; thinhdr=1; gotodup=2; fsys=4 | mutation: gotodup=128, fsys=4 |
+
+## How the front came about
+
+- `08b453d3fe`: from founder: seed 37's fastest (38446e6c09) + jitloop, jitinl, then mutation: noreorder=0 / crossover; mutation: guard=0
+- `0ecd446133`: from founder: seed 37's fastest (38446e6c09) + jitloop, jitinl, then mutation: jitvar=1 / mutation: abortif=0
+- `32e45690b2`: from founder: seed 37's fastest (38446e6c09) + jitloop, jitinl, then mutation: jitvar=1 / mutation: lto=1
+- `4b0fb8c6df`: from founder: seed 37's fastest (38446e6c09) + jitloop, jitinl, then mutation: jitvar=1 / mutation: jitinl=0
+- `21dd3f95f9`: from founder: seed 40's small-end knee (d99e3d9ed9) + rtimm=2, DUP+I, DUP<I, then crossover; mutation: rtempty=1
+- `32a8aaf4ee`: from founder: s6-cv8b + the JIT, jitx, jitloop, jitinl, then crossover; mutation: tag2=1
+- `83d692b397`: from founder: seed 37's fastest (38446e6c09) + jitloop, jitinl, then mutation: jitvar=1 / crossover; mutation: alignhot=32
+- `fe40800a39`: from founder: s6-cv8b + the JIT, jitx, jitloop, jitinl, then mutation: nocet=1, dskew=1 / borrowed escape+ops10+supers from 885e48cc6e; mutation: gotodup=32; vi
+- `acf039d46e`: from founder: s6-cv8b + the JIT, jitx, jitloop, jitinl, then mutation: nocet=1, dskew=1 / crossover; mutation: hotinl=20, t2hot=0.05
+- `13409540b9`: from founder: s6-cv8b + EXECUTE, I as opcodes, then mutation: d256=1
+- `843926ae55`: from founder: seed 40's small-end knee (d99e3d9ed9) + rtimm=2, DUP+I, DUP<I, then mutation: bfind=1
+report: /home/claude/forth-vm-evolution/build/evolve/report.md

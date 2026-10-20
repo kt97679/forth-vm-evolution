@@ -8443,3 +8443,23 @@ generations. Recommended: the held-out check first, a gate or workload only if t
 
 Files: results/drafts/escape-mechanism-435.md, results/drafts/footprint-gate-435.md, results/drafts/footprint-gate-435.out
 (new); results/README.md, HANDOFF.md.
+
+## Iteration 436 - 2026-10-20 - Claude
+
+**The islands built, as patch 3 of the pending batch; the held-out footprint check put in seed 63's chain** (the owner:
+implement both for the next run). Islands go with the batch, not into seed 63 - its batch and its pre-registered rules
+are judged without a second change - so the first run that can say "islands" is seed 64.
+
+Islands (results/pending/islands-after-seed63.patch): evolve.py --islands K - the population in K islands, each ranked
+and bred alone, a share of the Q keepers each, a ring of migrants every 10 generations (each island's two fastest and
+its best by Q); the run's front every island's together. The generation loop's breeding and survival became two
+helpers, unchanged for one island. next-run.sh: the word "islands" - --islands 4. Tested here: 16 designs, 4 generations,
+four islands migrating every 2 - migrants at 2 and 4, the attic fed from every island, the fast gate as usual, the
+report written; and one island, two generations, as before (results/drafts/islands-smoke-436*.log).
+
+The footprint check: footprint.py --fastest (the K fastest of the front, not K spread over it); NEXT-RUN's seed 63 line
+ends `then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3` - about 15 minutes past the
+10 hours. Predicted: within the 16 fastest, Spearman under 0.6 at 10,000 words.
+
+Files: results/pending/islands-after-seed63.patch, results/drafts/islands-smoke-436.log, islands-smoke-436-one.log (new);
+lab/evolve/footprint.py, lab/evolve/NEXT-RUN, results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
