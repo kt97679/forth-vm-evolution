@@ -118,9 +118,26 @@ bytes: 465 for the loop compiler, 608 for the immediates, 3-4% of the smallest d
 the small end goes without them; a register stage would cost bytes the same way. **The lever is the bytes**: a run-time
 compiler that costs a hundred bytes instead of five or six hundred would be worth taking even at the small end.
 
+## Where the bytes go (Iteration 421, bytes-421.py, its output bytes-421.out)
+
+The engine does not grow in either case: the handlers are there already. Every byte is the image's - the overlay's words,
+from the converter's map:
+
+- **The immediates, rtimm=2: +608.** Nine words added - IMM+ 89 bytes, SUPER-TABLE 88, SMALL-LIT? 85, SUPER-OP 52,
+  FOLD-TABLE 32, ?BRANCH, 26, IMM-OPS 16, LIT-PREV 16, FOLD-DEFAULTS 15 - and their headers about 106; COMPILE, and
+  LITERAL grow 59. **The pair lookup, SUPER-TABLE and SUPER-OP, is 140 bytes of it, and with rtimm=2 there are no pairs.**
+- **The loop compiler, rtloop=1: +465.** Twelve words - X10-OP 55, X10-XTS 48, COMPILE,8 32, RESOLVE-LEAVE16 27, ?DO8
+  25, DO8 22, LEAVE8 22... - and headers about 125. Its cheaper form exists: **rtloop=2** (Iteration 190) builds the
+  internal words headerless with the converter's switch - +361 on this design.
+- **Names across the image**: on the smallest design the 322 words' names and links are about 2,679 bytes, 32% of the
+  image. Hiding the internal ones was priced (-2.7 to -2.8%, Iterations 222-223) and deferred by the owner - reusable
+  helpers keep their names (Iteration 227): only an overlay's own internal words may go, as rtloop=2 does.
+
 ## Next
 
-1. Where the 608 and the 465 bytes go - which overlay words, the fuser's general machinery or the forms themselves.
-2. A lean immediates-only overlay (and a lean loop compiler), prototyped here as a patch, its bytes and its dispatches
+1. **A cheaper rtimm=2**, as rtloop=2 is to rtloop: the overlay without the pair lookup when there are no pairs (-140),
+   its internal words headerless (about -90) - 608 toward 380 bytes for fib's -13.6%. Prototyped here as a patch and
    measured against these rows.
+2. The loop compiler past rtloop=2: X10-OP and X10-XTS look its opcodes up at run time (103 bytes); constants written by
+   the converter, as LOOP-OPS is, might do.
 3. A general register stage only if a later workload shows move-heavy code these do not reach.

@@ -8150,3 +8150,19 @@ the same way. Next in the work directory: where those bytes go, then a lean imme
 compiler, measured against these rows.
 
 Files: results/wip-regmachine/existing-420.py, existing-420.out (new); results/wip-regmachine/README.md, HANDOFF.md.
+
+## Iteration 421 - 2026-10-20 - Claude
+
+**Where the run-time compilers' bytes go** (results/wip-regmachine/bytes-421.py, its output bytes-421.out). The owner:
+proceed. On seed 58's smallest design, from the converter's map of the image's words: the engine grows by nothing in
+either case. **rtimm=2, +608**: nine overlay words (IMM+ 89, SUPER-TABLE 88, SMALL-LIT? 85, SUPER-OP 52, FOLD-TABLE 32,
+?BRANCH, 26, IMM-OPS 16, LIT-PREV 16, FOLD-DEFAULTS 15), headers about 106, COMPILE, and LITERAL +59 - and the pair
+lookup, 140 bytes, serves no pairs: rtimm=2 has none. **rtloop=1, +465**: twelve words (X10-OP 55, X10-XTS 48,
+COMPILE,8 32...), headers about 125; its cheaper form exists - rtloop=2, internal words headerless (Iteration 190): +361
+here. Across the image, names and links are about 2,679 bytes (32%); hiding internal names in general was priced and
+deferred by the owner (222-223, 227) - an overlay's own internal words may go, as rtloop=2 does.
+
+Next in the work directory: a cheaper rtimm=2 - no pair lookup without pairs, internal words headerless - 608 toward
+380 bytes, prototyped as a patch and measured.
+
+Files: results/wip-regmachine/bytes-421.py, bytes-421.out (new); results/wip-regmachine/README.md, HANDOFF.md.

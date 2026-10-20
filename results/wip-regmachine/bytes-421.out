@@ -1,0 +1,9 @@
+as it is: engine 5696, image 8450 bytes; 322 words, bodies 5652 bytes
+
+rtimm=2: engine +0, image +608 bytes; 9 words added - bodies 419 bytes, headers about 106; 12 words changed, +72 bytes
+  added, largest: IMM+ 89; SUPER-TABLE 88; SMALL-LIT? 85; SUPER-OP 52; FOLD-TABLE 32; ?BRANCH, 26; IMM-OPS 16; LIT-PREV 16; FOLD-DEFAULTS 15
+  changed: COMPILE, +32; LITERAL +27; FOLD-OP +5; BEGIN +3; DO +3; (ABORT") +2; (.") +1; D. +1
+
+rtloop=1: engine +0, image +465 bytes; 12 words added - bodies 296 bytes, headers about 125; 17 words changed, +25 bytes
+  added, largest: X10-OP 55; X10-XTS 48; COMPILE,8 32; RESOLVE-LEAVE16 27; ?DO8 25; DO8 22; LEAVE8 22; LOOP-OPS 16; X10-OPS 16; CHAIN16? 13; RESOLVE-LEAVES 11; W@ 9
+  changed: COMPILE, -16; LOOP +16; +LOOP +16; LEAVE +9; DO -3; (ABORT") +2; 32, -2; FS-WRITE +2
