@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 438.
+- master: Iteration 439.
 - **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
   (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
   0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
@@ -288,6 +288,11 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    the after-seed-62 batch (402, patch 7). And tail, on no front of seeds 53-58: since seed 57 every tail design was
    the slowest at 32 bits for a fault (Iteration 400) - judge it again after seed 63. Seed 59's front: msc, scale and tail 0% too
    (Iteration 403, results/drafts/gene-usage-53-59.md).
+4b2. **Reachability - the audit's finding** (Iteration 439, results/audit-genes-designs-439.md): rtloopall needs all eight
+   loop words in the format-10 list; in seed 62 only 92 of the 5,819 genomes that set it could express it (J, UNLOOP,
+   (LEAVE) missing), its front share 1-65% run to run, rtiplus blocked behind it. Proposed: a repair - rtloopall turned
+   on puts the missing loop words first in the list - a patch after seed 63, the owner's call. The audit's other
+   checks found the pipeline sound: the screen costs about 9 front-quality designs a run; the tail kinds build at 32 bits.
 4c. **A local minimum?** (the owner, Iterations 373 and 392; results/convergence-seed58.md maps five sources to their
    tests): a constraint - real (seed 58); the carry - none found (seed 60, 406); one start for every run - seeds 58-62; collapse inside
    a run - none in seed 58; the gene set's edge - only new mechanisms pass it (item 4). Gene usage against seeds 53-57

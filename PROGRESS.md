@@ -8495,3 +8495,23 @@ candidates (one run); and three of seed 62's front designs rely on the rtimm=2/r
 applied there, would change nothing.
 
 Files: lab/evolve/review-checks.py, lab/evolve/process-seed.sh, results/seed63-rules.md, HANDOFF.md.
+
+## Iteration 439 - 2026-10-20 - Claude
+
+**A deep audit: are good genes or promising designs being rejected?** (the owner; results/audit-genes-designs-439.md).
+Every place the pipeline turns designs away, checked against seed 62's database (38,210 CV8 designs) and seeds 58-62's
+fronts, on today's master: survival is guarded (the attic, the families' and Q's keepers); the surrogate screen works
+- 1 of 880 audited screened children reached the front against 5.3 expected - at a cost of about 9 front-quality
+designs a run; the reach limit goes with the freeze; the 32-bit tail failures are fixed - a design of each failing kind
+(tail GCC, tail clang, tailpn) built and lived at 32 bits here; the freeze, the rules and the tag-2 requirement as
+checked before; selection on the laptop alone a known blind spot, measured by seed 63's head to head.
+
+The genes (results/drafts/audit-genes-439.out, every CV8 gene set / expressed / on the fronts): **one real rejection -
+rtloopall**, blocked by its prerequisite, all eight loop words in the format-10 list: of 5,819 genomes setting it in
+seed 62, 92 could express it (J missing in 4,044, UNLOOP 3,380, (LEAVE) 3,250); its front share 28-65% in seeds 58-61,
+1% in 62 - chance - and rtiplus behind it (1 expressed). Proposed: a repair mutation, the missing loop words first in
+the list, a patch after seed 63. The rest: jithelp, jitre, jitret new (no founders; mutation reaches them); hotcalls and
+sharedcall dead under the tag by design, back in the free seed 63; tail and tailpn unblocked; the rare genes used.
+Mechanisms not yet genes: direct threading at load the one never priced - its pricing proposed.
+
+Files: results/audit-genes-designs-439.md, results/drafts/audit-genes-439.out (new); results/README.md, HANDOFF.md.
