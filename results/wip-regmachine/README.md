@@ -59,3 +59,43 @@ about 11% faster for the tag-2 design (most of it loop's, now I+'s) and about 23
 1. Which descriptor set covers how much of the taken-in share, per workload, over seed 58's plain-CV8 front.
 2. One form prototyped behind the gene - its handler's bytes, the dispatches it removes - in this directory as a patch.
 3. General or targeted, decided on those numbers; then built, rehearsed and gated as above.
+
+## Coverage (Iteration 419, coverage-419.py, its output coverage-419.out)
+
+Eight plain-CV8 designs of seed 58's front, 14,146 to 20,977 bytes, every taken-in pattern classed by the operand sources
+it needs, cumulative: A a literal; B and the top kept (a DUP before); C and the return stack (R@, R>); D and the loop
+index (I, J); E and OVER and SWAP. Shares of all dispatches:
+
+| workload | A | B | C | D | E | all taken in |
+|---|---|---|---|---|---|---|
+| kernel | 2-4% | 4-8% | 7-11% | 7-11% | 10-17% | 11-25% |
+| fib | 10-18% | 15-32% | 15-32% | 15-32% | 20-36% | 20-36% |
+| corpus | 1-9% | 4-16% | 8-18% | 8-18% | 13-22% | 15-27% |
+| loop | 0 | 0-4% | 0-21% | 21-40% | 21-40% | 0-40% |
+| bubble | 0 | 0-7% | 0-8% | 7-10% | 9-23% | 11-23% |
+| ackermann | 0 | 0 | 0 | 0 | 0 | 0 |
+
+Two operations take most of it in: `+` 42% and `<` 21% - then `@`, `C@`, `=`, `CELL+`, ADDI 3-4% each. So few forms would
+do: `+` and `<` with a literal, a kept top or the loop index cover fib's and loop's share nearly whole.
+
+## What exists already (Iteration 419, existing-419.py, its output existing-419.out)
+
+Those forms are largely in the project: rtimm's immediates (ADDI, and DUP<I, DUP+I among the format-10 words), rtloop
+and rtloopall's loop compiler with rtiplus's I+. The smallest design uses none of them - no run-time fuser at all. Its
+run-time loop compiler turned on, nothing else changed: **loop's dispatches -79%, bubble's -62%, for 465 bytes**
+(14,146 to 14,611); the larger b966d06523 already has it. (A first try put DUP<I and DUP+I ahead of the design's
+format-10 words and pushed others out of their slots - kernel and corpus +4-13%: existing-419-first.out.)
+
+## Where this leaves it
+
+- **Loop and bubble are the loop compiler's**, already in reach: the search takes it on the larger plain designs and
+  leaves it on the smallest for its bytes - the small end trades speed for size by definition, and a register stage
+  would meet the same refusal there.
+- **fib's share is the immediates'** (`DUP 2 <`): rtimm has the forms, but needs the run-time fuser, which needs built
+  pairs - a coupling, not a cost. Freeing rtimm from it is a small, testable change: the next step here.
+- **kernel's and corpus's** share is spread (11-27%), mostly the image's own code - stage 1's converter-side plan, which
+  on today's tag-2 designs prices at 4-8%.
+
+So a general register stage would add less than its first pricing suggested: what remains after the forms in place is
+kernel's and corpus's spread share and fib's. Proposed next: rtimm without its pair coupling, measured on fib, as a
+patch here - before any new engine form.

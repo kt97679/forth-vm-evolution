@@ -1,0 +1,5 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+09de03f091 as it is              on: - | 14146 bytes (+0) | kernel +0.0%, fib +0.0%, corpus +0.0%, loop +0.0%, bubble +0.0%, ackermann +0.0%
+09de03f091 + rtloop              on: rtloop | 14611 bytes (+465) | kernel +0.5%, fib +0.0%, corpus +0.1%, loop -79.1%, bubble -62.0%, ackermann +0.0%
+b966d06523 as it is              on: rtloop | 18107 bytes (+0) | kernel +0.0%, fib +0.0%, corpus +0.0%, loop +0.0%, bubble +0.0%, ackermann +0.0%
+b966d06523 + rtloop              on: rtloop | 18211 bytes (+104) | kernel +0.0%, fib +0.0%, corpus +0.0%, loop +0.0%, bubble +0.0%, ackermann +0.0%

@@ -8115,3 +8115,22 @@ holding the small end. Next there: which descriptor set covers how much, then on
 
 Files: results/wip-regmachine/README.md, results/wip-regmachine/price-418.py, results/wip-regmachine/price-418.out
 (new); results/README.md, HANDOFF.md.
+
+## Iteration 419 - 2026-10-20 - Claude
+
+**The register machine's pricing carried on, in results/wip-regmachine/: what few forms would cover - and how much of it
+the project's own fusions already do.** The owner: proceed.
+
+coverage-419.py, eight plain-CV8 designs of seed 58's front: the taken-in share by the operand sources it needs - a
+literal, the top kept, the return stack, the loop index, OVER and SWAP. fib's 20-36% is nearly all literals and a kept
+top; loop's is the loop index; kernel's 11-25% and corpus's 15-27% are spread. Two operations take most in: `+` 42%,
+`<` 21%. existing-419.py: those forms largely exist - rtimm's immediates, the loop compiler, I+. On the smallest design,
+which uses none, the run-time loop compiler alone takes loop's dispatches down 79% and bubble's 62% for 465 bytes; the
+larger designs already carry it. A first try, which pushed format-10 words out of their slots, is kept beside it.
+
+So a general register stage would add less than its first pricing: loop and bubble are the loop compiler's, fib's is
+rtimm's immediates (coupled to the run-time fuser, which needs built pairs), kernel's and corpus's spread share is left.
+Next there: rtimm without that coupling, measured on fib - before any new engine form.
+
+Files: results/wip-regmachine/coverage-419.py, coverage-419.out, existing-419.py, existing-419.out,
+existing-419-first.out (new); results/wip-regmachine/README.md, HANDOFF.md.

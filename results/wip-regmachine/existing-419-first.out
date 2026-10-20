@@ -1,0 +1,4 @@
+pinned to cpu 0 (it and its sibling 1% busy; BENCH_CPU=N to choose)
+as it is                         on: - | 14146 bytes (+0) | kernel +0.0%, fib +0.0%, corpus +0.0%, loop +0.0%, bubble +0.0%, ackermann +0.0%
++ rtfuse, rtimm, DUP<I, DUP+I    on: - | 14170 bytes (+24) | kernel +3.9%, fib +0.0%, corpus +4.2%, loop +0.0%, bubble +0.0%, ackermann +0.0%
++ rtloopall, rtiplus too         on: - | 14619 bytes (+473) | kernel +13.4%, fib +0.0%, corpus +10.7%, loop -79.1%, bubble -6.6%, ackermann +0.1%
