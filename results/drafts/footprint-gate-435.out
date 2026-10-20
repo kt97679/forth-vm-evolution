@@ -1,0 +1,26 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+# Footprint: does the front's speed hold as the code grows? (lab/evolve/footprint.py)
+
+Front: /tmp/process/forth-vm-evolution-seed62-017b7ca97-fury-20261020-145013/pack/db.jsonl, re-measured front (192 designs); sampled 2 by selection speed, fastest to slowest. Sizes 3000, 10000; calls 40 a word, at least 200,000; 1 rounds, medians.
+
+built 195eec9ee7
+built 6908fe3fe5
+round 1 of 1
+## s6, hand-made: its own time per word compiled and per call run (ns)
+
+| N | compile, per word | run, per call |
+|---|---|---|
+| 3,000 | 157766 | 1050.4 |
+| 10,000 | 326863 | 540.9 |
+
+## Each design against s6 - run phase / compile phase, at each N (below 1: faster than s6)
+
+| design | selection speed | N=3,000 run / compile | N=10,000 run / compile |
+|---|---|---|---|
+| 195eec9ee7 | 0.127 | 0.205 / 0.085 | 0.804 / 0.073 |
+| 6908fe3fe5 | 1.434 | 0.638 / 1.866 | 1.690 / 2.492 |
+
+## Does the selection's order hold? Spearman, selection speed against the run phase's ratio
+
+- N = 3,000: - over 2 designs
+- N = 10,000: - over 2 designs

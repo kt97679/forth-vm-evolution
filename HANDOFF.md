@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 434.
+- master: Iteration 435.
 - **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
   (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
   0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
@@ -248,7 +248,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    but each design's time per call against s6 moves 1.6-3.8 times across N: the fast designs about 4x s6's speed at
    100-1,000 words, 1.1-1.5x at 10,000 (s6 itself falls off a cliff at 30,000: 154 to 464 ns a call). The selection's
    small programs flatter the fast end at large footprints; a footprint workload in the selection, or this as a
-   held-out check each run - the owner's call. (Before it: next, the experiment step for the
+   held-out check each run - the owner's call: **priced (435, results/drafts/footprint-gate-435.md)** - a held-out check
+   about 10 minutes a run (recommended first), a fast-end gate 1-2% of a run, a selection workload some 30% of its
+   generations. (Before it: next, the experiment step for the
    laptop - a sample of the front, each N full and --defs-only, repeated; time per call (run phase)
    and per word (compile phase), each against s6 - with --calls at least 40 N, as below 30,000's
    definitions (41 s on s6 here) swamp a fixed 200,000 calls.
@@ -293,7 +295,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    62 - one start - smallest 15,938, 15,939 and 15,929 bytes (0.06%), hypervolume within 0.7%, fastest 0.1111, 0.1108
    and 0.1164 (5.05%); gene usage 7.5-11.8 points apart a pair. One basin at the small end; at the fast end runs of one
    start stop about 5% apart by chance - Iteration 393's prediction 4's condition: the case for an escape mechanism
-   (islands or immigrants, item 4e) at the fast end. The owner's call.
+   (islands or immigrants, item 4e) at the fast end. The owner's call - **options priced (435,
+   results/drafts/escape-mechanism-435.md): islands recommended**, an evolver option off by default, one run against
+   seeds 63-64.
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
    machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
    none faster on any host than the front's fastest (results/xcheck-seed58.md).

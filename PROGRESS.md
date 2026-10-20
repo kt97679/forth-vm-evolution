@@ -8421,3 +8421,25 @@ bytes) gains a first step for a shorter run: if above, read at a common generati
 spread), which had 14,146 by its 133rd, before the frozen genes' bytes are examined.
 
 Files: lab/evolve/NEXT-RUN, results/seed63-rules.md, HANDOFF.md.
+
+## Iteration 435 - 2026-10-20 - Claude
+
+**The two decisions seed 62 left, prepared** (the owner: both). A pre-flight first, nothing changed by it: seed 63's
+chain start on the new master with stand-in hosts, REMOTES' own lines (smaller samples) and seed 62's archived front -
+dream's 32-bit check took the 3 candidates, its 64-bit pair the same designs with binaries, the Tegra all 7 asked for
+(the rebuild test's 4 and the 3), its deadline the run's remaining time.
+
+**The escape mechanism** (results/drafts/escape-mechanism-435.md): the fast end stalls early - the best speed's last 2%
+gain at generations 104, 75 and 45 in seeds 60-62 - and the evolver's diversity (the attic, borrowing, crowding, the
+families' and Q's keepers) keeps gene values, not rival fast lineages. Islands, age-layered immigrants, restart on
+stagnation and replicates compared; islands recommended - an evolver option off by default, built apart, tried in one
+run against seeds 63-64 at their common generation.
+
+**The footprint gate** (results/drafts/footprint-gate-435.md): in seed 62's database 1,266 children (4.1%) fell in the
+fast gate's window; a reading at 10,000 words costs about 1-2.5 s (footprint.py here, results/drafts/
+footprint-gate-435.out). A held-out check after each run about 10 minutes; a gate 1-2% of a run, but its reading does
+not mix with the selection's speed without a new rule; a footprint workload for every design some 30% of the
+generations. Recommended: the held-out check first, a gate or workload only if the top reorders at 10,000 words.
+
+Files: results/drafts/escape-mechanism-435.md, results/drafts/footprint-gate-435.md, results/drafts/footprint-gate-435.out
+(new); results/README.md, HANDOFF.md.
