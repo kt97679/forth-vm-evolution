@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 431.
+- master: Iteration 432.
 - **The runs**: seed 61 processed (Iteration 425): seed 60's first replicate landed at seed 60's ends by its own
   measures - fastest 0.110 (seed 60: 0.111), smallest 15,907 bytes (15,930); no verdict, no comparison step (seed 63's
   places it); gates 154 of 154 alive, ans-check 0 of 40. Next seed 62 (NEXT-RUN's line, 11 h - the owner, 408 - then
@@ -110,7 +110,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    `git mv results/pending-after-seed63 results/pending`, its paths (its ORDER.md, results/README.md) from
    pending-after-seed63/ to pending/, and `sh tools/batch-check.sh` against the new master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
    Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
-   lab/evolve/progress-table.py > results/progress-by-run.md`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
+   lab/evolve/progress-table.py > results/progress-by-run.md`; the gene votes, from seed 63 on (Iteration 432): `python3
+   lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
    chat's turn ends".
 
 ## The owner's standing decisions
@@ -198,8 +199,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    `seed 63 11h widths noevolved then experiment compare-fronts.py --rounds 6 --widths 8,4 --frontier --cpus 2,8`,
    a verdict against seeds 59-62. The comparison is reserved from the 11 hours (next-run.sh's reserve()): about 7 3/4
    hours of evolution (seed 60, 12 hours with the same step: 8 h 50). **Its decisions by results/seed63-rules.md**,
-   written before its results (the owner, 430), checked against losing good designs and adopted (431) - a gene
-   proposed out only after three runs, with a dependence test, reversibly - `review-checks.py curse` on its report
+   written before its results (the owner, 430), checked against losing good designs and adopted (431); genes by
+   votes, not by rule (432: results/gene-votes.md, appended from seed 63's processing on) - `review-checks.py curse` on its report
    shows whether the fast end's optimism falls from seed 58's 1.112, and jithelp's, jitre's and jitret's share of its front
    whether they stay (the owner: out again if useless).
 0f. **Why designs fail at 32 bits** (Iterations 399-401; results/bfind32-fault-399.md, results/fail32-400.md): every

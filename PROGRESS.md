@@ -8359,3 +8359,21 @@ with the frozen value all four live and are smaller (-120 to -2,370 bytes), the 
 behaviour (rtfuse on gives the same). The rest only measure. Adopted.
 
 Files: results/seed63-rules.md, results/README.md, HANDOFF.md.
+
+## Iteration 432 - 2026-10-20 - Claude
+
+**Genes by votes, not by rule** (the owner: rules should vote for removal, a gene going only on several votes).
+results/seed63-rules.md's gene rule becomes "The gene votes": per gene and run, four weak removal votes - under 10% of
+the front, none in its fastest tenth, its smallest, its best-Q tenth; strong keep votes, any one blocking - in such a
+tenth in any of the last three runs, a dependence test showing loss, the owner's word; a candidate at 11 of 12 over
+three runs with no keep vote, then the dependence test, then a reversible proposal; and votes the other way, to
+unfreeze. review-checks.py votes RESULTS.md [--seed N] [--ledger FILE [--append]] counts them and keeps the ledger,
+results/gene-votes.md - empty until seed 63's processing appends the first run (HANDOFF step 6); process-seed.sh's
+summary shows the run's votes and the tally, without writing.
+
+A dry run over seeds 59-61 (not in the ledger): candidates skippad, scale, fold, sharedcall, tail, msc, hotcalls,
+tailpn, alignhot - scale and msc frozen at 0 by patch 10 already; jitimg, jitvar, jitos and opcall kept, each in a
+fastest tenth in one of the three.
+
+Files: results/gene-votes.md (new); lab/evolve/review-checks.py, lab/evolve/process-seed.sh, results/seed63-rules.md,
+results/README.md, HANDOFF.md.

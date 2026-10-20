@@ -35,6 +35,9 @@ if [ -n "$SP" ]; then
     p ""; p "## review-checks.py curse (curse.txt) - the fast end's optimism, re-measured / in-run"; p '```'; head -3 curse.txt >> "$S"; p '```'
     python3 "$EV/review-checks.py" fail32 "$SP/db.jsonl" > fail32.txt 2>&1
     p ""; p "## review-checks.py fail32 (fail32.txt) - the 32-bit failures by cause"; p '```'; head -8 fail32.txt >> "$S"; p '```'
+    VN=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null)        # Iteration 432: the gene votes, with the ledger - not written
+    python3 "$EV/review-checks.py" votes "$SP/report.md" ${VN:+--seed "$VN"} --ledger "$REPO/results/gene-votes.md" > votes.txt 2>&1
+    p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
 fi
 if [ -n "$CP" ]; then
     F=$CP/compare-fronts.md

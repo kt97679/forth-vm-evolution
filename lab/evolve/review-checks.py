@@ -32,6 +32,12 @@ results/review-methodology-386.md), each reproducible:
                            ARMv7 - each class once, prebuilt64 for x86-64 where there is one - ranked by the
                            geometric mean of their speeds against s6 there; vetoed: more than 25% behind the
                            class's best of them (GOALS.md's margin)
+  votes RESULTS.md [--seed N] [--ledger FILE [--append]]
+                           the gene votes (Iteration 432; results/seed63-rules.md): for each gene, the run's
+                           votes for its removal - on under 10% of the front, on no design of its fastest tenth,
+                           of its smallest, of its best-Q tenth - and with a ledger (results/gene-votes.md) the
+                           tally over the last three runs: a keep vote when it was in any such tenth; a
+                           candidate at 11 of 12 votes and no keep vote. --append adds the run to the ledger
   screen DB RESULTS.md     the surrogate screen's audit: screened children measured anyway that reached the
                            final front, against the base rate; the tag-2 share screened and not
 """
@@ -342,4 +348,62 @@ elif check == 'generic':
     print('|---|---|---|---|---|---|---|---|---|')
     for gm, i, s, veto, kind, lap, tot in rows:
         print('| %s | %s | %.3f | %.3f | %.3f | **%.3f** | %s | %s | %s |' % (i, kind, s[0], s[1], s[2], gm, ', '.join(veto) or '-', '%.3f' % lap if lap else '-', '{:,}'.format(tot) if tot else '-'))
+elif check == 'votes':
+    args = sys.argv[2:]; ledger = None; seed = None; append = '--append' in args
+    if '--ledger' in args: i = args.index('--ledger'); ledger = args[i + 1]; del args[i:i + 2]
+    if '--seed' in args: i = args.index('--seed'); seed = int(args[i + 1]); del args[i:i + 2]
+    path = [a for a in args if a != '--append'][0]
+    if seed is None:
+        m = re.search(r'seed(\d+)', os.path.basename(path)); seed = int(m.group(1)) if m else 0
+    sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
+    cols = None; tab = {}; gen = {}
+    for l in open(path, errors='replace'):
+        if l.startswith('| design | speed |'): cols = [c.strip() for c in l.strip().strip('|').split('|')]; continue
+        if cols and re.match(r'\| [0-9a-f]{10} \|', l):
+            c = [x.strip() for x in l.strip().strip('|').split('|')]; tab.setdefault(c[0], dict(zip(cols, c)))
+        if l.startswith('{"'):
+            try: r = json.loads(l)
+            except ValueError: continue
+            if r.get('id') and 'genome' in r: gen.setdefault(r['id'], r['genome'])
+    def num(v):
+        try: return float(str(v).replace(',', ''))
+        except ValueError: return None
+    ids = [i for i in tab if i in gen]; n = len(ids); k = max(1, n // 10)
+    sp = {i: num(tab[i].get('re-measured', '')) or num(tab[i].get('speed', '')) or 9e9 for i in ids}
+    by = {i: num(tab[i].get('binary + image', '')) or 9e9 for i in ids}
+    mem = {i: num(tab[i].get('memory KB', '')) or 9e9 for i in ids}
+    fast = set(sorted(ids, key=sp.get)[:k]); small = set(sorted(ids, key=by.get)[:k])
+    bestq = set(sorted(ids, key=lambda i: sp[i] * by[i] * mem[i])[:k])
+    ex = {i: E.express(E.canon(gen[i])) for i in ids}
+    frozen = set(getattr(E, 'FROZEN', None) or ())
+    SKIP = {'enc', 'opt', 'compiler', 'spec', 'folds', 'ops10'}          # what a design is, not a mechanism to drop
+    run = []
+    for g in dict.fromkeys(x for fam in E.EXPRESSED.values() for x in fam):
+        if g in SKIP or g in frozen: continue
+        on = set(i for i in ids if ex[i].get(g)); share = 100.0 * len(on) / n if n else 0.0
+        f, sm, q = len(on & fast), len(on & small), len(on & bestq)
+        run.append((seed, g, share, f, sm, q, (share < 10) + (f == 0) + (sm == 0) + (q == 0)))
+    rows = []
+    if ledger and os.path.exists(ledger):
+        for l in open(ledger):
+            c = [x.strip() for x in l.strip().strip('|').split('|')]
+            if len(c) == 7 and c[0].isdigit():
+                rows.append((int(c[0]), c[1], float(c[2].rstrip('%')), int(c[3]), int(c[4]), int(c[5]), int(c[6])))
+    if ledger and append and seed not in set(r[0] for r in rows):
+        with open(ledger, 'a') as fo:
+            for r in run: fo.write('| %d | %s | %.0f%% | %d | %d | %d | %d |\n' % r)
+    rows = [r for r in rows if r[0] != seed] + run
+    last = sorted(set(r[0] for r in rows))[-3:]
+    print('seed %d: %d front designs (tenths of %d) - the removal votes of each gene this run, of 4: share under 10%%, none in the fastest, smallest, best-Q tenth' % (seed, n, k))
+    print('all four this run: %s' % (', '.join(g for _, g, _, _, _, _, v in run if v == 4) or 'none'))
+    tally = collections.OrderedDict()
+    for r in rows:
+        if r[0] in last: tally.setdefault(r[1], []).append(r)
+    cand, near = [], []
+    for g, rs in tally.items():
+        votes = sum(r[6] for r in rs); keep = any(r[3] or r[4] or r[5] for r in rs)
+        if len(rs) == 3 and not keep and votes >= 11: cand.append('%s (%d of 12)' % (g, votes))
+        elif not keep and votes >= 6: near.append('%s (%d of %d)' % (g, votes, 4 * len(rs)))
+    print('over the last %d runs in the ledger (%s): candidates - %s; no keep vote and half the votes or more - %s'
+          % (len(last), ', '.join(map(str, last)), ', '.join(cand) or 'none', ', '.join(near) or 'none'))
 else: sys.exit(__doc__)
