@@ -8094,3 +8094,24 @@ batch-check, the thirteen: PASS - 13 patches on a fresh clone of 1a37de3: run-te
 Files: results/rehearsal-417.md, results/drafts/rehearsal-417.py, results/drafts/rehearsal-db-417.py, results/drafts/
 farcall-tests-417.py, results/pending/dumpcheck-after-seed62.patch (new); results/pending/bigprog-after-seed62.patch,
 results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 418 - 2026-10-20 - Claude
+
+**The register machine begun, kept apart: results/wip-regmachine/ - its first pricing, on code as it runs.** The owner:
+work on it independently, so that unfinished it costs the next seed runs nothing. A directory on master, not a git
+branch (the bundle carries master alone); nothing there runs, and its patches will reach a run only through the gates
+and the owner's approval.
+
+price-418.py: designs built with the profiler and the converter's opcode names; from the profiler's pairs and triples,
+the dispatches a register stage could take in as operands - a move or literal straight before the operation that
+consumes it, and the one before that. On the tag (seed 60's two fastest interpreted): loop 40%, corpus 13%, kernel
+6-10%, sieve 10%, fib, bubble and ackermann nothing - 86% of it loop's `I +`, which rtiplus fuses since patch 11;
+control (calls, EXIT, branches) 20-67%. On plain CV8 (seed 58's smallest and a larger one): kernel 21-23%, fib 36%,
+corpus 23-26%, loop 25-40%, bubble 11-23%, sieve 17-18%, spread over many patterns (`LIT8 <`, `DUP LIT8 <`, `LIT32 +`,
+`DUP @`, `R@ =`...). As an upper estimate - time following dispatches, operands free - the six workloads' mean about 11%
+faster on the tag (most of it now I+'s) and 23% on plain CV8. So: on the tag little beyond the fusions in place; on
+plain CV8 real room, best met by a general operand form behind a gene - its bytes weighed by the search, plain CV8
+holding the small end. Next there: which descriptor set covers how much, then one form prototyped as a patch.
+
+Files: results/wip-regmachine/README.md, results/wip-regmachine/price-418.py, results/wip-regmachine/price-418.out
+(new); results/README.md, HANDOFF.md.
