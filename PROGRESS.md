@@ -8625,3 +8625,22 @@ deferred to the next generation's batch, the speed their geometric mean then - t
 patch after seed 65, the owner's call.
 
 Files: results/drafts/fastgate-review-445.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 446 - 2026-10-21 - Claude
+
+**The after-seed-65 batch: the fast gate's second reading deferred; the rtfuse simplification not prepared - it would
+have hidden a fault** (the owner: prepare both). evolve.py: a child under the gate is marked, not measured again at
+once; the next generation's batch measures it again among other co-runners, its 64-bit speed then the geometric mean of
+the two readings (its 32-bit reading the first), the record saved again. Tested in a clone (its stages built): a short
+evolution with the gate on the 4th fastest - 12 deferred readings applied, the run to its end
+(results/drafts/fastgate-defer-446.log). batch-checked below.
+
+The rtfuse simplification (rule 9: rtimm=2 to pass --rtfuse only with rtfuse on), checked before building: --rtfuse
+also writes I+'s entry in the fuser's table, and I+ fuses only where the fuser is built. On seed 64's front, profiled:
+a plain design with the fuser, loop's dispatches -20.0% with rtiplus; a plain design without, +0.0% - rtiplus expressed
+and inert. 37 of the front's 55 designs with rtiplus have no fuser (30 tag-2 JIT designs, where loops are translated
+anyway; 7 plain). Rule 7's 33% counts expression, not effect. Not prepared; proposed instead: rtiplus to bring the fuser
+with it - the owner's call.
+
+Files: results/pending/ORDER.md, results/pending/fastgate-defer-after-seed65.patch, results/drafts/fastgate-defer-446.log
+(new); results/README.md, HANDOFF.md.

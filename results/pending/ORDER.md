@@ -14,7 +14,7 @@ mixed with it.
 In a clone of master (eb306b2), its stages built: a short evolution with the gate on the 4th fastest (16 designs, 4
 generations, --fastgate 4) - 12 children measured again in the batch after their own, each its two readings and their
 mean logged (results/drafts/fastgate-defer-446.log; e.g. a127d1037a 0.7787 then 0.7242, recorded 0.751), the run to its
-end. Rule 3 reads its effect at the first run with it: the fastest tenth's optimism at most 1.05.
+end. **batch-check on 6097782: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.** Rule 3 reads its effect at the first run with it: the fastest tenth's optimism at most 1.05.
 
 **Not prepared: the rtfuse simplification** (rule 9's proposal). Checking it found that `--rtfuse` carries I+'s table
 entry too, and that I+ fuses only where the run-time fuser is built: on seed 64's front, a plain design with the fuser
