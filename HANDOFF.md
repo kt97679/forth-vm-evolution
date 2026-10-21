@@ -48,18 +48,19 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 440.
-- **The runs**: seed 62 processed (Iteration 433): seed 60's second replicate - its small end where seeds 60-61's is
-  (15,897 bytes), its fast end 5% behind them (0.116); at their common generation the three within 0.06% in size and
-  0.7% in hypervolume, 5.05% apart at the fastest - one basin at the small end, chance at the fast end (item 4c).
-  **The after-seed-62 batch applied** (13 patches, results/applied-after-seed62/ORDER.md; batch-check PASS); the
-  after-seed-63 batch is results/pending/ now, applied at seed 63's processing. Next seed 63 (NEXT-RUN's line, 10 h -
-  the owner, 434): the batch's first run, free of the tag-2 requirement, with a comparison; its decisions by
-  results/seed63-rules.md, its gene votes the ledger's first; its chain also runs the Tegra's rebuild test and the head
-  to head (REMOTES' --also lists - seed 62's chain ran from Iteration 425's bundle, before both).
+- master: Iteration 441.
+- **The runs**: seed 63 processed (Iteration 441): the after-seed-62 batch's first run, free - **not small**: the
+  smallest +10.8% (14,348 bytes) and 32 bits +13.1%, the best yet; hypervolume +15.1%; but **the fast end -55%** (0.263):
+  the JIT never assembled - its hand-made founder lacked the tag the JIT needs, and a free run with no evolved founders
+  had no other way in. The rules: freeze, 32-bit, small end PASS; the fast gate 1.051 (partly); I+ 0 (behind
+  rtloopall). **The after-seed-63 batch applied** (4 patches: the cheaper immediates and loop table, islands, the
+  rtloopall repair; results/applied-after-seed63/ORDER.md). **Pending, the owner's call before seed 64**: the JIT fix
+  (results/pending/ORDER.md - the founder with the tag, jit_ends for jitre) - recommended now, or seed 64 runs without a
+  JIT as seed 63 did. Next seed 64 (NEXT-RUN: 10 h, the footprint check after it; islands off unless the owner adds the
+  word).
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 63's, named from the bundle it starts from (seed 62's, `forth-vm-evolution-chain-017b7ca97-fury-
-  20261020-153456_tar.gz`, processed at 433). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
+  processed - seed 64's, named from the bundle it starts from (seed 63's, `forth-vm-evolution-chain-863f35005-fury-
+  20261021-015212_tar.gz`, processed at 441). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
@@ -220,7 +221,10 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    at 32 bits 0.651 and 0.650 - for dream the machine, not the width (item 4d).
    Its sample was small because a 4-byte sample took GCC's designs only: prebuilt32's takes clang's too (Iteration 408) -
    seed 60's front, 109 eligible where seed 59's gave 6.
-0d. **The Tegra's build failures - named** (Iteration 406, results/xcheck-seed60.md): not the linker but the
+0d. **The Tegra's build failures - closed** (Iteration 441): its rebuild test in seed 63's chain built all seven asked
+   for, the four that had failed (alignhot 32 and 64) among them - alignhot left out of 32-bit ARM builds (407) was the
+   whole cause. The history below.
+   Before: **The Tegra's build failures - named** (Iteration 406, results/xcheck-seed60.md): not the linker but the
    assembler, `bad immediate value for offset (5224)`. Every one of the 14 that failed in seeds 58-60's chains has
    alignhot 32 or 64, every one of the 28 that built 0 or 1 - most likely GCC's ARM literal pools placed without the
    padding that alignment adds, a load then past its 4 KB reach (the fsys lead was a correlate). Built (Iteration 407, the
@@ -314,8 +318,9 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
 4d. **Weighing across machines** (the owner, Iterations 376-377; results/drafts/cross-machine-weighing.md): three
    machine classes, equal (GOALS.md); the blind spot tested by xcheck --rejected - of seed 57's rejected designs,
    none faster on any host than the front's fastest (results/xcheck-seed58.md).
-   **The best design across the classes - head to head in seed 63's chain** (the owner, Iteration 430; seed 62's
-   chain ran from 425's bundle, before it): bf439eb307 (seed 60, rejected by its selection - its record in results/candidates-generic.md), 11e5884401 and
+   **The best design across the classes - measured** (seed 63's chain, Iteration 441): of 10 designs on all three,
+   seed 62's front's 5f512a3017 first (x86-64 0.368, x86-32 0.509, ARMv7 0.391 - mean 0.419, 25,105 bytes), then its
+   83716d5eaf (0.437), bf439eb307 (0.467); ad56a8e0fd and 11e5884401 vetoed at x86. The plan (Iteration 430): bf439eb307 (seed 60, rejected by its selection - its record in results/candidates-generic.md), 11e5884401 and
    ad56a8e0fd (seed 58's front) asked for by id on dream at 32 and 64 bits and on the Tegra (REMOTES); review-checks.py
    generic - now in process-seed.sh's summary - ranks every design measured on all three classes by the geometric mean
    of its speeds, vetoing one more than 25% behind a class's best. On seed 61's chain: bf439eb307 0.455, every front

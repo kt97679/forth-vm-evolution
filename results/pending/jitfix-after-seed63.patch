@@ -1,0 +1,34 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index b385221..f86c96a 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -424,6 +424,8 @@ static void jit_dump(int fd) {
+ #define JITNOTE(w, e)
+ #endif
+ 
++/* Iteration 441: out of JITX's block - jitre (Iteration 346) calls it without jitx; three of seed 63's designs did not compile */
++static inline int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; return o->n && o->st[o->n - 1] == S_EXIT; }
+ #if JITX
+ /*  Iteration 108, the gene jitx: the translator reaches further (results/
+  *  jit-kernel-words.md).
+@@ -448,7 +450,6 @@ static uint32_t *jit_kslot(UNS64 w) {
+     }
+     return 0;                           /* full: the rest stay bytecode */
+ }
+-static int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; return o->n && o->st[o->n - 1] == S_EXIT; }
+ #else
+ #define JIT_DEPTH 4
+ #endif
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 71ae6ae..c8bb61b 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -2162,7 +2162,7 @@ def main(argv):
+     # One competitive - seed 37's fastest, its record from results/ - and one any
+     # tree can make, from hand-made s6; crossover lends their genes on.
+     if not FROMZERO:
+-        pop += [get(dict(HUMAN['s6-cv8b'], jit=1, jitx=1, jitloop=1, jitinl=1), [], 'founder: s6-cv8b + the JIT, jitx, jitloop, jitinl', 0)]
++        pop += [get(dict(HUMAN['s6-cv8b'], tag2=1, jit=1, jitx=1, jitloop=1, jitinl=1), [], 'founder: s6-cv8b + the tag, the JIT, jitx, jitloop, jitinl', 0)]   # 441: the JIT needs the tag
+         f37 = None if NOEVOLVED else recorded_genome('38446e6c09')
+         if f37: pop += [get(dict(f37, jitloop=1, jitinl=1), [], "founder: seed 37's fastest (38446e6c09) + jitloop, jitinl", 0)]
+         else: print("  founder: seed 37's fastest %s - left out" % ('evolved, and --noevolved' if NOEVOLVED else 'not in results/'), flush=True)

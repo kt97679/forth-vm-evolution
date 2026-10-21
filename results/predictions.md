@@ -739,3 +739,20 @@ and a gate or a selection workload (results/drafts/footprint-gate-435.md) is wor
 Patch 4 of the after-seed-63 batch (mutation meets rtloopall's prerequisite). Seed 64: rtloopall expressed in at least
 30% of the genomes that set it (seed 62: 92 of 5,819, 1.6%), and on at least 20% of its front (seeds 58-62: 55, 65, 28,
 42, 1%) - no longer to chance; rtiplus, behind it, on at least 5% of the front.
+
+## Seed 63, scored (Iteration 441)
+
+The after-seed-62 batch's first run, free of the tag-2 requirement; 6 h 37 min of evolution, 90 generations.
+**7 right, 2 wrong** - and one prediction uninformative.
+
+- **Iteration 409: 1. no design refused at the reach limit - right** (0; seed 60: 247). **2. every front design with the
+  frozen values - right. 3. its smallest within 2% of 14,146** (with patch 12's bytes, Iteration 416) **- right**: 14,348.
+- **Iteration 400.3, revised: every tail design measured at 32 bits - right**: no 32-bit failure of any kind.
+- **Iteration 412: rtiplus on more than 10% of the front - wrong**: 0 - blocked behind rtloopall's prerequisite
+  (Iteration 439), whose repair comes with the after-seed-63 batch, applied at this processing.
+- **Iteration 397.2: jithelp and jitre under 10% of the front - right, but uninformative**: the JIT itself never
+  assembled - its founder lacked the tag (Iteration 441) - so neither had a chance.
+- **Iteration 428, the Tegra's rebuild test: all four build - right** (7 of 7 asked for, the four among them).
+- **Iteration 430, the head to head: 1. the three candidates above every design of the checked front measured on all
+  three - wrong**: two of seed 62's own front, 5f512a3017 (mean 0.419) and 83716d5eaf (0.437), ahead of bf439eb307
+  (0.467). **2. the best of the three passes the veto, its mean under 0.5 - right** (bf439eb307, 0.467).
