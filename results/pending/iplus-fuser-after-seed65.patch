@@ -1,0 +1,33 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c8bb61b..a4330b4 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -407,7 +407,9 @@ def overlay(g):
+     list needs no overlay: the converter writes it into cv8.4's FOLD-OPS.)
+     Everything else keeps the build's dumps, so the hand-made stages still
+     come out byte-identical."""
+-    return g['enc'] == 'cv8' and (bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g))) or rtimm2(g))
++    # Iteration 447: and rtiplus - I+ is found by the fuser's lookup, in its table; without the fuser it was expressed
++    # and inert (seed 64: a plain design's loop -20.0% with the fuser, +0.0% without; 37 of the front's 55 without it)
++    return g['enc'] == 'cv8' and (bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g))) or rtimm2(g) or rtiplus_on(g))
+ def rtimm2(g):
+     """Iteration 175: rtimm=2 - run-time immediates without pairs: the overlay
+     for ADDI and SWAP+I alone (forth/cv8t-fuse.4's lookup over no pairs, then
+@@ -419,7 +421,7 @@ def rtimm_lean(g):
+     """Iteration 422 (results/wip-regmachine/README.md): rtimm=2 in a plain-CV8 design with nothing else
+     for the run-time fuser to do - no pairs, no fused tests - builds forth/cv8-imm.4 alone, not
+     cv8-fuse.4 under cv8-fuse-imm.4 (rtimm=2 passes --rtfuse: built pairs and tests fuse, rtfuse or not)."""
+-    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2')
++    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2') and not rtiplus_on(g)   # 447: I+ needs the fuser
+ RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
+ def rt_tests(g):
+     """The fused tests this design has opcodes for - with rtfuse, its
+@@ -1033,7 +1035,7 @@ def _build(g, d):
+     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
+     if oc: opts += ['--opcall-file', os.path.join(d, 'opcall.json')]
+     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
+-    if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g): opts.append('--rtfuse')   # rtimm=2: IMM-OPS filled
++    if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g) or rtiplus_on(g): opts.append('--rtfuse')   # 447: I+'s entry   # rtimm=2: IMM-OPS filled
+     if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
+     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
+     if t2wide_on(g): opts.append('--tag2-wide')
