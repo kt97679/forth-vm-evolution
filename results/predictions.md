@@ -794,3 +794,9 @@ ahead of seed 64's (0.1253) - the best of four lineages within one run; 2. its s
 seed 64's then - islands not slowing the small end past the escape note's bound; 3. the JIT on the front, and no design
 dying. (Iteration 443's seed 65 prediction was for the same setup as seed 64; withdrawn.) Islands are worth keeping if
 1 and 2 both hold.
+
+## Seed 66, the after-seed-65 batch's first run - predicted (Iteration 447)
+
+The fast gate's second reading deferred, and I+ bringing the fuser. 1. The fast end's optimism (review-checks.py curse,
+the fastest tenth) at most 1.05 - rule 3's bound, met by no run since seed 58 but seed 63's 1.051. 2. Every front design
+with rtiplus built with the fuser, and rtiplus on at least 10% of the plain designs of its front.

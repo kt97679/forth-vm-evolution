@@ -8644,3 +8644,17 @@ with it - the owner's call.
 
 Files: results/pending/ORDER.md, results/pending/fastgate-defer-after-seed65.patch, results/drafts/fastgate-defer-446.log
 (new); results/README.md, HANDOFF.md.
+
+## Iteration 447 - 2026-10-21 - Claude
+
+**I+ brings the run-time fuser - patch 2 of the after-seed-65 batch** (the owner: Continue, to preparing it). I+ is
+found by the fuser's lookup in its table (forth/cv8-fuse.4's SUPER-OP, the converter writing its entry under --rtfuse):
+rtiplus without the fuser was expressed and inert - 37 of seed 64's 55 front designs with it. evolve.py: overlay() and
+the --rtfuse switch follow rtiplus_on() too; rtimm_lean() no longer takes an I+ design (cv8-imm.4 has no table). Tested
+in a clone (its stages built): seed 64's 72a4f14f1a, plain - loop's dispatches 16,034,434 against 20,033,944 (-20.0%),
++616 bytes, alive; 46b699252e, tag-2 with the JIT - +336 bytes, alive. Like rtimm=2 today, a design with rtiplus now
+fuses its built pairs and tests at run time too. The two patches batch-checked together on 42d4323: run-tests PASS,
+validate 7 of 7 IDENTICAL, jail PASS. Seed 66 predicted.
+
+Files: results/pending/iplus-fuser-after-seed65.patch (new); results/pending/ORDER.md, results/predictions.md,
+results/README.md, HANDOFF.md.

@@ -21,6 +21,7 @@ end. **batch-check on 6097782: run-tests PASS, validate 7 of 7 IDENTICAL, jail P
 **Patch 2, tested** (in a clone of c7935d6, its stages built): seed 64's 72a4f14f1a, plain, rtiplus inert without the
 fuser - now with it: loop's dispatches 16,034,434 against 20,033,944 (-20.0%), 19,684 bytes against its record's 19,068
 (+616), alive; 46b699252e, tag-2 with the JIT - +336 bytes, alive.
+**The two together, batch-checked on 42d4323: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.**
 
 **Not prepared: the rtfuse simplification** (rule 9's proposal). Checking it found that `--rtfuse` carries I+'s table
 entry too, and that I+ fuses only where the run-time fuser is built: on seed 64's front, a plain design with the fuser

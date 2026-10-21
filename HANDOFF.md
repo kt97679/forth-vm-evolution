@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 446.
+- master: Iteration 447.
 - **The runs**: seed 64 processed (Iteration 443): free, the batch and the JIT fix in - **the JIT back** (81 of its 167
   front designs), **the smallest of any run** (14,047 bytes), its fastest 0.125 (seed 62's 0.116), **not one design died**;
   the rtloopall repair worked (expressed where set 78%, on 155 of the front; I+ on 55); the footprint check: the top
@@ -60,7 +60,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   results/pending/ORDER.md**, applied at seed 65's processing; rtfuse to govern rtimm=2's run-time
   fusion - **not prepared (446)**: --rtfuse carries I+'s table entry too, and **I+ fuses only where the run-time fuser
   is built** (seed 64: a plain design with it, loop -20.0% with rtiplus; without it +0.0%; 37 of the front's 55 designs
-  with rtiplus have no fuser, 7 of them plain) - the owner's call instead: rtiplus to bring the fuser with it. **Seed 65: islands, 12 hours** (the owner, 444) -
+  with rtiplus have no fuser, 7 of them plain) - **so rtiplus brings the fuser: patch 2 of the after-seed-65 batch
+  (447)** - a plain design's loop -20.0% with it, +616 bytes. Until it is applied, rule 7's I+ share counts expression,
+  not effect (seed 65's will overstate). **Seed 65: islands, 12 hours** (the owner, 444) -
   NEXT-RUN: `seed 65 12h widths noevolved islands then experiment footprint.py ... then experiment review-checks.py spread`;
   the trial read at processing against seed 64 at generation 146 (seed 64's database kept in this container,
   build/evolve/keep/seed64-db.jsonl - if gone, seed 64's chain archive is wanted) and, by the chain's spread step,
