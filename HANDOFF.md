@@ -48,15 +48,18 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 443.
+- master: Iteration 444.
 - **The runs**: seed 64 processed (Iteration 443): free, the batch and the JIT fix in - **the JIT back** (81 of its 167
   front designs), **the smallest of any run** (14,047 bytes), its fastest 0.125 (seed 62's 0.116), **not one design died**;
   the rtloopall repair worked (expressed where set 78%, on 155 of the front; I+ on 55); the footprint check: the top
   keeps its order at 10,000 words (Spearman 0.888) - no footprint gate needed, the check stays in every line. No
   verdict (no comparison step). **For the owner before seed 65**: islands - seed 64 is the baseline the islands trial
   was waiting for (item 4c); the fast gate - optimism 1.085, its rule says revisit; rtfuse to govern rtimm=2's run-time
-  fusion - no front design relies on the overlap now (rule 9's proposal). NEXT-RUN: seed 65 as seed 64 until the owner
-  says.
+  fusion - no front design relies on the overlap now (rule 9's proposal). **Seed 65: islands, 12 hours** (the owner, 444) -
+  NEXT-RUN: `seed 65 12h widths noevolved islands then experiment footprint.py ... then experiment review-checks.py spread`;
+  the trial read at processing against seed 64 at generation 146 (seed 64's database kept in this container,
+  build/evolve/keep/seed64-db.jsonl - if gone, seed 64's chain archive is wanted) and, by the chain's spread step,
+  against every run at generation 90.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
   processed - seed 65's, named from the bundle it starts from (seed 64's, `forth-vm-evolution-chain-c094ab788-fury-
   20261021-130905_tar.gz`, processed at 443). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop

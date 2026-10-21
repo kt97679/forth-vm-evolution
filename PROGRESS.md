@@ -8602,3 +8602,14 @@ on islands; results/progress-by-run.md regenerated.
 
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed64.md, results/xcheck-seed64.md (new); results/gene-votes.md,
 results/predictions.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
+
+## Iteration 444 - 2026-10-21 - Claude
+
+**Seed 65 set: islands, 12 hours** (the owner). NEXT-RUN: `seed 65 12h widths noevolved islands then experiment
+footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread` - the islands
+trial the escape note planned (435): four islands of 64, migrants every 10 generations; no comparison step, so about
+11.5 hours of evolution. Its reading: at processing against seed 64 at generation 146, seed 64's database kept in this
+container (build/evolve/keep/, untracked - if it is gone, seed 64's chain archive is wanted); and the chain's spread step
+over every run's database at their common generation (seed 63's 90). Predicted; 443's prediction for seed 65 withdrawn.
+
+Files: lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF.md.

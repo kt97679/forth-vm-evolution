@@ -784,3 +784,13 @@ If the same setup as seed 64 (no islands): its ends within 5% of seed 64's by it
 14,047); the JIT on 30-70% of the front; no design dying. (Should the owner choose islands for it, Iteration 435's
 measure applies instead: the fast end against seeds 63-64's at their common generation, the small end no worse than
 0.5%.)
+
+## Seed 65, islands - predicted (Iteration 444)
+
+The owner chose the islands trial for seed 65, 12 hours (results/drafts/escape-mechanism-435.md): four islands of 64,
+migrants every 10 generations. Read at its processing against seed 64 at generation 146 (seed 64's database kept) and
+by the chain's spread step against every run at generation 90. Predicted: 1. at generation 146 its fastest at least 3%
+ahead of seed 64's (0.1253) - the best of four lineages within one run; 2. its smallest at generation 146 within 0.5% of
+seed 64's then - islands not slowing the small end past the escape note's bound; 3. the JIT on the front, and no design
+dying. (Iteration 443's seed 65 prediction was for the same setup as seed 64; withdrawn.) Islands are worth keeping if
+1 and 2 both hold.
