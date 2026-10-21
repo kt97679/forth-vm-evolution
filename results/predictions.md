@@ -756,3 +756,10 @@ The after-seed-62 batch's first run, free of the tag-2 requirement; 6 h 37 min o
 - **Iteration 430, the head to head: 1. the three candidates above every design of the checked front measured on all
   three - wrong**: two of seed 62's own front, 5f512a3017 (mean 0.419) and 83716d5eaf (0.437), ahead of bf439eb307
   (0.467). **2. the best of the three passes the veto, its mean under 0.5 - right** (bf439eb307, 0.467).
+
+## Seed 64, with the JIT's founder fixed - predicted (Iteration 442)
+
+Free, no evolved founders, 10 hours (about 9.5 of evolution, no comparison step), the after-seed-63 batch and the JIT
+fix applied. 1. The JIT back: on at least 20% of its front (seed 63: 10%), jitx or jitloop with it on at least 10%.
+2. Its fastest within 10% of seed 62's 0.116 by its own measures - the fast end back, not yet past it. 3. Its smallest
+within 1% of seed 63's 14,348 bytes - the free small end kept. 4. No 32-bit failure, no compile failure.

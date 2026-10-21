@@ -48,16 +48,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 441.
+- master: Iteration 442.
 - **The runs**: seed 63 processed (Iteration 441): the after-seed-62 batch's first run, free - **not small**: the
   smallest +10.8% (14,348 bytes) and 32 bits +13.1%, the best yet; hypervolume +15.1%; but **the fast end -55%** (0.263):
   the JIT never assembled - its hand-made founder lacked the tag the JIT needs, and a free run with no evolved founders
   had no other way in. The rules: freeze, 32-bit, small end PASS; the fast gate 1.051 (partly); I+ 0 (behind
   rtloopall). **The after-seed-63 batch applied** (4 patches: the cheaper immediates and loop table, islands, the
-  rtloopall repair; results/applied-after-seed63/ORDER.md). **Pending, the owner's call before seed 64**: the JIT fix
-  (results/pending/ORDER.md - the founder with the tag, jit_ends for jitre) - recommended now, or seed 64 runs without a
-  JIT as seed 63 did. Next seed 64 (NEXT-RUN: 10 h, the footprint check after it; islands off unless the owner adds the
-  word).
+  rtloopall repair; results/applied-after-seed63/ORDER.md). **The JIT fix applied before seed 64** (442, on the
+  owner's "Continue"; results/applied-after-seed63/ORDER.md, patch 5 - the founder with the tag, jit_ends for jitre). Next seed 64 (NEXT-RUN: 10 h, the footprint check after it; islands off unless the owner adds the
+  word): its fast end with a working JIT again, its small end free.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
   processed - seed 64's, named from the bundle it starts from (seed 63's, `forth-vm-evolution-chain-863f35005-fury-
   20261021-015212_tar.gz`, processed at 441). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop

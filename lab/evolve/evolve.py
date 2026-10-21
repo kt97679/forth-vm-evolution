@@ -2162,7 +2162,7 @@ def main(argv):
     # One competitive - seed 37's fastest, its record from results/ - and one any
     # tree can make, from hand-made s6; crossover lends their genes on.
     if not FROMZERO:
-        pop += [get(dict(HUMAN['s6-cv8b'], jit=1, jitx=1, jitloop=1, jitinl=1), [], 'founder: s6-cv8b + the JIT, jitx, jitloop, jitinl', 0)]
+        pop += [get(dict(HUMAN['s6-cv8b'], tag2=1, jit=1, jitx=1, jitloop=1, jitinl=1), [], 'founder: s6-cv8b + the tag, the JIT, jitx, jitloop, jitinl', 0)]   # 441: the JIT needs the tag
         f37 = None if NOEVOLVED else recorded_genome('38446e6c09')
         if f37: pop += [get(dict(f37, jitloop=1, jitinl=1), [], "founder: seed 37's fastest (38446e6c09) + jitloop, jitinl", 0)]
         else: print("  founder: seed 37's fastest %s - left out" % ('evolved, and --noevolved' if NOEVOLVED else 'not in results/'), flush=True)

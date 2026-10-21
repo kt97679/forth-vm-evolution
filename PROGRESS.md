@@ -8537,3 +8537,42 @@ the size of the tail engines. Not built; GENES.md's "Not yet" carries the price.
 
 Files: results/applied-after-seed63/loopall-repair-after-seed63.patch, results/drafts/price-dthread-440.md (new);
 results/applied-after-seed63/ORDER.md, lab/evolve/GENES.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 441 - 2026-10-21 - Claude
+
+**Seed 63 processed: the batch's first run, free - the small end and 32 bits the best yet, the fast end lost because
+the JIT never assembled; the after-seed-63 batch applied** (results/evolve-amd-ryzen-7-pro-8840hs-seed63.md).
+`seed 63 10h widths noevolved then experiment compare-fronts.py ...` at 863f35005 (Iteration 434): 23,151 designs in 6 h
+37 min, generations 0-90. **Verdict: not small** - against seeds 59-62, both CPUs agreeing: fastest -55.1%, smallest
++10.80% (14,348 bytes), hypervolume +15.1%, best Q -20.7%; at 32 bits its fastest +13.1%, the best yet.
+
+**Why the fast end fell**: the JIT needs the two-bit tag, and the hand-made founder carrying it had tag2 off - its JIT
+never expressed; seeds 59-62 required the tag, seed 58 had evolved founders; seed 63 had neither. The tag stayed at
+3-6% of its designs, the JIT at 1-4% (315 of 18,624), its fastest JIT design 0.269. Not the batch: seed 62's fastest JIT
+designs measured the same on seed 62's code and today's (0.163, 0.153 against 0.153, 0.155 here). A second fault: three
+designs did not compile - jitre calls jit_ends, defined only with jitx. Both fixed in one patch, tested.
+
+The rules (review-checks.py rules): the freeze PASS (no reach-limit refusal, the frozen values held), 32-bit PASS (no
+failure at all), the small end PASS; the fast gate 1.051 - partly; I+ 0, behind rtloopall (its repair in the batch now
+applied); jithelp, jitre, jitret, tail not candidates - the JIT's genes not voted this run (unavailable), the ledger
+says why; the rtimm/rtfuse overlap: 14 front designs rely on it - no change. Remote checks of seed 62's front
+(results/xcheck-seed63.md): **the Tegra built all 7 asked for - item 0d closed**; the head to head: seed 62's 5f512a3017
+first across the machine classes (mean 0.419), then 83716d5eaf (0.437), bf439eb307 (0.467). Predictions: 7 right, 2
+wrong (I+; the candidates above the checked front), one uninformative.
+
+The after-seed-63 batch: batch-check PASS on 68f360b, applied (results/applied-after-seed63/). On the new master: the
+build, run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS, the gate 161 of 161 alive (the run's 104 and the joint
+front's 107), ans-check 0 of 27 differ (the first chain stopped after the jail again; its last two steps run again).
+Session 55 appended; the gene votes' first run in the ledger; REMOTES' --also lists out; NEXT-RUN seed 64, 10 hours,
+the footprint check after it; results/progress-by-run.md regenerated.
+
+## Iteration 442 - 2026-10-21 - Claude
+
+**The JIT fix applied before seed 64** (the owner: Continue, after the recommendation to apply it now). batch-check of
+the one patch on 072d26e: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS; applied as the after-seed-63 batch's
+patch 5. Seed 64 starts with a founder whose JIT works; predicted.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed63.md, results/xcheck-seed63.md (new); results/applied-after-seed63/
+(the batch and patch 5); engine/jit.c, lab/evolve/evolve.py and the batch's files; lab/evolve/NEXT-RUN,
+lab/evolve/REMOTES, results/gene-votes.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/predictions.md,
+results/progress-by-run.md, results/README.md, HANDOFF.md.

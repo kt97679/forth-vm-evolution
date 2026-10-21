@@ -424,6 +424,8 @@ static void jit_dump(int fd) {
 #define JITNOTE(w, e)
 #endif
 
+/* Iteration 441: out of JITX's block - jitre (Iteration 346) calls it without jitx; three of seed 63's designs did not compile */
+static inline int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; return o->n && o->st[o->n - 1] == S_EXIT; }
 #if JITX
 /*  Iteration 108, the gene jitx: the translator reaches further (results/
  *  jit-kernel-words.md).
@@ -448,7 +450,6 @@ static uint32_t *jit_kslot(UNS64 w) {
     }
     return 0;                           /* full: the rest stay bytecode */
 }
-static int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; return o->n && o->st[o->n - 1] == S_EXIT; }
 #else
 #define JIT_DEPTH 4
 #endif

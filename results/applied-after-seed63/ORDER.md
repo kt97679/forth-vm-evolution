@@ -54,3 +54,16 @@ validate 7 of 7 IDENTICAL, jail PASS.
 
 Moved into results/pending/ at seed 62's processing (Iteration 433), once the after-seed-62 batch was applied, and
 batch-checked against that master; applied at seed 63's processing, as the routine applies any batch.
+
+## Patch 5 - the JIT fix, applied before seed 64 (Iterations 441-442)
+
+    git apply results/applied-after-seed63/jitfix-after-seed63.patch
+
+Found at seed 63's processing (results/evolve-amd-ryzen-7-pro-8840hs-seed63.md): **the founder** carrying the JIT
+(s6-cv8b with jit, jitx, jitloop, jitinl, Iteration 155) gets tag2 - the JIT needs the two-bit tag, and without it the
+founder's JIT never expressed, so seed 63, free and with no evolved founders, had no working JIT (its fast end -55%);
+**jit_ends** (engine/jit.c) moves out of jitx's block - jitre calls it without jitx, and three of seed 63's designs did
+not compile. Tested in a clone after the four patches above: the three designs build and live; the founder with the tag
+expresses the JIT, jitx, jitloop and jitinl, builds and lives. batch-check on 072d26e: run-tests PASS, validate 7 of 7
+IDENTICAL, jail PASS. Applied to master at Iteration 442, on the owner's "Continue" after the recommendation to apply it
+before seed 64.
