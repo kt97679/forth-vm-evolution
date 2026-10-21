@@ -48,18 +48,18 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 442.
-- **The runs**: seed 63 processed (Iteration 441): the after-seed-62 batch's first run, free - **not small**: the
-  smallest +10.8% (14,348 bytes) and 32 bits +13.1%, the best yet; hypervolume +15.1%; but **the fast end -55%** (0.263):
-  the JIT never assembled - its hand-made founder lacked the tag the JIT needs, and a free run with no evolved founders
-  had no other way in. The rules: freeze, 32-bit, small end PASS; the fast gate 1.051 (partly); I+ 0 (behind
-  rtloopall). **The after-seed-63 batch applied** (4 patches: the cheaper immediates and loop table, islands, the
-  rtloopall repair; results/applied-after-seed63/ORDER.md). **The JIT fix applied before seed 64** (442, on the
-  owner's "Continue"; results/applied-after-seed63/ORDER.md, patch 5 - the founder with the tag, jit_ends for jitre). Next seed 64 (NEXT-RUN: 10 h, the footprint check after it; islands off unless the owner adds the
-  word): its fast end with a working JIT again, its small end free.
+- master: Iteration 443.
+- **The runs**: seed 64 processed (Iteration 443): free, the batch and the JIT fix in - **the JIT back** (81 of its 167
+  front designs), **the smallest of any run** (14,047 bytes), its fastest 0.125 (seed 62's 0.116), **not one design died**;
+  the rtloopall repair worked (expressed where set 78%, on 155 of the front; I+ on 55); the footprint check: the top
+  keeps its order at 10,000 words (Spearman 0.888) - no footprint gate needed, the check stays in every line. No
+  verdict (no comparison step). **For the owner before seed 65**: islands - seed 64 is the baseline the islands trial
+  was waiting for (item 4c); the fast gate - optimism 1.085, its rule says revisit; rtfuse to govern rtimm=2's run-time
+  fusion - no front design relies on the overlap now (rule 9's proposal). NEXT-RUN: seed 65 as seed 64 until the owner
+  says.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 64's, named from the bundle it starts from (seed 63's, `forth-vm-evolution-chain-863f35005-fury-
-  20261021-015212_tar.gz`, processed at 441). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
+  processed - seed 65's, named from the bundle it starts from (seed 64's, `forth-vm-evolution-chain-c094ab788-fury-
+  20261021-130905_tar.gz`, processed at 443). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest
@@ -98,7 +98,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 5. A batch due now (its ORDER.md says when): `tools/batch-check.sh` first (one line), then apply it (reseed with
    `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
    files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
-   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS), `python3
+   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - last, and under setsid:
+   in a chain of its own it took the rest of the chain with it twice, 433 and 441; last and in its own session at 443 it
+   did not), `python3
    lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
    out, the run's front alone - Iteration 427), `python3 lab/evolve/ans-check.py
    --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
@@ -252,7 +254,8 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    but each design's time per call against s6 moves 1.6-3.8 times across N: the fast designs about 4x s6's speed at
    100-1,000 words, 1.1-1.5x at 10,000 (s6 itself falls off a cliff at 30,000: 154 to 464 ns a call). The selection's
    small programs flatter the fast end at large footprints; a footprint workload in the selection, or this as a
-   held-out check each run - the owner's call: **priced (435, results/drafts/footprint-gate-435.md)** - a held-out check
+   held-out check each run - **answered by seed 64's check (443): the 16 fastest keep their order at 10,000 words
+   (Spearman 0.888) - no gate, no workload; the check stays in each line.** Priced before (435, results/drafts/footprint-gate-435.md) - a held-out check
    about 10 minutes a run (recommended first), a fast-end gate 1-2% of a run, a selection workload some 30% of its
    generations. **The held-out check in the chain (the owner, 435-437)**: footprint.py --fastest (the front's 16 fastest,
    at 100 and 10,000 words, 3 rounds, about 15 minutes) - from seed 64's line on, every seed line: seed 63's processing

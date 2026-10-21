@@ -763,3 +763,24 @@ Free, no evolved founders, 10 hours (about 9.5 of evolution, no comparison step)
 fix applied. 1. The JIT back: on at least 20% of its front (seed 63: 10%), jitx or jitloop with it on at least 10%.
 2. Its fastest within 10% of seed 62's 0.116 by its own measures - the fast end back, not yet past it. 3. Its smallest
 within 1% of seed 63's 14,348 bytes - the free small end kept. 4. No 32-bit failure, no compile failure.
+
+## Seed 64, scored (Iteration 443)
+
+Free, 10 hours (9 h 25 min of evolution, 146 generations), the after-seed-63 batch and the JIT fix applied.
+**8 right, 1 wrong, 1 past its bound in the good direction.**
+
+- **Iteration 442: 1. the JIT on at least 20% of the front, jitx or jitloop with it on 10% - right**: the JIT on 81 of
+  167 (49%), jitx and jitloop on all 81. **2. its fastest within 10% of seed 62's 0.116 - right**: 0.125 (+7.8%).
+  **3. its smallest within 1% of seed 63's 14,348 - past it, the good way**: 14,047 (-2.1%), the smallest of any run.
+  **4. no 32-bit failure, no compile failure - right**: not one design died.
+- **Iteration 440, the rtloopall repair: expressed in at least 30% of the genomes that set it - right** (78%; seed 62:
+  1.6%); **on at least 20% of the front - right** (155 of 167); **rtiplus on at least 5% - right** (33%).
+- **Iteration 436, the held-out footprint check: under 0.6 within the 16 fastest at 10,000 words - wrong**: 0.888 (0.797
+  at 100) - the top keeps its order on large programs; their lead over s6 halves, about 4x to 2x.
+
+## Seed 65 - predicted (Iteration 443)
+
+If the same setup as seed 64 (no islands): its ends within 5% of seed 64's by its own measures (fastest 0.125, smallest
+14,047); the JIT on 30-70% of the front; no design dying. (Should the owner choose islands for it, Iteration 435's
+measure applies instead: the fast end against seeds 63-64's at their common generation, the small end no worse than
+0.5%.)

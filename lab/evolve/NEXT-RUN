@@ -13,6 +13,7 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 443: seed 65 as seed 64 until the owner decides on islands (the word "islands" in the line).
 # Iteration 441: seed 64 - its hours as seed 63's, the held-out footprint check after it (435-437); islands and the
 # JIT founder's fix the owner's to decide before it starts (HANDOFF item 0).
 # Iteration 437: the held-out footprint check (results/drafts/footprint-gate-435.md) from seed 64's line on, as the
@@ -54,4 +55,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 64 10h widths noevolved then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3
+seed 65 10h widths noevolved then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3

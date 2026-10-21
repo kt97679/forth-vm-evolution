@@ -8576,3 +8576,29 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed63.md, results/xcheck-seed63.md
 (the batch and patch 5); engine/jit.c, lab/evolve/evolve.py and the batch's files; lab/evolve/NEXT-RUN,
 lab/evolve/REMOTES, results/gene-votes.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/predictions.md,
 results/progress-by-run.md, results/README.md, HANDOFF.md.
+
+## Iteration 443 - 2026-10-21 - Claude
+
+**Seed 64 processed: the JIT back, the smallest design of any run, not one design died; the rtloopall repair and the
+footprint question answered** (results/evolve-amd-ryzen-7-pro-8840hs-seed64.md). `seed 64 10h widths noevolved then
+experiment footprint.py --fastest ...` at c094ab788 (Iteration 442): 37,499 designs in 9 h 25 min, generations 0-146;
+no compile failure, no reach-limit refusal, no 32-bit failure. No verdict (no comparison step).
+
+By its own measures: fastest 0.125 (seed 62: 0.116; seed 63: 0.263), smallest 14,047 bytes (seed 58's 14,146 the
+smallest before), at 32 bits 0.333. The JIT on 81 of 167 front designs, jitx and jitloop on all of them (seed 63: 10) -
+the founder's fix. rtloopall expressed in 78% of the genomes that set it (seed 62: 1.6%), on 155 of the front; rtiplus on
+55. heldout 0.978, the fastest tenth 0.888, regret +0.0% - the best yet; fast-end optimism 1.085 (the fast gate's rule:
+revisit). The footprint check: the 16 fastest keep their order at 10,000 words (Spearman 0.888; 0.797 at 100), their lead
+over s6 about 4x to 2x - no footprint gate or workload needed; the check stays. Rules: freeze, 32-bit, small end, I+ PASS;
+rule 9 proposes rtfuse to govern (no front design relies on the overlap). Gene votes: none a candidate after two runs;
+skippad, fold, sharedcall, tail, kstack, opcall, tailpn at 8 of 8. Remote checks of seed 63's front
+(results/xcheck-seed64.md): cf524f4c20, rejected by seed 63's selection, first across the machine classes (0.409).
+Predictions: 8 right, 1 wrong (the footprint top's reordering), 1 past its bound the good way (the small end).
+
+On master: the build, run-tests PASS, validate 7 of 7 IDENTICAL, the gate 167 of 167 alive, ans-check 0 of 43 (its
+negative control caught), the jail PASS - this time the whole chain finished: the jail run last and in its own session
+(it had ended the chain after it twice); the routine now says so. NEXT-RUN: seed 65 as seed 64 until the owner decides
+on islands; results/progress-by-run.md regenerated.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed64.md, results/xcheck-seed64.md (new); results/gene-votes.md,
+results/predictions.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
