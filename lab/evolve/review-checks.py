@@ -484,8 +484,11 @@ elif check == 'rules':
     sm = min(by.values()) if by else None
     out.append((6, 'The small end', "the front's smallest %s bytes" % ('{:,}'.format(int(sm)) if sm else '-'), 'at most 14,535',
                 'PASS' if sm and sm <= 14535 else 'ATTENTION'))
-    on = sum(1 for i in ids if ex[i].get('rtiplus')); share = 100.0 * on / n if n else 0.0
-    out.append((7, 'I+ (rtiplus)', '%.0f%% of the front (%d designs)' % (share, on), 'above 10%', 'PASS' if share > 10 else 'NOTED'))
+    on = [i for i in ids if ex[i].get('rtiplus')]                  # Iteration 448: and how many have the fuser I+ needs -
+    eff = [i for i in on if E.overlay(cg[i])]                      # without it rtiplus is expressed and inert (447)
+    share = 100.0 * len(eff) / n if n else 0.0
+    out.append((7, 'I+ (rtiplus)', '%d designs with it, %d of them with the run-time fuser it needs - %.0f%% of the front working'
+                % (len(on), len(eff), share), 'above 10%, working', 'PASS' if share > 10 else 'NOTED'))
     t, cand = gene_line('tail'); out.append((8, 'tail', t, 'kept unless a candidate', 'ATTENTION' if cand else 'PASS'))
     ov = [i for i in ids if E.rtimm2(cg[i]) and not ex[i].get('rtfuse') and (E.supers_in(cg[i]) or E.rt_tests(cg[i]))]
     out.append((9, 'The rtimm=2 / rtfuse overlap', 'front designs relying on it: %d' % len(ov), 'none: rtfuse to govern - proposed; some: no change',

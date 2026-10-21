@@ -8658,3 +8658,12 @@ validate 7 of 7 IDENTICAL, jail PASS. Seed 66 predicted.
 
 Files: results/pending/iplus-fuser-after-seed65.patch (new); results/pending/ORDER.md, results/predictions.md,
 results/README.md, HANDOFF.md.
+
+## Iteration 448 - 2026-10-21 - Claude
+
+**Rule 7 counts I+ that works** (while seed 65 runs). review-checks.py rules: the I+ line now counts the designs with
+rtiplus and, of them, those built with the run-time fuser I+ needs (overlay(), as the build decides) - the share of the
+front working. Seed 64, again: 55 with rtiplus, 18 working - 11% of the front, not the 33% reported at 443. The check
+runs at a seed's processing before its batch is applied, so seed 65's reading is its own code's.
+
+Files: lab/evolve/review-checks.py, HANDOFF.md.
