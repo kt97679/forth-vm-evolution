@@ -1,0 +1,123 @@
+pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
+  founder: seed 37's fastest evolved, and --noevolved - left out
+  founder: seed 40's small-end knee evolved, and --noevolved - left out
+    a9a65d6057 speed 1.565 size 27264   hand-made s0-cell
+    e97f72d39e speed 1.716 size 16776   hand-made s1-sod16
+    99d582de7d speed 1.346 size 16072   hand-made s2-cpt16
+    d113518703 speed 1.218 size 15904   hand-made s3-cpt16f
+    18a2c3e300 speed 1.263 size 14736   hand-made s4-cv8
+    31f61139fa speed 0.9489 size 12592  hand-made s5-cv8spec
+    40e755e2ae speed 0.9688 size 9265   hand-made s6-cv8b
+    68d47e90f3 speed 1.217 size 8751    founder: s4-cv8 + 24 pairs, run-time fusion
+    885e48cc6e speed 1.028 size 7953    founder: s6-cv8b + 2 pairs
+    912bad6160 speed 1.055 size 8334    founder: s6-cv8b + 2 pairs, run-time fusion
+    66bdb5b3b3 speed 1.299 size 8062    founder: s4-cv8 + format-10 opcodes + 20 pairs
+    8123f8c86f speed 1.023 size 7945    founder: s6-cv8b + EXECUTE, I as opcodes
+    dda6c6d477 speed 1.053 size 7644    founder: s6-cv8b + escape, 7 words, 24 pairs
+    68ac6b97da speed 0.959 size 7964    founder: s6-cv8b + escape, all format-10 opcodes, pairs, tests fused a
+    32a8aaf4ee speed 0.7485 size 7984   founder: s6-cv8b + the tag, the JIT, jitx, jitloop, jitinl
+    c2f3f86b39 speed 1.618 size 8435    seeded mutation: tracer=1
+  generation 1: 16 alive, front 6
+    a127d1037a speed 0.7787 size 8376   crossover
+    0b2b88da1e speed 1.159 size 8245    crossover; mutation: align1=1
+    b5d51859fd speed 1.227 size 8751    mutation: gotodup=32
+    03af0d4122 speed 1.212 size 8491    crossover; borrowed rtloopall from c2f3f86b39; mutation: jitret=1, t2w
+    cfb8c07f55 speed 1.249 size 8512    crossover; mutation: -spec tiny, rtempty=1
+    4b7ed43201 speed 1.522 size 16072   mutation: tracer=1
+    13431fe10c speed 1.363 size 15904   crossover; borrowed msc from c2f3f86b39; mutation: nocet=1
+    99aaf2bef8 speed 0.9793 size 7644   mutation: tail=1
+    870d64982d speed 1.502 size 8435    mutation: jittail=1, noreorder=1
+    7fd31bbc54 speed 1.167 size 8245    mutation: +spec tiny, alignfn=1
+    ebf4f83b06 speed 1.193 size 8135    crossover; mutation: jitinl=1
+    eee1617bbc speed 1.517 size 8435    mutation: alignfn=1
+    b90735f5b7 speed 1.064 size 7953    mutation: noinls=1
+    f9a2b48a3a speed 1.296 size 8544    crossover; mutation: jitvar=1
+    3ceb86675c speed 0.9199 size 7945   crossover; mutation: alignhot=32
+    0eff03b2cb speed 1.376 size 7964    mutation: -Os, gotodup=32
+  the attic: 11 designs, 31 gene values no survivor has
+  generation 2: 16 alive, front 7
+    a127d1037a measured again: 0.7787, then 0.7242 - speed 0.751
+    99aaf2bef8 measured again: 0.9793, then 0.9881 - speed 0.9837
+    3ceb86675c measured again: 0.9199, then 0.9346 - speed 0.9272
+    0fae7227a0 speed 1.134 size 8333    borrowed msc from cfb8c07f55; mutation: jitimg=1, abortif=1; via the a
+    627a355791 speed 0.8573 size 7945   mutation: tracer=1
+    362b257829 speed 1.386 size 15904   crossover; mutation: peel=1, tracer=1; via the attic
+    35766f32c6 speed 0.7605 size 7984   mutation: align1=1
+    632b5fc550 speed 0.7404 size 8376   mutation: noreorder=1, peel=1
+    20d44ce86b speed 1.009 size 7953    crossover; mutation: jittail=1
+    f8cea8ae18 speed 1.694 size 8451    mutation: escape=1; via the attic
+    2a79196a7d speed 1.151 size 8245    mutation: tos=1
+    e2ab3e9df0 speed 0.7328 size 7984   mutation: nocet=1
+    64bb56c3f6 speed 1.664 size 8435    mutation: nogcse=1, -spec tiny
+    244cb3882d speed 1.521 size 8435    mutation: varslot=1; via the attic
+    34af137730 speed 0.9754 size 7953   borrowed varcall+varslot from 3ceb86675c; mutation: noreorder=1, jitva
+    7560f7c820 speed 0.7944 size 8376   mutation: tracer=1
+    0725b57b29 speed 0.967 size 7915    crossover; mutation: escape=2
+    c502c461d3 speed 1.044 size 7953    crossover; mutation: rtiplus=1
+  the attic: 23 designs, 82 gene values no survivor has
+  generation 3: 16 alive, front 6
+    627a355791 measured again: 0.8573, then 0.9251 - speed 0.8905
+    35766f32c6 measured again: 0.7605, then 0.7729 - speed 0.7667
+    632b5fc550 measured again: 0.7404, then 0.7258 - speed 0.7331
+    e2ab3e9df0 measured again: 0.7328, then 0.7714 - speed 0.7518
+    34af137730 measured again: 0.9754, then 1.009 - speed 0.9919
+    7560f7c820 measured again: 0.7944, then 0.757 - speed 0.7755
+    0725b57b29 measured again: 0.967, then 0.9464 - speed 0.9567
+    cf3b71f0e3 speed 0.8876 size 7945   mutation: alignfn=1, +op (LEAVE)
+    bf799b31e6 speed 1.268 size 8167    crossover; mutation: tailpn=1
+    060212fb0b speed 0.6935 size 8085   crossover; mutation: rtloopall=1, dskew=1, rtloopall repaired (+ops (D
+    38ac0a4b37 speed 0.691 size 7984    mutation: guard=1
+    3d578817e5 speed 1.103 size 7969    mutation: escape=1
+    59287e34a6 speed 1.617 size 8333    mutation: compiler=1, jitloop=1; via the attic
+    eeca45c1bd speed 1.162 size 8245    mutation: dskew=1
+    0d125e37ef speed 0.7894 size 7984   mutation: bfind=1, jitinl=0
+    92cab7d831 speed 1.031 size 7906    mutation: -spec tiny, hotcalls=16
+    d754837b56 speed 1.236 size 8109    mutation: tag2=1
+    0617bfffb6 speed 1.759 size 7945    crossover; mutation: compiler=1, sharedcall=0
+    356b768b8c speed 0.991 size 8149    crossover; mutation: tracer=1, tos=1
+    b032846709 speed 1.464 size 7953    mutation: compiler=1
+    ee5df84616 speed 1.466 size 8435    crossover; mutation: gotodup=128, nogcse=1
+    0eb86583f1 speed 1.016 size 7953    mutation: rtempty=1, nogcse=1
+    9c866a9538 speed 1.037 size 7857    crossover; mutation: lto=1
+  the attic: 29 designs, 83 gene values no survivor has
+  generation 4: 16 alive, front 8
+    060212fb0b measured again: 0.6935, then 0.6816 - speed 0.6876
+    38ac0a4b37 measured again: 0.691, then 0.7606 - speed 0.725
+    df3866bc6b speed 0.9837 size 7841   borrowed supers from 356b768b8c
+    b4823550c5 speed 0.9754 size 7953   mutation: guard=1, kinput=1
+    0e7b24b06a speed 0.8983 size 8664   mutation: threads=2
+    f30b46f060 speed 0.6773 size 8381   crossover; mutation: rtloopall=1, rtloopall repaired (+ops (DO) (LOOP)
+    fe04dbb0a9 speed 1.561 size 7953    mutation: align1=1, guard=1
+    4852db9169 speed 0.8823 size 7857   mutation: nocrossjump=1
+    496799b681 speed 0.9863 size 7953   mutation: +op UNLOOP
+    20739fa99f speed 0.9952 size 7953   mutation: ipaclone=1
+    594d091276 speed 0.998 size 8149    borrowed kfast+tfind+kinput+klookup from a127d1037a; mutation: +spec l
+    af028e87d3 speed 1.017 size 7985    crossover; mutation: kstack=1
+    76b419fb0a speed 1.095 size 8245    mutation: tail=1; via the attic
+    e3ced22deb speed 1.197 size 8109    mutation: d256=1
+    22a95a655f speed 1.125 size 8245    crossover; mutation: fbuf=512; via the attic
+    8deeb79714 speed 1.056 size 8041    mutation: ipaclone=1, abortif=1
+  the attic: 35 designs, 86 gene values no survivor has
+
+The Q-best design (binary + image x run time x memory - the knee; information): 060212fb0b, speed 0.710, binary + image 22,557, memory 136 KB - Q 0.679 of s6-cv8b's.
+
+## The Pareto front
+
+| design | speed | re-measured | image | binary | binary + image | memory KB | sieve (held out) | genes, where they differ from s6-cv8b | how it was made |
+|---|---|---|---|---|---|---|---|---|---|
+| f30b46f060 | 0.699 | - | 8,381 | 14,504 | 22,885 | 140 | 0.715 | tracer=1; spec=tiny; ops10=(DO),(LOOP),(+LOOP),(?DO),(LEAVE),I,J,UNLOOP; escape=1; rtloop=1; rtloopall=1; bss=1; thinhdr=1; noinls=1 | crossover; mutation: rtloopall=1, rtloopall repaired (+ops ( |
+| 060212fb0b | 0.710 | - | 8,085 | 14,472 | 22,557 | 136 | 0.674 | noreorder=1; ops10=(DO),(LOOP),(+LOOP),(?DO),(LEAVE),I,J,UNLOOP; escape=1; rtloop=1; rtloopall=1; bss=1; thinhdr=1; dskew=1 | crossover; mutation: rtloopall=1, dskew=1, rtloopall repaire |
+| 4852db9169 | 0.911 | - | 7,857 | 12,376 | 20,233 | 136 | 0.835 | nocrossjump=1; nocet=1; bss=1; thinhdr=1; tag2=1; lto=1 | mutation: nocrossjump=1 |
+| df3866bc6b | 1.015 | - | 7,841 | 12,376 | 20,217 | 136 | 0.751 | nocet=1; 1 pairs: DUP >R; rtfuse=0; bss=1; thinhdr=1; tag2=1; lto=1 | borrowed supers from 356b768b8c |
+| 9c866a9538 | 1.071 | - | 7,857 | 12,344 | 20,201 | 140 | 0.854 | nocet=1; bss=1; thinhdr=1; tag2=1; lto=1 | crossover; mutation: lto=1 |
+| d754837b56 | 1.275 | - | 8,109 | 12,040 | 20,149 | 140 | 0.870 | tracer=1; tos=0; spec=tiny; varslot=0; bss=1; thinhdr=1; tag2=1; alignfn=1 | mutation: tag2=1 |
+| b032846709 | 1.512 | - | 7,953 | 10,480 | 18,433 | 136 | 1.564 | bss=1; thinhdr=1; compiler=1 | mutation: compiler=1 |
+| 870d64982d | 1.550 | - | 8,435 | 9,704 | 18,139 | 132 | 1.318 | noreorder=1; tracer=1; tos=0; spec=; varslot=0; bss=1; thinhdr=1 | mutation: jittail=1, noreorder=1 |
+
+## How the front came about
+
+- `f30b46f060`: from hand-made s4-cv8, then mutation: varslot=1; via the attic / crossover; mutation: rtloopall=1, rtloopall repaired (+ops (DO) (LOOP)
+- `060212fb0b`: from hand-made s6-cv8b, then borrowed varcall+varslot from 3ceb86675c; mutation: noreorder=1, jitva / crossover; mutation: rtloopall=1, dskew=1, rtloopall repaired (+ops (D
+- `4852db9169`: from hand-made s6-cv8b, then crossover; mutation: lto=1 / mutation: nocrossjump=1
+- `df3866bc6b`: from hand-made s6-cv8b, then crossover; mutation: lto=1 / borrowed supers from 356b768b8c
+report: /tmp/fg446/build/evolve/report.md
