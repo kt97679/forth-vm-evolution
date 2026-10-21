@@ -1419,7 +1419,9 @@ def emit(path):
             if w['n'] == 'LOOP-OPS': data = bytes([G['X_OPS10'].get(n, 0) if _ok else 0 for n in _lw])
             elif w['n'] == 'X10-XTS':
                 _o = [o for o, _ in _x]
-                data = b''.join(cel(v) for v in ([min(_o), max(_o)] + _o + [0] * (3 - len(_o)) if _o else [0] * 5))
+                # Iteration 423 (results/wip-regmachine): three 16-bit offsets, little-endian, no range
+                assert all(v < 65536 for v in _o), 'X10-XTS: I J UNLOOP past 64 KB'
+                data = b''.join(bytes([v & 255, v >> 8]) for v in _o + [0] * (3 - len(_o)))
             else: data = bytes([op for _, op in _x] + [0] * (3 - len(_x)))
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time

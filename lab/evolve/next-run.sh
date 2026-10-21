@@ -171,6 +171,10 @@ case " $* " in *" fromzero "*) FROMZERO=1; NOCARRY=1; set -- $(printf '%s\n' "$@
 # anchoring test as seed 36 ran it, before those founders existed.
 NOEVOLVED=${NEXT_RUN_NOEVOLVED:-}
 case " $* " in *" noevolved "*) NOEVOLVED=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx noevolved) ;; esac
+# Iteration 436 (the owner; results/drafts/escape-mechanism-435.md): "islands" - the population in four islands, each
+# ranked and bred alone, a ring of migrants every 10 generations (evolve.py --islands 4).
+ISLANDS=
+case " $* " in *" islands "*) ISLANDS=4; set -- $(printf '%s\n' "$@" | grep -vx islands) ;; esac
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
@@ -490,7 +494,7 @@ fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
 python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
 TICK=$!
-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} "$@" >> evolve.log 2>&1 \
+python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} ${ISLANDS:+--islands "$ISLANDS"} "$@" >> evolve.log 2>&1 \
     || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
 kill $TICK 2>/dev/null || true
 tail -3 evolve.log

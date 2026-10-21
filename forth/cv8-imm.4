@@ -1,0 +1,55 @@
+\ cv8-imm.4 - the run-time immediates alone: rtimm=2 in a plain-CV8 design with no pairs to fuse
+\ (results/wip-regmachine/README.md, Iteration 422 - work in progress, not in any run). cv8-fuse-imm.4's
+\ forms - n + as ADDI n, SWAP n + as SWAP+I n - over the kernel's own compiler, without cv8-fuse.4: its
+\ pair lookup (SUPER-TABLE, SUPER-OP) and its copy of the fold table, which a design with no pairs
+\ carries for nothing. LAST-OP, and the folds at ;, are the kernel's (cv8.4), which clears LAST-OP at
+\ every branch resolution; BEGIN clears it here as cv8-fuse.4's does, so no literal fuses across a loop's
+\ start. IMM-OPS, LIT-PREV, SMALL-LIT? and IMM+ are built headerless.
+CREATE IMM-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C, 0 C,   \ Iteration 176: DUP+I DUP<I DUP <
+ALIGN
+VARIABLE LIT-PREV ( --- a-addr )
+\ The primitive emitted straight before the last literal, or 0.
+
+: SMALL-LIT? ( a --- n -1 | 0 )
+\ The literal at a, ending at HERE, if ADDI's signed byte holds it: LIT8
+\ 0-127, or LIT32 -128 to -1 (a negative is never narrower).
+  DUP C@ LIT8-OP = IF
+    DUP 2 + HERE = IF 1+ C@ DUP 128 < IF -1 EXIT THEN THEN DROP 0 EXIT
+  THEN
+  DUP C@ LIT32-OP = IF DUP 5 + HERE = IF
+    DUP 2 + C@ 255 = OVER 3 + C@ 255 = AND OVER 4 + C@ 255 = AND
+    OVER 1+ C@ 128 < 0= AND IF 1+ C@ 256 - -1 EXIT THEN
+  THEN THEN DROP 0 ;
+
+: LITERAL8 ( n --- )
+\ cv8.4's, and a literal ADDI can hold stays in LAST-OP.
+  LAST-OP @ DUP IF DUP 1+ HERE = AND THEN LIT-PREV !
+  HERE SWAP LIT,
+  IMM-OPS C@ IF DUP SMALL-LIT? IF DROP LAST-OP ! EXIT THEN THEN DROP ; IMMEDIATE
+
+: IMM+ ( xt --- xt 0 | -1 )
+\ xt is + and a literal ADDI holds is straight before it: ADDI n in its
+\ place - or SWAP+I n where a plain SWAP came straight before the literal.
+  IMM-OPS C@ 0= IF 0 EXIT THEN
+  DUP C@ IMM-OPS 2 + C@ <> IF 0 EXIT THEN
+  LAST-OP @ ?DUP 0= IF 0 EXIT THEN
+  DUP SMALL-LIT? 0= IF DROP 0 EXIT THEN
+  ROT DROP SWAP
+  LIT-PREV @ ?DUP IF DUP C@ IMM-OPS 3 + C@ = IMM-OPS 1+ C@ 0= 0= AND IF
+    SWAP DROP HERE - ALLOT IMM-OPS 1+ C@ OP, C, 0 LAST-OP ! -1 EXIT
+  THEN DROP THEN
+  HERE - ALLOT IMM-OPS C@ OP, C, 0 LAST-OP ! -1 ;
+
+\ COMPILE,8 as cv8-fuse-imm.4's, without the pair lookup.
+: COMPILE,8 ( xt --- )
+  DUP PRIMITIVE? IF
+    DUP C@ 125 = IF
+      DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+    ELSE
+      IMM+ IF EXIT THEN
+      C@ HERE LAST-OP ! OP,
+    THEN
+  ELSE
+    CALL,
+  THEN ;
+: BEGIN8 ( --- a-addr )   ?COMP 0 LAST-OP ! HERE ; IMMEDIATE

@@ -353,6 +353,20 @@ def rtloopall_on(g):
     # seed 18. I+ assumed to claim its slot whenever rtiplus is asked for.
     got = [w for w, _ in zip(ops10_order(g, bool(g.get('rtiplus'))), super_slots(g))]
     return all(n in got for n in LOOP10)
+LOOP_REPAIR = float(os.environ.get('EVOLVE_LOOP_REPAIR', 0.25))
+def rtloopall_repair(g):
+    """Iteration 440 (results/audit-genes-designs-439.md): rtloopall's prerequisite met - the loop words missing from
+    the format-10 list put first, where they get slots, and the run-time loop compiler on. In seed 62 only 92 of 5,819
+    genomes setting rtloopall could express it (J, UNLOOP and (LEAVE) missing): eight entries at once, three of them
+    worth little alone; and a tag-2 design without escape has 2-4 format-10 slots, too few for eight - escape on
+    then (rtloopall and escape are linked already, LINKS). The search still weighs it: the words take slots from others."""
+    fixed = []
+    missing = [n for n in LOOP10 if n not in g.get('ops10', [])]
+    if missing: g['ops10'] = missing + [w for w in g.get('ops10', []) if w not in missing]; fixed.append('+ops ' + ' '.join(missing))
+    elif not rtloopall_on(g): g['ops10'] = list(LOOP10) + [w for w in g['ops10'] if w not in LOOP10]; fixed.append('loop ops first')
+    if not g.get('rtloop'): g['rtloop'] = 1; fixed.append('rtloop=1')
+    if not rtloopall_on(g) and not g.get('escape'): g['escape'] = 1; fixed.append('escape=1')   # the slots: 2-4 without it on the tag
+    return fixed
 def kfast_on(g):
     """Iteration 49: kernel words made faster for the byte-header system
     (forth/cv8b-kfast.4) - a byte-header CV8 design with the gene. (A
@@ -400,6 +414,12 @@ def rtimm2(g):
     cv8t-fuse-imm.4). Seed 40's small designs carried rtimm=1 unexpressed: it
     waited on pairs and rtfuse, three mutations away (results/price-hybrid.md)."""
     return g['enc'] == 'cv8' and g.get('rtimm') == 2 and 'imm' in g['spec']
+RTIMM_LEAN_INTERNAL = ('IMM-OPS', 'LIT-PREV', 'SMALL-LIT?', 'IMM+')
+def rtimm_lean(g):
+    """Iteration 422 (results/wip-regmachine/README.md): rtimm=2 in a plain-CV8 design with nothing else
+    for the run-time fuser to do - no pairs, no fused tests - builds forth/cv8-imm.4 alone, not
+    cv8-fuse.4 under cv8-fuse-imm.4 (rtimm=2 passes --rtfuse: built pairs and tests fuse, rtfuse or not)."""
+    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2')
 RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
 def rt_tests(g):
     """The fused tests this design has opcodes for - with rtfuse, its
@@ -1029,6 +1049,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitre'): opts.append('--jitre')       # Iteration 346: native code calling bytecode
     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
+    if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
     if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
         hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ()) + (FSYS4_INTERNAL if fsys_level(g) >= 4 else ()) + (FSYS5_INTERNAL if fsys_level(g) == 5 else ())
@@ -1038,6 +1059,7 @@ def _build(g, d):
     opts += CONVERT_EXTRA
     img = os.path.join(d, 'image.img')
     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
+    if rtimm_lean(g): fuse = '-lit'                                                                   # Iteration 422: no pair lookup
     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
@@ -1259,6 +1281,8 @@ def reach_lethal(g):
     lived: those still run - jailed."""
     return g['enc'] == 'cv8' and g.get('scale', 0) == 0 and not (g.get('varcall') and g.get('doesfar'))
 FASTGATE = [20, 1.05]   # Iteration 391 (the owner): the fast end measured twice - fast_gate(), evaluate(); --fastgate N
+ISLANDS = [int(os.environ.get('EVOLVE_ISLANDS', 1))]   # Iteration 436 (results/drafts/escape-mechanism-435.md): --islands K
+MIGRATE = [int(os.environ.get('EVOLVE_MIGRATE', 10))]  # generations between migrations, a ring
 def fast_gate(R):
     """The speed under which a child is measured twice: 5% above the FASTGATE[0]-th fastest design alive so
     far - the fast end, and the noise band around it. The fast end's in-run speeds were ~10% optimistic
@@ -1375,6 +1399,10 @@ def mutate(g, rnd):
                 what.append('fold %s->%s' % (p, q))
         else:
             g[k] ^= 1; what.append('%s=%d' % (k, g[k]))
+    # Iteration 440: rtloopall turned on, or carried blocked (one child in four), gets its prerequisite
+    if g['enc'] == 'cv8' and g.get('rtloopall') and not rtloopall_on(g) and ('rtloopall=1' in what or rnd.random() < LOOP_REPAIR):
+        fixed = rtloopall_repair(g)
+        if fixed: what.append('rtloopall repaired (%s)' % ', '.join(fixed))
     return g, 'mutation: ' + ', '.join(what or ['(none)'])
 
 def crossover(a, b, rnd):
@@ -1784,7 +1812,7 @@ def setup():
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
     W = os.path.join(O, 'work')
-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
@@ -1793,7 +1821,7 @@ def setup():
     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-self', ['cv8.4']), (KW() + '-b', ['cv8.4', 'cv8b.4']),
                                                                     (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
                         for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != KW() + '-self' else ('',))
-                        for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loop', '-loopall')
+                        for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
                         for q in (('', '-kstack') if b == KW() + '-bt' else ('',))    # Iteration 116
@@ -1802,6 +1830,7 @@ def setup():
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+                       + (['cv8-imm.4'] if '-lit' in name else [])     # Iteration 422: the immediates alone
                        + (['cv8-fuse-loopall.4'] if '-loopall' in name
                        else ['cv8-fuse-loop.4'] if '-loop' in name else [])
                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
@@ -2002,7 +2031,8 @@ def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
-             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate'}
+             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate', '--islands'}
+    if '--islands' in argv: ISLANDS[0] = int(argv[argv.index('--islands') + 1])   # Iteration 436
     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
     if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
         if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
@@ -2178,18 +2208,13 @@ def main(argv):
         pop.append(get(g, [], 'seeded ' + how, 0))
     flush()
     attic = []   # Iteration 188: demoted designs with genes the population lost
-    for gen in range(1, G + 1):
-        if UNTIL and time.time() >= UNTIL:
-            print('  the deadline (--until): no generation %d' % gen, flush=True); break
-        live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
-        order, rk, cd = rank(live, R)
+    def breed(live, rk, cd, count, gen):   # Iteration 436: one island's children (all of them with one island)
+        kids = []
         def pick():
             if attic and rnd.random() < ATTIC_P: return rnd.choice(attic)   # Iteration 188
             a, b = rnd.sample(live, 2) if len(live) > 1 else (live[0], live[0])
             return a if (rk[a], -cd[a]) <= (rk[b], -cd[b]) else b
-        kids = []
-        print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
-        for _ in range(N):
+        for _ in range(count):
             p1, p2 = pick(), pick()
             same = [i for i in live if i != p1 and R[i]['genome']['enc'] == R[p1]['genome']['enc']]
             if same and rnd.random() < 0.8: p2 = rnd.choice(same)   # mostly within the species
@@ -2206,13 +2231,49 @@ def main(argv):
                     g, h = mutate(g, rnd); how = (how + '; ' if how else '') + h
                 if gid(g) not in seen: break
             kids.append(get(g, parents, how + ('; via the attic' if set(parents) & set(attic) else ''), gen))
-        flush()
-        live = [i for i in dict.fromkeys(pop + kids) if R[i]['status'] == 'ok']
+        return kids
+    def survive(members, kids, n, qkeep):   # Iteration 436: survival within one island (the population, with one)
+        live = [i for i in dict.fromkeys(members + kids) if R[i]['status'] == 'ok']
         order = rank(live, R)[0]
         best_of = [next(i for i in order if R[i]['genome']['enc'] == f) for f in FAMILIES
                    if any(R[i]['genome']['enc'] == f for i in order)]   # no family dies out by crowding
-        qbest = sorted((i for i in order if R[i].get('rss')), key=lambda i: qual(R[i]))[:Q_KEEP]   # the knee survives
-        pop = list(dict.fromkeys(best_of + qbest + order))[:max(N, len(best_of) + len(qbest))]
+        qbest = sorted((i for i in order if R[i].get('rss')), key=lambda i: qual(R[i]))[:qkeep]   # the knee survives
+        return list(dict.fromkeys(best_of + qbest + order))[:max(n, len(best_of) + len(qbest))], order
+    def migrants(members):   # Iteration 436: an island's two fastest and its best by Q
+        al = [i for i in members if R[i]['status'] == 'ok']
+        fast = sorted(al, key=lambda i: R[i].get('speed') or 9e9)[:2]
+        return list(dict.fromkeys(fast + sorted((i for i in al if R[i].get('rss')), key=lambda i: qual(R[i]))[:1]))
+    isl = []
+    for gen in range(1, G + 1):
+        if UNTIL and time.time() >= UNTIL:
+            print('  the deadline (--until): no generation %d' % gen, flush=True); break
+        if ISLANDS[0] <= 1:
+            live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
+            order, rk, cd = rank(live, R)
+            print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
+            kids = breed(live, rk, cd, N, gen)
+            flush()
+            pop, order = survive(pop, kids, N, Q_KEEP)
+        else:   # Iteration 436 (results/drafts/escape-mechanism-435.md): islands, each ranked and bred alone
+            k = ISLANDS[0]; n = max(2, N // k)
+            if not isl: isl = [list(dict.fromkeys(pop))[j::k] for j in range(k)]
+            made = []
+            for j in range(k):
+                live = [i for i in dict.fromkeys(isl[j]) if R[i]['status'] == 'ok'] or [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok'][:2]
+                order, rk, cd = rank(live, R)
+                print('  generation %d, island %d: %d alive, front %d' % (gen, j, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
+                made.append(breed(live, rk, cd, n, gen))
+            flush()
+            pool = list(dict.fromkeys([i for members in isl for i in members] + [i for kids in made for i in kids]))   # for the attic
+            for j in range(k): isl[j] = survive(isl[j], made[j], n, max(1, Q_KEEP // k))[0]
+            if gen % MIGRATE[0] == 0:   # a ring: each island's migrants join the next, which keeps its best n
+                moving = [migrants(isl[j]) for j in range(k)]
+                for j in range(k):
+                    t = (j + 1) % k
+                    isl[t] = survive(isl[t], [i for i in moving[j] if i not in isl[t]], n, max(1, Q_KEEP // k))[0]
+                print('  generation %d: migrants %s' % (gen, ' '.join('%d>%d %d' % (j, (j + 1) % k, len(moving[j])) for j in range(k))), flush=True)
+            pop = list(dict.fromkeys(i for members in isl for i in members))
+            order = rank([i for i in pool if R[i]['status'] == 'ok'], R)[0]   # every candidate, as with one: the demoted reach the attic
         attic = attic_of(order, pop, attic, R) if ATTIC else []
         print('  the attic: %d designs, %d gene values no survivor has' % (len(attic),
               len(set(g for i in attic for g in genes_of(R[i])) - set(g for i in pop for g in genes_of(R[i])))), flush=True)

@@ -327,7 +327,7 @@ under GOALS.md's aim - simplicity and minimalism - and the owner's order (RELF.m
    operands (`+` and `<` the most), on the tag little beyond I+ - but the forms that take them largely exist as genes
    (rtimm's immediates, the loop compiler, I+), and what keeps the small end from them is their bytes, not their reach.
    No general stage unless a later workload shows move-heavy code these miss; two of the forms made cheaper instead -
-   the after-seed-63 batch (results/pending/ORDER.md). Its bound on the front: 7-46% a workload (410-411,
+   the after-seed-63 batch (results/applied-after-seed63/ORDER.md). Its bound on the front: 7-46% a workload (410-411,
    results/drafts/price-410.md). I, the loop index, fused on the tag since patch 11 (412-413: I+ pinned to one byte;
    every run-time table entry kept). Translation to direct threading at load (gforth's hybrid, Wasm3's M3): the compact
    image expanded at start. The interpreter's returns predicted - priced (410): handler replication at most 0.4-1.6% of

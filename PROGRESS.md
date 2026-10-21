@@ -8212,7 +8212,7 @@ both-423-checks.py (new); results/wip-regmachine/rtimm-lean-422.patch (the condi
 ## Iteration 424 - 2026-10-20 - Claude
 
 **The two cheaper run-time compilers queued as the after-seed-63 batch, rehearsed with the after-seed-62 batch**
-(results/pending/ORDER.md). The owner: queue both for the after-seed-63 batch.
+(results/applied-after-seed63/ORDER.md). The owner: queue both for the after-seed-63 batch.
 
 On a clone of master with the thirteen after-seed-62 patches applied, rtloop-lean applied as made; rtimm-lean did not:
 one hunk - its headerless line - met the batch's changes there, and was placed by hand, the patch's changed lines the
@@ -8222,7 +8222,7 @@ on: +551 bytes at 64 bits, +511 at 32); 36 front designs with rtimm=2 or the loo
 (rehearsal-424.out). They wait one run - seed 63 judges the after-seed-62 batch - and the processing routine (step 6)
 now says how a queued batch becomes results/pending/ once the one before it is applied.
 
-Files: results/pending/ORDER.md, rtimm-lean-after-seed63.patch, rtloop-lean-after-seed63.patch,
+Files: results/applied-after-seed63/ORDER.md, rtimm-lean-after-seed63.patch, rtloop-lean-after-seed63.patch,
 rehearsal-424.out (new); results/README.md, results/wip-regmachine/README.md, HANDOFF.md.
 
 ## Iteration 425 - 2026-10-20 - Claude
@@ -8450,7 +8450,7 @@ Files: results/drafts/escape-mechanism-435.md, results/drafts/footprint-gate-435
 implement both for the next run). Islands go with the batch, not into seed 63 - its batch and its pre-registered rules
 are judged without a second change - so the first run that can say "islands" is seed 64.
 
-Islands (results/pending/islands-after-seed63.patch): evolve.py --islands K - the population in K islands, each ranked
+Islands (results/applied-after-seed63/islands-after-seed63.patch): evolve.py --islands K - the population in K islands, each ranked
 and bred alone, a share of the Q keepers each, a ring of migrants every 10 generations (each island's two fastest and
 its best by Q); the run's front every island's together. The generation loop's breeding and survival became two
 helpers, unchanged for one island. next-run.sh: the word "islands" - --islands 4. Tested here: 16 designs, 4 generations,
@@ -8461,8 +8461,8 @@ The footprint check: footprint.py --fastest (the K fastest of the front, not K s
 ends `then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3` - about 15 minutes past the
 10 hours. Predicted: within the 16 fastest, Spearman under 0.6 at 10,000 words.
 
-Files: results/pending/islands-after-seed63.patch, results/drafts/islands-smoke-436.log, islands-smoke-436-one.log (new);
-lab/evolve/footprint.py, lab/evolve/NEXT-RUN, results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+Files: results/applied-after-seed63/islands-after-seed63.patch, results/drafts/islands-smoke-436.log, islands-smoke-436-one.log (new);
+lab/evolve/footprint.py, lab/evolve/NEXT-RUN, results/applied-after-seed63/ORDER.md, results/predictions.md, HANDOFF.md.
 
 ## Iteration 437 - 2026-10-20 - Claude
 
@@ -8477,7 +8477,7 @@ validate 7 of 7 IDENTICAL, jail PASS. Aligned: the footprint check from seed 64'
 63's line, which stays at the owner's 10 hours; seed 63's processing writes it into seed 64's (HANDOFF item 2); its
 prediction moved with it.
 
-Files: lab/evolve/NEXT-RUN, results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+Files: lab/evolve/NEXT-RUN, results/applied-after-seed63/ORDER.md, results/predictions.md, HANDOFF.md.
 
 ## Iteration 438 - 2026-10-20 - Claude
 
@@ -8521,7 +8521,7 @@ Files: results/audit-genes-designs-439.md, results/drafts/audit-genes-439.out (n
 **The audit's two follow-ups: the rtloopall repair built as patch 4 of the pending batch; direct threading at load
 priced - not worth building** (the owner: proceed with 1 and 2).
 
-The repair (results/pending/loopall-repair-after-seed63.patch): evolve.py's mutation, when it turns rtloopall on - or,
+The repair (results/applied-after-seed63/loopall-repair-after-seed63.patch): evolve.py's mutation, when it turns rtloopall on - or,
 one child in four (EVOLVE_LOOP_REPAIR), when a child carries it blocked - puts the missing loop words first in the
 format-10 list and turns the run-time loop compiler on. Tried on seed 62's blocked genomes first, it unblocked two in
 three: the rest were tag-2 designs without escape, 2-4 format-10 slots, too few for eight - so the repair turns escape on
@@ -8535,5 +8535,5 @@ Direct threading at load (results/drafts/price-dthread-440.md): the dispatch lab
 image expanded to addresses about +58 KB on seed 62's front, a third of the memory objective; and a new engine path
 the size of the tail engines. Not built; GENES.md's "Not yet" carries the price.
 
-Files: results/pending/loopall-repair-after-seed63.patch, results/drafts/price-dthread-440.md (new);
-results/pending/ORDER.md, lab/evolve/GENES.md, results/predictions.md, results/README.md, HANDOFF.md.
+Files: results/applied-after-seed63/loopall-repair-after-seed63.patch, results/drafts/price-dthread-440.md (new);
+results/applied-after-seed63/ORDER.md, lab/evolve/GENES.md, results/predictions.md, results/README.md, HANDOFF.md.

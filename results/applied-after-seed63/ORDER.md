@@ -12,10 +12,10 @@ batch, and these change bytes the search weighs.
 | 3 | islands-after-seed63.patch | Added at Iteration 436 (the owner: implement it for the next runs; results/drafts/escape-mechanism-435.md). evolve.py --islands K: the population in K islands, each ranked and bred alone (the same breeding and survival, a share of the population and of the Q keepers each), every 10 generations (EVOLVE_MIGRATE) each sends its two fastest and its best by Q to the next in a ring; the run's front is every island's together, as the report reads the whole database. The generation loop's breeding and survival moved into two helpers, unchanged for one island - the same statements in the same order. next-run.sh: the word "islands" in a seed line - --islands 4. Off unless a line says so. |
 | 2 | rtloop-lean-after-seed63.patch | The run-time loop compiler's X10-XTS (forth/cv8-fuse-loop.4) as three 16-bit offsets with no range check, written by tools/layout.py: 56 bytes less a design (rtloop=2 +361 -> +305 on seed 58's smallest), the code it compiles the same. (results/wip-regmachine/rtloop-lean-423.patch, unchanged.) |
 
-    git apply results/pending/rtimm-lean-after-seed63.patch
-    git apply results/pending/rtloop-lean-after-seed63.patch
-    git apply results/pending/islands-after-seed63.patch
-    git apply results/pending/loopall-repair-after-seed63.patch
+    git apply results/applied-after-seed63/rtimm-lean-after-seed63.patch
+    git apply results/applied-after-seed63/rtloop-lean-after-seed63.patch
+    git apply results/applied-after-seed63/islands-after-seed63.patch
+    git apply results/applied-after-seed63/loopall-repair-after-seed63.patch
 
 ## How each was tested
 
