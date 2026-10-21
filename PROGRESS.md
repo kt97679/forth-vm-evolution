@@ -8613,3 +8613,15 @@ container (build/evolve/keep/, untracked - if it is gone, seed 64's chain archiv
 over every run's database at their common generation (seed 63's 90). Predicted; 443's prediction for seed 65 withdrawn.
 
 Files: lab/evolve/NEXT-RUN, results/predictions.md, HANDOFF.md.
+
+## Iteration 445 - 2026-10-21 - Claude
+
+**The fast gate reviewed while seed 65 runs** (results/drafts/fastgate-review-445.md; rule 3 said revisit). Seed 64's
+database: 1,174 children measured twice under the gate, second / first median 1.000 (51% slower the second time) - no
+regression between the two in-run readings; but the front's fastest tenth, re-measured after the run, about 1.10 of
+both. The optimism is shared luck, not single-reading noise: the gate measures again at once, back to back, in the same
+moment - co-runners, clock, caches - so a design that met a kind moment meets it twice. Proposed: the second reading
+deferred to the next generation's batch, the speed their geometric mean then - the same cost, no new threshold; a
+patch after seed 65, the owner's call.
+
+Files: results/drafts/fastgate-review-445.md (new); results/README.md, HANDOFF.md.
