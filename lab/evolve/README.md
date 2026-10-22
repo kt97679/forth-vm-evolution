@@ -38,6 +38,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 
 - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
 - `footprint-gen.py` - a held-out program whose code footprint grows (N [--calls T] [--defs-only]): N words in levels, run round-robin, a checksum (Iteration 370; results/generalization.md)
+- `loadtest.py` - the measuring load (Iteration 455): the newest run's front, its fastest and slowest, each measured against s6 idle and with other cores busy running s6 - does load explain the fast end's optimism (results/drafts/fastgate-review-445.md)
 - `footprint.py` - does the front's speed hold as the code footprint grows: a sample of the newest run's front on footprint-gen.py's programs, paired with s6, checksums checked; run and compile phases against s6, and the selection's rank agreement at each N (Iteration 371; results/generalization.md)
 - `gene-usage.py` - the genes fronts use, an absent gene counted as off: one group, or two side by side by their difference (--vs) - seed 58 against the carried runs, a review's evidence (Iteration 375)
 - `missmap.py` - which handlers mispredict: perf record's user-space branch misses on the kernel and corpus workloads, each sample's source line charged to its handler (Iteration 294; the laptop's, between runs)
