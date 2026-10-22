@@ -48,24 +48,20 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 453.
-- **The runs**: seed 65 processed (Iteration 449) - **the islands trial: worth keeping by its measure**. Against seed 64
-  (no islands) at generation 146: fastest 6.8% ahead (0.1168 against 0.1253), smallest -0.3%, hypervolume +1.6%; 32 bits
-  8.0% behind. By its end: fastest 0.115, **smallest 13,959 bytes, the smallest of any run**; none died. One run against
-  one (the replicates' chance at the fast end: about 5%) - **seed 66 runs islands again to decide** (NEXT-RUN, 12 h, the
-  owner's hours for seed 65 kept). **Seed 67: 10 hours** (the owner, 453) - its line written at seed 66's processing,
-  islands in it if seed 66 confirms them. **The after-seed-65 batch applied** (the deferred gate reading; I+ with its fuser).
-  **The gene votes' first freeze (450, the owner): sharedcall, tail, kstack, tailpn frozen off** for seed 66 (the code
-  kept; removed if seed 66 shows no loss - read by its chain's spread against seed 65). skippad and fold, the other two
-  candidates, are genes of sod16 and cpt16, not CV8 - the votes now count only the front's encoding's genes. **For the
-  owner, someday**: the old encodings themselves (cell, sod16, cpt16) - founders only, never on a front since CV8.
-  **The inert-gene scan (451-452, results/drafts/inert-scan-451.md)**: corrected - all seven workloads, builds hashed:
-  no gene inert across designs (alignfn, gotodup, fbuf the same build in one design or two); jitloop works (bubble) and
-  tos works - the first pass's two findings were false, the jitloop freeze withdrawn. Proposed: the corrected scan beside
-  the votes at each processing - the owner's call.
+- master: Iteration 454.
+- **The runs**: seed 66 processed (Iteration 454) - **islands confirmed, the default from seed 67**: against seed 64 at
+  generation 146 its fastest 3.6% ahead (seed 65's: 6.8%), the small end level, hypervolume +1.8%. **The first freeze
+  showed no loss** against seed 65 at generation 90 (fastest 0.1286 against 0.1288, smallest +0.1%). By its end: fastest
+  0.121, smallest 14,037; none died; I+ working on all 39 designs carrying it. **For the owner**: (a) the frozen four's code
+  removed (sharedcall, tail, kstack, tailpn - the gene rule's last step, no loss shown); (b) the votes' next candidates -
+  **alignhot, jithelp, jitre** (12 of 12 over seeds 64-66) - frozen off the same way; (c) **the fast gate**: the deferred
+  reading did not lower the fast end's optimism (1.110) - not shared luck, then; more likely the measuring load (in-run four
+  workers, the re-measure after); selection itself is sound (heldout regret +1.4%) - rule 3 read as a calibration offset,
+  or a test under load; (d) the footprint check: the top reordered at 10,000 words this time (0.206; seeds 64-65: 0.888,
+  0.550) - watched. Next seed 67: **10 hours (the owner), islands** (NEXT-RUN).
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 66's, named from the bundle it starts from (seed 65's, `forth-vm-evolution-chain-e81eec6ff-fury-
-  20261022-014957_tar.gz`, processed at 449). For seed 66's islands reading seed 64's database is kept here too
+  processed - seed 67's, named from the bundle it starts from (seed 66's, `forth-vm-evolution-chain-94e6742bb-fury-
+  20261022-152338_tar.gz`, processed at 454). For seed 66's islands reading seed 64's database is kept here too
   (build/evolve/keep/seed64-db.jsonl); if gone, seed 64's archive. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only

@@ -821,3 +821,20 @@ predictions for it stand). At generation 146: its fastest at least 3% ahead of s
 sharedcall, tail, kstack and tailpn frozen off for seed 66 (on no front design of seeds 63-65). No loss: against seed 65
 (islands too) at their common generation by the chain's spread, its fastest within 5% (the replicates' band) and its
 smallest within 0.5%. If so, their code goes (tail's engines, gen-tail.py and build_tail; kstack's dumps; sharedcall's path).
+
+## Seed 66, scored (Iteration 454)
+
+**5 right, 1 wrong.**
+- **Iteration 449, islands again: 1. at generation 146 its fastest at least 3% ahead of seed 64's 0.1253 - right**: 0.1208,
+  3.6%. **2. its smallest there within 0.5% - right**: 14,045 against 14,047. Both held twice: islands the default.
+- **Iteration 447: 1. the fast end's optimism at most 1.05 - wrong**: 1.110 (seed 65: 1.115) - the deferred reading did not
+  lower it, so shared luck between the readings was not its cause. **2. every front design with rtiplus built with the
+  fuser - right** (39 of 39); **rtiplus on at least 10% of the plain designs - right** (38 of 85, 45%).
+- **Iteration 450, the freeze: no loss against seed 65 at their common generation - right**: fastest 0.1286 against 0.1288,
+  smallest 14,077 against 14,063 (+0.1%).
+
+## Seed 67 - predicted (Iteration 454)
+
+Islands the default, 10 hours (the owner). At generation 146 against seed 64 (its database kept): its fastest at least 2%
+ahead and its smallest within 0.5% - the islands' gain holding at the shorter run; no design dying; rtiplus on at least
+10% of its plain designs.

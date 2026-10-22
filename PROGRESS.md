@@ -8741,3 +8741,20 @@ if seed 66 confirms them. At 10 hours with no comparison step, about 9.5 hours o
 islands reading against seed 64 still holds.
 
 Files: lab/evolve/NEXT-RUN, HANDOFF.md.
+
+## Iteration 454 - 2026-10-22 - Claude
+
+**Seed 66 processed: islands confirmed - the default from seed 67; the first freeze showed no loss**
+(results/evolve-amd-ryzen-7-pro-8840hs-seed66.md). `seed 66 12h widths noevolved islands then experiment ...` at 94e6742bb
+(Iteration 450): 45,676 designs in 11 h 16 min, generations 0-178, none died. Against seed 64 at generation 146: fastest
+0.1208 against 0.1253 (3.6% ahead; seed 65: 6.8%), smallest 14,045 against 14,047, hypervolume +1.8%, 32 bits level - both
+islands runs met the trial's conditions. The freeze against seed 65 at generation 90 (the chain's spread over seeds 62-66):
+fastest 0.1286 against 0.1288, smallest +0.1% - no loss. By its end: fastest 0.121, smallest 14,037. heldout 0.985, regret
++1.4%; I+ with its fuser on all 39 front designs carrying it, 38 of the 85 plain ones. The fast end's optimism 1.110 - the
+deferred gate reading did not lower it. The footprint check: the 16 fastest's order 0.524 at 100 words, 0.206 at 10,000.
+The gene votes' next candidates over seeds 64-66: alignhot, jithelp, jitre. Predictions: 5 right, 1 wrong (the optimism).
+On master: the build, run-tests PASS, validate 7 of 7 IDENTICAL, the gate 149 of 149, ans-check 0 of 38 (its negative
+control caught), the jail PASS, alone. NEXT-RUN: seed 67, 10 hours (the owner), islands.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed66.md, results/xcheck-seed66.md (new); results/gene-votes.md,
+results/predictions.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
