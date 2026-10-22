@@ -28,3 +28,14 @@ entry too, and that I+ fuses only where the run-time fuser is built: on seed 64'
 - loop's dispatches -20.0% with rtiplus; one without - +0.0%. 37 of seed 64's 55 front designs with rtiplus have no
 fuser (30 of them tag-2 JIT designs, where it hardly matters; 7 plain, where it would). Making rtfuse govern rtimm=2's
 fusion would leave more designs so. Instead: patch 2 above.
+
+## Patch 3 - the gene votes' first freeze, applied before seed 66 (Iteration 450)
+
+    git apply results/applied-after-seed65/freeze-before-seed66.patch
+
+The owner (449-450): "yes, please prepare that freeze". **sharedcall, tail, kstack and tailpn frozen off** (FROZEN,
+evolve.py) - each 12 of 12 removal votes over seeds 63-65 (results/gene-votes.md), on no front design, so the
+dependence test had nothing to rebuild; reversible - the code stays, removed only if the run after shows no loss. And
+**review-checks.py votes counts only the front's own encoding's genes**: skippad and fold, the other two candidates, are
+sod16's and cpt16's (the old 16-bit encodings), voted on CV8 fronts they cannot reach - freezing them in CV8 would do
+nothing. batch-check on a763d7f: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.

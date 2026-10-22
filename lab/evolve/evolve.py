@@ -927,7 +927,11 @@ REQUIRE = []
 # design the search makes carries these values (require, at get()); a hand-made design keeps its own, so s6 and the
 # stages are unchanged. With varcall and doesfar on, no design dies at the reach limit any more (reach_lethal). Not
 # tail - a fault hid it until the after-seed-62 batch; judged after seed 63.
-FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0}
+# Iteration 450 (the owner; results/seed63-rules.md's gene votes): sharedcall, tail, kstack and tailpn frozen off - 12 of
+# 12 removal votes over seeds 63-65, on no front design, so the dependence test had nothing to rebuild. Reversible: the
+# code stays; removed only if the run after shows no loss (its comparison small or better).
+FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+          'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0}
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)

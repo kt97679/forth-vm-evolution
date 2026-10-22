@@ -4,7 +4,9 @@ results/seed63-rules.md, "The gene votes" (the owner, Iteration 432): no rule ta
 gene and run, four votes for its removal - on under 10% of the front; on no design of its fastest tenth; of its
 smallest tenth; of its best-Q tenth (speed x binary + image x memory). Written at each seed's processing from seed 63
 on: `python3 lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md
---append`, which also prints the tally over the last three runs here. Frozen genes are not voted on. **Seed 63: the JIT's genes not voted** (Iteration 441) - the hand-made founder carrying
+--append`, which also prints the tally over the last three runs here. Frozen genes are not voted on. **From seed 66 (Iteration 450): only the front's own encoding's genes are voted** - skippad and fold, sod16's and cpt16's,
+were voted on CV8 fronts they cannot reach; sharedcall, tail, kstack and tailpn frozen off (the first freeze). **Seed 63:
+the JIT's genes not voted** (Iteration 441) - the hand-made founder carrying
 the JIT lacked the tag its JIT needs, so none of them was available to the run; their window starts with the next run
 that has the JIT.
 

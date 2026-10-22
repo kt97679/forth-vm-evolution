@@ -815,3 +815,9 @@ The cost seen: at 32 bits its fastest 8.0% behind seed 64's at generation 146.
 The second islands run, and the after-seed-65 batch's first (the deferred gate reading, I+ with its fuser - 447's
 predictions for it stand). At generation 146: its fastest at least 3% ahead of seed 64's 0.1253 again, its smallest within
 0.5% of seed 64's 14,047. If both hold a second time, islands become the default.
+
+## The first freeze, in seed 66 - predicted (Iteration 450)
+
+sharedcall, tail, kstack and tailpn frozen off for seed 66 (on no front design of seeds 63-65). No loss: against seed 65
+(islands too) at their common generation by the chain's spread, its fastest within 5% (the replicates' band) and its
+smallest within 0.5%. If so, their code goes (tail's engines, gen-tail.py and build_tail; kstack's dumps; sharedcall's path).

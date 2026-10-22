@@ -383,8 +383,9 @@ elif check == 'votes':
     frozen = set(getattr(E, 'FROZEN', None) or ())
     SKIP = {'enc', 'opt', 'compiler', 'spec', 'folds', 'ops10'}          # what a design is, not a mechanism to drop
     run = []
-    for g in dict.fromkeys(x for fam in E.EXPRESSED.values() for x in fam):
-        if g in SKIP or g in frozen: continue
+    fams = set(gen[i].get('enc') for i in ids)                      # Iteration 450: the front's encodings' genes only -
+    for g in dict.fromkeys(x for f, fam in E.EXPRESSED.items() if f in fams for x in fam):   # skippad and fold, sod16's and
+        if g in SKIP or g in frozen: continue                        # cpt16's, were voted on in CV8 fronts they cannot reach
         on = set(i for i in ids if ex[i].get(g)); share = 100.0 * len(on) / n if n else 0.0
         f, sm, q = len(on & fast), len(on & small), len(on & bestq)
         run.append((seed, g, share, f, sm, q, (share < 10) + (f == 0) + (sm == 0) + (q == 0)))

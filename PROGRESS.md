@@ -8667,3 +8667,39 @@ front working. Seed 64, again: 55 with rtiplus, 18 working - 11% of the front, n
 runs at a seed's processing before its batch is applied, so seed 65's reading is its own code's.
 
 Files: lab/evolve/review-checks.py, HANDOFF.md.
+
+## Iteration 449 - 2026-10-22 - Claude
+
+**Seed 65 processed: the islands trial worth keeping by its measure; the smallest design of any run; the after-seed-65
+batch applied** (results/evolve-amd-ryzen-7-pro-8840hs-seed65.md). `seed 65 12h widths noevolved islands then experiment
+footprint.py ... then experiment review-checks.py spread` at e81eec6ff (Iteration 444): 50,281 designs in 11 h 16 min,
+generations 0-196, none died. Against seed 64 (no islands) at generation 146, seed 64's database kept here: fastest
+0.1168 against 0.1253 (6.8% ahead), smallest 14,005 against 14,047, hypervolume +1.6%, best Q -4.2%; 32 bits 8.0% behind.
+At generation 90, by the chain's spread over seeds 61-65: level with seed 64 at the fast end, the best hypervolume of
+the five. The fast end kept gaining to generation 124 (seed 64: 36). By its end: fastest 0.115, smallest 13,959 bytes.
+Predictions 444: 3 right - by the escape note's measure islands are worth keeping; one run against one, so seed 66 runs
+them again.
+
+Its front: 179, the JIT on 93; heldout 0.985, regret +1.5%; fast-end optimism 1.115; no 32-bit failure; rule 7 - I+ working
+on 6% (27 with rtiplus, 10 with the fuser). The footprint check: the 16 fastest's order 0.531 at 100 words, 0.550 at
+10,000 - no worse on large programs. The Tegra measured 7 - only 3 of seed 64's front are GCC without the JIT. The gene
+votes' first candidates over seeds 63-65: skippad, fold, sharedcall, tail, kstack, tailpn. The after-seed-65 batch
+(the deferred gate reading, I+ with its fuser): batch-check PASS on 82ff3fe, applied. NEXT-RUN: seed 66, islands again,
+12 hours.
+
+## Iteration 450 - 2026-10-22 - Claude
+
+**The gene votes' first freeze** (the owner: prepare that freeze and continue). sharedcall, tail, kstack and tailpn
+frozen off (FROZEN) for seed 66 - reversible, the code kept; review-checks.py votes now counts only the front's own
+encoding's genes: skippad and fold, the other two candidates, belong to sod16 and cpt16 and were voted on CV8 fronts they
+cannot reach. batch-check on a763d7f PASS; applied as the after-seed-65 batch's patch 3. Predicted for seed 66: no loss
+against seed 65 by the chain's spread.
+
+On the new master: the build, run-tests PASS, validate 7 of 7 IDENTICAL, the gate 179 of 179 alive, ans-check 0 of 46
+differ (its negative control caught), the jail PASS - run alone: the first chain stopped after validate when the
+freeze's batch-check ran its own jail test beside it - the jail test here takes the user's other processes with it, so
+the routine now says it runs last and alone.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed65.md, results/xcheck-seed65.md (new); results/applied-after-seed65/
+(two patches and the freeze); lab/evolve/evolve.py, lab/evolve/review-checks.py and the batch's files; lab/evolve/NEXT-RUN,
+results/gene-votes.md, results/predictions.md, results/progress-by-run.md, results/README.md, HANDOFF.md.

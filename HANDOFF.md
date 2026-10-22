@@ -48,15 +48,16 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 449.
+- master: Iteration 450.
 - **The runs**: seed 65 processed (Iteration 449) - **the islands trial: worth keeping by its measure**. Against seed 64
   (no islands) at generation 146: fastest 6.8% ahead (0.1168 against 0.1253), smallest -0.3%, hypervolume +1.6%; 32 bits
   8.0% behind. By its end: fastest 0.115, **smallest 13,959 bytes, the smallest of any run**; none died. One run against
   one (the replicates' chance at the fast end: about 5%) - **seed 66 runs islands again to decide** (NEXT-RUN, 12 h, the
   owner's hours for seed 65 kept). **The after-seed-65 batch applied** (the deferred gate reading; I+ with its fuser).
-  **For the owner**: the gene votes' first candidates - skippad, fold, sharedcall, tail, kstack, tailpn (12 of 12 over
-  seeds 63-65, on no front design, so the dependence test has nothing to rebuild) - by the gene rule, proposed: frozen off
-  for one run, the code kept, removed only if that run shows no loss.
+  **The gene votes' first freeze (450, the owner): sharedcall, tail, kstack, tailpn frozen off** for seed 66 (the code
+  kept; removed if seed 66 shows no loss - read by its chain's spread against seed 65). skippad and fold, the other two
+  candidates, are genes of sod16 and cpt16, not CV8 - the votes now count only the front's encoding's genes. **For the
+  owner, someday**: the old encodings themselves (cell, sod16, cpt16) - founders only, never on a front since CV8.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
   processed - seed 66's, named from the bundle it starts from (seed 65's, `forth-vm-evolution-chain-e81eec6ff-fury-
   20261022-014957_tar.gz`, processed at 449). For seed 66's islands reading seed 64's database is kept here too
@@ -99,9 +100,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 5. A batch due now (its ORDER.md says when): `tools/batch-check.sh` first (one line), then apply it (reseed with
    `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
    files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
-   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - last, and under setsid:
-   in a chain of its own it took the rest of the chain with it twice, 433 and 441; last and in its own session at 443 it
-   did not), `python3
+   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - last, and alone: here
+   it takes the same user's other processes with it - the chain after it at 433 and 441, and at 449 a gate running beside
+   a batch-check's own jail test; nothing may run beside it), `python3
    lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
    out, the run's front alone - Iteration 427), `python3 lab/evolve/ans-check.py
    --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
