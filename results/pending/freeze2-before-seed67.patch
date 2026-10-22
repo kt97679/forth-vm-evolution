@@ -1,0 +1,14 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 6673b59..e758e8e 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -931,7 +931,8 @@ REQUIRE = []
+ # 12 removal votes over seeds 63-65, on no front design, so the dependence test had nothing to rebuild. Reversible: the
+ # code stays; removed only if the run after shows no loss (its comparison small or better).
+ FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+-          'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0}
++          'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
++          'alignhot': 0, 'jithelp': 0, 'jitre': 0}    # Iteration 455 (the owner): the second freeze - 12 of 12 over seeds 64-66
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
