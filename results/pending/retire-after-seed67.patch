@@ -1,0 +1,381 @@
+diff --git a/forth/kstack.4 b/forth/kstack.4
+deleted file mode 100644
+index 5d32858..0000000
+--- a/forth/kstack.4
++++ /dev/null
+@@ -1,12 +0,0 @@
+-\ kstack.4 - the stack check, calling its error's message only when there is
+-\ something to say (Iteration 116, the gene kstack). The interpreter runs
+-\ ?STACK after every word, and the kernel's - DEPTH DUP 0< SWAP 10000 > OR
+-\ ABORT" Stack error" - called (ABORT") every time, only to skip the message.
+-\ This is the kernel input gene's own ?STACK8 (cv8b-kinput.4, Iteration 54)
+-\ on its own, for designs without that gene's C code: one unsigned compare
+-\ (DEPTH's logical shift makes an underflow huge), behind an IF. The same
+-\ check, message and WARM on failure. The converter swaps ?STACK8's body
+-\ into ?STACK, so INTERPRET's call reaches it.
+-
+-: ?STACK8 ( --- )
+-  DEPTH 10000 U> IF -1 ABORT" Stack error" THEN ;
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 4f25bfe..e714bf9 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -56,14 +56,14 @@ as the record of what each does.
+ | 2@ and 2! in `ops10`, and in `opbody`'s list (Iteration 290): the double-cell fetch and store, six dispatches a call each as kernel colon words, one as an opcode - bubble's inner loop calls them at run time (2@ three times, 2! once), the corpus's tester too: 16-42% of bubble's dispatches inside them (results/source-audit-2.md). Code compiled at run time calls the words, so opbody's [opcode EXIT] bodies carry the saving there | this lab: word-cost.py | bubble -11% to -28% of its dispatches, priced |
+ | > and 0= in `ops10`, and in `opbody`'s list (Iteration 299): the compare and the test as opcodes - > is `SWAP <` (the engine's L_gt is <, its name historical), 0= is `0 =`; code compiled at run time calls them: bubble's compare 11.7% of its dispatches, ackermann's test 7.7%, on seed 50's fastest design without the JIT (results/source-audit-3.md). The JIT translates both (GT; LIT and EQ) | this lab: hotwords.py, word-cost.py | 658ed9b9f8 with them first, opbody and opinline: bubble -11.7%, ackermann -7.7% - and, its slots full, the kernel +5.5% and the corpus +8.7% for the words they displaced: evolution places them |
+ | the [opcode EXIT] words among the primitives (`opinline`: 0, 1; Iteration 292): placed before (PRIMITIVES-END), where PRIMITIVE? asks by address, so the run-time compiler copies their opcode in place of a call - code compiled at run time (bubble's 2@ and 2!) saves the call and the EXIT. A word defined once only; a design with no [opcode EXIT] word does not express it. For a JIT design it can cost: an inlined opcode with no stencil leaves its word to the interpreter | this lab: word-cost.py | c9369657e4 with 2@ 2! and opbody: bubble 9,572,364 -> 7,448,901 dispatches (-22.2%; -41.6% from 12,759,474 before 2@ 2!) |
+-| the tail-call engine with preserve_none and musttail (`tailpn`: 0, 1; Iteration 293): clang 19+'s calling convention that saves no register on every handler, and musttail on every handler-to-handler call (tools/gen-tail.py --preserve-none) - CPython 3.14's tail-call interpreter. Built with the newest clang here that takes them (clang_pn(): clang-20 on the owner's laptop); expressed only on a clang tail engine, only where such a clang is installed | CPython 3.14; this lab: engines-check | s6's engine 14,232 bytes, 14,680 without (no register saved) - speed for the laptop's runs to judge |
++| **Retired at Iteration 456** - frozen off since Iteration 450 (12 of 12 removal votes over seeds 63-65, no loss in seed 66), its code removed; the gene kept in the genome, off, so identities hold. Was: the tail-call engine with preserve_none and musttail (`tailpn`: 0, 1; Iteration 293): clang 19+'s calling convention that saves no register on every handler, and musttail on every handler-to-handler call (tools/gen-tail.py --preserve-none) - CPython 3.14's tail-call interpreter. Built with the newest clang here that takes them (clang_pn(): clang-20 on the owner's laptop); expressed only on a clang tail engine, only where such a clang is installed | CPython 3.14; this lab: engines-check | s6's engine 14,232 bytes, 14,680 without (no register saved) - speed for the laptop's runs to judge |
+ | NUMBER? as one opcode (`knumber`: 0, 1; Iteration 295): forth/cv8b-knumber.4, after klookup's overlay - (NUMBER?), the kernel's NUMBER? with BASE @ and DPL given (its failures 0 0 0: only INTERPRET calls it, and aborts or throws), and NUMBER?8, whose body NUMBER? takes; the opcode's C (numberq, vm-lab.c) is the same steps. Put first in the design's format-10 list, so it takes a slot from the last word there. Expressed only with klookup | this lab: word-cost.py | c9369657e4's corpus 4,529,779 -> 4,067,754 dispatches (-10.2%, NUMBER? 10.1% -> 0.9%); 927064f127, its slots full: the corpus -4.9%, the kernel +5.3% - the word it displaced |
+ | handler entries aligned (`alignhot`: off, 32:11, 32, 64; Iteration 298): GCC's -falign-jumps, -falign-labels and -falign-functions - a computed goto's target, or a tail engine's function, on a fetch window's start; 32:11 only where it costs at most 10 bytes. The laptop's counters put the evolved interpreted designs' front end at half their cycles on compute work, and align1 only takes alignment away. GCC only; not with align1 or alignfn | this lab: counters.py --extra | the engine: s6 +1,280 bytes at 32:11, +5,216 at 32, +12,192 at 64; 658ed9b9f8 +1,216, +4,448, +10,976 - speed for the laptop's runs to judge |
+ | the dictionary walk branch-light (`bfind`; Iteration 316): THREAD-FIND's and (FIND)'s candidates compared as one masked 64-bit word - count and first seven characters - and the link read without a branch on its form; expressed when either is a format-10 opcode of the design | engine/vm-lab.c BFIND |
+ | the escape (`escape`): primitives 36-67 behind one byte (125 + selector), their 32 opcodes joining the free slots | relf's format 10 | rare primitives a byte bigger; the slots go to words and pairs - what lets a design with specialisations hold more than two |
+ | an operation and the call after it (`opcall`: a list, Iteration 121; the tag, computed goto): `X;CALL` opcodes of their own (0xFE00 + k), X's handler then a direct jump into the call | results/docs-reuse.md (Koopman) | fastest: parse -3.8%, corpus -3.4%, kernel -1.6% of dispatches for +768 bytes of engine (16 ops); results/opcall.md |
+ | ABORT" guarded (`abortif`: 0, 1; Iteration 117): the converter puts every (ABORT") call behind ?BRANCH and -1, as gforth and lbForth compile ABORT" | results/forth-sources.md | parse -5.6%, corpus -3.0%, kernel -1.0% of dispatches on the fastest design for 56 bytes; errors unchanged |
+-| the stack check guarded (`kstack`: 0, 1; Iteration 116; the tag, without kinput): kinput's own ?STACK8 on its own - DEPTH 10000 U> IF ... ABORT" ... THEN | results/forth-sources.md | parse and corpus -0.7% of dispatches on the smallest design, the image the same size |
++| **Retired at Iteration 456** - frozen off since Iteration 450 (12 of 12 removal votes over seeds 63-65, no loss in seed 66), its code removed; the gene kept in the genome, off, so identities hold. Was: the stack check guarded (`kstack`: 0, 1; Iteration 116; the tag, without kinput): kinput's own ?STACK8 on its own - DEPTH 10000 U> IF ... ABORT" ... THEN | results/forth-sources.md | parse and corpus -0.7% of dispatches on the smallest design, the image the same size |
+ | the file read-ahead buffer (`fbuf`: 0, 1, 2 = 4096, 1024, 512 bytes; Iteration 115) | results/deep-dive-2.md: memory had no lever | the kernel workload's memory 200 -> 172 -> 168 KB (smallest), 216 -> 180 -> 176 (fastest); more read(2) calls |
+ | function alignment off (`alignfn`: 0, 1; Iteration 113): -falign-functions=1 -falign-loops=1 | the deep dive's 15, a flag pool for the binary | -O2 engines ~1.1 KB smaller, -Os ones nothing (results/flags-gcsections.md) |
+ | no inlining of small functions (`noinls`: 0, 1; Iteration 113): -fno-inline-small-functions | the same | -O2 engines ~1.3 KB smaller, maybe slower |
+@@ -99,7 +99,7 @@ as the record of what each does.
+ | build artifacts left out (`lean`: 0, 1; Iterations 38-39): the compiler's X8 copies (calls and (POSTPONE)s to them go to X), the dump tool's words, dead shadowed words | this lab: the converter's own comment called the copies harmless | 12-16% of every CV8 image, 1,267-1,896 bytes on seed 6's front, no slower (results/lean.md) |
+ | run-time immediates (`rtimm`: 0, 1, 2; Iteration 37; 2 - Iteration 175: without pairs, the overlay alone): with run-time fusion and spec imm, the compiler the image carries makes `n +` an ADDI and `SWAP n +` a SWAP+I in the code it writes (forth/cv8-fuse-imm.4) | this lab: fib's own code, dumped from a front design | fib 15% fewer dispatches, 17-27% faster, for 408-472 bytes (results/rtimm.md) |
+ | one-byte calls (`hotcalls`: 0, 8, 16, 32): the far-call prefixes 0xE0-0xFF call the image's own words with the most call sites, through a table in the image's header; chosen per design by the converter, no profile | this lab's search (SEARCH-SPACE.md: a stranger), priced at Iteration 13 | a call one byte instead of two; the far form keeps 21 bits - 2 MB at scale 0 |
+-| tail-call threading (`tail`): every handler a function of (ip, dsp, rp, tos, t), dispatching by a tail call through a 256-entry table of functions; made from the cached engine | Wasm3, CPython 3.14, WasmKit | each handler's registers allocated for it alone; handlers that keep a frame are split so their dispatch stays a jump |
++| **Retired at Iteration 456** - frozen off since Iteration 450 (12 of 12 removal votes over seeds 63-65, no loss in seed 66), its code removed; the gene kept in the genome, off, so identities hold. Was: tail-call threading (`tail`): every handler a function of (ip, dsp, rp, tos, t), dispatching by a tail call through a 256-entry table of functions; made from the cached engine | Wasm3, CPython 3.14, WasmKit | each handler's registers allocated for it alone; handlers that keep a frame are split so their dispatch stays a jump |
+ | multi-state stack caching (`msc`): 0, 1 or 2 top items in registers, a dispatch table per state, each handler variant dispatching by the table of the state it ends in; generated from stack effects for 72 operations, the rest normalised to the one-register state | Ertl and Gregg; gforth's vmgen | no memory traffic where the state absorbs it; three times the code for the specified operations |
+ | compiler: `-O2/-O3/-Os`, `-fno-gcse`, `-fno-crossjumping`, `-fcf-protection=none`, minimal label alignment, `-fno-reorder-blocks` | gforth's and CPython's builds, this lab's endbr64 finding | how the C compiler lays out the interpreter: computed goto only pays if every handler keeps its own indirect jump, which GCSE and cross-jumping undo |
+ 
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 891018b..d6b9e1c 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -2,7 +2,7 @@
+ """engines-check.py - an engine down every generator's path builds, and runs
+ the corpus right (Iteration 249).
+ 
+-Seed 46 lost every design with the gene tail: an engine change (the dispatch
++Iteration 456: the tail engines removed (tail frozen off since 450), their paths with them. Seed 46 lost every design with the gene tail: an engine change (the dispatch
+ table as offsets, Iteration 237) broke the engines tools/gen-tail.py makes, and
+ no check built one - the fronts the gate builds had none. Every variant here is
+ s6-cv8b with genes set so that one path is taken: the cached top off, multi-
+@@ -43,8 +43,6 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('s6 as it is', {}, []),
+     ('cached top off', dict(tos=0), []),
+     ('multi-state (gen-msc)', dict(msc=1), ['msc']),
+-    ('tail calls (gen-tail)', dict(tail=1), ['tail']),
+-    ('tail calls on the two-bit tag', dict(tag2=1, tail=1), ['tail', 'tag2']),     # Iteration 405: t2call's path, at 4-byte cells too
+     ('superinstructions (gen-super)', dict(supers=donor('supers')), ['supers']),
+     ('op;CALL (gen-opcall)', dict(tag2=1, opcall=donor('opcall')), ['opcall']),
+     ('format-10 opcodes', dict(ops10=donor('ops10')), ['ops10']),
+@@ -65,12 +63,10 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
+     ('link-time optimisation', dict(lto=1), ['lto']),                           # Iteration 260
+     ('the JIT with link-time optimisation', dict(JIT, lto=1), ['jit', 'lto']),
+-    ('tail calls with link-time optimisation', dict(tail=1, lto=1), ['tail', 'lto']),
+     ('goto unfactoring 32', dict(gotodup=1), ['gotodup']),
+ ] + ([                                                                           # Iteration 262: where clang is installed
+     ('clang', dict(compiler=1), ['compiler']),
+     ('clang, the JIT', dict(JIT, compiler=1), ['compiler', 'jit']),
+-    ('clang, tail calls (gen-tail)', dict(tail=1, compiler=1), ['compiler', 'tail']),
+     ('clang, -Oz', dict(compiler=1, opt='Os'), ['compiler']),
+ ] if E.HAVE_CLANG else []) + [
+ ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
+@@ -80,15 +76,13 @@ VARIANTS += [(n + ', 2@ 2! opcodes', dict(g, ops10=list(g.get('ops10') or []) +
+              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+ VARIANTS += [(n.replace('2@ 2! opcodes', '2@ 2! inlined'), dict(g, opinline=1), need + ['opinline'])   # Iteration 292
+              for n, g, need in list(VARIANTS) if n.endswith('2@ 2! opcodes')]
+-if E.clang_pn():   # Iteration 293: where a clang 19+ is installed
+-    VARIANTS += [('clang %s, tail calls with preserve_none' % E.clang_pn(), dict(tail=1, compiler=1, tailpn=1), ['compiler', 'tail', 'tailpn'])]
+ KN = dict(kfast=1, kinput=1, klookup=1, knumber=1)   # Iteration 295: NUMBER? as one opcode, on every engine family
+ VARIANTS += [('klookup, knumber', dict(KN), ['knumber']), ('klookup, knumber, cached top off', dict(KN, tos=0), ['knumber']),
+-             ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']), ('klookup, knumber, tail calls', dict(KN, tail=1), ['knumber', 'tail']),
++             ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']),
+              ('klookup, knumber, the JIT', dict(KN, **JIT), ['knumber', 'jit'])]
+ VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot=1), ['alignhot']),   # Iteration 298
+              ('handler entries aligned to 32', dict(alignhot=2), ['alignhot']), ('handler entries aligned to 64', dict(alignhot=3), ['alignhot']),
+-             ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot']), ('aligned to 64, tail calls', dict(alignhot=3, tail=1), ['alignhot', 'tail'])]
++             ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot'])]
+ VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops10') or []), opbody=1, opinline=1), need + ['ops10', 'opinline'])   # Iteration 299
+              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+ # Iteration 316: the gene bfind - THREAD-FIND's and (FIND)'s walk branch-light - with each of
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index e758e8e..600cb16 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -774,7 +774,6 @@ def bin_size(eng):
+ GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
+ def CC(g):
+     """Iteration 262: the compiler the gene names - GCC as cc, or clang."""
+-    if express(g).get('tailpn'): return clang_pn()       # Iteration 293: clang 19+, for preserve_none
+     return 'clang' if express(g).get('compiler') else 'cc'
+ ARM32 = os.uname().machine.startswith('arm')   # Iteration 407: a 32-bit ARM host - the Tegra (armv7l)
+ def ccflags(g):
+@@ -792,49 +791,9 @@ def ccflags(g):
+     return f + _EXTRA_CFLAGS
+ _EXTRA_CFLAGS = os.environ.get('EVOLVE_CFLAGS', '').split()   # Iteration 294: a measurement's -g (missmap.py) - never the evolution's
+ 
+-def tail_offenders(eng):
+-    """Handlers whose machine code CALLS through an indexed table - a
+-    dispatch the compiler did not make a jump, which would grow the C
+-    stack by a frame each time it runs."""
+-    out = sh(['objdump', '-d', '--no-show-raw-insn', eng]).stdout.decode(errors='replace')
+-    fn, bad = None, set()
+-    for line in out.splitlines():
+-        m = re.match(r'^[0-9a-f]+ <([^>]+)>:', line)
+-        if m: fn = m.group(1); continue
+-        # Iteration 400: i386's forms too - a 4-byte table, absolute or based, or the pointer loaded first: matched
+-        # only as x86-64's, clang's calls at 4-byte cells went unseen, unwrapped, and its engine died on the corpus.
+-        # x86-64's own form is matched as it was: no 64-bit engine changes.
+-        if fn and re.match(r'[HI]_', fn) and re.search(r'call +\*\(%\w+,%\w+,8\)|call +\*(0x[0-9a-f]+)?\((%e\w+)?,%e\w+,4\)|call +\*%e[a-z]{2}\b', line):
+-            bad.add(re.sub(r'^[HI]_', '', fn).split('.')[0])
+-    return bad
+-
+-def build_tail(g, d, src, flags, eng):
+-    """Tail-call threading (tools/gen-tail.py): preprocess this design's
+-    engine with the 256-entry dispatch, make every handler a function, and
+-    wrap the ones whose dispatch the compiler would not make a jump - read
+-    from the machine code, then checked again: none may be left."""
+-    pp, tc = os.path.join(d, 'pp.c'), os.path.join(d, 'tail.c')
+-    fl = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL', '-DDISPOFF'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1', '-DDISPOFF=0']
+-    # Iteration 248: DISPOFF off here, in the preprocessing - gen-tail.py reads the
+-    # preprocessed source, where its own '#ifndef DISPOFF' guard is already gone, so
+-    # the handlers' table was offsets between functions: no tail design compiled in
+-    # seed 46 (222 died: engine did not compile)
+-    # Iteration 400: preprocessed by the compiler that builds it - CC(g) alone at 4-byte cells (EVOLVE_CC's -m32 left
+-    # out) made the x86-64 engine, 8-byte cells and __int128, for gcc -m32 to compile: every tail design died at 32 bits
+-    # (seed 58: 401 of 401 'engine did not compile', results/fail32-400.md).
+-    r = sh(CCV(g) + ['-E', '-P'] + fl + ['-o', pp, src])
+-    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))   # Iteration 400: its first error, as build's
+-    wrap = []
+-    for attempt in range(2):
+-        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
+-               + (['--preserve-none'] if express(g).get('tailpn') else ['--musttail'] if express(g).get('compiler') else []))   # 401: every clang engine's calls jumps   # Iteration 293
+-        if r.returncode: raise RuntimeError('died: tail-call generation' + why(r))
+-        r = sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt())
+-        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+-        bad = tail_offenders(eng)
+-        if not bad: return
+-        wrap = sorted(set(wrap) | bad)
+-    raise RuntimeError('died: tail calls not jumps (%s)' % ','.join(sorted(bad)))
++# Iteration 456 (the owner; results/gene-votes.md): tail-call threading removed - tail_offenders(), build_tail() and
++# tools/gen-tail.py. tail and tailpn stay in the genome, frozen off (FROZEN, Iteration 450), so every design keeps its
++# identity; seed 66 showed no loss with them off.
+ 
+ PROFILING = [False]      # set while design_pairs builds a profiling engine
+ CONVERT_EXTRA = []       # more converter options, set by a pricing tool (callsites.py); empty in a run
+@@ -1010,23 +969,21 @@ def _build(g, d):
+         flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
+     eng = os.path.join(d, 'engine')
+     def compile_engine():
+-        if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
+-        else:
+-            jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+-                   os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
+-            if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
+-                if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
+-                    raise RuntimeError('died: stack-cache generation')
+-            lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
+-            if lto and jit:                                      # the stencils outside it: the JIT reads their code as compiled
+-                objs = []
+-                for c in ('spn-stencils.c', 'spn-markers.c'):
+-                    o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
+-                    r = sh(CCV(g) + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
+-                    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+-                jit = jit[:4] + objs
+-            r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+-            if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
++        jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
++               os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
++        if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
++            if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
++                raise RuntimeError('died: stack-cache generation')
++        lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
++        if lto and jit:                                      # the stencils outside it: the JIT reads their code as compiled
++            objs = []
++            for c in ('spn-stencils.c', 'spn-markers.c'):
++                o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
++                r = sh(CCV(g) + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
++                if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
++            jit = jit[:4] + objs
++        r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
++        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
+     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
+     if g['bytehdr']: opts.append('--bytehdr')
+@@ -1070,7 +1027,6 @@ def _build(g, d):
+     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
+     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+-    fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
+     dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
+     # Iteration 199: a short branch the tag-2 encoding finds out of range is
+     # written to long-branches.json and the conversion fails; converted again
+@@ -1818,7 +1774,7 @@ def setup():
+     import shutil
+     W = os.path.join(O, 'work')
+     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
++               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+@@ -1829,7 +1785,7 @@ def setup():
+                         for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
+                         for t in (('', '-iplus') if l == '-loopall' else ('',))
+                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
+-                        for q in (('', '-kstack') if b == KW() + '-bt' else ('',))    # Iteration 116
++                        for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
+                         for j in (('', '-jit') if b == KW() + '-bt' else ('',))
+                         for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
+         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
+@@ -1840,7 +1796,6 @@ def setup():
+                        else ['cv8-fuse-loop.4'] if '-loop' in name else [])
+                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
+                        + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
+-                       + (['kstack.4'] if '-kstack' in name else [])        # Iteration 116: ?STACK8, swapped into ?STACK
+                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
+                        + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
+                        + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 205: the rest of the file words (fsys 2)
+diff --git a/tools/gen-tail.py b/tools/gen-tail.py
+deleted file mode 100644
+index 0a888fa..0000000
+--- a/tools/gen-tail.py
++++ /dev/null
+@@ -1,136 +0,0 @@
+-#!/usr/bin/env python3
+-"""gen-tail.py PREPROCESSED.c OUT.c [--wrap L_a,L_b,...] - tail-call
+-threading for the CV8 engine. --preserve-none (Iteration 293, the gene tailpn,
+-clang 19+): preserve_none on every handler, musttail on every tail call.
+---musttail (Iteration 401): musttail alone, for clang's engine without
+-preserve_none - at 4-byte cells clang makes no dispatch a jump without it.
+-
+-Input: the top-of-stack engine (vm-lab-tos.c, after gen-fold / gen-super),
+-preprocessed for one design with -DDISPATCH256=1 (cc -E -P), so every
+-#if and macro is resolved and every dispatch is the same statement,
+-`t = BYTE(ip); ip += 1; goto *dtab256[t];`.
+-
+-Output: the same engine with each handler a function of the machine
+-state, (ip, dsp, rp, tos, t), all five in argument registers, ending in a
+-TAIL call through a 256-entry table of functions - opcodes below 0x80,
+-the call path above. The handler bodies are unchanged: only their jumps
+-are rewritten. Every handler is small, so the compiler allocates its
+-registers for it alone, where in the one big function it allocates for
+-all of them at once (CPython 3.14, Wasm3, WasmKit).
+-
+-Without musttail (GCC before 15) the tail calls are -O2's sibling calls;
+-the kernel workload, millions of dispatches, overflows the C stack at
+-once if one is missed, so the strict check catches it.
+-
+---wrap: handlers whose body passes a local's address to the system
+-(fstat's struct, pipe's two descriptors) keep their frame, so the compiler
+-will not make their dispatch a jump. Each is split: an inner function runs
+-the body, saves the state to globals and returns the next function; the
+-outer one, with no locals, tail-calls it. Which ones need it is read from
+-the machine code (an indexed indirect CALL in a handler) - see
+-lab/evolve/evolve.py, build_tail.
+-"""
+-import re, sys
+-WRAP = set(sys.argv[sys.argv.index('--wrap') + 1].split(',')) if '--wrap' in sys.argv else set()
+-
+-src = open(sys.argv[1]).read()
+-fs = src.index('static void virtual_machine(void) {')
+-i = src.index('{', fs); depth, j = 0, i
+-while True:
+-    if src[j] == '{': depth += 1
+-    elif src[j] == '}':
+-        depth -= 1
+-        if depth == 0: break
+-    j += 1
+-pre, body, post = src[:fs], src[i + 1:j], src[j + 1:]
+-
+-k = body.index('\nnext:')
+-preamble, rest = body[:k], body[k + 1:]
+-labels = [(m.start(), m.group(1)) for m in re.finditer(r'^([A-Za-z_]\w*):(?!:)', rest, re.M)
+-          if m.group(1) not in ('default',) and not m.group(1).startswith('LSB_')]
+-names = [n for _, n in labels]
+-ARGS = 'UNS64 ip, UNS64 dsp, UNS64 rp, UNS64 tos, UNS64 t'
+-PASS = '(ip, dsp, rp, tos, t)'
+-STATE = '    const UNS64 dsp_limit = tc_dsp_limit, rp_limit = tc_rp_limit, cbase = tc_cbase;\n' \
+-        '    (void)dsp_limit; (void)rp_limit; (void)cbase;\n'
+-
+-def rewrite(b):
+-    b = b.replace('goto *dtab256[t];', 'return htab[t]%s;' % PASS)
+-    b = b.replace('goto *esc_tab[t];', 'return esc_ftab[t]%s;' % PASS)
+-    b = b.replace('goto *t2tab[t];', 'return t2tab[t]%s;' % PASS)        # the two-bit tag (Iteration 70)
+-    b = b.replace('goto *t2esc[t];', 'return t2esc[t]%s;' % PASS)
+-    b = re.sub(r'goto\s+([A-Za-z_]\w*)\s*;',
+-               lambda m: m.group(0) if m.group(1).startswith('LSB_') else 'return H_%s%s;' % (m.group(1), PASS), b)
+-    left = re.findall(r'goto\s*\*', b)
+-    assert not left, 'a computed goto gen-tail.py does not know'
+-    return b
+-
+-SAVE = '(tc_ip = ip, tc_dsp = dsp, tc_rp = rp, tc_tos = tos, tc_t = t, %s)'
+-def inner(b):
+-    b = rewrite(b).replace('return htab[t]%s;' % PASS, 'return %s;' % (SAVE % 'htab[t]'))
+-    b = b.replace('return esc_ftab[t]%s;' % PASS, 'return %s;' % (SAVE % 'esc_ftab[t]'))
+-    b = b.replace('return t2tab[t]%s;' % PASS, 'return %s;' % (SAVE % 't2tab[t]'))
+-    b = b.replace('return t2esc[t]%s;' % PASS, 'return %s;' % (SAVE % 't2esc[t]'))
+-    b = re.sub(r'return H_(\w+)\(ip, dsp, rp, tos, t\);', lambda m: 'return %s;' % (SAVE % ('H_' + m.group(1))), b)
+-    return re.sub(r'return\s*;', 'return 0;', b)
+-
+-funcs = []
+-for n, ((a, name), nxt) in enumerate(zip(labels, labels[1:] + [(len(rest), None)])):
+-    blk = rest[a + len(name) + 1:nxt[0]]
+-    assert blk.count('{') == blk.count('}'), 'handler %s does not end where the next begins' % name
+-    if name in WRAP:
+-        tail = ('    return %s;\n' % (SAVE % ('H_' + nxt[1]))) if nxt[1] else '    return 0;\n'
+-        funcs.append('static __attribute__((noinline)) hfn I_%s(%s) {\n%s%s\n%s}\n' % (name, ARGS, STATE, inner(blk), tail))
+-        funcs.append('static void H_%s(%s) {\n    hfn f_ = I_%s%s;\n    if (!f_) return;\n'
+-                     '    return f_(tc_ip, tc_dsp, tc_rp, tc_tos, tc_t);\n}\n' % (name, ARGS, name, PASS))
+-        continue
+-    tail = ('    return H_%s%s;\n' % (nxt[1], PASS)) if nxt[1] else ''      # what fell through
+-    funcs.append('static void H_%s(%s) {\n%s%s\n%s}\n' % (name, ARGS, STATE, rewrite(blk), tail))
+-
+-# the entry: the old preamble, with label addresses as function names and
+-# the label tables as tables of functions; then the first dispatch.
+-p = re.sub(r'&&([A-Za-z_]\w*)', r'H_\1', preamble.replace('#ifndef DISPOFF', '#undef DISPOFF\n#define DISPOFF 0\n#ifndef DISPOFF'))   # Iteration 237: functions, not offsets
+-p = p.replace('static const void *const dispatch[] = {', 'static const hfn dispatch[] = {')
+-ESC_N = re.search(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', p)        # 32, or 41 at ESCAPE == 2
+-ESC_N = int(ESC_N.group(1)) if ESC_N else 0
+-p = re.sub(r'const void \*cv8_tab\[128\], \*esc_tab\[(\d+)\];', r'hfn cv8_tab[128], esc_tab[\1];', p)
+-p = p.replace('static const void *dtab256[256];', '')
+-TAG2 = 'static const void *t2tab[256], *t2esc[256];' in p      # the two-bit tag: its tables global, of functions
+-p = p.replace('static const void *t2tab[256], *t2esc[256];', '')
+-p = p.replace('dtab256', 'htab')
+-entry = ('static void virtual_machine(void) {\n%s\n'
+-         '    tc_dsp_limit = dsp_limit; tc_rp_limit = rp_limit; tc_cbase = cbase;\n'
+-         '%s'
+-         '    t = (*(unsigned char*)(ip)); ip += 1;\n'
+-         '    %s[t]%s;\n}\n') % (p, '    { int e_; for (e_ = 0; e_ < %d; e_++) esc_ftab[e_] = esc_tab[e_]; }\n' % ESC_N
+-                                  if ESC_N else '', 't2tab' if TAG2 else 'htab', PASS)
+-head = ('typedef void (*hfn)(%s);\n'
+-        'static hfn htab[256], esc_ftab[ESC_FTAB_N];\n'
+-        'static UNS64 tc_dsp_limit, tc_rp_limit, tc_cbase, tc_ip, tc_dsp, tc_rp, tc_tos, tc_t;\n' % ARGS
+-        + ''.join('static void H_%s(%s);\n' % (n, ARGS) for n in names))
+-head = head.replace('ESC_FTAB_N', str(max(ESC_N, 32)))   # 32 as ever at level 1; 41 at level 2
+-if TAG2: head += 'static hfn t2tab[256], t2esc[256];\n'
+-body = ''.join(funcs)
+-if '--preserve-none' in sys.argv:
+-    # Iteration 293, the gene tailpn: clang 19+'s preserve_none on every handler - no register is
+-    # callee-saved, so the state stays in registers through the chain, nothing spilled - and
+-    # musttail on every handler-to-handler call, so none can become a call (CPython 3.14's form).
+-    # The entry, an ordinary C function, only calls into the chain: no musttail there.
+-    PN = '__attribute__((preserve_none))'
+-    head = head.replace('typedef void (*hfn)(', 'typedef void (%s *hfn)(' % PN, 1)
+-    head = head.replace('static void H_', 'static %s void H_' % PN)
+-    body = body.replace('static void H_', 'static %s void H_' % PN)
+-if '--preserve-none' in sys.argv or '--musttail' in sys.argv:   # Iteration 401: musttail alone too (--musttail)
+-    body = re.sub(r'(?<![\w.])return (htab\[t\]|esc_ftab\[t\]|t2tab\[t\]|t2esc\[t\]|H_\w+|f_)\((ip, dsp, rp, tos, t|tc_ip, tc_dsp, tc_rp, tc_tos, tc_t)\);',
+-                  r'__attribute__((musttail)) return \1(\2);', body)
+-# Iteration 405: at 32-bit x86 GCC gives a static function reached only by direct calls - the two-bit tag's shared call
+-# path, t2call - a convention of its own, arguments in registers: its incoming stack then too small for the five a
+-# dispatch passes on the stack, and its tail call stays a call ("tail calls not jumps (t2call)" - the rehearsal of the
+-# after-seed-62 batch). noipa keeps every handler's convention the declared one; empty for clang and off i386, so no
+-# other engine changes.
+-head = ('#if defined(__i386__) && defined(__GNUC__) && !defined(__clang__)\n#define TC_NOIPA __attribute__((noipa))\n'
+-        '#else\n#define TC_NOIPA\n#endif\n') + head
+-head = re.sub(r'static ((?:__attribute__\(\(preserve_none\)\) )?)void H_', r'static TC_NOIPA \1void H_', head)
+-body = re.sub(r'static ((?:__attribute__\(\(preserve_none\)\) )?)void H_', r'static TC_NOIPA \1void H_', body)
+-open(sys.argv[2], 'w').write(pre + head + body + entry + post)
+-print('%d handlers as functions, %d wrapped' % (len(names), len(WRAP & set(names))))
