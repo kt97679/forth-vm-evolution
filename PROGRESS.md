@@ -8732,3 +8732,12 @@ flags, data layout, the JIT's native code - timing's to judge). The jitloop free
 beside the votes at each processing.
 
 Files: results/drafts/inert-scan-451.md, results/drafts/inert-scan-451.py; results/README.md, HANDOFF.md.
+
+## Iteration 453 - 2026-10-22 - Claude
+
+**Seed 67 at 10 hours** (the owner: the next run, 10 hours - seed 66 already running at 12). Recorded in HANDOFF and as a
+comment in NEXT-RUN, whose active line stays seed 66's; seed 67's line is written at seed 66's processing, with islands
+if seed 66 confirms them. At 10 hours with no comparison step, about 9.5 hours of evolution - past generation 146, so the
+islands reading against seed 64 still holds.
+
+Files: lab/evolve/NEXT-RUN, HANDOFF.md.

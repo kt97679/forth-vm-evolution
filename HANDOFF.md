@@ -48,12 +48,13 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 452.
+- master: Iteration 453.
 - **The runs**: seed 65 processed (Iteration 449) - **the islands trial: worth keeping by its measure**. Against seed 64
   (no islands) at generation 146: fastest 6.8% ahead (0.1168 against 0.1253), smallest -0.3%, hypervolume +1.6%; 32 bits
   8.0% behind. By its end: fastest 0.115, **smallest 13,959 bytes, the smallest of any run**; none died. One run against
   one (the replicates' chance at the fast end: about 5%) - **seed 66 runs islands again to decide** (NEXT-RUN, 12 h, the
-  owner's hours for seed 65 kept). **The after-seed-65 batch applied** (the deferred gate reading; I+ with its fuser).
+  owner's hours for seed 65 kept). **Seed 67: 10 hours** (the owner, 453) - its line written at seed 66's processing,
+  islands in it if seed 66 confirms them. **The after-seed-65 batch applied** (the deferred gate reading; I+ with its fuser).
   **The gene votes' first freeze (450, the owner): sharedcall, tail, kstack, tailpn frozen off** for seed 66 (the code
   kept; removed if seed 66 shows no loss - read by its chain's spread against seed 65). skippad and fold, the other two
   candidates, are genes of sod16 and cpt16, not CV8 - the votes now count only the front's encoding's genes. **For the

@@ -13,6 +13,7 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 453 (the owner): seed 67, the run after this one, 10 hours - written here at seed 66's processing.
 # Iteration 449: seed 66 - islands again, to confirm seed 65's trial (6.8% at the fast end against seed 64); 12 hours
 # as the owner set for seed 65; the batch's first run.
 # Iteration 444 (the owner): seed 65 with islands, 12 hours - the islands trial against seeds 63-64 (results/drafts/
