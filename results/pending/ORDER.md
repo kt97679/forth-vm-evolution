@@ -13,4 +13,5 @@ is not mixed with it.
 ## How it was tested
 
 In a clone of master (e1285e3), its stages built: run-tests PASS (engines-check: 69 paths, each built and its corpus
-right), validate 7 of 7 IDENTICAL, a short evolution (16 designs, 3 generations) - 78 of 78 alive. batch-check below.
+right), validate 7 of 7 IDENTICAL, a short evolution (16 designs, 3 generations) - 78 of 78 alive. **batch-check on
+c69752e: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.**

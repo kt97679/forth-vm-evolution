@@ -8776,3 +8776,16 @@ seed 67's chain on the laptop, after the footprint check. Predicted.
 
 Files: lab/evolve/loadtest.py, results/applied-after-seed66/ (new); lab/evolve/evolve.py, lab/evolve/NEXT-RUN,
 results/predictions.md, HANDOFF.md.
+
+## Iteration 456 - 2026-10-22 - Claude
+
+**tail, tailpn and kstack retired - the after-seed-67 batch** (the owner: remove the frozen four's code; while seed 67
+runs). Removed: tools/gen-tail.py, build_tail() and tail_offenders(), the preserve_none compiler choice, the engine's
+tail branch in build() (its other branch one level up), engines-check's tail paths (89 to 69), forth/kstack.4 and its
+dump variants. Kept: the genes, in the genome and frozen off - canon(), express() and every design's identity read them -
+and lab/evolve/GENES.md marks them retired. sharedcall's path stays: CV8's base genome sets it, so the hand-made s5 and
+s6 use it, and s6 is the reference. Tested in a clone of e1285e3, its stages built: run-tests PASS (69 engine paths,
+each built and its corpus right), validate 7 of 7 IDENTICAL, a short evolution 78 of 78 alive; batch-check on c69752e PASS
+(run-tests, validate 7 of 7 IDENTICAL, the jail).
+
+Files: results/pending/ORDER.md, results/pending/retire-after-seed67.patch (new); results/README.md, HANDOFF.md.
