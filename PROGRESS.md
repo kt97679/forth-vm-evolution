@@ -8717,3 +8717,18 @@ tos picks the cached engine's source - to be looked at. Proposed: jitloop confir
 tos looked into; the scan run beside the votes at each processing - the owner's calls.
 
 Files: results/drafts/inert-scan-451.md, results/drafts/inert-scan-451.py (new); results/README.md, HANDOFF.md.
+
+## Iteration 452 - 2026-10-22 - Claude
+
+**The scan's two findings checked - both false; the scan corrected and run again** (the owner: confirm jitloop, look at
+tos). tos in the plain fastest: two different engines with it on and off (their hashes differ), 22,600 bytes each - equal
+sizes, not an unchanged build; TOS caching changes how each operation runs, not how many. jitloop in the fastest JIT
+design: bubble's dispatches 137,056 with it, 7,911,665 without (corpus -1.0%) - it gives the JIT (+LOOP) and (?DO), which
+kernel, loop and fib, the first pass's three workloads, do not use; -DJITLOOP itself is read by no code, the converter's
+stencils are the gene. The scan now profiles all seven workloads and calls a gene inert only when the build is the same,
+engine and image hashed: on the same four designs **no gene is inert across designs** - alignfn (two designs), gotodup
+and fbuf (one each) build the same with it off; the rest work, or build differently with no dispatch effect (compiler
+flags, data layout, the JIT's native code - timing's to judge). The jitloop freeze withdrawn; the corrected scan proposed
+beside the votes at each processing.
+
+Files: results/drafts/inert-scan-451.md, results/drafts/inert-scan-451.py; results/README.md, HANDOFF.md.

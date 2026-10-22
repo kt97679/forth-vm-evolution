@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 451.
+- master: Iteration 452.
 - **The runs**: seed 65 processed (Iteration 449) - **the islands trial: worth keeping by its measure**. Against seed 64
   (no islands) at generation 146: fastest 6.8% ahead (0.1168 against 0.1253), smallest -0.3%, hypervolume +1.6%; 32 bits
   8.0% behind. By its end: fastest 0.115, **smallest 13,959 bytes, the smallest of any run**; none died. One run against
@@ -58,9 +58,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   kept; removed if seed 66 shows no loss - read by its chain's spread against seed 65). skippad and fold, the other two
   candidates, are genes of sod16 and cpt16, not CV8 - the votes now count only the front's encoding's genes. **For the
   owner, someday**: the old encodings themselves (cell, sod16, cpt16) - founders only, never on a front since CV8.
-  **The inert-gene scan (451, results/drafts/inert-scan-451.md)**: jitloop inert in both JIT designs scanned (its
-  engine flag read nowhere), riding on 93 of seed 65's front - invisible to the votes; proposed: confirm, then freeze
-  it off; tos inert in the plain fastest - to look at; the scan beside the votes at each processing - the owner's call.
+  **The inert-gene scan (451-452, results/drafts/inert-scan-451.md)**: corrected - all seven workloads, builds hashed:
+  no gene inert across designs (alignfn, gotodup, fbuf the same build in one design or two); jitloop works (bubble) and
+  tos works - the first pass's two findings were false, the jitloop freeze withdrawn. Proposed: the corrected scan beside
+  the votes at each processing - the owner's call.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
   processed - seed 66's, named from the bundle it starts from (seed 65's, `forth-vm-evolution-chain-e81eec6ff-fury-
   20261022-014957_tar.gz`, processed at 449). For seed 66's islands reading seed 64's database is kept here too
