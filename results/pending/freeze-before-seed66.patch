@@ -1,0 +1,33 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 2036cf8..6673b59 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -927,7 +927,11 @@ REQUIRE = []
+ # design the search makes carries these values (require, at get()); a hand-made design keeps its own, so s6 and the
+ # stages are unchanged. With varcall and doesfar on, no design dies at the reach limit any more (reach_lethal). Not
+ # tail - a fault hid it until the after-seed-62 batch; judged after seed 63.
+-FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0}
++# Iteration 450 (the owner; results/seed63-rules.md's gene votes): sharedcall, tail, kstack and tailpn frozen off - 12 of
++# 12 removal votes over seeds 63-65, on no front design, so the dependence test had nothing to rebuild. Reversible: the
++# code stays; removed only if the run after shows no loss (its comparison small or better).
++FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
++          'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+diff --git a/lab/evolve/review-checks.py b/lab/evolve/review-checks.py
+index 5531e29..618db19 100644
+--- a/lab/evolve/review-checks.py
++++ b/lab/evolve/review-checks.py
+@@ -383,8 +383,9 @@ elif check == 'votes':
+     frozen = set(getattr(E, 'FROZEN', None) or ())
+     SKIP = {'enc', 'opt', 'compiler', 'spec', 'folds', 'ops10'}          # what a design is, not a mechanism to drop
+     run = []
+-    for g in dict.fromkeys(x for fam in E.EXPRESSED.values() for x in fam):
+-        if g in SKIP or g in frozen: continue
++    fams = set(gen[i].get('enc') for i in ids)                      # Iteration 450: the front's encodings' genes only -
++    for g in dict.fromkeys(x for f, fam in E.EXPRESSED.items() if f in fams for x in fam):   # skippad and fold, sod16's and
++        if g in SKIP or g in frozen: continue                        # cpt16's, were voted on in CV8 fronts they cannot reach
+         on = set(i for i in ids if ex[i].get(g)); share = 100.0 * len(on) / n if n else 0.0
+         f, sm, q = len(on & fast), len(on & small), len(on & bestq)
+         run.append((seed, g, share, f, sm, q, (share < 10) + (f == 0) + (sm == 0) + (q == 0)))
