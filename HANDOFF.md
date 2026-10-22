@@ -48,16 +48,17 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 454.
+- master: Iteration 455.
 - **The runs**: seed 66 processed (Iteration 454) - **islands confirmed, the default from seed 67**: against seed 64 at
   generation 146 its fastest 3.6% ahead (seed 65's: 6.8%), the small end level, hypervolume +1.8%. **The first freeze
   showed no loss** against seed 65 at generation 90 (fastest 0.1286 against 0.1288, smallest +0.1%). By its end: fastest
-  0.121, smallest 14,037; none died; I+ working on all 39 designs carrying it. **For the owner**: (a) the frozen four's code
-  removed (sharedcall, tail, kstack, tailpn - the gene rule's last step, no loss shown); (b) the votes' next candidates -
-  **alignhot, jithelp, jitre** (12 of 12 over seeds 64-66) - frozen off the same way; (c) **the fast gate**: the deferred
-  reading did not lower the fast end's optimism (1.110) - not shared luck, then; more likely the measuring load (in-run four
-  workers, the re-measure after); selection itself is sound (heldout regret +1.4%) - rule 3 read as a calibration offset,
-  or a test under load; (d) the footprint check: the top reordered at 10,000 words this time (0.206; seeds 64-65: 0.888,
+  0.121, smallest 14,037; none died; I+ working on all 39 designs carrying it. **The owner (455)**: (a) **the frozen four's code to go** -
+  tail's and tailpn's engines and kstack's, as the after-seed-67 batch (being prepared); **sharedcall's path stays**: the
+  hand-made s5 and s6 - the reference every speed is measured against - use it (CV8's base genome), so only its gene goes;
+  (b) **the second freeze applied: alignhot, jithelp, jitre off** (results/applied-after-seed66/ORDER.md, batch-check PASS);
+  (c) **the load tested in seed 67's chain** - lab/evolve/loadtest.py, the front's 8 fastest and 4 slowest against s6 idle
+  and with three other cores busy: the load explains the fast end's optimism (1.110) if the fast group runs about 10%
+  faster against s6 under it and the slow group does not; (d) the footprint check: the top reordered at 10,000 words this time (0.206; seeds 64-65: 0.888,
   0.550) - watched. Next seed 67: **10 hours (the owner), islands** (NEXT-RUN).
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
   processed - seed 67's, named from the bundle it starts from (seed 66's, `forth-vm-evolution-chain-94e6742bb-fury-

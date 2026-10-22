@@ -838,3 +838,9 @@ smallest within 0.5%. If so, their code goes (tail's engines, gen-tail.py and bu
 Islands the default, 10 hours (the owner). At generation 146 against seed 64 (its database kept): its fastest at least 2%
 ahead and its smallest within 0.5% - the islands' gain holding at the shorter run; no design dying; rtiplus on at least
 10% of its plain designs.
+
+## The load test in seed 67's chain - predicted (Iteration 455)
+
+lab/evolve/loadtest.py: seed 67's 8 fastest and 4 slowest against s6, idle and with three other cores running s6. The
+hypothesis (Iteration 454): the fast end's optimism is the measuring load. Predicted: the fast group's loaded / idle median
+0.93 or below, the slow group's 0.98 or above. If the fast group's is near 1.00 too, the load is not the cause either.

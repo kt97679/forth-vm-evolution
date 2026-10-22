@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 455 (the owner: test the load): after the footprint check, loadtest.py - the front's 8 fastest and 4 slowest
+# against s6 idle and with three other cores busy (about 20-30 minutes past the hours).
 # Iteration 454: seed 67 - 10 hours (the owner, 453), islands the default (seeds 65 and 66 both ahead of seed 64 at
 # generation 146: 6.8% and 3.6%).
 # Iteration 449: seed 66 - islands again, to confirm seed 65's trial (6.8% at the fast end against seed 64); 12 hours
@@ -61,4 +63,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 67 10h widths noevolved islands then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread
+seed 67 10h widths noevolved islands then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment loadtest.py --fastest 8 --slowest 4 --rounds 3 --load 3 then experiment review-checks.py spread

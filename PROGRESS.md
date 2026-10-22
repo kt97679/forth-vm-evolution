@@ -8758,3 +8758,21 @@ control caught), the jail PASS, alone. NEXT-RUN: seed 67, 10 hours (the owner), 
 
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed66.md, results/xcheck-seed66.md (new); results/gene-votes.md,
 results/predictions.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
+
+## Iteration 455 - 2026-10-22 - Claude
+
+**The owner's three answers: the frozen four's code to go; the second freeze; the load tested.**
+
+(a) The code removal: sharedcall's path cannot go - CV8's base genome sets sharedcall, so the hand-made s5 and s6 use the
+shared call path, and s6 is the reference every speed is measured against; only its gene goes. tail's and tailpn's
+engines (gen-tail.py, build_tail and the rest) and kstack's go - prepared as the after-seed-67 batch, so seed 67 is not
+mixed with it. (b) alignhot, jithelp and jitre frozen off (12 of 12 over seeds 64-66): batch-check on cb2e94d PASS -
+run-tests, validate 7 of 7 IDENTICAL, the jail - applied before seed 67 (results/applied-after-seed66/). (c) The load:
+lab/evolve/loadtest.py - the newest database's front, its K fastest and K slowest, each measured against s6 with
+evolve.py's own measure() idle and with N other physical cores running s6 on the kernel workload, idle, loaded, idle,
+loaded; per design loaded / idle, per group the median. This machine has one core, so its smoke run (the load forced onto
+the same core) checked only the path - the front read, builds, measures, the load started and stopped; the test runs in
+seed 67's chain on the laptop, after the footprint check. Predicted.
+
+Files: lab/evolve/loadtest.py, results/applied-after-seed66/ (new); lab/evolve/evolve.py, lab/evolve/NEXT-RUN,
+results/predictions.md, HANDOFF.md.
