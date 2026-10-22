@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 456.
+- master: Iteration 457.
 - **The runs**: seed 66 processed (Iteration 454) - **islands confirmed, the default from seed 67**: against seed 64 at
   generation 146 its fastest 3.6% ahead (seed 65's: 6.8%), the small end level, hypervolume +1.8%. **The first freeze
   showed no loss** against seed 65 at generation 90 (fastest 0.1286 against 0.1288, smallest +0.1%). By its end: fastest
@@ -61,6 +61,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   and with three other cores busy: the load explains the fast end's optimism (1.110) if the fast group runs about 10%
   faster against s6 under it and the slow group does not; (d) the footprint check: the top reordered at 10,000 words this time (0.206; seeds 64-65: 0.888,
   0.550) - watched. Next seed 67: **10 hours (the owner), islands** (NEXT-RUN).
+- **Fern, a scripting language on this Forth** (the owner, 457): designed - results/drafts/fern-design-457.md - and to
+  be built in a chat of its own, from this bundle; the evolution's chats carry on as before.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
   processed - seed 67's, named from the bundle it starts from (seed 66's, `forth-vm-evolution-chain-94e6742bb-fury-
   20261022-152338_tar.gz`, processed at 454). For seed 66's islands reading seed 64's database is kept here too

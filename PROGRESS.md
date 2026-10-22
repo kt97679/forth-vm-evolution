@@ -8789,3 +8789,14 @@ each built and its corpus right), validate 7 of 7 IDENTICAL, a short evolution 7
 (run-tests, validate 7 of 7 IDENTICAL, the jail).
 
 Files: results/pending/ORDER.md, results/pending/retire-after-seed67.patch (new); results/README.md, HANDOFF.md.
+
+## Iteration 457 - 2026-10-22 - Claude
+
+**Fern designed - a small scripting language compiled into Forth words** (results/drafts/fern-design-457.md). The owner
+asked, while seed 67 runs, for a minimal user-friendly scripting language on this Forth at little cost against bare
+Forth, and chose to build it in a chat of its own; this note is that chat's starting point: Ruby-style syntax closed by
+keywords, cells as the one type, a compiler in Forth emitting colon definitions as it parses, locals in a return-stack
+frame (FRAME, L@ k, L! k, UNFRAME - plain Forth first, VM primitives and genes later), no runtime type checks, no GC
+(a per-script arena), no floating point; expected within 0-20% of hand-written Forth; a four-step plan, the core first.
+
+Files: results/drafts/fern-design-457.md (new); results/README.md, HANDOFF.md.
