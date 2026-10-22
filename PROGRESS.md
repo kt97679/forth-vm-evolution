@@ -8703,3 +8703,17 @@ the routine now says it runs last and alone.
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed65.md, results/xcheck-seed65.md (new); results/applied-after-seed65/
 (two patches and the freeze); lab/evolve/evolve.py, lab/evolve/review-checks.py and the batch's files; lab/evolve/NEXT-RUN,
 results/gene-votes.md, results/predictions.md, results/progress-by-run.md, results/README.md, HANDOFF.md.
+
+## Iteration 451 - 2026-10-22 - Claude
+
+**The inert-gene scan** (the owner: proceed; results/drafts/inert-scan-451.md, results/drafts/inert-scan-451.py), while
+seed 66 runs. Four of seed 65's front designs - the fastest, the fastest without the JIT, the best by Q, the smallest -
+each expressed gene turned off in turn: binary + image bytes, and the profiler's dispatch counts on kernel, loop, fib.
+**jitloop is inert in both JIT designs**: not a byte, not a dispatch; -DJITLOOP is read nowhere in the engine now, and
+its converter stencils changed nothing in these images. It rides on all 93 JIT designs of the front, so the gene votes
+- which count presence - could never make it a candidate: the scan sees what they cannot. Inert in one design or two:
+tfind, swapi, dskew, alignfn, gotodup, opinline, noinls, fbuf. tos inert in the plain fastest (ab16f60a0c), unexpected -
+tos picks the cached engine's source - to be looked at. Proposed: jitloop confirmed on more JIT designs then frozen off;
+tos looked into; the scan run beside the votes at each processing - the owner's calls.
+
+Files: results/drafts/inert-scan-451.md, results/drafts/inert-scan-451.py (new); results/README.md, HANDOFF.md.
