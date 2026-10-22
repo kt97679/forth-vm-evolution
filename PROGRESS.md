@@ -8642,7 +8642,7 @@ and inert. 37 of the front's 55 designs with rtiplus have no fuser (30 tag-2 JIT
 anyway; 7 plain). Rule 7's 33% counts expression, not effect. Not prepared; proposed instead: rtiplus to bring the fuser
 with it - the owner's call.
 
-Files: results/pending/ORDER.md, results/pending/fastgate-defer-after-seed65.patch, results/drafts/fastgate-defer-446.log
+Files: results/applied-after-seed65/ORDER.md, results/applied-after-seed65/fastgate-defer-after-seed65.patch, results/drafts/fastgate-defer-446.log
 (new); results/README.md, HANDOFF.md.
 
 ## Iteration 447 - 2026-10-21 - Claude
@@ -8656,7 +8656,7 @@ in a clone (its stages built): seed 64's 72a4f14f1a, plain - loop's dispatches 1
 fuses its built pairs and tests at run time too. The two patches batch-checked together on 42d4323: run-tests PASS,
 validate 7 of 7 IDENTICAL, jail PASS. Seed 66 predicted.
 
-Files: results/pending/iplus-fuser-after-seed65.patch (new); results/pending/ORDER.md, results/predictions.md,
+Files: results/applied-after-seed65/iplus-fuser-after-seed65.patch (new); results/applied-after-seed65/ORDER.md, results/predictions.md,
 results/README.md, HANDOFF.md.
 
 ## Iteration 448 - 2026-10-21 - Claude

@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 449: seed 66 - islands again, to confirm seed 65's trial (6.8% at the fast end against seed 64); 12 hours
+# as the owner set for seed 65; the batch's first run.
 # Iteration 444 (the owner): seed 65 with islands, 12 hours - the islands trial against seeds 63-64 (results/drafts/
 # escape-mechanism-435.md); after the footprint check the replicates' spread over every run's database (their common
 # generation, seed 63's 90), and at processing seed 65 against seed 64 at 146 (its database kept, build/evolve/keep/).
@@ -57,4 +59,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 65 12h widths noevolved islands then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread
+seed 66 12h widths noevolved islands then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread

@@ -48,28 +48,19 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 448.
-- **The runs**: seed 64 processed (Iteration 443): free, the batch and the JIT fix in - **the JIT back** (81 of its 167
-  front designs), **the smallest of any run** (14,047 bytes), its fastest 0.125 (seed 62's 0.116), **not one design died**;
-  the rtloopall repair worked (expressed where set 78%, on 155 of the front; I+ on 55); the footprint check: the top
-  keeps its order at 10,000 words (Spearman 0.888) - no footprint gate needed, the check stays in every line. No
-  verdict (no comparison step). **For the owner before seed 65**: islands - seed 64 is the baseline the islands trial
-  was waiting for (item 4c); the fast gate - optimism 1.085, its rule says revisit - **reviewed (445, results/drafts/fastgate-review-445.md):
-  its two back-to-back readings share their luck (seed 64: second / first 1.000, the re-measure 1.10 slower at the fast
-  end); proposed - the second reading deferred to the next generation** - **prepared (446): the after-seed-65 batch,
-  results/pending/ORDER.md**, applied at seed 65's processing; rtfuse to govern rtimm=2's run-time
-  fusion - **not prepared (446)**: --rtfuse carries I+'s table entry too, and **I+ fuses only where the run-time fuser
-  is built** (seed 64: a plain design with it, loop -20.0% with rtiplus; without it +0.0%; 37 of the front's 55 designs
-  with rtiplus have no fuser, 7 of them plain) - **so rtiplus brings the fuser: patch 2 of the after-seed-65 batch
-  (447)** - a plain design's loop -20.0% with it, +616 bytes. Rule 7 now counts I+ that works - with the fuser (448;
-  seed 64: 55 with rtiplus, 18 working, 11% of the front). **Seed 65: islands, 12 hours** (the owner, 444) -
-  NEXT-RUN: `seed 65 12h widths noevolved islands then experiment footprint.py ... then experiment review-checks.py spread`;
-  the trial read at processing against seed 64 at generation 146 (seed 64's database kept in this container,
-  build/evolve/keep/seed64-db.jsonl - if gone, seed 64's chain archive is wanted) and, by the chain's spread step,
-  against every run at generation 90.
+- master: Iteration 449.
+- **The runs**: seed 65 processed (Iteration 449) - **the islands trial: worth keeping by its measure**. Against seed 64
+  (no islands) at generation 146: fastest 6.8% ahead (0.1168 against 0.1253), smallest -0.3%, hypervolume +1.6%; 32 bits
+  8.0% behind. By its end: fastest 0.115, **smallest 13,959 bytes, the smallest of any run**; none died. One run against
+  one (the replicates' chance at the fast end: about 5%) - **seed 66 runs islands again to decide** (NEXT-RUN, 12 h, the
+  owner's hours for seed 65 kept). **The after-seed-65 batch applied** (the deferred gate reading; I+ with its fuser).
+  **For the owner**: the gene votes' first candidates - skippad, fold, sharedcall, tail, kstack, tailpn (12 of 12 over
+  seeds 63-65, on no front design, so the dependence test has nothing to rebuild) - by the gene rule, proposed: frozen off
+  for one run, the code kept, removed only if that run shows no loss.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 65's, named from the bundle it starts from (seed 64's, `forth-vm-evolution-chain-c094ab788-fury-
-  20261021-130905_tar.gz`, processed at 443). Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
+  processed - seed 66's, named from the bundle it starts from (seed 65's, `forth-vm-evolution-chain-e81eec6ff-fury-
+  20261022-014957_tar.gz`, processed at 449). For seed 66's islands reading seed 64's database is kept here too
+  (build/evolve/keep/seed64-db.jsonl); if gone, seed 64's archive. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only
   where the tag is built; a failed tool's first error; `noevolved`; compare-fronts' sign labelled, its 32-bit fastest

@@ -8,8 +8,8 @@ mixed with it.
 | 1 | fastgate-defer-after-seed65.patch | The fast gate's second reading deferred (results/drafts/fastgate-review-445.md): a child under the gate is marked, not measured again at once - back to back the two readings shared their moment's luck (seed 64: second / first 1.000, the re-measure after the run about 1.10 slower at the fast end) - and measured again in the next generation's batch, among other co-runners, its speed then the geometric mean of the two (64 bits; its 32-bit reading the first). The same cost; no new threshold. |
 | 2 | iplus-fuser-after-seed65.patch | I+ brings the run-time fuser (Iteration 447, the owner's "Continue" to it): I+ is found by the fuser's lookup in its table, so rtiplus without the fuser was expressed and inert - 37 of seed 64's 55 front designs with it. overlay() and the converter's --rtfuse now follow rtiplus too, and the lean immediates (cv8-imm.4, no table) no longer take an I+ design. A design with rtiplus pays the fuser's bytes - and, like rtimm=2 today, any pairs or fused tests it builds fuse at run time with it. |
 
-    git apply results/pending/fastgate-defer-after-seed65.patch
-    git apply results/pending/iplus-fuser-after-seed65.patch
+    git apply results/applied-after-seed65/fastgate-defer-after-seed65.patch
+    git apply results/applied-after-seed65/iplus-fuser-after-seed65.patch
 
 ## How it was tested
 

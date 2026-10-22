@@ -407,7 +407,9 @@ def overlay(g):
     list needs no overlay: the converter writes it into cv8.4's FOLD-OPS.)
     Everything else keeps the build's dumps, so the hand-made stages still
     come out byte-identical."""
-    return g['enc'] == 'cv8' and (bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g))) or rtimm2(g))
+    # Iteration 447: and rtiplus - I+ is found by the fuser's lookup, in its table; without the fuser it was expressed
+    # and inert (seed 64: a plain design's loop -20.0% with the fuser, +0.0% without; 37 of the front's 55 without it)
+    return g['enc'] == 'cv8' and (bool(g.get('rtfuse') and (supers_in(g) or rt_tests(g))) or rtimm2(g) or rtiplus_on(g))
 def rtimm2(g):
     """Iteration 175: rtimm=2 - run-time immediates without pairs: the overlay
     for ADDI and SWAP+I alone (forth/cv8t-fuse.4's lookup over no pairs, then
@@ -419,7 +421,7 @@ def rtimm_lean(g):
     """Iteration 422 (results/wip-regmachine/README.md): rtimm=2 in a plain-CV8 design with nothing else
     for the run-time fuser to do - no pairs, no fused tests - builds forth/cv8-imm.4 alone, not
     cv8-fuse.4 under cv8-fuse-imm.4 (rtimm=2 passes --rtfuse: built pairs and tests fuse, rtfuse or not)."""
-    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2')
+    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2') and not rtiplus_on(g)   # 447: I+ needs the fuser
 RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
 def rt_tests(g):
     """The fused tests this design has opcodes for - with rtfuse, its
@@ -1033,7 +1035,7 @@ def _build(g, d):
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     if oc: opts += ['--opcall-file', os.path.join(d, 'opcall.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
-    if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g): opts.append('--rtfuse')   # rtimm=2: IMM-OPS filled
+    if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g) or rtiplus_on(g): opts.append('--rtfuse')   # 447: I+'s entry   # rtimm=2: IMM-OPS filled
     if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
     if t2wide_on(g): opts.append('--tag2-wide')
@@ -1293,7 +1295,7 @@ def fast_gate(R):
     sp = sorted(r['speed'] for r in R.values() if r.get('status') == 'ok' and r.get('speed'))
     return sp[n - 1] * FASTGATE[1] if len(sp) >= n else None
 
-def evaluate(g, rounds, keep=False, gate=None):
+def evaluate(g, rounds, keep=False, gate=None, again=False):
     # Build what the identity names: canon(g), as express() and gid() see it.
     # Built raw, a mutation that turned on byte headers in a design with
     # scaled calls was refused by the converter (--bytehdr wants --cpt 0) -
@@ -1317,12 +1319,10 @@ def evaluate(g, rounds, keep=False, gate=None):
         rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
         rec['mem'] = dict(LAST_RSS)
         rec['unit'] = UNIT
-        if gate and rec['speed'] < gate:   # Iteration 391: under the fast gate, measured again - the same rounds,
-            t2, raw2 = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)   # the engine as built; memory the first's
-            rec['speed1'] = rec['speed']; rec['speed2'] = math.exp(sum(math.log(t2[w]) for w in WORK_SEL) / len(WORK_SEL))
-            rec['t'] = t = {w: math.sqrt(t[w] * t2[w]) for w in t}; rec['raw'] = {w: math.sqrt(raw[w] * raw2[w]) for w in raw}
-            rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))   # = sqrt(speed1 x speed2)
-        if TWO_WIDTHS[0]: rec.update(eval32(g, rounds))       # Iteration 336: the 32-bit measurement, after the 64-bit one
+        if gate and rec['speed'] < gate:   # Iteration 391: under the fast gate, measured again; Iteration 446
+            rec['gated'] = 1               # (results/drafts/fastgate-review-445.md): not at once - back to back the two
+                                           # readings shared their moment's luck - but in the next generation's batch
+        if TWO_WIDTHS[0] and not again: rec.update(eval32(g, rounds))       # Iteration 336: the 32-bit measurement, after the 64-bit one
     except RuntimeError as e:
         rec['status'] = str(e)
     except subprocess.TimeoutExpired:
@@ -2129,7 +2129,22 @@ def main(argv):
                 items = keep
         gate = fast_gate(R)                                   # Iteration 391
         args = [(canon(g), ROUNDS, False, gate) for i, (g, parents, how, gen) in items]
-        for (i, (g, parents, how, gen)), rec in zip(items, WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args)):
+        # Iteration 446: the gated children of the generation before, measured again in this batch - among other
+        # co-runners, at another moment - their speed the geometric mean of the two readings then
+        again = [i for i, r in R.items() if r.get('gated') == 1 and r.get('status') == 'ok'] if items else []
+        args += [(R[i]['genome'], ROUNDS, False, None, True) for i in again]
+        results = list(WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args))
+        for i, rec2 in zip(again, results[len(items):]):
+            r = R[i]
+            if rec2.get('status') == 'ok' and rec2.get('t'):
+                t1, raw1 = r['t'], r.get('raw', {})
+                r['speed1'], r['speed2'] = r['speed'], rec2['speed']
+                r['t'] = t = {w: math.sqrt(t1[w] * rec2['t'][w]) for w in t1 if w in rec2['t']}
+                r['raw'] = {w: math.sqrt(raw1[w] * rec2['raw'][w]) for w in raw1 if w in rec2.get('raw', {})}
+                r['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
+            r['gated'] = 2; save(r)
+            print('    %s measured again: %.4g, then %s - %s' % (i, r.get('speed1', r['speed']), ('%.4g' % r['speed2']) if 'speed2' in r else rec2.get('status'), ('speed %.4g' % r['speed'])), flush=True)
+        for (i, (g, parents, how, gen)), rec in zip(items, results[:len(items)]):
             rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen)
             R[i] = rec; save(rec)
             print('    %s %-24s %s' % (i, rec['status'] if rec['status'] != 'ok' else

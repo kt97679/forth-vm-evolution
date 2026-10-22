@@ -800,3 +800,18 @@ dying. (Iteration 443's seed 65 prediction was for the same setup as seed 64; wi
 The fast gate's second reading deferred, and I+ bringing the fuser. 1. The fast end's optimism (review-checks.py curse,
 the fastest tenth) at most 1.05 - rule 3's bound, met by no run since seed 58 but seed 63's 1.051. 2. Every front design
 with rtiplus built with the fuser, and rtiplus on at least 10% of the plain designs of its front.
+
+## Seed 65, islands, scored (Iteration 449)
+
+**Iteration 444: 1. at generation 146 its fastest at least 3% ahead of seed 64's 0.1253 - right**: 0.1168, 6.8% ahead.
+**2. its smallest at generation 146 within 0.5% of seed 64's - right**, the good way: 14,005 against 14,047 (-0.3%).
+**3. the JIT on the front, no design dying - right**: the JIT on 93 of 179; none died. Both of the trial's conditions
+hold: by the escape note's measure islands are worth keeping. One run against one: the replicates of seeds 60-62 sat
+5.05% apart at their fast end, so 6.8% is past chance's usual reach but not by much - a second run with islands decides.
+The cost seen: at 32 bits its fastest 8.0% behind seed 64's at generation 146.
+
+## Seed 66, islands again - predicted (Iteration 449)
+
+The second islands run, and the after-seed-65 batch's first (the deferred gate reading, I+ with its fuser - 447's
+predictions for it stand). At generation 146: its fastest at least 3% ahead of seed 64's 0.1253 again, its smallest within
+0.5% of seed 64's 14,047. If both hold a second time, islands become the default.
