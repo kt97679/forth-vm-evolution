@@ -77,7 +77,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   (staged)**: UM* and COUNT native; UM/MOD written but unmapped until a zero divisor can THROW -10 from native code.
   **jitdoes built and tested, frozen off (473)**. Measured on seed 68's fast design with both: **scan's interpreted
   work 93% to 4%**; gc16 37% to 33%, evo 83% to 68% (UM/MOD next); fcp, brainless, cd16sim unchanged - their DOES>
-  children are reached as callees (no JIT header); next: a DOES> child at its call, UM/MOD's throw path, EXECUTE. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
+  children are reached as callees (no JIT header); next: a DOES> child at its call, UM/MOD's throw path, EXECUTE.
+  **Later in 473**: children taken at their call - fcp 72% to 54%, brainless 94% to 57%, cd16sim 87% to 66% left -
+  **but jitdoes gives those three wrong results** (appbench.py's checks; the corpus and a DOES> test pass): frozen,
+  NOT to be unfrozen until found. **jitmul is right on all seven applications; scan at 0.150 of s6** (was 0.687). Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in
   r15; seed 68's fastest GCC JIT design runs loop with 19.9% fewer instructions (cachegrind, exact), ackermann 2.1% more.

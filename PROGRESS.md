@@ -9059,3 +9059,11 @@ UM/MOD's throw path, EXECUTE.
 
 Files: engine/jit.c, tools/layout.py, lab/evolve/evolve.py, lab/evolve/engines-check.py,
 results/drafts/jitapps-471.md, HANDOFF.md.
+
+**Later in 473**: a DOES> child is reached as a headerless callee (translated once by jit_kslot, its decode starting at
+the child), so jitdoes takes it there too: on b9c5b4ae74 with both genes the JIT leaves fcp 53.9% (was 71.9%), brainless
+57.2% (93.8%), cd16sim 65.9% (86.5%). appbench.py takes --ids and --set; on b9c5b4ae74 with both genes our four
+applications are right and scan runs at 0.150 of s6 (0.687 before) - but fcp, brainless and cd16sim give wrong results;
+with jitmul alone all three are right (fcp 0.805, brainless 0.965, cd16sim 1.190). So jitmul is checked on all seven,
+and jitdoes has a fault the corpus and the small DOES> test miss: frozen, not to be unfrozen until found - suspects in
+results/drafts/jitapps-471.md.

@@ -17,7 +17,9 @@ import argparse, json, math, os, re, resource, shutil, statistics, sys, tempfile
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
 ap.add_argument('dbs', nargs='+'); ap.add_argument('--zip', default=''); ap.add_argument('--sample', type=int, default=16)
 ap.add_argument('--rounds', type=int, default=2); ap.add_argument('--apps', default='sim16,gc16,scan,evo,fcp,brainless,cd16sim')
+ap.add_argument('--ids', default=''); ap.add_argument('--set', action='append', default=[])   # Iteration 473: named designs, genes set
 a = ap.parse_args()
+SET = {k: int(v) for k, v in (x.split('=', 1) for x in a.set)}
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(HERE, 'appbench')); from fold import fold
 sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
@@ -67,13 +69,14 @@ else:
 order = sorted(sp, key=sp.get); k = min(a.sample, len(order))
 pick = [order[round(j * (len(order) - 1) / max(1, k - 1))] for j in range(k)] if k > 1 else order[:1]
 pick = list(dict.fromkeys(pick))
+if a.ids: pick = [i for i in a.ids.split(',') if i in R]
 print('# Applications held out (lab/evolve/appbench.py, Iteration 468)\n')
 print('Front: %s, %s (%d designs); %d sampled fastest to slowest; %s; %d rounds, CPU time, against s6.\n' % (db, how, len(order), len(pick), ', '.join(apps), a.rounds))
 print('| design | in-run speed | %s | geometric mean |\n|---|---|%s---|' % (' | '.join(apps), '---|' * len(apps)), flush=True)
 reng, rimg = E.REF[0], E.REF[1]; xs, ys, fails = [], [], []
 for i in pick:
     d = os.path.join(E.EV, 'appbench-d'); shutil.rmtree(d, ignore_errors=True)
-    try: eng, img = E.build(E.canon(R[i]['genome']), d)
+    try: eng, img = E.build(E.canon(dict(E.canon(R[i]['genome']), **SET)), d)
     except Exception as x: print('| %s | %.3f | %s | build failed |' % (i, sp[i], ' | '.join('-' for _ in apps)), flush=True); fails.append(i); continue
     ratios, cells = [], []
     for prog in apps:

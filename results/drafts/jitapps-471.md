@@ -97,3 +97,27 @@ there: a DOES> child at its call - a literal of the PFA, then a native call of i
 
 Next, in order of what they free: UM/MOD's throw path (evo, gc16, the Appbench programs' arithmetic), DOES> children at
 their call (fcp, brainless, cd16sim), EXECUTE (sim16, cd16sim, fcp's evaluators).
+
+## Iteration 473, later - children at their call; jitmul checked on all seven; jitdoes wrong on real programs
+
+A DOES> child has no JIT header (as a variable has none): the JIT reaches it as a callee and translates it once by
+jit_kslot, with the decode starting at the child itself - so jitdoes now takes the child at its own address too. The
+dispatches the JIT leaves on seed 68's b9c5b4ae74 with both genes: **fcp 71.9% to 53.9%, brainless 93.8% to 57.2%,
+cd16sim 86.5% to 65.9%** (gc16 32.6%, unchanged).
+
+appbench.py now takes --ids (named designs) and --set gene=value, and checks every output. On b9c5b4ae74, one round,
+time over s6's:
+
+| genes | sim16 | gc16 | scan | evo | fcp | brainless | cd16sim |
+|---|---|---|---|---|---|---|---|
+| as it is | 0.642 | 0.485 | 0.687 | 0.589 | 0.953 | 1.013 | 1.062 |
+| jitmul | - | - | - | - | 0.805 | 0.965 | 1.190 |
+| jitmul and jitdoes | 0.632 | 0.586 | **0.150** | 0.478 | **wrong** | **wrong** | **wrong** |
+
+**jitmul is right on all seven applications** (our four with both genes, Appbench's three with jitmul alone) - and
+scan runs at 0.150 of s6, 4.6 times faster than before it. **jitdoes gives fcp, brainless and cd16sim wrong results**,
+while the corpus and a DOES> test pass: a fault the small tests do not reach. It stays frozen, marked not to be
+unfrozen until found. Suspects to rule out first: a child translated before DOES> patched it (a CREATE'd word used
+between CREATE and DOES>, then cached by jit_kslot as a variable or a stale child); children made by DEFER, VALUE and
+the programs' own defining words whose DOES> code returns through the return stack; the cache keyed by address when
+MARKER or FORGET reuses the space.

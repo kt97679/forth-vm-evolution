@@ -638,7 +638,8 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
          *  what the interpreter runs as the PFA pushed on the return stack and a jump to the DOES> code, whose first
          *  operation, R>, takes it back. Here: a literal of the PFA, then the DOES> code from after that R>, to its
          *  EXIT - the return stack never touched, so the code's own order holds (results/drafts/jitapps-471.md).  */
-        if (n == 0 && JIT_DODOES >= 0 && JIT_FROMR >= 0 && b == (UNS8)JIT_DODOES && a == w + 5) {
+        if (n == 0 && JIT_DODOES >= 0 && JIT_FROMR >= 0 && b == (UNS8)JIT_DODOES && (a == w || a == w + 5)) {   /* 473: a child has
+                                         no header, as a variable has none - reached as a callee, translated once (jit_kslot) */
             UNS64 t_ = ((UNS64)(BYTE(a + 1) & 0x3F) << 24) | ((UNS64)BYTE(a + 2) << 16) | ((UNS64)BYTE(a + 3) << 8) | BYTE(a + 4);
             UNS64 tail = jit_cbase + t_;
             if (BYTE(tail) != (UNS8)JIT_FROMR) return 0;          /* a DOES> code of another shape: left */
