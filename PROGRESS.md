@@ -8928,3 +8928,18 @@ the seed pack's own (tests, validate, jail) stand.
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed68.md, results/xcheck-seed68.md (new); lab/evolve/next-run.sh,
 lab/evolve/seed-facts.py, lab/evolve/NEXT-RUN, results/gene-votes.md, results/predictions.md, results/pending/ORDER.md,
 results/progress-by-run.md, results/README.md, HANDOFF.md.
+
+## Iteration 465 - 2026-10-23 - Claude
+
+**jitrp, the JIT's return-stack pointer in a register - a prototype** (the owner: proceed; results/drafts/jitrp-465.md,
+results/drafts/jitrp-465.patch). While native code runs the pointer lived in jit_rp, in memory, reached through the
+IMM_RP hole; with JITRP it lives in r15 - a global register variable in the stencils' file and in the engine's (declared
+before every function), the eleven return-stack stencils using it, the native call handing it over in it,
+gen-jitk.py's I variant through RP_VALUE(). Each of those stencils three instructions shorter (st_loop 14 to 11, st_i 10
+to 7). This machine's timing swung 10-20% - valgrind installed, and cachegrind's exact instruction counts used instead:
+s6 with the JIT -0.2% to -0.4% (its return-stack stencils seldom native); seed 68's fastest GCC JIT design, 6c0c4e6886,
+loop -19.9%, bubble -4.5%, ackermann +2.1% (most likely the interpreter's lost register). Clang refuses the register
+variable - GCC only; regpin 3 takes r15 - another register there. Both builds pass the corpus. Five steps to a gene
+proposed, after the 32-bit JIT batch's run.
+
+Files: results/drafts/jitrp-465.md, results/drafts/jitrp-465.patch (new); results/README.md, HANDOFF.md.

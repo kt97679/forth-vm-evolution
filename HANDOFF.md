@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 464.
+- master: Iteration 465.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -57,6 +57,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   owner's hours; NEXT-RUN). **The after-seed-68 batch deferred to seed 69's processing** (the 32-bit JIT changes what
   "widths" selects for, so it waits a run - one change at a time). **For the owner, later**: the votes' new candidates
   rtfuse and jitos (12 of 12 over seeds 66-68).
+- **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in
+  r15; seed 68's fastest GCC JIT design runs loop with 19.9% fewer instructions (cachegrind, exact), ackermann 2.1% more.
+  Five steps to a gene (GCC only; a register clear of regpin's; with jitk; engines-check; the laptop's timing) - after
+  the 32-bit JIT batch's run. valgrind is installed here: exact instruction counts where this machine's timing is noise.
 - **The JIT at 32-bit x86 - a working prototype** (the owner, 460; results/drafts/jit-i386-460.md and .patch): s6 with
   the JIT built at 32 bits passes the corpus, speed 0.956 to 0.767; a variable-alignment bug fixed on the way. **Made
   real as the after-seed-68 batch (461, the owner; results/pending/ORDER.md)**: eval32 keeps the JIT, jitk off at 32 bits,
