@@ -180,6 +180,7 @@ gene('lean', convert=lambda g: ['--drop-x8', '--drop-dumptool'] if g.get('lean')
 gene('jitloop', needs=lambda g, e: jit_on(g))                                  # Iteration 129: on the JIT
 gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
 gene('jitmul', needs=lambda g, e: jit_on(g))                                   # Iteration 472: UM* and UM/MOD, COUNT (results/drafts/jitapps-471.md)
+gene('jitdoes', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 473: DOES> children native (jit.c)
 gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
 gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
 # Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
@@ -893,7 +894,7 @@ REQUIRE = []
 FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
           'alignhot': 0, 'jithelp': 0, 'jitre': 0,
-          'jitmul': 0}   # Iteration 472: staged - built and tested, off in the search until the owner unfreezes it    # Iteration 455 (the owner): the second freeze - 12 of 12 over seeds 64-66
+          'jitmul': 0, 'jitdoes': 0}   # Iteration 472: staged - built and tested, off in the search until the owner unfreezes it    # Iteration 455 (the owner): the second freeze - 12 of 12 over seeds 64-66
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
@@ -937,6 +938,7 @@ def _build(g, d):
     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
     if jit_on(g) and express(g).get('jitmul'): flags.append('-DJITMUL=1')   # Iteration 472: UM* and UM/MOD's stencils
+    if jit_on(g) and express(g).get('jitdoes'): flags.append('-DJITDOES=1') # Iteration 473: DOES> children native
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp

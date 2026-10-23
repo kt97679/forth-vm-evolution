@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 472.
+- master: Iteration 473.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -72,7 +72,12 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   ours run at 0.566 of s6 (Appbench's at 1.03, the selection's workloads at 0.140). brainless, public domain, may be
   copied in as it is. **Why the lead does not travel (471, results/drafts/jitapps-471.md)**: on seed 68's fast design
   the JIT leaves 37-94% of the applications' dispatches interpreted - operations without stencils (the multiply and
-  divide under *, CELLS, MOD, /) and EXECUTE sink whole words; proposed: those stencils, EXECUTE native. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
+  divide under *, CELLS, MOD, /) and EXECUTE sink whole words; proposed: those stencils, EXECUTE native. **The owner
+  (472): genes for them.** Named: UM*, UM/MOD, DODOES, EXECUTE the four largest. **jitmul built and tested, frozen off
+  (staged)**: UM* and COUNT native; UM/MOD written but unmapped until a zero divisor can THROW -10 from native code.
+  **jitdoes built and tested, frozen off (473)**. Measured on seed 68's fast design with both: **scan's interpreted
+  work 93% to 4%**; gc16 37% to 33%, evo 83% to 68% (UM/MOD next); fcp, brainless, cd16sim unchanged - their DOES>
+  children are reached as callees (no JIT header); next: a DOES> child at its call, UM/MOD's throw path, EXECUTE. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in
   r15; seed 68's fastest GCC JIT design runs loop with 19.9% fewer instructions (cachegrind, exact), ackermann 2.1% more.

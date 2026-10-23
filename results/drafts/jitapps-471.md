@@ -49,3 +49,51 @@ loops of real programs stay interpreted. Our six workloads never meet them, so t
 2. **EXECUTE in native code**: a call through the token - native when the target is, the interpreter when not.
 3. **Name ops 70 and 32** and give them stencils; **JIT_MAXOPS** raised or long words split.
 4. Then jitapps.py again - and appbench.py's times - to see how much of the lead comes back.
+
+## Iteration 472 - the operations named, and the first gene: jitmul
+
+The owner: 1. a gene for the multiply and divide, 2. another for EXECUTE, 3. name and cover the rest, 4. measure again.
+layout.py now lists, as comments in vm-jit-ops.h, every operation without stencils; for seed 68's fast design:
+op 27 UM*, op 28 UM/MOD, op 32 SP@, op 70 DODOES (the run-time of every DOES> word - VALUE's among them), op 118 COUNT,
+op 119 ALIGNED. The four largest causes: UM*, UM/MOD, DODOES and EXECUTE.
+
+jitmul (built, tested, staged frozen off): UM* a stencil of its own - the machine's widening multiply, four
+instructions - and COUNT from stencils there are (DUP 1+ SWAP C@). UM/MOD's stencil is written (one divide, the high
+cell reduced first - the interpreter's result mod 2^64) but not mapped: the interpreter answers a zero divisor with
+-10 THROW (Iteration 229), which a stencil cannot do yet. Found on the way: a first, bit-by-bit UM/MOD ran past the JIT's
+160-byte scan window, its second exit not copied, and the corpus died of SIGILL - the hazard the pending stencil-check
+reports; and a comment holding the Forth word star-slash closed itself early. s6 with the JIT and jitmul passes the
+corpus and matches the interpreter on an arithmetic test (products, quotients, remainders of both signs, UM*, UM/MOD,
+M*, star-slash, a division by zero). engines-check has the variant; jitapps.py takes --set=gene=value. jitmul is in
+FROZEN (0): the search does not take it until the owner unfreezes it.
+
+## Iteration 473 - jitdoes, and the first measure: scan's work 93% interpreted to 4%
+
+jitdoes (built, tested, staged frozen off): a DOES> child - [DODOES][a 4-byte call of its DOES> code][pad][PFA] - is
+translated as a literal of its PFA followed by its DOES> code from after the leading R> to its EXIT, so the return
+stack is never touched and the code's own order holds; the converter gives the JIT DODOES's and R>'s one-byte codes
+(JIT_DODOES, JIT_FROMR in vm-jit-ops.h). s6 with the JIT and jitdoes, and with jitmul too, passes the corpus and matches
+the interpreter on a DOES> test (constants, arrays, values in hot loops). engines-check has the variant.
+
+jitapps.py on seed 68's b9c5b4ae74 with --set=jitmul=1 --set=jitdoes=1 - the dispatches the JIT leaves, before and
+after:
+
+| application | before | jitmul and jitdoes |
+|---|---|---|
+| sim16 | 49.0% | 49.0% |
+| gc16 | 36.7% | 32.6% |
+| scan | 92.8% | **3.8%** |
+| evo | 82.6% | 68.3% |
+| fcp | 71.9% | 71.9% |
+| brainless | 94.4% | 93.8% |
+| cd16sim | 86.5% | 86.5% |
+
+**UM\* native gives scan almost all of its work to the JIT** - its loops index tables with CELLS, and CELLS stood on
+UM\*. evo and gc16 move less: their next blocker is UM/MOD (SM/REM, FM/MOD, /MOD under MOD and /) - the throw path. sim16
+is EXECUTE's. **jitdoes moved nothing yet in fcp, brainless and cd16sim**: their op-70 refusals remain - the DOES>
+children those programs make are reached as callees, not translated as words of their own (a child made by CREATE has
+no JIT header, as a variable has none - the JIT handles a variable at its call, JIT_DOVAR), so the next step is the same
+there: a DOES> child at its call - a literal of the PFA, then a native call of its DOES> code translated once and kept.
+
+Next, in order of what they free: UM/MOD's throw path (evo, gc16, the Appbench programs' arithmetic), DOES> children at
+their call (fcp, brainless, cd16sim), EXECUTE (sim16, cd16sim, fcp's evaluators).

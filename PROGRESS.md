@@ -9043,3 +9043,19 @@ lab/evolve/README.md, results/README.md, HANDOFF.md.
 ## Iteration 472 - 2026-10-23 - Claude
 
 **The operations named; jitmul built, tested and staged frozen off** (the owner: genes for the multiply and divide and for EXECUTE; name and cover the rest; measure). layout.py lists the operations without stencils in vm-jit-ops.h: on seed 68's fast design op 27 UM*, 28 UM/MOD, 32 SP@, 70 DODOES, 118 COUNT, 119 ALIGNED. jitmul: UM* a stencil of its own, COUNT from stencils there are; UM/MOD written (one divide) but unmapped - the interpreter answers a zero divisor with -10 THROW, which a stencil cannot do yet. On the way: a bit-by-bit UM/MOD ran past the JIT's 160-byte scan window (SIGILL in the corpus); a comment holding */ closed early. s6 with the JIT and jitmul passes the corpus and matches the interpreter on an arithmetic test. engines-check has the variant; jitapps.py takes --set. jitmul in FROZEN: the owner's to unfreeze. Next: a throw path for UM/MOD, jitdoes (DODOES), jitexec (EXECUTE), then measure.
+
+## Iteration 473 - 2026-10-23 - Claude
+
+**jitdoes built and staged; the first measure of the new genes** (the owner: proceed; results/drafts/jitapps-471.md,
+its Iteration 473 section). The 472 records completed first (the coverage note's section, HANDOFF's paragraph).
+jitdoes: in jit_body, a DOES> child's first operation, DODOES, becomes a literal of its PFA and the decoding continues in
+its DOES> code after the leading R>, to its EXIT - the return stack never touched; layout.py gives the JIT DODOES's and
+R>'s one-byte codes; evolve.py the gene (with jitx), its flag, frozen off with jitmul; engines-check the variant. s6 with
+the JIT and jitdoes (and with jitmul too) passes the corpus and matches the interpreter on a DOES> test. jitapps.py on
+seed 68's b9c5b4ae74 with both: the dispatches the JIT leaves - scan 92.8% to 3.8% (UM* native frees CELLS), gc16 36.7%
+to 32.6%, evo 82.6% to 68.3%, sim16, fcp, brainless and cd16sim unchanged. jitdoes reaches nothing there yet: those
+programs' DOES> children are reached as callees, without the JIT header a word has. Next: a DOES> child at its call,
+UM/MOD's throw path, EXECUTE.
+
+Files: engine/jit.c, tools/layout.py, lab/evolve/evolve.py, lab/evolve/engines-check.py,
+results/drafts/jitapps-471.md, HANDOFF.md.

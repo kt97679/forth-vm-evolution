@@ -1713,10 +1713,14 @@ if EMIT:
                 _rows.append('[%d] = {1, 1, 4, 0, {S_INTERP}%s},  /* an interpreted call (jitre) */' % (_li, ', 0' if JITHELPERS else ''))
                 _lint = '#define JIT_L_INTERP %d\n' % _li
             _jc = T2MAP['one'][G['T2_JIT']]
+            def _one(nm):              # Iteration 473, the gene jitdoes: an operation's one-byte code, -1 if it has none
+                xs = [x for x, n_ in G['t2_names']().items() if n_ == nm]
+                return T2MAP['one'].get(xs[0], -1) if xs and isinstance(T2MAP['one'], dict) else (T2MAP['one'][xs[0]] if xs and xs[0] < len(T2MAP['one']) else -1)
             open(_os.path.join(_d, 'vm-jit-ops.h'), 'w').write(
                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
-                '#define JIT_CODE %d\n#define JIT_DOVAR %d\n%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
-                % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]], _lint, '\n'.join(_rows))
+                '#define JIT_CODE %d\n#define JIT_DOVAR %d\n#define JIT_DODOES %d\n#define JIT_FROMR %d\n%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
+                % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]],
+                   _one('DODOES'), _one('R>'), _lint, '\n'.join(_rows))
                 + '/* the operations without stencils (Iteration 472) */\n' + '\n'.join(_miss) + '\n')
             print("wrote vm-jit-ops.h: %d of %d operations translatable; JIT is code %d" % (len(_rows), len(G['t2_names']()), _jc))
 

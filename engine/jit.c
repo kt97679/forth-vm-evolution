@@ -633,6 +633,19 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #if JITLOG
         jitlog_at = a; jitlog_why = 1; jitlog_op = -1;
 #endif
+#if JITDOES && JITX
+        /*  Iteration 473, the gene jitdoes: a DOES> child - [DODOES][4-byte call of its DOES> code][pad][PFA] - is
+         *  what the interpreter runs as the PFA pushed on the return stack and a jump to the DOES> code, whose first
+         *  operation, R>, takes it back. Here: a literal of the PFA, then the DOES> code from after that R>, to its
+         *  EXIT - the return stack never touched, so the code's own order holds (results/drafts/jitapps-471.md).  */
+        if (n == 0 && JIT_DODOES >= 0 && JIT_FROMR >= 0 && b == (UNS8)JIT_DODOES && a == w + 5) {
+            UNS64 t_ = ((UNS64)(BYTE(a + 1) & 0x3F) << 24) | ((UNS64)BYTE(a + 2) << 16) | ((UNS64)BYTE(a + 3) << 8) | BYTE(a + 4);
+            UNS64 tail = jit_cbase + t_;
+            if (BYTE(tail) != (UNS8)JIT_FROMR) return 0;          /* a DOES> code of another shape: left */
+            at[0] = a; opl[0] = 0xFFFD; arg[0] = (a + 1 + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);
+            n = 1; a = tail + 1; end = 0; b = BYTE(a);
+        }
+#endif
 #if JITLOG
         if (n >= JIT_MAXOPS) { jitlog_why = 6; return 0; }           /* 471: too long, told apart */
 #else
