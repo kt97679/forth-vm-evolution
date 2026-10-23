@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 469 (the owner: appbench.zip in ~/Downloads): seed 70's line, written at seed 69's processing, adds
+# then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
 # Iteration 464 (the owner: 12 hours): seed 69 - the real islands trial, the word now carried through the detach
 # (seeds 65-68 ran without islands). The after-seed-68 batch waits for its processing.
 # Iteration 458 (the owner): seed 68 at 8 hours, islands; the load test done (seed 67), out of the line.

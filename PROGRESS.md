@@ -8991,3 +8991,17 @@ not proposed - the measured size stays the base image's; applications load it th
 
 Files: lab/evolve/appbench.py, lab/evolve/appbench/fold.py, lab/evolve/appbench/prelude.fth,
 results/drafts/appbench-468.md (new); lab/evolve/README.md, results/README.md, HANDOFF.md.
+
+## Iteration 469 - 2026-10-23 - Claude
+
+**Our own application, written from scratch - sim16; and the zip's place** (the owner: appbench.zip in ~/Downloads; for
+the code that cannot be copied, borrow the idea and write anew). Ideas are free to use, a program's text is not, so each
+is written independently as a program of the same kind; brainless is public domain and needs none of this.
+lab/evolve/apps/sim16.fth: a 16-bit stack CPU simulated in Forth (operation and ALU tables of execution tokens), its own
+structured assembler, and two programs in its machine code - a sieve on 2000 flags, a recursive fib(20). Core words,
+upper case - no prelude, no folding; `60 BENCH` checks itself (SIEVE 303, FIB 6765, 21,936,820 steps), 3.3 s on s6.
+appbench.py runs it by default, without the zip; on three of seed 68's front its outputs right and the fast design at
+0.680 of s6 (fcp 0.856). Seed 70's line will add the appbench step with ~/Downloads/appbench.zip (noted in NEXT-RUN).
+
+Files: lab/evolve/apps/sim16.fth (new); lab/evolve/appbench.py, lab/evolve/NEXT-RUN, results/drafts/appbench-468.md,
+HANDOFF.md.

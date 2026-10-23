@@ -34,3 +34,26 @@ words, deep stacks, frequent calls, DOES>, deferred words, CATCH. What the evolv
    stay interpreted, and why.
 3. **Applications in the selection itself** - the search would then be paid for general speed, not for six kernels; a
    change to what it optimises, so a decision, not a patch.
+
+## Iteration 469 - our own applications, written from scratch
+
+The owner: for the programs that cannot be copied in, borrow the idea and write the code anew. Ideas and algorithms are
+free to use; only a program's own text is someone's - so each is written independently, as a program of the same kind,
+not a translation of theirs. **brainless needs none of this**: it is public domain and may be copied in as it is.
+
+**The first: lab/evolve/apps/sim16.fth** - a CPU simulated in Forth, as cd16sim is, but a CPU of its own: a 16-bit
+stack machine with sixteen operations and sixteen ALU functions dispatched through tables of execution tokens, a
+structured assembler (IF, THEN, BEGIN, UNTIL, WHILE, REPEAT, laid into the simulated memory), and two programs in its
+machine code - the sieve of Eratosthenes on 2000 flags and a recursive fib(20) by CALL and RET. Core words only, upper
+case: no prelude, no folding. `60 BENCH` checks itself: SIEVE 303, FIB 6765, 21,936,820 simulated instructions - 3.3 s
+on s6 here. appbench.py runs it by default and needs no zip for it. On three of seed 68's front, one round:
+
+| design | in-run speed | sim16 | fcp |
+|---|---|---|---|
+| b9c5b4ae74 | 0.140 | 0.680 | 0.856 |
+| 76bfbf6558 | 0.364 | 0.984 | 1.157 |
+| 57a20bf148 | 1.605 | 1.346 | 1.664 |
+
+The fast design's lead is larger on sim16 (1.5 times s6) than on the chess programs - still a fifth of what the
+selection's workloads show. Next of the same kind, the owner's call: a collector over a heap of cells (benchgc's idea),
+a scanner generator from regular expressions (lexex's), an evolution simulation (brew's).
