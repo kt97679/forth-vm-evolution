@@ -49,9 +49,15 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #define JIT_RP64  0x7ea1ed5ea1ed5e77ULL         /* SPN_RP_VALUE */
 #define JIT_IMM32 0x3c1a5e77U                   /* IMM32 */
 
+#if JITMUL
+#define JIT_TH64 0x3ea1ed5ea1ed5e33ULL         /* Iteration 475: spn-stencils.c's SPN_TH_VALUE, the throw helper's hole */
+#endif
 struct jit_st {             /* a stencil as read: offsets into its body, -1 for none */
     const unsigned char *src;
     int len, imm, imm32, rp, tailnext;          /* tailnext: the body ends "jmp NEXT" - dropped */
+#if JITMUL
+    int th;                                     /* Iteration 475: the throw helper's hole, or -1 */
+#endif
     int nnext, njump, ncall;                    /* how many holes of each */
 #if JITHELP
     int fn;                                     /* Iteration 344: the function hole's offset, or -1 */
@@ -110,6 +116,9 @@ static void jit_scan(void) {
             if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
         if (!end) continue;
         s->src = a; s->len = (int)(end - a); s->imm = s->imm32 = s->rp = -1;
+#if JITMUL
+        s->th = -1;
+#endif
 #if JITHELP
         s->fn = -1;
 #endif
@@ -117,6 +126,9 @@ static void jit_scan(void) {
         for (p = a; p < end; p++) {
             uint64_t v; uint32_t w;
             if (p + 8 <= end) { memcpy(&v, p, 8); if (v == JIT_IMM64) s->imm = (int)(p - a); if (v == JIT_RP64) s->rp = (int)(p - a);
+#if JITMUL
+                if (v == JIT_TH64) s->th = (int)(p - a);
+#endif
 #if JITHELP
                 if (v == JIT_FN64) s->fn = (int)(p - a);
 #endif
@@ -229,6 +241,20 @@ static spn_st jit_leave(cell *sp, cell tos);
 static UNS8 jit_sentinel[5];
 #endif
 static ucell jit_rp;                    /* the return stack while native code runs: IMM_RP */
+#if JITMUL
+/*  Iteration 475: the throw path. The interpreter enters native code through jit_call, which keeps a return
+ *  point (__builtin_setjmp - an engine links no C library, as jit_interp's); UM/MOD's stencil, at a zero divisor,
+ *  calls jit_throw0, which longjmps there with the stack; the interpreter then does what L_umdiv does: -10 where
+ *  the divisor was, and THROW. The native frames are dropped with the C stack; the return stack is jit_rp's.  */
+static void **jit_tb; static cell *jit_tsp;
+static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_tsp = sp; __builtin_longjmp(jit_tb, 1); }
+static int jit_call(uint32_t f, cell *sp, cell tos, spn_st *r) {
+    void *tb[5]; void **prev = jit_tb; jit_tb = tb;
+    if (__builtin_setjmp(tb)) { jit_tb = prev; return 1; }
+    *r = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+    jit_tb = prev; return 0;
+}
+#endif
 static UNS64 jit_cbase;                 /* the image base: calls are offsets from it */
 #if JITLOG
 /*  Iteration 340: why a word is left to the interpreter (lab/evolve/jitleft.py --why) - a build for
@@ -312,6 +338,9 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
     }
 #endif
     if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, 8); }
+#if JITMUL
+    if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, 8); }
+#endif
     return dst + n;
 }
 /* Iteration 81: a word that stays bytecode should cost its callers

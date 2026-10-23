@@ -1683,8 +1683,8 @@ if EMIT:
             if '--jitvar' in ARGV:    # Iteration 342, the gene jitvar: vf and vs - a literal of the slot's address, then @ or !
                 O['vf'] = (['LIT', 'FETCH'], 9 if G['VARSLOT'] else 8); O['vs'] = (['LIT', 'STORE'], 9 if G['VARSLOT'] else 8)
             if '--jitmul' in ARGV:    # Iteration 472, the gene jitmul: UM* and UM/MOD (spn-stencils.c, JITMUL); COUNT from stencils there are
-                # UM/MOD waits (472): the interpreter answers a zero divisor with -10 THROW, which no stencil can do yet
-                S1.update({'UM*': ['UMSTAR']}); K.setdefault('COUNT', (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1))
+                # 475: UM/MOD too - a zero divisor leaves native code as -10 THROW (jit.c's jit_throw0)
+                S1.update({'UM*': ['UMSTAR'], 'UM/MOD': ['UMMOD']}); K.setdefault('COUNT', (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1))
             if '--jitinl' in ARGV:    # Iteration 137, the gene jitinl: D+'s stencil (spn-stencils.c, JITINL)
                 S1.update({'D+': ['DPLUS']})
             def _jd(nm):

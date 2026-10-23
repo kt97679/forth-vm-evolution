@@ -49,6 +49,8 @@ typedef cell (*spn_io_fn)(cell, cell, cell);
 #define SPN_RP_VALUE 0x7ea1ed5ea1ed5e77LL
 #define SPN_FN_VALUE 0x6ea1ed5ea1ed5e66LL
 #define IMM_RP() ({ ucell *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RP_VALUE)); _v; })
+#define SPN_TH_VALUE 0x3ea1ed5ea1ed5e33LL     /* Iteration 475: the throw helper's address (jit.c's jit_throw0) */
+#define IMM_TH() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_TH_VALUE)); _v; })
 #define IMM_FN() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_FN_VALUE)); _v; })
 /* A fourth 64-bit hole, for READ and WRITE: the engine's I/O helper,
    spn_io(op, c-addr, u) - 0 writes, 1 reads - so native code shares the
@@ -230,14 +232,21 @@ typedef unsigned long long spn_udw;
 #define SPN_CB ((int)(8 * sizeof(ucell)))
 S(st_umstar) { spn_udw p = (spn_udw)(ucell)sp[0] * (ucell)tos;           /* ( u1 u2 -- lo hi ) */
                sp[0] = (cell)(ucell)p; GO(sp, (cell)(ucell)(p >> SPN_CB)); }
-S(st_ummod)  { ucell u = (ucell)tos, hi = (ucell)sp[0], lo = (ucell)sp[1], q, r;   /* ( lo hi u -- r q ) - not mapped yet: */
-               if (hi >= u) hi %= u;          /* a zero divisor must be -10 THROW, as the interpreter's (layout.py) */
+#if defined(SPN_TH_VALUE)
+S(st_ummod)  { ucell u = (ucell)tos, hi = (ucell)sp[0], lo = (ucell)sp[1], q, r;   /* ( lo hi u -- r q ) */
+               /* 475: a zero divisor is -10 THROW, as the interpreter's: the throw helper longjmps out of native
+                  code and never returns - called, not jumped to, so a jump to NEXT follows wherever GCC puts it */
+               if (!u) { ((spn_st (*)(cell *, cell))IMM_TH())(sp, tos); GO(sp, tos); }
+               if (hi >= u) hi %= u;          /* the quotient's high cell dropped - the interpreter's result mod 2^n */
 #if defined(__x86_64__)
                __asm__("divq %4" : "=a"(q), "=d"(r) : "a"(lo), "d"(hi), "rm"(u));
 #else
                __asm__("divl %4" : "=a"(q), "=d"(r) : "a"(lo), "d"(hi), "rm"(u));
 #endif
                sp[1] = (cell)r; GO(sp + 1, (cell)q); }
+#else
+S(st_ummod)  { __builtin_trap(); }          /* no throw hole on this machine yet: no NEXT, so never usable */
+#endif
 #endif
 #if JITX
 /* Iteration 108 (forth-vm-evolution, the gene jitx): FILL ( c-addr u char -- )

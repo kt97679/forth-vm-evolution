@@ -2154,7 +2154,14 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
                  /* the stack in memory here (gen-tos.py spills around a handler it
                     has no rule for): dsp at the top; native code wants sp at the
                     second, the top apart - SPN's convention */
+#if JITMUL
+                 if (jit_call(f_, (cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0, &r_)) {   /* 475: a zero divisor in native code */
+                     rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)jit_tsp - CELL_BYTES;
+                     DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; NEXT();            /* as L_umdiv's DIV0 */
+                 }
+#else
                  r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
+#endif
                  rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
                  ip = RS; rp += CELL_BYTES;
              } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
