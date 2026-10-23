@@ -9124,3 +9124,14 @@ workloads never EXECUTE, so the search cannot weigh it; fcp runs a third slower 
 untranslatable token's trip through the interpreter). Predicted for seed 70.
 
 Files: lab/evolve/evolve.py, results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 478 - 2026-10-23 - Claude
+
+**Another model's list of projects, verified and weighed** (results/drafts/more-projects-478.md). All nine repositories
+exist; their READMEs read here. Most of what they hold CV8, SPN and the JIT already have (variable-length literals and
+calls, frequency-assigned operations, hot calls, native code at definition time). New to us: nibbleforth's
+whole-program factoring of repeated sequences into words and inlining of single-use words - two size genes proposed -
+and astil_forth's register allocation and native code saved with the image, for later. The list did not weigh the
+applications finding: the largest open lever is still speed on real programs.
+
+Files: results/drafts/more-projects-478.md (new); results/README.md, HANDOFF.md.
