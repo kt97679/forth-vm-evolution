@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 459.
+- master: Iteration 460.
 - **The runs**: seed 67 processed (Iteration 458) - islands, 10 hours: against seed 64 at generation 139, fastest 4.5%
   ahead, smallest +0.37% - the third islands run ahead (6.8%, 3.6%, 4.5%). The second freeze showed no loss against seed 66.
   **The load test answered the fast end's optimism in part**: under three busy cores the fast designs measure about 5%
@@ -56,6 +56,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   **For the owner**: the votes' next candidate, **jitret** (12 of 12 over seeds 65-67) - frozen off the same way?; and
   rule 3 read against the load - the re-measure after the run done under the run's own load, or the offset written down.
   **The after-seed-67 batch applied** (tail, tailpn, kstack retired). Next seed 68: **8 hours (the owner), islands**.
+- **The JIT at 32-bit x86 - a working prototype** (the owner, 460; results/drafts/jit-i386-460.md and .patch): s6 with
+  the JIT built at 32 bits passes the corpus, speed 0.956 to 0.767; a variable-alignment bug fixed on the way. **For the
+  owner**: the five steps to make it real (eval32 keeps the JIT; jitk off at 32 bits; engines-check at 32 bits; dream's
+  32-bit build) as the after-seed-68 batch.
 - **c4's family looked at** (the owner, 459; results/drafts/c4-family-459.md): our JIT already has its lessons; **proposed
   for the owner: the stencil JIT ported to i386** (the 32-bit builds have no JIT - about 2.6x behind; ARMv7 after, AMaCC,
   Squint and shecc as references), a JIT-redundancy probe, an interpreter-in-Forth workload; for Fern, c4's frames and

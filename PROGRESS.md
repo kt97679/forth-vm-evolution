@@ -8840,3 +8840,19 @@ pass; an interpreter-in-Forth workload; for Fern, c4's frames (ENT, LEA, LEV) an
 noted: c4's line is GPL-2.0 - ideas only.
 
 Files: results/drafts/c4-family-459.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 460 - 2026-10-23 - Claude
+
+**The JIT at 32-bit x86: feasible, and a prototype works** (the owner: proceed with the i386 port's study;
+results/drafts/jit-i386-460.md, results/drafts/jit-i386-460.patch). A JIT design's 32-bit speed has been its
+interpreted speed - eval32() builds it with the JIT off, since spn-abi.h knew only x86-64 and 32-bit ARM. The
+copy-and-patch method carries over: i386 takes ARM's convention - the state one 64-bit value, regparm(2) bringing it in
+eax and edx and a 64-bit return leaving it there - with SPN_CC on the stencils, markers and the native call; holes a
+mov $imm32 each, found and filled a cell wide (JIT_HOLEW); endbr32 skipped. A real bug on the way: a variable called from
+translated code became align8(body + 5), 4 bytes off at 4-byte cells (the corpus's FILL/MOVE test, and VARIABLE V
+reading garbage) - now CELL_BYTES-aligned, the same at 64 bits. s6 with the JIT's genes at 32 bits: built (19,436
+bytes), the corpus to its end, its output the same as without the JIT; speed against the 32-bit s6 (one core here,
+indicative) 0.956 without, 0.767 with (fib 0.772 to 0.330, ackermann 0.924 to 0.592). Proposed: eval32 keeping the JIT,
+jitk off at 32 bits, engines-check and dream's 32-bit build covering it - the after-seed-68 batch, the owner's call.
+
+Files: results/drafts/jit-i386-460.md, results/drafts/jit-i386-460.patch (new); results/README.md, HANDOFF.md.
