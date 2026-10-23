@@ -1,0 +1,79 @@
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index d6b9e1c..1caa161 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -126,7 +126,7 @@ for name, genes, must in VARIANTS:
+ # SYSCALL's local label taken for a handler: no tail design had ever built at 4-byte cells (seed 58: 401 of 401).
+ # Iteration 401: clang's tail engine without preserve_none too - musttail is now on every clang tail engine; without it,
+ # at 4-byte cells clang made none of its dispatches jumps ('tail calls not jumps', results/fail32-400.md).
+-V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'tail' in must]
++V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'jit' in must]   # Iteration 461: the JIT at 32 bits
+ for name, genes, must in V32:
+     g = E.canon(dict(S6, **dict(genes, jit=0)))
+     d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 600cb16..65b10b8 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -702,12 +702,13 @@ def setup_widths():
+     setup()
+ 
+ def eval32(g, rounds):
+-    """Iteration 336: speed32 - the design, its JIT off, as a 32-bit x86 engine at 4-byte cells,
+-    over the selection's workloads, a round fewer; none (and why) if it does not build or live so."""
++    """Iteration 336: speed32 - the design as a 32-bit x86 engine at 4-byte cells, over the selection's
++    workloads, a round fewer; none (and why) if it does not build or live so. Iteration 461: with its
++    JIT, which builds at 32 bits now (results/drafts/jit-i386-460.md) - jitk aside, x86-64's registers."""
+     # Iteration 337: and its call scale at most 2 - at 4-byte cells nothing is 8-aligned, scale 3's
+     # unit: run-time definitions align to the cell, and a scaled call missed them (the corpus died).
+-    # A 32-bit build of the design takes cell-aligned calls, as it takes no JIT.
+-    g32 = dict(g, jit=0)
++    # A 32-bit build of the design takes cell-aligned calls. (Until Iteration 461 it took no JIT either.)
++    g32 = dict(g)
+     if (g32.get('scale') or 0) > 2: g32['scale'] = 2
+     g32 = canon(g32); d32 = os.path.join(EV, 'ind32-' + gid(g)); out = {}
+     try:
+@@ -721,6 +722,10 @@ def eval32(g, rounds):
+     shutil.rmtree(d32, ignore_errors=True)
+     return out
+ 
++def w32():
++    """Iteration 461: building for 32-bit x86 here (EVOLVE_CC with -m32)."""
++    return '-m32' in os.environ.get('EVOLVE_CC', '').split()
++
+ def CCV(g):
+     """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
+     designs keep clang: the Tegra has none, and its sample is GCC's)."""
+@@ -937,7 +942,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
+     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
+     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
+-    if jit_on(g) and express(g).get('jitk'): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils
++    if jit_on(g) and express(g).get('jitk') and not w32(): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils; 461: not at 32 bits
+     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
+     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
+     if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
+@@ -971,7 +976,7 @@ def _build(g, d):
+     def compile_engine():
+         jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+                os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
+-        if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
++        if jit_on(g) and express(g).get('jitk') and not w32():   # Iteration 259: the stack cache's stencils, beside vm.c (461: x86-64's registers)
+             if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
+                 raise RuntimeError('died: stack-cache generation')
+         lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
+diff --git a/lab/evolve/xcheck.py b/lab/evolve/xcheck.py
+index 63d64fa..67a13ab 100755
+--- a/lab/evolve/xcheck.py
++++ b/lab/evolve/xcheck.py
+@@ -141,7 +141,9 @@ if '--sample' in ARGS:
+         # Iteration 408: GCC only where the host builds the designs itself (native - the Tegra has no clang); a
+         # prebuilt sample (--bundle) is built here, where clang builds 32-bit engines too (Iteration 336) - so
+         # clang's designs are taken: with them out, dream's 32-bit check of seed 59's front had 6 eligible of 171.
+-        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = True; gcc = gcc or not bundle
++        # Iteration 461: the JIT builds at 32-bit x86 now - a prebuilt sample (--bundle, built here with -m32) keeps the
++        # designs with it; a host that builds itself at 4-byte cells (the Tegra, 32-bit ARM) has no JIT, so takes none.
++        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = nojit or not bundle; gcc = gcc or not bundle
+     if len(ARGS) != 1: sys.exit(__doc__)
+     out = ARGS[0]
+     sys.argv = [sys.argv[0]]; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
