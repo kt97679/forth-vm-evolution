@@ -55,6 +55,7 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('the JIT, every JIT gene', dict(JIT), ['jit', 'jitx', 'jitloop', 'jitinl', 'jittail']),
     ('the JIT with jitmul', dict(JIT, jitmul=1), ['jit', 'jitmul']),                  # Iteration 472: UM*, UM/MOD, COUNT native
     ('the JIT with jitdoes', dict(JIT, jitdoes=1), ['jit', 'jitdoes']),               # Iteration 473: DOES> children native
+    ('the JIT with jitexec', dict(JIT, jitexec=1), ['jit', 'jitexec']),               # Iteration 476: EXECUTE's helper
     ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
     ('the JIT, jitret', dict(JIT, jitret=1), ['jitret']),                       # Iteration 404: EXIT as pop and jmp
     ('the JIT, jitvar, varslot 0', dict(JIT, jitvar=1, varslot=0), ['jitvar']),

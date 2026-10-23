@@ -36,6 +36,9 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #if JITMUL
        S_UMSTAR, S_UMMOD,                        /* Iteration 472: the gene jitmul */
 #endif
+#if JITEXEC
+       S_EXECUTE,                                /* Iteration 476: the gene jitexec */
+#endif
        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
 #if JITK
 #include "jitk-map.h"                            /* Iteration 259, the gene jitk: tools/gen-jitk.py's */
@@ -52,11 +55,17 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #if JITMUL
 #define JIT_TH64 0x3ea1ed5ea1ed5e33ULL         /* Iteration 475: spn-stencils.c's SPN_TH_VALUE, the throw helper's hole */
 #endif
+#if JITEXEC
+#define JIT_EX64 0x2ea1ed5ea1ed5e22ULL         /* Iteration 476: SPN_EX_VALUE, EXECUTE's helper's hole */
+#endif
 struct jit_st {             /* a stencil as read: offsets into its body, -1 for none */
     const unsigned char *src;
     int len, imm, imm32, rp, tailnext;          /* tailnext: the body ends "jmp NEXT" - dropped */
 #if JITMUL
     int th;                                     /* Iteration 475: the throw helper's hole, or -1 */
+#endif
+#if JITEXEC
+    int ex;                                     /* Iteration 476: EXECUTE's helper's hole, or -1 */
 #endif
     int nnext, njump, ncall;                    /* how many holes of each */
 #if JITHELP
@@ -119,6 +128,9 @@ static void jit_scan(void) {
 #if JITMUL
         s->th = -1;
 #endif
+#if JITEXEC
+        s->ex = -1;
+#endif
 #if JITHELP
         s->fn = -1;
 #endif
@@ -128,6 +140,9 @@ static void jit_scan(void) {
             if (p + 8 <= end) { memcpy(&v, p, 8); if (v == JIT_IMM64) s->imm = (int)(p - a); if (v == JIT_RP64) s->rp = (int)(p - a);
 #if JITMUL
                 if (v == JIT_TH64) s->th = (int)(p - a);
+#endif
+#if JITEXEC
+                if (v == JIT_EX64) s->ex = (int)(p - a);
 #endif
 #if JITHELP
                 if (v == JIT_FN64) s->fn = (int)(p - a);
@@ -230,7 +245,10 @@ static const unsigned short jit_esc[256] = {
 #define JIT_MAXOPS 256                  /* a longer word stays bytecode */
 static unsigned char *jit_mem;
 static uint32_t jit_used = 16;             /* offsets 0 and 1 mean: not native */
-#if JITRE
+#if JITEXEC
+static spn_st jit_exec(cell *sp, cell tos, cell xt);      /* Iteration 476: below, after jit_body */
+#endif
+#if JITRE || JITEXEC   /* 476: jitexec uses jitre's way into the interpreter and back */
 /*  Iteration 346, the gene jitre: native code calling bytecode (vm-lab.c's jit_interp) - a callee the
  *  JIT cannot translate is interpreted instead of refusing its caller. The interpreter leaves through
  *  a sentinel return address: [the JIT opcode][2], a "word" whose native code, at offset 2 (free:
@@ -292,7 +310,7 @@ static int jit_init(void) {
         void *m = mmap(0, JIT_MEM, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         jit_scan();
         if (m == MAP_FAILED) state = -1; else { jit_mem = m; state = 1; }
-#if JITRE
+#if JITRE || JITEXEC
         if (state == 1) {                       /* movabs rax, jit_leave; jmp rax - and the sentinel */
             UNS8 *t_ = jit_mem + JIT_LEAVE_OFF; UNS64 a_ = (UNS64)(uintptr_t)jit_leave; uint32_t o_ = JIT_LEAVE_OFF;
             t_[0] = 0x48; t_[1] = 0xB8; memcpy(t_ + 2, &a_, 8); t_[10] = 0xFF; t_[11] = 0xE0;
@@ -340,6 +358,9 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
     if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, 8); }
 #if JITMUL
     if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, 8); }
+#endif
+#if JITEXEC
+    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, 8); }
 #endif
     return dst + n;
 }
@@ -529,6 +550,21 @@ static uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
 #else       /* without jitx, called once: inlined, the engine as it was */
 static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a, UNS64 end, int depth);
 #endif
+#if JITEXEC
+/* Iteration 476: a word whose body is >R then EXIT - the kernel's `: EXECUTE >R ;` (layout.py) - is EXECUTE */
+static int jit_isexec(UNS64 a) {
+    unsigned L; UNS8 b;
+    if (BYTE(a) == JIT_CODE) a += 5;
+    b = BYTE(a); if (T2_CALL(b)) return 0;
+    L = jit_one[T2_ONEIX(b)]; a++; if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+    if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 0;
+    if (jit_ops[L].n == 2 && jit_ops[L].st[0] == S_TOR && jit_ops[L].st[1] == S_EXIT) return 1;   /* >R;EXIT, fused */
+    if (jit_ops[L].n != 1 || jit_ops[L].st[0] != S_TOR) return 0;
+    b = BYTE(a); if (T2_CALL(b)) return 0;
+    L = jit_one[T2_ONEIX(b)]; a++; if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+    return L < (unsigned)JIT_NOPS && jit_ops[L].ok && jit_ops[L].n == 1 && jit_ops[L].st[0] == S_EXIT;
+}
+#endif
 /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
 static uint32_t jit_word(UNS64 w, int depth) {
     UNS64 end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
@@ -543,6 +579,19 @@ static uint32_t jit_word(UNS64 w, int depth) {
     if (f) jit_st32(w + 1, f);
     return f;
 }
+#if JITEXEC
+/* Iteration 476: EXECUTE from native code - the token's word native when it is, translated now when it can be
+   (a word with the JIT's header by jit_word, one without by its kslot, as a call's callee is), else run by the
+   interpreter (jit_interp, jitre's: a sentinel return address, a longjmp back) - and the stack handed back. */
+static spn_st jit_exec(cell *sp, cell tos, cell xt) {
+    UNS64 w = (UNS64)xt; uint32_t f = 0;
+    if (BYTE(w) == JIT_CODE) { f = jit_ld32(w + 1); if (f & 0x80000000u) f = jit_word(w, 0); }
+    else if (BYTE(w) != JIT_DOVAR) { uint32_t *k = jit_kslot(w);
+        if (k) { if (*k & 0x80000000u) { *k = 1; *k = jit_body(w, w, 0, 0); } f = *k; } }
+    if (f > 1) return ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+    return jit_interp(sp, tos, (cell)w);
+}
+#endif
 #if JITTAIL
 /*  Iteration 246, the gene jittail (results/price-jit-calls.md): a call to a
  *  native word whose next operation is EXIT - or a BRANCH, or a chain of them,
@@ -745,6 +794,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         if (opl[i] != 0xFFFF || arg[i] == w) continue;
 #if JITRE
         if (arg[i] < jit_cbase || arg[i] >= jit_cbase + ((UNS64)64 << 20)) return 0;   /* 350: a call to nowhere - the data after a refused callee, decoded */
+#endif
+#if JITEXEC
+        if (jit_isexec(arg[i])) { opl[i] = JIT_L_EXECUTE; continue; }   /* 476: a call of EXECUTE - its helper */
 #endif
         if (BYTE(arg[i]) == JIT_CODE) {
             f = jit_ld32(arg[i] + 1);

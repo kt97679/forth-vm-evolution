@@ -1427,7 +1427,7 @@ static UNS64 numberq(UNS64 a, UNS64 base, UNS64 dpl, UNS64 *lo, UNS64 *hi) {
     *lo = lo_; *hi = hi_; return (UNS64)-1;
 }
 #endif
-#if JITRE
+#if JITRE || JITEXEC
 /*  Iteration 346, the gene jitre: native code calling bytecode, as SPN's spn_interp - the stack back
  *  into memory (the top where dsp points: a nested virtual_machine fills its TOS from there), the
  *  sentinel pushed as a return address, the interpreter run from the body; its EXIT lands on the
@@ -1440,12 +1440,18 @@ static cell *jit_lsp; static cell jit_ltos;
 static spn_st jit_leave(cell *sp, cell tos) { jit_lsp = sp; jit_ltos = tos; __builtin_longjmp(jit_jb, 1); }
 static spn_st jit_interp(cell *sp, cell tos, cell body) {
     void *jb[5]; void **prev = jit_jb;
+#if JITMUL
+    void **prevtb = jit_tb;             /* 476: a throw's return point is the outer jit_call's again after */
+#endif
     g_dsp = (UNS64)(uintptr_t)sp - CELL_BYTES; CELL(g_dsp) = (UNS64)tos;
     g_rp = (UNS64)jit_rp - CELL_BYTES; CELL(g_rp) = (UNS64)(uintptr_t)jit_sentinel;
     g_ip = (UNS64)body;
     jit_jb = jb;
     if (!__builtin_setjmp(jb)) virtual_machine();
     jit_jb = prev;
+#if JITMUL
+    jit_tb = prevtb;
+#endif
     return SPN_ST(jit_lsp, jit_ltos);
 }
 #endif

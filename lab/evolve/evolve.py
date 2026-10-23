@@ -181,6 +181,7 @@ gene('jitloop', needs=lambda g, e: jit_on(g))                                  #
 gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
 gene('jitmul', needs=lambda g, e: jit_on(g))                                   # Iteration 472: UM* and UM/MOD, COUNT (results/drafts/jitapps-471.md)
 gene('jitdoes', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 473: DOES> children native (jit.c)
+gene('jitexec', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 476: EXECUTE through a helper (jit.c)
 gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
 gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
 # Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
@@ -893,7 +894,7 @@ REQUIRE = []
 # code stays; removed only if the run after shows no loss (its comparison small or better).
 FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
-          'alignhot': 0, 'jithelp': 0, 'jitre': 0}   # 475 (the owner): jitdoes enabled too - out of FROZEN, as jitmul (474)
+          'alignhot': 0, 'jithelp': 0, 'jitre': 0, 'jitexec': 0}   # 475: jitdoes enabled (the owner); 476: jitexec staged, frozen until the owner says
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
@@ -938,6 +939,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
     if jit_on(g) and express(g).get('jitmul'): flags.append('-DJITMUL=1')   # Iteration 472: UM* and UM/MOD's stencils
     if jit_on(g) and express(g).get('jitdoes'): flags.append('-DJITDOES=1') # Iteration 473: DOES> children native
+    if jit_on(g) and express(g).get('jitexec'): flags.append('-DJITEXEC=1') # Iteration 476: EXECUTE's helper
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
@@ -1012,6 +1014,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
     if jit_on(g) and express(g).get('jitmul'): opts.append('--jitmul')     # Iteration 472: UM*, UM/MOD, COUNT
+    if jit_on(g) and express(g).get('jitexec'): opts.append('--jitexec')   # Iteration 476: EXECUTE's row
     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
     if jit_on(g) and express(g).get('jithelp'): opts.append('--jithelp')   # Iteration 344: C primitives called from native code

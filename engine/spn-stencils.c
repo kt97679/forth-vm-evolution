@@ -51,6 +51,8 @@ typedef cell (*spn_io_fn)(cell, cell, cell);
 #define IMM_RP() ({ ucell *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RP_VALUE)); _v; })
 #define SPN_TH_VALUE 0x3ea1ed5ea1ed5e33LL     /* Iteration 475: the throw helper's address (jit.c's jit_throw0) */
 #define IMM_TH() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_TH_VALUE)); _v; })
+#define SPN_EX_VALUE 0x2ea1ed5ea1ed5e22LL     /* Iteration 476: EXECUTE's helper (jit.c's jit_exec) */
+#define IMM_EX() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_EX_VALUE)); _v; })
 #define IMM_FN() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_FN_VALUE)); _v; })
 /* A fourth 64-bit hole, for READ and WRITE: the engine's I/O helper,
    spn_io(op, c-addr, u) - 0 writes, 1 reads - so native code shares the
@@ -248,6 +250,16 @@ S(st_ummod)  { ucell u = (ucell)tos, hi = (ucell)sp[0], lo = (ucell)sp[1], q, r;
 S(st_ummod)  { __builtin_trap(); }          /* no throw hole on this machine yet: no NEXT, so never usable */
 #endif
 #endif
+#if JITEXEC
+/* Iteration 476, the gene jitexec: EXECUTE ( xt -- ) - the kernel's `: EXECUTE >R ;` makes the token a return
+   address, which native code cannot follow; here a helper takes it (jit.c's jit_exec: native when the word is,
+   translated now when it can be, else the interpreter) and hands the stack back. A call, then NEXT. */
+#if defined(SPN_EX_VALUE)
+S(st_execute) { spn_st r_ = ((spn_st (*)(cell *, cell, cell))IMM_EX())(sp + 1, sp[0], tos); GO(SPN_SP(r_), SPN_TOS(r_)); }
+#else
+S(st_execute) { __builtin_trap(); }        /* no helper hole on this machine yet: never usable */
+#endif
+#endif
 #if JITX
 /* Iteration 108 (forth-vm-evolution, the gene jitx): FILL ( c-addr u char -- )
    for its translator - without a call, which a stencil may not hold: rep stosb
@@ -303,6 +315,9 @@ const void *const spn_table[] = {
 #endif
 #if JITMUL
     (const void *)st_umstar, (const void *)st_ummod,     /* Iteration 472: after the rest, numbers kept */
+#endif
+#if JITEXEC
+    (const void *)st_execute,                            /* Iteration 476 */
 #endif
 #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,

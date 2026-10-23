@@ -1706,6 +1706,9 @@ if EMIT:
                     _rows.append('[%d] = {1, %d, %d, %d, {%s}%s},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
                                  ', '.join('S_' + s for s in _dj[0]) or '0', (', (void *)' + JITHELPERS[_nm]) if _nm in JITHELPERS else (', 0' if JITHELPERS else ''), _nm.replace('*/', '* /')))
                 else: _miss.append('/* [%d] %s - no stencils */' % (_x, _nm.replace('*/', '* /')))   # 472: named, for jitapps.py
+            if '--jitexec' in ARGV:    # Iteration 476, the gene jitexec: EXECUTE - a row no bytecode maps to, and the primitive if any
+                _le = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 2
+                _rows.append('[%d] = {1, 1, 0, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) */' % (_le, ', 0' if JITHELPERS else ''))
             _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
             if '--jitre' in ARGV:
                 _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
@@ -1718,9 +1721,9 @@ if EMIT:
                 return T2MAP['one'].get(xs[0], -1) if xs and isinstance(T2MAP['one'], dict) else (T2MAP['one'][xs[0]] if xs and xs[0] < len(T2MAP['one']) else -1)
             open(_os.path.join(_d, 'vm-jit-ops.h'), 'w').write(
                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
-                '#define JIT_CODE %d\n#define JIT_DOVAR %d\n#define JIT_DODOES %d\n#define JIT_FROMR %d\n%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
+                '#define JIT_CODE %d\n#define JIT_DOVAR %d\n#define JIT_DODOES %d\n#define JIT_FROMR %d\n%s%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
                 % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]],
-                   _one('DODOES'), _one('R>'), _lint, '\n'.join(_rows))
+                   _one('DODOES'), _one('R>'), _lint, ('#define JIT_L_EXECUTE %d\n' % _le) if '--jitexec' in ARGV else '', '\n'.join(_rows))
                 + '/* the operations without stencils (Iteration 472) */\n' + '\n'.join(_miss) + '\n')
             print("wrote vm-jit-ops.h: %d of %d operations translatable; JIT is code %d" % (len(_rows), len(G['t2_names']()), _jc))
 
