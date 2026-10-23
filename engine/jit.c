@@ -231,10 +231,12 @@ static UNS64 jit_cbase;                 /* the image base: calls are offsets fro
 /*  Iteration 340: why a word is left to the interpreter (lab/evolve/jitleft.py --why) - a build for
  *  the analysis only: each refusal written "R word address why" (image offsets) to the file JITLOG
  *  names. why: 1 an operation the decoder has no mapping for, 2 the return stack's order, 3 a
- *  stencil not usable, 4 a callee not translated (address: the callee), 5 the JIT's memory full.  */
+ *  stencil not usable, 4 a callee not translated (address: the callee), 5 the JIT's memory full;
+ *  Iteration 471 (lab/evolve/jitapps.py): 6 longer than JIT_MAXOPS, and a fifth field - for why 1 the
+ *  operation without stencils, jit_ops[]'s index (vm-jit-ops.h names it), else -1.  */
 #include <stdio.h>
 #include <stdlib.h>
-static UNS64 jitlog_at; static int jitlog_why;
+static UNS64 jitlog_at; static int jitlog_why; static int jitlog_op = -1;    /* 471: the operation (jit_ops[]'s index) */
 static void jitlog_note(int c, UNS64 a, UNS64 b, UNS64 v) {    /* scratch */
     static FILE *f; const char *p;
     if (!f && (p = getenv("JITLOG")) != NULL) f = fopen(p, "a");
@@ -244,7 +246,8 @@ static void jitlog_note(int c, UNS64 a, UNS64 b, UNS64 v) {    /* scratch */
 static void jitlog_refused(UNS64 w) {
     static FILE *f; const char *p;
     if (!f && (p = getenv("JITLOG")) != NULL) f = fopen(p, "a");
-    if (f) { fprintf(f, "R %lu %lu %d\n", (unsigned long)(w - jit_cbase), (unsigned long)(jitlog_at - jit_cbase), jitlog_why); fflush(f); }
+    if (f) { fprintf(f, "R %lu %lu %d %d\n", (unsigned long)(w - jit_cbase), (unsigned long)(jitlog_at - jit_cbase), jitlog_why,
+                     jitlog_why == 1 ? jitlog_op : -1); fflush(f); }
 }
 #endif
 
@@ -625,9 +628,13 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #endif
         UNS8 b = BYTE(a);
 #if JITLOG
-        jitlog_at = a; jitlog_why = 1;
+        jitlog_at = a; jitlog_why = 1; jitlog_op = -1;
 #endif
+#if JITLOG
+        if (n >= JIT_MAXOPS) { jitlog_why = 6; return 0; }           /* 471: too long, told apart */
+#else
         if (n >= JIT_MAXOPS) return 0;
+#endif
         at[n] = a;
         if (T2_CALL(b)) {               /* a call of 2, 3 or 4 bytes (2 or 4: t2wide) */
             int wd = T2_CALLW(b); UNS64 t = b & 0x3F;
@@ -637,6 +644,9 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             unsigned L = jit_one[T2_ONEIX(b)];
             a++;
             if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+#if JITLOG
+            jitlog_op = (int)L;
+#endif
             if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 0;
             opl[n] = (unsigned short)L;
             switch (jit_ops[L].opnd) {

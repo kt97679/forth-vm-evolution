@@ -9022,3 +9022,20 @@ front: every output right; the fast design at 0.566 of s6 on ours (sim16 0.595, 
 
 Files: lab/evolve/apps/gc16.fth, lab/evolve/apps/scan.fth, lab/evolve/apps/evo.fth (new); lab/evolve/appbench.py,
 results/drafts/appbench-468.md, HANDOFF.md.
+
+## Iteration 471 - 2026-10-23 - Claude
+
+**What the JIT leaves on the applications, and why** (the owner: the coverage study; results/drafts/jitapps-471.md,
+lab/evolve/jitapps.py). jitapps.py: the design profiled with the JIT off and on (-DJITLOG=1) over the seven
+applications - dispatches left, the words they sit in (the image's by the call map, the application's by the JIT's log
+of every word it decided), each refusal followed to its root. The analysis-only log (engine/jit.c, JITLOG builds only)
+now tells "too long" apart (why 6) and gives the operation without stencils as jit_ops[]'s index; jitleft.py reads either
+form. On seed 68's b9c5b4ae74 (0.140 on the selection's workloads) the JIT leaves 49% of sim16's dispatches, 37% of
+gc16's, 93% of scan's, 83% of evo's, 72% of fcp's, 94% of brainless's, 87% of cd16sim's. Roots: operations without
+stencils - by a probe, the double-cell multiply and divide under *, MOD, /, /MOD, */ and CELLS (ops 27, 28), and op 70
+not yet named - and EXECUTE's dispatch (the return stack's order: sim16's STEP, cd16sim's deferred words, VALUE's
+words); one missing stencil keeps a whole word and its callers interpreted. Proposed: those stencils, EXECUTE native,
+op 70 named, JIT_MAXOPS - the owner's calls. The stages rebuilt for the changed JIT source; production builds unchanged.
+
+Files: lab/evolve/jitapps.py, results/drafts/jitapps-471.md (new); engine/jit.c (JITLOG only), lab/evolve/jitleft.py,
+lab/evolve/README.md, results/README.md, HANDOFF.md.

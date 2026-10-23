@@ -51,7 +51,7 @@ def profile(g, d, why=False):
         runs[wl] = c
     if why and os.path.exists(jl):
         for f in (l.split() for l in open(jl)):
-            if len(f) == 4 and f[0] == 'R': refused.setdefault(int(f[1]), (int(f[2]), int(f[3])))
+            if len(f) >= 4 and f[0] == 'R': refused.setdefault(int(f[1]), (int(f[2]), int(f[3])))   # 471: a fifth field now
     shutil.rmtree(d, ignore_errors=True); os.path.exists(cm) and os.remove(cm)
     return W, runs, OPS, refused
 
