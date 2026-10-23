@@ -48,24 +48,19 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 457.
-- **The runs**: seed 66 processed (Iteration 454) - **islands confirmed, the default from seed 67**: against seed 64 at
-  generation 146 its fastest 3.6% ahead (seed 65's: 6.8%), the small end level, hypervolume +1.8%. **The first freeze
-  showed no loss** against seed 65 at generation 90 (fastest 0.1286 against 0.1288, smallest +0.1%). By its end: fastest
-  0.121, smallest 14,037; none died; I+ working on all 39 designs carrying it. **The owner (455)**: (a) **the frozen four's code to go** -
-  tail's and tailpn's engines and kstack's - **prepared (456): the after-seed-67 batch, results/pending/ORDER.md**
-  (engines-check 89 paths to 69, the genes kept in the genome frozen off so identities hold); **sharedcall's path stays**: the
-  hand-made s5 and s6 - the reference every speed is measured against - use it (CV8's base genome), so only its gene goes;
-  (b) **the second freeze applied: alignhot, jithelp, jitre off** (results/applied-after-seed66/ORDER.md, batch-check PASS);
-  (c) **the load tested in seed 67's chain** - lab/evolve/loadtest.py, the front's 8 fastest and 4 slowest against s6 idle
-  and with three other cores busy: the load explains the fast end's optimism (1.110) if the fast group runs about 10%
-  faster against s6 under it and the slow group does not; (d) the footprint check: the top reordered at 10,000 words this time (0.206; seeds 64-65: 0.888,
-  0.550) - watched. Next seed 67: **10 hours (the owner), islands** (NEXT-RUN).
+- master: Iteration 458.
+- **The runs**: seed 67 processed (Iteration 458) - islands, 10 hours: against seed 64 at generation 139, fastest 4.5%
+  ahead, smallest +0.37% - the third islands run ahead (6.8%, 3.6%, 4.5%). The second freeze showed no loss against seed 66.
+  **The load test answered the fast end's optimism in part**: under three busy cores the fast designs measure about 5%
+  faster against s6 (0.947), the slow ones not (0.994) - about half of the fast tenth's 1.083; the rest selection's luck.
+  **For the owner**: the votes' next candidate, **jitret** (12 of 12 over seeds 65-67) - frozen off the same way?; and
+  rule 3 read against the load - the re-measure after the run done under the run's own load, or the offset written down.
+  **The after-seed-67 batch applied** (tail, tailpn, kstack retired). Next seed 68: **8 hours (the owner), islands**.
 - **Fern, a scripting language on this Forth** (the owner, 457): designed - results/drafts/fern-design-457.md - and to
   be built in a chat of its own, from this bundle; the evolution's chats carry on as before.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 67's, named from the bundle it starts from (seed 66's, `forth-vm-evolution-chain-94e6742bb-fury-
-  20261022-152338_tar.gz`, processed at 454). For seed 66's islands reading seed 64's database is kept here too
+  processed - seed 68's, named from the bundle it starts from (seed 67's, `forth-vm-evolution-chain-e1285e3b1-fury-
+  20261023-024810_tar.gz`, processed at 458). For seed 66's islands reading seed 64's database is kept here too
   (build/evolve/keep/seed64-db.jsonl); if gone, seed 64's archive. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only

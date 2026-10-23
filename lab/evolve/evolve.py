@@ -774,7 +774,6 @@ def bin_size(eng):
 GOTODUPV = (None, 32, 128)        # Iteration 260: GCC's max-goto-duplication-insns - None its default, 8
 def CC(g):
     """Iteration 262: the compiler the gene names - GCC as cc, or clang."""
-    if express(g).get('tailpn'): return clang_pn()       # Iteration 293: clang 19+, for preserve_none
     return 'clang' if express(g).get('compiler') else 'cc'
 ARM32 = os.uname().machine.startswith('arm')   # Iteration 407: a 32-bit ARM host - the Tegra (armv7l)
 def ccflags(g):
@@ -792,49 +791,9 @@ def ccflags(g):
     return f + _EXTRA_CFLAGS
 _EXTRA_CFLAGS = os.environ.get('EVOLVE_CFLAGS', '').split()   # Iteration 294: a measurement's -g (missmap.py) - never the evolution's
 
-def tail_offenders(eng):
-    """Handlers whose machine code CALLS through an indexed table - a
-    dispatch the compiler did not make a jump, which would grow the C
-    stack by a frame each time it runs."""
-    out = sh(['objdump', '-d', '--no-show-raw-insn', eng]).stdout.decode(errors='replace')
-    fn, bad = None, set()
-    for line in out.splitlines():
-        m = re.match(r'^[0-9a-f]+ <([^>]+)>:', line)
-        if m: fn = m.group(1); continue
-        # Iteration 400: i386's forms too - a 4-byte table, absolute or based, or the pointer loaded first: matched
-        # only as x86-64's, clang's calls at 4-byte cells went unseen, unwrapped, and its engine died on the corpus.
-        # x86-64's own form is matched as it was: no 64-bit engine changes.
-        if fn and re.match(r'[HI]_', fn) and re.search(r'call +\*\(%\w+,%\w+,8\)|call +\*(0x[0-9a-f]+)?\((%e\w+)?,%e\w+,4\)|call +\*%e[a-z]{2}\b', line):
-            bad.add(re.sub(r'^[HI]_', '', fn).split('.')[0])
-    return bad
-
-def build_tail(g, d, src, flags, eng):
-    """Tail-call threading (tools/gen-tail.py): preprocess this design's
-    engine with the 256-entry dispatch, make every handler a function, and
-    wrap the ones whose dispatch the compiler would not make a jump - read
-    from the machine code, then checked again: none may be left."""
-    pp, tc = os.path.join(d, 'pp.c'), os.path.join(d, 'tail.c')
-    fl = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL', '-DDISPOFF'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1', '-DDISPOFF=0']
-    # Iteration 248: DISPOFF off here, in the preprocessing - gen-tail.py reads the
-    # preprocessed source, where its own '#ifndef DISPOFF' guard is already gone, so
-    # the handlers' table was offsets between functions: no tail design compiled in
-    # seed 46 (222 died: engine did not compile)
-    # Iteration 400: preprocessed by the compiler that builds it - CC(g) alone at 4-byte cells (EVOLVE_CC's -m32 left
-    # out) made the x86-64 engine, 8-byte cells and __int128, for gcc -m32 to compile: every tail design died at 32 bits
-    # (seed 58: 401 of 401 'engine did not compile', results/fail32-400.md).
-    r = sh(CCV(g) + ['-E', '-P'] + fl + ['-o', pp, src])
-    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))   # Iteration 400: its first error, as build's
-    wrap = []
-    for attempt in range(2):
-        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-tail.py'), pp, tc] + (['--wrap', ','.join(sorted(wrap))] if wrap else [])
-               + (['--preserve-none'] if express(g).get('tailpn') else ['--musttail'] if express(g).get('compiler') else []))   # 401: every clang engine's calls jumps   # Iteration 293
-        if r.returncode: raise RuntimeError('died: tail-call generation' + why(r))
-        r = sh(CCV(g) + ccflags(g) + (['-flto'] if express(g).get('lto') else []) + ['-w', '-o', eng, tc] + rt())
-        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
-        bad = tail_offenders(eng)
-        if not bad: return
-        wrap = sorted(set(wrap) | bad)
-    raise RuntimeError('died: tail calls not jumps (%s)' % ','.join(sorted(bad)))
+# Iteration 456 (the owner; results/gene-votes.md): tail-call threading removed - tail_offenders(), build_tail() and
+# tools/gen-tail.py. tail and tailpn stay in the genome, frozen off (FROZEN, Iteration 450), so every design keeps its
+# identity; seed 66 showed no loss with them off.
 
 PROFILING = [False]      # set while design_pairs builds a profiling engine
 CONVERT_EXTRA = []       # more converter options, set by a pricing tool (callsites.py); empty in a run
@@ -1010,23 +969,21 @@ def _build(g, d):
         flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
     eng = os.path.join(d, 'engine')
     def compile_engine():
-        if g.get('tail') and g['tos'] and not g.get('msc'): build_tail(g, d, src, flags, eng)
-        else:
-            jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
-                   os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
-            if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
-                if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
-                    raise RuntimeError('died: stack-cache generation')
-            lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
-            if lto and jit:                                      # the stencils outside it: the JIT reads their code as compiled
-                objs = []
-                for c in ('spn-stencils.c', 'spn-markers.c'):
-                    o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
-                    r = sh(CCV(g) + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
-                    if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
-                jit = jit[:4] + objs
-            r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
-            if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+        jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+               os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
+        if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
+            if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
+                raise RuntimeError('died: stack-cache generation')
+        lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one
+        if lto and jit:                                      # the stencils outside it: the JIT reads their code as compiled
+            objs = []
+            for c in ('spn-stencils.c', 'spn-markers.c'):
+                o = os.path.join(d, c[:-2] + '.o'); objs.append(o)
+                r = sh(CCV(g) + ccflags(g) + flags + [x for x in rt() if x.startswith(('-f', '-D', '-U'))] + jit[:4] + ['-c', '-o', o, os.path.join(ROOT, 'engine', c)])
+                if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+            jit = jit[:4] + objs
+        r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+        if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
     opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g['bytehdr']: opts.append('--bytehdr')
@@ -1070,7 +1027,6 @@ def _build(g, d):
     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
-    fuse += '-kstack' if t2 and g.get('kstack') else ''                                                # kstack: 116
     dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
@@ -1818,7 +1774,7 @@ def setup():
     import shutil
     W = os.path.join(O, 'work')
     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'kstack.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
@@ -1829,7 +1785,7 @@ def setup():
                         for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
-                        for q in (('', '-kstack') if b == KW() + '-bt' else ('',))    # Iteration 116
+                        for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
                         for j in (('', '-jit') if b == KW() + '-bt' else ('',))
                         for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
@@ -1840,7 +1796,6 @@ def setup():
                        else ['cv8-fuse-loop.4'] if '-loop' in name else [])
                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
                        + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
-                       + (['kstack.4'] if '-kstack' in name else [])        # Iteration 116: ?STACK8, swapped into ?STACK
                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
                        + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
                        + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 205: the rest of the file words (fsys 2)

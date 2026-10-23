@@ -8,7 +8,7 @@ is not mixed with it.
 |---|---|---|
 | 1 | retire-after-seed67.patch | **tail, tailpn and kstack retired**: their code removed - tools/gen-tail.py, build_tail() and tail_offenders() (lab/evolve/evolve.py), the preserve_none compiler choice, the engines-check paths that built tail engines (89 paths to 69), forth/kstack.4 and its dump variants. The genes stay in the genome, frozen off (FROZEN), so every design keeps its identity; lab/evolve/GENES.md marks them retired. **sharedcall's path stays**: CV8's base genome sets it, so the hand-made s5 and s6 - the reference - use it; only its gene is retired (frozen off since 450). |
 
-    git apply results/pending/retire-after-seed67.patch
+    git apply results/applied-after-seed67/retire-after-seed67.patch
 
 ## How it was tested
 

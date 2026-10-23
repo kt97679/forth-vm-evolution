@@ -844,3 +844,18 @@ ahead and its smallest within 0.5% - the islands' gain holding at the shorter ru
 lab/evolve/loadtest.py: seed 67's 8 fastest and 4 slowest against s6, idle and with three other cores running s6. The
 hypothesis (Iteration 454): the fast end's optimism is the measuring load. Predicted: the fast group's loaded / idle median
 0.93 or below, the slow group's 0.98 or above. If the fast group's is near 1.00 too, the load is not the cause either.
+
+## Seed 67, scored (Iteration 458)
+
+**5 right, 1 wrong.** Seed 67 reached generation 139, so its islands reading against seed 64 is there, not at 146.
+- **Iteration 454: its fastest at least 2% ahead of seed 64's - right**: 0.1197 against 0.1253 at 139 (4.5%). **Its
+  smallest within 0.5% - right**: 14,103 against 14,051 (+0.37%). **No design dying - right. rtiplus on 10% of its plain
+  designs - right**: 25 front designs with it, all with the fuser.
+- **Iteration 455, the load test: the fast group's loaded / idle 0.93 or below - wrong**: 0.947 - the load counts, but not
+  that much. **The slow group's 0.98 or above - right**: 0.994.
+
+## Seed 68 - predicted (Iteration 458)
+
+Islands, 8 hours (the owner), the after-seed-67 batch applied (tail, tailpn, kstack retired). About 7.5 hours of
+evolution, some 110 generations. At its last generation against seed 64 then: its fastest at least 2% ahead, its smallest
+within 0.5%; no design dying; no 32-bit failure.

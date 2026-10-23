@@ -2,7 +2,7 @@
 """engines-check.py - an engine down every generator's path builds, and runs
 the corpus right (Iteration 249).
 
-Seed 46 lost every design with the gene tail: an engine change (the dispatch
+Iteration 456: the tail engines removed (tail frozen off since 450), their paths with them. Seed 46 lost every design with the gene tail: an engine change (the dispatch
 table as offsets, Iteration 237) broke the engines tools/gen-tail.py makes, and
 no check built one - the fronts the gate builds had none. Every variant here is
 s6-cv8b with genes set so that one path is taken: the cached top off, multi-
@@ -43,8 +43,6 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('s6 as it is', {}, []),
     ('cached top off', dict(tos=0), []),
     ('multi-state (gen-msc)', dict(msc=1), ['msc']),
-    ('tail calls (gen-tail)', dict(tail=1), ['tail']),
-    ('tail calls on the two-bit tag', dict(tag2=1, tail=1), ['tail', 'tag2']),     # Iteration 405: t2call's path, at 4-byte cells too
     ('superinstructions (gen-super)', dict(supers=donor('supers')), ['supers']),
     ('op;CALL (gen-opcall)', dict(tag2=1, opcall=donor('opcall')), ['opcall']),
     ('format-10 opcodes', dict(ops10=donor('ops10')), ['ops10']),
@@ -65,12 +63,10 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('the JIT, a 3-cell stack cache', dict(JIT, jitk=3), ['jit', 'jitk']),
     ('link-time optimisation', dict(lto=1), ['lto']),                           # Iteration 260
     ('the JIT with link-time optimisation', dict(JIT, lto=1), ['jit', 'lto']),
-    ('tail calls with link-time optimisation', dict(tail=1, lto=1), ['tail', 'lto']),
     ('goto unfactoring 32', dict(gotodup=1), ['gotodup']),
 ] + ([                                                                           # Iteration 262: where clang is installed
     ('clang', dict(compiler=1), ['compiler']),
     ('clang, the JIT', dict(JIT, compiler=1), ['compiler', 'jit']),
-    ('clang, tail calls (gen-tail)', dict(tail=1, compiler=1), ['compiler', 'tail']),
     ('clang, -Oz', dict(compiler=1, opt='Os'), ['compiler']),
 ] if E.HAVE_CLANG else []) + [
 ] + [('fsys %d' % k, dict(fsys=k), ['fsys']) for k in (1, 2, 3, 4, 5)]
@@ -80,15 +76,13 @@ VARIANTS += [(n + ', 2@ 2! opcodes', dict(g, ops10=list(g.get('ops10') or []) + 
              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
 VARIANTS += [(n.replace('2@ 2! opcodes', '2@ 2! inlined'), dict(g, opinline=1), need + ['opinline'])   # Iteration 292
              for n, g, need in list(VARIANTS) if n.endswith('2@ 2! opcodes')]
-if E.clang_pn():   # Iteration 293: where a clang 19+ is installed
-    VARIANTS += [('clang %s, tail calls with preserve_none' % E.clang_pn(), dict(tail=1, compiler=1, tailpn=1), ['compiler', 'tail', 'tailpn'])]
 KN = dict(kfast=1, kinput=1, klookup=1, knumber=1)   # Iteration 295: NUMBER? as one opcode, on every engine family
 VARIANTS += [('klookup, knumber', dict(KN), ['knumber']), ('klookup, knumber, cached top off', dict(KN, tos=0), ['knumber']),
-             ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']), ('klookup, knumber, tail calls', dict(KN, tail=1), ['knumber', 'tail']),
+             ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']),
              ('klookup, knumber, the JIT', dict(KN, **JIT), ['knumber', 'jit'])]
 VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot=1), ['alignhot']),   # Iteration 298
              ('handler entries aligned to 32', dict(alignhot=2), ['alignhot']), ('handler entries aligned to 64', dict(alignhot=3), ['alignhot']),
-             ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot']), ('aligned to 64, tail calls', dict(alignhot=3, tail=1), ['alignhot', 'tail'])]
+             ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot'])]
 VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops10') or []), opbody=1, opinline=1), need + ['ops10', 'opinline'])   # Iteration 299
              for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
 # Iteration 316: the gene bfind - THREAD-FIND's and (FIND)'s walk branch-light - with each of

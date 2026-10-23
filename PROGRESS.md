@@ -8788,7 +8788,7 @@ s6 use it, and s6 is the reference. Tested in a clone of e1285e3, its stages bui
 each built and its corpus right), validate 7 of 7 IDENTICAL, a short evolution 78 of 78 alive; batch-check on c69752e PASS
 (run-tests, validate 7 of 7 IDENTICAL, the jail).
 
-Files: results/pending/ORDER.md, results/pending/retire-after-seed67.patch (new); results/README.md, HANDOFF.md.
+Files: results/applied-after-seed67/ORDER.md, results/applied-after-seed67/retire-after-seed67.patch (new); results/README.md, HANDOFF.md.
 
 ## Iteration 457 - 2026-10-22 - Claude
 
