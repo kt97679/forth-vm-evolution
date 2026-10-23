@@ -16,6 +16,7 @@ A = sys.argv[1:]
 def opt(name, default=None):
     return A[A.index(name) + 1] if name in A else default
 zp = opt('--zip', ''); apps = opt('--apps', 'sim16,gc16,scan,evo,fcp,brainless,cd16sim').split(',')
+SET = dict(a[6:].split('=', 1) for a in A if a.startswith('--set='))
 dbs = [A[i + 1] for i, a in enumerate(A) if a == '--db']
 ids = [a for i, a in enumerate(A) if not a.startswith('--') and (i == 0 or A[i - 1] not in ('--zip', '--apps', '--db'))]
 if not ids: sys.exit(__doc__)
@@ -87,7 +88,7 @@ def root(R, w, seen=()):
     return why, op, at
 
 for ident in ids:
-    g = E.canon(recs[ident]['genome'])
+    g = E.canon(dict(E.canon(recs[ident]['genome']), **{k: int(v) for k, v in SET.items()}))   # 472: --set=gene=value, as jitleft.py
     if not E.express(g).get('jit'): print('%s: no JIT' % ident); continue
     _, _, off, _ = profile(dict(g, jit=0), os.path.join(E.EV, 'jitapps-off'), False)
     W, OPS, on, logs = profile(g, os.path.join(E.EV, 'jitapps-on'), True)

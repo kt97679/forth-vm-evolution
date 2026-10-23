@@ -217,6 +217,28 @@ S(st_dplus)  { ucell lo = (ucell)sp[2] + (ucell)sp[0];
                cell hi = (cell)((ucell)sp[1] + (ucell)tos + (lo < (ucell)sp[0]));
                sp[2] = (cell)lo; GO(sp + 2, hi); }
 #endif
+#if JITMUL
+/* Iteration 472, the gene jitmul: UM* and UM/MOD - the double-cell multiply and divide that *, MOD, /, /MOD,
+   star-slash and CELLS stand on in the kernel; without them every word holding one stays interpreted (results/drafts/
+   jitapps-471.md). No library call (stencil-check): the product by the machine's widening multiply; the
+   quotient by its divide when the high cell is 0, else bit by bit - the interpreter's result either way. */
+#if defined(__x86_64__)
+typedef unsigned __int128 spn_udw;
+#else
+typedef unsigned long long spn_udw;
+#endif
+#define SPN_CB ((int)(8 * sizeof(ucell)))
+S(st_umstar) { spn_udw p = (spn_udw)(ucell)sp[0] * (ucell)tos;           /* ( u1 u2 -- lo hi ) */
+               sp[0] = (cell)(ucell)p; GO(sp, (cell)(ucell)(p >> SPN_CB)); }
+S(st_ummod)  { ucell u = (ucell)tos, hi = (ucell)sp[0], lo = (ucell)sp[1], q, r;   /* ( lo hi u -- r q ) - not mapped yet: */
+               if (hi >= u) hi %= u;          /* a zero divisor must be -10 THROW, as the interpreter's (layout.py) */
+#if defined(__x86_64__)
+               __asm__("divq %4" : "=a"(q), "=d"(r) : "a"(lo), "d"(hi), "rm"(u));
+#else
+               __asm__("divl %4" : "=a"(q), "=d"(r) : "a"(lo), "d"(hi), "rm"(u));
+#endif
+               sp[1] = (cell)r; GO(sp + 1, (cell)q); }
+#endif
 #if JITX
 /* Iteration 108 (forth-vm-evolution, the gene jitx): FILL ( c-addr u char -- )
    for its translator - without a call, which a stencil may not hold: rep stosb
@@ -269,6 +291,9 @@ const void *const spn_table[] = {
 #endif
 #if JITHELP
     (const void *)st_callc,      /* Iteration 344: last, so the others keep their numbers */
+#endif
+#if JITMUL
+    (const void *)st_umstar, (const void *)st_ummod,     /* Iteration 472: after the rest, numbers kept */
 #endif
 #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,

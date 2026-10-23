@@ -179,6 +179,7 @@ gene('abortif', convert=lambda g: ['--guard-abort'] if g.get('abortif') else [])
 gene('lean', convert=lambda g: ['--drop-x8', '--drop-dumptool'] if g.get('lean') else [])   # Iterations 38-39: build artifacts left out
 gene('jitloop', needs=lambda g, e: jit_on(g))                                  # Iteration 129: on the JIT
 gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
+gene('jitmul', needs=lambda g, e: jit_on(g))                                   # Iteration 472: UM* and UM/MOD, COUNT (results/drafts/jitapps-471.md)
 gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
 gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
 # Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
@@ -934,6 +935,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitloop'): flags.append('-DJITLOOP=1')   # Iteration 129: the scan reads further (expressed: dormant, nothing)
     # sysc's -DSYSC=1: every engine source is SYSC by default since Iteration 147   # Iteration 136: one SYSCALL for the shell's seventeen (forth/shell-sysc.4)
     if jit_on(g) and express(g).get('jitinl'): flags.append('-DJITINL=1')   # Iteration 137: one-operation words inline; D+'s stencil
+    if jit_on(g) and express(g).get('jitmul'): flags.append('-DJITMUL=1')   # Iteration 472: UM* and UM/MOD's stencils
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
@@ -1007,6 +1009,7 @@ def _build(g, d):
     if jit_on(g) and g.get('jitx'): opts.append('--jitx')         # Iteration 108: >R, R>, R@ given stencils
     if jit_on(g) and express(g).get('jitloop'): opts.append('--jitloop')   # Iteration 129: (+LOOP) and (?DO) given stencils
     if jit_on(g) and express(g).get('jitinl'): opts.append('--jitinl')     # Iteration 137: D+'s stencil
+    if jit_on(g) and express(g).get('jitmul'): opts.append('--jitmul')     # Iteration 472: UM*, UM/MOD, COUNT
     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
     if jit_on(g) and express(g).get('jithelp'): opts.append('--jithelp')   # Iteration 344: C primitives called from native code

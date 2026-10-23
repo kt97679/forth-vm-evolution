@@ -33,6 +33,9 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #if JITHELP
        S_CALLC,                                  /* Iteration 344: the gene jithelp */
 #endif
+#if JITMUL
+       S_UMSTAR, S_UMMOD,                        /* Iteration 472: the gene jitmul */
+#endif
        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
 #if JITK
 #include "jitk-map.h"                            /* Iteration 259, the gene jitk: tools/gen-jitk.py's */
