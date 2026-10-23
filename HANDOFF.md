@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 467.
+- master: Iteration 468.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -60,8 +60,11 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **Application workloads** (the owner, 466-467; results/drafts/appbench-466.md, -467.md): Appbench is the suite to
   hold out (applications run deep stacks and many calls - RPyForth 2026); **the owner's appbench.zip runs: fcp, brainless
   and cd16sim on s6, their own checks PASS** (results/drafts/appbench/run.py ZIP PROGRAM; the zip outside the repository -
-  terms differ); lexex and benchgc stop on case-sensitive lookups. Proposed: a held-out tier of the three; case-insensitive
-  FIND; coreext's words in the default image. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
+  terms differ); lexex and benchgc stop on case-sensitive lookups. **The held-out tier built (468): lab/evolve/appbench.py**
+  - a chain step once the zip has a path on the laptop. **First reading (results/drafts/appbench-468.md): the evolved lead
+  does not travel** - seed 68's design at 0.140 runs the applications at 1.03 of s6. The owner (468): a case-insensitive
+  gene, with concerns - planned, not built; coreext's words stay out of the image (the size measured is the base image;
+  the applications load extend.4 and coreext.4 themselves, in 0.01-0.06 s). Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in
   r15; seed 68's fastest GCC JIT design runs loop with 19.9% fewer instructions (cachegrind, exact), ackermann 2.1% more.

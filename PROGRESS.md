@@ -8973,3 +8973,21 @@ tier of fcp, brainless and cd16sim; a case-insensitive FIND; coreext's words in 
 
 Files: results/drafts/appbench-467.md, results/drafts/appbench/fold.py, prelude.fth, run.py (new); results/README.md,
 HANDOFF.md.
+
+## Iteration 468 - 2026-10-23 - Claude
+
+**Applications held out - the tool, and the evolved lead does not travel** (the owner: 1. run more applications, 2. a
+case-insensitive gene, with concerns, 3. would coreext's words in the image grow the size?;
+results/drafts/appbench-468.md). lab/evolve/appbench.py: N designs across the newest front built and run on fcp,
+brainless and cd16sim against s6 (the owner's zip read in place; the folding and prelude moved to lab/evolve/appbench/),
+each output checked, the child's CPU time, Spearman against the in-run speed. Tried on three of seed 68's front, one
+round: all outputs right, the order kept - and the lead gone: b9c5b4ae74, 0.140 on the selection's workloads, runs the
+applications at 1.028 of s6 (fcp 0.887, brainless 1.041, cd16sim 1.176); 76bfbf6558 (0.364) at 1.145; 57a20bf148
+(1.605) at 1.743. Loading is not it: the prelude and the program's compilation take 0.01-0.06 s of 4-7 s runs (fcp alone:
+s6 6.71 s, b9c5b4ae74 5.87 s; brainless alone: 3.84 s and 4.45 s). Proposed: appbench.py in the chain; why the JIT's lead
+vanishes (JITLOG's refusals); applications in the selection - the owner's decision. The case-insensitive gene: planned,
+not built - it touches every lookup path (FIND, HEADER, and the C-assisted kfast, klookup, tfind). coreext in the image:
+not proposed - the measured size stays the base image's; applications load it themselves.
+
+Files: lab/evolve/appbench.py, lab/evolve/appbench/fold.py, lab/evolve/appbench/prelude.fth,
+results/drafts/appbench-468.md (new); lab/evolve/README.md, results/README.md, HANDOFF.md.
