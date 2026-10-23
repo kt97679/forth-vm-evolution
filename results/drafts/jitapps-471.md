@@ -209,3 +209,35 @@ the selection's six workloads do not EXECUTE. Making that trip cheaper, or keepi
 lead to untranslatable words, is the next step for it.
 
 **Iteration 477: the owner enabled jitexec** - out of FROZEN with jitmul and jitdoes; all three in seed 70's search.
+
+## Iterations 481-483 - EXECUTE's cache; fcp's real cause, and jitcfa; both enabled
+
+**The inline cache (481)**, the first of the scouting answers' proposals (results/drafts/scout-answers-480.md):
+EXECUTE's stencil keeps, per call site, three cells in its literal hole - the token last seen, its native code, and
+the four bytes after the token as they were then, so a word made again at the same address misses; a hit calls the
+native code directly, a miss takes jit_exec, which fills the cache when the word is native. Right on every test (a site
+seeing two targets, a word redefined under the same name, CATCH through it). Worth little: sim16's instructions under
+cachegrind 1,653,095,136 against 1,667,766,694 without (0.9% fewer), its CPU time about 5% less over four alternating
+rounds - the helper was already short for a native target.
+
+**fcp's real cause (482)**: jit_exec's interpreted targets counted in the analysis build (a line at each power of 2
+per target) - fcp at least 5,029,280 trips through the interpreter, almost all to evalLP and evalDP (2,097,152 or more
+each), refused for "the return stack's order". evalLP is balanced on every path: >R at its start, R> ... >R in one arm,
+R> and EXIT in another. The JIT's check walked the operations down the page, so the EXIT's arm left the depth at 0 for
+the ELSE arm that follows it - and refused.
+
+**jitcfa (482)**: the same rule along the paths - the depth before each operation, a branch's target given the depth
+at the branch, the code after an unconditional jump or EXIT starting again from the depth its target was given, a
+backward branch meeting the depth its loop's head had. Right on words of those shapes (an evalLP, an EXIT out of a loop,
+nested >R, >R inside a loop) on s6 and the fast design, against the interpreter; the corpus; all seven applications.
+run-tests PASS (73 paths, the jitcfa variant among them), validate 7 of 7, the jail PASS (alone). On b9c5b4ae74 with all
+four genes, one round:
+
+| | sim16 | gc16 | scan | evo | fcp | brainless | cd16sim | geometric mean |
+|---|---|---|---|---|---|---|---|---|
+| before the genes | 0.642 | 0.485 | 0.687 | 0.589 | 0.953 | 1.013 | 1.062 | 0.747 |
+| jitmul, jitdoes, jitexec, the cache | 0.243 | 0.437 | 0.168 | 0.352 | 0.646 | 0.510 | 0.708 | 0.394 |
+| and jitcfa | 0.254 | 0.450 | 0.172 | 0.320 | **0.392** | **0.400** | **0.577** | **0.344** |
+
+fcp 1.6 times faster - jitexec's cost to it more than repaid; brainless and cd16sim faster too. **The owner enabled
+jitcfa (483)**: all four genes in seed 70's search.

@@ -9158,3 +9158,21 @@ regions with exits to the interpreter (one missing stencil costs a boundary, lon
 kernels in what the selection sees (ccforth's MIT benchmarks among them). The prompt's reviewed list extended.
 
 Files: results/drafts/scout-answers-480.md (new); results/drafts/scout-prompt-479.md, results/README.md, HANDOFF.md.
+
+## Iterations 481-483 - 2026-10-23 - Claude
+
+**EXECUTE's inline cache; fcp's real cause and jitcfa; jitcfa enabled** (the owner: proceed with the cache, then enable
+jitcfa; results/drafts/jitapps-471.md, its 481-483 section). The cache (481): per EXECUTE site three cells in the
+stencil's literal hole - the token, its native code, the four bytes after the token - a hit calls the native code
+directly, a miss takes jit_exec, which fills it; right on every test; worth 0.9% of sim16's instructions (cachegrind)
+and about 5% of its time. fcp's cause (482): the analysis build counting jit_exec's interpreted targets - at least five
+million trips, almost all to evalLP and evalDP, refused because the JIT's return-stack check read the operations down
+the page and an EXIT's arm left the depth wrong for the arm after it. jitcfa (482): the check along the paths - depths
+per branch target, code after an unconditional jump or EXIT resumed from its target's depth, loops checked against
+their head. Right on those shapes, on the corpus and on all seven applications; run-tests PASS (73 paths), validate 7
+of 7, the jail PASS. On b9c5b4ae74 with all four genes: fcp 0.392 of s6 (0.646 without jitcfa), brainless 0.400,
+cd16sim 0.577, geometric mean 0.344. The owner enabled jitcfa (483). The pending batch rebased a third time, clean.
+Predicted for seed 70.
+
+Files: engine/jit.c, engine/spn-stencils.c, tools/layout.py, lab/evolve/evolve.py, lab/evolve/engines-check.py,
+results/pending/ (rebased, ORDER.md), results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.

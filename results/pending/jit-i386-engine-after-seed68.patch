@@ -1,5 +1,5 @@
 diff --git a/engine/jit.c b/engine/jit.c
-index f857781..87cdddd 100644
+index 9fa9cb0..9c6c8e6 100644
 --- a/engine/jit.c
 +++ b/engine/jit.c
 @@ -47,9 +47,19 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
@@ -42,7 +42,7 @@ index f857781..87cdddd 100644
  #if JITMUL
                  if (v == JIT_TH64) s->th = (int)(p - a);
  #endif
-@@ -345,19 +355,19 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+@@ -347,19 +357,19 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
          else if (jit_relto(t->src + p, spn_table[J_CALL])) to = call;
          if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
      }
@@ -66,7 +66,7 @@ index f857781..87cdddd 100644
  #endif
  #if JITEXEC
      if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, 8); }
-@@ -804,7 +814,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+@@ -851,7 +861,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
          }
  #if JITX
          else if (BYTE(arg[i]) == JIT_DOVAR) {         /* a variable: its address, a literal */
@@ -116,7 +116,7 @@ index 41521c8..006738b 100644
 +SPN_CC spn_st spn_jump(cell *sp, cell tos) { (void)sp; (void)tos; exit(97); }
 +SPN_CC spn_st spn_call(cell *sp, cell tos) { (void)sp; (void)tos; exit(98); }
 diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
-index 7ea3007..060bda2 100644
+index 82365fb..92df890 100644
 --- a/engine/spn-stencils.c
 +++ b/engine/spn-stencils.c
 @@ -60,6 +60,19 @@ typedef cell (*spn_io_fn)(cell, cell, cell);

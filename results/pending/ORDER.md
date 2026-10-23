@@ -1,5 +1,6 @@
 # The after-seed-68 batch - apply in this order (deferred at Iteration 464 to seed 69's processing)
 
+**Rebased a third time (482)** onto EXECUTE's cache and jitcfa - clean; the three apply in order to 8633c99.
 **Rebased again (476)** onto jitexec - a clean three-way merge this time; the three apply in order to 8c2731a.
 **Rebased (475)** onto this session's JIT work (jitmul, jitdoes, UM/MOD's throw path): two conflicts in engine/jit.c,
 resolved - the holes a cell wide (JIT_HOLEW) and the throw hole kept, in the scan and the patching; the three patches

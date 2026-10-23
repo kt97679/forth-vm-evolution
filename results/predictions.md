@@ -900,3 +900,9 @@ The owner enabled jitexec. Seed 70's selection workloads never EXECUTE, so the s
 its share of the front's JIT designs near where drift leaves it - between a quarter and three quarters; appbench.py's
 geometric mean for the fastest JIT design that has all three genes below 0.45 of s6 (seed 68's fast design with them:
 0.347; fcp the one application slower with jitexec than without).
+
+## jitcfa in seed 70 - predicted (Iteration 483)
+
+The owner enabled jitcfa. Like jitexec, what it frees lies mostly outside the selection's six workloads, so its share
+of the front's JIT designs near drift (a quarter to three quarters); appbench.py's geometric mean for the fastest JIT
+design with all four genes below 0.42 of s6 (seed 68's fast design with them: 0.344).
