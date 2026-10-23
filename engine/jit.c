@@ -246,7 +246,9 @@ static const unsigned short jit_esc[256] = {
 static unsigned char *jit_mem;
 static uint32_t jit_used = 16;             /* offsets 0 and 1 mean: not native */
 #if JITEXEC
-static spn_st jit_exec(cell *sp, cell tos, cell xt);      /* Iteration 476: below, after jit_body */
+static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic);   /* Iteration 476: below, after jit_body; 481: its cache */
+#define JIT_NIC 4096                    /* 481: EXECUTE's inline caches, three cells a site; the last shared when full */
+static cell jit_ic[JIT_NIC][3]; static int jit_nic;
 #endif
 #if JITRE || JITEXEC   /* 476: jitexec uses jitre's way into the interpreter and back */
 /*  Iteration 346, the gene jitre: native code calling bytecode (vm-lab.c's jit_interp) - a callee the
@@ -583,12 +585,20 @@ static uint32_t jit_word(UNS64 w, int depth) {
 /* Iteration 476: EXECUTE from native code - the token's word native when it is, translated now when it can be
    (a word with the JIT's header by jit_word, one without by its kslot, as a call's callee is), else run by the
    interpreter (jit_interp, jitre's: a sentinel return address, a longjmp back) - and the stack handed back. */
-static spn_st jit_exec(cell *sp, cell tos, cell xt) {
+static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
     UNS64 w = (UNS64)xt; uint32_t f = 0;
     if (BYTE(w) == JIT_CODE) { f = jit_ld32(w + 1); if (f & 0x80000000u) f = jit_word(w, 0); }
     else if (BYTE(w) != JIT_DOVAR) { uint32_t *k = jit_kslot(w);
         if (k) { if (*k & 0x80000000u) { *k = 1; *k = jit_body(w, w, 0, 0); } f = *k; } }
-    if (f > 1) return ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+    if (f > 1) {                        /* 481: native - this site's cache remembers it */
+        ic[1] = 0; ic[0] = xt; ic[2] = (cell)jit_ld32(w + 1); ic[1] = (cell)(uintptr_t)(jit_mem + f);
+        return ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+    }
+#if JITLOG
+    {   static UNS64 tw_[256]; static unsigned long tc_[256]; int k_;     /* 481: interpreted targets, counted - a line at each power of 2 */
+        for (k_ = 0; k_ < 256 && tw_[k_] && tw_[k_] != w; k_++) ;
+        if (k_ < 256) { tw_[k_] = w; tc_[k_]++; if (!(tc_[k_] & (tc_[k_] - 1))) jitlog_note('X', w, w, tc_[k_]); } }
+#endif
     return jit_interp(sp, tos, (cell)w);
 }
 #endif
@@ -772,7 +782,43 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     }
     if (a != end) return 0;
     at[n] = end;
-#if JITX
+#if JITX && JITCFA
+    {   /* Iteration 482, the gene jitcfa: the same rule along the paths, not down the page - the depth before each
+           operation (dv), a branch's target given the depth at the branch, the code after an unconditional jump or an
+           EXIT starting again from the depth its target was given; a backward branch must meet the depth its loop's
+           head had. fcp's evalLP: >R at the start, R> ... >R in one arm, R> and EXIT in another - balanced on every
+           path, refused by the linear check below.  */
+        signed char dv[JIT_MAXOPS + 1], dt[JIT_MAXOPS + 1]; int d = 0, live = 1, k;
+        for (i = 0; i <= n; i++) dv[i] = dt[i] = -1;
+        for (i = 0; i < n; i++) {
+            if (dt[i] >= 0) { if (live && d != dt[i]) return 0; d = dt[i]; live = 1; }
+            if (!live) continue;                  /* reached by no path yet: a later backward branch to it is refused */
+            dv[i] = (signed char)d;
+            if (opl[i] >= 0xFFFD) continue;
+#if JITLOG
+            jitlog_at = at[i]; jitlog_why = 2;
+#endif
+            {   const struct jit_op *o_ = &jit_ops[opl[i]]; int unc_ = 0;
+                for (j = 0; j < o_->n; j++) {
+                    int s = o_->st[j];
+                    if (s == S_TOR) { if (d >= 100) return 0; d++; }
+                    else if (s == S_FROMR) { if (!d) return 0; d--; }
+                    else if (s == S_RFETCH) { if (!d) return 0; }
+                    else if (s == S_EXIT) { if (d) return 0; unc_ = 1; }
+                    else if (s == S_BRANCH || s == S_LEAVE) unc_ = 1;
+                }
+                if (o_->opnd >= 6) {                 /* a branch: its target is given this depth */
+                    for (k = 0; k < n && at[k] != arg[i]; k++) ;
+                    if (k == n) return 0;
+                    if (k <= i) { if (dv[k] != d) return 0; }
+                    else if (dt[k] >= 0) { if (dt[k] != d) return 0; }
+                    else dt[k] = (signed char)d;
+                }
+                if (unc_) live = 0;
+            }
+        }
+    }
+#elif JITX
     {   int d = 0;                      /* the return stack in order: never below the entry, at it at every EXIT */
         for (i = 0; i < n; i++) {
             if (opl[i] >= 0xFFFD) continue;      /* 474: a call, or a literal - jitdoes's PFA, the first operation - no return-stack effect */
@@ -796,7 +842,8 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         if (arg[i] < jit_cbase || arg[i] >= jit_cbase + ((UNS64)64 << 20)) return 0;   /* 350: a call to nowhere - the data after a refused callee, decoded */
 #endif
 #if JITEXEC
-        if (jit_isexec(arg[i])) { opl[i] = JIT_L_EXECUTE; continue; }   /* 476: a call of EXECUTE - its helper */
+        if (jit_isexec(arg[i])) {                                         /* 476: a call of EXECUTE - its helper; 481: its cache */
+            opl[i] = JIT_L_EXECUTE; arg[i] = (UNS64)(uintptr_t)jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1]; continue; }
 #endif
         if (BYTE(arg[i]) == JIT_CODE) {
             f = jit_ld32(arg[i] + 1);

@@ -255,7 +255,12 @@ S(st_ummod)  { __builtin_trap(); }          /* no throw hole on this machine yet
    address, which native code cannot follow; here a helper takes it (jit.c's jit_exec: native when the word is,
    translated now when it can be, else the interpreter) and hands the stack back. A call, then NEXT. */
 #if defined(SPN_EX_VALUE)
-S(st_execute) { spn_st r_ = ((spn_st (*)(cell *, cell, cell))IMM_EX())(sp + 1, sp[0], tos); GO(SPN_SP(r_), SPN_TOS(r_)); }
+/* Iteration 481: an inline cache - this call site's own three cells (the literal hole): the token last seen, its
+   native code, and the four bytes after the token as they were then, so a word re-made at the same address misses */
+S(st_execute) { cell *ic_ = (cell *)IMM();
+                if (ic_[0] == tos && ic_[1] && (uint32_t)ic_[2] == *(const uint32_t *)((const char *)tos + 1)) {
+                    spn_st r_ = ((spn_st (*)(cell *, cell))ic_[1])(sp + 1, sp[0]); GO(SPN_SP(r_), SPN_TOS(r_)); }
+                {   spn_st r_ = ((spn_st (*)(cell *, cell, cell, cell *))IMM_EX())(sp + 1, sp[0], tos, ic_); GO(SPN_SP(r_), SPN_TOS(r_)); } }
 #else
 S(st_execute) { __builtin_trap(); }        /* no helper hole on this machine yet: never usable */
 #endif

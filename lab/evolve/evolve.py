@@ -182,6 +182,7 @@ gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # 
 gene('jitmul', needs=lambda g, e: jit_on(g))                                   # Iteration 472: UM* and UM/MOD, COUNT (results/drafts/jitapps-471.md)
 gene('jitdoes', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 473: DOES> children native (jit.c)
 gene('jitexec', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 476: EXECUTE through a helper (jit.c)
+gene('jitcfa', needs=lambda g, e: jit_on(g) and g.get('jitx'))               # Iteration 482: the return-stack check along the paths
 gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
 gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
 # Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
@@ -894,7 +895,7 @@ REQUIRE = []
 # code stays; removed only if the run after shows no loss (its comparison small or better).
 FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
-          'alignhot': 0, 'jithelp': 0, 'jitre': 0}   # 475: jitdoes enabled (the owner); 477: jitexec enabled too (the owner)
+          'alignhot': 0, 'jithelp': 0, 'jitre': 0, 'jitcfa': 0}   # 475: jitdoes enabled (the owner); 477: jitexec too; 482: jitcfa staged, frozen until the owner says
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
@@ -940,6 +941,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitmul'): flags.append('-DJITMUL=1')   # Iteration 472: UM* and UM/MOD's stencils
     if jit_on(g) and express(g).get('jitdoes'): flags.append('-DJITDOES=1') # Iteration 473: DOES> children native
     if jit_on(g) and express(g).get('jitexec'): flags.append('-DJITEXEC=1') # Iteration 476: EXECUTE's helper
+    if jit_on(g) and express(g).get('jitcfa'): flags.append('-DJITCFA=1')   # Iteration 482: the check along the paths
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp

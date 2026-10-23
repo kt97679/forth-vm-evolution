@@ -1708,7 +1708,7 @@ if EMIT:
                 else: _miss.append('/* [%d] %s - no stencils */' % (_x, _nm.replace('*/', '* /')))   # 472: named, for jitapps.py
             if '--jitexec' in ARGV:    # Iteration 476, the gene jitexec: EXECUTE - a row no bytecode maps to, and the primitive if any
                 _le = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 2
-                _rows.append('[%d] = {1, 1, 0, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) */' % (_le, ', 0' if JITHELPERS else ''))
+                _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ', 0' if JITHELPERS else ''))
             _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
             if '--jitre' in ARGV:
                 _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
