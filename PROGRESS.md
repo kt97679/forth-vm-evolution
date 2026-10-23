@@ -8873,3 +8873,18 @@ column from seed 69, noted in the batch.
 
 Files: results/pending/ORDER.md, results/pending/jit-i386-engine-after-seed68.patch,
 results/pending/jit-i386-lab-after-seed68.patch (new); results/README.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 462 - 2026-10-23 - Claude
+
+**c4's circle, the second pass** (the owner: a deeper search for pages, posts and projects referencing c4, c4x86 and
+the rest; results/drafts/c4-family-459.md, its new sections). More of the circle: the 2014 Hacker News thread, srhuang's
+HackMD trace, rswier's own c5 (c4 with a syntax tree, one commit), comzyh's commented branch, minizig, Kray-G/kcs. The
+find that matters is the literature our JIT belongs to: Ertl and Paysan's "Code-Copying Compilation in Production"
+(EuroForth 2025) - Gforth copying GCC's snippets since 2003, its hurdles and fixes; their IP-update paper (ECOOP 2024);
+Ertl and Gregg's PACT 2004 copy-and-patch prototype; Xu and Kjolstad's copy-and-patch (OOPSLA 2021), CPython's JIT
+(PEP 744) and Deegen. Checked against our code: the JIT, jitk, tailnext, nocet and align1 are already theirs; no
+-fno-tree-vectorize gene; jitinl one operation only; jit_rp in memory. Six ideas proposed - a stencil relocatability
+check, stencils from relocations (for ARM), jitrp, wider jitinl, a no-vectorise gene, the Forth application benchmarks
+as held-out workloads - the owner's calls.
+
+Files: results/drafts/c4-family-459.md; results/README.md, HANDOFF.md.

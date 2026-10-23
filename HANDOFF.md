@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 461.
+- master: Iteration 462.
 - **The runs**: seed 67 processed (Iteration 458) - islands, 10 hours: against seed 64 at generation 139, fastest 4.5%
   ahead, smallest +0.37% - the third islands run ahead (6.8%, 3.6%, 4.5%). The second freeze showed no loss against seed 66.
   **The load test answered the fast end's optimism in part**: under three busy cores the fast designs measure about 5%
@@ -61,6 +61,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   real as the after-seed-68 batch (461, the owner; results/pending/ORDER.md)**: eval32 keeps the JIT, jitk off at 32 bits,
   dream's prebuilt 32-bit sample takes JIT designs, engines-check 81 paths; seed 67's front JIT designs 1.9-2.9x faster
   at 32 bits. **A break in the 32-bit column from seed 69.**
+- **The second pass over c4's circle** (the owner, 462; results/drafts/c4-family-459.md): the code-copying literature
+  (Ertl and Paysan 2025, copy-and-patch, CPython's JIT, Deegen); **six ideas for the owner** - a stencil relocatability
+  check, stencils from relocations (the way to ARM), jitrp (the return stack in a register), wider jitinl, a no-vectorise
+  gene, Forth application benchmarks held out.
 - **c4's family looked at** (the owner, 459; results/drafts/c4-family-459.md): our JIT already has its lessons; **proposed
   for the owner: the stencil JIT ported to i386** (the 32-bit builds have no JIT - about 2.6x behind; ARMv7 after, AMaCC,
   Squint and shecc as references), a JIT-redundancy probe, an interpreter-in-Forth workload; for Fern, c4's frames and

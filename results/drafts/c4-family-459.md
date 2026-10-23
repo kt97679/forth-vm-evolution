@@ -1,4 +1,4 @@
-# c4 and its family - what they hold for this project (Iteration 459)
+# c4 and its family - what they hold for this project (Iterations 459, 462)
 
 The owner asked (while seed 68 runs) for a deep dive into EarlGray/c4 and AoiKuiyuyou/AoikC4x86Study, a search for
 derived and similar projects, and which of their ideas apply here. Reusable facts first, then what applies.
@@ -59,3 +59,57 @@ which none of the six selection workloads is. A candidate held-out workload, or 
 - A sibling for that chat: a C front end in c4's style emitting Forth words - c4's VM maps almost one to one onto Forth
   (IMM a literal, LI and SI @ and !, LC and SC C@ and C!, BZ 0BRANCH, JSR a call) - C programs as workloads, and a
   second language.
+
+## The second pass (Iteration 462): who cites c4, and the literature behind our JIT
+
+The owner asked for a deeper search - pages, posts and projects referencing c4, c4x86 and the rest.
+
+**More of c4's circle.** The Hacker News thread of November 2014 ("C4 - C in 4 functions"); Thorsten Ball's walk-through
+(2024); srhuang's HackMD trace of c4 (2019), which lists comzyh/c4's commented branch, EarlGray's JIT, **rswier's own c5 -
+c4 with a syntax tree and a code generator, in one commit of rswier/c4** (d8e61a8), write-a-C-interpreter and AMaCC; a
+self-hosting compiler to WebAssembly that names c4 as its model (minizig, on Codeberg); Kray-G/kcs, scripting in C with a
+JIT (x86-64) and a VM - prior art for Fern.
+
+**The literature our JIT belongs to** - the most useful find:
+- **Ertl and Paysan, "Code-Copying Compilation in Production" (EuroForth 2025)** - Gforth has copied GCC-made code
+  snippets since 2003, on Alpha, ARM A32/T32 and A64, IA-32, AMD64, PowerPC, RISC-V and more, and with all its
+  optimisations it runs about as fast as SwiftForth's hand-written compiler; VFX Forth, with register allocation within
+  basic blocks and aggressive inlining, about twice as fast. It records the hurdles: code reordering, alignment padding,
+  deduplication and duplication by newer GCCs, register allocation, cache flushing, control-flow protection, clang.
+- Ertl and Paysan, "The Performance Effects of Virtual-Machine Instruction Pointer Updates" (ECOOP 2024); Ertl and
+  Gregg, "Retargeting JIT compilers by using C-compiler generated executable code" (PACT 2004) - the copy-and-patch
+  prototype for Gforth; stack caching with dynamic superinstructions (IVME 2004).
+- Xu and Kjolstad, "Copy-and-Patch Compilation" (OOPSLA 2021) - stencils as functions with holes, extracted from object
+  files by their relocations at build time; **CPython's JIT** (PEP 744, Python 3.13) - stencils compiled from one
+  template per micro-op, their holes the relocations llvm-readobj reports, chained by musttail; and **Deegen / LuaJIT
+  Remake** (Apache-2.0) - a copy-and-patch baseline JIT generated automatically, with register pinning, the GHC calling
+  convention and hot-cold splitting.
+
+**JIT back ends that reach our 32-bit targets**: abdimoallim/jit (a header-only C library for i386, x86-64, ARM32,
+ARM64, RISC-V 64); sljit and GNU lightning (from memory, not this search: both cover 32-bit x86 and ARM). MIR does not
+go below 64 bits.
+
+## Ideas for this project, from the second pass
+
+Checked against the code: **already ours** - the copy-and-patch JIT itself (its holes found by magic values, as in
+Ertl and Gregg 2004), stack caching across stencils (jitk), dropping the jump when the next stencil follows (tailnext),
+genes for -fcf-protection=none (nocet: Ertl and Paysan measured endbr64 at 1.45 times the instructions, 1.04 the cycles)
+and -falign-labels=1 -falign-jumps=1 (align1). **Not for us**: the IP-update optimisation - the JIT keeps no IP, and an
+interpreter needs code copying for it.
+
+New, proposed (the owner's calls):
+1. **A relocatability check for stencils** (Gforth's way: the snippets built twice, once padded; any byte that differs
+   outside the known holes is a reference out of the stencil). Today a stencil that GCC gives a call (memset, a stack
+   check) or a PC-relative constant is copied as if it were safe. Most useful now, with the i386 port, and for any future
+   compiler.
+2. **Stencils from the object file's relocations** (CPython, Xu and Kjolstad, Gforth's own suggestion): the clean way to
+   32-bit ARM - movw/movt and branch relocations name every hole, compile the stencils -marm (no Thumb), and flush the
+   cache (__builtin___clear_cache - check it emits code there, as Ertl advises).
+3. **The return-stack pointer pinned in a register** across stencils (Deegen's register pinning; Ertl's global register
+   variables - 12 general registers on AMD64): today jit_rp lives in memory, so every >R, R>, I and loop step touches it.
+   A gene, "jitrp".
+4. **Inlining beyond one operation** (VFX Forth's lead): jitinl inlines only one-operation words; calls and returns are
+   idiomatic Forth's most frequent block boundaries. A level for jitinl - words of up to 4 or 8 operations.
+5. **-fno-tree-vectorize** as a gene (Ertl: it removed GCC's register shuffling at Gforth's dispatch) - none today.
+6. **The Forth application benchmarks** Gforth is measured on - benchgc, brainless, cd16sim, lexex, fcp, and siev,
+   bubble, matrix, fib - as held-out workloads beside sieve: real programs, the question the footprint check asks.
