@@ -8958,3 +8958,18 @@ Proposed: the owner downloads Appbench on the laptop; a held-out tier of applica
 check; NIP, .( and [IF] by prelude or in the kernel.
 
 Files: results/drafts/appbench-466.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 467 - 2026-10-23 - Claude
+
+**Appbench on our Forth - three applications run, checked** (the owner: the zip uploaded, continue;
+results/drafts/appbench-467.md, results/drafts/appbench/). Terms: brainless public domain; benchgc, lexex, brew GPL;
+fcp and cd16sim no notice - so no program is copied into the repository; run.py reads the zip in place. s6 lacks 61 of
+140 commonly used standard words - and our own extend.4 and coreext.4 define nearly all of them (prelude.fth loads them,
+then a few stubs); its lookup is case-sensitive, so fold.py upper-cases the programs' source, keeping strings,
+comments, file and character names. On s6: fcp 6.8 s (120,287 nodes), brainless 4.1 s (110,023 nodes, 163,278
+evaluations), cd16sim 6.5 s (its own "should be" line equal) - all three checks PASS. lexex and benchgc stop on names
+built or read at run time in lower case, which no folding of the source reaches; brew not tried. Proposed: a held-out
+tier of fcp, brainless and cd16sim; a case-insensitive FIND; coreext's words in the default image.
+
+Files: results/drafts/appbench-467.md, results/drafts/appbench/fold.py, prelude.fth, run.py (new); results/README.md,
+HANDOFF.md.
