@@ -207,3 +207,5 @@ setjmp, a nested interpreter, a longjmp), where before the whole caller stayed i
 dispatch. A gene is the right home for that: the search weighs it design by design - but only on what it measures, and
 the selection's six workloads do not EXECUTE. Making that trip cheaper, or keeping a caller interpreted when its tokens
 lead to untranslatable words, is the next step for it.
+
+**Iteration 477: the owner enabled jitexec** - out of FROZEN with jitmul and jitdoes; all three in seed 70's search.

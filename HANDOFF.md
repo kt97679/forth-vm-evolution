@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 476.
+- master: Iteration 477.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -90,7 +90,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   it. Seed 70 carries the batch, jitmul and jitdoes (the owner's choice), and the appbench step. Next: jitexec.
   **476: jitexec built, tested, staged frozen** - EXECUTE through a helper (native, translated now, else interpreted):
   with all three the fast design at 2.9 times s6 on the applications (sim16 2.7x faster, brainless 40%), but fcp a
-  third slower (an untranslatable token's trip through the interpreter) - the owner's call whether to enable it.
+  third slower (an untranslatable token's trip through the interpreter). **477: the owner enabled it** - seed 70
+  carries jitmul, jitdoes and jitexec with the 32-bit batch. Next for jitexec: a cheaper trip, or a caller left
+  interpreted when its tokens lead to untranslatable words (fcp).
   The pending batch rebased again (applies to 8c2731a). Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in

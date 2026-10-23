@@ -893,3 +893,10 @@ without jitmul).
 With jitdoes enabled and UM/MOD native too: jitdoes expressed on at least half of seed 70's front's JIT designs, and
 appbench.py's geometric mean for its fastest JIT design below 0.60 of s6 (seed 68's fast design with all three: 0.416;
 without: 0.747) - the 474 prediction's bound tightened.
+
+## jitexec in seed 70 - predicted (Iteration 477)
+
+The owner enabled jitexec. Seed 70's selection workloads never EXECUTE, so the search cannot pay for it or against it:
+its share of the front's JIT designs near where drift leaves it - between a quarter and three quarters; appbench.py's
+geometric mean for the fastest JIT design that has all three genes below 0.45 of s6 (seed 68's fast design with them:
+0.347; fcp the one application slower with jitexec than without).

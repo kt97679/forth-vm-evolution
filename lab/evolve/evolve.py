@@ -894,7 +894,7 @@ REQUIRE = []
 # code stays; removed only if the run after shows no loss (its comparison small or better).
 FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
-          'alignhot': 0, 'jithelp': 0, 'jitre': 0, 'jitexec': 0}   # 475: jitdoes enabled (the owner); 476: jitexec staged, frozen until the owner says
+          'alignhot': 0, 'jithelp': 0, 'jitre': 0}   # 475: jitdoes enabled (the owner); 477: jitexec enabled too (the owner)
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)

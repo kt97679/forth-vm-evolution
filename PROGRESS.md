@@ -9115,3 +9115,12 @@ Frozen until the owner says. The pending batch rebased again (a clean three-way 
 
 Files: engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py, lab/evolve/evolve.py,
 lab/evolve/engines-check.py, results/pending/ (rebased), results/drafts/jitapps-471.md, HANDOFF.md.
+
+## Iteration 477 - 2026-10-23 - Claude
+
+**jitexec enabled** (the owner) - out of FROZEN; seed 70's search has jitmul, jitdoes and jitexec, with the 32-bit JIT
+batch applied at seed 69's processing and the appbench step in its chain. The caveat recorded: the selection's
+workloads never EXECUTE, so the search cannot weigh it; fcp runs a third slower with it on the fast design (an
+untranslatable token's trip through the interpreter). Predicted for seed 70.
+
+Files: lab/evolve/evolve.py, results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.
