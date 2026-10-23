@@ -894,7 +894,7 @@ REQUIRE = []
 FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
           'alignhot': 0, 'jithelp': 0, 'jitre': 0,
-          'jitmul': 0, 'jitdoes': 0}   # Iteration 472: staged - built and tested, off in the search until the owner unfreezes it    # Iteration 455 (the owner): the second freeze - 12 of 12 over seeds 64-66
+          'jitdoes': 0}   # 474 (the owner): jitmul enabled - out of FROZEN; jitdoes stays (wrong on fcp, brainless, cd16sim)   # Iteration 472: staged - built and tested, off in the search until the owner unfreezes it    # Iteration 455 (the owner): the second freeze - 12 of 12 over seeds 64-66
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)

@@ -881,3 +881,9 @@ void** - what they compared was plain runs with a plain run. The comparisons the
 12 hours (the owner), islands on at last - its log to show ", island " lines (seed-facts.py: "islands: on"). Against the
 five plain replicates at generation 109: its fastest below 0.1197, the best of the five; its smallest at most 14,207, the
 worst of the five. Islands worth keeping only if both hold.
+
+## jitmul in seed 70 - predicted (Iteration 474)
+
+The owner enabled jitmul (UM* and COUNT native). In seed 70: jitmul expressed on at least half of its front's JIT
+designs; and appbench.py's geometric mean for its fastest JIT design below 0.70 of s6 (seed 68's fast design: 0.747
+without jitmul).

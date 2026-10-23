@@ -697,7 +697,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #if JITX
     {   int d = 0;                      /* the return stack in order: never below the entry, at it at every EXIT */
         for (i = 0; i < n; i++) {
-            if (opl[i] == 0xFFFF) continue;
+            if (opl[i] >= 0xFFFD) continue;      /* 474: a call, or a literal - jitdoes's PFA, the first operation - no return-stack effect */
 #if JITLOG
             jitlog_at = at[i]; jitlog_why = 2;
 #endif

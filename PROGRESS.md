@@ -9067,3 +9067,18 @@ applications are right and scan runs at 0.150 of s6 (0.687 before) - but fcp, br
 with jitmul alone all three are right (fcp 0.805, brainless 0.965, cd16sim 1.190). So jitmul is checked on all seven,
 and jitdoes has a fault the corpus and the small DOES> test miss: frozen, not to be unfrozen until found - suspects in
 results/drafts/jitapps-471.md.
+
+## Iteration 474 - 2026-10-23 - Claude
+
+**jitdoes's fault found and fixed; jitmul enabled; with both, the applications at twice s6's speed** (the owner: enable
+jitmul, proceed with the open items; results/drafts/jitapps-471.md, its Iteration 474 section). A bisection over the
+children translated (a temporary knob, environ read by hand - no C library in an engine) put the fault at the first:
+jit_body's return-stack check read jit_ops[] at the code of jitdoes's PFA literal (0xFFFD), the first literal at that
+stage - an out-of-bounds read, garbage on s6, a crash on seed 68's fast design. Fixed: the check skips 0xFFFD and above.
+On b9c5b4ae74 with jitmul and jitdoes every output right: sim16 0.611, gc16 0.501, scan 0.189, evo 0.511, fcp 0.632,
+brainless 0.636, cd16sim 0.729 of s6 - geometric mean 0.508 (0.747 before). run-tests PASS (71 paths), validate 7 of 7,
+the jail PASS (alone); the pending 32-bit JIT batch still applies. jitmul out of FROZEN (the owner) - seed 70 carries it
+with that batch; jitdoes frozen until the owner says. UM/MOD's throw path designed (a setjmp helper at native entry, a
+function-address hole in the stencil) and jitexec outlined - next. Predicted for seed 70.
+
+Files: engine/jit.c, lab/evolve/evolve.py, results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.

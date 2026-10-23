@@ -121,3 +121,31 @@ unfrozen until found. Suspects to rule out first: a child translated before DOES
 between CREATE and DOES>, then cached by jit_kslot as a variable or a stale child); children made by DEFER, VALUE and
 the programs' own defining words whose DOES> code returns through the return stack; the cache keyed by address when
 MARKER or FORGET reuses the space.
+
+## Iteration 474 - jitdoes's fault found and fixed; jitmul enabled; the applications twice s6's speed
+
+**The fault**: a bisection over how many DOES> children jitdoes translates (a knob, since removed) - brainless went
+wrong at the first. The JIT's return-stack check (jit_body, JITX) skipped calls by their code 0xFFFF and read the
+operation table at every other code - and jitdoes's PFA literal is the first literal ever there at that stage (0xFFFD;
+jitx's own literals, a variable's, come later). An out-of-bounds read: harmless garbage on s6, which is why the corpus
+and the DOES> test passed there; a segmentation fault on seed 68's fast design, where even `5 KONST FIVE` printed
+nothing. The check now skips 0xFFFD and above - calls and literals have no return-stack effect.
+
+On seed 68's b9c5b4ae74, one round, time over s6's, **every output right**:
+
+| genes | sim16 | gc16 | scan | evo | fcp | brainless | cd16sim | geometric mean |
+|---|---|---|---|---|---|---|---|---|
+| as it is | 0.642 | 0.485 | 0.687 | 0.589 | 0.953 | 1.013 | 1.062 | 0.747 |
+| jitmul and jitdoes | 0.611 | 0.501 | **0.189** | 0.511 | **0.632** | **0.636** | **0.729** | **0.508** |
+
+Appbench's three 31-37% faster, scan 3.6 times: on the applications the design goes from 1.3 to 2.0 times s6's speed.
+On master: run-tests PASS (71 engine paths - the jitmul and jitdoes variants among them - each corpus right), validate 7
+of 7 IDENTICAL, the jail PASS (alone). The pending 32-bit JIT batch still applies on top, all three patches in order.
+
+**The owner: jitmul enabled** - out of FROZEN. **jitdoes stays frozen** until the owner says - now right on every test.
+
+**UM/MOD's throw path, designed**: the interpreter's call into native code made through a small helper holding a
+return point (__builtin_setjmp - the engine links no C library, as jit_interp already does); UM/MOD's stencil, on a zero
+divisor, calls a helper through a function-address hole that longjmps there with the stack; the interpreter then does
+what L_umdiv does - -10 where the divisor was, THROW. Then UM/MOD mapped: MOD and / native - evo's blocker. **jitexec**:
+EXECUTE through the token - native when the target is, else the same interpreted call jitre built.
