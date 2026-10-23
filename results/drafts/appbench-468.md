@@ -57,3 +57,29 @@ on s6 here. appbench.py runs it by default and needs no zip for it. On three of 
 The fast design's lead is larger on sim16 (1.5 times s6) than on the chess programs - still a fifth of what the
 selection's workloads show. Next of the same kind, the owner's call: a collector over a heap of cells (benchgc's idea),
 a scanner generator from regular expressions (lexex's), an evolution simulation (brew's).
+
+## Iteration 470 - three more of our own: a collector, a scanner generator, an evolution
+
+The owner: all three. Each written from scratch for this project, core words only and upper case (no prelude, no
+folding), each checking its own result; appbench.py runs all four of ours by default, no zip needed:
+
+| application | the kind (whose idea) | what it does | its check | s6 here |
+|---|---|---|---|---|
+| sim16.fth | a CPU simulator (cd16sim) | a 16-bit stack CPU, its assembler, a sieve and fib in its code | SIEVE 303 FIB 6765 STEPS 21,936,820 | 3.3 s |
+| gc16.fth | a garbage collector (benchgc) | 20,000 cons cells, mark and sweep, a mutator building and dropping random lists and trees, a GC-visible stack for building | GCS 618 FREED 7,454,729 CHECK 2636 | 2.8 s |
+| scan.fth | a scanner generator (lexex) | 14 token patterns as postfix regular expressions - Thompson's NFA, the subset construction (sets as byte arrays), a longest-match scanner over 20 KB of generated program text | NFA 44 DFA 17 IDENT 1723 NUMBER 908 SPACE 5407 ERRS 0 CHECK 20235 | 2.9 s |
+| evo.fth | an evolution (brew) | 64 genomes of 64 bytes toward a hidden target: popcount fitness, tournaments, one-point crossover, mutation, the fittest kept | BEST 445 AT 200 CHECK 24466 | 2.7 s |
+
+Checksums are kept below 65,521 so a 32-bit build computes the same; the random numbers are a 31-bit LCG, the same at
+either width. On three of seed 68's front, one round:
+
+| design | in-run speed | sim16 | gc16 | scan | evo | geometric mean |
+|---|---|---|---|---|---|---|
+| b9c5b4ae74 | 0.140 | 0.595 | 0.461 | 0.627 | 0.596 | 0.566 |
+| 76bfbf6558 | 0.364 | 1.028 | 0.728 | 0.743 | 0.594 | 0.758 |
+| 57a20bf148 | 1.605 | 1.340 | 1.869 | 1.665 | 2.074 | 1.715 |
+
+Every output right. Our own applications keep more of the fast design's lead (1.8 times s6) than Appbench's do (1.0) -
+written in the plain style of our workloads, fewer DOES>, deferred words and deep call chains - and still a quarter
+of what the selection's workloads show. The held-out tier now has seven applications: four of ours, three of
+Appbench's from the zip.

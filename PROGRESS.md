@@ -9005,3 +9005,20 @@ appbench.py runs it by default, without the zip; on three of seed 68's front its
 
 Files: lab/evolve/apps/sim16.fth (new); lab/evolve/appbench.py, lab/evolve/NEXT-RUN, results/drafts/appbench-468.md,
 HANDOFF.md.
+
+## Iteration 470 - 2026-10-23 - Claude
+
+**Three more applications of our own, from scratch - gc16, scan, evo** (the owner: add all three;
+results/drafts/appbench-468.md, its Iteration 470 section). gc16.fth: 20,000 cons cells, mark and sweep, tagged roots
+and a collector-visible stack so nothing live is lost mid-build, a mutator replacing random roots with random lists and
+trees (GCS 618, FREED 7,454,729, CHECK 2636; 2.8 s on s6). scan.fth: 14 token patterns as postfix regular expressions,
+Thompson's NFA, the subset construction over byte-array sets, a longest-match scanner over 20 KB of generated program
+text (NFA 44, DFA 17, IDENT 1723, NUMBER 908, SPACE 5407, no errors, CHECK 20235; 2.9 s) - its scanner word renamed off
+the kernel's SCAN. evo.fth: 64 genomes of 64 bytes toward a hidden target - popcount fitness, tournaments, one-point
+crossover, mutation, elitism (BEST 445 AT 200, CHECK 24466; 2.7 s) - one bug on the way: I read inside a DO loop with an
+address pushed on the return stack above the loop's own. Each checks its own result; checksums under 65,521, a 31-bit
+LCG, so 32-bit builds agree. appbench.py's default: the four of ours and Appbench's three. On three of seed 68's
+front: every output right; the fast design at 0.566 of s6 on ours (sim16 0.595, gc16 0.461, scan 0.627, evo 0.596).
+
+Files: lab/evolve/apps/gc16.fth, lab/evolve/apps/scan.fth, lab/evolve/apps/evo.fth (new); lab/evolve/appbench.py,
+results/drafts/appbench-468.md, HANDOFF.md.

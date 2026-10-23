@@ -1,0 +1,100 @@
+\ scan.fth - a scanner generator: token patterns as postfix regular expressions, built into an NFA (Thompson's
+\ construction), made a DFA by the subset construction, then a longest-match scanner run over generated program
+\ text (Iteration 470). Written for this project from scratch: an application workload of the kind Appbench's lexex
+\ is (a scanner's state machine built in Forth), not a copy of it. Core words only, upper case.
+\ Patterns: L a letter, D a digit, W white space, any other character itself; & concatenation, | alternation,
+\ ~ zero or more, ^ one or more - all postfix.
+
+DECIMAL
+200 CONSTANT MAXN   64 CONSTANT MAXD   13 CONSTANT NCLASS
+CREATE CLASSOF 256 ALLOT
+: CLASSES-INIT ( -- ) CLASSOF 256 12 FILL
+  [CHAR] Z 1+ [CHAR] A DO 0 CLASSOF I + C! LOOP   [CHAR] z 1+ [CHAR] a DO 0 CLASSOF I + C! LOOP
+  [CHAR] 9 1+ [CHAR] 0 DO 1 CLASSOF I + C! LOOP
+  2 CLASSOF BL + C!  2 CLASSOF 10 + C!  2 CLASSOF 9 + C!  2 CLASSOF 13 + C!
+  S" +-*/()=;<" 0 DO DUP I + C@ CLASSOF + I 3 + SWAP C! LOOP DROP ;
+
+\ the NFA: per state a class edge (class, target) and two epsilon edges; an accepting state's token
+CREATE ECLS MAXN CELLS ALLOT  CREATE ENXT MAXN CELLS ALLOT  CREATE EPS1 MAXN CELLS ALLOT
+CREATE EPS2 MAXN CELLS ALLOT  CREATE ACC MAXN CELLS ALLOT   VARIABLE NNFA
+: F@ ( s array -- x ) SWAP CELLS + @ ;
+: >ENXT ( t s -- ) CELLS ENXT + ! ;   : >ECLS ( c s -- ) CELLS ECLS + ! ;
+: >EPS1 ( t s -- ) CELLS EPS1 + ! ;   : >EPS2 ( t s -- ) CELLS EPS2 + ! ;   : >ACC ( id s -- ) CELLS ACC + ! ;
+: NEWSTATE ( -- s ) NNFA @ DUP MAXN < 0= IF ." TOO MANY NFA STATES" CR ABORT THEN
+  -1 OVER >ECLS  -1 OVER >ENXT  -1 OVER >EPS1  -1 OVER >EPS2  0 OVER >ACC  1 NNFA +! ;
+: SYM ( c -- s e ) NEWSTATE NEWSTATE  DUP 2 PICK >ENXT  ROT 2 PICK >ECLS ;
+: CAT ( s1 e1 s2 e2 -- s1 e2 ) >R SWAP >EPS1 R> ;
+: ALT ( s1 e1 s2 e2 -- s e ) NEWSTATE NEWSTATE
+  OVER 6 PICK SWAP >EPS1   OVER 4 PICK SWAP >EPS2   DUP 3 PICK >EPS1   DUP 5 PICK >EPS1   2SWAP 2DROP 2SWAP 2DROP ;
+: STAR ( s1 e1 -- s e ) NEWSTATE NEWSTATE
+  OVER 4 PICK SWAP >EPS1   2DUP SWAP >EPS2   3 PICK 3 PICK >EPS1   DUP 3 PICK >EPS2   2SWAP 2DROP ;
+: PLUS ( s1 e1 -- s e ) NEWSTATE NEWSTATE
+  OVER 4 PICK SWAP >EPS1   3 PICK 3 PICK >EPS1   DUP 3 PICK >EPS2   2SWAP 2DROP ;
+VARIABLE PADDR
+: SYMCLASS ( ch -- c ) DUP [CHAR] L = IF DROP 0 EXIT THEN  DUP [CHAR] D = IF DROP 1 EXIT THEN
+  DUP [CHAR] W = IF DROP 2 EXIT THEN  CLASSOF + C@ ;
+: BUILD ( addr len -- s e ) SWAP PADDR !  0 DO PADDR @ I + C@
+    DUP [CHAR] & = IF DROP CAT ELSE  DUP [CHAR] | = IF DROP ALT ELSE
+    DUP [CHAR] ~ = IF DROP STAR ELSE DUP [CHAR] ^ = IF DROP PLUS ELSE  SYMCLASS SYM
+    THEN THEN THEN THEN LOOP ;
+CREATE STARTS 32 CELLS ALLOT  VARIABLE NSTARTS
+: TOKEN ( addr len id -- ) >R BUILD R> SWAP >ACC  NSTARTS @ CELLS STARTS + !  1 NSTARTS +! ;
+: TOKENS ( -- ) 0 NNFA !  0 NSTARTS !
+  S" LLD|~&" 1 TOKEN   S" D^" 2 TOKEN   S" W^" 3 TOKEN   S" ==&" 4 TOKEN   S" =" 5 TOKEN   S" <=&" 6 TOKEN
+  S" <" 7 TOKEN   S" +" 8 TOKEN   S" -" 9 TOKEN   S" *" 10 TOKEN   S" /" 11 TOKEN   S" (" 12 TOKEN
+  S" )" 13 TOKEN   S" ;" 14 TOKEN ;
+
+\ the subset construction: sets of NFA states as byte arrays, a DFA state per distinct closed set
+CREATE DSETS MAXD MAXN * ALLOT  CREATE DTRANS MAXD NCLASS * CELLS ALLOT  CREATE DACC MAXD CELLS ALLOT
+CREATE TMP MAXN ALLOT  CREATE WL MAXN CELLS ALLOT  VARIABLE WLN  VARIABLE CSET  VARIABLE MCLS  VARIABLE NDFA
+: CLEAR ( set -- ) MAXN 0 FILL ;
+: DSET ( d -- addr ) MAXN * DSETS + ;
+: WPUSH ( s -- ) WLN @ CELLS WL + !  1 WLN +! ;
+: WPOP ( -- s ) -1 WLN +!  WLN @ CELLS WL + @ ;
+: ADDEPS ( t -- ) DUP 0< IF DROP EXIT THEN  DUP CSET @ + C@ IF DROP EXIT THEN  1 OVER CSET @ + C!  WPUSH ;
+: CLOSE ( set -- ) CSET !  0 WLN !  NNFA @ 0 DO CSET @ I + C@ IF I WPUSH THEN LOOP
+  BEGIN WLN @ WHILE WPOP DUP EPS1 F@ ADDEPS EPS2 F@ ADDEPS REPEAT ;
+: STEPSET ( from c to -- ) DUP CLEAR CSET !  MCLS !
+  NNFA @ 0 DO DUP I + C@ IF I ECLS F@ MCLS @ = IF 1 I ENXT F@ CSET @ + C! THEN THEN LOOP DROP ;
+: EMPTY? ( set -- f ) TRUE NNFA @ 0 DO OVER I + C@ IF DROP 0 LEAVE THEN LOOP SWAP DROP ;
+: SAME? ( a b -- f ) TRUE NNFA @ 0 DO 2 PICK I + C@ 2 PICK I + C@ <> IF DROP 0 LEAVE THEN LOOP ROT ROT 2DROP ;
+: FIND-DFA ( set -- d | -1 ) -1 NDFA @ 0 DO OVER I DSET SAME? IF DROP I LEAVE THEN LOOP SWAP DROP ;
+: ACCEPT-OF ( set -- id ) 999 NNFA @ 0 DO OVER I + C@ IF I ACC F@ ?DUP IF MIN THEN THEN LOOP
+  SWAP DROP DUP 999 = IF DROP 0 THEN ;
+: NEW-DFA ( set -- d ) NDFA @ DUP MAXD < 0= IF ." TOO MANY DFA STATES" CR ABORT THEN
+  OVER OVER DSET MAXN MOVE  OVER ACCEPT-OF OVER CELLS DACC + !  SWAP DROP  1 NDFA +! ;
+: DFA-BUILD ( -- ) 0 NDFA !  TMP CLEAR  NSTARTS @ 0 DO 1 I CELLS STARTS + @ TMP + C! LOOP
+  TMP CLOSE  TMP NEW-DFA DROP
+  0 BEGIN DUP NDFA @ < WHILE
+    NCLASS 0 DO
+      DUP DSET I TMP STEPSET  TMP CLOSE
+      TMP EMPTY? IF -1 ELSE TMP FIND-DFA DUP 0< IF DROP TMP NEW-DFA THEN THEN
+      OVER NCLASS * I + CELLS DTRANS + !
+    LOOP 1+ REPEAT DROP ;
+
+\ the input: generated program text; the scanner: the longest match from each position
+20000 CONSTANT TMAX  CREATE TEXT TMAX ALLOT  VARIABLE TLEN  VARIABLE SEED
+: RANDOM ( -- u ) SEED @ 1103515245 * 12345 + 2147483647 AND DUP SEED ! 8 RSHIFT ;
+: CHOOSE ( n -- u ) RANDOM SWAP MOD ;
+: PUT ( ch -- ) TLEN @ TEXT + C!  1 TLEN +! ;
+: GEN-IDENT 26 CHOOSE [CHAR] A + PUT  8 CHOOSE 0 ?DO 3 CHOOSE IF 26 CHOOSE [CHAR] a + ELSE 10 CHOOSE [CHAR] 0 + THEN PUT LOOP ;
+: GEN-NUMBER 6 CHOOSE 1+ 0 DO 10 CHOOSE [CHAR] 0 + PUT LOOP ;
+: GEN-OP S" +-*/()=;<" DROP 9 CHOOSE + C@ PUT ;
+: GEN-TOKEN ( k -- ) DUP 2 < IF DROP GEN-IDENT EXIT THEN DUP 2 = IF DROP GEN-NUMBER EXIT THEN
+  5 = IF GEN-OP THEN GEN-OP ;
+: GEN ( -- ) 0 TLEN !  4242 SEED !  BEGIN TLEN @ TMAX 20 - < WHILE 6 CHOOSE GEN-TOKEN BL PUT REPEAT ;
+CREATE COUNTS 16 CELLS ALLOT  VARIABLE ERRS
+VARIABLE POS  VARIABLE ST  VARIABLE LASTEND  VARIABLE LASTTOK  VARIABLE P
+: LONGEST ( -- ) 0 ST !  -1 LASTTOK !  POS @ P !
+  BEGIN P @ TLEN @ < IF ST @ NCLASS * P @ TEXT + C@ CLASSOF + C@ + CELLS DTRANS + @ DUP ST ! 0< 0= ELSE 0 THEN WHILE
+    1 P +!  ST @ CELLS DACC + @ ?DUP IF LASTTOK ! P @ LASTEND ! THEN
+  REPEAT ;
+: SCAN-TEXT ( -- ) COUNTS 16 CELLS 0 FILL  0 ERRS !  0 POS !
+  BEGIN POS @ TLEN @ < WHILE
+    LONGEST  LASTTOK @ 0< IF 1 ERRS +! 1 POS +! ELSE 1 LASTTOK @ CELLS COUNTS + +! LASTEND @ POS ! THEN
+  REPEAT ;
+VARIABLE CHECK
+: BENCH ( n -- ) CLASSES-INIT GEN  0 CHECK !
+  0 DO TOKENS DFA-BUILD SCAN-TEXT  15 1 DO I CELLS COUNTS + @ CHECK @ 31 * + 65521 MOD CHECK ! LOOP LOOP
+  ." SCAN NFA " NNFA @ .  ." DFA " NDFA @ .  ." IDENT " 1 CELLS COUNTS + @ .  ." NUMBER " 2 CELLS COUNTS + @ .
+  ." SPACE " 3 CELLS COUNTS + @ .  ." ERRS " ERRS @ .  ." CHECK " CHECK @ . CR ;

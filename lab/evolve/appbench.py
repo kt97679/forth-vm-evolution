@@ -2,7 +2,8 @@
 """appbench.py DB [DB ...] --zip PATH [--sample N] [--rounds R] [--apps fcp,brainless,cd16sim] - applications held out
 
 Iteration 468 (the owner: run more applications); Iteration 469: and our own, written from scratch - sim16
-(lab/evolve/apps/), a CPU simulated in Forth, needing no zip. The newest database's front - N designs across it, fastest to
+(lab/evolve/apps/), a CPU simulated in Forth; Iteration 470: gc16 (a collector), scan (a scanner
+generator), evo (a genetic algorithm) - ours too, needing no zip. The newest database's front - N designs across it, fastest to
 slowest - each built and run on Appbench's applications (Ertl and Paysan; the owner's appbench.zip, kept outside this
 repository, read where it lies), against s6 the same way, R rounds alternating; each design's output checked as the
 application's own result (fcp's nodes, brainless's nodes and evaluations, cd16sim's "should be" line). The
@@ -15,7 +16,7 @@ applications rank the front as the selection's workloads did (results/drafts/app
 import argparse, json, math, os, re, resource, shutil, statistics, sys, tempfile, zipfile
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
 ap.add_argument('dbs', nargs='+'); ap.add_argument('--zip', default=''); ap.add_argument('--sample', type=int, default=16)
-ap.add_argument('--rounds', type=int, default=2); ap.add_argument('--apps', default='sim16,fcp,brainless,cd16sim')
+ap.add_argument('--rounds', type=int, default=2); ap.add_argument('--apps', default='sim16,gc16,scan,evo,fcp,brainless,cd16sim')
 a = ap.parse_args()
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(HERE, 'appbench')); from fold import fold
@@ -24,8 +25,11 @@ E.setup()
 CALLS = {'fcp': 'include fcp-1.31-64.f||!: setup SETUP ;||bench bye', 'brainless': 'include benchmark.fs benchmark bye',
          'cd16sim': ': 3drop 2drop drop ; include bench.f 1000000 benchmark bye',
          'lexex': 'include run.fth bye', 'benchgc': '64000 include bench-gc5.fs bye'}
-OWN = {'sim16': ('sim16.fth', '60 BENCH BYE')}     # Iteration 469: ours, written from scratch (lab/evolve/apps/) - no zip, no prelude
-CHECKS = {'sim16': r'SIM16 SIEVE 303 FIB 6765 STEPS 21936820\b', 'fcp': r'(?s)\b120287\b.*Results:', 'brainless': r'110023 nodes .* 163278 evals', 'cd16sim': r'(\d+ \d+ \d+ \d+) should be \1\b'}
+OWN = {'sim16': ('sim16.fth', '60 BENCH BYE'), 'gc16': ('gc16.fth', '50000 BENCH BYE'),     # Iterations 469-470: ours,
+       'scan': ('scan.fth', '600 BENCH BYE'), 'evo': ('evo.fth', '3000 BENCH BYE')}          # from scratch (lab/evolve/apps/)
+CHECKS = {'sim16': r'SIM16 SIEVE 303 FIB 6765 STEPS 21936820\b', 'gc16': r'GC16 GCS 618 FREED 7454729 CHECK 2636\b',
+          'scan': r'SCAN NFA 44 DFA 17 IDENT 1723 NUMBER 908 SPACE 5407 ERRS 0 CHECK 20235\b', 'evo': r'EVO BEST 445 AT 200 CHECK 24466\b',
+           'fcp': r'(?s)\b120287\b.*Results:', 'brainless': r'110023 nodes .* 163278 evals', 'cd16sim': r'(\d+ \d+ \d+ \d+) should be \1\b'}
 apps = a.apps.split(',')
 def hexfix(t): return re.sub(r'(?<![\w$])\$([0-9A-F]+)\b', lambda m: str(int(m.group(1), 16)), t)
 work = tempfile.mkdtemp(prefix='appbench-'); text = {}

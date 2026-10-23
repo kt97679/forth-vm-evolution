@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 469.
+- master: Iteration 470.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -67,8 +67,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   the applications load extend.4 and coreext.4 themselves, in 0.01-0.06 s). **Seed 70's line gets `then experiment
   appbench.py --zip ~/Downloads/appbench.zip --sample 16`** (the owner: the zip in ~/Downloads). **Our own applications
   (469)**: lab/evolve/apps/sim16.fth, written from scratch - a CPU simulator checking itself; appbench.py runs it
-  without the zip; more of the kind proposed (a collector, a scanner generator, an evolution simulation); brainless,
-  public domain, may be copied in as it is. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
+  without the zip; **and three more (470, the owner: all three): gc16 (a collector), scan (a scanner generator), evo (a
+  genetic algorithm)** - appbench.py's default is all four of ours with the three of Appbench; on seed 68's fast design
+  ours run at 0.566 of s6 (Appbench's at 1.03, the selection's workloads at 0.140). brainless, public domain, may be
+  copied in as it is. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in
   r15; seed 68's fastest GCC JIT design runs loop with 19.9% fewer instructions (cachegrind, exact), ackermann 2.1% more.
