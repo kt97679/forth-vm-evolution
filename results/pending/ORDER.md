@@ -13,6 +13,8 @@ The owner (460-461): "yes, please proceed" - the JIT at 32-bit x86 made real (re
     git apply results/pending/jit-i386-lab-after-seed68.patch
     git apply results/pending/stencil-check-after-seed68.patch
 
+After patch 3: list lab/evolve/stencil-check.py among lab/evolve/README.md's tools (the handoff check asks for it).
+
 **A break to note**: from seed 69, the "fastest at 32 bits" column and speed32 measure JIT designs with their JIT -
 about half the time they took before (below); comparisons across the break at 32 bits are not like for like.
 
