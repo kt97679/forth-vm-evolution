@@ -63,7 +63,12 @@ c4 and its family (c4x86, AMaCC, Squint, shecc, write-a-C-interpreter); Gforth's
 code copying, stack caching, instruction-pointer updates; Ertl and Paysan's 2025 code-copying experience report);
 copy-and-patch (Xu and Kjolstad 2021), CPython's JIT, Deegen and LuaJIT Remake; RPyForth (2026); Appbench;
 nibbleforth, tokthr, zForth, paraforth, astil_forth, romforth, bee, milliForth, sectorforth; VFX Forth and SwiftForth as
-references; sljit, GNU lightning, MIR.
+references; sljit, GNU lightning, MIR. Since the first round (results/drafts/scout-answers-480.md): copapy and pelfy,
+buxn-jit, interp, ccforth, frth, WAMR, Uxn, MicroPython, STOKE, V8 Sparkplug, WebKit's LLInt, Android ART and Dalvik;
+Dave Mason's threaded and native dual execution; Brunthaler's inline caching with quickening; OSR (Mosaner et al.,
+D'Elia and Demetrescu); Gregg et al.'s code-copying JIT, Ertl and Gregg's retargeting; Prokopski and Verbrugge;
+Shannon and Bailey; LaTTe, linear scan, trace register allocation, virtual register machines; Clausen et al., Evans and
+Fraser, Latendresse and Feeley, Hu, Zhao and Scholz; the copy-and-patch JIT for R; robust benchmarking (Chen et al.).
 
 ## Answer format
 

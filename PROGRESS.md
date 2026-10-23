@@ -9144,3 +9144,17 @@ reviewed (so it is not suggested again), and an answer format - each item with i
 our constraints, the expected gain and cost, its licence, and the answerer's confidence that the source exists.
 
 Files: results/drafts/scout-prompt-479.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 480 - 2026-10-23 - Claude
+
+**Five answers to the scouting prompt, checked, merged, weighed** (the owner; results/drafts/scout-answers-480.md). The
+repositories checked on GitHub, the papers by search: most exist as described (copapy, MIT, with ARM32 among its
+architectures and our very method; Mason's dual threaded and native execution - and a 2026 copy-and-patch JIT for
+threaded interpreters on his profile, newer than the answers; Gregg's code-copying JIT; the R copy-and-patch JIT); four
+claims do not hold (Shannon and Bailey's is stack allocation for stack machines, not a JIT's registers; no OSR in
+Wasmtime; no EuroForth benchmark corpus; the MOEA Framework's author). Found on the way: Prokopski and Verbrugge's
+compiler-guaranteed code-copying safety. The order proposed: an inline cache for EXECUTE (fcp's third back), native
+regions with exits to the interpreter (one missing stencil costs a boundary, long words split), coverage and feature
+kernels in what the selection sees (ccforth's MIT benchmarks among them). The prompt's reviewed list extended.
+
+Files: results/drafts/scout-answers-480.md (new); results/drafts/scout-prompt-479.md, results/README.md, HANDOFF.md.
