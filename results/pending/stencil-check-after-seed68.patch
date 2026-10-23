@@ -1,0 +1,128 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 36f973f..18bbb76 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -93,6 +93,30 @@ static const unsigned char *jit_addr(int i) {
+  *  its ret made pop %rcx; jmp *%rcx. Correct where ret is - the same address, the same stack pointer.  */
+ static unsigned char jit_exit_jmp[32];
+ #endif
++/*  Iteration 463: a stencil is copied only if no call or jump in it leaves it for anything but a marker -
++ *  Gforth's relocatability rule (Ertl and Paysan, "Code-Copying Compilation in Production", 2025). A call GCC
++ *  put in - memset, __stack_chk_fail, mcount: E8, or on x86-64 FF 15 / FF 25 through the GOT - would point
++ *  elsewhere once copied. Such a stencil is not used: slower, never wrong. What bytes cannot show safely -
++ *  RIP-relative data, a short jump to a cold block past the copied part (a stack check's failure path) - is
++ *  lab/evolve/stencil-check.py's: objdump's reading of the object file, exact; engines-check runs it. */
++extern char __executable_start[], _end[];
++static int jit_leaves(const unsigned char *a, const unsigned char *end) {
++    const unsigned char *p, *t;
++    for (p = a + 1; p + 4 <= end; p++) {
++        int b1 = p[-1], b2 = p - 2 >= a ? p[-2] : -1;
++        int rel = b1 == 0xE8 || b1 == 0xE9 || (b2 == 0x0F && (b1 & 0xF0) == 0x80);
++#if defined(__x86_64__)
++        rel = rel || (b2 == 0xFF && (b1 == 0x15 || b1 == 0x25));
++#endif
++        if (!rel) continue;
++        t = p + 4 + jit_rel32(p);
++        if (t >= a && t <= end) continue;                                       /* inside: copied with it */
++        if (t == (const unsigned char *)spn_table[J_NEXT] || t == (const unsigned char *)spn_table[J_JUMP]
++            || t == (const unsigned char *)spn_table[J_CALL]) continue;          /* a marker: a hole */
++        if (t >= (const unsigned char *)__executable_start && t < (const unsigned char *)_end) return 1;
++    }
++    return 0;
++}
+ static void jit_scan(void) {
+     int i, k;
+     for (i = S_LIT; i < JIT_NST; i++) {
+@@ -116,6 +140,7 @@ static void jit_scan(void) {
+         else for (p = a; p + 5 <= hi; p++)
+             if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
+         if (!end) continue;
++        if (jit_leaves(a, end)) continue;              /* 463: a reference out of it - its len stays -1, not used */
+         s->src = a; s->len = (int)(end - a); s->imm = s->imm32 = s->rp = -1;
+ #if JITHELP
+         s->fn = -1;
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 1caa161..2dfb4a4 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -17,7 +17,7 @@ longer be taken is news too.
+ 
+     python3 lab/evolve/engines-check.py        PASS, or FAIL and what died
+ """
+-import contextlib, glob, json, os, shutil, sys
++import contextlib, glob, json, os, shutil, subprocess, sys
+ 
+ HERE = os.path.dirname(os.path.abspath(__file__))
+ ROOT = os.path.dirname(os.path.dirname(HERE))
+@@ -159,5 +159,12 @@ for name, genes, w in VBIG:
+     except Exception as e:
+         bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
+ shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)
++# Iteration 463: and are the stencils safe to copy - no relocation in one but to a marker (stencil-check.py), at 64
++# bits and at 32: a compiler that puts a call into a stencil (a stack check, a profiler hook) is caught here.
++for cc in ('gcc', 'gcc -m32 -fno-pie'):
++    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stencil-check.py'), '--cc', cc],
++                       capture_output=True, text=True)
++    print('  stencils     %s %s' % ('ok    ' if r.returncode == 0 else 'FAILED', (r.stdout or r.stderr).strip().split('\n')[0][:140]), flush=True)
++    if r.returncode: bad.append('stencils (%s)' % cc)
+ print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS) + len(V32) + len(VBIG), '; '.join(bad)))
+ sys.exit(1 if bad else 0)
+diff --git a/lab/evolve/stencil-check.py b/lab/evolve/stencil-check.py
+new file mode 100644
+index 0000000..a019261
+--- /dev/null
++++ b/lab/evolve/stencil-check.py
+@@ -0,0 +1,53 @@
++#!/usr/bin/env python3
++"""stencil-check.py [--cc 'gcc -m32 -fno-pie'] [FLAGS ...] - are SPN's stencils safe to copy? (Iteration 463)
++
++The JIT copies each stencil's machine code out of the engine - from its start to its last jump to a marker (NEXT or
++JUMP), or for EXIT to its ret - and patches its holes (engine/jit.c, jit_scan). That is right only if nothing in the
++copied part leaves it: Gforth's relocatability rule (Ertl and Paysan, "Code-Copying Compilation in Production", 2025).
++Two ways to leave, both read here from the object file - exactly, by objdump, not by guessing at bytes:
++- a relocation in the copied part whose target is not a marker - a call GCC put in (memset, __stack_chk_fail,
++  mcount), a constant in .rodata (copy-and-patch's insight: references out are the relocations);
++- a branch in the copied part to an address in the function outside the copied part - a cold block GCC placed after
++  the last jump (a stack-protector failure path), which the JIT does not copy.
++Compiles engine/spn-stencils.c alone with the flags given; exit 1 if any stencil is not safe to copy.
++"""
++import os, re, subprocess, sys, tempfile
++ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
++args = sys.argv[1:]; cc = ['gcc']
++if args[:1] == ['--cc']: cc = args[1].split(); args = args[2:]
++flags = args or ['-O2', '-DJITX=1', '-DJITINL=1', '-DJITLOOP=1']
++MARKERS = ('spn_next', 'spn_jump', 'spn_call')
++with tempfile.TemporaryDirectory() as d:
++    o = os.path.join(d, 'st.o')
++    r = subprocess.run(cc + flags + ['-I', os.path.join(ROOT, 'engine'), '-c', '-o', o, os.path.join(ROOT, 'engine', 'spn-stencils.c')], capture_output=True, text=True)
++    if r.returncode: sys.exit('stencil-check: did not compile: ' + r.stderr.strip()[-300:])
++    dis = subprocess.run(['objdump', '-dr', '--no-show-raw-insn', '-j', '.text', o], capture_output=True, text=True).stdout
++funcs, cur = {}, None                        # name -> list of (addr, text, [relocation targets])
++for l in dis.split('\n'):
++    m = re.match(r'^([0-9a-f]+) <([^>]+)>:$', l)
++    if m: cur = m.group(2); funcs[cur] = []; continue
++    if cur is None: continue
++    m = re.match(r'^\s+([0-9a-f]+):\s+R_\S+\s+(\S+)', l)
++    if m and funcs[cur]: funcs[cur][-1][2].append(re.sub(r'[-+]0x[0-9a-f]+$', '', m.group(2))); continue
++    m = re.match(r'^\s+([0-9a-f]+):\s+(.*)$', l)
++    if m: funcs[cur].append((int(m.group(1), 16), m.group(2).strip(), []))
++bad = {}
++for name, ins in funcs.items():
++    if not name.startswith('st_') or not ins: continue
++    # the copied part, as jit_scan finds it: up to the last jmp to NEXT or JUMP; EXIT's to its first ret
++    if name == 'st_exit': ends = [k for k, (a, t, rl) in enumerate(ins) if t.startswith('ret')][:1]
++    else: ends = [k for k, (a, t, rl) in enumerate(ins) if t.startswith('jmp') and any(x in ('spn_next', 'spn_jump') for x in rl)][-1:]
++    if not ends: continue                    # no shape the JIT reads: it is never used
++    last = ends[0]; lo = ins[0][0]; hi = ins[last + 1][0] if last + 1 < len(ins) else ins[last][0] + 16
++    for a, t, rl in ins[:last + 1]:
++        for x in rl:
++            if x not in MARKERS: bad.setdefault(name, set()).add('refers to %s' % x)
++        m = re.match(r'^(j\w+|call|loop\w*)\s+([0-9a-f]+) <', t)
++        if m and not rl:
++            tgt = int(m.group(2), 16)
++            if not lo <= tgt < hi: bad.setdefault(name, set()).add('%s to +0x%x, past the copied part' % (m.group(1), tgt - lo))
++stencils = sum(1 for n in funcs if n.startswith('st_'))
++print('stencil-check (%s %s): %d stencils; %s' % (' '.join(cc), ' '.join(flags), stencils,
++      'every one safe to copy' if not bad else '%d not safe to copy:' % len(bad)))
++for n in sorted(bad): print('  %s - %s' % (n, '; '.join(sorted(bad[n]))))
++sys.exit(1 if bad else 0)

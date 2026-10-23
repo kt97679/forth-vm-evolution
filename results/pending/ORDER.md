@@ -7,9 +7,11 @@ The owner (460-461): "yes, please proceed" - the JIT at 32-bit x86 made real (re
 |---|---|---|
 | 1 | jit-i386-engine-after-seed68.patch | **The JIT builds at 32-bit x86** (engine/: spn-abi.h, spn-stencils.c, spn-markers.c, jit.c, vm-lab.c) - i386 takes ARM's convention (the state one 64-bit value; regparm(2): eax and edx in and out), 4-byte holes (mov $imm32), endbr32; and **a variable's address aligned to the cell**, not to 8 bytes - 4 bytes off at 32 bits before, unchanged at 64. The prototype of Iteration 460, as is. |
 | 2 | jit-i386-lab-after-seed68.patch | **The 32-bit measurements keep the JIT**: eval32() builds the design as it is (until now "its JIT off"), jitk dropped at 32 bits by the build (w32(): gen-jitk.py's stencils name x86-64's registers); xcheck.py's prebuilt 32-bit sample (dream) takes JIT designs - a host building itself at 4-byte cells (the Tegra, ARM) still takes none; engines-check builds the JIT's variants at 32 bits too (69 paths to 81). |
+| 3 | stencil-check-after-seed68.patch | **The stencils checked safe to copy** (Iteration 463; the owner: proceed with the second pass's first idea - Gforth's relocatability rule, Ertl and Paysan 2025). lab/evolve/stencil-check.py compiles engine/spn-stencils.c alone and reads it with objdump: in the part the JIT copies, any relocation to anything but a marker (a call GCC put in, a .rodata constant) or any branch past the copied part (a cold block after the last jump) fails it. engines-check runs it at 64 and 32 bits. And engine/jit.c refuses at run time a stencil whose 32-bit call or jump leaves it for the engine image (E8, E9, 0F 8x; FF 15 / FF 25 on x86-64) - slower, never wrong. |
 
     git apply results/pending/jit-i386-engine-after-seed68.patch
     git apply results/pending/jit-i386-lab-after-seed68.patch
+    git apply results/pending/stencil-check-after-seed68.patch
 
 **A break to note**: from seed 69, the "fastest at 32 bits" column and speed32 measure JIT designs with their JIT -
 about half the time they took before (below); comparisons across the break at 32 bits are not like for like.
@@ -33,3 +35,20 @@ not show: eval32()'s harness reports "died: corpus" here for evolved designs at 
 this batch, while the same 32-bit build runs the corpus to its end when run directly; the laptop's chain has measured
 every front at 32 bits without a failure, so this is this machine's, to be watched at seed 69's processing (fail32).
 **batch-check on e6044c3: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.**
+
+## Patch 3, how it was tested (Iteration 463)
+
+In a clone with patches 1 and 2 committed: run-tests PASS, validate 7 of 7 IDENTICAL (with the runtime check and the
+first form of stencil-check). stencil-check, its exact form:
+
+| compiler and flags | result |
+|---|---|
+| gcc, the JIT's defines, -O2 | 43 stencils, every one safe to copy |
+| gcc -m32 -fno-pie, the same | 43 stencils, every one safe to copy |
+| gcc ... -fstack-protector-all | 43 not safe: each a jne past the copied part, to the stack check's failure path |
+| gcc -m32 -fno-pie ... -fstack-protector-all | the same, 43 |
+| gcc ... -pg | 43 not safe: each refers to mcount |
+
+The stack protector's case is the instructive one: the JIT built that way still ran the corpus and ran fast (s6 with
+the JIT: fib 0.341 against 0.324), because a canary never failed - the jump past the copied part was latent, never
+taken. The runtime check does not see it (a short jump); stencil-check does, which is why the tests run it.
