@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 458.
+- master: Iteration 459.
 - **The runs**: seed 67 processed (Iteration 458) - islands, 10 hours: against seed 64 at generation 139, fastest 4.5%
   ahead, smallest +0.37% - the third islands run ahead (6.8%, 3.6%, 4.5%). The second freeze showed no loss against seed 66.
   **The load test answered the fast end's optimism in part**: under three busy cores the fast designs measure about 5%
@@ -56,6 +56,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   **For the owner**: the votes' next candidate, **jitret** (12 of 12 over seeds 65-67) - frozen off the same way?; and
   rule 3 read against the load - the re-measure after the run done under the run's own load, or the offset written down.
   **The after-seed-67 batch applied** (tail, tailpn, kstack retired). Next seed 68: **8 hours (the owner), islands**.
+- **c4's family looked at** (the owner, 459; results/drafts/c4-family-459.md): our JIT already has its lessons; **proposed
+  for the owner: the stencil JIT ported to i386** (the 32-bit builds have no JIT - about 2.6x behind; ARMv7 after, AMaCC,
+  Squint and shecc as references), a JIT-redundancy probe, an interpreter-in-Forth workload; for Fern, c4's frames and
+  structure.
 - **Fern, a scripting language on this Forth** (the owner, 457): designed - results/drafts/fern-design-457.md - and to
   be built in a chat of its own, from this bundle; the evolution's chats carry on as before.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet

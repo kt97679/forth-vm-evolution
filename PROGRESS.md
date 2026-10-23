@@ -8825,3 +8825,18 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed67.md, results/xcheck-seed67.md
 (the retirement); lab/evolve/evolve.py, lab/evolve/engines-check.py, lab/evolve/GENES.md (tools/gen-tail.py and
 forth/kstack.4 removed); lab/evolve/NEXT-RUN, results/gene-votes.md, results/predictions.md, results/progress-by-run.md,
 results/README.md, HANDOFF.md.
+
+## Iteration 459 - 2026-10-23 - Claude
+
+**c4 and its family, captured** (the owner: a deep dive into EarlGray/c4 and AoiKuiyuyou/AoikC4x86Study, derived and
+similar projects, and what applies; results/drafts/c4-family-459.md). The family: rswier/c4 (~500 lines, self-hosting,
+a stack VM), EarlGray's i386 JIT in 86 lines, the commented study copy, write-a-C-interpreter, jserv's AMaCC (ARMv7 JIT
+and ELF on c4's infrastructure), HPCguy's Squint (AMaCC's follow-on with a peephole optimiser near gcc -O1), and,
+similar, jserv's shecc (ARMv7 and RV32, BSD-2). Checked against engine/jit.c: its lessons are already ours - jitk's
+register cache, immediate forms, a fused compare-and-branch. The gap they point at: the JIT is x86-64 only, and the
+32-bit fastest (about 0.33) sit where the 64-bit fastest without the JIT do (0.304) - about 2.6x behind the JIT's. Proposed:
+the stencil JIT ported to i386 first, ARMv7 after; a JIT-redundancy probe (a JITDUMP hook and objdump) before any peephole
+pass; an interpreter-in-Forth workload; for Fern, c4's frames (ENT, LEA, LEV) and structure, and its -s listing. Licences
+noted: c4's line is GPL-2.0 - ideas only.
+
+Files: results/drafts/c4-family-459.md (new); results/README.md, HANDOFF.md.
