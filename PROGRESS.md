@@ -8943,3 +8943,18 @@ variable - GCC only; regpin 3 takes r15 - another register there. Both builds pa
 proposed, after the 32-bit JIT batch's run.
 
 Files: results/drafts/jitrp-465.md, results/drafts/jitrp-465.patch (new); results/README.md, HANDOFF.md.
+
+## Iteration 466 - 2026-10-23 - Claude
+
+**Real Forth applications as held-out workloads - what exists, what runs** (the owner: proceed;
+results/drafts/appbench-466.md). The suite is Appbench (Ertl and Paysan: benchgc, brainless, fcp, cd16sim, CoreMark,
+lexex); a 2026 paper that ran it beside 18 Shootout kernels (RPyForth, arXiv 2609.23759) counted why it matters -
+stack depth at the 95th percentile 14.5 cells against 4, 22.7 calls per 1,000 primitives against 0.004 - and saw the
+systems rank differently on the two suites. Appbench (complang.tuwien.ac.at) and the Shootout's Forth programs are not
+reachable from this machine; Gforth's own benchmarks are (its GPL-3 repository on GitHub). On s6, siev.fs, bubble.fs and
+matrix.fs run to their ends with the source upper-cased (our words are upper case) and a three-line prelude - our kernel
+has no NIP and no .( (CORE EXT); fib.fs needs [IF] and floats. No copy of anyone's program put in the repository.
+Proposed: the owner downloads Appbench on the laptop; a held-out tier of applications in heldout.py, each with an output
+check; NIP, .( and [IF] by prelude or in the kernel.
+
+Files: results/drafts/appbench-466.md (new); results/README.md, HANDOFF.md.
