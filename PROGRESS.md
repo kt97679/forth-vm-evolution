@@ -9039,3 +9039,7 @@ op 70 named, JIT_MAXOPS - the owner's calls. The stages rebuilt for the changed 
 
 Files: lab/evolve/jitapps.py, results/drafts/jitapps-471.md (new); engine/jit.c (JITLOG only), lab/evolve/jitleft.py,
 lab/evolve/README.md, results/README.md, HANDOFF.md.
+
+## Iteration 472 - 2026-10-23 - Claude
+
+**The operations named; jitmul built, tested and staged frozen off** (the owner: genes for the multiply and divide and for EXECUTE; name and cover the rest; measure). layout.py lists the operations without stencils in vm-jit-ops.h: on seed 68's fast design op 27 UM*, 28 UM/MOD, 32 SP@, 70 DODOES, 118 COUNT, 119 ALIGNED. jitmul: UM* a stencil of its own, COUNT from stencils there are; UM/MOD written (one divide) but unmapped - the interpreter answers a zero divisor with -10 THROW, which a stencil cannot do yet. On the way: a bit-by-bit UM/MOD ran past the JIT's 160-byte scan window (SIGILL in the corpus); a comment holding */ closed early. s6 with the JIT and jitmul passes the corpus and matches the interpreter on an arithmetic test. engines-check has the variant; jitapps.py takes --set. jitmul in FROZEN: the owner's to unfreeze. Next: a throw path for UM/MOD, jitdoes (DODOES), jitexec (EXECUTE), then measure.
