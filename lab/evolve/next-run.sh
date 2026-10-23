@@ -173,7 +173,9 @@ NOEVOLVED=${NEXT_RUN_NOEVOLVED:-}
 case " $* " in *" noevolved "*) NOEVOLVED=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx noevolved) ;; esac
 # Iteration 436 (the owner; results/drafts/escape-mechanism-435.md): "islands" - the population in four islands, each
 # ranked and bred alone, a ring of migrants every 10 generations (evolve.py --islands 4).
-ISLANDS=
+# Iteration 464: carried through the detach (NEXT_RUN_ISLANDS), as noevolved and widths are - without it the detached
+# chain lost the word, and seeds 65-68 ran without islands though their lines asked for them.
+ISLANDS=${NEXT_RUN_ISLANDS:-}
 case " $* " in *" islands "*) ISLANDS=4; set -- $(printf '%s\n' "$@" | grep -vx islands) ;; esac
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
@@ -243,7 +245,7 @@ fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
-WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${ISLANDS:+ islands} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
 if [ "$KIND" = experiment ]; then
     NAME=${TOOL%.py}
     RUN=$RUNS/$NAME-$HEAD
@@ -288,12 +290,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
         say "going on in the background, as one chain - watch it with"
         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
         exit 0
     fi
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
     exit 0
 fi
 MODE=$NEXT_RUN_DETACHED
@@ -491,7 +493,7 @@ if [ -n "$CHAIN" ] && [ -s "$CHAIN/remote/hosts" ] && [ ! -e "$CHAIN/remote/laun
     step "the remote checks started - the previous front, measured there alongside (lab/evolve/REMOTES)"
     RUN_UNTIL=${UNTIL:-} sh lab/evolve/remote-checks.sh start "$CHAIN" || true   # Iteration 315: never costs the run; 429: no check past the evolution's end
 fi
-step "the run - $POP designs x $GENS generations, $ROUNDS rounds; evolve.log"
+step "the run - $POP designs x $GENS generations, $ROUNDS rounds${ISLANDS:+, $ISLANDS islands}; evolve.log"
 python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
 TICK=$!
 python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} ${ISLANDS:+--islands "$ISLANDS"} "$@" >> evolve.log 2>&1 \

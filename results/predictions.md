@@ -866,3 +866,18 @@ The after-seed-68 batch applied at seed 68's processing; seed 69 its first run. 
 most 0.20 against the 32-bit s6 on the laptop - about 0.6 of seed 67's 0.327 (here the front's JIT designs ran at 0.35
 to 0.52 of their JIT-off times). 2. No 32-bit failure (fail32). 3. dream's prebuilt 32-bit check samples JIT designs, its
 Spearman against the laptop's 32-bit speeds 0.8 or above.
+
+## Islands never ran - the islands scores voided (Iteration 464)
+
+Seeds 65-68 asked for islands and ran without them: next-run.sh lost the word in its detach (fixed at 464; seed-facts.py
+now reports from the log whether islands ran). **Iteration 444's three, 449's two and 454's islands predictions are
+void** - what they compared was plain runs with a plain run. The comparisons themselves stand as replicate variation:
+**seeds 64-68 are five plain replicates**; at generation 109 their fastest 0.1197-0.1298, their smallest 14,039-14,207.
+**Iteration 458, seed 68**: its fastest at least 2% ahead of seed 64's at its last generation - wrong (0.1298 against
+0.1279: 1.5% behind); its smallest within 0.5% - right (+0.1%); no design dying - right; no 32-bit failure - right.
+
+## Seed 69, the real islands trial - predicted (Iteration 464)
+
+12 hours (the owner), islands on at last - its log to show ", island " lines (seed-facts.py: "islands: on"). Against the
+five plain replicates at generation 109: its fastest below 0.1197, the best of the five; its smallest at most 14,207, the
+worst of the five. Islands worth keeping only if both hold.

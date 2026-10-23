@@ -48,14 +48,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 463.
-- **The runs**: seed 67 processed (Iteration 458) - islands, 10 hours: against seed 64 at generation 139, fastest 4.5%
-  ahead, smallest +0.37% - the third islands run ahead (6.8%, 3.6%, 4.5%). The second freeze showed no loss against seed 66.
-  **The load test answered the fast end's optimism in part**: under three busy cores the fast designs measure about 5%
-  faster against s6 (0.947), the slow ones not (0.994) - about half of the fast tenth's 1.083; the rest selection's luck.
-  **For the owner**: the votes' next candidate, **jitret** (12 of 12 over seeds 65-67) - frozen off the same way?; and
-  rule 3 read against the load - the re-measure after the run done under the run's own load, or the offset written down.
-  **The after-seed-67 batch applied** (tail, tailpn, kstack retired). Next seed 68: **8 hours (the owner), islands**.
+- master: Iteration 464.
+- **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
+  lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
+  ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
+  "islands: on/off" from the log. The islands "trial" of seeds 65-67 voided: **seeds 64-68 are five plain replicates** -
+  at generation 109 fastest 0.1197-0.1298, smallest 14,039-14,207. **Seed 69: the real islands trial, 12 hours** (the
+  owner's hours; NEXT-RUN). **The after-seed-68 batch deferred to seed 69's processing** (the 32-bit JIT changes what
+  "widths" selects for, so it waits a run - one change at a time). **For the owner, later**: the votes' new candidates
+  rtfuse and jitos (12 of 12 over seeds 66-68).
 - **The JIT at 32-bit x86 - a working prototype** (the owner, 460; results/drafts/jit-i386-460.md and .patch): s6 with
   the JIT built at 32 bits passes the corpus, speed 0.956 to 0.767; a variable-alignment bug fixed on the way. **Made
   real as the after-seed-68 batch (461, the owner; results/pending/ORDER.md)**: eval32 keeps the JIT, jitk off at 32 bits,
@@ -74,8 +75,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **Fern, a scripting language on this Forth** (the owner, 457): designed - results/drafts/fern-design-457.md - and to
   be built in a chat of its own, from this bundle; the evolution's chats carry on as before.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 68's, named from the bundle it starts from (seed 67's, `forth-vm-evolution-chain-e1285e3b1-fury-
-  20261023-024810_tar.gz`, processed at 458). For seed 66's islands reading seed 64's database is kept here too
+  processed - seed 69's, named from the bundle it starts from (seed 68's, `forth-vm-evolution-chain-b75372ada-fury-
+  20261023-140516_tar.gz`, processed at 464). For seed 69's islands reading the five plain runs are in its chain's
+  spread step (seeds 64-68 as archived on the laptop). For seed 66's islands reading seed 64's database is kept here too
   (build/evolve/keep/seed64-db.jsonl); if gone, seed 64's archive. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only

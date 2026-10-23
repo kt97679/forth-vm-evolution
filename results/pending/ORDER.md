@@ -1,4 +1,7 @@
-# The after-seed-68 batch - apply in this order (at seed 68's processing)
+# The after-seed-68 batch - apply in this order (deferred at Iteration 464 to seed 69's processing)
+
+**Deferred (464)**: seed 69 is the real islands trial (islands never ran before - HANDOFF), and the 32-bit JIT changes
+what "widths" selects for; one change at a time, so this batch waits for seed 69's processing. Batch-check again then.
 
 The owner (460-461): "yes, please proceed" - the JIT at 32-bit x86 made real (results/drafts/jit-i386-460.md, steps
 1-4). After seed 68, so seed 68 is not mixed with it.

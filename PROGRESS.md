@@ -8907,3 +8907,24 @@ batch-checked together on 687a0e2: run-tests PASS, validate 7 of 7 IDENTICAL, th
 
 Files: lab/evolve/stencil-check.py (new, in the patch); results/pending/stencil-check-after-seed68.patch,
 results/pending/ORDER.md; results/README.md, HANDOFF.md.
+
+## Iteration 464 - 2026-10-23 - Claude
+
+**Seed 68 processed - and islands never ran, in it or in seeds 65-67** (results/evolve-amd-ryzen-7-pro-8840hs-seed68.md).
+`seed 68 8h widths noevolved islands ...` at b75372ada (Iteration 458): 28,007 designs in 7 h 23 min, generations
+0-109, none died. Its evolve.log holds 109 "generation N:" lines and no ", island " line - and so do seeds 65-67's (196,
+178, 139), read from their chain archives. next-run.sh parsed "islands", then detached, re-running itself with the
+parsed words in the environment - NEXT_RUN_NOEVOLVED, NEXT_RUN_WIDTHS - and no NEXT_RUN_ISLANDS: the detached chain
+called evolve.py without --islands. Fixed: ISLANDS=${NEXT_RUN_ISLANDS:-} and the carrier on both re-runs; the chain's
+run line and its "the run" step now name islands; seed-facts.py reports "islands: on/off" from the log. The islands
+"trial" voided - its predictions and HANDOFF's "islands the default" withdrawn: seeds 64-68 are five plain replicates
+(the chain's spread at generation 109: fastest 0.1197-0.1298, smallest 14,039-14,207), seed 64, the trial's yardstick,
+at their slow end. Seed 68 itself: fastest 0.130, smallest 14,207; heldout 0.967, regret +5.9%; optimism 1.075; no
+32-bit failure; I+ 26% working; the votes' new candidates rtfuse and jitos. Seed 69 (12 hours, the owner): the real
+islands trial; the after-seed-68 batch deferred to its processing (one change at a time). The usual checks on master
+were not rerun: since b75372ada the engine and the evolver are unchanged (only notes, next-run.sh and seed-facts.py) -
+the seed pack's own (tests, validate, jail) stand.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed68.md, results/xcheck-seed68.md (new); lab/evolve/next-run.sh,
+lab/evolve/seed-facts.py, lab/evolve/NEXT-RUN, results/gene-votes.md, results/predictions.md, results/pending/ORDER.md,
+results/progress-by-run.md, results/README.md, HANDOFF.md.

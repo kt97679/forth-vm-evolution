@@ -15,11 +15,17 @@ made (how often mutation alone and crossover repeat a design).
 
 Until Iteration 256 this lived in /tmp, rewritten each time.
 """
-import collections, json, os, random, re, sys, time
+import os, collections, json, os, random, re, sys, time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 if len(sys.argv) != 3: sys.exit(__doc__)
 db, results = sys.argv[1], sys.argv[2]
+# Iteration 464: islands on or off, read from the run's own log - seeds 65-68 asked for islands and ran without
+_ev = os.path.join(os.path.dirname(os.path.abspath(db)), 'evolve.log')
+if os.path.exists(_ev):
+    _lines = open(_ev, errors='replace').read().split('\n')
+    _isl = sum(1 for l in _lines if ', island ' in l); _plain = sum(1 for l in _lines if l.startswith('  generation ') and ', island ' not in l)
+    print('islands: %s' % ('on - %d island generation lines' % _isl if _isl else 'off - every generation ranked as one population (%d lines)' % _plain))
 sys.argv = ['x']; sys.path.insert(0, HERE)
 import evolve as E
 
