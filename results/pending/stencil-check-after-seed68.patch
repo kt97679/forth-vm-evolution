@@ -1,8 +1,8 @@
 diff --git a/engine/jit.c b/engine/jit.c
-index 36f973f..18bbb76 100644
+index 2b8a092..9985a21 100644
 --- a/engine/jit.c
 +++ b/engine/jit.c
-@@ -93,6 +93,30 @@ static const unsigned char *jit_addr(int i) {
+@@ -102,6 +102,30 @@ static const unsigned char *jit_addr(int i) {
   *  its ret made pop %rcx; jmp *%rcx. Correct where ret is - the same address, the same stack pointer.  */
  static unsigned char jit_exit_jmp[32];
  #endif
@@ -33,16 +33,16 @@ index 36f973f..18bbb76 100644
  static void jit_scan(void) {
      int i, k;
      for (i = S_LIT; i < JIT_NST; i++) {
-@@ -116,6 +140,7 @@ static void jit_scan(void) {
+@@ -125,6 +149,7 @@ static void jit_scan(void) {
          else for (p = a; p + 5 <= hi; p++)
              if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
          if (!end) continue;
 +        if (jit_leaves(a, end)) continue;              /* 463: a reference out of it - its len stays -1, not used */
          s->src = a; s->len = (int)(end - a); s->imm = s->imm32 = s->rp = -1;
- #if JITHELP
-         s->fn = -1;
+ #if JITMUL
+         s->th = -1;
 diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
-index 1caa161..2dfb4a4 100755
+index 249e8b3..074e43e 100755
 --- a/lab/evolve/engines-check.py
 +++ b/lab/evolve/engines-check.py
 @@ -17,7 +17,7 @@ longer be taken is news too.
@@ -54,7 +54,7 @@ index 1caa161..2dfb4a4 100755
  
  HERE = os.path.dirname(os.path.abspath(__file__))
  ROOT = os.path.dirname(os.path.dirname(HERE))
-@@ -159,5 +159,12 @@ for name, genes, w in VBIG:
+@@ -161,5 +161,12 @@ for name, genes, w in VBIG:
      except Exception as e:
          bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
  shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)

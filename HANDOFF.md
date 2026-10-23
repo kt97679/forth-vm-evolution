@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 474.
+- master: Iteration 475.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -84,7 +84,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   **474: the fault found and fixed** (the return-stack check read the operation table at the literal's code) - with
   both genes every output right, the fast design 2.0 times s6 on the applications (1.3 before). **The owner: jitmul
   enabled** (out of FROZEN) - **seed 70 then carries it with the 32-bit JIT batch** (two changes, the owner's choice;
-  the batch still applies on top, checked). jitdoes frozen until the owner says. Next: UM/MOD's throw path, jitexec. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
+  the batch still applies on top, checked). jitdoes frozen until the owner says. Next: UM/MOD's throw path, jitexec.
+  **475 (the owner): jitdoes enabled; UM/MOD native** (its throw path: -10 THROW from native code, as the interpreter)
+  - **the fast design at 2.4 times s6 on the applications**, every output right. The pending 32-bit batch rebased onto
+  it. Seed 70 carries the batch, jitmul and jitdoes (the owner's choice), and the appbench step. Next: jitexec. Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in
   r15; seed 68's fastest GCC JIT design runs loop with 19.9% fewer instructions (cachegrind, exact), ackermann 2.1% more.

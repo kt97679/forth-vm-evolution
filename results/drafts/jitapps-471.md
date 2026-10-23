@@ -149,3 +149,31 @@ return point (__builtin_setjmp - the engine links no C library, as jit_interp al
 divisor, calls a helper through a function-address hole that longjmps there with the stack; the interpreter then does
 what L_umdiv does - -10 where the divisor was, THROW. Then UM/MOD mapped: MOD and / native - evo's blocker. **jitexec**:
 EXECUTE through the token - native when the target is, else the same interpreted call jitre built.
+
+## Iteration 475 - UM/MOD native, its throw path; jitdoes enabled; the applications at 2.4 times s6
+
+**The throw path** (as designed at 474): the interpreter enters native code through jit_call, which keeps a return
+point (__builtin_setjmp); UM/MOD's stencil, at a zero divisor, calls jit_throw0 through a new hole (SPN_TH_VALUE, filled
+with the helper's address as the return-stack hole is), and jit_throw0 longjmps back with the stack; the interpreter
+then does what L_umdiv does - -10 where the divisor was, THROW. The call is a call, not a tail jump, so a jump to NEXT
+follows it wherever GCC places it and the JIT copies it (the 472 lesson). Without the hole (32-bit x86, until it gets
+one) UM/MOD's stencil is a trap with no exit - never usable, so left as before. UM/MOD is mapped under jitmul.
+Tests: quotients and remainders of both signs, star-slash, an overflowing UM/MOD (0 10 3), division by zero caught by
+CATCH (-10) and uncaught ("Division by zero") - s6 with the JIT and both genes prints the interpreter's output, line for
+line, and so does seed 68's fast design with them against itself without.
+
+**The owner: jitdoes enabled** - out of FROZEN with jitmul. On b9c5b4ae74, one round, every output right:
+
+| | sim16 | gc16 | scan | evo | fcp | brainless | cd16sim | geometric mean |
+|---|---|---|---|---|---|---|---|---|
+| as it is | 0.642 | 0.485 | 0.687 | 0.589 | 0.953 | 1.013 | 1.062 | 0.747 |
+| jitmul, jitdoes (474) | 0.611 | 0.501 | 0.189 | 0.511 | 0.632 | 0.636 | 0.729 | 0.508 |
+| and UM/MOD native (475) | 0.531 | 0.408 | 0.158 | **0.287** | 0.509 | 0.603 | 0.717 | **0.416** |
+
+evo twice as fast again (its MOD), fcp a fifth faster: on the applications the design now runs at 2.4 times s6's speed
+(1.3 before these genes). On master: run-tests PASS (71 paths), validate 7 of 7 IDENTICAL, the jail PASS (alone). The
+pending 32-bit JIT batch rebased onto it (results/pending/ORDER.md).
+
+**jitexec, next**: EXECUTE's stencil calls a helper through a hole, as UM/MOD's throw does; the helper takes the token:
+a word with the JIT's header, native already or translated now (jit_word), called; anything else run by the
+interpreter from native code as jitre's jit_interp does (its sentinel and longjmp) - then back with the stack.

@@ -887,3 +887,9 @@ worst of the five. Islands worth keeping only if both hold.
 The owner enabled jitmul (UM* and COUNT native). In seed 70: jitmul expressed on at least half of its front's JIT
 designs; and appbench.py's geometric mean for its fastest JIT design below 0.70 of s6 (seed 68's fast design: 0.747
 without jitmul).
+
+## jitdoes and native UM/MOD in seed 70 - predicted (Iteration 475)
+
+With jitdoes enabled and UM/MOD native too: jitdoes expressed on at least half of seed 70's front's JIT designs, and
+appbench.py's geometric mean for its fastest JIT design below 0.60 of s6 (seed 68's fast design with all three: 0.416;
+without: 0.747) - the 474 prediction's bound tightened.

@@ -1,5 +1,9 @@
 # The after-seed-68 batch - apply in this order (deferred at Iteration 464 to seed 69's processing)
 
+**Rebased (475)** onto this session's JIT work (jitmul, jitdoes, UM/MOD's throw path): two conflicts in engine/jit.c,
+resolved - the holes a cell wide (JIT_HOLEW) and the throw hole kept, in the scan and the patching; the three patches
+apply in order to cc7a93e. Batch-check again at seed 69's processing, as below.
+
 **Deferred (464)**: seed 69 is the real islands trial (islands never ran before - HANDOFF), and the 32-bit JIT changes
 what "widths" selects for; one change at a time, so this batch waits for seed 69's processing. Batch-check again then.
 

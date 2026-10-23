@@ -9082,3 +9082,20 @@ with that batch; jitdoes frozen until the owner says. UM/MOD's throw path design
 function-address hole in the stencil) and jitexec outlined - next. Predicted for seed 70.
 
 Files: engine/jit.c, lab/evolve/evolve.py, results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 475 - 2026-10-23 - Claude
+
+**jitdoes enabled; UM/MOD native through a throw path; the applications at 2.4 times s6** (the owner: enable jitdoes,
+proceed with the open items; results/drafts/jitapps-471.md, its Iteration 475 section). The interpreter enters native
+code through jit_call (__builtin_setjmp, as jit_interp); UM/MOD's stencil at a zero divisor calls jit_throw0 through a
+new hole (SPN_TH_VALUE), which longjmps back; the interpreter does as L_umdiv - -10, THROW. A call, so a jump to NEXT
+follows it and it is copied. Without the hole (32-bit x86 for now) the stencil is a trap with no exit: never used.
+UM/MOD mapped under jitmul. Tests: both signs, star-slash, an overflowing UM/MOD, division by zero caught and uncaught -
+s6 with the JIT and both genes as the interpreter, line for line; the fast design with them as without. On b9c5b4ae74 with
+jitmul and jitdoes, every output right: evo 0.287 of s6 (0.511 at 474), fcp 0.509, gc16 0.408 - geometric mean 0.416
+(0.747 before the genes). jitdoes out of FROZEN. run-tests PASS (71 paths), validate 7 of 7, the jail PASS (alone). The
+pending 32-bit batch did not apply on top any more (two conflicts in jit.c, the holes' width and the new hole): rebased
+in order, the conflicts resolved, all three applying to cc7a93e. jitexec designed, next. Predicted for seed 70.
+
+Files: engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py, lab/evolve/evolve.py,
+results/pending/ (the three patches rebased, ORDER.md), results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.
