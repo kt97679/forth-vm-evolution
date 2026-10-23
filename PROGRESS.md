@@ -8800,3 +8800,28 @@ frame (FRAME, L@ k, L! k, UNFRAME - plain Forth first, VM primitives and genes l
 (a per-script arena), no floating point; expected within 0-20% of hand-written Forth; a four-step plan, the core first.
 
 Files: results/drafts/fern-design-457.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 458 - 2026-10-23 - Claude
+
+**Seed 67 processed: islands ahead a third time; the load explains half the fast end's optimism; the retirement
+applied** (results/evolve-amd-ryzen-7-pro-8840hs-seed67.md). `seed 67 10h widths noevolved islands then experiment
+footprint.py ... then experiment loadtest.py ... then experiment review-checks.py spread` at e1285e3b1 (Iteration 455):
+35,703 designs in 9 h 15 min, generations 0-139, none died. Against seed 64 at 139 (seed 67's last): fastest 0.1197
+against 0.1253 (4.5% ahead), smallest 14,103 against 14,051 (+0.37%), 32 bits 2.1% ahead - islands ahead in all three of
+their runs (6.8%, 3.6%, 4.5%). The second freeze against seed 66 at generation 90: fastest 0.1235 against 0.1286,
+smallest +0.4% - no loss. **The load test** (loadtest.py, the owner's question): the 8 fastest 0.947 loaded / idle, the 4
+slowest 0.994 - under three busy cores the fast designs measure about 5% faster against s6; about half the fast tenth's
+optimism (1.083), the rest selection's luck. heldout 0.971, regret +3.0%; I+ on 25 front designs, all with the fuser; the
+footprint check's 16 fastest too close to rank (0.212, -0.026). The gene votes' next candidate: jitret (12 of 12 over seeds
+65-67). Predictions: 5 right, 1 wrong (the load's size).
+
+The after-seed-67 batch - tail, tailpn and kstack retired - batch-check on d1909bb PASS, applied (results/applied-after-
+seed67/). On the new master: the build, run-tests PASS (69 engine paths), validate 7 of 7 IDENTICAL, the gate 152 of 152,
+ans-check 0 of 39 (its negative control caught), the jail PASS (alone). NEXT-RUN: seed 68, 8 hours (the owner), islands,
+the footprint check and the spread; the load test out of the line. Open for the owner: jitret's freeze; the load's offset
+- the re-measure after a run under the run's own load, or the offset written down as calibration.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed67.md, results/xcheck-seed67.md (new); results/applied-after-seed67/
+(the retirement); lab/evolve/evolve.py, lab/evolve/engines-check.py, lab/evolve/GENES.md (tools/gen-tail.py and
+forth/kstack.4 removed); lab/evolve/NEXT-RUN, results/gene-votes.md, results/predictions.md, results/progress-by-run.md,
+results/README.md, HANDOFF.md.
