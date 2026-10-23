@@ -32,4 +32,4 @@ fastest JIT designs and two from its middle, timed at 32 bits against the 32-bit
 not show: eval32()'s harness reports "died: corpus" here for evolved designs at 32 bits - with master's code as with
 this batch, while the same 32-bit build runs the corpus to its end when run directly; the laptop's chain has measured
 every front at 32 bits without a failure, so this is this machine's, to be watched at seed 69's processing (fail32).
-batch-check below.
+**batch-check on e6044c3: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.**

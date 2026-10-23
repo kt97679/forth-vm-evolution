@@ -859,3 +859,10 @@ hypothesis (Iteration 454): the fast end's optimism is the measuring load. Predi
 Islands, 8 hours (the owner), the after-seed-67 batch applied (tail, tailpn, kstack retired). About 7.5 hours of
 evolution, some 110 generations. At its last generation against seed 64 then: its fastest at least 2% ahead, its smallest
 within 0.5%; no design dying; no 32-bit failure.
+
+## The JIT at 32 bits, in seed 69 - predicted (Iteration 461)
+
+The after-seed-68 batch applied at seed 68's processing; seed 69 its first run. 1. Its front's fastest at 32 bits at
+most 0.20 against the 32-bit s6 on the laptop - about 0.6 of seed 67's 0.327 (here the front's JIT designs ran at 0.35
+to 0.52 of their JIT-off times). 2. No 32-bit failure (fail32). 3. dream's prebuilt 32-bit check samples JIT designs, its
+Spearman against the laptop's 32-bit speeds 0.8 or above.

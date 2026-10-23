@@ -8856,3 +8856,20 @@ indicative) 0.956 without, 0.767 with (fib 0.772 to 0.330, ackermann 0.924 to 0.
 jitk off at 32 bits, engines-check and dream's 32-bit build covering it - the after-seed-68 batch, the owner's call.
 
 Files: results/drafts/jit-i386-460.md, results/drafts/jit-i386-460.patch (new); results/README.md, HANDOFF.md.
+
+## Iteration 461 - 2026-10-23 - Claude
+
+**The JIT at 32-bit x86 made real - the after-seed-68 batch** (the owner: proceed with steps 1-4). Patch 1, the engine:
+Iteration 460's prototype as is. Patch 2, the lab: eval32() builds the design as it is - its JIT kept, where since
+Iteration 336 it was switched off - and the build drops jitk at 32 bits (w32(): gen-jitk.py's stencils name x86-64's
+registers); xcheck.py's prebuilt 32-bit sample (dream) takes JIT designs, while a host building itself at 4-byte cells
+(the Tegra) still takes none; engines-check builds the JIT's variants at 32 bits (69 paths to 81). Tested in a clone with
+both: run-tests PASS, validate 7 of 7 IDENTICAL; seed 67's front - its three fastest JIT designs and two from its middle
+- at 32 bits with their JIT 0.35 to 0.52 of their JIT-off times (1.9 to 2.9 times faster; jitk not yet ported). One
+thing this machine could not show: eval32()'s harness says "died: corpus" here for evolved 32-bit designs, with master's
+code too, while the same build runs the corpus to its end directly - this machine's, to watch at seed 69 (fail32).
+batch-check on e6044c3 PASS (run-tests, validate 7 of 7 IDENTICAL, the jail). Predicted for seed 69. A break in the 32-bit
+column from seed 69, noted in the batch.
+
+Files: results/pending/ORDER.md, results/pending/jit-i386-engine-after-seed68.patch,
+results/pending/jit-i386-lab-after-seed68.patch (new); results/README.md, results/predictions.md, HANDOFF.md.
