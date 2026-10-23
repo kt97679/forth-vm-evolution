@@ -1,8 +1,8 @@
 diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
-index aa4e525..249e8b3 100755
+index acfc4ca..a416669 100755
 --- a/lab/evolve/engines-check.py
 +++ b/lab/evolve/engines-check.py
-@@ -128,7 +128,7 @@ for name, genes, must in VARIANTS:
+@@ -129,7 +129,7 @@ for name, genes, must in VARIANTS:
  # SYSCALL's local label taken for a handler: no tail design had ever built at 4-byte cells (seed 58: 401 of 401).
  # Iteration 401: clang's tail engine without preserve_none too - musttail is now on every clang tail engine; without it,
  # at 4-byte cells clang made none of its dispatches jumps ('tail calls not jumps', results/fail32-400.md).
@@ -12,10 +12,10 @@ index aa4e525..249e8b3 100755
      g = E.canon(dict(S6, **dict(genes, jit=0)))
      d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index affd017..8c03593 100644
+index 2b694c0..c4a42bd 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
-@@ -704,12 +704,13 @@ def setup_widths():
+@@ -705,12 +705,13 @@ def setup_widths():
      setup()
  
  def eval32(g, rounds):
@@ -33,7 +33,7 @@ index affd017..8c03593 100644
      if (g32.get('scale') or 0) > 2: g32['scale'] = 2
      g32 = canon(g32); d32 = os.path.join(EV, 'ind32-' + gid(g)); out = {}
      try:
-@@ -723,6 +724,10 @@ def eval32(g, rounds):
+@@ -724,6 +725,10 @@ def eval32(g, rounds):
      shutil.rmtree(d32, ignore_errors=True)
      return out
  
@@ -44,7 +44,7 @@ index affd017..8c03593 100644
  def CCV(g):
      """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
      designs keep clang: the Tegra has none, and its sample is GCC's)."""
-@@ -941,7 +946,7 @@ def _build(g, d):
+@@ -943,7 +948,7 @@ def _build(g, d):
      if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
      if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
      if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
@@ -53,7 +53,7 @@ index affd017..8c03593 100644
      if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
      if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
      if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
-@@ -975,7 +980,7 @@ def _build(g, d):
+@@ -977,7 +982,7 @@ def _build(g, d):
      def compile_engine():
          jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
                 os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils

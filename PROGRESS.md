@@ -9099,3 +9099,19 @@ in order, the conflicts resolved, all three applying to cc7a93e. jitexec designe
 
 Files: engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py, lab/evolve/evolve.py,
 results/pending/ (the three patches rebased, ORDER.md), results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 476 - 2026-10-23 - Claude
+
+**jitexec - EXECUTE through a helper; staged frozen** (the owner: proceed; results/drafts/jitapps-471.md, its Iteration
+476 section). The kernel's EXECUTE is `: EXECUTE >R ;`, which native code cannot follow. A call of a word whose body is
+>R then EXIT becomes a row of its own (layout.py --jitexec, JIT_L_EXECUTE), whose stencil calls jit_exec through a new
+hole (SPN_EX_VALUE): native when the token's word is, translated now when it can be, else interpreted through jitre's
+sentinel and longjmp (built for jitexec too; jit_interp restores the throw path's return point after). Tests - EXECUTE
+of native words, a DOES> child, primitives, through tables and loops, of EXECUTE itself, a THROW through it caught by
+CATCH - as the interpreter on s6 (corpus passed) and on the fast design. run-tests PASS, validate 7 of 7, the jail PASS;
+engines-check's variant added. On b9c5b4ae74 with all three genes: sim16 0.195 of s6 (0.531), brainless 0.359 (0.603),
+geometric mean 0.347 (0.416) - but fcp 0.675 (0.509): an untranslatable token now costs a trip through the interpreter.
+Frozen until the owner says. The pending batch rebased again (a clean three-way merge).
+
+Files: engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py, lab/evolve/evolve.py,
+lab/evolve/engines-check.py, results/pending/ (rebased), results/drafts/jitapps-471.md, HANDOFF.md.

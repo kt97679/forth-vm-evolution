@@ -177,3 +177,33 @@ pending 32-bit JIT batch rebased onto it (results/pending/ORDER.md).
 **jitexec, next**: EXECUTE's stencil calls a helper through a hole, as UM/MOD's throw does; the helper takes the token:
 a word with the JIT's header, native already or translated now (jit_word), called; anything else run by the
 interpreter from native code as jitre's jit_interp does (its sentinel and longjmp) - then back with the stack.
+
+## Iteration 476 - jitexec: EXECUTE through a helper; the applications at 2.9 times s6
+
+The kernel's EXECUTE is `: EXECUTE >R ;` (layout.py) - the token made a return address, which native code cannot
+follow; that is why it was refused for "the return stack's order", and every word calling it with it. **jitexec**:
+a call of a word whose body is >R then EXIT (or the fused >R;EXIT) becomes EXECUTE's own row (JIT_L_EXECUTE, a row no
+bytecode maps to), whose stencil calls a helper through a new hole (SPN_EX_VALUE) and goes on to NEXT with the stack
+it hands back. The helper, jit_exec: the token's word native when it is, translated now when it can be (jit_word, or
+the kslot of a word without the header), else run by the interpreter through jitre's machinery - the sentinel return
+address and the longjmp back, which jitexec now builds too (jit_interp restores the throw path's return point after).
+
+Tests (EXECUTE of a native word, a DOES> child, primitives, through a table, through APPLY in a loop, EXECUTE of
+EXECUTE, a THROW out of an executed word caught by CATCH): s6 with the JIT and all three genes prints the interpreter's
+output and passes the corpus; seed 68's fast design with them as without. run-tests PASS (71 paths), validate 7 of 7,
+the jail PASS (alone); engines-check has the variant now. jitexec staged frozen, until the owner says.
+
+On b9c5b4ae74, one round, every output right:
+
+| | sim16 | gc16 | scan | evo | fcp | brainless | cd16sim | geometric mean |
+|---|---|---|---|---|---|---|---|---|
+| before the genes | 0.642 | 0.485 | 0.687 | 0.589 | 0.953 | 1.013 | 1.062 | 0.747 |
+| jitmul, jitdoes, native UM/MOD | 0.531 | 0.408 | 0.158 | 0.287 | 0.509 | 0.603 | 0.717 | 0.416 |
+| and jitexec | **0.195** | 0.430 | 0.178 | 0.257 | 0.675 | **0.359** | 0.655 | **0.347** |
+
+sim16 2.7 times faster (its dispatch through a table of tokens now native), brainless 40% faster - and **fcp a third
+slower**: EXECUTE of a word that cannot be translated now costs a trip through the interpreter from native code (a
+setjmp, a nested interpreter, a longjmp), where before the whole caller stayed interpreted and EXECUTE was one
+dispatch. A gene is the right home for that: the search weighs it design by design - but only on what it measures, and
+the selection's six workloads do not EXECUTE. Making that trip cheaper, or keeping a caller interpreted when its tokens
+lead to untranslatable words, is the next step for it.
