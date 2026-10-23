@@ -52,3 +52,5 @@ first form of stencil-check). stencil-check, its exact form:
 The stack protector's case is the instructive one: the JIT built that way still ran the corpus and ran fast (s6 with
 the JIT: fib 0.341 against 0.324), because a canary never failed - the jump past the copied part was latent, never
 taken. The runtime check does not see it (a short jump); stencil-check does, which is why the tests run it.
+
+**The three together, batch-checked on 687a0e2: run-tests PASS, validate 7 of 7 IDENTICAL, jail PASS.**

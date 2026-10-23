@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 462.
+- master: Iteration 463.
 - **The runs**: seed 67 processed (Iteration 458) - islands, 10 hours: against seed 64 at generation 139, fastest 4.5%
   ahead, smallest +0.37% - the third islands run ahead (6.8%, 3.6%, 4.5%). The second freeze showed no loss against seed 66.
   **The load test answered the fast end's optimism in part**: under three busy cores the fast designs measure about 5%
@@ -64,7 +64,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **The second pass over c4's circle** (the owner, 462; results/drafts/c4-family-459.md): the code-copying literature
   (Ertl and Paysan 2025, copy-and-patch, CPython's JIT, Deegen); **six ideas for the owner** - a stencil relocatability
   check, stencils from relocations (the way to ARM), jitrp (the return stack in a register), wider jitinl, a no-vectorise
-  gene, Forth application benchmarks held out.
+  gene, Forth application benchmarks held out. **The first done (463): the stencil safety check - patch 3 of the
+  after-seed-68 batch** (stencil-check.py, objdump-exact, in engines-check at 64 and 32 bits; a runtime guard in jit.c):
+  today's stencils all safe; a stack protector would make all 43 unsafe, latently.
 - **c4's family looked at** (the owner, 459; results/drafts/c4-family-459.md): our JIT already has its lessons; **proposed
   for the owner: the stencil JIT ported to i386** (the 32-bit builds have no JIT - about 2.6x behind; ARMv7 after, AMaCC,
   Squint and shecc as references), a JIT-redundancy probe, an interpreter-in-Forth workload; for Fern, c4's frames and

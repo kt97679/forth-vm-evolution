@@ -8888,3 +8888,22 @@ check, stencils from relocations (for ARM), jitrp, wider jitinl, a no-vectorise 
 as held-out workloads - the owner's calls.
 
 Files: results/drafts/c4-family-459.md; results/README.md, HANDOFF.md.
+
+## Iteration 463 - 2026-10-23 - Claude
+
+**The stencils checked safe to copy - patch 3 of the after-seed-68 batch** (the owner: proceed with the second pass's
+first idea, Gforth's relocatability rule). lab/evolve/stencil-check.py compiles engine/spn-stencils.c alone and reads it
+with objdump: in the part the JIT copies (to the last jump to NEXT or JUMP; EXIT's to its ret), any relocation to
+anything but a marker, or any branch past the copied part, fails it. Its first form read relocations only - and passed
+-fstack-protector-all's stencils on the wrong ground (their __stack_chk_fail calls sit past the copied part); the real
+hazard is the jne inside the copied part to that cold block, which the exact form now reports. Today's flags: 43
+stencils, every one safe, at 64 and at 32 bits; -fstack-protector-all: all 43 unsafe (a jne past the copied part);
+-pg: all 43 (mcount). Instructive: the JIT built with the stack protector still ran the corpus and ran fast (fib 0.341
+against 0.324) - the jump out was latent, never taken while no canary failed. engines-check runs stencil-check at 64 and
+32 bits; engine/jit.c also refuses at run time a stencil whose 32-bit call or jump leaves it for the engine image (E8,
+E9, 0F 8x; FF 15 / FF 25 on x86-64) - slower, never wrong; a short jump it cannot see, which is why the tests run the
+exact check. Tested in a clone with patches 1 and 2: run-tests PASS, validate 7 of 7 IDENTICAL; the three patches
+batch-checked together on 687a0e2: run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS.
+
+Files: lab/evolve/stencil-check.py (new, in the patch); results/pending/stencil-check-after-seed68.patch,
+results/pending/ORDER.md; results/README.md, HANDOFF.md.
