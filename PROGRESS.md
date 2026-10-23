@@ -9135,3 +9135,12 @@ and astil_forth's register allocation and native code saved with the image, for 
 applications finding: the largest open lever is still speed on real programs.
 
 Files: results/drafts/more-projects-478.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 479 - 2026-10-23 - Claude
+
+**A prompt for other models, to find more projects and ideas** (the owner; results/drafts/scout-prompt-479.md): the
+project and its constraints, the applications finding that prompts the search, seven areas wanted, everything already
+reviewed (so it is not suggested again), and an answer format - each item with its URL, the idea, the area, the fit to
+our constraints, the expected gain and cost, its licence, and the answerer's confidence that the source exists.
+
+Files: results/drafts/scout-prompt-479.md (new); results/README.md, HANDOFF.md.

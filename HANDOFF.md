@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 478.
+- master: Iteration 479.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
