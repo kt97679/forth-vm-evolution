@@ -1,0 +1,142 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index c3ddba9..84c4681 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -64,12 +64,21 @@ typedef uint64_t jit_hole_t;
+ #define JIT_IMM32 0x3c1a5e77U                   /* IMM32 */
+ 
+ #if JITMUL
++#if defined(__i386__)
++#define JIT_TH64 0x3ea1ed05U                   /* Iteration 493: 32 bits */
++#else
+ #define JIT_TH64 0x3ea1ed5ea1ed5e33ULL         /* Iteration 475: spn-stencils.c's SPN_TH_VALUE, the throw helper's hole */
+ #endif
++#endif
+ #if JITEXEC
++#if defined(__i386__)
++#define JIT_EX64 0x2ea1ed06U                   /* Iteration 493: 32 bits */
++#define JIT_RS64 0x1ea1ed07U
++#else
+ #define JIT_EX64 0x2ea1ed5ea1ed5e22ULL         /* Iteration 476: SPN_EX_VALUE, EXECUTE's helper's hole */
+ #define JIT_RS64 0x1ea1ed5ea1ed5e11ULL         /* Iteration 488: SPN_RS_VALUE, the resume helper's hole */
+ #endif
++#endif
+ struct jit_st {             /* a stencil as read: offsets into its body, -1 for none */
+     const unsigned char *src;
+     int len, imm, imm32, rp, tailnext;          /* tailnext: the body ends "jmp NEXT" - dropped */
+@@ -294,7 +303,7 @@ static cell jit_ic[JIT_NIC][3]; static int jit_nic;
+  *  a sentinel return address: [the JIT opcode][2], a "word" whose native code, at offset 2 (free:
+  *  offsets below 16 hold nothing native), is a trampoline to jit_leave.  */
+ static spn_st jit_interp(cell *sp, cell tos, cell body);
+-static spn_st jit_leave(cell *sp, cell tos);
++static spn_st SPN_CC jit_leave(cell *sp, cell tos);   /* 493: called as native code is, SPN_CC at 32 bits */
+ #define JIT_LEAVE_OFF 2
+ static UNS8 jit_sentinel[5];
+ #endif
+@@ -306,8 +315,8 @@ static ucell jit_rp;                    /* the return stack while native code ru
+  *  the divisor was, and THROW. The native frames are dropped with the C stack; the return stack is jit_rp's.  */
+ static void **jit_tb; static cell *jit_tsp;
+ static UNS64 jit_rip; static cell jit_ttos;     /* 488: where the interpreter resumes, and the top - 0 for UM/MOD's throw */
+-static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_rip = 0; jit_tsp = sp; __builtin_longjmp(jit_tb, 1); }
+-static spn_st jit_resume0(cell *sp, cell tos, cell ip) { jit_tsp = sp; jit_ttos = tos; jit_rip = (UNS64)ip; __builtin_longjmp(jit_tb, 1); }
++__attribute__((force_align_arg_pointer)) static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_rip = 0; jit_tsp = sp; __builtin_longjmp(jit_tb, 1); }
++__attribute__((force_align_arg_pointer)) static spn_st jit_resume0(cell *sp, cell tos, cell ip) { jit_tsp = sp; jit_ttos = tos; jit_rip = (UNS64)ip; __builtin_longjmp(jit_tb, 1); }
+ static int jit_call(uint32_t f, cell *sp, cell tos, spn_st *r) {
+     void *tb[5]; void **prev = jit_tb; jit_tb = tb;
+     if (__builtin_setjmp(tb)) { jit_tb = prev; return 1; }
+@@ -357,7 +366,12 @@ static int jit_init(void) {
+ #if JITRE || JITEXEC
+         if (state == 1) {                       /* movabs rax, jit_leave; jmp rax - and the sentinel */
+             UNS8 *t_ = jit_mem + JIT_LEAVE_OFF; UNS64 a_ = (UNS64)(uintptr_t)jit_leave; uint32_t o_ = JIT_LEAVE_OFF;
++#if defined(__i386__)
++            { uint32_t a32_ = (uint32_t)a_;           /* 493: mov ecx, jit_leave; jmp ecx - eax and edx, its arguments, kept */
++              t_[0] = 0xB9; memcpy(t_ + 1, &a32_, 4); t_[5] = 0xFF; t_[6] = 0xE1; }
++#else
+             t_[0] = 0x48; t_[1] = 0xB8; memcpy(t_ + 2, &a_, 8); t_[10] = 0xFF; t_[11] = 0xE0;
++#endif
+             jit_sentinel[0] = (UNS8)JIT_CODE; memcpy(jit_sentinel + 1, &o_, 4);
+         }
+ #endif
+@@ -404,10 +418,10 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+     if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, JIT_HOLEW); }
+ #endif
+ #if JITEXEC
+-    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, 8); }
++    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, JIT_HOLEW); }
+ #endif
+ #if JITEXEC && JITMUL
+-    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; memcpy(dst + t->rs, &v, 8); }
++    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; memcpy(dst + t->rs, &v, JIT_HOLEW); }
+ #endif
+     return dst + n;
+ }
+@@ -633,7 +647,7 @@ static uint32_t jit_word(UNS64 w, int depth) {
+ /* Iteration 476: EXECUTE from native code - the token's word native when it is, translated now when it can be
+    (a word with the JIT's header by jit_word, one without by its kslot, as a call's callee is), else run by the
+    interpreter (jit_interp, jitre's: a sentinel return address, a longjmp back) - and the stack handed back. */
+-static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
++__attribute__((force_align_arg_pointer)) static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
+     UNS64 w = (UNS64)xt; uint32_t f = 0;
+     if (BYTE(w) == JIT_CODE) { f = jit_ld32(w + 1); if (f & 0x80000000u) f = jit_word(w, 0); }
+     else if (BYTE(w) != JIT_DOVAR) { uint32_t *k = jit_kslot(w);
+diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
+index 73c1a36..3c9c0f3 100644
+--- a/engine/spn-stencils.c
++++ b/engine/spn-stencils.c
+@@ -75,6 +75,12 @@ typedef cell (*spn_io_fn)(cell, cell, cell);
+ #define IMM_RP() HOLE(ucell *, SPN_RP_VALUE)
+ #define IMM_FN() HOLE(void *, SPN_FN_VALUE)
+ #define IMM_IO() HOLE(spn_io_fn, SPN_IO_VALUE)
++#define SPN_TH_VALUE  0x3ea1ed05            /* Iteration 493: the helpers' holes at 32 bits too - UM/MOD's throw, */
++#define SPN_EX_VALUE  0x2ea1ed06            /* EXECUTE's helper, (ABORT")'s resume */
++#define SPN_RS_VALUE  0x1ea1ed07
++#define IMM_TH() HOLE(void *, SPN_TH_VALUE)
++#define IMM_EX() HOLE(void *, SPN_EX_VALUE)
++#define IMM_RS() HOLE(void *, SPN_RS_VALUE)
+ #elif defined(__arm__)
+ /* 32-bit ARM (Iteration 30): no 64-bit immediate, and none folded into an
+    instruction - every hole is a movw/movt pair, which the patcher finds by
+@@ -278,13 +284,13 @@ S(st_aligned) { GO(sp, (cell)(((ucell)tos + sizeof(cell) - 1) & ~(ucell)(sizeof(
+    native code, and the four bytes after the token as they were then, so a word re-made at the same address misses */
+ S(st_execute) { cell *ic_ = (cell *)IMM();
+                 if (ic_[0] == tos && ic_[1] && (uint32_t)ic_[2] == *(const uint32_t *)((const char *)tos + 1)) {
+-                    spn_st r_ = ((spn_st (*)(cell *, cell))ic_[1])(sp + 1, sp[0]); GO(SPN_SP(r_), SPN_TOS(r_)); }
++                    spn_st r_ = ((spn_fn)ic_[1])(sp + 1, sp[0]);   /* 493: native code - SPN_CC at 32 bits */ GO(SPN_SP(r_), SPN_TOS(r_)); }
+                 {   spn_st r_ = ((spn_st (*)(cell *, cell, cell, cell *))IMM_EX())(sp + 1, sp[0], tos, ic_); GO(SPN_SP(r_), SPN_TOS(r_)); } }
+ /* Iteration 486: a call of a word that stays bytecode but is cold by nature - I/O, ABORT, THROW (layout.py's list)
+    - made through the same helper, the token fixed in the site's cache, rather than refusing the caller */
+ S(st_callx)   { cell *ic_ = (cell *)IMM();
+                 if (ic_[1] && (uint32_t)ic_[2] == *(const uint32_t *)((const char *)ic_[0] + 1)) {
+-                    spn_st r_ = ((spn_st (*)(cell *, cell))ic_[1])(sp, tos); GO(SPN_SP(r_), SPN_TOS(r_)); }
++                    spn_st r_ = ((spn_fn)ic_[1])(sp, tos); GO(SPN_SP(r_), SPN_TOS(r_)); }
+                 {   spn_st r_ = ((spn_st (*)(cell *, cell, cell, cell *))IMM_EX())(sp, tos, ic_[0], ic_); GO(SPN_SP(r_), SPN_TOS(r_)); } }
+ #else
+ S(st_execute) { __builtin_trap(); }        /* no helper hole on this machine yet: never usable */
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index d83e238..06121a5 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1437,7 +1437,7 @@ static void virtual_machine(void);
+    callee-saved register, which the longjmp out of the nested interpreter gives back */
+ static void **jit_jb;
+ static cell *jit_lsp; static cell jit_ltos;
+-static spn_st jit_leave(cell *sp, cell tos) { jit_lsp = sp; jit_ltos = tos; __builtin_longjmp(jit_jb, 1); }
++static spn_st SPN_CC jit_leave(cell *sp, cell tos) { jit_lsp = sp; jit_ltos = tos; __builtin_longjmp(jit_jb, 1); }
+ static spn_st jit_interp(cell *sp, cell tos, cell body) {
+     void *jb[5]; void **prev = jit_jb;
+ #if JITMUL
+diff --git a/tools/layout.py b/tools/layout.py
+index 3b24e1f..f0b6674 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1659,8 +1659,8 @@ if EMIT:
+                 S1.update({'>R': ['TOR'], 'R>': ['FROMR'], 'R@': ['RFETCH'], 'FILL': ['FILL']})
+             K = {'lit0': (['LIT'], 0), 'lit1': (['LIT'], 1), 'litm1': (['LIT'], -1), '0=': (['LIT', 'EQ'], 0),
+                  '0<': (['LIT', 'LT'], 0), 'INVERT': (['LIT', 'XOR'], -1), '<>': (['EQ', 'LIT', 'XOR'], -1),
+-                 '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
+-                 'CELLS': (['LIT', 'LSHIFT'], 3),
++                 '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], CELL), 'CHAR+': (['ADDI'], 1),
++                 'CELLS': (['LIT', 'LSHIFT'], 3 if CELL == 8 else 2),   # 493: the cell's width - 4-byte cells at 32 bits
+                  # Iteration 290: 2@ and 2! as opcodes - five stencils each, CELL+'s ADDI the one constant;
+                  # without them a JIT design that takes the opcodes leaves every word holding one to the
+                  # interpreter (jit.c: all or nothing), 2@ and 2! themselves among them

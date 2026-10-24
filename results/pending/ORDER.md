@@ -1,9 +1,10 @@
 # The after-seed-70 batch - applied at seed 70's processing (Iterations 488-490)
 
-Prepared while seed 70 runs; master stays what seed 70's bundle tests. Two patches, in this order:
+Prepared while seed 70 runs; master stays what seed 70's bundle tests. Three patches, in this order:
 
     git apply results/pending/jit-more-after-seed70.patch
     git apply results/pending/coreext-2r-after-seed70.patch
+    git apply results/pending/jit-32bit-after-seed70.patch
 
 **jit-more-after-seed70.patch** (engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py):
 
@@ -29,5 +30,15 @@ ans-check 0 of 3 of seed 69's front differ, its negative control caught. **The J
 fcp, brainless and cd16sim to the interpreter** (17.5%, 5.8% and 18.1% before the batch); seed 68's fast design with all
 four genes runs the seven applications at 0.234 of s6 - fcp 0.165, cd16sim 0.300 (0.317 and 0.573 without the batch)
 - every output right.
+
+**jit-32bit-after-seed70.patch** (493; engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py): the new
+genes at 32 bits. The throw, EXECUTE and resume holes in the i386 stencils (they were x86-64 only, so UM/MOD, EXECUTE
+and (ABORT") were traps there - never used); the JIT's hole values and widths at 32 bits; an i386 trampoline into
+jit_leave (mov ecx; jmp ecx - eax and edx are its arguments) and jit_leave SPN_CC; the stencils' inline-cache hits
+calling native code as spn_fn - SPN_CC, which the plain cast was not at 32 bits; the helpers realigning their stack
+(force_align_arg_pointer). **And a bug of the 32-bit batch itself**: the converter's JIT map had CELL+ as ADDI 8 and
+CELLS as LSHIFT 3 - eight-byte cells - at either width; now by the cell. Tested: s6 at 32 bits interpreted, with the
+JIT, and with the JIT and all four genes - EXECUTE, DOES>, division and its throw, (ABORT"), strings, PICK, ALIGNED -
+equal line for line, each through the corpus; engines-check PASS at both widths with all three patches.
 
 **At seed 70's processing**: `sh tools/batch-check.sh` first, then apply both, the routine's chain after it.

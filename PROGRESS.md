@@ -9285,3 +9285,19 @@ before - and asks for the zip only for fcp and cd16sim. Run that way on seed 68'
 
 Files: lab/evolve/apps/brainless/ (new, 30 files and COPIED.md); lab/evolve/appbench.py, lab/evolve/README.md,
 HANDOFF.md.
+
+## Iteration 493 - 2026-10-24 - Claude
+
+**The new genes at 32 bits - the batch's third patch; and a bug of the applied 32-bit batch** (the owner: proceed with the
+other items; results/pending/ORDER.md). In a clone with the after-seed-70 batch as its base: the throw, EXECUTE and
+resume holes for the i386 stencils (x86-64 only before - UM/MOD, EXECUTE and (ABORT") were traps at 32 bits), the JIT's
+32-bit hole values and widths, an i386 trampoline into jit_leave with jit_leave SPN_CC. Tested at 32 bits against the
+interpreter, two faults found and fixed: the inline cache's hit called native code with the C convention, not SPN_CC
+(EXECUTE crashed); and PICK gave 0 - **the converter's JIT map had CELL+ as ADDI 8 and CELLS as LSHIFT 3 at either
+width**, a bug of the 32-bit batch applied at 487, hidden while PICK (SP@) stayed bytecode; now by the cell. The helpers
+realign their stack. s6 at 32 bits interpreted, with the JIT, and with the JIT and all four genes - equal line for line,
+the corpus each; engines-check PASS at both widths with all three patches. Seed 70 runs the 32-bit batch: its 32-bit
+JIT designs may compute wrong addresses where CELL+ or CELLS are translated - its 32-bit failures to be read at
+processing.
+
+Files: results/pending/jit-32bit-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.
