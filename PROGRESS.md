@@ -9431,3 +9431,19 @@ second patch, tried in a three-generation run of the evolver. Predicted: rule 3 
 
 Files: results/pending/fastgate-slower-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/review-checks.py,
 results/seed63-rules.md, results/drafts/process-review-501.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 504 - 2026-10-24 - Claude
+
+**The footprint experiment dropped; jithelp and jitre retired** (the owner: drop 7, the 4 MB check assumed kept; proceed
+with the other items; results/pending/ORDER.md). Seed 72's line goes without the footprint experiment (NEXT-RUN's
+note). The programs-past-4-MB check stays where it was put at 416: engines-check's BIG cases - calls across 4.9 MB of
+dictionary, links past the three-byte form, a far DOES> - on s6, the two-bit tag and 4-byte cells, every run-tests,
+every batch-check, every processing; rule 10 reads it. jithelp and jitre, frozen since 455 with 12 of 12 removal votes
+and on no front since, retired as the after-seed-71 batch's third patch: their engine blocks, converter rows, genes and
+flags gone; jit_interp and its sentinel kept for jitexec under JITEXEC alone; rule 2 watches jitret. run-tests PASS (93
+paths, the differential JIT test on every JIT variant at both widths) and validate 7 of 7 in a clone with all three.
+Considered and set aside: inlining words called once (nibbleforth's last idea) - the converter sees only the image, whose
+called-once words are mostly findable ones that must stay whole; the size to win is small.
+
+Files: results/pending/retire-jithelp-jitre-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/NEXT-RUN,
+HANDOFF.md.

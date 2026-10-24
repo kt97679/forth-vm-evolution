@@ -1,0 +1,336 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 84c4681..5f26f59 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -30,9 +30,6 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
+ #if JITINL
+        S_DPLUS,                                  /* Iteration 137: the gene jitinl */
+ #endif
+-#if JITHELP
+-       S_CALLC,                                  /* Iteration 344: the gene jithelp */
+-#endif
+ #if JITMUL
+        S_UMSTAR, S_UMMOD,                        /* Iteration 472: the gene jitmul */
+        S_SPFETCH, S_ALIGNED,                     /* Iteration 484: jitmul's too */
+@@ -89,9 +86,6 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for
+     int ex, rs;                                 /* Iteration 476: EXECUTE's helper's hole, 488 the resume's, or -1 */
+ #endif
+     int nnext, njump, ncall;                    /* how many holes of each */
+-#if JITHELP
+-    int fn;                                     /* Iteration 344: the function hole's offset, or -1 */
+-#endif
+ };
+ static struct jit_st jit_st[JIT_NST];
+ 
+@@ -176,9 +170,6 @@ static void jit_scan(void) {
+ #endif
+ #if JITEXEC
+         s->ex = s->rs = -1;
+-#endif
+-#if JITHELP
+-        s->fn = -1;
+ #endif
+         s->nnext = s->njump = s->ncall = 0;
+         for (p = a; p < end; p++) {
+@@ -190,9 +181,6 @@ static void jit_scan(void) {
+ #if JITEXEC
+                 if (v == JIT_EX64) s->ex = (int)(p - a);
+                 if (v == JIT_RS64) s->rs = (int)(p - a);
+-#endif
+-#if JITHELP
+-                if (v == JIT_FN64) s->fn = (int)(p - a);
+ #endif
+             }
+             if (p + 4 <= end) {
+@@ -225,34 +213,7 @@ static void jit_scan(void) {
+  *  stack's call and ret; loops and the return stack use the engine's
+  *  return stack, through jit_rp.  */
+ #include <sys/mman.h>
+-#if JITHELP
+-struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; void *fn; };
+-/* Iteration 344, the gene jithelp: the C primitives the outer interpreter stops at, as functions
+-   with the stencils' signature - called from native code through st_callc. Each the handler's own
+-   work (vm-lab.c), on the stencils' stack: tos in a register, sp[0] the item below. */
+-#include "spn-abi.h"
+-static spn_st h_place(cell *sp, cell tos) {            /* PLACE ( s n d -- ): vm-lab.c L_x_place */
+-    unsigned char *d = (unsigned char *)(uintptr_t)tos; ucell n = (ucell)sp[0];
+-    const unsigned char *s = (const unsigned char *)(uintptr_t)sp[1];
+-    *d++ = (unsigned char)n; while (n--) *d++ = *s++;
+-    return SPN_ST(sp + 3, sp[2]);
+-}
+-static spn_st h_parse(cell *sp, cell tos) {            /* (PARSE) ( a u c -- s len adv ): vm-lab.c L_x_parse */
+-    ucell c = (ucell)tos, u = (ucell)sp[0];
+-    const unsigned char *a = (const unsigned char *)(uintptr_t)sp[1], *p = a, *s;
+-    if (c == 32) {                                      /* a space: any control character too */
+-        while (u && *p <= 32) { p++; u--; } s = p;
+-        while (u && *p > 32) { p++; u--; }
+-    } else {
+-        while (u && (ucell)*p == c) { p++; u--; } s = p;
+-        while (u && (ucell)*p != c) { p++; u--; }
+-    }
+-    sp[1] = (cell)(uintptr_t)s; sp[0] = (cell)(p - s);
+-    return SPN_ST(sp, (cell)((p - a) + (u ? 1 : 0)));
+-}
+-#else
+ struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; };
+-#endif
+ /* Iteration 344: an operand that fills the first literal hole - kinds 1-5, and with jitvar the slot
+    kinds 8 and 9 (without them vf's literal took k, 0: a fetch from 0 - latent while no word with vf
+    was translated). Without JITVAR the very expression it was. */
+@@ -297,7 +258,7 @@ static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic);   /* Iteration 47
+ #define JIT_NIC 4096                    /* 481: EXECUTE's inline caches, three cells a site; the last shared when full */
+ static cell jit_ic[JIT_NIC][3]; static int jit_nic;
+ #endif
+-#if JITRE || JITEXEC   /* 476: jitexec uses jitre's way into the interpreter and back */
++#if JITEXEC   /* 476: jitexec uses jitre's way into the interpreter and back */
+ /*  Iteration 346, the gene jitre: native code calling bytecode (vm-lab.c's jit_interp) - a callee the
+  *  JIT cannot translate is interpreted instead of refusing its caller. The interpreter leaves through
+  *  a sentinel return address: [the JIT opcode][2], a "word" whose native code, at offset 2 (free:
+@@ -363,7 +324,7 @@ static int jit_init(void) {
+         void *m = mmap(0, JIT_MEM, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+         jit_scan();
+         if (m == MAP_FAILED) state = -1; else { jit_mem = m; state = 1; }
+-#if JITRE || JITEXEC
++#if JITEXEC
+         if (state == 1) {                       /* movabs rax, jit_leave; jmp rax - and the sentinel */
+             UNS8 *t_ = jit_mem + JIT_LEAVE_OFF; UNS64 a_ = (UNS64)(uintptr_t)jit_leave; uint32_t o_ = JIT_LEAVE_OFF;
+ #if defined(__i386__)
+@@ -404,15 +365,6 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+         if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
+     }
+     if (t->imm >= 0) memcpy(dst + t->imm, &val, JIT_HOLEW);
+-#if JITHELP
+-    if (t->fn >= 0) {                                  /* a helper call: its value is the helper */
+-        UNS64 fv_ = val;
+-#if JITRE
+-        if (t->imm >= 0) fv_ = (UNS64)(uintptr_t)jit_interp;   /* 348: st_interp by its holes - a function and a literal (st_callc has only the first); by index it would miss JITK's variants */
+-#endif
+-        memcpy(dst + t->fn, &fv_, JIT_HOLEW);
+-    }
+-#endif
+     if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, JIT_HOLEW); }
+ #if JITMUL
+     if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, JIT_HOLEW); }
+@@ -732,32 +684,6 @@ static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, co
+ }
+ #endif
+ 
+-#if JITRE
+-/* Iteration 349: does the word at a read or pop the return stack below its own entry - its caller's
+-   return address (a (S") reading the string after its call)? Then its caller cannot be translated past
+-   the call: what follows the call is data. Read to its EXIT, an operation unknown, or 64 operations. */
+-static int jit_rtouch(UNS64 a) {
+-    int d = 0, n_, j;
+-    if (BYTE(a) == JIT_CODE) a += 5;
+-    for (n_ = 0; n_ < 64; n_++) {
+-        UNS8 b = BYTE(a);
+-        if (T2_CALL(b)) { a += (UNS64)T2_CALLW(b); continue; }
+-        {   unsigned L = jit_one[T2_ONEIX(b)]; a++;
+-            if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+-            if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 1;     /* 350: unknown - it may read its caller's frame: refused, to be safe */
+-            for (j = 0; j < jit_ops[L].n; j++) {
+-                int s = jit_ops[L].st[j];
+-                if (s == S_TOR) d++;
+-                else if (s == S_FROMR || s == S_RFETCH) { if (!d) return 1; if (s == S_FROMR) d--; }
+-            }
+-            switch (jit_ops[L].opnd) { case 1: case 5: case 6: a += 1; break; case 2: case 7: a += 2; break;
+-                case 3: a += 4; break; case 4: a += 8; break; default: break; }
+-            if (jit_ends(L)) return 0;
+-        }
+-    }
+-    return 1;                           /* 350: no EXIT in 64 operations: not seen to be safe */
+-}
+-#endif
+ /* The operations from a to end - end 0: find it, a word without a header
+    (jitx) - of the word w: a call to w is a call to this code itself. */
+ #if JITX
+@@ -949,9 +875,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+     for (i = 0; i < n; i++) {           /* callees first: native, or no translation */
+         uint32_t f;
+         if (opl[i] != 0xFFFF || arg[i] == w) continue;
+-#if JITRE
+-        if (arg[i] < jit_cbase || arg[i] >= jit_cbase + ((UNS64)64 << 20)) return 0;   /* 350: a call to nowhere - the data after a refused callee, decoded */
+-#endif
+ #if JITEXEC
+         if (jit_isexec(arg[i])) {                                         /* 476: a call of EXECUTE - its helper; 481: its cache */
+             opl[i] = JIT_L_EXECUTE; arg[i] = (UNS64)(uintptr_t)jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1]; continue; }
+@@ -985,13 +908,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         if (f < 2) { jitlog_at = arg[i]; jitlog_why = 4; }
+         jitlog_note('C', w, arg[i], f);                 /* scratch: each callee's decision */
+ #endif
+-#if JITRE
+-        if (f < 2 && jit_rtouch(arg[i])) return 0;        /* 349: it pops its caller's return address - (S")'s inline data: refused, as before */
+-        if (f < 2) {                                      /* Iteration 346: interpreted, not refused - arg[i] its body */
+-            if (BYTE(arg[i]) == JIT_CODE) arg[i] += 5;      /* 347: past the header - entered at it, L_x_jit would repoint the "caller", the sentinel */
+-            opl[i] = JIT_L_INTERP; continue;
+-        }
+-#endif
+ #if JITEXEC
+         if (f < 2) {                                        /* 486: a cold word left bytecode - called through the helper */
+             static const long cold_[] = { JIT_W_COLD }; int c_;
+@@ -1083,9 +999,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+                 } else if (wh_[q_] == -1) p = jit_put(p, s, 0, 0, 0);       /* a canonicaliser */
+                 else {
+                     UNS64 v = o_ ? (UNS64)(INT64)o_->k : arg[i];               /* no o_: jitx's literal */
+-#if JITHELP
+-                    if (o_ && o_->fn) v = (UNS64)(uintptr_t)o_->fn;
+-#endif
+                     if (o_ && jit_st[s].imm >= 0 && lit && JIT_LITOPND(o_)) { v = arg[i]; lit = 0; }
+                     p = jit_put(p, s, v, jt, 0);
+                 }
+@@ -1116,9 +1029,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         for (j = 0; j < o->n; j++) {    /* the operand's value fills the first literal hole; k the rest */
+             int s = o->st[j];
+             UNS64 v = (UNS64)(INT64)o->k;
+-#if JITHELP
+-            if (o->fn) v = (UNS64)(uintptr_t)o->fn;
+-#endif
+             if (jit_st[s].imm >= 0 && lit && JIT_LITOPND(o)) { v = arg[i]; lit = 0; }
+             p = jit_put(p, s, v, jt, 0);
+         }
+diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
+index f85821c..7491d63 100644
+--- a/engine/spn-stencils.c
++++ b/engine/spn-stencils.c
+@@ -347,12 +347,6 @@ S(st_fill)   { unsigned char *p = (unsigned char *)sp[1]; cell n = *sp;
+ S(st_write) { spn_io_fn f = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
+ S(st_read)  { spn_io_fn f = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
+ #endif
+-#if JITHELP
+-/* Iteration 344, the gene jithelp: a C helper with the stencils' own signature, its address in the
+-   function hole - called through a register, so the stencil copies anywhere; outside the I/O
+-   stencils' own condition */
+-S(st_callc) { spn_st r = ((spn_fn)IMM_FN())(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }
+-#endif
+ const void *const spn_table[] = {
+     (const void *)spn_next, (const void *)spn_jump, (const void *)spn_call,
+     (const void *)st_lit, (const void *)st_dup, (const void *)st_drop,
+@@ -375,9 +369,6 @@ const void *const spn_table[] = {
+ #if JITINL
+     (const void *)st_dplus,      /* Iteration 137: after fill, so the others keep their numbers */
+ #endif
+-#if JITHELP
+-    (const void *)st_callc,      /* Iteration 344: last, so the others keep their numbers */
+-#endif
+ #if JITMUL
+     (const void *)st_umstar, (const void *)st_ummod,     /* Iteration 472: after the rest, numbers kept */
+     (const void *)st_spfetch, (const void *)st_aligned,  /* Iteration 484 */
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 5dccfe9..ccd925b 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1438,7 +1438,7 @@ static UNS64 numberq(UNS64 a, UNS64 base, UNS64 dpl, UNS64 *lo, UNS64 *hi) {
+     *lo = lo_; *hi = hi_; return (UNS64)-1;
+ }
+ #endif
+-#if JITRE || JITEXEC
++#if JITEXEC
+ /*  Iteration 346, the gene jitre: native code calling bytecode, as SPN's spn_interp - the stack back
+  *  into memory (the top where dsp points: a nested virtual_machine fills its TOS from there), the
+  *  sentinel pushed as a return address, the interpreter run from the body; its EXIT lands on the
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 43c4a4d..f3b0f94 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -206,8 +206,6 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
+ ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
+ gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
+      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
+-gene('jithelp', needs=lambda g, e: jit_on(g))   # Iteration 344: the C primitives the outer interpreter stops at, called from native code (st_callc)
+-gene('jitre', needs=lambda g, e: jit_on(g) and e.get('jithelp'))   # Iteration 346: a callee the JIT cannot translate interpreted, not refusing its caller (jit_interp)
+ gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
+ gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
+ gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
+@@ -901,7 +899,7 @@ REQUIRE = []
+ # code stays; removed only if the run after shows no loss (its comparison small or better).
+ FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
+-          'alignhot': 0, 'jithelp': 0, 'jitre': 0, 'jitos': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 501: nocase retired (the owner)
++          'alignhot': 0, 'jitos': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 501: nocase retired (the owner)
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+@@ -938,8 +936,6 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitrp'):        # Iteration 494, the gene jitrp: the return-stack pointer in a register
+         flags += ['-DJITRP=1', '-DJITRP_REG="%s"' % {2: 'rbx', 3: 'r13'}.get(g.get('regpin') or 0, 'r15')]   # clear of regpin's
+     if jit_on(g) and express(g).get('jitvar'): flags.append('-DJITVAR=1')   # Iteration 342: the slot operand's decoding
+-    if jit_on(g) and express(g).get('jithelp'): flags.append('-DJITHELP=1')   # Iteration 344: st_callc and the helpers
+-    if jit_on(g) and express(g).get('jitre'): flags.append('-DJITRE=1')       # Iteration 346: jit_interp
+     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
+     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
+     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
+@@ -1027,8 +1023,6 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitexec'): opts.append('--jitexec')   # Iteration 476: EXECUTE's row
+     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
+     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
+-    if jit_on(g) and express(g).get('jithelp'): opts.append('--jithelp')   # Iteration 344: C primitives called from native code
+-    if jit_on(g) and express(g).get('jitre'): opts.append('--jitre')       # Iteration 346: native code calling bytecode
+     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
+     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
+     if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
+diff --git a/lab/evolve/review-checks.py b/lab/evolve/review-checks.py
+index 48f5d22..ff05078 100644
+--- a/lab/evolve/review-checks.py
++++ b/lab/evolve/review-checks.py
+@@ -472,7 +472,7 @@ elif check == 'rules':
+         return ('%.0f%% of the front; in the fastest, smallest, best-Q tenth %d, %d, %d; %d of 4 removal votes, over %d run(s) %d%s'
+                 % (share, f, sm_, q, v, len(runs), tv, ' - a candidate' if cand else ('; a keep vote' if keep else ''))), cand
+     out.append((1, 'The verdict', "compare-fronts - process-seed.sh's verdict section", 'the 5% bar', 'SEE'))
+-    for g in ('jithelp', 'jitre', 'jitret'):
++    for g in ('jitret',):              # Iteration 504: jithelp and jitre retired - rule 2 watches jitret alone
+         t, cand = gene_line(g); out.append((2, g, t, 'kept unless a candidate: 11 of 12 over three runs, no keep vote', 'ATTENTION' if cand else 'PASS'))
+     rows = sorted(front_rows(path), key=lambda r: r['sp']); kk = max(1, len(rows) // 10)
+     if rows:
+diff --git a/results/seed63-rules.md b/results/seed63-rules.md
+index 5f4b79e..9870541 100644
+--- a/results/seed63-rules.md
++++ b/results/seed63-rules.md
+@@ -110,3 +110,8 @@ only if no front design relies on the overlap.
+ slower of its two readings, each workload's, where it was their geometric mean - the fast end stayed 7-10% optimistic
+ every run since 446, the best of thousands chosen on its luckier draw. The rule's band stands; the first run with the
+ change, seed 72, is its test.
++
++**Rule 2, jithelp and jitre retired (Iteration 504; the after-seed-71 batch)**: frozen since 455 (12 of 12 removal
++votes over three runs, 0% of every front since), their code goes - the C helpers called from native code (st_callc, the
++function hole), the interpreted call (S_INTERP) and their genes; jit_interp, its sentinel and its trampoline stay, for
++jitexec's interpreted path. Rule 2 watches jitret alone.
+diff --git a/tools/layout.py b/tools/layout.py
+index f0b6674..3dd67ec 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1677,9 +1677,7 @@ if EMIT:
+                  '<>?BRANCH': (['EQ', 'LIT', 'EQ', '0BRANCH'], 7), '<>?BRANCH8': (['EQ', 'LIT', 'EQ', '0BRANCH'], 6)}
+             if '--jitloop' in ARGV:   # Iteration 129, the gene jitloop: SPN's (+LOOP) and (?DO) stencils, a branch operand as (LOOP)'s
+                 O.update({'(+LOOP)': (['PLOOP'], 7), '(?DO)': (['QDO'], 7)})
+-            JITHELPERS = {'PLACE': 'h_place', '(PARSE)': 'h_parse'} if '--jithelp' in ARGV else {}   # Iterations 344-345, the gene jithelp: C primitives called from native code
+-            for _h in JITHELPERS: K[_h] = (['CALLC'], 0)
+-            if JITHELPERS: K['COUNT'] = (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1)   # Iteration 345: ( a -- a+1 u ) - stencils it has
++            # Iteration 504: jithelp retired (frozen since 455) - its C helpers and the rows' function field gone
+             if '--jitvar' in ARGV:    # Iteration 342, the gene jitvar: vf and vs - a literal of the slot's address, then @ or !
+                 O['vf'] = (['LIT', 'FETCH'], 9 if G['VARSLOT'] else 8); O['vs'] = (['LIT', 'STORE'], 9 if G['VARSLOT'] else 8)
+             if '--jitmul' in ARGV:    # Iteration 472, the gene jitmul: UM* and UM/MOD (spn-stencils.c, JITMUL); COUNT from stencils there are
+@@ -1705,19 +1703,14 @@ if EMIT:
+                 _dj = _jd(_nm)        # (not _d: that is the directory the headers go to)
+                 if _dj and len(_dj[0]) <= 5:
+                     _rows.append('[%d] = {1, %d, %d, %d, {%s}%s},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
+-                                 ', '.join('S_' + s for s in _dj[0]) or '0', (', (void *)' + JITHELPERS[_nm]) if _nm in JITHELPERS else (', 0' if JITHELPERS else ''), _nm.replace('*/', '* /')))
++                                 ', '.join('S_' + s for s in _dj[0]) or '0', '', _nm.replace('*/', '* /')))
+                 else: _miss.append('/* [%d] %s - no stencils */' % (_x, _nm.replace('*/', '* /')))   # 472: named, for jitapps.py
+             if '--jitexec' in ARGV:    # Iteration 476, the gene jitexec: EXECUTE - a row no bytecode maps to, and the primitive if any
+                 _le = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 2
+-                _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ', 0' if JITHELPERS else ''))
+-                _rows.append('[%d] = {1, 1, 4, 0, {S_CALLX}%s},  /* a cold call through the helper (486) */' % (_le + 1, ', 0' if JITHELPERS else ''))
+-                _rows.append('[%d] = {1, 1, 4, 0, {S_ABORTQ}%s},  /* (ABORT") - the flag here, the interpreter on a true one (488) */' % (_le + 2, ', 0' if JITHELPERS else ''))
+-            _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
+-            if '--jitre' in ARGV:
+-                _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
+-                assert _li < 0xFFFD, 'jitre: no index for INTERP'
+-                _rows.append('[%d] = {1, 1, 4, 0, {S_INTERP}%s},  /* an interpreted call (jitre) */' % (_li, ', 0' if JITHELPERS else ''))
+-                _lint = '#define JIT_L_INTERP %d\n' % _li
++                _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ''))
++                _rows.append('[%d] = {1, 1, 4, 0, {S_CALLX}%s},  /* a cold call through the helper (486) */' % (_le + 1, ''))
++                _rows.append('[%d] = {1, 1, 4, 0, {S_ABORTQ}%s},  /* (ABORT") - the flag here, the interpreter on a true one (488) */' % (_le + 2, ''))
++            _lint = ''                  # Iteration 504: jitre retired (frozen since 455) - its interpreted-call row gone
+             _jc = T2MAP['one'][G['T2_JIT']]
+             def _wends():              # Iteration 489: every image word's body, start and end - the decoder's end for a word reached
+                 rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_)) for w_ in order
