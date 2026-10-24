@@ -37,7 +37,8 @@ readings differently (the slower, from the after-seed-71 batch). So:
   retired; move to results/applied-after-seed71/; the routine's chain on master (build, run-tests - engines-check's
   differential JIT test at both widths in it -, validate, the jail, the gate, ans-check).
 - **Seed 72's line**: the owner's hours; without the footprint experiment (504):
-  `seed 72 <hours>h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16`.
+  `seed 72 <hours>h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment contention.py --sample 16`
+  (514, the owner: the contention experiment - results/drafts/ask-noise-answers-513.md).
   appbench.py's default then includes wordfreq and minif (nine applications).
 - **Records**: the results file (its first paragraph saying the speed break), xcheck, the compare-fronts session (the
   spread - sizes), the progress table (regenerated: the break bold), HANDOFF, PROGRESS, the predictions scored.

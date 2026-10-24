@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 514 (the owner): seed 72's line ends with the contention experiment - the fast end alone and beside co-runners:
+#   ... then experiment contention.py --sample 16
 # Iteration 504 (the owner): seed 72's line, written at seed 71's processing, without the footprint experiment
 # (process review 7: its order too close to call over seeds 64-70; the applications step answers big programs).
 # Iteration 498 (seed 70 processed): seed 71, 10 hours (the owner); the after-seed-70 batch applied - the applications

@@ -54,3 +54,7 @@ organised (elite resampling first) but its bias arithmetic wrong. 8 sensible and
   with three workers running ordinary measurements beside it - on the laptop. If (b) matches the in-run speeds and (a)
   is the 7-10% slower, the offset is contention; then the question is which speed the search should optimise - with
   co-runners (as now: cheap, four at a time) or alone (the speed a user sees) - and rule 3 compares like with like.
+
+**The owner (514)**: the experiment added - lab/evolve/contention.py, the last step of seed 72's chain (NEXT-RUN's note,
+the seed 71 checklist): the 16 fastest of the front, each measured as the run measures it, alone and beside three
+co-runners on other cores (looping s6 and front designs over the selection workloads), alone-loaded-loaded-alone.

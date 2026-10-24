@@ -47,3 +47,9 @@ For each suspected bug: where (function and line), the mechanism, **a minimal tr
 condition that produces it - the expected and the actual behaviour, and your confidence (high, medium, low). Then,
 separately: places that are risky but that you believe are correct, and invariants no code checks that should be
 asserted. No style comments, and no "might be an issue" without a mechanism.
+
+---
+
+*Iteration 514 (the owner): a self-contained version - this prompt with jit.c, spn-stencils.c and the vm-lab.c excerpts
+embedded as code blocks, as the after-seed-71 batch leaves them (89 KB, one file to paste) - is built from a clone with
+the batch applied; given to the owner as ask-jit-review-514-selfcontained.md.*

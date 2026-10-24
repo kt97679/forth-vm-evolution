@@ -9568,3 +9568,17 @@ ranked (9 best; 10's invented references, 7's wrong arithmetic); references chec
 Files: results/drafts/ask-noise-answers-513.md (new), results/drafts/fastgate-slower-withdrawn-513.patch (moved from
 results/pending/); results/pending/ORDER.md, results/predictions.md, results/seed63-rules.md, results/README.md,
 HANDOFF.md.
+
+## Iteration 514 - 2026-10-24 - Claude
+
+**The contention experiment added; the bug-hunt prompt made self-contained** (the owner: add it; one file to upload).
+lab/evolve/contention.py: the N fastest of the run's front, each measured exactly as the run measures it (R rounds,
+paired with s6), alone and beside K co-runners pinned to other cores - each looping s6 or a front design over the
+selection workloads, as the run's workers - in the order alone, loaded, loaded, alone; the report gives in-run, alone,
+loaded and their ratios with a reading of the medians. Tried here on seed 70's records (two designs, one round): it runs
+and leaves no co-runner behind (this container's one CPU cannot show contention). Seed 72's line ends with `then
+experiment contention.py --sample 16` (NEXT-RUN's note, the seed 71 checklist). The bug-hunt prompt as one file with
+jit.c, spn-stencils.c and the vm-lab.c excerpts embedded, as the after-seed-71 batch leaves them: 89 KB.
+
+Files: lab/evolve/contention.py (new); lab/evolve/README.md, lab/evolve/NEXT-RUN, results/drafts/seed71-checklist-505.md,
+results/drafts/ask-noise-answers-513.md, results/drafts/ask-jit-review-511.md, HANDOFF.md.
