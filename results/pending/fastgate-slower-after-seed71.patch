@@ -1,0 +1,27 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c2cee9a..f34d935 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -2122,7 +2122,9 @@ def main(argv):
+         gate = fast_gate(R)                                   # Iteration 391
+         args = [(canon(g), ROUNDS, False, gate) for i, (g, parents, how, gen) in items]
+         # Iteration 446: the gated children of the generation before, measured again in this batch - among other
+-        # co-runners, at another moment - their speed the geometric mean of the two readings then
++        # co-runners, at another moment; Iteration 503 (the owner): their speed the slower of the two readings - the
++        # whole reading, its workloads' times with it (each workload's slower time compounded: 0.70 and 0.70 made 0.74).
++        # The geometric mean kept the fast end 7-10% optimistic every run (rule 3) - the best chosen on a luckier draw
+         again = [i for i, r in R.items() if r.get('gated') == 1 and r.get('status') == 'ok'] if items else []
+         args += [(R[i]['genome'], ROUNDS, False, None, True) for i in again]
+         results = list(WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args))
+@@ -2131,9 +2133,8 @@ def main(argv):
+             if rec2.get('status') == 'ok' and rec2.get('t'):
+                 t1, raw1 = r['t'], r.get('raw', {})
+                 r['speed1'], r['speed2'] = r['speed'], rec2['speed']
+-                r['t'] = t = {w: math.sqrt(t1[w] * rec2['t'][w]) for w in t1 if w in rec2['t']}
+-                r['raw'] = {w: math.sqrt(raw1[w] * rec2['raw'][w]) for w in raw1 if w in rec2.get('raw', {})}
+-                r['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
++                if rec2['speed'] > r['speed']:                 # the second reading the slower: it stands
++                    r['t'], r['raw'], r['speed'] = dict(rec2['t']), dict(rec2.get('raw', {})), rec2['speed']
+             r['gated'] = 2; save(r)
+             print('    %s measured again: %.4g, then %s - %s' % (i, r.get('speed1', r['speed']), ('%.4g' % r['speed2']) if 'speed2' in r else rec2.get('status'), ('speed %.4g' % r['speed'])), flush=True)
+         for (i, (g, parents, how, gen)), rec in zip(items, results[:len(items)]):

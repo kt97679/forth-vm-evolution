@@ -9418,3 +9418,16 @@ experiment dropped from the chain.
 
 Files: tests/jit/jit-diff.fth, results/drafts/process-review-501.md, results/pending/ (new); lab/evolve/engines-check.py,
 tools/batch-check.sh, lab/evolve/README.md, results/README.md, HANDOFF.md.
+
+## Iterations 502-503 - 2026-10-24 - Claude
+
+**The owner's decisions on the process review: rules 11 and 12, and the fast gate's slower reading** (the owner: agree
+with 4, 5 and 6; 7 to be explained; results/drafts/process-review-501.md, results/seed63-rules.md). Rule 11: a gene
+comes out of FROZEN only when a selection workload (or size or memory) can see what it does, named in its record and its
+prediction. Rule 12: a gene's votes count from its second run with a workload that measures it - review-checks.py's
+GRACE table, the four JIT genes and jitrp from seed 72 (on master: a tool). The fast gate: a gated design's speed the
+slower of its two readings, each workload's, not their geometric mean - free, no reading more; the after-seed-71 batch's
+second patch, tried in a three-generation run of the evolver. Predicted: rule 3 PASS in seed 72.
+
+Files: results/pending/fastgate-slower-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/review-checks.py,
+results/seed63-rules.md, results/drafts/process-review-501.md, results/predictions.md, HANDOFF.md.

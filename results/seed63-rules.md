@@ -24,6 +24,8 @@ comparison against seeds 59-62 at both widths (HANDOFF.md, item 0).
 | 8 | The tail engines (HANDOFF item 4b) | the gene votes below - seeds 63-65 its first fair runs, the 32-bit fixes (patches 5, 6, 9) applied | kept unless the votes make it a candidate | a candidate: as 2 (gen-tail.py and build_tail removed last) |
 | 9 | The rtimm=2 / rtfuse overlap (item 4b, Iteration 423) | the front's designs with rtimm=2, rtfuse off and built pairs or fused tests | none: proposed - rtfuse governs (rtimm=2 passes --rtfuse only with rtfuse on) | some: no change |
 | 10 | Programs past 4 MB (patch 12) | the corpus and the tests | pass | a failure: fixed before seed 64 |
+| 11 | A gene paid for before it is enabled (the owner, Iteration 502) | the enabling's own record | a gene comes out of FROZEN only when a selection workload, or size or memory, can see what it does - the record names that workload, and a prediction for the gene names it too | none named: the gene stays frozen until one is (results/drafts/process-review-501.md: jitmul, jitdoes, jitexec and jitcfa, enabled on applications the selection did not measure, on none of seed 70's front) |
+| 12 | A grace period for the votes (the owner, Iteration 502) | review-checks.py votes (its GRACE table) | a gene's votes count from its second run with a workload that measures it | the four JIT genes and jitrp: from seed 72 |
 
 **The gene votes** (rules 2 and 8; every gene not frozen - the owner, Iteration 432). No rule takes a gene out; each
 run votes, and votes for keeping weigh more than votes for removal - keeping a useless gene costs code, removing a
@@ -103,3 +105,8 @@ unchanged - for 9.5% fewer bytes.
 small end, I+ and programs past 4 MB only measure or report. The rtimm/rtfuse proposal removes no behaviour: with
 rtfuse on, rtimm=2 does exactly what it does now with pairs - one mutation further, nothing lost - and it is proposed
 only if no front design relies on the overlap.
+
+**Rule 3, the fast gate, changed (Iteration 503, the owner; the after-seed-71 batch)**: a gated design's speed is the
+slower of its two readings, each workload's, where it was their geometric mean - the fast end stayed 7-10% optimistic
+every run since 446, the best of thousands chosen on its luckier draw. The rule's band stands; the first run with the
+change, seed 72, is its test.

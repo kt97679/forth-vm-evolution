@@ -28,3 +28,7 @@ The owner asked, after seeds 64-70 and the JIT work of 471-500. Changed now, as 
 
 And for the processing of seed 71, the first with the applications in the selection: its speeds compare with no run
 before it; the spread compares sizes, not speeds; seed 72 onward compare with 71.
+
+**The owner (502)**: 4, 5 and 6 agreed - rule 11 (a gene paid for before it is enabled) and rule 12 (a grace period for
+the votes, review-checks.py's GRACE: the four JIT genes and jitrp from seed 72) in results/seed63-rules.md; 6 as the
+re-measure, the slower of the two readings (the after-seed-71 batch, 503). 7 explained further - the owner's to decide.

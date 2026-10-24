@@ -416,9 +416,14 @@ elif check == 'votes':
     last = sorted(set(r[0] for r in rows))[-3:]
     print('seed %d: %d front designs (tenths of %d) - the removal votes of each gene this run, of 4: share under 10%%, none in the fastest, smallest, best-Q tenth' % (seed, n, k))
     print('all four this run: %s' % (', '.join(g for _, g, _, _, _, _, v in run if v == 4) or 'none'))
+    # Iteration 502 (the owner): a grace period - a gene's votes count from its second run with a workload that
+    # measures what it does (results/seed63-rules.md, rule 12). Seed 70 voted four times against jitmul, jitdoes,
+    # jitexec and jitcfa, which no workload paid for until the applications joined the selection (seed 71); jitrp
+    # was enabled for seed 71. Their votes count from seed 72. A gene enabled later gets its line here.
+    GRACE = {'jitmul': 72, 'jitdoes': 72, 'jitexec': 72, 'jitcfa': 72, 'jitrp': 72}
     tally = collections.OrderedDict()
     for r in rows:
-        if r[0] in last: tally.setdefault(r[1], []).append(r)
+        if r[0] in last and r[0] >= GRACE.get(r[1], 0): tally.setdefault(r[1], []).append(r)
     cand, near = [], []
     for g, rs in tally.items():
         votes = sum(r[6] for r in rs); keep = any(r[3] or r[4] or r[5] for r in rs)
