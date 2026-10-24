@@ -9222,7 +9222,8 @@ negative (-0.171, -0.329). **The gene votes fixed**: review-checks.py votes now 
 code (its commit's evolve.py, from the results file's "asked at" or --at) - seed 69 would otherwise have cast four
 removal votes each against jitmul, jitdoes, jitexec and jitcfa, which did not exist in it; jitos a candidate (12 of 12).
 The after-seed-68 batch: batch-check PASS (3 patches on e5c6239), applied, moved to results/applied-after-seed68/; the
-routine's chain on master after it. NEXT-RUN: seed 70, 11 hours, without islands, footprint, spread and the
+routine's chain on master after it: build, run-tests PASS, validate 7 of 7, the jail PASS, the gate 147 of 147 alive,
+ans-check 0 of 38 differ (rerun - the first stopped short when the chat's turn ended). NEXT-RUN: seed 70, 11 hours, without islands, footprint, spread and the
 applications after it. The compare-fronts record and the progress table updated; predictions scored.
 
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed69.md, results/xcheck-seed69.md (new); results/applied-after-seed68/
