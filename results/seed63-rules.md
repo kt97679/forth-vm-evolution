@@ -106,7 +106,8 @@ small end, I+ and programs past 4 MB only measure or report. The rtimm/rtfuse pr
 rtfuse on, rtimm=2 does exactly what it does now with pairs - one mutation further, nothing lost - and it is proposed
 only if no front design relies on the overlap.
 
-**Rule 3, the fast gate, changed (Iteration 503, the owner; the after-seed-71 batch)**: a gated design's speed is the
+**Rule 3, the fast gate, changed (Iteration 503, the owner; the after-seed-71 batch) - withdrawn at 513** (one reading's
+noise 0.96%, the gate's regression 0.07%: the offset is the measuring context, not luck - results/drafts/ask-noise-answers-513.md): a gated design's speed is the
 slower of its two readings, each workload's, where it was their geometric mean - the fast end stayed 7-10% optimistic
 every run since 446, the best of thousands chosen on its luckier draw. The rule's band stands; the first run with the
 change, seed 72, is its test.

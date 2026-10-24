@@ -936,7 +936,7 @@ paid for what they do; appbench.py's geometric mean for its fastest JIT design b
 with them and the batch: 0.234); the speeds on the six old workloads within 5% of seed 70's (the seventh costs them
 little).
 
-## The fast gate's slower reading, from seed 72 - predicted (Iteration 503)
+## The fast gate's slower reading, from seed 72 - predicted (Iteration 503) - WITHDRAWN (513): the patch withdrawn, see results/drafts/ask-noise-answers-513.md
 
 With the gated designs' speed the slower of their two readings: seed 72's fastest tenth re-measured / in-run, median,
 at most 1.05 (seeds 64-70: 1.07-1.10) - rule 3 PASS for the first time since 446.

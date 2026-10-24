@@ -9551,3 +9551,20 @@ trip from what holds - three stencils copied, two holes patched, the tails dropp
 42 (results/drafts/arm-cp-poc-512.c). Answer 1 the most careful, 5 the most confident and the most wrong.
 
 Files: results/drafts/ask-arm-jit-answers-512.md, results/drafts/arm-cp-poc-512.c (new); results/README.md, HANDOFF.md.
+
+## Iteration 513 - 2026-10-24 - Claude
+
+**The noise prompt's five answers checked - and two of the prompt's premises found wrong** (the owner brought them;
+results/drafts/ask-noise-answers-513.md). From seed 70's records: one in-run reading's noise is 0.96% (1,130 gated designs
+read twice), not the prompt's 2-3%; the gate's second readings are only 0.07% slower than the lucky first ones - no
+winner's curse to speak of at the reading level. And measure() already pairs every round with s6, alternating - the
+answers' main load fix was in place all along (the prompt said once per run). So the fast end's 7-10% is the measuring
+context: co-runners in the run, alone in the re-measure - a design-specific response to contention the pair cannot
+cancel (answer 9 named the limit). The slower-of-two patch withdrawn (0.54% of pessimism against an offset that is not
+noise; the other four pending patches apply without it), its prediction withdrawn; an experiment proposed. Answers
+ranked (9 best; 10's invented references, 7's wrong arithmetic); references checked by search (Fieldsend 2015, Hughes
+2001, Teich 2001 found; 10's TEC citations wrong).
+
+Files: results/drafts/ask-noise-answers-513.md (new), results/drafts/fastgate-slower-withdrawn-513.patch (moved from
+results/pending/); results/pending/ORDER.md, results/predictions.md, results/seed63-rules.md, results/README.md,
+HANDOFF.md.

@@ -3,7 +3,6 @@
 Prepared while seed 71 runs; master stays what seed 71's bundle tests.
 
     git apply results/pending/retire-nocase-after-seed71.patch
-    git apply results/pending/fastgate-slower-after-seed71.patch
     git apply results/pending/retire-jithelp-jitre-after-seed71.patch
     git apply results/pending/jitfuse-after-seed71.patch
     git apply results/pending/enable-jitfuse-after-seed71.patch
@@ -16,12 +15,9 @@ engines-check variant go; coreext.4's [ELSE] matching without case stays (499: f
 for a revival: results/drafts/nocase-496.md and results/applied-after-seed70/ (nocase-after-seed70.patch). Tested in a
 clone of master (35a2a8c) with it: run-tests PASS (93 engine paths).
 
-**fastgate-slower-after-seed71.patch** (lab/evolve/evolve.py, 503; the owner agreed to proposal 6 of
-results/drafts/process-review-501.md): a gated design - faster than the fast gate, measured a second time in the next
-generation's batch - takes the slower of its two readings, each workload's, not their geometric mean. Free: no reading
-more - the whole slower reading: a first version took each workload's slower time, which compounded (0.70 and 0.70
-made 0.74, slower than either). Tested: applies after the retirement; three generations of the evolver with both and
-the gate at the third fastest - gated designs measured again, the slower reading kept (0.9512 then 0.9771: 0.9771).
+**fastgate-slower-after-seed71.patch - withdrawn (513)**: seed 70's own data put one reading's noise at 0.96% and the
+gate's regression to the mean at 0.07% - the slower of two would add 0.54% of pessimism against a 7-10% that is
+not noise (results/drafts/ask-noise-answers-513.md); kept as results/drafts/fastgate-slower-withdrawn-513.patch.
 
 **retire-jithelp-jitre-after-seed71.patch** (504; engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py,
 lab/evolve/evolve.py, lab/evolve/review-checks.py, results/seed63-rules.md): **jithelp and jitre retired** - frozen since
