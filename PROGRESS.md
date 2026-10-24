@@ -9301,3 +9301,17 @@ JIT designs may compute wrong addresses where CELL+ or CELLS are translated - it
 processing.
 
 Files: results/pending/jit-32bit-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.
+
+## Iteration 494 - 2026-10-24 - Claude
+
+**jitrp made a gene - the batch's fourth patch, staged frozen** (the owner: proceed with the other items; his view on
+the applications: more is better, but not longer runs; results/pending/ORDER.md). The 465 prototype - the JIT's
+return-stack pointer in a register across the stencils - rebased onto the after-seed-70 batch in a clone: one conflict
+at the native call site, resolved by reading the pointer through JIT_RP_GET after a return, a throw or a resume; the
+nested interpreter for EXECUTE's interpreted path starts from it too. The gene: GCC and 64-bit only, its register clear
+of regpin's (r15; rbx under regpin 2; r13 under 3). Right on s6 with every JIT gene, with jitrp and with jitrp beside
+regpin 2 against the interpreter, the corpus each; engines-check PASS at both widths. Instructions on seed 68's fastest
+GCC JIT design: loop -19.2%, bubble -4.0%, ackermann +2.0% (465's figures again). A first patch of it missed what the
+three-way apply had staged (git diff without HEAD) - caught by the apply check, redone from HEAD.
+
+Files: results/pending/jitrp-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.

@@ -1,10 +1,11 @@
 # The after-seed-70 batch - applied at seed 70's processing (Iterations 488-490)
 
-Prepared while seed 70 runs; master stays what seed 70's bundle tests. Three patches, in this order:
+Prepared while seed 70 runs; master stays what seed 70's bundle tests. Four patches, in this order:
 
     git apply results/pending/jit-more-after-seed70.patch
     git apply results/pending/coreext-2r-after-seed70.patch
     git apply results/pending/jit-32bit-after-seed70.patch
+    git apply results/pending/jitrp-after-seed70.patch
 
 **jit-more-after-seed70.patch** (engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py):
 
@@ -40,5 +41,16 @@ calling native code as spn_fn - SPN_CC, which the plain cast was not at 32 bits;
 CELLS as LSHIFT 3 - eight-byte cells - at either width; now by the cell. Tested: s6 at 32 bits interpreted, with the
 JIT, and with the JIT and all four genes - EXECUTE, DOES>, division and its throw, (ABORT"), strings, PICK, ALIGNED -
 equal line for line, each through the corpus; engines-check PASS at both widths with all three patches.
+
+**jitrp-after-seed70.patch** (494; engine/spn-stencils.c, engine/vm-lab.c, tools/gen-jitk.py, lab/evolve/evolve.py,
+lab/evolve/engines-check.py): the 465 prototype made **the gene jitrp**, staged frozen - the JIT's return-stack pointer
+in a register across the stencils (GCC's global register variable; GCC and 64-bit only; r15, or rbx under regpin 2,
+r13 under regpin 3 - clear of regpin's). Rebased onto the batch: the native call site reads the register after a
+return and after a throw or a resume (JIT_RP_GET), and the nested interpreter (jit_interp, for EXECUTE's interpreted
+path) starts from it. Right against the interpreter on s6 with every JIT gene, with jitrp, and with jitrp beside
+regpin 2 (nested loops, >R and R@, EXECUTE, DOES>, I and J, ABORT" and division throws through CATCH, LEAVE, ?DO), the
+corpus each; engines-check PASS at both widths. Instructions (cachegrind) on seed 68's fastest GCC JIT design,
+6c0c4e6886: loop -19.2%, bubble -4.0%, fib 0.0%, ackermann +2.0% - the 465 prototype's figures again; on s6 with the
+JIT, whose loops run otherwise, -0.4% at most. Frozen until the owner says.
 
 **At seed 70's processing**: `sh tools/batch-check.sh` first, then apply both, the routine's chain after it.
