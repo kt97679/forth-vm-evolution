@@ -19,6 +19,9 @@ cd "$T" || exit 1
 [ -f results/pending/ORDER.md ] || { say "no pending batch - nothing to test"; exit 0; }
 n=0
 for p in $(sed -n 's/^ *git apply \(results\/pending\/[^ ]*\.patch\).*/\1/p' results/pending/ORDER.md); do
+    # Iteration 501: a patch that adds conflict markers applies cleanly - the after-seed-68 engine patch carried one from
+    # its 475 rebase to 486 (results/applied-after-seed68/ORDER.md) - so markers are refused before applying.
+    if grep -n '^+\(<<<<<<< \|=======$\|>>>>>>> \)' "$p" > "$OUT/markers.log"; then say "$p adds conflict markers ($OUT/markers.log)"; exit 1; fi
     git apply "$p" 2> "$OUT/apply.log" || { say "$p does not apply ($OUT/apply.log)"; exit 1; }
     n=$((n + 1))
 done

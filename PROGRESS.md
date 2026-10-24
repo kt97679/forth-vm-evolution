@@ -9403,3 +9403,18 @@ only - the selection's apps stay the four. On seed 70's fastest, 77d42fd7da: 0.5
 
 Files: lab/evolve/apps/wordfreq.fth, lab/evolve/apps/minif.fth (new); lab/evolve/appbench.py, lab/evolve/README.md,
 HANDOFF.md.
+
+## Iteration 501 - 2026-10-24 - Claude
+
+**nocase retired; the workflow reviewed, three fixes made** (the owner: retire it; do the recent runs call for changes?;
+results/drafts/process-review-501.md, results/pending/ORDER.md). The retirement - the overlays, the two extra kernel
+dumps per header system, the gene, its engines-check variant - is the after-seed-71 batch (run-tests PASS in a clone);
+the [ELSE] fix stays. The review: engines-check built its 32-bit variants with jit=0, so the 32-bit JIT was never tested
+there and CELL+/CELLS reached seed 70 - now the JIT is kept at 32 bits and every JIT variant runs tests/jit/jit-diff.fth
+(this session's hand-made JIT tests, permanent) against s6 at the same width: engines-check PASS, 95 paths. batch-check
+refuses a patch that adds conflict markers (the 475-486 rebase's). Proposed to the owner: a gene paid for by a workload
+before it is enabled; a grace period for gene votes; rule 3's band or a re-measure of the fastest; the footprint
+experiment dropped from the chain.
+
+Files: tests/jit/jit-diff.fth, results/drafts/process-review-501.md, results/pending/ (new); lab/evolve/engines-check.py,
+tools/batch-check.sh, lab/evolve/README.md, results/README.md, HANDOFF.md.

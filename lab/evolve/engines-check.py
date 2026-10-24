@@ -107,6 +107,12 @@ VARIANTS += [('bfind: THREAD-FIND, CV8, tos', {'kfast': 1, 'tfind': 1, 'bfind': 
 # genome, built and run on the corpus every time: a fault found once stays a test.
 VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
              for r in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'regressions.json')))]
+# Iteration 501: every JIT variant also runs tests/jit/jit-diff.fth, its output s6's at the same width - the corpus
+# passed where seed 70's 906 32-bit failures did not (CELL+ and CELLS, 493), since nothing it holds was translated.
+JDIFF = open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'tests', 'jit', 'jit-diff.fth'), 'rb').read()
+def jdiff(eng, img, pw):
+    return [l.strip() for l in E.sh([eng, img], inp=JDIFF, timeout=120, cpu=60, cwd=pw).stdout.decode('latin-1').replace('\r', '').split('\n')]
+JREF = {}
 for name, genes, must in VARIANTS:
     g = E.canon(dict(S6, **genes))
     ex = E.express(g)
@@ -115,8 +121,13 @@ for name, genes, must in VARIANTS:
         bad.append(name); print('  %-32s NOT EXPRESSED: %s' % (name, ', '.join(lost)), flush=True); continue
     d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
     try:
-        eng, img = E.build(g, d)
-        E.alive(eng, img, E.private_work(d))
+        eng, img = E.build(g, d); pw = E.private_work(d)
+        E.alive(eng, img, pw)
+        if 'jit' in must:
+            if 8 not in JREF:
+                dr = os.path.join(E.EV, 'engines-check-ref'); shutil.rmtree(dr, ignore_errors=True)
+                JREF[8] = jdiff(E.REF[0], E.REF[1], E.private_work(dr))
+            if jdiff(eng, img, pw) != JREF[8]: raise RuntimeError('jit-diff.fth: not as s6')
         if name.endswith(', tos') and 'bfind' in must:   # Iteration 402: built, not only expressed
             d0 = d + '-0'; shutil.rmtree(d0, ignore_errors=True); e0, _ = E.build(E.canon(dict(g, bfind=0)), d0)
             if open(e0, 'rb').read() == open(eng, 'rb').read(): raise RuntimeError('bfind inert: the same engine without it')
@@ -134,12 +145,17 @@ for name, genes, must in VARIANTS:
 # at 4-byte cells clang made none of its dispatches jumps ('tail calls not jumps', results/fail32-400.md).
 V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'jit' in must]   # Iteration 461: the JIT at 32 bits
 for name, genes, must in V32:
-    g = E.canon(dict(S6, **dict(genes, jit=0)))
+    g = E.canon(dict(S6, **genes))       # 501: the JIT kept - it runs at 32 bits since 487 (it was jit=0 here)
     d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
     try:
         with E.at_width(E.WIDTH4):
-            eng, img = E.build(g, d)
-            E.alive(eng, img, E.private_work(d))
+            eng, img = E.build(g, d); pw = E.private_work(d)
+            E.alive(eng, img, pw)
+            if 'jit' in must:
+                if 4 not in JREF:
+                    dr = os.path.join(E.EV, 'engines-check-ref4'); shutil.rmtree(dr, ignore_errors=True)
+                    er, ir = E.build(E.canon(dict(S6)), dr); JREF[4] = jdiff(er, ir, E.private_work(dr))
+                if jdiff(eng, img, pw) != JREF[4]: raise RuntimeError('jit-diff.fth: not as s6 at 32 bits')
         print('  %-32s ok     engine %6d, image %6d bytes' % (name, os.path.getsize(eng), os.path.getsize(img)), flush=True)
     except Exception as e:
         bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)

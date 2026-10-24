@@ -58,7 +58,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `counters-test.py` - counters.py leaves kernel.perf_event_paranoid as it found it, however the run ends: eight cases, a stand-in sudo; as root on a scratch machine (Iteration 279)
 - `counters.py` - where the cycles go: hardware counters (perf) for the newest front's designs on the selection workloads - the laptop's (Iteration 278)
 - `cpu-noise.py` - cpu-noise.py [--rounds N] [--cpus A,B] [--ids ID,...] [--work W,...] DB [DB ...]
-- `engines-check.py` - engines-check.py - an engine down every generator's path builds, and runs
+- `engines-check.py` - (Iteration 501: the JIT kept at 32 bits, and tests/jit/jit-diff.fth on every JIT variant against s6 at the same width) engines-check.py - an engine down every generator's path builds, and runs
 - `evolve.py` - evolve.py - evolve VM designs: the faster and the smaller survive
 - `factor-price.py` - factor-price.py ID [--shares 1e-3,1e-2,2] [--db FILE ...] - what the gene
 - `fsys-count.py` - fsys-count.py ID [ID ...] --db FILE [--db FILE] [--levels 4,5] [--works kernel,corpus]
