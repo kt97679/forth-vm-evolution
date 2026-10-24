@@ -45,9 +45,14 @@
 : FLUSH-FILE ( fileid --- ior )  DROP 0 ;                 \ nothing is buffered
 : GET-CURRENT ( --- wid )  CURRENT @ ;
 : SET-CURRENT ( wid --- )  CURRENT ! ;
+\ Iteration 499: the words [ELSE] skips over are matched without case - lexex's and benchgc's [if] ... [then], in
+\ lower case, were not, and everything after the first one skipped went with it, silently.
+CREATE [IF]-BUF 32 ALLOT
+: [IF]-UP ( c-addr u --- c-addr2 u )  31 MIN DUP >R [IF]-BUF SWAP CMOVE
+  [IF]-BUF R@ 0 ?DO DUP I + DUP C@ DUP 96 > OVER 123 < AND IF 32 - THEN SWAP C! LOOP R> ;
 : [ELSE] ( --- )
   1 BEGIN
-    BEGIN BL WORD COUNT DUP WHILE
+    BEGIN BL WORD COUNT DUP WHILE  [IF]-UP
       2DUP S" [IF]" COMPARE 0= IF 2DROP 1+ ELSE
       2DUP S" [ELSE]" COMPARE 0= IF 2DROP 1- DUP IF 1+ THEN ELSE
       S" [THEN]" COMPARE 0= IF 1- THEN THEN THEN
