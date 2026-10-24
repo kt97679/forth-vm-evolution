@@ -1,8 +1,8 @@
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index c2cee9a..f34d935 100644
+index 3e6d191..43c4a4d 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
-@@ -2122,7 +2122,9 @@ def main(argv):
+@@ -2116,7 +2116,9 @@ def main(argv):
          gate = fast_gate(R)                                   # Iteration 391
          args = [(canon(g), ROUNDS, False, gate) for i, (g, parents, how, gen) in items]
          # Iteration 446: the gated children of the generation before, measured again in this batch - among other
@@ -13,7 +13,7 @@ index c2cee9a..f34d935 100644
          again = [i for i, r in R.items() if r.get('gated') == 1 and r.get('status') == 'ok'] if items else []
          args += [(R[i]['genome'], ROUNDS, False, None, True) for i in again]
          results = list(WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args))
-@@ -2131,9 +2133,8 @@ def main(argv):
+@@ -2125,9 +2127,8 @@ def main(argv):
              if rec2.get('status') == 'ok' and rec2.get('t'):
                  t1, raw1 = r['t'], r.get('raw', {})
                  r['speed1'], r['speed2'] = r['speed'], rec2['speed']

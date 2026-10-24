@@ -269,10 +269,10 @@ index 43c4a4d..f3b0f94 100644
      if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
      if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
 diff --git a/lab/evolve/review-checks.py b/lab/evolve/review-checks.py
-index 48f5d22..ff05078 100644
+index b97dd9b..fa2ee07 100644
 --- a/lab/evolve/review-checks.py
 +++ b/lab/evolve/review-checks.py
-@@ -472,7 +472,7 @@ elif check == 'rules':
+@@ -488,7 +488,7 @@ elif check == 'rules':
          return ('%.0f%% of the front; in the fastest, smallest, best-Q tenth %d, %d, %d; %d of 4 removal votes, over %d run(s) %d%s'
                  % (share, f, sm_, q, v, len(runs), tv, ' - a candidate' if cand else ('; a keep vote' if keep else ''))), cand
      out.append((1, 'The verdict', "compare-fronts - process-seed.sh's verdict section", 'the 5% bar', 'SEE'))
@@ -295,7 +295,7 @@ index 5f4b79e..9870541 100644
 +function hole), the interpreted call (S_INTERP) and their genes; jit_interp, its sentinel and its trampoline stay, for
 +jitexec's interpreted path. Rule 2 watches jitret alone.
 diff --git a/tools/layout.py b/tools/layout.py
-index f0b6674..3dd67ec 100644
+index 2e0d1b6..bc232c8 100644
 --- a/tools/layout.py
 +++ b/tools/layout.py
 @@ -1677,9 +1677,7 @@ if EMIT:

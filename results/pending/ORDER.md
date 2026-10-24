@@ -48,4 +48,11 @@ the search to weigh its speed (-3.8% of instructions over the seven workloads) a
 selection sees both - every workload runs JIT code on a JIT design. Rule 12: its votes count from seed 73
 (review-checks.py's GRACE). Predicted (results/predictions.md).
 
+**Rebased at 509** (all five): master gained tests/jit/jit-ops.fth, an engines-check variant with 2@ and 2! as
+opcodes, and the 2@/2! width fix itself (moved out of jitfuse's patch onto master); jitfuse's branch targets are now
+marked by address, a pass each way. Measured again (instructions, seed 70's fastest with the four genes, jitk 3):
+kernel +0.3%, fib -16.3%, corpus +0.7%, loop -5.0%, bubble -10.6%, ackermann +1.5%, apps -1.2% - **the geometric
+mean -4.6%** (was -3.8%), 1,136 bytes more. engines-check PASS in a clone with all five (99 paths, the new tests on
+every JIT variant at both widths). All five apply in order to master.
+
 **At seed 71's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

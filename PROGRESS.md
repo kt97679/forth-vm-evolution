@@ -9501,3 +9501,19 @@ GENES.md has its row.
 
 Files: results/pending/enable-jitfuse-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/review-checks.py,
 lab/evolve/GENES.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 509 - 2026-10-24 - Claude
+
+**The JIT map audited, every mapped word tested at both widths, jitfuse's overhead cut** (the owner: proceed with the
+three). The audit: every constant in layout.py's JIT maps and every eight in jit.c and the stencils read for the cell's
+width - the stencils and the C side size by the cell; in the maps, CELL+ and CELLS were fixed at 493 and 2@ and 2! were
+the last (now fixed on master directly, with their test - out of jitfuse's patch). tests/jit/jit-ops.fth runs every
+word the JIT maps, each in its own word on edge values; engines-check runs it with jit-diff.fth on every JIT variant
+at both widths, against s6, plus a variant with 2@ and 2! as opcodes (format-10 words with opbody) - the case no variant
+had built. jitfuse marks branch targets by address, a pass each way, where each branch had rescanned the word: kernel
++0.3% and corpus +0.7% (were +1.2% and +2.4%); the seven's geometric mean -4.6% (was -3.8%). The five pending patches
+rebased onto master (twice - the engines-check edits moved their context): all apply in order; engines-check PASS in
+a clone with all five, 99 paths.
+
+Files: tests/jit/jit-ops.fth (new); tools/layout.py, lab/evolve/engines-check.py, results/pending/ (the five rebased,
+ORDER.md), HANDOFF.md.

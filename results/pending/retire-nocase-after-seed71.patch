@@ -47,12 +47,12 @@ index 03d9142..0000000
 -  HERE LAST !
 -  HERE C@ 1+ ALLOT ;
 diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
-index 1f33b75..ddecda9 100755
+index abb76c4..f96d5a2 100755
 --- a/lab/evolve/engines-check.py
 +++ b/lab/evolve/engines-check.py
-@@ -58,7 +58,6 @@ VARIANTS = [                                     # (name, genes set on s6, genes
-     ('the JIT with jitexec', dict(JIT, jitexec=1), ['jit', 'jitexec']),               # Iteration 476: EXECUTE's helper
+@@ -59,7 +59,6 @@ VARIANTS = [                                     # (name, genes set on s6, genes
      ('the JIT with jitcfa', dict(JIT, jitcfa=1), ['jit', 'jitcfa']),                  # Iteration 482: the check along the paths
+     ('the JIT with opbody', dict(JIT, ops10=['2@', '2!'], opbody=1), ['jit', 'opbody']),   # Iteration 509: 2@ and 2! as opcodes - jit-ops.fth runs them
      ('the JIT with jitrp', dict(JIT, jitrp=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitrp']),   # Iteration 494
 -    ('the JIT with nocase', dict(JIT, kfast=1, nocase=1), ['jit', 'nocase']),         # Iteration 497: names without case
      ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
