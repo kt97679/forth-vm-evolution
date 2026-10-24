@@ -17,7 +17,7 @@ longer be taken is news too.
 
     python3 lab/evolve/engines-check.py        PASS, or FAIL and what died
 """
-import contextlib, glob, json, os, shutil, sys
+import contextlib, glob, json, os, shutil, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -130,7 +130,7 @@ for name, genes, must in VARIANTS:
 # SYSCALL's local label taken for a handler: no tail design had ever built at 4-byte cells (seed 58: 401 of 401).
 # Iteration 401: clang's tail engine without preserve_none too - musttail is now on every clang tail engine; without it,
 # at 4-byte cells clang made none of its dispatches jumps ('tail calls not jumps', results/fail32-400.md).
-V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'tail' in must]
+V32 = [(name + ', 32 bits', genes, must) for name, genes, must in VARIANTS if 'bfind' in must or 'jit' in must]   # Iteration 461: the JIT at 32 bits
 for name, genes, must in V32:
     g = E.canon(dict(S6, **dict(genes, jit=0)))
     d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
@@ -163,5 +163,12 @@ for name, genes, w in VBIG:
     except Exception as e:
         bad.append(name); print('  %-32s DIED   %s' % (name, str(e)[:110]), flush=True)
 shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)
+# Iteration 463: and are the stencils safe to copy - no relocation in one but to a marker (stencil-check.py), at 64
+# bits and at 32: a compiler that puts a call into a stencil (a stack check, a profiler hook) is caught here.
+for cc in ('gcc', 'gcc -m32 -fno-pie'):
+    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stencil-check.py'), '--cc', cc],
+                       capture_output=True, text=True)
+    print('  stencils     %s %s' % ('ok    ' if r.returncode == 0 else 'FAILED', (r.stdout or r.stderr).strip().split('\n')[0][:140]), flush=True)
+    if r.returncode: bad.append('stencils (%s)' % cc)
 print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS) + len(V32) + len(VBIG), '; '.join(bad)))
 sys.exit(1 if bad else 0)

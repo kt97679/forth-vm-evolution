@@ -706,12 +706,13 @@ def setup_widths():
     setup()
 
 def eval32(g, rounds):
-    """Iteration 336: speed32 - the design, its JIT off, as a 32-bit x86 engine at 4-byte cells,
-    over the selection's workloads, a round fewer; none (and why) if it does not build or live so."""
+    """Iteration 336: speed32 - the design as a 32-bit x86 engine at 4-byte cells, over the selection's
+    workloads, a round fewer; none (and why) if it does not build or live so. Iteration 461: with its
+    JIT, which builds at 32 bits now (results/drafts/jit-i386-460.md) - jitk aside, x86-64's registers."""
     # Iteration 337: and its call scale at most 2 - at 4-byte cells nothing is 8-aligned, scale 3's
     # unit: run-time definitions align to the cell, and a scaled call missed them (the corpus died).
-    # A 32-bit build of the design takes cell-aligned calls, as it takes no JIT.
-    g32 = dict(g, jit=0)
+    # A 32-bit build of the design takes cell-aligned calls. (Until Iteration 461 it took no JIT either.)
+    g32 = dict(g)
     if (g32.get('scale') or 0) > 2: g32['scale'] = 2
     g32 = canon(g32); d32 = os.path.join(EV, 'ind32-' + gid(g)); out = {}
     try:
@@ -724,6 +725,10 @@ def eval32(g, rounds):
         out['speed32'] = None; out['why32'] = str(e)[:200]
     shutil.rmtree(d32, ignore_errors=True)
     return out
+
+def w32():
+    """Iteration 461: building for 32-bit x86 here (EVOLVE_CC with -m32)."""
+    return '-m32' in os.environ.get('EVOLVE_CC', '').split()
 
 def CCV(g):
     """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
@@ -945,7 +950,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
-    if jit_on(g) and express(g).get('jitk'): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils
+    if jit_on(g) and express(g).get('jitk') and not w32(): flags.append('-DJITK=%d' % express(g)['jitk'])   # Iteration 259: gen-jitk.py's stencils; 461: not at 32 bits
     if g.get('fbuf'): flags.append('-DFBUFSZ=%d' % FBUFV[g['fbuf']])   # Iteration 115: memory, against reads
     if PROFILING[0]: flags.append('-DPROFILE=%d' % (2 if PROFILING[0] == 2 else 1))   # 2: the tracer (Iteration 162)
     if PROFILING[0] and os.environ.get('JIT_PRICE') == '1': flags.append('-DJIT_PRICE=1')   # Iteration 218: lab/evolve/jitstack.py
@@ -979,7 +984,7 @@ def _build(g, d):
     def compile_engine():
         jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
                os.path.join(ROOT, 'engine', 'spn-markers.c')] if jit_on(g) else []   # Iteration 80: the stencils
-        if jit_on(g) and express(g).get('jitk'):           # Iteration 259: the stack cache's stencils, beside vm.c
+        if jit_on(g) and express(g).get('jitk') and not w32():   # Iteration 259: the stack cache's stencils, beside vm.c (461: x86-64's registers)
             if sh(['python3', os.path.join(ROOT, 'tools', 'gen-jitk.py'), str(express(g)['jitk']), os.path.dirname(src)]).returncode:
                 raise RuntimeError('died: stack-cache generation')
         lto = ['-flto'] if express(g).get('lto') else []    # Iteration 260: the engine and its runtime as one

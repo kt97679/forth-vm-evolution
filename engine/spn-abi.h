@@ -26,8 +26,19 @@ typedef uint64_t spn_st;
 #define SPN_ST(s, t)  ((uint64_t)(uint32_t)(uintptr_t)(s) | (uint64_t)(uint32_t)(t) << 32)
 #define SPN_SP(r)     ((cell *)(uintptr_t)(uint32_t)(r))
 #define SPN_TOS(r)    ((cell)(int32_t)(uint32_t)((r) >> 32))
+#elif defined(__i386__)
+/* Iteration 460: 32-bit x86, as 32-bit ARM - the state one 64-bit value, sp in the low word and tos in the high;
+   regparm(2) brings it in eax and edx, and a 64-bit value goes back in eax and edx: in and out alike. */
+typedef uint64_t spn_st;
+#define SPN_ST(s, t)  ((uint64_t)(uint32_t)(uintptr_t)(s) | (uint64_t)(uint32_t)(t) << 32)
+#define SPN_SP(r)     ((cell *)(uintptr_t)(uint32_t)(r))
+#define SPN_TOS(r)    ((cell)(int32_t)(uint32_t)((r) >> 32))
+#define SPN_CC __attribute__((regparm(2)))
 #else
-#error "SPN knows x86-64 and 32-bit ARM"
+#error "SPN knows x86-64, 32-bit x86 and 32-bit ARM"
 #endif
-typedef spn_st (*spn_fn)(cell *sp, cell tos);
+#ifndef SPN_CC
+#define SPN_CC
+#endif
+typedef spn_st (SPN_CC *spn_fn)(cell *sp, cell tos);
 #endif

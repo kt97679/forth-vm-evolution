@@ -172,7 +172,7 @@ line, and so does seed 68's fast design with them against itself without.
 
 evo twice as fast again (its MOD), fcp a fifth faster: on the applications the design now runs at 2.4 times s6's speed
 (1.3 before these genes). On master: run-tests PASS (71 paths), validate 7 of 7 IDENTICAL, the jail PASS (alone). The
-pending 32-bit JIT batch rebased onto it (results/pending/ORDER.md).
+pending 32-bit JIT batch rebased onto it (results/applied-after-seed68/ORDER.md).
 
 **jitexec, next**: EXECUTE's stencil calls a helper through a hole, as UM/MOD's throw does; the helper takes the token:
 a word with the JIT's header, native already or translated now (jit_word), called; anything else run by the

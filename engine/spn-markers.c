@@ -8,6 +8,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "spn-abi.h"
-spn_st spn_next(cell *sp, cell tos) { (void)sp; (void)tos; abort(); }
-spn_st spn_jump(cell *sp, cell tos) { (void)sp; (void)tos; exit(97); }
-spn_st spn_call(cell *sp, cell tos) { (void)sp; (void)tos; exit(98); }
+SPN_CC spn_st spn_next(cell *sp, cell tos) { (void)sp; (void)tos; abort(); }
+SPN_CC spn_st spn_jump(cell *sp, cell tos) { (void)sp; (void)tos; exit(97); }
+SPN_CC spn_st spn_call(cell *sp, cell tos) { (void)sp; (void)tos; exit(98); }

@@ -24,9 +24,9 @@ The owner (460-461): "yes, please proceed" - the JIT at 32-bit x86 made real (re
 | 2 | jit-i386-lab-after-seed68.patch | **The 32-bit measurements keep the JIT**: eval32() builds the design as it is (until now "its JIT off"), jitk dropped at 32 bits by the build (w32(): gen-jitk.py's stencils name x86-64's registers); xcheck.py's prebuilt 32-bit sample (dream) takes JIT designs - a host building itself at 4-byte cells (the Tegra, ARM) still takes none; engines-check builds the JIT's variants at 32 bits too (69 paths to 81). |
 | 3 | stencil-check-after-seed68.patch | **The stencils checked safe to copy** (Iteration 463; the owner: proceed with the second pass's first idea - Gforth's relocatability rule, Ertl and Paysan 2025). lab/evolve/stencil-check.py compiles engine/spn-stencils.c alone and reads it with objdump: in the part the JIT copies, any relocation to anything but a marker (a call GCC put in, a .rodata constant) or any branch past the copied part (a cold block after the last jump) fails it. engines-check runs it at 64 and 32 bits. And engine/jit.c refuses at run time a stencil whose 32-bit call or jump leaves it for the engine image (E8, E9, 0F 8x; FF 15 / FF 25 on x86-64) - slower, never wrong. |
 
-    git apply results/pending/jit-i386-engine-after-seed68.patch
-    git apply results/pending/jit-i386-lab-after-seed68.patch
-    git apply results/pending/stencil-check-after-seed68.patch
+    git apply results/applied-after-seed68/jit-i386-engine-after-seed68.patch
+    git apply results/applied-after-seed68/jit-i386-lab-after-seed68.patch
+    git apply results/applied-after-seed68/stencil-check-after-seed68.patch
 
 After patch 3: list lab/evolve/stencil-check.py among lab/evolve/README.md's tools (the handoff check asks for it).
 

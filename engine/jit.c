@@ -48,9 +48,19 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #define JIT_NST S_N
 #endif
 
+#if defined(__i386__)                           /* Iteration 460: 32-bit x86 - the holes a cell wide, 4 bytes */
+#define JIT_IMM64 0x5ea1ed01U
+#define JIT_FN64  0x6ea1ed03U
+#define JIT_RP64  0x7ea1ed02U
+#define JIT_HOLEW 4
+typedef uint32_t jit_hole_t;
+#else
 #define JIT_IMM64 0x5ea1ed5ea1ed5ea1ULL         /* spn-stencils.c's SPN_IMM_VALUE */
 #define JIT_FN64 0x6ea1ed5ea1ed5e66ULL          /* spn-stencils.c's SPN_FN_VALUE: a helper's address (jithelp) */
 #define JIT_RP64  0x7ea1ed5ea1ed5e77ULL         /* SPN_RP_VALUE */
+#define JIT_HOLEW 8
+typedef uint64_t jit_hole_t;
+#endif
 #define JIT_IMM32 0x3c1a5e77U                   /* IMM32 */
 
 #if JITMUL
@@ -102,6 +112,30 @@ static const unsigned char *jit_addr(int i) {
  *  its ret made pop %rcx; jmp *%rcx. Correct where ret is - the same address, the same stack pointer.  */
 static unsigned char jit_exit_jmp[32];
 #endif
+/*  Iteration 463: a stencil is copied only if no call or jump in it leaves it for anything but a marker -
+ *  Gforth's relocatability rule (Ertl and Paysan, "Code-Copying Compilation in Production", 2025). A call GCC
+ *  put in - memset, __stack_chk_fail, mcount: E8, or on x86-64 FF 15 / FF 25 through the GOT - would point
+ *  elsewhere once copied. Such a stencil is not used: slower, never wrong. What bytes cannot show safely -
+ *  RIP-relative data, a short jump to a cold block past the copied part (a stack check's failure path) - is
+ *  lab/evolve/stencil-check.py's: objdump's reading of the object file, exact; engines-check runs it. */
+extern char __executable_start[], _end[];
+static int jit_leaves(const unsigned char *a, const unsigned char *end) {
+    const unsigned char *p, *t;
+    for (p = a + 1; p + 4 <= end; p++) {
+        int b1 = p[-1], b2 = p - 2 >= a ? p[-2] : -1;
+        int rel = b1 == 0xE8 || b1 == 0xE9 || (b2 == 0x0F && (b1 & 0xF0) == 0x80);
+#if defined(__x86_64__)
+        rel = rel || (b2 == 0xFF && (b1 == 0x15 || b1 == 0x25));
+#endif
+        if (!rel) continue;
+        t = p + 4 + jit_rel32(p);
+        if (t >= a && t <= end) continue;                                       /* inside: copied with it */
+        if (t == (const unsigned char *)spn_table[J_NEXT] || t == (const unsigned char *)spn_table[J_JUMP]
+            || t == (const unsigned char *)spn_table[J_CALL]) continue;          /* a marker: a hole */
+        if (t >= (const unsigned char *)__executable_start && t < (const unsigned char *)_end) return 1;
+    }
+    return 0;
+}
 static void jit_scan(void) {
     int i, k;
     for (i = S_LIT; i < JIT_NST; i++) {
@@ -110,7 +144,7 @@ static void jit_scan(void) {
         if (i < S_N && i >= spn_table_len) continue;
         a0 = a = jit_addr(i); hi = a + JIT_SCAN_MAX;
         s->len = -1;
-        if (a[0] == 0xF3 && a[1] == 0x0F && a[2] == 0x1E && a[3] == 0xFA) a += 4;     /* endbr64 */
+        if (a[0] == 0xF3 && a[1] == 0x0F && a[2] == 0x1E && (a[3] == 0xFA || a[3] == 0xFB)) a += 4;     /* endbr64, endbr32 (460) */
         for (k = 0; k < spn_table_len; k++) {
             const unsigned char *e = spn_table[k];
             if (e > a0 && e < hi) hi = e;
@@ -125,6 +159,7 @@ static void jit_scan(void) {
         else for (p = a; p + 5 <= hi; p++)
             if (*p == 0xE9 && (jit_relto(p + 1, spn_table[J_NEXT]) || jit_relto(p + 1, spn_table[J_JUMP]))) end = p + 5;
         if (!end) continue;
+        if (jit_leaves(a, end)) continue;              /* 463: a reference out of it - its len stays -1, not used */
         s->src = a; s->len = (int)(end - a); s->imm = s->imm32 = s->rp = -1;
 #if JITMUL
         s->th = -1;
@@ -137,8 +172,8 @@ static void jit_scan(void) {
 #endif
         s->nnext = s->njump = s->ncall = 0;
         for (p = a; p < end; p++) {
-            uint64_t v; uint32_t w;
-            if (p + 8 <= end) { memcpy(&v, p, 8); if (v == JIT_IMM64) s->imm = (int)(p - a); if (v == JIT_RP64) s->rp = (int)(p - a);
+            jit_hole_t v; uint32_t w;
+            if (p + JIT_HOLEW <= end) { memcpy(&v, p, JIT_HOLEW); if (v == JIT_IMM64) s->imm = (int)(p - a); if (v == JIT_RP64) s->rp = (int)(p - a);
 #if JITMUL
                 if (v == JIT_TH64) s->th = (int)(p - a);
 #endif
@@ -272,7 +307,7 @@ static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_tsp = sp; __builti
 static int jit_call(uint32_t f, cell *sp, cell tos, spn_st *r) {
     void *tb[5]; void **prev = jit_tb; jit_tb = tb;
     if (__builtin_setjmp(tb)) { jit_tb = prev; return 1; }
-    *r = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+    *r = ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
     jit_tb = prev; return 0;
 }
 #endif
@@ -350,19 +385,19 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
         else if (jit_relto(t->src + p, spn_table[J_CALL])) to = call;
         if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
     }
-    if (t->imm >= 0) memcpy(dst + t->imm, &val, 8);
+    if (t->imm >= 0) memcpy(dst + t->imm, &val, JIT_HOLEW);
 #if JITHELP
     if (t->fn >= 0) {                                  /* a helper call: its value is the helper */
         UNS64 fv_ = val;
 #if JITRE
         if (t->imm >= 0) fv_ = (UNS64)(uintptr_t)jit_interp;   /* 348: st_interp by its holes - a function and a literal (st_callc has only the first); by index it would miss JITK's variants */
 #endif
-        memcpy(dst + t->fn, &fv_, 8);
+        memcpy(dst + t->fn, &fv_, JIT_HOLEW);
     }
 #endif
-    if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, 8); }
+    if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, JIT_HOLEW); }
 #if JITMUL
-    if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, 8); }
+    if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, JIT_HOLEW); }
 #endif
 #if JITEXEC
     if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, 8); }
@@ -595,7 +630,7 @@ static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
         if (k) { if (*k & 0x80000000u) { *k = 1; *k = jit_body(w, w, 0, 0); } f = *k; } }
     if (f > 1) {                        /* 481: native - this site's cache remembers it */
         ic[1] = 0; ic[0] = xt; ic[2] = (cell)jit_ld32(w + 1); ic[1] = (cell)(uintptr_t)(jit_mem + f);
-        return ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+        return ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
     }
 #if JITLOG
     {   static UNS64 tw_[256]; static unsigned long tc_[256]; int k_;     /* 481: interpreted targets, counted - a line at each power of 2 */
@@ -879,7 +914,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         }
 #if JITX
         else if (BYTE(arg[i]) == JIT_DOVAR) {         /* a variable: its address, a literal */
-            arg[i] = (arg[i] + 5 + 7) & ~(UNS64)7; opl[i] = 0xFFFD; continue;
+            arg[i] = (arg[i] + 5 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1); opl[i] = 0xFFFD; continue;   /* 460: a cell's alignment - 4 at 32 bits, as L_dovar's */
         }
 #if JITINL
         else if (jit_inl1(arg[i], &opl[i], &arg[i])) continue;     /* one operation: inline */

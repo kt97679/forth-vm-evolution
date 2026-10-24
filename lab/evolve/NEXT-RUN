@@ -13,8 +13,9 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
-# Iteration 469 (the owner: appbench.zip in ~/Downloads): seed 70's line, written at seed 69's processing, adds
-# then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
+# Iteration 487 (seed 69 processed): seed 70, 11 hours (the owner); islands dropped - seed 69's prediction failed
+# (464's rule: both or not kept); the after-seed-68 batch applied (the JIT at 32 bits, the stencil check) and the
+# four JIT genes enabled (472-483); the applications held out after the spread (appbench.zip in ~/Downloads, 469).
 # Iteration 464 (the owner: 12 hours): seed 69 - the real islands trial, the word now carried through the detach
 # (seeds 65-68 ran without islands). The after-seed-68 batch waits for its processing.
 # Iteration 458 (the owner): seed 68 at 8 hours, islands; the load test done (seed 67), out of the line.
@@ -68,4 +69,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 69 12h widths noevolved islands then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread
+seed 70 11h widths noevolved then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16

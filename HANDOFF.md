@@ -111,7 +111,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   the 32-bit JIT batch's run. valgrind is installed here: exact instruction counts where this machine's timing is noise.
 - **The JIT at 32-bit x86 - a working prototype** (the owner, 460; results/drafts/jit-i386-460.md and .patch): s6 with
   the JIT built at 32 bits passes the corpus, speed 0.956 to 0.767; a variable-alignment bug fixed on the way. **Made
-  real as the after-seed-68 batch (461, the owner; results/pending/ORDER.md)**: eval32 keeps the JIT, jitk off at 32 bits,
+  real as the after-seed-68 batch (461, the owner; results/applied-after-seed68/ORDER.md)**: eval32 keeps the JIT, jitk off at 32 bits,
   dream's prebuilt 32-bit sample takes JIT designs, engines-check 81 paths; seed 67's front JIT designs 1.9-2.9x faster
   at 32 bits. **A break in the 32-bit column from seed 69.**
 - **The second pass over c4's circle** (the owner, 462; results/drafts/c4-family-459.md): the code-copying literature

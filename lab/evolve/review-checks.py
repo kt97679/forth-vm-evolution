@@ -32,7 +32,7 @@ results/review-methodology-386.md), each reproducible:
                            ARMv7 - each class once, prebuilt64 for x86-64 where there is one - ranked by the
                            geometric mean of their speeds against s6 there; vetoed: more than 25% behind the
                            class's best of them (GOALS.md's margin)
-  votes RESULTS.md [--seed N] [--ledger FILE [--append]]
+  votes RESULTS.md [--seed N] [--at COMMIT] [--ledger FILE [--append]]
                            the gene votes (Iteration 432; results/seed63-rules.md): for each gene, the run's
                            votes for its removal - on under 10% of the front, on no design of its fastest tenth,
                            of its smallest, of its best-Q tenth - and with a ledger (results/gene-votes.md) the
@@ -382,10 +382,24 @@ elif check == 'votes':
     ex = {i: E.express(E.canon(gen[i])) for i in ids}
     frozen = set(getattr(E, 'FROZEN', None) or ())
     SKIP = {'enc', 'opt', 'compiler', 'spec', 'folds', 'ops10'}          # what a design is, not a mechanism to drop
+    # Iteration 487: only the genes the run's own code had - a gene added since (seed 69: jitmul, jitdoes, jitexec, jitcfa)
+    # is on no design of that run, and four removal votes would count against what it never had the chance to be.
+    # The run's commit: --at, else the results file's "asked at <hash>"; its evolve.py's quoted names are the genes then.
+    at = None
+    if '--at' in sys.argv: at = sys.argv[sys.argv.index('--at') + 1]
+    else:
+        m_ = re.search(r'asked at\s+([0-9a-f]{7,40})', open(path, errors='replace').read(4000)); at = m_.group(1) if m_ else None
+    known = None
+    if at:
+        import subprocess
+        src_ = subprocess.run(['git', 'show', at + ':lab/evolve/evolve.py'], capture_output=True, text=True,
+                              cwd=os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))).stdout
+        known = set(re.findall(r"'(\w+)'", src_)) or None
     run = []
     fams = set(gen[i].get('enc') for i in ids)                      # Iteration 450: the front's encodings' genes only -
     for g in dict.fromkeys(x for f, fam in E.EXPRESSED.items() if f in fams for x in fam):   # skippad and fold, sod16's and
         if g in SKIP or g in frozen: continue                        # cpt16's, were voted on in CV8 fronts they cannot reach
+        if known is not None and g not in known: continue           # 487: not in the run's code
         on = set(i for i in ids if ex[i].get(g)); share = 100.0 * len(on) / n if n else 0.0
         f, sm, q = len(on & fast), len(on & small), len(on & bestq)
         run.append((seed, g, share, f, sm, q, (share < 10) + (f == 0) + (sm == 0) + (q == 0)))

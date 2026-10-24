@@ -862,6 +862,8 @@ within 0.5%; no design dying; no 32-bit failure.
 
 ## The JIT at 32 bits, in seed 69 - predicted (Iteration 461)
 
+**Moved to seed 70 (Iteration 487)**: the batch was deferred to seed 69's processing (464), so seed 70 is its first run.
+
 The after-seed-68 batch applied at seed 68's processing; seed 69 its first run. 1. Its front's fastest at 32 bits at
 most 0.20 against the 32-bit s6 on the laptop - about 0.6 of seed 67's 0.327 (here the front's JIT designs ran at 0.35
 to 0.52 of their JIT-off times). 2. No 32-bit failure (fail32). 3. dream's prebuilt 32-bit check samples JIT designs, its
@@ -881,6 +883,10 @@ void** - what they compared was plain runs with a plain run. The comparisons the
 12 hours (the owner), islands on at last - its log to show ", island " lines (seed-facts.py: "islands: on"). Against the
 five plain replicates at generation 109: its fastest below 0.1197, the best of the five; its smallest at most 14,207, the
 worst of the five. Islands worth keeping only if both hold.
+
+**Scored (Iteration 487): fails.** Islands ran (700 island lines, "islands: on"). At generation 109 its fastest 0.1274 -
+not below 0.1197 (fourth of the six); its smallest 14,199 - at most 14,207, holds. One of two: islands not kept; seed 70
+runs without them. (Its end at 175, 0.1125 the fastest of six ends, lies within the replicates' ~5%.)
 
 ## jitmul in seed 70 - predicted (Iteration 474)
 

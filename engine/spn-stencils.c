@@ -60,6 +60,19 @@ typedef cell (*spn_io_fn)(cell, cell, cell);
 #define SPN_IO_VALUE 0x4ea1ed5ea1ed5e44LL
 #define IMM_IO() ({ spn_io_fn _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IO_VALUE)); _v; })
 #define IMM() ({ cell _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IMM_VALUE)); _v; })
+#elif defined(__i386__)
+/* Iteration 460: 32-bit x86 - a cell is 4 bytes, so every hole is a mov $imm32 written by inline asm (B8+r),
+   found by its value; IMM32 folds into instructions as on x86-64. Values distinct, as ARM's. */
+#define SPN_IMM_VALUE 0x5ea1ed01
+#define SPN_RP_VALUE  0x7ea1ed02
+#define SPN_FN_VALUE  0x6ea1ed03
+#define SPN_IO_VALUE  0x4ea1ed04
+#define IMM32 0x3c1a5e77L
+#define HOLE(type, v) ({ type _v; __asm__("movl %1, %0" : "=r"(_v) : "i"(v)); _v; })
+#define IMM()    HOLE(cell, SPN_IMM_VALUE)
+#define IMM_RP() HOLE(ucell *, SPN_RP_VALUE)
+#define IMM_FN() HOLE(void *, SPN_FN_VALUE)
+#define IMM_IO() HOLE(spn_io_fn, SPN_IO_VALUE)
 #elif defined(__arm__)
 /* 32-bit ARM (Iteration 30): no 64-bit immediate, and none folded into an
    instruction - every hole is a movw/movt pair, which the patcher finds by
@@ -85,11 +98,11 @@ typedef cell (*spn_io_fn)(cell, cell, cell);
    jumps into calls - every one of which breaks the stencil. Declared
    extern, a marker is an opaque function and each call to it compiles to
    the plain relative jump or call the patcher expects. */
-extern spn_st spn_next(cell *sp, cell tos);
-extern spn_st spn_jump(cell *sp, cell tos);
-extern spn_st spn_call(cell *sp, cell tos);
+extern SPN_CC spn_st spn_next(cell *sp, cell tos);
+extern SPN_CC spn_st spn_jump(cell *sp, cell tos);
+extern SPN_CC spn_st spn_call(cell *sp, cell tos);
 
-#define S(name) __attribute__((noinline, used)) spn_st name(cell *sp, cell tos)
+#define S(name) __attribute__((noinline, used)) SPN_CC spn_st name(cell *sp, cell tos)
 #define GO(sp, tos) return spn_next(sp, tos)
 
 S(st_lit)   { *--sp = tos; GO(sp, IMM()); }
@@ -154,7 +167,7 @@ S(st_branch) { return spn_jump(sp, tos); }
 S(st_call)  { spn_st r = spn_call(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }
 
 /* EXIT: leave the native word, returning the state to the caller. */
-__attribute__((noinline, used)) spn_st st_exit(cell *sp, cell tos)
+__attribute__((noinline, used)) SPN_CC spn_st st_exit(cell *sp, cell tos)
 { return SPN_ST(sp, tos); }
 
 /* The return stack. The interpreter and native code share one, reached

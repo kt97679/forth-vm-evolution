@@ -8871,8 +8871,8 @@ code too, while the same build runs the corpus to its end directly - this machin
 batch-check on e6044c3 PASS (run-tests, validate 7 of 7 IDENTICAL, the jail). Predicted for seed 69. A break in the 32-bit
 column from seed 69, noted in the batch.
 
-Files: results/pending/ORDER.md, results/pending/jit-i386-engine-after-seed68.patch,
-results/pending/jit-i386-lab-after-seed68.patch (new); results/README.md, results/predictions.md, HANDOFF.md.
+Files: results/applied-after-seed68/ORDER.md, results/applied-after-seed68/jit-i386-engine-after-seed68.patch,
+results/applied-after-seed68/jit-i386-lab-after-seed68.patch (new); results/README.md, results/predictions.md, HANDOFF.md.
 
 ## Iteration 462 - 2026-10-23 - Claude
 
@@ -8905,8 +8905,8 @@ E9, 0F 8x; FF 15 / FF 25 on x86-64) - slower, never wrong; a short jump it canno
 exact check. Tested in a clone with patches 1 and 2: run-tests PASS, validate 7 of 7 IDENTICAL; the three patches
 batch-checked together on 687a0e2: run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS.
 
-Files: lab/evolve/stencil-check.py (new, in the patch); results/pending/stencil-check-after-seed68.patch,
-results/pending/ORDER.md; results/README.md, HANDOFF.md.
+Files: lab/evolve/stencil-check.py (new, in the patch); results/applied-after-seed68/stencil-check-after-seed68.patch,
+results/applied-after-seed68/ORDER.md; results/README.md, HANDOFF.md.
 
 ## Iteration 464 - 2026-10-23 - Claude
 
@@ -8926,7 +8926,7 @@ were not rerun: since b75372ada the engine and the evolver are unchanged (only n
 the seed pack's own (tests, validate, jail) stand.
 
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed68.md, results/xcheck-seed68.md (new); lab/evolve/next-run.sh,
-lab/evolve/seed-facts.py, lab/evolve/NEXT-RUN, results/gene-votes.md, results/predictions.md, results/pending/ORDER.md,
+lab/evolve/seed-facts.py, lab/evolve/NEXT-RUN, results/gene-votes.md, results/predictions.md, results/applied-after-seed68/ORDER.md,
 results/progress-by-run.md, results/README.md, HANDOFF.md.
 
 ## Iteration 465 - 2026-10-23 - Claude

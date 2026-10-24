@@ -2166,7 +2166,7 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
                      DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; NEXT();            /* as L_umdiv's DIV0 */
                  }
 #else
-                 r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
+                 r_ = ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
 #endif
                  rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
                  ip = RS; rp += CELL_BYTES;
