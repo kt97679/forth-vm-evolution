@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 509.
+- master: Iteration 510.
 - **The runs**: **seed 70 processed (Iteration 498)** - inside the replicates' spread (at generation 109 fastest 0.1259,
   smallest 14,143); **the four JIT genes on no front design** - tried on thousands, dominated: the six workloads do not pay
   for them and they cost bytes; the applications 0.756 of s6 on its fastest. **906 32-bit failures, all JIT designs** -
@@ -158,10 +158,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   today's stencils all safe; a stack protector would make all 43 unsafe, latently.
 - **c4's family looked at** (the owner, 459; results/drafts/c4-family-459.md): our JIT already has its lessons; **proposed
   for the owner: the stencil JIT ported to i386** (the 32-bit builds have no JIT - about 2.6x behind; ARMv7 after, AMaCC,
-  Squint and shecc as references), a JIT-redundancy probe, an interpreter-in-Forth workload; for Fern, c4's frames and
-  structure.
-- **Fern, a scripting language on this Forth** (the owner, 457): designed - results/drafts/fern-design-457.md - and to
-  be built in a chat of its own, from this bundle; the evolution's chats carry on as before.
+  Squint and shecc as references), a JIT-redundancy probe, an interpreter-in-Forth workload; for Fern (obsolete here,
+  510), c4's frames and structure.
+- **Fern - obsolete in this project** (the owner, 510): a project of its own now, with this project's notes on it
+  (results/drafts/fern-design-457.md, c4-family-459.md's section 5) in full - nothing here to pursue or keep current.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
   processed - seed 71's, named from the bundle it starts from (seed 70's, `forth-vm-evolution-chain-b4c0b9c69d-fury-
   20261024-161913_tar.gz`, processed at 498). Seed 70's chain carries its own spread (every run's database on the

@@ -1,5 +1,8 @@
 # Fern - a small scripting language compiled into Forth words (a design note, Iteration 457)
 
+> **Obsolete (Iteration 510, the owner).** Fern is a project of its own now, and it has these notes - this one and
+> c4-family-459.md's section 5 - in full. Nothing here is pursued or kept current; kept for the history only.
+
 The owner asked for a minimal, user-friendly scripting language - in the spirit of Ruby or Python - implemented on top of
 this Forth, compiled into Forth words, at little cost against bare Forth; and chose to build it in a chat of its own.
 This note is that chat's starting point. "Fern" is a working name.

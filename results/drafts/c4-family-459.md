@@ -49,7 +49,8 @@ emitted instructions, a Squint-style pass over stencil boundaries could pay; bel
 Forth and running a fixed bytecode program is a classic nested-interpretation workload: dispatch inside Forth code,
 which none of the six selection workloads is. A candidate held-out workload, or a footprint-style check (optional).
 
-**5. For Fern** (results/drafts/fern-design-457.md, its own chat):
+**5. For Fern** (results/drafts/fern-design-457.md, its own chat) - *obsolete here (Iteration 510): Fern is its own
+project now, which has this section; kept for the history only*:
 - **c4's frames are Fern's locals**: ENT (a frame set up), LEA (a slot's address), LEV (the frame torn down) - FRAME,
   L@ / L!, UNFRAME - proven in a self-hosting compiler.
 - **c4's structure is Fern's**: a tokenizer, precedence climbing in one expression function emitting code as it parses,

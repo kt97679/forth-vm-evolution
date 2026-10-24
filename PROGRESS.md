@@ -9517,3 +9517,12 @@ a clone with all five, 99 paths.
 
 Files: tests/jit/jit-ops.fth (new); tools/layout.py, lab/evolve/engines-check.py, results/pending/ (the five rebased,
 ORDER.md), HANDOFF.md.
+
+## Iteration 510 - 2026-10-24 - Claude
+
+**Fern marked obsolete in this project** (the owner: the other project has the notes on Fern, everything captured).
+results/drafts/fern-design-457.md carries an obsolete banner; c4-family-459.md's section 5 (for Fern) is marked so;
+results/README.md's entry and HANDOFF's item say it - a project of its own now, nothing here to pursue or keep current.
+The notes stay, for the history.
+
+Files: results/drafts/fern-design-457.md, results/drafts/c4-family-459.md, results/README.md, HANDOFF.md.
