@@ -265,8 +265,15 @@ S(st_execute) { cell *ic_ = (cell *)IMM();
                 if (ic_[0] == tos && ic_[1] && (uint32_t)ic_[2] == *(const uint32_t *)((const char *)tos + 1)) {
                     spn_st r_ = ((spn_st (*)(cell *, cell))ic_[1])(sp + 1, sp[0]); GO(SPN_SP(r_), SPN_TOS(r_)); }
                 {   spn_st r_ = ((spn_st (*)(cell *, cell, cell, cell *))IMM_EX())(sp + 1, sp[0], tos, ic_); GO(SPN_SP(r_), SPN_TOS(r_)); } }
+/* Iteration 486: a call of a word that stays bytecode but is cold by nature - I/O, ABORT, THROW (layout.py's list)
+   - made through the same helper, the token fixed in the site's cache, rather than refusing the caller */
+S(st_callx)   { cell *ic_ = (cell *)IMM();
+                if (ic_[1] && (uint32_t)ic_[2] == *(const uint32_t *)((const char *)ic_[0] + 1)) {
+                    spn_st r_ = ((spn_st (*)(cell *, cell))ic_[1])(sp, tos); GO(SPN_SP(r_), SPN_TOS(r_)); }
+                {   spn_st r_ = ((spn_st (*)(cell *, cell, cell, cell *))IMM_EX())(sp, tos, ic_[0], ic_); GO(SPN_SP(r_), SPN_TOS(r_)); } }
 #else
 S(st_execute) { __builtin_trap(); }        /* no helper hole on this machine yet: never usable */
+S(st_callx)   { __builtin_trap(); }
 #endif
 #endif
 #if JITX
@@ -327,7 +334,7 @@ const void *const spn_table[] = {
     (const void *)st_spfetch, (const void *)st_aligned,  /* Iteration 484 */
 #endif
 #if JITEXEC
-    (const void *)st_execute,                            /* Iteration 476 */
+    (const void *)st_execute, (const void *)st_callx,    /* Iterations 476, 486 */
 #endif
 #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,

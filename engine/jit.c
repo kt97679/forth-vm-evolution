@@ -38,7 +38,7 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
        S_SPFETCH, S_ALIGNED,                     /* Iteration 484: jitmul's too */
 #endif
 #if JITEXEC
-       S_EXECUTE,                                /* Iteration 476: the gene jitexec */
+       S_EXECUTE, S_CALLX,                       /* Iterations 476, 486: the gene jitexec */
 #endif
        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
 #if JITK
@@ -296,8 +296,10 @@ static void jitlog_note(int c, UNS64 a, UNS64 b, UNS64 v) {    /* scratch */
 static void jitlog_refused(UNS64 w) {
     static FILE *f; const char *p;
     if (!f && (p = getenv("JITLOG")) != NULL) f = fopen(p, "a");
-    if (f) { fprintf(f, "R %lu %lu %d %d\n", (unsigned long)(w - jit_cbase), (unsigned long)(jitlog_at - jit_cbase), jitlog_why,
-                     jitlog_why == 1 ? jitlog_op : -1); fflush(f); }
+    if (f) { int q_; fprintf(f, "R %lu %lu %d %d", (unsigned long)(w - jit_cbase), (unsigned long)(jitlog_at - jit_cbase), jitlog_why,
+                     jitlog_why == 1 ? jitlog_op : -1);
+             fprintf(f, " w:"); for (q_ = 0; q_ < 8; q_++) fprintf(f, "%02x", BYTE(w + q_));          /* 485: the bytes, for a puzzle */
+             fprintf(f, " at:"); for (q_ = 0; q_ < 8; q_++) fprintf(f, "%02x", BYTE(jitlog_at + q_)); fprintf(f, "\n"); fflush(f); }
 }
 #endif
 
@@ -753,6 +755,24 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             int wd = T2_CALLW(b); UNS64 t = b & 0x3F;
             for (i = 1; i < wd; i++) t = t << 8 | BYTE(a + i);
             arg[n] = jit_cbase + t; opl[n] = 0xFFFF; a += (UNS64)wd;
+#if JITEXEC
+            /* Iteration 485: (S") and (.") read the counted string after their call - a call native code cannot make
+               (its return address is no bytecode), and decoded as code it was refused at the count byte (gc16's GC at
+               ` ." HEAP FULL"`, every caller with it). Here: the string's address and length as literals, and for (.")
+               TYPE through EXECUTE's helper; the decoding goes on after the string, aligned as the run-time words do.
+               The added operations get addresses no branch can name.  */
+            if (JIT_W_SQ >= 0 && JIT_W_DQ >= 0 && JIT_W_TYPE >= 0 &&
+                (arg[n] == jit_cbase + (UNS64)JIT_W_SQ || arg[n] == jit_cbase + (UNS64)JIT_W_DQ)) {
+                UNS64 s_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
+                if (n + 4 >= JIT_MAXOPS) return 0;
+                opl[n] = 0xFFFD; arg[n] = s_ + 1;
+                n++; at[n] = ((UNS64)1 << 63) | (s_ + 1); opl[n] = 0xFFFD; arg[n] = c_;
+                if (dq_) { n++; at[n] = ((UNS64)1 << 63) | (s_ + 2); opl[n] = 0xFFFD; arg[n] = jit_cbase + (UNS64)JIT_W_TYPE;
+                           n++; at[n] = ((UNS64)1 << 63) | (s_ + 3); opl[n] = JIT_L_EXECUTE;
+                           arg[n] = (UNS64)(uintptr_t)jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1]; }
+                a = (s_ + 1 + c_ + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);
+            }
+#endif
         } else {
             unsigned L = jit_one[T2_ONEIX(b)];
             a++;
@@ -886,6 +906,18 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         if (f < 2) {                                      /* Iteration 346: interpreted, not refused - arg[i] its body */
             if (BYTE(arg[i]) == JIT_CODE) arg[i] += 5;      /* 347: past the header - entered at it, L_x_jit would repoint the "caller", the sentinel */
             opl[i] = JIT_L_INTERP; continue;
+        }
+#endif
+#if JITEXEC
+        if (f < 2) {                                        /* 486: a cold word left bytecode - called through the helper */
+            static const long cold_[] = { JIT_W_COLD }; int c_;
+            for (c_ = 0; c_ < (int)(sizeof cold_ / sizeof cold_[0]); c_++)
+                if (cold_[c_] >= 0 && arg[i] == jit_cbase + (UNS64)cold_[c_]) break;
+            if (c_ < (int)(sizeof cold_ / sizeof cold_[0])) {
+                cell *ic_ = jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1];
+                ic_[1] = 0; ic_[0] = (cell)arg[i]; ic_[2] = 0;
+                opl[i] = JIT_L_CALLX; arg[i] = (UNS64)(uintptr_t)ic_; continue;
+            }
         }
 #endif
         if (f < 2) return 0;
