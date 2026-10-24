@@ -1,0 +1,19 @@
+diff --git a/forth/coreext.4 b/forth/coreext.4
+index 700d46b..f3bf8fa 100644
+--- a/forth/coreext.4
++++ b/forth/coreext.4
+@@ -36,9 +36,11 @@
+ : FALSE ( --- 0 )  0 ;
+ : NIP ( x1 x2 --- x2 )  SWAP DROP ;
+ : TUCK ( x1 x2 --- x2 x1 x2 )  SWAP OVER ;
+-: 2>R ( x1 x2 --- ) ( R: --- x1 x2 )  R> ROT ROT SWAP >R >R >R ;
+-: 2R> ( --- x1 x2 ) ( R: x1 x2 --- )  R> R> R> SWAP ROT >R ;
+-: 2R@ ( --- x1 x2 ) ( R: x1 x2 --- x1 x2 )  R> R> R> 2DUP >R >R SWAP ROT >R ;
++\ Iteration 489: compiled in place, as their own words were - a call that moved its own return address kept every
++\ word using them from the JIT (fcp's, brainless's); their interpretation semantics are undefined (Forth 2012).
++: 2>R ( x1 x2 --- ) ( R: --- x1 x2 )  POSTPONE SWAP POSTPONE >R POSTPONE >R ; IMMEDIATE
++: 2R> ( --- x1 x2 ) ( R: x1 x2 --- )  POSTPONE R> POSTPONE R> POSTPONE SWAP ; IMMEDIATE
++: 2R@ ( --- x1 x2 ) ( R: x1 x2 --- x1 x2 )  POSTPONE R> POSTPONE R> POSTPONE 2DUP POSTPONE >R POSTPONE >R POSTPONE SWAP ; IMMEDIATE
+ : UNUSED ( --- u )  DICT-LIMIT HERE - ;   \ to the limit ALLOT keeps (Iteration 184)
+ : FLUSH-FILE ( fileid --- ior )  DROP 0 ;                 \ nothing is buffered
+ : GET-CURRENT ( --- wid )  CURRENT @ ;

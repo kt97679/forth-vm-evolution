@@ -1,5 +1,5 @@
 diff --git a/engine/jit.c b/engine/jit.c
-index 6266e12e..c812f78 100644
+index 6266e12e..c3ddba9 100644
 --- a/engine/jit.c
 +++ b/engine/jit.c
 @@ -38,7 +38,7 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
@@ -75,7 +75,63 @@ index 6266e12e..c812f78 100644
  #endif
      return dst + n;
  }
-@@ -796,6 +803,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+@@ -535,7 +542,7 @@ static inline int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; r
+  *    stack balances in order - never below its entry, back to it at every
+  *    EXIT: a word that reads its own return address stays bytecode, since
+  *    native words return through the C stack, not the engine's.  */
+-#define JIT_DEPTH 8
++#define JIT_DEPTH 16                    /* 490: 8 refused fcp's DABS, nine calls below MAKEMOVE */
+ #define JIT_KN 256
+ static struct { UNS64 w; uint32_t f; } jit_k[JIT_KN];   /* f: native offset; 0 bytecode; 1 being translated; top bit: not yet */
+ static uint32_t *jit_kslot(UNS64 w) {
+@@ -606,9 +613,11 @@ static int jit_isexec(UNS64 a) {
+ }
+ #endif
+ /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
++static int jit_deep;                    /* 490: a translation refused below the depth limit - its callers may try again */
+ static uint32_t jit_word(UNS64 w, int depth) {
+     UNS64 end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
+-    uint32_t f;
++    uint32_t f, orig = jit_ld32(w + 1);
++    if (!depth) jit_deep = 0;
+     JITNOTE(w, end);
+     jit_st32(w + 1, 0);                 /* meanwhile, and if it fails: not native */
+     f = jit_body(w, w + 5, end, depth);
+@@ -617,6 +626,7 @@ static uint32_t jit_word(UNS64 w, int depth) {
+     jitlog_note('T', w, w, f);
+ #endif
+     if (f) jit_st32(w + 1, f);
++    else if (jit_deep && depth) jit_st32(w + 1, orig);   /* 490: refused for depth - left to translate again */
+     return f;
+ }
+ #if JITEXEC
+@@ -749,8 +759,24 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+ #endif
+     int n = 0, i, j;
+     (void)far;
+-    if (depth > JIT_DEPTH || !jit_init()) return 0;
++    if (depth > JIT_DEPTH) {            /* 490: too deep - not cached as bytecode below the top (jit_word, the kslot) */
++        jit_deep = 1;
++#if JITLOG
++        jitlog_at = w; jitlog_why = 7;
++#endif
++        return 0;
++    }
++    if (!jit_init()) return 0;
+ #if JITX
++#if defined(JIT_NWENDS)
++    if (!end && a == w && w >= jit_cbase) {     /* 489: an image word reached without its header - its end from the converter's
++                                       table, not the first EXIT no branch passes (DABS ran on into FM/MOD's header) */
++        UNS64 o_ = w - jit_cbase; int lo_ = 0, hi_ = JIT_NWENDS - 1;
++        while (lo_ <= hi_) { int m_ = (lo_ + hi_) / 2;
++            if (jit_wends[m_][0] == o_) { end = jit_cbase + jit_wends[m_][1]; break; }
++            if (jit_wends[m_][0] < o_) lo_ = m_ + 1; else hi_ = m_ - 1; }
++    }
++#endif
+     for (; !end || a < end; n++) {      /* decode, as the engine does */
+ #else
+     for (; a < end; n++) {
+@@ -796,6 +822,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                 ` ." HEAP FULL"`, every caller with it). Here: the string's address and length as literals, and for (.")
                 TYPE through EXECUTE's helper; the decoding goes on after the string, aligned as the run-time words do.
                 The added operations get addresses no branch can name.  */
@@ -90,6 +146,14 @@ index 6266e12e..c812f78 100644
              if (JIT_W_SQ >= 0 && JIT_W_DQ >= 0 && JIT_W_TYPE >= 0 &&
                  (arg[n] == jit_cbase + (UNS64)JIT_W_SQ || arg[n] == jit_cbase + (UNS64)JIT_W_DQ)) {
                  UNS64 s_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
+@@ -923,6 +957,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+             uint32_t *k = jit_kslot(arg[i]);
+             if (!k) return 0;
+             if (*k & 0x80000000u) { *k = 1; *k = jit_body(arg[i], arg[i], 0, depth + 1);
++                if (!*k && jit_deep) *k = 0x80000000u;                 /* 490: refused for depth - not yet, not never */
+ #if JITLOG
+                 if (!*k) jitlog_refused(arg[i]);
+ #endif
 diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
 index 9410cff..73c1a36 100644
 --- a/engine/spn-stencils.c
@@ -140,7 +204,7 @@ index 6156033..d83e238 100644
                   }
  #else
 diff --git a/tools/layout.py b/tools/layout.py
-index 7a8345d..927feea 100644
+index 7a8345d..3b24e1f 100644
 --- a/tools/layout.py
 +++ b/tools/layout.py
 @@ -1711,6 +1711,7 @@ if EMIT:
@@ -151,9 +215,24 @@ index 7a8345d..927feea 100644
              _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
              if '--jitre' in ARGV:
                  _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
-@@ -1730,6 +1731,7 @@ if EMIT:
+@@ -1718,6 +1719,11 @@ if EMIT:
+                 _rows.append('[%d] = {1, 1, 4, 0, {S_INTERP}%s},  /* an interpreted call (jitre) */' % (_li, ', 0' if JITHELPERS else ''))
+                 _lint = '#define JIT_L_INTERP %d\n' % _li
+             _jc = T2MAP['one'][G['T2_JIT']]
++            def _wends():              # Iteration 489: every image word's body, start and end - the decoder's end for a word reached
++                rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_)) for w_ in order
++                               if w_['s'] in new_off and kind.get(w_['s']) == 'code')
++                return ('#define JIT_NWENDS %d\nstatic const unsigned int jit_wends[][2] = {%s};\n'
++                        % (len(rows_), ', '.join('{%d, %d}' % r_ for r_ in rows_) or '{0, 0}'))
+             def _woff(nm):             # Iteration 485: a word's offset in the image (its body, as the call map's W lines), -1 if none
+                 ws_ = [w_ for w_ in order if w_['n'] == nm]
+                 return new_off[ws_[0]['s']]['body'] if ws_ else -1
+@@ -1728,8 +1734,9 @@ if EMIT:
+                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
+                 '#define JIT_CODE %d\n#define JIT_DOVAR %d\n#define JIT_DODOES %d\n#define JIT_FROMR %d\n%s%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
                  % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]],
-                    _one('DODOES'), _one('R>'), _lint, (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
+-                   _one('DODOES'), _one('R>'), _lint, (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
++                   _one('DODOES'), _one('R>'), _lint + _wends(), (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
                     for k_, n_ in (('SQ', '(S")'), ('DQ', '(.")'), ('TYPE', 'TYPE')))
 +                   + '#define JIT_L_ABORTQ %d\n#define JIT_W_AQ %d\n' % (_le + 2, _woff('(ABORT")'))
                     + '#define JIT_L_CALLX %d\n#define JIT_W_COLD %s\n' % (_le + 1, ', '.join(str(_woff(n_)) for n_ in

@@ -1,24 +1,33 @@
-# The after-seed-70 batch - applied at seed 70's processing (Iteration 488)
+# The after-seed-70 batch - applied at seed 70's processing (Iterations 488-490)
 
-Prepared while seed 70 runs; master stays what seed 70's bundle tests. One patch:
+Prepared while seed 70 runs; master stays what seed 70's bundle tests. Two patches, in this order:
 
-    git apply results/pending/jit-abortq-maxops-after-seed70.patch
+    git apply results/pending/jit-more-after-seed70.patch
+    git apply results/pending/coreext-2r-after-seed70.patch
 
-**jit-abortq-maxops-after-seed70.patch** (engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py):
+**jit-more-after-seed70.patch** (engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py):
 
-1. **(ABORT") native** (jitexec with jitmul): the decoder reads a call of (ABORT") (the converter's JIT_W_AQ) as one
-   operation, its inline message skipped; the stencil drops a false flag and goes on, and on a true one calls
-   jit_resume0 through a new hole (SPN_RS_VALUE), which longjmps to jit_call's return point with the call's own address -
-   the interpreter resumes there and runs (ABORT") itself, which never returns (-2 THROW, or the message and ABORT). The
-   inline message was decoded as code before (fcp's STR>MV, ?PROMOTEMV, cd16sim's LINE: - "Malformed...", "Illegal..."),
-   refusing those words and their callers.
-2. **JIT_MAXOPS 256 to 1024**: alone it moved nothing (488) - the long words then failed on other causes - so it rides
-   with the rest.
+1. **(ABORT") native** (488; jitexec with jitmul): one operation, its inline message skipped - the message was decoded
+   as code before; a false flag dropped, a true one handed back to the interpreter at the call itself (a resume helper
+   through a new hole, SPN_RS_VALUE, longjmps to jit_call's return point) - (ABORT") then never returns.
+2. **JIT_MAXOPS 256 to 1024** (488).
+3. **Every image word's end from the converter** (489; JIT_NWENDS, jit_wends): an image word reached without its header
+   was decoded to "the first EXIT no branch passes" - DABS, eight bytes, ran 43 bytes into FM/MOD's header.
+4. **Depth** (490): JIT_DEPTH 8 to 16, and a refusal caused only by depth no longer cached below the top - it was, so
+   fcp's DABS, first met nine calls below MAKEMOVE, stayed bytecode for good, and SM/REM, FM/MOD, /MOD, /, DIFF>DIR,
+   SQATTACKS?, ATTACKS? and MAKEMOVE with it. The refusal log now says so (why 7); before, a depth refusal carried the
+   last refusal's stale address and reason - the "return stack's order" that hid this cause in fcp and cd16sim.
 
-Tested here (488), on master e5c6239's successor with the patch in the working tree: a false flag in a hot loop, a true
-one caught by CATCH (-2, depth restored), one uncaught (the message, ABORT) - s6 with the JIT and all four genes, and
-seed 68's fast design with and without them, against the interpreter, line for line; the corpus. jitapps.py on the fast
-design: brainless's leftover 5.8% to 4.3%, cd16sim's 18.1% to 17.7%, fcp's unchanged 17.5% - what still blocks fcp and
-cd16sim is return-address words (2>R, 2R>, (TO)), DOES> code run by interpreted callers, and nested JIT headers.
+**coreext-2r-after-seed70.patch** (forth/coreext.4, 489): 2>R, 2R> and 2R@ compile in place (IMMEDIATE, POSTPONEd
+stack operations) - their own bodies moved their return address, which kept every caller from the JIT; their
+interpretation semantics are undefined (Forth 2012).
 
-**At seed 70's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.
+**Tested here (490)**, both patches in the working tree: against the interpreter, line for line, on s6 with the JIT and
+all four genes and on seed 68's fast design - (ABORT") false, caught and uncaught; 2>R, 2R>, 2R@ in the Forth 2012
+tests' shapes and a loop; signed division, MOD, SM/REM, DABS, /MOD; the corpus; engines-check PASS (64 and 32 bits);
+ans-check 0 of 3 of seed 69's front differ, its negative control caught. **The JIT now leaves 0.1% of the dispatches of
+fcp, brainless and cd16sim to the interpreter** (17.5%, 5.8% and 18.1% before the batch); seed 68's fast design with all
+four genes runs the seven applications at 0.234 of s6 - fcp 0.165, cd16sim 0.300 (0.317 and 0.573 without the batch)
+- every output right.
+
+**At seed 70's processing**: `sh tools/batch-check.sh` first, then apply both, the routine's chain after it.

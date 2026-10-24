@@ -9245,3 +9245,22 @@ flag in a hot loop, CATCH giving -2, one uncaught), the corpus; brainless's left
 Saved as the after-seed-70 batch; master's working tree back to the bundle's.
 
 Files: results/pending/ (new: the patch, ORDER.md); results/README.md, HANDOFF.md.
+
+## Iterations 489-490 - 2026-10-24 - Claude
+
+**The after-seed-70 batch completed: the JIT leaves 0.1% of the applications' work** (the owner: seed 70 started,
+proceed; results/pending/ORDER.md). Built on the 488 patch in the working tree, master untouched. 2>R, 2R> and 2R@
+compiled in place in coreext.4 - their bodies moved their own return address: brainless's leftover 4.3% to 1.5%. Then
+fcp's chain followed down by its refusals: its attack tests call /, which calls /MOD, FM/MOD, SM/REM and DABS - and DABS
+was refused "for the return stack's order" at w+43, eight bytes long. Two causes, both fixed: an image word reached
+without its header was decoded to "the first EXIT no branch passes", running on into the next word - now each image
+word's end comes from the converter (JIT_NWENDS); and - what fcp alone hit - the translation depth limit (8): DABS met
+nine calls below MAKEMOVE was refused for depth, the refusal cached for good, and the log carried the previous
+refusal's stale reason - the "return stack's order" that hid it in fcp and cd16sim. JIT_DEPTH 16, a depth refusal not
+cached below the top, and the log says why (7). The JIT then leaves 0.1% of fcp's, brainless's and cd16sim's dispatches
+(17.5%, 5.8%, 18.1% before the batch); seed 68's fast design with all four genes: 0.234 of s6 on the seven applications
+(fcp 0.165, cd16sim 0.300), every output right. engines-check PASS, ans-check 0 of 3 differ, the corpus. Saved as two
+patches for seed 70's processing; master's working tree restored.
+
+Files: results/pending/ (jit-more-after-seed70.patch and coreext-2r-after-seed70.patch replacing the 488 patch;
+ORDER.md); results/README.md, HANDOFF.md.

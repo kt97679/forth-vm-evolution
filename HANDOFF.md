@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 488.
+- master: Iteration 490.
 - **The runs**: **seed 69 processed (Iteration 487)** - islands ran (700 island lines) and **failed their prediction**:
   at generation 109 fastest 0.1274 against the replicates' 0.1197-0.1298, smallest 14,199 against 14,039-14,207 - inside
   the spread (its end, generation 175: 0.1125 and 14,043). By 464's rule islands are not kept. **The after-seed-68 batch
@@ -57,7 +57,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   in the 32-bit column from it. The gene votes count only the genes a run's code had (487: seed 69's would have voted
   against jitmul, jitdoes, jitexec and jitcfa, which it never had). **For the owner**: jitos a freeze candidate (12 of
   12 over seeds 67-69); rtfuse no longer. **The after-seed-70 batch waits** (488, results/pending/ORDER.md): native
-  (ABORT"), JIT_MAXOPS 1024 - master stays what seed 70's bundle tests.
+  (ABORT"), JIT_MAXOPS 1024; **489-490**: image words' ends from the converter, depth 16 with depth refusals not
+  cached (fcp's DABS, nine calls deep, had stayed bytecode with its eight callers), 2>R/2R>/2R@ compiled in place -
+  **the JIT leaves 0.1% of fcp's, brainless's and cd16sim's work; the fast design at 0.234 of s6 on the applications**.
+  Master stays what seed 70's bundle tests.
   Before - seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
