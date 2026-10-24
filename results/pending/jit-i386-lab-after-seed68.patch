@@ -12,7 +12,7 @@ index d6d9d08..949ab3f 100755
      g = E.canon(dict(S6, **dict(genes, jit=0)))
      d = os.path.join(E.EV, 'engines-check'); shutil.rmtree(d, ignore_errors=True)
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 888a94f..2afc35b 100644
+index 1a5148c..28f9ba9 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
 @@ -706,12 +706,13 @@ def setup_widths():

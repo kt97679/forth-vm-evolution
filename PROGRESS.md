@@ -9176,3 +9176,18 @@ Predicted for seed 70.
 
 Files: engine/jit.c, engine/spn-stencils.c, tools/layout.py, lab/evolve/evolve.py, lab/evolve/engines-check.py,
 results/pending/ (rebased, ORDER.md), results/drafts/jitapps-471.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 484 - 2026-10-23/24 - Claude
+
+**Measured before partial translation; three cheap fixes first** (the owner: start partial translation;
+results/drafts/jitapps-471.md, its 484 section). jitapps.py on b9c5b4ae74 with all four genes, now naming the operations
+without stencils: the remainder's causes SP@ (PICK is a colon word on it - evo's, scan's, brainless's largest), ALIGNED
+(fcp's), DOES> code whose R> is fused, then return-address words, words over 256 operations, a nested JIT opcode. SP@
+and ALIGNED got stencils under jitmul (SP@ in the interpreter's layout, three instructions); jitdoes takes fused DOES>
+code by pushing the PFA to the return stack and decoding the code whole. Right on PICK, DEPTH, SP@, ALIGNED and DOES>
+children against the interpreter; run-tests PASS (73 paths), validate 7 of 7, the jail PASS. The fast design on the
+applications: evo 0.234 of s6 (0.320), fcp 0.305 (0.392), brainless 0.325 (0.400) - geometric mean 0.301, 3.3 times s6.
+Open: gc16 refused at DODOES with no DOES> in it. The pending batch rebased a fourth time, clean.
+
+Files: engine/jit.c, engine/spn-stencils.c, tools/layout.py, lab/evolve/jitapps.py, results/pending/ (rebased,
+ORDER.md), results/drafts/jitapps-471.md, HANDOFF.md.

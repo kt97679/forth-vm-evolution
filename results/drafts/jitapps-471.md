@@ -241,3 +241,30 @@ four genes, one round:
 
 fcp 1.6 times faster - jitexec's cost to it more than repaid; brainless and cd16sim faster too. **The owner enabled
 jitcfa (483)**: all four genes in seed 70's search.
+
+## Iteration 484 - measured before partial translation: three cheap fixes first
+
+The owner asked for partial translation (results/drafts/scout-answers-480.md). Measured first, with all four genes on
+b9c5b4ae74 - the JIT left sim16 0.0% of its dispatches, gc16 19.4%, scan 3.7%, evo 23.2%, fcp 23.9%, brainless 8.8%,
+cd16sim 18.1% - and jitapps.py now names the operations without stencils (the converter's comments, 472). The causes:
+**SP@** (this kernel's PICK is a colon word on SP@ - 86% of evo's remainder, 49% of scan's, 19% of brainless's),
+**ALIGNED** (16% of fcp's), DOES> children whose code fuses R> with the next operation (jitdoes wanted R> alone), then
+return-address words (2>R, 2R>, DEFER's and VALUE's DOES> code run interpreted), words over JIT_MAXOPS (256), a nested
+JIT opcode. The first three cost a stencil or a few lines each, so they went first:
+
+- SP@ and ALIGNED stencils, under jitmul: SP@ writes the top to its slot and pushes that slot's address - the
+  interpreter's layout, three instructions; ALIGNED rounds up to a cell.
+- jitdoes takes DOES> code whose R> is fused: the PFA pushed to the return stack as DODOES does (a >R after its
+  literal), and the DOES> code decoded from its start, R> and all - the return-stack check sees them balance.
+- Right on PICK, DEPTH, SP@ (directly and through @), ALIGNED, DOES> children in a loop - s6 and the fast design against
+  the interpreter; the corpus; run-tests PASS (73 paths), validate 7 of 7, the jail PASS.
+
+On b9c5b4ae74 with all four genes, one round, every output right: sim16 0.241, gc16 0.434, scan 0.160, **evo 0.234**
+(0.320), **fcp 0.305** (0.392), **brainless 0.325** (0.400), cd16sim 0.571 - **geometric mean 0.301, 3.3 times s6** on the
+applications (1.3 at the start of this work). Left interpreted: evo 0.0%, scan 1.6%, fcp 17.5%, brainless 5.8%; gc16 and
+cd16sim unchanged.
+
+**Open**: gc16's remainder is refused at DODOES (CONS, LIST, TREE, PUSH), yet gc16 defines no DOES> word and this
+kernel's CONSTANT is LIT and EXIT - unexplained; a difference between the analysis build's operations and a normal
+build's is the first suspect. What partial translation would still address: return-address words, words over 256
+operations, the nested JIT opcode.

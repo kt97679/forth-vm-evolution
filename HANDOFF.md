@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 483.
+- master: Iteration 484.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -96,6 +96,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   sim16's instructions); fcp's real cause found - evalLP and evalDP refused by a return-stack check that read down the
   page; **jitcfa** checks along the paths: fcp 0.646 to 0.392 of s6, the fast design at 0.344 on the applications (2.9
   times s6). **The owner enabled jitcfa** - seed 70 carries jitmul, jitdoes, jitexec and jitcfa. Pending batch rebased.
+  **484 (measured before partial translation)**: SP@ and ALIGNED stencils (jitmul; PICK stands on SP@), jitdoes takes
+  fused DOES> code - the fast design at **0.301 of s6 on the applications (3.3 times)**. Open: gc16 refused at DODOES
+  with no DOES> in it; partial translation for return-address words, words over 256 operations, nested JIT opcodes.
   The pending batch rebased again (applies to 8c2731a). Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in
