@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 511.
+- master: Iteration 512.
 - **The runs**: **seed 70 processed (Iteration 498)** - inside the replicates' spread (at generation 109 fastest 0.1259,
   smallest 14,143); **the four JIT genes on no front design** - tried on thousands, dominated: the six workloads do not pay
   for them and they cost bytes; the applications 0.756 of s6 on its fastest. **906 32-bit failures, all JIT designs** -
@@ -304,7 +304,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 1. **Do the JIT genes earn their place now?** Seeds 71-72: jitmul, jitdoes, jitexec, jitcfa on the front, the
    applications' speed (predictions at 495); their votes count from seed 72 (rule 12). If not even with the
    applications paying, they are rule 11's case for freezing.
-2. **The JIT on ARMv7, for the Tegra** - SPN's stencils have ARM holes already (movw/movt pairs, Iteration 30); jit.c's
+2. **The JIT on ARMv7, for the Tegra** (512: the other models' answers checked, a copy-and-patch round trip under QEMU,
+   the recipe - results/drafts/ask-arm-jit-answers-512.md) - SPN's stencils have ARM holes already (movw/movt pairs, Iteration 30); jit.c's
    copying and patching are x86's (rel32 calls and jumps, the trampolines, the helpers' calls); copapy (MIT) shows the
    ARM relocations (results/drafts/scout-answers-480.md). Several sessions; after item 1.
 3. **Partial translation with cheap transitions** (results/drafts/jitapps-471.md) - since 490 the JIT leaves 0.1% of

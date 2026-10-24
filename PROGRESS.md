@@ -9537,3 +9537,17 @@ after-seed-71 batch leaves them; each bug with a minimal trigger, to become a te
 "unsure" where unsure; the answers to be verified as the scout's were (480).
 
 Files: results/drafts/ask-arm-jit-511.md, ask-noise-511.md, ask-jit-review-511.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 512 - 2026-10-24 - Claude
+
+**The ARM prompt's five answers checked** (the owner brought them; results/drafts/ask-arm-jit-answers-512.md). With GCC
+13.3's ARM cross compiler and QEMU installed here, Linux's cache-v7.S and the assembler: A32, a sibling call's `b`, the
+B/BL/movw/movt/ldr-pc encodings, the struct's sret against uint64_t in r0:r1 (ours already, spn-abi.h), the cache flush
+through libgcc to the kernel - which also invalidates the branch predictor (answer 5, right) - all hold. Wrong:
+-mword-relocations (answers 2, 4) makes a global's address a literal load; -mslow-flash-data (answer 5's "magic flag")
+GCC refuses for ARMv7-A; "always consecutive" movw/movt; the VFP worry for __builtin_setjmp (its function saves d8-d15).
+Found in none: Ubuntu's default stack protector puts a literal pool in every framed function. A copy-and-patch round
+trip from what holds - three stencils copied, two holes patched, the tails dropped, flushed, run under QEMU: 40 2 + =
+42 (results/drafts/arm-cp-poc-512.c). Answer 1 the most careful, 5 the most confident and the most wrong.
+
+Files: results/drafts/ask-arm-jit-answers-512.md, results/drafts/arm-cp-poc-512.c (new); results/README.md, HANDOFF.md.
