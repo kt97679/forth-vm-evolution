@@ -9490,3 +9490,14 @@ ackermann +2.7%; the geometric mean -3.8%, for 912 bytes (+2.4%). The owner's ca
 
 Files: results/pending/jitfuse-after-seed71.patch (new), results/pending/ORDER.md, results/drafts/jit-pairs-506.md,
 HANDOFF.md.
+
+## Iteration 508 - 2026-10-24 - Claude
+
+**jitfuse enabled for seed 72** (the owner: enable it; results/pending/ORDER.md). Its enabling is the after-seed-71
+batch's fifth patch - out of FROZEN, applied after the gene's own patch; all five apply in order to master. Rule 11
+holds - the selection sees its speed and its bytes; rule 12 - review-checks.py's GRACE counts its votes from seed 73
+(on master: a tool). Predicted for seed 72: on half the front's JIT designs at least, most of the fastest tenth's.
+GENES.md has its row.
+
+Files: results/pending/enable-jitfuse-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/review-checks.py,
+lab/evolve/GENES.md, results/predictions.md, HANDOFF.md.

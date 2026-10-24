@@ -6,6 +6,7 @@ Prepared while seed 71 runs; master stays what seed 71's bundle tests.
     git apply results/pending/fastgate-slower-after-seed71.patch
     git apply results/pending/retire-jithelp-jitre-after-seed71.patch
     git apply results/pending/jitfuse-after-seed71.patch
+    git apply results/pending/enable-jitfuse-after-seed71.patch
 
 **retire-nocase-after-seed71.patch** (forth/cv8b-nocase.4 and forth/cv8bt-nocase.4 removed, lab/evolve/evolve.py,
 lab/evolve/engines-check.py) - **the owner retired nocase** (501): it changes only how names are looked up, so it can
@@ -41,5 +42,10 @@ as CELL+ at 493. jit-diff.fth gains the pairs, a branch into one, 2@ and 2!. eng
 and without jitk, both widths). **Measured** (instructions, seed 70's fastest with the four JIT genes, jitk 3): fib
 -16.3%, bubble -9.3%, loop -4.8%, apps -0.9%, kernel +1.2%, corpus +2.4%, ackermann +2.7% - the geometric mean of the
 seven -3.8%, for 912 bytes more (+2.4%).
+
+**enable-jitfuse-after-seed71.patch** (508; lab/evolve/evolve.py) - **the owner enabled jitfuse**: out of FROZEN, for
+the search to weigh its speed (-3.8% of instructions over the seven workloads) against its bytes (+2.4%). Rule 11: the
+selection sees both - every workload runs JIT code on a JIT design. Rule 12: its votes count from seed 73
+(review-checks.py's GRACE). Predicted (results/predictions.md).
 
 **At seed 71's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

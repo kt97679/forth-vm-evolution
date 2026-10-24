@@ -940,3 +940,9 @@ little).
 
 With the gated designs' speed the slower of their two readings: seed 72's fastest tenth re-measured / in-run, median,
 at most 1.05 (seeds 64-70: 1.07-1.10) - rule 3 PASS for the first time since 446.
+
+## jitfuse in seed 72 - predicted (Iteration 508)
+
+jitfuse enabled from seed 72 (the after-seed-71 batch), paid for by the selection's speed (rule 11: fib, bubble and loop
+gain most). In seed 72: on at least half of the front's JIT designs, and on most of its fastest tenth's - about 4% of
+speed for about 2% of bytes is a trade the fast end takes, while the small end, where bytes weigh most, leaves it off.

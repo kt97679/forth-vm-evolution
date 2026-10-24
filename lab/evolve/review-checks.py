@@ -435,7 +435,8 @@ elif check == 'votes':
     # measures what it does (results/seed63-rules.md, rule 12). Seed 70 voted four times against jitmul, jitdoes,
     # jitexec and jitcfa, which no workload paid for until the applications joined the selection (seed 71); jitrp
     # was enabled for seed 71. Their votes count from seed 72. A gene enabled later gets its line here.
-    GRACE = {'jitmul': 72, 'jitdoes': 72, 'jitexec': 72, 'jitcfa': 72, 'jitrp': 72}
+    GRACE = {'jitmul': 72, 'jitdoes': 72, 'jitexec': 72, 'jitcfa': 72, 'jitrp': 72,
+             'jitfuse': 73}   # 508: enabled after seed 71 - its first run seed 72, its votes from seed 73
     tally = collections.OrderedDict()
     for r in rows:
         if r[0] in last and r[0] >= GRACE.get(r[1], 0): tally.setdefault(r[1], []).append(r)
