@@ -35,6 +35,7 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #endif
 #if JITMUL
        S_UMSTAR, S_UMMOD,                        /* Iteration 472: the gene jitmul */
+       S_SPFETCH, S_ALIGNED,                     /* Iteration 484: jitmul's too */
 #endif
 #if JITEXEC
        S_EXECUTE,                                /* Iteration 476: the gene jitexec */
@@ -730,9 +731,16 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                                          no header, as a variable has none - reached as a callee, translated once (jit_kslot) */
             UNS64 t_ = ((UNS64)(BYTE(a + 1) & 0x3F) << 24) | ((UNS64)BYTE(a + 2) << 16) | ((UNS64)BYTE(a + 3) << 8) | BYTE(a + 4);
             UNS64 tail = jit_cbase + t_;
-            if (BYTE(tail) != (UNS8)JIT_FROMR) return 0;          /* a DOES> code of another shape: left */
             at[0] = a; opl[0] = 0xFFFD; arg[0] = (a + 1 + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);
-            n = 1; a = tail + 1; end = 0; b = BYTE(a);
+            if (BYTE(tail) == (UNS8)JIT_FROMR) { n = 1; a = tail + 1; }    /* the R> dropped: the PFA stays on the data stack */
+            else {                      /* 484: R> fused with what follows (CONSTANT's, VALUE's DOES> @): the PFA pushed to the
+                                           return stack as DODOES does, and the DOES> code from its start, that R> and all */
+                static int l_tor = -2; int q_;
+                if (l_tor == -2) { l_tor = -1; for (q_ = 0; q_ < (int)JIT_NOPS; q_++) if (jit_ops[q_].ok && jit_ops[q_].n == 1 && jit_ops[q_].st[0] == S_TOR) { l_tor = q_; break; } }
+                if (l_tor < 0) return 0;
+                at[1] = a + 1; opl[1] = (unsigned short)l_tor; arg[1] = 0; n = 2; a = tail;
+            }
+            end = 0; b = BYTE(a);
         }
 #endif
 #if JITLOG

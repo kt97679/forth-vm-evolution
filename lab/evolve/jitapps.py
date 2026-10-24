@@ -64,6 +64,8 @@ def profile(g, d, why):
         for l in open(os.path.join(d, 'vm-jit-ops.h')):
             m = re.match(r'\[(\d+)\] = \{.*/\* *(.+?) *\*/', l)
             if m: OPS[int(m.group(1))] = m.group(2)
+            m = re.match(r'/\* \[(\d+)\] (.+?) - no stencils \*/', l)      # 484: the operations without stencils, named (layout.py 472)
+            if m: OPS[int(m.group(1))] = m.group(2)
     runs, logs = {}, {}
     for p in apps:
         pf, jl = os.path.join(d, 'p-' + p), os.path.join(d, 'jl-' + p)

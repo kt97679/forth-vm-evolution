@@ -249,6 +249,10 @@ S(st_ummod)  { ucell u = (ucell)tos, hi = (ucell)sp[0], lo = (ucell)sp[1], q, r;
 #else
 S(st_ummod)  { __builtin_trap(); }          /* no throw hole on this machine yet: no NEXT, so never usable */
 #endif
+/* Iteration 484: SP@ and ALIGNED - the kernel's PICK stands on SP@ (evo's and scan's last refusals), ALIGNED on
+   nothing a stencil had (fcp's). SP@ as the interpreter's: the top written to its slot, that slot's address pushed. */
+S(st_spfetch) { sp[-1] = tos; GO(sp - 1, (cell)(sp - 1)); }
+S(st_aligned) { GO(sp, (cell)(((ucell)tos + sizeof(cell) - 1) & ~(ucell)(sizeof(cell) - 1))); }
 #endif
 #if JITEXEC
 /* Iteration 476, the gene jitexec: EXECUTE ( xt -- ) - the kernel's `: EXECUTE >R ;` makes the token a return
@@ -320,6 +324,7 @@ const void *const spn_table[] = {
 #endif
 #if JITMUL
     (const void *)st_umstar, (const void *)st_ummod,     /* Iteration 472: after the rest, numbers kept */
+    (const void *)st_spfetch, (const void *)st_aligned,  /* Iteration 484 */
 #endif
 #if JITEXEC
     (const void *)st_execute,                            /* Iteration 476 */

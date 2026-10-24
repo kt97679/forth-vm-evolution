@@ -1684,7 +1684,8 @@ if EMIT:
                 O['vf'] = (['LIT', 'FETCH'], 9 if G['VARSLOT'] else 8); O['vs'] = (['LIT', 'STORE'], 9 if G['VARSLOT'] else 8)
             if '--jitmul' in ARGV:    # Iteration 472, the gene jitmul: UM* and UM/MOD (spn-stencils.c, JITMUL); COUNT from stencils there are
                 # 475: UM/MOD too - a zero divisor leaves native code as -10 THROW (jit.c's jit_throw0)
-                S1.update({'UM*': ['UMSTAR'], 'UM/MOD': ['UMMOD']}); K.setdefault('COUNT', (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1))
+                S1.update({'UM*': ['UMSTAR'], 'UM/MOD': ['UMMOD'], 'SP@': ['SPFETCH'], 'ALIGNED': ['ALIGNED']})   # 484: SP@, ALIGNED
+                K.setdefault('COUNT', (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1))
             if '--jitinl' in ARGV:    # Iteration 137, the gene jitinl: D+'s stencil (spn-stencils.c, JITINL)
                 S1.update({'D+': ['DPLUS']})
             def _jd(nm):
