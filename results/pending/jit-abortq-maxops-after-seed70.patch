@@ -1,0 +1,161 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 6266e12e..c812f78 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -38,7 +38,7 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
+        S_SPFETCH, S_ALIGNED,                     /* Iteration 484: jitmul's too */
+ #endif
+ #if JITEXEC
+-       S_EXECUTE, S_CALLX,                       /* Iterations 476, 486: the gene jitexec */
++       S_EXECUTE, S_CALLX, S_ABORTQ,             /* Iterations 476, 486, 488: the gene jitexec */
+ #endif
+        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
+ #if JITK
+@@ -68,6 +68,7 @@ typedef uint64_t jit_hole_t;
+ #endif
+ #if JITEXEC
+ #define JIT_EX64 0x2ea1ed5ea1ed5e22ULL         /* Iteration 476: SPN_EX_VALUE, EXECUTE's helper's hole */
++#define JIT_RS64 0x1ea1ed5ea1ed5e11ULL         /* Iteration 488: SPN_RS_VALUE, the resume helper's hole */
+ #endif
+ struct jit_st {             /* a stencil as read: offsets into its body, -1 for none */
+     const unsigned char *src;
+@@ -76,7 +77,7 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for
+     int th;                                     /* Iteration 475: the throw helper's hole, or -1 */
+ #endif
+ #if JITEXEC
+-    int ex;                                     /* Iteration 476: EXECUTE's helper's hole, or -1 */
++    int ex, rs;                                 /* Iteration 476: EXECUTE's helper's hole, 488 the resume's, or -1 */
+ #endif
+     int nnext, njump, ncall;                    /* how many holes of each */
+ #if JITHELP
+@@ -165,7 +166,7 @@ static void jit_scan(void) {
+         s->th = -1;
+ #endif
+ #if JITEXEC
+-        s->ex = -1;
++        s->ex = s->rs = -1;
+ #endif
+ #if JITHELP
+         s->fn = -1;
+@@ -179,6 +180,7 @@ static void jit_scan(void) {
+ #endif
+ #if JITEXEC
+                 if (v == JIT_EX64) s->ex = (int)(p - a);
++                if (v == JIT_RS64) s->rs = (int)(p - a);
+ #endif
+ #if JITHELP
+                 if (v == JIT_FN64) s->fn = (int)(p - a);
+@@ -278,7 +280,7 @@ static const unsigned short jit_esc[256] = {
+ #include "vm-tag2-esc.h"
+ };
+ #define JIT_MEM    (1u << 20)           /* the executable region: reserved; touched as used */
+-#define JIT_MAXOPS 256                  /* a longer word stays bytecode */
++#define JIT_MAXOPS 1024                 /* a longer word stays bytecode (488: 256 refused cd16sim's PROCESS, fcp's) */
+ static unsigned char *jit_mem;
+ static uint32_t jit_used = 16;             /* offsets 0 and 1 mean: not native */
+ #if JITEXEC
+@@ -303,7 +305,9 @@ static ucell jit_rp;                    /* the return stack while native code ru
+  *  calls jit_throw0, which longjmps there with the stack; the interpreter then does what L_umdiv does: -10 where
+  *  the divisor was, and THROW. The native frames are dropped with the C stack; the return stack is jit_rp's.  */
+ static void **jit_tb; static cell *jit_tsp;
+-static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_tsp = sp; __builtin_longjmp(jit_tb, 1); }
++static UNS64 jit_rip; static cell jit_ttos;     /* 488: where the interpreter resumes, and the top - 0 for UM/MOD's throw */
++static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_rip = 0; jit_tsp = sp; __builtin_longjmp(jit_tb, 1); }
++static spn_st jit_resume0(cell *sp, cell tos, cell ip) { jit_tsp = sp; jit_ttos = tos; jit_rip = (UNS64)ip; __builtin_longjmp(jit_tb, 1); }
+ static int jit_call(uint32_t f, cell *sp, cell tos, spn_st *r) {
+     void *tb[5]; void **prev = jit_tb; jit_tb = tb;
+     if (__builtin_setjmp(tb)) { jit_tb = prev; return 1; }
+@@ -401,6 +405,9 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+ #endif
+ #if JITEXEC
+     if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, 8); }
++#endif
++#if JITEXEC && JITMUL
++    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; memcpy(dst + t->rs, &v, 8); }
+ #endif
+     return dst + n;
+ }
+@@ -796,6 +803,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+                ` ." HEAP FULL"`, every caller with it). Here: the string's address and length as literals, and for (.")
+                TYPE through EXECUTE's helper; the decoding goes on after the string, aligned as the run-time words do.
+                The added operations get addresses no branch can name.  */
++#if JITMUL
++            if (JIT_W_AQ >= 0 && arg[n] == jit_cbase + (UNS64)JIT_W_AQ) {   /* 488: (ABORT") - the flag tested here; the call's
++                                           own address kept for the interpreter to resume at when it is true */
++                UNS64 s_ = a; unsigned c_ = BYTE(s_);
++                opl[n] = JIT_L_ABORTQ; arg[n] = at[n];
++                a = (s_ + 1 + c_ + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);
++            } else
++#endif
+             if (JIT_W_SQ >= 0 && JIT_W_DQ >= 0 && JIT_W_TYPE >= 0 &&
+                 (arg[n] == jit_cbase + (UNS64)JIT_W_SQ || arg[n] == jit_cbase + (UNS64)JIT_W_DQ)) {
+                 UNS64 s_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
+diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
+index 9410cff..73c1a36 100644
+--- a/engine/spn-stencils.c
++++ b/engine/spn-stencils.c
+@@ -53,6 +53,8 @@ typedef cell (*spn_io_fn)(cell, cell, cell);
+ #define IMM_TH() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_TH_VALUE)); _v; })
+ #define SPN_EX_VALUE 0x2ea1ed5ea1ed5e22LL     /* Iteration 476: EXECUTE's helper (jit.c's jit_exec) */
+ #define IMM_EX() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_EX_VALUE)); _v; })
++#define SPN_RS_VALUE 0x1ea1ed5ea1ed5e11LL     /* Iteration 488: the resume helper's address (jit.c's jit_resume0) */
++#define IMM_RS() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RS_VALUE)); _v; })
+ #define IMM_FN() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_FN_VALUE)); _v; })
+ /* A fourth 64-bit hole, for READ and WRITE: the engine's I/O helper,
+    spn_io(op, c-addr, u) - 0 writes, 1 reads - so native code shares the
+@@ -288,6 +290,15 @@ S(st_callx)   { cell *ic_ = (cell *)IMM();
+ S(st_execute) { __builtin_trap(); }        /* no helper hole on this machine yet: never usable */
+ S(st_callx)   { __builtin_trap(); }
+ #endif
++/* Iteration 488: (ABORT") - a false flag dropped and on; a true one hands the interpreter back the call itself (the
++   literal hole: its bytecode address), which never returns - -2 THROW, or the message and ABORT. Called, not jumped
++   to, so a jump to NEXT follows wherever GCC puts it. */
++#if defined(SPN_RS_VALUE)
++S(st_abortq)  { if (tos) { ((spn_st (*)(cell *, cell, cell))IMM_RS())(sp, tos, IMM()); GO(sp, tos); }
++                GO(sp + 1, sp[0]); }
++#else
++S(st_abortq)  { __builtin_trap(); }
++#endif
+ #endif
+ #if JITX
+ /* Iteration 108 (forth-vm-evolution, the gene jitx): FILL ( c-addr u char -- )
+@@ -348,6 +359,7 @@ const void *const spn_table[] = {
+ #endif
+ #if JITEXEC
+     (const void *)st_execute, (const void *)st_callx,    /* Iterations 476, 486 */
++    (const void *)st_abortq,                             /* Iteration 488 */
+ #endif
+ #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
+     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index 6156033..d83e238 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -2163,6 +2163,7 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
+ #if JITMUL
+                  if (jit_call(f_, (cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0, &r_)) {   /* 475: a zero divisor in native code */
+                      rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)jit_tsp - CELL_BYTES;
++                     if (jit_rip) { DS0 = (UNS64)jit_ttos; ip = jit_rip; jit_rip = 0; NEXT(); }   /* 488: (ABORT") true - the interpreter runs the call */
+                      DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; NEXT();            /* as L_umdiv's DIV0 */
+                  }
+ #else
+diff --git a/tools/layout.py b/tools/layout.py
+index 7a8345d..927feea 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1711,6 +1711,7 @@ if EMIT:
+                 _le = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 2
+                 _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ', 0' if JITHELPERS else ''))
+                 _rows.append('[%d] = {1, 1, 4, 0, {S_CALLX}%s},  /* a cold call through the helper (486) */' % (_le + 1, ', 0' if JITHELPERS else ''))
++                _rows.append('[%d] = {1, 1, 4, 0, {S_ABORTQ}%s},  /* (ABORT") - the flag here, the interpreter on a true one (488) */' % (_le + 2, ', 0' if JITHELPERS else ''))
+             _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
+             if '--jitre' in ARGV:
+                 _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
+@@ -1730,6 +1731,7 @@ if EMIT:
+                 % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]],
+                    _one('DODOES'), _one('R>'), _lint, (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
+                    for k_, n_ in (('SQ', '(S")'), ('DQ', '(.")'), ('TYPE', 'TYPE')))
++                   + '#define JIT_L_ABORTQ %d\n#define JIT_W_AQ %d\n' % (_le + 2, _woff('(ABORT")'))
+                    + '#define JIT_L_CALLX %d\n#define JIT_W_COLD %s\n' % (_le + 1, ', '.join(str(_woff(n_)) for n_ in
+                    ('EMIT', 'TYPE', 'CR', 'SPACE', 'SPACES', '.', 'U.', '.R', 'ABORT', 'THROW', 'KEY', 'ACCEPT')))) if '--jitexec' in ARGV else '', '\n'.join(_rows))   # not (ABORT"): it reads its caller's bytecode
+                 + '/* the operations without stencils (Iteration 472) */\n' + '\n'.join(_miss) + '\n')

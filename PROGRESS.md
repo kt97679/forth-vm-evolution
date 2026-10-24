@@ -9230,3 +9230,18 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed69.md, results/xcheck-seed69.md
 (moved), engine/, lab/evolve/ (the batch), lab/evolve/review-checks.py, lab/evolve/NEXT-RUN, results/gene-votes.md,
 results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/progress-by-run.md, results/predictions.md, results/README.md,
 HANDOFF.md.
+
+## Iteration 488 - 2026-10-24 - Claude
+
+**The after-seed-70 batch: native (ABORT"), JIT_MAXOPS 1024** (the owner: proceed with what is left; results/pending/
+ORDER.md). Seed 70's bundle made first (iter487: the routine's chain all PASS - build, run-tests, validate 7 of 7, the
+jail, the gate 147 of 147, ans-check 0 of 38 differ, its negative control caught). Then, outside master: JIT_MAXOPS at
+1024 moved nothing alone - the refusal log's bytes showed why: the long words, and fcp's STR>MV, ?PROMOTEMV and
+cd16sim's LINE:, hold (ABORT")'s inline messages ("Malformed...", "Illegal..."), decoded as code. Native (ABORT"): one
+operation, its message skipped; a false flag dropped, a true one handed back to the interpreter at the call itself
+through a resume helper (longjmp to jit_call's return point) - it never returns. Right against the interpreter (a false
+flag in a hot loop, CATCH giving -2, one uncaught), the corpus; brainless's leftover 5.8% to 4.3%, cd16sim's 18.1% to
+17.7%, fcp's unchanged - its rest is return-address words, DOES> code run by interpreted callers, nested JIT headers.
+Saved as the after-seed-70 batch; master's working tree back to the bundle's.
+
+Files: results/pending/ (new: the patch, ORDER.md); results/README.md, HANDOFF.md.
