@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 495.
+- master: Iteration 496.
 - **The runs**: **seed 69 processed (Iteration 487)** - islands ran (700 island lines) and **failed their prediction**:
   at generation 109 fastest 0.1274 against the replicates' 0.1197-0.1298, smallest 14,199 against 14,039-14,207 - inside
   the spread (its end, generation 175: 0.1125 and 14,043). By 464's rule islands are not kept. **The after-seed-68 batch

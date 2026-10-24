@@ -9327,3 +9327,13 @@ designs) measured on apps, the report's speed over seven workloads - a speed-col
 Predicted for seed 71. All five patches apply in order to master.
 
 Files: results/pending/decisions-after-seed70.patch (new), results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 496 - 2026-10-24 - Claude
+
+**The case-insensitive gene planned** (the owner: proceed with the other items; results/drafts/nocase-496.md). Read
+where it hooks in: every lookup copies its key into NAMEBUF (NAME>BUF, kfast's NAME>BUF8) and every search - the C
+(FIND) and THREAD-FIND included - compares NAMEBUF with stored names, so folding NAMEBUF after the copy folds them all;
+HEADER stores every name, so folding there makes the dictionary upper case. An X8 overlay (cv8b-nocase.4), composing
+with kfast, klookup and kinput; the acceptance test lexex and benchgc unshimmed. Not built yet.
+
+Files: results/drafts/nocase-496.md (new); results/README.md, HANDOFF.md.
