@@ -57,7 +57,7 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('the JIT with jitdoes', dict(JIT, jitdoes=1), ['jit', 'jitdoes']),               # Iteration 473: DOES> children native
     ('the JIT with jitexec', dict(JIT, jitexec=1), ['jit', 'jitexec']),               # Iteration 476: EXECUTE's helper
     ('the JIT with jitcfa', dict(JIT, jitcfa=1), ['jit', 'jitcfa']),                  # Iteration 482: the check along the paths
-    ('the JIT with opbody', dict(JIT, opbody=1), ['jit', 'opbody']),                 # Iteration 509: 2@ and 2! as opcodes - jit-ops.fth runs them
+    ('the JIT with opbody', dict(JIT, ops10=['2@', '2!'], opbody=1), ['jit', 'opbody']),   # Iteration 509: 2@ and 2! as opcodes - jit-ops.fth runs them
     ('the JIT with jitrp', dict(JIT, jitrp=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitrp']),   # Iteration 494
     ('the JIT with nocase', dict(JIT, kfast=1, nocase=1), ['jit', 'nocase']),         # Iteration 497: names without case
     ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
