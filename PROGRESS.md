@@ -9526,3 +9526,14 @@ results/README.md's entry and HANDOFF's item say it - a project of its own now, 
 The notes stay, for the history.
 
 Files: results/drafts/fern-design-457.md, results/drafts/c4-family-459.md, results/README.md, HANDOFF.md.
+
+## Iteration 511 - 2026-10-24 - Claude
+
+**Three prompts for other models** (the owner: three, not one - each needs its own expertise, and the bug hunt carries
+its own attachment): results/drafts/ask-arm-jit-511.md (the JIT on 32-bit ARM: encodings, flags, pitfalls, prior art),
+ask-noise-511.md (the fast end's optimism: methods for selecting under noise, a protocol for our costs),
+ask-jit-review-511.md (a bug hunt in jit.c - attached with spn-stencils.c and vm-lab.c's JIT entry and exit as the
+after-seed-71 batch leaves them; each bug with a minimal trigger, to become a test). Each asks for checkable answers and
+"unsure" where unsure; the answers to be verified as the scout's were (480).
+
+Files: results/drafts/ask-arm-jit-511.md, ask-noise-511.md, ask-jit-review-511.md (new); results/README.md, HANDOFF.md.
