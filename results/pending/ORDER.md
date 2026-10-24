@@ -5,6 +5,7 @@ Prepared while seed 71 runs; master stays what seed 71's bundle tests.
     git apply results/pending/retire-nocase-after-seed71.patch
     git apply results/pending/fastgate-slower-after-seed71.patch
     git apply results/pending/retire-jithelp-jitre-after-seed71.patch
+    git apply results/pending/jitfuse-after-seed71.patch
 
 **retire-nocase-after-seed71.patch** (forth/cv8b-nocase.4 and forth/cv8bt-nocase.4 removed, lab/evolve/evolve.py,
 lab/evolve/engines-check.py) - **the owner retired nocase** (501): it changes only how names are looked up, so it can
@@ -29,5 +30,16 @@ function hole, the rows' function field; the interpreted call, S_INTERP); jit_in
 kept - jitexec's interpreted path - under JITEXEC alone; the genes, their flags and converter options gone; rule 2
 watches jitret alone. Tested in a clone with all three patches: run-tests PASS (93 engine paths, the differential JIT
 test on every JIT variant at both widths), validate 7 of 7.
+
+**jitfuse-after-seed71.patch** (507; engine/jit.c, engine/spn-stencils.c, tools/layout.py, lab/evolve/evolve.py,
+lab/evolve/engines-check.py, tests/jit/jit-diff.fth): **the gene jitfuse, staged frozen** - a literal into +, <, >, =,
+XOR, AND or OR, and I into + or 2@, copied as one stencil (results/drafts/jit-pairs-506.md); never where the second
+operation is a branch target. Seven stencils (LIT + is st_addi's). Found while testing: the pairs were first marked before
+the callees were translated - a callee's translation overwrote them (the far test crashed); now marked just before the
+sizes, as jitk_tg is. And 2@ and 2! in the converter's JIT map took eight-byte cells at either width - by the cell now,
+as CELL+ at 493. jit-diff.fth gains the pairs, a branch into one, 2@ and 2!. engines-check PASS (two variants more, with
+and without jitk, both widths). **Measured** (instructions, seed 70's fastest with the four JIT genes, jitk 3): fib
+-16.3%, bubble -9.3%, loop -4.8%, apps -0.9%, kernel +1.2%, corpus +2.4%, ackermann +2.7% - the geometric mean of the
+seven -3.8%, for 912 bytes more (+2.4%).
 
 **At seed 71's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

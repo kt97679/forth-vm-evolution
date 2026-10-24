@@ -52,3 +52,17 @@ LIT32 +, DUP LIT8), and arithmetic between shuffles (+ XOR, + SWAP, ROT +, OVER 
 <, =, AND, OR, XOR as one stencil with the literal in a hole, as the interpreter's folds do - and the loop index into +
 and 2@; measured on the fast design before a gene is made (rule 11: the selection pays for it, every workload runs JIT
 code on a JIT design). Or none, if a few percent does not justify its stencils' bytes - a size cost the search weighs.
+
+## Built and measured (Iteration 507)
+
+The small version, the gene jitfuse (the after-seed-71 batch's fourth patch, staged frozen): the literal group and I + /
+I 2@. Instructions (cachegrind) on seed 70's fastest JIT design with the four JIT genes (jitk 3), without and with it:
+
+| kernel | fib | corpus | loop | bubble | ackermann | apps | geometric mean | bytes |
+|---|---|---|---|---|---|---|---|---|
+| +1.2% | -16.3% | +2.4% | -4.8% | -9.3% | +2.7% | -0.9% | **-3.8%** | +912 (+2.4%) |
+
+fib's DUP 2 < and bubble's comparisons gain most. kernel, corpus and ackermann lose a little: the pass that finds the
+pairs looks for branch targets in each word it translates (the compiling workloads translate most), and under jitk a
+fused stencil starts from the canonical state, spilling the cache before it. Either could be cut - targets marked while
+decoding, jitk variants of the seven (gen-jitk.py) - if the search takes the gene up.

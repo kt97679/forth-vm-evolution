@@ -1,0 +1,200 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 5f26f59..f3bf020 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -36,6 +36,9 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
+ #endif
+ #if JITEXEC
+        S_EXECUTE, S_CALLX, S_ABORTQ,             /* Iterations 476, 486, 488: the gene jitexec */
++#endif
++#if JITFUSE
++       S_LTI, S_GTI, S_EQI, S_XORI, S_ANDI, S_ORI, S_IPLUS, S_I2FETCH,   /* Iteration 507: the gene jitfuse */
+ #endif
+        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
+ #if JITK
+@@ -639,6 +642,36 @@ static int jit_tail(int i, int n, const unsigned short *opl, const UNS64 *arg, c
+ }
+ #endif
+ 
++#if JITFUSE
++/* Iteration 507, the gene jitfuse: pairs of operations copied as one stencil (results/drafts/jit-pairs-506.md) - a
++   literal into +, <, >, =, XOR, AND or OR (the literal in the stencil's hole; LIT + is st_addi), the loop index I into
++   + or 2@. Never where the second operation is a branch target: a jump there would land inside the pair. jit_fz[i]:
++   operation i copied with i+1 as this stencil; operation i+1 then copies nothing. */
++static unsigned short jit_fz[JIT_MAXOPS + 1];
++static int jit_row1(unsigned short l, int s) { return l < 0xFFFD && jit_ops[l].ok && jit_ops[l].n == 1 && jit_ops[l].st[0] == s; }
++static void jit_fuse(int n, const unsigned short *opl, const UNS64 *arg, const UNS64 *at) {
++    static unsigned char tg[JIT_MAXOPS + 1]; int i, j;
++    memset(tg, 0, sizeof tg); memset(jit_fz, 0, sizeof jit_fz);
++    for (i = 0; i < n; i++)
++        if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6)
++            for (j = 0; j < n; j++) if (at[j] == arg[i]) { tg[j] = 1; break; }
++    for (i = 0; i + 1 < n; i++) {
++        unsigned short a = opl[i], b = opl[i + 1]; int s = 0;
++        if (tg[i + 1] || b >= 0xFFFD || !jit_ops[b].ok) continue;
++        if (jit_row1(a, S_LIT)) {
++            if (jit_row1(b, S_PLUS)) s = S_ADDI; else if (jit_row1(b, S_LT)) s = S_LTI; else if (jit_row1(b, S_GT)) s = S_GTI;
++            else if (jit_row1(b, S_EQ)) s = S_EQI; else if (jit_row1(b, S_XOR)) s = S_XORI; else if (jit_row1(b, S_AND)) s = S_ANDI;
++            else if (jit_row1(b, S_OR)) s = S_ORI;
++        } else if (jit_row1(a, S_I)) {
++            const struct jit_op *o = &jit_ops[b];
++            if (jit_row1(b, S_PLUS)) s = S_IPLUS;
++            else if (o->n == 5 && o->st[0] == S_DUP && o->st[1] == S_ADDI && o->st[2] == S_FETCH && o->st[3] == S_SWAP
++                     && o->st[4] == S_FETCH && o->k == (signed char)sizeof(cell)) s = S_I2FETCH;       /* 2@ */
++        }
++        if (s && jit_usable(s)) { jit_fz[i] = (unsigned short)s; i++; }
++    }
++}
++#endif
+ #if JITK
+ /*  Iteration 259, the gene jitk: the top K cells in registers across the copied
+  *  code (gen-jitk.py; results/price-jit-stack.md). jitk_cs is the cache state
+@@ -662,6 +695,14 @@ static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, co
+     struct jit_op lit_op = { 1, 1, 1, 0, { S_LIT, 0, 0, 0, 0 } };
+     const struct jit_op *o = &lit_op;
+     (void)arg; (void)at;
++#if JITFUSE
++    if (i > 0 && jit_fz[i - 1]) return 0;                /* 507: copied with the operation before it */
++    if (jit_fz[i]) {                                     /* 507: the pair as one stencil, from the canonical state */
++        if ((k = jitk_canon(st, wh, 0)) < 0) return -1;
++        st[k] = jit_fz[i]; wh[k++] = 0; jitk_cs = 1;
++        return k;
++    }
++#endif
+     if (opl[i] >= 0xFFFE) {                             /* a call: in state 1 */
+         if ((k = jitk_canon(st, wh, 0)) < 0) return -1;
+ #if JITTAIL
+@@ -931,9 +972,16 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+             if (j < n) jitk_tg[j] = 1;
+         }
+     jitk_cs = 1;
++#endif
++#if JITFUSE
++    jit_fuse(n, opl, arg, at);          /* 507: after the callees are translated - jit_fz is shared, as jitk_tg */
+ #endif
+     for (i = 0; i < n; i++) {           /* sizes, and every stencil usable */
+         nat[i] = size;
++#if JITFUSE && !JITK
++        if (i > 0 && jit_fz[i - 1]) continue;             /* 507: copied with the pair before */
++        if (jit_fz[i]) { size += (uint32_t)jit_len(jit_fz[i]); continue; }
++#endif
+ #if JITLOG
+         jitlog_at = at[i]; jitlog_why = 3;
+ #endif
+@@ -981,6 +1029,10 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+         const struct jit_op *o;
+         UNS64 jt = 0;
+         int lit = 1;
++#if JITFUSE && !JITK
++        if (i > 0 && jit_fz[i - 1]) continue;             /* 507 */
++        if (jit_fz[i]) { o = &jit_ops[opl[i]]; jit_put(p, jit_fz[i], JIT_LITOPND(o) ? arg[i] : (UNS64)(INT64)o->k, 0, 0); continue; }
++#endif
+ #if JITK
+         {
+             int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
+diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
+index 7491d63..7c876ff 100644
+--- a/engine/spn-stencils.c
++++ b/engine/spn-stencils.c
+@@ -245,6 +245,19 @@ S(st_ploop)  { RPDECL cell *r = (cell *)RP;
+                if ((cell)(((o - l) ^ (n - l)) & ((o - l) ^ (ucell)tos)) < 0) { RP = (ucell)(r + 2); GO(sp + 1, *sp); }
+                r[0] = (cell)n; return spn_jump(sp + 1, *sp); }
+ S(st_i)      { RPDECL cell v = ((cell *)RP)[0]; *--sp = tos; GO(sp, v); }
++#if JITFUSE
++/* Iteration 507, the gene jitfuse (results/drafts/jit-pairs-506.md): a literal into an operation, the loop index into
++   + and 2@ - one stencil each, the value kept in a register where two stencils pushed and popped it. LIT + is
++   st_addi's already. */
++S(st_lti)     { GO(sp, -(tos < (cell)IMM())); }
++S(st_gti)     { GO(sp, -(tos > (cell)IMM())); }
++S(st_eqi)     { GO(sp, -(tos == (cell)IMM())); }
++S(st_xori)    { GO(sp, tos ^ IMM()); }
++S(st_andi)    { GO(sp, tos & IMM()); }
++S(st_ori)     { GO(sp, tos | IMM()); }
++S(st_iplus)   { RPDECL cell v = ((cell *)RP)[0]; GO(sp, tos + v); }
++S(st_i2fetch) { RPDECL cell *a = (cell *)((cell *)RP)[0]; *--sp = tos; *--sp = a[1]; GO(sp, a[0]); }
++#endif
+ S(st_j)      { RPDECL cell v = ((cell *)RP)[2]; *--sp = tos; GO(sp, v); }
+ S(st_unloop) { RPDECL RP += 2 * sizeof(cell); GO(sp, tos); }
+ S(st_leave)  { RPDECL RP += 2 * sizeof(cell); return spn_jump(sp, tos); }
+@@ -377,6 +390,11 @@ const void *const spn_table[] = {
+     (const void *)st_execute, (const void *)st_callx,    /* Iterations 476, 486 */
+     (const void *)st_abortq,                             /* Iteration 488 */
+ #endif
++#if JITFUSE
++    (const void *)st_lti, (const void *)st_gti, (const void *)st_eqi,      /* Iteration 507 */
++    (const void *)st_xori, (const void *)st_andi, (const void *)st_ori,
++    (const void *)st_iplus, (const void *)st_i2fetch,
++#endif
+ #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
+     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
+     (const void *)st_uge_br, (const void *)st_ge_br, (const void *)st_nei_br,
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 48e3f56..5165347 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -58,6 +58,8 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT with jitexec', dict(JIT, jitexec=1), ['jit', 'jitexec']),               # Iteration 476: EXECUTE's helper
+     ('the JIT with jitcfa', dict(JIT, jitcfa=1), ['jit', 'jitcfa']),                  # Iteration 482: the check along the paths
+     ('the JIT with jitrp', dict(JIT, jitrp=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitrp']),   # Iteration 494
++    ('the JIT with jitfuse', dict(JIT, jitfuse=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitfuse']),   # Iteration 507
++    ('the JIT with jitfuse and jitk', dict(JIT, jitfuse=1, jitk=2, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitfuse', 'jitk']),
+     ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
+     ('the JIT, jitret', dict(JIT, jitret=1), ['jitret']),                       # Iteration 404: EXIT as pop and jmp
+     ('the JIT, jitvar, varslot 0', dict(JIT, jitvar=1, varslot=0), ['jitvar']),
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index f3b0f94..82c426e 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -184,6 +184,7 @@ gene('jitdoes', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # I
+ gene('jitexec', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 476: EXECUTE through a helper (jit.c)
+ gene('jitcfa', needs=lambda g, e: jit_on(g) and g.get('jitx'))               # Iteration 482: the return-stack check along the paths
+ gene('jitrp', needs=lambda g, e: jit_on(g) and g.get('jitx') and not e.get('compiler') and cellw() == 8)   # Iteration 494: GCC's global register
++gene('jitfuse', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 507: pairs as one stencil (jit-pairs-506.md)
+ gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
+ gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
+ # Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
+@@ -899,7 +900,7 @@ REQUIRE = []
+ # code stays; removed only if the run after shows no loss (its comparison small or better).
+ FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
+-          'alignhot': 0, 'jitos': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 501: nocase retired (the owner)
++          'alignhot': 0, 'jitos': 0, 'jitfuse': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 501: nocase retired (the owner)
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+@@ -946,6 +947,7 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitdoes'): flags.append('-DJITDOES=1') # Iteration 473: DOES> children native
+     if jit_on(g) and express(g).get('jitexec'): flags.append('-DJITEXEC=1') # Iteration 476: EXECUTE's helper
+     if jit_on(g) and express(g).get('jitcfa'): flags.append('-DJITCFA=1')   # Iteration 482: the check along the paths
++    if jit_on(g) and express(g).get('jitfuse'): flags.append('-DJITFUSE=1') # Iteration 507: pairs as one stencil
+     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
+     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
+     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
+diff --git a/tests/jit/jit-diff.fth b/tests/jit/jit-diff.fth
+index 2045632..8e562e2 100644
+--- a/tests/jit/jit-diff.fth
++++ b/tests/jit/jit-diff.fth
+@@ -17,5 +17,9 @@ CREATE TAB ' SQ , ' FIVE , ' DUP , 7 , 9 ,
+ : T10 0 40 0 DO I EV + LOOP . 1 2 >R >R R@ R> R> + + . ;
+ : FIB DUP 2 < IF EXIT THEN DUP 1- FIB SWAP 2 - FIB + ;  : T11 20 FIB . ;
+ : T12 0 10 0 DO I 3 0 DO J I * + LOOP LOOP . 100 0 DO I CELLS DROP LOOP 6 CELLS 3 CELL+ + . ;
+-T1 CR T2 CR T3 CR T4 CR T5 CR T6 CR T7 CR T8 CR T9 CR T10 CR T11 CR T12 CR T1 CR T3 CR T10 CR
++: T13 0 20 0 DO I 5 + 3 < I 7 = OR I 9 > AND I 255 AND + I 16 OR + I 85 XOR + + LOOP . 1000 -3 + . -5 2 < . -5 -9 > . ;
++: T14 ( f -- n ) IF 1 ELSE 2 THEN 40 + ;  : T15 0 10 0 DO I + LOOP . 1 T14 . 0 T14 . ;
++CREATE PAIRS 1 , 2 , 30 , 40 , 500 , 600 ,  : T16 0 3 0 DO PAIRS I 2 * CELLS + DROP LOOP 0 PAIRS 3 0 DO DUP I 2* CELLS + 2@ + ROT + SWAP LOOP DROP . 7 8 PAIRS 2! PAIRS 2@ . . ;
++CREATE PP 2 CELLS ALLOT  : T17 5 6 PP 2! 0 PP CELL+ CELL+ PP DO I @ + 1 CELLS +LOOP . 11 22 PP 2! 0 PP DUP 1+ SWAP DO I 2@ DROP + LOOP . ;
++T1 CR T2 CR T3 CR T4 CR T5 CR T6 CR T7 CR T8 CR T9 CR T10 CR T11 CR T12 CR T1 CR T3 CR T10 CR T13 CR T15 CR T16 CR T17 CR
+ BYE
+diff --git a/tools/layout.py b/tools/layout.py
+index 3dd67ec..8e1ff74 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1664,7 +1664,7 @@ if EMIT:
+                  # Iteration 290: 2@ and 2! as opcodes - five stencils each, CELL+'s ADDI the one constant;
+                  # without them a JIT design that takes the opcodes leaves every word holding one to the
+                  # interpreter (jit.c: all or nothing), 2@ and 2! themselves among them
+-                 '2@': (['DUP', 'ADDI', 'FETCH', 'SWAP', 'FETCH'], 8), '2!': (['SWAP', 'OVER', 'STORE', 'ADDI', 'STORE'], 8)}
++                 '2@': (['DUP', 'ADDI', 'FETCH', 'SWAP', 'FETCH'], CELL), '2!': (['SWAP', 'OVER', 'STORE', 'ADDI', 'STORE'], CELL)}   # 507: the cell, as CELL+ (493)
+             O = {'LIT8': (['LIT'], 1), 'LIT': (['LIT'], 2), 'LIT32': (['LIT'], 3), 'LIT64': (['LIT'], 4),
+                  'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5), 'DUP+I': (['DUP', 'ADDI'], 5), 'DUP<I': (['DUP', 'LIT', 'LT'], 5),
+                  'BRANCH': (['BRANCH'], 7), 'BRANCH8': (['BRANCH'], 6), '?BRANCH': (['0BRANCH'], 7),

@@ -9476,3 +9476,17 @@ literal into an operation (LIT then +, -, <, =, AND, OR, XOR as one stencil with
 
 Files: lab/evolve/jitpairs.py, results/drafts/jit-pairs-506.md (new); lab/evolve/README.md, results/README.md,
 HANDOFF.md.
+
+## Iteration 507 - 2026-10-24 - Claude
+
+**jitfuse built and measured - the after-seed-71 batch's fourth patch, staged frozen** (the owner: build the small version
+and measure; results/drafts/jit-pairs-506.md, results/pending/ORDER.md). A literal into +, <, >, =, XOR, AND or OR, and I
+into + or 2@, as one stencil each - seven stencils, LIT + st_addi's - never where the second is a branch target, with and
+without jitk. Two faults found by the tests: the pairs marked before the callees' translation, which overwrote them (the
+far test crashed - now marked just before the sizes); 2@ and 2! in the converter's JIT map with eight-byte cells at
+either width (by the cell now). engines-check PASS, the differential test covering the pairs at both widths. Instructions
+on seed 70's fastest with the four genes: fib -16.3%, bubble -9.3%, loop -4.8%, apps -0.9%, kernel +1.2%, corpus +2.4%,
+ackermann +2.7%; the geometric mean -3.8%, for 912 bytes (+2.4%). The owner's call: enable it for the search to weigh.
+
+Files: results/pending/jitfuse-after-seed71.patch (new), results/pending/ORDER.md, results/drafts/jit-pairs-506.md,
+HANDOFF.md.
