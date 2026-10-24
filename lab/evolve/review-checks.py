@@ -272,6 +272,16 @@ elif check == 'spread':
         path, _, g = a.partition('@'); R = db(path)
         ok = [d for d in R.values() if d.get('status') == 'ok' and d.get('speed') and d.get('total') and d.get('rss')]
         runs.append([a, ok, int(g) if g else None, max(d.get('gen', 0) for d in ok)])
+    # Iteration 505: what each run's speed is - the workloads its selection measured (seed 71: apps, the seventh) and how
+    # a gated design's two readings were joined (from seed 72: the slower, not their geometric mean). A run unlike the
+    # first is marked; its speed, best Q, hypervolume and 32-bit speed do not compare - its size and memory do.
+    def era(ok):
+        sel = collections.Counter(tuple(sorted(k for k in (d.get('t') or {}) if k not in ('sieve', 'parse'))) for d in ok).most_common(1)
+        sel = sel[0][0] if sel else ()
+        two = [d for d in ok if d.get('speed1') and d.get('speed2')]
+        gate = ('slower' if all(abs(d['speed'] - max(d['speed1'], d['speed2'])) < 1e-9 * d['speed'] for d in two) else 'mean') if two else '?'
+        return sel, gate
+    eras = [era(r[1]) for r in runs]
     G0 = min(r[3] for r in runs)
     s6 = {k: json.dumps(v, sort_keys=True) for k, v in E.express(E.canon(E.HUMAN['s6-cv8b'])).items()}   # 'on' = differs from s6
     out = []
@@ -289,6 +299,11 @@ elif check == 'spread':
         out.append(dict(name=name, G=G, n=len(ds), fr=fr, pts=pts, use={k: v / len(fr) for k, v in use.items()}, q=q, s32=s32))
     allp = [tuple(math.log(x) for x in o['pts'][i]) for o in out for i in o['fr']]
     lo = tuple(min(p[k] for p in allp) for k in range(3)); ref = tuple(max(p[k] for p in allp) + 0.05 for k in range(3))
+    odd = [i for i in range(len(runs)) if eras[i][0] != eras[0][0] or (eras[i][1] != eras[0][1] and '?' not in (eras[i][1], eras[0][1]))]
+    if odd:
+        print('**Not like the first run** (marked \u2260): speed over %d workloads (%s), the gate\'s readings joined by %s - against it, the marked'
+              ' runs\' fastest, best Q, hypervolume and 32-bit speed do not compare; their size and memory do.\n' % (len(eras[0][0]), ', '.join(eras[0][0]), eras[0][1]))
+        for i in odd: runs[i][0] = out[i]['name'] = '\u2260 ' + runs[i][0] + ' (%d workloads, %s)' % (len(eras[i][0]), eras[i][1])
     print('| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |\n|---|---|---|---|---|---|---|---|---|---|')
     for o in out:
         P = [o['pts'][i] for i in o['fr']]

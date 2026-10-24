@@ -9447,3 +9447,18 @@ called-once words are mostly findable ones that must stay whole; the size to win
 
 Files: results/pending/retire-jithelp-jitre-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/NEXT-RUN,
 HANDOFF.md.
+
+## Iteration 505 - 2026-10-24 - Claude
+
+**Ready for seed 71: the tools know the speed break, the documents are current, the checklist written** (the owner:
+proceed with the three). The speed of seed 71 is over seven workloads, and from seed 72 a gated design's readings join
+as the slower - neither visible to the tools that compare runs. Both now read it from the records: the progress table's
+new "speed over" column (the workloads, from the records' times; the gate's join, from their two readings), a break in
+bold - it finds Iteration 151's at seed 38 on its own; the spread marks a run unlike the first with \u2260 and says which
+of its columns do not compare (tried on seed 70 against a copy given a seventh workload). GENES.md has rows for jitmul,
+jitdoes, jitexec, jitcfa and jitrp, and the three retired; HANDOFF's open items lead with the list as it is now (369's
+kept beneath). results/drafts/seed71-checklist-505.md: what compares across the break, the predictions seed 71 settles,
+the batch, seed 72's line.
+
+Files: results/drafts/seed71-checklist-505.md (new); lab/evolve/progress-table.py, lab/evolve/review-checks.py,
+lab/evolve/GENES.md, results/progress-by-run.md, results/README.md, HANDOFF.md.
