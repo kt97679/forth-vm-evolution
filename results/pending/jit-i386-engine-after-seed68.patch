@@ -1,5 +1,5 @@
 diff --git a/engine/jit.c b/engine/jit.c
-index de9cbb5..eccf2c2 100644
+index 2ee7cca..a3d9551 100644
 --- a/engine/jit.c
 +++ b/engine/jit.c
 @@ -48,9 +48,19 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
@@ -42,7 +42,16 @@ index de9cbb5..eccf2c2 100644
  #if JITMUL
                  if (v == JIT_TH64) s->th = (int)(p - a);
  #endif
-@@ -348,19 +358,19 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+@@ -272,7 +282,7 @@ static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_tsp = sp; __builti
+ static int jit_call(uint32_t f, cell *sp, cell tos, spn_st *r) {
+     void *tb[5]; void **prev = jit_tb; jit_tb = tb;
+     if (__builtin_setjmp(tb)) { jit_tb = prev; return 1; }
+-    *r = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
++    *r = ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+     jit_tb = prev; return 0;
+ }
+ #endif
+@@ -350,19 +360,19 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
          else if (jit_relto(t->src + p, spn_table[J_CALL])) to = call;
          if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
      }
@@ -66,7 +75,16 @@ index de9cbb5..eccf2c2 100644
  #endif
  #if JITEXEC
      if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, 8); }
-@@ -859,7 +869,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+@@ -595,7 +605,7 @@ static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
+         if (k) { if (*k & 0x80000000u) { *k = 1; *k = jit_body(w, w, 0, 0); } f = *k; } }
+     if (f > 1) {                        /* 481: native - this site's cache remembers it */
+         ic[1] = 0; ic[0] = xt; ic[2] = (cell)jit_ld32(w + 1); ic[1] = (cell)(uintptr_t)(jit_mem + f);
+-        return ((spn_st (*)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
++        return ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f))(sp, tos);
+     }
+ #if JITLOG
+     {   static UNS64 tw_[256]; static unsigned long tc_[256]; int k_;     /* 481: interpreted targets, counted - a line at each power of 2 */
+@@ -879,7 +889,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
          }
  #if JITX
          else if (BYTE(arg[i]) == JIT_DOVAR) {         /* a variable: its address, a literal */
@@ -116,7 +134,7 @@ index 41521c8..006738b 100644
 +SPN_CC spn_st spn_jump(cell *sp, cell tos) { (void)sp; (void)tos; exit(97); }
 +SPN_CC spn_st spn_call(cell *sp, cell tos) { (void)sp; (void)tos; exit(98); }
 diff --git a/engine/spn-stencils.c b/engine/spn-stencils.c
-index 1feae5d..3b3b237 100644
+index ddb5007..9410cff 100644
 --- a/engine/spn-stencils.c
 +++ b/engine/spn-stencils.c
 @@ -60,6 +60,19 @@ typedef cell (*spn_io_fn)(cell, cell, cell);
@@ -165,24 +183,15 @@ index 1feae5d..3b3b237 100644
  
  /* The return stack. The interpreter and native code share one, reached
 diff --git a/engine/vm-lab.c b/engine/vm-lab.c
-index a4d17ce..3e76507 100644
+index a4d17ce..6156033 100644
 --- a/engine/vm-lab.c
 +++ b/engine/vm-lab.c
-@@ -2160,6 +2160,7 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
-                  /* the stack in memory here (gen-tos.py spills around a handler it
-                     has no rule for): dsp at the top; native code wants sp at the
-                     second, the top apart - SPN's convention */
-+<<<<<<< ours
- #if JITMUL
-                  if (jit_call(f_, (cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0, &r_)) {   /* 475: a zero divisor in native code */
-                      rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)jit_tsp - CELL_BYTES;
-@@ -2168,6 +2169,9 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
+@@ -2166,7 +2166,7 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
+                      DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; NEXT();            /* as L_umdiv's DIV0 */
+                  }
  #else
-                  r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
- #endif
-+=======
+-                 r_ = ((spn_st (*)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
 +                 r_ = ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
-+>>>>>>> theirs
+ #endif
                   rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
                   ip = RS; rp += CELL_BYTES;
-              } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */

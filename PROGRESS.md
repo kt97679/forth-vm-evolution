@@ -9191,3 +9191,21 @@ Open: gc16 refused at DODOES with no DOES> in it. The pending batch rebased a fo
 
 Files: engine/jit.c, engine/spn-stencils.c, tools/layout.py, lab/evolve/jitapps.py, results/pending/ (rebased,
 ORDER.md), results/drafts/jitapps-471.md, HANDOFF.md.
+
+## Iterations 485-486 - 2026-10-24 - Claude
+
+**gc16's puzzle solved; inline strings and cold calls in the JIT; the applications at 3.7 times s6; a broken rebase
+repaired** (the owner: continue; results/drafts/jitapps-471.md, its 485-486 section). Partial translation weighed with
+the frozen jitre (an untranslatable callee called through the interpreter): the JIT's leftover fell, but the hot trips
+made gc16 and cd16sim slower - transitions too dear. The refusal log (analysis builds) now shows bytes: gc16's GC was
+refused at the count byte of `." HEAP FULL"` decoded as an opcode (9, DODOES). In jitexec: (S") and (.") decoded as
+their string's address and length (and TYPE through the helper), the decoding resumed after the string; and calls of
+cold words (output, input, ABORT, THROW - the converter's list) made through the helper instead of refusing the
+caller. Right on the tests, the corpus and every application; gc16 now wholly native - 0.219 of s6 (0.434), geometric
+mean 0.272. run-tests PASS, validate 7 of 7, the jail PASS. **My error, found while rebasing**: the pending engine patch
+had carried an unresolved conflict in engine/vm-lab.c since the 475 rebase - the checks applied the patch (markers
+apply) and looked for markers in jit.c only. Rebuilt from the original: the native call site resolved with SPN_CC,
+jit.c's native calls given SPN_CC; master plus the batch passes engines-check at 64 and 32 bits.
+
+Files: engine/jit.c, engine/spn-stencils.c, tools/layout.py, results/pending/ (repaired, ORDER.md),
+results/drafts/jitapps-471.md, HANDOFF.md.

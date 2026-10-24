@@ -1,5 +1,10 @@
 # The after-seed-68 batch - apply in this order (deferred at Iteration 464 to seed 69's processing)
 
+**Repaired and rebased (486)**: the engine patch had carried an unresolved conflict in engine/vm-lab.c since the 475
+rebase (the native call site: jitmul's jit_call against the patch's SPN_CC call) - the 475-484 checks applied the patch,
+which a patch holding conflict markers does, and looked for markers in jit.c only. Rebuilt from the original (e6044c3):
+the call site resolved (jit_call kept; the plain call with SPN_CC), jit.c's native calls given SPN_CC; no markers in
+any of the three; master plus the batch: engines-check PASS at 64 and 32 bits (the stencil check among it).
 **Rebased a fourth time (484)** onto SP@, ALIGNED and fused DOES> code - clean; the three apply in order to 1b3b289.
 **Rebased a third time (482)** onto EXECUTE's cache and jitcfa - clean; the three apply in order to 8633c99.
 **Rebased again (476)** onto jitexec - a clean three-way merge this time; the three apply in order to 8c2731a.

@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 484.
+- master: Iteration 486.
 - **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
@@ -99,6 +99,10 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   **484 (measured before partial translation)**: SP@ and ALIGNED stencils (jitmul; PICK stands on SP@), jitdoes takes
   fused DOES> code - the fast design at **0.301 of s6 on the applications (3.3 times)**. Open: gc16 refused at DODOES
   with no DOES> in it; partial translation for return-address words, words over 256 operations, nested JIT opcodes.
+  **485-486**: gc16's puzzle was `." HEAP FULL"`'s count byte decoded as DODOES; inline strings and cold calls (I/O,
+  ABORT, THROW through EXECUTE's helper) in jitexec - gc16 0.434 to 0.219, the applications at **0.272 of s6 (3.7x)**.
+  jitre tried: fewer dispatches, slower where hot - transitions too dear. **The pending engine patch had an unresolved
+  vm-lab.c conflict since 475** (my rebases); repaired from the original, engines-check PASS at both widths on top.
   The pending batch rebased again (applies to 8c2731a). Gforth's siev, bubble, matrix run on s6 with case folding and a prelude (no NIP, no .( in
   our kernel). Proposed: a held-out tier of applications; NIP, .( and [IF] by prelude or in the kernel.
 - **jitrp - a prototype** (the owner, 465; results/drafts/jitrp-465.md and .patch): the JIT's return-stack pointer in

@@ -268,3 +268,30 @@ cd16sim unchanged.
 kernel's CONSTANT is LIT and EXIT - unexplained; a difference between the analysis build's operations and a normal
 build's is the first suspect. What partial translation would still address: return-address words, words over 256
 operations, the nested JIT opcode.
+
+## Iterations 485-486 - gc16's puzzle solved; inline strings and cold calls; the applications at 3.7 times s6
+
+**Partial translation, weighed first**: the frozen jitre already calls an untranslatable word through the interpreter
+instead of refusing its caller - partial translation at the word's grain. Switched on with jithelp (which it needs), the
+JIT's leftover fell (fcp 17.5% to 2.5%, gc16 19.4% to 13.2%, brainless 5.8% to 3.0%, cd16sim 18.1% to 13.9%) - and the
+times rose where the calls were hot (gc16 0.43 to 0.73 of s6, cd16sim 0.58 to 0.76; fcp 0.31 to 0.24): each trip
+through the interpreter costs more than the dispatches it saves. Partial translation pays only with cheap transitions,
+or for calls that are cold.
+
+**gc16's puzzle (485)**: the refusal log now shows the bytes at the word and at the refusal - gc16's GC was refused at
+0x09 followed by "HEAP FU": the count byte of `." HEAP FULL"`'s inline string, decoded as an opcode - and 9 is DODOES.
+GC refused, and CONS, LIST, TREE and PUSH with it. **Inline strings**: the converter gives the JIT the offsets of
+(S"), (.") and TYPE (JIT_W_*); a call of (S") becomes the string's address and length as literals, (.") the same and
+TYPE through EXECUTE's helper; the decoding goes on after the string, aligned as the run-time words do.
+
+**Cold calls (486)**: GC still called CR and ABORT, which stay bytecode (WRITE has no stencil; ABORT throws). A call of a
+word on the converter's cold list - EMIT, TYPE, CR, SPACE, SPACES, ., U., .R, ABORT, THROW, KEY, ACCEPT: output, input,
+errors - now goes through EXECUTE's helper with the token fixed in the site's cache, rather than refusing the caller.
+Not (ABORT"): it reads its caller's bytecode. Right on output inside hot words, a never-taken ABORT in a loop, THROW
+caught by CATCH - s6 and the fast design against the interpreter; the corpus; every application.
+
+On b9c5b4ae74 with all four genes: the JIT leaves **gc16 0.0%** (19.4%), scan 0.0%, evo 0.0%, sim16 0.0%; fcp 17.5%,
+brainless 5.8%, cd16sim 18.1% unchanged. Two rounds, every output right: sim16 0.238, **gc16 0.219** (0.434), scan 0.162,
+evo 0.228, fcp 0.317, brainless 0.313, cd16sim 0.573 - **geometric mean 0.272, 3.7 times s6**. run-tests PASS (73 paths),
+validate 7 of 7, the jail PASS. Left for fcp, brainless and cd16sim: return-address words (2>R, 2R>), words over 256
+operations, a nested JIT opcode, (ABORT").
