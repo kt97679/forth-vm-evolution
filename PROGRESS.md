@@ -9315,3 +9315,15 @@ GCC JIT design: loop -19.2%, bubble -4.0%, ackermann +2.0% (465's figures again)
 three-way apply had staged (git diff without HEAD) - caught by the apply check, redone from HEAD.
 
 Files: results/pending/jitrp-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.
+
+## Iteration 495 - 2026-10-24 - Claude
+
+**The owner's decisions, as the after-seed-70 batch's fifth patch** (the owner: add the applications, freeze jitos, add
+jitrp; results/pending/ORDER.md). `apps` the seventh selection workload: our four applications inline - no file needed
+wherever the program runs - one short pass each, sized as the six (sim16 reduced to fib(15) on its simulated CPU, gc16
+200 steps, scan 3, evo 12): 0.058 s on s6, 0.016 s on seed 68's fast design with the four genes, its output s6's. jitos
+frozen, jitrp out of FROZEN. Tested in a clone with all five patches: run-tests PASS; one generation of the evolver (33
+designs) measured on apps, the report's speed over seven workloads - a speed-column break from the first run with it.
+Predicted for seed 71. All five patches apply in order to master.
+
+Files: results/pending/decisions-after-seed70.patch (new), results/pending/ORDER.md, results/predictions.md, HANDOFF.md.

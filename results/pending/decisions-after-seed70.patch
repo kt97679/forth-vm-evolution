@@ -1,0 +1,44 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 931848a..8cc848b 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -550,7 +550,7 @@ def opcall_in(g):
+     if not opcall_on(g): return []
+     av = set(opcall_avail(g)); names = [n for n in dict.fromkeys(g.get('opcall') or []) if n in av]
+     return [[n, 0xFE00 + k, OPCALL_POOL[n]] for k, n in enumerate(names)]
+-WORK_SEL = ['kernel', 'fib', 'corpus', 'loop', 'bubble', 'ackermann']; WORK_HELD = ['sieve', 'parse']
++WORK_SEL = ['kernel', 'fib', 'corpus', 'loop', 'bubble', 'ackermann', 'apps']; WORK_HELD = ['sieve', 'parse']   # 495 (the owner): apps
+ WORK_FAR = ['far']   # Iteration 159: the timed fib behind a 1 MB gap - three-byte calls; compare-fronts only
+ # Iteration 41: loop selected (the owner), sieve held out. Iteration 127 (the owner): parse held out - it
+ # timed the interpreter twice over, with the corpus - and two execution-heavy workloads in, the owner's
+@@ -901,7 +901,7 @@ REQUIRE = []
+ # code stays; removed only if the run after shows no loss (its comparison small or better).
+ FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
+-          'alignhot': 0, 'jithelp': 0, 'jitre': 0, 'jitrp': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa too (the owner); 494: jitrp staged
++          'alignhot': 0, 'jithelp': 0, 'jitre': 0, 'jitos': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+@@ -1142,6 +1142,7 @@ def long_files():
+ def program(w, single=False):
+     """The workload's input: the long one (Iteration 100), or single - as before."""
+     if w == 'kernel': return KERNEL_IN
++    if w == 'apps': return APPS_IN       # 495: the four applications of lab/evolve/apps/, a short pass each
+     if w == 'far':         # Iteration 159: fib's words past 1 MB - long calls under the tag, within s6's reach
+         return ('1048576 ALLOT\n' + program('fib', single).decode()).encode()
+     path = os.path.join(ROOT, 'bench', w + '.fth') if w != 'corpus' else CORPUS
+@@ -1151,6 +1152,13 @@ def program(w, single=False):
+     if w == 'parse': return (('S" %s" INCLUDED\n' % LONGF[w]) * LONG[w] + 'BYE\n').encode()
+     return ('S" %s" INCLUDED\nBYE\n' % LONGF[w]).encode()
+ 
++# Iteration 495 (the owner: add the applications): the seventh selection workload - our own four applications (a CPU
++# simulated, a collector, a scanner generator, a genetic algorithm), each one short pass checking itself, their source
++# inline so the program needs no file wherever it runs; sized as the six, ~11 ms on the fastest. Appbench's programs
++# stay held out (appbench.py). results/drafts/apps-selection-491.md priced it.
++APPS_IN = b''.join(open(os.path.join(ROOT, 'lab', 'evolve', 'apps', f), 'rb').read() + b'\n' + call + b'\n' for f, call in (
++    ('sim16.fth', b'700 ORG 15 LIT, FIB CALL, HALT,  0 STEPS !  700 RUN DPOP . STEPS @ . CR'),   # fib(15) on the simulated CPU
++    ('gc16.fth', b'200 BENCH'), ('scan.fth', b'3 BENCH'), ('evo.fth', b'12 BENCH'))) + b'BYE\n'
+ FAR_IN = open(os.path.join(ROOT, 'tests', 'core', 'far.fth'), 'rb').read()
+ FULL_IN = open(os.path.join(ROOT, 'tests', 'core', 'full.fth'), 'rb').read()
+ HAND_MADE = []

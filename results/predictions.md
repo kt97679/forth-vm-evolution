@@ -912,3 +912,11 @@ geometric mean for the fastest JIT design that has all three genes below 0.45 of
 The owner enabled jitcfa. Like jitexec, what it frees lies mostly outside the selection's six workloads, so its share
 of the front's JIT designs near drift (a quarter to three quarters); appbench.py's geometric mean for the fastest JIT
 design with all four genes below 0.42 of s6 (seed 68's fast design with them: 0.344).
+
+## The applications in the selection, from seed 71 - predicted (Iteration 495)
+
+The after-seed-70 batch makes our four applications the seventh selection workload. In the first run with it: the four
+JIT genes (jitmul, jitdoes, jitexec, jitcfa) each on at least three quarters of its front's JIT designs - the search now
+paid for what they do; appbench.py's geometric mean for its fastest JIT design below 0.30 of s6 (seed 68's fast design
+with them and the batch: 0.234); the speeds on the six old workloads within 5% of seed 70's (the seventh costs them
+little).

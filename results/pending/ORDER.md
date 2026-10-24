@@ -1,11 +1,12 @@
 # The after-seed-70 batch - applied at seed 70's processing (Iterations 488-490)
 
-Prepared while seed 70 runs; master stays what seed 70's bundle tests. Four patches, in this order:
+Prepared while seed 70 runs; master stays what seed 70's bundle tests. Five patches, in this order:
 
     git apply results/pending/jit-more-after-seed70.patch
     git apply results/pending/coreext-2r-after-seed70.patch
     git apply results/pending/jit-32bit-after-seed70.patch
     git apply results/pending/jitrp-after-seed70.patch
+    git apply results/pending/decisions-after-seed70.patch
 
 **jit-more-after-seed70.patch** (engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py):
 
@@ -52,5 +53,14 @@ regpin 2 (nested loops, >R and R@, EXECUTE, DOES>, I and J, ABORT" and division 
 corpus each; engines-check PASS at both widths. Instructions (cachegrind) on seed 68's fastest GCC JIT design,
 6c0c4e6886: loop -19.2%, bubble -4.0%, fib 0.0%, ackermann +2.0% - the 465 prototype's figures again; on s6 with the
 JIT, whose loops run otherwise, -0.4% at most. Frozen until the owner says.
+
+**decisions-after-seed70.patch** (495; lab/evolve/evolve.py) - **the owner's decisions**: (1) **the applications in the
+selection** - `apps`, the seventh selection workload: our own four applications, their source inline (no file needed
+wherever it runs), one short pass each - sim16 running fib(15) on its simulated CPU, gc16 200 steps, scan 3 builds,
+evo 12 generations - 0.058 s on s6 (0.010 of it compiling the four), 0.016 s on seed 68's fast design with the four
+genes, its output s6's; the speed objective's geometric mean now over seven - **a break in the speed column from the
+first run with it**; Appbench's programs stay held out (appbench.py). (2) **jitos frozen** (12 of 12 removal votes over
+seeds 67-69). (3) **jitrp enabled** (out of FROZEN). Tested in a clone with all five patches: run-tests PASS; one
+generation of the evolver, 33 designs, each measured on `apps` too, its report naming seven workloads.
 
 **At seed 70's processing**: `sh tools/batch-check.sh` first, then apply both, the routine's chain after it.
