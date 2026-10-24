@@ -9387,3 +9387,19 @@ library the search does not load, and seed 71 runs from its bundle; the Forth 20
 seed 71's processing (ans-check).
 
 Files: forth/coreext.4 (99720d3), HANDOFF.md.
+
+## Iteration 500 - 2026-10-24 - Claude
+
+**Two more held-out applications, from scratch** (the owner: proceed while seed 71 runs). The held-out set guards the
+new apps selection workload against being fitted to: two programs of kinds the four do not cover. wordfreq.fth: words of
+generated text counted in an open-addressing hash table whose keys are counted strings in a pool, compared byte by byte,
+the most frequent found (WORDS 20000, DISTINCT 1591, TOP 1163, CHECK 26703 at 140 passes; 3.4 s on s6). minif.fth: a
+small Forth interpreted in Forth - source parsed word by word, a dictionary of counted names searched by string compare,
+numbers converted by hand, colon definitions compiled to token lists and run by an inner interpreter through EXECUTE,
+IF and THEN as branch tokens, recursion, an unknown word thrown and caught (CHECK 21282, ERRS 6000 at 6,000 rounds; 1.5
+s). Core words, upper case, checking themselves; checksums under 65,521. appbench.py runs them by default, held out
+only - the selection's apps stay the four. On seed 70's fastest, 77d42fd7da: 0.556 and 0.519 of s6 as it is, 0.195 and
+0.214 with the four JIT genes - every output right.
+
+Files: lab/evolve/apps/wordfreq.fth, lab/evolve/apps/minif.fth (new); lab/evolve/appbench.py, lab/evolve/README.md,
+HANDOFF.md.

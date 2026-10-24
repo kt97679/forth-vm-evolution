@@ -16,7 +16,7 @@ applications rank the front as the selection's workloads did (results/drafts/app
 import argparse, json, math, os, re, resource, shutil, statistics, sys, tempfile, zipfile
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
 ap.add_argument('dbs', nargs='+'); ap.add_argument('--zip', default=''); ap.add_argument('--sample', type=int, default=16)
-ap.add_argument('--rounds', type=int, default=2); ap.add_argument('--apps', default='sim16,gc16,scan,evo,fcp,brainless,cd16sim')
+ap.add_argument('--rounds', type=int, default=2); ap.add_argument('--apps', default='sim16,gc16,scan,evo,wordfreq,minif,fcp,brainless,cd16sim')
 ap.add_argument('--ids', default=''); ap.add_argument('--set', action='append', default=[])   # Iteration 473: named designs, genes set
 a = ap.parse_args()
 SET = {k: int(v) for k, v in (x.split('=', 1) for x in a.set)}
@@ -28,8 +28,10 @@ CALLS = {'fcp': 'include fcp-1.31-64.f||!: setup SETUP ;||bench bye', 'brainless
          'cd16sim': ': 3drop 2drop drop ; include bench.f 1000000 benchmark bye',
          'lexex': 'include run.fth bye', 'benchgc': '64000 include bench-gc5.fs bye'}
 OWN = {'sim16': ('sim16.fth', '60 BENCH BYE'), 'gc16': ('gc16.fth', '50000 BENCH BYE'),     # Iterations 469-470: ours,
-       'scan': ('scan.fth', '600 BENCH BYE'), 'evo': ('evo.fth', '3000 BENCH BYE')}          # from scratch (lab/evolve/apps/)
-CHECKS = {'sim16': r'SIM16 SIEVE 303 FIB 6765 STEPS 21936820\b', 'gc16': r'GC16 GCS 618 FREED 7454729 CHECK 2636\b',
+       'scan': ('scan.fth', '600 BENCH BYE'), 'evo': ('evo.fth', '3000 BENCH BYE'),          # from scratch (lab/evolve/apps/)
+       'wordfreq': ('wordfreq.fth', '140 BENCH BYE'), 'minif': ('minif.fth', '6000 BENCH BYE')}   # Iteration 500: held out only
+CHECKS = {'wordfreq': r'WORDFREQ WORDS 20000 DISTINCT 1591 TOP 1163 CHECK 26703\b', 'minif': r'MINIF CHECK 21282 ERRS 6000 DEFS 14\b',
+          'sim16': r'SIM16 SIEVE 303 FIB 6765 STEPS 21936820\b', 'gc16': r'GC16 GCS 618 FREED 7454729 CHECK 2636\b',
           'scan': r'SCAN NFA 44 DFA 17 IDENT 1723 NUMBER 908 SPACE 5407 ERRS 0 CHECK 20235\b', 'evo': r'EVO BEST 445 AT 200 CHECK 24466\b',
            'fcp': r'(?s)\b120287\b.*Results:', 'brainless': r'110023 nodes .* 163278 evals', 'cd16sim': r'(\d+ \d+ \d+ \d+) should be \1\b'}
 apps = a.apps.split(',')
