@@ -48,13 +48,16 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 498.
+- master: Iteration 499.
 - **The runs**: **seed 70 processed (Iteration 498)** - inside the replicates' spread (at generation 109 fastest 0.1259,
   smallest 14,143); **the four JIT genes on no front design** - tried on thousands, dominated: the six workloads do not pay
   for them and they cost bytes; the applications 0.756 of s6 on its fastest. **906 32-bit failures, all JIT designs** -
   CELL+/CELLS (fixed in the batch). **The after-seed-70 batch applied** (six patches, batch-check PASS): the applications
   the seventh selection workload, jitrp enabled, jitos frozen, nocase staged frozen - results/applied-after-seed70/.
-  **Seed 71 next: 10 hours (the owner)** - the speed column breaks at it (seven workloads).
+  **Seed 71 next: 10 hours (the owner)** - the speed column breaks at it (seven workloads). **499: nocase's acceptance
+  passed** - coreext.4's [ELSE] matches [IF], [ELSE], [THEN] without case (on master directly - a run-time library the
+  search does not load; seed 71's bundle is unchanged): lexex and benchgc then run unmodified, as fcp and cd16sim did -
+  all four Appbench programs that stopped on case. The owner's call: enable nocase.
   Before - **seed 69 processed (Iteration 487)** - islands ran (700 island lines) and **failed their prediction**:
   at generation 109 fastest 0.1274 against the replicates' 0.1197-0.1298, smallest 14,199 against 14,039-14,207 - inside
   the spread (its end, generation 175: 0.1125 and 14,043). By 464's rule islands are not kept. **The after-seed-68 batch

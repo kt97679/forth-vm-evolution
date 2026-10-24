@@ -9372,3 +9372,18 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed70.md, results/xcheck-seed70.md
 (moved), engine/, forth/, lab/evolve/, tools/ (the batch), lab/evolve/NEXT-RUN, results/gene-votes.md,
 results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/progress-by-run.md, results/predictions.md, results/README.md,
 HANDOFF.md.
+
+## Iteration 499 - 2026-10-24 - Claude
+
+**nocase's acceptance test passed** (the owner: proceed while seed 71 runs). lexex and benchgc, unfolded on a nocase
+design, stopped at show-set and mark-stack - words their own files define. Their output showed why: sets.fth began and
+never said it had loaded. coreext.4's [ELSE], which [IF] skips with, matched [IF], [ELSE] and [THEN] with case; the
+programs write them in lower case, so the first skipped [if] ... [then] took the rest of the file with it, silently.
+[ELSE] now upper-cases each word it skips over before matching. lexex then runs whole - its own check, "Output file is
+correct" - and benchgc to its statistics: with fcp and cd16sim (497), all four Appbench programs that stopped on case run
+unmodified with nocase. Meant for a batch, the change landed on master directly (a patch file that could not be
+written under a root-owned results/pending, so the revert after it never ran) - kept there: coreext.4 is a run-time
+library the search does not load, and seed 71 runs from its bundle; the Forth 2012 suite still to be run with it at
+seed 71's processing (ans-check).
+
+Files: forth/coreext.4 (99720d3), HANDOFF.md.
