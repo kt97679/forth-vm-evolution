@@ -68,6 +68,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gene-equiv.py` - the evolver's genes behave as they did at an earlier commit: ids, expressions, seeded mutations, draws and crossovers (Iteration 276)
 - `gene-table-test.py` - a new gene is one row: a fictional gene works with no code change (Iteration 276)
 - `hotwords.py` - hotwords.py ID [ID ...] [--db FILE ...] [--write FILE] - every word's share
+- `jitpairs.py` - the operation pairs a JIT design runs over the selection workloads, named from its JIT table: prices super-stencils (Iteration 506; results/drafts/jit-pairs-506.md)
 - `jitapps.py` - what the JIT leaves on the applications (Iteration 471): a design profiled with the JIT off and on (-DJITLOG=1) over appbench.py's applications - the dispatches left, the words they sit in, each refusal followed to its root
 - `jitleft.py` - what the JIT leaves to the interpreter (Iteration 339): each JIT design profiled with the JIT off and on - the dispatches left, by workload, and the words that carry them
 - `image-ab.py` - image-ab.py ID [ID ...] --env VAR=VALUE [--set GENE=VALUE] [--db FILE] [--rounds N] - a

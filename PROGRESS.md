@@ -9462,3 +9462,17 @@ the batch, seed 72's line.
 
 Files: results/drafts/seed71-checklist-505.md (new); lab/evolve/progress-table.py, lab/evolve/review-checks.py,
 lab/evolve/GENES.md, results/progress-by-run.md, results/README.md, HANDOFF.md.
+
+## Iteration 506 - 2026-10-24 - Claude
+
+**The JIT's operation pairs counted** (the owner: start the count; results/drafts/jit-pairs-506.md). lab/evolve/
+jitpairs.py profiles seed 70's fastest JIT design with the JIT off - every operation the JIT would copy a counted
+dispatch - over the seven selection workloads, each weighted equally, names from the JIT build's table (its one-byte
+table differs by one JIT code, 65533; the op numbering the same, checked). 41.2% of dispatched pairs are two operations
+in straight-line code; the top 25 cover 25.3%: I + (3.0%), DUP I (2.9%), + XOR (2.9%), I 2@, DUP LIT8, LIT8 <, LIT32 +,
+DUP 0= ... A few percent of a JIT design's time to win, perhaps up to 8% without jitk. Proposed first: a gene for a
+literal into an operation (LIT then +, -, <, =, AND, OR, XOR as one stencil with a hole) and the loop index into + and
+2@, measured on the fast design before it is made a gene.
+
+Files: lab/evolve/jitpairs.py, results/drafts/jit-pairs-506.md (new); lab/evolve/README.md, results/README.md,
+HANDOFF.md.
