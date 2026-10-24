@@ -9209,3 +9209,23 @@ jit.c's native calls given SPN_CC; master plus the batch passes engines-check at
 
 Files: engine/jit.c, engine/spn-stencils.c, tools/layout.py, results/pending/ (repaired, ORDER.md),
 results/drafts/jitapps-471.md, HANDOFF.md.
+
+## Iteration 487 - 2026-10-24 - Claude
+
+**Seed 69 processed - islands not kept; the after-seed-68 batch applied; seed 70 at 11 hours** (the owner: proceed;
+the next run 11 hours; results/evolve-amd-ryzen-7-pro-8840hs-seed69.md). The pack's checks PASS; 44,876 designs,
+generations 0-175, islands on (700 island lines - the 464 fix working). Against the five plain replicates at generation
+109 (the chain's spread): fastest 0.1274 against 0.1197-0.1298, smallest 14,199 against 14,039-14,207, hypervolume
+0.6041 against 0.6027-0.6202 - inside the spread; its end 0.1125 and 14,043. The prediction failed on speed: islands not
+kept. Held out 0.968; the fast end's optimism 1.096; 32-bit failures 0; dream 0.963, the Tegra 0.965; footprint's order
+negative (-0.171, -0.329). **The gene votes fixed**: review-checks.py votes now counts only the genes in the run's own
+code (its commit's evolve.py, from the results file's "asked at" or --at) - seed 69 would otherwise have cast four
+removal votes each against jitmul, jitdoes, jitexec and jitcfa, which did not exist in it; jitos a candidate (12 of 12).
+The after-seed-68 batch: batch-check PASS (3 patches on e5c6239), applied, moved to results/applied-after-seed68/; the
+routine's chain on master after it. NEXT-RUN: seed 70, 11 hours, without islands, footprint, spread and the
+applications after it. The compare-fronts record and the progress table updated; predictions scored.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed69.md, results/xcheck-seed69.md (new); results/applied-after-seed68/
+(moved), engine/, lab/evolve/ (the batch), lab/evolve/review-checks.py, lab/evolve/NEXT-RUN, results/gene-votes.md,
+results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/progress-by-run.md, results/predictions.md, results/README.md,
+HANDOFF.md.

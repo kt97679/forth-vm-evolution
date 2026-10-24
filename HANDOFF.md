@@ -48,8 +48,16 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 486.
-- **The runs**: seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
+- master: Iteration 487.
+- **The runs**: **seed 69 processed (Iteration 487)** - islands ran (700 island lines) and **failed their prediction**:
+  at generation 109 fastest 0.1274 against the replicates' 0.1197-0.1298, smallest 14,199 against 14,039-14,207 - inside
+  the spread (its end, generation 175: 0.1125 and 14,043). By 464's rule islands are not kept. **The after-seed-68 batch
+  applied** (the JIT at 32 bits, the stencil check; batch-check PASS) - results/applied-after-seed68/. **Seed 70 next:
+  11 hours (the owner), no islands, the four JIT genes enabled, the applications held out after the spread** - a break
+  in the 32-bit column from it. The gene votes count only the genes a run's code had (487: seed 69's would have voted
+  against jitmul, jitdoes, jitexec and jitcfa, which it never had). **For the owner**: jitos a freeze candidate (12 of
+  12 over seeds 67-69); rtfuse no longer.
+  Before - seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
   "islands: on/off" from the log. The islands "trial" of seeds 65-67 voided: **seeds 64-68 are five plain replicates** -
@@ -113,7 +121,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   the JIT built at 32 bits passes the corpus, speed 0.956 to 0.767; a variable-alignment bug fixed on the way. **Made
   real as the after-seed-68 batch (461, the owner; results/applied-after-seed68/ORDER.md)**: eval32 keeps the JIT, jitk off at 32 bits,
   dream's prebuilt 32-bit sample takes JIT designs, engines-check 81 paths; seed 67's front JIT designs 1.9-2.9x faster
-  at 32 bits. **A break in the 32-bit column from seed 69.**
+  at 32 bits. **A break in the 32-bit column from seed 70** (applied at 487).
 - **The second pass over c4's circle** (the owner, 462; results/drafts/c4-family-459.md): the code-copying literature
   (Ertl and Paysan 2025, copy-and-patch, CPython's JIT, Deegen); **six ideas for the owner** - a stencil relocatability
   check, stencils from relocations (the way to ARM), jitrp (the return stack in a register), wider jitinl, a no-vectorise
@@ -127,9 +135,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **Fern, a scripting language on this Forth** (the owner, 457): designed - results/drafts/fern-design-457.md - and to
   be built in a chat of its own, from this bundle; the evolution's chats carry on as before.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 69's, named from the bundle it starts from (seed 68's, `forth-vm-evolution-chain-b75372ada-fury-
-  20261023-140516_tar.gz`, processed at 464). For seed 69's islands reading the five plain runs are in its chain's
-  spread step (seeds 64-68 as archived on the laptop). For seed 66's islands reading seed 64's database is kept here too
+  processed - seed 70's, named from the bundle it starts from (seed 69's, `forth-vm-evolution-chain-2f1f41c29-fury-
+  20261024-025828_tar.gz`, processed at 487). Seed 70's chain carries its own spread (every run's database on the
+  laptop) and the applications (appbench.zip in ~/Downloads). For seed 66's islands reading seed 64's database is kept here too
   (build/evolve/keep/seed64-db.jsonl); if gone, seed 64's archive. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
 - **The code**: the after-seed-59 batch applied (Iteration 389, results/applied-after-seed59/ORDER.md: opcall only

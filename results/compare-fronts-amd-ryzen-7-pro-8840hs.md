@@ -32005,3 +32005,15 @@ On both fronts: 79 of 100 and 100.
 | 2360ca2d4e | 1.643 | 1.635 | 1.005 |
 
 sieve, parse, far is held out (Iteration 41: loop was, until the owner put it in the selection). loop moves with an image's size mod 8 - the NOOPs before (LOOP) in run-time code (Iteration 13) - except where rtloop compiles its opcodes.
+
+## Session 56 - Iteration 487: seed 69 and seeds 64-68 (the chain's spread, at generation 109)
+
+**Islands (seed 69) inside the replicates' spread on every measure but best Q**: fastest 0.1274 against 0.1197-0.1298, smallest 14,199 against 14,039-14,207, hypervolume 0.6041 against 0.6027-0.6202 - the prediction failed; islands not kept. No compare step ran: this is the spread over every run's database, one generation for all (the first row is seed 69).
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 109 | 20633 | 324 | 0.1274 | 14,199 | 108 | 7.314e+05 | 0.6041 | 0.3309 |
+| archived-20261022-032641/build/evolve/db.jsonl | 109 | 19932 | 361 | 0.1236 | 14,039 | 108 | 7.1675e+05 | 0.6202 | 0.3709 |
+| archived-20261022-165054/build/evolve/db.jsonl | 109 | 20653 | 297 | 0.1217 | 14,077 | 112 | 6.7892e+05 | 0.6153 | 0.3157 |
+| archived-20261023-061021/build/evolve/db.jsonl | 109 | 21722 | 315 | 0.1197 | 14,135 | 112 | 6.883e+05 | 0.6027 | 0.3327 |
+| archived-20261023-145435/build/evolve/db.jsonl | 109 | 22167 | 328 | 0.1298 | 14,207 | 108 | 7.098e+05 | 0.6136 | 0.3413 |
