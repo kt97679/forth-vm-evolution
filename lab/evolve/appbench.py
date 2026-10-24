@@ -39,19 +39,28 @@ for prog in [p for p in apps if p in OWN]:
     d = os.path.join(work, prog); os.makedirs(d)
     f, call = OWN[prog]; text[prog] = open(os.path.join(HERE, 'apps', f), 'rb').read() + b'\n' + call.encode() + b'\n'
 zapps = [p for p in apps if p not in OWN]
-if zapps and not a.zip: sys.exit('appbench.py: --zip PATH (Appbench) for ' + ', '.join(zapps))
-with (zipfile.ZipFile(os.path.expanduser(a.zip)) if zapps else open(os.devnull)) as z:
-    for prog in zapps:
-        d = os.path.join(work, prog)
+LOCAL = {'brainless': os.path.join(HERE, 'apps', 'brainless')}   # Iteration 492: public domain - copied in, no zip needed
+need_zip = [p for p in zapps if p not in LOCAL]
+if need_zip and not a.zip: sys.exit('appbench.py: --zip PATH (Appbench) for ' + ', '.join(need_zip))
+z = zipfile.ZipFile(os.path.expanduser(a.zip)) if need_zip else None
+for prog in zapps:
+    d = os.path.join(work, prog)
+    if prog in LOCAL:
+        entries = [(os.path.relpath(os.path.join(r_, f_), LOCAL[prog]), open(os.path.join(r_, f_), 'rb').read())
+                   for r_, _, fs_ in os.walk(LOCAL[prog]) for f_ in fs_]
+    else:
+        entries = []
         for n in z.namelist():
             m = re.match(r'[^/]+/%s/(.+)' % re.escape(prog), n)
             if not m or '/CVS/' in '/' + m.group(1) or n.endswith('/'): continue
-            out = os.path.join(d, m.group(1)); os.makedirs(os.path.dirname(out), exist_ok=True); data = z.read(n)
-            if re.search(r'\.(fs|f|fth|fb|4th|vhd)$', n, re.I): data = hexfix(fold(data.decode('latin-1'))).encode('latin-1')
-            open(out, 'wb').write(data)
-        for f in ('extend.4', 'coreext.4'): shutil.copy(os.path.join(ROOT, 'forth', f), d)
-        text[prog] = (open(os.path.join(HERE, 'appbench', 'prelude.fth')).read() + '\n' + ' '.join(
-            s[1:] if s.startswith('!') else hexfix(fold(s)) for s in CALLS[prog].split('||')) + '\n').encode('latin-1')
+            entries.append((m.group(1), z.read(n)))
+    for rel, data in entries:
+        out = os.path.join(d, rel); os.makedirs(os.path.dirname(out), exist_ok=True)
+        if re.search(r'\.(fs|f|fth|fb|4th|vhd)$', rel, re.I): data = hexfix(fold(data.decode('latin-1'))).encode('latin-1')
+        open(out, 'wb').write(data)
+    for f in ('extend.4', 'coreext.4'): shutil.copy(os.path.join(ROOT, 'forth', f), d)
+    text[prog] = (open(os.path.join(HERE, 'appbench', 'prelude.fth')).read() + '\n' + ' '.join(
+        s[1:] if s.startswith('!') else hexfix(fold(s)) for s in CALLS[prog].split('||')) + '\n').encode('latin-1')
 def run(eng, img, prog):
     r0 = resource.getrusage(resource.RUSAGE_CHILDREN)
     p = E.sh(list(E.PIN) + [eng, img], cwd=os.path.join(work, prog), inp=text[prog], timeout=900, cpu=600)

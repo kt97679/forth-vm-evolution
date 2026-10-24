@@ -9276,3 +9276,12 @@ decision.
 
 Files: results/drafts/apps-selection-491.md, results/drafts/apps-selection-491.patch (new); results/README.md,
 HANDOFF.md.
+
+## Iteration 492 - 2026-10-24 - Claude
+
+**brainless copied in** (the owner: proceed with the other items). Public domain (its README), so it now lives in
+lab/evolve/apps/brainless/ unchanged (COPIED.md says whence); appbench.py reads it from there - folded at run time as
+before - and asks for the zip only for fcp and cd16sim. Run that way on seed 68's fast design: its output right.
+
+Files: lab/evolve/apps/brainless/ (new, 30 files and COPIED.md); lab/evolve/appbench.py, lab/evolve/README.md,
+HANDOFF.md.
