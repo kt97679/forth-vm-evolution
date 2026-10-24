@@ -9337,3 +9337,17 @@ HEADER stores every name, so folding there makes the dictionary upper case. An X
 with kfast, klookup and kinput; the acceptance test lexex and benchgc unshimmed. Not built yet.
 
 Files: results/drafts/nocase-496.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 497 - 2026-10-24 - Claude
+
+**The gene nocase built - the after-seed-70 batch's sixth patch, staged frozen** (the owner: proceed with the other
+items; results/pending/ORDER.md, results/drafts/nocase-496.md). An X8 overlay loaded after kfast's and kinput's:
+NAME>BUF8 folds NAMEBUF after the copy - every search, the C walks included, compares the folded key; HEADER8 folds the
+name it stores; ASCII a-z only. HEADER8's code differs between the header systems by one constant (tag 2's links are up
+to 4 bytes), so two overlay files. The gene needs kfast and not klookup; the kernel dump matrix gains -kfast-nocase and
+-kfast-kinput-nocase. A lower-case program runs right with it (undefined words without), the corpus each, on s6 with
+kfast, with kinput, and with tag 2 and the JIT. The acceptance test: Appbench's fcp and cd16sim run with no folding of
+their source at all; lexex and benchgc stop at words their own files define - not yet traced. run-tests PASS (with an
+engines-check variant), validate 7 of 7.
+
+Files: results/pending/nocase-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.

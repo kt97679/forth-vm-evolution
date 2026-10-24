@@ -1,12 +1,13 @@
 # The after-seed-70 batch - applied at seed 70's processing (Iterations 488-490)
 
-Prepared while seed 70 runs; master stays what seed 70's bundle tests. Five patches, in this order:
+Prepared while seed 70 runs; master stays what seed 70's bundle tests. Six patches, in this order:
 
     git apply results/pending/jit-more-after-seed70.patch
     git apply results/pending/coreext-2r-after-seed70.patch
     git apply results/pending/jit-32bit-after-seed70.patch
     git apply results/pending/jitrp-after-seed70.patch
     git apply results/pending/decisions-after-seed70.patch
+    git apply results/pending/nocase-after-seed70.patch
 
 **jit-more-after-seed70.patch** (engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py):
 
@@ -62,5 +63,16 @@ genes, its output s6's; the speed objective's geometric mean now over seven - **
 first run with it**; Appbench's programs stay held out (appbench.py). (2) **jitos frozen** (12 of 12 removal votes over
 seeds 67-69). (3) **jitrp enabled** (out of FROZEN). Tested in a clone with all five patches: run-tests PASS; one
 generation of the evolver, 33 designs, each measured on `apps` too, its report naming seven workloads.
+
+**nocase-after-seed70.patch** (497; forth/cv8b-nocase.4 and forth/cv8bt-nocase.4 new, lab/evolve/evolve.py,
+lab/evolve/engines-check.py): **the gene nocase**, staged frozen - names without case (results/drafts/nocase-496.md).
+An X8 overlay after kfast's and kinput's: FOLD8 (ASCII a-z only), NAME>BUF8 folding NAMEBUF after the copy (every
+search, the C walks included), HEADER8 folding the name it stores - one per header system (cv8bt's links are up to
+4 bytes). Needs kfast, not klookup (whose (FIND) copies the key in C). Two kernel dumps per header system more
+(-kfast-nocase, -kfast-kinput-nocase). Tested: a lower-case program - definitions, EVALUATE, variables, mixed case,
+loops, ' and EXECUTE - right with the gene on s6 with kfast, with kinput, and with tag 2 and the JIT (undefined words
+without it), the corpus each; **Appbench's fcp and cd16sim run with no folding of their source** (fcp's results,
+cd16sim's own check right); lexex and benchgc stop at a word their own files define (show-set, mark-stack) - not yet
+traced; run-tests PASS (an engines-check variant with it), validate 7 of 7. Frozen until the owner says.
 
 **At seed 70's processing**: `sh tools/batch-check.sh` first, then apply both, the routine's chain after it.

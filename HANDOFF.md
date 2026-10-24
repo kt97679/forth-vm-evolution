@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 496.
+- master: Iteration 497.
 - **The runs**: **seed 69 processed (Iteration 487)** - islands ran (700 island lines) and **failed their prediction**:
   at generation 109 fastest 0.1274 against the replicates' 0.1197-0.1298, smallest 14,199 against 14,039-14,207 - inside
   the spread (its end, generation 175: 0.1125 and 14,043). By 464's rule islands are not kept. **The after-seed-68 batch
@@ -63,7 +63,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   Master stays what seed 70's bundle tests. **493: the batch's third patch - the new genes at 32 bits**, and a bug of
   the applied 32-bit batch found (and **494: jitrp, the 465 prototype made a gene, the batch's fourth patch, staged
   frozen** - loop -19% of instructions on a GCC JIT design; **495, the owner's decisions as the fifth patch: the
-  applications the seventh selection workload (a speed-column break), jitos frozen, jitrp enabled**): the JIT's CELL+ and CELLS assumed eight-byte cells - **seed 70's 32-bit JIT
+  applications the seventh selection workload (a speed-column break), jitos frozen, jitrp enabled**; **497: the gene
+  nocase, the sixth patch, staged frozen** - fcp and cd16sim run unshimmed with it): the JIT's CELL+ and CELLS assumed eight-byte cells - **seed 70's 32-bit JIT
   designs may compute wrong addresses where those are translated**: look at its 32-bit failures at processing. **491: the applications in the selection priced** (results/drafts/
   apps-selection-491.md): as a seventh workload the four genes show threefold (0.573 to 0.193 of s6) - a draft patch;
   the owner's decision.
