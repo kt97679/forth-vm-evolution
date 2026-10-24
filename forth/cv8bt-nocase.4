@@ -1,0 +1,18 @@
+\ cv8bt-nocase.4 - names without case, for the gene nocase, the tag-2 system's (cv8bt.4) (Iteration 497; results/drafts/nocase-496.md).
+\ Loaded after cv8b.4 and kfast's and kinput's overlays; each X8 word gives the kernel's word its body, so every
+\ caller gets it. Every lookup copies its key to NAMEBUF (NAME>BUF) and every search compares NAMEBUF with the
+\ stored names, so folding NAMEBUF after the copy folds every search; HEADER8 folds the name it stores. Only ASCII
+\ a-z are folded: other bytes - UTF-8 names among them - stay as they are. Not with klookup, whose (FIND) copies
+\ the key in C.
+: FOLD8 ( c-addr u --- )  0 ?DO DUP I + C@ DUP 96 > OVER 123 < AND IF 32 - THEN OVER I + C! LOOP DROP ;
+: NAME>BUF8 ( c-addr u --- )
+\ kfast's: no padding - cv8b.4's SEARCH-WORDLIST8 compares the count and that many bytes; then folded.
+  32 MIN NAMEBUF PLACE NAMEBUF COUNT FOLD8 ;
+: HEADER8 ( --- )
+  32 WORD DUP COUNT FOLD8 DUP C@ 31 > ABORT" name too long" DUP FIND IF ." Redefining: " HERE COUNT TYPE CR THEN DROP DROP
+  HERE COUNT CURRENT @ @ HASH 1+ CELLS CURRENT @ + @ HDR-HEAD !
+  HDR-HEAD @ IF HERE 4 + HDR-HEAD @ - LINK-LEN ELSE 1 THEN HDR-LEN !    \ tag 2: links up to 4 bytes
+  HERE DUP HDR-LEN @ + HERE C@ 1+ CMOVE>
+  HDR-HEAD @ IF HERE HDR-LEN @ + HDR-HEAD @ - ELSE 0 THEN HDR-LEN @ LINK,
+  HERE LAST !
+  HERE C@ 1+ ALLOT ;

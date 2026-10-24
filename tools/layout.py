@@ -1659,8 +1659,8 @@ if EMIT:
                 S1.update({'>R': ['TOR'], 'R>': ['FROMR'], 'R@': ['RFETCH'], 'FILL': ['FILL']})
             K = {'lit0': (['LIT'], 0), 'lit1': (['LIT'], 1), 'litm1': (['LIT'], -1), '0=': (['LIT', 'EQ'], 0),
                  '0<': (['LIT', 'LT'], 0), 'INVERT': (['LIT', 'XOR'], -1), '<>': (['EQ', 'LIT', 'XOR'], -1),
-                 '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], 8), 'CHAR+': (['ADDI'], 1),
-                 'CELLS': (['LIT', 'LSHIFT'], 3),
+                 '1+': (['ADDI'], 1), '1-': (['ADDI'], -1), 'CELL+': (['ADDI'], CELL), 'CHAR+': (['ADDI'], 1),
+                 'CELLS': (['LIT', 'LSHIFT'], 3 if CELL == 8 else 2),   # 493: the cell's width - 4-byte cells at 32 bits
                  # Iteration 290: 2@ and 2! as opcodes - five stencils each, CELL+'s ADDI the one constant;
                  # without them a JIT design that takes the opcodes leaves every word holding one to the
                  # interpreter (jit.c: all or nothing), 2@ and 2! themselves among them
@@ -1711,6 +1711,7 @@ if EMIT:
                 _le = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 2
                 _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ', 0' if JITHELPERS else ''))
                 _rows.append('[%d] = {1, 1, 4, 0, {S_CALLX}%s},  /* a cold call through the helper (486) */' % (_le + 1, ', 0' if JITHELPERS else ''))
+                _rows.append('[%d] = {1, 1, 4, 0, {S_ABORTQ}%s},  /* (ABORT") - the flag here, the interpreter on a true one (488) */' % (_le + 2, ', 0' if JITHELPERS else ''))
             _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
             if '--jitre' in ARGV:
                 _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
@@ -1718,6 +1719,11 @@ if EMIT:
                 _rows.append('[%d] = {1, 1, 4, 0, {S_INTERP}%s},  /* an interpreted call (jitre) */' % (_li, ', 0' if JITHELPERS else ''))
                 _lint = '#define JIT_L_INTERP %d\n' % _li
             _jc = T2MAP['one'][G['T2_JIT']]
+            def _wends():              # Iteration 489: every image word's body, start and end - the decoder's end for a word reached
+                rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_)) for w_ in order
+                               if w_['s'] in new_off and kind.get(w_['s']) == 'code')
+                return ('#define JIT_NWENDS %d\nstatic const unsigned int jit_wends[][2] = {%s};\n'
+                        % (len(rows_), ', '.join('{%d, %d}' % r_ for r_ in rows_) or '{0, 0}'))
             def _woff(nm):             # Iteration 485: a word's offset in the image (its body, as the call map's W lines), -1 if none
                 ws_ = [w_ for w_ in order if w_['n'] == nm]
                 return new_off[ws_[0]['s']]['body'] if ws_ else -1
@@ -1728,8 +1734,9 @@ if EMIT:
                 '/* vm-jit-ops.h - this design\'s operations as SPN stencils (layout.py --jit, JIT.md) */\n'
                 '#define JIT_CODE %d\n#define JIT_DOVAR %d\n#define JIT_DODOES %d\n#define JIT_FROMR %d\n%s%sstatic const struct jit_op jit_ops[] = {\n%s\n};\n'
                 % (_jc, T2MAP['one'][[x for x, nm in G['t2_names']().items() if nm == 'DOVAR'][0]],
-                   _one('DODOES'), _one('R>'), _lint, (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
+                   _one('DODOES'), _one('R>'), _lint + _wends(), (('#define JIT_L_EXECUTE %d\n' % _le) + ''.join('#define JIT_W_%s %d\n' % (k_, _woff(n_))
                    for k_, n_ in (('SQ', '(S")'), ('DQ', '(.")'), ('TYPE', 'TYPE')))
+                   + '#define JIT_L_ABORTQ %d\n#define JIT_W_AQ %d\n' % (_le + 2, _woff('(ABORT")'))
                    + '#define JIT_L_CALLX %d\n#define JIT_W_COLD %s\n' % (_le + 1, ', '.join(str(_woff(n_)) for n_ in
                    ('EMIT', 'TYPE', 'CR', 'SPACE', 'SPACES', '.', 'U.', '.R', 'ABORT', 'THROW', 'KEY', 'ACCEPT')))) if '--jitexec' in ARGV else '', '\n'.join(_rows))   # not (ABORT"): it reads its caller's bytecode
                 + '/* the operations without stencils (Iteration 472) */\n' + '\n'.join(_miss) + '\n')

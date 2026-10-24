@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 498 (seed 70 processed): seed 71, 10 hours (the owner); the after-seed-70 batch applied - the applications
+# the seventh selection workload (a speed-column break), jitos frozen, jitrp enabled, nocase staged frozen.
 # Iteration 487 (seed 69 processed): seed 70, 11 hours (the owner); islands dropped - seed 69's prediction failed
 # (464's rule: both or not kept); the after-seed-68 batch applied (the JIT at 32 bits, the stencil check) and the
 # four JIT genes enabled (472-483); the applications held out after the spread (appbench.zip in ~/Downloads, 469).
@@ -69,4 +71,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 70 11h widths noevolved then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
+seed 71 10h widths noevolved then experiment footprint.py --fastest --sample 16 --sizes 100,10000 --rounds 3 then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16

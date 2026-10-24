@@ -38,7 +38,7 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
        S_SPFETCH, S_ALIGNED,                     /* Iteration 484: jitmul's too */
 #endif
 #if JITEXEC
-       S_EXECUTE, S_CALLX,                       /* Iterations 476, 486: the gene jitexec */
+       S_EXECUTE, S_CALLX, S_ABORTQ,             /* Iterations 476, 486, 488: the gene jitexec */
 #endif
        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
 #if JITK
@@ -64,10 +64,20 @@ typedef uint64_t jit_hole_t;
 #define JIT_IMM32 0x3c1a5e77U                   /* IMM32 */
 
 #if JITMUL
+#if defined(__i386__)
+#define JIT_TH64 0x3ea1ed05U                   /* Iteration 493: 32 bits */
+#else
 #define JIT_TH64 0x3ea1ed5ea1ed5e33ULL         /* Iteration 475: spn-stencils.c's SPN_TH_VALUE, the throw helper's hole */
 #endif
+#endif
 #if JITEXEC
+#if defined(__i386__)
+#define JIT_EX64 0x2ea1ed06U                   /* Iteration 493: 32 bits */
+#define JIT_RS64 0x1ea1ed07U
+#else
 #define JIT_EX64 0x2ea1ed5ea1ed5e22ULL         /* Iteration 476: SPN_EX_VALUE, EXECUTE's helper's hole */
+#define JIT_RS64 0x1ea1ed5ea1ed5e11ULL         /* Iteration 488: SPN_RS_VALUE, the resume helper's hole */
+#endif
 #endif
 struct jit_st {             /* a stencil as read: offsets into its body, -1 for none */
     const unsigned char *src;
@@ -76,7 +86,7 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for 
     int th;                                     /* Iteration 475: the throw helper's hole, or -1 */
 #endif
 #if JITEXEC
-    int ex;                                     /* Iteration 476: EXECUTE's helper's hole, or -1 */
+    int ex, rs;                                 /* Iteration 476: EXECUTE's helper's hole, 488 the resume's, or -1 */
 #endif
     int nnext, njump, ncall;                    /* how many holes of each */
 #if JITHELP
@@ -165,7 +175,7 @@ static void jit_scan(void) {
         s->th = -1;
 #endif
 #if JITEXEC
-        s->ex = -1;
+        s->ex = s->rs = -1;
 #endif
 #if JITHELP
         s->fn = -1;
@@ -179,6 +189,7 @@ static void jit_scan(void) {
 #endif
 #if JITEXEC
                 if (v == JIT_EX64) s->ex = (int)(p - a);
+                if (v == JIT_RS64) s->rs = (int)(p - a);
 #endif
 #if JITHELP
                 if (v == JIT_FN64) s->fn = (int)(p - a);
@@ -278,7 +289,7 @@ static const unsigned short jit_esc[256] = {
 #include "vm-tag2-esc.h"
 };
 #define JIT_MEM    (1u << 20)           /* the executable region: reserved; touched as used */
-#define JIT_MAXOPS 256                  /* a longer word stays bytecode */
+#define JIT_MAXOPS 1024                 /* a longer word stays bytecode (488: 256 refused cd16sim's PROCESS, fcp's) */
 static unsigned char *jit_mem;
 static uint32_t jit_used = 16;             /* offsets 0 and 1 mean: not native */
 #if JITEXEC
@@ -292,7 +303,7 @@ static cell jit_ic[JIT_NIC][3]; static int jit_nic;
  *  a sentinel return address: [the JIT opcode][2], a "word" whose native code, at offset 2 (free:
  *  offsets below 16 hold nothing native), is a trampoline to jit_leave.  */
 static spn_st jit_interp(cell *sp, cell tos, cell body);
-static spn_st jit_leave(cell *sp, cell tos);
+static spn_st SPN_CC jit_leave(cell *sp, cell tos);   /* 493: called as native code is, SPN_CC at 32 bits */
 #define JIT_LEAVE_OFF 2
 static UNS8 jit_sentinel[5];
 #endif
@@ -303,7 +314,9 @@ static ucell jit_rp;                    /* the return stack while native code ru
  *  calls jit_throw0, which longjmps there with the stack; the interpreter then does what L_umdiv does: -10 where
  *  the divisor was, and THROW. The native frames are dropped with the C stack; the return stack is jit_rp's.  */
 static void **jit_tb; static cell *jit_tsp;
-static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_tsp = sp; __builtin_longjmp(jit_tb, 1); }
+static UNS64 jit_rip; static cell jit_ttos;     /* 488: where the interpreter resumes, and the top - 0 for UM/MOD's throw */
+__attribute__((force_align_arg_pointer)) static spn_st jit_throw0(cell *sp, cell tos) { (void)tos; jit_rip = 0; jit_tsp = sp; __builtin_longjmp(jit_tb, 1); }
+__attribute__((force_align_arg_pointer)) static spn_st jit_resume0(cell *sp, cell tos, cell ip) { jit_tsp = sp; jit_ttos = tos; jit_rip = (UNS64)ip; __builtin_longjmp(jit_tb, 1); }
 static int jit_call(uint32_t f, cell *sp, cell tos, spn_st *r) {
     void *tb[5]; void **prev = jit_tb; jit_tb = tb;
     if (__builtin_setjmp(tb)) { jit_tb = prev; return 1; }
@@ -353,7 +366,12 @@ static int jit_init(void) {
 #if JITRE || JITEXEC
         if (state == 1) {                       /* movabs rax, jit_leave; jmp rax - and the sentinel */
             UNS8 *t_ = jit_mem + JIT_LEAVE_OFF; UNS64 a_ = (UNS64)(uintptr_t)jit_leave; uint32_t o_ = JIT_LEAVE_OFF;
+#if defined(__i386__)
+            { uint32_t a32_ = (uint32_t)a_;           /* 493: mov ecx, jit_leave; jmp ecx - eax and edx, its arguments, kept */
+              t_[0] = 0xB9; memcpy(t_ + 1, &a32_, 4); t_[5] = 0xFF; t_[6] = 0xE1; }
+#else
             t_[0] = 0x48; t_[1] = 0xB8; memcpy(t_ + 2, &a_, 8); t_[10] = 0xFF; t_[11] = 0xE0;
+#endif
             jit_sentinel[0] = (UNS8)JIT_CODE; memcpy(jit_sentinel + 1, &o_, 4);
         }
 #endif
@@ -400,7 +418,10 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
     if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, JIT_HOLEW); }
 #endif
 #if JITEXEC
-    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, 8); }
+    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, JIT_HOLEW); }
+#endif
+#if JITEXEC && JITMUL
+    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; memcpy(dst + t->rs, &v, JIT_HOLEW); }
 #endif
     return dst + n;
 }
@@ -535,7 +556,7 @@ static inline int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; r
  *    stack balances in order - never below its entry, back to it at every
  *    EXIT: a word that reads its own return address stays bytecode, since
  *    native words return through the C stack, not the engine's.  */
-#define JIT_DEPTH 8
+#define JIT_DEPTH 16                    /* 490: 8 refused fcp's DABS, nine calls below MAKEMOVE */
 #define JIT_KN 256
 static struct { UNS64 w; uint32_t f; } jit_k[JIT_KN];   /* f: native offset; 0 bytecode; 1 being translated; top bit: not yet */
 static uint32_t *jit_kslot(UNS64 w) {
@@ -606,9 +627,11 @@ static int jit_isexec(UNS64 a) {
 }
 #endif
 /* Translate the word whose JIT opcode is at w. The native offset, or 0. */
+static int jit_deep;                    /* 490: a translation refused below the depth limit - its callers may try again */
 static uint32_t jit_word(UNS64 w, int depth) {
     UNS64 end = w + 5 + (jit_ld32(w + 1) & 0x7FFFFFFFu);
-    uint32_t f;
+    uint32_t f, orig = jit_ld32(w + 1);
+    if (!depth) jit_deep = 0;
     JITNOTE(w, end);
     jit_st32(w + 1, 0);                 /* meanwhile, and if it fails: not native */
     f = jit_body(w, w + 5, end, depth);
@@ -617,13 +640,14 @@ static uint32_t jit_word(UNS64 w, int depth) {
     jitlog_note('T', w, w, f);
 #endif
     if (f) jit_st32(w + 1, f);
+    else if (jit_deep && depth) jit_st32(w + 1, orig);   /* 490: refused for depth - left to translate again */
     return f;
 }
 #if JITEXEC
 /* Iteration 476: EXECUTE from native code - the token's word native when it is, translated now when it can be
    (a word with the JIT's header by jit_word, one without by its kslot, as a call's callee is), else run by the
    interpreter (jit_interp, jitre's: a sentinel return address, a longjmp back) - and the stack handed back. */
-static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
+__attribute__((force_align_arg_pointer)) static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic) {
     UNS64 w = (UNS64)xt; uint32_t f = 0;
     if (BYTE(w) == JIT_CODE) { f = jit_ld32(w + 1); if (f & 0x80000000u) f = jit_word(w, 0); }
     else if (BYTE(w) != JIT_DOVAR) { uint32_t *k = jit_kslot(w);
@@ -749,8 +773,24 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #endif
     int n = 0, i, j;
     (void)far;
-    if (depth > JIT_DEPTH || !jit_init()) return 0;
+    if (depth > JIT_DEPTH) {            /* 490: too deep - not cached as bytecode below the top (jit_word, the kslot) */
+        jit_deep = 1;
+#if JITLOG
+        jitlog_at = w; jitlog_why = 7;
+#endif
+        return 0;
+    }
+    if (!jit_init()) return 0;
 #if JITX
+#if defined(JIT_NWENDS)
+    if (!end && a == w && w >= jit_cbase) {     /* 489: an image word reached without its header - its end from the converter's
+                                       table, not the first EXIT no branch passes (DABS ran on into FM/MOD's header) */
+        UNS64 o_ = w - jit_cbase; int lo_ = 0, hi_ = JIT_NWENDS - 1;
+        while (lo_ <= hi_) { int m_ = (lo_ + hi_) / 2;
+            if (jit_wends[m_][0] == o_) { end = jit_cbase + jit_wends[m_][1]; break; }
+            if (jit_wends[m_][0] < o_) lo_ = m_ + 1; else hi_ = m_ - 1; }
+    }
+#endif
     for (; !end || a < end; n++) {      /* decode, as the engine does */
 #else
     for (; a < end; n++) {
@@ -796,6 +836,14 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                ` ." HEAP FULL"`, every caller with it). Here: the string's address and length as literals, and for (.")
                TYPE through EXECUTE's helper; the decoding goes on after the string, aligned as the run-time words do.
                The added operations get addresses no branch can name.  */
+#if JITMUL
+            if (JIT_W_AQ >= 0 && arg[n] == jit_cbase + (UNS64)JIT_W_AQ) {   /* 488: (ABORT") - the flag tested here; the call's
+                                           own address kept for the interpreter to resume at when it is true */
+                UNS64 s_ = a; unsigned c_ = BYTE(s_);
+                opl[n] = JIT_L_ABORTQ; arg[n] = at[n];
+                a = (s_ + 1 + c_ + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);
+            } else
+#endif
             if (JIT_W_SQ >= 0 && JIT_W_DQ >= 0 && JIT_W_TYPE >= 0 &&
                 (arg[n] == jit_cbase + (UNS64)JIT_W_SQ || arg[n] == jit_cbase + (UNS64)JIT_W_DQ)) {
                 UNS64 s_ = a; unsigned c_ = BYTE(s_); int dq_ = arg[n] == jit_cbase + (UNS64)JIT_W_DQ;
@@ -923,6 +971,7 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
             uint32_t *k = jit_kslot(arg[i]);
             if (!k) return 0;
             if (*k & 0x80000000u) { *k = 1; *k = jit_body(arg[i], arg[i], 0, depth + 1);
+                if (!*k && jit_deep) *k = 0x80000000u;                 /* 490: refused for depth - not yet, not never */
 #if JITLOG
                 if (!*k) jitlog_refused(arg[i]);
 #endif

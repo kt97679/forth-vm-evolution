@@ -56,7 +56,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   11 hours (the owner), no islands, the four JIT genes enabled, the applications held out after the spread** - a break
   in the 32-bit column from it. The gene votes count only the genes a run's code had (487: seed 69's would have voted
   against jitmul, jitdoes, jitexec and jitcfa, which it never had). **For the owner**: jitos a freeze candidate (12 of
-  12 over seeds 67-69); rtfuse no longer. **The after-seed-70 batch waits** (488, results/pending/ORDER.md): native
+  12 over seeds 67-69); rtfuse no longer. **The after-seed-70 batch waits** (488, results/applied-after-seed70/ORDER.md): native
   (ABORT"), JIT_MAXOPS 1024; **489-490**: image words' ends from the converter, depth 16 with depth refusals not
   cached (fcp's DABS, nine calls deep, had stayed bytecode with its eight callers), 2>R/2R>/2R@ compiled in place -
   **the JIT leaves 0.1% of fcp's, brainless's and cd16sim's work; the fast design at 0.234 of s6 on the applications**.

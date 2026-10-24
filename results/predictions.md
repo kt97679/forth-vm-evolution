@@ -869,6 +869,10 @@ most 0.20 against the 32-bit s6 on the laptop - about 0.6 of seed 67's 0.327 (he
 to 0.52 of their JIT-off times). 2. No 32-bit failure (fail32). 3. dream's prebuilt 32-bit check samples JIT designs, its
 Spearman against the laptop's 32-bit speeds 0.8 or above.
 
+**Scored at seed 70 (Iteration 498): two of three.** The fastest at 32 bits 0.130 (at most 0.20 - holds); dream's 32-bit
+Spearman 0.935 (at least 0.8 - holds); 32-bit failures 906, all JIT designs with tag 2 - fails: the converter's JIT map
+gave CELL+ and CELLS eight-byte cells at either width (found at 493, fixed in the after-seed-70 batch).
+
 ## Islands never ran - the islands scores voided (Iteration 464)
 
 Seeds 65-68 asked for islands and ran without them: next-run.sh lost the word in its detach (fixed at 464; seed-facts.py
@@ -894,11 +898,17 @@ The owner enabled jitmul (UM* and COUNT native). In seed 70: jitmul expressed on
 designs; and appbench.py's geometric mean for its fastest JIT design below 0.70 of s6 (seed 68's fast design: 0.747
 without jitmul).
 
+**Scored (Iteration 498): fails.** jitmul on none of seed 70's front's 90 JIT designs (2,855 designs carried it, most
+alive); the fastest JIT design's applications 0.756 of s6. Dominated: on the six workloads it buys nothing and costs
+bytes - the applications' workload, from seed 71, is the remedy.
+
 ## jitdoes and native UM/MOD in seed 70 - predicted (Iteration 475)
 
 With jitdoes enabled and UM/MOD native too: jitdoes expressed on at least half of seed 70's front's JIT designs, and
 appbench.py's geometric mean for its fastest JIT design below 0.60 of s6 (seed 68's fast design with all three: 0.416;
 without: 0.747) - the 474 prediction's bound tightened.
+
+**Scored (Iteration 498): fails** - jitdoes on no front design; the applications 0.756 of s6. Dominated, as jitmul.
 
 ## jitexec in seed 70 - predicted (Iteration 477)
 
@@ -907,11 +917,16 @@ its share of the front's JIT designs near where drift leaves it - between a quar
 geometric mean for the fastest JIT design that has all three genes below 0.45 of s6 (seed 68's fast design with them:
 0.347; fcp the one application slower with jitexec than without).
 
+**Scored (Iteration 498): fails** - not near drift: on no front design. A gene the selection does not pay for does not
+drift onto a size-and-speed front; it costs bytes, so it is dominated.
+
 ## jitcfa in seed 70 - predicted (Iteration 483)
 
 The owner enabled jitcfa. Like jitexec, what it frees lies mostly outside the selection's six workloads, so its share
 of the front's JIT designs near drift (a quarter to three quarters); appbench.py's geometric mean for the fastest JIT
 design with all four genes below 0.42 of s6 (seed 68's fast design with them: 0.344).
+
+**Scored (Iteration 498): fails** - on no front design, for the same reason.
 
 ## The applications in the selection, from seed 71 - predicted (Iteration 495)
 

@@ -106,6 +106,17 @@ static long sysc_i386(long n)
 #include <string.h>
 #include <stdint.h>
 typedef uint16_t UNS16;   /* SOD16: a code token */
+#if X_JIT && JITRP && defined(__x86_64__)
+/* Iteration 465, the gene jitrp: the return-stack pointer handed to native code in a register (spn-stencils.c's
+   spn_rpr) - declared before every function, as GCC requires, so nothing in this file takes the register. */
+#ifndef JITRP_REG
+#define JITRP_REG "r15"
+#endif
+register uintptr_t spn_rpr __asm__(JITRP_REG);
+#define JIT_RP_GET() ((UNS64)spn_rpr)             /* 494: the return stack native code left - the register */
+#else
+#define JIT_RP_GET() ((UNS64)jit_rp)
+#endif
 
 extern char **environ;
 
@@ -1437,14 +1448,18 @@ static void virtual_machine(void);
    callee-saved register, which the longjmp out of the nested interpreter gives back */
 static void **jit_jb;
 static cell *jit_lsp; static cell jit_ltos;
-static spn_st jit_leave(cell *sp, cell tos) { jit_lsp = sp; jit_ltos = tos; __builtin_longjmp(jit_jb, 1); }
+static spn_st SPN_CC jit_leave(cell *sp, cell tos) { jit_lsp = sp; jit_ltos = tos; __builtin_longjmp(jit_jb, 1); }
 static spn_st jit_interp(cell *sp, cell tos, cell body) {
     void *jb[5]; void **prev = jit_jb;
 #if JITMUL
     void **prevtb = jit_tb;             /* 476: a throw's return point is the outer jit_call's again after */
 #endif
     g_dsp = (UNS64)(uintptr_t)sp - CELL_BYTES; CELL(g_dsp) = (UNS64)tos;
-    g_rp = (UNS64)jit_rp - CELL_BYTES; CELL(g_rp) = (UNS64)(uintptr_t)jit_sentinel;
+#if JITRP && defined(__x86_64__)
+    g_rp = (UNS64)spn_rpr - CELL_BYTES; CELL(g_rp) = (UNS64)(uintptr_t)jit_sentinel;
+#else
+    g_rp = JIT_RP_GET() - CELL_BYTES; CELL(g_rp) = (UNS64)(uintptr_t)jit_sentinel;   /* 494: the register under jitrp */
+#endif
     g_ip = (UNS64)body;
     jit_jb = jb;
     if (!__builtin_setjmp(jb)) virtual_machine();
@@ -2156,19 +2171,24 @@ L_x_jit:   { uint32_t f_ = jit_ld32(ip);
              if (f_ & 0x80000000u) f_ = jit_word(ip - 1, 0);
              if (JIT_NATIVE(f_)) {
                  spn_st r_;
+#if JITRP && defined(__x86_64__)
+                 spn_rpr = (ucell)rp;                  /* 465: handed over in the register */
+#else
                  jit_rp = (ucell)rp;
+#endif
                  /* the stack in memory here (gen-tos.py spills around a handler it
                     has no rule for): dsp at the top; native code wants sp at the
                     second, the top apart - SPN's convention */
 #if JITMUL
                  if (jit_call(f_, (cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0, &r_)) {   /* 475: a zero divisor in native code */
-                     rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)jit_tsp - CELL_BYTES;
+                     rp = JIT_RP_GET(); dsp = (UNS64)(uintptr_t)jit_tsp - CELL_BYTES;
+                     if (jit_rip) { DS0 = (UNS64)jit_ttos; ip = jit_rip; jit_rip = 0; NEXT(); }   /* 488: (ABORT") true - the interpreter runs the call */
                      DS0 = (UNS64)-10; RPUSH(ip); ip = cbase + throw_off; NEXT();            /* as L_umdiv's DIV0 */
                  }
 #else
                  r_ = ((spn_st (SPN_CC *)(cell *, cell))(void *)(jit_mem + f_))((cell *)(uintptr_t)(dsp + CELL_BYTES), (cell)DS0);
 #endif
-                 rp = (UNS64)jit_rp; dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
+                 rp = JIT_RP_GET(); dsp = (UNS64)(uintptr_t)SPN_SP(r_) - CELL_BYTES; DS0 = (UNS64)SPN_TOS(r_);
                  ip = RS; rp += CELL_BYTES;
              } else { if (JIT_REPOINT(f_)) jit_repoint(ip - 1, RS); ip += 4; } } NEXT();   /* bytecode: its caller skips the header next time */
 #endif

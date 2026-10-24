@@ -9249,7 +9249,7 @@ Files: results/pending/ (new: the patch, ORDER.md); results/README.md, HANDOFF.m
 ## Iterations 489-490 - 2026-10-24 - Claude
 
 **The after-seed-70 batch completed: the JIT leaves 0.1% of the applications' work** (the owner: seed 70 started,
-proceed; results/pending/ORDER.md). Built on the 488 patch in the working tree, master untouched. 2>R, 2R> and 2R@
+proceed; results/applied-after-seed70/ORDER.md). Built on the 488 patch in the working tree, master untouched. 2>R, 2R> and 2R@
 compiled in place in coreext.4 - their bodies moved their own return address: brainless's leftover 4.3% to 1.5%. Then
 fcp's chain followed down by its refusals: its attack tests call /, which calls /MOD, FM/MOD, SM/REM and DABS - and DABS
 was refused "for the return stack's order" at w+43, eight bytes long. Two causes, both fixed: an image word reached
@@ -9289,7 +9289,7 @@ HANDOFF.md.
 ## Iteration 493 - 2026-10-24 - Claude
 
 **The new genes at 32 bits - the batch's third patch; and a bug of the applied 32-bit batch** (the owner: proceed with the
-other items; results/pending/ORDER.md). In a clone with the after-seed-70 batch as its base: the throw, EXECUTE and
+other items; results/applied-after-seed70/ORDER.md). In a clone with the after-seed-70 batch as its base: the throw, EXECUTE and
 resume holes for the i386 stencils (x86-64 only before - UM/MOD, EXECUTE and (ABORT") were traps at 32 bits), the JIT's
 32-bit hole values and widths, an i386 trampoline into jit_leave with jit_leave SPN_CC. Tested at 32 bits against the
 interpreter, two faults found and fixed: the inline cache's hit called native code with the C convention, not SPN_CC
@@ -9300,12 +9300,12 @@ the corpus each; engines-check PASS at both widths with all three patches. Seed 
 JIT designs may compute wrong addresses where CELL+ or CELLS are translated - its 32-bit failures to be read at
 processing.
 
-Files: results/pending/jit-32bit-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.
+Files: results/applied-after-seed70/jit-32bit-after-seed70.patch (new), results/applied-after-seed70/ORDER.md, HANDOFF.md.
 
 ## Iteration 494 - 2026-10-24 - Claude
 
 **jitrp made a gene - the batch's fourth patch, staged frozen** (the owner: proceed with the other items; his view on
-the applications: more is better, but not longer runs; results/pending/ORDER.md). The 465 prototype - the JIT's
+the applications: more is better, but not longer runs; results/applied-after-seed70/ORDER.md). The 465 prototype - the JIT's
 return-stack pointer in a register across the stencils - rebased onto the after-seed-70 batch in a clone: one conflict
 at the native call site, resolved by reading the pointer through JIT_RP_GET after a return, a throw or a resume; the
 nested interpreter for EXECUTE's interpreted path starts from it too. The gene: GCC and 64-bit only, its register clear
@@ -9314,19 +9314,19 @@ regpin 2 against the interpreter, the corpus each; engines-check PASS at both wi
 GCC JIT design: loop -19.2%, bubble -4.0%, ackermann +2.0% (465's figures again). A first patch of it missed what the
 three-way apply had staged (git diff without HEAD) - caught by the apply check, redone from HEAD.
 
-Files: results/pending/jitrp-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.
+Files: results/applied-after-seed70/jitrp-after-seed70.patch (new), results/applied-after-seed70/ORDER.md, HANDOFF.md.
 
 ## Iteration 495 - 2026-10-24 - Claude
 
 **The owner's decisions, as the after-seed-70 batch's fifth patch** (the owner: add the applications, freeze jitos, add
-jitrp; results/pending/ORDER.md). `apps` the seventh selection workload: our four applications inline - no file needed
+jitrp; results/applied-after-seed70/ORDER.md). `apps` the seventh selection workload: our four applications inline - no file needed
 wherever the program runs - one short pass each, sized as the six (sim16 reduced to fib(15) on its simulated CPU, gc16
 200 steps, scan 3, evo 12): 0.058 s on s6, 0.016 s on seed 68's fast design with the four genes, its output s6's. jitos
 frozen, jitrp out of FROZEN. Tested in a clone with all five patches: run-tests PASS; one generation of the evolver (33
 designs) measured on apps, the report's speed over seven workloads - a speed-column break from the first run with it.
 Predicted for seed 71. All five patches apply in order to master.
 
-Files: results/pending/decisions-after-seed70.patch (new), results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+Files: results/applied-after-seed70/decisions-after-seed70.patch (new), results/applied-after-seed70/ORDER.md, results/predictions.md, HANDOFF.md.
 
 ## Iteration 496 - 2026-10-24 - Claude
 
@@ -9341,7 +9341,7 @@ Files: results/drafts/nocase-496.md (new); results/README.md, HANDOFF.md.
 ## Iteration 497 - 2026-10-24 - Claude
 
 **The gene nocase built - the after-seed-70 batch's sixth patch, staged frozen** (the owner: proceed with the other
-items; results/pending/ORDER.md, results/drafts/nocase-496.md). An X8 overlay loaded after kfast's and kinput's:
+items; results/applied-after-seed70/ORDER.md, results/drafts/nocase-496.md). An X8 overlay loaded after kfast's and kinput's:
 NAME>BUF8 folds NAMEBUF after the copy - every search, the C walks included, compares the folded key; HEADER8 folds the
 name it stores; ASCII a-z only. HEADER8's code differs between the header systems by one constant (tag 2's links are up
 to 4 bytes), so two overlay files. The gene needs kfast and not klookup; the kernel dump matrix gains -kfast-nocase and
@@ -9350,4 +9350,4 @@ kfast, with kinput, and with tag 2 and the JIT. The acceptance test: Appbench's 
 their source at all; lexex and benchgc stop at words their own files define - not yet traced. run-tests PASS (with an
 engines-check variant), validate 7 of 7.
 
-Files: results/pending/nocase-after-seed70.patch (new), results/pending/ORDER.md, HANDOFF.md.
+Files: results/applied-after-seed70/nocase-after-seed70.patch (new), results/applied-after-seed70/ORDER.md, HANDOFF.md.

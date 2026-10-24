@@ -2,12 +2,12 @@
 
 Prepared while seed 70 runs; master stays what seed 70's bundle tests. Six patches, in this order:
 
-    git apply results/pending/jit-more-after-seed70.patch
-    git apply results/pending/coreext-2r-after-seed70.patch
-    git apply results/pending/jit-32bit-after-seed70.patch
-    git apply results/pending/jitrp-after-seed70.patch
-    git apply results/pending/decisions-after-seed70.patch
-    git apply results/pending/nocase-after-seed70.patch
+    git apply results/applied-after-seed70/jit-more-after-seed70.patch
+    git apply results/applied-after-seed70/coreext-2r-after-seed70.patch
+    git apply results/applied-after-seed70/jit-32bit-after-seed70.patch
+    git apply results/applied-after-seed70/jitrp-after-seed70.patch
+    git apply results/applied-after-seed70/decisions-after-seed70.patch
+    git apply results/applied-after-seed70/nocase-after-seed70.patch
 
 **jit-more-after-seed70.patch** (engine/jit.c, engine/spn-stencils.c, engine/vm-lab.c, tools/layout.py):
 

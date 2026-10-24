@@ -43,7 +43,7 @@ OPS = [
     ('S_FETCH',  'fetch',  1, lambda a: ['*(cell *)%s' % a]),
     ('S_STORE',  'store',  2, lambda a, b: ['@*(cell *)%s = %s;' % (a, b)]),
     ('S_CFETCH', 'cfetch', 1, lambda a: ['(cell)*(uint8_t *)%s' % a]),
-    ('S_I',      'i',      0, lambda: ['@cell *rr_ = (cell *)*IMM_RP();', 'rr_[0]']),
+    ('S_I',      'i',      0, lambda: ['@cell *rr_ = (cell *)RP_VALUE();', 'rr_[0]']),
 ]
 REG = ['t0', 't1', 't2']
 
