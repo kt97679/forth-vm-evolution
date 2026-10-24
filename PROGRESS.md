@@ -9264,3 +9264,15 @@ patches for seed 70's processing; master's working tree restored.
 
 Files: results/pending/ (jit-more-after-seed70.patch and coreext-2r-after-seed70.patch replacing the 488 patch;
 ORDER.md); results/README.md, HANDOFF.md.
+
+## Iteration 491 - 2026-10-24 - Claude
+
+**The applications in the selection, priced** (the owner: continue; results/drafts/apps-selection-491.md). One short pass
+of our four applications (sim16 once, gc16 1000 steps, scan 12 builds, evo 60 generations), each checking itself, as a
+workload: s6 0.299 s; seed 68's fast design 0.171 s (0.573 of s6); with jitmul, jitdoes, jitexec and jitcfa 0.058 s
+(0.193) - a threefold difference the six kernels do not see. A draft patch makes it the seventh selection workload
+(APPS_IN; sized to the six's ~11 ms on the fastest); not applied - it changes what the search optimises - the owner's
+decision.
+
+Files: results/drafts/apps-selection-491.md, results/drafts/apps-selection-491.patch (new); results/README.md,
+HANDOFF.md.

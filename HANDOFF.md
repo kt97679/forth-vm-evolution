@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 490.
+- master: Iteration 491.
 - **The runs**: **seed 69 processed (Iteration 487)** - islands ran (700 island lines) and **failed their prediction**:
   at generation 109 fastest 0.1274 against the replicates' 0.1197-0.1298, smallest 14,199 against 14,039-14,207 - inside
   the spread (its end, generation 175: 0.1125 and 14,043). By 464's rule islands are not kept. **The after-seed-68 batch
@@ -60,7 +60,9 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
   (ABORT"), JIT_MAXOPS 1024; **489-490**: image words' ends from the converter, depth 16 with depth refusals not
   cached (fcp's DABS, nine calls deep, had stayed bytecode with its eight callers), 2>R/2R>/2R@ compiled in place -
   **the JIT leaves 0.1% of fcp's, brainless's and cd16sim's work; the fast design at 0.234 of s6 on the applications**.
-  Master stays what seed 70's bundle tests.
+  Master stays what seed 70's bundle tests. **491: the applications in the selection priced** (results/drafts/
+  apps-selection-491.md): as a seventh workload the four genes show threefold (0.573 to 0.193 of s6) - a draft patch;
+  the owner's decision.
   Before - seed 68 processed (Iteration 464) - **and islands never ran**: seeds 65-68 asked for them, but next-run.sh
   lost the word in its detach (no NEXT_RUN_ISLANDS beside NEXT_RUN_NOEVOLVED and NEXT_RUN_WIDTHS) - their logs hold no
   ", island " line. **Fixed (464)**: carried through the detach, shown in the chain's lines, and seed-facts.py reports
