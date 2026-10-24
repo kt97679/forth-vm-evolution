@@ -32017,3 +32017,15 @@ sieve, parse, far is held out (Iteration 41: loop was, until the owner put it in
 | archived-20261022-165054/build/evolve/db.jsonl | 109 | 20653 | 297 | 0.1217 | 14,077 | 112 | 6.7892e+05 | 0.6153 | 0.3157 |
 | archived-20261023-061021/build/evolve/db.jsonl | 109 | 21722 | 315 | 0.1197 | 14,135 | 112 | 6.883e+05 | 0.6027 | 0.3327 |
 | archived-20261023-145435/build/evolve/db.jsonl | 109 | 22167 | 328 | 0.1298 | 14,207 | 108 | 7.098e+05 | 0.6136 | 0.3413 |
+
+## Session 57 - Iteration 498: seed 70 and seeds 65-69 (the chain's spread, at generation 109)
+
+**Seed 70 inside the replicates' spread** - fastest 0.1259 against 0.1197-0.1298, smallest 14,143 against 14,077-14,207, hypervolume 0.6002 - its first run with the JIT at 32 bits (the fastest there 0.1335) and the four JIT genes, which reached no front design (no workload paid for them). The first row is seed 70.
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 109 | 22595 | 310 | 0.1259 | 14,143 | 108 | 6.8053e+05 | 0.6002 | 0.1335 |
+| archived-20261022-165054/build/evolve/db.jsonl | 109 | 20653 | 297 | 0.1217 | 14,077 | 112 | 6.7892e+05 | 0.6043 | 0.3157 |
+| archived-20261023-061021/build/evolve/db.jsonl | 109 | 21722 | 315 | 0.1197 | 14,135 | 112 | 6.883e+05 | 0.5932 | 0.3327 |
+| archived-20261023-145435/build/evolve/db.jsonl | 109 | 22167 | 328 | 0.1298 | 14,207 | 108 | 7.098e+05 | 0.6041 | 0.3413 |
+| archived-20261024-045036/build/evolve/db.jsonl | 109 | 20633 | 324 | 0.1274 | 14,199 | 108 | 7.314e+05 | 0.5937 | 0.3309 |

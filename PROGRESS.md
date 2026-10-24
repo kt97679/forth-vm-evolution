@@ -9351,3 +9351,24 @@ their source at all; lexex and benchgc stop at words their own files define - no
 engines-check variant), validate 7 of 7.
 
 Files: results/applied-after-seed70/nocase-after-seed70.patch (new), results/applied-after-seed70/ORDER.md, HANDOFF.md.
+
+## Iteration 498 - 2026-10-24 - Claude
+
+**Seed 70 processed - the four JIT genes dominated without the applications; the after-seed-70 batch applied; seed 71 at
+10 hours** (the owner: the next run 10 hours; results/evolve-amd-ryzen-7-pro-8840hs-seed70.md). The pack's checks PASS;
+39,777 designs, generations 0-155, islands off. Against seeds 65-69 at generation 109: fastest 0.1259, smallest 14,143,
+hypervolume 0.6002 - inside the spread. **jitmul, jitdoes, jitexec and jitcfa on no design of the front**, though 2,855
+to 6,900 designs carried each: on the six selection workloads they buy nothing and cost engine bytes, so each design with
+one is dominated by its twin without - the case for the applications' workload, measured. appbench.py on 16 of the front:
+the fastest at 0.756 of s6 on the seven applications; Spearman with the in-run speed 0.553. **The JIT at 32 bits**: the
+fastest there 0.130 (0.150 at 64); **906 32-bit failures, every one a JIT design with tag 2** - the CELL+/CELLS bug found
+at 493. Held out 0.972; the fast end's optimism 1.087; dream 0.941/0.935/0.959, the Tegra 0.929; footprint's order better
+(0.679, 0.465). Five predictions scored (the four genes' fail; the 32-bit one two of three). The after-seed-70 batch:
+batch-check PASS (six patches on cc6cdcd), applied, moved to results/applied-after-seed70/; the routine's chain on master after it: build, run-tests PASS,
+validate 7 of 7, the jail PASS, the gate 161 of 161 alive, ans-check 0 of 41 differ (its negative control caught).
+NEXT-RUN: seed 71, 10 hours - the applications in the selection from it.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed70.md, results/xcheck-seed70.md (new); results/applied-after-seed70/
+(moved), engine/, forth/, lab/evolve/, tools/ (the batch), lab/evolve/NEXT-RUN, results/gene-votes.md,
+results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/progress-by-run.md, results/predictions.md, results/README.md,
+HANDOFF.md.
