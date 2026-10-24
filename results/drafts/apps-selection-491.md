@@ -16,7 +16,7 @@ The four genes make a threefold difference on it - a difference the six workload
 same on all three. Sized for the selection (the six are ~11 ms on the fastest designs) the pass shrinks to sim16 once,
 gc16 300 steps, scan 4, evo 20 (about 0.06 s on s6).
 
-**The draft** (apps-selection-491.patch, against b5a06a6's evolve.py): `apps` the seventh selection workload - APPS_IN
+**The draft** (apps-selection-491.patch, against 0b52e1b's evolve.py): `apps` the seventh selection workload - APPS_IN
 the four files INCLUDED with their counts; the speed objective's geometric mean then over seven. Not applied, not
 batch-checked: it changes what the search optimises, so the speed column breaks at it; tools that print one column per
 workload (the report, remeasure, the gate's tables) will need a look before it runs. **The owner's decision**: whether,
