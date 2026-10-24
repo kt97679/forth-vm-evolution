@@ -1664,7 +1664,7 @@ if EMIT:
                  # Iteration 290: 2@ and 2! as opcodes - five stencils each, CELL+'s ADDI the one constant;
                  # without them a JIT design that takes the opcodes leaves every word holding one to the
                  # interpreter (jit.c: all or nothing), 2@ and 2! themselves among them
-                 '2@': (['DUP', 'ADDI', 'FETCH', 'SWAP', 'FETCH'], 8), '2!': (['SWAP', 'OVER', 'STORE', 'ADDI', 'STORE'], 8)}
+                 '2@': (['DUP', 'ADDI', 'FETCH', 'SWAP', 'FETCH'], CELL), '2!': (['SWAP', 'OVER', 'STORE', 'ADDI', 'STORE'], CELL)}   # 507/509: the cell, as CELL+ (493)
             O = {'LIT8': (['LIT'], 1), 'LIT': (['LIT'], 2), 'LIT32': (['LIT'], 3), 'LIT64': (['LIT'], 4),
                  'ADDI': (['ADDI'], 5), 'EQI': (['LIT', 'EQ'], 5), 'SWAP+I': (['SWAP', 'ADDI'], 5), 'DUP+I': (['DUP', 'ADDI'], 5), 'DUP<I': (['DUP', 'LIT', 'LT'], 5),
                  'BRANCH': (['BRANCH'], 7), 'BRANCH8': (['BRANCH'], 6), '?BRANCH': (['0BRANCH'], 7),
