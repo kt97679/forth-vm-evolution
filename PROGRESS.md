@@ -9803,3 +9803,17 @@ generations of 32: 23 of 162 children stopped, one audited, no error. The four p
 
 Files: results/pending/freeze-rt-after-seed73.patch (replaces freeze-rt-jitret-after-seed73.patch),
 results/pending/stop1-after-seed73.patch (new); results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 530 - 2026-10-25 - Claude
+
+**An evolver self-test; a prompt for the converter's JIT table** (the owner: proceed with both). lab/evolve/test-evolver.py,
+the after-seed-73 batch's fifth patch, run by tools/run-tests.sh: first_front against fronts()[0] (the two-design cases
+with and without the 32-bit speed, 300 random populations), one round first's decision, the adaptive operators' shares
+and floor, and a gated design's second reading - made a function (gate_again) to be checked. 14 checks pass on the
+batch's code; on master's code all six that can run fail (first_front off in 255 of 300 populations; the new functions
+missing) - checks shown to fail, as prompt 15 asks. The five patches apply in order. results/drafts/ask-jit-table-530.md:
+the converter's JIT table and the translator's operand decoder embedded (16 KB), the rules a row keeps at both widths,
+the three bugs found there before - for the owner to relay.
+
+Files: results/pending/test-evolver-after-seed73.patch, results/drafts/ask-jit-table-530.md (new);
+results/pending/ORDER.md, results/README.md, HANDOFF.md.

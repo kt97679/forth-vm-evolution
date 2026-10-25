@@ -6,6 +6,7 @@ Prepared while seed 73 runs; master stays what seed 73's bundle tests.
     git apply results/pending/aos-after-seed73.patch
     git apply results/pending/bughunt-evolver-after-seed73.patch
     git apply results/pending/stop1-after-seed73.patch
+    git apply results/pending/test-evolver-after-seed73.patch
 
 **freeze-rt-after-seed73.patch** (lab/evolve/evolve.py) - **the owner froze rtfuse and rtimm** (521; 528: jitret
 taken out). Over seeds 70-72 by the true fronts (results/drafts/front-recheck-528.md) rtfuse and rtimm keep 11 removal
@@ -36,5 +37,12 @@ one-round speed, memory and total kept, no 32-bit evaluation; one in ten measure
 rest go on from the first round (measure() continues an earlier call's rounds), so a full measurement costs no more.
 Seed 72: a third of the measured children so, none on the final front. Tried: four generations of 32 - 23 of 162
 children stopped, one audited in full, the run whole. EVOLVE_STOP1=0: off.
+
+**test-evolver-after-seed73.patch** (lab/evolve/test-evolver.py new, lab/evolve/evolve.py, tools/run-tests.sh; 530) -
+**checks that would have caught the bug hunt's finds**: first_front against fronts()[0] (two designs 1% apart, with and
+without the 32-bit speed; 300 random populations), one round first's decision, the adaptive operators' shares and
+floor, a gated design's second reading (made a function, gate_again, to be checked); 14 checks, run by run-tests.sh.
+Shown to fail on master's code before the batch: 6 of 6 failed - first_front differed in 255 of 300 populations, the
+three new functions missing.
 
 **At seed 73's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

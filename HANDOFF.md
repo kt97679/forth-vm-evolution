@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 529.
+- master: Iteration 530.
 - **The runs**: **seed 72 processed (Iteration 520)** - the output check at work (31 cpt16 designs refused); jitfuse on
   29 of 115 JIT designs, 3 of the fastest tenth (its prediction fails); **contention ruled out** - the fast end alone and
   beside co-runners differ 1.2%, both ~7% slower than in the run: the offset lies between the run and after it; **the
