@@ -9582,3 +9582,19 @@ jit.c, spn-stencils.c and the vm-lab.c excerpts embedded, as the after-seed-71 b
 
 Files: lab/evolve/contention.py (new); lab/evolve/README.md, lab/evolve/NEXT-RUN, results/drafts/seed71-checklist-505.md,
 results/drafts/ask-noise-answers-513.md, results/drafts/ask-jit-review-511.md, HANDOFF.md.
+
+## Iteration 515 - 2026-10-24 - Claude
+
+**The bug hunt's answers checked - one real bug, reproduced and fixed** (the owner brought four answers;
+results/drafts/ask-jit-review-answers-515.md). A word made after MARKER at an old word's address ran the old word's
+native code: jit_k, the cache of headerless words' translations, was keyed by the address alone - a CONSTANT 7 at the
+old CONSTANT 5's address answered 5 on JIT designs without jitinl (inlining hid it from every test). Answer 1 pointed
+there by the effect. Fixed in the after-seed-71 batch's fifth patch: each entry keeps a hash of the bytes its
+translation read, a different word translated again; jit_usable also refuses a stencil with a 32-bit hole the JIT would
+not patch (answer 4's finding - true in the code, unreachable today). tests/jit/jit-marker.fth on every JIT variant at
+both widths, a variant without jitinl added: engines-check PASS, 101 paths. Wrong or not bugs: EXECUTE-shaped user words
+(it is EXECUTE in the interpreter too), PICK off by one, jitk after a fused pair; the (ABORT") guards unreachable. On the
+way: the ARM cross compiler installed at 512 had displaced gcc-multilib's 32-bit headers here - reinstated.
+
+Files: results/drafts/ask-jit-review-answers-515.md, results/pending/jit-ksig-after-seed71.patch (new);
+results/pending/ORDER.md, results/README.md, HANDOFF.md.

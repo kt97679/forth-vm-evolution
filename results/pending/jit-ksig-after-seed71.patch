@@ -1,0 +1,103 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 5d278b9..20f4d99 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -351,6 +351,8 @@ static int jit_usable(int s) {
+     if ((s == S_0BRANCH || s == S_LOOP || s == S_PLOOP || s == S_QDO || s == S_DUP_GTI_BR)
+         && (jit_st[s].nnext < 1 || jit_st[s].njump != 1)) return 0;
+     if ((s == S_BRANCH || s == S_LEAVE) && jit_st[s].njump != 1) return 0;
++    if (jit_st[s].imm32 >= 0) return 0;      /* 515: a 32-bit hole is found but never patched here (st_addi32, st_dup_gti_br -
++                                                no operation maps to them; refused, never copied with the marker in it) */
+     return jit_st[s].len > 0 && jit_st[s].ncall == (s == S_CALL) && jit_st[s].njump <= 1;
+ }
+ static int jit_len(int s) { return jit_st[s].len - (jit_st[s].tailnext ? 5 : 0); }
+@@ -513,12 +515,46 @@ static inline int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; r
+  *    native words return through the C stack, not the engine's.  */
+ #define JIT_DEPTH 16                    /* 490: 8 refused fcp's DABS, nine calls below MAKEMOVE */
+ #define JIT_KN 256
+-static struct { UNS64 w; uint32_t f; } jit_k[JIT_KN];   /* f: native offset; 0 bytecode; 1 being translated; top bit: not yet */
++static struct { UNS64 w; uint32_t f, sig; } jit_k[JIT_KN];   /* f: native offset; 0 bytecode; 1 being translated; top bit: not yet */
++/* Iteration 515: what a translation of w read - its bytes to its end, found as jit_body finds a body's end (the first
++   EXIT no branch reaches past), hashed. MARKER rolls the dictionary back, and a word made after it can sit where an
++   old one sat: keyed by the address alone, jit_k handed the new word the old one's code (a CONSTANT 7 answered 5 - the
++   bug hunt of 513-515). A signature that differs is a different word: translated again. */
++static uint32_t jit_ksig(UNS64 w) {
++    UNS64 a = w, far = 0; uint32_t h = 2166136261u; int n;
++    for (n = 0; n < JIT_MAXOPS; n++) {
++        UNS64 a0 = a; UNS8 b = BYTE(a); unsigned L = (unsigned)JIT_NOPS; int stop;
++        if (T2_CALL(b)) a += (UNS64)T2_CALLW(b);
++        else {
++            L = jit_one[T2_ONEIX(b)]; a++;
++            if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
++            if (L < (unsigned)JIT_NOPS && jit_ops[L].ok)
++                switch (jit_ops[L].opnd) {
++                case 1: case 5: a += 1; break;
++                case 2: case 8: a += 2; break;
++                case 3: a += 4; break;
++                case 4: a += 8; break;
++                case 6: { UNS64 t_ = a + (UNS64)(INT64)(int8_t)BYTE(a); if (t_ > far) far = t_; a += 1; } break;
++                case 7: { UNS64 t_ = a + (UNS64)(INT64)(int16_t)LD16(a); if (t_ > far) far = t_; a += 2; } break;
++                case 9: a += (BYTE(a) & 0x80) ? 3 : 2; break;
++                default: break;
++                }
++        }
++        stop = L >= (unsigned)JIT_NOPS ? !T2_CALL(b) : !jit_ops[L].ok || (jit_ends(L) && a > far);
++        for (; a0 < a; a0++) h = (h ^ BYTE(a0)) * 16777619u;
++        if (stop) break;
++    }
++    return h;
++}
+ static uint32_t *jit_kslot(UNS64 w) {
+     unsigned h = (unsigned)((w * 0x9E3779B97F4A7C15ULL) >> 56), n;
++    uint32_t sg = jit_ksig(w);
+     for (n = 0; n < JIT_KN; n++, h = (h + 1) % JIT_KN) {
+-        if (jit_k[h].w == w) return &jit_k[h].f;
+-        if (!jit_k[h].w) { jit_k[h].w = w; jit_k[h].f = 0x80000000u; return &jit_k[h].f; }
++        if (jit_k[h].w == w) {
++            if (jit_k[h].sig != sg && jit_k[h].f != 1) { jit_k[h].sig = sg; jit_k[h].f = 0x80000000u; }   /* 515: another word now */
++            return &jit_k[h].f;
++        }
++        if (!jit_k[h].w) { jit_k[h].w = w; jit_k[h].sig = sg; jit_k[h].f = 0x80000000u; return &jit_k[h].f; }
+     }
+     return 0;                           /* full: the rest stay bytecode */
+ }
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 917655a..3b07ea3 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -58,6 +58,7 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+     ('the JIT with jitexec', dict(JIT, jitexec=1), ['jit', 'jitexec']),               # Iteration 476: EXECUTE's helper
+     ('the JIT with jitcfa', dict(JIT, jitcfa=1), ['jit', 'jitcfa']),                  # Iteration 482: the check along the paths
+     ('the JIT with opbody', dict(JIT, ops10=['2@', '2!'], opbody=1), ['jit', 'opbody']),   # Iteration 509: 2@ and 2! as opcodes - jit-ops.fth runs them
++    ('the JIT without jitinl', dict(JIT, jitinl=0, jitmul=1, jitexec=1), ['jit', 'jitexec']),   # Iteration 515: calls of headerless words through jit_k - jit-marker.fth
+     ('the JIT with jitrp', dict(JIT, jitrp=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitrp']),   # Iteration 494
+     ('the JIT with jitfuse', dict(JIT, jitfuse=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitfuse']),   # Iteration 507
+     ('the JIT with jitfuse and jitk', dict(JIT, jitfuse=1, jitk=2, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitfuse', 'jitk']),
+@@ -113,7 +114,9 @@ VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
+ # passed where seed 70's 906 32-bit failures did not (CELL+ and CELLS, 493), since nothing it holds was translated.
+ _JD = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'tests', 'jit')
+ # Iteration 509: and jit-ops.fth - every word the JIT maps, on edge values (its BYE ends the pair: jit-diff's is dropped)
+-JDIFF = open(os.path.join(_JD, 'jit-diff.fth'), 'rb').read().replace(b'\nBYE\n', b'\n') + open(os.path.join(_JD, 'jit-ops.fth'), 'rb').read()
++JDIFF = (open(os.path.join(_JD, 'jit-diff.fth'), 'rb').read() + open(os.path.join(_JD, 'jit-ops.fth'), 'rb').read()).replace(b'\nBYE\n', b'\n') \
++    + b''.join(open(os.path.join(os.path.dirname(_JD), '..', 'forth', f), 'rb').read() + b'\n' for f in ('extend.4', 'coreext.4')) \
++    + open(os.path.join(_JD, 'jit-marker.fth'), 'rb').read()   # 515: MARKER and a word at an old one's address
+ def jdiff(eng, img, pw):
+     return [l.strip() for l in E.sh([eng, img], inp=JDIFF, timeout=120, cpu=60, cwd=pw).stdout.decode('latin-1').replace('\r', '').split('\n')]
+ JREF = {}
+diff --git a/tests/jit/jit-marker.fth b/tests/jit/jit-marker.fth
+new file mode 100644
+index 0000000..0157d85
+--- /dev/null
++++ b/tests/jit/jit-marker.fth
+@@ -0,0 +1,11 @@
++\ jit-marker.fth - after extend.4 and coreext.4 (Iteration 515; lab/evolve/engines-check.py): a word without the JIT
++\ header (a CONSTANT) used by native code, the dictionary rolled back by MARKER, and a different CONSTANT made at the same
++\ address - its translation must be its own (jit_k was keyed by the address alone: 5 came back for 7). And a user word
++\ shaped like EXECUTE (>R EXIT) is EXECUTE in the interpreter too - the JIT's helper must run it the same.
++MARKER M1  5 CONSTANT KK  : USE KK ;  USE .  ' KK EXECUTE .  : USE2 ['] KK EXECUTE ;  USE2 .
++M1
++MARKER M1  7 CONSTANT KK  : USE KK ;  USE .  ' KK EXECUTE .  : USE2 ['] KK EXECUTE ;  USE2 .
++M1
++MARKER M1  -1 CONSTANT KK  : USE KK 1+ ;  USE .
++: MY-TOR >R ;  : TT 5 ['] DUP MY-TOR + . ;  TT
++BYE

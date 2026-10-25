@@ -6,6 +6,7 @@ Prepared while seed 71 runs; master stays what seed 71's bundle tests.
     git apply results/pending/retire-jithelp-jitre-after-seed71.patch
     git apply results/pending/jitfuse-after-seed71.patch
     git apply results/pending/enable-jitfuse-after-seed71.patch
+    git apply results/pending/jit-ksig-after-seed71.patch
 
 **retire-nocase-after-seed71.patch** (forth/cv8b-nocase.4 and forth/cv8bt-nocase.4 removed, lab/evolve/evolve.py,
 lab/evolve/engines-check.py) - **the owner retired nocase** (501): it changes only how names are looked up, so it can
@@ -50,5 +51,12 @@ marked by address, a pass each way. Measured again (instructions, seed 70's fast
 kernel +0.3%, fib -16.3%, corpus +0.7%, loop -5.0%, bubble -10.6%, ackermann +1.5%, apps -1.2% - **the geometric
 mean -4.6%** (was -3.8%), 1,136 bytes more. engines-check PASS in a clone with all five (99 paths, the new tests on
 every JIT variant at both widths). All five apply in order to master.
+
+**jit-ksig-after-seed71.patch** (515; engine/jit.c, lab/evolve/engines-check.py, tests/jit/jit-marker.fth new) - **a bug
+found by the bug hunt**: a word made after MARKER at an old word's address ran the old word's native code (jit_k keyed
+by the address alone: a CONSTANT 7 answered 5 on JIT designs without jitinl). Each entry now keeps a hash of the bytes
+its translation read; a different word is translated again. And jit_usable refuses a stencil with a 32-bit hole, which
+the JIT would not patch (none is used). jit-marker.fth on every JIT variant at both widths, a variant without jitinl
+added: engines-check PASS, 101 paths (results/drafts/ask-jit-review-answers-515.md).
 
 **At seed 71's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.
