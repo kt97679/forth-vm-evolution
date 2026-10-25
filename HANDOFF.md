@@ -48,13 +48,13 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 532.
+- master: Iteration 533.
 - **The runs**: **seed 72 processed (Iteration 520)** - the output check at work (31 cpt16 designs refused); jitfuse on
   29 of 115 JIT designs, 3 of the fastest tenth (its prediction fails); **contention ruled out** - the fast end alone and
   beside co-runners differ 1.2%, both ~7% slower than in the run: the offset lies between the run and after it; **the
   memory objective had measured the applications' data** since seed 71 (460-500 KB for all) - fixed. Freeze candidates:
-  rtfuse, rtimm - frozen by the owner (521), the after-seed-73 batch - **to be confirmed (532): by the rule's keep vote, on the
-  true fronts, neither is a candidate**; jitret not (528). **The after-seed-72 batch applied** (jitexec's table,
+  rtfuse, rtimm - **the freeze withdrawn (533, the owner)**: by the rule's keep vote, on the true fronts, neither is a
+  candidate; the votes over 71-73 decide at seed 73's processing (rtimm can qualify then); jitret not (528). **The after-seed-72 batch applied** (jitexec's table,
   memory). **Seed 73 next: 11 hours (the owner)** - jitexec's first fair run.
   Before - **seed 71 processed (Iteration 516)** - the first with the applications in the selection (a speed break):
   the selection now tracks the applications (Spearman 0.861, was 0.553), the old six kept (0.1193 against 0.1204), 9.5%

@@ -2,20 +2,19 @@
 
 Prepared while seed 73 runs; master stays what seed 73's bundle tests.
 
-    git apply results/pending/freeze-rt-after-seed73.patch
     git apply results/pending/aos-after-seed73.patch
     git apply results/pending/bughunt-evolver-after-seed73.patch
     git apply results/pending/stop1-after-seed73.patch
     git apply results/pending/test-evolver-after-seed73.patch
     git apply results/pending/jit-table-bounds-after-seed73.patch
 
-**freeze-rt-after-seed73.patch** (lab/evolve/evolve.py) - **the owner froze rtfuse and rtimm** (521; 528: jitret
-taken out). **To be confirmed (532)**: by the vote tool's own rule - 11 of 12 *and no keep vote* - on the true fronts
-neither is a candidate: rtfuse sits in seed 72's best-Q tenth, rtimm in seed 70's fastest; 528 counted the votes and
-missed the keep votes. Over seeds 70-72 by the true fronts (results/drafts/front-recheck-528.md) rtfuse and rtimm keep 11 removal
-votes of 12; jitret has 8 - it is in every run's fastest tenth - so the freeze of 521, made on the reported fronts,
-keeps only the two. Frozen at 0: out of mutation's pool; the founders have neither. I+ (rule 7) keeps rtloopall's
-overlay; rule 9's overlap moot. Reversible.
+**freeze-rt-after-seed73.patch - withdrawn (533, the owner)**: by the vote tool's own rule - 11 of 12 votes and no
+keep vote - on the true fronts neither rtfuse nor rtimm is a candidate (each has one keep vote: rtfuse in seed 72's
+best-Q tenth, rtimm in seed 70's fastest); the freeze rested on the reported fronts (521) and then on a recheck that
+counted the votes and missed the keep votes (528). The rule decides at seed 73's processing, its votes now from the
+runs' records (532): rtimm can be a candidate then (71 and 72: 4 of 4, no keep vote), rtfuse not before seed 75's
+(its keep vote is 72's). Kept as results/drafts/freeze-rt-withdrawn-533.patch. The other five apply in order without
+it and the evolver self-test passes on them (533); the batch-check of 532 ran with it - run it again at processing.
 
 **aos-after-seed73.patch** (lab/evolve/evolve.py, 526) - **adaptive operator selection** (the owner: proposal 1 of
 results/drafts/ask-search-answers-525.md). Each generation, the last ten generations' children by class (crossover;

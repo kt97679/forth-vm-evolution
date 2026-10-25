@@ -9848,3 +9848,17 @@ prediction 518, the batch, seed 74's line with the clock test.
 
 Files: results/drafts/seed73-checklist-532.md (new); lab/evolve/review-checks.py, lab/evolve/process-seed.sh,
 results/gene-votes.md, results/pending/ORDER.md, results/README.md, HANDOFF.md.
+
+## Iteration 533 - 2026-10-25 - Claude
+
+**The freeze withdrawn from the after-seed-73 batch** (the owner: proceed - drop it, the rule to decide). By the vote
+tool's own rule on the true fronts neither rtfuse nor rtimm is a candidate - each has one keep vote, at about what chance
+would give a gene on a few front designs - and the freeze rested first on the shortcut fronts (521), then on a recheck
+that missed the keep votes (528). Waiting costs a few percent of mutations for a run or two; the rule, now fed the runs'
+records (532), decides at seed 73's processing - rtimm can qualify then, rtfuse not before 75. If single keep votes keep
+blocking near-unused genes by chance, the place to fix that is the rule for every gene, not an exception here. The patch
+kept as results/drafts/freeze-rt-withdrawn-533.patch; the other five apply in order without it and the evolver
+self-test passes on them; batch-check again at processing (the checklist says so).
+
+Files: results/drafts/freeze-rt-withdrawn-533.patch (moved from results/pending/); results/pending/ORDER.md,
+results/drafts/seed73-checklist-532.md, HANDOFF.md.

@@ -23,9 +23,10 @@ batch), so its results file's front is not the true one.
 
 ## The batch
 
-results/pending/ORDER.md - six patches: the freeze (**the owner to confirm - see 532**), adaptive operators, the bug-hunt
-fixes, one round first, the evolver self-test, the JIT table's bounds. **batch-check run already at 532** (see
-PROGRESS); run it again only if master has changed since. Then the routine's chain.
+results/pending/ORDER.md - five patches: adaptive operators, the bug-hunt fixes, one round first, the evolver
+self-test, the JIT table's bounds (the freeze withdrawn at 533). batch-check ran at 532 with the freeze among them -
+**run it again**, then the routine's chain. **The freeze question**: the votes over 71-73 decide - rtimm is a candidate
+if seed 73 gives it 4 of 4 with no keep vote; rtfuse cannot be before seed 75's processing.
 
 ## Seed 74's line
 
