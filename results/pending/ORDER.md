@@ -7,6 +7,7 @@ Prepared while seed 73 runs; master stays what seed 73's bundle tests.
     git apply results/pending/bughunt-evolver-after-seed73.patch
     git apply results/pending/stop1-after-seed73.patch
     git apply results/pending/test-evolver-after-seed73.patch
+    git apply results/pending/jit-table-bounds-after-seed73.patch
 
 **freeze-rt-after-seed73.patch** (lab/evolve/evolve.py) - **the owner froze rtfuse and rtimm** (521; 528: jitret
 taken out). Over seeds 70-72 by the true fronts (results/drafts/front-recheck-528.md) rtfuse and rtimm keep 11 removal
@@ -44,5 +45,10 @@ without the 32-bit speed; 300 random populations), one round first's decision, t
 floor, a gated design's second reading (made a function, gate_again, to be checked); 14 checks, run by run-tests.sh.
 Shown to fail on master's code before the batch: 6 of 6 failed - first_front differed in 255 of 300 populations, the
 three new functions missing.
+
+**jit-table-bounds-after-seed73.patch** (tools/layout.py, 531) - **two bounds a reviewer named, asserted**
+(results/drafts/ask-jit-table-answers-531.md): jitexec's extra rows below T2_JIT (0xFE00), and each row's constant
+within jit_op.k's signed char. Neither fires today (a jitexec table: 83 rows, the extra rows at 126-128); either
+would now stop a build with a message instead of writing a wrong table.
 
 **At seed 73's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

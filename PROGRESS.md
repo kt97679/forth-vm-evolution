@@ -9817,3 +9817,18 @@ the three bugs found there before - for the owner to relay.
 
 Files: results/pending/test-evolver-after-seed73.patch, results/drafts/ask-jit-table-530.md (new);
 results/pending/ORDER.md, results/README.md, HANDOFF.md.
+
+## Iteration 531 - 2026-10-25 - Claude
+
+**The JIT-table review's answers checked - no bug; two bounds asserted** (the owner brought five;
+results/drafts/ask-jit-table-answers-531.md). Three answers called 2@ and 2! reversed with high confidence: the rows are
+`DUP CELL+ @ SWAP @` and `SWAP OVER ! CELL+ !` - the kernel's own definitions and the standard's stated equivalents; the
+answers had the standard's cell order backwards. One said the EXECUTE, CALLX and ABORT" rows read eight bytes at 32 bits:
+those rows are set by the translator with their argument made, never decoded from the image. ?NBRANCH is `0= ?BRANCH`
+fused, as its row computes. Already shown by our tests at both widths (jit-ops.fth's 2@/2!, the Forth 2012 core tests,
+jit-diff's 0= IF). Two latent bounds a reviewer found - the extra rows below 0xFE00, each row's constant within a signed
+char - asserted in tools/layout.py, the after-seed-73 batch's sixth patch; a jitexec table built with them. The six
+patches apply in order.
+
+Files: results/drafts/ask-jit-table-answers-531.md, results/pending/jit-table-bounds-after-seed73.patch (new);
+results/pending/ORDER.md, results/README.md, HANDOFF.md.
