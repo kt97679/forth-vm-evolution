@@ -9790,3 +9790,16 @@ Stopping those after one round skips two rounds and the 32-bit evaluation: about
 Proposed: jitret out of the freeze; one round first at 30%, audited one in ten.
 
 Files: results/drafts/front-recheck-528.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 529 - 2026-10-25 - Claude
+
+**jitret out of the freeze; one round first written** (the owner: proceed with both; results/pending/ORDER.md). The freeze
+patch now holds rtfuse and rtimm only (freeze-rt-after-seed73.patch) - jitret's 8 votes of 12 by the true fronts. One
+round first, the batch's fourth patch: after the first 64-bit round a child 30% beaten by an earlier no-larger design
+within the memory tolerance stops there - its one-round figures kept, no 32-bit evaluation, one in ten measured in full;
+the rest continue from that round (measure() takes an earlier call's state), so they cost nothing extra. Tried in four
+generations of 32: 23 of 162 children stopped, one audited, no error. The four patches apply in order. Predicted for seed
+74: a quarter to two fifths stopped, 15% more designs an hour, no audited stopped child on the final front.
+
+Files: results/pending/freeze-rt-after-seed73.patch (replaces freeze-rt-jitret-after-seed73.patch),
+results/pending/stop1-after-seed73.patch (new); results/pending/ORDER.md, results/predictions.md, HANDOFF.md.

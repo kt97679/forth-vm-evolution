@@ -2,16 +2,16 @@
 
 Prepared while seed 73 runs; master stays what seed 73's bundle tests.
 
-    git apply results/pending/freeze-rt-jitret-after-seed73.patch
+    git apply results/pending/freeze-rt-after-seed73.patch
     git apply results/pending/aos-after-seed73.patch
     git apply results/pending/bughunt-evolver-after-seed73.patch
+    git apply results/pending/stop1-after-seed73.patch
 
-**freeze-rt-jitret-after-seed73.patch** (lab/evolve/evolve.py) - **the owner froze rtfuse, rtimm and jitret** (521), the
-gene votes' candidates over seeds 70-72: rtfuse and rtimm 12 of 12 removal votes, jitret 11 of 12 - each under a tenth of
-the front, none in its fastest, smallest or best-Q tenth. Frozen at 0: out of mutation's pool (FROZEN), so no lineage
-takes them up - the founders have none (s6: rtfuse 0, rtimm and jitret unset). Reversible: out of FROZEN again. What
-needs them does not: I+ (rule 7) needs rtloopall's overlay, not rtfuse; rule 9 (the rtimm=2 / rtfuse overlap) is moot
-with both frozen; rule 2 watched jitret, frozen now.
+**freeze-rt-after-seed73.patch** (lab/evolve/evolve.py) - **the owner froze rtfuse and rtimm** (521; 528: jitret
+taken out). Over seeds 70-72 by the true fronts (results/drafts/front-recheck-528.md) rtfuse and rtimm keep 11 removal
+votes of 12; jitret has 8 - it is in every run's fastest tenth - so the freeze of 521, made on the reported fronts,
+keeps only the two. Frozen at 0: out of mutation's pool; the founders have neither. I+ (rule 7) keeps rtloopall's
+overlay; rule 9's overlap moot. Reversible.
 
 **aos-after-seed73.patch** (lab/evolve/evolve.py, 526) - **adaptive operator selection** (the owner: proposal 1 of
 results/drafts/ask-search-answers-525.md). Each generation, the last ten generations' children by class (crossover;
@@ -28,5 +28,13 @@ on random populations it differed from fronts()[0] 176 times in 200, now never i
 designs, not the 185 reported (7 s for 21,557 designs). Selection always used fronts() and is unchanged. A gated
 design whose second run fails now dies with that failure instead of keeping its first reading; a run with no
 measurement is a death, not an exception that ends the run; EVOLVE_SCREEN_AUDIT=0 no longer divides by zero.
+
+**stop1-after-seed73.patch** (lab/evolve/evolve.py, 529) - **one round first** (the owner; priced in
+results/drafts/front-recheck-528.md): after the first 64-bit round, a child beaten in that round's speed by 30% by a
+design measured before its generation - no larger, memory within MEM_TOL - stops: "stopped after one round", its
+one-round speed, memory and total kept, no 32-bit evaluation; one in ten measured in full anyway (stopaudit). The
+rest go on from the first round (measure() continues an earlier call's rounds), so a full measurement costs no more.
+Seed 72: a third of the measured children so, none on the final front. Tried: four generations of 32 - 23 of 162
+children stopped, one audited in full, the run whole. EVOLVE_STOP1=0: off.
 
 **At seed 73's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

@@ -1,0 +1,100 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index b079807..5a99077 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1233,7 +1233,7 @@ def text_size(path):
+         s = sec(k)
+         if b[stroff + s[0]:b.index(b'\0', stroff + s[0])] == b'.text': return s[5]
+     return None
+-def measure(eng, img, pw, works, rounds):
++def measure(eng, img, pw, works, rounds, state=None, r0=0):
+     """The MEDIAN CPU time per workload over the rounds, the design and the
+     reference - hand-made s6 - run back to back in every round, alternating
+     which goes first. Returns design / reference per workload, and the
+@@ -1247,9 +1247,10 @@ def measure(eng, img, pw, works, rounds):
+     each session, so two sessions ranked the same designs up to 28% apart. The median of the same runs
+     agreed within 3.6% between halves of a session and 2.1% between CPUs
+     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
+-    runs, ref = {}, {}
+-    LAST_RSS.clear(); mem = {}; outs = {}
+-    for r_ in range(rounds):
++    # Iteration 529: state - an earlier call's runs, to go on from (one round first, then the rest); r0 its rounds
++    runs, ref, mem, outs = state if state is not None else ({}, {}, {}, {})
++    LAST_RSS.clear()
++    for r_ in range(r0, r0 + rounds):
+         for w in works:
+             pair = [(eng, img, pw, runs), REF + (ref,)]
+             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
+@@ -1279,6 +1280,31 @@ def reach_lethal(g):
+ FASTGATE = [20, 1.05]   # Iteration 391 (the owner): the fast end measured twice - fast_gate(), evaluate(); --fastgate N
+ ISLANDS = [int(os.environ.get('EVOLVE_ISLANDS', 1))]   # Iteration 436 (results/drafts/escape-mechanism-435.md): --islands K
+ MIGRATE = [int(os.environ.get('EVOLVE_MIGRATE', 10))]  # generations between migrations, a ring
++# Iteration 529 (the owner; results/drafts/front-recheck-528.md): one round first. After the first 64-bit round, a child
++# beaten in that round's speed by STOP1 (30%) by a design measured before its generation - no larger, memory within
++# MEM_TOL - stops: "stopped after one round", its one-round figures kept, no 32-bit evaluation. Seed 72: a third of the
++# measured children so, none of them on the final front; one round strays from three by at most 7.4%. One in
++# STOP1_AUDIT measured in full anyway (stopaudit), the check. EVOLVE_STOP1=0: off.
++STOP1 = float(os.environ.get('EVOLVE_STOP1', 0.30))
++STOP1_AUDIT = int(os.environ.get('EVOLVE_STOP1_AUDIT', 10))
++def stop_stair(R, gen_now):
++    """Per memory value, the staircase of the living designs before gen_now: speeds ascending, the least total."""
++    if not STOP1: return None
++    pts = sorted((r['speed'], ov(r, 'total'), r['rss']) for r in R.values() if r.get('status') == 'ok' and r.get('speed')
++                 and r.get('rss') and r.get('total') and isinstance(r.get('gen', 0), int) and r.get('gen', 0) < gen_now)
++    st = {}
++    for s_, t_, m_ in pts:
++        ss, tt = st.setdefault(m_, ([], []))
++        if tt and tt[-1] <= t_: continue
++        ss.append(s_); tt.append(t_)
++    return st or None
++def stop_beaten(st, s_, t_, m_):
++    for mv, (ss, tt) in st.items():
++        if mv > m_ + MEM_TOL: continue
++        k = bisect.bisect_right(ss, s_ / (1 + STOP1))
++        if k > 0 and tt[k - 1] <= t_: return True
++    return False
++
+ def fast_gate(R):
+     """The speed under which a child is measured twice: 5% above the FASTGATE[0]-th fastest design alive so
+     far - the fast end, and the noise band around it. The fast end's in-run speeds were ~10% optimistic
+@@ -1289,7 +1315,7 @@ def fast_gate(R):
+     sp = sorted(r['speed'] for r in R.values() if r.get('status') == 'ok' and r.get('speed'))
+     return sp[n - 1] * FASTGATE[1] if len(sp) >= n else None
+ 
+-def evaluate(g, rounds, keep=False, gate=None, again=False):
++def evaluate(g, rounds, keep=False, gate=None, again=False, stop=None):
+     # Build what the identity names: canon(g), as express() and gid() see it.
+     # Built raw, a mutation that turned on byte headers in a design with
+     # scaled calls was refused by the converter (--bytehdr wants --cpt 0) -
+@@ -1306,7 +1332,20 @@ def evaluate(g, rounds, keep=False, gate=None, again=False):
+         rec['bin'] = bin_size(eng); rec['total'] = rec['bin'] + rec['size']     # Iteration 75: an objective
+         pw = private_work(d)
+         alive(eng, img, pw, far=not hand_made(g))
+-        t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
++        if stop and rounds > 1 and not again:     # Iteration 529 (the owner): one round first
++            st = ({}, {}, {}, {})
++            t1, raw1 = measure(eng, img, pw, WORK_SEL + WORK_HELD, 1, state=st)
++            s1 = math.exp(sum(math.log(t1[w]) for w in WORK_SEL) / len(WORK_SEL))
++            m1 = max([v for w_, v in LAST_RSS.items() if w_ != 'apps'] or list(LAST_RSS.values())) if LAST_RSS else None
++            if m1 is not None and stop_beaten(stop, s1, rec['total'], m1):
++                if STOP1_AUDIT and int(gid(g), 16) % STOP1_AUDIT == 1: rec['stopaudit'] = 1   # measured in full anyway
++                else:
++                    rec.update(status='stopped after one round', speed1r=s1, t1r=t1, rss=m1, mem=dict(LAST_RSS))
++                    if not keep: shutil.rmtree(d, ignore_errors=True)
++                    return rec
++            t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds - 1, state=st, r0=1)
++        else:
++            t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
+         rec['t'] = t; rec['raw'] = raw
+         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
+         rec['etext'] = text_size(eng)                              # Iteration 73: tracked, not scored
+@@ -2157,7 +2196,8 @@ def main(argv):
+                 if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
+                 items = keep
+         gate = fast_gate(R)                                   # Iteration 391
+-        args = [(canon(g), ROUNDS, False, gate) for i, (g, parents, how, gen) in items]
++        stop = stop_stair(R, gen_now) if items else None             # Iteration 529
++        args = [(canon(g), ROUNDS, False, gate, False, stop) for i, (g, parents, how, gen) in items]
+         # Iteration 446: the gated children of the generation before, measured again in this batch - among other
+         # co-runners, at another moment - their speed the geometric mean of the two readings then
+         again = [i for i, r in R.items() if r.get('gated') == 1 and r.get('status') == 'ok'] if items else []

@@ -974,3 +974,10 @@ seed 72's (185 front designs of 26,100 children: 0.71%).
 With first_front following dominates() (the after-seed-73 batch): seed 74's reported front at least a quarter larger than
 its fronts by the old staircase would have been - checked by running the old rule on its records (seed 72: 246 against
 185).
+
+## One round first, from seed 74 - predicted (Iteration 529)
+
+With children 30% beaten after one round stopped there (the after-seed-73 batch): in seed 74, between a quarter and two
+fifths of the children that pass the screen stop after one round; the designs an hour at least 15% above seed 72's
+(2,916), allowing for the run's other changes; and none of the stopped children's audited full measurements reaches the
+final front.
