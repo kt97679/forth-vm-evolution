@@ -9679,3 +9679,16 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed72.md, results/xcheck-seed72.md
 (moved), lab/evolve/evolve.py, tools/layout.py (the batch), lab/evolve/NEXT-RUN, results/gene-votes.md,
 results/predictions.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/progress-by-run.md, results/README.md,
 HANDOFF.md.
+
+## Iteration 521 - 2026-10-25 - Claude
+
+**rtfuse, rtimm and jitret frozen; a rebuild ruled out for the fast end's offset** (the owner: freeze them, continue;
+results/pending/ORDER.md). The freeze is the after-seed-73 batch's patch: the three at 0 in FROZEN - out of mutation's
+pool, the founders without them; I+ keeps rtloopall's overlay (rule 7), rule 9's overlap moot, rule 2's jitret frozen.
+The offset: two of seed 72's fastest built twice are byte-identical, engine and image, and the run's recorded sizes - so
+the after-run binary is the in-run one. With contention (520) and a lucky reading (513) ruled out, the moment is left:
+the run's full load against after it; a test with the run's own mix of workers proposed
+(results/drafts/ask-noise-answers-513.md).
+
+Files: results/pending/ (new: freeze-rt-jitret-after-seed73.patch, ORDER.md); results/drafts/ask-noise-answers-513.md,
+results/README.md, HANDOFF.md.

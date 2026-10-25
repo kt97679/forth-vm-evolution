@@ -58,3 +58,12 @@ organised (elite resampling first) but its bias arithmetic wrong. 8 sensible and
 **The owner (514)**: the experiment added - lab/evolve/contention.py, the last step of seed 72's chain (NEXT-RUN's note,
 the seed 71 checklist): the 16 fastest of the front, each measured as the run measures it, alone and beside three
 co-runners on other cores (looping s6 and front designs over the selection workloads), alone-loaded-loaded-alone.
+
+**Seed 72's answer (520-521)**: the contention experiment found co-runners move the ratio 1.2% in the median - not the
+cause; alone and loaded alike, the fast end is ~7% slower after the run than in it. **A rebuild is not the cause either**
+(521): c3a18bd60b and b27b6a30ae built twice are byte-identical, engine and image, and the same sizes as the run
+recorded. And the gate's in-run second readings agree with the first (0.07%, seed 70) - so it is not a lucky reading.
+Left: the moment - the machine's state after the run, against the run's full load of four workers building and
+measuring (three co-runners that measure only may not lower the clock as the run does; a design and s6 need not gain
+alike from a higher clock). A test, on the laptop: the fast end measured beside the run's own mix - four workers building
+and measuring - against alone.
