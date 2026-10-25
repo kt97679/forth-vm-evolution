@@ -372,6 +372,8 @@ elif check == 'votes':
     args = sys.argv[2:]; ledger = None; seed = None; append = '--append' in args
     if '--ledger' in args: i = args.index('--ledger'); ledger = args[i + 1]; del args[i:i + 2]
     if '--seed' in args: i = args.index('--seed'); seed = int(args[i + 1]); del args[i:i + 2]
+    db = None
+    if '--db' in args: i = args.index('--db'); db = args[i + 1]; del args[i:i + 2]
     path = [a for a in args if a != '--append'][0]
     if seed is None:
         m = re.search(r'seed(\d+)', os.path.basename(path)); seed = int(m.group(1)) if m else 0
@@ -388,10 +390,35 @@ elif check == 'votes':
     def num(v):
         try: return float(str(v).replace(',', ''))
         except ValueError: return None
-    ids = [i for i in tab if i in gen]; n = len(ids); k = max(1, n // 10)
-    sp = {i: num(tab[i].get('re-measured', '')) or num(tab[i].get('speed', '')) or 9e9 for i in ids}
-    by = {i: num(tab[i].get('binary + image', '')) or 9e9 for i in ids}
-    mem = {i: num(tab[i].get('memory KB', '')) or 9e9 for i in ids}
+    if db:
+        # Iteration 532: the front from the run's own records, by dominates() itself - not the results file's table,
+        # which the run's first_front wrote: until the after-seed-73 batch a shortcut that ignored the 2% speed band and
+        # the 32-bit speed, about a third of each front the true one (results/drafts/front-recheck-528.md). It made
+        # jitret a freeze candidate on 11 votes of 12 where the true fronts give 8. Speeds in-run, the run's own.
+        Rd = {}
+        for l in open(db, errors='replace'):
+            if not l.startswith('{'): continue
+            try: r = json.loads(l)
+            except ValueError: continue
+            if r.get('id'): Rd[r['id']] = r
+        ok = [i for i, r in Rd.items() if r.get('status') == 'ok' and r.get('speed') and E.ov(r, 'total') and r.get('rss')]
+        E.TWO_WIDTHS[0] = sum(1 for i in ok if Rd[i].get('speed32')) * 2 > len(ok)
+        if E.TWO_WIDTHS[0]: ok = [i for i in ok if Rd[i].get('speed32')]
+        arch = []
+        for i in sorted(ok, key=lambda i: (E.ov(Rd[i], 'total'), Rd[i]['speed'])):
+            if any(E.dominates(Rd[a], Rd[i]) for a in arch): continue
+            arch = [a for a in arch if not E.dominates(Rd[i], Rd[a])]; arch.append(i)
+        import bisect
+        by_t = sorted(ok, key=lambda i: E.ov(Rd[i], 'total')); tots = [E.ov(Rd[i], 'total') for i in by_t]
+        ids = [b for b in arch if not any(a != b and E.dominates(Rd[a], Rd[b]) for a in by_t[:bisect.bisect_right(tots, E.ov(Rd[b], 'total'))])]
+        gen = {i: Rd[i]['genome'] for i in ids}
+        n = len(ids); k = max(1, n // 10)
+        sp = {i: Rd[i]['speed'] for i in ids}; by = {i: E.ov(Rd[i], 'total') for i in ids}; mem = {i: Rd[i]['rss'] for i in ids}
+    else:
+        ids = [i for i in tab if i in gen]; n = len(ids); k = max(1, n // 10)
+        sp = {i: num(tab[i].get('re-measured', '')) or num(tab[i].get('speed', '')) or 9e9 for i in ids}
+        by = {i: num(tab[i].get('binary + image', '')) or 9e9 for i in ids}
+        mem = {i: num(tab[i].get('memory KB', '')) or 9e9 for i in ids}
     fast = set(sorted(ids, key=sp.get)[:k]); small = set(sorted(ids, key=by.get)[:k])
     bestq = set(sorted(ids, key=lambda i: sp[i] * by[i] * mem[i])[:k])
     ex = {i: E.express(E.canon(gen[i])) for i in ids}

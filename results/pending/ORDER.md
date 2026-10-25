@@ -10,7 +10,9 @@ Prepared while seed 73 runs; master stays what seed 73's bundle tests.
     git apply results/pending/jit-table-bounds-after-seed73.patch
 
 **freeze-rt-after-seed73.patch** (lab/evolve/evolve.py) - **the owner froze rtfuse and rtimm** (521; 528: jitret
-taken out). Over seeds 70-72 by the true fronts (results/drafts/front-recheck-528.md) rtfuse and rtimm keep 11 removal
+taken out). **To be confirmed (532)**: by the vote tool's own rule - 11 of 12 *and no keep vote* - on the true fronts
+neither is a candidate: rtfuse sits in seed 72's best-Q tenth, rtimm in seed 70's fastest; 528 counted the votes and
+missed the keep votes. Over seeds 70-72 by the true fronts (results/drafts/front-recheck-528.md) rtfuse and rtimm keep 11 removal
 votes of 12; jitret has 8 - it is in every run's fastest tenth - so the freeze of 521, made on the reported fronts,
 keeps only the two. Frozen at 0: out of mutation's pool; the founders have neither. I+ (rule 7) keeps rtloopall's
 overlay; rule 9's overlap moot. Reversible.

@@ -9832,3 +9832,19 @@ patches apply in order.
 
 Files: results/drafts/ask-jit-table-answers-531.md, results/pending/jit-table-bounds-after-seed73.patch (new);
 results/pending/ORDER.md, results/README.md, HANDOFF.md.
+
+## Iteration 532 - 2026-10-25 - Claude
+
+**The vote ledger on the true fronts; the batch checked; seed 73's checklist** (the owner: proceed). review-checks.py
+votes takes --db and computes the run's front from its records by dominates() itself (archive, then each member against
+every design of no more total) instead of the results file's table, which the old shortcut wrote; process-seed.sh passes
+the pack's records. The ledger's rows for seeds 70-72 rewritten from the runs' records (160 rows): over 70-72 **no gene
+is a freeze candidate** - the rule is 11 of 12 votes *and no keep vote*, and on the true fronts rtfuse is in seed 72's
+best-Q tenth, rtimm in seed 70's fastest, both at 11 votes. 528 counted the votes and missed the keep votes: the freeze
+of rtfuse and rtimm in the batch rests on that - flagged in ORDER.md for the owner to confirm or drop. batch-check on the
+six pending patches: PASS (run-tests with the evolver self-test, validate 7 of 7, the jail) on 2c8b754.
+results/drafts/seed73-checklist-532.md: what compares (memory the six's again), the true front beside the reported,
+prediction 518, the batch, seed 74's line with the clock test.
+
+Files: results/drafts/seed73-checklist-532.md (new); lab/evolve/review-checks.py, lab/evolve/process-seed.sh,
+results/gene-votes.md, results/pending/ORDER.md, results/README.md, HANDOFF.md.
