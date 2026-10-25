@@ -96,6 +96,9 @@ def run_all(eng, img, pw, core='core.fr', only=None):
         tail = t.split('<<FILE>>', 1)[-1]
         stop = re.search(r'(Undefined word|Not found) (\S+)', tail)
         end = ('<<END OF %s>>' % f) in t
+        # Iteration 517: compared without blank lines and the prompt's OKs - a cpt16 design (seed 71's 7fabd817ed) echoed
+        # 29 fewer of them on toolstest.fth, every result and test the same: a false difference, as alive() ignores them
+        so = b'\n'.join(l for l in so.replace(b'\r', b'').split(b'\n') if l.strip() and l.strip() != b'OK')
         out[f] = dict(rc=rc, out=so, tests=tests, failed=failed, end=end, stop='' if end or not stop else stop.group(2))
     return out
 

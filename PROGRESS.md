@@ -9621,3 +9621,18 @@ larger programs fail (the applications too); seed 72's output check refuses thos
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed71.md, results/xcheck-seed71.md (new); results/applied-after-seed71/
 (moved), lab/evolve/ (the batch), engine/, tools/, tests/jit/, lab/evolve/NEXT-RUN, results/gene-votes.md,
 results/predictions.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/README.md, HANDOFF.md.
+
+## Iteration 517 - 2026-10-25 - Claude
+
+**Why three JIT genes were ignored, and what cpt16 designs do with larger programs** (the owner: both, while seed 72
+runs; results/drafts/jit-genes-517.md). On seed 71's fastest: jitexec gave -13.7% of the applications' instructions
+(-1.7% over seven) **but cost 586,544 bytes** - its three extra JIT-table rows sat past T2_JIT (0xFE00), so jit_ops ran
+to 65,029 rows (585 KB of read-only data). A bug no search could see past: fixed as the after-seed-72 batch's first patch
+(39,460 bytes with jitexec against 36,708 without; engines-check PASS, 101 paths). jitdoes buys nothing on the
+selection's workloads (+436 bytes); jitcfa is on the fastest already, free. The cpt16 designs refuse calls past their
+16-bit reach out loud ("call out of reach ROOTS" after gc16 allots 320 KB), as the far rule allows - no silent fault;
+the 516 output check keeps them from profiting. Their toolstest.fth difference was 29 prompt OKs, the 121 result lines
+the same: ans-check.py now compares without blank and OK lines, as alive() does.
+
+Files: results/drafts/jit-genes-517.md, results/pending/ (new: jitexec-table-after-seed72.patch, ORDER.md);
+lab/evolve/ans-check.py, results/README.md, HANDOFF.md.

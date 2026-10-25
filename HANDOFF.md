@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 516.
+- master: Iteration 517.
 - **The runs**: **seed 71 processed (Iteration 516)** - the first with the applications in the selection (a speed break):
   the selection now tracks the applications (Spearman 0.861, was 0.553), the old six kept (0.1193 against 0.1204), 9.5%
   fewer designs an hour; jitmul on 72 of 130 JIT designs, the other JIT genes hardly; **a loophole** - outputs never
@@ -308,7 +308,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
    the applications in the selection (a speed break - the progress table and the spread mark it, 505); the
    after-seed-71 batch (results/applied-after-seed71/ORDER.md: nocase retired, the fast gate's slower reading, jithelp and jitre
    retired) batch-checked, then applied; seed 72's line without the footprint experiment (the owner, 504).
-1. **Do the JIT genes earn their place now?** Seeds 71-72: jitmul, jitdoes, jitexec, jitcfa on the front, the
+1. **Do the JIT genes earn their place now?** (517: jitexec's 586 KB was a table bug - fixed in the after-seed-72
+   batch; jitdoes buys nothing on the selection - results/drafts/jit-genes-517.md) Seeds 71-72: jitmul, jitdoes, jitexec, jitcfa on the front, the
    applications' speed (predictions at 495); their votes count from seed 72 (rule 12). If not even with the
    applications paying, they are rule 11's case for freezing.
 2. **The JIT on ARMv7, for the Tegra** (512: the other models' answers checked, a copy-and-patch round trip under QEMU,
