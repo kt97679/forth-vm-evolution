@@ -9776,3 +9776,17 @@ runs and leaves nothing behind. NEXT-RUN: seed 74's line ends with it.
 Files: lab/evolve/clockcheck.py, results/pending/bughunt-evolver-after-seed73.patch,
 results/drafts/ask-evolver-review-answers-527.md (new); results/pending/ORDER.md, lab/evolve/NEXT-RUN,
 lab/evolve/README.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 528 - 2026-10-25 - Claude
+
+**Seeds 70-72 rechecked by the corrected front; "one round first" priced** (the owner: proceed;
+results/drafts/front-recheck-528.md). The reported fronts were mostly not the true ones - 63 of 156 (seed 70), 76 of 210,
+72 of 185 in both - so the reports, the gate's front, the re-measure and the appbench samples spoke of the wrong set;
+selection was right throughout. The votes: rtfuse and rtimm 11 of 12 - the freeze stands; **jitret 8, not 11 - its
+freeze rested on the wrong fronts** (it is in every run's fastest tenth by the true front); jitfuse in 12 of seed 72's
+fastest 24, not 3 of 18. One round first: of seed 72's 21,384 measured children, 33% were beaten by 30% in speed by an
+earlier no-larger design within the memory tolerance - none of them on the final front; 46% at 20%, two lost (32-bit).
+Stopping those after one round skips two rounds and the 32-bit evaluation: about a fifth more children an hour at 30%.
+Proposed: jitret out of the freeze; one round first at 30%, audited one in ten.
+
+Files: results/drafts/front-recheck-528.md (new); results/README.md, HANDOFF.md.
