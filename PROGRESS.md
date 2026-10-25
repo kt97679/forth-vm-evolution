@@ -9715,3 +9715,16 @@ claim tested, measured or looked up, the answers ranked, nothing adopted uncheck
 
 Files: prompts/20-ask-other-models.md (new); prompts/INDEX.md, prompts/README.md, prompts/USAGE.md, prompts/UPSTREAM,
 HANDOFF.md.
+
+## Iteration 524 - 2026-10-25 - Claude
+
+**An audit by prompt 20 - three prompts for other models** (the owner: audit the project, ask other models wherever they
+can help; results/drafts/audit-ask-524.md). Every open challenge weighed: three for other models - more from the run's
+budget (the surrogate screen's model and uncertainty, cheaper first looks, adaptive operators, stagnation:
+ask-search-524.md), the CPU state behind the fast end's offset (ask-cpu-state-524.md), and a fresh reading of the
+evolver's evaluation and selection with 359 lines of evolve.py embedded (ask-evolver-review-524.md); the rest answered by
+measurement, tests or the owner. Premises taken from the code and the last runs: 256 children a generation, the screen's
+additive model and margins, getrusage CPU time, pairs with s6, the 0.07% and 1.2% results.
+
+Files: results/drafts/audit-ask-524.md, ask-search-524.md, ask-cpu-state-524.md, ask-evolver-review-524.md (new);
+results/README.md, HANDOFF.md.
