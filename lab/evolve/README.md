@@ -65,6 +65,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `fsys-count.py` - fsys-count.py ID [ID ...] --db FILE [--db FILE] [--levels 4,5] [--works kernel,corpus]
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
+- `genecost.py` - what each gene costs in bytes, switched one at a time on given designs (Iteration 519): the check that would have caught jitexec's 585 KB table (results/drafts/genecost-519.md)
 - `hotsites.py` - hotsites.py ID [--db FILE ...] [--write FILE] - the image's hottest call
 - `gene-equiv.py` - the evolver's genes behave as they did at an earlier commit: ids, expressions, seeded mutations, draws and crossovers (Iteration 276)
 - `gene-table-test.py` - a new gene is one row: a fictional gene works with no code change (Iteration 276)

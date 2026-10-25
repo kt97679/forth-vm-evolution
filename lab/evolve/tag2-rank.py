@@ -32,7 +32,7 @@ for did in ids:
         c = collections.Counter()
         for line in open(pf):
             f = line.split()
-            if f[0] in ('I', 'C'): continue
+            if len(f) < 3 or not f[0].isdigit(): continue      # 519: only the pair lines - the profiler writes I, C, W, T ... too
             a, b, k = int(f[0]), int(f[1]), int(f[2])
             if a == 0x7D: c[128 + b] += k; continue          # an escaped primitive: its selector
             if b < 128 and b != 0x7D: c[b] += k

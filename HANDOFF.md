@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 518.
+- master: Iteration 519.
 - **The runs**: **seed 71 processed (Iteration 516)** - the first with the applications in the selection (a speed break):
   the selection now tracks the applications (Spearman 0.861, was 0.553), the old six kept (0.1193 against 0.1204), 9.5%
   fewer designs an hour; jitmul on 72 of 130 JIT designs, the other JIT genes hardly; **a loophole** - outputs never

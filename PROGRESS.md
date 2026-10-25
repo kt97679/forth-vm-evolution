@@ -9645,3 +9645,16 @@ lab/evolve/ans-check.py, results/README.md, HANDOFF.md.
 quarter of the front's JIT designs at least, most of the fastest tenth's.
 
 Files: lab/evolve/review-checks.py, results/seed63-rules.md, results/predictions.md, HANDOFF.md.
+
+## Iteration 519 - 2026-10-25 - Claude
+
+**Every gene's byte cost checked; the profile tables refreshed and found not to matter** (the owner: both, while seed 72
+runs; results/drafts/genecost-519.md). lab/evolve/genecost.py switches each gene of a design's family in turn and
+compares the engine's and image's bytes: on seed 71's fastest, a mid-front interpreter and its smallest, 92 switches,
+all built - only jitexec out of line (the 585 KB table, fixed after seed 72); the JIT itself about 17 KB, interpreter
+genes at most 3.8 KB, the genes seed 71 voted against cheap. The three profile tables made again from seed 71's front
+(lab/evolve/*-v2.json; tag2-rank.py fixed to skip the profiler's newer lines, and it needs old-format designs): a gene
+choosing them, tried in a clone, bought 0.0% (the ranking) and -0.2% (hotinl's sites) - not made a gene.
+
+Files: lab/evolve/genecost.py, lab/evolve/hotsites-v2.json, hotwords-v2.json, tag2-rank-v2.json,
+results/drafts/genecost-519.md (new); lab/evolve/tag2-rank.py, lab/evolve/README.md, results/README.md, HANDOFF.md.
