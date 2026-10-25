@@ -9899,3 +9899,17 @@ unused genes and paths retired, the article's figures recomputed on the true fro
 seeds 73-74 (the batch, the clock test), 75-76 the new baseline, then the confirmation run.
 
 Files: GOALS.md, HANDOFF.md.
+
+## Iteration 537 - 2026-10-25 - Claude
+
+**Two prompts for other models** (the owner: anything else to ask?; prompt 20). results/drafts/ask-front-stats-537.md:
+comparing fronts across stochastic runs - indicators and tests with two or three runs a method, the stopping rule's
+false-stop and false-continue risks, whether "no re-enabled gene in a top tenth" is a sound confirmation test, choosing
+the final set (extremes and a knee) - with the real figures: the true fronts of seeds 70-72 (212, 313, 246), the spread
+tool's extremes for seeds 68-72, the methods that differ, the memory faults since fixed. results/drafts/
+ask-related-work-537.md: prior work for the article - automatic design-space exploration of interpreters and VMs, the
+techniques combined (superinstructions, stack caching, encodings, copy-and-patch), size-against-speed optimisation, what
+would be new, the venues - references asked with links, to be checked one by one. The first suits a model strong in
+statistics with citations; the second one with research and citations.
+
+Files: results/drafts/ask-front-stats-537.md, results/drafts/ask-related-work-537.md (new); results/README.md, HANDOFF.md.
