@@ -169,6 +169,9 @@ setup.
    and is rewritten, not appended to; a check fails when it is older than the
    last commit that changed the state. Every other document points to it
    rather than restating it - two "where things stand" sections disagree.
+   Keep it a card, with a size you check: every session reads it whole, so
+   history and background move to a reference read on demand, verbatim
+   (forth-vm-evolution: 59 KB, the present 12.5 KB of it; prompt 21).
 
 10. **Make losing work a failing check, not a habit.** Before the bundle,
     fail on: changes not committed; a scratch clone holding changes or

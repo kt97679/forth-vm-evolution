@@ -39,6 +39,7 @@ describe are ones any measurement or write-up project can reproduce.
 | [18-does-it-generalize](18-does-it-generalize.md) | before trusting what a long search found | winners flattered by the benchmarks they were picked on, tuned to one CPU, tested only on programs that fit every cache |
 | [19-address-by-name](19-address-by-name.md) | before a script edits or reads part of a structured document | a numbered item edited in the wrong list, a table row given its neighbour's text, a column read by position |
 | [20-ask-other-models](20-ask-other-models.md) | at every challenge: would another model help? | answers trusted unchecked, or a wrong premise sent - a sound answer to the wrong question |
+| [21-spend-tokens-where-they-buy-results](21-spend-tokens-where-they-buy-results.md) | at a session's start, and at every record, report, input and question | whole files read by every session, facts written four times, dumps pasted where a summary answers |
 
 ## The two that mattered most
 

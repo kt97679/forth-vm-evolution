@@ -38,7 +38,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 542.
+- master: Iteration 543.
 - **Seed 73 is running** on the laptop - 11 hours (the owner), jitexec's first fair run, then review-checks spread and
   the appbench sample. Its processing is next: results/drafts/seed73-checklist-532.md, then "Processing a returned seed".
 - **The after-seed-73 batch**, six patches (results/pending/ORDER.md): adaptive operators, the bug-hunt fixes (the true

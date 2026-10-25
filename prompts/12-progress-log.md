@@ -73,6 +73,12 @@ up with the truth.
    lines of "where things stand" and "next", the newest 166 iterations
    old, beside a handoff file that was current - two presents, one wrong.
 
+7. **Write each fact once, and keep the entry short.** The detail and its
+   evidence live in their own document; the entry says what, the numbers
+   and the files in a few lines, and points there; an index line is one
+   sentence. A fact written in four places costs four times and drifts in
+   three (prompt 21).
+
 ## Artifact required
 
 Before starting: the search you ran and what it found (or "no prior

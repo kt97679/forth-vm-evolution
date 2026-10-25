@@ -62,6 +62,7 @@ artifact, not for a claim:
 | `18` | per round the held-out rank correlation and the flattered designs; per other machine the same binaries' rank correlation; speed against program size |
 | `19` | for each structured edit, the name it was found by, the count showing it occurs once, the changed unit read back with its neighbours |
 | `20` | at each challenge, one line: other models useful or not, and why; when useful, the self-contained prompts; when answered, the verification file - every claim, how it was checked, its verdict |
+| `21` | the size of what a session reads whole, and each cut with its before and after |
 
 If a response says the prompt was considered but shows none of these, the
 prompt was not applied.

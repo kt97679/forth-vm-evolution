@@ -64,6 +64,10 @@ When reading one:
    changed shebang, a forced environment variable, an artificial load.
    If the reproduction gives the reporter's exact numbers, the fix can
    be verified without them.
+10. **A report pasted back has a size budget.** Whoever reads it reads all
+   of it, and every later step reads it again: send the summary and the
+   lines that matter - a `du` table, the failing lines and their
+   neighbours - not the whole listing or log (prompt 21).
 
 ## Artifact required
 

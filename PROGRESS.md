@@ -9988,3 +9988,8 @@ read whole by every new chat) - the rest verbatim in HANDOFF-REFERENCE.md, read 
 each fact once, short replies, summaries not dumps, a new chat after each seed. prompts/20: an answer contract, answers
 pasted one at a time and logged in results/model-usefulness.md (new). Four /tmp scripts behind recorded figures
 committed (results/drafts/front-recheck-528-votes.py, frozen-recheck-534.py, -534-raw.py, hv-ranges-539.py).
+
+## Iteration 543 - 2026-10-25 - Claude
+
+**The token rules into the prompt library** (the owner): prompts/21-spend-tokens-where-they-buy-results.md (new); 07
+item 9, 11 item 10, 12 item 7; INDEX, README, USAGE rows; UPSTREAM lists them for relf.

@@ -39,6 +39,7 @@ fetched lazily when their trigger conditions are met.
 | `18-does-it-generalize` | call the winners of a long search or optimisation better - selected on fixed benchmarks, on one machine | the workloads are the product's own, on the machine it ships on |
 | `19-address-by-name` | edit or read one part of a structured document by script or pattern - a list item, a table row, a column | the document is regenerated from data each time |
 | `20-ask-other-models` | settle a challenge alone that turns on knowledge outside the repository, a fresh reading of code, a field's methods, or a search for prior art - weigh it in one line at every challenge | a measurement, build or test here answers it faster and surer |
+| `21-spend-tokens-where-they-buy-results` | start a session, write a record, report or reply, read a pasted input, or ask other models - in work that runs over many sessions | a one-off question in a fresh session |
 
 ## The one that is hardest to self-apply
 
