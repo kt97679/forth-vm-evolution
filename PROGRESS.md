@@ -9928,3 +9928,20 @@ al. 2009 found by search. Four proposals for the owner: the stopping rule and th
 GOALS.md, the final set's method, a fixed-reference hypervolume tool with bounds fixed before the next run.
 
 Files: results/drafts/ask-front-stats-answers-538.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 539 - 2026-10-25 - Claude
+
+**The four statistics proposals done; the related-work answers checked** (the owner: all four; the other prompt's
+answers). lab/evolve/hv.py: the fixed-reference hypervolume of a run's true front - four objectives (speed and the
+32-bit speed on a log scale), exact by slicing in pure Python, its self-test against Monte Carlo (a single point
+0.0625 exactly; 20 random sets within 0.005) - in the box lab/evolve/hv-bounds.json, fixed now, before seed 74. Seeds
+70-72: 0.445 (212 designs in the box), 0.079 and 0.000 - 71 and 72's memory was the applications' data, outside the
+box: the series starts at seed 73. GOALS.md revised: the stopping rule (at least three runs on an unchanged method;
+effect sizes decided now - hypervolume 1%, speed 2%, size 1%, memory 4 KB, 32-bit speed 2%; no p-values), the
+confirmation run (the hypervolume against the pooled front; each re-enabled gene's enrichment), the final set (extremes,
+then greedy hypervolume contribution). The related-work answers (results/drafts/ask-related-work-answers-539.md): the
+prior art verified, four papers found by search; the claim to make is the integration, not any technique; a fabricated
+origin for copy-and-patch caught; a random-search baseline worth adding to the article.
+
+Files: lab/evolve/hv.py, lab/evolve/hv-bounds.json, results/drafts/ask-related-work-answers-539.md (new); GOALS.md,
+lab/evolve/README.md, results/README.md, HANDOFF.md.

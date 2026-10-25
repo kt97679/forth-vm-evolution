@@ -67,6 +67,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
 - `genecost.py` - what each gene costs in bytes, switched one at a time on given designs (Iteration 519): the check that would have caught jitexec's 585 KB table (results/drafts/genecost-519.md)
+- `hv.py` - the fixed-reference hypervolume of a run's true front (Iteration 539): four objectives in the box hv-bounds.json fixed before seed 74, exact by slicing, pure Python; `--self-test` against Monte Carlo. GOALS.md's stopping rule and confirmation run use it
 - `hotsites.py` - hotsites.py ID [--db FILE ...] [--write FILE] - the image's hottest call
 - `gene-equiv.py` - the evolver's genes behave as they did at an earlier commit: ids, expressions, seeded mutations, draws and crossovers (Iteration 276)
 - `gene-table-test.py` - a new gene is one row: a fictional gene works with no code change (Iteration 276)

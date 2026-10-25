@@ -105,23 +105,31 @@ results/drafts/goals-snapshots.md.)
 
 "Once the improvements are done" (the Tegra session, below) means this - three steps, in order:
 
-1. **The stopping rule.** Two consecutive runs on an unchanged method - the same workloads, selection, operators,
-   gates and hours - each with no gain beyond the replicate spread on any of the three objectives (its smallest
-   binary + image, its fastest speed, its least memory, against the best of the runs before it on that method, the
-   spread being review-checks.py spread's), and no open correctness issue. A run that changes the method restarts the
-   count.
+1. **The stopping rule** (revised at Iteration 539 by results/drafts/ask-front-stats-answers-538.md). Judged on each
+   run's true front by **its fixed-reference hypervolume** - lab/evolve/hv.py, in the box lab/evolve/hv-bounds.json
+   fixed before seed 74 (speed and the 32-bit speed on a log scale): one number a run, comparable from run to run
+   because the box never moves. With two or three runs no significance test can decide anything (the smallest two-sided
+   p of a rank test is 0.100 for three runs against three), so the rule uses **effect sizes decided now**: a run gains
+   when its hypervolume beats the best earlier run's on the method by 1% or more, or an extreme does by its threshold -
+   speed 2%, binary + image 1%, memory 4 KB, the 32-bit speed 2%. **Stop when, after at least three runs on an
+   unchanged method** (the same workloads, selection, operators, gates, hours and box), **the last two runs gain
+   nothing**, with no open correctness issue. A method change restarts the count. Report each run's values and the
+   spread; no p-values. The series starts at seed 73, the first run with memory measured right since 70.
 2. **The confirmation run.** One run of the same method and hours **from the final front** - without `noevolved`, the
    earlier runs' true fronts among the founders - with **every frozen gene that still has code re-enabled**
    (alignhot, msc, scale, sharedcall; the frozen-at-1 genes - bytehdr, doesfar, thinhdr, varcall, bss, lean - free to
    take 0). The retired genes (tail, tailpn, kstack, jithelp, jitre, nocase: their code removed) stay retired unless
-   this run shows their region matters. Judged on the true front: **confirmed** when no re-enabled gene is in its
-   fastest, smallest or best-Q tenth and the front is no better than the replicate spread; a re-enabled gene that
-   earns a place has its freeze revisited before anything is called final. Not "the same designs" - a random search
-   never repeats them - but the same quality, and no frozen gene worth having.
-3. **Then the designs are frozen** - a final set (the smallest, the fastest, the best-Q knee) - and consolidation:
-   each re-measured alone and under load on the laptop, dream and the Tegra; the genes and code paths no final design
-   uses retired (the aim: simplicity); every figure the article quotes recomputed from the runs' records on the true
-   fronts (results/drafts/front-recheck-528.md: until Iteration 532 the reported fronts were mostly not the true ones).
+   this run shows their region matters. **Confirmed** when its true front's hypervolume is not 1% above the pooled true
+   front of the method's last runs (the same box) and no extreme gains by its threshold. Each re-enabled gene screened by
+   its enrichment - its share of the run's true front over its share of the children that could carry it: a gene well
+   above 1 has its freeze revisited before anything is called final. (The top tenths only as a first look: a gene can
+   matter inside the front without reaching one.) Not "the same designs" - a random search never repeats them.
+3. **Then the designs are frozen** - **the final set**: the extremes, each re-measured, then designs added one at a
+   time by their contribution to the hypervolume in the same box, after merging designs within the tolerances, to five
+   or ten; a knee as a candidate, not an oracle (four objectives may have several or none). Consolidation: each
+   re-measured alone and under load on the laptop, dream and the Tegra; the genes and code paths no final design uses
+   retired (the aim: simplicity); every figure the article quotes recomputed from the runs' records on the true fronts
+   (results/drafts/front-recheck-528.md: until Iteration 532 the reported fronts were mostly not the true ones).
 
 ## Later - the owner's plans
 

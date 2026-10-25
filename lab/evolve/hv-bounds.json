@@ -1,0 +1,19 @@
+{
+ "_": "Iteration 539, fixed before seed 74 (GOALS.md: When the improvements are done). The box the hypervolume is measured in: speed and speed32 as ratios to hand-made s6 on a log scale, total in bytes and rss in KB linearly; [low, high] each, minimised; the reference point their highs. Chosen from seeds 70-72's true fronts (speed 0.12-2.1, total 14,079-42,860, memory 112-224 KB where measured right) with room on both sides. Never changed after the fact: a new box is a new series.",
+ "speed": [
+  0.08,
+  3.0
+ ],
+ "total": [
+  12000,
+  64000
+ ],
+ "rss": [
+  64,
+  320
+ ],
+ "speed32": [
+  0.08,
+  3.0
+ ]
+}
