@@ -57,6 +57,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `compare-fronts.py` - compare-fronts.py DB [DB ...] [--rounds N] [--cpus A,B] - the fronts of; Iteration 352: --widths 8,4 - and each design's interpreter at 4-byte cells (eval32), a section "At 32 bits": each run's fastest there against the others'
 - `counters-test.py` - counters.py leaves kernel.perf_event_paranoid as it found it, however the run ends: eight cases, a stand-in sudo; as root on a scratch machine (Iteration 279)
 - `counters.py` - where the cycles go: hardware counters (perf) for the newest front's designs on the selection workloads - the laptop's (Iteration 278)
+- `clockcheck.py` - the clock test (Iteration 527, the owner): the fast end paired with s6 alone, beside benchmark co-runners and beside compile co-runners, each run's CPU time and cycles and the core's clock - is the fast end's offset the clock? A chain step from seed 74
 - `contention.py` - the fastest of a run's front measured as the run measures them (paired with s6), alone and beside co-running workers (Iteration 514): does contention account for the fast end's 7-10% (rule 3)? A chain step from seed 72
 - `cpu-noise.py` - cpu-noise.py [--rounds N] [--cpus A,B] [--ids ID,...] [--work W,...] DB [DB ...]
 - `engines-check.py` - (Iteration 501: the JIT kept at 32 bits, and tests/jit/jit-diff.fth on every JIT variant against s6 at the same width) engines-check.py - an engine down every generator's path builds, and runs

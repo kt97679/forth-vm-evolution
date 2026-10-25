@@ -1,0 +1,79 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 160f0db..c687111 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1210,6 +1210,7 @@ def run_metric(eng, img, pw, w, single=False):
+     OUT_LAST[0] = hashlib.sha1(re.sub(rb'(?m)^Redefining:[^\n]*\n', b'', r.stdout.replace(b'\r', b''))).hexdigest()
+     # Iteration 516: what it printed - measure() compares it with s6's; a family's kernel differs in its words, so
+     # 'Redefining: X' differs with it (cell designs have no LIT, or CALL, for sim16 to redefine) - not the output
++    if not m: raise RuntimeError('died: no measurement (exit %s)' % r.returncode)   # 527: not an AttributeError that ends the run
+     return int(m.group(1))
+ RSS_LAST, LAST_RSS = [0], {}     # the last run's memory (KB); the last measure()'s design, per workload: the median
+ OUT_LAST = ['']                  # Iteration 516: the last run's output, hashed
+@@ -1566,24 +1567,30 @@ def fronts(ids, R):
+ def first_front(ids, R):
+     """fronts(ids, R)[0] - the same designs, in the same order - without
+     comparing every pair (Iteration 99: a 12-hour run makes ~90,000 designs,
+-    and fronts() over all of them would take hours). Sorted by speed, a
+-    design is dominated by one strictly faster with no more total and memory
+-    within MEM_TOL - so, per memory value, the least total seen among the
+-    faster ones decides it - or by one as fast, no worse in both and better
+-    in one: checked within its speed. Linear in the designs, times the few
+-    memory values (pages: ~10)."""
+-    pts = sorted(((ov(R[i], 'speed'), ov(R[i], 'total'), ov(R[i], 'rss'), i) for i in ids), key=lambda p: p[0])
+-    mems = sorted(set(p[2] for p in pts)); least = {m: math.inf for m in mems}; out = set(); k = 0
+-    while k < len(pts):
+-        j = k
+-        while j < len(pts) and pts[j][0] == pts[k][0]: j += 1
+-        grp = pts[k:j]
+-        for s, t, m, i in grp:
+-            dom = any(least[mv] <= t for mv in mems if mv <= m + MEM_TOL)
+-            dom = dom or any(i2 != i and t2 <= t and m2 <= m + MEM_TOL and (t2 < t or m2 < m - MEM_TOL) for s2, t2, m2, i2 in grp)
+-            if not dom: out.add(i)
+-        for s, t, m, i in grp: least[m] = min(least[m], t)
+-        k = j
++    and fronts() over all of them would take hours). Iteration 527 (the bug
++    hunt of 524): by dominates() itself - its 2% in speed, MEM_TOL in memory
++    and, with two widths, the 32-bit speed. The staircase before it called a
++    design dominated by any faster one with no more total and memory: a design
++    within 2% of a faster one was dropped, and with two widths the 32-bit speed
++    was not looked at - on random populations of 25 it differed from fronts()[0]
++    176 times in 200. Now: by total, then speed, an archive of the designs
++    nothing seen dominates - a new one is checked against the archive, and
++    drops the members it dominates; then each member checked against every design
++    of no more total, since with tolerances dominance need not be transitive. The
++    designs times the archive (the front: a few hundred) - seconds."""
++    arch = []
++    for i in sorted(ids, key=lambda i: (ov(R[i], 'total'), ov(R[i], 'speed'))):
++        r = R[i]
++        if any(dominates(R[a], r) for a in arch): continue
++        arch = [a for a in arch if not dominates(r, R[a])]
++        arch.append(i)
++    # with tolerances a design the archive kept can still be dominated by one it dropped: each member checked
++    # against every design of no more total - the archive times the designs, seconds for a long run
++    by_t = sorted(ids, key=lambda i: ov(R[i], 'total')); tots = [ov(R[i], 'total') for i in by_t]
++    out = set()
++    for b in arch:
++        k = bisect.bisect_right(tots, ov(R[b], 'total'))
++        if not any(a != b and dominates(R[a], R[b]) for a in by_t[:k]): out.add(b)
+     return [i for i in ids if i in out]
+ 
+ def crowding(front, R):
+@@ -2140,7 +2147,7 @@ def main(argv):
+                 for i, (g, parents, how, gen) in items:
+                     ps, pt = screen_predict(SCR['model'], canon(g))
+                     if gen >= SCREEN_FROM and screen_beaten(stair, ps, pt):
+-                        if int(i, 16) % SCREEN_AUDIT == 0:
++                        if SCREEN_AUDIT and int(i, 16) % SCREEN_AUDIT == 0:   # 527: EVOLVE_SCREEN_AUDIT=0 - none audited, not a ZeroDivisionError
+                             n_aud += 1; keep.append((i, (g, parents, how + '; screened, audited', gen))); continue
+                         n_scr += 1
+                         rec = {'status': 'screened', 'pred': [round(ps, 4), round(pt)], 'secs': 0,
+@@ -2164,6 +2171,8 @@ def main(argv):
+                 r['t'] = t = {w: math.sqrt(t1[w] * rec2['t'][w]) for w in t1 if w in rec2['t']}
+                 r['raw'] = {w: math.sqrt(raw1[w] * rec2['raw'][w]) for w in raw1 if w in rec2.get('raw', {})}
+                 r['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
++            elif rec2.get('status') != 'ok':   # 527 (the bug hunt): a failed second run kills - not its first reading kept
++                r['status'] = rec2.get('status') or 'died: measured again'
+             r['gated'] = 2; save(r)
+             print('    %s measured again: %.4g, then %s - %s' % (i, r.get('speed1', r['speed']), ('%.4g' % r['speed2']) if 'speed2' in r else rec2.get('status'), ('speed %.4g' % r['speed'])), flush=True)
+         for (i, (g, parents, how, gen)), rec in zip(items, results[:len(items)]):

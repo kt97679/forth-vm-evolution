@@ -9757,3 +9757,22 @@ co-runners, compile co-runners - with cycles and frequencies recorded.
 
 Files: results/pending/aos-after-seed73.patch, results/drafts/ask-cpu-state-answers-526.md (new);
 results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+
+## Iteration 527 - 2026-10-25 - Claude
+
+**The evolver bug hunt's answers checked - two real bugs fixed; the clock test written** (the owner: agreed to the clock
+test; the last prompt's answers; results/drafts/ask-evolver-review-answers-527.md). first_front - every report, the gate,
+the re-measure, the appbench sample - ignored the 2% speed band and the 32-bit speed: on random populations it differed
+from fronts()[0] 176 times in 200, and seed 72's front is 246 designs, not the 185 reported; now an archive by
+dominates() checked against every design of no more total - 0 in 400, 7 s for 21,557 designs. Selection used fronts()
+all along. A gated design whose second run failed kept its first reading - now it dies. Hardened: a missing measurement
+line ends one design, not the run; an audit rate of 0 no longer divides by zero. The after-seed-73 batch's third patch;
+the three apply in order. Wrong or harmless: the fast gate's direction, the set comparison (s6 is deterministic), the CR
+order, screened generations, shared globals. lab/evolve/clockcheck.py: the fast end paired with s6 alone, beside
+benchmark co-runners and beside compile co-runners (building front designs, as workers do), six blocks there and back,
+each run's CPU time and cycles and the core's clock; tried here on one design (cycles unreadable in this container) - it
+runs and leaves nothing behind. NEXT-RUN: seed 74's line ends with it.
+
+Files: lab/evolve/clockcheck.py, results/pending/bughunt-evolver-after-seed73.patch,
+results/drafts/ask-evolver-review-answers-527.md (new); results/pending/ORDER.md, lab/evolve/NEXT-RUN,
+lab/evolve/README.md, results/predictions.md, results/README.md, HANDOFF.md.

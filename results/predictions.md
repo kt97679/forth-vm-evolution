@@ -968,3 +968,9 @@ In seed 73: jitexec on at least a quarter of the front's JIT designs and on most
 With the operators' chances following their children's front yield (the after-seed-73 batch): in seed 74, crossover's
 share of the children below 20% (seed 72: 36.6%), and the front entries per child over the run at least a fifth above
 seed 72's (185 front designs of 26,100 children: 0.71%).
+
+## The fronts the reports show, from seed 74 - predicted (Iteration 527)
+
+With first_front following dominates() (the after-seed-73 batch): seed 74's reported front at least a quarter larger than
+its fronts by the old staircase would have been - checked by running the old rule on its records (seed 72: 246 against
+185).

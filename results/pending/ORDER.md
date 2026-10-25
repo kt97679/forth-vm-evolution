@@ -4,6 +4,7 @@ Prepared while seed 73 runs; master stays what seed 73's bundle tests.
 
     git apply results/pending/freeze-rt-jitret-after-seed73.patch
     git apply results/pending/aos-after-seed73.patch
+    git apply results/pending/bughunt-evolver-after-seed73.patch
 
 **freeze-rt-jitret-after-seed73.patch** (lab/evolve/evolve.py) - **the owner froze rtfuse, rtimm and jitret** (521), the
 gene votes' candidates over seeds 70-72: rtfuse and rtimm 12 of 12 removal votes, jitret 11 of 12 - each under a tenth of
@@ -19,5 +20,13 @@ crossover's chance and borrowing's follow the yields with a floor of 0.1 a class
 about 0.15 instead of 0.25, borrowing about 0.42 instead of 0.15). Deterministic from the records; EVOLVE_AOS=0 the
 fixed chances; a line a generation says them. Tried: four generations of 32 - the chances computed from generation
 3 and applied (0.28 and 0.38, then 0.37 and 0.26), the run whole.
+
+**bughunt-evolver-after-seed73.patch** (lab/evolve/evolve.py, 527) - **from the evolver's bug hunt**
+(results/drafts/ask-evolver-review-answers-527.md): first_front, which every report, the gate, the re-measure and
+the appbench sample use, now follows dominates() - the old staircase ignored the 2% in speed and the 32-bit speed:
+on random populations it differed from fronts()[0] 176 times in 200, now never in 400; seed 72's front is 246
+designs, not the 185 reported (7 s for 21,557 designs). Selection always used fronts() and is unchanged. A gated
+design whose second run fails now dies with that failure instead of keeping its first reading; a run with no
+measurement is a death, not an exception that ends the run; EVOLVE_SCREEN_AUDIT=0 no longer divides by zero.
 
 **At seed 73's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

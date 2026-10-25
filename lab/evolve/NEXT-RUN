@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 527 (the owner): seed 74's line ends with the clock test - ... then experiment clockcheck.py --sample 8
+# (its cycles need perf-hold-start.sh run first, as for the counters step; without them the time alone)
 # Iteration 520 (seed 72 processed): seed 73, 11 hours (the owner); the after-seed-72 batch applied - jitexec's table
 # fixed (its first fair run); the contention experiment done (not the cause), so not carried.
 # Iteration 516 (seed 71 processed): seed 72, 9 hours (the owner); the after-seed-71 batch applied - jitfuse enabled, the
