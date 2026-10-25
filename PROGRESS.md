@@ -9728,3 +9728,17 @@ additive model and margins, getrusage CPU time, pairs with s6, the 0.07% and 1.2
 
 Files: results/drafts/audit-ask-524.md, ask-search-524.md, ask-cpu-state-524.md, ask-evolver-review-524.md (new);
 results/README.md, HANDOFF.md.
+
+## Iteration 525 - 2026-10-25 - Claude
+
+**The search prompt's answers checked against our data** (the owner brought five; results/drafts/ask-search-answers-525.md).
+Their shared premise - the fixed-margin screen wrongly rejects good children - is wrong for us: of seed 72's 502 audited
+rejects none reached the front and none of 200 checked would have been non-dominated in its generation; the room is to
+screen more. A single workload cannot screen (Spearman with the seven's mean 0.41-0.65 in the fastest tenth). One round
+strays from three's median by 1.0% on average, at most 7.4% here - an early abort needs ~10%. The operator yield, from
+the run's own counts: front entries per child - mutation 1.11%, borrowing 0.71%, crossover 0.14%. Proposed: adaptive
+operator selection, a bootstrap-ensemble screen on the probability of being dominated, one round first for clearly
+dominated children; deferred: other models, NSGA-III, MAP-Elites, linkage. Answers ranked (1 best; 5's references and
+"pure Python" scikit-learn wrong); Thierens 2005 checked by search.
+
+Files: results/drafts/ask-search-answers-525.md (new); results/README.md, HANDOFF.md.
