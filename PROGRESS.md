@@ -9702,3 +9702,16 @@ Same-size engines differ in flags and tables. A smaller idea left unmeasured: th
 flag combination.
 
 Files: results/drafts/engine-cache-522.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 523 - 2026-10-25 - Claude
+
+**Prompt 20: ask other models when they can help, then check every word** (the owner: capture in the prompts library
+that we use other models' help when it is useful, and weigh every challenge for it; prompts/20-ask-other-models.md). At
+every challenge one line: would another model help - knowledge outside the repository, a fresh reading of code, a
+field's methods, a search - or does a measurement here answer it faster? When they would: one self-contained prompt per
+question, its premises checked against the repository first, checkable answers asked for; when the answers return, every
+claim tested, measured or looked up, the answers ranked, nothing adopted unchecked. Its why: this project's four rounds
+(479-515), the noise prompt's two wrong premises among them. INDEX, README, USAGE rows; UPSTREAM noted for relf.
+
+Files: prompts/20-ask-other-models.md (new); prompts/INDEX.md, prompts/README.md, prompts/USAGE.md, prompts/UPSTREAM,
+HANDOFF.md.

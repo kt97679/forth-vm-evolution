@@ -38,6 +38,7 @@ describe are ones any measurement or write-up project can reproduce.
 | [17-variants-as-data](17-variants-as-data.md) | before adding a third variant by hand | every new variant touching many places, copies drifting apart
 | [18-does-it-generalize](18-does-it-generalize.md) | before trusting what a long search found | winners flattered by the benchmarks they were picked on, tuned to one CPU, tested only on programs that fit every cache |
 | [19-address-by-name](19-address-by-name.md) | before a script edits or reads part of a structured document | a numbered item edited in the wrong list, a table row given its neighbour's text, a column read by position |
+| [20-ask-other-models](20-ask-other-models.md) | at every challenge: would another model help? | answers trusted unchecked, or a wrong premise sent - a sound answer to the wrong question |
 
 ## The two that mattered most
 
