@@ -1,5 +1,0 @@
-== run-tests
-exit 0: PASS - no regressions
-  generators   ok     21 paths, each built and its corpus right
-== validate
-7

@@ -1,8 +1,0 @@
-== reseed
-exit 0: 4-byte kernel: identical from old and new seed (15212 bytes)
-== build
-exit 0: build complete: /tmp/b45/build
-== sizes
-add5ec8937 7680 8752
-d3149e10c6 10088 8601
-cc6d168e0a 23900 10830

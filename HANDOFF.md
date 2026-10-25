@@ -48,7 +48,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 540.
+- master: Iteration 541.
 - **The runs**: **seed 72 processed (Iteration 520)** - the output check at work (31 cpt16 designs refused); jitfuse on
   29 of 115 JIT designs, 3 of the fastest tenth (its prediction fails); **contention ruled out** - the fast end alone and
   beside co-runners differ 1.2%, both ~7% slower than in the run: the offset lies between the run and after it; **the
@@ -601,7 +601,8 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 Every document: README.md's "Documents" section. Every measurement, analysis
 and per-run record: results/README.md. Every tool of the evolver:
 lab/evolve/README.md's "Tools". The prompts: prompts/INDEX.md. The leftovers of
-the chats of Iterations 213-265: results/drafts/chat-to-iter265/README.md.
+the chats of Iterations 213-265: results/drafts/chat-to-iter265/README.md (left the tree at Iteration 541 -
+`git show cb05abe20:results/drafts/chat-to-iter265/README.md`).
 GOALS.md before Iteration 275: results/drafts/goals-snapshots.md.
 
 ## Before a chat's turn ends - every turn that changed the repository

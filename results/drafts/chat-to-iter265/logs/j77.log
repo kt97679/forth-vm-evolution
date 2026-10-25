@@ -1,9 +1,0 @@
-== run-tests
-exit 0: PASS - no regressions
-  generators   ok     29 paths, each built and its corpus right
-== validate
-7
-== ans
-| cl3456ac1e | 0 | 14 of 14 | - |
-| cl3bb2087f | 1 | 14 of 14 | - |
-0 of 2 designs differ from s6 somewhere.

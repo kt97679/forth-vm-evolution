@@ -157,7 +157,8 @@ results/drafts/goals-snapshots.md.)
 ## Rejected or deferred - look here first
 
 The scratch trees of the chats of Iterations 213-265 hold no prototype of any of
-these (results/drafts/chat-to-iter265/trees/SORTED.md, read in Iteration 277).
+these (results/drafts/chat-to-iter265/trees/SORTED.md, read in Iteration 277; the directory left the tree at Iteration 541 -
+`git show cb05abe20:results/drafts/chat-to-iter265/trees/SORTED.md`).
 
 | approach | what decided it | where |
 |---|---|---|

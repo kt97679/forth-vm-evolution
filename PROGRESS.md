@@ -9956,3 +9956,27 @@ method's runs, let the article say what the evolutionary search contributed beyo
 as values, one run. A random mode in evolve.py to be written when consolidation starts.
 
 Files: GOALS.md, HANDOFF.md.
+
+## Iteration 541 - 2026-10-25 - Claude
+
+**The cleanup** (the owner: the repository holds a lot of old data; yes, proceed). The git history is small (8.6 MB
+packed); the bulk is the laptop's runs/, which git ignores: about 1 GB, of it ~400 MB copies - a repo.bundle in every
+chain directory (~180 MB), the remotes' bins.tar.gz (~25 MB), chain tarballs that copy their chain directories (~195
+MB) - while clean-runs.sh never looked inside a chain. Three changes:
+(1) tools/clean-runs.sh: in every finished chain (status not running or stopping) the copies sent to the remotes go -
+remote/repo.bundle and remote/*/bins.tar.gz; chain tarballs past the newest KEEP_CHAINS (2) go; run directories whose
+pack is in a chain's packs/ go; and never a seed pack - the old pack limit (newest 8 tarballs) would have removed seed
+packs from the top of runs/ after a run outside a chain - with a guard that keeps one, or a directory holding one, and
+reports a bug; the dry run gives each size and the total. tools/test-clean-runs.sh: 12 checks on a made-up runs
+directory, run by tools/run-tests.sh; the tool as it was fails 8 of them.
+(2) lab/evolve/chainctl.py: the chain archive leaves out repo.bundle and bins.tar.gz - 9.7 of seed 61's 22.9 MB; the
+seed pack and the remotes' results stay. From the next archive packed with this code.
+(3) results/drafts/chat-to-iter265 (3.4 MB, the chats' leftovers, reviewed at 277) left the tree; its four references
+point to `git show cb05abe20:...`. results/wip-regmachine stays - it is the parked register machine (HANDOFF), not
+abandoned work as I described it to the owner; and the per-run reports, compare-fronts and PROGRESS stay: records, the
+reports the only ones outside the history for seeds before 53.
+On the laptop: `sh tools/clean-runs.sh --dry-run` lists what goes before next-run.sh does it at seed 74's start.
+
+Files: tools/clean-runs.sh, tools/run-tests.sh, lab/evolve/chainctl.py, GOALS.md, HANDOFF.md, results/README.md,
+results/drafts/factor-plan.md, lab/evolve/README.md; tools/test-clean-runs.sh (new); results/drafts/chat-to-iter265/
+(removed).

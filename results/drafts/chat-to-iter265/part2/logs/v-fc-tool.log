@@ -1,4 +1,0 @@
-pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
-## be1620e346 (kinput=1, kfast=0, jit=0, escape=0)
-  kernel:
-    fsys 5:   6,603,379 dispatches, I/O words  1,423,399; system calls    135 (read 73, lseek 4, write 15, mmap 13); stdout 1361 bytes

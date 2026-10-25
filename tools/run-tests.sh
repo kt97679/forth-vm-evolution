@@ -538,5 +538,13 @@ for w in 64 32; do
         rm -f "$t"
     done
 done
+
+# The runs directory's tidying (Iteration 541): the copies sent to the remotes go from finished chains only, chain
+# tarballs past the newest two go - and no seed pack, the runs' records, ever goes. A made-up runs directory; the
+# tool as it was failed 8 of the 12 checks, among them two that would have lost seed packs.
+echo
+echo "the runs directory's tidying (tools/test-clean-runs.sh):"
+if out=$(sh "$ROOT/tools/test-clean-runs.sh" 2>&1); then printf '  %-12s ok     %s\n' clean-runs "$(printf '%s' "$out" | tail -1)"
+else printf '  %-12s FAIL   %s\n' clean-runs "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; rc=1; fi
 [ $rc -eq 0 ] && echo "PASS - no regressions" || echo "FAIL - see above"
 exit $rc

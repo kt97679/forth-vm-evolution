@@ -1,5 +1,0 @@
-pinned to cpu 0 (it and its sibling 1% busy; BENCH_CPU=N to choose)
-add5ec8937 (/home/claude/forth-vm-evolution): fib 112, loop 112, corpus 140, kernel 172, bubble 120, ackermann 116 KB
-d3149e10c6 (/home/claude/forth-vm-evolution): fib 144, loop 140, corpus 168, kernel 196, bubble 148, ackermann 140 KB
-cc6d168e0a (/home/claude/forth-vm-evolution): fib 148, loop 152, corpus 212, kernel 216, bubble 156, ackermann 152 KB
-fc09f6373d (/home/claude/forth-vm-evolution): fib 120, loop 120, corpus 172, kernel 180, bubble 136, ackermann 128 KB

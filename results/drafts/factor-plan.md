@@ -72,6 +72,7 @@ Where the build parted from this plan, and why:
   against 127): not explained yet; image bytes are what is measured.
 - /tmp/factor.py (step 2 above) was not kept, but that chat's machine still
   held it: recovered as found in Iteration 273 -
-  results/drafts/chat-to-iter265/scripts/factor.py (254's exact-bytes version),
+  results/drafts/chat-to-iter265/scripts/factor.py (254's exact-bytes version; left the tree at Iteration 541 -
+  `git show cb05abe20:results/drafts/chat-to-iter265/scripts/factor.py`),
   factor0.py and factor1.py (263's 154 and 359). The pass in tools/layout.py is
   the method now; lab/evolve/factor-price.py measures it on a design.

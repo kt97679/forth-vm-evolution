@@ -1,7 +1,0 @@
-== gate at fsys 5
-pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
-be1620e346 fsys 5: alive (corpus as the cell engine, kernel.img identical, far)
-a0c7010722 fsys 5: alive (corpus as the cell engine, kernel.img identical, far)
-9a3de58ebe fsys 5: alive (corpus as the cell engine, kernel.img identical, far)
-28677d13b1 fsys 5: alive (corpus as the cell engine, kernel.img identical, far)
-exit 0 94 s

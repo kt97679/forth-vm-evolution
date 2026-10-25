@@ -1,7 +1,0 @@
-HEAD c0bf29d Iteration 248: seed 46 processed (not small, hypervolume +6.4%; every tail design died - the dispatch offsets broke gen-tail, fixed); the after-seed-46 batch applied (primfirst, nobit7, jittail, tailfix; reseeded); seed 47 for 6 hours
-cloned at c0bf29d472e0
-0 commits past the clone point
-
-git status --short:
- M lab/evolve/evolve.py
-?? lab/evolve/engines-check.py

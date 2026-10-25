@@ -246,7 +246,7 @@ first explanation had blamed the clock; this one's were written by it.
 ## Drafts - designs, plans, negative results and archives (`drafts/`)
 
 - `drafts/callrel.md` - The gene callrel - a draft, not in the batch (Iteration 164).
-- `drafts/chat-to-iter265/README.md` - The leftovers of the chats of Iterations 213-265, as found.
+The leftovers of the chats of Iterations 213-265 (drafts/chat-to-iter265/, 3.4 MB as found) left the tree at Iteration 541; they are in the history: `git show cb05abe20:results/drafts/chat-to-iter265/README.md`.
 - `drafts/crossfast.md` - The cross-compiler's byte loops - a fast path, proposed (Iteration 255).
 - `drafts/factor-plan.md` - The gene factor - repeated code moved into headerless shared bodies (plan, Iteration 264).
 - `drafts/fsys/README.md` - fsys - the file and memory words in Forth over SYSCALL (Iteration 202, in progress).

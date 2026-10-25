@@ -1,7 +1,0 @@
-applied rebind
-applied fsys5
-applied guard
-applied fsys5fast
-build exit 0
-run-tests exit 0: PASS - no regressions
-validate exit 0: 7 IDENTICAL

@@ -34,7 +34,7 @@ next-run.sh itself uses:
                                         .partial files removed; root-owned files in REPO
                                         listed (exit 3), for next-run.sh to give back
 """
-import os, signal, socket, subprocess, sys, tarfile, time
+import fnmatch, os, signal, socket, subprocess, sys, tarfile, time
 
 STEP_PREFIX = 'next-run: '
 
@@ -181,8 +181,20 @@ def remote(cmd, chain, nowait=False):
         subprocess.run(['sh', REMOTE, cmd, chain] + (['nowait'] if nowait else []))
 
 
+# What the archive leaves out (Iteration 541): the copies sent to the remotes - the repository bundle and the prebuilt
+# binaries - nine or ten MB of a 23 MB archive, none of it a record: the repository is the repository, a build remakes
+# the binaries. tools/clean-runs.sh removes them from a finished chain's directory.
+NOT_PACKED = ('remote/repo.bundle', 'remote/*/bins.tar.gz')
+
+
+def packed(info):
+    """tarfile's filter for the archive: None for a copy sent to the remotes, the entry otherwise."""
+    rel = info.name.split('/', 1)[1] if '/' in info.name else ''
+    return None if any(fnmatch.fnmatch(rel, p) for p in NOT_PACKED) else info
+
+
 def pack(chain, status):
-    """The one archive: everything in the chain directory, whatever happened."""
+    """The one archive: everything in the chain directory, whatever happened - but the copies sent to the remotes."""
     runs = os.path.dirname(chain)
     remote('gather', chain, nowait=status in ('stopped', 'interrupted'))
     head = read(chain, 'head') or 'unknown'
@@ -195,7 +207,7 @@ def pack(chain, status):
     with tarfile.open(part, 'w:gz') as t:
         for n in sorted(os.listdir(chain)):
             if n.endswith('.new'): continue
-            t.add(os.path.join(chain, n), arcname=os.path.join(os.path.basename(chain), n))
+            t.add(os.path.join(chain, n), arcname=os.path.join(os.path.basename(chain), n), filter=packed)
     os.replace(part, final)
     write(chain, 'archive', final)
     return final

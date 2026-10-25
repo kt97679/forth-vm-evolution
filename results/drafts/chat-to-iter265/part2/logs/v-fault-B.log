@@ -1,8 +1,0 @@
-pinned to cpu 0 (it and its sibling 0% busy; BENCH_CPU=N to choose)
-## be1620e346 - native: status 0, 19045 bytes, 316 lines
-- fsys 3: as native
-- fsys 4: as native
-- fsys 5: DIFFERS (status 0) - line 9: native b'0 -1 4 |beta|\r', fsys 5 b'0 -1 0 ||\r'
-- WRITE-LINE after a line (R/W): WRONG at fsys 5: b'firstXX\ncond line\nthird\n'; native elsewhere (its read-ahead not given back): b'first\nsecond line\nthird\nXX\n'
-
-FAIL - 2
