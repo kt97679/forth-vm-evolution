@@ -1309,7 +1309,9 @@ def evaluate(g, rounds, keep=False, gate=None, again=False):
         rec['t'] = t; rec['raw'] = raw
         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
         rec['etext'] = text_size(eng)                              # Iteration 73: tracked, not scored
-        rec['rss'] = max(LAST_RSS.values()) if LAST_RSS else None   # KB, the most any workload touched (its median): an objective
+        # Iteration 520: not the applications' - their data (gc16's 320 KB of cells) set every design's memory from seed 71
+        # (460-500 KB, the six's 108-136): the objective measured the programs, not the machine. The rest as before.
+        rec['rss'] = max([v for w_, v in LAST_RSS.items() if w_ != 'apps'] or list(LAST_RSS.values())) if LAST_RSS else None   # KB: an objective
         rec['mem'] = dict(LAST_RSS)
         rec['unit'] = UNIT
         if gate and rec['speed'] < gate:   # Iteration 391: under the fast gate, measured again; Iteration 446

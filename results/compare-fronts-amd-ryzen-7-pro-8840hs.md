@@ -32041,3 +32041,16 @@ Seed 71's speed is over seven workloads, the others' over six: its fastest, best
 | archived-20261023-145435/build/evolve/db.jsonl | 109 | 22167 | 328 | 0.1298 | 14,207 | 108 | 7.098e+05 | 0.8218 | 0.3413 |
 | archived-20261024-045036/build/evolve/db.jsonl | 109 | 20633 | 324 | 0.1274 | 14,199 | 108 | 7.314e+05 | 0.8253 | 0.3309 |
 | archived-20261024-171649/build/evolve/db.jsonl | 109 | 22595 | 310 | 0.1259 | 14,143 | 108 | 6.8053e+05 | 0.8279 | 0.1335 |
+
+## Session 59 - Iteration 520: seed 72 and seeds 67-71 (the chain's spread, at generation 102 or the last)
+
+Seed 72 and seed 71 measure speed over seven workloads; the others over six (marked by the spread itself): sizes compare across all, speed between 72 and 71 only. The first row is seed 72.
+
+**Not like the first run** (marked ≠): speed over 7 workloads (ackermann, apps, bubble, corpus, fib, kernel, loop), the gate's readings joined by mean - against it, the marked runs' fastest, best Q, hypervolume and 32-bit speed do not compare; their size and memory do.
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 102 | 21557 | 324 | 0.1485 | 14,079 | 460 | 3.1548e+06 | 0.1880 | 0.1828 |
+| ≠ archived-20261023-145435/build/evolve/db.jsonl (6 workloads, mean) | 102 | 20773 | 327 | 0.1300 | 14,207 | 108 | 7.098e+05 | 0.8370 | 0.3413 |
+| ≠ archived-20261024-045036/build/evolve/db.jsonl (6 workloads, mean) | 102 | 19372 | 310 | 0.1274 | 14,199 | 108 | 7.314e+05 | 0.8395 | 0.3612 |
+| ≠ archived-20261024-171649/build/evolve/db.jsonl (6 workloads, mean) | 102 | 21293 | 302 | 0.1267 | 14,143 | 108 | 6.8053e+05 | 0.8419 | 0.1335 |
+| archived-20261025-055619/build/evolve/db.jsonl | 102 | 18701 | 362 | 0.1452 | 14,210 | 136 | 2.8024e+06 | 0.3790 | 0.1612 |

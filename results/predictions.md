@@ -952,6 +952,10 @@ jitfuse enabled from seed 72 (the after-seed-71 batch), paid for by the selectio
 gain most). In seed 72: on at least half of the front's JIT designs, and on most of its fastest tenth's - about 4% of
 speed for about 2% of bytes is a trade the fast end takes, while the small end, where bytes weigh most, leaves it off.
 
+**Scored at seed 72 (Iteration 520): fails.** jitfuse on 29 of the front's 115 JIT designs (a quarter, not half) and
+3 of its fastest tenth's 18 (not most). Its gain (-3.8% to -4.6% of instructions at 507-509) is real but the fast end
+took it rarely - bytes, or the JIT designs' other genes doing the same work (folds, supers).
+
 ## jitexec fairly weighed, in seed 73 - predicted (Iteration 518)
 
 The after-seed-72 batch fixes jitexec's 585 KB JIT table (results/drafts/jit-genes-517.md): 2,752 bytes for -13.7% of

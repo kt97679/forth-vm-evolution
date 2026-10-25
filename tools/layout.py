@@ -1706,7 +1706,8 @@ if EMIT:
                                  ', '.join('S_' + s for s in _dj[0]) or '0', '', _nm.replace('*/', '* /')))
                 else: _miss.append('/* [%d] %s - no stencils */' % (_x, _nm.replace('*/', '* /')))   # 472: named, for jitapps.py
             if '--jitexec' in ARGV:    # Iteration 476, the gene jitexec: EXECUTE - a row no bytecode maps to, and the primitive if any
-                _le = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 2
+                _le = max(k for k in G['t2_names']().keys() if k < 0xFE00) + 2   # 517: not past T2_JIT (0xFE00) - the rows
+                # there made jit_ops 65,029 rows, 585 KB of every jitexec engine: why no search ever kept jitexec
                 _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ''))
                 _rows.append('[%d] = {1, 1, 4, 0, {S_CALLX}%s},  /* a cold call through the helper (486) */' % (_le + 1, ''))
                 _rows.append('[%d] = {1, 1, 4, 0, {S_ABORTQ}%s},  /* (ABORT") - the flag here, the interpreter on a true one (488) */' % (_le + 2, ''))
