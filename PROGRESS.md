@@ -9885,3 +9885,17 @@ apply in order; seed 73's checklist names them.
 
 Files: results/pending/unfreeze-jitos-after-seed73.patch (new); results/pending/ORDER.md, results/predictions.md,
 results/seed63-rules.md, results/drafts/seed73-checklist-532.md, HANDOFF.md.
+
+## Iteration 536 - 2026-10-25 - Claude
+
+**When the improvements are done - written into GOALS.md** (the owner: how close to finalizing; a confirmation cycle with
+the genes re-enabled - sounds good, proceed). Three steps: (1) the stopping rule - two consecutive runs on an unchanged
+method with no gain beyond the replicate spread on any of the three objectives and no open correctness issue; a method
+change restarts the count; (2) the confirmation run - same method and hours, from the final front (without noevolved),
+every frozen gene that still has code re-enabled (alignhot, msc, scale, sharedcall; the frozen-at-1 six free to take 0),
+the retired ones left retired - confirmed when no re-enabled gene reaches a top tenth of the true front and the front is
+no better than the spread; (3) the designs frozen and consolidated - re-measured alone and under load on three machines,
+unused genes and paths retired, the article's figures recomputed on the true fronts. The estimate given the owner:
+seeds 73-74 (the batch, the clock test), 75-76 the new baseline, then the confirmation run.
+
+Files: GOALS.md, HANDOFF.md.

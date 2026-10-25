@@ -101,6 +101,28 @@ results/drafts/goals-snapshots.md.)
   document is listed in README.md's index, every result in results/README.md.
   A fact lives in one of them; the others point to it.
 
+## When the improvements are done (the owner, Iteration 536)
+
+"Once the improvements are done" (the Tegra session, below) means this - three steps, in order:
+
+1. **The stopping rule.** Two consecutive runs on an unchanged method - the same workloads, selection, operators,
+   gates and hours - each with no gain beyond the replicate spread on any of the three objectives (its smallest
+   binary + image, its fastest speed, its least memory, against the best of the runs before it on that method, the
+   spread being review-checks.py spread's), and no open correctness issue. A run that changes the method restarts the
+   count.
+2. **The confirmation run.** One run of the same method and hours **from the final front** - without `noevolved`, the
+   earlier runs' true fronts among the founders - with **every frozen gene that still has code re-enabled**
+   (alignhot, msc, scale, sharedcall; the frozen-at-1 genes - bytehdr, doesfar, thinhdr, varcall, bss, lean - free to
+   take 0). The retired genes (tail, tailpn, kstack, jithelp, jitre, nocase: their code removed) stay retired unless
+   this run shows their region matters. Judged on the true front: **confirmed** when no re-enabled gene is in its
+   fastest, smallest or best-Q tenth and the front is no better than the replicate spread; a re-enabled gene that
+   earns a place has its freeze revisited before anything is called final. Not "the same designs" - a random search
+   never repeats them - but the same quality, and no frozen gene worth having.
+3. **Then the designs are frozen** - a final set (the smallest, the fastest, the best-Q knee) - and consolidation:
+   each re-measured alone and under load on the laptop, dream and the Tegra; the genes and code paths no final design
+   uses retired (the aim: simplicity); every figure the article quotes recomputed from the runs' records on the true
+   fronts (results/drafts/front-recheck-528.md: until Iteration 532 the reported fronts were mostly not the true ones).
+
 ## Later - the owner's plans
 
 1. **The Tegra session - once the improvements are done** (the owner).
