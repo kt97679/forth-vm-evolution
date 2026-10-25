@@ -130,6 +130,14 @@ results/drafts/goals-snapshots.md.)
    re-measured alone and under load on the laptop, dream and the Tegra; the genes and code paths no final design uses
    retired (the aim: simplicity); every figure the article quotes recomputed from the runs' records on the true fronts
    (results/drafts/front-recheck-528.md: until Iteration 532 the reported fronts were mostly not the true ones).
+4. **The random-search baseline** (the owner, Iteration 540; results/drafts/ask-related-work-answers-539.md). One run
+   of the same hours in which every child is a fresh random genome - random_genome(), uniform over the genome's
+   space, the generator the random founders already come from - each evaluated exactly as the method's children
+   are (build, checks, every workload, both widths), with nothing learned in the loop: no selection, no surrogate
+   screen, no one-round stop (both use what earlier designs showed). Its true front's hypervolume in the same box
+   and its extremes, set beside the method's runs, are what the article can say the evolutionary search itself
+   contributed - as against the design space alone. One run, reported as values, not a test. It needs a random mode
+   in evolve.py, written when consolidation starts.
 
 ## Later - the owner's plans
 

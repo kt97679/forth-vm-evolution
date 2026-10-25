@@ -9945,3 +9945,14 @@ origin for copy-and-patch caught; a random-search baseline worth adding to the a
 
 Files: lab/evolve/hv.py, lab/evolve/hv-bounds.json, results/drafts/ask-related-work-answers-539.md (new); GOALS.md,
 lab/evolve/README.md, results/README.md, HANDOFF.md.
+
+## Iteration 540 - 2026-10-25 - Claude
+
+**A random-search baseline added to the plan** (the owner: yes; GOALS.md, When the improvements are done, step 4). One
+run of the same hours in which every child is a fresh random_genome() - uniform over the genome's space, the random
+founders' generator - evaluated exactly as the method's children, with nothing learned in the loop (no selection, no
+surrogate screen, no one-round stop). Its true front's hypervolume in the fixed box and its extremes, beside the
+method's runs, let the article say what the evolutionary search contributed beyond the design space itself - reported
+as values, one run. A random mode in evolve.py to be written when consolidation starts.
+
+Files: GOALS.md, HANDOFF.md.
