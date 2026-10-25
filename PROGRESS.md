@@ -9636,3 +9636,12 @@ the same: ans-check.py now compares without blank and OK lines, as alive() does.
 
 Files: results/drafts/jit-genes-517.md, results/pending/ (new: jitexec-table-after-seed72.patch, ORDER.md);
 lab/evolve/ans-check.py, results/README.md, HANDOFF.md.
+
+## Iteration 518 - 2026-10-25 - Claude
+
+**jitexec's votes from seed 74** (the owner: proceed). Seeds 70-72 could not weigh jitexec fairly - its JIT table cost
+585 KB until the after-seed-72 batch (517) - so rule 12's grace for it moves to seed 74, its second run after the fix
+(review-checks.py's GRACE; results/seed63-rules.md's rule 12 row). Predicted for seed 73, its first fair run: on a
+quarter of the front's JIT designs at least, most of the fastest tenth's.
+
+Files: lab/evolve/review-checks.py, results/seed63-rules.md, results/predictions.md, HANDOFF.md.

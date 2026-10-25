@@ -435,7 +435,9 @@ elif check == 'votes':
     # measures what it does (results/seed63-rules.md, rule 12). Seed 70 voted four times against jitmul, jitdoes,
     # jitexec and jitcfa, which no workload paid for until the applications joined the selection (seed 71); jitrp
     # was enabled for seed 71. Their votes count from seed 72. A gene enabled later gets its line here.
-    GRACE = {'jitmul': 72, 'jitdoes': 72, 'jitexec': 72, 'jitcfa': 72, 'jitrp': 72,
+    # 518 (the owner): jitexec's from seed 74 - until the after-seed-72 batch its JIT table cost 585 KB (a bug,
+    # results/drafts/jit-genes-517.md), so seeds 70-72 could not weigh it; its first fair run is 73, its votes from 74
+    GRACE = {'jitmul': 72, 'jitdoes': 72, 'jitexec': 74, 'jitcfa': 72, 'jitrp': 72,
              'jitfuse': 73}   # 508: enabled after seed 71 - its first run seed 72, its votes from seed 73
     tally = collections.OrderedDict()
     for r in rows:

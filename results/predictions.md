@@ -951,3 +951,10 @@ at most 1.05 (seeds 64-70: 1.07-1.10) - rule 3 PASS for the first time since 446
 jitfuse enabled from seed 72 (the after-seed-71 batch), paid for by the selection's speed (rule 11: fib, bubble and loop
 gain most). In seed 72: on at least half of the front's JIT designs, and on most of its fastest tenth's - about 4% of
 speed for about 2% of bytes is a trade the fast end takes, while the small end, where bytes weigh most, leaves it off.
+
+## jitexec fairly weighed, in seed 73 - predicted (Iteration 518)
+
+The after-seed-72 batch fixes jitexec's 585 KB JIT table (results/drafts/jit-genes-517.md): 2,752 bytes for -13.7% of
+the applications workload's instructions (-1.7% over the seven) on seed 71's fastest - rule 11's payer the applications.
+In seed 73: jitexec on at least a quarter of the front's JIT designs and on most of the fastest tenth's (seeds 70-72:
+2 designs at most).
