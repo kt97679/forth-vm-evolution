@@ -1,0 +1,27 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index a9bd864..df19d95 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -900,7 +900,7 @@ REQUIRE = []
+ # code stays; removed only if the run after shows no loss (its comparison small or better).
+ FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
+-          'alignhot': 0, 'jitos': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
++          'alignhot': 0}   # 534 (the owner): jitos unfrozen - its freeze (495) fails the rule on the true fronts (results/drafts/frozen-recheck-534.md); 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+diff --git a/lab/evolve/review-checks.py b/lab/evolve/review-checks.py
+index b4d3fe5..794ec9b 100644
+--- a/lab/evolve/review-checks.py
++++ b/lab/evolve/review-checks.py
+@@ -464,7 +464,8 @@ elif check == 'votes':
+     # was enabled for seed 71. Their votes count from seed 72. A gene enabled later gets its line here.
+     # 518 (the owner): jitexec's from seed 74 - until the after-seed-72 batch its JIT table cost 585 KB (a bug,
+     # results/drafts/jit-genes-517.md), so seeds 70-72 could not weigh it; its first fair run is 73, its votes from 74
+-    GRACE = {'jitmul': 72, 'jitdoes': 72, 'jitexec': 74, 'jitcfa': 72, 'jitrp': 72,
++    # 534 (the owner): jitos unfrozen for seed 74 - its votes from its second run back, seed 75
++    GRACE = {'jitmul': 72, 'jitdoes': 72, 'jitexec': 74, 'jitcfa': 72, 'jitrp': 72, 'jitos': 75,
+              'jitfuse': 73}   # 508: enabled after seed 71 - its first run seed 72, its votes from seed 73
+     tally = collections.OrderedDict()
+     for r in rows:

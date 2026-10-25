@@ -9874,3 +9874,14 @@ the fastest and best-Q tenths in six runs each. msc, scale, sharedcall, tail, ta
 records of. Proposed: unfreeze jitos for the rule to decide, as for rtfuse and rtimm.
 
 Files: results/drafts/frozen-recheck-534.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 535 - 2026-10-25 - Claude
+
+**jitos unfrozen - the after-seed-73 batch's sixth patch** (the owner: proceed; results/pending/ORDER.md). Out of FROZEN,
+its votes from seed 75 (review-checks.py's GRACE; rule 12's row in results/seed63-rules.md). Built here after forty
+iterations frozen: a JIT design with it 22,684 bytes against 24,892 without, alive, outputs right - engines-check had kept
+its path. Predicted for seed 74: back on the true front, in the fastest or best-Q tenth at least once. The six patches
+apply in order; seed 73's checklist names them.
+
+Files: results/pending/unfreeze-jitos-after-seed73.patch (new); results/pending/ORDER.md, results/predictions.md,
+results/seed63-rules.md, results/drafts/seed73-checklist-532.md, HANDOFF.md.

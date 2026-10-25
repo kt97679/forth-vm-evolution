@@ -981,3 +981,9 @@ With children 30% beaten after one round stopped there (the after-seed-73 batch)
 fifths of the children that pass the screen stop after one round; the designs an hour at least 15% above seed 72's
 (2,916), allowing for the run's other changes; and none of the stopped children's audited full measurements reaches the
 final front.
+
+## jitos back, in seed 74 - predicted (Iteration 534)
+
+Unfrozen by the after-seed-73 batch (results/drafts/frozen-recheck-534.md): in seed 74, jitos on the true front again,
+and at least one of its designs in the fastest or the best-Q tenth - as in six of seeds 59-66 each. Rule 11's workloads:
+the size objective (its translator 2,208 bytes smaller on an s6 JIT design) and every workload's speed.

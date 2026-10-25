@@ -7,6 +7,7 @@ Prepared while seed 73 runs; master stays what seed 73's bundle tests.
     git apply results/pending/stop1-after-seed73.patch
     git apply results/pending/test-evolver-after-seed73.patch
     git apply results/pending/jit-table-bounds-after-seed73.patch
+    git apply results/pending/unfreeze-jitos-after-seed73.patch
 
 **freeze-rt-after-seed73.patch - withdrawn (533, the owner)**: by the vote tool's own rule - 11 of 12 votes and no
 keep vote - on the true fronts neither rtfuse nor rtimm is a candidate (each has one keep vote: rtfuse in seed 72's
@@ -51,5 +52,12 @@ three new functions missing.
 (results/drafts/ask-jit-table-answers-531.md): jitexec's extra rows below T2_JIT (0xFE00), and each row's constant
 within jit_op.k's signed char. Neither fires today (a jitexec table: 83 rows, the extra rows at 126-128); either
 would now stop a build with a message instead of writing a wrong table.
+
+**unfreeze-jitos-after-seed73.patch** (lab/evolve/evolve.py, lab/evolve/review-checks.py; 534) - **jitos unfrozen** (the
+owner; results/drafts/frozen-recheck-534.md): its freeze (495) fails the rule on the true fronts - 11 votes over
+67-69 and a keep vote (seed 69's best-Q tenth) - and in seeds 59-66 it was in the fastest and best-Q tenths in six runs
+each. Out of FROZEN; its votes from seed 75 (rule 12, GRACE). Rule 11: the size objective and every workload's speed
+see it - built here with and without it: 22,684 bytes against 24,892 (2,208 less), alive, outputs right;
+engines-check keeps its path ('the JIT, translator -Os').
 
 **At seed 73's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.
