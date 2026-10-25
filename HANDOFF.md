@@ -48,8 +48,15 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## The state now
 
-- master: Iteration 515.
-- **The runs**: **seed 70 processed (Iteration 498)** - inside the replicates' spread (at generation 109 fastest 0.1259,
+- master: Iteration 516.
+- **The runs**: **seed 71 processed (Iteration 516)** - the first with the applications in the selection (a speed break):
+  the selection now tracks the applications (Spearman 0.861, was 0.553), the old six kept (0.1193 against 0.1204), 9.5%
+  fewer designs an hour; jitmul on 72 of 130 JIT designs, the other JIT genes hardly; **a loophole** - outputs never
+  compared, 791 cpt16 designs failed apps early and looked fast, one on the front - closed (outputs checked, the batch's
+  sixth patch); 32-bit failures none; ans-check 1 of 43 differ - a cpt16 design stopping early in toolstest.fth (not the
+  [ELSE] change: the same before it). **The after-seed-71 batch applied** (six patches). **Seed 72 next: 9 hours (the
+  owner)**, the contention experiment last.
+  Before - **seed 70 processed (Iteration 498)** - inside the replicates' spread (at generation 109 fastest 0.1259,
   smallest 14,143); **the four JIT genes on no front design** - tried on thousands, dominated: the six workloads do not pay
   for them and they cost bytes; the applications 0.756 of s6 on its fastest. **906 32-bit failures, all JIT designs** -
   CELL+/CELLS (fixed in the batch). **The after-seed-70 batch applied** (six patches, batch-check PASS): the applications
@@ -163,8 +170,8 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 - **Fern - obsolete in this project** (the owner, 510): a project of its own now, with this project's notes on it
   (results/drafts/fern-design-457.md, c4-family-459.md's section 5) in full - nothing here to pursue or keep current.
 - **Files a new chat needs** (Iteration 415), beyond the newest bundle: the chain archive of every seed not yet
-  processed - seed 71's, named from the bundle it starts from (seed 70's, `forth-vm-evolution-chain-b4c0b9c69d-fury-
-  20261024-161913_tar.gz`, processed at 498). Seed 70's chain carries its own spread (every run's database on the
+  processed - seed 72's, named from the bundle it starts from (seed 71's, `forth-vm-evolution-chain-b5e9cbd-fury-
+  20261025-034658_tar.gz`, processed at 516). Seed 70's chain carries its own spread (every run's database on the
   laptop) and the applications (appbench.zip in ~/Downloads). For seed 66's islands reading seed 64's database is kept here too
   (build/evolve/keep/seed64-db.jsonl); if gone, seed 64's archive. Every processed run's facts and front are in results/evolve-*-seedN.md; its database stays on the laptop
   (runs/archived-*).
@@ -297,7 +304,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 ## Open items (Iteration 505 - the list now; Iteration 369's below it, much of it done, kept for its history)
 
-0. **Seed 71's processing** - by results/drafts/seed71-checklist-505.md, written before its results: the first run with
+0. **Seed 71 processed (516)**; seed 72's processing next - its contention experiment read first. Seed 71's was the first run with
    the applications in the selection (a speed break - the progress table and the spread mark it, 505); the
    after-seed-71 batch (results/applied-after-seed71/ORDER.md: nocase retired, the fast gate's slower reading, jithelp and jitre
    retired) batch-checked, then applied; seed 72's line without the footprint experiment (the owner, 504).

@@ -32029,3 +32029,15 @@ sieve, parse, far is held out (Iteration 41: loop was, until the owner put it in
 | archived-20261023-061021/build/evolve/db.jsonl | 109 | 21722 | 315 | 0.1197 | 14,135 | 112 | 6.883e+05 | 0.5932 | 0.3327 |
 | archived-20261023-145435/build/evolve/db.jsonl | 109 | 22167 | 328 | 0.1298 | 14,207 | 108 | 7.098e+05 | 0.6041 | 0.3413 |
 | archived-20261024-045036/build/evolve/db.jsonl | 109 | 20633 | 324 | 0.1274 | 14,199 | 108 | 7.314e+05 | 0.5937 | 0.3309 |
+
+## Session 58 - Iteration 516: seed 71 and seeds 66-70 (the chain's spread, at generation 109) - sizes only
+
+Seed 71's speed is over seven workloads, the others' over six: its fastest, best Q and hypervolume do not compare with theirs (the spread at b5e9cbd predates the marking of 505); its sizes do. The first row is seed 71.
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 109 | 19938 | 379 | 0.1452 | 14,210 | 136 | 2.8024e+06 | 0.3723 | 0.1604 |
+| archived-20261023-061021/build/evolve/db.jsonl | 109 | 21722 | 315 | 0.1197 | 14,135 | 112 | 6.883e+05 | 0.8346 | 0.3327 |
+| archived-20261023-145435/build/evolve/db.jsonl | 109 | 22167 | 328 | 0.1298 | 14,207 | 108 | 7.098e+05 | 0.8218 | 0.3413 |
+| archived-20261024-045036/build/evolve/db.jsonl | 109 | 20633 | 324 | 0.1274 | 14,199 | 108 | 7.314e+05 | 0.8253 | 0.3309 |
+| archived-20261024-171649/build/evolve/db.jsonl | 109 | 22595 | 310 | 0.1259 | 14,143 | 108 | 6.8053e+05 | 0.8279 | 0.1335 |

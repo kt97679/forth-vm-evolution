@@ -936,6 +936,11 @@ paid for what they do; appbench.py's geometric mean for its fastest JIT design b
 with them and the batch: 0.234); the speeds on the six old workloads within 5% of seed 70's (the seventh costs them
 little).
 
+**Scored at seed 71 (Iteration 516): one of three.** The four JIT genes on three quarters of the front's JIT designs -
+fails: jitmul 72 of 130, jitcfa 9, jitexec 2, jitdoes none. The fastest JIT design's applications below 0.30 of s6 -
+fails: 0.491 (seed 70's 0.756). The six old workloads within 5% - holds: the fastest's six 0.1193, seed 70's 0.1204.
+And a loophole read the applications' times without their outputs (results/evolve-amd-ryzen-7-pro-8840hs-seed71.md).
+
 ## The fast gate's slower reading, from seed 72 - predicted (Iteration 503) - WITHDRAWN (513): the patch withdrawn, see results/drafts/ask-noise-answers-513.md
 
 With the gated designs' speed the slower of their two readings: seed 72's fastest tenth re-measured / in-run, median,

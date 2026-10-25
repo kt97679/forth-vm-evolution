@@ -9598,3 +9598,26 @@ way: the ARM cross compiler installed at 512 had displaced gcc-multilib's 32-bit
 
 Files: results/drafts/ask-jit-review-answers-515.md, results/applied-after-seed71/jit-ksig-after-seed71.patch (new);
 results/applied-after-seed71/ORDER.md, results/README.md, HANDOFF.md.
+
+## Iteration 516 - 2026-10-25 - Claude
+
+**Seed 71 processed - the applications in the selection, and a loophole in it; the after-seed-71 batch applied; seed 72
+at 9 hours** (the owner: the next run 9 hours; results/evolve-amd-ryzen-7-pro-8840hs-seed71.md, by
+results/drafts/seed71-checklist-505.md). 32,733 designs, generations 0-130, a speed break (seven workloads). The
+selection now tracks the applications: appbench's Spearman with the in-run speed 0.861 (seed 70: 0.553); the old six
+kept (the fastest's 0.1193, seed 70's 0.1204); 9.5% fewer designs an hour. jitmul on 72 of the front's 130 JIT designs;
+jitcfa 9, jitexec 2, jitdoes none. 32-bit failures none. Predictions: one of three (495). **The loophole**: measure()
+never compared what a workload printed - 791 cpt16 designs failed the applications early on undefined words and timed
+0.13 of s6 there; one, 908baebc14, reached the front (wrong on four appbench programs). Closed by the batch's sixth patch:
+each workload's output compared with s6's in the same rounds, 'Redefining:' lines aside (a family's kernel has other
+words - cell designs were wrongly refused until they were left out); tried on 14 designs across encodings. jitrp kept
+from lto (six died). batch-check PASS on the first five; all six applied, moved to results/applied-after-seed71/; the
+chain on master: build, run-tests PASS, validate 7 of 7, the jail PASS, the gate 210 of 210 alive; ans-check 1 of 43
+differ - 7fabd817ed, a cpt16 design, stops early in toolstest.fth (rc 0, its last 29 lines missing); the same with
+coreext.4 from before 499's [ELSE] change, so not that - the family the loophole carried onto the front, whose
+larger programs fail (the applications too); seed 72's output check refuses those that fail a workload. NEXT-RUN: seed
+72, 9 hours, the contention experiment last.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed71.md, results/xcheck-seed71.md (new); results/applied-after-seed71/
+(moved), lab/evolve/ (the batch), engine/, tools/, tests/jit/, lab/evolve/NEXT-RUN, results/gene-votes.md,
+results/predictions.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/README.md, HANDOFF.md.
