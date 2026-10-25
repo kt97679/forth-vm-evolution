@@ -9692,3 +9692,13 @@ the run's full load against after it; a test with the run's own mix of workers p
 
 Files: results/pending/ (new: freeze-rt-jitret-after-seed73.patch, ORDER.md); results/drafts/ask-noise-answers-513.md,
 results/README.md, HANDOFF.md.
+
+## Iteration 522 - 2026-10-25 - Claude
+
+**An engine cache priced - 1%, not built** (the owner: find its hit rate first; results/drafts/engine-cache-522.md). The
+compiler is about half a fast design's evaluation, and seed 72's living designs had only 3,206 distinct engine sizes
+among 22,651 - but 300 consecutive designs keyed by their exact compile inputs gave 296 distinct: a cache would hit 1%.
+Same-size engines differ in flags and tables. A smaller idea left unmeasured: the JIT's stencils compiled once per JIT
+flag combination.
+
+Files: results/drafts/engine-cache-522.md (new); results/README.md, HANDOFF.md.
