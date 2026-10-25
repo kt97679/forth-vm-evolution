@@ -962,3 +962,9 @@ The after-seed-72 batch fixes jitexec's 585 KB JIT table (results/drafts/jit-gen
 the applications workload's instructions (-1.7% over the seven) on seed 71's fastest - rule 11's payer the applications.
 In seed 73: jitexec on at least a quarter of the front's JIT designs and on most of the fastest tenth's (seeds 70-72:
 2 designs at most).
+
+## Adaptive operator selection, from seed 74 - predicted (Iteration 526)
+
+With the operators' chances following their children's front yield (the after-seed-73 batch): in seed 74, crossover's
+share of the children below 20% (seed 72: 36.6%), and the front entries per child over the run at least a fifth above
+seed 72's (185 front designs of 26,100 children: 0.71%).

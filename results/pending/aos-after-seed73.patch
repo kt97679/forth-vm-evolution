@@ -1,0 +1,63 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index a4a901b..160f0db 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1615,6 +1615,34 @@ def crowding(front, R):
+ # dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
+ # evaluations: drawn one time in ten (SLOW_GENES).
+ XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
++# Iteration 526 (the owner, proposal 1 of results/drafts/ask-search-answers-525.md): adaptive operator selection.
++# Seed 72's front entries per child: mutation 1.11%, borrowing 0.71%, crossover 0.14% - crossover a third of the
++# children. Each generation, the children of the last AOS_W generations are classed as their 'how' begins
++# (crossover; borrowed - a borrowing without crossover; mutation - the rest), each class's yield is its children
++# on the front now, smoothed ((entries + 1) / (children + 20)), and the class shares follow the yields with a floor
++# of AOS_FLOOR each: crossover's chance is its share, borrowing's the borrowed share over what crossover leaves.
++# Deterministic: from the records alone, so a resumed run decides the same. EVOLVE_AOS=0: the fixed 0.25 and 0.15.
++AOS = os.environ.get('EVOLVE_AOS', '1') != '0'
++AOS_W, AOS_FLOOR = int(os.environ.get('EVOLVE_AOS_W', 10)), float(os.environ.get('EVOLVE_AOS_FLOOR', 0.1))
++OPS = {'xover': XOVER, 'borrow': 0.15}
++def op_class(how):
++    h = how or ''
++    return 'crossover' if h.startswith('crossover') else 'borrowed' if 'borrow' in h.split(';')[0] else 'mutation'
++def aos_update(R, rk, gen):
++    """The operators' chances for generation gen from the last AOS_W generations' yield (Iteration 526)."""
++    if not AOS: return None
++    made, hit = collections.Counter(), collections.Counter()
++    for i, r in R.items():
++        g_ = r.get('gen')
++        if not isinstance(g_, int) or not (gen - AOS_W <= g_ < gen) or not r.get('parents'): continue
++        c = op_class(r.get('how')); made[c] += 1
++        if rk.get(i) == 0: hit[c] += 1
++    if sum(made.values()) < 50: return None
++    y = {c: (hit[c] + 1.0) / (made[c] + 20.0) for c in ('crossover', 'borrowed', 'mutation')}
++    t = sum(y.values()); f = AOS_FLOOR
++    sh = {c: f + (1 - 3 * f) * y[c] / t for c in y}
++    OPS['xover'] = sh['crossover']; OPS['borrow'] = min(0.9, sh['borrowed'] / max(1e-9, 1 - sh['crossover']))
++    return y
+ LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail', 'jitk'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
+ SLOW_GENES = ('varcall', 'doesfar')
+ ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
+@@ -2228,11 +2256,11 @@ def main(argv):
+             same = [i for i in live if i != p1 and R[i]['genome']['enc'] == R[p1]['genome']['enc']]
+             if same and rnd.random() < 0.8: p2 = rnd.choice(same)   # mostly within the species
+             for _try in range(10):
+-                if rnd.random() < XOVER and p1 != p2:   # Iteration 197: 0.6 before
++                if rnd.random() < OPS['xover'] and p1 != p2:   # Iteration 197: 0.6 before; 526: adaptive
+                     g = crossover(R[p1]['genome'], R[p2]['genome'], rnd); how = 'crossover'; parents = [p1, p2]
+                 else:
+                     g = canon(R[p1]['genome']); how = ''; parents = [p1]
+-                if rnd.random() < 0.15 and len(live) > 2:
++                if rnd.random() < OPS['borrow'] and len(live) > 2:   # 526: adaptive
+                     donor = rnd.choice([i for i in live + attic if i not in parents])   # the attic's lost genes too
+                     g, h = borrow(g, R[donor]['genome'], rnd); how = (how + '; ' if how else '') + h + ' from ' + donor
+                     parents = parents + [donor]
+@@ -2260,6 +2288,9 @@ def main(argv):
+             live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
+             order, rk, cd = rank(live, R)
+             print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
++            y_ = aos_update(R, rk, gen)
++            if y_: print('  operators (526): crossover %.2f, borrowing %.2f - yields crossover %.2f%%, borrowed %.2f%%, mutation %.2f%%' % (
++                OPS['xover'], OPS['borrow'], 100 * y_['crossover'], 100 * y_['borrowed'], 100 * y_['mutation']), flush=True)
+             kids = breed(live, rk, cd, N, gen)
+             flush()
+             pop, order = survive(pop, kids, N, Q_KEEP)

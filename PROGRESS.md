@@ -9742,3 +9742,18 @@ dominated children; deferred: other models, NSGA-III, MAP-Elites, linkage. Answe
 "pure Python" scikit-learn wrong); Thierens 2005 checked by search.
 
 Files: results/drafts/ask-search-answers-525.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 526 - 2026-10-25 - Claude
+
+**Adaptive operator selection written; the CPU-state answers checked** (the owner: start with proposal 1; the other
+prompt's answers). The operators' chances follow their children's front yield over the last ten generations, with a
+floor: crossover about 0.15 and borrowing about 0.42 from seed 72's counts - the after-seed-73 batch's second patch,
+deterministic, EVOLVE_AOS=0 to switch off, tried in a four-generation run; predicted for seed 74. The five CPU answers
+(results/drafts/ask-cpu-state-answers-526.md): all put the clock first, and the direction fits our counters study - s6
+the more compute-bound (2.41 instructions a cycle against the JIT design's 2.21, a fifth of its branch misses), so a
+quiet core's boost helps it more; getrusage claims sorted (one wrong, one muddled, the microsecond grain right); our
+helper already reads cycles beside CPU time. Proposed: contention.py as the four-condition test - alone, benchmark
+co-runners, compile co-runners - with cycles and frequencies recorded.
+
+Files: results/pending/aos-after-seed73.patch, results/drafts/ask-cpu-state-answers-526.md (new);
+results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
