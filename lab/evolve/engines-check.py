@@ -58,8 +58,10 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('the JIT with jitexec', dict(JIT, jitexec=1), ['jit', 'jitexec']),               # Iteration 476: EXECUTE's helper
     ('the JIT with jitcfa', dict(JIT, jitcfa=1), ['jit', 'jitcfa']),                  # Iteration 482: the check along the paths
     ('the JIT with opbody', dict(JIT, ops10=['2@', '2!'], opbody=1), ['jit', 'opbody']),   # Iteration 509: 2@ and 2! as opcodes - jit-ops.fth runs them
+    ('the JIT without jitinl', dict(JIT, jitinl=0, jitmul=1, jitexec=1), ['jit', 'jitexec']),   # Iteration 515: calls of headerless words through jit_k - jit-marker.fth
     ('the JIT with jitrp', dict(JIT, jitrp=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitrp']),   # Iteration 494
-    ('the JIT with nocase', dict(JIT, kfast=1, nocase=1), ['jit', 'nocase']),         # Iteration 497: names without case
+    ('the JIT with jitfuse', dict(JIT, jitfuse=1, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitfuse']),   # Iteration 507
+    ('the JIT with jitfuse and jitk', dict(JIT, jitfuse=1, jitk=2, jitmul=1, jitdoes=1, jitexec=1, jitcfa=1), ['jit', 'jitfuse', 'jitk']),
     ('the JIT, jitimg and jitvar', dict(JIT, jitimg=1, jitvar=1), ['jitimg', 'jitvar']),     # Iteration 343
     ('the JIT, jitret', dict(JIT, jitret=1), ['jitret']),                       # Iteration 404: EXIT as pop and jmp
     ('the JIT, jitvar, varslot 0', dict(JIT, jitvar=1, varslot=0), ['jitvar']),
@@ -112,7 +114,9 @@ VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
 # passed where seed 70's 906 32-bit failures did not (CELL+ and CELLS, 493), since nothing it holds was translated.
 _JD = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'tests', 'jit')
 # Iteration 509: and jit-ops.fth - every word the JIT maps, on edge values (its BYE ends the pair: jit-diff's is dropped)
-JDIFF = open(os.path.join(_JD, 'jit-diff.fth'), 'rb').read().replace(b'\nBYE\n', b'\n') + open(os.path.join(_JD, 'jit-ops.fth'), 'rb').read()
+JDIFF = (open(os.path.join(_JD, 'jit-diff.fth'), 'rb').read() + open(os.path.join(_JD, 'jit-ops.fth'), 'rb').read()).replace(b'\nBYE\n', b'\n') \
+    + b''.join(open(os.path.join(os.path.dirname(_JD), '..', 'forth', f), 'rb').read() + b'\n' for f in ('extend.4', 'coreext.4')) \
+    + open(os.path.join(_JD, 'jit-marker.fth'), 'rb').read()   # 515: MARKER and a word at an old one's address
 def jdiff(eng, img, pw):
     return [l.strip() for l in E.sh([eng, img], inp=JDIFF, timeout=120, cpu=60, cwd=pw).stdout.decode('latin-1').replace('\r', '').split('\n')]
 JREF = {}

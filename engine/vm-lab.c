@@ -1438,7 +1438,7 @@ static UNS64 numberq(UNS64 a, UNS64 base, UNS64 dpl, UNS64 *lo, UNS64 *hi) {
     *lo = lo_; *hi = hi_; return (UNS64)-1;
 }
 #endif
-#if JITRE || JITEXEC
+#if JITEXEC
 /*  Iteration 346, the gene jitre: native code calling bytecode, as SPN's spn_interp - the stack back
  *  into memory (the top where dsp points: a nested virtual_machine fills its TOS from there), the
  *  sentinel pushed as a return address, the interpreter run from the body; its EXIT lands on the

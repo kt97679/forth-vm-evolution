@@ -9407,7 +9407,7 @@ HANDOFF.md.
 ## Iteration 501 - 2026-10-24 - Claude
 
 **nocase retired; the workflow reviewed, three fixes made** (the owner: retire it; do the recent runs call for changes?;
-results/drafts/process-review-501.md, results/pending/ORDER.md). The retirement - the overlays, the two extra kernel
+results/drafts/process-review-501.md, results/applied-after-seed71/ORDER.md). The retirement - the overlays, the two extra kernel
 dumps per header system, the gene, its engines-check variant - is the after-seed-71 batch (run-tests PASS in a clone);
 the [ELSE] fix stays. The review: engines-check built its 32-bit variants with jit=0, so the 32-bit JIT was never tested
 there and CELL+/CELLS reached seed 70 - now the JIT is kept at 32 bits and every JIT variant runs tests/jit/jit-diff.fth
@@ -9429,13 +9429,13 @@ GRACE table, the four JIT genes and jitrp from seed 72 (on master: a tool). The 
 slower of its two readings, each workload's, not their geometric mean - free, no reading more; the after-seed-71 batch's
 second patch, tried in a three-generation run of the evolver. Predicted: rule 3 PASS in seed 72.
 
-Files: results/pending/fastgate-slower-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/review-checks.py,
+Files: results/applied-after-seed71/fastgate-slower-after-seed71.patch (new), results/applied-after-seed71/ORDER.md, lab/evolve/review-checks.py,
 results/seed63-rules.md, results/drafts/process-review-501.md, results/predictions.md, HANDOFF.md.
 
 ## Iteration 504 - 2026-10-24 - Claude
 
 **The footprint experiment dropped; jithelp and jitre retired** (the owner: drop 7, the 4 MB check assumed kept; proceed
-with the other items; results/pending/ORDER.md). Seed 72's line goes without the footprint experiment (NEXT-RUN's
+with the other items; results/applied-after-seed71/ORDER.md). Seed 72's line goes without the footprint experiment (NEXT-RUN's
 note). The programs-past-4-MB check stays where it was put at 416: engines-check's BIG cases - calls across 4.9 MB of
 dictionary, links past the three-byte form, a far DOES> - on s6, the two-bit tag and 4-byte cells, every run-tests,
 every batch-check, every processing; rule 10 reads it. jithelp and jitre, frozen since 455 with 12 of 12 removal votes
@@ -9445,7 +9445,7 @@ paths, the differential JIT test on every JIT variant at both widths) and valida
 Considered and set aside: inlining words called once (nibbleforth's last idea) - the converter sees only the image, whose
 called-once words are mostly findable ones that must stay whole; the size to win is small.
 
-Files: results/pending/retire-jithelp-jitre-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/NEXT-RUN,
+Files: results/applied-after-seed71/retire-jithelp-jitre-after-seed71.patch (new), results/applied-after-seed71/ORDER.md, lab/evolve/NEXT-RUN,
 HANDOFF.md.
 
 ## Iteration 505 - 2026-10-24 - Claude
@@ -9480,7 +9480,7 @@ HANDOFF.md.
 ## Iteration 507 - 2026-10-24 - Claude
 
 **jitfuse built and measured - the after-seed-71 batch's fourth patch, staged frozen** (the owner: build the small version
-and measure; results/drafts/jit-pairs-506.md, results/pending/ORDER.md). A literal into +, <, >, =, XOR, AND or OR, and I
+and measure; results/drafts/jit-pairs-506.md, results/applied-after-seed71/ORDER.md). A literal into +, <, >, =, XOR, AND or OR, and I
 into + or 2@, as one stencil each - seven stencils, LIT + st_addi's - never where the second is a branch target, with and
 without jitk. Two faults found by the tests: the pairs marked before the callees' translation, which overwrote them (the
 far test crashed - now marked just before the sizes); 2@ and 2! in the converter's JIT map with eight-byte cells at
@@ -9488,18 +9488,18 @@ either width (by the cell now). engines-check PASS, the differential test coveri
 on seed 70's fastest with the four genes: fib -16.3%, bubble -9.3%, loop -4.8%, apps -0.9%, kernel +1.2%, corpus +2.4%,
 ackermann +2.7%; the geometric mean -3.8%, for 912 bytes (+2.4%). The owner's call: enable it for the search to weigh.
 
-Files: results/pending/jitfuse-after-seed71.patch (new), results/pending/ORDER.md, results/drafts/jit-pairs-506.md,
+Files: results/applied-after-seed71/jitfuse-after-seed71.patch (new), results/applied-after-seed71/ORDER.md, results/drafts/jit-pairs-506.md,
 HANDOFF.md.
 
 ## Iteration 508 - 2026-10-24 - Claude
 
-**jitfuse enabled for seed 72** (the owner: enable it; results/pending/ORDER.md). Its enabling is the after-seed-71
+**jitfuse enabled for seed 72** (the owner: enable it; results/applied-after-seed71/ORDER.md). Its enabling is the after-seed-71
 batch's fifth patch - out of FROZEN, applied after the gene's own patch; all five apply in order to master. Rule 11
 holds - the selection sees its speed and its bytes; rule 12 - review-checks.py's GRACE counts its votes from seed 73
 (on master: a tool). Predicted for seed 72: on half the front's JIT designs at least, most of the fastest tenth's.
 GENES.md has its row.
 
-Files: results/pending/enable-jitfuse-after-seed71.patch (new), results/pending/ORDER.md, lab/evolve/review-checks.py,
+Files: results/applied-after-seed71/enable-jitfuse-after-seed71.patch (new), results/applied-after-seed71/ORDER.md, lab/evolve/review-checks.py,
 lab/evolve/GENES.md, results/predictions.md, HANDOFF.md.
 
 ## Iteration 509 - 2026-10-24 - Claude
@@ -9566,7 +9566,7 @@ ranked (9 best; 10's invented references, 7's wrong arithmetic); references chec
 2001, Teich 2001 found; 10's TEC citations wrong).
 
 Files: results/drafts/ask-noise-answers-513.md (new), results/drafts/fastgate-slower-withdrawn-513.patch (moved from
-results/pending/); results/pending/ORDER.md, results/predictions.md, results/seed63-rules.md, results/README.md,
+results/pending/); results/applied-after-seed71/ORDER.md, results/predictions.md, results/seed63-rules.md, results/README.md,
 HANDOFF.md.
 
 ## Iteration 514 - 2026-10-24 - Claude
@@ -9596,5 +9596,5 @@ both widths, a variant without jitinl added: engines-check PASS, 101 paths. Wron
 (it is EXECUTE in the interpreter too), PICK off by one, jitk after a fused pair; the (ABORT") guards unreachable. On the
 way: the ARM cross compiler installed at 512 had displaced gcc-multilib's 32-bit headers here - reinstated.
 
-Files: results/drafts/ask-jit-review-answers-515.md, results/pending/jit-ksig-after-seed71.patch (new);
-results/pending/ORDER.md, results/README.md, HANDOFF.md.
+Files: results/drafts/ask-jit-review-answers-515.md, results/applied-after-seed71/jit-ksig-after-seed71.patch (new);
+results/applied-after-seed71/ORDER.md, results/README.md, HANDOFF.md.

@@ -299,7 +299,7 @@ authored `Kirill Timofeev <kt97679@gmail.com>`; deliveries are git bundles.
 
 0. **Seed 71's processing** - by results/drafts/seed71-checklist-505.md, written before its results: the first run with
    the applications in the selection (a speed break - the progress table and the spread mark it, 505); the
-   after-seed-71 batch (results/pending/ORDER.md: nocase retired, the fast gate's slower reading, jithelp and jitre
+   after-seed-71 batch (results/applied-after-seed71/ORDER.md: nocase retired, the fast gate's slower reading, jithelp and jitre
    retired) batch-checked, then applied; seed 72's line without the footprint experiment (the owner, 504).
 1. **Do the JIT genes earn their place now?** Seeds 71-72: jitmul, jitdoes, jitexec, jitcfa on the front, the
    applications' speed (predictions at 495); their votes count from seed 72 (rule 12). If not even with the

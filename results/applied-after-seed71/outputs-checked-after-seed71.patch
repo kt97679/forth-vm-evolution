@@ -1,0 +1,47 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 214c2a2..2967ade 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -183,7 +183,7 @@ gene('jitmul', needs=lambda g, e: jit_on(g))                                   #
+ gene('jitdoes', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 473: DOES> children native (jit.c)
+ gene('jitexec', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 476: EXECUTE through a helper (jit.c)
+ gene('jitcfa', needs=lambda g, e: jit_on(g) and g.get('jitx'))               # Iteration 482: the return-stack check along the paths
+-gene('jitrp', needs=lambda g, e: jit_on(g) and g.get('jitx') and not e.get('compiler') and cellw() == 8)   # Iteration 494: GCC's global register
++gene('jitrp', needs=lambda g, e: jit_on(g) and g.get('jitx') and not e.get('compiler') and cellw() == 8 and not g.get('lto'))   # 494; 516: not with lto - 'global register variable follows a function definition' (seed 71, 6 died)
+ gene('jitfuse', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 507: pairs as one stencil (jit-pairs-506.md)
+ gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
+ gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
+@@ -1207,8 +1207,12 @@ def run_metric(eng, img, pw, w, single=False):
+     mf = re.search(rb'^MINFLT (\d+)', r.stderr, re.M)
+     mr = re.search(rb'^MAXRSS (\d+)', r.stderr, re.M)
+     RSS_LAST[0] = int(mf.group(1)) * PAGE_KB if mf else (int(mr.group(1)) if mr else 0)
++    OUT_LAST[0] = hashlib.sha1(re.sub(rb'(?m)^Redefining:[^\n]*\n', b'', r.stdout.replace(b'\r', b''))).hexdigest()
++    # Iteration 516: what it printed - measure() compares it with s6's; a family's kernel differs in its words, so
++    # 'Redefining: X' differs with it (cell designs have no LIT, or CALL, for sim16 to redefine) - not the output
+     return int(m.group(1))
+ RSS_LAST, LAST_RSS = [0], {}     # the last run's memory (KB); the last measure()'s design, per workload: the median
++OUT_LAST = ['']                  # Iteration 516: the last run's output, hashed
+ PAGE_KB = os.sysconf('SC_PAGE_SIZE') // 1024
+ 
+ def text_size(path):
+@@ -1243,13 +1247,19 @@ def measure(eng, img, pw, works, rounds):
+     agreed within 3.6% between halves of a session and 2.1% between CPUs
+     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
+     runs, ref = {}, {}
+-    LAST_RSS.clear(); mem = {}
++    LAST_RSS.clear(); mem = {}; outs = {}
+     for r_ in range(rounds):
+         for w in works:
+             pair = [(eng, img, pw, runs), REF + (ref,)]
+             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
+                 store.setdefault(w, []).append(run_metric(e, i, p, w))
+                 if store is runs: mem.setdefault(w, []).append(RSS_LAST[0])   # the design's, not s6's
++                outs.setdefault((store is runs, w), set()).add(OUT_LAST[0])
++    # Iteration 516: a workload's output must be s6's - the run, not only its time. Unchecked, the applications
++    # workload (seed 71) rewarded failing it: 791 cpt16 designs stopped early in apps on undefined words and timed
++    # 0.13 of s6 there, against ~1.07 elsewhere - one reached the front. Both ran the same program in the same rounds.
++    for w in works:
++        if outs.get((True, w)) != outs.get((False, w)): raise RuntimeError('wrong output: ' + w)
+     if 'corpus' in mem and 'corpus' in LONGF:    # Iteration 100: the corpus's memory from one single run
+         run_metric(eng, img, pw, 'corpus', single=True); mem['corpus'] = [RSS_LAST[0]]
+     LAST_RSS.update({w: statistics.median(v) for w, v in mem.items()})     # a page or two of noise

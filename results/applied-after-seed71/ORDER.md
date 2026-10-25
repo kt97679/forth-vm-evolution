@@ -2,11 +2,12 @@
 
 Prepared while seed 71 runs; master stays what seed 71's bundle tests.
 
-    git apply results/pending/retire-nocase-after-seed71.patch
-    git apply results/pending/retire-jithelp-jitre-after-seed71.patch
-    git apply results/pending/jitfuse-after-seed71.patch
-    git apply results/pending/enable-jitfuse-after-seed71.patch
-    git apply results/pending/jit-ksig-after-seed71.patch
+    git apply results/applied-after-seed71/retire-nocase-after-seed71.patch
+    git apply results/applied-after-seed71/retire-jithelp-jitre-after-seed71.patch
+    git apply results/applied-after-seed71/jitfuse-after-seed71.patch
+    git apply results/applied-after-seed71/enable-jitfuse-after-seed71.patch
+    git apply results/applied-after-seed71/jit-ksig-after-seed71.patch
+    git apply results/applied-after-seed71/outputs-checked-after-seed71.patch
 
 **retire-nocase-after-seed71.patch** (forth/cv8b-nocase.4 and forth/cv8bt-nocase.4 removed, lab/evolve/evolve.py,
 lab/evolve/engines-check.py) - **the owner retired nocase** (501): it changes only how names are looked up, so it can
@@ -58,5 +59,14 @@ by the address alone: a CONSTANT 7 answered 5 on JIT designs without jitinl). Ea
 its translation read; a different word is translated again. And jit_usable refuses a stencil with a 32-bit hole, which
 the JIT would not patch (none is used). jit-marker.fth on every JIT variant at both widths, a variant without jitinl
 added: engines-check PASS, 101 paths (results/drafts/ask-jit-review-answers-515.md).
+
+**outputs-checked-after-seed71.patch** (516; lab/evolve/evolve.py) - **found at seed 71's processing**: measure() timed
+the workloads and never looked at what they printed, so the applications workload rewarded failing it - 791 cpt16
+designs stopped early in apps on undefined words and timed 0.13 of s6 there against ~1.07 elsewhere, and one reached
+the front (908baebc14, wrong on four of appbench's programs). Now every workload's output is compared with s6's from
+the same rounds ('Redefining:' warnings left out - a family's kernel has other words): a wrong output kills the design.
+No extra run. Tried on 14 of seed 71's designs across encodings: the failing cpt16 ones refused, cell, cpt16 and cv8
+otherwise measured. And jitrp not with lto - six seed 71 designs died: global register variable follows a function
+definition. Batch-checked with the chain after it (the other five: batch-check PASS on de80601).
 
 **At seed 71's processing**: `sh tools/batch-check.sh` first, then apply, the routine's chain after it.

@@ -32,7 +32,7 @@ readings differently (the slower, from the after-seed-71 batch). So:
 
 - **Gene votes**: appended as always; the grace period (rule 12) keeps the four JIT genes' and jitrp's out of the
   candidates until seed 72's.
-- **The after-seed-71 batch** (results/pending/ORDER.md): `sh tools/batch-check.sh` first - it now refuses conflict
+- **The after-seed-71 batch** (results/applied-after-seed71/ORDER.md): `sh tools/batch-check.sh` first - it now refuses conflict
   markers - then apply the three patches in order: nocase retired, the fast gate's slower reading, jithelp and jitre
   retired; move to results/applied-after-seed71/; the routine's chain on master (build, run-tests - engines-check's
   differential JIT test at both widths in it -, validate, the jail, the gate, ans-check).

@@ -488,7 +488,7 @@ elif check == 'rules':
         return ('%.0f%% of the front; in the fastest, smallest, best-Q tenth %d, %d, %d; %d of 4 removal votes, over %d run(s) %d%s'
                 % (share, f, sm_, q, v, len(runs), tv, ' - a candidate' if cand else ('; a keep vote' if keep else ''))), cand
     out.append((1, 'The verdict', "compare-fronts - process-seed.sh's verdict section", 'the 5% bar', 'SEE'))
-    for g in ('jithelp', 'jitre', 'jitret'):
+    for g in ('jitret',):              # Iteration 504: jithelp and jitre retired - rule 2 watches jitret alone
         t, cand = gene_line(g); out.append((2, g, t, 'kept unless a candidate: 11 of 12 over three runs, no keep vote', 'ATTENTION' if cand else 'PASS'))
     rows = sorted(front_rows(path), key=lambda r: r['sp']); kk = max(1, len(rows) // 10)
     if rows:

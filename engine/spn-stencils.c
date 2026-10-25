@@ -245,6 +245,19 @@ S(st_ploop)  { RPDECL cell *r = (cell *)RP;
                if ((cell)(((o - l) ^ (n - l)) & ((o - l) ^ (ucell)tos)) < 0) { RP = (ucell)(r + 2); GO(sp + 1, *sp); }
                r[0] = (cell)n; return spn_jump(sp + 1, *sp); }
 S(st_i)      { RPDECL cell v = ((cell *)RP)[0]; *--sp = tos; GO(sp, v); }
+#if JITFUSE
+/* Iteration 507, the gene jitfuse (results/drafts/jit-pairs-506.md): a literal into an operation, the loop index into
+   + and 2@ - one stencil each, the value kept in a register where two stencils pushed and popped it. LIT + is
+   st_addi's already. */
+S(st_lti)     { GO(sp, -(tos < (cell)IMM())); }
+S(st_gti)     { GO(sp, -(tos > (cell)IMM())); }
+S(st_eqi)     { GO(sp, -(tos == (cell)IMM())); }
+S(st_xori)    { GO(sp, tos ^ IMM()); }
+S(st_andi)    { GO(sp, tos & IMM()); }
+S(st_ori)     { GO(sp, tos | IMM()); }
+S(st_iplus)   { RPDECL cell v = ((cell *)RP)[0]; GO(sp, tos + v); }
+S(st_i2fetch) { RPDECL cell *a = (cell *)((cell *)RP)[0]; *--sp = tos; *--sp = a[1]; GO(sp, a[0]); }
+#endif
 S(st_j)      { RPDECL cell v = ((cell *)RP)[2]; *--sp = tos; GO(sp, v); }
 S(st_unloop) { RPDECL RP += 2 * sizeof(cell); GO(sp, tos); }
 S(st_leave)  { RPDECL RP += 2 * sizeof(cell); return spn_jump(sp, tos); }
@@ -347,12 +360,6 @@ S(st_fill)   { unsigned char *p = (unsigned char *)sp[1]; cell n = *sp;
 S(st_write) { spn_io_fn f = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
 S(st_read)  { spn_io_fn f = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
 #endif
-#if JITHELP
-/* Iteration 344, the gene jithelp: a C helper with the stencils' own signature, its address in the
-   function hole - called through a register, so the stencil copies anywhere; outside the I/O
-   stencils' own condition */
-S(st_callc) { spn_st r = ((spn_fn)IMM_FN())(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }
-#endif
 const void *const spn_table[] = {
     (const void *)spn_next, (const void *)spn_jump, (const void *)spn_call,
     (const void *)st_lit, (const void *)st_dup, (const void *)st_drop,
@@ -375,9 +382,6 @@ const void *const spn_table[] = {
 #if JITINL
     (const void *)st_dplus,      /* Iteration 137: after fill, so the others keep their numbers */
 #endif
-#if JITHELP
-    (const void *)st_callc,      /* Iteration 344: last, so the others keep their numbers */
-#endif
 #if JITMUL
     (const void *)st_umstar, (const void *)st_ummod,     /* Iteration 472: after the rest, numbers kept */
     (const void *)st_spfetch, (const void *)st_aligned,  /* Iteration 484 */
@@ -385,6 +389,11 @@ const void *const spn_table[] = {
 #if JITEXEC
     (const void *)st_execute, (const void *)st_callx,    /* Iterations 476, 486 */
     (const void *)st_abortq,                             /* Iteration 488 */
+#endif
+#if JITFUSE
+    (const void *)st_lti, (const void *)st_gti, (const void *)st_eqi,      /* Iteration 507 */
+    (const void *)st_xori, (const void *)st_andi, (const void *)st_ori,
+    (const void *)st_iplus, (const void *)st_i2fetch,
 #endif
 #if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
     (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,

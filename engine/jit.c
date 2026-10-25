@@ -30,15 +30,15 @@ enum { J_NEXT, J_JUMP, J_CALL,                  /* the markers: only their addre
 #if JITINL
        S_DPLUS,                                  /* Iteration 137: the gene jitinl */
 #endif
-#if JITHELP
-       S_CALLC,                                  /* Iteration 344: the gene jithelp */
-#endif
 #if JITMUL
        S_UMSTAR, S_UMMOD,                        /* Iteration 472: the gene jitmul */
        S_SPFETCH, S_ALIGNED,                     /* Iteration 484: jitmul's too */
 #endif
 #if JITEXEC
        S_EXECUTE, S_CALLX, S_ABORTQ,             /* Iterations 476, 486, 488: the gene jitexec */
+#endif
+#if JITFUSE
+       S_LTI, S_GTI, S_EQI, S_XORI, S_ANDI, S_ORI, S_IPLUS, S_I2FETCH,   /* Iteration 507: the gene jitfuse */
 #endif
        S_N };                                    /* spn_table's order, the first 44 (45 with jitx) */
 #if JITK
@@ -89,9 +89,6 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for 
     int ex, rs;                                 /* Iteration 476: EXECUTE's helper's hole, 488 the resume's, or -1 */
 #endif
     int nnext, njump, ncall;                    /* how many holes of each */
-#if JITHELP
-    int fn;                                     /* Iteration 344: the function hole's offset, or -1 */
-#endif
 };
 static struct jit_st jit_st[JIT_NST];
 
@@ -177,9 +174,6 @@ static void jit_scan(void) {
 #if JITEXEC
         s->ex = s->rs = -1;
 #endif
-#if JITHELP
-        s->fn = -1;
-#endif
         s->nnext = s->njump = s->ncall = 0;
         for (p = a; p < end; p++) {
             jit_hole_t v; uint32_t w;
@@ -190,9 +184,6 @@ static void jit_scan(void) {
 #if JITEXEC
                 if (v == JIT_EX64) s->ex = (int)(p - a);
                 if (v == JIT_RS64) s->rs = (int)(p - a);
-#endif
-#if JITHELP
-                if (v == JIT_FN64) s->fn = (int)(p - a);
 #endif
             }
             if (p + 4 <= end) {
@@ -225,34 +216,7 @@ static void jit_scan(void) {
  *  stack's call and ret; loops and the return stack use the engine's
  *  return stack, through jit_rp.  */
 #include <sys/mman.h>
-#if JITHELP
-struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; void *fn; };
-/* Iteration 344, the gene jithelp: the C primitives the outer interpreter stops at, as functions
-   with the stencils' signature - called from native code through st_callc. Each the handler's own
-   work (vm-lab.c), on the stencils' stack: tos in a register, sp[0] the item below. */
-#include "spn-abi.h"
-static spn_st h_place(cell *sp, cell tos) {            /* PLACE ( s n d -- ): vm-lab.c L_x_place */
-    unsigned char *d = (unsigned char *)(uintptr_t)tos; ucell n = (ucell)sp[0];
-    const unsigned char *s = (const unsigned char *)(uintptr_t)sp[1];
-    *d++ = (unsigned char)n; while (n--) *d++ = *s++;
-    return SPN_ST(sp + 3, sp[2]);
-}
-static spn_st h_parse(cell *sp, cell tos) {            /* (PARSE) ( a u c -- s len adv ): vm-lab.c L_x_parse */
-    ucell c = (ucell)tos, u = (ucell)sp[0];
-    const unsigned char *a = (const unsigned char *)(uintptr_t)sp[1], *p = a, *s;
-    if (c == 32) {                                      /* a space: any control character too */
-        while (u && *p <= 32) { p++; u--; } s = p;
-        while (u && *p > 32) { p++; u--; }
-    } else {
-        while (u && (ucell)*p == c) { p++; u--; } s = p;
-        while (u && (ucell)*p != c) { p++; u--; }
-    }
-    sp[1] = (cell)(uintptr_t)s; sp[0] = (cell)(p - s);
-    return SPN_ST(sp, (cell)((p - a) + (u ? 1 : 0)));
-}
-#else
 struct jit_op { unsigned char ok, n, opnd; signed char k; unsigned char st[5]; };
-#endif
 /* Iteration 344: an operand that fills the first literal hole - kinds 1-5, and with jitvar the slot
    kinds 8 and 9 (without them vf's literal took k, 0: a fetch from 0 - latent while no word with vf
    was translated). Without JITVAR the very expression it was. */
@@ -297,7 +261,7 @@ static spn_st jit_exec(cell *sp, cell tos, cell xt, cell *ic);   /* Iteration 47
 #define JIT_NIC 4096                    /* 481: EXECUTE's inline caches, three cells a site; the last shared when full */
 static cell jit_ic[JIT_NIC][3]; static int jit_nic;
 #endif
-#if JITRE || JITEXEC   /* 476: jitexec uses jitre's way into the interpreter and back */
+#if JITEXEC   /* 476: jitexec uses jitre's way into the interpreter and back */
 /*  Iteration 346, the gene jitre: native code calling bytecode (vm-lab.c's jit_interp) - a callee the
  *  JIT cannot translate is interpreted instead of refusing its caller. The interpreter leaves through
  *  a sentinel return address: [the JIT opcode][2], a "word" whose native code, at offset 2 (free:
@@ -363,7 +327,7 @@ static int jit_init(void) {
         void *m = mmap(0, JIT_MEM, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         jit_scan();
         if (m == MAP_FAILED) state = -1; else { jit_mem = m; state = 1; }
-#if JITRE || JITEXEC
+#if JITEXEC
         if (state == 1) {                       /* movabs rax, jit_leave; jmp rax - and the sentinel */
             UNS8 *t_ = jit_mem + JIT_LEAVE_OFF; UNS64 a_ = (UNS64)(uintptr_t)jit_leave; uint32_t o_ = JIT_LEAVE_OFF;
 #if defined(__i386__)
@@ -387,6 +351,8 @@ static int jit_usable(int s) {
     if ((s == S_0BRANCH || s == S_LOOP || s == S_PLOOP || s == S_QDO || s == S_DUP_GTI_BR)
         && (jit_st[s].nnext < 1 || jit_st[s].njump != 1)) return 0;
     if ((s == S_BRANCH || s == S_LEAVE) && jit_st[s].njump != 1) return 0;
+    if (jit_st[s].imm32 >= 0) return 0;      /* 515: a 32-bit hole is found but never patched here (st_addi32, st_dup_gti_br -
+                                                no operation maps to them; refused, never copied with the marker in it) */
     return jit_st[s].len > 0 && jit_st[s].ncall == (s == S_CALL) && jit_st[s].njump <= 1;
 }
 static int jit_len(int s) { return jit_st[s].len - (jit_st[s].tailnext ? 5 : 0); }
@@ -404,15 +370,6 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
         if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
     }
     if (t->imm >= 0) memcpy(dst + t->imm, &val, JIT_HOLEW);
-#if JITHELP
-    if (t->fn >= 0) {                                  /* a helper call: its value is the helper */
-        UNS64 fv_ = val;
-#if JITRE
-        if (t->imm >= 0) fv_ = (UNS64)(uintptr_t)jit_interp;   /* 348: st_interp by its holes - a function and a literal (st_callc has only the first); by index it would miss JITK's variants */
-#endif
-        memcpy(dst + t->fn, &fv_, JIT_HOLEW);
-    }
-#endif
     if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, JIT_HOLEW); }
 #if JITMUL
     if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, JIT_HOLEW); }
@@ -558,12 +515,46 @@ static inline int jit_ends(unsigned L) { const struct jit_op *o = &jit_ops[L]; r
  *    native words return through the C stack, not the engine's.  */
 #define JIT_DEPTH 16                    /* 490: 8 refused fcp's DABS, nine calls below MAKEMOVE */
 #define JIT_KN 256
-static struct { UNS64 w; uint32_t f; } jit_k[JIT_KN];   /* f: native offset; 0 bytecode; 1 being translated; top bit: not yet */
+static struct { UNS64 w; uint32_t f, sig; } jit_k[JIT_KN];   /* f: native offset; 0 bytecode; 1 being translated; top bit: not yet */
+/* Iteration 515: what a translation of w read - its bytes to its end, found as jit_body finds a body's end (the first
+   EXIT no branch reaches past), hashed. MARKER rolls the dictionary back, and a word made after it can sit where an
+   old one sat: keyed by the address alone, jit_k handed the new word the old one's code (a CONSTANT 7 answered 5 - the
+   bug hunt of 513-515). A signature that differs is a different word: translated again. */
+static uint32_t jit_ksig(UNS64 w) {
+    UNS64 a = w, far = 0; uint32_t h = 2166136261u; int n;
+    for (n = 0; n < JIT_MAXOPS; n++) {
+        UNS64 a0 = a; UNS8 b = BYTE(a); unsigned L = (unsigned)JIT_NOPS; int stop;
+        if (T2_CALL(b)) a += (UNS64)T2_CALLW(b);
+        else {
+            L = jit_one[T2_ONEIX(b)]; a++;
+            if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
+            if (L < (unsigned)JIT_NOPS && jit_ops[L].ok)
+                switch (jit_ops[L].opnd) {
+                case 1: case 5: a += 1; break;
+                case 2: case 8: a += 2; break;
+                case 3: a += 4; break;
+                case 4: a += 8; break;
+                case 6: { UNS64 t_ = a + (UNS64)(INT64)(int8_t)BYTE(a); if (t_ > far) far = t_; a += 1; } break;
+                case 7: { UNS64 t_ = a + (UNS64)(INT64)(int16_t)LD16(a); if (t_ > far) far = t_; a += 2; } break;
+                case 9: a += (BYTE(a) & 0x80) ? 3 : 2; break;
+                default: break;
+                }
+        }
+        stop = L >= (unsigned)JIT_NOPS ? !T2_CALL(b) : !jit_ops[L].ok || (jit_ends(L) && a > far);
+        for (; a0 < a; a0++) h = (h ^ BYTE(a0)) * 16777619u;
+        if (stop) break;
+    }
+    return h;
+}
 static uint32_t *jit_kslot(UNS64 w) {
     unsigned h = (unsigned)((w * 0x9E3779B97F4A7C15ULL) >> 56), n;
+    uint32_t sg = jit_ksig(w);
     for (n = 0; n < JIT_KN; n++, h = (h + 1) % JIT_KN) {
-        if (jit_k[h].w == w) return &jit_k[h].f;
-        if (!jit_k[h].w) { jit_k[h].w = w; jit_k[h].f = 0x80000000u; return &jit_k[h].f; }
+        if (jit_k[h].w == w) {
+            if (jit_k[h].sig != sg && jit_k[h].f != 1) { jit_k[h].sig = sg; jit_k[h].f = 0x80000000u; }   /* 515: another word now */
+            return &jit_k[h].f;
+        }
+        if (!jit_k[h].w) { jit_k[h].w = w; jit_k[h].sig = sg; jit_k[h].f = 0x80000000u; return &jit_k[h].f; }
     }
     return 0;                           /* full: the rest stay bytecode */
 }
@@ -687,6 +678,44 @@ static int jit_tail(int i, int n, const unsigned short *opl, const UNS64 *arg, c
 }
 #endif
 
+#if JITFUSE
+/* Iteration 507, the gene jitfuse: pairs of operations copied as one stencil (results/drafts/jit-pairs-506.md) - a
+   literal into +, <, >, =, XOR, AND or OR (the literal in the stencil's hole; LIT + is st_addi), the loop index I into
+   + or 2@. Never where the second operation is a branch target: a jump there would land inside the pair. jit_fz[i]:
+   operation i copied with i+1 as this stencil; operation i+1 then copies nothing. */
+static unsigned short jit_fz[JIT_MAXOPS + 1];
+static int jit_row1(unsigned short l, int s) { return l < 0xFFFD && jit_ops[l].ok && jit_ops[l].n == 1 && jit_ops[l].st[0] == s; }
+#define JIT_FUSE_SPAN 8192
+static void jit_fuse(int n, const unsigned short *opl, const UNS64 *arg, const UNS64 *at) {
+    static unsigned char tg[JIT_MAXOPS + 1], map[JIT_FUSE_SPAN]; int i, j;
+    UNS64 lo = at[0], hi = at[n];                    /* the word's bytes: at[n] is its end */
+    memset(tg, 0, (size_t)n + 1); memset(jit_fz, 0, ((size_t)n + 1) * sizeof jit_fz[0]);
+    if (hi > lo && hi - lo <= JIT_FUSE_SPAN) {       /* 509: the targets marked by address - a pass each way, where every */
+        memset(map, 0, (size_t)(hi - lo));           /* branch had rescanned the word (kernel +1.2%, corpus +2.4% at 507) */
+        for (i = 0; i < n; i++)
+            if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6 && arg[i] >= lo && arg[i] < hi) map[arg[i] - lo] = 1;
+        for (j = 0; j < n; j++) if (at[j] >= lo && at[j] < hi && map[at[j] - lo]) tg[j] = 1;   /* S" literals' at: bit 63, out */
+    } else
+        for (i = 0; i < n; i++)
+            if (opl[i] < 0xFFFD && jit_ops[opl[i]].opnd >= 6)
+                for (j = 0; j < n; j++) if (at[j] == arg[i]) { tg[j] = 1; break; }
+    for (i = 0; i + 1 < n; i++) {
+        unsigned short a = opl[i], b = opl[i + 1]; int s = 0;
+        if (tg[i + 1] || b >= 0xFFFD || !jit_ops[b].ok) continue;
+        if (jit_row1(a, S_LIT)) {
+            if (jit_row1(b, S_PLUS)) s = S_ADDI; else if (jit_row1(b, S_LT)) s = S_LTI; else if (jit_row1(b, S_GT)) s = S_GTI;
+            else if (jit_row1(b, S_EQ)) s = S_EQI; else if (jit_row1(b, S_XOR)) s = S_XORI; else if (jit_row1(b, S_AND)) s = S_ANDI;
+            else if (jit_row1(b, S_OR)) s = S_ORI;
+        } else if (jit_row1(a, S_I)) {
+            const struct jit_op *o = &jit_ops[b];
+            if (jit_row1(b, S_PLUS)) s = S_IPLUS;
+            else if (o->n == 5 && o->st[0] == S_DUP && o->st[1] == S_ADDI && o->st[2] == S_FETCH && o->st[3] == S_SWAP
+                     && o->st[4] == S_FETCH && o->k == (signed char)sizeof(cell)) s = S_I2FETCH;       /* 2@ */
+        }
+        if (s && jit_usable(s)) { jit_fz[i] = (unsigned short)s; i++; }
+    }
+}
+#endif
 #if JITK
 /*  Iteration 259, the gene jitk: the top K cells in registers across the copied
  *  code (gen-jitk.py; results/price-jit-stack.md). jitk_cs is the cache state
@@ -710,6 +739,14 @@ static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, co
     struct jit_op lit_op = { 1, 1, 1, 0, { S_LIT, 0, 0, 0, 0 } };
     const struct jit_op *o = &lit_op;
     (void)arg; (void)at;
+#if JITFUSE
+    if (i > 0 && jit_fz[i - 1]) return 0;                /* 507: copied with the operation before it */
+    if (jit_fz[i]) {                                     /* 507: the pair as one stencil, from the canonical state */
+        if ((k = jitk_canon(st, wh, 0)) < 0) return -1;
+        st[k] = jit_fz[i]; wh[k++] = 0; jitk_cs = 1;
+        return k;
+    }
+#endif
     if (opl[i] >= 0xFFFE) {                             /* a call: in state 1 */
         if ((k = jitk_canon(st, wh, 0)) < 0) return -1;
 #if JITTAIL
@@ -732,32 +769,6 @@ static int jitk_op(int i, int n, const unsigned short *opl, const UNS64 *arg, co
 }
 #endif
 
-#if JITRE
-/* Iteration 349: does the word at a read or pop the return stack below its own entry - its caller's
-   return address (a (S") reading the string after its call)? Then its caller cannot be translated past
-   the call: what follows the call is data. Read to its EXIT, an operation unknown, or 64 operations. */
-static int jit_rtouch(UNS64 a) {
-    int d = 0, n_, j;
-    if (BYTE(a) == JIT_CODE) a += 5;
-    for (n_ = 0; n_ < 64; n_++) {
-        UNS8 b = BYTE(a);
-        if (T2_CALL(b)) { a += (UNS64)T2_CALLW(b); continue; }
-        {   unsigned L = jit_one[T2_ONEIX(b)]; a++;
-            if (L == T2_ESC) { L = jit_esc[BYTE(a)]; a++; }
-            if (L >= (unsigned)JIT_NOPS || !jit_ops[L].ok) return 1;     /* 350: unknown - it may read its caller's frame: refused, to be safe */
-            for (j = 0; j < jit_ops[L].n; j++) {
-                int s = jit_ops[L].st[j];
-                if (s == S_TOR) d++;
-                else if (s == S_FROMR || s == S_RFETCH) { if (!d) return 1; if (s == S_FROMR) d--; }
-            }
-            switch (jit_ops[L].opnd) { case 1: case 5: case 6: a += 1; break; case 2: case 7: a += 2; break;
-                case 3: a += 4; break; case 4: a += 8; break; default: break; }
-            if (jit_ends(L)) return 0;
-        }
-    }
-    return 1;                           /* 350: no EXIT in 64 operations: not seen to be safe */
-}
-#endif
 /* The operations from a to end - end 0: find it, a word without a header
    (jitx) - of the word w: a call to w is a call to this code itself. */
 #if JITX
@@ -949,9 +960,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
     for (i = 0; i < n; i++) {           /* callees first: native, or no translation */
         uint32_t f;
         if (opl[i] != 0xFFFF || arg[i] == w) continue;
-#if JITRE
-        if (arg[i] < jit_cbase || arg[i] >= jit_cbase + ((UNS64)64 << 20)) return 0;   /* 350: a call to nowhere - the data after a refused callee, decoded */
-#endif
 #if JITEXEC
         if (jit_isexec(arg[i])) {                                         /* 476: a call of EXECUTE - its helper; 481: its cache */
             opl[i] = JIT_L_EXECUTE; arg[i] = (UNS64)(uintptr_t)jit_ic[jit_nic < JIT_NIC - 1 ? jit_nic++ : JIT_NIC - 1]; continue; }
@@ -985,13 +993,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         if (f < 2) { jitlog_at = arg[i]; jitlog_why = 4; }
         jitlog_note('C', w, arg[i], f);                 /* scratch: each callee's decision */
 #endif
-#if JITRE
-        if (f < 2 && jit_rtouch(arg[i])) return 0;        /* 349: it pops its caller's return address - (S")'s inline data: refused, as before */
-        if (f < 2) {                                      /* Iteration 346: interpreted, not refused - arg[i] its body */
-            if (BYTE(arg[i]) == JIT_CODE) arg[i] += 5;      /* 347: past the header - entered at it, L_x_jit would repoint the "caller", the sentinel */
-            opl[i] = JIT_L_INTERP; continue;
-        }
-#endif
 #if JITEXEC
         if (f < 2) {                                        /* 486: a cold word left bytecode - called through the helper */
             static const long cold_[] = { JIT_W_COLD }; int c_;
@@ -1016,8 +1017,15 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         }
     jitk_cs = 1;
 #endif
+#if JITFUSE
+    jit_fuse(n, opl, arg, at);          /* 507: after the callees are translated - jit_fz is shared, as jitk_tg */
+#endif
     for (i = 0; i < n; i++) {           /* sizes, and every stencil usable */
         nat[i] = size;
+#if JITFUSE && !JITK
+        if (i > 0 && jit_fz[i - 1]) continue;             /* 507: copied with the pair before */
+        if (jit_fz[i]) { size += (uint32_t)jit_len(jit_fz[i]); continue; }
+#endif
 #if JITLOG
         jitlog_at = at[i]; jitlog_why = 3;
 #endif
@@ -1065,6 +1073,10 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         const struct jit_op *o;
         UNS64 jt = 0;
         int lit = 1;
+#if JITFUSE && !JITK
+        if (i > 0 && jit_fz[i - 1]) continue;             /* 507 */
+        if (jit_fz[i]) { o = &jit_ops[opl[i]]; jit_put(p, jit_fz[i], JIT_LITOPND(o) ? arg[i] : (UNS64)(INT64)o->k, 0, 0); continue; }
+#endif
 #if JITK
         {
             int st_[16], wh_[16], m_ = jitk_op(i, n, opl, arg, at, st_, wh_), q_;
@@ -1083,9 +1095,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
                 } else if (wh_[q_] == -1) p = jit_put(p, s, 0, 0, 0);       /* a canonicaliser */
                 else {
                     UNS64 v = o_ ? (UNS64)(INT64)o_->k : arg[i];               /* no o_: jitx's literal */
-#if JITHELP
-                    if (o_ && o_->fn) v = (UNS64)(uintptr_t)o_->fn;
-#endif
                     if (o_ && jit_st[s].imm >= 0 && lit && JIT_LITOPND(o_)) { v = arg[i]; lit = 0; }
                     p = jit_put(p, s, v, jt, 0);
                 }
@@ -1116,9 +1125,6 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
         for (j = 0; j < o->n; j++) {    /* the operand's value fills the first literal hole; k the rest */
             int s = o->st[j];
             UNS64 v = (UNS64)(INT64)o->k;
-#if JITHELP
-            if (o->fn) v = (UNS64)(uintptr_t)o->fn;
-#endif
             if (jit_st[s].imm >= 0 && lit && JIT_LITOPND(o)) { v = arg[i]; lit = 0; }
             p = jit_put(p, s, v, jt, 0);
         }

@@ -1677,9 +1677,7 @@ if EMIT:
                  '<>?BRANCH': (['EQ', 'LIT', 'EQ', '0BRANCH'], 7), '<>?BRANCH8': (['EQ', 'LIT', 'EQ', '0BRANCH'], 6)}
             if '--jitloop' in ARGV:   # Iteration 129, the gene jitloop: SPN's (+LOOP) and (?DO) stencils, a branch operand as (LOOP)'s
                 O.update({'(+LOOP)': (['PLOOP'], 7), '(?DO)': (['QDO'], 7)})
-            JITHELPERS = {'PLACE': 'h_place', '(PARSE)': 'h_parse'} if '--jithelp' in ARGV else {}   # Iterations 344-345, the gene jithelp: C primitives called from native code
-            for _h in JITHELPERS: K[_h] = (['CALLC'], 0)
-            if JITHELPERS: K['COUNT'] = (['DUP', 'ADDI', 'SWAP', 'CFETCH'], 1)   # Iteration 345: ( a -- a+1 u ) - stencils it has
+            # Iteration 504: jithelp retired (frozen since 455) - its C helpers and the rows' function field gone
             if '--jitvar' in ARGV:    # Iteration 342, the gene jitvar: vf and vs - a literal of the slot's address, then @ or !
                 O['vf'] = (['LIT', 'FETCH'], 9 if G['VARSLOT'] else 8); O['vs'] = (['LIT', 'STORE'], 9 if G['VARSLOT'] else 8)
             if '--jitmul' in ARGV:    # Iteration 472, the gene jitmul: UM* and UM/MOD (spn-stencils.c, JITMUL); COUNT from stencils there are
@@ -1705,19 +1703,14 @@ if EMIT:
                 _dj = _jd(_nm)        # (not _d: that is the directory the headers go to)
                 if _dj and len(_dj[0]) <= 5:
                     _rows.append('[%d] = {1, %d, %d, %d, {%s}%s},  /* %s */' % (_x, len(_dj[0]), _dj[1], _dj[2],
-                                 ', '.join('S_' + s for s in _dj[0]) or '0', (', (void *)' + JITHELPERS[_nm]) if _nm in JITHELPERS else (', 0' if JITHELPERS else ''), _nm.replace('*/', '* /')))
+                                 ', '.join('S_' + s for s in _dj[0]) or '0', '', _nm.replace('*/', '* /')))
                 else: _miss.append('/* [%d] %s - no stencils */' % (_x, _nm.replace('*/', '* /')))   # 472: named, for jitapps.py
             if '--jitexec' in ARGV:    # Iteration 476, the gene jitexec: EXECUTE - a row no bytecode maps to, and the primitive if any
                 _le = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 2
-                _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ', 0' if JITHELPERS else ''))
-                _rows.append('[%d] = {1, 1, 4, 0, {S_CALLX}%s},  /* a cold call through the helper (486) */' % (_le + 1, ', 0' if JITHELPERS else ''))
-                _rows.append('[%d] = {1, 1, 4, 0, {S_ABORTQ}%s},  /* (ABORT") - the flag here, the interpreter on a true one (488) */' % (_le + 2, ', 0' if JITHELPERS else ''))
-            _lint = ''                  # Iteration 346, the gene jitre: one row no bytecode maps to - an interpreted call
-            if '--jitre' in ARGV:
-                _li = max(k for k in G['t2_names']().keys() if k < 0xFF00) + 1   # 349: above the operations, below the markers - max()+1 was 0xFFFE, "a call resolved"
-                assert _li < 0xFFFD, 'jitre: no index for INTERP'
-                _rows.append('[%d] = {1, 1, 4, 0, {S_INTERP}%s},  /* an interpreted call (jitre) */' % (_li, ', 0' if JITHELPERS else ''))
-                _lint = '#define JIT_L_INTERP %d\n' % _li
+                _rows.append('[%d] = {1, 1, 4, 0, {S_EXECUTE}%s},  /* EXECUTE (jitexec) - its operand the site\'s cache (481) */' % (_le, ''))
+                _rows.append('[%d] = {1, 1, 4, 0, {S_CALLX}%s},  /* a cold call through the helper (486) */' % (_le + 1, ''))
+                _rows.append('[%d] = {1, 1, 4, 0, {S_ABORTQ}%s},  /* (ABORT") - the flag here, the interpreter on a true one (488) */' % (_le + 2, ''))
+            _lint = ''                  # Iteration 504: jitre retired (frozen since 455) - its interpreted-call row gone
             _jc = T2MAP['one'][G['T2_JIT']]
             def _wends():              # Iteration 489: every image word's body, start and end - the decoder's end for a word reached
                 rows_ = sorted((new_off[w_['s']]['body'], new_off[w_['s']]['body'] + new_body_bytes(w_)) for w_ in order

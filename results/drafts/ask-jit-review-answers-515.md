@@ -15,7 +15,7 @@ into its caller and the cache is not consulted, which hid it from every test.
 Answer 1 pointed here (its Bug 2: stale native code when a word reuses an address), though it blamed the EXECUTE cache's
 key - that key (the four bytes after the token) does catch a changed body; the stale code came from jit_k behind it.
 
-**The fix** (results/pending/jit-ksig-after-seed71.patch, the after-seed-71 batch's fifth): each jit_k entry also keeps
+**The fix** (results/applied-after-seed71/jit-ksig-after-seed71.patch, the after-seed-71 batch's fifth): each jit_k entry also keeps
 a hash of the bytes its translation read - to the word's end, found as the translator finds it; a different hash is a
 different word, translated again. The reproduction gives `5 7` on every JIT design. tests/jit/jit-marker.fth (MARKER
 three times, through calls and EXECUTE; and a user word shaped like EXECUTE) runs after extend.4 and coreext.4 on every

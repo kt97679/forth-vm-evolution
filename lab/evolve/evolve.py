@@ -183,8 +183,8 @@ gene('jitmul', needs=lambda g, e: jit_on(g))                                   #
 gene('jitdoes', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 473: DOES> children native (jit.c)
 gene('jitexec', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 476: EXECUTE through a helper (jit.c)
 gene('jitcfa', needs=lambda g, e: jit_on(g) and g.get('jitx'))               # Iteration 482: the return-stack check along the paths
-gene('jitrp', needs=lambda g, e: jit_on(g) and g.get('jitx') and not e.get('compiler') and cellw() == 8)   # Iteration 494: GCC's global register
-gene('nocase', needs=lambda g, e: kfast_on(g) and not klookup_on(g))           # Iteration 497: names without case
+gene('jitrp', needs=lambda g, e: jit_on(g) and g.get('jitx') and not e.get('compiler') and cellw() == 8 and not g.get('lto'))   # 494; 516: not with lto - 'global register variable follows a function definition' (seed 71, 6 died)
+gene('jitfuse', needs=lambda g, e: jit_on(g) and g.get('jitx'))              # Iteration 507: pairs as one stencil (jit-pairs-506.md)
 gene('jitos', needs=lambda g, e: jit_on(g) and g['opt'] != 'Os')             # Iteration 239: the JIT's translator compiled for size; an -Os engine is so already
 gene('jittail', needs=lambda g, e: jit_on(g))                                  # Iteration 246: the JIT's tail calls as jumps (results/price-jit-calls.md)
 # Iteration 292: the [opcode EXIT] words among the primitives, so PRIMITIVE? lets the run-time
@@ -207,8 +207,6 @@ gene('knumber', needs=lambda g, e: klookup_on(g))
 ALIGNV = (None, '32:11', '32', '64')   # 32:11 - aligned where it costs at most 10 bytes (GCC's n:m)
 gene('alignhot', values=range(len(ALIGNV)), show=lambda v: 'alignhot=%s' % ALIGNV[v],
      needs=lambda g, e: not e.get('compiler') and not e.get('align1') and not e.get('alignfn'))
-gene('jithelp', needs=lambda g, e: jit_on(g))   # Iteration 344: the C primitives the outer interpreter stops at, called from native code (st_callc)
-gene('jitre', needs=lambda g, e: jit_on(g) and e.get('jithelp'))   # Iteration 346: a callee the JIT cannot translate interpreted, not refusing its caller (jit_interp)
 gene('jitret', needs=lambda g, e: jit_on(g))   # Iteration 404: EXIT as pop and jmp, not ret - the return predictor's depth (jit.c)
 gene('jitvar', needs=lambda g, e: jit_on(g))   # Iteration 342: vf and vs (getstatic, putstatic) given the JIT
 gene('jitimg', values=(0, 1), needs=lambda g, e: jit_on(g))   # Iteration 341: the image's words JIT candidates - 1 the outer interpreter (2, every plain code word, kills on the corpus: not offered)
@@ -373,10 +371,6 @@ def rtloopall_repair(g):
     if not g.get('rtloop'): g['rtloop'] = 1; fixed.append('rtloop=1')
     if not rtloopall_on(g) and not g.get('escape'): g['escape'] = 1; fixed.append('escape=1')   # the slots: 2-4 without it on the tag
     return fixed
-def nocase_on(g):
-    """Iteration 497, the gene nocase: names without case - forth/cv8b-nocase.4 (cv8bt-nocase.4 under tag 2) after kfast's and
-    kinput's overlays; not with klookup, whose (FIND) copies the key in C (results/drafts/nocase-496.md)."""
-    return kfast_on(g) and not klookup_on(g) and bool(express(g).get('nocase'))
 def kfast_on(g):
     """Iteration 49: kernel words made faster for the byte-header system
     (forth/cv8b-kfast.4) - a byte-header CV8 design with the gene. (A
@@ -906,7 +900,7 @@ REQUIRE = []
 # code stays; removed only if the run after shows no loss (its comparison small or better).
 FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
-          'alignhot': 0, 'jithelp': 0, 'jitre': 0, 'jitos': 0, 'nocase': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 497: nocase staged
+          'alignhot': 0, 'jitos': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
@@ -943,8 +937,6 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitrp'):        # Iteration 494, the gene jitrp: the return-stack pointer in a register
         flags += ['-DJITRP=1', '-DJITRP_REG="%s"' % {2: 'rbx', 3: 'r13'}.get(g.get('regpin') or 0, 'r15')]   # clear of regpin's
     if jit_on(g) and express(g).get('jitvar'): flags.append('-DJITVAR=1')   # Iteration 342: the slot operand's decoding
-    if jit_on(g) and express(g).get('jithelp'): flags.append('-DJITHELP=1')   # Iteration 344: st_callc and the helpers
-    if jit_on(g) and express(g).get('jitre'): flags.append('-DJITRE=1')       # Iteration 346: jit_interp
     if jit_on(g) and os.environ.get('EVOLVE_JITLOG'): flags.append('-DJITLOG=1')   # Iteration 340: jitleft.py --why's build only
     if express(g).get('bfind'): flags.append('-DBFIND=1')   # Iteration 316: THREAD-FIND's and (FIND)'s walk branch-light
     if jit_on(g) and g.get('jitx'): flags.append('-DJITX=1')   # Iteration 108: the translator reaches further
@@ -955,6 +947,7 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitdoes'): flags.append('-DJITDOES=1') # Iteration 473: DOES> children native
     if jit_on(g) and express(g).get('jitexec'): flags.append('-DJITEXEC=1') # Iteration 476: EXECUTE's helper
     if jit_on(g) and express(g).get('jitcfa'): flags.append('-DJITCFA=1')   # Iteration 482: the check along the paths
+    if jit_on(g) and express(g).get('jitfuse'): flags.append('-DJITFUSE=1') # Iteration 507: pairs as one stencil
     if jit_on(g) and express(g).get('jitos'): flags.append('-DJITOS=1')     # Iteration 239: the translator -Os
     if jit_on(g) and express(g).get('jittail'): flags.append('-DJITTAIL=1')  # Iteration 246: tail calls as jumps
     if jit_on(g) and express(g).get('jitret'): flags.append('-DJITRET=1')    # Iteration 404: EXIT as pop and jmp
@@ -1032,8 +1025,6 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitexec'): opts.append('--jitexec')   # Iteration 476: EXECUTE's row
     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
-    if jit_on(g) and express(g).get('jithelp'): opts.append('--jithelp')   # Iteration 344: C primitives called from native code
-    if jit_on(g) and express(g).get('jitre'): opts.append('--jitre')       # Iteration 346: native code calling bytecode
     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
     if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
     if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
@@ -1050,7 +1041,7 @@ def _build(g, d):
     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
-    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-nocase' if nocase_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
+    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.
@@ -1216,8 +1207,12 @@ def run_metric(eng, img, pw, w, single=False):
     mf = re.search(rb'^MINFLT (\d+)', r.stderr, re.M)
     mr = re.search(rb'^MAXRSS (\d+)', r.stderr, re.M)
     RSS_LAST[0] = int(mf.group(1)) * PAGE_KB if mf else (int(mr.group(1)) if mr else 0)
+    OUT_LAST[0] = hashlib.sha1(re.sub(rb'(?m)^Redefining:[^\n]*\n', b'', r.stdout.replace(b'\r', b''))).hexdigest()
+    # Iteration 516: what it printed - measure() compares it with s6's; a family's kernel differs in its words, so
+    # 'Redefining: X' differs with it (cell designs have no LIT, or CALL, for sim16 to redefine) - not the output
     return int(m.group(1))
 RSS_LAST, LAST_RSS = [0], {}     # the last run's memory (KB); the last measure()'s design, per workload: the median
+OUT_LAST = ['']                  # Iteration 516: the last run's output, hashed
 PAGE_KB = os.sysconf('SC_PAGE_SIZE') // 1024
 
 def text_size(path):
@@ -1252,13 +1247,19 @@ def measure(eng, img, pw, works, rounds):
     agreed within 3.6% between halves of a session and 2.1% between CPUs
     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
     runs, ref = {}, {}
-    LAST_RSS.clear(); mem = {}
+    LAST_RSS.clear(); mem = {}; outs = {}
     for r_ in range(rounds):
         for w in works:
             pair = [(eng, img, pw, runs), REF + (ref,)]
             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
                 store.setdefault(w, []).append(run_metric(e, i, p, w))
                 if store is runs: mem.setdefault(w, []).append(RSS_LAST[0])   # the design's, not s6's
+                outs.setdefault((store is runs, w), set()).add(OUT_LAST[0])
+    # Iteration 516: a workload's output must be s6's - the run, not only its time. Unchecked, the applications
+    # workload (seed 71) rewarded failing it: 791 cpt16 designs stopped early in apps on undefined words and timed
+    # 0.13 of s6 there, against ~1.07 elsewhere - one reached the front. Both ran the same program in the same rounds.
+    for w in works:
+        if outs.get((True, w)) != outs.get((False, w)): raise RuntimeError('wrong output: ' + w)
     if 'corpus' in mem and 'corpus' in LONGF:    # Iteration 100: the corpus's memory from one single run
         run_metric(eng, img, pw, 'corpus', single=True); mem['corpus'] = [RSS_LAST[0]]
     LAST_RSS.update({w: statistics.median(v) for w, v in mem.items()})     # a page or two of noise
@@ -1804,7 +1805,7 @@ def setup():
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
     W = os.path.join(O, 'work')
-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4', 'cv8b-nocase.4', 'cv8bt-nocase.4',
+    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
@@ -1812,15 +1813,14 @@ def setup():
     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-self', ['cv8.4']), (KW() + '-b', ['cv8.4', 'cv8b.4']),
                                                                     (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
-                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber',
-                                   '-kfast-nocase', '-kfast-kinput-nocase') if b != KW() + '-self' else ('',))   # -nocase: Iteration 497
+                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != KW() + '-self' else ('',))   # 501: -nocase retired
                         for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
                         for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
                         for j in (('', '-jit') if b == KW() + '-bt' else ('',))
                         for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
-        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + ([('cv8bt-nocase.4' if name.startswith(KW() + '-bt') else 'cv8b-nocase.4')] if '-nocase' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
+        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
                        + (['cv8-imm.4'] if '-lit' in name else [])     # Iteration 422: the immediates alone

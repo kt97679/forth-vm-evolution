@@ -111,3 +111,8 @@ noise 0.96%, the gate's regression 0.07%: the offset is the measuring context, n
 slower of its two readings, each workload's, where it was their geometric mean - the fast end stayed 7-10% optimistic
 every run since 446, the best of thousands chosen on its luckier draw. The rule's band stands; the first run with the
 change, seed 72, is its test.
+
+**Rule 2, jithelp and jitre retired (Iteration 504; the after-seed-71 batch)**: frozen since 455 (12 of 12 removal
+votes over three runs, 0% of every front since), their code goes - the C helpers called from native code (st_callc, the
+function hole), the interpreted call (S_INTERP) and their genes; jit_interp, its sentinel and its trampoline stay, for
+jitexec's interpreted path. Rule 2 watches jitret alone.
