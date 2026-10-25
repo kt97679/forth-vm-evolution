@@ -17,6 +17,11 @@ failing run no longer can; 67 cpt16 designs alive (their applications right at 6
 three co-runners - loaded / alone 1.012 in the median (0.978-1.054). Both are ~7% slower than in the run (alone 1.069,
 loaded 1.080): the fast end's offset is between the run and after it, with or without co-runners - not contention.
 
+**The memory objective measured the applications** (found here): every design's memory is the most any selection
+workload touched, and since seed 71 that is the applications' own data - gc16's 320 KB of cells: 460-500 KB for all,
+where the six old workloads give 108-136 (the front's least 464 KB, seed 71's 140 - its failing cpt16 designs, which
+never allocated). Fixed in the after-seed-72 batch: the most of the others, as before seed 71.
+
 Facts: the fastest c3a18bd60b 0.1485 (seed 71's 0.1426 at generation 130; this run reached generation 102: 2,916
 designs an hour against 3,273); the smallest 14,079 bytes (seed 71: 14,210); appbench.py on 16 of the front - nine
 applications now (wordfreq, minif) - the fastest's geometric mean 0.275 of s6, Spearman with the in-run speed 0.797,

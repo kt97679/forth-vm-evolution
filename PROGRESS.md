@@ -9658,3 +9658,24 @@ choosing them, tried in a clone, bought 0.0% (the ranking) and -0.2% (hotinl's s
 
 Files: lab/evolve/genecost.py, lab/evolve/hotsites-v2.json, hotwords-v2.json, tag2-rank-v2.json,
 results/drafts/genecost-519.md (new); lab/evolve/tag2-rank.py, lab/evolve/README.md, results/README.md, HANDOFF.md.
+
+## Iteration 520 - 2026-10-25 - Claude
+
+**Seed 72 processed - contention ruled out, the memory objective repaired; the after-seed-72 batch applied; seed 73 at 11
+hours** (the owner: the next run 11 hours; results/evolve-amd-ryzen-7-pro-8840hs-seed72.md). 26,244 designs, generations
+0-102, the front 185; speed over seven workloads as seed 71's. The output check (516) refused 31 cpt16 designs; 67 alive
+fail at 32 bits for the same reach (rule 5's 67). jitfuse on 29 of 115 JIT designs, 3 of the fastest tenth - its
+prediction fails. **The contention experiment**: the 16 fastest, alone and beside three co-runners, 1.012 apart in the
+median - both ~7% slower than in the run: not contention; the offset lies between the run and after it. **The memory
+objective** had measured the applications' own data since seed 71 (gc16's cells: 460-500 KB for every design, the old six
+108-136) - fixed in the batch (the most of the others). appbench.py: the fastest's nine applications 0.275 of s6,
+Spearman 0.797, all right. Freeze candidates: rtfuse, rtimm (12 of 12), jitret (11 of 12) - proposed to the owner. The
+after-seed-72 batch: batch-check PASS (jitexec's table), the memory patch with it, applied, moved to
+results/applied-after-seed72/; the chain on master: build, run-tests PASS, validate 7 of 7, the jail PASS, the gate
+185 of 185 alive, ans-check 0 of 38 differ (its negative control caught). NEXT-RUN: seed 73, 11 hours, without the
+contention experiment.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed72.md, results/xcheck-seed72.md (new); results/applied-after-seed72/
+(moved), lab/evolve/evolve.py, tools/layout.py (the batch), lab/evolve/NEXT-RUN, results/gene-votes.md,
+results/predictions.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md, results/progress-by-run.md, results/README.md,
+HANDOFF.md.
