@@ -9980,3 +9980,11 @@ On the laptop: `sh tools/clean-runs.sh --dry-run` lists what goes before next-ru
 Files: tools/clean-runs.sh, tools/run-tests.sh, lab/evolve/chainctl.py, GOALS.md, HANDOFF.md, results/README.md,
 results/drafts/factor-plan.md, lab/evolve/README.md; tools/test-clean-runs.sh (new); results/drafts/chat-to-iter265/
 (removed).
+
+## Iteration 542 - 2026-10-25 - Claude
+
+**Fewer tokens** (the owner; habr.com/ru/articles/1099264, Grammar.md): HANDOFF.md cut to a 12.5 KB state card (was 59 KB,
+read whole by every new chat) - the rest verbatim in HANDOFF-REFERENCE.md, read on demand; conventions in the card: write
+each fact once, short replies, summaries not dumps, a new chat after each seed. prompts/20: an answer contract, answers
+pasted one at a time and logged in results/model-usefulness.md (new). Four /tmp scripts behind recorded figures
+committed (results/drafts/front-recheck-528-votes.py, frozen-recheck-534.py, -534-raw.py, hv-ranges-539.py).

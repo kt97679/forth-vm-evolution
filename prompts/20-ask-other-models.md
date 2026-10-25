@@ -65,10 +65,19 @@ At a challenge, before settling it alone:
    - the answer asked as checkable claims: exact encodings, flags, triggers,
      numbers, references with links - and "unsure" where unsure;
    - code embedded when the target cannot take attachments (one file to
-     paste), attached otherwise; nothing secret.
+     paste), attached otherwise; nothing secret;
+   - an answer contract at its end (Iteration 542 - answers are read in
+     full, so their length is paid for): at most about 900 words; the
+     question not restated; each claim with how to check it; references as a
+     list with links; "unsure" where unsure.
    Say which kind of model suits each prompt.
 
-4. When the answers return, check every claim before using any:
+4. The owner pastes the answers one at a time (Iteration 542). On each:
+   say in a few lines what it adds that the earlier ones did not, what is
+   wrong, and whether the question is answered - if it is, the rest need not
+   be asked; log it in results/model-usefulness.md (the round, the model as
+   the owner names it, new / wrong / verdict).
+   Then, with the answers in, check every claim before using any:
    - a claim about code becomes a test, run where it applies (both widths,
      every variant);
    - a claim about a tool or an instruction set is tried with that tool;

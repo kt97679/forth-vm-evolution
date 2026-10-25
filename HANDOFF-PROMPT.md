@@ -60,9 +60,12 @@ Set up first:
    jobs it started in the background, and about 300 s is a call's limit:
    start anything long with `setsid nohup ... &` and poll it (run-tests takes
    about six minutes). A turn also has a budget of tool calls (about fifty).
-3. Read HANDOFF.md whole - the state, the routine for a returned seed, the
-   owner's decisions, the open items, the lessons, and what every turn does
-   before it ends - then GOALS.md (the aim, how success is measured, the
+3. Read HANDOFF.md whole - the state card: the state, the routine for a
+   returned seed, the owner's decisions every session uses, the open items, the
+   conventions, and what every turn does before it ends; its background
+   (HANDOFF-REFERENCE.md: the decisions in full, the history, the lessons) on
+   demand - the lessons before changing the evolver or a measurement - then
+   GOALS.md (the aim, how success is measured, the
    register of rejected ideas: look there before trying one), then
    PROGRESS.md's entries after the iteration HANDOFF.md names, then
    prompts/INDEX.md. README.md's "Documents" section indexes everything else.

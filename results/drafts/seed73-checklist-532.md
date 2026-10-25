@@ -34,3 +34,15 @@ if seed 73 gives it 4 of 4 with no keep vote; rtfuse cannot be before seed 75's 
 ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8` - cycles need perf-hold-start.sh run
 first, as for the counters step. Seed 74 will show: stopped children (one round first), the operators' line each
 generation, the reported fronts by the true rule (predictions 526, 527, 529).
+
+## Added since 535 (Iteration 542)
+
+- The fixed-box hypervolume: `python3 lab/evolve/hv.py <seed 73's db.jsonl>` - the first value of GOALS.md's series
+  (its box is lab/evolve/hv-bounds.json; never changed after the fact). Record it with the extremes.
+- The stopping count starts at seed 74 - the batch changes the method.
+- The laptop's runs/ is tidied at seed 74's start (tools/clean-runs.sh, Iteration 541) - if the owner sends its first
+  output, check that it removed only copies (repo.bundle, bins.tar.gz, chain tarballs past the newest two).
+- From seed 74's chain the archive leaves out the bundle and the binaries: expect about 13 MB, not 23.
+- Write each fact once (HANDOFF.md, Conventions): the processing's detail in seed 73's results file; the PROGRESS
+  entry three lines or so.
+
