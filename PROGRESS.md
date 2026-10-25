@@ -9862,3 +9862,15 @@ self-test passes on them; batch-check again at processing (the checklist says so
 
 Files: results/drafts/freeze-rt-withdrawn-533.patch (moved from results/pending/); results/pending/ORDER.md,
 results/drafts/seed73-checklist-532.md, HANDOFF.md.
+
+## Iteration 534 - 2026-10-25 - Claude
+
+**Every freeze rechecked on the true fronts** (the owner: any genes left we want to enable?;
+results/drafts/frozen-recheck-534.md). From seeds 59-72's records (the chain archives), each frozen gene counted where it
+could be expressed, by the true front and the rule (11 of 12, no keep vote): alignhot (64-66), jithelp and jitre (64-66;
+expressed on no front design - a first raw count of dormant values had jitre at 38%) and kstack (62-64 on) hold. jitos,
+frozen at 495 on 67-69, fails the rule: 11 votes and a keep vote (seed 69's best-Q tenth) - and in seeds 59-66 it was in
+the fastest and best-Q tenths in six runs each. msc, scale, sharedcall, tail, tailpn were frozen before any run we have
+records of. Proposed: unfreeze jitos for the rule to decide, as for rtfuse and rtimm.
+
+Files: results/drafts/frozen-recheck-534.md (new); results/README.md, HANDOFF.md.
