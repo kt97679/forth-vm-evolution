@@ -9913,3 +9913,18 @@ would be new, the venues - references asked with links, to be checked one by one
 statistics with citations; the second one with research and citations.
 
 Files: results/drafts/ask-front-stats-537.md, results/drafts/ask-related-work-537.md (new); results/README.md, HANDOFF.md.
+
+## Iteration 538 - 2026-10-25 - Claude
+
+**The front-statistics answers checked** (the owner brought five; results/drafts/ask-front-stats-answers-538.md). All five
+agree, and rightly: a hypervolume with a fixed normalisation and reference point (our spread tool's per-comparison
+reference makes its numbers incomparable); no rank tests with two or three runs (checked: Mann-Whitney's smallest
+two-sided p is 0.100 for 3 against 3, Wilcoxon needs 6 pairs); our stopping rule weak as worded - at least three runs,
+the hypervolume as main statistic, an effect size fixed in advance; the top-tenth confirmation a screen, not a test -
+the hypervolume against the pooled front and per-run enrichment instead; the final set by extremes and greedy
+hypervolume contribution. Wrong: invented risk figures (63), a test that compares a difference with a hundredth of
+itself (67), an invented pymoo API, a mismatched DOI and a reference not found (67). Martí et al. 2016 and Trautmann et
+al. 2009 found by search. Four proposals for the owner: the stopping rule and the confirmation test revised in
+GOALS.md, the final set's method, a fixed-reference hypervolume tool with bounds fixed before the next run.
+
+Files: results/drafts/ask-front-stats-answers-538.md (new); results/README.md, HANDOFF.md.
