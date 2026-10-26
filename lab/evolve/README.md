@@ -98,6 +98,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `seed-facts.py` - seed-facts.py DB RESULTS - step 3 of processing a returned seed (Iteration 256)
 - `stackops.py` - stackops.py ID [ID ...] [--db FILE] - a register machine priced by
 - `tag2-rank.py` - tag2-rank.py OUT.json DB ID [ID ...] - the reference ranking
+- `test-evolver.py` - the evolver's self-test (Iteration 530; applied at 544 with the after-seed-73 batch): first_front against fronts()[0] over 300 random populations, one round first's decision, the adaptive operators' shares and floor, a gated design's second reading (gate_again) - 14 checks, run by tools/run-tests.sh.
 - `test-jail.py` - test-jail.py - prove that an engine the evolver runs cannot fork
 - `vm-run.sh` - lab/evolve/vm-run.sh SEED [REQ] - a run on the development VM (Iteration 79)
 - `xcheck.py` - the front measured on another machine: --sample picks designs on the laptop, the host's run builds, checks and measures them against s6 there, --report compares the rankings (Iteration 307); Iteration 331: --cell 4 samples a 32-bit check - each design built and alive as a 32-bit x86 engine here before it goes; the host's byte order and cell width recorded Since Iteration 377, --rejected K: designs the selection rejected, measured too.

@@ -1,7 +1,7 @@
 # HANDOFF-REFERENCE - background to HANDOFF.md, read on demand (Iteration 542)
 
 HANDOFF.md is the state card a new chat reads whole; this is what it points to: the owner's standing decisions in
-full, the state through Iteration 541 (history - the card has the present), the open items' lists of Iterations
+full, the state through Iteration 544 (history - the card has the present), the open items' lists of Iterations
 505 and 369, and the lessons - read the lessons before changing the evolver or a measurement. Moved here verbatim
 at Iteration 542 (the owner: fewer tokens at every chat's start).
 
@@ -76,8 +76,21 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
 - **Superinstructions kept for now** (Iteration 389), though they buy nearly nothing: 0.27% of dispatches with the
   JIT off, 0.9% with it on, bytes either way (results/supers-knockout-seed58.md).
 
-## The state through Iteration 541 (history - HANDOFF.md has the present)
+## The state through Iteration 544 (history - HANDOFF.md has the present)
 
+- **The runs**: **seed 73 processed (Iteration 544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222
+  (reported 174, 61 in both); no comparison in its chain - the spread at generation 102 level with 71-72; the fixed-box
+  hypervolume 0.34915 (the series' first); memory the six workloads' again (least 112 KB); jitexec on 6 of 65 JIT designs
+  (518 fails); no freeze candidate, rtimm not - the withdrawn freeze's question closed; **the after-seed-73 batch applied**;
+  seed 74 at 10 hours (the owner), the clock test last.
+- **The card at Iteration 543**, moved here at 544:
+  - **Decided since 532**: the rtfuse/rtimm freeze withdrawn (533) - the votes over 71-73 decide at 73's processing; every
+    freeze rechecked on the true fronts, jitos unfrozen (534-535); GOALS.md's "When the improvements are done" (536,
+    revised 539-540): the stopping rule on the fixed-box hypervolume (lab/evolve/hv.py, lab/evolve/hv-bounds.json - the
+    series starts at seed 73), the confirmation run, the final set, the random-search baseline; the cleanup (541):
+    clean-runs.sh tidies the chains at seed 74's start, and chain archives leave out the bundle and the binaries.
+  - **Before 532**: seeds 70-72 processed (498, 516, 520). Every reported front until 532 was the shortcut's, not the true
+    one (results/drafts/front-recheck-528.md): figures are recomputed from the runs' records.
 - **The runs**: **seed 72 processed (Iteration 520)** - the output check at work (31 cpt16 designs refused); jitfuse on
   29 of 115 JIT designs, 3 of the fastest tenth (its prediction fails); **contention ruled out** - the fast end alone and
   beside co-runners differ 1.2%, both ~7% slower than in the run: the offset lies between the run and after it; **the

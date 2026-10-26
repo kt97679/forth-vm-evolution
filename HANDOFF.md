@@ -1,6 +1,6 @@
 # HANDOFF - start here in a new chat
 
-The state card: read it whole. Its background - the owner's decisions in full, the state through Iteration 541, the
+The state card: read it whole. Its background - the owner's decisions in full, the state through Iteration 544, the
 open items' history, the lessons - is HANDOFF-REFERENCE.md, read on demand; its lessons before changing the evolver or a
 measurement.
 
@@ -38,25 +38,23 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 543.
-- **Seed 73 is running** on the laptop - 11 hours (the owner), jitexec's first fair run, then review-checks spread and
-  the appbench sample. Its processing is next: results/drafts/seed73-checklist-532.md, then "Processing a returned seed".
-- **The after-seed-73 batch**, six patches (results/applied-after-seed73/ORDER.md): adaptive operators, the bug-hunt fixes (the true
-  front among them), one round first, the evolver self-test, the JIT table's bounds, jitos unfrozen. batch-check again
-  before applying. It changes the method: GOALS.md's stopping count starts at seed 74.
-- **Seed 74's line**, written at 73's processing: the clock test (lab/evolve/clockcheck.py) at its end - the fast end's
-  7% offset (open item 3).
-- **Predictions due** (results/predictions.md): seed 73 - jitexec (518); seed 74 - adaptive operators, one round first,
-  the front sizes (526, 527, 529), jitos back on the front (534).
-- **Decided since 532**: the rtfuse/rtimm freeze withdrawn (533) - the votes over 71-73 decide at 73's processing; every
-  freeze rechecked on the true fronts, jitos unfrozen (534-535); GOALS.md's "When the improvements are done" (536,
-  revised 539-540): the stopping rule on the fixed-box hypervolume (lab/evolve/hv.py, lab/evolve/hv-bounds.json - the
-  series starts at seed 73), the confirmation run, the final set, the random-search baseline; the cleanup (541):
-  clean-runs.sh tidies the chains at seed 74's start, and chain archives leave out the bundle and the binaries.
-- **Before 532**: seeds 70-72 processed (498, 516, 520). Every reported front until 532 was the shortcut's, not the true
-  one (results/drafts/front-recheck-528.md): figures are recomputed from the runs' records.
-- **Files a new chat needs**: the newest bundle, and the chain archive of every seed not yet processed - seed 73's
-  (`forth-vm-evolution-chain-<its commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
+- master: Iteration 544.
+- **Seed 74 is next** - 10 hours (the owner), on the after-seed-73 batch (results/applied-after-seed73/ORDER.md: adaptive
+  operators, the true front in every report, one round first, the evolver self-test, the JIT table's bounds, jitos
+  unfrozen). The method changed, so GOALS.md's stopping count starts at seed 74 - and the hours are part of the method:
+  seeds 75 on at 10 hours too, or the count restarts. Its line ends with the clock test (lab/evolve/clockcheck.py, open
+  item 3), whose cycles need kernel.perf_event_paranoid at most 2 while it runs - the chain's perf hold covers counters.py
+  and missmap.py only: the owner's sysctl before the start (NEXT-RUN's comment), else the time alone.
+- **Seed 73 processed (544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222 (reported 174); no
+  comparison in its chain, the spread level with 71-72; the fixed-box hypervolume 0.34915, the series' first; jitexec on 6
+  of 65 JIT designs (518 fails); no freeze candidate - rtimm not (533's question closed), rtfuse not before 75.
+- **Predictions due** (results/predictions.md): seed 74 - adaptive operators, the reported fronts, one round first (526,
+  527, 529), jitos back on the front (534).
+- **Before 544**: seeds 70-73 processed (498, 516, 520, 544). Every front reported until seed 74 was the shortcut's, not the
+  true one (results/drafts/front-recheck-528.md): figures are recomputed from the runs' records. The decisions of
+  532-543: HANDOFF-REFERENCE.md.
+- **Files a new chat needs**: the newest bundle, and seed 74's chain archive (`forth-vm-evolution-chain-<its
+  commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
@@ -79,7 +77,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 5. A batch due now (its ORDER.md says when): `tools/batch-check.sh` first (one line), then apply it (reseed with
    `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
    files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
-   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - last, and alone: here
+   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - run it last, after the gate and ans-check, and alone: here
    it takes the same user's other processes with it - the chain after it at 433 and 441, and at 449 a gate running beside
    a batch-check's own jail test; nothing may run beside it), `python3
    lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
@@ -114,17 +112,24 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. Seed 73's processing (above), then seed 74's line.
+1. Seed 74's processing, then a new chat: predictions 526, 527, 529, 534; its reported front is the true one now - check
+   it against `review-checks.py votes --db`; the clock test's reading (item 3); its hypervolume, the stopping series' first
+   run on the method; clean-runs.sh's first tidy of the laptop's runs/ (only copies gone: repo.bundle, bins.tar.gz, chain
+   tarballs past the newest two); the archive about 13 MB, without the bundle and the binaries.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": runs on an unchanged method from seed
-   74, then the confirmation run, the final set, the random-search baseline (a random mode in evolve.py, written at
-   consolidation).
-3. The fast end's 7% offset (rule 3): the clock test in seed 74's chain (results/drafts/ask-noise-answers-513.md,
-   ask-cpu-state-answers-526.md).
-4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner.
-5. The JIT genes' place: their votes count (rule 12); seed 73 is jitexec's first fair run.
-6. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
+   74 (10 hours), then the confirmation run, the final set, the random-search baseline (a random mode in evolve.py,
+   written at consolidation).
+3. The fast end's 7% offset (rule 3; seed 73 1.070): the clock test in seed 74's chain - its cycles only with paranoid at
+   most 2, above (results/drafts/ask-noise-answers-513.md, ask-cpu-state-answers-526.md).
+4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 73: 1 design relies
+   on it).
+5. The JIT genes' place: their votes count (rule 12). Seed 73: jitexec on 6 and jitfuse on 7 of 65 JIT designs; jitrp 8
+   votes of 8 over 72-73 - a freeze candidate if seed 74 gives it three or four (11 of 12) with no keep vote.
+6. fail32 does not list cpt16's 16-bit reach refused at 4-byte cells (517) among its known causes - rule 5 reads ATTENTION
+   for it (seeds 72-73: 67 and 61 designs, every one cpt16, "wrong output: apps"): a line for review-checks.py.
+7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
-7. The article, after consolidation: the claim is the integration, not any technique
+8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts.
 
 ## Conventions - tokens (the owner, Iteration 542)
