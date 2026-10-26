@@ -38,13 +38,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 544.
-- **Seed 74 is next** - 10 hours (the owner), on the after-seed-73 batch (results/applied-after-seed73/ORDER.md: adaptive
-  operators, the true front in every report, one round first, the evolver self-test, the JIT table's bounds, jitos
-  unfrozen). The method changed, so GOALS.md's stopping count starts at seed 74 - and the hours are part of the method:
-  seeds 75 on at 10 hours too, or the count restarts. Its line ends with the clock test (lab/evolve/clockcheck.py, open
-  item 3), whose cycles need kernel.perf_event_paranoid at most 2 while it runs - the chain's perf hold covers counters.py
-  and missmap.py only: the owner's sysctl before the start (NEXT-RUN's comment), else the time alone.
+- master: Iteration 545.
+- **Seed 74 is running** on the laptop - 10 hours (the owner), the first run of the after-seed-73 batch
+  (results/applied-after-seed73/ORDER.md). The method changed, so GOALS.md's stopping count starts at seed 74 - its
+  hours, 10, are the method's: seeds 75 on at 10 too, or the count restarts. Its clock test runs without cycles unless
+  the owner set kernel.perf_event_paranoid to 2 by hand - and only after the evolution's re-measurement: tools/cputime.c
+  opens the counters for every run once it may (545). Its processing: results/drafts/seed74-checklist-545.md, then
+  "Processing a returned seed".
+- **The after-seed-74 batch**, three patches (results/pending/ORDER.md): fail32 learns cpt16's reach; the clock test
+  takes the chain's perf hold - from seed 75, next-run.sh asks for sudo once at the start; the progress table's header.
+  batch-check again before applying.
 - **Seed 73 processed (544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222 (reported 174); no
   comparison in its chain, the spread level with 71-72; the fixed-box hypervolume 0.34915, the series' first; jitexec on 6
   of 65 JIT designs (518 fails); no freeze candidate - rtimm not (533's question closed), rtfuse not before 75.
@@ -119,14 +122,14 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": runs on an unchanged method from seed
    74 (10 hours), then the confirmation run, the final set, the random-search baseline (a random mode in evolve.py,
    written at consolidation).
-3. The fast end's 7% offset (rule 3; seed 73 1.070): the clock test in seed 74's chain - its cycles only with paranoid at
-   most 2, above (results/drafts/ask-noise-answers-513.md, ask-cpu-state-answers-526.md).
+3. The fast end's 7% offset (rule 3; seed 73 1.070): the clock test - seed 74's on the time and the clock (cycles only if
+   set by hand), seed 75's with the chain's hold (results/drafts/ask-noise-answers-513.md, ask-cpu-state-answers-526.md).
 4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 73: 1 design relies
    on it).
 5. The JIT genes' place: their votes count (rule 12). Seed 73: jitexec on 6 and jitfuse on 7 of 65 JIT designs; jitrp 8
    votes of 8 over 72-73 - a freeze candidate if seed 74 gives it three or four (11 of 12) with no keep vote.
-6. fail32 does not list cpt16's 16-bit reach refused at 4-byte cells (517) among its known causes - rule 5 reads ATTENTION
-   for it (seeds 72-73: 67 and 61 designs, every one cpt16, "wrong output: apps"): a line for review-checks.py.
+6. Rule 5's ATTENTION for cpt16's reach at 4-byte cells (517; seeds 72-73: 67 and 61 designs) is in name only until
+   the after-seed-74 batch's fail32 patch is applied.
 7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
 8. The article, after consolidation: the claim is the integration, not any technique

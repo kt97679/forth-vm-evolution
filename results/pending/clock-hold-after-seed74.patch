@@ -1,0 +1,150 @@
+diff --git a/lab/evolve/clockcheck.py b/lab/evolve/clockcheck.py
+index 7536866..738449a 100644
+--- a/lab/evolve/clockcheck.py
++++ b/lab/evolve/clockcheck.py
+@@ -11,10 +11,46 @@ benchmark co-runners, beside K compile co-runners (building front designs, as th
+ reverse - recording for every run its CPU time and, when the counters are readable, its cycles, and the measured core's
+ reported clock before each block. If the cycle ratio holds where the time ratio moves, the offset is the clock.
+ 
+-Cycles need kernel.perf_event_paranoid at most 2 (lab/evolve/perf-hold.py arranges it for a chain's counters step);
+-otherwise the time alone is recorded and the report says so. stdout: the report; stderr: progress.
++Cycles need kernel.perf_event_paranoid at most 2: in next-run.sh's chain, root's lab/evolve/perf-hold.py holds it while
++this measures, as for counters.py (Iteration 545 - sudo asks once, at the chain's start); otherwise the time alone is
++recorded and the report says so. --self-test: the hold's handshake, against a stand-in for perf-hold.py. stdout: the
++report; stderr: progress.
+ """
+-import json, math, os, random, re, shutil, statistics, subprocess, sys, time
++import contextlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
++
++@contextlib.contextmanager
++def held(start, done, C):
++    # Iteration 545: the chain's hold (counters.PerfHold, as counters.py and missmap.py take it) while this measures;
++    # none, or one that fails, and the clock test runs on the time alone
++    h = None
++    if start and start != 'none':
++        try: h = C.PerfHold(start, done).__enter__()
++        except SystemExit: print('clockcheck: perf-hold.py did not set kernel.perf_event_paranoid (runs/perf-hold.log) - the time alone', file=sys.stderr)
++    try: yield h
++    finally:
++        if h: h.__exit__()
++
++if sys.argv[1:] == ['--self-test']:
++    import tempfile, threading
++    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import counters as C
++    t = tempfile.mkdtemp(); C.PARANOID = os.path.join(t, 'paranoid'); open(C.PARANOID, 'w').write('4\n')
++    st, dn = os.path.join(t, 'hold.start'), os.path.join(t, 'hold.done')
++    def root():                             # perf-hold.py's half: 2 once START names a pid, the old value back at DONE
++        while not os.path.exists(st): time.sleep(0.01)
++        open(C.PARANOID, 'w').write('2\n')
++        while not os.path.exists(dn): time.sleep(0.01)
++        open(C.PARANOID, 'w').write('4\n')
++    th = threading.Thread(target=root, daemon=True); th.start()
++    with held(st, dn, C): inside = open(C.PARANOID).read().strip()
++    th.join(5); ok1 = inside == '2' and open(C.PARANOID).read().strip() == '4' and open(st).read().strip() == str(os.getpid())
++    os.remove(st); os.remove(dn)
++    C.time = type('T', (), {'sleep': staticmethod(lambda s: None)})     # no holder: PerfHold gives up at once
++    with held(st, dn, C) as h2: ok2 = h2 is None and open(C.PARANOID).read().strip() == '4'
++    with held('none', 'none', C) as h3: ok3 = h3 is None and not os.path.exists(os.path.join(t, 'none'))
++    shutil.rmtree(t)
++    print('clockcheck --self-test: the hold %s (2 while it measures, 4 after); no holder %s, none %s (the time alone)'
++          % tuple('ok' if v else 'FAIL' for v in (ok1, ok2, ok3)))
++    sys.exit(0 if ok1 and ok2 and ok3 else 1)
+ HERE = os.path.dirname(os.path.abspath(__file__))
+ args = sys.argv[1:]; opt = {'--sample': '8', '--rounds': '3', '--workers': '3'}
+ for k in list(opt):
+@@ -104,6 +140,8 @@ def stop(hs):
+ 
+ ORDER = ['alone', 'bench', 'compile', 'compile', 'bench', 'alone']
+ rows = []
++import counters as C
++HOLD = contextlib.ExitStack(); HOLD.enter_context(held(os.environ.get('PERF_HOLD_START'), os.environ.get('PERF_HOLD_DONE'), C))
+ for i in pick:
+     d = os.path.join(E.EV, 'clockcheck-' + i); shutil.rmtree(d, ignore_errors=True)
+     try:
+@@ -124,6 +162,7 @@ for i in pick:
+     except Exception as x:
+         say('  %s: %s' % (i, str(x)[:120]))
+     shutil.rmtree(d, ignore_errors=True)
++HOLD.close()                                # the setting back now (perf-hold.py), before the report
+ shutil.rmtree(prog, ignore_errors=True)
+ for n in range(K): shutil.rmtree(os.path.join(E.EV, 'clockcheck-cc%d' % n), ignore_errors=True)
+ 
+diff --git a/lab/evolve/next-run.sh b/lab/evolve/next-run.sh
+index c7101fe..712b2a8 100755
+--- a/lab/evolve/next-run.sh
++++ b/lab/evolve/next-run.sh
+@@ -278,12 +278,18 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
+         # Iteration 315: the remote checks' hosts tried here, where it is seen (lab/evolve/REMOTES)
+         case " $* $THEN " in *" seed "*) sh lab/evolve/remote-checks.sh probe "$NEXT_RUN_CHAIN" || true ;; esac
+     fi
+-    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)   # Iteration 294: missmap.py too
++    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*|*" clockcheck.py "*)   # Iteration 294: missmap.py too; 545: clockcheck.py
+         if [ -z "${PERF_HOLD_START:-}" ]; then
+-            PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
+-            export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain
+             PERF_HOLD_START=$RUNS/perf-hold-$(date +%Y%m%d-%H%M%S).start; PERF_HOLD_DONE=${PERF_HOLD_START%.start}.done
+-            sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" || die "counters.py cannot have perf's counters - nothing started"
++            case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)
++                PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
++                export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain
++                sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" || die "counters.py cannot have perf's counters - nothing started";;
++            # Iteration 545: the clock test alone - its cycles read by tools/cputime.c, no perf program needed; without the
++            # hold it still runs, on the time alone ("none": the chain's later steps do not ask again)
++            *)  PERF_HOLD_FOR=clockcheck.py sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" \
++                    || { say "the clock test will record the time alone - kernel.perf_event_paranoid not held"; PERF_HOLD_START=none; PERF_HOLD_DONE=none; };;
++            esac
+             export PERF_HOLD_START PERF_HOLD_DONE
+         fi;;
+     esac
+diff --git a/lab/evolve/perf-hold-start.sh b/lab/evolve/perf-hold-start.sh
+index 12bbcd1..d773005 100644
+--- a/lab/evolve/perf-hold-start.sh
++++ b/lab/evolve/perf-hold-start.sh
+@@ -8,7 +8,10 @@
+ # perf itself first, while someone is here to fix it (Iteration 283): Ubuntu's perf is a
+ # wrapper that exits 2 when the tools for the running kernel are not installed - the
+ # second laptop try stopped so, in the background, perf's own message lost
+-if ! out=$("${PERF:-perf}" --version 2>&1); then      # PERF: what next-run.sh found (counters.py --find-perf)
++# Iteration 545: PERF_HOLD_FOR - the step the hold is for: counters.py (also missmap.py's) by default, or clockcheck.py,
++# whose cycles tools/cputime.c reads itself - no perf program checked, and a refusal leaves it the time alone
++FOR=${PERF_HOLD_FOR:-counters.py}; STOP="nothing started"; [ "$FOR" = counters.py ] || STOP="the clock test on the time alone"
++if [ "$FOR" = counters.py ] && ! out=$("${PERF:-perf}" --version 2>&1); then      # PERF: what next-run.sh found (counters.py --find-perf)
+     echo "next-run: perf does not run here:" >&2; echo "$out" | sed -n '1,6s/^/    /p' >&2
+     echo "next-run: on Ubuntu: sudo apt install linux-tools-\$(uname -r) - for the kernel running now; nothing started" >&2
+     exit 1
+@@ -16,12 +19,12 @@ fi
+ p=$(cat /proc/sys/kernel/perf_event_paranoid)
+ [ "$p" -le 2 ] && exit 0                         # counters allowed already: no sudo
+ if ! [ -t 0 ] && ! [ -t 1 ]; then
+-    echo "next-run: counters.py needs kernel.perf_event_paranoid at 2 (it is $p), and sudo a terminal to ask on - start next-run.sh from one" >&2
++    echo "next-run: $FOR needs kernel.perf_event_paranoid at 2 (it is $p), and sudo a terminal to ask on - start next-run.sh from one" >&2
+     exit 1
+ fi
+-echo "next-run: counters.py needs perf's counters - kernel.perf_event_paranoid is $p. sudo asks once, now;"
+-echo "next-run: it is set to 2 only while counters.py measures, and put back after (lab/evolve/perf-hold.py)."
+-sudo -v || { echo "next-run: sudo refused - nothing started" >&2; exit 1; }
++echo "next-run: $FOR needs perf's counters - kernel.perf_event_paranoid is $p. sudo asks once, now;"
++echo "next-run: it is set to 2 only while $FOR measures, and put back after (lab/evolve/perf-hold.py)."
++sudo -v || { echo "next-run: sudo refused - $STOP" >&2; exit 1; }
+ # HUP ignored from the fork on (an ignored signal stays ignored across exec), then a session of
+ # its own: a terminal closing as this returns - a race on a busy machine - cannot end the hold
+-sudo -n -b sh -c 'trap "" HUP; exec setsid python3 "$0" "$@" < /dev/null > /dev/null 2>&1' "$(cd "$(dirname "$0")" && pwd)/perf-hold.py" "$1" "$2" "$3" ${4:+"$4"} || { echo "next-run: perf-hold.py did not start - nothing started" >&2; exit 1; }
++sudo -n -b sh -c 'trap "" HUP; exec setsid python3 "$0" "$@" < /dev/null > /dev/null 2>&1' "$(cd "$(dirname "$0")" && pwd)/perf-hold.py" "$1" "$2" "$3" ${4:+"$4"} || { echo "next-run: perf-hold.py did not start - $STOP" >&2; exit 1; }
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 4148eb1..5750a08 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -373,6 +373,13 @@ echo "the evolver's own functions (lab/evolve/test-evolver.py):"
+ if out=$(python3 "$ROOT/lab/evolve/test-evolver.py" 2>&1); then printf '  %-12s ok     %s\n' evolver "$(printf '%s' "$out" | tail -1 | cut -c15-110)"
+ else printf '  %-12s FAIL   %s\n' evolver "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; FAILED=1; fi
+ 
++# The clock test's hold (Iteration 545): clockcheck.py takes the chain's hold on kernel.perf_event_paranoid as
++# counters.py does - the handshake checked against a stand-in for root's perf-hold.py, and without one the time alone.
++echo
++echo "the clock test's perf hold (lab/evolve/clockcheck.py --self-test):"
++if out=$(python3 "$ROOT/lab/evolve/clockcheck.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
++else printf '  %-12s FAIL   %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
++
+ # The engine generators (Iteration 249): seed 46 lost every design with the
+ # gene tail - an engine change broke gen-tail.py's engines and nothing built
+ # one before the run. lab/evolve/engines-check.py builds s6-cv8b down every
