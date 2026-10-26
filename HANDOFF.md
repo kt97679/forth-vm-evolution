@@ -38,7 +38,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 547.
+- master: Iteration 548.
 - **Seed 74 is running** on the laptop - 10 hours (the owner), the first run of the after-seed-73 batch
   (results/applied-after-seed73/ORDER.md). The method changed, so GOALS.md's stopping count starts at seed 74 - its
   hours, 10, are the method's: seeds 75 on at 10 too, or the count restarts. Its clock test runs without cycles unless
@@ -121,8 +121,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    run on the method; clean-runs.sh's first tidy of the laptop's runs/ (only copies gone: repo.bundle, bins.tar.gz, chain
    tarballs past the newest two); the archive about 13 MB, without the bundle and the binaries.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": runs on an unchanged method from seed
-   74 (10 hours), then the confirmation run, the final set, the random-search baseline (a random mode in evolve.py,
-   written at consolidation).
+   74 (10 hours), then the confirmation run, the final set, the random-search baseline (its mode drafted and tested:
+   results/drafts/random-mode-548.patch, applied at consolidation).
 3. The fast end's 7% offset (rule 3; seed 73 1.070): the clock test - seed 74's on the time and the clock (cycles only if
    set by hand), seed 75's with the chain's hold (results/drafts/ask-noise-answers-513.md, ask-cpu-state-answers-526.md).
 4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 73: 1 design relies
@@ -135,7 +135,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
 8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts; across machines the
-   fast end as a band, the fastest named per machine (results/drafts/xcheck-agreement-546.md).
+   fast end as a band, the fastest named per machine (results/drafts/xcheck-agreement-546.md). The method section
+   drafted (results/drafts/article-method-548.md).
 
 ## Conventions - tokens (the owner, Iteration 542)
 

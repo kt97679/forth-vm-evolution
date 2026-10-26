@@ -137,7 +137,8 @@ results/drafts/goals-snapshots.md.)
    screen, no one-round stop (both use what earlier designs showed). Its true front's hypervolume in the same box
    and its extremes, set beside the method's runs, are what the article can say the evolutionary search itself
    contributed - as against the design space alone. One run, reported as values, not a test. It needs a random mode
-   in evolve.py, written when consolidation starts.
+   in evolve.py - drafted and tested at Iteration 548 (results/drafts/random-mode-548.patch: evolve.py --random,
+   `random` in a run's line), applied when consolidation starts.
 
 ## Later - the owner's plans
 

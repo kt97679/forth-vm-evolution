@@ -10045,3 +10045,17 @@ reported 174; a run no results file claims named by the chain's line. batch-chec
 
 Files: results/pending/truefronts-after-seed74.patch (new), results/pending/ORDER.md,
 results/drafts/seed74-checklist-545.md, results/README.md, HANDOFF.md.
+
+## Iteration 548 - 2026-10-26 - Claude
+
+**The random-search baseline's mode, drafted for consolidation** (results/drafts/random-mode-548.patch; GOALS.md, "When
+the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop (no
+breeding, no operators' adaptation, no screen, no one-round stop), the fast gate kept as a measurement; `random` in a
+run's line. Not in the after-seed-74 batch - applied when consolidation starts. Tested on master with that batch:
+run-tests PASS, validate 7 of 7; with the screen and the one-round stop forced on, a normal run fitted the screen and
+stopped a child after one round, the random run made six random children, none screened or stopped; with islands,
+refused. **The article's method section, a first draft** (results/drafts/article-method-548.md, about 1,500 words in
+the author's register): [74+] marks the figures still to come, [check] what the owner should confirm.
+
+Files: results/drafts/random-mode-548.patch, results/drafts/article-method-548.md (new), GOALS.md, results/README.md,
+HANDOFF.md.
