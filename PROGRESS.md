@@ -10080,3 +10080,18 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed74.md, results/xcheck-seed74.md
 amd-ryzen-7-pro-8840hs.md (session 61), results/gene-votes.md, results/predictions.md, results/progress-by-run.md,
 results/README.md; lab/evolve/NEXT-RUN, HANDOFF.md.
 
+## Iteration 550 - 2026-10-26 - Claude
+
+**Where the fast end's offset comes from** (results/drafts/fast-end-offset-550.md, from seed 74's records and its
+re-measurement): not luck - the gate's two in-run readings agree (second / first 1.001 over 1,226 designs, a reading's
+noise about 0.9%); not the clock (the clock test). The JIT designs: re-measured / in-run 1.070, the rest 1.012; by
+in-run rank 1.081, 1.055, 1.022, 0.992; bubble 1.170 and sieve 1.115 for the JIT designs - under the run's four
+workers they read faster against s6 than one at a time, most likely. The test that would decide: the front re-measured
+four at a time. **Seed 75's processing prepared**: the checklist (results/drafts/seed75-checklist-550.md);
+results/drafts/truefronts-tables-550.py - truefronts.md into the progress table on the true fronts and the charts' data,
+tested on seeds 73-74's packs (222 and 238; reported 174 and 238); the after-seed-75 batch - truefronts.py's reported
+column (it counted genomes: 261 for seed 74's 238), batch-check PASS.
+
+Files: results/drafts/fast-end-offset-550.md, fast-end-offset-550.py, truefronts-tables-550.py, seed75-checklist-550.md
+(new); results/pending/ (new: ORDER.md, truefronts-reported-after-seed75.patch); results/README.md, HANDOFF.md.
+

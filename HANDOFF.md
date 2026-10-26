@@ -38,8 +38,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 549.
-- **Seed 75 is next** - 10 hours, the method's: the stopping count's second run, after seed 74. Its line ends with the
+- master: Iteration 550.
+- **Seed 75 is running** on the laptop - 10 hours, the method's: the stopping count's second run, after seed 74. Its
+  processing: results/drafts/seed75-checklist-550.md, then "Processing a returned seed". Its line ends with the
   clock test - now with the chain's perf hold: **next-run.sh asks for sudo once, at the start** - and truefronts.py,
   every seed pack's true front. The after-seed-74 batch is applied (results/applied-after-seed74/ORDER.md).
 - **Seed 74 processed (549)** - results/evolve-amd-ryzen-7-pro-8840hs-seed74.md: the reported front is the true one
@@ -47,6 +48,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   method; one round first holds (529); adaptive operators (526) and jitos (534) fail; the clock test: the offset does
   not follow the clock. Its chain came back "failed" - the experiments failed at their packing, their reports whole
   (Iteration 541's cleanup; fixed by the batch's chain-logs patch).
+- **The after-seed-75 batch**, one patch (results/pending/ORDER.md): truefronts.py's reported column. batch-check
+  before applying.
 - **jitrp is a freeze candidate** (12 of 12 over 72-74, no keep vote). A freeze changes the method and restarts the
   stopping count: the owner's to decide - not frozen.
 - **Predictions due** (results/predictions.md): seed 75 - no gain over seed 74 by the stopping rule (549).
@@ -118,10 +121,10 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": runs on an unchanged method from seed
    74 (10 hours; its hypervolume 0.35667), then the confirmation run, the final set, the random-search baseline (its mode
    drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
-3. The fast end's 7% offset (rule 3; seeds 73-74 1.070, 1.066): seed 74's clock test - the time against the run 1.079
-   alone, 1.056 beside compiles, while the core's clock moved 2,000-4,600 MHz: not the clock. Seed 75's cycles confirm;
-   then the winner's curse or the run's hours of load (results/drafts/ask-noise-answers-513.md,
-   ask-cpu-state-answers-526.md).
+3. The fast end's 7% offset (rule 3; seeds 73-74 1.070, 1.066) - results/drafts/fast-end-offset-550.md: not luck (the
+   gate's two in-run readings agree, a reading's noise about 0.9%), not the clock (seed 74's clock test): the JIT
+   designs - re-measured / in-run 1.070, the rest 1.012; bubble and sieve most - under the run's load most likely. The
+   test that would decide: the front re-measured four at a time against one (--remeasure with workers, a small patch).
 4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 74: 2 designs
    rely on it).
 5. The JIT genes' place: their votes count (rule 12). Seed 74: JIT designs 50 of 238, all of the fastest tenth; jitmul
