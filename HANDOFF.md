@@ -38,7 +38,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 550.
+- master: Iteration 551.
 - **Seed 75 is running** on the laptop - 10 hours, the method's: the stopping count's second run, after seed 74. Its
   processing: results/drafts/seed75-checklist-550.md, then "Processing a returned seed". Its line ends with the
   clock test - now with the chain's perf hold: **next-run.sh asks for sudo once, at the start** - and truefronts.py,
@@ -48,8 +48,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   method; one round first holds (529); adaptive operators (526) and jitos (534) fail; the clock test: the offset does
   not follow the clock. Its chain came back "failed" - the experiments failed at their packing, their reports whole
   (Iteration 541's cleanup; fixed by the batch's chain-logs patch).
-- **The after-seed-75 batch**, one patch (results/pending/ORDER.md): truefronts.py's reported column. batch-check
-  before applying.
+- **The after-seed-75 batch**, two patches (results/pending/ORDER.md): truefronts.py's reported column; the processing
+  tools (draft-results.py, process-checks.sh - "Processing a returned seed"). Apply it first: batch-check, apply, commit.
 - **jitrp is a freeze candidate** (12 of 12 over 72-74, no keep vote). A freeze changes the method and restarts the
   stopping count: the owner's to decide - not frozen.
 - **Predictions due** (results/predictions.md): seed 75 - no gain over seed 74 by the stopping rule (549).
@@ -59,6 +59,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
+
+**The tools, from seed 75's processing** (Iteration 551 - the after-seed-75 batch, applied first): `sh
+lab/evolve/process-seed.sh ARCHIVE`, then `python3 lab/evolve/draft-results.py --iteration N` - the results file, the
+xcheck file and the spread's session drafted, the facts filled in, TODO lines for the verdict, the predictions, the votes
+and the rules (none may be committed); judge and edit; a batch if one waits; then `setsid nohup sh
+lab/evolve/process-checks.sh RESULTS [COMPARE] > /dev/null 2>&1 &` - build, run-tests, validate, the gate, ans-check, the
+jail last - polled until /tmp/process-checks/status says DONE; the records; the bundle. The steps below say what each
+judges.
 
 1. `sh lab/evolve/process-seed.sh <the chain archive>` as claude (Iteration 395): every output in a file under
    /tmp/process, about a screen in /tmp/process/summary.md - read that, the files only where it points. It covers
@@ -114,7 +122,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. Seed 75's processing, then a new chat: the prediction (549); the clock test with cycles - check that sudo was asked
+1. Seed 75's processing - in a new chat, with the tools above (results/drafts/seed75-checklist-550.md), then: the prediction (549); the clock test with cycles - check that sudo was asked
    at the start and the setting held only while it measured (runs/perf-hold.log); truefronts.md - every seed's true
    front: check the seed names, then rebuild results/progress-by-run.md and the charts on the true fronts; the chain's
    status done (the chain-logs patch).
@@ -147,6 +155,20 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
   arrival - what is new, what is wrong, what checks out - and logged in results/model-usefulness.md; stop when the
   question is answered.
 - A new chat after each seed's processing.
+
+**Efficiency** (the owner, Iteration 551 - seeds 73 and 74 in one chat cost several times two fresh chats):
+
+- One chat per returned archive: a fresh chat with the newest bundle and the archive, ending with a bundle. A long
+  chat re-reads all of itself every turn.
+- Work while a run goes: only what must be ready before the next run - in its own short chat, bundle in and out, or
+  folded into the next processing. Not an iteration per question.
+- Charts drawn by a script into a file and shown as the file - never data points typed into a chart call.
+- Replies: the answer first, short; nothing a tool output already showed, restated.
+- Effort: xhigh for the routine; max for the unexpected - a failed chain, an odd result, a design decision.
+- Tool calls: never `pkill -f` a pattern in your own command line (it kills your shell); a file written after an `&&`
+  step that can fail is lost with it - check what was written; remove a background job's old output before polling it
+  (a stale file reads as done); a sandbox restart kills background jobs and keeps /tmp - the status file says where to
+  resume; no quadratic loop over a run's records (a call's 300 s).
 
 ## Where things are
 

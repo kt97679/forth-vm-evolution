@@ -10095,3 +10095,17 @@ column (it counted genomes: 261 for seed 74's 238), batch-check PASS.
 Files: results/drafts/fast-end-offset-550.md, fast-end-offset-550.py, truefronts-tables-550.py, seed75-checklist-550.md
 (new); results/pending/ (new: ORDER.md, truefronts-reported-after-seed75.patch); results/README.md, HANDOFF.md.
 
+## Iteration 551 - 2026-10-26 - Claude
+
+**The processing scripted, and the efficiency rules** (the owner: two archives in one chat cost too much). The
+after-seed-75 batch's second patch: lab/evolve/draft-results.py drafts a returned seed's results file from
+process-seed.sh's output - every fact seeds 73 and 74's processing gathered by hand, TODO lines for what a chat judges -
+with the xcheck file and the spread's session; lab/evolve/process-checks.sh runs the checks on master in their order,
+the jail last, one status file, FROM= to resume. Tested on seed 74's archive: the draft's figures its hand-written file's;
+process-checks.sh from the gate: 261 of 261 alive, ans-check 0 of 61 differ (its control caught), the jail PASS.
+HANDOFF.md: the tools in "Processing a returned seed", and "Efficiency" under the token conventions - one chat per
+archive, side work only with a deadline, charts by script, short replies, xhigh for the routine, the tool-call lessons.
+batch-check on both patches: PASS.
+
+Files: results/pending/process-tools-after-seed75.patch (new), results/pending/ORDER.md, results/README.md, HANDOFF.md.
+

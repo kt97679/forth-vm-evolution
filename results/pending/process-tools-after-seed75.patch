@@ -1,0 +1,156 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index e55a378..9913576 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -36,8 +36,10 @@ What each script here does, from its own first line (Iteration 275). What each g
+ GENES.md; running the evolution on the laptop: RUNNING.md; the rest of this file
+ is the evolver's development history, phase by phase, then iteration by iteration.
+ 
++- `draft-results.py` - a returned seed's results file drafted from process-seed.sh's output (Iteration 551): the facts - records, the true front, the hypervolume, the extremes, one round first, the operators, the JIT designs, the fast end re-measured, the experiments, the remote checks - with TODO lines for the verdict, the predictions, the votes and the rules; also the xcheck file and the spread's session.
+ - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
+ - `footprint-gen.py` - a held-out program whose code footprint grows (N [--calls T] [--defs-only]): N words in levels, run round-robin, a checksum (Iteration 370; results/generalization.md)
++- `process-checks.sh` - the checks on master after a seed's processing applied its batch (Iteration 551): build, run-tests, validate, the gate, ans-check on its sample, the jail last - started detached, one status file; FROM= resumes after a sandbox restart.
+ - `stencil-check.py` - the JIT's stencils safe to copy (Iteration 463; the after-seed-68 batch, applied at 487): from objdump's relocations, every stencil's references inside its copied part and no branch past it; engines-check runs it at 64 and 32 bits, and jit.c guards at run time
+ - `apps/brainless/COPIED.md` - brainless (public domain) copied into apps/brainless/ from Appbench 1.4 (Iteration 492): appbench.py runs it with no zip
+ - `apps/wordfreq.fth`, `apps/minif.fth` - two more held-out applications from scratch (Iteration 500): words of generated text counted in a hash table of counted strings; a small Forth interpreted in Forth (its own dictionary searched by string compare, colon definitions run through EXECUTE, IF and THEN, an unknown word thrown and caught) - appbench.py's, not the selection's
+diff --git a/lab/evolve/draft-results.py b/lab/evolve/draft-results.py
+new file mode 100644
+index 0000000..b286e38
+--- /dev/null
++++ b/lab/evolve/draft-results.py
+@@ -0,0 +1,89 @@
++#!/usr/bin/env python3
++"""lab/evolve/draft-results.py [PROCESS] --iteration N - a returned seed's results file drafted from process-seed.sh's
++output (Iteration 551; HANDOFF.md, "Processing a returned seed"): the facts a processing chat gathered by hand - the
++run's line and records, the true front against the reported one, the fixed-box hypervolume, the extremes, one round
++first, the operators, the JIT designs, the fast end re-measured, the experiments' headlines, the remote checks. Writes
++results/evolve-MACHINE-seedN.md (the draft header, ---, report.md), results/xcheck-seedN.md (the chain's remote
++checks), and the spread's session appended to results/compare-fronts-MACHINE.md. The verdict, the predictions' scores,
++the votes and the rules stay the chat's: TODO lines mark them (summary.md has their facts) - none may be left in what
++is committed. PROCESS: /tmp/process."""
++import collections, glob, json, os, re, statistics as st, subprocess, sys
++a = sys.argv[1:]
++it = a[a.index('--iteration') + 1] if '--iteration' in a else 'N'
++P = next((x for x in a if not x.startswith('--') and x != it), '/tmp/process')
++HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
++sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
++pack = glob.glob(os.path.join(P, 'forth-vm-evolution-seed*-*', 'pack'))[0]
++m = re.search(r'seed(\d+)-([0-9a-f]+)-', pack); N, commit = int(m.group(1)), m.group(2)
++chain = (glob.glob(os.path.join(P, 'chain-*')) or [''])[0]
++rd = lambda f, d='?': open(f).read().strip() if f and os.path.exists(f) else d
++line, status = rd(os.path.join(chain, 'line')), rd(os.path.join(chain, 'status')).split('\n')[0]
++mach = re.search(r'evolve-(.+)-seed\d+\w*\.md$', sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')))[-1]).group(1)
++db = os.path.join(pack, 'db.jsonl'); R = {}
++for l in open(db, errors='replace'):
++    if l.startswith('{'):
++        try: r = json.loads(l)
++        except ValueError: continue
++        if r.get('id'): R[r['id']] = r
++cnt = collections.Counter(r.get('status') for r in R.values()); gens = max((r.get('gen') or 0) for r in R.values())
++hm = re.search(r'\b(\d+)h\b', line); hours = int(hm.group(1)) if hm else None
++ok = [i for i, r in R.items() if r.get('status') == 'ok' and r.get('speed') and E.ov(r, 'total') and r.get('rss')]
++E.TWO_WIDTHS[0] = sum(1 for i in ok if R[i].get('speed32')) * 2 > len(ok)
++if E.TWO_WIDTHS[0]: ok = [i for i in ok if R[i].get('speed32')]
++T = E.first_front(ok, R); rep = open(os.path.join(pack, 'report.md')).read()
++Rf = set(re.findall(r'^\| ([0-9a-f]{10}) \|', rep.split('## How the front came about')[0], re.M))
++hv = next((l.strip() for l in subprocess.run([sys.executable, os.path.join(HERE, 'hv.py'), db], capture_output=True, text=True).stdout.split('\n') if 'hypervolume' in l), '?')
++f = min(T, key=lambda i: R[i]['speed']); s = min(T, key=lambda i: E.ov(R[i], 'total')); mm = min(T, key=lambda i: R[i]['rss'])
++w = min((i for i in T if R[i].get('speed32')), key=lambda i: R[i]['speed32'], default=None)
++kids = [r for r in R.values() if (r.get('gen') or 0) > 0]; meas = [r for r in kids if r.get('status') != 'screened']
++stop = cnt.get('stopped after one round', 0); aud = [i for i, r in R.items() if r.get('stopaudit')]
++cls = lambda h: 'crossover' if h.startswith('crossover') else 'borrowed' if ' from ' in h else 'mutation'
++def shares(g):
++    c = collections.Counter(cls(r.get('how', '')) for r in g); return {k: 100.0 * v / max(1, len(g)) for k, v in c.items()}
++top = max((r['gen'] for r in kids), default=0); o_all, o_5 = shares(kids), shares([r for r in kids if r['gen'] > 0.8 * top])
++fk = sum(1 for i in T if (R[i].get('gen') or 0) > 0)
++ex = {i: E.express(E.canon(R[i]['genome'])) for i in T}; J = [i for i in T if E.jit_on(E.canon(R[i]['genome']))]
++k = max(1, len(T) // 10); fj = [i for i in sorted(T, key=lambda i: R[i]['speed'])[:k] if i in J]
++genes = ', '.join('%s %d' % (g, sum(1 for i in J if ex[i].get(g))) for g in ('jitmul', 'jitfuse', 'jitexec', 'jitos', 'jitrp'))
++rm = json.load(open(os.path.join(pack, 'remeasure.json'))) if os.path.exists(os.path.join(pack, 'remeasure.json')) else {}
++ri = sorted((i for i in rm if i in R and R[i].get('speed')), key=lambda i: R[i]['speed']); rr = {i: rm[i]['speed'] / R[i]['speed'] for i in ri}
++jr = lambda i: E.jit_on(E.canon(R[i]['genome']))
++md = lambda xs: '%.3f' % st.median(xs) if xs else '-'
++def exp(tool, pat):
++    fs = glob.glob(os.path.join(P, 'forth-vm-evolution-%s-*' % tool, 'pack', tool + '.md')) + glob.glob(os.path.join(chain, 'packs', 'failed-%s-*' % tool, tool + '.md'))
++    if not fs: return None
++    t = open(fs[0]).read(); return t if pat is None else next((l.strip() for l in t.split('\n') if re.match(pat, l)), '?')
++sp = exp('review-checks', None); spread_row = next((l for l in (sp or '').split('\n') if l.startswith('| build/evolve/db.jsonl')), None)
++ab, ck = exp('appbench', r'\*\*Spearman'), exp('clockcheck', r'\*\*Medians'); tf = exp('truefronts', None)
++remote = sorted(glob.glob(os.path.join(chain, 'remote', '*.md')))
++rsp = '; '.join('%s %s' % (os.path.basename(x)[:-3], next((re.sub(r'\s+', ' ', l.replace('*', '').strip()).split(' between')[0][:70] for l in open(x) if 'Spearman' in l), '?')) for x in remote)
++P_ = lambda d: ', '.join('%s %.1f%%' % (k, v) for k, v in sorted(d.items()))
++head = '\n'.join(x for x in [
++ '# Seed %d on the %s - TODO: the run in a phrase (Iteration %s)' % (N, mach.replace('-', ' ').upper().replace('AMD RYZEN', 'AMD Ryzen').replace(' PRO ', ' PRO '), it), '',
++ '`%s` at %s. The chain: %s%s. %s designs, generations 0-%d: %s%s.' % (line, commit, status, '' if status == 'done' else ' - TODO: what failed', '{:,}'.format(len(R)), gens,
++    ', '.join('%s %s' % ('{:,}'.format(v), k) for k, v in cnt.most_common()), '; %s designs an hour' % '{:,}'.format(len(R) // hours) if hours else ''), '',
++ '**The front**: the true one %d designs - the report\'s %d%s.' % (len(T), len(Rf), ', the same' if Rf == set(T) else ' - TODO: why they differ'), '',
++ '**The fixed-box hypervolume**: %s. TODO: against the method\'s earlier runs (GOALS.md).' % hv.split(': ', 1)[-1], '',
++ '**The extremes**: fastest %s %.4f, smallest %s %s bytes, least memory %s KB%s.' % (f, R[f]['speed'], s, '{:,}'.format(E.ov(R[s], 'total')), R[mm]['rss'],
++    ', fastest at 32 bits %s %.4f' % (w, R[w]['speed32']) if w else ''), '',
++ '**One round first**: %s children stopped after one round, %.1f%% of those measured; %d audited in full, %d of them on the front.' % (
++    '{:,}'.format(stop), 100.0 * stop / max(1, len(meas)), len(aud), len(set(aud) & set(T))), '',
++ '**The operators**: %s of the children; the last fifth %s; the front\'s entries per child %.3f%% (%d of %s).' % (P_(o_all), P_(o_5), 100.0 * fk / max(1, len(kids)), fk, '{:,}'.format(len(kids))), '',
++ '**The JIT designs**: %d of the front, %d of its fastest tenth\'s %d; %s.' % (len(J), len(fj), k, genes), '',
++ '**The fast end re-measured** (remeasure.json, %d designs): the fastest ten %s re-measured / in-run, the JIT designs %s, the rest %s.' % (
++    len(ri), md([rr[i] for i in ri[:10]]), md([rr[i] for i in ri if jr(i)]), md([rr[i] for i in ri if not jr(i)])) if ri else None, '',
++ '**The experiments**: the spread at generation 102 - %s; appbench - %s; the clock test - %s; truefronts - %s.' % (
++    spread_row.strip() if spread_row else 'none', ab or 'none', ck or 'none', '%d runs' % tf.count('{"run"') if tf else 'none'), '',
++ '**The remote checks** (results/xcheck-seed%d.md): %s.' % (N, rsp) if remote else None, '',
++ 'TODO: the verdict (rule 1), the predictions scored (results/predictions.md), the votes and the rules, the held-out check, the curse, progress - summary.md.']
++ if x is not None)
++out = os.path.join(ROOT, 'results', 'evolve-%s-seed%d.md' % (mach, N))
++open(out, 'w').write(head + '\n\n---\n\n' + rep); print('draft-results: %s (%d TODO)' % (out, head.count('TODO')))
++if remote:
++    x = os.path.join(ROOT, 'results', 'xcheck-seed%d.md' % N)
++    open(x, 'w').write("# The checks of seed %d's front during seed %d (Iteration %s)\n\n---\n\n" % (N - 1, N, it) + '\n\n---\n\n'.join(open(r).read().strip('\n') for r in remote) + '\n'); print('draft-results: ' + x)
++if sp and '| run |' in sp:
++    cf = os.path.join(ROOT, 'results', 'compare-fronts-%s.md' % mach); n = max([int(v) for v in re.findall(r'^## Session (\d+)', open(cf).read(), re.M)] or [0]) + 1
++    tab = re.sub(r'/\S*?/runs/', '', sp[sp.index('| run |'):].split('\n\n')[0])
++    open(cf, 'a').write('\n## Session %d - Iteration %s: seed %d and the archived runs (the chain\'s spread, at generation 102)\n\nTODO: what compares - the workloads and the memory of each.\n\n%s\n' % (n, it, N, tab.strip('\n')))
++    print('draft-results: session %d appended to %s (1 TODO)' % (n, cf))
+diff --git a/lab/evolve/process-checks.sh b/lab/evolve/process-checks.sh
+new file mode 100644
+index 0000000..35fe211
+--- /dev/null
++++ b/lab/evolve/process-checks.sh
+@@ -0,0 +1,40 @@
++#!/bin/sh
++# lab/evolve/process-checks.sh RESULTS [COMPARE] - the checks on master once a seed's processing has applied its batch
++# (Iteration 551; HANDOFF.md, "Processing a returned seed" 5), in their order and the jail last, alone: build, run-tests,
++# validate, the gate (RESULTS, and COMPARE - a comparison pack's compare-fronts.md - when the chain had one), ans-check on
++# every fourth of RESULTS' front by size and its extremes, the jail. Started detached, polled by its status:
++#     setsid nohup sh lab/evolve/process-checks.sh RESULTS > /dev/null 2>&1 &
++# then wait for "DONE" in /tmp/process-checks/status - its lines the results, the logs beside it (OUT= elsewhere).
++# Nothing else of this user may run while the jail does. After a sandbox restart (background jobs die, /tmp stays):
++# FROM=tests, validate, gate, ans or jail starts there. Not as root - the evolver refuses it.
++RES=$1; CMP=${2:-}; OUT=${OUT:-/tmp/process-checks}; FROM=${FROM:-build}
++cd "$(dirname "$0")/../.." || exit 1
++mkdir -p "$OUT"; S=$OUT/status; on=0
++[ "$FROM" = build ] && : > "$S"
++st() { echo "$* $(date +%T)" >> "$S"; }
++step() { if [ "$on" = 0 ] && [ "$1" = "$FROM" ]; then on=1; fi; [ "$on" = 1 ]; }
++st "START from $FROM at $(git rev-parse --short HEAD)"
++if step build; then env LAYOUTS=1 bash tools/build-stages.sh > "$OUT/build.log" 2>&1; st "build=$?"; fi
++if step tests; then bash tools/run-tests.sh > "$OUT/tests.log" 2>&1; st "run-tests=$? $(tail -n 1 "$OUT/tests.log")"; fi
++if step validate; then python3 lab/evolve/evolve.py --validate > "$OUT/validate.log" 2>&1; st "validate=$? $(grep -c IDENTICAL "$OUT/validate.log") of 7 IDENTICAL"; fi
++if step gate; then python3 lab/evolve/gate.py "$RES" $CMP > "$OUT/gate.log" 2>&1; st "gate=$? $(grep -m 1 '^alive' "$OUT/gate.log")"; fi
++if step ans; then
++    IDS=$(python3 - "$RES" << 'PY'
++import re, sys
++rows = []
++for l in open(sys.argv[1], errors='replace').read().split('## How the front came about')[0].split('\n'):
++    f = [x.strip() for x in l.split('|')]
++    if len(f) > 10 and re.fullmatch(r'[0-9a-f]{10}', f[1] or ''):
++        n = lambda v: float(v.replace(',', '')) if re.fullmatch(r'[0-9.,]+', v or '') else 9e9
++        rows.append((f[1], n(f[2]), n(f[4]), n(f[7]), n(f[8])))
++by = sorted(rows, key=lambda r: r[3]); ids = [r[0] for r in by[::4]]
++for e in (min(rows, key=lambda r: r[1])[0], min(rows, key=lambda r: r[2])[0], by[0][0], by[-1][0], min(rows, key=lambda r: r[4])[0]):
++    if e not in ids: ids.append(e)
++print(','.join(ids))
++PY
++)
++    python3 lab/evolve/ans-check.py --ids "$IDS" > "$OUT/ans.log" 2>&1
++    st "ans-check=$? $(grep -m 1 'designs differ' "$OUT/ans.log"); negative control $(grep -q 'caught' "$OUT/ans.log" && echo caught || echo NOT caught)"
++fi
++if step jail; then st "jail - alone"; python3 lab/evolve/test-jail.py > "$OUT/jail.log" 2>&1; st "jail=$? $(tail -n 1 "$OUT/jail.log")"; fi
++st DONE
