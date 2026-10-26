@@ -1,0 +1,22 @@
+diff --git a/lab/evolve/truefronts.py b/lab/evolve/truefronts.py
+index 615a961..b34a692 100644
+--- a/lab/evolve/truefronts.py
++++ b/lab/evolve/truefronts.py
+@@ -34,12 +34,11 @@ def name(p):
+ paths.sort(key=lambda p: (not name(p).startswith('archived'), name(p)))    # oldest archived first, this clone's run last
+ reported = {}
+ for f in glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')):
+-    ids = set()
+-    for l in open(f, errors='replace'):
+-        if l.startswith('{"'):
+-            try: ids.add(json.loads(l)['id'])
+-            except (ValueError, KeyError): pass
+-    if ids: reported[int(re.search(r'seed(\d+)\.md$', f).group(1))] = ids
++    # Iteration 550: the front table's designs - from seed 74 the genomes below it list the re-measured ones off the
++    # front too (seed 74: 261 for 238)
++    ids = set(re.findall(r'^\| ([0-9a-f]{10}) \|', open(f, errors='replace').read().split('## How the front came about')[0], re.M))
++    m = re.search(r'seed(\d+)\.md$', f)             # a variant's file (seed61b.md, say) names no run here
++    if ids and m: reported[int(m.group(1))] = ids
+ line_seed = None
+ try: line_seed = int(re.search(r'\bseed (\d+)', open(os.path.join(os.environ['NEXT_RUN_CHAIN'], 'line')).read()).group(1))
+ except (KeyError, OSError, AttributeError, ValueError): pass
