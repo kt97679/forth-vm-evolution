@@ -32068,3 +32068,15 @@ Seeds 73, 72 and 71 measure speed over seven workloads; 69 and 70 over six (mark
 | ≠ archived-20261024-171649/build/evolve/db.jsonl (6 workloads, mean) | 102 | 21293 | 302 | 0.1267 | 14,143 | 108 | 6.8053e+05 | 0.8419 | 0.1335 |
 | archived-20261025-055619/build/evolve/db.jsonl | 102 | 18701 | 362 | 0.1452 | 14,210 | 136 | 2.8024e+06 | 0.3790 | 0.1612 |
 | archived-20261025-160555/build/evolve/db.jsonl | 102 | 21557 | 324 | 0.1485 | 14,079 | 460 | 3.1548e+06 | 0.1880 | 0.1828 |
+
+## Session 61 - Iteration 549: seed 74 and seeds 70-73 (the chain's spread, at generation 102)
+
+Seeds 74, 73, 72 and 71 measure speed over seven workloads; 70 over six (marked by the spread itself). Memory compares between 74, 73 and 70 (71-72's was the applications' data). The first row is seed 74; its experiment step failed at its packing, its report whole (results/evolve-amd-ryzen-7-pro-8840hs-seed74.md).
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 102 | 16744 | 226 | 0.1520 | 14,167 | 108 | 9.4306e+05 | 0.7767 | 0.1731 |
+| ≠ archived-20261024-171649/build/evolve/db.jsonl (6 workloads, mean) | 102 | 21293 | 302 | 0.1267 | 14,143 | 108 | 6.8053e+05 | 0.8389 | 0.1335 |
+| archived-20261025-055619/build/evolve/db.jsonl | 102 | 18701 | 362 | 0.1452 | 14,210 | 136 | 2.8024e+06 | 0.3713 | 0.1612 |
+| archived-20261025-160555/build/evolve/db.jsonl | 102 | 21557 | 324 | 0.1485 | 14,079 | 460 | 3.1548e+06 | 0.1868 | 0.1828 |
+| archived-20261026-043231/build/evolve/db.jsonl | 102 | 21709 | 308 | 0.1469 | 14,079 | 112 | 9.1527e+05 | 0.7690 | 0.1896 |

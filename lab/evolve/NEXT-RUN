@@ -13,6 +13,10 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 549 (seed 74 processed): seed 75, 10 hours - the method's, the stopping count's second run. The
+# after-seed-74 batch applied: fail32 knows cpt16's reach; the clock test takes the chain's perf hold - sudo asks once,
+# at the start; the progress table counts the front; truefronts.py, last - every seed pack's true front; a running
+# chain keeps its first step's directory (seed 74's three experiments failed at their packing).
 # Iteration 544 (seed 73 processed): seed 74, 10 hours (the owner); the after-seed-73 batch applied - adaptive operators,
 # the true front, one round first, the evolver self-test, the JIT table's bounds, jitos unfrozen: the method changes, the
 # stopping count (GOALS.md) starts here - its hours are the method's: seeds 75 on at 10 too. The clock test last: the
@@ -86,4 +90,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 74 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8
+seed 75 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8 then experiment truefronts.py

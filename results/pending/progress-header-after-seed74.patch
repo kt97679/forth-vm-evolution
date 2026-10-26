@@ -1,8 +1,17 @@
 diff --git a/lab/evolve/progress-table.py b/lab/evolve/progress-table.py
-index fc908b2..697e144 100755
+index fc908b2..7c18c2a 100755
 --- a/lab/evolve/progress-table.py
 +++ b/lab/evolve/progress-table.py
-@@ -34,7 +34,7 @@ for f in glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')):
+@@ -29,12 +29,16 @@ for f in glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')):
+             try: r = json.loads(l)
+             except ValueError: continue
+             if isinstance(r.get('speed'), (int, float)) and r.get('bin') and r.get('size'): recs.append(r)
++    # Iteration 549: the front is the Pareto front table's designs - from seed 74 the genomes listed below it hold the
++    # re-measured designs off the front too (261 records for a front of 238)
++    front = set(re.findall(r'^\| ([0-9a-f]{10}) \|', text.split('## How the front came about')[0], re.M))
++    if front: recs = [r for r in recs if r.get('id') in front] or recs
+     if not recs: continue
+     fast = min(recs, key=lambda r: r['speed'])
      small = min(recs, key=lambda r: r['bin'] + r['size'])
      mem = min(recs, key=lambda r: r['rss'] if isinstance(r.get('rss'), (int, float)) else 1e9)
      # Iteration 505: what the speed is - the selection's workloads (from the records' times; seed 71 added apps) and the
@@ -11,7 +20,7 @@ index fc908b2..697e144 100755
      import collections
      sel = collections.Counter(tuple(sorted(k for k in (r.get('t') or {}) if k not in ('sieve', 'parse'))) for r in recs).most_common(1)
      sel = sel[0][0] if sel and sel[0][0] else None
-@@ -46,8 +46,8 @@ rows.sort(key=lambda r: (r[0], r[1]))
+@@ -46,8 +50,8 @@ rows.sort(key=lambda r: (r[0], r[1]))
  print('# Every run\'s extremes (lab/evolve/progress-table.py)\n')
  print('Speed against the hand-made s6 of the same commit, on that run\'s selection; the selection changed at Iteration 151 (values either side are not comparable). Size: stripped engine + image, bytes.\n')
  print('The last column says what the speed is: the selection\'s workloads (from seed 71, apps the seventh) and how the fast\n'

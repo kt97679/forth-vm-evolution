@@ -1,0 +1,89 @@
+diff --git a/lab/evolve/next-run.sh b/lab/evolve/next-run.sh
+index 712b2a8..d6a9254 100755
+--- a/lab/evolve/next-run.sh
++++ b/lab/evolve/next-run.sh
+@@ -387,7 +387,11 @@ checks() {   # build/ made current, then everything that must pass before a meas
+     step "the jail"
+     python3 lab/evolve/test-jail.py > "$RUN/jail.log" 2>&1 || { cat "$RUN/jail.log"; exit 1; }
+     tail -1 "$RUN/jail.log"
+-    NEXT_RUN_CHECKED=$HEAD:$RUN; export NEXT_RUN_CHECKED
++    # Iteration 549: the logs kept in the chain's directory as well - its later steps copy them from there
++    if [ -n "${NEXT_RUN_CHAIN:-}" ] && mkdir -p "$NEXT_RUN_CHAIN/checked" && cp "$RUN/tests.log" "$RUN/validate.log" "$RUN/jail.log" "$NEXT_RUN_CHAIN/checked/"; then
++        NEXT_RUN_CHECKED=$HEAD:$NEXT_RUN_CHAIN/checked
++    else NEXT_RUN_CHECKED=$HEAD:$RUN; fi
++    export NEXT_RUN_CHECKED
+ }
+ 
+ if [ "$MODE" = experiment ]; then
+@@ -423,7 +427,8 @@ if [ "$MODE" = experiment ]; then
+     grep -m2 -E 'Calibration|front of all runs' "$RUN/$NAME.md" || true
+     step "packed to send back"
+     K=$RUN/pack; rm -rf "$K"; mkdir -p "$K"
+-    for f in "$NAME.md" "$NAME.log" build.log tests.log validate.log jail.log; do cp "$RUN/$f" "$K/"; done
++    for f in "$NAME.md" "$NAME.log" build.log tests.log validate.log jail.log; do   # 549: what is there - a missing log no failure
++        if [ -f "$RUN/$f" ]; then cp "$RUN/$f" "$K/"; else echo "   no $f to pack"; fi; done
+     lscpu > "$K/lscpu.txt" 2>&1 || true
+     { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT"; } > "$K/machine.txt"
+     cp "${CHAINLOG:-$RUN/next-run.log}" "$K/next-run.log"   # Iteration 313: the chain's log so far
+diff --git a/tools/clean-runs.sh b/tools/clean-runs.sh
+index 29cd105..eee6b5c 100644
+--- a/tools/clean-runs.sh
++++ b/tools/clean-runs.sh
+@@ -10,7 +10,7 @@
+ #    their databases travelled in the runs' pack tarballs;
+ #  - run directories, NAME-<commit> (7 or more hex digits), whose pack
+ #    tarball is here: it holds their logs;
+-#  - run directories whose pack tarball is in a chain's packs/ (Iteration 541);
++#  - run directories whose pack tarball is in a finished chain's packs/ (Iteration 541; finished - 549);
+ #  - chain tarballs (forth-vm-evolution-chain-*) past the newest KEEP_CHAINS
+ #    (default 2): each copies its chain directory, which stays (Iteration 541);
+ #  - other pack tarballs past the newest KEEP_PACKS (default 8, by the time
+@@ -48,12 +48,20 @@ if [ "$C" != 0 ] && [ "$P" != 0 ]; then
+     n=$(ls -d archived-* 2>/dev/null | wc -l)
+     ls -d archived-* 2>/dev/null | sort | head -n $(( n > KEEP ? n - KEEP : 0 )) >> "$LIST"
+ fi
++in_finished_chain() {   # Iteration 549: a running chain's later steps copy its first step's logs from that step's
++    for p in chain-*/packs/forth-vm-evolution-"$1"-*.tar.gz; do    # directory - seed 74's experiments failed so
++        [ -f "$p" ] || continue
++        case $(head -n 1 "${p%%/packs/*}/status" 2>/dev/null || true) in running|stopping|'') continue ;; esac
++        return 0
++    done
++    return 1
++}
+ for d in */; do
+     d=${d%/}; h=${d##*-}
+     case $d in archived-*|*[!A-Za-z0-9-]*) continue ;; esac
+     case $h in ''|*[!0-9a-f]*) continue ;; esac
+     [ ${#h} -ge 7 ] || continue
+-    { ls forth-vm-evolution-"$d"-*.tar.gz || ls chain-*/packs/forth-vm-evolution-"$d"-*.tar.gz; } > /dev/null 2>&1 \
++    { ls forth-vm-evolution-"$d"-*.tar.gz > /dev/null 2>&1 || in_finished_chain "$d"; } \
+         && echo "$d" >> "$LIST"
+ done
+ newest_past() {    # the tarballs on stdin, oldest first, all but the newest $1 (by the time in their names)
+diff --git a/tools/test-clean-runs.sh b/tools/test-clean-runs.sh
+index 6f3b41c..e9d10eb 100755
+--- a/tools/test-clean-runs.sh
++++ b/tools/test-clean-runs.sh
+@@ -25,6 +25,7 @@ done
+ for a in 1 2 3 4 5 6; do mkdir archived-2026102$a; f archived-2026102$a/db.jsonl 2000; done
+ f archived-20261021/forth-vm-evolution-seed09-0123abc-host-20261009-020202.tar.gz 10   # a seed pack where none belongs
+ mkdir seed60-abc1234 footprint-def5678; f seed60-abc1234/build.log 10; f footprint-def5678/build.log 10
++mkdir seed61-bcd2345; f seed61-bcd2345/tests.log 10        # Iteration 549: its pack in a running chain's packs/
+ FAIL=0
+ ok() { if eval "$2"; then echo "ok    $1"; else echo "FAIL  $1"; FAIL=1; fi; }
+ gone() { [ ! -e "$1" ]; }
+@@ -37,6 +38,7 @@ err=$(RUNS=$R sh "$HERE/clean-runs.sh" 2>&1 >/dev/null)
+ ok "a finished chain loses its repo.bundle and bins.tar.gz" 'gone chain-2026102A/remote/repo.bundle && gone chain-2026102A/remote/h1/bins.tar.gz'
+ ok "a stopped chain loses its repo.bundle" 'gone chain-2026102C/remote/repo.bundle'
+ ok "a finished chain keeps its results" 'here chain-2026102A/remote/h1/out.json && here chain-2026102A/status'
++ok "a running chain's first step keeps its directory (549)" 'here seed61-bcd2345/tests.log'
+ ok "a running chain keeps everything" 'here chain-2026102B/remote/repo.bundle && here chain-2026102B/remote/h1/bins.tar.gz'
+ ok "chain tarballs: the newest 2 kept" 'gone forth-vm-evolution-chain-abc21-host-20261021-010101.tar.gz && gone forth-vm-evolution-chain-abc22-host-20261022-010101.tar.gz && here forth-vm-evolution-chain-abc23-host-20261023-010101.tar.gz && here forth-vm-evolution-chain-abc24-host-20261024-010101.tar.gz'
+ ok "every seed pack kept - ten at the top, two in chains" '[ $(ls forth-vm-evolution-seed*.tar.gz | wc -l) = 10 ] && [ $(ls chain-*/packs/forth-vm-evolution-seed*.tar.gz | wc -l) = 2 ]'
+@@ -44,5 +46,5 @@ ok "other packs: the newest 8 kept" '[ $(ls forth-vm-evolution-footprint-*.tar.g
+ ok "a run directory whose pack is in a chain goes; one without a pack stays" 'gone seed60-abc1234 && here footprint-def5678'
+ ok "archives past the newest 4 go - but not one holding a seed pack, reported as a bug" 'gone archived-20261022 && here archived-20261021 && here archived-20261023 && printf "%s" "$err" | grep -q "BUG - archived-20261021 holds a seed pack"'
+ ok "a failed chain tarball (no time at the end of its name) stays" 'here forth-vm-evolution-chain-dead-host-20261019-010101-failed.tar.gz'
+-[ $FAIL = 0 ] && echo "test-clean-runs: 12 checks, all pass" || echo "test-clean-runs: FAIL"
++[ $FAIL = 0 ] && echo "test-clean-runs: 13 checks, all pass" || echo "test-clean-runs: FAIL"
+ exit $FAIL

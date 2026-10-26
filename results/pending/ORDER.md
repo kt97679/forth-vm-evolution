@@ -6,9 +6,11 @@ Prepared while seed 74 runs; master stays what seed 74's bundle tests.
     git apply results/pending/clock-hold-after-seed74.patch
     git apply results/pending/progress-header-after-seed74.patch
     git apply results/pending/truefronts-after-seed74.patch
+    git apply results/pending/chain-logs-after-seed74.patch
 
 batch-check (545): PASS - the first three applied to a fresh clone, run-tests (the clock test's self-test among them),
-validate 7 of 7 IDENTICAL, the jail. Again with all four (547): PASS.
+validate 7 of 7 IDENTICAL, the jail. Again with all four (547): PASS. At seed 74's processing (549) patches 3 and 4
+revised and 5 added - batch-check again: PROGRESS.md.
 
 **fail32-cpt16-after-seed74.patch** (lab/evolve/review-checks.py) - **cpt16's reach, expected**. cpt16 refuses calls
 past its 16-bit reach out loud ("call out of reach", forth/cpt16.4; Iteration 517), and its designs alive at 64 bits -
@@ -38,7 +40,9 @@ steps have since 282.
 
 **progress-header-after-seed74.patch** (lab/evolve/progress-table.py, results/progress-by-run.md) - the table's header
 said the fast gate took the slower of two readings from seed 72; that gate was withdrawn at 513
-(results/drafts/fastgate-slower-withdrawn-513.patch) and every row since reads "mean". The header only.
+(results/drafts/fastgate-slower-withdrawn-513.patch) and every row since reads "mean". And (549) the front counted by
+the report's front table, not by its genomes: from seed 74 the genomes list the re-measured designs off the front too -
+seed 74's row read 261 for a front of 238.
 
 **truefronts-after-seed74.patch** (lab/evolve/truefronts.py new, lab/evolve/README.md) - **every run's true front from
 its records** (the owner, Iteration 547; GOALS.md: the article's figures on the true fronts). The runs' records are on
@@ -50,4 +54,16 @@ in truefronts.md: a row a run - records, alive, the true front against the repor
 32 bits, the smallest, the least memory, what its speed is over - and every true front's designs as JSON lines, for the
 progress table and the charts. Tested on seed 73's records: seed 73 named at 100%, the true front 222 (votes --db's),
 the reported 174, the extremes as its results file's; the same records under other ids named by the chain's line (seed
-99 in the test); a run with no speed or size in its records listed as such. About 20 s a database here, 81 MB each.
+99 in the test); a run with no speed or size in its records listed as such. About 20 s a database here, 81 MB each. Revised at 549:
+tools/clean-runs.sh keeps the newest four archived runs only, so it reads every seed pack first - $RUNS and its chains'
+packs/, the db.jsonl inside, the seed from the pack's name, the newest pack of a seed - and a database besides only for a
+seed no pack gave. Tested on seed 74's pack: 238, the extremes as seed74-front-549.py's.
+
+**chain-logs-after-seed74.patch** (tools/clean-runs.sh, lab/evolve/next-run.sh, tools/test-clean-runs.sh) - **seed 74's
+experiments failed at their packing**. clean-runs.sh, run before every step of a chain, removed a run directory once its
+pack was in a chain's packs/ (541) - also while that chain ran: the seed step's directory went before the experiments,
+with the tests', validation's and jail's logs a later step copies (`2>/dev/null || true`), and each experiment then
+failed at `cp .../tests.log`, its report whole. Now: such a directory goes only once its chain has finished; the first
+step's logs are kept in the chain's directory too (checked/), where the later steps copy them from; and an experiment's
+pack takes the logs that are there. Tested: test-clean-runs.sh, 13 checks - the new one, a running chain's first step
+keeps its directory; next-run.sh's syntax; the first chain at seed 75 runs the rest.

@@ -973,11 +973,18 @@ With the operators' chances following their children's front yield (the after-se
 share of the children below 20% (seed 72: 36.6%), and the front entries per child over the run at least a fifth above
 seed 72's (185 front designs of 26,100 children: 0.71%).
 
+**Scored at seed 74 (Iteration 549): fails.** Crossover made 27.8% of the children (the last fifth 23.6%), not
+under 20%; the front's entries per child 0.705% (238 of 33,760, the true front) - no gain on seed 72's 0.71% (its
+staircase's; on its true front 0.94%).
+
 ## The fronts the reports show, from seed 74 - predicted (Iteration 527)
 
 With first_front following dominates() (the after-seed-73 batch): seed 74's reported front at least a quarter larger than
 its fronts by the old staircase would have been - checked by running the old rule on its records (seed 72: 246 against
 185).
+
+**Scored at seed 74 (Iteration 549): holds.** The reported front 238 designs, the old staircase's on the same records
+144 - 1.65 times.
 
 ## One round first, from seed 74 - predicted (Iteration 529)
 
@@ -986,8 +993,13 @@ fifths of the children that pass the screen stop after one round; the designs an
 (2,916), allowing for the run's other changes; and none of the stopped children's audited full measurements reaches the
 final front.
 
+**Scored at seed 74 (Iteration 549): holds.** 8,470 children stopped after one round, 28.4% of those measured; 3,390
+designs an hour, 16.3% above seed 72's; 885 audited in full, none on the final front.
+
 ## jitos back, in seed 74 - predicted (Iteration 534)
 
 Unfrozen by the after-seed-73 batch (results/drafts/frozen-recheck-534.md): in seed 74, jitos on the true front again,
 and at least one of its designs in the fastest or the best-Q tenth - as in six of seeds 59-66 each. Rule 11's workloads:
 the size objective (its translator 2,208 bytes smaller on an s6 JIT design) and every workload's speed.
+
+**Scored at seed 74 (Iteration 549): fails.** jitos on none of the 238.
