@@ -5,7 +5,7 @@ Prepared while seed 75 runs; master stays what seed 75's bundle tests.
     git apply results/pending/truefronts-reported-after-seed75.patch
     git apply results/pending/process-tools-after-seed75.patch
 
-batch-check (550): PASS with the first. Again with both (551): PROGRESS.md.
+batch-check (550): PASS with the first. Again with both (551): PASS.
 
 **truefronts-reported-after-seed75.patch** (lab/evolve/truefronts.py) - its "reported" column counted a results file's
 genome records; from seed 74 those list the re-measured designs off the front too (seed 74: 261 for a front of 238),
