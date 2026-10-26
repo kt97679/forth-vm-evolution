@@ -900,7 +900,7 @@ REQUIRE = []
 # code stays; removed only if the run after shows no loss (its comparison small or better).
 FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
           'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
-          'alignhot': 0, 'jitos': 0}   # 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
+          'alignhot': 0}   # 534 (the owner): jitos unfrozen - its freeze (495) fails the rule on the true fronts (results/drafts/frozen-recheck-534.md); 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
@@ -1210,6 +1210,7 @@ def run_metric(eng, img, pw, w, single=False):
     OUT_LAST[0] = hashlib.sha1(re.sub(rb'(?m)^Redefining:[^\n]*\n', b'', r.stdout.replace(b'\r', b''))).hexdigest()
     # Iteration 516: what it printed - measure() compares it with s6's; a family's kernel differs in its words, so
     # 'Redefining: X' differs with it (cell designs have no LIT, or CALL, for sim16 to redefine) - not the output
+    if not m: raise RuntimeError('died: no measurement (exit %s)' % r.returncode)   # 527: not an AttributeError that ends the run
     return int(m.group(1))
 RSS_LAST, LAST_RSS = [0], {}     # the last run's memory (KB); the last measure()'s design, per workload: the median
 OUT_LAST = ['']                  # Iteration 516: the last run's output, hashed
@@ -1232,7 +1233,7 @@ def text_size(path):
         s = sec(k)
         if b[stroff + s[0]:b.index(b'\0', stroff + s[0])] == b'.text': return s[5]
     return None
-def measure(eng, img, pw, works, rounds):
+def measure(eng, img, pw, works, rounds, state=None, r0=0):
     """The MEDIAN CPU time per workload over the rounds, the design and the
     reference - hand-made s6 - run back to back in every round, alternating
     which goes first. Returns design / reference per workload, and the
@@ -1246,9 +1247,10 @@ def measure(eng, img, pw, works, rounds):
     each session, so two sessions ranked the same designs up to 28% apart. The median of the same runs
     agreed within 3.6% between halves of a session and 2.1% between CPUs
     (results/run-spread-amd-ryzen-7-pro-8840hs.md)."""
-    runs, ref = {}, {}
-    LAST_RSS.clear(); mem = {}; outs = {}
-    for r_ in range(rounds):
+    # Iteration 529: state - an earlier call's runs, to go on from (one round first, then the rest); r0 its rounds
+    runs, ref, mem, outs = state if state is not None else ({}, {}, {}, {})
+    LAST_RSS.clear()
+    for r_ in range(r0, r0 + rounds):
         for w in works:
             pair = [(eng, img, pw, runs), REF + (ref,)]
             for e, i, p, store in (pair if r_ % 2 == 0 else pair[::-1]):
@@ -1278,6 +1280,46 @@ def reach_lethal(g):
 FASTGATE = [20, 1.05]   # Iteration 391 (the owner): the fast end measured twice - fast_gate(), evaluate(); --fastgate N
 ISLANDS = [int(os.environ.get('EVOLVE_ISLANDS', 1))]   # Iteration 436 (results/drafts/escape-mechanism-435.md): --islands K
 MIGRATE = [int(os.environ.get('EVOLVE_MIGRATE', 10))]  # generations between migrations, a ring
+# Iteration 529 (the owner; results/drafts/front-recheck-528.md): one round first. After the first 64-bit round, a child
+# beaten in that round's speed by STOP1 (30%) by a design measured before its generation - no larger, memory within
+# MEM_TOL - stops: "stopped after one round", its one-round figures kept, no 32-bit evaluation. Seed 72: a third of the
+# measured children so, none of them on the final front; one round strays from three by at most 7.4%. One in
+# STOP1_AUDIT measured in full anyway (stopaudit), the check. EVOLVE_STOP1=0: off.
+STOP1 = float(os.environ.get('EVOLVE_STOP1', 0.30))
+STOP1_AUDIT = int(os.environ.get('EVOLVE_STOP1_AUDIT', 10))
+def stop_stair(R, gen_now):
+    """Per memory value, the staircase of the living designs before gen_now: speeds ascending, the least total."""
+    if not STOP1: return None
+    pts = sorted((r['speed'], ov(r, 'total'), r['rss']) for r in R.values() if r.get('status') == 'ok' and r.get('speed')
+                 and r.get('rss') and r.get('total') and isinstance(r.get('gen', 0), int) and r.get('gen', 0) < gen_now)
+    st = {}
+    for s_, t_, m_ in pts:
+        ss, tt = st.setdefault(m_, ([], []))
+        if tt and tt[-1] <= t_: continue
+        ss.append(s_); tt.append(t_)
+    return st or None
+def stop_beaten(st, s_, t_, m_):
+    for mv, (ss, tt) in st.items():
+        if mv > m_ + MEM_TOL: continue
+        k = bisect.bisect_right(ss, s_ / (1 + STOP1))
+        if k > 0 and tt[k - 1] <= t_: return True
+    return False
+
+def gate_again(r, rec2):
+    """A gated design's second reading joined to its first (Iteration 446): per workload the geometric mean, the speed
+    from them; a failed second run kills it (527, the bug hunt) - not its first reading kept. A function since 530, so
+    lab/evolve/test-evolver.py can hold it to that."""
+    if rec2.get('status') == 'ok' and rec2.get('t'):
+        t1, raw1 = r['t'], r.get('raw', {})
+        r['speed1'], r['speed2'] = r['speed'], rec2['speed']
+        r['t'] = t = {w: math.sqrt(t1[w] * rec2['t'][w]) for w in t1 if w in rec2['t']}
+        r['raw'] = {w: math.sqrt(raw1[w] * rec2['raw'][w]) for w in raw1 if w in rec2.get('raw', {})}
+        r['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
+    elif rec2.get('status') != 'ok':
+        r['status'] = rec2.get('status') or 'died: measured again'
+    r['gated'] = 2
+    return r
+
 def fast_gate(R):
     """The speed under which a child is measured twice: 5% above the FASTGATE[0]-th fastest design alive so
     far - the fast end, and the noise band around it. The fast end's in-run speeds were ~10% optimistic
@@ -1288,7 +1330,7 @@ def fast_gate(R):
     sp = sorted(r['speed'] for r in R.values() if r.get('status') == 'ok' and r.get('speed'))
     return sp[n - 1] * FASTGATE[1] if len(sp) >= n else None
 
-def evaluate(g, rounds, keep=False, gate=None, again=False):
+def evaluate(g, rounds, keep=False, gate=None, again=False, stop=None):
     # Build what the identity names: canon(g), as express() and gid() see it.
     # Built raw, a mutation that turned on byte headers in a design with
     # scaled calls was refused by the converter (--bytehdr wants --cpt 0) -
@@ -1305,7 +1347,20 @@ def evaluate(g, rounds, keep=False, gate=None, again=False):
         rec['bin'] = bin_size(eng); rec['total'] = rec['bin'] + rec['size']     # Iteration 75: an objective
         pw = private_work(d)
         alive(eng, img, pw, far=not hand_made(g))
-        t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
+        if stop and rounds > 1 and not again:     # Iteration 529 (the owner): one round first
+            st = ({}, {}, {}, {})
+            t1, raw1 = measure(eng, img, pw, WORK_SEL + WORK_HELD, 1, state=st)
+            s1 = math.exp(sum(math.log(t1[w]) for w in WORK_SEL) / len(WORK_SEL))
+            m1 = max([v for w_, v in LAST_RSS.items() if w_ != 'apps'] or list(LAST_RSS.values())) if LAST_RSS else None
+            if m1 is not None and stop_beaten(stop, s1, rec['total'], m1):
+                if STOP1_AUDIT and int(gid(g), 16) % STOP1_AUDIT == 1: rec['stopaudit'] = 1   # measured in full anyway
+                else:
+                    rec.update(status='stopped after one round', speed1r=s1, t1r=t1, rss=m1, mem=dict(LAST_RSS))
+                    if not keep: shutil.rmtree(d, ignore_errors=True)
+                    return rec
+            t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds - 1, state=st, r0=1)
+        else:
+            t, raw = measure(eng, img, pw, WORK_SEL + WORK_HELD, rounds)
         rec['t'] = t; rec['raw'] = raw
         rec['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
         rec['etext'] = text_size(eng)                              # Iteration 73: tracked, not scored
@@ -1566,24 +1621,30 @@ def fronts(ids, R):
 def first_front(ids, R):
     """fronts(ids, R)[0] - the same designs, in the same order - without
     comparing every pair (Iteration 99: a 12-hour run makes ~90,000 designs,
-    and fronts() over all of them would take hours). Sorted by speed, a
-    design is dominated by one strictly faster with no more total and memory
-    within MEM_TOL - so, per memory value, the least total seen among the
-    faster ones decides it - or by one as fast, no worse in both and better
-    in one: checked within its speed. Linear in the designs, times the few
-    memory values (pages: ~10)."""
-    pts = sorted(((ov(R[i], 'speed'), ov(R[i], 'total'), ov(R[i], 'rss'), i) for i in ids), key=lambda p: p[0])
-    mems = sorted(set(p[2] for p in pts)); least = {m: math.inf for m in mems}; out = set(); k = 0
-    while k < len(pts):
-        j = k
-        while j < len(pts) and pts[j][0] == pts[k][0]: j += 1
-        grp = pts[k:j]
-        for s, t, m, i in grp:
-            dom = any(least[mv] <= t for mv in mems if mv <= m + MEM_TOL)
-            dom = dom or any(i2 != i and t2 <= t and m2 <= m + MEM_TOL and (t2 < t or m2 < m - MEM_TOL) for s2, t2, m2, i2 in grp)
-            if not dom: out.add(i)
-        for s, t, m, i in grp: least[m] = min(least[m], t)
-        k = j
+    and fronts() over all of them would take hours). Iteration 527 (the bug
+    hunt of 524): by dominates() itself - its 2% in speed, MEM_TOL in memory
+    and, with two widths, the 32-bit speed. The staircase before it called a
+    design dominated by any faster one with no more total and memory: a design
+    within 2% of a faster one was dropped, and with two widths the 32-bit speed
+    was not looked at - on random populations of 25 it differed from fronts()[0]
+    176 times in 200. Now: by total, then speed, an archive of the designs
+    nothing seen dominates - a new one is checked against the archive, and
+    drops the members it dominates; then each member checked against every design
+    of no more total, since with tolerances dominance need not be transitive. The
+    designs times the archive (the front: a few hundred) - seconds."""
+    arch = []
+    for i in sorted(ids, key=lambda i: (ov(R[i], 'total'), ov(R[i], 'speed'))):
+        r = R[i]
+        if any(dominates(R[a], r) for a in arch): continue
+        arch = [a for a in arch if not dominates(r, R[a])]
+        arch.append(i)
+    # with tolerances a design the archive kept can still be dominated by one it dropped: each member checked
+    # against every design of no more total - the archive times the designs, seconds for a long run
+    by_t = sorted(ids, key=lambda i: ov(R[i], 'total')); tots = [ov(R[i], 'total') for i in by_t]
+    out = set()
+    for b in arch:
+        k = bisect.bisect_right(tots, ov(R[b], 'total'))
+        if not any(a != b and dominates(R[a], R[b]) for a in by_t[:k]): out.add(b)
     return [i for i in ids if i in out]
 
 def crowding(front, R):
@@ -1615,6 +1676,34 @@ def crowding(front, R):
 # dominated by their parent 0.5% and 0.2% of the time - 3.5% of a run's
 # evaluations: drawn one time in ten (SLOW_GENES).
 XOVER = float(os.environ.get('EVOLVE_XOVER', 0.25))
+# Iteration 526 (the owner, proposal 1 of results/drafts/ask-search-answers-525.md): adaptive operator selection.
+# Seed 72's front entries per child: mutation 1.11%, borrowing 0.71%, crossover 0.14% - crossover a third of the
+# children. Each generation, the children of the last AOS_W generations are classed as their 'how' begins
+# (crossover; borrowed - a borrowing without crossover; mutation - the rest), each class's yield is its children
+# on the front now, smoothed ((entries + 1) / (children + 20)), and the class shares follow the yields with a floor
+# of AOS_FLOOR each: crossover's chance is its share, borrowing's the borrowed share over what crossover leaves.
+# Deterministic: from the records alone, so a resumed run decides the same. EVOLVE_AOS=0: the fixed 0.25 and 0.15.
+AOS = os.environ.get('EVOLVE_AOS', '1') != '0'
+AOS_W, AOS_FLOOR = int(os.environ.get('EVOLVE_AOS_W', 10)), float(os.environ.get('EVOLVE_AOS_FLOOR', 0.1))
+OPS = {'xover': XOVER, 'borrow': 0.15}
+def op_class(how):
+    h = how or ''
+    return 'crossover' if h.startswith('crossover') else 'borrowed' if 'borrow' in h.split(';')[0] else 'mutation'
+def aos_update(R, rk, gen):
+    """The operators' chances for generation gen from the last AOS_W generations' yield (Iteration 526)."""
+    if not AOS: return None
+    made, hit = collections.Counter(), collections.Counter()
+    for i, r in R.items():
+        g_ = r.get('gen')
+        if not isinstance(g_, int) or not (gen - AOS_W <= g_ < gen) or not r.get('parents'): continue
+        c = op_class(r.get('how')); made[c] += 1
+        if rk.get(i) == 0: hit[c] += 1
+    if sum(made.values()) < 50: return None
+    y = {c: (hit[c] + 1.0) / (made[c] + 20.0) for c in ('crossover', 'borrowed', 'mutation')}
+    t = sum(y.values()); f = AOS_FLOOR
+    sh = {c: f + (1 - 3 * f) * y[c] / t for c in y}
+    OPS['xover'] = sh['crossover']; OPS['borrow'] = min(0.9, sh['borrowed'] / max(1e-9, 1 - sh['crossover']))
+    return y
 LINKS = [('jit', 'jitx', 'jitloop', 'jitinl', 'jitos', 'jittail', 'jitk'), ('tos', 'tail', 'msc'), ('escape', 'rtloopall'), ('rtfuse', 'rtimm')]
 SLOW_GENES = ('varcall', 'doesfar')
 ATTIC = int(os.environ.get('EVOLVE_ATTIC', 128))
@@ -2112,7 +2201,7 @@ def main(argv):
                 for i, (g, parents, how, gen) in items:
                     ps, pt = screen_predict(SCR['model'], canon(g))
                     if gen >= SCREEN_FROM and screen_beaten(stair, ps, pt):
-                        if int(i, 16) % SCREEN_AUDIT == 0:
+                        if SCREEN_AUDIT and int(i, 16) % SCREEN_AUDIT == 0:   # 527: EVOLVE_SCREEN_AUDIT=0 - none audited, not a ZeroDivisionError
                             n_aud += 1; keep.append((i, (g, parents, how + '; screened, audited', gen))); continue
                         n_scr += 1
                         rec = {'status': 'screened', 'pred': [round(ps, 4), round(pt)], 'secs': 0,
@@ -2122,7 +2211,8 @@ def main(argv):
                 if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
                 items = keep
         gate = fast_gate(R)                                   # Iteration 391
-        args = [(canon(g), ROUNDS, False, gate) for i, (g, parents, how, gen) in items]
+        stop = stop_stair(R, gen_now) if items else None             # Iteration 529
+        args = [(canon(g), ROUNDS, False, gate, False, stop) for i, (g, parents, how, gen) in items]
         # Iteration 446: the gated children of the generation before, measured again in this batch - among other
         # co-runners, at another moment - their speed the geometric mean of the two readings then
         again = [i for i, r in R.items() if r.get('gated') == 1 and r.get('status') == 'ok'] if items else []
@@ -2130,13 +2220,7 @@ def main(argv):
         results = list(WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args))
         for i, rec2 in zip(again, results[len(items):]):
             r = R[i]
-            if rec2.get('status') == 'ok' and rec2.get('t'):
-                t1, raw1 = r['t'], r.get('raw', {})
-                r['speed1'], r['speed2'] = r['speed'], rec2['speed']
-                r['t'] = t = {w: math.sqrt(t1[w] * rec2['t'][w]) for w in t1 if w in rec2['t']}
-                r['raw'] = {w: math.sqrt(raw1[w] * rec2['raw'][w]) for w in raw1 if w in rec2.get('raw', {})}
-                r['speed'] = math.exp(sum(math.log(t[w]) for w in WORK_SEL) / len(WORK_SEL))
-            r['gated'] = 2; save(r)
+            gate_again(r, rec2); save(r)
             print('    %s measured again: %.4g, then %s - %s' % (i, r.get('speed1', r['speed']), ('%.4g' % r['speed2']) if 'speed2' in r else rec2.get('status'), ('speed %.4g' % r['speed'])), flush=True)
         for (i, (g, parents, how, gen)), rec in zip(items, results[:len(items)]):
             rec.update(id=i, genome=canon(g), parents=parents, how=how, gen=gen)
@@ -2228,11 +2312,11 @@ def main(argv):
             same = [i for i in live if i != p1 and R[i]['genome']['enc'] == R[p1]['genome']['enc']]
             if same and rnd.random() < 0.8: p2 = rnd.choice(same)   # mostly within the species
             for _try in range(10):
-                if rnd.random() < XOVER and p1 != p2:   # Iteration 197: 0.6 before
+                if rnd.random() < OPS['xover'] and p1 != p2:   # Iteration 197: 0.6 before; 526: adaptive
                     g = crossover(R[p1]['genome'], R[p2]['genome'], rnd); how = 'crossover'; parents = [p1, p2]
                 else:
                     g = canon(R[p1]['genome']); how = ''; parents = [p1]
-                if rnd.random() < 0.15 and len(live) > 2:
+                if rnd.random() < OPS['borrow'] and len(live) > 2:   # 526: adaptive
                     donor = rnd.choice([i for i in live + attic if i not in parents])   # the attic's lost genes too
                     g, h = borrow(g, R[donor]['genome'], rnd); how = (how + '; ' if how else '') + h + ' from ' + donor
                     parents = parents + [donor]
@@ -2260,6 +2344,9 @@ def main(argv):
             live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
             order, rk, cd = rank(live, R)
             print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
+            y_ = aos_update(R, rk, gen)
+            if y_: print('  operators (526): crossover %.2f, borrowing %.2f - yields crossover %.2f%%, borrowed %.2f%%, mutation %.2f%%' % (
+                OPS['xover'], OPS['borrow'], 100 * y_['crossover'], 100 * y_['borrowed'], 100 * y_['mutation']), flush=True)
             kids = breed(live, rk, cd, N, gen)
             flush()
             pop, order = survive(pop, kids, N, Q_KEEP)

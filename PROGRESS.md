@@ -9683,7 +9683,7 @@ HANDOFF.md.
 ## Iteration 521 - 2026-10-25 - Claude
 
 **rtfuse, rtimm and jitret frozen; a rebuild ruled out for the fast end's offset** (the owner: freeze them, continue;
-results/pending/ORDER.md). The freeze is the after-seed-73 batch's patch: the three at 0 in FROZEN - out of mutation's
+results/applied-after-seed73/ORDER.md). The freeze is the after-seed-73 batch's patch: the three at 0 in FROZEN - out of mutation's
 pool, the founders without them; I+ keeps rtloopall's overlay (rule 7), rule 9's overlap moot, rule 2's jitret frozen.
 The offset: two of seed 72's fastest built twice are byte-identical, engine and image, and the run's recorded sizes - so
 the after-run binary is the in-run one. With contention (520) and a lucky reading (513) ruled out, the moment is left:
@@ -9755,8 +9755,8 @@ quiet core's boost helps it more; getrusage claims sorted (one wrong, one muddle
 helper already reads cycles beside CPU time. Proposed: contention.py as the four-condition test - alone, benchmark
 co-runners, compile co-runners - with cycles and frequencies recorded.
 
-Files: results/pending/aos-after-seed73.patch, results/drafts/ask-cpu-state-answers-526.md (new);
-results/pending/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
+Files: results/applied-after-seed73/aos-after-seed73.patch, results/drafts/ask-cpu-state-answers-526.md (new);
+results/applied-after-seed73/ORDER.md, results/predictions.md, results/README.md, HANDOFF.md.
 
 ## Iteration 527 - 2026-10-25 - Claude
 
@@ -9773,8 +9773,8 @@ benchmark co-runners and beside compile co-runners (building front designs, as w
 each run's CPU time and cycles and the core's clock; tried here on one design (cycles unreadable in this container) - it
 runs and leaves nothing behind. NEXT-RUN: seed 74's line ends with it.
 
-Files: lab/evolve/clockcheck.py, results/pending/bughunt-evolver-after-seed73.patch,
-results/drafts/ask-evolver-review-answers-527.md (new); results/pending/ORDER.md, lab/evolve/NEXT-RUN,
+Files: lab/evolve/clockcheck.py, results/applied-after-seed73/bughunt-evolver-after-seed73.patch,
+results/drafts/ask-evolver-review-answers-527.md (new); results/applied-after-seed73/ORDER.md, lab/evolve/NEXT-RUN,
 lab/evolve/README.md, results/predictions.md, results/README.md, HANDOFF.md.
 
 ## Iteration 528 - 2026-10-25 - Claude
@@ -9793,7 +9793,7 @@ Files: results/drafts/front-recheck-528.md (new); results/README.md, HANDOFF.md.
 
 ## Iteration 529 - 2026-10-25 - Claude
 
-**jitret out of the freeze; one round first written** (the owner: proceed with both; results/pending/ORDER.md). The freeze
+**jitret out of the freeze; one round first written** (the owner: proceed with both; results/applied-after-seed73/ORDER.md). The freeze
 patch now holds rtfuse and rtimm only (freeze-rt-after-seed73.patch) - jitret's 8 votes of 12 by the true fronts. One
 round first, the batch's fourth patch: after the first 64-bit round a child 30% beaten by an earlier no-larger design
 within the memory tolerance stops there - its one-round figures kept, no 32-bit evaluation, one in ten measured in full;
@@ -9801,8 +9801,8 @@ the rest continue from that round (measure() takes an earlier call's state), so 
 generations of 32: 23 of 162 children stopped, one audited, no error. The four patches apply in order. Predicted for seed
 74: a quarter to two fifths stopped, 15% more designs an hour, no audited stopped child on the final front.
 
-Files: results/pending/freeze-rt-after-seed73.patch (replaces freeze-rt-jitret-after-seed73.patch),
-results/pending/stop1-after-seed73.patch (new); results/pending/ORDER.md, results/predictions.md, HANDOFF.md.
+Files: results/applied-after-seed73/freeze-rt-after-seed73.patch (replaces freeze-rt-jitret-after-seed73.patch),
+results/applied-after-seed73/stop1-after-seed73.patch (new); results/applied-after-seed73/ORDER.md, results/predictions.md, HANDOFF.md.
 
 ## Iteration 530 - 2026-10-25 - Claude
 
@@ -9815,8 +9815,8 @@ missing) - checks shown to fail, as prompt 15 asks. The five patches apply in or
 the converter's JIT table and the translator's operand decoder embedded (16 KB), the rules a row keeps at both widths,
 the three bugs found there before - for the owner to relay.
 
-Files: results/pending/test-evolver-after-seed73.patch, results/drafts/ask-jit-table-530.md (new);
-results/pending/ORDER.md, results/README.md, HANDOFF.md.
+Files: results/applied-after-seed73/test-evolver-after-seed73.patch, results/drafts/ask-jit-table-530.md (new);
+results/applied-after-seed73/ORDER.md, results/README.md, HANDOFF.md.
 
 ## Iteration 531 - 2026-10-25 - Claude
 
@@ -9830,8 +9830,8 @@ jit-diff's 0= IF). Two latent bounds a reviewer found - the extra rows below 0xF
 char - asserted in tools/layout.py, the after-seed-73 batch's sixth patch; a jitexec table built with them. The six
 patches apply in order.
 
-Files: results/drafts/ask-jit-table-answers-531.md, results/pending/jit-table-bounds-after-seed73.patch (new);
-results/pending/ORDER.md, results/README.md, HANDOFF.md.
+Files: results/drafts/ask-jit-table-answers-531.md, results/applied-after-seed73/jit-table-bounds-after-seed73.patch (new);
+results/applied-after-seed73/ORDER.md, results/README.md, HANDOFF.md.
 
 ## Iteration 532 - 2026-10-25 - Claude
 
@@ -9847,7 +9847,7 @@ results/drafts/seed73-checklist-532.md: what compares (memory the six's again), 
 prediction 518, the batch, seed 74's line with the clock test.
 
 Files: results/drafts/seed73-checklist-532.md (new); lab/evolve/review-checks.py, lab/evolve/process-seed.sh,
-results/gene-votes.md, results/pending/ORDER.md, results/README.md, HANDOFF.md.
+results/gene-votes.md, results/applied-after-seed73/ORDER.md, results/README.md, HANDOFF.md.
 
 ## Iteration 533 - 2026-10-25 - Claude
 
@@ -9860,7 +9860,7 @@ blocking near-unused genes by chance, the place to fix that is the rule for ever
 kept as results/drafts/freeze-rt-withdrawn-533.patch; the other five apply in order without it and the evolver
 self-test passes on them; batch-check again at processing (the checklist says so).
 
-Files: results/drafts/freeze-rt-withdrawn-533.patch (moved from results/pending/); results/pending/ORDER.md,
+Files: results/drafts/freeze-rt-withdrawn-533.patch (moved from results/pending/); results/applied-after-seed73/ORDER.md,
 results/drafts/seed73-checklist-532.md, HANDOFF.md.
 
 ## Iteration 534 - 2026-10-25 - Claude
@@ -9877,13 +9877,13 @@ Files: results/drafts/frozen-recheck-534.md (new); results/README.md, HANDOFF.md
 
 ## Iteration 535 - 2026-10-25 - Claude
 
-**jitos unfrozen - the after-seed-73 batch's sixth patch** (the owner: proceed; results/pending/ORDER.md). Out of FROZEN,
+**jitos unfrozen - the after-seed-73 batch's sixth patch** (the owner: proceed; results/applied-after-seed73/ORDER.md). Out of FROZEN,
 its votes from seed 75 (review-checks.py's GRACE; rule 12's row in results/seed63-rules.md). Built here after forty
 iterations frozen: a JIT design with it 22,684 bytes against 24,892 without, alive, outputs right - engines-check had kept
 its path. Predicted for seed 74: back on the true front, in the fastest or best-Q tenth at least once. The six patches
 apply in order; seed 73's checklist names them.
 
-Files: results/pending/unfreeze-jitos-after-seed73.patch (new); results/pending/ORDER.md, results/predictions.md,
+Files: results/applied-after-seed73/unfreeze-jitos-after-seed73.patch (new); results/applied-after-seed73/ORDER.md, results/predictions.md,
 results/seed63-rules.md, results/drafts/seed73-checklist-532.md, HANDOFF.md.
 
 ## Iteration 536 - 2026-10-25 - Claude

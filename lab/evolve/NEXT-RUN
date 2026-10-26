@@ -13,6 +13,11 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 544 (seed 73 processed): seed 74, 10 hours (the owner); the after-seed-73 batch applied - adaptive operators,
+# the true front, one round first, the evolver self-test, the JIT table's bounds, jitos unfrozen: the method changes, the
+# stopping count (GOALS.md) starts here - its hours are the method's: seeds 75 on at 10 too. The clock test last: the
+# chain's perf hold covers counters.py and missmap.py only, so for its cycles kernel.perf_event_paranoid at most 2 while
+# it runs (sudo sysctl kernel.perf_event_paranoid=2 before the start, 4 again after) - otherwise the time alone.
 # Iteration 527 (the owner): seed 74's line ends with the clock test - ... then experiment clockcheck.py --sample 8
 # (its cycles need perf-hold-start.sh run first, as for the counters step; without them the time alone)
 # Iteration 520 (seed 72 processed): seed 73, 11 hours (the owner); the after-seed-72 batch applied - jitexec's table
@@ -81,4 +86,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 73 11h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
+seed 74 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8

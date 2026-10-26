@@ -2,12 +2,12 @@
 
 Prepared while seed 73 runs; master stays what seed 73's bundle tests.
 
-    git apply results/pending/aos-after-seed73.patch
-    git apply results/pending/bughunt-evolver-after-seed73.patch
-    git apply results/pending/stop1-after-seed73.patch
-    git apply results/pending/test-evolver-after-seed73.patch
-    git apply results/pending/jit-table-bounds-after-seed73.patch
-    git apply results/pending/unfreeze-jitos-after-seed73.patch
+    git apply results/applied-after-seed73/aos-after-seed73.patch
+    git apply results/applied-after-seed73/bughunt-evolver-after-seed73.patch
+    git apply results/applied-after-seed73/stop1-after-seed73.patch
+    git apply results/applied-after-seed73/test-evolver-after-seed73.patch
+    git apply results/applied-after-seed73/jit-table-bounds-after-seed73.patch
+    git apply results/applied-after-seed73/unfreeze-jitos-after-seed73.patch
 
 **freeze-rt-after-seed73.patch - withdrawn (533, the owner)**: by the vote tool's own rule - 11 of 12 votes and no
 keep vote - on the true fronts neither rtfuse nor rtimm is a candidate (each has one keep vote: rtfuse in seed 72's

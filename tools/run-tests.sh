@@ -365,6 +365,14 @@ echo "the tracer (tools/vmtrace.py --self-test):"
 if out=$(python3 "$ROOT/tools/vmtrace.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' s6 "$(printf '%s' "$out" | tail -1 | cut -c17-110)"
 else printf '  %-12s FAIL   %s\n' s6 "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
 
+# The evolver's own functions (Iteration 530): the front shortcut was far from the dominance it claimed for many
+# runs before the bug hunt of 524-527 found it. lab/evolve/test-evolver.py holds first_front to fronts(), one round
+# first, the adaptive operators and the gated second reading to what they promise - pure functions, a second.
+echo
+echo "the evolver's own functions (lab/evolve/test-evolver.py):"
+if out=$(python3 "$ROOT/lab/evolve/test-evolver.py" 2>&1); then printf '  %-12s ok     %s\n' evolver "$(printf '%s' "$out" | tail -1 | cut -c15-110)"
+else printf '  %-12s FAIL   %s\n' evolver "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; FAILED=1; fi
+
 # The engine generators (Iteration 249): seed 46 lost every design with the
 # gene tail - an engine change broke gen-tail.py's engines and nothing built
 # one before the run. lab/evolve/engines-check.py builds s6-cv8b down every

@@ -963,6 +963,10 @@ the applications workload's instructions (-1.7% over the seven) on seed 71's fas
 In seed 73: jitexec on at least a quarter of the front's JIT designs and on most of the fastest tenth's (seeds 70-72:
 2 designs at most).
 
+**Scored at seed 73 (Iteration 544): fails.** jitexec on 6 of the true front's 65 JIT designs (9%, not a quarter) and 6
+of its fastest tenth's 22 (not most) - three times seeds 70-72's 2-3 designs with its table fixed; its payer, the
+applications, is one workload of seven.
+
 ## Adaptive operator selection, from seed 74 - predicted (Iteration 526)
 
 With the operators' chances following their children's front yield (the after-seed-73 batch): in seed 74, crossover's

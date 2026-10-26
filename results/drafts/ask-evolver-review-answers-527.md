@@ -3,7 +3,7 @@
 Five answers to results/drafts/ask-evolver-review-524.md (the owner, 527; two of them the same text). Every claim read
 against evolve.py and, where it could be, run.
 
-## Real, and fixed (results/pending/bughunt-evolver-after-seed73.patch)
+## Real, and fixed (results/applied-after-seed73/bughunt-evolver-after-seed73.patch)
 
 **first_front did not follow dominates()** (answers 57 and 58 by its 2% band; 54 and 57 by the 32-bit speed). Its
 staircase called a design dominated by any faster one with no more total and memory - ignoring the 2% tolerance in speed,
