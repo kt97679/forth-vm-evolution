@@ -10007,3 +10007,16 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed73.md, results/xcheck-seed73.md
 (new); results/applied-after-seed73/ (was results/pending/); results/compare-fronts-amd-ryzen-7-pro-8840hs.md (session
 60), results/gene-votes.md, results/predictions.md, results/progress-by-run.md, results/README.md; lab/evolve/NEXT-RUN,
 lab/evolve/README.md, HANDOFF.md, HANDOFF-REFERENCE.md.
+
+## Iteration 545 - 2026-10-26 - Claude
+
+**The after-seed-74 batch**, prepared while seed 74 runs (results/pending/ORDER.md): fail32 and rule 5 learn cpt16's
+reach at 4-byte cells - expected, no fault (seed 73's records: 61 expected, rule 5 PASS; the negative control caught);
+the clock test takes the chain's perf hold as counters.py does - from seed 75 sudo asks once at the start, the setting
+held only while it measures, no perf program needed (clockcheck.py --self-test in run-tests; next-run.sh's block in a
+harness, six cases); the progress table's header without the withdrawn slower-of-two gate. batch-check PASS. **Seed
+74's checklist** (results/drafts/seed74-checklist-545.md). Found on the way: a sysctl set by hand holds through the
+evolution too - tools/cputime.c opens the counters for every run once it may - so for seed 74 only after the re-measurement.
+
+Files: results/pending/ (new: ORDER.md, fail32-cpt16-after-seed74.patch, clock-hold-after-seed74.patch,
+progress-header-after-seed74.patch), results/drafts/seed74-checklist-545.md (new), results/README.md, HANDOFF.md.
