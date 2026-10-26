@@ -29,6 +29,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `xcheck-seed56.md` - The first run checked on four machines (Iteration 354): the Tegra's first native run (ARMv7, Spearman 0.944), dream.lan at 64 bits, at 32, and the same designs at 64 - the skew the width's, not the machine's.
 - `xcheck-seed57.md` - The checks of seed 56's front during seed 57 (Iteration 378): dream 64-bit Spearman 0.980; at 32 bits 0.713, the same designs at 64 bits 0.949 - the width's skew again; the Tegra 0.881.
 - `xcheck-seed58.md` - The checks of seed 57's front during seed 58, and seed 57's rejected designs (Iteration 384): the Tegra Spearman 0.973, dream 64-bit 0.959, 32-bit 0.875; no rejected design faster on any host than the front's fastest (item 4d); three Tegra link failures (regpin=1 with lto=1).
+- `xcheck-seed74.md` - The checks of seed 73's front during seed 74 (Iteration 549): dream 0.977 (default, 24), 0.974 (32-bit), 0.984 (64-bit); the Tegra 0.856 (16).
 - `xcheck-seed73.md` - The checks of seed 72's front during seed 73 (Iteration 544): dream 0.870 (default, 24), 0.931 (32-bit), 0.893 (64-bit); the Tegra 0.882 (16).
 - `xcheck-seed72.md` - The checks of seed 71's front during seed 72 (Iteration 520): dream at three builds and the Tegra.
 - `xcheck-seed71.md` - The checks of seed 70's front during seed 71 (Iteration 516): dream 0.804 (default, 24), 0.969 (32-bit), 0.966 (64-bit); the Tegra 0.607 (7).
@@ -91,6 +92,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `drafts/jit-pairs-506.md` - The JIT's operation pairs over the seven selection workloads, pricing super-stencils (Iteration 506): 41% of dispatched pairs in straight-line code, the top 25 a quarter; I +, DUP I, + XOR lead; a few percent to win - a literal-into-operation gene proposed first.
 - `drafts/seed73-checklist-532.md` - Seed 73's processing, written before its results (Iteration 532): what compares (memory again the six's), the true front beside the reported, prediction 518 (jitexec's first fair run), the batch, seed 74's line with the clock test.
 - `drafts/seed73-front-544.py` - Seed 73's true front against its reported one, the JIT genes' shares (prediction 518), the extremes and the 32-bit failures by encoding (Iteration 544).
+- `drafts/seed74-front-549.py` - Seed 74's fronts: the true one against the results file's and the old staircase's on the same records (prediction 527), the one-round audits (529), the operators' shares (526), the JIT genes (534), the extremes (Iteration 549).
 - `drafts/seed74-checklist-545.md` - Seed 74's processing, the checklist (Iteration 545): the predictions due with their numbers, the hypervolume, the clock test, the votes, the batch, seed 75's line.
 - `drafts/xcheck-agreement-546.md` - Why the cross-machine checks agreed less on seed 72's front (Iteration 546): mostly the sample; the machines order the fast JIT designs differently; the fast end is a band.
 - `drafts/xcheck-agreement-546.py` - The analysis behind it, from a chain's remote measurements and the checked run's records (Iteration 546).
