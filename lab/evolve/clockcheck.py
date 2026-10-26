@@ -11,10 +11,46 @@ benchmark co-runners, beside K compile co-runners (building front designs, as th
 reverse - recording for every run its CPU time and, when the counters are readable, its cycles, and the measured core's
 reported clock before each block. If the cycle ratio holds where the time ratio moves, the offset is the clock.
 
-Cycles need kernel.perf_event_paranoid at most 2 (lab/evolve/perf-hold.py arranges it for a chain's counters step);
-otherwise the time alone is recorded and the report says so. stdout: the report; stderr: progress.
+Cycles need kernel.perf_event_paranoid at most 2: in next-run.sh's chain, root's lab/evolve/perf-hold.py holds it while
+this measures, as for counters.py (Iteration 545 - sudo asks once, at the chain's start); otherwise the time alone is
+recorded and the report says so. --self-test: the hold's handshake, against a stand-in for perf-hold.py. stdout: the
+report; stderr: progress.
 """
-import json, math, os, random, re, shutil, statistics, subprocess, sys, time
+import contextlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
+
+@contextlib.contextmanager
+def held(start, done, C):
+    # Iteration 545: the chain's hold (counters.PerfHold, as counters.py and missmap.py take it) while this measures;
+    # none, or one that fails, and the clock test runs on the time alone
+    h = None
+    if start and start != 'none':
+        try: h = C.PerfHold(start, done).__enter__()
+        except SystemExit: print('clockcheck: perf-hold.py did not set kernel.perf_event_paranoid (runs/perf-hold.log) - the time alone', file=sys.stderr)
+    try: yield h
+    finally:
+        if h: h.__exit__()
+
+if sys.argv[1:] == ['--self-test']:
+    import tempfile, threading
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import counters as C
+    t = tempfile.mkdtemp(); C.PARANOID = os.path.join(t, 'paranoid'); open(C.PARANOID, 'w').write('4\n')
+    st, dn = os.path.join(t, 'hold.start'), os.path.join(t, 'hold.done')
+    def root():                             # perf-hold.py's half: 2 once START names a pid, the old value back at DONE
+        while not os.path.exists(st): time.sleep(0.01)
+        open(C.PARANOID, 'w').write('2\n')
+        while not os.path.exists(dn): time.sleep(0.01)
+        open(C.PARANOID, 'w').write('4\n')
+    th = threading.Thread(target=root, daemon=True); th.start()
+    with held(st, dn, C): inside = open(C.PARANOID).read().strip()
+    th.join(5); ok1 = inside == '2' and open(C.PARANOID).read().strip() == '4' and open(st).read().strip() == str(os.getpid())
+    os.remove(st); os.remove(dn)
+    C.time = type('T', (), {'sleep': staticmethod(lambda s: None)})     # no holder: PerfHold gives up at once
+    with held(st, dn, C) as h2: ok2 = h2 is None and open(C.PARANOID).read().strip() == '4'
+    with held('none', 'none', C) as h3: ok3 = h3 is None and not os.path.exists(os.path.join(t, 'none'))
+    shutil.rmtree(t)
+    print('clockcheck --self-test: the hold %s (2 while it measures, 4 after); no holder %s, none %s (the time alone)'
+          % tuple('ok' if v else 'FAIL' for v in (ok1, ok2, ok3)))
+    sys.exit(0 if ok1 and ok2 and ok3 else 1)
 HERE = os.path.dirname(os.path.abspath(__file__))
 args = sys.argv[1:]; opt = {'--sample': '8', '--rounds': '3', '--workers': '3'}
 for k in list(opt):
@@ -104,6 +140,8 @@ def stop(hs):
 
 ORDER = ['alone', 'bench', 'compile', 'compile', 'bench', 'alone']
 rows = []
+import counters as C
+HOLD = contextlib.ExitStack(); HOLD.enter_context(held(os.environ.get('PERF_HOLD_START'), os.environ.get('PERF_HOLD_DONE'), C))
 for i in pick:
     d = os.path.join(E.EV, 'clockcheck-' + i); shutil.rmtree(d, ignore_errors=True)
     try:
@@ -124,6 +162,7 @@ for i in pick:
     except Exception as x:
         say('  %s: %s' % (i, str(x)[:120]))
     shutil.rmtree(d, ignore_errors=True)
+HOLD.close()                                # the setting back now (perf-hold.py), before the report
 shutil.rmtree(prog, ignore_errors=True)
 for n in range(K): shutil.rmtree(os.path.join(E.EV, 'clockcheck-cc%d' % n), ignore_errors=True)
 

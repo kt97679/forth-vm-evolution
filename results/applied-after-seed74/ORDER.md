@@ -2,11 +2,11 @@
 
 Prepared while seed 74 runs; master stays what seed 74's bundle tests.
 
-    git apply results/pending/fail32-cpt16-after-seed74.patch
-    git apply results/pending/clock-hold-after-seed74.patch
-    git apply results/pending/progress-header-after-seed74.patch
-    git apply results/pending/truefronts-after-seed74.patch
-    git apply results/pending/chain-logs-after-seed74.patch
+    git apply results/applied-after-seed74/fail32-cpt16-after-seed74.patch
+    git apply results/applied-after-seed74/clock-hold-after-seed74.patch
+    git apply results/applied-after-seed74/progress-header-after-seed74.patch
+    git apply results/applied-after-seed74/truefronts-after-seed74.patch
+    git apply results/applied-after-seed74/chain-logs-after-seed74.patch
 
 batch-check (545): PASS - the first three applied to a fresh clone, run-tests (the clock test's self-test among them),
 validate 7 of 7 IDENTICAL, the jail. Again with all four (547): PASS. At seed 74's processing (549) patches 3 and 4

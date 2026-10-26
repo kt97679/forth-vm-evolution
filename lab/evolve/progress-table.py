@@ -29,12 +29,16 @@ for f in glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md')):
             try: r = json.loads(l)
             except ValueError: continue
             if isinstance(r.get('speed'), (int, float)) and r.get('bin') and r.get('size'): recs.append(r)
+    # Iteration 549: the front is the Pareto front table's designs - from seed 74 the genomes listed below it hold the
+    # re-measured designs off the front too (261 records for a front of 238)
+    front = set(re.findall(r'^\| ([0-9a-f]{10}) \|', text.split('## How the front came about')[0], re.M))
+    if front: recs = [r for r in recs if r.get('id') in front] or recs
     if not recs: continue
     fast = min(recs, key=lambda r: r['speed'])
     small = min(recs, key=lambda r: r['bin'] + r['size'])
     mem = min(recs, key=lambda r: r['rss'] if isinstance(r.get('rss'), (int, float)) else 1e9)
     # Iteration 505: what the speed is - the selection's workloads (from the records' times; seed 71 added apps) and the
-    # fast gate's join of two readings (from seed 72 the slower, before it their geometric mean)
+    # fast gate's join of two readings (their geometric mean; a slower-of-two gate, prepared for seed 72, withdrawn at 513)
     import collections
     sel = collections.Counter(tuple(sorted(k for k in (r.get('t') or {}) if k not in ('sieve', 'parse'))) for r in recs).most_common(1)
     sel = sel[0][0] if sel and sel[0][0] else None
@@ -46,8 +50,8 @@ rows.sort(key=lambda r: (r[0], r[1]))
 print('# Every run\'s extremes (lab/evolve/progress-table.py)\n')
 print('Speed against the hand-made s6 of the same commit, on that run\'s selection; the selection changed at Iteration 151 (values either side are not comparable). Size: stripped engine + image, bytes.\n')
 print('The last column says what the speed is: the selection\'s workloads (from seed 71, apps the seventh) and how the fast\n'
-      'gate joined a design\'s two readings (from seed 72 the slower; before, their geometric mean). **Bold**: a break - the\n'
-      'speed columns do not compare across it; size and memory do.\n')
+      'gate joined a design\'s two readings (their geometric mean - the slower-of-two gate prepared for seed 72 was withdrawn\n'
+      'at Iteration 513). **Bold**: a break - the speed columns do not compare across it; size and memory do.\n')
 print('| seed | iteration | front | fastest | speed | x s6 | smallest | binary + image | smallest engine | least memory KB | speed over |')
 print('|---|---|---|---|---|---|---|---|---|---|---|')
 prev = None

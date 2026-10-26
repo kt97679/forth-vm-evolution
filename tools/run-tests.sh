@@ -373,6 +373,13 @@ echo "the evolver's own functions (lab/evolve/test-evolver.py):"
 if out=$(python3 "$ROOT/lab/evolve/test-evolver.py" 2>&1); then printf '  %-12s ok     %s\n' evolver "$(printf '%s' "$out" | tail -1 | cut -c15-110)"
 else printf '  %-12s FAIL   %s\n' evolver "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; FAILED=1; fi
 
+# The clock test's hold (Iteration 545): clockcheck.py takes the chain's hold on kernel.perf_event_paranoid as
+# counters.py does - the handshake checked against a stand-in for root's perf-hold.py, and without one the time alone.
+echo
+echo "the clock test's perf hold (lab/evolve/clockcheck.py --self-test):"
+if out=$(python3 "$ROOT/lab/evolve/clockcheck.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
+else printf '  %-12s FAIL   %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+
 # The engine generators (Iteration 249): seed 46 lost every design with the
 # gene tail - an engine change broke gen-tail.py's engines and nothing built
 # one before the run. lab/evolve/engines-check.py builds s6-cv8b down every

@@ -10,7 +10,7 @@
 #    their databases travelled in the runs' pack tarballs;
 #  - run directories, NAME-<commit> (7 or more hex digits), whose pack
 #    tarball is here: it holds their logs;
-#  - run directories whose pack tarball is in a chain's packs/ (Iteration 541);
+#  - run directories whose pack tarball is in a finished chain's packs/ (Iteration 541; finished - 549);
 #  - chain tarballs (forth-vm-evolution-chain-*) past the newest KEEP_CHAINS
 #    (default 2): each copies its chain directory, which stays (Iteration 541);
 #  - other pack tarballs past the newest KEEP_PACKS (default 8, by the time
@@ -48,12 +48,20 @@ if [ "$C" != 0 ] && [ "$P" != 0 ]; then
     n=$(ls -d archived-* 2>/dev/null | wc -l)
     ls -d archived-* 2>/dev/null | sort | head -n $(( n > KEEP ? n - KEEP : 0 )) >> "$LIST"
 fi
+in_finished_chain() {   # Iteration 549: a running chain's later steps copy its first step's logs from that step's
+    for p in chain-*/packs/forth-vm-evolution-"$1"-*.tar.gz; do    # directory - seed 74's experiments failed so
+        [ -f "$p" ] || continue
+        case $(head -n 1 "${p%%/packs/*}/status" 2>/dev/null || true) in running|stopping|'') continue ;; esac
+        return 0
+    done
+    return 1
+}
 for d in */; do
     d=${d%/}; h=${d##*-}
     case $d in archived-*|*[!A-Za-z0-9-]*) continue ;; esac
     case $h in ''|*[!0-9a-f]*) continue ;; esac
     [ ${#h} -ge 7 ] || continue
-    { ls forth-vm-evolution-"$d"-*.tar.gz || ls chain-*/packs/forth-vm-evolution-"$d"-*.tar.gz; } > /dev/null 2>&1 \
+    { ls forth-vm-evolution-"$d"-*.tar.gz > /dev/null 2>&1 || in_finished_chain "$d"; } \
         && echo "$d" >> "$LIST"
 done
 newest_past() {    # the tarballs on stdin, oldest first, all but the newest $1 (by the time in their names)

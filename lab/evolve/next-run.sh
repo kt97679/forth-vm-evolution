@@ -278,12 +278,18 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
         # Iteration 315: the remote checks' hosts tried here, where it is seen (lab/evolve/REMOTES)
         case " $* $THEN " in *" seed "*) sh lab/evolve/remote-checks.sh probe "$NEXT_RUN_CHAIN" || true ;; esac
     fi
-    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)   # Iteration 294: missmap.py too
+    case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*|*" clockcheck.py "*)   # Iteration 294: missmap.py too; 545: clockcheck.py
         if [ -z "${PERF_HOLD_START:-}" ]; then
-            PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
-            export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain
             PERF_HOLD_START=$RUNS/perf-hold-$(date +%Y%m%d-%H%M%S).start; PERF_HOLD_DONE=${PERF_HOLD_START%.start}.done
-            sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" || die "counters.py cannot have perf's counters - nothing started"
+            case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*)
+                PERF=$(python3 lab/evolve/counters.py --find-perf) || die "counters.py: no perf runs here - nothing started"
+                export PERF                 # Iteration 284: the perf that runs, found once, here, for the whole chain
+                sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" || die "counters.py cannot have perf's counters - nothing started";;
+            # Iteration 545: the clock test alone - its cycles read by tools/cputime.c, no perf program needed; without the
+            # hold it still runs, on the time alone ("none": the chain's later steps do not ask again)
+            *)  PERF_HOLD_FOR=clockcheck.py sh lab/evolve/perf-hold-start.sh "$PERF_HOLD_START" "$PERF_HOLD_DONE" "$RUNS/perf-hold.log" "$NEXT_RUN_CHAIN" \
+                    || { say "the clock test will record the time alone - kernel.perf_event_paranoid not held"; PERF_HOLD_START=none; PERF_HOLD_DONE=none; };;
+            esac
             export PERF_HOLD_START PERF_HOLD_DONE
         fi;;
     esac
@@ -381,7 +387,11 @@ checks() {   # build/ made current, then everything that must pass before a meas
     step "the jail"
     python3 lab/evolve/test-jail.py > "$RUN/jail.log" 2>&1 || { cat "$RUN/jail.log"; exit 1; }
     tail -1 "$RUN/jail.log"
-    NEXT_RUN_CHECKED=$HEAD:$RUN; export NEXT_RUN_CHECKED
+    # Iteration 549: the logs kept in the chain's directory as well - its later steps copy them from there
+    if [ -n "${NEXT_RUN_CHAIN:-}" ] && mkdir -p "$NEXT_RUN_CHAIN/checked" && cp "$RUN/tests.log" "$RUN/validate.log" "$RUN/jail.log" "$NEXT_RUN_CHAIN/checked/"; then
+        NEXT_RUN_CHECKED=$HEAD:$NEXT_RUN_CHAIN/checked
+    else NEXT_RUN_CHECKED=$HEAD:$RUN; fi
+    export NEXT_RUN_CHECKED
 }
 
 if [ "$MODE" = experiment ]; then
@@ -417,7 +427,8 @@ if [ "$MODE" = experiment ]; then
     grep -m2 -E 'Calibration|front of all runs' "$RUN/$NAME.md" || true
     step "packed to send back"
     K=$RUN/pack; rm -rf "$K"; mkdir -p "$K"
-    for f in "$NAME.md" "$NAME.log" build.log tests.log validate.log jail.log; do cp "$RUN/$f" "$K/"; done
+    for f in "$NAME.md" "$NAME.log" build.log tests.log validate.log jail.log; do   # 549: what is there - a missing log no failure
+        if [ -f "$RUN/$f" ]; then cp "$RUN/$f" "$K/"; else echo "   no $f to pack"; fi; done
     lscpu > "$K/lscpu.txt" 2>&1 || true
     { git log -1 --format='%H %s'; uname -a; cc --version 2>&1 | sed 1q; python3 --version 2>&1; echo "$WANT"; } > "$K/machine.txt"
     cp "${CHAINLOG:-$RUN/next-run.log}" "$K/next-run.log"   # Iteration 313: the chain's log so far

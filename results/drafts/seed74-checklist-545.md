@@ -29,7 +29,7 @@ hours. Then "Processing a returned seed" (HANDOFF.md), with these:
    keep vote; rtfuse not before seed 75's processing.
 7. **Rule 5**: cpt16 designs failing the applications at 32 bits are expected (the reach, 517) - fail32 learns it with
    the after-seed-74 batch; before that, its ATTENTION for them is in name only.
-8. **The after-seed-74 batch** (results/pending/ORDER.md): batch-check, then apply - no patch touches forth/kernel.4,
+8. **The after-seed-74 batch** (results/applied-after-seed74/ORDER.md): batch-check, then apply - no patch touches forth/kernel.4,
    no reseed.
 9. **Seed 75's line**: `seed 75 10h widths noevolved then experiment review-checks.py spread then experiment
    appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8 then experiment

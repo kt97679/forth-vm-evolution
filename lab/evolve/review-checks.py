@@ -26,7 +26,9 @@ results/review-methodology-386.md), each reproducible:
   fail32 DB                the run's 32-bit failures by cause (Iteration 427: seed 61's, classed by hand at 425) -
                            died on the corpus with bfind and no tos, or no engine from the tail engine (by
                            compiler), the causes the after-seed-62 batch fixes (from seed 63 on, any is a
-                           regression); anything else by its message, "not a known cause" - look
+                           regression); cpt16 past its 16-bit call reach at 4-byte cells, refused out loud
+                           (Iteration 517), expected - no fault (Iteration 545); anything else by its message, "not a
+                           known cause" - look
   generic REMOTE_DIR       the best design across the machine classes (Iteration 430; GOALS.md, Iteration 377): a
                            chain's remote checks (CHAIN/remote), the designs measured on x86-64, 32-bit x86 and
                            ARMv7 - each class once, prebuilt64 for x86-64 where there is one - ranked by the
@@ -75,6 +77,11 @@ def spearman(a, b):
         return r
     ra, rb = ranks(a), ranks(b); m = len(a)
     return 1 - 6 * sum((x - y) ** 2 for x, y in zip(ra, rb)) / (m * (m * m - 1))
+
+def expected32(w, g):
+    # Iteration 545: a 32-bit failure that is no fault - cpt16's calls past its 16-bit reach, refused out loud
+    # ("call out of reach", Iteration 517): the applications allot past the reach at 4-byte cells, not at 8.
+    return w.startswith('wrong output') and 'apps' in w and g.get('enc') == 'cpt16'
 
 def thirds(rows):
     n = len(rows); return (('fastest third', rows[:n // 3]), ('middle third', rows[n // 3:2 * n // 3]), ('slowest third', rows[2 * n // 3:]))
@@ -333,11 +340,14 @@ elif check == 'fail32':
         k = None
         if 'corpus' in w and e.get('bfind') and not e.get('tos'): k = 'bfind without tos'
         elif 'compile' in w and e.get('tail'): k = 'tail, %s%s' % ('clang' if g.get('compiler') else 'GCC', ' with preserve_none' if e.get('tailpn') else '')
+        elif expected32(w, g): k = 'expected - cpt16 past its 16-bit call reach at 4-byte cells, refused out loud (Iteration 517)'
         c[(w, k or 'not a known cause - look')] += 1
     print('at 32 bits: %d designs measured, %d failed' % (ok, n))
     for (w, k), m in sorted(c.items(), key=lambda kv: -kv[1]): print('  %6d  %s - %s' % (m, w, k))
     known = sum(m for (w, k), m in c.items() if k.startswith(('bfind', 'tail')))
     print('the known causes: %d of %d (fixed by the after-seed-62 batch: from seed 63 on, any is a regression)' % (known, n))
+    exp = sum(m for (w, k), m in c.items() if k.startswith('expected'))
+    print('expected, no fault: %d of %d (cpt16\'s reach at 4-byte cells - Iteration 517); not a known cause: %d' % (exp, n, n - known - exp))
 elif check == 'generic':
     import glob, math
     rd = sys.argv[2]; cls = {}
@@ -529,9 +539,9 @@ elif check == 'rules':
     for i in ids:
         for g, val in frz.items():
             if (ex[i].get(g) or 0) != val: bad['%s %s' % (g, 'off' if val else 'on')] += 1
-    reach = known = other = None
+    reach = known = other = expected = None
     if opts.get('--db'):
-        reach = known = other = 0
+        reach = known = other = expected = 0
         for l in open(opts['--db'], errors='replace'):
             if 'reach limit' not in l and '"why32"' not in l: continue
             try: r = json.loads(l)
@@ -541,11 +551,13 @@ elif check == 'rules':
             if w:
                 g = E.canon(r['genome']); e = E.express(g)
                 if ('corpus' in w and e.get('bfind') and not e.get('tos')) or ('compile' in w and e.get('tail')): known += 1
+                elif expected32(w, g): expected += 1          # Iteration 545: no fault
                 else: other += 1
     out.append((4, 'The freeze', 'front designs off a frozen value: %s; refused at the reach limit: %s'
                 % (', '.join('%s %d' % kv for kv in sorted(bad.items())) or 'none', 'give --db' if reach is None else reach),
                 'none and none', 'SEE' if reach is None and not bad else ('PASS' if not bad and not reach else 'ATTENTION')))
-    out.append((5, '32-bit correctness', 'give --db' if known is None else 'failures of a known cause %d, of another %d' % (known, other),
+    out.append((5, '32-bit correctness', 'give --db' if known is None else 'failures of a known cause %d, of another %d%s' % (known, other,
+                '; expected, cpt16\'s reach at 4-byte cells (517): %d' % expected if expected else ''),
                 'none of a known cause', 'SEE' if known is None else ('PASS' if known == 0 and other == 0 else 'ATTENTION')))
     sm = min(by.values()) if by else None
     out.append((6, 'The small end', "the front's smallest %s bytes" % ('{:,}'.format(int(sm)) if sm else '-'), 'at most 14,535',

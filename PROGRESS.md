@@ -10010,7 +10010,7 @@ lab/evolve/README.md, HANDOFF.md, HANDOFF-REFERENCE.md.
 
 ## Iteration 545 - 2026-10-26 - Claude
 
-**The after-seed-74 batch**, prepared while seed 74 runs (results/pending/ORDER.md): fail32 and rule 5 learn cpt16's
+**The after-seed-74 batch**, prepared while seed 74 runs (results/applied-after-seed74/ORDER.md): fail32 and rule 5 learn cpt16's
 reach at 4-byte cells - expected, no fault (seed 73's records: 61 expected, rule 5 PASS; the negative control caught);
 the clock test takes the chain's perf hold as counters.py does - from seed 75 sudo asks once at the start, the setting
 held only while it measures, no perf program needed (clockcheck.py --self-test in run-tests; next-run.sh's block in a
@@ -10036,14 +10036,14 @@ HANDOFF.md.
 
 ## Iteration 547 - 2026-10-26 - Claude
 
-**truefronts.py**, the after-seed-74 batch's fourth patch (the owner; results/pending/ORDER.md): every run's true front
+**truefronts.py**, the after-seed-74 batch's fourth patch (the owner; results/applied-after-seed74/ORDER.md): every run's true front
 recomputed from the laptop's records - a chain step that measures nothing, seed 75's last (`then experiment
 truefronts.py`). Each run named by its seed through the results file whose front its own children made; out, a row a
 run and every true front's designs as JSON lines - for the progress table, the charts and the article (GOALS.md: its
 figures on the true fronts). Tested on seed 73's records: named at 100%, the true front 222 as votes --db's, the
 reported 174; a run no results file claims named by the chain's line. batch-check PASS on all four.
 
-Files: results/pending/truefronts-after-seed74.patch (new), results/pending/ORDER.md,
+Files: results/applied-after-seed74/truefronts-after-seed74.patch (new), results/applied-after-seed74/ORDER.md,
 results/drafts/seed74-checklist-545.md, results/README.md, HANDOFF.md.
 
 ## Iteration 548 - 2026-10-26 - Claude

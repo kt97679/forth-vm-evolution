@@ -45,7 +45,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the owner set kernel.perf_event_paranoid to 2 by hand - and only after the evolution's re-measurement: tools/cputime.c
   opens the counters for every run once it may (545). Its processing: results/drafts/seed74-checklist-545.md, then
   "Processing a returned seed".
-- **The after-seed-74 batch**, four patches (results/pending/ORDER.md): fail32 learns cpt16's reach; the clock test
+- **The after-seed-74 batch**, four patches (results/applied-after-seed74/ORDER.md): fail32 learns cpt16's reach; the clock test
   takes the chain's perf hold - from seed 75, next-run.sh asks for sudo once at the start; the progress table's header;
   truefronts.py - every run's true front from the laptop's records, seed 75's last step. batch-check again before
   applying.

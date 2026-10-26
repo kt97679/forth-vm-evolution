@@ -3,8 +3,8 @@
 Speed against the hand-made s6 of the same commit, on that run's selection; the selection changed at Iteration 151 (values either side are not comparable). Size: stripped engine + image, bytes.
 
 The last column says what the speed is: the selection's workloads (from seed 71, apps the seventh) and how the fast
-gate joined a design's two readings (from seed 72 the slower; before, their geometric mean). **Bold**: a break - the
-speed columns do not compare across it; size and memory do.
+gate joined a design's two readings (their geometric mean - the slower-of-two gate prepared for seed 72 was withdrawn
+at Iteration 513). **Bold**: a break - the speed columns do not compare across it; size and memory do.
 
 | seed | iteration | front | fastest | speed | x s6 | smallest | binary + image | smallest engine | least memory KB | speed over |
 |---|---|---|---|---|---|---|---|---|---|---|
