@@ -4,6 +4,8 @@ Prepared while seed 75 runs; master stays what seed 75's bundle tests.
 
     git apply results/pending/truefronts-reported-after-seed75.patch
 
+batch-check (550): PASS - applied to a fresh clone, run-tests, validate 7 of 7 IDENTICAL, the jail.
+
 **truefronts-reported-after-seed75.patch** (lab/evolve/truefronts.py) - its "reported" column counted a results file's
 genome records; from seed 74 those list the re-measured designs off the front too (seed 74: 261 for a front of 238),
 the miscount the after-seed-74 batch fixed in progress-table.py. Now the front table's designs - and a variant's
