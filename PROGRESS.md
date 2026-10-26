@@ -10109,3 +10109,12 @@ batch-check on both patches: PASS.
 
 Files: results/pending/process-tools-after-seed75.patch (new), results/pending/ORDER.md, results/README.md, HANDOFF.md.
 
+## Iteration 552 - 2026-10-26 - Claude
+
+**Recurring steps become scripts** (the owner): prompts/21, item 9 - a sequence that recurs (every routine run, every
+session, or typed by hand a second time with more to come) becomes a script, tested like any change; the script does
+the mechanics, the judgment stays with the session (TODO lines); a one-off analysis keeps its script beside its result,
+not made a general tool. HANDOFF.md's "Efficiency" points to it.
+
+Files: prompts/21-spend-tokens-where-they-buy-results.md, HANDOFF.md.
+

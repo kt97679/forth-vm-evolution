@@ -38,7 +38,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 551.
+- master: Iteration 552.
 - **Seed 75 is running** on the laptop - 10 hours, the method's: the stopping count's second run, after seed 74. Its
   processing: results/drafts/seed75-checklist-550.md, then "Processing a returned seed". Its line ends with the
   clock test - now with the chain's perf hold: **next-run.sh asks for sudo once, at the start** - and truefronts.py,
@@ -165,6 +165,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 - Charts drawn by a script into a file and shown as the file - never data points typed into a chart call.
 - Replies: the answer first, short; nothing a tool output already showed, restated.
 - Effort: xhigh for the routine; max for the unexpected - a failed chain, an odd result, a design decision.
+- Recurring steps become scripts; the judgment stays in the chat - prompts/21, item 9 (Iteration 552).
 - Tool calls: never `pkill -f` a pattern in your own command line (it kills your shell); a file written after an `&&`
   step that can fail is lost with it - check what was written; remove a background job's old output before polling it
   (a stale file reads as done); a sandbox restart kills background jobs and keeps /tmp - the status file says where to
