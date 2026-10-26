@@ -8,7 +8,7 @@ Prepared while seed 74 runs; master stays what seed 74's bundle tests.
     git apply results/pending/truefronts-after-seed74.patch
 
 batch-check (545): PASS - the first three applied to a fresh clone, run-tests (the clock test's self-test among them),
-validate 7 of 7 IDENTICAL, the jail. Again with the fourth (547): see PROGRESS.md.
+validate 7 of 7 IDENTICAL, the jail. Again with all four (547): PASS.
 
 **fail32-cpt16-after-seed74.patch** (lab/evolve/review-checks.py) - **cpt16's reach, expected**. cpt16 refuses calls
 past its 16-bit reach out loud ("call out of reach", forth/cpt16.4; Iteration 517), and its designs alive at 64 bits -
