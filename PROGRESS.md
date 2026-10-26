@@ -10020,3 +10020,16 @@ evolution too - tools/cputime.c opens the counters for every run once it may - s
 
 Files: results/pending/ (new: ORDER.md, fail32-cpt16-after-seed74.patch, clock-hold-after-seed74.patch,
 progress-header-after-seed74.patch), results/drafts/seed74-checklist-545.md (new), results/README.md, HANDOFF.md.
+
+## Iteration 546 - 2026-10-26 - Claude
+
+**Why the cross-machine checks agreed less on seed 72's front** (0.870-0.931 and the Tegra's 0.882, against
+0.955-0.958 and 0.916; results/drafts/xcheck-agreement-546.md): mostly the sample - 16 to 30 designs a check, 95%
+bootstrap intervals from 0.62-0.74 up to 0.96-0.97, the two fronts made alike. What is real: the machines order the
+fast JIT designs differently - each agrees with itself (dream's two sessions 0.974, 0.900 within the JIT designs; the
+laptop's in-run against re-measured 0.958), the laptop and dream within the JIT designs 0.44-0.54; not the winner's
+curse, not the applications (0.94-0.99); loop and corpus reorder most. The laptop's fastest lands 3.4-3.7% behind
+dream's best and 1.0% behind the Tegra's: the fast end is a band.
+
+Files: results/drafts/xcheck-agreement-546.md, results/drafts/xcheck-agreement-546.py (new), results/README.md,
+HANDOFF.md.

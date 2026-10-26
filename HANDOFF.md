@@ -38,7 +38,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 545.
+- master: Iteration 546.
 - **Seed 74 is running** on the laptop - 10 hours (the owner), the first run of the after-seed-73 batch
   (results/applied-after-seed73/ORDER.md). The method changed, so GOALS.md's stopping count starts at seed 74 - its
   hours, 10, are the method's: seeds 75 on at 10 too, or the count restarts. Its clock test runs without cycles unless
@@ -133,7 +133,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
 8. The article, after consolidation: the claim is the integration, not any technique
-   (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts.
+   (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts; across machines the
+   fast end as a band, the fastest named per machine (results/drafts/xcheck-agreement-546.md).
 
 ## Conventions - tokens (the owner, Iteration 542)
 
