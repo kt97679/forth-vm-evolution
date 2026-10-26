@@ -5,9 +5,10 @@ Prepared while seed 74 runs; master stays what seed 74's bundle tests.
     git apply results/pending/fail32-cpt16-after-seed74.patch
     git apply results/pending/clock-hold-after-seed74.patch
     git apply results/pending/progress-header-after-seed74.patch
+    git apply results/pending/truefronts-after-seed74.patch
 
-batch-check (545): PASS - the three applied to a fresh clone, run-tests (the clock test's self-test among them),
-validate 7 of 7 IDENTICAL, the jail.
+batch-check (545): PASS - the first three applied to a fresh clone, run-tests (the clock test's self-test among them),
+validate 7 of 7 IDENTICAL, the jail. Again with the fourth (547): see PROGRESS.md.
 
 **fail32-cpt16-after-seed74.patch** (lab/evolve/review-checks.py) - **cpt16's reach, expected**. cpt16 refuses calls
 past its 16-bit reach out loud ("call out of reach", forth/cpt16.4; Iteration 517), and its designs alive at 64 bits -
@@ -38,3 +39,15 @@ steps have since 282.
 **progress-header-after-seed74.patch** (lab/evolve/progress-table.py, results/progress-by-run.md) - the table's header
 said the fast gate took the slower of two readings from seed 72; that gate was withdrawn at 513
 (results/drafts/fastgate-slower-withdrawn-513.patch) and every row since reads "mean". The header only.
+
+**truefronts-after-seed74.patch** (lab/evolve/truefronts.py new, lab/evolve/README.md) - **every run's true front from
+its records** (the owner, Iteration 547; GOALS.md: the article's figures on the true fronts). The runs' records are on
+the laptop alone, so it is a chain's experiment step - seed 75's last: `then experiment truefronts.py`. It reads every
+archived run's database ($RUNS, else runs/, and lab/evolve/runs/; next-run.sh passes only the newest four), measures
+nothing, and names each run by its seed - the results file whose reported front the run's own children made (generation
+1 on: a carried design is a founder, generation 0, in the runs after), else the chain's line for this clone's run. Out,
+in truefronts.md: a row a run - records, alive, the true front against the reported one, the fastest in the run and at
+32 bits, the smallest, the least memory, what its speed is over - and every true front's designs as JSON lines, for the
+progress table and the charts. Tested on seed 73's records: seed 73 named at 100%, the true front 222 (votes --db's),
+the reported 174, the extremes as its results file's; the same records under other ids named by the chain's line (seed
+99 in the test); a run with no speed or size in its records listed as such. About 20 s a database here, 81 MB each.

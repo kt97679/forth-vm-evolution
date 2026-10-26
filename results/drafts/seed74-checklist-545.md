@@ -32,5 +32,7 @@ hours. Then "Processing a returned seed" (HANDOFF.md), with these:
 8. **The after-seed-74 batch** (results/pending/ORDER.md): batch-check, then apply - no patch touches forth/kernel.4,
    no reseed.
 9. **Seed 75's line**: `seed 75 10h widths noevolved then experiment review-checks.py spread then experiment
-   appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8` - 10 hours, the
-   method's; with the batch, next-run.sh asks for sudo once at the start, for the clock test's hold - tell the owner.
+   appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8 then experiment
+   truefronts.py` - 10 hours, the method's; with the batch, next-run.sh asks for sudo once at the start, for the clock
+   test's hold - tell the owner. truefronts.py last (547): every archived run's true front, read at seed 75's processing
+   - the seed names checked by their share, then the progress table and the charts rebuilt on the true fronts.

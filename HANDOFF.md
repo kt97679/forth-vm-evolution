@@ -38,16 +38,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 546.
+- master: Iteration 547.
 - **Seed 74 is running** on the laptop - 10 hours (the owner), the first run of the after-seed-73 batch
   (results/applied-after-seed73/ORDER.md). The method changed, so GOALS.md's stopping count starts at seed 74 - its
   hours, 10, are the method's: seeds 75 on at 10 too, or the count restarts. Its clock test runs without cycles unless
   the owner set kernel.perf_event_paranoid to 2 by hand - and only after the evolution's re-measurement: tools/cputime.c
   opens the counters for every run once it may (545). Its processing: results/drafts/seed74-checklist-545.md, then
   "Processing a returned seed".
-- **The after-seed-74 batch**, three patches (results/pending/ORDER.md): fail32 learns cpt16's reach; the clock test
-  takes the chain's perf hold - from seed 75, next-run.sh asks for sudo once at the start; the progress table's header.
-  batch-check again before applying.
+- **The after-seed-74 batch**, four patches (results/pending/ORDER.md): fail32 learns cpt16's reach; the clock test
+  takes the chain's perf hold - from seed 75, next-run.sh asks for sudo once at the start; the progress table's header;
+  truefronts.py - every run's true front from the laptop's records, seed 75's last step. batch-check again before
+  applying.
 - **Seed 73 processed (544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222 (reported 174); no
   comparison in its chain, the spread level with 71-72; the fixed-box hypervolume 0.34915, the series' first; jitexec on 6
   of 65 JIT designs (518 fails); no freeze candidate - rtimm not (533's question closed), rtfuse not before 75.
