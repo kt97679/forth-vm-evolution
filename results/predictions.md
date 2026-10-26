@@ -1003,3 +1003,11 @@ and at least one of its designs in the fastest or the best-Q tenth - as in six o
 the size objective (its translator 2,208 bytes smaller on an s6 JIT design) and every workload's speed.
 
 **Scored at seed 74 (Iteration 549): fails.** jitos on none of the 238.
+
+## Seed 75, the stopping count's second run - predicted (Iteration 549)
+
+On the method seed 74 began (the after-seed-73 batch; 10 hours): seed 75 gains nothing over seed 74 by GOALS.md's
+effect sizes - its fixed-box hypervolume within 1% of 0.35667 or below it, and no extreme past its threshold (speed 2%,
+binary + image 1%, memory 4 KB, the 32-bit speed 2%). The fronts have moved little since seed 71 (results/drafts/
+xcheck-agreement-546.md; the spreads of sessions 59-61).
+

@@ -38,26 +38,21 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 548.
-- **Seed 74 is running** on the laptop - 10 hours (the owner), the first run of the after-seed-73 batch
-  (results/applied-after-seed73/ORDER.md). The method changed, so GOALS.md's stopping count starts at seed 74 - its
-  hours, 10, are the method's: seeds 75 on at 10 too, or the count restarts. Its clock test runs without cycles unless
-  the owner set kernel.perf_event_paranoid to 2 by hand - and only after the evolution's re-measurement: tools/cputime.c
-  opens the counters for every run once it may (545). Its processing: results/drafts/seed74-checklist-545.md, then
-  "Processing a returned seed".
-- **The after-seed-74 batch**, four patches (results/applied-after-seed74/ORDER.md): fail32 learns cpt16's reach; the clock test
-  takes the chain's perf hold - from seed 75, next-run.sh asks for sudo once at the start; the progress table's header;
-  truefronts.py - every run's true front from the laptop's records, seed 75's last step. batch-check again before
-  applying.
-- **Seed 73 processed (544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222 (reported 174); no
-  comparison in its chain, the spread level with 71-72; the fixed-box hypervolume 0.34915, the series' first; jitexec on 6
-  of 65 JIT designs (518 fails); no freeze candidate - rtimm not (533's question closed), rtfuse not before 75.
-- **Predictions due** (results/predictions.md): seed 74 - adaptive operators, the reported fronts, one round first (526,
-  527, 529), jitos back on the front (534).
-- **Before 544**: seeds 70-73 processed (498, 516, 520, 544). Every front reported until seed 74 was the shortcut's, not the
-  true one (results/drafts/front-recheck-528.md): figures are recomputed from the runs' records. The decisions of
-  532-543: HANDOFF-REFERENCE.md.
-- **Files a new chat needs**: the newest bundle, and seed 74's chain archive (`forth-vm-evolution-chain-<its
+- master: Iteration 549.
+- **Seed 75 is next** - 10 hours, the method's: the stopping count's second run, after seed 74. Its line ends with the
+  clock test - now with the chain's perf hold: **next-run.sh asks for sudo once, at the start** - and truefronts.py,
+  every seed pack's true front. The after-seed-74 batch is applied (results/applied-after-seed74/ORDER.md).
+- **Seed 74 processed (549)** - results/evolve-amd-ryzen-7-pro-8840hs-seed74.md: the reported front is the true one
+  (238; the old staircase 144 - 527 holds); the fixed-box hypervolume 0.35667, the stopping series' first on the
+  method; one round first holds (529); adaptive operators (526) and jitos (534) fail; the clock test: the offset does
+  not follow the clock. Its chain came back "failed" - the experiments failed at their packing, their reports whole
+  (Iteration 541's cleanup; fixed by the batch's chain-logs patch).
+- **jitrp is a freeze candidate** (12 of 12 over 72-74, no keep vote). A freeze changes the method and restarts the
+  stopping count: the owner's to decide - not frozen.
+- **Predictions due** (results/predictions.md): seed 75 - no gain over seed 74 by the stopping rule (549).
+- **Before 549**: seeds 70-74 processed (498, 516, 520, 544, 549); every front reported until seed 74 was the
+  shortcut's (results/drafts/front-recheck-528.md) - figures recomputed from the records. History: HANDOFF-REFERENCE.md.
+- **Files a new chat needs**: the newest bundle, and seed 75's chain archive (`forth-vm-evolution-chain-<its
   commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
@@ -116,24 +111,24 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. Seed 74's processing, then a new chat: predictions 526, 527, 529, 534; its reported front is the true one now - check
-   it against `review-checks.py votes --db`; the clock test's reading (item 3); its hypervolume, the stopping series' first
-   run on the method; clean-runs.sh's first tidy of the laptop's runs/ (only copies gone: repo.bundle, bins.tar.gz, chain
-   tarballs past the newest two); the archive about 13 MB, without the bundle and the binaries.
+1. Seed 75's processing, then a new chat: the prediction (549); the clock test with cycles - check that sudo was asked
+   at the start and the setting held only while it measured (runs/perf-hold.log); truefronts.md - every seed's true
+   front: check the seed names, then rebuild results/progress-by-run.md and the charts on the true fronts; the chain's
+   status done (the chain-logs patch).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": runs on an unchanged method from seed
-   74 (10 hours), then the confirmation run, the final set, the random-search baseline (its mode drafted and tested:
-   results/drafts/random-mode-548.patch, applied at consolidation).
-3. The fast end's 7% offset (rule 3; seed 73 1.070): the clock test - seed 74's on the time and the clock (cycles only if
-   set by hand), seed 75's with the chain's hold (results/drafts/ask-noise-answers-513.md, ask-cpu-state-answers-526.md).
-4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 73: 1 design relies
-   on it).
-5. The JIT genes' place: their votes count (rule 12). Seed 73: jitexec on 6 and jitfuse on 7 of 65 JIT designs; jitrp 8
-   votes of 8 over 72-73 - a freeze candidate if seed 74 gives it three or four (11 of 12) with no keep vote.
-6. Rule 5's ATTENTION for cpt16's reach at 4-byte cells (517; seeds 72-73: 67 and 61 designs) is in name only until
-   the after-seed-74 batch's fail32 patch is applied.
-7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
+   74 (10 hours; its hypervolume 0.35667), then the confirmation run, the final set, the random-search baseline (its mode
+   drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
+3. The fast end's 7% offset (rule 3; seeds 73-74 1.070, 1.066): seed 74's clock test - the time against the run 1.079
+   alone, 1.056 beside compiles, while the core's clock moved 2,000-4,600 MHz: not the clock. Seed 75's cycles confirm;
+   then the winner's curse or the run's hours of load (results/drafts/ask-noise-answers-513.md,
+   ask-cpu-state-answers-526.md).
+4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 74: 2 designs
+   rely on it).
+5. The JIT genes' place: their votes count (rule 12). Seed 74: JIT designs 50 of 238, all of the fastest tenth; jitmul
+   25, jitfuse 5, jitexec 1; jitos none (534 fails); jitrp a freeze candidate (above).
+6. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
-8. The article, after consolidation: the claim is the integration, not any technique
+7. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts; across machines the
    fast end as a band, the fastest named per machine (results/drafts/xcheck-agreement-546.md). The method section
    drafted (results/drafts/article-method-548.md).

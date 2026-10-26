@@ -10059,3 +10059,24 @@ the author's register): [74+] marks the figures still to come, [check] what the 
 
 Files: results/drafts/random-mode-548.patch, results/drafts/article-method-548.md (new), GOALS.md, results/README.md,
 HANDOFF.md.
+
+## Iteration 549 - 2026-10-26 - Claude
+
+**Seed 74 processed** (results/evolve-amd-ryzen-7-pro-8840hs-seed74.md): the reported front is the true one - 238
+designs, the old staircase 144 on the same records (527 holds); the fixed-box hypervolume 0.35667, the stopping series'
+first run on the method; one round first holds (529: 28.4% stopped, 3,390 designs an hour, none of 885 audits on the
+front); adaptive operators fail (526: crossover 27.8%, entries per child 0.705%), and jitos (534: none on the front);
+jitrp a freeze candidate, not frozen - the owner's (a freeze restarts the count). The clock test, without cycles: the
+offset does not follow the clock. **The chain came back "failed"**: clean-runs.sh, before every step, took the seed
+step's directory once its pack was in the chain (541), and the experiments failed at copying its logs - their reports
+whole. **The after-seed-74 batch**, revised and applied: five patches (a fifth, chain-logs, for the failure; truefronts
+reads every seed pack - clean-runs keeps four archived runs; the progress table counts the front table), batch-check
+PASS; the chain on master: run-tests PASS, validate 7 of 7, the gate 261 of 261 alive (the front and the re-measured
+designs), ans-check 0 of 61 differ (its negative control caught), the jail PASS - the sandbox restarted after validate,
+and those three ran again. Seed 75 at 10 hours, the prediction: no gain.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed74.md, results/xcheck-seed74.md, results/drafts/seed74-front-549.py
+(new); results/applied-after-seed74/ (was results/pending/: chain-logs-after-seed74.patch new); results/compare-fronts-
+amd-ryzen-7-pro-8840hs.md (session 61), results/gene-votes.md, results/predictions.md, results/progress-by-run.md,
+results/README.md; lab/evolve/NEXT-RUN, HANDOFF.md.
+
