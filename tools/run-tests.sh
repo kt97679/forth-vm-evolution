@@ -376,6 +376,10 @@ else printf '  %-12s FAIL   %s\n' evolver "$(printf '%s' "$out" | grep FAIL | he
 # The clock test's hold (Iteration 545): clockcheck.py takes the chain's hold on kernel.perf_event_paranoid as
 # counters.py does - the handshake checked against a stand-in for root's perf-hold.py, and without one the time alone.
 echo
+echo "the stopping rule (lab/evolve/stopping.py --self-test):"
+if out=$(python3 "$ROOT/lab/evolve/stopping.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c24-124)"
+else printf '  %-12s FAIL   %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+echo
 echo "the clock test's perf hold (lab/evolve/clockcheck.py --self-test):"
 if out=$(python3 "$ROOT/lab/evolve/clockcheck.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
 else printf '  %-12s FAIL   %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi

@@ -85,6 +85,24 @@ def self_test():
     return 0 if ok else 1
 
 
+
+def measure(db, E, b=None):
+    """A database's true front, measured (Iteration 554 - stopping.py's numbers too): its size, how many inside the box,
+    the hypervolume and the four extremes."""
+    b = b or json.load(open(BOUNDS)); R = {}
+    for l in open(db, errors='replace'):
+        if l.startswith('{'):
+            try: r = json.loads(l)
+            except ValueError: continue
+            if r.get('id'):
+                r['total'] = E.ov(r, 'total') if r.get('status') == 'ok' and (r.get('total') or r.get('size')) else r.get('total')
+                R[r['id']] = r
+    F = true_front(R, E)
+    Z = [z for z in (norm(R[i], b) for i in F) if z is not None]
+    ex = lambda k: min(R[i][k] for i in F)
+    return dict(front=len(F), inside=len(Z), hv=hv4(Z), fastest=ex('speed'), smallest=ex('total'), memory=ex('rss'), fastest32=ex('speed32'))
+
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     if not args: sys.exit(__doc__)
@@ -92,16 +110,6 @@ if __name__ == '__main__':
     b = json.load(open(BOUNDS))
     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
     for db in args:
-        R = {}
-        for l in open(db, errors='replace'):
-            if l.startswith('{'):
-                try: r = json.loads(l)
-                except ValueError: continue
-                if r.get('id'):
-                    r['total'] = E.ov(r, 'total') if r.get('status') == 'ok' and (r.get('total') or r.get('size')) else r.get('total')
-                    R[r['id']] = r
-        F = true_front(R, E)
-        Z = [z for z in (norm(R[i], b) for i in F) if z is not None]
-        ex = lambda k: min(R[i][k] for i in F)
+        m = measure(db, E, b)
         print('%s: true front %d (%d inside the box), hypervolume %.5f | fastest %.4f, smallest %d, least memory %d KB, fastest at 32 bits %.4f'
-              % (db, len(F), len(Z), hv4(Z), ex('speed'), ex('total'), ex('rss'), ex('speed32')), flush=True)
+              % (db, m['front'], m['inside'], m['hv'], m['fastest'], m['smallest'], m['memory'], m['fastest32']), flush=True)

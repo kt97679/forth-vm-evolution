@@ -38,6 +38,8 @@ if [ -n "$SP" ]; then
     VN=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null)        # Iteration 432: the gene votes, with the ledger - not written
     python3 "$EV/review-checks.py" votes "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > votes.txt 2>&1   # 532: the front from the records
     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
+    python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
+    p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'
     python3 "$EV/review-checks.py" rules "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > rules.txt 2>&1   # Iteration 438
     p ""; p "## review-checks.py rules (rules.txt) - results/seed63-rules.md's rules, measured"; cut -c1-300 rules.txt | grep -v '^pinned' >> "$S"
 fi

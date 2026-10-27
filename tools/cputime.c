@@ -1,7 +1,7 @@
 /*
  *  cputime.c - run a command and report how much CPU it used.
  *
- *      cputime PROG ARG...      -> "CPUNS <nanoseconds>" on stderr,
+ *      cputime PROG ARG...      -> "CPUNS <nanoseconds>" on stderr (and its user and system parts, "USERNS", "SYSNS" - Iteration 554),
  *                                  then "MAXRSS <kilobytes>": peak resident
  *                                  memory, from the same rusage record,
  *                                  then, where the hardware counters can
@@ -141,6 +141,10 @@ int main(int argc, char **argv)
        + (unsigned long long)ru.ru_stime.tv_sec * 1000000000ULL
        + (unsigned long long)ru.ru_stime.tv_usec * 1000ULL;
     say("CPUNS %llu\n", ns);
+    /* Iteration 554: the two parts apart as well, once the child is gone - the clock test's user and system split
+       (results/drafts/fast-end-offset-554.md). The run's number is the sum above, unchanged. */
+    say("USERNS %llu\n", (unsigned long long)ru.ru_utime.tv_sec * 1000000000ULL + (unsigned long long)ru.ru_utime.tv_usec * 1000ULL);
+    say("SYSNS %llu\n", (unsigned long long)ru.ru_stime.tv_sec * 1000000000ULL + (unsigned long long)ru.ru_stime.tv_usec * 1000ULL);
     say("MAXRSS %ld\n", (long)ru.ru_maxrss);
     /* Iteration 75: the pages the child touched - minor and major faults,
        counted one by one. ru_maxrss is no measure for a small static

@@ -33,6 +33,8 @@ if E.TWO_WIDTHS[0]: ok = [i for i in ok if R[i].get('speed32')]
 T = E.first_front(ok, R); rep = open(os.path.join(pack, 'report.md')).read()
 Rf = set(re.findall(r'^\| ([0-9a-f]{10}) \|', rep.split('## How the front came about')[0], re.M))
 hv = next((l.strip() for l in subprocess.run([sys.executable, os.path.join(HERE, 'hv.py'), db], capture_output=True, text=True).stdout.split('\n') if 'hypervolume' in l), '?')
+so = subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
+stop_ = ' '.join(l for l in so.split('\n') if l.startswith(('verdict:', 'the count:', 'the next run gains if:'))) or "TODO: against the method's earlier runs (GOALS.md)."
 f = min(T, key=lambda i: R[i]['speed']); s = min(T, key=lambda i: E.ov(R[i], 'total')); mm = min(T, key=lambda i: R[i]['rss'])
 w = min((i for i in T if R[i].get('speed32')), key=lambda i: R[i]['speed32'], default=None)
 kids = [r for r in R.values() if (r.get('gen') or 0) > 0]; meas = [r for r in kids if r.get('status') != 'screened']
@@ -63,7 +65,7 @@ head = '\n'.join(x for x in [
  '`%s` at %s. The chain: %s%s. %s designs, generations 0-%d: %s%s.' % (line, commit, status, '' if status == 'done' else ' - TODO: what failed', '{:,}'.format(len(R)), gens,
     ', '.join('%s %s' % ('{:,}'.format(v), k) for k, v in cnt.most_common()), '; %s designs an hour' % '{:,}'.format(len(R) // hours) if hours else ''), '',
  '**The front**: the true one %d designs - the report\'s %d%s.' % (len(T), len(Rf), ', the same' if Rf == set(T) else ' - TODO: why they differ'), '',
- '**The fixed-box hypervolume**: %s. TODO: against the method\'s earlier runs (GOALS.md).' % hv.split(': ', 1)[-1], '',
+ '**The fixed-box hypervolume**: %s. **The stopping rule** (stopping.py, results/stopping-series.md): %s' % (hv.split(': ', 1)[-1], stop_), '',
  '**The extremes**: fastest %s %.4f, smallest %s %s bytes, least memory %s KB%s.' % (f, R[f]['speed'], s, '{:,}'.format(E.ov(R[s], 'total')), R[mm]['rss'],
     ', fastest at 32 bits %s %.4f' % (w, R[w]['speed32']) if w else ''), '',
  '**One round first**: %s children stopped after one round, %.1f%% of those measured; %d audited in full, %d of them on the front.' % (
