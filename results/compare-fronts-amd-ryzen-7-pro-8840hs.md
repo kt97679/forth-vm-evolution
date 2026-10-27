@@ -32097,3 +32097,20 @@ bits seed 74 leads them (0.1731), seed 71 all five (0.1612).
 | archived-20261025-160555/build/evolve/db.jsonl | 102 | 21557 | 324 | 0.1485 | 14,079 | 460 | 3.1548e+06 | 0.1937 | 0.1828 |
 | archived-20261026-043231/build/evolve/db.jsonl | 102 | 21709 | 308 | 0.1469 | 14,079 | 112 | 9.1527e+05 | 0.7955 | 0.1896 |
 | archived-20261026-154831/build/evolve/db.jsonl | 102 | 16744 | 226 | 0.1520 | 14,167 | 108 | 9.4306e+05 | 0.8033 | 0.1731 |
+
+## Session 63 - Iteration 555: seed 76 and the archived runs (the chain's spread, at generation 102)
+
+The five runs at generation 102, each from its own records: seed 76 (build/) and the archived seeds 72, 73, 74 and 75,
+in that order. The speed is over the same seven workloads (+apps, mean, both widths) for all five - one column. Memory
+compares for seeds 73-76: seed 72 measured it wrong (460 KB) - and with it the best Q and the hypervolume here (review-
+checks.py's own, not hv.py's fixed box). Seeds 75 and 76 lead the fast end, 0.1384 and 0.1383 against 0.1469-0.1520; the
+hypervolume of the four that compare within 2% (seed 74 0.6812, 76 0.6803, 75 0.6746, 73 0.6685); at 32 bits seed 74
+leads them (0.1731).
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 102 | 16736 | 334 | 0.1383 | 14,237 | 108 | 9.7187e+05 | 0.6803 | 0.1856 |
+| archived-20261025-160555/build/evolve/db.jsonl | 102 | 21557 | 324 | 0.1485 | 14,079 | 460 | 3.1548e+06 | 0.1628 | 0.1828 |
+| archived-20261026-043231/build/evolve/db.jsonl | 102 | 21709 | 308 | 0.1469 | 14,079 | 112 | 9.1527e+05 | 0.6685 | 0.1896 |
+| archived-20261026-154831/build/evolve/db.jsonl | 102 | 16744 | 226 | 0.1520 | 14,167 | 108 | 9.4306e+05 | 0.6812 | 0.1731 |
+| archived-20261027-034200/build/evolve/db.jsonl | 102 | 17051 | 355 | 0.1384 | 14,103 | 108 | 1.0108e+06 | 0.6746 | 0.1783 |

@@ -1026,3 +1026,16 @@ under seed 75's 0.1363), the smallest above 13,938 bytes, the least memory above
 bests to beat are already the lucky ones: the fastest of seeds 73-75 read 0.1399, 0.1402, 0.1363, the hypervolume
 0.34915, 0.35667, 0.34851 - each threshold lies about two of those spreads past its best. If it holds, seed 77 can end
 the count.
+
+**Scored at seed 76 (Iteration 555): holds.** By stopping.py: the hypervolume 0.35036 (under 0.36024), the fastest
+0.1450 (over 0.1336), the smallest 14,109, the least memory 112 KB, the fastest at 32 bits 0.1778 - nothing past its
+bar. A note on the measure: 105 alive designs read faster than the front's fastest, down to 0.1383, lost to a dominance
+chain (the results file) - still over the bar.
+
+## Seed 77, 12 hours, a new series - predicted (Iteration 555)
+
+Two more hours do not beat the 10-hour series by GOALS.md's effect sizes: seed 77's fixed-box hypervolume under 0.36024
+(1% above the best of seeds 74-76, 0.35667), its fastest over 0.1336, its smallest over 13,938 bytes, its least memory
+over 108 KB, its fastest at 32 bits over 0.1688 - the same bar, on the same tolerance front. The gains have become rare
+late in a run: the speed's last 2% gain came at generation 49 in seed 75 and 67 in seed 76, of 137 and 141; the
+smallest's last at 135-136, in steps of tens of bytes. Twelve hours add about 30 generations of that.

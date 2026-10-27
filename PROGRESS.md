@@ -10142,3 +10142,16 @@ parts - sampled at the tick: a coarse check). batch-check: PASS (run-tests with 
 
 Files: results/drafts/fast-end-offset-554.md, results/drafts/fast-end-offset-554.py, results/pending/ (ORDER.md,
 stopping-rule-after-seed76.patch, clock-cost-after-seed76.patch), results/README.md, HANDOFF.md.
+
+## Iteration 555 - 2026-10-27 - Claude
+
+**Seed 76 processed**: no gain by the stopping rule (stopping.py's first run on a returned seed) - the hypervolume
+0.35036, the fastest 0.1450; prediction 553 holds. A dominance chain hid its fastest designs: 105 alive designs faster
+than the front's fastest, down to 0.1383 - the tolerance dominance is not transitive; the strict front 1,296 designs,
+hypervolume 0.36757 - the rule's extremes for the new series the owner's to decide. The after-seed-76 batch applied
+(batch-check PASS); the chain on master: all PASS - run-tests, validate 7 of 7 IDENTICAL, the gate alive 289 of 289, ans-check 0 of 69 differ (its negative control caught), the jail. Two cv8 JIT designs that died on the corpus compute it wrong here (results/drafts/corpus-deaths-555.md) - an open correctness issue, off the front. Seed 77 next at 12 hours, the owner's - a method change: a new series.
+
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed76.md, results/drafts/corpus-deaths-555.md, results/xcheck-seed76.md, results/applied-after-seed76/ (was
+pending/), results/stopping-series.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md (session 63),
+results/predictions.md, results/gene-votes.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN,
+HANDOFF.md, HANDOFF-REFERENCE.md.

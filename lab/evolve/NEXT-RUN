@@ -13,6 +13,10 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 555 (seed 76 processed): seed 77, 12 hours - the owner's; the hours are the method's (GOALS.md), so a new
+# series: the stopping count restarts (seed 76 gained nothing - at 10 hours seed 77 could have ended it). The after-seed-76
+# batch applied (stopping.py; the clock test's cost a design and s6 both pay). The clock test back in the line for that
+# table - sudo asked once, at the start, for the perf hold.
 # Iteration 553 (seed 75 processed): seed 76, 10 hours - the method's, the stopping count's third run. Seed 75 gained by
 # the speed extreme alone (0.1363 against 0.1402, past 2%; the hypervolume 2.3% below), so seed 76 cannot end the count -
 # the earliest stop is after seed 77. The after-seed-75 batch applied (the processing tools; nothing a run uses). The clock
@@ -94,4 +98,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 76 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
+seed 77 12h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8

@@ -76,7 +76,7 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
 - **Superinstructions kept for now** (Iteration 389), though they buy nearly nothing: 0.27% of dispatches with the
   JIT off, 0.9% with it on, bytes either way (results/supers-knockout-seed58.md).
 
-## The state through Iteration 553 (history - HANDOFF.md has the present)
+## The state through Iteration 555 (history - HANDOFF.md has the present)
 
 - **The runs**: **seed 73 processed (Iteration 544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222
   (reported 174, 61 in both); no comparison in its chain - the spread at generation 102 level with 71-72; the fixed-box
@@ -248,6 +248,12 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
   truefronts.py's reported column; the processing scripted - draft-results.py, process-checks.sh. Its first batch-check
   at 553 failed in a fresh sandbox without gcc-multilib (the generators test refuses an 8-byte-only build); with it,
   PASS.
+- **Seed 75 processed (Iteration 553)** - results/evolve-amd-ryzen-7-pro-8840hs-seed75.md: the stopping count's second
+  run gained by the fastest alone (0.1363 against 0.1402, past 2%), the hypervolume 2.3% below; prediction 549 failed. It
+  was judged at first by the hypervolume alone - the reason the rule became a script (554).
+- **While seed 76 ran (Iteration 554)**: the fast end's offset tested on seed 75's re-measure - a cost every workload's
+  run pays, a design and s6 alike (results/drafts/fast-end-offset-554.md); the after-seed-76 batch - stopping.py and its
+  ledger, the clock test's cost both pay (results/applied-after-seed76/ORDER.md).
 
 ## Open items (Iteration 505's list)
 

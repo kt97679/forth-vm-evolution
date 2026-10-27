@@ -2,8 +2,8 @@
 
 Prepared while seed 76 runs (the owner, 554: "all three"); master stays what seed 76's bundle tests.
 
-    git apply results/pending/stopping-rule-after-seed76.patch
-    git apply results/pending/clock-cost-after-seed76.patch
+    git apply results/applied-after-seed76/stopping-rule-after-seed76.patch
+    git apply results/applied-after-seed76/clock-cost-after-seed76.patch
 
 batch-check (554): PASS - run-tests (the stopping rule's self-test and the clock test's split among them), validate 7 of 7 IDENTICAL, the jail. A first run was cut short by a sandbox restart after its run-tests had passed.
 

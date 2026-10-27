@@ -1,6 +1,6 @@
 # HANDOFF - start here in a new chat
 
-The state card: read it whole. Its background - the owner's decisions in full, the state through Iteration 553, the
+The state card: read it whole. Its background - the owner's decisions in full, the state through Iteration 555, the
 open items' history, the lessons - is HANDOFF-REFERENCE.md, read on demand; its lessons before changing the evolver or a
 measurement.
 
@@ -40,25 +40,25 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 554.
-- **Seed 76 is running** - 10 hours, the method's: the stopping count's third run (lab/evolve/NEXT-RUN: review-checks'
-  spread and appbench after it; no clock test, so no perf hold). Its processing: "Processing a returned seed" below.
-- **The after-seed-76 batch** (results/pending/ORDER.md, Iteration 554): the stopping rule mechanical (stopping.py, the
-  ledger results/stopping-series.md - index it once applied); the clock test's cost a design and s6 both pay (cputime's
-  user and system parts). Apply it first at seed 76's processing: batch-check, apply, commit.
-- **Seed 75 processed (553)** - results/evolve-amd-ryzen-7-pro-8840hs-seed75.md: by the stopping rule it **gains, on
-  the speed extreme alone** - the fastest 4c9c2d9075 0.1363 against seed 74's 0.1402 (2.8%, past 2%); the hypervolume
-  0.34851, 2.3% below 0.35667. Prediction 549 fails; seed 76 cannot end the count - **the earliest stop is after seed
-  77**. The true front 266, the report's; the chain done, every pack whole; the chain on master: all PASS - run-tests, validate 7 of 7 IDENTICAL, the gate alive 291 of 291, ans-check 0 of 69 differ (its negative control caught), the jail; resumed from the tests after a sandbox restart.
-- **jitdoes, jitrp and jitret are freeze candidates** (12 of 12 over 73-75, no keep vote). A freeze changes the method
-  and restarts the stopping count: the owner's to decide - none frozen.
-- **Predictions due** (results/predictions.md): seed 76 - no gain over the best of seeds 74-75 (553): the hypervolume
-  under 0.36024, the fastest over 0.1336, the smallest over 13,938 bytes, memory over 108 KB, the 32-bit fastest over
-  0.1688.
-- **Before 553**: seeds 70-75 processed (498, 516, 520, 544, 549, 553); every front reported until seed 74 was the
-  shortcut's (results/drafts/front-recheck-528.md) - the true fronts of seeds 53-75: results/truefronts-seed75.md and
-  results/progress-true-fronts.md. History: HANDOFF-REFERENCE.md.
-- **Files a new chat needs**: the newest bundle, and seed 76's chain archive (`forth-vm-evolution-chain-<its
+- master: Iteration 555.
+- **Seed 77 is next - 12 hours, the owner's (555): a new series.** The hours are the method's (GOALS.md), so the
+  stopping count restarts at seed 77 - the earliest stop after seed 79; results/stopping-series.md has its method line
+  (if seed 77 ran at 10 hours after all - the chain's line says - delete that line before stopping.py). Its chain:
+  review-checks' spread, appbench, and the clock test with the cost a design and s6 both pay (the after-seed-76 batch) -
+  sudo asked once, at the start, for the perf hold.
+- **Seed 76 processed (555)** - results/evolve-amd-ryzen-7-pro-8840hs-seed76.md: **no gain** (prediction 553 holds) -
+  the hypervolume 0.35036, the fastest 0.1450, nothing past its bar; a 10-hour seed 77 gaining nothing would have ended
+  the count. **A dominance chain hid its fastest designs**: 105 alive designs faster than the front's fastest, down to
+  0.1383 - the evolver's dominance (2% speed, 8 KB memory as ties) is not transitive; on the strict front 1,296 designs,
+  the hypervolume 0.36757, the fastest 0.1383, the least memory 108 KB. The chain on master: all PASS - run-tests, validate 7 of 7 IDENTICAL, the gate alive 289 of 289, ans-check 0 of 69 differ (its negative control caught), the jail.
+- **For the owner, before seed 77's processing**: the stopping rule's extremes from every alive design (the strict
+  front's) for the new series, the hypervolume as before - or the rule as it is. And jitdoes, the one freeze candidate
+  (12 of 12 over 74-76) - a freeze changes the method.
+- **Predictions due** (results/predictions.md): seed 77 - twelve hours do not beat the 10-hour series' bar (555).
+- **Before 555**: seeds 70-76 processed (498, 516, 520, 544, 549, 553, 555); the after-seed-76 batch applied at 555
+  (results/applied-after-seed76/ORDER.md: stopping.py and its ledger; the clock test's cost both pay); the fast end's
+  offset tested at 554 (results/drafts/fast-end-offset-554.md). History: HANDOFF-REFERENCE.md.
+- **Files a new chat needs**: the newest bundle, and seed 77's chain archive (`forth-vm-evolution-chain-<its
   commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
@@ -127,31 +127,32 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. Seed 76's processing - in a new chat, with the tools above: the prediction (553); the stopping count - seed 75 gained
-   (the fastest), so seed 76 alone cannot end it; the votes (jitdoes, jitrp, jitret candidates at 75).
-2. The end of the improvement phase - GOALS.md, "When the improvements are done": runs on an unchanged method from seed
-   74 (10 hours; hypervolumes 0.35667, 0.34851; seed 75 gained by the fastest, 0.1363), the earliest stop after seed 77;
-   then the confirmation run, the final set, the random-search baseline (its mode drafted and tested:
-   results/drafts/random-mode-548.patch, applied at consolidation).
-3. The fast end's offset (rule 3; seeds 73-75 1.070, 1.066, 1.047) - results/drafts/fast-end-offset-554.md (554, on seed
-   75's re-measure): a cost every workload's run pays, a design and s6 alike, outside user space - not the JIT (non-JIT
-   designs shift as their JIT neighbours do; designs slower than s6 the other way; bubble's implied cost about 300 us in
-   every group, kernel's 75). It scales the fast end's numbers, hardly its order, and its level varies from moment to
-   moment - within the stopping rule's 2% speed threshold. The measurement that would locate it: the after-seed-76
-   batch's clock-cost patch, with seed 77's line ending `then experiment clockcheck.py --sample 8` (sudo once, at the
-   start, for the perf hold) - the owner's call.
-4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 75: no design
-   relies on it).
-5. The JIT genes' place: their votes count (rule 12). Seed 75: JIT designs 94 of 266, all 26 of the fastest tenth;
-   jitmul 55, jitfuse 19, jitexec 1, jitos 43 (back - seed 74 none), jitrp 24; jitdoes, jitrp and jitret freeze
-   candidates (above).
-6. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
+1. Seed 77's processing - in a new chat, with the tools above: a new series (12 hours) - stopping.py says it opens the
+   series; the prediction (555) against the 10-hour bar; the clock test's cost both pay against
+   results/drafts/fast-end-offset-554.md (bubble's shift about 300 us, kernel's 75).
+2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
+   without a stop - seed 75 gained (the fastest, 553), seed 76 nothing (555); the 12-hour series from seed 77, the
+   earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted
+   and tested: results/drafts/random-mode-548.patch, applied at consolidation).
+3. **Correctness - open**: two cv8 JIT designs of seed 76 compute the corpus wrong (died on the laptop, a wrong output
+   here, deterministic) - results/drafts/corpus-deaths-555.md; off the front. GOALS.md's stop needs no open correctness
+   issue: find the gene combination (one gene at a time against their nearest right designs).
+3b. The stopping rule's measure - the tolerance front's extremes can cross the rule's thresholds by a dominance chain
+   (seed 76's results file): the owner's to decide for the 12-hour series - the extremes from every alive design, the
+   hypervolume as before.
+4. The fast end's offset (rule 3; seeds 73-76 1.070, 1.066, 1.047, 1.063) - results/drafts/fast-end-offset-554.md: a cost
+   every workload's run pays, a design and s6 alike, outside user space - not the JIT; seed 76's re-measure agrees (the
+   non-JIT designs 0.988, below 1 as predicted). Seed 77's clock test measures the cost both pay, by workload.
+5. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE when no design relies on it - seed 76: 2 do, no change.
+6. The JIT genes' place: their votes count (rule 12). Seed 76: JIT designs 73 of 262, all 26 of the fastest tenth;
+   jitmul 43, jitfuse 10, jitexec 1, jitos 19, jitrp 22; jitdoes the one freeze candidate.
+7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
-7. The article, after consolidation: the claim is the integration, not any technique
+8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts (seeds 53-75:
    results/truefronts-seed75.md, results/progress-true-fronts.md); across machines the fast end as a band, the fastest
-   named per machine (results/drafts/xcheck-agreement-546.md). The method section drafted
-   (results/drafts/article-method-548.md).
+   named per machine (results/drafts/xcheck-agreement-546.md; seed 76's checks: 3d4e860a9f the fastest on dream). The
+   method section drafted (results/drafts/article-method-548.md).
 
 ## Conventions - tokens (the owner, Iteration 542)
 

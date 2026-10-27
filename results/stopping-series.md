@@ -10,3 +10,5 @@ laptop); from seed 75 on, each from its pack's database.
 {"method": "from seed 74", "why": "the after-seed-73 batch (Iteration 544): adaptive operators, the true front, one round first, the evolver self-test, the JIT table's bounds, jitos unfrozen - the count starts (GOALS.md)"}
 {"seed": 74, "front": 238, "hv": 0.35667, "fastest": 0.14023, "smallest": 14079, "memory": 112, "fastest32": 0.17395}
 {"seed": 75, "front": 266, "hv": 0.348506, "fastest": 0.136349, "smallest": 14095, "memory": 112, "fastest32": 0.172292}
+{"seed": 76, "front": 262, "hv": 0.350361, "fastest": 0.145013, "smallest": 14109, "memory": 112, "fastest32": 0.177819}
+{"method": "from seed 77", "why": "12 hours, the owner (Iteration 555) - the hours are the method (GOALS.md): the count restarts; the measure as before unless the owner decides (seed 76: the dominance chain)"}

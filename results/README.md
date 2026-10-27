@@ -6,7 +6,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 
 ## The evolution, run by run
 
-- `evolve-amd-ryzen-7-pro-8840hs-seedN.md` - each run, seeds 1-75 (none for seed 48, the owner's choice; Iteration 384 brought this line from 47): the verdict and the facts, then the pack's report with every front design's genome (the gate, ans-check and the other tools read genomes from these).
+- `evolve-amd-ryzen-7-pro-8840hs-seedN.md` - each run, seeds 1-76 (none for seed 48, the owner's choice; Iteration 384 brought this line from 47): the verdict and the facts, then the pack's report with every front design's genome (the gate, ans-check and the other tools read genomes from these).
 - `evolve-amd-ryzen-7-pro-8840hs-seed4b.md` - Evolution on the Ryzen 7 PRO 8840HS - seed 4 again: a replicate.
 - `compare-fronts-amd-ryzen-7-pro-8840hs.md` - every comparison session: the fronts of all runs measured again together, judged by the five measures.
 - `model-usefulness.md` - Which other model helped, one line per answer (Iteration 542): answers pasted one at a time, each assessed on arrival.
@@ -14,12 +14,13 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `progress-by-run.md` - every run's extremes, for the progress charts (lab/evolve/progress-table.py).
 - `progress-true-fronts.md` - every run's extremes on its true front, seeds 53-75 (Iteration 553; results/drafts/truefronts-tables-550.py from truefronts-seed75.md): progress-by-run.md's table on the true fronts.
 - `truefronts-seed75.md` - every seed pack's true front, seeds 53-75, from each run's records (lab/evolve/truefronts.py in seed 75's chain; Iteration 553): the table and every front's points - the source of the true-front tables and charts.
+- `stopping-series.md` - GOALS.md's stopping rule, run by run: each run's fixed-box hypervolume and four extremes, a method line opening each series (lab/evolve/stopping.py appends; Iteration 554, applied at 555).
 - `applied-after-seedN/ORDER.md` - each batch of patches applied after a run: the order, and how each patch was tested.
 - `audit-genes-designs-439.md` - Are good genes or promising designs being rejected? (Iteration 439): every place the pipeline turns designs away, checked - the screen costs about 9 front-quality designs a run, the 32-bit tail failures fixed and verified; the one real rejection, rtloopall's eight-word prerequisite (92 of 5,819 genomes could express it in seed 62), rtiplus behind it; four recommendations.
 - `applied-after-seed73/` - the after-seed-73 batch, applied at seed 73's processing (Iteration 544): six patches - adaptive operator selection, the evolver's bug-hunt fixes (first_front by dominates(): reports show the true front), one round first, the evolver self-test (lab/evolve/test-evolver.py), the JIT table's bounds asserted, jitos unfrozen; ORDER.md with how each was tested.
 - `applied-after-seed74/` - the after-seed-74 batch, applied at seed 74's processing (Iteration 549): five patches - fail32 learns cpt16's reach, the clock test takes the chain's perf hold, the progress table's header and front, truefronts.py (every seed pack's true front), a running chain keeps its first step's directory; ORDER.md with how each was tested.
 - `applied-after-seed75/` - the after-seed-75 batch, applied at seed 75's processing (Iteration 553): two patches - truefronts.py's reported column; the processing tools, draft-results.py and process-checks.sh.
-- `pending/ORDER.md` - the batch to apply first at seed 76's processing (Iteration 554): the stopping rule mechanical (stopping.py, the ledger results/stopping-series.md); the clock test's cost a design and s6 both pay (cputime's user and system parts); how each was tested.
+- `applied-after-seed76/` - the after-seed-76 batch, applied at seed 76's processing (Iteration 555): two patches - the stopping rule mechanical (stopping.py, the ledger stopping-series.md); the clock test's cost a design and s6 both pay (cputime's user and system parts).
 - `applied-after-seed72/` - the after-seed-72 batch, applied at seed 72's processing (Iteration 520): jitexec's JIT table (its rows after the real operations - 585 KB less) and the memory objective without the applications' own data; ORDER.md with how each was tested.
 - `applied-after-seed71/` - the after-seed-71 batch, applied at seed 71's processing (Iteration 516): six patches - nocase retired, jithelp and jitre retired, jitfuse and its enabling, the MARKER fix (jit_k's signature) with its test, and the outputs checked in measure() (the applications loophole) with jitrp kept from lto; ORDER.md with how each was tested.
 - `applied-after-seed70/` - the after-seed-70 batch, applied at seed 70's processing (Iteration 498): six patches - more JIT coverage (ABORT", word ends, depth), 2>R in place, the new genes at 32 bits (and CELL+/CELLS by the cell), jitrp, the owner's decisions (the applications the seventh selection workload, jitos frozen, jitrp enabled), nocase staged; ORDER.md with how each was tested; batch-check PASS on cc6cdcd.
@@ -35,6 +36,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `xcheck-seed58.md` - The checks of seed 57's front during seed 58, and seed 57's rejected designs (Iteration 384): the Tegra Spearman 0.973, dream 64-bit 0.959, 32-bit 0.875; no rejected design faster on any host than the front's fastest (item 4d); three Tegra link failures (regpin=1 with lto=1).
 - `xcheck-seed74.md` - The checks of seed 73's front during seed 74 (Iteration 549): dream 0.977 (default, 24), 0.974 (32-bit), 0.984 (64-bit); the Tegra 0.856 (16).
 - `xcheck-seed75.md` - The checks of seed 74's front during seed 75 (Iteration 553): dream 0.910 (default, 24), 0.906 (32-bit), 0.945 (64-bit); the Tegra 0.762 (8).
+- `xcheck-seed76.md` - The checks of seed 75's front during seed 76 (Iteration 555): dream 0.972 (default, 24), 0.952 (32-bit), 0.980 (64-bit); the Tegra 0.832 (16).
 - `xcheck-seed73.md` - The checks of seed 72's front during seed 73 (Iteration 544): dream 0.870 (default, 24), 0.931 (32-bit), 0.893 (64-bit); the Tegra 0.882 (16).
 - `xcheck-seed72.md` - The checks of seed 71's front during seed 72 (Iteration 520): dream at three builds and the Tegra.
 - `xcheck-seed71.md` - The checks of seed 70's front during seed 71 (Iteration 516): dream 0.804 (default, 24), 0.969 (32-bit), 0.966 (64-bit); the Tegra 0.607 (7).
@@ -103,6 +105,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `drafts/truefronts-tables-550.py` - truefronts.py's output turned into the progress table on the true fronts and the charts' data (Iteration 550; for seed 75's processing).
 - `drafts/truefronts-charts-553.py` - The true fronts' charts drawn into a file from truefronts-tables-550.py's chart data (Iteration 553): each run's fastest, and the size-speed staircases by era.
 - `drafts/fast-end-offset-554.md` - The fast end's offset tested on seed 75's re-measure (Iteration 554): a cost every workload's run pays, a design and s6 alike, outside user space - not the JIT; bubble's about 300 us in every group, kernel's 75.
+- `drafts/corpus-deaths-555.md` - Two designs of seed 76 that died on the corpus, reproduced (Iteration 555): a wrong output here, deterministic - an open correctness issue in a JIT combination; their genomes and the steps.
 - `drafts/fast-end-offset-554.py` - The script behind fast-end-offset-554.md: the run's records only, no new timing.
 - `drafts/seed75-checklist-550.md` - Seed 75's processing, the checklist (Iteration 550).
 - `drafts/seed74-checklist-545.md` - Seed 74's processing, the checklist (Iteration 545): the predictions due with their numbers, the hypervolume, the clock test, the votes, the batch, seed 75's line.
