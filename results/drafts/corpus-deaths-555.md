@@ -19,3 +19,25 @@ Their records:
 
     {"id": "d11c9a6300", "gen": 85, "status": "died: corpus", "how": "mutation: factor=3, nocrossjump=1; via the attic", "genome": {"tos": 1, "scale": 0, "bytehdr": 1, "spec": ["var", "tiny", "small", "imm"], "sharedcall": 0, "doesfar": 1, "varcall": 1, "varslot": 1, "d256": 0, "guard": 0, "folds": ["+", "=", "!", "@", "LSHIFT", "RSHIFT", "C@", "C!", "AND", "OR", "XOR", "LIT", "<", "U<", "OVER", "DROP", "DUP", "SWAP", "ROT", ">R", "R>", "R@", "NEGATE"], "skippad": 0, "fold": 1, "supers": [["DUP", ">R"], ["C!", "R>"], [">R", "C!"], ["ROT", "DUP"], ["R@", "ROT"], ["DUP", "C@"], [">R", "OVER"], ["OVER", "C@"], ["C@", "="], ["C@", "DUP"], ["SWAP", "R>"], ["LSHIFT", "OVER"], ["OVER", "R>"], ["ROT", "ROT"], ["C@", "SWAP"], ["C@", "OR"], ["SWAP", "DUP"], ["R>", "SWAP"], ["OVER", "R@"], ["C@", ">R"], ["DUP", "@"], ["+", "R>"], ["R>", "="], ["C@", "OVER"]], "rtfuse": 0, "ops10": ["(DO)", "(LOOP)", "(+LOOP)", "(?DO)", "(LEAVE)", "I", "J", "UNLOOP"], "escape": 1, "tail": 0, "msc": 0, "opt": "O2", "nogcse": 0, "nocrossjump": 1, "nocet": 1, "align1": 0, "noreorder": 0, "peel": 0, "ipaclone": 1, "tracer": 1, "enc": "cv8", "lean": 1, "tag2": 1, "jit": 1, "jitx": 1, "jitloop": 1, "jitinl": 1, "thinhdr": 1, "bss": 1, "kstack": 0, "tailpn": 0, "alignhot": 0, "threads": 0, "fsys": 2, "regpin": 3, "dskew": 0, "hotcalls": 0, "rtimm": 2, "rtloop": 1, "rtloopall": 1, "kfast": 1, "tfind": 0, "kinput": 1, "klookup": 1, "rtiplus": 0, "swapi": 0, "t2hot": 0, "hotinl": 20, "opbody": 0, "t2wide": 0, "rtempty": 1, "alignfn": 0, "noinls": 1, "fbuf": 0, "abortif": 1, "opcall": [], "sysc": 0, "jitos": 1, "jittail": 1, "jitk": 2, "lto": 0, "gotodup": 0, "compiler": 0, "jitmul": 1, "jitdoes": 1, "jitexec": 1, "jitcfa": 1, "jitrp": 1, "jitfuse": 0, "opinline": 0, "knumber": 0, "jitret": 0, "jitvar": 0, "jitimg": 1, "bfind": 0, "factor": 3}}
     {"id": "e80800407e", "gen": 67, "status": "died: corpus", "how": "crossover; borrowed tag2+t2hot+t2wide from b696007be3; mutation: tracer=1, nocrossjump=1; via the attic; screened, audited", "genome": {"tos": 1, "scale": 0, "bytehdr": 1, "spec": ["loc"], "sharedcall": 0, "doesfar": 1, "varcall": 1, "varslot": 0, "d256": 0, "guard": 0, "folds": ["+", "=", "!", "@", "LSHIFT", "RSHIFT", "C@", "C!", "AND", "OR", "XOR", "LIT", "<", "U<", "OVER", "DROP", "DUP", "SWAP", "ROT", ">R", "R>", "R@", "NEGATE"], "skippad": 0, "fold": 1, "supers": [], "rtfuse": 0, "ops10": ["(DO)", "(LOOP)", "(+LOOP)", "OVER?BRANCH8", "(?DO)", "(LEAVE)", "I", "J", "2!"], "escape": 0, "tail": 0, "msc": 0, "opt": "O3", "nogcse": 0, "nocrossjump": 1, "nocet": 1, "align1": 1, "noreorder": 0, "peel": 0, "ipaclone": 0, "tracer": 1, "enc": "cv8", "threads": 1, "fsys": 2, "regpin": 1, "dskew": 1, "hotcalls": 0, "rtimm": 0, "lean": 1, "rtloop": 1, "rtloopall": 1, "bss": 1, "kfast": 1, "tfind": 0, "kinput": 0, "klookup": 0, "thinhdr": 1, "rtiplus": 0, "swapi": 0, "tag2": 1, "t2hot": 1, "jit": 1, "hotinl": 0, "opbody": 1, "t2wide": 0, "rtempty": 0, "jitx": 1, "alignfn": 0, "noinls": 1, "fbuf": 1, "kstack": 0, "abortif": 0, "opcall": [], "jitloop": 1, "sysc": 0, "jitinl": 1, "jitos": 0, "jittail": 1, "jitk": 0, "lto": 1, "gotodup": 1, "compiler": 0, "jitmul": 1, "jitdoes": 0, "jitexec": 1, "jitcfa": 0, "jitrp": 1, "jitfuse": 1, "opinline": 0, "tailpn": 0, "knumber": 0, "alignhot": 0, "jitret": 0, "jitvar": 0, "jitimg": 1, "bfind": 0, "factor": 1}}
+
+## The bisect (Iteration 556)
+
+One gene at a time here, on the corpus (results/drafts/corpus-deaths-bisect-556.py):
+
+| design | the corpus |
+|---|---|
+| acf592137d - d11c9a6300's parent (JIT; tracer 1, nocrossjump 0) | right |
+| the parent with factor=3 | right |
+| the parent with nocrossjump=1 | wrong - 7827eeea, d11c9a6300's own |
+| d11c9a6300 (both) | wrong |
+| e80800407e (tracer 1, nocrossjump 1) | wrong |
+| e80800407e with nocrossjump=0 | right |
+| e80800407e with tracer=0 | right |
+| e80800407e with both 0 | right |
+
+The fault needs -ftracer and -fno-crossjumping together (tracer=1, nocrossjump=1) on a JIT design - and more besides:
+268 JIT designs of seed 76 carry the pair and ran right; these two died. A layout-dependent fault, most likely in a JIT
+stencil - machine code copied out of the compiled engine - that tail duplication without cross-jumping leaves wrong;
+compilers lay it out differently (a death on the laptop, a wrong output here). Not guarded: the pair is mostly right, and
+the run's output checks reject the rest. Open, for the JIT: acf592137d with and without nocrossjump=1 - one engine
+source, one flag apart - is the smallest pair to compare stencil by stencil.
