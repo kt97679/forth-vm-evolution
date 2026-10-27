@@ -40,13 +40,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 556.
-- **Seed 77 is next - 12 hours from scratch on every gene that still has code (the owner, 555-556): a new series.**
+- master: Iteration 557.
+- **Seed 77 is running - 12 hours from scratch on every gene that still has code (the owner, 555-556): a new series.**
   Every freeze lifted but the retired (tail, kstack, tailpn); the stopping rule's extremes from every alive design, its
   hypervolume on the true front as before (results/stopping-series.md's method line says "extremes": "alive"; if seed 77
   ran at 10 hours after all - the chain's line says - fix that line before stopping.py). The count restarts - the
   earliest stop after seed 79. Its chain: review-checks' spread, appbench, and the clock test with the cost a design and
   s6 both pay - sudo asked once, at the start, for the perf hold.
+- **The after-seed-77 batch** (results/pending/ORDER.md, Iteration 557): the JIT patches every copy of a value hole - the
+  root cause of seed 76's corpus deaths; the stencil check's blind spot closed; lifted.py (prediction 556 scored in
+  summary.md). Apply it first at seed 77's processing, then follow results/drafts/seed77-checklist-557.md.
 - **Seed 76 processed (555)** - results/evolve-amd-ryzen-7-pro-8840hs-seed76.md: **no gain** (prediction 553 holds) -
   the hypervolume 0.35036, the fastest 0.1450, nothing past its bar; a 10-hour seed 77 gaining nothing would have ended
   the count. **A dominance chain hid its fastest designs**: 105 alive designs faster than the front's fastest, down to
@@ -128,17 +131,17 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. Seed 77's processing - in a new chat, with the tools above: a new series (12 hours, every freeze lifted) -
+1. Seed 77's processing - in a new chat, the after-seed-77 batch first, then results/drafts/seed77-checklist-557.md: a new series (12 hours, every freeze lifted) -
    stopping.py says it opens the series; the lifted genes' shares of its true front (results/drafts/unfreeze-preflight-556.md); the prediction (555) against the 10-hour bar; the clock test's cost both pay against
    results/drafts/fast-end-offset-554.md (bubble's shift about 300 us, kernel's 75).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop - seed 75 gained (the fastest, 553), seed 76 nothing (555); the 12-hour series from seed 77, the
    earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted
    and tested: results/drafts/random-mode-548.patch, applied at consolidation).
-3. **Correctness - open**: two cv8 JIT designs of seed 76 compute the corpus wrong (died on the laptop, a wrong output
-   here) - results/drafts/corpus-deaths-555.md; off the front. The bisect (556): the pair tracer=1 and nocrossjump=1
-   (-ftracer, -fno-crossjumping), and more - 268 JIT designs carry the pair and run right: layout-dependent, most likely a
-   JIT stencil. Next: acf592137d with and without nocrossjump=1, stencil by stencil. GOALS.md's stop needs it closed.
+3. **Correctness - found, fixed, waiting to apply** (557): seed 76's two corpus deaths were the JIT patching one copy of
+   a value hole that -ftracer duplicated and -fno-crossjumping kept (st_execute; st_callx in every build, on a path the
+   workloads never take) - results/drafts/corpus-deaths-555.md. The fix is the after-seed-77 batch; GOALS.md's stop
+   needs it applied - at seed 77's processing.
 3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
    hypervolume on the true front as before (stopping.py; seed 76's dominance chain).
 4. The fast end's offset (rule 3; seeds 73-76 1.070, 1.066, 1.047, 1.063) - results/drafts/fast-end-offset-554.md: a cost

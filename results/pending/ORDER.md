@@ -5,7 +5,7 @@ Prepared while seed 77 runs (the owner, 557); master stays what seed 77's bundle
     git apply results/pending/jit-holes-after-seed77.patch
     git apply results/pending/lifted-after-seed77.patch
 
-batch-check (557): pending.
+batch-check (557): PASS - run-tests (jitholes-check: d11c9a6300's corpus as s6; the stencil check with the pair), validate 7 of 7 IDENTICAL, the jail.
 
 **jit-holes-after-seed77.patch** (engine/jit.c; lab/evolve/stencil-check.py, engines-check.py, jitholes-check.py new;
 tools/run-tests.sh) - **the JIT patches every copy of a value hole**: the root of seed 76's corpus deaths

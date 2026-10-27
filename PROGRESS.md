@@ -10167,3 +10167,15 @@ design for the new series. Seed 76's corpus deaths bisected: tracer=1 with nocro
 Files: results/drafts/unfreeze-preflight-556.md, results/drafts/unfreeze-preflight-556.py,
 results/drafts/corpus-deaths-bisect-556.py, results/drafts/corpus-deaths-555.md, results/applied-before-seed77/ (was
 pending/), results/predictions.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.
+
+## Iteration 557 - 2026-10-27 - Claude
+
+**While seed 77 runs** (the owner: go ahead here): seed 76's corpus deaths found and fixed. The two designs' flags differ
+by -fno-crossjumping alone; with it, -ftracer's duplicate of a block survives, so st_execute held EXECUTE's helper hole
+twice - and jit.c patched only the copy jit_scan noted last, the other a jump to nowhere (st_callx the same in every build,
+on a path never taken). jit_fill patches every copy: both designs right on every workload, seed 76's fastest unchanged.
+The stencil check read no stencil under a design's own flags (-ffunction-sections) - fixed. lifted.py scores prediction
+556; seed 77's checklist written. batch-check: PASS (run-tests with jitholes-check, validate 7 of 7 IDENTICAL, the jail).
+
+Files: results/drafts/corpus-deaths-555.md, results/drafts/seed77-checklist-557.md, results/pending/ (ORDER.md,
+jit-holes-after-seed77.patch, lifted-after-seed77.patch), results/README.md, HANDOFF.md.
