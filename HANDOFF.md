@@ -40,7 +40,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 557.
+- master: Iteration 558.
 - **Seed 77 is running - 12 hours from scratch on every gene that still has code (the owner, 555-556): a new series.**
   Every freeze lifted but the retired (tail, kstack, tailpn); the stopping rule's extremes from every alive design, its
   hypervolume on the true front as before (results/stopping-series.md's method line says "extremes": "alive"; if seed 77
