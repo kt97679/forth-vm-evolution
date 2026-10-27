@@ -1,0 +1,264 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 9913576..638788e 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -39,6 +39,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
+ - `draft-results.py` - a returned seed's results file drafted from process-seed.sh's output (Iteration 551): the facts - records, the true front, the hypervolume, the extremes, one round first, the operators, the JIT designs, the fast end re-measured, the experiments, the remote checks - with TODO lines for the verdict, the predictions, the votes and the rules; also the xcheck file and the spread's session.
+ - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
+ - `footprint-gen.py` - a held-out program whose code footprint grows (N [--calls T] [--defs-only]): N words in levels, run round-robin, a checksum (Iteration 370; results/generalization.md)
++- `stopping.py` - GOALS.md's stopping rule, mechanical (Iteration 554): a run's hypervolume and four extremes against the best of the method's earlier runs in results/stopping-series.md, criterion by criterion; the count, the earliest stop, the next run's bar. process-seed.sh and draft-results.py run it; step 6 appends the run (--append).
+ - `process-checks.sh` - the checks on master after a seed's processing applied its batch (Iteration 551): build, run-tests, validate, the gate, ans-check on its sample, the jail last - started detached, one status file; FROM= resumes after a sandbox restart.
+ - `stencil-check.py` - the JIT's stencils safe to copy (Iteration 463; the after-seed-68 batch, applied at 487): from objdump's relocations, every stencil's references inside its copied part and no branch past it; engines-check runs it at 64 and 32 bits, and jit.c guards at run time
+ - `apps/brainless/COPIED.md` - brainless (public domain) copied into apps/brainless/ from Appbench 1.4 (Iteration 492): appbench.py runs it with no zip
+diff --git a/lab/evolve/draft-results.py b/lab/evolve/draft-results.py
+index b286e38..4a118cd 100644
+--- a/lab/evolve/draft-results.py
++++ b/lab/evolve/draft-results.py
+@@ -33,6 +33,8 @@ if E.TWO_WIDTHS[0]: ok = [i for i in ok if R[i].get('speed32')]
+ T = E.first_front(ok, R); rep = open(os.path.join(pack, 'report.md')).read()
+ Rf = set(re.findall(r'^\| ([0-9a-f]{10}) \|', rep.split('## How the front came about')[0], re.M))
+ hv = next((l.strip() for l in subprocess.run([sys.executable, os.path.join(HERE, 'hv.py'), db], capture_output=True, text=True).stdout.split('\n') if 'hypervolume' in l), '?')
++so = subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
++stop_ = ' '.join(l for l in so.split('\n') if l.startswith(('verdict:', 'the count:', 'the next run gains if:'))) or "TODO: against the method's earlier runs (GOALS.md)."
+ f = min(T, key=lambda i: R[i]['speed']); s = min(T, key=lambda i: E.ov(R[i], 'total')); mm = min(T, key=lambda i: R[i]['rss'])
+ w = min((i for i in T if R[i].get('speed32')), key=lambda i: R[i]['speed32'], default=None)
+ kids = [r for r in R.values() if (r.get('gen') or 0) > 0]; meas = [r for r in kids if r.get('status') != 'screened']
+@@ -63,7 +65,7 @@ head = '\n'.join(x for x in [
+  '`%s` at %s. The chain: %s%s. %s designs, generations 0-%d: %s%s.' % (line, commit, status, '' if status == 'done' else ' - TODO: what failed', '{:,}'.format(len(R)), gens,
+     ', '.join('%s %s' % ('{:,}'.format(v), k) for k, v in cnt.most_common()), '; %s designs an hour' % '{:,}'.format(len(R) // hours) if hours else ''), '',
+  '**The front**: the true one %d designs - the report\'s %d%s.' % (len(T), len(Rf), ', the same' if Rf == set(T) else ' - TODO: why they differ'), '',
+- '**The fixed-box hypervolume**: %s. TODO: against the method\'s earlier runs (GOALS.md).' % hv.split(': ', 1)[-1], '',
++ '**The fixed-box hypervolume**: %s. **The stopping rule** (stopping.py, results/stopping-series.md): %s' % (hv.split(': ', 1)[-1], stop_), '',
+  '**The extremes**: fastest %s %.4f, smallest %s %s bytes, least memory %s KB%s.' % (f, R[f]['speed'], s, '{:,}'.format(E.ov(R[s], 'total')), R[mm]['rss'],
+     ', fastest at 32 bits %s %.4f' % (w, R[w]['speed32']) if w else ''), '',
+  '**One round first**: %s children stopped after one round, %.1f%% of those measured; %d audited in full, %d of them on the front.' % (
+diff --git a/lab/evolve/hv.py b/lab/evolve/hv.py
+index 4650676..85a2fae 100644
+--- a/lab/evolve/hv.py
++++ b/lab/evolve/hv.py
+@@ -85,6 +85,24 @@ def self_test():
+     return 0 if ok else 1
+ 
+ 
++
++def measure(db, E, b=None):
++    """A database's true front, measured (Iteration 554 - stopping.py's numbers too): its size, how many inside the box,
++    the hypervolume and the four extremes."""
++    b = b or json.load(open(BOUNDS)); R = {}
++    for l in open(db, errors='replace'):
++        if l.startswith('{'):
++            try: r = json.loads(l)
++            except ValueError: continue
++            if r.get('id'):
++                r['total'] = E.ov(r, 'total') if r.get('status') == 'ok' and (r.get('total') or r.get('size')) else r.get('total')
++                R[r['id']] = r
++    F = true_front(R, E)
++    Z = [z for z in (norm(R[i], b) for i in F) if z is not None]
++    ex = lambda k: min(R[i][k] for i in F)
++    return dict(front=len(F), inside=len(Z), hv=hv4(Z), fastest=ex('speed'), smallest=ex('total'), memory=ex('rss'), fastest32=ex('speed32'))
++
++
+ if __name__ == '__main__':
+     args = sys.argv[1:]
+     if not args: sys.exit(__doc__)
+@@ -92,16 +110,6 @@ if __name__ == '__main__':
+     b = json.load(open(BOUNDS))
+     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
+     for db in args:
+-        R = {}
+-        for l in open(db, errors='replace'):
+-            if l.startswith('{'):
+-                try: r = json.loads(l)
+-                except ValueError: continue
+-                if r.get('id'):
+-                    r['total'] = E.ov(r, 'total') if r.get('status') == 'ok' and (r.get('total') or r.get('size')) else r.get('total')
+-                    R[r['id']] = r
+-        F = true_front(R, E)
+-        Z = [z for z in (norm(R[i], b) for i in F) if z is not None]
+-        ex = lambda k: min(R[i][k] for i in F)
++        m = measure(db, E, b)
+         print('%s: true front %d (%d inside the box), hypervolume %.5f | fastest %.4f, smallest %d, least memory %d KB, fastest at 32 bits %.4f'
+-              % (db, len(F), len(Z), hv4(Z), ex('speed'), ex('total'), ex('rss'), ex('speed32')), flush=True)
++              % (db, m['front'], m['inside'], m['hv'], m['fastest'], m['smallest'], m['memory'], m['fastest32']), flush=True)
+diff --git a/lab/evolve/process-seed.sh b/lab/evolve/process-seed.sh
+index 7be0fd6..8405b61 100644
+--- a/lab/evolve/process-seed.sh
++++ b/lab/evolve/process-seed.sh
+@@ -38,6 +38,8 @@ if [ -n "$SP" ]; then
+     VN=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null)        # Iteration 432: the gene votes, with the ledger - not written
+     python3 "$EV/review-checks.py" votes "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > votes.txt 2>&1   # 532: the front from the records
+     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
++    python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
++    p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'
+     python3 "$EV/review-checks.py" rules "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > rules.txt 2>&1   # Iteration 438
+     p ""; p "## review-checks.py rules (rules.txt) - results/seed63-rules.md's rules, measured"; cut -c1-300 rules.txt | grep -v '^pinned' >> "$S"
+ fi
+diff --git a/lab/evolve/stopping.py b/lab/evolve/stopping.py
+new file mode 100644
+index 0000000..3021dda
+--- /dev/null
++++ b/lab/evolve/stopping.py
+@@ -0,0 +1,130 @@
++#!/usr/bin/env python3
++"""lab/evolve/stopping.py DB --seed N [--ledger LEDGER] [--append] | --self-test - GOALS.md's stopping rule, mechanical
++(Iteration 554; prompts/21, item 9: the rule's arithmetic a script, the judgment the chat's - seed 75 was judged by its
++hypervolume alone at first, and the gain its fastest made missed).
++
++A run's numbers - its true front's fixed-box hypervolume and four extremes, from its own database (hv.py's measure(), the
++box hv-bounds.json) - against the method's earlier runs in the ledger (results/stopping-series.md): the run gains when
++its hypervolume beats the best earlier one by 1% or more, or an extreme beats the best earlier one by its threshold -
++speed 2%, binary + image 1%, memory 4 KB, the 32-bit speed 2% - each criterion against its own best (the pooled
++reading, as GOALS.md words the confirmation test: "the pooled true front"). Stop when, after at least three runs on the
++method, the last two gain nothing - and no correctness issue is open, which is the chat's to say. The ledger: a
++{"method": ...} line opens a series (a method change restarts the count), then a line a run; the earlier runs are the
++newest series' runs before seed N; --append adds this run's line. stdout: the series, the verdict, the count, the bar.
++"""
++import json, os, sys
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++LEDGER = os.path.join(os.path.dirname(os.path.dirname(HERE)), 'results', 'stopping-series.md')
++KEYS = ('hv', 'fastest', 'smallest', 'memory', 'fastest32')
++NAME = dict(hv='the hypervolume', fastest='the fastest', smallest='the smallest', memory='the least memory',
++            fastest32='the fastest at 32 bits')
++
++
++def bar(runs):
++    """What a run must reach to gain over these runs, criterion by criterion (GOALS.md's thresholds)."""
++    return dict(hv=max(r['hv'] for r in runs) * 1.01, fastest=min(r['fastest'] for r in runs) * 0.98,
++                smallest=min(r['smallest'] for r in runs) * 0.99, memory=min(r['memory'] for r in runs) - 4,
++                fastest32=min(r['fastest32'] for r in runs) * 0.98)
++
++
++def gains(run, earlier):
++    """The criteria a run gains on over the earlier runs; None for a series' first run - nothing to beat."""
++    if not earlier: return None
++    b = bar(earlier)
++    return [k for k in KEYS if (run[k] >= b[k] if k == 'hv' else run[k] <= b[k])]
++
++
++def stop(runs):
++    """GOALS.md: at least three runs on the method, the last two gaining nothing."""
++    return len(runs) >= 3 and gains(runs[-1], runs[:-1]) == [] and gains(runs[-2], runs[:-2]) == []
++
++
++def earliest(runs):
++    """The seed after which the count can end at the earliest, if every run from the next on gains nothing."""
++    if stop(runs): return runs[-1]['seed']
++    k = 1 if len(runs) >= 2 and gains(runs[-1], runs[:-1]) == [] else 2
++    while len(runs) + k < 3: k += 1
++    return runs[-1]['seed'] + k
++
++
++def series(path):
++    """The ledger's newest series: its method line, and its runs in order."""
++    method, runs = {}, []
++    for l in open(path):
++        if l.startswith('{'):
++            r = json.loads(l)
++            if 'method' in r: method, runs = r, []
++            elif 'seed' in r: runs.append(r)
++    return method, runs
++
++
++def fmt(k, v):
++    if k == 'hv': return '%.5f' % v
++    if k in ('fastest', 'fastest32'): return '%.4f' % v
++    if k == 'smallest': return '{:,}'.format(int(round(v)))
++    return '%d KB' % round(v)
++
++
++def report(run, method, runs):
++    S = [r for r in runs if r['seed'] < run['seed']] + [run]
++    out = ["the stopping rule (GOALS.md) on the method %s - each run against the best of the method's earlier runs, "
++           "criterion by criterion" % method.get('method', '(no method line)'), '',
++           '| seed | front | hypervolume | fastest | smallest | least memory | fastest at 32 bits | gains |',
++           '|---|---|---|---|---|---|---|---|']
++    for i, r in enumerate(S):
++        g = gains(r, S[:i])
++        out.append('| %s | %s | %s | %s |' % (r['seed'], r.get('front', '-'), ' | '.join(fmt(k, r[k]) for k in KEYS),
++                   'the first' if g is None else ', '.join(NAME[k] for k in g) if g else 'nothing'))
++    g = gains(run, S[:-1]); out.append('')
++    if g is None: out.append('verdict: seed %d opens the series - nothing earlier to gain on' % run['seed'])
++    else:
++        b = {k: (max if k == 'hv' else min)(r[k] for r in S[:-1]) for k in KEYS}
++        ch = lambda k: '%+d KB' % round(run[k] - b[k]) if k == 'memory' else '%+.1f%%' % (100 * (run[k] / b[k] - 1))
++        out.append('verdict: seed %d %s - %s' % (run['seed'], 'GAINS, by %s' % ' and '.join(NAME[k] for k in g) if g else
++                   'gains nothing', '; '.join('%s %s against %s (%s%s)' % (NAME[k], fmt(k, run[k]), fmt(k, b[k]), ch(k),
++                   ', past its threshold' if k in g else '') for k in KEYS)))
++    out.append('the count: %d run(s) on the method; %s' % (len(S), 'STOP - three runs or more, the last two gaining nothing '
++               '(if no correctness issue is open)' if stop(S) else 'the earliest stop after seed %d, if every run until '
++               'then gains nothing' % earliest(S)))
++    nb = bar(S)
++    out.append('the next run gains if: ' + ', '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS))
++    return '\n'.join(out)
++
++
++def self_test():
++    a = dict(seed=1, hv=0.35, fastest=0.14, smallest=14000, memory=112, fastest32=0.17)
++    def r(seed, **k): x = dict(a, seed=seed); x.update(k); return x
++    b = r(2, fastest=0.1371)                   # 2.1% faster than a: a gain
++    c = r(3, fastest=0.1350, hv=0.3534)        # 1.5% faster than b, 0.97% above a's hypervolume: nothing
++    d = r(4, smallest=13870)                   # 0.93% smaller: nothing
++    e = r(5, memory=108)                       # 4 KB less: a gain
++    checks = [gains(a, []) is None, gains(b, [a]) == ['fastest'], gains(c, [a, b]) == [], gains(d, [a, b, c]) == [],
++              gains(e, [a, b, c, d]) == ['memory'], gains(r(6, memory=109), [a]) == [], gains(r(7, hv=0.3536), [a]) == ['hv'],
++              gains(r(8, fastest32=0.1665), [a]) == ['fastest32'], not stop([a, b]), not stop([a, b, c]), stop([a, b, c, d]),
++              stop([a, r(2), r(3)]), not stop([a, b, c, d, e]), earliest([a, b]) == 4, earliest([a, r(2)]) == 3,
++              earliest([a]) == 3, earliest([a, b, c]) == 4]
++    ok = all(checks)
++    print('stopping.py self-test: %d checks - the thresholds at their edges, the count, the earliest stop - %s'
++          % (len(checks), 'pass' if ok else 'FAIL at %s' % [i for i, x in enumerate(checks) if not x]))
++    return 0 if ok else 1
++
++
++if __name__ == '__main__':
++    a = sys.argv[1:]
++    if a == ['--self-test']: sys.exit(self_test())
++    opt = lambda k: a[a.index(k) + 1] if k in a and a.index(k) + 1 < len(a) else None
++    if opt('--seed') is None: sys.exit(__doc__)
++    seed, led = int(opt('--seed')), opt('--ledger') or LEDGER
++    db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger')))
++    sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E, hv
++    m = hv.measure(db, E)
++    run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(m['fastest'], 6), smallest=m['smallest'],
++               memory=m['memory'], fastest32=round(m['fastest32'], 6))
++    method, runs = series(led)
++    print(report(run, method, runs))
++    if '--append' in a:
++        if any(x['seed'] == seed for x in runs): print('the ledger has seed %d already - nothing appended' % seed)
++        else:
++            with open(led, 'a') as f: f.write(json.dumps(run) + '\n')
++            print('appended to %s' % os.path.relpath(led))
+diff --git a/results/stopping-series.md b/results/stopping-series.md
+new file mode 100644
+index 0000000..eb15ca5
+--- /dev/null
++++ b/results/stopping-series.md
+@@ -0,0 +1,12 @@
++# The stopping series - GOALS.md's stopping rule, run by run (lab/evolve/stopping.py, Iteration 554)
++
++Each run on the method: its true front's fixed-box hypervolume (lab/evolve/hv.py, the box lab/evolve/hv-bounds.json)
++and four extremes, from its own database at its processing; stopping.py judges a run against the best of the method's
++earlier runs, criterion by criterion, and appends its line (HANDOFF.md, "Processing a returned seed", step 6). A method
++change opens a new series with a "method" line - the count restarts there. Seed 74's line: its hypervolume from its
++processing (Iteration 549), its extremes from its records (results/truefronts-seed75.md; its database stays on the
++laptop); from seed 75 on, each from its pack's database.
++
++{"method": "from seed 74", "why": "the after-seed-73 batch (Iteration 544): adaptive operators, the true front, one round first, the evolver self-test, the JIT table's bounds, jitos unfrozen - the count starts (GOALS.md)"}
++{"seed": 74, "front": 238, "hv": 0.35667, "fastest": 0.14023, "smallest": 14079, "memory": 112, "fastest32": 0.17395}
++{"seed": 75, "front": 266, "hv": 0.348506, "fastest": 0.136349, "smallest": 14095, "memory": 112, "fastest32": 0.172292}
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 5750a08..4fc4eb6 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -376,6 +376,10 @@ else printf '  %-12s FAIL   %s\n' evolver "$(printf '%s' "$out" | grep FAIL | he
+ # The clock test's hold (Iteration 545): clockcheck.py takes the chain's hold on kernel.perf_event_paranoid as
+ # counters.py does - the handshake checked against a stand-in for root's perf-hold.py, and without one the time alone.
+ echo
++echo "the stopping rule (lab/evolve/stopping.py --self-test):"
++if out=$(python3 "$ROOT/lab/evolve/stopping.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c24-124)"
++else printf '  %-12s FAIL   %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
++echo
+ echo "the clock test's perf hold (lab/evolve/clockcheck.py --self-test):"
+ if out=$(python3 "$ROOT/lab/evolve/clockcheck.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
+ else printf '  %-12s FAIL   %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
