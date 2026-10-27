@@ -10186,7 +10186,7 @@ jit-holes-after-seed77.patch, lifted-after-seed77.patch), results/README.md, HAN
 across the compiler genes (results/drafts/jit-sweep-558.md): 332 flag sets - every gene alone, every pair, 200 triples -
 none unsafe to copy; the only repeated holes st_callx (under tracer alone, 48 sets) and st_execute (tracer with
 nocrossjump, 7) - both patched by the batch's fix; no guard needed beyond it. 557's "st_callx in every build" corrected:
-every build with tracer (also in the patch's comment - the batch checked again: {BC}).
+every build with tracer (also in the patch's comment - the batch checked again: PASS - run-tests with jitholes-check, validate 7 of 7 IDENTICAL, the jail).
 
 Files: results/drafts/jit-sweep-558.md, results/drafts/jit-sweep-558.py, results/drafts/corpus-deaths-555.md,
 results/pending/ (ORDER.md, jit-holes-after-seed77.patch), results/README.md, HANDOFF.md.
