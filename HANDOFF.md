@@ -48,7 +48,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   earliest stop after seed 79. Its chain: review-checks' spread, appbench, and the clock test with the cost a design and
   s6 both pay - sudo asked once, at the start, for the perf hold.
 - **The after-seed-77 batch** (results/pending/ORDER.md, Iteration 557): the JIT patches every copy of a value hole - the
-  root cause of seed 76's corpus deaths; the stencil check's blind spot closed; lifted.py (prediction 556 scored in
+  root cause of seed 76's corpus deaths, not a method change (the owner, 558); the stencil check's blind spot closed; lifted.py (prediction 556 scored in
   summary.md). Apply it first at seed 77's processing, then follow results/drafts/seed77-checklist-557.md.
 - **Seed 76 processed (555)** - results/evolve-amd-ryzen-7-pro-8840hs-seed76.md: **no gain** (prediction 553 holds) -
   the hypervolume 0.35036, the fastest 0.1450, nothing past its bar; a 10-hour seed 77 gaining nothing would have ended
@@ -139,9 +139,9 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted
    and tested: results/drafts/random-mode-548.patch, applied at consolidation).
 3. **Correctness - found, fixed, waiting to apply** (557): seed 76's two corpus deaths were the JIT patching one copy of
-   a value hole that -ftracer duplicated and -fno-crossjumping kept (st_execute; st_callx in every build, on a path the
-   workloads never take) - results/drafts/corpus-deaths-555.md. The fix is the after-seed-77 batch; GOALS.md's stop
-   needs it applied - at seed 77's processing.
+   a value hole that -ftracer duplicated and -fno-crossjumping kept (st_execute; st_callx under -ftracer alone, on a path the workloads never take) - results/drafts/corpus-deaths-555.md. The fix is the after-seed-77 batch; GOALS.md's stop
+   needs it applied - at seed 77's processing. Not a method change (the owner, 558). The sweep (558): no other
+   stencil fault under 332 flag sets - results/drafts/jit-sweep-558.md.
 3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
    hypervolume on the true front as before (stopping.py; seed 76's dominance chain).
 4. The fast end's offset (rule 3; seeds 73-76 1.070, 1.066, 1.047, 1.063) - results/drafts/fast-end-offset-554.md: a cost

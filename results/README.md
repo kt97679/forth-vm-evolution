@@ -110,6 +110,8 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `drafts/corpus-deaths-555.md` - Two designs of seed 76 that died on the corpus, reproduced (Iteration 555): a wrong output here, deterministic - an open correctness issue in a JIT combination; their genomes and the steps; the bisect (556): the pair tracer=1 and nocrossjump=1 on a JIT design, layout-dependent; the root cause (557): one offset noted for each value hole, so a repeated hole was patched once - fixed in the after-seed-77 batch.
 - `drafts/corpus-deaths-bisect-556.py` - The bisect behind it: the two designs and their parent, one gene at a time (Iteration 556).
 - `drafts/seed77-checklist-557.md` - Seed 77's processing, the checklist (Iteration 557): the new series' line, prediction 555 on the tolerance front, prediction 556 by lifted.py, the deaths to expect, the clock test's cost both pay.
+- `drafts/jit-sweep-558.md` - The JIT's stencils across the compiler genes (Iteration 558): 332 flag sets, none unsafe; the only repeated holes st_callx (tracer) and st_execute (tracer with nocrossjump) - both patched by the after-seed-77 batch.
+- `drafts/jit-sweep-558.py` - The sweep's script.
 - `drafts/unfreeze-preflight-556.md` - Every lifted freeze checked before seed 77 (Iteration 556): four bases from seed 76's front, one gene at a time, both widths, nine workloads against s6 - no new failure.
 - `drafts/unfreeze-preflight-556.py` - The pre-flight's script.
 - `drafts/fast-end-offset-554.py` - The script behind fast-end-offset-554.md: the run's records only, no new timing.

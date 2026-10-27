@@ -48,7 +48,7 @@ The two designs' flags differ by -fno-crossjumping alone. Compiled with each, sp
 inline (jitexec) - holds EXECUTE's helper hole once with cross-jumping, twice without: -ftracer duplicated the block and
 nothing merged the copy back. jit_scan notes one offset for each value hole and jit_put patches that one, so the other
 copy kept its marker value (0x2ea1ed5ea1ed5e22) - a jump to nowhere on that path: a death on the laptop, here a fault
-trapped into a wrong output. st_callx holds the same hole twice in every build, on a path the workloads never take.
+trapped into a wrong output. st_callx holds the same hole twice under -ftracer alone, on a path the workloads never take (the sweep, 558: in every build with tracer - 557 said every build; the design it was compared with had tracer too).
 stencil-check.py passed both: it checks what leaves a stencil, not a hole that repeats - and under a design's own flags it
 read no stencil at all (-ffunction-sections). The fix - the after-seed-77 batch (results/pending/ORDER.md): jit_fill
 patches every copy; the checker reads a design's flags and reports repeated holes; jitholes-check.py in run-tests.

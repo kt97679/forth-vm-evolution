@@ -10179,3 +10179,14 @@ The stencil check read no stencil under a design's own flags (-ffunction-section
 
 Files: results/drafts/corpus-deaths-555.md, results/drafts/seed77-checklist-557.md, results/pending/ (ORDER.md,
 jit-holes-after-seed77.patch, lifted-after-seed77.patch), results/README.md, HANDOFF.md.
+
+## Iteration 558 - 2026-10-27 - Claude
+
+**The JIT fix is not a method change** (the owner agreed) - recorded in the after-seed-77 batch. **The stencils swept**
+across the compiler genes (results/drafts/jit-sweep-558.md): 332 flag sets - every gene alone, every pair, 200 triples -
+none unsafe to copy; the only repeated holes st_callx (under tracer alone, 48 sets) and st_execute (tracer with
+nocrossjump, 7) - both patched by the batch's fix; no guard needed beyond it. 557's "st_callx in every build" corrected:
+every build with tracer (also in the patch's comment - the batch checked again: {BC}).
+
+Files: results/drafts/jit-sweep-558.md, results/drafts/jit-sweep-558.py, results/drafts/corpus-deaths-555.md,
+results/pending/ (ORDER.md, jit-holes-after-seed77.patch), results/README.md, HANDOFF.md.
