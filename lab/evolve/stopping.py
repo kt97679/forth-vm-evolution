@@ -11,6 +11,8 @@ reading, as GOALS.md words the confirmation test: "the pooled true front"). Stop
 method, the last two gain nothing - and no correctness issue is open, which is the chat's to say. The ledger: a
 {"method": ...} line opens a series (a method change restarts the count), then a line a run; the earlier runs are the
 newest series' runs before seed N; --append adds this run's line. stdout: the series, the verdict, the count, the bar.
+A method line with "extremes": "alive" takes the four extremes from every alive design - the strict front's - and not
+the true front's, whose tolerance dominance can lose the fastest to a chain (Iteration 556: seed 76's, 105 designs).
 """
 import json, os, sys
 
@@ -69,7 +71,7 @@ def fmt(k, v):
 def report(run, method, runs):
     S = [r for r in runs if r['seed'] < run['seed']] + [run]
     out = ["the stopping rule (GOALS.md) on the method %s - each run against the best of the method's earlier runs, "
-           "criterion by criterion" % method.get('method', '(no method line)'), '',
+           "criterion by criterion%s" % (method.get('method', '(no method line)'), '; the extremes from every alive design' if method.get('extremes') == 'alive' else ''), '',
            '| seed | front | hypervolume | fastest | smallest | least memory | fastest at 32 bits | gains |',
            '|---|---|---|---|---|---|---|---|']
     for i, r in enumerate(S):
@@ -118,10 +120,10 @@ if __name__ == '__main__':
     seed, led = int(opt('--seed')), opt('--ledger') or LEDGER
     db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger')))
     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E, hv
-    m = hv.measure(db, E)
-    run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(m['fastest'], 6), smallest=m['smallest'],
-               memory=m['memory'], fastest32=round(m['fastest32'], 6))
-    method, runs = series(led)
+    m = hv.measure(db, E); method, runs = series(led)
+    x = m['alive'] if method.get('extremes') == 'alive' else m      # 556: the series says whose extremes
+    run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(x['fastest'], 6), smallest=x['smallest'],
+               memory=x['memory'], fastest32=round(x['fastest32'], 6))
     print(report(run, method, runs))
     if '--append' in a:
         if any(x['seed'] == seed for x in runs): print('the ledger has seed %d already - nothing appended' % seed)

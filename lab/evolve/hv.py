@@ -100,7 +100,10 @@ def measure(db, E, b=None):
     F = true_front(R, E)
     Z = [z for z in (norm(R[i], b) for i in F) if z is not None]
     ex = lambda k: min(R[i][k] for i in F)
-    return dict(front=len(F), inside=len(Z), hv=hv4(Z), fastest=ex('speed'), smallest=ex('total'), memory=ex('rss'), fastest32=ex('speed32'))
+    A = [r for r in R.values() if r.get('status') == 'ok' and r.get('speed') and r.get('total') and r.get('rss') and r.get('speed32')]
+    al = lambda k: min(r[k] for r in A)      # 556: the extremes over every alive design - the strict front's, no dominance chain
+    return dict(front=len(F), inside=len(Z), hv=hv4(Z), fastest=ex('speed'), smallest=ex('total'), memory=ex('rss'), fastest32=ex('speed32'),
+                alive=dict(fastest=al('speed'), smallest=al('total'), memory=al('rss'), fastest32=al('speed32')))
 
 
 if __name__ == '__main__':

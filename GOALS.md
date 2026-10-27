@@ -114,9 +114,12 @@ results/drafts/goals-snapshots.md.)
    speed 2%, binary + image 1%, memory 4 KB, the 32-bit speed 2%. **Stop when, after at least three runs on an
    unchanged method** (the same workloads, selection, operators, gates, hours and box), **the last two runs gain
    nothing**, with no open correctness issue. A method change restarts the count. Report each run's values and the
-   spread; no p-values. The series starts at seed 73, the first run with memory measured right since 70.
+   spread; no p-values. The series starts at seed 73, the first run with memory measured right since 70. **From seed 77**
+   (the owner, 555-556) a new series: 12 hours; every freeze that still has code lifted (evolve.py's FROZEN keeps only the
+   retired); the four extremes from every alive design, the hypervolume on the true front as before - seed 76's dominance
+   chain hid its fastest designs (results/evolve-amd-ryzen-7-pro-8840hs-seed76.md).
 2. **The confirmation run.** One run of the same method and hours **from the final front** - without `noevolved`, the
-   earlier runs' true fronts among the founders - with **every frozen gene that still has code re-enabled**
+   earlier runs' true fronts among the founders - with **every frozen gene that still has code re-enabled** (lifted from seed 77 already - 556)
    (alignhot, msc, scale, sharedcall; the frozen-at-1 genes - bytehdr, doesfar, thinhdr, varcall, bss, lean - free to
    take 0). The retired genes (tail, tailpn, kstack, jithelp, jitre, nocase: their code removed) stay retired unless
    this run shows their region matters. **Confirmed** when its true front's hypervolume is not 1% above the pooled true

@@ -898,9 +898,15 @@ REQUIRE = []
 # Iteration 450 (the owner; results/seed63-rules.md's gene votes): sharedcall, tail, kstack and tailpn frozen off - 12 of
 # 12 removal votes over seeds 63-65, on no front design, so the dependence test had nothing to rebuild. Reversible: the
 # code stays; removed only if the run after shows no loss (its comparison small or better).
-FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
-          'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
-          'alignhot': 0}   # 534 (the owner): jitos unfrozen - its freeze (495) fails the rule on the true fronts (results/drafts/frozen-recheck-534.md); 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
+# Iteration 556 (the owner: "do we have any genes left that are not enabled yet? ... run from scratch with new genes
+# enabled"): every freeze that still has code lifted, for the 12-hour series from seed 77 - alignhot, msc, scale and
+# sharedcall free again; bytehdr, doesfar, thinhdr, varcall, bss and lean free to take 0. GOALS.md's confirmation run had
+# planned it from the final front; from scratch, a gene that needs designs built around it gets them. Only the retired
+# stay - tail, kstack and tailpn, their code removed. The pre-flight: results/drafts/unfreeze-preflight-556.md. Until 556:
+#   FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+#             'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
+#             'alignhot': 0}   # 534 (the owner): jitos unfrozen - its freeze (495) fails the rule on the true fronts (results/drafts/frozen-recheck-534.md); 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
+FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0}
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
