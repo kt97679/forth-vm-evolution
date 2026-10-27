@@ -10155,3 +10155,15 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed76.md, results/drafts/corpus-de
 pending/), results/stopping-series.md, results/compare-fronts-amd-ryzen-7-pro-8840hs.md (session 63),
 results/predictions.md, results/gene-votes.md, results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN,
 HANDOFF.md, HANDOFF-REFERENCE.md.
+
+## Iteration 556 - 2026-10-27 - Claude
+
+**Before seed 77** (the owner: from scratch, every gene that still has code): every freeze lifted but the retired, after a
+pre-flight - four bases from seed 76's front, one gene at a time, both widths, nine workloads against s6: no new failure
+(scale inert on cv8; doesfar and varcall at 0 screened by reach_lethal). The stopping rule's extremes from every alive
+design for the new series. Seed 76's corpus deaths bisected: tracer=1 with nocrossjump=1 on a JIT design, layout-dependent
+(268 such designs right) - open. batch-check: PASS (run-tests, validate 7 of 7 IDENTICAL, the jail); applied.
+
+Files: results/drafts/unfreeze-preflight-556.md, results/drafts/unfreeze-preflight-556.py,
+results/drafts/corpus-deaths-bisect-556.py, results/drafts/corpus-deaths-555.md, results/applied-before-seed77/ (was
+pending/), results/predictions.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md.

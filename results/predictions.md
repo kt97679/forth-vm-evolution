@@ -1039,3 +1039,11 @@ Two more hours do not beat the 10-hour series by GOALS.md's effect sizes: seed 7
 over 108 KB, its fastest at 32 bits over 0.1688 - the same bar, on the same tolerance front. The gains have become rare
 late in a run: the speed's last 2% gain came at generation 49 in seed 75 and 67 in seed 76, of 137 and 141; the
 smallest's last at 135-136, in steps of tens of bytes. Twelve hours add about 30 generations of that.
+
+## Seed 77, the lifted freezes - predicted (Iteration 556)
+
+The freezes were right: on seed 77's true front bytehdr, thinhdr, bss and lean stay 1 on 95% or more of the designs;
+alignhot, msc and sharedcall are each on under 10%; doesfar and varcall stay 1 on every design (reach_lethal screens 0).
+The pre-flight found the lifted values working (results/drafts/unfreeze-preflight-556.md) - working is not winning:
+every front design of seeds 53-60 had the frozen-on values (Iteration 409), and the frozen-off genes were on no front
+design when frozen.

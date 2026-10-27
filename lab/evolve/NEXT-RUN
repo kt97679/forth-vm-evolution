@@ -13,6 +13,9 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 556 (the owner): seed 77 from scratch on every gene that still has code - every freeze lifted but the
+# retired (results/applied-before-seed77/ORDER.md); the stopping rule's extremes from every alive design. The line
+# itself unchanged: 12 hours, the clock test at the end.
 # Iteration 555 (seed 76 processed): seed 77, 12 hours - the owner's; the hours are the method's (GOALS.md), so a new
 # series: the stopping count restarts (seed 76 gained nothing - at 10 hours seed 77 could have ended it). The after-seed-76
 # batch applied (stopping.py; the clock test's cost a design and s6 both pay). The clock test back in the line for that

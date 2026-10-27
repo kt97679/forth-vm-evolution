@@ -3,10 +3,10 @@
 The owner (556): seed 77 from scratch, 12 hours, with every gene that still has code enabled; the stopping rule's
 extremes from every alive design. Applied to master before the run - seed 77's bundle carries it.
 
-    git apply results/pending/unfreeze-before-seed77.patch
-    git apply results/pending/stopping-alive-before-seed77.patch
+    git apply results/applied-before-seed77/unfreeze-before-seed77.patch
+    git apply results/applied-before-seed77/stopping-alive-before-seed77.patch
 
-batch-check (556): pending.
+batch-check (556): PASS - run-tests (the stopping rule's self-test among them), validate 7 of 7 IDENTICAL, the jail; applied before seed 77.
 
 **unfreeze-before-seed77.patch** (lab/evolve/evolve.py, GOALS.md) - **every freeze that still has code lifted**: FROZEN
 keeps only the retired (tail, kstack, tailpn - their code removed); alignhot, msc, scale and sharedcall free again;
