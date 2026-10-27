@@ -46,7 +46,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Seed 75 processed (553)** - results/evolve-amd-ryzen-7-pro-8840hs-seed75.md: by the stopping rule it **gains, on
   the speed extreme alone** - the fastest 4c9c2d9075 0.1363 against seed 74's 0.1402 (2.8%, past 2%); the hypervolume
   0.34851, 2.3% below 0.35667. Prediction 549 fails; seed 76 cannot end the count - **the earliest stop is after seed
-  77**. The true front 266, the report's; the chain done, every pack whole; the chain on master: {CHECKS}.
+  77**. The true front 266, the report's; the chain done, every pack whole; the chain on master: all PASS - run-tests, validate 7 of 7 IDENTICAL, the gate alive 291 of 291, ans-check 0 of 69 differ (its negative control caught), the jail; resumed from the tests after a sandbox restart.
 - **jitdoes, jitrp and jitret are freeze candidates** (12 of 12 over 73-75, no keep vote). A freeze changes the method
   and restarts the stopping count: the owner's to decide - none frozen.
 - **Predictions due** (results/predictions.md): seed 76 - no gain over the best of seeds 74-75 (553): the hypervolume

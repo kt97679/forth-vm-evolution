@@ -10124,7 +10124,7 @@ Files: prompts/21-spend-tokens-where-they-buy-results.md, HANDOFF.md.
 0.1402 (2.8%, the threshold 2%), while the hypervolume, 0.34851, is 2.3% below 0.35667 - so prediction 549 fails and
 seed 76 cannot end the count. jitdoes, jitrp and jitret freeze candidates (12 of 12 over 73-75); the clock test's cycles
 put the fast-end offset outside user space (a lead). The after-seed-75 batch applied (batch-check PASS once gcc-multilib
-was installed); the chain on master: {CHECKS}. Seed 76 next, 10 hours.
+was installed); the chain on master: all PASS - run-tests, validate 7 of 7 IDENTICAL, the gate alive 291 of 291, ans-check 0 of 69 differ (its negative control caught), the jail; resumed from the tests after a sandbox restart. Seed 76 next, 10 hours.
 
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed75.md, results/xcheck-seed75.md, results/truefronts-seed75.md,
 results/progress-true-fronts.md, results/drafts/truefronts-charts-553.py, results/applied-after-seed75/ (was pending/),
