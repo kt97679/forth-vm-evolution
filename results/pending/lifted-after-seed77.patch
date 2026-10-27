@@ -1,0 +1,66 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 28b5a45..e589183 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -39,6 +39,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
+ - `draft-results.py` - a returned seed's results file drafted from process-seed.sh's output (Iteration 551): the facts - records, the true front, the hypervolume, the extremes, one round first, the operators, the JIT designs, the fast end re-measured, the experiments, the remote checks - with TODO lines for the verdict, the predictions, the votes and the rules; also the xcheck file and the spread's session.
+ - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
+ - `footprint-gen.py` - a held-out program whose code footprint grows (N [--calls T] [--defs-only]): N words in levels, run round-robin, a checksum (Iteration 370; results/generalization.md)
++- `lifted.py` - the freezes lifted at 556 on a run's true front (Iteration 557): each gene's share at each value, the enrichment of its other values, prediction 556 scored; process-seed.sh runs it.
+ - `stopping.py` - GOALS.md's stopping rule, mechanical (Iteration 554): a run's hypervolume and four extremes against the best of the method's earlier runs in results/stopping-series.md, criterion by criterion; the count, the earliest stop, the next run's bar. process-seed.sh and draft-results.py run it; step 6 appends the run (--append).
+ - `process-checks.sh` - the checks on master after a seed's processing applied its batch (Iteration 551): build, run-tests, validate, the gate, ans-check on its sample, the jail last - started detached, one status file; FROM= resumes after a sandbox restart.
+ - `stencil-check.py` - the JIT's stencils safe to copy (Iteration 463; the after-seed-68 batch, applied at 487): from objdump's relocations, every stencil's references inside its copied part and no branch past it; engines-check runs it at 64 and 32 bits, and jit.c guards at run time
+diff --git a/lab/evolve/lifted.py b/lab/evolve/lifted.py
+new file mode 100644
+index 0000000..459b596
+--- /dev/null
++++ b/lab/evolve/lifted.py
+@@ -0,0 +1,35 @@
++#!/usr/bin/env python3
++"""lab/evolve/lifted.py DB - the lifted freezes on a run's true front (Iteration 557). Each gene the owner unfroze at 556
++(evolve.py's FROZEN until then): the share of the true front at each of its values (canon's, as a design is built), and
++the enrichment of its non-frozen values - their share of the front over their share of every alive design. Then
++prediction 556 scored: bytehdr, thinhdr, bss and lean at 1 on 95% or more of the front; alignhot, msc and sharedcall
++each on under 10%; doesfar and varcall at 1 on every design. As the build user (it imports the evolver)."""
++import collections, json, os, sys
++HERE = os.path.dirname(os.path.abspath(__file__))
++LIFTED = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0, 'sharedcall': 0, 'alignhot': 0}
++if len(sys.argv) < 2: sys.exit(__doc__)
++db = sys.argv[1]; sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E, hv
++R = {}
++for l in open(db, errors='replace'):
++    if l.startswith('{'):
++        try: r = json.loads(l)
++        except ValueError: continue
++        if r.get('id'):
++            r['total'] = E.ov(r, 'total') if r.get('status') == 'ok' and (r.get('total') or r.get('size')) else r.get('total'); R[r['id']] = r
++F = hv.true_front(R, E)
++A = [i for i, r in R.items() if r.get('status') == 'ok' and r.get('speed') and r.get('speed32')]
++X = {i: E.canon(R[i]['genome']) for i in set(F) | set(A)}
++print('lifted.py: %s - the true front %d, alive %d' % (db, len(F), len(A)))
++print('| gene | frozen at, until 556 | the front, at each value | enrichment of the other values |'); print('|---|---|---|---|')
++share = {}
++for k, f in LIFTED.items():
++    cf = collections.Counter(X[i].get(k, f) for i in F); ca = collections.Counter(X[i].get(k, f) for i in A)
++    share[k] = {v: c / len(F) for v, c in cf.items()}
++    en = ', '.join('%s: %.2f' % (v, (cf[v] / len(F)) / (ca[v] / len(A))) for v in sorted(ca) if v != f and ca[v]) or '-'
++    print('| %s | %s | %s | %s |' % (k, f, ', '.join('%s %.0f%%' % (v, 100 * cf[v] / len(F)) for v in sorted(cf)), en))
++on = lambda k, v: share[k].get(v, 0.0)
++c1 = all(on(k, 1) >= 0.95 for k in ('bytehdr', 'thinhdr', 'bss', 'lean'))
++c2 = all(1 - on(k, 0) < 0.10 for k in ('alignhot', 'msc', 'sharedcall'))
++c3 = all(on(k, 1) == 1.0 for k in ('doesfar', 'varcall'))
++print('prediction 556 (the freezes were right): %s - bytehdr, thinhdr, bss, lean at 1 on 95%%+: %s; alignhot, msc, sharedcall each '
++      'on under 10%%: %s; doesfar and varcall at 1 everywhere: %s' % ('HOLDS' if c1 and c2 and c3 else 'FAILS', *('yes' if c else 'no' for c in (c1, c2, c3))))
+diff --git a/lab/evolve/process-seed.sh b/lab/evolve/process-seed.sh
+index 8405b61..e7040d3 100644
+--- a/lab/evolve/process-seed.sh
++++ b/lab/evolve/process-seed.sh
+@@ -40,6 +40,8 @@ if [ -n "$SP" ]; then
+     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
+     python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
+     p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'
++    python3 "$EV/lifted.py" "$SP/db.jsonl" > lifted.txt 2>&1   # Iteration 557: the freezes lifted at 556, on the true front
++    p ""; p "## lifted.py (lifted.txt) - the freezes lifted at 556 on the true front; prediction 556"; p '```'; grep -v '^|---' lifted.txt | cut -c1-300 >> "$S"; p '```'
+     python3 "$EV/review-checks.py" rules "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > rules.txt 2>&1   # Iteration 438
+     p ""; p "## review-checks.py rules (rules.txt) - results/seed63-rules.md's rules, measured"; cut -c1-300 rules.txt | grep -v '^pinned' >> "$S"
+ fi

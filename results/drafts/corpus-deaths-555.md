@@ -41,3 +41,14 @@ stencil - machine code copied out of the compiled engine - that tail duplication
 compilers lay it out differently (a death on the laptop, a wrong output here). Not guarded: the pair is mostly right, and
 the run's output checks reject the rest. Open, for the JIT: acf592137d with and without nocrossjump=1 - one engine
 source, one flag apart - is the smallest pair to compare stencil by stencil.
+
+## The root cause and the fix (Iteration 557)
+
+The two designs' flags differ by -fno-crossjumping alone. Compiled with each, spn-stencils.c's st_execute - EXECUTE
+inline (jitexec) - holds EXECUTE's helper hole once with cross-jumping, twice without: -ftracer duplicated the block and
+nothing merged the copy back. jit_scan notes one offset for each value hole and jit_put patches that one, so the other
+copy kept its marker value (0x2ea1ed5ea1ed5e22) - a jump to nowhere on that path: a death on the laptop, here a fault
+trapped into a wrong output. st_callx holds the same hole twice in every build, on a path the workloads never take.
+stencil-check.py passed both: it checks what leaves a stencil, not a hole that repeats - and under a design's own flags it
+read no stencil at all (-ffunction-sections). The fix - the after-seed-77 batch (results/pending/ORDER.md): jit_fill
+patches every copy; the checker reads a design's flags and reports repeated holes; jitholes-check.py in run-tests.

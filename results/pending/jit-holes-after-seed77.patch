@@ -1,0 +1,140 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 20f4d99..fdd8cf8 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -93,6 +93,16 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for
+ static struct jit_st jit_st[JIT_NST];
+ 
+ static int32_t jit_rel32(const unsigned char *p) { int32_t v; memcpy(&v, p, 4); return v; }
++/* Iteration 557: every copy of a value hole patched, not the one jit_scan noted last. -ftracer duplicates a block and
++   -fno-crossjumping keeps the copy, so a stencil can hold a hole twice (seed 76's st_execute; st_callx in every build):
++   one copy patched, the other left at its marker value - a jump to nowhere (results/drafts/corpus-deaths-555.md). */
++static void jit_fill(unsigned char *dst, int n, jit_hole_t hole, const void *v) {
++    int p;
++    for (p = 0; p + JIT_HOLEW <= n; p++) {
++        jit_hole_t x; memcpy(&x, dst + p, JIT_HOLEW);
++        if (x == hole) { memcpy(dst + p, v, JIT_HOLEW); p += JIT_HOLEW - 1; }
++    }
++}
+ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit_rel32(p) == (const unsigned char *)t; }
+ 
+ /* Iteration 129: a stencil is read up to the next table function, or this
+@@ -369,16 +379,16 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump,
+         else if (jit_relto(t->src + p, spn_table[J_CALL])) to = call;
+         if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
+     }
+-    if (t->imm >= 0) memcpy(dst + t->imm, &val, JIT_HOLEW);
+-    if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, JIT_HOLEW); }
++    if (t->imm >= 0) jit_fill(dst, n, JIT_IMM64, &val);
++    if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; jit_fill(dst, n, JIT_RP64, &v); }
+ #if JITMUL
+-    if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, JIT_HOLEW); }
++    if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; jit_fill(dst, n, JIT_TH64, &v); }
+ #endif
+ #if JITEXEC
+-    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, JIT_HOLEW); }
++    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; jit_fill(dst, n, JIT_EX64, &v); }
+ #endif
+ #if JITEXEC && JITMUL
+-    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; memcpy(dst + t->rs, &v, JIT_HOLEW); }
++    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; jit_fill(dst, n, JIT_RS64, &v); }
+ #endif
+     return dst + n;
+ }
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 3b07ea3..2be1214 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -190,10 +190,11 @@ for name, genes, w in VBIG:
+ shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)
+ # Iteration 463: and are the stencils safe to copy - no relocation in one but to a marker (stencil-check.py), at 64
+ # bits and at 32: a compiler that puts a call into a stencil (a stack check, a profiler hook) is caught here.
+-for cc in ('gcc', 'gcc -m32 -fno-pie'):
+-    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stencil-check.py'), '--cc', cc],
++# Iteration 557: and with -ftracer beside -fno-crossjumping, the pair that left seed 76's st_execute holding a hole twice.
++for cc, fl in (('gcc', []), ('gcc -m32 -fno-pie', []), ('gcc', ['-O2', '-ftracer', '-fno-crossjumping', '-DJITX=1', '-DJITINL=1', '-DJITLOOP=1', '-DJITEXEC=1', '-DJITMUL=1'])):
++    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stencil-check.py'), '--cc', cc] + fl,
+                        capture_output=True, text=True)
+     print('  stencils     %s %s' % ('ok    ' if r.returncode == 0 else 'FAILED', (r.stdout or r.stderr).strip().split('\n')[0][:140]), flush=True)
+-    if r.returncode: bad.append('stencils (%s)' % cc)
++    if r.returncode: bad.append('stencils (%s%s)' % (cc, ' ' + ' '.join(fl[:3]) if fl else ''))
+ print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS) + len(V32) + len(VBIG), '; '.join(bad)))
+ sys.exit(1 if bad else 0)
+diff --git a/lab/evolve/jitholes-check.py b/lab/evolve/jitholes-check.py
+new file mode 100644
+index 0000000..21b051e
+--- /dev/null
++++ b/lab/evolve/jitholes-check.py
+@@ -0,0 +1,16 @@
++#!/usr/bin/env python3
++"""jitholes-check.py - a JIT design whose stencil holds a value hole twice computes right (Iteration 557). Seed 76's
++d11c9a6300: -ftracer with -fno-crossjumping leaves st_execute with two copies of EXECUTE's helper hole; jit.c patched one,
++and the corpus came out wrong (results/drafts/corpus-deaths-555.md). Builds it, runs the corpus, compares the output
++with s6's; exit 1 if it differs. As the build user, in a built tree (run-tests runs it)."""
++import os, shutil, sys
++sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
++G = {'tos': 1, 'scale': 0, 'bytehdr': 1, 'spec': ['var', 'tiny', 'small', 'imm'], 'sharedcall': 0, 'doesfar': 1, 'varcall': 1, 'varslot': 1, 'd256': 0, 'guard': 0, 'folds': ['+', '=', '!', '@', 'LSHIFT', 'RSHIFT', 'C@', 'C!', 'AND', 'OR', 'XOR', 'LIT', '<', 'U<', 'OVER', 'DROP', 'DUP', 'SWAP', 'ROT', '>R', 'R>', 'R@', 'NEGATE'], 'skippad': 0, 'fold': 1, 'supers': [['DUP', '>R'], ['C!', 'R>'], ['>R', 'C!'], ['ROT', 'DUP'], ['R@', 'ROT'], ['DUP', 'C@'], ['>R', 'OVER'], ['OVER', 'C@'], ['C@', '='], ['C@', 'DUP'], ['SWAP', 'R>'], ['LSHIFT', 'OVER'], ['OVER', 'R>'], ['ROT', 'ROT'], ['C@', 'SWAP'], ['C@', 'OR'], ['SWAP', 'DUP'], ['R>', 'SWAP'], ['OVER', 'R@'], ['C@', '>R'], ['DUP', '@'], ['+', 'R>'], ['R>', '='], ['C@', 'OVER']], 'rtfuse': 0, 'ops10': ['(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP'], 'escape': 1, 'tail': 0, 'msc': 0, 'opt': 'O2', 'nogcse': 0, 'nocrossjump': 1, 'nocet': 1, 'align1': 0, 'noreorder': 0, 'peel': 0, 'ipaclone': 1, 'tracer': 1, 'enc': 'cv8', 'lean': 1, 'tag2': 1, 'jit': 1, 'jitx': 1, 'jitloop': 1, 'jitinl': 1, 'thinhdr': 1, 'bss': 1, 'kstack': 0, 'tailpn': 0, 'alignhot': 0, 'threads': 0, 'fsys': 2, 'regpin': 3, 'dskew': 0, 'hotcalls': 0, 'rtimm': 2, 'rtloop': 1, 'rtloopall': 1, 'kfast': 1, 'tfind': 0, 'kinput': 1, 'klookup': 1, 'rtiplus': 0, 'swapi': 0, 't2hot': 0, 'hotinl': 20, 'opbody': 0, 't2wide': 0, 'rtempty': 1, 'alignfn': 0, 'noinls': 1, 'fbuf': 0, 'abortif': 1, 'opcall': [], 'sysc': 0, 'jitos': 1, 'jittail': 1, 'jitk': 2, 'lto': 0, 'gotodup': 0, 'compiler': 0, 'jitmul': 1, 'jitdoes': 1, 'jitexec': 1, 'jitcfa': 1, 'jitrp': 1, 'jitfuse': 0, 'opinline': 0, 'knumber': 0, 'jitret': 0, 'jitvar': 0, 'jitimg': 1, 'bfind': 0, 'factor': 3}
++E.setup()
++d = os.path.join(E.EV, 'jitholes-check'); shutil.rmtree(d, ignore_errors=True)
++E.run_metric(*E.REF, 'corpus'); s6 = E.OUT_LAST[0]
++eng, img = E.build(E.canon(G), d); E.run_metric(eng, img, E.private_work(d), 'corpus'); got = E.OUT_LAST[0]
++shutil.rmtree(d, ignore_errors=True)
++print('jitholes-check: d11c9a6300 (tracer with nocrossjump: st_execute holds EXECUTE\'s helper hole twice) - the corpus %s'
++      % ('as s6' if got == s6 else 'DIFFERS from s6'))
++sys.exit(0 if got == s6 else 1)
+diff --git a/lab/evolve/stencil-check.py b/lab/evolve/stencil-check.py
+index a019261..a233d15 100644
+--- a/lab/evolve/stencil-check.py
++++ b/lab/evolve/stencil-check.py
+@@ -16,6 +16,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
+ args = sys.argv[1:]; cc = ['gcc']
+ if args[:1] == ['--cc']: cc = args[1].split(); args = args[2:]
+ flags = args or ['-O2', '-DJITX=1', '-DJITINL=1', '-DJITLOOP=1']
++flags = [f for f in flags if f not in ('-ffunction-sections', '-fdata-sections')]   # 557: they only place functions, and
++# put each in its own .text.* - this reads .text, so a design's own flags read 0 stencils, "every one safe" vacuously
++HOLES = set(re.findall(r'#define JIT_(?:IMM|RP|TH|EX|RS)64\s+0x([0-9a-fA-F]+)', open(os.path.join(ROOT, 'engine', 'jit.c')).read()))
+ MARKERS = ('spn_next', 'spn_jump', 'spn_call')
+ with tempfile.TemporaryDirectory() as d:
+     o = os.path.join(d, 'st.o')
+@@ -31,7 +34,7 @@ for l in dis.split('\n'):
+     if m and funcs[cur]: funcs[cur][-1][2].append(re.sub(r'[-+]0x[0-9a-f]+$', '', m.group(2))); continue
+     m = re.match(r'^\s+([0-9a-f]+):\s+(.*)$', l)
+     if m: funcs[cur].append((int(m.group(1), 16), m.group(2).strip(), []))
+-bad = {}
++bad = {}; twice = {}                      # twice: a value hole more than once in the copied part (557: jit.c patches every copy)
+ for name, ins in funcs.items():
+     if not name.startswith('st_') or not ins: continue
+     # the copied part, as jit_scan finds it: up to the last jmp to NEXT or JUMP; EXIT's to its first ret
+@@ -39,6 +42,9 @@ for name, ins in funcs.items():
+     else: ends = [k for k, (a, t, rl) in enumerate(ins) if t.startswith('jmp') and any(x in ('spn_next', 'spn_jump') for x in rl)][-1:]
+     if not ends: continue                    # no shape the JIT reads: it is never used
+     last = ends[0]; lo = ins[0][0]; hi = ins[last + 1][0] if last + 1 < len(ins) else ins[last][0] + 16
++    for h in HOLES:
++        k = sum(1 for a, t, rl in ins[:last + 1] if re.search(r'\$0x0*%s\b' % h.lower().lstrip('0'), t))
++        if k > 1: twice[name] = k
+     for a, t, rl in ins[:last + 1]:
+         for x in rl:
+             if x not in MARKERS: bad.setdefault(name, set()).add('refers to %s' % x)
+@@ -50,4 +56,6 @@ stencils = sum(1 for n in funcs if n.startswith('st_'))
+ print('stencil-check (%s %s): %d stencils; %s' % (' '.join(cc), ' '.join(flags), stencils,
+       'every one safe to copy' if not bad else '%d not safe to copy:' % len(bad)))
+ for n in sorted(bad): print('  %s - %s' % (n, '; '.join(sorted(bad[n]))))
+-sys.exit(1 if bad else 0)
++if twice: print('  a value hole twice or more in the copied part - jit.c patches every copy (557): ' + ', '.join(sorted(twice)))
++if not stencils: print('stencil-check: no stencil read - nothing checked (the flags?)')
++sys.exit(1 if bad or not stencils else 0)
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 4fc4eb6..dfc58e3 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -380,6 +380,10 @@ echo "the stopping rule (lab/evolve/stopping.py --self-test):"
+ if out=$(python3 "$ROOT/lab/evolve/stopping.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c24-124)"
+ else printf '  %-12s FAIL   %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+ echo
++echo "the JIT's value holes (lab/evolve/jitholes-check.py):"
++if out=$(python3 "$ROOT/lab/evolve/jitholes-check.py" 2>&1); then printf '  %-12s ok     %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c17-117)"
++else printf '  %-12s FAIL   %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
++echo
+ echo "the clock test's perf hold (lab/evolve/clockcheck.py --self-test):"
+ if out=$(python3 "$ROOT/lab/evolve/clockcheck.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
+ else printf '  %-12s FAIL   %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
