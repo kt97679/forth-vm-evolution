@@ -112,6 +112,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `drafts/seed77-checklist-557.md` - Seed 77's processing, the checklist (Iteration 557): the new series' line, prediction 555 on the tolerance front, prediction 556 by lifted.py, the deaths to expect, the clock test's cost both pay.
 - `drafts/jit-sweep-558.md` - The JIT's stencils across the compiler genes (Iteration 558): 332 flag sets, none unsafe; the only repeated holes st_callx (tracer) and st_execute (tracer with nocrossjump) - both patched by the after-seed-77 batch.
 - `drafts/jit-sweep-558.py` - The sweep's script.
+- `drafts/confirmation-pool-559.md` - The confirmation run's founders, no good design missed (Iteration 559, the owner): --carry's tolerance front drops chain-hidden designs - the strict front instead, every archived run, the pool pre-flighted.
 - `drafts/unfreeze-preflight-556.md` - Every lifted freeze checked before seed 77 (Iteration 556): four bases from seed 76's front, one gene at a time, both widths, nine workloads against s6 - no new failure.
 - `drafts/unfreeze-preflight-556.py` - The pre-flight's script.
 - `drafts/fast-end-offset-554.py` - The script behind fast-end-offset-554.md: the run's records only, no new timing.

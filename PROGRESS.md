@@ -10190,3 +10190,13 @@ every build with tracer (also in the patch's comment - the batch checked again: 
 
 Files: results/drafts/jit-sweep-558.md, results/drafts/jit-sweep-558.py, results/drafts/corpus-deaths-555.md,
 results/pending/ (ORDER.md, jit-holes-after-seed77.patch), results/README.md, HANDOFF.md.
+
+## Iteration 559 - 2026-10-27 - Claude
+
+**The confirmation run, planned with care** (the owner: no rush, no good design missed): the run seeded with the best
+designs seen waits for the 12-hour series' stop. --carry, read: it carries each database's tolerance front, so seed 76's
+105 chain-hidden fastest designs would stay behind; its record filter keeps every alive design. The plan
+(results/drafts/confirmation-pool-559.md): the strict front of every archived run, designs named elsewhere, the pool
+pre-flighted on the current code.
+
+Files: results/drafts/confirmation-pool-559.md, results/README.md, HANDOFF.md.

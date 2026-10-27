@@ -40,7 +40,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 558.
+- master: Iteration 559.
 - **Seed 77 is running - 12 hours from scratch on every gene that still has code (the owner, 555-556): a new series.**
   Every freeze lifted but the retired (tail, kstack, tailpn); the stopping rule's extremes from every alive design, its
   hypervolume on the true front as before (results/stopping-series.md's method line says "extremes": "alive"; if seed 77
@@ -136,8 +136,10 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    results/drafts/fast-end-offset-554.md (bubble's shift about 300 us, kernel's 75).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop - seed 75 gained (the fastest, 553), seed 76 nothing (555); the 12-hour series from seed 77, the
-   earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted
-   and tested: results/drafts/random-mode-548.patch, applied at consolidation).
+   earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
+   The confirmation run's founders built carefully (the owner, 559: no good design missed) -
+   results/drafts/confirmation-pool-559.md: --carry to take each run's strict front (today's tolerance front drops
+   chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
 3. **Correctness - found, fixed, waiting to apply** (557): seed 76's two corpus deaths were the JIT patching one copy of
    a value hole that -ftracer duplicated and -fno-crossjumping kept (st_execute; st_callx under -ftracer alone, on a path the workloads never take) - results/drafts/corpus-deaths-555.md. The fix is the after-seed-77 batch; GOALS.md's stop
    needs it applied - at seed 77's processing. Not a method change (the owner, 558). The sweep (558): no other
