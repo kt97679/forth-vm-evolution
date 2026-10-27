@@ -10130,3 +10130,15 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed75.md, results/xcheck-seed75.md
 results/progress-true-fronts.md, results/drafts/truefronts-charts-553.py, results/applied-after-seed75/ (was pending/),
 results/compare-fronts-amd-ryzen-7-pro-8840hs.md (session 62), results/predictions.md, results/gene-votes.md,
 results/progress-by-run.md, results/README.md, lab/evolve/NEXT-RUN, HANDOFF.md, HANDOFF-REFERENCE.md.
+
+## Iteration 554 - 2026-10-27 - Claude
+
+**While seed 76 runs** (the owner: all three): the fast end's offset tested on seed 75's re-measure - a cost every
+workload's run pays, a design and s6 alike, outside user space, not the JIT: non-JIT designs at 0.33-0.5 shift as their
+JIT neighbours do, designs slower than s6 the other way, bubble's implied cost about 300 us in every group. The
+after-seed-76 batch prepared: the stopping rule mechanical (stopping.py and its ledger, reproducing seed 75's corrected
+verdict); the clock test's cost both pay, from the time and the user-space cycles (cputime prints its user and system
+parts - sampled at the tick: a coarse check). batch-check: {BC}.
+
+Files: results/drafts/fast-end-offset-554.md, results/drafts/fast-end-offset-554.py, results/pending/ (ORDER.md,
+stopping-rule-after-seed76.patch, clock-cost-after-seed76.patch), results/README.md, HANDOFF.md.

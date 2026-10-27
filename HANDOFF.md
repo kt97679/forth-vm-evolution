@@ -40,9 +40,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 553.
-- **Seed 76 is next** - 10 hours, the method's: the stopping count's third run (lab/evolve/NEXT-RUN: review-checks'
+- master: Iteration 554.
+- **Seed 76 is running** - 10 hours, the method's: the stopping count's third run (lab/evolve/NEXT-RUN: review-checks'
   spread and appbench after it; no clock test, so no perf hold). Its processing: "Processing a returned seed" below.
+- **The after-seed-76 batch** (results/pending/ORDER.md, Iteration 554): the stopping rule mechanical (stopping.py, the
+  ledger results/stopping-series.md - index it once applied); the clock test's cost a design and s6 both pay (cputime's
+  user and system parts). Apply it first at seed 76's processing: batch-check, apply, commit.
 - **Seed 75 processed (553)** - results/evolve-amd-ryzen-7-pro-8840hs-seed75.md: by the stopping rule it **gains, on
   the speed extreme alone** - the fastest 4c9c2d9075 0.1363 against seed 74's 0.1402 (2.8%, past 2%); the hypervolume
   0.34851, 2.3% below 0.35667. Prediction 549 fails; seed 76 cannot end the count - **the earliest stop is after seed
@@ -76,7 +79,7 @@ judges.
    and the remote checks' agreement.
 2. Judge it. On the stopping series (seed 74 on), GOALS.md's stopping rule first - the hypervolume by 1% and each
    extreme by its threshold, against the best of the method's earlier runs: any one is a gain (553: seed 75's fastest
-   alone). Then the verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
+   alone) - summary.md's stopping.py section prints it, from the after-seed-76 batch on. Then the verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
    by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
    positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
    (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
@@ -105,7 +108,7 @@ judges.
    master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
    Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
    lab/evolve/progress-table.py > results/progress-by-run.md`; the gene votes, from seed 63 on (Iteration 432): `python3
-   lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
+   lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; the stopping series (the after-seed-76 batch on): `python3 lab/evolve/stopping.py <the pack's db.jsonl> --seed N --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
    chat's turn ends".
 
 ## The owner's standing decisions - the ones every session uses
@@ -130,12 +133,13 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    74 (10 hours; hypervolumes 0.35667, 0.34851; seed 75 gained by the fastest, 0.1363), the earliest stop after seed 77;
    then the confirmation run, the final set, the random-search baseline (its mode drafted and tested:
    results/drafts/random-mode-548.patch, applied at consolidation).
-3. The fast end's offset (rule 3; seeds 73-75 1.070, 1.066, 1.047 - PASS at 75) - results/drafts/fast-end-offset-550.md:
-   not luck, not the clock (the clock tests of 74 and 75). Seed 75's, with cycles: the user-space cycle ratio unmoved
-   (1.001) where the time moved 1.1-1.6% - what varies lies outside user space, and a fixed cost there weighs most at the
-   fast end (a lead: results/evolve-amd-ryzen-7-pro-8840hs-seed75.md). Tests that would decide, each a small patch, the
-   owner's call: the clock test's user and system times apart (rusage); the front re-measured four at a time against one
-   (--remeasure with workers).
+3. The fast end's offset (rule 3; seeds 73-75 1.070, 1.066, 1.047) - results/drafts/fast-end-offset-554.md (554, on seed
+   75's re-measure): a cost every workload's run pays, a design and s6 alike, outside user space - not the JIT (non-JIT
+   designs shift as their JIT neighbours do; designs slower than s6 the other way; bubble's implied cost about 300 us in
+   every group, kernel's 75). It scales the fast end's numbers, hardly its order, and its level varies from moment to
+   moment - within the stopping rule's 2% speed threshold. The measurement that would locate it: the after-seed-76
+   batch's clock-cost patch, with seed 77's line ending `then experiment clockcheck.py --sample 8` (sudo once, at the
+   start, for the perf hold) - the owner's call.
 4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 75: no design
    relies on it).
 5. The JIT genes' place: their votes count (rule 12). Seed 75: JIT designs 94 of 266, all 26 of the fastest tenth;
