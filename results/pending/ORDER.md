@@ -5,7 +5,7 @@ Prepared while seed 76 runs (the owner, 554: "all three"); master stays what see
     git apply results/pending/stopping-rule-after-seed76.patch
     git apply results/pending/clock-cost-after-seed76.patch
 
-batch-check (554): pending.
+batch-check (554): PASS - run-tests (the stopping rule's self-test and the clock test's split among them), validate 7 of 7 IDENTICAL, the jail. A first run was cut short by a sandbox restart after its run-tests had passed.
 
 **stopping-rule-after-seed76.patch** (lab/evolve/stopping.py and results/stopping-series.md new; lab/evolve/hv.py,
 process-seed.sh, draft-results.py, README.md; tools/run-tests.sh) - **GOALS.md's stopping rule, mechanical** (prompts/21,

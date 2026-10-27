@@ -10138,7 +10138,7 @@ workload's run pays, a design and s6 alike, outside user space, not the JIT: non
 JIT neighbours do, designs slower than s6 the other way, bubble's implied cost about 300 us in every group. The
 after-seed-76 batch prepared: the stopping rule mechanical (stopping.py and its ledger, reproducing seed 75's corrected
 verdict); the clock test's cost both pay, from the time and the user-space cycles (cputime prints its user and system
-parts - sampled at the tick: a coarse check). batch-check: {BC}.
+parts - sampled at the tick: a coarse check). batch-check: PASS (run-tests with both new self-tests, validate 7 of 7 IDENTICAL, the jail).
 
 Files: results/drafts/fast-end-offset-554.md, results/drafts/fast-end-offset-554.py, results/pending/ (ORDER.md,
 stopping-rule-after-seed76.patch, clock-cost-after-seed76.patch), results/README.md, HANDOFF.md.
