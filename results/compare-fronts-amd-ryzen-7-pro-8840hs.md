@@ -32080,3 +32080,20 @@ Seeds 74, 73, 72 and 71 measure speed over seven workloads; 70 over six (marked 
 | archived-20261025-055619/build/evolve/db.jsonl | 102 | 18701 | 362 | 0.1452 | 14,210 | 136 | 2.8024e+06 | 0.3713 | 0.1612 |
 | archived-20261025-160555/build/evolve/db.jsonl | 102 | 21557 | 324 | 0.1485 | 14,079 | 460 | 3.1548e+06 | 0.1868 | 0.1828 |
 | archived-20261026-043231/build/evolve/db.jsonl | 102 | 21709 | 308 | 0.1469 | 14,079 | 112 | 9.1527e+05 | 0.7690 | 0.1896 |
+
+## Session 62 - Iteration 553: seed 75 and the archived runs (the chain's spread, at generation 102)
+
+The five runs at generation 102, each from its own records: seed 75 (build/) and the archived seeds 71, 72, 73 and 74,
+in that order. The speed is over the same seven workloads (+apps, mean, both widths) for all five - one column. Memory
+compares only for seeds 73-75: seeds 71-72 measured it wrong (136 and 460 KB) - and with it the best Q and the
+hypervolume here (review-checks.py's own, not hv.py's fixed box). Seed 75 leads at the 64-bit fast end, 0.1384 against
+0.1452-0.1520, and in the hypervolume of the three that compare, 0.8115 against seeds 73-74's 0.7955 and 0.8033; at 32
+bits seed 74 leads them (0.1731), seed 71 all five (0.1612).
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 102 | 17051 | 355 | 0.1384 | 14,103 | 108 | 1.0108e+06 | 0.8115 | 0.1783 |
+| archived-20261025-055619/build/evolve/db.jsonl | 102 | 18701 | 362 | 0.1452 | 14,210 | 136 | 2.8024e+06 | 0.3846 | 0.1612 |
+| archived-20261025-160555/build/evolve/db.jsonl | 102 | 21557 | 324 | 0.1485 | 14,079 | 460 | 3.1548e+06 | 0.1937 | 0.1828 |
+| archived-20261026-043231/build/evolve/db.jsonl | 102 | 21709 | 308 | 0.1469 | 14,079 | 112 | 9.1527e+05 | 0.7955 | 0.1896 |
+| archived-20261026-154831/build/evolve/db.jsonl | 102 | 16744 | 226 | 0.1520 | 14,167 | 108 | 9.4306e+05 | 0.8033 | 0.1731 |

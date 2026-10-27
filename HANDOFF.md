@@ -1,6 +1,6 @@
 # HANDOFF - start here in a new chat
 
-The state card: read it whole. Its background - the owner's decisions in full, the state through Iteration 544, the
+The state card: read it whole. Its background - the owner's decisions in full, the state through Iteration 553, the
 open items' history, the lessons - is HANDOFF-REFERENCE.md, read on demand; its lessons before changing the evolver or a
 measurement.
 
@@ -35,32 +35,32 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   patches committing each, build there. Files for a pending patch are written
   there, never in master. Never two evolver processes on one tree at once.
   After changing forth/ or engine/, rebuild the stages.
+- The 32-bit stages need gcc-multilib, which a fresh sandbox may lack (Iteration 553: the stages then build at 8-byte
+  cells only and run-tests' generators test fails): `apt-get install -y gcc-multilib` as root, first.
 
 ## The state now
 
-- master: Iteration 552.
-- **Seed 75 is running** on the laptop - 10 hours, the method's: the stopping count's second run, after seed 74. Its
-  processing: results/drafts/seed75-checklist-550.md, then "Processing a returned seed". Its line ends with the
-  clock test - now with the chain's perf hold: **next-run.sh asks for sudo once, at the start** - and truefronts.py,
-  every seed pack's true front. The after-seed-74 batch is applied (results/applied-after-seed74/ORDER.md).
-- **Seed 74 processed (549)** - results/evolve-amd-ryzen-7-pro-8840hs-seed74.md: the reported front is the true one
-  (238; the old staircase 144 - 527 holds); the fixed-box hypervolume 0.35667, the stopping series' first on the
-  method; one round first holds (529); adaptive operators (526) and jitos (534) fail; the clock test: the offset does
-  not follow the clock. Its chain came back "failed" - the experiments failed at their packing, their reports whole
-  (Iteration 541's cleanup; fixed by the batch's chain-logs patch).
-- **The after-seed-75 batch**, two patches (results/pending/ORDER.md): truefronts.py's reported column; the processing
-  tools (draft-results.py, process-checks.sh - "Processing a returned seed"). Apply it first: batch-check, apply, commit.
-- **jitrp is a freeze candidate** (12 of 12 over 72-74, no keep vote). A freeze changes the method and restarts the
-  stopping count: the owner's to decide - not frozen.
-- **Predictions due** (results/predictions.md): seed 75 - no gain over seed 74 by the stopping rule (549).
-- **Before 549**: seeds 70-74 processed (498, 516, 520, 544, 549); every front reported until seed 74 was the
-  shortcut's (results/drafts/front-recheck-528.md) - figures recomputed from the records. History: HANDOFF-REFERENCE.md.
-- **Files a new chat needs**: the newest bundle, and seed 75's chain archive (`forth-vm-evolution-chain-<its
+- master: Iteration 553.
+- **Seed 76 is next** - 10 hours, the method's: the stopping count's third run (lab/evolve/NEXT-RUN: review-checks'
+  spread and appbench after it; no clock test, so no perf hold). Its processing: "Processing a returned seed" below.
+- **Seed 75 processed (553)** - results/evolve-amd-ryzen-7-pro-8840hs-seed75.md: by the stopping rule it **gains, on
+  the speed extreme alone** - the fastest 4c9c2d9075 0.1363 against seed 74's 0.1402 (2.8%, past 2%); the hypervolume
+  0.34851, 2.3% below 0.35667. Prediction 549 fails; seed 76 cannot end the count - **the earliest stop is after seed
+  77**. The true front 266, the report's; the chain done, every pack whole; the chain on master: {CHECKS}.
+- **jitdoes, jitrp and jitret are freeze candidates** (12 of 12 over 73-75, no keep vote). A freeze changes the method
+  and restarts the stopping count: the owner's to decide - none frozen.
+- **Predictions due** (results/predictions.md): seed 76 - no gain over the best of seeds 74-75 (553): the hypervolume
+  under 0.36024, the fastest over 0.1336, the smallest over 13,938 bytes, memory over 108 KB, the 32-bit fastest over
+  0.1688.
+- **Before 553**: seeds 70-75 processed (498, 516, 520, 544, 549, 553); every front reported until seed 74 was the
+  shortcut's (results/drafts/front-recheck-528.md) - the true fronts of seeds 53-75: results/truefronts-seed75.md and
+  results/progress-true-fronts.md. History: HANDOFF-REFERENCE.md.
+- **Files a new chat needs**: the newest bundle, and seed 76's chain archive (`forth-vm-evolution-chain-<its
   commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
-**The tools, from seed 75's processing** (Iteration 551 - the after-seed-75 batch, applied first): `sh
+**The tools** (Iteration 551, first used at seed 75's processing - 553): `sh
 lab/evolve/process-seed.sh ARCHIVE`, then `python3 lab/evolve/draft-results.py --iteration N` - the results file, the
 xcheck file and the spread's session drafted, the facts filled in, TODO lines for the verdict, the predictions, the votes
 and the rules (none may be committed); judge and edit; a batch if one waits; then `setsid nohup sh
@@ -74,7 +74,9 @@ judges.
    laptop's own re-measures, not applied), the verdict as printed and from both CPUs, seed-facts.py, heldout.py,
    review-checks.py progress, curse (the fast end's optimism) and fail32 (the 32-bit failures by cause - Iteration 427)
    and the remote checks' agreement.
-2. Judge it. The verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
+2. Judge it. On the stopping series (seed 74 on), GOALS.md's stopping rule first - the hypervolume by 1% and each
+   extreme by its threshold, against the best of the method's earlier runs: any one is a gain (553: seed 75's fastest
+   alone). Then the verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
    by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
    positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
    (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
@@ -122,27 +124,30 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. Seed 75's processing - in a new chat, with the tools above (results/drafts/seed75-checklist-550.md), then: the prediction (549); the clock test with cycles - check that sudo was asked
-   at the start and the setting held only while it measured (runs/perf-hold.log); truefronts.md - every seed's true
-   front: check the seed names, then rebuild results/progress-by-run.md and the charts on the true fronts; the chain's
-   status done (the chain-logs patch).
+1. Seed 76's processing - in a new chat, with the tools above: the prediction (553); the stopping count - seed 75 gained
+   (the fastest), so seed 76 alone cannot end it; the votes (jitdoes, jitrp, jitret candidates at 75).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": runs on an unchanged method from seed
-   74 (10 hours; its hypervolume 0.35667), then the confirmation run, the final set, the random-search baseline (its mode
-   drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
-3. The fast end's 7% offset (rule 3; seeds 73-74 1.070, 1.066) - results/drafts/fast-end-offset-550.md: not luck (the
-   gate's two in-run readings agree, a reading's noise about 0.9%), not the clock (seed 74's clock test): the JIT
-   designs - re-measured / in-run 1.070, the rest 1.012; bubble and sieve most - under the run's load most likely. The
-   test that would decide: the front re-measured four at a time against one (--remeasure with workers, a small patch).
-4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 74: 2 designs
-   rely on it).
-5. The JIT genes' place: their votes count (rule 12). Seed 74: JIT designs 50 of 238, all of the fastest tenth; jitmul
-   25, jitfuse 5, jitexec 1; jitos none (534 fails); jitrp a freeze candidate (above).
+   74 (10 hours; hypervolumes 0.35667, 0.34851; seed 75 gained by the fastest, 0.1363), the earliest stop after seed 77;
+   then the confirmation run, the final set, the random-search baseline (its mode drafted and tested:
+   results/drafts/random-mode-548.patch, applied at consolidation).
+3. The fast end's offset (rule 3; seeds 73-75 1.070, 1.066, 1.047 - PASS at 75) - results/drafts/fast-end-offset-550.md:
+   not luck, not the clock (the clock tests of 74 and 75). Seed 75's, with cycles: the user-space cycle ratio unmoved
+   (1.001) where the time moved 1.1-1.6% - what varies lies outside user space, and a fixed cost there weighs most at the
+   fast end (a lead: results/evolve-amd-ryzen-7-pro-8840hs-seed75.md). Tests that would decide, each a small patch, the
+   owner's call: the clock test's user and system times apart (rusage); the front re-measured four at a time against one
+   (--remeasure with workers).
+4. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE every run - "rtfuse governs" waits on the owner (seed 75: no design
+   relies on it).
+5. The JIT genes' place: their votes count (rule 12). Seed 75: JIT designs 94 of 266, all 26 of the fastest tenth;
+   jitmul 55, jitfuse 19, jitexec 1, jitos 43 (back - seed 74 none), jitrp 24; jitdoes, jitrp and jitret freeze
+   candidates (above).
 6. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
 7. The article, after consolidation: the claim is the integration, not any technique
-   (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts; across machines the
-   fast end as a band, the fastest named per machine (results/drafts/xcheck-agreement-546.md). The method section
-   drafted (results/drafts/article-method-548.md).
+   (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts (seeds 53-75:
+   results/truefronts-seed75.md, results/progress-true-fronts.md); across machines the fast end as a band, the fastest
+   named per machine (results/drafts/xcheck-agreement-546.md). The method section drafted
+   (results/drafts/article-method-548.md).
 
 ## Conventions - tokens (the owner, Iteration 542)
 

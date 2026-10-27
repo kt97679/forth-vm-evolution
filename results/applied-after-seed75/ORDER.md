@@ -2,8 +2,8 @@
 
 Prepared while seed 75 runs; master stays what seed 75's bundle tests.
 
-    git apply results/pending/truefronts-reported-after-seed75.patch
-    git apply results/pending/process-tools-after-seed75.patch
+    git apply results/applied-after-seed75/truefronts-reported-after-seed75.patch
+    git apply results/applied-after-seed75/process-tools-after-seed75.patch
 
 batch-check (550): PASS with the first. Again with both (551): PASS.
 

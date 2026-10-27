@@ -13,6 +13,10 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 553 (seed 75 processed): seed 76, 10 hours - the method's, the stopping count's third run. Seed 75 gained by
+# the speed extreme alone (0.1363 against 0.1402, past 2%; the hypervolume 2.3% below), so seed 76 cannot end the count -
+# the earliest stop is after seed 77. The after-seed-75 batch applied (the processing tools; nothing a run uses). The clock
+# test and truefronts done, out of the line - no perf hold; the offset's deciding tests the owner's call.
 # Iteration 549 (seed 74 processed): seed 75, 10 hours - the method's, the stopping count's second run. The
 # after-seed-74 batch applied: fail32 knows cpt16's reach; the clock test takes the chain's perf hold - sudo asks once,
 # at the start; the progress table counts the front; truefronts.py, last - every seed pack's true front; a running
@@ -90,4 +94,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 75 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8 then experiment truefronts.py
+seed 76 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16

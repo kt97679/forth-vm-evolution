@@ -22,7 +22,7 @@ returned seed" (HANDOFF.md), with these:
 5. **jitrp**: a freeze candidate since seed 74 (12 of 12, no keep vote) - the owner's; a freeze restarts the count.
 6. **Rule 3**: ATTENTION expected - the JIT designs read faster under the run's load (fast-end-offset-550.md). Rule 5:
    cpt16's reach now named expected (the fail32 patch).
-7. **The after-seed-75 batch** (results/pending/ORDER.md): one patch, truefronts.py's reported column - batch-check,
+7. **The after-seed-75 batch** (results/applied-after-seed75/ORDER.md): one patch, truefronts.py's reported column - batch-check,
    then apply.
 8. **Seed 76's line**, 10 hours, the method's: `seed 76 10h widths noevolved then experiment review-checks.py spread
    then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16` - the clock test and truefronts done; the

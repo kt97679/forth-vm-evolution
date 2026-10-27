@@ -1011,3 +1011,18 @@ effect sizes - its fixed-box hypervolume within 1% of 0.35667 or below it, and n
 binary + image 1%, memory 4 KB, the 32-bit speed 2%). The fronts have moved little since seed 71 (results/drafts/
 xcheck-agreement-546.md; the spreads of sessions 59-61).
 
+
+**Scored at seed 75 (Iteration 553): fails.** The hypervolume 0.34851, 2.3% below 0.35667 - that half holds; but the
+fastest, 4c9c2d9075 0.1363 against 0.1402, is 2.8% faster, past the 2% threshold (its end-of-run re-measure 0.1371 too).
+The smallest 14,095, the least memory 112 KB, the fastest at 32 bits 0.1723 (1.0%) - none past theirs. Seed 75 gains:
+seed 76 cannot end the count.
+
+## Seed 76, the stopping count's third run - predicted (Iteration 553)
+
+On the method seed 74 began (10 hours; nothing frozen): seed 76 gains nothing by GOALS.md's effect sizes against the
+best of seeds 74-75 - its fixed-box hypervolume below 0.36024 (1% above seed 74's 0.35667), its fastest above 0.1336 (2%
+under seed 75's 0.1363), the smallest above 13,938 bytes, the least memory above 108 KB, the fastest at 32 bits above
+0.1688. Each run on the method starts from scratch (noevolved, nocarry), so seed 76's extremes are fresh draws, and the
+bests to beat are already the lucky ones: the fastest of seeds 73-75 read 0.1399, 0.1402, 0.1363, the hypervolume
+0.34915, 0.35667, 0.34851 - each threshold lies about two of those spreads past its best. If it holds, seed 77 can end
+the count.

@@ -76,7 +76,7 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
 - **Superinstructions kept for now** (Iteration 389), though they buy nearly nothing: 0.27% of dispatches with the
   JIT off, 0.9% with it on, bytes either way (results/supers-knockout-seed58.md).
 
-## The state through Iteration 544 (history - HANDOFF.md has the present)
+## The state through Iteration 553 (history - HANDOFF.md has the present)
 
 - **The runs**: **seed 73 processed (Iteration 544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222
   (reported 174, 61 in both); no comparison in its chain - the spread at generation 102 level with 71-72; the fixed-box
@@ -239,6 +239,15 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
 - **The method since Iteration 386** (results/review-methodology-386.md, its proposals all done or queued; the
   follow-ups verdict-audit-388.md, convergence-seed58.md, tools-audit-394.md): the verdict from both CPUs, the fast
   gate, heldout's top-end lines, review-checks.py's progress and spread, process-seed.sh and batch-check.sh.
+- **Seed 74 processed (Iteration 549)** - results/evolve-amd-ryzen-7-pro-8840hs-seed74.md: the reported front the true
+  one (238; the old staircase 144 - prediction 527 holds); the fixed-box hypervolume 0.35667, the stopping series'
+  first on the method; one round first holds (529); adaptive operators (526) and jitos (534) fail; the clock test: the
+  offset does not follow the clock. Its chain came back "failed" - the experiments failed at their packing, their
+  reports whole (Iteration 541's cleanup; fixed by the after-seed-74 batch's chain-logs patch).
+- **The after-seed-75 batch** (Iterations 550-551, applied at 553 - results/applied-after-seed75/ORDER.md):
+  truefronts.py's reported column; the processing scripted - draft-results.py, process-checks.sh. Its first batch-check
+  at 553 failed in a fresh sandbox without gcc-multilib (the generators test refuses an 8-byte-only build); with it,
+  PASS.
 
 ## Open items (Iteration 505's list)
 
