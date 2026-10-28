@@ -10231,3 +10231,9 @@ ledger (the extremes exact where they moved, the hypervolume every 10 generation
 the curve is computed detached: stopping.py --curve, 204 s for seed 77, in process-run.sh). Seed 78 at about 120
 generations gains on the hypervolume >= 0.34447, the fastest <= 0.1394, the smallest <= 13,910. Self-tests: stopping.py
 30 checks. Files: results/pending/ (ORDER.md, the two patches), results/drafts/seed78-checklist-561.md.
+
+**Later in Iteration 562 - the confirmation run's founders prepared** (the owner, 559: no good design missed):
+carry-after-seed78.patch - --carry takes each database's strict front (seed 77: 1,419 against the tolerance front's 370),
+the designs carry-named.txt names (44aaae552d, seed 77's applications' fastest, on no strict front), NEXT-RUN's
+"carryall", and carry-check.py - the pool sized and a sample built against s6 (seed 77: 1,420 designs, 6 of 6 right).
+Nothing changes for the series' runs (noevolved). Files: results/pending/, results/drafts/confirmation-pool-559.md.

@@ -5,9 +5,9 @@ applies it by hand this once - results/drafts/seed78-checklist-561.md - and proc
 
     git apply results/pending/process-after-seed78.patch
     git apply results/pending/stopping-matched-after-seed78.patch
+    git apply results/pending/carry-after-seed78.patch
 
-batch-check (562, on 34e4681 - the patches as they stand): PASS - both applied to a fresh clone, run-tests PASS,
-validate 7 of 7 IDENTICAL, the jail PASS.
+batch-check (562, the three patches): below.
 
 **process-after-seed78.patch** (lab/evolve/process-run.sh, process-finish.sh, draft-results.py, process-records.sh - refuses a move onto an existing applied-after-seedN/; tools/setup-sandbox.sh,
 wait-for.sh; process-run.sh computes the run's curve for the stopping rule, detached (562); HANDOFF.md, HANDOFF-PROMPT.md, HANDOFF-REFERENCE.md, README.md, lab/evolve/README.md) - **a processing in three
@@ -37,3 +37,15 @@ stopping.py 30 checks, hv.py's. The 9-hour series line goes; the series from see
 its curve - seed 78 its second run; it gains, by its last generation (about 120 at 9 hours), on the hypervolume >=
 0.34447, the fastest <= 0.1394 or the smallest <= 13,910 (at 160: 0.35325, 0.1378, 13,875; memory <= 104 KB and 32-bit
 <= 0.1668 throughout).
+
+**carry-after-seed78.patch** (lab/evolve/evolve.py, next-run.sh, carry-check.py, carry-named.txt, README.md) - **the
+confirmation run's founders, no good design missed** (the owner, 559; results/drafts/confirmation-pool-559.md, steps
+1-4). --carry takes each database's strict front - no tolerance - at its own widths (evolve.py's carry_pool, shared with
+the pre-flight): seed 77's 1,419 designs against its tolerance front's 370. carry-named.txt: five designs named
+elsewhere (dream's fastest of the rejected, the held-out fastest of seeds 75-77, seed 77's applications' fastest),
+carried where a database has them and no front did - 44aaae552d, the applications' fastest, is on no strict front.
+NEXT-RUN's "carryall": every archived database, not the newest four. carry-check.py: the pool sized (seed 77 alone:
+1,420 designs, 0.4 hours of generation 0; seeds 71-79 about ten thousand, about 3 hours) and a sample built here against
+s6 - on seed 77: 6 of 6 right (the four extremes, the named one, one by speed). The series runs noevolved and never
+carries: nothing changes for seeds 78-79, the count untouched.
+

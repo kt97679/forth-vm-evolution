@@ -13,6 +13,11 @@ with the run's own; no cap. Its filter (status ok, a speed, a size) keeps every 
 fastest, down to 0.1383; its strict front 1,296 designs against 262. Carried as it is, the confirmation run would leave
 them out.
 
+**Prepared (Iteration 562)**: steps 1, 3 and 4 in the after-seed-78 batch (carry-after-seed78.patch); step 2 is the
+confirmation run's NEXT-RUN line - `seed N HOURS widths carryall` (no noevolved), with `then experiment carry-check.py
+--all` in the line of the run before it, so the pool is pre-flighted on the laptop's every archive; step 5 is its
+processing.
+
 **The plan, before the confirmation run:**
 1. --carry takes each database's strict front (no tolerance) - a patch. The series runs with noevolved and never
    carries, so it waits until then without touching the count.

@@ -1,0 +1,216 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 7c102d1..35f41b4 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -40,6 +40,8 @@ is the evolver's development history, phase by phase, then iteration by iteratio
+ - `process-run.sh` ITERATION [ARCHIVE] - a returned seed's processing, its mechanical part, one detached job (Iteration 560): process-seed.sh, draft-results.py, the batch checked and applied (git apply --index), process-checks.sh, and the control - a death right on master rebuilt on the commit before the batch; /tmp/process-run/status.
+ - `process-finish.sh` N ITERATION [--dry] - the processing finished (Iteration 560): every check passed, the chain line filled, no TODO, process-records.sh, the chat's records there, then the commit and the bundle; stops naming what is wrong or missing.
+ - `process-records.sh` - HANDOFF's step 6, its mechanical part, in one command (Iteration 560): the applied batch moved to results/applied-after-seedN/ (only when every patch is applied) with its citations, the progress table, the gene votes and the stopping line appended (each once), and with NEXT_METHOD the next series' method line.
++- `carry-check.py` [DB...] [--all] [--sample N] - the confirmation run's founders pre-flighted (Iteration 562): the pool --carry makes (evolve.py's carry_pool - each database's strict front and the named designs), its size and generation 0's hours, and a sample built here and run on the corpus against s6; exit 1 on one wrong. An experiment step: `then experiment carry-check.py --all`.
++- `carry-named.txt` - designs named elsewhere (each machine's fastest, the held-out and application bests), carried in where a database has them and no front did (Iteration 562).
+ - `deaths-check.py` - a returned seed's deaths and wrong outputs rebuilt on this tree, each against s6's output (Iteration 560): the expected causes listed, not rebuilt; exit 1 on one still wrong - an open correctness issue. process-checks.sh runs it after ans-check.
+ - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
+ - `footprint-gen.py` - a held-out program whose code footprint grows (N [--calls T] [--defs-only]): N words in levels, run round-robin, a checksum (Iteration 370; results/generalization.md)
+diff --git a/lab/evolve/carry-check.py b/lab/evolve/carry-check.py
+new file mode 100644
+index 0000000..191d1bf
+--- /dev/null
++++ b/lab/evolve/carry-check.py
+@@ -0,0 +1,59 @@
++#!/usr/bin/env python3
++"""lab/evolve/carry-check.py [DB...] [--all] [--sample N] - the confirmation run's founders pre-flighted, before its run
++(Iteration 562; results/drafts/confirmation-pool-559.md, steps 2-4). The pool evolve.py --carry makes of the databases
++(carry_pool: each one's strict front, and the designs carry-named.txt names): its size database by database, where each
++named design was found, and the hours its generation 0 costs (about a second a design). Then a sample built with this
++tree and run on the corpus against s6 - each database's four extremes, every named design, the rest spread by speed, N
++in all (default 40) - so a genome the code has moved under (the JIT's hole fix, the lifted freezes) is caught before the
++run, not in it. --all: every archived database beside the first archived one given (an experiment step gets only the
++newest four), and the run's own. Markdown on stdout; exit 1 on a design that differs or dies. As the build user, in a
++built tree; an experiment step: `then experiment carry-check.py --all`.
++"""
++import collections, glob, os, shutil, sys
++a = sys.argv[1:]
++N = int(a[a.index('--sample') + 1]) if '--sample' in a else 40
++dbs = [x for x in a if x.endswith('.jsonl')]
++sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
++if '--all' in a:
++    arch = [x for x in dbs if '/archived-' in x]
++    if arch: dbs = sorted(set(dbs) | set(glob.glob(arch[0].split('/archived-')[0] + '/archived-*/build/evolve/db*.jsonl')))
++if not dbs: sys.exit(__doc__)
++named = dict(l.split(None, 1) for l in open(E.NAMED) if l.strip() and not l.startswith('#')) if os.path.exists(E.NAMED) else {}
++pool = E.carry_pool(dbs, named=named)
++lab = lambda how: how.split(' from ', 1)[1].rsplit(': ', 1)[0]
++by = collections.defaultdict(list)
++for x in pool: by[lab(x[1])].append(x)
++print('# The confirmation run\'s founders, pre-flighted (carry-check.py)\n')
++print('%d designs from %d databases - generation 0 about %.1f hours of the run at a second a design.\n' % (len(pool), len(dbs), len(pool) / 3600.0))
++print('| database | new designs in the pool |\n|---|---|')
++for k in sorted(by): print('| %s | %d |' % (k, len(by[k])))
++ids = {x[2]['id']: x for x in pool}
++print('\n**The named designs**: ' + '; '.join('%s %s' % (i, 'named, carried' if i in ids and ids[i][1].startswith('named') else
++      'on a front' if i in ids else 'in no database given, or already carried as another') for i in sorted(named)) + '.\n')
++pick, seen = [], set()
++def add(x):
++    if x[2]['id'] not in seen: seen.add(x[2]['id']); pick.append(x)
++for k in sorted(by):                   # each database's four extremes
++    for f in ('speed', 'total', 'rss', 'speed32'):
++        c = [x for x in by[k] if x[2].get(f)]
++        if c: add(min(c, key=lambda x: E.ov(x[2], f)))
++for x in pool:
++    if x[1].startswith('named'): add(x)
++rest = sorted((x for x in pool if x[2]['id'] not in seen), key=lambda x: x[2]['speed'])
++k = max(1, len(rest) // max(1, N - len(pick)))
++for x in rest[::k]:
++    if len(pick) >= N: break
++    add(x)
++E.setup(); E.run_metric(*E.REF, 'corpus'); ref = E.OUT_LAST[0]; bad = 0
++print('The sample - %d designs, each built here and run on the corpus:\n\n| design | from | its speed there | here |\n|---|---|---|---|' % len(pick))
++for g, how, r in pick:
++    d = os.path.join(E.EV, 'carry-check'); shutil.rmtree(d, ignore_errors=True)
++    try:
++        eng, img = E.build(g, d); E.run_metric(eng, img, E.private_work(d), 'corpus')
++        here = 'right - as s6' if E.OUT_LAST[0] == ref else 'DIFFERS from s6'
++    except Exception as x:
++        here = 'DIES here: %s' % str(x)[:80]
++    shutil.rmtree(d, ignore_errors=True); bad += not here.startswith('right')
++    print('| %s | %s | %.4f | %s |' % (r['id'], how.split(': ')[0], r['speed'], here), flush=True)
++print('\ncarry-check: %d of %d sampled compute right here; %d open' % (len(pick) - bad, len(pick), bad))
++sys.exit(1 if bad else 0)
+diff --git a/lab/evolve/carry-named.txt b/lab/evolve/carry-named.txt
+new file mode 100644
+index 0000000..f6a2d60
+--- /dev/null
++++ b/lab/evolve/carry-named.txt
+@@ -0,0 +1,7 @@
++# lab/evolve/carry-named.txt - designs named elsewhere, carried in where a database has them and no front did
++# (Iteration 562; results/drafts/confirmation-pool-559.md, step 3 - evolve.py's carry_pool). One a line: the id, why.
++3d4e860a9f the fastest on dream of the designs the laptop rejected (results/xcheck-seed76.md)
++b502af976b seed 75's held-out fastest (sieve - heldout.py)
++2cbc366040 seed 76's held-out fastest (sieve - heldout.py)
++ce3cd13f29 seed 77's held-out fastest (sieve - heldout.py)
++44aaae552d seed 77's fastest on the applications (appbench)
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index b03a751..a29fc76 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1624,6 +1624,38 @@ def fronts(ids, R):
+     left = [i for i in ids if i not in placed]
+     return F + [left] if left else F
+ 
++NAMED = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'carry-named.txt')
++
++def carry_pool(paths, have=(), named=None):
++    """--carry's designs (Iteration 562 - the confirmation run's founders, results/drafts/confirmation-pool-559.md):
++    each database's strict front by its own records - no tolerance, for the tolerance front's dominance chain lost
++    seed 76's 105 fastest (seed 77: 1,419 strict against 370) - at its own widths, and the designs carry-named.txt names
++    where a database has them and no front did. Sorted by database, so a resumed run makes the same first generation;
++    no genome twice, none already in have. [(genome, how, record)]; carry-check.py pre-flights the same pool."""
++    global SPEED_TOL, MEM_TOL
++    if named is None:
++        named = dict(l.split(None, 1) for l in open(NAMED) if l.strip() and not l.startswith('#')) if os.path.exists(NAMED) else {}
++    out, have, keep = [], set(have), (SPEED_TOL, MEM_TOL, TWO_WIDTHS[0])
++    try:
++        SPEED_TOL = MEM_TOL = 0.0
++        for path in sorted(paths):
++            C = {}
++            for l in open(path, errors='replace'):
++                try: r = json.loads(l)
++                except ValueError: continue
++                if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
++            label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
++            TWO_WIDTHS[0] = sum(1 for r in C.values() if r.get('speed32')) * 2 > len(C)     # an older run: one width
++            ids = [i for i in C if C[i].get('speed32')] if TWO_WIDTHS[0] else list(C)
++            for i, how in [(i, 'carried from %s: %s') for i in first_front(ids, C)] + [(i, 'named, carried from %s: %s') for i in sorted(named) if i in C]:
++                g = canon(require(C[i]['genome']))
++                if gid(g) in have: continue
++                # re-encoded (--require), it is a new design: this run's, not its origin's
++                have.add(gid(g)); out.append((g, ('tag 2 of %s: %s' if gid(g) != i else how) % (label, i), C[i]))
++    finally:
++        SPEED_TOL, MEM_TOL, TWO_WIDTHS[0] = keep
++    return out
++
+ def first_front(ids, R):
+     """fronts(ids, R)[0] - the same designs, in the same order - without
+     comparing every pair (Iteration 99: a 12-hour run makes ~90,000 designs,
+@@ -2287,21 +2319,9 @@ def main(argv):
+     # design of the run. Sorted, so a resumed run makes the same first
+     # generation; no random draw is spent, so the seed's draws are as before.
+     if '--carry' in argv and not FROMZERO:
+-        carried, have = [], set(pop)
+-        for path in sorted(p for p in argv[argv.index('--carry') + 1].split(',') if p):
+-            C = {}
+-            for l in open(path):
+-                try: r = json.loads(l)
+-                except ValueError: continue
+-                if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
+-            label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
+-            for i in first_front(list(C), C):
+-                g = canon(require(C[i]['genome']))
+-                if gid(g) in have: continue
+-                # re-encoded (--require), it is a new design: this run's, not its origin's
+-                have.add(gid(g)); carried.append((g, ('tag 2 of %s: %s' if gid(g) != i else 'carried from %s: %s') % (label, i)))
+-        print('  carried in: %d designs, the fronts of %d databases' % (len(carried), len(argv[argv.index('--carry') + 1].split(','))), flush=True)
+-        pop += [get(g, [], how, 0) for g, how in carried]
++        carried = carry_pool([p for p in argv[argv.index('--carry') + 1].split(',') if p], set(pop))   # Iteration 562
++        print('  carried in: %d designs, the strict fronts of %d databases and the named designs they hold' % (len(carried), len(argv[argv.index('--carry') + 1].split(','))), flush=True)
++        pop += [get(g, [], how, 0) for g, how, _ in carried]
+     while len(pop) < N:                 # (from zero, already full)
+         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
+         pop.append(get(g, [], 'seeded ' + how, 0))
+diff --git a/lab/evolve/next-run.sh b/lab/evolve/next-run.sh
+index d6a9254..bc6cab0 100755
+--- a/lab/evolve/next-run.sh
++++ b/lab/evolve/next-run.sh
+@@ -148,7 +148,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
+     [ -n "$THEN" ] || return 0
+     echo; say "then: $THEN"
+     exec 9>&-
+-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS
++    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS
+     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
+ }
+ # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
+@@ -171,6 +171,10 @@ case " $* " in *" fromzero "*) FROMZERO=1; NOCARRY=1; set -- $(printf '%s\n' "$@
+ # anchoring test as seed 36 ran it, before those founders existed.
+ NOEVOLVED=${NEXT_RUN_NOEVOLVED:-}
+ case " $* " in *" noevolved "*) NOEVOLVED=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx noevolved) ;; esac
++# Iteration 562: "carryall" - every archived database carried, not the newest four (the confirmation run's founders,
++# results/drafts/confirmation-pool-559.md; each one's strict front and the named designs - evolve.py's carry_pool).
++CARRYALL=${NEXT_RUN_CARRYALL:-}
++case " $* " in *" carryall "*) CARRYALL=1; set -- $(printf '%s\n' "$@" | grep -vx carryall) ;; esac
+ # Iteration 436 (the owner; results/drafts/escape-mechanism-435.md): "islands" - the population in four islands, each
+ # ranked and bred alone, a ring of migrants every 10 generations (evolve.py --islands 4).
+ # Iteration 464: carried through the detach (NEXT_RUN_ISLANDS), as noevolved and widths are - without it the detached
+@@ -245,7 +249,7 @@ fi
+ HEAD=$(git rev-parse --short HEAD)
+ RUN=$RUNS/seed$SEED-$HEAD
+ STATE=build/evolve/next-run.state
+-WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${ISLANDS:+ islands} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
++WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${CARRYALL:+ carryall}${ISLANDS:+ islands} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+ if [ "$KIND" = experiment ]; then
+     NAME=${TOOL%.py}
+     RUN=$RUNS/$NAME-$HEAD
+@@ -296,12 +300,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
+     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
+     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
+     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
+-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
++        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+         say "going on in the background, as one chain - watch it with"
+         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
+         exit 0
+     fi
+-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
++    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+     exit 0
+ fi
+ MODE=$NEXT_RUN_DETACHED
+@@ -482,7 +486,7 @@ fi
+ # Iteration 63: the newest CARRY_LAST archived databases (default 4; 0: all),
+ # as the comparison - the older fronts are dominated, and carrying them
+ # cost minutes of every run's first generation (188 designs in seed 15).
+-CLAST=${CARRY_LAST:-4}
++CLAST=${CARRY_LAST:-4}; [ -z "$CARRYALL" ] || CLAST=0
+ n=$(archives | wc -l)
+ skip=0; if [ "$CLAST" -gt 0 ] && [ "$n" -gt "$CLAST" ]; then skip=$((n - CLAST)); fi
+ CARRY=""; i=0

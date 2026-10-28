@@ -139,7 +139,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop; from seed 77 one series matched by generation, the hours free (562), the earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -
-   results/drafts/confirmation-pool-559.md: --carry to take each run's strict front (today's tolerance front drops
+   results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
+   designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
 3. **Correctness - the JIT's value holes fixed, applied (560)**: the after-seed-77 batch (results/drafts/corpus-deaths-555.md,
    jit-sweep-558.md); seed 77's one corpus death the same fault - wrong before the fix, right after (deaths-check.py's control).
