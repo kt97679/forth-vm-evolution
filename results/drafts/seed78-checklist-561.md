@@ -7,7 +7,8 @@ The first processing with process-run.sh; it comes in the after-seed-78 batch (r
 2. As claude in /home/claude/forth-vm-evolution: `sh tools/batch-check.sh` detached, PASS; then each patch ORDER.md
    names (the stopping one only if the owner said yes) with `git apply --index`, and `git commit -m "Iteration N: the
    after-seed-78 batch applied - K patches (...), batch-check PASS"`.
-3. `setsid nohup sh lab/evolve/process-run.sh N > /dev/null 2>&1 &` - it finds the batch applied; then HANDOFF.md's
+3. `setsid nohup sh lab/evolve/process-run.sh N > /dev/null 2>&1 &` - early in a turn, and seen to DONE in it: a
+   detached job dies when the turn ends (561; cut off: FROM=checks resumes it at the checks). It finds the batch applied; then HANDOFF.md's
    routine: wait-for.sh, summary.md, the judgment, process-finish.sh.
 
 What to judge:

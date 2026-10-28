@@ -122,10 +122,10 @@ index aaac603..8b87f10 100644
  
  - A rehearsal reaches what a test of variants does not: the tail variants were built on s6, not on the two-bit tag, and
 diff --git a/HANDOFF.md b/HANDOFF.md
-index b8c4f78..9d707e7 100644
+index b8c4f78..34fdfc8 100644
 --- a/HANDOFF.md
 +++ b/HANDOFF.md
-@@ -62,55 +62,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
+@@ -62,55 +62,22 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
  
  ## Processing a returned seed
  
@@ -189,6 +189,8 @@ index b8c4f78..9d707e7 100644
 +   and judge while the rest runs: the stopping rule (stopping.py; GOALS.md), the verdict from both CPUs, the predictions
 +   scored and the next written (results/predictions.md), the results file's TODO lines, the spread's session; NEXT-RUN
 +   (the owner's hours), this card, the PROGRESS entry. Run nothing as claude while the status's last line says "jail".
++   A detached job dies when the turn ends (the sandbox suspends; /tmp stays - 561): start it early, see it to DONE in
++   the same turn; cut off, `FROM=checks` resumes it at the checks.
 +3. At DONE: `sh lab/evolve/process-finish.sh N ITERATION` - it stops naming anything wrong or missing (a check, a TODO, a
 +   record); fixed, run it again. It writes the chain line, runs process-records.sh (`NEXT_METHOD='why'` when the next
 +   run changes the method), commits and makes the bundle: present it.
@@ -344,10 +346,10 @@ index 1862ec3..45d4a17 100755
          "s|results/pending/\([A-Za-z0-9._-]*-after-seed$N\.patch\)|results/applied-after-seed$N/\1|g; s|results/pending/ORDER\.md|results/applied-after-seed$N/ORDER.md|g"
 diff --git a/lab/evolve/process-run.sh b/lab/evolve/process-run.sh
 new file mode 100755
-index 0000000..50cf86d
+index 0000000..5c33179
 --- /dev/null
 +++ b/lab/evolve/process-run.sh
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,70 @@
 +#!/bin/sh
 +# lab/evolve/process-run.sh ITERATION [ARCHIVE] - a returned seed's processing, its mechanical part, as one detached job
 +# (Iteration 560; HANDOFF.md, "Processing a returned seed"). In order, each step's line in /tmp/process-run/status:
@@ -364,14 +366,22 @@ index 0000000..50cf86d
 +#   then: sh tools/wait-for.sh /tmp/process-run/status 'summary|DONE|STOP'   (summary.md is ready at "summary")
 +# Judge while it runs (summary.md; the results file's header - never run anything as this user once the status says
 +# "jail - alone"); at DONE: sh lab/evolve/process-finish.sh N ITERATION. As the build user, never root.
++# A detached job dies when the chat's turn ends - the sandbox suspends, /tmp stays (Iteration 561: a test cut off at
++# its run-tests). Start it early in a turn and see it to DONE; cut off: FROM=checks resumes at step 4 - /tmp/process and
++# the drafts kept, the chat's edits to them too - and with the batch already applied.
 +set -u
 +I=${1:?ITERATION}; A=${2:-$(ls /mnt/user-data/uploads/forth-vm-evolution-chain-*_tar.gz 2>/dev/null | tail -1)}
 +cd "$(dirname "$0")/../.." || exit 1
 +O=/tmp/process-run; mkdir -p "$O"; S=$O/status; : > "$S"
 +st() { echo "$* $(date +%T)" >> "$S"; }
 +die() { st "STOP - $*"; exit 1; }
++if [ "${FROM:-}" = checks ]; then                                 # 561: a cut-off run resumed at the checks
++    ls /tmp/process/*-seed[0-9]*-*/pack/db.jsonl > /dev/null 2>&1 || die "FROM=checks: no /tmp/process - run it whole"
++    [ ! -d results/pending ] || [ -n "$(git log --format=%h -1 --grep='batch applied')" ] || die "FROM=checks: a batch waits unapplied"
++    st "START again from the checks at $(git rev-parse --short HEAD)"
++else
 +[ -f "$A" ] || die "no chain archive (ARCHIVE, or forth-vm-evolution-chain-*_tar.gz in /mnt/user-data/uploads)"
-+[ -z "$(git status --porcelain -- engine forth tools lab results)" ] || die "the tree has changes - commit or stash them first"
++[ -z "$(git status --porcelain -- engine forth tools lab results)" ] || die "the tree has changes - commit or stash them first (cut off after its drafts: FROM=checks)"
 +st "START $(basename "$A") at $(git rev-parse --short HEAD)"
 +sh lab/evolve/process-seed.sh "$A" > "$O/process-seed.log" 2>&1 || die "process-seed.sh (process-seed.log)"
 +st "summary - /tmp/process/summary.md: $(tail -n 1 "$O/process-seed.log")"
@@ -396,6 +406,9 @@ index 0000000..50cf86d
 +    git commit -q -m "Iteration $I: the after-seed-$N batch applied - $(echo $P | wc -w) patches ($(for p in $P; do basename "$p" -after-seed$N.patch; done | tr '\n' ' ' | sed 's/ $//; s/ /, /g')), batch-check PASS" || die "the batch's commit"
 +    st "applied - $(git log --oneline -1 | cut -c1-120)"
 +fi
++fi                                                                # the FROM=checks branch's end
++N=$(ls -d /tmp/process/*-seed[0-9]*-* | sed -n 's/.*-seed\([0-9]*\)-.*/\1/p' | head -n 1)
++[ -n "${PRE:-}" ] || { C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied"); [ -z "$C" ] || PRE=$(git rev-parse --short "$C^"); }
 +R=$(grep -o 'results/evolve-[^ ]*-seed[0-9]*\.md' "$O/draft.log" | head -1)
 +st "checks - process-checks.sh $R (its status /tmp/process-checks/status)"
 +sh lab/evolve/process-checks.sh "$R" > /dev/null 2>&1

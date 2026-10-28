@@ -15,7 +15,13 @@ passed or it stops, the chain line, no TODO, process-records.sh, the chat's reco
 draft-results.py drafts the facts the chat typed (held out, the curse, progress, votes, rules, lifted, 32 bits, the
 clock cost, the deaths); wait-for.sh polls. HANDOFF.md's routine three commands, its detail moved to HANDOFF-REFERENCE.md.
 Tested: process-finish.sh --dry on seed 77's checks (PASS, and a planted TODO stops it); setup-sandbox.sh fresh and
-again; draft-results.py on seed 77's process output; process-run.sh whole - below.
+again; draft-results.py on seed 77's process output; and the whole path the checklist gives, on a clone of master with the
+batch applied by hand and seed 77's archive (561): process-run.sh exit 0 - the batch found applied, build, run-tests PASS,
+validate 7 of 7, the gate 417 of 417, ans-check 0 of 96 differ, deaths-check 1 of 1 right, the jail PASS; the control at
+4256111 (before the hole fix) 0 of 1 right - 560's control by hand, reproduced by the script; process-finish.sh --dry
+stopped on a TODO left, then (filled) wrote the chain and control lines and stopped at process-records.sh's new guard
+(applied-after-seed77/ exists - the archive was seed 77's). The first try was cut off at run-tests: the sandbox suspends
+between turns and a detached job dies - so process-run.sh FROM=checks resumes at the checks (and HANDOFF.md says it).
 
 **stopping-gen-after-seed78.patch** (lab/evolve/hv.py, stopping.py; GOALS.md; results/stopping-series.md) - **every run
 judged at generation 100 - the owner's yes needed before it is applied.** The owner (561): the hours vary with his
