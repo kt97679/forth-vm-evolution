@@ -10211,3 +10211,11 @@ Seed 78 at 9 hours (the owner): a new series. Scripted: lab/evolve/process-recor
 process-checks step); draft-results.py reads the spread's generation (it printed 102). Files: results/evolve-amd-ryzen-7-
 pro-8840hs-seed77.md, results/xcheck-seed77.md, results/applied-after-seed77/, session 64, results/predictions.md,
 results/stopping-series.md, results/gene-votes.md, results/progress-by-run.md.
+
+## Iteration 561 - 2026-10-28 - Claude
+
+**The after-seed-78 batch** (the owner: every repeatable action a script; the hours vary with his days): a processing in
+three commands - process-run.sh, process-finish.sh, tools/setup-sandbox.sh, wait-for.sh; draft-results.py drafts the
+facts; HANDOFF.md's routine 205 lines to 170. And every run judged at generation 100 (hv.py --gen, stopping.py's "gen"):
+seed 77 there 0.33872, 0.1435, 14,051, 108 KB - the owner's yes needed. Files: results/pending/ (ORDER.md, two patches),
+results/drafts/seed78-checklist-561.md.

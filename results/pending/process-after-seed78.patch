@@ -1,0 +1,450 @@
+diff --git a/HANDOFF-PROMPT.md b/HANDOFF-PROMPT.md
+index bd50d88..85d086f 100644
+--- a/HANDOFF-PROMPT.md
++++ b/HANDOFF-PROMPT.md
+@@ -32,43 +32,18 @@ not yet processed (forth-vm-evolution-*_tar.gz), and any archive HANDOFF.md's
+ We are continuing my project forth-vm-evolution. Attached: the newest git
+ bundle of the repository, and the packs of any laptop runs not yet processed.
+ 
+-Set up first:
+-
+-0. As root: `apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get
+-   install -y -qq gcc-multilib clang clang-19` - gcc-multilib because the build
+-   makes 4-byte cells too, as the laptop's does; clang because the gene
+-   compiler is offered only where clang is installed; clang-19 for
+-   preserve_none.
+-   Then `[ -e /usr/include/asm ] || ln -s x86_64-linux-gnu/asm /usr/include/asm`
+-   - the 32-bit builds' asm/ headers, where only gcc-13-multilib came in (Iteration 382).
+-   Optional, for tools/arm-qemu-check.sh only: `gcc-arm-linux-gnueabihf qemu-user` - but on Ubuntu it
+-   REMOVES gcc-multilib, and /usr/include/asm with it: every 32-bit build then fails (Iteration 391).
+-   Afterwards `apt-get install gcc-multilib` puts them back (and takes the ARM compiler out).
+-1. Clone as the user claude, into a directory it owns: `cd /home/claude &&
+-   mkdir -p forth-vm-evolution && chown claude:claude forth-vm-evolution &&
+-   runuser -u claude -- git clone /mnt/user-data/uploads/<bundle>
+-   forth-vm-evolution`, and give the clone the owner's identity, which every
+-   commit carries: `runuser -u claude -- git -C forth-vm-evolution config
+-   user.name "Kirill Timofeev" && runuser -u claude -- git -C
+-   forth-vm-evolution config user.email kt97679@gmail.com`. Every git, build
+-   and tool command runs as `runuser -u claude -- ...` (git refuses root on
+-   this tree).
+-2. Build and check, in /home/claude/forth-vm-evolution: `runuser -u claude --
+-   env LAYOUTS=1 bash tools/build-stages.sh`; `runuser -u claude -- bash
+-   tools/run-tests.sh` (PASS - no regressions); `runuser -u claude -- python3
+-   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL). A tool call ends the
+-   jobs it started in the background, and about 300 s is a call's limit:
+-   start anything long with `setsid nohup ... &` and poll it (run-tests takes
+-   about six minutes). A turn also has a budget of tool calls (about fifty).
+-3. Read HANDOFF.md whole - the state card: the state, the routine for a
+-   returned seed, the owner's decisions every session uses, the open items, the
+-   conventions, and what every turn does before it ends; its background
+-   (HANDOFF-REFERENCE.md: the decisions in full, the history, the lessons) on
+-   demand - the lessons before changing the evolver or a measurement - then
+-   GOALS.md (the aim, how success is measured, the
+-   register of rejected ideas: look there before trying one), then
+-   PROGRESS.md's entries after the iteration HANDOFF.md names, then
+-   prompts/INDEX.md. README.md's "Documents" section indexes everything else.
++Set up first (Iteration 560 - tools/setup-sandbox.sh does steps 0-1 of the old list, HANDOFF-REFERENCE.md):
++
++1. As root: `git clone -q /mnt/user-data/uploads/<bundle> /tmp/s && sh /tmp/s/tools/setup-sandbox.sh && rm -rf
++   /tmp/s` - the compilers, the clone as claude in /home/claude/forth-vm-evolution, the owner's identity. Every git,
++   build and tool command after it runs as `runuser -u claude -- ...` (git refuses root on this tree).
++2. A returned seed: HANDOFF.md's "Processing a returned seed" - process-run.sh builds and checks everything. Any other
++   chat: `CHECK=1` before the setup command starts the build, run-tests and validate (`sh tools/wait-for.sh
++   /tmp/setup-check/status DONE`; run-tests PASS, validate 7 of 7 IDENTICAL). A tool call ends near 300 s and a turn
++   has about fifty: anything long goes detached (setsid nohup ... &) and is polled.
++3. Read HANDOFF.md whole - the state card, the routine, the owner's decisions, the open items, the conventions. The
++   rest on demand: HANDOFF-REFERENCE.md (its lessons before changing the evolver or a measurement), GOALS.md (the aim,
++   the stopping rule, the register of rejected ideas - before trying one), PROGRESS.md's newest entries, prompts/INDEX.md.
+ 
+ Please set up, confirm the checks pass, and tell me what you will do next.
+ 
+diff --git a/HANDOFF-REFERENCE.md b/HANDOFF-REFERENCE.md
+index aaac603..8b87f10 100644
+--- a/HANDOFF-REFERENCE.md
++++ b/HANDOFF-REFERENCE.md
+@@ -457,6 +457,58 @@ format-10 words (ops10) are listed past their slots and not built, as are nearly
+ pairs; express() keeps only what is built - a design's identity, and what lab/evolve/seed-facts.py
+ counts - so dormant entries are a neutral reservoir a mutation can promote, not a fault in the reports.
+ 
++## Processing a returned seed - the steps in detail (HANDOFF.md's routine runs them, Iteration 560)
++
++**The tools** (Iteration 551, first used at seed 75's processing - 553): `sh
++lab/evolve/process-seed.sh ARCHIVE`, then `python3 lab/evolve/draft-results.py --iteration N` - the results file, the
++xcheck file and the spread's session drafted, the facts filled in, TODO lines for the verdict, the predictions, the votes
++and the rules (none may be committed); judge and edit; a batch if one waits; then `setsid nohup sh
++lab/evolve/process-checks.sh RESULTS [COMPARE] > /dev/null 2>&1 &` - build, run-tests, validate, the gate, ans-check, the
++jail last - polled until /tmp/process-checks/status says DONE; the records; the bundle. The steps below say what each
++judges.
++
++1. `sh lab/evolve/process-seed.sh <the chain archive>` as claude (Iteration 395): every output in a file under
++   /tmp/process, about a screen in /tmp/process/summary.md - read that, the files only where it points. It covers
++   the pack's own checks (tests PASS, validate 7 IDENTICAL, jail PASS; its results-measured-here.patch is the
++   laptop's own re-measures, not applied), the verdict as printed and from both CPUs, seed-facts.py, heldout.py,
++   review-checks.py progress, curse (the fast end's optimism) and fail32 (the 32-bit failures by cause - Iteration 427)
++   and the remote checks' agreement.
++2. Judge it. On the stopping series (seed 74 on), GOALS.md's stopping rule first - the hypervolume by 1% and each
++   extreme by its threshold, against the best of the method's earlier runs: any one is a gain (553: seed 75's fastest
++   alone) - summary.md's stopping.py section prints it, from the after-seed-76 batch on. Then the verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
++   by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
++   positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
++   (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
++   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all - seed 62's chain runs it on
++   the laptop over seeds 58-62 (its review-checks pack, Iteration 415); here, about 8 minutes for three databases, in
++   the background (results/drafts/preflight-414.md).
++3. Score the predictions, write the next (`results/predictions.md`).
++4. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a `---`, then report.md - the gate and
++   ans-check read genomes from it; results/xcheck-seedN.md from the remote reports.
++5. A batch due now (its ORDER.md says when): `tools/batch-check.sh` first (one line), then apply it (reseed with
++   `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
++   files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
++   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - run it last, after the gate and ans-check, and alone: here
++   it takes the same user's other processes with it - the chain after it at 433 and 441, and at 449 a gate running beside
++   a batch-check's own jail test; nothing may run beside it), `python3
++   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
++   out, the run's front alone - Iteration 427), `python3 lab/evolve/ans-check.py
++   --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
++   minutes. process-checks.sh runs them all, and deaths-check.py (the seed's deaths rebuilt) before the jail.
++6. The records - `sh lab/evolve/process-records.sh N ITERATION` (Iteration 560; `NEXT_METHOD='why'` when the
++   next run changes the method) does the mechanical part below: the batch's move and citations, the progress table, the
++   votes, the stopping line; then the predictions, NEXT-RUN, this file, PROGRESS by hand. By hand, for reference: a batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
++   (Iteration 372: 62 had been left behind):
++   `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
++   (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
++   run: handoff-check names it). A batch queued behind it moves into results/pending/ the same way - its folder
++   renamed, its paths followed (done at 433: the after-seed-63 batch) - and `sh tools/batch-check.sh` runs against the new
++   master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
++   Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
++   lab/evolve/progress-table.py > results/progress-by-run.md`; the gene votes, from seed 63 on (Iteration 432): `python3
++   lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; the stopping series (the after-seed-76 batch on): `python3 lab/evolve/stopping.py <the pack's db.jsonl> --seed N --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
++   chat's turn ends".
++
+ ## Lessons - how faults got in, and the checks that catch them now
+ 
+ - A rehearsal reaches what a test of variants does not: the tail variants were built on s6, not on the two-bit tag, and
+diff --git a/HANDOFF.md b/HANDOFF.md
+index b8c4f78..9d707e7 100644
+--- a/HANDOFF.md
++++ b/HANDOFF.md
+@@ -62,55 +62,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
+ 
+ ## Processing a returned seed
+ 
+-**The tools** (Iteration 551, first used at seed 75's processing - 553): `sh
+-lab/evolve/process-seed.sh ARCHIVE`, then `python3 lab/evolve/draft-results.py --iteration N` - the results file, the
+-xcheck file and the spread's session drafted, the facts filled in, TODO lines for the verdict, the predictions, the votes
+-and the rules (none may be committed); judge and edit; a batch if one waits; then `setsid nohup sh
+-lab/evolve/process-checks.sh RESULTS [COMPARE] > /dev/null 2>&1 &` - build, run-tests, validate, the gate, ans-check, the
+-jail last - polled until /tmp/process-checks/status says DONE; the records; the bundle. The steps below say what each
+-judges.
+-
+-1. `sh lab/evolve/process-seed.sh <the chain archive>` as claude (Iteration 395): every output in a file under
+-   /tmp/process, about a screen in /tmp/process/summary.md - read that, the files only where it points. It covers
+-   the pack's own checks (tests PASS, validate 7 IDENTICAL, jail PASS; its results-measured-here.patch is the
+-   laptop's own re-measures, not applied), the verdict as printed and from both CPUs, seed-facts.py, heldout.py,
+-   review-checks.py progress, curse (the fast end's optimism) and fail32 (the 32-bit failures by cause - Iteration 427)
+-   and the remote checks' agreement.
+-2. Judge it. On the stopping series (seed 74 on), GOALS.md's stopping rule first - the hypervolume by 1% and each
+-   extreme by its threshold, against the best of the method's earlier runs: any one is a gain (553: seed 75's fastest
+-   alone) - summary.md's stopping.py section prints it, from the after-seed-76 batch on. Then the verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
+-   by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
+-   positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
+-   (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
+-   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all - seed 62's chain runs it on
+-   the laptop over seeds 58-62 (its review-checks pack, Iteration 415); here, about 8 minutes for three databases, in
+-   the background (results/drafts/preflight-414.md).
+-3. Score the predictions, write the next (`results/predictions.md`).
+-4. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a `---`, then report.md - the gate and
+-   ans-check read genomes from it; results/xcheck-seedN.md from the remote reports.
+-5. A batch due now (its ORDER.md says when): `tools/batch-check.sh` first (one line), then apply it (reseed with
+-   `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
+-   files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
+-   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - run it last, after the gate and ans-check, and alone: here
+-   it takes the same user's other processes with it - the chain after it at 433 and 441, and at 449 a gate running beside
+-   a batch-check's own jail test; nothing may run beside it), `python3
+-   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
+-   out, the run's front alone - Iteration 427), `python3 lab/evolve/ans-check.py
+-   --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
+-   minutes. process-checks.sh runs them all, and deaths-check.py (the seed's deaths rebuilt) before the jail.
+-6. The records - `sh lab/evolve/process-records.sh N ITERATION` (Iteration 560; `NEXT_METHOD='why'` when the
+-   next run changes the method) does the mechanical part below: the batch's move and citations, the progress table, the
+-   votes, the stopping line; then the predictions, NEXT-RUN, this file, PROGRESS by hand. By hand, for reference: a batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
+-   (Iteration 372: 62 had been left behind):
+-   `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
+-   (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
+-   run: handoff-check names it). A batch queued behind it moves into results/pending/ the same way - its folder
+-   renamed, its paths followed (done at 433: the after-seed-63 batch) - and `sh tools/batch-check.sh` runs against the new
+-   master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
+-   Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
+-   lab/evolve/progress-table.py > results/progress-by-run.md`; the gene votes, from seed 63 on (Iteration 432): `python3
+-   lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; the stopping series (the after-seed-76 batch on): `python3 lab/evolve/stopping.py <the pack's db.jsonl> --seed N --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
+-   chat's turn ends".
++Three commands, the judgment between them (Iteration 560; each step's detail and what it judges: HANDOFF-REFERENCE.md,
++"Processing a returned seed - the steps in detail"):
++
++1. As root, a fresh sandbox: `git clone -q /mnt/user-data/uploads/<bundle> /tmp/s && sh /tmp/s/tools/setup-sandbox.sh
++   && rm -rf /tmp/s` - the compilers, the clone as claude, the identity.
++2. As claude, in the clone: `setsid nohup sh lab/evolve/process-run.sh ITERATION > /dev/null 2>&1 &`, polled with `sh
++   tools/wait-for.sh /tmp/process-run/status 'summary|DONE|STOP'` - the archive unpacked and checked, the results
++   drafted, the batch checked and applied, the checks on master, the control. At "summary" read /tmp/process/summary.md
++   and judge while the rest runs: the stopping rule (stopping.py; GOALS.md), the verdict from both CPUs, the predictions
++   scored and the next written (results/predictions.md), the results file's TODO lines, the spread's session; NEXT-RUN
++   (the owner's hours), this card, the PROGRESS entry. Run nothing as claude while the status's last line says "jail".
++3. At DONE: `sh lab/evolve/process-finish.sh N ITERATION` - it stops naming anything wrong or missing (a check, a TODO, a
++   record); fixed, run it again. It writes the chain line, runs process-records.sh (`NEXT_METHOD='why'` when the next
++   run changes the method), commits and makes the bundle: present it.
+ 
+ ## The owner's standing decisions - the ones every session uses
+ 
+diff --git a/README.md b/README.md
+index 79942dd..449856d 100644
+--- a/README.md
++++ b/README.md
+@@ -132,6 +132,7 @@ the article. Before trying an approach, search `GOALS.md` and
+ chats follows `HANDOFF-PROMPT.md`. A handoff is an `Iteration N:` commit,
+ then `tools/make-bundle.sh DIR`, which runs `tools/handoff-check.py`, names
+ the bundle by `GOALS.md`'s convention and checks that it clones.
++A new sandbox: `tools/setup-sandbox.sh`, as root; a detached job polled: `tools/wait-for.sh` (Iteration 560).
+ 
+ ## Documents - every one
+ 
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 3444f3a..7c102d1 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -37,6 +37,8 @@ GENES.md; running the evolution on the laptop: RUNNING.md; the rest of this file
+ is the evolver's development history, phase by phase, then iteration by iteration.
+ 
+ - `draft-results.py` - a returned seed's results file drafted from process-seed.sh's output (Iteration 551): the facts - records, the true front, the hypervolume, the extremes, one round first, the operators, the JIT designs, the fast end re-measured, the experiments, the remote checks - with TODO lines for the verdict, the predictions, the votes and the rules; also the xcheck file and the spread's session.
++- `process-run.sh` ITERATION [ARCHIVE] - a returned seed's processing, its mechanical part, one detached job (Iteration 560): process-seed.sh, draft-results.py, the batch checked and applied (git apply --index), process-checks.sh, and the control - a death right on master rebuilt on the commit before the batch; /tmp/process-run/status.
++- `process-finish.sh` N ITERATION [--dry] - the processing finished (Iteration 560): every check passed, the chain line filled, no TODO, process-records.sh, the chat's records there, then the commit and the bundle; stops naming what is wrong or missing.
+ - `process-records.sh` - HANDOFF's step 6, its mechanical part, in one command (Iteration 560): the applied batch moved to results/applied-after-seedN/ (only when every patch is applied) with its citations, the progress table, the gene votes and the stopping line appended (each once), and with NEXT_METHOD the next series' method line.
+ - `deaths-check.py` - a returned seed's deaths and wrong outputs rebuilt on this tree, each against s6's output (Iteration 560): the expected causes listed, not rebuilt; exit 1 on one still wrong - an open correctness issue. process-checks.sh runs it after ans-check.
+ - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
+diff --git a/lab/evolve/draft-results.py b/lab/evolve/draft-results.py
+index 73be68f..1b25787 100644
+--- a/lab/evolve/draft-results.py
++++ b/lab/evolve/draft-results.py
+@@ -60,6 +60,18 @@ spread_gen = spread_row.split('|')[2].strip() if spread_row else '?'   # Iterati
+ ab, ck = exp('appbench', r'\*\*Spearman'), exp('clockcheck', r'\*\*Medians'); tf = exp('truefronts', None)
+ remote = sorted(glob.glob(os.path.join(chain, 'remote', '*.md')))
+ rsp = '; '.join('%s %s' % (os.path.basename(x)[:-3], next((re.sub(r'\s+', ' ', l.replace('*', '').strip()).split(' between')[0][:70] for l in open(x) if 'Spearman' in l), '?')) for x in remote)
++def txt(name, i, j):         # Iteration 560: a process-seed.sh output's lines, joined - the facts drafted, not retyped
++    f = os.path.join(P, name + '.txt')
++    if not os.path.exists(f): return '(no %s.txt)' % name
++    L = [l.strip() for l in open(f, errors='replace') if l.strip() and not l.startswith(('|---', 'pinned'))]
++    return ' '.join(L[i:j] if j is not None else L[i:])
++def rules_():
++    rows = [[c.strip() for c in l.split('|')] for l in open(os.path.join(P, 'rules.txt'), errors='replace') if re.match(r'\| \d+ \|', l)] if os.path.exists(os.path.join(P, 'rules.txt')) else []
++    odd = ['%s (%s) %s' % (r[1], r[2], r[5].strip('*')) for r in rows if 'PASS' not in r[5]]
++    return '%d rules; %s' % (len(rows), ', '.join(odd) + ', the rest PASS' if odd else 'all PASS')
++def cost_():
++    t = exp('clockcheck', None) or ''; rows = [[c.strip() for c in l.split('|')] for l in t.split('\n') if re.match(r'\| [a-z]+ \| [0-9.]+ \|', l)]
++    return ', '.join('%s %s' % (r[1], r[5]) for r in rows if len(r) > 5) or '?'
+ P_ = lambda d: ', '.join('%s %.1f%%' % (k, v) for k, v in sorted(d.items()))
+ head = '\n'.join(x for x in [
+  '# Seed %d on the %s - TODO: the run in a phrase (Iteration %s)' % (N, mach.replace('-', ' ').upper().replace('AMD RYZEN', 'AMD Ryzen').replace(' PRO ', ' PRO '), it), '',
+@@ -78,7 +90,17 @@ head = '\n'.join(x for x in [
+  '**The experiments**: the spread at generation %s - %s; appbench - %s; the clock test - %s; truefronts - %s.' % (
+     spread_gen, spread_row.strip() if spread_row else 'none', ab or 'none', ck or 'none', '%d runs' % tf.count('{"run"') if tf else 'none'), '',
+  '**The remote checks** (results/xcheck-seed%d.md): %s.' % (N, rsp) if remote else None, '',
+- 'TODO: the verdict (rule 1), the predictions scored (results/predictions.md), the votes and the rules, the held-out check, the curse, progress - summary.md.']
++ '**Held out** (heldout.py): %s' % txt('heldout', 0, 3), '',
++ '**The curse** (curse.txt - rule 3, 0.98-1.05 works): %s' % txt('curse', 1, 3), '',
++ '**Progress**: %s' % txt('progress', -2, None), '',
++ '**The votes**: %s' % txt('votes', 1, 3), '',
++ '**The rules** (rules.txt): %s' % rules_(), '',
++ '**The freezes lifted** (lifted.py): %s' % txt('lifted', -1, None) if os.path.exists(os.path.join(P, 'lifted.txt')) else None, '',
++ '**At 32 bits** (fail32.txt): %s' % txt('fail32', 0, 1) + ' ' + txt('fail32', -1, None), '',
++ '**The clock test\'s cost both pay** (clockcheck.md, us by workload, alone): %s' % cost_() if ck else None, '',
++ '**The deaths**: %s. [process-finish: deaths-check]' % (', '.join('%s %s' % (v, k) for k, v in cnt.items() if re.match('(died|wrong output)', k or '')) or 'none'), '',
++ '**The chain on master**: [process-finish: the chain]', '',
++ 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.']
+  if x is not None)
+ out = os.path.join(ROOT, 'results', 'evolve-%s-seed%d.md' % (mach, N))
+ open(out, 'w').write(head + '\n\n---\n\n' + rep); print('draft-results: %s (%d TODO)' % (out, head.count('TODO')))
+diff --git a/lab/evolve/process-finish.sh b/lab/evolve/process-finish.sh
+new file mode 100755
+index 0000000..df208da
+--- /dev/null
++++ b/lab/evolve/process-finish.sh
+@@ -0,0 +1,62 @@
++#!/bin/sh
++# lab/evolve/process-finish.sh N ITERATION [--dry] - a returned seed's processing finished, once process-run.sh is DONE
++# and the chat has judged (Iteration 560). It stops at the first thing wrong, saying what:
++#   1. every check passed - /tmp/process-checks/status: build, run-tests, validate (7 of 7), the gate (every design
++#      alive), ans-check (0 differ, the negative control caught), deaths-check, the jail; each step's exit 0;
++#   2. the results file's two [process-finish: ...] lines filled - the chain on master, deaths-check's table (and the
++#      control's line when process-run.sh made one);
++#   3. nothing left to judge: no TODO in the results file, its xcheck, the comparison's newest session;
++#   4. process-records.sh N ITERATION (NEXT_METHOD= passed on) - the batch moved, the progress table, the ledgers;
++#   5. the chat's records there: predictions.md scores seed N, NEXT-RUN names seed N+1 (or none), HANDOFF.md says
++#      "master: Iteration ITERATION", PROGRESS.md has its entry;
++#   6. --dry stops here; else everything committed and tools/make-bundle.sh /mnt/user-data/outputs - then present it.
++# Safe to run again after fixing what it named. As the build user.
++set -u
++N=${1:?N}; I=${2:?ITERATION}; DRY=${3:-}
++cd "$(dirname "$0")/../.." || exit 1
++S=/tmp/process-checks/status; R=$(ls results/evolve-*-seed"$N".md 2>/dev/null | head -1)
++say() { echo "process-finish: $*"; }; die() { say "STOP - $*"; exit 1; }
++[ -n "$R" ] || die "no results/evolve-*-seed$N.md"
++grep -q '^DONE' "$S" 2>/dev/null || die "process-checks.sh not DONE ($S)"
++for k in build run-tests validate gate ans-check deaths jail; do                      # 1.
++    l=$(grep "^$k=" "$S" | tail -n 1); [ -n "$l" ] || die "no $k line in $S"
++    case $l in "$k=0"*) ;; *) die "$l" ;; esac
++done
++grep -q '^validate=0 7 of 7 IDENTICAL' "$S" || die "$(grep '^validate=' "$S")"
++G=$(sed -n 's/^gate=0 alive: \([0-9]*\) of \([0-9]*\).*/\1 \2/p' "$S"); set -- $G
++[ $# -eq 2 ] && [ "$1" = "$2" ] || die "$(grep '^gate=' "$S")"; GA="$1 of $2"
++A=$(sed -n 's/^ans-check=0 \([0-9]* of [0-9]*\) designs differ.*/\1/p' "$S")
++case $A in "0 of "*) ;; *) die "$(grep '^ans-check=' "$S")" ;; esac
++grep '^ans-check=' "$S" | grep -q 'negative control caught' || die "ans-check's negative control not caught"
++H=$(sed -n 's/^START from [a-z]* at \([0-9a-f]*\).*/\1/p' "$S")
++D=/tmp/process-checks/deaths.log; DL=$(tail -n 1 "$D" | sed 's/^deaths-check: //')
++CL=$(grep -h '^control at' /tmp/process-run/status 2>/dev/null | sed 's/ [0-9:]*$//')
++CHAIN="process-checks.sh at $H: build 0, run-tests PASS, validate 7 of 7 IDENTICAL, the gate alive $GA, ans-check $A differ (its negative control caught), deaths-check: $DL, the jail PASS."
++python3 - "$R" "$CHAIN" "$D" "$CL" << 'PY' || die "the results file's [process-finish: ...] lines"
++import re, sys
++r, chain, d, cl = sys.argv[1:]; s = open(r).read()
++rows = [l.strip() for l in open(d) if re.match(r'\| [0-9a-f]{10} \|', l)]
++dead = 'deaths-check.py rebuilt them here (design, generation, in the run, genes, here): %s.' % ('; '.join(
++    ' - '.join(c.strip() for c in l.strip('|').split('|')) for l in rows) or 'none to rebuild') + (' The %s.' % cl if cl else '')
++s = s.replace('[process-finish: the chain]', chain).replace('[process-finish: deaths-check]', dead)
++open(r, 'w').write(s)
++PY
++say "1-2. every check passed; the chain line and the deaths filled"
++T=$(grep -l 'TODO\|\[process-finish' "$R" "results/xcheck-seed$N.md" 2>/dev/null | tr '\n' ' ')                   # 3.
++C=$(ls results/compare-fronts-*.md 2>/dev/null | head -1)
++[ -z "$C" ] || ! awk '/^## Session /{s=""} {s=s $0 "\n"} END{printf "%s", s}' "$C" | grep -q TODO || T="$T $C (its newest session)"
++[ -z "$T" ] || die "TODO left in: $T"
++sh lab/evolve/process-records.sh "$N" "$I" || die "process-records.sh"                                               # 4.
++M=""                                                                                                                  # 5.
++grep -q "Scored at seed $N " results/predictions.md || M="$M results/predictions.md (\"Scored at seed $N\");"
++L=$(grep -v '^#' lab/evolve/NEXT-RUN | grep -v '^ *$' | head -n 1)
++case $L in "seed $((N + 1)) "*|none*) ;; *) M="$M lab/evolve/NEXT-RUN (its line: $L);" ;; esac
++grep -q "^- master: Iteration $I\.\$" HANDOFF.md || M="$M HANDOFF.md (\"- master: Iteration $I.\");"
++grep -q "^## Iteration $I " PROGRESS.md || M="$M PROGRESS.md (\"## Iteration $I\");"
++[ -z "$M" ] || die "the chat's records missing:$M"
++say "3-5. nothing left to judge; the records written"
++[ "$DRY" = --dry ] && { say "--dry: nothing committed"; exit 0; }
++P=$(sed -n '1s/^# Seed [0-9]* on the .* - \(.*\) (Iteration [0-9]*)$/\1/p' "$R")
++git add -A && git commit -q -m "Iteration $I: seed $N processed - ${P:-see its results file}" || die "the commit"
++say "committed $(git log --oneline -1 | cut -c1-100)"
++sh tools/make-bundle.sh /mnt/user-data/outputs 2>&1 | tail -n 3
+diff --git a/lab/evolve/process-run.sh b/lab/evolve/process-run.sh
+new file mode 100755
+index 0000000..50cf86d
+--- /dev/null
++++ b/lab/evolve/process-run.sh
+@@ -0,0 +1,59 @@
++#!/bin/sh
++# lab/evolve/process-run.sh ITERATION [ARCHIVE] - a returned seed's processing, its mechanical part, as one detached job
++# (Iteration 560; HANDOFF.md, "Processing a returned seed"). In order, each step's line in /tmp/process-run/status:
++#   1. process-seed.sh ARCHIVE (default: the one chain archive in /mnt/user-data/uploads) - /tmp/process/summary.md;
++#   2. draft-results.py --iteration ITERATION - the results file, xcheck, the spread's session; TODO: the verdict and
++#      the predictions only;
++#   3. a batch in results/pending/: tools/batch-check.sh, then - PASS only - its patches applied in ORDER.md's order
++#      with git apply --index (the patches' own files, nothing else) and committed; a patch that changes
++#      forth/kernel.4 stops it (reseed by hand: tools/reseed.sh);
++#   4. process-checks.sh on master (build, run-tests, validate, the gate, ans-check, deaths-check, the jail - alone);
++#   5. a batch applied and a death that computes right on master: the control - deaths-check on the commit before the
++#      batch, in its own clone - so "the batch fixed it" is measured, not assumed (Iteration 560: seed 77's 0b17df4e1c).
++# Start it detached and poll:   setsid nohup sh lab/evolve/process-run.sh 561 > /dev/null 2>&1 &
++#   then: sh tools/wait-for.sh /tmp/process-run/status 'summary|DONE|STOP'   (summary.md is ready at "summary")
++# Judge while it runs (summary.md; the results file's header - never run anything as this user once the status says
++# "jail - alone"); at DONE: sh lab/evolve/process-finish.sh N ITERATION. As the build user, never root.
++set -u
++I=${1:?ITERATION}; A=${2:-$(ls /mnt/user-data/uploads/forth-vm-evolution-chain-*_tar.gz 2>/dev/null | tail -1)}
++cd "$(dirname "$0")/../.." || exit 1
++O=/tmp/process-run; mkdir -p "$O"; S=$O/status; : > "$S"
++st() { echo "$* $(date +%T)" >> "$S"; }
++die() { st "STOP - $*"; exit 1; }
++[ -f "$A" ] || die "no chain archive (ARCHIVE, or forth-vm-evolution-chain-*_tar.gz in /mnt/user-data/uploads)"
++[ -z "$(git status --porcelain -- engine forth tools lab results)" ] || die "the tree has changes - commit or stash them first"
++st "START $(basename "$A") at $(git rev-parse --short HEAD)"
++sh lab/evolve/process-seed.sh "$A" > "$O/process-seed.log" 2>&1 || die "process-seed.sh (process-seed.log)"
++st "summary - /tmp/process/summary.md: $(tail -n 1 "$O/process-seed.log")"
++python3 lab/evolve/draft-results.py --iteration "$I" > "$O/draft.log" 2>&1 || die "draft-results.py (draft.log)"
++st "drafted - $(grep -c '' "$O/draft.log") files: $(grep -o 'results/[^ ]*' "$O/draft.log" | tr '\n' ' ')"
++PRE=; N=$(ls -d /tmp/process/*-seed[0-9]*-* | sed -n 's/.*-seed\([0-9]*\)-.*/\1/p' | head -n 1)
++T=; [ -d results/pending ] && for p in $(sed -n 's|^ *git apply \(results/pending/[^ ]*\.patch\).*|\1|p' results/pending/ORDER.md); do
++    git apply -R --check "$p" 2> /dev/null || T="$T $p"; done          # applied already (by hand, once): skipped
++if [ -d results/pending ] && [ -z "$T" ]; then
++    C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied"); PRE=$(git rev-parse --short "$C^" 2> /dev/null)
++    st "the batch applied already, at ${C:-?} - not again"
++elif [ -d results/pending ]; then
++    PRE=$(git rev-parse --short HEAD)
++    sh tools/batch-check.sh > "$O/batch-check.log" 2>&1; L=$(cat /tmp/batch-check/summary 2>/dev/null)
++    st "batch-check - $(echo "$L" | cut -c1-160)"
++    case $L in "batch-check: PASS"*) ;; *) die "batch-check did not pass - /tmp/batch-check" ;; esac
++    P=$(sed -n 's|^ *git apply \(results/pending/[^ ]*\.patch\).*|\1|p' results/pending/ORDER.md)
++    for p in $P; do
++        git apply --index "$p" || die "$p does not apply to master"
++        ! git diff --cached --name-only | grep -qx forth/kernel.4 || die "$p changes forth/kernel.4 - reseed by hand (tools/reseed.sh), commit, then process-checks.sh"
++    done
++    git commit -q -m "Iteration $I: the after-seed-$N batch applied - $(echo $P | wc -w) patches ($(for p in $P; do basename "$p" -after-seed$N.patch; done | tr '\n' ' ' | sed 's/ $//; s/ /, /g')), batch-check PASS" || die "the batch's commit"
++    st "applied - $(git log --oneline -1 | cut -c1-120)"
++fi
++R=$(grep -o 'results/evolve-[^ ]*-seed[0-9]*\.md' "$O/draft.log" | head -1)
++st "checks - process-checks.sh $R (its status /tmp/process-checks/status)"
++sh lab/evolve/process-checks.sh "$R" > /dev/null 2>&1
++st "checks done - $(grep -c '=0' /tmp/process-checks/status) steps 0, $(grep -cE '=[1-9]' /tmp/process-checks/status) not"
++if [ -n "$PRE" ] && grep -q 'right - as s6' /tmp/process-checks/deaths.log 2>/dev/null; then
++    C=$O/control; rm -rf "$C"; git clone -q . "$C" && git -C "$C" checkout -q "$PRE" && cp lab/evolve/deaths-check.py "$C/lab/evolve/"
++    ( cd "$C" && env LAYOUTS=1 bash tools/build-stages.sh > "$O/control-build.log" 2>&1 &&
++      python3 lab/evolve/deaths-check.py "$(ls /tmp/process/*-seed[0-9]*-*/pack/db.jsonl | head -1)" > "$O/control.log" 2>&1 )
++    st "control at $PRE (before the batch) - $(tail -n 1 "$O/control.log" 2>/dev/null)"; rm -rf "$C"
++fi
++st DONE
+diff --git a/tools/setup-sandbox.sh b/tools/setup-sandbox.sh
+new file mode 100755
+index 0000000..d72f37e
+--- /dev/null
++++ b/tools/setup-sandbox.sh
+@@ -0,0 +1,34 @@
++#!/bin/sh
++# tools/setup-sandbox.sh [BUNDLE] - a new chat's sandbox in one command, as root (Iteration 560; HANDOFF-PROMPT.md's
++# steps 0-1, a few calls each chat until then, and a stumble or two: a directory claude cannot write, git refusing root).
++# The compilers (gcc-multilib for the 4-byte cells, clang, clang-19 for preserve_none) and the 32-bit asm/ headers, when
++# missing; the clone, as the user claude, in /home/claude/forth-vm-evolution (DEST=), with the owner's identity. BUNDLE:
++# default the newest forth-vm-evolution-claude-*.bundle in /mnt/user-data/uploads not ending in -checkpoint. CHECK=1
++# also starts the build, run-tests and validate detached (/tmp/setup-check/status) - not for a returned seed:
++# lab/evolve/process-run.sh builds and checks. Run from any clone of the bundle:
++#   git clone -q /mnt/user-data/uploads/<bundle> /tmp/s && sh /tmp/s/tools/setup-sandbox.sh && rm -rf /tmp/s
++set -u
++[ "$(id -u)" = 0 ] || { echo "setup-sandbox: as root"; exit 1; }
++B=${1:-$(ls -t /mnt/user-data/uploads/forth-vm-evolution-claude-*.bundle 2>/dev/null | grep -v -- '-checkpoint' | head -n 1)}
++D=${DEST:-/home/claude/forth-vm-evolution}
++[ -f "$B" ] || { echo "setup-sandbox: no bundle (BUNDLE, or one in /mnt/user-data/uploads)"; exit 1; }
++if ! dpkg -s gcc-multilib clang clang-19 > /dev/null 2>&1; then
++    apt-get update -qq > /tmp/setup-apt.log 2>&1
++    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gcc-multilib clang clang-19 >> /tmp/setup-apt.log 2>&1 ||
++        echo "setup-sandbox: apt-get failed - /tmp/setup-apt.log"
++fi
++[ -e /usr/include/asm ] || ln -s x86_64-linux-gnu/asm /usr/include/asm
++if [ -d "$D/.git" ]; then echo "setup-sandbox: $D exists - left as it is"
++else mkdir -p "$D" && chown claude:claude "$D" && runuser -u claude -- git clone -q "$B" "$D" || { echo "setup-sandbox: the clone failed"; exit 1; }; fi
++runuser -u claude -- git -C "$D" config user.name "Kirill Timofeev" && runuser -u claude -- git -C "$D" config user.email kt97679@gmail.com
++echo "setup-sandbox: $(basename "$B") -> $D at $(runuser -u claude -- git -C "$D" log --oneline -1 | cut -c1-70)"
++echo "setup-sandbox: $(dpkg -s gcc-multilib clang-19 2>/dev/null | grep -c '^Status: install ok') of 2 packages in; asm/ $([ -e /usr/include/asm ] && echo there)"
++if [ "${CHECK:-0}" = 1 ]; then
++    rm -rf /tmp/setup-check; mkdir /tmp/setup-check; chown claude:claude /tmp/setup-check
++    runuser -u claude -- setsid nohup sh -c "cd $D && S=/tmp/setup-check/status
++        env LAYOUTS=1 bash tools/build-stages.sh > /tmp/setup-check/build.log 2>&1; echo build=\$? >> \$S
++        bash tools/run-tests.sh > /tmp/setup-check/tests.log 2>&1; echo \"run-tests=\$? \$(tail -n 1 /tmp/setup-check/tests.log)\" >> \$S
++        python3 lab/evolve/evolve.py --validate > /tmp/setup-check/validate.log 2>&1; echo \"validate=\$? \$(grep -c IDENTICAL /tmp/setup-check/validate.log) of 7 IDENTICAL\" >> \$S
++        echo DONE >> \$S" > /dev/null 2>&1 &
++    echo "setup-sandbox: the build, run-tests and validate started - sh tools/wait-for.sh /tmp/setup-check/status DONE"
++fi
+diff --git a/tools/wait-for.sh b/tools/wait-for.sh
+new file mode 100755
+index 0000000..68c3193
+--- /dev/null
++++ b/tools/wait-for.sh
+@@ -0,0 +1,7 @@
++#!/bin/sh
++# tools/wait-for.sh FILE PATTERN [SECONDS] - wait until FILE has a line matching the extended regex PATTERN, at most
++# SECONDS (default 280: a tool call ends near 300 s), then print FILE's last lines (Iteration 560 - the polling loop
++# every processing typed again). Exit 0 when matched, 1 when the time ran out: call it again.
++F=$1; P=$2; T=${3:-280}; i=0
++while [ "$i" -lt "$T" ]; do grep -qE "$P" "$F" 2>/dev/null && { tail -n 4 "$F" | cut -c1-220; exit 0; }; sleep 5; i=$((i + 5)); done
++tail -n 2 "$F" 2>/dev/null | cut -c1-220; echo "wait-for: no '$P' in $F after ${T}s - call again"; exit 1
