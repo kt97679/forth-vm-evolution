@@ -6,7 +6,8 @@ applies it by hand this once - results/drafts/seed78-checklist-561.md - and proc
     git apply results/pending/process-after-seed78.patch
     git apply results/pending/stopping-matched-after-seed78.patch
 
-batch-check (562): below.
+batch-check (562, on 34e4681 - the patches as they stand): PASS - both applied to a fresh clone, run-tests PASS,
+validate 7 of 7 IDENTICAL, the jail PASS.
 
 **process-after-seed78.patch** (lab/evolve/process-run.sh, process-finish.sh, draft-results.py, process-records.sh - refuses a move onto an existing applied-after-seedN/; tools/setup-sandbox.sh,
 wait-for.sh; process-run.sh computes the run's curve for the stopping rule, detached (562); HANDOFF.md, HANDOFF-PROMPT.md, HANDOFF-REFERENCE.md, README.md, lab/evolve/README.md) - **a processing in three
