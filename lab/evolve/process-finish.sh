@@ -51,7 +51,7 @@ dead = 'deaths-check.py rebuilt them here (design, generation, in the run, genes
 s = s.replace('[process-finish: the chain]', chain).replace('[process-finish: deaths-check]', dead)
 open(r, 'w').write(s)
 PY
-say "1-2. every check passed; the chain line and the deaths filled"
+say "1-2. every check passed${OPEN:+ but deaths-check - open, recorded}; the chain line and the deaths filled"
 T=$(grep -l 'TODO\|\[process-finish' "$R" "results/xcheck-seed$N.md" 2>/dev/null | tr '\n' ' ')                   # 3.
 C=$(ls results/compare-fronts-*.md 2>/dev/null | head -1)
 [ -z "$C" ] || ! awk '/^## Session /{s=""} {s=s $0 "\n"} END{printf "%s", s}' "$C" | grep -q TODO || T="$T $C (its newest session)"

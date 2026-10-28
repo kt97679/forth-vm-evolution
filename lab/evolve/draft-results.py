@@ -107,6 +107,11 @@ open(out, 'w').write(head + '\n\n---\n\n' + rep); print('draft-results: %s (%d T
 if remote:
     x = os.path.join(ROOT, 'results', 'xcheck-seed%d.md' % N)
     open(x, 'w').write("# The checks of seed %d's front during seed %d (Iteration %s)\n\n---\n\n" % (N - 1, N, it) + '\n\n---\n\n'.join(open(r).read().strip('\n') for r in remote) + '\n'); print('draft-results: ' + x)
+    ix = os.path.join(ROOT, 'results', 'README.md'); L = open(ix).read().split('\n')    # 563: its index line, each seed
+    if not any(l.startswith('- `xcheck-seed%d.md`' % N) for l in L):
+        k = max((n for n, l in enumerate(L) if l.startswith('- `xcheck-seed')), default=len(L) - 1)
+        L.insert(k + 1, "- `xcheck-seed%d.md` - The checks of seed %d's front during seed %d (Iteration %s): %s." % (N, N - 1, N, it, rsp))
+        open(ix, 'w').write('\n'.join(L)); print('draft-results: its line in results/README.md')
 if sp and '| run |' in sp:
     cf = os.path.join(ROOT, 'results', 'compare-fronts-%s.md' % mach); n = max([int(v) for v in re.findall(r'^## Session (\d+)', open(cf).read(), re.M)] or [0]) + 1
     tab = re.sub(r'/\S*?/runs/', '', sp[sp.index('| run |'):].split('\n\n')[0])
