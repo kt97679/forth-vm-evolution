@@ -40,6 +40,9 @@ st "drafted - $(grep -c '' "$O/draft.log") files: $(grep -o 'results/[^ ]*' "$O/
 PRE=; N=$(ls -d /tmp/process/*-seed[0-9]*-* | sed -n 's/.*-seed\([0-9]*\)-.*/\1/p' | head -n 1)
 T=; [ -d results/pending ] && for p in $(sed -n 's|^ *git apply \(results/pending/[^ ]*\.patch\).*|\1|p' results/pending/ORDER.md); do
     git apply -R --check "$p" 2> /dev/null || T="$T $p"; done          # applied already (by hand, once): skipped
+# 563: patches over the same lines reverse no more once a later one is on - the convention's commit says applied, as
+# process-records.sh reads it
+[ -z "$T" ] || [ -z "$(git log --format=%h -1 --grep="the after-seed-$N batch applied")" ] || T=
 if [ -d results/pending ] && [ -z "$T" ]; then
     C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied"); PRE=$(git rev-parse --short "$C^" 2> /dev/null)
     st "the batch applied already, at ${C:-?} - not again"
