@@ -17,7 +17,14 @@ cd "$(dirname "$0")/../.." || exit 1
 S=/tmp/process-checks/status; R=$(ls results/evolve-*-seed"$N".md 2>/dev/null | head -1)
 say() { echo "process-finish: $*"; }; die() { say "STOP - $*"; exit 1; }
 [ -n "$R" ] || die "no results/evolve-*-seed$N.md"
-grep -q '^DONE' "$S" 2>/dev/null || die "process-checks.sh not DONE ($S)"
+[ -f "$S" ] || die "no $S"
+# 563: only this chain's lines - from the last "START from build" on (a resumed step appends after it); the status file
+# keeps an earlier chain's lines, and their passes are not this seed's
+K=/tmp/process-finish.status; awk '/^START from build/{b=""} {b=b $0 "\n"} END{printf "%s", b}' "$S" > "$K"; S=$K
+grep -q '^START from build' "$S" || die "no full chain in /tmp/process-checks/status - process-checks.sh from build"
+grep -q '^DONE' "$S" || die "process-checks.sh not DONE (/tmp/process-checks/status)"
+H0=$(sed -n 's/^START from build at \([0-9a-f]*\).*/\1/p' "$S")
+git diff --quiet "$H0" HEAD -- engine forth lab/evolve/evolve.py || die "the checks ran at $H0 and the engine, kernel or evolver changed since - run them again"
 for k in build run-tests validate gate ans-check deaths jail; do                      # 1.
     l=$(grep "^$k=" "$S" | tail -n 1); [ -n "$l" ] || die "no $k line in $S"
     case $l in "$k=0"*) ;; *) die "$l" ;; esac
@@ -28,7 +35,7 @@ G=$(sed -n 's/^gate=0 alive: \([0-9]*\) of \([0-9]*\).*/\1 \2/p' "$S"); set -- $
 A=$(sed -n 's/^ans-check=0 \([0-9]* of [0-9]*\) designs differ.*/\1/p' "$S")
 case $A in "0 of "*) ;; *) die "$(grep '^ans-check=' "$S")" ;; esac
 grep '^ans-check=' "$S" | grep -q 'negative control caught' || die "ans-check's negative control not caught"
-H=$(sed -n 's/^START from [a-z]* at \([0-9a-f]*\).*/\1/p' "$S")
+H=$H0
 D=/tmp/process-checks/deaths.log; DL=$(tail -n 1 "$D" | sed 's/^deaths-check: //')
 CL=$(grep -h '^control at' /tmp/process-run/status 2>/dev/null | sed 's/ [0-9:]*$//')
 CHAIN="process-checks.sh at $H: build 0, run-tests PASS, validate 7 of 7 IDENTICAL, the gate alive $GA, ans-check $A differ (its negative control caught), deaths-check: $DL, the jail PASS."

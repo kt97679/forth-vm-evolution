@@ -68,8 +68,9 @@ if grep -q "opt('--curve')" lab/evolve/stopping.py && ! grep -q "\"seed\": $N," 
 fi
 R=$(grep -o 'results/evolve-[^ ]*-seed[0-9]*\.md' "$O/draft.log" | head -1)
 st "checks - process-checks.sh $R (its status /tmp/process-checks/status)"
-sh lab/evolve/process-checks.sh "$R" > /dev/null 2>&1
-st "checks done - $(grep -c '=0' /tmp/process-checks/status) steps 0, $(grep -cE '=[1-9]' /tmp/process-checks/status) not"
+FROM=build sh lab/evolve/process-checks.sh "$R" > /dev/null 2>&1      # 563: never this script's FROM - process-checks reads its own
+K=$(awk '/^START from build/{b=""} {b=b $0 "\n"} END{printf "%s", b}' /tmp/process-checks/status)    # this chain's lines only
+st "checks done - $(echo "$K" | grep -c '=0') steps 0, $(echo "$K" | grep -cE '=[1-9]') not"
 if [ -n "$PRE" ] && grep -q 'right - as s6' /tmp/process-checks/deaths.log 2>/dev/null; then
     C=$O/control; rm -rf "$C"; git clone -q . "$C" && git -C "$C" checkout -q "$PRE" && cp lab/evolve/deaths-check.py "$C/lab/evolve/"
     ( cd "$C" && env LAYOUTS=1 bash tools/build-stages.sh > "$O/control-build.log" 2>&1 &&
