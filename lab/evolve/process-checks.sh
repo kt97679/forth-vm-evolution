@@ -6,7 +6,8 @@
 #     setsid nohup sh lab/evolve/process-checks.sh RESULTS > /dev/null 2>&1 &
 # then wait for "DONE" in /tmp/process-checks/status - its lines the results, the logs beside it (OUT= elsewhere).
 # Nothing else of this user may run while the jail does. After a sandbox restart (background jobs die, /tmp stays):
-# FROM=tests, validate, gate, ans or jail starts there. Not as root - the evolver refuses it.
+# FROM=tests, validate, gate, ans, deaths or jail starts there. DB= a seed pack's db.jsonl for the deaths step
+# (default: process-seed.sh's, under /tmp/process). Not as root - the evolver refuses it.
 RES=$1; CMP=${2:-}; OUT=${OUT:-/tmp/process-checks}; FROM=${FROM:-build}
 cd "$(dirname "$0")/../.." || exit 1
 mkdir -p "$OUT"; S=$OUT/status; on=0
@@ -35,6 +36,11 @@ PY
 )
     python3 lab/evolve/ans-check.py --ids "$IDS" > "$OUT/ans.log" 2>&1
     st "ans-check=$? $(grep -m 1 'designs differ' "$OUT/ans.log"); negative control $(grep -q 'caught' "$OUT/ans.log" && echo caught || echo NOT caught)"
+fi
+if step deaths; then          # Iteration 560: the seed's deaths and wrong outputs rebuilt on this tree (deaths-check.py)
+    DB=${DB:-$(ls /tmp/process/*-seed[0-9]*/pack/db.jsonl 2>/dev/null | head -1)}
+    if [ -n "$DB" ]; then python3 lab/evolve/deaths-check.py "$DB" > "$OUT/deaths.log" 2>&1; st "deaths=$? $(tail -n 1 "$OUT/deaths.log")"
+    else st "deaths - no db (DB=, or process-seed.sh's /tmp/process)"; fi
 fi
 if step jail; then st "jail - alone"; python3 lab/evolve/test-jail.py > "$OUT/jail.log" 2>&1; st "jail=$? $(tail -n 1 "$OUT/jail.log")"; fi
 st DONE

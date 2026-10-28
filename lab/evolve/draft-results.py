@@ -56,6 +56,7 @@ def exp(tool, pat):
     if not fs: return None
     t = open(fs[0]).read(); return t if pat is None else next((l.strip() for l in t.split('\n') if re.match(pat, l)), '?')
 sp = exp('review-checks', None); spread_row = next((l for l in (sp or '').split('\n') if l.startswith('| build/evolve/db.jsonl')), None)
+spread_gen = spread_row.split('|')[2].strip() if spread_row else '?'   # Iteration 560: the spread's own generation, not 102
 ab, ck = exp('appbench', r'\*\*Spearman'), exp('clockcheck', r'\*\*Medians'); tf = exp('truefronts', None)
 remote = sorted(glob.glob(os.path.join(chain, 'remote', '*.md')))
 rsp = '; '.join('%s %s' % (os.path.basename(x)[:-3], next((re.sub(r'\s+', ' ', l.replace('*', '').strip()).split(' between')[0][:70] for l in open(x) if 'Spearman' in l), '?')) for x in remote)
@@ -74,8 +75,8 @@ head = '\n'.join(x for x in [
  '**The JIT designs**: %d of the front, %d of its fastest tenth\'s %d; %s.' % (len(J), len(fj), k, genes), '',
  '**The fast end re-measured** (remeasure.json, %d designs): the fastest ten %s re-measured / in-run, the JIT designs %s, the rest %s.' % (
     len(ri), md([rr[i] for i in ri[:10]]), md([rr[i] for i in ri if jr(i)]), md([rr[i] for i in ri if not jr(i)])) if ri else None, '',
- '**The experiments**: the spread at generation 102 - %s; appbench - %s; the clock test - %s; truefronts - %s.' % (
-    spread_row.strip() if spread_row else 'none', ab or 'none', ck or 'none', '%d runs' % tf.count('{"run"') if tf else 'none'), '',
+ '**The experiments**: the spread at generation %s - %s; appbench - %s; the clock test - %s; truefronts - %s.' % (
+    spread_gen, spread_row.strip() if spread_row else 'none', ab or 'none', ck or 'none', '%d runs' % tf.count('{"run"') if tf else 'none'), '',
  '**The remote checks** (results/xcheck-seed%d.md): %s.' % (N, rsp) if remote else None, '',
  'TODO: the verdict (rule 1), the predictions scored (results/predictions.md), the votes and the rules, the held-out check, the curse, progress - summary.md.']
  if x is not None)
@@ -87,5 +88,5 @@ if remote:
 if sp and '| run |' in sp:
     cf = os.path.join(ROOT, 'results', 'compare-fronts-%s.md' % mach); n = max([int(v) for v in re.findall(r'^## Session (\d+)', open(cf).read(), re.M)] or [0]) + 1
     tab = re.sub(r'/\S*?/runs/', '', sp[sp.index('| run |'):].split('\n\n')[0])
-    open(cf, 'a').write('\n## Session %d - Iteration %s: seed %d and the archived runs (the chain\'s spread, at generation 102)\n\nTODO: what compares - the workloads and the memory of each.\n\n%s\n' % (n, it, N, tab.strip('\n')))
+    open(cf, 'a').write('\n## Session %d - Iteration %s: seed %d and the archived runs (the chain\'s spread, at generation %s)\n\nTODO: what compares - the workloads and the memory of each.\n\n%s\n' % (n, it, N, spread_gen, tab.strip('\n')))
     print('draft-results: session %d appended to %s (1 TODO)' % (n, cf))
