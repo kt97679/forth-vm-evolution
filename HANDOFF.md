@@ -50,8 +50,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   Prediction 555 fails by the memory alone (108 KB, one 4 KB page, reached by seed 76's alive designs already);
   prediction 556 holds (every lifted gene at its old frozen value on 100% of the front).
 - **The after-seed-77 batch applied (560)** - results/applied-after-seed77/ORDER.md: the JIT patches every copy of a value
-  hole; seed 77's one corpus death (0b17df4e1c: jit, tracer, nocrossjump - the 557 hole) rebuilt on the fixed tree by
-  deaths-check.py: see the results file's deaths line. The chain on master: results file's last section.
+  hole; seed 77's one corpus death (0b17df4e1c: jit, tracer, nocrossjump - the 557 hole) wrong on the tree before
+  the fix, right on the fixed one (deaths-check.py): no correctness issue open. The chain on master all PASS - run-tests,
+  validate 7 of 7, the gate 417 of 417, ans-check 0 of 96 differ, deaths 1 of 1, the jail.
 - **Predictions due** (results/predictions.md): seed 78 - nine hours lose nothing at the fast end, lose at the small end (560).
 - **Scripts added (560)**: lab/evolve/process-records.sh (step 6 in one command); lab/evolve/deaths-check.py (a
   process-checks step: the seed's deaths rebuilt on the tree); draft-results.py reads the spread's generation.
@@ -135,7 +136,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    results/drafts/confirmation-pool-559.md: --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
 3. **Correctness - the JIT's value holes fixed, applied (560)**: the after-seed-77 batch (results/drafts/corpus-deaths-555.md,
-   jit-sweep-558.md); seed 77's one corpus death the same fault - deaths-check.py's line in the results file.
+   jit-sweep-558.md); seed 77's one corpus death the same fault - wrong before the fix, right after (deaths-check.py's control).
 3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
    hypervolume on the true front as before (stopping.py; seed 76's dominance chain).
 4. The fast end's offset (rule 3; seeds 73-76 1.070, 1.066, 1.047, 1.063) - results/drafts/fast-end-offset-554.md: a cost

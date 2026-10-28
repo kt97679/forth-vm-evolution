@@ -10206,7 +10206,7 @@ Files: results/drafts/confirmation-pool-559.md, results/README.md, HANDOFF.md.
 **Seed 77 processed** (12 hours, every freeze lifted): the true front 370, the hypervolume 0.35010, the fastest 0.1421, the
 smallest 14,015, 108 KB - inside seeds 73-76's spread at generation 128 (session 64); prediction 555 fails by the memory
 alone (one 4 KB page), 556 holds (lifted.py: every lifted gene at its old value on 100% of the front). The after-seed-77
-batch applied (batch-check PASS); the corpus death 0b17df4e1c the 557 hole - DEATHS-RESULT; the chain on master: CHAIN-RESULT.
+batch applied (batch-check PASS); the corpus death 0b17df4e1c the 557 hole - wrong before the fix, right after it (deaths-check.py, the control at 4256111); the chain on master: all PASS (run-tests, validate 7 of 7, the gate 417 of 417, ans-check 0 of 96 differ, deaths 1 of 1, the jail).
 Seed 78 at 9 hours (the owner): a new series. Scripted: lab/evolve/process-records.sh, lab/evolve/deaths-check.py (a
 process-checks step); draft-results.py reads the spread's generation (it printed 102). Files: results/evolve-amd-ryzen-7-
 pro-8840hs-seed77.md, results/xcheck-seed77.md, results/applied-after-seed77/, session 64, results/predictions.md,
