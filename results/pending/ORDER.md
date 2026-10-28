@@ -4,13 +4,12 @@ Prepared while seed 78 runs; master stays what seed 78's bundle tests. It brings
 applies it by hand this once - results/drafts/seed78-checklist-561.md - and process-run.sh then finds it applied.
 
     git apply results/pending/process-after-seed78.patch
-    git apply results/pending/stopping-gen-after-seed78.patch
+    git apply results/pending/stopping-matched-after-seed78.patch
 
-batch-check (561, on c4a42f4 - the patches as they stand): PASS - both applied to a fresh clone, run-tests PASS,
-validate 7 of 7 IDENTICAL, the jail PASS.
+batch-check (562): below.
 
 **process-after-seed78.patch** (lab/evolve/process-run.sh, process-finish.sh, draft-results.py, process-records.sh - refuses a move onto an existing applied-after-seedN/; tools/setup-sandbox.sh,
-wait-for.sh; HANDOFF.md, HANDOFF-PROMPT.md, HANDOFF-REFERENCE.md, README.md, lab/evolve/README.md) - **a processing in three
+wait-for.sh; process-run.sh computes the run's curve for the stopping rule, detached (562); HANDOFF.md, HANDOFF-PROMPT.md, HANDOFF-REFERENCE.md, README.md, lab/evolve/README.md) - **a processing in three
 commands** (the owner, 560-561: every repeatable action a script): setup-sandbox.sh (a new chat's setup, as root);
 process-run.sh (detached: process-seed, the drafts, the batch checked and applied with git apply --index, the checks on
 master, the control - a death right on master rebuilt on the commit before the batch); process-finish.sh (every check
@@ -26,11 +25,14 @@ stopped on a TODO left, then (filled) wrote the chain and control lines and stop
 (applied-after-seed77/ exists - the archive was seed 77's). The first try was cut off at run-tests: the sandbox suspends
 between turns and a detached job dies - so process-run.sh FROM=checks resumes at the checks (and HANDOFF.md says it).
 
-**stopping-gen-after-seed78.patch** (lab/evolve/hv.py, stopping.py; GOALS.md; results/stopping-series.md) - **every run
-judged at generation 100 - the owner's yes needed before it is applied.** The owner (561): the hours vary with his
-days. GOALS.md counts the hours in the method, so the rule could never stop; at generation 100 (about 8 hours at seed
-77's pace: generation 83 at 6 h, 98 at 7, 113 at 8, 127 at 9) every run is judged at one effort - hv.py --gen; a series'
-method line "gen": 100; a run short of it recorded with "short": true, not counted. The 9-hour series line goes; the series
-from seed 77 at generation 100 has seed 77's line (hypervolume 0.33872, fastest 0.1435, smallest 14,051, 108 KB, 32-bit
-0.1702 - against 0.35010, 0.1406, 14,015, 108, 0.1702 at its end): seed 78 its second run, the earliest stop after 79.
-stopping.py's self-test 18 checks. If the owner says no: delete its line above - seed 78 opens the 9-hour series.
+**stopping-matched-after-seed78.patch** (lab/evolve/hv.py, stopping.py; GOALS.md; results/stopping-series.md) - **the
+hours leave the method; each run judged at its last generation against each earlier run at that same generation** (the
+owner's yes, 562 - it replaces 561's generation-100 cut, which judged a run before its end). The thresholds are adjusted
+to the run's length by the earlier run's own record: each run's ledger line carries its curve - the four extremes (every
+alive design's) exact where they moved, the hypervolume every 10 generations; an earlier run shorter than this one is
+taken at its end; both choices favour a gain, so an error continues the phase. stopping.py --curve FILE computes the
+curve (204 s for seed 77 - process-run.sh does it detached), --append takes it; hv.py load() and --gen. Self-tests:
+stopping.py 30 checks, hv.py's. The 9-hour series line goes; the series from seed 77, matched, has seed 77's line with
+its curve - seed 78 its second run; it gains, by its last generation (about 120 at 9 hours), on the hypervolume >=
+0.34447, the fastest <= 0.1394 or the smallest <= 13,910 (at 160: 0.35325, 0.1378, 13,875; memory <= 104 KB and 32-bit
+<= 0.1668 throughout).

@@ -1,0 +1,214 @@
+diff --git a/GOALS.md b/GOALS.md
+index 1edffed..56b0622 100644
+--- a/GOALS.md
++++ b/GOALS.md
+@@ -112,13 +112,16 @@ results/drafts/goals-snapshots.md.)
+    p of a rank test is 0.100 for three runs against three), so the rule uses **effect sizes decided now**: a run gains
+    when its hypervolume beats the best earlier run's on the method by 1% or more, or an extreme does by its threshold -
+    speed 2%, binary + image 1%, memory 4 KB, the 32-bit speed 2%. **Stop when, after at least three runs on an
+-   unchanged method** (the same workloads, selection, operators, gates, hours and box), **the last two runs gain
++   unchanged method** (the same workloads, selection, operators, gates and box; the hours too until Iteration 562), **the last two runs gain
+    nothing**, with no open correctness issue. A method change restarts the count. Report each run's values and the
+    spread; no p-values. The series starts at seed 73, the first run with memory measured right since 70. **From seed 77**
+    (the owner, 555-556) a new series: 12 hours; every freeze that still has code lifted (evolve.py's FROZEN keeps only the
+    retired); the four extremes from every alive design, the hypervolume on the true front as before - seed 76's dominance
+-   chain hid its fastest designs (results/evolve-amd-ryzen-7-pro-8840hs-seed76.md). **From seed 78** (the owner, 560) a new
+-   series again: 9 hours, the rest as seed 77's - the 12-hour series ended at its one run.
++   chain hid its fastest designs (results/evolve-amd-ryzen-7-pro-8840hs-seed76.md). **From Iteration 562** (the owner: the hours
++   vary with his days) the hours are no part of the method: each run ends by its hours and is judged **at its last
++   generation, against each earlier run at that same generation** - the thresholds adjusted to the run's length by the
++   earlier run's own record (its curve in the ledger, every 5 generations); an earlier run shorter than this one is
++   taken at its end. The series from seed 77 (its method as above): seeds 77 (12 h) and 78 (9 h) its first two.
+ 2. **The confirmation run.** One run of the same method and hours **from the final front** - without `noevolved`, the
+    earlier runs' true fronts among the founders - with **every frozen gene that still has code re-enabled** (lifted from seed 77 already - 556)
+    (alignhot, msc, scale, sharedcall; the frozen-at-1 genes - bytehdr, doesfar, thinhdr, varcall, bss, lean - free to
+diff --git a/lab/evolve/hv.py b/lab/evolve/hv.py
+index 11242c2..f594a94 100644
+--- a/lab/evolve/hv.py
++++ b/lab/evolve/hv.py
+@@ -86,10 +86,9 @@ def self_test():
+ 
+ 
+ 
+-def measure(db, E, b=None):
+-    """A database's true front, measured (Iteration 554 - stopping.py's numbers too): its size, how many inside the box,
+-    the hypervolume and the four extremes."""
+-    b = b or json.load(open(BOUNDS)); R = {}
++def load(db, E):
++    """A database's records by id, each with its binary + image total (Iteration 562: read once for a run's curve)."""
++    R = {}
+     for l in open(db, errors='replace'):
+         if l.startswith('{'):
+             try: r = json.loads(l)
+@@ -97,6 +96,15 @@ def measure(db, E, b=None):
+             if r.get('id'):
+                 r['total'] = E.ov(r, 'total') if r.get('status') == 'ok' and (r.get('total') or r.get('size')) else r.get('total')
+                 R[r['id']] = r
++    return R
++
++
++def measure(db, E, b=None, gen=None, R=None):
++    """A database's true front, measured (Iteration 554 - stopping.py's numbers too): its size, how many inside the box,
++    the hypervolume and the four extremes. gen: only the records of generations up to it (Iteration 560); R: the records
++    load() read, for many generations of one run (562)."""
++    b = b or json.load(open(BOUNDS)); R = load(db, E) if R is None else R
++    if gen is not None: R = {i: r for i, r in R.items() if (r.get('gen') or 0) <= gen}
+     F = true_front(R, E)
+     Z = [z for z in (norm(R[i], b) for i in F) if z is not None]
+     ex = lambda k: min(R[i][k] for i in F)
+@@ -110,9 +118,11 @@ if __name__ == '__main__':
+     args = sys.argv[1:]
+     if not args: sys.exit(__doc__)
+     if args[0] == '--self-test': sys.exit(self_test())
++    g = int(args[args.index('--gen') + 1]) if '--gen' in args else None     # Iteration 560
++    if g is not None: del args[args.index('--gen'):args.index('--gen') + 2]
+     b = json.load(open(BOUNDS))
+     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
+     for db in args:
+-        m = measure(db, E, b)
+-        print('%s: true front %d (%d inside the box), hypervolume %.5f | fastest %.4f, smallest %d, least memory %d KB, fastest at 32 bits %.4f'
+-              % (db, m['front'], m['inside'], m['hv'], m['fastest'], m['smallest'], m['memory'], m['fastest32']), flush=True)
++        m = measure(db, E, b, g)
++        print('%s%s: true front %d (%d inside the box), hypervolume %.5f | fastest %.4f, smallest %d, least memory %d KB, fastest at 32 bits %.4f'
++              % (db, ' at generation %d' % g if g is not None else '', m['front'], m['inside'], m['hv'], m['fastest'], m['smallest'], m['memory'], m['fastest32']), flush=True)
+diff --git a/lab/evolve/stopping.py b/lab/evolve/stopping.py
+index 529b317..a381829 100644
+--- a/lab/evolve/stopping.py
++++ b/lab/evolve/stopping.py
+@@ -13,6 +13,13 @@ method, the last two gain nothing - and no correctness issue is open, which is t
+ newest series' runs before seed N; --append adds this run's line. stdout: the series, the verdict, the count, the bar.
+ A method line with "extremes": "alive" takes the four extremes from every alive design - the strict front's - and not
+ the true front's, whose tolerance dominance can lose the fastest to a chain (Iteration 556: seed 76's, 105 designs).
++A method line with "matched": true (Iteration 562 - the owner's hours vary, so they are no part of the method) judges each
++run at its last generation against each earlier run's numbers at that generation - the thresholds adjusted to the run's
++length by the earlier run's own record: its "curve" - the four extremes (every alive design's) exact at every generation
++where they moved, the hypervolume every 10 generations (a true front costs up to 34 s); between two hypervolume points
++its earlier one. An earlier run shorter than this one is taken at its end. Both favour a gain: an error continues the
++phase rather than ends it. --curve FILE computes the curve alone (minutes - process-run.sh does it, detached); --append
++takes it from FILE when it is this seed's, else computes it. "the next run gains if" depends on how far the next run goes.
+ """
+ import json, os, sys
+ 
+@@ -30,10 +37,39 @@ def bar(runs):
+                 fastest32=min(r['fastest32'] for r in runs) * 0.98)
+ 
+ 
++def at(run, g):
++    """A run's numbers at generation g (562): each criterion's last curve point at or before g (its first, when g is
++    before them all); at or past its end, or with no curve or no g, its end."""
++    c = run.get('curve')
++    if not c or g is None or g >= run.get('gens', 10 ** 9): return run
++    out = dict(run)
++    for k in KEYS:
++        pts = c.get(k) or []
++        if pts: out[k] = ([v for x, v in pts if x <= g] or [pts[0][1]])[-1]
++    return out
++
++
++def curve(db, E, hv, R, gens):
++    """A run's curve (562): the extremes over every alive design where they moved, generation by generation, and the
++    hypervolume every 10 generations."""
++    F = dict(fastest='speed', smallest='total', memory='rss', fastest32='speed32'); c = {k: [] for k in F}; best = {}
++    A = sorted((r for r in R.values() if r.get('status') == 'ok' and all(r.get(f) for f in F.values())), key=lambda r: r.get('gen') or 0)
++    for r in A:
++        g = r.get('gen') or 0
++        for k, f in F.items():
++            if k not in best or r[f] < best[k]:
++                best[k] = r[f]; v = round(r[f], 6) if k.startswith('fastest') else r[f]
++                if c[k] and c[k][-1][0] == g: c[k][-1][1] = v
++                else: c[k].append([g, v])
++    c['hv'] = [[g, round(hv.measure(db, E, gen=g, R=R)['hv'], 6)] for g in range(10, gens, 10)]
++    return c
++
++
+ def gains(run, earlier):
+-    """The criteria a run gains on over the earlier runs; None for a series' first run - nothing to beat."""
++    """The criteria a run gains on over the earlier runs; None for a series' first run - nothing to beat. A run with its
++    last generation ("gens") meets each earlier run at that generation (at())."""
+     if not earlier: return None
+-    b = bar(earlier)
++    b = bar([at(k, run.get('gens')) for k in earlier])
+     return [k for k in KEYS if (run[k] >= b[k] if k == 'hv' else run[k] <= b[k])]
+ 
+ 
+@@ -76,21 +112,26 @@ def report(run, method, runs):
+            '|---|---|---|---|---|---|---|---|']
+     for i, r in enumerate(S):
+         g = gains(r, S[:i])
+-        out.append('| %s | %s | %s | %s |' % (r['seed'], r.get('front', '-'), ' | '.join(fmt(k, r[k]) for k in KEYS),
++        out.append('| %s | %s | %s | %s |' % ('%s (to %s)' % (r['seed'], r['gens']) if 'gens' in r else r['seed'], r.get('front', '-'), ' | '.join(fmt(k, r[k]) for k in KEYS),
+                    'the first' if g is None else ', '.join(NAME[k] for k in g) if g else 'nothing'))
+     g = gains(run, S[:-1]); out.append('')
+     if g is None: out.append('verdict: seed %d opens the series - nothing earlier to gain on' % run['seed'])
+     else:
+-        b = {k: (max if k == 'hv' else min)(r[k] for r in S[:-1]) for k in KEYS}
++        b = {k: (max if k == 'hv' else min)(at(r, run.get('gens'))[k] for r in S[:-1]) for k in KEYS}
+         ch = lambda k: '%+d KB' % round(run[k] - b[k]) if k == 'memory' else '%+.1f%%' % (100 * (run[k] / b[k] - 1))
+-        out.append('verdict: seed %d %s - %s' % (run['seed'], 'GAINS, by %s' % ' and '.join(NAME[k] for k in g) if g else
++        out.append('verdict: seed %d%s %s - %s' % (run['seed'], ' (at its last generation, %d - the earlier runs there too)' % run['gens'] if method.get('matched') and 'gens' in run else '', 'GAINS, by %s' % ' and '.join(NAME[k] for k in g) if g else
+                    'gains nothing', '; '.join('%s %s against %s (%s%s)' % (NAME[k], fmt(k, run[k]), fmt(k, b[k]), ch(k),
+                    ', past its threshold' if k in g else '') for k in KEYS)))
+     out.append('the count: %d run(s) on the method; %s' % (len(S), 'STOP - three runs or more, the last two gaining nothing '
+                '(if no correctness issue is open)' if stop(S) else 'the earliest stop after seed %d, if every run until '
+                'then gains nothing' % earliest(S)))
+-    nb = bar(S)
+-    out.append('the next run gains if: ' + ', '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS))
++    if method.get('matched'):                   # 562: the bar moves with the next run's length
++        out.append('the next run gains if, by its last generation: ' + '; '.join('%d - %s' % (G, ', '.join('%s %s' % (
++            '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS)) for G in (80, 100, 120, 140, 160)
++            for nb in [bar([at(x, G) for x in S])]) + ' (hypervolume, fastest, smallest, memory, 32-bit)')
++    else:
++        nb = bar(S)
++        out.append('the next run gains if: ' + ', '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS))
+     return '\n'.join(out)
+ 
+ 
+@@ -106,6 +147,12 @@ def self_test():
+               gains(r(8, fastest32=0.1665), [a]) == ['fastest32'], not stop([a, b]), not stop([a, b, c]), stop([a, b, c, d]),
+               stop([a, r(2), r(3)]), not stop([a, b, c, d, e]), earliest([a, b]) == 4, earliest([a, r(2)]) == 3,
+               earliest([a]) == 3, earliest([a, b, c]) == 4]
++    k = r(9, hv=0.35, fastest=0.14, gens=160, curve=dict(hv=[[100, 0.33], [150, 0.345]], fastest=[[3, 0.2], [90, 0.145], [150, 0.141]],
++          smallest=[[3, 14100]], memory=[[3, 112]], fastest32=[[3, 0.175]]))
++    n = r(10, hv=0.336, fastest=0.1445, smallest=14100, memory=112, fastest32=0.175, gens=120)   # 562: a shorter run
++    checks += [at(k, 120)['hv'] == 0.33, at(k, 155)['hv'] == 0.345, at(k, 160) is k, at(k, None) is k, at(a, 120) is a,
++               at(k, 50)['hv'] == 0.33, at(k, 120)['fastest'] == 0.145, at(k, 2)['fastest'] == 0.2, gains(n, [k]) == ['hv'], gains(dict(n, gens=None), [k]) == [],
++               gains(dict(n, gens=160), [k]) == [], gains(r(11, hv=0.3534, gens=200), [k]) == [], gains(r(12, hv=0.3536, gens=200), [k]) == ['hv']]
+     ok = all(checks)
+     print('stopping.py self-test: %d checks - the thresholds at their edges, the count, the earliest stop - %s'
+           % (len(checks), 'pass' if ok else 'FAIL at %s' % [i for i, x in enumerate(checks) if not x]))
+@@ -118,12 +165,21 @@ if __name__ == '__main__':
+     opt = lambda k: a[a.index(k) + 1] if k in a and a.index(k) + 1 < len(a) else None
+     if opt('--seed') is None: sys.exit(__doc__)
+     seed, led = int(opt('--seed')), opt('--ledger') or LEDGER
+-    db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger')))
++    db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger'), opt('--curve')))
+     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E, hv
+-    m = hv.measure(db, E); method, runs = series(led)
+-    x = m['alive'] if method.get('extremes') == 'alive' else m      # 556: the series says whose extremes
++    method, runs = series(led); R = hv.load(db, E); m = hv.measure(db, E, R=R)
++    pick = lambda m: m['alive'] if method.get('extremes') == 'alive' else m      # 556: the series says whose extremes
++    x = pick(m)
+     run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(x['fastest'], 6), smallest=x['smallest'],
+                memory=x['memory'], fastest32=round(x['fastest32'], 6))
++    if method.get('matched') or opt('--curve'):  # 562: its last generation; its curve for --append, or alone
++        run['gens'] = max((r.get('gen') or 0) for r in R.values()); cf = opt('--curve')
++        if opt('--curve') and '--append' not in a:
++            json.dump(dict(seed=seed, gens=run['gens'], curve=curve(db, E, hv, R, run['gens'])), open(cf, 'w'))
++            sys.exit(print('stopping: seed %d\'s curve, generations 0-%d, in %s' % (seed, run['gens'], cf)))
++        if '--append' in a:
++            k = json.load(open(cf)) if cf and os.path.exists(cf) else {}
++            run['curve'] = k['curve'] if k.get('seed') == seed and k.get('gens') == run['gens'] else curve(db, E, hv, R, run['gens'])
+     print(report(run, method, runs))
+     if '--append' in a:
+         if any(x['seed'] == seed for x in runs): print('the ledger has seed %d already - nothing appended' % seed)
+diff --git a/results/stopping-series.md b/results/stopping-series.md
+index 487557b..14b694e 100644
+--- a/results/stopping-series.md
++++ b/results/stopping-series.md
+@@ -13,4 +13,5 @@ laptop); from seed 75 on, each from its pack's database.
+ {"seed": 76, "front": 262, "hv": 0.350361, "fastest": 0.145013, "smallest": 14109, "memory": 112, "fastest32": 0.177819}
+ {"method": "from seed 77", "why": "12 hours (the owner, 555); every freeze that still has code lifted (the owner, 556); the extremes from every alive design - seed 76's dominance chain (556). A new series: the count restarts", "extremes": "alive"}
+ {"seed": 77, "front": 370, "hv": 0.350103, "fastest": 0.140636, "smallest": 14015, "memory": 108, "fastest32": 0.170181}
+-{"method": "from seed 78", "why": "9 hours (the owner, 560) - the 12-hour series ended at seed 77, its one run; every freeze with code still lifted, the extremes from every alive design. A new series: the count restarts", "extremes": "alive"}
++{"method": "from seed 77, matched by generation", "matched": true, "extremes": "alive", "why": "the owner's hours vary with his days (562): the hours leave the method; each run judged at its last generation against each earlier run at that generation - the thresholds adjusted to the run's length by the earlier run's own curve. Otherwise seed 77's method: every freeze with code lifted, the extremes from every alive design"}
++{"seed": 77, "front": 370, "hv": 0.350103, "fastest": 0.140636, "smallest": 14015, "memory": 108, "fastest32": 0.170181, "gens": 161, "curve": {"fastest": [[0, 0.69659], [1, 0.578352], [2, 0.566014], [3, 0.562574], [4, 0.537486], [5, 0.509166], [7, 0.474397], [8, 0.439356], [9, 0.431719], [10, 0.430337], [11, 0.422943], [12, 0.354282], [13, 0.330395], [17, 0.302013], [18, 0.290934], [19, 0.290581], [20, 0.268908], [23, 0.237675], [24, 0.23635], [25, 0.235136], [27, 0.217266], [28, 0.213524], [29, 0.211128], [30, 0.206365], [31, 0.201002], [38, 0.198664], [39, 0.193794], [40, 0.174122], [44, 0.159563], [55, 0.156884], [59, 0.15608], [60, 0.154328], [63, 0.152655], [65, 0.152548], [67, 0.148208], [68, 0.147674], [72, 0.14632], [78, 0.14604], [83, 0.145639], [97, 0.144638], [98, 0.143538], [103, 0.142264], [124, 0.141782], [142, 0.140636]], "smallest": [[0, 16781], [2, 16395], [3, 16077], [4, 15881], [8, 15497], [11, 15069], [14, 15049], [16, 15029], [17, 15005], [18, 14713], [22, 14597], [25, 14565], [29, 14553], [31, 14410], [44, 14394], [47, 14305], [53, 14258], [70, 14115], [72, 14107], [80, 14083], [93, 14075], [95, 14059], [97, 14051], [133, 14039], [135, 14015]], "memory": [[0, 128], [2, 124], [3, 120], [5, 116], [7, 112], [22, 108]], "fastest32": [[0, 0.689756], [1, 0.63056], [2, 0.577352], [4, 0.543405], [5, 0.535876], [7, 0.495527], [8, 0.456606], [9, 0.441972], [11, 0.428489], [12, 0.414254], [14, 0.410021], [15, 0.395839], [16, 0.389049], [17, 0.368862], [18, 0.368001], [19, 0.366269], [20, 0.341655], [21, 0.311395], [22, 0.31109], [23, 0.309941], [24, 0.30262], [25, 0.301794], [26, 0.300703], [27, 0.267306], [29, 0.24763], [31, 0.23535], [33, 0.233019], [34, 0.228374], [36, 0.220066], [37, 0.216686], [38, 0.213526], [41, 0.213035], [44, 0.20392], [45, 0.203714], [49, 0.201505], [53, 0.199364], [54, 0.19515], [63, 0.191498], [70, 0.182575], [73, 0.181394], [75, 0.177052], [89, 0.1766], [91, 0.175618], [92, 0.17245], [96, 0.170181]], "hv": [[10, 0.183246], [20, 0.236014], [30, 0.277005], [40, 0.306433], [50, 0.316071], [60, 0.321317], [70, 0.330136], [80, 0.336678], [90, 0.335131], [100, 0.338724], [110, 0.341389], [120, 0.341057], [130, 0.345832], [140, 0.350279], [150, 0.346654], [160, 0.349756]]}}

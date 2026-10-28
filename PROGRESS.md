@@ -10221,3 +10221,13 @@ seed 77 there 0.33872, 0.1435, 14,051, 108 KB - the owner's yes needed. Files: r
 results/drafts/seed78-checklist-561.md. Tested whole on seed 77's archive - every check passed, the control (the death
 wrong before the hole fix) reproduced by the script; the first try died with the turn (the sandbox suspends), so
 process-run.sh FROM=checks resumes at the checks.
+
+## Iteration 562 - 2026-10-28 - Claude
+
+**The stopping rule matched by generation** (the owner: the hours vary; judge each run at its last generation; the
+thresholds adjusted to the run's time): stopping-matched-after-seed78.patch replaces 561's generation-100 cut. Each run is
+judged at its last generation against each earlier run at that same generation, from the earlier run's curve in the
+ledger (the extremes exact where they moved, the hypervolume every 10 generations - a true front costs up to 34 s, so
+the curve is computed detached: stopping.py --curve, 204 s for seed 77, in process-run.sh). Seed 78 at about 120
+generations gains on the hypervolume >= 0.34447, the fastest <= 0.1394, the smallest <= 13,910. Self-tests: stopping.py
+30 checks. Files: results/pending/ (ORDER.md, the two patches), results/drafts/seed78-checklist-561.md.

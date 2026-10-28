@@ -40,7 +40,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 561.
+- master: Iteration 562.
 - **Seed 78 is next - 9 hours from scratch, every freeze still lifted (the owner, 560): a new series again** - the hours
   are the method's (GOALS.md), so the count restarts; the earliest stop after seed 80. Its chain: the spread and
   appbench; no clock test (item 4 answered), so no perf hold and no sudo. NEXT-RUN carries the line.
@@ -54,9 +54,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the fix, right on the fixed one (deaths-check.py): no correctness issue open. The chain on master all PASS - run-tests,
   validate 7 of 7, the gate 417 of 417, ans-check 0 of 96 differ, deaths 1 of 1, the jail.
 - **The after-seed-78 batch** (results/pending/ORDER.md, Iteration 561): a processing in three commands -
-  process-run.sh, process-finish.sh, setup-sandbox.sh, draft-results.py drafting the facts; and **every run judged at
-  generation 100** (the owner's hours vary - GOALS.md's rule counted them, so it could never stop): **the owner's yes
-  needed**. Seed 78's processing applies it by hand once: results/drafts/seed78-checklist-561.md. Tested whole on
+  process-run.sh, process-finish.sh, setup-sandbox.sh, draft-results.py drafting the facts; and **the stopping rule matched by
+  generation** (the owner's yes, 562): the hours leave the method; each run judged at its last generation against each
+  earlier run at that generation - the thresholds adjusted to its length. Seed 78's processing applies it by hand once: results/drafts/seed78-checklist-561.md. Tested whole on
   seed 77's archive (561): every check passed, the control reproduced 560's by itself (ORDER.md).
 - **Predictions due** (results/predictions.md): seed 78 - nine hours lose nothing at the fast end, lose at the small end (560).
 - **Scripts added (560)**: lab/evolve/process-records.sh (step 6 in one command); lab/evolve/deaths-check.py (a
@@ -134,7 +134,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 ## Open items
 
 1. Seed 78's processing - results/drafts/seed78-checklist-561.md: the after-seed-78 batch by hand once, then
-   process-run.sh and process-finish.sh; the stopping rule at generation 100 if the owner said yes.
+   process-run.sh and process-finish.sh; the stopping rule matched by generation (562).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop; the 12-hour series seed 77 alone (560); the 9-hour series from seed 78, the earliest stop after seed 80; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -

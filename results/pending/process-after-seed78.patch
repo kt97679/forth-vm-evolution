@@ -122,10 +122,10 @@ index aaac603..8b87f10 100644
  
  - A rehearsal reaches what a test of variants does not: the tail variants were built on s6, not on the two-bit tag, and
 diff --git a/HANDOFF.md b/HANDOFF.md
-index b8c4f78..34fdfc8 100644
+index 32bbd74..778f33c 100644
 --- a/HANDOFF.md
 +++ b/HANDOFF.md
-@@ -62,55 +62,22 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
+@@ -67,55 +67,22 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
  
  ## Processing a returned seed
  
@@ -333,7 +333,7 @@ index 0000000..df208da
 +say "committed $(git log --oneline -1 | cut -c1-100)"
 +sh tools/make-bundle.sh /mnt/user-data/outputs 2>&1 | tail -n 3
 diff --git a/lab/evolve/process-records.sh b/lab/evolve/process-records.sh
-index 1862ec3..45d4a17 100755
+index 1862ec3..da741da 100755
 --- a/lab/evolve/process-records.sh
 +++ b/lab/evolve/process-records.sh
 @@ -27,6 +27,7 @@ if [ -d results/pending ]; then                                              # 1
@@ -344,12 +344,21 @@ index 1862ec3..45d4a17 100755
      git mv results/pending "results/applied-after-seed$N" || exit 1
      git grep -lz 'results/pending/' -- '*.md' | xargs -0 -r sed -i \
          "s|results/pending/\([A-Za-z0-9._-]*-after-seed$N\.patch\)|results/applied-after-seed$N/\1|g; s|results/pending/ORDER\.md|results/applied-after-seed$N/ORDER.md|g"
+@@ -44,7 +45,7 @@ if grep -q "^| $N | " results/gene-votes.md; then say "gene-votes.md has seed $N
+ else python3 lab/evolve/review-checks.py votes "$RES" --seed "$N" --db "$DB" --ledger results/gene-votes.md --append > /dev/null &&
+     say "gene votes appended: $(grep -c "^| $N | " results/gene-votes.md) genes"; fi
+ if grep -q "\"seed\": $N," results/stopping-series.md; then say "stopping-series.md has seed $N already - not appended"
+-else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep -E '^verdict' |
++else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md $([ -f /tmp/process/curve.json ] && echo --curve /tmp/process/curve.json) --append | grep -E '^verdict' |
+     sed 's/^/process-records: stopping: /'; fi
+ 
+ if [ -n "${NEXT_METHOD:-}" ]; then                                           # 4.
 diff --git a/lab/evolve/process-run.sh b/lab/evolve/process-run.sh
 new file mode 100755
-index 0000000..5c33179
+index 0000000..18724ae
 --- /dev/null
 +++ b/lab/evolve/process-run.sh
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,76 @@
 +#!/bin/sh
 +# lab/evolve/process-run.sh ITERATION [ARCHIVE] - a returned seed's processing, its mechanical part, as one detached job
 +# (Iteration 560; HANDOFF.md, "Processing a returned seed"). In order, each step's line in /tmp/process-run/status:
@@ -359,6 +368,8 @@ index 0000000..5c33179
 +#   3. a batch in results/pending/: tools/batch-check.sh, then - PASS only - its patches applied in ORDER.md's order
 +#      with git apply --index (the patches' own files, nothing else) and committed; a patch that changes
 +#      forth/kernel.4 stops it (reseed by hand: tools/reseed.sh);
++#   3b. the run's curve for the stopping rule (stopping.py --curve, minutes - after the batch, whose stopping.py may
++#      bring it);
 +#   4. process-checks.sh on master (build, run-tests, validate, the gate, ans-check, deaths-check, the jail - alone);
 +#   5. a batch applied and a death that computes right on master: the control - deaths-check on the commit before the
 +#      batch, in its own clone - so "the batch fixed it" is measured, not assumed (Iteration 560: seed 77's 0b17df4e1c).
@@ -409,6 +420,10 @@ index 0000000..5c33179
 +fi                                                                # the FROM=checks branch's end
 +N=$(ls -d /tmp/process/*-seed[0-9]*-* | sed -n 's/.*-seed\([0-9]*\)-.*/\1/p' | head -n 1)
 +[ -n "${PRE:-}" ] || { C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied"); [ -z "$C" ] || PRE=$(git rev-parse --short "$C^"); }
++D=$(ls /tmp/process/*-seed[0-9]*-*/pack/db.jsonl | head -n 1)     # 562: the run's curve for the stopping rule, detached
++if grep -q "opt('--curve')" lab/evolve/stopping.py && ! grep -q "\"seed\": $N," /tmp/process/curve.json 2> /dev/null; then
++    python3 lab/evolve/stopping.py "$D" --seed "$N" --curve /tmp/process/curve.json > "$O/curve.log" 2>&1; st "curve - $(tail -n 1 "$O/curve.log")"
++fi
 +R=$(grep -o 'results/evolve-[^ ]*-seed[0-9]*\.md' "$O/draft.log" | head -1)
 +st "checks - process-checks.sh $R (its status /tmp/process-checks/status)"
 +sh lab/evolve/process-checks.sh "$R" > /dev/null 2>&1
