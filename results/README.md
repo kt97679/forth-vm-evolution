@@ -39,6 +39,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `xcheck-seed74.md` - The checks of seed 73's front during seed 74 (Iteration 549): dream 0.977 (default, 24), 0.974 (32-bit), 0.984 (64-bit); the Tegra 0.856 (16).
 - `xcheck-seed75.md` - The checks of seed 74's front during seed 75 (Iteration 553): dream 0.910 (default, 24), 0.906 (32-bit), 0.945 (64-bit); the Tegra 0.762 (8).
 - `xcheck-seed76.md` - The checks of seed 75's front during seed 76 (Iteration 555): dream 0.972 (default, 24), 0.952 (32-bit), 0.980 (64-bit); the Tegra 0.832 (16).
+- `xcheck-seed77.md` - The checks of seed 76's front during seed 77 (Iteration 560): dream 0.957 (default, 24), 0.951 (32-bit), 0.968 (64-bit); the Tegra 0.921 (16).
 - `xcheck-seed73.md` - The checks of seed 72's front during seed 73 (Iteration 544): dream 0.870 (default, 24), 0.931 (32-bit), 0.893 (64-bit); the Tegra 0.882 (16).
 - `xcheck-seed72.md` - The checks of seed 71's front during seed 72 (Iteration 520): dream at three builds and the Tegra.
 - `xcheck-seed71.md` - The checks of seed 70's front during seed 71 (Iteration 516): dream 0.804 (default, 24), 0.969 (32-bit), 0.966 (64-bit); the Tegra 0.607 (7).
