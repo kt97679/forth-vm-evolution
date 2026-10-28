@@ -1057,6 +1057,9 @@ design when frozen.
 front (370): bytehdr, doesfar, thinhdr, varcall, bss, lean at 1; msc, scale, sharedcall, alignhot at 0; the other values'
 enrichment 0.00. Working, and never winning.
 
+**Seed 78 (Iteration 564): holds, as built** - 563 read lifted.py's FAILS on the written genome (msc 24%, sharedcall 78%
+on the front); express() builds none of them: every lifted gene at its frozen value as built, the rest not expressed.
+
 ## Seed 78, 9 hours, a new series - predicted (Iteration 560)
 
 Nine hours, about 120 generations (seed 77: 161 in 12), lose nothing at the fast end and lose at the small end. Seed 77's

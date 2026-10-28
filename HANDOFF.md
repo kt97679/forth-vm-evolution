@@ -46,10 +46,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **No correctness issue open (564 - 563's "new fault" corrected)**: seed 78's three kernel deaths are the reach limit at
   scale 1, known since Iteration 10 (reach_lethal; doesfar's freeze, lifted at 556, had hidden it) - gene-narrow.py:
   doesfar=0 necessary and sufficient. The after-seed-79 batch (results/pending/ORDER.md) teaches deaths-check.py the
-  class; process-run.sh applies it at seed 79's processing. The stop is not blocked.
+  class, the random-search baseline (NEXT-RUN's "random", smoke-tested) and lifted.py as built; process-run.sh
+  applies it at seed 79's processing. The stop is not blocked.
 - **Seed 78 processed (563)** - 9 hours, 126 generations, the true front 182: gains nothing (matched against seed 77 at
-  126), the weakest of five at generation 126 (session 65); two runs on the method, the earliest stop after seed 79. Prediction 560 failed at the fast end. lifted.py and the votes disagree on msc, sharedcall,
-  alignhot (the canonical genome against express()) - open.
+  126), the weakest of five at generation 126 (session 65); two runs on the method, the earliest stop after seed 79. Prediction 560 failed at the fast end. The lifted genes as built: every one at its frozen value
+  on the front (564 - the written values drift, inert); prediction 556 holds.
 - **The after-seed-78 batch applied (563)** - results/applied-after-seed78/ORDER.md: a processing in three commands, the
   stopping rule matched by generation, the confirmation run's founders. Its first use found three faults in it, fixed:
   an applied batch not recognised when patches overlap; process-run's FROM leaking into process-checks (every check
@@ -97,7 +98,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 1. Seed 78's processing - results/drafts/seed78-checklist-561.md: the after-seed-78 batch by hand once, then
    process-run.sh and process-finish.sh; the stopping rule matched by generation (562).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
-   without a stop; from seed 77 one series matched by generation, the hours free (562), the earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
+   without a stop; from seed 77 one series matched by generation, the hours free (562), the earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -
    results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
    designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops

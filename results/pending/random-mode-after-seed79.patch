@@ -1,0 +1,123 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index a29fc76..a503cc4 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -2152,8 +2152,14 @@ def main(argv):
+     if '-h' in argv or '--help' in argv:
+         print(__doc__); return
+     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
+-             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate', '--islands'}
++             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate', '--islands', '--random'}
+     if '--islands' in argv: ISLANDS[0] = int(argv[argv.index('--islands') + 1])   # Iteration 436
++    # Iteration 548 (GOALS.md, "When the improvements are done" 4 - the random-search baseline): --random - every child
++    # a fresh random genome (random_genome(), the random founders' generator), measured as the method's children are,
++    # with nothing learned in the loop: no breeding, no operators' adaptation, no screen, no one-round stop. The fast
++    # gate's second reading stays - a measurement, not a search. Generation 0 as the other options make it.
++    RANDOMK = '--random' in argv
++    if RANDOMK and ISLANDS[0] > 1: sys.exit('evolve.py: --random runs one population, not islands')
+     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
+     if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
+         if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
+@@ -2227,7 +2233,7 @@ def main(argv):
+         all made before any is needed, so the run decides as it did serially."""
+         items = list(pending.items()); pending.clear()
+         gen_now = max((it[1][3] for it in items), default=0)
+-        if SCREEN and items and gen_now >= SCREEN_FROM:          # Iteration 200: the screen
++        if SCREEN and not RANDOMK and items and gen_now >= SCREEN_FROM:   # Iteration 200: the screen (548: none with --random)
+             if SCR['model'] is None or gen_now - SCR['fit'] >= SCREEN_EVERY:
+                 recs = [r for r in R.values() if r['status'] == 'ok' and r.get('speed') and ov(r, 'total') and r.get('gen', 0) < gen_now]
+                 if len(recs) >= SCREEN_MIN:
+@@ -2249,7 +2255,7 @@ def main(argv):
+                 if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
+                 items = keep
+         gate = fast_gate(R)                                   # Iteration 391
+-        stop = stop_stair(R, gen_now) if items else None             # Iteration 529
++        stop = stop_stair(R, gen_now) if items and not RANDOMK else None   # Iteration 529 (548: none with --random)
+         args = [(canon(g), ROUNDS, False, gate, False, stop) for i, (g, parents, how, gen) in items]
+         # Iteration 446: the gated children of the generation before, measured again in this batch - among other
+         # co-runners, at another moment - their speed the geometric mean of the two readings then
+@@ -2351,6 +2357,14 @@ def main(argv):
+                 if gid(g) not in seen: break
+             kids.append(get(g, parents, how + ('; via the attic' if set(parents) & set(attic) else ''), gen))
+         return kids
++    def random_kids(count, gen):   # Iteration 548: --random - fresh random genomes, none seen before
++        kids = []
++        for _ in range(count):
++            for _try in range(10):
++                g = require(random_genome(rnd))
++                if gid(g) not in seen: break
++            kids.append(get(g, [], 'random', gen))
++        return kids
+     def survive(members, kids, n, qkeep):   # Iteration 436: survival within one island (the population, with one)
+         live = [i for i in dict.fromkeys(members + kids) if R[i]['status'] == 'ok']
+         order = rank(live, R)[0]
+@@ -2370,10 +2384,10 @@ def main(argv):
+             live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
+             order, rk, cd = rank(live, R)
+             print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
+-            y_ = aos_update(R, rk, gen)
++            y_ = None if RANDOMK else aos_update(R, rk, gen)
+             if y_: print('  operators (526): crossover %.2f, borrowing %.2f - yields crossover %.2f%%, borrowed %.2f%%, mutation %.2f%%' % (
+                 OPS['xover'], OPS['borrow'], 100 * y_['crossover'], 100 * y_['borrowed'], 100 * y_['mutation']), flush=True)
+-            kids = breed(live, rk, cd, N, gen)
++            kids = random_kids(N, gen) if RANDOMK else breed(live, rk, cd, N, gen)
+             flush()
+             pop, order = survive(pop, kids, N, Q_KEEP)
+         else:   # Iteration 436 (results/drafts/escape-mechanism-435.md): islands, each ranked and bred alone
+diff --git a/lab/evolve/next-run.sh b/lab/evolve/next-run.sh
+index bc6cab0..c02c777 100755
+--- a/lab/evolve/next-run.sh
++++ b/lab/evolve/next-run.sh
+@@ -148,7 +148,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
+     [ -n "$THEN" ] || return 0
+     echo; say "then: $THEN"
+     exec 9>&-
+-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS
++    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS NEXT_RUN_RANDOM
+     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
+ }
+ # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
+@@ -181,6 +181,10 @@ case " $* " in *" carryall "*) CARRYALL=1; set -- $(printf '%s\n' "$@" | grep -v
+ # chain lost the word, and seeds 65-68 ran without islands though their lines asked for them.
+ ISLANDS=${NEXT_RUN_ISLANDS:-}
+ case " $* " in *" islands "*) ISLANDS=4; set -- $(printf '%s\n' "$@" | grep -vx islands) ;; esac
++# Iteration 548 (GOALS.md, the random-search baseline): "random" - every child a fresh random genome (evolve.py
++# --random): nothing learned in the loop; generation 0 as the line's other words make it. Carried through the detach.
++RANDOMKIDS=${NEXT_RUN_RANDOM:-}
++case " $* " in *" random "*) RANDOMKIDS=1; set -- $(printf '%s\n' "$@" | grep -vx random) ;; esac
+ case "${1:-none}" in
+     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
+     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
+@@ -249,7 +253,7 @@ fi
+ HEAD=$(git rev-parse --short HEAD)
+ RUN=$RUNS/seed$SEED-$HEAD
+ STATE=build/evolve/next-run.state
+-WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${CARRYALL:+ carryall}${ISLANDS:+ islands} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
++WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${CARRYALL:+ carryall}${ISLANDS:+ islands}${RANDOMKIDS:+ random} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+ if [ "$KIND" = experiment ]; then
+     NAME=${TOOL%.py}
+     RUN=$RUNS/$NAME-$HEAD
+@@ -300,12 +304,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
+     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
+     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
+     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
+-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
++        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_RANDOM=$RANDOMKIDS NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+         say "going on in the background, as one chain - watch it with"
+         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
+         exit 0
+     fi
+-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
++    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_RANDOM=$RANDOMKIDS NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+     exit 0
+ fi
+ MODE=$NEXT_RUN_DETACHED
+@@ -511,7 +515,7 @@ fi
+ step "the run - $POP designs x $GENS generations, $ROUNDS rounds${ISLANDS:+, $ISLANDS islands}; evolve.log"
+ python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
+ TICK=$!
+-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} ${ISLANDS:+--islands "$ISLANDS"} "$@" >> evolve.log 2>&1 \
++python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${RANDOMKIDS:+--random} ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} ${ISLANDS:+--islands "$ISLANDS"} "$@" >> evolve.log 2>&1 \
+     || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
+ kill $TICK 2>/dev/null || true
+ tail -3 evolve.log

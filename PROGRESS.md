@@ -10259,3 +10259,8 @@ reach at scale 1, and the kernel workload's dictionary is larger: reach_lethal's
 jailed), hidden while doesfar was frozen at 1 (409-556). Seed 78's six such designs: three screened, the three measured
 dead; at scales 2-3 the form lives (474). No correctness issue open; the stop not blocked. The after-seed-79 batch:
 deaths-check.py names the class, gene-narrow.py. Files: results/pending/, the seed 78 results file (a dated correction).
+**Later in Iteration 564**: the random-search baseline ready - results/drafts/random-mode-548.patch brought up to date
+(its next-run.sh half collided with 562's carryall) and smoke-tested (generation 1 four random children, exit 0);
+random-mode-after-seed79.patch. 563's open question closed: as built (express()) every lifted gene sits at its frozen
+value on seed 78's front - the written values drift where they do nothing; lifted.py now reads express(), and
+prediction 556 holds. lifted-express-after-seed79.patch.
