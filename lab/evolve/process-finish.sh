@@ -10,7 +10,8 @@
 #   5. the chat's records there: predictions.md scores seed N, NEXT-RUN names seed N+1 (or none), HANDOFF.md says
 #      "master: Iteration ITERATION", PROGRESS.md has its entry;
 #   6. --dry stops here; else everything committed and tools/make-bundle.sh /mnt/user-data/outputs - then present it.
-# Safe to run again after fixing what it named. As the build user.
+# OPEN='why' (563): deaths-check's open deaths recorded as an open correctness issue, not waived - the chain line says
+# so; no other check can be. Safe to run again after fixing what it named. As the build user.
 set -u
 N=${1:?N}; I=${2:?ITERATION}; DRY=${3:-}
 cd "$(dirname "$0")/../.." || exit 1
@@ -27,7 +28,8 @@ H0=$(sed -n 's/^START from build at \([0-9a-f]*\).*/\1/p' "$S")
 git diff --quiet "$H0" HEAD -- engine forth lab/evolve/evolve.py || die "the checks ran at $H0 and the engine, kernel or evolver changed since - run them again"
 for k in build run-tests validate gate ans-check deaths jail; do                      # 1.
     l=$(grep "^$k=" "$S" | tail -n 1); [ -n "$l" ] || die "no $k line in $S"
-    case $l in "$k=0"*) ;; *) die "$l" ;; esac
+    case $l in "$k=0"*) ;; "deaths="*) [ -n "${OPEN:-}" ] || die "$l - an open correctness issue: fix it, or OPEN='why' records it";;
+        *) die "$l" ;; esac
 done
 grep -q '^validate=0 7 of 7 IDENTICAL' "$S" || die "$(grep '^validate=' "$S")"
 G=$(sed -n 's/^gate=0 alive: \([0-9]*\) of \([0-9]*\).*/\1 \2/p' "$S"); set -- $G
@@ -38,6 +40,7 @@ grep '^ans-check=' "$S" | grep -q 'negative control caught' || die "ans-check's 
 H=$H0
 D=/tmp/process-checks/deaths.log; DL=$(tail -n 1 "$D" | sed 's/^deaths-check: //')
 CL=$(grep -h '^control at' /tmp/process-run/status 2>/dev/null | sed 's/ [0-9:]*$//')
+[ -z "${OPEN:-}" ] || DL="$DL - OPEN, a correctness issue: $OPEN"
 CHAIN="process-checks.sh at $H: build 0, run-tests PASS, validate 7 of 7 IDENTICAL, the gate alive $GA, ans-check $A differ (its negative control caught), deaths-check: $DL, the jail PASS."
 python3 - "$R" "$CHAIN" "$D" "$CL" << 'PY' || die "the results file's [process-finish: ...] lines"
 import re, sys

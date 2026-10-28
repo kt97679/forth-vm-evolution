@@ -10237,3 +10237,15 @@ carry-after-seed78.patch - --carry takes each database's strict front (seed 77: 
 the designs carry-named.txt names (44aaae552d, seed 77's applications' fastest, on no strict front), NEXT-RUN's
 "carryall", and carry-check.py - the pool sized and a sample built against s6 (seed 77: 1,420 designs, 6 of 6 right).
 Nothing changes for the series' runs (noevolved). Files: results/pending/, results/drafts/confirmation-pool-559.md.
+
+## Iteration 563 - 2026-10-28 - Claude
+
+**Seed 78 processed** (9 hours, 126 generations, the true front 182) - the first processing by process-run.sh and
+process-finish.sh: gains nothing against seed 77 at generation 126 (the matched rule); the weakest of five at generation
+126 (session 65); prediction 560 fails at the fast end, holds at the small end. **A new correctness fault**: three cv8
+interpreter designs died on the kernel workload and compute wrong on master - all with six lifted values together
+(bytehdr, doesfar, thinhdr, bss, lean at 0, scale 1), a combination on no living design; open, and the stop waits on it.
+The new scripts' first use found three faults of their own, fixed: an applied batch missed when patches overlap; FROM
+leaking into process-checks.sh; an earlier chain's passes taken from the status file. Seed 79 next, 12 hours, with
+carry-check.py --all. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed78.md, xcheck-seed78.md, session 65,
+results/applied-after-seed78/, results/predictions.md, results/drafts/seed79-checklist-563.md.

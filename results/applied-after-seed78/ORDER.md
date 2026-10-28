@@ -3,9 +3,9 @@
 Prepared while seed 78 runs; master stays what seed 78's bundle tests. It brings process-run.sh, so seed 78's processing
 applies it by hand this once - results/drafts/seed78-checklist-561.md - and process-run.sh then finds it applied.
 
-    git apply results/pending/process-after-seed78.patch
-    git apply results/pending/stopping-matched-after-seed78.patch
-    git apply results/pending/carry-after-seed78.patch
+    git apply results/applied-after-seed78/process-after-seed78.patch
+    git apply results/applied-after-seed78/stopping-matched-after-seed78.patch
+    git apply results/applied-after-seed78/carry-after-seed78.patch
 
 batch-check (562, on bd72523 - the three patches as they stand): PASS - all applied to a fresh clone, run-tests PASS,
 validate 7 of 7 IDENTICAL, the jail PASS.

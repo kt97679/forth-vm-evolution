@@ -1067,3 +1067,15 @@ speed made its last 2% gain at generation 67, seed 76's at 67, seed 75's at 49; 
 (Iteration 562: that last sentence superseded - with the matched stopping rule seed 78 is the second run of the series
 from seed 77, the earliest stop after seed 79. The prediction itself stands: the whole run's tolerance front.)
 
+**Scored at seed 78 (Iteration 563): fails at the fast end, holds at the small end.** The tolerance front (hv.py's
+line): the fastest 0.1493 and the hypervolume 0.33952 below the ranges (0.1363-0.1450, 0.3485-0.3567); the smallest
+14,189 above 14,015. Not the hours alone - at generation 126 seed 78 is behind all of seeds 74-77 (the spread).
+
+## Seed 79, 12 hours - predicted (Iteration 563)
+
+Seed 79 gains nothing, and the stopping rule stops after it. At its last generation (about 160 at 12 hours) it must beat
+seed 77 there: the hypervolume >= 0.35325, the fastest <= 0.1378, the smallest <= 13,875, the memory <= 104 KB, 32-bit
+<= 0.1668. Since the freezes were lifted the two runs sit at the slow end of the spread at equal effort (0.1418, 0.1477
+at generation 126 against 74-76's 0.1381-0.1389), and every run since 76 holds 108 KB. A weak prediction: in the 10-hour
+series one run of three gained (seed 75, by the fastest) - a fresh draw clears a 2% bar about one time in three.
+

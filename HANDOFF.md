@@ -40,31 +40,26 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 562.
-- **Seed 78 is next - 9 hours from scratch, every freeze still lifted.** With the after-seed-78 batch (the owner's yes,
-  562) the hours are no part of the method: seed 78 is the second run of the series from seed 77, judged at its last
-  generation against seed 77 at that generation; the earliest stop after seed 79. Its chain: the spread and appbench;
-  no clock test, so no sudo. NEXT-RUN carries the line.
-- **Seed 77 processed (560)** - results/evolve-amd-ryzen-7-pro-8840hs-seed77.md: 12 hours, 161 generations, the true
-  front 370; the hypervolume 0.35010, the fastest 0.1421 (alive 0.1406), the smallest 14,015, the least memory 108 KB -
-  inside seeds 73-76's spread at generation 128 (session 64). The 12-hour series' only run (stopping-series.md).
-  Prediction 555 fails by the memory alone (108 KB, one 4 KB page, reached by seed 76's alive designs already);
-  prediction 556 holds (every lifted gene at its old frozen value on 100% of the front).
-- **The after-seed-77 batch applied (560)** - results/applied-after-seed77/ORDER.md: the JIT patches every copy of a value
-  hole; seed 77's one corpus death (0b17df4e1c: jit, tracer, nocrossjump - the 557 hole) wrong on the tree before
-  the fix, right on the fixed one (deaths-check.py): no correctness issue open. The chain on master all PASS - run-tests,
-  validate 7 of 7, the gate 417 of 417, ans-check 0 of 96 differ, deaths 1 of 1, the jail.
-- **The after-seed-78 batch** (results/pending/ORDER.md, Iteration 561): a processing in three commands -
-  process-run.sh, process-finish.sh, setup-sandbox.sh, draft-results.py drafting the facts; and **the stopping rule matched by
-  generation** (the owner's yes, 562): the hours leave the method; each run judged at its last generation against each
-  earlier run at that generation - the thresholds adjusted to its length. Seed 78's processing applies it by hand once: results/drafts/seed78-checklist-561.md. Tested whole on
-  seed 77's archive (561): every check passed, the control reproduced 560's by itself (ORDER.md).
-- **Predictions due** (results/predictions.md): seed 78 - nine hours lose nothing at the fast end, lose at the small end (560).
-- **Scripts added (560)**: lab/evolve/process-records.sh (step 6 in one command); lab/evolve/deaths-check.py (a
-  process-checks step: the seed's deaths rebuilt on the tree); draft-results.py reads the spread's generation.
-- **Before 560**: seeds 70-76 processed (498-555); history: HANDOFF-REFERENCE.md.
-- **Files a new chat needs**: the newest bundle, and seed 78's chain archive (`forth-vm-evolution-chain-<its
-  commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
+- master: Iteration 563.
+- **Seed 79 is next - 12 hours from scratch** (the owner), every freeze still lifted, the stopping rule matched by
+  generation. NEXT-RUN carries the line; its chain pre-flights the confirmation run's founders (carry-check.py --all).
+- **A correctness fault is open (563) - the first job**: seed 78's three kernel deaths (cv8, the JIT off) compute wrong
+  on master; all three carry bytehdr=0, doesfar=0, thinhdr=0, bss=0, lean=0, scale=1 - lifted at 556, each common alone,
+  together on no living design. Narrow the combination (rebuild 9e2a4b5df1 with one value set back at a time:
+  deaths-check.py's way), find the cause, fix or freeze it. Until then the stopping rule cannot stop
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed78.md, its deaths).
+- **Seed 78 processed (563)** - 9 hours, 126 generations, the true front 182: gains nothing (matched against seed 77 at
+  126), the weakest of five at generation 126 (session 65); two runs on the method, the earliest stop after seed 79 -
+  if the fault is fixed. Prediction 560 failed at the fast end. lifted.py and the votes disagree on msc, sharedcall,
+  alignhot (the canonical genome against express()) - open.
+- **The after-seed-78 batch applied (563)** - results/applied-after-seed78/ORDER.md: a processing in three commands, the
+  stopping rule matched by generation, the confirmation run's founders. Its first use found three faults in it, fixed:
+  an applied batch not recognised when patches overlap; process-run's FROM leaking into process-checks (every check
+  skipped); process-finish taking an earlier chain's passes from the status file. process-finish's OPEN='why' records
+  an open fault (it waives no other check).
+- **Predictions due** (results/predictions.md): seed 79 gains nothing (563, weak).
+- **Before 563**: seeds 70-77 processed (498-560); history: HANDOFF-REFERENCE.md.
+- **Files a new chat needs**: the newest bundle, and seed 79's chain archive. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
@@ -109,8 +104,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
    designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
-3. **Correctness - the JIT's value holes fixed, applied (560)**: the after-seed-77 batch (results/drafts/corpus-deaths-555.md,
-   jit-sweep-558.md); seed 77's one corpus death the same fault - wrong before the fix, right after (deaths-check.py's control).
+3. **Correctness - open (563)**: seed 78's three cv8 kernel deaths, the JIT off - the state card above. The JIT's
+   value holes fixed and applied (560: corpus-deaths-555.md, jit-sweep-558.md).
 3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
    hypervolume on the true front as before (stopping.py; seed 76's dominance chain).
 4. The fast end's offset (rule 3; seeds 73-76 1.070, 1.066, 1.047, 1.063) - results/drafts/fast-end-offset-554.md: a cost

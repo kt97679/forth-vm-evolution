@@ -63,3 +63,4 @@ at Iteration 513). **Bold**: a break - the speed columns do not compare across i
 | 75 | 553 | 266 | 4c9c2d9075 | 0.136 | 7.33 | b2eb2ef4a9 | 14,095 | 5,008 | 112 | 7 +apps, mean |
 | 76 | 555 | 262 | 7f6362b7e5 | 0.145 | 6.90 | 344b8fe8fe | 14,109 | 5,136 | 112 | 7 +apps, mean |
 | 77 | 560 | 370 | 0cc2c03ff7 | 0.142 | 7.04 | 07cfdaf038 | 14,015 | 4,928 | 108 | 7 +apps, mean |
+| 78 | 563 | 182 | a32d992f8d | 0.149 | 6.70 | 210c505ebc | 14,189 | 5,168 | 112 | 7 +apps, mean |

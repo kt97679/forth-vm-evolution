@@ -1,9 +1,9 @@
 # Seed 78's processing - the checklist (Iteration 561)
 
-The first processing with process-run.sh; it comes in the after-seed-78 batch (results/pending/ORDER.md), so once:
+The first processing with process-run.sh; it comes in the after-seed-78 batch (results/applied-after-seed78/ORDER.md), so once:
 
 1. As root: `git clone -q /mnt/user-data/uploads/<bundle> /tmp/s && cd /tmp/s && git apply
-   results/pending/process-after-seed78.patch && sh tools/setup-sandbox.sh && cd / && rm -rf /tmp/s`.
+   results/applied-after-seed78/process-after-seed78.patch && sh tools/setup-sandbox.sh && cd / && rm -rf /tmp/s`.
 2. As claude in /home/claude/forth-vm-evolution: `sh tools/batch-check.sh` detached, PASS; then each patch ORDER.md
    names (all three: the owner said yes to the matched stopping rule, 562) with `git apply --index`, and `git commit -m "Iteration N: the
    after-seed-78 batch applied - K patches (...), batch-check PASS"`.
