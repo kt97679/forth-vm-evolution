@@ -93,6 +93,17 @@ struct jit_st {             /* a stencil as read: offsets into its body, -1 for 
 static struct jit_st jit_st[JIT_NST];
 
 static int32_t jit_rel32(const unsigned char *p) { int32_t v; memcpy(&v, p, 4); return v; }
+/* Iteration 557: every copy of a value hole patched, not the one jit_scan noted last. -ftracer duplicates blocks, and a
+   copy can survive - st_callx's under -ftracer alone, seed 76's st_execute's with -fno-crossjumping too (the sweep, 558) -
+   so a stencil can hold a hole twice: one copy patched, the other left at its marker value, a jump to nowhere
+   (results/drafts/corpus-deaths-555.md). */
+static void jit_fill(unsigned char *dst, int n, jit_hole_t hole, const void *v) {
+    int p;
+    for (p = 0; p + JIT_HOLEW <= n; p++) {
+        jit_hole_t x; memcpy(&x, dst + p, JIT_HOLEW);
+        if (x == hole) { memcpy(dst + p, v, JIT_HOLEW); p += JIT_HOLEW - 1; }
+    }
+}
 static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit_rel32(p) == (const unsigned char *)t; }
 
 /* Iteration 129: a stencil is read up to the next table function, or this
@@ -369,16 +380,16 @@ static unsigned char *jit_put(unsigned char *dst, int s, UNS64 val, UNS64 jump, 
         else if (jit_relto(t->src + p, spn_table[J_CALL])) to = call;
         if (to) { int32_t r = (int32_t)(to - (UNS64)(uintptr_t)(dst + p + 4)); memcpy(dst + p, &r, 4); p += 3; }
     }
-    if (t->imm >= 0) memcpy(dst + t->imm, &val, JIT_HOLEW);
-    if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; memcpy(dst + t->rp, &v, JIT_HOLEW); }
+    if (t->imm >= 0) jit_fill(dst, n, JIT_IMM64, &val);
+    if (t->rp >= 0) { UNS64 v = (UNS64)(uintptr_t)&jit_rp; jit_fill(dst, n, JIT_RP64, &v); }
 #if JITMUL
-    if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; memcpy(dst + t->th, &v, JIT_HOLEW); }
+    if (t->th >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_throw0; jit_fill(dst, n, JIT_TH64, &v); }
 #endif
 #if JITEXEC
-    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; memcpy(dst + t->ex, &v, JIT_HOLEW); }
+    if (t->ex >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_exec; jit_fill(dst, n, JIT_EX64, &v); }
 #endif
 #if JITEXEC && JITMUL
-    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; memcpy(dst + t->rs, &v, JIT_HOLEW); }
+    if (t->rs >= 0) { UNS64 v = (UNS64)(uintptr_t)jit_resume0; jit_fill(dst, n, JIT_RS64, &v); }
 #endif
     return dst + n;
 }

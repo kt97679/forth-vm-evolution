@@ -40,6 +40,8 @@ if [ -n "$SP" ]; then
     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
     python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
     p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'
+    python3 "$EV/lifted.py" "$SP/db.jsonl" > lifted.txt 2>&1   # Iteration 557: the freezes lifted at 556, on the true front
+    p ""; p "## lifted.py (lifted.txt) - the freezes lifted at 556 on the true front; prediction 556"; p '```'; grep -v '^|---' lifted.txt | cut -c1-300 >> "$S"; p '```'
     python3 "$EV/review-checks.py" rules "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > rules.txt 2>&1   # Iteration 438
     p ""; p "## review-checks.py rules (rules.txt) - results/seed63-rules.md's rules, measured"; cut -c1-300 rules.txt | grep -v '^pinned' >> "$S"
 fi

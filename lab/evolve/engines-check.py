@@ -190,10 +190,11 @@ for name, genes, w in VBIG:
 shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)
 # Iteration 463: and are the stencils safe to copy - no relocation in one but to a marker (stencil-check.py), at 64
 # bits and at 32: a compiler that puts a call into a stencil (a stack check, a profiler hook) is caught here.
-for cc in ('gcc', 'gcc -m32 -fno-pie'):
-    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stencil-check.py'), '--cc', cc],
+# Iteration 557: and with -ftracer beside -fno-crossjumping, the pair that left seed 76's st_execute holding a hole twice.
+for cc, fl in (('gcc', []), ('gcc -m32 -fno-pie', []), ('gcc', ['-O2', '-ftracer', '-fno-crossjumping', '-DJITX=1', '-DJITINL=1', '-DJITLOOP=1', '-DJITEXEC=1', '-DJITMUL=1'])):
+    r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stencil-check.py'), '--cc', cc] + fl,
                        capture_output=True, text=True)
     print('  stencils     %s %s' % ('ok    ' if r.returncode == 0 else 'FAILED', (r.stdout or r.stderr).strip().split('\n')[0][:140]), flush=True)
-    if r.returncode: bad.append('stencils (%s)' % cc)
+    if r.returncode: bad.append('stencils (%s%s)' % (cc, ' ' + ' '.join(fl[:3]) if fl else ''))
 print('PASS' if not bad else 'FAIL - %d of %d: %s' % (len(bad), len(VARIANTS) + len(V32) + len(VBIG), '; '.join(bad)))
 sys.exit(1 if bad else 0)
