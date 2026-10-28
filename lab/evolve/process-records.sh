@@ -27,6 +27,7 @@ if [ -d results/pending ]; then                                              # 1
     C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied")
     for p in $P; do git apply -R --check "$p" 2> /dev/null || [ -n "$C" ] || { say "$p is not applied - apply the batch first"; exit 1; }; done
     [ -z "$C" ] || say "the batch applied at $C"
+    [ ! -e "results/applied-after-seed$N" ] || { say "results/applied-after-seed$N exists already - pending left as it is"; exit 1; }
     git mv results/pending "results/applied-after-seed$N" || exit 1
     git grep -lz 'results/pending/' -- '*.md' | xargs -0 -r sed -i \
         "s|results/pending/\([A-Za-z0-9._-]*-after-seed$N\.patch\)|results/applied-after-seed$N/\1|g; s|results/pending/ORDER\.md|results/applied-after-seed$N/ORDER.md|g"
@@ -44,7 +45,7 @@ if grep -q "^| $N | " results/gene-votes.md; then say "gene-votes.md has seed $N
 else python3 lab/evolve/review-checks.py votes "$RES" --seed "$N" --db "$DB" --ledger results/gene-votes.md --append > /dev/null &&
     say "gene votes appended: $(grep -c "^| $N | " results/gene-votes.md) genes"; fi
 if grep -q "\"seed\": $N," results/stopping-series.md; then say "stopping-series.md has seed $N already - not appended"
-else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep -E '^verdict' |
+else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md $([ -f /tmp/process/curve.json ] && echo --curve /tmp/process/curve.json) --append | grep -E '^verdict' |
     sed 's/^/process-records: stopping: /'; fi
 
 if [ -n "${NEXT_METHOD:-}" ]; then                                           # 4.

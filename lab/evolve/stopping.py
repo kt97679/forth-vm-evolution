@@ -13,6 +13,13 @@ method, the last two gain nothing - and no correctness issue is open, which is t
 newest series' runs before seed N; --append adds this run's line. stdout: the series, the verdict, the count, the bar.
 A method line with "extremes": "alive" takes the four extremes from every alive design - the strict front's - and not
 the true front's, whose tolerance dominance can lose the fastest to a chain (Iteration 556: seed 76's, 105 designs).
+A method line with "matched": true (Iteration 562 - the owner's hours vary, so they are no part of the method) judges each
+run at its last generation against each earlier run's numbers at that generation - the thresholds adjusted to the run's
+length by the earlier run's own record: its "curve" - the four extremes (every alive design's) exact at every generation
+where they moved, the hypervolume every 10 generations (a true front costs up to 34 s); between two hypervolume points
+its earlier one. An earlier run shorter than this one is taken at its end. Both favour a gain: an error continues the
+phase rather than ends it. --curve FILE computes the curve alone (minutes - process-run.sh does it, detached); --append
+takes it from FILE when it is this seed's, else computes it. "the next run gains if" depends on how far the next run goes.
 """
 import json, os, sys
 
@@ -30,10 +37,39 @@ def bar(runs):
                 fastest32=min(r['fastest32'] for r in runs) * 0.98)
 
 
+def at(run, g):
+    """A run's numbers at generation g (562): each criterion's last curve point at or before g (its first, when g is
+    before them all); at or past its end, or with no curve or no g, its end."""
+    c = run.get('curve')
+    if not c or g is None or g >= run.get('gens', 10 ** 9): return run
+    out = dict(run)
+    for k in KEYS:
+        pts = c.get(k) or []
+        if pts: out[k] = ([v for x, v in pts if x <= g] or [pts[0][1]])[-1]
+    return out
+
+
+def curve(db, E, hv, R, gens):
+    """A run's curve (562): the extremes over every alive design where they moved, generation by generation, and the
+    hypervolume every 10 generations."""
+    F = dict(fastest='speed', smallest='total', memory='rss', fastest32='speed32'); c = {k: [] for k in F}; best = {}
+    A = sorted((r for r in R.values() if r.get('status') == 'ok' and all(r.get(f) for f in F.values())), key=lambda r: r.get('gen') or 0)
+    for r in A:
+        g = r.get('gen') or 0
+        for k, f in F.items():
+            if k not in best or r[f] < best[k]:
+                best[k] = r[f]; v = round(r[f], 6) if k.startswith('fastest') else r[f]
+                if c[k] and c[k][-1][0] == g: c[k][-1][1] = v
+                else: c[k].append([g, v])
+    c['hv'] = [[g, round(hv.measure(db, E, gen=g, R=R)['hv'], 6)] for g in range(10, gens, 10)]
+    return c
+
+
 def gains(run, earlier):
-    """The criteria a run gains on over the earlier runs; None for a series' first run - nothing to beat."""
+    """The criteria a run gains on over the earlier runs; None for a series' first run - nothing to beat. A run with its
+    last generation ("gens") meets each earlier run at that generation (at())."""
     if not earlier: return None
-    b = bar(earlier)
+    b = bar([at(k, run.get('gens')) for k in earlier])
     return [k for k in KEYS if (run[k] >= b[k] if k == 'hv' else run[k] <= b[k])]
 
 
@@ -76,21 +112,26 @@ def report(run, method, runs):
            '|---|---|---|---|---|---|---|---|']
     for i, r in enumerate(S):
         g = gains(r, S[:i])
-        out.append('| %s | %s | %s | %s |' % (r['seed'], r.get('front', '-'), ' | '.join(fmt(k, r[k]) for k in KEYS),
+        out.append('| %s | %s | %s | %s |' % ('%s (to %s)' % (r['seed'], r['gens']) if 'gens' in r else r['seed'], r.get('front', '-'), ' | '.join(fmt(k, r[k]) for k in KEYS),
                    'the first' if g is None else ', '.join(NAME[k] for k in g) if g else 'nothing'))
     g = gains(run, S[:-1]); out.append('')
     if g is None: out.append('verdict: seed %d opens the series - nothing earlier to gain on' % run['seed'])
     else:
-        b = {k: (max if k == 'hv' else min)(r[k] for r in S[:-1]) for k in KEYS}
+        b = {k: (max if k == 'hv' else min)(at(r, run.get('gens'))[k] for r in S[:-1]) for k in KEYS}
         ch = lambda k: '%+d KB' % round(run[k] - b[k]) if k == 'memory' else '%+.1f%%' % (100 * (run[k] / b[k] - 1))
-        out.append('verdict: seed %d %s - %s' % (run['seed'], 'GAINS, by %s' % ' and '.join(NAME[k] for k in g) if g else
+        out.append('verdict: seed %d%s %s - %s' % (run['seed'], ' (at its last generation, %d - the earlier runs there too)' % run['gens'] if method.get('matched') and 'gens' in run else '', 'GAINS, by %s' % ' and '.join(NAME[k] for k in g) if g else
                    'gains nothing', '; '.join('%s %s against %s (%s%s)' % (NAME[k], fmt(k, run[k]), fmt(k, b[k]), ch(k),
                    ', past its threshold' if k in g else '') for k in KEYS)))
     out.append('the count: %d run(s) on the method; %s' % (len(S), 'STOP - three runs or more, the last two gaining nothing '
                '(if no correctness issue is open)' if stop(S) else 'the earliest stop after seed %d, if every run until '
                'then gains nothing' % earliest(S)))
-    nb = bar(S)
-    out.append('the next run gains if: ' + ', '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS))
+    if method.get('matched'):                   # 562: the bar moves with the next run's length
+        out.append('the next run gains if, by its last generation: ' + '; '.join('%d - %s' % (G, ', '.join('%s %s' % (
+            '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS)) for G in (80, 100, 120, 140, 160)
+            for nb in [bar([at(x, G) for x in S])]) + ' (hypervolume, fastest, smallest, memory, 32-bit)')
+    else:
+        nb = bar(S)
+        out.append('the next run gains if: ' + ', '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, nb[k])) for k in KEYS))
     return '\n'.join(out)
 
 
@@ -106,6 +147,12 @@ def self_test():
               gains(r(8, fastest32=0.1665), [a]) == ['fastest32'], not stop([a, b]), not stop([a, b, c]), stop([a, b, c, d]),
               stop([a, r(2), r(3)]), not stop([a, b, c, d, e]), earliest([a, b]) == 4, earliest([a, r(2)]) == 3,
               earliest([a]) == 3, earliest([a, b, c]) == 4]
+    k = r(9, hv=0.35, fastest=0.14, gens=160, curve=dict(hv=[[100, 0.33], [150, 0.345]], fastest=[[3, 0.2], [90, 0.145], [150, 0.141]],
+          smallest=[[3, 14100]], memory=[[3, 112]], fastest32=[[3, 0.175]]))
+    n = r(10, hv=0.336, fastest=0.1445, smallest=14100, memory=112, fastest32=0.175, gens=120)   # 562: a shorter run
+    checks += [at(k, 120)['hv'] == 0.33, at(k, 155)['hv'] == 0.345, at(k, 160) is k, at(k, None) is k, at(a, 120) is a,
+               at(k, 50)['hv'] == 0.33, at(k, 120)['fastest'] == 0.145, at(k, 2)['fastest'] == 0.2, gains(n, [k]) == ['hv'], gains(dict(n, gens=None), [k]) == [],
+               gains(dict(n, gens=160), [k]) == [], gains(r(11, hv=0.3534, gens=200), [k]) == [], gains(r(12, hv=0.3536, gens=200), [k]) == ['hv']]
     ok = all(checks)
     print('stopping.py self-test: %d checks - the thresholds at their edges, the count, the earliest stop - %s'
           % (len(checks), 'pass' if ok else 'FAIL at %s' % [i for i, x in enumerate(checks) if not x]))
@@ -118,12 +165,21 @@ if __name__ == '__main__':
     opt = lambda k: a[a.index(k) + 1] if k in a and a.index(k) + 1 < len(a) else None
     if opt('--seed') is None: sys.exit(__doc__)
     seed, led = int(opt('--seed')), opt('--ledger') or LEDGER
-    db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger')))
+    db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger'), opt('--curve')))
     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E, hv
-    m = hv.measure(db, E); method, runs = series(led)
-    x = m['alive'] if method.get('extremes') == 'alive' else m      # 556: the series says whose extremes
+    method, runs = series(led); R = hv.load(db, E); m = hv.measure(db, E, R=R)
+    pick = lambda m: m['alive'] if method.get('extremes') == 'alive' else m      # 556: the series says whose extremes
+    x = pick(m)
     run = dict(seed=seed, front=m['front'], hv=round(m['hv'], 6), fastest=round(x['fastest'], 6), smallest=x['smallest'],
                memory=x['memory'], fastest32=round(x['fastest32'], 6))
+    if method.get('matched') or opt('--curve'):  # 562: its last generation; its curve for --append, or alone
+        run['gens'] = max((r.get('gen') or 0) for r in R.values()); cf = opt('--curve')
+        if opt('--curve') and '--append' not in a:
+            json.dump(dict(seed=seed, gens=run['gens'], curve=curve(db, E, hv, R, run['gens'])), open(cf, 'w'))
+            sys.exit(print('stopping: seed %d\'s curve, generations 0-%d, in %s' % (seed, run['gens'], cf)))
+        if '--append' in a:
+            k = json.load(open(cf)) if cf and os.path.exists(cf) else {}
+            run['curve'] = k['curve'] if k.get('seed') == seed and k.get('gens') == run['gens'] else curve(db, E, hv, R, run['gens'])
     print(report(run, method, runs))
     if '--append' in a:
         if any(x['seed'] == seed for x in runs): print('the ledger has seed %d already - nothing appended' % seed)

@@ -60,6 +60,18 @@ spread_gen = spread_row.split('|')[2].strip() if spread_row else '?'   # Iterati
 ab, ck = exp('appbench', r'\*\*Spearman'), exp('clockcheck', r'\*\*Medians'); tf = exp('truefronts', None)
 remote = sorted(glob.glob(os.path.join(chain, 'remote', '*.md')))
 rsp = '; '.join('%s %s' % (os.path.basename(x)[:-3], next((re.sub(r'\s+', ' ', l.replace('*', '').strip()).split(' between')[0][:70] for l in open(x) if 'Spearman' in l), '?')) for x in remote)
+def txt(name, i, j):         # Iteration 560: a process-seed.sh output's lines, joined - the facts drafted, not retyped
+    f = os.path.join(P, name + '.txt')
+    if not os.path.exists(f): return '(no %s.txt)' % name
+    L = [l.strip() for l in open(f, errors='replace') if l.strip() and not l.startswith(('|---', 'pinned'))]
+    return ' '.join(L[i:j] if j is not None else L[i:])
+def rules_():
+    rows = [[c.strip() for c in l.split('|')] for l in open(os.path.join(P, 'rules.txt'), errors='replace') if re.match(r'\| \d+ \|', l)] if os.path.exists(os.path.join(P, 'rules.txt')) else []
+    odd = ['%s (%s) %s' % (r[1], r[2], r[5].strip('*')) for r in rows if 'PASS' not in r[5]]
+    return '%d rules; %s' % (len(rows), ', '.join(odd) + ', the rest PASS' if odd else 'all PASS')
+def cost_():
+    t = exp('clockcheck', None) or ''; rows = [[c.strip() for c in l.split('|')] for l in t.split('\n') if re.match(r'\| [a-z]+ \| [0-9.]+ \|', l)]
+    return ', '.join('%s %s' % (r[1], r[5]) for r in rows if len(r) > 5) or '?'
 P_ = lambda d: ', '.join('%s %.1f%%' % (k, v) for k, v in sorted(d.items()))
 head = '\n'.join(x for x in [
  '# Seed %d on the %s - TODO: the run in a phrase (Iteration %s)' % (N, mach.replace('-', ' ').upper().replace('AMD RYZEN', 'AMD Ryzen').replace(' PRO ', ' PRO '), it), '',
@@ -78,7 +90,17 @@ head = '\n'.join(x for x in [
  '**The experiments**: the spread at generation %s - %s; appbench - %s; the clock test - %s; truefronts - %s.' % (
     spread_gen, spread_row.strip() if spread_row else 'none', ab or 'none', ck or 'none', '%d runs' % tf.count('{"run"') if tf else 'none'), '',
  '**The remote checks** (results/xcheck-seed%d.md): %s.' % (N, rsp) if remote else None, '',
- 'TODO: the verdict (rule 1), the predictions scored (results/predictions.md), the votes and the rules, the held-out check, the curse, progress - summary.md.']
+ '**Held out** (heldout.py): %s' % txt('heldout', 0, 3), '',
+ '**The curse** (curse.txt - rule 3, 0.98-1.05 works): %s' % txt('curse', 1, 3), '',
+ '**Progress**: %s' % txt('progress', -2, None), '',
+ '**The votes**: %s' % txt('votes', 1, 3), '',
+ '**The rules** (rules.txt): %s' % rules_(), '',
+ '**The freezes lifted** (lifted.py): %s' % txt('lifted', -1, None) if os.path.exists(os.path.join(P, 'lifted.txt')) else None, '',
+ '**At 32 bits** (fail32.txt): %s' % txt('fail32', 0, 1) + ' ' + txt('fail32', -1, None), '',
+ '**The clock test\'s cost both pay** (clockcheck.md, us by workload, alone): %s' % cost_() if ck else None, '',
+ '**The deaths**: %s. [process-finish: deaths-check]' % (', '.join('%s %s' % (v, k) for k, v in cnt.items() if re.match('(died|wrong output)', k or '')) or 'none'), '',
+ '**The chain on master**: [process-finish: the chain]', '',
+ 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.']
  if x is not None)
 out = os.path.join(ROOT, 'results', 'evolve-%s-seed%d.md' % (mach, N))
 open(out, 'w').write(head + '\n\n---\n\n' + rep); print('draft-results: %s (%d TODO)' % (out, head.count('TODO')))

@@ -86,10 +86,9 @@ def self_test():
 
 
 
-def measure(db, E, b=None):
-    """A database's true front, measured (Iteration 554 - stopping.py's numbers too): its size, how many inside the box,
-    the hypervolume and the four extremes."""
-    b = b or json.load(open(BOUNDS)); R = {}
+def load(db, E):
+    """A database's records by id, each with its binary + image total (Iteration 562: read once for a run's curve)."""
+    R = {}
     for l in open(db, errors='replace'):
         if l.startswith('{'):
             try: r = json.loads(l)
@@ -97,6 +96,15 @@ def measure(db, E, b=None):
             if r.get('id'):
                 r['total'] = E.ov(r, 'total') if r.get('status') == 'ok' and (r.get('total') or r.get('size')) else r.get('total')
                 R[r['id']] = r
+    return R
+
+
+def measure(db, E, b=None, gen=None, R=None):
+    """A database's true front, measured (Iteration 554 - stopping.py's numbers too): its size, how many inside the box,
+    the hypervolume and the four extremes. gen: only the records of generations up to it (Iteration 560); R: the records
+    load() read, for many generations of one run (562)."""
+    b = b or json.load(open(BOUNDS)); R = load(db, E) if R is None else R
+    if gen is not None: R = {i: r for i, r in R.items() if (r.get('gen') or 0) <= gen}
     F = true_front(R, E)
     Z = [z for z in (norm(R[i], b) for i in F) if z is not None]
     ex = lambda k: min(R[i][k] for i in F)
@@ -110,9 +118,11 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     if not args: sys.exit(__doc__)
     if args[0] == '--self-test': sys.exit(self_test())
+    g = int(args[args.index('--gen') + 1]) if '--gen' in args else None     # Iteration 560
+    if g is not None: del args[args.index('--gen'):args.index('--gen') + 2]
     b = json.load(open(BOUNDS))
     sys.argv = ['x']; sys.path.insert(0, HERE); import evolve as E
     for db in args:
-        m = measure(db, E, b)
-        print('%s: true front %d (%d inside the box), hypervolume %.5f | fastest %.4f, smallest %d, least memory %d KB, fastest at 32 bits %.4f'
-              % (db, m['front'], m['inside'], m['hv'], m['fastest'], m['smallest'], m['memory'], m['fastest32']), flush=True)
+        m = measure(db, E, b, g)
+        print('%s%s: true front %d (%d inside the box), hypervolume %.5f | fastest %.4f, smallest %d, least memory %d KB, fastest at 32 bits %.4f'
+              % (db, ' at generation %d' % g if g is not None else '', m['front'], m['inside'], m['hv'], m['fastest'], m['smallest'], m['memory'], m['fastest32']), flush=True)

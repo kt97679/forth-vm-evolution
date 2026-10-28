@@ -1,0 +1,7 @@
+# lab/evolve/carry-named.txt - designs named elsewhere, carried in where a database has them and no front did
+# (Iteration 562; results/drafts/confirmation-pool-559.md, step 3 - evolve.py's carry_pool). One a line: the id, why.
+3d4e860a9f the fastest on dream of the designs the laptop rejected (results/xcheck-seed76.md)
+b502af976b seed 75's held-out fastest (sieve - heldout.py)
+2cbc366040 seed 76's held-out fastest (sieve - heldout.py)
+ce3cd13f29 seed 77's held-out fastest (sieve - heldout.py)
+44aaae552d seed 77's fastest on the applications (appbench)

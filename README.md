@@ -132,6 +132,7 @@ the article. Before trying an approach, search `GOALS.md` and
 chats follows `HANDOFF-PROMPT.md`. A handoff is an `Iteration N:` commit,
 then `tools/make-bundle.sh DIR`, which runs `tools/handoff-check.py`, names
 the bundle by `GOALS.md`'s convention and checks that it clones.
+A new sandbox: `tools/setup-sandbox.sh`, as root; a detached job polled: `tools/wait-for.sh` (Iteration 560).
 
 ## Documents - every one
 

@@ -457,6 +457,58 @@ format-10 words (ops10) are listed past their slots and not built, as are nearly
 pairs; express() keeps only what is built - a design's identity, and what lab/evolve/seed-facts.py
 counts - so dormant entries are a neutral reservoir a mutation can promote, not a fault in the reports.
 
+## Processing a returned seed - the steps in detail (HANDOFF.md's routine runs them, Iteration 560)
+
+**The tools** (Iteration 551, first used at seed 75's processing - 553): `sh
+lab/evolve/process-seed.sh ARCHIVE`, then `python3 lab/evolve/draft-results.py --iteration N` - the results file, the
+xcheck file and the spread's session drafted, the facts filled in, TODO lines for the verdict, the predictions, the votes
+and the rules (none may be committed); judge and edit; a batch if one waits; then `setsid nohup sh
+lab/evolve/process-checks.sh RESULTS [COMPARE] > /dev/null 2>&1 &` - build, run-tests, validate, the gate, ans-check, the
+jail last - polled until /tmp/process-checks/status says DONE; the records; the bundle. The steps below say what each
+judges.
+
+1. `sh lab/evolve/process-seed.sh <the chain archive>` as claude (Iteration 395): every output in a file under
+   /tmp/process, about a screen in /tmp/process/summary.md - read that, the files only where it points. It covers
+   the pack's own checks (tests PASS, validate 7 IDENTICAL, jail PASS; its results-measured-here.patch is the
+   laptop's own re-measures, not applied), the verdict as printed and from both CPUs, seed-facts.py, heldout.py,
+   review-checks.py progress, curse (the fast end's optimism) and fail32 (the 32-bit failures by cause - Iteration 427)
+   and the remote checks' agreement.
+2. Judge it. On the stopping series (seed 74 on), GOALS.md's stopping rule first - the hypervolume by 1% and each
+   extreme by its threshold, against the best of the method's earlier runs: any one is a gain (553: seed 75's fastest
+   alone) - summary.md's stopping.py section prints it, from the after-seed-76 batch on. Then the verdict by GOALS.md's "Judging a run", read from both CPUs (the owner, 389) - for a session printed
+   by older code (seed 59's), the summary's "both CPUs" line; its per-CPU lines show how far noise moves it; a
+   positive figure is the run ahead. heldout: the top-end lines and the regret beside the whole front's Spearman
+   (about 0.94 on seeds 49-57). progress: say if diversity falls or the gains stop early. Replicates (seeds 61-62):
+   `python3 lab/evolve/review-checks.py spread <db> <db> <db>`, one generation for all - seed 62's chain runs it on
+   the laptop over seeds 58-62 (its review-checks pack, Iteration 415); here, about 8 minutes for three databases, in
+   the background (results/drafts/preflight-414.md).
+3. Score the predictions, write the next (`results/predictions.md`).
+4. `results/evolve-amd-ryzen-7-pro-8840hs-seedN.md`: the verdict and facts, a `---`, then report.md - the gate and
+   ans-check read genomes from it; results/xcheck-seedN.md from the remote reports.
+5. A batch due now (its ORDER.md says when): `tools/batch-check.sh` first (one line), then apply it (reseed with
+   `tools/reseed.sh` only when a patch changes `forth/kernel.4`). Then ONE background chain on master, logs to
+   files: build (`env LAYOUTS=1 bash tools/build-stages.sh`), `bash tools/run-tests.sh` (PASS), `python3
+   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL), `python3 lab/evolve/test-jail.py` (PASS - run it last, after the gate and ans-check, and alone: here
+   it takes the same user's other processes with it - the chain after it at 433 and 441, and at 449 a gate running beside
+   a batch-check's own jail test; nothing may run beside it), `python3
+   lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
+   out, the run's front alone - Iteration 427), `python3 lab/evolve/ans-check.py
+   --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
+   minutes. process-checks.sh runs them all, and deaths-check.py (the seed's deaths rebuilt) before the jail.
+6. The records - `sh lab/evolve/process-records.sh N ITERATION` (Iteration 560; `NEXT_METHOD='why'` when the
+   next run changes the method) does the mechanical part below: the batch's move and citations, the progress table, the
+   votes, the stopping line; then the predictions, NEXT-RUN, this file, PROGRESS by hand. By hand, for reference: a batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
+   (Iteration 372: 62 had been left behind):
+   `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
+   (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
+   run: handoff-check names it). A batch queued behind it moves into results/pending/ the same way - its folder
+   renamed, its paths followed (done at 433: the after-seed-63 batch) - and `sh tools/batch-check.sh` runs against the new
+   master. The session appended to `results/compare-fronts-amd-ryzen-7-pro-8840hs.md` ("## Session K -
+   Iteration I: seed N and seeds ...", the verdict line, then the pack's compare-fronts.md); `python3
+   lab/evolve/progress-table.py > results/progress-by-run.md`; the gene votes, from seed 63 on (Iteration 432): `python3
+   lab/evolve/review-checks.py votes results/evolve-<machine>-seedN.md --ledger results/gene-votes.md --append`; the stopping series (the after-seed-76 batch on): `python3 lab/evolve/stopping.py <the pack's db.jsonl> --seed N --append`; NEXT-RUN; this file; a PROGRESS entry; then "Before a
+   chat's turn ends".
+
 ## Lessons - how faults got in, and the checks that catch them now
 
 - A rehearsal reaches what a test of variants does not: the tail variants were built on s6, not on the two-bit tag, and

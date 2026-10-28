@@ -1624,6 +1624,38 @@ def fronts(ids, R):
     left = [i for i in ids if i not in placed]
     return F + [left] if left else F
 
+NAMED = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'carry-named.txt')
+
+def carry_pool(paths, have=(), named=None):
+    """--carry's designs (Iteration 562 - the confirmation run's founders, results/drafts/confirmation-pool-559.md):
+    each database's strict front by its own records - no tolerance, for the tolerance front's dominance chain lost
+    seed 76's 105 fastest (seed 77: 1,419 strict against 370) - at its own widths, and the designs carry-named.txt names
+    where a database has them and no front did. Sorted by database, so a resumed run makes the same first generation;
+    no genome twice, none already in have. [(genome, how, record)]; carry-check.py pre-flights the same pool."""
+    global SPEED_TOL, MEM_TOL
+    if named is None:
+        named = dict(l.split(None, 1) for l in open(NAMED) if l.strip() and not l.startswith('#')) if os.path.exists(NAMED) else {}
+    out, have, keep = [], set(have), (SPEED_TOL, MEM_TOL, TWO_WIDTHS[0])
+    try:
+        SPEED_TOL = MEM_TOL = 0.0
+        for path in sorted(paths):
+            C = {}
+            for l in open(path, errors='replace'):
+                try: r = json.loads(l)
+                except ValueError: continue
+                if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
+            label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
+            TWO_WIDTHS[0] = sum(1 for r in C.values() if r.get('speed32')) * 2 > len(C)     # an older run: one width
+            ids = [i for i in C if C[i].get('speed32')] if TWO_WIDTHS[0] else list(C)
+            for i, how in [(i, 'carried from %s: %s') for i in first_front(ids, C)] + [(i, 'named, carried from %s: %s') for i in sorted(named) if i in C]:
+                g = canon(require(C[i]['genome']))
+                if gid(g) in have: continue
+                # re-encoded (--require), it is a new design: this run's, not its origin's
+                have.add(gid(g)); out.append((g, ('tag 2 of %s: %s' if gid(g) != i else how) % (label, i), C[i]))
+    finally:
+        SPEED_TOL, MEM_TOL, TWO_WIDTHS[0] = keep
+    return out
+
 def first_front(ids, R):
     """fronts(ids, R)[0] - the same designs, in the same order - without
     comparing every pair (Iteration 99: a 12-hour run makes ~90,000 designs,
@@ -2287,21 +2319,9 @@ def main(argv):
     # design of the run. Sorted, so a resumed run makes the same first
     # generation; no random draw is spent, so the seed's draws are as before.
     if '--carry' in argv and not FROMZERO:
-        carried, have = [], set(pop)
-        for path in sorted(p for p in argv[argv.index('--carry') + 1].split(',') if p):
-            C = {}
-            for l in open(path):
-                try: r = json.loads(l)
-                except ValueError: continue
-                if r.get('status') == 'ok' and r.get('speed') and r.get('size'): C[r['id']] = r
-            label = '/'.join(path.split('/')[-4:-3] + path.split('/')[-1:])
-            for i in first_front(list(C), C):
-                g = canon(require(C[i]['genome']))
-                if gid(g) in have: continue
-                # re-encoded (--require), it is a new design: this run's, not its origin's
-                have.add(gid(g)); carried.append((g, ('tag 2 of %s: %s' if gid(g) != i else 'carried from %s: %s') % (label, i)))
-        print('  carried in: %d designs, the fronts of %d databases' % (len(carried), len(argv[argv.index('--carry') + 1].split(','))), flush=True)
-        pop += [get(g, [], how, 0) for g, how in carried]
+        carried = carry_pool([p for p in argv[argv.index('--carry') + 1].split(',') if p], set(pop))   # Iteration 562
+        print('  carried in: %d designs, the strict fronts of %d databases and the named designs they hold' % (len(carried), len(argv[argv.index('--carry') + 1].split(','))), flush=True)
+        pop += [get(g, [], how, 0) for g, how, _ in carried]
     while len(pop) < N:                 # (from zero, already full)
         g, how = mutate(HUMAN[rnd.choice(list(HUMAN))], rnd)
         pop.append(get(g, [], 'seeded ' + how, 0))

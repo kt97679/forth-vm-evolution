@@ -148,7 +148,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
     [ -n "$THEN" ] || return 0
     echo; say "then: $THEN"
     exec 9>&-
-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS
+    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
 }
 # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
@@ -171,6 +171,10 @@ case " $* " in *" fromzero "*) FROMZERO=1; NOCARRY=1; set -- $(printf '%s\n' "$@
 # anchoring test as seed 36 ran it, before those founders existed.
 NOEVOLVED=${NEXT_RUN_NOEVOLVED:-}
 case " $* " in *" noevolved "*) NOEVOLVED=1; NOCARRY=1; set -- $(printf '%s\n' "$@" | grep -vx noevolved) ;; esac
+# Iteration 562: "carryall" - every archived database carried, not the newest four (the confirmation run's founders,
+# results/drafts/confirmation-pool-559.md; each one's strict front and the named designs - evolve.py's carry_pool).
+CARRYALL=${NEXT_RUN_CARRYALL:-}
+case " $* " in *" carryall "*) CARRYALL=1; set -- $(printf '%s\n' "$@" | grep -vx carryall) ;; esac
 # Iteration 436 (the owner; results/drafts/escape-mechanism-435.md): "islands" - the population in four islands, each
 # ranked and bred alone, a ring of migrants every 10 generations (evolve.py --islands 4).
 # Iteration 464: carried through the detach (NEXT_RUN_ISLANDS), as noevolved and widths are - without it the detached
@@ -245,7 +249,7 @@ fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
-WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${ISLANDS:+ islands} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${CARRYALL:+ carryall}${ISLANDS:+ islands} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
 if [ "$KIND" = experiment ]; then
     NAME=${TOOL%.py}
     RUN=$RUNS/$NAME-$HEAD
@@ -296,12 +300,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
         say "going on in the background, as one chain - watch it with"
         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
         exit 0
     fi
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
     exit 0
 fi
 MODE=$NEXT_RUN_DETACHED
@@ -482,7 +486,7 @@ fi
 # Iteration 63: the newest CARRY_LAST archived databases (default 4; 0: all),
 # as the comparison - the older fronts are dominated, and carrying them
 # cost minutes of every run's first generation (188 designs in seed 15).
-CLAST=${CARRY_LAST:-4}
+CLAST=${CARRY_LAST:-4}; [ -z "$CARRYALL" ] || CLAST=0
 n=$(archives | wc -l)
 skip=0; if [ "$CLAST" -gt 0 ] && [ "$n" -gt "$CLAST" ]; then skip=$((n - CLAST)); fi
 CARRY=""; i=0

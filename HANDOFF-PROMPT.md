@@ -32,43 +32,18 @@ not yet processed (forth-vm-evolution-*_tar.gz), and any archive HANDOFF.md's
 We are continuing my project forth-vm-evolution. Attached: the newest git
 bundle of the repository, and the packs of any laptop runs not yet processed.
 
-Set up first:
+Set up first (Iteration 560 - tools/setup-sandbox.sh does steps 0-1 of the old list, HANDOFF-REFERENCE.md):
 
-0. As root: `apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get
-   install -y -qq gcc-multilib clang clang-19` - gcc-multilib because the build
-   makes 4-byte cells too, as the laptop's does; clang because the gene
-   compiler is offered only where clang is installed; clang-19 for
-   preserve_none.
-   Then `[ -e /usr/include/asm ] || ln -s x86_64-linux-gnu/asm /usr/include/asm`
-   - the 32-bit builds' asm/ headers, where only gcc-13-multilib came in (Iteration 382).
-   Optional, for tools/arm-qemu-check.sh only: `gcc-arm-linux-gnueabihf qemu-user` - but on Ubuntu it
-   REMOVES gcc-multilib, and /usr/include/asm with it: every 32-bit build then fails (Iteration 391).
-   Afterwards `apt-get install gcc-multilib` puts them back (and takes the ARM compiler out).
-1. Clone as the user claude, into a directory it owns: `cd /home/claude &&
-   mkdir -p forth-vm-evolution && chown claude:claude forth-vm-evolution &&
-   runuser -u claude -- git clone /mnt/user-data/uploads/<bundle>
-   forth-vm-evolution`, and give the clone the owner's identity, which every
-   commit carries: `runuser -u claude -- git -C forth-vm-evolution config
-   user.name "Kirill Timofeev" && runuser -u claude -- git -C
-   forth-vm-evolution config user.email kt97679@gmail.com`. Every git, build
-   and tool command runs as `runuser -u claude -- ...` (git refuses root on
-   this tree).
-2. Build and check, in /home/claude/forth-vm-evolution: `runuser -u claude --
-   env LAYOUTS=1 bash tools/build-stages.sh`; `runuser -u claude -- bash
-   tools/run-tests.sh` (PASS - no regressions); `runuser -u claude -- python3
-   lab/evolve/evolve.py --validate` (7 of 7 IDENTICAL). A tool call ends the
-   jobs it started in the background, and about 300 s is a call's limit:
-   start anything long with `setsid nohup ... &` and poll it (run-tests takes
-   about six minutes). A turn also has a budget of tool calls (about fifty).
-3. Read HANDOFF.md whole - the state card: the state, the routine for a
-   returned seed, the owner's decisions every session uses, the open items, the
-   conventions, and what every turn does before it ends; its background
-   (HANDOFF-REFERENCE.md: the decisions in full, the history, the lessons) on
-   demand - the lessons before changing the evolver or a measurement - then
-   GOALS.md (the aim, how success is measured, the
-   register of rejected ideas: look there before trying one), then
-   PROGRESS.md's entries after the iteration HANDOFF.md names, then
-   prompts/INDEX.md. README.md's "Documents" section indexes everything else.
+1. As root: `git clone -q /mnt/user-data/uploads/<bundle> /tmp/s && sh /tmp/s/tools/setup-sandbox.sh && rm -rf
+   /tmp/s` - the compilers, the clone as claude in /home/claude/forth-vm-evolution, the owner's identity. Every git,
+   build and tool command after it runs as `runuser -u claude -- ...` (git refuses root on this tree).
+2. A returned seed: HANDOFF.md's "Processing a returned seed" - process-run.sh builds and checks everything. Any other
+   chat: `CHECK=1` before the setup command starts the build, run-tests and validate (`sh tools/wait-for.sh
+   /tmp/setup-check/status DONE`; run-tests PASS, validate 7 of 7 IDENTICAL). A tool call ends near 300 s and a turn
+   has about fifty: anything long goes detached (setsid nohup ... &) and is polled.
+3. Read HANDOFF.md whole - the state card, the routine, the owner's decisions, the open items, the conventions. The
+   rest on demand: HANDOFF-REFERENCE.md (its lessons before changing the evolver or a measurement), GOALS.md (the aim,
+   the stopping rule, the register of rejected ideas - before trying one), PROGRESS.md's newest entries, prompts/INDEX.md.
 
 Please set up, confirm the checks pass, and tell me what you will do next.
 
