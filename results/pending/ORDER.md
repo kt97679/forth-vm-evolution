@@ -6,7 +6,8 @@ process-run.sh checks and applies it.
     git apply results/pending/random-mode-after-seed79.patch
     git apply results/pending/lifted-express-after-seed79.patch
 
-batch-check (564, the three patches): below.
+batch-check (564, on cb07975 - the three patches): PASS - all applied to a fresh clone, run-tests PASS, validate 7 of 7
+IDENTICAL, the jail PASS.
 
 **deaths-reach-after-seed79.patch** (lab/evolve/deaths-check.py, gene-narrow.py, README.md) - seed 78's three kernel
 deaths classified: the reach limit at scale 1, known since Iteration 10 - reach_lethal does not run cv8 designs with a
