@@ -1,7 +1,7 @@
 # Seed 77's processing - the checklist (Iteration 557)
 
 Seed 77 opened a new series: 12 hours, from scratch, every freeze that still has code lifted (556), the stopping rule's
-extremes from every alive design. The after-seed-77 batch (results/pending/ORDER.md) applies first.
+extremes from every alive design. The after-seed-77 batch (results/applied-after-seed77/ORDER.md) applies first.
 
 1. **The chain's line**: seed 77 ran 12 hours (the chain's `line`); else results/stopping-series.md's "from seed 77"
    method line is wrong - fix it before stopping.py.

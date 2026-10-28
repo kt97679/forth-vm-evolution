@@ -1040,6 +1040,11 @@ over 108 KB, its fastest at 32 bits over 0.1688 - the same bar, on the same tole
 late in a run: the speed's last 2% gain came at generation 49 in seed 75 and 67 in seed 76, of 137 and 141; the
 smallest's last at 135-136, in steps of tens of bytes. Twelve hours add about 30 generations of that.
 
+**Scored at seed 77 (Iteration 560): fails, by the least memory alone.** On the tolerance front (hv.py's line): the
+least memory 108 KB against 112, the 4 KB threshold met exactly - one page; the hypervolume 0.35010, the fastest 0.1421,
+the smallest 14,015, the fastest at 32 bits 0.1841 all short of their bars. Not the hours: seed 76's alive designs had
+108 KB already (hidden by its dominance chain), and the spread at generation 128 finds all five runs at 108 KB.
+
 ## Seed 77, the lifted freezes - predicted (Iteration 556)
 
 The freezes were right: on seed 77's true front bytehdr, thinhdr, bss and lean stay 1 on 95% or more of the designs;
@@ -1047,3 +1052,16 @@ alignhot, msc and sharedcall are each on under 10%; doesfar and varcall stay 1 o
 The pre-flight found the lifted values working (results/drafts/unfreeze-preflight-556.md) - working is not winning:
 every front design of seeds 53-60 had the frozen-on values (Iteration 409), and the frozen-off genes were on no front
 design when frozen.
+
+**Scored at seed 77 (Iteration 560): holds** (lifted.py) - every lifted gene at its old frozen value on 100% of the true
+front (370): bytehdr, doesfar, thinhdr, varcall, bss, lean at 1; msc, scale, sharedcall, alignhot at 0; the other values'
+enrichment 0.00. Working, and never winning.
+
+## Seed 78, 9 hours, a new series - predicted (Iteration 560)
+
+Nine hours, about 120 generations (seed 77: 161 in 12), lose nothing at the fast end and lose at the small end. Seed 77's
+speed made its last 2% gain at generation 67, seed 76's at 67, seed 75's at 49; the smallest kept gaining to generation
+135-136, in steps of tens of bytes. So on its tolerance front (hv.py's line): the fastest inside seeds 74-77's range,
+0.1363-0.1450, and the hypervolume inside 0.3485-0.3567; the smallest above seed 77's 14,015 bytes. Seed 78 opens the
+9-hour series (stopping.py) - nothing to gain on; the count's earliest stop after seed 80.
+

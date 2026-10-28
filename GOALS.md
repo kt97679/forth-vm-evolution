@@ -117,7 +117,8 @@ results/drafts/goals-snapshots.md.)
    spread; no p-values. The series starts at seed 73, the first run with memory measured right since 70. **From seed 77**
    (the owner, 555-556) a new series: 12 hours; every freeze that still has code lifted (evolve.py's FROZEN keeps only the
    retired); the four extremes from every alive design, the hypervolume on the true front as before - seed 76's dominance
-   chain hid its fastest designs (results/evolve-amd-ryzen-7-pro-8840hs-seed76.md).
+   chain hid its fastest designs (results/evolve-amd-ryzen-7-pro-8840hs-seed76.md). **From seed 78** (the owner, 560) a new
+   series again: 9 hours, the rest as seed 77's - the 12-hour series ended at its one run.
 2. **The confirmation run.** One run of the same method and hours **from the final front** - without `noevolved`, the
    earlier runs' true fronts among the founders - with **every frozen gene that still has code re-enabled** (lifted from seed 77 already - 556)
    (alignhot, msc, scale, sharedcall; the frozen-at-1 genes - bytehdr, doesfar, thinhdr, varcall, bss, lean - free to

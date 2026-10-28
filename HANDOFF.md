@@ -40,29 +40,23 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 559.
-- **Seed 77 is running - 12 hours from scratch on every gene that still has code (the owner, 555-556): a new series.**
-  Every freeze lifted but the retired (tail, kstack, tailpn); the stopping rule's extremes from every alive design, its
-  hypervolume on the true front as before (results/stopping-series.md's method line says "extremes": "alive"; if seed 77
-  ran at 10 hours after all - the chain's line says - fix that line before stopping.py). The count restarts - the
-  earliest stop after seed 79. Its chain: review-checks' spread, appbench, and the clock test with the cost a design and
-  s6 both pay - sudo asked once, at the start, for the perf hold.
-- **The after-seed-77 batch** (results/pending/ORDER.md, Iteration 557): the JIT patches every copy of a value hole - the
-  root cause of seed 76's corpus deaths, not a method change (the owner, 558); the stencil check's blind spot closed; lifted.py (prediction 556 scored in
-  summary.md). Apply it first at seed 77's processing, then follow results/drafts/seed77-checklist-557.md.
-- **Seed 76 processed (555)** - results/evolve-amd-ryzen-7-pro-8840hs-seed76.md: **no gain** (prediction 553 holds) -
-  the hypervolume 0.35036, the fastest 0.1450, nothing past its bar; a 10-hour seed 77 gaining nothing would have ended
-  the count. **A dominance chain hid its fastest designs**: 105 alive designs faster than the front's fastest, down to
-  0.1383 - the evolver's dominance (2% speed, 8 KB memory as ties) is not transitive; on the strict front 1,296 designs,
-  the hypervolume 0.36757, the fastest 0.1383, the least memory 108 KB. The chain on master: all PASS - run-tests, validate 7 of 7 IDENTICAL, the gate alive 289 of 289, ans-check 0 of 69 differ (its negative control caught), the jail.
-- **jitdoes** is the one freeze candidate (12 of 12 over 74-76) - with every freeze lifted, the owner's whether the
-  votes still freeze anything in the new series.
-- **Predictions due** (results/predictions.md): seed 77 - twelve hours do not beat the 10-hour series' bar (555);
-  the lifted freezes change the front little (556).
-- **Before 555**: seeds 70-76 processed (498, 516, 520, 544, 549, 553, 555); the after-seed-76 batch applied at 555
-  (results/applied-after-seed76/ORDER.md: stopping.py and its ledger; the clock test's cost both pay); the fast end's
-  offset tested at 554 (results/drafts/fast-end-offset-554.md). History: HANDOFF-REFERENCE.md.
-- **Files a new chat needs**: the newest bundle, and seed 77's chain archive (`forth-vm-evolution-chain-<its
+- master: Iteration 560.
+- **Seed 78 is next - 9 hours from scratch, every freeze still lifted (the owner, 560): a new series again** - the hours
+  are the method's (GOALS.md), so the count restarts; the earliest stop after seed 80. Its chain: the spread and
+  appbench; no clock test (item 4 answered), so no perf hold and no sudo. NEXT-RUN carries the line.
+- **Seed 77 processed (560)** - results/evolve-amd-ryzen-7-pro-8840hs-seed77.md: 12 hours, 161 generations, the true
+  front 370; the hypervolume 0.35010, the fastest 0.1421 (alive 0.1406), the smallest 14,015, the least memory 108 KB -
+  inside seeds 73-76's spread at generation 128 (session 64). The 12-hour series' only run (stopping-series.md).
+  Prediction 555 fails by the memory alone (108 KB, one 4 KB page, reached by seed 76's alive designs already);
+  prediction 556 holds (every lifted gene at its old frozen value on 100% of the front).
+- **The after-seed-77 batch applied (560)** - results/applied-after-seed77/ORDER.md: the JIT patches every copy of a value
+  hole; seed 77's one corpus death (0b17df4e1c: jit, tracer, nocrossjump - the 557 hole) rebuilt on the fixed tree by
+  deaths-check.py: see the results file's deaths line. The chain on master: results file's last section.
+- **Predictions due** (results/predictions.md): seed 78 - nine hours lose nothing at the fast end, lose at the small end (560).
+- **Scripts added (560)**: lab/evolve/process-records.sh (step 6 in one command); lab/evolve/deaths-check.py (a
+  process-checks step: the seed's deaths rebuilt on the tree); draft-results.py reads the spread's generation.
+- **Before 560**: seeds 70-76 processed (498-555); history: HANDOFF-REFERENCE.md.
+- **Files a new chat needs**: the newest bundle, and seed 78's chain archive (`forth-vm-evolution-chain-<its
   commit>-fury-<time>_tar.gz`). appbench.zip stays on the laptop.
 
 ## Processing a returned seed
@@ -102,8 +96,10 @@ judges.
    lab/evolve/gate.py <results file> <compare pack>/compare-fronts.md` (all alive; a run with no comparison step: COMPARE left
    out, the run's front alone - Iteration 427), `python3 lab/evolve/ans-check.py
    --ids <every fourth of the front by size, and its extremes>` (0 differ, its negative control caught) - about 20
-   minutes.
-6. The records. A batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
+   minutes. process-checks.sh runs them all, and deaths-check.py (the seed's deaths rebuilt) before the jail.
+6. The records - `sh lab/evolve/process-records.sh N ITERATION` (Iteration 560; `NEXT_METHOD='why'` when the
+   next run changes the method) does the mechanical part below: the batch's move and citations, the progress table, the
+   votes, the stopping line; then the predictions, NEXT-RUN, this file, PROGRESS by hand. By hand, for reference: a batch applied: `git mv results/pending results/applied-after-seedN` and its citations follow
    (Iteration 372: 62 had been left behind):
    `git grep -lz 'results/pending/' -- '*.md' | xargs -0 sed -i 's|results/pending/\([A-Za-z0-9._-]*-after-seedN\.patch\)|results/applied-after-seedN/\1|g; s|results/pending/ORDER\.md|results/applied-after-seedN/ORDER.md|g'`
    (N the seed); and results/README.md's `pending/ORDER.md` line goes, unless a new batch waits (Iteration 414's dry
@@ -131,19 +127,15 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. Seed 77's processing - in a new chat, the after-seed-77 batch first, then results/drafts/seed77-checklist-557.md: a new series (12 hours, every freeze lifted) -
-   stopping.py says it opens the series; the lifted genes' shares of its true front (results/drafts/unfreeze-preflight-556.md); the prediction (555) against the 10-hour bar; the clock test's cost both pay against
-   results/drafts/fast-end-offset-554.md (bubble's shift about 300 us, kernel's 75).
+1. Seed 78's processing - a new series (9 hours): stopping.py opens it; prediction 560 (the fast end inside seeds
+   74-77's range, the small end above 14,015); deaths-check's line (any death of a known cause is a regression now).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
-   without a stop - seed 75 gained (the fastest, 553), seed 76 nothing (555); the 12-hour series from seed 77, the
-   earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
+   without a stop; the 12-hour series seed 77 alone (560); the 9-hour series from seed 78, the earliest stop after seed 80; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -
    results/drafts/confirmation-pool-559.md: --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
-3. **Correctness - found, fixed, waiting to apply** (557): seed 76's two corpus deaths were the JIT patching one copy of
-   a value hole that -ftracer duplicated and -fno-crossjumping kept (st_execute; st_callx under -ftracer alone, on a path the workloads never take) - results/drafts/corpus-deaths-555.md. The fix is the after-seed-77 batch; GOALS.md's stop
-   needs it applied - at seed 77's processing. Not a method change (the owner, 558). The sweep (558): no other
-   stencil fault under 332 flag sets - results/drafts/jit-sweep-558.md.
+3. **Correctness - the JIT's value holes fixed, applied (560)**: the after-seed-77 batch (results/drafts/corpus-deaths-555.md,
+   jit-sweep-558.md); seed 77's one corpus death the same fault - deaths-check.py's line in the results file.
 3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
    hypervolume on the true front as before (stopping.py; seed 76's dominance chain).
 4. The fast end's offset (rule 3; seeds 73-76 1.070, 1.066, 1.047, 1.063) - results/drafts/fast-end-offset-554.md: a cost

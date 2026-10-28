@@ -76,8 +76,12 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
 - **Superinstructions kept for now** (Iteration 389), though they buy nearly nothing: 0.27% of dispatches with the
   JIT off, 0.9% with it on, bytes either way (results/supers-knockout-seed58.md).
 
-## The state through Iteration 555 (history - HANDOFF.md has the present)
+## The state through Iteration 559 (history - HANDOFF.md has the present)
 
+- **Iterations 556-559** (HANDOFF.md's card at 559): seed 77 running, 12 hours, every freeze with code lifted (556); the
+  after-seed-77 batch prepared and checked (557-558: the JIT's value holes; lifted.py); the stencil sweep, 332 flag sets
+  (558); the confirmation run's founders planned (559: results/drafts/confirmation-pool-559.md). Seed 76 processed at 555
+  (no gain; the dominance chain; the corpus deaths reproduced).
 - **The runs**: **seed 73 processed (Iteration 544)** - results/evolve-amd-ryzen-7-pro-8840hs-seed73.md: the true front 222
   (reported 174, 61 in both); no comparison in its chain - the spread at generation 102 level with 71-72; the fixed-box
   hypervolume 0.34915 (the series' first); memory the six workloads' again (least 112 KB); jitexec on 6 of 65 JIT designs

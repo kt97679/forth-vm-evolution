@@ -13,6 +13,11 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 560 (seed 77 processed): seed 78, 9 hours (the owner) - the hours are the method's (GOALS.md), so a new
+# series again: seed 77 the 12-hour series' only run; the count restarts, the earliest stop after seed 80. The
+# after-seed-77 batch applied (the JIT patches every copy of a value hole - seed 77's one corpus death fixed; lifted.py).
+# The freezes stay lifted. The clock test out of the line - its table answered item 4 (the cost both pay, 464-831 us by
+# workload), so no perf hold and no sudo; the spread and appbench kept.
 # Iteration 556 (the owner): seed 77 from scratch on every gene that still has code - every freeze lifted but the
 # retired (results/applied-before-seed77/ORDER.md); the stopping rule's extremes from every alive design. The line
 # itself unchanged: 12 hours, the clock test at the end.
@@ -101,4 +106,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 77 12h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8
+seed 78 9h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16

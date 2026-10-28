@@ -2,8 +2,8 @@
 
 Prepared while seed 77 runs (the owner, 557); master stays what seed 77's bundle tests.
 
-    git apply results/pending/jit-holes-after-seed77.patch
-    git apply results/pending/lifted-after-seed77.patch
+    git apply results/applied-after-seed77/jit-holes-after-seed77.patch
+    git apply results/applied-after-seed77/lifted-after-seed77.patch
 
 batch-check (557): PASS - run-tests (jitholes-check: d11c9a6300's corpus as s6; the stencil check with the pair), validate 7 of 7 IDENTICAL, the jail. Again at 558 - the first patch's comment corrected (st_callx: under -ftracer, not every build), the patch regenerated whole: PASS.
 

@@ -12,3 +12,5 @@ laptop); from seed 75 on, each from its pack's database.
 {"seed": 75, "front": 266, "hv": 0.348506, "fastest": 0.136349, "smallest": 14095, "memory": 112, "fastest32": 0.172292}
 {"seed": 76, "front": 262, "hv": 0.350361, "fastest": 0.145013, "smallest": 14109, "memory": 112, "fastest32": 0.177819}
 {"method": "from seed 77", "why": "12 hours (the owner, 555); every freeze that still has code lifted (the owner, 556); the extremes from every alive design - seed 76's dominance chain (556). A new series: the count restarts", "extremes": "alive"}
+{"seed": 77, "front": 370, "hv": 0.350103, "fastest": 0.140636, "smallest": 14015, "memory": 108, "fastest32": 0.170181}
+{"method": "from seed 78", "why": "9 hours (the owner, 560) - the 12-hour series ended at seed 77, its one run; every freeze with code still lifted, the extremes from every alive design. A new series: the count restarts", "extremes": "alive"}

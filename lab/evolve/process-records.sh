@@ -22,13 +22,17 @@ say() { echo "process-records: $*"; }
 if [ -d results/pending ]; then                                              # 1. the batch
     P=$(sed -n 's|^ *git apply \(results/pending/[^ ]*\.patch\).*|\1|p' results/pending/ORDER.md)
     [ -n "$P" ] || { say "results/pending/ORDER.md names no patch - left as it is"; exit 1; }
-    for p in $P; do git apply -R --check "$p" 2> /dev/null || { say "$p is not applied - apply the batch first"; exit 1; }; done
+    # applied: each patch reverses cleanly, or - a later commit touched its lines - a commit says so (the convention:
+    # "Iteration I: the after-seed-N batch applied")
+    C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied")
+    for p in $P; do git apply -R --check "$p" 2> /dev/null || [ -n "$C" ] || { say "$p is not applied - apply the batch first"; exit 1; }; done
+    [ -z "$C" ] || say "the batch applied at $C"
     git mv results/pending "results/applied-after-seed$N" || exit 1
     git grep -lz 'results/pending/' -- '*.md' | xargs -0 -r sed -i \
         "s|results/pending/\([A-Za-z0-9._-]*-after-seed$N\.patch\)|results/applied-after-seed$N/\1|g; s|results/pending/ORDER\.md|results/applied-after-seed$N/ORDER.md|g"
     sed -i "s|^- \`pending/ORDER\.md\` - [^:]*:|- \`applied-after-seed$N/\` - the after-seed-$N batch, applied at seed $N's processing (Iteration $I):|" results/README.md
     say "the batch ($(echo $P | wc -w) patches) moved to results/applied-after-seed$N/, citations followed; README: $(grep -c "applied-after-seed$N/\`" results/README.md) line"
-    L=$(git grep -l 'results/pending/' -- '*.md' | grep -v '^PROGRESS.md$' | tr '\n' ' ')
+    L=$(git grep -lE 'results/pending/[A-Za-z0-9._-]+-after-seed[0-9]+\.patch' -- '*.md' | grep -vE '^(PROGRESS\.md|results/applied-after-seed[0-9]+/)' | tr '\n' ' ')
     [ -z "$L" ] || say "still citing results/pending/ (a batch queued behind? check): $L"
 else
     say "no results/pending/ - no batch to move"
