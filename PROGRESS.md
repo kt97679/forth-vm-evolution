@@ -10218,4 +10218,6 @@ results/stopping-series.md, results/gene-votes.md, results/progress-by-run.md.
 three commands - process-run.sh, process-finish.sh, tools/setup-sandbox.sh, wait-for.sh; draft-results.py drafts the
 facts; HANDOFF.md's routine 205 lines to 170. And every run judged at generation 100 (hv.py --gen, stopping.py's "gen"):
 seed 77 there 0.33872, 0.1435, 14,051, 108 KB - the owner's yes needed. Files: results/pending/ (ORDER.md, two patches),
-results/drafts/seed78-checklist-561.md.
+results/drafts/seed78-checklist-561.md. Tested whole on seed 77's archive - every check passed, the control (the death
+wrong before the hole fix) reproduced by the script; the first try died with the turn (the sandbox suspends), so
+process-run.sh FROM=checks resumes at the checks.

@@ -56,7 +56,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **The after-seed-78 batch** (results/pending/ORDER.md, Iteration 561): a processing in three commands -
   process-run.sh, process-finish.sh, setup-sandbox.sh, draft-results.py drafting the facts; and **every run judged at
   generation 100** (the owner's hours vary - GOALS.md's rule counted them, so it could never stop): **the owner's yes
-  needed**. Seed 78's processing applies it by hand once: results/drafts/seed78-checklist-561.md.
+  needed**. Seed 78's processing applies it by hand once: results/drafts/seed78-checklist-561.md. Tested whole on
+  seed 77's archive (561): every check passed, the control reproduced 560's by itself (ORDER.md).
 - **Predictions due** (results/predictions.md): seed 78 - nine hours lose nothing at the fast end, lose at the small end (560).
 - **Scripts added (560)**: lab/evolve/process-records.sh (step 6 in one command); lab/evolve/deaths-check.py (a
   process-checks step: the seed's deaths rebuilt on the tree); draft-results.py reads the spread's generation.
@@ -168,6 +169,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
   arrival - what is new, what is wrong, what checks out - and logged in results/model-usefulness.md; stop when the
   question is answered.
 - A new chat after each seed's processing.
+- **A detached job dies when the turn ends** (561: the sandbox suspends between turns; /tmp and the clone stay, the
+  processes go). Start a long job early in a turn and see it to its end in that turn; cut off, rerun it from its step.
 
 **Efficiency** (the owner, Iteration 551 - seeds 73 and 74 in one chat cost several times two fresh chats):
 

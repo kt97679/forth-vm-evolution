@@ -6,6 +6,9 @@ applies it by hand this once - results/drafts/seed78-checklist-561.md - and proc
     git apply results/pending/process-after-seed78.patch
     git apply results/pending/stopping-gen-after-seed78.patch
 
+batch-check (561, on c4a42f4 - the patches as they stand): PASS - both applied to a fresh clone, run-tests PASS,
+validate 7 of 7 IDENTICAL, the jail PASS.
+
 **process-after-seed78.patch** (lab/evolve/process-run.sh, process-finish.sh, draft-results.py, process-records.sh - refuses a move onto an existing applied-after-seedN/; tools/setup-sandbox.sh,
 wait-for.sh; HANDOFF.md, HANDOFF-PROMPT.md, HANDOFF-REFERENCE.md, README.md, lab/evolve/README.md) - **a processing in three
 commands** (the owner, 560-561: every repeatable action a script): setup-sandbox.sh (a new chat's setup, as root);
