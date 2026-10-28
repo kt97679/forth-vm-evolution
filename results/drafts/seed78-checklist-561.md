@@ -5,7 +5,7 @@ The first processing with process-run.sh; it comes in the after-seed-78 batch (r
 1. As root: `git clone -q /mnt/user-data/uploads/<bundle> /tmp/s && cd /tmp/s && git apply
    results/pending/process-after-seed78.patch && sh tools/setup-sandbox.sh && cd / && rm -rf /tmp/s`.
 2. As claude in /home/claude/forth-vm-evolution: `sh tools/batch-check.sh` detached, PASS; then each patch ORDER.md
-   names (both: the owner said yes to the matched stopping rule, 562) with `git apply --index`, and `git commit -m "Iteration N: the
+   names (all three: the owner said yes to the matched stopping rule, 562) with `git apply --index`, and `git commit -m "Iteration N: the
    after-seed-78 batch applied - K patches (...), batch-check PASS"`.
 3. `setsid nohup sh lab/evolve/process-run.sh N > /dev/null 2>&1 &` - early in a turn, and seen to DONE in it: a
    detached job dies when the turn ends (561; cut off: FROM=checks resumes it at the checks). It finds the batch applied; then HANDOFF.md's
