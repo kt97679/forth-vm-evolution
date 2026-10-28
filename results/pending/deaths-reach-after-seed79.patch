@@ -1,0 +1,73 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index 35f41b4..67595a1 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -43,6 +43,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
+ - `carry-check.py` [DB...] [--all] [--sample N] - the confirmation run's founders pre-flighted (Iteration 562): the pool --carry makes (evolve.py's carry_pool - each database's strict front and the named designs), its size and generation 0's hours, and a sample built here and run on the corpus against s6; exit 1 on one wrong. An experiment step: `then experiment carry-check.py --all`.
+ - `carry-named.txt` - designs named elsewhere (each machine's fastest, the held-out and application bests), carried in where a database has them and no front did (Iteration 562).
+ - `deaths-check.py` - a returned seed's deaths and wrong outputs rebuilt on this tree, each against s6's output (Iteration 560): the expected causes listed, not rebuilt; exit 1 on one still wrong - an open correctness issue. process-checks.sh runs it after ans-check.
++- `gene-narrow.py` DB ID WORKLOAD GENE=VALUE... - which genes a design's wrong output needs (Iteration 564): each suspect value put back one at a time (necessary), then each returned alone to the rest put back (sufficient); a build a line. Seed 78's kernel deaths: doesfar=0 alone - the reach limit at scale 1.
+ - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
+ - `footprint-gen.py` - a held-out program whose code footprint grows (N [--calls T] [--defs-only]): N words in levels, run round-robin, a checksum (Iteration 370; results/generalization.md)
+ - `lifted.py` - the freezes lifted at 556 on a run's true front (Iteration 557): each gene's share at each value, the enrichment of its other values, prediction 556 scored; process-seed.sh runs it.
+diff --git a/lab/evolve/deaths-check.py b/lab/evolve/deaths-check.py
+index 6ba5319..79ca5b4 100755
+--- a/lab/evolve/deaths-check.py
++++ b/lab/evolve/deaths-check.py
+@@ -2,7 +2,8 @@
+ """lab/evolve/deaths-check.py DB [--all] [--max N] - a returned seed's deaths and wrong outputs, rebuilt on this tree
+ (Iteration 560). Every record of DB (a seed pack's db.jsonl) whose status is "died: W" or "wrong output: W" is built here
+ and run on W; its output against s6's. The expected causes are listed, not rebuilt: "not run" (reach_lethal screens a
+-reach the design cannot have - Iteration 556) and cpt16 wrong on apps (it stops early on the applications' undefined
++reach the design cannot have - Iteration 556), the same reach at scale 1 on the kernel workload (2^15 bytes: reach_lethal
++runs these, most lived in seed 2 - Iteration 10; seed 78's three died, 564), and cpt16 wrong on apps (it stops early on the applications' undefined
+ words - Iteration 516); --all rebuilds those too. A design that computes right here is a fault this tree has fixed (seed
+ 77's corpus death, a JIT value hole - Iteration 557); one that still differs or dies is an open correctness issue, and
+ GOALS.md's stop needs none: exit 1. As the build user, in a built tree, alone (it is an evolver process: process-checks.sh
+@@ -19,6 +20,9 @@ sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+ def expected(r, w):
+     if 'not run' in r['status']: return 'reach limit, not run (556)'
+     if w == 'apps' and r['genome'].get('enc') == 'cpt16': return 'cpt16 on apps (516)'
++    g = r['genome']                                     # 564: reach_lethal's scale 1 - run, jailed (Iteration 10)
++    if w == 'kernel' and g.get('enc') == 'cv8' and g.get('scale') == 1 and not (g.get('varcall') and g.get('doesfar')):
++        return 'the reach limit at scale 1, run and jailed (10; back with doesfar lifted, 556)'
+     return None
+ 
+ def sign(g):            # the genes of the known faults, for reading the table
+diff --git a/lab/evolve/gene-narrow.py b/lab/evolve/gene-narrow.py
+new file mode 100644
+index 0000000..0d6b72f
+--- /dev/null
++++ b/lab/evolve/gene-narrow.py
+@@ -0,0 +1,31 @@
++#!/usr/bin/env python3
++"""lab/evolve/gene-narrow.py DB ID WORKLOAD GENE=VALUE... - which genes a design's wrong output needs (Iteration 564: seed
++78's cv8 kernel deaths, six lifted values together). The design ID of DB, built here and run on WORKLOAD against s6, as
++it is; with each GENE set to its VALUE (a suspect value put back to a known one), one at a time - a gene whose putting
++back makes it right is necessary; then all of them put back (it should compute right), and each suspect value alone
++returned - one that alone makes it wrong is sufficient. As the build user, in a built tree; a build a line.
++"""
++import json, os, shutil, sys
++a = sys.argv[1:]
++if len(a) < 4: sys.exit(__doc__)
++db, ID, W, sets = a[0], a[1], a[2], dict(x.split('=', 1) for x in a[3:])
++sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
++r = next(json.loads(l) for l in open(db) if l.startswith('{') and '"%s"' % ID in l and json.loads(l).get('id') == ID)
++g0 = dict(r['genome']); val = lambda v: int(v) if v.lstrip('-').isdigit() else v
++known = {k: val(v) for k, v in sets.items()}; suspect = {k: g0.get(k) for k in known}
++E.setup(); E.run_metric(*E.REF, W); ref = E.OUT_LAST[0]
++def run(g, what):
++    d = os.path.join(E.EV, 'gene-narrow'); shutil.rmtree(d, ignore_errors=True)
++    try:
++        eng, img = E.build(E.canon(g), d); E.run_metric(eng, img, E.private_work(d), W)
++        ok = E.OUT_LAST[0] == ref; out = 'right' if ok else 'WRONG'
++    except Exception as x:
++        ok, out = False, 'DIES: %s' % str(x)[:70]
++    shutil.rmtree(d, ignore_errors=True); print('| %s | %s |' % (what, out), flush=True); return ok
++print('%s (%s) on %s - the suspects: %s\n\n| the genome | here |\n|---|---|' % (ID, r.get('status'), W, ', '.join('%s=%s' % kv for kv in suspect.items())))
++base = run(g0, 'as it is')
++nec = [k for k in known if run(dict(g0, **{k: known[k]}), '%s put back to %s' % (k, known[k]))]
++allb = dict(g0, **known); clean = run(allb, 'all %d put back' % len(known))
++suf = [k for k in known if not run(dict(allb, **{k: suspect[k]}), 'all put back but %s=%s' % (k, suspect[k]))] if clean else []
++print('\ngene-narrow: as it is %s; necessary (put back, it is right): %s; all put back %s; sufficient alone: %s'
++      % ('wrong' if not base else 'RIGHT - nothing to narrow', ', '.join(nec) or 'none alone', 'right' if clean else 'STILL WRONG - another cause', ', '.join(suf) or 'none alone'))

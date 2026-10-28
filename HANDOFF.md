@@ -40,17 +40,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 563.
+- master: Iteration 564.
 - **Seed 79 is next - 12 hours from scratch** (the owner), every freeze still lifted, the stopping rule matched by
   generation. NEXT-RUN carries the line; its chain pre-flights the confirmation run's founders (carry-check.py --all).
-- **A correctness fault is open (563) - the first job**: seed 78's three kernel deaths (cv8, the JIT off) compute wrong
-  on master; all three carry bytehdr=0, doesfar=0, thinhdr=0, bss=0, lean=0, scale=1 - lifted at 556, each common alone,
-  together on no living design. Narrow the combination (rebuild 9e2a4b5df1 with one value set back at a time:
-  deaths-check.py's way), find the cause, fix or freeze it. Until then the stopping rule cannot stop
-  (results/evolve-amd-ryzen-7-pro-8840hs-seed78.md, its deaths).
+- **No correctness issue open (564 - 563's "new fault" corrected)**: seed 78's three kernel deaths are the reach limit at
+  scale 1, known since Iteration 10 (reach_lethal; doesfar's freeze, lifted at 556, had hidden it) - gene-narrow.py:
+  doesfar=0 necessary and sufficient. The after-seed-79 batch (results/pending/ORDER.md) teaches deaths-check.py the
+  class; process-run.sh applies it at seed 79's processing. The stop is not blocked.
 - **Seed 78 processed (563)** - 9 hours, 126 generations, the true front 182: gains nothing (matched against seed 77 at
-  126), the weakest of five at generation 126 (session 65); two runs on the method, the earliest stop after seed 79 -
-  if the fault is fixed. Prediction 560 failed at the fast end. lifted.py and the votes disagree on msc, sharedcall,
+  126), the weakest of five at generation 126 (session 65); two runs on the method, the earliest stop after seed 79. Prediction 560 failed at the fast end. lifted.py and the votes disagree on msc, sharedcall,
   alignhot (the canonical genome against express()) - open.
 - **The after-seed-78 batch applied (563)** - results/applied-after-seed78/ORDER.md: a processing in three commands, the
   stopping rule matched by generation, the confirmation run's founders. Its first use found three faults in it, fixed:
@@ -104,8 +102,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
    designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
-3. **Correctness - open (563)**: seed 78's three cv8 kernel deaths, the JIT off - the state card above. The JIT's
-   value holes fixed and applied (560: corpus-deaths-555.md, jit-sweep-558.md).
+3. **Correctness - none open (564)**: seed 78's kernel deaths are the scale-1 reach limit (Iteration 10), not a fault.
+   The JIT's value holes fixed and applied (560: corpus-deaths-555.md, jit-sweep-558.md).
 3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
    hypervolume on the true front as before (stopping.py; seed 76's dominance chain).
 4. The fast end's offset (rule 3; seeds 73-76 1.070, 1.066, 1.047, 1.063) - results/drafts/fast-end-offset-554.md: a cost

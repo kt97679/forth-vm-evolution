@@ -43,7 +43,11 @@
 
 **Prediction 560** (nine hours lose nothing at the fast end and lose at the small end - the tolerance front, hv.py's line): **fails at the fast end, holds at the small end** - the fastest 0.1493 and the hypervolume 0.33952 below seeds 74-77's ranges (0.1363-0.1450; 0.3485-0.3567); the smallest 14,189 above 14,015. Not the hours alone: at generation 126 seed 78 is 4.2% behind seed 77 and behind every run of the spread - the draw. **Prediction 556** (scored at seed 77: holds): lifted.py on seed 78 says its second clause fails - msc on 24% of the true front (enrichment 2.90), sharedcall 78% (0.97), alignhot 16% (1.5-2.2) - while the votes give each a removal vote (8 of 8 over seeds 76-78). lifted.py reads the canonical genome, the votes what is built (express()): a value with no effect drifts on a front. An open question, not a reversal - settled by express() on the lifted genes.
 
-**The kernel deaths - a new fault, open (563)**: 9e2a4b5df1 (generation 0), d40ff02637 and 1a252d6786 (1), each cv8
+**Corrected at Iteration 564 - not a new fault**: the three are the reach limit at scale 1, known since Iteration 10
+(reach_lethal runs cv8 designs with a two-byte DOES> form at scale 1, jailed; 2^15 bytes and the kernel workload's
+dictionary is larger), back since doesfar's freeze was lifted (556). gene-narrow.py: doesfar=0 necessary and sufficient
+on each; the same form lives at scales 2-3 (474 designs). No correctness issue is open; the paragraph below, as judged
+at 563, stands corrected. **The kernel deaths, as judged at 563**: 9e2a4b5df1 (generation 0), d40ff02637 and 1a252d6786 (1), each cv8
 with the JIT off, died on the kernel workload - and compute wrong on the code seed 78 ran on (29b9999, the control) and
 on master (27f3290). Not the 557 hole (no JIT). All three carry six lifted values at once - bytehdr=0, doesfar=0,
 thinhdr=0, bss=0, lean=0, scale=1, each off its frozen value of 556 - and each value alone is common among the living

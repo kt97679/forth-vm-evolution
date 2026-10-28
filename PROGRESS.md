@@ -10249,3 +10249,13 @@ The new scripts' first use found three faults of their own, fixed: an applied ba
 leaking into process-checks.sh; an earlier chain's passes taken from the status file. Seed 79 next, 12 hours, with
 carry-check.py --all. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed78.md, xcheck-seed78.md, session 65,
 results/applied-after-seed78/, results/predictions.md, results/drafts/seed79-checklist-563.md.
+
+## Iteration 564 - 2026-10-28 - Claude
+
+**563's "new correctness fault" corrected: the reach limit at scale 1.** gene-narrow.py (new: suspect values put back one
+at a time, then returned alone) on seed 78's three kernel deaths: doesfar=0 necessary and sufficient on each; the other
+five lifted values, fold and skippad innocent. With varcall=1, doesfar=0 is the two-byte DOES> form - 2^15 bytes of
+reach at scale 1, and the kernel workload's dictionary is larger: reach_lethal's documented case (Iteration 10: run,
+jailed), hidden while doesfar was frozen at 1 (409-556). Seed 78's six such designs: three screened, the three measured
+dead; at scales 2-3 the form lives (474). No correctness issue open; the stop not blocked. The after-seed-79 batch:
+deaths-check.py names the class, gene-narrow.py. Files: results/pending/, the seed 78 results file (a dated correction).
