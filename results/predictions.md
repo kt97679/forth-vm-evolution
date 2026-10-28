@@ -1064,4 +1064,6 @@ speed made its last 2% gain at generation 67, seed 76's at 67, seed 75's at 49; 
 135-136, in steps of tens of bytes. So on its tolerance front (hv.py's line): the fastest inside seeds 74-77's range,
 0.1363-0.1450, and the hypervolume inside 0.3485-0.3567; the smallest above seed 77's 14,015 bytes. Seed 78 opens the
 9-hour series (stopping.py) - nothing to gain on; the count's earliest stop after seed 80.
+(Iteration 562: that last sentence superseded - with the matched stopping rule seed 78 is the second run of the series
+from seed 77, the earliest stop after seed 79. The prediction itself stands: the whole run's tolerance front.)
 

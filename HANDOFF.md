@@ -41,9 +41,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 ## The state now
 
 - master: Iteration 562.
-- **Seed 78 is next - 9 hours from scratch, every freeze still lifted (the owner, 560): a new series again** - the hours
-  are the method's (GOALS.md), so the count restarts; the earliest stop after seed 80. Its chain: the spread and
-  appbench; no clock test (item 4 answered), so no perf hold and no sudo. NEXT-RUN carries the line.
+- **Seed 78 is next - 9 hours from scratch, every freeze still lifted.** With the after-seed-78 batch (the owner's yes,
+  562) the hours are no part of the method: seed 78 is the second run of the series from seed 77, judged at its last
+  generation against seed 77 at that generation; the earliest stop after seed 79. Its chain: the spread and appbench;
+  no clock test, so no sudo. NEXT-RUN carries the line.
 - **Seed 77 processed (560)** - results/evolve-amd-ryzen-7-pro-8840hs-seed77.md: 12 hours, 161 generations, the true
   front 370; the hypervolume 0.35010, the fastest 0.1421 (alive 0.1406), the smallest 14,015, the least memory 108 KB -
   inside seeds 73-76's spread at generation 128 (session 64). The 12-hour series' only run (stopping-series.md).
@@ -136,7 +137,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 1. Seed 78's processing - results/drafts/seed78-checklist-561.md: the after-seed-78 batch by hand once, then
    process-run.sh and process-finish.sh; the stopping rule matched by generation (562).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
-   without a stop; the 12-hour series seed 77 alone (560); the 9-hour series from seed 78, the earliest stop after seed 80; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
+   without a stop; from seed 77 one series matched by generation, the hours free (562), the earliest stop after seed 79; then the confirmation run, the final set, the random-search baseline (its mode drafted and tested: results/drafts/random-mode-548.patch, applied at consolidation).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -
    results/drafts/confirmation-pool-559.md: --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
