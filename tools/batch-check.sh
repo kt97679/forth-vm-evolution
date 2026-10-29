@@ -35,7 +35,7 @@ python3 lab/evolve/test-jail.py > "$OUT/jail.log" 2>&1; rj=$?; j=$(tail -1 "$OUT
 # line must not hide a failure; on any FAIL the patched clone stays, and the script exits 1.
 if [ "$rt" -eq 0 ] && [ "$t" = "PASS - no regressions" ] && [ "$rv" -eq 0 ] && [ "$va" -gt 0 ] && [ "$vi" -eq "$va" ] \
    && [ "$rj" -eq 0 ] && [ "$j" = "PASS" ]; then verdict=PASS; else verdict=FAIL; fi
-say "$verdict - $n patch(es) applied to a fresh clone of $(git -C "$REPO" log --oneline -1 | cut -c1-50); run-tests: $t (exit $rt); validate: $vi of $va IDENTICAL (exit $rv); jail: $j (exit $rj); logs in $OUT"
+say "$verdict - $n patch(es) applied to a fresh clone of $(git -C "$T" log --oneline -1 | cut -c1-50); run-tests: $t (exit $rt); validate: $vi of $va IDENTICAL (exit $rv); jail: $j (exit $rj); logs in $OUT"
 [ "$verdict" = PASS ] || { echo "batch-check: the patched clone kept, to look at: $T" >> "$OUT/summary"; exit 1; }
 # Iteration 567 (results/drafts/automation-audit-567.md): RECORD=1 writes the PASS into ORDER.md - its "batch-check (...)"
 # paragraph, made or replaced - and commits that file alone; until then a chat typed it and committed it, 11 times since
