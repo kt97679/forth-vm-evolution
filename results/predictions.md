@@ -1105,3 +1105,7 @@ as all four lifted runs. A fresh draw clears a bar about two times in seven (see
 seed 79's gain came past generation 161, beyond a 9-hour run's reach. And the Tegra agrees with the laptop on seed 77's
 16 designs asked by id (REMOTES' --also): Spearman 0.8 or more - the host is sound; below it, the host is the question.
 
+*A note at 567*: the smallest's bar is 13,910 at generation 120 and 13,875 at 140 (`stopping.py --bar 120,140`, the
+after-seed-81 batch) - 13,849 was seed 80's end (13,989) less 1%, taken by hand where the rule takes each run at
+the generation; the other bars as written. The verdict is stopping.py's own, so the stop is not affected.
+
