@@ -10313,3 +10313,7 @@ build) this session made by hand. Tested: two runs, a fresh DEST twice, a live j
 **The automation audit** (the owner): results/drafts/automation-audit-567.md - processing is three commands already;
 the manual work left is between runs and in restated records (since 500: 20 fix-up commits, 11 recording a batch-check
 line, 5 index lines; seed 81's checklist found stale, corrected). Eight candidates; first a batch tool and a design runner.
+**Candidates 1-4 built** (the owner's yes): tools/batch-make.sh, batch-check.sh RECORD=1, handoff-check refusing a TODO
+(master); design.py and stopping.py --bar - two more patches in the after-seed-81 batch, made by batch-make.sh. design.py:
+the minimal design right at both widths, DIES at the old window. --bar found prediction 566's smallest bar typed wrong
+(13,849; the rule 13,910 - noted). Checklists hold judgment, not state (HANDOFF).

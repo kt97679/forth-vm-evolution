@@ -49,3 +49,14 @@ A script drafts and checks around them, as draft-results.py's TODO lines do; it 
 
 tools/ (1, 6, 7, 8) run only here: committed on master, tested as written. lab/evolve/ (2, 3, 5) is the laptop's tree too:
 appended to the after-seed-81 batch, batch-check run again, applied at seed 81's processing.
+
+## Done (Iteration 567, the owner's yes to 1-4)
+
+1. tools/batch-make.sh (master); batch-check.sh RECORD=1; handoff-check refuses a TODO in ORDER.md. First use: the two
+   patches below - made, indexed and committed in one command, the PASS recorded by the check itself.
+2. lab/evolve/design.py (design-after-seed81.patch): the minimal design right at both widths, DIES with the old window.
+3. stopping.py --bar (bar-after-seed81.patch): its first use found a bar typed wrong - prediction 566's smallest, 13,849
+   where the rule gives 13,910 (results/predictions.md's note).
+4. The convention in HANDOFF.md: a checklist holds judgment, not state; seed 81's stale line corrected.
+
+5-8 not done: 5 waits for 1-4 to be used once; 6-8 are small and can go with the next tools change.

@@ -51,8 +51,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   Predictions 565 and 556 hold. Its correctness issue fixed in the after-seed-81 batch (567, open item 3).
 - **The after-seed-81 batch waits (567)** - results/pending/ (ORDER.md): jitscan (jit.c's scan window 160 -> 512, the
   cause of seed 80's JIT deaths; stencil-check reads the window; engines-check's 64-aligned variant; regression
-  c578b55046) and ccflags (the flags of the expressed genes) - batch-check PASS; process-run.sh applies it at seed 81's
-  processing.
+  c578b55046), ccflags (the flags of the expressed genes), design (lab/evolve/design.py) and bar (stopping.py --bar) -
+  batch-check PASS; process-run.sh applies it at seed 81's processing.
 - **The Tegra explained (566)**: not the host - the compiler gene went to clang, and rage builds only GCC without the
   JIT; seeds 78-79's fronts held a 1.25x band of such designs (the checks -0.103, 0.082), seed 80's none. REMOTES'
   --also asks rage for 16 of seed 77's front by id in seed 81's chain (out at its processing).
