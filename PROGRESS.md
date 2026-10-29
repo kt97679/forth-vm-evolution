@@ -10275,3 +10275,4 @@ or, read at equal effort, the stop now: the owner's choice. The three lifted run
 126 than all three freeze-on runs. The founders' pre-flight clean (6,252 designs, 40 of 40). The Tegra disagreed
 (-0.103), unexplained. Prediction 563 failed by the rule, 556 holds as built. Seed 80 next, 12 hours. Files: the seed
 79 results file, xcheck-seed79.md, session 66, results/applied-after-seed79/, predictions.md, seed80-checklist-565.md.
+The owner chose the rule as written: seed 80 a series run, the earliest stop after seed 81.

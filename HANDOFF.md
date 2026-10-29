@@ -42,8 +42,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 - master: Iteration 565.
 - **Seed 80 is next - 12 hours from scratch** (the owner), the freezes lifted, the stopping rule matched by generation.
-  NEXT-RUN carries the line - and, commented, the confirmation run's (`seed 80 12h widths carryall`) should the owner
-  read seed 79 at equal effort (below).
+  The owner chose (565) the rule as written over reading seed 79 at equal effort - seed 80 a series run, the earliest
+  stop after seed 81. NEXT-RUN carries the line.
 - **Seed 79 processed (565)** - results/evolve-amd-ryzen-7-pro-8840hs-seed79.md: 12 hours, 177 generations, the true
   front 257. **It gains by the rule** (the fastest -2.0%, 32-bit -3.5%, against seed 77's end) - three runs, the earliest
   stop after seed 81 - **but not at equal effort**: at generation 161 (seed 77's end) no gain; the rule's lean decided it.

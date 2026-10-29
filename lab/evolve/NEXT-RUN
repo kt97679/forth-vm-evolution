@@ -16,7 +16,8 @@
 # Iteration 565 (seed 79 processed): seed 80, 12 hours (the owner). Seed 79 gained by the rule (past generation 161,
 # seed 77's end) - three runs, the earliest stop after seed 81. Were the gain read at equal effort (none at 161), the
 # rule would have stopped: then this line becomes the confirmation run - seed 80 12h widths carryall (no noevolved;
-# its founders pre-flighted in seed 79's chain, 40 of 40 right). The owner's choice.
+# its founders pre-flighted in seed 79's chain, 40 of 40 right). The owner chose (565): the rule as written - seed 80
+# a series run.
 # Iteration 563 (seed 78 processed): seed 79, 12 hours (the owner). Seed 78 gained nothing - two runs on the matched
 # method; if seed 79 gains nothing the rule stops after it, so its chain pre-flights the confirmation run's founders:
 # carry-check.py --all (every archive's strict front and the named designs, a sample built against s6).
