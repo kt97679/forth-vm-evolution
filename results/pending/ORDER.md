@@ -9,8 +9,7 @@ candidates 2 and 3 (results/drafts/automation-audit-567.md).
     git apply results/pending/design-after-seed81.patch
     git apply results/pending/bar-after-seed81.patch
 
-batch-check (567, on 92b9e8a - the two patches): PASS - both applied to a fresh clone, run-tests PASS (engines-check 107
-paths, 102 on master: the variant at both widths, regression c578b55046, two stencil sets), validate 7 of 7 IDENTICAL,
+batch-check (567, on 6576d97 - 4 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
 
 **jitscan-after-seed81.patch** (engine/jit.c, lab/evolve/stencil-check.py, engines-check.py, regressions.json, README.md)
