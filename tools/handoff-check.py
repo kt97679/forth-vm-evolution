@@ -135,6 +135,7 @@ if os.path.isdir(pd):
     named = set(re.findall(r'results/pending/([^\s`]+\.patch)', order))
     for p in sorted(have - named): fail(7, 'results/pending/%s: not applied by ORDER.md' % p)
     for p in sorted(named - have): fail(7, 'ORDER.md applies results/pending/%s, which is not there' % p)
+    if 'TODO' in order: fail(7, 'results/pending/ORDER.md has a TODO - the prose of a patch tools/batch-make.sh added (567)')
 
 # 8. NEXT-RUN has a line to run
 nr = [l.strip() for l in open(os.path.join(ROOT, 'lab', 'evolve', 'NEXT-RUN')) if l.strip() and not l.startswith('#')]

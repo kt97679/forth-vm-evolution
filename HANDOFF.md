@@ -147,6 +147,11 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 - Work while a run goes: only what must be ready before the next run - in its own short chat, bundle in and out, or
   folded into the next processing. Not an iteration per question.
 - Charts drawn by a script into a file and shown as the file - never data points typed into a chart call.
+- A batch: its scratch tree by `SCRATCH=` (setup-sandbox.sh), each commit a patch named by its subject's first word, then
+  `tools/batch-make.sh N ITERATION SCRATCH` (the patches, ORDER.md's lines and TODOs, the index, the commit); the prose;
+  `RECORD=1 tools/batch-check.sh` writes and commits its PASS (567). A design against s6: lab/evolve/design.py (the batch).
+- A seed's checklist holds what to judge and read, never state - a batch waiting, the hours, a bar: those print from
+  their sources (process-run's summary, ORDER.md, `stopping.py --bar GEN`). Seed 81's restated one went stale (567).
 - Replies: the answer first, short; nothing a tool output already showed, restated.
 - Effort: xhigh for the routine; max for the unexpected - a failed chain, an odd result, a design decision.
 - Recurring steps become scripts; the judgment stays in the chat - prompts/21, item 9 (Iteration 552).
