@@ -2,9 +2,9 @@
 
 process-run.sh checks and applies it.
 
-    git apply results/pending/deaths-reach-after-seed79.patch
-    git apply results/pending/random-mode-after-seed79.patch
-    git apply results/pending/lifted-express-after-seed79.patch
+    git apply results/applied-after-seed79/deaths-reach-after-seed79.patch
+    git apply results/applied-after-seed79/random-mode-after-seed79.patch
+    git apply results/applied-after-seed79/lifted-express-after-seed79.patch
 
 batch-check (564, on cb07975 - the three patches): PASS - all applied to a fresh clone, run-tests PASS, validate 7 of 7
 IDENTICAL, the jail PASS.

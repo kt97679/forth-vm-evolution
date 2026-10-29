@@ -40,25 +40,21 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 564.
-- **Seed 79 is next - 12 hours from scratch** (the owner), every freeze still lifted, the stopping rule matched by
-  generation. NEXT-RUN carries the line; its chain pre-flights the confirmation run's founders (carry-check.py --all).
-- **No correctness issue open (564 - 563's "new fault" corrected)**: seed 78's three kernel deaths are the reach limit at
-  scale 1, known since Iteration 10 (reach_lethal; doesfar's freeze, lifted at 556, had hidden it) - gene-narrow.py:
-  doesfar=0 necessary and sufficient. The after-seed-79 batch (results/pending/ORDER.md) teaches deaths-check.py the
-  class, the random-search baseline (NEXT-RUN's "random", smoke-tested) and lifted.py as built; process-run.sh
-  applies it at seed 79's processing. The stop is not blocked.
-- **Seed 78 processed (563)** - 9 hours, 126 generations, the true front 182: gains nothing (matched against seed 77 at
-  126), the weakest of five at generation 126 (session 65); two runs on the method, the earliest stop after seed 79. Prediction 560 failed at the fast end. The lifted genes as built: every one at its frozen value
-  on the front (564 - the written values drift, inert); prediction 556 holds.
-- **The after-seed-78 batch applied (563)** - results/applied-after-seed78/ORDER.md: a processing in three commands, the
-  stopping rule matched by generation, the confirmation run's founders. Its first use found three faults in it, fixed:
-  an applied batch not recognised when patches overlap; process-run's FROM leaking into process-checks (every check
-  skipped); process-finish taking an earlier chain's passes from the status file. process-finish's OPEN='why' records
-  an open fault (it waives no other check).
-- **Predictions due** (results/predictions.md): seed 79 gains nothing (563, weak).
-- **Before 563**: seeds 70-77 processed (498-560); history: HANDOFF-REFERENCE.md.
-- **Files a new chat needs**: the newest bundle, and seed 79's chain archive. appbench.zip stays on the laptop.
+- master: Iteration 565.
+- **Seed 80 is next - 12 hours from scratch** (the owner), the freezes lifted, the stopping rule matched by generation.
+  NEXT-RUN carries the line - and, commented, the confirmation run's (`seed 80 12h widths carryall`) should the owner
+  read seed 79 at equal effort (below).
+- **Seed 79 processed (565)** - results/evolve-amd-ryzen-7-pro-8840hs-seed79.md: 12 hours, 177 generations, the true
+  front 257. **It gains by the rule** (the fastest -2.0%, 32-bit -3.5%, against seed 77's end) - three runs, the earliest
+  stop after seed 81 - **but not at equal effort**: at generation 161 (seed 77's end) no gain; the rule's lean decided it.
+  The three lifted runs slower at the fast end at generation 126 than 74-76 (3 against 3 apart). The founders'
+  pre-flight: 6,252 designs (seeds 75-79), 40 of 40 right. The Tegra disagreed (-0.103), unexplained. Prediction 563
+  failed by the rule; 556 holds as built. Deaths: 4, the scale-1 reach limit. No correctness issue open.
+- **The after-seed-79 batch applied (565)** - results/applied-after-seed79/ORDER.md: deaths-check names the scale-1
+  reach limit, gene-narrow.py, the random-search baseline ("random"), lifted.py as built. Nothing waits.
+- **Predictions due** (results/predictions.md): seed 80 - slow at generation 126, no gain (565).
+- **Before 565**: seeds 70-78 processed (498-563); history: HANDOFF-REFERENCE.md.
+- **Files a new chat needs**: the newest bundle, and seed 80's chain archive. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

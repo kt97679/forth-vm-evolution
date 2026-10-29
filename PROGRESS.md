@@ -10264,3 +10264,14 @@ deaths-check.py names the class, gene-narrow.py. Files: results/pending/, the se
 random-mode-after-seed79.patch. 563's open question closed: as built (express()) every lifted gene sits at its frozen
 value on seed 78's front - the written values drift where they do nothing; lifted.py now reads express(), and
 prediction 556 holds. lifted-express-after-seed79.patch.
+
+## Iteration 565 - 2026-10-29 - Claude
+
+**Seed 79 processed** (12 hours, 177 generations, the true front 257) by process-run.sh and process-finish.sh, the
+after-seed-79 batch checked and applied by process-run.sh itself. **It gains by the matched rule** - the fastest -2.0%
+and 32-bit -3.5% at generation 177 against seed 77's end (161) - **but not at equal effort**: at generation 161 no gain;
+its gains came past seed 77's reach, the rule's documented lean deciding. Three runs, the earliest stop after seed 81 -
+or, read at equal effort, the stop now: the owner's choice. The three lifted runs slower at the fast end at generation
+126 than all three freeze-on runs. The founders' pre-flight clean (6,252 designs, 40 of 40). The Tegra disagreed
+(-0.103), unexplained. Prediction 563 failed by the rule, 556 holds as built. Seed 80 next, 12 hours. Files: the seed
+79 results file, xcheck-seed79.md, session 66, results/applied-after-seed79/, predictions.md, seed80-checklist-565.md.

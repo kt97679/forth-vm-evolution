@@ -1082,3 +1082,13 @@ seed 77 there: the hypervolume >= 0.35325, the fastest <= 0.1378, the smallest <
 at generation 126 against 74-76's 0.1381-0.1389), and every run since 76 holds 108 KB. A weak prediction: in the 10-hour
 series one run of three gained (seed 75, by the fastest) - a fresh draw clears a 2% bar about one time in three.
 
+**Scored at seed 79 (Iteration 565): fails by the rule, holds at equal effort.** Seed 79 gains at its last generation
+(177) on the fastest (-2.0%, at the threshold) and 32-bit (-3.5%) against seed 77's end (161); at generation 161 it
+gains nothing - its gains came past seed 77's reach.
+
+## Seed 80, 12 hours - predicted (Iteration 565)
+
+The lifted runs stay slow at equal effort: seed 80's fastest at generation 126 is above 0.1389 (the slowest of seeds
+74-76 there; seeds 77-79 at 0.1418, 0.1477, 0.1435). And seed 80 gains nothing at its last generation against seeds
+77-79 there - a fresh draw clears the bar about one time in three (seeds 75 and 79 gained, of six).
+

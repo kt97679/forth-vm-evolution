@@ -32138,3 +32138,15 @@ What compares: five runs' records to generation 126 - seed 78 (9 hours, the free
 | archived-20261027-034200/build/evolve/db.jsonl | 126 | 20966 | 427 | 0.1381 | 14,103 | 108 | 1.0108e+06 | 0.6483 | 0.1711 |
 | archived-20261027-143909/build/evolve/db.jsonl | 126 | 20484 | 401 | 0.1383 | 14,173 | 108 | 9.6937e+05 | 0.6529 | 0.1856 |
 | archived-20261028-042145/build/evolve/db.jsonl | 126 | 20984 | 407 | 0.1418 | 14,051 | 108 | 9.5336e+05 | 0.6447 | 0.1826 |
+
+## Session 66 - Iteration 565: seed 79 and the archived runs (the chain's spread, at generation 126)
+
+What compares: five runs' records to generation 126 - seed 79 (12 hours, the freezes lifted) and seeds 75-78 - by review-checks.py spread on the laptop, the seven selection workloads and the memory of each. Seed 79 among the weakest there (the fastest 0.1435, the largest small end, 112 KB, the lowest hypervolume); the three lifted runs (77-79) slower at the fast end than seeds 74-76.
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 126 | 19444 | 344 | 0.1435 | 14,364 | 112 | 9.9942e+05 | 0.6089 | 0.1878 |
+| archived-20261027-034200/build/evolve/db.jsonl | 126 | 20966 | 427 | 0.1381 | 14,103 | 108 | 1.0108e+06 | 0.6483 | 0.1711 |
+| archived-20261027-143909/build/evolve/db.jsonl | 126 | 20484 | 401 | 0.1383 | 14,173 | 108 | 9.6937e+05 | 0.6529 | 0.1856 |
+| archived-20261028-042145/build/evolve/db.jsonl | 126 | 20984 | 407 | 0.1418 | 14,051 | 108 | 9.5336e+05 | 0.6447 | 0.1826 |
+| archived-20261028-143239/build/evolve/db.jsonl | 126 | 19303 | 309 | 0.1477 | 14,189 | 108 | 9.5669e+05 | 0.6339 | 0.1885 |
