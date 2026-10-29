@@ -1,7 +1,8 @@
 # The after-seed-81 batch - to apply first at seed 81's processing (Iteration 567)
 
-process-run.sh checks and applies it. HANDOFF.md's open item 3: seed 80's two JIT deaths
-(results/drafts/jitexec-alignhot-566.md, its section "The cause and the fix").
+process-run.sh checks and applies it. The first two: HANDOFF.md's open item 3, seed 80's two JIT deaths
+(results/drafts/jitexec-alignhot-566.md, its section "The cause and the fix"); the last two: the automation audit's
+candidates 2 and 3 (results/drafts/automation-audit-567.md).
 
     git apply results/pending/jitscan-after-seed81.patch
     git apply results/pending/ccflags-after-seed81.patch
@@ -33,6 +34,14 @@ an unexpressed alignhot); seed 52's two regressions build as their ids say (they
 At seed 81's processing, if seed 81 has deaths of this class: the control (process-run.sh step 5) measures them right on master
 and wrong before the batch - deaths-check names it.
 
-**design-after-seed81.patch** (lab/evolve/README.md, lab/evolve/design.py, lab/evolve/engines-check.py, lab/evolve/evolve.py) - TODO: what it does, why, how it was tested.
+**design-after-seed81.patch** (lab/evolve/design.py, evolve.py, engines-check.py, README.md) - **one design built and
+run against s6**: a recorded id (results/ or --db) or a hand-made stage with GENE=VALUE set, each gene said expressed or
+not; workloads by name, jit-diff, or files, at 8- or 4-byte cells; right, WRONG (the first differing line) or DIES. The
+jit-diff input moved into evolve.py's jit_diff_in(), engines-check's too (the same 32,453 bytes). Tested: the minimal
+design right on apps and jit-diff at both widths; with JIT_SCAN_MAX put back to 160, DIES on all three (exit 1);
+alignhot under align1 said NOT expressed; a recorded id rebuilt to its own id, its corpus and fib right.
 
-**bar-after-seed81.patch** (lab/evolve/README.md, lab/evolve/stopping.py) - TODO: what it does, why, how it was tested.
+**bar-after-seed81.patch** (lab/evolve/stopping.py, README.md) - **`stopping.py --bar GEN[,GEN]`**: what the next
+run must reach by its last generation, from the ledger alone - a prediction's numbers, typed by hand until now. At 120
+and 140 it gives prediction 566's bars but one: the smallest 13,910 and 13,875, where 13,849 had been taken by hand from
+seed 80's end (results/predictions.md's note). The self-test's 30 checks pass.
