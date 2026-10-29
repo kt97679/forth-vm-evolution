@@ -6,7 +6,9 @@ process-run.sh checks and applies it. HANDOFF.md's open item 3: seed 80's two JI
     git apply results/pending/jitscan-after-seed81.patch
     git apply results/pending/ccflags-after-seed81.patch
 
-batch-check (567, on BATCHCOMMIT - the two patches): BATCHRESULT
+batch-check (567, on 92b9e8a - the two patches): PASS - both applied to a fresh clone, run-tests PASS (engines-check 107
+paths, 102 on master: the variant at both widths, regression c578b55046, two stencil sets), validate 7 of 7 IDENTICAL,
+the jail PASS.
 
 **jitscan-after-seed81.patch** (engine/jit.c, lab/evolve/stencil-check.py, engines-check.py, regressions.json, README.md)
 - **the cause**: jit_scan reads a stencil at most JIT_SCAN_MAX bytes (160); under -falign-*=64 st_execute's cache-hit

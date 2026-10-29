@@ -40,18 +40,22 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 566.
+- master: Iteration 567.
 - **Seed 81 is next - 9 hours** (the owner), the method from seed 77 (the freezes lifted, the stopping rule matched by
   generation). NEXT-RUN carries the line, carry-check.py --all at its end: **if seed 81 gains nothing the rule stops
   after it** - then the confirmation run (seed 82 widths carryall, the owner's hours; GOALS.md step 2).
 - **Seed 80 processed (566)** - results/evolve-amd-ryzen-7-pro-8840hs-seed80.md: 12 hours, 178 generations, the true
   front 258. **Nothing gained** at generation 178 against seed 79 (the hypervolume -4.3%, the fastest +4.5%); four runs,
   the last gaining nothing. The four lifted runs all slower at generation 126 than 74-76 (4 against 3 apart).
-  Predictions 565 and 556 hold. **One correctness issue open** (open item 3).
+  Predictions 565 and 556 hold. Its correctness issue fixed in the after-seed-81 batch (567, open item 3).
+- **The after-seed-81 batch waits (567)** - results/pending/ (ORDER.md): jitscan (jit.c's scan window 160 -> 512, the
+  cause of seed 80's JIT deaths; stencil-check reads the window; engines-check's 64-aligned variant; regression
+  c578b55046) and ccflags (the flags of the expressed genes) - batch-check PASS; process-run.sh applies it at seed 81's
+  processing.
 - **The Tegra explained (566)**: not the host - the compiler gene went to clang, and rage builds only GCC without the
   JIT; seeds 78-79's fronts held a 1.25x band of such designs (the checks -0.103, 0.082), seed 80's none. REMOTES'
   --also asks rage for 16 of seed 77's front by id in seed 81's chain (out at its processing).
-- **Predictions due** (results/predictions.md): seed 81 - no gain, the stop once the open fault is fixed; the Tegra 0.8 or more on the 16 (566).
+- **Predictions due** (results/predictions.md): seed 81 - no gain, the stop once the fault's fix is applied (its processing); the Tegra 0.8 or more on the 16 (566).
 - **Before 566**: seeds 70-79 processed (498-565); history: HANDOFF-REFERENCE.md.
 - **Files a new chat needs**: the newest bundle, and seed 81's chain archive. appbench.zip stays on the laptop.
 
@@ -99,10 +103,11 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
    designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
-3. **Correctness - one open (566)**: seed 80's two JIT deaths on apps - jitexec with alignhot=3 (64-byte alignment)
-   segfaults on sim16's nested EXECUTE; and alignhot is built where express() drops it
-   (results/drafts/jitexec-alignhot-566.md). The stop after seed 81 needs it fixed - a patch for results/pending/,
-   in a chat while seed 81 runs or at its processing. Before: none open (564): seed 78's kernel deaths are the scale-1 reach limit (Iteration 10), not a fault.
+3. **Correctness - fixed, the batch pending (567)**: seed 80's two JIT deaths - under -falign-*=64 jit_scan's 160-byte
+   window cut st_execute short, its je to the cache-hit path left the copy (17 of 84 flag sets cut a stencil, all at
+   64); and ccflags() built alignhot where express() drops it (results/drafts/jitexec-alignhot-566.md, its end). The
+   after-seed-81 batch fixes both; at seed 81's processing it must apply (batch-check PASS) before the stop is judged.
+   Before: none open (564): seed 78's kernel deaths are the scale-1 reach limit (Iteration 10), not a fault.
    The JIT's value holes fixed and applied (560: corpus-deaths-555.md, jit-sweep-558.md).
 3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
    hypervolume on the true front as before (stopping.py; seed 76's dominance chain).

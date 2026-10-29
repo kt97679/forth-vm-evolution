@@ -10291,3 +10291,17 @@ laptop's chain would have stopped at its tests. **deaths-check: 2 open** - jitex
 (the minimal design s6 + tag2, jit, jitx, jitexec, alignhot=3), and alignhot is built where express() drops it -
 recorded open (results/drafts/jitexec-alignhot-566.md). Seed 81 next, 9 hours (the owner, after 10 first), carry-check.py --all at its end. Files: the seed 80 results file, xcheck-seed80.md,
 session 67, predictions.md, drafts/seed81-checklist-566.md, drafts/jitexec-alignhot-566.md.
+
+## Iteration 567 - 2026-10-29 - Claude
+
+**Seed 80's JIT deaths fixed - the after-seed-81 batch** (results/pending/, applied at seed 81's processing; seed 81
+runs). The cause: jit.c's jit_scan reads a stencil at most 160 bytes; under -falign-*=64 st_execute's cache-hit exit
+ended at byte 164, the copy ended at the miss path's exit and kept its short je to the rest - the first cache hit on a
+native target jumped past the copy (jit-diff.fth's T2 shows it; the corpus does not). Over 84 flag sets the longest
+stencil is 146 bytes at 32-byte alignment, 242 at 64; at 160, 17 sets cut one, all at 64, and stencil-check.py passed
+all 17. jitscan-after-seed81.patch: JIT_SCAN_MAX 512 (none cut), stencil-check reads the window, engines-check runs it
+at 64-byte alignment, builds "the JIT with jitexec, aligned to 64" and runs jit-diff on JIT regressions; the minimal
+design is regression c578b55046 - wrong at 160, right at 512 at both widths. ccflags-after-seed81.patch: ccflags() builds
+the genes express() keeps (9 of seeds 76-80's 1,481 recorded designs build differently, each an unexpressed alignhot).
+Files: results/pending/ (ORDER.md, two patches), drafts/stencil-window-567.py, jitscan-test-567.py, ccflags-diff-567.py,
+drafts/jitexec-alignhot-566.md (the cause).
