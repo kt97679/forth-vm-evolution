@@ -10276,3 +10276,18 @@ or, read at equal effort, the stop now: the owner's choice. The three lifted run
 (-0.103), unexplained. Prediction 563 failed by the rule, 556 holds as built. Seed 80 next, 12 hours. Files: the seed
 79 results file, xcheck-seed79.md, session 66, results/applied-after-seed79/, predictions.md, seed80-checklist-565.md.
 The owner chose the rule as written: seed 80 a series run, the earliest stop after seed 81.
+
+## Iteration 566 - 2026-10-29 - Claude
+
+**Seed 80 processed** (12 hours, 178 generations, the true front 258) by process-run.sh (its checks resumed with
+FROM=checks after the turn cut them) and process-finish.sh; no batch waited. **It gains nothing** at generation 178
+against seed 79 there (the hypervolume -4.3%, the fastest +4.5%, the smallest -0.2%): four runs, the earliest stop after
+seed 81. The four lifted runs all slower at generation 126 than 74-76 (0.1418-0.1477 against 0.1381-0.1389).
+Predictions 565 and 556 hold. **The Tegra's disagreement explained**: the compiler gene went to clang; the fronts' designs
+rage can build (GCC, no JIT) fell to a 1.25x band (seeds 78-79) and none (80) - REMOTES' --also asks it for 16 of seed
+77's by id. **run-tests failed on master** (generators: op;CALL NOT EXPRESSED) - engines-check.py's donor took seed 80's
+newest opcall, ['PLACE'], a format-10 word's only; it now takes the newest value the variant expresses (['ROT']) - the
+laptop's chain would have stopped at its tests. **deaths-check: 2 open** - jitexec with alignhot=3 segfaults on sim16
+(the minimal design s6 + tag2, jit, jitx, jitexec, alignhot=3), and alignhot is built where express() drops it -
+recorded open (results/drafts/jitexec-alignhot-566.md). Seed 81 next, 10 hours, carry-check.py --all at its end. Files: the seed 80 results file, xcheck-seed80.md,
+session 67, predictions.md, drafts/seed81-checklist-566.md, drafts/jitexec-alignhot-566.md.

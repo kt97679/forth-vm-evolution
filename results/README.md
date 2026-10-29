@@ -33,6 +33,8 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `gene-votes.md` - The gene votes, run by run (from Iteration 432): each gene's four removal votes a run - under 10% of the front, in none of its fastest, smallest, best-Q tenths - appended at each processing from seed 63 on; results/seed63-rules.md says how they count.
 - `candidates-generic.md` - Designs kept by id that no front holds (Iteration 430): bf439eb307's record, for xcheck --also - the candidates for the best design across the machine classes.
 - `drafts/seed80-checklist-565.md` - Seed 80's processing, the checklist (Iteration 565): the stopping rule's fourth run; seed 79's gain past seed 77's reach; the Tegra.
+- `drafts/jitexec-alignhot-566.md` - Seed 80's two open deaths (Iteration 566): jitexec with alignhot=3 segfaults on sim16's nested EXECUTE; alignhot built where express() drops it.
+- `drafts/seed81-checklist-566.md` - Seed 81's processing, the checklist (Iteration 566): the fifth run, a stop if it gains nothing; the confirmation founders; the Tegra's --also test.
 - `drafts/seed79-checklist-563.md` - Seed 79's processing, the checklist (Iteration 563): the stopping rule's third run - the confirmation run's line if it stops.
 - `drafts/seed78-checklist-561.md` - Seed 78's processing, the checklist (Iteration 561): the batch by hand once, then process-run.sh; the stopping rule's bar by how far seed 78 goes.
 - `drafts/runner-protocol.md` - The runner's protocol, the owner's requirements as a specification (Iterations 302-303): one command, one archive with every log, a clean stop, recovery at every start.
@@ -62,6 +64,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `xcheck-seed59.md` - The checks of seed 58's front during seed 59 (Iteration 398): dream 64-bit 0.959/0.963, 32-bit 0.651, the Tegra 0.709 (against the laptop's 64-bit speeds - open item 0g); no rejected design faster; the probes: copies in a second, the Tegra's wait its own build.
 - `xcheck-seed78.md` - The checks of seed 77's front during seed 78 (Iteration 563): the Tegra 0.926 (16); no dream report in this chain.
 - `xcheck-seed79.md` - The checks of seed 78's front during seed 79 (Iteration 565): dream.lan-prebuilt 24 designs measured on both: Spearman 0.890; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.869; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.931; rage.lan-native 16 designs measured on both: Spearman -0.103.
+- `xcheck-seed80.md` - The checks of seed 79's front during seed 80 (Iteration 566): dream.lan-prebuilt 24 designs measured on both: Spearman 0.877; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.911; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.939; rage.lan-native 16 designs measured on both: Spearman 0.082.
 - `xcheck-dream-seed55.md` - The first check at both widths (Iteration 334): dream.lan 64-bit Spearman 0.940; 32-bit x86 at 4-byte cells 0.694 - the laptop's six fastest interpreted designs 8th-13th there: the skew the owner feared.
 - `xcheck-dream-seed54.md` - The second remote check (Iteration 333): seed 53's front on dream.lan - Spearman 0.941, the laptop's six fastest ranked 3 4 2 10 1 5 there.
 - `drafts/two-width-scratch-db.jsonl` - The second two-width scratch run's database (Iteration 337): its designs without speed32, to reproduce.

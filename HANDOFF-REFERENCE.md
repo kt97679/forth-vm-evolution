@@ -525,6 +525,11 @@ judges.
 - A gene's check must build the gene's code: engines-check's bfind variants sat on s6, whose TOS engine never takes
   the bfind walk, and passed from Iteration 316 to 399 while the walk was wrong at 4-byte cells (seed 59: 34 of the
   front dead at 32 bits). And UNS64 is the cell, not 64 bits: a fixed-width value takes uint64_t (Iteration 399).
+- A test that reads the results files changes with every seed: engines-check's donor took each list gene's value from the
+  newest recorded design, and seed 80's opcall ['PLACE'] (offered only with PLACE a format-10 word) made the op;CALL
+  variant NOT EXPRESSED - run-tests failed on master once the drafted results file was in the tree, and the laptop's
+  next chain would have stopped at its tests (Iteration 566: the donor now takes the newest value the variant
+  expresses). process-checks on master, before the bundle, is what catches it.
 - On Ubuntu gcc-arm-linux-gnueabihf and gcc-multilib cannot both be installed: the first removes the second,
   and /usr/include/asm with it - every 32-bit build fails until gcc-multilib is back (Iteration 391, the ARM
   compiler installed at 390 for a cross build). After any apt install, build before trusting the tree.

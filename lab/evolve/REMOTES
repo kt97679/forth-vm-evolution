@@ -13,7 +13,10 @@ dream.lan    prebuilt32  30     3       40       --cell 4 --rejected 6
 #   asked for by id here, at 64 bits through prebuilt64's pairing, and on the Tegra: one chain, one commit
 #   (results/candidates-generic.md; review-checks.py generic ranks them at processing). Out at seed 63's processing.
 dream.lan    prebuilt64  30     3       40       --from prebuilt32
-rage.lan     native      16     2       run      --cell 4 --rejected 4
+#   Iteration 566: seed 80's front holds no design the Tegra can build (GCC, no JIT - the compiler gene at clang), and
+#   seeds 78-79's held only a 1.25x speed band (the checks -0.103, 0.082): 16 of seed 77's front asked for by id, 0.34-0.96,
+#   five measured there in seed 78's chain (0.926) - the host tested directly. Out at seed 81's processing.
+rage.lan     native      16     2       run      --cell 4 --rejected 4 --also 87d744cf61,b0ae9df364,62a3270cb8,b5297e165e,0dc639bb04,d48399e6a6,953bf22f85,d95af0f227,c125251bc4,6d0cdfcfab,d21be6bd69,25e62c1eae,0a316ae645,fada1c70f9,16b1c59b88,dc9608f0ff
 #   Iteration 428 (the owner), done in seed 63's chain - all seven built (Iteration 441: --also out) - the Tegra rebuilt four of the
 #   14 designs that failed to build
 #   there in seeds 58-60's chains (open item 0d), asked for by id after its sample (xcheck --also): ce937eca6d and
