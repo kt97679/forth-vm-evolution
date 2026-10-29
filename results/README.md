@@ -35,6 +35,7 @@ missing from this index (README.md, "Documents", indexes everything else).
 - `candidates-generic.md` - Designs kept by id that no front holds (Iteration 430): bf439eb307's record, for xcheck --also - the candidates for the best design across the machine classes.
 - `drafts/seed80-checklist-565.md` - Seed 80's processing, the checklist (Iteration 565): the stopping rule's fourth run; seed 79's gain past seed 77's reach; the Tegra.
 - `drafts/jitexec-alignhot-566.md` - Seed 80's two deaths (Iteration 566; the cause 567): jit_scan's 160-byte window cut st_execute under -falign-*=64; alignhot built where express() drops it - fixed in the after-seed-81 batch.
+- `drafts/automation-audit-567.md` - Where the chat's manual work can become scripts (Iteration 567): eight candidates by what they save - a batch's mechanics and a design runner first.
 - `drafts/jitscan-test-567.py` - the after-seed-81 batch's JIT designs on the corpus, jit-diff and sim16 (Iteration 567): right at 512 at both widths, the first two wrong at 160.
 - `drafts/ccflags-diff-567.py` - the recorded designs ccflags-after-seed81.patch builds differently (Iteration 567): 9 of seeds 76-80's 1,481, each an unexpressed alignhot.
 - `drafts/stencil-window-567.py` - jit_scan's window against GCC's stencils over 84 flag sets (Iteration 567): the longest 146 bytes at 32-byte alignment, 242 at 64; 17 sets cut at 160, none at 512.

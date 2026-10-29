@@ -10310,3 +10310,6 @@ requirement a change to it, never a manual step in a document (07 item 11, INDEX
 tools/setup-sandbox.sh made so: each step says "there" or what it did; CHECK=1 not started while running (a pid) or
 once DONE; how the clone stands against the bundle; SCRATCH=DIR the scratch tree (clone, identity, pending patches,
 build) this session made by hand. Tested: two runs, a fresh DEST twice, a live job, a DONE, SCRATCH twice (build=0).
+**The automation audit** (the owner): results/drafts/automation-audit-567.md - processing is three commands already;
+the manual work left is between runs and in restated records (since 500: 20 fix-up commits, 11 recording a batch-check
+line, 5 index lines; seed 81's checklist found stale, corrected). Eight candidates; first a batch tool and a design runner.

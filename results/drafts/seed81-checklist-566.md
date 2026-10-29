@@ -1,6 +1,7 @@
 # Seed 81's processing - the checklist (Iteration 566)
 
-HANDOFF.md's routine (process-run.sh, then process-finish.sh); nothing waits in results/pending/.
+HANDOFF.md's routine (process-run.sh, then process-finish.sh); the after-seed-81 batch waits in results/pending/ (567) -
+process-run.sh checks and applies it. (Corrected at 567: this line said nothing waits.)
 
 - **The stopping rule** (matched by generation): seed 81 is the method's fifth run; seed 80 gained nothing, so if seed 81
   gains nothing the rule stops after it. At 9 hours it ends near generation 126-133 - every earlier run of the series
