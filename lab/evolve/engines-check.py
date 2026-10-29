@@ -27,15 +27,19 @@ import evolve as E
 E.TWO_WIDTHS[0] = True; E.setup_widths(); E.TWO_WIDTHS[0] = False   # Iteration 399: the 4-byte references too
 S6 = dict(E.HUMAN['s6-cv8b'])
 
-def donor(gene):
-    """A recorded design's value for a list gene - the newest found."""
+def donor(gene, base=None):
+    """A recorded design's value for a list gene - the newest found that the variant (s6 with base's genes) expresses.
+    Iteration 566: seed 80's newest opcall value was ['PLACE'] alone, offered only where PLACE is a format-10 word - on
+    s6 with the tag it is dropped, and the variant failed NOT EXPRESSED while the path itself was sound (DROP's, seed
+    79's, built and ran). A value its own design needed other genes for is no test of the path; none at all still fails."""
     val = None
     for f in sorted(glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed*.md'))):
         for l in open(f):
             if l.startswith('{"bin"'):
                 try: g = json.loads(l)['genome']
                 except (ValueError, KeyError): continue
-                if g.get(gene): val = g[gene]
+                if g.get(gene) and E.express(E.canon(dict(S6, **dict(base or {}, **{gene: g[gene]})))).get(gene):
+                    val = g[gene]
     return val
 
 JIT = dict(tag2=1, jit=1, jitx=1, jitloop=1, jitinl=1, jittail=1)   # the JIT and op;CALL live under the tag
@@ -43,9 +47,9 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('s6 as it is', {}, []),
     ('cached top off', dict(tos=0), []),
     ('multi-state (gen-msc)', dict(msc=1), ['msc']),
-    ('superinstructions (gen-super)', dict(supers=donor('supers')), ['supers']),
-    ('op;CALL (gen-opcall)', dict(tag2=1, opcall=donor('opcall')), ['opcall']),
-    ('format-10 opcodes', dict(ops10=donor('ops10')), ['ops10']),
+    ('superinstructions (gen-super)', dict(supers=donor('supers', {})), ['supers']),
+    ('op;CALL (gen-opcall)', dict(tag2=1, opcall=donor('opcall', dict(tag2=1))), ['opcall']),
+    ('format-10 opcodes', dict(ops10=donor('ops10', {})), ['ops10']),
     ('escape byte', dict(escape=1), ['escape']),
     ('escape byte, wide', dict(escape=2), ['escape']),
     ('two-bit tag', dict(tag2=1), ['tag2']),
