@@ -2,7 +2,8 @@
 """lab/evolve/deaths-check.py DB [--all] [--max N] - a returned seed's deaths and wrong outputs, rebuilt on this tree
 (Iteration 560). Every record of DB (a seed pack's db.jsonl) whose status is "died: W" or "wrong output: W" is built here
 and run on W; its output against s6's. The expected causes are listed, not rebuilt: "not run" (reach_lethal screens a
-reach the design cannot have - Iteration 556) and cpt16 wrong on apps (it stops early on the applications' undefined
+reach the design cannot have - Iteration 556), the same reach at scale 1 on the kernel workload (2^15 bytes: reach_lethal
+runs these, most lived in seed 2 - Iteration 10; seed 78's three died, 564), and cpt16 wrong on apps (it stops early on the applications' undefined
 words - Iteration 516); --all rebuilds those too. A design that computes right here is a fault this tree has fixed (seed
 77's corpus death, a JIT value hole - Iteration 557); one that still differs or dies is an open correctness issue, and
 GOALS.md's stop needs none: exit 1. As the build user, in a built tree, alone (it is an evolver process: process-checks.sh
@@ -19,6 +20,9 @@ sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 def expected(r, w):
     if 'not run' in r['status']: return 'reach limit, not run (556)'
     if w == 'apps' and r['genome'].get('enc') == 'cpt16': return 'cpt16 on apps (516)'
+    g = r['genome']                                     # 564: reach_lethal's scale 1 - run, jailed (Iteration 10)
+    if w == 'kernel' and g.get('enc') == 'cv8' and g.get('scale') == 1 and not (g.get('varcall') and g.get('doesfar')):
+        return 'the reach limit at scale 1, run and jailed (10; back with doesfar lifted, 556)'
     return None
 
 def sign(g):            # the genes of the known faults, for reading the table

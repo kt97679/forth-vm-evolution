@@ -148,7 +148,7 @@ then_next() {   # the second half of "A then B": the lock released, the mode dec
     [ -n "$THEN" ] || return 0
     echo; say "then: $THEN"
     exec 9>&-
-    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS
+    unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS NEXT_RUN_RANDOM
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
 }
 # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
@@ -181,6 +181,10 @@ case " $* " in *" carryall "*) CARRYALL=1; set -- $(printf '%s\n' "$@" | grep -v
 # chain lost the word, and seeds 65-68 ran without islands though their lines asked for them.
 ISLANDS=${NEXT_RUN_ISLANDS:-}
 case " $* " in *" islands "*) ISLANDS=4; set -- $(printf '%s\n' "$@" | grep -vx islands) ;; esac
+# Iteration 548 (GOALS.md, the random-search baseline): "random" - every child a fresh random genome (evolve.py
+# --random): nothing learned in the loop; generation 0 as the line's other words make it. Carried through the detach.
+RANDOMKIDS=${NEXT_RUN_RANDOM:-}
+case " $* " in *" random "*) RANDOMKIDS=1; set -- $(printf '%s\n' "$@" | grep -vx random) ;; esac
 case "${1:-none}" in
     none) say "nothing to run for this commit - pulled, and stopping"; exit 0 ;;
     compare) KIND=experiment; TOOL=compare-fronts.py; SEED=0; CROUNDS=${2:-${CROUNDS:-10}}; TARGS="--rounds $CROUNDS" ;;
@@ -249,7 +253,7 @@ fi
 HEAD=$(git rev-parse --short HEAD)
 RUN=$RUNS/seed$SEED-$HEAD
 STATE=build/evolve/next-run.state
-WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${CARRYALL:+ carryall}${ISLANDS:+ islands} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
+WANT="seed $SEED${REQ:+ $REQ}${FROMZERO:+ fromzero}${NOEVOLVED:+ noevolved}${NOCARRY:+ nocarry}${CARRYALL:+ carryall}${ISLANDS:+ islands}${RANDOMKIDS:+ random} at $HEAD, pop $POP gens $GENS rounds $ROUNDS"
 if [ "$KIND" = experiment ]; then
     NAME=${TOOL%.py}
     RUN=$RUNS/$NAME-$HEAD
@@ -300,12 +304,12 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
     # Iteration 313: a chain - every step of the line - is one session, one directory, one log
     # (lab/evolve/chainctl.py): made here by the first step, carried by the rest.
     if [ ! -s "$NEXT_RUN_CHAIN/sid" ]; then
-        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+        NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_RANDOM=$RANDOMKIDS NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS setsid nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
         say "going on in the background, as one chain - watch it with"
         echo "    sh lab/evolve/next-run.sh monitor     (status: where it is; stop: ends it, and still packs)"
         exit 0
     fi
-    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
+    NEXT_RUN_DETACHED=$MODE NEXT_RUN_THEN=$THEN NEXT_RUN_NOCARRY=$NOCARRY NEXT_RUN_CARRYALL=$CARRYALL NEXT_RUN_RANDOM=$RANDOMKIDS NEXT_RUN_FROMZERO=$FROMZERO NEXT_RUN_NOEVOLVED=$NOEVOLVED NEXT_RUN_WIDTHS=$WIDTHS NEXT_RUN_ISLANDS=$ISLANDS nohup sh "$0" "$@" >> "$NEXT_RUN_CHAIN/chain.log" 2>&1 < /dev/null &
     exit 0
 fi
 MODE=$NEXT_RUN_DETACHED
@@ -511,7 +515,7 @@ fi
 step "the run - $POP designs x $GENS generations, $ROUNDS rounds${ISLANDS:+, $ISLANDS islands}; evolve.log"
 python3 lab/evolve/chainctl.py ticker $$ "${UNTIL:-0}" &     # Iteration 313: a progress line every 5 minutes
 TICK=$!
-python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} ${ISLANDS:+--islands "$ISLANDS"} "$@" >> evolve.log 2>&1 \
+python3 lab/evolve/evolve.py --pop "$POP" --gens "$GENS" --rounds "$ROUNDS" --seed "$SEED" --jobs "$JOBS" ${RANDOMKIDS:+--random} ${UNTIL:+--until "$UNTIL"} ${FROMZERO:+--fromzero} ${NOEVOLVED:+--noevolved} ${WIDTHS:+--widths 8,4} ${ISLANDS:+--islands "$ISLANDS"} "$@" >> evolve.log 2>&1 \
     || { kill $TICK 2>/dev/null || true; tail -20 evolve.log; exit 1; }
 kill $TICK 2>/dev/null || true
 tail -3 evolve.log

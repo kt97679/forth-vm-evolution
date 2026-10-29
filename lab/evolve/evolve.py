@@ -2152,8 +2152,14 @@ def main(argv):
     if '-h' in argv or '--help' in argv:
         print(__doc__); return
     known = {'--validate', '--report', '--pop', '--gens', '--rounds', '--seed', '--db', '--knockout', '--remeasure', '--sample', '--carry', '--require',
-             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate', '--islands'}
+             '--jobs', '--until', '--fromzero', '--noevolved', '--widths', '--fastgate', '--islands', '--random'}
     if '--islands' in argv: ISLANDS[0] = int(argv[argv.index('--islands') + 1])   # Iteration 436
+    # Iteration 548 (GOALS.md, "When the improvements are done" 4 - the random-search baseline): --random - every child
+    # a fresh random genome (random_genome(), the random founders' generator), measured as the method's children are,
+    # with nothing learned in the loop: no breeding, no operators' adaptation, no screen, no one-round stop. The fast
+    # gate's second reading stays - a measurement, not a search. Generation 0 as the other options make it.
+    RANDOMK = '--random' in argv
+    if RANDOMK and ISLANDS[0] > 1: sys.exit('evolve.py: --random runs one population, not islands')
     if '--require' in argv: REQUIRE[:] = [x for x in argv[argv.index('--require') + 1].split(',') if x]
     if '--widths' in argv:                     # Iteration 336: 8,4 - selecting at both widths
         if argv[argv.index('--widths') + 1] != '8,4': sys.exit('--widths: 8,4 only')
@@ -2227,7 +2233,7 @@ def main(argv):
         all made before any is needed, so the run decides as it did serially."""
         items = list(pending.items()); pending.clear()
         gen_now = max((it[1][3] for it in items), default=0)
-        if SCREEN and items and gen_now >= SCREEN_FROM:          # Iteration 200: the screen
+        if SCREEN and not RANDOMK and items and gen_now >= SCREEN_FROM:   # Iteration 200: the screen (548: none with --random)
             if SCR['model'] is None or gen_now - SCR['fit'] >= SCREEN_EVERY:
                 recs = [r for r in R.values() if r['status'] == 'ok' and r.get('speed') and ov(r, 'total') and r.get('gen', 0) < gen_now]
                 if len(recs) >= SCREEN_MIN:
@@ -2249,7 +2255,7 @@ def main(argv):
                 if n_scr or n_aud: print('  the screen: %d of %d children not measured, %d audited' % (n_scr, len(items), n_aud), flush=True)
                 items = keep
         gate = fast_gate(R)                                   # Iteration 391
-        stop = stop_stair(R, gen_now) if items else None             # Iteration 529
+        stop = stop_stair(R, gen_now) if items and not RANDOMK else None   # Iteration 529 (548: none with --random)
         args = [(canon(g), ROUNDS, False, gate, False, stop) for i, (g, parents, how, gen) in items]
         # Iteration 446: the gated children of the generation before, measured again in this batch - among other
         # co-runners, at another moment - their speed the geometric mean of the two readings then
@@ -2351,6 +2357,14 @@ def main(argv):
                 if gid(g) not in seen: break
             kids.append(get(g, parents, how + ('; via the attic' if set(parents) & set(attic) else ''), gen))
         return kids
+    def random_kids(count, gen):   # Iteration 548: --random - fresh random genomes, none seen before
+        kids = []
+        for _ in range(count):
+            for _try in range(10):
+                g = require(random_genome(rnd))
+                if gid(g) not in seen: break
+            kids.append(get(g, [], 'random', gen))
+        return kids
     def survive(members, kids, n, qkeep):   # Iteration 436: survival within one island (the population, with one)
         live = [i for i in dict.fromkeys(members + kids) if R[i]['status'] == 'ok']
         order = rank(live, R)[0]
@@ -2370,10 +2384,10 @@ def main(argv):
             live = [i for i in dict.fromkeys(pop) if R[i]['status'] == 'ok']
             order, rk, cd = rank(live, R)
             print('  generation %d: %d alive, front %d' % (gen, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
-            y_ = aos_update(R, rk, gen)
+            y_ = None if RANDOMK else aos_update(R, rk, gen)
             if y_: print('  operators (526): crossover %.2f, borrowing %.2f - yields crossover %.2f%%, borrowed %.2f%%, mutation %.2f%%' % (
                 OPS['xover'], OPS['borrow'], 100 * y_['crossover'], 100 * y_['borrowed'], 100 * y_['mutation']), flush=True)
-            kids = breed(live, rk, cd, N, gen)
+            kids = random_kids(N, gen) if RANDOMK else breed(live, rk, cd, N, gen)
             flush()
             pop, order = survive(pop, kids, N, Q_KEEP)
         else:   # Iteration 436 (results/drafts/escape-mechanism-435.md): islands, each ranked and bred alone
