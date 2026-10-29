@@ -13,7 +13,7 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
-# Iteration 566 (seed 80 processed): seed 81, 10 hours (the owner). Seed 80 gained nothing - four runs on the method,
+# Iteration 566 (seed 80 processed): seed 81, 9 hours (the owner; 10 first, then 9). Seed 80 gained nothing - four runs on the method,
 # the last gaining nothing: if seed 81 gains nothing the rule stops after it (once seed 80's open fault is fixed -
 # results/drafts/jitexec-alignhot-566.md; the run itself loses only the designs it kills), so its chain pre-flights the confirmation
 # run's founders again (carry-check.py --all - seeds 80-81's fronts are new since seed 79's check). Then the confirmation
@@ -122,4 +122,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 81 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment carry-check.py --all
+seed 81 9h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment carry-check.py --all

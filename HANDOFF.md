@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 ## The state now
 
 - master: Iteration 566.
-- **Seed 81 is next - 10 hours** (the owner), the method from seed 77 (the freezes lifted, the stopping rule matched by
+- **Seed 81 is next - 9 hours** (the owner), the method from seed 77 (the freezes lifted, the stopping rule matched by
   generation). NEXT-RUN carries the line, carry-check.py --all at its end: **if seed 81 gains nothing the rule stops
   after it** - then the confirmation run (seed 82 widths carryall, the owner's hours; GOALS.md step 2).
 - **Seed 80 processed (566)** - results/evolve-amd-ryzen-7-pro-8840hs-seed80.md: 12 hours, 178 generations, the true

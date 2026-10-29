@@ -1096,12 +1096,12 @@ The lifted runs stay slow at equal effort: seed 80's fastest at generation 126 i
 0.1418-0.1477, all above 74-76's 0.1381-0.1389); at its last generation (178) nothing gained against seed 79 there - the
 hypervolume -4.3%, the fastest +4.5%, the smallest -0.2% (the bar 1%).
 
-## Seed 81, 10 hours - predicted (Iteration 566)
+## Seed 81, 9 hours - predicted (Iteration 566)
 
-Seed 81 gains nothing, and the stopping rule stops after it (once the open fault of 566 is fixed). Ten hours make about 148 generations (seed 80: 178 in 12);
-by the curves it must beat, at generation 140, the hypervolume 0.35378, the fastest 0.1389, the smallest 13,849, the
-memory 104 KB or 32-bit 0.1668 (at 160: 0.35482, 0.1367, 13,849, 104, 0.1652). Its fastest at generation 126 above 0.1389,
+Seed 81 gains nothing, and the stopping rule stops after it (once the open fault of 566 is fixed). Nine hours make about 126-133 generations (seed 78: 126 in 9;
+seed 80: 178 in 12); by the curves it must beat, at generation 120, the hypervolume 0.34501, the fastest 0.1394, the
+smallest 13,849, the memory 104 KB or 32-bit 0.1668 (at 140: 0.35378, 0.1389, 13,849, 104, 0.1668). Its fastest at generation 126 above 0.1389,
 as all four lifted runs. A fresh draw clears a bar about two times in seven (seeds 75 and 79 gained, of 74-80) - and
-seed 79's gain came past generation 161, beyond a 10-hour run's reach. And the Tegra agrees with the laptop on seed 77's
+seed 79's gain came past generation 161, beyond a 9-hour run's reach. And the Tegra agrees with the laptop on seed 77's
 16 designs asked by id (REMOTES' --also): Spearman 0.8 or more - the host is sound; below it, the host is the question.
 

@@ -10289,5 +10289,5 @@ rage can build (GCC, no JIT) fell to a 1.25x band (seeds 78-79) and none (80) - 
 newest opcall, ['PLACE'], a format-10 word's only; it now takes the newest value the variant expresses (['ROT']) - the
 laptop's chain would have stopped at its tests. **deaths-check: 2 open** - jitexec with alignhot=3 segfaults on sim16
 (the minimal design s6 + tag2, jit, jitx, jitexec, alignhot=3), and alignhot is built where express() drops it -
-recorded open (results/drafts/jitexec-alignhot-566.md). Seed 81 next, 10 hours, carry-check.py --all at its end. Files: the seed 80 results file, xcheck-seed80.md,
+recorded open (results/drafts/jitexec-alignhot-566.md). Seed 81 next, 9 hours (the owner, after 10 first), carry-check.py --all at its end. Files: the seed 80 results file, xcheck-seed80.md,
 session 67, predictions.md, drafts/seed81-checklist-566.md, drafts/jitexec-alignhot-566.md.

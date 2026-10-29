@@ -3,7 +3,7 @@
 HANDOFF.md's routine (process-run.sh, then process-finish.sh); nothing waits in results/pending/.
 
 - **The stopping rule** (matched by generation): seed 81 is the method's fifth run; seed 80 gained nothing, so if seed 81
-  gains nothing the rule stops after it. At 10 hours it ends near generation 148 - every earlier run of the series
+  gains nothing the rule stops after it. At 9 hours it ends near generation 126-133 - every earlier run of the series
   (77-80) reached it, so the match is exact. stopping.py prints the bar.
 - **A stop**: GOALS.md step 2 - the confirmation run next (seed 82 widths carryall, no noevolved; the owner's hours);
   carry-check.py --all in seed 81's chain pre-flights its founders (seeds 80-81 new since seed 79's check) - read its
