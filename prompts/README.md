@@ -40,6 +40,7 @@ describe are ones any measurement or write-up project can reproduce.
 | [19-address-by-name](19-address-by-name.md) | before a script edits or reads part of a structured document | a numbered item edited in the wrong list, a table row given its neighbour's text, a column read by position |
 | [20-ask-other-models](20-ask-other-models.md) | at every challenge: would another model help? | answers trusted unchecked, or a wrong premise sent - a sound answer to the wrong question |
 | [21-spend-tokens-where-they-buy-results](21-spend-tokens-where-they-buy-results.md) | at a session's start, and at every record, report, input and question | whole files read by every session, facts written four times, dumps pasted where a summary answers |
+| [22-setup-is-a-script](22-setup-is-a-script.md) | before setting up anything by hand, and when a step fails for something missing | setup paid by hand at every session switch; requirements found by failing and written as manual steps in documents; a second run that does it all again |
 
 ## The two that mattered most
 

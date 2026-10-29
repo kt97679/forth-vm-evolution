@@ -31,12 +31,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **A turn has a budget of tool calls (about fifty).** Commit and make a
   `--checkpoint` bundle before long work: twice a turn ended with work only in
   /tmp (Iterations 267-268).
-- A scratch tree for a batch in progress: clone master, apply the pending
-  patches committing each, build there. Files for a pending patch are written
+- A scratch tree for a batch in progress: `SCRATCH=/tmp/x sh tools/setup-sandbox.sh` as root - master cloned, the
+  pending patches applied committing each, the build started (/tmp/x.status). Files for a pending patch are written
   there, never in master. Never two evolver processes on one tree at once.
   After changing forth/ or engine/, rebuild the stages.
-- The 32-bit stages need gcc-multilib, which a fresh sandbox may lack (Iteration 553: the stages then build at 8-byte
-  cells only and run-tests' generators test fails): `apt-get install -y gcc-multilib` as root, first.
+- **The environment is tools/setup-sandbox.sh** (the owner, 567; prompts/22): idempotent - run it again rather than
+  mend by hand (a second run changes nothing); a requirement a session finds missing goes into it in that turn, never
+  as a manual step in a document (gcc-multilib, Iteration 553, was one).
 
 ## The state now
 

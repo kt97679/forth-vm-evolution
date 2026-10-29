@@ -10305,3 +10305,8 @@ design is regression c578b55046 - wrong at 160, right at 512 at both widths. ccf
 the genes express() keeps (9 of seeds 76-80's 1,481 recorded designs build differently, each an unexpressed alignhot).
 Files: results/pending/ (ORDER.md, two patches), drafts/stencil-window-567.py, jitscan-test-567.py, ccflags-diff-567.py,
 drafts/jitexec-alignhot-566.md (the cause).
+**The environment only by script** (the owner): prompts/22-setup-is-a-script.md new - one idempotent setup script, every
+requirement a change to it, never a manual step in a document (07 item 11, INDEX, README, USAGE, UPSTREAM).
+tools/setup-sandbox.sh made so: each step says "there" or what it did; CHECK=1 not started while running (a pid) or
+once DONE; how the clone stands against the bundle; SCRATCH=DIR the scratch tree (clone, identity, pending patches,
+build) this session made by hand. Tested: two runs, a fresh DEST twice, a live job, a DONE, SCRATCH twice (build=0).

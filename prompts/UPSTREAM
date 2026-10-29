@@ -48,3 +48,7 @@ these, and update this file.
   and habr.com/ru/articles/1099264 with Grammar.md); 07 item 9 (the present a card), 11 item
   10 (a report's size budget), 12 item 7 (each fact once, short entries); 20 (Iteration 542:
   an answer contract, answers one at a time, a ledger); INDEX, README and USAGE rows.
+  Iteration 567 (forth-vm-evolution): 22-setup-is-a-script new (the owner: chats switch
+  often, so the environment's setup is a script - idempotent, every new requirement a change
+  to it; this project's setup list, a requirement found by failing, the missing identity, the
+  scratch tree made by hand); 07 item 11 (the setup one script); INDEX, README and USAGE rows.

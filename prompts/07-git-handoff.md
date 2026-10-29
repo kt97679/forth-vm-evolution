@@ -187,6 +187,7 @@ setup.
     the bundle; to the new one - start from the bundle the old one presented
     last. Test the second by doing it: run its setup, word for word, on a
     fresh clone. The missing step shows; reading the prompt does not show it.
+    The setup itself is one idempotent script, not a list of steps (prompt 22).
 
 12. **Recovering from a closed session.** While its machine lasts, ask it for
     every file it left outside the repository - for the whole range of work it
