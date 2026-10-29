@@ -1,0 +1,134 @@
+diff --git a/lab/evolve/README.md b/lab/evolve/README.md
+index b96714f..6e57299 100644
+--- a/lab/evolve/README.md
++++ b/lab/evolve/README.md
+@@ -43,6 +43,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
+ - `carry-check.py` [DB...] [--all] [--sample N] - the confirmation run's founders pre-flighted (Iteration 562): the pool --carry makes (evolve.py's carry_pool - each database's strict front and the named designs), its size and generation 0's hours, and a sample built here and run on the corpus against s6; exit 1 on one wrong. An experiment step: `then experiment carry-check.py --all`.
+ - `carry-named.txt` - designs named elsewhere (each machine's fastest, the held-out and application bests), carried in where a database has them and no front did (Iteration 562).
+ - `deaths-check.py` - a returned seed's deaths and wrong outputs rebuilt on this tree, each against s6's output (Iteration 560): the expected causes listed, not rebuilt; exit 1 on one still wrong - an open correctness issue. process-checks.sh runs it after ans-check.
++- `design.py` DESIGN [GENE=VALUE ...] [--db FILE] [--width 4] [--keep DIR] INPUT ... - one design built and run against s6 (Iteration 567): a recorded id or a hand-made stage with genes set, each gene said expressed or not; workloads by name, jit-diff (engines-check's tests/jit input, now evolve.py's jit_diff_in()) or files - right, WRONG (the first differing line) or DIES.
+ - `gene-narrow.py` DB ID WORKLOAD GENE=VALUE... - which genes a design's wrong output needs (Iteration 564): each suspect value put back one at a time (necessary), then each returned alone to the rest put back (sufficient); a build a line. Seed 78's kernel deaths: doesfar=0 alone - the reach limit at scale 1.
+ - `heldout.py` - does the front's speed hold on the held-out workload: the rank correlation, the fastest designs' held-out ranks, the designs the selection flatters (Iteration 305) Iteration 390: the Spearman over the fastest third and tenth, and the regret (the pick against the held-out fastest).
+ - `footprint-gen.py` - a held-out program whose code footprint grows (N [--calls T] [--defs-only]): N words in levels, run round-robin, a checksum (Iteration 370; results/generalization.md)
+diff --git a/lab/evolve/design.py b/lab/evolve/design.py
+new file mode 100644
+index 0000000..a405509
+--- /dev/null
++++ b/lab/evolve/design.py
+@@ -0,0 +1,81 @@
++#!/usr/bin/env python3
++"""lab/evolve/design.py DESIGN [GENE=VALUE ...] [--db FILE] [--width 4] [--keep DIR] INPUT ... - one design built and
++run against s6 (Iteration 567; results/drafts/automation-audit-567.md, candidate 2): the step every fault starts with,
++written afresh each time until then - 566's minimal design narrowed gene by gene by hand, 567's two throwaway scripts.
++
++DESIGN: a recorded id (results/evolve-*.md's records, or --db FILE's - a run's db.jsonl), or a hand-made stage
++(s6-cv8b, s4-cv8, ...). GENE=VALUE sets a gene on it - a number, a word (opt=Os), or a list as a,b,c ([] empty).
++INPUT, one or more: a workload by name - the input a run measures it on (kernel, fib, corpus, loop, bubble, ackermann,
++apps, sieve, parse, far) - jit-diff (tests/jit's programs, as engines-check runs them on every JIT variant), or a file.
++Each is run on the design and on s6 at the same width: right, WRONG (the first line that differs, both sides) or DIES
++(the exit status, the end of stderr). First the genes set, each as expressed or not: express() decides the build (567).
++--keep DIR builds in DIR and leaves it (engine, image.img, work/) to run by hand. Exit 0 when every input is right.
++
++    python3 lab/evolve/design.py s6-cv8b tag2=1 jit=1 jitx=1 jitexec=1 alignhot=3 apps jit-diff
++    python3 lab/evolve/design.py 2d4a69fc8d --db /tmp/process/<pack>/pack/db.jsonl --width 4 apps
++
++As the build user, in a built tree (tools/build-stages.sh). gene-narrow.py asks which genes a wrong output needs.
++"""
++import contextlib, json, os, shutil, sys
++
++a = sys.argv[1:]
++def opt(k):
++    if k not in a: return None
++    i = a.index(k); v = a[i + 1] if i + 1 < len(a) else sys.exit(__doc__); del a[i:i + 2]; return v
++db, width, keep = opt('--db'), int(opt('--width') or 8), opt('--keep')
++if len(a) < 2 or a[0] in ('-h', '--help'): sys.exit(__doc__)
++name, sets = a[0], dict(x.split('=', 1) for x in a[1:] if '=' in x and not os.path.exists(x))
++inputs = [x for x in a[1:] if not ('=' in x and not os.path.exists(x))]
++if not inputs: sys.exit('design: no INPUT - a workload, jit-diff or a file')
++sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
++
++if name in E.HUMAN: g0 = dict(E.HUMAN[name])
++elif db:
++    g0 = next((json.loads(l)['genome'] for l in open(db) if l.startswith('{') and '"%s"' % name in l
++               and json.loads(l).get('id') == name), None)
++else: g0 = E.recorded_genome(name)
++if g0 is None: sys.exit('design: %s - no hand-made stage of that name, and no record of it%s' % (name, ' in ' + db if db else ' in results/'))
++LISTS = ('spec', 'folds', 'supers', 'ops10', 'opcall')
++def val(k, v):
++    if k in LISTS: return [] if v in ('', '[]') else v.split(',')
++    return int(v) if v.lstrip('-').isdigit() else v
++g = E.canon(dict(g0, **{k: val(k, v) for k, v in sets.items()}))
++ex = E.express(g)
++print('design %s%s -> %s, %d-byte cells%s' % (name, ''.join(' %s=%s' % kv for kv in sets.items()), E.gid(g), width,
++      ''.join('\n  %s=%s %s' % (k, sets[k], 'expressed' if ex.get(k) not in (None, 0, [], '') else 'NOT expressed - builds nothing')
++              for k in sets)))
++
++E.setup()
++if width == 4: E.TWO_WIDTHS[0] = True; E.setup_widths(); E.TWO_WIDTHS[0] = False
++def feed(x):
++    if x == 'jit-diff': return E.jit_diff_in()
++    if os.path.exists(x): return open(x, 'rb').read()
++    return E.program(x)
++def run(eng, img, pw, inp):
++    try: r = E.sh([eng, img], inp=inp, cwd=pw, timeout=300, cpu=120)
++    except Exception as x: return None, [], 'timeout (%s)' % str(x)[:60]
++    return r.returncode, r.stdout.decode('latin-1').replace('\r', '').split('\n'), r.stderr.decode('latin-1').strip()[-160:]
++d = keep or os.path.join(E.EV, 'design-%d' % os.getpid()); dr = os.path.join(E.EV, 'design-ref-%d' % os.getpid())
++bad = 0
++with (E.at_width(E.WIDTH4) if width == 4 else contextlib.nullcontext()):
++    try:
++        shutil.rmtree(d, ignore_errors=True); eng, img = E.build(g, d); pw = E.private_work(d)
++    except Exception as x: sys.exit('design: the build DIED - %s' % str(x)[:200])
++    if width == 4:
++        shutil.rmtree(dr, ignore_errors=True); re_, ri = E.build(E.canon(dict(E.HUMAN['s6-cv8b'])), dr)
++    else: re_, ri = E.REF[0], E.REF[1]
++    rw = E.private_work(dr)
++    for x in inputs:
++        try: inp = feed(x)
++        except Exception as e: print('  %-12s no such input (%s)' % (x, str(e)[:60])); bad += 1; continue
++        (c0, o0, _), (c1, o1, e1) = run(re_, ri, rw, inp), run(eng, img, pw, inp)
++        if c1 == c0 and o1 == o0: print('  %-12s right' % x); continue
++        bad += 1
++        if c1 != c0: print('  %-12s DIES - exit %s (s6 %s)%s' % (x, c1, c0, ': ' + e1 if e1 else ''))
++        else:
++            i = next(k for k in range(max(len(o0), len(o1))) if (o0[k:k + 1] or ['']) != (o1[k:k + 1] or ['']))
++            print('  %-12s WRONG - line %d: s6 %r, this %r' % (x, i + 1, (o0[i:i + 1] or [''])[0][:70], (o1[i:i + 1] or [''])[0][:70]))
++if keep: print('design: kept in %s - %s %s, run in %s' % (d, eng, img, pw))
++else: shutil.rmtree(d, ignore_errors=True)
++shutil.rmtree(dr, ignore_errors=True)
++sys.exit(1 if bad else 0)
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index b951b81..38b9a9c 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -119,11 +119,8 @@ VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
+              for r in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'regressions.json')))]
+ # Iteration 501: every JIT variant also runs tests/jit/jit-diff.fth, its output s6's at the same width - the corpus
+ # passed where seed 70's 906 32-bit failures did not (CELL+ and CELLS, 493), since nothing it holds was translated.
+-_JD = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'tests', 'jit')
+-# Iteration 509: and jit-ops.fth - every word the JIT maps, on edge values (its BYE ends the pair: jit-diff's is dropped)
+-JDIFF = (open(os.path.join(_JD, 'jit-diff.fth'), 'rb').read() + open(os.path.join(_JD, 'jit-ops.fth'), 'rb').read()).replace(b'\nBYE\n', b'\n') \
+-    + b''.join(open(os.path.join(os.path.dirname(_JD), '..', 'forth', f), 'rb').read() + b'\n' for f in ('extend.4', 'coreext.4')) \
+-    + open(os.path.join(_JD, 'jit-marker.fth'), 'rb').read()   # 515: MARKER and a word at an old one's address
++# Iteration 509: and jit-ops.fth, every word the JIT maps on edge values; 515: jit-marker.fth (567: evolve.py's, shared)
++JDIFF = E.jit_diff_in()
+ def jdiff(eng, img, pw):
+     return [l.strip() for l in E.sh([eng, img], inp=JDIFF, timeout=120, cpu=60, cwd=pw).stdout.decode('latin-1').replace('\r', '').split('\n')]
+ JREF = {}
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index d5895fe..2c2a9e0 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -1167,6 +1167,12 @@ APPS_IN = b''.join(open(os.path.join(ROOT, 'lab', 'evolve', 'apps', f), 'rb').re
+     ('sim16.fth', b'700 ORG 15 LIT, FIB CALL, HALT,  0 STEPS !  700 RUN DPOP . STEPS @ . CR'),   # fib(15) on the simulated CPU
+     ('gc16.fth', b'200 BENCH'), ('scan.fth', b'3 BENCH'), ('evo.fth', b'12 BENCH'))) + b'BYE\n'
+ FAR_IN = open(os.path.join(ROOT, 'tests', 'core', 'far.fth'), 'rb').read()
++def jit_diff_in():
++    """tests/jit's programs as one input (Iteration 501, engines-check.py's; 567: design.py's too): jit-diff.fth and
++    jit-ops.fth (509; its BYE ends the pair - jit-diff's dropped), the extension word sets, jit-marker.fth (515)."""
++    t = lambda *p: open(os.path.join(ROOT, *p), 'rb').read()
++    return ((t('tests', 'jit', 'jit-diff.fth') + t('tests', 'jit', 'jit-ops.fth')).replace(b'\nBYE\n', b'\n')
++            + b''.join(t('forth', f) + b'\n' for f in ('extend.4', 'coreext.4')) + t('tests', 'jit', 'jit-marker.fth'))
+ FULL_IN = open(os.path.join(ROOT, 'tests', 'core', 'full.fth'), 'rb').read()
+ HAND_MADE = []
+ def hand_made(g):

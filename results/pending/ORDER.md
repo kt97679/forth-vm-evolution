@@ -5,6 +5,8 @@ process-run.sh checks and applies it. HANDOFF.md's open item 3: seed 80's two JI
 
     git apply results/pending/jitscan-after-seed81.patch
     git apply results/pending/ccflags-after-seed81.patch
+    git apply results/pending/design-after-seed81.patch
+    git apply results/pending/bar-after-seed81.patch
 
 batch-check (567, on 92b9e8a - the two patches): PASS - both applied to a fresh clone, run-tests PASS (engines-check 107
 paths, 102 on master: the variant at both widths, regression c578b55046, two stencil sets), validate 7 of 7 IDENTICAL,
@@ -30,3 +32,7 @@ an unexpressed alignhot); seed 52's two regressions build as their ids say (they
 
 At seed 81's processing, if seed 81 has deaths of this class: the control (process-run.sh step 5) measures them right on master
 and wrong before the batch - deaths-check names it.
+
+**design-after-seed81.patch** (lab/evolve/README.md, lab/evolve/design.py, lab/evolve/engines-check.py, lab/evolve/evolve.py) - TODO: what it does, why, how it was tested.
+
+**bar-after-seed81.patch** (lab/evolve/README.md, lab/evolve/stopping.py) - TODO: what it does, why, how it was tested.
