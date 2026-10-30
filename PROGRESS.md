@@ -10338,3 +10338,8 @@ run-by-run section a flat 170 lines, two reference documents two-thirds history;
 **The indexing done** (the owner: all four, for tokens): HANDOFF's question-to-place map; the history out of
 lab/evolve/README.md (58 -> 16 KB, HISTORY.md) and HANDOFF-REFERENCE.md (61 -> 19 KB, HANDOFF-HISTORY.md); the results
 index by subject, ten subsections; 67 long index lines cut, handoff-check 12 caps them at 300. Prompt 21 item 10.
+**The Tegra cross-built, and three small tools** (the owner): clang does not install on rage; cross-built here it works -
+seed 81's c610e092aa by clang for ARMv7 (lld, Ubuntu's armhf C library): corpus, fib, apps identical under qemu-arm, the
+images identical; but gcc-arm-linux-gnueabihf removes gcc-multilib, and the ARM engine carries static glibc (347,688
+bytes against 12,916) - an ARM runtime without the C library proposed (open item 1). results/drafts/tegra-cross-568.py;
+setup-sandbox.sh CROSS=1. The tools: tools/disposable.sh, make-bundle printing the new chat's message, handoff-check 13.

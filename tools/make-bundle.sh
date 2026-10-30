@@ -47,4 +47,9 @@ if [ "$(git rev-parse HEAD)" != "$(git -C "$check/clone" rev-parse HEAD)" ]; the
     exit 1
 fi
 git bundle list-heads "$file" | sed 's/^/  /' >&2
+if [ -z "$cp" ]; then     # Iteration 568: the new chat's message, ready to paste - HANDOFF-PROMPT.md's second, the name filled in
+    b=$(basename "$file")
+    { echo; echo "make-bundle: the new chat's message - attach $b$(sed -n 's/^- \*\*Files a new chat needs\*\*: the newest bundle, and \([^.]*\)\..*/, and \1/p' HANDOFF.md):"; echo
+      awk '/^## 2\./{s=1} s && /^---$/{n++; next} s && n==1' HANDOFF-PROMPT.md | sed "s|<bundle>|$b|"; } >&2
+fi
 echo "$file"

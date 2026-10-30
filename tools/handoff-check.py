@@ -31,6 +31,9 @@ This check fails, naming what would be lost, when:
      (the prompts' ids); a seed's number matches N (seedN, applied-after-seedN);
   10. a script of the evolver (lab/evolve/*.py, *.sh) is missing from
       lab/evolve/README.md's tools.
+  13. a file under results/ that the current iteration's commits added (the
+      master line's Iteration N) and its PROGRESS entry does not name (Iteration
+      568: the log names every file it adds - the article is written from it).
   12. an index line (a "- " line of an index) longer than 300 characters
       (Iteration 568, the owner: tokens) - a line says what the document is and
       what it found, in one sentence; the document holds the rest.
@@ -189,6 +192,17 @@ if len(_run) > 1: fail(11, 'HANDOFF.md says seeds %s are running - one at most' 
 for _i, _t in itext.items():
     for _l in _t.split('\n'):
         if _l.startswith('- ') and len(_l) > 300: fail(12, '%s: an index line of %d characters - one sentence, at most 300: %s...' % (_i, len(_l), _l[:60]))
+
+# 13. the current iteration's new results files named in its PROGRESS entry (568)
+_it = re.search(r'^- master: Iteration (\d+)', _hd, re.M)
+if _it:
+    _pg = open(os.path.join(ROOT, 'PROGRESS.md')).read()
+    _e = re.search(r'^## Iteration %s\b.*?(?=^## Iteration |\Z)' % _it.group(1), _pg, re.M | re.S)
+    _, _added = git('log', '--diff-filter=A', '--name-only', '--format=', '--grep=^Iteration %s:' % _it.group(1), '--', 'results')
+    for _f in sorted({x for x in _added.split('\n') if x and os.path.exists(os.path.join(ROOT, x))}):
+        _b = os.path.basename(_f)
+        if not _e or (_b not in _e.group(0) and re.sub(r'\.\w+$', '', _b) not in _e.group(0)):
+            fail(13, '%s: added in Iteration %s, named in no line of its PROGRESS entry' % (_f, _it.group(1)))
 
 if fails:
     print('handoff-check: FAIL - a new chat would lose or misread this:')

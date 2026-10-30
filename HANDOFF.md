@@ -96,7 +96,13 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    rage's check stays for its front and the final set - clang on the Tegra, or sampled from the run's alive designs.
    Claude's view (568): clang - with it rage builds 135 of seed 81's 256 front designs (every one without the JIT,
    0.32-1.66), without it 1; sampling checks designs the article does not report. Neither reaches the fast end (the JIT
-   is x86 only: all 25 of the fastest tenth). First check that clang installs on rage in reasonable time (Gentoo, ARMv7).
+   is x86 only: all 25 of the fastest tenth). Clang does not install on rage (the owner); **cross-built here it works**
+   (results/drafts/tegra-cross-568.py): clang --target=arm-linux-gnueabihf, lld, Ubuntu's armhf C library - corpus,
+   fib, apps identical under qemu-arm. Two catches for fury: never gcc-arm-linux-gnueabihf (Ubuntu removes gcc-multilib
+   for it); and an ARM engine links the C library - 347,688 bytes static against 12,916 on x86, rage's own dynamic. The
+   plan proposed: an ARM runtime without the C library (as engine/rt-linux-i386.c, 164 lines), so every ARM engine is
+   built alike - rage its GCC designs, fury the clang ones - and a prebuilt mode for rage in remote-checks.sh. The owner's
+   go, before the confirmation run.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop; from seed 77 one series matched by generation, the hours free (562); seeds 77-81 run, 81 gaining (568) - the earliest stop after seed 83; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -
@@ -183,12 +189,13 @@ Grep first, then read the one section it finds; never read whole PROGRESS.md, pr
 1. Commit everything that should survive. A script that produced a figure
    recorded in PROGRESS.md goes into the repository (lab/evolve/ or
    results/drafts/); every other file you wrote in /tmp is deleted or listed in
-   `/tmp/handoff-disposable.txt` (a path, then a reason, per line).
+   `/tmp/handoff-disposable.txt` - `sh tools/disposable.sh PATH REASON` writes the line (568). A file the
+   iteration adds under results/ is named in its PROGRESS entry (handoff-check 13).
 2. Bring this file up to date: "master: Iteration N", the state, the open
    items - a card: history goes to HANDOFF-HISTORY.md; write the PROGRESS
    entry - about three lines: what, the numbers, the files.
 3. `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs` - it
    runs `tools/handoff-check.py` and refuses a bundle a new chat could not
    start from. Mid-work, `--checkpoint` makes a bundle that is not a handoff
-   point (its name ends in -checkpoint).
-4. Present the bundle.
+   point (its name ends in -checkpoint). It prints the new chat's message, the bundle's name in it (568).
+4. Present the bundle, and give the owner that message.

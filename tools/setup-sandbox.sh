@@ -13,6 +13,7 @@
 # /tmp/setup-check/pid) or once they are DONE (rm -rf /tmp/setup-check to run them again); cut off by the turn's end,
 # it starts them again. A package, link, owner, identity or tree a session needs and does not find goes in here, in
 # that turn - a manual step written in a document instead is a bug in this script.
+# CROSS=1 (568): the packages to build ARMv7 engines with clang and run them under qemu-arm.
 # SCRATCH=DIR (567 - a scratch tree, HANDOFF.md's "for a batch in progress", made by hand until then, and git refused
 # root in it): master of DEST cloned into DIR as claude, the identity, results/pending's patches applied in ORDER.md's
 # order, each committed, and the stages built detached - DIR.status (build=N, DONE), DIR.log. A DIR already there is left
@@ -30,6 +31,12 @@ else
         echo "setup-sandbox: the compilers installed" || echo "setup-sandbox: apt-get failed - /tmp/setup-apt.log"
 fi
 [ -e /usr/include/asm ] || ln -s x86_64-linux-gnu/asm /usr/include/asm
+if [ "${CROSS:-0}" = 1 ]; then              # Iteration 568: ARMv7 builds by clang here (results/drafts/tegra-cross-568.py) - never
+    # gcc-arm-linux-gnueabihf: Ubuntu removes gcc-multilib for it, and the 32-bit x86 builds with it
+    if dpkg -s lld qemu-user libc6-dev-armhf-cross libgcc-13-dev-armhf-cross > /dev/null 2>&1; then echo "setup-sandbox: the ARM cross packages there"
+    else DEBIAN_FRONTEND=noninteractive apt-get install -y -qq lld qemu-user libc6-dev-armhf-cross libgcc-13-dev-armhf-cross >> /tmp/setup-apt.log 2>&1 &&
+        echo "setup-sandbox: the ARM cross packages installed" || echo "setup-sandbox: apt-get failed (cross) - /tmp/setup-apt.log"; fi
+fi
 if [ -d "$D/.git" ]; then                 # 567: left as it is, and said how it stands against the bundle
     H=$(asme git -C "$D" rev-parse HEAD); M=$(git bundle list-heads "$B" 2>/dev/null | awk '$2 == "refs/heads/master" {print $1}')
     if [ "$H" = "$M" ]; then echo "setup-sandbox: $D there, at the bundle's master - left as it is"

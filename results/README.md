@@ -117,6 +117,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck32-402.md` - Item 0g (Iteration 402): xcheck --report --laptop32 - the 32-bit hosts against the laptop's own 32-bit speeds (the Tegra 0.709 to 0.857; dream 0.651 to 0.650, the machine not the width); the Tegra's eight link failures all fsys on.
 - `drafts/xcheck-agreement-546.md` - Why the cross-machine checks agreed less on seed 72's front (Iteration 546): mostly the sample; the machines order the fast JIT designs differently; the fast end is a band.
 - `drafts/xcheck-agreement-546.py` - The analysis behind it, from a chain's remote measurements and the checked run's records (Iteration 546).
+- `drafts/tegra-cross-568.py` - The Tegra's clang designs cross-built on the laptop (Iteration 568): clang for ARMv7 with lld and the armhf C library - corpus, fib and apps identical under qemu-arm; the engine 347,688 bytes with static glibc.
 
 ### The search - its method, genes and prices
 
