@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 570.
+- master: Iteration 571.
 - **Seed 83 is next - 9 hours** (as seed 82 - the owner's to confirm), the method from seed 77. NEXT-RUN carries the
   line, carry-check.py --all at its end. Six runs on the method, seed 82 gaining nothing: **the stop after seed 83** if
   it gains nothing - then the confirmation run (seed 84 widths carryall, the owner's hours; open items 1-2 before it).
