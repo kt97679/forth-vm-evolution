@@ -10317,3 +10317,17 @@ line, 5 index lines; seed 81's checklist found stale, corrected). Eight candidat
 (master); design.py and stopping.py --bar - two more patches in the after-seed-81 batch, made by batch-make.sh. design.py:
 the minimal design right at both widths, DIES at the old window. --bar found prediction 566's smallest bar typed wrong
 (13,849; the rule 13,910 - noted). Checklists hold judgment, not state (HANDOFF).
+
+## Iteration 568 - 2026-10-30 - Claude
+
+**Seed 81 processed - nine hours, a gain at the fast end: the series goes on.** 128 generations, the true front 215.
+By the stopping rule it gains at generation 128 - the hypervolume 0.34746 (+1.9%) and the fastest 0.1377 (-2.9%); at
+equal effort (the spread, generation 126) it is the fastest of the five runs on the method at 64 and 32 bits (0.1387,
+0.1691) and the largest at the small end (14,210). Its fastest tenth re-measures 1.060 of in-run (78-80: 1.061-1.094) -
+not luck. Five runs on the method, the earliest stop after seed 83. Prediction 566 fails (the gain; its fastest at
+126 under 0.1389 by 0.1%); its Tegra half holds - rage against the laptop on seed 77's 16 by id, Spearman 0.971: the
+host is sound, REMOTES' --also out (open item 1 now the owner's choice of rage's check for the confirmation front).
+The after-seed-81 batch applied (17566c6; batch-check PASS, the checks on master all 0); the control measured it -
+seed 81's one open death, fb35526657 (jitexec, alignhot=3, tracer), DIFFERS before the batch, right after. Next: seed
+82, 9 hours (the owner); predicted: no gain, its fastest at 126 above 0.1387.
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed81.md, xcheck-seed81.md; compare-fronts, predictions, stopping-series.

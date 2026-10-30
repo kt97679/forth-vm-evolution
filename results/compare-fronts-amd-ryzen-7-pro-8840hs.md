@@ -32162,3 +32162,17 @@ What compares: five runs' records to generation 126 - seed 80 (12 hours, the fre
 | archived-20261028-042145/build/evolve/db.jsonl | 126 | 20984 | 407 | 0.1418 | 14,051 | 108 | 9.5336e+05 | 0.6396 | 0.1826 |
 | archived-20261028-143239/build/evolve/db.jsonl | 126 | 19303 | 309 | 0.1477 | 14,189 | 108 | 9.5669e+05 | 0.6291 | 0.1885 |
 | archived-20261029-040143/build/evolve/db.jsonl | 126 | 19444 | 344 | 0.1435 | 14,364 | 112 | 9.9942e+05 | 0.6036 | 0.1878 |
+
+## Session 68 - Iteration 568: seed 81 and the archived runs (the chain's spread, at generation 126)
+
+Each run's own selection - the same since seed 71 (seven workloads, apps the seventh) on this laptop - read at
+generation 126, the stopping rule's matching (562); the least memory 108-112 KB in every run. Seed 81 the fastest of
+the five at 64 and 32 bits, the largest at the small end.
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 126 | 18851 | 322 | 0.1387 | 14,210 | 112 | 1.0032e+06 | 0.6160 | 0.1691 |
+| archived-20261028-042145/build/evolve/db.jsonl | 126 | 20984 | 407 | 0.1418 | 14,051 | 108 | 9.5336e+05 | 0.6380 | 0.1826 |
+| archived-20261028-143239/build/evolve/db.jsonl | 126 | 19303 | 309 | 0.1477 | 14,189 | 108 | 9.5669e+05 | 0.6274 | 0.1885 |
+| archived-20261029-040143/build/evolve/db.jsonl | 126 | 19444 | 344 | 0.1435 | 14,364 | 112 | 9.9942e+05 | 0.6012 | 0.1878 |
+| archived-20261029-182437/build/evolve/db.jsonl | 126 | 18896 | 369 | 0.1444 | 14,089 | 112 | 1.0055e+06 | 0.6094 | 0.1825 |

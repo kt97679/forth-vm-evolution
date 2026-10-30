@@ -4,10 +4,10 @@ process-run.sh checks and applies it. The first two: HANDOFF.md's open item 3, s
 (results/drafts/jitexec-alignhot-566.md, its section "The cause and the fix"); the last two: the automation audit's
 candidates 2 and 3 (results/drafts/automation-audit-567.md).
 
-    git apply results/pending/jitscan-after-seed81.patch
-    git apply results/pending/ccflags-after-seed81.patch
-    git apply results/pending/design-after-seed81.patch
-    git apply results/pending/bar-after-seed81.patch
+    git apply results/applied-after-seed81/jitscan-after-seed81.patch
+    git apply results/applied-after-seed81/ccflags-after-seed81.patch
+    git apply results/applied-after-seed81/design-after-seed81.patch
+    git apply results/applied-after-seed81/bar-after-seed81.patch
 
 batch-check (567, on 6576d97 - 4 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.

@@ -1109,3 +1109,15 @@ seed 79's gain came past generation 161, beyond a 9-hour run's reach. And the Te
 after-seed-81 batch) - 13,849 was seed 80's end (13,989) less 1%, taken by hand where the rule takes each run at
 the generation; the other bars as written. The verdict is stopping.py's own, so the stop is not affected.
 
+**Scored at seed 81 (Iteration 568): fails; the Tegra holds.** Seed 81 gains at generation 128 - the hypervolume 0.34746
+(+1.9% over 0.34106) and the fastest 0.1377 (-2.9% under 0.1418); its fastest at generation 126, 0.1387, is under
+0.1389 by 0.1% - the first lifted run there, and the fastest of the five at equal effort. Rage against the laptop on seed 77's 16 designs asked by id: Spearman 0.971.
+
+## Seed 82, 9 hours - predicted (Iteration 568)
+
+Seed 82 gains nothing: by its last generation, about 126-130 in 9 hours (seed 81: 128), it must reach the hypervolume
+0.35093, the fastest 0.1350, the smallest 13,910, the memory 104 KB or 32-bit 0.1657 (`stopping.py --bar 120`, the
+ledger with seed 81). The fastest bar is seed 81's best less 2%; seed 81 was the one run to clear such a margin at
+equal effort (0.1387 against 0.1418 at 126, -2.2%). Of the eight runs since seed 74, three gained. Its fastest at generation 126 above
+seed 81's 0.1387. If it gains nothing, the earliest stop is after seed 83.
+
