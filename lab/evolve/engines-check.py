@@ -60,6 +60,9 @@ VARIANTS = [                                     # (name, genes set on s6, genes
     ('the JIT with jitmul', dict(JIT, jitmul=1), ['jit', 'jitmul']),                  # Iteration 472: UM*, UM/MOD, COUNT native
     ('the JIT with jitdoes', dict(JIT, jitdoes=1), ['jit', 'jitdoes']),               # Iteration 473: DOES> children native
     ('the JIT with jitexec', dict(JIT, jitexec=1), ['jit', 'jitexec']),               # Iteration 476: EXECUTE's helper
+    # Iteration 567: and at 64-byte alignment - GCC's padding put st_execute's last exit past jit_scan's 160 bytes, the copy
+    # kept a je to the cache's hit path past its end: seed 80's two deaths (results/drafts/jitexec-alignhot-566.md)
+    ('the JIT with jitexec, aligned to 64', dict(JIT, jitexec=1, alignhot=3), ['jit', 'jitexec', 'alignhot']),
     ('the JIT with jitcfa', dict(JIT, jitcfa=1), ['jit', 'jitcfa']),                  # Iteration 482: the check along the paths
     ('the JIT with opbody', dict(JIT, ops10=['2@', '2!'], opbody=1), ['jit', 'opbody']),   # Iteration 509: 2@ and 2! as opcodes - jit-ops.fth runs them
     ('the JIT without jitinl', dict(JIT, jitinl=0, jitmul=1, jitexec=1), ['jit', 'jitexec']),   # Iteration 515: calls of headerless words through jit_k - jit-marker.fth
@@ -116,11 +119,8 @@ VARIANTS += [('regression %s (seed %s)' % (r['id'], r['seed']), r['genome'], [])
              for r in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'regressions.json')))]
 # Iteration 501: every JIT variant also runs tests/jit/jit-diff.fth, its output s6's at the same width - the corpus
 # passed where seed 70's 906 32-bit failures did not (CELL+ and CELLS, 493), since nothing it holds was translated.
-_JD = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'tests', 'jit')
-# Iteration 509: and jit-ops.fth - every word the JIT maps, on edge values (its BYE ends the pair: jit-diff's is dropped)
-JDIFF = (open(os.path.join(_JD, 'jit-diff.fth'), 'rb').read() + open(os.path.join(_JD, 'jit-ops.fth'), 'rb').read()).replace(b'\nBYE\n', b'\n') \
-    + b''.join(open(os.path.join(os.path.dirname(_JD), '..', 'forth', f), 'rb').read() + b'\n' for f in ('extend.4', 'coreext.4')) \
-    + open(os.path.join(_JD, 'jit-marker.fth'), 'rb').read()   # 515: MARKER and a word at an old one's address
+# Iteration 509: and jit-ops.fth, every word the JIT maps on edge values; 515: jit-marker.fth (567: evolve.py's, shared)
+JDIFF = E.jit_diff_in()
 def jdiff(eng, img, pw):
     return [l.strip() for l in E.sh([eng, img], inp=JDIFF, timeout=120, cpu=60, cwd=pw).stdout.decode('latin-1').replace('\r', '').split('\n')]
 JREF = {}
@@ -134,8 +134,8 @@ for name, genes, must in VARIANTS:
     try:
         eng, img = E.build(g, d); pw = E.private_work(d)
         E.alive(eng, img, pw)
-        if 'jit' in must:
-            if 8 not in JREF:
+        if 'jit' in must or (name.startswith('regression ') and ex.get('jit')):   # 567: a JIT regression too - seed 80's computes
+            if 8 not in JREF:                                                    # the corpus right, jit-diff's T2 not
                 dr = os.path.join(E.EV, 'engines-check-ref'); shutil.rmtree(dr, ignore_errors=True)
                 JREF[8] = jdiff(E.REF[0], E.REF[1], E.private_work(dr))
             if jdiff(eng, img, pw) != JREF[8]: raise RuntimeError('jit-diff.fth: not as s6')
@@ -195,7 +195,12 @@ shutil.rmtree(os.path.join(E.EV, 'engines-check'), ignore_errors=True)
 # Iteration 463: and are the stencils safe to copy - no relocation in one but to a marker (stencil-check.py), at 64
 # bits and at 32: a compiler that puts a call into a stencil (a stack check, a profiler hook) is caught here.
 # Iteration 557: and with -ftracer beside -fno-crossjumping, the pair that left seed 76's st_execute holding a hole twice.
-for cc, fl in (('gcc', []), ('gcc -m32 -fno-pie', []), ('gcc', ['-O2', '-ftracer', '-fno-crossjumping', '-DJITX=1', '-DJITINL=1', '-DJITLOOP=1', '-DJITEXEC=1', '-DJITMUL=1'])):
+# Iteration 567: and at 64-byte alignment, every JIT stencil, at 64 bits and at 32 - the two sets that at jit_scan's old
+# 160 bytes cut st_execute (seed 80's deaths), and st_callx and st_ummod at 32 bits (17 of 84 sets cut, all at 64).
+JALL = ['-DJITX=1', '-DJITINL=1', '-DJITLOOP=1', '-DJITEXEC=1', '-DJITMUL=1', '-DJITFUSE=1']
+A64 = ['-falign-jumps=64', '-falign-labels=64', '-falign-functions=64']
+for cc, fl in (('gcc', []), ('gcc -m32 -fno-pie', []), ('gcc', ['-O2', '-ftracer', '-fno-crossjumping', '-DJITX=1', '-DJITINL=1', '-DJITLOOP=1', '-DJITEXEC=1', '-DJITMUL=1']),
+               ('gcc', ['-O2'] + A64 + JALL), ('gcc -m32 -fno-pie', ['-O2', '-fno-crossjumping', '-ftracer'] + A64 + JALL)):
     r = subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stencil-check.py'), '--cc', cc] + fl,
                        capture_output=True, text=True)
     print('  stencils     %s %s' % ('ok    ' if r.returncode == 0 else 'FAILED', (r.stdout or r.stderr).strip().split('\n')[0][:140]), flush=True)

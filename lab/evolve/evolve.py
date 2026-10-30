@@ -786,16 +786,21 @@ def CC(g):
     return 'clang' if express(g).get('compiler') else 'cc'
 ARM32 = os.uname().machine.startswith('arm')   # Iteration 407: a 32-bit ARM host - the Tegra (armv7l)
 def ccflags(g):
-    if express(g).get('compiler'):          # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
-        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) and k not in GCC_ONLY for w in f.split()] + _EXTRA_CFLAGS
-    f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if g.get(k) for w in f.split()]   # a flag gene a genome lacks is off
-    if g.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[g['gotodup']]]   # Iteration 260
+    # Iteration 567: the flags of the genes express() keeps, not the raw genome's - a design is built as its id says. Seed
+    # 80's two JIT deaths had align1 and alignfn, so express() drops alignhot (its needs), yet the engine was built with
+    # -falign-*=64, appended after align1's =1 and winning (results/drafts/jitexec-alignhot-566.md). The same for alignfn,
+    # noinls, gotodup and alignhot on the families that do not express them.
+    e = express(g)
+    if e.get('compiler'):                   # Iteration 262: clang - its -Oz for -Os, and only the flags it knows
+        return ['-Oz' if g['opt'] == 'Os' else '-' + g['opt']] + [w for k, f in CFLAGS.items() if e.get(k) and k not in GCC_ONLY for w in f.split()] + _EXTRA_CFLAGS
+    f = ['-' + g['opt']] + [w for k, f in CFLAGS.items() if e.get(k) for w in f.split()]   # a flag gene a genome lacks is off
+    if e.get('gotodup'): f += ['--param', 'max-goto-duplication-insns=%d' % GOTODUPV[e['gotodup']]]   # Iteration 260
     # Iteration 407 (open item 0d): not on 32-bit ARM - there GCC places the engine's literal pools without the padding
     # these alignments add, and a load lands past its 4 KB reach: the assembler's 'bad immediate value for offset', all
     # 14 of seeds 58-60's Tegra failures alignhot 32 or 64, all 28 that built 0 or 1. Left out of that build, as the JIT
     # of a 32-bit one; the laptop's and dream's builds as before.
-    if g.get('alignhot') and not ARM32: f += ['-falign-jumps=%s' % ALIGNV[g['alignhot']], '-falign-labels=%s' % ALIGNV[g['alignhot']],
-                                '-falign-functions=%s' % ALIGNV[g['alignhot']]]   # Iteration 298: a handler's entry - a computed goto's
+    if e.get('alignhot') and not ARM32: f += ['-falign-jumps=%s' % ALIGNV[e['alignhot']], '-falign-labels=%s' % ALIGNV[e['alignhot']],
+                                '-falign-functions=%s' % ALIGNV[e['alignhot']]]   # Iteration 298: a handler's entry - a computed goto's
                                 # target, or a tail engine's function - on a fetch window's start
     return f + _EXTRA_CFLAGS
 _EXTRA_CFLAGS = os.environ.get('EVOLVE_CFLAGS', '').split()   # Iteration 294: a measurement's -g (missmap.py) - never the evolution's
@@ -1162,6 +1167,12 @@ APPS_IN = b''.join(open(os.path.join(ROOT, 'lab', 'evolve', 'apps', f), 'rb').re
     ('sim16.fth', b'700 ORG 15 LIT, FIB CALL, HALT,  0 STEPS !  700 RUN DPOP . STEPS @ . CR'),   # fib(15) on the simulated CPU
     ('gc16.fth', b'200 BENCH'), ('scan.fth', b'3 BENCH'), ('evo.fth', b'12 BENCH'))) + b'BYE\n'
 FAR_IN = open(os.path.join(ROOT, 'tests', 'core', 'far.fth'), 'rb').read()
+def jit_diff_in():
+    """tests/jit's programs as one input (Iteration 501, engines-check.py's; 567: design.py's too): jit-diff.fth and
+    jit-ops.fth (509; its BYE ends the pair - jit-diff's dropped), the extension word sets, jit-marker.fth (515)."""
+    t = lambda *p: open(os.path.join(ROOT, *p), 'rb').read()
+    return ((t('tests', 'jit', 'jit-diff.fth') + t('tests', 'jit', 'jit-ops.fth')).replace(b'\nBYE\n', b'\n')
+            + b''.join(t('forth', f) + b'\n' for f in ('extend.4', 'coreext.4')) + t('tests', 'jit', 'jit-marker.fth'))
 FULL_IN = open(os.path.join(ROOT, 'tests', 'core', 'full.fth'), 'rb').read()
 HAND_MADE = []
 def hand_made(g):

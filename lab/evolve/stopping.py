@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lab/evolve/stopping.py DB --seed N [--ledger LEDGER] [--append] | --self-test - GOALS.md's stopping rule, mechanical
+"""lab/evolve/stopping.py DB --seed N [--ledger LEDGER] [--append] | --bar GEN[,GEN] | --self-test - GOALS.md's stopping rule, mechanical
 (Iteration 554; prompts/21, item 9: the rule's arithmetic a script, the judgment the chat's - seed 75 was judged by its
 hypervolume alone at first, and the gain its fastest made missed).
 
@@ -163,6 +163,12 @@ if __name__ == '__main__':
     a = sys.argv[1:]
     if a == ['--self-test']: sys.exit(self_test())
     opt = lambda k: a[a.index(k) + 1] if k in a and a.index(k) + 1 < len(a) else None
+    if opt('--bar'):          # 567: what the next run must reach by its last generation GEN - a prediction's numbers, no DB
+        method, runs = series(opt('--ledger') or LEDGER)
+        for G in [int(x) for x in opt('--bar').split(',')]:
+            b = bar([at(x, G) for x in runs]) if method.get('matched') else bar(runs)
+            print('the next run gains if, at generation %d: %s' % (G, '; or '.join('%s %s %s' % (NAME[k], '>=' if k == 'hv' else '<=', fmt(k, b[k])) for k in KEYS)))
+        sys.exit(0)
     if opt('--seed') is None: sys.exit(__doc__)
     seed, led = int(opt('--seed')), opt('--ledger') or LEDGER
     db = next(x for x in a if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger'), opt('--curve')))

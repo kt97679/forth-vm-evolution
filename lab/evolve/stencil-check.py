@@ -2,7 +2,8 @@
 """stencil-check.py [--cc 'gcc -m32 -fno-pie'] [FLAGS ...] - are SPN's stencils safe to copy? (Iteration 463)
 
 The JIT copies each stencil's machine code out of the engine - from its start to its last jump to a marker (NEXT or
-JUMP), or for EXIT to its ret - and patches its holes (engine/jit.c, jit_scan). That is right only if nothing in the
+JUMP) within JIT_SCAN_MAX bytes (Iteration 567; STENCIL_WINDOW=N reads another), or for EXIT to its ret - and patches
+its holes (engine/jit.c, jit_scan). That is right only if nothing in the
 copied part leaves it: Gforth's relocatability rule (Ertl and Paysan, "Code-Copying Compilation in Production", 2025).
 Two ways to leave, both read here from the object file - exactly, by objdump, not by guessing at bytes:
 - a relocation in the copied part whose target is not a marker - a call GCC put in (memset, __stack_chk_fail,
@@ -20,6 +21,10 @@ flags = [f for f in flags if f not in ('-ffunction-sections', '-fdata-sections')
 # put each in its own .text.* - this reads .text, so a design's own flags read 0 stencils, "every one safe" vacuously
 HOLES = set(re.findall(r'#define JIT_(?:IMM|RP|TH|EX|RS)64\s+0x([0-9a-fA-F]+)', open(os.path.join(ROOT, 'engine', 'jit.c')).read()))
 MARKERS = ('spn_next', 'spn_jump', 'spn_call')
+# Iteration 567: and only as far as jit_scan reads - JIT_SCAN_MAX bytes from the function's start. Under -falign-*=64
+# st_execute's last exit lay past the 160 then: the copy ended at its first, its short je to the rest left it, and this
+# check, reading to the last exit, passed it (seed 80's deaths; results/drafts/jitexec-alignhot-566.md).
+WINDOW = int(os.environ.get('STENCIL_WINDOW') or re.search(r'#define JIT_SCAN_MAX\s+(\d+)', open(os.path.join(ROOT, 'engine', 'jit.c')).read()).group(1))   # STENCIL_WINDOW=160: the old
 with tempfile.TemporaryDirectory() as d:
     o = os.path.join(d, 'st.o')
     r = subprocess.run(cc + flags + ['-I', os.path.join(ROOT, 'engine'), '-c', '-o', o, os.path.join(ROOT, 'engine', 'spn-stencils.c')], capture_output=True, text=True)
@@ -39,7 +44,8 @@ for name, ins in funcs.items():
     if not name.startswith('st_') or not ins: continue
     # the copied part, as jit_scan finds it: up to the last jmp to NEXT or JUMP; EXIT's to its first ret
     if name == 'st_exit': ends = [k for k, (a, t, rl) in enumerate(ins) if t.startswith('ret')][:1]
-    else: ends = [k for k, (a, t, rl) in enumerate(ins) if t.startswith('jmp') and any(x in ('spn_next', 'spn_jump') for x in rl)][-1:]
+    else: ends = [k for k, (a, t, rl) in enumerate(ins) if t.startswith('jmp') and any(x in ('spn_next', 'spn_jump') for x in rl)
+                  and a + 5 - ins[0][0] <= WINDOW][-1:]   # 567: the last exit inside the window (a jmp rel32, 5 bytes)
     if not ends: continue                    # no shape the JIT reads: it is never used
     last = ends[0]; lo = ins[0][0]; hi = ins[last + 1][0] if last + 1 < len(ins) else ins[last][0] + 16
     for h in HOLES:
@@ -53,7 +59,7 @@ for name, ins in funcs.items():
             tgt = int(m.group(2), 16)
             if not lo <= tgt < hi: bad.setdefault(name, set()).add('%s to +0x%x, past the copied part' % (m.group(1), tgt - lo))
 stencils = sum(1 for n in funcs if n.startswith('st_'))
-print('stencil-check (%s %s): %d stencils; %s' % (' '.join(cc), ' '.join(flags), stencils,
+print('stencil-check (%s %s, the scan %d bytes): %d stencils; %s' % (' '.join(cc), ' '.join(flags), WINDOW, stencils,
       'every one safe to copy' if not bad else '%d not safe to copy:' % len(bad)))
 for n in sorted(bad): print('  %s - %s' % (n, '; '.join(sorted(bad[n]))))
 if twice: print('  a value hole twice or more in the copied part - jit.c patches every copy (557): ' + ', '.join(sorted(twice)))

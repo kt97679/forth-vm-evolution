@@ -114,7 +114,12 @@ static int jit_relto(const unsigned char *p, const void *t) { return p + 4 + jit
    whose (LOOP) stencil was 72 bytes there: read to its fall-through, its loop-back missed,
    copied short, a segmentation fault on the corpus's first loop. The end is the last jump to
    NEXT or JUMP, which only stencils make, and the next table function still bounds a scan. */
-#define JIT_SCAN_MAX 160
+/* Iteration 567: 512 - under -falign-*=64 (the gene alignhot=3, unfrozen from seed 77) GCC pads inside a stencil:
+   st_execute's last exit ended at byte 164, the scan took its first, and the copy kept the short je to the cache's hit
+   path past its end - a jump into the next stencil, seed 80's two deaths on sim16 (results/drafts/jitexec-alignhot-566.md).
+   The longest stencil over 42 flag sets: 146 bytes at 32-byte alignment, 242 at 64 (st_ummod, -Os); no build without
+   64 copies a byte more. stencil-check.py reads this window and fails a stencil it cuts. */
+#define JIT_SCAN_MAX 512
 static const unsigned char *jit_addr(int i) {
 #if JITK
     if (i >= S_N) return (const unsigned char *)spn_ktable[i - S_N];
