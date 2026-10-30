@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 569.
+- master: Iteration 570.
 - **Seed 83 is next - 9 hours** (as seed 82 - the owner's to confirm), the method from seed 77. NEXT-RUN carries the
   line, carry-check.py --all at its end. Six runs on the method, seed 82 gaining nothing: **the stop after seed 83** if
   it gains nothing - then the confirmation run (seed 84 widths carryall, the owner's hours; open items 1-2 before it).
@@ -50,7 +50,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   ends the best at equal effort, neither by its threshold. Its fastest tenth re-measures 1.048 (78-81: 1.060-1.094).
   Every check on master passes; the deaths all of expected causes; no batch. Prediction 568 holds; its second half fails.
 - **The Tegra**: the host is sound (568: Spearman 0.971 on seed 77's 16 by id); seed 82's chain - 0.143 on 8 of seed 81's front - a
-  narrow band (the laptop's 0.32-0.40), not the host. Its check for the confirmation front: open item 1.
+  narrow band (the laptop's 0.32-0.40), not the host. Its check for the confirmation front: clang, prepared (570) - open item 1.
 - **Predictions due** (results/predictions.md): seed 83 - no gain and the stop; its fastest at 126 at or above 0.1378;
   carry-check.py --all every sampled founder right (569).
 - **Before 569**: seeds 70-81 processed (498-568); history: HANDOFF-HISTORY.md.
@@ -91,18 +91,13 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. The Tegra's subject (566; the host sound, 568 - Spearman 0.971 on seed 77's 16 by id): the front holds ever fewer
-   designs rage can build (GCC, no JIT) - none on seed 80's. Before the confirmation run, the owner's choice whether
-   rage's check stays for its front and the final set - clang on the Tegra, or sampled from the run's alive designs.
-   Claude's view (568): clang - with it rage builds 135 of seed 81's 256 front designs (every one without the JIT,
-   0.32-1.66), without it 1; sampling checks designs the article does not report. Neither reaches the fast end (the JIT
-   is x86 only: all 25 of the fastest tenth). Clang does not install on rage (the owner); **cross-built here it works**
-   (results/drafts/tegra-cross-568.py): clang --target=arm-linux-gnueabihf, lld, Ubuntu's armhf C library - corpus,
-   fib, apps identical under qemu-arm. Two catches for fury: never gcc-arm-linux-gnueabihf (Ubuntu removes gcc-multilib
-   for it); and an ARM engine links the C library - 347,688 bytes static against 12,916 on x86, rage's own dynamic. The
-   plan proposed: an ARM runtime without the C library (as engine/rt-linux-i386.c, 164 lines), so every ARM engine is
-   built alike - rage its GCC designs, fury the clang ones - and a prebuilt mode for rage in remote-checks.sh. The owner's
-   go, before the confirmation run.
+1. The Tegra's check (the owner, 570: clang) - **the after-seed-83 batch waits** (results/pending/ORDER.md: armrt,
+   prebuiltarm): engine/rt-linux-armv7.c, every ARM engine without the C library (6-16 KB, not 347 KB); rage's check
+   prebuiltarm - the front's clang designs cross-built on fury (xcheck.py --arm), s6 and GCC's built on rage; seed 82's
+   front 196 eligible, 3 before. Nothing changes on x86 (byte-identical). **Before seed 84's chain the owner installs on
+   fury** `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` (no conflict with gcc-multilib); missing, rage's sample
+   fails as a line in steps, never the chain. Rage's numbers from then: no-C-library engines, mostly clang's - not
+   comparable with its checks before.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop; from seed 77 one series matched by generation, the hours free (562); seeds 77-82 run, 82 gaining nothing (569) - the stop after seed 83 if it gains nothing; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -

@@ -120,6 +120,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/xcheck-agreement-546.md` - Why the cross-machine checks agreed less on seed 72's front (Iteration 546): mostly the sample; the machines order the fast JIT designs differently; the fast end is a band.
 - `drafts/xcheck-agreement-546.py` - The analysis behind it, from a chain's remote measurements and the checked run's records (Iteration 546).
 - `drafts/tegra-cross-568.py` - The Tegra's clang designs cross-built on the laptop (Iteration 568): clang for ARMv7 with lld and the armhf C library - corpus, fib and apps identical under qemu-arm; the engine 347,688 bytes with static glibc.
+- `drafts/x86-identity-570.py` - The after-seed-83 batch changes nothing on x86 (Iteration 570): s6 and 13 of seed 82's front at 8- and 4-byte cells, engines and images byte-identical in master and the batch.
+- `drafts/prebuiltarm-e2e-570.sh` - Rage's prebuiltarm check end to end on one machine (Iteration 570): remote-checks.sh with ssh/scp stand-ins - 10 clang designs cross-built (74 KB), s6 and 2 GCC designs built on the host.
 
 ### The search - its method, genes and prices
 

@@ -392,3 +392,17 @@ format-10 words (ops10) are listed past their slots and not built, as are nearly
 pairs; express() keeps only what is built - a design's identity, and what lab/evolve/seed-facts.py
 counts - so dormant entries are a neutral reservoir a mutation can promote, not a fault in the reports.
 
+## Open item 1 before Iteration 570 (the Tegra; the owner chose clang at 570)
+
+1. The Tegra's subject (566; the host sound, 568 - Spearman 0.971 on seed 77's 16 by id): the front holds ever fewer
+   designs rage can build (GCC, no JIT) - none on seed 80's. Before the confirmation run, the owner's choice whether
+   rage's check stays for its front and the final set - clang on the Tegra, or sampled from the run's alive designs.
+   Claude's view (568): clang - with it rage builds 135 of seed 81's 256 front designs (every one without the JIT,
+   0.32-1.66), without it 1; sampling checks designs the article does not report. Neither reaches the fast end (the JIT
+   is x86 only: all 25 of the fastest tenth). Clang does not install on rage (the owner); **cross-built here it works**
+   (results/drafts/tegra-cross-568.py): clang --target=arm-linux-gnueabihf, lld, Ubuntu's armhf C library - corpus,
+   fib, apps identical under qemu-arm. Two catches for fury: never gcc-arm-linux-gnueabihf (Ubuntu removes gcc-multilib
+   for it); and an ARM engine links the C library - 347,688 bytes static against 12,916 on x86, rage's own dynamic. The
+   plan proposed: an ARM runtime without the C library (as engine/rt-linux-i386.c, 164 lines), so every ARM engine is
+   built alike - rage its GCC designs, fury the clang ones - and a prebuilt mode for rage in remote-checks.sh. The owner's
+   go, before the confirmation run.

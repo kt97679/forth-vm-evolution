@@ -10354,3 +10354,12 @@ ans-check 0 of 63, the jail); the deaths all expected (cpt16 on apps 36, the sca
 Spearman 0.143 on 8 of seed 81's front, a narrow band - not the host. Prediction 568 holds (no gain), its second half fails.
 Seed 83 next, 9 hours (as 82 - the owner's to confirm), carry-check.py --all at its end: no gain there stops the rule.
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed82.md, xcheck-seed82.md; compare-fronts, predictions, stopping-series.
+
+## Iteration 570 - 2026-10-30 - Claude
+
+**The Tegra's check with clang (the owner's choice, open item 1) - a batch for seed 83's processing.** results/pending:
+armrt (engine/rt-linux-armv7.c - every ARM engine without the C library, 6,444-16,064 bytes against 347,688; evolve.py
+EVOLVE_TARGET=armv7, a clang design cross-built on fury; tools/arm-cross-check.py) and prebuiltarm (xcheck.py --arm, a
+partial bundle; REMOTES' rage line). 40 of seed 82's 193 clang designs alive under qemu-arm, fib and apps identical;
+rage's GCC side simulated with ARM GCC 13; x86 byte-identical; the check end to end. Fury needs lld,
+libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross. Files: results/drafts/x86-identity-570.py, prebuiltarm-e2e-570.sh.
