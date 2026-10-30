@@ -1121,3 +1121,16 @@ ledger with seed 81). The fastest bar is seed 81's best less 2%; seed 81 was the
 equal effort (0.1387 against 0.1418 at 126, -2.2%). Of the eight runs since seed 74, three gained. Its fastest at generation 126 above
 seed 81's 0.1387. If it gains nothing, the earliest stop is after seed 83.
 
+**Scored at seed 82 (Iteration 569): holds; its second half fails.** Seed 82 gains nothing at generation 126 - the
+hypervolume 0.33152 (-2.8% under 0.34106), the fastest 0.1378 (-0.6% under 0.1387), the smallest 14,043 (-0.1%), the
+memory 108 KB, 32-bit 0.1683 (-0.5%). Its fastest at generation 126, 0.1378, is under seed 81's 0.1387 by 0.6%: the
+fastest at equal effort again, short of the 2% the rule asks.
+
+## Seed 83, 9 hours - predicted (Iteration 569)
+
+Seed 83 gains nothing, and the stopping rule stops after it: by its last generation, about 126-130 in 9 hours, it must
+reach the hypervolume 0.34501, the fastest 0.1351, the smallest 13,903, the memory 104 KB or 32-bit 0.1649 at
+generation 120 (at 140: 0.35378, 0.1350, 13,875, 104 KB, 0.1649 - `stopping.py --bar`, the ledger with seed 82). Of the
+nine runs since seed 74, three gained; seeds 81 and 82 each reached the fastest at equal effort, 82 by 0.6% - the fast
+end is moving by less than its threshold. Its fastest at generation 126 at or above 0.1378 (seed 82's), and
+carry-check.py --all finds every sampled founder right (seed 79's: 40 of 40; seed 81's went unrecorded).

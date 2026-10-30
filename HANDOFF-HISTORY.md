@@ -6,6 +6,9 @@ HANDOFF-REFERENCE.md. History the card sheds goes here. Grep a term or an iterat
 
 ## The state through Iteration 562 (history - HANDOFF.md has the present)
 
+- **Iterations 563-568**: seeds 78-81 processed (563, 565, 566, 568 - 79 and 81 gained, 78 and 80 not; 81 the fastest
+  at equal effort); the JIT/alignhot deaths fixed by the after-seed-81 batch (17566c6, the control measured it); the
+  Tegra sound (568: Spearman 0.971 by id), clang cross-built for it here; the documents' index rebuilt (568).
 - **Iterations 560-562**: seed 77 processed (560: inside the 10-hour runs' spread; prediction 555 failed by the memory
   alone; its corpus death the 557 hole, wrong before the fix and right after); the after-seed-78 batch prepared and
   checked (561-562: a processing in three commands; the stopping rule matched by generation, the owner's hours free;

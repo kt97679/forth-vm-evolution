@@ -41,20 +41,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 568.
-- **Seed 82 is next - 9 hours** (the owner), the method from seed 77 (the freezes lifted, the stopping rule matched by
-  generation). NEXT-RUN carries the line. Five runs on the method, seed 81 gaining: **the earliest stop after seed 83**
-  (if 82 and 83 gain nothing) - seed 83's chain then carries carry-check.py --all, and the confirmation run follows.
-- **Seed 81 processed (568)** - results/evolve-amd-ryzen-7-pro-8840hs-seed81.md: 9 hours, 128 generations, the true
-  front 215. **Gains** at generation 128 by the hypervolume (+1.9%) and the fastest (-2.9%); at equal effort (126) the
-  fastest of the five runs at 64 and 32 bits, the largest at the small end; its fast end no luckier than 78-80's.
-  Prediction 566 fails (the gain); its Tegra half holds. The after-seed-81 batch applied (17566c6) - the control
-  measured it: seed 81's one open death, fb35526657 (jitexec, alignhot=3, tracer), wrong before the batch, right after.
-- **The Tegra (568)**: the host is sound - Spearman 0.971 with the laptop on seed 77's 16 designs asked by id; --also
-  out. Its check for the confirmation front: open item 1.
-- **Predictions due** (results/predictions.md): seed 82 - no gain, its fastest at generation 126 above 0.1387 (568).
-- **Before 568**: seeds 70-80 processed (498-566); history: HANDOFF-HISTORY.md.
-- **Files a new chat needs**: the newest bundle, and seed 82's chain archive. appbench.zip stays on the laptop.
+- master: Iteration 569.
+- **Seed 83 is next - 9 hours** (as seed 82 - the owner's to confirm), the method from seed 77. NEXT-RUN carries the
+  line, carry-check.py --all at its end. Six runs on the method, seed 82 gaining nothing: **the stop after seed 83** if
+  it gains nothing - then the confirmation run (seed 84 widths carryall, the owner's hours; open items 1-2 before it).
+- **Seed 82 processed (569)** - results/evolve-amd-ryzen-7-pro-8840hs-seed82.md: 9 hours, 126 generations, the true
+  front 246. **No gain** at 126: the hypervolume -2.8%, the fastest 0.1378 (-0.6%), the smallest 14,043 (-0.1%) - both
+  ends the best at equal effort, neither by its threshold. Its fastest tenth re-measures 1.048 (78-81: 1.060-1.094).
+  Every check on master passes; the deaths all of expected causes; no batch. Prediction 568 holds; its second half fails.
+- **The Tegra**: the host is sound (568: Spearman 0.971 on seed 77's 16 by id); seed 82's chain - 0.143 on 8 of seed 81's front - a
+  narrow band (the laptop's 0.32-0.40), not the host. Its check for the confirmation front: open item 1.
+- **Predictions due** (results/predictions.md): seed 83 - no gain and the stop; its fastest at 126 at or above 0.1378;
+  carry-check.py --all every sampled founder right (569).
+- **Before 569**: seeds 70-81 processed (498-568); history: HANDOFF-HISTORY.md.
+- **Files a new chat needs**: the newest bundle, and seed 83's chain archive. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
@@ -104,12 +104,12 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    built alike - rage its GCC designs, fury the clang ones - and a prebuilt mode for rage in remote-checks.sh. The owner's
    go, before the confirmation run.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
-   without a stop; from seed 77 one series matched by generation, the hours free (562); seeds 77-81 run, 81 gaining (568) - the earliest stop after seed 83; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
+   without a stop; from seed 77 one series matched by generation, the hours free (562); seeds 77-82 run, 82 gaining nothing (569) - the stop after seed 83 if it gains nothing; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -
    results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
    designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops
    chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
-3. **Correctness - none open (568)**: seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
+3. **Correctness - none open (569)**: seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
    -falign-*=64; ccflags() built alignhot where express() drops it (results/drafts/jitexec-alignhot-566.md) - fixed by
    the after-seed-81 batch, applied at 17566c6; seed 81's one such death right after it, wrong before (the control).
    Before: none open (564): seed 78's kernel deaths are the scale-1 reach limit (Iteration 10), not a fault.
