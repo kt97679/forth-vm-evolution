@@ -5,6 +5,9 @@ process-run.sh checks and applies it.
     git apply results/pending/armrt-after-seed83.patch
     git apply results/pending/prebuiltarm-after-seed83.patch
 
+batch-check (570, on f0e1d0d - 2 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
+the jail PASS.
+
 **armrt-after-seed83.patch** (engine/rt-linux-armv7.c, engine/rt-linux-x86_64.c, lab/evolve/evolve.py, tools/arm-cross-
 check.py) - Iteration 570, the owner's open item 1: clang for the Tegra. engine/rt-linux-armv7.c is rt-linux-i386.c's
 twin for 32-bit ARM: system calls by svc #0 (i386's numbers but exit_group, 248), the signals' restorer, _start, byte-
