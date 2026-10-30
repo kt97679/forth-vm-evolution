@@ -1,8 +1,8 @@
 # HANDOFF - start here in a new chat
 
-The state card: read it whole. Its background - the owner's decisions in full, the state through Iteration 555, the
-open items' history, the lessons - is HANDOFF-REFERENCE.md, read on demand; its lessons before changing the evolver or a
-measurement.
+The state card: read it whole. Its background - the owner's decisions in full, the processing steps, the lessons - is
+HANDOFF-REFERENCE.md, read on demand (its lessons before changing the evolver or a measurement); its history is
+HANDOFF-HISTORY.md, grepped.
 
 ## What this is
 
@@ -53,7 +53,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **The Tegra (568)**: the host is sound - Spearman 0.971 with the laptop on seed 77's 16 designs asked by id; --also
   out. Its check for the confirmation front: open item 1.
 - **Predictions due** (results/predictions.md): seed 82 - no gain, its fastest at generation 126 above 0.1387 (568).
-- **Before 568**: seeds 70-80 processed (498-566); history: HANDOFF-REFERENCE.md.
+- **Before 568**: seeds 70-80 processed (498-566); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and seed 82's chain archive. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
@@ -127,7 +127,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 ## Conventions - tokens (the owner, Iteration 542)
 
 - Write each fact once: the detail in its own document; a PROGRESS entry of about three lines - what, the numbers, the
-  files; an index line of one sentence. This file stays a card: history goes to HANDOFF-REFERENCE.md.
+  files; an index line of one sentence. This file stays a card: history goes to HANDOFF-HISTORY.md.
 - Replies: the answer first, few sections; detail when asked.
 - Tool output: aggregates and the lines that matter, never whole files or listings. Ask the owner for summaries
   (`du -sh runs/* build/* | sort -h | tail -30`), not dumps.
@@ -158,14 +158,25 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
   (a stale file reads as done); a sandbox restart kills background jobs and keeps /tmp - the status file says where to
   resume; no quadratic loop over a run's records (a call's 300 s).
 
-## Where things are
+## Where to look - the first place for each question (568)
 
-Every document: README.md's "Documents" section. Every measurement, analysis
-and per-run record: results/README.md. Every tool of the evolver:
-lab/evolve/README.md's "Tools". The prompts: prompts/INDEX.md. The leftovers of
-the chats of Iterations 213-265: results/drafts/chat-to-iter265/README.md (left the tree at Iteration 541 -
-`git show cb05abe20:results/drafts/chat-to-iter265/README.md`).
-GOALS.md before Iteration 275: results/drafts/goals-snapshots.md. This file's background: HANDOFF-REFERENCE.md.
+Grep first, then read the one section it finds; never read whole PROGRESS.md, predictions.md or a HISTORY file.
+- The present, the next step, the open decisions: this card.
+- A run's results: results/evolve-amd-ryzen-7-pro-8840hs-seedN.md (its title is the run in a phrase); every run at
+  once: results/progress-by-run.md; the stopping rule's ledger: results/stopping-series.md; other machines:
+  results/xcheck-seedN.md.
+- The stopping rule, the measures, the end of the phase: GOALS.md; the next run's bars: `stopping.py --bar GEN`.
+- A prediction: results/predictions.md, `grep -n "^## Seed"` - the newest at the end.
+- A subject in results/: results/README.md, by subject - its "### " headings (runs, faults, the JIT, machines,
+  the search, the end of the phase, other models' answers), then a term.
+- A gene: `grep -n "gene('NAME'" lab/evolve/evolve.py`; its history: lab/evolve/HISTORY.md; its votes:
+  results/gene-votes.md.
+- A tool: lab/evolve/README.md's tools, one line each; its usage: the tool's docstring.
+- An owner's decision: HANDOFF-REFERENCE.md's "standing decisions"; when and why: `grep -n TERM PROGRESS.md`.
+- A batch: results/pending/ORDER.md while it waits, results/applied-after-seedN/ORDER.md after.
+- A past iteration: `grep -n "^## Iteration N" PROGRESS.md`, that entry only; the card's history to 562:
+  HANDOFF-HISTORY.md; GOALS.md before 275: results/drafts/goals-snapshots.md.
+- Every document: README.md's "Documents"; the prompts: prompts/INDEX.md.
 
 ## Before a chat's turn ends - every turn that changed the repository
 
@@ -174,7 +185,7 @@ GOALS.md before Iteration 275: results/drafts/goals-snapshots.md. This file's ba
    results/drafts/); every other file you wrote in /tmp is deleted or listed in
    `/tmp/handoff-disposable.txt` (a path, then a reason, per line).
 2. Bring this file up to date: "master: Iteration N", the state, the open
-   items - a card: history goes to HANDOFF-REFERENCE.md; write the PROGRESS
+   items - a card: history goes to HANDOFF-HISTORY.md; write the PROGRESS
    entry - about three lines: what, the numbers, the files.
 3. `runuser -u claude -- sh tools/make-bundle.sh /mnt/user-data/outputs` - it
    runs `tools/handoff-check.py` and refuses a bundle a new chat could not

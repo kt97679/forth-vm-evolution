@@ -52,3 +52,6 @@ these, and update this file.
   often, so the environment's setup is a script - idempotent, every new requirement a change
   to it; this project's setup list, a requirement found by failing, the missing identity, the
   scratch tree made by hand); 07 item 11 (the setup one script); INDEX, README and USAGE rows.
+  Iteration 568 (forth-vm-evolution): 21 item 10 new - make finding cheap (the card's question-to-place
+  map; an index grouped by subject, lines capped, no history in it; a lookup measured); its trigger and
+  artifact; the 568 audit as provenance; INDEX row.

@@ -10335,3 +10335,6 @@ Files: results/evolve-amd-ryzen-7-pro-8840hs-seed81.md, xcheck-seed81.md; compar
 (all without the JIT), without it 1 (HANDOFF open item 1). The documents' indexing audited -
 results/drafts/doc-index-audit-568.md: lookups narrow well where the index names the topic; the results index's
 run-by-run section a flat 170 lines, two reference documents two-thirds history; four proposals.
+**The indexing done** (the owner: all four, for tokens): HANDOFF's question-to-place map; the history out of
+lab/evolve/README.md (58 -> 16 KB, HISTORY.md) and HANDOFF-REFERENCE.md (61 -> 19 KB, HANDOFF-HISTORY.md); the results
+index by subject, ten subsections; 67 long index lines cut, handoff-check 12 caps them at 300. Prompt 21 item 10.

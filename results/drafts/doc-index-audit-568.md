@@ -55,3 +55,18 @@ index would be another 50 KB); an index of predictions.md (HANDOFF names the pre
 end).
 
 1 and 2 cut what a session reads; 3 cuts the lines a grep of the index returns; 4 keeps the index an index.
+
+## Done (Iteration 568, the owner: all four)
+
+1. HANDOFF.md's "Where to look": twelve questions, each with its first place and the term to grep (the card 14.6 ->
+   15.9 KB).
+2. The history moved verbatim: lab/evolve/README.md 58.2 -> 16.1 KB (lab/evolve/HISTORY.md, 39.6 KB);
+   HANDOFF-REFERENCE.md 61.2 -> 19.1 KB (HANDOFF-HISTORY.md, 42.5 KB); the citations followed.
+3. results/README.md's run-by-run section is "The evolution, by subject": ten subsections - each run's records, the
+   checks on other machines, the batches, the checklists, faults, the JIT, machines and widths, the search, the end of
+   the phase, other models' answers - each oldest first, a script beside its document. batch-make.sh puts a pending
+   line after the last batch, so the order holds.
+4. The 67 index lines past 300 characters cut at a sentence or clause - the document holds the rest
+   (results/README.md 54.6 -> 49.1 KB); handoff-check's 12 fails a longer one.
+
+The prompts: 21's item 10 - make finding cheap.

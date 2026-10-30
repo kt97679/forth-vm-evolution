@@ -113,7 +113,8 @@ do not show. x86-64 only.
     prompts/        reusable prompts for this kind of work, from relf
                     (INDEX.md; the commit in UPSTREAM)
     HANDOFF.md      the present: the state, the routine, the open items
-    HANDOFF-REFERENCE.md  its background, read on demand: the decisions in full, the history, the lessons
+    HANDOFF-REFERENCE.md  its background, read on demand: the decisions in full, the processing steps, the lessons
+    HANDOFF-HISTORY.md    its history, grepped: the state to Iteration 562, the open items of 505 and 369
     GOALS.md        the aim, the measures, conventions, what was rejected
     PROGRESS.md     the log, one entry per iteration
 

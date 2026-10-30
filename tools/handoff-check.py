@@ -31,6 +31,9 @@ This check fails, naming what would be lost, when:
      (the prompts' ids); a seed's number matches N (seedN, applied-after-seedN);
   10. a script of the evolver (lab/evolve/*.py, *.sh) is missing from
       lab/evolve/README.md's tools.
+  12. an index line (a "- " line of an index) longer than 300 characters
+      (Iteration 568, the owner: tokens) - a line says what the document is and
+      what it found, in one sentence; the document holds the rest.
 
 5 and 6 pass for anything listed in the disposable list (--disposable FILE,
 default /tmp/handoff-disposable.txt): per line a path - a file, or a directory
@@ -181,6 +184,11 @@ for _m in re.finditer(r"\*\*Seed (\d+) is (the laptop's next run|set)\*\*", _hd)
         fail(11, 'HANDOFF.md says "Seed %s is %s", but NEXT-RUN runs: %s' % (_m.group(1), _m.group(2), nr[0] if nr else 'nothing'))
 _run = sorted({_m.group(1) for _m in re.finditer(r"\*\*Seed (\d+) is running\*\*", _hd)}, key=int)
 if len(_run) > 1: fail(11, 'HANDOFF.md says seeds %s are running - one at most' % ', '.join(_run))
+
+# 12. an index line of one sentence (568)
+for _i, _t in itext.items():
+    for _l in _t.split('\n'):
+        if _l.startswith('- ') and len(_l) > 300: fail(12, '%s: an index line of %d characters - one sentence, at most 300: %s...' % (_i, len(_l), _l[:60]))
 
 if fails:
     print('handoff-check: FAIL - a new chat would lose or misread this:')

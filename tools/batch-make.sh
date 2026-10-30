@@ -55,8 +55,8 @@ p, line = sys.argv[1:]; s = open(p).read().split('\n')
 i = [k for k, l in enumerate(s) if l.startswith('- `pending/ORDER.md`')]
 if i: s[i[0]] = line
 else:
-    j = [k for k, l in enumerate(s) if l.startswith('- `applied-after-seed')]
-    s.insert(j[0] if j else len(s), line)
+    j = [k for k, l in enumerate(s) if l.startswith('- `applied-after-seed')]   # 568: the batches oldest first - after the last
+    s.insert(j[-1] + 1 if j else len(s), line)
 open(p, 'w').write('\n'.join(s))
 PY
 git add results/pending results/README.md && git commit -q -m "Iteration $I: the after-seed-$N batch - $names (batch-make.sh from $X)" &&

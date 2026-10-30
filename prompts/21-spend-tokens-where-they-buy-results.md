@@ -1,6 +1,6 @@
 ---
 id: 21-spend-tokens-where-they-buy-results
-when: at a session's start, and whenever you write a record, a report or a reply, read a pasted input, or ask other models - in work that runs over many sessions
+when: at a session's start, and whenever you write a record, a report or a reply, look something up in the project's documents, read a pasted input, or ask other models - in work that runs over many sessions
 applies-when:
   - every session starts by reading the project's own documents
   - records (a log, an index, a state file) are written every session
@@ -30,6 +30,14 @@ Iterations 535-542) the sinks were whole things, not words:
   round and two added little;
 * **each step's facts were written four or five times** - the log, the index, the
   state file, the batch's notes, the reply.
+
+Later (Iteration 568) the sink was finding, not reading: every document was indexed,
+yet the results index's main section was one flat list of 170 lines in no usable
+order, 67 index lines ran past 300 characters (the longest 768), and the two
+reference documents a session opens for a decision or a tool were two-thirds history
+(61 KB and 58 KB, each 19 KB once the history moved to files of its own). Where the
+index named a subject, a lookup narrowed to 2-9 lines against 12-77 files for a grep
+of the tree - the index paid where it was ordered.
 
 Trimming polite words would have saved nothing measurable beside these. Two sources
 say the same, and add that an unclear request is the costliest of all, through the
@@ -84,10 +92,18 @@ Before a session, and at each record, report, input and question:
    like any change. The script does the mechanics; the judgment stays with
    the session, marked by TODO lines the script leaves. A one-off analysis
    keeps its script beside its result, but is not made into a general tool.
+
+10. Make finding cheap. The card ends with a map: for each question a session
+    asks, the first place to look and the term to grep. An index holds only its
+    lines, grouped by subject, each one sentence - a check caps its length; an
+    index document carries no history - that goes to a file of its own, grepped,
+    never read whole. Measure a lookup: the lines a grep of the index returns
+    against the files a grep of the tree does.
 ```
 
 ## Artifact required
 
-At a session's start: the size of what it read whole. At a cut: the sink, its size
+At a session's start: the size of what it read whole. For an index: its size, its
+subjects, and the lines a lookup returns. At a cut: the sink, its size
 before and after, and where the moved text went. For other models: the ledger line
 per answer.
