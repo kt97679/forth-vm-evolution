@@ -4,6 +4,7 @@ process-run.sh checks and applies it.
 
     git apply results/pending/armrt-after-seed83.patch
     git apply results/pending/prebuiltarm-after-seed83.patch
+    git apply results/pending/ragecheck-after-seed83.patch
 
 batch-check (570, on f0e1d0d - 2 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -36,3 +37,5 @@ the host): 12 sampled (no db.jsonl, so none rejected), 10 cross-built into a 74 
 measured on the host, the 10 shipped (not runnable on x86 - as expected); the report's "Built where" line. The laptop
 needs `sudo apt-get install lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` - none conflicts with gcc-multilib
 (whose Conflicts name only the gcc-N-<arch> cross compilers); qemu-user only for tools/arm-cross-check.py.
+
+**ragecheck-after-seed83.patch** (tools/arm-cross-check.py, tools/rage-check.sh) - TODO: what it does, why, how it was tested.

@@ -1,0 +1,173 @@
+diff --git a/tools/arm-cross-check.py b/tools/arm-cross-check.py
+index ef0a1ce..33628d4 100644
+--- a/tools/arm-cross-check.py
++++ b/tools/arm-cross-check.py
+@@ -1,21 +1,25 @@
+ #!/usr/bin/env python3
+-"""tools/arm-cross-check.py RESULTS.md [--n K] [--ids ID,...] [--gcc CC] - the ARM engines checked here (Iteration 570).
++"""tools/arm-cross-check.py RESULTS.md [--n K] [--ids ID,...] [--gcc CC] - the ARM engines checked (Iterations 570-571).
+ 
+-The designs of a front (RESULTS.md's {"bin" lines) that the Tegra can be sent from the laptop - cv8, clang, no JIT -
+-cross-built for ARMv7 by evolve.py's own build at 4-byte cells (EVOLVE_TARGET=armv7: clang, lld,
+-engine/rt-linux-armv7.c - no C library). The ARM engine must pass evolve.alive under qemu-arm - the corpus, the kernel,
+-far, full - and give a 32-bit x86 engine's output on fib and apps (the first design's, built as the laptop builds its
+-4-byte engines: a correct design's output is every design's). qemu runs outside evolve.py's jail (it starts a
+-thread), so only on designs the laptop already ran. --n K: K of them spread evenly by speed, the fastest and the
+-slowest among them. Prints a line a design and the totals: built, alive, identical, the engines' sizes.
++Each design built by evolve.py's own build at 4-byte cells, without the C library (engine/rt-linux-armv7.c), must pass
++evolve.alive - the corpus, the kernel, far, full - and give the reference's output on fib and apps: the hand-made s6
++as tools/build-stages.sh builds it here with the C library (build/s6-cv8b-32 - the stage engine, the way ARM engines
++were built until Iteration 570; a correct design's output is every design's). A line a design, then the totals: built,
++alive, identical, the engines' sizes; exit 0 only if every design passed.
+ 
+---gcc CC (the Tegra's side, simulated): the GCC designs instead - the hand-made stages (s6 among them; cell, cpt16
+-and the like: relf.c and build_other), then the front's without clang and the JIT - built by CC (arm-linux-gnueabihf-gcc) as on an ARM host (evolve.ARM32): the ARM runtime, and the ARM
+-build of a GCC design, which the laptop never makes. Needs gcc-arm-linux-gnueabihf, which removes gcc-multilib:
+-its x86 reference comes from a run before (/tmp/arm-cross-x86.json, written by a run without --gcc - so run
+-without --gcc first, at the same commit).
++  on x86-64, no --gcc: the designs the laptop sends the Tegra (cv8, clang, no JIT, from RESULTS.md's {"bin" lines),
++      cross-built (EVOLVE_TARGET=armv7: clang, lld) and run under qemu-arm - outside evolve.py's jail (qemu starts a
++      thread), so only designs the laptop already ran. Iteration 570: 40 of seed 82's 193, all passed, 6-16 KB.
++  on x86-64, --gcc CC (the Tegra's side, simulated - CC arm-linux-gnueabihf-gcc, which removes gcc-multilib): the
++      hand-made stages (cell, sod16, cpt16, cv8: relf.c and build_other) and RESULTS.md's GCC designs without the JIT,
++      built as on an ARM host (evolve.ARM32), under qemu-arm.
++  on the Tegra (an ARM host; Iteration 571 - tools/rage-check.sh runs it there): the same designs as --gcc, built by
++      the host's cc as its check builds them, run natively - GCC 16 and the runtime's start (the legacy-layout
++      re-exec, which qemu never takes) on the real machine before its check of the confirmation front.
+ 
+-Needs `CROSS=1 sh tools/setup-sandbox.sh` (lld, qemu-user, libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross).
++--n K: K of the designs spread evenly by speed, the fastest and the slowest among them. The hand-made stages s3-s5 do
++not convert at 4-byte cells and s2-cpt16 runs out of reach on apps, at either width's build (570) - known, listed apart.
++Needs, on x86-64, `CROSS=1 sh tools/setup-sandbox.sh` (lld, qemu-user, libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross).
+ """
+ import json, os, shutil, subprocess, sys
+ A = sys.argv[1:]
+@@ -25,57 +29,61 @@ def opt(name, default=None):
+ n = int(opt('--n', '0')); ids = [x for x in (opt('--ids') or '').split(',') if x]; gcc = opt('--gcc')
+ if len(A) != 1: sys.exit(__doc__)
+ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+-os.environ['EVOLVE_CELL'] = '4'; os.environ.setdefault('EVOLVE_CC', 'gcc -m32 -fno-pie -no-pie')
++NATIVE = os.uname().machine.startswith('arm')          # the Tegra itself: its cc, no qemu
++if NATIVE and gcc: sys.exit('arm-cross-check: --gcc is the Tegra simulated on x86-64; here the host\'s cc builds')
++KNOWN = {'s2-cpt16': 'out of reach on apps (scale 1)', 's3-cpt16f': 'not converted at 4-byte cells',
++         's4-cv8': 'not converted at 4-byte cells', 's5-cv8spec': 'not converted at 4-byte cells'}
++os.environ['EVOLVE_CELL'] = '4'
+ if gcc: os.environ['EVOLVE_CC'] = gcc
++elif not NATIVE: os.environ.setdefault('EVOLVE_CC', 'gcc -m32 -fno-pie -no-pie')
+ sys.argv = ['x']; sys.path.insert(0, os.path.join(ROOT, 'lab', 'evolve')); import evolve as E
+-if gcc: E.ARM32 = True                             # as on the Tegra: ccflags drops alignhot, rt() is ARM's
++if gcc: E.ARM32 = True                                 # as on the Tegra: ccflags drops alignhot, rt() is ARM's
+ E.setup()
+-REF = '/tmp/arm-cross-x86.json'
+ 
+ _sh = E.sh
+ def qsh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
+-    """evolve.sh, an ARM engine run under qemu-arm and outside the jail - its wall-clock limit 4x."""
+-    if cmd and str(cmd[0]).endswith('/engine') and '/arm-' in str(cmd[0]):
++    """evolve.sh; on x86-64 an ARM engine under qemu-arm, outside the jail - its wall-clock limit 4x."""
++    if not NATIVE and cmd and str(cmd[0]).endswith('/engine') and '/arm-' in str(cmd[0]):
+         return subprocess.run(['qemu-arm'] + list(cmd), cwd=cwd, input=inp, capture_output=True, timeout=4 * timeout)
+     return _sh(cmd, cwd=cwd, inp=inp, timeout=timeout, env=env, cpu=cpu)
+ E.sh = qsh
+ 
++rd = os.path.join(E.EV, 'arm-ref'); shutil.rmtree(rd, ignore_errors=True); os.makedirs(rd); rp = E.private_work(rd)
++ref = {w: E.sh([os.path.join(E.O, 's6-cv8b-32'), os.path.join(E.O, 's6-cv8b-s32.img')], cwd=rp, inp=E.program(w), timeout=120, cpu=30).stdout
++       for w in ('fib', 'apps')}
++shutil.rmtree(rd, ignore_errors=True)
+ recs = [json.loads(l) for l in open(A[0]) if l.startswith('{"bin"')]
+-if gcc:
+-    pick = [{'id': k, 'genome': v, 'speed': 0} for k, v in sorted(E.HUMAN.items()) if not E.express(E.canon(v)).get('jit')] + [r for r in recs if not E.express(E.canon(r['genome'])).get('compiler')
+-            and not E.express(E.canon(r['genome'])).get('jit')]
++ex = lambda r: E.express(E.canon(r['genome']))
++if gcc or NATIVE:
++    pick = [{'id': k, 'genome': v, 'speed': 0} for k, v in sorted(E.HUMAN.items()) if not ex({'genome': v}).get('jit')] + [
++            r for r in recs if not ex(r).get('compiler') and not ex(r).get('jit')]
+ else:
+-    pick = [r for r in recs if r['genome'].get('enc', 'cv8') == 'cv8' and E.express(E.canon(r['genome'])).get('compiler')
+-            and not E.express(E.canon(r['genome'])).get('jit')]
+-pick.sort(key=lambda r: r.get('speed') or 9)
++    pick = [r for r in recs if r['genome'].get('enc', 'cv8') == 'cv8' and ex(r).get('compiler') and not ex(r).get('jit')]
++pick.sort(key=lambda r: r.get('speed') or 0)
+ if ids: pick = [r for r in pick if r['id'] in ids]
+ if n and len(pick) > n: pick = [pick[int(j * (len(pick) - 1) / max(1, n - 1))] for j in range(n)]
+-print('arm-cross-check: %d designs of %d (%s)' % (len(pick), len(recs), 'GCC, by ' + gcc if gcc else 'cv8, clang, no JIT'), flush=True)
+-tot = dict(built=0, alive=0, same=0); sizes = []
++how = 'the host\'s cc, natively' if NATIVE else 'GCC, by %s, under qemu-arm' % gcc if gcc else 'cv8, clang, no JIT, under qemu-arm'
++print('arm-cross-check: %d designs of %d (%s); the reference build/s6-cv8b-32 (the C library)' % (len(pick), len(recs), how), flush=True)
++tot = dict(built=0, alive=0, same=0); sizes = []; known = []
+ for k, r in enumerate(pick, 1):
+-    g = E.canon(r['genome']); i = r['id']
+-    if not gcc and k == 1:                           # the reference: the first design as a 32-bit x86 engine
+-        dx = os.path.join(E.EV, 'x86-' + i)
+-        try:
+-            ex, ix = E.build(g, dx); px = E.private_work(dx)
+-            out = {w: E.sh([ex, ix], cwd=px, inp=E.program(w), timeout=120, cpu=30).stdout.decode('latin-1') for w in ('fib', 'apps')}
+-            json.dump(out, open(REF, 'w')); print('arm-cross-check: the x86-32 reference from %s (%d bytes)' % (i, os.path.getsize(ex)), flush=True)
+-        except Exception as ex_:
+-            sys.exit('arm-cross-check: %s x86-32: %s' % (i, str(ex_)[:80]))
+-        shutil.rmtree(dx, ignore_errors=True)
+-    if not os.path.exists(REF): sys.exit('arm-cross-check: no x86 reference (%s) - run without --gcc first' % REF)
+-    out = json.load(open(REF)); da = os.path.join(E.EV, 'arm-' + i)
+-    if not gcc: os.environ['EVOLVE_TARGET'] = 'armv7'
++    g = E.canon(r['genome']); i = r['id']; da = os.path.join(E.EV, 'arm-' + i)
++    if not gcc and not NATIVE: os.environ['EVOLVE_TARGET'] = 'armv7'
+     try: ea, ia = E.build(g, da)
+-    except Exception as ex_: print('%3d %s ARM build: %s' % (k, i, str(ex_)[:100]), flush=True); continue
++    except Exception as ex_:
++        if i in KNOWN: known.append(i); print('%3d %s - %s (known)' % (k, i, KNOWN[i]), flush=True); continue
++        print('%3d %s ARM build: %s' % (k, i, str(ex_)[:100]), flush=True); continue
+     finally: os.environ.pop('EVOLVE_TARGET', None)
+     tot['built'] += 1; pa = E.private_work(da); sizes.append(os.path.getsize(ea))
+     try: E.alive(ea, ia, pa); tot['alive'] += 1; v = 'alive'
+     except Exception as ex_: v = 'DEAD (%s)' % str(ex_)[:60]
+-    same = [w for w in ('fib', 'apps') if E.sh([ea, ia], cwd=pa, inp=E.program(w), timeout=120).stdout.decode('latin-1') == out[w]]
+-    tot['same'] += len(same) == 2
+-    print('%3d %s %-5s speed %.3f: ARM %d bytes, %s, fib+apps %s' % (k, i, g['enc'], r.get('speed') or 0, os.path.getsize(ea), v, 'IDENTICAL' if len(same) == 2 else 'DIFFER (%s same)' % ','.join(same) or 'none'), flush=True)
++    same = [w for w in ('fib', 'apps') if E.sh([ea, ia], cwd=pa, inp=E.program(w), timeout=120).stdout == ref[w]]
++    if len(same) < 2 and i in KNOWN and v == 'alive': known.append(i); tot['built'] -= 1; tot['alive'] -= 1; sizes.pop()
++    else: tot['same'] += len(same) == 2
++    print('%3d %s %-5s speed %.3f: ARM %d bytes, %s, fib+apps %s' % (k, i, g['enc'], r.get('speed') or 0, os.path.getsize(ea), v,
++          'IDENTICAL' if len(same) == 2 else ('DIFFER (%s same)' % (','.join(same) or 'none')) + (' - known: %s' % KNOWN[i] if i in KNOWN else '')), flush=True)
+     shutil.rmtree(da, ignore_errors=True)
+-print('arm-cross-check: %d built for ARM, %d alive under qemu-arm, %d identical on fib and apps, of %d; ARM engines %s bytes' % (
+-    tot['built'], tot['alive'], tot['same'], len(pick), '%d-%d' % (min(sizes), max(sizes)) if sizes else '-'), flush=True)
+-sys.exit(0 if pick and tot['built'] == tot['alive'] == tot['same'] == len(pick) else 1)
++m = len(pick) - len(known)
++print('arm-cross-check: %d built for ARM, %d alive, %d identical on fib and apps, of %d%s; ARM engines %s bytes' % (
++    tot['built'], tot['alive'], tot['same'], m, ' (and %d known: %s)' % (len(known), ', '.join(known)) if known else '',
++    '%d-%d' % (min(sizes), max(sizes)) if sizes else '-'), flush=True)
++sys.exit(0 if m and tot['built'] == tot['alive'] == tot['same'] == m else 1)
+diff --git a/tools/rage-check.sh b/tools/rage-check.sh
+new file mode 100644
+index 0000000..59491f1
+--- /dev/null
++++ b/tools/rage-check.sh
+@@ -0,0 +1,28 @@
++#!/bin/sh
++# tools/rage-check.sh [HOST] [RESULTS.md] - the Tegra's engines checked on the Tegra itself, from the laptop, before its
++# check of a front (Iteration 571; the owner: before seed 84, the confirmation run). In this repository, as the owner:
++#   sh tools/rage-check.sh                 HOST rage.lan, RESULTS the newest results/evolve-*-seedN.md
++# HEAD bundled and copied to HOST:fve-ragecheck/, cloned there, its stages built (tools/build-stages.sh), then
++# tools/arm-cross-check.py RESULTS run there natively: the hand-made stages and the front's GCC designs built by the
++# host's cc without the C library (engine/rt-linux-armv7.c, Iteration 570) - alive, and fib and apps as the stage s6
++# with the C library gives them. What qemu cannot say: the host's GCC (16 on rage) with the runtime, and the engine's
++# start on a 32-bit host - the legacy-layout re-exec, which under qemu fails and is skipped. In the foreground, each
++# design's line as it comes; the log kept in HOST:fve-ragecheck/check.log (the clone removed after a pass). Exit 0: every
++# design passed - rage's check of the next front will build as tested. The Tegra is slow: its stages and about ten
++# designs take a while (Iteration 571 could not time it). Run it while no chain's check runs there. SSH and SCP may
++# name stand-ins (results/drafts/rage-check-e2e-571.sh); RAGECHECK_OPTS more arguments for arm-cross-check.py (--n K).
++set -u
++HOST=${1:-rage.lan}; REPO=$(cd "$(dirname "$0")/.." && pwd)
++RES=${2:-$(ls "$REPO"/results/evolve-*-seed*.md 2>/dev/null | sort -V | tail -n 1)}
++[ -f "$RES" ] || { echo "rage-check: no results file (RESULTS.md)"; exit 2; }
++SSH=${SSH:-ssh}; SCP=${SCP:-scp}; O="-o BatchMode=yes -o ConnectTimeout=10"; D=fve-ragecheck
++B=$(mktemp /tmp/rage-check-XXXXXX.bundle) && rm -f "$B" || exit 2
++git -C "$REPO" bundle create "$B" HEAD > /dev/null 2>&1 || { echo "rage-check: git bundle failed"; exit 2; }
++echo "rage-check: $HOST, $(git -C "$REPO" log --oneline -1 | cut -c1-60), $(basename "$RES")"
++$SSH $O "$HOST" "mkdir -p $D && rm -rf $D/repo" < /dev/null && $SCP -q $O "$B" "$HOST:$D/repo.bundle" \
++    || { rm -f "$B"; echo "rage-check: $HOST not reached (ssh, no password asked)"; exit 2; }
++rm -f "$B"; R=results/$(basename "$RES")
++$SSH $O "$HOST" "cd $D && git -c advice.detachedHead=false clone -q repo.bundle repo && cd repo && echo 'rage-check: building the stages there' && \
++    { LAYOUTS=1 bash tools/build-stages.sh > ../build.log 2>&1 || { echo 'rage-check: build-stages.sh FAILED ($D/build.log)'; exit 1; }; } && \
++    { python3 tools/arm-cross-check.py $R ${RAGECHECK_OPTS:-}; echo \"rage-check: exit \$?\"; } 2>&1 | tee ../check.log; grep -qx 'rage-check: exit 0' ../check.log \
++    && { cd .. && rm -rf repo repo.bundle; echo 'rage-check: PASS'; } || { echo 'rage-check: FAILED - $D/check.log, $D/repo kept'; exit 1; }" < /dev/null
