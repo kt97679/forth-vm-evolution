@@ -94,6 +94,9 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 1. The Tegra's subject (566; the host sound, 568 - Spearman 0.971 on seed 77's 16 by id): the front holds ever fewer
    designs rage can build (GCC, no JIT) - none on seed 80's. Before the confirmation run, the owner's choice whether
    rage's check stays for its front and the final set - clang on the Tegra, or sampled from the run's alive designs.
+   Claude's view (568): clang - with it rage builds 135 of seed 81's 256 front designs (every one without the JIT,
+   0.32-1.66), without it 1; sampling checks designs the article does not report. Neither reaches the fast end (the JIT
+   is x86 only: all 25 of the fastest tenth). First check that clang installs on rage in reasonable time (Gentoo, ARMv7).
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop; from seed 77 one series matched by generation, the hours free (562); seeds 77-81 run, 81 gaining (568) - the earliest stop after seed 83; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -

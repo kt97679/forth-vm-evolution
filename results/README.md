@@ -300,6 +300,7 @@ first explanation had blamed the clock; this one's were written by it.
 
 ## Drafts - designs, plans, negative results and archives (`drafts/`)
 
+- `drafts/doc-index-audit-568.md` - How a session finds what the documents hold (Iteration 568): the index narrows a lookup to 2-9 lines where it names the topic; its run-by-run section a flat 170 lines; two reference documents two-thirds history - four proposals.
 - `drafts/callrel.md` - The gene callrel - a draft, not in the batch (Iteration 164).
 The leftovers of the chats of Iterations 213-265 (drafts/chat-to-iter265/, 3.4 MB as found) left the tree at Iteration 541; they are in the history: `git show cb05abe20:results/drafts/chat-to-iter265/README.md`.
 - `drafts/crossfast.md` - The cross-compiler's byte loops - a fast path, proposed (Iteration 255).

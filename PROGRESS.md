@@ -10331,3 +10331,7 @@ The after-seed-81 batch applied (17566c6; batch-check PASS, the checks on master
 seed 81's one open death, fb35526657 (jitexec, alignhot=3, tracer), DIFFERS before the batch, right after. Next: seed
 82, 9 hours (the owner); predicted: no gain, its fastest at 126 above 0.1387.
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed81.md, xcheck-seed81.md; compare-fronts, predictions, stopping-series.
+**Two questions after** (the owner): the Tegra - clang over sampling: with it rage builds 135 of seed 81's 256 front designs
+(all without the JIT), without it 1 (HANDOFF open item 1). The documents' indexing audited -
+results/drafts/doc-index-audit-568.md: lookups narrow well where the index names the topic; the results index's
+run-by-run section a flat 170 lines, two reference documents two-thirds history; four proposals.
