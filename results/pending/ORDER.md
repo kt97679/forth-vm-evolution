@@ -38,4 +38,15 @@ measured on the host, the 10 shipped (not runnable on x86 - as expected); the re
 needs `sudo apt-get install lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` - none conflicts with gcc-multilib
 (whose Conflicts name only the gcc-N-<arch> cross compilers); qemu-user only for tools/arm-cross-check.py.
 
-**ragecheck-after-seed83.patch** (tools/arm-cross-check.py, tools/rage-check.sh) - TODO: what it does, why, how it was tested.
+**ragecheck-after-seed83.patch** (tools/arm-cross-check.py, tools/rage-check.sh) - Iteration 571 (the owner): the
+Tegra's engines checked on the Tegra itself before its check of the confirmation front - what qemu cannot say: rage's
+GCC 16 with engine/rt-linux-armv7.c, and the engine's start on a 32-bit host (the legacy-layout re-exec, which fails and
+is skipped under qemu). From the laptop, after seed 83's processing and before seed 84: `sh tools/rage-check.sh` - HEAD
+bundled, copied to rage.lan:fve-ragecheck/, cloned, the stages built there, then arm-cross-check.py on the newest
+results file, natively: the hand-made stages and the front's GCC designs built by rage's cc as its check builds them,
+each alive and giving fib and apps as the stage s6 with the C library does; exit 0 and the clone removed on a pass, kept
+with check.log on a failure. arm-cross-check.py: a native mode on an ARM host, and the stage s6 (build/s6-cv8b-32) its
+reference in every mode - no x86 run before needed; the known cases (s2-cpt16 out of reach on apps, s3-s5 not converted
+at 4-byte cells) listed apart. Tested: the reference the same as 570's (3 designs IDENTICAL under qemu-arm); rage-
+check.sh end to end with ssh and scp stand-ins (results/drafts/rage-check-e2e-571.sh) - PASS, the clone removed; a
+failing check (no design) - exit 1, the clone and its log kept. Not timed on rage.
