@@ -10362,4 +10362,5 @@ armrt (engine/rt-linux-armv7.c - every ARM engine without the C library, 6,444-1
 EVOLVE_TARGET=armv7, a clang design cross-built on fury; tools/arm-cross-check.py) and prebuiltarm (xcheck.py --arm, a
 partial bundle; REMOTES' rage line). 40 of seed 82's 193 clang designs alive under qemu-arm, fib and apps identical;
 rage's GCC side simulated with ARM GCC 13; x86 byte-identical; the check end to end. Fury needs lld,
-libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross. Files: results/drafts/x86-identity-570.py, prebuiltarm-e2e-570.sh.
+libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross. Files: results/pending/ORDER.md, armrt-after-seed83.patch, prebuiltarm-after-seed83.patch (batch-check PASS);
+results/drafts/x86-identity-570.py, prebuiltarm-e2e-570.sh.
