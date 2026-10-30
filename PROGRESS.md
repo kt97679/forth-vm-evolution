@@ -10364,3 +10364,12 @@ partial bundle; REMOTES' rage line). 40 of seed 82's 193 clang designs alive und
 rage's GCC side simulated with ARM GCC 13; x86 byte-identical; the check end to end. Fury needs lld,
 libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross. Files: results/pending/ORDER.md, armrt-after-seed83.patch, prebuiltarm-after-seed83.patch (batch-check PASS);
 results/drafts/x86-identity-570.py, prebuiltarm-e2e-570.sh.
+
+## Iteration 571 - 2026-10-30 - Claude
+
+**Two pieces while seed 83 runs (the owner).** tools/rage-check.sh - the after-seed-83 batch's third patch (ragecheck):
+from the laptop, rage's own GCC and the runtime's start checked on rage before its check of the confirmation front
+(arm-cross-check.py natively there; the stage s6 its reference); tested end to end with stand-ins, PASS and a failure.
+lab/evolve/final-set.py - GOALS.md step 3's selection: on seeds 77-82's results files pooled, the true front 396, 279
+merged within the tolerances; the four strict extremes, then by hypervolume gain - five 79.8%, ten 94.0%; self-test pass.
+Files: results/pending/ragecheck-after-seed83.patch, ORDER.md; results/drafts/rage-check-e2e-571.sh.

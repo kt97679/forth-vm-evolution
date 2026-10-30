@@ -98,8 +98,12 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    fury** `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` (no conflict with gcc-multilib); missing, rage's sample
    fails as a line in steps, never the chain. Rage's numbers from then: no-C-library engines, mostly clang's - not
    comparable with its checks before.
+   **Then, before seed 84, the owner runs `sh tools/rage-check.sh` on the laptop** (571, the batch's third patch; no chain
+   running): rage's GCC and the runtime's start checked on rage itself, qemu's blind spots - PASS before the confirmation run.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
    without a stop; from seed 77 one series matched by generation, the hours free (562); seeds 77-82 run, 82 gaining nothing (569) - the stop after seed 83 if it gains nothing; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
+   The final set's selection ready (571): lab/evolve/final-set.py on the runs' db.jsonl - seeds 77-82's results files
+   pooled: front 396, 279 merged; five designs 79.8% of its hypervolume, ten 94.0%, the knee among them.
    The confirmation run's founders built carefully (the owner, 559: no good design missed) -
    results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
    designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops
