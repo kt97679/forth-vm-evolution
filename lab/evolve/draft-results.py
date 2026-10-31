@@ -35,10 +35,19 @@ Rf = set(re.findall(r'^\| ([0-9a-f]{10}) \|', rep.split('## How the front came a
 hv = next((l.strip() for l in subprocess.run([sys.executable, os.path.join(HERE, 'hv.py'), db], capture_output=True, text=True).stdout.split('\n') if 'hypervolume' in l), '?')
 CONF = os.path.exists(os.path.join(P, 'confirmation'))   # 573: the confirmation run (process-seed.sh's marker) - confirm.py's test, not the series'
 cf_ = os.path.join(P, 'confirm.txt')
-so = '' if CONF else subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
+RAND = os.path.exists(os.path.join(P, 'random'))           # 573: the random-search baseline (GOALS.md step 4)
+so = '' if CONF or RAND else subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
 co = (open(cf_).read() if os.path.exists(cf_) else subprocess.run([sys.executable, os.path.join(HERE, 'confirm.py'), db, '--seed', str(N)],
       capture_output=True, text=True).stdout) if CONF else ''
 conf_ = ' '.join(l.strip().rstrip('.') + '.' for l in co.split('\n') if l.startswith(('verdict:', 'What it added:', 'the screen:'))) or 'TODO: confirm.py gave no verdict (confirm.txt).'
+bt = open(os.path.join(P, 'baseline.txt')).read().split('\n') if RAND and os.path.exists(os.path.join(P, 'baseline.txt')) else []
+row_ = lambda k: next((l.strip('| ').split(' | ') for l in bt if l.startswith('| ' + k + ' |')), None)
+base_ = ('values, not a test - against the series\' median at the same generation (%s): %s. %s' % (
+    next((l.split('at ', 1)[1].split(' -')[0] for l in bt if l.startswith('**The series at generation')), '?'),
+    '; '.join('%s %s against %s (%s)' % (r[0], r[1], r[3], r[5]) for r in (row_(k) for k in ('the hypervolume', 'the fastest', 'the smallest', 'the least memory', 'the fastest at 32 bits')) if r),
+    next((l for l in bt if l.startswith('The final front')), '')) if bt else 'TODO: baseline.py gave nothing (baseline.txt).')
+fp_ = ' '.join(l.strip() for l in (open(os.path.join(P, 'finalpick.txt')).read().split('\n') if os.path.exists(os.path.join(P, 'finalpick.txt')) else [])
+               if l.startswith(('Against the in-run set', 'Under load', 'Left out', 'dream', 'rage')))
 stop_ = ' '.join(l for l in so.split('\n') if l.startswith(('verdict:', 'the count:', 'the next run gains if:'))) or "TODO: against the method's earlier runs (GOALS.md)."
 f = min(T, key=lambda i: R[i]['speed']); s = min(T, key=lambda i: E.ov(R[i], 'total')); mm = min(T, key=lambda i: R[i]['rss'])
 w = min((i for i in T if R[i].get('speed32')), key=lambda i: R[i]['speed32'], default=None)
@@ -84,7 +93,9 @@ head = '\n'.join(x for x in [
     ', '.join('%s %s' % ('{:,}'.format(v), k) for k, v in cnt.most_common()), '; %s designs an hour' % '{:,}'.format(len(R) // hours) if hours else ''), '',
  '**The front**: the true one %d designs - the report\'s %d%s.' % (len(T), len(Rf), ', the same' if Rf == set(T) else ' - TODO: why they differ'), '',
  '**The fixed-box hypervolume**: %s. %s' % (hv.split(': ', 1)[-1], ('**The confirmation test** (confirm.py, confirm.txt; GOALS.md step 2): %s' % conf_) if CONF
+     else ('**The random-search baseline** (baseline.py, baseline.txt; GOALS.md step 4): %s' % base_) if RAND
      else '**The stopping rule** (stopping.py, results/stopping-series.md): %s' % stop_), '',
+ '**The final set, re-measured** (final-pick.py, finalpick.txt - GOALS.md step 3): %s' % (fp_ or 'TODO: final-pick.py did not run (summary.md).') if RAND else None, '',
  '**The final set** (final-set.py, finalset.txt - GOALS.md step 3, from the pool and this run): %s' % txt('finalset', 1, 2) if CONF and os.path.exists(os.path.join(P, 'finalset.txt')) else None, '',
  '**The extremes**: fastest %s %.4f, smallest %s %s bytes, least memory %s KB%s.' % (f, R[f]['speed'], s, '{:,}'.format(E.ov(R[s], 'total')), R[mm]['rss'],
     ', fastest at 32 bits %s %.4f' % (w, R[w]['speed32']) if w else ''), '',
@@ -108,7 +119,7 @@ head = '\n'.join(x for x in [
  '**The deaths**: %s. [process-finish: deaths-check]' % (', '.join('%s %s' % (v, k) for k, v in cnt.items() if re.match('(died|wrong output)', k or '')) or 'none'), '',
  '**The chain on master**: [process-finish: the chain]', '',
  ('TODO: the confirmation verdict and the genes\' screen judged (confirm.txt; GOALS.md step 2), the final set\'s next step (finalset.txt; step 3), '
-  'the predictions scored (results/predictions.md) - summary.md.' if CONF else 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.')]
+  'the predictions scored (results/predictions.md) - summary.md.' if CONF else ('TODO: the baseline set beside the series as values (baseline.txt; GOALS.md step 4), the final set from the re-measures (finalpick.txt; step 3), the predictions scored (results/predictions.md) - summary.md.') if RAND else 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.')]
  if x is not None)
 out = os.path.join(ROOT, 'results', 'evolve-%s-seed%d.md' % (mach, N))
 cd_ = os.path.join(P, 'candidates-final.md')       # 573: the re-measure's candidates, where xcheck.py --also @FILE finds them on a host

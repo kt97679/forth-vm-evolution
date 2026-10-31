@@ -41,7 +41,9 @@ if [ -n "$SP" ]; then
     # Iteration 573: the confirmation run (GOALS.md step 2) - no series run. next-run.sh strips a line's words (carryall,
     # widths, noevolved, random) before it writes the chain's line - seed 83's reads "seed 83 9h then ..." - so the word is
     # read where the run's WANT is kept: the pack's machine.txt and the chain's steps. The marker file tells the rest.
-    grep -qsw carryall "$C/line" "$C/steps" "$SP/machine.txt" && echo carryall > "$OUT/confirmation"
+    W=$({ grep -h '^seed ' "$SP/machine.txt"; sed -n 's/^ok \(seed .*\)/\1/p' "$C/steps"; } 2> /dev/null | head -n 1)   # the run's WANT
+    case " $W $(cat "$C/line" 2> /dev/null) " in *" carryall "*) echo carryall > "$OUT/confirmation" ;; esac
+    case " $W " in *" random "*) echo random > "$OUT/random" ;; esac      # 573: the random-search baseline, GOALS.md step 4
     if [ -f "$OUT/confirmation" ]; then
         # the final set's draft first: its candidates (573) are a place confirm.py's KEEP looks
         python3 "$EV/final-set.py" $(python3 "$EV/confirm.py" --pool-files "$VN") "$SP/db.jsonl" --json finalset.json --candidates candidates-final.md > finalset.txt 2>&1
@@ -51,6 +53,15 @@ if [ -n "$SP" ]; then
         p "- the restore (next-run.log): $(grep -c 'restore-archives: seed [0-9]* - archived' "$SP/next-run.log" 2>/dev/null) restored - seeds $(sed -n 's/.*restore-archives: seed \([0-9]*\) - archived.*/\1/p' "$SP/next-run.log" 2>/dev/null | tr '\n' ' ')"
         p ""; p "## final-set.py (finalset.txt, finalset.json, candidates-final.md) - GOALS.md step 3's draft from the pool and this run"; p '```'
         sed -n '3p' finalset.txt | cut -c1-400 >> "$S"; grep '^| [0-9]' finalset.txt | cut -c1-200 >> "$S"; grep '^The candidates' finalset.txt | cut -c1-300 >> "$S"; p '```'
+    elif [ -f "$OUT/random" ]; then        # 573: the random-search baseline (GOALS.md step 4) - no series run; values, not a test
+        python3 "$EV/baseline.py" "$SP/db.jsonl" --seed "$VN" > baseline.txt 2>&1
+        p ""; p "## baseline.py (baseline.txt) - GOALS.md step 4: the random run beside the series"; p '```'; grep -v '^|---' baseline.txt | cut -c1-300 >> "$S"; p '```'
+        CA=$(ls "$REPO"/results/candidates-final-seed*.md 2> /dev/null | tail -n 1); LT=$(ls "$OUT"/*-loadtest-*/pack/loadtest.md 2> /dev/null | tail -n 1)
+        if [ -n "$CA" ] && [ -n "$LT" ]; then            # GOALS.md step 3: the set from the chain's re-measures
+            python3 "$EV/final-pick.py" "$CA" "$LT" $(ls "$C"/remote/*/out.json 2> /dev/null) --json finalpick.json > finalpick.txt 2>&1
+            p ""; p "## final-pick.py (finalpick.txt, finalpick.json) - GOALS.md step 3 from the re-measures: $(basename "$CA"), the chain's loadtest, $(ls "$C"/remote/*/out.json 2> /dev/null | wc -l) hosts"
+            p '```'; grep -v '^|---' finalpick.txt | cut -c1-260 >> "$S"; p '```'
+        else p ""; p "## final-pick.py - not run: the candidates ${CA:-none}, the chain's loadtest ${LT:-none}"; fi
     else
     python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
     p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'

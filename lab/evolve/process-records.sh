@@ -7,7 +7,8 @@
 #   3. the gene votes appended to results/gene-votes.md, the stopping line to results/stopping-series.md - each skipped
 #      when the ledger already has seed N, so a second run adds nothing; the stopping line too for the confirmation run
 #      (process-seed.sh's marker, PROCESS/confirmation - Iteration 573: no series run; confirm.py --append writes its
-#      {"confirmation": N} line, which stopping.py passes over and a later confirmation run pools);
+#      {"confirmation": N} line, which stopping.py passes over and a later confirmation run pools); the random baseline
+#      (PROCESS/random): baseline.py --append's {"random": N} line, and no gene votes;
 #   4. NEXT_METHOD='why' set: the next series' method line (from seed N+1, the extremes from every alive design) - a
 #      method change (GOALS.md: the hours among it) restarts the count.
 # DB= the seed pack's db.jsonl (default process-seed.sh's under /tmp/process). Commits nothing: prints what it did and
@@ -43,10 +44,14 @@ fi
 
 python3 lab/evolve/progress-table.py > results/progress-by-run.md && say "results/progress-by-run.md written"   # 2.
 
-if grep -q "^| $N | " results/gene-votes.md; then say "gene-votes.md has seed $N already - not appended"      # 3.
+PD=$(dirname "$(dirname "$(dirname "$DB")")")                              # process-seed.sh's markers (573)
+if [ -f "$PD/random" ]; then say "seed $N is the random baseline - no gene votes (random designs vote for nothing)"   # 573
+elif grep -q "^| $N | " results/gene-votes.md; then say "gene-votes.md has seed $N already - not appended"      # 3.
 else python3 lab/evolve/review-checks.py votes "$RES" --seed "$N" --db "$DB" --ledger results/gene-votes.md --append > /dev/null &&
     say "gene votes appended: $(grep -c "^| $N | " results/gene-votes.md) genes"; fi
-if [ -f "$(dirname "$(dirname "$(dirname "$DB")")")/confirmation" ]; then if grep -q "\"confirmation\": $N," results/stopping-series.md; then say "stopping-series.md has confirmation $N already - not appended"   # 573
+if [ -f "$PD/random" ]; then if grep -q "\"random\": $N," results/stopping-series.md; then say "stopping-series.md has random $N already - not appended"
+    else python3 lab/evolve/baseline.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep '^The final front' | cut -c1-200 | sed 's/^/process-records: random line appended, no series line - /'; fi
+elif [ -f "$PD/confirmation" ]; then if grep -q "\"confirmation\": $N," results/stopping-series.md; then say "stopping-series.md has confirmation $N already - not appended"   # 573
     else python3 lab/evolve/confirm.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep '^verdict' | sed 's/^/process-records: confirmation line appended, no series line - /'; fi
 elif grep -q "\"seed\": $N," results/stopping-series.md; then say "stopping-series.md has seed $N already - not appended"
 else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md $([ -f /tmp/process/curve.json ] && echo --curve /tmp/process/curve.json) --append | grep -E '^verdict' |

@@ -63,7 +63,7 @@ fi                                                                # the FROM=che
 N=$(ls -d /tmp/process/*-seed[0-9]*-* | sed -n 's/.*-seed\([0-9]*\)-.*/\1/p' | head -n 1)
 [ -n "${PRE:-}" ] || { C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied"); [ -z "$C" ] || PRE=$(git rev-parse --short "$C^"); }
 D=$(ls /tmp/process/*-seed[0-9]*-*/pack/db.jsonl | head -n 1)     # 562: the run's curve for the stopping rule, detached
-if [ -f /tmp/process/confirmation ]; then st "curve - none: the confirmation run (carryall), judged at its end by confirm.py"   # 573
+if [ -f /tmp/process/confirmation ] || [ -f /tmp/process/random ]; then st "curve - none: the confirmation run or the random baseline, judged at its end by confirm.py"   # 573
 elif grep -q "opt('--curve')" lab/evolve/stopping.py && ! grep -q "\"seed\": $N," /tmp/process/curve.json 2> /dev/null; then
     python3 lab/evolve/stopping.py "$D" --seed "$N" --curve /tmp/process/curve.json > "$O/curve.log" 2>&1; st "curve - $(tail -n 1 "$O/curve.log")"
 fi
