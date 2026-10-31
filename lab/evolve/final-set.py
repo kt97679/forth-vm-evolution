@@ -26,6 +26,11 @@ names. The steps:
 
 stdout: markdown - the pool, the front, the merges, the set (each design's objectives, what it adds, the cumulative
 share of the front's hypervolume) and the knee. --json OUT: the set's records, one per line, for the re-measures.
+--candidates OUT.md (the owner, Iteration 573 - in-run speeds are optimistic at the fast end, seed 83's fastest ten
+1.073 re-measured / in-run, and the merge's 2% is about the noise, so one pick an extreme can miss the fastest): the
+designs re-measured before the extremes are chosen - the set, every alive design within 5% of the fastest at either
+width, the 5 smallest and the 5 leanest, and every design merged into one of the set's; a paragraph, then one record a
+line with its "why" (xcheck.py --also @FILE and loadtest.py --ids FILE read them).
 --self-test: synthetic fronts with known answers.
 """
 import json, math, os, sys
@@ -77,6 +82,24 @@ def select(R, E, b, k=10):
     inside = [i for i in M if Z[i] is not None]
     knee = min(inside, key=lambda i: (math.sqrt(sum(c * c for c in Z[i])), i)) if inside else None
     return dict(front=len(F), kept=M, merged=merged, set=[(i, why[i], adds[i]) for i in S], hv_front=hvf, hv_set=cur, knee=knee, Z=Z)
+
+
+def candidates(R, res, band=0.05, n=5):
+    """The re-measure's candidates (the owner, 573): -> {id: [why...]} in a fixed order."""
+    A = [i for i, r in R.items() if r.get('status') == 'ok' and r.get('speed') and r.get('total') and r.get('rss') and r.get('speed32')]
+    C = {}
+    add = lambda i, w: C.setdefault(i, []).append(w)
+    for i, w, _ in res['set']: add(i, 'the set: ' + w)
+    for key, name in (('speed', 'the fastest'), ('speed32', 'the fastest at 32 bits')):
+        f = min(R[i][key] for i in A)
+        for i in sorted(A, key=lambda i: (R[i][key], i)):
+            if R[i][key] > f * (1 + band): break
+            add(i, 'within %d%% of %s' % (round(100 * band), name))
+    for key, name in (('total', 'smallest'), ('rss', 'leanest')):
+        for i in sorted(A, key=lambda i: (R[i][key], R[i]['speed'], i))[:n]: add(i, 'the %d %s' % (n, name))
+    for i, _, _ in res['set']:
+        for m in res['merged'].get(i, []): add(m, 'merged into ' + i)
+    return C
 
 
 def report(files, R, src, res, b, k):
@@ -144,6 +167,8 @@ if __name__ == '__main__':
     k = 10; out = None
     if '--k' in A: j = A.index('--k'); k = int(A[j + 1]); del A[j:j + 2]
     if '--json' in A: j = A.index('--json'); out = A[j + 1]; del A[j:j + 2]
+    cand = None
+    if '--candidates' in A: j = A.index('--candidates'); cand = A[j + 1]; del A[j:j + 2]
     R, src = {}, {}
     for f in A:
         for i, r in hv.load(f, E).items(): R[i] = r; src[i] = os.path.basename(f)
@@ -152,3 +177,14 @@ if __name__ == '__main__':
     if out:
         with open(out, 'w') as o:
             for i, w, a in res['set']: o.write(json.dumps(dict(R[i], why=w, adds=a), sort_keys=True) + '\n')
+    if cand:
+        C = candidates(R, res)
+        with open(cand, 'w') as o:
+            o.write('# The final set\'s candidates - %d designs re-measured before the extremes are chosen (final-set.py --candidates, '
+                    'the owner\'s decision of Iteration 573; GOALS.md step 3)\n\nFrom %s. Each line a design\'s record and why it is here: '
+                    'the set of %d, every alive design within 5%% of the fastest at either width, the 5 smallest and the 5 leanest, '
+                    'and every design merged into one of the set\'s. Read by xcheck.py --also @FILE and loadtest.py --ids FILE.\n\n'
+                    % (len(C), ', '.join(os.path.basename(f) for f in A), len(res['set'])))
+            for i, w in C.items(): o.write(json.dumps(dict(R[i], why=w, src=src[i]), sort_keys=True) + '\n')
+        print('\nThe candidates (--candidates %s): %d designs - %s.' % (cand, len(C), ', '.join('%d %s' % (v, k) for k, v in sorted(
+            __import__('collections').Counter(w.split(':')[0] if w.startswith('the set') else w.split(' into ')[0] for ws in C.values() for w in ws).items()))))

@@ -147,6 +147,28 @@ results/drafts/goals-snapshots.md.)
    in evolve.py - drafted and tested at Iteration 548 (results/drafts/random-mode-548.patch: evolve.py --random,
    `random` in a run's line), applied when consolidation starts.
 
+**The owner's decisions before seed 84 returned (Iteration 573)** - one aim: no potentially useful design or gene filtered
+out by a threshold or one noisy number; when unsure, keep it and re-measure it. (Their arithmetic: lab/evolve/confirm.py,
+final-set.py --candidates, loadtest.py --ids, xcheck.py --also @FILE.)
+- **Step 2, a stricter test besides**: not confirmed either when the run's bred designs, added to the pool, raise its
+  hypervolume by 1% or more - the pool's numbers are the best of seven runs' in-run measures, the carried designs re-timed
+  once, so the run's own front leans to confirmed.
+- **Not confirmed - by where the gain came from**: every gaining design joins the final set's candidates either way. Bred
+  designs gained: the search had more to find - another confirmation run, its pool the series and this run. Carried designs
+  only (earlier fronts outside the pool, under today's code): the pool widened - no new search. An extreme's gain stands
+  only after its re-measure.
+- **The genes**: REVISIT (an enrichment of 1.5 or more, 5 or more front designs) - the freeze revisited; KEEP - the other
+  value on a candidate, an extreme or a fastest tenth; a gene is a retire candidate only when its other value is on no
+  true front of the eight runs, seeds 77-84 - never on one run's absence. The retired genes need a separate experiment.
+- **Step 3, the re-measures before the extremes are chosen**: a set of 10, not 5; the candidates - the set, every alive
+  design within 5% of the fastest at either width, the 5 smallest and the 5 leanest, the designs merged into the set's -
+  each re-measured alone and under load at both widths on the laptop (loadtest.py --ids) and on dream and the Tegra
+  (xcheck.py --also @FILE); the whole pooled front kept as the record the article draws on.
+- **Step 4**: `seed N 12h widths noevolved random` - the series' own generation 0, nothing carried; a random design on the
+  final front joins the candidates.
+- **The Tegra**: tools/rage-check.sh PASS on fury before the chain after seed 84 (open item 1), or its re-measures see
+  1 of the designs clang lets it build (135 of seed 81's 256).
+
 ## Later - the owner's plans
 
 1. **The Tegra session - once the improvements are done** (the owner).

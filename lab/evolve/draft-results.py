@@ -111,6 +111,9 @@ head = '\n'.join(x for x in [
   'the predictions scored (results/predictions.md) - summary.md.' if CONF else 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.')]
  if x is not None)
 out = os.path.join(ROOT, 'results', 'evolve-%s-seed%d.md' % (mach, N))
+cd_ = os.path.join(P, 'candidates-final.md')       # 573: the re-measure's candidates, where xcheck.py --also @FILE finds them on a host
+if CONF and os.path.exists(cd_):
+    import shutil; shutil.copy(cd_, os.path.join(ROOT, 'results', 'candidates-final-seed%d.md' % N)); print('draft-results: results/candidates-final-seed%d.md' % N)
 open(out, 'w').write(head + '\n\n---\n\n' + rep); print('draft-results: %s (%d TODO)' % (out, head.count('TODO')))
 if remote:
     x = os.path.join(ROOT, 'results', 'xcheck-seed%d.md' % N)

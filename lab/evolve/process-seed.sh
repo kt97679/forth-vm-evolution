@@ -39,13 +39,14 @@ if [ -n "$SP" ]; then
     python3 "$EV/review-checks.py" votes "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > votes.txt 2>&1   # 532: the front from the records
     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
     if grep -qw carryall "$C/line" 2> /dev/null; then     # Iteration 573: the confirmation run (GOALS.md step 2) - no series run
-        python3 "$EV/confirm.py" "$SP/db.jsonl" --seed "$VN" > confirm.txt 2>&1
-        p ""; p "## confirm.py (confirm.txt) - GOALS.md step 2: against the pooled true front, the re-enabled genes' screen"; p '```'
+        # the final set's draft first: its candidates (573) are a place confirm.py's KEEP looks
+        python3 "$EV/final-set.py" $(python3 "$EV/confirm.py" --pool-files "$VN") "$SP/db.jsonl" --json finalset.json --candidates candidates-final.md > finalset.txt 2>&1
+        python3 "$EV/confirm.py" "$SP/db.jsonl" --seed "$VN" --candidates candidates-final.md > confirm.txt 2>&1
+        p ""; p "## confirm.py (confirm.txt) - GOALS.md step 2: against the pooled true front, the re-enabled genes' classes"; p '```'
         grep -v '^|---' confirm.txt | cut -c1-300 >> "$S"; p '```'
         p "- the restore (next-run.log): $(grep -c 'restore-archives: seed [0-9]* - archived' "$SP/next-run.log" 2>/dev/null) restored - seeds $(sed -n 's/.*restore-archives: seed \([0-9]*\) - archived.*/\1/p' "$SP/next-run.log" 2>/dev/null | tr '\n' ' ')"
-        python3 "$EV/final-set.py" $(python3 "$EV/confirm.py" --pool-files "$VN") "$SP/db.jsonl" --json finalset.json > finalset.txt 2>&1
-        p ""; p "## final-set.py (finalset.txt, finalset.json) - GOALS.md step 3's selection from the pool and this run, if confirmed"; p '```'
-        sed -n '3p' finalset.txt | cut -c1-400 >> "$S"; grep '^| [0-9]' finalset.txt | cut -c1-200 >> "$S"; p '```'
+        p ""; p "## final-set.py (finalset.txt, finalset.json, candidates-final.md) - GOALS.md step 3's draft from the pool and this run"; p '```'
+        sed -n '3p' finalset.txt | cut -c1-400 >> "$S"; grep '^| [0-9]' finalset.txt | cut -c1-200 >> "$S"; grep '^The candidates' finalset.txt | cut -c1-300 >> "$S"; p '```'
     else
     python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
     p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'

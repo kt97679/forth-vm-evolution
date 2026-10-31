@@ -12,7 +12,7 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       are designs the laptop's selection REJECTED - living, off the front, within its speed span,
       from the run's db.jsonl beside RESULTS.md, spread by speed - so a design good there and
       rejected here can be seen at all (results/drafts/cross-machine-weighing.md); marked in the
-      report, with how many ran faster there than the front's median and fastest. --also ID,ID...
+      report, with how many ran faster there than the front's median and fastest. --also ID,ID... (573: or @FILE, every id in it)
       (Iteration 428): designs asked for by id, from the repository's results/evolve-*.md (and any beside
       RESULTS.md - Iteration 429: in a chain RESULTS.md is the archived run's report.md), after the
       sample - the Tegra's rebuild test of the designs that once failed there (open item 0d); marked
@@ -139,6 +139,17 @@ if '--sample' in ARGS:
     src = opt('--sample'); n = int(opt('--n', '24')); nojit = opt('--no-jit', flag=True); gcc = opt('--gcc-only', flag=True); bundle = opt('--bundle')
     nrej = int(opt('--rejected', '0'))                                # Iteration 377: designs the selection rejected
     also = [i for i in (opt('--also') or '').split(',') if i]         # Iteration 428: designs asked for by id
+    if any(i.startswith('@') for i in also):                         # 573: @FILE - every record's id in it (a candidates file)
+        ex = []
+        for i in also:
+            if not i.startswith('@'): ex.append(i); continue
+            f = i[1:] if os.path.isabs(i[1:]) else os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), i[1:])
+            for l in (open(f) if os.path.exists(f) else []):
+                if l.startswith('{"'):
+                    try: ex.append(json.loads(l)['id'])
+                    except (ValueError, KeyError): pass
+            print('xcheck: --also %s: %s' % (i, '%d designs' % (len(ex)) if os.path.exists(f) else 'no such file - none'), flush=True)
+        also = list(dict.fromkeys(ex))
     # Iteration 331: --cell 4 - a 32-bit check (the owner: 32-bit x86 and the Tegra, at native
     # 4-byte cells). The sample built here as 32-bit x86 at 4-byte cells (gcc -m32, static), each
     # design taken only if it builds and lives so - no JIT, no clang - and with --bundle the
