@@ -118,7 +118,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `test-jail.py` - test-jail.py - prove that an engine the evolver runs cannot fork
 - `truefronts.py` - every run's true front recomputed from its records (Iteration 547; GOALS.md: the article's figures on the true fronts): a chain's experiment step that reads every archived run's database and measures nothing.
 - `vm-run.sh` - lab/evolve/vm-run.sh SEED [REQ] - a run on the development VM (Iteration 79)
-- `xcheck.py` - the front measured on another machine: --sample picks designs on the laptop, the host's run builds, checks and measures them against s6 there, --report compares the rankings (Iteration 307); --arm, the Tegra's clang designs cross-built here (570; tools/arm-cross-check.py); --also @FILE (573).
+- `xcheck.py` - the front measured on another machine: --sample picks designs on the laptop, the host's run builds, checks and measures them against s6 there, --report compares the rankings (Iteration 307); --arm, the Tegra's clang designs cross-built (570); --also @FILE (573).
 - `NEXT-RUN` - what the laptop runs next, with every past choice as a comment
 - `hotsites-v1.json`, `tag2-rank-v1.json`, `hotwords-v1.json` - the reference profiles the converter reads (hotinl, the tag's ranking, factor)
 
