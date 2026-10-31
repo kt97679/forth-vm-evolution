@@ -57,7 +57,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `apps/wordfreq.fth`, `apps/minif.fth` - two more held-out applications from scratch (Iteration 500): words of generated text counted in a hash table of counted strings.
 - `appbench.py` - applications held out (Iteration 468): the newest front's designs built and run on Appbench's fcp, brainless and cd16sim (the owner's zip, read in place) against s6, each output checked, ranked against the in-run speed; its folding and prelude in appbench/
 - `fold.py` (lab/evolve/appbench/) - appbench.py's folding: an application's source to upper case, keeping strings, comments, file and character names, upper-casing a string EVALUATE takes unless it holds a '/', $hex made decimal (Iteration 467)
-- `loadtest.py` - the measuring load (Iteration 455): the newest run's front, its fastest and slowest, each measured against s6 idle and with other cores busy running s6 - does load explain the fast end's optimism (results/drafts/fastgate-review-445.md)
+- `loadtest.py` - the measuring load (Iteration 455): the newest run's front, its fastest and slowest, each measured against s6 idle and with other cores busy running s6 - does load explain the fast end's optimism (results/drafts/fastgate-review-445.md); --ids FILE (573): every candidate, both widths.
 - `footprint.py` - does the front's speed hold as the code footprint grows: a sample of the newest run's front on footprint-gen.py's programs, paired with s6, checksums checked; run and compile phases against s6, and the selection's rank agreement at each N (Iteration 371; results/generalization.md)
 - `gene-usage.py` - the genes fronts use, an absent gene counted as off: one group, or two side by side by their difference (--vs) - seed 58 against the carried runs, a review's evidence (Iteration 375)
 - `missmap.py` - which handlers mispredict: perf record's user-space branch misses on the kernel and corpus workloads, each sample's source line charged to its handler (Iteration 294; the laptop's, between runs)
@@ -77,8 +77,8 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `engines-check.py` - (Iteration 501: the JIT kept at 32 bits, and tests/jit/jit-diff.fth on every JIT variant against s6 at the same width) engines-check.py - an engine down every generator's path builds, and runs
 - `evolve.py` - evolve.py - evolve VM designs: the faster and the smaller survive
 - `factor-price.py` - factor-price.py ID [--shares 1e-3,1e-2,2] [--db FILE ...] - what the gene
-- `final-set.py` - GOALS.md step 3's selection (Iteration 571): from runs' records pooled, the true front merged within the tolerances, the four strict extremes, then designs by hypervolume gain to K; a knee as a candidate; --self-test.
-- `confirm.py` - GOALS.md step 2, the confirmation test (Iteration 573): a carryall run against the series' pooled true front and best extremes, what it added, the re-enabled genes' enrichment screened; process-seed.sh runs it; --self-test.
+- `final-set.py` - GOALS.md step 3's selection (Iteration 571): from runs' records pooled, the true front merged within the tolerances, the four strict extremes, then designs by hypervolume gain to K; a knee as a candidate; --candidates (573): the re-measure's.
+- `confirm.py` - GOALS.md step 2, the confirmation test (Iteration 573): a carryall run against the series' pooled true front and best extremes, what it added, gains by origin, the genes' four classes (573); process-seed.sh runs it; --self-test.
 - `fsys-count.py` - fsys-count.py ID [ID ...] --db FILE [--db FILE] [--levels 4,5] [--works kernel,corpus]
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
@@ -118,7 +118,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `test-jail.py` - test-jail.py - prove that an engine the evolver runs cannot fork
 - `truefronts.py` - every run's true front recomputed from its records (Iteration 547; GOALS.md: the article's figures on the true fronts): a chain's experiment step that reads every archived run's database and measures nothing.
 - `vm-run.sh` - lab/evolve/vm-run.sh SEED [REQ] - a run on the development VM (Iteration 79)
-- `xcheck.py` - the front measured on another machine: --sample picks designs on the laptop, the host's run builds, checks and measures them against s6 there, --report compares the rankings (Iteration 307); --arm, the Tegra's clang designs cross-built here (570; tools/arm-cross-check.py).
+- `xcheck.py` - the front measured on another machine: --sample picks designs on the laptop, the host's run builds, checks and measures them against s6 there, --report compares the rankings (Iteration 307); --arm, the Tegra's clang designs cross-built here (570; tools/arm-cross-check.py); --also @FILE (573).
 - `NEXT-RUN` - what the laptop runs next, with every past choice as a comment
 - `hotsites-v1.json`, `tag2-rank-v1.json`, `hotwords-v1.json` - the reference profiles the converter reads (hotinl, the tag's ranking, factor)
 

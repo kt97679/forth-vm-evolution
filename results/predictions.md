@@ -1152,4 +1152,5 @@ fastest at 32 bits not under 0.1610 (0.1643, seed 79). Why: the last two runs ga
 than the series' runs; and one run's fastest is one draw against the best of seven. The restore works: next-run.log
 names seeds 71-78 restored, and the carry line counts 13 databases.
 (573, before seed 84 returned: the pooled true front's own hypervolume is 0.36826, the bar 0.37195 - confirm.py; 0.36805
-was final-set.py's merged set. The genes' screen fixed: REVISIT at an enrichment of 1.5 or more, 5 or more front designs.)
+was final-set.py's merged set. The genes' screen fixed: REVISIT at an enrichment of 1.5 or more, 5 or more front designs. The owner's stricter test
+besides: confirmed only if seed 84's bred designs add under 1% to the pool's hypervolume - GOALS.md, 573.)

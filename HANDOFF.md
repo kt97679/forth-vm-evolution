@@ -55,9 +55,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   pooled 0.36805), no extreme by its threshold (bars there); the restore names seeds 71-78, the carry 13 databases.
 - **Processing seed 84** - the same three commands (573): a carryall line makes process-seed.sh run lab/evolve/confirm.py
   (confirm.txt: the pooled true front 0.36826, its bar 0.37195; the extremes' bars; what the run added; the ten re-enabled
-  genes' enrichment, REVISIT at 1.5+ with 5+ front designs) and final-set.py on the pool and seed 84 (finalset.txt) in
-  place of stopping.py; draft-results.py writes both; no curve, no stopping-series line. The chat judges the verdict and the
-  screen. Then step 3 - the final set re-measured - and the random-search baseline (applied at 79: NEXT-RUN's "random").
+  genes' classes) and final-set.py on the pool and seed 84 (finalset.txt; candidates-final.md - draft-results.py copies it
+  to results/candidates-final-seed84.md) in place of stopping.py; no curve, no stopping-series line. The owner's decisions
+  (573, GOALS.md step 2-4): the verdict's two kinds of NOT CONFIRMED, the genes' classes, the candidates. The next chain,
+  confirmed or the pool widened: NEXT-RUN `seed 85 12h widths noevolved random then experiment loadtest.py --ids
+  results/candidates-final-seed84.md` (an hour or two after the run, on fury), every REMOTES line `--also
+  @results/candidates-final-seed84.md`, minutes `run`; rage-check PASS first (open item 1). Not built yet: the extremes
+  chosen from the re-measures (seed 85's processing).
 - **Before 572**: seeds 70-82 processed (498-569); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and seed 84's chain archive. appbench.zip stays on the laptop.
 
@@ -100,13 +104,14 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    ragecheck): ARM engines without the C library; rage's check of the front's clang designs, cross-built on fury. Nothing
    changes on x86. **Before seed 84 the owner installs on fury** `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross`
    (missing, rage's sample fails as a line in steps, never the chain), **then runs `sh tools/rage-check.sh`** on the
-   laptop, no chain running - PASS before the confirmation run. Rage's numbers from then: no-C-library engines, mostly
+   laptop, no chain running - PASS before the confirmation run; if it was not, before seed 85's chain (573: the Tegra's
+   re-measures of the final set need it). Rage's numbers from then: no-C-library engines, mostly
    clang's - not comparable with its checks before.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
    seed 83 (572; seeds 77-83 on one method). Step 2, the confirmation run, is seed 84 (its founders:
    results/drafts/confirmation-pool-559.md, carry-after-seed78.patch, restore-archives.sh); step 3, the final set -
    lab/evolve/final-set.py (571; seeds 77-83 pooled: front 387, 271 merged) - and the random-search baseline (applied at seed 79's
-   processing: NEXT-RUN's "random"). The test and the final set's draft scripted (573: confirm.py, process-seed.sh).
+   processing: NEXT-RUN's "random"). The test and the final set's draft scripted, the re-measure's tools ready (573: GOALS.md, the owner's decisions).
 3. **Correctness - none open (569)**: seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
    -falign-*=64; ccflags() built alignhot where express() drops it (results/drafts/jitexec-alignhot-566.md) - fixed by
    the after-seed-81 batch, applied at 17566c6; seed 81's one such death right after it, wrong before (the control).
