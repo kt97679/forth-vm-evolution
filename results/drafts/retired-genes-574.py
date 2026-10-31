@@ -15,7 +15,7 @@ def load(tree, name):
     spec = importlib.util.spec_from_file_location(name, os.path.join(d, 'evolve.py'))
     m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); os.chdir(cwd); return m
 
-tree = sys.argv[1]; base = sys.argv[2] if len(sys.argv) > 2 else None
+tree = os.path.abspath(sys.argv[1]); base = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else None
 E = load(tree, 'ev_tree'); B = load(base, 'ev_base') if base else None
 root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 G = collections.OrderedDict()
@@ -65,5 +65,6 @@ g = dict(G[83][0]); g.pop('skippad')
 with open(p, 'w') as f: f.write(json.dumps(dict(id='9900000000', status='ok', speed=0.5, size=5000, genome=g)) + '\n')
 try: E.carry_pool([p], named={}); print('the guard (a cv8 genome without skippad): not stopped' + (' - FAIL' if 'genes not current' in open(os.path.join(tree, 'lab/evolve/evolve.py')).read() else ' (no guard in TREE)')); bad += 'genes not current' in open(os.path.join(tree, 'lab/evolve/evolve.py')).read()
 except SystemExit as e: print('the guard (a cv8 genome without skippad): stopped - %s' % e)
+import shutil; shutil.rmtree(tmp)
 print('PASS' if not bad else 'FAIL')
 sys.exit(1 if bad else 0)
