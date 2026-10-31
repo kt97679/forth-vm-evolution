@@ -10402,4 +10402,7 @@ Then: next-run.sh strips carryall from the chain's line (seed 83's reads "seed 8
 it; the run is now known by its pack's machine.txt and the chain's steps. confirm.py --append: a {"confirmation"} line
 stopping.py passes over, pooled by a later confirmation. final-pick.py: the set from the re-measures. Smoke: random with
 widths, generation 1 four random children, 3 alive at both widths.
-Files: none under results/ (predictions.md, seed 84's note).
+The nine likely retire candidates read (results/drafts/retire-candidates-573.md): the old values' code builds the hand-made
+stages s2-s5 (bytehdr, varcall, doesfar, scale); sharedcall does nothing beside varcall; msc (tools/gen-msc.py, 330 lines)
+the one real removal, never measured on the Tegra, where no JIT excludes it.
+Files: results/drafts/retire-candidates-573.md (predictions.md, seed 84's note).

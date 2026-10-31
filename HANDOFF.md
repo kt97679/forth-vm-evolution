@@ -129,6 +129,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    jitmul 43, jitfuse 10, jitexec 1, jitos 19, jitrp 22; jitdoes the one freeze candidate.
 7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
+7b. Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
+   values' code builds the stages s2-s5; msc's Tegra check before retiring it.
 8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts (seeds 53-75:
    results/truefronts-seed75.md, results/progress-true-fronts.md); across machines the fast end as a band, the fastest

@@ -188,6 +188,7 @@ Each subject oldest first; a script or patch beside the document it made.
 
 - `drafts/article-method-548.md` - The article's method section, a first draft (Iteration 548): the design space, the objectives, the search, the three audited shortcuts, the true front, one command a run, the checks, the stopping rule, the baseline, what was not isolated.
 - `drafts/confirmation-pool-559.md` - The confirmation run's founders, no good design missed (Iteration 559, the owner): --carry's tolerance front drops chain-hidden designs - the strict front instead, every archived run, the pool pre-flighted.
+- `drafts/retire-candidates-573.md` - The nine genes seeds 77-83's fronts never moved off their old values (Iteration 573): what retiring each would remove - little but msc, the old values building the hand-made stages s2-s5; msc's Tegra check first.
 - `drafts/random-mode-548.patch` - The random-search baseline's mode, drafted and tested for consolidation (Iteration 548; GOALS.md, "When the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop, the fast gate kept.
 
 ### Prompts to other models, and their answers
