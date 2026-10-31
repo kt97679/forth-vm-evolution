@@ -51,7 +51,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck-seed80.md` - The checks of seed 79's front during seed 80 (Iteration 566): dream.lan-prebuilt 24 designs measured on both: Spearman 0.877; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.911; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.939.
 - `xcheck-seed81.md` - The checks of seed 80's front during seed 81 (Iteration 568): dream.lan-prebuilt 24 designs measured on both: Spearman 0.891; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.919; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.928; rage.lan-native ?.
 - `xcheck-seed82.md` - The checks of seed 81's front during seed 82 (Iteration 569): Spearman with the laptop - dream 0.818 (24), 0.864 and 0.892 (30 at 32 and 64 bits); rage 0.143 (8, a narrow band).
-- `xcheck-seed83.md` - The checks of seed 82's front during seed 83 (Iteration 572): dream.lan-prebuilt 24 designs measured on both: Spearman 0.989; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.932; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.993; rage.lan-native 6 designs measured on both: Spearman 0.143.
+- `xcheck-seed83.md` - The checks of seed 82's front during seed 83 (Iteration 572): Spearman with the laptop - dream 0.989 (24), 0.932 and 0.993 (30 at 32 and 64 bits); rage 0.143 (6, a narrow band).
 
 ### The batches of patches applied after the runs
 
