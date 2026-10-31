@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 572.
+- master: Iteration 573.
 - **Seed 84 is next - the confirmation run, 12 hours (the owner)**: `seed 84 12h widths carryall` (GOALS.md step 2).
   **Before it, on fury**: `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` installed, then `sh tools/rage-check.sh`
   PASS (open item 1). Its founders: every run's strict front from seed 71 on - seeds 71-78 restored from their seed packs
@@ -53,9 +53,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   after-seed-83 batch applied (9664214: armrt, prebuiltarm, ragecheck).
 - **Predictions due** (results/predictions.md): seed 84 confirmed - the hypervolume under 0.3717 (1% over seeds 77-83's
   pooled 0.36805), no extreme by its threshold (bars there); the restore names seeds 71-78, the carry 13 databases.
-- **Processing seed 84** differs from a series run: the confirmation test (GOALS.md step 2 - against the pooled true
-  front of 77-83, each re-enabled gene's enrichment), then step 3 - the final set (lab/evolve/final-set.py) re-measured,
-  and the random-search baseline (random-mode-after-seed79.patch, NEXT-RUN's "random").
+- **Processing seed 84** - the same three commands (573): a carryall line makes process-seed.sh run lab/evolve/confirm.py
+  (confirm.txt: the pooled true front 0.36826, its bar 0.37195; the extremes' bars; what the run added; the ten re-enabled
+  genes' enrichment, REVISIT at 1.5+ with 5+ front designs) and final-set.py on the pool and seed 84 (finalset.txt) in
+  place of stopping.py; draft-results.py writes both; no curve, no stopping-series line. The chat judges the verdict and the
+  screen. Then step 3 - the final set re-measured - and the random-search baseline (applied at 79: NEXT-RUN's "random").
 - **Before 572**: seeds 70-82 processed (498-569); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and seed 84's chain archive. appbench.zip stays on the laptop.
 
@@ -103,8 +105,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
    seed 83 (572; seeds 77-83 on one method). Step 2, the confirmation run, is seed 84 (its founders:
    results/drafts/confirmation-pool-559.md, carry-after-seed78.patch, restore-archives.sh); step 3, the final set -
-   lab/evolve/final-set.py (571; seeds 77-83 pooled: front 387, 271 merged) - and the random-search baseline (ready:
-   random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
+   lab/evolve/final-set.py (571; seeds 77-83 pooled: front 387, 271 merged) - and the random-search baseline (applied at seed 79's
+   processing: NEXT-RUN's "random"). The test and the final set's draft scripted (573: confirm.py, process-seed.sh).
 3. **Correctness - none open (569)**: seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
    -falign-*=64; ccflags() built alignhot where express() drops it (results/drafts/jitexec-alignhot-566.md) - fixed by
    the after-seed-81 batch, applied at 17566c6; seed 81's one such death right after it, wrong before (the control).

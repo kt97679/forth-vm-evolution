@@ -38,7 +38,7 @@ cf_ = os.path.join(P, 'confirm.txt')
 so = '' if CONF else subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
 co = (open(cf_).read() if os.path.exists(cf_) else subprocess.run([sys.executable, os.path.join(HERE, 'confirm.py'), db, '--seed', str(N)],
       capture_output=True, text=True).stdout) if CONF else ''
-conf_ = ' '.join(l.strip() for l in co.split('\n') if l.startswith(('verdict:', 'What it added:', 'the screen:'))) or 'TODO: confirm.py gave no verdict (confirm.txt).'
+conf_ = ' '.join(l.strip().rstrip('.') + '.' for l in co.split('\n') if l.startswith(('verdict:', 'What it added:', 'the screen:'))) or 'TODO: confirm.py gave no verdict (confirm.txt).'
 stop_ = ' '.join(l for l in so.split('\n') if l.startswith(('verdict:', 'the count:', 'the next run gains if:'))) or "TODO: against the method's earlier runs (GOALS.md)."
 f = min(T, key=lambda i: R[i]['speed']); s = min(T, key=lambda i: E.ov(R[i], 'total')); mm = min(T, key=lambda i: R[i]['rss'])
 w = min((i for i in T if R[i].get('speed32')), key=lambda i: R[i]['speed32'], default=None)
@@ -85,7 +85,7 @@ head = '\n'.join(x for x in [
  '**The front**: the true one %d designs - the report\'s %d%s.' % (len(T), len(Rf), ', the same' if Rf == set(T) else ' - TODO: why they differ'), '',
  '**The fixed-box hypervolume**: %s. %s' % (hv.split(': ', 1)[-1], ('**The confirmation test** (confirm.py, confirm.txt; GOALS.md step 2): %s' % conf_) if CONF
      else '**The stopping rule** (stopping.py, results/stopping-series.md): %s' % stop_), '',
- '**The final set** (final-set.py, finalset.txt - GOALS.md step 3, from the pool and this run): %s' % txt('finalset', 2, 3) if CONF and os.path.exists(os.path.join(P, 'finalset.txt')) else None, '',
+ '**The final set** (final-set.py, finalset.txt - GOALS.md step 3, from the pool and this run): %s' % txt('finalset', 1, 2) if CONF and os.path.exists(os.path.join(P, 'finalset.txt')) else None, '',
  '**The extremes**: fastest %s %.4f, smallest %s %s bytes, least memory %s KB%s.' % (f, R[f]['speed'], s, '{:,}'.format(E.ov(R[s], 'total')), R[mm]['rss'],
     ', fastest at 32 bits %s %.4f' % (w, R[w]['speed32']) if w else ''), '',
  '**One round first**: %s children stopped after one round, %.1f%% of those measured; %d audited in full, %d of them on the front.' % (

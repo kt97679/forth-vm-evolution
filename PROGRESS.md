@@ -10384,3 +10384,14 @@ hours (the owner), widths carryall. Its pool: seed 83's carry-check.py --all saw
 keeps four archives) - lab/evolve/restore-archives.sh brings seeds 71-78 back from their seed packs for carryall
 (next-run.sh; tools/test-restore-archives.sh in run-tests, two broken variants caught). Pooled front 77-83: 0.36805.
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed83.md, results/xcheck-seed83.md, results/applied-after-seed83/.
+
+## Iteration 573 - 2026-10-31 - Claude
+
+**The confirmation test and seed 84's processing path, prepared while it runs.** lab/evolve/confirm.py - GOALS.md step 2
+as a script: seeds 77-83's pooled true front (387, hypervolume 0.36826 - 0.36805 was final-set.py's merged set; the bar
+0.37195), the extremes' bars from the ledger, what the run added, the ten re-enabled genes' enrichment (front over bred
+children, among the expressing; REVISIT at 1.5+ with 5+, fixed now); --self-test. A carryall chain line makes
+process-seed.sh run it and final-set.py (pool + run) instead of stopping.py; draft-results.py writes both; process-run.sh
+draws no curve, process-records.sh no stopping-series line. Dry run on a fake carryall archive (seeds 77-83's fronts, 77-80
+as carried): summary, draft, records as intended. Setup's first apt-get ran past a tool call's 300 s; rerun, idempotent.
+Files: none under results/ (predictions.md, seed 84's note).
