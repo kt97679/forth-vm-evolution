@@ -167,7 +167,9 @@ int sigaltstack(const stack_t *restrict ss, stack_t *restrict old) { return (int
 
 /* ---- memory and strings --------------------------------------------------
  * rep movsb/stosb rather than loops: GCC recognises a copying loop and
- * turns it into a call to memcpy - which, here, is this function. */
+ * turns it into a call to memcpy - which, here, is this function. Iteration
+ * 570: x86's own - rt-linux-armv7.c gives its three (RT_OWN_MEM). */
+#ifndef RT_OWN_MEM
 void *memcpy(void *restrict d, const void *restrict s, size_t n)
 {
     void *r = d;
@@ -187,6 +189,7 @@ void *memset(void *d, int c, size_t n)
     __asm__ volatile ("rep stosb" : "+D"(d), "+c"(n) : "a"(c) : "memory");
     return r;
 }
+#endif /* RT_OWN_MEM */
 __attribute__((optimize("no-tree-loop-distribute-patterns")))
 int memcmp(const void *a, const void *b, size_t n)
 {

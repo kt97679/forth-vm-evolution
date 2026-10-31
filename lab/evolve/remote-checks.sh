@@ -27,6 +27,10 @@
 # its bytes (remote/HOST-HOW/transfer.txt), and the host's load at the check's start and every 30 s
 # while it runs (load-start.txt, load.log): both appended to the host's report by gather.
 #
+# Iteration 570 (the owner: the Tegra's clang designs built on the laptop): prebuiltarm - the sample's clang designs
+# cross-built here for ARMv7 (xcheck.py --arm; lld, libc6-dev-armhf-cross, libgcc-13-dev-armhf-cross installed), shipped;
+# s6 and the GCC designs built there, by the host's GCC - every ARM engine without the C library (rt-linux-armv7.c).
+#
 # Never costs the chain: whatever fails is a line in CHAIN/steps and the next host goes on.
 # SSH and SCP may name stand-ins (the tests), and REMOTES_FILE the hosts' file (Iteration 379).
 set -u
@@ -79,7 +83,8 @@ start)
             opts=$(printf ' %s' $opts | sed "s| --from $frm| --ids $R/$host-$frm/designs.json|") ;;
         esac
         set -- --n "$n" $opts
-        case $how in prebuilt|prebuilt32|prebuilt64) set -- "$@" --bundle "$H/bins.tar.gz" ;; esac
+        case $how in prebuilt|prebuilt32|prebuilt64) set -- "$@" --bundle "$H/bins.tar.gz" ;;
+            prebuiltarm) set -- "$@" --bundle "$H/bins.tar.gz" --arm ;; esac   # Iteration 570: clang's ARMv7 engines, built here
         (cd "$REPO" && python3 lab/evolve/xcheck.py --sample "$rep" "$H/designs.json" "$@") > "$H/sample.log" 2>&1 \
             || { note "$CHK" "FAILED - the sample (remote/$CHK/sample.log)"; continue; }
         rm -rf "$REPO"/build/evolve/xcheck-b-* "$REPO/build/evolve/xcheck-bundle"
@@ -98,7 +103,7 @@ git clone -q "\$W/repo.bundle" "\$W/repo" || fail "the clone of the bundle faile
 cd "\$W/repo" || fail "no clone"
 PRE=
 LAYOUTS=1 bash tools/build-stages.sh > "\$W/build.log" 2>&1 || fail "build-stages.sh failed (build.log)"
-case $how in prebuilt|prebuilt32|prebuilt64) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
+case $how in prebuilt|prebuilt32|prebuilt64|prebuiltarm) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
 if [ $how = prebuilt32 ]; then              # the 4-byte references this host cannot make
     cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-self.txt build/k32-b.txt || fail "the 4-byte references did not install"
     export EVOLVE_CELL=4 EVOLVE_PREBUILT_REF="\$W/bins/bin/s6"
@@ -106,7 +111,7 @@ fi
 python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds --until \$UNTIL \$PRE > "\$W/xcheck.log" 2>&1 || fail "xcheck.py failed (xcheck.log)"
 echo 0 > "\$W/DONE"
 RUN
-        files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32|prebuilt64) files="$files $H/bins.tar.gz" ;; esac
+        files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32|prebuilt64|prebuiltarm) files="$files $H/bins.tar.gz" ;; esac
         ndes=$(python3 -c 'import json, sys; d = json.load(open(sys.argv[1])); print(len(d.get("designs", d)) if isinstance(d, dict) else len(d))' "$H/designs.json" 2>/dev/null || echo '?')
         cat >> "$L" << LAUNCH
 t0=\$(date +%s%N)

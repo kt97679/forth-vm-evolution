@@ -730,10 +730,19 @@ def w32():
     """Iteration 461: building for 32-bit x86 here (EVOLVE_CC with -m32)."""
     return '-m32' in os.environ.get('EVOLVE_CC', '').split()
 
+def arm_cross():
+    """Iteration 570 (the owner: the Tegra's clang designs built on the laptop): EVOLVE_TARGET=armv7 - a clang cv8
+    design cross-built here for 32-bit ARM (rage), by the clang that builds its x86 engine, linked by lld against
+    engine/rt-linux-armv7.c; every other design is the Tegra's to build with its GCC (_build refuses it here). Set
+    only by xcheck.py --sample --arm, around its ARM builds: never in the evolution."""
+    return os.environ.get('EVOLVE_TARGET') == 'armv7'
+ARM_CROSS_CC = ['clang', '--target=arm-linux-gnueabihf', '-march=armv7-a', '-mfloat-abi=hard', '-fuse-ld=lld']   # the armhf baseline
+
 def CCV(g):
     """Iteration 324: the design's compiler as a command - EVOLVE_CC in place of GCC's (clang
     designs keep clang: the Tegra has none, and its sample is GCC's)."""
     c = CC(g)
+    if arm_cross(): return list(ARM_CROSS_CC)        # Iteration 570: _build lets only clang's designs here
     if os.environ.get('EVOLVE_CC') and c in ('cc', 'gcc'): return os.environ['EVOLVE_CC'].split()
     return [c] + (['-m32', '-fno-pie', '-no-pie'] if '-m32' in os.environ.get('EVOLVE_CC', '').split() else [])   # Iteration 336: clang at 32 bits too; 363: not PIE, as relf's
 
@@ -752,7 +761,14 @@ def rt():
     EVOLVE_LIBC=1: there, the C library as before."""
     fl = ['-fno-asynchronous-unwind-tables']
     u = os.uname()
-    if PROFILING[0] or os.environ.get('EVOLVE_LIBC') == '1' or (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
+    if PROFILING[0] or os.environ.get('EVOLVE_LIBC') == '1': return fl
+    # Iteration 570: 32-bit ARM - the Tegra's own builds (GCC) and the laptop's cross-built clang ones - without the
+    # C library too, so every ARM engine is built alike: static glibc made one 347,688 bytes (tegra-cross-568.py)
+    if (u.sysname == 'Linux' and ARM32) or arm_cross():
+        return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
+                     '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', os.path.join(ROOT, 'engine', 'rt-linux-armv7.c'),
+                     '-lgcc', '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
+    if (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
     # Iteration 331: building 32-bit x86 here (EVOLVE_CC with -m32) - the i386 runtime, static
     # as the x86-64 one: a 32-bit check's binaries run where no 32-bit C library is (dream.lan)
     rtc = os.path.join(ROOT, 'engine', 'rt-linux-i386.c') if '-m32' in os.environ.get('EVOLVE_CC', '').split() else RTC
@@ -921,6 +937,8 @@ def _build(g, d):
     """-> (engine, image) or raises RuntimeError('died: ...')"""
     if os.path.exists(d): shutil.rmtree(d)
     os.makedirs(d)
+    if arm_cross() and (g['enc'] != 'cv8' or CC(g) != 'clang'):   # Iteration 570: GCC's - cc() too - are the Tegra's
+        raise RuntimeError('died: not cross-built for ARM - a GCC design, built on the Tegra itself')
     if g['enc'] != 'cv8': return build_other(g, d)
     src = os.path.join(d, 'vm.c')
     shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)

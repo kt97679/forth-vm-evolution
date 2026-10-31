@@ -39,6 +39,15 @@ Three modes, for next-run.sh's remote checks (results/drafts/runner-protocol.md)
       on the host, the bundle unpacked into DIR: no expression to compare and nothing
       to build - the binary is the design; s6 is the shipped one.
 
+  xcheck.py --sample RESULTS.md OUT.json --cell 4 --bundle BIN.tar.gz --arm [...]
+      (Iteration 570 - the owner: the Tegra's clang designs built on the laptop) for the Tegra
+      (REMOTES' prebuiltarm): no JIT, clang's designs taken - each cv8 one cross-built here
+      for ARMv7 too (evolve.py's EVOLVE_TARGET=armv7: clang, lld, engine/rt-linux-armv7.c),
+      and taken only if that builds; the bundle holds those alone - no s6, no build32/.
+      On the host, a bundle without s6 is a partial one: s6 and every design not in it are
+      built there, by its own compiler, as native's are (GCC's: every ARM engine built
+      alike, without the C library), the rest measured as shipped - marked prebuilt.
+
   xcheck.py --report OUT.json
       on the laptop: the host's speeds against the laptop's for the designs measured on
       both - the Spearman rank correlation, where the laptop's fastest rank there, the
@@ -78,6 +87,9 @@ if '--report' in ARGS:
     print('%s-endian, %s-byte cells - measured on the host (Iteration 331)\n' % (env.get('byteorder', '?'), env.get('cell', '?')))   # Iteration 331
     print('%s, %s; %s; Python %s; measured %s, %d round(s) a design.\n' % (
         env.get('machine', '?'), env.get('kernel', '?'), env.get('cc', '?'), env.get('python', '?'), R.get('when', '?'), R.get('rounds', 0)))
+    if R.get('prebuilt') == 'partial':                                 # Iteration 570: the Tegra's prebuiltarm
+        print('Built where: %d designs cross-built on the laptop (clang, ARMv7, no C library), shipped; s6 and the other %d built here.\n' % (
+            sum(1 for x in R['designs'] if x.get('prebuilt')), sum(1 for x in R['designs'] if not x.get('prebuilt'))))
     if not R.get('s6_ok'):
         print('**Not usable: hand-made s6 - %s.**' % R.get('s6_why', '?')); sys.exit(0)
     d = [x for x in R['designs'] if x.get('speed_here') is not None and not x.get('asked')]
@@ -133,6 +145,8 @@ if '--sample' in ARGS:
     # 4-byte references a 64-bit-only host cannot make (build32/: the 32-bit cell engine, its
     # image, the base k32 dumps).
     cell4 = opt('--cell', '8') == '4'
+    arm = opt('--arm', flag=True)                                     # Iteration 570: see the docstring
+    if arm and not (cell4 and bundle): sys.exit('xcheck: --arm is a prebuilt sample at 4-byte cells: --cell 4 --bundle FILE')
     # Iteration 335: --ids FILE - exactly another check's designs (its designs.json), at this width:
     # the same designs at 64 bits and at 32 on one host, the width alone (seed 55's two samples
     # shared 8 designs, nearly all slow)
@@ -143,7 +157,7 @@ if '--sample' in ARGS:
         # clang's designs are taken: with them out, dream's 32-bit check of seed 59's front had 6 eligible of 171.
         # Iteration 461: the JIT builds at 32-bit x86 now - a prebuilt sample (--bundle, built here with -m32) keeps the
         # designs with it; a host that builds itself at 4-byte cells (the Tegra, 32-bit ARM) has no JIT, so takes none.
-        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = nojit or not bundle; gcc = gcc or not bundle
+        os.environ.setdefault('EVOLVE_CC', 'gcc -m32'); os.environ['EVOLVE_CELL'] = '4'; nojit = nojit or not bundle or arm; gcc = gcc or not bundle
     if len(ARGS) != 1: sys.exit(__doc__)
     out = ARGS[0]
     sys.argv = [sys.argv[0]]; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
@@ -168,7 +182,7 @@ if '--sample' in ARGS:
         if nojit and e.get('jit'): continue
         if gcc and (e.get('compiler') or e.get('tailpn')): continue
         ok.append((i, sp, tot, e))
-    pick = []; built = {}
+    pick = []; built = {}; armb = {}
     if cell4: E.setup()
     def good(i):
         """Iteration 331: at --cell 4, a design only if it builds and lives as a 32-bit engine here."""
@@ -177,6 +191,11 @@ if '--sample' in ARGS:
             try:
                 eng, img = E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); E.alive(eng, img, E.private_work(os.path.join(E.EV, 'xcheck-b-' + i)))
                 built[i] = (eng, img)
+                g_ = E.canon(gen[i])
+                if arm and g_['enc'] == 'cv8' and E.CC(g_) == 'clang':      # Iteration 570: and as the Tegra's, built here
+                    os.environ['EVOLVE_TARGET'] = 'armv7'
+                    try: armb[i] = E.build(g_, os.path.join(E.EV, 'xcheck-a-' + i))
+                    finally: del os.environ['EVOLVE_TARGET']
             except Exception as ex:
                 built[i] = None; print('xcheck: %s left out at 4-byte cells - %s' % (i, str(ex)[:90]), flush=True)
         return built[i] is not None
@@ -245,21 +264,25 @@ if '--sample' in ARGS:
     json.dump([dict({'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot}, **({'rejected': True} if i in rejected else {}), **({'asked': True} if i in asked else {})) for i, sp, tot, e in pick], open(out, 'w'), indent=1)
     if rejected: print('xcheck: %d of them rejected by the laptop\'s selection (Iteration 377)' % len(rejected), flush=True)
     print('xcheck: %d designs sampled from %d eligible (%s%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', ', at 4-byte cells, each alive so' if cell4 else '', out))
+    if arm: print('xcheck: %d of them cross-built for ARMv7 here (clang), %d for the host to build (GCC)' % (len(armb), len(pick) - len(armb)), flush=True)
     if bundle:
         import tarfile
         if not cell4: E.setup()
         stage = os.path.join(E.EV, 'xcheck-bundle'); shutil.rmtree(stage, ignore_errors=True)
         def put(name, eng, img):
             os.makedirs(os.path.join(stage, name)); shutil.copy2(eng, os.path.join(stage, name, 'engine')); shutil.copy2(img, os.path.join(stage, name, 'image'))
-        put('s6', E.REF[0], E.REF[1])
-        for i, *_ in pick:
+        if arm:                                                         # Iteration 570: clang's ARM engines alone
+            os.makedirs(stage)
+            for i in armb: put(i, *armb[i])
+        else: put('s6', E.REF[0], E.REF[1])
+        for i, *_ in ([] if arm else pick):
             eng, img = built[i] if cell4 else E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
-        if cell4:
+        if cell4 and not arm:
             os.makedirs(os.path.join(stage, 'build32'))
             for f in ('s0-cell-32', 's0-cell-s32.img', 'k32-self.txt', 'k32-b.txt'): shutil.copy2(os.path.join(E.O, f), os.path.join(stage, 'build32', f))
         with tarfile.open(bundle + '.partial', 'w:gz') as t: t.add(stage, arcname='bin')
         os.replace(bundle + '.partial', bundle)
-        print('xcheck: %d designs and s6 built into %s (%d KB)' % (len(pick), bundle, os.path.getsize(bundle) // 1024))
+        print('xcheck: %d designs%s built into %s (%d KB)' % (len(armb) if arm else len(pick), ' (ARMv7)' if arm else ' and s6', bundle, os.path.getsize(bundle) // 1024))
     sys.exit(0)
 
 # ---- the host's run ----
@@ -286,9 +309,11 @@ print('xcheck: %s, %s, %s cores; %s' % (env['host'], env['cpu'], env['cores'], e
 D = json.load(open(src))
 E.setup()
 WS = E.WORK_SEL + E.WORK_HELD + E.WORK_FAR
-R['prebuilt'] = bool(pre)
+# Iteration 570: a bundle without s6 is a partial one (--arm's): s6 and what it lacks built here, by the host's compiler
+part = bool(pre) and not os.path.exists(os.path.join(pre, 's6', 'engine'))
+R['prebuilt'] = 'partial' if part else bool(pre)
 try:
-    if pre:                                   # the laptop's binaries: s6 the shipped one, the reference too
+    if pre and not part:                      # the laptop's binaries: s6 the shipped one, the reference too
         eng, img = os.path.join(pre, 's6', 'engine'), os.path.join(pre, 's6', 'image')
         shutil.rmtree(os.path.join(E.EV, 'xcheck-s6-pre'), ignore_errors=True)   # a run before this one's (private_work refuses it)
         E.REF = (eng, img, E.private_work(os.path.join(E.EV, 'xcheck-s6-pre')))
@@ -308,13 +333,15 @@ for k, x in enumerate(D, 1):
     R['designs'].append(rec)
     if until and time.time() > until: rec['why'] = 'the time limit'; save(); continue
     g = E.canon(x['genome']); e = norm(E.express(g))
-    if not pre and e != x['expressed']:
+    shipped = bool(pre) and (not part or os.path.exists(os.path.join(pre, x['id'], 'engine')))   # 570: or built here
+    if shipped and part: rec['prebuilt'] = True
+    if not shipped and e != x['expressed']:
         diff = sorted(set(k_ for k_ in set(e) | set(x['expressed']) if e.get(k_) != x['expressed'].get(k_)))
         rec['why'] = 'not itself here: %s' % ', '.join(diff); save()
         print('xcheck: %d/%d %s not itself here (%s)' % (k, len(D), x['id'], ', '.join(diff)), flush=True); continue
     try:
         d = os.path.join(E.EV, 'xcheck-' + x['id']); shutil.rmtree(d, ignore_errors=True)   # an earlier run's: a design recurs
-        if pre: eng, img = os.path.join(pre, x['id'], 'engine'), os.path.join(pre, x['id'], 'image')
+        if shipped: eng, img = os.path.join(pre, x['id'], 'engine'), os.path.join(pre, x['id'], 'image')
         else: eng, img = E.build(g, d)
         pw = E.private_work(d); E.alive(eng, img, pw)
         m = E.measure(eng, img, pw, WS, rounds)
