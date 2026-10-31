@@ -1154,3 +1154,8 @@ names seeds 71-78 restored, and the carry line counts 13 databases.
 (573, before seed 84 returned: the pooled true front's own hypervolume is 0.36826, the bar 0.37195 - confirm.py; 0.36805
 was final-set.py's merged set. The genes' screen fixed: REVISIT at an enrichment of 1.5 or more, 5 or more front designs. The owner's stricter test
 besides: confirmed only if seed 84's bred designs add under 1% to the pool's hypervolume - GOALS.md, 573.)
+(574: the first chain failed - KeyError 'jithelp' in crossover() after generation 0, results/drafts/seed84-failed-574.md;
+fixed by the after-seed-84 batch. Scored on it: the restore named seeds 71-78, right; the carry 13 databases, right; the
+founders 14,202, inside 12,000-15,000; generation 0 about 5 hours, not 3-4 - wrong (0.8 designs a second, not one). The
+rerun, the same line at the fix's commit: the carry 14 databases (the failed run's own adds no design), the same 14,202
+founders, generation 0 about 5 hours - about 7 of the 12 evolving; the verdict's prediction above stands.)

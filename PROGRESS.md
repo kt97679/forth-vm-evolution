@@ -10410,3 +10410,14 @@ values; process-seed.sh knows a run by its WANT (machine.txt, steps), runs basel
 votes, a {"random"} ledger line - dry-run on archives shaped like the real ones (the line stripped), both paths.
 setup-sandbox.sh: apt-get detached, waited 240 s at most (tested cut off, running, done, there).
 Files: results/drafts/retire-candidates-573.md (predictions.md, seed 84's note).
+
+## Iteration 574 - 2026-10-31 - Claude
+
+**Seed 84's chain failed, fixed - the after-seed-84 batch applied at once.** The chain (d00ce78b1) measured generation 0's
+14,219 founders in about 5 hours (14,163 alive; 55 of seed 71's and s2-cpt16 died on apps), then breed()'s first crossover
+stopped: KeyError 'jithelp' - seeds 70-71's genomes hold jithelp, jitre, nocase, deleted at 516, and canon() kept dead
+keys. retired-after-seed84.patch: canon() keeps the current genes; carry_pool() stops at once on a genome off them. Tested
+on the 3,489 genomes of seeds 70-83's results files (7,079 KeyErrors before, none after, no id moved; the guard's control
+stopped); batch-check PASS. The remote checks of seed 83's front: dream 0.971/0.943/0.985, rage 0.953 on 16 (15 cross-
+built on fury). The rerun: NEXT-RUN unchanged, generation 0 again about 5 hours. Files: results/drafts/seed84-failed-574.md,
+results/drafts/retired-genes-574.py, results/applied-after-seed84/ (predictions.md, seed 84's note).

@@ -557,7 +557,8 @@ WORK_FAR = ['far']   # Iteration 159: the timed fib behind a 1 MB gap - three-by
 
 
 def canon(g):
-    g = dict(g); g['spec'] = [s for s in SPECS if s in g['spec']]; g['folds'] = list(g['folds'])
+    g = {k: v for k, v in g.items() if k in CV8 or k in CC0 or k in LATE or k == 'enc'}   # Iteration 574: genes deleted since dropped - seeds 70-71's jithelp, jitre, nocase broke crossover()
+    g['spec'] = [s for s in SPECS if s in g['spec']]; g['folds'] = list(g['folds'])
     g['supers'] = [list(x) for x in g.get('supers', [])]
     g['ops10'] = list(g.get('ops10', []))
     for k in LATE: g.setdefault(k, 0)          # genomes recorded before them: off
@@ -1683,6 +1684,9 @@ def carry_pool(paths, have=(), named=None):
                 have.add(gid(g)); out.append((g, ('tag 2 of %s: %s' if gid(g) != i else how) % (label, i), C[i]))
     finally:
         SPEED_TOL, MEM_TOL, TWO_WIDTHS[0] = keep
+    want = set(canon(HUMAN['s6-cv8b']))     # Iteration 574: crossover() reads each key of one parent in the other - a genome
+    for g, how, r in out:                   # off the current genes stops the run here, not after generation 0 (seed 84: 5 h)
+        if set(g) != want: raise SystemExit('carry: %s - genes not current: %s' % (how, ' '.join(sorted(set(g) ^ want))))
     return out
 
 def first_front(ids, R):

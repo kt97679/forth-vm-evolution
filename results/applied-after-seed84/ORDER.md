@@ -2,7 +2,7 @@
 
 No seed to process: batch-check, then applied to master by hand in Iteration 574 (HANDOFF-REFERENCE.md's step 6).
 
-    git apply results/pending/retired-after-seed84.patch
+    git apply results/applied-after-seed84/retired-after-seed84.patch
 
 batch-check (573, on f502cba - 1 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.

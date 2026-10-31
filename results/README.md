@@ -70,7 +70,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed79/` - the after-seed-79 batch, applied at seed 79's processing (Iteration 565): deaths-check.py names the scale-1 reach limit; gene-narrow.py; the random-search baseline ("random"); lifted.py as built.
 - `applied-after-seed81/` - the after-seed-81 batch, applied at seed 81's processing (Iteration 568): jitscan, ccflags, design, bar (ORDER.md says what each does).
 - `applied-after-seed83/` - the after-seed-83 batch, applied at seed 83's processing (Iteration 572): armrt, prebuiltarm, ragecheck (ORDER.md says what each does).
-- `pending/ORDER.md` - the batch to apply first at seed 84's processing: retired (ORDER.md says what each does).
+- `applied-after-seed84/` - the after-seed-84 batch, applied at once after seed 84's chain failed (Iteration 574): retired (ORDER.md says what it does).
 
 ### The processing checklists
 
@@ -92,6 +92,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/corpus-deaths-555.md` - Two designs of seed 76 that died on the corpus, reproduced (Iteration 555): a wrong output here, deterministic - an open correctness issue in a JIT combination; their genomes and the steps.
 - `drafts/jitexec-alignhot-566.md` - Seed 80's two deaths (Iteration 566; the cause 567): jit_scan's 160-byte window cut st_execute under -falign-*=64; alignhot built where express() drops it - fixed in the after-seed-81 batch.
 - `drafts/corpus-deaths-bisect-556.py` - The bisect behind it: the two designs and their parent, one gene at a time (Iteration 556).
+- `drafts/seed84-failed-574.md` - Seed 84's chain failed 5 hours in (Iteration 574): seeds 70-71's retired genes (jithelp) broke crossover() after generation 0; generation 0 by database, the remote checks, what the rerun costs.
+- `drafts/retired-genes-574.py` - The fix tested on the 3,489 genomes of seeds 70-83's results files (Iteration 574): crossover, mutate and borrow, the ids unchanged, carry_pool and its guard.
 
 ### The JIT
 
