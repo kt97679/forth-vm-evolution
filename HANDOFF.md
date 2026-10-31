@@ -41,20 +41,23 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 571.
-- **Seed 83 is next - 9 hours** (as seed 82 - the owner's to confirm), the method from seed 77. NEXT-RUN carries the
-  line, carry-check.py --all at its end. Six runs on the method, seed 82 gaining nothing: **the stop after seed 83** if
-  it gains nothing - then the confirmation run (seed 84 widths carryall, the owner's hours; open items 1-2 before it).
-- **Seed 82 processed (569)** - results/evolve-amd-ryzen-7-pro-8840hs-seed82.md: 9 hours, 126 generations, the true
-  front 246. **No gain** at 126: the hypervolume -2.8%, the fastest 0.1378 (-0.6%), the smallest 14,043 (-0.1%) - both
-  ends the best at equal effort, neither by its threshold. Its fastest tenth re-measures 1.048 (78-81: 1.060-1.094).
-  Every check on master passes; the deaths all of expected causes; no batch. Prediction 568 holds; its second half fails.
-- **The Tegra**: the host is sound (568: Spearman 0.971 on seed 77's 16 by id); seed 82's chain - 0.143 on 8 of seed 81's front - a
-  narrow band (the laptop's 0.32-0.40), not the host. Its check for the confirmation front: clang, prepared (570) - open item 1.
-- **Predictions due** (results/predictions.md): seed 83 - no gain and the stop; its fastest at 126 at or above 0.1378;
-  carry-check.py --all every sampled founder right (569).
-- **Before 569**: seeds 70-81 processed (498-568); history: HANDOFF-HISTORY.md.
-- **Files a new chat needs**: the newest bundle, and seed 83's chain archive. appbench.zip stays on the laptop.
+- master: Iteration 572.
+- **Seed 84 is next - the confirmation run, 12 hours (the owner)**: `seed 84 12h widths carryall` (GOALS.md step 2).
+  **Before it, on fury**: `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` installed, then `sh tools/rage-check.sh`
+  PASS (open item 1). Its founders: every run's strict front from seed 71 on - seeds 71-78 restored from their seed packs
+  by lab/evolve/restore-archives.sh (572: tools/clean-runs.sh keeps four archives; seed 83's carry-check saw 79-83 only,
+  none of the five named) - about 12,000-15,000 designs, 3-4 hours of generation 0.
+- **Seed 83 processed (572) - the stopping rule stops**: results/evolve-amd-ryzen-7-pro-8840hs-seed83.md - 9 hours, 126
+  generations, the true front 180, no measure better (the hypervolume -1.5%, the fastest 0.1459 +5.8%); seven runs on the
+  method, the last two gaining nothing, no correctness issue open. carry-check 40 of 40; every check on master passes; the
+  after-seed-83 batch applied (9664214: armrt, prebuiltarm, ragecheck).
+- **Predictions due** (results/predictions.md): seed 84 confirmed - the hypervolume under 0.3717 (1% over seeds 77-83's
+  pooled 0.36805), no extreme by its threshold (bars there); the restore names seeds 71-78, the carry 13 databases.
+- **Processing seed 84** differs from a series run: the confirmation test (GOALS.md step 2 - against the pooled true
+  front of 77-83, each re-enabled gene's enrichment), then step 3 - the final set (lab/evolve/final-set.py) re-measured,
+  and the random-search baseline (random-mode-after-seed79.patch, NEXT-RUN's "random").
+- **Before 572**: seeds 70-82 processed (498-569); history: HANDOFF-HISTORY.md.
+- **Files a new chat needs**: the newest bundle, and seed 84's chain archive. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
@@ -91,23 +94,17 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. The Tegra's check (the owner, 570: clang) - **the after-seed-83 batch waits** (results/pending/ORDER.md: armrt,
-   prebuiltarm): engine/rt-linux-armv7.c, every ARM engine without the C library (6-16 KB, not 347 KB); rage's check
-   prebuiltarm - the front's clang designs cross-built on fury (xcheck.py --arm), s6 and GCC's built on rage; seed 82's
-   front 196 eligible, 3 before. Nothing changes on x86 (byte-identical). **Before seed 84's chain the owner installs on
-   fury** `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` (no conflict with gcc-multilib); missing, rage's sample
-   fails as a line in steps, never the chain. Rage's numbers from then: no-C-library engines, mostly clang's - not
-   comparable with its checks before.
-   **Then, before seed 84, the owner runs `sh tools/rage-check.sh` on the laptop** (571, the batch's third patch; no chain
-   running): rage's GCC and the runtime's start checked on rage itself, qemu's blind spots - PASS before the confirmation run.
-2. The end of the improvement phase - GOALS.md, "When the improvements are done": the 10-hour series (74-76) closed
-   without a stop; from seed 77 one series matched by generation, the hours free (562); seeds 77-82 run, 82 gaining nothing (569) - the stop after seed 83 if it gains nothing; then the confirmation run, the final set, the random-search baseline (ready: random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
-   The final set's selection ready (571): lab/evolve/final-set.py on the runs' db.jsonl - seeds 77-82's results files
-   pooled: front 396, 279 merged; five designs 79.8% of its hypervolume, ten 94.0%, the knee among them.
-   The confirmation run's founders built carefully (the owner, 559: no good design missed) -
-   results/drafts/confirmation-pool-559.md - prepared (562, carry-after-seed78.patch: the strict front, the named
-   designs, carryall, carry-check.py): --carry to take each run's strict front (today's tolerance front drops
-   chain-hidden designs - seed 76's 105 fastest), every archived run, designs named elsewhere, the pool pre-flighted.
+1. The Tegra's check (the owner, 570: clang) - the after-seed-83 batch **applied** (572, 9664214: armrt, prebuiltarm,
+   ragecheck): ARM engines without the C library; rage's check of the front's clang designs, cross-built on fury. Nothing
+   changes on x86. **Before seed 84 the owner installs on fury** `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross`
+   (missing, rage's sample fails as a line in steps, never the chain), **then runs `sh tools/rage-check.sh`** on the
+   laptop, no chain running - PASS before the confirmation run. Rage's numbers from then: no-C-library engines, mostly
+   clang's - not comparable with its checks before.
+2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
+   seed 83 (572; seeds 77-83 on one method). Step 2, the confirmation run, is seed 84 (its founders:
+   results/drafts/confirmation-pool-559.md, carry-after-seed78.patch, restore-archives.sh); step 3, the final set -
+   lab/evolve/final-set.py (571; seeds 77-83 pooled: front 387, 271 merged) - and the random-search baseline (ready:
+   random-mode-after-seed79.patch, NEXT-RUN's "random" - 564).
 3. **Correctness - none open (569)**: seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
    -falign-*=64; ccflags() built alignhot where express() drops it (results/drafts/jitexec-alignhot-566.md) - fixed by
    the after-seed-81 batch, applied at 17566c6; seed 81's one such death right after it, wrong before (the control).
@@ -178,7 +175,7 @@ Grep first, then read the one section it finds; never read whole PROGRESS.md, pr
   results/gene-votes.md.
 - A tool: lab/evolve/README.md's tools, one line each; its usage: the tool's docstring.
 - An owner's decision: HANDOFF-REFERENCE.md's "standing decisions"; when and why: `grep -n TERM PROGRESS.md`.
-- A batch: results/pending/ORDER.md while it waits, results/applied-after-seedN/ORDER.md after.
+- A batch: results/applied-after-seed83/ORDER.md while it waits, results/applied-after-seedN/ORDER.md after.
 - A past iteration: `grep -n "^## Iteration N" PROGRESS.md`, that entry only; the card's history to 562:
   HANDOFF-HISTORY.md; GOALS.md before 275: results/drafts/goals-snapshots.md.
 - Every document: README.md's "Documents"; the prompts: prompts/INDEX.md.

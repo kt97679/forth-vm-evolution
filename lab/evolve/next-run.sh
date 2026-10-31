@@ -491,6 +491,12 @@ fi
 # as the comparison - the older fronts are dominated, and carrying them
 # cost minutes of every run's first generation (188 designs in seed 15).
 CLAST=${CARRY_LAST:-4}; [ -z "$CARRYALL" ] || CLAST=0
+# Iteration 572: carryall's "every archived database" - the ones clean-runs.sh removed back from their seed packs first
+# (seed 83's carry-check.py --all: seeds 79-83 only); never stops the run, every line said.
+if [ -n "$CARRYALL" ] && [ -z "$NOCARRY" ]; then
+    step "the archives clean-runs.sh removed, restored from their seed packs (lab/evolve/restore-archives.sh)"
+    RUNS="$RUNS" sh lab/evolve/restore-archives.sh 2>&1 | while read -r l; do say "$l"; done || true
+fi
 n=$(archives | wc -l)
 skip=0; if [ "$CLAST" -gt 0 ] && [ "$n" -gt "$CLAST" ]; then skip=$((n - CLAST)); fi
 CARRY=""; i=0

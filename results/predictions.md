@@ -1134,3 +1134,20 @@ generation 120 (at 140: 0.35378, 0.1350, 13,875, 104 KB, 0.1649 - `stopping.py -
 nine runs since seed 74, three gained; seeds 81 and 82 each reached the fastest at equal effort, 82 by 0.6% - the fast
 end is moving by less than its threshold. Its fastest at generation 126 at or above 0.1378 (seed 82's), and
 carry-check.py --all finds every sampled founder right (seed 79's: 40 of 40; seed 81's went unrecorded).
+
+**Scored at seed 83 (Iteration 572): holds.** Seed 83 gains nothing at generation 126 - the hypervolume 0.33579 (-1.5%
+under 0.34106), the fastest 0.1459 (+5.8% over 0.1378), the smallest 14,187, the memory 108 KB, 32-bit 0.1782 - and the
+rule stops: seven runs on the method, the last two gaining nothing. Its fastest, 0.1459, at or above 0.1378; carry-check.py
+--all 40 of 40 right (its pool seeds 79-83 alone - the archives clean-runs.sh removed; restore-archives.sh, 572).
+
+## Seed 84, the confirmation run, 12 hours - predicted (Iteration 572)
+
+GOALS.md step 2: `seed 84 12h widths carryall` - every run's strict front from seed 71 on (seeds 71-78 restored from
+their packs) and carry-named.txt's five among the founders. **Confirmed**: its true front's hypervolume not 1% above the
+pooled true front of seeds 77-83 - 0.36805 (final-set.py on their results files: 387 designs, 271 merged), so under
+0.3717 - and no extreme by its threshold against the strict extremes from every alive design of 77-83: the fastest not
+under 0.1350 (0.1377, seed 81), the smallest not under 13,849 (13,989, seed 80), the memory not under 104 KB (108), the
+fastest at 32 bits not under 0.1610 (0.1643, seed 79). Why: the last two runs gained nothing; generation 0 re-times some
+12,000-15,000 founders, 3-4 of the 12 hours (seed 79's check: 6,252 from five databases), so it evolves fewer generations
+than the series' runs; and one run's fastest is one draw against the best of seven. The restore works: next-run.log
+names seeds 71-78 restored, and the carry line counts 13 databases.

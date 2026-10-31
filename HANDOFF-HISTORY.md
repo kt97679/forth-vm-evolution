@@ -4,6 +4,23 @@ Moved verbatim from HANDOFF-REFERENCE.md at Iteration 568 (the owner: fewer toke
 lists of Iterations 505 and 369. The present is HANDOFF.md; the decisions, the processing steps and the lessons are
 HANDOFF-REFERENCE.md. History the card sheds goes here. Grep a term or an iteration; never read it whole.
 
+## The card's state at Iteration 571 (moved at 572)
+
+- master: Iteration 571.
+- **Seed 83 is next - 9 hours** (as seed 82 - the owner's to confirm), the method from seed 77. NEXT-RUN carries the
+  line, carry-check.py --all at its end. Six runs on the method, seed 82 gaining nothing: **the stop after seed 83** if
+  it gains nothing - then the confirmation run (seed 84 widths carryall, the owner's hours; open items 1-2 before it).
+- **Seed 82 processed (569)** - results/evolve-amd-ryzen-7-pro-8840hs-seed82.md: 9 hours, 126 generations, the true
+  front 246. **No gain** at 126: the hypervolume -2.8%, the fastest 0.1378 (-0.6%), the smallest 14,043 (-0.1%) - both
+  ends the best at equal effort, neither by its threshold. Its fastest tenth re-measures 1.048 (78-81: 1.060-1.094).
+  Every check on master passes; the deaths all of expected causes; no batch. Prediction 568 holds; its second half fails.
+- **The Tegra**: the host is sound (568: Spearman 0.971 on seed 77's 16 by id); seed 82's chain - 0.143 on 8 of seed 81's front - a
+  narrow band (the laptop's 0.32-0.40), not the host. Its check for the confirmation front: clang, prepared (570) - open item 1.
+- **Predictions due** (results/predictions.md): seed 83 - no gain and the stop; its fastest at 126 at or above 0.1378;
+  carry-check.py --all every sampled founder right (569).
+- **Before 569**: seeds 70-81 processed (498-568); history: HANDOFF-HISTORY.md.
+- **Files a new chat needs**: the newest bundle, and seed 83's chain archive. appbench.zip stays on the laptop.
+
 ## The state through Iteration 562 (history - HANDOFF.md has the present)
 
 - **Iterations 563-568**: seeds 78-81 processed (563, 565, 566, 568 - 79 and 81 gained, 78 and 80 not; 81 the fastest

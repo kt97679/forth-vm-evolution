@@ -2,9 +2,9 @@
 
 process-run.sh checks and applies it.
 
-    git apply results/pending/armrt-after-seed83.patch
-    git apply results/pending/prebuiltarm-after-seed83.patch
-    git apply results/pending/ragecheck-after-seed83.patch
+    git apply results/applied-after-seed83/armrt-after-seed83.patch
+    git apply results/applied-after-seed83/prebuiltarm-after-seed83.patch
+    git apply results/applied-after-seed83/ragecheck-after-seed83.patch
 
 batch-check (571, on 67231cc - 3 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.

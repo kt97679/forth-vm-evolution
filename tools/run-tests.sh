@@ -569,5 +569,8 @@ echo
 echo "the runs directory's tidying (tools/test-clean-runs.sh):"
 if out=$(sh "$ROOT/tools/test-clean-runs.sh" 2>&1); then printf '  %-12s ok     %s\n' clean-runs "$(printf '%s' "$out" | tail -1)"
 else printf '  %-12s FAIL   %s\n' clean-runs "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; rc=1; fi
+# Iteration 572: carryall's archives restored from the seed packs clean-runs.sh keeps (lab/evolve/restore-archives.sh)
+if out=$(sh "$ROOT/tools/test-restore-archives.sh" 2>&1); then printf '  %-12s ok     %s\n' restore "$(printf '%s' "$out" | tail -1 | cut -c1-110)"
+else printf '  %-12s FAIL   %s\n' restore "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; rc=1; fi
 [ $rc -eq 0 ] && echo "PASS - no regressions" || echo "FAIL - see above"
 exit $rc

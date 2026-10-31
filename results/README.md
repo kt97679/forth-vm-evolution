@@ -51,6 +51,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck-seed80.md` - The checks of seed 79's front during seed 80 (Iteration 566): dream.lan-prebuilt 24 designs measured on both: Spearman 0.877; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.911; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.939.
 - `xcheck-seed81.md` - The checks of seed 80's front during seed 81 (Iteration 568): dream.lan-prebuilt 24 designs measured on both: Spearman 0.891; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.919; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.928; rage.lan-native ?.
 - `xcheck-seed82.md` - The checks of seed 81's front during seed 82 (Iteration 569): Spearman with the laptop - dream 0.818 (24), 0.864 and 0.892 (30 at 32 and 64 bits); rage 0.143 (8, a narrow band).
+- `xcheck-seed83.md` - The checks of seed 82's front during seed 83 (Iteration 572): dream.lan-prebuilt 24 designs measured on both: Spearman 0.989; dream.lan-prebuilt32 30 designs measured on both: Spearman 0.932; dream.lan-prebuilt64 30 designs measured on both: Spearman 0.993; rage.lan-native 6 designs measured on both: Spearman 0.143.
 
 ### The batches of patches applied after the runs
 
@@ -68,7 +69,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed78/` - the after-seed-78 batch, applied at seed 78's processing (Iteration 563): a processing in three commands (process-run.sh, process-finish.sh, setup-sandbox.sh); the stopping rule matched by generation - each run at its last generation against each earlier one there (562).
 - `applied-after-seed79/` - the after-seed-79 batch, applied at seed 79's processing (Iteration 565): deaths-check.py names the scale-1 reach limit; gene-narrow.py; the random-search baseline ("random"); lifted.py as built.
 - `applied-after-seed81/` - the after-seed-81 batch, applied at seed 81's processing (Iteration 568): jitscan, ccflags, design, bar (ORDER.md says what each does).
-- `pending/ORDER.md` - the batch to apply first at seed 83's processing: armrt, prebuiltarm, ragecheck (ORDER.md says what each does).
+- `applied-after-seed83/` - the after-seed-83 batch, applied at seed 83's processing (Iteration 572): armrt, prebuiltarm, ragecheck (ORDER.md says what each does).
 
 ### The processing checklists
 

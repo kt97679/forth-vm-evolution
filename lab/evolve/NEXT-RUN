@@ -13,6 +13,11 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 572 (seed 83 processed): seed 84, 12 hours (the owner) - the confirmation run (GOALS.md step 2): widths
+# carryall, no noevolved. Seed 83 gained nothing - seven runs on the method, the last two gaining nothing: the rule stops.
+# carryall carries every archived database; the ones tools/clean-runs.sh removed (seeds 71-78) come back from their seed
+# packs first (lab/evolve/restore-archives.sh). Before it, on fury: lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross
+# installed, and `sh tools/rage-check.sh` PASS (HANDOFF.md, open item 1). No carry-check.py after it: its pool was the check.
 # Iteration 569 (seed 82 processed): seed 83, 9 hours (as seed 82; the owner's to confirm). Seed 82 gained nothing at
 # generation 126 - six runs on the method, the last gaining nothing: if seed 83 gains nothing the rule stops after it,
 # so its chain pre-flights the confirmation run's founders again (carry-check.py --all - seed 82's front is new since
@@ -130,4 +135,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 83 9h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment carry-check.py --all
+seed 84 12h widths carryall then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
