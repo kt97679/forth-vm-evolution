@@ -36,7 +36,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   there, never in master. Never two evolver processes on one tree at once.
   After changing forth/ or engine/, rebuild the stages.
 - **The environment is tools/setup-sandbox.sh** (the owner, 567; prompts/22): idempotent - run it again rather than
-  mend by hand (a second run changes nothing); a requirement a session finds missing goes into it in that turn, never
+  mend by hand (a second run changes nothing; 573: "still installing - run this again" is apt-get detached past 240 s); a requirement a session finds missing goes into it in that turn, never
   as a manual step in a document (gcc-multilib, Iteration 553, was one).
 
 ## The state now
@@ -60,8 +60,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (573, GOALS.md step 2-4): the verdict's two kinds of NOT CONFIRMED, the genes' classes, the candidates. The next chain,
   confirmed or the pool widened: NEXT-RUN `seed 85 12h widths noevolved random then experiment loadtest.py --ids
   results/candidates-final-seed84.md` (an hour or two after the run, on fury), every REMOTES line `--also
-  @results/candidates-final-seed84.md`, minutes `run`; rage-check PASS first (open item 1). Seed 85's processing: lab/evolve/final-pick.py
-  (the candidates, loadtest's output, the hosts' out.json). The confirmation run is known by its pack's machine.txt and the
+  @results/candidates-final-seed84.md`, minutes `run`; rage-check PASS first (open item 1). Seed 85's processing (the random baseline, known by
+  its WANT): process-seed.sh runs baseline.py and final-pick.py (the candidates, the chain's loadtest, the hosts' out.json);
+  no curve, no gene votes, a {"random": 85} ledger line. The confirmation run is known by its pack's machine.txt and the
   chain's steps (next-run.sh strips carryall from the chain's line): process-seed.sh's marker /tmp/process/confirmation;
   process-records.sh appends its {"confirmation": 84} line, which stopping.py passes over and a later confirmation pools.
 - **Before 572**: seeds 70-82 processed (498-569); history: HANDOFF-HISTORY.md.

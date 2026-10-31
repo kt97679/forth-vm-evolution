@@ -10405,4 +10405,8 @@ widths, generation 1 four random children, 3 alive at both widths.
 The nine likely retire candidates read (results/drafts/retire-candidates-573.md): the old values' code builds the hand-made
 stages s2-s5 (bytehdr, varcall, doesfar, scale); sharedcall does nothing beside varcall; msc (tools/gen-msc.py, 330 lines)
 the one real removal, never measured on the Tegra, where no JIT excludes it.
+Seed 85's processing (the random baseline): baseline.py - the run beside the series at its generation and at their ends,
+values; process-seed.sh knows a run by its WANT (machine.txt, steps), runs baseline.py and final-pick.py; no curve, no
+votes, a {"random"} ledger line - dry-run on archives shaped like the real ones (the line stripped), both paths.
+setup-sandbox.sh: apt-get detached, waited 240 s at most (tested cut off, running, done, there).
 Files: results/drafts/retire-candidates-573.md (predictions.md, seed 84's note).

@@ -24,18 +24,29 @@ B=${1:-$(ls -t /mnt/user-data/uploads/forth-vm-evolution-claude-*.bundle 2>/dev/
 D=${DEST:-/home/claude/forth-vm-evolution}
 [ -f "$B" ] || { echo "setup-sandbox: no bundle (BUNDLE, or one in /mnt/user-data/uploads)"; exit 1; }
 asme() { runuser -u claude -- "$@"; }
-if dpkg -s gcc-multilib clang clang-19 > /dev/null 2>&1; then echo "setup-sandbox: the compilers there"
-else
-    apt-get update -qq > /tmp/setup-apt.log 2>&1
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gcc-multilib clang clang-19 >> /tmp/setup-apt.log 2>&1 &&
-        echo "setup-sandbox: the compilers installed" || echo "setup-sandbox: apt-get failed - /tmp/setup-apt.log"
-fi
+# Iteration 573: apt-get detached and waited for, at most WAIT seconds (default 240) - a tool call ends near 300 s, and
+# the compilers' install ran past it in a fresh sandbox (the call killed, dpkg finishing by luck); killed mid-dpkg, a
+# sandbox breaks. Not done in time: the clone made, nothing that needs the packages started - run this again.
+apt_bg() {
+    n=$1; shift; st=/tmp/setup-apt-$n.status
+    if dpkg -s "$@" > /dev/null 2>&1; then echo "setup-sandbox: the $n there"; return 0; fi
+    p=$(cat "/tmp/setup-apt-$n.pid" 2> /dev/null)
+    if [ -z "$p" ] || ! kill -0 "$p" 2> /dev/null; then
+        rm -f "$st"
+        setsid nohup sh -c "echo \$\$ > /tmp/setup-apt-$n.pid; { apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $*; } >> /tmp/setup-apt.log 2>&1; echo \$? > $st" > /dev/null 2>&1 &
+        echo "setup-sandbox: the $n installing, detached (/tmp/setup-apt.log)"
+    else echo "setup-sandbox: the $n installing already (pid $p)"; fi
+    w=0; while [ ! -f "$st" ] && [ "$w" -lt "${WAIT:-240}" ]; do sleep 5; w=$((w + 5)); done
+    [ -f "$st" ] || { echo "setup-sandbox: the $n still installing - run this again when it ends (/tmp/setup-apt.log)"; return 1; }
+    [ "$(cat "$st")" = 0 ] && dpkg -s "$@" > /dev/null 2>&1 && { echo "setup-sandbox: the $n installed"; return 0; }
+    echo "setup-sandbox: apt-get failed ($n) - /tmp/setup-apt.log"; return 1
+}
+PKG=ok
+apt_bg compilers gcc-multilib clang clang-19 || PKG=
 [ -e /usr/include/asm ] || ln -s x86_64-linux-gnu/asm /usr/include/asm
-if [ "${CROSS:-0}" = 1 ]; then              # Iteration 568: ARMv7 builds by clang here (results/drafts/tegra-cross-568.py) - never
+if [ "${CROSS:-0}" = 1 ] && [ -n "$PKG" ]; then    # Iteration 568: ARMv7 builds by clang here (results/drafts/tegra-cross-568.py) - never
     # gcc-arm-linux-gnueabihf: Ubuntu removes gcc-multilib for it, and the 32-bit x86 builds with it
-    if dpkg -s lld qemu-user libc6-dev-armhf-cross libgcc-13-dev-armhf-cross > /dev/null 2>&1; then echo "setup-sandbox: the ARM cross packages there"
-    else DEBIAN_FRONTEND=noninteractive apt-get install -y -qq lld qemu-user libc6-dev-armhf-cross libgcc-13-dev-armhf-cross >> /tmp/setup-apt.log 2>&1 &&
-        echo "setup-sandbox: the ARM cross packages installed" || echo "setup-sandbox: apt-get failed (cross) - /tmp/setup-apt.log"; fi
+    apt_bg arm-cross lld qemu-user libc6-dev-armhf-cross libgcc-13-dev-armhf-cross || PKG=
 fi
 if [ -d "$D/.git" ]; then                 # 567: left as it is, and said how it stands against the bundle
     H=$(asme git -C "$D" rev-parse HEAD); M=$(git bundle list-heads "$B" 2>/dev/null | awk '$2 == "refs/heads/master" {print $1}')
@@ -46,7 +57,8 @@ else mkdir -p "$D" && chown claude:claude "$D" && asme git clone -q "$B" "$D" ||
 asme git -C "$D" config user.name "Kirill Timofeev" && asme git -C "$D" config user.email kt97679@gmail.com
 echo "setup-sandbox: $(basename "$B") -> $D at $(asme git -C "$D" log --oneline -1 | cut -c1-70)"
 echo "setup-sandbox: $(dpkg -s gcc-multilib clang-19 2>/dev/null | grep -c '^Status: install ok') of 2 packages in; asm/ $([ -e /usr/include/asm ] && echo there)"
-if [ "${CHECK:-0}" = 1 ]; then
+if [ "${CHECK:-0}" = 1 ] && [ -z "$PKG" ]; then echo "setup-sandbox: the checks not started - the packages are not in yet"
+elif [ "${CHECK:-0}" = 1 ]; then
     P=$(cat /tmp/setup-check/pid 2>/dev/null)
     if [ -n "$P" ] && grep -q setup-check "/proc/$P/cmdline" 2>/dev/null; then echo "setup-sandbox: the checks run already (pid $P) - not started again"
     elif grep -qx DONE /tmp/setup-check/status 2>/dev/null; then echo "setup-sandbox: the checks done already - $(grep -v DONE /tmp/setup-check/status | tr '\n' ' ')(rm -rf /tmp/setup-check to run them again)"
@@ -60,7 +72,8 @@ if [ "${CHECK:-0}" = 1 ]; then
         echo "setup-sandbox: the build, run-tests and validate started - sh tools/wait-for.sh /tmp/setup-check/status DONE"
     fi
 fi
-if [ -n "${SCRATCH:-}" ]; then                                       # 567: a scratch tree, as HANDOFF.md asks
+if [ -n "${SCRATCH:-}" ] && [ -z "$PKG" ]; then echo "setup-sandbox: the scratch tree not made - the packages are not in yet"
+elif [ -n "${SCRATCH:-}" ]; then                                     # 567: a scratch tree, as HANDOFF.md asks
     X=$SCRATCH
     if [ -d "$X/.git" ]; then echo "setup-sandbox: scratch $X there at $(asme git -C "$X" log --oneline -1 | cut -c1-60) - left as it is"
     else
