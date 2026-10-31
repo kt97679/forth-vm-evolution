@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lab/evolve/confirm.py DB --seed N [--ledger LEDGER] [--candidates FILE] [--pool FILE ...] | --pool-files N | --self-test - GOALS.md step 2, the confirmation
+"""lab/evolve/confirm.py DB --seed N [--ledger LEDGER] [--candidates FILE] [--append] [--pool FILE ...] | --pool-files N | --self-test - GOALS.md step 2, the confirmation
 test, mechanical (Iteration 573, prepared while seed 84 ran; prompts/21, item 9: the arithmetic a script, the judgment the
 chat's). The confirmation run (`seed N HOURS widths carryall`) against the method's last runs:
 
@@ -33,6 +33,10 @@ The owner's decisions of Iteration 573 (GOALS.md step 2), before seed 84 returne
      candidate (--candidates: final-set.py's, the set and the bands), on an extreme, or in the fastest tenth of the run's
      or the pool's front; stays - its other value on a true front of any of the pooled runs or this one; retire
      candidate - on none of them: its other value's code, the gene fixed at its old value (consolidation's to decide).
+  9. A confirmation run in the ledger (--append, process-records.sh): a {"confirmation": N, ...} line - its own front's
+     numbers and its verdict - which stopping.py's series() passes over (neither a method nor a seed line). A later
+     confirmation run (after NOT CONFIRMED - the search) pools the series AND the earlier confirmation runs, and takes
+     their extremes among the bests: its pool the series and seed 84, as the owner decided.
 stdout: markdown; the verdict in one line, "verdict: seed N CONFIRMED" or "verdict: seed N NOT CONFIRMED - ...". As the
 build user (it imports the evolver). --self-test: synthetic records, known answers."""
 import ast, glob, json, os, re, sys
@@ -121,6 +125,17 @@ def self_test():
     return 0 if ok else 1
 
 
+def confirmations(path, N):
+    """573: the confirmation lines after the ledger's newest method line, before seed N - each like a run's line."""
+    out = []
+    for l in open(path):
+        if l.startswith('{'):
+            r = json.loads(l)
+            if 'method' in r: out = []
+            elif 'confirmation' in r and r['confirmation'] < N: out.append(dict(r, seed=r['confirmation']))
+    return out
+
+
 def pool_files(runs):
     miss = [r['seed'] for r in runs if not glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed%d.md' % r['seed']))]
     if miss: sys.exit('confirm.py: no results file for seeds %s' % miss)
@@ -131,14 +146,15 @@ def main(a):
     opt = lambda k: a[a.index(k) + 1] if k in a and a.index(k) + 1 < len(a) else None
     if a == ['--self-test']: return self_test()
     if opt('--pool-files'):
-        print('\n'.join(pool_files([r for r in stopping.series(opt('--ledger') or stopping.LEDGER)[1] if r['seed'] < int(opt('--pool-files'))])))
+        L, n = opt('--ledger') or stopping.LEDGER, int(opt('--pool-files'))
+        print('\n'.join(pool_files([r for r in stopping.series(L)[1] if r['seed'] < n] + confirmations(L, n))))
         return 0
     if opt('--seed') is None: sys.exit(__doc__)
     N = int(opt('--seed')); led = opt('--ledger') or stopping.LEDGER
     pool = a[a.index('--pool') + 1:] if '--pool' in a else []          # --pool last: every file after it
-    db = next(x for x in (a[:a.index('--pool')] if pool else a) if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger')))
+    db = next(x for x in (a[:a.index('--pool')] if pool else a) if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger'), opt('--candidates')))
     sys.argv = ['x']; import evolve as E
-    b = json.load(open(hv.BOUNDS)); method, runs = stopping.series(led); runs = [r for r in runs if r['seed'] < N]
+    b = json.load(open(hv.BOUNDS)); method, runs = stopping.series(led); runs = [r for r in runs if r['seed'] < N] + confirmations(led, N)
     pool = pool or pool_files(runs)
     P = {}
     for f in pool: P.update(hv.load(f, E))
@@ -172,6 +188,13 @@ def main(a):
     nm = lambda k: 'the pool and its bred designs' if k == 'bred' else '%s (%s, %s)' % (stopping.NAME[k], 'its front' if k == 'hv' else xid[k],
                                                                                       'bred' if (k == 'hv' and hb - ph >= hc - ph) or (k != 'hv' and isbred(xid[k])) else 'carried')
     ext = ' - the extremes\' gains stand only after their re-measure (step 3\'s candidates)' if set(g) - {'hv', 'bred'} else ''
+    vd = 'CONFIRMED' if not g else 'NOT CONFIRMED - the search' if org == 'search' else 'NOT CONFIRMED - the pool widened'
+    if '--append' in a:                                                  # 573: the run's line, once
+        if any(l.startswith('{') and json.loads(l).get('confirmation') == N for l in open(led)): print('confirm.py: the ledger has seed %d already' % N)
+        else:
+            with open(led, 'a') as o:
+                o.write(json.dumps(dict(confirmation=N, front=m['front'], hv=round(m['hv'], 6), fastest=round(run['fastest'], 6), smallest=run['smallest'],
+                                        memory=run['memory'], fastest32=round(run['fastest32'], 6), verdict=vd)) + '\n')
     print('\nverdict: seed %d %s' % (N, 'CONFIRMED - the hypervolume not 1% over the pool\'s, no extreme by its threshold, the bred designs adding under 1%' if not g
           else 'NOT CONFIRMED - the search: gained by %s; next: another confirmation run pooled over the series and seed %d (GOALS.md, 573)%s' % (', '.join(map(nm, g)), N, ext) if org == 'search'
           else 'NOT CONFIRMED - the pool widened: gained by %s, carried designs only; next: no new search - the pool widened, the gainers among the candidates (GOALS.md, 573)%s' % (', '.join(map(nm, g)), ext)))

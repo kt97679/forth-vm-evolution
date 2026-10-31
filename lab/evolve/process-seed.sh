@@ -38,7 +38,11 @@ if [ -n "$SP" ]; then
     VN=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null)        # Iteration 432: the gene votes, with the ledger - not written
     python3 "$EV/review-checks.py" votes "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > votes.txt 2>&1   # 532: the front from the records
     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
-    if grep -qw carryall "$C/line" 2> /dev/null; then     # Iteration 573: the confirmation run (GOALS.md step 2) - no series run
+    # Iteration 573: the confirmation run (GOALS.md step 2) - no series run. next-run.sh strips a line's words (carryall,
+    # widths, noevolved, random) before it writes the chain's line - seed 83's reads "seed 83 9h then ..." - so the word is
+    # read where the run's WANT is kept: the pack's machine.txt and the chain's steps. The marker file tells the rest.
+    grep -qsw carryall "$C/line" "$C/steps" "$SP/machine.txt" && echo carryall > "$OUT/confirmation"
+    if [ -f "$OUT/confirmation" ]; then
         # the final set's draft first: its candidates (573) are a place confirm.py's KEEP looks
         python3 "$EV/final-set.py" $(python3 "$EV/confirm.py" --pool-files "$VN") "$SP/db.jsonl" --json finalset.json --candidates candidates-final.md > finalset.txt 2>&1
         python3 "$EV/confirm.py" "$SP/db.jsonl" --seed "$VN" --candidates candidates-final.md > confirm.txt 2>&1

@@ -78,6 +78,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `evolve.py` - evolve.py - evolve VM designs: the faster and the smaller survive
 - `factor-price.py` - factor-price.py ID [--shares 1e-3,1e-2,2] [--db FILE ...] - what the gene
 - `final-set.py` - GOALS.md step 3's selection (Iteration 571): from runs' records pooled, the true front merged within the tolerances, the four strict extremes, then designs by hypervolume gain to K; a knee as a candidate; --candidates (573): the re-measure's.
+- `final-pick.py` - GOALS.md step 3 after the re-measures (Iteration 573): the extremes and the set chosen from loadtest.py --ids's re-measures, alone and under load; each host's fastest named, its fast five FLAGGED if out of the set; --self-test.
 - `confirm.py` - GOALS.md step 2, the confirmation test (Iteration 573): a carryall run against the series' pooled true front and best extremes, what it added, gains by origin, the genes' four classes (573); process-seed.sh runs it; --self-test.
 - `fsys-count.py` - fsys-count.py ID [ID ...] --db FILE [--db FILE] [--levels 4,5] [--works kernel,corpus]
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)

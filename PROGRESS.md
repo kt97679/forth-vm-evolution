@@ -10398,4 +10398,8 @@ Then the owner's decisions (GOALS.md, 573 - no useful design or gene filtered ou
 bred designs adding 1% to the pool), a gain read by its origin (the search, or the pool widened), the genes' four classes
 (on 77-83's fronts: 9 of 10 retire candidates, alignhot stays); final-set.py --candidates (77-83: 39); loadtest.py --ids
 at both widths (133 s a design here); xcheck.py --also @FILE (39 asked, 16 without the JIT). Dry-run end to end again.
+Then: next-run.sh strips carryall from the chain's line (seed 83's reads "seed 83 9h then ...") - the fake archive had hidden
+it; the run is now known by its pack's machine.txt and the chain's steps. confirm.py --append: a {"confirmation"} line
+stopping.py passes over, pooled by a later confirmation. final-pick.py: the set from the re-measures. Smoke: random with
+widths, generation 1 four random children, 3 alive at both widths.
 Files: none under results/ (predictions.md, seed 84's note).

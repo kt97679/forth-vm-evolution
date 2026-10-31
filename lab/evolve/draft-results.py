@@ -33,7 +33,7 @@ if E.TWO_WIDTHS[0]: ok = [i for i in ok if R[i].get('speed32')]
 T = E.first_front(ok, R); rep = open(os.path.join(pack, 'report.md')).read()
 Rf = set(re.findall(r'^\| ([0-9a-f]{10}) \|', rep.split('## How the front came about')[0], re.M))
 hv = next((l.strip() for l in subprocess.run([sys.executable, os.path.join(HERE, 'hv.py'), db], capture_output=True, text=True).stdout.split('\n') if 'hypervolume' in l), '?')
-CONF = 'carryall' in line.split()        # 573: the confirmation run (GOALS.md step 2) - confirm.py's test, not the series'
+CONF = os.path.exists(os.path.join(P, 'confirmation'))   # 573: the confirmation run (process-seed.sh's marker) - confirm.py's test, not the series'
 cf_ = os.path.join(P, 'confirm.txt')
 so = '' if CONF else subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
 co = (open(cf_).read() if os.path.exists(cf_) else subprocess.run([sys.executable, os.path.join(HERE, 'confirm.py'), db, '--seed', str(N)],

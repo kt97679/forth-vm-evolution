@@ -60,8 +60,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (573, GOALS.md step 2-4): the verdict's two kinds of NOT CONFIRMED, the genes' classes, the candidates. The next chain,
   confirmed or the pool widened: NEXT-RUN `seed 85 12h widths noevolved random then experiment loadtest.py --ids
   results/candidates-final-seed84.md` (an hour or two after the run, on fury), every REMOTES line `--also
-  @results/candidates-final-seed84.md`, minutes `run`; rage-check PASS first (open item 1). Not built yet: the extremes
-  chosen from the re-measures (seed 85's processing).
+  @results/candidates-final-seed84.md`, minutes `run`; rage-check PASS first (open item 1). Seed 85's processing: lab/evolve/final-pick.py
+  (the candidates, loadtest's output, the hosts' out.json). The confirmation run is known by its pack's machine.txt and the
+  chain's steps (next-run.sh strips carryall from the chain's line): process-seed.sh's marker /tmp/process/confirmation;
+  process-records.sh appends its {"confirmation": 84} line, which stopping.py passes over and a later confirmation pools.
 - **Before 572**: seeds 70-82 processed (498-569); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and seed 84's chain archive. appbench.zip stays on the laptop.
 

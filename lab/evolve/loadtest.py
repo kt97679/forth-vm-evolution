@@ -28,6 +28,8 @@ sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 if a.ids: E.TWO_WIDTHS[0] = True; E.setup_widths()         # 573: the 4-byte cells' references too, for eval32
 else: E.setup()
 if not a.ids and not a.dbs: ap.error('a database, or --ids FILE')
+if a.ids and not os.path.exists(a.ids):                      # 573: a chain's experiment names it from the repository
+    a.ids = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), a.ids)
 db = a.ids or max(a.dbs, key=os.path.getmtime)
 R = {}
 for l in open(db):
