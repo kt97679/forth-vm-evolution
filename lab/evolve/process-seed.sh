@@ -38,8 +38,18 @@ if [ -n "$SP" ]; then
     VN=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null)        # Iteration 432: the gene votes, with the ledger - not written
     python3 "$EV/review-checks.py" votes "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > votes.txt 2>&1   # 532: the front from the records
     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
+    if grep -qw carryall "$C/line" 2> /dev/null; then     # Iteration 573: the confirmation run (GOALS.md step 2) - no series run
+        python3 "$EV/confirm.py" "$SP/db.jsonl" --seed "$VN" > confirm.txt 2>&1
+        p ""; p "## confirm.py (confirm.txt) - GOALS.md step 2: against the pooled true front, the re-enabled genes' screen"; p '```'
+        grep -v '^|---' confirm.txt | cut -c1-300 >> "$S"; p '```'
+        p "- the restore (next-run.log): $(grep -c 'restore-archives: seed [0-9]* - archived' "$SP/next-run.log" 2>/dev/null) restored - seeds $(sed -n 's/.*restore-archives: seed \([0-9]*\) - archived.*/\1/p' "$SP/next-run.log" 2>/dev/null | tr '\n' ' ')"
+        python3 "$EV/final-set.py" $(python3 "$EV/confirm.py" --pool-files "$VN") "$SP/db.jsonl" --json finalset.json > finalset.txt 2>&1
+        p ""; p "## final-set.py (finalset.txt, finalset.json) - GOALS.md step 3's selection from the pool and this run, if confirmed"; p '```'
+        sed -n '3p' finalset.txt | cut -c1-400 >> "$S"; grep '^| [0-9]' finalset.txt | cut -c1-200 >> "$S"; p '```'
+    else
     python3 "$EV/stopping.py" "$SP/db.jsonl" ${VN:+--seed "$VN"} --ledger "$REPO/results/stopping-series.md" > stopping.txt 2>&1   # Iteration 554
     p ""; p "## stopping.py (stopping.txt) - GOALS.md's stopping rule, with results/stopping-series.md (appended at step 6)"; p '```'; cut -c1-500 stopping.txt >> "$S"; p '```'
+    fi
     python3 "$EV/lifted.py" "$SP/db.jsonl" > lifted.txt 2>&1   # Iteration 557: the freezes lifted at 556, on the true front
     p ""; p "## lifted.py (lifted.txt) - the freezes lifted at 556 on the true front; prediction 556"; p '```'; grep -v '^|---' lifted.txt | cut -c1-300 >> "$S"; p '```'
     python3 "$EV/review-checks.py" rules "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > rules.txt 2>&1   # Iteration 438

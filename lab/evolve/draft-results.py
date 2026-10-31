@@ -33,7 +33,12 @@ if E.TWO_WIDTHS[0]: ok = [i for i in ok if R[i].get('speed32')]
 T = E.first_front(ok, R); rep = open(os.path.join(pack, 'report.md')).read()
 Rf = set(re.findall(r'^\| ([0-9a-f]{10}) \|', rep.split('## How the front came about')[0], re.M))
 hv = next((l.strip() for l in subprocess.run([sys.executable, os.path.join(HERE, 'hv.py'), db], capture_output=True, text=True).stdout.split('\n') if 'hypervolume' in l), '?')
-so = subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
+CONF = 'carryall' in line.split()        # 573: the confirmation run (GOALS.md step 2) - confirm.py's test, not the series'
+cf_ = os.path.join(P, 'confirm.txt')
+so = '' if CONF else subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
+co = (open(cf_).read() if os.path.exists(cf_) else subprocess.run([sys.executable, os.path.join(HERE, 'confirm.py'), db, '--seed', str(N)],
+      capture_output=True, text=True).stdout) if CONF else ''
+conf_ = ' '.join(l.strip() for l in co.split('\n') if l.startswith(('verdict:', 'What it added:', 'the screen:'))) or 'TODO: confirm.py gave no verdict (confirm.txt).'
 stop_ = ' '.join(l for l in so.split('\n') if l.startswith(('verdict:', 'the count:', 'the next run gains if:'))) or "TODO: against the method's earlier runs (GOALS.md)."
 f = min(T, key=lambda i: R[i]['speed']); s = min(T, key=lambda i: E.ov(R[i], 'total')); mm = min(T, key=lambda i: R[i]['rss'])
 w = min((i for i in T if R[i].get('speed32')), key=lambda i: R[i]['speed32'], default=None)
@@ -78,7 +83,9 @@ head = '\n'.join(x for x in [
  '`%s` at %s. The chain: %s%s. %s designs, generations 0-%d: %s%s.' % (line, commit, status, '' if status == 'done' else ' - TODO: what failed', '{:,}'.format(len(R)), gens,
     ', '.join('%s %s' % ('{:,}'.format(v), k) for k, v in cnt.most_common()), '; %s designs an hour' % '{:,}'.format(len(R) // hours) if hours else ''), '',
  '**The front**: the true one %d designs - the report\'s %d%s.' % (len(T), len(Rf), ', the same' if Rf == set(T) else ' - TODO: why they differ'), '',
- '**The fixed-box hypervolume**: %s. **The stopping rule** (stopping.py, results/stopping-series.md): %s' % (hv.split(': ', 1)[-1], stop_), '',
+ '**The fixed-box hypervolume**: %s. %s' % (hv.split(': ', 1)[-1], ('**The confirmation test** (confirm.py, confirm.txt; GOALS.md step 2): %s' % conf_) if CONF
+     else '**The stopping rule** (stopping.py, results/stopping-series.md): %s' % stop_), '',
+ '**The final set** (final-set.py, finalset.txt - GOALS.md step 3, from the pool and this run): %s' % txt('finalset', 2, 3) if CONF and os.path.exists(os.path.join(P, 'finalset.txt')) else None, '',
  '**The extremes**: fastest %s %.4f, smallest %s %s bytes, least memory %s KB%s.' % (f, R[f]['speed'], s, '{:,}'.format(E.ov(R[s], 'total')), R[mm]['rss'],
     ', fastest at 32 bits %s %.4f' % (w, R[w]['speed32']) if w else ''), '',
  '**One round first**: %s children stopped after one round, %.1f%% of those measured; %d audited in full, %d of them on the front.' % (
@@ -100,7 +107,8 @@ head = '\n'.join(x for x in [
  '**The clock test\'s cost both pay** (clockcheck.md, us by workload, alone): %s' % cost_() if ck else None, '',
  '**The deaths**: %s. [process-finish: deaths-check]' % (', '.join('%s %s' % (v, k) for k, v in cnt.items() if re.match('(died|wrong output)', k or '')) or 'none'), '',
  '**The chain on master**: [process-finish: the chain]', '',
- 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.']
+ ('TODO: the confirmation verdict and the genes\' screen judged (confirm.txt; GOALS.md step 2), the final set\'s next step (finalset.txt; step 3), '
+  'the predictions scored (results/predictions.md) - summary.md.' if CONF else 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.')]
  if x is not None)
 out = os.path.join(ROOT, 'results', 'evolve-%s-seed%d.md' % (mach, N))
 open(out, 'w').write(head + '\n\n---\n\n' + rep); print('draft-results: %s (%d TODO)' % (out, head.count('TODO')))

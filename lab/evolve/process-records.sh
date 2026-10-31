@@ -5,7 +5,8 @@
 #      is applied (git apply -R --check), else it stops - its citations followed in every .md, README.md's line renamed;
 #   2. results/progress-by-run.md (progress-table.py);
 #   3. the gene votes appended to results/gene-votes.md, the stopping line to results/stopping-series.md - each skipped
-#      when the ledger already has seed N, so a second run adds nothing;
+#      when the ledger already has seed N, so a second run adds nothing; the stopping line too for the confirmation run
+#      (the chain's line has carryall - Iteration 573: no series run; confirm.py judges it);
 #   4. NEXT_METHOD='why' set: the next series' method line (from seed N+1, the extremes from every alive design) - a
 #      method change (GOALS.md: the hours among it) restarts the count.
 # DB= the seed pack's db.jsonl (default process-seed.sh's under /tmp/process). Commits nothing: prints what it did and
@@ -44,7 +45,8 @@ python3 lab/evolve/progress-table.py > results/progress-by-run.md && say "result
 if grep -q "^| $N | " results/gene-votes.md; then say "gene-votes.md has seed $N already - not appended"      # 3.
 else python3 lab/evolve/review-checks.py votes "$RES" --seed "$N" --db "$DB" --ledger results/gene-votes.md --append > /dev/null &&
     say "gene votes appended: $(grep -c "^| $N | " results/gene-votes.md) genes"; fi
-if grep -q "\"seed\": $N," results/stopping-series.md; then say "stopping-series.md has seed $N already - not appended"
+if grep -qsw carryall /tmp/process/chain-*/line; then say "seed $N is the confirmation run (carryall) - no series line in stopping-series.md: its test is confirm.py's, in $RES"   # 573
+elif grep -q "\"seed\": $N," results/stopping-series.md; then say "stopping-series.md has seed $N already - not appended"
 else python3 lab/evolve/stopping.py "$DB" --seed "$N" --ledger results/stopping-series.md $([ -f /tmp/process/curve.json ] && echo --curve /tmp/process/curve.json) --append | grep -E '^verdict' |
     sed 's/^/process-records: stopping: /'; fi
 
