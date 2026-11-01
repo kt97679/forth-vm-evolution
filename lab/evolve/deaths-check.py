@@ -23,6 +23,13 @@ def expected(r, w):
     g = r['genome']                                     # 564: reach_lethal's scale 1 - run, jailed (Iteration 10)
     if w == 'kernel' and g.get('enc') == 'cv8' and g.get('scale') == 1 and not (g.get('varcall') and g.get('doesfar')):
         return 'the reach limit at scale 1, run and jailed (10; back with doesfar lifted, 556)'
+    # 576: seed 85's random genomes reach it at scale 2 too - 69 kernel deaths, every one bytehdr=0, lean=0, threads=2 without
+    # both far forms; 83 of 83 such designs with both lived (results/evolve-amd-ryzen-7-pro-8840hs-seed85.md)
+    if w == 'kernel' and g.get('enc') == 'cv8' and g.get('scale') == 2 and not (g.get('varcall') and g.get('doesfar')) \
+            and not g.get('bytehdr') and not g.get('lean'):
+        return 'the reach limit at scale 2, large dictionaries (576)'
+    # 576: the converter's size check at the scale-0 call reach (results/drafts/body-size-drift-576.md) - dies before any run
+    if 'body size drift' in r['status'] and g.get('scale') == 0: return 'the scale-0 call reach, the converter refuses (576)'
     return None
 
 def sign(g):            # the genes of the known faults, for reading the table

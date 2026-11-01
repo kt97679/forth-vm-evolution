@@ -140,9 +140,14 @@ for did, g in designs:
     except Exception as e:
         print('| %s | | build failed: %s | |' % (did, str(e)[:60])); bad += 1; continue
     diff = [f for f in TESTED if (out[f]['rc'], out[f]['out']) != (ref[f]['rc'], ref[f]['out'])]
+    # 576: coreext.4 defines TRAVERSE-WORDLIST over byte headers only ([DEFINED] NEXT-NFA8, Iteration 186) - a cell-header
+    # design refuses it out loud, as the far rule allows (seed 85's ccbc1d53fb: 49 of 63 tests run, none failed)
+    loud = [f for f in diff if out[f]['stop'] == 'TRAVERSE-WORDLIST' and out[f]['failed'] == 0 and out[f]['rc'] == ref[f]['rc']
+            and not E.express(g).get('bytehdr')]
+    diff = [f for f in diff if f not in loud]
     bad += bool(diff)
     print('| %s | %d | %d of %d | %s |' % (did, E.express(g).get('guard', 0), len(TESTED) - len(diff), len(TESTED),
-          ', '.join('%s (rc %s)' % (f, out[f]['rc']) for f in diff) or '-'), flush=True)
+          ', '.join(['%s (rc %s)' % (f, out[f]['rc']) for f in diff] + ['%s stops at TRAVERSE-WORDLIST, out loud (no byte headers - 186)' % f for f in loud]) or '-'), flush=True)
     shutil.rmtree(d, ignore_errors=True)
 print('\n%d of %d designs differ from s6 somewhere.' % (bad, len(designs)))
 sys.exit(1 if bad or not caught else 0)
