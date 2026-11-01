@@ -10472,5 +10472,6 @@ founders 0.1788 - 1.4% fewer, all of it on corpus (2.4%); the rest of the 4.5% i
 instruction (2.3% idle, 0.4% in the run) - results/drafts/fastend-icount-579.md. retire-report-579.py on the pooled true
 front (seeds 77-84, 447 designs): 17 values unused - most fix a gene on (no code) or are the stages' older values; thinhdr
 and bss now used (off 573's nine); thin values named. HANDOFF: NEXT-RUN and REMOTES for both outcomes. Files:
-results/drafts/fastend-icount-579.md, .py, .jsonl, .s6.json; results/drafts/retire-report-579.md, .py.
+results/drafts/fastend-icount-579.md, results/drafts/fastend-icount-579.py, results/drafts/fastend-icount-579.jsonl,
+results/drafts/fastend-icount-579.s6.json, results/drafts/retire-report-579.md, results/drafts/retire-report-579.py.
 
