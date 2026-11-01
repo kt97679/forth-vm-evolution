@@ -10488,3 +10488,17 @@ B's line, not for seed 85's, not twice). process-seed.sh runs final-pick.py for 
 the shortlist written). Self-test passes. Files: lab/evolve/final-pick.py, lab/evolve/next-run.sh,
 lab/evolve/process-seed.sh, GOALS.md, HANDOFF.md.
 
+## Iteration 581 - 2026-11-01 - Claude
+
+**The open small items (the owner: proceed).** A correction first: 579's per-workload comparison matched "founder", which
+labels the bred group too - redone: corpus 0.961, not 0.976; the group medians stood. The gene: guard - knocked out on
+three bred designs, 8-10% more instructions on corpus and about 6% on kernel; 3 of the 22 bred have it, among the fastest
+idle; jitimg 0.3-0.5% only. 32 bits, counted under setarch -L (the engine's legacy-layout re-exec escaped valgrind): the
+best bred 0.7% fewer instructions than the pool's best - near a tie. threads=2 at scale 2: rebuilt with threads 0-3 only
+128 chains dies; with both far forms or at scale 3 it lives, at scale 1 it dies - the near DOES> form's reach, the
+dictionary grown at run time. Chain B's Tegra: 900 minutes stays (the owner did not choose; 15 hours keeps the near
+designs). Files: results/drafts/fastend-icount-579.md, results/drafts/fastend-icount-579.py,
+results/drafts/fastend-knockout-581.py, results/drafts/fastend-icount-581-32.jsonl,
+results/drafts/fastend-icount-581-32.s6.json, results/drafts/reach-scale2-581.md, results/drafts/reach-scale2-581.py,
+HANDOFF.md.
+

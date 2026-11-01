@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 580.
+- master: Iteration 581.
 - **The next chain - seed 86, 12 hours (the owner): the second confirmation run** (GOALS.md step 2): NEXT-RUN `seed 86 12h
   widths carryall then experiment review-checks.py spread then experiment appbench.py ...` - seed 84's chain. Its founders:
   the series' and seed 84's fronts; seed 85's random run not carried (576: next-run.sh skips a run whose WANT says random).
@@ -55,7 +55,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   final front. A new death, 55 "body size drift": the scale-0 call reach, no fault (results/drafts/body-size-drift-576.md).
 - **Processing the next chain**: the same three commands; a confirmation run - process-seed.sh runs final-set.py and
   confirm.py (as seed 84). Judge: confirm.py's verdict; dream's 41 (xcheck-seed86.md: does the bred lead hold at 64
-  bits? results/drafts/fastend-icount-579.md: 1.4% of the 4.5% is fewer instructions - expect 1.4-4.5% there).
+  bits? results/drafts/fastend-icount-579.md: 1.4% of the 4.5% is fewer instructions, guard the strongest gene - expect
+  1.4-4.5% there).
   Drafted for both outcomes (579):
   - CONFIRMED - the final pick, **two chains (the owner, 579; 580)**, neither with a seed step:
     **Chain A**: NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md` (242 candidates, about 1.5

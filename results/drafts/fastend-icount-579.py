@@ -49,7 +49,10 @@ if os.path.exists(OUT):
 
 def icount(eng, img, pw, w):
     """User-space instructions of one run of workload w (cachegrind's I refs); its output's hash beside it."""
-    r = subprocess.run(['valgrind', '--tool=cachegrind', '--cache-sim=no', '--cachegrind-out-file=/dev/null',
+    # a 32-bit engine re-execs itself into Linux's legacy layout (spn-cv8.c, Iteration 326) - under valgrind that exec
+    # escapes the launcher: run already in the legacy layout (setarch -L), so it does not
+    pre = ['setarch', os.uname().machine, '-L'] if width == '4' else []
+    r = subprocess.run(pre + ['valgrind', '--tool=cachegrind', '--cache-sim=no', '--cachegrind-out-file=/dev/null',
                         '--smc-check=all', eng, img], input=E.program(w), cwd=pw, capture_output=True, timeout=1800)
     m = re.search(rb'I\s+refs:\s+([\d,]+)', r.stderr)
     if not m: raise RuntimeError('no count for %s (exit %s): %s' % (w, r.returncode, r.stderr[-200:]))

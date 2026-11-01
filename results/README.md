@@ -102,6 +102,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/fastend-icount-579.py` - The count behind it: valgrind cachegrind on the seven selection workloads, each design against s6; its output fastend-icount-579.jsonl and .s6.json.
 - `drafts/retire-report-579.md` - Consolidation's retirement read under 578's rule (Iteration 579): every gene value against the pooled true front of seeds 77-84 - 17 unused, the thin ones named.
 - `drafts/retire-report-579.py` - The report behind it: confirm.py's pool, its true front, each gene value expressed (a live gene's 0 put back); markdown on stdout, nothing changed.
+- `drafts/fastend-knockout-581.py` - One gene switched in seed 84's fast designs, counted (Iteration 581): guard gives 8-10% fewer instructions on corpus, jitimg 0.3-0.5%.
+- `drafts/fastend-icount-581-32.jsonl` - The 32-bit fast end counted (Iteration 581): seed 84's 3 bred and the pool's 4, under setarch -L; its s6 in fastend-icount-581-32.s6.json.
+- `drafts/reach-scale2-581.md` - Why only threads=2 reaches the scale-2 limit (Iteration 581): the near DOES> form's reach, the dictionary grown at run time by 128-chain wordlists.
+- `drafts/reach-scale2-581.py` - The rebuilds behind it: seed 85's scale-2 kernel deaths with threads 0-3, then with both far forms, at scale 3 and at scale 1.
 
 ### The JIT
 
