@@ -134,7 +134,10 @@ if remote:
         k = max((n for n, l in enumerate(L) if l.startswith('- `xcheck-seed')), default=len(L) - 1)
         L.insert(k + 1, "- `xcheck-seed%d.md` - The checks of seed %d's front during seed %d (Iteration %s): %s." % (N, N - 1, N, it, rsp))
         open(ix, 'w').write('\n'.join(L)); print('draft-results: its line in results/README.md')
-if sp and '| run |' in sp:
+cfx = os.path.join(ROOT, 'results', 'compare-fronts-%s.md' % mach)   # 576: run again, no second session for the same seed
+if sp and '| run |' in sp and re.search(r'^## Session \d+ - Iteration %s: seed %d and' % (re.escape(str(it)), N), open(cfx).read(), re.M):
+    print('draft-results: the session for seed %d at Iteration %s in %s already - not again' % (N, it, cfx))
+elif sp and '| run |' in sp:
     cf = os.path.join(ROOT, 'results', 'compare-fronts-%s.md' % mach); n = max([int(v) for v in re.findall(r'^## Session (\d+)', open(cf).read(), re.M)] or [0]) + 1
     tab = re.sub(r'/\S*?/runs/', '', sp[sp.index('| run |'):].split('\n\n')[0])
     open(cf, 'a').write('\n## Session %d - Iteration %s: seed %d and the archived runs (the chain\'s spread, at generation %s)\n\nTODO: what compares - the workloads and the memory of each.\n\n%s\n' % (n, it, N, spread_gen, tab.strip('\n')))

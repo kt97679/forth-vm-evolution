@@ -35,7 +35,7 @@ if [ -n "$SP" ]; then
     p ""; p "## review-checks.py curse (curse.txt) - the fast end's optimism, re-measured / in-run"; p '```'; head -3 curse.txt >> "$S"; p '```'
     python3 "$EV/review-checks.py" fail32 "$SP/db.jsonl" > fail32.txt 2>&1
     p ""; p "## review-checks.py fail32 (fail32.txt) - the 32-bit failures by cause"; p '```'; head -8 fail32.txt >> "$S"; p '```'
-    VN=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null)        # Iteration 432: the gene votes, with the ledger - not written
+    VN=$(echo "$SP" | sed -n 's|.*-seed\([0-9][0-9]*\)-[^/]*/pack$|\1|p')   # 576: the seed pack's name - the line can start with another step (seed 85's: "experiment ... then seed 85")
     python3 "$EV/review-checks.py" votes "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > votes.txt 2>&1   # 532: the front from the records
     p ""; p "## review-checks.py votes (votes.txt) - the gene votes, with results/gene-votes.md (appended at step 6)"; p '```'; head -3 votes.txt | cut -c1-400 >> "$S"; p '```'
     # Iteration 573: the confirmation run (GOALS.md step 2) - no series run. next-run.sh strips a line's words (carryall,
@@ -85,7 +85,7 @@ if ls "$C"/remote/*.md > /dev/null 2>&1; then
     p ""; p "## The remote checks (their reports in $C/remote)"; p '```'
     grep -HiE 'spearman|rejected by|asked for by id' "$C"/remote/*.md | sed "s|$C/remote/||" | cut -c1-200 >> "$S"
     # Iteration 403 (item 0g): a 4-byte host against the laptop's own 32-bit speeds too - those of the run it checked
-    N=$(awk '$1 == "seed" {print $2}' "$C/line" 2>/dev/null); L32=$(ls "$REPO"/results/evolve-*-seed$((${N:-1} - 1)).md 2>/dev/null | head -1)
+    N=$(echo "$SP" | sed -n 's|.*-seed\([0-9][0-9]*\)-[^/]*/pack$|\1|p'); L32=$(ls "$REPO"/results/evolve-*-seed$((${N:-1} - 1)).md 2>/dev/null | head -1)
     for o in "$C"/remote/*/out.json; do
         [ -f "$o" ] && [ -n "$L32" ] && grep -q '"cell": *4' "$o" || continue
         python3 "$EV/xcheck.py" --report "$o" --laptop32 "$L32" 2>/dev/null | grep -E '32-bit speeds' | sed "s|^|$(basename "$(dirname "$o")").md, --laptop32 $(basename "$L32"): |" | cut -c1-220 >> "$S"
