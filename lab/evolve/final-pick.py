@@ -26,7 +26,7 @@ stdout: markdown. --json OUT: the set (alone), one record a line, the re-measure
 inrun / inrun32. --self-test: synthetic candidates, known answers.
 """
 import importlib.util, json, math, os, sys
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import hv
 _s = importlib.util.spec_from_file_location('final_set', os.path.join(HERE, 'final-set.py')); FS = importlib.util.module_from_spec(_s); _s.loader.exec_module(FS)
@@ -144,6 +144,35 @@ def pick(C, L, hosts, E, b, k=10, veto=0.25, top=3):
     return dict(alone=res['alone'], loaded=res['loaded'], hosts=H, across=A)
 
 
+def shortlist(p, E, b, n=40, fast=5):
+    """580 (the owner, 579: the final pick in two chains): chain A's laptop re-measures narrowed to the designs chain B
+    asks dream and the Tegra for, beside the laptop's second re-measure. In order, none dropped for n: the set alone,
+    the set loaded, step 5's additions, each width's `fast` fastest alone and loaded; then the alone set's greedy
+    continued (the next by hypervolume) up to n. -> [(id, why)]"""
+    out, have = [], set()
+    def add(i, w):
+        if i not in have: have.add(i); out.append((i, w))
+    for name in ('alone', 'loaded'):
+        if p[name][0]:
+            for i, w, _ in p[name][0]['set']: add(i, 'the set %s: %s' % (name, w))
+    for i, w in (p['across']['added'] if p['across'] else []): add(i, w)
+    for name in ('alone', 'loaded'):
+        RR = p[name][1]
+        for key, bits in (('speed', 64), ('speed32', 32)):
+            for i in sorted(RR, key=lambda i: (RR[i][key], i))[:fast]: add(i, 'among the %d fastest %s at %d bits' % (fast, name, bits))
+    R = p['alone'][1]
+    if R and len(out) < n:
+        for i, w, _ in FS.select(R, E, b, max(n, len(out)))['set']:
+            if len(out) >= n: break
+            add(i, 'next by hypervolume (%s)' % w)
+    if R and len(out) < n:                         # the near-misses: off the front, closest to the fastest no larger
+        def behind(i):
+            t = E.ov(R[i], 'total'); return R[i]['speed'] / min(R[j]['speed'] for j in R if E.ov(R[j], 'total') <= t)
+        for i in sorted((i for i in R if i not in have), key=lambda i: (behind(i), i))[:n - len(out)]:
+            add(i, 'near the front: %.1f%% behind the fastest no larger' % ((behind(i) - 1) * 100))
+    return out
+
+
 def self_test():
     sys.argv = ['x']; import evolve as E
     b = json.load(open(hv.BOUNDS)); ok = True
@@ -166,6 +195,10 @@ def self_test():
     h = p['hosts'][0]
     check(h['fastest']['id'] == 'mid' and h['n'] == 5, 'the host\'s fastest named: %s' % h['fastest'])
     check(all(i in [x[0] for x in sa] for i in ('sm', 'ln')), 'the smallest and the leanest in the set')
+    S = shortlist(p, E, b, 40); si = [i for i, _ in S]
+    check(set(i for i, _, _ in p['alone'][0]['set']) <= set(si) and len(si) == len(set(si))
+          and set(si) <= set(p['alone'][1]) | set(p['loaded'][1]), 'the shortlist holds the set, once each, each re-measured: %s' % si)
+    check(len(shortlist(p, E, b, 1)) >= len(p['alone'][0]['set']), 'the shortlist drops none of the set for n')
     # 576: across machines - a laptop specialist (spec: fastest here, 38% behind on ARMv7) the best mean but vetoed; gen,
     # good everywhere, the generic pick; arm1, the Tegra's fastest, outside the set: ADDED; partial: no ARMv7 reading, kept
     Rx = {i: dict(speed=a, speed32=b_) for i, a, b_ in (('spec', 0.110, 0.130), ('gen', 0.135, 0.160), ('f2', 0.146, 0.170),
@@ -182,7 +215,7 @@ def self_test():
     check(len(A['rows']) == 5, 'nothing removed by the veto')
     check(abs(spearman([1, 2, 3, 4], [10, 20, 30, 40]) - 1) < 1e-12 and abs(spearman([1, 2, 3, 4], [4, 3, 2, 1]) + 1) < 1e-12, 'Spearman')
     print('final-pick self-test: the fastest by re-measure, the loaded reading, a failed re-measure named, a host\'s fastest, '
-          'Spearman; across machines - the veto, the pick, the additions - %s' % ('pass' if ok else 'FAIL'))
+          'Spearman; across machines - the veto, the pick, the additions; the shortlist - %s' % ('pass' if ok else 'FAIL'))
     return 0 if ok else 1
 
 
@@ -195,6 +228,9 @@ def main(a):
     veto, top = 0.25, 3
     if '--veto' in a: j = a.index('--veto'); veto = float(a[j + 1]); del a[j:j + 2]
     if '--top' in a: j = a.index('--top'); top = int(a[j + 1]); del a[j:j + 2]
+    sl, sn = None, 40
+    if '--shortlist' in a: j = a.index('--shortlist'); sl = a[j + 1]; del a[j:j + 2]
+    if '--n' in a: j = a.index('--n'); sn = int(a[j + 1]); del a[j:j + 2]
     sys.argv = ['x']; import evolve as E
     b = json.load(open(hv.BOUNDS))
     C = {i: r for i, r in records(a[0]).items() if r.get('genome') is not None}; L = records(a[1])
@@ -254,6 +290,16 @@ def main(a):
                 tm['id'], tm['mean'], ', '.join('%s %d%%' % (k, round(tm['behind'][k] * 100)) for k in tm['vetoed'])))
         print('Each class\'s fastest: %s.' % '; '.join('%s %s' % (k, A['fastest'][k]) for k in A['present']))
         print('**Added to the set across machines** (never taken out): %s.' % ('; '.join('%s - %s' % x for x in A['added']) if A['added'] else 'none - the set holds them'))
+    if sl and res:
+        S = shortlist(p, E, b, sn)
+        with open(sl, 'w') as o:
+            o.write('# The final pick\'s shortlist - chain B\'s designs (final-pick.py --shortlist, Iteration 580)\n\n'
+                    'From %s and the laptop\'s re-measures of chain A (%s): %d designs - the set alone and loaded, the additions '
+                    'across machines, each width\'s %d fastest alone and loaded, then the next by hypervolume and the near-misses up to %d. Chain B: '
+                    'NEXT-RUN `experiment loadtest.py --ids %s`, REMOTES `--also @%s` (dream, rage) - one record a line.\n\n'
+                    % (os.path.basename(a[0]), os.path.basename(a[1]), len(S), 5, sn, os.path.relpath(sl, ROOT), os.path.relpath(sl, ROOT)))
+            for i, w in S: o.write(json.dumps(dict(C[i], why=w), sort_keys=True) + '\n')
+        print('\n**The shortlist for chain B**: %d designs in %s.' % (len(S), sl))
     if out:
         with open(out, 'w') as o:
             for i, w, ad in res['set']: o.write(json.dumps(dict(R[i], why=w, adds=ad), sort_keys=True) + '\n')

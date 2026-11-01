@@ -71,6 +71,17 @@ if [ -n "$SP" ]; then
     python3 "$EV/review-checks.py" rules "$SP/report.md" ${VN:+--seed "$VN"} --db "$SP/db.jsonl" --ledger "$REPO/results/gene-votes.md" > rules.txt 2>&1   # Iteration 438
     p ""; p "## review-checks.py rules (rules.txt) - results/seed63-rules.md's rules, measured"; cut -c1-300 rules.txt | grep -v '^pinned' >> "$S"
 fi
+# 580 (the owner, 579): the final pick in two chains, neither with a seed step. Chain A re-measures
+# results/candidates-final-seedN.md on the laptop: final-pick.py narrows it to results/shortlist-seedN.md (--shortlist).
+# Chain B re-measures the shortlist beside dream and the Tegra (REMOTES --also): final-pick.py with every host - the set.
+LTN=$(ls "$OUT"/*-loadtest-*/pack/loadtest.md 2> /dev/null | tail -n 1); IDS=$(sed -n 's/.*loadtest\.py --ids \([^ ]*\).*/\1/p' "$C/line" 2> /dev/null | head -1)
+if [ -z "$SP" ] && [ -n "$LTN" ] && [ -n "$IDS" ] && [ -f "$REPO/$IDS" ]; then
+    case $(basename "$IDS") in candidates-final-seed*) SL=$REPO/results/shortlist-$(basename "$IDS" | sed 's/^candidates-final-//'); WH="chain A - the shortlist to $(basename "$SL")" ;;
+                               *) SL=; WH="chain B - the final set, across machines" ;; esac
+    python3 "$EV/final-pick.py" "$REPO/$IDS" "$LTN" $(ls "$C"/remote/*/out.json 2> /dev/null) --json finalpick.json ${SL:+--shortlist "$SL"} > finalpick.txt 2>&1
+    p ""; p "## final-pick.py (finalpick.txt, finalpick.json) - $WH: $IDS, the chain's loadtest, $(ls "$C"/remote/*/out.json 2> /dev/null | wc -l) hosts"
+    p '```'; grep -v '^|---' finalpick.txt | cut -c1-260 >> "$S"; p '```'
+fi
 if [ -n "$CP" ]; then
     F=$CP/compare-fronts.md
     p ""; p "## The comparison - the verdict (\"+\" is the run ahead)"; p '```'

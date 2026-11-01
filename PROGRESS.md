@@ -10475,3 +10475,16 @@ and bss now used (off 573's nine); thin values named. HANDOFF: NEXT-RUN and REMO
 results/drafts/fastend-icount-579.md, results/drafts/fastend-icount-579.py, results/drafts/fastend-icount-579.jsonl,
 results/drafts/fastend-icount-579.s6.json, results/drafts/retire-report-579.md, results/drafts/retire-report-579.py.
 
+## Iteration 580 - 2026-11-01 - Claude
+
+**The final pick in two chains (the owner, 579).** next-run.sh started the remote checks only in a seed step, so an
+experiment-only chain asked no host; and 242 candidates would take dream about 10 hours, the Tegra days. Now: chain A,
+the laptop alone re-measures every candidate; final-pick.py --shortlist (--n 40) writes results/shortlist-seedN.md - the
+set alone and loaded, the additions across machines, each width's 5 fastest alone and loaded, the next by hypervolume,
+the near-misses (behind the fastest no larger), none of the first dropped for n; chain B re-measures it with 5 rounds
+beside dream and the Tegra. next-run.sh: a chain with no seed step probes and starts the remote checks when a REMOTES
+line asks by id (--also), each line's minutes its deadline, the pack waiting (tested on fake chains: started for chain
+B's line, not for seed 85's, not twice). process-seed.sh runs final-pick.py for both chains (rehearsed on a fake chain A:
+the shortlist written). Self-test passes. Files: lab/evolve/final-pick.py, lab/evolve/next-run.sh,
+lab/evolve/process-seed.sh, GOALS.md, HANDOFF.md.
+

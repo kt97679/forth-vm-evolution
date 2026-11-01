@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 579.
+- master: Iteration 580.
 - **The next chain - seed 86, 12 hours (the owner): the second confirmation run** (GOALS.md step 2): NEXT-RUN `seed 86 12h
   widths carryall then experiment review-checks.py spread then experiment appbench.py ...` - seed 84's chain. Its founders:
   the series' and seed 84's fronts; seed 85's random run not carried (576: next-run.sh skips a run whose WANT says random).
@@ -57,13 +57,19 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   confirm.py (as seed 84). Judge: confirm.py's verdict; dream's 41 (xcheck-seed86.md: does the bred lead hold at 64
   bits? results/drafts/fastend-icount-579.md: 1.4% of the 4.5% is fewer instructions - expect 1.4-4.5% there).
   Drafted for both outcomes (579):
-  - CONFIRMED - the final pick: NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md` (242
-    candidates: about 1.5 hours - the 41 took 16 minutes); REMOTES `--also @results/candidates-final-seed86.md` on
-    dream's prebuilt32 (prebuilt64 pairs it) and on rage's line (a JIT design there its JIT-off build - xcheck.py --arm,
-    577), only after the owner's rage-check.sh PASS (open item 1: on fury, between the chains). **Check first** that
-    next-run.sh starts REMOTES in a chain with no seed step (seed 85's started with its seed); if not, the owner decides
-    how. Then final-pick.py with every host (step 5 across machines). Consolidation's retirement:
-    results/drafts/retire-report-579.py (578's rule) - re-run on the pool with seed 86.
+  - CONFIRMED - the final pick, **two chains (the owner, 579; 580)**, neither with a seed step:
+    **Chain A**: NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md` (242 candidates, about 1.5
+    hours on the laptop alone); REMOTES with no `--also` (take 576's out) - no host asked. Its processing:
+    process-seed.sh runs final-pick.py --shortlist - results/shortlist-seed86.md, about 40: the set alone and loaded,
+    the additions, each width's 5 fastest alone and loaded, the next by hypervolume, the near-misses (each record's
+    why). **Chain B**: NEXT-RUN `experiment loadtest.py --ids results/shortlist-seed86.md --rounds 5`; REMOTES `--also
+    @results/shortlist-seed86.md` on dream's prebuilt32 (prebuilt64 pairs it; designs 4, minutes 150 each) and rage's
+    line (designs 4, minutes 900 - about 38 minutes a design there: the shortlist's first 20 or so, in its order, the set
+    first), only after the owner's rage-check.sh PASS (open item 1, on fury between the chains). next-run.sh starts the
+    remote checks in a chain with no seed step when a REMOTES line asks by id, each line's minutes from its start; the
+    pack waits for them (580). Its processing: final-pick.py with every host - step 5 across machines, the final set.
+    process-run.sh's later stages (draft-results, the checks) expect a seed pack: if it stops, process-seed.sh's
+    summary has the final pick. Consolidation's retirement: results/drafts/retire-report-579.py (578's rule).
   - NOT CONFIRMED by bred designs again - per 573 another confirmation run, `seed 87 12h widths carryall ...` as seed 86's
     line (the owner's hours); by carried designs only - the pool widened, the final pick as above.
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three

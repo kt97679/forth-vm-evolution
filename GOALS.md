@@ -139,7 +139,9 @@ results/drafts/goals-snapshots.md.)
 3. **Then the designs are frozen** - **the final set**: the extremes, each re-measured, then designs added one at a
    time by their contribution to the hypervolume in the same box, after merging designs within the tolerances, to five
    or ten; a knee as a candidate, not an oracle (four objectives may have several or none). Consolidation: each
-   re-measured alone and under load on the laptop, dream and the Tegra; the genes and code paths no design on the pooled
+   re-measured alone and under load on the laptop, dream and the Tegra (in two chains - the owner, 579: the laptop
+   re-measures every candidate, final-pick.py --shortlist narrows them to about 40, then the laptop again beside dream
+   and the Tegra; 242 candidates would take dream about 10 hours and the Tegra days); the genes and code paths no design on the pooled
    true front uses retired (the aim: simplicity; the owner, Iteration 578 - not "no final design": the final set is
    10-15 designs, the pooled front hundreds, and a gene good on it is kept - lose no good gene); every figure the
    article quotes recomputed from the runs' records on the true fronts (results/drafts/front-recheck-528.md: until

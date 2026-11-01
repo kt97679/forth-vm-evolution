@@ -284,7 +284,10 @@ if [ -z "${NEXT_RUN_DETACHED:-}" ]; then
         echo running > "$NEXT_RUN_CHAIN/status"; : > "$NEXT_RUN_CHAIN/steps"
         export NEXT_RUN_CHAIN
         # Iteration 315: the remote checks' hosts tried here, where it is seen (lab/evolve/REMOTES)
-        case " $* $THEN " in *" seed "*) sh lab/evolve/remote-checks.sh probe "$NEXT_RUN_CHAIN" || true ;; esac
+        # 580: a chain with no seed step too, when a REMOTES line asks for designs by id (--also) - the final pick's chain B
+        case " $* $THEN " in *" seed "*) sh lab/evolve/remote-checks.sh probe "$NEXT_RUN_CHAIN" || true ;;
+            *) if sed -n '/^[^#]/p' lab/evolve/REMOTES 2> /dev/null | grep -q -e '--also'; then
+                   sh lab/evolve/remote-checks.sh probe "$NEXT_RUN_CHAIN" || true; fi ;; esac
     fi
     case " ${TOOL:-} $THEN " in *" counters.py "*|*" missmap.py "*|*" clockcheck.py "*)   # Iteration 294: missmap.py too; 545: clockcheck.py
         if [ -z "${PERF_HOLD_START:-}" ]; then
@@ -405,6 +408,14 @@ checks() {   # build/ made current, then everything that must pass before a meas
 if [ "$MODE" = experiment ]; then
     step "build/ made current - build-stages.sh leaves build/evolve/ alone"
     checks
+    # 580 (the owner, 579: the final pick in two chains): a chain with no seed step starts the remote checks here, once,
+    # when it probed hosts (REMOTES asks for designs by id) - no evolution's end to stop at: each line's minutes its
+    # deadline ("run": 120), and the chain's pack waits for them (chainctl.py's gather)
+    if [ -n "$CHAIN" ] && [ -s "$CHAIN/remote/hosts" ] && [ ! -e "$CHAIN/remote/launched" ] && ! ls "$CHAIN"/remote/*/until > /dev/null 2>&1 \
+            && ! grep -qw seed "$CHAIN/line"; then
+        step "the remote checks started - the designs asked for by id, each line's minutes from its start (lab/evolve/REMOTES)"
+        RUN_UNTIL= sh lab/evolve/remote-checks.sh start "$CHAIN" || true
+    fi
     # Iteration 62: the newest COMPARE_LAST archived databases (default 4; 0:
     # all). Every run carries the earlier fronts, and since then the front of
     # all runs has come from the newest one or two: re-timing seeds 1-10 cost
