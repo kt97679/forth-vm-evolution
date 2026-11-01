@@ -32204,3 +32204,20 @@ fast end of the five (seeds 79-83) and the third smallest; seed 82 still the fas
 | archived-20261029-182437/build/evolve/db.jsonl | 126 | 18896 | 369 | 0.1444 | 14,089 | 112 | 1.0055e+06 | 0.6017 | 0.1825 |
 | archived-20261030-043716/build/evolve/db.jsonl | 126 | 18851 | 322 | 0.1387 | 14,210 | 112 | 1.0032e+06 | 0.6070 | 0.1691 |
 | archived-20261030-145521/build/evolve/db.jsonl | 126 | 19721 | 365 | 0.1378 | 14,043 | 108 | 1.0538e+06 | 0.6077 | 0.1820 |
+
+## Session 71 - Iteration 575: seed 84 and the archived runs (the chain's spread, at generation 0)
+
+Each run's own selection - the same since seed 71 (seven workloads, apps the seventh) on this laptop - read at
+generation 0, the one generation every run here has (seed 84's failed chain stopped after it, 574); the least memory
+108-136 KB. The two seed-84 rows are the same 14,163 founders re-timed a day apart: the fastest 0.1352 and 0.1330 (1.7%),
+the hypervolume 0.6376 and 0.6397, the smallest and the memory equal - the session-to-session spread at the fast end,
+the size of the confirmation test's 2% bar. The other three rows are earlier runs' random generation 0s (119-132
+designs): not comparable with a carried one.
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 0 | 14163 | 612 | 0.1352 | 13,989 | 108 | 9.1263e+05 | 0.6376 | 0.1715 |
+| archived-20261030-043716/build/evolve/db.jsonl | 0 | 119 | 13 | 0.6502 | 20,985 | 136 | 2.424e+06 | 0.1784 | 0.6558 |
+| archived-20261030-145521/build/evolve/db.jsonl | 0 | 120 | 15 | 0.6523 | 19,745 | 136 | 2.842e+06 | 0.1741 | 0.6506 |
+| archived-20261031-012505/build/evolve/db.jsonl | 0 | 132 | 16 | 0.6678 | 19,024 | 136 | 2.5359e+06 | 0.1862 | 0.6490 |
+| archived-20261031-150439/build/evolve/db.jsonl | 0 | 14163 | 580 | 0.1330 | 13,989 | 108 | 9.2108e+05 | 0.6397 | 0.1739 |
