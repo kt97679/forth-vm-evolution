@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 578.
+- master: Iteration 579.
 - **The next chain - seed 86, 12 hours (the owner): the second confirmation run** (GOALS.md step 2): NEXT-RUN `seed 86 12h
   widths carryall then experiment review-checks.py spread then experiment appbench.py ...` - seed 84's chain. Its founders:
   the series' and seed 84's fronts; seed 85's random run not carried (576: next-run.sh skips a run whose WANT says random).
@@ -55,9 +55,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   final front. A new death, 55 "body size drift": the scale-0 call reach, no fault (results/drafts/body-size-drift-576.md).
 - **Processing the next chain**: the same three commands; a confirmation run - process-seed.sh runs final-set.py and
   confirm.py (as seed 84). Judge: confirm.py's verdict; dream's 41 (xcheck-seed86.md: does the bred lead hold at 64
-  bits?). CONFIRMED: the final pick - NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md`, REMOTES
-  `--also` the same file on dream's lines and rage's (rage-check.sh PASS first, open item 1; on the Tegra a JIT design is
-  measured as its JIT-off build - xcheck.py --arm, 576), final-pick.py. NOT CONFIRMED: the owner decides.
+  bits? results/drafts/fastend-icount-579.md: 1.4% of the 4.5% is fewer instructions - expect 1.4-4.5% there).
+  Drafted for both outcomes (579):
+  - CONFIRMED - the final pick: NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md` (242
+    candidates: about 1.5 hours - the 41 took 16 minutes); REMOTES `--also @results/candidates-final-seed86.md` on
+    dream's prebuilt32 (prebuilt64 pairs it) and on rage's line (a JIT design there its JIT-off build - xcheck.py --arm,
+    577), only after the owner's rage-check.sh PASS (open item 1: on fury, between the chains). **Check first** that
+    next-run.sh starts REMOTES in a chain with no seed step (seed 85's started with its seed); if not, the owner decides
+    how. Then final-pick.py with every host (step 5 across machines). Consolidation's retirement:
+    results/drafts/retire-report-579.py (578's rule) - re-run on the pool with seed 86.
+  - NOT CONFIRMED by bred designs again - per 573 another confirmation run, `seed 87 12h widths carryall ...` as seed 86's
+    line (the owner's hours); by carried designs only - the pool widened, the final pick as above.
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Self-test passes. Consolidation

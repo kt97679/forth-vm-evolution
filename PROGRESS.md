@@ -10464,3 +10464,13 @@ retired are those no design on the pooled true front uses (hundreds of designs; 
 design uses (10-15). No tool implements the retirement yet; confirm.py's retire candidates already ask the same of
 seeds 77-84's true fronts. Files: GOALS.md, HANDOFF.md.
 
+## Iteration 579 - 2026-11-01 - Claude
+
+**While seed 86 runs (the owner): the fast-end lead counted, the retirement read, the next chain drafted.** valgrind's
+instruction counts of the re-measure's 41 at 64 bits: seed 84's bred designs 0.1763 of s6's instructions, their
+founders 0.1788 - 1.4% fewer, all of it on corpus (2.4%); the rest of the 4.5% idle lead is the laptop's time per
+instruction (2.3% idle, 0.4% in the run) - results/drafts/fastend-icount-579.md. retire-report-579.py on the pooled true
+front (seeds 77-84, 447 designs): 17 values unused - most fix a gene on (no code) or are the stages' older values; thinhdr
+and bss now used (off 573's nine); thin values named. HANDOFF: NEXT-RUN and REMOTES for both outcomes. Files:
+results/drafts/fastend-icount-579.md, .py, .jsonl, .s6.json; results/drafts/retire-report-579.md, .py.
+

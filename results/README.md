@@ -98,6 +98,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/retired-genes-574.py` - The fix tested on the 3,489 genomes of seeds 70-83's results files (Iteration 574): crossover, mutate and borrow, the ids unchanged, carry_pool and its guard.
 - `drafts/body-size-drift-576.md` - Seed 85's 55 "body size drift" deaths (Iteration 576): the scale-0 call reach where varcall and doesfar exempt a design from reach_lethal() - no fault, no change.
 - `drafts/body-size-drift-576.py` - The count behind it: the drift deaths, the gene values all of them share, and how every design with those values ended.
+- `drafts/fastend-icount-579.md` - Seed 84's fast-end lead counted (Iteration 579): 1.4% fewer instructions than its founders, all on corpus; the rest of the 4.5% idle lead the laptop's time per instruction.
+- `drafts/fastend-icount-579.py` - The count behind it: valgrind cachegrind on the seven selection workloads, each design against s6; its output fastend-icount-579.jsonl and .s6.json.
+- `drafts/retire-report-579.md` - Consolidation's retirement read under 578's rule (Iteration 579): every gene value against the pooled true front of seeds 77-84 - 17 unused, the thin ones named.
+- `drafts/retire-report-579.py` - The report behind it: confirm.py's pool, its true front, each gene value expressed (a live gene's 0 put back); markdown on stdout, nothing changed.
 
 ### The JIT
 
