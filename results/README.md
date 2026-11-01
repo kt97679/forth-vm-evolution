@@ -194,6 +194,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/confirmation-pool-559.md` - The confirmation run's founders, no good design missed (Iteration 559, the owner): --carry's tolerance front drops chain-hidden designs - the strict front instead, every archived run, the pool pre-flighted.
 - `drafts/retire-candidates-573.md` - The nine genes seeds 77-83's fronts never moved off their old values (Iteration 573): what retiring each would remove - little but msc, the old values building the hand-made stages s2-s5; msc's Tegra check first.
 - `drafts/random-mode-548.patch` - The random-search baseline's mode, drafted and tested for consolidation (Iteration 548; GOALS.md, "When the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop, the fast gate kept.
+- `candidates-final-seed84.md` - The final set's candidates from the pool of seeds 77-83 and seed 84 (Iteration 575, final-set.py --candidates): 242 records, one a line, for loadtest.py --ids and xcheck.py --also.
+- `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers
 
