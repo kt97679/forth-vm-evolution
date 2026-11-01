@@ -10457,3 +10457,10 @@ ELF. On seed 85's chain's data: the generic pick 8ef0975d7c (x86-64 and x86-32 o
 4b679ef996 added. Self-test passes. GOALS.md records the terms. Files: lab/evolve/final-pick.py, lab/evolve/xcheck.py,
 GOALS.md, HANDOFF.md.
 
+## Iteration 578 - 2026-11-01 - Claude
+
+**Consolidation's retirement softened (the owner: lose no good gene).** GOALS.md step 3: the genes and code paths
+retired are those no design on the pooled true front uses (hundreds of designs; 447 at seed 85), not those no final
+design uses (10-15). No tool implements the retirement yet; confirm.py's retire candidates already ask the same of
+seeds 77-84's true fronts. Files: GOALS.md, HANDOFF.md.
+

@@ -139,9 +139,11 @@ results/drafts/goals-snapshots.md.)
 3. **Then the designs are frozen** - **the final set**: the extremes, each re-measured, then designs added one at a
    time by their contribution to the hypervolume in the same box, after merging designs within the tolerances, to five
    or ten; a knee as a candidate, not an oracle (four objectives may have several or none). Consolidation: each
-   re-measured alone and under load on the laptop, dream and the Tegra; the genes and code paths no final design uses
-   retired (the aim: simplicity); every figure the article quotes recomputed from the runs' records on the true fronts
-   (results/drafts/front-recheck-528.md: until Iteration 532 the reported fronts were mostly not the true ones).
+   re-measured alone and under load on the laptop, dream and the Tegra; the genes and code paths no design on the pooled
+   true front uses retired (the aim: simplicity; the owner, Iteration 578 - not "no final design": the final set is
+   10-15 designs, the pooled front hundreds, and a gene good on it is kept - lose no good gene); every figure the
+   article quotes recomputed from the runs' records on the true fronts (results/drafts/front-recheck-528.md: until
+   Iteration 532 the reported fronts were mostly not the true ones).
 4. **The random-search baseline** (the owner, Iteration 540; results/drafts/ask-related-work-answers-539.md). One run
    of the same hours in which every child is a fresh random genome - random_genome(), uniform over the genome's
    space, the generator the random founders already come from - each evaluated exactly as the method's children

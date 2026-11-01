@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 577.
+- master: Iteration 578.
 - **The next chain - seed 86, 12 hours (the owner): the second confirmation run** (GOALS.md step 2): NEXT-RUN `seed 86 12h
   widths carryall then experiment review-checks.py spread then experiment appbench.py ...` - seed 84's chain. Its founders:
   the series' and seed 84's fronts; seed 85's random run not carried (576: next-run.sh skips a run whose WANT says random).
@@ -60,7 +60,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   measured as its JIT-off build - xcheck.py --arm, 576), final-pick.py. NOT CONFIRMED: the owner decides.
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
-  class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Self-test passes.
+  class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Self-test passes. Consolidation
+  (578, the owner): a gene or code path is retired only when no design on the pooled true front uses it - not the final set.
 - **Predictions due** (results/predictions.md): seed 86 confirmed (55/45); dream - the bred lead under 2% (60/40).
 - **Before 576**: seeds 70-84 processed (498-575); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.
