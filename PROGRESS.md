@@ -10430,7 +10430,7 @@ generations, 389 on the true front (42 carried, 347 bred), its hypervolume 0.365
 without the 2 fastest, under the bar at bred speeds 2% slower; the same founders re-timed a day apart 0.1352 and 0.1330.
 Genes: no REVISIT/KEEP, alignhot stays, nine retire candidates. Every check passes. The owner (575): the fast-end
 re-measure (41 designs), then seed 85 random, 10 hours; random mode smoke-tested; process-finish.sh takes seed N+1
-as a later step of the chain. Files: results/evolve-amd-ryzen-7-pro-
-8840hs-seed84.md, results/xcheck-seed84.md, results/candidates-final-seed84.md, results/fastend-remeasure-575.md,
+as a later step of the chain. Files:
+results/evolve-amd-ryzen-7-pro-8840hs-seed84.md, results/xcheck-seed84.md, results/candidates-final-seed84.md, results/fastend-remeasure-575.md,
 results/drafts/bred-gain-sensitivity-575.py, results/drafts/fastend-ids-575.py, results/drafts/fastend-judge-575.py.
 
