@@ -502,6 +502,9 @@ skip=0; if [ "$CLAST" -gt 0 ] && [ "$n" -gt "$CLAST" ]; then skip=$((n - CLAST))
 CARRY=""; i=0
 for f in $(archives); do                                        # oldest first, the VM's runs among them
     i=$((i + 1)); [ "$i" -gt "$skip" ] || continue
+    # 576: the random baseline's run (GOALS.md step 4; its WANT says random) founds nothing - values beside the series,
+    # not the method's: seed 86's confirmation run carries the series and seed 84, as seed 84 carried the series
+    if grep -qsw random "${f%/build/evolve/*}/build/evolve/next-run.state"; then say "not carried: ${f%/build/evolve/*} - the random baseline"; continue; fi
     CARRY="${CARRY:+$CARRY,}$f"
 done
 if [ -n "$NOCARRY" ]; then

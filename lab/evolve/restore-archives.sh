@@ -20,7 +20,8 @@ for p in $(ls forth-vm-evolution-seed[0-9]*-*.tar.gz chain-*/packs/forth-vm-evol
     [ ! -e "archived-$t" ] || { echo "restore-archives: seed $s - archived-$t there already, not its: $p left"; continue; }
     k=.restore-$t; rm -rf "$k"; mkdir -p "$k/build/evolve"
     if tar -xzOf "$p" pack/db.jsonl > "$k/build/evolve/db.jsonl" 2> /dev/null && [ -s "$k/build/evolve/db.jsonl" ]; then
-        echo "seed $s restored from $p" > "$k/build/evolve/next-run.state"
+        w=$(tar -xzOf "$p" pack/machine.txt 2> /dev/null | grep -m 1 '^seed ')   # 576: the run's WANT - next-run.sh's carry reads "random" in it
+        echo "seed $s restored from $p${w:+ - $w}" > "$k/build/evolve/next-run.state"
         mv "$k" "archived-$t" && n=$((n + 1)) && echo "restore-archives: seed $s - archived-$t from $p"
     else rm -rf "$k"; echo "restore-archives: seed $s - no database in $p"; fi
 done
