@@ -10445,3 +10445,15 @@ baseline, votes as seed 0), draft-results.py's session once; carryall skips the 
 Files: results/evolve-amd-ryzen-7-pro-8840hs-seed85.md, results/xcheck-seed85.md, results/drafts/body-size-drift-576.md,
 results/drafts/body-size-drift-576.py.
 
+## Iteration 577 - 2026-11-01 - Claude
+
+**Across machines, the gaps closed (the owner: lose no good design or gene; rules not too strict).** final-pick.py step
+5: each candidate's speed in three classes, each once - x86-64 (the laptop alone, dream's 8-byte lines; each host once),
+x86 at 32 bits, ARMv7 - and their geometric mean; the 25% veto removes nothing, only names the generic pick (the best
+mean within the margin everywhere; a vetoed best mean named beside it); the three best means and each class's fastest
+ADDED to the set; a design missing a class ranked on the rest, partial, kept. The Tegra: a JIT design asked for by id
+is built with the JIT off (xcheck.py --arm --also, jitoff in designs.json) - tried here: 8ef0975d7c cross-built, an ARM
+ELF. On seed 85's chain's data: the generic pick 8ef0975d7c (x86-64 and x86-32 only - no host measured the 41),
+4b679ef996 added. Self-test passes. GOALS.md records the terms. Files: lab/evolve/final-pick.py, lab/evolve/xcheck.py,
+GOALS.md, HANDOFF.md.
+

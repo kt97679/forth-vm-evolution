@@ -62,7 +62,12 @@ How each is measured:
 **Across machines** (the owner, Iteration 377; results/drafts/cross-machine-weighing.md): the best generic
 designs are chosen for **three classes of machine, equal** - x86-64, x86 at 32 bits, ARMv7 - by the
 geometric mean of their speeds over the classes, each class once, with a veto: none more than a margin
-behind the best of its class (25% proposed). Selection stays on the laptop, at both widths; the other
+behind the best of its class. **The terms (the owner, Iteration 576: lose no good design or gene - rules not too
+strict)**: the veto 25% and it removes nothing - it only decides which design is named the generic pick (the best mean
+within the margin everywhere; a vetoed best mean is named beside it); the three best means and each class's fastest
+are ADDED to the final set when the laptop's choice lacks them; a JIT design's ARMv7 speed is its own genome with the
+JIT off (ARMv7 has no JIT - the design as it builds there; xcheck.py --arm --also, marked); a design missing a class is
+ranked on those it has, marked partial, kept. lab/evolve/final-pick.py step 5. Selection stays on the laptop, at both widths; the other
 machines test it, designs it rejected included (xcheck --rejected). A disagreement is diagnosed - measured
 again, the width separated from the architecture, knockouts on both - before it is weighed; a mechanism
 that helps one class and hurts another is a per-architecture build choice only if large and simple.

@@ -250,6 +250,7 @@ if '--sample' in ARGS:
                 if pool: take([pool[int(j * (len(pool) - 1) / max(1, nrej - 1))] for j in range(min(nrej, len(pool)))], nrej)
                 rejected = {x[0] for x in pick[before:]}
         n = n_all
+    twin = set()
     if also:                                                             # Iteration 428: after the sample, by id
         import glob
         recs = {}
@@ -267,12 +268,15 @@ if '--sample' in ARGS:
             r = recs.get(i)
             if not r: print('xcheck: --also %s: in no results file here - left out' % i, flush=True); continue
             e = E.express(E.canon(r['genome'])); gen[i] = r['genome']
+            if arm and e.get('jit'):                                     # 576 (the owner: lose no good design): ARMv7 has no JIT -
+                gen[i] = dict(r['genome'], jit=0); e = E.express(E.canon(gen[i])); twin.add(i)   # the design as it builds there
+                print('xcheck: --also %s: its JIT off - ARMv7 has none; measured under its id (final-pick.py marks it)' % i, flush=True)
             if (nojit and e.get('jit')) or (gcc and (e.get('compiler') or e.get('tailpn'))):
                 print('xcheck: --also %s: not itself on this host (the JIT or clang) - left out' % i, flush=True); continue
             if not good(i): continue
             pick.append((i, r.get('speed') or 0.0, r.get('total'), e)); asked.add(i)
         print('xcheck: %d of %d asked for by id (--also, Iteration 428)' % (len(asked), len(also)), flush=True)
-    json.dump([dict({'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot}, **({'rejected': True} if i in rejected else {}), **({'asked': True} if i in asked else {})) for i, sp, tot, e in pick], open(out, 'w'), indent=1)
+    json.dump([dict({'id': i, 'genome': gen[i], 'expressed': norm(e), 'speed': sp, 'total': tot}, **({'rejected': True} if i in rejected else {}), **({'asked': True} if i in asked else {}), **({'jitoff': True} if i in twin else {})) for i, sp, tot, e in pick], open(out, 'w'), indent=1)
     if rejected: print('xcheck: %d of them rejected by the laptop\'s selection (Iteration 377)' % len(rejected), flush=True)
     print('xcheck: %d designs sampled from %d eligible (%s%s%s) into %s' % (len(pick), len(ok), 'no JIT ' if nojit else '', 'GCC only' if gcc else '', ', at 4-byte cells, each alive so' if cell4 else '', out))
     if arm: print('xcheck: %d of them cross-built for ARMv7 here (clang), %d for the host to build (GCC)' % (len(armb), len(pick) - len(armb)), flush=True)

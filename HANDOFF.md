@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 576.
+- master: Iteration 577.
 - **The next chain - seed 86, 12 hours (the owner): the second confirmation run** (GOALS.md step 2): NEXT-RUN `seed 86 12h
   widths carryall then experiment review-checks.py spread then experiment appbench.py ...` - seed 84's chain. Its founders:
   the series' and seed 84's fronts; seed 85's random run not carried (576: next-run.sh skips a run whose WANT says random).
@@ -56,7 +56,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Processing the next chain**: the same three commands; a confirmation run - process-seed.sh runs final-set.py and
   confirm.py (as seed 84). Judge: confirm.py's verdict; dream's 41 (xcheck-seed86.md: does the bred lead hold at 64
   bits?). CONFIRMED: the final pick - NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md`, REMOTES
-  `--also` the same file (rage-check.sh PASS first, open item 1), final-pick.py. NOT CONFIRMED: the owner decides.
+  `--also` the same file on dream's lines and rage's (rage-check.sh PASS first, open item 1; on the Tegra a JIT design is
+  measured as its JIT-off build - xcheck.py --arm, 576), final-pick.py. NOT CONFIRMED: the owner decides.
+- **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
+  classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
+  class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Self-test passes.
 - **Predictions due** (results/predictions.md): seed 86 confirmed (55/45); dream - the bred lead under 2% (60/40).
 - **Before 576**: seeds 70-84 processed (498-575); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.
