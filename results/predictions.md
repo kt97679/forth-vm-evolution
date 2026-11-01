@@ -1161,3 +1161,17 @@ rerun, the same line at the fix's commit: the carry 14 databases (the failed run
 founders, generation 0 about 5 hours - about 7 of the 12 evolving; the verdict's prediction above stands.)
 
 **Scored at seed 84 (Iteration 575): wrong on the verdict.** NOT CONFIRMED (confirm.txt): the hypervolume 0.36557, -0.7% against the pool - right; the smallest 13,973, the memory 108 KB, the fastest at 32 bits 0.1648 - right; the fastest 0.1325 (d701cad70b, bred) under 0.1350 - wrong; the stricter test, the bred designs +1.19% to the pool - wrong. Both by small margins, at the fast end alone (results/drafts/bred-gain-sensitivity-575.py: +0.77% without the 2 bred designs faster than the pool's fastest; under the bar at bred speeds 2% slower). What the reasoning missed: in its own session the run beat its re-timed founders by 2.0% (0.1325 against 3152d3d441's 0.1352) - 94 generations from the strongest start found a little more at the fast end - and the session spread is as large (the same founders 0.1352 and 0.1330 a day apart). The carry 14 databases and 14,202 founders - right; the restore named seeds 71-79, not 71-78 (seed 79's archive gone since, the failed chain's took its place among the four kept).
+
+## The chain after seed 84: the fast-end re-measure, then seed 85 (the random baseline, 10 hours) - predicted (Iteration 575)
+
+`experiment loadtest.py --ids results/fastend-remeasure-575.md then seed 85 10h widths noevolved random then experiment
+review-checks.py spread`. **The re-measure** (41 designs; results/drafts/fastend-judge-575.py): GONE - seed 84's best bred
+design under 2% ahead of the best of the rest (its re-timed founders, the pool) in at least one reading, and the stricter
+test on the idle re-measures under 1%. Why: the bred group's re-measured / in-run 2-4 points above the founders' and the
+pool's (94 generations of single draws at the fast end, the founders and the pool re-timed already); a 60/40 call - the
+bred fast end is a cluster of 22 designs at 0.1325-0.1352, not one. **Seed 85, random** (GOALS.md step 4): its true
+front's fixed-box hypervolume 0.20-0.30 (the series 0.33-0.37); the fastest slower than 0.20, the smallest above 14,400
+bytes, the least memory 112 KB or more; 12,000-25,000 designs, every one measured in full (no screen, no one-round stop
+- the smoke test at 575 saw none); the deaths 10-30% of the designs (the smoke test: 11 of 39 - the reach limit, the
+kernel workload, cpt16 on apps), none of a new kind.
+

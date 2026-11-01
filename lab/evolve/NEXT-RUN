@@ -13,6 +13,13 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 575 (seed 84 processed): the fast-end re-measure, then seed 85, 10 hours (the owner) - the random-search
+# baseline (GOALS.md step 4: noevolved random, nothing carried). Seed 84 NOT CONFIRMED by the fastest and the stricter
+# test, both a ~2% gap at the fast end, the size of the session spread: loadtest.py --ids results/fastend-remeasure-575.md
+# re-measures its fast bred designs, its best re-timed founders and the pool's fastest in one session, alone and under
+# load at both widths - it decides between a second confirmation run and the final pick. The random run is needed
+# either way; the re-measure goes first so a fault in the random mode's first chain cannot cost it. REMOTES unchanged:
+# the Tegra's re-measure goes with the final candidates (rage-check.sh PASS before that chain - HANDOFF.md, open item 1).
 # Iteration 572 (seed 83 processed): seed 84, 12 hours (the owner) - the confirmation run (GOALS.md step 2): widths
 # carryall, no noevolved. Seed 83 gained nothing - seven runs on the method, the last two gaining nothing: the rule stops.
 # carryall carries every archived database; the ones tools/clean-runs.sh removed (seeds 71-78) come back from their seed
@@ -135,4 +142,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 84 12h widths carryall then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
+experiment loadtest.py --ids results/fastend-remeasure-575.md then seed 85 10h widths noevolved random then experiment review-checks.py spread

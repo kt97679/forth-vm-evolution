@@ -41,37 +41,30 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 574.
-- **Seed 84 failed (574) - run it again, NEXT-RUN's line unchanged**: its chain (d00ce78b1) stopped after generation 0,
-  5 hours in - KeyError 'jithelp' in crossover(): seeds 70-71's genomes hold genes Iteration 516 deleted
-  (results/drafts/seed84-failed-574.md). The after-seed-84 batch (retired) applied at 574: canon() keeps the current genes,
-  carry_pool() stops at once on a genome off them. The rerun starts fresh (a new commit): generation 0 again about 5 hours,
-  14 databases (the failed run's own adds no design).
-- **Seed 84 is next - the confirmation run, 12 hours (the owner)**: `seed 84 12h widths carryall` (GOALS.md step 2).
-  **Before it, on fury**: `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross` installed, then `sh tools/rage-check.sh`
-  PASS (open item 1). Its founders: every run's strict front from seed 71 on - seeds 71-78 restored from their seed packs
-  by lab/evolve/restore-archives.sh (572: tools/clean-runs.sh keeps four archives; seed 83's carry-check saw 79-83 only,
-  none of the five named) - 14,202 designs, about 5 hours of generation 0 (574: the failed chain's).
-- **Seed 83 processed (572) - the stopping rule stops**: results/evolve-amd-ryzen-7-pro-8840hs-seed83.md - 9 hours, 126
-  generations, the true front 180, no measure better (the hypervolume -1.5%, the fastest 0.1459 +5.8%); seven runs on the
-  method, the last two gaining nothing, no correctness issue open. carry-check 40 of 40; every check on master passes; the
-  after-seed-83 batch applied (9664214: armrt, prebuiltarm, ragecheck).
-- **Predictions due** (results/predictions.md; 574's note for the rerun): seed 84 confirmed - the hypervolume under 0.3717 (1% over seeds 77-83's
-  pooled 0.36805), no extreme by its threshold (bars there); the restore names seeds 71-78, the carry 13 databases.
-- **Processing seed 84** - the same three commands (573): a carryall line makes process-seed.sh run lab/evolve/confirm.py
-  (confirm.txt: the pooled true front 0.36826, its bar 0.37195; the extremes' bars; what the run added; the ten re-enabled
-  genes' classes) and final-set.py on the pool and seed 84 (finalset.txt; candidates-final.md - draft-results.py copies it
-  to results/candidates-final-seed84.md) in place of stopping.py; no curve, no stopping-series line. The owner's decisions
-  (573, GOALS.md step 2-4): the verdict's two kinds of NOT CONFIRMED, the genes' classes, the candidates. The next chain,
-  confirmed or the pool widened: NEXT-RUN `seed 85 12h widths noevolved random then experiment loadtest.py --ids
-  results/candidates-final-seed84.md` (an hour or two after the run, on fury), every REMOTES line `--also
-  @results/candidates-final-seed84.md`, minutes `run`; rage-check PASS first (open item 1). Seed 85's processing (the random baseline, known by
-  its WANT): process-seed.sh runs baseline.py and final-pick.py (the candidates, the chain's loadtest, the hosts' out.json);
-  no curve, no gene votes, a {"random": 85} ledger line. The confirmation run is known by its pack's machine.txt and the
-  chain's steps (next-run.sh strips carryall from the chain's line): process-seed.sh's marker /tmp/process/confirmation;
-  process-records.sh appends its {"confirmation": 84} line, which stopping.py passes over and a later confirmation pools.
-- **Before 572**: seeds 70-82 processed (498-569); history: HANDOFF-HISTORY.md.
-- **Files a new chat needs**: the newest bundle, and seed 84's chain archive. appbench.zip stays on the laptop.
+- master: Iteration 575.
+- **The next chain - the fast-end re-measure, then seed 85, 10 hours (the owner)**: NEXT-RUN `experiment loadtest.py
+  --ids results/fastend-remeasure-575.md then seed 85 10h widths noevolved random then experiment review-checks.py
+  spread`. The re-measure: 41 designs (results/drafts/fastend-ids-575.py: seed 84's 22 bred as fast as its best founder
+  and 3 fastest bred at 32 bits, its 4 best re-timed founders, the pool's 8 fastest and 4 fastest at 32 bits), alone and
+  under load at both widths, about an hour. Then the random baseline (GOALS.md step 4) - its mode smoke-tested here at
+  575 (random children measured at both widths; no screen, no one-round stop). REMOTES unchanged.
+- **Seed 84 processed (575) - NOT CONFIRMED, at the fast end only**: results/evolve-amd-ryzen-7-pro-8840hs-seed84.md - 12
+  h, 94 generations, its own front -0.7% against the pool; the fastest 0.1325 (the bar 0.1350) and the bred designs
+  +1.19% to the pool (the bar 1%), both a ~2% gap the size of the session spread (the same 14,163 founders 0.1352 and
+  0.1330 a day apart; results/drafts/bred-gain-sensitivity-575.py). The genes: no REVISIT, no KEEP; alignhot stays;
+  nine retire candidates. Every check passes; no correctness issue open. The owner's decision (575, GOALS.md): the
+  re-measure decides.
+- **Processing the next chain**: the same three commands. process-seed.sh knows the random run by its WANT - baseline.py,
+  a {"random": 85} ledger line, no curve, no votes; its final-pick.py reads candidates-final-seed84.md and the chain's
+  loadtest, which holds the fast-end file's 41 only - so it names the rest unmeasured, and it is **not the final pick**.
+  The judgment first: `python3 results/drafts/fastend-judge-575.py /tmp/process/*-loadtest-*/pack/loadtest.md` (seed
+  84's records from its results file). STANDS: NEXT-RUN `seed 86 12h widths carryall` - a second confirmation run, its
+  pool the series and seed 84 (confirm.py pools it from the {"confirmation": 84} line); the owner's hours. GONE: seed 84
+  confirmed in effect - NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed84.md`, every REMOTES line
+  `--also @results/candidates-final-seed84.md` (rage-check.sh PASS first, open item 1), then final-pick.py on all of it.
+- **Predictions due** (results/predictions.md): the re-measure GONE (a 60/40 call); seed 85's hypervolume 0.20-0.30.
+- **Before 575**: seeds 70-83 processed (498-572); seed 84's first chain failed (574); history: HANDOFF-HISTORY.md.
+- **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
@@ -111,13 +104,14 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 1. The Tegra's check (the owner, 570: clang) - the after-seed-83 batch **applied** (572, 9664214: armrt, prebuiltarm,
    ragecheck): ARM engines without the C library; rage's check of the front's clang designs, cross-built on fury. Nothing
    changes on x86. Seed 84's failed chain cross-built 15 for rage on fury (Spearman 0.953 on 16, seed 83's 0.143 on 6) -
-   the packages are in; rage-check.sh's PASS is not in its archive: ask. **Before seed 84 the owner installs on fury** `lld libc6-dev-armhf-cross libgcc-13-dev-armhf-cross`
-   (missing, rage's sample fails as a line in steps, never the chain), **then runs `sh tools/rage-check.sh`** on the
-   laptop, no chain running - PASS before the confirmation run; if it was not, before seed 85's chain (573: the Tegra's
-   re-measures of the final set need it). Rage's numbers from then: no-C-library engines, mostly
+   the packages are in. Seed 84's chain: 15 cross-built again, Spearman 0.935 on 16 - but rage busy while it measured
+   (load average 4.3 on 4 CPUs). rage-check.sh's PASS is still not in an archive: **the owner runs `sh
+   tools/rage-check.sh` on fury, no chain running, before the chain that re-measures the candidates on the Tegra** (575:
+   not the next one). Rage's numbers from then: no-C-library engines, mostly
    clang's - not comparable with its checks before.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
-   seed 83 (572; seeds 77-83 on one method). Step 2, the confirmation run, is seed 84 (its founders:
+   seed 83 (572; seeds 77-83 on one method). Step 2: seed 84 NOT CONFIRMED by a ~2% fast-end gap - the re-measure decides
+   (575, above); seed 84 (its founders:
    results/drafts/confirmation-pool-559.md, carry-after-seed78.patch, restore-archives.sh); step 3, the final set -
    lab/evolve/final-set.py (571; seeds 77-83 pooled: front 387, 271 merged) - and the random-search baseline (applied at seed 79's
    processing: NEXT-RUN's "random"). The test and the final set's draft scripted, the re-measure's tools ready (573: GOALS.md, the owner's decisions).

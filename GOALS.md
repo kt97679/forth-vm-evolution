@@ -166,6 +166,11 @@ final-set.py --candidates, loadtest.py --ids, xcheck.py --also @FILE.)
   (xcheck.py --also @FILE); the whole pooled front kept as the record the article draws on.
 - **Step 4**: `seed N 12h widths noevolved random` - the series' own generation 0, nothing carried; a random design on the
   final front joins the candidates.
+- **575, seed 84's NOT CONFIRMED** (the fastest and the stricter test, both a ~2% gap at the fast end, the size of the
+  session spread): re-measured first, in one session - loadtest.py --ids results/fastend-remeasure-575.md, its fast bred
+  designs against its re-timed founders and the pool's fastest (results/drafts/fastend-judge-575.py). The gain stands
+  (2% at 64 bits in both readings, or the stricter test on the re-measures 1%): a second confirmation run; else seed 84
+  confirmed in effect - the candidates re-measured in full, then the final pick. The random baseline meanwhile (10 hours).
 - **The Tegra**: tools/rage-check.sh PASS on fury before the chain after seed 84 (open item 1), or its re-measures see
   1 of the designs clang lets it build (135 of seed 81's 256).
 

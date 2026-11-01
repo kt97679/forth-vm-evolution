@@ -10421,3 +10421,16 @@ on the 3,489 genomes of seeds 70-83's results files (7,079 KeyErrors before, non
 stopped); batch-check PASS. The remote checks of seed 83's front: dream 0.971/0.943/0.985, rage 0.953 on 16 (15 cross-
 built on fury). The rerun: NEXT-RUN unchanged, generation 0 again about 5 hours. Files: results/drafts/seed84-failed-574.md,
 results/drafts/retired-genes-574.py, results/applied-after-seed84/ (predictions.md, seed 84's note).
+
+## Iteration 575 - 2026-11-01 - Claude
+
+**Seed 84 processed - the confirmation run NOT CONFIRMED, at the fast end only; the re-measure decides.** 12 h, 94
+generations, 389 on the true front (42 carried, 347 bred), its hypervolume 0.36557, -0.7% against the pool. The fastest
+0.1325 (d701cad70b, bar 0.1350) and the bred designs +1.19% to the pool (bar 1%) - all from the bred fast third, +0.77%
+without the 2 fastest, under the bar at bred speeds 2% slower; the same founders re-timed a day apart 0.1352 and 0.1330.
+Genes: no REVISIT/KEEP, alignhot stays, nine retire candidates. Every check passes. The owner (575): the fast-end
+re-measure (41 designs), then seed 85 random, 10 hours; random mode smoke-tested; process-finish.sh takes seed N+1
+as a later step of the chain. Files: results/evolve-amd-ryzen-7-pro-
+8840hs-seed84.md, results/xcheck-seed84.md, results/candidates-final-seed84.md, results/fastend-remeasure-575.md,
+results/drafts/bred-gain-sensitivity-575.py, results/drafts/fastend-ids-575.py, results/drafts/fastend-judge-575.py.
+
