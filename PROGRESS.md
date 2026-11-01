@@ -10434,3 +10434,14 @@ as a later step of the chain. Files:
 results/evolve-amd-ryzen-7-pro-8840hs-seed84.md, results/xcheck-seed84.md, results/candidates-final-seed84.md, results/fastend-remeasure-575.md,
 results/drafts/bred-gain-sensitivity-575.py, results/drafts/fastend-ids-575.py, results/drafts/fastend-judge-575.py.
 
+## Iteration 576 - 2026-11-01 - Claude
+
+**Seed 85 processed - the random baseline 0.553 of the series; the fast-end re-measure STANDS: seed 86, a second
+confirmation run, 12 hours (the owner).** Re-measure (41 of 41): seed 84's best bred 5.9% ahead idle, 6.8% loaded, the
+stricter test +1.25% - its lead 0.8% in-run, 4.5% re-measured, unexplained. Random, generation 140: the hypervolume 0.18779
+against the series' median 0.33952, the fastest 0.3200 (2.23x), the smallest 16,446 (1.16x); 55 "body size drift" deaths -
+the scale-0 call reach, no fault. Fixed: process-seed.sh's seed from the pack's name (the line began "experiment": no
+baseline, votes as seed 0), draft-results.py's session once; carryall skips the random run; dream asked for the 41.
+Files: results/evolve-amd-ryzen-7-pro-8840hs-seed85.md, results/xcheck-seed85.md, results/drafts/body-size-drift-576.md,
+results/drafts/body-size-drift-576.py.
+

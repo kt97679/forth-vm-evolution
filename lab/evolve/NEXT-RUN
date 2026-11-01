@@ -13,6 +13,11 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 576 (seed 85 processed): seed 86, 12 hours (the owner) - the second confirmation run (GOALS.md step 2), the
+# chain seed 84's. The fast-end re-measure STANDS: seed 84's bred designs 5.9% ahead of the best of the rest idle, 6.8%
+# loaded, the stricter test +1.25% (results/evolve-amd-ryzen-7-pro-8840hs-seed85.md). carryall carries the series and
+# seed 84, not seed 85's random run (next-run.sh, 576); confirm.py pools seeds 77-84. REMOTES: dream re-measures the same
+# 41 at both widths (576). Seed 85, the random baseline, done: 0.553 of the series' median hypervolume at its generation.
 # Iteration 575 (seed 84 processed): the fast-end re-measure, then seed 85, 10 hours (the owner) - the random-search
 # baseline (GOALS.md step 4: noevolved random, nothing carried). Seed 84 NOT CONFIRMED by the fastest and the stricter
 # test, both a ~2% gap at the fast end, the size of the session spread: loadtest.py --ids results/fastend-remeasure-575.md
@@ -142,4 +147,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-experiment loadtest.py --ids results/fastend-remeasure-575.md then seed 85 10h widths noevolved random then experiment review-checks.py spread
+seed 86 12h widths carryall then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16

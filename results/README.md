@@ -53,6 +53,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck-seed82.md` - The checks of seed 81's front during seed 82 (Iteration 569): Spearman with the laptop - dream 0.818 (24), 0.864 and 0.892 (30 at 32 and 64 bits); rage 0.143 (8, a narrow band).
 - `xcheck-seed83.md` - The checks of seed 82's front during seed 83 (Iteration 572): Spearman with the laptop - dream 0.989 (24), 0.932 and 0.993 (30 at 32 and 64 bits); rage 0.143 (6, a narrow band).
 - `xcheck-seed84.md` - The checks of seed 83's front during seed 84 (Iteration 575): Spearman with the laptop 0.969, 0.962 and 0.984 on dream (prebuilt, 32, 64), 0.935 on rage (16, clang-built, the host busy).
+- `xcheck-seed85.md` - The checks of seed 84's front during seed 85 (Iteration 576): Spearman with the laptop 0.983, 0.938 and 0.972 on dream (prebuilt, 32, 64), 0.956 on rage (14, clang-built).
 
 ### The batches of patches applied after the runs
 
@@ -95,6 +96,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/corpus-deaths-bisect-556.py` - The bisect behind it: the two designs and their parent, one gene at a time (Iteration 556).
 - `drafts/seed84-failed-574.md` - Seed 84's chain failed 5 hours in (Iteration 574): seeds 70-71's retired genes (jithelp) broke crossover() after generation 0; generation 0 by database, the remote checks, what the rerun costs.
 - `drafts/retired-genes-574.py` - The fix tested on the 3,489 genomes of seeds 70-83's results files (Iteration 574): crossover, mutate and borrow, the ids unchanged, carry_pool and its guard.
+- `drafts/body-size-drift-576.md` - Seed 85's 55 "body size drift" deaths (Iteration 576): the scale-0 call reach where varcall and doesfar exempt a design from reach_lethal() - no fault, no change.
+- `drafts/body-size-drift-576.py` - The count behind it: the drift deaths, the gene values all of them share, and how every design with those values ended.
 
 ### The JIT
 

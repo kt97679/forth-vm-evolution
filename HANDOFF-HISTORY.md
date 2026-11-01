@@ -457,3 +457,30 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   process-records.sh appends its {"confirmation": 84} line, which stopping.py passes over and a later confirmation pools.
 - **Before 572**: seeds 70-82 processed (498-569); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and seed 84's chain archive. appbench.zip stays on the laptop.
+
+## The state card before Iteration 576 (seed 85 returned)
+
+- master: Iteration 575.
+- **The next chain - the fast-end re-measure, then seed 85, 10 hours (the owner)**: NEXT-RUN `experiment loadtest.py
+  --ids results/fastend-remeasure-575.md then seed 85 10h widths noevolved random then experiment review-checks.py
+  spread`. The re-measure: 41 designs (results/drafts/fastend-ids-575.py: seed 84's 22 bred as fast as its best founder
+  and 3 fastest bred at 32 bits, its 4 best re-timed founders, the pool's 8 fastest and 4 fastest at 32 bits), alone and
+  under load at both widths, about an hour. Then the random baseline (GOALS.md step 4) - its mode smoke-tested here at
+  575 (random children measured at both widths; no screen, no one-round stop). REMOTES unchanged.
+- **Seed 84 processed (575) - NOT CONFIRMED, at the fast end only**: results/evolve-amd-ryzen-7-pro-8840hs-seed84.md - 12
+  h, 94 generations, its own front -0.7% against the pool; the fastest 0.1325 (the bar 0.1350) and the bred designs
+  +1.19% to the pool (the bar 1%), both a ~2% gap the size of the session spread (the same 14,163 founders 0.1352 and
+  0.1330 a day apart; results/drafts/bred-gain-sensitivity-575.py). The genes: no REVISIT, no KEEP; alignhot stays;
+  nine retire candidates. Every check passes; no correctness issue open. The owner's decision (575, GOALS.md): the
+  re-measure decides.
+- **Processing the next chain**: the same three commands. process-seed.sh knows the random run by its WANT - baseline.py,
+  a {"random": 85} ledger line, no curve, no votes; its final-pick.py reads candidates-final-seed84.md and the chain's
+  loadtest, which holds the fast-end file's 41 only - so it names the rest unmeasured, and it is **not the final pick**.
+  The judgment first: `python3 results/drafts/fastend-judge-575.py /tmp/process/*-loadtest-*/pack/loadtest.md` (seed
+  84's records from its results file). STANDS: NEXT-RUN `seed 86 12h widths carryall` - a second confirmation run, its
+  pool the series and seed 84 (confirm.py pools it from the {"confirmation": 84} line); the owner's hours. GONE: seed 84
+  confirmed in effect - NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed84.md`, every REMOTES line
+  `--also @results/candidates-final-seed84.md` (rage-check.sh PASS first, open item 1), then final-pick.py on all of it.
+- **Predictions due** (results/predictions.md): the re-measure GONE (a 60/40 call); seed 85's hypervolume 0.20-0.30.
+- **Before 575**: seeds 70-83 processed (498-572); seed 84's first chain failed (574); history: HANDOFF-HISTORY.md.
+- **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.

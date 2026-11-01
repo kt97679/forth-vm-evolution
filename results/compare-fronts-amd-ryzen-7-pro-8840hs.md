@@ -32221,3 +32221,18 @@ designs): not comparable with a carried one.
 | archived-20261030-145521/build/evolve/db.jsonl | 0 | 120 | 15 | 0.6523 | 19,745 | 136 | 2.842e+06 | 0.1741 | 0.6506 |
 | archived-20261031-012505/build/evolve/db.jsonl | 0 | 132 | 16 | 0.6678 | 19,024 | 136 | 2.5359e+06 | 0.1862 | 0.6490 |
 | archived-20261031-150439/build/evolve/db.jsonl | 0 | 14163 | 580 | 0.1330 | 13,989 | 108 | 9.2108e+05 | 0.6397 | 0.1739 |
+
+## Session 72 - Iteration 576: seed 85 and the archived runs (the chain's spread, at generation 0)
+
+Each run's own selection - the same since seed 71 (seven workloads, apps the seventh) on this laptop - read at
+generation 0, the one generation every run here has; the least memory 108-136 KB. Seed 85 (build/evolve, the random
+baseline) starts from 102 random designs - the fastest 0.8017, as the other from-scratch runs' 0.65-0.67; the two seed-84
+rows (its failed chain and its run, 14,163 founders each) the same founders re-timed a day apart, as at Session 71.
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 0 | 102 | 11 | 0.8017 | 21,201 | 132 | 3.1289e+06 | 0.1482 | 0.7405 |
+| archived-20261030-145521/build/evolve/db.jsonl | 0 | 120 | 15 | 0.6523 | 19,745 | 136 | 2.842e+06 | 0.1741 | 0.6506 |
+| archived-20261031-012505/build/evolve/db.jsonl | 0 | 132 | 16 | 0.6678 | 19,024 | 136 | 2.5359e+06 | 0.1862 | 0.6490 |
+| archived-20261031-150439/build/evolve/db.jsonl | 0 | 14163 | 580 | 0.1330 | 13,989 | 108 | 9.2108e+05 | 0.6397 | 0.1739 |
+| archived-20261101-043918/build/evolve/db.jsonl | 0 | 14163 | 612 | 0.1352 | 13,989 | 108 | 9.1263e+05 | 0.6376 | 0.1715 |
