@@ -64,5 +64,5 @@ open(p, 'w').write('\n'.join(s))
 PY
 git add "$Q" results/README.md && git commit -q -m "Iteration $I: the after-seed-$N batch - $names (batch-make.sh from $X)" &&
     say "committed: $(git log --oneline -1 | cut -c1-90)"
-grep -q TODO "$O" && say "next: the TODO paragraphs in $O, a commit, then: setsid nohup env RECORD=1 sh tools/batch-check.sh > /dev/null 2>&1 &" ||
+grep -q TODO "$O" && say "next: the TODO paragraphs in $O, a commit, then: setsid nohup env PENDING=$Q RECORD=1 sh tools/batch-check.sh > /dev/null 2>&1 &" ||
     say "next: setsid nohup env PENDING=$Q RECORD=1 sh tools/batch-check.sh > /dev/null 2>&1 &"
