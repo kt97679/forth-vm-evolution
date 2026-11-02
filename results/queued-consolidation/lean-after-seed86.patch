@@ -1,0 +1,48 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index c7a2e9b..681d4a7 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -177,7 +177,7 @@ gene('opbody', needs=lambda g, e: any(w in OPBODY for w, _ in ops10_in(g)),    #
+ gene('bss', convert=lambda g: ['--bss'] if g.get('bss') else [])               # Iteration 44: scratch buffers out of the file
+ gene('thinhdr', convert=lambda g: ['--thin-header'] if g.get('thinhdr') else [])   # Iteration 58: one thread head, not 32
+ gene('abortif', convert=lambda g: ['--guard-abort'] if g.get('abortif') else [])   # Iteration 117: ABORT" behind IF ... THEN
+-gene('lean', convert=lambda g: ['--drop-x8', '--drop-dumptool'] if g.get('lean') else [])   # Iterations 38-39: build artifacts left out
++gene('lean', convert=lambda g: ['--drop-x8', '--drop-dumptool'])   # Iteration 589: retired at 1 (FROZEN) - both drops for every CV8 design   # Iterations 38-39: build artifacts left out
+ gene('jitloop', needs=lambda g, e: jit_on(g))                                  # Iteration 129: on the JIT
+ gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
+ gene('jitmul', needs=lambda g, e: jit_on(g))                                   # Iteration 472: UM* and UM/MOD, COUNT (results/drafts/jitapps-471.md)
+@@ -931,7 +931,10 @@ REQUIRE = []
+ #   FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
+ #             'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
+ #             'alignhot': 0}   # 534 (the owner): jitos unfrozen - its freeze (495) fails the rule on the true fronts (results/drafts/frozen-recheck-534.md); 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
+-FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0}
++# Iteration 589 (retire-stages-584.md, step 2): lean retired at 1 - on every pooled-front design and candidate; lean 0
++# built only s4, frozen (stages/frozen). Its row's two drops unconditional, layout.py's lean-off switches gone. Kept in
++# LATE and EXPRESSED at 1, so every id stands; s5 and s6 keep lean=1 (a hand-made genome bypasses require()).
++FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+diff --git a/tools/layout.py b/tools/layout.py
+index 258addd..e3106f5 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -344,8 +344,7 @@ def _refs(ws, skip=(), chain=None):       # every call target and (POSTPONE) tar
+     return r
+ DROPPED = {}
+ import os as _os
+-_NO_LEAN = _os.environ.get('SOD16_NO_LEAN')      # both parts of the gene lean off, to measure (Iteration 39)
+-if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD16_NO_DROPX8') and not _NO_LEAN:   # the switch: to measure
++if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED:   # 589: the lean-off switches (SOD16_NO_LEAN, _NO_DROPX8, _NO_DROPTOOL) retired with lean 0
+     _nm = {w['s']: w['n'] for w in order}
+     def _chain(caller, t):                # a later X8 (or its X) deferring to an earlier one of its name
+         src = SRC_OF.get(caller, caller)
+@@ -375,7 +374,7 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD
+ # reachable not at all. Both leave `order` only where nothing refers to
+ # them - checked, not assumed.
+ DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')
+-if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and not _NO_LEAN:
++if '--drop-dumptool' in ARGV:
+     _names = [w['n'] for w in order]
+     _k = len(_names) - 1 - _names[::-1].index('NFA') if 'NFA' in _names else None
+     _tool = order[_k:] if _k is not None and all(w['n'] in DUMPTOOL for w in order[_k:]) else []

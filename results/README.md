@@ -74,7 +74,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed81/` - the after-seed-81 batch, applied at seed 81's processing (Iteration 568): jitscan, ccflags, design, bar (ORDER.md says what each does).
 - `applied-after-seed83/` - the after-seed-83 batch, applied at seed 83's processing (Iteration 572): armrt, prebuiltarm, ragecheck (ORDER.md says what each does).
 - `applied-after-seed84/` - the after-seed-84 batch, applied at once after seed 84's chain failed (Iteration 574): retired (ORDER.md says what it does).
-- `queued-consolidation/ORDER.md` - the batch queued for consolidation, applied after the final pick: fsys45, freeze (ORDER.md says what each does).
+- `queued-consolidation/ORDER.md` - the batch queued for consolidation, applied after the final pick: fsys45, freeze, lean (ORDER.md says what each does).
 
 ### The processing checklists
 
