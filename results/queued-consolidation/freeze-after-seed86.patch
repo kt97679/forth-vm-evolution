@@ -1,12 +1,12 @@
 diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
-index 6e58dde..b5e9f7b 100644
+index 6e58dde..c7a2e9b 100644
 --- a/lab/evolve/evolve.py
 +++ b/lab/evolve/evolve.py
 @@ -116,6 +116,7 @@ HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie
      's5-cv8spec': human('cv8', lean=1),     # Iteration 166: the compiler's copies and the dump tool left out
      's6-cv8b':    human('cv8', scale=0, bytehdr=1, doesfar=1, lean=1),
  }
-+FROZEN = ('s2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec')   # Iteration 588: built once, kept in stages/frozen - not rebuilt
++FROZEN_STAGES = ('s2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec')   # Iteration 588: built once, kept in stages/frozen - not rebuilt (FROZEN is the genes')
  FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
  # Which genes each family expresses; the rest are carried, not built.
  EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
@@ -16,7 +16,7 @@ index 6e58dde..b5e9f7b 100644
              try:
 -                eng, img = build(g, d)
 -                same = open(img, 'rb').read() == open(os.path.join(O, name + '-s%d.img' % (8 * cellw())), 'rb').read()   # Iteration 338
-+                if name in FROZEN:     # Iteration 588: the build's copies, checked against the hashes they were frozen with
++                if name in FROZEN_STAGES:   # Iteration 588: the build's copies, checked against the hashes they were frozen with
 +                    sums = dict(l.split()[::-1] for l in open(os.path.join(ROOT, 'stages', 'frozen', 'SHA256SUMS')) if l.strip())
 +                    eng, img = [os.path.join(O, name + x % (8 * cellw())) for x in ('-%d', '-s%d.img')]
 +                    same = all(os.path.exists(f) and hashlib.sha256(open(f, 'rb').read()).hexdigest() == sums.get(os.path.basename(f))
