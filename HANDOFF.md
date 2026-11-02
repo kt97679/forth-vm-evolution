@@ -41,13 +41,18 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 585.
-- **The next chain - the final pick's chain B** (GOALS.md step 3; the owner's 12 hours): NEXT-RUN `experiment loadtest.py
-  --ids results/shortlist-seed86.md --rounds 5` - the 40 alone and under load at both widths (about 20 minutes); REMOTES
-  rage first, 540 minutes, `--also @results/tegra-list-seed86.md` (the shortlist, the 4 msc pairs, the rest: 240 in order),
-  dream's prebuilt32/64 the shortlist again; the chain about 10-11 hours (gather waits for the launch, 585). **Before it, the
-  owner on fury, no chain running: `sh tools/rage-check.sh rage.lan results/shortlist-seed86.md` PASS** - its 7 GCC lto=1
-  designs built by rage's GCC with -u raise (open item 1b).
+- master: Iteration 586.
+- **Chain B, running (started 16:06 at aee0a409c) - its archive is the RE-PACK, not the first pack (586)**: the laptop's
+  40 packed at 16:34. The remote lines run one after another INSIDE the launch - its ssh start held the session until
+  run.sh ended (fixed at 586 for later chains) - rage's first, its 540 minutes (about 01:20 at the latest), then dream's
+  two; 585's gather waits at most 120 minutes for the launch, so the chain packs about 18:35 with no remote result (three
+  NOT STARTED). The owner's command, from the clone, collects them when the launch ends:
+  `C=$PWD/runs/chain-20261102-160604; nohup sh -c "while kill -0 \$(cat $C/remote/launch.pid) 2>/dev/null; do sleep 60; done; python3 lab/evolve/chainctl.py pack $C done" > /tmp/repack.log 2>&1 &`
+  - the newest forth-vm-evolution-chain-aee0a409c-fury-*.tar.gz is chain B's; its steps carry the first gather's NOT
+  STARTED and the lines' late "started" and "gathered": expected. Rage: 233 of its 240 asked for (+4 sampled; 227
+  cross-built, 10 GCC) - 7 msc designs left out (585's lookup missed the clone's own build/evolve/db.jsonl; fixed at
+  586): msc's retirement needs a short Tegra session after chain B. Before it, `sh tools/rage-check.sh` - PASS or not,
+  the owner's word.
 - **Chain A, done (585)** - results/final-pick-chainA-seed86.md: 232 of 232 re-measured at both widths and on dream; the
   generic pick 4df5b46d00 across x86-64 and x86-32, four added; the shortlist 40. The laptop's 64-bit fast-band order its
   own (0.889 against itself, -0.357 against dream). Fixed: final-pick.py's host Spearman at its width; gather's silently
@@ -72,9 +77,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   candidate, s6 as it is (results/drafts/retire-stages-584.md). Six patches in fresh chats, the freeze of s2-s5 first;
   each passes results/drafts/build-hash-584.py - every design but s2-s5 the same engine and image bytes as master's
   (results/drafts/build-hash-584-8.jsonl, -4.jsonl) - then run-tests, validate, batch-check; queued after fsys45.
-- **Processing chain B**: the same three commands; process-seed.sh runs final-pick.py with every host (no --shortlist) -
-  GOALS.md step 5 across the three classes, the final set; process-run.sh stops after the summary (no seed pack), as chain
-  A's did. Then consolidation: retire-plan-583.md (msc by the Tegra's pairs), retire-report-579.py (578's rule).
+- **Processing chain B** (the re-packed archive): the same three commands; process-seed.sh runs final-pick.py with every
+  host (no --shortlist) - GOALS.md step 5 across the three classes, the final set; process-run.sh stops after the summary
+  (no seed pack), as chain A's did. Prediction (7), the chain's hours, reads the re-pack's time. Then consolidation:
+  retire-plan-583.md (msc: the Tegra session for its 4 pairs first), retire-report-579.py (578's rule).
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a

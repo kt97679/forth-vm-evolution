@@ -10555,3 +10555,14 @@ archived databases (the msc pairs); evolve.py -Wl,-u,raise on ARM (open item 1b;
 IDENTICAL under qemu; rage-check.sh confirms GCC). NEXT-RUN chain B; REMOTES rage first, 540 minutes.
 Files: results/final-pick-chainA-seed86.md, results/shortlist-seed86.md, results/tegra-list-seed86.md,
 results/drafts/chainA-agreement-585.py.
+
+## Iteration 586 - 2026-11-02 - Claude
+
+**Chain B checked while it runs - its remote lines held inside the launch; the owner re-packs.** The laptop's 40 packed at
+16:34 and no line had started: the launch's ssh start (`cd DIR && setsid nohup sh run.sh ... &`) held the session until
+run.sh ended - bash 5.2.21: 4014 ms for a 4-second job, 6 ms detached - so the lines run one after another inside the
+launch, rage's 540 minutes first, and 585's gather gives up after 120 minutes: the chain packs about 18:35 with no remote
+result. Chain A's "start 711588 ms" was a whole line, and its rage line, launched last, was lost by the same cause. The
+owner's command re-packs when the launch ends (chainctl.py pack). Fixed for later chains: the start detached (9 ms, run.sh
+ran on); xcheck --also reads the clone's own run's database first - chain B left 7 of the 8 msc designs out (585 looked only
+in runs/archived-*). NEXT-RUN none.

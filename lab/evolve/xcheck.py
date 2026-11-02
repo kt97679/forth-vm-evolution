@@ -263,10 +263,12 @@ if '--sample' in ARGS:
                     try: r = json.loads(l)
                     except ValueError: continue
                     if r.get('id') in also and 'genome' in r: recs.setdefault(r['id'], r)
-        # 585: ids no results file holds - the archived databases beside the sample's (runs/archived-*/build/evolve/
-        # db.jsonl, the newest first): retire-plan-583's msc pairs are in seed 86's database only
+        # 585: ids no results file holds - the databases: 586, the clone's own run's first (build/evolve/db.jsonl - an
+        # experiment chain archives nothing, so seed 86's is there: 585 looked only in runs/archived-* and chain B left
+        # 7 of the 8 msc designs out), then the archived ones beside the sample's, the newest first
         miss = [i for i in also if i not in recs]
-        for f in (sorted(glob.glob(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(src))))), 'archived-*', 'build', 'evolve', 'db.jsonl')), reverse=True) if miss else []):
+        dbs = [os.path.join(E.ROOT, 'build', 'evolve', 'db.jsonl')] + sorted(glob.glob(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(src))))), 'archived-*', 'build', 'evolve', 'db.jsonl')), reverse=True)
+        for f in ([x for x in dbs if os.path.exists(x)] if miss else []):
             for l in open(f):
                 if l.startswith('{"') and any(i in l for i in miss):
                     try: r = json.loads(l)

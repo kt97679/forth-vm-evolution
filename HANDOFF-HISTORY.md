@@ -546,3 +546,15 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   results/drafts/retire-report-579.py (578's rule).
 - **Predictions due** (results/predictions.md): chain A - all 232 re-measured (90/10), 1-2.5 hours (80/20), the laptop's
   fastest at 64 bits one of the 41's bred group (60/40), the shortlist 30-50 (75/25), dream all 232 in its 150 minutes (80/20).
+
+## The card at Iteration 585, moved at 586
+
+- **The next chain - the final pick's chain B** (GOALS.md step 3; the owner's 12 hours): NEXT-RUN `experiment loadtest.py
+  --ids results/shortlist-seed86.md --rounds 5` - the 40 alone and under load at both widths (about 20 minutes); REMOTES
+  rage first, 540 minutes, `--also @results/tegra-list-seed86.md` (the shortlist, the 4 msc pairs, the rest: 240 in order),
+  dream's prebuilt32/64 the shortlist again; the chain about 10-11 hours (gather waits for the launch, 585). **Before it, the
+  owner on fury, no chain running: `sh tools/rage-check.sh rage.lan results/shortlist-seed86.md` PASS** - its 7 GCC lto=1
+  designs built by rage's GCC with -u raise (open item 1b).
+- **Processing chain B**: the same three commands; process-seed.sh runs final-pick.py with every host (no --shortlist) -
+  GOALS.md step 5 across the three classes, the final set; process-run.sh stops after the summary (no seed pack), as chain
+  A's did. Then consolidation: retire-plan-583.md (msc by the Tegra's pairs), retire-report-579.py (578's rule).

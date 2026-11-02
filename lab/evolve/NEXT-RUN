@@ -13,6 +13,8 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 586 (chain B running, started from 585's bundle): none - a pull of this bundle must not start chain B
+# again; chain B's processing writes the next line (msc's Tegra session, then consolidation's).
 # Iteration 585 (chain A processed): the final pick's chain B (the owner, 579-580; his 12 hours) - the shortlist's 40
 # re-measured on the laptop at 5 rounds, alone and under load at both widths (about 20 minutes), while dream re-measures
 # them at both widths and the Tegra every candidate it can build, the shortlist first (REMOTES: 540 minutes, the chain
@@ -160,4 +162,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-experiment loadtest.py --ids results/shortlist-seed86.md --rounds 5
+none

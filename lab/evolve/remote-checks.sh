@@ -64,6 +64,9 @@ start)
     # host's lock), each deadline from its own start; the laptop waits at most their sum
     : > "$R/queued"
     L=$R/launch.sh                                                   # Iteration 379: the copying, in the background
+    # 586: a line's remote start detached (cd || exit; run.sh &) - with 'cd && run.sh &' the backgrounded list's shell held
+    # the ssh session until run.sh ended, so each line ran to its end inside the launch, one after another, and was noted
+    # "started" only then: chain A's rage line, launched last, was not done at the pack; chain B's, first, held the rest
     printf '#!/bin/sh\n# the copying and starting of %s'"'"'s checks (remote-checks.sh start, Iteration 379)\n' "$(basename "$CHAIN")" > "$L"
     printf 'note() { echo "remote $1: $2" >> "%s/steps"; echo "next-run: remote $1: $2"; }\n' "$CHAIN" >> "$L"
     conf | while read -r host how n rounds minutes opts; do
@@ -117,7 +120,7 @@ RUN
 t0=\$(date +%s%N)
 if $SSH $O "$host" "mkdir -p $RD" < /dev/null > "$H/ssh.log" 2>&1 && t1=\$(date +%s%N) \\
     && $SCP -q $O $files "$host:$RD/" >> "$H/ssh.log" 2>&1 && t2=\$(date +%s%N) \\
-    && $SSH $O "$host" "cd $RD && setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1 && t3=\$(date +%s%N); then
+    && $SSH $O "$host" "cd $RD || exit 1; setsid nohup sh run.sh > run.log 2>&1 < /dev/null &" < /dev/null >> "$H/ssh.log" 2>&1 && t3=\$(date +%s%N); then
     b=\$(cat $files | wc -c)                                    # Iteration 381: the copy, timed
     tx=\$(awk -v b=\$b -v m=\$(( (t1 - t0) / 1000000 )) -v c=\$(( (t2 - t1) / 1000000 )) -v st=\$(( (t3 - t2) / 1000000 )) 'BEGIN { cs = c / 1000; printf "%.1f MB in %dm %02ds (%.0f KB/s); mkdir %d ms, start %d ms", b / 1048576, cs / 60, cs % 60, (cs > 0 ? b / 1024 / cs : 0), m, st }')
     echo "\$tx" > "$H/transfer.txt"
