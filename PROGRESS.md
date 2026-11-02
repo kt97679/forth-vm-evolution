@@ -10602,5 +10602,7 @@ the row's two drops for every CV8 design, layout.py's three lean-off switches go
 and EXPRESSED). Tested by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS); s4 alone changed among
 the frozen stages (its image - the one stage with lean 0, so 584's "dormant in every stage" was wrong for s4; frozen,
 nothing lost). The fresh sandbox's first setup call ran past 300 s with its work done; run again it returned at once
-(cause not found). Next: scale, varcall with sharedcall, doesfar, bytehdr - one a fresh chat.
-Files: results/queued-consolidation/lean-after-seed86.patch.
+(cause not found). Next: scale, varcall with sharedcall, doesfar, bytehdr - one a fresh chat. The owner asked to use
+all three machines: a chain's x86 lines wait for rage's; a chain D, only if chain C's sessions disagree, fills that
+wait with repeated sessions (no more rounds; one design at a time a host).
+Files: results/queued-consolidation/lean-after-seed86.patch, results/drafts/chain-sizing-589.md.

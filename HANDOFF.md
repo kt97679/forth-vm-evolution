@@ -89,7 +89,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   on chain C's readings (process-seed.sh's chain-B mode: the shortlist); then final-pick.py beside chain B's readings,
   `--also-session results/chainB-seed86` (588: the laptop's two loadtest.md merged by geometric mean, each host's lines its
   mean in step 5) - a design in either session's set kept (lose no good design). Keep chain C's readings as chain B's;
-  the 8 msc records (rage's designs.json) into the repository; msc by retire-plan-583's rule. Then consolidation:
+  the 8 msc records (rage's designs.json) into the repository; msc by retire-plan-583's rule. A chain D only if predictions 3 or 4 fail (two sessions disagree): sized to fill
+  the slowest line, the x86 lines repeating whole sessions through rage's (results/drafts/chain-sizing-589.md - the
+  owner, 589: use all three machines). Then consolidation:
   retire-plan-583.md, retire-report-579.py (578's rule) on the final set.
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
