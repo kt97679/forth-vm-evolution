@@ -1,7 +1,8 @@
 #!/bin/sh
 # results/drafts/retire-test-588.sh SCRATCH - a retirement patch tested (Iteration 588): a clone of SCRATCH at its HEAD, built, validated (its dumps made),
 # (/tmp/vh/status, polled to DONE; --validate before the hashes: it makes the dictionary dumps the 8-byte build reads -
-# a tree built but not validated kills designs with FileNotFoundError, 588). As the build user, detached:
+# a tree built but not validated kills designs with FileNotFoundError, 588). Before the bundle: rm -rf /tmp/hx /tmp/vh (589: its
+# clone holds the scratch commits - the queue's patches - and handoff-check stops on it). As the build user, detached:
 #   setsid nohup sh results/drafts/retire-test-588.sh /tmp/x > /dev/null 2>&1 &
 # build-hash-584.py at both widths against master's 584 hashes, then batch-check of the queue from the main tree
 S=/tmp/vh/status; mkdir -p /tmp/vh; rm -f $S; R=/home/claude/forth-vm-evolution
