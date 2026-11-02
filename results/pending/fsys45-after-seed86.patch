@@ -1,0 +1,227 @@
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index ccd925b..e49b1b8 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -1337,18 +1337,8 @@ NOINLINE_IO static int t_fgetc(int fd) {
+     return f->b[f->pos++];
+ }
+ 
+-#if FSYS >= 4
+-/*  Iteration 207, fsys 4: the Forth output buffer (forth/file-sysc4.4) - its
+- *  [address, fill], registered by SYSCALL -5 - is flushed wherever t_obuf
+- *  is: before every system call, before a read blocks, at every exit, the
+- *  faults' included. The flush points are the native engine's, unchanged.  */
+-static UNS64 *g_fbuf;
+-#endif
+ NOINLINE_IO static void t_flush(void) {
+     if (t_olen) { full_write(1, t_obuf, (size_t)t_olen); t_olen = 0; }
+-#if FSYS >= 4
+-    if (g_fbuf && g_fbuf[1]) { full_write(1, (const void *)(uintptr_t)g_fbuf[0], (size_t)g_fbuf[1]); g_fbuf[1] = 0; }
+-#endif
+ }
+ 
+ /*  WRITE and READ - primitives 30 and 31, where EMIT and KEY were; the
+@@ -2503,10 +2493,6 @@ L_syscall: {
+      *  and the positioning words did first - file-sysc.4's need it: READ-LINE,
+      *  native, reads ahead.  */
+     if (num == -4) { t_fdrop((int)a[0]); r = 0; } else
+-#endif
+-#if FSYS >= 4
+-    if (num == -5) { g_fbuf = (UNS64 *)(uintptr_t)a[0]; r = 0; } else   /* the Forth output buffer registered */
+-    if (num == -6) r = 0; else                                          /* a flush: done on entry, above */
+ #endif
+     if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
+     else {
+diff --git a/forth/file-sysc4.4 b/forth/file-sysc4.4
+deleted file mode 100644
+index 212f6a9..0000000
+--- a/forth/file-sysc4.4
++++ /dev/null
+@@ -1,27 +0,0 @@
+-\ file-sysc4.4 - fsys 4: file-sysc3.4's single-SYSCALL I/O with the user
+-\ output buffered where Gforth buffers it (Iteration 207, the owner). The
+-\ standard leaves buffering open (FLUSH-FILE implies it); Gforth's practice
+-\ and its proposal: never buffer the user input device; never buffer the user
+-\ output device when it is a terminal; buffer it when it is not - a pipe, a
+-\ file (complang.tuwien.ac.at/forth/ansforth-cvs/buffering.html). So WRITE
+-\ asks once whether stdout is a terminal (ioctl TCGETS): there it writes at
+-\ once, as fsys 3; elsewhere it adds to a 4 KB buffer on the heap - the
+-\ dictionary holds only its [address, fill], registered with the engine
+-\ (SYSCALL -5), whose t_flush empties it wherever the native engine flushed
+-\ its own: before every system call, before a read blocks, at every exit and
+-\ fault. A full buffer is flushed by SYSCALL -6. Input stays unbuffered.
+-
+-CREATE FS-OB 0 , 0 ,                             \ the buffer's address, its fill
+-VARIABLE FS-OMODE  0 FS-OMODE !                  \ 0 not yet asked, 1 buffered, 2 a terminal: direct
+-4096 CONSTANT FS-OSIZE
+-: FS-OINIT ( --- )
+-  FS-OSIZE FS-MMAP DUP 0< IF DROP 2 FS-OMODE ! EXIT THEN
+-  DUP FS-OB ! 0 FS-OB CELL+ !
+-  1 21505 ROT 16 FS3                             \ ioctl(1, TCGETS, the buffer as scratch): 0 on a terminal
+-  0= IF 2 ELSE 1 FS-OB -5 FS1 DROP THEN FS-OMODE ! ;
+-: WRITE ( c-addr u --- )
+-  FS-OMODE @ 0= IF FS-OINIT THEN
+-  FS-OMODE @ 2 = IF 1 FS-WRITE DROP EXIT THEN
+-  DUP FS-OSIZE > IF -6 FS0 DROP 1 FS-WRITE DROP EXIT THEN
+-  DUP FS-OB CELL+ @ + FS-OSIZE > IF -6 FS0 DROP THEN
+-  FS-OB @ FS-OB CELL+ @ + SWAP DUP FS-OB CELL+ +! CMOVE ;
+diff --git a/forth/file-sysc5.4 b/forth/file-sysc5.4
+deleted file mode 100644
+index af0d37d..0000000
+--- a/forth/file-sysc5.4
++++ /dev/null
+@@ -1,66 +0,0 @@
+-\ file-sysc5.4 - fsys 5: fsys 4 with READ-LINE reading ahead where the file
+-\ can seek (Iteration 211). The owner's rule: no read-ahead from stdin, pipes
+-\ or anything else that cannot seek - bytes read past the line there are gone;
+-\ where a file can seek they can be given back. So a seekable descriptor (1-63,
+-\ never 0) reads 4 KB at a time into a buffer on the heap, as the native
+-\ engine's t_fgetc did, and every other use of the file first gives back what
+-\ was read ahead - lseek(2) by the unread count, as t_fdrop did: READ-FILE,
+-\ REPOSITION-FILE, FILE-POSITION, FILE-SIZE, WRITE-FILE, WRITE-LINE and
+-\ CLOSE-FILE are wrapped so; OPEN-FILE clears a number used again. The state
+-\ is on the heap too - a table of [next, end, buffer] for 64 descriptors, made
+-\ on first use; the dictionary holds its address alone. Iteration 214: next
+-\ and end are addresses, equal when nothing is read ahead; a line already in
+-\ the buffer is taken at once, the rest goes the general way.
+-
+-CREATE FS-RT 0 ,                                 \ the table's address, 0 until first used
+-4096 CONSTANT FS-RSIZE
+-: FS-RE ( fid --- a-addr )  [ 3 CELLS ] LITERAL * FS-RT @ + ;   \ the descriptor's [next, end, buffer]
+-: FS-RESET ( fid --- )                           \ nothing read ahead
+-  DUP 1- 63 U< FS-RT @ AND IF FS-RE 0 0 ROT 2! ELSE DROP THEN ;
+-: FS-GIVEBACK ( fid --- )                        \ what was read ahead, given back
+-  DUP 1- 63 U< FS-RT @ AND 0= IF DROP EXIT THEN
+-  DUP FS-RE 2@ SWAP -                            ( fid next-end )
+-  ?DUP IF OVER SWAP 1 8 FS3 DROP THEN            \ lseek(fid, next-end, SEEK_CUR)
+-  FS-RESET ;
+-: READ-FILE ( c-addr u1 fid --- u2 ior )  DUP FS-GIVEBACK READ-FILE ;
+-: REPOSITION-FILE ( ud fid --- ior )  DUP FS-GIVEBACK REPOSITION-FILE ;
+-: FILE-POSITION ( fid --- ud ior )  DUP FS-GIVEBACK FILE-POSITION ;
+-: FILE-SIZE ( fid --- ud ior )  DUP FS-GIVEBACK FILE-SIZE ;
+-: WRITE-FILE ( c-addr u fid --- ior )  DUP FS-GIVEBACK WRITE-FILE ;
+-: WRITE-LINE ( c-addr u fid --- ior )  DUP FS-GIVEBACK WRITE-LINE ;
+-: CLOSE-FILE ( fid --- ior )  DUP FS-GIVEBACK CLOSE-FILE ;
+-: OPEN-FILE ( c-addr u fam --- fid ior )  OPEN-FILE OVER FS-RESET ;
+-
+-VARIABLE FS-E  VARIABLE FS-LIM                   \ READ-LINE's entry; the end of its caller's buffer
+-: FS-FILL ( fid --- n )                          \ the buffer refilled: what came, 0 at the end, <0 an error
+-  FS-E @ 2 CELLS + DUP @ 0= IF FS-RSIZE FS-MMAP OVER ! THEN @   ( fid buf )
+-  SWAP OVER FS-RSIZE 0 FS3                       ( buf n )   \ read(fid, buf, 4 KB)
+-  DUP 0> IF 2DUP + ROT FS-E @ 2! ELSE SWAP DROP THEN ;
+-: FS-TAKE ( c --- c' f )                         \ from the buffer to c, up to an LF or FS-LIM: f true when an LF ended the line
+-  DUP FS-LIM @ SWAP -  FS-E @ 2@ SWAP OVER -  ROT MIN    ( c next w )
+-  OVER SWAP 10 SCAN                              ( c next a r )
+-  >R OVER - >R  OVER R@ CMOVE  R@ +              ( c' ) ( R: r k )
+-  R> R> IF 1+ -1 ELSE 0 THEN  SWAP FS-E @ +! ;   \ the entry's next moved on, past an LF taken
+-: READ-LINE ( c-addr u1 fid --- u2 flag ior )
+-  DUP 1- 63 U< FS-RT @ AND IF                     \ the line may be read ahead already
+-    DUP FS-RE >R  OVER R@ 2@ SWAP OVER - ROT MIN  ( c u1 fid next w ) ( R: e )
+-    2DUP 10 SCAN IF                               \ its LF there, within u1: taken at once
+-      SWAP DROP OVER -  2DUP + 1+ R> !            ( c u1 fid next k )  \ next: past the LF
+-      DUP IF 2DUP + 1- C@ 13 = IF 1- THEN THEN    \ a CR before the LF ends the line too
+-      >R >R 2DROP R> SWAP R@ CMOVE R> -1 0 EXIT
+-    THEN 2DROP DROP R> DROP
+-  THEN
+-  DUP 1- 63 U< 0= IF READ-LINE EXIT THEN          \ stdin, or past the table: as fsys 3
+-  FS-RT @ 0= IF FS-RSIZE FS-MMAP FS-RT ! THEN     \ the table, made on first use
+-  DUP FS-RE DUP 2@ = IF                           \ nothing read ahead: can the file seek?
+-    OVER FS-SEEKS? 0= IF DROP READ-LINE EXIT THEN \ no: as fsys 3, no read-ahead
+-  THEN
+-  FS-E ! >R  OVER FS-P !  OVER + FS-LIM !         ( c ) ( R: fid )
+-  BEGIN
+-    DUP FS-LIM @ = IF -1 0 -1 ELSE                \ the caller's buffer full: the line goes on next time
+-      FS-E @ 2@ = IF R@ FS-FILL ELSE 1 THEN       \ the buffer empty: refilled
+-      DUP 1 < IF 0< IF -200 ELSE 0 THEN OVER FS-P @ = 0= SWAP -1   \ the end of the file, or an error
+-      ELSE DROP FS-TAKE IF -1 0 -1 ELSE 0 THEN THEN
+-    THEN
+-  UNTIL                                           ( c flag ior )
+-  R> DROP ROT FS-P @ - FS-CR ROT ROT ;
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 4818227..f6663a9 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -257,7 +257,7 @@ LOOP10 = ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
+ # (and the converter, which fills the three tables by their names in the
+ # dump): rtloop=2 builds them headerless (tools/layout.py --headerless).
+ RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVES', 'LOOP-OPS', 'X10-XTS', 'X10-OPS')
+-# Iteration 202, the gene fsys (results/drafts/fsys/README.md): six file words
++# Iteration 202, the gene fsys (results/drafts/fsys/README.md; levels 4-5 retired at 583, results/drafts/retire-plan-583.md): six file words
+ # and RESIZE in Forth over SYSCALL (forth/file-sysc.4, loaded last in a -fsys
+ # dump), their handlers out of the engine: 27 of 68 primitives never ran in
+ # the eight workloads. A design without it builds from the dumps it always did.
+@@ -339,8 +339,6 @@ FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
+ FSYS3_INTERNAL = ('FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
+                   'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
+ FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
+-FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207
+-FSYS5_INTERNAL = ('FS-RT', 'FS-RSIZE', 'FS-RE', 'FS-RESET', 'FS-GIVEBACK', 'FS-E', 'FS-LIM', 'FS-FILL', 'FS-TAKE')   # Iteration 211; 214: FS-LIM for FS-CNT, FS-MAX, FS-ERR
+ 
+ def rtloop_on(g):
+     """Iteration 41: does this design compile loops at run time with its loop
+@@ -562,6 +560,7 @@ def canon(g):
+     g['supers'] = [list(x) for x in g.get('supers', [])]
+     g['ops10'] = list(g.get('ops10', []))
+     for k in LATE: g.setdefault(k, 0)          # genomes recorded before them: off
++    if g['fsys'] > 3: g['fsys'] = 3            # Iteration 583: fsys 4-5 retired (no design on the pooled front, no candidate) - level 3
+     g['opcall'] = list(g['opcall'] or [])      # Iteration 121: a list gene, [] when off
+     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
+     return g
+@@ -1060,7 +1059,7 @@ def _build(g, d):
+     if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
+     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
+     if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
+-        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ()) + (FSYS4_INTERNAL if fsys_level(g) >= 4 else ()) + (FSYS5_INTERNAL if fsys_level(g) == 5 else ())
++        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ())
+         opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) >= 3 else ()))]
+     if hl: opts += ['--headerless', ','.join(hl)]
+     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
+@@ -1071,7 +1070,7 @@ def _build(g, d):
+     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
+     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+-    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
++    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+     # Iteration 199: a short branch the tag-2 encoding finds out of range is
+     # written to long-branches.json and the conversion fails; converted again
+     # with it kept long - the set only grows, so it ends.
+@@ -1424,7 +1423,7 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
+     't2hot': (tuple(range(len(T2HOT))), lambda v: 't2hot=%s' % T2HOT[v]),       # Iteration 71: the tag's ranking, size against speed
+     'gotodup': (tuple(range(len(GOTODUPV))), lambda v: 'gotodup=%s' % GOTODUPV[v]),   # Iteration 260: GCC's goto unfactoring
+     'fbuf': (tuple(range(len(FBUFV))), lambda v: 'fbuf=%d' % FBUFV[v]),          # Iteration 115: a file's read-ahead, 4096, 1024, 512
+-    'fsys': (tuple(range(6)), lambda v: 'fsys=%d' % v),                         # Iterations 202-211: native, then Forth over SYSCALL, levels 1-5
++    'fsys': (tuple(range(4)), lambda v: 'fsys=%d' % v),                         # Iterations 202-211: native, then Forth over SYSCALL, levels 1-3 (583: 4-5 retired)
+     'threads': (tuple(range(4)), lambda v: 'threads=%d' % v),                   # Iteration 204: as built (32), 64, 128, 16 chains
+     'regpin': (tuple(range(4)), lambda v: 'regpin=%d' % v),                     # Iteration 197: GCC's choice, three assignments
+     'escape': (tuple(range(3)), lambda v: 'escape=%d' % v),                     # Iteration 11: nine more primitives behind it
+@@ -1968,7 +1967,7 @@ def setup():
+     import shutil
+     W = os.path.join(O, 'work')
+     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
++               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+@@ -1981,7 +1980,7 @@ def setup():
+                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
+                         for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
+                         for j in (('', '-jit') if b == KW() + '-bt' else ('',))
+-                        for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
++                        for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
+         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
+                        + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
+                        + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+@@ -1992,10 +1991,8 @@ def setup():
+                        + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
+                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
+                        + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
+-                       + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 205: the rest of the file words (fsys 2)
+-                       + (['file-sysc3.4'] if any(k in name for k in ('-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
+-                       + (['file-sysc4.4'] if '-fsys4' in name or '-fsys5' in name else [])   # Iteration 207: the output buffered off a terminal (fsys 4)
+-                       + (['file-sysc5.4'] if '-fsys5' in name else [])      # Iteration 211: READ-LINE reading ahead where a file can seek (fsys 5)
++                       + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3')) else [])   # Iteration 205: the rest of the file words (fsys 2)
++                       + (['file-sysc3.4'] if any(k in name for k in ('-fsys3',)) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
+                        + ['dict-dump-addr.4']) + 'BYE\n'
+         out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
+         dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
