@@ -10502,3 +10502,16 @@ results/drafts/fastend-knockout-581.py, results/drafts/fastend-icount-581-32.jso
 results/drafts/fastend-icount-581-32.s6.json, results/drafts/reach-scale2-581.md, results/drafts/reach-scale2-581.py,
 HANDOFF.md.
 
+## Iteration 582 - 2026-11-02 - Claude
+
+**Seed 86 processed - the second confirmation run: the search gained nothing; NOT CONFIRMED only by a carried design's
+one page of memory - the pool widened, no new search (GOALS.md, 573); step 2 ends.** 92 generations, 38,853 designs; its
+front -1.0% against the pool of seeds 77-84, its bred designs +0.05% (the bar 1%), the fastest 0.1330 against seed 84's
+0.1325; the least memory 104 KB against 108 (the bar 104) - fb0d57c8a2, carried from seed 76's database. Dream's 41: seed
+84's bred lead -0.6% at 64 bits, +0.2% at 32, against the laptop's 5.9% - the laptop's. The genes' screen: no REVISIT, no
+KEEP, nine retire candidates. Next, in the owner's 10 hours (then 12 for chain B, the Tegra's): the final pick's chain A, `experiment loadtest.py
+--ids results/candidates-final-seed86.md`, 232 candidates, dream asked for all of them alongside - seed 86's chain
+measured a 68-design line there in about 4.3 minutes and 15 designs on rage in about 28: 579's budgets were not rates.
+The Tegra's GCC designs fail to link raise - all 4 lto=1, the one that linked lto=0 (HANDOFF open item 1b). process-finish.sh accepts the final pick's experiment-only lines for seed N (580's chains). Files:
+results/evolve-amd-ryzen-7-pro-8840hs-seed86.md, results/xcheck-seed86.md, results/candidates-final-seed86.md,
+results/drafts/dream41-582.py.

@@ -54,6 +54,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck-seed83.md` - The checks of seed 82's front during seed 83 (Iteration 572): Spearman with the laptop - dream 0.989 (24), 0.932 and 0.993 (30 at 32 and 64 bits); rage 0.143 (6, a narrow band).
 - `xcheck-seed84.md` - The checks of seed 83's front during seed 84 (Iteration 575): Spearman with the laptop 0.969, 0.962 and 0.984 on dream (prebuilt, 32, 64), 0.935 on rage (16, clang-built, the host busy).
 - `xcheck-seed85.md` - The checks of seed 84's front during seed 85 (Iteration 576): Spearman with the laptop 0.983, 0.938 and 0.972 on dream (prebuilt, 32, 64), 0.956 on rage (14, clang-built).
+- `xcheck-seed86.md` - The checks of seed 85's front during seed 86 (Iteration 582): Spearman with the laptop 0.983, 0.836 and 0.983 on dream (prebuilt, 32, 64), 0.918 on rage (11, clang-built); dream's 41: the bred lead the laptop's.
 
 ### The batches of patches applied after the runs
 
@@ -206,6 +207,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/retire-candidates-573.md` - The nine genes seeds 77-83's fronts never moved off their old values (Iteration 573): what retiring each would remove - little but msc, the old values building the hand-made stages s2-s5; msc's Tegra check first.
 - `drafts/random-mode-548.patch` - The random-search baseline's mode, drafted and tested for consolidation (Iteration 548; GOALS.md, "When the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop, the fast gate kept.
 - `candidates-final-seed84.md` - The final set's candidates from the pool of seeds 77-83 and seed 84 (Iteration 575, final-set.py --candidates): 242 records, one a line, for loadtest.py --ids and xcheck.py --also.
+- `candidates-final-seed86.md` - The final set's candidates from the pool of seeds 77-84 and seed 86 (Iteration 582, final-set.py --candidates): 232 records, one a line, for loadtest.py --ids (the final pick's chain A).
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers

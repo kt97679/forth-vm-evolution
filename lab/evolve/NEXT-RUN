@@ -13,6 +13,13 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 582 (seed 86 processed): the final pick's chain A (the owner, 579-580; GOALS.md step 3) - every candidate
+# re-measured alone and under load at both widths on the laptop, about 1.5 hours, and on dream alongside (REMOTES, 582:
+# a 68-design line took it about 4.3 minutes in seed 86's chain). Seed 86 NOT CONFIRMED by carried designs only - the least memory 104 KB, a carried design of seed 76's, exactly at
+# the 4 KB bar; the search gained nothing (the bred designs +0.05% to the pool): the pool widened, no new search (573).
+# Dream's 41: seed 84's bred lead -0.6% at 64 bits, +0.2% at 32 - the laptop's 5.9% was the laptop's. The owner's next
+# windows: 10 hours, then 12 - this chain the 10 (it needs about 2), chain B the 12 (the Tegra's). Its processing: final-pick.py --shortlist (about 40) for chain B - the laptop
+# again beside dream and the Tegra, after the owner's rage-check.sh PASS on fury between the chains.
 # Iteration 576 (seed 85 processed): seed 86, 12 hours (the owner) - the second confirmation run (GOALS.md step 2), the
 # chain seed 84's. The fast-end re-measure STANDS: seed 84's bred designs 5.9% ahead of the best of the rest idle, 6.8%
 # loaded, the stricter test +1.25% (results/evolve-amd-ryzen-7-pro-8840hs-seed85.md). carryall carries the series and
@@ -147,4 +154,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-seed 86 12h widths carryall then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16
+experiment loadtest.py --ids results/candidates-final-seed86.md

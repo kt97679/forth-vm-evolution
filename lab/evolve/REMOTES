@@ -8,16 +8,21 @@
 #
 # host       how       designs  rounds  minutes  sample options
 dream.lan    prebuilt    24     3       30
-dream.lan    prebuilt32  30     3       110      --cell 4 --rejected 6 --also @results/fastend-remeasure-575.md
+dream.lan    prebuilt32  30     3       150      --cell 4 --rejected 6 --also @results/candidates-final-seed86.md
+#   Iteration 582 (the final pick's chain A, in the owner's 10 hours): the 232 candidates asked for by id at both widths.
+#   Seed 86's chain measured a 68-design line here in about 4.3 minutes, the stages built here included (load.log), so
+#   232 take well under an hour - 579's "about 10 hours" was a budget, not a rate. process-seed.sh gives final-pick.py
+#   every host's out.json: the shortlist sees dream too. Out at chain A's processing (chain B's lists then).
 #   Iteration 576 (seed 85 processed; the re-measure STANDS - seed 84's bred designs 5.9% ahead of the best of the
 #   rest on the laptop, a lead its own run had put at 0-2%): the same 41 asked for by id on dream, at both widths through
 #   prebuilt64's pairing - is the lead the laptop's or the designs'? 70 minutes more on each line for them; all 41
-#   are JIT and clang designs, so the Tegra (no JIT on ARMv7, open item 7) can measure none. Out at seed 86's processing.
+#   are JIT and clang designs, so the Tegra (no JIT on ARMv7, open item 7) can measure none. Out at seed 86's processing
+#   (582): dream put the bred lead at -0.6% (64 bits), +0.2% (32) - the laptop's (results/xcheck-seed86.md).
 #   Iteration 430 (the owner), done in seed 63's chain (Iteration 441: --also out) - three candidates for the
 #   best design across the machine classes,
 #   asked for by id here, at 64 bits through prebuilt64's pairing, and on the Tegra: one chain, one commit
 #   (results/candidates-generic.md; review-checks.py generic ranks them at processing). Out at seed 63's processing.
-dream.lan    prebuilt64  30     3       110      --from prebuilt32
+dream.lan    prebuilt64  30     3       150      --from prebuilt32
 #   Iteration 566: seed 80's front holds no design the Tegra can build (GCC, no JIT - the compiler gene at clang), and
 #   seeds 78-79's held only a 1.25x speed band (the checks -0.103, 0.082): 16 of seed 77's front asked for by id, 0.34-0.96,
 #   five measured there in seed 78's chain (0.926) - the host tested directly. Out at seed 81's processing.

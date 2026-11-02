@@ -60,7 +60,9 @@ sh lab/evolve/process-records.sh "$N" "$I" || die "process-records.sh"          
 M=""                                                                                                                  # 5.
 grep -q "Scored at seed $N " results/predictions.md || M="$M results/predictions.md (\"Scored at seed $N\");"
 L=$(grep -v '^#' lab/evolve/NEXT-RUN | grep -v '^ *$' | head -n 1)
-case $L in "seed $((N + 1)) "*|*" then seed $((N + 1)) "*|none*) ;; *) M="$M lab/evolve/NEXT-RUN (its line: $L);" ;; esac   # 575: or a later step
+case $L in "seed $((N + 1)) "*|*" then seed $((N + 1)) "*|none*) ;;   # 575: or a later step; 582: or the final pick's chains (580)
+    "experiment loadtest.py --ids results/candidates-final-seed$N.md"*|"experiment loadtest.py --ids results/shortlist-seed$N.md"*) ;;
+    *) M="$M lab/evolve/NEXT-RUN (its line: $L);" ;; esac
 grep -q "^- master: Iteration $I\.\$" HANDOFF.md || M="$M HANDOFF.md (\"- master: Iteration $I.\");"
 grep -q "^## Iteration $I " PROGRESS.md || M="$M PROGRESS.md (\"## Iteration $I\");"
 [ -z "$M" ] || die "the chat's records missing:$M"

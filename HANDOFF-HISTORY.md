@@ -484,3 +484,45 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 - **Predictions due** (results/predictions.md): the re-measure GONE (a 60/40 call); seed 85's hypervolume 0.20-0.30.
 - **Before 575**: seeds 70-83 processed (498-572); seed 84's first chain failed (574); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.
+
+## The state card before Iteration 582 (seed 86 returned)
+
+- master: Iteration 581.
+- **The next chain - seed 86, 12 hours (the owner): the second confirmation run** (GOALS.md step 2): NEXT-RUN `seed 86 12h
+  widths carryall then experiment review-checks.py spread then experiment appbench.py ...` - seed 84's chain. Its founders:
+  the series' and seed 84's fronts; seed 85's random run not carried (576: next-run.sh skips a run whose WANT says random).
+  confirm.py pools seeds 77-83 and 84 (the {"confirmation": 84} line). REMOTES: dream re-measures the fast-end file's 41 at
+  both widths alongside (`--also @results/fastend-remeasure-575.md`, 110 minutes a line; out at seed 86's processing).
+- **The re-measure STANDS (576)**: seed 84's best bred 5.9% ahead of the best of the rest idle, 6.8% loaded (the bar 2%), the
+  stricter test +1.25% (the bar 1%) - results/evolve-amd-ryzen-7-pro-8840hs-seed85.md. Unexplained: the bred lead 0.8%
+  in-run (group medians), 4.5% re-measured; dream's 41 test whether it is the laptop's.
+- **Seed 85, the random baseline (GOALS.md step 4), done (576)**: at generation 140 the hypervolume 0.553 of the series'
+  median, the fastest 2.23 and the 32-bit 2.19 times slower, the smallest 1.16 times larger; none of its front on the
+  final front. A new death, 55 "body size drift": the scale-0 call reach, no fault (results/drafts/body-size-drift-576.md).
+- **Processing the next chain**: the same three commands; a confirmation run - process-seed.sh runs final-set.py and
+  confirm.py (as seed 84). Judge: confirm.py's verdict; dream's 41 (xcheck-seed86.md: does the bred lead hold at 64
+  bits? results/drafts/fastend-icount-579.md: 1.4% of the 4.5% is fewer instructions, guard the strongest gene - expect
+  1.4-4.5% there).
+  Drafted for both outcomes (579):
+  - CONFIRMED - the final pick, **two chains (the owner, 579; 580)**, neither with a seed step:
+    **Chain A**: NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md` (242 candidates, about 1.5
+    hours on the laptop alone); REMOTES with no `--also` (take 576's out) - no host asked. Its processing:
+    process-seed.sh runs final-pick.py --shortlist - results/shortlist-seed86.md, about 40: the set alone and loaded,
+    the additions, each width's 5 fastest alone and loaded, the next by hypervolume, the near-misses (each record's
+    why). **Chain B**: NEXT-RUN `experiment loadtest.py --ids results/shortlist-seed86.md --rounds 5`; REMOTES `--also
+    @results/shortlist-seed86.md` on dream's prebuilt32 (prebuilt64 pairs it; designs 4, minutes 150 each) and rage's
+    line (designs 4, minutes 900 - about 38 minutes a design there: the shortlist's first 20 or so, in its order, the set
+    first), only after the owner's rage-check.sh PASS (open item 1, on fury between the chains). next-run.sh starts the
+    remote checks in a chain with no seed step when a REMOTES line asks by id, each line's minutes from its start; the
+    pack waits for them (580). Its processing: final-pick.py with every host - step 5 across machines, the final set.
+    process-run.sh's later stages (draft-results, the checks) expect a seed pack: if it stops, process-seed.sh's
+    summary has the final pick. Consolidation's retirement: results/drafts/retire-report-579.py (578's rule).
+  - NOT CONFIRMED by bred designs again - per 573 another confirmation run, `seed 87 12h widths carryall ...` as seed 86's
+    line (the owner's hours); by carried designs only - the pool widened, the final pick as above.
+- **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
+  classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
+  class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Self-test passes. Consolidation
+  (578, the owner): a gene or code path is retired only when no design on the pooled true front uses it - not the final set.
+- **Predictions due** (results/predictions.md): seed 86 confirmed (55/45); dream - the bred lead under 2% (60/40).
+- **Before 576**: seeds 70-84 processed (498-575); history: HANDOFF-HISTORY.md.
+- **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.

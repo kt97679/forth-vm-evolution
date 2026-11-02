@@ -32236,3 +32236,19 @@ rows (its failed chain and its run, 14,163 founders each) the same founders re-t
 | archived-20261031-012505/build/evolve/db.jsonl | 0 | 132 | 16 | 0.6678 | 19,024 | 136 | 2.5359e+06 | 0.1862 | 0.6490 |
 | archived-20261031-150439/build/evolve/db.jsonl | 0 | 14163 | 580 | 0.1330 | 13,989 | 108 | 9.2108e+05 | 0.6397 | 0.1739 |
 | archived-20261101-043918/build/evolve/db.jsonl | 0 | 14163 | 612 | 0.1352 | 13,989 | 108 | 9.1263e+05 | 0.6376 | 0.1715 |
+
+## Session 73 - Iteration 582: seed 86 and the archived runs (the chain's spread, at generation 0)
+
+Each run's own selection - the same since seed 71 (seven workloads, apps the seventh) on this laptop - read at
+generation 0, the one generation every run here has; the least memory 104-136 KB. Seed 86 (build/evolve, the second
+confirmation run) re-times 15,515 founders - the series' fronts and seed 84's - and holds both its extremes already
+there: the fastest 0.1330, and the least memory 104 KB, the one gain confirm.py reads (fb0d57c8a2, from seed 76's
+database). Seed 84's two rows, the same 14,163 founders a day apart: 0.1330 and 0.1352, the session spread at the fast end.
+
+| run | generation | designs to it | front | fastest | smallest | least memory KB | best Q | hypervolume | fastest at 32 bits |
+|---|---|---|---|---|---|---|---|---|---|
+| build/evolve/db.jsonl | 0 | 15515 | 598 | 0.1330 | 13,973 | 104 | 9.0118e+05 | 0.6298 | 0.1705 |
+| archived-20261031-012505/build/evolve/db.jsonl | 0 | 132 | 16 | 0.6678 | 19,024 | 136 | 2.5359e+06 | 0.1800 | 0.6490 |
+| archived-20261031-150439/build/evolve/db.jsonl | 0 | 14163 | 580 | 0.1330 | 13,989 | 108 | 9.2108e+05 | 0.6171 | 0.1739 |
+| archived-20261101-043918/build/evolve/db.jsonl | 0 | 14163 | 612 | 0.1352 | 13,989 | 108 | 9.1263e+05 | 0.6150 | 0.1715 |
+| archived-20261101-155809/build/evolve/db.jsonl | 0 | 102 | 11 | 0.8017 | 21,201 | 132 | 3.1289e+06 | 0.1429 | 0.7405 |

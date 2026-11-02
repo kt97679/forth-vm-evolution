@@ -41,44 +41,40 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 581.
-- **The next chain - seed 86, 12 hours (the owner): the second confirmation run** (GOALS.md step 2): NEXT-RUN `seed 86 12h
-  widths carryall then experiment review-checks.py spread then experiment appbench.py ...` - seed 84's chain. Its founders:
-  the series' and seed 84's fronts; seed 85's random run not carried (576: next-run.sh skips a run whose WANT says random).
-  confirm.py pools seeds 77-83 and 84 (the {"confirmation": 84} line). REMOTES: dream re-measures the fast-end file's 41 at
-  both widths alongside (`--also @results/fastend-remeasure-575.md`, 110 minutes a line; out at seed 86's processing).
-- **The re-measure STANDS (576)**: seed 84's best bred 5.9% ahead of the best of the rest idle, 6.8% loaded (the bar 2%), the
-  stricter test +1.25% (the bar 1%) - results/evolve-amd-ryzen-7-pro-8840hs-seed85.md. Unexplained: the bred lead 0.8%
-  in-run (group medians), 4.5% re-measured; dream's 41 test whether it is the laptop's.
-- **Seed 85, the random baseline (GOALS.md step 4), done (576)**: at generation 140 the hypervolume 0.553 of the series'
-  median, the fastest 2.23 and the 32-bit 2.19 times slower, the smallest 1.16 times larger; none of its front on the
-  final front. A new death, 55 "body size drift": the scale-0 call reach, no fault (results/drafts/body-size-drift-576.md).
-- **Processing the next chain**: the same three commands; a confirmation run - process-seed.sh runs final-set.py and
-  confirm.py (as seed 84). Judge: confirm.py's verdict; dream's 41 (xcheck-seed86.md: does the bred lead hold at 64
-  bits? results/drafts/fastend-icount-579.md: 1.4% of the 4.5% is fewer instructions, guard the strongest gene - expect
-  1.4-4.5% there).
-  Drafted for both outcomes (579):
-  - CONFIRMED - the final pick, **two chains (the owner, 579; 580)**, neither with a seed step:
-    **Chain A**: NEXT-RUN `experiment loadtest.py --ids results/candidates-final-seed86.md` (242 candidates, about 1.5
-    hours on the laptop alone); REMOTES with no `--also` (take 576's out) - no host asked. Its processing:
-    process-seed.sh runs final-pick.py --shortlist - results/shortlist-seed86.md, about 40: the set alone and loaded,
-    the additions, each width's 5 fastest alone and loaded, the next by hypervolume, the near-misses (each record's
-    why). **Chain B**: NEXT-RUN `experiment loadtest.py --ids results/shortlist-seed86.md --rounds 5`; REMOTES `--also
-    @results/shortlist-seed86.md` on dream's prebuilt32 (prebuilt64 pairs it; designs 4, minutes 150 each) and rage's
-    line (designs 4, minutes 900 - about 38 minutes a design there: the shortlist's first 20 or so, in its order, the set
-    first), only after the owner's rage-check.sh PASS (open item 1, on fury between the chains). next-run.sh starts the
-    remote checks in a chain with no seed step when a REMOTES line asks by id, each line's minutes from its start; the
-    pack waits for them (580). Its processing: final-pick.py with every host - step 5 across machines, the final set.
-    process-run.sh's later stages (draft-results, the checks) expect a seed pack: if it stops, process-seed.sh's
-    summary has the final pick. Consolidation's retirement: results/drafts/retire-report-579.py (578's rule).
-  - NOT CONFIRMED by bred designs again - per 573 another confirmation run, `seed 87 12h widths carryall ...` as seed 86's
-    line (the owner's hours); by carried designs only - the pool widened, the final pick as above.
+- master: Iteration 582.
+- **The next chain - the final pick's chain A** (GOALS.md step 3; the owner, 579-580): NEXT-RUN `experiment loadtest.py
+  --ids results/candidates-final-seed86.md` - the 232 candidates (final-set.py --candidates on the pool and seed 86: the
+  set's 10, 93 within 5% of the fastest, 131 at 32 bits, the 5 smallest, the 5 leanest) alone and under load at both
+  widths on the laptop, about 1.5 hours; dream asked for all 232 at both widths alongside (REMOTES, 582). The owner's next windows: 10 hours, then 12 - chain A
+  the 10 (it needs about 2), chain B the 12 (the Tegra's).
+- **Seed 86, the second confirmation run, done (582)**: NOT CONFIRMED by carried designs only - the least memory 104 KB
+  (fb0d57c8a2, seed 76's, carried) at the 4 KB bar under the pool's 108; the search gained nothing (its front -1.0%
+  against the pool, its bred designs +0.05%, the fastest 0.1330 against 0.1325): the pool widened, no new search (GOALS.md,
+  573) - step 2 ends. results/evolve-amd-ryzen-7-pro-8840hs-seed86.md.
+- **The fast-end question answered (582)**: dream's 41 put seed 84's bred lead at -0.6% (64 bits), +0.2% (32) against the
+  laptop's 5.9% - the laptop's, not the designs' (results/xcheck-seed86.md; results/drafts/dream41-582.py).
+- **The hosts' real rates (582)**: seed 86's chain measured a 68-design line on dream in about 4.3 minutes and 15
+  designs on rage in about 28, the stages built there included (load.log; a lock serializes a host's lines) - 579's
+  "dream about 10 hours, the Tegra days" was a budget. So dream re-measures every candidate in chain A, and chain B's 900
+  minutes on the Tegra hold every candidate it can build, not the shortlist's first 20: chain A's processing writes
+  chain B's lists (the shortlist first, then the rest).
+- **Processing chain A**: the same three commands; process-seed.sh runs final-pick.py --shortlist -
+  results/shortlist-seed86.md, about 40: the set alone and loaded, the additions, each width's 5 fastest alone and loaded,
+  the next by hypervolume, the near-misses (each record's why). process-run.sh's later stages (draft-results, the checks)
+  expect a seed pack: if it stops, process-seed.sh's summary has the shortlist. Then **chain B**: NEXT-RUN `experiment
+  loadtest.py --ids results/shortlist-seed86.md --rounds 5`; REMOTES `--also @results/shortlist-seed86.md` on dream's
+  prebuilt32 (prebuilt64 pairs it; designs 4, minutes 150 each) and rage's line (designs 4, minutes 900 - room for every
+  candidate at seed 86's rate, the shortlist first), only after the LTO fix (open item 1b) and the owner's rage-check.sh
+  PASS (open item 1, on fury between the chains); next-run.sh starts those checks with no seed step (580).
+  Its processing: final-pick.py with every host - step 5 across machines, the final set. Consolidation's retirement:
+  results/drafts/retire-report-579.py (578's rule).
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
-  class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Self-test passes. Consolidation
-  (578, the owner): a gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 86 confirmed (55/45); dream - the bred lead under 2% (60/40).
-- **Before 576**: seeds 70-84 processed (498-575); history: HANDOFF-HISTORY.md.
+  class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
+  gene or code path is retired only when no design on the pooled true front uses it - not the final set.
+- **Predictions due** (results/predictions.md): chain A - all 232 re-measured (90/10), 1-2.5 hours (80/20), the laptop's
+  fastest at 64 bits one of the 41's bred group (60/40), the shortlist 30-50 (75/25), dream all 232 in its 150 minutes (80/20).
+- **Before 582**: seeds 70-86 processed (498-582); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
@@ -121,13 +117,18 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    changes on x86. Seed 84's failed chain cross-built 15 for rage on fury (Spearman 0.953 on 16, seed 83's 0.143 on 6) -
    the packages are in. Seed 84's chain: 15 cross-built again, Spearman 0.935 on 16 - but rage busy while it measured
    (load average 4.3 on 4 CPUs). rage-check.sh's PASS is still not in an archive: **the owner runs `sh
-   tools/rage-check.sh` on fury, no chain running, before the chain that re-measures the candidates on the Tegra** (575:
-   not the next one). Rage's numbers from then: no-C-library engines, mostly
+   tools/rage-check.sh` on fury, no chain running, before the chain that re-measures the candidates on the Tegra** (chain
+   B; 582: not chain A). Rage's numbers from then: no-C-library engines, mostly
    clang's - not comparable with its checks before.
+1b. **The Tegra's GCC designs do not link (582)**: `undefined reference to 'raise'` - 4 of seed 86's 5 GCC designs on
+   rage, 2 in seed 85's chain; all 4 lto=1, the one that linked lto=0. rt-linux-armv7.c defines raise (line 112) for
+   libgcc's __aeabi_idiv0 - LTO likely drops it before libgcc's member asks for it (`__attribute__((used))` or
+   `-Wl,-u,raise`). A batch before chain B, tested on a lto=1 design; until then the Tegra builds clang and lto=0 only.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
-   seed 83 (572; seeds 77-83 on one method). Step 2: seed 84 NOT CONFIRMED at the fast end; the re-measure STANDS (576) -
-   seed 86 the second confirmation run. Step 3, the final set - lab/evolve/final-set.py, final-pick.py (its first run on
-   the 41 at 576: not the pick). **Step 4, the random baseline, done (576)**: results/evolve-amd-ryzen-7-pro-8840hs-seed85.md.
+   seed 83 (572). **Step 2 done (582)**: seed 84 NOT CONFIRMED at the fast end - the laptop's lead (dream, 582); seed 86
+   NOT CONFIRMED by carried designs only - the pool widened, no new search. **Step 3, the final set, next** - chain A, then
+   chain B (lab/evolve/final-set.py, final-pick.py). **Step 4, the random baseline, done (576)**:
+   results/evolve-amd-ryzen-7-pro-8840hs-seed85.md.
 3. **Correctness - none open (576)**: seed 85's 55 "body size drift" deaths the scale-0 call reach, met where varcall
    and doesfar exempt a design from reach_lethal() - no wrong output (results/drafts/body-size-drift-576.md). seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
    -falign-*=64; ccflags() built alignhot where express() drops it (results/drafts/jitexec-alignhot-566.md) - fixed by
