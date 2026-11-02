@@ -13,6 +13,12 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 585 (chain A processed): the final pick's chain B (the owner, 579-580; his 12 hours) - the shortlist's 40
+# re-measured on the laptop at 5 rounds, alone and under load at both widths (about 20 minutes), while dream re-measures
+# them at both widths and the Tegra every candidate it can build, the shortlist first (REMOTES: 540 minutes, the chain
+# about 10-11 hours). Before it, on fury, no chain running: sh tools/rage-check.sh rage.lan results/shortlist-seed86.md
+# - PASS (the 7 GCC lto=1 designs link with 585's -u raise; open item 1b). Its processing: final-pick.py with every
+# host - GOALS.md step 5 across the three classes, the final set.
 # Iteration 582 (seed 86 processed): the final pick's chain A (the owner, 579-580; GOALS.md step 3) - every candidate
 # re-measured alone and under load at both widths on the laptop, about 1.5 hours, and on dream alongside (REMOTES, 582:
 # a 68-design line took it about 4.3 minutes in seed 86's chain). Seed 86 NOT CONFIRMED by carried designs only - the least memory 104 KB, a carried design of seed 76's, exactly at
@@ -154,4 +160,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-experiment loadtest.py --ids results/candidates-final-seed86.md
+experiment loadtest.py --ids results/shortlist-seed86.md --rounds 5

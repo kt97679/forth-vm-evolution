@@ -526,3 +526,23 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 - **Predictions due** (results/predictions.md): seed 86 confirmed (55/45); dream - the bred lead under 2% (60/40).
 - **Before 576**: seeds 70-84 processed (498-575); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.
+
+## The card at Iteration 584, moved at 585
+
+- **The next chain - the final pick's chain A** (GOALS.md step 3; the owner, 579-580): NEXT-RUN `experiment loadtest.py
+  --ids results/candidates-final-seed86.md` - the 232 candidates (final-set.py --candidates on the pool and seed 86: the
+  set's 10, 93 within 5% of the fastest, 131 at 32 bits, the 5 smallest, the 5 leanest) alone and under load at both
+  widths on the laptop, about 1.5 hours; dream asked for all 232 at both widths alongside (REMOTES, 582). The owner's next windows: 10 hours, then 12 - chain A
+  the 10 (it needs about 2), chain B the 12 (the Tegra's).
+- **Processing chain A**: the same three commands; process-seed.sh runs final-pick.py --shortlist -
+  results/shortlist-seed86.md, about 40: the set alone and loaded, the additions, each width's 5 fastest alone and loaded,
+  the next by hypervolume, the near-misses (each record's why). process-run.sh's later stages (draft-results, the checks)
+  expect a seed pack: if it stops, process-seed.sh's summary has the shortlist. Then **chain B**: NEXT-RUN `experiment
+  loadtest.py --ids results/shortlist-seed86.md --rounds 5`; REMOTES `--also @results/shortlist-seed86.md` on dream's
+  prebuilt32 (prebuilt64 pairs it; designs 4, minutes 150 each) and rage's line (designs 4, minutes 900 - room for every
+  candidate at seed 86's rate, the shortlist first), only after the LTO fix (open item 1b) and the owner's rage-check.sh
+  PASS (open item 1, on fury between the chains); next-run.sh starts those checks with no seed step (580).
+  Its processing: final-pick.py with every host - step 5 across machines, the final set. Consolidation's retirement:
+  results/drafts/retire-report-579.py (578's rule).
+- **Predictions due** (results/predictions.md): chain A - all 232 re-measured (90/10), 1-2.5 hours (80/20), the laptop's
+  fastest at 64 bits one of the 41's bred group (60/40), the shortlist 30-50 (75/25), dream all 232 in its 150 minutes (80/20).

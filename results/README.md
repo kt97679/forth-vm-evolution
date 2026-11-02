@@ -212,6 +212,9 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/random-mode-548.patch` - The random-search baseline's mode, drafted and tested for consolidation (Iteration 548; GOALS.md, "When the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop, the fast gate kept.
 - `candidates-final-seed84.md` - The final set's candidates from the pool of seeds 77-83 and seed 84 (Iteration 575, final-set.py --candidates): 242 records, one a line, for loadtest.py --ids and xcheck.py --also.
 - `candidates-final-seed86.md` - The final set's candidates from the pool of seeds 77-84 and seed 86 (Iteration 582, final-set.py --candidates): 232 records, one a line, for loadtest.py --ids (the final pick's chain A).
+- `final-pick-chainA-seed86.md` - The final pick's chain A (Iteration 585): the 232 re-measured, the set, the additions across machines, and the machines' agreement (the laptop's 64-bit fast-band order its own).
+- `shortlist-seed86.md` - The final pick's shortlist (Iteration 585, final-pick.py --shortlist on chain A): 40 records, one a line, for chain B's loadtest.py --ids and dream's --also.
+- `tegra-list-seed86.md` - Chain B's list for the Tegra (Iteration 585): the shortlist, retire-plan-583's msc pairs, the rest of the candidates, in xcheck --also's order.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers

@@ -767,7 +767,10 @@ def rt():
     # C library too, so every ARM engine is built alike: static glibc made one 347,688 bytes (tegra-cross-568.py)
     if (u.sysname == 'Linux' and ARM32) or arm_cross():
         return fl + ['-static', '-no-pie', '-nostdlib', '-fno-stack-protector', '-U_FORTIFY_SOURCE', '-D_FORTIFY_SOURCE=0',
-                     '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-DRTLIB=1', os.path.join(ROOT, 'engine', 'rt-linux-armv7.c'),
+                     # 585 (open item 1b): -u raise - libgcc's __aeabi_idiv0 calls raise (rt-linux-armv7.c), but the division
+                     # calls appear only in LTO's code, after the linker plugin resolved raise as unused: GCC's lto=1 designs
+                     # did not link on rage (seed 86's chain). Named undefined on the command line, raise stays global.
+                     '-Wl,-N', '-Wl,-z,norelro', '-Wl,--build-id=none', '-Wl,-u,raise', '-DRTLIB=1', os.path.join(ROOT, 'engine', 'rt-linux-armv7.c'),
                      '-lgcc', '-ffunction-sections', '-fdata-sections', '-Wl,--gc-sections']
     if (u.sysname, u.machine) != ('Linux', 'x86_64'): return fl
     # Iteration 331: building 32-bit x86 here (EVOLVE_CC with -m32) - the i386 runtime, static

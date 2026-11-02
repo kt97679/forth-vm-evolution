@@ -10542,3 +10542,16 @@ repeat builds identical at both; the first 32-bit run built without setup_widths
 would pass - caught and redone. Files:
 results/drafts/retire-stages-584.md, results/drafts/build-hash-584.py, results/drafts/build-hash-584-8.jsonl,
 results/drafts/build-hash-584-4.jsonl.
+
+## Iteration 585 - 2026-11-02 - Claude
+
+**Chain A processed; chain B prepared for the owner's 12 hours.** 232 of 232 re-measured at both widths (50 minutes) and on
+dream; the set re-measured (in 2af9192e1d, bee0b97bb5, df890d7385; out 15ecc6a232, 9e22f1625c, cea114f47e, kept); across
+machines the generic pick 4df5b46d00 (0.1917), four added; the shortlist 40. Found: final-pick.py ranked every host
+against the laptop's 64-bit speeds (dream-32 -0.183, +0.588 at its width); the laptop's 64-bit fast-band order its own
+(0.889 against itself, -0.357 against dream); rage's line dropped unseen. Fixed: remote-checks.sh gather waits for the
+launch (LAUNCH_WAIT) and names a line that never started; final-pick.py each host at its width; xcheck.py --also reads the
+archived databases (the msc pairs); evolve.py -Wl,-u,raise on ARM (open item 1b; the clang ARM builds 3 of 3 alive and
+IDENTICAL under qemu; rage-check.sh confirms GCC). NEXT-RUN chain B; REMOTES rage first, 540 minutes.
+Files: results/final-pick-chainA-seed86.md, results/shortlist-seed86.md, results/tegra-list-seed86.md,
+results/drafts/chainA-agreement-585.py.

@@ -55,6 +55,12 @@ def remeasured(C, L, key, key32):
     return R, out
 
 
+def hostkey(h):
+    """Iteration 585: the laptop's speed a host is ranked against - its own width (4-byte cells: speed32). It read the
+    64-bit for every host: chain A's dream-32 Spearman -0.183 was +0.588 at its width."""
+    return 'speed32' if h.get('env', {}).get('cell') == 4 else 'speed'
+
+
 def spearman(a, b):
     """Rank correlation of two equal-length lists (average ranks for ties)."""
     def rank(x):
@@ -129,9 +135,10 @@ def pick(C, L, hosts, E, b, k=10, veto=0.25, top=3):
     H = []
     for h in hosts:
         d = [x for x in h.get('designs', []) if x.get('id') in C and x.get('speed_here')]
+        if not d: continue                                            # 585: a sample line - no candidate in it
         ra = res['alone'][1]
         both = [x for x in d if x['id'] in ra]
-        rho = spearman([x['speed_here'] for x in both], [ra[x['id']]['speed'] for x in both])
+        rho = spearman([x['speed_here'] for x in both], [ra[x['id']][hostkey(h)] for x in both])
         fast = sorted(d, key=lambda x: (x['speed_here'], x['id']))
         H.append(dict(host=h.get('env', {}).get('host', '?'), cell=h.get('env', {}).get('cell', '?'), n=len(d), rho=rho, nboth=len(both),
                       fastest=fast[0] if fast else None, flagged=[x['id'] for x in fast[:5] if x['id'] not in sa]))
@@ -213,6 +220,7 @@ def self_test():
     check(not [r for r in A['rows'] if r['id'] == 'partial'][0]['full'] and 'partial' in [r['id'] for r in A['rows']], 'a design without an ARMv7 reading kept, partial')
     check(A['twin'] == {'f2'} and klass(dict(machine='armv7l', cell=4)) == 'ARMv7' and klass(dict(machine='x86_64', cell=4)) == 'x86-32', 'the JIT-off twin marked; the classes')
     check(len(A['rows']) == 5, 'nothing removed by the veto')
+    check(hostkey(dict(env=dict(cell=4))) == 'speed32' and hostkey(dict(env=dict(cell=8))) == 'speed' and hostkey({}) == 'speed', 'a host at its own width (585)')
     check(abs(spearman([1, 2, 3, 4], [10, 20, 30, 40]) - 1) < 1e-12 and abs(spearman([1, 2, 3, 4], [4, 3, 2, 1]) + 1) < 1e-12, 'Spearman')
     print('final-pick self-test: the fastest by re-measure, the loaded reading, a failed re-measure named, a host\'s fastest, '
           'Spearman; across machines - the veto, the pick, the additions; the shortlist - %s' % ('pass' if ok else 'FAIL'))

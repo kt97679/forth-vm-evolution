@@ -1186,3 +1186,16 @@ kernel workload, cpt16 on apps), none of a new kind.
 ## Chain A, the final pick's laptop re-measure - predicted (Iteration 582)
 
 `experiment loadtest.py --ids results/candidates-final-seed86.md` at 582 - the 232 candidates (final-set.py --candidates on the pool and seed 86) alone and under load at both widths, no remote host (GOALS.md step 3, the owner's two chains, 579). (1) All 232 re-measured at both widths, none failing (90/10): each ran both widths in-run under today's code. (2) The chain 1 to 2.5 hours (80/20; 579's estimate 1.5 hours for 242). (3) The laptop's re-measured fastest at 64 bits alone is one of the 41's bred group (results/fastend-remeasure-575.md's "seed 84 bred") (60/40): dream sees no bred lead, so the laptop's 5.9% is the machine's, and a machine's property repeats where a session's noise would not. (4) final-pick.py --shortlist keeps 30 to 50 designs (75/25). (5) Dream, asked for all 232 at both widths (582), measures them inside its 150 minutes a line (80/20): seed 86's chain took about 4.3 minutes for 68.
+
+Scored (Iteration 585): all 232 re-measured at both widths - right; 1-2.5 hours - wrong, the step 50 minutes (the chain 67);
+the laptop's fastest at 64 bits one of the 41's bred group - right (2af9192e1d, seed 84 bred); the shortlist 30-50 - right
+(40); dream all 232 in its 150 minutes - right, at both widths.
+
+## Chain B, the final pick across machines - predicted (Iteration 585)
+
+`experiment loadtest.py --ids results/shortlist-seed86.md --rounds 5`; REMOTES rage first (540 minutes, its list of 240)
+and dream's two lines on the shortlist. (1) The 40 re-measured at both widths alone and loaded - 90/10. (2) rage-check.sh's
+7 GCC lto=1 designs link and pass with -u raise - 80/20. (3) The Tegra measures at least 200 of its 240 - 70/30. (4) Dream's
+two sessions agree on the 40, Spearman 0.8 or more at both widths - 75/25. (5) With ARMv7 in, the generic pick is not
+4df5b46d00 - 55/45. (6) Each msc pair's msc=0 design as fast or faster on the Tegra (msc retired) - 65/35. (7) The chain
+9.5-11.5 hours - 75/25.

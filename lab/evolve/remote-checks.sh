@@ -129,6 +129,7 @@ LAUNCH
     if [ -s "$L" ] && grep -q '^if ' "$L"; then                   # 379: the run does not wait for the network
         : > "$R/launched"
         nohup sh "$L" >> "$CHAIN/chain.log" 2>&1 < /dev/null &
+        echo $! > "$R/launch.pid"                                  # 585: gather waits for it
         echo "next-run: remote checks sampled - copied and started in the background (remote/launch.sh); the run starts now"
     fi ;;
 stop)
@@ -138,6 +139,15 @@ stop)
             && note "$CHK" "stopped" || note "$CHK" "could not be reached to stop"
     done ;;
 gather)
+    # 585: a launch still copying and starting lines is waited for, at most LAUNCH_WAIT minutes (default 120), unless
+    # stopped - in a chain with no seed step the laptop's step can end first: chain A's rage line was still starting at
+    # the pack and was dropped without a word. A line that never started is said so.
+    p=$(cat "$R/launch.pid" 2> /dev/null); w=$(( $(date +%s) + ${LAUNCH_WAIT:-120} * 60 ))
+    if [ -z "$NOWAIT" ] && [ -n "$p" ]; then while kill -0 "$p" 2> /dev/null && [ "$(date +%s)" -lt "$w" ]; do sleep 30; done; fi
+    for H in "$R"/*/; do
+        [ -d "$H" ] && [ ! -f "$H/until" ] || continue; CHK=$(basename "$H")
+        grep -q "^remote $CHK: FAILED" "$CHAIN/steps" 2> /dev/null || note "$CHK" "NOT STARTED - left out: its launch $( [ -n "$p" ] && kill -0 "$p" 2> /dev/null && echo still running || echo ended) at the gather (remote/$CHK/)"
+    done
     for H in "$R"/*/; do
         [ -f "$H/until" ] || continue; CHK=$(basename "$H"); until=$(cat "$H/until"); read -r host RD < "$H/where"
         if [ -z "$NOWAIT" ]; then

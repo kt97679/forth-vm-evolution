@@ -7,8 +7,17 @@
 # "run": all the time the evolution leaves (Iteration 429, remote-checks.sh), so the chain never waits on a host.
 #
 # host       how       designs  rounds  minutes  sample options
-dream.lan    prebuilt    24     3       30
-dream.lan    prebuilt32  30     3       150      --cell 4 --rejected 6 --also @results/candidates-final-seed86.md
+rage.lan     prebuiltarm 4       2       540      --cell 4 --rejected 4 --also @results/tegra-list-seed86.md
+#   Iteration 585 (chain B, the owner's 12 hours): first, so its launch (the stages built on the Tegra) starts first;
+#   540 minutes from its start - the chain about 10-11 hours with the checks and the launches. The list: the shortlist,
+#   the msc pairs, the rest of the 232 (results/tegra-list-seed86.md) - seed 86's rate (15 in about 28 minutes, the
+#   stages included) holds all 248. Only after `sh tools/rage-check.sh rage.lan results/shortlist-seed86.md` PASS on
+#   fury (the shortlist's 7 GCC lto=1 designs built by rage's GCC with -u raise - open item 1b).
+dream.lan    prebuilt32  4       3       150      --cell 4 --rejected 6 --also @results/shortlist-seed86.md
+#   Iteration 585: the shortlist again (chain A measured all 232 here) - a second session for the final pick.
+dream.lan    prebuilt64  4       3       150      --from prebuilt32
+# (out at 585) dream.lan    prebuilt    24     3       30
+# (out at 585) dream.lan    prebuilt32  30     3       150      --cell 4 --rejected 6 --also @results/candidates-final-seed86.md
 #   Iteration 582 (the final pick's chain A, in the owner's 10 hours): the 232 candidates asked for by id at both widths.
 #   Seed 86's chain measured a 68-design line here in about 4.3 minutes, the stages built here included (load.log), so
 #   232 take well under an hour - 579's "about 10 hours" was a budget, not a rate. process-seed.sh gives final-pick.py
@@ -22,11 +31,11 @@ dream.lan    prebuilt32  30     3       150      --cell 4 --rejected 6 --also @r
 #   best design across the machine classes,
 #   asked for by id here, at 64 bits through prebuilt64's pairing, and on the Tegra: one chain, one commit
 #   (results/candidates-generic.md; review-checks.py generic ranks them at processing). Out at seed 63's processing.
-dream.lan    prebuilt64  30     3       150      --from prebuilt32
+# (out at 585) dream.lan    prebuilt64  30     3       150      --from prebuilt32
 #   Iteration 566: seed 80's front holds no design the Tegra can build (GCC, no JIT - the compiler gene at clang), and
 #   seeds 78-79's held only a 1.25x speed band (the checks -0.103, 0.082): 16 of seed 77's front asked for by id, 0.34-0.96,
 #   five measured there in seed 78's chain (0.926) - the host tested directly. Out at seed 81's processing.
-rage.lan     prebuiltarm 16     2       run      --cell 4 --rejected 4
+# (out at 585) rage.lan     prebuiltarm 16     2       run      --cell 4 --rejected 4
 #   Iteration 570 (the owner, open item 1: clang on the Tegra): prebuiltarm, was native - with clang's designs in, rage
 #   checks 135 of seed 81's 256 front designs, 1 without (results/drafts/tegra-cross-568.py). Clang does not install on
 #   rage, so the laptop cross-builds them (xcheck.py --arm); s6 and the GCC designs built there; every ARM engine without

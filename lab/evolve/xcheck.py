@@ -263,6 +263,17 @@ if '--sample' in ARGS:
                     try: r = json.loads(l)
                     except ValueError: continue
                     if r.get('id') in also and 'genome' in r: recs.setdefault(r['id'], r)
+        # 585: ids no results file holds - the archived databases beside the sample's (runs/archived-*/build/evolve/
+        # db.jsonl, the newest first): retire-plan-583's msc pairs are in seed 86's database only
+        miss = [i for i in also if i not in recs]
+        for f in (sorted(glob.glob(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(src))))), 'archived-*', 'build', 'evolve', 'db.jsonl')), reverse=True) if miss else []):
+            for l in open(f):
+                if l.startswith('{"') and any(i in l for i in miss):
+                    try: r = json.loads(l)
+                    except ValueError: continue
+                    if r.get('id') in miss and 'genome' in r and r.get('status', 'ok') == 'ok': recs.setdefault(r['id'], r)
+            miss = [i for i in miss if i not in recs]
+            if not miss: break
         for i in also:
             if i in [p[0] for p in pick]: continue
             r = recs.get(i)
