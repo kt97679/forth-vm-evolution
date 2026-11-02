@@ -10594,3 +10594,13 @@ queue in setup-sandbox, batch-make (--binary now) and batch-check; final-pick.py
 its own 14). The five gene patches: fresh chats (a patch's test about an hour on one CPU).
 Files: results/queued-consolidation/freeze-after-seed86.patch, results/drafts/retire-test-588.sh,
 results/drafts/build-hash-cmp-588.py.
+
+## Iteration 589 - 2026-11-02 - Claude
+
+While chain C runs: the older formats' retirement, step 2 - lean retired at 1, queued after the freeze: FROZEN's 'lean': 1,
+the row's two drops for every CV8 design, layout.py's three lean-off switches gone; the ids unchanged (lean stays in LATE
+and EXPRESSED). Tested by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS); s4 alone changed among
+the frozen stages (its image - the one stage with lean 0, so 584's "dormant in every stage" was wrong for s4; frozen,
+nothing lost). The fresh sandbox's first setup call ran past 300 s with its work done; run again it returned at once
+(cause not found). Next: scale, varcall with sharedcall, doesfar, bytehdr - one a fresh chat.
+Files: results/queued-consolidation/lean-after-seed86.patch.

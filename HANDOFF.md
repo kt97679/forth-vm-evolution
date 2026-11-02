@@ -41,14 +41,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 588.
-- **The older formats' retirement - step 1 of 6 queued (588)**: results/queued-consolidation/freeze-after-seed86.patch, after
-  fsys45 - s2-s5's engines and images frozen in stages/frozen/ (SHA256SUMS), copied by build-stages.sh where they run,
-  --validate checking them by hash. Tested (results/drafts/retire-test-588.sh): build-hash at both widths 667 of 667 the same as master's (s2-s5 too); then a name clash fixed (the
-  stage tuple shadowed by the genes' FROZEN - --validate rebuilt s2-s5; now FROZEN_STAGES: a sample of 10 the same at both
-  widths) and batch-check PASS on the fixed queue, s2-s5 checked by hash. Next, one gene a fresh chat
-  (scale, varcall with sharedcall, doesfar, bytehdr, lean): retire-stages-584.md's "In practice (588)" - about an hour
-  of test a patch on the sandbox's one CPU. final-pick.py --also-session (588) for chain C's processing.
+- master: Iteration 589.
+- **The older formats' retirement - steps 1-2 of 6 queued (589)**: results/queued-consolidation/, after fsys45 - the
+  freeze (588: s2-s5's engines and images in stages/frozen/, copied by build-stages.sh, --validate checking them by hash)
+  and lean retired at 1 (589: FROZEN, both drops for every CV8 design, layout.py's lean-off switches gone). Lean tested
+  by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS).
+  Next, one gene a fresh chat (scale, varcall with sharedcall, doesfar, bytehdr): retire-stages-584.md's "In practice"
+  - about an hour of test a patch on the sandbox's one CPU. final-pick.py --also-session (588) for chain C's processing.
 - **Chain B, processed (587)** - results/final-pick-chainB-seed86.md: the final set 14 (results/final-set-seed86.md) -
   the laptop's 10 and 4 added across machines (06b188f45b, 6c6717b20a, c13353f8cf the best means; d6b42c335a x86-32's
   fastest); no generic pick within 25% (ARMv7's best, 690981ca5b, a GCC design without the JIT, 130% behind on x86).
@@ -83,7 +82,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   before (process-run.sh applies pending). Waiting: jitdoes=1 and rtloop=2 for the final set (12 and 1 candidates; the
   fastest, 15ecc6a232, uses jitdoes); msc=1 for the Tegra's 4 msc pairs, in chain B's list; bytehdr, doesfar, lean,
   scale, varcall: the owner said go (584: "if it will not lose good designs") - checked: no front design, no
-  candidate, s6 as it is (results/drafts/retire-stages-584.md). The freeze queued (588); the five gene patches in fresh chats -
+  candidate, s6 as it is (results/drafts/retire-stages-584.md). The freeze and lean queued (588, 589); the four other gene patches in fresh chats -
   each passes results/drafts/build-hash-584.py - every design but s2-s5 the same engine and image bytes as master's
   (results/drafts/build-hash-584-8.jsonl, -4.jsonl) - then run-tests, validate, batch-check; queued after fsys45.
 - **Processing chain C**: the same three commands - process-run.sh stops after the summary (no seed pack), final-pick.py

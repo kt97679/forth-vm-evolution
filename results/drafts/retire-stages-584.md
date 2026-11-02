@@ -9,7 +9,7 @@ scale 1-3 or lean 0 (results/drafts/retire-report-583.md); none of the 232 final
 (results/drafts/retire-candidates-583.py), so no final-set design can. s6, the reference every speed is measured against,
 has the front's values (bytehdr 1, varcall 1, doesfar 1, scale 0, lean 1); s0 and s1 have them dormant - all three as
 they are. The values live only in s2 (scale 1), s3 (scale 3), s4 (bytehdr 0, varcall 0, scale 3; sharedcall 0) and s5
-(bytehdr 0, doesfar 0, scale 3); lean 0 is dormant in every stage. Frozen, s2-s5 are kept, not lost: what goes is
+(bytehdr 0, doesfar 0, scale 3); lean 0 is in s4 only - not dormant there: built with lean on, s4's image changes (589). Frozen, s2-s5 are kept, not lost: what goes is
 building them again from source.
 
 **The test, mechanical** (results/drafts/build-hash-584.py): every pooled-front design, every candidate and the seven
@@ -62,6 +62,11 @@ stage tuple first took that name, was shadowed by it, and --validate silently re
 renamed FROZEN_STAGES, the branch run by hand (four hashes IDENTICAL, each alive): grep a module name before adding one.
 And hv.load keys records by their recorded id, so a canon() change - a gene frozen, fsys45's 4-5 read as 3 - re-identifies
 only designs built after it; the pooled fronts stand.
+
+**Step 2, lean, queued (589)**: lean-after-seed86.patch - FROZEN's 'lean': 1 (in LATE and EXPRESSED still, so the ids
+stand), the row's two drops for every CV8 design, layout.py's lean-off switches gone. Build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS). The
+frozen stages' own line is the patch's control: s4, the one stage with lean 0, built from source changes its image (its
+engine the same); s2, s3, s5 the same. Next: scale, varcall with sharedcall, doesfar, bytehdr - one a chat.
 
 The next patches' footprints (588, grep counts, not an audit). **lean**, the smallest: its gene row (`gene('lean',
 convert=...)`: the two drops when on), LATE, EXPRESSED, HUMAN's s5 and s6; layout.py's measuring switches (_NO_LEAN,
