@@ -24,8 +24,12 @@ Tegra), its designs asked for by id (--also @CANDIDATES).
      taken out): the --top 3 best means and each class's fastest, when the laptop's set lacks them.
 stdout: markdown. --json OUT: the set (alone), one record a line, the re-measured speeds in and the in-run ones kept as
 inrun / inrun32. --self-test: synthetic candidates, known answers.
+--also-session DIR (Iteration 588; repeatable): another session's readings beside these - DIR's loadtest.md merged
+into the laptop's (each speed the geometric mean of the sessions that have it; a reading one session lacks does not count
+against the design - lose no good design), DIR's *.out.json added to the hosts (step 5 takes each host's mean; step 4
+names each line). Chain C's processing: --also-session results/chainB-seed86.
 """
-import importlib.util, json, math, os, sys
+import glob, importlib.util, json, math, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, HERE)
 import hv
@@ -41,6 +45,22 @@ def records(f):
             except ValueError: continue
             if r.get('id'): out[r['id']] = r
     return out
+
+
+def merge_sessions(Ls):
+    """Iteration 588: the laptop's re-measures from several sessions -> one record an id: each speed the geometric mean
+    of the sessions that have it (a failed reading in one does not count against the design), sessions = how many."""
+    by = {}
+    for L in Ls:
+        for i, r in L.items(): by.setdefault(i, []).append(r)
+    M = {}
+    for i, rs in by.items():
+        m = dict(rs[0], sessions=len(rs))
+        for k in ('idle', 'loaded', 'idle32', 'loaded32'):
+            v = [r[k] for r in rs if r.get(k)]
+            m[k] = math.exp(sum(math.log(t) for t in v) / len(v)) if v else None
+        M[i] = m
+    return M
 
 
 def remeasured(C, L, key, key32):
@@ -222,6 +242,10 @@ def self_test():
     check(len(A['rows']) == 5, 'nothing removed by the veto')
     check(hostkey(dict(env=dict(cell=4))) == 'speed32' and hostkey(dict(env=dict(cell=8))) == 'speed' and hostkey({}) == 'speed', 'a host at its own width (585)')
     check(abs(spearman([1, 2, 3, 4], [10, 20, 30, 40]) - 1) < 1e-12 and abs(spearman([1, 2, 3, 4], [4, 3, 2, 1]) + 1) < 1e-12, 'Spearman')
+    M = merge_sessions([{'a': dict(id='a', idle=0.10, loaded=0.2, idle32=None, loaded32=0.3)},
+                        {'a': dict(id='a', idle=0.40, loaded=0.2, idle32=0.5, loaded32=0.3), 'b': dict(id='b', idle=0.1, loaded=0.1, idle32=0.1, loaded32=0.1)}])
+    check(abs(M['a']['idle'] - 0.2) < 1e-12 and M['a']['idle32'] == 0.5 and M['a']['sessions'] == 2 and M['b']['sessions'] == 1,
+          'two sessions merged - the geometric mean, a failed reading not counted (588): %s' % M)
     print('final-pick self-test: the fastest by re-measure, the loaded reading, a failed re-measure named, a host\'s fastest, '
           'Spearman; across machines - the veto, the pick, the additions; the shortlist - %s' % ('pass' if ok else 'FAIL'))
     return 0 if ok else 1
@@ -239,14 +263,21 @@ def main(a):
     sl, sn = None, 40
     if '--shortlist' in a: j = a.index('--shortlist'); sl = a[j + 1]; del a[j:j + 2]
     if '--n' in a: j = a.index('--n'); sn = int(a[j + 1]); del a[j:j + 2]
+    also = []
+    while '--also-session' in a: j = a.index('--also-session'); also.append(a[j + 1]); del a[j:j + 2]
     sys.argv = ['x']; import evolve as E
     b = json.load(open(hv.BOUNDS))
     C = {i: r for i, r in records(a[0]).items() if r.get('genome') is not None}; L = records(a[1])
     H = [json.load(open(f)) for f in a[2:]]
+    if also:                                             # Iteration 588: another session's readings beside these
+        L = merge_sessions([L] + [records(os.path.join(d, 'loadtest.md')) for d in also])
+        H += [json.load(open(f)) for d in also for f in sorted(glob.glob(os.path.join(d, '*.out.json')))]
     p = pick(C, L, H, E, b, k, veto, top)
     res, R, left = p['alone']
     print('# The final set, re-measured - %d candidates, %d re-measured at both widths (final-pick.py; GOALS.md step 3, '
           'the owner\'s decisions of Iteration 573)\n' % (len(C), len(R)))
+    if also: print('Two or more sessions (Iteration 588): this one and %s - the laptop\'s re-measures each the geometric mean of the '
+                   'sessions that have it; each host\'s lines its mean in step 5, each named in step 4.\n' % ', '.join(also))
     if not res: print('**Nothing re-measured - no choice.**'); return 1
     print('Chosen from the laptop\'s re-measures alone (loadtest.py --ids, idle), re-measured against re-measured: the four '
           'extremes, then by hypervolume to %d. Size and memory exact.\n' % k)
