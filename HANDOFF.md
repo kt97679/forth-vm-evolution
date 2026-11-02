@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 583.
+- master: Iteration 584.
 - **The next chain - the final pick's chain A** (GOALS.md step 3; the owner, 579-580): NEXT-RUN `experiment loadtest.py
   --ids results/candidates-final-seed86.md` - the 232 candidates (final-set.py --candidates on the pool and seed 86: the
   set's 10, 93 within 5% of the fastest, 131 at 32 bits, the 5 smallest, the 5 leanest) alone and under load at both
@@ -63,7 +63,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   batch queued (results/queued-consolidation/, batch-check PASS) - moved to results/pending/ at consolidation, never
   before (process-run.sh applies pending). Waiting: jitdoes=1 and rtloop=2 for the final set (12 and 1 candidates; the
   fastest, 15ecc6a232, uses jitdoes); msc=1 for the Tegra's 4 msc pairs, in chain B's list; bytehdr, doesfar, lean,
-  scale, varcall for the owner - freeze s2-s5 as built artefacts, or keep.
+  scale, varcall: the owner said go (584: "if it will not lose good designs") - checked: no front design, no
+  candidate, s6 as it is (results/drafts/retire-stages-584.md). Six patches in fresh chats, the freeze of s2-s5 first;
+  each passes results/drafts/build-hash-584.py - every design but s2-s5 the same engine and image bytes as master's
+  (results/drafts/build-hash-584-8.jsonl, -4.jsonl) - then run-tests, validate, batch-check; queued after fsys45.
 - **Processing chain A**: the same three commands; process-seed.sh runs final-pick.py --shortlist -
   results/shortlist-seed86.md, about 40: the set alone and loaded, the additions, each width's 5 fastest alone and loaded,
   the next by hypervolume, the near-misses (each record's why). process-run.sh's later stages (draft-results, the checks)

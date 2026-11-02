@@ -10527,3 +10527,18 @@ queued for consolidation, not pending. msc=1 waits for the Tegra (4 msc pairs fr
 for the owner; the search-space-only values kept. Files: results/drafts/curve-seed86-583.py,
 results/drafts/retire-report-583.md, results/drafts/retire-candidates-583.py, results/drafts/retire-plan-583.md,
 results/queued-consolidation/ORDER.md, results/queued-consolidation/fsys45-after-seed86.patch.
+
+## Iteration 584 - 2026-11-02 - Claude
+
+**The older formats' retirement checked and planned (the owner: "if this simplification will not result in losing good
+designs - go ahead").** bytehdr 0, varcall 0, doesfar 0, scale 1-3, lean 0: on no design of the pooled true front of
+seeds 77-86 and on none of the 232 candidates; s6, the reference, has the front's values, s0-s1 them dormant; they live
+only in s2-s5 (lean 0 dormant in all) - frozen as built artefacts, kept. It is six patches, not one: twelve tools and the
+remote hosts' stage builds use s2-s5 by name, so the freeze goes first, then a gene a patch (scale, varcall with
+sharedcall, doesfar, bytehdr, lean). Each patch's test, mechanical: build-hash-584.py - every pooled-front design, every
+candidate and the stages built by evolve.py's build() at both widths, engine and image hashed (deterministic; about 1 s a
+design here) - every design but s2-s5 must hash as master's. Master's hashes recorded: 671 designs at each width, none failing,
+repeat builds identical at both; the first 32-bit run built without setup_widths() - all 671 failed, a baseline any patch
+would pass - caught and redone. Files:
+results/drafts/retire-stages-584.md, results/drafts/build-hash-584.py, results/drafts/build-hash-584-8.jsonl,
+results/drafts/build-hash-584-4.jsonl.
