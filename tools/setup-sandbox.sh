@@ -18,6 +18,9 @@
 # root in it): master of DEST cloned into DIR as claude, the identity, results/pending's patches applied in ORDER.md's
 # order (PENDING=DIR another batch's directory, 588: results/queued-consolidation), each committed, and the stages built detached - DIR.status (build=N, DONE), DIR.log. A DIR already there is left
 # as it is. Delete them before the bundle: rm -rf DIR DIR.status DIR.log
+# Iteration 590: the two detached jobs start by runuser and setsid -f directly, never through asme with a redirect and &:
+# dash kept the caller's stdout open (fds 10-11) in the subshell running the function, which waited on runuser, which
+# waited on the job - the setup call held to the job's end, past 300 s (589's "cause not found"; reproduced with a sleep).
 set -u
 [ "$(id -u)" = 0 ] || { echo "setup-sandbox: as root"; exit 1; }
 B=${1:-$(ls -t /mnt/user-data/uploads/forth-vm-evolution-claude-*.bundle 2>/dev/null | grep -v -- '-checkpoint' | head -n 1)}
@@ -64,11 +67,11 @@ elif [ "${CHECK:-0}" = 1 ]; then
     elif grep -qx DONE /tmp/setup-check/status 2>/dev/null; then echo "setup-sandbox: the checks done already - $(grep -v DONE /tmp/setup-check/status | tr '\n' ' ')(rm -rf /tmp/setup-check to run them again)"
     else
         rm -rf /tmp/setup-check; mkdir /tmp/setup-check; chown claude:claude /tmp/setup-check
-        asme setsid nohup sh -c "echo \$\$ > /tmp/setup-check/pid; cd $D && S=/tmp/setup-check/status
+        runuser -u claude -- setsid -f nohup sh -c "echo \$\$ > /tmp/setup-check/pid; cd $D && S=/tmp/setup-check/status
             env LAYOUTS=1 bash tools/build-stages.sh > /tmp/setup-check/build.log 2>&1; echo build=\$? >> \$S
             bash tools/run-tests.sh > /tmp/setup-check/tests.log 2>&1; echo \"run-tests=\$? \$(tail -n 1 /tmp/setup-check/tests.log)\" >> \$S
             python3 lab/evolve/evolve.py --validate > /tmp/setup-check/validate.log 2>&1; echo \"validate=\$? \$(grep -c IDENTICAL /tmp/setup-check/validate.log) of 7 IDENTICAL\" >> \$S
-            echo DONE >> \$S" > /dev/null 2>&1 &
+            echo DONE >> \$S" > /dev/null 2>&1
         echo "setup-sandbox: the build, run-tests and validate started - sh tools/wait-for.sh /tmp/setup-check/status DONE"
     fi
 fi
@@ -84,7 +87,7 @@ elif [ -n "${SCRATCH:-}" ]; then                                     # 567: a sc
             asme git -C "$X" apply --index "$p" && asme git -C "$X" commit -q -m "scratch: $p" || { echo "setup-sandbox: $p does not apply in $X"; exit 1; }
             n=$((n + 1)); done
         rm -f "$X.status"; touch "$X.status" "$X.log"; chown claude:claude "$X.status" "$X.log"
-        asme setsid nohup sh -c "cd $X && LAYOUTS=1 bash tools/build-stages.sh > $X.log 2>&1; echo build=\$? >> $X.status; echo DONE >> $X.status" > /dev/null 2>&1 &
+        runuser -u claude -- setsid -f nohup sh -c "cd $X && LAYOUTS=1 bash tools/build-stages.sh > $X.log 2>&1; echo build=\$? >> $X.status; echo DONE >> $X.status" > /dev/null 2>&1
         echo "setup-sandbox: scratch $X - master, $n pending patch(es) applied; the build started - sh tools/wait-for.sh $X.status DONE"
     fi
 fi
