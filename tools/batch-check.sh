@@ -10,15 +10,17 @@
 # first, and check the line's commit and patch count (Iteration 397: a run before the commit tested 1 patch of 3).
 # Run it as the user that builds (not root), detached if it must outlive a call:
 #   setsid nohup sh tools/batch-check.sh > /dev/null 2>&1 &   ... then: cat /tmp/batch-check/summary
+# PENDING=DIR (Iteration 588): the batch's directory, default results/pending - results/queued-consolidation for
+# consolidation's queue, tested as it will be applied after the final pick.
 set -u
-REPO=$(cd "$(dirname "$0")/.." && pwd); OUT=${1:-/tmp/batch-check}
+REPO=$(cd "$(dirname "$0")/.." && pwd); OUT=${1:-/tmp/batch-check}; Q=${PENDING:-results/pending}
 rm -rf "$OUT"; mkdir -p "$OUT"; T=$OUT/tree
 say() { echo "batch-check: $*" | tee "$OUT/summary"; }
 git clone -q "$REPO" "$T" || { say "the clone failed"; exit 1; }
 cd "$T" || exit 1
-[ -f results/pending/ORDER.md ] || { say "no pending batch - nothing to test"; exit 0; }
+[ -f "$Q/ORDER.md" ] || { say "no batch in $Q - nothing to test"; exit 0; }
 n=0
-for p in $(sed -n 's/^ *git apply \(results\/pending\/[^ ]*\.patch\).*/\1/p' results/pending/ORDER.md); do
+for p in $(sed -n "s|^ *git apply \\($Q/[^ ]*\\.patch\\).*|\\1|p" "$Q/ORDER.md"); do
     # Iteration 501: a patch that adds conflict markers applies cleanly - the after-seed-68 engine patch carried one from
     # its 475 rebase to 486 (results/applied-after-seed68/ORDER.md) - so markers are refused before applying.
     if grep -n '^+\(<<<<<<< \|=======$\|>>>>>>> \)' "$p" > "$OUT/markers.log"; then say "$p adds conflict markers ($OUT/markers.log)"; exit 1; fi
@@ -44,8 +46,8 @@ if [ "${RECORD:-0}" = 1 ]; then
     C=$(git -C "$T" rev-parse --short HEAD); I=$(sed -n 's/^- master: Iteration \([0-9]*\).*/\1/p' "$REPO/HANDOFF.md" | head -n 1)
     G=$(sed -n 's/.*generators *ok *\([0-9]* paths\).*/\1/p' "$OUT/tests.log" | head -n 1)
     L="batch-check ($I, on $C - $n patches): PASS - run-tests PASS (the generators: ${G:-?}), validate $vi of $va IDENTICAL, the jail PASS."
-    if ! git -C "$REPO" diff --quiet HEAD -- results/pending/ORDER.md; then say "PASS - ORDER.md has edits not committed, so not recorded: $L"
-    elif python3 - "$REPO/results/pending/ORDER.md" "$L" << 'PY'
+    if ! git -C "$REPO" diff --quiet HEAD -- "$Q/ORDER.md"; then say "PASS - ORDER.md has edits not committed, so not recorded: $L"
+    elif python3 - "$REPO/$Q/ORDER.md" "$L" << 'PY'
 import re, sys, textwrap
 p, line = sys.argv[1], sys.argv[2]; s = open(p).read()
 new = '\n'.join(textwrap.wrap(line, 120)) + '\n'
@@ -56,8 +58,8 @@ else:
     s = s[:a.end()] + '\n' + new + '\n' + s[a.end():].lstrip('\n')
 open(p, 'w').write(s)
 PY
-    then N=$(sed -n 's/^# The after-seed-\([0-9]*\) batch.*/\1/p' "$REPO/results/pending/ORDER.md")
-         git -C "$REPO" commit -q -m "Iteration $I: the after-seed-$N batch checked (batch-check PASS on $C, $n patches)" -- results/pending/ORDER.md &&
+    then N=$(sed -n 's/^# The after-seed-\([0-9]*\) batch.*/\1/p' "$REPO/$Q/ORDER.md")
+         git -C "$REPO" commit -q -m "Iteration $I: the after-seed-$N batch checked (batch-check PASS on $C, $n patches)" -- "$Q/ORDER.md" &&
              echo "batch-check: recorded in ORDER.md and committed - $(git -C "$REPO" log --oneline -1 | cut -c1-80)" >> "$OUT/summary"
     fi
 fi

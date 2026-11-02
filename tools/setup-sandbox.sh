@@ -16,7 +16,7 @@
 # CROSS=1 (568): the packages to build ARMv7 engines with clang and run them under qemu-arm.
 # SCRATCH=DIR (567 - a scratch tree, HANDOFF.md's "for a batch in progress", made by hand until then, and git refused
 # root in it): master of DEST cloned into DIR as claude, the identity, results/pending's patches applied in ORDER.md's
-# order, each committed, and the stages built detached - DIR.status (build=N, DONE), DIR.log. A DIR already there is left
+# order (PENDING=DIR another batch's directory, 588: results/queued-consolidation), each committed, and the stages built detached - DIR.status (build=N, DONE), DIR.log. A DIR already there is left
 # as it is. Delete them before the bundle: rm -rf DIR DIR.status DIR.log
 set -u
 [ "$(id -u)" = 0 ] || { echo "setup-sandbox: as root"; exit 1; }
@@ -79,7 +79,8 @@ elif [ -n "${SCRATCH:-}" ]; then                                     # 567: a sc
     else
         mkdir -p "$X" && chown claude:claude "$X" && asme git clone -q "$D" "$X" || { echo "setup-sandbox: the scratch clone failed"; exit 1; }
         asme git -C "$X" config user.name "Kirill Timofeev" && asme git -C "$X" config user.email kt97679@gmail.com
-        n=0; for p in $(sed -n 's|^ *git apply \(results/pending/[^ ]*\.patch\).*|\1|p' "$X/results/pending/ORDER.md" 2>/dev/null); do
+        Q=${PENDING:-results/pending}
+        n=0; for p in $(sed -n "s|^ *git apply \\($Q/[^ ]*\\.patch\\).*|\\1|p" "$X/$Q/ORDER.md" 2>/dev/null); do
             asme git -C "$X" apply --index "$p" && asme git -C "$X" commit -q -m "scratch: $p" || { echo "setup-sandbox: $p does not apply in $X"; exit 1; }
             n=$((n + 1)); done
         rm -f "$X.status"; touch "$X.status" "$X.log"; chown claude:claude "$X.status" "$X.log"
