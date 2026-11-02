@@ -7,15 +7,24 @@
 # "run": all the time the evolution leaves (Iteration 429, remote-checks.sh), so the chain never waits on a host.
 #
 # host       how       designs  rounds  minutes  sample options
-rage.lan     prebuiltarm 4       2       540      --cell 4 --rejected 4 --also @results/tegra-list-seed86.md
+rage.lan     prebuiltarm 4       10      450      --cell 4 --rejected 4 --also 6d321be1cc,9920e9af07,01efebca24,97a4e37ab4,c67e6b5336,8bddf3a5e4,629b7e96ec,75acca89a6,@results/shortlist-seed86.md
+#   Iteration 587 (chain C, the owner's 8 hours): retire-plan-583's 8 msc designs first, by id (their records in the
+#   clone's own database, seed 86's - read since 586), then the shortlist's 40 again at 10 rounds: a second ARMv7
+#   session (chain B's at 2). About 3 hours (chain B: 35 s a design at 2 rounds, its stages 16 minutes); the deadline
+#   450 minutes, inside the 8 hours.
+# (out at 587) rage.lan     prebuiltarm 4       2       540      --cell 4 --rejected 4 --also @results/tegra-list-seed86.md
 #   Iteration 585 (chain B, the owner's 12 hours): first, so its launch (the stages built on the Tegra) starts first;
 #   540 minutes from its start - the chain about 10-11 hours with the checks and the launches. The list: the shortlist,
 #   the msc pairs, the rest of the 232 (results/tegra-list-seed86.md) - seed 86's rate (15 in about 28 minutes, the
 #   stages included) holds all 248. Only after `sh tools/rage-check.sh rage.lan results/shortlist-seed86.md` PASS on
 #   fury (the shortlist's 7 GCC lto=1 designs built by rage's GCC with -u raise - open item 1b).
-dream.lan    prebuilt32  4       3       150      --cell 4 --rejected 6 --also @results/shortlist-seed86.md
+dream.lan    prebuilt32  4       10      150      --cell 4 --rejected 6 --also @results/shortlist-seed86.md
+#   Iteration 587: the shortlist a third time here (chains A, B) at 10 rounds - chain B's readings kept
+#   (results/chainB-seed86/), so the two sessions compare.
+# (out at 587) dream.lan    prebuilt32  4       3       150      --cell 4 --rejected 6 --also @results/shortlist-seed86.md
 #   Iteration 585: the shortlist again (chain A measured all 232 here) - a second session for the final pick.
-dream.lan    prebuilt64  4       3       150      --from prebuilt32
+dream.lan    prebuilt64  4       10      150      --from prebuilt32
+# (out at 587) dream.lan    prebuilt64  4       3       150      --from prebuilt32
 # (out at 585) dream.lan    prebuilt    24     3       30
 # (out at 585) dream.lan    prebuilt32  30     3       150      --cell 4 --rejected 6 --also @results/candidates-final-seed86.md
 #   Iteration 582 (the final pick's chain A, in the owner's 10 hours): the 232 candidates asked for by id at both widths.

@@ -558,3 +558,37 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 - **Processing chain B**: the same three commands; process-seed.sh runs final-pick.py with every host (no --shortlist) -
   GOALS.md step 5 across the three classes, the final set; process-run.sh stops after the summary (no seed pack), as chain
   A's did. Then consolidation: retire-plan-583.md (msc by the Tegra's pairs), retire-report-579.py (578's rule).
+
+## Iteration 587 - the card's lines replaced (chain B processed)
+
+- **Chain B, running (started 16:06 at aee0a409c) - its archive is the RE-PACK, not the first pack (586)**: the laptop's
+  40 packed at 16:34. The remote lines run one after another INSIDE the launch - its ssh start held the session until
+  run.sh ended (fixed at 586 for later chains) - rage's first, its 540 minutes (about 01:20 at the latest), then dream's
+  two; 585's gather waits at most 120 minutes for the launch, so the chain packs about 18:35 with no remote result (three
+  NOT STARTED). The owner's command, from the clone, collects them when the launch ends:
+  `C=$PWD/runs/chain-20261102-160604; nohup sh -c "while kill -0 \$(cat $C/remote/launch.pid) 2>/dev/null; do sleep 60; done; python3 lab/evolve/chainctl.py pack $C done" > /tmp/repack.log 2>&1 &`
+  - the newest forth-vm-evolution-chain-aee0a409c-fury-*.tar.gz is chain B's; its steps carry the first gather's NOT
+  STARTED and the lines' late "started" and "gathered": expected. Rage: 233 of its 240 asked for (+4 sampled; 227
+  cross-built, 10 GCC) - 7 msc designs left out (585's lookup missed the clone's own build/evolve/db.jsonl; fixed at
+  586): msc's retirement needs a short Tegra session after chain B. Before it, `sh tools/rage-check.sh` - PASS or not,
+  the owner's word.
+- **Processing chain B** (the re-packed archive): the same three commands; process-seed.sh runs final-pick.py with every
+  host (no --shortlist) - GOALS.md step 5 across the three classes, the final set; process-run.sh stops after the summary
+  (no seed pack), as chain A's did. Prediction (7), the chain's hours, reads the re-pack's time. Then consolidation:
+  retire-plan-583.md (msc: the Tegra session for its 4 pairs first), retire-report-579.py (578's rule).
+- **Predictions due** (results/predictions.md): chain B - the 40 re-measured (90/10), rage-check's 7 link (80/20), the
+  Tegra 200 of 240 (70/30), dream's sessions agree 0.8+ (75/25), the generic pick changes with ARMv7 (55/45), msc retired
+  (65/35), the chain 9.5-11.5 hours (75/25).
+1. The Tegra's check (the owner, 570: clang) - the after-seed-83 batch **applied** (572, 9664214: armrt, prebuiltarm,
+   ragecheck): ARM engines without the C library; rage's check of the front's clang designs, cross-built on fury. Nothing
+   changes on x86. Seed 84's failed chain cross-built 15 for rage on fury (Spearman 0.953 on 16, seed 83's 0.143 on 6) -
+   the packages are in. Seed 84's chain: 15 cross-built again, Spearman 0.935 on 16 - but rage busy while it measured
+   (load average 4.3 on 4 CPUs). rage-check.sh's PASS is still not in an archive: **the owner runs `sh
+   tools/rage-check.sh` on fury, no chain running, before the chain that re-measures the candidates on the Tegra** (chain
+   B; 582: not chain A). Rage's numbers from then: no-C-library engines, mostly
+   clang's - not comparable with its checks before.
+1b. **The Tegra's GCC designs do not link (582)**: `undefined reference to 'raise'` - 4 of seed 86's 5 GCC designs on
+   rage, 2 in seed 85's chain; all 4 lto=1, the one that linked lto=0. rt-linux-armv7.c defines raise (line 112) for
+   libgcc's __aeabi_idiv0 - LTO likely drops it before libgcc's member asks for it (`__attribute__((used))` or
+   `-Wl,-u,raise`). A batch before chain B, tested on a lto=1 design; until then the Tegra builds clang and lto=0 only. **585: -Wl,-u,raise in evolve.py's ARM
+   flags** - the clang ARM builds checked under qemu (3 of 3 alive, IDENTICAL); rage-check.sh on the shortlist confirms GCC.

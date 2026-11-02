@@ -10566,3 +10566,18 @@ result. Chain A's "start 711588 ms" was a whole line, and its rage line, launche
 owner's command re-packs when the launch ends (chainctl.py pack). Fixed for later chains: the start detached (9 ms, run.sh
 ran on); xcheck --also reads the clone's own run's database first - chain B left 7 of the 8 msc designs out (585 looked only
 in runs/archived-*). NEXT-RUN none.
+
+## Iteration 587 - 2026-11-02 - Claude
+
+**Chain B processed - the final set 14, nothing cut; chain C planned for the owner's 8 hours.** Every host measured all
+it was given (rage 237 of 237 in 154 of its 540 minutes, dream 44 of 44 a width, the laptop 40 of 40): 2.9 hours, not
+585's 10-11 - seed 86's rage time read as a rate, its stages' build in it. The set: the laptop's 10 and 4 added across
+machines; no generic pick within 25%; rage agrees with the laptop on the 10 non-JIT designs (0.927), not the JIT ones'
+JIT-off builds. Rage's GCC built 9 lto=1 designs with -u raise: open items 1, 1b closed. Only 7 msc designs unmeasured
+(585's lookup): chain C, which measures the 40 again on all three machines at 10 rounds.
+Files: results/final-pick-chainB-seed86.md, results/final-set-seed86.md, results/chainB-seed86/README.md,
+results/chainB-seed86/loadtest.md,
+results/chainB-seed86/dream.lan-prebuilt32.out.json, results/chainB-seed86/dream.lan-prebuilt32.md,
+results/chainB-seed86/dream.lan-prebuilt64.out.json, results/chainB-seed86/dream.lan-prebuilt64.md,
+results/chainB-seed86/rage.lan-prebuiltarm.out.json, results/chainB-seed86/rage.lan-prebuiltarm.md,
+results/drafts/chainB-agreement-587.py.

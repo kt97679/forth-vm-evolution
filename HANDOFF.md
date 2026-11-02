@@ -41,18 +41,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 586.
-- **Chain B, running (started 16:06 at aee0a409c) - its archive is the RE-PACK, not the first pack (586)**: the laptop's
-  40 packed at 16:34. The remote lines run one after another INSIDE the launch - its ssh start held the session until
-  run.sh ended (fixed at 586 for later chains) - rage's first, its 540 minutes (about 01:20 at the latest), then dream's
-  two; 585's gather waits at most 120 minutes for the launch, so the chain packs about 18:35 with no remote result (three
-  NOT STARTED). The owner's command, from the clone, collects them when the launch ends:
-  `C=$PWD/runs/chain-20261102-160604; nohup sh -c "while kill -0 \$(cat $C/remote/launch.pid) 2>/dev/null; do sleep 60; done; python3 lab/evolve/chainctl.py pack $C done" > /tmp/repack.log 2>&1 &`
-  - the newest forth-vm-evolution-chain-aee0a409c-fury-*.tar.gz is chain B's; its steps carry the first gather's NOT
-  STARTED and the lines' late "started" and "gathered": expected. Rage: 233 of its 240 asked for (+4 sampled; 227
-  cross-built, 10 GCC) - 7 msc designs left out (585's lookup missed the clone's own build/evolve/db.jsonl; fixed at
-  586): msc's retirement needs a short Tegra session after chain B. Before it, `sh tools/rage-check.sh` - PASS or not,
-  the owner's word.
+- master: Iteration 587.
+- **Chain B, processed (587)** - results/final-pick-chainB-seed86.md: the final set 14 (results/final-set-seed86.md) -
+  the laptop's 10 and 4 added across machines (06b188f45b, 6c6717b20a, c13353f8cf the best means; d6b42c335a x86-32's
+  fastest); no generic pick within 25% (ARMv7's best, 690981ca5b, a GCC design without the JIT, 130% behind on x86).
+  Every host measured all it was given (rage 237 of 237 at 2 rounds in 154 of its 540 minutes; dream 44 of 44 a width):
+  the chain took 2.9 hours of the owner's 12, nothing cut - 585 read seed 86's rage time, its 16-minute stages build in
+  it, as a per-design rate (measured: 35 s a design at 2 rounds). Its readings kept in results/chainB-seed86/ (chain A's
+  were not - its dream session cannot be compared). Rage's GCC built 9 lto=1 designs with -u raise, alive: open items 1
+  and 1b closed. The 7 msc designs 585 never asked for: chain C. The swaps against chain A's set are ties (the fastest
+  0.9%, the smallest the same bytes): chain A's members and additions not in this set stay on the shortlist, re-measured.
+- **Chain C, next (NEXT-RUN; the owner's 8 hours)** - the shortlist's 40 again on the three machines at 10 rounds (the
+  laptop alone and loaded at both widths, dream at both widths, the Tegra), the 8 msc designs on the Tegra first. About
+  3 hours of work, rage's line the longest; the 8 hours its window (rage's deadline 450 minutes) - an end near hour 3 is
+  expected. An experiment chain ends when its work is done: quote its length from measured rates, a one-time build apart.
 - **Chain A, done (585)** - results/final-pick-chainA-seed86.md: 232 of 232 re-measured at both widths and on dream; the
   generic pick 4df5b46d00 across x86-64 and x86-32, four added; the shortlist 40. The laptop's 64-bit fast-band order its
   own (0.889 against itself, -0.357 against dream). Fixed: final-pick.py's host Spearman at its width; gather's silently
@@ -77,17 +79,19 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   candidate, s6 as it is (results/drafts/retire-stages-584.md). Six patches in fresh chats, the freeze of s2-s5 first;
   each passes results/drafts/build-hash-584.py - every design but s2-s5 the same engine and image bytes as master's
   (results/drafts/build-hash-584-8.jsonl, -4.jsonl) - then run-tests, validate, batch-check; queued after fsys45.
-- **Processing chain B** (the re-packed archive): the same three commands; process-seed.sh runs final-pick.py with every
-  host (no --shortlist) - GOALS.md step 5 across the three classes, the final set; process-run.sh stops after the summary
-  (no seed pack), as chain A's did. Prediction (7), the chain's hours, reads the re-pack's time. Then consolidation:
-  retire-plan-583.md (msc: the Tegra session for its 4 pairs first), retire-report-579.py (578's rule).
+- **Processing chain C**: the same three commands - process-run.sh stops after the summary (no seed pack), final-pick.py
+  on chain C's readings (process-seed.sh's chain-B mode: the shortlist); then final-pick.py beside chain B's readings
+  (results/chainB-seed86/: each host's two out.json - final-pick.py takes a host's mean; the laptop's two loadtest.md
+  merged by hand) - a design in either session's set kept (lose no good design). Keep chain C's readings as chain B's;
+  the 8 msc records (rage's designs.json) into the repository; msc by retire-plan-583's rule. Then consolidation:
+  retire-plan-583.md, retire-report-579.py (578's rule) on the final set.
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): chain B - the 40 re-measured (90/10), rage-check's 7 link (80/20), the
-  Tegra 200 of 240 (70/30), dream's sessions agree 0.8+ (75/25), the generic pick changes with ARMv7 (55/45), msc retired
-  (65/35), the chain 9.5-11.5 hours (75/25).
+- **Predictions due** (results/predictions.md): chain C - every line all it is given (90/10), 2.5-4 hours (75/25),
+  rage's two sessions 0.8+ (70/30), dream's 0.8+ (75/25), msc retired (65/35), 11 of the 14 kept (65/35), no generic pick
+  (85/15).
 - **Before 582**: seeds 70-86 processed (498-582); history: HANDOFF-HISTORY.md.
 - **Files a new chat needs**: the newest bundle, and the next chain's archive. appbench.zip stays on the laptop.
 
@@ -126,23 +130,13 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 
 ## Open items
 
-1. The Tegra's check (the owner, 570: clang) - the after-seed-83 batch **applied** (572, 9664214: armrt, prebuiltarm,
-   ragecheck): ARM engines without the C library; rage's check of the front's clang designs, cross-built on fury. Nothing
-   changes on x86. Seed 84's failed chain cross-built 15 for rage on fury (Spearman 0.953 on 16, seed 83's 0.143 on 6) -
-   the packages are in. Seed 84's chain: 15 cross-built again, Spearman 0.935 on 16 - but rage busy while it measured
-   (load average 4.3 on 4 CPUs). rage-check.sh's PASS is still not in an archive: **the owner runs `sh
-   tools/rage-check.sh` on fury, no chain running, before the chain that re-measures the candidates on the Tegra** (chain
-   B; 582: not chain A). Rage's numbers from then: no-C-library engines, mostly
-   clang's - not comparable with its checks before.
-1b. **The Tegra's GCC designs do not link (582)**: `undefined reference to 'raise'` - 4 of seed 86's 5 GCC designs on
-   rage, 2 in seed 85's chain; all 4 lto=1, the one that linked lto=0. rt-linux-armv7.c defines raise (line 112) for
-   libgcc's __aeabi_idiv0 - LTO likely drops it before libgcc's member asks for it (`__attribute__((used))` or
-   `-Wl,-u,raise`). A batch before chain B, tested on a lto=1 design; until then the Tegra builds clang and lto=0 only. **585: -Wl,-u,raise in evolve.py's ARM
-   flags** - the clang ARM builds checked under qemu (3 of 3 alive, IDENTICAL); rage-check.sh on the shortlist confirms GCC.
+1. The Tegra's check - **closed (587)**: chain B's rage line built 9 GCC lto=1 designs with its own GCC 16 and 585's
+   -u raise, and 227 clang designs cross-built without the C library - all alive and measured (1b's link fault fixed);
+   rage-check.sh was not run (the owner, 587) and is no longer needed before a chain.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
    seed 83 (572). **Step 2 done (582)**: seed 84 NOT CONFIRMED at the fast end - the laptop's lead (dream, 582); seed 86
-   NOT CONFIRMED by carried designs only - the pool widened, no new search. **Step 3, the final set, next** - chain A, then
-   chain B (lab/evolve/final-set.py, final-pick.py). **Step 4, the random baseline, done (576)**:
+   NOT CONFIRMED by carried designs only - the pool widened, no new search. **Step 3, the final set: chain B's 14 (587)** -
+   results/final-pick-chainB-seed86.md; its second session chain C. **Step 4, the random baseline, done (576)**:
    results/evolve-amd-ryzen-7-pro-8840hs-seed85.md.
 3. **Correctness - none open (576)**: seed 85's 55 "body size drift" deaths the scale-0 call reach, met where varcall
    and doesfar exempt a design from reach_lethal() - no wrong output (results/drafts/body-size-drift-576.md). seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under

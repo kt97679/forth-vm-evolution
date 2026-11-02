@@ -13,6 +13,15 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 587 (chain B processed; the owner: 8 hours): chain C - the final set's second session across machines, and
+# msc's Tegra pairs. The shortlist's 40 again: the laptop at 10 rounds, alone and under load at both widths (about 30
+# minutes); dream at both widths at 10 rounds (about 15 minutes a width); the Tegra (REMOTES) the 8 msc designs first -
+# retire-plan-583's 4 pairs, chain B measured 1 - then the 40 at 10 rounds (chain B's: 2). The work about 3 hours,
+# rage's line the longest (chain B's rate: 35 s a design at 2 rounds, after 16 minutes of building there; 53 designs at
+# 10) - the 8 hours are its window and rage's deadline 450 minutes: it ends when done, so an end near hour 3 is expected,
+# not a fault (chain B: 2.9 hours of 12, nothing cut). No rage-check.sh first: chain B's rage built 9 GCC lto=1 designs
+# with -u raise, all alive. Its processing: final-pick.py on its own readings, then beside chain B's
+# (results/chainB-seed86/) - a design in either session's set kept; msc by retire-plan-583's rule; then consolidation.
 # Iteration 586 (chain B running, started from 585's bundle): none - a pull of this bundle must not start chain B
 # again; chain B's processing writes the next line (msc's Tegra session, then consolidation's).
 # Iteration 585 (chain A processed): the final pick's chain B (the owner, 579-580; his 12 hours) - the shortlist's 40
@@ -162,4 +171,4 @@
 # anchoring test as first specified, from scratch WITH tag2: against seed 58 the constraint alone, against
 # the carried tag-2 runs (53-57) anchoring alone. And the first chain on Iteration 379's remote path: only
 # the sampling before the evolution (seed 58 waited 55 minutes, seed 57 52), the copying in the background,
-none
+experiment loadtest.py --ids results/shortlist-seed86.md --rounds 10

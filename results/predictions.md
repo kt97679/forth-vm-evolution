@@ -1199,3 +1199,21 @@ and dream's two lines on the shortlist. (1) The 40 re-measured at both widths al
 two sessions agree on the 40, Spearman 0.8 or more at both widths - 75/25. (5) With ARMv7 in, the generic pick is not
 4df5b46d00 - 55/45. (6) Each msc pair's msc=0 design as fast or faster on the Tegra (msc retired) - 65/35. (7) The chain
 9.5-11.5 hours - 75/25.
+
+Scored (Iteration 587): the 40 re-measured at both widths alone and loaded - right; rage-check.sh's 7 - not scored as
+written (not run, 587), its question answered by the chain: rage's GCC 16 built 9 GCC lto=1 designs with -u raise, all
+alive and measured; the Tegra 200 of 240 - right (233; the 7 missing msc designs never asked - 585's lookup, fixed at
+586); dream's two sessions 0.8 or more - not scored: chain A's dream readings were not kept (the 10 its tables keep: 0.988
+at both widths, over the whole range); the generic pick not 4df5b46d00 - right (none within the veto; the best mean
+06b188f45b); msc retired - not scored (1 of the 8 measured; chain C); the chain 9.5-11.5 hours - wrong, 2.9: rage's 237 in
+154 minutes - 585 read seed 86's 28 minutes for 15, the stages' build in them, as a rate.
+
+## Chain C, the final set's second session across machines and msc's Tegra pairs - predicted (Iteration 587)
+
+`experiment loadtest.py --ids results/shortlist-seed86.md --rounds 10`; REMOTES rage the 8 msc designs then the 40 (10
+rounds, 450 minutes), dream the 40 at both widths (10 rounds); the owner's 8 hours. (1) Every line measures all it is
+given, none cut by its deadline - 90/10. (2) The chain 2.5 to 4 hours (chain B's rates: rage 35 s a design at 2 rounds,
+its stages 16 minutes) - 75/25. (3) Rage's two sessions agree on the 40, Spearman 0.8 or more - 70/30. (4) Dream's two
+sessions agree on the 40, 0.8 or more at both widths - 75/25. (5) Each msc pair's msc=0 design as fast or faster on the
+Tegra (msc retired) - 65/35. (6) Chain C's own final set keeps at least 11 of chain B's 14 - 65/35. (7) Again no generic
+pick within 25% - 85/15.

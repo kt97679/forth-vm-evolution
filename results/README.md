@@ -215,6 +215,9 @@ Each subject oldest first; a script or patch beside the document it made.
 - `final-pick-chainA-seed86.md` - The final pick's chain A (Iteration 585): the 232 re-measured, the set, the additions across machines, and the machines' agreement (the laptop's 64-bit fast-band order its own).
 - `shortlist-seed86.md` - The final pick's shortlist (Iteration 585, final-pick.py --shortlist on chain A): 40 records, one a line, for chain B's loadtest.py --ids and dream's --also.
 - `tegra-list-seed86.md` - Chain B's list for the Tegra (Iteration 585): the shortlist, retire-plan-583's msc pairs, the rest of the candidates, in xcheck --also's order.
+- `final-pick-chainB-seed86.md` - The final pick's chain B (Iteration 587): the shortlist across three machines - the final set of 14, no generic pick within 25%, why the chain took 2.9 hours with nothing cut, the machines' agreement.
+- `final-set-seed86.md` - The final set (Iteration 587, chain B): 14 records, one a line - consolidation's input, read again with chain C's second session.
+- `chainB-seed86/README.md` - Chain B's readings (Iteration 587): the laptop's loadtest.md and each host's out.json and report, kept so the next session compares (chain A's were not).
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers
