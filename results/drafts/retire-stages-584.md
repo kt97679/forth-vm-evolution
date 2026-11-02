@@ -77,7 +77,7 @@ the JIT's two shifts (dead: JITVAR needs TAG2, which #errors unless SCALE 0). Th
 at any scale). s4 and s5 still build from source (a hand-made genome bypasses require()), so the tools that build them
 need no move. No design lost: seeds 77-86's results files hold 2681 designs, all CV8, 2 at scale 1 or 3, neither on the
 front; the 232 candidates, the final 14 and the shortlist 40 all at scale 0. Removing SCALE itself would mean retiring
-the cpt16 and sod16 families - none recorded since seed 77, but not in the owner's go-ahead (584's five genes): asked.
+the cpt16 and sod16 families - none recorded since seed 77, but not in the owner's go-ahead (584's five genes) - asked; the owner (590): "let's not retire them now" - they stay.
 
 The next patches' footprints (588, grep counts, not an audit). **lean**, the smallest: its gene row (`gene('lean',
 convert=...)`: the two drops when on), LATE, EXPRESSED, HUMAN's s5 and s6; layout.py's measuring switches (_NO_LEAN,
