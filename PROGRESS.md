@@ -10581,3 +10581,16 @@ results/chainB-seed86/dream.lan-prebuilt32.out.json, results/chainB-seed86/dream
 results/chainB-seed86/dream.lan-prebuilt64.out.json, results/chainB-seed86/dream.lan-prebuilt64.md,
 results/chainB-seed86/rage.lan-prebuiltarm.out.json, results/chainB-seed86/rage.lan-prebuiltarm.md,
 results/drafts/chainB-agreement-587.py.
+
+## Iteration 588 - 2026-11-02 - Claude
+
+While chain C runs: the older formats' retirement, step 1 - the freeze of s2-s5 queued after fsys45
+(results/queued-consolidation/freeze-after-seed86.patch; stages/frozen/, 32 files, 1.1 MB, SHA256SUMS; build-stages.sh
+copies them where they run, --validate checks their hashes). Tested: build-hash at both widths 667 of 667 the same (s2-s5
+too); a name clash fixed after it (the stage tuple shadowed by the genes' FROZEN, --validate rebuilding s2-s5 -
+FROZEN_STAGES: a sample of 10 the same at both widths), batch-check PASS on the fixed queue, s2-s5 by hash. 584's hashes hold here (12 of 12 spot
+checks); a tree built but not validated kills designs - the dumps --validate makes, not fsys45. Tools: PENDING= for the
+queue in setup-sandbox, batch-make (--binary now) and batch-check; final-pick.py --also-session (chain B beside itself:
+its own 14). The five gene patches: fresh chats (a patch's test about an hour on one CPU).
+Files: results/queued-consolidation/freeze-after-seed86.patch, results/drafts/retire-test-588.sh,
+results/drafts/build-hash-cmp-588.py.

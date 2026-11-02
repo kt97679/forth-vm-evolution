@@ -42,3 +42,30 @@ at both widths, run-tests, validate and batch-check:
 
 **When**: applied at consolidation, after chain B's final pick, with fsys45. Built in fresh chats - the freeze first,
 the largest; then a gene a patch - each starting from this file and the baseline hashes.
+
+## In practice (Iteration 588)
+
+**Step 1, the freeze, queued**: freeze-after-seed86.patch (results/queued-consolidation/ORDER.md). Each next patch, one a
+chat: as root `PENDING=results/queued-consolidation SCRATCH=/tmp/x sh tools/setup-sandbox.sh` (master and the queue
+applied, built); the patch committed in /tmp/x, its subject's first word the gene (`scale: ...`); `PENDING=
+results/queued-consolidation sh tools/batch-make.sh 86 N /tmp/x` and its ORDER.md paragraph committed; then
+`setsid nohup sh results/drafts/retire-test-588.sh /tmp/x &` - a fresh clone of /tmp/x built, --validate, build-hash-584.py
+at both widths compared with the 584 hashes by build-hash-cmp-588.py, then batch-check of the queue (RECORD=1), polled to
+DONE in /tmp/vh/status: about an hour here, so start it early in the turn. --validate comes before the hashes: it makes
+the dictionary dumps the 8-byte build reads - a tree built but not validated kills designs (FileNotFoundError), not a
+patch's fault. A gene patch leaves s2-s5 to stages/frozen: --validate checks their hashes and never builds their HUMAN
+genomes; the tools that build those genomes or their formats move with the patch that retires the value - test-ext-loops.sh
+and layout-noise.sh (scale 3), arm-cross-check.py (HUMAN, each patch), design.py's bases (s4-cv8).
+
+Two lessons from the freeze (588). evolve.py's `FROZEN` is the genes' dict (tail, kstack, tailpn - frozen genes); the
+stage tuple first took that name, was shadowed by it, and --validate silently rebuilt s2-s5 still 7 of 7 - caught,
+renamed FROZEN_STAGES, the branch run by hand (four hashes IDENTICAL, each alive): grep a module name before adding one.
+And hv.load keys records by their recorded id, so a canon() change - a gene frozen, fsys45's 4-5 read as 3 - re-identifies
+only designs built after it; the pooled fronts stand.
+
+The next patches' footprints (588, grep counts, not an audit). **lean**, the smallest: its gene row (`gene('lean',
+convert=...)`: the two drops when on), LATE, EXPRESSED, HUMAN's s5 and s6; layout.py's measuring switches (_NO_LEAN,
+SOD16_NO_DROPX8, SOD16_NO_DROPTOOL). **scale**, the largest: SCALE in vm-lab.c 16 times, spn-cv8.c 14, jit.c 2; in
+evolve.py the CV8 base (scale=3), HUMAN, EXPRESSED, BLOCKS, the bytehdr guard, eval32's cap, -DSCALE, --cpt,
+reach_lethal and the mutation values; the images' own compiler takes the design's scale (--set-compiler-vars), so the
+Forth side stays as it is - its bytes are in every image; test-ext-loops.sh and layout-noise.sh build scale-3 formats.
