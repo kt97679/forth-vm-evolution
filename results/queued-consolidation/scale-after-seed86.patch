@@ -1,0 +1,44 @@
+diff --git a/engine/jit.c b/engine/jit.c
+index 4924909..ba0a999 100644
+--- a/engine/jit.c
++++ b/engine/jit.c
+@@ -904,11 +904,11 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
+ #if JITVAR
+             /* Iteration 342, the gene jitvar: a variable's slot - vf and vs (getstatic, putstatic) as
+                a literal of the address, then @ or ! - the address the engine's SLOT() makes */
+-            case 8: arg[n] = jit_cbase + ((UNS64)LD16(a) << SCALE); a += 2; break;
++            case 8: arg[n] = jit_cbase + (UNS64)LD16(a); a += 2; break;   /* 590: SCALE 0 (TAG2) */
+             case 9: { UNS64 t_ = BYTE(a);       /* VARSLOT: two bytes, or three with the top bit */
+                 if (t_ & 0x80) { t_ = ((t_ & 0x7F) << 16) | ((UNS64)BYTE(a + 1) << 8) | BYTE(a + 2); a += 3; }
+                 else { t_ = (t_ << 8) | BYTE(a + 1); a += 2; }
+-                arg[n] = jit_cbase + (t_ << SCALE); } break;
++                arg[n] = jit_cbase + t_; } break;
+ #endif
+             default: return 0;
+             }
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 681d4a7..59da7ee 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -934,7 +934,11 @@ REQUIRE = []
+ # Iteration 589 (retire-stages-584.md, step 2): lean retired at 1 - on every pooled-front design and candidate; lean 0
+ # built only s4, frozen (stages/frozen). Its row's two drops unconditional, layout.py's lean-off switches gone. Kept in
+ # LATE and EXPRESSED at 1, so every id stands; s5 and s6 keep lean=1 (a hand-made genome bypasses require()).
+-FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1}
++# Iteration 590 (retire-stages-584.md, step 3): scale retired at 0 for CV8 - every pooled-front design and candidate has
++# it, scale 1-3 built only s4 and s5 (frozen). FROZEN is CV8's (require()), and mutate()'s pool now agrees: cpt16 keeps
++# its scale gene - SCALE stays in vm-lab.c and layout.py for cpt16 and sod16 (s1 builds at SCALE 1, s2-s3 frozen). The
++# JIT's two shifts went (JITVAR needs TAG2, SCALE 0 by vm-lab.c's #error); EXPRESSED keeps scale, so every id stands.
++FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+@@ -1439,7 +1443,7 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
+ def mutate(g, rnd):
+     g = canon(g); what = []
+     for _ in range(rnd.choice([1, 1, 2])):
+-        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if x not in FROZEN] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's
++        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if not (g['enc'] == 'cv8' and x in FROZEN)] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's; 590: CV8's, as require()
+         k = rnd.choice(pool)
+         if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
+         if k == 'enc':
