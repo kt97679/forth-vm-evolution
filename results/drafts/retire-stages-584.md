@@ -68,6 +68,17 @@ stand), the row's two drops for every CV8 design, layout.py's lean-off switches 
 frozen stages' own line is the patch's control: s4, the one stage with lean 0, built from source changes its image (its
 engine the same); s2, s3, s5 the same. Next: scale, varcall with sharedcall, doesfar, bytehdr - one a chat.
 
+**Step 3, scale, queued (590)**: scale-after-seed86.patch - scale retired at 0 for CV8 only. 584's "the engine's SCALE
+paths go" was wrong: SCALE is not CV8's alone - cpt16 expresses scale (built at max(1, scale)), sod16 builds at SCALE 1,
+and s1-sod16 is rebuilt from source; vm-lab.c's `cbase + (t << SCALE)` and layout.py's --cpt serve them, so they stay,
+and so do eval32's cap and canon()'s bytehdr guard (cpt16's). What goes: the CV8 gene (FROZEN, and mutate()'s pool now
+excludes FROZEN for CV8 alone, as require() applies it - only scale, of the FROZEN genes, is expressed outside CV8) and
+the JIT's two shifts (dead: JITVAR needs TAG2, which #errors unless SCALE 0). The far-DOES> line keeps `- SCALE` (right
+at any scale). s4 and s5 still build from source (a hand-made genome bypasses require()), so the tools that build them
+need no move. No design lost: seeds 77-86's results files hold 2681 designs, all CV8, 2 at scale 1 or 3, neither on the
+front; the 232 candidates, the final 14 and the shortlist 40 all at scale 0. Removing SCALE itself would mean retiring
+the cpt16 and sod16 families - none recorded since seed 77, but not in the owner's go-ahead (584's five genes): asked.
+
 The next patches' footprints (588, grep counts, not an audit). **lean**, the smallest: its gene row (`gene('lean',
 convert=...)`: the two drops when on), LATE, EXPRESSED, HUMAN's s5 and s6; layout.py's measuring switches (_NO_LEAN,
 SOD16_NO_DROPX8, SOD16_NO_DROPTOOL). **scale**, the largest: SCALE in vm-lab.c 16 times, spn-cv8.c 14, jit.c 2; in
