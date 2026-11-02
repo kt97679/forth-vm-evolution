@@ -32,7 +32,7 @@ for c in $(git -C "$X" rev-list --reverse origin/master..HEAD); do
     name=$(echo "$s" | sed 's/[: ].*//' | tr 'A-Z' 'a-z' | tr -cd 'a-z0-9-')
     [ -n "$name" ] || { say "commit $c: no name in its subject '$s'"; exit 1; }
     P=$Q/$name-after-seed$N.patch
-    git -C "$X" diff "$c^" "$c" > "$P"
+    git -C "$X" diff --binary "$c^" "$c" > "$P"   # 588: --binary, or a binary file is "Binary files differ" and never applies
     files=$(git -C "$X" diff --name-only "$c^" "$c" | tr '\n' ' ' | sed 's/ $//; s/ /, /g')
     if grep -q "git apply $P" "$O"; then say "$P made again ($files)"
     else
