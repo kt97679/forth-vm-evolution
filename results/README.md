@@ -74,7 +74,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed81/` - the after-seed-81 batch, applied at seed 81's processing (Iteration 568): jitscan, ccflags, design, bar (ORDER.md says what each does).
 - `applied-after-seed83/` - the after-seed-83 batch, applied at seed 83's processing (Iteration 572): armrt, prebuiltarm, ragecheck (ORDER.md says what each does).
 - `applied-after-seed84/` - the after-seed-84 batch, applied at once after seed 84's chain failed (Iteration 574): retired (ORDER.md says what it does).
-- `pending/ORDER.md` - the batch to apply first at seed 86's processing: fsys45 (ORDER.md says what each does).
+- `queued-consolidation/ORDER.md` - consolidation's retirement batch, queued until after the final pick (Iteration 583): fsys45 - fsys levels 4-5 retired, batch-check PASS; ORDER.md says when and how it is applied.
 
 ### The processing checklists
 
@@ -206,6 +206,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/article-method-548.md` - The article's method section, a first draft (Iteration 548): the design space, the objectives, the search, the three audited shortcuts, the true front, one command a run, the checks, the stopping rule, the baseline, what was not isolated.
 - `drafts/confirmation-pool-559.md` - The confirmation run's founders, no good design missed (Iteration 559, the owner): --carry's tolerance front drops chain-hidden designs - the strict front instead, every archived run, the pool pre-flighted.
 - `drafts/retire-candidates-573.md` - The nine genes seeds 77-83's fronts never moved off their old values (Iteration 573): what retiring each would remove - little but msc, the old values building the hand-made stages s2-s5; msc's Tegra check first.
+- `drafts/retire-report-583.md` - Consolidation's retirement report with seed 86 in the pool (Iteration 583; retire-report-579.py rerun): 17 values on no design of the pooled true front of seeds 77-86.
+- `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.
 - `drafts/random-mode-548.patch` - The random-search baseline's mode, drafted and tested for consolidation (Iteration 548; GOALS.md, "When the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop, the fast gate kept.
 - `candidates-final-seed84.md` - The final set's candidates from the pool of seeds 77-83 and seed 84 (Iteration 575, final-set.py --candidates): 242 records, one a line, for loadtest.py --ids and xcheck.py --also.
 - `candidates-final-seed86.md` - The final set's candidates from the pool of seeds 77-84 and seed 86 (Iteration 582, final-set.py --candidates): 232 records, one a line, for loadtest.py --ids (the final pick's chain A).

@@ -1,8 +1,10 @@
 # The after-seed-86 batch - to apply first at seed 86's processing (Iteration 583)
 
+**Queued for consolidation** (Iteration 583) - not results/pending/, which process-run.sh applies at the next processing: moved there at consolidation, after the final pick, with the patches drafted then (results/drafts/retire-plan-583.md), and batch-check run again on that master.
+
 process-run.sh checks and applies it.
 
-    git apply results/pending/fsys45-after-seed86.patch
+    git apply results/queued-consolidation/fsys45-after-seed86.patch
 
 batch-check (582, on cbf4daa - 1 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.

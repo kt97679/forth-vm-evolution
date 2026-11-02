@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 582.
+- master: Iteration 583.
 - **The next chain - the final pick's chain A** (GOALS.md step 3; the owner, 579-580): NEXT-RUN `experiment loadtest.py
   --ids results/candidates-final-seed86.md` - the 232 candidates (final-set.py --candidates on the pool and seed 86: the
   set's 10, 93 within 5% of the fastest, 131 at 32 bits, the 5 smallest, the 5 leanest) alone and under load at both
@@ -57,7 +57,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   designs on rage in about 28, the stages built there included (load.log; a lock serializes a host's lines) - 579's
   "dream about 10 hours, the Tegra days" was a budget. So dream re-measures every candidate in chain A, and chain B's 900
   minutes on the Tegra hold every candidate it can build, not the shortlist's first 20: chain A's processing writes
-  chain B's lists (the shortlist first, then the rest).
+  chain B's lists (the shortlist first, then the rest; the Tegra's
+  also the msc pairs of retire-plan-583.md).
+- **Consolidation's retirement, planned (583)** - results/drafts/retire-plan-583.md: fsys 4-5 retired, the fsys45
+  batch queued (results/queued-consolidation/, batch-check PASS) - moved to results/pending/ at consolidation, never
+  before (process-run.sh applies pending). Waiting: jitdoes=1 and rtloop=2 for the final set (12 and 1 candidates; the
+  fastest, 15ecc6a232, uses jitdoes); msc=1 for the Tegra's 4 msc pairs, in chain B's list; bytehdr, doesfar, lean,
+  scale, varcall for the owner - freeze s2-s5 as built artefacts, or keep.
 - **Processing chain A**: the same three commands; process-seed.sh runs final-pick.py --shortlist -
   results/shortlist-seed86.md, about 40: the set alone and loaded, the additions, each width's 5 fastest alone and loaded,
   the next by hypervolume, the near-misses (each record's why). process-run.sh's later stages (draft-results, the checks)
@@ -145,7 +151,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    jitmul 43, jitfuse 10, jitexec 1, jitos 19, jitrp 22; jitdoes the one freeze candidate.
 7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
-7b. Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
+7b. (583: planned - results/drafts/retire-plan-583.md.) Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
    values' code builds the stages s2-s5; msc's Tegra check before retiring it.
 8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts (seeds 53-75:

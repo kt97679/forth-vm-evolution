@@ -10515,3 +10515,15 @@ measured a 68-design line there in about 4.3 minutes and 15 designs on rage in a
 The Tegra's GCC designs fail to link raise - all 4 lto=1, the one that linked lto=0 (HANDOFF open item 1b). process-finish.sh accepts the final pick's experiment-only lines for seed N (580's chains). Files:
 results/evolve-amd-ryzen-7-pro-8840hs-seed86.md, results/xcheck-seed86.md, results/candidates-final-seed86.md,
 results/drafts/dream41-582.py.
+
+## Iteration 583 - 2026-11-02 - Claude
+
+**Seed 86's curve committed; consolidation's retirement planned, its first batch queued (the owner).** Seed 86 flat from
+generation 0: hv 0.37071, then 0.36933 at 91; three extremes at generation 0, the smallest 34 bytes smaller. 578's rule
+rerun with seed 86: 17 values on no pooled-front design (alignhot=0 off since 579, rtloop=2 on); against the 232
+final-pick candidates jitdoes=1 12 (the fastest, 15ecc6a232, among them), fsys=1 12, rtloop=2 1 - those wait for the
+final set. Retired now: fsys 4-5 - 119 lines out, the engine preprocessed identical at FSYS 0-3, batch-check PASS -
+queued for consolidation, not pending. msc=1 waits for the Tegra (4 msc pairs from seed 86 for chain B); the stage genes
+for the owner; the search-space-only values kept. Files: results/drafts/curve-seed86-583.py,
+results/drafts/retire-report-583.md, results/drafts/retire-candidates-583.py, results/drafts/retire-plan-583.md,
+results/queued-consolidation/ORDER.md, results/queued-consolidation/fsys45-after-seed86.patch.
