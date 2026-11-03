@@ -10631,3 +10631,12 @@ designs and the 40, 4 sessions expected in 680 minutes; dream up to 40 a width i
 Tested: the guard 7 of 7 with stand-ins, the hosts' sessions end to end with 570's ssh stand-ins 14 of 14 (3 sessions
 at each width, the second line stopped by its deadline at 3 of 9). Chains C and D processed together.
 Files: results/drafts/chain-d-test-591.sh.
+
+## Iteration 592 - 2026-11-03 - Claude
+
+While chain D runs: the older formats' retirement, step 4 - varcall retired at 1, sharedcall with it, queued after scale.
+The engines' fixed 15-bit call and per-handler call path gone (vm-lab.c, spn-cv8.c), layout.py's --no-varcall and
+sod16.py's VARCALL; 56 lines in, 108 out; s4 no longer built from source (build() refuses varcall 0). Tested by
+results/drafts/retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 5 patches
+(run-tests, validate 7 of 7 IDENTICAL, the jail). NEXT-RUN none while chain D runs.
+Files: results/queued-consolidation/varcall-after-seed86.patch.
