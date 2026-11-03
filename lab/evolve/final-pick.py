@@ -27,7 +27,8 @@ inrun / inrun32. --self-test: synthetic candidates, known answers.
 --also-session DIR (Iteration 588; repeatable): another session's readings beside these - DIR's loadtest.md merged
 into the laptop's (each speed the geometric mean of the sessions that have it; a reading one session lacks does not count
 against the design - lose no good design), DIR's *.out.json added to the hosts (step 5 takes each host's mean; step 4
-names each line). Chain C's processing: --also-session results/chainB-seed86.
+names each line). Chain C's processing: --also-session results/chainB-seed86. A DIR without loadtest.md adds its hosts
+only (595: chain D's sessions, lab/evolve/chain-sessions.py - a host can have more sessions than the laptop).
 """
 import glob, importlib.util, json, math, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -270,7 +271,7 @@ def main(a):
     C = {i: r for i, r in records(a[0]).items() if r.get('genome') is not None}; L = records(a[1])
     H = [json.load(open(f)) for f in a[2:]]
     if also:                                             # Iteration 588: another session's readings beside these
-        L = merge_sessions([L] + [records(os.path.join(d, 'loadtest.md')) for d in also])
+        L = merge_sessions([L] + [records(os.path.join(d, 'loadtest.md')) for d in also if os.path.exists(os.path.join(d, 'loadtest.md'))])   # 595: a hosts-only session
         H += [json.load(open(f)) for d in also for f in sorted(glob.glob(os.path.join(d, '*.out.json')))]
     p = pick(C, L, H, E, b, k, veto, top)
     res, R, left = p['alone']

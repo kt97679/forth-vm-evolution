@@ -41,14 +41,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 594.
+- master: Iteration 595.
 - **Chain D, started (591) - the owner's 12 hours**: the shortlist's 40 in whole sessions repeated on the three machines
   (NEXT-RUN; REMOTES --sessions), started before chain C's verdict - 589's filler, about even odds chain C would ask for it.
   The laptop's step repeats while another session ends by the remote lines' last deadline (repeat-fits.sh); rage the 8
   msc designs and the 40, 4 sessions expected in 680 minutes; dream as many as 330 minutes a width hold. About 11.5
   hours. Tested by results/drafts/chain-d-test-591.sh. NEXT-RUN none since 592 (a pull must not start it again - 588's
   rule); chains C and D's processing writes the next line.
-- **The older formats' retirement - all 6 steps queued (594)**: results/queued-consolidation/, after fsys45 - the
+- **Consolidation's queue - 8 patches (595)**: rtloop 2 retired (595, below); the older formats' retirement, all 6 steps (594): results/queued-consolidation/, after fsys45 - the
   freeze (588: s2-s5's engines and images in stages/frozen/, copied by build-stages.sh, --validate checking them by hash)
   and lean retired at 1 (589: FROZEN, both drops for every CV8 design, layout.py's lean-off switches gone). Lean tested
   by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS);
@@ -61,6 +61,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   layout-noise.sh on s6; build-hash 667 of 667 at both widths, batch-check PASS on the 6 patches.
   Bytehdr (594) retired at 1, the last - CV8's full headers gone (layout.py refuses --v8 without --bytehdr, so CV8 calls
   unscaled), the -self dumps with them (setup()'s 63, build-stages.sh's 4); build-hash 667 of 667 the same at both widths (s2, s3 from source the same; s4 and s5 refused by build()), validate 7 of 7 IDENTICAL on the patched tree, batch-check PASS on the 7 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS); cut off by a turn's end at the 4-byte hashes and resumed (RESUME=1).
+  Rtloop (595) 2 retired, after bytehdr - on no front, shortlist or final-set design (chains C and D choose from the 40); canon reads 2 as 1;
+  results/drafts/rtloop-check-595.py: of 2874 designs the expression changed in exactly the 136 with the headerless loop words; batch-check
+  PASS on the 8 patches. Jitdoes 1 stays (3ee67e7d34, chain B's set); msc waits for the Tegra's pairs.
   The queue applies at consolidation, after chains C and D's processing (retire-plan-583.md). final-pick.py --also-session (588) for chain C's processing.
 - **Chain B, processed (587)** - results/final-pick-chainB-seed86.md: the final set 14 (results/final-set-seed86.md) -
   the laptop's 10 and 4 added across machines (06b188f45b, 6c6717b20a, c13353f8cf the best means; d6b42c335a x86-32's
@@ -104,7 +107,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Processing chains C and D (one chat, both archives)**: the same three commands for each - process-run.sh stops after
   the summary (no seed pack), final-pick.py on chain C's readings (process-seed.sh's chain-B mode: the shortlist); then
   final-pick.py on every session - chain D's laptop packs (a loadtest.md each) and its remote/HOST-HOW[-sN] out files, each
-  session a directory, `--also-session` each beside results/chainB-seed86 and chain C's (588: the laptop's loadtest.md
+  session a directory (lab/evolve/chain-sessions.py UNPACKED DEST CANDIDATES - lays them out, prints the final-pick line and
+  msc's verdict from rage's pairs; 595), `--also-session` each beside results/chainB-seed86 and chain C's (588: the laptop's loadtest.md
   merged by geometric mean, each host's lines its mean in step 5) - a design in any session's set kept (lose no good design). Keep chain C's readings as chain B's;
   the 8 msc records (rage's designs.json) into the repository; msc by retire-plan-583's rule. Chain D is 589's sizing (results/drafts/chain-sizing-589.md), run now. Then
   consolidation:

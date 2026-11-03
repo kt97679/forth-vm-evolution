@@ -10656,3 +10656,8 @@ full headers gone: layout.py refuses --v8 without --bytehdr (CV8 calls unscaled,
 -self dumps out (setup()'s 63, build-stages.sh's 4), test-ext-loops.sh's s5 line out; 43 lines in (comments mostly), 40 out. Build-hash 667 of 667 at both
 widths; batch-check PASS on the 7 patches. All six queued: they apply at consolidation, after chains C and D's processing.
 Files: results/queued-consolidation/bytehdr-after-seed86.patch.
+
+## Iteration 595 - 2026-11-03 - Claude
+
+While chain D runs: rtloop 2 retired (578's rule; retire-plan-583's "after the final set") - on no front design and on none of the shortlist's 40 or chain B's 14, the sets chains C and D choose from; queued after bytehdr. Tested without building: evolve.py alone changes, and of 2874 designs the expression changed in exactly the 136 that passed the loop words headerless; batch-check PASS on the 8 patches. Jitdoes 1 stays (chain B's 3ee67e7d34). Chains C and D's processing: lab/evolve/chain-sessions.py lays a chain's readings out by session, prints the final-pick line and msc's verdict; final-pick.py reads a session without loadtest.md (stand-in test: chain B's set the same).
+Files: results/queued-consolidation/rtloop-after-seed86.patch, results/drafts/rtloop-check-595.py.
