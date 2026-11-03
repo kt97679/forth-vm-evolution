@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 606.
+- master: Iteration 607.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -82,7 +82,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   article until he approves. Part one condensed from article/article-en.md (its paraphrases checked against it), part two
   from results/article-figures-600.md and the final pick. His reason for the switch in (605: randomising had found the
   interesting things in other projects - designs no project or paper covers); the credits (Ertl and Gregg, COLE) and the
-  ending asking readers whether the designs are new (results/drafts/originality-605.md). The fast end's 5-7% out of both (606, the owner:
+  ending asking readers whether the designs are new (results/drafts/originality-605.md; 607: the two details have
+  fixed-length precedents - Rose's ART-FORTH, Rochester 1986, uxForth, Enforth - only their variable-length forms not
+  found, and the question now asks about those). Two ASCII diagrams (607, results/drafts/ascii-figures-607.py, no
+  pictures - the owner): each run's hypervolume, the pooled front as speed against size. The fast end's 5-7% out of both (606, the owner:
   process, not result - it cancels in every comparison). Waiting: his review; the [pending] portable run (seed 87); a Russian reader's pass
   (AUDIENCE.md: a translation-shaped text is a named failure on Habr); prompts 04 and 05 before publishing; the KDPV image.
   The method draft (results/drafts/article-method-548.md): one [check] left, the offset; the follow-up chain's tool

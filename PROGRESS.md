@@ -10775,3 +10775,15 @@ Files: results/drafts/originality-605.md.
 The fast end's 5-7% out of both drafts (the owner agreed: process, not result - the final set was chosen on re-measures
 and the stopping rule compared in-run with in-run, so it cancels). No [check] left in either.
 
+## Iteration 607 - 2026-11-03 - Claude
+
+The owner: no pictures, ASCII diagrams where useful; check the two possibly-new details; reviews by other models when
+the draft is ready. The two details have fixed-length precedents: base-relative calls and a relative header link in
+hashed chains - Anthony Rose's ART-FORTH (1986 Rochester Forth Conference, JFAR 4(2)); a top-bit call token - uxForth
+(2016); calls as offsets from the dictionary's start - Enforth. Not found: their variable-length forms (a two-or-three-
+byte call, a one-to-three-byte link read backwards) and any winner's combination; both drafts now ask readers about
+exactly those, citing them. Two ASCII diagrams in both drafts: each run's hypervolume (the series 0.332-0.352, the
+confirmations 0.366-0.369, the random 0.188) and the pooled front's 444 as speed against size (165 with the JIT) beside
+the random search's 30 and s6.
+Files: results/drafts/ascii-figures-607.py.
+

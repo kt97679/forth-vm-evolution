@@ -314,7 +314,60 @@ fastest 0.320 against 0.138-0.148, its smallest 16,446 bytes against
 13,989-14,210, its least memory 116 KB against 108-112. The design space
 alone is not where the result comes from.
 
+Every run's front, as one number:
+
+```
+hypervolume of each run's front (higher is better)
+
+seed 77                  ##########################################     0.350
+seed 78                  #########################################      0.340
+seed 79                  ###########################################    0.352
+seed 80                  #########################################      0.336
+seed 81                  ##########################################     0.347
+seed 82                  ########################################       0.332
+seed 83                  #########################################      0.336
+seed 84, confirming      ############################################   0.366
+seed 85, random          #######################                        0.188
+seed 86, confirming      #############################################  0.369
+```
+
 ## 15. No design is best at everything
+
+Drawn as speed against size, the pooled front shows the trade before
+any table does:
+
+```
+the pooled front: speed against s6 (log scale) and size
+
+45 KB |    J               r
+      |                        r
+      |
+39 KB |                       r
+      | JJ                oo   r
+      |  JJJ
+32 KB |  JJJ
+      |   JJJJJJ          o
+      |       JJJJJJJJJJ o         r
+26 KB |           JJJJJJJJ
+      |                 oo      r r
+      |                  ooo       rrr r    rr  S
+19 KB |                  ooooo          r r r    r
+      |                     oooooo         r   rrr  rrr
+      |                          ooooooooooooo     r rr       r
+13 KB |                                    ooooooooooooooooo
+      +------------------------------------------------------------
+          0.15      0.25          0.5           1             2
+       faster <- speed (CPU time against s6) -> slower
+
+J  a design with the JIT (x86 only)        o  a design without it
+r  the random search's front               S  s6, where the ladder ended
+444 designs on the pooled front (165 with the JIT); the random search's 30
+```
+
+The designs with the JIT own the fast corner and pay for it in bytes;
+the designs without it run along the bottom, from fast at about 20 KB to
+small and slow; the random search's front lies right of the search's or
+above it everywhere.
 
 The pooled fronts held 444 designs. The candidates were re-measured -
 alone and under load, at both widths - on the laptop, then the forty
@@ -367,15 +420,18 @@ above.]
 ## What still bothers me
 
 **Whether any of this is new.** Technique by technique, nothing in the
-winners is: see the credits in section 10. Two things I could not find
-described anywhere: a byte-coded Forth whose calls are two- or three-byte
-offsets from the image base with no table, and a dictionary header
-whose link is a one-to-three-byte distance decoded backwards from the
-name. And no paper or system I found combines what any of the winners
-combines. Forth's folklore lives on comp.lang.forth more than in papers,
-so not finding it proves little. If you know a Forth that does either
-of the two, or a winner's whole combination, please tell me in the
-comments.
+winners is: see the credits in section 10. Even the two details I
+thought were mine turned out to have relatives once I looked properly.
+Calls relative to a base, for relocation and for shorter references,
+and a dictionary link that is a relative offset in a hashed chain are
+both in Anthony Rose's ART-FORTH, at the Rochester Forth Conference in
+1986; a token whose top bit marks a call is in uxForth (2016); Enforth
+makes its calls offsets from the start of the dictionary. What I still
+have not found is the variable-length forms - a call of two or three
+bytes, a link of one to three read backwards from the name - and any
+winner's whole combination. Forth's folklore lives on comp.lang.forth
+more than in papers, so not finding them proves little. If you know a
+Forth that does either, please tell me in the comments.
 
 **Selection ran on one machine.** The Tegra disagrees with the laptop
 almost completely - as Huang, Marr and Ugawa found for interpreter
@@ -408,6 +464,10 @@ the comments than be wrong quietly.
 - M.A. Ertl, D. Gregg, "Retargeting JIT compilers by using C-compiler generated executable code", PACT 2004; D. Gregg,
   M.A. Ertl, "Optimizing code-copying JIT compilers for virtual stack machines", Concurrency and Computation 18(11), 2006
 - H. Xu, F. Kjolstad, "Copy-and-patch compilation", OOPSLA 2021
+- A. Rose, "Design of a fast 68000-based subroutine threaded FORTH with inline code & an optimiser", Proceedings of the
+  1986 Rochester Forth Conference (JFAR 4(2), 285-288)
+- [uxForth](http://oneweekwonder.blogspot.com/2016/11/uxforth-unexpanded-forth-for-standard_6.html), 2016;
+  [Enforth](https://github.com/malyn/Enforth)
 - K. Hoste, L. Eeckhout, "COLE: compiler optimization level exploration", CGO 2008
 - W. Huang, S. Marr, T. Ugawa, "Optimizing the order of bytecode handlers in interpreters using a genetic algorithm",
   ACM SAC 2023
