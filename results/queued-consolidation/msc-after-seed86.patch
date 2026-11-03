@@ -1,0 +1,498 @@
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 4dbb223..454cb3d 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -106,7 +106,7 @@ as the record of what each does.
+ | run-time immediates (`rtimm`: 0, 1, 2; Iteration 37; 2 - Iteration 175: without pairs, the overlay alone): with run-time fusion and spec imm, the compiler the image carries makes `n +` an ADDI and `SWAP n +` a SWAP+I in the code it writes (forth/cv8-fuse-imm.4) | this lab: fib's own code, dumped from a front design | fib 15% fewer dispatches, 17-27% faster, for 408-472 bytes (results/rtimm.md) |
+ | one-byte calls (`hotcalls`: 0, 8, 16, 32): the far-call prefixes 0xE0-0xFF call the image's own words with the most call sites, through a table in the image's header; chosen per design by the converter, no profile | this lab's search (SEARCH-SPACE.md: a stranger), priced at Iteration 13 | a call one byte instead of two; the far form keeps 21 bits - 2 MB at scale 0 |
+ | **Retired at Iteration 456** - frozen off since Iteration 450 (12 of 12 removal votes over seeds 63-65, no loss in seed 66), its code removed; the gene kept in the genome, off, so identities hold. Was: tail-call threading (`tail`): every handler a function of (ip, dsp, rp, tos, t), dispatching by a tail call through a 256-entry table of functions; made from the cached engine | Wasm3, CPython 3.14, WasmKit | each handler's registers allocated for it alone; handlers that keep a frame are split so their dispatch stays a jump |
+-| multi-state stack caching (`msc`): 0, 1 or 2 top items in registers, a dispatch table per state, each handler variant dispatching by the table of the state it ends in; generated from stack effects for 72 operations, the rest normalised to the one-register state | Ertl and Gregg; gforth's vmgen | no memory traffic where the state absorbs it; three times the code for the specified operations |
++| **Retired at Iteration 596** - on no design of the pooled true front and no final-pick candidate, and on the Tegra each of the 4 msc pairs' msc=0 design as fast or faster (retire-plan-583.md); tools/gen-msc.py removed, the gene kept in the genome at 0 so identities hold. Was: multi-state stack caching (`msc`): 0, 1 or 2 top items in registers, a dispatch table per state, each handler variant dispatching by the table of the state it ends in; generated from stack effects for 72 operations, the rest normalised to the one-register state | Ertl and Gregg; gforth's vmgen | no memory traffic where the state absorbs it; three times the code for the specified operations |
+ | compiler: `-O2/-O3/-Os`, `-fno-gcse`, `-fno-crossjumping`, `-fcf-protection=none`, minimal label alignment, `-fno-reorder-blocks` | gforth's and CPython's builds, this lab's endbr64 finding | how the C compiler lays out the interpreter: computed goto only pays if every handler keeps its own indirect jump, which GCSE and cross-jumping undo |
+ 
+ ## Not yet - each needs engine work first
+diff --git a/lab/evolve/engines-check.py b/lab/evolve/engines-check.py
+index 38b9a9c..4f1e524 100755
+--- a/lab/evolve/engines-check.py
++++ b/lab/evolve/engines-check.py
+@@ -2,11 +2,11 @@
+ """engines-check.py - an engine down every generator's path builds, and runs
+ the corpus right (Iteration 249).
+ 
+-Iteration 456: the tail engines removed (tail frozen off since 450), their paths with them. Seed 46 lost every design with the gene tail: an engine change (the dispatch
++Iteration 456: the tail engines removed (tail frozen off since 450), their paths with them; Iteration 596 the
++multi-state engines (msc retired at 0, tools/gen-msc.py removed), their five paths with them. Seed 46 lost every design with the gene tail: an engine change (the dispatch
+ table as offsets, Iteration 237) broke the engines tools/gen-tail.py makes, and
+ no check built one - the fronts the gate builds had none. Every variant here is
+-s6-cv8b with genes set so that one path is taken: the cached top off, multi-
+-state caching (gen-msc.py), tail-call threading (gen-tail.py), superinstructions
++s6-cv8b with genes set so that one path is taken: the cached top off, tail-call threading (gen-tail.py), superinstructions
+ (gen-super.py), op;CALL handlers (gen-opcall.py), format-10 opcodes, the escape
+ byte (both widths), the two-bit tag (narrow and wide, and with factored bodies), the JIT with every JIT
+ gene (and with jitos, and on the wide tag), and the file-system levels (the
+@@ -46,7 +46,6 @@ JIT = dict(tag2=1, jit=1, jitx=1, jitloop=1, jitinl=1, jittail=1)   # the JIT an
+ VARIANTS = [                                     # (name, genes set on s6, genes that must be expressed)
+     ('s6 as it is', {}, []),
+     ('cached top off', dict(tos=0), []),
+-    ('multi-state (gen-msc)', dict(msc=1), ['msc']),
+     ('superinstructions (gen-super)', dict(supers=donor('supers', {})), ['supers']),
+     ('op;CALL (gen-opcall)', dict(tag2=1, opcall=donor('opcall', dict(tag2=1))), ['opcall']),
+     ('format-10 opcodes', dict(ops10=donor('ops10', {})), ['ops10']),
+@@ -89,18 +88,17 @@ VARIANTS = [                                     # (name, genes set on s6, genes
+ 
+ bad = []
+ VARIANTS += [(n + ', 2@ 2! opcodes', dict(g, ops10=list(g.get('ops10') or []) + ['2@', '2!'], opbody=1), need + ['ops10'])   # Iteration 290
+-             for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
++             for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+ VARIANTS += [(n.replace('2@ 2! opcodes', '2@ 2! inlined'), dict(g, opinline=1), need + ['opinline'])   # Iteration 292
+              for n, g, need in list(VARIANTS) if n.endswith('2@ 2! opcodes')]
+ KN = dict(kfast=1, kinput=1, klookup=1, knumber=1)   # Iteration 295: NUMBER? as one opcode, on every engine family
+ VARIANTS += [('klookup, knumber', dict(KN), ['knumber']), ('klookup, knumber, cached top off', dict(KN, tos=0), ['knumber']),
+-             ('klookup, knumber, multi-state', dict(KN, msc=1), ['knumber', 'msc']),
+              ('klookup, knumber, the JIT', dict(KN, **JIT), ['knumber', 'jit'])]
+ VARIANTS += [('handler entries aligned to 32, padding at most 10', dict(alignhot=1), ['alignhot']),   # Iteration 298
+              ('handler entries aligned to 32', dict(alignhot=2), ['alignhot']), ('handler entries aligned to 64', dict(alignhot=3), ['alignhot']),
+              ('aligned to 64, cached top off', dict(alignhot=3, tos=0), ['alignhot'])]
+ VARIANTS += [(n + ', > 0= inlined', dict(g, ops10=['>', '0='] + list(g.get('ops10') or []), opbody=1, opinline=1), need + ['ops10', 'opinline'])   # Iteration 299
+-             for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'multi-state (gen-msc)', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
++             for n, g, need in list(VARIANTS) if n in ('s6 as it is', 'cached top off', 'tail calls (gen-tail)', 'the JIT, every JIT gene')]
+ # Iteration 316: the gene bfind - THREAD-FIND's and (FIND)'s walk branch-light - with each of
+ # the two words, in each link form (CV8's 1-3 bytes, TAG2's 1-4)
+ # Iteration 399: tos 0 - a TOS engine's THREAD-FIND and (FIND) are tools/gen-tos.py's own bodies, the plain walk:
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 21e88ed..f4acd09 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -491,8 +491,9 @@ def jit_on(g):
+             and bool(g['tos']) and not g.get('msc') and not g.get('tail') and os.uname().machine == 'x86_64')
+ def t2wide_on(g):
+     """Iteration 95: the tag without its 3-byte call - 0x80-0xBF 64 more one-byte
+-    codes (127), calls of 2 bytes (16 KB) and 4 (1 GB). Not yet for multi-state
+-    caching: tools/gen-msc.py builds its tables with three call widths."""
++    codes (127), calls of 2 bytes (16 KB) and 4 (1 GB). Not for multi-state
++    caching (its generator built its tables with three call widths; msc retired
++    at 596, the condition kept so ids stand)."""
+     return (g['enc'] == 'cv8' and bool(g.get('t2wide')) and bool(g.get('tag2')) and bool(g['bytehdr'])
+             and not (g.get('msc') and g['tos']))
+ def ops10_order(g, iplus):
+@@ -947,8 +948,13 @@ REQUIRE = []
+ # what went: the full-header CV8 format - layout.py refuses --v8 without --bytehdr (so --cpt 0: its CV8 calls unscaled),
+ # the -self dumps (cv8.4 without cv8b.4: build-stages.sh's four, setup()'s 63) and the dump choice. build() refuses
+ # bytehdr 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands; cpt16's guard in canon() stays.
++# Iteration 596 (retire-plan-583.md; 578's rule): msc retired at 0 - multi-state stack caching, on no design of the
++# pooled true front and on none of the final pick's candidates; applied only if the Tegra's 4 pairs (chains C and D,
++# lab/evolve/chain-sessions.py) find each msc=0 design as fast or faster. What went: tools/gen-msc.py and build()'s call
++# of it, engines-check.py's five multi-state paths. build() refuses msc 1. The gene stays in the genome and express()'s
++# msc conditions stay (as tail's, 456), so every id stands - an archived msc=1 genome keeps its id, refused at build.
+ FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1,
+-          'bytehdr': 1}
++          'bytehdr': 1, 'msc': 0}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1)
+@@ -964,6 +970,7 @@ def _build(g, d):
+     if not g['varcall']: raise RuntimeError('died: varcall 0 - retired (Iteration 592); s4 is frozen (stages/frozen)')
+     if not g['doesfar']: raise RuntimeError('died: doesfar 0 - retired (Iteration 593); s5 is frozen (stages/frozen)')
+     if not g['bytehdr']: raise RuntimeError('died: bytehdr 0 - retired (Iteration 594); s4 and s5 are frozen (stages/frozen)')
++    if g.get('msc') and g['tos']: raise RuntimeError('died: msc 1 - retired (Iteration 596): multi-state caching, tools/gen-msc.py, removed')
+     src = os.path.join(d, 'vm.c')
+     shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)
+     folds = ','.join(g['folds'])
+@@ -1024,10 +1031,6 @@ def _build(g, d):
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-opcall.py'), src, os.path.join(d, 'opcall.json')])
+         if r.returncode: raise RuntimeError('died: op;CALL generation' + why(r))
+         flags.append('-DOPCALL=1')
+-    if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py); the tag too (Iteration 70)
+-        r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src])
+-        if r.returncode: raise RuntimeError('died: multi-state generation' + why(r))
+-        flags = [f for f in flags if not f.startswith('-DDISPATCH256')] + ['-DDISPATCH256=1']
+     eng = os.path.join(d, 'engine')
+     def compile_engine():
+         jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+diff --git a/results/drafts/msc-check-596.py b/results/drafts/msc-check-596.py
+new file mode 100644
+index 0000000..cc64b85
+--- /dev/null
++++ b/results/drafts/msc-check-596.py
+@@ -0,0 +1,32 @@
++#!/usr/bin/env python3
++"""results/drafts/msc-check-596.py - the msc retirement checked without building (Iteration 596).
++Run in a tree (its lab/evolve/evolve.py): every recorded design of the pooled runs (rtloop-check-595.py's pool - the
++series' and the confirmation runs' results files, every record), the final pick's candidates, the shortlist, the final
++set and the hand-made stages - by set, how many express msc on (express(canon(g)), the build's view: build() now
++refuses them), how many carry msc=1 unexpressed (tos 0) and whether FROZEN's msc 0 changes any expression. express() and canon() are untouched by the patch, so
++every id stands; the patch is right when no candidate, shortlist, final-set or hand-made design is among them."""
++import json, os, sys
++HERE = os.path.join(os.getcwd(), 'lab', 'evolve'); sys.path.insert(0, HERE)
++sys.argv = ['x']
++import evolve as E
++import importlib.util, hv, stopping
++s = importlib.util.spec_from_file_location('confirm', os.path.join(HERE, 'confirm.py')); CF = importlib.util.module_from_spec(s); s.loader.exec_module(CF)
++method, runs = stopping.series(stopping.LEDGER); runs = [r for r in runs if r['seed'] < 87]
++SETS = {'pool': {}}
++for f in CF.pool_files(runs + CF.confirmations(stopping.LEDGER, 87)):
++    for i, r in hv.load(f, E).items(): SETS['pool'].setdefault(i, r['genome'])
++for n, f in (('candidates', 'results/candidates-final-seed86.md'), ('shortlist', 'results/shortlist-seed86.md'), ('final set', 'results/final-set-seed86.md')):
++    SETS[n] = {}
++    for l in open(f):
++        if l.startswith('{'): r = json.loads(l); SETS[n].setdefault(r['id'], r['genome'])
++SETS['hand-made'] = dict(E.HUMAN)
++bad = False
++for n, G in SETS.items():
++    on = sorted(i for i, g in G.items() if g.get('enc') == 'cv8' and E.express(E.canon(g)).get('msc'))
++    req = [g for g in G.values() if g.get('enc') == 'cv8' and E.require(g).get('msc') != g.get('msc', 0)]
++    moved = sum(1 for g in req if E.express(E.canon(E.require(g))) != E.express(E.canon(dict(E.require(g), msc=g['msc']))))
++    print('%-10s %5d designs, %4d express msc on, %4d msc=1 in the genome, %d of them expressed differently by FROZEN\'s msc 0%s'
++          % (n, len(G), len(on), len(req), moved, ' - ' + ' '.join(on[:8]) if on and n != 'pool' else ''))
++    if (on or moved) and n != 'pool': bad = True
++print('msc-check-596: %s' % ('FAIL - a design the final pick can choose expresses msc' if bad else 'PASS - msc on no candidate, shortlist, final-set or hand-made design'))
++sys.exit(1 if bad else 0)
+diff --git a/tools/gen-msc.py b/tools/gen-msc.py
+deleted file mode 100644
+index 6e267c7..0000000
+--- a/tools/gen-msc.py
++++ /dev/null
+@@ -1,330 +0,0 @@
+-#!/usr/bin/env python3
+-"""gen-msc.py ENGINE.c - multi-state stack caching (Ertl and Gregg; gforth).
+-
+-ENGINE.c is the CV8 top-of-stack engine (vm-lab-tos.c, after gen-fold /
+-gen-super), built with -DDISPATCH256=1; it is rewritten in place. There
+-the top item is always in a register: state 1. Here there are three
+-states - nothing, the top, or the top two (`tos`, `nos`) in registers -
+-and a dispatch table for each. A handler variant knows the state it ends
+-in, so it dispatches through that state's table: the state needs no
+-variable.
+-
+-The hot primitives are generated from stack effects (SPECS): for each
+-input state, where each input lives, what goes to memory, and an end
+-state keeping as much in registers as fits - as gforth's vmgen does. DUP
+-in state 1 ends in state 2 without touching memory; + in state 2 ends in
+-state 1 without a load.
+-
+-Every other handler keeps its state-1 body: states 0 and 2 reach it
+-through one normaliser each, which fills or spills one item and jumps on
+-the opcode still in t. NOOP, EXIT, BRANCH and the call path touch no data
+-stack and get a copy per state, so calls and returns keep the cache.
+-
+-The extra tables are filled at start-up by comparing label addresses with
+-the state-1 table, so they follow any opcode assignment - folds, the
+-escape's remap, superinstructions.
+-"""
+-import re, sys
+-
+-# label: (inputs, outputs, C) - bottom to top; the semantics of the
+-# engine's own handlers (engine/vm-lab.c), letter for letter.
+-SPECS = {
+-    'L_dup':     (['a'], ['a', 'a'], ''),
+-    'L_drop':    (['a'], [], ''),
+-    'L_swap':    (['a', 'b'], ['b', 'a'], ''),
+-    'L_over':    (['a', 'b'], ['a', 'b', 'a'], ''),
+-    'L_rot':     (['a', 'b', 'c'], ['b', 'c', 'a'], ''),
+-    'L_plus':    (['a', 'b'], ['c'], 'c = a + b;'),
+-    'L_eq':      (['a', 'b'], ['c'], 'c = -(UNS64)(b == a);'),
+-    'L_gt':      (['a', 'b'], ['c'], 'c = -(UNS64)((INT64)a < (INT64)b);'),     # <
+-    'L_ugt':     (['a', 'b'], ['c'], 'c = -(UNS64)(a < b);'),                   # U<
+-    'L_and':     (['a', 'b'], ['c'], 'c = a & b;'),
+-    'L_or':      (['a', 'b'], ['c'], 'c = a | b;'),
+-    'L_xor':     (['a', 'b'], ['c'], 'c = a ^ b;'),
+-    'L_negate':  (['a'], ['b'], 'b = -a;'),
+-    'L_lshift':  (['a', 'b'], ['c'], 'c = a << b;'),
+-    'L_rshift':  (['a', 'b'], ['c'], 'c = a >> b;'),
+-    'L_fetch':   (['a'], ['x'], 'x = CELL(a);'),
+-    'L_store':   (['x', 'a'], [], 'CELL(a) = x;'),
+-    'L_cfetch':  (['a'], ['x'], 'x = BYTE(a);'),
+-    'L_cstore':  (['x', 'a'], [], 'BYTE(a) = (UNS8)x;'),
+-    'L_tor':     (['a'], [], 'RPUSH(a);'),
+-    'L_fromr':   ([], ['a'], 'a = RS; rp += CELL_BYTES;'),
+-    'L_rfetch':  ([], ['a'], 'a = RS;'),
+-    'L_lit':     ([], ['n'], 'n = (UNS64)OPND16(ip); ip += 2;'),
+-    'L_lit8':    ([], ['n'], 'n = (UNS64)BYTE(ip); ip += 1;'),
+-    'L_0branch': (['f'], [], 'if (f) ip += 2; else ip += BROFF(ip);'),
+-    # the specialisations (SPEC): tiny words, small literals, immediates, variables
+-    'L_zeq':     (['a'], ['f'], 'f = -(UNS64)(a == 0);'),
+-    'L_sub':     (['a', 'b'], ['c'], 'c = a - b;'),
+-    'L_ne':      (['a', 'b'], ['c'], 'c = -(UNS64)(a != b);'),
+-    'L_zlt':     (['a'], ['f'], 'f = -(UNS64)((INT64)a < 0);'),
+-    'L_sgt':     (['a', 'b'], ['c'], 'c = -(UNS64)((INT64)b < (INT64)a);'),      # >
+-    'L_2dup':    (['a', 'b'], ['a', 'b', 'a', 'b'], ''),
+-    'L_2drop':   (['a', 'b'], [], ''),
+-    'L_charp':   (['a'], ['b'], 'b = a + 1;'),
+-    'L_onep':    (['a'], ['b'], 'b = a + 1;'),
+-    'L_cellp':   (['a'], ['b'], 'b = a + CELL_BYTES;'),
+-    'L_cells':   (['a'], ['b'], 'b = a << CELL_SHIFT;'),
+-    'L_onem':    (['a'], ['b'], 'b = a - 1;'),
+-    'L_invert':  (['a'], ['b'], 'b = ~a;'),
+-    'L_count':   (['a'], ['b', 'c'], 'b = a + 1; c = BYTE(a);'),
+-    'L_aligned': (['a'], ['b'], 'b = (a + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1);'),
+-    'L_lit0':    ([], ['n'], 'n = 0;'),
+-    'L_lit1':    ([], ['n'], 'n = 1;'),
+-    'L_litm1':   ([], ['n'], 'n = ~(UNS64)0;'),
+-    'L_vf':      ([], ['x'], 'x = CELL(SLOT());'),
+-    'L_vs':      (['x'], [], 'CELL(SLOT()) = x;'),
+-    'L_addi':    (['a'], ['b'], 'b = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1;'),
+-    'L_eqi':     (['a'], ['b'], 'b = -(UNS64)(a == (UNS64)(INT64)(int8_t)BYTE(ip)); ip += 1;'),
+-    'L_addix':   (['a'], ['b'], 'b = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip = RS; rp += CELL_BYTES;'),
+-    'L_eqix':    (['a'], ['b'], 'b = -(UNS64)(a == (UNS64)(INT64)(int8_t)BYTE(ip)); ip = RS; rp += CELL_BYTES;'),
+-    # relf's format-10 opcodes (OPS10) - ?DUP alone cannot be said this way
+-    'L_x_i':         ([], ['x'], 'x = RS;'),
+-    'L_x_j':         ([], ['x'], 'x = CELL(rp + 2 * CELL_BYTES);'),
+-    'L_x_iplus':     (['a'], ['b'], 'b = a + RS;'),     # Iteration 60: I +
+-    'L_x_plusstore': (['x', 'a'], [], 'CELL(a) += x;'),
+-    'L_x_2fetch':    (['a'], ['x1', 'x2'], '{ UNS64 a_ = a; x1 = CELL(a_ + CELL_BYTES); x2 = CELL(a_); }'),   # Iteration 290: 2@
+-    'L_x_2store':    (['x1', 'x2', 'a'], [], '{ UNS64 a_ = a; CELL(a_) = x2; CELL(a_ + CELL_BYTES) = x1; }'),   # 2!
+-    'L_x_gt':        (['a', 'b'], ['c'], 'c = -(UNS64)((INT64)a > (INT64)b);'),   # Iteration 299: >
+-    'L_x_zeq':       (['a'], ['f'], 'f = -(UNS64)(a == 0);'),   # 0=
+-    'L_x_do':        (['a', 'b'], [], 'RPUSH(a); RPUSH(b);'),
+-    'L_x_execute':   (['x'], [], 'RPUSH(ip); ip = x;'),
+-    'L_x_unloop':    ([], [], 'rp += 2 * CELL_BYTES;'),
+-    'L_x_leave':     ([], [], 'rp += 2 * CELL_BYTES; ip += (int16_t)LD16(ip);'),
+-    'L_x_loop':      ([], [], '{ UNS64 i_ = RS + 1; if (i_ == CELL(rp + CELL_BYTES)) { rp += 2 * CELL_BYTES; ip += 2; } '
+-                              'else { CELL(rp) = i_; ip += (int16_t)LD16(ip); } }'),
+-    'L_x_qdo':       (['a', 'b'], [], 'if (a != b) { RPUSH(a); RPUSH(b); ip += 2; } else ip += (int16_t)LD16(ip);'),
+-    'L_x_ploop':     (['n'], [], '{ UNS64 i_ = RS, l_ = CELL(rp + CELL_BYTES), j_ = i_ + n; '
+-                                 'if ((INT64)(((i_ - l_) ^ (j_ - l_)) & ((i_ - l_) ^ n)) < 0) { rp += 2 * CELL_BYTES; ip += 2; } '
+-                                 'else { CELL(rp) = j_; ip += (int16_t)LD16(ip); } }'),
+-    'L_x_br8':       ([], [], 'ip += (int8_t)BYTE(ip);'),
+-    'L_x_qbr8':      (['f'], [], 'if (f) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_nqbr':      (['f'], [], 'if (f) ip += (int16_t)LD16(ip); else ip += 2;'),
+-    'L_x_nqbr8':     (['f'], [], 'if (f) ip += (int8_t)BYTE(ip); else ip += 1;'),
+-    'L_x_ltbr':      (['a', 'b'], [], 'if ((INT64)a < (INT64)b) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_ltbr8':     (['a', 'b'], [], 'if ((INT64)a < (INT64)b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_eqbr':         (['a', 'b'], [], 'if (a == b) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_eqbr8':        (['a', 'b'], [], 'if (a == b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_ultbr':        (['a', 'b'], [], 'if (a < b) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_ultbr8':       (['a', 'b'], [], 'if (a < b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_nebr':         (['a', 'b'], [], 'if (a != b) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_nebr8':        (['a', 'b'], [], 'if (a != b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_sgtbr':        (['a', 'b'], [], 'if ((INT64)a > (INT64)b) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_sgtbr8':       (['a', 'b'], [], 'if ((INT64)a > (INT64)b) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_zltbr':        (['a'], [], 'if ((INT64)a < 0) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_zltbr8':       (['a'], [], 'if ((INT64)a < 0) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_eqibr':        (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_eqibr8':       (['a'], [], 'UNS64 i_ = (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1; if (a == i_) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    # Iteration 33: tests that keep their value - what comes in goes out
+-    'L_x_dupbr':        (['f'], ['f'], 'if (f) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_dupbr8':       (['f'], ['f'], 'if (f) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    'L_x_overbr':       (['a', 'b'], ['a', 'b'], 'if (a) ip += 2; else ip += (int16_t)LD16(ip);'),
+-    'L_x_overbr8':      (['a', 'b'], ['a', 'b'], 'if (a) ip += 1; else ip += (int8_t)BYTE(ip);'),
+-    # Iteration 34
+-    'L_x_dupnbr':       (['f'], ['f'], 'if (f) ip += (int16_t)LD16(ip); else ip += 2;'),
+-    'L_x_dupnbr8':      (['f'], ['f'], 'if (f) ip += (int8_t)BYTE(ip); else ip += 1;'),
+-    'L_x_swapaddi':     (['a', 'b'], ['b', 'c'], 'c = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1;'),
+-    'L_x_dupaddi':      (['a'], ['a', 'c'], 'c = a + (UNS64)(INT64)(int8_t)BYTE(ip); ip += 1;'),
+-    'L_x_duplti':       (['a'], ['a', 'c'], 'c = -(UNS64)((INT64)a < (INT64)(int8_t)BYTE(ip)); ip += 1;'),
+-    # Iteration 50
+-    'L_x_fill':         (['a', 'u', 'c'], [], '{ UNS64 a_ = a, u_ = u; while (u_) { BYTE(a_) = (UNS8)c; a_++; u_--; } }'),
+-    'L_x_threadfind':   (['a', 'nb'], ['r'], '{ UNS64 a_ = a, nb_ = nb; UNS8 n_ = BYTE(nb_); while (a_) {     if ((BYTE(a_) & 31) == n_) { UNS64 k_ = 0; while (k_ < n_ && BYTE(a_ + 1 + k_) == BYTE(nb_ + 1 + k_)) k_++; if (k_ == n_) break; }     a_ = PREVNFA(a_); } r = a_; }'),
+-    'L_x_scan':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) > 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) != c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_skip':         (['a', 'u', 'c'], ['a2', 'u2'], '{ UNS64 a_ = a, u_ = u; if (c == 32) while (u_ && BYTE(a_) <= 32) { a_++; u_--; } else while (u_ && (UNS64)BYTE(a_) == c) { a_++; u_--; } a2 = a_; u2 = u_; }'),
+-    'L_x_find':         (['c', 'nb', 'ctx', 'n'], ['x', 'f'], '{ UNS64 n_ = n, ctx_ = ctx, nb_ = nb, c_ = c, x_ = c_, r_ = 0; if ((INT64)n_ > 1 && CELL(ctx_ + (n_ - 1) * CELL_BYTES) == CELL(ctx_ + (n_ - 2) * CELL_BYTES)) n_--; while (n_) { UNS64 w_, u_, k_, h_, a_; UNS8 m_; n_--; w_ = CELL(ctx_ + n_ * CELL_BYTES); u_ = BYTE(c_); if ((INT64)u_ > 32) u_ = 32; BYTE(nb_) = (UNS8)u_; for (k_ = 0; k_ < u_; k_++) BYTE(nb_ + 1 + k_) = BYTE(c_ + 1 + k_); h_ = (UNS64)BYTE(nb_ + 1) << 1; if ((INT64)u_ > 1) h_ ^= (UNS64)BYTE(nb_ + 2) << 2; h_ = (h_ ^ u_) & (CELL(w_) - 1); a_ = CELL(w_ + (h_ + 1) * CELL_BYTES); m_ = BYTE(nb_); while (a_) { if ((BYTE(a_) & 31) == m_) { UNS64 j_ = 0; while (j_ < m_ && BYTE(a_ + 1 + j_) == BYTE(nb_ + 1 + j_)) j_++; if (j_ == m_) break; } a_ = PREVNFA(a_); } if (a_) { x_ = a_ + 1 + (BYTE(a_) & 31); r_ = (BYTE(a_) & 64) ? 1 : (UNS64)-1; break; } } x = x_; f = r_; }'),
+-    'L_x_tonumber':     (['lo', 'hi', 'a', 'u', 'b'], ['lo2', 'hi2', 'a2', 'u2'], '{ UNS64 b_ = b, u_ = u, a_ = a, hi_ = hi, lo_ = lo; while (u_) { INT64 d_ = (INT64)BYTE(a_) - 48; UNS64 ph_, pl_; if (d_ < 0 || (d_ > 9 && d_ < 17)) break; if (d_ > 9) d_ -= 7; if (!(d_ < (INT64)b_)) break; ph_ = lo_; pl_ = b_; umul(&ph_, &pl_); hi_ = ph_ + hi_ * b_; lo_ = pl_ + (UNS64)d_; if (lo_ < pl_) hi_++; a_++; u_--; } lo2 = lo_; hi2 = hi_; a2 = a_; u2 = u_; }'),
+-    'L_x_numberq':      (['a', 'b', 'p'], ['lo', 'hi', 'f'], '{ UNS64 lo_, hi_, f_ = numberq(a, b, p, &lo_, &hi_); lo = lo_; hi = hi_; f = f_; }'),   # Iteration 295: (NUMBER?)
+-    'L_x_parse':        (['a', 'u', 'c'], ['a1', 'n', 'v'], '{ UNS64 p_ = a, u_ = u, s_, r1_, r2_, r3_; if (c == 32) { while (u_ && BYTE(p_) <= 32) { p_++; u_--; } s_ = p_; while (u_ && BYTE(p_) > 32) { p_++; u_--; } } else { while (u_ && (UNS64)BYTE(p_) == c) { p_++; u_--; } s_ = p_; while (u_ && (UNS64)BYTE(p_) != c) { p_++; u_--; } } r1_ = s_; r2_ = p_ - s_; r3_ = (p_ - a) + (u_ ? 1 : 0); a1 = r1_; n = r2_; v = r3_; }'),
+-    'L_x_hash':         (['a', 'u', 't'], ['n'], '{ UNS64 h_ = (UNS64)BYTE(a) << 1; if ((INT64)u > 1) h_ ^= (UNS64)BYTE(a + 1) << 2; h_ = (h_ ^ u) & (t - 1); n = h_; }'),
+-    'L_x_place':        (['s', 'n', 'd'], [], '{ UNS64 d_ = d, s_ = s, n_ = n; BYTE(d_) = (UNS8)n_; d_++; while (n_) { BYTE(d_) = BYTE(s_); d_++; s_++; n_--; } }'),
+-    'L_x_cmove':        (['s', 'd', 'u'], [], '{ UNS64 s_ = s, d_ = d, u_ = u; while (u_) { BYTE(d_) = BYTE(s_); s_++; d_++; u_--; } }'),
+-}
+-STACKFREE = ['L_noop', 'L_exit', 'L_branch', 'L_hcall']   # L_hcall: one-byte calls (Iteration 14)
+-
+-def rename(code, mp):
+-    """Whole-word renaming of a spec's declared names - not its C."""
+-    if not mp or not code: return code
+-    pat = r'\b(%s)\b' % '|'.join(sorted(map(re.escape, mp), key=len, reverse=True))
+-    return re.sub(pat, lambda m: mp[m.group(1)], code)
+-
+-def compose(A, B):
+-    """A then B as one stack effect: B takes A's outputs first, then
+-    deeper items; what passes between them becomes a temporary."""
+-    n = [0]
+-    def fresh(): n[0] += 1; return 'z%d' % n[0]
+-    stack, inputs, code = [], [], []
+-    for ins, outs, c, *_ in (A, B):
+-        mp = {x: fresh() for x in dict.fromkeys(ins + outs)}
+-        got = []
+-        for _ in ins:
+-            if stack: got.append(stack.pop())
+-            else: z = fresh(); inputs.insert(0, z); got.append(z)
+-        for x, z in zip(ins, reversed(got)): mp[x] = z
+-        code.append(rename(c, mp))
+-        stack += [mp[x] for x in outs]
+-    temps = sorted({z for c in code for z in re.findall(r'\bz\d+\b', c)} - set(inputs) - set(stack))
+-    return (inputs, stack, ' '.join(c for c in code if c), temps)
+-
+-def variant(label, spec, s):
+-    ins, outs, code = spec[:3]
+-    temps = spec[3] if len(spec) > 3 else []
+-    regs = ['tos', 'nos'][:s]
+-    v = lambda n: 'v_' + n
+-    st = []
+-    for k in range(len(ins)):                      # k = 0 is the top
+-        src = regs[k] if k < s else 'CELL(dsp + %d * CELL_BYTES)' % (k - s)
+-        st.append('UNS64 %s = %s;' % (v(ins[len(ins) - 1 - k]), src))
+-    rem = []                                       # cached items below the inputs, top first
+-    for k in range(len(ins), s):
+-        st.append('UNS64 r%d_ = %s;' % (k, regs[k])); rem.append('r%d_' % k)
+-    st += ['UNS64 %s;' % v(o) for o in dict.fromkeys(list(outs) + list(temps)) if o not in ins]
+-    if code: st.append(rename(code, {x: v(x) for x in set(ins) | set(outs) | set(temps)}))
+-    if len(ins) > s: st.append('dsp += %d * CELL_BYTES;' % (len(ins) - s))
+-    items = [v(o) for o in reversed(outs)] + rem   # the new stack, top first
+-    so = min(2, len(items))
+-    for x in reversed(items[so:]): st.append('SPILLX(%s);' % x)   # deepest first
+-    if so >= 1: st.append('tos = %s;' % items[0])
+-    if so == 2: st.append('nos = %s;' % items[1])
+-    st.append('NEXT_S%d();' % so)
+-    return '%s__s%d: { %s }\n' % (label, s, ' '.join(st))
+-
+-src = open(sys.argv[1]).read()
+-import os
+-labs = set(re.findall(r'^(L_\w+):', src, re.M))
+-
+-def conditions(text):
+-    """Each label defined once -> the condition it is defined under, as one
+-    #if expression (absent: unconditional). Everything generated here for a
+-    handler - its variants, and the comparison with its address that fills
+-    the state tables - must exist exactly when the handler does: the
+-    tables compared with &&L_eqix unconditionally, so multi-state caching
+-    without specialisations could not compile; nor, once gen-tos.py kept
+-    the format-10 handlers in their own #if (Iteration 5), without them."""
+-    frames, where, count = [], {}, {}
+-    for line in text.splitlines():
+-        m = re.match(r'\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b\s*(.*)', line)
+-        if m:
+-            k, e = m.group(1), m.group(2).split('/*')[0].split('//')[0].strip()
+-            if k == 'if': frames.append([[], '(%s)' % e])
+-            elif k == 'ifdef': frames.append([[], 'defined(%s)' % e])
+-            elif k == 'ifndef': frames.append([[], '!defined(%s)' % e])
+-            elif k == 'elif': frames[-1][0].append(frames[-1][1]); frames[-1][1] = '(%s)' % e
+-            elif k == 'else': frames[-1][0].append(frames[-1][1]); frames[-1][1] = None
+-            else: frames.pop()
+-            continue
+-        m = re.match(r'^(L_\w+):', line)
+-        if m:
+-            l = m.group(1); count[l] = count.get(l, 0) + 1
+-            parts = [p for prev, cur in frames for p in ['!' + x for x in prev] + ([cur] if cur else [])]
+-            where[l] = ' && '.join(parts)
+-    return {l: c for l, c in where.items() if count[l] == 1 and c}
+-COND = conditions(src)
+-def under(l, text):
+-    """text, compiled exactly when handler l is"""
+-    return '#if %s\n%s#endif\n' % (COND[l], text) if l in COND else text
+-specs = {l: sp for l, sp in SPECS.items() if l in labs}
+-# the folds (gen-fold.py: LX_name, prim then EXIT, in vm-fold-bodies.h): the
+-# primitive's stack effect, then the return
+-fb = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'vm-fold-bodies.h')
+-if os.path.exists(fb) and '#if FOLD' in src:
+-    for l in re.findall(r'^(LX_\w+):', open(fb).read(), re.M):
+-        base = 'L' + l[2:]
+-        if base in specs:
+-            ins, outs, code = specs[base][:3]
+-            specs[l] = (ins, outs, (code + ' ' if code else '') + 'ip = RS; rp += CELL_BYTES;')
+-# the superinstructions (gen-super.py: LS_k, "/* FIRST SECOND */", in
+-# vm-super-bodies.h): their two halves' effects, composed
+-sb = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), 'vm-super-bodies.h')
+-if os.path.exists(sb) and '#if SUPER' in src:
+-    prims = [l.split()[1] for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'forth', 'kernel.4'))
+-             if l.startswith('PRIMITIVE')]
+-    tab = src[src.index('static const void *const dispatch[] = {'):]
+-    order = re.findall(r'(?:&&|DSP\()(L_\w+)', tab[:tab.index('};')])   # DSP(): Iteration 237
+-    for l, a, b in re.findall(r'^(LS_\d+): /\* (\S+) (\S+) \*/', open(sb).read(), re.M):
+-        la, lb = order[prims.index(a)], order[prims.index(b)]
+-        if la in SPECS and lb in SPECS: specs[l] = compose(SPECS[la], SPECS[lb])
+-
+-# macros, after the cached engine's own
+-m = src.index('#define FILLNEXT() do { POPT(); NEXT(); } while (0)\n') + len('#define FILLNEXT() do { POPT(); NEXT(); } while (0)\n')
+-src = src[:m] + '''/* multi-state stack caching (tools/gen-msc.py) */
+-#if TAG2   /* the two-bit tag (Iteration 70): its own tables, one per state */
+-#define NEXT_S0() do { t = BYTE(ip); ip += 1; goto *t2tab_0[t]; } while (0)
+-#define NEXT_S2() do { t = BYTE(ip); ip += 1; goto *t2tab_2[t]; } while (0)
+-#define S1TAB t2tab
+-#else
+-#define NEXT_S0() do { t = BYTE(ip); ip += 1; goto *dtab256_0[t]; } while (0)
+-#define NEXT_S2() do { t = BYTE(ip); ip += 1; goto *dtab256_2[t]; } while (0)
+-#define S1TAB dtab256
+-#endif
+-#define NEXT_S1() NEXT()
+-#if GUARD
+-#define SPILLX(x) do { dsp -= CELL_BYTES; CELL(dsp) = (x); } while (0)
+-#else
+-#define SPILLX(x) do { dsp -= CELL_BYTES; if (dsp < dsp_limit) stack_fault(0); CELL(dsp) = (x); } while (0)
+-#endif
+-    UNS64 nos = 0;
+-''' + src[m:]
+-
+-# the tables for states 0 and 2, after the state-1 table is filled
+-fill = re.search(r'\n(\s*)dtab256\[i_\] = \(i_ < n_ && i_ < 128\) \? dispatch\[i_\] : (?:&&do_call|HCALL\(i_\));\n(\s*)\}\n', src)
+-assert fill, 'no 256-entry table to follow (build with DISPATCH256)'
+-cases = ''.join(under(l, '            if (dtab256[i_] == &&%s) { dtab256_0[i_] = &&%s__s0; dtab256[i_] = &&%s__s1; dtab256_2[i_] = &&%s__s2; }\n'
+-                % (l, l, l, l)) for l in specs)
+-cases += ''.join(under(l, '            if (dtab256[i_] == &&%s) { dtab256_0[i_] = &&%s__0; dtab256_2[i_] = &&%s__2; }\n'
+-                 % (l, l, l)) for l in STACKFREE if l in labs)
+-src = src[:fill.end()] + '''    static const void *dtab256_0[256], *dtab256_2[256];
+-    if (!dtab256_0[0]) {
+-        int i_;
+-        for (i_ = 0; i_ < 256; i_++) {
+-%s            if (i_ >= 128) { dtab256_0[i_] = &&do_call__0; dtab256_2[i_] = &&do_call__2; continue; }
+-            dtab256_0[i_] = &&L_norm0; dtab256_2[i_] = &&L_norm2;
+-%s        }
+-    }
+-#if TAG2
+-    static const void *t2tab_0[256], *t2tab_2[256];
+-    if (!t2tab_0[0]) {
+-        int i_;
+-        for (i_ = 0; i_ < 256; i_++) {
+-            if (i_ >= 64) {
+-                t2tab_0[i_] = i_ < 128 ? &&L_t2call2__0 : i_ < 192 ? &&L_t2call3__0 : &&L_t2call4__0;
+-                t2tab_2[i_] = i_ < 128 ? &&L_t2call2__2 : i_ < 192 ? &&L_t2call3__2 : &&L_t2call4__2;
+-                continue;
+-            }
+-            t2tab_0[i_] = &&L_norm0; t2tab_2[i_] = &&L_norm2;
+-%s        }
+-    }
+-#endif
+-''' % (('#if HOTCALLS\n            if (i_ >= 0xE0) { dtab256_0[i_] = &&L_hcall__0; dtab256_2[i_] = &&L_hcall__2; continue; }\n#endif\n'
+-       if 'L_hcall' in labs else ''), cases, cases.replace('dtab256', 't2tab')) + src[fill.end():]
+-
+-# the variants, the normalisers and the per-state copies
+-dc = src.index('\ndo_call:\n') + 1
+-dce = src.index('    NEXT();\n#endif\n', dc) + len('    NEXT();\n')
+-call = src[dc:dce]
+-gen = ['/* ---- multi-state stack caching: generated by tools/gen-msc.py ---- */\n',
+-       'L_norm0: tos = CELL(dsp); dsp += CELL_BYTES; goto *S1TAB[t];         /* 0 -> 1 */\n',
+-       'L_norm2: SPILLX(nos); goto *S1TAB[t];                                 /* 2 -> 1 */\n']
+-# the two-bit tag's calls, one copy per state: they never touch the data stack
+-t2a = src.find('\nL_t2call2:')
+-if t2a >= 0:
+-    t2e = src.index('NEXT();', src.index('\nt2call:', t2a)) + len('NEXT();')
+-    t2blk = src[t2a + 1:t2e]
+-    for s in (0, 2):
+-        b = t2blk
+-        for lb in ('L_t2call2', 'L_t2call3', 'L_t2call4', 't2call'):
+-            b = re.sub(r'\b%s\b' % lb, '%s__%d' % (lb, s), b)
+-        gen.append('#if ENC == 3 && TAG2\n' + b.replace('NEXT();', 'NEXT_S%d();' % s) + '\n#endif\n')
+-for s in (0, 2):
+-    gen.append(call.replace('do_call:', 'do_call__%d:' % s).replace('NEXT();', 'NEXT_S%d();' % s))
+-    for l in STACKFREE:
+-        if l not in labs: continue
+-        b = re.search(r'^%s:(.*?NEXT\(\);)' % l, src, re.M | re.S).group(1)   # to its own NEXT: L_branch has one per encoding
+-        gen.append(under(l, '%s__%d:%s\n' % (l, s, b.replace('NEXT();', 'NEXT_S%d();' % s))))
+-for l, sp in specs.items():
+-    gen.append(under(l, ''.join(variant(l, sp, s) for s in (0, 1, 2))))
+-# at the end of the handlers, where every macro they use is defined (SLOT)
+-i = src.index('#if FOLD\n#define EXITNEXT()')
+-src = src[:i] + ''.join(gen) + src[i:]
+-open(sys.argv[1], 'w').write(src)
+-print('%d primitives in three states, %d stack-free handlers copied' % (len(specs), len([l for l in STACKFREE if l in labs])))
+diff --git a/tools/run-tests.sh b/tools/run-tests.sh
+index 93dae02..fabfa4d 100755
+--- a/tools/run-tests.sh
++++ b/tools/run-tests.sh
+@@ -391,7 +391,7 @@ else printf '  %-12s FAIL   %s\n' clockcheck "$(printf '%s' "$out" | tail -1 | c
+ # The engine generators (Iteration 249): seed 46 lost every design with the
+ # gene tail - an engine change broke gen-tail.py's engines and nothing built
+ # one before the run. lab/evolve/engines-check.py builds s6-cv8b down every
+-# generator's path (gen-msc, gen-tail, gen-super, gen-opcall, format-10, the
++# generator's path (gen-tail, gen-super, gen-opcall, format-10, the
+ # escape byte, the tag, the JIT and its genes, the fsys levels) and runs the
+ # corpus on each - about 90 s, here, before every run.
+ echo
