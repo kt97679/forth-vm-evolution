@@ -909,6 +909,8 @@ T2RANK = os.path.join(ROOT, 'lab', 'evolve', 'tag2-rank-v1.json')   # the refere
 T2HOT = [0.02, 0.0, 0.05, 100.0]
 # Iteration 71: --require tag2 - every design of the run, the hand-made
 # references excepted, in the two-bit tag (with byte headers)
+# Iteration 602: --require nojit - every design of the run, the references excepted, without the JIT (jit=0): the
+# portable run (results/drafts/portable-plan-602.md) - relf's CV8 is portable, the JIT x86 only
 REQUIRE = []
 # Iteration 409 (the owner: the simplicity review, results/drafts/simplicity-proposal-408.md): genes the search no longer
 # varies. On in every front design of seeds 53-60 (1,431 - bss and lean in all but one and two), so frozen on: bytehdr,
@@ -952,6 +954,7 @@ FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall':
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1)
+    if 'nojit' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, jit=0)   # Iteration 602: the portable run - every design without the JIT
     return g
 
 def _build(g, d):
@@ -1447,6 +1450,7 @@ def mutate(g, rnd):
     g = canon(g); what = []
     for _ in range(rnd.choice([1, 1, 2])):
         pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if not (g['enc'] == 'cv8' and x in FROZEN)] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's; 590: CV8's, as require()
+        if 'nojit' in REQUIRE: pool = [x for x in pool if not x.startswith('jit')]   # 602: the JIT's genes dormant in every design - a mutation there repeats its parent
         k = rnd.choice(pool)
         if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
         if k == 'enc':

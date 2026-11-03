@@ -46,11 +46,14 @@ python3 lab/evolve/progress-table.py > results/progress-by-run.md && say "result
 
 PD=$(dirname "$(dirname "$(dirname "$DB")")")                              # process-seed.sh's markers (573)
 if [ -f "$PD/random" ]; then say "seed $N is the random baseline - no gene votes (random designs vote for nothing)"   # 573
+elif [ -f "$PD/portable" ]; then say "seed $N is the portable run - no gene votes (the JIT forced off would vote against every JIT gene)"   # 602
 elif grep -q "^| $N | " results/gene-votes.md; then say "gene-votes.md has seed $N already - not appended"      # 3.
 else python3 lab/evolve/review-checks.py votes "$RES" --seed "$N" --db "$DB" --ledger results/gene-votes.md --append > /dev/null &&
     say "gene votes appended: $(grep -c "^| $N | " results/gene-votes.md) genes"; fi
 if [ -f "$PD/random" ]; then if grep -q "\"random\": $N," results/stopping-series.md; then say "stopping-series.md has random $N already - not appended"
     else python3 lab/evolve/baseline.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep '^The final front' | cut -c1-200 | sed 's/^/process-records: random line appended, no series line - /'; fi
+elif [ -f "$PD/portable" ]; then if grep -q "\"portable\": $N," results/stopping-series.md; then say "stopping-series.md has portable $N already - not appended"   # 602
+    else python3 lab/evolve/portable.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep '^verdict' | sed 's/^/process-records: portable line appended, no series line - /'; fi
 elif [ -f "$PD/confirmation" ]; then if grep -q "\"confirmation\": $N," results/stopping-series.md; then say "stopping-series.md has confirmation $N already - not appended"   # 573
     else python3 lab/evolve/confirm.py "$DB" --seed "$N" --ledger results/stopping-series.md --append | grep '^verdict' | sed 's/^/process-records: confirmation line appended, no series line - /'; fi
 elif grep -q "\"seed\": $N," results/stopping-series.md; then say "stopping-series.md has seed $N already - not appended"

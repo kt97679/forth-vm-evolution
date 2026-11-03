@@ -36,10 +36,13 @@ hv = next((l.strip() for l in subprocess.run([sys.executable, os.path.join(HERE,
 CONF = os.path.exists(os.path.join(P, 'confirmation'))   # 573: the confirmation run (process-seed.sh's marker) - confirm.py's test, not the series'
 cf_ = os.path.join(P, 'confirm.txt')
 RAND = os.path.exists(os.path.join(P, 'random'))           # 573: the random-search baseline (GOALS.md step 4)
-so = '' if CONF or RAND else subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
+PORT = os.path.exists(os.path.join(P, 'portable'))         # 602: the portable run (results/drafts/portable-plan-602.md)
+so = '' if CONF or RAND or PORT else subprocess.run([sys.executable, os.path.join(HERE, 'stopping.py'), db, '--seed', str(N)], capture_output=True, text=True).stdout   # 554
 co = (open(cf_).read() if os.path.exists(cf_) else subprocess.run([sys.executable, os.path.join(HERE, 'confirm.py'), db, '--seed', str(N)],
       capture_output=True, text=True).stdout) if CONF else ''
 conf_ = ' '.join(l.strip().rstrip('.') + '.' for l in co.split('\n') if l.startswith(('verdict:', 'What it added:', 'the screen:'))) or 'TODO: confirm.py gave no verdict (confirm.txt).'
+pt_ = open(os.path.join(P, 'portable.txt')).read().split('\n') if PORT and os.path.exists(os.path.join(P, 'portable.txt')) else []   # 602
+port_ = ' '.join(l.strip() for l in pt_ if l.startswith(('verdict', 'The run\'s designs on the union'))) or 'TODO: portable.py gave no verdict (portable.txt).'
 bt = open(os.path.join(P, 'baseline.txt')).read().split('\n') if RAND and os.path.exists(os.path.join(P, 'baseline.txt')) else []
 row_ = lambda k: next((l.strip('| ').split(' | ') for l in bt if l.startswith('| ' + k + ' |')), None)
 base_ = ('values, not a test - against the series\' median at the same generation (%s): %s. %s' % (
@@ -94,6 +97,7 @@ head = '\n'.join(x for x in [
  '**The front**: the true one %d designs - the report\'s %d%s.' % (len(T), len(Rf), ', the same' if Rf == set(T) else ' - TODO: why they differ'), '',
  '**The fixed-box hypervolume**: %s. %s' % (hv.split(': ', 1)[-1], ('**The confirmation test** (confirm.py, confirm.txt; GOALS.md step 2): %s' % conf_) if CONF
      else ('**The random-search baseline** (baseline.py, baseline.txt; GOALS.md step 4): %s' % base_) if RAND
+     else ('**The portable run** (portable.py, portable.txt; results/drafts/portable-plan-602.md): %s' % port_) if PORT
      else '**The stopping rule** (stopping.py, results/stopping-series.md): %s' % stop_), '',
  '**The final set, re-measured** (final-pick.py, finalpick.txt - GOALS.md step 3): %s' % (fp_ or 'TODO: final-pick.py did not run (summary.md).') if RAND else None, '',
  '**The final set** (final-set.py, finalset.txt - GOALS.md step 3, from the pool and this run): %s' % txt('finalset', 1, 2) if CONF and os.path.exists(os.path.join(P, 'finalset.txt')) else None, '',
@@ -119,7 +123,7 @@ head = '\n'.join(x for x in [
  '**The deaths**: %s. [process-finish: deaths-check]' % (', '.join('%s %s' % (v, k) for k, v in cnt.items() if re.match('(died|wrong output)', k or '')) or 'none'), '',
  '**The chain on master**: [process-finish: the chain]', '',
  ('TODO: the confirmation verdict and the genes\' screen judged (confirm.txt; GOALS.md step 2), the final set\'s next step (finalset.txt; step 3), '
-  'the predictions scored (results/predictions.md) - summary.md.' if CONF else ('TODO: the baseline set beside the series as values (baseline.txt; GOALS.md step 4), the final set from the re-measures (finalpick.txt; step 3), the predictions scored (results/predictions.md) - summary.md.') if RAND else 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.')]
+  'the predictions scored (results/predictions.md) - summary.md.' if CONF else ('TODO: the portable verdict judged (portable.txt), the portable designs found before re-measured (portablepick.txt), the follow-up re-measure planned (results/drafts/portable-plan-602.md), the predictions scored - summary.md.') if PORT else ('TODO: the baseline set beside the series as values (baseline.txt; GOALS.md step 4), the final set from the re-measures (finalpick.txt; step 3), the predictions scored (results/predictions.md) - summary.md.') if RAND else 'TODO: the verdict (rule 1) and the predictions scored (results/predictions.md) - summary.md.')]
  if x is not None)
 out = os.path.join(ROOT, 'results', 'evolve-%s-seed%d.md' % (mach, N))
 cd_ = os.path.join(P, 'candidates-final.md')       # 573: the re-measure's candidates, where xcheck.py --also @FILE finds them on a host

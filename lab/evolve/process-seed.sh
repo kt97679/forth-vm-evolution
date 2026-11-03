@@ -44,6 +44,7 @@ if [ -n "$SP" ]; then
     W=$({ grep -h '^seed ' "$SP/machine.txt"; sed -n 's/^ok \(seed .*\)/\1/p' "$C/steps"; } 2> /dev/null | head -n 1)   # the run's WANT
     case " $W $(cat "$C/line" 2> /dev/null) " in *" carryall "*) echo carryall > "$OUT/confirmation" ;; esac
     case " $W " in *" random "*) echo random > "$OUT/random" ;; esac      # 573: the random-search baseline, GOALS.md step 4
+    case " $W " in *" nojit "*) echo nojit > "$OUT/portable" ;; esac      # 602: the portable run (results/drafts/portable-plan-602.md)
     if [ -f "$OUT/confirmation" ]; then
         # the final set's draft first: its candidates (573) are a place confirm.py's KEEP looks
         python3 "$EV/final-set.py" $(python3 "$EV/confirm.py" --pool-files "$VN") "$SP/db.jsonl" --json finalset.json --candidates candidates-final.md > finalset.txt 2>&1
@@ -53,6 +54,14 @@ if [ -n "$SP" ]; then
         p "- the restore (next-run.log): $(grep -c 'restore-archives: seed [0-9]* - archived' "$SP/next-run.log" 2>/dev/null) restored - seeds $(sed -n 's/.*restore-archives: seed \([0-9]*\) - archived.*/\1/p' "$SP/next-run.log" 2>/dev/null | tr '\n' ' ')"
         p ""; p "## final-set.py (finalset.txt, finalset.json, candidates-final.md) - GOALS.md step 3's draft from the pool and this run"; p '```'
         sed -n '3p' finalset.txt | cut -c1-400 >> "$S"; grep '^| [0-9]' finalset.txt | cut -c1-200 >> "$S"; grep '^The candidates' finalset.txt | cut -c1-300 >> "$S"; p '```'
+    elif [ -f "$OUT/portable" ]; then      # 602: the portable run - no series run; beside the portable designs found before it
+        python3 "$EV/portable.py" "$SP/db.jsonl" --seed "$VN" > portable.txt 2>&1
+        p ""; p "## portable.py (portable.txt) - the portable run beside the portable designs found before it (portable-plan-602.md)"; p '```'; grep -v '^|---' portable.txt | cut -c1-300 >> "$S"; p '```'
+        LT=$(ls "$OUT"/*-loadtest-*/pack/loadtest.md 2> /dev/null | tail -n 1)
+        if [ -n "$LT" ]; then                  # the chain's re-measure of the 282 found before, beside dream and the Tegra
+            python3 "$EV/final-pick.py" "$REPO/results/portable-front-seed86.md" "$LT" $(ls "$C"/remote/*/out.json 2> /dev/null) --json portablepick.json > portablepick.txt 2>&1
+            p ""; p "## final-pick.py (portablepick.txt, portablepick.json) - the portable designs found before, re-measured on the three machines"; p '```'; grep -v '^|---' portablepick.txt | cut -c1-260 >> "$S"; p '```'
+        else p ""; p "## final-pick.py on the portable designs - not run: no loadtest pack in the chain"; fi
     elif [ -f "$OUT/random" ]; then        # 573: the random-search baseline (GOALS.md step 4) - no series run; values, not a test
         python3 "$EV/baseline.py" "$SP/db.jsonl" --seed "$VN" > baseline.txt 2>&1
         p ""; p "## baseline.py (baseline.txt) - GOALS.md step 4: the random run beside the series"; p '```'; grep -v '^|---' baseline.txt | cut -c1-300 >> "$S"; p '```'

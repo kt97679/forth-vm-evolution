@@ -556,7 +556,7 @@ if [ -n "$CARRY" ]; then
 else
     set --
 fi
-if [ -n "${REQ:-}" ]; then set -- "$@" --require "$REQ"; say "every design of the run in the two-bit tag"; fi
+if [ -n "${REQ:-}" ]; then set -- "$@" --require "$REQ"; case $REQ in nojit) say "every design of the run without the JIT - the portable run (602)" ;; *) say "every design of the run in the two-bit tag" ;; esac; fi
 if [ -n "$CHAIN" ] && [ -s "$CHAIN/remote/hosts" ] && [ ! -e "$CHAIN/remote/launched" ] && ! ls "$CHAIN"/remote/*/until > /dev/null 2>&1; then   # 379: launched, even if not started yet
     step "the remote checks started - the previous front, measured there alongside (lab/evolve/REMOTES)"
     RUN_UNTIL=${UNTIL:-} sh lab/evolve/remote-checks.sh start "$CHAIN" || true   # Iteration 315: never costs the run; 429: no check past the evolution's end
