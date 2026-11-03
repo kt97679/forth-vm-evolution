@@ -107,6 +107,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `pack-designs.py` - designs packed for another project (Iteration 601, relf): each built at both widths by build(), its engine, image, C source as compiled and build commands, checked against s6 on the nine workloads.
 - `portable.py` - the portable run (seed N nojit) beside the portable designs found before it, by the stopping rule's thresholds; its own ledger line (Iteration 602).
 - `portable-followup.py` - the portable run's follow-up chain: the run's best on the union's front beside the 282's re-measured set, its list and its NEXT-RUN and REMOTES lines sized from measured rates (Iteration 604).
+- `export-designs.py` - designs exported so `make` builds them: each one's real source (the compiler's own -MM), a Makefile, the image shipped; checked byte for byte against the lab's build in a fresh directory (Iteration 608).
 - `repeat-fits.sh` - whether one more session of a repeated experiment ends by the chain's deadline - the remote lines' last (Iteration 591, chain D): next-run.sh's then_next asks it; REMOTES' --sessions K is the hosts' side.
 - `outbuf-check.py` - outbuf-check.py [ID] - does output buffering break anything? (Iteration 207)
 - `price.py` - price.py ID [ID ...] [--db FILE] - what a fusion could save, before building it

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 607.
+- master: Iteration 608.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -77,6 +77,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   stopping rule's thresholds, fixed now), final-pick.py on the 282 across machines; then a short chain re-measuring the
   run's best beside the 282's best, and the relf handoff's portable roles updated. Rehearsed in a scratch clone: 29
   records, none with the JIT; next-run.sh's parse of the line tested.
+- **`make` builds the winners (608; the owner: a working Forth from make, the image shipped as SOD32 did)** - the
+  top Makefile and designs/ (designs/README.md): the nine of the relf handoff by role name, each its engine's real
+  source and a Makefile, built from source; `make test`, `make libc` (the five portable ones, any host), `make 32`.
+  lab/evolve/export-designs.py writes them and checks, in a fresh directory, each engine byte for byte the lab's (18 of
+  18) and each C-library build running (5 of 5). After seed 87's follow-up, if a portable role changes: rerun it.
 - **The article (604; open item 8)** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
   article until he approves. Part one condensed from article/article-en.md (its paraphrases checked against it), part two

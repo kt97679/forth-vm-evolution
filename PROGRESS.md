@@ -10787,3 +10787,14 @@ confirmations 0.366-0.369, the random 0.188) and the pooled front's 444 as speed
 the random search's 30 and s6.
 Files: results/drafts/ascii-figures-607.py.
 
+## Iteration 608 - 2026-11-03 - Claude
+
+`make` builds the winning designs (the owner: interested folks get a working Forth by running make; the image shipped,
+as SOD32 did). lab/evolve/export-designs.py: each design built by build() with its commands recorded, the compiler's
+own -MM for the files it reads (copied into src/ and src32/ - the widths' generated headers share names), the compile
+line made relative into a Makefile; build() tightens the engine in-process (tools/elf_tight.py), so the check tightens
+the Makefile's output the same way - 18 of 18 the lab's bytes, in a fresh directory; the C-library build (EVOLVE_LIBC=1,
+`make forth-libc`, any host) 5 of 5 running. The top Makefile (make, make NAME, make test, make libc, make 32), designs/
+with the nine by role name and designs/README.md, a quick start in README.md, one sentence in both article drafts.
+Tested as a user: make, make test (9 of 9), make libc.
+

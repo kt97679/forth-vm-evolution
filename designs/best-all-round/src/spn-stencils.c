@@ -1,0 +1,410 @@
+/*
+ *  spn-stencils.c - SPN: Stencil-Patched Native.
+ *
+ *  Every function here is a STENCIL: one Forth operation written as an
+ *  ordinary C function. They are never called. The Forth side reads their
+ *  machine code out of this binary, copies it back to back into executable
+ *  memory, and patches the holes. See forth/spn.4.
+ *
+ *  THE STATE. A stencil takes the data stack as (sp, tos): tos is the top
+ *  item, sp points at the second. Under the calling convention both arrive
+ *  in registers and leave in registers, so the top of stack is register-
+ *  cached across the whole native sequence with no allocator anywhere.
+ *
+ *  THE HOLES. A stencil marks what the patcher must fill in by referring
+ *  to one of four things, and the Forth side finds each reference exactly
+ *  rather than by guessing:
+ *
+ *    spn_next(...)   a tail call - "continue with the next operation".
+ *                    Found as a 32-bit relative jump whose target is
+ *                    exactly &spn_next. Retargeted to the next stencil,
+ *                    or dropped when the next stencil follows directly.
+ *    spn_jump(...)   a branch target. Same test against &spn_jump.
+ *    spn_call(...)   a call to another native word. Same test.
+ *    SPN_IMM         a literal. Emitted as an 8-byte immediate, found by
+ *                    its value.
+ *
+ *  A stencil that does not have the expected shape when the Forth side
+ *  inspects it is simply not used, so an unexpected compiler makes SPN
+ *  slower, never wrong.
+ *
+ *  RULES for writing a stencil: no calls except through the four markers,
+ *  no static data, nothing PC-relative - the code is moved.
+ */
+#include <stdint.h>
+#include "spn-abi.h"       /* cell, spn_st: registers in, registers out */
+
+typedef cell (*spn_io_fn)(cell, cell, cell);
+#if defined(__x86_64__)
+#define SPN_IMM_VALUE 0x5ea1ed5ea1ed5ea1LL
+/* A 32-bit hole, for when the literal fits. The compiler folds it into
+   the instruction itself - add $imm32, cmp $imm32 - one instruction where
+   the 64-bit hole needs a load and an operation. Chosen so its bytes do
+   not occur inside the 64-bit marker's. */
+#define IMM32 0x3c1a5e77L
+/* Two more 64-bit holes, filled with ENGINE addresses rather than
+   literals: the return-stack pointer that >R and R> share with the
+   interpreter, and the helper that lets native code call a word that
+   was not translated. Distinct values, so each is found unambiguously. */
+#define SPN_RP_VALUE 0x7ea1ed5ea1ed5e77LL
+#define SPN_FN_VALUE 0x6ea1ed5ea1ed5e66LL
+#define IMM_RP() ({ ucell *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RP_VALUE)); _v; })
+#define SPN_TH_VALUE 0x3ea1ed5ea1ed5e33LL     /* Iteration 475: the throw helper's address (jit.c's jit_throw0) */
+#define IMM_TH() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_TH_VALUE)); _v; })
+#define SPN_EX_VALUE 0x2ea1ed5ea1ed5e22LL     /* Iteration 476: EXECUTE's helper (jit.c's jit_exec) */
+#define IMM_EX() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_EX_VALUE)); _v; })
+#define SPN_RS_VALUE 0x1ea1ed5ea1ed5e11LL     /* Iteration 488: the resume helper's address (jit.c's jit_resume0) */
+#define IMM_RS() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_RS_VALUE)); _v; })
+#define IMM_FN() ({ void *_v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_FN_VALUE)); _v; })
+/* A fourth 64-bit hole, for READ and WRITE: the engine's I/O helper,
+   spn_io(op, c-addr, u) - 0 writes, 1 reads - so native code shares the
+   interpreter's buffers instead of crossing into it for every byte. */
+#define SPN_IO_VALUE 0x4ea1ed5ea1ed5e44LL
+#define IMM_IO() ({ spn_io_fn _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IO_VALUE)); _v; })
+#define IMM() ({ cell _v; __asm__("movabs %1, %0" : "=r"(_v) : "i"(SPN_IMM_VALUE)); _v; })
+#elif defined(__i386__)
+/* Iteration 460: 32-bit x86 - a cell is 4 bytes, so every hole is a mov $imm32 written by inline asm (B8+r),
+   found by its value; IMM32 folds into instructions as on x86-64. Values distinct, as ARM's. */
+#define SPN_IMM_VALUE 0x5ea1ed01
+#define SPN_RP_VALUE  0x7ea1ed02
+#define SPN_FN_VALUE  0x6ea1ed03
+#define SPN_IO_VALUE  0x4ea1ed04
+#define IMM32 0x3c1a5e77L
+#define HOLE(type, v) ({ type _v; __asm__("movl %1, %0" : "=r"(_v) : "i"(v)); _v; })
+#define IMM()    HOLE(cell, SPN_IMM_VALUE)
+#define IMM_RP() HOLE(ucell *, SPN_RP_VALUE)
+#define IMM_FN() HOLE(void *, SPN_FN_VALUE)
+#define IMM_IO() HOLE(spn_io_fn, SPN_IO_VALUE)
+#define SPN_TH_VALUE  0x3ea1ed05            /* Iteration 493: the helpers' holes at 32 bits too - UM/MOD's throw, */
+#define SPN_EX_VALUE  0x2ea1ed06            /* EXECUTE's helper, (ABORT")'s resume */
+#define SPN_RS_VALUE  0x1ea1ed07
+#define IMM_TH() HOLE(void *, SPN_TH_VALUE)
+#define IMM_EX() HOLE(void *, SPN_EX_VALUE)
+#define IMM_RS() HOLE(void *, SPN_RS_VALUE)
+#elif defined(__arm__)
+/* 32-bit ARM (Iteration 30): no 64-bit immediate, and none folded into an
+   instruction - every hole is a movw/movt pair, which the patcher finds by
+   its two 16-bit halves and refills. One pair per hole, each value its own,
+   so each is found unambiguously; IMM32 is a hole like the rest. */
+#define SPN_IMM_VALUE   0x5ea1ed01
+#define SPN_RP_VALUE    0x7ea1ed02
+#define SPN_FN_VALUE    0x6ea1ed03
+#define SPN_IO_VALUE    0x4ea1ed04
+#define SPN_IMM32_VALUE 0x3c1a5e77
+#define HOLE(type, v) ({ type _v; __asm__("movw %0, %1\n\tmovt %0, %2" : "=r"(_v) \
+                         : "i"((v) & 0xffff), "i"(((unsigned)(v) >> 16) & 0xffff)); _v; })
+#define IMM()    HOLE(cell, SPN_IMM_VALUE)
+#define IMM32    HOLE(cell, SPN_IMM32_VALUE)
+#define IMM_RP() HOLE(ucell *, SPN_RP_VALUE)
+#define IMM_FN() HOLE(void *, SPN_FN_VALUE)
+#define IMM_IO() HOLE(spn_io_fn, SPN_IO_VALUE)
+#endif
+
+/* Iteration 465, the gene jitrp: the return-stack pointer pinned in a register across the stencils
+   (Deegen's register pinning; Ertl and Paysan 2025, global register variables) - each >R, R>, I and loop step
+   then uses the register, where it loaded and stored jit_rp through the IMM_RP hole. The engine's file
+   declares the same register variable, so its own code leaves the register alone and the native call hands
+   the pointer over in it. x86-64 only; the register is the build's (JITRP_REG), clear of regpin's. */
+#if JITRP && defined(__x86_64__)
+#ifndef JITRP_REG
+#define JITRP_REG "r15"
+#endif
+register ucell spn_rpr __asm__(JITRP_REG);
+#define RPDECL
+#define RP spn_rpr
+#define RP_VALUE() spn_rpr
+#else
+#define RPDECL ucell *rpp = IMM_RP();
+#define RP (*rpp)
+#define RP_VALUE() (*IMM_RP())
+#endif
+
+/* The markers. Only DECLARED here, and defined in spn-markers.c. That is
+   deliberate: if the compiler can see a marker's body it learns the
+   marker never returns, clones it, strips its arguments and turns the tail
+   jumps into calls - every one of which breaks the stencil. Declared
+   extern, a marker is an opaque function and each call to it compiles to
+   the plain relative jump or call the patcher expects. */
+extern SPN_CC spn_st spn_next(cell *sp, cell tos);
+extern SPN_CC spn_st spn_jump(cell *sp, cell tos);
+extern SPN_CC spn_st spn_call(cell *sp, cell tos);
+
+#define S(name) __attribute__((noinline, used)) SPN_CC spn_st name(cell *sp, cell tos)
+#define GO(sp, tos) return spn_next(sp, tos)
+
+S(st_lit)   { *--sp = tos; GO(sp, IMM()); }
+S(st_dup)   { *--sp = tos; GO(sp, tos); }
+S(st_drop)  { GO(sp + 1, *sp); }
+S(st_swap)  { cell t = *sp; *sp = tos; GO(sp, t); }
+S(st_over)  { cell t = *sp; *--sp = tos; GO(sp, t); }
+S(st_rot)   { cell a = sp[1], b = sp[0]; sp[1] = b; sp[0] = tos; GO(sp, a); }
+S(st_plus)  { GO(sp + 1, tos + *sp); }
+S(st_addi)  { GO(sp, tos + IMM()); }
+S(st_eq)    { GO(sp + 1, -(*sp == tos)); }
+S(st_gt)    { GO(sp + 1, -(*sp > tos)); }
+S(st_lt)    { GO(sp + 1, -(*sp < tos)); }
+S(st_xor)   { GO(sp + 1, tos ^ *sp); }
+S(st_and)   { GO(sp + 1, tos & *sp); }
+S(st_negate){ GO(sp, -tos); }
+
+S(st_addi32) { GO(sp, tos + IMM32); }
+
+/* DUP n < IF, fused. IF jumps when the flag is FALSE - when NOT tos < n,
+   which is tos > n-1 - so the translator patches in n-1. Written as a
+   strict > on purpose: given tos >= C the compiler emits cmp $(C-1),
+   moving the constant, and the hole would no longer be found. The
+   comparison, the branch and the DUP that feeds it become one cmp and
+   one conditional jump, with nothing written to the stack. */
+S(st_dup_gti_br) { if (tos > IMM32) return spn_jump(sp, tos); GO(sp, tos); }
+
+/* ?BRANCH fused with the operation that makes its flag: one compare and
+   one conditional jump, no flag made and then tested. Each jumps where the
+   pair would - when the flag would have been zero - and leaves the stack
+   as the pair would. What feeds ?BRANCH, measured on the CV8 interpreter
+   (kernel, corpus, parse): 0= about 3% of everything dispatched, DUP 1-2%,
+   U< and = around 1%, then -, n= and OR. */
+#if SPN_FUSED_BR     /* s8 only: s7's engine scans the whole table at boot, and
+                       these would cost it time for stencils it never uses */
+S(st_nz_br)  { cell f = tos; tos = *sp++;                   /* 0= IF: jump if non-zero */
+               if (f != 0) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_dup_br) { if (tos == 0) return spn_jump(sp, tos); GO(sp, tos); }   /* DUP IF */
+S(st_ne_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* = IF */
+               if (a != b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_uge_br) { ucell a = (ucell)sp[0], b = (ucell)tos; tos = sp[1]; sp += 2;  /* U< IF */
+               if (a >= b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_ge_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* < IF */
+               if (a >= b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_nei_br) { cell f = tos; tos = *sp++;                   /* n= IF, n in the 32-bit hole */
+               if (f != IMM32) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_eq_br)  { cell a = sp[0], b = tos; tos = sp[1]; sp += 2;           /* - IF: jump if equal */
+               if (a == b) return spn_jump(sp, tos); GO(sp, tos); }
+S(st_or_br)  { cell x = sp[0] | tos; tos = sp[1]; sp += 2;              /* OR IF */
+               if (x == 0) return spn_jump(sp, tos); GO(sp, tos); }
+#endif
+
+/* ?BRANCH: take the flag, then either fall through or jump. */
+S(st_0branch) {
+    cell f = tos; tos = *sp++;
+    if (f == 0) return spn_jump(sp, tos);
+    GO(sp, tos);
+}
+S(st_branch) { return spn_jump(sp, tos); }
+
+/* A call to another native word, which hands back the new stack state. */
+S(st_call)  { spn_st r = spn_call(sp, tos); GO(SPN_SP(r), SPN_TOS(r)); }
+
+/* EXIT: leave the native word, returning the state to the caller. */
+__attribute__((noinline, used)) SPN_CC spn_st st_exit(cell *sp, cell tos)
+{ return SPN_ST(sp, tos); }
+
+/* The return stack. The interpreter and native code share one, reached
+   through the engine's own pointer - so a >R in native code and an R>
+   in an interpreted word that it calls see the same stack. */
+S(st_tor)    { RPDECL ucell r = RP - sizeof(cell);
+               *(cell *)r = tos; RP = r; GO(sp + 1, *sp); }
+S(st_fromr)  { RPDECL ucell r = RP; cell v = *(cell *)r;
+               RP = r + sizeof(cell); *--sp = tos; GO(sp, v); }
+S(st_rfetch) { RPDECL cell v = *(cell *)RP;
+               *--sp = tos; GO(sp, v); }
+
+/* Memory, and the rest of the arithmetic. Unsigned where the engine is:
+   its cells are UNS64, so U<, LSHIFT and RSHIFT must be too. */
+S(st_fetch)  { GO(sp, *(cell *)tos); }
+S(st_store)  { *(cell *)tos = *sp; GO(sp + 2, sp[1]); }
+S(st_cfetch) { GO(sp, *(uint8_t *)tos); }
+S(st_cstore) { *(uint8_t *)tos = (uint8_t)*sp; GO(sp + 2, sp[1]); }
+S(st_or)     { GO(sp + 1, tos | *sp); }
+S(st_ult)    { GO(sp + 1, -(cell)((ucell)*sp < (ucell)tos)); }
+S(st_lshift) { GO(sp + 1, (cell)((ucell)*sp << tos)); }
+S(st_rshift) { GO(sp + 1, (cell)((ucell)*sp >> tos)); }
+
+/* Call a word that has no native code: run it in the interpreter and
+   come back. Both holes are absolute - the helper lives in the engine,
+   which can be further from this code than a 32-bit jump reaches. */
+typedef spn_st (*spn_interp_fn)(cell *, cell, cell);
+S(st_interp) { spn_st r = ((spn_interp_fn)IMM_FN())(sp, tos, IMM()); GO(SPN_SP(r), SPN_TOS(r)); }
+
+/* DO loops, on the shared return stack in the kernel's own layout: the
+   index on top, the limit under it. Exactly the arithmetic of (LOOP) and
+   (+LOOP) in kernel.4 - +LOOP exits when old-limit and new-limit differ
+   in sign and the step points at the limit (Iteration 125) - but done UNSIGNED, since C leaves signed overflow undefined
+   and a Forth loop counter must wrap. There is no return address between
+   a native loop's parameters and an enclosing loop's, so J is rp[2];
+   interpreted J adds a cell for its own return address. */
+S(st_do)     { RPDECL cell *r = (cell *)RP - 2;
+               r[1] = *sp; r[0] = tos; RP = (ucell)r; GO(sp + 2, sp[1]); }
+S(st_qdo)    { if (*sp == tos) return spn_jump(sp + 2, sp[1]);
+               RPDECL cell *r = (cell *)RP - 2;
+               r[1] = *sp; r[0] = tos; RP = (ucell)r; GO(sp + 2, sp[1]); }
+S(st_loop)   { RPDECL cell *r = (cell *)RP;
+               ucell ix = (ucell)r[0] + 1;
+               if (ix == (ucell)r[1]) { RP = (ucell)(r + 2); GO(sp, tos); }
+               r[0] = (cell)ix; return spn_jump(sp, tos); }
+S(st_ploop)  { RPDECL cell *r = (cell *)RP;
+               ucell o = (ucell)r[0], l = (ucell)r[1], n = o + (ucell)tos;
+               if ((cell)(((o - l) ^ (n - l)) & ((o - l) ^ (ucell)tos)) < 0) { RP = (ucell)(r + 2); GO(sp + 1, *sp); }
+               r[0] = (cell)n; return spn_jump(sp + 1, *sp); }
+S(st_i)      { RPDECL cell v = ((cell *)RP)[0]; *--sp = tos; GO(sp, v); }
+#if JITFUSE
+/* Iteration 507, the gene jitfuse (results/drafts/jit-pairs-506.md): a literal into an operation, the loop index into
+   + and 2@ - one stencil each, the value kept in a register where two stencils pushed and popped it. LIT + is
+   st_addi's already. */
+S(st_lti)     { GO(sp, -(tos < (cell)IMM())); }
+S(st_gti)     { GO(sp, -(tos > (cell)IMM())); }
+S(st_eqi)     { GO(sp, -(tos == (cell)IMM())); }
+S(st_xori)    { GO(sp, tos ^ IMM()); }
+S(st_andi)    { GO(sp, tos & IMM()); }
+S(st_ori)     { GO(sp, tos | IMM()); }
+S(st_iplus)   { RPDECL cell v = ((cell *)RP)[0]; GO(sp, tos + v); }
+S(st_i2fetch) { RPDECL cell *a = (cell *)((cell *)RP)[0]; *--sp = tos; *--sp = a[1]; GO(sp, a[0]); }
+#endif
+S(st_j)      { RPDECL cell v = ((cell *)RP)[2]; *--sp = tos; GO(sp, v); }
+S(st_unloop) { RPDECL RP += 2 * sizeof(cell); GO(sp, tos); }
+S(st_leave)  { RPDECL RP += 2 * sizeof(cell); return spn_jump(sp, tos); }
+
+/* PICK. In the kernel it is built on SP@, which native code cannot use,
+   so it was refused - and every native PICK went through the re-entry
+   trampoline. In the native layout it is one load: tos is u, sp[0] is
+   x0, and xu is sp[u]. */
+S(st_pick)   { GO(sp, sp[tos]); }
+#if JITINL
+/* Iteration 137 (forth-vm-evolution, the gene jitinl): D+ ( d1 d2 -- d3 ), as
+   the engine's L_dplus - the low cells added, their carry into the high. */
+S(st_dplus)  { ucell lo = (ucell)sp[2] + (ucell)sp[0];
+               cell hi = (cell)((ucell)sp[1] + (ucell)tos + (lo < (ucell)sp[0]));
+               sp[2] = (cell)lo; GO(sp + 2, hi); }
+#endif
+#if JITMUL
+/* Iteration 472, the gene jitmul: UM* and UM/MOD - the double-cell multiply and divide that *, MOD, /, /MOD,
+   star-slash and CELLS stand on in the kernel; without them every word holding one stays interpreted (results/drafts/
+   jitapps-471.md). No library call (stencil-check): the product by the machine's widening multiply; the
+   quotient by its divide when the high cell is 0, else bit by bit - the interpreter's result either way. */
+#if defined(__x86_64__)
+typedef unsigned __int128 spn_udw;
+#else
+typedef unsigned long long spn_udw;
+#endif
+#define SPN_CB ((int)(8 * sizeof(ucell)))
+S(st_umstar) { spn_udw p = (spn_udw)(ucell)sp[0] * (ucell)tos;           /* ( u1 u2 -- lo hi ) */
+               sp[0] = (cell)(ucell)p; GO(sp, (cell)(ucell)(p >> SPN_CB)); }
+#if defined(SPN_TH_VALUE)
+S(st_ummod)  { ucell u = (ucell)tos, hi = (ucell)sp[0], lo = (ucell)sp[1], q, r;   /* ( lo hi u -- r q ) */
+               /* 475: a zero divisor is -10 THROW, as the interpreter's: the throw helper longjmps out of native
+                  code and never returns - called, not jumped to, so a jump to NEXT follows wherever GCC puts it */
+               if (!u) { ((spn_st (*)(cell *, cell))IMM_TH())(sp, tos); GO(sp, tos); }
+               if (hi >= u) hi %= u;          /* the quotient's high cell dropped - the interpreter's result mod 2^n */
+#if defined(__x86_64__)
+               __asm__("divq %4" : "=a"(q), "=d"(r) : "a"(lo), "d"(hi), "rm"(u));
+#else
+               __asm__("divl %4" : "=a"(q), "=d"(r) : "a"(lo), "d"(hi), "rm"(u));
+#endif
+               sp[1] = (cell)r; GO(sp + 1, (cell)q); }
+#else
+S(st_ummod)  { __builtin_trap(); }          /* no throw hole on this machine yet: no NEXT, so never usable */
+#endif
+/* Iteration 484: SP@ and ALIGNED - the kernel's PICK stands on SP@ (evo's and scan's last refusals), ALIGNED on
+   nothing a stencil had (fcp's). SP@ as the interpreter's: the top written to its slot, that slot's address pushed. */
+S(st_spfetch) { sp[-1] = tos; GO(sp - 1, (cell)(sp - 1)); }
+S(st_aligned) { GO(sp, (cell)(((ucell)tos + sizeof(cell) - 1) & ~(ucell)(sizeof(cell) - 1))); }
+#endif
+#if JITEXEC
+/* Iteration 476, the gene jitexec: EXECUTE ( xt -- ) - the kernel's `: EXECUTE >R ;` makes the token a return
+   address, which native code cannot follow; here a helper takes it (jit.c's jit_exec: native when the word is,
+   translated now when it can be, else the interpreter) and hands the stack back. A call, then NEXT. */
+#if defined(SPN_EX_VALUE)
+/* Iteration 481: an inline cache - this call site's own three cells (the literal hole): the token last seen, its
+   native code, and the four bytes after the token as they were then, so a word re-made at the same address misses */
+S(st_execute) { cell *ic_ = (cell *)IMM();
+                if (ic_[0] == tos && ic_[1] && (uint32_t)ic_[2] == *(const uint32_t *)((const char *)tos + 1)) {
+                    spn_st r_ = ((spn_fn)ic_[1])(sp + 1, sp[0]);   /* 493: native code - SPN_CC at 32 bits */ GO(SPN_SP(r_), SPN_TOS(r_)); }
+                {   spn_st r_ = ((spn_st (*)(cell *, cell, cell, cell *))IMM_EX())(sp + 1, sp[0], tos, ic_); GO(SPN_SP(r_), SPN_TOS(r_)); } }
+/* Iteration 486: a call of a word that stays bytecode but is cold by nature - I/O, ABORT, THROW (layout.py's list)
+   - made through the same helper, the token fixed in the site's cache, rather than refusing the caller */
+S(st_callx)   { cell *ic_ = (cell *)IMM();
+                if (ic_[1] && (uint32_t)ic_[2] == *(const uint32_t *)((const char *)ic_[0] + 1)) {
+                    spn_st r_ = ((spn_fn)ic_[1])(sp, tos); GO(SPN_SP(r_), SPN_TOS(r_)); }
+                {   spn_st r_ = ((spn_st (*)(cell *, cell, cell, cell *))IMM_EX())(sp, tos, ic_[0], ic_); GO(SPN_SP(r_), SPN_TOS(r_)); } }
+#else
+S(st_execute) { __builtin_trap(); }        /* no helper hole on this machine yet: never usable */
+S(st_callx)   { __builtin_trap(); }
+#endif
+/* Iteration 488: (ABORT") - a false flag dropped and on; a true one hands the interpreter back the call itself (the
+   literal hole: its bytecode address), which never returns - -2 THROW, or the message and ABORT. Called, not jumped
+   to, so a jump to NEXT follows wherever GCC puts it. */
+#if defined(SPN_RS_VALUE)
+S(st_abortq)  { if (tos) { ((spn_st (*)(cell *, cell, cell))IMM_RS())(sp, tos, IMM()); GO(sp, tos); }
+                GO(sp + 1, sp[0]); }
+#else
+S(st_abortq)  { __builtin_trap(); }
+#endif
+#endif
+#if JITX
+/* Iteration 108 (forth-vm-evolution, the gene jitx): FILL ( c-addr u char -- )
+   for its translator - without a call, which a stencil may not hold: rep stosb
+   on x86-64, elsewhere a loop the compiler cannot turn into memset. */
+S(st_fill)   { unsigned char *p = (unsigned char *)sp[1]; cell n = *sp;
+#if defined(__x86_64__)
+               if (n > 0) { ucell k = (ucell)n; __asm__ volatile("rep stosb" : "+D"(p), "+c"(k) : "a"(tos) : "memory"); }
+#else
+               { volatile unsigned char *q = p; while (n-- > 0) *q++ = (unsigned char)tos; }
+#endif
+               GO(sp + 3, sp[2]); }
+#endif
+
+/* The table the Forth side reads. Order matters: SPN-TABLE hands it over
+   as-is, and forth/spn.4 names the entries by position. */
+#if SPN_IO
+/* WRITE ( c-addr u --- ) and READ ( c-addr u1 --- u2 ): one call to the
+   engine's helper. A real call, so unlike every other stencil these use
+   the machine stack - the compiler saves sp across it itself. */
+S(st_write) { spn_io_fn f = IMM_IO(); f(0, *sp, tos); GO(sp + 2, sp[1]); }
+S(st_read)  { spn_io_fn f = IMM_IO(); cell n = f(1, *sp, tos); GO(sp + 1, n); }
+#endif
+const void *const spn_table[] = {
+    (const void *)spn_next, (const void *)spn_jump, (const void *)spn_call,
+    (const void *)st_lit, (const void *)st_dup, (const void *)st_drop,
+    (const void *)st_swap, (const void *)st_over, (const void *)st_rot,
+    (const void *)st_plus, (const void *)st_addi, (const void *)st_eq,
+    (const void *)st_gt, (const void *)st_lt, (const void *)st_xor,
+    (const void *)st_and, (const void *)st_negate, (const void *)st_0branch,
+    (const void *)st_branch, (const void *)st_call, (const void *)st_exit,
+    (const void *)st_addi32, (const void *)st_dup_gti_br,
+    (const void *)st_tor, (const void *)st_fromr, (const void *)st_rfetch,
+    (const void *)st_fetch, (const void *)st_store, (const void *)st_cfetch,
+    (const void *)st_cstore, (const void *)st_or, (const void *)st_ult,
+    (const void *)st_lshift, (const void *)st_rshift, (const void *)st_interp,
+    (const void *)st_do, (const void *)st_qdo, (const void *)st_loop,
+    (const void *)st_ploop, (const void *)st_i, (const void *)st_j,
+    (const void *)st_unloop, (const void *)st_leave, (const void *)st_pick,
+#if JITX
+    (const void *)st_fill,
+#endif
+#if JITINL
+    (const void *)st_dplus,      /* Iteration 137: after fill, so the others keep their numbers */
+#endif
+#if JITMUL
+    (const void *)st_umstar, (const void *)st_ummod,     /* Iteration 472: after the rest, numbers kept */
+    (const void *)st_spfetch, (const void *)st_aligned,  /* Iteration 484 */
+#endif
+#if JITEXEC
+    (const void *)st_execute, (const void *)st_callx,    /* Iterations 476, 486 */
+    (const void *)st_abortq,                             /* Iteration 488 */
+#endif
+#if JITFUSE
+    (const void *)st_lti, (const void *)st_gti, (const void *)st_eqi,      /* Iteration 507 */
+    (const void *)st_xori, (const void *)st_andi, (const void *)st_ori,
+    (const void *)st_iplus, (const void *)st_i2fetch,
+#endif
+#if SPN_FUSED_BR     /* 44- : s8's; appended, so the first 44 keep their numbers */
+    (const void *)st_nz_br, (const void *)st_dup_br, (const void *)st_ne_br,
+    (const void *)st_uge_br, (const void *)st_ge_br, (const void *)st_nei_br,
+    (const void *)st_eq_br, (const void *)st_or_br,
+#endif
+#if SPN_IO           /* 52- : WRITE, READ - after the fused ones, numbers kept */
+    (const void *)st_write, (const void *)st_read,
+#endif
+};
+const int spn_table_len = sizeof spn_table / sizeof spn_table[0];
+#if JITK
+#include "spn-jitk.inc"                 /* Iteration 259, the gene jitk: tools/gen-jitk.py writes it */
+#endif

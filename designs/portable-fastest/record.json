@@ -1,0 +1,289 @@
+{
+ "adds": 0.005557783357915902,
+ "bin": 14872,
+ "etext": null,
+ "gen": 0,
+ "genome": {
+  "abortif": 0,
+  "align1": 1,
+  "alignfn": 1,
+  "alignhot": 0,
+  "bfind": 0,
+  "bss": 1,
+  "bytehdr": 1,
+  "compiler": 0,
+  "d256": 0,
+  "doesfar": 1,
+  "dskew": 1,
+  "enc": "cv8",
+  "escape": 1,
+  "factor": 3,
+  "fbuf": 0,
+  "fold": 1,
+  "folds": [
+   "+",
+   "=",
+   "!",
+   "@",
+   "LSHIFT",
+   "RSHIFT",
+   "C@",
+   "C!",
+   "AND",
+   "OR",
+   "XOR",
+   "LIT",
+   "<",
+   "U<",
+   "OVER",
+   "DROP",
+   "DUP",
+   "SWAP",
+   "ROT",
+   ">R",
+   "R>",
+   "R@",
+   "NEGATE"
+  ],
+  "fsys": 0,
+  "gotodup": 2,
+  "guard": 1,
+  "hotcalls": 0,
+  "hotinl": 0,
+  "ipaclone": 0,
+  "jit": 0,
+  "jitcfa": 0,
+  "jitdoes": 0,
+  "jitexec": 0,
+  "jitfuse": 0,
+  "jitimg": 0,
+  "jitinl": 0,
+  "jitk": 0,
+  "jitloop": 0,
+  "jitmul": 0,
+  "jitos": 0,
+  "jitret": 0,
+  "jitrp": 1,
+  "jittail": 0,
+  "jitvar": 1,
+  "jitx": 0,
+  "kfast": 1,
+  "kinput": 1,
+  "klookup": 1,
+  "knumber": 0,
+  "kstack": 0,
+  "lean": 1,
+  "lto": 1,
+  "msc": 0,
+  "nocet": 1,
+  "nocrossjump": 1,
+  "nogcse": 1,
+  "noinls": 1,
+  "noreorder": 0,
+  "opbody": 1,
+  "opcall": [
+   "SWAP"
+  ],
+  "opinline": 1,
+  "ops10": [
+   "(DO)",
+   "BRANCH8",
+   "(LOOP)",
+   "I",
+   "J",
+   "UNLOOP",
+   "+!",
+   "?DUP",
+   "(?DO)",
+   "(+LOOP)",
+   "(LEAVE)",
+   "?BRANCH8",
+   "?NBRANCH",
+   "?NBRANCH8",
+   "=?BRANCH",
+   "U<?BRANCH",
+   "0<?BRANCH8",
+   "DUP?BRANCH8",
+   "DUP?NBRANCH",
+   "SWAP+I",
+   "DUP+I",
+   "FILL",
+   "CMOVE",
+   "THREAD-FIND",
+   "HASH",
+   "(FIND)",
+   "(>NUMBER)",
+   "2@",
+   "2!",
+   "=I?BRANCH8"
+  ],
+  "opt": "O2",
+  "peel": 0,
+  "regpin": 3,
+  "rtempty": 1,
+  "rtfuse": 0,
+  "rtimm": 2,
+  "rtiplus": 1,
+  "rtloop": 1,
+  "rtloopall": 1,
+  "scale": 0,
+  "sharedcall": 0,
+  "skippad": 0,
+  "spec": [
+   "var",
+   "tiny",
+   "small",
+   "imm"
+  ],
+  "supers": [
+   [
+    "DUP",
+    ">R"
+   ],
+   [
+    ">R",
+    "C!"
+   ],
+   [
+    "ROT",
+    "DUP"
+   ],
+   [
+    "R@",
+    "ROT"
+   ],
+   [
+    "OVER",
+    "C@"
+   ],
+   [
+    "C@",
+    "="
+   ],
+   [
+    "C@",
+    "DUP"
+   ],
+   [
+    "SWAP",
+    "R>"
+   ],
+   [
+    "LSHIFT",
+    "OVER"
+   ],
+   [
+    "C@",
+    "SWAP"
+   ],
+   [
+    "SWAP",
+    "DUP"
+   ],
+   [
+    "R>",
+    "SWAP"
+   ],
+   [
+    "OVER",
+    "R@"
+   ],
+   [
+    "C@",
+    ">R"
+   ],
+   [
+    "DUP",
+    "@"
+   ],
+   [
+    "+",
+    "R>"
+   ],
+   [
+    "R>",
+    "="
+   ],
+   [
+    "C@",
+    "OVER"
+   ]
+  ],
+  "swapi": 0,
+  "sysc": 0,
+  "t2hot": 0,
+  "t2wide": 1,
+  "tag2": 0,
+  "tail": 0,
+  "tailpn": 0,
+  "tfind": 0,
+  "thinhdr": 1,
+  "threads": 0,
+  "tos": 0,
+  "tracer": 0,
+  "varcall": 1,
+  "varslot": 0
+ },
+ "how": "carried from archived-20261101-043918/db.jsonl: 690981ca5b",
+ "id": "690981ca5b",
+ "inrun": 0.3590394859047025,
+ "inrun32": 0.31398872108960424,
+ "mem": {
+  "ackermann": 84,
+  "apps": 476,
+  "bubble": 76,
+  "corpus": 88,
+  "fib": 80,
+  "kernel": 136,
+  "loop": 76,
+  "parse": 80,
+  "sieve": 84
+ },
+ "parents": [],
+ "raw": {
+  "ackermann": 11467000,
+  "apps": 39066000,
+  "bubble": 7805000,
+  "corpus": 7312000,
+  "fib": 49575000,
+  "kernel": 2980000,
+  "loop": 10888000,
+  "parse": 13476000,
+  "sieve": 14797000
+ },
+ "rss": 136,
+ "secs": 4.4,
+ "sets": [
+  "B",
+  "C",
+  "pooled"
+ ],
+ "size": 8292,
+ "speed": 0.3669166071391519,
+ "speed32": 0.33713009842033864,
+ "src": "db.jsonl",
+ "status": "ok",
+ "t": {
+  "ackermann": 0.8867151252706464,
+  "apps": 0.6853443738816182,
+  "bubble": 0.2074804614812058,
+  "corpus": 0.1956335616438356,
+  "fib": 0.720074948799512,
+  "kernel": 0.3926218708827404,
+  "loop": 0.11028838264639446,
+  "parse": 0.15343102093793762,
+  "sieve": 0.4986520186021433
+ },
+ "t32": {
+  "ackermann": 0.7066288498600051,
+  "apps": 0.717709813218516,
+  "bubble": 0.13906909620598035,
+  "corpus": 0.19232934553131598,
+  "fib": 0.6029447140896291,
+  "kernel": 0.3612993363604611,
+  "loop": 0.10182097334589521
+ },
+ "total": 23164,
+ "unit": "median cpu time / hand-made s6, long workloads (Iteration 100)",
+ "why": "adds the most"
+}

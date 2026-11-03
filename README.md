@@ -9,6 +9,15 @@ saved.
 that does the job; speed where it costs little. `GOALS.md` says how that
 decides things.
 
+## Quick start - a working Forth
+
+    make             # the nine winning designs of the search, from source (x86-64 Linux)
+    make test
+    designs/portable-knee/forth designs/portable-knee/image.img
+
+Each is the best at something - fastest, smallest, least memory, fastest without the JIT;
+`designs/README.md` says which is which, and how to build on other hosts (`make libc`).
+
 Every row of the ladder in `stages/STAGES.md` is a system that builds,
 boots, compiles its own encoding, and passes the same 661-case ANS CORE
 corpus. Nothing in the measured tables is modelled.
@@ -156,6 +165,7 @@ Start and steer:
 
 The systems and their findings:
 - `stages/STAGES.md` - the ladder: every stage, what it is and how it differs.
+- `designs/README.md` - the winning designs, built from source with `make`: which wins what, the builds, how they are generated (Iteration 608).
 - `stages/frozen/README.md` - s2-s5 frozen as built artefacts (Iteration 588, applied 599): their engines and images, SHA256SUMS, how build-stages.sh and --validate use them.
 - `FORMAT-TAG2.md` - the two-bit tag, the byte format the evolved designs use: 64 opcodes, a 1 GB code space.
 - `JIT.md` - the lazy JIT as a gene: the plan of Iteration 73 and its phases.
