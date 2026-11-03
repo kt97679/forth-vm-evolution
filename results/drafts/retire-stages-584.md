@@ -80,6 +80,8 @@ same; s4 lean's change), batch-check PASS on the 4 patches. No design lost: seed
 front; the 232 candidates, the final 14 and the shortlist 40 all at scale 0. Removing SCALE itself would mean retiring
 the cpt16 and sod16 families - none recorded since seed 77, but not in the owner's go-ahead (584's five genes) - asked; the owner (590): "let's not retire them now" - they stay.
 
+**Step 4, varcall with sharedcall, queued (592)**: varcall-after-seed86.patch - FROZEN's 'varcall': 1, 'sharedcall': 1 (sharedcall already dormant under varcall: express() drops it, build() forced it on). Unlike scale, nothing outside CV8 used either: SHAREDCALL appears only as `ENC == 3 && SHAREDCALL`, and VARCALL defaulted to 1 in both engines, read only in CV8's code - so the engines' fixed 15-bit call (NEXT's per-handler call, do_call's and DODOES's 15-bit decode, the HOTCALLS #error) went, in vm-lab.c and spn-cv8.c alike, with layout.py's --no-varcall and sod16.py's VARCALL and every -DVARCALL/-DSHAREDCALL. s4 can no longer be built from source: build() refuses varcall 0 by name, design.py's example base and test-ext-loops.sh's s4 line went with it (the tools of 588's list that build its format). The image's compiler variable CV8-VARCALL-V stays, written -1 (its bytes are in every image). TEST-RESULT. Next: doesfar, then bytehdr - one a chat.
+
 The next patches' footprints (588, grep counts, not an audit). **lean**, the smallest: its gene row (`gene('lean',
 convert=...)`: the two drops when on), LATE, EXPRESSED, HUMAN's s5 and s6; layout.py's measuring switches (_NO_LEAN,
 SOD16_NO_DROPX8, SOD16_NO_DROPTOOL). **scale**, the largest: SCALE in vm-lab.c 16 times, spn-cv8.c 14, jit.c 2; in
