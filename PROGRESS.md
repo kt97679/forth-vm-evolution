@@ -10710,3 +10710,12 @@ results/applied-after-seed86/varcall-after-seed86.patch, results/applied-after-s
 results/applied-after-seed86/bytehdr-after-seed86.patch, results/applied-after-seed86/rtloop-after-seed86.patch;
 stages/frozen/ (the freeze patch's; indexed in README.md).
 
+## Iteration 600 - 2026-11-03 - Claude
+
+The article's method section: its figures recomputed from the runs' records on the true fronts (GOALS.md step 3's last
+part) - the series 77-83 (126-178 generations, 32-46 thousand designs a run; hv 0.332-0.352), the shortcuts' audits (the
+screen: 2 of 421 audited children run in full on the true front; one round first: 0 of 6,934), the fast ten re-measured
+1.051-1.073 (seed 77's clock test: cycles 1.002 - not the clock), the random baseline 0.55 of the series' median hv, the
+final set's extremes, across machines on the 40 (the i7 0.92 / 0.47, the Tegra 0.08). The draft's [74+] all filled, 4 [check]s left.
+Files: results/article-figures-600.md, results/drafts/article-figures-600.py.
+

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 599.
+- master: Iteration 600.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -56,8 +56,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   pooled over every session of chains B, C and D gives 15, chain B's and chain C's own sets add 6 (lose no good design).
   No generic pick within 25% (the best mean 06b188f45b; each class's fastest c7c35f9c97, 4ef851fd8e, 690981ca5b).
   Readings kept: results/chainB-seed86/, results/chainC-seed86/, results/chainD-seed86/sK.
-- **Next: the article's figures, in a fresh chat** (open item 8; GOALS.md step 3's last part): every figure the article
-  quotes recomputed from the runs' records on the true fronts. No machine run planned (NEXT-RUN none; 589's rule).
+- **The method section's figures, recomputed (600)** - results/article-figures-600.md
+  (results/drafts/article-figures-600.py, from the ledger, the results files, the final set and the chains' readings);
+  results/drafts/article-method-548.md's [74+] markers all filled. New in them: the screen loses a few front designs (2
+  of 421 audited children that ran in full reached the true front, seeds 77-83); one round first none (0 of 6,934); seed
+  77's clock test - not the clock (cycles 1.002); the random baseline 0.55 of the series' median hypervolume.
+- **Next: the article itself - the owner's** (open item 8): which article (the first one, article/, is the stage ladder;
+  the search's has only its method section), prompts/14's audience research before drafting, 04 and 05 before publishing
+  (GOALS.md); the draft's 4 [check] marks (the series' carry and widths, the fast end's offset, the analysis between
+  runs, the jail's list). No machine run planned (NEXT-RUN none; 589's rule).
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
@@ -130,7 +137,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    values' code builds the stages s2-s5; msc kept by the Tegra's check (598).
 8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts (seeds 53-75:
-   results/truefronts-seed75.md, results/progress-true-fronts.md); across machines the fast end as a band, the fastest
+   results/truefronts-seed75.md, results/progress-true-fronts.md; the method section's: results/article-figures-600.md, 600); across machines the fast end as a band, the fastest
    named per machine (results/drafts/xcheck-agreement-546.md; seed 76's checks: 3d4e860a9f the fastest on dream). The
    method section drafted (results/drafts/article-method-548.md).
 

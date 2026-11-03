@@ -1,13 +1,14 @@
-# How the designs were evolved - a draft of the method section (Iteration 548)
+# How the designs were evolved - a draft of the method section (Iteration 548; figures recomputed at 600)
 
-*For the article after consolidation (GOALS.md, "The article"), written while seed 74 ran. In the author's register
-(article/AUTHOR-STYLE.md): first person, commands as typed, numbers flat, what was not isolated said plainly. [74+]
-marks a figure that waits - for the true fronts (lab/evolve/truefronts.py, seed 75's chain) or the random-search
-baseline; [check] a sentence the owner should confirm. Everything else is the method as it stands at Iteration 548.*
+*For the article after consolidation (GOALS.md, "The article"), written while seed 74 ran; its figures recomputed at
+Iteration 600 from the runs' records on the true fronts - results/article-figures-600.md (results/drafts/article-figures-600.py):
+the series from seed 77 that the stopping rule ended, its confirmation runs, the random baseline, the final set. In the
+author's register (article/AUTHOR-STYLE.md): first person, commands as typed, numbers flat, what was not isolated said
+plainly. [check] marks a sentence the owner should confirm.*
 
 ## The design space
 
-Every design is a genome - 84 genes, a few of them frozen at one value - and a genome is all it takes to build one:
+Every design is a genome - 84 genes, nine of them frozen at one value - and a genome is all it takes to build one:
 lab/evolve/evolve.py turns it into a C engine and a self-hosting Forth image. The genes are the kind of decision the
 first article took by hand, one at a time: how operations are encoded (four families, called cell, sod16, cpt16 and
 cv8 in the code), whether the top of the stack lives in a register, how far a call reaches, which pairs of operations
@@ -35,7 +36,8 @@ objective. A design
 dominates another when it is no worse in all of them and better in one - with speeds within 2% counted equal and
 memory within 8 KB. A design that computes anything wrong dies: every workload's output is compared with the expected
 one, at both widths. Two more workloads, sieve and parse, are never used for selection; they are measured on the front
-afterwards, to see whether the speed carries over (seed 73: Spearman 0.961 between the two).
+afterwards, to see whether the speed carries over (sieve against the selection speed over each run's true front,
+seeds 77-83: Spearman 0.94-0.98).
 
 ## The search
 
@@ -45,8 +47,8 @@ crossover, from genes borrowed from a third design, and from mutation - nine chi
 74 on, the chances of crossover and borrowing follow how many of their children reached the front in the last ten
 generations. The survivors: the best of each family (crowding cannot kill a family), the eight best by a quality score
 (the knee of the front), then the rest by rank. A design already in the database is never measured again. A run is
-bounded by hours, not generations: seed 73 made 128 generations and 32,876 designs in its 11 hours, about 3,000 an
-hour.
+bounded by hours, not generations: the seven runs from seed 77 made 126-178 generations and 32,394-45,696 designs in 9
+or 12 hours, 3,400-3,800 an hour.
 
 ## Three shortcuts, each audited
 
@@ -55,9 +57,11 @@ Three shortcuts spend less on them, each with a check that it is not losing fron
 
 1. **The screen** - from generation 5, an additive model fitted on the run's own measured designs (refitted every ten
    generations, once there are 1,000) predicts a child's speed and size; a child predicted far behind the run's
-   staircase is not measured. One in ten of those is measured anyway. Seed 73: 5,981 of its 32,876 designs screened.
+   staircase is not measured. One in ten of those is measured anyway. In the seven runs, 4,430-6,934 of a run's designs were screened;
+   of the audited ones that ran in full, 2 of 421 reached the true front - the screen loses a few front designs (on that
+   rate, about twenty across the seven runs, against 180-370 on each run's front).
 2. **One round first** - from seed 74, a child 30% behind after its first round stops there; one in ten is measured in
-   full anyway. [74+: how many stopped, and whether an audited one reached the front.]
+   full anyway. In the seven runs, 7,488-12,059 children a run stopped there; of the 6,934 audited in full, none reached the true front.
 3. **The fast gate** - a child whose first reading would put it on the front is measured again in the next batch,
    beside other work, and its speed is the geometric mean of the two readings: one lucky reading cannot carry a design
    onto the front.
@@ -66,7 +70,7 @@ Three shortcuts spend less on them, each with a check that it is not losing fron
 
 From seed 74 the front a report shows is the true one: every design that no other dominates, tolerances included. Before
 it, the reports used a staircase that ignored the 2% band and the 32-bit speed, and kept about a third of each true front
-(seed 73: 61 of 222). Every figure here is recomputed from the runs' records on the true fronts. [74+]
+(seed 73: 61 of 222). Every figure here is recomputed from the runs' records on the true fronts.
 
 ## One command a run
 
@@ -74,24 +78,28 @@ A run is one command on one laptop, an AMD Ryzen 7 PRO 8840HS:
 
     sh lab/evolve/next-run.sh
 
-It reads its line from lab/evolve/NEXT-RUN - seed 74's:
+It reads its line from lab/evolve/NEXT-RUN - seed 77's:
 
-    seed 74 10h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8
+    seed 77 12h then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8
 
 and runs a chain: the tests and the byte-identical rebuild, the evolution, the front measured again in six rounds, the
 experiments, and one archive to send back. `widths` is the 32-bit objective; `noevolved` means nothing is carried from
 an earlier run - every run starts from the hand-made designs and the founders built from them, so the runs are
-replicates, not one long run. [check: say how the archives were analysed between runs, or leave it out.]
+replicates, not one long run. [check: from seed 77 the lines carry neither `widths` nor `noevolved` - say what the series
+carried in and at which widths it selected; and how the archives were analysed between runs, or leave it out.]
 
 ## Checks against fooling myself
 
-- The fastest tenth of a front, measured again after the run, comes out about 7% slower than in it (seed 73: 1.070) -
-  partly the winner's curse, perhaps the clock: the cores run slower under the run's compiles than alone. A clock test
-  with the cycle counters decides. [74+]
-- On other machines - an Intel i7-6700 at three builds and an ARMv7 board - a sample of the front ranks at Spearman
-  0.87-0.96 against the laptop. Each machine agrees with itself better than with the others; where they differ is the
-  order of the fastest JIT designs, which lie within about 1.5% of each other here. The laptop's fastest lands 1-4%
-  behind each machine's own best: the fast end is a band, not one design.
+- The fastest ten of a front, measured again after the run, come out 5-7% slower than in it (seeds 77-83: 1.051-1.073;
+  the JIT designs 1.034-1.057, the rest 0.991-1.016). Not the clock: seed 77's clock test, with the cycle counters, found
+  the cores no slower beside the run's compiles than alone (time 0.990, cycles 1.002). [check: the reading of the rest -
+  the winner's curse, or a cost outside user space (results/drafts/fast-end-offset-554.md, HANDOFF open item 4)]
+- On other machines - an Intel i7-6700 at both widths and an ARMv7 board, a Tegra - a sample of each run's front ranks
+  close to the laptop's order (seed 83 on the i7: Spearman 0.932-0.993). The final pick's 40 candidates, mostly from the fast
+  end, measured in 42 sessions on the i7 and 6 on the Tegra: Spearman 0.92 against the laptop at 32 bits, 0.47 at 64,
+  0.08 on the Tegra (where the JIT designs run without the JIT). Each machine agrees with itself better than with the
+  others (0.96-0.99 between its own sessions). The laptop's fastest is 6-7% behind the i7's own best at either width: the
+  fast end is a band, not one design.
 - Designs from the front are rebuilt and run on the Forth core tests by a second tool, with a negative control - a test
   with one wrong expected value, which must fail.
 - An engine the evolver runs cannot fork or outlive its time limit (lab/evolve/test-jail.py). [check: the jail's full
@@ -102,8 +110,12 @@ replicates, not one long run. [check: say how the archives were analysed between
 Each run's true front gets one number: its hypervolume in a box fixed before seed 74 (lab/evolve/hv.py; speed on a
 log scale). A run gains when that number beats the best earlier run's by 1%, or an extreme improves by its threshold
 (speed 2%, size 1%, memory 4 KB, the 32-bit speed 2%). The runs stop when, after at least three on an unchanged method
-- the same workloads, selection, operators, gates, hours and box - the last two gain nothing. A change to the method
-restarts the count; seed 74 started it. With three runs no significance test can decide anything, so the rule uses
+- the same workloads, selection, operators, gates and box - the last two gain nothing. A change to the method
+restarts the count: the last one at seed 77 (12 hours, every freeze that still had code lifted), and since the hours
+vary with my days, a run is judged at its last generation against each earlier run at that same generation. The rule
+stopped after seed 83 - seven runs, the last two gaining nothing. Two confirmation runs from the pooled front (seeds 84
+and 86) confirmed nothing new: seed 84's gain at the fast end was the laptop's (on the i7 -0.6% and +0.2%), seed 86's
+came from designs carried in, not bred. With three runs no significance test can decide anything, so the rule uses
 effect sizes fixed in advance, and the article reports values and spreads, not p-values.
 
 ## What the search itself adds
@@ -114,14 +126,17 @@ operators' adaptation, no screen, no one round first. (The fast gate stays: it i
 true front's hypervolume and extremes, beside the method's runs, are what the evolutionary search contributed over the
 design space alone:
 
-    seed N 10h widths noevolved random
+    seed 85 10h widths noevolved random
 
-[74+: the baseline's figures.]
+Its 35,760 random genomes left a true front of 30 designs, against 180-370 in the series' runs; its hypervolume 0.188
+is 0.55 of the series' median (0.340); its fastest 0.320 against the series' 0.138-0.148, its smallest 16,446 bytes
+against 13,989-14,210, its least memory 116 KB against 108-112.
 
 ## What was not isolated
 
-- Selection ran on one machine. The fast end's order is that machine's; on others it holds to within a few percent.
-- CPU time is not cycles: a busy laptop runs its cores slower, and the 7% offset may be that. [74+]
+- Selection ran on one machine. The fast end's order is that machine's; on the i7 its fastest is 6-7% behind the best.
+- CPU time is not cycles - but seed 77's clock test found the cores no slower under the run's load (cycles 1.002 of
+  alone), so the fast end's 5-7% offset is not the clock.
 - The screen and one round first skip children by prediction. The audits measure how often that misses - not that it
   never does.
-- Each method was run three times at most, single seeds each; the spread between runs is reported, not tested.
+- The final method ran seven times (seeds 77-83), a single seed each; the spread between runs is reported, not tested.
