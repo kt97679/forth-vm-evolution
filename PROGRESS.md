@@ -10707,5 +10707,6 @@ Files: results/drafts/consolidate-599.sh, results/applied-after-seed86/ORDER.md,
 results/applied-after-seed86/fsys45-after-seed86.patch, results/applied-after-seed86/freeze-after-seed86.patch,
 results/applied-after-seed86/lean-after-seed86.patch, results/applied-after-seed86/scale-after-seed86.patch,
 results/applied-after-seed86/varcall-after-seed86.patch, results/applied-after-seed86/doesfar-after-seed86.patch,
-results/applied-after-seed86/bytehdr-after-seed86.patch, results/applied-after-seed86/rtloop-after-seed86.patch.
+results/applied-after-seed86/bytehdr-after-seed86.patch, results/applied-after-seed86/rtloop-after-seed86.patch;
+stages/frozen/ (the freeze patch's; indexed in README.md).
 
