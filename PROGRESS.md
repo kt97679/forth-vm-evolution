@@ -10748,3 +10748,14 @@ has no replicate, and the Tegra's 282 take about 4.6 hours a session (four sessi
 1250 minutes, 4 sessions; dream 620 a width, up to 12 sessions. NEXT-RUN `seed 87 nojit 21h widths then ...`; the chain
 about 22.5 hours. Prediction 1 now: the Tegra 3 or more sessions (70/30).
 
+## Iteration 604 - 2026-11-03 - Claude
+
+While seed 87 waits (the owner: all three). The method draft's checks from the records: the series was `widths
+noevolved` (replicates), the jail's list, the analysis between runs - the offset's reading left. lab/evolve/portable-followup.py:
+the follow-up chain's list (the run's best on the union's front by final-set.py's select(), the 282's re-measured set)
+and its lines sized from measured rates (stand-in: the 5 fakes chosen, the 7 kept). The single article (the owner: the
+ladder, then the genetic algorithm; English for ForthHub, Russian for Habr): drafts beside the ladder article - part one
+condensed and checked against it (three paraphrases corrected), part two from the records; s6 22,265 bytes at 8-byte
+cells for the comparison. Two [check]s and the portable run pending.
+Files: (none under results/).
+

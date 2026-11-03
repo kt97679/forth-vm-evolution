@@ -179,6 +179,7 @@ The evolution:
 
 The write-up, the prompts, the outside sources:
 - `article/article-en.md`, `article/article-ru.md` - the write-up, for ForthHub and for Habr.
+- `article/article-en-draft.md`, `article/article-ru-draft.md` - the single article (the owner, Iteration 604): the ladder by hand, then the genetic algorithm - drafts for ForthHub and Habr, beside the ladder article until approved.
 - `article/AUDIENCE.md` - Who this is for, and what that changes; `article/AUTHOR-STYLE.md` - How kt97679 actually writes, from his 14 Habr articles; `article/REVIEW-PROMPT.md` - the prompt for reviewing a draft; `article/TERMINOLOGY-RU.md` - Russian terminology, fixed before translating.
 - `prompts/INDEX.md` - the prompt library's dispatcher; `prompts/README.md` and `prompts/USAGE.md` describe the library, `prompts/UPSTREAM` what changed here since relf.
 - `reference/forth-archive/README.md` - The owner's Forth collection, kept (Iteration 213); `reference/forth-archive/colorforth-chars.md` - colorForth's packed names, the encoding.

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 603.
+- master: Iteration 604.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -77,10 +77,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   stopping rule's thresholds, fixed now), final-pick.py on the 282 across machines; then a short chain re-measuring the
   run's best beside the 282's best, and the relf handoff's portable roles updated. Rehearsed in a scratch clone: 29
   records, none with the JIT; next-run.sh's parse of the line tested.
-- **Next: the article itself - the owner's** (open item 8): which article (the first one, article/, is the stage ladder;
-  the search's has only its method section), prompts/14's audience research before drafting, 04 and 05 before publishing
-  (GOALS.md); the draft's 4 [check] marks (the series' carry and widths, the fast end's offset, the analysis between
-  runs, the jail's list). After the portable run.
+- **The article (604; open item 8)** - one article, the ladder by hand then the genetic algorithm (the owner: English
+  for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
+  article until he approves. Part one condensed from article/article-en.md (its paraphrases checked against it), part two
+  from results/article-figures-600.md and the final pick. Waiting: his review; two [check]s - the reason for the switch in
+  his words, his reading of the fast end's 5-7%; the [pending] portable run (seed 87); a Russian reader's pass
+  (AUDIENCE.md: a translation-shaped text is a named failure on Habr); prompts 04 and 05 before publishing; the KDPV image.
+  The method draft (results/drafts/article-method-548.md): one [check] left, the offset; the follow-up chain's tool
+  ready (lab/evolve/portable-followup.py).
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
