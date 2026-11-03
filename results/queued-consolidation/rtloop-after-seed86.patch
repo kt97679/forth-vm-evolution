@@ -1,0 +1,48 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 0600646..21e88ed 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -155,7 +155,7 @@ def gene(name, values=None, show=None, family='cv8', late=True, needs=None, conv
+ # dormant sysc stay in express() as code. Genes listed above keep their place.
+ gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  # nothing to fuse at run time otherwise; older than LATE
+ gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
+-gene('rtloop', values=range(3), needs=lambda g, e: rtloop_on(g))               # Iteration 41: a loop opcode to use
++gene('rtloop', values=range(2), needs=lambda g, e: rtloop_on(g))               # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired)
+ gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
+ gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
+ gene('tfind', needs=lambda g, e: tfind_on(g))                                  # Iteration 52: with kfast
+@@ -254,10 +254,6 @@ def super_slots(g):
+     return (SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
+             + (list(range(27 if g.get('escape') == 2 else 36, 68)) if g.get('escape') else []))   # ESCAPE: primitives 36-67 behind a byte; level 2 from 27
+ LOOP10 = ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
+-# Iteration 190: forth/cv8-fuse-loop.4's words reached only by its own code
+-# (and the converter, which fills the three tables by their names in the
+-# dump): rtloop=2 builds them headerless (tools/layout.py --headerless).
+-RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVES', 'LOOP-OPS', 'X10-XTS', 'X10-OPS')
+ # Iteration 202, the gene fsys (results/drafts/fsys/README.md; levels 4-5 retired at 583, results/drafts/retire-plan-583.md): six file words
+ # and RESIZE in Forth over SYSCALL (forth/file-sysc.4, loaded last in a -fsys
+ # dump), their handlers out of the engine: 27 of 68 primitives never ran in
+@@ -562,6 +558,7 @@ def canon(g):
+     g['ops10'] = list(g.get('ops10', []))
+     for k in LATE: g.setdefault(k, 0)          # genomes recorded before them: off
+     if g['fsys'] > 3: g['fsys'] = 3            # Iteration 583: fsys 4-5 retired (no design on the pooled front, no candidate) - level 3
++    if g['rtloop'] > 1: g['rtloop'] = 1        # Iteration 595: rtloop 2 retired (no design on the pooled front, the shortlist or the final set) - its words named
+     g['opcall'] = list(g['opcall'] or [])      # Iteration 121: a list gene, [] when off
+     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
+     return g
+@@ -576,7 +573,6 @@ def express(g):
+         e['opcall'] = [x[0] for x in opcall_in(g)]
+         if not e['opcall']: e.pop('opcall')
+     if e.get('rtimm') == 2 and g.get('rtfuse') and (supers_in(g) or rt_tests(g)): e['rtimm'] = 1   # Iteration 175: the same build - one id
+-    if e.get('rtloop') == 2 and rtloopall_on(g): e['rtloop'] = 1                   # Iteration 190: loopall's own words - the same build
+     if 'sysc' in e and g['enc'] != 'cv8': e.pop('sysc')                            # Iteration 136: SYSC is vm-lab.c's, build()'s
+     if e.get('compiler'):                                                           # Iteration 262: clang - GCC's own genes do nothing
+         for k in GCC_ONLY: e.pop(k, None)
+@@ -1074,7 +1070,6 @@ def _build(g, d):
+     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
+     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
+     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
+-    if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
+     if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
+     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
+     if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
