@@ -8,6 +8,7 @@ process-run.sh checks and applies it.
     git apply results/queued-consolidation/freeze-after-seed86.patch
     git apply results/queued-consolidation/lean-after-seed86.patch
     git apply results/queued-consolidation/scale-after-seed86.patch
+    git apply results/queued-consolidation/varcall-after-seed86.patch
 
 batch-check (590, on bf653f1 - 4 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.
@@ -19,3 +20,5 @@ the jail PASS.
 **lean-after-seed86.patch** (lab/evolve/evolve.py, tools/layout.py) - the older formats' retirement, step 2 (results/drafts/retire-stages-584.md; the owner, 584): the gene lean retired at 1. lean 0 is on no design of the pooled true front of seeds 77-86 and on none of the 232 candidates (results/drafts/retire-report-583.md), and built only s4, frozen by the patch before. FROZEN gains 'lean': 1 (as tail, kstack, tailpn: kept in LATE and EXPRESSED, so every id stands); the row's --drop-x8 and --drop-dumptool are passed for every CV8 design; layout.py's lean-off measuring switches (SOD16_NO_LEAN, SOD16_NO_DROPX8, SOD16_NO_DROPTOOL - results/lean.md, dropx8.md) are gone. s5 and s6 keep lean=1 in HUMAN: a hand-made genome bypasses require(), and without it s6's expressed lean would read 0. Tested (results/drafts/retire-test-588.sh): build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS); among the frozen stages s4 alone changed, its image (its engine the same) - the one stage with lean 0, the test's control.
 
 **scale-after-seed86.patch** (engine/jit.c, lab/evolve/evolve.py) - the older formats' retirement, step 3 (results/drafts/retire-stages-584.md; the owner, 584): scale retired at 0 for CV8 - FROZEN's 'scale': 0, mutate()'s pool CV8's FROZEN as require()'s, so cpt16 keeps its scale gene; the JIT's two dead shifts gone (JITVAR needs TAG2, SCALE 0 by #error). No design lost: all 2681 designs in seeds 77-86's results files are CV8, the 232 candidates, the final 14 and the shortlist 40 all at scale 0; scale 1-3 built only s4 and s5 (frozen). Tested by retire-test-588.sh (Iteration 590): build-hash 667 of 667 the same at both widths (s2, s3 and s5 built from source the same - cpt16 untouched; s4 lean's change); batch-check PASS on the 4 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS).
+
+**varcall-after-seed86.patch** (engine/spn-cv8.c, engine/vm-lab.c, lab/evolve/design.py, lab/evolve/evolve.py, tools/arm-qemu-check.sh, tools/build-stages.sh, tools/layout-noise.sh, tools/layout.py, tools/mk-spn-cv8-image.sh, tools/sod16.py, tools/test-ext-loops.sh) - TODO: what it does, why, how it was tested.

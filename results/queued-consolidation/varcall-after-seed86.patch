@@ -1,0 +1,526 @@
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 988cba0..58c9fb8 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -177,13 +177,9 @@ static char **g_argv;
+  *  align(body+3), which is what every other CV8 stage uses.  */
+ #define DOESFAR 0
+ #endif
+-#ifndef VARCALL
+-/*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
+- *  (14-bit payload), 11xxxxxx takes two (22-bit). Costs one extra test
+- *  on the call path; buys a far call without spending an opcode.
+- *  VARCALL=0 is the fixed 15-bit form.  */
+-#define VARCALL 1
+-#endif
++/*  The call form is variable: 10xxxxxx takes one more byte (14-bit payload), 11xxxxxx takes two
++ *  (22-bit), decoded once on the shared call path (do_call). The fixed 15-bit form (VARCALL=0) and the
++ *  per-handler call path (SHAREDCALL=0) were retired with s4, frozen (Iteration 592).  */
+ #ifndef SIGNTEST
+ /*  Measured in guest instructions (tools/lab/xarch, qemu): -3.6% on
+  *  AArch64, -4.2% on RISC-V 64, +/-0.3% on x86, but +3.0% on ARMv7.  */
+@@ -418,7 +414,7 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
+                             walk links, can refuse. */
+ static const UNS8 IMAGE_MAGIC[8] = { 'C', 'V', '8', '0' + SCALE, CELL_BYTES,
+     SPEC ? 'L' : 0, CV8_VERSION,
+-    (VARCALL ? F_VARCALL : 0) | (VARSLOT ? F_VARSLOT : 0)
++    F_VARCALL | (VARSLOT ? F_VARSLOT : 0)
+         | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR };
+ #else
+ static const UNS8 IMAGE_MAGIC[8] = { 'C', 'P', 'T', '0' + SCALE, CELL_BYTES, 0, 0, 0 };
+@@ -1172,7 +1168,7 @@ static void virtual_machine(void) {
+       for (i_ = 0; i_ < 32; i_++)  esc_tab[i_] = dispatch[esc_k[i_]]; }
+ #define dispatch cv8_tab
+ #endif
+-#if ENC == 3 && SHAREDCALL && DISPATCH256
++#if ENC == 3 && DISPATCH256
+     /*  Same handlers, but indexed by the whole byte: 0x80-0xFF all land
+      *  on do_call, so no test is needed to tell an opcode from a call. */
+     /*  Static, and filled once: s8 re-enters this function every time
+@@ -1186,7 +1182,7 @@ static void virtual_machine(void) {
+     }
+ #endif
+ 
+-#if ENC == 3 && SHAREDCALL
++#if ENC == 3
+ /*  Every handler keeps its own opcode dispatch (what the branch predictor
+  *  needs), but the call path - decode, RPUSH, limit check - exists once.
+  *  GCC otherwise replicates ~50 bytes of it into all ~120 handlers.  */
+@@ -1210,14 +1206,6 @@ static void virtual_machine(void) {
+         goto do_call; \
+     } while (0)
+ #endif
+-#elif ENC == 3
+-#define NEXT() do { \
+-        PROFIP(ip); t = BYTE(ip); \
+-        if (t < 0x80) { ip += 1; PROF(t); goto *dispatch[t]; } \
+-        t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2; \
+-        PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); \
+-        goto next; \
+-    } while (0)
+ #else
+ #define NEXT() do { \
+         t = TOK(ip); ip += 2; \
+@@ -1229,14 +1217,14 @@ static void virtual_machine(void) {
+ 
+ next:
+     NEXT();
+-#if ENC == 3 && SHAREDCALL
++#if ENC == 3
+ do_call:
+ #if DISPATCH256
+     /*  ip is already past the first byte here.  */
+     if (t & 0x40) { t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1);
+                     ip += 2; }
+     else          { t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; }
+-#elif VARCALL
++#else
+     if (t & 0x40) {                       /* 11xxxxxx: 22-bit target */
+         t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
+         ip += 3;
+@@ -1244,8 +1232,6 @@ do_call:
+         t = ((t & 0x3F) << 8) | BYTE(ip + 1);
+         ip += 2;
+     }
+-#else
+-    t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2;
+ #endif
+     PROF(256); RPUSH(ip); ip = cbase + (t << SCALE);
+     NEXT();
+@@ -1400,7 +1386,6 @@ L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
+     ip = RS; rp += CELL_BYTES; NEXT();
+ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+ #if ENC == 3
+-#if VARCALL
+     if (BYTE(ip) & 0x40) {
+         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
+ #if DOESFAR
+@@ -1411,10 +1396,6 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
+         RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     }
+-#else
+-    t = ((BYTE(ip) & 0x7F) << 8) | BYTE(ip + 1);
+-    RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+-#endif
+     ip = cbase + (t << SCALE); NEXT();
+ #else
+     t = TOK(ip);
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index e49b1b8..a1da027 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -209,13 +209,9 @@ static char **g_argv;
+     : a__ - (((UNS64)(t__ & 31) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                     \
+              | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4)); })   /* 416: a fourth form, 29 bits */
+ #endif
+-#ifndef VARCALL
+-/*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
+- *  (14-bit payload), 11xxxxxx takes two (22-bit). Costs one extra test
+- *  on the call path; buys a far call without spending an opcode.
+- *  VARCALL=0 is the fixed 15-bit form.  */
+-#define VARCALL 1
+-#endif
++/*  The call form is variable: 10xxxxxx takes one more byte (14-bit payload), 11xxxxxx takes two
++ *  (22-bit), decoded once on the shared call path (do_call). The fixed 15-bit form (VARCALL=0) and the
++ *  per-handler call path (SHAREDCALL=0) were retired with s4, frozen (Iteration 592).  */
+ #ifndef SIGNTEST
+ /*  Measured in guest instructions (tools/lab/xarch, qemu): -3.6% on
+  *  AArch64, -4.2% on RISC-V 64, +/-0.3% on x86, but +3.0% on ARMv7.  */
+@@ -583,7 +579,7 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
+                             walk links, can refuse. */
+ static const UNS8 IMAGE_MAGIC[8] = { 'C', 'V', '8', '0' + SCALE, CELL_BYTES,
+     SPEC ? 'L' : 0, CV8_VERSION,
+-    (VARCALL ? F_VARCALL : 0) | (VARSLOT ? F_VARSLOT : 0)
++    F_VARCALL | (VARSLOT ? F_VARSLOT : 0)
+         | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR | (HOTCALLS ? F_HOTCALLS : 0)
+         | (TAG2 ? F_TAG2 : 0) };
+ #else
+@@ -1697,7 +1693,7 @@ static void virtual_machine(void) {
+         }
+     }
+ #endif
+-#if ENC == 3 && SHAREDCALL && DISPATCH256
++#if ENC == 3 && DISPATCH256
+     /*  Same handlers, but indexed by the whole byte: 0x80-0xFF all land
+      *  on do_call, so no test is needed to tell an opcode from a call. */
+     /*  Static, and filled once: s8 re-enters this function every time
+@@ -1717,7 +1713,7 @@ static void virtual_machine(void) {
+ #define NEXT() do { \
+         PROFIP(ip); t = BYTE(ip); ip += 1; if (T2_IS_OP(t)) PROF(t); goto *t2tab[t]; \
+     } while (0)
+-#elif ENC == 3 && SHAREDCALL
++#elif ENC == 3
+ /*  Every handler keeps its own opcode dispatch (what the branch predictor
+  *  needs), but the call path - decode, RPUSH, limit check - exists once.
+  *  GCC otherwise replicates ~50 bytes of it into all ~120 handlers.  */
+@@ -1741,14 +1737,6 @@ static void virtual_machine(void) {
+         goto do_call; \
+     } while (0)
+ #endif
+-#elif ENC == 3
+-#define NEXT() do { \
+-        PROFIP(ip); t = BYTE(ip); \
+-        if (t < 0x80) { ip += 1; PROF(t); goto *dispatch[t]; } \
+-        t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2; \
+-        PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); TRACE_CALL(); \
+-        goto next; \
+-    } while (0)
+ #else
+ #define NEXT() do { \
+         t = TOK(ip); ip += 2; \
+@@ -1772,14 +1760,14 @@ t2call:    PROF(256); PROFRET(ip, t); RPUSH(ip); ip = cbase + t; TRACE_CALL(); N
+ L_t2esc:   t = BYTE(ip); ip += 1; goto *t2esc[t];
+ L_t2bad:   write_str(2, "relf: no operation has this code\n"); exit(70);
+ #endif
+-#if ENC == 3 && SHAREDCALL
++#if ENC == 3
+ do_call:
+ #if DISPATCH256
+     /*  ip is already past the first byte here.  */
+     if (t & 0x40) { t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1);
+                     ip += 2; }
+     else          { t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; }
+-#elif VARCALL
++#else
+ #if HOTCALLS
+     if ((t & 0xE0) == 0xE0) { ip += 1; goto L_hcall; }   /* the low byte, as SIGNTEST sign-extends */
+ #endif
+@@ -1790,16 +1778,11 @@ do_call:
+         t = ((t & 0x3F) << 8) | BYTE(ip + 1);
+         ip += 2;
+     }
+-#else
+-    t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2;
+ #endif
+     PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); TRACE_CALL();
+     NEXT();
+ #endif
+ #if ENC == 3 && HOTCALLS
+-#if !(SHAREDCALL && VARCALL)
+-#error "HOTCALLS needs the shared, variable-length call path"
+-#endif
+ L_hcall:   /* one-byte call: t holds the byte (0xE0-0xFF), ip is past it */
+     PROF(256); RPUSH(ip); ip = cbase + hot_tab[t & 0x1F]; TRACE_CALL(); NEXT();
+ #endif
+@@ -2209,7 +2192,6 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+     RPUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     ip = cbase + t; NEXT();
+ #elif ENC == 3
+-#if VARCALL
+     if (BYTE(ip) & 0x40) {
+         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
+ #if DOESFAR
+@@ -2220,10 +2202,6 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
+         RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     }
+-#else
+-    t = ((BYTE(ip) & 0x7F) << 8) | BYTE(ip + 1);
+-    RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+-#endif
+     ip = cbase + (t << SCALE); NEXT();
+ #else
+     t = TOK(ip);
+diff --git a/lab/evolve/design.py b/lab/evolve/design.py
+index a405509..60aa115 100644
+--- a/lab/evolve/design.py
++++ b/lab/evolve/design.py
+@@ -4,7 +4,7 @@ run against s6 (Iteration 567; results/drafts/automation-audit-567.md, candidate
+ written afresh each time until then - 566's minimal design narrowed gene by gene by hand, 567's two throwaway scripts.
+ 
+ DESIGN: a recorded id (results/evolve-*.md's records, or --db FILE's - a run's db.jsonl), or a hand-made stage
+-(s6-cv8b, s4-cv8, ...). GENE=VALUE sets a gene on it - a number, a word (opt=Os), or a list as a,b,c ([] empty).
++(s6-cv8b, s5-cv8spec, ...; not s4-cv8, frozen - varcall 0, 592). GENE=VALUE sets a gene on it - a number, a word (opt=Os), or a list as a,b,c ([] empty).
+ INPUT, one or more: a workload by name - the input a run measures it on (kernel, fib, corpus, loop, bubble, ackermann,
+ apps, sieve, parse, far) - jit-diff (tests/jit's programs, as engines-check runs them on every JIT variant), or a file.
+ Each is run on the design and on s6 at the same width: right, WRONG (the first line that differs, both sides) or DIES
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 59da7ee..25f449a 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -938,7 +938,11 @@ REQUIRE = []
+ # it, scale 1-3 built only s4 and s5 (frozen). FROZEN is CV8's (require()), and mutate()'s pool now agrees: cpt16 keeps
+ # its scale gene - SCALE stays in vm-lab.c and layout.py for cpt16 and sod16 (s1 builds at SCALE 1, s2-s3 frozen). The
+ # JIT's two shifts went (JITVAR needs TAG2, SCALE 0 by vm-lab.c's #error); EXPRESSED keeps scale, so every id stands.
+-FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0}
++# Iteration 592 (retire-stages-584.md, step 4): varcall retired at 1, sharedcall with it - every pooled-front design and
++# candidate has varcall 1, under which sharedcall is dormant (express) and forced on (build); varcall 0 and sharedcall 0
++# built only s4 (frozen). The engines' fixed 15-bit call and per-handler call path gone, layout.py's --no-varcall too;
++# build() refuses varcall 0 (a hand-made genome bypasses require()). EXPRESSED keeps both, so every id stands.
++FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+@@ -951,26 +955,21 @@ def _build(g, d):
+     if arm_cross() and (g['enc'] != 'cv8' or CC(g) != 'clang'):   # Iteration 570: GCC's - cc() too - are the Tegra's
+         raise RuntimeError('died: not cross-built for ARM - a GCC design, built on the Tegra itself')
+     if g['enc'] != 'cv8': return build_other(g, d)
++    if not g['varcall']: raise RuntimeError('died: varcall 0 - retired (Iteration 592); s4 is frozen (stages/frozen)')
+     src = os.path.join(d, 'vm.c')
+     shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)
+     folds = ','.join(g['folds'])
+     r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-fold.py'), src, folds, 'v8'])
+     if r.returncode: raise RuntimeError('died: fold generation')
+-    flags = ['-DENC=3', '-DREG=1', '-DFOLD=1', '-DSCALE=%d' % g['scale'],
+-             '-DVARCALL=%d' % g['varcall'], '-DVARSLOT=%d' % g['varslot']]
+-    # Variable-length calls are decoded only on the shared call path
+-    # (engine/vm-lab.c, do_call), so with varcall the engine always has it.
+-    # And DODOES reads the three-byte (far) form only under VARCALL, so far
+-    # DOES> calls need variable-length calls.
+-    eff = dict(g, sharedcall=g['sharedcall'] or g['varcall'], doesfar=g['doesfar'] and g['varcall'])
+-    for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
+-                 ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
+-        if eff.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
++    flags = ['-DENC=3', '-DREG=1', '-DFOLD=1', '-DSCALE=%d' % g['scale'], '-DVARSLOT=%d' % g['varslot']]
++    # Variable-length calls on the shared call path (engine/vm-lab.c, do_call) are every CV8 engine's since 592.
++    for k, f in (('doesfar', '-DDOESFAR=1'), ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
++        if g.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
+     if fsys_on(g): flags.append('-DFSYS=%d' % fsys_level(g))   # Iteration 202: seven handlers out (1); twelve, rebound (2: Iteration 205)
+     if g.get('regpin'): flags.append('-DREGPIN=%d' % g['regpin'])   # Iteration 197: the VM registers pinned
+     if g['spec']: flags.append('-DSPEC=1')
+     t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
+-    if g.get('hotcalls') and g['varcall'] and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
++    if g.get('hotcalls') and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
+     if t2: flags.append('-DTAG2=1')
+     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
+     if jit_on(g): flags.append('-DX_JIT=1')
+@@ -1020,7 +1019,7 @@ def _build(g, d):
+     if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py); the tag too (Iteration 70)
+         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src])
+         if r.returncode: raise RuntimeError('died: multi-state generation' + why(r))
+-        flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
++        flags = [f for f in flags if not f.startswith('-DDISPATCH256')] + ['-DDISPATCH256=1']
+     eng = os.path.join(d, 'engine')
+     def compile_engine():
+         jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
+@@ -1044,15 +1043,14 @@ def _build(g, d):
+     if g.get('escape'): opts.append('--escape')
+     if g.get('escape') == 2: opts.append('--escape2')
+     opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
+-    if g['doesfar'] and g['varcall']: opts.append('--does-far')   # see build(): far DOES> needs VARCALL
++    if g['doesfar']: opts.append('--does-far')
+     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
+-    if not g['varcall']: opts.append('--no-varcall')
+     if not g['varslot']: opts.append('--no-varslot')
+     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
+     if oc: opts += ['--opcall-file', os.path.join(d, 'opcall.json')]
+     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
+     if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g) or rtiplus_on(g): opts.append('--rtfuse')   # 447: I+'s entry   # rtimm=2: IMM-OPS filled
+-    if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
++    if g.get('hotcalls') and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
+     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
+     if t2wide_on(g): opts.append('--tag2-wide')
+     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
+diff --git a/tools/arm-qemu-check.sh b/tools/arm-qemu-check.sh
+index 10dbc0a..57abcfa 100755
+--- a/tools/arm-qemu-check.sh
++++ b/tools/arm-qemu-check.sh
+@@ -51,7 +51,7 @@ if [ ! -r "$O/s6-cv8b-s32.img" ] || [ ! -r "$O/.corpus-good.fth" ]; then
+     exit 0
+ fi
+ python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$T/spn-cv8-tos.c"
+-$CC $FLAGS -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
++$CC $FLAGS -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
+     -I"$O" -I"$ROOT/engine" -o "$T/s8-arm" "$T/spn-cv8-tos.c" \
+     "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c" 2>/dev/null
+ ERRS='INCORRECT RESULT: \{|WRONG NUMBER OF RESULTS: \{|Undefined word'
+diff --git a/tools/build-stages.sh b/tools/build-stages.sh
+index 4ea58f7..c421d4c 100755
+--- a/tools/build-stages.sh
++++ b/tools/build-stages.sh
+@@ -300,7 +300,7 @@ for LV in $(seq 0 $((LAYOUTS - 1))); do
+   #   ENC=1 SOD16 (word table)   ENC=2 CPT16 (computed target)   ENC=3 CV8
+   #   REG=1 VM registers in locals        FOLD=1 folded prim+EXIT
+   #   SCALE=S call scale shift            SKIPPAD=1 loader drops NOOPs
+-  #   SPEC=1 specialised opcodes          SHAREDCALL=1 shared call path
++  #   SPEC=1 specialised opcodes          the shared call path always (592)
+   cp engine/vm-lab.c "$O/"
+   python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
+ 
+@@ -333,9 +333,9 @@ for LV in $(seq 0 $((LAYOUTS - 1))); do
+   # s6: s5 with byte-aligned call targets (SCALE=0). The engine never reads
+   # a dictionary link, so the byte-granular header is invisible to it; the
+   # scale is the only difference in the binary.
+-  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
++  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 \
+           -o "$O/s6-cv8b-64$LVSUF" "$O/vm-lab-tos.c"
+-  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
++  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 \
+           -o "$O/s6-cv8b-32$LVSUF" "$O/vm-lab-tos.c"
+   # relf: today's CV8, vendored as a REFERENCE SYSTEM (vendor/relf, which
+   # commit in vendor/relf/UPSTREAM; tools/update-relf.sh). Built as relf
+diff --git a/tools/layout-noise.sh b/tools/layout-noise.sh
+index 278104b..b4e6079 100755
+--- a/tools/layout-noise.sh
++++ b/tools/layout-noise.sh
+@@ -59,7 +59,7 @@ elif [ -r "$O/s5-cv8spec-s32.img" ]; then
+ else
+     echo "no s5-cv8spec self-hosting image in $O - run tools/build-stages.sh"; exit 1
+ fi
+-BASE="$M -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=$SCALE -DSPEC=1 -DSHAREDCALL=1"
++BASE="$M -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=$SCALE -DSPEC=1"
+ 
+ # Semantically neutral, layout-changing. Nothing here alters what the
+ # engine computes; -falign-* only moves code, and the dead function is
+diff --git a/tools/layout.py b/tools/layout.py
+index e3106f5..41e84df 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -162,7 +162,6 @@ if '--escape' in ARGV:
+     G['ESCAPE'] = True
+     G['ESC_PRIMS'].update(G['ESC_PRIMS_ALL'])
+     if '--escape2' in ARGV: G['ESC_PRIMS'].update(G['ESC2_PRIMS'])
+-if '--no-varcall' in ARGV: G['VARCALL'] = False
+ if '--no-varslot' in ARGV: G['VARSLOT'] = False
+ UB = 1 if V8 else 2                # bytes per stream unit
+ DOVARP = len(G['prims']) + 1       # after LIT32
+@@ -1195,7 +1194,7 @@ def _v8_dodoes(n):
+     # Iteration 416: a DOES> word's code field - [DODOES][call][pad] to a cell. A far call (3 bytes) counts CELLS, as the
+     # engine's DODOES reads it with DOESFAR - a DOES> tail is aligned - so 22 bits reach 32 MB, 16 at 4-byte cells.
+     v = v8val(n)
+-    if G['VARCALL'] and v >= (1 << 14) and '--does-far' in ARGV:
++    if v >= (1 << 14) and '--does-far' in ARGV:
+         vb = v << (CPT or 0); assert vb % CELL == 0, 'a DOES> tail not cell-aligned'
+         vc = vb // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
+         b = bytes([0xC0 | (vc >> 16), (vc >> 8) & 0xFF, vc & 0xFF])
+@@ -1207,10 +1206,8 @@ def callbytes(target):
+         v = v8val(target); return G['t2call'](v, G['t2calllen'](v))
+     if V8:
+         v = v8val(target)
+-        if G['VARCALL']:
+-            if v < (1 << 14): return bytes([0x80 | (v >> 8), v & 0xFF])
+-            return bytes([0xC0 | (v >> 16), (v >> 8) & 0xFF, v & 0xFF])
+-        return bytes([0x80 | (v >> 8), v & 0xFF])
++        if v < (1 << 14): return bytes([0x80 | (v >> 8), v & 0xFF])
++        return bytes([0xC0 | (v >> 16), (v >> 8) & 0xFF, v & 0xFF])   # 592: always the variable form (--no-varcall retired)
+     return tk(calltok_addr(target))
+ 
+ # ---- emit the token image -------------------------------------------
+@@ -1384,7 +1381,7 @@ def emit(path):
+     # VARCALL, kept the overlay's default and wrote far calls its engine misread.
+     if V8: CVARS['DICT-MAX'] = 256 << 20   # Iteration 184: vm-lab.c's MEMMAX - the stacks apart, the dictionary its own
+     if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
+-    if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
++    if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1   # 592: varcall retired at 1
+     for w in order:
+         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
+         at, op = new_off[w['s']]['body'] + cfd(w['s']), G['cv8_op']   # [DOVAR][pad], then the data
+@@ -1472,7 +1469,7 @@ def emit(path):
+             else: data = bytes(_c(x) for x in data)
+         img[at:at + len(data)] = data
+ 
+-    _flags = ((1 if G['VARCALL'] else 0) | (2 if G['VARSLOT'] else 0)
++    _flags = (1 | (2 if G['VARSLOT'] else 0)
+               | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0) | (32 if HOT else 0)
+               | (64 if TAG2_ON else 0)) if V8 else 0
+     hdr = (b'SOD1' if CPT is None else (b'CV8' if V8 else b'CPT') + bytes([48 + CPT]))
+@@ -1514,7 +1511,6 @@ def emit(path):
+         _thr = [w for w in order if w['n'] == 'THROW']
+         hdr += cel(new_off[_thr[-1]['s']]['body'] if _thr else 0)
+     if HOT:            # last in the header: one-byte calls' targets, as image offsets
+-        assert G['VARCALL'], "one-byte calls take far-call prefixes: they need --varcall"
+         _o = [new_target_off(a) for a in HOT]
+         assert all(0 <= x < 1 << 16 for x in _o), "a one-byte call's target beyond 64 KB"
+         hdr += bytes([len(_o)]) + b''.join(x.to_bytes(2, 'little') for x in _o)
+diff --git a/tools/mk-spn-cv8-image.sh b/tools/mk-spn-cv8-image.sh
+index fd8bfb0..989e1e4 100755
+--- a/tools/mk-spn-cv8-image.sh
++++ b/tools/mk-spn-cv8-image.sh
+@@ -20,7 +20,7 @@ O=$(cd "$1" && pwd); ROOT=$(cd "$(dirname "$0")/.." && pwd); W=$O/work
+ [ -r "$O/s6-cv8b-s64.img" ] || { echo "build s6-cv8b first (tools/build-stages.sh)"; exit 1; }
+ python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$O/spn-cv8-tos.c"
+ engine() {  # engine SUFFIX FLAGS - the one place these flags are written
+-    cc -O2 $2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
++    cc -O2 $2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
+        -I"$O" -I"$ROOT/engine" -o "$O/s8-spncv8-64$1" "$O/spn-cv8-tos.c" \
+        "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c" $RT_FLAGS
+     cp "$O/s8-spncv8-64$1" "$O/s8-full-64$1"; cp "$O/s8-spncv8-64$1" "$O/s8-lazy-64$1"
+diff --git a/tools/sod16.py b/tools/sod16.py
+index 9f7e564..cd9cdee 100644
+--- a/tools/sod16.py
++++ b/tools/sod16.py
+@@ -949,7 +949,6 @@ V8 = False            # byte-stream mode: 1-byte ops, 2-byte calls
+ V8_FOLDLIST = []      # v8: folded opcodes are 73 + position in this list
+ V8_LIT32, V8_DOVAR, V8_DODOES, V8_LIT8, V8_LIT8X, V8_FOLD0 = 68, 69, 70, 71, 72, 73
+ V8_CALLTOK = [None]   # layout pass binds: old target addr -> scaled value
+-VARCALL = True        # 10xxxxxx = 2-byte call, 11xxxxxx = 3-byte
+ VARSLOT = True        # 0xxxxxxx+1 = 15-bit slot, 1xxxxxxx+2 = 23-bit
+ OP_CTX = [None]       # (ops, j) while sizing, so op_bytes can see context
+ HOTCALLS = {}         # one-byte calls (Iteration 13): old target address -> opcode;
+@@ -1031,7 +1030,7 @@ def op_bytes(k, pl, t):
+         return n - (2 if (k == 'P' and pl in ESC_PRIMS) else 1) + t2len(L)
+     if V8:
+         if k == 'C' and pl in HOTCALLS: return 1
+-        if k == 'C' and VARCALL:
++        if k == 'C':                                   # 10xxxxxx a 2-byte call, 11xxxxxx 3 (592: always)
+             if OP_CTX[0] is not None and before_operand(*OP_CTX[0]): return 3
+             return 2 if V8_CALLTOK[0] is None or V8_CALLTOK[0](pl) < (1 << 14) else 3
+         if k in ('VF', 'VS', 'LOC'):
+@@ -1149,12 +1148,12 @@ def pad_before(ops, j, t):
+     """NOOP padding needed before op j so an inline operand lands aligned.
+     A call before an operand ALWAYS uses the 3-byte far form, so the
+     padding does not depend on how far the target happens to be. With
+-    VARCALL a near call is 2 bytes and a far one 3; letting the distance
++    variable-length calls a near call is 2 bytes and a far one 3; letting the distance
+     decide made (POSTPONE) and (LOOP) read a misaligned operand."""
+     if before_operand(ops, j):
+         if V8 and TAG2[0]: return (-(t + 4)) % CELL     # tag 2: always the 4-byte call
+         if V8 and ops[j][1] in HOTCALLS: return (-(t + 1)) % CELL
+-        return (-(t + (3 if (V8 and VARCALL) else 2))) % CELL
++        return (-(t + (3 if V8 else 2))) % CELL
+     return 0
+ 
+ def layout(ops):
+@@ -1306,20 +1305,16 @@ def to_bytes_v8(ops):
+         elif k == 'C' and pl in HOTCALLS: b.append(HOTCALLS[pl])
+         elif k == 'C':
+             v = V8_CALLTOK[0](pl) if V8_CALLTOK[0] else 0
+-            if VARCALL:
+-                if before_operand(ops, j):
+-                    assert v < (1 << 22), "call target %d out of 22 bits" % v
+-                    b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
+-                    b.append(v & 0xFF)
+-                elif v < (1 << 14):
+-                    b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
+-                else:
+-                    assert v < (1 << 22), "varcall target %d out of 22 bits" % v
+-                    b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
+-                    b.append(v & 0xFF)
+-            else:
+-                assert 0 <= v < 0x8000, "v8 call value %d out of 15 bits" % v
++            if before_operand(ops, j):
++                assert v < (1 << 22), "call target %d out of 22 bits" % v
++                b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
++                b.append(v & 0xFF)
++            elif v < (1 << 14):
+                 b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
++            else:
++                assert v < (1 << 22), "varcall target %d out of 22 bits" % v
++                b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
++                b.append(v & 0xFF)
+         elif k == 'EQIH':                              # the fused opcode, then the immediate
+             nk = ops[j + 1][0]
+             b.append(X_OPS10['=I?BRANCH8' if nk == 'EQITS' else '=I?BRANCH']); b.append(pl & 0xFF)
+diff --git a/tools/test-ext-loops.sh b/tools/test-ext-loops.sh
+index 16a0175..f5b943b 100755
+--- a/tools/test-ext-loops.sh
++++ b/tools/test-ext-loops.sh
+@@ -2,7 +2,8 @@
+ # tools/test-ext-loops.sh - ?DO and LEAVE in an extension (Iteration 139). The
+ # converter refused both until the kernel's leave addresses became offsets;
+ # now they are loop words like (LOOP). Four words using them are compiled on
+-# the cell stage before shell.4, translated with s1's, s3's, s4's and s5's
++# the cell stage before shell.4, translated with s1's, s3's and s5's (s4's
++# format, varcall 0, retired in 592 - s4 frozen)
+ # own options, as build-stages.sh translates those stages' shell images, and
+ # run on each stage's engine: a skipped ?DO, a LEAVE, a ?DO that runs, a
+ # LEAVE in a nested loop. Not yet in run-tests.sh; run it after build-stages.sh.
+@@ -22,7 +23,6 @@ ins() { printf '%s' "$1" | sed 's|S" shell.4" INCLUDED|S" t-ext-loops.4" INCLUDE
+ ( cd "$W" && printf "$(ins "$SELF_BOOT")" | "$O/s0-cell-64" kernel.img ) | tr -d '\r' > "$T/d64-self.txt"
+ want='7 8 4 3 2 1 0 4 3 2 1 0 4 3 2 1 0 4 3 2 1 0'; bad=0
+ for st in "s1-sod16 d64.txt --skip-pad" "s3-cpt16f d64.txt --cpt 3 $CPTF" \
+-          "s4-cv8 d64.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot" \
+           "s5-cv8spec d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler"; do
+   set -- $st; n=$1; d=$2; shift 2
+   if ! ( cd "$W" && python3 "$ROOT/tools/layout.py" "$T/$d" 8 "$@" --emit-image "$T/$n.img" ) > "$T/$n.log" 2>&1; then
