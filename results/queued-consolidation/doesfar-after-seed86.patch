@@ -1,0 +1,298 @@
+diff --git a/engine/spn-cv8.c b/engine/spn-cv8.c
+index 58c9fb8..893b386 100644
+--- a/engine/spn-cv8.c
++++ b/engine/spn-cv8.c
+@@ -168,15 +168,6 @@ static char **g_argv;
+  *  generator's DOVAR names it for both engines (Iteration 66).  */
+ #define TAG2 0
+ #endif
+-#ifndef DOESFAR
+-/*  DOESFAR: CREATE reserves THREE bytes after the DOVAR opcode and
+- *  DOES> writes the three-byte far call, so the parameter field is at
+- *  align(body+4). Needed when the call scale is 0, where the two-byte
+- *  near form reaches only 16 KB and the cross-compiler's dictionary is
+- *  far larger. Without it CREATE reserves two and the field is at
+- *  align(body+3), which is what every other CV8 stage uses.  */
+-#define DOESFAR 0
+-#endif
+ /*  The call form is variable: 10xxxxxx takes one more byte (14-bit payload), 11xxxxxx takes two
+  *  (22-bit), decoded once on the shared call path (do_call). The fixed 15-bit form (VARCALL=0) and the
+  *  per-handler call path (SHAREDCALL=0) were retired with s4, frozen (Iteration 592).  */
+@@ -1378,8 +1369,10 @@ L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
+      *  agreed by accident; the byte-header layout leaves bodies wherever
+      *  the name ends, and a DOES> word created at run time then found
+      *  its parameter field one cell away from where CREATE had put it.
+-     *  cv8.4's CREATE8 reserves the two bytes.  */
+-    PUSH((ip + (DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
++     *  cv8.4's CREATE8 reserved the two bytes; since doesfar retired at 1
++ *  (Iteration 593) CREATE reserves three for the far call, so the
++ *  field is at align(body+4).  */
++    PUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #else
+     PUSH((ip + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #endif
+@@ -1388,9 +1381,7 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+ #if ENC == 3
+     if (BYTE(ip) & 0x40) {
+         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
+-#if DOESFAR
+         t <<= (CELL_BYTES == 8 ? 3 : 2) - SCALE;  /* Iteration 416: a far DOES> call counts cells - its tail is aligned */
+-#endif
+         RPUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     } else {
+         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
+diff --git a/engine/vm-lab.c b/engine/vm-lab.c
+index a1da027..c23bab8 100644
+--- a/engine/vm-lab.c
++++ b/engine/vm-lab.c
+@@ -152,15 +152,6 @@ static char **g_argv;
+  *  let code span 32 MB - an asymmetry that fails silently.  */
+ #define VARSLOT 1
+ #endif
+-#ifndef DOESFAR
+-/*  DOESFAR: CREATE reserves THREE bytes after the DOVAR opcode and
+- *  DOES> writes the three-byte far call, so the parameter field is at
+- *  align(body+4). Needed when the call scale is 0, where the two-byte
+- *  near form reaches only 16 KB and the cross-compiler's dictionary is
+- *  far larger. Without it CREATE reserves two and the field is at
+- *  align(body+3), which is what every other CV8 stage uses.  */
+-#define DOESFAR 0
+-#endif
+ #ifndef HOTCALLS
+ /*  HOTCALLS (Iteration 14): one-byte calls. The far-call prefixes
+  *  0xE0-0xFF become calls to up to 32 of the image's own words, whose
+@@ -2173,12 +2164,14 @@ L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
+      *  agreed by accident; the byte-header layout leaves bodies wherever
+      *  the name ends, and a DOES> word created at run time then found
+      *  its parameter field one cell away from where CREATE had put it.
+-     *  cv8.4's CREATE8 reserves the two bytes.  */
++     *  cv8.4's CREATE8 reserved the two bytes; since doesfar retired at 1
++ *  (Iteration 593) CREATE reserves three for the far call, so the
++ *  field is at align(body+4).  */
+ #if TAG2
+     /*  Tag 2: CREATE reserves the longest call, 4 bytes (FORMAT-TAG2.md).  */
+     PUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #else
+-    PUSH((ip + (DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
++    PUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+ #endif
+ #else
+     PUSH((ip + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+@@ -2194,9 +2187,7 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
+ #elif ENC == 3
+     if (BYTE(ip) & 0x40) {
+         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
+-#if DOESFAR
+         t <<= (CELL_BYTES == 8 ? 3 : 2) - SCALE;  /* Iteration 416: a far DOES> call counts cells - its tail is aligned */
+-#endif
+         RPUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+     } else {
+         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
+diff --git a/lab/evolve/design.py b/lab/evolve/design.py
+index 60aa115..17e75bc 100644
+--- a/lab/evolve/design.py
++++ b/lab/evolve/design.py
+@@ -4,7 +4,7 @@ run against s6 (Iteration 567; results/drafts/automation-audit-567.md, candidate
+ written afresh each time until then - 566's minimal design narrowed gene by gene by hand, 567's two throwaway scripts.
+ 
+ DESIGN: a recorded id (results/evolve-*.md's records, or --db FILE's - a run's db.jsonl), or a hand-made stage
+-(s6-cv8b, s5-cv8spec, ...; not s4-cv8, frozen - varcall 0, 592). GENE=VALUE sets a gene on it - a number, a word (opt=Os), or a list as a,b,c ([] empty).
++(s6-cv8b, ...; not s4-cv8 or s5-cv8spec, frozen - varcall 0, 592; doesfar 0, 593). GENE=VALUE sets a gene on it - a number, a word (opt=Os), or a list as a,b,c ([] empty).
+ INPUT, one or more: a workload by name - the input a run measures it on (kernel, fib, corpus, loop, bubble, ackermann,
+ apps, sieve, parse, far) - jit-diff (tests/jit's programs, as engines-check runs them on every JIT variant), or a file.
+ Each is run on the design and on s6 at the same width: right, WRONG (the first line that differs, both sides) or DIES
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 25f449a..baa242d 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -24,7 +24,7 @@ GENOME - phase 1: the CV8 family, 8-byte cells
+   bytehdr    0/1   byte-granular headers (image --bytehdr, from the k64-b dump)
+   spec       set   specialisation families of loc var tiny small imm
+   sharedcall 0/1   one call path shared by every call opcode
+-  doesfar    0/1   DOES> children that reach anywhere (DOESFAR)
++  doesfar    0/1   DOES> children that reach anywhere (retired at 1, Iteration 593)
+   varcall    0/1   opcodes that call through a variable (VARCALL)
+   varslot    0/1   opcodes for variable slots (VARSLOT)
+   d256       0/1   the 256-entry dispatch table (DISPATCH256)
+@@ -942,7 +942,11 @@ REQUIRE = []
+ # candidate has varcall 1, under which sharedcall is dormant (express) and forced on (build); varcall 0 and sharedcall 0
+ # built only s4 (frozen). The engines' fixed 15-bit call and per-handler call path gone, layout.py's --no-varcall too;
+ # build() refuses varcall 0 (a hand-made genome bypasses require()). EXPRESSED keeps both, so every id stands.
+-FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1}
++# Iteration 593 (retire-stages-584.md, step 5): doesfar retired at 1 - every pooled-front design and candidate has it;
++# doesfar 0 built only s4 and s5 (frozen). The engines' DOESFAR switch gone (CREATE reserves three bytes, a far DOES>
++# call counts cells), layout.py's --does-far too (the far form, its compiler variables, for every CV8 design); build()
++# refuses doesfar 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands.
++FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+@@ -956,6 +960,7 @@ def _build(g, d):
+         raise RuntimeError('died: not cross-built for ARM - a GCC design, built on the Tegra itself')
+     if g['enc'] != 'cv8': return build_other(g, d)
+     if not g['varcall']: raise RuntimeError('died: varcall 0 - retired (Iteration 592); s4 is frozen (stages/frozen)')
++    if not g['doesfar']: raise RuntimeError('died: doesfar 0 - retired (Iteration 593); s5 is frozen (stages/frozen)')
+     src = os.path.join(d, 'vm.c')
+     shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)
+     folds = ','.join(g['folds'])
+@@ -963,7 +968,7 @@ def _build(g, d):
+     if r.returncode: raise RuntimeError('died: fold generation')
+     flags = ['-DENC=3', '-DREG=1', '-DFOLD=1', '-DSCALE=%d' % g['scale'], '-DVARSLOT=%d' % g['varslot']]
+     # Variable-length calls on the shared call path (engine/vm-lab.c, do_call) are every CV8 engine's since 592.
+-    for k, f in (('doesfar', '-DDOESFAR=1'), ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
++    for k, f in (('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
+         if g.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
+     if fsys_on(g): flags.append('-DFSYS=%d' % fsys_level(g))   # Iteration 202: seven handlers out (1); twelve, rebound (2: Iteration 205)
+     if g.get('regpin'): flags.append('-DREGPIN=%d' % g['regpin'])   # Iteration 197: the VM registers pinned
+@@ -1043,7 +1048,6 @@ def _build(g, d):
+     if g.get('escape'): opts.append('--escape')
+     if g.get('escape') == 2: opts.append('--escape2')
+     opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
+-    if g['doesfar']: opts.append('--does-far')
+     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
+     if not g['varslot']: opts.append('--no-varslot')
+     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
+diff --git a/tools/arm-cross-check.py b/tools/arm-cross-check.py
+index 33628d4..da0cb8e 100644
+--- a/tools/arm-cross-check.py
++++ b/tools/arm-cross-check.py
+@@ -32,7 +32,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ NATIVE = os.uname().machine.startswith('arm')          # the Tegra itself: its cc, no qemu
+ if NATIVE and gcc: sys.exit('arm-cross-check: --gcc is the Tegra simulated on x86-64; here the host\'s cc builds')
+ KNOWN = {'s2-cpt16': 'out of reach on apps (scale 1)', 's3-cpt16f': 'not converted at 4-byte cells',
+-         's4-cv8': 'not converted at 4-byte cells', 's5-cv8spec': 'not converted at 4-byte cells'}
++         's4-cv8': 'frozen - not built from source (varcall 0, 592)', 's5-cv8spec': 'frozen - not built from source (doesfar 0, 593)'}
+ os.environ['EVOLVE_CELL'] = '4'
+ if gcc: os.environ['EVOLVE_CC'] = gcc
+ elif not NATIVE: os.environ.setdefault('EVOLVE_CC', 'gcc -m32 -fno-pie -no-pie')
+diff --git a/tools/arm-qemu-check.sh b/tools/arm-qemu-check.sh
+index 57abcfa..add7456 100755
+--- a/tools/arm-qemu-check.sh
++++ b/tools/arm-qemu-check.sh
+@@ -51,7 +51,7 @@ if [ ! -r "$O/s6-cv8b-s32.img" ] || [ ! -r "$O/.corpus-good.fth" ]; then
+     exit 0
+ fi
+ python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$T/spn-cv8-tos.c"
+-$CC $FLAGS -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
++$CC $FLAGS -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
+     -I"$O" -I"$ROOT/engine" -o "$T/s8-arm" "$T/spn-cv8-tos.c" \
+     "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c" 2>/dev/null
+ ERRS='INCORRECT RESULT: \{|WRONG NUMBER OF RESULTS: \{|Undefined word'
+diff --git a/tools/build-stages.sh b/tools/build-stages.sh
+index c421d4c..b2138f7 100755
+--- a/tools/build-stages.sh
++++ b/tools/build-stages.sh
+@@ -333,9 +333,9 @@ for LV in $(seq 0 $((LAYOUTS - 1))); do
+   # s6: s5 with byte-aligned call targets (SCALE=0). The engine never reads
+   # a dictionary link, so the byte-granular header is invisible to it; the
+   # scale is the only difference in the binary.
+-  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 \
++  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 \
+           -o "$O/s6-cv8b-64$LVSUF" "$O/vm-lab-tos.c"
+-  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 \
++  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 \
+           -o "$O/s6-cv8b-32$LVSUF" "$O/vm-lab-tos.c"
+   # relf: today's CV8, vendored as a REFERENCE SYSTEM (vendor/relf, which
+   # commit in vendor/relf/UPSTREAM; tools/update-relf.sh). Built as relf
+diff --git a/tools/gen-tos.py b/tools/gen-tos.py
+index 271e7e4..2a28e86 100755
+--- a/tools/gen-tos.py
++++ b/tools/gen-tos.py
+@@ -31,11 +31,11 @@ HOT = {
+  'L_negate': 'tos = -tos; NEXT();',
+  'L_lshift': 'tos = NOS << tos; dsp += CELL_BYTES; NEXT();',
+  'L_rshift': 'tos = NOS >> tos; dsp += CELL_BYTES; NEXT();',
+- # PFA = align(body+3), matching vm-lab.c's ENC=3 L_dovar and the DODOES
++ # PFA = align(body+4) (align(body+5) at tag 2; doesfar retired at 1, 593), matching vm-lab.c's ENC=3 L_dovar and the DODOES
+  # path. This table OVERRIDES the source; when the source changed and this
+  # did not, the first CREATE after boot pushed the wrong address on the
+  # 32-bit build and the right one on 64-bit, by alignment luck.
+- 'L_dovar':  'PUSHT((ip + (TAG2 ? 4 : DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)); ip = RS; rp += CELL_BYTES; NEXT();',
++ 'L_dovar':  'PUSHT((ip + (TAG2 ? 4 : 3) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)); ip = RS; rp += CELL_BYTES; NEXT();',
+  'L_lit0':   'PUSHT(0); NEXT();',
+  'L_lit1':   'PUSHT(1); NEXT();',
+  'L_litm1':  'PUSHT(~(UNS64)0); NEXT();',
+diff --git a/tools/layout-noise.sh b/tools/layout-noise.sh
+index b4e6079..1e28851 100755
+--- a/tools/layout-noise.sh
++++ b/tools/layout-noise.sh
+@@ -51,15 +51,16 @@ python3 tools/gen-tos.py "$O/vm-lab.c" > "$L/vm-lab-tos.c"
+ python3 tools/gen-fold.py "$L/vm-lab-tos.c" "$HOT" v8 > /dev/null
+ # Which cell width exists here is not a constant: a 32-bit host has no
+ # 8-byte column at all. Pick the image that was actually built and the
+-# call scale that goes with it.
+-if [ -r "$O/s5-cv8spec-s64.img" ]; then
+-    IMG=$O/s5-cv8spec-s64.img; SCALE=3; M=
+-elif [ -r "$O/s5-cv8spec-s32.img" ]; then
+-    IMG=$O/s5-cv8spec-s32.img; SCALE=2; M=$( [ "$(printf '%s' "$(getconf LONG_BIT 2>/dev/null)")" = 64 ] && echo "-m32 -fno-pie -no-pie" )
++# call scale that goes with it. s6's engine and image (Iteration 593): s5's
++# engine, doesfar 0, is no longer built from source (stages/frozen).
++if [ -r "$O/s6-cv8b-s64.img" ]; then
++    IMG=$O/s6-cv8b-s64.img; W32=; M=
++elif [ -r "$O/s6-cv8b-s32.img" ]; then
++    IMG=$O/s6-cv8b-s32.img; W32=1; M=$( [ "$(printf '%s' "$(getconf LONG_BIT 2>/dev/null)")" = 64 ] && echo "-m32 -fno-pie -no-pie" )
+ else
+-    echo "no s5-cv8spec self-hosting image in $O - run tools/build-stages.sh"; exit 1
++    echo "no s6-cv8b self-hosting image in $O - run tools/build-stages.sh"; exit 1
+ fi
+-BASE="$M -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=$SCALE -DSPEC=1"
++BASE="$M -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1"
+ 
+ # Semantically neutral, layout-changing. Nothing here alters what the
+ # engine computes; -falign-* only moves code, and the dead function is
+@@ -92,7 +93,7 @@ done < <(variants)
+ # 4-byte run needs a retargeted copy and a different reference image -
+ # the same dance kernel-compile.sh does. Either way the engine WRITES
+ # kernel.img, so the committed one is saved and restored around the run.
+-if [ "$SCALE" = 2 ]; then
++if [ -n "$W32" ]; then
+     sed '22s/^8 TARGET-CELL-BYTES !/4 TARGET-CELL-BYTES !/' \
+         "$ROOT/forth/cross.4" > "$W/cross32.4"
+     XCSRC=cross32.4; REFSRC=$W/kernel32.img
+diff --git a/tools/layout.py b/tools/layout.py
+index 41e84df..d5074f8 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -1192,9 +1192,10 @@ G['V8_PFA'][0] = v8pfa
+ G['V8_LOC'][0] = v8loc
+ def _v8_dodoes(n):
+     # Iteration 416: a DOES> word's code field - [DODOES][call][pad] to a cell. A far call (3 bytes) counts CELLS, as the
+-    # engine's DODOES reads it with DOESFAR - a DOES> tail is aligned - so 22 bits reach 32 MB, 16 at 4-byte cells.
++    # engine's DODOES reads it - a DOES> tail is aligned - so 22 bits reach 32 MB, 16 at 4-byte cells. Every CV8 design's
++    # form since doesfar retired at 1 (Iteration 593): --does-far gone.
+     v = v8val(n)
+-    if v >= (1 << 14) and '--does-far' in ARGV:
++    if v >= (1 << 14):
+         vb = v << (CPT or 0); assert vb % CELL == 0, 'a DOES> tail not cell-aligned'
+         vc = vb // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
+         b = bytes([0xC0 | (vc >> 16), (vc >> 8) & 0xFF, vc & 0xFF])
+@@ -1368,13 +1369,12 @@ def emit(path):
+     # the default list writes back exactly the bytes it already had.
+     # --set-compiler-vars: the compiler's call shift and DOES> form, which
+     # cv8.4 and cv8b.4 set as a PAIR - shift 3, near DOES> calls, 2 bytes
+-    # reserved; or shift 0, far calls, 3 bytes - but which a design chooses
+-    # independently: scale is --cpt, the DOES> form --does-far. Without
++    # reserved; or shift 0, far calls, 3 bytes - the shift from --cpt, the
++    # DOES> form always far since doesfar retired at 1 (Iteration 593). Without
+     # this, code compiled at run time encodes calls the engine misreads.
+     CVARS = {}
+     if '--set-compiler-vars' in ARGV:
+-        far = '--does-far' in ARGV
+-        CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
++        CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 3}
+         if TAG2_ON: CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 4}   # the 4-byte call
+     # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
+     # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
+diff --git a/tools/mk-spn-cv8-image.sh b/tools/mk-spn-cv8-image.sh
+index 989e1e4..0506073 100755
+--- a/tools/mk-spn-cv8-image.sh
++++ b/tools/mk-spn-cv8-image.sh
+@@ -20,7 +20,7 @@ O=$(cd "$1" && pwd); ROOT=$(cd "$(dirname "$0")/.." && pwd); W=$O/work
+ [ -r "$O/s6-cv8b-s64.img" ] || { echo "build s6-cv8b first (tools/build-stages.sh)"; exit 1; }
+ python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$O/spn-cv8-tos.c"
+ engine() {  # engine SUFFIX FLAGS - the one place these flags are written
+-    cc -O2 $2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
++    cc -O2 $2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
+        -I"$O" -I"$ROOT/engine" -o "$O/s8-spncv8-64$1" "$O/spn-cv8-tos.c" \
+        "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c" $RT_FLAGS
+     cp "$O/s8-spncv8-64$1" "$O/s8-full-64$1"; cp "$O/s8-spncv8-64$1" "$O/s8-lazy-64$1"
