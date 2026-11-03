@@ -106,17 +106,20 @@ inverted copy and binary-searched it on every call it compiled.
 
 ## 5. Attempt four: delete the table
 
-CPT16 keeps the 16-bit unit and computes the call target from the token
-instead of looking it up. The images are identical to the byte; the
-speed on running code the same (1.024 against 1.000, error 0.021); and
-kernel compilation 34% faster than SOD16, because the inverted copy and
-its searches went with the table.
+CPT16 keeps the 16-bit unit and computes the call target instead of
+looking it up: `base + (value << shift)`, so compiling a call is one
+line, subtract, shift, add 256. The images are identical to SOD16's, to
+the byte, and kernel compilation came level with the cell engine -
+1.024 against 1.000 at 4-byte cells, error 0.021 - about 34% ahead of
+SOD16. That 34% is a sum: the lookup in the dispatch loop and the
+compiler's reverse search went in the same step.
 
 ## 6. Attempt five: narrow the unit itself
 
 What decides the size is how many bytes an operation takes, not how
 cleverly a target is computed. CV8 is the same idea in a byte stream:
-one byte for most operations, a call in one to three.
+one byte for a primitive, values under 0x80; a byte of 0x80 or more
+starts a call, two or three bytes long.
 
     CV8, image             11,416 bytes at 8-byte cells, 0.469x of cell threading
 
@@ -134,9 +137,11 @@ order.
 
 ## 8. Attempt seven: the last place cell width was still being paid
 
-The 64-bit image was still 2,980 bytes larger than the 32-bit one, most
-of it in the dictionary headers: a cell-sized link per word, and names
-padded to cells. The link became a distance of one to three bytes:
+The token stream was now the same at both widths, but the 64-bit image
+was still 2,980 bytes larger than the 32-bit one: 1,088 bytes of
+dictionary link cells, 496 of padding to align names, 660 of padding at
+the end of code bodies. None of that is code. The link became a distance
+of one to three bytes, and names and bodies stopped being padded:
 
     image, 8-byte cells    11,088 -> 7,609     0.456x -> 0.313x
     image, 4-byte cells     8,108 -> 6,749     0.606x -> 0.504x
@@ -321,7 +326,8 @@ speed:
 | s6, where the ladder ended | 1 | 1 | 1 | 22,265 | | no |
 
 The JIT is x86 only; on the Tegra a JIT design runs without it, which is
-why the fastest designs on x86 are among the slowest there. No design
+why the fastest designs on x86 are slower there than the best without
+it. No design
 comes within 25% of the best on all three machines at once, so there is
 no single answer: the final set is 21 designs, chosen so that each
 criterion's winner on each machine is in it.
@@ -339,7 +345,7 @@ simplest system that does the job, with speed where it costs little. A
 mechanism stays only if some design on the pooled front uses it. So the
 search's last step was to take out what no good design used: the older
 header and call formats that only the hand-made stages needed, two
-file-system levels, a loop format. 358 lines out, 219 in. The stages
+file-system levels, a headerless form of the loop words. 358 lines out, 219 in. The stages
 that needed them - s2 to s5 - are kept as built files, checked by hash,
 so the ladder still runs. Every design in the final set builds to the
 same engine and image bytes after the removal as before.
@@ -353,7 +359,7 @@ above.]
 
 **The fast end's 5-7%.** The fastest designs of each run come out 5-7%
 slower when measured again after the run than during it - the JIT
-designs 3-6%, the rest not at all. It is not the clock: a test with the
+designs 3-6%, the rest within 1-2%. It is not the clock: a test with the
 cycle counters found the cores no slower under the run's load than
 alone. Some of it is surely the winner's curse, the fastest of
 thousands being the luckiest too. I do not know whether that is all of
