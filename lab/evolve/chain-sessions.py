@@ -45,7 +45,10 @@ def main(a):
     print('chain-sessions: %d session(s) -> %s; the laptop %d, %s' % (n, dest, len(packs),
           ', '.join('%s %d' % (hn, len(s)) for hn, s in lines.items()) or 'no remote line'))
     if cand:
-        kept = [d for d in sorted(glob.glob('results/chain*-seed86')) if os.path.abspath(d) != os.path.abspath(dest)]
+        kept = []                                       # 598: a kept chain of several sessions (results/chainD-seed86/sK) - each
+        for d in sorted(glob.glob('results/chain*-seed86')):
+            if os.path.abspath(d) == os.path.abspath(dest): continue
+            kept += sorted(glob.glob(os.path.join(d, 's[0-9]*')), key=lambda p: int(re.search(r's(\d+)$', p).group(1))) or [d]
         first = dirs[0]
         print('final-pick: python3 lab/evolve/final-pick.py %s %s %s%s' % (cand, os.path.join(first, 'loadtest.md'),
               ' '.join(sorted(glob.glob(os.path.join(first, '*.out.json')))),
