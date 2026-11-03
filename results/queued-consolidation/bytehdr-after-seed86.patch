@@ -1,0 +1,284 @@
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index baa242d..0600646 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -21,7 +21,7 @@ never measured twice, and a run resumes where the last one stopped.
+ GENOME - phase 1: the CV8 family, 8-byte cells
+   tos        0/1   engine with the top of stack in a register (gen-tos)
+   scale      0-3   call targets in units of 2^scale (engine SCALE, image --cpt)
+-  bytehdr    0/1   byte-granular headers (image --bytehdr, from the k64-b dump)
++  bytehdr    0/1   byte-granular headers (image --bytehdr, from the k64-b dump; retired at 1, Iteration 594)
+   spec       set   specialisation families of loc var tiny small imm
+   sharedcall 0/1   one call path shared by every call opcode
+   doesfar    0/1   DOES> children that reach anywhere (retired at 1, Iteration 593)
+@@ -946,10 +946,16 @@ REQUIRE = []
+ # doesfar 0 built only s4 and s5 (frozen). The engines' DOESFAR switch gone (CREATE reserves three bytes, a far DOES>
+ # call counts cells), layout.py's --does-far too (the far form, its compiler variables, for every CV8 design); build()
+ # refuses doesfar 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands.
+-FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1}
++# Iteration 594 (retire-stages-584.md, step 6, the last): bytehdr retired at 1 - every pooled-front design and candidate
++# has it; bytehdr 0 built only s4 and s5 (frozen). The engines had no switch (F_BYTEHDR in every CV8 engine's features);
++# what went: the full-header CV8 format - layout.py refuses --v8 without --bytehdr (so --cpt 0: its CV8 calls unscaled),
++# the -self dumps (cv8.4 without cv8b.4: build-stages.sh's four, setup()'s 63) and the dump choice. build() refuses
++# bytehdr 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands; cpt16's guard in canon() stays.
++FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1,
++          'bytehdr': 1}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+-    if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
++    if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1)
+     return g
+ 
+ def _build(g, d):
+@@ -961,6 +967,7 @@ def _build(g, d):
+     if g['enc'] != 'cv8': return build_other(g, d)
+     if not g['varcall']: raise RuntimeError('died: varcall 0 - retired (Iteration 592); s4 is frozen (stages/frozen)')
+     if not g['doesfar']: raise RuntimeError('died: doesfar 0 - retired (Iteration 593); s5 is frozen (stages/frozen)')
++    if not g['bytehdr']: raise RuntimeError('died: bytehdr 0 - retired (Iteration 594); s4 and s5 are frozen (stages/frozen)')
+     src = os.path.join(d, 'vm.c')
+     shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)
+     folds = ','.join(g['folds'])
+@@ -973,7 +980,7 @@ def _build(g, d):
+     if fsys_on(g): flags.append('-DFSYS=%d' % fsys_level(g))   # Iteration 202: seven handlers out (1); twelve, rebound (2: Iteration 205)
+     if g.get('regpin'): flags.append('-DREGPIN=%d' % g['regpin'])   # Iteration 197: the VM registers pinned
+     if g['spec']: flags.append('-DSPEC=1')
+-    t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
++    t2 = bool(g.get('tag2'))   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers every CV8 design's (594)
+     if g.get('hotcalls') and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
+     if t2: flags.append('-DTAG2=1')
+     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
+@@ -1043,8 +1050,7 @@ def _build(g, d):
+         r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
+         if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
+     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
+-    opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
+-    if g['bytehdr']: opts.append('--bytehdr')
++    opts = ['--v8', '--cpt', str(g['scale']), '--bytehdr', '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
+     if g.get('escape'): opts.append('--escape')
+     if g.get('escape') == 2: opts.append('--escape2')
+     opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
+@@ -1083,7 +1089,7 @@ def _build(g, d):
+     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
+     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+-    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
++    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+     # Iteration 199: a short branch the tag-2 encoding finds out of range is
+     # written to long-branches.json and the conversion fails; converted again
+     # with it kept long - the set only grows, so it ends.
+@@ -1953,7 +1959,7 @@ def stale_build():
+     a git pull without a rebuild. The evolver builds every design from the
+     engine source the build generated (vm-lab-tos.c) and from its dumps:
+     stale, the newer genes die for reasons that are not theirs."""
+-    made = [os.path.join(O, f) for f in ('vm-lab-tos.c', KW() + '-self.txt', KW() + '-b.txt')]
++    made = [os.path.join(O, f) for f in ('vm-lab-tos.c', KW() + '-b.txt')]
+     if not all(os.path.exists(f) for f in made): return ['(build/ is incomplete)']
+     when = min(os.path.getmtime(f) for f in made)
+     srcs = [os.path.join(ROOT, 'engine', 'vm-lab.c'), os.path.join(ROOT, 'tools', 'gen-tos.py'),
+@@ -1973,7 +1979,7 @@ def setup():
+         sys.exit('build/ is older than its sources (%s%s) - after a git pull, build again:\n'
+                  '    LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate'
+                  % (', '.join(newer[:4]), ', ...' if len(newer) > 4 else ''))
+-    for need in (CPUT, os.path.join(O, KW() + '-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
++    for need in (CPUT, os.path.join(O, KW() + '-b.txt'), os.path.join(O, 'vm-lab-tos.c')):
+         if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
+     # The CV8 compiler with table-driven folds and run-time fusion
+     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
+@@ -1985,9 +1991,9 @@ def setup():
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
+     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
+-    for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-self', ['cv8.4']), (KW() + '-b', ['cv8.4', 'cv8b.4']),
++    for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-b', ['cv8.4', 'cv8b.4']),   # 594: -self (no cv8b.4) gone with bytehdr 0
+                                                                     (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
+-                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != KW() + '-self' else ('',))   # 501: -nocase retired
++                        for k in ('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber')   # 501: -nocase retired
+                         for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
+                         for t in (('', '-iplus') if l == '-loopall' else ('',))
+                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
+diff --git a/lab/evolve/remote-checks.sh b/lab/evolve/remote-checks.sh
+index 1869fbd..f966a4f 100644
+--- a/lab/evolve/remote-checks.sh
++++ b/lab/evolve/remote-checks.sh
+@@ -112,7 +112,7 @@ PRE=
+ LAYOUTS=1 bash tools/build-stages.sh > "\$W/build.log" 2>&1 || fail "build-stages.sh failed (build.log)"
+ case $how in prebuilt|prebuilt32|prebuilt64|prebuiltarm) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
+ if [ $how = prebuilt32 ]; then              # the 4-byte references this host cannot make
+-    cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-self.txt build/k32-b.txt || fail "the 4-byte references did not install"
++    cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-b.txt || fail "the 4-byte references did not install"
+     export EVOLVE_CELL=4 EVOLVE_PREBUILT_REF="\$W/bins/bin/s6"
+ fi
+ # Iteration 591 (chain D): up to $ses sessions of the same designs, each its own out file (out.json, out-s2.json, ...) -
+diff --git a/lab/evolve/xcheck.py b/lab/evolve/xcheck.py
+index c5be651..6237ca4 100755
+--- a/lab/evolve/xcheck.py
++++ b/lab/evolve/xcheck.py
+@@ -307,7 +307,7 @@ if '--sample' in ARGS:
+             eng, img = built[i] if cell4 else E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
+         if cell4 and not arm:
+             os.makedirs(os.path.join(stage, 'build32'))
+-            for f in ('s0-cell-32', 's0-cell-s32.img', 'k32-self.txt', 'k32-b.txt'): shutil.copy2(os.path.join(E.O, f), os.path.join(stage, 'build32', f))
++            for f in ('s0-cell-32', 's0-cell-s32.img', 'k32-b.txt'): shutil.copy2(os.path.join(E.O, f), os.path.join(stage, 'build32', f))
+         with tarfile.open(bundle + '.partial', 'w:gz') as t: t.add(stage, arcname='bin')
+         os.replace(bundle + '.partial', bundle)
+         print('xcheck: %d designs%s built into %s (%d KB)' % (len(armb) if arm else len(pick), ' (ARMv7)' if arm else ' and s6', bundle, os.path.getsize(bundle) // 1024))
+diff --git a/tools/arm-cross-check.py b/tools/arm-cross-check.py
+index da0cb8e..df536be 100644
+--- a/tools/arm-cross-check.py
++++ b/tools/arm-cross-check.py
+@@ -32,7 +32,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ NATIVE = os.uname().machine.startswith('arm')          # the Tegra itself: its cc, no qemu
+ if NATIVE and gcc: sys.exit('arm-cross-check: --gcc is the Tegra simulated on x86-64; here the host\'s cc builds')
+ KNOWN = {'s2-cpt16': 'out of reach on apps (scale 1)', 's3-cpt16f': 'not converted at 4-byte cells',
+-         's4-cv8': 'frozen - not built from source (varcall 0, 592)', 's5-cv8spec': 'frozen - not built from source (doesfar 0, 593)'}
++         's4-cv8': 'frozen - not built from source (varcall 0, 592; bytehdr 0, 594)',
++         's5-cv8spec': 'frozen - not built from source (doesfar 0, 593; bytehdr 0, 594)'}
+ os.environ['EVOLVE_CELL'] = '4'
+ if gcc: os.environ['EVOLVE_CC'] = gcc
+ elif not NATIVE: os.environ.setdefault('EVOLVE_CC', 'gcc -m32 -fno-pie -no-pie')
+diff --git a/tools/build-stages.sh b/tools/build-stages.sh
+index b2138f7..f6b5c49 100755
+--- a/tools/build-stages.sh
++++ b/tools/build-stages.sh
+@@ -232,7 +232,8 @@ echo "built  $_b"
+ # words are in the image it is laying out:
+ #   d*   full shell image      - what the shell size table uses
+ #   k*   bare kernel           - boots into the Forth interpreter
+-#   *self  same, plus cv8.4    - the self-hosting compiler overlay
++#   k*-b   the kernel, plus cv8.4 and cv8b.4 - the self-hosting compiler overlay, byte headers
++#          (cv8.4 alone, the *self dumps of CV8's full headers, went with bytehdr 0 - Iteration 594)
+ runnable() { # runnable ENGINE - exists, and this host can execute it
+     [ -x "$1" ] || return 1
+     "$1" /dev/null >/dev/null 2>&1
+@@ -253,21 +254,15 @@ dump() { # dump ENGINE IMAGE OUTFILE BOOTSCRIPT
+     [ -z "$_e" ] || { echo "build-stages: $3 - an overlay did not load: $_e"; exit 1; }
+ }
+ SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+-SELF_BOOT='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" cv8-save.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+ KERN_BOOT='S" dict-dump-addr.4" INCLUDED\nBYE\n'
+-KSELF_BOOT='S" cv8.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+ KCPT_BOOT='S" cpt16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+ KS16_BOOT='S" sod16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+ KCV8B_BOOT='S" cv8.4" INCLUDED\nS" cv8b.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
+ 
+ dump "$O/s0-cell-64" kernel.img   d64.txt      "$SHELL_BOOT"
+ dump "$O/s0-cell-32" kernel32.img d32.txt      "$SHELL_BOOT"
+-dump "$O/s0-cell-64" kernel.img   d64-self.txt "$SELF_BOOT"
+-dump "$O/s0-cell-32" kernel32.img d32-self.txt "$SELF_BOOT"
+ dump "$O/s0-cell-64" kernel.img   k64.txt      "$KERN_BOOT"
+ dump "$O/s0-cell-32" kernel32.img k32.txt      "$KERN_BOOT"
+-dump "$O/s0-cell-64" kernel.img   k64-self.txt "$KSELF_BOOT"
+-dump "$O/s0-cell-32" kernel32.img k32-self.txt "$KSELF_BOOT"
+ dump "$O/s0-cell-64" kernel.img   k64-cpt.txt  "$KCPT_BOOT"
+ dump "$O/s0-cell-32" kernel32.img k32-cpt.txt  "$KCPT_BOOT"
+ dump "$O/s0-cell-64" kernel.img   k64-s16.txt  "$KS16_BOOT"
+diff --git a/tools/layout.py b/tools/layout.py
+index d5074f8..c31f8de 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -121,9 +121,14 @@ if V8:
+ # cell operands or a builtin tail - get their START aligned. This needs
+ # the cv8b.4 overlay in the image, since the kernel's own SEARCH-WORDLIST
+ # and NAME> assume a cell link and an aligned name.
++# Every CV8 image's form since bytehdr retired at 1 (Iteration 594): --v8 without it - CV8's full
++# headers, s4's and s5's (frozen) - is refused, so a CV8 image is at --cpt 0 and its calls unscaled.
++# The full-header side below is cpt16's.
+ BYTEHDR = '--bytehdr' in ARGV
+ if BYTEHDR and not (V8 and CPT == 0):
+     sys.exit("--bytehdr requires --v8 --cpt 0")
++if V8 and not BYTEHDR:
++    sys.exit("--v8 requires --bytehdr: CV8's full headers retired (Iteration 594)")
+ 
+ 
+ # ---- the two-bit tag (Iteration 66, FORMAT-TAG2.md): --tag2 -----------
+@@ -1173,21 +1178,19 @@ def calltok_addr(target):
+     return v
+ if CPT is not None:
+     G['G_CALLTOK'][0] = lambda target, n: calltok_addr(target)
+-def v8val(target):
+-    off = new_target_off(target)
+-    assert off % (1 << CPT) == 0, "v8 call target %d not aligned" % off
+-    return off >> CPT
++def v8val(target):          # CV8 calls name a byte offset - --cpt 0, unscaled (Iteration 594)
++    return new_target_off(target)
+ if V8: G['V8_CALLTOK'][0] = v8val
+ def v8pfa(target):
+     off = BSS_OFF[target] if target in BSS_OFF else new_off[target]['body'] + cfd(target)   # [DOVAR][pad]: one cell, two at tag 2 and 4-byte cells
+-    assert off % (1 << CPT) == 0 and (off >> CPT) < (1 << 23)
+-    return off >> CPT
++    assert off < (1 << 23)
++    return off
+ def v8loc(old):
+     n2 = remap_pfa_off(old)
+     if n2 is None: n2 = remap_body_off(old)
+-    assert n2 is not None and n2 % (1 << CPT) == 0, old
+-    assert (n2 >> CPT) < (1 << 23), "locals slot %d beyond 23-bit reach" % n2
+-    return n2 >> CPT
++    assert n2 is not None, old
++    assert n2 < (1 << 23), "locals slot %d beyond 23-bit reach" % n2
++    return n2
+ G['V8_PFA'][0] = v8pfa
+ G['V8_LOC'][0] = v8loc
+ def _v8_dodoes(n):
+@@ -1196,8 +1199,8 @@ def _v8_dodoes(n):
+     # form since doesfar retired at 1 (Iteration 593): --does-far gone.
+     v = v8val(n)
+     if v >= (1 << 14):
+-        vb = v << (CPT or 0); assert vb % CELL == 0, 'a DOES> tail not cell-aligned'
+-        vc = vb // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
++        assert v % CELL == 0, 'a DOES> tail not cell-aligned'
++        vc = v // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
+         b = bytes([0xC0 | (vc >> 16), (vc >> 8) & 0xFF, vc & 0xFF])
+     else: b = callbytes(n)
+     assert 1 + len(b) <= CELL, 'a DOES> call longer than its code field'
+@@ -1369,12 +1372,12 @@ def emit(path):
+     # the default list writes back exactly the bytes it already had.
+     # --set-compiler-vars: the compiler's call shift and DOES> form, which
+     # cv8.4 and cv8b.4 set as a PAIR - shift 3, near DOES> calls, 2 bytes
+-    # reserved; or shift 0, far calls, 3 bytes - the shift from --cpt, the
++    # reserved; or shift 0, far calls, 3 bytes - shift 0 in every CV8 image (594), the
+     # DOES> form always far since doesfar retired at 1 (Iteration 593). Without
+     # this, code compiled at run time encodes calls the engine misreads.
+     CVARS = {}
+     if '--set-compiler-vars' in ARGV:
+-        CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 3}
++        CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 3}   # shift 0: --cpt 0 (594)
+         if TAG2_ON: CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 4}   # the 4-byte call
+     # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
+     # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
+diff --git a/tools/test-ext-loops.sh b/tools/test-ext-loops.sh
+index f5b943b..1c43148 100755
+--- a/tools/test-ext-loops.sh
++++ b/tools/test-ext-loops.sh
+@@ -2,8 +2,8 @@
+ # tools/test-ext-loops.sh - ?DO and LEAVE in an extension (Iteration 139). The
+ # converter refused both until the kernel's leave addresses became offsets;
+ # now they are loop words like (LOOP). Four words using them are compiled on
+-# the cell stage before shell.4, translated with s1's, s3's and s5's (s4's
+-# format, varcall 0, retired in 592 - s4 frozen)
++# the cell stage before shell.4, translated with s1's and s3's (s4's format,
++# varcall 0, retired in 592; s5's, bytehdr 0, in 594 - both frozen)
+ # own options, as build-stages.sh translates those stages' shell images, and
+ # run on each stage's engine: a skipped ?DO, a LEAVE, a ?DO that runs, a
+ # LEAVE in a nested loop. Not yet in run-tests.sh; run it after build-stages.sh.
+@@ -11,7 +11,7 @@ set -eu
+ ROOT=$(cd "$(dirname "$0")/.." && pwd); cd "$ROOT"
+ O=$ROOT/build; W=$O/work; T=$(mktemp -d); trap 'rm -rf "$T"; rm -f "$W/t-ext-loops.4"' EXIT
+ [ -x "$O/s0-cell-64" ] || { echo "SKIP   needs the 8-byte build"; exit 0; }
+-eval "$(grep -E '^(SHELL_BOOT|SELF_BOOT|HOT|SPECS)=' tools/build-stages.sh)"; CPTF="--dataprims --fold --fold-set $HOT"
++eval "$(grep -E '^(SHELL_BOOT|HOT)=' tools/build-stages.sh)"; CPTF="--dataprims --fold --fold-set $HOT"
+ cat > "$W/t-ext-loops.4" << 'F'
+ : XT1 0 0 ?DO 99 LOOP 7 ;
+ : XT2 10 0 DO I 3 = IF LEAVE THEN LOOP 8 ;
+@@ -20,10 +20,8 @@ cat > "$W/t-ext-loops.4" << 'F'
+ F
+ ins() { printf '%s' "$1" | sed 's|S" shell.4" INCLUDED|S" t-ext-loops.4" INCLUDED\\nS" shell.4" INCLUDED|'; }
+ ( cd "$W" && printf "$(ins "$SHELL_BOOT")" | "$O/s0-cell-64" kernel.img ) | tr -d '\r' > "$T/d64.txt"
+-( cd "$W" && printf "$(ins "$SELF_BOOT")" | "$O/s0-cell-64" kernel.img ) | tr -d '\r' > "$T/d64-self.txt"
+ want='7 8 4 3 2 1 0 4 3 2 1 0 4 3 2 1 0 4 3 2 1 0'; bad=0
+-for st in "s1-sod16 d64.txt --skip-pad" "s3-cpt16f d64.txt --cpt 3 $CPTF" \
+-          "s5-cv8spec d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler"; do
++for st in "s1-sod16 d64.txt --skip-pad" "s3-cpt16f d64.txt --cpt 3 $CPTF"; do
+   set -- $st; n=$1; d=$2; shift 2
+   if ! ( cd "$W" && python3 "$ROOT/tools/layout.py" "$T/$d" 8 "$@" --emit-image "$T/$n.img" ) > "$T/$n.log" 2>&1; then
+     echo "FAIL   $n: did not translate"; bad=1; continue; fi
