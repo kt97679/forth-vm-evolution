@@ -1253,3 +1253,9 @@ batch-check PASS on the 8, unchanged since 595 - 90/10. (2) build-hash-584.py af
 engine and image bytes at both widths - 85/15. (3) No gene value beyond the queued ones and jitdoes is on none of the 21
 and on none of the pooled true front - so nothing new to retire - 60/40. (4) jitdoes 1 stays (3ee67e7d34 and any other
 of the 21 that uses it) - 90/10.
+
+Scored (Iteration 599): batch-check PASS on the 8 - right (on 4bb5eff: run-tests, validate 7 of 7, the jail); the 21 the
+same bytes - right (21 of 21 at both widths, none died; results/drafts/consolidate-599.sh); nothing new to retire - wrong
+as written, right in its outcome: five more values are on none of the 21 nor the front (alignhot 1, fsys 1, jit 0, jitinl
+0, jitos 0), retire-plan-583's "kept: nothing simpler" - no code to remove; nothing new retired; jitdoes stays - right
+(3ee67e7d34 and be42bd8ea4 of the 21).

@@ -26,7 +26,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   `/mnt/user-data/uploads`; deliveries go to `/mnt/user-data/outputs`, presented.
 - A tool call ends near 300 s and kills what it started in the background:
   start anything long with `setsid nohup ... &` and poll it. Times on the VM:
-  a build about a minute, run-tests about six, validate two to four. Tool calls
+  a build under a minute (17 s since the freeze, 599), run-tests about six, validate two to four. Tool calls
   run /bin/sh (dash): no bash-only syntax there.
 - **A turn has a budget of tool calls (about fifty).** Commit and make a
   `--checkpoint` bundle before long work: twice a turn ended with work only in
@@ -41,34 +41,30 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 598.
-- **Chains C and D, processed (598)** - results/final-pick-chainCD-seed86.md: **the final set 21**
-  (results/final-set-chainsBCD-seed86.md) - the pick pooled over every session (chain D's 40, chains B and C; the
-  laptop's 31 merged) gives 15, chain B's and chain C's own sets add 6 (lose no good design); chain B's 14 all kept.
-  No generic pick within 25% (the best mean 06b188f45b; each class's fastest c7c35f9c97, 4ef851fd8e, 690981ca5b). Both
-  chains complete: C 2.9 hours, D 11.7 (the laptop 29 sessions, dream 40 a width, rage 4). Sessions within a night agree
-  better than chain B's against chain C's on every line (dream 0.977 / 0.990, rage 0.962; results/drafts/chainCD-agreement-598.py);
-  the laptop the noisy line (about 2.1% a design between sessions, dream and rage 0.5%). Readings kept:
-  results/chainC-seed86/, results/chainD-seed86/sK.
-- **msc kept (598)**: on the Tegra each of the 4 pairs' msc=0 design 17.6-18.4% slower than its msc=1 one over 5
-  sessions - its queued patch deleted (results/msc-pairs-seed86.md: the 8 records). msc stays a gene; whether it helps
-  the designs ARMv7 ranks first (690981ca5b, msc=0) was not measured.
-- **Next: consolidation, in a fresh chat** (the sandbox's, no machine run; results/drafts/retire-plan-583.md, "At
-  consolidation"): retire-report-579.py (578's rule: no design on the pooled true front uses it) and
-  retire-candidates-583.py on the final set's 21; jitdoes 1 stays (3ee67e7d34 in the set); results/queued-consolidation/
-  moved to results/pending/ with any new patch, batch-check on that master, then applied. **The queue - 8 patches**:
-  fsys45, the freeze of s2-s5 (stages/frozen/), lean, scale (CV8 only), varcall, doesfar, bytehdr, rtloop 2 - each
-  tested by build-hash 667 of 667 at both widths; batch-check PASS on the 8 (397c93b, byte for byte the ones queued); the
-  cell, sod16 and cpt16 families stay (the owner, 590). ORDER.md says what each does. After it: the figures and the
-  article (open item 8).
+- master: Iteration 599.
+- **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
+  (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
+  hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
+  bytehdr 1 fixed; scale 0 for CV8 (SCALE stays for cpt16 and sod16; the cell, sod16 and cpt16 families stay - the owner,
+  590); rtloop 2 gone (canon reads 2 as 1). 53 files, 219 lines in, 358 out. batch-check PASS on 4bb5eff (its record
+  commit 0c83123 says 598); on master run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS; the final set's 21 the
+  same engine and image bytes before and after at both widths, none died (results/drafts/consolidate-599.sh). Of the 17
+  values on no pooled-front design (results/drafts/retire-report-583.md, rerun the same): 10 retired; kept jitdoes 1 (2
+  of the 21: 3ee67e7d34, be42bd8ea4), msc 1 (the Tegra: msc=0 18% slower, 598) and alignhot 1, fsys 1, jit 0, jitinl
+  0, jitos 0 (no code to remove - retire-plan-583.md).
+- **The final set: 21 (598)** - results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md: the pick
+  pooled over every session of chains B, C and D gives 15, chain B's and chain C's own sets add 6 (lose no good design).
+  No generic pick within 25% (the best mean 06b188f45b; each class's fastest c7c35f9c97, 4ef851fd8e, 690981ca5b).
+  Readings kept: results/chainB-seed86/, results/chainC-seed86/, results/chainD-seed86/sK.
+- **Next: the article's figures, in a fresh chat** (open item 8; GOALS.md step 3's last part): every figure the article
+  quotes recomputed from the runs' records on the true fronts. No machine run planned (NEXT-RUN none; 589's rule).
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): consolidation - batch-check PASS on the 8 (90/10), every one of the 21
-  the same bytes after them (85/15), nothing new to retire (60/40), jitdoes stays (90/10).
-- **Before 598**: chains A-D, seed 86 and the final pick's planning (582-597) - HANDOFF-HISTORY.md, "The card's state at
-  Iteration 597"; seeds 70-86 processed (498-582).
+- **Predictions due**: none - no run planned (results/predictions.md: consolidation's scored, 599).
+- **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
+  A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
 - **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
@@ -112,7 +108,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
    seed 83 (572). **Step 2 done (582)**: seed 84 NOT CONFIRMED at the fast end - the laptop's lead (dream, 582); seed 86
    NOT CONFIRMED by carried designs only - the pool widened, no new search. **Step 3, the final set: 21 (598)** -
-   results/final-pick-chainCD-seed86.md, from chains B, C and D; consolidation next. **Step 4, the random baseline, done (576)**:
+   results/final-pick-chainCD-seed86.md, from chains B, C and D; consolidation's retirements done (599); the figures next. **Step 4, the random baseline, done (576)**:
    results/evolve-amd-ryzen-7-pro-8840hs-seed85.md.
 3. **Correctness - none open (576)**: seed 85's 55 "body size drift" deaths the scale-0 call reach, met where varcall
    and doesfar exempt a design from reach_lethal() - no wrong output (results/drafts/body-size-drift-576.md). seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
@@ -130,7 +126,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    jitmul 43, jitfuse 10, jitexec 1, jitos 19, jitrp 22; jitdoes the one freeze candidate.
 7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
-7b. (583: planned - results/drafts/retire-plan-583.md.) Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
+7b. (Done, 599: results/applied-after-seed86/ORDER.md; planned at 583 - results/drafts/retire-plan-583.md.) Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
    values' code builds the stages s2-s5; msc kept by the Tegra's check (598).
 8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts (seeds 53-75:

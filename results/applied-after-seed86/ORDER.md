@@ -5,14 +5,14 @@ C and D, 598), moved here then, batch-check run again on that master and applied
 a value these retire (results/drafts/retire-candidates-583.py on results/final-set-chainsBCD-seed86.md: of the 17
 values on no pooled-front design only jitdoes=1 is on final designs - kept).
 
-    git apply results/pending/fsys45-after-seed86.patch
-    git apply results/pending/freeze-after-seed86.patch
-    git apply results/pending/lean-after-seed86.patch
-    git apply results/pending/scale-after-seed86.patch
-    git apply results/pending/varcall-after-seed86.patch
-    git apply results/pending/doesfar-after-seed86.patch
-    git apply results/pending/bytehdr-after-seed86.patch
-    git apply results/pending/rtloop-after-seed86.patch
+    git apply results/applied-after-seed86/fsys45-after-seed86.patch
+    git apply results/applied-after-seed86/freeze-after-seed86.patch
+    git apply results/applied-after-seed86/lean-after-seed86.patch
+    git apply results/applied-after-seed86/scale-after-seed86.patch
+    git apply results/applied-after-seed86/varcall-after-seed86.patch
+    git apply results/applied-after-seed86/doesfar-after-seed86.patch
+    git apply results/applied-after-seed86/bytehdr-after-seed86.patch
+    git apply results/applied-after-seed86/rtloop-after-seed86.patch
 
 batch-check (598, on 4bb5eff - 8 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
 the jail PASS.

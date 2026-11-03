@@ -4,6 +4,38 @@ Moved verbatim from HANDOFF-REFERENCE.md at Iteration 568 (the owner: fewer toke
 lists of Iterations 505 and 369. The present is HANDOFF.md; the decisions, the processing steps and the lessons are
 HANDOFF-REFERENCE.md. History the card sheds goes here. Grep a term or an iteration; never read it whole.
 
+## The card's state at Iteration 598 (moved at 599)
+
+- **Chains C and D, processed (598)** - results/final-pick-chainCD-seed86.md: **the final set 21**
+  (results/final-set-chainsBCD-seed86.md) - the pick pooled over every session (chain D's 40, chains B and C; the
+  laptop's 31 merged) gives 15, chain B's and chain C's own sets add 6 (lose no good design); chain B's 14 all kept.
+  No generic pick within 25% (the best mean 06b188f45b; each class's fastest c7c35f9c97, 4ef851fd8e, 690981ca5b). Both
+  chains complete: C 2.9 hours, D 11.7 (the laptop 29 sessions, dream 40 a width, rage 4). Sessions within a night agree
+  better than chain B's against chain C's on every line (dream 0.977 / 0.990, rage 0.962; results/drafts/chainCD-agreement-598.py);
+  the laptop the noisy line (about 2.1% a design between sessions, dream and rage 0.5%). Readings kept:
+  results/chainC-seed86/, results/chainD-seed86/sK.
+- **msc kept (598)**: on the Tegra each of the 4 pairs' msc=0 design 17.6-18.4% slower than its msc=1 one over 5
+  sessions - its queued patch deleted (results/msc-pairs-seed86.md: the 8 records). msc stays a gene; whether it helps
+  the designs ARMv7 ranks first (690981ca5b, msc=0) was not measured.
+- **Next: consolidation, in a fresh chat** (the sandbox's, no machine run; results/drafts/retire-plan-583.md, "At
+  consolidation"): retire-report-579.py (578's rule: no design on the pooled true front uses it) and
+  retire-candidates-583.py on the final set's 21; jitdoes 1 stays (3ee67e7d34 in the set); results/queued-consolidation/
+  moved to results/pending/ with any new patch, batch-check on that master, then applied. **The queue - 8 patches**:
+  fsys45, the freeze of s2-s5 (stages/frozen/), lean, scale (CV8 only), varcall, doesfar, bytehdr, rtloop 2 - each
+  tested by build-hash 667 of 667 at both widths; batch-check PASS on the 8 (397c93b, byte for byte the ones queued); the
+  cell, sod16 and cpt16 families stay (the owner, 590). ORDER.md says what each does. After it: the figures and the
+  article (open item 8).
+- **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
+  classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
+  class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
+  gene or code path is retired only when no design on the pooled true front uses it - not the final set.
+- **Predictions due** (results/predictions.md): consolidation - batch-check PASS on the 8 (90/10), every one of the 21
+  the same bytes after them (85/15), nothing new to retire (60/40), jitdoes stays (90/10).
+- **Before 598**: chains A-D, seed 86 and the final pick's planning (582-597) - HANDOFF-HISTORY.md, "The card's state at
+  Iteration 597"; seeds 70-86 processed (498-582).
+- **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
+
+
 ## The card's state at Iteration 597 (moved at 598)
 
 - **Chain D, returned (597), not yet processed - with chain C's archive, in one chat**: forth-vm-evolution-chain-cdb8375c4-fury-20261103-135537_tar.gz,

@@ -13,6 +13,7 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 599 (consolidation's retirements applied, 1b53e88): none - the article's figures are the sandbox's.
 # Iteration 598 (chains C and D processed): none - the final set is chosen (21, results/final-set-chainsBCD-seed86.md)
 # and consolidation is the sandbox's (retire-plan-583.md); no machine work planned (results/drafts/chain-sizing-589.md).
 # msc kept (the Tegra's 4 pairs: msc=0 17.6-18.4% slower over 5 sessions). REMOTES keeps chain D's lines, read only by

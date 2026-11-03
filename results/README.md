@@ -74,7 +74,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed81/` - the after-seed-81 batch, applied at seed 81's processing (Iteration 568): jitscan, ccflags, design, bar (ORDER.md says what each does).
 - `applied-after-seed83/` - the after-seed-83 batch, applied at seed 83's processing (Iteration 572): armrt, prebuiltarm, ragecheck (ORDER.md says what each does).
 - `applied-after-seed84/` - the after-seed-84 batch, applied at once after seed 84's chain failed (Iteration 574): retired (ORDER.md says what it does).
-- `pending/ORDER.md` - the after-seed-86 batch, consolidation's retirements (queued 583-596, applied 599): fsys45, freeze, lean, scale, varcall, doesfar, bytehdr, rtloop (ORDER.md says what each does; msc's deleted at 598, KEEP).
+- `applied-after-seed86/ORDER.md` - the after-seed-86 batch, consolidation's retirements (queued 583-596, applied 599 at 1b53e88): fsys45, freeze, lean, scale, varcall, doesfar, bytehdr, rtloop (ORDER.md says what each does; msc's deleted at 598, KEEP).
 
 ### The processing checklists
 
