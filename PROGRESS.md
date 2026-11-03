@@ -10661,3 +10661,12 @@ Files: results/queued-consolidation/bytehdr-after-seed86.patch.
 
 While chain D runs: rtloop 2 retired (578's rule; retire-plan-583's "after the final set") - on no front design and on none of the shortlist's 40 or chain B's 14, the sets chains C and D choose from; queued after bytehdr. Tested without building: evolve.py alone changes, and of 2874 designs the expression changed in exactly the 136 that passed the loop words headerless; batch-check PASS on the 8 patches. Jitdoes 1 stays (chain B's 3ee67e7d34). Chains C and D's processing: lab/evolve/chain-sessions.py lays a chain's readings out by session, prints the final-pick line and msc's verdict; final-pick.py reads a session without loadtest.md (stand-in test: chain B's set the same).
 Files: results/queued-consolidation/rtloop-after-seed86.patch, results/drafts/rtloop-check-595.py.
+
+## Iteration 596 - 2026-11-03 - Claude
+
+While chain D runs: msc retired at 0 (578's rule; retire-plan-583's "the Tegra first"), queued last and conditional - applied
+only if chains C and D's processing finds msc's verdict RETIRE (chain-sessions.py, the Tegra's 4 pairs), else deleted. Removes
+tools/gen-msc.py and build()'s call, engines-check's 5 multi-state paths; FROZEN's msc 0, build() refuses msc 1, every id kept
+(express() untouched); 17 lines in, 346 out. msc expressed by none of the 232 candidates, the 40, the 14 or the 7 stages;
+batch-check PASS on the 9 patches.
+Files: results/queued-consolidation/msc-after-seed86.patch, results/drafts/msc-check-596.py.
