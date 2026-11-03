@@ -904,11 +904,11 @@ static inline __attribute__((always_inline)) uint32_t jit_body(UNS64 w, UNS64 a,
 #if JITVAR
             /* Iteration 342, the gene jitvar: a variable's slot - vf and vs (getstatic, putstatic) as
                a literal of the address, then @ or ! - the address the engine's SLOT() makes */
-            case 8: arg[n] = jit_cbase + ((UNS64)LD16(a) << SCALE); a += 2; break;
+            case 8: arg[n] = jit_cbase + (UNS64)LD16(a); a += 2; break;   /* 590: SCALE 0 (TAG2) */
             case 9: { UNS64 t_ = BYTE(a);       /* VARSLOT: two bytes, or three with the top bit */
                 if (t_ & 0x80) { t_ = ((t_ & 0x7F) << 16) | ((UNS64)BYTE(a + 1) << 8) | BYTE(a + 2); a += 3; }
                 else { t_ = (t_ << 8) | BYTE(a + 1); a += 2; }
-                arg[n] = jit_cbase + (t_ << SCALE); } break;
+                arg[n] = jit_cbase + t_; } break;
 #endif
             default: return 0;
             }

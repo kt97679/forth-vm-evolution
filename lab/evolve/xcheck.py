@@ -307,7 +307,7 @@ if '--sample' in ARGS:
             eng, img = built[i] if cell4 else E.build(E.canon(gen[i]), os.path.join(E.EV, 'xcheck-b-' + i)); put(i, eng, img)
         if cell4 and not arm:
             os.makedirs(os.path.join(stage, 'build32'))
-            for f in ('s0-cell-32', 's0-cell-s32.img', 'k32-self.txt', 'k32-b.txt'): shutil.copy2(os.path.join(E.O, f), os.path.join(stage, 'build32', f))
+            for f in ('s0-cell-32', 's0-cell-s32.img', 'k32-b.txt'): shutil.copy2(os.path.join(E.O, f), os.path.join(stage, 'build32', f))
         with tarfile.open(bundle + '.partial', 'w:gz') as t: t.add(stage, arcname='bin')
         os.replace(bundle + '.partial', bundle)
         print('xcheck: %d designs%s built into %s (%d KB)' % (len(armb) if arm else len(pick), ' (ARMv7)' if arm else ' and s6', bundle, os.path.getsize(bundle) // 1024))

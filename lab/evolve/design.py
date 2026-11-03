@@ -4,7 +4,7 @@ run against s6 (Iteration 567; results/drafts/automation-audit-567.md, candidate
 written afresh each time until then - 566's minimal design narrowed gene by gene by hand, 567's two throwaway scripts.
 
 DESIGN: a recorded id (results/evolve-*.md's records, or --db FILE's - a run's db.jsonl), or a hand-made stage
-(s6-cv8b, s4-cv8, ...). GENE=VALUE sets a gene on it - a number, a word (opt=Os), or a list as a,b,c ([] empty).
+(s6-cv8b, ...; not s4-cv8 or s5-cv8spec, frozen - varcall 0, 592; doesfar 0, 593). GENE=VALUE sets a gene on it - a number, a word (opt=Os), or a list as a,b,c ([] empty).
 INPUT, one or more: a workload by name - the input a run measures it on (kernel, fib, corpus, loop, bubble, ackermann,
 apps, sieve, parse, far) - jit-diff (tests/jit's programs, as engines-check runs them on every JIT variant), or a file.
 Each is run on the design and on s6 at the same width: right, WRONG (the first line that differs, both sides) or DIES

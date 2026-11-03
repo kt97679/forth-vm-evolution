@@ -31,11 +31,11 @@ HOT = {
  'L_negate': 'tos = -tos; NEXT();',
  'L_lshift': 'tos = NOS << tos; dsp += CELL_BYTES; NEXT();',
  'L_rshift': 'tos = NOS >> tos; dsp += CELL_BYTES; NEXT();',
- # PFA = align(body+3), matching vm-lab.c's ENC=3 L_dovar and the DODOES
+ # PFA = align(body+4) (align(body+5) at tag 2; doesfar retired at 1, 593), matching vm-lab.c's ENC=3 L_dovar and the DODOES
  # path. This table OVERRIDES the source; when the source changed and this
  # did not, the first CREATE after boot pushed the wrong address on the
  # 32-bit build and the right one on 64-bit, by alignment luck.
- 'L_dovar':  'PUSHT((ip + (TAG2 ? 4 : DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)); ip = RS; rp += CELL_BYTES; NEXT();',
+ 'L_dovar':  'PUSHT((ip + (TAG2 ? 4 : 3) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1)); ip = RS; rp += CELL_BYTES; NEXT();',
  'L_lit0':   'PUSHT(0); NEXT();',
  'L_lit1':   'PUSHT(1); NEXT();',
  'L_litm1':  'PUSHT(~(UNS64)0); NEXT();',

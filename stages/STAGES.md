@@ -1,5 +1,7 @@
 # The stage ladder
 
+s2-s5 are frozen since Iteration 588 - built once and kept, copied by tools/build-stages.sh rather than built (stages/frozen/README.md).
+
 Every stage in this table is a *working system*: an engine binary plus an
 image that boots, runs the shell, and (where marked) compiles new Forth
 definitions. Nothing here is modelled or estimated.

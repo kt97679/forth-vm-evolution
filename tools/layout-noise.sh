@@ -51,15 +51,16 @@ python3 tools/gen-tos.py "$O/vm-lab.c" > "$L/vm-lab-tos.c"
 python3 tools/gen-fold.py "$L/vm-lab-tos.c" "$HOT" v8 > /dev/null
 # Which cell width exists here is not a constant: a 32-bit host has no
 # 8-byte column at all. Pick the image that was actually built and the
-# call scale that goes with it.
-if [ -r "$O/s5-cv8spec-s64.img" ]; then
-    IMG=$O/s5-cv8spec-s64.img; SCALE=3; M=
-elif [ -r "$O/s5-cv8spec-s32.img" ]; then
-    IMG=$O/s5-cv8spec-s32.img; SCALE=2; M=$( [ "$(printf '%s' "$(getconf LONG_BIT 2>/dev/null)")" = 64 ] && echo "-m32 -fno-pie -no-pie" )
+# call scale that goes with it. s6's engine and image (Iteration 593): s5's
+# engine, doesfar 0, is no longer built from source (stages/frozen).
+if [ -r "$O/s6-cv8b-s64.img" ]; then
+    IMG=$O/s6-cv8b-s64.img; W32=; M=
+elif [ -r "$O/s6-cv8b-s32.img" ]; then
+    IMG=$O/s6-cv8b-s32.img; W32=1; M=$( [ "$(printf '%s' "$(getconf LONG_BIT 2>/dev/null)")" = 64 ] && echo "-m32 -fno-pie -no-pie" )
 else
-    echo "no s5-cv8spec self-hosting image in $O - run tools/build-stages.sh"; exit 1
+    echo "no s6-cv8b self-hosting image in $O - run tools/build-stages.sh"; exit 1
 fi
-BASE="$M -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=$SCALE -DSPEC=1 -DSHAREDCALL=1"
+BASE="$M -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1"
 
 # Semantically neutral, layout-changing. Nothing here alters what the
 # engine computes; -falign-* only moves code, and the dead function is
@@ -92,7 +93,7 @@ done < <(variants)
 # 4-byte run needs a retargeted copy and a different reference image -
 # the same dance kernel-compile.sh does. Either way the engine WRITES
 # kernel.img, so the committed one is saved and restored around the run.
-if [ "$SCALE" = 2 ]; then
+if [ -n "$W32" ]; then
     sed '22s/^8 TARGET-CELL-BYTES !/4 TARGET-CELL-BYTES !/' \
         "$ROOT/forth/cross.4" > "$W/cross32.4"
     XCSRC=cross32.4; REFSRC=$W/kernel32.img

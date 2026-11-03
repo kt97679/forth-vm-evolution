@@ -121,9 +121,14 @@ if V8:
 # cell operands or a builtin tail - get their START aligned. This needs
 # the cv8b.4 overlay in the image, since the kernel's own SEARCH-WORDLIST
 # and NAME> assume a cell link and an aligned name.
+# Every CV8 image's form since bytehdr retired at 1 (Iteration 594): --v8 without it - CV8's full
+# headers, s4's and s5's (frozen) - is refused, so a CV8 image is at --cpt 0 and its calls unscaled.
+# The full-header side below is cpt16's.
 BYTEHDR = '--bytehdr' in ARGV
 if BYTEHDR and not (V8 and CPT == 0):
     sys.exit("--bytehdr requires --v8 --cpt 0")
+if V8 and not BYTEHDR:
+    sys.exit("--v8 requires --bytehdr: CV8's full headers retired (Iteration 594)")
 
 
 # ---- the two-bit tag (Iteration 66, FORMAT-TAG2.md): --tag2 -----------
@@ -162,7 +167,6 @@ if '--escape' in ARGV:
     G['ESCAPE'] = True
     G['ESC_PRIMS'].update(G['ESC_PRIMS_ALL'])
     if '--escape2' in ARGV: G['ESC_PRIMS'].update(G['ESC2_PRIMS'])
-if '--no-varcall' in ARGV: G['VARCALL'] = False
 if '--no-varslot' in ARGV: G['VARSLOT'] = False
 UB = 1 if V8 else 2                # bytes per stream unit
 DOVARP = len(G['prims']) + 1       # after LIT32
@@ -344,8 +348,7 @@ def _refs(ws, skip=(), chain=None):       # every call target and (POSTPONE) tar
     return r
 DROPPED = {}
 import os as _os
-_NO_LEAN = _os.environ.get('SOD16_NO_LEAN')      # both parts of the gene lean off, to measure (Iteration 39)
-if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD16_NO_DROPX8') and not _NO_LEAN:   # the switch: to measure
+if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED:   # 589: the lean-off switches (SOD16_NO_LEAN, _NO_DROPX8, _NO_DROPTOOL) retired with lean 0
     _nm = {w['s']: w['n'] for w in order}
     def _chain(caller, t):                # a later X8 (or its X) deferring to an earlier one of its name
         src = SRC_OF.get(caller, caller)
@@ -375,7 +378,7 @@ if CV8_COMPILER and '--drop-x8' in ARGV and SWAPPED and not _os.environ.get('SOD
 # reachable not at all. Both leave `order` only where nothing refers to
 # them - checked, not assumed.
 DUMPTOOL = ('NFA', 'BP', 'BE', 'NFATAB', '#NFA', 'TA', 'CELLB', 'INIT-NFATAB', 'COLLECT', 'SWAPC', 'SORTNFA', 'DUMP', 'PROLOGUE-DUMP')
-if '--drop-dumptool' in ARGV and not _os.environ.get('SOD16_NO_DROPTOOL') and not _NO_LEAN:
+if '--drop-dumptool' in ARGV:
     _names = [w['n'] for w in order]
     _k = len(_names) - 1 - _names[::-1].index('NFA') if 'NFA' in _names else None
     _tool = order[_k:] if _k is not None and all(w['n'] in DUMPTOOL for w in order[_k:]) else []
@@ -1175,30 +1178,29 @@ def calltok_addr(target):
     return v
 if CPT is not None:
     G['G_CALLTOK'][0] = lambda target, n: calltok_addr(target)
-def v8val(target):
-    off = new_target_off(target)
-    assert off % (1 << CPT) == 0, "v8 call target %d not aligned" % off
-    return off >> CPT
+def v8val(target):          # CV8 calls name a byte offset - --cpt 0, unscaled (Iteration 594)
+    return new_target_off(target)
 if V8: G['V8_CALLTOK'][0] = v8val
 def v8pfa(target):
     off = BSS_OFF[target] if target in BSS_OFF else new_off[target]['body'] + cfd(target)   # [DOVAR][pad]: one cell, two at tag 2 and 4-byte cells
-    assert off % (1 << CPT) == 0 and (off >> CPT) < (1 << 23)
-    return off >> CPT
+    assert off < (1 << 23)
+    return off
 def v8loc(old):
     n2 = remap_pfa_off(old)
     if n2 is None: n2 = remap_body_off(old)
-    assert n2 is not None and n2 % (1 << CPT) == 0, old
-    assert (n2 >> CPT) < (1 << 23), "locals slot %d beyond 23-bit reach" % n2
-    return n2 >> CPT
+    assert n2 is not None, old
+    assert n2 < (1 << 23), "locals slot %d beyond 23-bit reach" % n2
+    return n2
 G['V8_PFA'][0] = v8pfa
 G['V8_LOC'][0] = v8loc
 def _v8_dodoes(n):
     # Iteration 416: a DOES> word's code field - [DODOES][call][pad] to a cell. A far call (3 bytes) counts CELLS, as the
-    # engine's DODOES reads it with DOESFAR - a DOES> tail is aligned - so 22 bits reach 32 MB, 16 at 4-byte cells.
+    # engine's DODOES reads it - a DOES> tail is aligned - so 22 bits reach 32 MB, 16 at 4-byte cells. Every CV8 design's
+    # form since doesfar retired at 1 (Iteration 593): --does-far gone.
     v = v8val(n)
-    if G['VARCALL'] and v >= (1 << 14) and '--does-far' in ARGV:
-        vb = v << (CPT or 0); assert vb % CELL == 0, 'a DOES> tail not cell-aligned'
-        vc = vb // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
+    if v >= (1 << 14):
+        assert v % CELL == 0, 'a DOES> tail not cell-aligned'
+        vc = v // CELL; assert vc < (1 << 22), 'a DOES> tail out of reach'
         b = bytes([0xC0 | (vc >> 16), (vc >> 8) & 0xFF, vc & 0xFF])
     else: b = callbytes(n)
     assert 1 + len(b) <= CELL, 'a DOES> call longer than its code field'
@@ -1208,10 +1210,8 @@ def callbytes(target):
         v = v8val(target); return G['t2call'](v, G['t2calllen'](v))
     if V8:
         v = v8val(target)
-        if G['VARCALL']:
-            if v < (1 << 14): return bytes([0x80 | (v >> 8), v & 0xFF])
-            return bytes([0xC0 | (v >> 16), (v >> 8) & 0xFF, v & 0xFF])
-        return bytes([0x80 | (v >> 8), v & 0xFF])
+        if v < (1 << 14): return bytes([0x80 | (v >> 8), v & 0xFF])
+        return bytes([0xC0 | (v >> 16), (v >> 8) & 0xFF, v & 0xFF])   # 592: always the variable form (--no-varcall retired)
     return tk(calltok_addr(target))
 
 # ---- emit the token image -------------------------------------------
@@ -1372,20 +1372,19 @@ def emit(path):
     # the default list writes back exactly the bytes it already had.
     # --set-compiler-vars: the compiler's call shift and DOES> form, which
     # cv8.4 and cv8b.4 set as a PAIR - shift 3, near DOES> calls, 2 bytes
-    # reserved; or shift 0, far calls, 3 bytes - but which a design chooses
-    # independently: scale is --cpt, the DOES> form --does-far. Without
+    # reserved; or shift 0, far calls, 3 bytes - shift 0 in every CV8 image (594), the
+    # DOES> form always far since doesfar retired at 1 (Iteration 593). Without
     # this, code compiled at run time encodes calls the engine misreads.
     CVARS = {}
     if '--set-compiler-vars' in ARGV:
-        far = '--does-far' in ARGV
-        CVARS = {'CV8-SHIFT-V': CPT or 0, 'CV8-DOES-FAR?': -1 if far else 0, 'CV8-DOES-RESERVE': 3 if far else 2}
+        CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 3}   # shift 0: --cpt 0 (594)
         if TAG2_ON: CVARS = {'CV8-SHIFT-V': 0, 'CV8-DOES-FAR?': -1, 'CV8-DOES-RESERVE': 4}   # the 4-byte call
     # Iteration 159: whether calls may take cv8's 3-byte far form - VARCALL -
     # written for EVERY cv8 design, compiler vars or not: hand-made s4 has no
     # VARCALL, kept the overlay's default and wrote far calls its engine misread.
     if V8: CVARS['DICT-MAX'] = 256 << 20   # Iteration 184: vm-lab.c's MEMMAX - the stacks apart, the dictionary its own
     if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
-    if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1 if G['VARCALL'] else 0
+    if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1   # 592: varcall retired at 1
     for w in order:
         if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + cfd(w['s']), G['cv8_op']   # [DOVAR][pad], then the data
@@ -1473,7 +1472,7 @@ def emit(path):
             else: data = bytes(_c(x) for x in data)
         img[at:at + len(data)] = data
 
-    _flags = ((1 if G['VARCALL'] else 0) | (2 if G['VARSLOT'] else 0)
+    _flags = (1 | (2 if G['VARSLOT'] else 0)
               | (4 if G['SPEC'] else 0) | 8 | (16 if BYTEHDR else 0) | (32 if HOT else 0)
               | (64 if TAG2_ON else 0)) if V8 else 0
     hdr = (b'SOD1' if CPT is None else (b'CV8' if V8 else b'CPT') + bytes([48 + CPT]))
@@ -1515,7 +1514,6 @@ def emit(path):
         _thr = [w for w in order if w['n'] == 'THROW']
         hdr += cel(new_off[_thr[-1]['s']]['body'] if _thr else 0)
     if HOT:            # last in the header: one-byte calls' targets, as image offsets
-        assert G['VARCALL'], "one-byte calls take far-call prefixes: they need --varcall"
         _o = [new_target_off(a) for a in HOT]
         assert all(0 <= x < 1 << 16 for x in _o), "a one-byte call's target beyond 64 KB"
         hdr += bytes([len(_o)]) + b''.join(x.to_bytes(2, 'little') for x in _o)

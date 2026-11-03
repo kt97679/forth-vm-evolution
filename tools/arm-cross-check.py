@@ -32,7 +32,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NATIVE = os.uname().machine.startswith('arm')          # the Tegra itself: its cc, no qemu
 if NATIVE and gcc: sys.exit('arm-cross-check: --gcc is the Tegra simulated on x86-64; here the host\'s cc builds')
 KNOWN = {'s2-cpt16': 'out of reach on apps (scale 1)', 's3-cpt16f': 'not converted at 4-byte cells',
-         's4-cv8': 'not converted at 4-byte cells', 's5-cv8spec': 'not converted at 4-byte cells'}
+         's4-cv8': 'frozen - not built from source (varcall 0, 592; bytehdr 0, 594)',
+         's5-cv8spec': 'frozen - not built from source (doesfar 0, 593; bytehdr 0, 594)'}
 os.environ['EVOLVE_CELL'] = '4'
 if gcc: os.environ['EVOLVE_CC'] = gcc
 elif not NATIVE: os.environ.setdefault('EVOLVE_CC', 'gcc -m32 -fno-pie -no-pie')

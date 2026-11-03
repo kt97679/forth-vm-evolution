@@ -112,7 +112,7 @@ PRE=
 LAYOUTS=1 bash tools/build-stages.sh > "\$W/build.log" 2>&1 || fail "build-stages.sh failed (build.log)"
 case $how in prebuilt|prebuilt32|prebuilt64|prebuiltarm) mkdir -p "\$W/bins" && tar -xzf "\$W/bins.tar.gz" -C "\$W/bins" || fail "the binaries did not unpack"; PRE="--prebuilt \$W/bins/bin" ;; esac
 if [ $how = prebuilt32 ]; then              # the 4-byte references this host cannot make
-    cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-self.txt build/k32-b.txt || fail "the 4-byte references did not install"
+    cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-b.txt || fail "the 4-byte references did not install"
     export EVOLVE_CELL=4 EVOLVE_PREBUILT_REF="\$W/bins/bin/s6"
 fi
 # Iteration 591 (chain D): up to $ses sessions of the same designs, each its own out file (out.json, out-s2.json, ...) -

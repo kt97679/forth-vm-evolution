@@ -51,7 +51,7 @@ if [ ! -r "$O/s6-cv8b-s32.img" ] || [ ! -r "$O/.corpus-good.fth" ]; then
     exit 0
 fi
 python3 "$ROOT/tools/gen-tos.py" "$ROOT/engine/spn-cv8.c" > "$T/spn-cv8-tos.c"
-$CC $FLAGS -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
+$CC $FLAGS -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSPN_FUSED_BR=1 -DSPN_IO=1 \
     -I"$O" -I"$ROOT/engine" -o "$T/s8-arm" "$T/spn-cv8-tos.c" \
     "$ROOT/engine/spn-stencils.c" "$ROOT/engine/spn-markers.c" 2>/dev/null
 ERRS='INCORRECT RESULT: \{|WRONG NUMBER OF RESULTS: \{|Undefined word'

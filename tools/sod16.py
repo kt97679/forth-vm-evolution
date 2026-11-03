@@ -949,7 +949,6 @@ V8 = False            # byte-stream mode: 1-byte ops, 2-byte calls
 V8_FOLDLIST = []      # v8: folded opcodes are 73 + position in this list
 V8_LIT32, V8_DOVAR, V8_DODOES, V8_LIT8, V8_LIT8X, V8_FOLD0 = 68, 69, 70, 71, 72, 73
 V8_CALLTOK = [None]   # layout pass binds: old target addr -> scaled value
-VARCALL = True        # 10xxxxxx = 2-byte call, 11xxxxxx = 3-byte
 VARSLOT = True        # 0xxxxxxx+1 = 15-bit slot, 1xxxxxxx+2 = 23-bit
 OP_CTX = [None]       # (ops, j) while sizing, so op_bytes can see context
 HOTCALLS = {}         # one-byte calls (Iteration 13): old target address -> opcode;
@@ -1031,7 +1030,7 @@ def op_bytes(k, pl, t):
         return n - (2 if (k == 'P' and pl in ESC_PRIMS) else 1) + t2len(L)
     if V8:
         if k == 'C' and pl in HOTCALLS: return 1
-        if k == 'C' and VARCALL:
+        if k == 'C':                                   # 10xxxxxx a 2-byte call, 11xxxxxx 3 (592: always)
             if OP_CTX[0] is not None and before_operand(*OP_CTX[0]): return 3
             return 2 if V8_CALLTOK[0] is None or V8_CALLTOK[0](pl) < (1 << 14) else 3
         if k in ('VF', 'VS', 'LOC'):
@@ -1149,12 +1148,12 @@ def pad_before(ops, j, t):
     """NOOP padding needed before op j so an inline operand lands aligned.
     A call before an operand ALWAYS uses the 3-byte far form, so the
     padding does not depend on how far the target happens to be. With
-    VARCALL a near call is 2 bytes and a far one 3; letting the distance
+    variable-length calls a near call is 2 bytes and a far one 3; letting the distance
     decide made (POSTPONE) and (LOOP) read a misaligned operand."""
     if before_operand(ops, j):
         if V8 and TAG2[0]: return (-(t + 4)) % CELL     # tag 2: always the 4-byte call
         if V8 and ops[j][1] in HOTCALLS: return (-(t + 1)) % CELL
-        return (-(t + (3 if (V8 and VARCALL) else 2))) % CELL
+        return (-(t + (3 if V8 else 2))) % CELL
     return 0
 
 def layout(ops):
@@ -1306,20 +1305,16 @@ def to_bytes_v8(ops):
         elif k == 'C' and pl in HOTCALLS: b.append(HOTCALLS[pl])
         elif k == 'C':
             v = V8_CALLTOK[0](pl) if V8_CALLTOK[0] else 0
-            if VARCALL:
-                if before_operand(ops, j):
-                    assert v < (1 << 22), "call target %d out of 22 bits" % v
-                    b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
-                    b.append(v & 0xFF)
-                elif v < (1 << 14):
-                    b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
-                else:
-                    assert v < (1 << 22), "varcall target %d out of 22 bits" % v
-                    b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
-                    b.append(v & 0xFF)
-            else:
-                assert 0 <= v < 0x8000, "v8 call value %d out of 15 bits" % v
+            if before_operand(ops, j):
+                assert v < (1 << 22), "call target %d out of 22 bits" % v
+                b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
+                b.append(v & 0xFF)
+            elif v < (1 << 14):
                 b.append(0x80 | (v >> 8)); b.append(v & 0xFF)
+            else:
+                assert v < (1 << 22), "varcall target %d out of 22 bits" % v
+                b.append(0xC0 | (v >> 16)); b.append((v >> 8) & 0xFF)
+                b.append(v & 0xFF)
         elif k == 'EQIH':                              # the fused opcode, then the immediate
             nk = ops[j + 1][0]
             b.append(X_OPS10['=I?BRANCH8' if nk == 'EQITS' else '=I?BRANCH']); b.append(pl & 0xFF)

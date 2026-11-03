@@ -152,15 +152,6 @@ static char **g_argv;
  *  let code span 32 MB - an asymmetry that fails silently.  */
 #define VARSLOT 1
 #endif
-#ifndef DOESFAR
-/*  DOESFAR: CREATE reserves THREE bytes after the DOVAR opcode and
- *  DOES> writes the three-byte far call, so the parameter field is at
- *  align(body+4). Needed when the call scale is 0, where the two-byte
- *  near form reaches only 16 KB and the cross-compiler's dictionary is
- *  far larger. Without it CREATE reserves two and the field is at
- *  align(body+3), which is what every other CV8 stage uses.  */
-#define DOESFAR 0
-#endif
 #ifndef HOTCALLS
 /*  HOTCALLS (Iteration 14): one-byte calls. The far-call prefixes
  *  0xE0-0xFF become calls to up to 32 of the image's own words, whose
@@ -209,13 +200,9 @@ static char **g_argv;
     : a__ - (((UNS64)(t__ & 31) << 24) | ((UNS64)BYTE(a__ - 2) << 16)                     \
              | ((UNS64)BYTE(a__ - 3) << 8) | BYTE(a__ - 4)); })   /* 416: a fourth form, 29 bits */
 #endif
-#ifndef VARCALL
-/*  VARCALL: the call form is variable too. 10xxxxxx takes one more byte
- *  (14-bit payload), 11xxxxxx takes two (22-bit). Costs one extra test
- *  on the call path; buys a far call without spending an opcode.
- *  VARCALL=0 is the fixed 15-bit form.  */
-#define VARCALL 1
-#endif
+/*  The call form is variable: 10xxxxxx takes one more byte (14-bit payload), 11xxxxxx takes two
+ *  (22-bit), decoded once on the shared call path (do_call). The fixed 15-bit form (VARCALL=0) and the
+ *  per-handler call path (SHAREDCALL=0) were retired with s4, frozen (Iteration 592).  */
 #ifndef SIGNTEST
 /*  Measured in guest instructions (tools/lab/xarch, qemu): -3.6% on
  *  AArch64, -4.2% on RISC-V 64, +/-0.3% on x86, but +3.0% on ARMv7.  */
@@ -583,7 +570,7 @@ static const UNS8 IMAGE_MAGIC[8] = { 'S', 'O', 'D', '1', CELL_BYTES, 0, 0, 0 };
                             walk links, can refuse. */
 static const UNS8 IMAGE_MAGIC[8] = { 'C', 'V', '8', '0' + SCALE, CELL_BYTES,
     SPEC ? 'L' : 0, CV8_VERSION,
-    (VARCALL ? F_VARCALL : 0) | (VARSLOT ? F_VARSLOT : 0)
+    F_VARCALL | (VARSLOT ? F_VARSLOT : 0)
         | (SPEC ? F_SPEC : 0) | F_LIT64 | F_BYTEHDR | (HOTCALLS ? F_HOTCALLS : 0)
         | (TAG2 ? F_TAG2 : 0) };
 #else
@@ -1337,18 +1324,8 @@ NOINLINE_IO static int t_fgetc(int fd) {
     return f->b[f->pos++];
 }
 
-#if FSYS >= 4
-/*  Iteration 207, fsys 4: the Forth output buffer (forth/file-sysc4.4) - its
- *  [address, fill], registered by SYSCALL -5 - is flushed wherever t_obuf
- *  is: before every system call, before a read blocks, at every exit, the
- *  faults' included. The flush points are the native engine's, unchanged.  */
-static UNS64 *g_fbuf;
-#endif
 NOINLINE_IO static void t_flush(void) {
     if (t_olen) { full_write(1, t_obuf, (size_t)t_olen); t_olen = 0; }
-#if FSYS >= 4
-    if (g_fbuf && g_fbuf[1]) { full_write(1, (const void *)(uintptr_t)g_fbuf[0], (size_t)g_fbuf[1]); g_fbuf[1] = 0; }
-#endif
 }
 
 /*  WRITE and READ - primitives 30 and 31, where EMIT and KEY were; the
@@ -1707,7 +1684,7 @@ static void virtual_machine(void) {
         }
     }
 #endif
-#if ENC == 3 && SHAREDCALL && DISPATCH256
+#if ENC == 3 && DISPATCH256
     /*  Same handlers, but indexed by the whole byte: 0x80-0xFF all land
      *  on do_call, so no test is needed to tell an opcode from a call. */
     /*  Static, and filled once: s8 re-enters this function every time
@@ -1727,7 +1704,7 @@ static void virtual_machine(void) {
 #define NEXT() do { \
         PROFIP(ip); t = BYTE(ip); ip += 1; if (T2_IS_OP(t)) PROF(t); goto *t2tab[t]; \
     } while (0)
-#elif ENC == 3 && SHAREDCALL
+#elif ENC == 3
 /*  Every handler keeps its own opcode dispatch (what the branch predictor
  *  needs), but the call path - decode, RPUSH, limit check - exists once.
  *  GCC otherwise replicates ~50 bytes of it into all ~120 handlers.  */
@@ -1751,14 +1728,6 @@ static void virtual_machine(void) {
         goto do_call; \
     } while (0)
 #endif
-#elif ENC == 3
-#define NEXT() do { \
-        PROFIP(ip); t = BYTE(ip); \
-        if (t < 0x80) { ip += 1; PROF(t); goto *dispatch[t]; } \
-        t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2; \
-        PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); TRACE_CALL(); \
-        goto next; \
-    } while (0)
 #else
 #define NEXT() do { \
         t = TOK(ip); ip += 2; \
@@ -1782,14 +1751,14 @@ t2call:    PROF(256); PROFRET(ip, t); RPUSH(ip); ip = cbase + t; TRACE_CALL(); N
 L_t2esc:   t = BYTE(ip); ip += 1; goto *t2esc[t];
 L_t2bad:   write_str(2, "relf: no operation has this code\n"); exit(70);
 #endif
-#if ENC == 3 && SHAREDCALL
+#if ENC == 3
 do_call:
 #if DISPATCH256
     /*  ip is already past the first byte here.  */
     if (t & 0x40) { t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip) << 8) | BYTE(ip + 1);
                     ip += 2; }
     else          { t = ((t & 0x3F) << 8) | BYTE(ip); ip += 1; }
-#elif VARCALL
+#else
 #if HOTCALLS
     if ((t & 0xE0) == 0xE0) { ip += 1; goto L_hcall; }   /* the low byte, as SIGNTEST sign-extends */
 #endif
@@ -1800,16 +1769,11 @@ do_call:
         t = ((t & 0x3F) << 8) | BYTE(ip + 1);
         ip += 2;
     }
-#else
-    t = ((t & 0x7F) << 8) | BYTE(ip + 1); ip += 2;
 #endif
     PROF(256); RPUSH(ip); ip = cbase + (t << SCALE); TRACE_CALL();
     NEXT();
 #endif
 #if ENC == 3 && HOTCALLS
-#if !(SHAREDCALL && VARCALL)
-#error "HOTCALLS needs the shared, variable-length call path"
-#endif
 L_hcall:   /* one-byte call: t holds the byte (0xE0-0xFF), ip is past it */
     PROF(256); RPUSH(ip); ip = cbase + hot_tab[t & 0x1F]; TRACE_CALL(); NEXT();
 #endif
@@ -2200,12 +2164,14 @@ L_dovar:   /* DOVAR as a primitive: [DOVAR][pad][PFA] -> push PFA, return */
      *  agreed by accident; the byte-header layout leaves bodies wherever
      *  the name ends, and a DOES> word created at run time then found
      *  its parameter field one cell away from where CREATE had put it.
-     *  cv8.4's CREATE8 reserves the two bytes.  */
+     *  cv8.4's CREATE8 reserved the two bytes; since doesfar retired at 1
+ *  (Iteration 593) CREATE reserves three for the far call, so the
+ *  field is at align(body+4).  */
 #if TAG2
     /*  Tag 2: CREATE reserves the longest call, 4 bytes (FORMAT-TAG2.md).  */
     PUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
 #else
-    PUSH((ip + (DOESFAR ? 3 : 2) + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
+    PUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
 #endif
 #else
     PUSH((ip + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
@@ -2219,21 +2185,14 @@ L_dodoes:  /* [DODOES][tail][pad][PFA] -> the tail's R> finds the PFA */
     RPUSH((ip + 4 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
     ip = cbase + t; NEXT();
 #elif ENC == 3
-#if VARCALL
     if (BYTE(ip) & 0x40) {
         t = ((BYTE(ip) & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
-#if DOESFAR
         t <<= (CELL_BYTES == 8 ? 3 : 2) - SCALE;  /* Iteration 416: a far DOES> call counts cells - its tail is aligned */
-#endif
         RPUSH((ip + 3 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
     } else {
         t = ((BYTE(ip) & 0x3F) << 8) | BYTE(ip + 1);
         RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
     }
-#else
-    t = ((BYTE(ip) & 0x7F) << 8) | BYTE(ip + 1);
-    RPUSH((ip + 2 + CELL_BYTES - 1) & ~(UNS64)(CELL_BYTES - 1));
-#endif
     ip = cbase + (t << SCALE); NEXT();
 #else
     t = TOK(ip);
@@ -2503,10 +2462,6 @@ L_syscall: {
      *  and the positioning words did first - file-sysc.4's need it: READ-LINE,
      *  native, reads ahead.  */
     if (num == -4) { t_fdrop((int)a[0]); r = 0; } else
-#endif
-#if FSYS >= 4
-    if (num == -5) { g_fbuf = (UNS64 *)(uintptr_t)a[0]; r = 0; } else   /* the Forth output buffer registered */
-    if (num == -6) r = 0; else                                          /* a flush: done on entry, above */
 #endif
     if (num < 0) r = num == -1 ? (long)g_argc : num == -2 ? (long)(uintptr_t)g_argv : num == -3 ? (long)(uintptr_t)environ : -1;
     else {

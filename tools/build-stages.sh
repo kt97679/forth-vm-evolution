@@ -232,7 +232,8 @@ echo "built  $_b"
 # words are in the image it is laying out:
 #   d*   full shell image      - what the shell size table uses
 #   k*   bare kernel           - boots into the Forth interpreter
-#   *self  same, plus cv8.4    - the self-hosting compiler overlay
+#   k*-b   the kernel, plus cv8.4 and cv8b.4 - the self-hosting compiler overlay, byte headers
+#          (cv8.4 alone, the *self dumps of CV8's full headers, went with bytehdr 0 - Iteration 594)
 runnable() { # runnable ENGINE - exists, and this host can execute it
     [ -x "$1" ] || return 1
     "$1" /dev/null >/dev/null 2>&1
@@ -253,21 +254,15 @@ dump() { # dump ENGINE IMAGE OUTFILE BOOTSCRIPT
     [ -z "$_e" ] || { echo "build-stages: $3 - an overlay did not load: $_e"; exit 1; }
 }
 SHELL_BOOT='S" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
-SELF_BOOT='S" cv8.4" INCLUDED\nS" pool.4" INCLUDED\nS" locals.4" INCLUDED\nS" save-system.4" INCLUDED\nS" shell-sysc.4" INCLUDED\nS" shell.4" INCLUDED\nS" cv8-save.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KERN_BOOT='S" dict-dump-addr.4" INCLUDED\nBYE\n'
-KSELF_BOOT='S" cv8.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KCPT_BOOT='S" cpt16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KS16_BOOT='S" sod16.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 KCV8B_BOOT='S" cv8.4" INCLUDED\nS" cv8b.4" INCLUDED\nS" dict-dump-addr.4" INCLUDED\nBYE\n'
 
 dump "$O/s0-cell-64" kernel.img   d64.txt      "$SHELL_BOOT"
 dump "$O/s0-cell-32" kernel32.img d32.txt      "$SHELL_BOOT"
-dump "$O/s0-cell-64" kernel.img   d64-self.txt "$SELF_BOOT"
-dump "$O/s0-cell-32" kernel32.img d32-self.txt "$SELF_BOOT"
 dump "$O/s0-cell-64" kernel.img   k64.txt      "$KERN_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32.txt      "$KERN_BOOT"
-dump "$O/s0-cell-64" kernel.img   k64-self.txt "$KSELF_BOOT"
-dump "$O/s0-cell-32" kernel32.img k32-self.txt "$KSELF_BOOT"
 dump "$O/s0-cell-64" kernel.img   k64-cpt.txt  "$KCPT_BOOT"
 dump "$O/s0-cell-32" kernel32.img k32-cpt.txt  "$KCPT_BOOT"
 dump "$O/s0-cell-64" kernel.img   k64-s16.txt  "$KS16_BOOT"
@@ -300,7 +295,7 @@ for LV in $(seq 0 $((LAYOUTS - 1))); do
   #   ENC=1 SOD16 (word table)   ENC=2 CPT16 (computed target)   ENC=3 CV8
   #   REG=1 VM registers in locals        FOLD=1 folded prim+EXIT
   #   SCALE=S call scale shift            SKIPPAD=1 loader drops NOOPs
-  #   SPEC=1 specialised opcodes          SHAREDCALL=1 shared call path
+  #   SPEC=1 specialised opcodes          the shared call path always (592)
   cp engine/vm-lab.c "$O/"
   python3 tools/gen-tos.py "$O/vm-lab.c" > "$O/vm-lab-tos.c"
 
@@ -323,28 +318,19 @@ for LV in $(seq 0 $((LAYOUTS - 1))); do
   cc32 -O2 -Wall -o "$O/p8-pack8-32$LVSUF" engine/pack8.c
   cc64    -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-64$LVSUF" "$O/vm-lab.c"
   cc32 -O2 -DENC=1 -DREG=1 -DSKIPPAD=1 -DSCALE=1 -o "$O/s1-sod16-32$LVSUF" "$O/vm-lab.c"
-  cc64    -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-64$LVSUF" "$O/vm-lab.c"
-  cc32 -O2 -DENC=2 -DREG=1 -DSCALE=1 -o "$O/s2-cpt16-32$LVSUF" "$O/vm-lab.c"
 
   python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" > /dev/null
-  cc64    -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=3 -o "$O/s3-cpt16f-64$LVSUF" "$O/vm-lab.c"
-  cc32 -O2 -DENC=2 -DREG=1 -DFOLD=1 -DSCALE=2 -o "$O/s3-cpt16f-32$LVSUF" "$O/vm-lab.c"
 
   python3 tools/gen-fold.py "$O/vm-lab.c" "$HOT" v8 > /dev/null
-  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-64$LVSUF" "$O/vm-lab.c"
-  cc32 -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DVARCALL=0 -DVARSLOT=0 -o "$O/s4-cv8-32$LVSUF" "$O/vm-lab.c"
 
+  # s2-s5: frozen (Iteration 588) - their engines and images copied from stages/frozen below, not built
   python3 tools/gen-fold.py "$O/vm-lab-tos.c" "$HOT" v8 > /dev/null
-  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=3 -DSPEC=1 -DSHAREDCALL=1 \
-          -o "$O/s5-cv8spec-64$LVSUF" "$O/vm-lab-tos.c"
-  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=2 -DSPEC=1 -DSHAREDCALL=1 \
-          -o "$O/s5-cv8spec-32$LVSUF" "$O/vm-lab-tos.c"
   # s6: s5 with byte-aligned call targets (SCALE=0). The engine never reads
   # a dictionary link, so the byte-granular header is invisible to it; the
   # scale is the only difference in the binary.
-  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
+  cc64    -O2 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 \
           -o "$O/s6-cv8b-64$LVSUF" "$O/vm-lab-tos.c"
-  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 -DSHAREDCALL=1 -DDOESFAR=1 \
+  cc32 -O2 -fno-pie -no-pie -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DSPEC=1 \
           -o "$O/s6-cv8b-32$LVSUF" "$O/vm-lab-tos.c"
   # relf: today's CV8, vendored as a REFERENCE SYSTEM (vendor/relf, which
   # commit in vendor/relf/UPSTREAM; tools/update-relf.sh). Built as relf
@@ -412,18 +398,24 @@ img() { # img NAME CELL DUMP OPTIONS...
 }
 CPTF="--dataprims --fold --fold-set $HOT"
 
+# s2-s5, frozen (Iteration 588; results/drafts/retire-stages-584.md): built once at Iteration 587's master and kept
+# in stages/frozen (its README.md; SHA256SUMS, which evolve.py --validate checks) - the values only they use, scale
+# 1-3, bytehdr 0, varcall 0 and doesfar 0, are retired from the source. Copied where they run: an x86 Linux host, at
+# the widths it builds; a host that cannot run them (the Tegra) has none - no tool there uses them. One layout variant.
+for st in s2-cpt16 s3-cpt16f s4-cv8 s5-cv8spec; do
+  for c in 64 32; do
+    eval "_on=\$BUILD$c"
+    [ "$_on" = 1 ] && runnable "$ROOT/stages/frozen/$st-$c" || continue
+    cp -f "$ROOT/stages/frozen/$st-$c" "$ROOT/stages/frozen/$st-$c.img" "$ROOT/stages/frozen/$st-k$c.img" \
+          "$ROOT/stages/frozen/$st-s$c.img" "$O/"
+  done
+done
+echo "copied s2-s5 (frozen: stages/frozen)"
+
 # shell images - what the size table and the shell suites use
 img s1-sod16-64   8 d64.txt --skip-pad
 img s1-sod16-32   4 d32.txt --skip-pad
-img s2-cpt16-64   8 d64.txt --cpt 1 --skip-pad
-img s2-cpt16-32   4 d32.txt --cpt 1 --skip-pad
-img s3-cpt16f-64  8 d64.txt --cpt 3 $CPTF
-img s3-cpt16f-32  4 d32.txt --cpt 2 $CPTF
-img s4-cv8-64     8 d64.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot
-img s4-cv8-32     4 d32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
 # Iteration 166: s5 and s6 lean - the copies --cv8-compiler leaves, and the dump tool, out
-img s5-cv8spec-64 8 d64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
-img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
 
 # ---- kernel-only images ----------------------------------------------
 # These boot into the Forth INTERPRETER, which is what the CORE suite
@@ -446,14 +438,6 @@ img s5-cv8spec-32 4 d32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler
 [ "$BUILD32" = 1 ] && cp "$W/kernel32.img" "$O/s0-cell-k32.img"
 img s1-sod16-k64   8 k64.txt --skip-pad
 img s1-sod16-k32   4 k32.txt --skip-pad
-img s2-cpt16-k64   8 k64.txt --cpt 1 --skip-pad
-img s2-cpt16-k32   4 k32.txt --cpt 1 --skip-pad
-img s3-cpt16f-k64  8 k64.txt --cpt 3 $CPTF
-img s3-cpt16f-k32  4 k32.txt --cpt 2 $CPTF
-img s4-cv8-k64     8 k64.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot
-img s4-cv8-k32     4 k32.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot
-img s5-cv8spec-k64 8 k64.txt --v8 --cpt 3 $CPTF --spec $SPECS
-img s5-cv8spec-k32 4 k32.txt --v8 --cpt 2 $CPTF --spec $SPECS
 # s6 run-only: the same word set laid out with byte headers, for the size
 # column ONLY. It does not boot: the kernel's own SEARCH-WORDLIST assumes
 # a cell link and an aligned name, and only the cv8b.4 overlay replaces
@@ -476,19 +460,6 @@ fi
 [ "$BUILD32" = 1 ] && cp "$O/s0-cell-k32.img" "$O/s0-cell-s32.img"
 img s1-sod16-s64   8 k64-s16.txt --skip-pad --compiler-overlay 16
 img s1-sod16-s32   4 k32-s16.txt --skip-pad --compiler-overlay 16
-img s2-cpt16-s64   8 k64-cpt.txt --cpt 1 --skip-pad --compiler-overlay 16
-img s2-cpt16-s32   4 k32-cpt.txt --cpt 1 --skip-pad --compiler-overlay 16
-img s3-cpt16f-s64  8 k64-cpt.txt --cpt 3 $CPTF --compiler-overlay 16
-img s3-cpt16f-s32  4 k32-cpt.txt --cpt 2 $CPTF --compiler-overlay 16
-# s4 uses cv8.4 too. Its engine is built with VARCALL=0, so it reads
-# every call as the fixed 2-byte form; cv8.4 emits the 3-byte form only
-# past 16384 scaled units, which a kernel image never reaches. The build
-# checks this rather than trusting it - see the far-call assertion in
-# the log.
-img s4-cv8-s64     8 k64-self.txt --v8 --cpt 3 $CPTF --no-varcall --no-varslot --cv8-compiler
-img s4-cv8-s32     4 k32-self.txt --v8 --cpt 2 $CPTF --no-varcall --no-varslot --cv8-compiler
-img s5-cv8spec-s64 8 k64-self.txt --v8 --cpt 3 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
-img s5-cv8spec-s32 4 k32-self.txt --v8 --cpt 2 $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
 img s6-cv8b-s64    8 k64-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
 img s6-cv8b-s32    4 k32-b.txt --v8 --cpt 0 --bytehdr $CPTF --spec $SPECS --cv8-compiler --drop-x8 --drop-dumptool
 echo "built  stage images"

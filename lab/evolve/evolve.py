@@ -21,10 +21,10 @@ never measured twice, and a run resumes where the last one stopped.
 GENOME - phase 1: the CV8 family, 8-byte cells
   tos        0/1   engine with the top of stack in a register (gen-tos)
   scale      0-3   call targets in units of 2^scale (engine SCALE, image --cpt)
-  bytehdr    0/1   byte-granular headers (image --bytehdr, from the k64-b dump)
+  bytehdr    0/1   byte-granular headers (image --bytehdr, from the k64-b dump; retired at 1, Iteration 594)
   spec       set   specialisation families of loc var tiny small imm
   sharedcall 0/1   one call path shared by every call opcode
-  doesfar    0/1   DOES> children that reach anywhere (DOESFAR)
+  doesfar    0/1   DOES> children that reach anywhere (retired at 1, Iteration 593)
   varcall    0/1   opcodes that call through a variable (VARCALL)
   varslot    0/1   opcodes for variable slots (VARSLOT)
   d256       0/1   the 256-entry dispatch table (DISPATCH256)
@@ -116,6 +116,7 @@ HUMAN = {   # the hand-made stages, as genomes; genes a family does not use lie 
     's5-cv8spec': human('cv8', lean=1),     # Iteration 166: the compiler's copies and the dump tool left out
     's6-cv8b':    human('cv8', scale=0, bytehdr=1, doesfar=1, lean=1),
 }
+FROZEN_STAGES = ('s2-cpt16', 's3-cpt16f', 's4-cv8', 's5-cv8spec')   # Iteration 588: built once, kept in stages/frozen - not rebuilt (FROZEN is the genes')
 FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
@@ -154,7 +155,7 @@ def gene(name, values=None, show=None, family='cv8', late=True, needs=None, conv
 # dormant sysc stay in express() as code. Genes listed above keep their place.
 gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  # nothing to fuse at run time otherwise; older than LATE
 gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
-gene('rtloop', values=range(3), needs=lambda g, e: rtloop_on(g))               # Iteration 41: a loop opcode to use
+gene('rtloop', values=range(2), needs=lambda g, e: rtloop_on(g))               # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired)
 gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
 gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
 gene('tfind', needs=lambda g, e: tfind_on(g))                                  # Iteration 52: with kfast
@@ -176,7 +177,7 @@ gene('opbody', needs=lambda g, e: any(w in OPBODY for w, _ in ops10_in(g)),    #
 gene('bss', convert=lambda g: ['--bss'] if g.get('bss') else [])               # Iteration 44: scratch buffers out of the file
 gene('thinhdr', convert=lambda g: ['--thin-header'] if g.get('thinhdr') else [])   # Iteration 58: one thread head, not 32
 gene('abortif', convert=lambda g: ['--guard-abort'] if g.get('abortif') else [])   # Iteration 117: ABORT" behind IF ... THEN
-gene('lean', convert=lambda g: ['--drop-x8', '--drop-dumptool'] if g.get('lean') else [])   # Iterations 38-39: build artifacts left out
+gene('lean', convert=lambda g: ['--drop-x8', '--drop-dumptool'])   # Iteration 589: retired at 1 (FROZEN) - both drops for every CV8 design   # Iterations 38-39: build artifacts left out
 gene('jitloop', needs=lambda g, e: jit_on(g))                                  # Iteration 129: on the JIT
 gene('jitinl', needs=lambda g, e: jit_on(g) and g.get('jitx'))                # Iteration 137: in jitx's translator
 gene('jitmul', needs=lambda g, e: jit_on(g))                                   # Iteration 472: UM* and UM/MOD, COUNT (results/drafts/jitapps-471.md)
@@ -253,11 +254,7 @@ def super_slots(g):
     return (SUPER_FREE + list(range(73 + len(g['folds']), 96)) + ([] if g['spec'] else list(range(96, 124)))
             + (list(range(27 if g.get('escape') == 2 else 36, 68)) if g.get('escape') else []))   # ESCAPE: primitives 36-67 behind a byte; level 2 from 27
 LOOP10 = ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
-# Iteration 190: forth/cv8-fuse-loop.4's words reached only by its own code
-# (and the converter, which fills the three tables by their names in the
-# dump): rtloop=2 builds them headerless (tools/layout.py --headerless).
-RTLOOP_INTERNAL = ('X10-OP', 'W@', 'CHAIN16?', 'RESOLVE-LEAVE16', 'RESOLVE-LEAVES', 'LOOP-OPS', 'X10-XTS', 'X10-OPS')
-# Iteration 202, the gene fsys (results/drafts/fsys/README.md): six file words
+# Iteration 202, the gene fsys (results/drafts/fsys/README.md; levels 4-5 retired at 583, results/drafts/retire-plan-583.md): six file words
 # and RESIZE in Forth over SYSCALL (forth/file-sysc.4, loaded last in a -fsys
 # dump), their handlers out of the engine: 27 of 68 primitives never ran in
 # the eight workloads. A design without it builds from the dumps it always did.
@@ -339,8 +336,6 @@ FSYS2_REBIND = ('OPEN-FILE', 'CLOSE-FILE', 'WRITE-FILE', 'ALLOCATE', 'FREE')
 FSYS3_INTERNAL = ('FS-P', 'FS-EDIT?', 'FS-SEEKS?', 'FS-BACK', 'FS-UPTO-EDIT', 'FS-ANY', 'FS-LF', 'FS-CR',
                   'FS-SK', 'FS-BIT', 'FS-FORGET')   # Iteration 206; the last three 208
 FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
-FSYS4_INTERNAL = ('FS-OB', 'FS-OMODE', 'FS-OSIZE', 'FS-OINIT')   # Iteration 207
-FSYS5_INTERNAL = ('FS-RT', 'FS-RSIZE', 'FS-RE', 'FS-RESET', 'FS-GIVEBACK', 'FS-E', 'FS-LIM', 'FS-FILL', 'FS-TAKE')   # Iteration 211; 214: FS-LIM for FS-CNT, FS-MAX, FS-ERR
 
 def rtloop_on(g):
     """Iteration 41: does this design compile loops at run time with its loop
@@ -562,6 +557,8 @@ def canon(g):
     g['supers'] = [list(x) for x in g.get('supers', [])]
     g['ops10'] = list(g.get('ops10', []))
     for k in LATE: g.setdefault(k, 0)          # genomes recorded before them: off
+    if g['fsys'] > 3: g['fsys'] = 3            # Iteration 583: fsys 4-5 retired (no design on the pooled front, no candidate) - level 3
+    if g['rtloop'] > 1: g['rtloop'] = 1        # Iteration 595: rtloop 2 retired (no design on the pooled front, the shortlist or the final set) - its words named
     g['opcall'] = list(g['opcall'] or [])      # Iteration 121: a list gene, [] when off
     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
     return g
@@ -576,7 +573,6 @@ def express(g):
         e['opcall'] = [x[0] for x in opcall_in(g)]
         if not e['opcall']: e.pop('opcall')
     if e.get('rtimm') == 2 and g.get('rtfuse') and (supers_in(g) or rt_tests(g)): e['rtimm'] = 1   # Iteration 175: the same build - one id
-    if e.get('rtloop') == 2 and rtloopall_on(g): e['rtloop'] = 1                   # Iteration 190: loopall's own words - the same build
     if 'sysc' in e and g['enc'] != 'cv8': e.pop('sysc')                            # Iteration 136: SYSC is vm-lab.c's, build()'s
     if e.get('compiler'):                                                           # Iteration 262: clang - GCC's own genes do nothing
         for k in GCC_ONLY: e.pop(k, None)
@@ -931,10 +927,31 @@ REQUIRE = []
 #   FROZEN = {'bytehdr': 1, 'doesfar': 1, 'thinhdr': 1, 'varcall': 1, 'bss': 1, 'lean': 1, 'msc': 0, 'scale': 0,
 #             'sharedcall': 0, 'tail': 0, 'kstack': 0, 'tailpn': 0,
 #             'alignhot': 0}   # 534 (the owner): jitos unfrozen - its freeze (495) fails the rule on the true fronts (results/drafts/frozen-recheck-534.md); 475: jitdoes enabled (the owner); 477: jitexec; 483: jitcfa; 495 (the owner): jitrp enabled, jitos frozen; 504: jithelp and jitre retired; 508 (the owner): jitfuse enabled; 501: nocase retired (the owner)
-FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0}
+# Iteration 589 (retire-stages-584.md, step 2): lean retired at 1 - on every pooled-front design and candidate; lean 0
+# built only s4, frozen (stages/frozen). Its row's two drops unconditional, layout.py's lean-off switches gone. Kept in
+# LATE and EXPRESSED at 1, so every id stands; s5 and s6 keep lean=1 (a hand-made genome bypasses require()).
+# Iteration 590 (retire-stages-584.md, step 3): scale retired at 0 for CV8 - every pooled-front design and candidate has
+# it, scale 1-3 built only s4 and s5 (frozen). FROZEN is CV8's (require()), and mutate()'s pool now agrees: cpt16 keeps
+# its scale gene - SCALE stays in vm-lab.c and layout.py for cpt16 and sod16 (s1 builds at SCALE 1, s2-s3 frozen). The
+# JIT's two shifts went (JITVAR needs TAG2, SCALE 0 by vm-lab.c's #error); EXPRESSED keeps scale, so every id stands.
+# Iteration 592 (retire-stages-584.md, step 4): varcall retired at 1, sharedcall with it - every pooled-front design and
+# candidate has varcall 1, under which sharedcall is dormant (express) and forced on (build); varcall 0 and sharedcall 0
+# built only s4 (frozen). The engines' fixed 15-bit call and per-handler call path gone, layout.py's --no-varcall too;
+# build() refuses varcall 0 (a hand-made genome bypasses require()). EXPRESSED keeps both, so every id stands.
+# Iteration 593 (retire-stages-584.md, step 5): doesfar retired at 1 - every pooled-front design and candidate has it;
+# doesfar 0 built only s4 and s5 (frozen). The engines' DOESFAR switch gone (CREATE reserves three bytes, a far DOES>
+# call counts cells), layout.py's --does-far too (the far form, its compiler variables, for every CV8 design); build()
+# refuses doesfar 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands.
+# Iteration 594 (retire-stages-584.md, step 6, the last): bytehdr retired at 1 - every pooled-front design and candidate
+# has it; bytehdr 0 built only s4 and s5 (frozen). The engines had no switch (F_BYTEHDR in every CV8 engine's features);
+# what went: the full-header CV8 format - layout.py refuses --v8 without --bytehdr (so --cpt 0: its CV8 calls unscaled),
+# the -self dumps (cv8.4 without cv8b.4: build-stages.sh's four, setup()'s 63) and the dump choice. build() refuses
+# bytehdr 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands; cpt16's guard in canon() stays.
+FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1,
+          'bytehdr': 1}
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
-    if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1, bytehdr=1)
+    if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1)
     return g
 
 def _build(g, d):
@@ -944,26 +961,23 @@ def _build(g, d):
     if arm_cross() and (g['enc'] != 'cv8' or CC(g) != 'clang'):   # Iteration 570: GCC's - cc() too - are the Tegra's
         raise RuntimeError('died: not cross-built for ARM - a GCC design, built on the Tegra itself')
     if g['enc'] != 'cv8': return build_other(g, d)
+    if not g['varcall']: raise RuntimeError('died: varcall 0 - retired (Iteration 592); s4 is frozen (stages/frozen)')
+    if not g['doesfar']: raise RuntimeError('died: doesfar 0 - retired (Iteration 593); s5 is frozen (stages/frozen)')
+    if not g['bytehdr']: raise RuntimeError('died: bytehdr 0 - retired (Iteration 594); s4 and s5 are frozen (stages/frozen)')
     src = os.path.join(d, 'vm.c')
     shutil.copy(os.path.join(O, 'vm-lab-tos.c' if g['tos'] else 'vm-lab.c'), src)
     folds = ','.join(g['folds'])
     r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-fold.py'), src, folds, 'v8'])
     if r.returncode: raise RuntimeError('died: fold generation')
-    flags = ['-DENC=3', '-DREG=1', '-DFOLD=1', '-DSCALE=%d' % g['scale'],
-             '-DVARCALL=%d' % g['varcall'], '-DVARSLOT=%d' % g['varslot']]
-    # Variable-length calls are decoded only on the shared call path
-    # (engine/vm-lab.c, do_call), so with varcall the engine always has it.
-    # And DODOES reads the three-byte (far) form only under VARCALL, so far
-    # DOES> calls need variable-length calls.
-    eff = dict(g, sharedcall=g['sharedcall'] or g['varcall'], doesfar=g['doesfar'] and g['varcall'])
-    for k, f in (('sharedcall', '-DSHAREDCALL=1'), ('doesfar', '-DDOESFAR=1'),
-                 ('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
-        if eff.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
+    flags = ['-DENC=3', '-DREG=1', '-DFOLD=1', '-DSCALE=%d' % g['scale'], '-DVARSLOT=%d' % g['varslot']]
+    # Variable-length calls on the shared call path (engine/vm-lab.c, do_call) are every CV8 engine's since 592.
+    for k, f in (('d256', '-DDISPATCH256=1'), ('guard', '-DGUARD=1'), ('dskew', '-DDSKEW=2048')):
+        if g.get(k): flags.append(f)          # .get: a hand-made genome need not carry a late gene (dskew)
     if fsys_on(g): flags.append('-DFSYS=%d' % fsys_level(g))   # Iteration 202: seven handlers out (1); twelve, rebound (2: Iteration 205)
     if g.get('regpin'): flags.append('-DREGPIN=%d' % g['regpin'])   # Iteration 197: the VM registers pinned
     if g['spec']: flags.append('-DSPEC=1')
-    t2 = bool(g.get('tag2')) and bool(g['bytehdr'])   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers
-    if g.get('hotcalls') and g['varcall'] and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
+    t2 = bool(g.get('tag2'))   # Iteration 66: the two-bit tag (FORMAT-TAG2.md); byte headers every CV8 design's (594)
+    if g.get('hotcalls') and not t2: flags.append('-DHOTCALLS=1')   # one-byte calls: see express()
     if t2: flags.append('-DTAG2=1')
     if t2wide_on(g): flags.append('-DT2WIDE=1')         # Iteration 95: no 3-byte call, 127 one-byte codes
     if jit_on(g): flags.append('-DX_JIT=1')
@@ -1013,7 +1027,7 @@ def _build(g, d):
     if g.get('msc') and g['tos']:           # multi-state stack caching (tools/gen-msc.py); the tag too (Iteration 70)
         r = sh(['python3', os.path.join(ROOT, 'tools', 'gen-msc.py'), src])
         if r.returncode: raise RuntimeError('died: multi-state generation' + why(r))
-        flags = [f for f in flags if not f.startswith(('-DDISPATCH256', '-DSHAREDCALL'))] + ['-DDISPATCH256=1', '-DSHAREDCALL=1']
+        flags = [f for f in flags if not f.startswith('-DDISPATCH256')] + ['-DDISPATCH256=1']
     eng = os.path.join(d, 'engine')
     def compile_engine():
         jit = ['-I', os.path.dirname(src), '-I', os.path.join(ROOT, 'engine'), os.path.join(ROOT, 'engine', 'spn-stencils.c'),
@@ -1032,20 +1046,17 @@ def _build(g, d):
         r = sh(CCV(g) + ccflags(g) + flags + lto + ['-o', eng, src] + jit + rt())
         if r.returncode: raise RuntimeError('died: engine did not compile' + why(r))
     if not t2: compile_engine()      # under the tag, after the converter: its ranking is the engine's map
-    opts = ['--v8', '--cpt', str(g['scale']), '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
-    if g['bytehdr']: opts.append('--bytehdr')
+    opts = ['--v8', '--cpt', str(g['scale']), '--bytehdr', '--dataprims', '--fold', '--fold-set', folds, '--cv8-compiler']
     if g.get('escape'): opts.append('--escape')
     if g.get('escape') == 2: opts.append('--escape2')
     opts.append('--set-compiler-vars')       # the image's compiler follows THIS design's scale and DOES> form
-    if g['doesfar'] and g['varcall']: opts.append('--does-far')   # see build(): far DOES> needs VARCALL
     if g['spec']: opts += ['--spec', ','.join(canon(g)['spec'])]
-    if not g['varcall']: opts.append('--no-varcall')
     if not g['varslot']: opts.append('--no-varslot')
     if sup: opts += ['--supers-file', os.path.join(d, 'supers.json')]
     if oc: opts += ['--opcall-file', os.path.join(d, 'opcall.json')]
     if o10: opts += ['--ops10-file', os.path.join(d, 'ops10.json')]
     if (g['rtfuse'] and (sup or rt_tests(g))) or rtimm2(g) or rtiplus_on(g): opts.append('--rtfuse')   # 447: I+'s entry   # rtimm=2: IMM-OPS filled
-    if g.get('hotcalls') and g['varcall'] and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
+    if g.get('hotcalls') and not t2: opts += ['--hotcalls', str(g['hotcalls'])]
     if t2: opts += ['--tag2'] + (['--tag2-rank', T2RANK] if os.path.exists(T2RANK) else []) + ['--tag2-hot', str(T2HOT[g.get('t2hot', 0)])]
     if t2wide_on(g): opts.append('--tag2-wide')
     if g.get('hotinl') and t2: opts += ['--hot-inline', HOTSITES, str(g['hotinl'])]   # Iteration 92: the hottest call sites inlined
@@ -1059,11 +1070,10 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
-    if rtloop_on(g) and not rtloopall_on(g) and express(g).get('rtloop') == 2: hl += RTLOOP_INTERNAL   # Iteration 190: cv8-fuse-loop.4's internal words
     if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
     if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
-        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ()) + (FSYS4_INTERNAL if fsys_level(g) >= 4 else ()) + (FSYS5_INTERNAL if fsys_level(g) == 5 else ())
+        hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ())
         opts += ['--rebind', ','.join(FSYS2_REBIND + (FSYS3_REBIND if fsys_level(g) >= 3 else ()))]
     if hl: opts += ['--headerless', ','.join(hl)]
     if g.get('threads'): opts += ['--threads', str(THREADS_N[g['threads']])]   # Iteration 204: the dictionary's chains
@@ -1074,7 +1084,7 @@ def _build(g, d):
     fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
-    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt' if g['bytehdr'] else '-self%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3', 4: '-fsys4', 5: '-fsys5'}.get(fsys_level(g), ''))))
+    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.
@@ -1427,7 +1437,7 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
     't2hot': (tuple(range(len(T2HOT))), lambda v: 't2hot=%s' % T2HOT[v]),       # Iteration 71: the tag's ranking, size against speed
     'gotodup': (tuple(range(len(GOTODUPV))), lambda v: 'gotodup=%s' % GOTODUPV[v]),   # Iteration 260: GCC's goto unfactoring
     'fbuf': (tuple(range(len(FBUFV))), lambda v: 'fbuf=%d' % FBUFV[v]),          # Iteration 115: a file's read-ahead, 4096, 1024, 512
-    'fsys': (tuple(range(6)), lambda v: 'fsys=%d' % v),                         # Iterations 202-211: native, then Forth over SYSCALL, levels 1-5
+    'fsys': (tuple(range(4)), lambda v: 'fsys=%d' % v),                         # Iterations 202-211: native, then Forth over SYSCALL, levels 1-3 (583: 4-5 retired)
     'threads': (tuple(range(4)), lambda v: 'threads=%d' % v),                   # Iteration 204: as built (32), 64, 128, 16 chains
     'regpin': (tuple(range(4)), lambda v: 'regpin=%d' % v),                     # Iteration 197: GCC's choice, three assignments
     'escape': (tuple(range(3)), lambda v: 'escape=%d' % v),                     # Iteration 11: nine more primitives behind it
@@ -1436,7 +1446,7 @@ GENE_VALUES.update({    # Iteration 276: the older genes' values, once - mutate(
 def mutate(g, rnd):
     g = canon(g); what = []
     for _ in range(rnd.choice([1, 1, 2])):
-        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if x not in FROZEN] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's
+        pool = [x for x in EXPRESSED[g['enc']] + list(CC0) if not (g['enc'] == 'cv8' and x in FROZEN)] + ['enc'] * (1 if rnd.random() < 0.2 else 0)   # 409: not FROZEN's; 590: CV8's, as require()
         k = rnd.choice(pool)
         if k in SLOW_GENES and rnd.random() < 0.9: k = rnd.choice([x for x in pool if x not in SLOW_GENES])   # Iteration 197
         if k == 'enc':
@@ -1944,7 +1954,7 @@ def stale_build():
     a git pull without a rebuild. The evolver builds every design from the
     engine source the build generated (vm-lab-tos.c) and from its dumps:
     stale, the newer genes die for reasons that are not theirs."""
-    made = [os.path.join(O, f) for f in ('vm-lab-tos.c', KW() + '-self.txt', KW() + '-b.txt')]
+    made = [os.path.join(O, f) for f in ('vm-lab-tos.c', KW() + '-b.txt')]
     if not all(os.path.exists(f) for f in made): return ['(build/ is incomplete)']
     when = min(os.path.getmtime(f) for f in made)
     srcs = [os.path.join(ROOT, 'engine', 'vm-lab.c'), os.path.join(ROOT, 'tools', 'gen-tos.py'),
@@ -1964,27 +1974,27 @@ def setup():
         sys.exit('build/ is older than its sources (%s%s) - after a git pull, build again:\n'
                  '    LAYOUTS=1 bash tools/build-stages.sh && bash tools/run-tests.sh && python3 lab/evolve/evolve.py --validate'
                  % (', '.join(newer[:4]), ', ...' if len(newer) > 4 else ''))
-    for need in (CPUT, os.path.join(O, KW() + '-self.txt'), os.path.join(O, 'vm-lab-tos.c')):
+    for need in (CPUT, os.path.join(O, KW() + '-b.txt'), os.path.join(O, 'vm-lab-tos.c')):
         if not os.path.exists(need): sys.exit('%s missing: run tools/build-stages.sh first' % need)
     # The CV8 compiler with table-driven folds and run-time fusion
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
     W = os.path.join(O, 'work')
     for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
-               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4', 'file-sysc4.4', 'file-sysc5.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+               'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
-    for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-self', ['cv8.4']), (KW() + '-b', ['cv8.4', 'cv8b.4']),
+    for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-b', ['cv8.4', 'cv8b.4']),   # 594: -self (no cv8b.4) gone with bytehdr 0
                                                                     (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
-                        for k in (('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber') if b != KW() + '-self' else ('',))   # 501: -nocase retired
+                        for k in ('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber')   # 501: -nocase retired
                         for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
                         for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
                         for j in (('', '-jit') if b == KW() + '-bt' else ('',))
-                        for y in ('', '-fsys', '-fsys2', '-fsys3', '-fsys4', '-fsys5') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
+                        for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
@@ -1995,10 +2005,8 @@ def setup():
                        + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
                        + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
-                       + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 205: the rest of the file words (fsys 2)
-                       + (['file-sysc3.4'] if any(k in name for k in ('-fsys3', '-fsys4', '-fsys5')) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
-                       + (['file-sysc4.4'] if '-fsys4' in name or '-fsys5' in name else [])   # Iteration 207: the output buffered off a terminal (fsys 4)
-                       + (['file-sysc5.4'] if '-fsys5' in name else [])      # Iteration 211: READ-LINE reading ahead where a file can seek (fsys 5)
+                       + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3')) else [])   # Iteration 205: the rest of the file words (fsys 2)
+                       + (['file-sysc3.4'] if any(k in name for k in ('-fsys3',)) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
                        + ['dict-dump-addr.4']) + 'BYE\n'
         out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
         dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
@@ -2216,10 +2224,18 @@ def main(argv):
         for name, g in HUMAN.items():
             d = os.path.join(EV, 'validate-' + name)
             try:
-                eng, img = build(g, d)
-                same = open(img, 'rb').read() == open(os.path.join(O, name + '-s%d.img' % (8 * cellw())), 'rb').read()   # Iteration 338
+                if name in FROZEN_STAGES:   # Iteration 588: the build's copies, checked against the hashes they were frozen with
+                    sums = dict(l.split()[::-1] for l in open(os.path.join(ROOT, 'stages', 'frozen', 'SHA256SUMS')) if l.strip())
+                    eng, img = [os.path.join(O, name + x % (8 * cellw())) for x in ('-%d', '-s%d.img')]
+                    same = all(os.path.exists(f) and hashlib.sha256(open(f, 'rb').read()).hexdigest() == sums.get(os.path.basename(f))
+                               for f in (eng, img))
+                    os.makedirs(d, exist_ok=True); what = 'IDENTICAL to the frozen one (and the engine)' if same else 'or engine DIFFERENT from the frozen'
+                else:
+                    eng, img = build(g, d)
+                    same = open(img, 'rb').read() == open(os.path.join(O, name + '-s%d.img' % (8 * cellw())), 'rb').read()   # Iteration 338
+                    what = 'IDENTICAL to the build\'s' if same else 'DIFFERENT from the build\'s'
                 pw = private_work(d); alive(eng, img, pw, far=False)   # Iteration 158: run-tests.sh judges them far
-                print('  %-11s image %s the build\'s, corpus and kernel workload correct' % (name, 'IDENTICAL to' if same else 'DIFFERENT from'))
+                print('  %-11s image %s, corpus and kernel workload correct' % (name, what))
                 ok &= same
             except RuntimeError as e:
                 print('  %-11s %s' % (name, e)); ok = False
