@@ -4,7 +4,7 @@
 Iteration 600 from the runs' records on the true fronts - results/article-figures-600.md (results/drafts/article-figures-600.py):
 the series from seed 77 that the stopping rule ended, its confirmation runs, the random baseline, the final set. In the
 author's register (article/AUTHOR-STYLE.md): first person, commands as typed, numbers flat, what was not isolated said
-plainly. [check] marks a sentence the owner should confirm.*
+plainly. [check] marks a sentence the owner should confirm - one left (602).*
 
 ## The design space
 
@@ -80,13 +80,14 @@ A run is one command on one laptop, an AMD Ryzen 7 PRO 8840HS:
 
 It reads its line from lab/evolve/NEXT-RUN - seed 77's:
 
-    seed 77 12h then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8
+    seed 77 12h widths noevolved then experiment review-checks.py spread then experiment appbench.py --zip ~/Downloads/appbench.zip --sample 16 then experiment clockcheck.py --sample 8
 
 and runs a chain: the tests and the byte-identical rebuild, the evolution, the front measured again in six rounds, the
 experiments, and one archive to send back. `widths` is the 32-bit objective; `noevolved` means nothing is carried from
 an earlier run - every run starts from the hand-made designs and the founders built from them, so the runs are
-replicates, not one long run. [check: from seed 77 the lines carry neither `widths` nor `noevolved` - say what the series
-carried in and at which widths it selected; and how the archives were analysed between runs, or leave it out.]
+replicates, not one long run - every run of the series, seeds 77 to 83, was `widths noevolved`. Each archive came back
+to the same scripts: the pack's own checks again, the results file drafted from the database, the remote machines'
+readings set beside it, the stopping rule's numbers, and the next run's line written from that.
 
 ## Checks against fooling myself
 
@@ -102,8 +103,11 @@ carried in and at which widths it selected; and how the archives were analysed b
   fast end is a band, not one design.
 - Designs from the front are rebuilt and run on the Forth core tests by a second tool, with a negative control - a test
   with one wrong expected value, which must fail.
-- An engine the evolver runs cannot fork or outlive its time limit (lab/evolve/test-jail.py). [check: the jail's full
-  list]
+- An engine the evolver runs cannot fork or outlive its time limit: every one runs jailed - no new processes, bounded
+  memory, CPU time and files. lab/evolve/test-jail.py checks it in an order that is safe if the jail fails: one fork,
+  jailed, must fail; one fork, not jailed, must succeed, so the first tested something; only then a fork bomb through
+  the evolver's own runner, at most one engine alive. (Iteration 10: a broken design reached FORK in a loop and froze the
+  laptop.)
 
 ## When to stop
 
