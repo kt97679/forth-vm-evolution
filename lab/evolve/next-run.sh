@@ -146,23 +146,35 @@ case " $* " in
 esac
 STEPLINE=$*       # 591: this step's words - a "then" that repeats them is a repeated session (then_next)
 then_next() {   # the second half of "A then B": the lock released, the mode decided anew
-    [ -n "$THEN" ] || return 0
+    [ -n "$THEN" ] || { trap - EXIT; return 0; }
     # 591 (chain D; the owner, 589: use all three machines): a repeat of this same experiment ("A then A then A") only
     # while another session, as long as this one (from its tool's start), ends by the chain's deadline - the remote
     # lines' last (lab/evolve/repeat-fits.sh); else the rest skipped and the chain packed here, as at a line's end
     if [ "$KIND" = experiment ] && [ -n "$CHAIN" ] && [ "$(echo ${THEN%% then *})" = "$(echo $STEPLINE)" ]; then
-        r_=$(sh "$REPO/lab/evolve/repeat-fits.sh" "$CHAIN" $(( $(date +%s) - ${STEP_T0:-0} ))); rc_=$?; echo "   $r_"
+        # 597: rc_ by ||, never "x=$(cmd); rc=$?" - under set -e a failing substitution ends the shell there (chain D's
+        # last session: repeat-fits said no, next-run.sh ended silently, the chain unpacked until packed by hand)
+        rc_=0; r_=$(sh "$REPO/lab/evolve/repeat-fits.sh" "$CHAIN" $(( $(date +%s) - ${STEP_T0:-0} ))) || rc_=$?; echo "   $r_"
         if [ "$rc_" != 0 ]; then
             n_=$(( $(printf '%s\n' "$THEN" | sed 's/ then /\n/g' | grep -c .) ))
             echo "skipped: $n_ more of '$STEPLINE' - $r_" >> "$CHAIN/steps"; say "then: $n_ more skipped - $r_"
             st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed
-            python3 "$REPO/lab/evolve/chainctl.py" pack "$CHAIN" $st; exit 0
+            python3 "$REPO/lab/evolve/chainctl.py" pack "$CHAIN" $st; trap - EXIT; exit 0
         fi
     fi
     echo; say "then: $THEN"
     exec 9>&-
     unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS NEXT_RUN_RANDOM
     NEXT_RUN_PULLED=1 exec sh "$REPO/lab/evolve/next-run.sh" $THEN
+}
+# 597: from a step's pack to the chain's next move (the repeat guard, the chain's pack, the next step's exec) the EXIT
+# trap is unpacked, not none: whatever ends the shell there, the chain is packed - the one archive, whatever happened
+# (313). exec runs no EXIT trap; every normal exit there clears it first. Stopped (chainctl.py stop), stop packs it.
+unpacked() {
+    trap - EXIT
+    [ -n "$CHAIN" ] || exit 1
+    [ "$(sed 1q "$CHAIN/status" 2>/dev/null)" != stopping ] || exit 1
+    echo "FAILED after the step's pack: next-run.sh ended before the chain's next move (chain.log)" >> "$CHAIN/steps" || true
+    python3 "$REPO/lab/evolve/chainctl.py" pack "$CHAIN" done-some-failed; exit 1
 }
 # Iteration 114 (the owner): "nocarry" - a run from scratch, no archived front
 # carried in: only the hand-made and random designs. The anchoring test - does
@@ -229,6 +241,9 @@ PT=$RUNS/phase-times
 phase_record() {   # phase_record KEY SECONDS ROUNDS [CPUS]
     mkdir -p "$RUNS"; { grep -v "^$1 " "$PT" 2>/dev/null; echo "$*"; } > "$PT.new" && mv "$PT.new" "$PT"
 }
+ncpus() {   # the CPUs a line's --cpus names, 1 without it (597: grep -c's count of 0 is status 1 - set -e ended the shell)
+    nc_=$(printf '%s\n' "$1" | sed -n 's/.*--cpus \([0-9,]*\).*/\1/p' | tr ',' '\n' | grep -c . || true); [ "$nc_" -gt 0 ] || nc_=1; echo "$nc_"
+}
 reserve() {        # seconds to keep for what follows the evolution
     rs=1120; rr=6; cs=6400; cr=6; cc=2                      # seed 38's, until a chain records its own
     l=$(grep '^remeasure ' "$PT" 2>/dev/null | tail -1); [ -z "$l" ] || { set -- $l; rs=$2; rr=$3; }
@@ -236,7 +251,7 @@ reserve() {        # seconds to keep for what follows the evolution
     r=$(( rs * ${REMEASURE:-6} / rr ))
     case " $THEN " in *compare-fronts.py*)
         tr_=$(printf '%s\n' "$THEN" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); tr_=${tr_:-10}
-        tc_=$(printf '%s\n' "$THEN" | sed -n 's/.*--cpus \([0-9,]*\).*/\1/p' | tr ',' '\n' | grep -c .); [ "$tc_" -gt 0 ] || tc_=1
+        tc_=$(ncpus "$THEN")
         c_=$(( cs * tr_ * tc_ / (cr * cc) ))
         # Iteration 355: --widths 8,4 - each design measured at 32 bits too: half again (Iteration 352)
         case " $THEN " in *" --widths "*) c_=$(( c_ * 3 / 2 )) ;; esac
@@ -452,7 +467,7 @@ if [ "$MODE" = experiment ]; then
     python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { tail -20 "$RUN/$NAME.log"; exit 1; }
     if [ "$TOOL" = compare-fronts.py ]; then                      # Iteration 152: the next chain's reserve
         cr_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); cr_=${cr_:-10}
-        cc_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--cpus \([0-9,]*\).*/\1/p' | tr ',' '\n' | grep -c .); [ "$cc_" -gt 0 ] || cc_=1
+        cc_=$(ncpus "$TARGS")
         t_=$(( $(date +%s) - T0 ))
         case " $TARGS " in *" --widths "*) t_=$(( t_ * 2 / 3 )) ;; esac   # Iteration 355: kept as one width's
         phase_record compare "$t_" "$cr_" "$cc_"
@@ -469,10 +484,10 @@ if [ "$MODE" = experiment ]; then
     P=${CHAIN:-$RUNS}${CHAIN:+/packs}/forth-vm-evolution-$NAME-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
     tar -czf "$P" -C "$RUN" pack
     rm -rf "$K"
-    trap - EXIT
+    trap unpacked EXIT
     echo; say "this step DONE - $(basename "$P"), in the chain's archive"
     [ -z "$CHAIN" ] || echo "ok $WANT - $(basename "$P")" >> "$CHAIN/steps"
-    if [ -z "$THEN" ] && [ -n "$CHAIN" ]; then st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed; python3 lab/evolve/chainctl.py pack "$CHAIN" $st; exit 0; fi
+    if [ -z "$THEN" ] && [ -n "$CHAIN" ]; then st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed; python3 lab/evolve/chainctl.py pack "$CHAIN" $st; trap - EXIT; exit 0; fi
     then_next
     exit 0
 fi
@@ -576,8 +591,8 @@ repo_files "$K"                                # Iteration 85: the clone, listed
 P=${CHAIN:-$RUNS}${CHAIN:+/packs}/forth-vm-evolution-seed$SEED-$HEAD-$(uname -n)-$(date -u +%Y%m%d-%H%M%S).tar.gz
 tar -czf "$P" -C "$RUN" pack
 rm -rf "$K"
-trap - EXIT
+trap unpacked EXIT
 echo; say "this step DONE - $(basename "$P"), in the chain's archive"
 [ -z "$CHAIN" ] || echo "ok $WANT - $(basename "$P")" >> "$CHAIN/steps"
-if [ -z "$THEN" ] && [ -n "$CHAIN" ]; then st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed; python3 lab/evolve/chainctl.py pack "$CHAIN" $st; exit 0; fi
+if [ -z "$THEN" ] && [ -n "$CHAIN" ]; then st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed; python3 lab/evolve/chainctl.py pack "$CHAIN" $st; trap - EXIT; exit 0; fi
 then_next

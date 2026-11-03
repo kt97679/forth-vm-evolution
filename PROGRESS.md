@@ -10670,3 +10670,13 @@ tools/gen-msc.py and build()'s call, engines-check's 5 multi-state paths; FROZEN
 (express() untouched); 17 lines in, 346 out. msc expressed by none of the 232 candidates, the 40, the 14 or the 7 stages;
 batch-check PASS on the 9 patches.
 Files: results/queued-consolidation/msc-after-seed86.patch, results/drafts/msc-check-596.py.
+
+## Iteration 597 - 2026-11-03 - Claude
+
+Chain D returned (status done, 11.7 hours: the laptop 29 sessions, dream 40 a width, rage 4), packed by hand: next-run.sh's
+set -e ended it after session 29 at `r_=$(repeat-fits.sh); rc_=$?` - repeat-fits' first "no" - past the step's `trap - EXIT`,
+so no pack. Fixed: rc_ by `||`, ncpus() for the `grep -c` count that fails the same way without --cpus, the EXIT trap
+unpacked from a step's pack to the chain's next move, chainctl.py's status and monitor naming the pack command; the test
+under set -eu with the trap armed, 11 of 11 (6 fail on master before). chain-sessions.py's trial on chain D: msc KEEP
+(msc=0 17.6-18.2% slower in 4 of 4 Tegra pairs) - msc's queued patch deleted at the processing.
+Files: results/drafts/chain-d-test-591.sh (changed).

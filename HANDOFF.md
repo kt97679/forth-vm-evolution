@@ -41,13 +41,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 596.
-- **Chain D, started (591) - the owner's 12 hours**: the shortlist's 40 in whole sessions repeated on the three machines
-  (NEXT-RUN; REMOTES --sessions), started before chain C's verdict - 589's filler, about even odds chain C would ask for it.
-  The laptop's step repeats while another session ends by the remote lines' last deadline (repeat-fits.sh); rage the 8
-  msc designs and the 40, 4 sessions expected in 680 minutes; dream as many as 330 minutes a width hold. About 11.5
-  hours. Tested by results/drafts/chain-d-test-591.sh. NEXT-RUN none since 592 (a pull must not start it again - 588's
-  rule); chains C and D's processing writes the next line.
+- master: Iteration 597.
+- **Chain D, returned (597), not yet processed - with chain C's archive, in one chat**: forth-vm-evolution-chain-cdb8375c4-fury-20261103-135537_tar.gz,
+  status done, 02:14-13:55 (11.7 hours of the owner's 12), every line all it was given: the laptop 29 sessions, dream
+  40 of 40 at each width (its cap), rage 4 (a 5th would have ended past its deadline). Packed by hand: next-run.sh ended
+  silently after session 29 (below, fixed in 597); nothing lost. chain-sessions.py's trial on it (597, /tmp only):
+  **msc's verdict KEEP** - each Tegra pair's msc=0 design 17.6-18.2% slower than its msc=1 one over 4 of 4 sessions, so
+  the processing deletes msc's queued patch (596's rule; chain C cannot turn it - "as fast on every line" fails here).
+- **next-run.sh's set -e faults, fixed (597)**: `r_=$(repeat-fits.sh ...); rc_=$?` ended the shell on repeat-fits' first
+  "no" (dash: a failing substitution in an assignment is a failing command), after the step's `trap - EXIT` - so no pack,
+  status left running; `... | grep -c .` the same with no --cpus (`next-run.sh compare`; never hit - every compare line
+  had --cpus). Now rc_ by `||`, ncpus() guarded, and the EXIT trap `unpacked` from a step's pack to the chain's next move
+  (an exit there packs the chain done-some-failed; stopping left to stop); chainctl.py's status and monitor say how to
+  pack a chain that ended unpacked. results/drafts/chain-d-test-591.sh runs the cut-out functions under set -eu with the
+  trap armed: 11 of 11 (master before it: 6 of 11 fail).
 - **Consolidation's queue - 9 patches (596)**: msc retired at 0 (596, below, conditional); rtloop 2 retired (595, below); the older formats' retirement, all 6 steps (594): results/queued-consolidation/, after fsys45 - the
   freeze (588: s2-s5's engines and images in stages/frozen/, copied by build-stages.sh, --validate checking them by hash)
   and lean retired at 1 (589: FROZEN, both drops for every CV8 design, layout.py's lean-off switches gone). Lean tested
@@ -64,7 +71,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   Rtloop (595) 2 retired, after bytehdr - on no front, shortlist or final-set design (chains C and D choose from the 40); canon reads 2 as 1;
   results/drafts/rtloop-check-595.py: of 2874 designs the expression changed in exactly the 136 with the headerless loop words; batch-check
   PASS on the 8 patches. Jitdoes 1 stays (3ee67e7d34, chain B's set).
-  Msc (596) retired at 0, the last, **conditional**: kept only if chain-sessions.py prints msc's verdict RETIRE, else the patch
+  Msc (596) retired at 0, the last, **conditional** (chain D's trial, 597: KEEP - the patch goes at the processing): kept only if chain-sessions.py prints msc's verdict RETIRE, else the patch
   and its git-apply line deleted (the 8 before it unaffected) - tools/gen-msc.py and engines-check's 5 paths gone, build()
   refuses msc 1, ids kept (express() untouched, as tail's at 456); results/drafts/msc-check-596.py: msc expressed by no
   candidate, shortlist, final-set or hand-made design; batch-check PASS on the 9 patches.
@@ -126,7 +133,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (85/15). Chain D (591): rage 4 sessions, dream 20+ a width, the laptop 12+, 11-12 hours, sessions within the night agree
   better than chains B and C, 11 of the 14 kept, msc retired, no generic pick.
 - **Before 582**: seeds 70-86 processed (498-582); history: HANDOFF-HISTORY.md.
-- **Files a new chat needs**: the newest bundle; for the processing, chain C's archive (above) and chain D's. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; chain C's archive (forth-vm-evolution-chain-ee7a0ee97-fury-20261102-225556_tar.gz) and chain D's (forth-vm-evolution-chain-cdb8375c4-fury-20261103-135537_tar.gz), processed in one chat. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

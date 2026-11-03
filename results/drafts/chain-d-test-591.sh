@@ -3,6 +3,9 @@
 # 1. The laptop's guard: next-run.sh's then_next, cut out and run with stand-ins - a repeat of the same experiment goes
 #    on while lab/evolve/repeat-fits.sh says another session ends by the deadline, else the chain is packed (a stand-in
 #    chainctl.py) and the rest skipped; a different next step is never guarded. "guard" runs this part alone.
+#    597: run as next-run.sh runs it - under set -eu, the EXIT trap (unpacked) armed as after a step's pack: set -u
+#    alone hid chain D's fault (repeat-fits' "no" ended the shell at "r_=$(...); rc_=$?", the chain never packed). The
+#    trap itself (an exit in that window packs the chain; stopping leaves it to stop) and ncpus (1 without --cpus).
 # 2. A REMOTES line's --sessions, end to end with 570's ssh and scp stand-ins (/tmp/e2e/host the host): a dream-like
 #    pair - prebuilt32 up to 3 sessions in 30 minutes, prebuilt64 (--from it) up to 9 in 4 minutes, so its deadline
 #    stops it - two of the shortlist's designs at 1 round; gather's reports, one a session.
@@ -12,21 +15,30 @@ G=/tmp/guard-591; rm -rf $G; mkdir -p $G/repo/lab/evolve $G/chain/remote/h-a
 cp "$ROOT/lab/evolve/repeat-fits.sh" $G/repo/lab/evolve/
 printf 'import sys\nopen("%s/packed", "w").write(sys.argv[3])\n' $G > $G/repo/lab/evolve/chainctl.py
 printf 'echo "exec $*" > %s/execd\n' $G > $G/repo/lab/evolve/next-run.sh
-sed -n '/^then_next() {/,/^}/p' "$ROOT/lab/evolve/next-run.sh" > $G/fn.sh
+for f in then_next unpacked ncpus; do sed -n "/^$f() {/,/^}/p" "$ROOT/lab/evolve/next-run.sh"; done > $G/fn.sh
 guard() {   # $1 the step's length in s, $2 the deadline from now in s, $3 the next step's words
-    rm -f $G/packed $G/execd; : > $G/chain/steps; echo "line" > $G/chain/line
+    rm -f $G/packed $G/execd; : > $G/chain/steps; echo "line" > $G/chain/line; echo running > $G/chain/status
     echo $(( $(date +%s) + $2 )) > $G/chain/remote/h-a/until
-    ( say() { echo "next-run: $*"; }; REPO=$G/repo; KIND=experiment; CHAIN=$G/chain
+    ( set -eu; say() { echo "next-run: $*"; }; REPO=$G/repo; KIND=experiment; CHAIN=$G/chain
       STEPLINE='experiment loadtest.py --ids x.md --rounds 10'; THEN="$3"; STEP_T0=$(( $(date +%s) - $1 ))
-      . $G/fn.sh; then_next ) > $G/out 2>&1
+      . $G/fn.sh; trap unpacked EXIT; then_next ) > $G/out 2>&1
     if [ -f $G/packed ]; then echo "packed $(cat $G/packed)"; elif [ -f $G/execd ]; then echo "next"; else echo "neither"; fi
 }
 R='experiment loadtest.py --ids x.md --rounds 10'
-t "$(guard 600 3600 "$R then $R")" next "a repeat with time for it goes on"
+t "$(guard 600 3600 "$R then $R")" next "a repeat with time for it goes on - the exec runs no EXIT trap"
 t "$(guard 600 300 "$R then $R")" "packed done" "a repeat past the deadline packs the chain"
 t "$(grep -c 'skipped: 2 more' $G/chain/steps)" 1 "the skip counts both repeats left"
 t "$(guard 600 300 "experiment xcheck.py --other")" next "a different next step is never guarded"
 t "$(guard 600 300 "$R")" "packed done" "the last repeat guarded too"
+net() {     # 597: the shell ends in the window after a step's pack; $1 the chain's status
+    rm -f $G/packed; : > $G/chain/steps; echo "$1" > $G/chain/status
+    ( set -eu; REPO=$G/repo; CHAIN=$G/chain; . $G/fn.sh; trap unpacked EXIT; false ) > $G/out 2>&1
+    if [ -f $G/packed ]; then echo "packed $(cat $G/packed)"; else echo "neither"; fi
+}
+t "$(net running)" "packed done-some-failed" "an exit after a step's pack packs the chain"
+t "$(grep -c '^FAILED after the step' $G/chain/steps)" 1 "that exit recorded in steps"
+t "$(net stopping)" neither "stopping: the trap leaves the pack to stop"
+t "$( (set -eu; . $G/fn.sh; a=$(ncpus '--rounds 6'); b=$(ncpus '--rounds 6 --cpus 2,8'); echo "$a $b") 2>&1)" "1 2" "ncpus: 1 without --cpus, under set -e"
 rm $G/chain/remote/h-a/until; touch -d '-700 minutes' $G/chain/line
 t "$(sh $G/repo/lab/evolve/repeat-fits.sh $G/chain 60 > /dev/null; echo $?)" 1 "no remote line: the chain's start + 690 minutes"
 touch $G/chain/line

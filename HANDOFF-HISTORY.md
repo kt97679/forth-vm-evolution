@@ -592,3 +592,12 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
    libgcc's __aeabi_idiv0 - LTO likely drops it before libgcc's member asks for it (`__attribute__((used))` or
    `-Wl,-u,raise`). A batch before chain B, tested on a lto=1 design; until then the Tegra builds clang and lto=0 only. **585: -Wl,-u,raise in evolve.py's ARM
    flags** - the clang ARM builds checked under qemu (3 of 3 alive, IDENTICAL); rage-check.sh on the shortlist confirms GCC.
+
+## Iteration 597 - the card's chain D line replaced (chain D returned)
+
+- **Chain D, started (591) - the owner's 12 hours**: the shortlist's 40 in whole sessions repeated on the three machines
+  (NEXT-RUN; REMOTES --sessions), started before chain C's verdict - 589's filler, about even odds chain C would ask for it.
+  The laptop's step repeats while another session ends by the remote lines' last deadline (repeat-fits.sh); rage the 8
+  msc designs and the 40, 4 sessions expected in 680 minutes; dream as many as 330 minutes a width hold. About 11.5
+  hours. Tested by results/drafts/chain-d-test-591.sh. NEXT-RUN none since 592 (a pull must not start it again - 588's
+  rule); chains C and D's processing writes the next line.

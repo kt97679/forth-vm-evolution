@@ -96,6 +96,13 @@ def current_step(chain):
 
 # ---- the owner's commands
 
+def unfinished(chain):
+    """597: a chain whose session is gone, its status still running or stopping - it ended without its archive."""
+    return ('it ended without packing (status %s): python3 lab/evolve/chainctl.py pack %s done packs it, after the remote '
+            'lines\' deadline (their results waited for); the next start archives it as interrupted, the remote lines '
+            'cut short' % (state(chain), chain))
+
+
 def cmd_status(runs):
     cs = chains(runs)
     if not cs: print('no chain has run here (%s)' % runs); return 0
@@ -114,7 +121,7 @@ def cmd_status(runs):
     else:
         a = read(c, 'archive')
         if st in ('running', 'stopping'):
-            print('  it is not running and did not finish - the next start archives it as interrupted')
+            print('  ' + unfinished(c))
         elif a: print('  send: %s' % a)
     return 0
 
@@ -126,6 +133,7 @@ def cmd_monitor(runs):
     for l in last_lines(log, 40): print(l)
     if not alive(c):
         print('-- the chain is not running (status %s)%s' % (state(c), ('; send ' + read(c, 'archive')) if read(c, 'archive') else ''))
+        if state(c) in ('running', 'stopping'): print('-- ' + unfinished(c))
         return 0
     print('-- following %s (Ctrl-C stops the watching, not the chain)' % log)
     try:
@@ -141,6 +149,7 @@ def cmd_monitor(runs):
                         if b: sys.stdout.write(b.decode(errors='replace'))
                         break
         print('-- the chain has ended: status %s%s' % (state(c), ('; send ' + read(c, 'archive')) if read(c, 'archive') else ''))
+        if state(c) in ('running', 'stopping'): print('-- ' + unfinished(c))
     except KeyboardInterrupt:
         print('\n-- stopped watching; the chain goes on')
     return 0
