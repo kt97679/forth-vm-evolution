@@ -223,6 +223,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `final-pick-chainCD-seed86.md` - Chains C and D processed (Iteration 598): the final set 21 from every session pooled and each session's set, no generic pick, the sessions' agreement by host, msc kept on the Tegra's pairs.
 - `final-set-chainsBCD-seed86.md` - The final set from chains B, C and D (Iteration 598): 21 records, one a line, the pooled re-measures in each - consolidation's input.
 - `msc-pairs-seed86.md` - retire-plan-583's 4 msc pairs (Iteration 598): their 8 records and the Tegra's speeds over 5 sessions.
+- `handoff-relf-601.md` - The designs handed to relf (Iteration 601): nine winners of the final set by role - fastest per x86 width, best all-round, fastest portable and on ARMv7, the knee, least memory, smallest - and what relf can take.
 - `chainC-seed86/README.md` - Chain C's readings (Iteration 598): the laptop's loadtest.md and each host's out.json and report, one session.
 - `chainD-seed86/README.md` - Chain D's readings (Iteration 598): 40 session directories - the laptop 29, dream 40 a width, rage 4.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.

@@ -10719,3 +10719,13 @@ screen: 2 of 421 audited children run in full on the true front; one round first
 final set's extremes, across machines on the 40 (the i7 0.92 / 0.47, the Tegra 0.08). The draft's [74+] all filled, 4 [check]s left.
 Files: results/article-figures-600.md, results/drafts/article-figures-600.py.
 
+## Iteration 601 - 2026-11-03 - Claude
+
+The handoff to relf (the owner: several designs, none best at everything): nine of the final set's 21 by role - fastest
+on x86-64 (c7c35f9c97, 0.185) and x86-32 (4ef851fd8e, 0.199), best all-round (06b188f45b), the smallest JIT design
+(bac37f35a2), fastest portable and on ARMv7 (690981ca5b, 0.327 there), the knee (c2ef9488ff), 22420b3b61, least memory
+(fb0d57c8a2, 104 KB), smallest (cea114f47e, 13,939 bytes). Packed by the new lab/evolve/pack-designs.py at both widths -
+engine, image, C source as compiled, build commands; 18 of 18 builds 9 of 9 workloads right against s6, their bytes
+consolidation's hashes. The package: forth-vm-evolution-designs-iter601.tar.gz (1.1 MB, outputs, not the repository).
+Files: results/handoff-relf-601.md, results/drafts/relf-handoff-601.py, results/drafts/relf-readme-601.py.
+

@@ -96,3 +96,8 @@ profile says only where relf would look first, in phase 2.
 6. **Dropped (Iteration 365)**: a port list from the best relf-profile design - there is no relf
    profile. Phase 2 instead: the best generic designs' mechanisms, each measured on relf's terms
    (relf-ab.sh), when this lab has found them.
+7. **Done (Iteration 601): the handoff** - phase 2's input: nine designs of the final set, each criterion's winner
+   (results/handoff-relf-601.md; the package forth-vm-evolution-designs-iter601.tar.gz, rebuilt byte for byte by
+   lab/evolve/pack-designs.py): the four JIT designs x86 only, the five portable ones relf's CV8 candidates; their
+   mechanisms to be taken into relf and measured there with relf-ab.sh, as above.
+

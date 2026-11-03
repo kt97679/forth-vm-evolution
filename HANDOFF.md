@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 600.
+- master: Iteration 601.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -61,6 +61,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/drafts/article-method-548.md's [74+] markers all filled. New in them: the screen loses a few front designs (2
   of 421 audited children that ran in full reached the true front, seeds 77-83); one round first none (0 of 6,934); seed
   77's clock test - not the clock (cycles 1.002); the random baseline 0.55 of the series' median hypervolume.
+- **The handoff to relf (601)** - results/handoff-relf-601.md, the package forth-vm-evolution-designs-iter601.tar.gz
+  (lab/evolve/pack-designs.py): nine designs of the final set by role - c7c35f9c97 fastest x86-64, 4ef851fd8e fastest
+  x86-32, 06b188f45b best all-round, bac37f35a2 the smallest JIT design (these four x86 only); 690981ca5b fastest portable
+  and on ARMv7, c2ef9488ff the knee, 22420b3b61, fb0d57c8a2 least memory, cea114f47e smallest (portable). Each at both
+  widths: 9 of 9 workloads right against s6, the bytes consolidation's. Phase 2 (RELF.md): relf takes mechanisms and
+  measures them with relf-ab.sh.
 - **Next: the article itself - the owner's** (open item 8): which article (the first one, article/, is the stage ladder;
   the search's has only its method section), prompts/14's audience research before drafting, 04 and 05 before publishing
   (GOALS.md); the draft's 4 [check] marks (the series' carry and widths, the fast end's offset, the analysis between
