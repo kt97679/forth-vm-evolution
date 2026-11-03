@@ -174,19 +174,21 @@ that much, and repeating a run cannot see it.
 
 ## 9. Why I stopped choosing by hand
 
-Two sentences in my notes from the ladder kept bothering me. "I never
-tried them in any other order", about the common-case opcodes. And
-"which of the two mattered more, I did not measure", about the 34%.
-Every attempt was one decision, taken on top of all the earlier ones,
-measured once. By s6 the open decisions were no longer one big change
-each but dozens of small ones - which pairs to fuse, which literals get
-their own opcode, whether the top of the stack lives in a register, how
-the dictionary is chained, which compiler builds the engine and with
-which flags - and their effects depend on each other. Trying them one at
-a time, in one order, says little about the combination.
-[check: the reason in your own words]
+While working on other projects I had noticed that some of the most
+interesting findings came when I deliberately randomised the choices and
+looked for solutions outside the usual patterns. Every attempt in part
+one was the usual pattern: one decision taken on top of the last, of the
+kind the literature already describes. I thought that a search which
+randomises could find good designs no existing project or publication
+covers.
 
-So each of those decisions became a gene, and a program breeds designs.
+There was also a practical reason. By s6 the open decisions were no
+longer one big change each but dozens of small ones - which pairs to
+fuse, which literals get their own opcode, whether the top of the stack
+lives in a register, how the dictionary is chained, which compiler builds
+the engine and with which flags - and their effects depend on each
+other. So each of them became a gene, and a program breeds designs.
+Whether what it found really is new is the question I end with.
 
 ## 10. A design is a genome
 
@@ -196,7 +198,14 @@ image. The genes are the kind of decision part one took by hand: the
 encoding family (cell, SOD16, CPT16 or CV8), fused pairs, specialised
 opcodes, the top of the stack in a register, a small JIT that turns hot
 words into machine code, the dictionary's layout, the compiler and its
-flags. The hand-made stages are points in the same space, and that is
+flags. None of these techniques is mine. Byte-coded threading is old Forth
+practice; superinstructions and stack caching are M. Anton Ertl and
+David Gregg's, and so is a JIT that copies native code compiled from C
+fragments, in a Forth, since 2004 - it is in Gforth; searching compiler
+settings with a multi-objective genetic algorithm is COLE's (Hoste and
+Eeckhout, 2008). What the search adds is all of them in one genome.
+
+The hand-made stages are points in the same space, and that is
 checked rather than assumed:
 
     python3 lab/evolve/evolve.py --validate
@@ -357,6 +366,17 @@ above.]
 
 ## What still bothers me
 
+**Whether any of this is new.** Technique by technique, nothing in the
+winners is: see the credits in section 10. Two things I could not find
+described anywhere: a byte-coded Forth whose calls are two- or three-byte
+offsets from the image base with no table, and a dictionary header
+whose link is a one-to-three-byte distance decoded backwards from the
+name. And no paper or system I found combines what any of the winners
+combines. Forth's folklore lives on comp.lang.forth more than in papers,
+so not finding it proves little. If you know a Forth that does either
+of the two, or a winner's whole combination, please tell me in the
+comments.
+
 **The fast end's 5-7%.** The fastest designs of each run come out 5-7%
 slower when measured again after the run than during it - the JIT
 designs 3-6%, the rest within 1-2%. It is not the clock: a test with the
@@ -366,7 +386,9 @@ thousands being the luckiest too. I do not know whether that is all of
 it. [check: your reading]
 
 **Selection ran on one machine.** The Tegra disagrees with the laptop
-almost completely, and one gene shows what that costs: multi-state stack
+almost completely - as Huang, Marr and Ugawa found for interpreter
+handler orders evolved for one machine - and one gene shows what that
+costs: multi-state stack
 caching made its designs 18% faster on ARMv7, and the search never kept
 it, because on the laptop those designs were slower and twice the size.
 How much else of that kind there is, I cannot tell from here.
@@ -389,3 +411,11 @@ the comments than be wrong quietly.
   Transactions on Evolutionary Computation* 6(2), 2002
 - ForthHub discussion #187, ["An elevator description for Forth's threaded code models?"](https://github.com/ForthHub/discussion/discussions/187), whose vocabulary this article uses
 - IEEE 1275-1994, the Open Firmware standard, whose FCode is a byte-coded Forth
+- M.A. Ertl, "Stack caching for interpreters", PLDI 1995; M.A. Ertl, D. Gregg, "Combining stack caching with dynamic
+  superinstructions", IVME 2004
+- M.A. Ertl, D. Gregg, "Retargeting JIT compilers by using C-compiler generated executable code", PACT 2004; D. Gregg,
+  M.A. Ertl, "Optimizing code-copying JIT compilers for virtual stack machines", Concurrency and Computation 18(11), 2006
+- H. Xu, F. Kjolstad, "Copy-and-patch compilation", OOPSLA 2021
+- K. Hoste, L. Eeckhout, "COLE: compiler optimization level exploration", CGO 2008
+- W. Huang, S. Marr, T. Ugawa, "Optimizing the order of bytecode handlers in interpreters using a genetic algorithm",
+  ACM SAC 2023

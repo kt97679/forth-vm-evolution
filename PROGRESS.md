@@ -10759,3 +10759,14 @@ condensed and checked against it (three paraphrases corrected), part two from th
 cells for the comparison. Two [check]s and the portable run pending.
 Files: (none under results/).
 
+## Iteration 605 - 2026-11-03 - Claude
+
+The owner's reason for the switch, in both drafts (randomising had found the interesting things in other projects; designs
+no project or paper covers), and his question - are the winners original: results/drafts/originality-605.md, from 539's
+list and five searches. Every technique known (the byte encoding folklore - Koopman 1996, uxForth; fusion, stack caching
+and the copying JIT Ertl and Gregg's, in Gforth since 2004; the flag search COLE's; the nearest search, Huang, Marr and
+Ugawa's GA over handler order, SAC 2023, which also failed to generalise across machines); not found described: CV8's
+table-free relative calls, the backward-decoded byte-header link, any winner's combination. The drafts credit them and
+end by asking the readers. Which winners use what, from their genomes (tos 5, threads 5, supers 3, spec 6 of 9).
+Files: results/drafts/originality-605.md.
+

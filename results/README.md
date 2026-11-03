@@ -226,6 +226,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `handoff-relf-601.md` - The designs handed to relf (Iteration 601): nine winners of the final set by role - fastest per x86 width, best all-round, fastest portable and on ARMv7, the knee, least memory, smallest - and what relf can take.
 - `portable-front-seed86.md` - The portable designs found before the portable run (Iteration 602): the pooled true front's 279 without the JIT and the final set's 3 others, in-run - measured again in seed 87's chain.
 - `drafts/portable-plan-602.md` - The portable run, planned (Iteration 602): why (the final pick re-measured 5 of the 279 portable front designs), the chain, the rule fixed before it, what follows.
+- `drafts/originality-605.md` - Are the winning designs original (Iteration 605): each mechanism of the nine and where it was described - every technique known; two details and the combinations not found; the readers asked.
 - `chainC-seed86/README.md` - Chain C's readings (Iteration 598): the laptop's loadtest.md and each host's out.json and report, one session.
 - `chainD-seed86/README.md` - Chain D's readings (Iteration 598): 40 session directories - the laptop 29, dream 40 a width, rage 4.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
