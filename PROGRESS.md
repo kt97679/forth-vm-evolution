@@ -10526,7 +10526,7 @@ final set. Retired now: fsys 4-5 - 119 lines out, the engine preprocessed identi
 queued for consolidation, not pending. msc=1 waits for the Tegra (4 msc pairs from seed 86 for chain B); the stage genes
 for the owner; the search-space-only values kept. Files: results/drafts/curve-seed86-583.py,
 results/drafts/retire-report-583.md, results/drafts/retire-candidates-583.py, results/drafts/retire-plan-583.md,
-results/queued-consolidation/ORDER.md, results/queued-consolidation/fsys45-after-seed86.patch.
+results/pending/ORDER.md, results/pending/fsys45-after-seed86.patch.
 
 ## Iteration 584 - 2026-11-02 - Claude
 
@@ -10585,14 +10585,14 @@ results/drafts/chainB-agreement-587.py.
 ## Iteration 588 - 2026-11-02 - Claude
 
 While chain C runs: the older formats' retirement, step 1 - the freeze of s2-s5 queued after fsys45
-(results/queued-consolidation/freeze-after-seed86.patch; stages/frozen/, 32 files, 1.1 MB, SHA256SUMS; build-stages.sh
+(results/pending/freeze-after-seed86.patch; stages/frozen/, 32 files, 1.1 MB, SHA256SUMS; build-stages.sh
 copies them where they run, --validate checks their hashes). Tested: build-hash at both widths 667 of 667 the same (s2-s5
 too); a name clash fixed after it (the stage tuple shadowed by the genes' FROZEN, --validate rebuilding s2-s5 -
 FROZEN_STAGES: a sample of 10 the same at both widths), batch-check PASS on the fixed queue, s2-s5 by hash. 584's hashes hold here (12 of 12 spot
 checks); a tree built but not validated kills designs - the dumps --validate makes, not fsys45. Tools: PENDING= for the
 queue in setup-sandbox, batch-make (--binary now) and batch-check; final-pick.py --also-session (chain B beside itself:
 its own 14). The five gene patches: fresh chats (a patch's test about an hour on one CPU).
-Files: results/queued-consolidation/freeze-after-seed86.patch, results/drafts/retire-test-588.sh,
+Files: results/pending/freeze-after-seed86.patch, results/drafts/retire-test-588.sh,
 results/drafts/build-hash-cmp-588.py.
 
 ## Iteration 589 - 2026-11-02 - Claude
@@ -10605,7 +10605,7 @@ nothing lost). The fresh sandbox's first setup call ran past 300 s with its work
 (cause not found). Next: scale, varcall with sharedcall, doesfar, bytehdr - one a fresh chat. The owner asked to use
 all three machines: a chain's x86 lines wait for rage's; a chain D, only if chain C's sessions disagree, fills that
 wait with repeated sessions (no more rounds; one design at a time a host).
-Files: results/queued-consolidation/lean-after-seed86.patch, results/drafts/chain-sizing-589.md.
+Files: results/pending/lean-after-seed86.patch, results/drafts/chain-sizing-589.md.
 
 ## Iteration 590 - 2026-11-02 - Claude
 
@@ -10618,7 +10618,7 @@ build-hash 667 of 667 the same at both widths (s2, s3, s5 built from source the 
 batch-check PASS on the 4 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS). The owner: the cell, sod16 and cpt16 families stay ("let's not retire them now"). setup-sandbox.sh: 589's
 300 s setup call found - the subshell running asme held the caller's stdout to the detached job's end; the jobs now start
 by runuser and setsid -f (1-2 s). Chain C returned (2.9 hours, every line all it was given) - processed in a fresh chat.
-Files: results/queued-consolidation/scale-after-seed86.patch.
+Files: results/pending/scale-after-seed86.patch.
 
 ## Iteration 591 - 2026-11-03 - Claude
 
@@ -10639,7 +10639,7 @@ The engines' fixed 15-bit call and per-handler call path gone (vm-lab.c, spn-cv8
 sod16.py's VARCALL; 56 lines in, 108 out; s4 no longer built from source (build() refuses varcall 0). Tested by
 results/drafts/retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 5 patches
 (run-tests, validate 7 of 7 IDENTICAL, the jail). NEXT-RUN none while chain D runs.
-Files: results/queued-consolidation/varcall-after-seed86.patch.
+Files: results/pending/varcall-after-seed86.patch.
 
 ## Iteration 593 - 2026-11-03 - Claude
 
@@ -10647,7 +10647,7 @@ While chain D runs: the older formats' retirement, step 5 - doesfar retired at 1
 switch and layout.py's --does-far gone (the far DOES> form every CV8 design's), build() refuses doesfar 0 (s5 frozen),
 layout-noise.sh on s6; 39 lines in, 52 out. Engines preprocessed the same at 22 settings; build-hash 667 of 667 at 8-byte cells,
 667 of 667 at 4; batch-check PASS on the 6 patches. retire-test-588.sh resumes after a turn's end (RESUME=1). Next: bytehdr.
-Files: results/queued-consolidation/doesfar-after-seed86.patch, results/drafts/doesfar-pp-593.sh.
+Files: results/pending/doesfar-after-seed86.patch, results/drafts/doesfar-pp-593.sh.
 
 ## Iteration 594 - 2026-11-03 - Claude
 
@@ -10655,12 +10655,12 @@ While chain D runs: the older formats' retirement, step 6, the last - bytehdr re
 full headers gone: layout.py refuses --v8 without --bytehdr (CV8 calls unscaled, their shifts out), build() refuses 0, the
 -self dumps out (setup()'s 63, build-stages.sh's 4), test-ext-loops.sh's s5 line out; 43 lines in (comments mostly), 40 out. Build-hash 667 of 667 at both
 widths; batch-check PASS on the 7 patches. All six queued: they apply at consolidation, after chains C and D's processing.
-Files: results/queued-consolidation/bytehdr-after-seed86.patch.
+Files: results/pending/bytehdr-after-seed86.patch.
 
 ## Iteration 595 - 2026-11-03 - Claude
 
 While chain D runs: rtloop 2 retired (578's rule; retire-plan-583's "after the final set") - on no front design and on none of the shortlist's 40 or chain B's 14, the sets chains C and D choose from; queued after bytehdr. Tested without building: evolve.py alone changes, and of 2874 designs the expression changed in exactly the 136 that passed the loop words headerless; batch-check PASS on the 8 patches. Jitdoes 1 stays (chain B's 3ee67e7d34). Chains C and D's processing: lab/evolve/chain-sessions.py lays a chain's readings out by session, prints the final-pick line and msc's verdict; final-pick.py reads a session without loadtest.md (stand-in test: chain B's set the same).
-Files: results/queued-consolidation/rtloop-after-seed86.patch, results/drafts/rtloop-check-595.py.
+Files: results/pending/rtloop-after-seed86.patch, results/drafts/rtloop-check-595.py.
 
 ## Iteration 596 - 2026-11-03 - Claude
 
@@ -10669,7 +10669,7 @@ only if chains C and D's processing finds msc's verdict RETIRE (chain-sessions.p
 tools/gen-msc.py and build()'s call, engines-check's 5 multi-state paths; FROZEN's msc 0, build() refuses msc 1, every id kept
 (express() untouched); 17 lines in, 346 out. msc expressed by none of the 232 candidates, the 40, the 14 or the 7 stages;
 batch-check PASS on the 9 patches.
-Files: results/queued-consolidation/msc-after-seed86.patch, results/drafts/msc-check-596.py.
+Files: results/pending/msc-after-seed86.patch, results/drafts/msc-check-596.py.
 
 ## Iteration 597 - 2026-11-03 - Claude
 

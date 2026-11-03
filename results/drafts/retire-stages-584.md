@@ -45,7 +45,7 @@ the largest; then a gene a patch - each starting from this file and the baseline
 
 ## In practice (Iteration 588)
 
-**Step 1, the freeze, queued**: freeze-after-seed86.patch (results/queued-consolidation/ORDER.md). Each next patch, one a
+**Step 1, the freeze, queued**: freeze-after-seed86.patch (results/pending/ORDER.md). Each next patch, one a
 chat: as root `PENDING=results/queued-consolidation SCRATCH=/tmp/x sh tools/setup-sandbox.sh` (master and the queue
 applied, built); the patch committed in /tmp/x, its subject's first word the gene (`scale: ...`); `PENDING=
 results/queued-consolidation sh tools/batch-make.sh 86 N /tmp/x` and its ORDER.md paragraph committed; then

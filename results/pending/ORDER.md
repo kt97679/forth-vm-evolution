@@ -1,17 +1,18 @@
-# The after-seed-86 batch - to apply first at seed 86's processing (Iteration 583)
+# The after-seed-86 batch - consolidation's retirements (Iterations 583-596; applied at consolidation, Iteration 599)
 
-**Queued for consolidation** (Iteration 583) - not results/pending/, which process-run.sh applies at the next processing: moved there at consolidation, after the final pick, with the patches drafted then (results/drafts/retire-plan-583.md), and batch-check run again on that master.
+**Consolidation** (Iteration 599): queued in results/queued-consolidation/ from 583 until the final pick was done (chains
+C and D, 598), moved here then, batch-check run again on that master and applied in this order. No final-set design uses
+a value these retire (results/drafts/retire-candidates-583.py on results/final-set-chainsBCD-seed86.md: of the 17
+values on no pooled-front design only jitdoes=1 is on final designs - kept).
 
-process-run.sh checks and applies it.
-
-    git apply results/queued-consolidation/fsys45-after-seed86.patch
-    git apply results/queued-consolidation/freeze-after-seed86.patch
-    git apply results/queued-consolidation/lean-after-seed86.patch
-    git apply results/queued-consolidation/scale-after-seed86.patch
-    git apply results/queued-consolidation/varcall-after-seed86.patch
-    git apply results/queued-consolidation/doesfar-after-seed86.patch
-    git apply results/queued-consolidation/bytehdr-after-seed86.patch
-    git apply results/queued-consolidation/rtloop-after-seed86.patch
+    git apply results/pending/fsys45-after-seed86.patch
+    git apply results/pending/freeze-after-seed86.patch
+    git apply results/pending/lean-after-seed86.patch
+    git apply results/pending/scale-after-seed86.patch
+    git apply results/pending/varcall-after-seed86.patch
+    git apply results/pending/doesfar-after-seed86.patch
+    git apply results/pending/bytehdr-after-seed86.patch
+    git apply results/pending/rtloop-after-seed86.patch
 
 batch-check (397c93b, on 4ac518d - these 8 patches, byte for byte; 596's PASS on 9 had msc's too): PASS - run-tests PASS (the
 generators: 107 paths), validate 7 of 7 IDENTICAL, the jail PASS.
