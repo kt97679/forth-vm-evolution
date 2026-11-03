@@ -1259,3 +1259,14 @@ same bytes - right (21 of 21 at both widths, none died; results/drafts/consolida
 as written, right in its outcome: five more values are on none of the 21 nor the front (alignhot 1, fsys 1, jit 0, jitinl
 0, jitos 0), retire-plan-583's "kept: nothing simpler" - no code to remove; nothing new retired; jitdoes stays - right
 (3ee67e7d34 and be42bd8ea4 of the 21).
+
+## Seed 87, the portable run (nojit, 12 hours) - predicted (Iteration 602)
+
+`seed 87 nojit 12h widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5`; the Tegra and
+dream measuring the 282 portable designs found before (results/drafts/portable-plan-602.md). (1) The chain done, every
+line all it was given, the Tegra the 282 in at least one session - 75/25. (2) portable.py's verdict BETTER (in-run, the
+stopping rule's thresholds) - 45/55. (3) Of the 282 re-measured, the laptop's fastest portable design at 64 bits is not
+c2ef9488ff - 70/30. (4) The Tegra's fastest of the 282 is not 690981ca5b - 60/40. (5) The Tegra's order on the 282
+against the laptop's 32-bit alone: Spearman 0.7 or more - 60/40. (6) After the follow-up re-measure, at least one of the
+handoff's five portable roles goes to another design - 65/35.
+

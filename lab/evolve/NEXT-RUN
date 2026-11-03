@@ -5,14 +5,22 @@
 # database here) or "none" (pull and stop). compare and experiment archive
 # nothing. Each iteration sets it for the bundle it hands over (Iteration 22).
 #
-# The line: seed N [tag2] [6h | 12h | night] [nocarry | fromzero | noevolved] [widths] [then STEP ...]. tag2: every
-#   design in the two-bit tag; nocarry: no earlier front carried in; fromzero: random genomes only; noevolved: nocarry
+# The line: seed N [tag2 | nojit] [6h | 12h | night] [nocarry | fromzero | noevolved] [widths] [then STEP ...]. tag2: every
+#   design in the two-bit tag; nojit (602): every design without the JIT, the portable run; nocarry: no earlier front carried in; fromzero: random genomes only; noevolved: nocarry
 #   without the founders drawn from earlier runs' records (Iteration 387); widths: selected at 64 and 32 bits; "then":
 #   the next step when this one has packed - a comparison later in a chain takes its reserve from every seed step
 #   before it. next-run.sh says more where it parses each word.
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 602 (the owner: "let's find best portable design and see if it would be better than what we already
+# found"): the portable run - every design without the JIT (nojit: evolve.py --require nojit), the earlier fronts carried
+# in as their JIT-off builds, selected at both widths (relf builds both), 12 hours - the owner's to confirm. Then the
+# laptop re-measures the 282 portable designs found before (alone and loaded, both widths, 5 rounds - about 1.5 hours,
+# chain A's rate), while the Tegra and dream measure them during the run (REMOTES). The chain about 13.5 hours. Its
+# processing: portable.py (the run against the portable designs found before, the rule fixed now) and final-pick.py on
+# the 282 across the three machines - results/drafts/portable-plan-602.md; then a short chain re-measuring the run's
+# best beside the best found before, on the three machines.
 # Iteration 599 (consolidation's retirements applied, 1b53e88): none - the article's figures are the sandbox's.
 # Iteration 598 (chains C and D processed): none - the final set is chosen (21, results/final-set-chainsBCD-seed86.md)
 # and consolidation is the sandbox's (retire-plan-583.md); no machine work planned (results/drafts/chain-sizing-589.md).
@@ -190,4 +198,4 @@
 # session a directory for final-pick.py --also-session, beside results/chainB-seed86 and chain C's.
 # Iteration 592 (chain D running, started from 591's bundle): none - a pull of this bundle must not start chain D
 # again; chains C and D's processing writes the next line (consolidation's).
-none
+seed 87 nojit 12h widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5

@@ -10729,3 +10729,15 @@ engine, image, C source as compiled, build commands; 18 of 18 builds 9 of 9 work
 consolidation's hashes. The package: forth-vm-evolution-designs-iter601.tar.gz (1.1 MB, outputs, not the repository).
 Files: results/handoff-relf-601.md, results/drafts/relf-handoff-601.py, results/drafts/relf-readme-601.py.
 
+## Iteration 602 - 2026-11-03 - Claude
+
+The portable run prepared (the owner: the best portable design, and whether a search for it beats what we have). 601's
+reason was wrong - memory keeps portable designs on the front (279 of the pooled 444); the gap was the final pick's: 5 of
+the 279 were candidates, the fastest in-run (8cc7f60d6b 0.298 against c2ef9488ff's 0.3125) never re-measured, none on
+ARMv7. `nojit`: evolve.py --require nojit (require() jit=0; mutation off the JIT's genes), next-run.sh's word (its
+check let only tag2 through - fixed, the parse tested); lab/evolve/portable.py, the rule fixed now (stand-ins: equal -
+NOT BETTER; seed 86 flagged); the processing tools mark the run (no stopping line, no votes). Rehearsed in a scratch
+clone: 29 records, none with the JIT. NEXT-RUN seed 87 nojit 12h widths, then the laptop re-measures the 282; REMOTES:
+the Tegra and dream measure the 282 during the run.
+Files: results/portable-front-seed86.md, results/drafts/portable-plan-602.md.
+

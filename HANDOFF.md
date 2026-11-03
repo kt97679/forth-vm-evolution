@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 601.
+- master: Iteration 602.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -67,18 +67,28 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   and on ARMv7, c2ef9488ff the knee, 22420b3b61, fb0d57c8a2 least memory, cea114f47e smallest (portable). Each at both
   widths: 9 of 9 workloads right against s6, the bytes consolidation's. Phase 2 (RELF.md): relf takes mechanisms and
   measures them with relf-ab.sh.
+- **Next run: seed 87, the portable run (602; results/drafts/portable-plan-602.md)** - NEXT-RUN `seed 87 nojit 12h
+  widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5` (12 hours the owner's to confirm;
+  the chain about 13.5): every design without the JIT (evolve.py --require nojit), the earlier fronts carried in JIT-off;
+  meanwhile the Tegra and dream measure the 282 portable designs found before (REMOTES). Why: the final pick's candidates
+  held 5 of the pooled front's 279 portable designs - the fastest in-run (8cc7f60d6b 0.298) never re-measured, none on
+  ARMv7 (601's reason, the JIT crowding them off the front, was wrong: memory keeps them). Its processing: process-run.sh
+  as usual - process-seed.sh marks it portable (no stopping line, no gene votes): portable.py's verdict (BETTER by the
+  stopping rule's thresholds, fixed now), final-pick.py on the 282 across machines; then a short chain re-measuring the
+  run's best beside the 282's best, and the relf handoff's portable roles updated. Rehearsed in a scratch clone: 29
+  records, none with the JIT; next-run.sh's parse of the line tested.
 - **Next: the article itself - the owner's** (open item 8): which article (the first one, article/, is the stage ladder;
   the search's has only its method section), prompts/14's audience research before drafting, 04 and 05 before publishing
   (GOALS.md); the draft's 4 [check] marks (the series' carry and widths, the fast end's offset, the analysis between
-  runs, the jail's list). No machine run planned (NEXT-RUN none; 589's rule).
+  runs, the jail's list). After the portable run.
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due**: none - no run planned (results/predictions.md: consolidation's scored, 599).
+- **Predictions due** (results/predictions.md): seed 87, the portable run - 6 (602).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; seed 87's chain archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

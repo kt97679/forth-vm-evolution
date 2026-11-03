@@ -271,7 +271,7 @@ case ${SIZE:-} in
     *) die "after the seed and tag2: nothing, night, or hours (12h) - not '$SIZE'" ;;
 esac
 # Iteration 71: "seed N tag2" - every design of the run in the two-bit tag
-case ${REQ:-} in ''|tag2) ;; *) die "after the seed: nothing, or tag2 - not '$REQ'";; esac
+case ${REQ:-} in ''|tag2|nojit) ;; *) die "after the seed: nothing, tag2 or nojit (602) - not '$REQ'";; esac
 case $SEED in ''|*[!0-9]*) die "the seed must be a number, or 'compare' - not '$SEED'";; esac
 case $CROUNDS in ''|*[!0-9]*) die "the rounds must be a number, not '$CROUNDS'";; esac
 if [ "$KIND" = experiment ]; then      # a tool of this repository, nothing else
