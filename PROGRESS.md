@@ -10680,3 +10680,18 @@ unpacked from a step's pack to the chain's next move, chainctl.py's status and m
 under set -eu with the trap armed, 11 of 11 (6 fail on master before). chain-sessions.py's trial on chain D: msc KEEP
 (msc=0 17.6-18.2% slower in 4 of 4 Tegra pairs) - msc's queued patch deleted at the processing.
 Files: results/drafts/chain-d-test-591.sh (changed).
+
+## Iteration 598 - 2026-11-03 - Claude
+
+**Chains C and D processed - the final set 21, msc kept.** The pick pooled over every session (chain D's 29 laptop, 40
+dream a width, 4 rage sessions beside chains B and C) gives 15; chain B's and chain C's own sets add 6 - chain B's 14 all
+kept; no generic pick within 25% (06b188f45b the best mean). msc=0 17.6-18.4% slower in each Tegra pair over 5 sessions:
+KEEP, its queued patch deleted (8 left). Sessions within the night agree better than chain B's against chain C's on each
+line (dream 0.977 / 0.990, rage 0.962 against 0.943 / 0.978 / 0.954). chain-sessions.py reads a kept chain's sessions.
+Files: results/final-pick-chainCD-seed86.md, results/final-set-chainsBCD-seed86.md, results/msc-pairs-seed86.md,
+results/chainC-seed86/README.md, results/chainC-seed86/loadtest.md, results/chainC-seed86/dream.lan-prebuilt32.md,
+results/chainC-seed86/dream.lan-prebuilt32.out.json, results/chainC-seed86/dream.lan-prebuilt64.md,
+results/chainC-seed86/dream.lan-prebuilt64.out.json, results/chainC-seed86/rage.lan-prebuiltarm.md,
+results/chainC-seed86/rage.lan-prebuiltarm.out.json, results/chainD-seed86/README.md, results/chainD-seed86/sK/ (40
+session directories, each loadtest.md - s1-s29 - and each host's out.json and report), results/drafts/chainCD-agreement-598.py,
+results/drafts/final-set-598.py.

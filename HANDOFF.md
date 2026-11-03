@@ -41,99 +41,35 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 597.
-- **Chain D, returned (597), not yet processed - with chain C's archive, in one chat**: forth-vm-evolution-chain-cdb8375c4-fury-20261103-135537_tar.gz,
-  status done, 02:14-13:55 (11.7 hours of the owner's 12), every line all it was given: the laptop 29 sessions, dream
-  40 of 40 at each width (its cap), rage 4 (a 5th would have ended past its deadline). Packed by hand: next-run.sh ended
-  silently after session 29 (below, fixed in 597); nothing lost. chain-sessions.py's trial on it (597, /tmp only):
-  **msc's verdict KEEP** - each Tegra pair's msc=0 design 17.6-18.2% slower than its msc=1 one over 4 of 4 sessions, so
-  the processing deletes msc's queued patch (596's rule; chain C cannot turn it - "as fast on every line" fails here).
-- **next-run.sh's set -e faults, fixed (597)**: `r_=$(repeat-fits.sh ...); rc_=$?` ended the shell on repeat-fits' first
-  "no" (dash: a failing substitution in an assignment is a failing command), after the step's `trap - EXIT` - so no pack,
-  status left running; `... | grep -c .` the same with no --cpus (`next-run.sh compare`; never hit - every compare line
-  had --cpus). Now rc_ by `||`, ncpus() guarded, and the EXIT trap `unpacked` from a step's pack to the chain's next move
-  (an exit there packs the chain done-some-failed; stopping left to stop); chainctl.py's status and monitor say how to
-  pack a chain that ended unpacked. results/drafts/chain-d-test-591.sh runs the cut-out functions under set -eu with the
-  trap armed: 11 of 11 (master before it: 6 of 11 fail).
-- **Consolidation's queue - 9 patches (596)**: msc retired at 0 (596, below, conditional); rtloop 2 retired (595, below); the older formats' retirement, all 6 steps (594): results/queued-consolidation/, after fsys45 - the
-  freeze (588: s2-s5's engines and images in stages/frozen/, copied by build-stages.sh, --validate checking them by hash)
-  and lean retired at 1 (589: FROZEN, both drops for every CV8 design, layout.py's lean-off switches gone). Lean tested
-  by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS);
-  scale (590) the same - 667 of 667 at both widths, batch-check PASS on the 4 patches.
-  Scale (590) retired at 0 for CV8 only - SCALE serves cpt16 and sod16 (s1 rebuilt from source), so the engine's and
-  layout.py's scaling stay; the cell, sod16 and cpt16 families stay too (the owner, 590: "let's not retire them now").
-  Varcall (592) retired at 1, sharedcall with it - the engines' fixed 15-bit call and per-handler call path gone, s4 no
-  longer buildable from source (build() refuses varcall 0); build-hash 667 of 667 at both widths, batch-check PASS on the 5 patches.
-  Doesfar (593) retired at 1 - the engines' DOESFAR switch and layout.py's --does-far gone, s5 refused by build(),
-  layout-noise.sh on s6; build-hash 667 of 667 at both widths, batch-check PASS on the 6 patches.
-  Bytehdr (594) retired at 1, the last - CV8's full headers gone (layout.py refuses --v8 without --bytehdr, so CV8 calls
-  unscaled), the -self dumps with them (setup()'s 63, build-stages.sh's 4); build-hash 667 of 667 the same at both widths (s2, s3 from source the same; s4 and s5 refused by build()), validate 7 of 7 IDENTICAL on the patched tree, batch-check PASS on the 7 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS); cut off by a turn's end at the 4-byte hashes and resumed (RESUME=1).
-  Rtloop (595) 2 retired, after bytehdr - on no front, shortlist or final-set design (chains C and D choose from the 40); canon reads 2 as 1;
-  results/drafts/rtloop-check-595.py: of 2874 designs the expression changed in exactly the 136 with the headerless loop words; batch-check
-  PASS on the 8 patches. Jitdoes 1 stays (3ee67e7d34, chain B's set).
-  Msc (596) retired at 0, the last, **conditional** (chain D's trial, 597: KEEP - the patch goes at the processing): kept only if chain-sessions.py prints msc's verdict RETIRE, else the patch
-  and its git-apply line deleted (the 8 before it unaffected) - tools/gen-msc.py and engines-check's 5 paths gone, build()
-  refuses msc 1, ids kept (express() untouched, as tail's at 456); results/drafts/msc-check-596.py: msc expressed by no
-  candidate, shortlist, final-set or hand-made design; batch-check PASS on the 9 patches.
-  The queue applies at consolidation, after chains C and D's processing (retire-plan-583.md). final-pick.py --also-session (588) for chain C's processing.
-- **Chain B, processed (587)** - results/final-pick-chainB-seed86.md: the final set 14 (results/final-set-seed86.md) -
-  the laptop's 10 and 4 added across machines (06b188f45b, 6c6717b20a, c13353f8cf the best means; d6b42c335a x86-32's
-  fastest); no generic pick within 25% (ARMv7's best, 690981ca5b, a GCC design without the JIT, 130% behind on x86).
-  Every host measured all it was given (rage 237 of 237 at 2 rounds in 154 of its 540 minutes; dream 44 of 44 a width):
-  the chain took 2.9 hours of the owner's 12, nothing cut - 585 read seed 86's rage time, its 16-minute stages build in
-  it, as a per-design rate (measured: 35 s a design at 2 rounds). Its readings kept in results/chainB-seed86/ (chain A's
-  were not - its dream session cannot be compared). Rage's GCC built 9 lto=1 designs with -u raise, alive: open items 1
-  and 1b closed. The 7 msc designs 585 never asked for: chain C. The swaps against chain A's set are ties (the fastest
-  0.9%, the smallest the same bytes): chain A's members and additions not in this set stay on the shortlist, re-measured.
-- **Chain C, returned (590), not yet processed - with chain D's archive, in one chat**: forth-vm-evolution-chain-ee7a0ee97-fury-20261102-225556_tar.gz,
-  status done in 2.9 hours (20:01-22:55), every remote line all it was given (dream 40 of 40 at each width, rage 48 of
-  48); its processing below. As planned (587): the shortlist's 40 again on the three machines at 10 rounds (the
-  laptop alone and loaded at both widths, dream at both widths, the Tegra), the 8 msc designs on the Tegra first. About
-  3 hours of work, rage's line the longest; the 8 hours its window (rage's deadline 450 minutes) - an end near hour 3 is
-  expected. An experiment chain ends when its work is done: quote its length from measured rates, a one-time build apart.
-- **Chain A, done (585)** - results/final-pick-chainA-seed86.md: 232 of 232 re-measured at both widths and on dream; the
-  generic pick 4df5b46d00 across x86-64 and x86-32, four added; the shortlist 40. The laptop's 64-bit fast-band order its
-  own (0.889 against itself, -0.357 against dream). Fixed: final-pick.py's host Spearman at its width; gather's silently
-  dropped line; xcheck --also from the archived databases (the msc pairs' records are only in seed 86's).
-- **Seed 86, the second confirmation run, done (582)**: NOT CONFIRMED by carried designs only - the least memory 104 KB
-  (fb0d57c8a2, seed 76's, carried) at the 4 KB bar under the pool's 108; the search gained nothing (its front -1.0%
-  against the pool, its bred designs +0.05%, the fastest 0.1330 against 0.1325): the pool widened, no new search (GOALS.md,
-  573) - step 2 ends. results/evolve-amd-ryzen-7-pro-8840hs-seed86.md.
-- **The fast-end question answered (582)**: dream's 41 put seed 84's bred lead at -0.6% (64 bits), +0.2% (32) against the
-  laptop's 5.9% - the laptop's, not the designs' (results/xcheck-seed86.md; results/drafts/dream41-582.py).
-- **The hosts' real rates (582)**: seed 86's chain measured a 68-design line on dream in about 4.3 minutes and 15
-  designs on rage in about 28, the stages built there included (load.log; a lock serializes a host's lines) - 579's
-  "dream about 10 hours, the Tegra days" was a budget. So dream re-measures every candidate in chain A, and chain B's 900
-  minutes on the Tegra hold every candidate it can build, not the shortlist's first 20: chain A's processing writes
-  chain B's lists (the shortlist first, then the rest; the Tegra's
-  also the msc pairs of retire-plan-583.md).
-- **Consolidation's retirement, planned (583)** - results/drafts/retire-plan-583.md: fsys 4-5 retired, the fsys45
-  batch queued (results/queued-consolidation/, batch-check PASS) - moved to results/pending/ at consolidation, never
-  before (process-run.sh applies pending). Waiting: jitdoes=1 and rtloop=2 for the final set (12 and 1 candidates; the
-  fastest, 15ecc6a232, uses jitdoes); msc=1 for the Tegra's 4 msc pairs, in chain B's list; bytehdr, doesfar, lean,
-  scale, varcall: the owner said go (584: "if it will not lose good designs") - checked: no front design, no
-  candidate, s6 as it is (results/drafts/retire-stages-584.md). The freeze and lean queued (588, 589); the four other gene patches in fresh chats -
-  each passes results/drafts/build-hash-584.py - every design but s2-s5 the same engine and image bytes as master's
-  (results/drafts/build-hash-584-8.jsonl, -4.jsonl) - then run-tests, validate, batch-check; queued after fsys45.
-- **Processing chains C and D (one chat, both archives)**: the same three commands for each - process-run.sh stops after
-  the summary (no seed pack), final-pick.py on chain C's readings (process-seed.sh's chain-B mode: the shortlist); then
-  final-pick.py on every session - chain D's laptop packs (a loadtest.md each) and its remote/HOST-HOW[-sN] out files, each
-  session a directory (lab/evolve/chain-sessions.py UNPACKED DEST CANDIDATES - lays them out, prints the final-pick line and
-  msc's verdict from rage's pairs; 595), `--also-session` each beside results/chainB-seed86 and chain C's (588: the laptop's loadtest.md
-  merged by geometric mean, each host's lines its mean in step 5) - a design in any session's set kept (lose no good design). Keep chain C's readings as chain B's;
-  the 8 msc records (rage's designs.json) into the repository; msc by retire-plan-583's rule - its patch queued (596): kept on RETIRE, deleted on KEEP. Chain D is 589's sizing (results/drafts/chain-sizing-589.md), run now. Then
-  consolidation:
-  retire-plan-583.md, retire-report-579.py (578's rule) on the final set.
+- master: Iteration 598.
+- **Chains C and D, processed (598)** - results/final-pick-chainCD-seed86.md: **the final set 21**
+  (results/final-set-chainsBCD-seed86.md) - the pick pooled over every session (chain D's 40, chains B and C; the
+  laptop's 31 merged) gives 15, chain B's and chain C's own sets add 6 (lose no good design); chain B's 14 all kept.
+  No generic pick within 25% (the best mean 06b188f45b; each class's fastest c7c35f9c97, 4ef851fd8e, 690981ca5b). Both
+  chains complete: C 2.9 hours, D 11.7 (the laptop 29 sessions, dream 40 a width, rage 4). Sessions within a night agree
+  better than chain B's against chain C's on every line (dream 0.977 / 0.990, rage 0.962; results/drafts/chainCD-agreement-598.py);
+  the laptop the noisy line (about 2.1% a design between sessions, dream and rage 0.5%). Readings kept:
+  results/chainC-seed86/, results/chainD-seed86/sK.
+- **msc kept (598)**: on the Tegra each of the 4 pairs' msc=0 design 17.6-18.4% slower than its msc=1 one over 5
+  sessions - its queued patch deleted (results/msc-pairs-seed86.md: the 8 records). msc stays a gene; whether it helps
+  the designs ARMv7 ranks first (690981ca5b, msc=0) was not measured.
+- **Next: consolidation, in a fresh chat** (the sandbox's, no machine run; results/drafts/retire-plan-583.md, "At
+  consolidation"): retire-report-579.py (578's rule: no design on the pooled true front uses it) and
+  retire-candidates-583.py on the final set's 21; jitdoes 1 stays (3ee67e7d34 in the set); results/queued-consolidation/
+  moved to results/pending/ with any new patch, batch-check on that master, then applied. **The queue - 8 patches**:
+  fsys45, the freeze of s2-s5 (stages/frozen/), lean, scale (CV8 only), varcall, doesfar, bytehdr, rtloop 2 - each
+  tested by build-hash 667 of 667 at both widths; batch-check PASS on the 8 (397c93b, byte for byte the ones queued); the
+  cell, sod16 and cpt16 families stay (the owner, 590). ORDER.md says what each does. After it: the figures and the
+  article (open item 8).
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): chain C - every line all it is given (90/10), 2.5-4 hours (75/25),
-  rage's two sessions 0.8+ (70/30), dream's 0.8+ (75/25), msc retired (65/35), 11 of the 14 kept (65/35), no generic pick
-  (85/15). Chain D (591): rage 4 sessions, dream 20+ a width, the laptop 12+, 11-12 hours, sessions within the night agree
-  better than chains B and C, 11 of the 14 kept, msc retired, no generic pick.
-- **Before 582**: seeds 70-86 processed (498-582); history: HANDOFF-HISTORY.md.
-- **Files a new chat needs**: the newest bundle; chain C's archive (forth-vm-evolution-chain-ee7a0ee97-fury-20261102-225556_tar.gz) and chain D's (forth-vm-evolution-chain-cdb8375c4-fury-20261103-135537_tar.gz), processed in one chat. appbench.zip stays on the laptop.
+- **Predictions due** (results/predictions.md): consolidation - batch-check PASS on the 8 (90/10), every one of the 21
+  the same bytes after them (85/15), nothing new to retire (60/40), jitdoes stays (90/10).
+- **Before 598**: chains A-D, seed 86 and the final pick's planning (582-597) - HANDOFF-HISTORY.md, "The card's state at
+  Iteration 597"; seeds 70-86 processed (498-582).
+- **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
@@ -175,8 +111,8 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
    rage-check.sh was not run (the owner, 587) and is no longer needed before a chain.
 2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
    seed 83 (572). **Step 2 done (582)**: seed 84 NOT CONFIRMED at the fast end - the laptop's lead (dream, 582); seed 86
-   NOT CONFIRMED by carried designs only - the pool widened, no new search. **Step 3, the final set: chain B's 14 (587)** -
-   results/final-pick-chainB-seed86.md; its second session chain C. **Step 4, the random baseline, done (576)**:
+   NOT CONFIRMED by carried designs only - the pool widened, no new search. **Step 3, the final set: 21 (598)** -
+   results/final-pick-chainCD-seed86.md, from chains B, C and D; consolidation next. **Step 4, the random baseline, done (576)**:
    results/evolve-amd-ryzen-7-pro-8840hs-seed85.md.
 3. **Correctness - none open (576)**: seed 85's 55 "body size drift" deaths the scale-0 call reach, met where varcall
    and doesfar exempt a design from reach_lethal() - no wrong output (results/drafts/body-size-drift-576.md). seed 82's deaths all expected (cpt16 on apps 36, the scale-1 reach 10). Seed 80's two JIT deaths - jit_scan's 160-byte window cut st_execute under
@@ -195,7 +131,7 @@ The full list, with the reasons: HANDOFF-REFERENCE.md.
 7. Deferred: the JIT on ARMv7, for the Tegra session (results/drafts/ask-arm-jit-answers-512.md); an uncertainty-aware
    screen tested offline (results/drafts/ask-search-answers-525.md, proposal 2).
 7b. (583: planned - results/drafts/retire-plan-583.md.) Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
-   values' code builds the stages s2-s5; msc's Tegra check before retiring it.
+   values' code builds the stages s2-s5; msc kept by the Tegra's check (598).
 8. The article, after consolidation: the claim is the integration, not any technique
    (results/drafts/ask-related-work-answers-539.md); every figure recomputed on the true fronts (seeds 53-75:
    results/truefronts-seed75.md, results/progress-true-fronts.md); across machines the fast end as a band, the fastest

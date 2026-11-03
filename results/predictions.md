@@ -1218,6 +1218,12 @@ sessions agree on the 40, 0.8 or more at both widths - 75/25. (5) Each msc pair'
 Tegra (msc retired) - 65/35. (6) Chain C's own final set keeps at least 11 of chain B's 14 - 65/35. (7) Again no generic
 pick within 25% - 85/15.
 
+Scored (Iteration 598): every line all it was given - right (dream 40 of 40 a width, rage 48 of 48, the laptop the 40 at
+all four readings); 2.5-4 hours - right (2.9); rage's two sessions 0.8 or more - right (chain B against chain C 0.954 on
+the 40); dream's - right (0.943 at 64 bits, 0.978 at 32); msc retired - wrong (each pair's msc=0 design 16.4-19.2% slower:
+KEEP); 11 of the 14 kept - wrong (10: 3ee67e7d34, c13353f8cf, cea114f47e, df890d7385 out - cea114f47e's place taken by
+bee0b97bb5, the same 13,939 bytes); no generic pick - right (the best mean 06b188f45b).
+
 ## Chain D, the shortlist's sessions repeated on the three machines - predicted (Iteration 591)
 
 NEXT-RUN `experiment loadtest.py --ids results/shortlist-seed86.md --rounds 10`, repeated while another session ends by
@@ -1229,3 +1235,21 @@ sessions within the night agree on the 40 better than chain B's against chain C'
 on each host - 65/35. (6) The final set from every session (chains B, C, D) keeps at least 11 of chain B's 14 - 65/35.
 (7) msc: each pair's msc=0 design as fast or faster in the Tegra's mean over its sessions - 65/35. (8) No generic pick
 within 25% - 85/15.
+
+Scored (Iteration 598): rage 4 sessions, all 48 each - right (9590-9614 s a session; a 5th refused by its deadline);
+dream 20 or more a width - right (40, the cap; about 7 minutes a session); the laptop 12 or more - right (29, about 23
+minutes each); 11-12 hours, no line failed - right (11.7; every line all it was given - next-run.sh's set -e ended it
+unpacked after session 29, nothing lost, fixed at 597); sessions within the night agree better - right on each host
+(the median pairwise Spearman: dream 0.977 and 0.990 against chain B's against chain C's 0.943 and 0.978, rage 0.962
+against 0.954; results/drafts/chainCD-agreement-598.py); 11 of the 14 kept - right (11 by the pooled pick; all 14 by
+the union); msc retired - wrong (17.6-18.2% slower over 4 sessions: KEEP); no generic pick - right (06b188f45b the best
+mean, 42% behind ARMv7's best there).
+
+## Consolidation, after chains C and D - predicted (Iteration 598)
+
+The sandbox's, no machine run: results/queued-consolidation/'s 8 patches to results/pending/, retire-report-579.py and
+retire-candidates-583.py on the final set's 21 (results/final-set-chainsBCD-seed86.md), batch-check on that master. (1)
+batch-check PASS on the 8, unchanged since 595 - 90/10. (2) build-hash-584.py after them: every one of the 21 the same
+engine and image bytes at both widths - 85/15. (3) No gene value beyond the queued ones and jitdoes is on none of the 21
+and on none of the pooled true front - so nothing new to retire - 60/40. (4) jitdoes 1 stays (3ee67e7d34 and any other
+of the 21 that uses it) - 90/10.

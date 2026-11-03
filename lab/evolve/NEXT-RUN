@@ -13,6 +13,10 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 598 (chains C and D processed): none - the final set is chosen (21, results/final-set-chainsBCD-seed86.md)
+# and consolidation is the sandbox's (retire-plan-583.md); no machine work planned (results/drafts/chain-sizing-589.md).
+# msc kept (the Tegra's 4 pairs: msc=0 17.6-18.4% slower over 5 sessions). REMOTES keeps chain D's lines, read only by
+# a chain step.
 # Iteration 587 (chain B processed; the owner: 8 hours): chain C - the final set's second session across machines, and
 # msc's Tegra pairs. The shortlist's 40 again: the laptop at 10 rounds, alone and under load at both widths (about 30
 # minutes); dream at both widths at 10 rounds (about 15 minutes a width); the Tegra (REMOTES) the 8 msc designs first -
