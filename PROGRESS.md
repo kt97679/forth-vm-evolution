@@ -10770,3 +10770,8 @@ table-free relative calls, the backward-decoded byte-header link, any winner's c
 end by asking the readers. Which winners use what, from their genomes (tos 5, threads 5, supers 3, spec 6 of 9).
 Files: results/drafts/originality-605.md.
 
+## Iteration 606 - 2026-11-03 - Claude
+
+The fast end's 5-7% out of both drafts (the owner agreed: process, not result - the final set was chosen on re-measures
+and the stopping rule compared in-run with in-run, so it cancels). No [check] left in either.
+

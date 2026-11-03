@@ -377,14 +377,6 @@ so not finding it proves little. If you know a Forth that does either
 of the two, or a winner's whole combination, please tell me in the
 comments.
 
-**The fast end's 5-7%.** The fastest designs of each run come out 5-7%
-slower when measured again after the run than during it - the JIT
-designs 3-6%, the rest within 1-2%. It is not the clock: a test with the
-cycle counters found the cores no slower under the run's load than
-alone. Some of it is surely the winner's curse, the fastest of
-thousands being the luckiest too. I do not know whether that is all of
-it. [check: your reading]
-
 **Selection ran on one machine.** The Tegra disagrees with the laptop
 almost completely - as Huang, Marr and Ugawa found for interpreter
 handler orders evolved for one machine - and one gene shows what that
