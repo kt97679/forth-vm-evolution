@@ -10648,3 +10648,11 @@ switch and layout.py's --does-far gone (the far DOES> form every CV8 design's), 
 layout-noise.sh on s6; 39 lines in, 52 out. Engines preprocessed the same at 22 settings; build-hash 667 of 667 at 8-byte cells,
 667 of 667 at 4; batch-check PASS on the 6 patches. retire-test-588.sh resumes after a turn's end (RESUME=1). Next: bytehdr.
 Files: results/queued-consolidation/doesfar-after-seed86.patch, results/drafts/doesfar-pp-593.sh.
+
+## Iteration 594 - 2026-11-03 - Claude
+
+While chain D runs: the older formats' retirement, step 6, the last - bytehdr retired at 1, queued after doesfar. CV8's
+full headers gone: layout.py refuses --v8 without --bytehdr (CV8 calls unscaled, their shifts out), build() refuses 0, the
+-self dumps out (setup()'s 63, build-stages.sh's 4), test-ext-loops.sh's s5 line out; 43 lines in (comments mostly), 40 out. Build-hash 667 of 667 at both
+widths; batch-check PASS on the 7 patches. All six queued: they apply at consolidation, after chains C and D's processing.
+Files: results/queued-consolidation/bytehdr-after-seed86.patch.
