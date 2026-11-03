@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 602.
+- master: Iteration 603.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -67,9 +67,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   and on ARMv7, c2ef9488ff the knee, 22420b3b61, fb0d57c8a2 least memory, cea114f47e smallest (portable). Each at both
   widths: 9 of 9 workloads right against s6, the bytes consolidation's. Phase 2 (RELF.md): relf takes mechanisms and
   measures them with relf-ab.sh.
-- **Next run: seed 87, the portable run (602; results/drafts/portable-plan-602.md)** - NEXT-RUN `seed 87 nojit 12h
-  widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5` (12 hours the owner's to confirm;
-  the chain about 13.5): every design without the JIT (evolve.py --require nojit), the earlier fronts carried in JIT-off;
+- **Next run: seed 87, the portable run (602; results/drafts/portable-plan-602.md)** - NEXT-RUN `seed 87 nojit 21h
+  widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5` (21 hours, 603 - the owner's 9 or
+  21; the chain about 22.5; the Tegra up to 4 sessions, dream 12 a width): every design without the JIT (evolve.py --require nojit), the earlier fronts carried in JIT-off;
   meanwhile the Tegra and dream measure the 282 portable designs found before (REMOTES). Why: the final pick's candidates
   held 5 of the pooled front's 279 portable designs - the fastest in-run (8cc7f60d6b 0.298) never re-measured, none on
   ARMv7 (601's reason, the JIT crowding them off the front, was wrong: memory keeps them). Its processing: process-run.sh

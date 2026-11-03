@@ -13,11 +13,14 @@
 # Why each run was chosen: PROGRESS.md; every comment this file has carried: git log -p lab/evolve/NEXT-RUN (pruned
 #   to the runs in hand at Iteration 396 - 96 iterations' comments, Iterations 28-389).
 #
+# Iteration 603 (the owner: 9 or 21 hours, "whatever makes sense"): 21 - generation 0 measures every carried design
+# JIT-off (new ids), the run is a single one, and the Tegra's 282 take about 4.6 hours a session: four sessions in 21
+# hours against one in 9 (REMOTES), dream about 12 a width. The chain about 22.5 hours.
 # Iteration 602 (the owner: "let's find best portable design and see if it would be better than what we already
 # found"): the portable run - every design without the JIT (nojit: evolve.py --require nojit), the earlier fronts carried
-# in as their JIT-off builds, selected at both widths (relf builds both), 12 hours - the owner's to confirm. Then the
+# in as their JIT-off builds, selected at both widths (relf builds both) - 21 hours (603). Then the
 # laptop re-measures the 282 portable designs found before (alone and loaded, both widths, 5 rounds - about 1.5 hours,
-# chain A's rate), while the Tegra and dream measure them during the run (REMOTES). The chain about 13.5 hours. Its
+# chain A's rate), while the Tegra and dream measure them during the run (REMOTES). The chain about 22.5 hours (603). Its
 # processing: portable.py (the run against the portable designs found before, the rule fixed now) and final-pick.py on
 # the 282 across the three machines - results/drafts/portable-plan-602.md; then a short chain re-measuring the run's
 # best beside the best found before, on the three machines.
@@ -198,4 +201,4 @@
 # session a directory for final-pick.py --also-session, beside results/chainB-seed86 and chain C's.
 # Iteration 592 (chain D running, started from 591's bundle): none - a pull of this bundle must not start chain D
 # again; chains C and D's processing writes the next line (consolidation's).
-seed 87 nojit 12h widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5
+seed 87 nojit 21h widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5

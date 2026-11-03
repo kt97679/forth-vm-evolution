@@ -10741,3 +10741,10 @@ clone: 29 records, none with the JIT. NEXT-RUN seed 87 nojit 12h widths, then th
 the Tegra and dream measure the 282 during the run.
 Files: results/portable-front-seed86.md, results/drafts/portable-plan-602.md.
 
+## Iteration 603 - 2026-11-03 - Claude
+
+The portable run's length (the owner: 9 or 21 hours): 21 - generation 0 measures every carried design JIT-off, the run
+has no replicate, and the Tegra's 282 take about 4.6 hours a session (four sessions in 21 hours, one in 9). REMOTES: rage
+1250 minutes, 4 sessions; dream 620 a width, up to 12 sessions. NEXT-RUN `seed 87 nojit 21h widths then ...`; the chain
+about 22.5 hours. Prediction 1 now: the Tegra 3 or more sessions (70/30).
+

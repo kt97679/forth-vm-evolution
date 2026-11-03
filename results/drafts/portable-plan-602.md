@@ -11,10 +11,10 @@ fastest of them in-run - 8cc7f60d6b 0.298, f55cec5849 0.304, 0d2912ef80 0.306, a
 never re-measured, nor measured on dream or the Tegra, whose order on portable designs is its own.
 results/portable-front-seed86.md: the 279 and the final set's 3 other portable designs, 282.
 
-**The chain** (NEXT-RUN, REMOTES; the owner's hours, 12 proposed): `seed 87 nojit 12h widths` - every design without
+**The chain** (NEXT-RUN, REMOTES; 21 hours - 603, the owner's 9 or 21): `seed 87 nojit 21h widths` - every design without
 the JIT (evolve.py --require nojit: require() sets jit=0, mutation leaves the JIT's genes), the earlier fronts carried in
 as their JIT-off builds, selected at both widths; then `experiment loadtest.py --ids results/portable-front-seed86.md
---rounds 5` on the laptop; during the run the Tegra (3 rounds, up to 2 sessions) and dream (10 rounds, up to 6
+--rounds 5` on the laptop; during the run the Tegra (3 rounds, up to 4 sessions) and dream (10 rounds, up to 12
 sessions a width) measure the 282. Rehearsed in a scratch clone (602): 6 carried, 29 records, none with the JIT.
 
 **The rule, fixed before the run** (lab/evolve/portable.py): BETTER when the run's true front's hypervolume beats the

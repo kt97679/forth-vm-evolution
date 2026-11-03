@@ -79,9 +79,10 @@
 #   and the final set's 3 others), the final set's 7 first. Sized from chain D: rage about 18 s a round and 5 s a design
 #   (282 at 3 rounds about 4.6 hours a session - two fit 680 minutes after its 16-minute stages); dream about 10 s a
 #   design at 10 rounds (about 47 minutes a session a width - up to 6 in 330 minutes each).
+#   Iteration 603 (21 hours): rage 1250 minutes, 4 sessions; dream 620 minutes a width, up to 12 sessions each.
 # (out at 602) rage.lan     prebuiltarm 4       10      680      --cell 4 --rejected 4 --sessions 5 --also 6d321be1cc,9920e9af07,01efebca24,97a4e37ab4,c67e6b5336,8bddf3a5e4,629b7e96ec,75acca89a6,@results/shortlist-seed86.md
 # (out at 602) dream.lan    prebuilt32  4       10      330      --cell 4 --rejected 6 --sessions 40 --also @results/shortlist-seed86.md
 # (out at 602) dream.lan    prebuilt64  4       10      330      --from prebuilt32 --sessions 40
-rage.lan     prebuiltarm 4       3       680      --cell 4 --rejected 4 --sessions 2 --also @results/portable-front-seed86.md
-dream.lan    prebuilt32  4       10      330      --cell 4 --rejected 6 --sessions 6 --also @results/portable-front-seed86.md
-dream.lan    prebuilt64  4       10      330      --from prebuilt32 --sessions 6
+rage.lan     prebuiltarm 4       3       1250     --cell 4 --rejected 4 --sessions 4 --also @results/portable-front-seed86.md
+dream.lan    prebuilt32  4       10      620      --cell 4 --rejected 6 --sessions 12 --also @results/portable-front-seed86.md
+dream.lan    prebuilt64  4       10      620      --from prebuilt32 --sessions 12
