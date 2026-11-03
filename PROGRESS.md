@@ -10606,3 +10606,16 @@ nothing lost). The fresh sandbox's first setup call ran past 300 s with its work
 all three machines: a chain's x86 lines wait for rage's; a chain D, only if chain C's sessions disagree, fills that
 wait with repeated sessions (no more rounds; one design at a time a host).
 Files: results/queued-consolidation/lean-after-seed86.patch, results/drafts/chain-sizing-589.md.
+
+## Iteration 590 - 2026-11-02 - Claude
+
+While chain C ran: the older formats' retirement, step 3 - scale retired at 0 for CV8 only, queued after lean. 584's plan
+was wrong in one place: SCALE also serves cpt16 (its gene, built at max(1, scale)) and sod16 (SCALE 1; s1 rebuilt from
+source), so vm-lab.c's and layout.py's scaling stay; what went is the CV8 gene (FROZEN; mutate()'s pool now applies FROZEN
+to CV8 alone, as require() does, so cpt16 keeps its scale) and the JIT's two dead shifts. No design lost: seeds 77-86's
+2681 recorded designs all CV8, the 232 candidates, final 14 and shortlist 40 at scale 0. Tested by retire-test-588.sh:
+build-hash 667 of 667 the same at both widths (s2, s3, s5 built from source the same - cpt16 untouched; s4 lean's change),
+batch-check PASS on the 4 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS). The owner: the cell, sod16 and cpt16 families stay ("let's not retire them now"). setup-sandbox.sh: 589's
+300 s setup call found - the subshell running asme held the caller's stdout to the detached job's end; the jobs now start
+by runuser and setsid -f (1-2 s). Chain C returned (2.9 hours, every line all it was given) - processed in a fresh chat.
+Files: results/queued-consolidation/scale-after-seed86.patch.

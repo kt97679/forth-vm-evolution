@@ -45,7 +45,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **The older formats' retirement - steps 1-3 of 6 queued (590)**: results/queued-consolidation/, after fsys45 - the
   freeze (588: s2-s5's engines and images in stages/frozen/, copied by build-stages.sh, --validate checking them by hash)
   and lean retired at 1 (589: FROZEN, both drops for every CV8 design, layout.py's lean-off switches gone). Lean tested
-  by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS).
+  by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS);
+  scale (590) the same - 667 of 667 at both widths, batch-check PASS on the 4 patches.
   Scale (590) retired at 0 for CV8 only - SCALE serves cpt16 and sod16 (s1 rebuilt from source), so the engine's and
   layout.py's scaling stay; the cell, sod16 and cpt16 families stay too (the owner, 590: "let's not retire them now").
   Next, one gene a fresh chat (varcall with sharedcall, doesfar, bytehdr): retire-stages-584.md's "In practice"
