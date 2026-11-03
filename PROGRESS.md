@@ -10640,3 +10640,11 @@ sod16.py's VARCALL; 56 lines in, 108 out; s4 no longer built from source (build(
 results/drafts/retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 5 patches
 (run-tests, validate 7 of 7 IDENTICAL, the jail). NEXT-RUN none while chain D runs.
 Files: results/queued-consolidation/varcall-after-seed86.patch.
+
+## Iteration 593 - 2026-11-03 - Claude
+
+While chain D runs: the older formats' retirement, step 5 - doesfar retired at 1, queued after varcall. The engines' DOESFAR
+switch and layout.py's --does-far gone (the far DOES> form every CV8 design's), build() refuses doesfar 0 (s5 frozen),
+layout-noise.sh on s6; 39 lines in, 52 out. Engines preprocessed the same at 22 settings; build-hash 667 of 667 at 8-byte cells,
+667 of 667 at 4; batch-check PASS on the 6 patches. retire-test-588.sh resumes after a turn's end (RESUME=1). Next: bytehdr.
+Files: results/queued-consolidation/doesfar-after-seed86.patch, results/drafts/doesfar-pp-593.sh.

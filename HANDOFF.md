@@ -41,14 +41,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 592.
+- master: Iteration 593.
 - **Chain D, started (591) - the owner's 12 hours**: the shortlist's 40 in whole sessions repeated on the three machines
   (NEXT-RUN; REMOTES --sessions), started before chain C's verdict - 589's filler, about even odds chain C would ask for it.
   The laptop's step repeats while another session ends by the remote lines' last deadline (repeat-fits.sh); rage the 8
   msc designs and the 40, 4 sessions expected in 680 minutes; dream as many as 330 minutes a width hold. About 11.5
   hours. Tested by results/drafts/chain-d-test-591.sh. NEXT-RUN none since 592 (a pull must not start it again - 588's
   rule); chains C and D's processing writes the next line.
-- **The older formats' retirement - steps 1-4 of 6 queued (592)**: results/queued-consolidation/, after fsys45 - the
+- **The older formats' retirement - steps 1-5 of 6 queued (593)**: results/queued-consolidation/, after fsys45 - the
   freeze (588: s2-s5's engines and images in stages/frozen/, copied by build-stages.sh, --validate checking them by hash)
   and lean retired at 1 (589: FROZEN, both drops for every CV8 design, layout.py's lean-off switches gone). Lean tested
   by retire-test-588.sh: build-hash 667 of 667 the same at both widths, batch-check PASS on the 3 patches (run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS);
@@ -57,8 +57,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   layout.py's scaling stay; the cell, sod16 and cpt16 families stay too (the owner, 590: "let's not retire them now").
   Varcall (592) retired at 1, sharedcall with it - the engines' fixed 15-bit call and per-handler call path gone, s4 no
   longer buildable from source (build() refuses varcall 0); build-hash 667 of 667 at both widths, batch-check PASS on the 5 patches.
-  Next, one gene a fresh chat (doesfar, then bytehdr): retire-stages-584.md's "In practice"
-  - about an hour of test a patch on the sandbox's one CPU. final-pick.py --also-session (588) for chain C's processing.
+  Doesfar (593) retired at 1 - the engines' DOESFAR switch and layout.py's --does-far gone, s5 refused by build(),
+  layout-noise.sh on s6; build-hash 667 of 667 at both widths, batch-check PASS on the 6 patches.
+  Next, bytehdr (the last) in a fresh chat: retire-stages-584.md's "In practice" - about 1.5 hours of test on the
+  sandbox's one CPU, past a turn's end: `RESUME=1` reruns retire-test-588.sh from where it stopped. final-pick.py --also-session (588) for chain C's processing.
 - **Chain B, processed (587)** - results/final-pick-chainB-seed86.md: the final set 14 (results/final-set-seed86.md) -
   the laptop's 10 and 4 added across machines (06b188f45b, 6c6717b20a, c13353f8cf the best means; d6b42c335a x86-32's
   fastest); no generic pick within 25% (ARMv7's best, 690981ca5b, a GCC design without the JIT, 130% behind on x86).
