@@ -14,8 +14,8 @@ values on no pooled-front design only jitdoes=1 is on final designs - kept).
     git apply results/pending/bytehdr-after-seed86.patch
     git apply results/pending/rtloop-after-seed86.patch
 
-batch-check (397c93b, on 4ac518d - these 8 patches, byte for byte; 596's PASS on 9 had msc's too): PASS - run-tests PASS (the
-generators: 107 paths), validate 7 of 7 IDENTICAL, the jail PASS.
+batch-check (598, on 4bb5eff - 8 patches): PASS - run-tests PASS (the generators: 107 paths), validate 7 of 7 IDENTICAL,
+the jail PASS.
 
 **fsys45-after-seed86.patch** - consolidation's first retirement (GOALS.md step 3; 578's rule): fsys levels 4 and 5 - on no design of the pooled true front of seeds 77-86 (results/drafts/retire-report-583.md) and on none of the 232 final-pick candidates (results/drafts/retire-plan-583.md). Removes the engine's three FSYS >= 4 blocks (the Forth output buffer, SYSCALL -5 and -6), forth/file-sysc4.4 and file-sysc5.4, their helpers, loads and dumps; the gene's values 0-3; canon() reads a recorded 4 or 5 as 3. Tested: the engine preprocessed (gcc -E -P) byte-identical before and after at FSYS 0, 1, 2, 3 and unset - every remaining design builds the same engine; canon(fsys 5) gives 3; then batch-check. Applied at consolidation, after the final pick (queued, not pending - chain A's processing must not apply it).
 
