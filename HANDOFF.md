@@ -41,7 +41,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 590.
+- master: Iteration 591.
+- **Chain D, started (591) - the owner's 12 hours**: the shortlist's 40 in whole sessions repeated on the three machines
+  (NEXT-RUN; REMOTES --sessions), started before chain C's verdict - 589's filler, about even odds chain C would ask for it.
+  The laptop's step repeats while another session ends by the remote lines' last deadline (repeat-fits.sh); rage the 8
+  msc designs and the 40, 4 sessions expected in 680 minutes; dream as many as 330 minutes a width hold. About 11.5
+  hours. Tested by results/drafts/chain-d-test-591.sh. **A bundle made while it runs sets NEXT-RUN none** (a pull must
+  not start it again - 588's rule).
 - **The older formats' retirement - steps 1-3 of 6 queued (590)**: results/queued-consolidation/, after fsys45 - the
   freeze (588: s2-s5's engines and images in stages/frozen/, copied by build-stages.sh, --validate checking them by hash)
   and lean retired at 1 (589: FROZEN, both drops for every CV8 design, layout.py's lean-off switches gone). Lean tested
@@ -60,7 +66,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   were not - its dream session cannot be compared). Rage's GCC built 9 lto=1 designs with -u raise, alive: open items 1
   and 1b closed. The 7 msc designs 585 never asked for: chain C. The swaps against chain A's set are ties (the fastest
   0.9%, the smallest the same bytes): chain A's members and additions not in this set stay on the shortlist, re-measured.
-- **Chain C, returned (590), not yet processed - a fresh chat**: forth-vm-evolution-chain-ee7a0ee97-fury-20261102-225556_tar.gz,
+- **Chain C, returned (590), not yet processed - with chain D's archive, in one chat**: forth-vm-evolution-chain-ee7a0ee97-fury-20261102-225556_tar.gz,
   status done in 2.9 hours (20:01-22:55), every remote line all it was given (dream 40 of 40 at each width, rage 48 of
   48); its processing below. As planned (587): the shortlist's 40 again on the three machines at 10 rounds (the
   laptop alone and loaded at both widths, dream at both widths, the Tegra), the 8 msc designs on the Tegra first. About
@@ -90,13 +96,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   candidate, s6 as it is (results/drafts/retire-stages-584.md). The freeze and lean queued (588, 589); the four other gene patches in fresh chats -
   each passes results/drafts/build-hash-584.py - every design but s2-s5 the same engine and image bytes as master's
   (results/drafts/build-hash-584-8.jsonl, -4.jsonl) - then run-tests, validate, batch-check; queued after fsys45.
-- **Processing chain C**: the same three commands - process-run.sh stops after the summary (no seed pack), final-pick.py
-  on chain C's readings (process-seed.sh's chain-B mode: the shortlist); then final-pick.py beside chain B's readings,
-  `--also-session results/chainB-seed86` (588: the laptop's two loadtest.md merged by geometric mean, each host's lines its
-  mean in step 5) - a design in either session's set kept (lose no good design). Keep chain C's readings as chain B's;
-  the 8 msc records (rage's designs.json) into the repository; msc by retire-plan-583's rule. A chain D only if predictions 3 or 4 fail (two sessions disagree): sized to fill
-  the slowest line, the x86 lines repeating whole sessions through rage's (results/drafts/chain-sizing-589.md - the
-  owner, 589: use all three machines). Then consolidation:
+- **Processing chains C and D (one chat, both archives)**: the same three commands for each - process-run.sh stops after
+  the summary (no seed pack), final-pick.py on chain C's readings (process-seed.sh's chain-B mode: the shortlist); then
+  final-pick.py on every session - chain D's laptop packs (a loadtest.md each) and its remote/HOST-HOW[-sN] out files, each
+  session a directory, `--also-session` each beside results/chainB-seed86 and chain C's (588: the laptop's loadtest.md
+  merged by geometric mean, each host's lines its mean in step 5) - a design in any session's set kept (lose no good design). Keep chain C's readings as chain B's;
+  the 8 msc records (rage's designs.json) into the repository; msc by retire-plan-583's rule. Chain D is 589's sizing (results/drafts/chain-sizing-589.md), run now. Then
+  consolidation:
   retire-plan-583.md, retire-report-579.py (578's rule) on the final set.
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
@@ -104,9 +110,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
 - **Predictions due** (results/predictions.md): chain C - every line all it is given (90/10), 2.5-4 hours (75/25),
   rage's two sessions 0.8+ (70/30), dream's 0.8+ (75/25), msc retired (65/35), 11 of the 14 kept (65/35), no generic pick
-  (85/15).
+  (85/15). Chain D (591): rage 4 sessions, dream 20+ a width, the laptop 12+, 11-12 hours, sessions within the night agree
+  better than chains B and C, 11 of the 14 kept, msc retired, no generic pick.
 - **Before 582**: seeds 70-86 processed (498-582); history: HANDOFF-HISTORY.md.
-- **Files a new chat needs**: the newest bundle, and chain C's archive (above). appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; for the processing, chain C's archive (above) and chain D's. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

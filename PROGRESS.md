@@ -10619,3 +10619,15 @@ batch-check PASS on the 4 patches (run-tests PASS, validate 7 of 7 IDENTICAL, th
 300 s setup call found - the subshell running asme held the caller's stdout to the detached job's end; the jobs now start
 by runuser and setsid -f (1-2 s). Chain C returned (2.9 hours, every line all it was given) - processed in a fresh chat.
 Files: results/queued-consolidation/scale-after-seed86.patch.
+
+## Iteration 591 - 2026-11-03 - Claude
+
+Chain D for the owner's 12 hours ("please add whatever makes sense"), before chain C is processed: 589's filler - the
+shortlist's 40 in whole sessions repeated on the three machines (no more rounds), about even odds chain C would have asked
+for it. The laptop's step repeated (at most 30): next-run.sh's then_next starts a repeat only while another, as long as the
+last, ends by the remote lines' last deadline (lab/evolve/repeat-fits.sh), else packs; REMOTES' --sessions K: one build,
+then sessions while one as long as the last fits, each its own out file and report (remote-checks.sh). Rage the 8 msc
+designs and the 40, 4 sessions expected in 680 minutes; dream up to 40 a width in 330 minutes each; about 11.5 hours.
+Tested: the guard 7 of 7 with stand-ins, the hosts' sessions end to end with 570's ssh stand-ins 14 of 14 (3 sessions
+at each width, the second line stopped by its deadline at 3 of 9). Chains C and D processed together.
+Files: results/drafts/chain-d-test-591.sh.

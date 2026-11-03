@@ -80,6 +80,10 @@ start)
         elif [ "$minutes" = run ]; then minutes=120; fi                # no deadline given: as before
         echo "$host $minutes" >> "$R/queued"
         offset=$(( (before + minutes) * 60 ))                         # 379: the deadline counted from the start
+        ses=1; case " $opts " in *" --sessions "*)                    # Iteration 591 (chain D): sessions repeated in the line
+            ses=$(printf '%s\n' $opts | awk 'p {print; exit} $1 == "--sessions" {p = 1}')
+            opts=$(printf ' %s' $opts | sed "s| --sessions $ses||") ;; esac
+        sest=; [ "$ses" -gt 1 ] && sest=", up to $ses sessions"
         case " $opts " in *" --from "*)                               # Iteration 335: another check's designs
             frm=$(printf '%s\n' $opts | awk 'p {print; exit} $1 == "--from" {p = 1}')
             [ -s "$R/$host-$frm/designs.json" ] || { note "$CHK" "FAILED - its pair $host-$frm sampled nothing"; continue; }
@@ -93,7 +97,7 @@ start)
         rm -rf "$REPO"/build/evolve/xcheck-b-* "$REPO/build/evolve/xcheck-bundle"
         cat > "$H/run.sh" << RUN
 #!/bin/sh
-# $CHK's check of $(basename "$CHAIN") (lab/evolve/remote-checks.sh): $how, $rounds rounds, $minutes minutes from its start
+# $CHK's check of $(basename "$CHAIN") (lab/evolve/remote-checks.sh): $how, $rounds rounds, $minutes minutes from its start$sest
 cd "\$(dirname "\$0")" || exit 1
 W=\$(pwd); echo \$\$ > "\$W/pid"
 # Iteration 381: the host's load - at the start, and every 30 s while this check runs
@@ -111,7 +115,17 @@ if [ $how = prebuilt32 ]; then              # the 4-byte references this host ca
     cp "\$W"/bins/bin/build32/* build/ && touch build/s0-cell-32 build/s0-cell-s32.img build/k32-self.txt build/k32-b.txt || fail "the 4-byte references did not install"
     export EVOLVE_CELL=4 EVOLVE_PREBUILT_REF="\$W/bins/bin/s6"
 fi
-python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/out.json" --rounds $rounds --until \$UNTIL \$PRE > "\$W/xcheck.log" 2>&1 || fail "xcheck.py failed (xcheck.log)"
+# Iteration 591 (chain D): up to $ses sessions of the same designs, each its own out file (out.json, out-s2.json, ...) -
+# another only while one as long as the last ends by the deadline
+s=1; O=out.json; L=xcheck.log
+while :; do
+    t0=\$(date +%s)
+    python3 lab/evolve/xcheck.py "\$W/designs.json" "\$W/\$O" --rounds $rounds --until \$UNTIL \$PRE > "\$W/\$L" 2>&1 || fail "xcheck.py failed (\$L)"
+    t=\$(( \$(date +%s) - t0 )); echo "session \$s: \$t s, \$O" >> "\$W/sessions.txt"
+    s=\$((s + 1)); [ \$s -le $ses ] || break
+    [ \$(( \$(date +%s) + t )) -le \$UNTIL ] || { echo "session \$s not started: another of \$t s would end past the deadline" >> "\$W/sessions.txt"; break; }
+    O=out-s\$s.json; L=xcheck-s\$s.log
+done
 echo 0 > "\$W/DONE"
 RUN
         files="$R/repo.bundle $H/designs.json $H/run.sh"; case $how in prebuilt|prebuilt32|prebuilt64|prebuiltarm) files="$files $H/bins.tar.gz" ;; esac
@@ -125,7 +139,7 @@ if $SSH $O "$host" "mkdir -p $RD" < /dev/null > "$H/ssh.log" 2>&1 && t1=\$(date 
     tx=\$(awk -v b=\$b -v m=\$(( (t1 - t0) / 1000000 )) -v c=\$(( (t2 - t1) / 1000000 )) -v st=\$(( (t3 - t2) / 1000000 )) 'BEGIN { cs = c / 1000; printf "%.1f MB in %dm %02ds (%.0f KB/s); mkdir %d ms, start %d ms", b / 1048576, cs / 60, cs % 60, (cs > 0 ? b / 1024 / cs : 0), m, st }')
     echo "\$tx" > "$H/transfer.txt"
     echo \$(( \$(date +%s) + $offset )) > "$H/until"; echo "$host $RD" > "$H/where"
-    note "$CHK" "started - $ndes designs, $how, $minutes minutes from its start - copied \$tx"
+    note "$CHK" "started - $ndes designs, $how, $minutes minutes from its start$sest - copied \$tx"
 else note "$CHK" "FAILED - copying or starting there (remote/$CHK/ssh.log)"; fi
 LAUNCH
     done
@@ -157,6 +171,8 @@ gather)
             while [ "$(date +%s)" -lt $(( until + 300 )) ] && ! $SSH $O "$host" "[ -f $RD/DONE ]" < /dev/null > /dev/null 2>&1; do sleep 30; done
         fi
         for f in out.json run.log xcheck.log build.log FAILED DONE load.log load-start.txt; do $SCP -q $O "$host:$RD/$f" "$H/" > /dev/null 2>&1 || true; done
+        for f in $($SSH $O "$host" "cd $RD 2> /dev/null && ls out-s*.json xcheck-s*.log sessions.txt 2> /dev/null" < /dev/null 2> /dev/null); do
+            $SCP -q $O "$host:$RD/$f" "$H/" > /dev/null 2>&1 || true; done                       # 591: the further sessions
         $SSH $O "$host" "[ -f $RD/pid ] && kill -TERM -\$(cat $RD/pid) 2>/dev/null; rm -rf $RD" < /dev/null > /dev/null 2>&1 || true
         if [ -s "$H/out.json" ] && (cd "$REPO" && python3 lab/evolve/xcheck.py --report "$H/out.json") > "$R/$CHK.md" 2> "$H/report.log"; then
             {   # Iteration 381: how the check was copied, and the host's load while it ran
@@ -166,6 +182,15 @@ gather)
             } >> "$R/$CHK.md"
             note "$CHK" "gathered - remote/$CHK.md$( [ -f "$H/FAILED" ] && echo ", though: $(cat "$H/FAILED")")"
         else note "$CHK" "FAILED - no results$( [ -f "$H/FAILED" ] && echo ": $(cat "$H/FAILED")") (remote/$CHK/)"; fi
+        for o in "$H"/out-s*.json; do                               # 591: each further session its own report
+            [ -s "$o" ] || continue; sn=$(basename "$o" .json); sn=${sn#out-}
+            if (cd "$REPO" && python3 lab/evolve/xcheck.py --report "$o") > "$R/$CHK-$sn.md" 2>> "$H/report.log"; then
+                note "$CHK" "session ${sn#s} gathered - remote/$CHK-$sn.md"
+            else note "$CHK" "session ${sn#s} FAILED - no report (remote/$CHK/)"; fi
+        done
+        if [ -s "$H/sessions.txt" ]; then
+            note "$CHK" "$(grep -c '^session [0-9]*:' "$H/sessions.txt") sessions measured$(grep -q 'not started' "$H/sessions.txt" && echo ' - the next not started: it would end past the deadline')"
+        fi
     done
     for host in $(cat "$R/hosts" 2>/dev/null); do $SSH $O "$host" "rmdir $RDIR 2>/dev/null; rm -f $RDIR/.lock; rmdir $RDIR 2>/dev/null; true" < /dev/null > /dev/null 2>&1 || true
     done ;;

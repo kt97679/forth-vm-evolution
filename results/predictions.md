@@ -1217,3 +1217,15 @@ its stages 16 minutes) - 75/25. (3) Rage's two sessions agree on the 40, Spearma
 sessions agree on the 40, 0.8 or more at both widths - 75/25. (5) Each msc pair's msc=0 design as fast or faster on the
 Tegra (msc retired) - 65/35. (6) Chain C's own final set keeps at least 11 of chain B's 14 - 65/35. (7) Again no generic
 pick within 25% - 85/15.
+
+## Chain D, the shortlist's sessions repeated on the three machines - predicted (Iteration 591)
+
+NEXT-RUN `experiment loadtest.py --ids results/shortlist-seed86.md --rounds 10`, repeated while another session ends by
+the remote lines' last deadline (at most 30); REMOTES --sessions: rage the 8 msc designs and the 40, up to 5 in 680
+minutes; dream up to 40 a width in 330 minutes each. The owner's 12 hours, started before chain C was processed. (1) Rage
+measures 4 sessions, all 48 each - 70/30 (3 if a session runs past about 165 minutes). (2) Dream 20 or more sessions a
+width - 70/30. (3) The laptop 12 or more - 65/35. (4) The chain 11 to 12 hours, no line failed - 80/20. (5) A host's
+sessions within the night agree on the 40 better than chain B's against chain C's (the median pairwise Spearman higher)
+on each host - 65/35. (6) The final set from every session (chains B, C, D) keeps at least 11 of chain B's 14 - 65/35.
+(7) msc: each pair's msc=0 design as fast or faster in the Tegra's mean over its sessions - 65/35. (8) No generic pick
+within 25% - 85/15.

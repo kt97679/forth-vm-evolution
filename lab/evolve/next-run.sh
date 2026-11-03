@@ -144,8 +144,21 @@ THEN=${NEXT_RUN_THEN:-}
 case " $* " in
     *" then "*) ALL="$*"; THEN=${ALL#* then }; set -- ${ALL%% then *} ;;
 esac
+STEPLINE=$*       # 591: this step's words - a "then" that repeats them is a repeated session (then_next)
 then_next() {   # the second half of "A then B": the lock released, the mode decided anew
     [ -n "$THEN" ] || return 0
+    # 591 (chain D; the owner, 589: use all three machines): a repeat of this same experiment ("A then A then A") only
+    # while another session, as long as this one (from its tool's start), ends by the chain's deadline - the remote
+    # lines' last (lab/evolve/repeat-fits.sh); else the rest skipped and the chain packed here, as at a line's end
+    if [ "$KIND" = experiment ] && [ -n "$CHAIN" ] && [ "$(echo ${THEN%% then *})" = "$(echo $STEPLINE)" ]; then
+        r_=$(sh "$REPO/lab/evolve/repeat-fits.sh" "$CHAIN" $(( $(date +%s) - ${STEP_T0:-0} ))); rc_=$?; echo "   $r_"
+        if [ "$rc_" != 0 ]; then
+            n_=$(( $(printf '%s\n' "$THEN" | sed 's/ then /\n/g' | grep -c .) ))
+            echo "skipped: $n_ more of '$STEPLINE' - $r_" >> "$CHAIN/steps"; say "then: $n_ more skipped - $r_"
+            st=done; ! grep -q "^FAILED" "$CHAIN/steps" || st=done-some-failed
+            python3 "$REPO/lab/evolve/chainctl.py" pack "$CHAIN" $st; exit 0
+        fi
+    fi
     echo; say "then: $THEN"
     exec 9>&-
     unset NEXT_RUN_DETACHED NEXT_RUN_THEN NEXT_RUN_NOCARRY NEXT_RUN_CARRYALL NEXT_RUN_FROMZERO NEXT_RUN_NOEVOLVED NEXT_RUN_WIDTHS NEXT_RUN_RANDOM
@@ -435,6 +448,7 @@ if [ "$MODE" = experiment ]; then
     for f in "$@"; do echo "   $f"; done
     step "lab/evolve/$TOOL $TARGS"
     T0=$(date +%s)
+    STEP_T0=$T0                                                   # 591: a session's length, for a repeat (then_next)
     python3 "lab/evolve/$TOOL" $TARGS "$@" > "$RUN/$NAME.md" 2> "$RUN/$NAME.log" || { tail -20 "$RUN/$NAME.log"; exit 1; }
     if [ "$TOOL" = compare-fronts.py ]; then                      # Iteration 152: the next chain's reserve
         cr_=$(printf '%s\n' "$TARGS" | sed -n 's/.*--rounds \([0-9][0-9]*\).*/\1/p'); cr_=${cr_:-10}

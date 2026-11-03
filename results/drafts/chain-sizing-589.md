@@ -26,3 +26,8 @@ experiment step on the laptop, REMOTES on the hosts) - built and tested in that 
 **Considered, not taken.** The gene-retirement tests (deterministic - build-hash at both widths, run-tests, validate,
 batch-check; an hour each on the sandbox's one CPU) on dream's idle cores: four patches left, and the setup and the round
 trip through the owner cost more than they save.
+
+**591: run before chain C's processing** (the owner: "we can start 12 hours run now, please add whatever makes sense"):
+chain D as above - NEXT-RUN's step repeated while lab/evolve/repeat-fits.sh says another session ends by the remote lines'
+last deadline; REMOTES' --sessions K in each line (one build, then sessions while one as long as the last fits). Chains C
+and D processed together.
