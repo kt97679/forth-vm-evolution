@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 608.
+- master: Iteration 609.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -67,6 +67,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   and on ARMv7, c2ef9488ff the knee, 22420b3b61, fb0d57c8a2 least memory, cea114f47e smallest (portable). Each at both
   widths: 9 of 9 workloads right against s6, the bytes consolidation's. Phase 2 (RELF.md): relf takes mechanisms and
   measures them with relf-ab.sh.
+- **Seed 87 interrupted and resumed (609)**: the laptop crashed about 10.5 hours in; the owner restarted next-run.sh at
+  03:35 UTC on 2026-11-04 and it resumed from its database (iter603's bundle again - `- resume`), the 21 hours from the
+  restart (the evolution until 00:00 UTC on 11-05, then the 282 re-measured). The crashed chain was archived first,
+  WITH the remote readings gathered: runs/forth-vm-evolution-chain-883c621e2d-fury-20261104-033532-interrupted.tar.gz -
+  dream at 4-byte cells 9 sessions of the 282 (its 620 minutes), at 8-byte 1, the Tegra 1 complete (a second cut short:
+  leave it out). Process it beside the new chain's archive: no seed pack in it (process-seed.sh may stop on it), so
+  take its remote/ readings - chain-sessions.py-style, each complete session pooled with the new chain's. The new chain
+  launched the remote lines afresh (the Tegra up to 4 sessions in 1,220 minutes, dream 12 a width). Prediction 1 (the
+  chain done, every line all it was given) - the crash noted when it is scored.
 - **Next run: seed 87, the portable run (602; results/drafts/portable-plan-602.md)** - NEXT-RUN `seed 87 nojit 21h
   widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5` (21 hours, 603 - the owner's 9 or
   21; the chain about 22.5; the Tegra up to 4 sessions, dream 12 a width): every design without the JIT (evolve.py --require nojit), the earlier fronts carried in JIT-off;

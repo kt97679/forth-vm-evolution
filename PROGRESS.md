@@ -10798,3 +10798,9 @@ the Makefile's output the same way - 18 of 18 the lab's bytes, in a fresh direct
 with the nine by role name and designs/README.md, a quick start in README.md, one sentence in both article drafts.
 Tested as a user: make, make test (9 of 9), make libc.
 
+## Iteration 609 - 2026-11-04 - Claude
+
+Seed 87 interrupted by a crash about 10.5 hours in, resumed from its database (03:35 UTC; the 21 hours from the
+restart). The crashed chain's archive keeps the remote readings gathered before it was archived - dream at 4-byte cells
+9 sessions of the 282, at 8-byte 1, the Tegra 1 - to be pooled with the new chain's at processing (the card).
+
