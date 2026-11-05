@@ -235,6 +235,11 @@ Each subject oldest first; a script or patch beside the document it made.
 - `chain-seed87-interrupted/README.md` - The crashed seed 87 chain's complete sessions (Iteration 610): dream 9 at 4-byte cells, rage 1.
 - `portable-pick-seed87.md` - The 282 portable designs found before, re-measured on three machines, every session pooled (Iteration 610).
 - `followup-seed87.md` - The follow-up chain's 45 designs: seed 87's best beside the 282's by role (Iteration 610).
+- `chain-followup87/README.md` - The follow-up chain's readings (Iteration 611): the 45 in every session - the laptop 28, dream 45 and 41, rage 5.
+- `followup-pick-seed87.md` - Seed 87's best beside the 282's, re-measured on three machines, every session pooled (Iteration 611).
+- `followup-roles-seed87.md` - The relf handoff's portable roles after the follow-up chain (Iteration 611): 782f3ad7ff the fastest portable, a627b954c6 small and fast on ARMv7.
+- `handoff-relf-611.md` - The designs handed to relf (Iteration 611, replacing 601's): ten winners by role, the portable run's 782f3ad7ff the fastest portable.
+- `relf-designs-611.md` - The relf handoff's ten records, the input of pack-designs.py and export-designs.py (Iteration 611).
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers

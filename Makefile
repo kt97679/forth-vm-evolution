@@ -2,8 +2,8 @@
 # `make` builds every one (x86-64 Linux); `make NAME` one; `make libc` the portable ones with the C library, for any
 # other host; `make 32` the 4-byte-cell engines (gcc-multilib); `make test` builds and runs each.
 
-DESIGNS = fastest-x86-64 fastest-x86-32 best-all-round small-jit portable-fastest portable-knee portable-small least-memory smallest
-PORTABLE = portable-fastest portable-knee portable-small least-memory smallest
+DESIGNS = fastest-x86-64 fastest-x86-32 best-all-round small-jit portable-fastest portable-arm portable-knee portable-small least-memory smallest
+PORTABLE = portable-fastest portable-arm portable-knee portable-small least-memory smallest
 
 all: $(DESIGNS)
 

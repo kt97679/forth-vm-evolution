@@ -11,7 +11,7 @@ decides things.
 
 ## Quick start - a working Forth
 
-    make             # the nine winning designs of the search, from source (x86-64 Linux)
+    make             # the ten winning designs of the search, from source (x86-64 Linux)
     make test
     designs/portable-knee/forth designs/portable-knee/image.img
 

@@ -1275,7 +1275,8 @@ generation 3 (results/drafts/resume-610.md); the restarted chain did every line 
 3 sessions, 1 more complete in the crashed chain). (2) right - BETTER: hypervolume +2.4%, fastest 0.2847 against 0.2978,
 at 32 bits 0.2888 against 0.3059. (3) right - 8cc7f60d6b, 0.3109 alone. (4) right by 0.3% - pooled over 4 sessions
 3452cb633b 0.3280, 690981ca5b 0.3291, each the fastest in two: a tie. (5) right - Spearman 0.935 over 282 (the Tegra's 4
-sessions against the laptop's 32-bit alone). (6) open - carried to the follow-up chain.
+sessions against the laptop's 32-bit alone). (6) right - scored at the follow-up chain (Iteration 611): the fastest
+portable role went from 690981ca5b to 782f3ad7ff (results/followup-roles-seed87.md).
 
 ## The follow-up chain (seed 87's best beside the 282's, 13 hours) - predicted (Iteration 610)
 
@@ -1285,3 +1286,10 @@ without a crash, the Tegra 4 or more complete sessions of the 45 - 75/25. (2) Re
 alone, the run's fastest beats 8cc7f60d6b by 2% or more - 70/30. (3) Seed 87's prediction 6: at least one of the
 handoff's five portable roles goes to another design - 70/30. (4) At ARMv7, 690981ca5b and 3452cb633b within 1% of
 each other again - 70/30.
+
+**Scored at the follow-up chain (Iteration 611): three right, one wrong by a hundredth of a point.** (1) right - done,
+no crash; the Tegra 5 sessions, each all 45 (dream 45 at 8-byte cells, 41 at 4-byte; the laptop 28). (2) wrong by
+0.01 point - the design named the run's fastest, a2df4ef183, -1.99% +/- 0.23% against 8cc7f60d6b alone over 28 sessions;
+the run's fastest after re-measure, 782f3ad7ff, -2.28% +/- 0.16%. (3) right - the fastest portable role to 782f3ad7ff
+(mean -11.6%), small and fast on ARMv7 to a627b954c6 (the owner: 4 KB of memory traded). (4) right - 3452cb633b
+-0.08% +/- 0.21% against 690981ca5b at ARMv7 (results/followup-roles-seed87.md, results/drafts/followup-roles-611.py).

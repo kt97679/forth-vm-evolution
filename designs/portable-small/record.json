@@ -1,8 +1,6 @@
 {
- "adds": 0.014052708543012049,
- "bin": 9544,
- "etext": null,
- "gen": 0,
+ "bin": 9416,
+ "gen": 130,
  "genome": {
   "abortif": 0,
   "align1": 0,
@@ -31,7 +29,6 @@
    "C!",
    "AND",
    "OR",
-   "XOR",
    "LIT",
    "<",
    "U<",
@@ -46,25 +43,25 @@
    "NEGATE"
   ],
   "fsys": 2,
-  "gotodup": 0,
+  "gotodup": 2,
   "guard": 1,
   "hotcalls": 0,
   "hotinl": 20,
   "ipaclone": 0,
   "jit": 0,
-  "jitcfa": 0,
+  "jitcfa": 1,
   "jitdoes": 0,
   "jitexec": 0,
   "jitfuse": 0,
   "jitimg": 0,
   "jitinl": 1,
-  "jitk": 3,
-  "jitloop": 1,
+  "jitk": 0,
+  "jitloop": 0,
   "jitmul": 0,
   "jitos": 0,
   "jitret": 0,
-  "jitrp": 1,
-  "jittail": 1,
+  "jitrp": 0,
+  "jittail": 0,
   "jitvar": 1,
   "jitx": 0,
   "kfast": 1,
@@ -74,16 +71,14 @@
   "kstack": 0,
   "lean": 1,
   "lto": 1,
-  "msc": 0,
+  "msc": 1,
   "nocet": 1,
   "nocrossjump": 0,
   "nogcse": 0,
   "noinls": 1,
   "noreorder": 0,
   "opbody": 1,
-  "opcall": [
-   "DROP"
-  ],
+  "opcall": [],
   "opinline": 1,
   "ops10": [
    "(DO)",
@@ -94,33 +89,40 @@
    "I",
    "J",
    "UNLOOP",
+   "0=",
    "BRANCH8",
+   "U<?BRANCH",
    "<?BRANCH8",
    "DUP+I",
    "DUP<I",
    "FILL",
-   "CMOVE",
-   "SCAN",
-   "PLACE",
+   "OVER?BRANCH",
    "I+",
+   "<?BRANCH",
    "2@",
    "2!",
-   ">"
+   ">",
+   "PLACE",
+   "+!"
   ],
   "opt": "O2",
   "peel": 0,
   "regpin": 0,
-  "rtempty": 0,
+  "rtempty": 1,
   "rtfuse": 0,
   "rtimm": 0,
   "rtiplus": 1,
-  "rtloop": 2,
+  "rtloop": 1,
   "rtloopall": 1,
   "scale": 0,
-  "sharedcall": 0,
+  "sharedcall": 1,
   "skippad": 0,
   "spec": [],
   "supers": [
+   [
+    "+",
+    "@"
+   ],
    [
     "DUP",
     ">R"
@@ -136,10 +138,6 @@
    [
     "ROT",
     "DUP"
-   ],
-   [
-    "@",
-    "+"
    ],
    [
     "R@",
@@ -172,6 +170,10 @@
    [
     "OVER",
     "R>"
+   ],
+   [
+    "+",
+    "SWAP"
    ],
    [
     "ROT",
@@ -208,87 +210,29 @@
    [
     "R>",
     "="
-   ],
-   [
-    "C@",
-    "OVER"
    ]
   ],
-  "swapi": 0,
+  "swapi": 1,
   "sysc": 0,
   "t2hot": 0,
-  "t2wide": 1,
+  "t2wide": 0,
   "tag2": 0,
   "tail": 0,
   "tailpn": 0,
   "tfind": 0,
   "thinhdr": 1,
-  "threads": 0,
+  "threads": 3,
   "tos": 0,
   "tracer": 0,
   "varcall": 1,
-  "varslot": 0
+  "varslot": 1
  },
- "how": "carried from archived-20261101-043918/db.jsonl: 22420b3b61",
- "id": "22420b3b61",
- "inrun": 0.39675937967303054,
- "inrun32": 0.43523910984318526,
- "mem": {
-  "ackermann": 80,
-  "apps": 476,
-  "bubble": 80,
-  "corpus": 80,
-  "fib": 80,
-  "kernel": 120,
-  "loop": 76,
-  "parse": 76,
-  "sieve": 84
- },
- "parents": [],
- "raw": {
-  "ackermann": 14130000,
-  "apps": 41770000,
-  "bubble": 6435000,
-  "corpus": 9746000,
-  "fib": 63696000,
-  "kernel": 3643000,
-  "loop": 9933000,
-  "parse": 19163000,
-  "sieve": 14026000
- },
- "rss": 120,
- "secs": 4.4,
- "sets": [
-  "B",
-  "C",
-  "pooled"
- ],
- "size": 9384,
- "speed": 0.4114784155400366,
- "speed32": 0.46171007105499084,
- "src": "db.jsonl",
+ "id": "a627b954c6",
+ "rss": 124,
+ "size": 9191,
+ "speed": 0.371174794462023,
+ "speed32": 0.4013385605147352,
  "status": "ok",
- "t": {
-  "ackermann": 1.0863381256246636,
-  "apps": 0.7314211669118162,
-  "bubble": 0.17317007534983853,
-  "corpus": 0.26003895514821634,
-  "fib": 0.875943727051446,
-  "kernel": 0.4781467384171151,
-  "loop": 0.10327833057799682,
-  "parse": 0.2165408606038691,
-  "sieve": 0.47767598678609136
- },
- "t32": {
-  "ackermann": 1.062448054401209,
-  "apps": 0.7593202318482697,
-  "bubble": 0.220752923674532,
-  "corpus": 0.2771746561295086,
-  "fib": 0.9295912585431372,
-  "kernel": 0.4954637096774194,
-  "loop": 0.13013641958070887
- },
- "total": 18928,
- "unit": "median cpu time / hand-made s6, long workloads (Iteration 100)",
- "why": "adds the most"
+ "total": 18607,
+ "why": "the run - adds the most"
 }

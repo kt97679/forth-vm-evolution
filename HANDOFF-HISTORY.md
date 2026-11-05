@@ -751,3 +751,27 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   stopping rule's thresholds, fixed now), final-pick.py on the 282 across machines; then a short chain re-measuring the
   run's best beside the 282's best, and the relf handoff's portable roles updated. Rehearsed in a scratch clone: 29
   records, none with the JIT; next-run.sh's parse of the line tested.
+
+## The card's state at Iteration 610 (replaced at 611)
+
+- **The handoff to relf (601)** - results/handoff-relf-601.md, the package forth-vm-evolution-designs-iter601.tar.gz
+  (lab/evolve/pack-designs.py): nine designs of the final set by role - c7c35f9c97 fastest x86-64, 4ef851fd8e fastest
+  x86-32, 06b188f45b best all-round, bac37f35a2 the smallest JIT design (these four x86 only); 690981ca5b fastest portable
+  and on ARMv7, c2ef9488ff the knee, 22420b3b61, fb0d57c8a2 least memory, cea114f47e smallest (portable). Each at both
+  widths: 9 of 9 workloads right against s6, the bytes consolidation's. Phase 2 (RELF.md): relf takes mechanisms and
+  measures them with relf-ab.sh.
+- **Next run: the follow-up chain (610)** - NEXT-RUN `experiment loadtest.py --ids results/followup-seed87.md --rounds 10`
+  repeated to the remote lines' deadline (about 13.5 hours: the Tegra 810 minutes, 5 sessions; dream 400 a width): the
+  run's 30 best, the 282's 13 by role, the handoff's 690981ca5b and c2ef9488ff. Sized by the noise: a session moves a
+  design 0.7-0.9% (median), so 5 Tegra sessions resolve the roles' 2% at 4 standard errors; 24 hours would change no
+  decision (the owner: as long as needed). Its processing: chain-sessions.py, final-pick.py on the 45 with every
+  session; a portable role of results/handoff-relf-601.md replaced where a design beats it by the thresholds, then
+  pack-designs.py and export-designs.py rerun. Then, the owner's choice: a second portable run (the union of two
+  attempts beat the longer one), not long all-gene runs (that series stopped at seed 83; 84 and 86 not confirmed).
+- **`make` builds the winners (608; the owner: a working Forth from make, the image shipped as SOD32 did)** - the
+  top Makefile and designs/ (designs/README.md): the nine of the relf handoff by role name, each its engine's real
+  source and a Makefile, built from source; `make test`, `make libc` (the five portable ones, any host), `make 32`.
+  lab/evolve/export-designs.py writes them and checks, in a fresh directory, each engine byte for byte the lab's (18 of
+  18) and each C-library build running (5 of 5). After seed 87's follow-up, if a portable role changes: rerun it.
+- **Predictions due** (results/predictions.md): the follow-up chain - 4 (610), its 3 carrying seed 87's 6.
+- **Files a new chat needs**: the newest bundle; the follow-up chain's archive when it returns. appbench.zip stays on the laptop.

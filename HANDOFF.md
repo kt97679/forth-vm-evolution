@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 610.
+- master: Iteration 611.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -61,36 +61,39 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/drafts/article-method-548.md's [74+] markers all filled. New in them: the screen loses a few front designs (2
   of 421 audited children that ran in full reached the true front, seeds 77-83); one round first none (0 of 6,934); seed
   77's clock test - not the clock (cycles 1.002); the random baseline 0.55 of the series' median hypervolume.
-- **The handoff to relf (601)** - results/handoff-relf-601.md, the package forth-vm-evolution-designs-iter601.tar.gz
-  (lab/evolve/pack-designs.py): nine designs of the final set by role - c7c35f9c97 fastest x86-64, 4ef851fd8e fastest
-  x86-32, 06b188f45b best all-round, bac37f35a2 the smallest JIT design (these four x86 only); 690981ca5b fastest portable
-  and on ARMv7, c2ef9488ff the knee, 22420b3b61, fb0d57c8a2 least memory, cea114f47e smallest (portable). Each at both
-  widths: 9 of 9 workloads right against s6, the bytes consolidation's. Phase 2 (RELF.md): relf takes mechanisms and
-  measures them with relf-ab.sh.
+- **The handoff to relf (611; 601's replaced)** - results/handoff-relf-611.md, the package forth-vm-evolution-designs-iter611.tar.gz
+  (outputs; lab/evolve/pack-designs.py on results/relf-designs-611.md): ten designs by role - c7c35f9c97 fastest x86-64,
+  4ef851fd8e fastest x86-32, 06b188f45b best all-round, bac37f35a2 the smallest JIT design (these four x86 only);
+  782f3ad7ff fastest portable, 690981ca5b fastest on ARMv7, c2ef9488ff the knee, a627b954c6 small and fast on ARMv7,
+  fb0d57c8a2 least memory, cea114f47e smallest. Each at both widths 9 of 9 workloads right against s6; the eight kept,
+  601's bytes. Phase 2 (RELF.md): relf takes mechanisms and measures them with relf-ab.sh.
 - **Seed 87 processed (610)** - the portable run: portable.py BETTER than the portable designs found before
   (hypervolume +2.4%, fastest 0.2847 against 0.2978, at 32 bits 0.2888 against 0.3059) -
   results/evolve-amd-ryzen-7-pro-8840hs-seed87.md. The 282 found before, every complete session of both chains pooled
   (results/portable-pick-seed87.md; readings results/chain-seed87/, results/chain-seed87-interrupted/ - the crashed
   chain's dream 8-byte session and the Tegra's second were cut short, left out): x86-64 8cc7f60d6b, x86-32 1f2e71902c,
-  ARMv7 3452cb633b and 690981ca5b tied (0.3%), the generic pick f55cec5849. The relf handoff unchanged until the follow-up.
+  ARMv7 3452cb633b and 690981ca5b tied (0.3%), the generic pick f55cec5849. Its follow-up: 611.
 - **The resume fixed (610)** - seed 87's restart forked at generation 3: the replay saw each gated design's second
   reading from the start (results/drafts/resume-610.md). evolve.py replays first readings until their batch;
   lab/evolve/test-resume.py in run-tests (a crash at generation 6: the replay as the first attempt; EVOLVE_REPLAY=0
   forks - the control). The two attempts (results/drafts/attempts-610.py): the crashed one's 136 generations found the
   run's fastest at both widths; the resumed one's 262 ended below it (0.2871 against 0.2919); their union 0.2958.
-- **Next run: the follow-up chain (610)** - NEXT-RUN `experiment loadtest.py --ids results/followup-seed87.md --rounds 10`
-  repeated to the remote lines' deadline (about 13.5 hours: the Tegra 810 minutes, 5 sessions; dream 400 a width): the
-  run's 30 best, the 282's 13 by role, the handoff's 690981ca5b and c2ef9488ff. Sized by the noise: a session moves a
-  design 0.7-0.9% (median), so 5 Tegra sessions resolve the roles' 2% at 4 standard errors; 24 hours would change no
-  decision (the owner: as long as needed). Its processing: chain-sessions.py, final-pick.py on the 45 with every
-  session; a portable role of results/handoff-relf-601.md replaced where a design beats it by the thresholds, then
-  pack-designs.py and export-designs.py rerun. Then, the owner's choice: a second portable run (the union of two
-  attempts beat the longer one), not long all-gene runs (that series stopped at seed 83; 84 and 86 not confirmed).
-- **`make` builds the winners (608; the owner: a working Forth from make, the image shipped as SOD32 did)** - the
-  top Makefile and designs/ (designs/README.md): the nine of the relf handoff by role name, each its engine's real
-  source and a Makefile, built from source; `make test`, `make libc` (the five portable ones, any host), `make 32`.
-  lab/evolve/export-designs.py writes them and checks, in a fresh directory, each engine byte for byte the lab's (18 of
-  18) and each C-library build running (5 of 5). After seed 87's follow-up, if a portable role changes: rerun it.
+- **The follow-up chain processed (611)** - results/followup-roles-seed87.md: the 45 side by side, every session complete
+  (the laptop 28, dream 45 and 41, the Tegra 5; results/chain-followup87/, pooled: results/followup-pick-seed87.md). The
+  portable run's 782f3ad7ff the fastest portable design (mean 0.3507 against 690981ca5b's 0.3969, -11.6%; the generic
+  pick of the 45); 690981ca5b kept on ARMv7 (3452cb633b a tie again); a627b954c6 for 22420b3b61 (1.7% smaller, ARMv7
+  -1.1%, +4 KB - the owner: traded); the knee, least memory and smallest kept (the owner: no small gain in one criterion
+  for a large loss in others - 62abdb2c64). **Open, the owner's call**: 64a7345393 dominates cea114f47e (0.34% of bytes
+  at 8-byte cells, 0.20% at 4, 3-7% faster in each class) - below the rule's 1%. The noise half the sizing's (the
+  Tegra 0.44% a session); factor 3 with GCC 1.95 times the laptop's time on dream at 32 bits.
+- **Next run: the second portable run - waiting for its hours (611)** - NEXT-RUN none until the owner gives them: his
+  choice at 610, a second portable run (nojit, widths; the union of seed 87's two attempts beat the longer one), not long
+  all-gene runs (that series stopped at seed 83). Its line, REMOTES and predictions written with the hours.
+- **`make` builds the winners (608; ten at 611)** - the top Makefile and designs/ (designs/README.md): the ten of the
+  relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6), each
+  its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six portable ones, any host),
+  `make 32`. lab/evolve/export-designs.py writes them and checks, in a fresh directory, each engine byte for byte the
+  lab's (20 of 20) and each C-library build running (6 of 6). Rerun it when a role changes.
 - **The article (604; open item 8)** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
   article until he approves. Part one condensed from article/article-en.md (its paraphrases checked against it), part two
@@ -100,7 +103,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   fixed-length precedents - Rose's ART-FORTH, Rochester 1986, uxForth, Enforth - only their variable-length forms not
   found, and the question now asks about those). Two ASCII diagrams (607, results/drafts/ascii-figures-607.py, no
   pictures - the owner): each run's hypervolume, the pooled front as speed against size. The fast end's 5-7% out of both (606, the owner:
-  process, not result - it cancels in every comparison). Waiting: his review; the [pending] portable run (seed 87); a Russian reader's pass
+  process, not result - it cancels in every comparison). Waiting: his review; the [pending] portable run (seed 87 and its follow-up done, 611 - to write in from results/followup-roles-seed87.md); a Russian reader's pass
   (AUDIENCE.md: a translation-shaped text is a named failure on Habr); prompts 04 and 05 before publishing; the KDPV image.
   The method draft (results/drafts/article-method-548.md): one [check] left, the offset; the follow-up chain's tool
   ready (lab/evolve/portable-followup.py).
@@ -108,10 +111,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): the follow-up chain - 4 (610), its 3 carrying seed 87's 6.
+- **Predictions due** (results/predictions.md): none - the follow-up chain's scored (611: three right, (2) wrong by
+  0.01 point); the second portable run's written with its line.
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; the follow-up chain's archive when it returns. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; the second portable run's archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 
