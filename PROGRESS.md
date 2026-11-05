@@ -10813,4 +10813,7 @@ replay saw second readings early): evolve.py fixed, lab/evolve/test-resume.py wi
 attempts compared - the shorter found the fast end, the longer ended lower, their union above both. Next: the follow-up
 chain, 45 designs, about 13.5 hours. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed87.md, results/xcheck-seed87.md,
 results/portable-pick-seed87.md, results/followup-seed87.md, results/chain-seed87/, results/chain-seed87-interrupted/,
-results/drafts/resume-610.md, results/drafts/attempts-610.py.
+results/drafts/resume-610.md, results/drafts/attempts-610.py. The sessions, results/chain-seed87/sK and
+results/chain-seed87-interrupted/sK: dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json and
+rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md, dream.lan-prebuilt64.md and
+rage.lan-prebuiltarm.md, the laptop's loadtest.md in chain-seed87/s1, a README.md in each directory.
