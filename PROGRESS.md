@@ -10843,3 +10843,15 @@ experiment - 17 one-gene reversions of 9f8811f7f4 and 690981ca5b and the control
 at both widths. Seed 88 set: the second portable run, 21 hours, the experiment on dream and the Tegra during it and on
 the laptop after; 4 predictions. The article's section 17 (the portable run and its follow-up) in both drafts. Files:
 results/candidates-dream32-612.md, results/drafts/dream32-variants-612.py.
+
+## Iteration 613 - 2026-11-05 - Claude
+
+While seed 88 runs, its processing prepared (the owner). portable.py: every earlier portable run joins what was found
+before (the ledger's portable lines - seed 87's front, and its extremes from every alive design, as its results file
+holds the front only: 0.2888 at 32 bits, not the front's 0.2947); --front OUT writes that pool - results/portable-front-
+seed87.md, 348 designs before seed 88. Checked: --front for seed 87 reproduces results/portable-front-seed86.md's 282
+exactly; seed 87's front as a stand-in run gives its pool's ledger numbers at --seed 87 (0.288890) and NOT BETTER at
+--seed 88 (-0.1%). results/drafts/dream32-experiment-613.py reads the experiment from chain-sessions.py's layout:
+self-test 4 checks PASS; on the follow-up's readings the bases and the control at 2.094, 1.813 and 1.072, as recorded,
+the bar 1.233. NEXT-RUN none while seed 88 runs. Files: results/portable-front-seed87.md,
+results/drafts/dream32-experiment-613.py.

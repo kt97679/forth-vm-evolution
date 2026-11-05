@@ -214,4 +214,6 @@
 # seed 87's now among them. Then the laptop's session of the dream 32-bit experiment (results/candidates-dream32-612.md,
 # 20 rounds, about 25 minutes: one step - a repeat would be skipped, the remote lines' deadline passed by then), which
 # dream and the Tegra measure during the run (REMOTES). The chain about 22 hours.
-seed 88 nojit 21h widths then experiment loadtest.py --ids results/candidates-dream32-612.md --rounds 20
+# Iteration 613 (seed 88 running, started from 612's bundle): none - a pull of this bundle must not start seed 88 again
+# (as 586 for chain B); seed 88's processing writes the next line.
+none

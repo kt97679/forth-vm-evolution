@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 612.
+- master: Iteration 613.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -85,14 +85,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   tie); a627b954c6 for 22420b3b61 (the owner: 4 KB traded); 64a7345393 the smallest (612). The noise half the sizing's
   (the Tegra 0.44% a session). A GCC lineage runs about twice the laptop's time on dream at 32 bits - not factor 3 as 611
   wrote (factor needs tag2: expressed in none of them, 612); its expressed genes confounded - seed 88's chain tests them.
-- **Seed 88 is the laptop's next run (612)** - NEXT-RUN `seed 88 nojit 21h widths then experiment loadtest.py --ids
-  results/candidates-dream32-612.md --rounds 20`, about 22 hours: the second portable run, seed 87's setup again (the
-  owner: "use whatever hours are needed" - 21: seed 87's hypervolume flat from generation 20, yet its winners came late,
-  at 171 and 258), the earlier fronts carried, seed 87's among them. REMOTES: the dream 32-bit experiment's 20 - 9f8811f7f4
-  and 690981ca5b with one gene reverted at a time, 782f3ad7ff the control (results/drafts/dream32-variants-612.py) - dream
-  30 sessions a width, the Tegra 12; the laptop one step of 20 rounds after the run (a repeat would be skipped: the remote
-  deadline passed). Its processing: process-run.sh, portable.py's pool widened to seed 87's designs first; the experiment
-  by chain-sessions.py, each variant's dream/laptop ratio at 4-byte cells against its base's (as followup-roles-611.py).
+- **Seed 88 running (started from 612's bundle; 613: NEXT-RUN none, so a pull of this bundle cannot start it again)** -
+  `seed 88 nojit 21h widths then experiment loadtest.py --ids results/candidates-dream32-612.md --rounds 20`, about 22
+  hours: the second portable run, seed 87's setup again (21 hours: seed 87's winners came late, at generations 171 and
+  258), the earlier fronts carried, seed 87's among them; REMOTES: the dream 32-bit experiment's 20 (9f8811f7f4 and
+  690981ca5b with one gene reverted at a time, 782f3ad7ff the control) - dream 30 sessions a width, the Tegra 12; the
+  laptop one step of 20 rounds after the run. **Its processing, prepared (613)**: process-run.sh as usual - portable.py
+  now judges the run against every portable design found before it, seed 87's included (the ledger's portable lines:
+  its front and its extremes from every alive design; results/portable-front-seed87.md, the 348 found before seed 88);
+  the experiment: `chain-sessions.py /tmp/process results/chain-seed88`, then `python3
+  results/drafts/dream32-experiment-613.py results/chain-seed88` - each variant against its base, predictions 3 and 4.
 - **`make` builds the winners (608; ten at 611)** - the top Makefile and designs/ (designs/README.md): the ten of the
   relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
   smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six

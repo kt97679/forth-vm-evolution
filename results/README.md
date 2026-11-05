@@ -226,6 +226,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `msc-pairs-seed86.md` - retire-plan-583's 4 msc pairs (Iteration 598): their 8 records and the Tegra's speeds over 5 sessions.
 - `handoff-relf-601.md` - The designs handed to relf (Iteration 601): nine winners of the final set by role - fastest per x86 width, best all-round, fastest portable and on ARMv7, the knee, least memory, smallest - and what relf can take.
 - `portable-front-seed86.md` - The portable designs found before the portable run (Iteration 602): the pooled true front's 279 without the JIT and the final set's 3 others, in-run - measured again in seed 87's chain.
+- `portable-front-seed87.md` - The portable designs found before seed 88 (Iteration 613, portable.py --front): 348, seed 87's among them.
 - `drafts/portable-plan-602.md` - The portable run, planned (Iteration 602): why (the final pick re-measured 5 of the 279 portable front designs), the chain, the rule fixed before it, what follows.
 - `drafts/originality-605.md` - Are the winning designs original (Iteration 605): each mechanism of the nine and where it was described - every technique known; two details and the combinations not found; the readers asked.
 - `drafts/resume-610.md` - The resume that forked (Iteration 610): seed 87's restart replayed second readings early and forked at generation 3; the fix, its test and the two attempts compared.

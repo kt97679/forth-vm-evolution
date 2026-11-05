@@ -803,3 +803,14 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
 - **Predictions due** (results/predictions.md): none - the follow-up chain's scored (611: three right, (2) wrong by
   0.01 point); the second portable run's written with its line.
 - **Files a new chat needs**: the newest bundle; the second portable run's archive when it returns. appbench.zip stays on the laptop.
+
+## The card's state at Iteration 612 (replaced at 613)
+
+- **Seed 88 is the laptop's next run (612)** - NEXT-RUN `seed 88 nojit 21h widths then experiment loadtest.py --ids
+  results/candidates-dream32-612.md --rounds 20`, about 22 hours: the second portable run, seed 87's setup again (the
+  owner: "use whatever hours are needed" - 21: seed 87's hypervolume flat from generation 20, yet its winners came late,
+  at 171 and 258), the earlier fronts carried, seed 87's among them. REMOTES: the dream 32-bit experiment's 20 - 9f8811f7f4
+  and 690981ca5b with one gene reverted at a time, 782f3ad7ff the control (results/drafts/dream32-variants-612.py) - dream
+  30 sessions a width, the Tegra 12; the laptop one step of 20 rounds after the run (a repeat would be skipped: the remote
+  deadline passed). Its processing: process-run.sh, portable.py's pool widened to seed 87's designs first; the experiment
+  by chain-sessions.py, each variant's dream/laptop ratio at 4-byte cells against its base's (as followup-roles-611.py).
