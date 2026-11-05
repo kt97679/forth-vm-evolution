@@ -412,10 +412,47 @@ that needed them - s2 to s5 - are kept as built files, checked by hash,
 so the ladder still runs. Every design in the final set builds to the
 same engine and image bytes after the removal as before.
 
-[pending: the portable run - seed 87, every design without the JIT, and
-the 279 portable designs on the pooled front measured on all three
-machines; whether a search for the portable designs alone beats the ones
-above.]
+## 17. A search without the JIT
+
+The designs without the JIT in that table were found on the way: in
+those runs the JIT took the fast end. Would a search for portable
+designs alone do better? Before it ran, I fixed what better would mean:
+its front against the 282 portable designs found before, by the
+stopping rule's own effect sizes - 1% of hypervolume, or an extreme by
+its threshold: 2% of speed at either width, 1% of size, 4 KB of memory.
+
+The run, seed 87, kept every design without the JIT and started from
+the earlier fronts built without it: 21 hours on the laptop. The laptop
+crashed ten and a half hours in, and the restart did not continue the
+first search but began a second one from the same designs. The shorter
+search found the fastest designs at both widths, the longer one ended
+below it, and together they beat either. By the rule the run was
+better: hypervolume +2.4%, its fastest 0.285 against 0.298.
+
+Numbers from inside a run are optimistic at the fast end, so the run's
+30 best and the 15 best found before were measured again side by side
+for 13 hours - the laptop 28 sessions, the i7 45 at 8-byte cells and 41
+at 4, the Tegra 5, every design in every session. Three of the portable
+roles above changed hands:
+
+| what it wins | x86-64 | x86-32 | ARMv7 | bytes | memory |
+|---|---|---|---|---|---|
+| fastest without the JIT, on x86 and on average (new) | **0.343** | **0.339** | 0.372 | 26,242 | 148 KB |
+| fastest on ARMv7 (unchanged) | 0.416 | 0.456 | **0.330** | 23,164 | 136 KB |
+| small and fast on ARMv7 (new) | 0.452 | 0.443 | 0.359 | 18,607 | 124 KB |
+| smallest (new) | 1.933 | 1.866 | 1.834 | **13,891** | 116 KB |
+
+Against the best portable design found before, the new fastest is 4%
+better on the mean of the three machines - 1.3% on x86-64, 5% at 32
+bits - and 13% slower on the Tegra, where the old one keeps its place.
+The new smallest is 48 bytes smaller than the old one and 3-7% faster
+on every machine. The new small one fast on the Tegra is 1.7% smaller
+and 1% faster than the one before it, for 4 KB more memory. Least
+memory did not move.
+
+So a search for portable designs alone does beat what came before, but
+by a few percent, not by a step. Whether a second such run finds more
+is the next test.
 
 ## What still bothers me
 

@@ -1293,3 +1293,12 @@ no crash; the Tegra 5 sessions, each all 45 (dream 45 at 8-byte cells, 41 at 4-b
 the run's fastest after re-measure, 782f3ad7ff, -2.28% +/- 0.16%. (3) right - the fastest portable role to 782f3ad7ff
 (mean -11.6%), small and fast on ARMv7 to a627b954c6 (the owner: 4 KB of memory traded). (4) right - 3452cb633b
 -0.08% +/- 0.21% against 690981ca5b at ARMv7 (results/followup-roles-seed87.md, results/drafts/followup-roles-611.py).
+
+## Seed 88, the second portable run, and the dream 32-bit experiment - predicted (Iteration 612)
+
+`seed 88 nojit 21h widths`, then the laptop's session of results/candidates-dream32-612.md (20 rounds), which
+dream at both widths and the Tegra measure during the run. (1) The chain done without a crash, seed 88 past generation
+250 - 70/30. (2) portable.py: seed 88 BETTER than every portable design found before it, seed 87's included (in-run,
+the stopping rule's thresholds) - 40/60. (3) The clang build brings both bases' dream/laptop ratio at 4-byte cells within
+15% of the control's (782f3ad7ff, 1.07) - 70/30. (4) A single reverted gene other than the compiler does the same for both
+bases - 35/65 (regpin the likeliest).

@@ -239,7 +239,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed87.md` - Seed 87's best beside the 282's, re-measured on three machines, every session pooled (Iteration 611).
 - `followup-roles-seed87.md` - The relf handoff's portable roles after the follow-up chain (Iteration 611): 782f3ad7ff the fastest portable, a627b954c6 small and fast on ARMv7.
 - `handoff-relf-611.md` - The designs handed to relf (Iteration 611, replacing 601's): ten winners by role, the portable run's 782f3ad7ff the fastest portable.
-- `relf-designs-611.md` - The relf handoff's ten records, the input of pack-designs.py and export-designs.py (Iteration 611).
+- `relf-designs-611.md` - The relf handoff's ten records, the input of pack-designs.py and export-designs.py (Iteration 611; the smallest 64a7345393 at 612).
+- `candidates-dream32-612.md` - The dream 32-bit experiment (Iteration 612): 9f8811f7f4 and 690981ca5b with one gene reverted at a time, and the control 782f3ad7ff.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers

@@ -1,8 +1,9 @@
 # Forth designs for relf - the winners of forth-vm-evolution's search (Iteration 611)
 
-(forth-vm-evolution, Iteration 611: it replaces results/handoff-relf-601.md - the portable run's 782f3ad7ff the fastest
-portable design, 690981ca5b kept as the fastest on ARMv7, a627b954c6 for 22420b3b61 as small and fast on ARMv7
-(results/followup-roles-seed87.md); the other seven unchanged, their engine and image bytes 601's at both widths; built
+(forth-vm-evolution, Iteration 611, the smallest 612: it replaces results/handoff-relf-601.md - the portable run's
+782f3ad7ff the fastest portable design, 690981ca5b kept as the fastest on ARMv7, a627b954c6 for 22420b3b61 as small and
+fast on ARMv7, and 64a7345393 for cea114f47e as the smallest - smaller at both widths, 3-7% faster in each class
+(results/followup-roles-seed87.md); the other six unchanged, their engine and image bytes 601's at both widths; built
 and checked with lab/evolve/pack-designs.py.)
 
 Ten designs - the lab's final set's (21 designs, results/final-set-chainsBCD-seed86.md) and the portable run's
@@ -33,7 +34,7 @@ laptop at 8-byte cells.
 | the knee: fast portable on x86, small | c2ef9488ff | 0.360 | 0.396 | 0.478 | 20,901 | 20,829 | 140 | no - portable | 9/9 / 9/9 |
 | small, fast on ARMv7 | a627b954c6 | 0.452 | 0.443 | 0.359 | 18,607 | 18,135 | 124 | no - portable | 9/9 / 9/9 |
 | least memory | fb0d57c8a2 | 0.916 | 0.884 | 0.521 | 17,830 | 17,462 | 104 | no - portable | 9/9 / 9/9 |
-| smallest | cea114f47e | 1.992 | 1.925 | 1.975 | 13,939 | 13,703 | 116 | no - portable | 9/9 / 9/9 |
+| smallest | 64a7345393 | 1.933 | 1.866 | 1.834 | 13,891 | 13,675 | 116 | no - portable | 9/9 / 9/9 |
 
 The trade in two sentences: the JIT designs are 4.3-5.4 times s6's speed on x86-64 (4.2-5.0 at 32 bits) in 30-40 KB and 208-244 KB of
 memory; without the JIT the three fastest portable designs are 2.1-3.0 times s6's speed on ARMv7 and 2.4-2.9 on x86-64 in 20-27 KB,
@@ -54,7 +55,7 @@ optimisation level, -O2 if absent.
 - **c2ef9488ff** (the knee: fast portable on x86, small): abortif=1, align1=-, bfind=1, bss=1, compiler=1, d256=1, escape=2, folds=22 ops, fsys=2, guard=1, kfast=1, kinput=1, klookup=1, nocrossjump=-, nogcse=-, noreorder=-, opbody=1, opinline=1, ops10=42 ops, opt=Os, rtfuse=0, rtiplus=1, rtloop=1, rtloopall=1, spec=4 ops, swapi=1, tfind=1, thinhdr=1, threads=1, varslot=0.
 - **a627b954c6** (small, fast on ARMv7): bss=1, dskew=1, fbuf=1, folds=22 ops, fsys=2, gotodup=2, guard=1, kfast=1, kinput=1, klookup=1, lto=1, msc=-, nocet=1, noinls=1, opbody=1, opinline=1, ops10=29 ops, rtfuse=0, rtiplus=1, rtloop=1, rtloopall=1, spec=, supers=++@,DUP+>R, tail=-, thinhdr=1, threads=3, tos=0.
 - **fb0d57c8a2** (least memory): alignfn=1, bss=1, fsys=3, gotodup=1, hotcalls=32, kfast=1, kinput=1, klookup=1, lto=1, msc=-, noinls=1, opbody=1, ops10=19 ops, regpin=3, rtfuse=0, rtiplus=1, rtloop=1, rtloopall=1, spec=, tail=-, tfind=1, thinhdr=1, tos=0.
-- **cea114f47e** (smallest): align1=-, alignfn=1, bss=1, compiler=1, dskew=1, fbuf=1, folds=16 ops, fsys=3, hotcalls=32, msc=-, nocrossjump=-, nogcse=-, noreorder=-, ops10=?BRANCH8,BRANCH8, opt=Os, rtfuse=0, spec=, supers=++C@, tail=-, thinhdr=1, threads=3, tos=0, varslot=0.
+- **64a7345393** (smallest): align1=-, bss=1, compiler=1, dskew=1, fbuf=2, folds=11 ops, fsys=3, hotcalls=32, kfast=1, msc=-, nocet=1, nocrossjump=-, nogcse=-, noreorder=-, opbody=1, opinline=1, ops10=6 ops, opt=Os, rtfuse=0, spec=, supers=++C@, tail=-, thinhdr=1, threads=3, tos=0.
 
 ### The genes, as lab/evolve/GENES.md describes them
 
@@ -140,5 +141,5 @@ the lab's build ran, in order - the compiler line gives every -D), `check.txt` (
 same width). `SHA256SUMS` covers every engine and image.
 
 Rebuilt byte for byte from the repository at the commit named in the bundle: `python3 lab/evolve/pack-designs.py OUT
-results/relf-designs-611.md c7c35f9c97,4ef851fd8e,06b188f45b,bac37f35a2,782f3ad7ff,690981ca5b,c2ef9488ff,a627b954c6,fb0d57c8a2,cea114f47e` (in a built tree). The rest of the final set
+results/relf-designs-611.md c7c35f9c97,4ef851fd8e,06b188f45b,bac37f35a2,782f3ad7ff,690981ca5b,c2ef9488ff,a627b954c6,fb0d57c8a2,64a7345393` (in a built tree). The rest of the final set
 and every reading behind these numbers: results/final-pick-chainCD-seed86.md and results/followup-pick-seed87.md.

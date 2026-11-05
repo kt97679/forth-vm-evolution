@@ -775,3 +775,31 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   18) and each C-library build running (5 of 5). After seed 87's follow-up, if a portable role changes: rerun it.
 - **Predictions due** (results/predictions.md): the follow-up chain - 4 (610), its 3 carrying seed 87's 6.
 - **Files a new chat needs**: the newest bundle; the follow-up chain's archive when it returns. appbench.zip stays on the laptop.
+
+## The card's state at Iteration 611 (replaced at 612)
+
+- **The handoff to relf (611; 601's replaced)** - results/handoff-relf-611.md, the package forth-vm-evolution-designs-iter611.tar.gz
+  (outputs; lab/evolve/pack-designs.py on results/relf-designs-611.md): ten designs by role - c7c35f9c97 fastest x86-64,
+  4ef851fd8e fastest x86-32, 06b188f45b best all-round, bac37f35a2 the smallest JIT design (these four x86 only);
+  782f3ad7ff fastest portable, 690981ca5b fastest on ARMv7, c2ef9488ff the knee, a627b954c6 small and fast on ARMv7,
+  fb0d57c8a2 least memory, cea114f47e smallest. Each at both widths 9 of 9 workloads right against s6; the eight kept,
+  601's bytes. Phase 2 (RELF.md): relf takes mechanisms and measures them with relf-ab.sh.
+- **The follow-up chain processed (611)** - results/followup-roles-seed87.md: the 45 side by side, every session complete
+  (the laptop 28, dream 45 and 41, the Tegra 5; results/chain-followup87/, pooled: results/followup-pick-seed87.md). The
+  portable run's 782f3ad7ff the fastest portable design (mean 0.3507 against 690981ca5b's 0.3969, -11.6%; the generic
+  pick of the 45); 690981ca5b kept on ARMv7 (3452cb633b a tie again); a627b954c6 for 22420b3b61 (1.7% smaller, ARMv7
+  -1.1%, +4 KB - the owner: traded); the knee, least memory and smallest kept (the owner: no small gain in one criterion
+  for a large loss in others - 62abdb2c64). **Open, the owner's call**: 64a7345393 dominates cea114f47e (0.34% of bytes
+  at 8-byte cells, 0.20% at 4, 3-7% faster in each class) - below the rule's 1%. The noise half the sizing's (the
+  Tegra 0.44% a session); factor 3 with GCC 1.95 times the laptop's time on dream at 32 bits.
+- **Next run: the second portable run - waiting for its hours (611)** - NEXT-RUN none until the owner gives them: his
+  choice at 610, a second portable run (nojit, widths; the union of seed 87's two attempts beat the longer one), not long
+  all-gene runs (that series stopped at seed 83). Its line, REMOTES and predictions written with the hours.
+- **`make` builds the winners (608; ten at 611)** - the top Makefile and designs/ (designs/README.md): the ten of the
+  relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6), each
+  its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six portable ones, any host),
+  `make 32`. lab/evolve/export-designs.py writes them and checks, in a fresh directory, each engine byte for byte the
+  lab's (20 of 20) and each C-library build running (6 of 6). Rerun it when a role changes.
+- **Predictions due** (results/predictions.md): none - the follow-up chain's scored (611: three right, (2) wrong by
+  0.01 point); the second portable run's written with its line.
+- **Files a new chat needs**: the newest bundle; the second portable run's archive when it returns. appbench.zip stays on the laptop.

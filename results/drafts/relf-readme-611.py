@@ -7,7 +7,7 @@ rows = {json.loads(l)['id']: json.loads(l) for l in open(sys.argv[1])}; P = sys.
 ROLES = [('c7c35f9c97', 'fastest on x86-64'), ('4ef851fd8e', 'fastest on x86-32'), ('06b188f45b', 'best all-round (the best mean of the three classes)'),
          ('bac37f35a2', 'smallest of the JIT designs'), ('782f3ad7ff', 'fastest portable; fastest portable on x86'),
          ('690981ca5b', 'fastest on ARMv7'), ('c2ef9488ff', 'the knee: fast portable on x86, small'), ('a627b954c6', 'small, fast on ARMv7'),
-         ('fb0d57c8a2', 'least memory'), ('cea114f47e', 'smallest')]
+         ('fb0d57c8a2', 'least memory'), ('64a7345393', 'smallest')]
 G = open('lab/evolve/GENES.md').read().split('\n')
 GLOSS = {   # the genes GENES.md has no row for, from what the repository states elsewhere (601)
     'tos': 'the top of the data stack in a register (GENES.md\'s CV8 table; engine/vm-lab-tos.c)',

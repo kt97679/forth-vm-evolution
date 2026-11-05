@@ -10832,3 +10832,14 @@ results/relf-designs-611.md, results/drafts/followup-roles-611.py, results/draft
 results/drafts/relf-readme-611.py. The sessions, results/chain-followup87/sK: dream.lan-prebuilt32.out.json,
 dream.lan-prebuilt64.out.json and rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md,
 dream.lan-prebuilt64.md and rage.lan-prebuiltarm.md, the laptop's loadtest.md in s1-s28, a README.md.
+
+## Iteration 612 - 2026-11-05 - Claude
+
+The smallest role to 64a7345393 (the owner asked for Claude's view: smaller than cea114f47e at both widths, 3-7% faster
+in each class, 25 genes off s6 against 23 - nothing traded); the package forth-vm-evolution-designs-iter612.tar.gz and
+designs/smallest rebuilt (20 of 20 right against s6, 20 of 20 engines the lab's bytes). 611's factor 3 corrected: factor
+needs tag2, expressed in none of the 7 - a lineage marker; the lineage's confounded genes go to the dream 32-bit
+experiment - 17 one-gene reversions of 9f8811f7f4 and 690981ca5b and the control 782f3ad7ff, 20 designs, all 9 of 9 right
+at both widths. Seed 88 set: the second portable run, 21 hours, the experiment on dream and the Tegra during it and on
+the laptop after; 4 predictions. The article's section 17 (the portable run and its follow-up) in both drafts. Files:
+results/candidates-dream32-612.md, results/drafts/dream32-variants-612.py.

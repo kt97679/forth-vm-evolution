@@ -36,7 +36,7 @@ engine as measured (`make tight`). Memory: peak resident.
 | `portable-knee` | c2ef9488ff | fast without the JIT on x86; small | 0.360 | 0.396 | 0.478 | 20,901 | 140 KB | no |
 | `portable-small` | a627b954c6 | small, fast on ARMv7 | 0.452 | 0.443 | 0.359 | 18,607 | 124 KB | no |
 | `least-memory` | fb0d57c8a2 | least memory | 0.916 | 0.884 | 0.521 | 17,830 | 104 KB | no |
-| `smallest` | cea114f47e | smallest | 1.992 | 1.925 | 1.975 | 13,939 | 116 KB | no |
+| `smallest` | 64a7345393 | smallest | 1.933 | 1.866 | 1.834 | 13,891 | 116 KB | no |
 
 \* on ARMv7 without its JIT: the JIT generates x86 code, so the JIT designs are for x86 only.
 

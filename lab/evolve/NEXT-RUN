@@ -208,4 +208,10 @@
 # design 0.7-0.9%, the median): the Tegra 5 sessions resolve the roles' 2% at 4 standard errors - about 13.5 hours.
 # Iteration 611 (the follow-up chain processed - results/followup-roles-seed87.md): none - the owner's next, a second
 # portable run (610), waits for its hours; this line must not start the follow-up chain again on a pull.
-none
+# Iteration 612 (the owner: "use whatever hours are needed"): the second portable run - seed 87's setup again, a second
+# 21-hour attempt (seed 87: the hypervolume flat within noise from generation 20, yet its winners came late - 782f3ad7ff
+# at generation 171, 64a7345393 at 258; the union of its two attempts beat both), the earlier fronts carried as before,
+# seed 87's now among them. Then the laptop's session of the dream 32-bit experiment (results/candidates-dream32-612.md,
+# 20 rounds, about 25 minutes: one step - a repeat would be skipped, the remote lines' deadline passed by then), which
+# dream and the Tegra measure during the run (REMOTES). The chain about 22 hours.
+seed 88 nojit 21h widths then experiment loadtest.py --ids results/candidates-dream32-612.md --rounds 20
