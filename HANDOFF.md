@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 609.
+- master: Iteration 610.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -67,25 +67,25 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   and on ARMv7, c2ef9488ff the knee, 22420b3b61, fb0d57c8a2 least memory, cea114f47e smallest (portable). Each at both
   widths: 9 of 9 workloads right against s6, the bytes consolidation's. Phase 2 (RELF.md): relf takes mechanisms and
   measures them with relf-ab.sh.
-- **Seed 87 interrupted and resumed (609)**: the laptop crashed about 10.5 hours in; the owner restarted next-run.sh at
-  03:35 UTC on 2026-11-04 and it resumed from its database (iter603's bundle again - `- resume`), the 21 hours from the
-  restart (the evolution until 00:00 UTC on 11-05, then the 282 re-measured). The crashed chain was archived first,
-  WITH the remote readings gathered: runs/forth-vm-evolution-chain-883c621e2d-fury-20261104-033532-interrupted.tar.gz -
-  dream at 4-byte cells 9 sessions of the 282 (its 620 minutes), at 8-byte 1, the Tegra 1 complete (a second cut short:
-  leave it out). Process it beside the new chain's archive: no seed pack in it (process-seed.sh may stop on it), so
-  take its remote/ readings - chain-sessions.py-style, each complete session pooled with the new chain's. The new chain
-  launched the remote lines afresh (the Tegra up to 4 sessions in 1,220 minutes, dream 12 a width). Prediction 1 (the
-  chain done, every line all it was given) - the crash noted when it is scored.
-- **Next run: seed 87, the portable run (602; results/drafts/portable-plan-602.md)** - NEXT-RUN `seed 87 nojit 21h
-  widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5` (21 hours, 603 - the owner's 9 or
-  21; the chain about 22.5; the Tegra up to 4 sessions, dream 12 a width): every design without the JIT (evolve.py --require nojit), the earlier fronts carried in JIT-off;
-  meanwhile the Tegra and dream measure the 282 portable designs found before (REMOTES). Why: the final pick's candidates
-  held 5 of the pooled front's 279 portable designs - the fastest in-run (8cc7f60d6b 0.298) never re-measured, none on
-  ARMv7 (601's reason, the JIT crowding them off the front, was wrong: memory keeps them). Its processing: process-run.sh
-  as usual - process-seed.sh marks it portable (no stopping line, no gene votes): portable.py's verdict (BETTER by the
-  stopping rule's thresholds, fixed now), final-pick.py on the 282 across machines; then a short chain re-measuring the
-  run's best beside the 282's best, and the relf handoff's portable roles updated. Rehearsed in a scratch clone: 29
-  records, none with the JIT; next-run.sh's parse of the line tested.
+- **Seed 87 processed (610)** - the portable run: portable.py BETTER than the portable designs found before
+  (hypervolume +2.4%, fastest 0.2847 against 0.2978, at 32 bits 0.2888 against 0.3059) -
+  results/evolve-amd-ryzen-7-pro-8840hs-seed87.md. The 282 found before, every complete session of both chains pooled
+  (results/portable-pick-seed87.md; readings results/chain-seed87/, results/chain-seed87-interrupted/ - the crashed
+  chain's dream 8-byte session and the Tegra's second were cut short, left out): x86-64 8cc7f60d6b, x86-32 1f2e71902c,
+  ARMv7 3452cb633b and 690981ca5b tied (0.3%), the generic pick f55cec5849. The relf handoff unchanged until the follow-up.
+- **The resume fixed (610)** - seed 87's restart forked at generation 3: the replay saw each gated design's second
+  reading from the start (results/drafts/resume-610.md). evolve.py replays first readings until their batch;
+  lab/evolve/test-resume.py in run-tests (a crash at generation 6: the replay as the first attempt; EVOLVE_REPLAY=0
+  forks - the control). The two attempts (results/drafts/attempts-610.py): the crashed one's 136 generations found the
+  run's fastest at both widths; the resumed one's 262 ended below it (0.2871 against 0.2919); their union 0.2958.
+- **Next run: the follow-up chain (610)** - NEXT-RUN `experiment loadtest.py --ids results/followup-seed87.md --rounds 10`
+  repeated to the remote lines' deadline (about 13.5 hours: the Tegra 810 minutes, 5 sessions; dream 400 a width): the
+  run's 30 best, the 282's 13 by role, the handoff's 690981ca5b and c2ef9488ff. Sized by the noise: a session moves a
+  design 0.7-0.9% (median), so 5 Tegra sessions resolve the roles' 2% at 4 standard errors; 24 hours would change no
+  decision (the owner: as long as needed). Its processing: chain-sessions.py, final-pick.py on the 45 with every
+  session; a portable role of results/handoff-relf-601.md replaced where a design beats it by the thresholds, then
+  pack-designs.py and export-designs.py rerun. Then, the owner's choice: a second portable run (the union of two
+  attempts beat the longer one), not long all-gene runs (that series stopped at seed 83; 84 and 86 not confirmed).
 - **`make` builds the winners (608; the owner: a working Forth from make, the image shipped as SOD32 did)** - the
   top Makefile and designs/ (designs/README.md): the nine of the relf handoff by role name, each its engine's real
   source and a Makefile, built from source; `make test`, `make libc` (the five portable ones, any host), `make 32`.
@@ -108,10 +108,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 87, the portable run - 6 (602).
+- **Predictions due** (results/predictions.md): the follow-up chain - 4 (610), its 3 carrying seed 87's 6.
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; seed 87's chain archive when it returns. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; the follow-up chain's archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

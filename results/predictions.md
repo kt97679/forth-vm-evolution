@@ -1270,3 +1270,18 @@ c2ef9488ff - 70/30. (4) The Tegra's fastest of the 282 is not 690981ca5b - 60/40
 against the laptop's 32-bit alone: Spearman 0.7 or more - 60/40. (6) After the follow-up re-measure, at least one of the
 handoff's five portable roles goes to another design - 65/35.
 
+**Scored at seed 87 (Iteration 610): four right, one wrong (the crash), one open.** (1) wrong - the laptop crashed 10.5 hours in, at generation 136, and the restart's resume forked at
+generation 3 (results/drafts/resume-610.md); the restarted chain did every line its deadline allowed (the Tegra the 282 in
+3 sessions, 1 more complete in the crashed chain). (2) right - BETTER: hypervolume +2.4%, fastest 0.2847 against 0.2978,
+at 32 bits 0.2888 against 0.3059. (3) right - 8cc7f60d6b, 0.3109 alone. (4) right by 0.3% - pooled over 4 sessions
+3452cb633b 0.3280, 690981ca5b 0.3291, each the fastest in two: a tie. (5) right - Spearman 0.935 over 282 (the Tegra's 4
+sessions against the laptop's 32-bit alone). (6) open - carried to the follow-up chain.
+
+## The follow-up chain (seed 87's best beside the 282's, 13 hours) - predicted (Iteration 610)
+
+`experiment loadtest.py --ids results/followup-seed87.md --rounds 10`, repeated to the remote lines' deadline; the
+Tegra and dream the same 45 (results/drafts/resume-610.md's chain is the first on the replay fix). (1) The chain done
+without a crash, the Tegra 4 or more complete sessions of the 45 - 75/25. (2) Re-measured side by side on the laptop
+alone, the run's fastest beats 8cc7f60d6b by 2% or more - 70/30. (3) Seed 87's prediction 6: at least one of the
+handoff's five portable roles goes to another design - 70/30. (4) At ARMv7, 690981ca5b and 3452cb633b within 1% of
+each other again - 70/30.

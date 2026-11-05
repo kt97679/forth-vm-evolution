@@ -62,6 +62,7 @@ grep -q "Scored at seed $N " results/predictions.md || M="$M results/predictions
 L=$(grep -v '^#' lab/evolve/NEXT-RUN | grep -v '^ *$' | head -n 1)
 case $L in "seed $((N + 1)) "*|*" then seed $((N + 1)) "*|none*) ;;   # 575: or a later step; 582: or the final pick's chains (580)
     "experiment loadtest.py --ids results/candidates-final-seed$N.md"*|"experiment loadtest.py --ids results/shortlist-seed$N.md"*) ;;
+    "experiment loadtest.py --ids results/followup-seed$N.md"*) ;;   # 610: the portable run's follow-up (portable-followup.py)
     *) M="$M lab/evolve/NEXT-RUN (its line: $L);" ;; esac
 grep -q "^- master: Iteration $I\.\$" HANDOFF.md || M="$M HANDOFF.md (\"- master: Iteration $I.\");"
 grep -q "^## Iteration $I " PROGRESS.md || M="$M PROGRESS.md (\"## Iteration $I\");"

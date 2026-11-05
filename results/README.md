@@ -55,6 +55,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck-seed84.md` - The checks of seed 83's front during seed 84 (Iteration 575): Spearman with the laptop 0.969, 0.962 and 0.984 on dream (prebuilt, 32, 64), 0.935 on rage (16, clang-built, the host busy).
 - `xcheck-seed85.md` - The checks of seed 84's front during seed 85 (Iteration 576): Spearman with the laptop 0.983, 0.938 and 0.972 on dream (prebuilt, 32, 64), 0.956 on rage (14, clang-built).
 - `xcheck-seed86.md` - The checks of seed 85's front during seed 86 (Iteration 582): Spearman with the laptop 0.983, 0.836 and 0.983 on dream (prebuilt, 32, 64), 0.918 on rage (11, clang-built); dream's 41: the bred lead the laptop's.
+- `xcheck-seed87.md` - The checks of seed 86's front during seed 87 (Iteration 610): dream.lan-prebuilt32-s2 6 designs measured on both: Spearman 0.771; dream.lan-prebuilt32-s3 6 designs measured on both: Spearman 0.771; dream.lan-prebuilt32-s4 6 designs measured on both: Spearman 0.771; dream.lan-prebuilt32-s5 6 designs measured on both: Spearman 0.829; dream.lan-prebuilt32-s6 6 designs measured on both: Spearman 0.829; dream.lan-prebuilt32-s7 6 designs measured on both: Spearman 0.829; dream.lan-prebuilt32-s8 6 designs measured on both: Spearman 0.771; dream.lan-prebuilt32-s9 6 designs measured on both: Spearman 0.771; dream.lan-prebuilt32 6 designs measured on both: Spearman 0.771; dream.lan-prebuilt64-s10 206 designs measured on both: Spearman 0.975; dream.lan-prebuilt64-s2 206 designs measured on both: Spearman 0.975; dream.lan-prebuilt64-s3 206 designs measured on both: Spearman 0.974; dream.lan-prebuilt64-s4 206 designs measured on both: Spearman 0.976; dream.lan-prebuilt64-s5 206 designs measured on both: Spearman 0.976; dream.lan-prebuilt64-s6 206 designs measured on both: Spearman 0.974; dream.lan-prebuilt64-s7 206 designs measured on both: Spearman 0.976; dream.lan-prebuilt64-s8 206 designs measured on both: Spearman 0.975; dream.lan-prebuilt64-s9 206 designs measured on both: Spearman 0.976; dream.lan-prebuilt64 206 designs measured on both: Spearman 0.976; rage.lan-prebuiltarm-s2 4 designs measured on both: Spearman 1.000; rage.lan-prebuiltarm-s3 4 designs measured on both: Spearman 1.000; rage.lan-prebuiltarm 4 designs measured on both: Spearman 1.000.
 
 ### The batches of patches applied after the runs
 
@@ -229,6 +230,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/originality-605.md` - Are the winning designs original (Iteration 605): each mechanism of the nine and where it was described - every technique known; two details and the combinations not found; the readers asked.
 - `chainC-seed86/README.md` - Chain C's readings (Iteration 598): the laptop's loadtest.md and each host's out.json and report, one session.
 - `chainD-seed86/README.md` - Chain D's readings (Iteration 598): 40 session directories - the laptop 29, dream 40 a width, rage 4.
+- `chain-seed87/README.md` - Seed 87's chain readings (Iteration 610): the laptop's loadtest of the 282, dream 9 and 10 sessions, rage 3.
+- `chain-seed87-interrupted/README.md` - The crashed seed 87 chain's complete sessions (Iteration 610): dream 9 at 4-byte cells, rage 1.
+- `portable-pick-seed87.md` - The 282 portable designs found before, re-measured on three machines, every session pooled (Iteration 610).
+- `followup-seed87.md` - The follow-up chain's 45 designs: seed 87's best beside the 282's by role (Iteration 610).
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers

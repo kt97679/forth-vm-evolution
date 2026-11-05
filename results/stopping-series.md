@@ -24,3 +24,4 @@ laptop); from seed 75 on, each from its pack's database.
 {"confirmation": 84, "front": 389, "hv": 0.365572, "fastest": 0.132498, "smallest": 13973, "memory": 108, "fastest32": 0.164826, "verdict": "NOT CONFIRMED - the search"}
 {"random": 85, "gens": 140, "front": 30, "hv": 0.187794, "fastest": 0.320019, "smallest": 16446, "memory": 116, "fastest32": 0.38059, "final": []}
 {"confirmation": 86, "front": 320, "hv": 0.369327, "fastest": 0.13302, "smallest": 13939, "memory": 104, "fastest32": 0.164511, "verdict": "NOT CONFIRMED - the pool widened"}
+{"portable": 87, "front": 326, "hv": 0.295776, "fastest": 0.28466015750478463, "smallest": 13803, "memory": 108, "fastest32": 0.28876912809928157, "pool": {"hv": 0.28889, "fastest": 0.2978300788735017, "smallest": 13939, "memory": 104, "fastest32": 0.3059454214012039}, "on_union": 326, "verdict": "BETTER"}

@@ -10804,3 +10804,13 @@ Seed 87 interrupted by a crash about 10.5 hours in, resumed from its database (0
 restart). The crashed chain's archive keeps the remote readings gathered before it was archived - dream at 4-byte cells
 9 sessions of the 282, at 8-byte 1, the Tegra 1 - to be pooled with the new chain's at processing (the card).
 
+## Iteration 610 - 2026-11-05 - Claude
+
+Seed 87 processed: the portable run BETTER (hypervolume +2.4%; fastest 0.2847/0.2978, 32-bit 0.2888/0.3059); the 282
+re-measured with both chains' complete sessions pooled (8cc7f60d6b, 1f2e71902c, ARMv7 3452cb633b/690981ca5b tied,
+generic f55cec5849); predictions 4 of 5 right, the crash the one wrong. The restart's resume forked at generation 3 (the
+replay saw second readings early): evolve.py fixed, lab/evolve/test-resume.py with its control in run-tests; the two
+attempts compared - the shorter found the fast end, the longer ended lower, their union above both. Next: the follow-up
+chain, 45 designs, about 13.5 hours. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed87.md, results/xcheck-seed87.md,
+results/portable-pick-seed87.md, results/followup-seed87.md, results/chain-seed87/, results/chain-seed87-interrupted/,
+results/drafts/resume-610.md, results/drafts/attempts-610.py.

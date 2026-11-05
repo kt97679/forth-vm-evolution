@@ -372,6 +372,9 @@ echo
 echo "the evolver's own functions (lab/evolve/test-evolver.py):"
 if out=$(python3 "$ROOT/lab/evolve/test-evolver.py" 2>&1); then printf '  %-12s ok     %s\n' evolver "$(printf '%s' "$out" | tail -1 | cut -c15-110)"
 else printf '  %-12s FAIL   %s\n' evolver "$(printf '%s' "$out" | grep FAIL | head -1 | cut -c1-110)"; FAILED=1; fi
+# Iteration 610: a resumed run replays its first attempt - seed 87's restart forked at generation 3 (test-resume.py).
+if out=$(python3 "$ROOT/lab/evolve/test-resume.py" 2>&1); then printf '  %-12s ok     %s\n' resume "$(printf '%s' "$out" | tail -1 | cut -c14-110)"
+else printf '  %-12s FAIL   %s\n' resume "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
 
 # The clock test's hold (Iteration 545): clockcheck.py takes the chain's hold on kernel.perf_event_paranoid as
 # counters.py does - the handshake checked against a stand-in for root's perf-hold.py, and without one the time alone.

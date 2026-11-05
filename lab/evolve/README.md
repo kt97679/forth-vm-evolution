@@ -123,6 +123,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `stackops.py` - stackops.py ID [ID ...] [--db FILE] - a register machine priced by
 - `tag2-rank.py` - tag2-rank.py OUT.json DB ID [ID ...] - the reference ranking
 - `test-evolver.py` - the evolver's self-test (Iteration 530; applied at 544 with the after-seed-73 batch): first_front against fronts()[0] over 300 random populations, one round first's decision, the adaptive operators' shares and floor, a gated design's second reading (gate_again) - 14 checks.
+- `test-resume.py` - a resumed run replays its first attempt (Iteration 610; seed 87's restart forked at generation 3): a run with a stand-in measurement cut at generation 6, started again - generations 1-6 as the first attempt's; EVOLVE_REPLAY=0 forks, the control. In tools/run-tests.sh.
 - `test-jail.py` - test-jail.py - prove that an engine the evolver runs cannot fork
 - `truefronts.py` - every run's true front recomputed from its records (Iteration 547; GOALS.md: the article's figures on the true fronts): a chain's experiment step that reads every archived run's database and measures nothing.
 - `vm-run.sh` - lab/evolve/vm-run.sh SEED [REQ] - a run on the development VM (Iteration 79)

@@ -729,3 +729,25 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   msc designs and the 40, 4 sessions expected in 680 minutes; dream as many as 330 minutes a width hold. About 11.5
   hours. Tested by results/drafts/chain-d-test-591.sh. NEXT-RUN none since 592 (a pull must not start it again - 588's
   rule); chains C and D's processing writes the next line.
+
+## The card's state at Iteration 609 (replaced at 610)
+
+- **Seed 87 interrupted and resumed (609)**: the laptop crashed about 10.5 hours in; the owner restarted next-run.sh at
+  03:35 UTC on 2026-11-04 and it resumed from its database (iter603's bundle again - `- resume`), the 21 hours from the
+  restart (the evolution until 00:00 UTC on 11-05, then the 282 re-measured). The crashed chain was archived first,
+  WITH the remote readings gathered: runs/forth-vm-evolution-chain-883c621e2d-fury-20261104-033532-interrupted.tar.gz -
+  dream at 4-byte cells 9 sessions of the 282 (its 620 minutes), at 8-byte 1, the Tegra 1 complete (a second cut short:
+  leave it out). Process it beside the new chain's archive: no seed pack in it (process-seed.sh may stop on it), so
+  take its remote/ readings - chain-sessions.py-style, each complete session pooled with the new chain's. The new chain
+  launched the remote lines afresh (the Tegra up to 4 sessions in 1,220 minutes, dream 12 a width). Prediction 1 (the
+  chain done, every line all it was given) - the crash noted when it is scored.
+- **Next run: seed 87, the portable run (602; results/drafts/portable-plan-602.md)** - NEXT-RUN `seed 87 nojit 21h
+  widths then experiment loadtest.py --ids results/portable-front-seed86.md --rounds 5` (21 hours, 603 - the owner's 9 or
+  21; the chain about 22.5; the Tegra up to 4 sessions, dream 12 a width): every design without the JIT (evolve.py --require nojit), the earlier fronts carried in JIT-off;
+  meanwhile the Tegra and dream measure the 282 portable designs found before (REMOTES). Why: the final pick's candidates
+  held 5 of the pooled front's 279 portable designs - the fastest in-run (8cc7f60d6b 0.298) never re-measured, none on
+  ARMv7 (601's reason, the JIT crowding them off the front, was wrong: memory keeps them). Its processing: process-run.sh
+  as usual - process-seed.sh marks it portable (no stopping line, no gene votes): portable.py's verdict (BETTER by the
+  stopping rule's thresholds, fixed now), final-pick.py on the 282 across machines; then a short chain re-measuring the
+  run's best beside the 282's best, and the relf handoff's portable roles updated. Rehearsed in a scratch clone: 29
+  records, none with the JIT; next-run.sh's parse of the line tested.

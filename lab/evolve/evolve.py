@@ -1833,18 +1833,27 @@ def rank(ids, R):
 
 # ---- the database ----------------------------------------------------------
 LOADED = {'lines': 0, 'bad': 0, 'first_bad': None}
+# Iteration 610 (seed 87's crash, results/drafts/resume-610.md): a gated design's first reading and the generation whose
+# batch measured it again - load() keeps the second, the record as it ends; a resumed run replays the first until then.
+REPLAY, REPLAY_ON = {}, [os.environ.get('EVOLVE_REPLAY', '1') != '0']   # EVOLVE_REPLAY=0: off (the test's control)
 def load():
     """The designs evaluated so far. A run killed while writing leaves a
     truncated last line: skipped, and that design is evaluated again.
     What was skipped is counted (LOADED), so a database that cannot be
     read at all does not pass for an empty one."""
     R = {}
-    LOADED.update(lines=0, bad=0, first_bad=None)
+    LOADED.update(lines=0, bad=0, first_bad=None); REPLAY.clear(); pend = []
     if os.path.exists(DB):
         for l in open(DB, encoding='utf-8-sig', errors='replace'):   # a byte-order mark is not JSON
             if not l.strip(): continue
             LOADED['lines'] += 1
-            try: r = json.loads(l); R[r['id']] = r
+            try:
+                r = json.loads(l); i = r['id']
+                if 'speed1' in r and R.get(i, {}).get('gated') == 1: REPLAY[i] = [R[i], None]; pend.append(i)   # 610
+                elif 'speed1' not in r:
+                    for j in pend: REPLAY[j][1] = r.get('gen') or 0   # the batch's own records follow its second readings
+                    pend = []
+                R[i] = r
             except (ValueError, KeyError, TypeError):
                 LOADED['bad'] += 1
                 if LOADED['first_bad'] is None: LOADED['first_bad'] = l[:70]
@@ -2270,6 +2279,12 @@ def main(argv):
     FASTGATE[0] = opt('--fastgate', FASTGATE[0])          # Iteration 391: 0, off
     JOBS, UNTIL = opt('--jobs', 1), opt('--until', 0)        # Iteration 99: workers on their own cores; a deadline
     R = load()
+    # Iteration 610: a resumed run's replay saw each gated design's second reading from its first generation - written
+    # a generation later, it ranked on it early and forked (seed 87: at generation 3, 133 generations lost). The first
+    # reading stands until the batch that measured it again, as it did the first time (flush()).
+    later = {i: (R[i], when) for i, (r1, when) in REPLAY.items()} if REPLAY_ON[0] else {}
+    for i in later: R[i] = REPLAY[i][0]
+    if later: print('  the replay: %d designs measured again in the database, each at its batch' % len(later), flush=True)
     if JOBS > 1: start_pool(JOBS)
     # The designs THIS run has asked for so far. Its decisions must not look
     # at the whole database: resumed, it replays from there, and the
@@ -2283,12 +2298,15 @@ def main(argv):
         i = gid(g); seen.add(i)
         if i not in R and i not in pending: pending[i] = (g, parents, how, gen)
         return i
-    def flush():
+    def flush(gen=0):
         """Iteration 99: what get() asked for, evaluated - by the workers when
         --jobs N - and recorded in the order asked: a generation's children are
         all made before any is needed, so the run decides as it did serially."""
         items = list(pending.items()); pending.clear()
-        gen_now = max((it[1][3] for it in items), default=0)
+        gen_now = max((it[1][3] for it in items), default=gen)
+        for i in [i for i, (r2, w) in later.items() if R[i].get('gated') == 1 and (w <= gen_now if w is not None else bool(items))]:
+            R[i] = later.pop(i)[0]                       # 610: replayed - this batch measured it again the first time
+            print('    %s measured again: %.4g, then %s - %s (replayed)' % (i, R[i].get('speed1', R[i]['speed']), ('%.4g' % R[i]['speed2']) if 'speed2' in R[i] else R[i].get('status'), 'speed %.4g' % R[i]['speed']), flush=True)
         if SCREEN and not RANDOMK and items and gen_now >= SCREEN_FROM:   # Iteration 200: the screen (548: none with --random)
             if SCR['model'] is None or gen_now - SCR['fit'] >= SCREEN_EVERY:
                 recs = [r for r in R.values() if r['status'] == 'ok' and r.get('speed') and ov(r, 'total') and r.get('gen', 0) < gen_now]
@@ -2315,7 +2333,7 @@ def main(argv):
         args = [(canon(g), ROUNDS, False, gate, False, stop) for i, (g, parents, how, gen) in items]
         # Iteration 446: the gated children of the generation before, measured again in this batch - among other
         # co-runners, at another moment - their speed the geometric mean of the two readings then
-        again = [i for i, r in R.items() if r.get('gated') == 1 and r.get('status') == 'ok'] if items else []
+        again = [i for i, r in R.items() if r.get('gated') == 1 and r.get('status') == 'ok' and i not in later] if items else []
         args += [(R[i]['genome'], ROUNDS, False, None, True) for i in again]
         results = list(WORKERS[0].imap(_job, args) if WORKERS[0] else map(_job, args))
         for i, rec2 in zip(again, results[len(items):]):
@@ -2444,7 +2462,7 @@ def main(argv):
             if y_: print('  operators (526): crossover %.2f, borrowing %.2f - yields crossover %.2f%%, borrowed %.2f%%, mutation %.2f%%' % (
                 OPS['xover'], OPS['borrow'], 100 * y_['crossover'], 100 * y_['borrowed'], 100 * y_['mutation']), flush=True)
             kids = random_kids(N, gen) if RANDOMK else breed(live, rk, cd, N, gen)
-            flush()
+            flush(gen)
             pop, order = survive(pop, kids, N, Q_KEEP)
         else:   # Iteration 436 (results/drafts/escape-mechanism-435.md): islands, each ranked and bred alone
             k = ISLANDS[0]; n = max(2, N // k)
@@ -2455,7 +2473,7 @@ def main(argv):
                 order, rk, cd = rank(live, R)
                 print('  generation %d, island %d: %d alive, front %d' % (gen, j, len(live), sum(1 for i in live if rk[i] == 0)), flush=True)
                 made.append(breed(live, rk, cd, n, gen))
-            flush()
+            flush(gen)
             pool = list(dict.fromkeys([i for members in isl for i in members] + [i for kids in made for i in kids]))   # for the attic
             for j in range(k): isl[j] = survive(isl[j], made[j], n, max(1, Q_KEEP // k))[0]
             if gen % MIGRATE[0] == 0:   # a ring: each island's migrants join the next, which keeps its best n
@@ -2470,6 +2488,7 @@ def main(argv):
         print('  the attic: %d designs, %d gene values no survivor has' % (len(attic),
               len(set(g for i in attic for g in genes_of(R[i])) - set(g for i in pop for g in genes_of(R[i])))), flush=True)
     if WORKERS[0]: WORKERS[0].close(); WORKERS[0].join()
+    for i in list(later): R[i] = later.pop(i)[0]   # 610: stopped inside its replay, it reports the records as they end
     report(R)
 
 
