@@ -10911,3 +10911,12 @@ lines screening the last run's rest), the search stopping at the first follow-up
 it is written down (GOALS.md step 3: the last rest screened if the owner wants, the retire report on the final pooled front,
 the roles packed and exported, the figures recomputed). GOALS.md's new section, the plan's two paragraphs, the card.
 
+## Iteration 619 - 2026-11-06 - Claude
+
+The audit the owner asked for - the results so far and whether a run with non-portable (JIT) designs is worth it: no
+correctness issue open; the JIT search converged by its own rule and its second run from the pool (seed 86) gained nothing;
+no gene added since Iteration 540; the JIT needs the tag and the top-of-stack register, which no portable front design has
+(seed 88: 0 of 469), so the portable gains do not carry over; the JIT roles 1.70-1.85 times the best portable design's
+speed on x86, clang builds untouched by dream's GCC penalty. Not now; a 21-hour JIT run before the freeze only to settle
+the length, never tested past 178 generations. Files: results/audit-nonportable-619.md.
+

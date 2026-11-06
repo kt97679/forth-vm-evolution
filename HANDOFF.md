@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 618.
+- master: Iteration 619.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -121,7 +121,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Before the freeze** (618; GOALS.md step 3 - results/drafts/portable-plan-602.md, "Then the freeze"): the portable search
   to its end by the rule; the last run's rest screened if the owner wants (617); the retire report on the final pooled
   front, every value no design on it uses retired, the winners' bytes unchanged (599's way); the roles packed and exported
-  from the final code, make test, the handoff final; the portable figures recomputed from the records.
+  from the final code, make test, the handoff final; the portable figures recomputed from the records. A JIT run (619, results/audit-nonportable-619.md): not now - converged, nothing
+  new since, the portable gains out of its reach; one 21-hour JIT run before the freeze only to settle the length, the owner's call.
 - **`make` builds the winners (608; ten at 611)** - the top Makefile and designs/ (designs/README.md): the ten of the
   relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
   smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six
