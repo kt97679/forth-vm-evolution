@@ -37,8 +37,8 @@ design). Another portable run - seed 89, `seed 89 nojit 21h widths`, every earli
 follow-up confirms that seed 88's search found something: one of its designs, re-measured, beats the best of those found
 before by the stopping rule's thresholds - the laptop alone at either width, a class (x86-64, x86-32, ARMv7) or the mean
 of the three by 2% with the paired difference 2 SE or more, binary + image by 1% or memory by 4 KB (exact) - or takes a
-portable role of the handoff (the processing's decision, the owner's trades). Else the portable search stops, and the next
-work is the article's final pass. `lab/evolve/followup-roles.py --gain` prints the figures and the verdict
+portable role of the handoff (the processing's decision, the owner's trades). Else the portable search stops, and the
+freeze follows ("Then the freeze", below). `lab/evolve/followup-roles.py --gain` prints the figures and the verdict
 (process-followup.sh's OUT/gain.txt); on 611's readings it gives 611's outcome - seed 87's gain confirmed (the mean -4.2%
 against 8cc7f60d6b), so another run (results/drafts/followup-rehearsal-615.sh checks it).
 The check (616) - the rule loses no good design: it decides only whether to search again, and no design is dropped
@@ -65,4 +65,22 @@ slower nor 1% larger; the flagged join seed 89's follow-up list (portable-follow
 decides. Tested on 611's readings with 601's holders: from the remote lines alone it flags the two designs 611 gave roles,
 782f3ad7ff first; with today's holders, none of seed 87's. If the portable search stops instead, the screen does not run and
 the 375 stay recorded, as at 616 - a remote-only chain for them the owner's call then.
+
+**The search goes on while it makes progress** (Iteration 618; the owner: "we definitely should proceed with evolving
+designs if we see progress"). The rule above applies after every portable run's follow-up, not only seed 88's: run N's
+confirmed gain sets run N+1 - `seed N+1 nojit 21h widths`, every earlier portable front carried, no experiment (21 hours as
+seeds 87 and 88, the owner's at 603, unless he says otherwise); its remote lines screen run N's rest
+(results/screen-seedN.md), and the screen's flagged join run N+1's follow-up, sized to resolve 2% at about 5 SE on every
+line (614). The search stops at the first follow-up that confirms no gain. At run N's processing, once the follow-up is
+due: `portable.py --front OUT` writes the pool before run N (as 613's results/portable-front-seed87.md); then
+`portable-followup.py <run N's db> results/followup-pick-seed<N-1>.json results/followup-seedN.md --before <that pool>
+--holders <the handoff's designs> --also results/screen-flagged-seed<N-1>.md --hours H --rest results/screen-seedN.md`
+writes the follow-up's list and the next run's screen at once.
+
+**Then the freeze** (618; GOALS.md step 3, "the designs are frozen"): the last run's rest screened on the remote lines
+first if the owner wants it (617: his call); the retire report on the final pooled front, the portable runs' included -
+every gene value and code path no design on it uses retired, each winner's engine and image bytes unchanged at both widths
+(as 599); the final roles packed and exported from the final code (pack-designs.py, export-designs.py: each engine the
+lab's bytes, every design right against s6 at both widths, make test, the C-library builds) and the handoff made final;
+the article's portable figures recomputed from the runs' records.
 

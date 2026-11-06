@@ -10903,3 +10903,11 @@ holder by the role's own rule, loosened; on 611's readings with 601's holders it
 782f3ad7ff first; --flagged and portable-followup.py --also carry them into the next follow-up; process-followup.sh keeps
 the pick's JSON (results/followup-pick-seedN.json); the rehearsal PASS, 5 of 5. Files: results/screen-seed88.md.
 
+## Iteration 618 - 2026-11-06 - Claude
+
+The portable search goes on while it makes progress (the owner: "we definitely should proceed with evolving designs if we
+see progress"): 616's rule now applies after every follow-up - a confirmed gain sets the next run (21 hours, its remote
+lines screening the last run's rest), the search stopping at the first follow-up that confirms none - and the freeze after
+it is written down (GOALS.md step 3: the last rest screened if the owner wants, the retire report on the final pooled front,
+the roles packed and exported, the figures recomputed). GOALS.md's new section, the plan's two paragraphs, the card.
+

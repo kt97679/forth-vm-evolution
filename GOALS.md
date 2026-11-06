@@ -183,6 +183,15 @@ final-set.py --candidates, loadtest.py --ids, xcheck.py --also @FILE.)
 - **The Tegra**: tools/rage-check.sh PASS on fury before the chain after seed 84 (open item 1), or its re-measures see
   1 of the designs clang lets it build (135 of seed 81's 256).
 
+## The portable search (Iterations 602-618)
+
+After the improvement phase, runs without the JIT (`nojit`, 21 hours) for designs that run everywhere - relf's portable
+roles - each judged in-run against every portable design found before (lab/evolve/portable.py), then re-measured on the
+three machines in a follow-up chain. **It goes on while it makes progress** (the owner, 618): another run after every
+follow-up that confirms a gain by the stopping rule's thresholds, in any class, extreme or role; it stops at the first
+follow-up that confirms none, and the designs are then frozen as step 3 above freezes them. The detail:
+results/drafts/portable-plan-602.md ("After the follow-up", "The search goes on", "Then the freeze").
+
 ## Later - the owner's plans
 
 1. **The Tegra session - once the improvements are done** (the owner).
