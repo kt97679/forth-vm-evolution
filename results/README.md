@@ -229,6 +229,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `portable-front-seed86.md` - The portable designs found before the portable run (Iteration 602): the pooled true front's 279 without the JIT and the final set's 3 others, in-run - measured again in seed 87's chain.
 - `portable-front-seed87.md` - The portable designs found before seed 88 (Iteration 613, portable.py --front): 348, seed 87's among them.
 - `drafts/portable-plan-602.md` - The portable run, planned (Iteration 602): why (the final pick re-measured 5 of the 279 portable front designs), the chain, the rule fixed before it, what follows.
+- `drafts/jit-run-plan-620.md` - The last JIT run before the freeze, planned (Iteration 620): 21 hours carrying every front, judged against every earlier front by what it bred, its follow-up, the tools to prepare.
 - `drafts/originality-605.md` - Are the winning designs original (Iteration 605): each mechanism of the nine and where it was described - every technique known; two details and the combinations not found; the readers asked.
 - `drafts/resume-610.md` - The resume that forked (Iteration 610): seed 87's restart replayed second readings early and forked at generation 3; the fix, its test and the two attempts compared.
 - `chainC-seed86/README.md` - Chain C's readings (Iteration 598): the laptop's loadtest.md and each host's out.json and report, one session.
