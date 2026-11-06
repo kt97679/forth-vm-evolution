@@ -31,3 +31,21 @@ list and lines: re-measuring, in one session a machine, the run's designs on the
 front beside the best of the 282 by role (laptop, dream, the Tegra); the portable roles of results/handoff-relf-601.md
 replaced where a design beats the one there by the thresholds after re-measure, and the package rebuilt
 (lab/evolve/pack-designs.py). The run is no series run: no stopping line, no gene votes (its own ledger line).
+
+**After the follow-up** (Iteration 616; the owner: fixed before seed 88's follow-up returns, and checked to lose no good
+design). Another portable run - seed 89, 21 hours, seed 88's setup with every earlier portable front carried - when the
+follow-up confirms that seed 88's search found something: one of its designs, re-measured, beats the best of those found
+before by the stopping rule's thresholds - the laptop alone at either width, a class (x86-64, x86-32, ARMv7) or the mean
+of the three by 2% with the paired difference 2 SE or more, binary + image by 1% or memory by 4 KB (exact) - or takes a
+portable role of the handoff (the processing's decision, the owner's trades). Else the portable search stops, and the next
+work is the article's final pass. `lab/evolve/followup-roles.py --gain` prints the figures and the verdict
+(process-followup.sh's OUT/gain.txt); on 611's readings it gives 611's outcome - seed 87's gain confirmed (the mean -4.2%
+against 8cc7f60d6b), so another run (results/drafts/followup-rehearsal-615.sh checks it).
+The check (616) - the rule loses no good design: it decides only whether to search again, and no design is dropped
+either way - seed 88's front stays recorded (its 469 genomes in results/evolve-amd-ryzen-7-pro-8840hs-seed88.md, its ledger
+line in results/stopping-series.md), its re-measured best kept by role in results/followup-pick-seed88.md with each
+class's fastest and the best means added (final-pick.py step 5), and a role changes only where a design beats its holder.
+Its first form keyed on one design, one machine and one width (c7814def6d against 9f8811f7f4, the laptop alone at 4-byte
+cells): a gain in another class or a role would have stopped the search - widened to every class, extreme and role. As
+before 616: the follow-up re-measures 30 of seed 88's 405 designs on the union's front (select(), by in-run numbers); the
+rest are not re-measured across machines - kept, recorded, for a later need.

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 615.
+- master: Iteration 616.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -110,7 +110,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/drafts/followup-roles-611.py's; on seed 88's real archive the layout results/chain-seed88's. Then by hand: the roles
   judged (the owner's trades, as 611), results/followup-roles-seed88.md, the package and designs/ when a role changes
   (pack-designs.py, export-designs.py), the predictions, NEXT-RUN, this card, PROGRESS, make-bundle.sh - process-finish.sh
-  is for seeds.
+  is for seeds. **What its result triggers** (616, fixed before it returns; checked to lose no good design): another
+  portable run, seed 89 (21 hours, seed 88's setup), when a seed 88 design beats the best found before by the thresholds
+  after re-measure - the laptop at either width, a class or the mean (2%, 2 SE), size 1%, memory 4 KB - or takes a role;
+  else the portable search stops (results/drafts/portable-plan-602.md, "After the follow-up"; the verdict in
+  /tmp/followup/gain.txt).
 - **`make` builds the winners (608; ten at 611)** - the top Makefile and designs/ (designs/README.md): the ten of the
   relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
   smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six

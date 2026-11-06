@@ -10883,3 +10883,13 @@ archive 145 of 145 files results/chain-seed88's. deaths-check.py: a death by a r
 words, expected - seed 88's 2 open now 0 (2 refused the same); its --self-test (3 of 3) in run-tests. NEXT-RUN none while
 the chain runs. Files: results/drafts/followup-rehearsal-615.sh.
 
+## Iteration 616 - 2026-11-06 - Claude
+
+The rule after seed 88's follow-up, fixed before its results (the owner: checked to lose no good design): another portable
+run, seed 89, when a seed 88 design beats the best found before by the thresholds after re-measure in any class, extreme or
+role; else the portable search stops (results/drafts/portable-plan-602.md, "After the follow-up"). The check: no design is
+dropped either way (seed 88's 469 genomes in its results file, its ledger line, the pick by role with each class's fastest
+added); the first form's trigger - one design, one machine, one width - widened, since a gain elsewhere would have stopped
+the search. lab/evolve/followup-roles.py --gain prints the verdict (process-followup.sh's OUT/gain.txt); on 611's readings
+611's outcome (the mean -4.20% against 8cc7f60d6b, binary + image -0.98%), results/drafts/followup-rehearsal-615.sh PASS.
+

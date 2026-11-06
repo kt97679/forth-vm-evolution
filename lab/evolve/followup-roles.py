@@ -12,9 +12,13 @@ chat's and the owner's; the predictions of iteration N (610: seed 87's follow-up
 by (factor, compiler). Pooled as final-pick.py pools: each source's geometric mean over its sessions; x86-64 and x86-32
 the geometric mean of the laptop alone and dream, ARMv7 the Tegra; the mean of the three; errors paired by session (the
 sessions both designs have). A design missing a class is left out of the classes, named.
+--gain (Iteration 616): instead, the rule fixed before seed 88's follow-up returned (results/drafts/portable-plan-602.md,
+"After the follow-up") - the run's designs against the best of those found before, re-measured: the laptop alone at each
+width, each class and the mean of the three (2%, the paired difference 2 SE or more), binary + image (1%) and memory
+(4 KB), exact; the run's designs beating a role's holder; the verdict - another portable run, or the search stops.
 611's run again: followup-roles.py results/followup-seed87.md results/chain-followup87 --handoff results/handoff-relf-601.md
   --predictions 610 --roles fastest=690981ca5b,arm=690981ca5b,knee=c2ef9488ff,smallarm=22420b3b61,memory=fb0d57c8a2,smallest=cea114f47e"""
-import glob, json, math, os, statistics, sys
+import glob, io, json, math, os, re, statistics, sys
 
 a = sys.argv[1:]
 if len(a) < 2 or '--roles' not in a: sys.exit(__doc__)
@@ -22,6 +26,8 @@ opt = lambda n, d=None: a[a.index(n) + 1] if n in a else d
 CAND, SESS = a[0], a[1]
 R = dict(x.split('=', 1) for x in opt('--roles').split(','))
 HAND, PRED = opt('--handoff', 'results/handoff-relf-611.md'), opt('--predictions')
+GAIN, OUT0 = '--gain' in a, sys.stdout
+if GAIN: sys.stdout = io.StringIO()          # 616: every section computed, the rule's alone printed
 SOURCES = ('laptop64', 'laptop32', 'laptop64-loaded', 'laptop32-loaded', 'dream64', 'dream32', 'rage')
 HOSTFILE = {'dream64': 'dream.lan-prebuilt64.out.json', 'dream32': 'dream.lan-prebuilt32.out.json',
             'rage': 'rage.lan-prebuiltarm.out.json'}
@@ -182,3 +188,44 @@ for k in sorted(g):
         statistics.median(x[j] for x in g[k]) for j in range(3))))
 x = [y for v in g.values() for y in v]
 print('  all %d: %.3f %.3f %.3f' % ((len(x),) + tuple(statistics.median(y[j] for y in x) for j in range(3))))
+
+
+def gain():
+    """616: the rule of results/drafts/portable-plan-602.md, "After the follow-up" - a gain is a design of the run beating the
+    best of those found before by the stopping rule's thresholds, re-measured"""
+    sys.stdout = OUT0
+    rn = [i for i in C if run(i)]; fb = [i for i in C if str(C[i].get('why', '')).startswith('found before')]
+    print('## The run against the best found before, re-measured - the rule of Iteration 616 (results/drafts/portable-plan-602.md)')
+    if not rn or not fb: print('verdict: none - the list has %d of the run\'s and %d found before' % (len(rn), len(fb))); return
+    got = []
+
+    def speed(name, key, f):
+        r = [i for i in rn if key(i) is not None]; b = [i for i in fb if key(i) is not None]
+        if not r or not b: print('  %s: not measured on both' % name); return
+        x, y = min(r, key=key), min(b, key=key); m, se = f(x, y)
+        g = math.exp(m) - 1 <= -T and (m <= -2 * se if se else m < 0)
+        print('  %s: the run\'s %s %.4f, found before %s %.4f: %s +/- %.2f%% - %s' % (name, x, key(x), y, key(y), pct(m), se * 100,
+                                                                                  'GAIN' if g else 'no'))
+        if g: got.append(name)
+    for s, w in (('laptop64', '8-byte'), ('laptop32', '4-byte')):
+        speed('the laptop alone, %s cells' % w, lambda i, s=s: P[s].get(i), lambda x, y, s=s: paired(s, x, y))
+    for k in PARTS:
+        speed(k, lambda i, k=k: CL[i][k] if i in CL else None, lambda x, y, k=k: cdiff(k, x, y))
+    speed('the mean of the three', lambda i: CL[i]['mean'] if i in CL else None, mdiff)
+    x, y = min(rn, key=lambda i: C[i]['total']), min(fb, key=lambda i: C[i]['total']); d = C[x]['total'] / C[y]['total'] - 1
+    print('  binary + image: the run\'s %s %s B, found before %s %s B: %+.2f%% - %s' % (x, format(C[x]['total'], ','), y,
+          format(C[y]['total'], ','), d * 100, 'GAIN' if d <= -B else 'no'))
+    if d <= -B: got.append('binary + image')
+    x, y = min(rn, key=lambda i: C[i]['rss']), min(fb, key=lambda i: C[i]['rss']); d = C[x]['rss'] - C[y]['rss']
+    print('  memory: the run\'s %s %d KB, found before %s %d KB: %+d KB - %s' % (x, C[x]['rss'], y, C[y]['rss'], d, 'GAIN' if d <= -M else 'no'))
+    if d <= -M: got.append('memory')
+    print('  the roles: the run\'s designs beating a holder by the rule - %s' % ('; '.join('%s %s' % (k, ' '.join(v)) for k, v in CH.items())
+                                                                              or 'none'))
+    n = re.search(r'seed(\d+)', os.path.basename(CAND)); nxt = 'seed %d' % (int(n.group(1)) + 1) if n else 'the next portable run'
+    if got: print('verdict: a gain confirmed (%s) - another portable run, %s' % (', '.join(got), nxt))
+    elif CH: print('verdict: no extreme gained; role candidates above - another portable run, %s, if a role goes to one of them (the '
+                   'processing decides), else the portable search stops' % nxt)
+    else: print('verdict: none confirmed - the portable search stops')
+
+
+if GAIN: gain()

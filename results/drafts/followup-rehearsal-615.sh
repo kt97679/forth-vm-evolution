@@ -33,5 +33,9 @@ sed -n '/^# The final set/,$p' results/followup-pick-seed87.md > "$R/pick.611"; 
 python3 results/drafts/followup-roles-611.py > "$R/roles.611" 2>&1
 p1=$([ "$nd" = 0 ] && [ "$nf" = "$nl" ] && echo PASS || echo FAIL); p2=$(cmp -s "$R/pick.611" "$R/pick.here" && echo PASS || echo FAIL)
 p3=$(cmp -s "$R/roles.611" "$R/out/roles.txt" && echo PASS || echo FAIL)
-echo "rehearsal: the readings $p1 ($nf of 611's files, $nd differ, $nl laid out); the pick $p2; the roles $p3 ($(wc -l < "$R/out/roles.txt") lines)"
-[ "$p1$p2$p3" = PASSPASSPASS ] && echo "rehearsal: PASS" || { echo "rehearsal: FAIL"; exit 1; }
+# 616: the rule after the follow-up on 611's readings - seed 87's gain confirmed, as 611 found it (the mean -4.2% against
+# 8cc7f60d6b, results/followup-roles-seed87.md; binary + image 0.98%, short of 1%)
+p4=$(grep -q '^verdict: a gain confirmed' "$R/out/gain.txt" && grep -q 'the mean of the three: .*-4.20%' "$R/out/gain.txt" \
+     && grep -q 'binary + image: .*-0.98% - no' "$R/out/gain.txt" && echo PASS || echo FAIL)
+echo "rehearsal: the readings $p1 ($nf of 611's files, $nd differ, $nl laid out); the pick $p2; the roles $p3 ($(wc -l < "$R/out/roles.txt") lines); the rule $p4"
+[ "$p1$p2$p3$p4" = PASSPASSPASSPASS ] && echo "rehearsal: PASS" || { echo "rehearsal: FAIL"; exit 1; }

@@ -10,6 +10,8 @@
 #      and OUT/pick.json;
 #   5. each role against its holder: lab/evolve/followup-roles.py -> OUT/roles.txt (PRED= the iteration whose predictions
 #      it prints, HANDOFF= the handoff file, default results/handoff-relf-611.md).
+#   6. (Iteration 616) the rule after the follow-up: followup-roles.py --gain -> OUT/gain.txt - another portable run, or the
+#      search stops (results/drafts/portable-plan-602.md, "After the follow-up").
 # OUT/summary.md, printed at the end, is the screen to judge from. N: the portable run's seed (results/followup-seedN.md
 # the list); ROLES: the handoff's portable roles, role=id,... (followup-roles.py); ARCHIVE: default the newest
 # forth-vm-evolution-chain-*_tar.gz in /mnt/user-data/uploads. OUT=/tmp/followup, DEST=results - the rehearsal's another
@@ -55,7 +57,9 @@ last=$(echo "$ss" | tail -n 1)
   cat "$O/pick.out"; } > "$F"
 python3 lab/evolve/followup-roles.py "$C" "$K" --roles "$ROLES" --handoff "${HANDOFF:-results/handoff-relf-611.md}" \
     ${PRED:+--predictions "$PRED"} > "$O/roles.txt" 2>&1 || die "followup-roles.py ($O/roles.txt)"   # 5.
+python3 lab/evolve/followup-roles.py "$C" "$K" --roles "$ROLES" --handoff "${HANDOFF:-results/handoff-relf-611.md}" --gain \
+    > "$O/gain.txt" 2>&1 || die "followup-roles.py --gain ($O/gain.txt)"                     # 6. (616) the rule after the follow-up
 { echo; echo "the pick: $F (OUT/pick.json); its set:"; grep '^| [0-9]' "$O/pick.out" | cut -c1-160 | head -n 16
-  echo; cat "$O/roles.txt"; } >> "$S"
+  echo; cat "$O/roles.txt"; echo; cat "$O/gain.txt"; } >> "$S"
 cat "$S"
 echo "process-followup: DONE - $S; the readings $K, the pick $F; judge the roles, then results/followup-roles-seed$N.md"
