@@ -10920,3 +10920,11 @@ no gene added since Iteration 540; the JIT needs the tag and the top-of-stack re
 speed on x86, clang builds untouched by dream's GCC penalty. Not now; a 21-hour JIT run before the freeze only to settle
 the length, never tested past 178 generations. Files: results/audit-nonportable-619.md.
 
+## Iteration 620 - 2026-11-06 - Claude
+
+The last JIT run planned (the owner: "yes, let's do 21 hour jit run"): after the portable search ends, the last step
+before the freeze - `seed N 21h widths carryall`, the JIT allowed, every archived front carried; its remote lines screening
+the last portable run's rest; judged by confirm.py against every earlier front, only what it bred counted; a follow-up beside
+the four x86 roles when it gains; continued only on confirmed progress (618). The follow-up tools' JIT options to prepare
+while it runs. GOALS.md's section, the card. Files: results/drafts/jit-run-plan-620.md.
+

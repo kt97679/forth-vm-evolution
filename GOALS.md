@@ -192,6 +192,13 @@ follow-up that confirms a gain by the stopping rule's thresholds, in any class, 
 follow-up that confirms none, and the designs are then frozen as step 3 above freezes them. The detail:
 results/drafts/portable-plan-602.md ("After the follow-up", "The search goes on", "Then the freeze").
 
+## The last JIT run (Iteration 620)
+
+After the portable search ends and before the freeze, one 21-hour run with the JIT (the owner, 620): the one lever the JIT
+search never tried, its length (results/audit-nonportable-619.md). Judged as a confirmation run (step 2 above) against
+every earlier front, only what it bred counted; continued only on confirmed progress, as the portable search. The detail:
+results/drafts/jit-run-plan-620.md.
+
 ## Later - the owner's plans
 
 1. **The Tegra session - once the improvements are done** (the owner).
