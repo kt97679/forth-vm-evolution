@@ -247,6 +247,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `dream32-experiment-seed88.md` - The dream 32-bit experiment read (Iteration 614): the compiler - clang restores both bases, no other single gene does.
 - `followup-pick-seed87.json` - followup-pick-seed87.md's set as JSON (final-pick.py --json, reproduced at 614): seed 88's follow-up's PICK.
 - `followup-seed88.md` - Seed 88's follow-up chain's 46: its best beside seed 87's follow-up pick and the relf handoff's role holders (Iteration 614).
+- `screen-seed88.md` - The screen for seed 89's remote lines (Iteration 617): the 375 of seed 88's union front its follow-up does not re-measure, with the six portable role holders.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 
 ### Prompts to other models, and their answers

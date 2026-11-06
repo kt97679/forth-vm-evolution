@@ -16,6 +16,14 @@ sessions both designs have). A design missing a class is left out of the classes
 "After the follow-up") - the run's designs against the best of those found before, re-measured: the laptop alone at each
 width, each class and the mean of the three (2%, the paired difference 2 SE or more), binary + image (1%) and memory
 (4 KB), exact; the run's designs beating a role's holder; the verdict - another portable run, or the search stops.
+--screen (Iteration 617): instead, the screen the next portable run's remote lines measured (portable-followup.py --rest):
+each of the run's designs against each speed role's holder on that role's lines, paired by session, flagged by the role's
+own rule with dream standing in for the laptop - the fastest portable: the mean over dream at both widths and the Tegra
+below the holder's; the fastest on ARMv7: faster on the Tegra; the knee (dream at both widths) and small and fast on ARMv7
+(the Tegra): faster on a line or 1% smaller, and no line 4% slower (one machine stands in for two) nor 1% larger. Any gain
+counts, so the screen is loose; the flagged join that run's follow-up list (--flagged OUT writes their records for
+portable-followup.py --also), where the role's rule decides. On 611's readings with 601's holders it flags the two designs
+611 gave roles, 782f3ad7ff first.
 611's run again: followup-roles.py results/followup-seed87.md results/chain-followup87 --handoff results/handoff-relf-601.md
   --predictions 610 --roles fastest=690981ca5b,arm=690981ca5b,knee=c2ef9488ff,smallarm=22420b3b61,memory=fb0d57c8a2,smallest=cea114f47e"""
 import glob, io, json, math, os, re, statistics, sys
@@ -61,6 +69,44 @@ for k, d in enumerate(sorted(glob.glob(os.path.join(SESS, 's[0-9]*')), key=lambd
             for x in n: S[s][x['id']][k] = x['speed_here']
             done[s].append(len(n))
 P = {s: {i: gm(list(v.values())) for i, v in S[s].items() if v} for s in SOURCES}
+if '--screen' in a:                                   # 617: the screen (results/drafts/portable-plan-602.md, "After the follow-up")
+    sys.stdout = OUT0
+    def pd(s, x, y):
+        d = [math.log(S[s][x][k] / S[s][y][k]) for k in S[s][x] if k in S[s][y]]
+        return (statistics.fmean(d), statistics.stdev(d) / math.sqrt(len(d)) if len(d) > 1 else float('nan'), len(d)) if d else None
+    SRC = {'fastest': ('dream64', 'dream32', 'rage'), 'arm': ('rage',), 'knee': ('dream64', 'dream32'), 'smallarm': ('rage',)}
+    rn = [i for i in C if str(C[i].get('why', '')).startswith('the run')]
+    print('## The screen - the run\'s %d against each speed role\'s holder, the remote lines (the rule of Iterations 616-617)' % len(rn))
+    for x in ('dream64', 'dream32', 'rage'):
+        print('  %-8s %2d sessions, each %d-%d of %d' % (x, len(done[x]), min(done[x] or [0]), max(done[x] or [0]), NC))
+    flag = {}
+    for role, src in SRC.items():
+        h = R.get(role)
+        if not h: continue
+        hits = []
+        for i in rn:
+            if i == h: continue
+            r = [pd(x, i, h) for x in src]
+            if any(t is None for t in r): continue
+            if role == 'fastest':            # the best mean: dream standing in for the laptop's x86 classes, the Tegra for ARMv7
+                m = sum(t[0] for t in r) / len(r); ok = m < 0; why = 'the mean of %s %s' % ('+'.join(src), pct(m))
+            elif role == 'arm':
+                m = r[0][0]; ok = m < 0; why = 'rage %s +/- %.2f%%' % (pct(m), r[0][1] * 100)
+            else:                            # the knee, small and fast on ARMv7: the role's rule, any speed gain counted
+                b = C[i]['total'] / C[h]['total'] - 1; m = min(t[0] for t in r)
+                ok = (m < 0 or b <= -B) and all(math.exp(t[0]) - 1 < 2 * T for t in r) and b < B
+                why = '%s, bytes %+.2f%%' % (', '.join('%s %s' % (x, pct(t[0])) for x, t in zip(src, r)), b * 100)
+            if ok: hits.append((m, i, why))
+        hits.sort()
+        print('  %s - %s: %d%s' % (role, h, len(hits), ''.join('\n    %s %s' % (i, w) for m, i, w in hits[:12])
+                                  + ('\n    ... %d more' % (len(hits) - 12) if len(hits) > 12 else '')))
+        for m, i, w in hits: flag.setdefault(i, []).append(role)
+    print('flagged: %d - they join the follow-up\'s list%s' % (len(flag), (': ' + ' '.join(sorted(flag))) if flag else ''))
+    if opt('--flagged'):
+        with open(opt('--flagged'), 'w') as o:
+            o.write('# The screen\'s flagged (lab/evolve/followup-roles.py --screen, Iteration 617), for the next follow-up\'s list\n\n')
+            for i in sorted(flag): o.write(json.dumps(dict({k: C[i][k] for k in C[i] if k != 'why'}, why='found before - flagged by the screen (%s)' % ', '.join(flag[i])), sort_keys=True) + '\n')
+    sys.exit(0)
 CL, gap = {}, []
 for i in C:
     if not all(i in P[s] for p in PARTS.values() for s in p): gap.append(i); continue

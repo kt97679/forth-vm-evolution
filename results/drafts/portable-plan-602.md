@@ -33,7 +33,7 @@ replaced where a design beats the one there by the thresholds after re-measure, 
 (lab/evolve/pack-designs.py). The run is no series run: no stopping line, no gene votes (its own ledger line).
 
 **After the follow-up** (Iteration 616; the owner: fixed before seed 88's follow-up returns, and checked to lose no good
-design). Another portable run - seed 89, 21 hours, seed 88's setup with every earlier portable front carried - when the
+design). Another portable run - seed 89, `seed 89 nojit 21h widths`, every earlier portable front carried, no experiment - when the
 follow-up confirms that seed 88's search found something: one of its designs, re-measured, beats the best of those found
 before by the stopping rule's thresholds - the laptop alone at either width, a class (x86-64, x86-32, ARMv7) or the mean
 of the three by 2% with the paired difference 2 SE or more, binary + image by 1% or memory by 4 KB (exact) - or takes a
@@ -49,3 +49,20 @@ Its first form keyed on one design, one machine and one width (c7814def6d agains
 cells): a gain in another class or a role would have stopped the search - widened to every class, extreme and role. As
 before 616: the follow-up re-measures 30 of seed 88's 405 designs on the union's front (select(), by in-run numbers); the
 rest are not re-measured across machines - kept, recorded, for a later need.
+
+**The screen during seed 89** (Iteration 617; the owner: the second of 616's two options). Its remote lines, idle
+otherwise, measure results/screen-seed88.md (portable-followup.py --rest): the 375 of seed 88's 405 designs on the union's
+front that its follow-up does not re-measure, and the six portable role holders to pair them with - dream at both widths, 10
+rounds, 8 sessions a width; the Tegra, 3 rounds, 3 sessions (seed 88's chain's rates: dream 11 and 10 s a design a session,
+the Tegra 17 s a round and 5 s a design; its own GCC builds of about 300 designs not timed - the third session may be cut
+short). REMOTES then, as printed: `rage.lan prebuiltarm 4 3 1255 --cell 4 --rejected 4 --sessions 3 --also
+@results/screen-seed88.md`, `dream.lan prebuilt32 4 10 625 --cell 4 --rejected 6 --sessions 8 --also
+@results/screen-seed88.md`, `dream.lan prebuilt64 4 10 625 --from prebuilt32 --sessions 8`. At seed 89's processing:
+chain-sessions.py lays the lines out (results/chain-screen88); `followup-roles.py results/screen-seed88.md
+results/chain-screen88 --screen --roles ... --flagged results/screen-flagged-seed88.md` flags each design that looks better
+than a speed role's holder by the role's own rule, loosened - dream standing in for the laptop, any gain counted, no line 4%
+slower nor 1% larger; the flagged join seed 89's follow-up list (portable-followup.py --also), where the role's rule
+decides. Tested on 611's readings with 601's holders: from the remote lines alone it flags the two designs 611 gave roles,
+782f3ad7ff first; with today's holders, none of seed 87's. If the portable search stops instead, the screen does not run and
+the 375 stay recorded, as at 616 - a remote-only chain for them the owner's call then.
+

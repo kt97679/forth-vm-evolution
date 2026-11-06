@@ -16,6 +16,11 @@ portable.py --front wrote them (results/portable-front-seed87.md: the 348 before
 in place of the pool of the seeds before 87 and the final set (the default, seed 87's). --holders FILE: the relf
 handoff's designs (results/relf-designs-611.md), each JIT-free one not listed yet added, so a role is re-measured beside
 its holder (610 added 690981ca5b and c2ef9488ff by hand).
+--also FILE (Iteration 617): records added as they are, each not listed yet, its own why - the screen's flagged
+(followup-roles.py --screen --flagged). --rest OUT2 (Iteration 617; results/drafts/portable-plan-602.md, "After the follow-up"): the run's other designs on the
+union's front - those select() left out - and the holders, one record a line: the screen the next portable run's remote
+lines measure; its REMOTES lines printed, sized to --hours from seed 88's chain's rates (dream 11 s a design a session at
+4-byte cells and 10 at 8-byte, 10 rounds; the Tegra 17 s a round and 5 s a design, at 3 rounds).
 Prints the chain's lines - NEXT-RUN's `experiment loadtest.py --ids OUT --rounds 10` and REMOTES' two hosts - sized from
 the measured rates (chain D: the laptop about 34 s a design for its four readings at 10 rounds; dream about 10 s a design
 a session at 10 rounds; the Tegra about 18 s a round and 5 s a design, its stages 16 minutes), to fit --hours (default
@@ -27,7 +32,7 @@ if len(a) < 3: sys.exit(__doc__)
 db, pick, out = a[:3]; k = int(a[a.index('--k') + 1]) if '--k' in a else 30
 hours = float(a[a.index('--hours') + 1]) if '--hours' in a else None
 opt = lambda n: a[a.index(n) + 1] if n in a else None
-before, holders = opt('--before'), opt('--holders')
+before, holders, rest, also = opt('--before'), opt('--holders'), opt('--rest'), opt('--also')
 recs = lambda f: [json.loads(l) for l in open(f) if l.strip().startswith('{')]
 sys.argv = ['x']; import evolve as E
 import hv, stopping
@@ -59,6 +64,8 @@ for r in P:
     if r['id'] not in seen: rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - ' + str(r.get('why', 'the pick')))); seen.add(r['id'])
 for r in (recs(holders) if holders else []):
     if r['id'] not in seen and not jit(r): rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - the relf handoff\'s role holder')); seen.add(r['id'])
+for r in (recs(also) if also else []):
+    if r['id'] not in seen and not jit(r): rows.append(dict({x: r[x] for x in keep if x in r}, why=r.get('why', 'found before - added'))); seen.add(r['id'])
 with open(out, 'w') as o:
     o.write('# The portable run\'s follow-up (lab/evolve/portable-followup.py): the run\'s best (%d of its %d designs on the union\'s\n'
             '# true front, by final-set.py\'s select()) and the best of the portable designs found before (%d: final-pick.py\'s set\n'
@@ -74,3 +81,22 @@ print('NEXT-RUN:  experiment loadtest.py --ids %s --rounds 10' % out)
 print('REMOTES:   rage.lan     prebuiltarm 4       10      %d      --cell 4 --rejected 4 --sessions %d --also @%s' % (int(H * 60) - 5, s_r, out))
 print('           dream.lan    prebuilt32  4       10      %d      --cell 4 --rejected 6 --sessions %d --also @%s' % (int(H * 30) - 5, s_d, out))
 print('           dream.lan    prebuilt64  4       10      %d      --from prebuilt32 --sessions %d' % (int(H * 30) - 5, s_d))
+if rest:                                              # 617: the screen - the union's front less the chosen, with the holders
+    rr = [dict({x: on[i][x] for x in keep if x in on[i]}, why='the run - the screen (the rest of the union\'s front)')
+          for i in sorted(on, key=lambda i: (on[i]['speed'], i)) if i not in seen]
+    hold = [dict({x: r[x] for x in keep if x in r}, why='found before - the relf handoff\'s role holder')
+            for r in (recs(holders) if holders else []) if not jit(r)]
+    with open(rest, 'w') as o:
+        o.write('# The screen (lab/evolve/portable-followup.py --rest, Iteration 617): the run\'s %d other designs on the union\'s true\n'
+                '# front - those its follow-up does not re-measure - and the relf handoff\'s %d portable role holders to pair them with,\n'
+                '# measured on the remote lines during the next portable run (results/drafts/portable-plan-602.md, "After the follow-up").\n\n'
+                % (len(rr), len(hold)))
+        for r in rr + hold: o.write(json.dumps(r, sort_keys=True) + '\n')
+    m = len(rr) + len(hold); H2 = hours or 21.0
+    d32, d64, tg = m * 11 / 60.0, m * 10 / 60.0, m * (3 * 17 + 5) / 60.0
+    print('the screen: %d designs -> %s (the run %d, the holders %d); a session: dream %.0f and %.0f minutes (4- and 8-byte), the '
+          'Tegra %.0f at 3 rounds' % (m, rest, len(rr), len(hold), d32, d64, tg))
+    sd = max(1, min(int((H2 * 30 - 5) // d32), int((H2 * 30 - 5) // d64))); st = max(1, int((H2 * 60 - 5 - 16) // tg))
+    print('REMOTES:   rage.lan     prebuiltarm 4       3       %d     --cell 4 --rejected 4 --sessions %d --also @%s' % (int(H2 * 60) - 5, st, rest))
+    print('           dream.lan    prebuilt32  4       10      %d      --cell 4 --rejected 6 --sessions %d --also @%s' % (int(H2 * 30) - 5, sd, rest))
+    print('           dream.lan    prebuilt64  4       10      %d      --from prebuilt32 --sessions %d' % (int(H2 * 30) - 5, sd))

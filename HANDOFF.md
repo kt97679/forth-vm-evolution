@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 616.
+- master: Iteration 617.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -111,7 +111,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   judged (the owner's trades, as 611), results/followup-roles-seed88.md, the package and designs/ when a role changes
   (pack-designs.py, export-designs.py), the predictions, NEXT-RUN, this card, PROGRESS, make-bundle.sh - process-finish.sh
   is for seeds. **What its result triggers** (616, fixed before it returns; checked to lose no good design): another
-  portable run, seed 89 (21 hours, seed 88's setup), when a seed 88 design beats the best found before by the thresholds
+  portable run, seed 89 (`seed 89 nojit 21h widths`, no experiment; 617: its remote lines screen
+  results/screen-seed88.md - the 375 of seed 88's union front the follow-up does not re-measure, with the six holders - and
+  the flagged, followup-roles.py --screen --flagged, join its follow-up via portable-followup.py --also), when a seed 88 design beats the best found before by the thresholds
   after re-measure - the laptop at either width, a class or the mean (2%, 2 SE), size 1%, memory 4 KB - or takes a role;
   else the portable search stops (results/drafts/portable-plan-602.md, "After the follow-up"; the verdict in
   /tmp/followup/gain.txt).

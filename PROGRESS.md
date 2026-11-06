@@ -10893,3 +10893,13 @@ added); the first form's trigger - one design, one machine, one width - widened,
 the search. lab/evolve/followup-roles.py --gain prints the verdict (process-followup.sh's OUT/gain.txt); on 611's readings
 611's outcome (the mean -4.20% against 8cc7f60d6b, binary + image -0.98%), results/drafts/followup-rehearsal-615.sh PASS.
 
+## Iteration 617 - 2026-11-06 - Claude
+
+Seed 89's setup in the rule, the owner's choice: `seed 89 nojit 21h widths` with its remote lines screening the 375 of seed
+88's 405 union-front designs its follow-up does not re-measure, beside the six portable role holders (results/screen-seed88.md,
+portable-followup.py --rest; the follow-up's list made again by it is the running chain's, byte for byte): dream 8 sessions
+a width at 10 rounds, the Tegra 3 at 3. followup-roles.py --screen flags each design that looks better than a speed role's
+holder by the role's own rule, loosened; on 611's readings with 601's holders it flags the two designs 611 gave roles,
+782f3ad7ff first; --flagged and portable-followup.py --also carry them into the next follow-up; process-followup.sh keeps
+the pick's JSON (results/followup-pick-seedN.json); the rehearsal PASS, 5 of 5. Files: results/screen-seed88.md.
+
