@@ -10871,3 +10871,15 @@ results/followup-seed88.md, results/followup-pick-seed87.json (followup-pick-see
 results/drafts/gcc-clang-614.py, results/chain-seed88/ - README.md, and in sK dream.lan-prebuilt32.out.json,
 dream.lan-prebuilt64.out.json and rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md,
 dream.lan-prebuilt64.md and rage.lan-prebuiltarm.md (rage s1-s12), s1/loadtest.md the laptop's step.
+
+## Iteration 615 - 2026-11-06 - Claude
+
+While seed 88's follow-up chain runs (the owner: both here): its processing one command - lab/evolve/process-followup.sh
+(611's steps by hand: unpack, the chain's lines, chain-sessions.py, final-pick.py over every session, the roles) and
+lab/evolve/followup-roles.py (results/drafts/followup-roles-611.py made general: its 50 lines to the byte; the handoff's six
+portable roles; the 614 predictions' figures). Rehearsed: results/drafts/followup-rehearsal-615.sh PASS - 611's readings made
+back into a chain archive, 210 of 210 readings laid out 611's byte for byte, the pick and the roles 611's; on seed 88's real
+archive 145 of 145 files results/chain-seed88's. deaths-check.py: a death by a retired value, refused here in the run's
+words, expected - seed 88's 2 open now 0 (2 refused the same); its --self-test (3 of 3) in run-tests. NEXT-RUN none while
+the chain runs. Files: results/drafts/followup-rehearsal-615.sh.
+

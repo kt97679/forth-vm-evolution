@@ -383,6 +383,10 @@ echo "the stopping rule (lab/evolve/stopping.py --self-test):"
 if out=$(python3 "$ROOT/lab/evolve/stopping.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c24-124)"
 else printf '  %-12s FAIL   %s\n' stopping "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
 echo
+echo "a death by a retired value (lab/evolve/deaths-check.py --self-test - Iteration 615):"
+if out=$(python3 "$ROOT/lab/evolve/deaths-check.py" --self-test 2>&1); then printf '  %-12s ok     %s\n' deaths "$(printf '%s' "$out" | tail -1 | cut -c25-125)"
+else printf '  %-12s FAIL   %s\n' deaths "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
+echo
 echo "the JIT's value holes (lab/evolve/jitholes-check.py):"
 if out=$(python3 "$ROOT/lab/evolve/jitholes-check.py" 2>&1); then printf '  %-12s ok     %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c17-117)"
 else printf '  %-12s FAIL   %s\n' jitholes "$(printf '%s' "$out" | tail -1 | cut -c1-110)"; FAILED=1; fi
