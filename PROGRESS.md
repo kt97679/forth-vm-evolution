@@ -10855,3 +10855,19 @@ exactly; seed 87's front as a stand-in run gives its pool's ledger numbers at --
 self-test 4 checks PASS; on the follow-up's readings the bases and the control at 2.094, 1.813 and 1.072, as recorded,
 the bar 1.233. NEXT-RUN none while seed 88 runs. Files: results/portable-front-seed87.md,
 results/drafts/dream32-experiment-613.py.
+
+## Iteration 614 - 2026-11-06 - Claude
+
+Seed 88 processed - the second portable run, 295 generations, no crash, every remote session complete: BETTER than every
+portable design found before it by one extreme (the fastest at 32 bits, c7814def6d, a GCC build, 0.2803 against 0.2888;
+the hypervolume 0.2936 against the pool's 0.2979). The dream 32-bit experiment: the compiler - clang brings both GCC bases
+to the control's dream/laptop ratio at 4-byte cells (2.13 and 1.82 to 1.17; the control 1.105; dream 25-38% faster, the
+laptop 14-18% slower), no other single gene; across seed 87's follow-up's 45, GCC median 1.57, clang 1.13. Predictions:
+three right, one wrong. The follow-up chain set, 9 hours (the owner: the hours Claude's): the 46 of
+results/followup-seed88.md, by lab/evolve/portable-followup.py's new --before and --holders (its union's front 405, as
+portable.py's). On master: build, run-tests PASS, validate 7 of 7 IDENTICAL, the gate 469 of 469 alive. Files:
+results/evolve-amd-ryzen-7-pro-8840hs-seed88.md, results/xcheck-seed88.md, results/dream32-experiment-seed88.md,
+results/followup-seed88.md, results/followup-pick-seed87.json (followup-pick-seed87.md's set, reproduced exactly),
+results/drafts/gcc-clang-614.py, results/chain-seed88/ - README.md, and in sK dream.lan-prebuilt32.out.json,
+dream.lan-prebuilt64.out.json and rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md,
+dream.lan-prebuilt64.md and rage.lan-prebuiltarm.md (rage s1-s12), s1/loadtest.md the laptop's step.

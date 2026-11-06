@@ -216,4 +216,11 @@
 # dream and the Tegra measure during the run (REMOTES). The chain about 22 hours.
 # Iteration 613 (seed 88 running, started from 612's bundle): none - a pull of this bundle must not start seed 88 again
 # (as 586 for chain B); seed 88's processing writes the next line.
-none
+# Iteration 614 (the owner: the hours Claude's - 9): seed 88's follow-up chain (results/drafts/portable-plan-602.md,
+# "Then"): the 46 of results/followup-seed88.md (lab/evolve/portable-followup.py --before --holders) - seed 88's 30
+# best on the union's front, seed 87's follow-up pick's 13 (results/followup-pick-seed87.json), the relf handoff's
+# 690981ca5b, c2ef9488ff and 64a7345393 - side by side, 10 rounds a step, about 29 minutes: 20 listed, about 18 fit (the
+# rest skipped past the remote lines' deadline, as 610's). The chain about 9 hours. Sized on seed 87's follow-up noise
+# (results/followup-roles-seed87.md): 2% at about 5.5 SE on the Tegra (3 sessions) and the laptop at 4-byte cells, 19
+# on dream (35 sessions a width) - 6 hours would leave the Tegra 2 sessions, 4.5 SE; 13 (610's) more than needed.
+experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10 then experiment loadtest.py --ids results/followup-seed88.md --rounds 10

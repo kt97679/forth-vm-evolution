@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""lab/evolve/portable-followup.py DB PICK.json OUT [--k 30] [--hours H] - the portable run's follow-up chain written
+"""lab/evolve/portable-followup.py DB PICK.json OUT [--k 30] [--hours H] [--before FILE] [--holders FILE] - the portable
+run's follow-up chain written
 (Iteration 604; results/drafts/portable-plan-602.md, "Then"): one session a machine re-measuring, side by side, the
 run's best and the best of the portable designs found before it.
 
@@ -10,6 +11,11 @@ role. OUT: the list, one record a line (loadtest.py --ids and xcheck.py --also @
     lab/evolve/portable.py names them), narrowed by final-set.py's select() to --k: the four extremes, then the designs
     adding the most hypervolume in the fixed box;
   - the pick's set: each design kept with its role.
+--before FILE (Iteration 614, seed 88's follow-up): the portable designs found before the run, one record a line, as
+portable.py --front wrote them (results/portable-front-seed87.md: the 348 before seed 88, seed 87's run among them) -
+in place of the pool of the seeds before 87 and the final set (the default, seed 87's). --holders FILE: the relf
+handoff's designs (results/relf-designs-611.md), each JIT-free one not listed yet added, so a role is re-measured beside
+its holder (610 added 690981ca5b and c2ef9488ff by hand).
 Prints the chain's lines - NEXT-RUN's `experiment loadtest.py --ids OUT --rounds 10` and REMOTES' two hosts - sized from
 the measured rates (chain D: the laptop about 34 s a design for its four readings at 10 rounds; dream about 10 s a design
 a session at 10 rounds; the Tegra about 18 s a round and 5 s a design, its stages 16 minutes), to fit --hours (default
@@ -20,19 +26,26 @@ a = sys.argv[1:]
 if len(a) < 3: sys.exit(__doc__)
 db, pick, out = a[:3]; k = int(a[a.index('--k') + 1]) if '--k' in a else 30
 hours = float(a[a.index('--hours') + 1]) if '--hours' in a else None
+opt = lambda n: a[a.index(n) + 1] if n in a else None
+before, holders = opt('--before'), opt('--holders')
+recs = lambda f: [json.loads(l) for l in open(f) if l.strip().startswith('{')]
 sys.argv = ['x']; import evolve as E
 import hv, stopping
 _s = importlib.util.spec_from_file_location('final_set', os.path.join(HERE, 'final-set.py')); FS = importlib.util.module_from_spec(_s); _s.loader.exec_module(FS)
 _c = importlib.util.spec_from_file_location('confirm', os.path.join(HERE, 'confirm.py')); CF = importlib.util.module_from_spec(_c); _c.loader.exec_module(CF)
 jit = lambda r: bool(E.express(E.canon(r['genome'])).get('jit'))
 R = {i: r for i, r in hv.load(db, E).items() if r.get('genome') and not jit(r)}
-method, runs = stopping.series(stopping.LEDGER); runs = [r for r in runs if r['seed'] < 87]
 Q = {}
-for f in CF.pool_files(runs + CF.confirmations(stopping.LEDGER, 87)): Q.update({i: r for i, r in hv.load(f, E).items() if r.get('genome') and not jit(r)})
-for l in open(os.path.join(HERE, '..', '..', 'results', 'final-set-chainsBCD-seed86.md')):
-    if l.startswith('{'):
-        x = json.loads(l)
+if before:
+    for x in recs(before):
         if not jit(x): Q.setdefault(x['id'], dict(x, speed=x.get('inrun') or x['speed'], speed32=x.get('inrun32') or x['speed32']))
+else:
+    method, runs = stopping.series(stopping.LEDGER); runs = [r for r in runs if r['seed'] < 87]
+    for f in CF.pool_files(runs + CF.confirmations(stopping.LEDGER, 87)): Q.update({i: r for i, r in hv.load(f, E).items() if r.get('genome') and not jit(r)})
+    for l in open(os.path.join(HERE, '..', '..', 'results', 'final-set-chainsBCD-seed86.md')):
+        if l.startswith('{'):
+            x = json.loads(l)
+            if not jit(x): Q.setdefault(x['id'], dict(x, speed=x.get('inrun') or x['speed'], speed32=x.get('inrun32') or x['speed32']))
 U = dict(Q); U.update(R)
 on = {i: R[i] for i in hv.true_front(U, E) if i in R and i not in Q}
 b = json.load(open(hv.BOUNDS))
@@ -44,11 +57,13 @@ for i, w in chosen:
     rows.append(dict({x: on[i][x] for x in keep if x in on[i]}, why=w)); seen.add(i)
 for r in P:
     if r['id'] not in seen: rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - ' + str(r.get('why', 'the pick')))); seen.add(r['id'])
+for r in (recs(holders) if holders else []):
+    if r['id'] not in seen and not jit(r): rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - the relf handoff\'s role holder')); seen.add(r['id'])
 with open(out, 'w') as o:
     o.write('# The portable run\'s follow-up (lab/evolve/portable-followup.py): the run\'s best (%d of its %d designs on the union\'s\n'
-            '# true front, by final-set.py\'s select()) and the best of the portable designs found before (%d, final-pick.py\'s set\n'
-            '# on the 282), re-measured side by side - one session a machine. In-run numbers for the run\'s, re-measured for the rest.\n\n'
-            % (len(chosen), len(on), len(rows) - len(chosen)))
+            '# true front, by final-set.py\'s select()) and the best of the portable designs found before (%d: final-pick.py\'s set\n'
+            '# in %s%s), re-measured side by side - one session a machine. In-run numbers for the run\'s, re-measured for the rest.\n\n'
+            % (len(chosen), len(on), len(rows) - len(chosen), os.path.basename(pick), ', the relf handoff\'s role holders' if holders else ''))
     for r in rows: o.write(json.dumps(r, sort_keys=True) + '\n')
 n = len(rows); lap_h = n * 34 / 3600.0; dream_m = n * 10 / 60.0; rage_m = 16 + n * (10 * 18 + 5) / 60.0
 H = hours or max(lap_h, rage_m / 60.0)

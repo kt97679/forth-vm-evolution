@@ -1302,3 +1302,19 @@ dream at both widths and the Tegra measure during the run. (1) The chain done wi
 the stopping rule's thresholds) - 40/60. (3) The clang build brings both bases' dream/laptop ratio at 4-byte cells within
 15% of the control's (782f3ad7ff, 1.07) - 70/30. (4) A single reverted gene other than the compiler does the same for both
 bases - 35/65 (regpin the likeliest).
+
+**Scored at seed 88 (Iteration 614): three right, one wrong.** (1) right - done, no crash: seed 88 to generation 295; every session
+complete (the laptop's step of 20 rounds, dream 30 a width, the Tegra 12, each all 20). (2) right, by one extreme -
+BETTER by the fastest at 32 bits, c7814def6d 0.2803 against 0.2888 (-2.9%); the hypervolume 0.2936 against the pool's
+0.2979, the fastest -1.6%, the smallest -0.7%, each short of its bar. (3) right - the clang build: 9f8811f7f4 2.130 ->
+1.167, 690981ca5b 1.824 -> 1.166, the control 1.105 (the bar 1.271). (4) wrong - none of regpin, rtimm, nogcse, gotodup,
+lto, noinls on both; regpin +3.9% and +1.8% on the ratio, the wrong way (results/dream32-experiment-seed88.md).
+
+## Seed 88's follow-up chain, 9 hours - predicted (Iteration 614)
+
+The 46 of results/followup-seed88.md - seed 88's 30 best on the union's front, seed 87's follow-up pick's 13, the relf
+handoff's 690981ca5b, c2ef9488ff and 64a7345393 - side by side on the laptop (about 18 sessions), dream (35 a width) and
+the Tegra (3). (1) The chain done, every session of every line complete - 80/20. (2) At least one of the handoff's six
+portable roles goes to a seed 88 design - 55/45. (3) The fastest portable role stays with 782f3ad7ff: no seed 88
+design's mean over the three classes 2% or more below its - 65/35. (4) c7814def6d, a GCC build, at 1.36 or more times the
+laptop's time on dream at 4-byte cells (seed 87's follow-up: GCC median 1.57, clang 1.13) - 75/25.

@@ -814,3 +814,16 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   30 sessions a width, the Tegra 12; the laptop one step of 20 rounds after the run (a repeat would be skipped: the remote
   deadline passed). Its processing: process-run.sh, portable.py's pool widened to seed 87's designs first; the experiment
   by chain-sessions.py, each variant's dream/laptop ratio at 4-byte cells against its base's (as followup-roles-611.py).
+
+## The card's seed 88 bullet at Iteration 613 (replaced at 614 by its processing)
+
+- **Seed 88 running (started from 612's bundle; 613: NEXT-RUN none, so a pull of this bundle cannot start it again)** -
+  `seed 88 nojit 21h widths then experiment loadtest.py --ids results/candidates-dream32-612.md --rounds 20`, about 22
+  hours: the second portable run, seed 87's setup again (21 hours: seed 87's winners came late, at generations 171 and
+  258), the earlier fronts carried, seed 87's among them; REMOTES: the dream 32-bit experiment's 20 (9f8811f7f4 and
+  690981ca5b with one gene reverted at a time, 782f3ad7ff the control) - dream 30 sessions a width, the Tegra 12; the
+  laptop one step of 20 rounds after the run. **Its processing, prepared (613)**: process-run.sh as usual - portable.py
+  now judges the run against every portable design found before it, seed 87's included (the ledger's portable lines:
+  its front and its extremes from every alive design; results/portable-front-seed87.md, the 348 found before seed 88);
+  the experiment: `chain-sessions.py /tmp/process results/chain-seed88`, then `python3
+  results/drafts/dream32-experiment-613.py results/chain-seed88` - each variant against its base, predictions 3 and 4.

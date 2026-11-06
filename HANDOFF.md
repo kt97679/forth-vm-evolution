@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 613.
+- master: Iteration 614.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -85,16 +85,22 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   tie); a627b954c6 for 22420b3b61 (the owner: 4 KB traded); 64a7345393 the smallest (612). The noise half the sizing's
   (the Tegra 0.44% a session). A GCC lineage runs about twice the laptop's time on dream at 32 bits - not factor 3 as 611
   wrote (factor needs tag2: expressed in none of them, 612); its expressed genes confounded - seed 88's chain tests them.
-- **Seed 88 running (started from 612's bundle; 613: NEXT-RUN none, so a pull of this bundle cannot start it again)** -
-  `seed 88 nojit 21h widths then experiment loadtest.py --ids results/candidates-dream32-612.md --rounds 20`, about 22
-  hours: the second portable run, seed 87's setup again (21 hours: seed 87's winners came late, at generations 171 and
-  258), the earlier fronts carried, seed 87's among them; REMOTES: the dream 32-bit experiment's 20 (9f8811f7f4 and
-  690981ca5b with one gene reverted at a time, 782f3ad7ff the control) - dream 30 sessions a width, the Tegra 12; the
-  laptop one step of 20 rounds after the run. **Its processing, prepared (613)**: process-run.sh as usual - portable.py
-  now judges the run against every portable design found before it, seed 87's included (the ledger's portable lines:
-  its front and its extremes from every alive design; results/portable-front-seed87.md, the 348 found before seed 88);
-  the experiment: `chain-sessions.py /tmp/process results/chain-seed88`, then `python3
-  results/drafts/dream32-experiment-613.py results/chain-seed88` - each variant against its base, predictions 3 and 4.
+- **Seed 88 processed (614)** - the second portable run: portable.py BETTER than every portable design found before it,
+  seed 87's included, by one extreme - the fastest at 32 bits, c7814def6d (a GCC build) 0.2803 against 0.2888; the
+  hypervolume (0.2936 against 0.2979), the fastest, the smallest and memory short of their bars
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed88.md). The dream 32-bit experiment: the compiler
+  (results/dream32-experiment-seed88.md) - clang brings both GCC bases to the control's dream/laptop ratio at 4-byte cells
+  (2.13 and 1.82 to 1.17; the control 1.105): dream 25-38% faster, the laptop 14-18% slower, so the laptop's selection
+  keeps GCC at 32 bits; no other single gene. General: seed 87's follow-up's 45, GCC median 1.57, clang 1.13
+  (results/drafts/gcc-clang-614.py). A front-end effect on dream's Skylake (jump alignment) the candidate, untested - a
+  count of the engines' dispatch jumps on 32-byte boundaries would test it here.
+- **Seed 88's follow-up chain set (614; the owner: the hours Claude's - 9)** - NEXT-RUN 20 steps of `experiment
+  loadtest.py --ids results/followup-seed88.md --rounds 10` (about 18 fit), REMOTES the Tegra 3 sessions, dream 35 a width:
+  the 46 - seed 88's 30 best on the union's front, seed 87's follow-up pick's 13 (results/followup-pick-seed87.json), the
+  handoff's 690981ca5b, c2ef9488ff and 64a7345393 (portable-followup.py --before results/portable-front-seed87.md --holders
+  results/relf-designs-611.md). Sized on seed 87's follow-up noise: 2% at about 5.5 SE on the Tegra and on the laptop at
+  4-byte cells. Its processing as 611's (results/followup-pick-seed87.md's command, results/drafts/followup-roles-611.py):
+  the roles against results/handoff-relf-611.md; the package and designs/ rebuilt when a role changes.
 - **`make` builds the winners (608; ten at 611)** - the top Makefile and designs/ (designs/README.md): the ten of the
   relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
   smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six
@@ -117,10 +123,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 88's chain - 4 (612).
+- **Predictions due** (results/predictions.md): seed 88's follow-up chain - 4 (614).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; seed 88's chain archive when it returns. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; the follow-up chain's archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

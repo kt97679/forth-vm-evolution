@@ -85,6 +85,11 @@
 # (out at 602) dream.lan    prebuilt64  4       10      330      --from prebuilt32 --sessions 40
 #   Iteration 612 (seed 88): the dream 32-bit experiment's 20 (results/candidates-dream32-612.md) - the Tegra 12 sessions
 #   (28 designs a session with the sample and the rejected: about 90 minutes, from the follow-up's rate), dream 30 a width.
-rage.lan     prebuiltarm 4       10      1250     --cell 4 --rejected 4 --sessions 12 --also @results/candidates-dream32-612.md
-dream.lan    prebuilt32  4       10      600      --cell 4 --rejected 6 --sessions 30 --also @results/candidates-dream32-612.md
-dream.lan    prebuilt64  4       10      600      --from prebuilt32 --sessions 30
+# (out at 614) rage.lan     prebuiltarm 4       10      1250     --cell 4 --rejected 4 --sessions 12 --also @results/candidates-dream32-612.md
+# (out at 614) dream.lan    prebuilt32  4       10      600      --cell 4 --rejected 6 --sessions 30 --also @results/candidates-dream32-612.md
+# (out at 614) dream.lan    prebuilt64  4       10      600      --from prebuilt32 --sessions 30
+#   Iteration 614 (seed 88's follow-up, 9 hours): the 46 of results/followup-seed88.md, as portable-followup.py printed
+#   them - the Tegra 3 sessions (about 158 minutes each), dream 35 a width (about 8 minutes a session a width).
+rage.lan     prebuiltarm 4       10      535      --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed88.md
+dream.lan    prebuilt32  4       10      265      --cell 4 --rejected 6 --sessions 35 --also @results/followup-seed88.md
+dream.lan    prebuilt64  4       10      265      --from prebuilt32 --sessions 35
