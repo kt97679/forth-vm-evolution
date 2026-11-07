@@ -7,7 +7,7 @@ rows = {json.loads(l)['id']: json.loads(l) for l in open(sys.argv[1])}; P = sys.
 ROLES = [('c7c35f9c97', 'fastest on x86-64'), ('4ef851fd8e', 'fastest on x86-32'), ('06b188f45b', 'best all-round (the best mean of the three classes)'),
          ('bac37f35a2', 'smallest of the JIT designs'), ('782f3ad7ff', 'fastest portable; fastest portable on x86'),
          ('690981ca5b', 'fastest on ARMv7'), ('c2ef9488ff', 'the knee: fast portable on x86, small'), ('a627b954c6', 'small, fast on ARMv7'),
-         ('fb0d57c8a2', 'least memory'), ('4dd4e3e7e2', 'smallest')]
+         ('fb0d57c8a2', 'least memory'), ('64a7345393', 'smallest')]
 G = open('lab/evolve/GENES.md').read().split('\n')
 GLOSS = {   # the genes GENES.md has no row for, from what the repository states elsewhere (601)
     'tos': 'the top of the data stack in a register (GENES.md\'s CV8 table; engine/vm-lab-tos.c)',
@@ -41,7 +41,7 @@ def size(i, c):
 def ok(i, c): t = open(os.path.join(P, i, 'cell%d' % c, 'check.txt')).read(); return '%d/9' % t.count(' right')
 L = ['# Forth designs for relf - the winners of forth-vm-evolution\'s search (Iteration 611)', '',
      'Ten designs - the lab\'s final set\'s (21 designs, results/final-set-chainsBCD-seed86.md) and the portable run\'s',
-     '(seeds 87 and 88, results/followup-pick-seed87.md and followup-pick-seed88.md) - chosen so that every',
+     '(seed 87, results/followup-pick-seed87.md) - chosen so that every',
      'criterion\'s winner is here: no design is best at everything - none comes within 25% of the best on all three machine',
      'classes, and the fast designs are large while the small ones are slow. Every one is the CV8 byte-coded family, built',
      'at both cell widths and checked against the lab\'s hand-made s6-cv8b on the nine workloads it measures.', '',
@@ -50,10 +50,8 @@ L = ['# Forth designs for relf - the winners of forth-vm-evolution\'s search (It
      'loop, bubble, ackermann, apps) - lower is faster, 0.185 is 5.4 times s6\'s speed. Each class the geometric mean of its',
      'machines, every session pooled: x86-64 - the laptop (AMD Ryzen 7 PRO 8840HS) and dream (Intel i7-6700) at 8-byte',
      'cells; x86-32 - the same at 4-byte cells; ARMv7 - rage (an NVIDIA Tegra), where a JIT design runs without its JIT (*).',
-     'The portable designs read side by side in the follow-up chain (Iteration 611: the laptop 28 sessions, dream 45 at',
-     '8-byte cells and 41 at 4-byte, the Tegra 5) - the smallest, 4dd4e3e7e2, in seed 88\'s (Iteration 621: the laptop 18,',
-     'dream 28 and 25, the Tegra 3), beside the other portable roles\' holders (782f3ad7ff there within 0.1% of its 611',
-     'figures); the four JIT designs in seed 86\'s chains B-D (the laptop 31, dream 42,',
+     'The six portable designs read side by side in the follow-up chain (Iteration 611: the laptop 28 sessions, dream 45 at',
+     '8-byte cells and 41 at 4-byte, the Tegra 5); the four JIT designs in seed 86\'s chains B-D (the laptop 31, dream 42,',
      'the Tegra 6). Size: the stripped engine plus the image, exact. Memory: peak resident, the',
      'laptop at 8-byte cells.', '',
      '| role | design | x86-64 | x86-32 | ARMv7 | bytes, 8-byte cells | bytes, 4-byte | memory KB | JIT | checks (8 / 4) |',

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 621.
+- master: Iteration 622.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -100,7 +100,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade, which he
   confirmed (621: "performance drop is too significant and size gain is too small"); no extreme gained - seed 88's in-run 32-bit lead,
   c7814def6d, 2.1% behind 9f8811f7f4 re-measured. By the 616/618 rule the **portable search stops** after two runs.
-- **Seed 89 is set** (621): the last JIT run (620, the owner's 21 hours) - `seed 89 21h widths carryall`, no experiment;
+- **Seed 89 running (started from 621's bundle at eca15d5; 622: NEXT-RUN none, so a pull of this bundle cannot start
+  it again)** - the last JIT run (620, the owner's 21 hours) - `seed 89 21h widths carryall`, no experiment;
   REMOTES 617's lines screening results/screen-seed88.md (the Tegra 1255 minutes, 3 sessions at 3 rounds; dream 625 a
   width, 8 sessions). **Its processing**: process-run.sh as a seed, with confirm.py's pool widened by --pool to the
   portable runs' fronts - the default (`confirm.py --pool-files 89`: seeds 77-84 and 86) leaves out seeds 87 and 88, and
