@@ -135,6 +135,9 @@ judges.
 
 ## Lessons - how faults got in, and the checks that catch them now
 
+- Branches of one chat share its sandbox (622): a second branch's edits landed in this tree mid-turn and `git commit -a`
+  swept three of them into eca15d5 (reverted at 997d945). Stage named paths; read `git status` before a commit; a file
+  changed that this session did not write is another session's.
 - A rehearsal reaches what a test of variants does not: the tail variants were built on s6, not on the two-bit tag, and
   t2call's path, which only a tag2 design has, kept its tail call a call at 32 bits under GCC (Iteration 405). Before the
   laptop runs a batch, evaluate a run's front with its genes on, and evolve a short run, in a scratch clone.

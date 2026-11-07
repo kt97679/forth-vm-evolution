@@ -24,6 +24,11 @@ below the holder's; the fastest on ARMv7: faster on the Tegra; the knee (dream a
 counts, so the screen is loose; the flagged join that run's follow-up list (--flagged OUT writes their records for
 portable-followup.py --also), where the role's rule decides. On 611's readings with 601's holders it flags the two designs
 611 gave roles, 782f3ad7ff first.
+--roles also takes the x86 roles (Iteration 622, the JIT run's follow-up - results/drafts/jit-run-plan-620.md): fast64 (the
+fastest on x86-64), fast32 (on x86-32), allround (the best mean), smalljit (the smallest JIT design), over every design with
+the class; the six portable roles then over the JIT-free designs alone (a record's "jit", portable-followup.py --jit), a
+design missing a class kept in the classes it has; a screened design (why: flagged by the screen) a portable role's
+candidate as the run's are. Rehearsed: results/drafts/jit-rehearsal-622.py.
 611's run again: followup-roles.py results/followup-seed87.md results/chain-followup87 --handoff results/handoff-relf-601.md
   --predictions 610 --roles fastest=690981ca5b,arm=690981ca5b,knee=c2ef9488ff,smallarm=22420b3b61,memory=fb0d57c8a2,smallest=cea114f47e"""
 import glob, io, json, math, os, re, statistics, sys
@@ -49,6 +54,8 @@ C = {r['id']: r for r in (json.loads(l) for l in open(CAND) if l.startswith('{')
 miss = sorted(set(i for i in R.values() if i not in C))
 if miss: sys.exit('followup-roles: holders not in %s: %s' % (CAND, ' '.join(miss)))
 NC = len(C)
+jit = lambda i: bool(C[i].get('jit'))                # 622: the JIT run's follow-up marks its JIT designs
+XK = {'fast64': 'x86-64', 'fast32': 'x86-32', 'allround': 'mean'}
 S = {s: {i: {} for i in C} for s in SOURCES}            # source -> design -> {session: reading}, in session order
 done = {s: [] for s in SOURCES}
 for k, d in enumerate(sorted(glob.glob(os.path.join(SESS, 's[0-9]*')), key=lambda d: int(d.rsplit('s', 1)[1]))):
@@ -108,12 +115,14 @@ if '--screen' in a:                                   # 617: the screen (results
             for i in sorted(flag): o.write(json.dumps(dict({k: C[i][k] for k in C[i] if k != 'why'}, why='found before - flagged by the screen (%s)' % ', '.join(flag[i])), sort_keys=True) + '\n')
     sys.exit(0)
 CL, gap = {}, []
-for i in C:
-    if not all(i in P[s] for p in PARTS.values() for s in p): gap.append(i); continue
-    c = {k: gm([P[s][i] for s in p]) for k, p in PARTS.items()}
-    c['mean'] = gm(list(c.values())); CL[i] = c
-D = [i for i in C if i in CL]
-lost = sorted(set(i for i in R.values() if i not in CL))
+for i in C:                                          # 622: a design missing a class kept in the classes it has
+    c = {k: gm([P[s][i] for s in p]) for k, p in PARTS.items() if all(i in P[s] for s in p)}
+    if len(c) < len(PARTS): gap.append(i)
+    if len(c) == len(PARTS): c['mean'] = gm(list(c.values()))
+    if c: CL[i] = c
+D = [i for i in C if 'mean' in CL.get(i, {})]
+PD = [i for i in D if not jit(i)]                    # 622: the portable roles over the JIT-free designs
+lost = sorted(set(i for r, i in R.items() if (XK[r] not in CL.get(i, {}) if r in XK else i not in CL if r == 'smalljit' else i not in D)))
 if lost: sys.exit('followup-roles: holders without a reading in every class: %s' % ' '.join(lost))
 CH = {}                                              # role -> the run's designs that beat its holder by the rule
 
@@ -134,11 +143,12 @@ def mdiff(a, b):
 
 
 run = lambda i: str(C[i].get('why', '')).startswith('the run')
+cand = lambda i: run(i) or 'flagged by the screen' in str(C[i].get('why', ''))   # 622: a screened design a portable role's candidate
 print('## Completeness - sessions, and the fewest of the %d a session measured' % NC)
 for s in SOURCES:
     if done[s]: print('  %-16s %2d sessions, each %d-%d of %d' % (s, len(done[s]), min(done[s]), max(done[s]), NC))
     else: print('  %-16s  0 sessions' % s)
-if gap: print('  missing a class, left out of the classes: %s' % ' '.join(gap))
+if gap: print('  missing a class, left out of the mean and the portable roles: %s' % ' '.join(gap))
 
 print('\n## Noise - a design\'s session-to-session SD (median over the %d), without and with each session\'s common shift' % NC)
 ids = sorted(D)
@@ -156,49 +166,69 @@ for s in SOURCES:
                                      (statistics.fmean(sh[-t3:]) - statistics.fmean(sh[:t3])) * 100))
 
 print('\n## The roles (%s) - speed 2%%, binary + image 1%%, memory 4 KB' % HAND)
-inc = R['fastest']; bm = min(D, key=lambda i: CL[i]['mean']); m, se = mdiff(bm, inc)
+inc = R['fastest']; bm = min(PD, key=lambda i: CL[i]['mean']); m, se = mdiff(bm, inc)
 print('  fastest portable (the best mean): %s %.4f against %s %.4f: %s +/- %.2f%%' % (bm, CL[bm]['mean'], inc,
                                                                                      CL[inc]['mean'], pct(m), se * 100))
-if bm != inc and math.exp(m) - 1 <= -T and run(bm): CH.setdefault('fastest portable', []).append(bm)
+if bm != inc and math.exp(m) - 1 <= -T and cand(bm): CH.setdefault('fastest portable', []).append(bm)
 for k in PARTS:
     m, se = cdiff(k, bm, inc)
     print('    %s %s %.4f, %s %.4f: %s +/- %.2f%%' % (k, bm, CL[bm][k], inc, CL[inc][k], pct(m), se * 100))
-inc = R['arm']; arm = sorted(D, key=lambda i: CL[i]['ARMv7'])
+inc = R['arm']; arm = sorted(PD, key=lambda i: CL[i]['ARMv7'])
 print('  fastest on ARMv7: %s' % ', '.join('%s %.4f' % (i, CL[i]['ARMv7']) for i in arm[:5]))
 for i in arm[:4]:
     if i != inc:
         m, se = cdiff('ARMv7', i, inc); print('    %s against %s: %s +/- %.2f%%' % (i, inc, pct(m), se * 100))
-        if math.exp(m) - 1 <= -T and run(i): CH.setdefault('fastest on ARMv7', []).append(i)
+        if math.exp(m) - 1 <= -T and cand(i): CH.setdefault('fastest on ARMv7', []).append(i)
 
 
 def role(inc, keys, name):
     print('  %s - %s: %s, %s B, %d KB' % (name, inc, ', '.join('%s %.4f' % (k, CL[inc][k]) for k in keys),
                                           format(C[inc]['total'], ','), C[inc]['rss']))
-    for i in sorted(D, key=lambda i: C[i]['total']):
+    for i in sorted(PD, key=lambda i: C[i]['total']):
         if i == inc: continue
         r = {k: CL[i][k] / CL[inc][k] - 1 for k in keys}; r['bytes'] = C[i]['total'] / C[inc]['total'] - 1
         th = dict({k: T for k in keys}, bytes=B)
         if any(r[k] <= -th[k] for k in r) and all(r[k] < th[k] for k in r):
             print('    %s: %s, memory %+d KB' % (i, ', '.join('%s %+.2f%%' % (k, v * 100) for k, v in r.items()),
                                                 C[i]['rss'] - C[inc]['rss']))
-            if run(i): CH.setdefault(name, []).append(i)
+            if cand(i): CH.setdefault(name, []).append(i)
 
 
 role(R['knee'], ('x86-64', 'x86-32'), 'the knee')
 role(R['smallarm'], ('ARMv7',), 'small, fast on ARMv7')
-inc = R['memory']; lm = [i for i in sorted(C, key=lambda i: C[i]['rss']) if i != inc]
+inc = R['memory']; lm = [i for i in sorted(C, key=lambda i: C[i]['rss']) if i != inc and not jit(i)]
 print('  least memory - %s %d KB; the next %s' % (inc, C[inc]['rss'], ', '.join('%s %d KB' % (i, C[i]['rss']) for i in lm[:2])))
-CH.update({'least memory': [i for i in lm if C[i]['rss'] <= C[inc]['rss'] - M and run(i)]} if any(
-    C[i]['rss'] <= C[inc]['rss'] - M and run(i) for i in lm) else {})
+CH.update({'least memory': [i for i in lm if C[i]['rss'] <= C[inc]['rss'] - M and cand(i)]} if any(
+    C[i]['rss'] <= C[inc]['rss'] - M and cand(i) for i in lm) else {})
 inc = R['smallest']
 print('  smallest - %s %s B; smaller:' % (inc, format(C[inc]['total'], ',')))
-for i in sorted(D, key=lambda i: C[i]['total']):
+for i in sorted(PD, key=lambda i: C[i]['total']):
     if C[i]['total'] >= C[inc]['total']: break
     print('    %s %s B (%+.2f%%): %s, memory %+d KB' % (i, format(C[i]['total'], ','),
           (C[i]['total'] / C[inc]['total'] - 1) * 100,
           ', '.join('%s %s +/- %.2f%%' % ((k,) + (lambda d: (pct(d[0]), d[1] * 100))(cdiff(k, i, inc))) for k in PARTS),
           C[i]['rss'] - C[inc]['rss']))
-    if run(i): CH.setdefault('smallest', []).append(i)
+    if cand(i): CH.setdefault('smallest', []).append(i)
+for key, name in (('fast64', 'fastest on x86-64'), ('fast32', 'fastest on x86-32'), ('allround', 'best all-round (the best mean)')):
+    inc = R.get(key)                                 # 622: the x86 roles, over every design with the class
+    if not inc: continue
+    k = XK[key]; xs = sorted((i for i in CL if k in CL[i]), key=lambda i: CL[i][k])
+    print('  %s: %s' % (name, ', '.join('%s %.4f' % (i, CL[i][k]) for i in xs[:5])))
+    for i in xs[:4]:
+        if i == inc: continue
+        m, se = mdiff(i, inc) if k == 'mean' else cdiff(k, i, inc)
+        print('    %s against %s: %s +/- %.2f%%' % (i, inc, pct(m), se * 100))
+        if math.exp(m) - 1 <= -T and run(i): CH.setdefault(name, []).append(i)
+inc = R.get('smalljit')
+if inc:
+    print('  the smallest JIT design - %s %s B; smaller JIT designs:' % (inc, format(C[inc]['total'], ',')))
+    for i in sorted((i for i in C if jit(i)), key=lambda i: C[i]['total']):
+        if C[i]['total'] >= C[inc]['total']: break
+        ks = [k for k in PARTS if k in CL.get(i, {}) and k in CL.get(inc, {})]
+        print('    %s %s B (%+.2f%%): %s, memory %+d KB' % (i, format(C[i]['total'], ','), (C[i]['total'] / C[inc]['total'] - 1) * 100,
+              ', '.join('%s %s +/- %.2f%%' % ((k,) + (lambda d: (pct(d[0]), d[1] * 100))(cdiff(k, i, inc))) for k in ks) or 'no class in common',
+              C[i]['rss'] - C[inc]['rss']))
+        if run(i): CH.setdefault('the smallest JIT design', []).append(i)
 
 if PRED == '610':
     print('\n## The predictions of Iteration 610')
@@ -256,8 +286,8 @@ def gain():
     for s, w in (('laptop64', '8-byte'), ('laptop32', '4-byte')):
         speed('the laptop alone, %s cells' % w, lambda i, s=s: P[s].get(i), lambda x, y, s=s: paired(s, x, y))
     for k in PARTS:
-        speed(k, lambda i, k=k: CL[i][k] if i in CL else None, lambda x, y, k=k: cdiff(k, x, y))
-    speed('the mean of the three', lambda i: CL[i]['mean'] if i in CL else None, mdiff)
+        speed(k, lambda i, k=k: CL.get(i, {}).get(k), lambda x, y, k=k: cdiff(k, x, y))
+    speed('the mean of the three', lambda i: CL.get(i, {}).get('mean'), mdiff)
     x, y = min(rn, key=lambda i: C[i]['total']), min(fb, key=lambda i: C[i]['total']); d = C[x]['total'] / C[y]['total'] - 1
     print('  binary + image: the run\'s %s %s B, found before %s %s B: %+.2f%% - %s' % (x, format(C[x]['total'], ','), y,
           format(C[y]['total'], ','), d * 100, 'GAIN' if d <= -B else 'no'))
@@ -268,6 +298,14 @@ def gain():
     print('  the roles: the run\'s designs beating a holder by the rule - %s' % ('; '.join('%s %s' % (k, ' '.join(v)) for k, v in CH.items())
                                                                               or 'none'))
     n = re.search(r'seed(\d+)', os.path.basename(CAND)); nxt = 'seed %d' % (int(n.group(1)) + 1) if n else 'the next portable run'
+    if any(jit(i) for i in C):                       # 622: the JIT run's follow-up (results/drafts/jit-run-plan-620.md)
+        nxt = nxt if n else 'the next JIT run'
+        if got: print('verdict: a gain confirmed (%s) - another JIT run, %s' % (', '.join(got), nxt))
+        elif CH: print('verdict: no extreme gained; role candidates above - another JIT run, %s, if an x86 role goes to one of the '
+                       'run\'s; the portable search reopened if a portable role goes to a screened design (the processing decides); '
+                       'else the JIT roles final' % nxt)
+        else: print('verdict: none confirmed - the JIT roles final, the freeze next')
+        return
     if got: print('verdict: a gain confirmed (%s) - another portable run, %s' % (', '.join(got), nxt))
     elif CH: print('verdict: no extreme gained; role candidates above - another portable run, %s, if a role goes to one of them (the '
                    'processing decides), else the portable search stops' % nxt)

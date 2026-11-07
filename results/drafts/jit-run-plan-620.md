@@ -27,4 +27,5 @@ search the same way. No follow-up due for the JIT and the screen flagged some: a
 
 **To prepare while the run goes** (today's follow-up tools are portable only): portable-followup.py keeping JIT designs (it
 drops them - a --jit option); followup-roles.py's roles for the x86 classes (the fastest on x86-64 and on x86-32 - it has
-ARMv7's) and the smallest JIT design; rehearsed as 615's. The run's predictions written when it is set.
+ARMv7's) and the smallest JIT design; rehearsed as 615's. The run's predictions written when it is set. **Done (622)**: portable-followup.py --jit --seed N,
+followup-roles.py's fast64, fast32, allround and smalljit, confirm.py's pool with the portable runs (results/drafts/jit-rehearsal-622.py).

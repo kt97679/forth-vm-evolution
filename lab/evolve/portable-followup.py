@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lab/evolve/portable-followup.py DB PICK.json OUT [--k 30] [--hours H] [--before FILE] [--holders FILE] - the portable
+"""lab/evolve/portable-followup.py DB PICK.json OUT [--k 30] [--hours H] [--before FILE] [--holders FILE] [--jit --seed N] - the portable
 run's follow-up chain written
 (Iteration 604; results/drafts/portable-plan-602.md, "Then"): one session a machine re-measuring, side by side, the
 run's best and the best of the portable designs found before it.
@@ -24,7 +24,12 @@ lines measure; its REMOTES lines printed, sized to --hours from seed 88's chain'
 Prints the chain's lines - NEXT-RUN's `experiment loadtest.py --ids OUT --rounds 10` and REMOTES' two hosts - sized from
 the measured rates (chain D: the laptop about 34 s a design for its four readings at 10 rounds; dream about 10 s a design
 a session at 10 rounds; the Tegra about 18 s a round and 5 s a design, its stages 16 minutes), to fit --hours (default
-the laptop's line). As the build user (it imports the evolver)."""
+the laptop's line). As the build user (it imports the evolver).
+--jit (Iteration 622; results/drafts/jit-run-plan-620.md, "The follow-up"): the JIT run's - its JIT designs kept and, of
+its designs, only what it bred (confirm.py's CARRIED: a carried design is the pool's); found before, without --before,
+the pool before --seed N (confirm.py's: the series, the confirmations, the portable runs) and the final set; the holders
+and --also kept with their JIT; each record its "jit" (followup-roles.py's portable roles skip JIT designs). PICK - for
+none: the x86 and portable holders come by --holders."""
 import importlib.util, json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 a = sys.argv[1:]
@@ -33,29 +38,35 @@ db, pick, out = a[:3]; k = int(a[a.index('--k') + 1]) if '--k' in a else 30
 hours = float(a[a.index('--hours') + 1]) if '--hours' in a else None
 opt = lambda n: a[a.index(n) + 1] if n in a else None
 before, holders, rest, also = opt('--before'), opt('--holders'), opt('--rest'), opt('--also')
+JIT, seedN = '--jit' in a, (int(opt('--seed')) if opt('--seed') else None)
+if JIT and not before and seedN is None: sys.exit('portable-followup: --jit needs --seed N (the pool before it) or --before FILE')
 recs = lambda f: [json.loads(l) for l in open(f) if l.strip().startswith('{')]
 sys.argv = ['x']; import evolve as E
 import hv, stopping
 _s = importlib.util.spec_from_file_location('final_set', os.path.join(HERE, 'final-set.py')); FS = importlib.util.module_from_spec(_s); _s.loader.exec_module(FS)
 _c = importlib.util.spec_from_file_location('confirm', os.path.join(HERE, 'confirm.py')); CF = importlib.util.module_from_spec(_c); _c.loader.exec_module(CF)
 jit = lambda r: bool(E.express(E.canon(r['genome'])).get('jit'))
-R = {i: r for i, r in hv.load(db, E).items() if r.get('genome') and not jit(r)}
+drop = (lambda r: False) if JIT else jit           # 622: --jit keeps the JIT designs
+R = {i: r for i, r in hv.load(db, E).items() if r.get('genome') and not drop(r)
+     and not (JIT and str(r.get('how', '')).startswith(CF.CARRIED))}   # 622: only what the JIT run bred
 Q = {}
 if before:
     for x in recs(before):
-        if not jit(x): Q.setdefault(x['id'], dict(x, speed=x.get('inrun') or x['speed'], speed32=x.get('inrun32') or x['speed32']))
+        if not drop(x): Q.setdefault(x['id'], dict(x, speed=x.get('inrun') or x['speed'], speed32=x.get('inrun32') or x['speed32']))
 else:
-    method, runs = stopping.series(stopping.LEDGER); runs = [r for r in runs if r['seed'] < 87]
-    for f in CF.pool_files(runs + CF.confirmations(stopping.LEDGER, 87)): Q.update({i: r for i, r in hv.load(f, E).items() if r.get('genome') and not jit(r)})
+    n0 = seedN if JIT else 87
+    method, runs = stopping.series(stopping.LEDGER); runs = [r for r in runs if r['seed'] < n0]
+    for f in CF.pool_files(runs + CF.confirmations(stopping.LEDGER, n0) + (CF.portables(stopping.LEDGER, n0) if JIT else [])):
+        Q.update({i: r for i, r in hv.load(f, E).items() if r.get('genome') and not drop(r)})
     for l in open(os.path.join(HERE, '..', '..', 'results', 'final-set-chainsBCD-seed86.md')):
         if l.startswith('{'):
             x = json.loads(l)
-            if not jit(x): Q.setdefault(x['id'], dict(x, speed=x.get('inrun') or x['speed'], speed32=x.get('inrun32') or x['speed32']))
+            if not drop(x): Q.setdefault(x['id'], dict(x, speed=x.get('inrun') or x['speed'], speed32=x.get('inrun32') or x['speed32']))
 U = dict(Q); U.update(R)
 on = {i: R[i] for i in hv.true_front(U, E) if i in R and i not in Q}
 b = json.load(open(hv.BOUNDS))
 chosen = [(i, 'the run - ' + w) for i, w, _ in FS.select(on, E, b, k)['set']] if on else []
-P = [json.loads(l) for l in open(pick) if l.strip().startswith('{')]
+P = [] if pick == '-' else [json.loads(l) for l in open(pick) if l.strip().startswith('{')]
 keep = ('id', 'genome', 'speed', 'speed32', 'total', 'size', 'bin', 'rss', 'gen', 'status')
 rows, seen = [], set()
 for i, w in chosen:
@@ -63,11 +74,13 @@ for i, w in chosen:
 for r in P:
     if r['id'] not in seen: rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - ' + str(r.get('why', 'the pick')))); seen.add(r['id'])
 for r in (recs(holders) if holders else []):
-    if r['id'] not in seen and not jit(r): rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - the relf handoff\'s role holder')); seen.add(r['id'])
+    if r['id'] not in seen and not drop(r): rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - the relf handoff\'s role holder')); seen.add(r['id'])
 for r in (recs(also) if also else []):
-    if r['id'] not in seen and not jit(r): rows.append(dict({x: r[x] for x in keep if x in r}, why=r.get('why', 'found before - added'))); seen.add(r['id'])
+    if r['id'] not in seen and not drop(r): rows.append(dict({x: r[x] for x in keep if x in r}, why=r.get('why', 'found before - added'))); seen.add(r['id'])
+if JIT: rows = [dict(r, jit=bool(jit(r))) for r in rows]
 with open(out, 'w') as o:
-    o.write('# The portable run\'s follow-up (lab/evolve/portable-followup.py): the run\'s best (%d of its %d designs on the union\'s\n'
+    o.write(('# The JIT run\'s follow-up (lab/evolve/portable-followup.py --jit)' if JIT else '# The portable run\'s follow-up (lab/evolve/portable-followup.py)')
+            + ': the run\'s best (%d of its %d designs on the union\'s\n'
             '# true front, by final-set.py\'s select()) and the best of the portable designs found before (%d: final-pick.py\'s set\n'
             '# in %s%s), re-measured side by side - one session a machine. In-run numbers for the run\'s, re-measured for the rest.\n\n'
             % (len(chosen), len(on), len(rows) - len(chosen), os.path.basename(pick), ', the relf handoff\'s role holders' if holders else ''))
@@ -85,7 +98,7 @@ if rest:                                              # 617: the screen - the un
     rr = [dict({x: on[i][x] for x in keep if x in on[i]}, why='the run - the screen (the rest of the union\'s front)')
           for i in sorted(on, key=lambda i: (on[i]['speed'], i)) if i not in seen]
     hold = [dict({x: r[x] for x in keep if x in r}, why='found before - the relf handoff\'s role holder')
-            for r in (recs(holders) if holders else []) if not jit(r)]
+            for r in (recs(holders) if holders else []) if not drop(r)]
     with open(rest, 'w') as o:
         o.write('# The screen (lab/evolve/portable-followup.py --rest, Iteration 617): the run\'s %d other designs on the union\'s true\n'
                 '# front - those its follow-up does not re-measure - and the relf handoff\'s %d portable role holders to pair them with,\n'

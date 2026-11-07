@@ -117,11 +117,19 @@ def self_test():
           'an extreme by where its design came from')
     check(origin(['hv'], {}, 0.01, 0.02, br) == 'pool' and origin(['hv'], {}, 0.02, 0.02, br) == 'search', 'the hypervolume by the larger part, a tie the search')
     check(origin(['bred', 'smallest'], {'smallest': 'c1'}, 0.02, 0, br) == 'search', 'the bred criterion is the search')
+    import tempfile
+    with tempfile.NamedTemporaryFile('w', suffix='.md', delete=False) as t:
+        t.write('# ledger\n' + '\n'.join(json.dumps(x) for x in ({'method': 'm'}, {'seed': 80}, {'confirmation': 84}, {'random': 85},
+                                                                  {'portable': 87}, {'portable': 88})) + '\n')
+    pp = lambda n: [r['seed'] for r in portables(t.name, n)]
+    check(pp(89) == [87, 88] and pp(88) == [87] and pp(87) == [] and [r['seed'] for r in confirmations(t.name, 89)] == [84],
+          'the portable runs in the pool before their seed, the random baseline out (622)')
+    os.unlink(t.name)
     check(screened(5, 1.5) and not screened(4, 3.0) and not screened(9, 1.49), 'the screen at 1.5 and 5 designs')
     check(set(lifted_genes()) == {'bytehdr', 'doesfar', 'thinhdr', 'varcall', 'bss', 'lean', 'msc', 'scale', 'sharedcall', 'alignhot'},
           'the ten re-enabled genes (GOALS.md step 2)')
     print('confirm self-test: the pool again, the speed extreme either side of 2%%, a gain by volume alone, the enrichment, '
-          'the origins, the screen, the genes - %s' % ('pass' if ok else 'FAIL'))
+          'the origins, the screen, the genes, the portable runs - %s' % ('pass' if ok else 'FAIL'))
     return 0 if ok else 1
 
 
@@ -136,6 +144,15 @@ def confirmations(path, N):
     return out
 
 
+def portables(path, N):
+    """622: the portable runs' lines before seed N, each like a run's line - their fronts in the pool and their extremes in
+    the bars (results/drafts/jit-run-plan-620.md: every earlier front; seed 89's default without them, seeds 77-84 and 86,
+    left seed 88's 13,709 B outside the smallest's bar). Seed 85, the random baseline, stays out, as carryall leaves it
+    (576)."""
+    return [dict(r, seed=r['portable']) for r in (json.loads(l) for l in open(path) if l.startswith('{'))
+            if 'portable' in r and r['portable'] < N]
+
+
 def pool_files(runs):
     miss = [r['seed'] for r in runs if not glob.glob(os.path.join(ROOT, 'results', 'evolve-*-seed%d.md' % r['seed']))]
     if miss: sys.exit('confirm.py: no results file for seeds %s' % miss)
@@ -147,14 +164,14 @@ def main(a):
     if a == ['--self-test']: return self_test()
     if opt('--pool-files'):
         L, n = opt('--ledger') or stopping.LEDGER, int(opt('--pool-files'))
-        print('\n'.join(pool_files([r for r in stopping.series(L)[1] if r['seed'] < n] + confirmations(L, n))))
+        print('\n'.join(pool_files([r for r in stopping.series(L)[1] if r['seed'] < n] + confirmations(L, n) + portables(L, n))))
         return 0
     if opt('--seed') is None: sys.exit(__doc__)
     N = int(opt('--seed')); led = opt('--ledger') or stopping.LEDGER
     pool = a[a.index('--pool') + 1:] if '--pool' in a else []          # --pool last: every file after it
     db = next(x for x in (a[:a.index('--pool')] if pool else a) if not x.startswith('--') and x not in (opt('--seed'), opt('--ledger'), opt('--candidates')))
     sys.argv = ['x']; import evolve as E
-    b = json.load(open(hv.BOUNDS)); method, runs = stopping.series(led); runs = [r for r in runs if r['seed'] < N] + confirmations(led, N)
+    b = json.load(open(hv.BOUNDS)); method, runs = stopping.series(led); runs = [r for r in runs if r['seed'] < N] + confirmations(led, N) + portables(led, N)
     pool = pool or pool_files(runs)
     P = {}
     for f in pool: P.update(hv.load(f, E))

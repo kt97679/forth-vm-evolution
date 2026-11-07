@@ -10940,3 +10940,12 @@ lacks seeds 87-88 - --pool at its processing. Files: results/followup-roles-seed
 results/followup-pick-seed88.json, results/chain-followup88/ - its sK: dream.lan-prebuilt32.out.json,
 dream.lan-prebuilt64.out.json and rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md,
 dream.lan-prebuilt64.md and rage.lan-prebuiltarm.md, the laptop's loadtest.md in s1-s18, a README.md.
+
+## Iteration 622 - 2026-11-07 - Claude
+
+Seed 89 running (NEXT-RUN none). Its processing prepared: confirm.py's default pool takes the portable runs (seed 89's: 11
+files, true front 620 against 444, hv 0.38110 against 0.37785 - the smallest's bar 13,572 B, not 13,800; self-test in
+run-tests); portable-followup.py --jit --seed N and followup-roles.py's x86 roles (fast64, fast32, allround, smalljit; the
+portable roles over JIT-free designs) - rehearsed on chains B-D: 601's holders and final-pick.py's figures, the control
+flagged, the portable path byte for byte; seed 88's roles and the 615 rehearsal unchanged. Another branch's three edits
+(the smallest to 4dd4e3e7e2) swept into eca15d5 by commit -a, reverted. Files: results/drafts/jit-rehearsal-622.py.

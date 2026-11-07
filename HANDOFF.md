@@ -103,11 +103,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Seed 89 running (started from 621's bundle at eca15d5; 622: NEXT-RUN none, so a pull of this bundle cannot start
   it again)** - the last JIT run (620, the owner's 21 hours) - `seed 89 21h widths carryall`, no experiment;
   REMOTES 617's lines screening results/screen-seed88.md (the Tegra 1255 minutes, 3 sessions at 3 rounds; dream 625 a
-  width, 8 sessions). **Its processing**: process-run.sh as a seed, with confirm.py's pool widened by --pool to the
-  portable runs' fronts - the default (`confirm.py --pool-files 89`: seeds 77-84 and 86) leaves out seeds 87 and 88, and
-  process-seed.sh passes the default; the screen read by followup-roles.py --screen --flagged on the remote lines'
-  readings; then results/drafts/jit-run-plan-620.md, "The follow-up". To prepare while it runs (620): portable-followup.py
-  keeping JIT designs, followup-roles.py's x86 roles, rehearsed as 615's - and the --pool above.
+  width, 8 sessions). **Its processing** (prepared 622): process-run.sh as a seed - confirm.py's pool takes the portable runs'
+  fronts by default now (seed 89's: 11 files, front 620, hv 0.38110; the smallest's bar 13,572 B, not 13,800); the screen
+  read by followup-roles.py --screen --flagged on the remote lines' readings; when it gains, its follow-up -
+  `portable-followup.py <seed 89's db> - results/followup-seed89.md --jit --seed 89 --holders results/relf-designs-611.md
+  --also <the screen's flagged>`, then followup-roles.py with the six portable roles and
+  fast64=c7c35f9c97,fast32=4ef851fd8e,allround=06b188f45b,smalljit=bac37f35a2 (results/drafts/jit-rehearsal-622.py PASS).
 - **Before the freeze** (618; GOALS.md step 3 - results/drafts/portable-plan-602.md, "Then the freeze"): the portable search
   ended (621); seed 88's rest screened during seed 89 (620); the retire report on the final pooled
   front, every value no design on it uses retired, the winners' bytes unchanged (599's way); the roles packed and exported
