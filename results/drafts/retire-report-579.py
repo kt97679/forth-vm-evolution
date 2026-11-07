@@ -7,19 +7,22 @@ every confirmation run's - their designs' union, its true front (hv.true_front: 
 (evolve.py's GENE_VALUES) and each value: how many designs on the pooled true front express it (evolve.express - a
 dormant gene's value counts for none), and how many of all the pool's alive designs. A value no front design expresses is
 a retire candidate under 578's rule; a value fewer than 5 front designs express is named as thin - kept, but the
-re-measures decide whether those designs stay. Nothing is changed; the report is markdown on stdout. The code a retired
+re-measures decide whether those designs stay. Nothing is changed; the report is markdown on stdout. Iteration 623 (the freeze's preview): the portable runs' fronts in the
+pool too (confirm.py's portables - none before seed 88, so N 87's report as it was); --winners: each candidate's users among
+the final set's 21 and the relf handoff's ten, whose bytes the freeze keeps (599) - such a value stays. The code a retired
 value would remove: results/drafts/retire-candidates-573.md for the nine re-enabled genes - not recomputed here."""
 import collections, importlib.util, json, os, sys
 
 HERE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'lab', 'evolve')
 sys.path.insert(0, HERE)
+WIN = '--winners' in sys.argv; sys.argv = [x for x in sys.argv if x != '--winners']
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 87
 sys.argv = ['x']; import evolve as E
 import hv, stopping
 _s = importlib.util.spec_from_file_location('confirm', os.path.join(HERE, 'confirm.py')); CF = importlib.util.module_from_spec(_s); _s.loader.exec_module(CF)
 
 method, runs = stopping.series(stopping.LEDGER); runs = [r for r in runs if r['seed'] < N]
-pool = CF.pool_files(runs + CF.confirmations(stopping.LEDGER, N))
+pool = CF.pool_files(runs + CF.confirmations(stopping.LEDGER, N) + CF.portables(stopping.LEDGER, N))
 P = {}
 for f in pool: P.update(hv.load(f, E))
 T = hv.true_front(P, E)
@@ -57,6 +60,17 @@ for g in sorted(set().union(*E.EXPRESSED.values()) | set(E.GENE_VALUES)):
         elif nf < 5: thin.append((g, v, nf))
         print('| %s | %s | %d | %d | %s |' % (g, v, nf, na, verdict))
 print('\n**Retire candidates under 578** (%d values): %s.' % (len(cand), '; '.join('%s=%s (%d recorded designs off the front)' % c for c in cand) or 'none'))
+if WIN:
+    root = os.path.dirname(os.path.dirname(HERE))
+    W = {}
+    for f in ('results/final-set-chainsBCD-seed86.md', 'results/relf-designs-611.md'):
+        W.update({r['id']: r for r in (json.loads(l) for l in open(os.path.join(root, f)) if l.startswith('{')) if r.get('genome')})
+    xw = {i: expressed(W[i]['genome']) for i in W}
+    print('\n**The winners** (%d: the final set\'s 21 and the relf handoff\'s ten, results/final-set-chainsBCD-seed86.md and '
+          'results/relf-designs-611.md) - each candidate\'s users among them, whose bytes the freeze keeps (599):' % len(W))
+    for g, v, na in cand:
+        u = sorted(i for i in W if xw[i].get(g) == v)
+        print('- %s=%s: %s' % (g, v, ('%d - %s: stays' % (len(u), ' '.join(u))) if u else 'none - retirable'))
 print('**Thin** (fewer than 5 front designs - their designs\' re-measures decide): %s.' % ('; '.join('%s=%s (%d)' % t for t in thin) or 'none'))
 print('\nWhat a candidate means: a late gene\'s 0 unused (jit=0, jitos=0, jitinl=0 where they are live) fixes the gene on '
       'and removes no code - the search space only; another value unused removes that value\'s code (alignhot=1, fsys 1, 4 '
