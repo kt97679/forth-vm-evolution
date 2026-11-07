@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 620.
+- master: Iteration 621.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -95,31 +95,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   keeps GCC at 32 bits; no other single gene. General: seed 87's follow-up's 45, GCC median 1.57, clang 1.13
   (results/drafts/gcc-clang-614.py). A front-end effect on dream's Skylake (jump alignment) the candidate, untested - a
   count of the engines' dispatch jumps on 32-byte boundaries would test it here.
-- **Seed 88's follow-up chain running (started from 614's bundle; 615: NEXT-RUN none, so a pull of this bundle cannot
-  start it again; the owner: the hours Claude's - 9)** - 614's NEXT-RUN: 20 steps of `experiment
-  loadtest.py --ids results/followup-seed88.md --rounds 10` (about 18 fit), REMOTES the Tegra 3 sessions, dream 35 a width:
-  the 46 - seed 88's 30 best on the union's front, seed 87's follow-up pick's 13 (results/followup-pick-seed87.json), the
-  handoff's 690981ca5b, c2ef9488ff and 64a7345393 (portable-followup.py --before results/portable-front-seed87.md --holders
-  results/relf-designs-611.md). Sized on seed 87's follow-up noise: 2% at about 5.5 SE on the Tegra and on the laptop at
-  4-byte cells. **Its processing (615), one command** - as claude: `PRED=614 sh lab/evolve/process-followup.sh 88 ITERATION
-  fastest=782f3ad7ff,arm=690981ca5b,knee=c2ef9488ff,smallarm=a627b954c6,memory=fb0d57c8a2,smallest=64a7345393` (about a
-  minute): the archive unpacked and its lines checked, the readings to results/chain-followup88, the pooled pick to
-  results/followup-pick-seed88.md, each role against its holder and the 614 predictions' figures in
-  /tmp/followup/summary.md (lab/evolve/followup-roles.py). Rehearsed: results/drafts/followup-rehearsal-615.sh PASS - 611's
-  readings made into a chain archive, every reading laid out 611's byte for byte, the pick 611's, the roles
-  results/drafts/followup-roles-611.py's; on seed 88's real archive the layout results/chain-seed88's. Then by hand: the roles
-  judged (the owner's trades, as 611), results/followup-roles-seed88.md, the package and designs/ when a role changes
-  (pack-designs.py, export-designs.py), the predictions, NEXT-RUN, this card, PROGRESS, make-bundle.sh - process-finish.sh
-  is for seeds. **What its result triggers** (616, fixed before it returns; checked to lose no good design; 618, the owner:
-  repeating - another run after every follow-up that confirms a gain, the search stopping at the first that confirms none): another
-  portable run, seed 89 (`seed 89 nojit 21h widths`, no experiment; 617: its remote lines screen
-  results/screen-seed88.md - the 375 of seed 88's union front the follow-up does not re-measure, with the six holders - and
-  the flagged, followup-roles.py --screen --flagged, join its follow-up via portable-followup.py --also), when a seed 88 design beats the best found before by the thresholds
-  after re-measure - the laptop at either width, a class or the mean (2%, 2 SE), size 1%, memory 4 KB - or takes a role;
-  else the portable search stops (results/drafts/portable-plan-602.md, "After the follow-up"; the verdict in
-  /tmp/followup/gain.txt).
+- **Seed 88's follow-up processed (621)** - results/followup-roles-seed88.md: the 46, every session complete (the laptop 18,
+  dream 28 and 25, the Tegra 3), the incumbents within 0.1% of 611's. No role changes: the smallest's candidates
+  4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade - his to reverse
+  (then seed 89 is a third portable run, `seed 89 nojit 21h widths`); no extreme gained - seed 88's in-run 32-bit lead,
+  c7814def6d, 2.1% behind 9f8811f7f4 re-measured. By the 616/618 rule the **portable search stops** after two runs.
+- **Seed 89 is set** (621): the last JIT run (620, the owner's 21 hours) - `seed 89 21h widths carryall`, no experiment;
+  REMOTES 617's lines screening results/screen-seed88.md (the Tegra 1255 minutes, 3 sessions at 3 rounds; dream 625 a
+  width, 8 sessions). **Its processing**: process-run.sh as a seed, with confirm.py's pool widened by --pool to the
+  portable runs' fronts - the default (`confirm.py --pool-files 89`: seeds 77-84 and 86) leaves out seeds 87 and 88, and
+  process-seed.sh passes the default; the screen read by followup-roles.py --screen --flagged on the remote lines'
+  readings; then results/drafts/jit-run-plan-620.md, "The follow-up". To prepare while it runs (620): portable-followup.py
+  keeping JIT designs, followup-roles.py's x86 roles, rehearsed as 615's - and the --pool above.
 - **Before the freeze** (618; GOALS.md step 3 - results/drafts/portable-plan-602.md, "Then the freeze"): the portable search
-  to its end by the rule; the last run's rest screened if the owner wants (617); the retire report on the final pooled
+  ended (621); seed 88's rest screened during seed 89 (620); the retire report on the final pooled
   front, every value no design on it uses retired, the winners' bytes unchanged (599's way); the roles packed and exported
   from the final code, make test, the handoff final; the portable figures recomputed from the records. **The last JIT run (620, the owner)**: one 21-hour JIT run after the portable
   search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
@@ -147,10 +136,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 88's follow-up chain - 4 (614).
+- **Predictions due** (results/predictions.md): seed 89, the last JIT run - 4 (621).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; the follow-up chain's archive when it returns. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; seed 89's chain archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

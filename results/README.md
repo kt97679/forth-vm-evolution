@@ -249,6 +249,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed87.json` - followup-pick-seed87.md's set as JSON (final-pick.py --json, reproduced at 614): seed 88's follow-up's PICK.
 - `followup-seed88.md` - Seed 88's follow-up chain's 46: its best beside seed 87's follow-up pick and the relf handoff's role holders (Iteration 614).
 - `screen-seed88.md` - The screen for seed 89's remote lines (Iteration 617): the 375 of seed 88's union front its follow-up does not re-measure, with the six portable role holders.
+- `chain-followup88/README.md` - Seed 88's follow-up chain's readings (Iteration 621): the 46 in every session - the laptop 18, dream 28 and 25, rage 3.
+- `followup-pick-seed88.md` - Seed 88's best beside the portable designs found before, re-measured on three machines, every session pooled (Iteration 621).
+- `followup-pick-seed88.json` - followup-pick-seed88.md's set as JSON (final-pick.py --json, Iteration 621).
+- `followup-roles-seed88.md` - The portable roles after seed 88's follow-up (Iteration 621): none changes and no extreme gained, so the portable search stops.
 - `audit-nonportable-619.md` - The audit of the results so far and whether a JIT run is worth it (Iteration 619): converged, nothing new since, the portable gains out of its reach - not now.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 

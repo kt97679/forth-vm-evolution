@@ -827,3 +827,29 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   its front and its extremes from every alive design; results/portable-front-seed87.md, the 348 found before seed 88);
   the experiment: `chain-sessions.py /tmp/process results/chain-seed88`, then `python3
   results/drafts/dream32-experiment-613.py results/chain-seed88` - each variant against its base, predictions 3 and 4.
+
+## The card's seed 88 follow-up bullet at Iteration 620 (replaced at 621 by its processing)
+
+- **Seed 88's follow-up chain running (started from 614's bundle; 615: NEXT-RUN none, so a pull of this bundle cannot
+  start it again; the owner: the hours Claude's - 9)** - 614's NEXT-RUN: 20 steps of `experiment
+  loadtest.py --ids results/followup-seed88.md --rounds 10` (about 18 fit), REMOTES the Tegra 3 sessions, dream 35 a width:
+  the 46 - seed 88's 30 best on the union's front, seed 87's follow-up pick's 13 (results/followup-pick-seed87.json), the
+  handoff's 690981ca5b, c2ef9488ff and 64a7345393 (portable-followup.py --before results/portable-front-seed87.md --holders
+  results/relf-designs-611.md). Sized on seed 87's follow-up noise: 2% at about 5.5 SE on the Tegra and on the laptop at
+  4-byte cells. **Its processing (615), one command** - as claude: `PRED=614 sh lab/evolve/process-followup.sh 88 ITERATION
+  fastest=782f3ad7ff,arm=690981ca5b,knee=c2ef9488ff,smallarm=a627b954c6,memory=fb0d57c8a2,smallest=64a7345393` (about a
+  minute): the archive unpacked and its lines checked, the readings to results/chain-followup88, the pooled pick to
+  results/followup-pick-seed88.md, each role against its holder and the 614 predictions' figures in
+  /tmp/followup/summary.md (lab/evolve/followup-roles.py). Rehearsed: results/drafts/followup-rehearsal-615.sh PASS - 611's
+  readings made into a chain archive, every reading laid out 611's byte for byte, the pick 611's, the roles
+  results/drafts/followup-roles-611.py's; on seed 88's real archive the layout results/chain-seed88's. Then by hand: the roles
+  judged (the owner's trades, as 611), results/followup-roles-seed88.md, the package and designs/ when a role changes
+  (pack-designs.py, export-designs.py), the predictions, NEXT-RUN, this card, PROGRESS, make-bundle.sh - process-finish.sh
+  is for seeds. **What its result triggers** (616, fixed before it returns; checked to lose no good design; 618, the owner:
+  repeating - another run after every follow-up that confirms a gain, the search stopping at the first that confirms none): another
+  portable run, seed 89 (`seed 89 nojit 21h widths`, no experiment; 617: its remote lines screen
+  results/screen-seed88.md - the 375 of seed 88's union front the follow-up does not re-measure, with the six holders - and
+  the flagged, followup-roles.py --screen --flagged, join its follow-up via portable-followup.py --also), when a seed 88 design beats the best found before by the thresholds
+  after re-measure - the laptop at either width, a class or the mean (2%, 2 SE), size 1%, memory 4 KB - or takes a role;
+  else the portable search stops (results/drafts/portable-plan-602.md, "After the follow-up"; the verdict in
+  /tmp/followup/gain.txt).

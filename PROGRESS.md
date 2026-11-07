@@ -10928,3 +10928,15 @@ the last portable run's rest; judged by confirm.py against every earlier front, 
 the four x86 roles when it gains; continued only on confirmed progress (618). The follow-up tools' JIT options to prepare
 while it runs. GOALS.md's section, the card. Files: results/drafts/jit-run-plan-620.md.
 
+## Iteration 621 - 2026-11-07 - Claude
+
+Seed 88's follow-up chain processed (process-followup.sh, one command): the 46 side by side, every session complete (the
+laptop 18, dream 28 and 25, the Tegra 3), the incumbents within 0.1% of 611's. No role changes - the smallest's
+candidates 4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade; no
+extreme gained (seed 88's in-run 32-bit lead, c7814def6d, 2.1% behind 9f8811f7f4 re-measured): the portable search stops
+(616/618). Predictions: three right, one wrong (no role). Seed 89 set, the last JIT run (620): `seed 89 21h widths
+carryall`, REMOTES 617's lines screening results/screen-seed88.md; 4 predictions. confirm.py's default pool for seed 89
+lacks seeds 87-88 - --pool at its processing. Files: results/followup-roles-seed88.md, results/followup-pick-seed88.md,
+results/followup-pick-seed88.json, results/chain-followup88/ - its sK: dream.lan-prebuilt32.out.json,
+dream.lan-prebuilt64.out.json and rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md,
+dream.lan-prebuilt64.md and rage.lan-prebuiltarm.md, the laptop's loadtest.md in s1-s18, a README.md.

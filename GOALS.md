@@ -190,14 +190,15 @@ roles - each judged in-run against every portable design found before (lab/evolv
 three machines in a follow-up chain. **It goes on while it makes progress** (the owner, 618): another run after every
 follow-up that confirms a gain by the stopping rule's thresholds, in any class, extreme or role; it stops at the first
 follow-up that confirms none, and the designs are then frozen as step 3 above freezes them. The detail:
-results/drafts/portable-plan-602.md ("After the follow-up", "The search goes on", "Then the freeze").
+results/drafts/portable-plan-602.md ("After the follow-up", "The search goes on", "Then the freeze"). **Stopped at 621**: seed 87's follow-up confirmed a
+gain (611), seed 88's none (results/followup-roles-seed88.md).
 
 ## The last JIT run (Iteration 620)
 
 After the portable search ends and before the freeze, one 21-hour run with the JIT (the owner, 620): the one lever the JIT
 search never tried, its length (results/audit-nonportable-619.md). Judged as a confirmation run (step 2 above) against
 every earlier front, only what it bred counted; continued only on confirmed progress, as the portable search. The detail:
-results/drafts/jit-run-plan-620.md.
+results/drafts/jit-run-plan-620.md. Set at 621: seed 89.
 
 ## Later - the owner's plans
 

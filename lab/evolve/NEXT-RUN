@@ -225,4 +225,10 @@
 # on dream (35 sessions a width) - 6 hours would leave the Tegra 2 sessions, 4.5 SE; 13 (610's) more than needed.
 # Iteration 615 (seed 88's follow-up chain running, started from 614's bundle): none - a pull of this bundle must not
 # start it again (as 613 for seed 88); its processing (lab/evolve/process-followup.sh) writes the next line.
-none
+# Iteration 621 (seed 88's follow-up processed - results/followup-roles-seed88.md): the last JIT run (620, the owner:
+# "yes, let's do 21 hour jit run") - the portable search stopped by the 616/618 rule (no extreme gained, no role taken).
+# The JIT allowed, every archived database carried as founders (seed 86's way, the portable runs' among them), selected
+# at both widths, no experiment (results/drafts/jit-run-plan-620.md). REMOTES: 617's lines screening
+# results/screen-seed88.md, seed 88's rest, at no laptop time. Its processing: process-run.sh, confirm.py's pool widened
+# by --pool to seeds 87-88's fronts (HANDOFF.md).
+seed 89 21h widths carryall

@@ -1318,3 +1318,20 @@ the Tegra (3). (1) The chain done, every session of every line complete - 80/20.
 portable roles goes to a seed 88 design - 55/45. (3) The fastest portable role stays with 782f3ad7ff: no seed 88
 design's mean over the three classes 2% or more below its - 65/35. (4) c7814def6d, a GCC build, at 1.36 or more times the
 laptop's time on dream at 4-byte cells (seed 87's follow-up: GCC median 1.57, clang 1.13) - 75/25.
+
+**Scored at seed 88's follow-up (Iteration 621): three right, one wrong.** (1) right - done, every session of every line
+complete: the laptop 18, dream 28 and 25 (of 35 allowed), the Tegra 3, each all 46. (2) wrong - no role to a seed 88
+design: the smallest's candidates, 4dd4e3e7e2 (1.31% smaller; x86-32 +27.9%) and 422e922f9c (0.29%), turned down by the
+owner's 611 trade. (3) right - 782f3ad7ff kept: the run's best mean, 7055894eea, +5.47% +/- 0.40%. (4) right - c7814def6d
+2.049 (results/followup-roles-seed88.md).
+
+## Seed 89, the last JIT run (carryall, 21 hours) - predicted (Iteration 621)
+
+`seed 89 21h widths carryall` - the JIT allowed, every archived database carried, no experiment; REMOTES screen
+results/screen-seed88.md (seed 88's 375 not re-measured, with the six portable holders) on dream at both widths and the
+Tegra. (1) The chain done without a crash, seed 89 past generation 150 (seed 86, carryall at 12 hours: 91) - 65/35. (2)
+confirm.py CONFIRMED - what seed 89 bred gains on the pooled true front, the pool widened to the portable runs' fronts, by
+a threshold (the hypervolume 1%, speed 2%, bytes 1%, memory 4 KB, the 32-bit speed 2%) - 25/75 (seeds 83, 84 and 86 gained
+nothing; the length the one lever untried). (3) The screen flags at least one of seed 88's 375 against a speed role's
+holder (followup-roles.py --screen, its loosened rule) - 60/40. (4) The Tegra completes at least two sessions of the
+screen (617: the third may be cut short) - 75/25.
