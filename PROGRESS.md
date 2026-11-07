@@ -10932,8 +10932,8 @@ while it runs. GOALS.md's section, the card. Files: results/drafts/jit-run-plan-
 
 Seed 88's follow-up chain processed (process-followup.sh, one command): the 46 side by side, every session complete (the
 laptop 18, dream 28 and 25, the Tegra 3), the incumbents within 0.1% of 611's. No role changes - the smallest's
-candidates 4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade; no
-extreme gained (seed 88's in-run 32-bit lead, c7814def6d, 2.1% behind 9f8811f7f4 re-measured): the portable search stops
+candidates 4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade, which he confirmed
+("performance drop is too significant and size gain is too small" - a standing decision in HANDOFF-REFERENCE.md now); no extreme gained (seed 88's in-run 32-bit lead, c7814def6d, 2.1% behind 9f8811f7f4 re-measured): the portable search stops
 (616/618). Predictions: three right, one wrong (no role). Seed 89 set, the last JIT run (620): `seed 89 21h widths
 carryall`, REMOTES 617's lines screening results/screen-seed88.md; 4 predictions. confirm.py's default pool for seed 89
 lacks seeds 87-88 - --pool at its processing. Files: results/followup-roles-seed88.md, results/followup-pick-seed88.md,

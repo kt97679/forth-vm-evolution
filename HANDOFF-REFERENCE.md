@@ -46,6 +46,11 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
 - Offer trade-offs to evolution as genes rather than deciding (factor's levels,
   Iteration 267). Small gains count: size savings are exact - take them; speed
   ones go in as genes (261).
+- Role picks between designs (611, 621): no small gain in one criterion for a
+  large loss in the others - 62abdb2c64 (0.98% smaller, 12.5% and 24.0% slower
+  on x86) and 4dd4e3e7e2 (1.31% smaller, 27.9% slower at x86-32: "performance drop is too significant and size gain is too small")
+  kept out of the smallest role. "Size savings are exact - take them" (above)
+  is about changes to the system, not a choice between designs.
 - Noisy timing questions go to the laptop; on the VM (+-10%) decide by the
   profiler's dispatch counts, which are deterministic; to time two engines,
   alternate them over many rounds.

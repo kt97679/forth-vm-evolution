@@ -29,16 +29,21 @@ def readings(sess):
                 if x.get('speed_here'): host.setdefault((h, x['id']), []).append(x['speed_here'])
     return lap, host
 RD = {k: readings(v) for k, v in SESS.items()}
+# 622: a portable design seed 87's follow-up never measured (the smallest, 4dd4e3e7e2 - the owner) read from seed 88's
+# follow-up chain, where it sat beside the six; every other design's figures as 611 and 612 had them
+RD88 = readings(sorted(glob.glob('results/chain-followup88/s[0-9]*'), key=num))
 s6 = E.express(E.canon(E.HUMAN['s6-cv8b']))
 rows = []
 for r in F:
     i = r['id']; e = E.express(E.canon(r['genome'])); lap, host = RD[bool(e.get('jit'))]
+    f88 = not e.get('jit') and ('idle', i) not in lap
+    if f88: lap, host = RD88
     m = lambda k: gm(v) if (v := k) else None
     l64, l32 = m(lap.get(('idle', i))), m(lap.get(('idle32', i)))
     d64, d32, arm = m(host.get(('dream.lan-prebuilt64', i))), m(host.get(('dream.lan-prebuilt32', i))), m(host.get(('rage.lan-prebuiltarm', i)))
     c64 = gm([x for x in (l64, d64) if x]); c32 = gm([x for x in (l32, d32) if x])
     diff = {k: e.get(k) for k in sorted(set(e) | set(s6)) if e.get(k) != s6.get(k)}
-    rows.append(dict(id=i, why=r.get('why'), sets=r.get('sets'), source='seed 86 chains B-D' if e.get('jit') else 'the follow-up chain (611)', x86_64=c64, x86_32=c32, armv7=arm, mean=gm([x for x in (c64, c32, arm) if x]),
+    rows.append(dict(id=i, why=r.get('why'), sets=r.get('sets'), source='seed 86 chains B-D' if e.get('jit') else "seed 88's follow-up chain (621)" if f88 else 'the follow-up chain (611)', x86_64=c64, x86_32=c32, armv7=arm, mean=gm([x for x in (c64, c32, arm) if x]),
                      laptop64=l64, laptop32=l32, dream64=d64, dream32=d32, total=r['total'], bin=r.get('bin'), rss=r['rss'],
                      enc=e.get('enc'), jit=bool(e.get('jit')), compiler=e.get('compiler'), differs=diff, genome=r['genome']))
 rows.sort(key=lambda x: x['mean'])   # 611: the roles' order is relf-readme-611.py's

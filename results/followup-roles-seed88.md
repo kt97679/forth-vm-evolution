@@ -27,9 +27,8 @@ Speeds are the classes of final-pick.py step 5 (lower is faster); errors are pai
 **The smallest, judged by the owner's trade at 611**: 62abdb2c64, 136 B smaller (0.98%) for 12.5% at x86-64 and 24.0% at
 x86-32, was "no small gain in one criterion for a large loss in the others". 4dd4e3e7e2 is that trade again - 182 B for
 4.5%, 27.9% and 8.3% - and clears the bytes bar only against the holder, not against the smallest found before
-(62abdb2c64: -0.68%); 422e922f9c is under the bar and slower in two classes. Neither takes the role. **The owner's to
-reverse**: the role to 4dd4e3e7e2 makes seed 89 a third portable run (`seed 89 nojit 21h widths`, the 618 rule) in place
-of the JIT run below. Both are kept either way: 4dd4e3e7e2 the pooled pick's smallest (results/followup-pick-seed88.md),
+(62abdb2c64: -0.68%); 422e922f9c is under the bar and slower in two classes. Neither takes the role - **the owner
+confirmed (621)**: "performance drop is too significant and size gain is too small". Both are kept: 4dd4e3e7e2 the pooled pick's smallest (results/followup-pick-seed88.md),
 422e922f9c on seed 88's recorded front.
 
 ## The rule after the follow-up (616, 618): no gain - the portable search stops

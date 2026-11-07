@@ -97,8 +97,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   count of the engines' dispatch jumps on 32-byte boundaries would test it here.
 - **Seed 88's follow-up processed (621)** - results/followup-roles-seed88.md: the 46, every session complete (the laptop 18,
   dream 28 and 25, the Tegra 3), the incumbents within 0.1% of 611's. No role changes: the smallest's candidates
-  4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade - his to reverse
-  (then seed 89 is a third portable run, `seed 89 nojit 21h widths`); no extreme gained - seed 88's in-run 32-bit lead,
+  4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade, which he
+  confirmed (621: "performance drop is too significant and size gain is too small"); no extreme gained - seed 88's in-run 32-bit lead,
   c7814def6d, 2.1% behind 9f8811f7f4 re-measured. By the 616/618 rule the **portable search stops** after two runs.
 - **Seed 89 is set** (621): the last JIT run (620, the owner's 21 hours) - `seed 89 21h widths carryall`, no experiment;
   REMOTES 617's lines screening results/screen-seed88.md (the Tegra 1255 minutes, 3 sessions at 3 rounds; dream 625 a
