@@ -10970,3 +10970,10 @@ had written it over with its entry; handoff-check 14). Files: results/evolve-amd
 results/xcheck-seed89.md, results/candidates-final-seed89.md, results/followup-seed89.md, results/screen-flagged-seed88.md,
 results/chain-screen88/ (README, sK/dream.lan-prebuilt32.out, dream.lan-prebuilt64.out, rage.lan-prebuiltarm.out and the
 reports), results/drafts/gain-designs-624.md, results/drafts/drift-624.py.
+
+## Iteration 625 - 2026-11-08 - Claude
+
+Seed 89's follow-up running (started from 624's bundle at 6e28635dc0): NEXT-RUN none. The freeze's retire report with
+seed 89 in the pool: 12 values on no front design (623: 8) - fsys=0 (690981ca5b's, stays), jitrp=0, noinls=0, opbody=0,
+rtloopall=0 added, jitinl=0 now thin; msc=1 still the owner's. The fast end's optimism by run: the JIT runs 1.05-1.10, the
+portable 1.02-1.03 - a JIT trait, not the length. Files: results/drafts/retire-report-625.md, results/drafts/gain-designs-624.md.

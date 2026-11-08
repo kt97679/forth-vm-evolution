@@ -213,6 +213,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/retire-candidates-573.md` - The nine genes seeds 77-83's fronts never moved off their old values (Iteration 573): what retiring each would remove - little but msc, the old values building the hand-made stages s2-s5; msc's Tegra check first.
 - `drafts/retire-report-583.md` - Consolidation's retirement report with seed 86 in the pool (Iteration 583; retire-report-579.py rerun): 17 values on no design of the pooled true front of seeds 77-86.
 - `drafts/retire-report-623.md` - The freeze's retire report previewed before seed 89 (Iteration 623): 8 values on no design of the pooled front with the portable runs; msc=1 the one with code.
+- `drafts/retire-report-625.md` - The freeze's retire report with seed 89 in the pool (Iteration 625): 12 values on no front design, five more than 623's as seed 89's front displaced older designs; msc=1 the owner's.
 - `drafts/jcc-count-623.md` - Why GCC builds run slow on dream at 32 bits (Iteration 623): dispatch jumps on 32-byte boundaries rank with it in 614's variants - Intel's JCC erratum likely.
 - `drafts/gain-designs-624.md` - Seed 89's 32-bit gain off the ε-front (Iteration 624): why the follow-up's list missed it, the fix, and the drift check (drafts/drift-624.py).
 - `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.

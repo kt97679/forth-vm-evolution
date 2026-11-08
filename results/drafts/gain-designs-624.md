@@ -14,3 +14,9 @@ Drift (results/drafts/drift-624.py): the 2,398 carried designs measured again in
 readings, median 1.0009 at 64 bits (quartiles 0.992-1.009) and 1.0056 at 32 (0.995-1.017); seed 79's 147 at 32 bits
 1.0057 - seed 89's readings no faster, so the gain is not drift. Its risk is the fast end's optimism: the fastest tenth
 re-measured at 1.096 of in-run (curse.txt), and each of the seven has one in-run reading - the follow-up decides.
+
+**The fast end's optimism by run** (Iteration 625; each results file's curse line - the fastest tenth re-measured at the
+run's end over its in-run speed, at 64 bits): the JIT runs 1.048-1.096 (seeds 78-86: 1.061, 1.094, 1.070, 1.060, 1.048,
+1.089, 1.066, 1.080; seed 89 1.096), the portable runs 1.023 and 1.028 (seeds 87 and 88, 21 hours and more designs) - a
+trait of the JIT designs' readings, not of a run's length. Seed 79, whose 0.1643 is the 32-bit bar's base, read 1.094: seed
+89's lead is not measured against a less optimistic run; the follow-up re-measures the seven beside the 32-bit holder.

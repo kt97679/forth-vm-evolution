@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 624.
+- master: Iteration 625.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -109,7 +109,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (results/drafts/gain-designs-624.md). The screen of seed 88's rest (results/xcheck-seed89.md): 5 flagged - ee7258275b
   against the knee; 8164d3858f, ae99617f06, dac11e0a15, a48aca1051 against small and fast on ARMv7; none against the
   fastest portable or ARMv7 holders.
-- **Seed 89's follow-up set (624; the owner: "as many hours as needed for the best efficiency" - 10)** -
+- **Seed 89's follow-up running (started from 624's bundle at 6e28635dc0; 625: NEXT-RUN none, so a pull of this bundle
+  cannot start it again; the owner: "as many hours as needed for the best efficiency" - 10)** -
   results/followup-seed89.md: the run's 30 by select(), the seven past the bar (portable-followup.py --jit --seed since
   624: the ε-front had left them off), the ten relf holders and the screen's five - 52 on the laptop (18 steps), dream (20
   a width) and the Tegra (3 sessions, the bottleneck: 2% at 5.6 SE); the window 10 hours, the work about 9. **Its
@@ -123,7 +124,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   ended (621); seed 88's rest screened during seed 89 (624: 5 flagged, in seed 89's follow-up); the retire report on the final pooled
   front, every value no design on it uses retired, the winners' bytes unchanged (599's way) - previewed on today's pool (623,
   results/drafts/retire-report-623.md): 8 values on no front design, msc=1 the one with code (the owner's: 578's rule or
-  598's Tegra 18%), thinhdr=0 kept for s6; the roles packed and exported
+  598's Tegra 18%), thinhdr=0 kept for s6; with seed 89 in the pool 12 (625,
+  results/drafts/retire-report-625.md: fsys=0, 690981ca5b's, jitrp=0, noinls=0, opbody=0, rtloopall=0 added, jitinl=0 now
+  thin) - the freeze's list unless another JIT run follows; the roles packed and exported
   from the final code, make test, the handoff final; the portable figures recomputed from the records. **The last JIT run (620, the owner)**: one 21-hour JIT run after the portable
   search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
   run's rest, judged by confirm.py (only what it bred counted), a follow-up when it gains, continued only on confirmed
