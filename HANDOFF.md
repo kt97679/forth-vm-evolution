@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 628.
+- master: Iteration 629.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -118,12 +118,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   8164d3858f's -2.45% +/- 0.68% is thin (3 Tegra sessions, the holder's third its slowest) - seed 90's Tegra line
   re-measures it against a627b954c6; it takes the role, and reopens the portable search (620), only if the sessions pooled
   with the follow-up's hold 2% at 2 SE. The smallest kept (efb0fece07 is 4dd4e3e7e2's trade).
-- **Seed 90 set (628; the owner: "as many hours as you think is best" - 21)** - `seed 90 21h widths carryall`, seed 89's
-  setup (seed 89's winners born by generation 167 of 202, its front's additions slowing). REMOTES screen seed 89's rest -
-  results/screen-seed89.md, 291: the JIT-free designs of its union front the follow-up did not re-measure (made from its
-  results file - the db.jsonl is on the laptop), the ten holders, 8164d3858f and ae99617f06 - the Tegra 4 sessions, dream
-  11 a width. Its processing: process-run.sh (confirm.py's pool has seeds 86-89); the screen by followup-roles.py --screen
-  with the 628 holders; the smallarm pair's Tegra sessions pooled with the follow-up's.
+- **Seed 90 running (started from 628's bundle at e9435de; 629: NEXT-RUN none, so a pull cannot start it again)** -
+  `seed 90 21h widths carryall`, seed 89's setup, 21 hours (the owner left them to Claude, 628: seed 89's winners born by
+  generation 167 of 202, its front's additions slowing). REMOTES screen seed 89's rest - results/screen-seed89.md, 291: the
+  JIT-free designs of its union front the follow-up did not re-measure (made from its results file - the db.jsonl is on
+  the laptop), the ten holders, 8164d3858f and ae99617f06 - the Tegra 4 sessions, dream 11 a width. **Its processing**:
+  process-run.sh (confirm.py's pool has seeds 86-89); the screen as 624's - the remote readings laid out as
+  results/chain-screen89 (chain-sessions.py), then `python3 lab/evolve/followup-roles.py results/screen-seed89.md
+  results/chain-screen89 --screen --roles fastest=782f3ad7ff,arm=3eb59b271d,knee=c2ef9488ff,smallarm=a627b954c6,
+  memory=fb0d57c8a2,smallest=64a7345393 --flagged results/screen-flagged-seed89.md` (one argument, no spaces; the 628
+  holders); small and fast on ARMv7 by the rule fixed at 629, `python3 results/drafts/smallarm-pool-629.py` - every Tegra
+  session pooled, 2% at 2 SE or the question closes; the first real clean lines, `grep 'remote clean' CHAIN/steps`.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier

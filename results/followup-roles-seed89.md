@@ -61,3 +61,12 @@ lines, 3 rounds) had it -2.90%. Against a627b954c6 four genes: folds (XOR for R@
 2. The next run: seed 90, a JIT run again (620's form, `seed 90 21h widths carryall`; its remote lines could screen seed
    89's rest - the 324 of its union front this follow-up did not re-measure - and give the Tegra more sessions of
    8164d3858f against a627b954c6); and whether 8164d3858f's thin gain opens a portable (nojit) run of its own.
+
+## The re-measure's rule, fixed before seed 90's data (Iteration 629)
+
+Small and fast on ARMv7 is decided on every Tegra session of the three designs: this follow-up's three (10 rounds) and
+seed 90's screen's (3 rounds, up to four), each session one paired log-difference against a627b954c6, equal weights, the
+SE from their spread (results/drafts/smallarm-pool-629.py; on this follow-up alone it gives the figures above).
+8164d3858f or ae99617f06 - the faster, if both - takes the role at 2% faster and 2 SE, the role rule fixed before seed 87,
+and by 620 the portable search reopens; otherwise a627b954c6 keeps it and the question is closed.
+

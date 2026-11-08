@@ -253,4 +253,6 @@
 # its follow-up did not re-measure, the ten holders, and 8164d3858f and ae99617f06 for the Tegra's re-measure against
 # a627b954c6 - at no laptop time. The chain cleans rage and dream at its start and end (remote-checks.sh clean, 628).
 # Its processing: process-run.sh; confirm.py's default pool has seeds 86-89 (--pool-files 90).
-seed 90 21h widths carryall
+# Iteration 629 (seed 90 running, started from 628's bundle at e9435de): none - a pull of this bundle must not start
+# seed 90 again (as 622 for seed 89); its processing (process-run.sh) writes the next line.
+none

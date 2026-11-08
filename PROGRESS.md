@@ -11008,3 +11008,11 @@ and dream after the run): each host's fve-xcheck emptied of this and earlier cha
 at probe, their processes stopped (none with a terminal), one line a host in the steps; lab/evolve/test-remote-clean.sh
 in run-tests. Files: results/handoff-relf-628.md, results/relf-designs-628.md, results/screen-seed89.md.
 
+## Iteration 629 - 2026-11-08 - Claude
+
+Seed 90 running (started from 628's bundle at e9435de): NEXT-RUN none, so a pull of this bundle cannot start it again.
+Small and fast on ARMv7's rule fixed before seed 90's data: every Tegra session of 8164d3858f and ae99617f06 against
+a627b954c6 pooled - the follow-up's 3 and seed 90's screen's - 2% at 2 SE takes the role, else it stays and the question
+closes; rehearsed on the follow-up alone (-2.45% +/- 0.68%, 627's). Seed 90's processing steps in the card. Files:
+results/drafts/smallarm-pool-629.py.
+
