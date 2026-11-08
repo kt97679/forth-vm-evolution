@@ -57,6 +57,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck-seed86.md` - The checks of seed 85's front during seed 86 (Iteration 582): Spearman with the laptop 0.983, 0.836 and 0.983 on dream (prebuilt, 32, 64), 0.918 on rage (11, clang-built); dream's 41: the bred lead the laptop's.
 - `xcheck-seed87.md` - The 282 portable designs found before, measured during seed 87 (Iteration 610): 282 of 282 built on dream at both widths and on the Tegra, Spearman with the laptop about 0.98 on dream and 0.935 on the Tegra over the 282.
 - `xcheck-seed88.md` - The remote checks during seed 88 (Iteration 614): the dream 32-bit experiment's 20 on dream at both widths (30 sessions) and the Tegra (12), 20 of 20 in every session.
+- `xcheck-seed89.md` - Seed 89's remote lines (Iteration 624): the screen of seed 88's rest - dream 6 sessions a width, the Tegra 2 - flags 5 against the knee and small and fast on ARMv7.
 
 ### The batches of patches applied after the runs
 
@@ -213,6 +214,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/retire-report-583.md` - Consolidation's retirement report with seed 86 in the pool (Iteration 583; retire-report-579.py rerun): 17 values on no design of the pooled true front of seeds 77-86.
 - `drafts/retire-report-623.md` - The freeze's retire report previewed before seed 89 (Iteration 623): 8 values on no design of the pooled front with the portable runs; msc=1 the one with code.
 - `drafts/jcc-count-623.md` - Why GCC builds run slow on dream at 32 bits (Iteration 623): dispatch jumps on 32-byte boundaries rank with it in 614's variants - Intel's JCC erratum likely.
+- `drafts/gain-designs-624.md` - Seed 89's 32-bit gain off the ε-front (Iteration 624): why the follow-up's list missed it, the fix, and the drift check (drafts/drift-624.py).
 - `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.
 - `drafts/retire-stages-584.md` - Retiring the older formats (Iteration 584; the owner: if it loses no good design): the condition checked, what goes, what uses s2-s5, the six patches - the freeze first - and their build-hash test.
 - `drafts/random-mode-548.patch` - The random-search baseline's mode, drafted and tested for consolidation (Iteration 548; GOALS.md, "When the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop, the fast gate kept.
@@ -251,6 +253,9 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed87.json` - followup-pick-seed87.md's set as JSON (final-pick.py --json, reproduced at 614): seed 88's follow-up's PICK.
 - `followup-seed88.md` - Seed 88's follow-up chain's 46: its best beside seed 87's follow-up pick and the relf handoff's role holders (Iteration 614).
 - `screen-seed88.md` - The screen for seed 89's remote lines (Iteration 617): the 375 of seed 88's union front its follow-up does not re-measure, with the six portable role holders.
+- `screen-flagged-seed88.md` - The screen's five of seed 88's rest (Iteration 624): flagged against the knee and small and fast on ARMv7, in seed 89's follow-up.
+- `chain-screen88/README.md` - The screen's readings (Iteration 624): seed 88's rest on seed 89's remote lines by session - dream 6 a width, the Tegra 2.
+- `followup-seed89.md` - Seed 89's follow-up chain's 52 (Iteration 624): its best and its 32-bit gain beside the relf handoff's ten holders and the screen's five.
 - `chain-followup88/README.md` - Seed 88's follow-up chain's readings (Iteration 621): the 46 in every session - the laptop 18, dream 28 and 25, rage 3.
 - `followup-pick-seed88.md` - Seed 88's best beside the portable designs found before, re-measured on three machines, every session pooled (Iteration 621).
 - `followup-pick-seed88.json` - followup-pick-seed88.md's set as JSON (final-pick.py --json, Iteration 621).

@@ -1335,3 +1335,20 @@ a threshold (the hypervolume 1%, speed 2%, bytes 1%, memory 4 KB, the 32-bit spe
 nothing; the length the one lever untried). (3) The screen flags at least one of seed 88's 375 against a speed role's
 holder (followup-roles.py --screen, its loosened rule) - 60/40. (4) The Tegra completes at least two sessions of the
 screen (617: the third may be cut short) - 75/25.
+
+**Scored at seed 89 (Iteration 624): three right, one wrong.** (1) right - the chain done, no crash,
+generation 203. (2) wrong - what seed 89 bred gained in-run (confirm.py's NOT CONFIRMED is that gain): the fastest at 32
+bits, ee34931cd7 0.1580 against the bar 0.1610, and the pool with its bred designs +1.8%; the re-measure is the
+follow-up's. (3) right - the screen flagged 5: ee7258275b against the knee; 8164d3858f, ae99617f06, dac11e0a15 and
+a48aca1051 against small and fast on ARMv7. (4) right - the Tegra 2 sessions complete, the third not started (past the
+deadline); dream 6 a width of 8.
+
+## Seed 89's follow-up chain, 10 hours - predicted (Iteration 624)
+
+The 52 of results/followup-seed89.md - seed 89's 30 best on the union's front and the seven it bred past the 32-bit bar,
+the relf handoff's ten holders (the four x86 roles among them), the screen's five - side by side on the laptop (18 steps),
+dream (20 a width) and the Tegra (3). (1) The chain done, every line's sessions complete, the Tegra's 3 - 75/25. (2) Seed
+89's 32-bit gain stands: one of the seven past the bar 2% or more faster than 4ef851fd8e on x86-32 (the laptop and dream
+at 4-byte cells), at 2 SE - 30/70 (seed 88's in-run 32-bit lead 2.9% ahead, 2.1% behind re-measured; the fast tenth's
+re-measure 1.096 here). (3) Any of the ten roles to a seed 89 design or a flagged one - 40/60. (4) Small and fast on ARMv7
+to one of the screen's four (8164d3858f -2.90% on two Tegra sessions at 3 rounds) - 30/70.

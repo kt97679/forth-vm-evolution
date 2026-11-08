@@ -37,6 +37,8 @@ This check fails, naming what would be lost, when:
   12. an index line (a "- " line of an index) longer than 300 characters
       (Iteration 568, the owner: tokens) - a line says what the document is and
       what it found, in one sentence; the document holds the rest.
+  14. PROGRESS.md without its first entry, Iteration 1 (Iteration 624: 623 wrote
+      the file over with its own entry - the log is appended, never rewritten).
 
 5 and 6 pass for anything listed in the disposable list (--disposable FILE,
 default /tmp/handoff-disposable.txt): per line a path - a file, or a directory
@@ -203,6 +205,10 @@ if _it:
         _b = os.path.basename(_f)
         if not _e or (_b not in _e.group(0) and re.sub(r'\.\w+$', '', _b) not in _e.group(0)):
             fail(13, '%s: added in Iteration %s, named in no line of its PROGRESS entry' % (_f, _it.group(1)))
+
+# 14. PROGRESS.md whole, from its first entry (624: Iteration 623 wrote the file over with its own entry)
+if not re.search(r'^## Iteration 1 - ', open(os.path.join(ROOT, 'PROGRESS.md')).read(), re.M):
+    fail(14, 'PROGRESS.md: no "## Iteration 1" - the log cut; restore it from git (git log -p PROGRESS.md) and append')
 
 if fails:
     print('handoff-check: FAIL - a new chat would lose or misread this:')

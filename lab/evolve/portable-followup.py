@@ -29,7 +29,9 @@ the laptop's line). As the build user (it imports the evolver).
 its designs, only what it bred (confirm.py's CARRIED: a carried design is the pool's); found before, without --before,
 the pool before --seed N (confirm.py's: the series, the confirmations, the portable runs) and the final set; the holders
 and --also kept with their JIT; each record its "jit" (followup-roles.py's portable roles skip JIT designs). PICK - for
-none: the x86 and portable holders come by --holders."""
+none: the x86 and portable holders come by --holders. With --seed N, each design the run
+bred past a criterion's bar (confirm.py's, from every alive design) joins too (624: the union's front, an ε-front, had
+left seed 89's 32-bit gain off it - results/drafts/gain-designs-624.md)."""
 import importlib.util, json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 a = sys.argv[1:]
@@ -66,11 +68,24 @@ U = dict(Q); U.update(R)
 on = {i: R[i] for i in hv.true_front(U, E) if i in R and i not in Q}
 b = json.load(open(hv.BOUNDS))
 chosen = [(i, 'the run - ' + w) for i, w, _ in FS.select(on, E, b, k)['set']] if on else []
+gain = []     # 624: --jit - the run's gain re-measured: each design it bred past a criterion's bar, from every alive design (the
+# stopping rule's extremes, 556; confirm.py's verdict) - the union's front, an ε-front (evolve.py's SPEED_TOL), can leave
+# them all off it: seed 89's 32-bit gain, ee34931cd7 and the seven others past the bar, none on it (results/drafts/gain-designs-624.md)
+if JIT and seedN is not None:
+    led = stopping.LEDGER
+    rr = [r for r in stopping.series(led)[1] if r['seed'] < seedN] + CF.confirmations(led, seedN) + CF.portables(led, seedN)
+    bar = CF.judge(dict(hv=0.0, fastest=0.0, smallest=0, memory=0, fastest32=0.0), 1.0, rr)[0]
+    A = [i for i, r in R.items() if r.get('status') == 'ok' and r.get('speed') and r.get('total') and r.get('rss') and r.get('speed32')]
+    names = dict(fastest='the fastest', smallest='the smallest', memory='the least memory', fastest32='the fastest at 32 bits')
+    for key, f in (('fastest', 'speed'), ('smallest', 'total'), ('memory', 'rss'), ('fastest32', 'speed32')):
+        for i in sorted((i for i in A if R[i][f] <= bar[key]), key=lambda i: (R[i][f], i)):
+            if i not in {c[0] for c in chosen} | {g[0] for g in gain}:
+                gain.append((i, 'the run - past the bar of %s (%s), %s the union\'s front' % (names[key], ('%.4f' if 'fastest' in key else '%d') % bar[key], 'on' if i in on else 'off')))
 P = [] if pick == '-' else [json.loads(l) for l in open(pick) if l.strip().startswith('{')]
 keep = ('id', 'genome', 'speed', 'speed32', 'total', 'size', 'bin', 'rss', 'gen', 'status')
 rows, seen = [], set()
-for i, w in chosen:
-    rows.append(dict({x: on[i][x] for x in keep if x in on[i]}, why=w)); seen.add(i)
+for i, w in chosen + gain:
+    rows.append(dict({x: R[i][x] for x in keep if x in R[i]}, why=w)); seen.add(i)
 for r in P:
     if r['id'] not in seen: rows.append(dict({x: r[x] for x in keep if x in r}, why='found before - ' + str(r.get('why', 'the pick')))); seen.add(r['id'])
 for r in (recs(holders) if holders else []):
@@ -83,11 +98,12 @@ with open(out, 'w') as o:
             + ': the run\'s best (%d of its %d designs on the union\'s\n'
             '# true front, by final-set.py\'s select()) and the best of the portable designs found before (%d: final-pick.py\'s set\n'
             '# in %s%s), re-measured side by side - one session a machine. In-run numbers for the run\'s, re-measured for the rest.\n\n'
-            % (len(chosen), len(on), len(rows) - len(chosen), os.path.basename(pick), ', the relf handoff\'s role holders' if holders else ''))
+            % (len(chosen), len(on), len(rows) - len(chosen) - len(gain), os.path.basename(pick), ', the relf handoff\'s role holders' if holders else ''))
+    if gain: o.write('# With them %d it bred past a bar, from every alive design (the stopping rule\'s extremes; 624).\n\n' % len(gain))
     for r in rows: o.write(json.dumps(r, sort_keys=True) + '\n')
 n = len(rows); lap_h = n * 34 / 3600.0; dream_m = n * 10 / 60.0; rage_m = 16 + n * (10 * 18 + 5) / 60.0
 H = hours or max(lap_h, rage_m / 60.0)
-print('%d designs -> %s: the run %d (of %d on the union\'s front), found before %d' % (n, out, len(chosen), len(on), n - len(chosen)))
+print('%d designs -> %s: the run %d (of %d on the union\'s front)%s, found before %d' % (n, out, len(chosen), len(on), ', past a bar %d' % len(gain) if gain else '', n - len(chosen) - len(gain)))
 print('the laptop: about %.1f hours at 10 rounds (four readings); dream about %.0f minutes a session a width; the Tegra about %.0f minutes a session at 10 rounds' % (lap_h, dream_m, rage_m))
 s_d = min(40, max(1, int(H * 60 / 2 // dream_m))); s_r = min(5, max(1, int((H * 60 - 16) // (rage_m - 16))))   # chain D: dream's cap 40
 print('NEXT-RUN:  experiment loadtest.py --ids %s --rounds 10' % out)

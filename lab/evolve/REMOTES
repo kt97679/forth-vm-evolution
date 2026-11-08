@@ -94,6 +94,9 @@
 #   375 of its union front its follow-up did not re-measure, with the six portable holders; the Tegra 3 rounds, 3
 #   sessions (the third may be cut short), dream 10 rounds, 8 sessions a width. Each deadline clamped to the evolution's
 #   end less 5 minutes (remote-checks.sh).
-rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 3 --also @results/screen-seed88.md
-dream.lan    prebuilt32  4       10      625      --cell 4 --rejected 6 --sessions 8 --also @results/screen-seed88.md
-dream.lan    prebuilt64  4       10      625      --from prebuilt32 --sessions 8
+#   Iteration 624 (seed 89's follow-up, 10 hours - NEXT-RUN): results/followup-seed89.md's 52 at 10 rounds - the Tegra
+#   3 sessions (about 160 minutes each after 16 of stages), dream 20 a width (about 9 minutes a session): capped at the
+#   need, so the chain ends with the Tegra's third session, about 9 hours; the window keeps the margin for its builds.
+rage.lan     prebuiltarm 4       10      595      --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed89.md
+dream.lan    prebuilt32  4       10      295      --cell 4 --rejected 6 --sessions 20 --also @results/followup-seed89.md
+dream.lan    prebuilt64  4       10      295      --from prebuilt32 --sessions 20

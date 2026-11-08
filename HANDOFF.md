@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 623.
+- master: Iteration 624.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -101,17 +101,26 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade, which he
   confirmed (621: "performance drop is too significant and size gain is too small"); no extreme gained - seed 88's in-run 32-bit lead,
   c7814def6d, 2.1% behind 9f8811f7f4 re-measured. By the 616/618 rule the **portable search stops** after two runs.
-- **Seed 89 running (started from 621's bundle at eca15d5; 622: NEXT-RUN none, so a pull of this bundle cannot start
-  it again)** - the last JIT run (620, the owner's 21 hours) - `seed 89 21h widths carryall`, no experiment;
-  REMOTES 617's lines screening results/screen-seed88.md (the Tegra 1255 minutes, 3 sessions at 3 rounds; dream 625 a
-  width, 8 sessions). **Its processing** (prepared 622): process-run.sh as a seed - confirm.py's pool takes the portable runs'
-  fronts by default now (seed 89's: 11 files, front 620, hv 0.38110; the smallest's bar 13,572 B, not 13,800); the screen
-  read by followup-roles.py --screen --flagged on the remote lines' readings; when it gains, its follow-up -
-  `portable-followup.py <seed 89's db> - results/followup-seed89.md --jit --seed 89 --holders results/relf-designs-611.md
-  --also <the screen's flagged>`, then followup-roles.py with the six portable roles and
-  fast64=c7c35f9c97,fast32=4ef851fd8e,allround=06b188f45b,smalljit=bac37f35a2 (results/drafts/jit-rehearsal-622.py PASS).
+- **Seed 89 processed (624)** - the last JIT run (21 hours, carryall, 203 generations): confirm.py NOT CONFIRMED - gained
+  in-run by what it bred: the fastest at 32 bits, ee34931cd7 0.1580 against the bar 0.1610 (seven bred designs past it,
+  all JIT, all off the ε-front), and the pool with its bred designs +1.8%; no gain at 64 bits (its 0.1311 carried), in
+  size (13,709, seed 88's) or memory (108 KB) - results/evolve-amd-ryzen-7-pro-8840hs-seed89.md. Not drift (the carried
+  re-read 1.001 and 1.006 of their pool readings), but in-run: the fastest tenth re-measured at 1.096 of in-run
+  (results/drafts/gain-designs-624.md). The screen of seed 88's rest (results/xcheck-seed89.md): 5 flagged - ee7258275b
+  against the knee; 8164d3858f, ae99617f06, dac11e0a15, a48aca1051 against small and fast on ARMv7; none against the
+  fastest portable or ARMv7 holders.
+- **Seed 89's follow-up set (624; the owner: "as many hours as needed for the best efficiency" - 10)** -
+  results/followup-seed89.md: the run's 30 by select(), the seven past the bar (portable-followup.py --jit --seed since
+  624: the ε-front had left them off), the ten relf holders and the screen's five - 52 on the laptop (18 steps), dream (20
+  a width) and the Tegra (3 sessions, the bottleneck: 2% at 5.6 SE); the window 10 hours, the work about 9. **Its
+  processing**: `sh lab/evolve/process-followup.sh 89 ITERATION fastest=782f3ad7ff,arm=690981ca5b,knee=c2ef9488ff,
+  smallarm=a627b954c6,memory=fb0d57c8a2,smallest=64a7345393,fast64=c7c35f9c97,fast32=4ef851fd8e,allround=06b188f45b,
+  smalljit=bac37f35a2` (one argument, no spaces; jit-rehearsal-622.py); then the 618/620 rule - another JIT run only on a
+  role or extreme confirmed, else the JIT roles final; a flagged design taking a portable role reopens the portable search.
+- **PROGRESS.md restored (624)** - Iteration 623 wrote it over with its own entry (Iterations 1-622 out of the file, kept
+  in git); restored from f2fa339, and handoff-check 14 refuses a PROGRESS.md without its first entry.
 - **Before the freeze** (618; GOALS.md step 3 - results/drafts/portable-plan-602.md, "Then the freeze"): the portable search
-  ended (621); seed 88's rest screened during seed 89 (620); the retire report on the final pooled
+  ended (621); seed 88's rest screened during seed 89 (624: 5 flagged, in seed 89's follow-up); the retire report on the final pooled
   front, every value no design on it uses retired, the winners' bytes unchanged (599's way) - previewed on today's pool (623,
   results/drafts/retire-report-623.md): 8 values on no front design, msc=1 the one with code (the owner's: 578's rule or
   598's Tegra 18%), thinhdr=0 kept for s6; the roles packed and exported
@@ -141,10 +150,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 89, the last JIT run - 4 (621).
+- **Predictions due** (results/predictions.md): seed 89's follow-up chain - 4 (624).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; seed 89's chain archive when it returns. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; seed 89's follow-up chain's archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

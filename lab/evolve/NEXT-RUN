@@ -233,4 +233,12 @@
 # by --pool to seeds 87-88's fronts (HANDOFF.md).
 # Iteration 622 (seed 89 running, started from 621's bundle at eca15d5): none - a pull of this bundle must not start
 # seed 89 again (as 613 for seed 88); its processing (process-run.sh) writes the next line.
-none
+# Iteration 624 (seed 89 processed; the owner: "set as many hours as needed for the best efficiency"): seed 89's follow-up
+# chain (results/drafts/jit-run-plan-620.md, "The follow-up") - the 52 of results/followup-seed89.md (portable-followup.py
+# --jit --seed 89 --holders --also): the run's 30 best on the union's front, the seven it bred past the 32-bit bar (its
+# gain, off the ε-front - results/drafts/gain-designs-624.md), the relf handoff's ten holders and the screen's five
+# (results/screen-flagged-seed88.md) - side by side, 10 rounds a step, about 30 minutes. Sized to the need: the Tegra the
+# bottleneck - 3 sessions of about 160 minutes resolve 2% at 5.6 SE (seed 88's follow-up: a paired difference 0.36% over
+# 3; 2 would give 4.5); the laptop 18 steps, about 5.8 SE at 4-byte cells; dream 20 a width (3 would do). The window 10
+# hours keeps seed 88's margin for the Tegra's builds; the chain ends with its work, about 9.
+experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10 then experiment loadtest.py --ids results/followup-seed89.md --rounds 10
