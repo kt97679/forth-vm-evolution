@@ -51,6 +51,9 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
   on x86) and 4dd4e3e7e2 (1.31% smaller, 27.9% slower at x86-32: "performance drop is too significant and size gain is too small")
   kept out of the smallest role. "Size savings are exact - take them" (above)
   is about changes to the system, not a choice between designs.
+- msc=1 kept at the freeze, for now (626: "let's keep msc=1 for now") - the one retire candidate with code behind it
+  (results/drafts/retire-report-625.md: no front design and no winner uses it; dormant in the ARM roles' holders), kept
+  for 598's Tegra pairs (msc=0 17.6-18.4% slower in 4 of 4) - an exception to 578's rule.
 - Noisy timing questions go to the laptop; on the VM (+-10%) decide by the
   profiler's dispatch counts, which are deterministic; to time two engines,
   alternate them over many rounds.

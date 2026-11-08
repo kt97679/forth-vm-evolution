@@ -10977,3 +10977,8 @@ Seed 89's follow-up running (started from 624's bundle at 6e28635dc0): NEXT-RUN 
 seed 89 in the pool: 12 values on no front design (623: 8) - fsys=0 (690981ca5b's, stays), jitrp=0, noinls=0, opbody=0,
 rtloopall=0 added, jitinl=0 now thin; msc=1 still the owner's. The fast end's optimism by run: the JIT runs 1.05-1.10, the
 portable 1.02-1.03 - a JIT trait, not the length. Files: results/drafts/retire-report-625.md, results/drafts/gain-designs-624.md.
+
+## Iteration 626 - 2026-11-08 - Claude
+
+The owner keeps msc=1 at the freeze, for now - 598's Tegra pairs (msc=0 17.6-18.4% slower) over 578's rule; recorded in
+HANDOFF-REFERENCE.md's standing decisions. The freeze's list otherwise as results/drafts/retire-report-625.md. No files added.
