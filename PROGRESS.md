@@ -10982,3 +10982,17 @@ portable 1.02-1.03 - a JIT trait, not the length. Files: results/drafts/retire-r
 
 The owner keeps msc=1 at the freeze, for now - 598's Tegra pairs (msc=0 17.6-18.4% slower) over 578's rule; recorded in
 HANDOFF-REFERENCE.md's standing decisions. The freeze's list otherwise as results/drafts/retire-report-625.md. No files added.
+
+## Iteration 627 - 2026-11-08 - Claude
+
+Seed 89's follow-up chain processed (process-followup.sh, one command): the 52 side by side, every session complete (the
+laptop 18, dream 20 and 20, the Tegra 3). The JIT run's 32-bit gain confirmed - ee34931cd7 the fastest on x86-32, -3.15%
++/- 0.42% against 4ef851fd8e (all 20 of dream's sessions faster) - so by 618/620 another JIT run, seed 90 (the owner's
+hours). Four role changes by the rule, waiting on the owner: x86-32 ee34931cd7; ARMv7 3eb59b271d (bred by the JIT run,
+JIT-free, 2.77% smaller too); the smallest JIT design c6f1c1331b (2.71% smaller, no speed lost); small and fast on ARMv7
+8164d3858f (screened; thin - 3 Tegra sessions, the holder drifting), which by 620 reopens the portable search. The
+smallest kept (efb0fece07 is 4dd4e3e7e2's trade). Predictions 4 of 4 by the rule. Files: results/followup-roles-seed89.md,
+results/followup-pick-seed89.md, results/followup-pick-seed89.json, results/chain-followup89/ - its sK:
+dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json and rage.lan-prebuiltarm.out.json with their reports
+dream.lan-prebuilt32.md, dream.lan-prebuilt64.md and rage.lan-prebuiltarm.md, the laptop's loadtest.md in s1-s18, a
+README.md; results/drafts/followup-check-627.py.

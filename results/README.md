@@ -216,6 +216,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/retire-report-625.md` - The freeze's retire report with seed 89 in the pool (Iteration 625): 12 values on no front design, five more than 623's as seed 89's front displaced older designs; msc=1 the owner's.
 - `drafts/jcc-count-623.md` - Why GCC builds run slow on dream at 32 bits (Iteration 623): dispatch jumps on 32-byte boundaries rank with it in 614's variants - Intel's JCC erratum likely.
 - `drafts/gain-designs-624.md` - Seed 89's 32-bit gain off the ε-front (Iteration 624): why the follow-up's list missed it, the fix, and the drift check (drafts/drift-624.py).
+- `drafts/followup-check-627.py` - Seed 89's follow-up's role changes checked session by session (Iteration 627): the paired differences, the Tegra's t-interval, the holders' drift.
 - `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.
 - `drafts/retire-stages-584.md` - Retiring the older formats (Iteration 584; the owner: if it loses no good design): the condition checked, what goes, what uses s2-s5, the six patches - the freeze first - and their build-hash test.
 - `drafts/random-mode-548.patch` - The random-search baseline's mode, drafted and tested for consolidation (Iteration 548; GOALS.md, "When the improvements are done" 4): evolve.py --random - every child a fresh random genome, nothing learned in the loop, the fast gate kept.
@@ -262,6 +263,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed88.md` - Seed 88's best beside the portable designs found before, re-measured on three machines, every session pooled (Iteration 621).
 - `followup-pick-seed88.json` - followup-pick-seed88.md's set as JSON (final-pick.py --json, Iteration 621).
 - `followup-roles-seed88.md` - The portable roles after seed 88's follow-up (Iteration 621): none changes and no extreme gained, so the portable search stops.
+- `chain-followup89/README.md` - Seed 89's follow-up chain's readings (Iteration 627): the 52 in every session - the laptop 18, dream 20 and 20, rage 3.
+- `followup-pick-seed89.md` - Seed 89's best beside the designs found before, re-measured on three machines, every session pooled (Iteration 627).
+- `followup-pick-seed89.json` - followup-pick-seed89.md's set as JSON (final-pick.py --json, Iteration 627).
+- `followup-roles-seed89.md` - The roles after seed 89's follow-up (Iteration 627): four changes by the rule, waiting on the owner; the JIT's gain confirmed, so another JIT run by 618/620.
 - `audit-nonportable-619.md` - The audit of the results so far and whether a JIT run is worth it (Iteration 619): converged, nothing new since, the portable gains out of its reach - not now.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 626.
+- master: Iteration 627.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -109,15 +109,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (results/drafts/gain-designs-624.md). The screen of seed 88's rest (results/xcheck-seed89.md): 5 flagged - ee7258275b
   against the knee; 8164d3858f, ae99617f06, dac11e0a15, a48aca1051 against small and fast on ARMv7; none against the
   fastest portable or ARMv7 holders.
-- **Seed 89's follow-up running (started from 624's bundle at 6e28635dc0; 625: NEXT-RUN none, so a pull of this bundle
-  cannot start it again; the owner: "as many hours as needed for the best efficiency" - 10)** -
-  results/followup-seed89.md: the run's 30 by select(), the seven past the bar (portable-followup.py --jit --seed since
-  624: the ε-front had left them off), the ten relf holders and the screen's five - 52 on the laptop (18 steps), dream (20
-  a width) and the Tegra (3 sessions, the bottleneck: 2% at 5.6 SE); the window 10 hours, the work about 9. **Its
-  processing**: `sh lab/evolve/process-followup.sh 89 ITERATION fastest=782f3ad7ff,arm=690981ca5b,knee=c2ef9488ff,
-  smallarm=a627b954c6,memory=fb0d57c8a2,smallest=64a7345393,fast64=c7c35f9c97,fast32=4ef851fd8e,allround=06b188f45b,
-  smalljit=bac37f35a2` (one argument, no spaces; jit-rehearsal-622.py); then the 618/620 rule - another JIT run only on a
-  role or extreme confirmed, else the JIT roles final; a flagged design taking a portable role reopens the portable search.
+- **Seed 89's follow-up processed (627)** - results/followup-roles-seed89.md: the 52, every session complete (the laptop
+  18, dream 20 and 20, the Tegra 3). The JIT run's 32-bit gain confirmed: ee34931cd7 the fastest on x86-32, -3.15% +/-
+  0.42% against 4ef851fd8e (all 20 of dream's sessions faster), the laptop's 32-bit extreme 68f5ce466c -3.01% - by 618/620
+  **another JIT run, seed 90** (its hours the owner's; NEXT-RUN none until then). **Four role changes by the rule, waiting
+  on the owner**: x86-32 ee34931cd7; ARMv7 3eb59b271d (bred by seed 89, JIT-free; -2.84% +/- 0.62% and 2.77% smaller); the
+  smallest JIT design c6f1c1331b (2.71% smaller, no speed lost - the pick among eight); small and fast on ARMv7 8164d3858f
+  (the screen's; -2.45% +/- 0.68%, thin - 3 Tegra sessions, the holder's third its slowest), which by 620 reopens the
+  portable search. The smallest kept (efb0fece07 is 4dd4e3e7e2's trade; --gain's size "GAIN" is seed 88's 13,709 B). Taken:
+  the relf handoff's successor, pack-designs.py, export-designs.py.
 - **PROGRESS.md restored (624)** - Iteration 623 wrote it over with its own entry (Iterations 1-622 out of the file, kept
   in git); restored from f2fa339, and handoff-check 14 refuses a PROGRESS.md without its first entry.
 - **Before the freeze** (618; GOALS.md step 3 - results/drafts/portable-plan-602.md, "Then the freeze"): the portable search
@@ -126,7 +126,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/drafts/retire-report-623.md): 8 values on no front design, msc=1 the one with code - kept for now (the owner,
   626: 598's Tegra 18% over 578's rule), thinhdr=0 kept for s6; with seed 89 in the pool 12 (625,
   results/drafts/retire-report-625.md: fsys=0, 690981ca5b's, jitrp=0, noinls=0, opbody=0, rtloopall=0 added, jitinl=0 now
-  thin) - the freeze's list unless another JIT run follows; the roles packed and exported
+  thin) - the freeze's list unless another JIT run follows (627: one is due by the rule); the roles packed and exported
   from the final code, make test, the handoff final; the portable figures recomputed from the records. **The last JIT run (620, the owner)**: one 21-hour JIT run after the portable
   search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
   run's rest, judged by confirm.py (only what it bred counted), a follow-up when it gains, continued only on confirmed
@@ -153,10 +153,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 89's follow-up chain - 4 (624).
+- **Predictions due** (results/predictions.md): none - seed 90's when it is set (627: seed 89's follow-up 4 of 4 by the rule).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; seed 89's follow-up chain's archive when it returns. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; seed 90's archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

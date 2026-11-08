@@ -1352,3 +1352,11 @@ dream (20 a width) and the Tegra (3). (1) The chain done, every line's sessions 
 at 4-byte cells), at 2 SE - 30/70 (seed 88's in-run 32-bit lead 2.9% ahead, 2.1% behind re-measured; the fast tenth's
 re-measure 1.096 here). (3) Any of the ten roles to a seed 89 design or a flagged one - 40/60. (4) Small and fast on ARMv7
 to one of the screen's four (8164d3858f -2.90% on two Tegra sessions at 3 rounds) - 30/70.
+
+**Scored at seed 89's follow-up (Iteration 627): four right by the rule - (3) and (4) wait on the owner's role
+decisions.** (1) right - done, every session of every line complete: the laptop 18, dream 20 and 20, the Tegra 3, each all
+52. (2) right - ee34931cd7 -3.15% +/- 0.42% against 4ef851fd8e on x86-32 (the laptop -4.23%, dream -2.05%, all 20 of
+dream's sessions faster); b969aa7bd8, 68f5ce466c and d8471f1b16 past too. (3) right by the rule - the fastest on x86-32
+ee34931cd7, the fastest on ARMv7 3eb59b271d, the smallest JIT design c6f1c1331b (seed 89's), small and fast on ARMv7
+8164d3858f (screened). (4) right by the rule - 8164d3858f -2.45% +/- 0.68% on the Tegra's three sessions, thin: the
+holder's third its slowest (results/followup-roles-seed89.md).
