@@ -97,6 +97,8 @@
 #   Iteration 624 (seed 89's follow-up, 10 hours - NEXT-RUN): results/followup-seed89.md's 52 at 10 rounds - the Tegra
 #   3 sessions (about 160 minutes each after 16 of stages), dream 20 a width (about 9 minutes a session): capped at the
 #   need, so the chain ends with the Tegra's third session, about 9 hours; the window keeps the margin for its builds.
-rage.lan     prebuiltarm 4       10      595      --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed89.md
-dream.lan    prebuilt32  4       10      295      --cell 4 --rejected 6 --sessions 20 --also @results/followup-seed89.md
-dream.lan    prebuilt64  4       10      295      --from prebuilt32 --sessions 20
+# Iteration 628 (seed 90, the JIT run again): the screen of seed 89's rest, results/screen-seed89.md (291; portable-followup.py --rest
+# --hours 21: a session the Tegra about 270 minutes at 3 rounds, dream about 54 and 48) - 617's lines, the sessions to fit.
+rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 4 --also @results/screen-seed89.md
+dream.lan    prebuilt32  4       10      625      --cell 4 --rejected 6 --sessions 11 --also @results/screen-seed89.md
+dream.lan    prebuilt64  4       10      625      --from prebuilt32 --sessions 11

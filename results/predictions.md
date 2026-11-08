@@ -1360,3 +1360,15 @@ dream's sessions faster); b969aa7bd8, 68f5ce466c and d8471f1b16 past too. (3) ri
 ee34931cd7, the fastest on ARMv7 3eb59b271d, the smallest JIT design c6f1c1331b (seed 89's), small and fast on ARMv7
 8164d3858f (screened). (4) right by the rule - 8164d3858f -2.45% +/- 0.68% on the Tegra's three sessions, thin: the
 holder's third its slowest (results/followup-roles-seed89.md).
+
+## Seed 90, the JIT run again (carryall, 21 hours) - predicted (Iteration 628)
+
+Seed 89's setup again, seed 89's front among the founders; its remote lines screen seed 89's rest
+(results/screen-seed89.md, 291). (1) The chain done with every remote line's sessions (the Tegra 4, dream 11 a width),
+and both hosts' clean lines in its steps at the start and the end, the end's "fve-xcheck removed" on each - 75/25. (2)
+confirm.py CONFIRMED by what seed 90 bred, in-run against the pool with seed 89's front (any criterion) - 40/60: seed 89
+gained from the pool before it, seed 90 starts from seed 89's own front. (3) The screen flags at least one of seed 89's
+rest against a portable role - 65/35 (seed 88's flagged 5). (4) The Tegra's re-measure of 8164d3858f against a627b954c6,
+pooled with the follow-up's 3 sessions: 2% or more faster at 2 SE - 35/65 (its first session -1.18%, the holder's third
+its slowest).
+

@@ -10996,3 +10996,15 @@ results/followup-pick-seed89.md, results/followup-pick-seed89.json, results/chai
 dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json and rage.lan-prebuiltarm.out.json with their reports
 dream.lan-prebuilt32.md, dream.lan-prebuilt64.md and rage.lan-prebuiltarm.md, the laptop's loadtest.md in s1-s18, a
 README.md; results/drafts/followup-check-627.py.
+
+## Iteration 628 - 2026-11-08 - Claude
+
+The owner's decisions on seed 89's follow-up ("proceed as you suggested"): three roles changed - x86-32 ee34931cd7, ARMv7
+3eb59b271d, the smallest JIT design c6f1c1331b - the package iter628 (20 of 20 builds 9 of 9 right) and designs/ made
+again for them (byte for byte; make test 10 of 10); 8164d3858f's thin ARMv7 gain goes to seed 90's Tegra line. Seed 90
+set, 21 hours (the hours left to Claude: seed 89's winners born by generation 167 of 202), its remote lines screening
+seed 89's rest (291, from its results file); 4 predictions. remote-checks.sh clean (the owner: proper cleanup on rage
+and dream after the run): each host's fve-xcheck emptied of this and earlier chains at gather's end, the earlier chains'
+at probe, their processes stopped (none with a terminal), one line a host in the steps; lab/evolve/test-remote-clean.sh
+in run-tests. Files: results/handoff-relf-628.md, results/relf-designs-628.md, results/screen-seed89.md.
+

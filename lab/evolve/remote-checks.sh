@@ -1,5 +1,5 @@
 #!/bin/sh
-# lab/evolve/remote-checks.sh probe|start|gather|stop CHAIN [nowait] - the previous front
+# lab/evolve/remote-checks.sh probe|start|gather|stop|clean CHAIN [nowait] - the previous front
 # measured on other machines alongside a seed chain (Iteration 315; the hosts in
 # lab/evolve/REMOTES; results/drafts/runner-protocol.md). next-run.sh and chainctl.py call it:
 #
@@ -17,6 +17,8 @@
 #           xcheck.py --report into CHAIN/remote/HOST.md, the host's directory removed - a
 #           host not done waits until its own deadline, unless nowait (stopped, interrupted)
 #   stop    each host's run ended - by its process group, not by name
+#   clean   (Iteration 628) each host's fve-xcheck emptied of this chain and every earlier one - gather's last step,
+#           and probe's first (the earlier chains' only); by hand, the same as gather's
 #
 # Iteration 429 (the owner: the Tegra slow, its checks in parallel with everything, never slowing it): with
 # RUN_UNTIL (next-run.sh's evolution deadline, epoch seconds) no check's deadline lies past the evolution's end
@@ -35,7 +37,7 @@
 # SSH and SCP may name stand-ins (the tests), and REMOTES_FILE the hosts' file (Iteration 379).
 set -u
 CMD=${1:-}; CHAIN=${2:-}; NOWAIT=${3:-}
-[ -n "$CMD" ] && [ -d "$CHAIN" ] || { echo "usage: remote-checks.sh probe|start|gather|stop CHAIN [nowait]" >&2; exit 2; }
+[ -n "$CMD" ] && [ -d "$CHAIN" ] || { echo "usage: remote-checks.sh probe|start|gather|stop|clean CHAIN [nowait]" >&2; exit 2; }
 REPO=$(cd "$(dirname "$0")/../.." && pwd)
 CONF=${REMOTES_FILE:-$REPO/lab/evolve/REMOTES}
 SSH=${SSH:-ssh}; SCP=${SCP:-scp}
@@ -44,6 +46,55 @@ R=$CHAIN/remote
 RDIR=fve-xcheck/$(basename "$CHAIN")
 note() { echo "remote $1: $2" >> "$CHAIN/steps"; echo "next-run: remote $1: $2"; }
 conf() { sed -n '/^[^#]/p' "$CONF" 2>/dev/null; }
+# Iteration 628 (the owner: "proper cleanup on both rage and dream" after the run). gather removed each line's directory
+# once, its failure unsaid, and a chain cut off before its gather (seed 87's crash) left its directories and could leave
+# its processes; nothing said what a host kept. clean: on each host, the chain directories under fve-xcheck in range -
+# MODE "upto" this chain's and every earlier chain's (by name, chain-YYYYMMDD-HHMMSS: one chain at a time, so an earlier
+# one is over), "before" the earlier ones only - their processes stopped first (by working directory, TERM then KILL),
+# never a process with a terminal - a shell the owner left there -, the directories removed, fve-xcheck removed when empty; anything else there, and a later chain's, left as it is. One
+# line a host in CHAIN/steps: what went, what fve-xcheck keeps, the home's free space. The script goes on ssh's stdin.
+clean_script() {
+    cat << 'EOS'
+mode=$1; cur=$2; cd || exit 1
+free() { df -Pk . 2> /dev/null | awk 'NR == 2 {printf "%d MB free in the home", $4 / 1024}'; }
+[ -d fve-xcheck ] || { echo "nothing there (no fve-xcheck); $(free)"; exit 0; }
+B=$(cd fve-xcheck && pwd -P); c1=${cur%-*}; c2=${cur#*-}
+take() {
+    case $1 in chain-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;; *) return 1 ;; esac
+    x=${1#chain-}; x1=${x%-*}; x2=${x#*-}
+    [ "$x1" -lt "$c1" ] || { [ "$x1" -eq "$c1" ] && [ "$x2" -lt "$c2" ]; } && return 0
+    [ "$mode" = upto ] && [ "$x1" -eq "$c1" ] && [ "$x2" -eq "$c2" ]
+}
+pids() {
+    for p in /proc/[0-9]*; do
+        w=$(readlink "$p/cwd" 2> /dev/null) || continue
+        case $w in "$B"/*) ;; *) continue ;; esac
+        d=${w#"$B"/}; d=${d%%/*}; take "$d" && [ "${p#/proc/}" != "$$" ] || continue
+        st=$(cat "$p/stat" 2> /dev/null) || continue; set -- ${st##*) }; [ "${5:-1}" = 0 ] && echo "${p#/proc/}"
+    done
+}
+k=$(pids | wc -l)
+if [ "$k" -gt 0 ]; then kill -TERM $(pids) 2> /dev/null; sleep 3; q=$(pids); [ -n "$q" ] && kill -KILL $q 2> /dev/null; sleep 1; fi
+n=0; kb=0
+for d in "$B"/chain-*; do
+    [ -d "$d" ] && take "$(basename "$d")" || continue
+    s=$(du -sk "$d" 2> /dev/null | cut -f1); rm -rf "$d" && { n=$((n + 1)); kb=$((kb + ${s:-0})); }
+done
+rmdir "$B" 2> /dev/null
+if [ -d "$B" ]; then left="fve-xcheck keeps: $(ls -A "$B" | tr '\n' ' ' | sed 's/ $//' | cut -c1-160)"; else left="fve-xcheck removed"; fi
+command -v readlink > /dev/null || left="$left (no readlink: processes not looked for)"
+echo "$n chain directories removed ($((kb / 1024)) MB), $k processes stopped; $left; $(free)"
+EOS
+}
+clean() {
+    c=$(basename "$CHAIN"); c=${c#chain-}
+    case $c in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]) ;;
+        *) note all "clean: $(basename "$CHAIN") is not a chain's name - nothing cleaned"; return 0 ;; esac
+    for host in $(sort -u "$R/hosts" 2> /dev/null); do
+        r=$(clean_script | $SSH $O "$host" "sh -s $1 $c" 2> /dev/null | tail -n 1)
+        note "clean $host" "${r:-could not be reached - left as it was}"
+    done
+}
 
 case $CMD in
 probe)
@@ -53,7 +104,8 @@ probe)
         t0=$(date +%s%N)                                              # Iteration 381: the connection, timed
         if $SSH $O "$host" true < /dev/null > /dev/null 2>&1; then ms=$(( ($(date +%s%N) - t0) / 1000000 )); echo "$host $ms" >> "$R/connect"; echo "$host" >> "$R/hosts"; echo "next-run: remote $host answers in $ms ms - its check runs alongside the seed run"
         else note "$host" "does not answer (ssh, no password asked) - skipped"; fi
-    done ;;
+    done
+    clean before ;;                                                   # 628: an earlier chain's leftovers, first
 start)
     [ -s "$R/hosts" ] || exit 0
     rep=$(ls -d "$(dirname "$CHAIN")"/archived-*/build/evolve/report.md 2>/dev/null | sort | tail -1)
@@ -193,7 +245,9 @@ gather)
         fi
     done
     for host in $(cat "$R/hosts" 2>/dev/null); do $SSH $O "$host" "rmdir $RDIR 2>/dev/null; rm -f $RDIR/.lock; rmdir $RDIR 2>/dev/null; true" < /dev/null > /dev/null 2>&1 || true
-    done ;;
+    done
+    clean upto ;;                                                     # 628: whatever this chain and earlier ones left
+clean) clean upto ;;
 *) echo "remote-checks.sh: no command $CMD" >&2; exit 2 ;;
 esac
 exit 0

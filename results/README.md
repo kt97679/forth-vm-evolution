@@ -248,13 +248,16 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed87.md` - Seed 87's best beside the 282's, re-measured on three machines, every session pooled (Iteration 611).
 - `followup-roles-seed87.md` - The relf handoff's portable roles after the follow-up chain (Iteration 611): 782f3ad7ff the fastest portable, a627b954c6 small and fast on ARMv7.
 - `handoff-relf-611.md` - The designs handed to relf (Iteration 611, replacing 601's): ten winners by role, the portable run's 782f3ad7ff the fastest portable.
+- `handoff-relf-628.md` - The relf handoff after seed 89's follow-up (Iteration 628): three roles change - ee34931cd7 the fastest on x86-32, c6f1c1331b the smallest JIT design, 3eb59b271d the fastest on ARMv7; the package iter628.
 - `relf-designs-611.md` - The relf handoff's ten records, the input of pack-designs.py and export-designs.py (Iteration 611; the smallest 64a7345393 at 612).
+- `relf-designs-628.md` - The relf handoff's ten records after seed 89's follow-up (Iteration 628), the input of pack-designs.py and export-designs.py.
 - `candidates-dream32-612.md` - The dream 32-bit experiment (Iteration 612): 9f8811f7f4 and 690981ca5b with one gene reverted at a time, and the control 782f3ad7ff.
 - `chain-seed88/README.md` - Seed 88's chain's readings (Iteration 614): the dream 32-bit experiment's 20 in every session - the laptop 1, dream 30 a width, rage 12.
 - `dream32-experiment-seed88.md` - The dream 32-bit experiment read (Iteration 614): the compiler - clang restores both bases, no other single gene does.
 - `followup-pick-seed87.json` - followup-pick-seed87.md's set as JSON (final-pick.py --json, reproduced at 614): seed 88's follow-up's PICK.
 - `followup-seed88.md` - Seed 88's follow-up chain's 46: its best beside seed 87's follow-up pick and the relf handoff's role holders (Iteration 614).
 - `screen-seed88.md` - The screen for seed 89's remote lines (Iteration 617): the 375 of seed 88's union front its follow-up does not re-measure, with the six portable role holders.
+- `screen-seed89.md` - The screen for seed 90's remote lines (Iteration 628): seed 89's rest (291 - its union front's JIT-free designs the follow-up did not re-measure, the ten holders, 8164d3858f and ae99617f06 for the Tegra).
 - `screen-flagged-seed88.md` - The screen's five of seed 88's rest (Iteration 624): flagged against the knee and small and fast on ARMv7, in seed 89's follow-up.
 - `chain-screen88/README.md` - The screen's readings (Iteration 624): seed 88's rest on seed 89's remote lines by session - dream 6 a width, the Tegra 2.
 - `followup-seed89.md` - Seed 89's follow-up chain's 52 (Iteration 624): its best and its 32-bit gain beside the relf handoff's ten holders and the screen's five.

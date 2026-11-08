@@ -243,4 +243,14 @@
 # hours keeps seed 88's margin for the Tegra's builds; the chain ends with its work, about 9.
 # Iteration 625 (seed 89's follow-up chain running, started from 624's bundle at 6e28635dc0): none - a pull of this
 # bundle must not start it again (as 615 for seed 88's); its processing (lab/evolve/process-followup.sh) writes the next line.
-none
+# Iteration 628 (seed 89's follow-up processed at 627 - results/followup-roles-seed89.md; the owner: "proceed as you suggested
+# and allocate as many hours as you think is best"): seed 90, the JIT run again by the 618/620 rule - seed 89's 32-bit
+# gain confirmed (ee34931cd7 now the fastest on x86-32). Seed 89's setup: the JIT allowed, every archived database
+# carried as founders (seed 89's among them), both widths, no experiment. 21 hours, as seed 89: its confirmed winners
+# were born at generations 93-167 of 202 and its front's additions slowed (2.5 a generation to 100, 1.5 after 150), so
+# a longer run buys little, and the same length keeps the two comparable by generation; REMOTES' screen fits it (the
+# Tegra 4 sessions). REMOTES: seed 89's rest - results/screen-seed89.md, 291: the JIT-free designs of its union front
+# its follow-up did not re-measure, the ten holders, and 8164d3858f and ae99617f06 for the Tegra's re-measure against
+# a627b954c6 - at no laptop time. The chain cleans rage and dream at its start and end (remote-checks.sh clean, 628).
+# Its processing: process-run.sh; confirm.py's default pool has seeds 86-89 (--pool-files 90).
+seed 90 21h widths carryall

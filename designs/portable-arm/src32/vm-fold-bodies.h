@@ -2,7 +2,6 @@ LX_lit:     /* lit     */ PUSH(OPND16(ip)); ip += 2; EXITNEXT();
 LX_drop:    /* drop    */ dsp += CELL_BYTES; EXITNEXT();
 LX_dup:     /* dup     */ PUSH(DS1); EXITNEXT();
 LX_swap:    /* swap    */ t = DS0; DS0 = DS1; DS1 = t; EXITNEXT();
-LX_rot:     /* rot     */ t = DS2; DS2 = DS1; DS1 = DS0; DS0 = t; EXITNEXT();
 LX_over:    /* over    */ PUSH(DS2); EXITNEXT();
 LX_cfetch:  /* C@      */ DS0 = BYTE(DS0); EXITNEXT();
 LX_fetch:   /* @       */ DS0 = CELL(DS0); EXITNEXT();
@@ -10,7 +9,6 @@ LX_cstore:  /* c!      */ BYTE(DS0) = (UNS8)DS1; dsp += 2 * CELL_BYTES; EXITNEXT
 LX_store:   /* !       */ CELL(DS0) = DS1; dsp += 2 * CELL_BYTES; EXITNEXT();
 LX_and:     /* and     */ DS1 &= DS0; dsp += CELL_BYTES; EXITNEXT();
 LX_or:      /* or      */ DS1 |= DS0; dsp += CELL_BYTES; EXITNEXT();
-LX_xor:     /* xor     */ DS1 ^= DS0; dsp += CELL_BYTES; EXITNEXT();
 LX_fromr:   /* r>      */ PUSH(RS); rp += CELL_BYTES; EXITNEXT();
 LX_tor:     /* >r      */ RPUSH(DS0); dsp += CELL_BYTES; EXITNEXT();
 LX_rfetch:  /* r@      */ PUSH(RS); EXITNEXT();
