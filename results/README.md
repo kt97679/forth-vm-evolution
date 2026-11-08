@@ -256,6 +256,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `screen-flagged-seed88.md` - The screen's five of seed 88's rest (Iteration 624): flagged against the knee and small and fast on ARMv7, in seed 89's follow-up.
 - `chain-screen88/README.md` - The screen's readings (Iteration 624): seed 88's rest on seed 89's remote lines by session - dream 6 a width, the Tegra 2.
 - `followup-seed89.md` - Seed 89's follow-up chain's 52 (Iteration 624): its best and its 32-bit gain beside the relf handoff's ten holders and the screen's five.
+- `candidates-final-seed89.md` - Seed 89's 178 final-pick candidates (Iteration 624): final-set.py's draft from the pool and the run - the leanest, the smallest, the set, those within 5% of the fastest at either width.
 - `chain-followup88/README.md` - Seed 88's follow-up chain's readings (Iteration 621): the 46 in every session - the laptop 18, dream 28 and 25, rage 3.
 - `followup-pick-seed88.md` - Seed 88's best beside the portable designs found before, re-measured on three machines, every session pooled (Iteration 621).
 - `followup-pick-seed88.json` - followup-pick-seed88.md's set as JSON (final-pick.py --json, Iteration 621).
