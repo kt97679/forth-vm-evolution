@@ -104,6 +104,12 @@
 # minutes a session, more while dream copies its backup), the Tegra 185 s a design a session at 10 rounds after its 16
 # minutes of stages (11 with the 4 rejected: about 34 minutes); the Tegra 2 sessions, dream 10 a width - the knee's
 # question is x86's, the Tegra's for the classes only.
-rage.lan     prebuiltarm 4       10      100      --cell 4 --rejected 4 --sessions 2 --also @results/followup-seed90.md
-dream.lan    prebuilt32  4       10      55       --cell 4 --rejected 6 --sessions 10 --also @results/followup-seed90.md
-dream.lan    prebuilt64  4       10      55       --from prebuilt32 --sessions 10
+# rage.lan     prebuiltarm 4       10      100      --cell 4 --rejected 4 --sessions 2 --also @results/followup-seed90.md
+# dream.lan    prebuilt32  4       10      55       --cell 4 --rejected 6 --sessions 10 --also @results/followup-seed90.md
+# dream.lan    prebuilt64  4       10      55       --from prebuilt32 --sessions 10
+# Iteration 632 - seed 91, the portable run 620 reopened: its remote lines screen seed 90's rest (results/screen-seed90.md,
+# 266: the JIT run's 259 JIT-free designs on the union's front, the six portable holders, 11a56ff9e4) - sized by
+# portable-followup.py at seed 90's chain's rates (631): a session dream about 66 and 57 minutes, the Tegra 314 at 3 rounds.
+rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 3 --also @results/screen-seed90.md
+dream.lan    prebuilt32  4       10      625      --cell 4 --rejected 6 --sessions 9 --also @results/screen-seed90.md
+dream.lan    prebuilt64  4       10      625      --from prebuilt32 --sessions 9

@@ -1391,3 +1391,13 @@ minutes a width). (2) 11a56ff9e4 takes the knee by the role's rule - 1% smaller 
 slower, the laptop and dream pooled - 80/20 (dream -1.3% at 64 bits; the laptop would need +5.4% to reach 2%). (3) It is 2%
 or more faster than c2ef9488ff on x86-32, at 2 SE - 80/20 (dream -4.4%, the laptop in-run -8.0%). (4) The laptop agrees
 with dream in sign at 64 bits (faster) - 40/60 (the laptop in-run +0.6%, the fast end's optimism on top).
+
+## Seed 91, the portable run reopened (nojit, 21 hours) - predicted (Iteration 632)
+
+Seeds 87 and 88's setup, the newest four databases carried (87-90); its remote lines screen seed 90's rest
+(results/screen-seed90.md, 266). (1) The chain done with the remote lines' sessions as sized - the Tegra 3, dream 9 a
+width (seed 90's rates, 631) - 55/45 (dream's backup copy, if still running, slowed seed 90's loaded sessions up to 27%).
+(2) portable.py BETTER than every portable design found before, by any criterion in-run - 45/55 (seed 87 by the
+hypervolume, seed 88 by one extreme; seed 91 starts from both and from seeds 89-90's JIT-free designs). (3) The screen
+flags at least one of seed 90's rest against a portable role - 60/40 (seed 88's rest 5, seed 89's 1 once JIT-free). (4) The
+hypervolume past its 1% bar - 25/75 (seed 87 +2.4%, seed 88 short).

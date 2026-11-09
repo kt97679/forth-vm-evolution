@@ -265,6 +265,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-seed88.md` - Seed 88's follow-up chain's 46: its best beside seed 87's follow-up pick and the relf handoff's role holders (Iteration 614).
 - `screen-seed88.md` - The screen for seed 89's remote lines (Iteration 617): the 375 of seed 88's union front its follow-up does not re-measure, with the six portable role holders.
 - `screen-seed89.md` - The screen for seed 90's remote lines (Iteration 628): seed 89's rest (291 - its union front's designs the follow-up did not re-measure, 82 of them JIT - left out of the screen at 630, the ten holders, 8164d3858f and ae99617f06 for the Tegra).
+- `screen-seed90.md` - The screen for seed 91's remote lines (Iteration 632): seed 90's rest - its 259 JIT-free designs on the union's front, none re-measured - with the six portable holders and 11a56ff9e4.
 - `screen-flagged-seed88.md` - The screen's five of seed 88's rest (Iteration 624): flagged against the knee and small and fast on ARMv7, in seed 89's follow-up.
 - `screen-flagged-seed89.md` - The screen's one of seed 89's rest (Iteration 630): 11a56ff9e4, flagged against the knee, for the next follow-up's list.
 - `chain-screen88/README.md` - The screen's readings (Iteration 624): seed 88's rest on seed 89's remote lines by session - dream 6 a width, the Tegra 2.

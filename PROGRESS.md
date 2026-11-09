@@ -11039,3 +11039,13 @@ copied zfs to btrfs over USB). Seed 90's follow-up set, ending before 9 pm the o
 beside the six portable holders, 20 laptop steps, dream 10 a width, the Tegra 2 - about 2 hours; 4 predictions; then the
 portable run. Files: results/handoff-relf-631.md, results/relf-designs-631.md, results/followup-seed90.md,
 results/drafts/smallarm-classes-631.py.
+
+## Iteration 632 - 2026-11-09 - Claude
+
+While seed 90's follow-up runs: seed 91 set - the portable run 620 reopened, `seed 91 nojit 21h widths` (seeds 87-88's
+setup), its remote lines screening seed 90's rest: 266 (the JIT run's 259 JIT-free designs on the union's front - none
+re-measured, the source of 3eb59b271d's kind - the six portable holders, 11a56ff9e4), built from seed 90's db.jsonl while it
+was here. portable-followup.py: --seed N without --jit (the pool before N, only what the run bred), --k 0 (the union's
+front all to the screen), --rest JIT-free always, the screen sized by seed 90's chain's rates (seed 88's left two screens
+short); results/drafts/jit-rehearsal-622.py PASS (its check 6 less the screen's sizing). 4 predictions. Files:
+results/screen-seed90.md.

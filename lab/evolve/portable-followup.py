@@ -19,8 +19,11 @@ its holder (610 added 690981ca5b and c2ef9488ff by hand).
 --also FILE (Iteration 617): records added as they are, each not listed yet, its own why - the screen's flagged
 (followup-roles.py --screen --flagged). --rest OUT2 (Iteration 617; results/drafts/portable-plan-602.md, "After the follow-up"): the run's other designs on the
 union's front - those select() left out - and the holders, one record a line: the screen the next portable run's remote
-lines measure; its REMOTES lines printed, sized to --hours from seed 88's chain's rates (dream 11 s a design a session at
-4-byte cells and 10 at 8-byte, 10 rounds; the Tegra 17 s a round and 5 s a design, at 3 rounds).
+lines measure, JIT designs left out (630: 628's list held 82 - a portable role's candidate is JIT-free); its REMOTES lines
+printed, sized to --hours from seed 90's chain's rates (631: dream 15 s a design a session at 4-byte cells and 13 at 8-byte,
+10 rounds; the Tegra 22 s a round and 5 s a design, at 3 rounds - seed 88's 11, 10 and 17 left two screens' lines short).
+--seed N without --jit (631): the pool before seed N as --jit's (the series, the confirmations, the portable runs) and only
+what the run bred - a JIT run's JIT-free designs screened; --k 0: none chosen for a follow-up, the union's front all --rest.
 Prints the chain's lines - NEXT-RUN's `experiment loadtest.py --ids OUT --rounds 10` and REMOTES' two hosts - sized from
 the measured rates (chain D: the laptop about 34 s a design for its four readings at 10 rounds; dream about 10 s a design
 a session at 10 rounds; the Tegra about 18 s a round and 5 s a design, its stages 16 minutes), to fit --hours (default
@@ -50,15 +53,15 @@ _c = importlib.util.spec_from_file_location('confirm', os.path.join(HERE, 'confi
 jit = lambda r: bool(E.express(E.canon(r['genome'])).get('jit'))
 drop = (lambda r: False) if JIT else jit           # 622: --jit keeps the JIT designs
 R = {i: r for i, r in hv.load(db, E).items() if r.get('genome') and not drop(r)
-     and not (JIT and str(r.get('how', '')).startswith(CF.CARRIED))}   # 622: only what the JIT run bred
+     and not ((JIT or seedN) and str(r.get('how', '')).startswith(CF.CARRIED))}   # 622: only what the JIT run bred (631: --seed)
 Q = {}
 if before:
     for x in recs(before):
         if not drop(x): Q.setdefault(x['id'], dict(x, speed=x.get('inrun') or x['speed'], speed32=x.get('inrun32') or x['speed32']))
 else:
-    n0 = seedN if JIT else 87
+    n0 = seedN or 87                                   # 631: --seed without --jit - the pool before seed N too
     method, runs = stopping.series(stopping.LEDGER); runs = [r for r in runs if r['seed'] < n0]
-    for f in CF.pool_files(runs + CF.confirmations(stopping.LEDGER, n0) + (CF.portables(stopping.LEDGER, n0) if JIT else [])):
+    for f in CF.pool_files(runs + CF.confirmations(stopping.LEDGER, n0) + (CF.portables(stopping.LEDGER, n0) if JIT or seedN else [])):
         Q.update({i: r for i, r in hv.load(f, E).items() if r.get('genome') and not drop(r)})
     for l in open(os.path.join(HERE, '..', '..', 'results', 'final-set-chainsBCD-seed86.md')):
         if l.startswith('{'):
@@ -67,7 +70,7 @@ else:
 U = dict(Q); U.update(R)
 on = {i: R[i] for i in hv.true_front(U, E) if i in R and i not in Q}
 b = json.load(open(hv.BOUNDS))
-chosen = [(i, 'the run - ' + w) for i, w, _ in FS.select(on, E, b, k)['set']] if on else []
+chosen = [(i, 'the run - ' + w) for i, w, _ in FS.select(on, E, b, k)['set']] if on and k else []
 gain = []     # 624: --jit - the run's gain re-measured: each design it bred past a criterion's bar, from every alive design (the
 # stopping rule's extremes, 556; confirm.py's verdict) - the union's front, an ε-front (evolve.py's SPEED_TOL), can leave
 # them all off it: seed 89's 32-bit gain, ee34931cd7 and the seven others past the bar, none on it (results/drafts/gain-designs-624.md)
@@ -112,9 +115,9 @@ print('           dream.lan    prebuilt32  4       10      %d      --cell 4 --re
 print('           dream.lan    prebuilt64  4       10      %d      --from prebuilt32 --sessions %d' % (int(H * 30) - 5, s_d))
 if rest:                                              # 617: the screen - the union's front less the chosen, with the holders
     rr = [dict({x: on[i][x] for x in keep if x in on[i]}, why='the run - the screen (the rest of the union\'s front)')
-          for i in sorted(on, key=lambda i: (on[i]['speed'], i)) if i not in seen]
+          for i in sorted(on, key=lambda i: (on[i]['speed'], i)) if i not in seen and not jit(on[i])]   # 630: JIT-free
     hold = [dict({x: r[x] for x in keep if x in r}, why='found before - the relf handoff\'s role holder')
-            for r in (recs(holders) if holders else []) if not drop(r)]
+            for r in (recs(holders) if holders else []) if not jit(r)]
     with open(rest, 'w') as o:
         o.write('# The screen (lab/evolve/portable-followup.py --rest, Iteration 617): the run\'s %d other designs on the union\'s true\n'
                 '# front - those its follow-up does not re-measure - and the relf handoff\'s %d portable role holders to pair them with,\n'
@@ -122,7 +125,7 @@ if rest:                                              # 617: the screen - the un
                 % (len(rr), len(hold)))
         for r in rr + hold: o.write(json.dumps(r, sort_keys=True) + '\n')
     m = len(rr) + len(hold); H2 = hours or 21.0
-    d32, d64, tg = m * 11 / 60.0, m * 10 / 60.0, m * (3 * 17 + 5) / 60.0
+    d32, d64, tg = m * 15 / 60.0, m * 13 / 60.0, m * (3 * 22 + 5) / 60.0   # 631: seed 90's chain's rates
     print('the screen: %d designs -> %s (the run %d, the holders %d); a session: dream %.0f and %.0f minutes (4- and 8-byte), the '
           'Tegra %.0f at 3 rounds' % (m, rest, len(rr), len(hold), d32, d64, tg))
     sd = max(1, min(int((H2 * 30 - 5) // d32), int((H2 * 30 - 5) // d64))); st = max(1, int((H2 * 60 - 5 - 16) // tg))

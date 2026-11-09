@@ -70,7 +70,9 @@ try:
         x = list(a); x[2] = os.path.join(W, t + '.md'); x[-1] = os.path.join(W, t + '-rest.md')
         q = subprocess.run([sys.executable, s] + x, capture_output=True, text=True)
         outs.append((q.stdout.replace(x[2], 'OUT').replace(x[-1], 'REST'), open(x[2]).read(), open(x[-1]).read()))
-    check(outs[0] == outs[1] and len(outs[0][1]) > 1000, '(6) the portable path the pre-622 script\'s byte for byte (list, screen, printed lines; %d bytes)' % len(outs[0][1]))
+    cut = lambda t: t.split('\nthe screen:')[0]      # 631: the screen's sizing lines - seed 90's chain's rates, by design
+    check(outs[0][1:] == outs[1][1:] and cut(outs[0][0]) == cut(outs[1][0]) and len(outs[0][1]) > 1000,
+          '(6) the portable path the pre-622 script\'s byte for byte (list, screen, printed lines but the screen\'s sizing - 631; %d bytes)' % len(outs[0][1]))
 finally:
     os.unlink(old)
 shutil.rmtree(W)
