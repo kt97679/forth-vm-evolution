@@ -1392,6 +1392,13 @@ slower, the laptop and dream pooled - 80/20 (dream -1.3% at 64 bits; the laptop 
 or more faster than c2ef9488ff on x86-32, at 2 SE - 80/20 (dream -4.4%, the laptop in-run -8.0%). (4) The laptop agrees
 with dream in sign at 64 bits (faster) - 40/60 (the laptop in-run +0.6%, the fast end's optimism on top).
 
+**Scored at seed 90's follow-up (Iteration 634): three right, one wrong - (2) waits on the owner's decision.** (1) right -
+done 21:06-23:01 UTC (15:01 Pacific), every line complete: the laptop 20, dream 10 and 10, the Tegra 2, each all 7. (2)
+right by the rule - 5.45% smaller, x86-32 -3.59% +/- 0.43%, x86-64 +1.54% +/- 0.25% (the laptop alone and dream pooled).
+(3) right - 8.5 SE: the laptop -4.22% (20 of 20 sessions faster), dream -2.95% (9 of 10). (4) wrong - at 8-byte cells the
+laptop +4.38% +/- 0.29% (none of 20 faster; loaded +5.53%), dream -1.22% +/- 0.41%: the machines split, the pooled class
+under 2% by dream's sign (results/followup-roles-seed90.md).
+
 ## Seed 91, the portable run reopened (nojit, 21 hours) - predicted (Iteration 632)
 
 Seeds 87 and 88's setup, the newest four databases carried (87-90); its remote lines screen seed 90's rest

@@ -11057,3 +11057,15 @@ follow-up readings - both run; followup-rehearsal-615.sh PASS). The pool before 
 designs, seeds 89-90's JIT-free front designs among them (3eb59b271d) - seed 91's bars 0.2758, 0.2851 at 32 bits, 13,709
 B, 104 KB. lab/evolve/remote-load.py: each remote session's host load, those over 2 named - 630's dream finding (10 of its
 16 sessions) automated in process-seed.sh's and process-followup.sh's summaries. Files: results/portable-front-seed90.md.
+
+## Iteration 634 - 2026-11-09 - Claude
+
+Seed 90's follow-up chain processed (process-followup.sh, one command): the 7 side by side, every session complete (the
+laptop 20, dream 10 and 10, the Tegra 2), done 15:01 the owner's time. 11a56ff9e4 takes the knee by the rule, waiting on
+the owner: 5.45% smaller, x86-32 -3.59% +/- 0.43% (the laptop -4.22%, dream -2.95%), x86-64 +1.54% +/- 0.25% pooled - the
+machines split there (the laptop +4.38%, none of 20 sessions faster; dream -1.22%); the other five holders kept. Predictions
+3 of 4 ((4) wrong: the 64-bit split). Seed 91 not started yet (the owner) - NEXT-RUN keeps its line. Files:
+results/followup-roles-seed90.md, results/followup-pick-seed90.md, results/followup-pick-seed90.json,
+results/chain-followup90/ - its sK: dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json and
+rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md, dream.lan-prebuilt64.md and
+rage.lan-prebuiltarm.md, the laptop's loadtest.md in s1-s20, a README.md; results/drafts/followup-check-634.py.

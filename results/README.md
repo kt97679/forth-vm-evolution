@@ -220,6 +220,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/followup-check-627.py` - Seed 89's follow-up's role changes checked session by session (Iteration 627): the paired differences, the Tegra's t-interval, the holders' drift.
 - `drafts/smallarm-pool-629.py` - Small and fast on ARMv7 decided by the rule fixed before seed 90's data (Iteration 629): every Tegra session of 8164d3858f and ae99617f06 against a627b954c6 pooled, 2% at 2 SE.
 - `drafts/smallarm-classes-631.py` - Small and fast on ARMv7's new holder in the relf handoff's table (Iteration 631): ae99617f06 and a627b954c6 in final-pick.py's classes from seed 89's follow-up.
+- `drafts/followup-check-634.py` - Seed 90's follow-up's knee checked line by line (Iteration 634): 11a56ff9e4 against c2ef9488ff by session, and 631's predictions scored.
 - `drafts/dream-load-630.py` - Dream's load during seed 90's chain against the screen's readings (Iteration 630): the 32-bit line at 8.45 on average, its loaded sessions' spread doubled, no bias in the knee's flag.
 - `drafts/screen-jit-630.py` - The 82 JIT designs of seed 89's rest against the four x86 holders on dream (Iteration 630): none past 2%, and no smaller JIT design without a speed loss.
 - `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.
@@ -283,6 +284,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed89.md` - Seed 89's best beside the designs found before, re-measured on three machines, every session pooled (Iteration 627).
 - `followup-pick-seed89.json` - followup-pick-seed89.md's set as JSON (final-pick.py --json, Iteration 627).
 - `followup-roles-seed89.md` - The roles after seed 89's follow-up (Iteration 627): four changes by the rule, waiting on the owner; the JIT's gain confirmed, so another JIT run by 618/620.
+- `chain-followup90/README.md` - Seed 90's follow-up chain's readings (Iteration 634): the 7 in every session - the laptop 20, dream 10 and 10, rage 2.
+- `followup-pick-seed90.md` - Seed 90's follow-up's 7 re-measured on three machines, every session pooled (Iteration 634).
+- `followup-pick-seed90.json` - followup-pick-seed90.md's set as JSON (final-pick.py --json, Iteration 634).
+- `followup-roles-seed90.md` - The portable roles after seed 90's follow-up (Iteration 634): 11a56ff9e4 takes the knee by the rule, waiting on the owner - the x86 machines split at 64 bits.
 - `audit-nonportable-619.md` - The audit of the results so far and whether a JIT run is worth it (Iteration 619): converged, nothing new since, the portable gains out of its reach - not now.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 

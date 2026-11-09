@@ -269,4 +269,7 @@
 # 87 and 88: `nojit`, the newest four databases carried (87-90, JIT-off builds), both widths, 21 hours (the portable
 # runs' length, 603/618 - the owner may say otherwise; started after the follow-up ends, by 9 pm his time, it ends by
 # about 6 pm tomorrow). REMOTES screen seed 90's rest at no laptop time. Start it only once the follow-up's chain is done.
+# Iteration 634 (seed 90's follow-up processed - results/followup-roles-seed90.md; the owner: seed 91 not started yet):
+# seed 91 as 632 set it, the follow-up's chain done - to start from this bundle. The knee's holder (11a56ff9e4 by the
+# rule, the owner's decision) changes nothing in the run: its screen measures both, the roles are read at processing.
 seed 91 nojit 21h widths
