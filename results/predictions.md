@@ -1381,3 +1381,13 @@ seed 89's own 6 of 8 and 2 of 3 had shown. (2) right - no gain: confirm.py CONFI
 8164d3858f pooled -1.91% +/- 0.46% over six sessions, short of 2%; the rule's other challenger, ae99617f06, past it
 (-2.30% +/- 0.42%).
 
+
+## Seed 90's follow-up, about 2 hours - predicted (Iteration 631)
+
+The 7 of results/followup-seed90.md - 11a56ff9e4, the screen's flag against the knee, beside the six portable holders -
+on the laptop (20 steps), dream (10 sessions a width, while it copies its backup) and the Tegra (2). (1) The chain done
+with every line's sessions complete, before 9 pm the owner's time - 80/20 (dream slower under the copy, its deadline 55
+minutes a width). (2) 11a56ff9e4 takes the knee by the role's rule - 1% smaller (it is 5.45%) and neither x86 class 2%
+slower, the laptop and dream pooled - 80/20 (dream -1.3% at 64 bits; the laptop would need +5.4% to reach 2%). (3) It is 2%
+or more faster than c2ef9488ff on x86-32, at 2 SE - 80/20 (dream -4.4%, the laptop in-run -8.0%). (4) The laptop agrees
+with dream in sign at 64 bits (faster) - 40/60 (the laptop in-run +0.6%, the fast end's optimism on top).

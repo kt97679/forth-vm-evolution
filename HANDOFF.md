@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 630.
+- master: Iteration 631.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -61,7 +61,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/drafts/article-method-548.md's [74+] markers all filled. New in them: the screen loses a few front designs (2
   of 421 audited children that ran in full reached the true front, seeds 77-83); one round first none (0 of 6,934); seed
   77's clock test - not the clock (cycles 1.002); the random baseline 0.55 of the series' median hypervolume.
-- **The handoff to relf (611; the smallest 612; three replaced 628 - results/handoff-relf-628.md)** - results/handoff-relf-611.md, the package
+- **The handoff to relf (611; the smallest 612; three replaced 628 - results/handoff-relf-628.md; small and fast on ARMv7
+  631 - results/handoff-relf-631.md)** - results/handoff-relf-611.md, the package
   forth-vm-evolution-designs-iter612.tar.gz (outputs; lab/evolve/pack-designs.py on results/relf-designs-611.md): ten
   designs by role - c7c35f9c97 fastest x86-64, 4ef851fd8e fastest x86-32, 06b188f45b best all-round, bac37f35a2 the
   smallest JIT design (these four x86 only); 782f3ad7ff fastest portable, 690981ca5b fastest on ARMv7, c2ef9488ff the
@@ -118,15 +119,20 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   8164d3858f's -2.45% +/- 0.68% is thin (3 Tegra sessions, the holder's third its slowest) - seed 90's Tegra line
   re-measures it against a627b954c6; it takes the role, and reopens the portable search (620), only if the sessions pooled
   with the follow-up's hold 2% at 2 SE. The smallest kept (efb0fece07 is 4dd4e3e7e2's trade).
-- **Seed 90 processed (630) - the JIT run again gained nothing; waiting on the owner** - confirm.py CONFIRMED (no
-  criterion past its bar: the hypervolume -1.7% on the pool's, at 32 bits 0.1578 against seed 89's 0.1580, the bar 0.1549),
-  so by 620 the four x86 roles are final - results/evolve-amd-ryzen-7-pro-8840hs-seed90.md. The screen of seed 89's rest
-  (results/xcheck-seed90.md; its list held 82 JIT designs - followup-roles.py --screen now leaves them out): 11a56ff9e4
-  flagged against the knee (5.45% smaller; dream -4.4% at 32 bits, -1.3% at 64 - results/screen-flagged-seed89.md). Small
-  and fast on ARMv7 by the 629 rule: **ae99617f06 takes it** (-2.30% +/- 0.42% over six Tegra sessions, thin; 8164d3858f
-  -1.91%), which by 620 reopens the portable search. **The owner's**: ae99617f06's role, the next run and its hours - a
-  portable run with 11a56ff9e4 in its follow-up, or first a short follow-up of the flagged (620: portable-followup.py
-  --also). Dream's 32-bit line ran under another load (8.45 on average; results/drafts/dream-load-630.py).
+- **Seed 90 processed (630)** - confirm.py CONFIRMED, nothing gained: by 620 the four x86 roles are final
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed90.md). The screen of seed 89's rest (results/xcheck-seed90.md; 82 JIT designs
+  in its list - followup-roles.py --screen leaves them out now) flagged 11a56ff9e4 against the knee (5.45% smaller; dream
+  -4.4% at 32 bits, -1.3% at 64). Small and fast on ARMv7 by the 629 rule to ae99617f06 (-2.30% +/- 0.42%, six Tegra
+  sessions) - **the owner agreed (631)**: results/handoff-relf-631.md, results/relf-designs-631.md, the package
+  forth-vm-evolution-designs-iter631.tar.gz (outputs), designs/portable-small made again; by 620 the portable search reopens.
+- **Seed 90's follow-up running (631; the owner: ending before 9 pm his time, then the next run tonight or after 6 am)** -
+  11a56ff9e4 against the knee's c2ef9488ff beside the six portable holders (results/followup-seed90.md, 7): 20 laptop
+  steps, dream 10 a width, the Tegra 2, about 2 hours. **Its processing**: `HANDOFF=results/handoff-relf-631.md PRED=631
+  sh lab/evolve/process-followup.sh 90 ITERATION fastest=782f3ad7ff,arm=3eb59b271d,knee=c2ef9488ff,smallarm=ae99617f06,
+  memory=fb0d57c8a2,smallest=64a7345393` (one argument, no spaces); the knee by role()'s rule (1% smaller, neither x86
+  class 2% slower); --gain has no run's designs here. **Then the portable run 620 reopened** - its setup as seed 88's,
+  the hours the owner's. Dream copies a backup (the owner: zfs to btrfs over USB) - 630's load; its sessions' spread
+  doubles while it runs, paired readings unbiased.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier
@@ -149,7 +155,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
   run's rest, judged by confirm.py (only what it bred counted), a follow-up when it gains, continued only on confirmed
   progress (results/drafts/jit-run-plan-620.md; the audit: results/audit-nonportable-619.md).
-- **`make` builds the winners (608; ten at 611; 628: fastest-x86-32 ee34931cd7, portable-arm 3eb59b271d, small-jit
+- **`make` builds the winners (608; ten at 611; 631: portable-small ae99617f06; 628: fastest-x86-32 ee34931cd7, portable-arm 3eb59b271d, small-jit
   c6f1c1331b)** - the top Makefile and designs/ (designs/README.md): the ten of the
   relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
   smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six
@@ -172,10 +178,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due**: none - the next run's are written when it is set (seed 90's scored at 630: three of four).
+- **Predictions due** (results/predictions.md): seed 90's follow-up's - 4 (631).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle; seed 90's follow-up's archive when it returns. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

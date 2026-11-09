@@ -99,6 +99,11 @@
 #   need, so the chain ends with the Tegra's third session, about 9 hours; the window keeps the margin for its builds.
 # Iteration 628 (seed 90, the JIT run again): the screen of seed 89's rest, results/screen-seed89.md (291; portable-followup.py --rest
 # --hours 21: a session the Tegra about 270 minutes at 3 rounds, dream about 54 and 48) - 617's lines, the sessions to fit.
-rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 4 --also @results/screen-seed89.md
-dream.lan    prebuilt32  4       10      625      --cell 4 --rejected 6 --sessions 11 --also @results/screen-seed89.md
-dream.lan    prebuilt64  4       10      625      --from prebuilt32 --sessions 11
+# Iteration 631 - seed 90's follow-up (results/followup-seed90.md, 7 designs; the owner: ending before 9 pm, his time):
+# sized by seed 90's chain's rates - dream 13-15 s a design a session at 10 rounds (13 with the 6 rejected: about 3-4
+# minutes a session, more while dream copies its backup), the Tegra 185 s a design a session at 10 rounds after its 16
+# minutes of stages (11 with the 4 rejected: about 34 minutes); the Tegra 2 sessions, dream 10 a width - the knee's
+# question is x86's, the Tegra's for the classes only.
+rage.lan     prebuiltarm 4       10      100      --cell 4 --rejected 4 --sessions 2 --also @results/followup-seed90.md
+dream.lan    prebuilt32  4       10      55       --cell 4 --rejected 6 --sessions 10 --also @results/followup-seed90.md
+dream.lan    prebuilt64  4       10      55       --from prebuilt32 --sessions 10

@@ -1,6 +1,6 @@
 {
  "bin": 9416,
- "gen": 130,
+ "gen": 278,
  "genome": {
   "abortif": 0,
   "align1": 0,
@@ -39,11 +39,11 @@
    "ROT",
    ">R",
    "R>",
-   "R@",
+   "XOR",
    "NEGATE"
   ],
   "fsys": 2,
-  "gotodup": 2,
+  "gotodup": 1,
   "guard": 1,
   "hotcalls": 0,
   "hotinl": 20,
@@ -109,7 +109,7 @@
   "peel": 0,
   "regpin": 0,
   "rtempty": 1,
-  "rtfuse": 0,
+  "rtfuse": 1,
   "rtimm": 0,
   "rtiplus": 1,
   "rtloop": 1,
@@ -214,7 +214,7 @@
   ],
   "swapi": 1,
   "sysc": 0,
-  "t2hot": 0,
+  "t2hot": 3,
   "t2wide": 0,
   "tag2": 0,
   "tail": 0,
@@ -225,14 +225,15 @@
   "tos": 0,
   "tracer": 0,
   "varcall": 1,
-  "varslot": 1
+  "varslot": 0
  },
- "id": "a627b954c6",
+ "id": "ae99617f06",
+ "jit": false,
  "rss": 124,
- "size": 9191,
- "speed": 0.371174794462023,
- "speed32": 0.4013385605147352,
+ "size": 9183,
+ "speed": 0.3751574012075074,
+ "speed32": 0.4045153959416717,
  "status": "ok",
- "total": 18607,
- "why": "the run - adds the most"
+ "total": 18599,
+ "why": "found before - flagged by the screen (smallarm)"
 }

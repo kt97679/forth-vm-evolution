@@ -11029,3 +11029,13 @@ first clean lines right. Predictions three of four. Files: results/evolve-amd-ry
 results/xcheck-seed90.md, results/candidates-final-seed90.md, results/screen-flagged-seed89.md, results/chain-screen89/
 (README.md, sK/dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json, rage.lan-prebuiltarm.out.json and the
 reports), results/drafts/dream-load-630.py, results/drafts/screen-jit-630.py.
+
+## Iteration 631 - 2026-11-09 - Claude
+
+The owner's decisions on seed 90: ae99617f06 takes small and fast on ARMv7 (the 629 rule) - results/handoff-relf-631.md,
+results/relf-designs-631.md, the package forth-vm-evolution-designs-iter631.tar.gz (20 of 20 builds 9 of 9 right),
+designs/portable-small made again; by 620 the portable search reopens. Dream's 630 load explained (the owner: a backup
+copied zfs to btrfs over USB). Seed 90's follow-up set, ending before 9 pm the owner's time: 11a56ff9e4 against the knee
+beside the six portable holders, 20 laptop steps, dream 10 a width, the Tegra 2 - about 2 hours; 4 predictions; then the
+portable run. Files: results/handoff-relf-631.md, results/relf-designs-631.md, results/followup-seed90.md,
+results/drafts/smallarm-classes-631.py.

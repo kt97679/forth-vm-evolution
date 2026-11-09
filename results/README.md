@@ -219,6 +219,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/gain-designs-624.md` - Seed 89's 32-bit gain off the ε-front (Iteration 624): why the follow-up's list missed it, the fix, and the drift check (drafts/drift-624.py).
 - `drafts/followup-check-627.py` - Seed 89's follow-up's role changes checked session by session (Iteration 627): the paired differences, the Tegra's t-interval, the holders' drift.
 - `drafts/smallarm-pool-629.py` - Small and fast on ARMv7 decided by the rule fixed before seed 90's data (Iteration 629): every Tegra session of 8164d3858f and ae99617f06 against a627b954c6 pooled, 2% at 2 SE.
+- `drafts/smallarm-classes-631.py` - Small and fast on ARMv7's new holder in the relf handoff's table (Iteration 631): ae99617f06 and a627b954c6 in final-pick.py's classes from seed 89's follow-up.
 - `drafts/dream-load-630.py` - Dream's load during seed 90's chain against the screen's readings (Iteration 630): the 32-bit line at 8.45 on average, its loaded sessions' spread doubled, no bias in the knee's flag.
 - `drafts/screen-jit-630.py` - The 82 JIT designs of seed 89's rest against the four x86 holders on dream (Iteration 630): none past 2%, and no smaller JIT design without a speed loss.
 - `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.
@@ -253,8 +254,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-roles-seed87.md` - The relf handoff's portable roles after the follow-up chain (Iteration 611): 782f3ad7ff the fastest portable, a627b954c6 small and fast on ARMv7.
 - `handoff-relf-611.md` - The designs handed to relf (Iteration 611, replacing 601's): ten winners by role, the portable run's 782f3ad7ff the fastest portable.
 - `handoff-relf-628.md` - The relf handoff after seed 89's follow-up (Iteration 628): three roles change - ee34931cd7 the fastest on x86-32, c6f1c1331b the smallest JIT design, 3eb59b271d the fastest on ARMv7; the package iter628.
+- `handoff-relf-631.md` - The relf handoff after seed 90 (Iteration 631): small and fast on ARMv7 to ae99617f06 by the rule fixed at 629, the owner's.
 - `relf-designs-611.md` - The relf handoff's ten records, the input of pack-designs.py and export-designs.py (Iteration 611; the smallest 64a7345393 at 612).
 - `relf-designs-628.md` - The relf handoff's ten records after seed 89's follow-up (Iteration 628), the input of pack-designs.py and export-designs.py.
+- `relf-designs-631.md` - The relf handoff's ten records after seed 90 (Iteration 631), the input of pack-designs.py and export-designs.py.
 - `candidates-dream32-612.md` - The dream 32-bit experiment (Iteration 612): 9f8811f7f4 and 690981ca5b with one gene reverted at a time, and the control 782f3ad7ff.
 - `chain-seed88/README.md` - Seed 88's chain's readings (Iteration 614): the dream 32-bit experiment's 20 in every session - the laptop 1, dream 30 a width, rage 12.
 - `dream32-experiment-seed88.md` - The dream 32-bit experiment read (Iteration 614): the compiler - clang restores both bases, no other single gene does.
@@ -267,6 +270,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `chain-screen88/README.md` - The screen's readings (Iteration 624): seed 88's rest on seed 89's remote lines by session - dream 6 a width, the Tegra 2.
 - `chain-screen89/README.md` - The screen's readings (Iteration 630): seed 89's rest on seed 90's remote lines by session - dream 8 a width, the Tegra 3.
 - `followup-seed89.md` - Seed 89's follow-up chain's 52 (Iteration 624): its best and its 32-bit gain beside the relf handoff's ten holders and the screen's five.
+- `followup-seed90.md` - Seed 90's follow-up chain's 7 (Iteration 631): the screen's 11a56ff9e4 against the knee beside the six portable holders.
 - `candidates-final-seed89.md` - Seed 89's 178 final-pick candidates (Iteration 624): final-set.py's draft from the pool and the run - the leanest, the smallest, the set, those within 5% of the fastest at either width.
 - `candidates-final-seed90.md` - Seed 90's 469 final-pick candidates (Iteration 630): final-set.py's draft from the pool and the run - no step taken, the run gained nothing.
 - `chain-followup88/README.md` - Seed 88's follow-up chain's readings (Iteration 621): the 46 in every session - the laptop 18, dream 28 and 25, rage 3.

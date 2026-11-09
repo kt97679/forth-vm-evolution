@@ -10,9 +10,9 @@ LX_cstore:  /* c!      */ BYTE(DS0) = (UNS8)DS1; dsp += 2 * CELL_BYTES; EXITNEXT
 LX_store:   /* !       */ CELL(DS0) = DS1; dsp += 2 * CELL_BYTES; EXITNEXT();
 LX_and:     /* and     */ DS1 &= DS0; dsp += CELL_BYTES; EXITNEXT();
 LX_or:      /* or      */ DS1 |= DS0; dsp += CELL_BYTES; EXITNEXT();
+LX_xor:     /* xor     */ DS1 ^= DS0; dsp += CELL_BYTES; EXITNEXT();
 LX_fromr:   /* r>      */ PUSH(RS); rp += CELL_BYTES; EXITNEXT();
 LX_tor:     /* >r      */ RPUSH(DS0); dsp += CELL_BYTES; EXITNEXT();
-LX_rfetch:  /* r@      */ PUSH(RS); EXITNEXT();
 LX_eq:      /* =       */ DS1 = - (UNS64)(DS0 == DS1); dsp += CELL_BYTES; EXITNEXT();
 LX_ugt:     /* u<      */ DS1 = - (UNS64)(DS1 < DS0); dsp += CELL_BYTES; EXITNEXT();
 LX_gt:      /* <       */
