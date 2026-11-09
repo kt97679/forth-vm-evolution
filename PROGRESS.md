@@ -11069,3 +11069,10 @@ results/followup-roles-seed90.md, results/followup-pick-seed90.md, results/follo
 results/chain-followup90/ - its sK: dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json and
 rage.lan-prebuiltarm.out.json with their reports dream.lan-prebuilt32.md, dream.lan-prebuilt64.md and
 rage.lan-prebuiltarm.md, the laptop's loadtest.md in s1-s20, a README.md; results/drafts/followup-check-634.py.
+
+## Iteration 635 - 2026-11-09 - Claude
+
+Seed 91 running (the owner, after 634's bundle) - NEXT-RUN none. The knee's 64-bit split checked against the Skylake's JCC
+erratum (623's test, jcc-count-623.py on the follow-up's 7): not it - 11a56ff9e4's engine has more dispatch jumps on a
+32-byte boundary than c2ef9488ff's at 8-byte cells (13 of 136 against 11 of 170), yet dream favours it (dream/laptop 1.094
+against 1.156); the knee still the owner's decision. Files: results/followup-roles-seed90.md (the test's paragraph).

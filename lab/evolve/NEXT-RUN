@@ -272,4 +272,8 @@
 # Iteration 634 (seed 90's follow-up processed - results/followup-roles-seed90.md; the owner: seed 91 not started yet):
 # seed 91 as 632 set it, the follow-up's chain done - to start from this bundle. The knee's holder (11a56ff9e4 by the
 # rule, the owner's decision) changes nothing in the run: its screen measures both, the roles are read at processing.
-seed 91 nojit 21h widths
+# (Iteration 632's line, seed 91 - started; a pull must not start it again:)
+# seed 91 nojit 21h widths
+# Iteration 635 (seed 91 running, the owner, after 634's bundle): none - a pull of this bundle must not start seed 91
+# again (as 629 for seed 90); its processing (process-run.sh) writes the next line.
+none

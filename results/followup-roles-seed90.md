@@ -47,6 +47,14 @@ takes the knee: smaller by an exact 5.45%, faster at 32 bits on both x86 machine
 cost, on the owner's laptop alone, of 4.4% at 8-byte cells. c2ef9488ff stays in the final set
 (results/final-set-chainsBCD-seed86.md) whichever way the knee goes - nothing is lost.
 
+**The jump-alignment test (Iteration 635)** - is dream's side of the 64-bit split the Skylake's JCC erratum (623)?
+`python3 results/drafts/jcc-count-623.py results/followup-seed90.md results/chain-followup90`: the 7 built here as the
+laptop builds them (the 8-byte engines the laptop's bytes, 7 of 7). At 8-byte cells 11a56ff9e4's engine has 13 of 136
+dispatch jumps on a 32-byte boundary (9.6%), c2ef9488ff 11 of 170 (6.5%); branch units 11.9% and 11.5%. The erratum would
+favour c2ef9488ff on dream, yet dream favours 11a56ff9e4 (dream/laptop 1.094 against 1.156): the split is not that
+artefact, as far as static counts tell (not weighted by how often each jump runs) - each CPU's own, and by the rule the
+pooled class is the measure.
+
 ## The rule after a follow-up (616) - not this list's
 
 --gain: "none - the list has 0 of the run's and 7 found before": this follow-up re-measures a screened design, not a

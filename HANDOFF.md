@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 634.
+- master: Iteration 635.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -128,12 +128,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Seed 90's follow-up processed (634)** - results/followup-roles-seed90.md: the 7, every session complete (the
   laptop 20, dream 10 a width, the Tegra 2), 15:01 the owner's time. **11a56ff9e4 takes the knee by the rule - the owner's
   decision, asked at 634**: 5.45% smaller, x86-32 -3.59% +/- 0.43% (both machines), x86-64 +1.54% +/- 0.25% pooled - the
-  machines split there: the laptop +4.38% (none of 20 sessions faster), dream -1.22%. If he agrees: the handoff file, the
+  machines split there: the laptop +4.38% (none of 20 sessions faster), dream -1.22% - not the JCC erratum (635: by static
+  counts it would favour c2ef9488ff on dream). If he agrees: the handoff file, the
   package and designs/ for the knee (631's way - pack-designs.py, export-designs.py, make test). The other five holders
   kept; --gain not this list's (a screened design, not a run's). Predictions 3 of 4.
 - **Seed 91 set (632) - the portable run 620 reopened**: `seed 91 nojit 21h widths` (seeds 87-88's setup, the newest four
-  databases carried) - not started yet (the owner, 634), its line in NEXT-RUN; NEXT-RUN none once it runs (629: a pull
-  must not start it again). REMOTES screen seed 90's rest - results/screen-seed90.md,
+  databases carried) - **running (the owner, 635, after 634's bundle)**; NEXT-RUN none (629: a pull must not start it
+  again) - its processing writes the next line. REMOTES screen seed 90's rest - results/screen-seed90.md,
   266: the JIT run's 259 JIT-free designs on the union's front (portable-followup.py --seed 90 --k 0, 631; none
   re-measured), the six portable holders and 11a56ff9e4 - the Tegra 3 sessions, dream 9 a width (seed 90's rates).
   **Its processing**: process-run.sh (portable.py's verdict against results/portable-front-seed90.md, 528, written at
