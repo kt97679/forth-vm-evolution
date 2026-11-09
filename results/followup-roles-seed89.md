@@ -70,3 +70,19 @@ SE from their spread (results/drafts/smallarm-pool-629.py; on this follow-up alo
 8164d3858f or ae99617f06 - the faster, if both - takes the role at 2% faster and 2 SE, the role rule fixed before seed 87,
 and by 620 the portable search reopens; otherwise a627b954c6 keeps it and the question is closed.
 
+
+## The re-measure's verdict (Iteration 630)
+
+Seed 90's Tegra line measured three sessions at 3 rounds (four planned; the fourth past the deadline), the Tegra at its
+usual load (1.4). Pooled with the follow-up's three by the rule above:
+
+```
+the Tegra: 6 sessions in results/chain-followup89, results/chain-screen89
+  8164d3858f against a627b954c6, 6 sessions: -1.18% -2.70% -3.45% -0.77% -0.86% -2.45%; pooled -1.91% +/- 0.46% - not by the rule
+  ae99617f06 against a627b954c6, 6 sessions: -1.50% -2.25% -3.48% -2.32% -0.90% -3.35%; pooled -2.30% +/- 0.42% - past 2% at 2 SE
+verdict: ae99617f06 takes small and fast on ARMv7 - by 620 the portable search reopens
+```
+
+By the rule ae99617f06 takes small and fast on ARMv7 - faster in all six sessions, 8 bytes smaller (18,599 B), memory
+the same - and by 620 the portable search reopens; 8164d3858f, the challenger the card named, stops at -1.91%. Thin:
+0.30% past the bar, under one SE. The owner's decision, as 628's three (results/xcheck-seed90.md).

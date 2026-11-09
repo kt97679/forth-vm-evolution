@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 629.
+- master: Iteration 630.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -114,29 +114,28 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   618/620 another JIT run. **Three roles changed (628)**: x86-32 ee34931cd7; ARMv7 3eb59b271d (bred by seed 89, JIT-free;
   -2.84% and 2.77% smaller); the smallest JIT design c6f1c1331b (2.71% smaller, no speed lost) - results/handoff-relf-628.md,
   results/relf-designs-628.md, the package forth-vm-evolution-designs-iter628.tar.gz (outputs; 20 of 20 builds 9 of 9
-  right), designs/ made again for the three (byte for byte; make test 10 of 10). **Small and fast on ARMv7 waits**:
+  right), designs/ made again for the three (byte for byte; make test 10 of 10). **Small and fast on ARMv7 waited** (630: by the pooled rule to ae99617f06, below):
   8164d3858f's -2.45% +/- 0.68% is thin (3 Tegra sessions, the holder's third its slowest) - seed 90's Tegra line
   re-measures it against a627b954c6; it takes the role, and reopens the portable search (620), only if the sessions pooled
   with the follow-up's hold 2% at 2 SE. The smallest kept (efb0fece07 is 4dd4e3e7e2's trade).
-- **Seed 90 running (started from 628's bundle at e9435de; 629: NEXT-RUN none, so a pull cannot start it again)** -
-  `seed 90 21h widths carryall`, seed 89's setup, 21 hours (the owner left them to Claude, 628: seed 89's winners born by
-  generation 167 of 202, its front's additions slowing). REMOTES screen seed 89's rest - results/screen-seed89.md, 291: the
-  JIT-free designs of its union front the follow-up did not re-measure (made from its results file - the db.jsonl is on
-  the laptop), the ten holders, 8164d3858f and ae99617f06 - the Tegra 4 sessions, dream 11 a width. **Its processing**:
-  process-run.sh (confirm.py's pool has seeds 86-89); the screen as 624's - the remote readings laid out as
-  results/chain-screen89 (chain-sessions.py), then `python3 lab/evolve/followup-roles.py results/screen-seed89.md
-  results/chain-screen89 --screen --roles fastest=782f3ad7ff,arm=3eb59b271d,knee=c2ef9488ff,smallarm=a627b954c6,
-  memory=fb0d57c8a2,smallest=64a7345393 --flagged results/screen-flagged-seed89.md` (one argument, no spaces; the 628
-  holders); small and fast on ARMv7 by the rule fixed at 629, `python3 results/drafts/smallarm-pool-629.py` - every Tegra
-  session pooled, 2% at 2 SE or the question closes; the first real clean lines, `grep 'remote clean' CHAIN/steps`.
+- **Seed 90 processed (630) - the JIT run again gained nothing; waiting on the owner** - confirm.py CONFIRMED (no
+  criterion past its bar: the hypervolume -1.7% on the pool's, at 32 bits 0.1578 against seed 89's 0.1580, the bar 0.1549),
+  so by 620 the four x86 roles are final - results/evolve-amd-ryzen-7-pro-8840hs-seed90.md. The screen of seed 89's rest
+  (results/xcheck-seed90.md; its list held 82 JIT designs - followup-roles.py --screen now leaves them out): 11a56ff9e4
+  flagged against the knee (5.45% smaller; dream -4.4% at 32 bits, -1.3% at 64 - results/screen-flagged-seed89.md). Small
+  and fast on ARMv7 by the 629 rule: **ae99617f06 takes it** (-2.30% +/- 0.42% over six Tegra sessions, thin; 8164d3858f
+  -1.91%), which by 620 reopens the portable search. **The owner's**: ae99617f06's role, the next run and its hours - a
+  portable run with 11a56ff9e4 in its follow-up, or first a short follow-up of the flagged (620: portable-followup.py
+  --also). Dream's 32-bit line ran under another load (8.45 on average; results/drafts/dream-load-630.py).
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier
   chain's directories, their processes stopped first (by working directory, TERM then KILL, never one with a terminal),
   fve-xcheck removed when empty, and probe clears the earlier chains' leftovers before measuring - one line a host in the
   steps ("remote clean HOST: ... MB free in the home"). By hand: `sh lab/evolve/remote-checks.sh clean runs/chain-...`.
-  Tested on stand-in hosts (lab/evolve/test-remote-clean.sh, in run-tests); the real hosts' first lines come with seed
-  90's archive - read them at its processing.
+  Tested on stand-in hosts (lab/evolve/test-remote-clean.sh, in run-tests); the real hosts' first lines (630): at the start
+  one earlier chain's directories removed (dream 461 MB, rage 285 MB), at the end none left, fve-xcheck removed on both;
+  rage 2.6 GB free.
 - **PROGRESS.md restored (624)** - Iteration 623 wrote it over with its own entry (Iterations 1-622 out of the file, kept
   in git); restored from f2fa339, and handoff-check 14 refuses a PROGRESS.md without its first entry.
 - **Before the freeze** (618; GOALS.md step 3 - results/drafts/portable-plan-602.md, "Then the freeze"): the portable search
@@ -145,7 +144,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   results/drafts/retire-report-623.md): 8 values on no front design, msc=1 the one with code - kept for now (the owner,
   626: 598's Tegra 18% over 578's rule), thinhdr=0 kept for s6; with seed 89 in the pool 12 (625,
   results/drafts/retire-report-625.md: fsys=0, 690981ca5b's, jitrp=0, noinls=0, opbody=0, rtloopall=0 added, jitinl=0 now
-  thin) - the freeze's list unless another JIT run follows (628: seed 90 set); the roles packed and exported
+  thin) - the freeze's list, rerun with seed 90 in the pool (630: no gain, no JIT run follows); the roles packed and exported
   from the final code, make test, the handoff final; the portable figures recomputed from the records. **The last JIT run (620, the owner)**: one 21-hour JIT run after the portable
   search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
   run's rest, judged by confirm.py (only what it bred counted), a follow-up when it gains, continued only on confirmed
@@ -173,10 +172,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 90's - 4 (628).
+- **Predictions due**: none - the next run's are written when it is set (seed 90's scored at 630: three of four).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; seed 90's archive when it returns. appbench.zip stays on the laptop.
+- **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

@@ -1372,3 +1372,12 @@ rest against a portable role - 65/35 (seed 88's flagged 5). (4) The Tegra's re-m
 pooled with the follow-up's 3 sessions: 2% or more faster at 2 SE - 35/65 (its first session -1.18%, the holder's third
 its slowest).
 
+**Scored at seed 90 (Iteration 630): three right, one wrong.** (1) wrong - the clean lines as predicted, both hosts at
+the start and the end, "fve-xcheck removed" on each at the end; but the sessions short: the Tegra 3 of 4, dream 8 of 11 a
+width - 628 sized them by seed 88's rates (dream 10-11 s a design a session, the Tegra 56), this chain's 13-15 and 70, as
+seed 89's own 6 of 8 and 2 of 3 had shown. (2) right - no gain: confirm.py CONFIRMED (this prediction's "CONFIRMED", as
+621's, meant the gain - confirm.py's NOT CONFIRMED; from now on written "a gain"). (3) right - the screen flags
+11a56ff9e4 against the knee, once the list's 82 JIT designs are left out (results/xcheck-seed90.md). (4) right -
+8164d3858f pooled -1.91% +/- 0.46% over six sessions, short of 2%; the rule's other challenger, ae99617f06, past it
+(-2.30% +/- 0.42%).
+

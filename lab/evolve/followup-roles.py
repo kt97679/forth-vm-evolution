@@ -23,7 +23,8 @@ below the holder's; the fastest on ARMv7: faster on the Tegra; the knee (dream a
 (the Tegra): faster on a line or 1% smaller, and no line 4% slower (one machine stands in for two) nor 1% larger. Any gain
 counts, so the screen is loose; the flagged join that run's follow-up list (--flagged OUT writes their records for
 portable-followup.py --also), where the role's rule decides. On 611's readings with 601's holders it flags the two designs
-611 gave roles, 782f3ad7ff first.
+611 gave roles, 782f3ad7ff first. JIT designs (the JIT expressed) are left out of it (630: seed 89's rest held 82 - a
+JIT run's rest, screened for the portable roles).
 --roles also takes the x86 roles (Iteration 622, the JIT run's follow-up - results/drafts/jit-run-plan-620.md): fast64 (the
 fastest on x86-64), fast32 (on x86-32), allround (the best mean), smalljit (the smallest JIT design), over every design with
 the class; the six portable roles then over the JIT-free designs alone (a record's "jit", portable-followup.py --jit), a
@@ -82,8 +83,11 @@ if '--screen' in a:                                   # 617: the screen (results
         d = [math.log(S[s][x][k] / S[s][y][k]) for k in S[s][x] if k in S[s][y]]
         return (statistics.fmean(d), statistics.stdev(d) / math.sqrt(len(d)) if len(d) > 1 else float('nan'), len(d)) if d else None
     SRC = {'fastest': ('dream64', 'dream32', 'rage'), 'arm': ('rage',), 'knee': ('dream64', 'dream32'), 'smallarm': ('rage',)}
+    sys.argv = ['x']; import evolve as E               # 630: a portable role's candidate is JIT-free (622) - in the screen too
     rn = [i for i in C if str(C[i].get('why', '')).startswith('the run')]
-    print('## The screen - the run\'s %d against each speed role\'s holder, the remote lines (the rule of Iterations 616-617)' % len(rn))
+    xj = [i for i in rn if E.express(E.canon(C[i]['genome'])).get('jit')]; rn = [i for i in rn if i not in xj]
+    print('## The screen - the run\'s %d against each speed role\'s holder, the remote lines (the rule of Iterations 616-617)%s'
+          % (len(rn), '; %d JIT designs left out (a portable role\'s candidate is JIT-free - 622, 630)' % len(xj) if xj else ''))
     for x in ('dream64', 'dream32', 'rage'):
         print('  %-8s %2d sessions, each %d-%d of %d' % (x, len(done[x]), min(done[x] or [0]), max(done[x] or [0]), NC))
     flag = {}

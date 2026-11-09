@@ -255,4 +255,8 @@
 # Its processing: process-run.sh; confirm.py's default pool has seeds 86-89 (--pool-files 90).
 # Iteration 629 (seed 90 running, started from 628's bundle at e9435de): none - a pull of this bundle must not start
 # seed 90 again (as 622 for seed 89); its processing (process-run.sh) writes the next line.
+# Iteration 630 (seed 90 processed - nothing gained, the JIT roles final by 620): none until the owner decides small and
+# fast on ARMv7 (ae99617f06 by the 629 rule, which by 620 reopens the portable search) and 11a56ff9e4's follow-up
+# against the knee (results/xcheck-seed90.md) - the hours his. Size a remote line by seed 90's rates: dream 13-15 s a
+# design a session at 10 rounds, the Tegra 70 s at 3 (628 used seed 88's 10-11 and 56).
 none

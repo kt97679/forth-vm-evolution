@@ -11016,3 +11016,16 @@ a627b954c6 pooled - the follow-up's 3 and seed 90's screen's - 2% at 2 SE takes 
 closes; rehearsed on the follow-up alone (-2.45% +/- 0.68%, 627's). Seed 90's processing steps in the card. Files:
 results/drafts/smallarm-pool-629.py.
 
+## Iteration 630 - 2026-11-09 - Claude
+
+Seed 90 processed - the JIT run again gained nothing: confirm.py CONFIRMED (hypervolume -1.7% on the pool's; at 32 bits
+0.1578 against seed 89's 0.1580, the bar 0.1549), so by 620 the four x86 roles are final. The screen of seed 89's rest
+held 82 JIT designs (628 called it JIT-free): followup-roles.py --screen leaves them out now (624's screen the same to the
+byte) - 11a56ff9e4 flagged against the knee (5.45% smaller, dream -4.4% at 32 bits); the JIT ones none past an x86 holder.
+Small and fast on ARMv7 by the 629 rule to ae99617f06 (-2.30% +/- 0.42%, six Tegra sessions; 8164d3858f -1.91%), which
+by 620 reopens the portable search - the owner's, with the next run's hours (NEXT-RUN none). Dream's 32-bit line under
+another load (8.45 on average, seed 89's 1.39): its loaded sessions' spread doubled, the flag not biased. The hosts'
+first clean lines right. Predictions three of four. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed90.md,
+results/xcheck-seed90.md, results/candidates-final-seed90.md, results/screen-flagged-seed89.md, results/chain-screen89/
+(README.md, sK/dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json, rage.lan-prebuiltarm.out.json and the
+reports), results/drafts/dream-load-630.py, results/drafts/screen-jit-630.py.
