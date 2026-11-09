@@ -11049,3 +11049,11 @@ was here. portable-followup.py: --seed N without --jit (the pool before N, only 
 front all to the screen), --rest JIT-free always, the screen sized by seed 90's chain's rates (seed 88's left two screens
 short); results/drafts/jit-rehearsal-622.py PASS (its check 6 less the screen's sizing). 4 predictions. Files:
 results/screen-seed90.md.
+
+## Iteration 633 - 2026-11-09 - Claude
+
+While seed 90's follow-up runs: its processing rehearsed on this list (followup-roles.py's roles and --gain on seed 89's
+follow-up readings - both run; followup-rehearsal-615.sh PASS). The pool before seed 91 written: portable.py --front, 528
+designs, seeds 89-90's JIT-free front designs among them (3eb59b271d) - seed 91's bars 0.2758, 0.2851 at 32 bits, 13,709
+B, 104 KB. lab/evolve/remote-load.py: each remote session's host load, those over 2 named - 630's dream finding (10 of its
+16 sessions) automated in process-seed.sh's and process-followup.sh's summaries. Files: results/portable-front-seed90.md.

@@ -110,6 +110,8 @@ if ls "$C"/remote/*.md > /dev/null 2>&1; then
         [ -f "$o" ] && [ -n "$L32" ] && grep -q '"cell": *4' "$o" || continue
         python3 "$EV/xcheck.py" --report "$o" --laptop32 "$L32" 2>/dev/null | grep -E '32-bit speeds' | sed "s|^|$(basename "$(dirname "$o")").md, --laptop32 $(basename "$L32"): |" | cut -c1-220 >> "$S"
     done; p '```'
+    python3 "$EV/remote-load.py" "$C/remote" > remoteload.txt 2>&1 || true    # Iteration 633: another load on a host (630)
+    p ""; p "## remote-load.py (remoteload.txt) - each remote line's sessions against its host's load"; p '```'; cut -c1-260 remoteload.txt >> "$S"; p '```'
     python3 "$EV/review-checks.py" generic "$C/remote" > generic.txt 2>&1      # Iteration 430: the three classes
     p ""; p "## review-checks.py generic (generic.txt) - the best design across the three machine classes"; p '```'; head -14 generic.txt | cut -c1-200 >> "$S"; p '```'
 fi

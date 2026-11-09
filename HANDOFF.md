@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 632.
+- master: Iteration 633.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -130,12 +130,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   steps, dream 10 a width, the Tegra 2, about 2 hours. **Its processing**: `HANDOFF=results/handoff-relf-631.md PRED=631
   sh lab/evolve/process-followup.sh 90 ITERATION fastest=782f3ad7ff,arm=3eb59b271d,knee=c2ef9488ff,smallarm=ae99617f06,
   memory=fb0d57c8a2,smallest=64a7345393` (one argument, no spaces); the knee by role()'s rule (1% smaller, neither x86
-  class 2% slower); --gain has no run's designs here; NEXT-RUN none then if seed 91 runs (629: a pull must not start it again).
+  class 2% slower; rehearsed at 633 on seed 89's readings - the roles and --gain run on this list); --gain has no run's designs here; NEXT-RUN none then if seed 91 runs (629: a pull must not start it again).
 - **Seed 91 set (632) - the portable run 620 reopened**: `seed 91 nojit 21h widths` (seeds 87-88's setup, the newest four
   databases carried), to start once the follow-up's chain is done. REMOTES screen seed 90's rest - results/screen-seed90.md,
   266: the JIT run's 259 JIT-free designs on the union's front (portable-followup.py --seed 90 --k 0, 631; none
   re-measured), the six portable holders and 11a56ff9e4 - the Tegra 3 sessions, dream 9 a width (seed 90's rates).
-  **Its processing**: process-run.sh (portable.py's verdict); the screen as 630's - chain-sessions.py into
+  **Its processing**: process-run.sh (portable.py's verdict against results/portable-front-seed90.md, 528, written at
+  633 - seeds 89-90's JIT-free front designs in it, 3eb59b271d among them; the bars: 0.2758, at 32 bits 0.2851, 13,709 B,
+  104 KB); the screen as 630's - chain-sessions.py into
   results/chain-screen90, `followup-roles.py results/screen-seed90.md results/chain-screen90 --screen --roles
   fastest=782f3ad7ff,arm=3eb59b271d,knee=KNEE,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393 --flagged
   results/screen-flagged-seed90.md` (KNEE the follow-up's verdict); then its follow-up by the plan's command

@@ -39,6 +39,7 @@ echo "the chain at $(cat "$H/head" 2>/dev/null): $(grep -o 'experiment loadtest.
 echo "the laptop: $(grep -c 'this step DONE' "$H/chain.log") steps done, $(ls "$O"/*-loadtest-*/pack/loadtest.md 2>/dev/null | wc -l) loadtest packs"
 grep -h -E 'skipp|deadline|not started|FAIL|STOP|crash|Traceback' "$H/chain.log" | sed 's/^next-run: /  /' | cut -c1-200 | head -n 8
 grep -h 'sessions measured' "$H/chain.log" | sed 's/^next-run: /  /'
+python3 lab/evolve/remote-load.py "$H/remote" 2>/dev/null | sed 's/^/  /' | cut -c1-260   # 633: another load on a host (630)
 echo
 } > "$S"
 python3 lab/evolve/chain-sessions.py "$O" "$K" > "$O/sessions.log" 2>&1 || die "chain-sessions.py ($O/sessions.log)"   # 3.
