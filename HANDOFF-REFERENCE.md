@@ -17,6 +17,9 @@ at Iteration 542 (the owner: fewer tokens at every chat's start).
   best designs are found, and written from PROGRESS.md: so every iteration has its entry, with its
   numbers, and **names every file it adds** under results/ (PROGRESS.md, Iteration 366: the audit and
   the index of what no entry had named).
+- **The article last (Iteration 636).** The owner: "let's pivot to the article when everything else will be done and we
+  will handoff designs to the relf project" - after the portable search ends, the freeze and the final handoff of the
+  designs to relf; until then its drafts wait, and no session works on them.
 - **A generic Forth first (Iteration 365).** This lab builds a generic Forth, with no optimization
   for relf's shell: (1) the best generic designs, found here on this lab's own workloads; (2) then how
   they fit relf and its shell; (3) only then relf tuned for its shell - and relf too kept as generic

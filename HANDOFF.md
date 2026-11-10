@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 635.
+- master: Iteration 636.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -62,7 +62,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   of 421 audited children that ran in full reached the true front, seeds 77-83); one round first none (0 of 6,934); seed
   77's clock test - not the clock (cycles 1.002); the random baseline 0.55 of the series' median hypervolume.
 - **The handoff to relf (611; the smallest 612; three replaced 628 - results/handoff-relf-628.md; small and fast on ARMv7
-  631 - results/handoff-relf-631.md)** - results/handoff-relf-611.md, the package
+  631 - results/handoff-relf-631.md; the knee 636 - results/handoff-relf-636.md)** - results/handoff-relf-611.md, the package
   forth-vm-evolution-designs-iter612.tar.gz (outputs; lab/evolve/pack-designs.py on results/relf-designs-611.md): ten
   designs by role - c7c35f9c97 fastest x86-64, 4ef851fd8e fastest x86-32, 06b188f45b best all-round, bac37f35a2 the
   smallest JIT design (these four x86 only); 782f3ad7ff fastest portable, 690981ca5b fastest on ARMv7, c2ef9488ff the
@@ -126,11 +126,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   sessions) - **the owner agreed (631)**: results/handoff-relf-631.md, results/relf-designs-631.md, the package
   forth-vm-evolution-designs-iter631.tar.gz (outputs), designs/portable-small made again; by 620 the portable search reopens.
 - **Seed 90's follow-up processed (634)** - results/followup-roles-seed90.md: the 7, every session complete (the
-  laptop 20, dream 10 a width, the Tegra 2), 15:01 the owner's time. **11a56ff9e4 takes the knee by the rule - the owner's
-  decision, asked at 634**: 5.45% smaller, x86-32 -3.59% +/- 0.43% (both machines), x86-64 +1.54% +/- 0.25% pooled - the
+  laptop 20, dream 10 a width, the Tegra 2), 15:01 the owner's time. **11a56ff9e4 takes the knee by the rule - the owner
+  agreed (636)**: 5.45% smaller, x86-32 -3.59% +/- 0.43% (both machines), x86-64 +1.54% +/- 0.25% pooled - the
   machines split there: the laptop +4.38% (none of 20 sessions faster), dream -1.22% - not the JCC erratum (635: by static
-  counts it would favour c2ef9488ff on dream). If he agrees: the handoff file, the
-  package and designs/ for the knee (631's way - pack-designs.py, export-designs.py, make test). The other five holders
+  counts it would favour c2ef9488ff on dream). Done at 636: results/handoff-relf-636.md, results/relf-designs-636.md,
+  the package forth-vm-evolution-designs-iter636.tar.gz (outputs), designs/portable-knee made again. The other five holders
   kept; --gain not this list's (a screened design, not a run's). Predictions 3 of 4.
 - **Seed 91 set (632) - the portable run 620 reopened**: `seed 91 nojit 21h widths` (seeds 87-88's setup, the newest four
   databases carried) - **running (the owner, 635, after 634's bundle)**; NEXT-RUN none (629: a pull must not start it
@@ -141,8 +141,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   633 - seeds 89-90's JIT-free front designs in it, 3eb59b271d among them; the bars: 0.2758, at 32 bits 0.2851, 13,709 B,
   104 KB); the screen as 630's - chain-sessions.py into
   results/chain-screen90, `followup-roles.py results/screen-seed90.md results/chain-screen90 --screen --roles
-  fastest=782f3ad7ff,arm=3eb59b271d,knee=KNEE,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393 --flagged
-  results/screen-flagged-seed90.md` (KNEE the owner's decision on 634's verdict: 11a56ff9e4, else c2ef9488ff); then its follow-up by the plan's command
+  fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393 --flagged
+  results/screen-flagged-seed90.md`; then its follow-up by the plan's command
   (results/drafts/portable-plan-602.md, "The search goes on"). Dream copies a backup (the owner: zfs to btrfs over USB) - 630's load; its sessions' spread
   doubles while it runs, paired readings unbiased.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
@@ -167,13 +167,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
   run's rest, judged by confirm.py (only what it bred counted), a follow-up when it gains, continued only on confirmed
   progress (results/drafts/jit-run-plan-620.md; the audit: results/audit-nonportable-619.md).
-- **`make` builds the winners (608; ten at 611; 631: portable-small ae99617f06; 628: fastest-x86-32 ee34931cd7, portable-arm 3eb59b271d, small-jit
+- **`make` builds the winners (608; ten at 611; 636: portable-knee 11a56ff9e4; 631: portable-small ae99617f06; 628: fastest-x86-32 ee34931cd7, portable-arm 3eb59b271d, small-jit
   c6f1c1331b)** - the top Makefile and designs/ (designs/README.md): the ten of the
   relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
   smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six
   portable ones), `make 32`. lab/evolve/export-designs.py writes them and checks each engine byte for byte the lab's (20
   of 20) and each C-library build running (6 of 6). Rerun it when a role changes.
-- **The article (604; open item 8)** - one article, the ladder by hand then the genetic algorithm (the owner: English
+- **The article (604; open item 8) - last (the owner, 636): once everything else is done - the search's end, the
+  freeze, the designs handed off to relf** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
   article until he approves. Part one condensed from article/article-en.md (its paraphrases checked against it), part two
   from results/article-figures-600.md and the final pick. His reason for the switch in (605: randomising had found the

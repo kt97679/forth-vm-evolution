@@ -11076,3 +11076,11 @@ Seed 91 running (the owner, after 634's bundle) - NEXT-RUN none. The knee's 64-b
 erratum (623's test, jcc-count-623.py on the follow-up's 7): not it - 11a56ff9e4's engine has more dispatch jumps on a
 32-byte boundary than c2ef9488ff's at 8-byte cells (13 of 136 against 11 of 170), yet dream favours it (dream/laptop 1.094
 against 1.156); the knee still the owner's decision. Files: results/followup-roles-seed90.md (the test's paragraph).
+
+## Iteration 636 - 2026-11-09 - Claude
+
+The owner's decisions: 11a56ff9e4 takes the knee (634's verdict by the rule; Claude's recommendation) - results/handoff-relf-636.md,
+results/relf-designs-636.md, the package forth-vm-evolution-designs-iter636.tar.gz (20 of 20 builds 9 of 9 right; the knee
+19,761 B at 8-byte cells, 19,369 at 4), designs/portable-knee made again (the lab's bytes at both widths; make test 10 of
+10); seed 91's screen reads knee=11a56ff9e4. And the article last - after the search's end, the freeze and the designs
+handed off to relf (HANDOFF-REFERENCE.md's standing decisions). Files: results/handoff-relf-636.md, results/relf-designs-636.md.
