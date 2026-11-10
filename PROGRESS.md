@@ -11104,3 +11104,11 @@ Seed 91's follow-up resized before it starts (the owner: started about 3 pm his 
 not 637's 9 - the same 38 (portable-followup.py --hours 14.5 writes results/followup-seed91.md and screen-seed91.md the same
 to the byte), 39 laptop steps, dream 40 sessions a width (the tool's cap), the Tegra 5 at 865 minutes; prediction (1)
 rescored for five sessions (65/35). Files: none added.
+
+## Iteration 639 - 2026-11-10 - Claude
+
+While seed 91's follow-up runs: the freeze's retire report with seeds 90-91 in the pool (retire-report-579.py 92 --winners,
+--handoff new - the relf handoff as it stands, 636's; the control, 90, reproduces 625's report byte for byte): still 12
+values on no front design - bss=0 in (s6, s0 and s1 build with it: stays), jitinl=0 in (no code); noinls=0 and thinhdr=0
+out; fsys=0 and jitdoes=1 kept by the winners, msc=1 the owner's. The freeze's list if the follow-up confirms no gain.
+The follow-up running (from 638's bundle): NEXT-RUN none. Files: results/drafts/retire-report-639.md.

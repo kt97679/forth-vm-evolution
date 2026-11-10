@@ -16,6 +16,10 @@ import collections, importlib.util, json, os, sys
 HERE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'lab', 'evolve')
 sys.path.insert(0, HERE)
 WIN = '--winners' in sys.argv; sys.argv = [x for x in sys.argv if x != '--winners']
+# Iteration 639: --handoff FILE - the relf handoff's designs as they stand (results/relf-designs-636.md), its roles changed
+# at 628, 631 and 636; default 611's, as 623 and 625 read it
+HO = sys.argv[sys.argv.index('--handoff') + 1] if '--handoff' in sys.argv else 'results/relf-designs-611.md'
+if '--handoff' in sys.argv: i = sys.argv.index('--handoff'); del sys.argv[i:i + 2]
 N = int(sys.argv[1]) if len(sys.argv) > 1 else 87
 sys.argv = ['x']; import evolve as E
 import hv, stopping
@@ -63,11 +67,11 @@ print('\n**Retire candidates under 578** (%d values): %s.' % (len(cand), '; '.jo
 if WIN:
     root = os.path.dirname(os.path.dirname(HERE))
     W = {}
-    for f in ('results/final-set-chainsBCD-seed86.md', 'results/relf-designs-611.md'):
+    for f in ('results/final-set-chainsBCD-seed86.md', HO):
         W.update({r['id']: r for r in (json.loads(l) for l in open(os.path.join(root, f)) if l.startswith('{')) if r.get('genome')})
     xw = {i: expressed(W[i]['genome']) for i in W}
     print('\n**The winners** (%d: the final set\'s 21 and the relf handoff\'s ten, results/final-set-chainsBCD-seed86.md and '
-          'results/relf-designs-611.md) - each candidate\'s users among them, whose bytes the freeze keeps (599):' % len(W))
+          '%s) - each candidate\'s users among them, whose bytes the freeze keeps (599):' % (len(W), HO))
     for g, v, na in cand:
         u = sorted(i for i in W if xw[i].get(g) == v)
         print('- %s=%s: %s' % (g, v, ('%d - %s: stays' % (len(u), ' '.join(u))) if u else 'none - retirable'))

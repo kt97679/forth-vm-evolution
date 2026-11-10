@@ -216,6 +216,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/retire-report-583.md` - Consolidation's retirement report with seed 86 in the pool (Iteration 583; retire-report-579.py rerun): 17 values on no design of the pooled true front of seeds 77-86.
 - `drafts/retire-report-623.md` - The freeze's retire report previewed before seed 89 (Iteration 623): 8 values on no design of the pooled front with the portable runs; msc=1 the one with code.
 - `drafts/retire-report-625.md` - The freeze's retire report with seed 89 in the pool (Iteration 625): 12 values on no front design, five more than 623's as seed 89's front displaced older designs; msc=1 the owner's.
+- `drafts/retire-report-639.md` - The freeze's retire report with seeds 90-91 in the pool (Iteration 639): still 12 values on no front design - bss=0 (stays for s6) and jitinl=0 in, noinls=0 and thinhdr=0 out.
 - `drafts/jcc-count-623.md` - Why GCC builds run slow on dream at 32 bits (Iteration 623): dispatch jumps on 32-byte boundaries rank with it in 614's variants - Intel's JCC erratum likely.
 - `drafts/gain-designs-624.md` - Seed 89's 32-bit gain off the ε-front (Iteration 624): why the follow-up's list missed it, the fix, and the drift check (drafts/drift-624.py).
 - `drafts/followup-check-627.py` - Seed 89's follow-up's role changes checked session by session (Iteration 627): the paired differences, the Tegra's t-interval, the holders' drift.
