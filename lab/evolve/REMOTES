@@ -116,6 +116,11 @@
 # Iteration 637 - seed 91's follow-up (results/followup-seed91.md, 38 designs; about 9 hours, Claude's - the owner): sized
 # by portable-followup.py at seed 90's chain's rates (seed 91's agree: dream 9 sessions a width of 266 in 625 minutes) -
 # dream about 6 minutes a session a width at 10 rounds, the Tegra about 133 at 10 rounds after its stages.
-rage.lan     prebuiltarm 4       10      535      --cell 4 --rejected 4 --sessions 4 --also @results/followup-seed91.md
-dream.lan    prebuilt32  4       10      265      --cell 4 --rejected 6 --sessions 40 --also @results/followup-seed91.md
-dream.lan    prebuilt64  4       10      265      --from prebuilt32 --sessions 40
+# rage.lan     prebuiltarm 4       10      535      --cell 4 --rejected 4 --sessions 4 --also @results/followup-seed91.md
+# dream.lan    prebuilt32  4       10      265      --cell 4 --rejected 6 --sessions 40 --also @results/followup-seed91.md
+# dream.lan    prebuilt64  4       10      265      --from prebuilt32 --sessions 40
+# Iteration 638 - the same follow-up at about 15 hours (the owner: ending by 6 am his time): portable-followup.py --hours
+# 14.5 - the Tegra 5 sessions (865 minutes), dream 40 a width as before (its cap; 430 minutes a width).
+rage.lan     prebuiltarm 4       10      865      --cell 4 --rejected 4 --sessions 5 --also @results/followup-seed91.md
+dream.lan    prebuilt32  4       10      430      --cell 4 --rejected 6 --sessions 40 --also @results/followup-seed91.md
+dream.lan    prebuilt64  4       10      430      --from prebuilt32 --sessions 40

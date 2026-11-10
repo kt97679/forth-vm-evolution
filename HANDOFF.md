@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 637.
+- master: Iteration 638.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -138,9 +138,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   screen of seed 90's rest (results/xcheck-seed91.md, results/chain-screen90/): 1 flagged - 7fb40ff7ba against the ARMv7
   holder (the Tegra -1.06% +/- 1.92%); followup-roles.py now counts a listed design's readings that a line drew into its
   rejected sample (637 - they were dropped; no earlier screen or follow-up held such an overlap). Predictions 4 of 4.
-- **Seed 91's follow-up set (637; the owner: the hours Claude's) - about 9 hours, NEXT-RUN's line**: the 38 of
+- **Seed 91's follow-up set (637; 15 hours at 638 - the owner: started about 3 pm his time, results at 6 am) - NEXT-RUN's line**: the 38 of
   results/followup-seed91.md (portable-followup.py: seed 91's best 30 by select(), the six portable holders, c2ef9488ff,
-  7fb40ff7ba), 24 laptop steps, dream 40 sessions a width, the Tegra 4 (REMOTES) - as seed 88's follow-up (46, 9 h). The
+  7fb40ff7ba), 39 laptop steps, dream 40 sessions a width, the Tegra 5 (REMOTES) - 637's 9 hours (seed 88's) widened. The
   next run's screen written at once: results/screen-seed91.md (326 - seed 91's other 320 on the union's front, the six
   holders). **Its processing**: `sh lab/evolve/process-followup.sh 91 ITERATION
   fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393` (HANDOFF=

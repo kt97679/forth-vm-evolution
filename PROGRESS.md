@@ -11097,3 +11097,10 @@ results/xcheck-seed91.md, results/screen-flagged-seed90.md, results/followup-see
 results/chain-screen90/ (README.md, sK/dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json,
 rage.lan-prebuiltarm.out.json and the reports dream.lan-prebuilt32.md, dream.lan-prebuilt64.md, rage.lan-prebuiltarm.md;
 rage s1-s3).
+
+## Iteration 638 - 2026-11-10 - Claude
+
+Seed 91's follow-up resized before it starts (the owner: started about 3 pm his time, the results sent at 6 am): 15 hours,
+not 637's 9 - the same 38 (portable-followup.py --hours 14.5 writes results/followup-seed91.md and screen-seed91.md the same
+to the byte), 39 laptop steps, dream 40 sessions a width (the tool's cap), the Tegra 5 at 865 minutes; prediction (1)
+rescored for five sessions (65/35). Files: none added.

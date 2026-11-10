@@ -1416,11 +1416,12 @@ holder (the Tegra -1.06% +/- 1.92%), once followup-roles.py counts a listed desi
 rejected sample (637; as it stood, none flagged). (4) right - the hypervolume -2.5%.
 
 
-## Seed 91's follow-up, about 9 hours - predicted (Iteration 637)
+## Seed 91's follow-up, about 15 hours - predicted (Iteration 637; resized 638)
 
 The 38 of results/followup-seed91.md - seed 91's best 30, the six portable holders, c2ef9488ff and the screen's
-7fb40ff7ba - on the laptop (24 steps), dream (40 sessions a width) and the Tegra (4). (1) Every line's sessions complete,
-the Tegra's fourth included - 55/45 (four of about 133 minutes after its stages, against a 535-minute deadline). (2) A gain
+7fb40ff7ba - on the laptop (39 steps; 24 at 637's 9 hours), dream (40 sessions a width) and the Tegra (5; 4). (1) Every line's sessions
+complete, the Tegra's fifth included - 65/35 (five of about 133 minutes after its stages, against an 865-minute deadline;
+637's 55/45 was for four in 535). (2) A gain
 by the 616 rule, so the portable search goes on (seed 92) - 25/75 (in-run nothing past a threshold; the fastest tenth's
 re-measure 1.045 of in-run). (3) 7fb40ff7ba takes the ARMv7 role (2% at 2 SE, the Tegra's sessions pooled) - 15/85 (the
 screen -1.06% +/- 1.92%, three sessions at 3 rounds). (4) Seed 91's fastest, 3060f04651, slower than 782f3ad7ff on the
