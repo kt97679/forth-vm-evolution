@@ -59,6 +59,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `xcheck-seed88.md` - The remote checks during seed 88 (Iteration 614): the dream 32-bit experiment's 20 on dream at both widths (30 sessions) and the Tegra (12), 20 of 20 in every session.
 - `xcheck-seed89.md` - Seed 89's remote lines (Iteration 624): the screen of seed 88's rest - dream 6 sessions a width, the Tegra 2 - flags 5 against the knee and small and fast on ARMv7.
 - `xcheck-seed90.md` - Seed 90's remote lines (Iteration 630): the screen of seed 89's rest - dream 8 sessions a width, its 32-bit line under another load, the Tegra 3 - flags 11a56ff9e4 against the knee, and small and fast on ARMv7 goes to ae99617f06 by the 629 rule.
+- `xcheck-seed91.md` - Seed 91's remote lines (Iteration 637): the screen of seed 90's rest - dream 9 sessions a width, the Tegra 3 - flags 7fb40ff7ba against the ARMv7 holder.
 
 ### The batches of patches applied after the runs
 
@@ -276,6 +277,10 @@ Each subject oldest first; a script or patch beside the document it made.
 - `chain-screen89/README.md` - The screen's readings (Iteration 630): seed 89's rest on seed 90's remote lines by session - dream 8 a width, the Tegra 3.
 - `followup-seed89.md` - Seed 89's follow-up chain's 52 (Iteration 624): its best and its 32-bit gain beside the relf handoff's ten holders and the screen's five.
 - `followup-seed90.md` - Seed 90's follow-up chain's 7 (Iteration 631): the screen's 11a56ff9e4 against the knee beside the six portable holders.
+- `screen-flagged-seed90.md` - The screen's one of seed 90's rest (Iteration 637): 7fb40ff7ba, flagged against the ARMv7 holder, in seed 91's follow-up.
+- `chain-screen90/README.md` - The screen's readings (Iteration 637): seed 90's rest on seed 91's remote lines by session - dream 9 a width, the Tegra 3.
+- `followup-seed91.md` - Seed 91's follow-up chain's 38 (Iteration 637): its best 30 beside the six portable holders, c2ef9488ff and the screen's 7fb40ff7ba.
+- `screen-seed91.md` - The screen for the next portable run's remote lines (Iteration 637): seed 91's rest - 320 of its designs on the union's front not in the follow-up - with the six portable holders.
 - `candidates-final-seed89.md` - Seed 89's 178 final-pick candidates (Iteration 624): final-set.py's draft from the pool and the run - the leanest, the smallest, the set, those within 5% of the fastest at either width.
 - `candidates-final-seed90.md` - Seed 90's 469 final-pick candidates (Iteration 630): final-set.py's draft from the pool and the run - no step taken, the run gained nothing.
 - `chain-followup88/README.md` - Seed 88's follow-up chain's readings (Iteration 621): the 46 in every session - the laptop 18, dream 28 and 25, rage 3.

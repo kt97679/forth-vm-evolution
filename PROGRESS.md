@@ -11084,3 +11084,16 @@ results/relf-designs-636.md, the package forth-vm-evolution-designs-iter636.tar.
 19,761 B at 8-byte cells, 19,369 at 4), designs/portable-knee made again (the lab's bytes at both widths; make test 10 of
 10); seed 91's screen reads knee=11a56ff9e4. And the article last - after the search's end, the freeze and the designs
 handed off to relf (HANDOFF-REFERENCE.md's standing decisions). Files: results/handoff-relf-636.md, results/relf-designs-636.md.
+
+## Iteration 637 - 2026-11-10 - Claude
+
+Seed 91 processed - the portable run reopened, 284 generations, every remote session complete: portable.py NOT BETTER
+in-run (hypervolume -2.5%; at 32 bits 0.2764 against 0.2803; the smallest 13,691 against 13,709 B), so its follow-up
+decides (616/618). The screen of seed 90's rest flags 7fb40ff7ba against the ARMv7 holder (the Tegra -1.06% +/- 1.92%) once
+followup-roles.py counts a listed design's readings drawn into a line's rejected sample (dropped before; no earlier screen
+or follow-up affected); process-run.sh's FROM=checks ended before DONE with no batch (PRE unset under set -u) - fixed. The follow-up set, about 9 hours (the owner: the hours Claude's): 38 designs, 24 laptop steps,
+dream 40 sessions a width, the Tegra 4. Predictions 4 of 4. Files: results/evolve-amd-ryzen-7-pro-8840hs-seed91.md,
+results/xcheck-seed91.md, results/screen-flagged-seed90.md, results/followup-seed91.md, results/screen-seed91.md,
+results/chain-screen90/ (README.md, sK/dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.out.json,
+rage.lan-prebuiltarm.out.json and the reports dream.lan-prebuilt32.md, dream.lan-prebuilt64.md, rage.lan-prebuiltarm.md;
+rage s1-s3).

@@ -59,7 +59,7 @@ elif [ -d results/pending ]; then
     git commit -q -m "Iteration $I: the after-seed-$N batch applied - $(echo $P | wc -w) patches ($(for p in $P; do basename "$p" -after-seed$N.patch; done | tr '\n' ' ' | sed 's/ $//; s/ /, /g')), batch-check PASS" || die "the batch's commit"
     st "applied - $(git log --oneline -1 | cut -c1-120)"
 fi
-fi                                                                # the FROM=checks branch's end
+fi                                                                # the FROM=checks branch's end (637: PRE unset there with no batch - read as ${PRE:-} below, set -u had ended the job before DONE)
 N=$(ls -d /tmp/process/*-seed[0-9]*-* | sed -n 's/.*-seed\([0-9]*\)-.*/\1/p' | head -n 1)
 [ -n "${PRE:-}" ] || { C=$(git log --format=%h -1 --grep="the after-seed-$N batch applied"); [ -z "$C" ] || PRE=$(git rev-parse --short "$C^"); }
 D=$(ls /tmp/process/*-seed[0-9]*-*/pack/db.jsonl | head -n 1)     # 562: the run's curve for the stopping rule, detached
@@ -72,7 +72,7 @@ st "checks - process-checks.sh $R (its status /tmp/process-checks/status)"
 FROM=build sh lab/evolve/process-checks.sh "$R" > /dev/null 2>&1      # 563: never this script's FROM - process-checks reads its own
 K=$(awk '/^START from build/{b=""} {b=b $0 "\n"} END{printf "%s", b}' /tmp/process-checks/status)    # this chain's lines only
 st "checks done - $(echo "$K" | grep -c '=0') steps 0, $(echo "$K" | grep -cE '=[1-9]') not"
-if [ -n "$PRE" ] && grep -q 'right - as s6' /tmp/process-checks/deaths.log 2>/dev/null; then
+if [ -n "${PRE:-}" ] && grep -q 'right - as s6' /tmp/process-checks/deaths.log 2>/dev/null; then
     C=$O/control; rm -rf "$C"; git clone -q . "$C" && git -C "$C" checkout -q "$PRE" && cp lab/evolve/deaths-check.py "$C/lab/evolve/"
     ( cd "$C" && env LAYOUTS=1 bash tools/build-stages.sh > "$O/control-build.log" 2>&1 &&
       python3 lab/evolve/deaths-check.py "$(ls /tmp/process/*-seed[0-9]*-*/pack/db.jsonl | head -1)" > "$O/control.log" 2>&1 )

@@ -73,7 +73,9 @@ for k, d in enumerate(sorted(glob.glob(os.path.join(SESS, 's[0-9]*')), key=lambd
     for s, f in HOSTFILE.items():
         if os.path.exists(os.path.join(d, f)):
             o = json.load(open(os.path.join(d, f)))
-            n = [x for x in o['designs'] if x.get('id') in C and not x.get('rejected') and x.get('speed_here')]
+            # 637: a listed design's reading counts however the line came to measure it - seed 91's Tegra line drew
+            # 7fb40ff7ba into its rejected sample and so did not ask for it again; dropped, the screen missed its flag
+            n = [x for x in o['designs'] if x.get('id') in C and x.get('speed_here')]
             for x in n: S[s][x['id']][k] = x['speed_here']
             done[s].append(len(n))
 P = {s: {i: gm(list(v.values())) for i, v in S[s].items() if v} for s in SOURCES}

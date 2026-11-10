@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 636.
+- master: Iteration 637.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -132,19 +132,21 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   counts it would favour c2ef9488ff on dream). Done at 636: results/handoff-relf-636.md, results/relf-designs-636.md,
   the package forth-vm-evolution-designs-iter636.tar.gz (outputs), designs/portable-knee made again. The other five holders
   kept; --gain not this list's (a screened design, not a run's). Predictions 3 of 4.
-- **Seed 91 set (632) - the portable run 620 reopened**: `seed 91 nojit 21h widths` (seeds 87-88's setup, the newest four
-  databases carried) - **running (the owner, 635, after 634's bundle)**; NEXT-RUN none (629: a pull must not start it
-  again) - its processing writes the next line. REMOTES screen seed 90's rest - results/screen-seed90.md,
-  266: the JIT run's 259 JIT-free designs on the union's front (portable-followup.py --seed 90 --k 0, 631; none
-  re-measured), the six portable holders and 11a56ff9e4 - the Tegra 3 sessions, dream 9 a width (seed 90's rates).
-  **Its processing**: process-run.sh (portable.py's verdict against results/portable-front-seed90.md, 528, written at
-  633 - seeds 89-90's JIT-free front designs in it, 3eb59b271d among them; the bars: 0.2758, at 32 bits 0.2851, 13,709 B,
-  104 KB); the screen as 630's - chain-sessions.py into
-  results/chain-screen90, `followup-roles.py results/screen-seed90.md results/chain-screen90 --screen --roles
-  fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393 --flagged
-  results/screen-flagged-seed90.md`; then its follow-up by the plan's command
-  (results/drafts/portable-plan-602.md, "The search goes on"). Dream copies a backup (the owner: zfs to btrfs over USB) - 630's load; its sessions' spread
-  doubles while it runs, paired readings unbiased.
+- **Seed 91 processed (637) - the portable run reopened: NOT BETTER in-run** (results/evolve-amd-ryzen-7-pro-8840hs-seed91.md):
+  against the pool before it (results/portable-front-seed90.md, 528) the hypervolume -2.5%, at 32 bits 0.2764 against
+  0.2803 (-1.4%), the smallest 13,691 against 13,709 (18 B), memory the same. By 616/618 the follow-up decides. The
+  screen of seed 90's rest (results/xcheck-seed91.md, results/chain-screen90/): 1 flagged - 7fb40ff7ba against the ARMv7
+  holder (the Tegra -1.06% +/- 1.92%); followup-roles.py now counts a listed design's readings that a line drew into its
+  rejected sample (637 - they were dropped; no earlier screen or follow-up held such an overlap). Predictions 4 of 4.
+- **Seed 91's follow-up set (637; the owner: the hours Claude's) - about 9 hours, NEXT-RUN's line**: the 38 of
+  results/followup-seed91.md (portable-followup.py: seed 91's best 30 by select(), the six portable holders, c2ef9488ff,
+  7fb40ff7ba), 24 laptop steps, dream 40 sessions a width, the Tegra 4 (REMOTES) - as seed 88's follow-up (46, 9 h). The
+  next run's screen written at once: results/screen-seed91.md (326 - seed 91's other 320 on the union's front, the six
+  holders). **Its processing**: `sh lab/evolve/process-followup.sh 91 ITERATION
+  fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393` (HANDOFF=
+  results/handoff-relf-636.md, PRED= 637); its gain.txt by the 616 rule: a gain - seed 92 (`seed 92 nojit 21h widths`, its
+  remote lines screening results/screen-seed91.md); none - the portable search stops and the freeze follows ("Before the
+  freeze", below; the screen of seed 91's rest the owner's call, 617). A role changed: the package and designs/ again.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier
@@ -191,10 +193,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 91's - 4 (632).
+- **Predictions due** (results/predictions.md): seed 91's follow-up's - 4 (637).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; seed 91's archive when it returns. appbench.zip
+- **Files a new chat needs**: the newest bundle; seed 91's follow-up's archive when it returns. appbench.zip
   stays on the laptop.
 
 ## Processing a returned seed

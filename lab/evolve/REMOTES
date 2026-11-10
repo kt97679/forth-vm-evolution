@@ -110,6 +110,12 @@
 # Iteration 632 - seed 91, the portable run 620 reopened: its remote lines screen seed 90's rest (results/screen-seed90.md,
 # 266: the JIT run's 259 JIT-free designs on the union's front, the six portable holders, 11a56ff9e4) - sized by
 # portable-followup.py at seed 90's chain's rates (631): a session dream about 66 and 57 minutes, the Tegra 314 at 3 rounds.
-rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 3 --also @results/screen-seed90.md
-dream.lan    prebuilt32  4       10      625      --cell 4 --rejected 6 --sessions 9 --also @results/screen-seed90.md
-dream.lan    prebuilt64  4       10      625      --from prebuilt32 --sessions 9
+# rage.lan     prebuiltarm 4       3       1255     --cell 4 --rejected 4 --sessions 3 --also @results/screen-seed90.md
+# dream.lan    prebuilt32  4       10      625      --cell 4 --rejected 6 --sessions 9 --also @results/screen-seed90.md
+# dream.lan    prebuilt64  4       10      625      --from prebuilt32 --sessions 9
+# Iteration 637 - seed 91's follow-up (results/followup-seed91.md, 38 designs; about 9 hours, Claude's - the owner): sized
+# by portable-followup.py at seed 90's chain's rates (seed 91's agree: dream 9 sessions a width of 266 in 625 minutes) -
+# dream about 6 minutes a session a width at 10 rounds, the Tegra about 133 at 10 rounds after its stages.
+rage.lan     prebuiltarm 4       10      535      --cell 4 --rejected 4 --sessions 4 --also @results/followup-seed91.md
+dream.lan    prebuilt32  4       10      265      --cell 4 --rejected 6 --sessions 40 --also @results/followup-seed91.md
+dream.lan    prebuilt64  4       10      265      --from prebuilt32 --sessions 40

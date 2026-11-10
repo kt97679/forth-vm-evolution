@@ -1408,3 +1408,20 @@ width (seed 90's rates, 631) - 55/45 (dream's backup copy, if still running, slo
 hypervolume, seed 88 by one extreme; seed 91 starts from both and from seeds 89-90's JIT-free designs). (3) The screen
 flags at least one of seed 90's rest against a portable role - 60/40 (seed 88's rest 5, seed 89's 1 once JIT-free). (4) The
 hypervolume past its 1% bar - 25/75 (seed 87 +2.4%, seed 88 short).
+
+**Scored at seed 91 (Iteration 637): four right.** (1) right - every session as sized: the Tegra 3, dream 9 a width, each
+complete (dream's 32-bit line loaded in all nine, 2.1-7.6 on average). (2) right - no gain: portable.py NOT BETTER, no
+criterion by its threshold (at 32 bits -1.4%, the smallest 18 bytes). (3) right - 7fb40ff7ba flagged against the ARMv7
+holder (the Tegra -1.06% +/- 1.92%), once followup-roles.py counts a listed design's readings drawn into a line's
+rejected sample (637; as it stood, none flagged). (4) right - the hypervolume -2.5%.
+
+
+## Seed 91's follow-up, about 9 hours - predicted (Iteration 637)
+
+The 38 of results/followup-seed91.md - seed 91's best 30, the six portable holders, c2ef9488ff and the screen's
+7fb40ff7ba - on the laptop (24 steps), dream (40 sessions a width) and the Tegra (4). (1) Every line's sessions complete,
+the Tegra's fourth included - 55/45 (four of about 133 minutes after its stages, against a 535-minute deadline). (2) A gain
+by the 616 rule, so the portable search goes on (seed 92) - 25/75 (in-run nothing past a threshold; the fastest tenth's
+re-measure 1.045 of in-run). (3) 7fb40ff7ba takes the ARMv7 role (2% at 2 SE, the Tegra's sessions pooled) - 15/85 (the
+screen -1.06% +/- 1.92%, three sessions at 3 rounds). (4) Seed 91's fastest, 3060f04651, slower than 782f3ad7ff on the
+laptop at 8-byte cells - 70/30 (in-run 0.2763 against 0.2758 found before, the fast end's optimism on top).
