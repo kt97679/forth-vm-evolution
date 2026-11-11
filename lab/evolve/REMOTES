@@ -129,6 +129,9 @@
 # machines, seed 91's rest (320), the holders and the best re-measured before (results/drafts/finalcheck-641.py). Sized at
 # seed 91's chains' rates: dream about 110 minutes a session a width (7 a width), the Tegra about 520 at 3 rounds by 631's
 # rate - its third may be cut short (seed 91's follow-up's 190 s a design at 10 rounds gives about 60 at 3: three fit).
-rage.lan     prebuiltarm 4       3       1555     --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed91-final.md
-dream.lan    prebuilt32  4       10      775      --cell 4 --rejected 6 --sessions 7 --also @results/followup-seed91-final.md
-dream.lan    prebuilt64  4       10      775      --from prebuilt32 --sessions 7
+# (out at 647) rage.lan     prebuiltarm 4       3       1555     --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed91-final.md
+# (out at 647) dream.lan    prebuilt32  4       10      775      --cell 4 --rejected 6 --sessions 7 --also @results/followup-seed91-final.md
+# (out at 647) dream.lan    prebuilt64  4       10      775      --from prebuilt32 --sessions 7
+# Iteration 647 (the owner: "please include rage check into next run"): no remote line - the next chain is
+# lab/evolve/rage-designs.py on the laptop, which uses rage itself (tools/rage-check.sh); a measuring line beside it
+# would time the Tegra under a build.

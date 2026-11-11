@@ -296,4 +296,9 @@
 # across machines, seed 91's rest, the holders, the best re-measured before), the laptop 6 steps of about 4.6 hours (5 fit;
 # repeat-fits skips the sixth), dream 7 sessions a width, the Tegra 3 at 3 rounds (REMOTES, 1555 minutes). Its processing:
 # process-followup.sh 91-final (the card).
-experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10
+# (ran from 641; its archive the final check) experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10 then experiment loadtest.py --ids results/followup-seed91-final.md --rounds 10
+# Iteration 647 (the owner: "please include rage check into next run"): after the final check's chain has ended (rage
+# free) - designs/' forth-arm on the Tegra: lab/evolve/rage-designs.py runs tools/rage-check.sh with
+# RAGECHECK_CMD='sh tools/rage-designs-check.sh' (the three GCC designs' bytes, GCC 16; Iteration 646). No remote
+# line (REMOTES). Its archive's pack holds rage-designs.md, PASS or FAILED.
+experiment rage-designs.py
