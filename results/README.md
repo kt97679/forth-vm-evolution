@@ -231,6 +231,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/freeze-retire-641.md` - The freeze's retirements read (Iteration 642): of the report's 12 values only rtloopall=0 goes, with the partial loop compiler no front design uses; seven values remove no code.
 - `drafts/freeze-audit-641.py` - The run-time overlays each build loads, counted over the pooled front, the stages and the winners (Iteration 642): -loop on none of 615.
 - `drafts/build-hash-641.py` - build-hash-584.py reaching the portable pools and every kept design (Iteration 642): the freeze batch's byte check.
+- `drafts/rehearse-final-644.py` - The final check's processing rehearsed at its size (Iteration 644): a synthetic archive of the 435 from seed 91's follow-up's chain - process-followup.sh 91-final in 3 seconds, complete.
 - `drafts/dream-load-630.py` - Dream's load during seed 90's chain against the screen's readings (Iteration 630): the 32-bit line at 8.45 on average, its loaded sessions' spread doubled, no bias in the knee's flag.
 - `drafts/screen-jit-630.py` - The 82 JIT designs of seed 89's rest against the four x86 holders on dream (Iteration 630): none past 2%, and no smaller JIT design without a speed loss.
 - `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.

@@ -11150,3 +11150,11 @@ The freeze's batch, its second patch: rtimm_lean (forth/cv8-imm.4 loaded alone f
 read as 0), queued after rtloop. With both: 141 of 4,892 ids change (no winner's), the 52 designs' bytes the same at both
 widths, batch-check PASS. Files: results/queued-freeze/rtimmlean-after-seed91.patch, results/queued-freeze/ORDER.md,
 results/drafts/freeze-retire-641.md.
+
+## Iteration 644 - 2026-11-11 - Claude
+
+The final check's processing rehearsed at its size: a synthetic archive in seed 91's follow-up's layout with the 435 in
+every session (results/drafts/rehearse-final-644.py; readings of the nearest measured design, scaled by in-run ratio,
+0.6% noise), processed by process-followup.sh 91-final into /tmp - 3 seconds end to end, every line 435 of 435 (the
+Tegra 436: its rejected sample drew a listed design, as in the real chain), the pick, the roles and --gain at 435 without
+fault; the 72's "the check" read as candidates. Files: results/drafts/rehearse-final-644.py.

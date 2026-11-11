@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 643.
+- master: Iteration 644.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -160,6 +160,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393` - every role
   by the rule (roles.txt lists every design beating a holder), --gain the never-measured and the rest against the found
   before; a role changed: the package and designs/ again; a near miss: a short confirmation; then the freeze.
+  **Rehearsed (644)** on a synthetic archive of the 435 (results/drafts/rehearse-final-644.py, from seed 91's follow-up's
+  chain): the command ran end to end in 3 seconds, every line complete. Two readings to expect: a line's count can show 436
+  of 435 when its rejected sample draws a listed design (the Tegra's did, 7fb40ff7ba, in seed 91's follow-up - both
+  readings real); and --gain's verdict line speaks of seed 92 - here a role taken means the package and designs/ again,
+  then the freeze, no further run.
 - **The freeze's batch, queued (642-643)** - results/queued-freeze/ORDER.md, batch-check PASS on both: rtloop-after-seed91
   (the partial run-time loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91
   (forth/cv8-imm.4, rtimm=2 alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in; the two
