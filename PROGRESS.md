@@ -11112,3 +11112,13 @@ While seed 91's follow-up runs: the freeze's retire report with seeds 90-91 in t
 values on no front design - bss=0 in (s6, s0 and s1 build with it: stays), jitinl=0 in (no code); noinls=0 and thinhdr=0
 out; fsys=0 and jitdoes=1 kept by the winners, msc=1 the owner's. The freeze's list if the follow-up confirms no gain.
 The follow-up running (from 638's bundle): NEXT-RUN none. Files: results/drafts/retire-report-639.md.
+
+## Iteration 640 - 2026-11-11 - Claude
+
+Seed 91's follow-up processed (e22aa0b0be, 14.3 h; the laptop 35 of 39 steps, dream 40 a width, the Tegra 5, all 38 on
+every line): no role changed by speed (ARMv7 965f48c803 -1.22% +/- 0.40%); the smallest's candidate 01712a2639 (-1.44%,
+x86-32 +18.4%) the owner's call. --gain's GAIN (the laptop at 4-byte cells -5.38%, size -1.44%) is against the list's 8
+found before alone; against the whole pool -0.68% (bridged, e523a45566) and -0.13% (4dd4e3e7e2) - no gain, so the search
+stops and the freeze follows unless the owner takes 01712a2639. Predictions 3 of 4. Files: results/chain-followup91/,
+results/followup-pick-seed91.md, results/followup-pick-seed91.json, results/followup-roles-seed91.md,
+results/drafts/gain-bridge-640.py.

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 639.
+- master: Iteration 640.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -138,15 +138,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   screen of seed 90's rest (results/xcheck-seed91.md, results/chain-screen90/): 1 flagged - 7fb40ff7ba against the ARMv7
   holder (the Tegra -1.06% +/- 1.92%); followup-roles.py now counts a listed design's readings that a line drew into its
   rejected sample (637 - they were dropped; no earlier screen or follow-up held such an overlap). Predictions 4 of 4.
-- **Seed 91's follow-up set (637; 15 hours at 638 - the owner: started about 3 pm his time, results at 6 am) - running (the owner, from 638's bundle); NEXT-RUN none**: the 38 of
-  results/followup-seed91.md (portable-followup.py: seed 91's best 30 by select(), the six portable holders, c2ef9488ff,
-  7fb40ff7ba), 39 laptop steps, dream 40 sessions a width, the Tegra 5 (REMOTES) - 637's 9 hours (seed 88's) widened. The
-  next run's screen written at once: results/screen-seed91.md (326 - seed 91's other 320 on the union's front, the six
-  holders). **Its processing**: `sh lab/evolve/process-followup.sh 91 ITERATION
-  fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393` (HANDOFF=
-  results/handoff-relf-636.md, PRED= 637); its gain.txt by the 616 rule: a gain - seed 92 (`seed 92 nojit 21h widths`, its
-  remote lines screening results/screen-seed91.md); none - the portable search stops and the freeze follows ("Before the
-  freeze", below; the screen of seed 91's rest the owner's call, 617). A role changed: the package and designs/ again.
+- **Seed 91's follow-up processed (640) - no gain against the whole pool; waiting on the owner** -
+  results/followup-roles-seed91.md: the 38, every session complete (the laptop 35 of 39 steps, dream 40 a width, the Tegra
+  5). Roles: none changed by speed (ARMv7: 965f48c803 -1.22% +/- 0.40%, short of 2%); **the smallest the owner's call** -
+  01712a2639 1.44% smaller than 64a7345393, x86-32 +18.4%, x86-64 +4.5%, ARMv7 +6.5% (611/621's trade; Claude: keep).
+  followup-roles.py --gain said GAIN (the laptop at 4-byte cells -5.38%, the smallest -1.44%), but against the list's 8
+  found before alone (seed 90's pick and the holders); against the whole pool (results/drafts/gain-bridge-640.py) -0.68%
+  against e523a45566 (bridged) and -0.13% against 4dd4e3e7e2, short of 2% and 1% - the in-run verdict (637). **So the
+  portable search stops and the freeze follows ("Before the freeze"), unless the owner gives 01712a2639 the smallest role**
+  (then seed 92, `seed 92 nojit 21h widths`, screening results/screen-seed91.md; the package and designs/ again; and
+  portable-followup.py's found-before widened to every earlier pick's extremes first). NEXT-RUN none. Predictions 3 of 4.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier
@@ -194,10 +195,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): seed 91's follow-up's - 4 (637).
+- **Predictions due** (results/predictions.md): none - seed 91's follow-up's scored (640), 3 of 4.
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; seed 91's follow-up's archive when it returns. appbench.zip
+- **Files a new chat needs**: the newest bundle; a chain archive only if seed 92 runs. appbench.zip
   stays on the laptop.
 
 ## Processing a returned seed

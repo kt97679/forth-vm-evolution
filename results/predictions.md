@@ -1426,3 +1426,10 @@ by the 616 rule, so the portable search goes on (seed 92) - 25/75 (in-run nothin
 re-measure 1.045 of in-run). (3) 7fb40ff7ba takes the ARMv7 role (2% at 2 SE, the Tegra's sessions pooled) - 15/85 (the
 screen -1.06% +/- 1.92%, three sessions at 3 rounds). (4) Seed 91's fastest, 3060f04651, slower than 782f3ad7ff on the
 laptop at 8-byte cells - 70/30 (in-run 0.2763 against 0.2758 found before, the fast end's optimism on top).
+
+**Scored at seed 91's follow-up (Iteration 640): three right, one wrong - (2) waits on the owner's call on the smallest.**
+(1) right - the laptop 35 steps, dream 40 a width, the Tegra 5, each complete. (2) right by the pooled reading - against
+the whole pool no extreme past its threshold (the laptop at 4-byte cells -0.68% against e523a45566, bridged; the smallest
+-0.13% against 4dd4e3e7e2), though followup-roles.py --gain, against the list's 8 found before alone, says GAIN; a gain
+if the owner gives 01712a2639 the smallest role (results/followup-roles-seed91.md). (3) right - 7fb40ff7ba -0.62% +/-
+0.39% on the Tegra. (4) wrong - 3060f04651 0.69% +/- 0.20% faster than 782f3ad7ff on the laptop at 8-byte cells.
