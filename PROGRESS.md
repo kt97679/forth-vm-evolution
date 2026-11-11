@@ -11133,3 +11133,12 @@ seed 87's rest), the pool's in-run fastest at both widths among them. One chain 
 and the best re-measured before - 435 on all three machines (the laptop 5, dream 7 a width, the Tegra 3); NEXT-RUN,
 REMOTES; followup-roles.py's run() takes "the check" as a candidate; 4 predictions. Files: results/followup-seed91-final.md,
 results/drafts/coverage-641.py, results/drafts/coverage-641.txt, results/drafts/finalcheck-641.py.
+
+## Iteration 642 - 2026-11-11 - Claude
+
+The freeze's batch prepared while the final check runs: the retire report's 12 values read for code - four stay by use,
+seven remove none (583's "nothing simpler"); an audit of the run-time overlays found the partial loop compiler on no
+pooled-front design (0 of 615), stage or winner - rtloop-after-seed91.patch (120 lines out, 23 in; rtloopall at 1), queued
+in results/queued-freeze; ids 140 of 4,892 changed (the -loop designs, no winner), the bytes the same, batch-check PASS.
+Files: results/drafts/freeze-retire-641.md, results/drafts/freeze-audit-641.py, results/drafts/build-hash-641.py,
+results/queued-freeze/ORDER.md, results/queued-freeze/rtloop-after-seed91.patch.
