@@ -11166,3 +11166,14 @@ results/drafts/freeze-build-645.sh - validate 7 of 7 IDENTICAL, export-designs.p
 same as designs/ for 10 of 10, make, make test 10 ok, make 32, make libc, pack-designs.py 20 of 20 right on the nine
 workloads, the 40 packed engines and images the same bytes as master's builds. The batch changes no shipped byte; at the
 freeze the script runs on master with the final roles. Files: results/drafts/freeze-build-645.sh.
+
+## Iteration 646 - 2026-11-11 - Claude
+
+The owner asked whether the portable engines still use libc. The lab's do not, on any machine (rt-linux-x86_64.c,
+rt-linux-i386.c, rt-linux-armv7.c); designs/ shipped ARM only as forth-libc. lab/evolve/export-arm.py adds `make
+forth-arm` to the six designs without the JIT (srcarm/, the lab's ARM command; `make arm` from the top): the three clang
+designs the lab's bytes and running under qemu-arm, the three GCC ones checked with a cross GCC 13 (the rule gives the
+lab's bytes, runs) - their GCC 16 bytes wait on the Tegra (tools/rage-designs-check.sh through rage-check.sh's new
+RAGECHECK_CMD). make test 10 ok, make 32, make libc unchanged. Files: lab/evolve/export-arm.py, tools/rage-designs-check.sh,
+designs/least-memory/srcarm, designs/portable-arm/srcarm, designs/portable-fastest/srcarm, designs/portable-knee/srcarm,
+designs/portable-small/srcarm, designs/smallest/srcarm.

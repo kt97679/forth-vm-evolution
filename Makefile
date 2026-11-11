@@ -13,6 +13,9 @@ $(DESIGNS):
 libc:
 	for d in $(PORTABLE); do $(MAKE) -C designs/$$d forth-libc || exit 1; done
 
+arm:
+	for d in $(PORTABLE); do $(MAKE) -C designs/$$d forth-arm || exit 1; done
+
 32:
 	for d in $(DESIGNS); do $(MAKE) -C designs/$$d forth32 || exit 1; done
 
@@ -22,4 +25,4 @@ test: all
 clean:
 	for d in $(DESIGNS); do $(MAKE) -C designs/$$d clean; done
 
-.PHONY: all libc 32 test clean $(DESIGNS)
+.PHONY: all libc arm 32 test clean $(DESIGNS)

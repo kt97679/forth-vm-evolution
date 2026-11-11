@@ -4,12 +4,15 @@
 # `make forth-libc` the same design with the C library, for any other host (not the JIT designs: x86 code).
 # Run: ./forth image.img   (or ./forth32 image32.img). Names are upper case; BYE leaves. `make tight`: the
 # file exactly as measured (python3; the same loaded bytes, no section headers). Compiler and linker warnings
+# `make forth-arm` 4-byte cells for 32-bit ARM Linux (ARMv7, hard float), no C library (srcarm/rt-linux-armv7.c): cross-built by clang and lld from any host - the bytes the Tegra ran. Run: ./forth-arm image32.img
 CC32 = clang
 # about attributes and an RWX segment are expected.
 
 CC = clang
 SRC = src/rt-linux-x86_64.c src/vm-fold-bodies.h src/vm-fold-table.h src/vm-ops10-esc.h src/vm-ops10-table.h src/vm-super-bodies.h src/vm-super-esc.h src/vm-super-table.h src/vm.c
 SRC32 = src32/rt-linux-i386.c src32/rt-linux-x86_64.c src32/vm-fold-bodies.h src32/vm-fold-table.h src32/vm-ops10-esc.h src32/vm-ops10-table.h src32/vm-super-bodies.h src32/vm-super-esc.h src32/vm-super-table.h src32/vm.c
+CCARM = clang --target=arm-linux-gnueabihf -march=armv7-a -mfloat-abi=hard -fuse-ld=lld
+SRCARM = srcarm/rt-linux-armv7.c srcarm/rt-linux-x86_64.c srcarm/vm-fold-bodies.h srcarm/vm-fold-table.h srcarm/vm-ops10-esc.h srcarm/vm-ops10-table.h srcarm/vm-super-bodies.h srcarm/vm-super-esc.h srcarm/vm-super-table.h srcarm/vm.c
 
 all: forth
 
@@ -18,6 +21,9 @@ forth: $(SRC)
 
 forth32: $(SRC32)
 	$(CC32) -m32 -fno-pie -no-pie -Oz -falign-functions=1 -falign-loops=1 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DVARSLOT=0 -DDISPATCH256=1 -DGUARD=1 -DDSKEW=2048 -DFSYS=2 -DREGPIN=1 -DSPEC=1 -DESCAPE=1 -DOPS10=1 -DX_CMOVE=1 -DX_FILL=1 -DX_FIND=1 -DX_HASH=1 -DX_IPLUS=1 -DX_OVERBR=1 -DX_PARSE=1 -DX_PLACE=1 -DX_SCAN=1 -DX_SKIP=1 -DX_SWAPADDI=1 -DX_TONUMBER=1 -DSUPER=1 -o forth32 src32/vm.c -fno-asynchronous-unwind-tables -static -no-pie -nostdlib -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wl,-N -Wl,-z,norelro -Wl,--build-id=none -DRTLIB=1 src32/rt-linux-i386.c -lgcc -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+forth-arm: $(SRCARM)
+	$(CCARM) -Oz -falign-functions=1 -falign-loops=1 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DVARSLOT=0 -DDISPATCH256=1 -DGUARD=1 -DDSKEW=2048 -DFSYS=2 -DREGPIN=1 -DSPEC=1 -DESCAPE=1 -DOPS10=1 -DX_CMOVE=1 -DX_FILL=1 -DX_FIND=1 -DX_HASH=1 -DX_IPLUS=1 -DX_OVERBR=1 -DX_PARSE=1 -DX_PLACE=1 -DX_SCAN=1 -DX_SKIP=1 -DX_SWAPADDI=1 -DX_TONUMBER=1 -DSUPER=1 -o forth-arm srcarm/vm.c -fno-asynchronous-unwind-tables -static -no-pie -nostdlib -fno-stack-protector -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -Wl,-N -Wl,-z,norelro -Wl,--build-id=none -Wl,-u,raise -DRTLIB=1 srcarm/rt-linux-armv7.c -lgcc -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 forth-libc: $(SRC)
 	$(CC) -Oz -falign-functions=1 -falign-loops=1 -DENC=3 -DREG=1 -DFOLD=1 -DSCALE=0 -DVARSLOT=0 -DDISPATCH256=1 -DGUARD=1 -DDSKEW=2048 -DFSYS=2 -DREGPIN=1 -DSPEC=1 -DESCAPE=1 -DOPS10=1 -DX_CMOVE=1 -DX_FILL=1 -DX_FIND=1 -DX_HASH=1 -DX_IPLUS=1 -DX_OVERBR=1 -DX_PARSE=1 -DX_PLACE=1 -DX_SCAN=1 -DX_SKIP=1 -DX_SWAPADDI=1 -DX_TONUMBER=1 -DSUPER=1 -o forth-libc src/vm.c -fno-asynchronous-unwind-tables
@@ -29,6 +35,6 @@ run: forth
 	./forth image.img
 
 clean:
-	rm -f forth forth32 forth-libc forth.tight
+	rm -f forth forth32 forth-arm forth-libc forth.tight
 
 .PHONY: all tight run clean

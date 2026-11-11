@@ -1,0 +1,17 @@
+cv8_tab[36] = &&L_x_place;
+cv8_tab[37] = &&L_x_leave;
+cv8_tab[38] = &&L_x_i;
+cv8_tab[39] = &&L_x_j;
+cv8_tab[40] = &&L_x_do;
+cv8_tab[41] = &&L_x_loop;
+cv8_tab[42] = &&L_x_ploop;
+cv8_tab[43] = &&L_x_qdo;
+cv8_tab[44] = &&L_x_unloop;
+cv8_tab[45] = &&L_x_qbr8;
+cv8_tab[46] = &&L_x_2fetch;
+cv8_tab[47] = &&L_x_2store;
+cv8_tab[48] = &&L_x_br8;
+cv8_tab[49] = &&L_x_overbr;
+cv8_tab[50] = &&L_x_cmove;
+cv8_tab[51] = &&L_x_gt;
+cv8_tab[52] = &&L_x_zeq;

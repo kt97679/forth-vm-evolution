@@ -1,0 +1,6 @@
+[126] = DSP(L_x_qbr8),
+[127] = DSP(L_x_br8),
+[84] = DSP(L_x_eqibr),
+[85] = DSP(L_x_2fetch),
+[86] = DSP(L_x_zeq),
+[87] = DSP(L_x_zltbr8),

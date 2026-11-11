@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 645.
+- master: Iteration 646.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -178,6 +178,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40
   packed engines and images the same bytes as master's. At the freeze: on master after `git apply`, with the final roles'
   records and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
+- **forth-arm (646; the owner: the engines without the C library everywhere)**: the lab built every engine without libc
+  on all three machines (rt-linux-x86_64.c 75, rt-linux-i386.c 331, rt-linux-armv7.c 570), but designs/ shipped ARM only
+  as forth-libc. Now each of the six designs without the JIT has `make forth-arm` (srcarm/, the lab's ARM command; top
+  `make arm`), written by lab/evolve/export-arm.py after export-designs.py. Checked: the three clang ones (portable-fastest,
+  portable-knee, smallest) the lab's bytes - those the Tegra ran, cross-built - and running under qemu-arm; the three GCC
+  ones (portable-arm, portable-small, least-memory) with a cross GCC 13: the rule gives the lab's simulated bytes and runs -
+  **their real bytes (the Tegra's GCC 16) wait on the Tegra**: `RAGECHECK_CMD='sh tools/rage-designs-check.sh' sh
+  tools/rage-check.sh` from the laptop (the owner; while no chain uses rage), at the freeze or before. The cross GCC's
+  package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier

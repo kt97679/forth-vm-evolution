@@ -8,6 +8,10 @@
 #   1. the stages built, evolve.py --validate (7 of 7 IDENTICAL);
 #   2. lab/evolve/export-designs.py /tmp/fz/designs - its own check: in a fresh directory each Makefile builds the lab's
 #      engine byte for byte; then each exported design against TREE/designs/NAME (diff -r: what the freeze would change);
+#   2b. (646) lab/evolve/export-arm.py: forth-arm for the designs without the JIT - the clang ones here (CROSS=1 setup:
+#      lld, qemu-user), the GCC ones with --gcc arm-linux-gnueabihf-gcc when that cross GCC is installed (its package
+#      removes gcc-multilib: install it after this script, run export-arm.py --gcc on the export, put gcc-multilib
+#      back) - and on the Tegra itself: RAGECHECK_CMD='sh tools/rage-designs-check.sh' sh tools/rage-check.sh (the owner);
 #   3. the export put in TREE/designs/, then `make`, `make test`, `make 32` and `make libc` from TREE's top;
 #   4. lab/evolve/pack-designs.py /tmp/fz/pkg - every design at both widths right on the nine workloads against s6.
 set -u
@@ -20,6 +24,9 @@ IDS=$(echo "$NAMES" | tr ',' '\n' | sed 's/.*=//' | paste -sd, -)
 env LAYOUTS=1 bash tools/build-stages.sh > $O/build.log 2>&1; st "build=$?"
 python3 lab/evolve/evolve.py --validate > $O/validate.log 2>&1; st "validate=$? $(grep -c IDENTICAL $O/validate.log) of 7 IDENTICAL"
 python3 lab/evolve/export-designs.py $O/designs "$R" "$NAMES" > $O/export.log 2>&1; st "export=$? $(tail -n 1 $O/export.log | cut -c1-120)"
+python3 lab/evolve/export-arm.py $O/designs "$R" "$NAMES" > $O/export-arm.log 2>&1; st "export-arm=$? $(tail -n 1 $O/export-arm.log | cut -c1-100)"
+if command -v arm-linux-gnueabihf-gcc > /dev/null; then python3 lab/evolve/export-arm.py $O/designs "$R" "$NAMES" --gcc arm-linux-gnueabihf-gcc > $O/export-arm-gcc.log 2>&1
+    st "export-arm --gcc=$? $(tail -n 1 $O/export-arm-gcc.log | cut -c1-100)"; else st "export-arm --gcc: no cross GCC here - the GCC designs' forth-arm as designs/ has it"; fi
 same=0; diff=''
 for nm in $(echo "$NAMES" | tr ',' '\n' | sed 's/=.*//'); do
     if diff -r -q "$O/designs/$nm" "designs/$nm" > $O/diff-$nm.log 2>&1; then same=$((same + 1)); else diff="$diff $nm"; fi

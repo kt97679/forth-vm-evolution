@@ -45,8 +45,13 @@ engine as measured (`make tight`). Memory: peak resident.
 - `make` (in a design's directory) - `forth`, the build the project measured: 8-byte cells, x86-64 Linux, without the
   C library (its own small runtime, `src/rt-linux-x86_64.c`), static. Needs gcc or clang - each design names its own
   compiler in its Makefile (`make CC=gcc` works with either; another compiler gives other bytes, the same Forth).
-- `make forth-libc` - the same design with the C library, for any other host with a C compiler (ARM Linux, other
-  Unixes). The six designs without the JIT; `make libc` from the top builds them all.
+- `make forth-arm` - 4-byte cells for 32-bit ARM Linux (ARMv7, hard float), without the C library (its own runtime,
+  `srcarm/rt-linux-armv7.c`), static - the build the lab measured on the Tegra (`./forth-arm image32.img`). A clang design
+  cross-builds from any host with clang and lld; a GCC design builds on the ARM host with its own GCC
+  (`make forth-arm CCARM=arm-linux-gnueabihf-gcc` to cross-build; the Tegra measured GCC 16). The six designs without
+  the JIT; `make arm` from the top builds them all.
+- `make forth-libc` - the same design with the C library, for any other host with a C compiler (other Unixes). The six
+  designs without the JIT; `make libc` from the top builds them all.
 - `make forth32` - 4-byte cells (`./forth32 image32.img`); needs 32-bit support (gcc-multilib); `make 32` from the top.
 - `make tight` - the file exactly as measured: the same loaded bytes, without section headers or symbols (python3).
 
