@@ -1,0 +1,264 @@
+diff --git a/forth/cv8-fuse-loop.4 b/forth/cv8-fuse-loop.4
+deleted file mode 100644
+index d8edee8..0000000
+--- a/forth/cv8-fuse-loop.4
++++ /dev/null
+@@ -1,84 +0,0 @@
+-\ cv8-fuse-loop.4 - loops compiled at RUN time as the image's own are
+-\ (Iteration 41). Loaded after cv8.4 (and cv8b.4, cv8-fuse.4 and
+-\ cv8-fuse-imm.4 where a design has them), only for designs with the gene
+-\ rtloop (lab/evolve).
+-\
+-\ The converter turns the loop words in the IMAGE's code into format-10
+-\ opcodes. Code compiled at run time called their colon bodies instead -
+-\ (DO), I, (LOOP) - and padded with NOOPs before each cell operand, which
+-\ execute on every pass (Iterations 13 and 28: 68-70% of the loop
+-\ benchmark's dispatches). Here the run-time compiler emits the opcodes,
+-\ with the 16-bit operands the converter gives them: no alignment, no
+-\ padding.
+-\
+-\ LOOP-OPS: this design's (DO) (LOOP) (+LOOP) (?DO) (LEAVE) opcodes, each 0
+-\ where it has none - evolution keeps only some (seed 7's front: no design
+-\ has all five), so each word uses its own opcode where there is one and
+-\ the cell compiler's form where not; a frame built by one form is read by
+-\ the other, as the image's own code mixes them. X10-XTS: the image offsets of I J
+-\ UNLOOP, 16 bits each (Iteration 423); X10-OPS: their opcodes - 0 where a design has
+-\ none. The converter writes them (tools/layout.py); a ['] here would hold
+-\ the cell system's address.
+-\
+-\ A pending (?DO) or (LEAVE) operand holds, until LOOP resolves it, the
+-\ distance back to the previous pending one, or 0 for none: 16 bits hold
+-\ that, where the cell compiler's absolute links would not fit. Only where
+-\ BOTH are opcodes: one chain cannot mix the two forms, so otherwise both
+-\ keep the cell chain, and LOOP resolves whichever this design has.
+-
+-CREATE LOOP-OPS ( --- c-addr )   0 C, 0 C, 0 C, 0 C, 0 C,
+-ALIGN
+-CREATE X10-XTS ( --- c-addr )    0 C, 0 C, 0 C, 0 C, 0 C, 0 C,   \ Iteration 423: three 16-bit offsets, no range
+-CREATE X10-OPS ( --- c-addr )    0 C, 0 C, 0 C,
+-ALIGN
+-
+-: W@ ( a --- u )   DUP C@ SWAP 1+ C@ 8 LSHIFT OR ;
+-: X10-OP ( xt --- op | 0 )
+-\ Iteration 423 (results/wip-regmachine/README.md): I J UNLOOP's image offsets in 16 bits, looked
+-\ through at each compile - no range check first; a missing word's entry is 0, and its opcode 0.
+-  START @ -  3 0 DO
+-    DUP X10-XTS I 2* + W@ = IF DROP X10-OPS I + C@ UNLOOP EXIT THEN
+-  LOOP DROP 0 ;
+-: COMPILE,8 ( xt --- )
+-\ The COMPILE,8 before this one, and I J UNLOOP as their opcodes.
+-  DUP X10-OP ?DUP IF SWAP DROP 0 LAST-OP ! OP, EXIT THEN
+-  COMPILE,8 ;
+-
+-
+-: CHAIN16? ( --- f )   LOOP-OPS 3 + C@ 0= 0= LOOP-OPS 4 + C@ 0= 0= AND ;
+-\ (?DO) and (LEAVE) both opcodes: the pending operands chain in 16 bits.
+-
+-: RESOLVE-LEAVE16 ( --- )
+-\ Each pending (?DO) or (LEAVE) operand: its offset to HERE, the loop's end.
+-  'LEAVE @ BEGIN ?DUP WHILE
+-    DUP W@ >R  HERE OVER - OVER !W
+-    R> ?DUP IF - ELSE DROP 0 THEN
+-  REPEAT ;
+-
+-: RESOLVE-LEAVES ( --- )   CHAIN16? IF RESOLVE-LEAVE16 ELSE RESOLVE-LEAVE THEN ;
+-
+-: DO8 ( --- a-addr )
+-  ?COMP LOOP-OPS C@ ?DUP IF
+-    0 LAST-OP ! OP,  'LEAVE @ HERE 0 'LEAVE ! EXIT
+-  THEN POSTPONE DO8 ; IMMEDIATE
+-
+-: LOOP8 ( a-addr --- )
+-  ?COMP LOOP-OPS 1+ C@ ?DUP IF OP, <RESOLVE
+-  ELSE OPERAND-ALIGN POSTPONE (LOOP) HERE - , THEN
+-  RESOLVE-LEAVES 'LEAVE ! ; IMMEDIATE
+-
+-: +LOOP8 ( a-addr --- )
+-  ?COMP LOOP-OPS 2 + C@ ?DUP IF OP, <RESOLVE
+-  ELSE OPERAND-ALIGN POSTPONE (+LOOP) HERE - , THEN
+-  RESOLVE-LEAVES 'LEAVE ! ; IMMEDIATE
+-
+-: ?DO8 ( --- a-addr )
+-  ?COMP CHAIN16? IF
+-    0 LAST-OP ! LOOP-OPS 3 + C@ OP,  'LEAVE @ HERE 'LEAVE ! 0 W, HERE EXIT
+-  THEN POSTPONE ?DO8 ; IMMEDIATE
+-
+-: LEAVE8 ( --- )
+-  ?COMP CHAIN16? IF
+-    0 LAST-OP ! LOOP-OPS 4 + C@ OP,
+-    HERE 'LEAVE @ ?DUP IF HERE SWAP - ELSE 0 THEN W, 'LEAVE ! EXIT
+-  THEN POSTPONE LEAVE8 ; IMMEDIATE
+diff --git a/forth/cv8-fuse-loopall.4 b/forth/cv8-fuse-loopall.4
+index 44ab915..4565a32 100644
+--- a/forth/cv8-fuse-loopall.4
++++ b/forth/cv8-fuse-loopall.4
+@@ -4,7 +4,8 @@
+ \ genes rtloop and rtloopall (lab/evolve) - seven of the ten rtloop
+ \ designs on seed 8's front have all eight.
+ \
+-\ cv8-fuse-loop.4 serves any subset: every word there keeps a fallback to
++\ cv8-fuse-loop.4 (retired at Iteration 641 - no pooled-front design used it;
++\ rtloop now means all eight) served any subset: every word there kept a fallback to
+ \ the word it replaces, which keeps those words alive, and chooses between
+ \ the 16-bit and the cell chain of pending LEAVEs at compile time. Here
+ \ there is nothing to fall back to and one chain - 16 bits - so the
+diff --git a/lab/evolve/GENES.md b/lab/evolve/GENES.md
+index 4dbb223..4cadf3d 100644
+--- a/lab/evolve/GENES.md
++++ b/lab/evolve/GENES.md
+@@ -100,8 +100,8 @@ as the record of what each does.
+ | FILL and CMOVE as opcodes (in `ops10`; Iteration 50): the kernel's byte loops as format-10 opcodes, and their colon bodies the opcode and EXIT for code compiled at run time | this lab: the dispatch attribution | kernel 0.865, corpus 0.917, sieve 0.848 more on 96f2d8bfd7 with kfast, 32 bytes less (results/kfast.md) |
+ | kernel words faster (`kfast`: 0, 1; Iteration 49; byte headers): NAME>BUF without its 32-byte zero fill, which the byte compare never reads (forth/cv8b-kfast.4) | this lab: every dispatch attributed to its word | 24-29% fewer dispatches on kernel, parse and corpus (results/kfast.md) |
+ | scratch buffers out of the file (`bss`: 0, 1; Iteration 44): TIB, POCKET and INCLUDE-BUFFER live past the image's end, DP after them | this lab: an audit of a small image | 1,056-1,064 bytes (11-13%), no dispatch more (results/bss.md) |
+-| rtloop compact (`rtloopall`: 0, 1; Iteration 43): with rtloop and all eight loop opcodes, a run-time loop compiler without fallbacks - one chain, one 12-byte table (forth/cv8-fuse-loopall.4) | this lab: rtloop's own bytes, priced word by word | 380-488 bytes of rtloop's ~470 on seed 8's front, the same speed (results/rtloopall.md) |
+-| run-time loops (`rtloop`: 0, 1; Iteration 41): the compiler the image carries emits the design's loop opcodes - (DO) (LOOP) (+LOOP) (?DO) (LEAVE), I J UNLOOP - each where it has one, 16-bit operands, no padding (forth/cv8-fuse-loop.4) | this lab: loop.fth's INNER, dumped | loop 2-4x faster, for about 6% of the image (results/rtloop.md); loop is selected since |
++| rtloop compact (`rtloopall`: 0, 1; Iteration 43; retired at 1, 641 - rtloop means all eight since): with rtloop and all eight loop opcodes, a run-time loop compiler without fallbacks - one chain, one 12-byte table (forth/cv8-fuse-loopall.4) | this lab: rtloop's own bytes, priced word by word | 380-488 bytes of rtloop's ~470 on seed 8's front, the same speed (results/rtloopall.md) |
++| run-time loops (`rtloop`: 0, 1; Iteration 41): the compiler the image carries emits the design's loop opcodes - (DO) (LOOP) (+LOOP) (?DO) (LEAVE), I J UNLOOP - each where it has one, 16-bit operands, no padding (forth/cv8-fuse-loop.4 - this partial form retired at 641: no pooled-front design used it) | this lab: loop.fth's INNER, dumped | loop 2-4x faster, for about 6% of the image (results/rtloop.md); loop is selected since |
+ | build artifacts left out (`lean`: 0, 1; Iterations 38-39): the compiler's X8 copies (calls and (POSTPONE)s to them go to X), the dump tool's words, dead shadowed words | this lab: the converter's own comment called the copies harmless | 12-16% of every CV8 image, 1,267-1,896 bytes on seed 6's front, no slower (results/lean.md) |
+ | run-time immediates (`rtimm`: 0, 1, 2; Iteration 37; 2 - Iteration 175: without pairs, the overlay alone): with run-time fusion and spec imm, the compiler the image carries makes `n +` an ADDI and `SWAP n +` a SWAP+I in the code it writes (forth/cv8-fuse-imm.4) | this lab: fib's own code, dumped from a front design | fib 15% fewer dispatches, 17-27% faster, for 408-472 bytes (results/rtimm.md) |
+ | one-byte calls (`hotcalls`: 0, 8, 16, 32): the far-call prefixes 0xE0-0xFF call the image's own words with the most call sites, through a table in the image's header; chosen per design by the converter, no profile | this lab's search (SEARCH-SPACE.md: a stranger), priced at Iteration 13 | a call one byte instead of two; the far form keeps 21 bits - 2 MB at scale 0 |
+diff --git a/lab/evolve/evolve.py b/lab/evolve/evolve.py
+index 83a5a45..e4c05e1 100644
+--- a/lab/evolve/evolve.py
++++ b/lab/evolve/evolve.py
+@@ -155,7 +155,7 @@ def gene(name, values=None, show=None, family='cv8', late=True, needs=None, conv
+ # dormant sysc stay in express() as code. Genes listed above keep their place.
+ gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  # nothing to fuse at run time otherwise; older than LATE
+ gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
+-gene('rtloop', values=range(2), needs=lambda g, e: rtloop_on(g))               # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired)
++gene('rtloop', values=range(2), needs=lambda g, e: rtloopall_on(g))            # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired; 641: with all eight only - the partial compiler retired)
+ gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
+ gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
+ gene('tfind', needs=lambda g, e: tfind_on(g))                                  # Iteration 52: with kfast
+@@ -339,8 +339,9 @@ FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
+ 
+ def rtloop_on(g):
+     """Iteration 41: does this design compile loops at run time with its loop
+-    opcodes (forth/cv8-fuse-loop.4)? The gene, and any of them - each word
+-    uses its own where the design has it."""
++    opcodes? The gene, and any of them. Iteration 641: the partial compiler (forth/cv8-fuse-loop.4 - each word its
++    own opcode where the design had it) retired - no pooled-front design used it; rtloop is expressed with all eight only
++    (rtloopall_on, forth/cv8-fuse-loopall.4)."""
+     return g['enc'] == 'cv8' and bool(g.get('rtloop')) and any(n in g.get('ops10', []) for n in LOOP10)
+ def rtloopall_on(g):
+     """Iteration 43: the compact run-time loop compiler (forth/cv8-fuse-loopall.4)
+@@ -949,8 +950,12 @@ REQUIRE = []
+ # what went: the full-header CV8 format - layout.py refuses --v8 without --bytehdr (so --cpt 0: its CV8 calls unscaled),
+ # the -self dumps (cv8.4 without cv8b.4: build-stages.sh's four, setup()'s 63) and the dump choice. build() refuses
+ # bytehdr 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands; cpt16's guard in canon() stays.
++# Iteration 641 (the freeze's batch; results/drafts/freeze-retire-641.md): rtloopall retired at 1 - the partial run-time
++# loop compiler (forth/cv8-fuse-loop.4, the -loop dumps, layout.py's LOOP-OPS, X10-XTS and X10-OPS) used by no design on
++# the pooled true front of seeds 77-91, the final set or the relf handoff; rtloop now expressed with all eight loop
++# opcodes only (rtloopall_on), so every front design's id stands - a genome with rtloop and fewer reads rtloop dormant.
+ FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1,
+-          'bytehdr': 1}
++          'bytehdr': 1, 'rtloopall': 1}
+ def require(g):
+     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
+     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1)
+@@ -1084,7 +1089,7 @@ def _build(g, d):
+     img = os.path.join(d, 'image.img')
+     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
+     if rtimm_lean(g): fuse = '-lit'                                                                   # Iteration 422: no pair lookup
+-    fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
++    fuse += '-loopall' if rtloopall_on(g) else ''                                                     # rtloop: 41; rtloopall: 43; 641: -loop retired
+     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
+     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
+     dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+@@ -1993,7 +1998,7 @@ def setup():
+     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
+     import shutil
+     W = os.path.join(O, 'work')
+-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
++    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
+         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
+         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
+@@ -2002,7 +2007,7 @@ def setup():
+     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-b', ['cv8.4', 'cv8b.4']),   # 594: -self (no cv8b.4) gone with bytehdr 0
+                                                                     (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
+                         for k in ('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber')   # 501: -nocase retired
+-                        for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
++                        for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loopall')   # -lit: Iteration 422; 641: -loop retired
+                         for t in (('', '-iplus') if l == '-loopall' else ('',))
+                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
+                         for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
+@@ -2012,8 +2017,7 @@ def setup():
+                        + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
+                        + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+                        + (['cv8-imm.4'] if '-lit' in name else [])     # Iteration 422: the immediates alone
+-                       + (['cv8-fuse-loopall.4'] if '-loopall' in name
+-                       else ['cv8-fuse-loop.4'] if '-loop' in name else [])
++                       + (['cv8-fuse-loopall.4'] if '-loopall' in name else [])
+                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
+                        + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
+                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
+diff --git a/tools/layout.py b/tools/layout.py
+index c31f8de..be8ef18 100644
+--- a/tools/layout.py
++++ b/tools/layout.py
+@@ -328,7 +328,7 @@ if CV8_COMPILER:
+ # Every call or (POSTPONE) of any X8 goes to its X - the latest code under
+ # that name: cv8.4's WHILE8 calls IF8, and with run-time fusion IF is
+ # cv8-fuse.4's, as seed 7's designs were built. One exception (Iteration
+-# 41): a later X8 that defers to the one it replaces (cv8-fuse-loop.4)
++# 41): a later X8 that defers to the one it replaces (cv8-fuse-loop.4, retired at 641; kept general)
+ # calls an EARLIER X8 OF ITS OWN NAME - from X too, whose code it is - and
+ # that call stays, keeping the earlier one; sent to X it would call itself.
+ def _refs(ws, skip=(), chain=None):       # every call target and (POSTPONE) target in these words' code
+@@ -498,10 +498,9 @@ if TAG2_ON:
+     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
+     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
+     _pin += [G['T2_JIT']] if '--jit' in ARGV else []   # Iterations 80-81: every run-time word's first byte - no slot
+-    # the run-time loop compilers (cv8-fuse-loop.4, cv8-fuse-loopall.4): their
+-    # loop opcodes, pinned - loopall has no fallback, and an escaped loop
+-    # opcode in loop's tables falls back to calling the colon word
+-    if any(x['n'] in ('LOOPTAB', 'LOOP-OPS') for x in order):
++    # the run-time loop compiler (cv8-fuse-loopall.4; the partial cv8-fuse-loop.4
++    # retired at 641): its loop opcodes, pinned - loopall has no fallback
++    if any(x['n'] == 'LOOPTAB' for x in order):
+         _pin += [G['X_OPS10'][n] for n in ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
+                  if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
+     # the run-time immediates (forth/cv8t-fuse-imm.4): IMM-OPS holds one-byte
+@@ -1386,7 +1385,7 @@ def emit(path):
+     if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
+     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1   # 592: varcall retired at 1
+     for w in order:
+-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
++        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB') + tuple(CVARS): continue
+         at, op = new_off[w['s']]['body'] + cfd(w['s']), G['cv8_op']   # [DOVAR][pad], then the data
+         if w['n'] in CVARS:
+             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
+@@ -1405,23 +1404,6 @@ def emit(path):
+             _o = [new_off[_byn[n]['s']]['body'] for n in ('I', 'J', 'UNLOOP')]
+             assert _o[0] < 65536 and 0 < _o[1] - _o[0] < 256 and 0 < _o[2] - _o[0] < 256, 'LOOPTAB: I J UNLOOP not neighbours %r' % _o
+             data = bytes([G['X_OPS10'][n] for n in _lw] + [_o[0] & 255, _o[0] >> 8, _o[1] - _o[0], _o[2] - _o[0]])
+-        elif w['n'] in ('LOOP-OPS', 'X10-XTS', 'X10-OPS'):
+-            # Iteration 41: the loop opcodes for code compiled at run time
+-            # (forth/cv8-fuse-loop.4) - each the design has, 0 for the rest -
+-            # and I J UNLOOP with their image offsets, the lowest and highest
+-            # first. SOD16_NO_RTLOOP=1 writes zeros, to measure.
+-            _lw = ['(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)']
+-            _ok = not _os.environ.get('SOD16_NO_RTLOOP')
+-            _byn = {x['n']: x for x in order}
+-            _x = [(new_off[_byn[n]['s']]['body'], G['X_OPS10'][n]) for n in ('I', 'J', 'UNLOOP')
+-                  if _ok and n in G['X_OPS10'] and n in _byn]
+-            if w['n'] == 'LOOP-OPS': data = bytes([G['X_OPS10'].get(n, 0) if _ok else 0 for n in _lw])
+-            elif w['n'] == 'X10-XTS':
+-                _o = [o for o, _ in _x]
+-                # Iteration 423 (results/wip-regmachine): three 16-bit offsets, little-endian, no range
+-                assert all(v < 65536 for v in _o), 'X10-XTS: I J UNLOOP past 64 KB'
+-                data = b''.join(bytes([v & 255, v >> 8]) for v in _o + [0] * (3 - len(_o)))
+-            else: data = bytes([op for _, op in _x] + [0] * (3 - len(_x)))
+         elif w['n'] == 'IMM-OPS':
+             # Iteration 37: ADDI and SWAP+I for code compiled at run time
+             # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has
+@@ -1454,7 +1436,7 @@ def emit(path):
+             data = bytes([len(tests) + len(pairs)] + [x for e in tests for x in e]
+                          + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
+             assert len(data) <= 73, "superinstruction table overflows"
+-        if TAG2_ON and w['n'] in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-OPS', 'LOOPTAB'):
++        if TAG2_ON and w['n'] in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB'):
+             # tag 2: the tables in this design's one-byte codes. An escaped
+             # operation cannot sit in a byte: its entry goes (0 means none, as
+             # the overlays read it). Folds at run time go entirely - their

@@ -80,6 +80,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `applied-after-seed83/` - the after-seed-83 batch, applied at seed 83's processing (Iteration 572): armrt, prebuiltarm, ragecheck (ORDER.md says what each does).
 - `applied-after-seed84/` - the after-seed-84 batch, applied at once after seed 84's chain failed (Iteration 574): retired (ORDER.md says what it does).
 - `applied-after-seed86/ORDER.md` - the after-seed-86 batch, consolidation's retirements (queued 583-596, applied 599 at 1b53e88): fsys45, freeze, lean, scale, varcall, doesfar, bytehdr, rtloop (ORDER.md says what each does; msc's deleted at 598, KEEP).
+- `queued-freeze/ORDER.md` - the batch queued for consolidation, applied after the final pick: rtloop (ORDER.md says what each does).
 
 ### The processing checklists
 
