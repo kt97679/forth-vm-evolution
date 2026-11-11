@@ -11142,3 +11142,11 @@ pooled-front design (0 of 615), stage or winner - rtloop-after-seed91.patch (120
 in results/queued-freeze; ids 140 of 4,892 changed (the -loop designs, no winner), the bytes the same, batch-check PASS.
 Files: results/drafts/freeze-retire-641.md, results/drafts/freeze-audit-641.py, results/drafts/build-hash-641.py,
 results/queued-freeze/ORDER.md, results/queued-freeze/rtloop-after-seed91.patch.
+
+## Iteration 643 - 2026-11-11 - Claude
+
+The freeze's batch, its second patch: rtimm_lean (forth/cv8-imm.4 loaded alone for rtimm=2 in a plain design, Iteration
+422) on no pooled-front design, stage or winner - rtimmlean-after-seed91.patch (66 lines out, 8 in; such a genome's rtimm
+read as 0), queued after rtloop. With both: 141 of 4,892 ids change (no winner's), the 52 designs' bytes the same at both
+widths, batch-check PASS. Files: results/queued-freeze/rtimmlean-after-seed91.patch, results/queued-freeze/ORDER.md,
+results/drafts/freeze-retire-641.md.

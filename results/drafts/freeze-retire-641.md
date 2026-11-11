@@ -38,7 +38,12 @@ rtimm_lean (forth/cv8-imm.4 alone): front 0, alive 1, list + winners 0
   out, 23 in (forth/cv8-fuse-loop.4's 84, layout.py 30 to 6). In the final check's list one design uses it, b35ae710e6
   (chain-followup87's fastest on the laptop at 4-byte cells, off the front): if it takes a role, the patch is dropped.
 - **rtimm_lean** (`-lit`: forth/cv8-imm.4 loaded alone, RTIMM_LEAN_INTERNAL headerless; Iteration 422) - on no front
-  design, 1 alive, none listed or winning: the next candidate, its code not read yet.
+  design, 1 alive, none listed or winning. **The batch's second patch** (643), results/queued-freeze/
+  rtimmlean-after-seed91.patch: forth/cv8-imm.4 (55 lines, its own header calls it work in progress), the -lit dumps, the
+  headerless list; canon() reads such a genome's rtimm as 0 - the build it had is gone, so it takes another id rather than
+  standing for another build (a genome before 422 built the fuser under the same conditions; neither is on the front).
+  66 lines out, 8 in. Ids with both patches: 141 of 4,892 change (the 140 -loop designs, the one lean), no winner; the bytes
+  of the 52 designs at both widths with both patches applied: 52 of 52 the same engine and image bytes at 8-byte cells, 0 died; 52 of 52 the same engine and image bytes at 4-byte cells, 0 died.
 
 **The patch's test.** Every recorded design's id before and after (evolve.gid, 4,892 designs: the pool, the list, the
 winners): 140 change - the -loop designs, none of the winners, b35ae710e6 the one listed. The bytes: 68 designs - the 28

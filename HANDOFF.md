@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 642.
+- master: Iteration 643.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -160,13 +160,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393` - every role
   by the rule (roles.txt lists every design beating a holder), --gain the never-measured and the rest against the found
   before; a role changed: the package and designs/ again; a near miss: a short confirmation; then the freeze.
-- **The freeze's batch, queued (642)** - results/queued-freeze/ORDER.md, batch-check PASS: rtloop-after-seed91.patch
-  retires the partial run-time loop compiler (forth/cv8-fuse-loop.4, the -loop dumps, layout.py's LOOP-OPS/X10 tables; 120
-  lines out, 23 in) - on no pooled-front design, stage or winner (results/drafts/freeze-audit-641.py), rtloopall at 1;
-  every front id stands, the winners' bytes the same at both widths (results/drafts/build-hash-641.py). The retire report's
-  other 11 values stay - four by use, seven the search space only, 583's "nothing simpler" (results/drafts/freeze-retire-641.md).
-  At the freeze: drop the patch if b35ae710e6 (the one -loop design in the final check) takes a role, else `git apply` it
-  per ORDER.md, rebuild, run-tests, validate. Next candidate: rtimm_lean (forth/cv8-imm.4 alone; 0 front designs).
+- **The freeze's batch, queued (642-643)** - results/queued-freeze/ORDER.md, batch-check PASS on both: rtloop-after-seed91
+  (the partial run-time loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91
+  (forth/cv8-imm.4, rtimm=2 alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in; the two
+  run-time overlays no pooled-front design, stage or winner uses (results/drafts/freeze-audit-641.py). Ids: 141 of 4,892
+  change, no winner's; the 52 designs' bytes (the 28 winners and 24 front designs) the same at both widths
+  (results/drafts/build-hash-641.py). The report's other 11 values stay - four by use, seven the search space only
+  (results/drafts/freeze-retire-641.md). At the freeze: drop rtloop if b35ae710e6 (the one -loop design in the final
+  check) takes a role; `git apply` the rest per ORDER.md, rebuild, run-tests, validate, the winners' bytes again.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier
