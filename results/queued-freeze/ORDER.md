@@ -1,4 +1,4 @@
-# The freeze's batch - the retirements of the final pooled front (Iteration 642; applied at the freeze, after the final check)
+# The after-seed-91 batch - the freeze's retirements of the final pooled front (Iterations 642-643; applied at the freeze, after the final check)
 
 Queued in results/queued-freeze/ (process-run.sh never applies it): applied by hand at the freeze, after the final check is
 processed - a patch dropped first if a design the final check gives a role uses what it retires
