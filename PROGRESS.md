@@ -11158,3 +11158,11 @@ every session (results/drafts/rehearse-final-644.py; readings of the nearest mea
 0.6% noise), processed by process-followup.sh 91-final into /tmp - 3 seconds end to end, every line 435 of 435 (the
 Tegra 436: its rejected sample drew a listed design, as in the real chain), the pick, the roles and --gain at 435 without
 fault; the 72's "the check" read as candidates. Files: results/drafts/rehearse-final-644.py.
+
+## Iteration 645 - 2026-11-11 - Claude
+
+The freeze rehearsed: a scratch tree with results/queued-freeze's two patches, today's ten roles through
+results/drafts/freeze-build-645.sh - validate 7 of 7 IDENTICAL, export-designs.py's byte-for-byte check, the export the
+same as designs/ for 10 of 10, make, make test 10 ok, make 32, make libc, pack-designs.py 20 of 20 right on the nine
+workloads, the 40 packed engines and images the same bytes as master's builds. The batch changes no shipped byte; at the
+freeze the script runs on master with the final roles. Files: results/drafts/freeze-build-645.sh.

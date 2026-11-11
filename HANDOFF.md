@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 644.
+- master: Iteration 645.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -173,6 +173,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (results/drafts/build-hash-641.py). The report's other 11 values stay - four by use, seven the search space only
   (results/drafts/freeze-retire-641.md). At the freeze: drop rtloop if b35ae710e6 (the one -loop design in the final
   check) takes a role; `git apply` the rest per ORDER.md, rebuild, run-tests, validate, the winners' bytes again.
+  **The freeze's build-out rehearsed (645)** in a scratch tree with both patches and today's ten roles -
+  results/drafts/freeze-build-645.sh: validate 7 of 7, export-designs.py's own check, the export the same as designs/ for
+  10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40
+  packed engines and images the same bytes as master's. At the freeze: on master after `git apply`, with the final roles'
+  records and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
   crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier
