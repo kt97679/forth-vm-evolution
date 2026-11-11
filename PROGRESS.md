@@ -11177,3 +11177,11 @@ lab's bytes, runs) - their GCC 16 bytes wait on the Tegra (tools/rage-designs-ch
 RAGECHECK_CMD). make test 10 ok, make 32, make libc unchanged. Files: lab/evolve/export-arm.py, tools/rage-designs-check.sh,
 designs/least-memory/srcarm, designs/portable-arm/srcarm, designs/portable-fastest/srcarm, designs/portable-knee/srcarm,
 designs/portable-small/srcarm, designs/smallest/srcarm.
+
+## Iteration 647 - 2026-11-11 - Claude
+
+The owner: "please include rage check into next run". NEXT-RUN is now `experiment rage-designs.py` (the final check's
+line commented, its chain running) and REMOTES has no line: lab/evolve/rage-designs.py runs tools/rage-check.sh from the
+laptop with RAGECHECK_CMD='sh tools/rage-designs-check.sh' - the three GCC designs' forth-arm against the Tegra's own
+GCC 16 bytes. End to end here with ssh/scp stand-ins (results/drafts/rage-check-e2e-571.sh's): the bundle, the clone,
+the stages, export-arm.py, PASS, the clone removed. Files: lab/evolve/rage-designs.py.

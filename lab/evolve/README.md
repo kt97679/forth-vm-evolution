@@ -112,6 +112,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `portable-followup.py` - a run's follow-up chain: its best on the union's front beside the designs found before, its list and its NEXT-RUN and REMOTES lines sized from measured rates (604); --before, --holders, --also, --rest, --jit, past-a-bar designs; a JIT run's rest by --seed --k 0 (631).
 - `export-designs.py` - designs exported so `make` builds them: each one's real source (the compiler's own -MM), a Makefile, the image shipped; checked byte for byte against the lab's build in a fresh directory (Iteration 608).
 - `export-arm.py` - after export-designs.py: `make forth-arm` for the designs without the JIT - 32-bit ARM, no C library (engine/rt-linux-armv7.c), the lab's command; checked byte for byte and run (qemu-arm, or natively on the Tegra: tools/rage-designs-check.sh). Iteration 646.
+- `rage-designs.py` - a chain's laptop step (NEXT-RUN `experiment rage-designs.py`): tools/rage-check.sh with RAGECHECK_CMD='sh tools/rage-designs-check.sh' - designs/' forth-arm built and run on the Tegra itself, its GCC designs' bytes. Iteration 647.
 - `repeat-fits.sh` - whether one more session of a repeated experiment ends by the chain's deadline - the remote lines' last (Iteration 591, chain D): next-run.sh's then_next asks it; REMOTES' --sessions K is the hosts' side.
 - `outbuf-check.py` - outbuf-check.py [ID] - does output buffering break anything? (Iteration 207)
 - `price.py` - price.py ID [ID ...] [--db FILE] - what a fusion could save, before building it

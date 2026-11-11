@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 646.
+- master: Iteration 647.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -184,8 +184,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   `make arm`), written by lab/evolve/export-arm.py after export-designs.py. Checked: the three clang ones (portable-fastest,
   portable-knee, smallest) the lab's bytes - those the Tegra ran, cross-built - and running under qemu-arm; the three GCC
   ones (portable-arm, portable-small, least-memory) with a cross GCC 13: the rule gives the lab's simulated bytes and runs -
-  **their real bytes (the Tegra's GCC 16) wait on the Tegra**: `RAGECHECK_CMD='sh tools/rage-designs-check.sh' sh
-  tools/rage-check.sh` from the laptop (the owner; while no chain uses rage), at the freeze or before. The cross GCC's
+  **their real bytes (the Tegra's GCC 16): the next run (647)** - NEXT-RUN `experiment rage-designs.py`, no remote line:
+  lab/evolve/rage-designs.py runs tools/rage-check.sh with RAGECHECK_CMD='sh tools/rage-designs-check.sh' from the laptop
+  (end to end with ssh/scp stand-ins here: PASS); its pack's rage-designs.md says PASS or FAILED. **647's bundle goes on
+  the laptop only after the final check's chain has ended** - NEXT-RUN no longer holds that chain's line. The cross GCC's
   package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
@@ -237,7 +239,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Predictions due** (results/predictions.md): the final check's - 4 (641).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; the final check's chain archive when it returns. appbench.zip
+- **Files a new chat needs**: the newest bundle; the final check's chain archive when it returns; the rage check's. appbench.zip
   stays on the laptop.
 
 ## Processing a returned seed
