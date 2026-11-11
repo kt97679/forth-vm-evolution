@@ -11119,6 +11119,8 @@ Seed 91's follow-up processed (e22aa0b0be, 14.3 h; the laptop 35 of 39 steps, dr
 every line): no role changed by speed (ARMv7 965f48c803 -1.22% +/- 0.40%); the smallest's candidate 01712a2639 (-1.44%,
 x86-32 +18.4%) the owner's call. --gain's GAIN (the laptop at 4-byte cells -5.38%, size -1.44%) is against the list's 8
 found before alone; against the whole pool -0.68% (bridged, e523a45566) and -0.13% (4dd4e3e7e2) - no gain, so the search
-stops and the freeze follows unless the owner takes 01712a2639. Predictions 3 of 4. Files: results/chain-followup91/,
+stops and the freeze follows unless the owner takes 01712a2639. Predictions 3 of 4. Files: results/chain-followup91/
+(README.md; its sK: loadtest.md, dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.md,
+dream.lan-prebuilt64.out.json, rage.lan-prebuiltarm.md, rage.lan-prebuiltarm.out.json),
 results/followup-pick-seed91.md, results/followup-pick-seed91.json, results/followup-roles-seed91.md,
 results/drafts/gain-bridge-640.py.
