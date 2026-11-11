@@ -1433,3 +1433,15 @@ the whole pool no extreme past its threshold (the laptop at 4-byte cells -0.68% 
 -0.13% against 4dd4e3e7e2), though followup-roles.py --gain, against the list's 8 found before alone, says GAIN; a gain
 if the owner gives 01712a2639 the smallest role (results/followup-roles-seed91.md). (3) right - 7fb40ff7ba -0.62% +/-
 0.39% on the Tegra. (4) wrong - 3060f04651 0.69% +/- 0.20% faster than 782f3ad7ff on the laptop at 8-byte cells.
+
+## The final check before the freeze, 26 hours - predicted (Iteration 641)
+
+The 435 of results/followup-seed91-final.md - the 72 pooled-front designs no chain measured across machines, seed 91's
+rest (320), the holders and the best re-measured before - on the laptop (5 sessions), dream (7 a width) and the Tegra (3
+at 3 rounds). (1) Every line complete as sized, the Tegra's third session included - 60/40 (631's rate: 1574 of 1555
+minutes; seed 91's follow-up's: about 1330). (2) A portable role changes by the rule, to any design of the list - 30/70
+(two of the last three screens gave a role; seed 91's in-run and follow-up found none). (3) One of the 72 beats every
+design measured before on the laptop alone at either width (2% at 2 SE) - 25/75 (95077030b0 in-run 0.2851 at 4-byte
+cells, at the fast end's 1.05-1.10 of in-run 0.300-0.313 against 0.3086; 38100f0280 at 8-byte about 0.292 against
+7fb40ff7ba's 0.2878). (4) No design dies on any line - 85/15 (the 66 carried ones alive in seeds 89-90, after 599).
+

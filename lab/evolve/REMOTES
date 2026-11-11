@@ -121,6 +121,14 @@
 # dream.lan    prebuilt64  4       10      265      --from prebuilt32 --sessions 40
 # Iteration 638 - the same follow-up at about 15 hours (the owner: ending by 6 am his time): portable-followup.py --hours
 # 14.5 - the Tegra 5 sessions (865 minutes), dream 40 a width as before (its cap; 430 minutes a width).
-rage.lan     prebuiltarm 4       10      865      --cell 4 --rejected 4 --sessions 5 --also @results/followup-seed91.md
-dream.lan    prebuilt32  4       10      430      --cell 4 --rejected 6 --sessions 40 --also @results/followup-seed91.md
-dream.lan    prebuilt64  4       10      430      --from prebuilt32 --sessions 40
+# (out at 641) rage.lan     prebuiltarm 4       10      865      --cell 4 --rejected 4 --sessions 5 --also @results/followup-seed91.md
+# (out at 641) dream.lan    prebuilt32  4       10      430      --cell 4 --rejected 6 --sessions 40 --also @results/followup-seed91.md
+# (out at 641) dream.lan    prebuilt64  4       10      430      --from prebuilt32 --sessions 40
+# Iteration 641 - the final check before the freeze (the owner: "absolutely sure we found best designs", 26 hours from
+# about 7 am his time): results/followup-seed91-final.md, 435 designs - the 72 pooled-front designs never measured across
+# machines, seed 91's rest (320), the holders and the best re-measured before (results/drafts/finalcheck-641.py). Sized at
+# seed 91's chains' rates: dream about 110 minutes a session a width (7 a width), the Tegra about 520 at 3 rounds by 631's
+# rate - its third may be cut short (seed 91's follow-up's 190 s a design at 10 rounds gives about 60 at 3: three fit).
+rage.lan     prebuiltarm 4       3       1555     --cell 4 --rejected 4 --sessions 3 --also @results/followup-seed91-final.md
+dream.lan    prebuilt32  4       10      775      --cell 4 --rejected 6 --sessions 7 --also @results/followup-seed91-final.md
+dream.lan    prebuilt64  4       10      775      --from prebuilt32 --sessions 7

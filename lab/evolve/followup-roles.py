@@ -148,7 +148,7 @@ def mdiff(a, b):
     return sum(x[0] for x in ds) / 3, math.sqrt(sum(x[1] ** 2 for x in ds)) / 3
 
 
-run = lambda i: str(C[i].get('why', '')).startswith('the run')
+run = lambda i: str(C[i].get('why', '')).startswith(('the run', 'the check'))   # 641: the final check's never-measured, candidates as a run's
 cand = lambda i: run(i) or 'flagged by the screen' in str(C[i].get('why', ''))   # 622: a screened design a portable role's candidate
 print('## Completeness - sessions, and the fewest of the %d a session measured' % NC)
 for s in SOURCES:

@@ -224,6 +224,9 @@ Each subject oldest first; a script or patch beside the document it made.
 - `drafts/smallarm-classes-631.py` - Small and fast on ARMv7's new holder in the relf handoff's table (Iteration 631): ae99617f06 and a627b954c6 in final-pick.py's classes from seed 89's follow-up.
 - `drafts/followup-check-634.py` - Seed 90's follow-up's knee checked line by line (Iteration 634): 11a56ff9e4 against c2ef9488ff by session, and 631's predictions scored.
 - `drafts/gain-bridge-640.py` - Seed 91's follow-up's gain against the whole pool (Iteration 640): the laptop at 4-byte cells -0.68% (bridged), the smallest -0.13% - short of 2% and 1%.
+- `drafts/coverage-641.py` - Which pooled-front designs were never measured across machines (Iteration 641): 72 of the 528 - 66 carried into seeds 89-90 and screened by neither, 6 of seed 87's rest.
+- `drafts/coverage-641.txt` - coverage-641.py's output: the counts and the 72, each with its in-run figures and origin (Iteration 641).
+- `drafts/finalcheck-641.py` - The final check's list and chain lines written (Iteration 641): 435 designs, sized to the owner's 26 hours.
 - `drafts/dream-load-630.py` - Dream's load during seed 90's chain against the screen's readings (Iteration 630): the 32-bit line at 8.45 on average, its loaded sessions' spread doubled, no bias in the knee's flag.
 - `drafts/screen-jit-630.py` - The 82 JIT designs of seed 89's rest against the four x86 holders on dream (Iteration 630): none past 2%, and no smaller JIT design without a speed loss.
 - `drafts/retire-plan-583.md` - Consolidation's retirement planned (Iteration 583): each value against the 232 final-pick candidates, its code, its class; fsys 4-5 retired, the rest after the final set, the Tegra or the owner.
@@ -301,6 +304,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed91.md` - Seed 91's follow-up's 38 re-measured on three machines, every session pooled (Iteration 640).
 - `followup-pick-seed91.json` - followup-pick-seed91.md's set as JSON (final-pick.py --json, Iteration 640).
 - `followup-roles-seed91.md` - The portable roles after seed 91's follow-up (Iteration 640): none changed but the smallest's trade (the owner's); no gain against the whole pool - the search stops.
+- `followup-seed91-final.md` - The final check before the freeze (Iteration 641): 435 designs - the 72 pooled-front designs never measured across machines, seed 91's rest, the holders and the best re-measured before.
 - `audit-nonportable-619.md` - The audit of the results so far and whether a JIT run is worth it (Iteration 619): converged, nothing new since, the portable gains out of its reach - not now.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.
 

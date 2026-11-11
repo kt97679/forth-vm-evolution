@@ -1,0 +1,75 @@
+the pool before seed 91: 528 - remote all three 417, remote all three, the laptop 39, remote none 72
+seed 91's own: 355 - remote all three 9, remote all three, the laptop 35, remote none 311
+the pool's designs on no remote line: 72 - in no follow-up or screen list 66
+- 38100f0280 speed 0.2758, 32-bit 0.3148, 34054 B, 136 KB; carried from archived-20261107-045152/db.jsonl: 38100f0280
+- 95077030b0 speed 0.2901, 32-bit 0.2851, 32788 B, 136 KB; carried from archived-20261107-045152/db.jsonl: 95077030b0
+- b0aabb56bc speed 0.2917, 32-bit 0.3017, 31355 B, 132 KB; carried from archived-20261107-045152/db.jsonl: b0aabb56bc
+- 208bd2d2ff speed 0.2952, 32-bit 0.3093, 25554 B, 140 KB; carried from archived-20261105-192241/db.jsonl: 208bd2d2ff
+- 4dcea8d430 speed 0.2998, 32-bit 0.3236, 24564 B, 144 KB; carried from archived-20261107-045152/db.jsonl: 4dcea8d430
+- e1e64545f5 speed 0.3023, 32-bit 0.3383, 23195 B, 136 KB; carried from archived-20261107-045152/db.jsonl: e1e64545f5
+- d710e403b0 speed 0.3036, 32-bit 0.3018, 25258 B, 144 KB; carried from archived-20261107-045152/db.jsonl: d710e403b0
+- 8a10c05956 speed 0.3037, 32-bit 0.3008, 30803 B, 132 KB; carried from archived-20261107-045152/db.jsonl: 8a10c05956
+- 00a044c3dc speed 0.3142, 32-bit 0.3476, 21157 B, 144 KB; mutation: rtimm=2; in portable-front-seed87.md
+- 9eb29a2415 speed 0.3149, 32-bit 0.3355, 22346 B, 132 KB; carried from archived-20261108-225833/db.jsonl: 9eb29a2415
+- 8d2259a1ab speed 0.3492, 32-bit 0.3956, 18671 B, 132 KB; carried from archived-20261107-045152/db.jsonl: 8d2259a1ab
+- 1c0cebd422 speed 0.3563, 32-bit 0.3984, 18315 B, 148 KB; carried from archived-20261107-045152/db.jsonl: 1c0cebd422
+- 16ff94aa4d speed 0.3613, 32-bit 0.4120, 17995 B, 140 KB; carried from archived-20261107-045152/db.jsonl: 16ff94aa4d
+- 2722625adb speed 0.3702, 32-bit 0.3989, 18307 B, 144 KB; borrowed noinls from 73ef1e88d9; mutation: hotcalls=0; in portable-front-seed87.md
+- 20d35f6ca3 speed 0.3712, 32-bit 0.3907, 18599 B, 124 KB; carried from archived-20261107-045152/db.jsonl: 20d35f6ca3
+- e51c5eef04 speed 0.3892, 32-bit 0.3680, 17993 B, 140 KB; carried from archived-20261105-192241/db.jsonl: e51c5eef04
+- bc94ff35ed speed 0.4200, 32-bit 0.4033, 17060 B, 136 KB; carried from archived-20261108-225833/db.jsonl: bc94ff35ed
+- 1ea8810879 speed 0.4697, 32-bit 0.4688, 16492 B, 120 KB; carried from archived-20261107-045152/db.jsonl: 1ea8810879
+- 7c82644510 speed 0.4713, 32-bit 0.4435, 16636 B, 136 KB; borrowed rtfuse+rtimm from 131b67c6d1; mutation: hotcalls=32; in portable-front-seed87.md
+- 42abe5f0c8 speed 0.4740, 32-bit 0.4429, 16636 B, 128 KB; carried from archived-20261105-192241/db.jsonl: 42abe5f0c8; in portable-front-seed87.md
+- b0e9c432e7 speed 0.5106, 32-bit 0.4604, 16188 B, 128 KB; borrowed bss+thinhdr from 198b878cd9; mutation: tracer=1, va
+- b83cb27f32 speed 0.5116, 32-bit 0.4565, 16188 B, 128 KB; borrowed varcall+varslot from 349562789b; mutation: varslot=
+- a6ba510f0e speed 0.5143, 32-bit 0.4642, 16188 B, 128 KB; carried from archived-20261107-045152/db.jsonl: a6ba510f0e
+- b1dca89a44 speed 0.5320, 32-bit 0.4850, 15972 B, 128 KB; carried from archived-20261108-225833/db.jsonl: b1dca89a44
+- 503a876ec6 speed 0.5612, 32-bit 0.5036, 15860 B, 120 KB; carried from archived-20261107-045152/db.jsonl: 503a876ec6
+- 083a614ede speed 0.5645, 32-bit 0.6129, 15526 B, 136 KB; carried from archived-20261105-192241/db.jsonl: 083a614ede; in portable-front-seed87.md
+- adfb3b02b8 speed 0.5729, 32-bit 0.5358, 15780 B, 128 KB; carried from archived-20261108-225833/db.jsonl: adfb3b02b8
+- 116f5e878b speed 0.5730, 32-bit 0.5126, 15812 B, 128 KB; borrowed folds from d092e68bf6; mutation: varslot=1; via the
+- 01976a1ae8 speed 0.5757, 32-bit 0.5124, 15812 B, 128 KB; borrowed rtempty from a40e1a1209; mutation: noreorder=0
+- c955446411 speed 0.6058, 32-bit 0.5286, 15684 B, 116 KB; carried from archived-20261107-045152/db.jsonl: c955446411
+- b1bab87760 speed 0.6127, 32-bit 0.5241, 15684 B, 116 KB; carried from archived-20261107-045152/db.jsonl: b1bab87760
+- 5d635950a6 speed 0.6344, 32-bit 0.5193, 15668 B, 136 KB; carried from archived-20261107-045152/db.jsonl: 5d635950a6
+- e4b6633bf3 speed 0.6364, 32-bit 0.6109, 15140 B, 136 KB; carried from archived-20261108-225833/db.jsonl: e4b6633bf3
+- e94f6257a8 speed 0.6402, 32-bit 0.4938, 15796 B, 136 KB; carried from archived-20261107-045152/db.jsonl: e94f6257a8
+- 0744cbd332 speed 0.6402, 32-bit 0.5053, 15796 B, 120 KB; carried from archived-20261105-192241/db.jsonl: 0744cbd332; in portable-front-seed87.md
+- 1c11856f95 speed 0.6586, 32-bit 0.5167, 15620 B, 128 KB; carried from archived-20261108-225833/db.jsonl: 1c11856f95
+- 7a4d6f6755 speed 0.6596, 32-bit 0.7296, 15100 B, 128 KB; carried from archived-20261107-045152/db.jsonl: 7a4d6f6755
+- e1f809095d speed 0.6640, 32-bit 0.7643, 15381 B, 112 KB; borrowed tail from 857a9117e7; mutation: gotodup=128
+- d34524f48f speed 0.6701, 32-bit 0.7554, 15381 B, 112 KB; borrowed varcall+varslot from 45572b2120; mutation: klookup=
+- 7be186fe6c speed 0.6716, 32-bit 0.7604, 15381 B, 112 KB; borrowed tail+tos from 46d1c112b7; mutation: fbuf=1024, rtim
+- 8e309d5a50 speed 0.6833, 32-bit 0.9011, 15052 B, 128 KB; mutation: nocet=1, jitmul=1
+- 7aa88d3167 speed 0.6844, 32-bit 0.8982, 15052 B, 132 KB; carried from archived-20261108-225833/db.jsonl: 7aa88d3167
+- 33ac0af438 speed 0.6888, 32-bit 0.6732, 15516 B, 112 KB; carried from archived-20261107-045152/db.jsonl: 33ac0af438
+- b54b1c3f1b speed 0.6924, 32-bit 0.8981, 15052 B, 136 KB; carried from archived-20261108-225833/db.jsonl: b54b1c3f1b
+- 20229cb573 speed 0.7067, 32-bit 0.6686, 15068 B, 136 KB; mutation: +op <>?BRANCH
+- 1ecf19075e speed 0.7278, 32-bit 0.6838, 15341 B, 112 KB; carried from archived-20261108-225833/db.jsonl: 1ecf19075e
+- 802c8aa87d speed 0.8055, 32-bit 0.7682, 14901 B, 116 KB; carried from archived-20261107-045152/db.jsonl: 802c8aa87d
+- 5fe445ebdc speed 0.8134, 32-bit 0.8307, 14509 B, 116 KB; carried from archived-20261107-045152/db.jsonl: 5fe445ebdc
+- b519e8ac18 speed 0.8180, 32-bit 0.8664, 14473 B, 120 KB; carried from archived-20261108-225833/db.jsonl: b519e8ac18
+- 1d78260ce8 speed 0.8272, 32-bit 0.7563, 14821 B, 112 KB; carried from archived-20261107-045152/db.jsonl: 1d78260ce8
+- ad9289ebcd speed 0.8590, 32-bit 0.8442, 14461 B, 116 KB; carried from archived-20261107-045152/db.jsonl: ad9289ebcd
+- ebfb5ba56c speed 0.8709, 32-bit 0.9589, 14340 B, 116 KB; carried from archived-20261107-045152/db.jsonl: ebfb5ba56c
+- 52ec4455fd speed 0.8816, 32-bit 1.1029, 14237 B, 120 KB; borrowed fbuf from 33945b063f; mutation: hotinl=40; via the 
+- e6939d3285 speed 0.9796, 32-bit 0.8107, 14437 B, 116 KB; carried from archived-20261107-045152/db.jsonl: e6939d3285
+- f65eb46e50 speed 1.0007, 32-bit 0.9208, 14213 B, 120 KB; carried from archived-20261108-225833/db.jsonl: f65eb46e50
+- cd19bdb4ec speed 1.0295, 32-bit 1.1092, 14125 B, 120 KB; borrowed folds from 77df6dd459; mutation: peel=1, nogcse=0; 
+- 4d3593ac8d speed 1.0300, 32-bit 1.1156, 14125 B, 116 KB; borrowed varcall+varslot from 0e2cab5708; mutation: jitdoes=
+- 2b8dd99af7 speed 1.0363, 32-bit 1.1156, 14125 B, 120 KB; borrowed tail from 188cfe6830; mutation: varslot=0; via the 
+- c0e96ee116 speed 1.0698, 32-bit 1.1374, 14075 B, 116 KB; mutation: varslot=1, rtloopall repaired (+ops (DO) (LOOP) (+
+- 429b27452d speed 1.0767, 32-bit 1.1485, 14075 B, 112 KB; carried from archived-20261107-045152/db.jsonl: 429b27452d
+- c9255e6766 speed 1.0795, 32-bit 1.1425, 14075 B, 116 KB; mutation: dskew=0
+- e240ae3c3c speed 1.4014, 32-bit 1.5161, 13995 B, 116 KB; mutation: alignfn=1
+- c1b0c0c314 speed 1.4092, 32-bit 1.5218, 13995 B, 120 KB; carried from archived-20261108-225833/db.jsonl: c1b0c0c314
+- f0e6d8d533 speed 1.4123, 32-bit 1.5409, 13995 B, 116 KB; mutation: fbuf=4096
+- ad52e8871c speed 1.5426, 32-bit 1.4232, 13959 B, 116 KB; borrowed alignfn from 72f608d1aa; mutation: nocet=0; via the
+- b646ea7d67 speed 1.5500, 32-bit 1.6057, 13851 B, 116 KB; carried from archived-20261108-225833/db.jsonl: b646ea7d67
+- 44a8a098b7 speed 1.5562, 32-bit 1.6116, 13851 B, 116 KB; carried from archived-20261108-225833/db.jsonl: 44a8a098b7
+- d06ef4cbce speed 1.5637, 32-bit 1.7364, 13776 B, 120 KB; carried from archived-20261108-225833/db.jsonl: d06ef4cbce
+- c42ea2077b speed 1.5654, 32-bit 1.5887, 13851 B, 116 KB; carried from archived-20261107-045152/db.jsonl: c42ea2077b
+- 287aff50f6 speed 1.5795, 32-bit 1.9163, 13725 B, 116 KB; carried from archived-20261107-045152/db.jsonl: 287aff50f6
+- 1ddd158bf5 speed 1.6313, 32-bit 1.4389, 13955 B, 116 KB; carried from archived-20261108-225833/db.jsonl: 1ddd158bf5
+- 2e7d378661 speed 1.6369, 32-bit 1.7540, 13731 B, 116 KB; carried from archived-20261108-225833/db.jsonl: 2e7d378661

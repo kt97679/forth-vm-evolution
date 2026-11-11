@@ -11124,3 +11124,12 @@ stops and the freeze follows unless the owner takes 01712a2639. Predictions 3 of
 dream.lan-prebuilt64.out.json, rage.lan-prebuiltarm.md, rage.lan-prebuiltarm.out.json),
 results/followup-pick-seed91.md, results/followup-pick-seed91.json, results/followup-roles-seed91.md,
 results/drafts/gain-bridge-640.py.
+
+## Iteration 641 - 2026-11-11 - Claude
+
+The final check before the freeze (the owner: "absolutely sure we found best designs", 26 hours): 72 of the pool's 528
+front designs were never measured across machines (66 carried into seeds 89-90, which screened only what they bred; 6 of
+seed 87's rest), the pool's in-run fastest at both widths among them. One chain measures them, seed 91's rest, the holders
+and the best re-measured before - 435 on all three machines (the laptop 5, dream 7 a width, the Tegra 3); NEXT-RUN,
+REMOTES; followup-roles.py's run() takes "the check" as a candidate; 4 predictions. Files: results/followup-seed91-final.md,
+results/drafts/coverage-641.py, results/drafts/coverage-641.txt, results/drafts/finalcheck-641.py.
