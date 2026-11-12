@@ -307,9 +307,12 @@ Each subject oldest first; a script or patch beside the document it made.
 - `followup-pick-seed90.json` - followup-pick-seed90.md's set as JSON (final-pick.py --json, Iteration 634).
 - `followup-roles-seed90.md` - The portable roles after seed 90's follow-up (Iteration 634): 11a56ff9e4 takes the knee by the rule, waiting on the owner - the x86 machines split at 64 bits.
 - `chain-followup91/README.md` - Seed 91's follow-up chain's readings (Iteration 640): the 38 in every session - the laptop 35, dream 40 and 40, rage 5.
+- `chain-followup91-final/README.md` - the final check's readings by session (648): the laptop s1-s5, dream s1-s7 a width, the Tegra s1-s2.
 - `followup-pick-seed91.md` - Seed 91's follow-up's 38 re-measured on three machines, every session pooled (Iteration 640).
+- `followup-pick-seed91-final.md` - the final check's pooled pick (648): the 435 on three machines, every session (its set: followup-pick-seed91-final.json).
 - `followup-pick-seed91.json` - followup-pick-seed91.md's set as JSON (final-pick.py --json, Iteration 640).
 - `followup-roles-seed91.md` - The portable roles after seed 91's follow-up (Iteration 640): none changed but the smallest's trade (the owner's); no gain against the whole pool - the search stops.
+- results/followup-roles-seed91-final.md - the final check before the freeze (648): 435 on three machines, no extreme gained, the smallest's one trade-free candidate d180351903 the owner's call.
 - `followup-seed91-final.md` - The final check before the freeze (Iteration 641): 435 designs - the 72 pooled-front designs never measured across machines, seed 91's rest, the holders and the best re-measured before.
 - `audit-nonportable-619.md` - The audit of the results so far and whether a JIT run is worth it (Iteration 619): converged, nothing new since, the portable gains out of its reach - not now.
 - `fastend-remeasure-575.md` - Seed 84's fast-end re-measure (Iteration 575): 41 records - its fast bred designs, its best re-timed founders, the pool's fastest - for loadtest.py --ids; judged by drafts/fastend-judge-575.py.

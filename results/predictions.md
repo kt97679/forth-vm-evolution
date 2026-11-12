@@ -1445,3 +1445,12 @@ design measured before on the laptop alone at either width (2% at 2 SE) - 25/75 
 cells, at the fast end's 1.05-1.10 of in-run 0.300-0.313 against 0.3086; 38100f0280 at 8-byte about 0.292 against
 7fb40ff7ba's 0.2878). (4) No design dies on any line - 85/15 (the 66 carried ones alive in seeds 89-90, after 599).
 
+Scored (Iteration 648, results/followup-roles-seed91-final.md): (1) wrong - the Tegra 2 of 3 sessions (about 9.3 hours
+each). (2) pending - the rule's one trade-free candidate, d180351903 for the smallest: wrong if the owner takes it, else
+right. (3) right - 38100f0280 +2.69%, 95077030b0 +1.84% behind the best found before. (4) right - none died.
+
+## The rage check (lab/evolve/rage-designs.py) - predicted (Iteration 648)
+
+The three GCC designs' forth-arm (portable-arm, portable-small, least-memory) built by the Tegra's own GCC 16 against the
+bytes its lab lines ran. (1) rage-designs.md says PASS, all three byte for byte - 75/25 (646: the cross GCC 13 reproduced
+the lab's simulated bytes by the same rule; 647: end to end with stand-ins PASS).

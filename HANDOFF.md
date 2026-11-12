@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 647.
+- master: Iteration 648.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -148,31 +148,23 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   portable search stops and the freeze follows ("Before the freeze"), unless the owner gives 01712a2639 the smallest role**
   (then seed 92, `seed 92 nojit 21h widths`, screening results/screen-seed91.md; the package and designs/ again; and
   portable-followup.py's found-before widened to every earlier pick's extremes first). NEXT-RUN none. Predictions 3 of 4.
-- **The final check before the freeze (641; the owner: "I want to be absolutely sure we found best designs" - 26 hours,
-  from about 7 am his time) - running (from 641's bundle)**: results/followup-seed91-final.md, 435 - the 72 pooled-front
-  designs no chain ever measured across machines (results/drafts/coverage-641.txt: 66 carried into seeds 89-90 - 631's
-  screens took only what a run bred - and 6 of seed 87's rest, before screens; among them the pool's in-run fastest at both
-  widths, 38100f0280 and 95077030b0), seed 91's rest (320), the six holders and c2ef9488ff, and the best re-measured before
-  (36: every pick's set, each follow-up chain's three fastest on the laptop a width) - all three machines in one chain
-  (results/drafts/finalcheck-641.py; the laptop 5 sessions, dream 7 a width, the Tegra 3 at 3 rounds). followup-roles.py's
-  run() takes why "the check" as a candidate (641). The smallest's trade (01712a2639, 640) decided after it. **Its
-  processing**: `HANDOFF=results/handoff-relf-636.md PRED=641 sh lab/evolve/process-followup.sh 91-final ITERATION
-  fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393` - every role
-  by the rule (roles.txt lists every design beating a holder), --gain the never-measured and the rest against the found
-  before; a role changed: the package and designs/ again; a near miss: a short confirmation; then the freeze.
-  **Rehearsed (644)** on a synthetic archive of the 435 (results/drafts/rehearse-final-644.py, from seed 91's follow-up's
-  chain): the command ran end to end in 3 seconds, every line complete. Two readings to expect: a line's count can show 436
-  of 435 when its rejected sample draws a listed design (the Tegra's did, 7fb40ff7ba, in seed 91's follow-up - both
-  readings real); and --gain's verdict line speaks of seed 92 - here a role taken means the package and designs/ again,
-  then the freeze, no further run.
+- **The final check processed (648) - no extreme gained; the smallest the owner's call** -
+  results/followup-roles-seed91-final.md: the 435 (641's list) on the laptop 5, dream 7 a width, the Tegra 2 of 3 (the third
+  would end past the deadline); none died. No role changed by speed: five holders kept; small and fast on ARMv7 by 629's
+  pooled rule (a627b954c6 -3.21% in this chain, +1.21% +/- 0.84% over all 10 Tegra sessions with both). --gain: no line (the
+  pool's in-run fastest, 38100f0280 and 95077030b0, +2.69% and +1.84% behind). **The smallest's one trade-free candidate,
+  d180351903** (13,883 B, -8 B; x86-64 -0.59% - the laptop +3.40%, dream -4.43% -, x86-32 -3.85%, ARMv7 -3.30% on 2
+  sessions): the owner's call - Claude: take it if pack-designs.py shows it smaller at 4-byte cells too, else keep
+  64a7345393; 01712a2639 kept (640). The Tegra's readings swing 4-5% a pair between chains (its kernel 7.3.1 -> 7.3.3 on
+  2026-11-10; results/drafts/finalcheck-648.py). Taken: the package and designs/ again (smallest is a clang design - the
+  rage check unaffected), then the freeze; kept: the freeze.
 - **The freeze's batch, queued (642-643)** - results/queued-freeze/ORDER.md, batch-check PASS on both: rtloop-after-seed91
   (the partial run-time loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91
   (forth/cv8-imm.4, rtimm=2 alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in; the two
   run-time overlays no pooled-front design, stage or winner uses (results/drafts/freeze-audit-641.py). Ids: 141 of 4,892
   change, no winner's; the 52 designs' bytes (the 28 winners and 24 front designs) the same at both widths
   (results/drafts/build-hash-641.py). The report's other 11 values stay - four by use, seven the search space only
-  (results/drafts/freeze-retire-641.md). At the freeze: drop rtloop if b35ae710e6 (the one -loop design in the final
-  check) takes a role; `git apply` the rest per ORDER.md, rebuild, run-tests, validate, the winners' bytes again.
+  (results/drafts/freeze-retire-641.md). At the freeze: b35ae710e6 (the one -loop design in the final check) took no role (648), so `git apply` both per ORDER.md, rebuild, run-tests, validate, the winners' bytes again.
   **The freeze's build-out rehearsed (645)** in a scratch tree with both patches and today's ten roles -
   results/drafts/freeze-build-645.sh: validate 7 of 7, export-designs.py's own check, the export the same as designs/ for
   10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40
@@ -186,8 +178,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   ones (portable-arm, portable-small, least-memory) with a cross GCC 13: the rule gives the lab's simulated bytes and runs -
   **their real bytes (the Tegra's GCC 16): the next run (647)** - NEXT-RUN `experiment rage-designs.py`, no remote line:
   lab/evolve/rage-designs.py runs tools/rage-check.sh with RAGECHECK_CMD='sh tools/rage-designs-check.sh' from the laptop
-  (end to end with ssh/scp stand-ins here: PASS); its pack's rage-designs.md says PASS or FAILED. **647's bundle goes on
-  the laptop only after the final check's chain has ended** - NEXT-RUN no longer holds that chain's line. The cross GCC's
+  (end to end with ssh/scp stand-ins here: PASS); its pack's rage-designs.md says PASS or FAILED. The final check's chain
+  ended (648): the rage check runs from 648's bundle (or the newest). The cross GCC's
   package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
 - **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
   clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
@@ -236,10 +228,11 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): the final check's - 4 (641).
+- **Predictions due** (results/predictions.md): the rage check's - 1 (648). The final check's scored (648): 2 right, 1
+  wrong (the Tegra 2 of 3), (2) pending the owner's call on the smallest.
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
-- **Files a new chat needs**: the newest bundle; the final check's chain archive when it returns; the rage check's. appbench.zip
+- **Files a new chat needs**: the newest bundle; the rage check's archive when it returns. appbench.zip
   stays on the laptop.
 
 ## Processing a returned seed

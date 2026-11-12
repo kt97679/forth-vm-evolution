@@ -11185,3 +11185,13 @@ line commented, its chain running) and REMOTES has no line: lab/evolve/rage-desi
 laptop with RAGECHECK_CMD='sh tools/rage-designs-check.sh' - the three GCC designs' forth-arm against the Tegra's own
 GCC 16 bytes. End to end here with ssh/scp stand-ins (results/drafts/rage-check-e2e-571.sh's): the bundle, the clone,
 the stages, export-arm.py, PASS, the clone removed. Files: lab/evolve/rage-designs.py.
+
+## Iteration 648 - 2026-11-12 - Claude
+
+The final check processed (16681a02bf, 25.9 h; the laptop 5, dream 7 a width, the Tegra 2 of 3; all 435 on every line,
+none died): no extreme gained (the 72's in-run fastest +2.69% and +1.84% behind), no role changed by speed (small and fast
+on ARMv7 kept by 629's pooled rule: a627b954c6 -3.21% here, +1.21% +/- 0.84% over 10 Tegra sessions); the smallest's one
+trade-free candidate, d180351903 (-8 B; x86-64 -0.59%, x86-32 -3.85%, ARMv7 -3.30%), the owner's call. The Tegra's readings
+swing 4-5% a pair between chains (kernel 7.3.1 -> 7.3.3). Predictions 2 of 3, one pending. Files: results/chain-followup91-final/ (README.md; its sK:
+dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md, rage.lan-prebuiltarm.md, rage.lan-prebuiltarm.out.json), results/followup-pick-seed91-final.md, results/followup-pick-seed91-final.json,
+results/followup-roles-seed91-final.md, results/drafts/finalcheck-648.py.

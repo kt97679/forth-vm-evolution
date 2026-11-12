@@ -853,3 +853,23 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   after re-measure - the laptop at either width, a class or the mean (2%, 2 SE), size 1%, memory 4 KB - or takes a role;
   else the portable search stops (results/drafts/portable-plan-602.md, "After the follow-up"; the verdict in
   /tmp/followup/gain.txt).
+
+## The card's state at Iteration 647 - the final check's bullet, replaced at 648
+
+- **The final check before the freeze (641; the owner: "I want to be absolutely sure we found best designs" - 26 hours,
+  from about 7 am his time) - running (from 641's bundle)**: results/followup-seed91-final.md, 435 - the 72 pooled-front
+  designs no chain ever measured across machines (results/drafts/coverage-641.txt: 66 carried into seeds 89-90 - 631's
+  screens took only what a run bred - and 6 of seed 87's rest, before screens; among them the pool's in-run fastest at both
+  widths, 38100f0280 and 95077030b0), seed 91's rest (320), the six holders and c2ef9488ff, and the best re-measured before
+  (36: every pick's set, each follow-up chain's three fastest on the laptop a width) - all three machines in one chain
+  (results/drafts/finalcheck-641.py; the laptop 5 sessions, dream 7 a width, the Tegra 3 at 3 rounds). followup-roles.py's
+  run() takes why "the check" as a candidate (641). The smallest's trade (01712a2639, 640) decided after it. **Its
+  processing**: `HANDOFF=results/handoff-relf-636.md PRED=641 sh lab/evolve/process-followup.sh 91-final ITERATION
+  fastest=782f3ad7ff,arm=3eb59b271d,knee=11a56ff9e4,smallarm=ae99617f06,memory=fb0d57c8a2,smallest=64a7345393` - every role
+  by the rule (roles.txt lists every design beating a holder), --gain the never-measured and the rest against the found
+  before; a role changed: the package and designs/ again; a near miss: a short confirmation; then the freeze.
+  **Rehearsed (644)** on a synthetic archive of the 435 (results/drafts/rehearse-final-644.py, from seed 91's follow-up's
+  chain): the command ran end to end in 3 seconds, every line complete. Two readings to expect: a line's count can show 436
+  of 435 when its rejected sample draws a listed design (the Tegra's did, 7fb40ff7ba, in seed 91's follow-up - both
+  readings real); and --gain's verdict line speaks of seed 92 - here a role taken means the package and designs/ again,
+  then the freeze, no further run.
