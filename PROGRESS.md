@@ -11231,3 +11231,10 @@ exported Makefile (checked against express() on x86-64), --list printed first (n
 Makefile edit idempotent. Tested: the Tegra's choice simulated (the GCC three), x86-64 and --gcc with all ten (the clang
 three and the GCC three, the same as designs/), end to end with stand-ins PASS; run-tests PASS, validate 7 of 7. Files:
 results/drafts/rage-select-as-tegra-652.py.
+
+## Iteration 653 - 2026-11-12 - Claude
+
+While the rage check reran: export-arm.py's native path read through for anything else host-dependent - none (the native
+build and its compile-command search ran on the Tegra in 652's failed run; the rest is make, the host's cc, the repo's
+elf_tight.py and the engine run without qemu). One fault of 652's own: --list exited after making the check's temporary
+directory, one left in /tmp a run - now it exits first (tested: 3 taken, none left). Files: none under results/.

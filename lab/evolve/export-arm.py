@@ -116,9 +116,9 @@ for name, i in PAIRS:
     open(os.path.join(d, 'Makefile'), 'w').write('\n'.join(mk))
     made.append((name, i, sha(eng), clang)); size = os.path.getsize(eng); shutil.rmtree(b, ignore_errors=True)
     print('%s (%s, %s): srcarm %d files, the engine %d bytes' % (name, i, 'clang' if clang else 'GCC', len(os.listdir(sd)), size), flush=True)
+if LIST: sys.exit(0)                                    # 653: before the check's directory, none left behind
 T = tempfile.mkdtemp(prefix='export-arm-check-')
 shutil.copy(os.path.join(E.ROOT, 'tools', 'elf_tight.py'), os.path.join(T, 'elf_tight.py'))
-if LIST: sys.exit(0)
 for name, i, esha, clang in made:
     dd = os.path.join(T, name); shutil.copytree(os.path.join(OUT, name), dd)
     r = subprocess.run(['make', '-s', '-C', dd, 'forth-arm'] + (['CCARM=' + gcc] if gcc else []), capture_output=True, text=True)

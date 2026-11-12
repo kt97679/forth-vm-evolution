@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 652.
+- master: Iteration 653.
 - **The search is over; the freeze next.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
@@ -107,7 +107,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   exported Makefile (checked against express() on x86-64), --list printed first, the records from designs/, the Makefile
   edit idempotent; tested as the Tegra sees it (results/drafts/rage-select-as-tegra-652.py: the GCC three), x86-64 and
   --gcc with all ten (the same as designs/), end to end with stand-ins PASS. **The rage check is the next run again**
-  (NEXT-RUN unchanged), from 652's bundle; a rerun clears the Tegra's leftover fve-ragecheck/repo itself.
+  (NEXT-RUN unchanged), from 652's bundle; a rerun clears the Tegra's leftover fve-ragecheck/repo itself. 653: the native path read through for
+  other host-dependence - none; --list no longer leaves its check directory in /tmp.
 - **The article (604; open item 8) - last (the owner, 636): once everything else is done - the search's end, the
   freeze, the designs handed off to relf** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
