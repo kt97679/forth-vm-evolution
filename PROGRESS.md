@@ -11195,3 +11195,12 @@ trade-free candidate, d180351903 (-8 B; x86-64 -0.59%, x86-32 -3.85%, ARMv7 -3.3
 swing 4-5% a pair between chains (kernel 7.3.1 -> 7.3.3). Predictions 2 of 3, one pending. Files: results/chain-followup91-final/ (README.md; its sK:
 dream.lan-prebuilt32.md, dream.lan-prebuilt32.out.json, dream.lan-prebuilt64.md, dream.lan-prebuilt64.out.json, loadtest.md, rage.lan-prebuiltarm.md, rage.lan-prebuiltarm.out.json), results/followup-pick-seed91-final.md, results/followup-pick-seed91-final.json,
 results/followup-roles-seed91-final.md, results/drafts/finalcheck-648.py.
+
+## Iteration 649 - 2026-11-12 - Claude
+
+The owner took the final check's trade-free candidate: d180351903 the smallest - pack-designs.py: smaller at both widths
+(13,883 / 13,627 B against 64a7345393's 13,891 / 13,675), 9 of 9 right at both. The package iter649 (outputs; 20 of 20
+builds 9 of 9 right), designs/smallest made again by export-designs.py and export-arm.py (the lab's bytes at both widths and
+for ARMv7, forth-arm running under qemu-arm); make test 10 ok, make 32, make libc; run-tests PASS, validate 7 of 7. The
+handoff reads the ARMv7 column as a band (648's swing). Prediction (2) wrong: the final check's 2 of 4. Files:
+results/relf-designs-649.md, results/handoff-relf-649.md.

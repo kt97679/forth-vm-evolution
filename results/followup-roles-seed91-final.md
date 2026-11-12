@@ -59,3 +59,8 @@ between the two (a627b954c6 -3.28% / -3.14%, d180351903 -2.64% / -3.96%, 7fb40ff
 (1) wrong - the Tegra measured 2 of 3 sessions. (2) pending - a role changes only if the owner gives d180351903 the smallest
 (then wrong). (3) right - neither of the 72's in-run fastest beat the best found before (+2.69%, +1.84%). (4) right -
 none died on any line.
+
+## The owner's decision (649)
+
+d180351903 takes the smallest - built by pack-designs.py, smaller at both widths (13,883 / 13,627 B against 64a7345393's
+13,891 / 13,675) and 9 of 9 right at both: results/handoff-relf-649.md. Small and fast on ARMv7 left to the pooled rule.

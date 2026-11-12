@@ -1,11 +1,11 @@
 LX_lit:     /* lit     */ PUSH(OPND16(ip)); ip += 2; EXITNEXT();
 LX_drop:    /* drop    */ dsp += CELL_BYTES; EXITNEXT();
+LX_dup:     /* dup     */ PUSH(DS1); EXITNEXT();
 LX_fetch:   /* @       */ DS0 = CELL(DS0); EXITNEXT();
 LX_cstore:  /* c!      */ BYTE(DS0) = (UNS8)DS1; dsp += 2 * CELL_BYTES; EXITNEXT();
 LX_store:   /* !       */ CELL(DS0) = DS1; dsp += 2 * CELL_BYTES; EXITNEXT();
+LX_and:     /* and     */ DS1 &= DS0; dsp += CELL_BYTES; EXITNEXT();
 LX_or:      /* or      */ DS1 |= DS0; dsp += CELL_BYTES; EXITNEXT();
 LX_xor:     /* xor     */ DS1 ^= DS0; dsp += CELL_BYTES; EXITNEXT();
-LX_tor:     /* >r      */ RPUSH(DS0); dsp += CELL_BYTES; EXITNEXT();
 LX_plus:    /* +       */ DS1 += DS0; dsp += CELL_BYTES; EXITNEXT();
-LX_lshift:  /* lshift  */ DS1 <<= DS0; dsp += CELL_BYTES; EXITNEXT();
 LX_rshift:  /* rshift  */ DS1 >>= DS0; dsp += CELL_BYTES; EXITNEXT();

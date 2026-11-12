@@ -22,7 +22,7 @@ One design: `make portable-knee`, or `make` in its directory. A file: `./forth i
 Speed is CPU time against the hand-made s6 the search started from, so lower is faster - 0.185 is 5.4 times s6's
 speed; each class the geometric mean of its machines (x86-64: an AMD Ryzen 7 PRO 8840HS and an Intel i7-6700; x86-32:
 the same at 4-byte cells; ARMv7: an NVIDIA Tegra), every session pooled - the portable designs re-measured side by
-side in Iteration 611 (results/followup-roles-seed87.md; the knee in seed 90's follow-up, 636), the JIT designs in seed 86's chains. Bytes: engine and image at 8-byte cells, the
+side in Iteration 611 (results/followup-roles-seed87.md; the knee in seed 90's follow-up, 636; the smallest in the final check, 649), the JIT designs in seed 86's chains. Bytes: engine and image at 8-byte cells, the
 engine as measured (`make tight`). Memory: peak resident.
 
 | `make` target | design | what it wins | x86-64 | x86-32 | ARMv7 | bytes | memory | JIT |
@@ -36,7 +36,7 @@ engine as measured (`make tight`). Memory: peak resident.
 | `portable-knee` | 11a56ff9e4 | fast without the JIT on x86; small | 0.363 | 0.377 | 0.477 | 19,761 | 140 KB | no |
 | `portable-small` | ae99617f06 | small, fast on ARMv7 | 0.450 | 0.444 | 0.351 | 18,599 | 124 KB | no |
 | `least-memory` | fb0d57c8a2 | least memory | 0.916 | 0.884 | 0.521 | 17,830 | 104 KB | no |
-| `smallest` | 64a7345393 | smallest | 1.933 | 1.866 | 1.834 | 13,891 | 116 KB | no |
+| `smallest` | d180351903 | smallest | 1.926 | 1.784 | 1.717 | 13,883 | 116 KB | no |
 
 \* on ARMv7 without its JIT: the JIT generates x86 code, so the JIT designs are for x86 only.
 

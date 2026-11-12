@@ -1,4 +1,4 @@
-LS_0: /* + C@ */
-    /* +       */ DS1 += DS0; dsp += CELL_BYTES; goto LSB_0;
+LS_0: /* SWAP R> */
+    /* swap    */ t = DS0; DS0 = DS1; DS1 = t; goto LSB_0;
 LSB_0:
-  /* C@      */ DS0 = BYTE(DS0); NEXT();
+   /* r>      */ PUSH(RS); rp += CELL_BYTES; NEXT();

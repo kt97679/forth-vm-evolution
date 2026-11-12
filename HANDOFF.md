@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 648.
+- master: Iteration 649.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -62,7 +62,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   of 421 audited children that ran in full reached the true front, seeds 77-83); one round first none (0 of 6,934); seed
   77's clock test - not the clock (cycles 1.002); the random baseline 0.55 of the series' median hypervolume.
 - **The handoff to relf (611; the smallest 612; three replaced 628 - results/handoff-relf-628.md; small and fast on ARMv7
-  631 - results/handoff-relf-631.md; the knee 636 - results/handoff-relf-636.md)** - results/handoff-relf-611.md, the package
+  631 - results/handoff-relf-631.md; the knee 636 - results/handoff-relf-636.md; the smallest 649 -
+  results/handoff-relf-649.md)** - results/handoff-relf-611.md, the package
   forth-vm-evolution-designs-iter612.tar.gz (outputs; lab/evolve/pack-designs.py on results/relf-designs-611.md): ten
   designs by role - c7c35f9c97 fastest x86-64, 4ef851fd8e fastest x86-32, 06b188f45b best all-round, bac37f35a2 the
   smallest JIT design (these four x86 only); 782f3ad7ff fastest portable, 690981ca5b fastest on ARMv7, c2ef9488ff the
@@ -148,16 +149,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   portable search stops and the freeze follows ("Before the freeze"), unless the owner gives 01712a2639 the smallest role**
   (then seed 92, `seed 92 nojit 21h widths`, screening results/screen-seed91.md; the package and designs/ again; and
   portable-followup.py's found-before widened to every earlier pick's extremes first). NEXT-RUN none. Predictions 3 of 4.
-- **The final check processed (648) - no extreme gained; the smallest the owner's call** -
+- **The final check processed (648) - no extreme gained; the smallest to d180351903 (649)** -
   results/followup-roles-seed91-final.md: the 435 (641's list) on the laptop 5, dream 7 a width, the Tegra 2 of 3 (the third
   would end past the deadline); none died. No role changed by speed: five holders kept; small and fast on ARMv7 by 629's
   pooled rule (a627b954c6 -3.21% in this chain, +1.21% +/- 0.84% over all 10 Tegra sessions with both). --gain: no line (the
   pool's in-run fastest, 38100f0280 and 95077030b0, +2.69% and +1.84% behind). **The smallest's one trade-free candidate,
   d180351903** (13,883 B, -8 B; x86-64 -0.59% - the laptop +3.40%, dream -4.43% -, x86-32 -3.85%, ARMv7 -3.30% on 2
-  sessions): the owner's call - Claude: take it if pack-designs.py shows it smaller at 4-byte cells too, else keep
-  64a7345393; 01712a2639 kept (640). The Tegra's readings swing 4-5% a pair between chains (its kernel 7.3.1 -> 7.3.3 on
-  2026-11-10; results/drafts/finalcheck-648.py). Taken: the package and designs/ again (smallest is a clang design - the
-  rage check unaffected), then the freeze; kept: the freeze.
+  sessions): taken (the owner, 649: smaller at both widths, 13,883 / 13,627 B against 13,891 / 13,675, 9 of 9 right at both) -
+  results/handoff-relf-649.md, results/relf-designs-649.md, the package forth-vm-evolution-designs-iter649.tar.gz, designs/smallest
+  made again (forth-arm the lab's bytes, running under qemu-arm; make test 10 of 10); 01712a2639 kept (640). The Tegra's readings swing 4-5% a pair between chains (its kernel 7.3.1 -> 7.3.3 on
+  2026-11-10; results/drafts/finalcheck-648.py). Next: the rage check (smallest is a clang design - unaffected), then the freeze.
 - **The freeze's batch, queued (642-643)** - results/queued-freeze/ORDER.md, batch-check PASS on both: rtloop-after-seed91
   (the partial run-time loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91
   (forth/cv8-imm.4, rtimm=2 alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in; the two
@@ -168,8 +169,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **The freeze's build-out rehearsed (645)** in a scratch tree with both patches and today's ten roles -
   results/drafts/freeze-build-645.sh: validate 7 of 7, export-designs.py's own check, the export the same as designs/ for
   10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40
-  packed engines and images the same bytes as master's. At the freeze: on master after `git apply`, with the final roles'
-  records and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
+  packed engines and images the same bytes as master's. At the freeze: on master after `git apply`, with the final roles' records (results/relf-designs-649.md) and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
 - **forth-arm (646; the owner: the engines without the C library everywhere)**: the lab built every engine without libc
   on all three machines (rt-linux-x86_64.c 75, rt-linux-i386.c 331, rt-linux-armv7.c 570), but designs/ shipped ARM only
   as forth-libc. Now each of the six designs without the JIT has `make forth-arm` (srcarm/, the lab's ARM command; top
@@ -204,7 +204,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
   run's rest, judged by confirm.py (only what it bred counted), a follow-up when it gains, continued only on confirmed
   progress (results/drafts/jit-run-plan-620.md; the audit: results/audit-nonportable-619.md).
-- **`make` builds the winners (608; ten at 611; 636: portable-knee 11a56ff9e4; 631: portable-small ae99617f06; 628: fastest-x86-32 ee34931cd7, portable-arm 3eb59b271d, small-jit
+- **`make` builds the winners (608; ten at 611; 649: smallest d180351903; 636: portable-knee 11a56ff9e4; 631: portable-small ae99617f06; 628: fastest-x86-32 ee34931cd7, portable-arm 3eb59b271d, small-jit
   c6f1c1331b)** - the top Makefile and designs/ (designs/README.md): the ten of the
   relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
   smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six
@@ -220,7 +220,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   fixed-length precedents - Rose's ART-FORTH, Rochester 1986, uxForth, Enforth - only their variable-length forms not
   found, and the question now asks about those). Two ASCII diagrams (607, results/drafts/ascii-figures-607.py, no
   pictures - the owner): each run's hypervolume, the pooled front as speed against size. The fast end's 5-7% out of both (606, the owner:
-  process, not result - it cancels in every comparison). Waiting: his review; section 17, the portable run and its follow-up, written in both drafts (612); a Russian reader's pass
+  process, not result - it cancels in every comparison). Waiting: section 17's smallest row (both drafts: 64a7345393's 13,891) to d180351903's at the figures
+  pass (649); his review; section 17, the portable run and its follow-up, written in both drafts (612); a Russian reader's pass
   (AUDIENCE.md: a translation-shaped text is a named failure on Habr); prompts 04 and 05 before publishing; the KDPV image.
   The method draft (results/drafts/article-method-548.md): one [check] left, the offset; the follow-up chain's tool
   ready (lab/evolve/portable-followup.py).
@@ -228,8 +229,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): the rage check's - 1 (648). The final check's scored (648): 2 right, 1
-  wrong (the Tegra 2 of 3), (2) pending the owner's call on the smallest.
+- **Predictions due** (results/predictions.md): the rage check's - 1 (648). The final check's scored (648-649): 2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
   A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
 - **Files a new chat needs**: the newest bundle; the rage check's archive when it returns. appbench.zip

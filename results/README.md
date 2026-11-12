@@ -273,7 +273,9 @@ Each subject oldest first; a script or patch beside the document it made.
 - `relf-designs-628.md` - The relf handoff's ten records after seed 89's follow-up (Iteration 628), the input of pack-designs.py and export-designs.py.
 - `relf-designs-631.md` - The relf handoff's ten records after seed 90 (Iteration 631), the input of pack-designs.py and export-designs.py.
 - `handoff-relf-636.md` - The relf handoff after seed 90's follow-up (Iteration 636): the knee to 11a56ff9e4 by the rule, the owner's.
+- `handoff-relf-649.md` - the relf handoff after the final check (649): the smallest to d180351903, the package iter649, the ARMv7 column read as a band.
 - `relf-designs-636.md` - The relf handoff's ten records after seed 90's follow-up (Iteration 636), the input of pack-designs.py and export-designs.py.
+- `relf-designs-649.md` - the ten by role after 649 (the smallest d180351903): pack-designs.py's and export-designs.py's input.
 - `candidates-dream32-612.md` - The dream 32-bit experiment (Iteration 612): 9f8811f7f4 and 690981ca5b with one gene reverted at a time, and the control 782f3ad7ff.
 - `chain-seed88/README.md` - Seed 88's chain's readings (Iteration 614): the dream 32-bit experiment's 20 in every session - the laptop 1, dream 30 a width, rage 12.
 - `dream32-experiment-seed88.md` - The dream 32-bit experiment read (Iteration 614): the compiler - clang restores both bases, no other single gene does.
