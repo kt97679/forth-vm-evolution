@@ -11212,3 +11212,11 @@ patches: validate 7 of 7 IDENTICAL, the export the same as designs/ for 10 of 10
 export-arm.py --gcc with the cross GCC 13, gcc-multilib put back after), make, make test 10 ok, make 32, make libc,
 pack-designs.py 20 of 20 right, the 40 packed engines and images the same bytes as master's iter649 package. The batch
 changes no shipped byte. Files: results/drafts/designs-sha256-649.txt (master's 40 checksums, the freeze's reference).
+
+## Iteration 651 - 2026-11-12 - Claude
+
+The card trimmed for the end of the search (the owner, after 650's suggestion): HANDOFF.md 38,188 -> 23,309 bytes - 20
+bullets of history (seeds 87-91 and their follow-ups, the retirements, the final set, the figures, the relf handoff's and
+make's histories, the hosts' cleaning, the old freeze list) and the closed open items 1, 2, 3b, 5, 6 and 7b moved to
+HANDOFF-HISTORY.md ("The card's state at Iteration 650"); four bullets in their place - the search's end, the ten roles,
+what the freeze needs, where the history is. Files: none under results/.

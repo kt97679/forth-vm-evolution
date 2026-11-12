@@ -873,3 +873,162 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   of 435 when its rejected sample draws a listed design (the Tegra's did, 7fb40ff7ba, in seed 91's follow-up - both
   readings real); and --gain's verdict line speaks of seed 92 - here a role taken means the package and designs/ again,
   then the freeze, no further run.
+
+## The card's state at Iteration 650 - the bullets and open items moved out when the card was trimmed (651)
+
+- **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
+  (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
+  hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
+  bytehdr 1 fixed; scale 0 for CV8 (SCALE stays for cpt16 and sod16; the cell, sod16 and cpt16 families stay - the owner,
+  590); rtloop 2 gone (canon reads 2 as 1). 53 files, 219 lines in, 358 out. batch-check PASS on 4bb5eff (its record
+  commit 0c83123 says 598); on master run-tests PASS, validate 7 of 7 IDENTICAL, the jail PASS; the final set's 21 the
+  same engine and image bytes before and after at both widths, none died (results/drafts/consolidate-599.sh). Of the 17
+  values on no pooled-front design (results/drafts/retire-report-583.md, rerun the same): 10 retired; kept jitdoes 1 (2
+  of the 21: 3ee67e7d34, be42bd8ea4), msc 1 (the Tegra: msc=0 18% slower, 598) and alignhot 1, fsys 1, jit 0, jitinl
+  0, jitos 0 (no code to remove - retire-plan-583.md).
+- **The final set: 21 (598)** - results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md: the pick
+  pooled over every session of chains B, C and D gives 15, chain B's and chain C's own sets add 6 (lose no good design).
+  No generic pick within 25% (the best mean 06b188f45b; each class's fastest c7c35f9c97, 4ef851fd8e, 690981ca5b).
+  Readings kept: results/chainB-seed86/, results/chainC-seed86/, results/chainD-seed86/sK.
+- **The method section's figures, recomputed (600)** - results/article-figures-600.md
+  (results/drafts/article-figures-600.py, from the ledger, the results files, the final set and the chains' readings);
+  results/drafts/article-method-548.md's [74+] markers all filled. New in them: the screen loses a few front designs (2
+  of 421 audited children that ran in full reached the true front, seeds 77-83); one round first none (0 of 6,934); seed
+  77's clock test - not the clock (cycles 1.002); the random baseline 0.55 of the series' median hypervolume.
+- **The handoff to relf (611; the smallest 612; three replaced 628 - results/handoff-relf-628.md; small and fast on ARMv7
+  631 - results/handoff-relf-631.md; the knee 636 - results/handoff-relf-636.md; the smallest 649 -
+  results/handoff-relf-649.md)** - results/handoff-relf-611.md, the package
+  forth-vm-evolution-designs-iter612.tar.gz (outputs; lab/evolve/pack-designs.py on results/relf-designs-611.md): ten
+  designs by role - c7c35f9c97 fastest x86-64, 4ef851fd8e fastest x86-32, 06b188f45b best all-round, bac37f35a2 the
+  smallest JIT design (these four x86 only); 782f3ad7ff fastest portable, 690981ca5b fastest on ARMv7, c2ef9488ff the
+  knee, a627b954c6 small and fast on ARMv7, fb0d57c8a2 least memory, 64a7345393 smallest (612, for cea114f47e: smaller
+  at both widths, 3-7% faster in each class, as simple - the owner asked for Claude's view). Each at both widths 9 of 9
+  right against s6. Phase 2 (RELF.md): relf takes mechanisms and measures them with relf-ab.sh.
+- **Seed 87 processed (610)** - the portable run: portable.py BETTER than the portable designs found before
+  (hypervolume +2.4%, fastest 0.2847 against 0.2978, at 32 bits 0.2888 against 0.3059) -
+  results/evolve-amd-ryzen-7-pro-8840hs-seed87.md. The 282 found before, every complete session of both chains pooled
+  (results/portable-pick-seed87.md; readings results/chain-seed87/, results/chain-seed87-interrupted/ - the crashed
+  chain's dream 8-byte session and the Tegra's second were cut short, left out): x86-64 8cc7f60d6b, x86-32 1f2e71902c,
+  ARMv7 3452cb633b and 690981ca5b tied (0.3%), the generic pick f55cec5849. Its follow-up: 611.
+- **The resume fixed (610)** - seed 87's restart forked at generation 3: the replay saw each gated design's second
+  reading from the start (results/drafts/resume-610.md). evolve.py replays first readings until their batch;
+  lab/evolve/test-resume.py in run-tests (a crash at generation 6: the replay as the first attempt; EVOLVE_REPLAY=0
+  forks - the control). The two attempts (results/drafts/attempts-610.py): the crashed one's 136 generations found the
+  run's fastest at both widths; the resumed one's 262 ended below it (0.2871 against 0.2919); their union 0.2958.
+- **The follow-up chain processed (611)** - results/followup-roles-seed87.md: the 45 side by side, every session complete
+  (results/chain-followup87/, pooled: results/followup-pick-seed87.md). 782f3ad7ff the fastest portable design (mean
+  -11.6% against 690981ca5b, -4.2% against the best found before, 8cc7f60d6b); 690981ca5b kept on ARMv7 (3452cb633b a
+  tie); a627b954c6 for 22420b3b61 (the owner: 4 KB traded); 64a7345393 the smallest (612). The noise half the sizing's
+  (the Tegra 0.44% a session). A GCC lineage runs about twice the laptop's time on dream at 32 bits - not factor 3 as 611
+  wrote (factor needs tag2: expressed in none of them, 612); its expressed genes confounded - seed 88's chain tests them.
+- **Seed 88 processed (614; deaths-check's 2 open were values retired at 599, refused the same here - expected from 615)**
+  - the second portable run: portable.py BETTER than every portable design found before it,
+  seed 87's included, by one extreme - the fastest at 32 bits, c7814def6d (a GCC build) 0.2803 against 0.2888; the
+  hypervolume (0.2936 against 0.2979), the fastest, the smallest and memory short of their bars
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed88.md). The dream 32-bit experiment: the compiler
+  (results/dream32-experiment-seed88.md) - clang brings both GCC bases to the control's dream/laptop ratio at 4-byte cells
+  (2.13 and 1.82 to 1.17; the control 1.105): dream 25-38% faster, the laptop 14-18% slower, so the laptop's selection
+  keeps GCC at 32 bits; no other single gene. General: seed 87's follow-up's 45, GCC median 1.57, clang 1.13
+  (results/drafts/gcc-clang-614.py). The front-end question (623, results/drafts/jcc-count-623.md): in 614's variants the dispatch jumps' share on 32-byte
+  boundaries ranks with dream's slowdown (+0.79) and alignment-only genes move it 10-24% - Intel's JCC erratum on the
+  Skylake the likely cause; padding indirect jumps too clears every one (+0.4-5.2% bytes); untimed - the test needs dream.
+- **Seed 88's follow-up processed (621)** - results/followup-roles-seed88.md: the 46, every session complete (the laptop 18,
+  dream 28 and 25, the Tegra 3), the incumbents within 0.1% of 611's. No role changes: the smallest's candidates
+  4dd4e3e7e2 (1.31% smaller, x86-32 +27.9%) and 422e922f9c (0.29%) turned down by the owner's 611 trade, which he
+  confirmed (621: "performance drop is too significant and size gain is too small"); no extreme gained - seed 88's in-run 32-bit lead,
+  c7814def6d, 2.1% behind 9f8811f7f4 re-measured. By the 616/618 rule the **portable search stops** after two runs.
+- **Seed 89 processed (624)** - the last JIT run (21 hours, carryall, 203 generations): confirm.py NOT CONFIRMED - gained
+  in-run by what it bred: the fastest at 32 bits, ee34931cd7 0.1580 against the bar 0.1610 (seven bred designs past it,
+  all JIT, all off the ε-front), and the pool with its bred designs +1.8%; no gain at 64 bits (its 0.1311 carried), in
+  size (13,709, seed 88's) or memory (108 KB) - results/evolve-amd-ryzen-7-pro-8840hs-seed89.md. Not drift (the carried
+  re-read 1.001 and 1.006 of their pool readings), but in-run: the fastest tenth re-measured at 1.096 of in-run
+  (results/drafts/gain-designs-624.md). The screen of seed 88's rest (results/xcheck-seed89.md): 5 flagged - ee7258275b
+  against the knee; 8164d3858f, ae99617f06, dac11e0a15, a48aca1051 against small and fast on ARMv7; none against the
+  fastest portable or ARMv7 holders.
+- **Seed 89's follow-up processed (627; the owner's decisions, 628)** - results/followup-roles-seed89.md: the 52, every
+  session complete. The JIT run's 32-bit gain confirmed (ee34931cd7 -3.15% +/- 0.42% against 4ef851fd8e on x86-32), so by
+  618/620 another JIT run. **Three roles changed (628)**: x86-32 ee34931cd7; ARMv7 3eb59b271d (bred by seed 89, JIT-free;
+  -2.84% and 2.77% smaller); the smallest JIT design c6f1c1331b (2.71% smaller, no speed lost) - results/handoff-relf-628.md,
+  results/relf-designs-628.md, the package forth-vm-evolution-designs-iter628.tar.gz (outputs; 20 of 20 builds 9 of 9
+  right), designs/ made again for the three (byte for byte; make test 10 of 10). **Small and fast on ARMv7 waited** (630: by the pooled rule to ae99617f06, below):
+  8164d3858f's -2.45% +/- 0.68% is thin (3 Tegra sessions, the holder's third its slowest) - seed 90's Tegra line
+  re-measures it against a627b954c6; it takes the role, and reopens the portable search (620), only if the sessions pooled
+  with the follow-up's hold 2% at 2 SE. The smallest kept (efb0fece07 is 4dd4e3e7e2's trade).
+- **Seed 90 processed (630)** - confirm.py CONFIRMED, nothing gained: by 620 the four x86 roles are final
+  (results/evolve-amd-ryzen-7-pro-8840hs-seed90.md). The screen of seed 89's rest (results/xcheck-seed90.md; 82 JIT designs
+  in its list - followup-roles.py --screen leaves them out now) flagged 11a56ff9e4 against the knee (5.45% smaller; dream
+  -4.4% at 32 bits, -1.3% at 64). Small and fast on ARMv7 by the 629 rule to ae99617f06 (-2.30% +/- 0.42%, six Tegra
+  sessions) - **the owner agreed (631)**: results/handoff-relf-631.md, results/relf-designs-631.md, the package
+  forth-vm-evolution-designs-iter631.tar.gz (outputs), designs/portable-small made again; by 620 the portable search reopens.
+- **Seed 90's follow-up processed (634)** - results/followup-roles-seed90.md: the 7, every session complete (the
+  laptop 20, dream 10 a width, the Tegra 2), 15:01 the owner's time. **11a56ff9e4 takes the knee by the rule - the owner
+  agreed (636)**: 5.45% smaller, x86-32 -3.59% +/- 0.43% (both machines), x86-64 +1.54% +/- 0.25% pooled - the
+  machines split there: the laptop +4.38% (none of 20 sessions faster), dream -1.22% - not the JCC erratum (635: by static
+  counts it would favour c2ef9488ff on dream). Done at 636: results/handoff-relf-636.md, results/relf-designs-636.md,
+  the package forth-vm-evolution-designs-iter636.tar.gz (outputs), designs/portable-knee made again. The other five holders
+  kept; --gain not this list's (a screened design, not a run's). Predictions 3 of 4.
+- **Seed 91 processed (637) - the portable run reopened: NOT BETTER in-run** (results/evolve-amd-ryzen-7-pro-8840hs-seed91.md):
+  against the pool before it (results/portable-front-seed90.md, 528) the hypervolume -2.5%, at 32 bits 0.2764 against
+  0.2803 (-1.4%), the smallest 13,691 against 13,709 (18 B), memory the same. By 616/618 the follow-up decides. The
+  screen of seed 90's rest (results/xcheck-seed91.md, results/chain-screen90/): 1 flagged - 7fb40ff7ba against the ARMv7
+  holder (the Tegra -1.06% +/- 1.92%); followup-roles.py now counts a listed design's readings that a line drew into its
+  rejected sample (637 - they were dropped; no earlier screen or follow-up held such an overlap). Predictions 4 of 4.
+- **Seed 91's follow-up processed (640) - no gain against the whole pool; the final check follows (641)** -
+  results/followup-roles-seed91.md: the 38, every session complete (the laptop 35 of 39 steps, dream 40 a width, the Tegra
+  5). Roles: none changed by speed (ARMv7: 965f48c803 -1.22% +/- 0.40%, short of 2%); **the smallest the owner's call** -
+  01712a2639 1.44% smaller than 64a7345393, x86-32 +18.4%, x86-64 +4.5%, ARMv7 +6.5% (611/621's trade; Claude: keep).
+  followup-roles.py --gain said GAIN (the laptop at 4-byte cells -5.38%, the smallest -1.44%), but against the list's 8
+  found before alone (seed 90's pick and the holders); against the whole pool (results/drafts/gain-bridge-640.py) -0.68%
+  against e523a45566 (bridged) and -0.13% against 4dd4e3e7e2, short of 2% and 1% - the in-run verdict (637). **So the
+  portable search stops and the freeze follows ("Before the freeze"), unless the owner gives 01712a2639 the smallest role**
+  (then seed 92, `seed 92 nojit 21h widths`, screening results/screen-seed91.md; the package and designs/ again; and
+  portable-followup.py's found-before widened to every earlier pick's extremes first). NEXT-RUN none. Predictions 3 of 4.
+- **The hosts cleaned after every chain (628; the owner: "proper cleanup on both rage and dream")** - remote-checks.sh
+  clean: gather removed each line's directory once, its failure unsaid, and a chain cut off before its gather (seed 87's
+  crash) left its directories; now gather's last step empties each host's fve-xcheck of this chain's and every earlier
+  chain's directories, their processes stopped first (by working directory, TERM then KILL, never one with a terminal),
+  fve-xcheck removed when empty, and probe clears the earlier chains' leftovers before measuring - one line a host in the
+  steps ("remote clean HOST: ... MB free in the home"). By hand: `sh lab/evolve/remote-checks.sh clean runs/chain-...`.
+  Tested on stand-in hosts (lab/evolve/test-remote-clean.sh, in run-tests); the real hosts' first lines (630): at the start
+  one earlier chain's directories removed (dream 461 MB, rage 285 MB), at the end none left, fve-xcheck removed on both;
+  rage 2.6 GB free.
+- **PROGRESS.md restored (624)** - Iteration 623 wrote it over with its own entry (Iterations 1-622 out of the file, kept
+  in git); restored from f2fa339, and handoff-check 14 refuses a PROGRESS.md without its first entry.
+- **Before the freeze** (618; GOALS.md step 3 - results/drafts/portable-plan-602.md, "Then the freeze"): the portable search
+  ended (621); seed 88's rest screened during seed 89 (624: 5 flagged, in seed 89's follow-up); the retire report on the final pooled
+  front, every value no design on it uses retired, the winners' bytes unchanged (599's way) - previewed on today's pool (623,
+  results/drafts/retire-report-623.md): 8 values on no front design, msc=1 the one with code - kept for now (the owner,
+  626: 598's Tegra 18% over 578's rule), thinhdr=0 kept for s6; with seed 89 in the pool 12 (625,
+  results/drafts/retire-report-625.md: fsys=0, 690981ca5b's, jitrp=0, noinls=0, opbody=0, rtloopall=0 added, jitinl=0 now
+  thin) - the freeze's list, rerun with seed 90 in the pool (630: no gain, no JIT run follows); with seeds 90-91 (639,
+  results/drafts/retire-report-639.md): 12 - bss=0 in (stays for s6, s0, s1), jitinl=0 in, noinls=0 and thinhdr=0 out; the roles packed and exported
+  from the final code, make test, the handoff final; the portable figures recomputed from the records. **The last JIT run (620, the owner)**: one 21-hour JIT run after the portable
+  search ends, the last step before the freeze - `seed N 21h widths carryall`, its remote lines screening the last portable
+  run's rest, judged by confirm.py (only what it bred counted), a follow-up when it gains, continued only on confirmed
+  progress (results/drafts/jit-run-plan-620.md; the audit: results/audit-nonportable-619.md).
+- **`make` builds the winners (608; ten at 611; 649: smallest d180351903; 636: portable-knee 11a56ff9e4; 631: portable-small ae99617f06; 628: fastest-x86-32 ee34931cd7, portable-arm 3eb59b271d, small-jit
+  c6f1c1331b)** - the top Makefile and designs/ (designs/README.md): the ten of the
+  relf handoff by role name (611: portable-fastest 782f3ad7ff, portable-arm 690981ca5b, portable-small a627b954c6; 612:
+  smallest 64a7345393), each its engine's real source and a Makefile, built from source; `make test`, `make libc` (the six
+  portable ones), `make 32`. lab/evolve/export-designs.py writes them and checks each engine byte for byte the lab's (20
+  of 20) and each C-library build running (6 of 6). Rerun it when a role changes.
+- **Before 599**: chains C and D's processing (598) - HANDOFF-HISTORY.md, "The card's state at Iteration 598"; chains
+  A-D, seed 86 and the final pick's planning (582-597) - "at Iteration 597"; seeds 70-86 processed (498-582).
+
+### Open items closed or moot (651)
+
+1. The Tegra's check - **closed (587)**: chain B's rage line built 9 GCC lto=1 designs with its own GCC 16 and 585's
+   -u raise, and 227 clang designs cross-built without the C library - all alive and measured (1b's link fault fixed);
+   rage-check.sh was not run (the owner, 587) and is no longer needed before a chain.
+2. The end of the improvement phase - GOALS.md, "When the improvements are done": **step 1 done** - the rule stopped at
+   seed 83 (572). **Step 2 done (582)**: seed 84 NOT CONFIRMED at the fast end - the laptop's lead (dream, 582); seed 86
+   NOT CONFIRMED by carried designs only - the pool widened, no new search. **Step 3, the final set: 21 (598)** -
+   results/final-pick-chainCD-seed86.md, from chains B, C and D; consolidation's retirements done (599); the figures next. **Step 4, the random baseline, done (576)**:
+   results/evolve-amd-ryzen-7-pro-8840hs-seed85.md.
+3b. The stopping rule's measure - decided (the owner, 556): from seed 77 the extremes from every alive design, the
+   hypervolume on the true front as before (stopping.py; seed 76's dominance chain).
+5. Rule 9 (the rtimm=2 / rtfuse overlap): PROPOSE when no design relies on it - seed 76: 2 do, no change.
+6. The JIT genes' place: their votes count (rule 12). Seed 76: JIT designs 73 of 262, all 26 of the fastest tenth;
+   jitmul 43, jitfuse 10, jitexec 1, jitos 19, jitrp 22; jitdoes the one freeze candidate.
+7b. (Done, 599: results/applied-after-seed86/ORDER.md; planned at 583 - results/drafts/retire-plan-583.md.) Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
+   values' code builds the stages s2-s5; msc kept by the Tegra's check (598).
