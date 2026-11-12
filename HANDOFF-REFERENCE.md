@@ -235,3 +235,8 @@ judges.
 - Information is lost only outside the repository: the handoff check (below)
   fails on uncommitted work, untracked scripts, scratch trees with changes, a
   stale HANDOFF.md.
+- A path that runs only on another host is tested with that host's view (652): export-arm.py chose designs by this host's
+  express(), and on the Tegra the JIT (jit_on() wants x86_64) and clang's compiler gene (clang on the PATH) are never
+  expressed - the rage check took a JIT design for a plain GCC one and failed; 647's end-to-end test ran on x86-64. A
+  design's class now comes from its exported Makefile, checked against express() on x86-64, and
+  results/drafts/rage-select-as-tegra-652.py runs the choice with os.uname() and the PATH as the Tegra's.

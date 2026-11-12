@@ -1455,3 +1455,4 @@ The three GCC designs' forth-arm (portable-arm, portable-small, least-memory) bu
 bytes its lab lines ran. (1) rage-designs.md says PASS, all three byte for byte - 75/25 (646: the cross GCC 13 reproduced
 the lab's simulated bytes by the same rule; 647: end to end with stand-ins PASS).
 (2) resolved (649): wrong - a role changed, the owner gave d180351903 the smallest. The final check's: 2 of 4.
+Not scored (652): the run at 2e9343d91f failed on a tool fault before any GCC design was checked - (1) stands for the rerun.

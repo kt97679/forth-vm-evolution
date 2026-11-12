@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""lab/evolve/export-arm.py OUT DB NAME=ID[,NAME=ID...] [--gcc CC] - the 32-bit ARM build added to exported designs
+"""lab/evolve/export-arm.py OUT DB NAME=ID[,NAME=ID...] [--gcc CC] [--list] - the 32-bit ARM build added to exported designs
 (Iteration 646; the owner: engines without the C library everywhere - designs/ shipped them for x86 only, ARM pointed at
 forth-libc). After lab/evolve/export-designs.py OUT: for each design of the list without the JIT, evolve.py's own build
 at 4-byte cells for ARMv7 without the C library (engine/rt-linux-armv7.c, Iteration 570), as the lab built what the Tegra
@@ -14,12 +14,19 @@ The image must be the one exported for 4-byte cells (OUT/NAME/image32.img). Then
 only OUT/NAME: `make forth-arm` (CCARM=CC with --gcc) builds the lab's engine byte for byte (tightened as build() does),
 and it runs ': SQ DUP * ; 7 SQ .' to 49 - under qemu-arm on x86-64, natively on ARM. Exit 1 if any design fails.
 Which designs a run takes: on x86-64 without --gcc the clang ones, with --gcc the GCC ones; on an ARM host the GCC ones.
+Each design's class (clang or GCC, the JIT or not) is the lab's x86-64 export's - OUT/NAME/Makefile's `CC =` and src/jit.c
+among its sources - never this host's express(): on the Tegra jit_on() wants x86_64 and the compiler gene clang on the
+PATH, so every design looked a GCC one without the JIT (Iteration 652: the chain at 2e9343d91f took best-all-round, a
+clang JIT design, and failed on its image). On x86-64 the two must agree. --list: each design's class and whether this
+host takes it, nothing built.
 Needs on x86-64 `CROSS=1 sh tools/setup-sandbox.sh` (lld, qemu-user) and, for --gcc, gcc-arm-linux-gnueabihf. As the
 build user, in a built tree; after export-designs.py OUT, every time (it writes the Makefiles afresh)."""
 import hashlib, json, os, re, shlex, shutil, subprocess, sys, tempfile
 A = sys.argv[1:]
 gcc = None
 if '--gcc' in A: k = A.index('--gcc'); gcc = A[k + 1]; del A[k:k + 2]
+LIST = '--list' in A
+if LIST: A.remove('--list')
 if len(A) != 3: sys.exit(__doc__)
 OUT, DB = os.path.abspath(A[0]), A[1]
 PAIRS = [tuple(p.split('=', 1)) for p in A[2].split(',')]
@@ -30,7 +37,7 @@ if gcc: os.environ['EVOLVE_CC'] = gcc
 elif not NATIVE: os.environ.setdefault('EVOLVE_CC', 'gcc -m32 -fno-pie -no-pie')
 sys.argv = ['x']; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import evolve as E
 if gcc: E.ARM32 = True                                   # as on the Tegra: ccflags drops alignhot, rt() is ARM's
-E.setup()
+if not LIST: E.setup()                                  # --list builds nothing (652)
 R = {json.loads(l)['id']: json.loads(l) for l in open(DB) if l.startswith('{')}
 LOG = []
 _sh = E.sh
@@ -42,13 +49,27 @@ def sh(cmd, cwd=None, inp=None, timeout=300, env=None, cpu=60):
 E.sh = sh
 sha = lambda p: hashlib.sha256(open(p, 'rb').read()).hexdigest()
 CROSS = ' '.join(E.ARM_CROSS_CC)
+def lab_class(d):
+    """(clang, jit) as the lab's x86-64 export made the design: its Makefile's `CC =`, src/jit.c in its SRC (Iteration 652)."""
+    t = open(os.path.join(d, 'Makefile')).read(); m = re.search(r'^CC = (\S+)', t, re.M)
+    if not m: sys.exit('export-arm: %s - no `CC =` in its Makefile' % d)
+    return m.group(1) == 'clang', bool(re.search(r'^SRC = .*\bsrc/jit\.c\b', t, re.M))
 made, bad = [], 0
 for name, i in PAIRS:
-    if i not in R: sys.exit('export-arm: %s not in %s' % (i, DB))
-    g = E.canon(R[i]['genome']); e = E.express(g); clang = E.CC(g) == 'clang'
-    if e.get('jit') or clang != (not gcc and not NATIVE): continue    # the JIT is x86 code; each design its host's run
     d = os.path.join(OUT, name); sd = os.path.join(d, 'srcarm')
     if not os.path.exists(os.path.join(d, 'Makefile')): sys.exit('export-arm: %s - export-designs.py first' % d)
+    clang, jit = lab_class(d)
+    if not NATIVE and i in R:                         # on x86-64 express() is the lab's: the export must say the same
+        g = E.canon(R[i]['genome'])
+        if (clang, jit) != (E.CC(g) == 'clang', bool(E.express(g).get('jit'))):
+            sys.exit('export-arm: %s (%s) - its Makefile and express() disagree on clang or the JIT' % (name, i))
+    take = not jit and clang == (not gcc and not NATIVE)   # the JIT is x86 code; each design its host's run
+    if LIST:
+        print('%s (%s): %s, %s - %s' % (name, i, 'clang' if clang else 'GCC', 'the JIT' if jit else 'no JIT',
+              'taken here' if take else 'not this host\'s'), flush=True); continue
+    if not take: continue
+    if i not in R: sys.exit('export-arm: %s not in %s' % (i, DB))
+    g = E.canon(R[i]['genome'])
     shutil.rmtree(sd, ignore_errors=True); os.makedirs(sd)
     b = os.path.join(E.EV, 'arm-export-%s' % i); shutil.rmtree(b, ignore_errors=True); del LOG[:]
     if clang: os.environ['EVOLVE_TARGET'] = 'armv7'
@@ -80,6 +101,7 @@ for name, i in PAIRS:
     if sha(img) != sha(os.path.join(d, 'image32.img')): sys.exit('export-arm: %s - the ARM image is not image32.img' % i)
     mk = open(os.path.join(d, 'Makefile')).read().split('\n')
     mk = [l for l in mk if not l.startswith(('CCARM = ', 'SRCARM = ', 'forth-arm:', '\t$(CCARM)', '# `make forth-arm`'))]
+    mk = [l for j, l in enumerate(mk) if not (l == '' and j and mk[j - 1] == '')]   # 652: its blank line once - again idempotent
     at = next(j for j, l in enumerate(mk) if l.startswith('SRC32 = '))
     mk[at + 1:at + 1] = ['CCARM = %s' % (CROSS if clang else 'cc'),
                          'SRCARM = %s' % ' '.join('srcarm/' + s for s in sorted(os.listdir(sd)))]
@@ -96,6 +118,7 @@ for name, i in PAIRS:
     print('%s (%s, %s): srcarm %d files, the engine %d bytes' % (name, i, 'clang' if clang else 'GCC', len(os.listdir(sd)), size), flush=True)
 T = tempfile.mkdtemp(prefix='export-arm-check-')
 shutil.copy(os.path.join(E.ROOT, 'tools', 'elf_tight.py'), os.path.join(T, 'elf_tight.py'))
+if LIST: sys.exit(0)
 for name, i, esha, clang in made:
     dd = os.path.join(T, name); shutil.copytree(os.path.join(OUT, name), dd)
     r = subprocess.run(['make', '-s', '-C', dd, 'forth-arm'] + (['CCARM=' + gcc] if gcc else []), capture_output=True, text=True)

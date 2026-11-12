@@ -11220,3 +11220,14 @@ bullets of history (seeds 87-91 and their follow-ups, the retirements, the final
 make's histories, the hosts' cleaning, the old freeze list) and the closed open items 1, 2, 3b, 5, 6 and 7b moved to
 HANDOFF-HISTORY.md ("The card's state at Iteration 650"); four bullets in their place - the search's end, the ten roles,
 what the freeze needs, where the history is. Files: none under results/.
+
+## Iteration 652 - 2026-11-12 - Claude
+
+The rage check's run failed (chain 2e9343d91f, 16 minutes; on the Tegra `export-arm: 06b188f45b - the ARM image is not
+image32.img`): export-arm.py chose designs by the host's express(), and on the Tegra none shows the JIT (jit_on() wants
+x86_64) or clang (the compiler gene needs it on the PATH) - all ten looked GCC designs without the JIT, best-all-round
+first; next, rage-designs-check.sh's records default (636's) lacked 649's smallest. Fixed: each design's class from its
+exported Makefile (checked against express() on x86-64), --list printed first (no setup), the records from designs/, the
+Makefile edit idempotent. Tested: the Tegra's choice simulated (the GCC three), x86-64 and --gcc with all ten (the clang
+three and the GCC three, the same as designs/), end to end with stand-ins PASS; run-tests PASS, validate 7 of 7. Files:
+results/drafts/rage-select-as-tegra-652.py.

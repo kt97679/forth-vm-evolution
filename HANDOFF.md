@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 651.
+- master: Iteration 652.
 - **The search is over; the freeze next.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
@@ -100,6 +100,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (end to end with ssh/scp stand-ins here: PASS); its pack's rage-designs.md says PASS or FAILED. The final check's chain
   ended (648): the rage check runs from 648's bundle (or the newest). The cross GCC's
   package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
+  **Its first run failed (652)**: the chain at 2e9343d91f, 16 minutes - `export-arm: 06b188f45b - the ARM image is not
+  image32.img`. export-arm.py chose designs by the host's express(), and on the Tegra none shows the JIT (jit_on() wants
+  x86_64) or clang (the compiler gene needs it on the PATH): the ten all looked GCC designs without the JIT, best-all-round
+  first; next, rage-designs-check.sh's records default (636's) lacked 649's smallest. Fixed: each design's class from its
+  exported Makefile (checked against express() on x86-64), --list printed first, the records from designs/, the Makefile
+  edit idempotent; tested as the Tegra sees it (results/drafts/rage-select-as-tegra-652.py: the GCC three), x86-64 and
+  --gcc with all ten (the same as designs/), end to end with stand-ins PASS. **The rage check is the next run again**
+  (NEXT-RUN unchanged), from 652's bundle; a rerun clears the Tegra's leftover fve-ragecheck/repo itself.
 - **The article (604; open item 8) - last (the owner, 636): once everything else is done - the search's end, the
   freeze, the designs handed off to relf** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
@@ -119,7 +127,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): the rage check's - 1 (648). The final check's scored (648-649): 2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
+- **Predictions due** (results/predictions.md): the rage check's - 1 (648; its first run failed on a tool fault, 652). The final check's scored (648-649): 2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
   portable runs and their follow-ups, the final check's plan); remote hosts cleaned after every chain (628:
   `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
