@@ -11204,3 +11204,11 @@ builds 9 of 9 right), designs/smallest made again by export-designs.py and expor
 for ARMv7, forth-arm running under qemu-arm); make test 10 ok, make 32, make libc; run-tests PASS, validate 7 of 7. The
 handoff reads the ARMv7 column as a band (648's swing). Prediction (2) wrong: the final check's 2 of 4. Files:
 results/relf-designs-649.md, results/handoff-relf-649.md.
+
+## Iteration 650 - 2026-11-12 - Claude
+
+The freeze rehearsed again with 649's roles (the smallest d180351903), in a scratch tree with results/queued-freeze's two
+patches: validate 7 of 7 IDENTICAL, the export the same as designs/ for 10 of 10 (the three GCC designs' forth-arm by
+export-arm.py --gcc with the cross GCC 13, gcc-multilib put back after), make, make test 10 ok, make 32, make libc,
+pack-designs.py 20 of 20 right, the 40 packed engines and images the same bytes as master's iter649 package. The batch
+changes no shipped byte. Files: results/drafts/designs-sha256-649.txt (master's 40 checksums, the freeze's reference).

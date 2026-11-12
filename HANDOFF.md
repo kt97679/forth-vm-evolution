@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 649.
+- master: Iteration 650.
 - **Consolidation's retirements, done (599)** - the after-seed-86 batch applied at 1b53e88
   (results/applied-after-seed86/ORDER.md): fsys 4-5 retired; s2-s5 frozen as built artefacts (stages/frozen/, checked by
   hash in --validate; s4 and s5 refused by build() from source); lean 1, varcall 1 (sharedcall with it), doesfar 1,
@@ -168,8 +168,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   (results/drafts/freeze-retire-641.md). At the freeze: b35ae710e6 (the one -loop design in the final check) took no role (648), so `git apply` both per ORDER.md, rebuild, run-tests, validate, the winners' bytes again.
   **The freeze's build-out rehearsed (645)** in a scratch tree with both patches and today's ten roles -
   results/drafts/freeze-build-645.sh: validate 7 of 7, export-designs.py's own check, the export the same as designs/ for
-  10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40
-  packed engines and images the same bytes as master's. At the freeze: on master after `git apply`, with the final roles' records (results/relf-designs-649.md) and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
+  10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40 packed engines and images the same bytes as master's. **Again at 650 with 649's roles** (smallest d180351903):
+  validate 7 of 7, the export the same as designs/ for 10 of 10 (the GCC three's forth-arm by export-arm.py --gcc with the
+  cross GCC, gcc-multilib back after), make test 10 ok, make 32, make libc, 20 of 20 right, the 40 the bytes of
+  results/drafts/designs-sha256-649.txt (master's). The command: `sh results/drafts/freeze-build-645.sh . results/relf-designs-649.md
+  fastest-x86-64=c7c35f9c97,fastest-x86-32=ee34931cd7,best-all-round=06b188f45b,small-jit=c6f1c1331b,portable-fastest=782f3ad7ff,
+  portable-arm=3eb59b271d,portable-knee=11a56ff9e4,portable-small=ae99617f06,least-memory=fb0d57c8a2,smallest=d180351903`
+  (no spaces in the list), then /tmp/fz/pkg/SHA256SUMS against that file. At the freeze: on master after `git apply`, with the final roles' records (results/relf-designs-649.md) and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
 - **forth-arm (646; the owner: the engines without the C library everywhere)**: the lab built every engine without libc
   on all three machines (rt-linux-x86_64.c 75, rt-linux-i386.c 331, rt-linux-armv7.c 570), but designs/ shipped ARM only
   as forth-libc. Now each of the six designs without the JIT has `make forth-arm` (srcarm/, the lab's ARM command; top
