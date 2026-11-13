@@ -41,8 +41,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 655.
-- **The search is over; the freeze next.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
+- master: Iteration 656.
+- **The search is over; the freeze's batch applied (656) - the relf handoff final next.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
   the portable runs (seeds 87, 88, 91) and the last JIT runs (89, 90), each with a follow-up chain on the three machines
@@ -59,9 +59,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   lab/evolve/export-designs.py then export-arm.py write them and check the lab's bytes - rerun when a role changes. Phase 2
   (RELF.md): relf takes mechanisms and measures them with relf-ab.sh.
 - **The freeze - what remains** (618's list: results/drafts/portable-plan-602.md, "Then the freeze"; GOALS.md step 3): the
-  batch applied on master and the build-out run (the freeze's batch, below);
+  batch applied on master and the build-out run - done at 656 (the freeze's batch, below);
   the retire report as 639 left it (results/drafts/retire-report-639.md; what stays and why:
-  results/drafts/freeze-retire-641.md); the handoff final - one relf document for 611 and its four updates (650's
+  results/drafts/freeze-retire-641.md); next, the handoff final - one relf document for 611 and its four updates (650's
   suggestion) and this card; then, with the article, its portable figures recomputed from the runs' records.
 - **The final check processed (648) - no extreme gained; the smallest to d180351903 (649)** -
   results/followup-roles-seed91-final.md: the 435 (641's list) on the laptop 5, dream 7 a width, the Tegra 2 of 3 (the third
@@ -72,23 +72,18 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   sessions): taken (the owner, 649: smaller at both widths, 13,883 / 13,627 B against 13,891 / 13,675, 9 of 9 right at both) -
   results/handoff-relf-649.md, results/relf-designs-649.md, the package forth-vm-evolution-designs-iter649.tar.gz, designs/smallest
   made again (forth-arm the lab's bytes, running under qemu-arm; make test 10 of 10); 01712a2639 kept (640). The Tegra's readings swing 4-5% a pair between chains (its kernel 7.3.1 -> 7.3.3 on
-  2026-11-10; results/drafts/finalcheck-648.py). Next: the freeze - the rage check passed (654); NEXT-RUN none.
-- **The freeze's batch, queued (642-643)** - results/queued-freeze/ORDER.md, batch-check PASS on both: rtloop-after-seed91
-  (the partial run-time loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91
-  (forth/cv8-imm.4, rtimm=2 alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in; the two
-  run-time overlays no pooled-front design, stage or winner uses (results/drafts/freeze-audit-641.py). Ids: 141 of 4,892
-  change, no winner's; the 52 designs' bytes (the 28 winners and 24 front designs) the same at both widths
-  (results/drafts/build-hash-641.py). The report's other 11 values stay - four by use, seven the search space only
-  (results/drafts/freeze-retire-641.md). At the freeze: b35ae710e6 (the one -loop design in the final check) took no role (648), so `git apply` both per ORDER.md, rebuild, run-tests, validate, the winners' bytes again.
-  **The freeze's build-out rehearsed (645)** in a scratch tree with both patches and today's ten roles -
-  results/drafts/freeze-build-645.sh: validate 7 of 7, export-designs.py's own check, the export the same as designs/ for
-  10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40 packed engines and images the same bytes as master's. **Again at 650 with 649's roles** (smallest d180351903):
-  validate 7 of 7, the export the same as designs/ for 10 of 10 (the GCC three's forth-arm by export-arm.py --gcc with the
-  cross GCC, gcc-multilib back after), make test 10 ok, make 32, make libc, 20 of 20 right, the 40 the bytes of
-  results/drafts/designs-sha256-649.txt (master's). The command: `sh results/drafts/freeze-build-645.sh . results/relf-designs-649.md
-  fastest-x86-64=c7c35f9c97,fastest-x86-32=ee34931cd7,best-all-round=06b188f45b,small-jit=c6f1c1331b,portable-fastest=782f3ad7ff,
-  portable-arm=3eb59b271d,portable-knee=11a56ff9e4,portable-small=ae99617f06,least-memory=fb0d57c8a2,smallest=d180351903`
-  (no spaces in the list), then /tmp/fz/pkg/SHA256SUMS against that file. At the freeze: on master after `git apply`, with the final roles' records (results/relf-designs-649.md) and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
+  2026-11-10; results/drafts/finalcheck-648.py). Next: the relf handoff final - the freeze's batch applied (656); NEXT-RUN none.
+- **The freeze's batch, applied (656)** - results/applied-after-seed91/ORDER.md: rtloop-after-seed91 (the partial run-time
+  loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91 (forth/cv8-imm.4, rtimm=2
+  alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in. On master run-tests PASS, validate 7 of
+  7, the jail PASS; the 69 designs of results/drafts/freeze-ids-656.py (the 29 winners, d180351903 among them, and 40 front
+  designs drawn) the same engine and image bytes before and after at both widths, 0 died. The build-out
+  (results/drafts/freeze-build-645.sh, 649's ten roles; rehearsed at 645 and 650): validate 7 of 7, the export the same as
+  designs/ for 10 of 10 (the GCC three's forth-arm by export-arm.py --gcc, the cross GCC 13.3; gcc-multilib back after),
+  make test 10 ok, make 32, make libc, pack-designs 20 of 20 right, the 40 the bytes of results/drafts/designs-sha256-649.txt
+  - no shipped byte changed: designs/ and the package forth-vm-evolution-designs-iter649.tar.gz stand. A role changed later:
+  the same command (`sh results/drafts/freeze-build-645.sh . RECORDS NAME=ID,...`, no spaces in the list), its designs/
+  directory and the package made again, the handoff's records. The bullet as it stood: HANDOFF-HISTORY.md (656).
 - **forth-arm (646; the owner: the engines without the C library everywhere)**: each of the six designs without the
   JIT has `make forth-arm` (srcarm/, the lab's ARM command; top `make arm`), written by lab/evolve/export-arm.py after
   export-designs.py - the clang three (portable-fastest, portable-knee, smallest) cross-built, the lab's bytes, running
@@ -121,7 +116,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **Predictions due** (results/predictions.md): none. Scored: the rage check's (654) 1 of 1; the final check's (648-649)
   2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
-  portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 (the rage check's first
+  portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 and its freeze's-batch bullet at 655 (the rage check's first
   run); remote hosts cleaned after every chain (628: `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
 - **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
 

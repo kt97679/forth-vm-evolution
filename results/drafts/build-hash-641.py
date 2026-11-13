@@ -38,6 +38,7 @@ for f in ('results/followup-seed91-final.md', 'results/relf-designs-636.md', 're
         if l.startswith('{'): r = json.loads(l); G.setdefault(r['id'], r['genome'])
 ids = [i for i in sorted(G) if (not only or i in only) and i not in done][:lim]
 if w4: E.TWO_WIDTHS[0] = True; E.setup_widths()   # the 4-byte references at_width swaps in, as a run's start builds them
+else: E.setup()   # Iteration 656: this tree's own dumps - build-stages.sh leaves its four only (every design died without them), and dumps another tree's setup() left would hash its kernel
 cell = '4' if w4 else '8'; sha = lambda p: hashlib.sha256(open(p, 'rb').read()).hexdigest()[:16]
 n = 0
 if done: open(out, 'a').close(); s_ = open(out).read(); open(out, 'w').write(s_[:s_.rfind('}') + 1] + '\n' if '}' in s_ else '')

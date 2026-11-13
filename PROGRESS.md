@@ -11256,3 +11256,16 @@ Rage's compiler named - the owner ran 654's `ssh rage.lan 'cc --version | head -
 lines in results/, 2026-10-17 to the final check's last, kernels 7.2.11-7.3.3) - the rage check's bytes built by the
 compiler the Tegra measured with; 652's stray /tmp directory removed. results/rage-designs-654.md closed; card. Files:
 none added under results/.
+
+## Iteration 656 - 2026-11-13 - Claude
+
+The freeze's batch applied on master (the owner: yes) - results/queued-freeze moved to results/applied-after-seed91 and
+applied in ORDER.md's order: rtloop and rtimmlean, 186 lines out, 31 in. On master run-tests PASS, validate 7 of 7
+IDENTICAL, the jail PASS; the 29 winners (d180351903 new) and 40 front designs drawn 69 of 69 the same engine and image
+bytes at both widths, 0 died - build-hash-641.py now calls setup() at 8-byte cells (its first pass here died 69 of 69:
+build-stages.sh leaves only its own four dumps, and dumps another tree left would hash that tree's kernel). The build-out
+with 649's roles: the export the same as designs/ for 10 of 10 (the GCC three by export-arm.py --gcc, the cross GCC 13.3,
+gcc-multilib back after), make test 10 ok, make 32, make libc, pack 20 of 20 right, the 40 the bytes of
+designs-sha256-649.txt - no shipped byte changed. Files: results/drafts/freeze-ids-656.py,
+results/applied-after-seed91/ORDER.md, results/applied-after-seed91/rtloop-after-seed91.patch,
+results/applied-after-seed91/rtimmlean-after-seed91.patch.

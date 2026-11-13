@@ -1055,3 +1055,22 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
   --gcc with all ten (the same as designs/), end to end with stand-ins PASS. **The rage check is the next run again**
   (NEXT-RUN unchanged), from 652's bundle; a rerun clears the Tegra's leftover fve-ragecheck/repo itself. 653: the native path read through for
   other host-dependence - none; --list no longer leaves its check directory in /tmp.
+
+## The card's freeze's-batch bullet at Iteration 655 (the batch applied at 656)
+
+- **The freeze's batch, queued (642-643)** - results/queued-freeze/ORDER.md, batch-check PASS on both: rtloop-after-seed91
+  (the partial run-time loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91
+  (forth/cv8-imm.4, rtimm=2 alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in; the two
+  run-time overlays no pooled-front design, stage or winner uses (results/drafts/freeze-audit-641.py). Ids: 141 of 4,892
+  change, no winner's; the 52 designs' bytes (the 28 winners and 24 front designs) the same at both widths
+  (results/drafts/build-hash-641.py). The report's other 11 values stay - four by use, seven the search space only
+  (results/drafts/freeze-retire-641.md). At the freeze: b35ae710e6 (the one -loop design in the final check) took no role (648), so `git apply` both per ORDER.md, rebuild, run-tests, validate, the winners' bytes again.
+  **The freeze's build-out rehearsed (645)** in a scratch tree with both patches and today's ten roles -
+  results/drafts/freeze-build-645.sh: validate 7 of 7, export-designs.py's own check, the export the same as designs/ for
+  10 of 10, make / make test (10 ok) / make 32 / make libc, pack-designs.py 20 of 20 right on the nine workloads, the 40 packed engines and images the same bytes as master's. **Again at 650 with 649's roles** (smallest d180351903):
+  validate 7 of 7, the export the same as designs/ for 10 of 10 (the GCC three's forth-arm by export-arm.py --gcc with the
+  cross GCC, gcc-multilib back after), make test 10 ok, make 32, make libc, 20 of 20 right, the 40 the bytes of
+  results/drafts/designs-sha256-649.txt (master's). The command: `sh results/drafts/freeze-build-645.sh . results/relf-designs-649.md
+  fastest-x86-64=c7c35f9c97,fastest-x86-32=ee34931cd7,best-all-round=06b188f45b,small-jit=c6f1c1331b,portable-fastest=782f3ad7ff,
+  portable-arm=3eb59b271d,portable-knee=11a56ff9e4,portable-small=ae99617f06,least-memory=fb0d57c8a2,smallest=d180351903`
+  (no spaces in the list), then /tmp/fz/pkg/SHA256SUMS against that file. At the freeze: on master after `git apply`, with the final roles' records (results/relf-designs-649.md) and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).

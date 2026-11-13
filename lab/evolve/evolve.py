@@ -155,7 +155,7 @@ def gene(name, values=None, show=None, family='cv8', late=True, needs=None, conv
 # dormant sysc stay in express() as code. Genes listed above keep their place.
 gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  # nothing to fuse at run time otherwise; older than LATE
 gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
-gene('rtloop', values=range(2), needs=lambda g, e: rtloop_on(g))               # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired)
+gene('rtloop', values=range(2), needs=lambda g, e: rtloopall_on(g))            # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired; 641: with all eight only - the partial compiler retired)
 gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
 gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
 gene('tfind', needs=lambda g, e: tfind_on(g))                                  # Iteration 52: with kfast
@@ -339,8 +339,9 @@ FSYS3_REBIND = ('WRITE', 'READ', 'READ-LINE', 'BYE')
 
 def rtloop_on(g):
     """Iteration 41: does this design compile loops at run time with its loop
-    opcodes (forth/cv8-fuse-loop.4)? The gene, and any of them - each word
-    uses its own where the design has it."""
+    opcodes? The gene, and any of them. Iteration 641: the partial compiler (forth/cv8-fuse-loop.4 - each word its
+    own opcode where the design had it) retired - no pooled-front design used it; rtloop is expressed with all eight only
+    (rtloopall_on, forth/cv8-fuse-loopall.4)."""
     return g['enc'] == 'cv8' and bool(g.get('rtloop')) and any(n in g.get('ops10', []) for n in LOOP10)
 def rtloopall_on(g):
     """Iteration 43: the compact run-time loop compiler (forth/cv8-fuse-loopall.4)
@@ -415,12 +416,10 @@ def rtimm2(g):
     cv8t-fuse-imm.4). Seed 40's small designs carried rtimm=1 unexpressed: it
     waited on pairs and rtfuse, three mutations away (results/price-hybrid.md)."""
     return g['enc'] == 'cv8' and g.get('rtimm') == 2 and 'imm' in g['spec']
-RTIMM_LEAN_INTERNAL = ('IMM-OPS', 'LIT-PREV', 'SMALL-LIT?', 'IMM+')
-def rtimm_lean(g):
-    """Iteration 422 (results/wip-regmachine/README.md): rtimm=2 in a plain-CV8 design with nothing else
-    for the run-time fuser to do - no pairs, no fused tests - builds forth/cv8-imm.4 alone, not
-    cv8-fuse.4 under cv8-fuse-imm.4 (rtimm=2 passes --rtfuse: built pairs and tests fuse, rtfuse or not)."""
-    return rtimm2(g) and not (supers_in(g) or rt_tests(g)) and not express(g).get('tag2') and not rtiplus_on(g)   # 447: I+ needs the fuser
+# Iteration 643 (the freeze's batch; results/drafts/freeze-retire-641.md): rtimm_lean retired - rtimm=2 in a plain-CV8
+# design with nothing else for the fuser (no pairs, no fused tests, no tag, no I+) built forth/cv8-imm.4 alone (Iteration
+# 422, its words headerless); on no design of the pooled true front of seeds 77-91, the final set or the relf handoff (1 of
+# 4,874 alive). canon() reads such a genome's rtimm as 0 - it keeps no build of its own, so its id changes.
 RT_TESTS = ('?NBRANCH', '<?BRANCH', '=?BRANCH', 'U<?BRANCH', '<>?BRANCH', '>?BRANCH', '0<?BRANCH')     # the long fused tests: what the overlay can fuse at run time
 def rt_tests(g):
     """The fused tests this design has opcodes for - with rtfuse, its
@@ -558,6 +557,8 @@ def canon(g):
     g['ops10'] = list(g.get('ops10', []))
     for k in LATE: g.setdefault(k, 0)          # genomes recorded before them: off
     if g['fsys'] > 3: g['fsys'] = 3            # Iteration 583: fsys 4-5 retired (no design on the pooled front, no candidate) - level 3
+    if (g.get('rtimm') == 2 and g['enc'] == 'cv8' and 'imm' in g['spec'] and not (supers_in(g) or rt_tests(g))
+            and not (g.get('tag2') and g.get('bytehdr')) and not rtiplus_on(g)): g['rtimm'] = 0   # Iteration 643: rtimm_lean retired
     if g['rtloop'] > 1: g['rtloop'] = 1        # Iteration 595: rtloop 2 retired (no design on the pooled front, the shortlist or the final set) - its words named
     g['opcall'] = list(g['opcall'] or [])      # Iteration 121: a list gene, [] when off
     if g['bytehdr']: g['scale'] = 0   # byte headers never convert with scaled targets: lethal, so not tried
@@ -949,8 +950,12 @@ REQUIRE = []
 # what went: the full-header CV8 format - layout.py refuses --v8 without --bytehdr (so --cpt 0: its CV8 calls unscaled),
 # the -self dumps (cv8.4 without cv8b.4: build-stages.sh's four, setup()'s 63) and the dump choice. build() refuses
 # bytehdr 0 (a hand-made genome bypasses require()). EXPRESSED keeps it, so every id stands; cpt16's guard in canon() stays.
+# Iteration 641 (the freeze's batch; results/drafts/freeze-retire-641.md): rtloopall retired at 1 - the partial run-time
+# loop compiler (forth/cv8-fuse-loop.4, the -loop dumps, layout.py's LOOP-OPS, X10-XTS and X10-OPS) used by no design on
+# the pooled true front of seeds 77-91, the final set or the relf handoff; rtloop now expressed with all eight loop
+# opcodes only (rtloopall_on), so every front design's id stands - a genome with rtloop and fewer reads rtloop dormant.
 FROZEN = {'tail': 0, 'kstack': 0, 'tailpn': 0, 'lean': 1, 'scale': 0, 'varcall': 1, 'sharedcall': 1, 'doesfar': 1,
-          'bytehdr': 1}
+          'bytehdr': 1, 'rtloopall': 1}
 def require(g):
     if g.get('enc') == 'cv8': g = dict(g, **FROZEN)                   # Iteration 409
     if 'tag2' in REQUIRE and g.get('enc') == 'cv8': g = dict(g, tag2=1)
@@ -1073,7 +1078,6 @@ def _build(g, d):
     if jit_on(g) and express(g).get('jitimg'): opts += ['--jitimg', str(express(g)['jitimg'])]   # Iteration 341: the image's words JIT candidates
     if jit_on(g) and express(g).get('jitvar'): opts.append('--jitvar')   # Iteration 342: vf and vs given the JIT
     hl = []                                                     # words kept, their headers dropped (tools/layout.py --headerless)
-    if rtimm_lean(g): hl += RTIMM_LEAN_INTERNAL                 # Iteration 422: cv8-imm.4's internal words
     if fsys_on(g): hl += FSYS_INTERNAL                          # Iteration 202: file-sysc.4's helpers
     if fsys_level(g) >= 2:                                      # Iteration 205: file-sysc2.4's, and the kernel's uses rebound
         hl += FSYS2_INTERNAL + (FSYS3_INTERNAL if fsys_level(g) >= 3 else ())
@@ -1083,8 +1087,7 @@ def _build(g, d):
     opts += CONVERT_EXTRA
     img = os.path.join(d, 'image.img')
     fuse = ('-fuse-imm' if g.get('rtimm') and 'imm' in g['spec'] else '-fuse') if overlay(g) else ''   # rtimm: Iteration 37
-    if rtimm_lean(g): fuse = '-lit'                                                                   # Iteration 422: no pair lookup
-    fuse += '-loopall' if rtloopall_on(g) else '-loop' if rtloop_on(g) else ''                        # rtloop: 41; rtloopall: 43
+    fuse += '-loopall' if rtloopall_on(g) else ''                                                     # rtloop: 41; rtloopall: 43; 641: -loop retired
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
     dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
@@ -1993,7 +1996,7 @@ def setup():
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
     W = os.path.join(O, 'work')
-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-imm.4', 'cv8-fuse-loop.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
@@ -2002,7 +2005,7 @@ def setup():
     for name, files in [(b + k + f + l + t + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-b', ['cv8.4', 'cv8b.4']),   # 594: -self (no cv8b.4) gone with bytehdr 0
                                                                     (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
                         for k in ('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber')   # 501: -nocase retired
-                        for f in (('', '-fuse', '-fuse-imm', '-lit') if b != KW() + '-bt' else ('', '-fuse', '-fuse-imm')) for l in ('', '-loop', '-loopall')   # -lit: Iteration 422
+                        for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loopall')   # 641: -loop retired; 643: -lit (Iteration 422)
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
                         for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
@@ -2011,9 +2014,7 @@ def setup():
         boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
                        + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
                        + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
-                       + (['cv8-imm.4'] if '-lit' in name else [])     # Iteration 422: the immediates alone
-                       + (['cv8-fuse-loopall.4'] if '-loopall' in name
-                       else ['cv8-fuse-loop.4'] if '-loop' in name else [])
+                       + (['cv8-fuse-loopall.4'] if '-loopall' in name else [])
                        + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
                        + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
                        + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'

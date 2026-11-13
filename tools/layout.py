@@ -328,7 +328,7 @@ if CV8_COMPILER:
 # Every call or (POSTPONE) of any X8 goes to its X - the latest code under
 # that name: cv8.4's WHILE8 calls IF8, and with run-time fusion IF is
 # cv8-fuse.4's, as seed 7's designs were built. One exception (Iteration
-# 41): a later X8 that defers to the one it replaces (cv8-fuse-loop.4)
+# 41): a later X8 that defers to the one it replaces (cv8-fuse-loop.4, retired at 641; kept general)
 # calls an EARLIER X8 OF ITS OWN NAME - from X too, whose code it is - and
 # that call stays, keeping the earlier one; sent to X it would call itself.
 def _refs(ws, skip=(), chain=None):       # every call target and (POSTPONE) target in these words' code
@@ -498,10 +498,9 @@ if TAG2_ON:
     _pin += [G['V8_LIT8'], G['V8_LIT32'], G['V8_LIT64'], G['V8_DOVAR'], G['V8_DODOES']]
     _pin += [G['X_OPS10'][n] for n in ('BRANCH8', '?BRANCH8') if n in G['X_OPS10']]
     _pin += [G['T2_JIT']] if '--jit' in ARGV else []   # Iterations 80-81: every run-time word's first byte - no slot
-    # the run-time loop compilers (cv8-fuse-loop.4, cv8-fuse-loopall.4): their
-    # loop opcodes, pinned - loopall has no fallback, and an escaped loop
-    # opcode in loop's tables falls back to calling the colon word
-    if any(x['n'] in ('LOOPTAB', 'LOOP-OPS') for x in order):
+    # the run-time loop compiler (cv8-fuse-loopall.4; the partial cv8-fuse-loop.4
+    # retired at 641): its loop opcodes, pinned - loopall has no fallback
+    if any(x['n'] == 'LOOPTAB' for x in order):
         _pin += [G['X_OPS10'][n] for n in ('(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)', 'I', 'J', 'UNLOOP')
                  if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
     # the run-time immediates (forth/cv8t-fuse-imm.4): IMM-OPS holds one-byte
@@ -1386,7 +1385,7 @@ def emit(path):
     if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1   # 592: varcall retired at 1
     for w in order:
-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-XTS', 'X10-OPS', 'LOOPTAB') + tuple(CVARS): continue
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + cfd(w['s']), G['cv8_op']   # [DOVAR][pad], then the data
         if w['n'] in CVARS:
             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
@@ -1405,23 +1404,6 @@ def emit(path):
             _o = [new_off[_byn[n]['s']]['body'] for n in ('I', 'J', 'UNLOOP')]
             assert _o[0] < 65536 and 0 < _o[1] - _o[0] < 256 and 0 < _o[2] - _o[0] < 256, 'LOOPTAB: I J UNLOOP not neighbours %r' % _o
             data = bytes([G['X_OPS10'][n] for n in _lw] + [_o[0] & 255, _o[0] >> 8, _o[1] - _o[0], _o[2] - _o[0]])
-        elif w['n'] in ('LOOP-OPS', 'X10-XTS', 'X10-OPS'):
-            # Iteration 41: the loop opcodes for code compiled at run time
-            # (forth/cv8-fuse-loop.4) - each the design has, 0 for the rest -
-            # and I J UNLOOP with their image offsets, the lowest and highest
-            # first. SOD16_NO_RTLOOP=1 writes zeros, to measure.
-            _lw = ['(DO)', '(LOOP)', '(+LOOP)', '(?DO)', '(LEAVE)']
-            _ok = not _os.environ.get('SOD16_NO_RTLOOP')
-            _byn = {x['n']: x for x in order}
-            _x = [(new_off[_byn[n]['s']]['body'], G['X_OPS10'][n]) for n in ('I', 'J', 'UNLOOP')
-                  if _ok and n in G['X_OPS10'] and n in _byn]
-            if w['n'] == 'LOOP-OPS': data = bytes([G['X_OPS10'].get(n, 0) if _ok else 0 for n in _lw])
-            elif w['n'] == 'X10-XTS':
-                _o = [o for o, _ in _x]
-                # Iteration 423 (results/wip-regmachine): three 16-bit offsets, little-endian, no range
-                assert all(v < 65536 for v in _o), 'X10-XTS: I J UNLOOP past 64 KB'
-                data = b''.join(bytes([v & 255, v >> 8]) for v in _o + [0] * (3 - len(_o)))
-            else: data = bytes([op for _, op in _x] + [0] * (3 - len(_x)))
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time
             # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has
@@ -1454,7 +1436,7 @@ def emit(path):
             data = bytes([len(tests) + len(pairs)] + [x for e in tests for x in e]
                          + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
             assert len(data) <= 73, "superinstruction table overflows"
-        if TAG2_ON and w['n'] in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOP-OPS', 'X10-OPS', 'LOOPTAB'):
+        if TAG2_ON and w['n'] in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB'):
             # tag 2: the tables in this design's one-byte codes. An escaped
             # operation cannot sit in a byte: its entry goes (0 means none, as
             # the overlays read it). Folds at run time go entirely - their
