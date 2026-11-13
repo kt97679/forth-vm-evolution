@@ -9,7 +9,7 @@
 #   4. the pooled pick: final-pick.py over every session -> DEST/followup-pick-seedN.md (its title and command, as 611's)
 #      and its set as DEST/followup-pick-seedN.json (617: the next follow-up's PICK);
 #   5. each role against its holder: lab/evolve/followup-roles.py -> OUT/roles.txt (PRED= the iteration whose predictions
-#      it prints, HANDOFF= the handoff file, default results/handoff-relf-611.md).
+#      it prints, HANDOFF= the handoff file, default results/handoff-relf-657.md, the final one - 657).
 #   6. (Iteration 616) the rule after the follow-up: followup-roles.py --gain -> OUT/gain.txt - another portable run, or the
 #      search stops (results/drafts/portable-plan-602.md, "After the follow-up").
 # OUT/summary.md, printed at the end, is the screen to judge from. N: the portable run's seed (results/followup-seedN.md
@@ -53,13 +53,13 @@ n() { ls "$K"/s[0-9]*/"$1" 2>/dev/null | wc -l; }
 last=$(echo "$ss" | tail -n 1)
 { echo "# Seed $N's best beside the portable designs found before, re-measured on three machines, every session pooled (Iteration $I)"
   echo
-  echo "\`python3 lab/evolve/final-pick.py $C $K/s1/loadtest.md $K/s1/*.out.json --also-session $K/s2 ... s$last\` - the laptop $(n loadtest.md) sessions (10 rounds), dream $(n dream.lan-prebuilt64.out.json) at 8-byte cells and $(n dream.lan-prebuilt32.out.json) at 4-byte, the Tegra $(n rage.lan-prebuiltarm.out.json) (lab/evolve/process-followup.sh). The roles against ${HANDOFF:-results/handoff-relf-611.md}: results/followup-roles-seed$N.md."
+  echo "\`python3 lab/evolve/final-pick.py $C $K/s1/loadtest.md $K/s1/*.out.json --also-session $K/s2 ... s$last\` - the laptop $(n loadtest.md) sessions (10 rounds), dream $(n dream.lan-prebuilt64.out.json) at 8-byte cells and $(n dream.lan-prebuilt32.out.json) at 4-byte, the Tegra $(n rage.lan-prebuiltarm.out.json) (lab/evolve/process-followup.sh). The roles against ${HANDOFF:-results/handoff-relf-657.md}: results/followup-roles-seed$N.md."
   echo
   cat "$O/pick.out"; } > "$F"
 cp "$O/pick.json" "$D/followup-pick-seed$N.json"         # 617: the next follow-up's PICK (portable-followup.py)
-python3 lab/evolve/followup-roles.py "$C" "$K" --roles "$ROLES" --handoff "${HANDOFF:-results/handoff-relf-611.md}" \
+python3 lab/evolve/followup-roles.py "$C" "$K" --roles "$ROLES" --handoff "${HANDOFF:-results/handoff-relf-657.md}" \
     ${PRED:+--predictions "$PRED"} > "$O/roles.txt" 2>&1 || die "followup-roles.py ($O/roles.txt)"   # 5.
-python3 lab/evolve/followup-roles.py "$C" "$K" --roles "$ROLES" --handoff "${HANDOFF:-results/handoff-relf-611.md}" --gain \
+python3 lab/evolve/followup-roles.py "$C" "$K" --roles "$ROLES" --handoff "${HANDOFF:-results/handoff-relf-657.md}" --gain \
     > "$O/gain.txt" 2>&1 || die "followup-roles.py --gain ($O/gain.txt)"                     # 6. (616) the rule after the follow-up
 { echo; echo "the pick: $F (OUT/pick.json); its set:"; grep '^| [0-9]' "$O/pick.out" | cut -c1-160 | head -n 16
   echo; cat "$O/roles.txt"; echo; cat "$O/gain.txt"; } >> "$S"

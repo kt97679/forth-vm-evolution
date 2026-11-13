@@ -41,28 +41,27 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 656.
-- **The search is over; the freeze's batch applied (656) - the relf handoff final next.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
+- master: Iteration 657.
+- **The search is over; the freeze done - its batch applied (656), the relf handoff final (657); the article next, the last.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
   the portable runs (seeds 87, 88, 91) and the last JIT runs (89, 90), each with a follow-up chain on the three machines
   (results/followup-roles-seed87.md to -seed91.md; every run: results/progress-by-run.md) - the x86 roles final at 630, the
   portable search stopped at 640 - and the final check (641-649, below): no further gain. Each step's bullet as it stood:
   HANDOFF-HISTORY.md, "The card's state at Iteration 650" (before it, the states at 597, 598 and 647).
-- **The ten roles - the relf handoff** (results/handoff-relf-611.md - how to build, run and check a design, what relf takes -
-  with its updates 628, 631, 636 and 649; the records results/relf-designs-649.md; the package
-  forth-vm-evolution-designs-iter649.tar.gz): fastest-x86-64 c7c35f9c97, fastest-x86-32 ee34931cd7, best-all-round
+- **The ten roles - the relf handoff, final (657)** (results/handoff-relf-657.md - one document for 611 and its four updates
+  628, 631, 636 and 649, which stay as history: the roles by `make` target, how to build, run and check a design, what
+  relf takes; the records results/relf-designs-649.md; the package forth-vm-evolution-designs-iter649.tar.gz): fastest-x86-64 c7c35f9c97, fastest-x86-32 ee34931cd7, best-all-round
   06b188f45b, small-jit c6f1c1331b (these four x86 only, the JIT); portable-fastest 782f3ad7ff, portable-arm 3eb59b271d,
   portable-knee 11a56ff9e4, portable-small ae99617f06, least-memory fb0d57c8a2, smallest d180351903 - each at both widths 9
   of 9 right against s6. `make` builds them from designs/ (608; designs/README.md), each its engine's real source and a
   Makefile: `make test`, `make 32`, `make libc` and `make arm` (the six without the JIT; forth-arm, 646);
   lab/evolve/export-designs.py then export-arm.py write them and check the lab's bytes - rerun when a role changes. Phase 2
   (RELF.md): relf takes mechanisms and measures them with relf-ab.sh.
-- **The freeze - what remains** (618's list: results/drafts/portable-plan-602.md, "Then the freeze"; GOALS.md step 3): the
-  batch applied on master and the build-out run - done at 656 (the freeze's batch, below);
-  the retire report as 639 left it (results/drafts/retire-report-639.md; what stays and why:
-  results/drafts/freeze-retire-641.md); next, the handoff final - one relf document for 611 and its four updates (650's
-  suggestion) and this card; then, with the article, its portable figures recomputed from the runs' records.
+- **The freeze - done (657)** (618's list: results/drafts/portable-plan-602.md, "Then the freeze"; GOALS.md step 3): the
+  batch applied on master and the build-out run (656, below); the retire report as 639 left it
+  (results/drafts/retire-report-639.md; what stays and why: results/drafts/freeze-retire-641.md); the handoff final (657,
+  above; 650's suggestion). Its last item goes with the article: the portable figures recomputed from the runs' records.
 - **The final check processed (648) - no extreme gained; the smallest to d180351903 (649)** -
   results/followup-roles-seed91-final.md: the 435 (641's list) on the laptop 5, dream 7 a width, the Tegra 2 of 3 (the third
   would end past the deadline); none died. No role changed by speed: five holders kept; small and fast on ARMv7 by 629's
@@ -72,7 +71,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   sessions): taken (the owner, 649: smaller at both widths, 13,883 / 13,627 B against 13,891 / 13,675, 9 of 9 right at both) -
   results/handoff-relf-649.md, results/relf-designs-649.md, the package forth-vm-evolution-designs-iter649.tar.gz, designs/smallest
   made again (forth-arm the lab's bytes, running under qemu-arm; make test 10 of 10); 01712a2639 kept (640). The Tegra's readings swing 4-5% a pair between chains (its kernel 7.3.1 -> 7.3.3 on
-  2026-11-10; results/drafts/finalcheck-648.py). Next: the relf handoff final - the freeze's batch applied (656); NEXT-RUN none.
+  2026-11-10; results/drafts/finalcheck-648.py). Next: the article - the freeze done (657); NEXT-RUN none.
 - **The freeze's batch, applied (656)** - results/applied-after-seed91/ORDER.md: rtloop-after-seed91 (the partial run-time
   loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91 (forth/cv8-imm.4, rtimm=2
   alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in. On master run-tests PASS, validate 7 of
@@ -94,8 +93,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   portable-arm 15,968 B. Rage's compiler (the owner, 655): Gentoo 16.2.1_p20260926, the one all 81 rage sessions naming
   theirs carry (2026-10-17 to the final check) - the bytes the Tegra measured; 652's stray /tmp directory removed. The
   cross GCC's package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
-- **The article (604; open item 8) - last (the owner, 636): once everything else is done - the search's end, the
-  freeze, the designs handed off to relf** - one article, the ladder by hand then the genetic algorithm (the owner: English
+- **The article (604; open item 8) - next, the last step (the owner, 636: once everything else is done - the search's end,
+  the freeze, the designs handed off to relf; the handoff written final at 657)** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
   article until he approves. Part one condensed from article/article-en.md (its paraphrases checked against it), part two
   from results/article-figures-600.md and the final pick. His reason for the switch in (605: randomising had found the

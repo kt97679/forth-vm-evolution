@@ -5,7 +5,7 @@ results/drafts/followup-rehearsal-615.sh). CANDIDATES: the chain's list (results
 readings by session (chain-sessions.py's DEST, sK). R: the handoff's portable roles and their holders, role=id,... -
 fastest (the best mean over the three classes), arm (the fastest on ARMv7), knee (x86-64 and x86-32), smallarm (small,
 fast on ARMv7), memory (least memory), smallest; each holder must be in CANDIDATES. FILE names the handoff in the roles'
-heading (default results/handoff-relf-611.md). Prints each line's completeness; the noise (a design's session-to-session
+heading (default results/handoff-relf-657.md, the final one - 657). Prints each line's completeness; the noise (a design's session-to-session
 SD, a paired difference's SE); each role against its holder by the rule fixed before seed 87 (results/drafts/
 portable-plan-602.md: speed 2%, binary + image 1%, memory 4 KB) - the designs that beat a holder listed, the trades the
 chat's and the owner's; the predictions of iteration N (610: seed 87's follow-up, 614: seed 88's); dream against the laptop
@@ -39,7 +39,7 @@ if len(a) < 2 or '--roles' not in a: sys.exit(__doc__)
 opt = lambda n, d=None: a[a.index(n) + 1] if n in a else d
 CAND, SESS = a[0], a[1]
 R = dict(x.split('=', 1) for x in opt('--roles').split(','))
-HAND, PRED = opt('--handoff', 'results/handoff-relf-611.md'), opt('--predictions')
+HAND, PRED = opt('--handoff', 'results/handoff-relf-657.md'), opt('--predictions')
 GAIN, OUT0 = '--gain' in a, sys.stdout
 if GAIN: sys.stdout = io.StringIO()          # 616: every section computed, the rule's alone printed
 SOURCES = ('laptop64', 'laptop32', 'laptop64-loaded', 'laptop32-loaded', 'dream64', 'dream32', 'rage')

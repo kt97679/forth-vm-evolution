@@ -274,6 +274,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `relf-designs-631.md` - The relf handoff's ten records after seed 90 (Iteration 631), the input of pack-designs.py and export-designs.py.
 - `handoff-relf-636.md` - The relf handoff after seed 90's follow-up (Iteration 636): the knee to 11a56ff9e4 by the rule, the owner's.
 - `handoff-relf-649.md` - the relf handoff after the final check (649): the smallest to d180351903, the package iter649, the ARMv7 column read as a band.
+- `handoff-relf-657.md` - The relf handoff made final (Iteration 657): one document for 611 and its four updates - the ten roles by `make` target, each row from the chain that decided it, the genes by the frozen code, what relf takes, the files, the history (results/drafts/relf-handoff-657.py).
 - `relf-designs-636.md` - The relf handoff's ten records after seed 90's follow-up (Iteration 636), the input of pack-designs.py and export-designs.py.
 - `relf-designs-649.md` - the ten by role after 649 (the smallest d180351903): pack-designs.py's and export-designs.py's input.
 - `rage-designs-654.md` - The rage check (Iteration 654): designs/' forth-arm for the GCC three built on the Tegra - PASS, the lab's bytes and running; their ARMv7 engine sizes.

@@ -1,5 +1,7 @@
 # The relf handoff after seed 89's follow-up - three roles change (Iteration 628)
 
+> Replaced: the relf handoff is results/handoff-relf-657.md (Iteration 657) - the final one, all ten roles in one document.
+
 results/handoff-relf-611.md stands - the roles, how to build, run and check a design, what relf takes - with three of
 its ten designs replaced by seed 89's (the owner, 628; the evidence: results/followup-roles-seed89.md). The ten, by role:
 results/relf-designs-628.md; the package: forth-vm-evolution-designs-iter628.tar.gz (lab/evolve/pack-designs.py on it,

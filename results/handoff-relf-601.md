@@ -1,5 +1,7 @@
 # Forth designs for relf - the winners of forth-vm-evolution's search (Iteration 601)
 
+> Replaced: the relf handoff is results/handoff-relf-657.md (Iteration 657) - the final one, all ten roles in one document.
+
 (forth-vm-evolution, Iteration 601: the engine and image bytes are master's since consolidation's 1b53e88, the same as its
 build hashes; built and checked with lab/evolve/pack-designs.py.)
 

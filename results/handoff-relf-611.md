@@ -1,5 +1,7 @@
 # Forth designs for relf - the winners of forth-vm-evolution's search (Iteration 611)
 
+> Replaced: the relf handoff is results/handoff-relf-657.md (Iteration 657) - the final one, all ten roles in one document.
+
 (forth-vm-evolution, Iteration 611, the smallest 612: it replaces results/handoff-relf-601.md - the portable run's
 782f3ad7ff the fastest portable design, 690981ca5b kept as the fastest on ARMv7, a627b954c6 for 22420b3b61 as small and
 fast on ARMv7, and 64a7345393 for cea114f47e as the smallest - smaller at both widths, 3-7% faster in each class

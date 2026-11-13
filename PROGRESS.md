@@ -11269,3 +11269,12 @@ gcc-multilib back after), make test 10 ok, make 32, make libc, pack 20 of 20 rig
 designs-sha256-649.txt - no shipped byte changed. Files: results/drafts/freeze-ids-656.py,
 results/applied-after-seed91/ORDER.md, results/applied-after-seed91/rtloop-after-seed91.patch,
 results/applied-after-seed91/rtimmlean-after-seed91.patch.
+
+## Iteration 657 - 2026-11-13 - Claude
+
+The relf handoff made final (650's suggestion; the owner: go): results/handoff-relf-657.md, one document for 611 and its
+four updates, written by results/drafts/relf-handoff-657.py - each role's row the newest document's, checked against the
+records and designs/README.md (10 of 10); the genes by the frozen code (611's four kept designs the same lists; the four
+genes 611 left to evolve.py described); a "measured" column, the ARMv7 band, the files, the build-out command, the
+history. The six earlier handoffs point to it; followup-roles.py's default label 657's; card. Files:
+results/handoff-relf-657.md, results/drafts/relf-handoff-657.py.

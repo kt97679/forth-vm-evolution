@@ -1,5 +1,7 @@
 # The relf handoff after the final check - the smallest changes (Iteration 649)
 
+> Replaced: the relf handoff is results/handoff-relf-657.md (Iteration 657) - the final one, all ten roles in one document.
+
 results/handoff-relf-611.md stands - the roles, how to build, run and check a design, what relf takes - with 628's three
 (results/handoff-relf-628.md), 631's small and fast on ARMv7 (results/handoff-relf-631.md), 636's knee
 (results/handoff-relf-636.md) and now the smallest to d180351903 (the owner, 649: the final check's one candidate without a
