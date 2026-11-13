@@ -547,7 +547,7 @@ compiler's inverted copy went in one step and stayed gone.
 
 The repository is at [github.com/kt97679/forth-vm-evolution](https://github.com/kt97679/forth-vm-evolution);
 every number above comes out of it, and `make` at its top builds the
-nine designs of the table in section 15 from source. I would rather be
+ten designs of the table at the end of section 17 from source. I would rather be
 corrected in the comments than be wrong quietly.
 
 ## References

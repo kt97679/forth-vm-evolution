@@ -4,7 +4,7 @@
 Iteration 600 from the runs' records on the true fronts - results/article-figures-600.md (results/drafts/article-figures-600.py):
 the series from seed 77 that the stopping rule ended, its confirmation runs, the random baseline, the final set. In the
 author's register (article/AUTHOR-STYLE.md): first person, commands as typed, numbers flat, what was not isolated said
-plainly. [check] marks a sentence the owner should confirm - one left (602).*
+plainly. [check] marks a sentence the owner should confirm - none left (659).*
 
 ## The design space
 
@@ -93,8 +93,9 @@ readings set beside it, the stopping rule's numbers, and the next run's line wri
 
 - The fastest ten of a front, measured again after the run, come out 5-7% slower than in it (seeds 77-83: 1.051-1.073;
   the JIT designs 1.034-1.057, the rest 0.991-1.016). Not the clock: seed 77's clock test, with the cycle counters, found
-  the cores no slower beside the run's compiles than alone (time 0.990, cycles 1.002). [check: the reading of the rest -
-  the winner's curse, or a cost outside user space (results/drafts/fast-end-offset-554.md, HANDOFF open item 4)]
+  the cores no slower beside the run's compiles than alone (time 0.990, cycles 1.002). The rest left
+  unread - the winner's curse, or a cost outside user space (results/drafts/fast-end-offset-554.md, HANDOFF open item 4);
+  the article names no cause (606; the [check] closed, 659).
 - On other machines - an Intel i7-6700 at both widths and an ARMv7 board, a Tegra - a sample of each run's front ranks
   close to the laptop's order (seed 83 on the i7: Spearman 0.932-0.993). The final pick's 40 candidates, mostly from the fast
   end, measured in 42 sessions on the i7 and 6 on the Tegra: Spearman 0.92 against the laptop at 32 bits, 0.47 at 64,

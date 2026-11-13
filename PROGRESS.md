@@ -11291,3 +11291,14 @@ The final check's record said 30 designs smaller than the smallest holder, 29 wi
 caught on its own stage, the rest IDENTICAL. Two shell tests left their scripts in /tmp (10 a run): removed at their end
 now (0). A copied built tree wrote back into this one - the lesson in HANDOFF-REFERENCE.md. Files:
 results/article-figures-658.md, results/drafts/article-figures-658.py.
+
+## Iteration 659 - 2026-11-13 - Claude
+
+The article's consistency pass (the owner: yes). tools/article-check.py: English and Russian carry the same numbers in all
+23 sections (its self-test plants a changed digit and a dropped number and finds exactly those); of the English draft's
+197 distinctive figures 195 are in the records as written, and the other two, 13,380 and 8,108, come out of the build at
+a105e59, the ladder article's commit. Part one's image sizes regenerate there and not at master: the kernel changed after
+it and every run-only image grew 6-12% (s6 at 8-byte cells 7,609 then, 8,385 now) - the owner's call, a tag and a
+sentence or part one measured again. Both drafts' last paragraph: ten designs, the table at the end of section 17. The
+method draft's last [check] closed: the article names no cause for the fast end. Files: tools/article-check.py,
+results/article-check-659.md.

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 658.
+- master: Iteration 659.
 - **The search is over; the freeze done - its batch applied (656), the relf handoff final (657), the article's portable figures (658); the article next, the last.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
@@ -104,9 +104,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   found, and the question now asks about those). Two ASCII diagrams (607, results/drafts/ascii-figures-607.py, no
   pictures - the owner): each run's hypervolume, the pooled front as speed against size. The fast end's 5-7% out of both (606, the owner:
   process, not result - it cancels in every comparison). Section 17 finished in both drafts (658: seeds 88-91, the final check, the ten roles'
-  table; results/article-figures-658.md, 22 of 22 figures as the chains' documents have them). Waiting: his review; a Russian reader's pass
+  table; results/article-figures-658.md, 22 of 22 figures as the chains' documents have them). `python3 tools/article-check.py --self-test`, exit 0
+  after every edit of the drafts (659): the same numbers in both, section by section; 195 of the English 197 distinctive
+  figures in the records, the other two from the build at a105e59 - where part one's sizes regenerate, not at master (the
+  run-only images grew 6-12% since; results/article-check-659.md): his call, a tag and a sentence or part one measured
+  again. Waiting: his review; a Russian reader's pass
   (AUDIENCE.md: a translation-shaped text is a named failure on Habr); prompts 04 and 05 before publishing; the KDPV image.
-  The method draft (results/drafts/article-method-548.md): one [check] left, the offset; the follow-up chain's tool
+  The method draft (results/drafts/article-method-548.md): no [check] left (659); the follow-up chain's tool
   ready (lab/evolve/portable-followup.py).
 - **Across machines - the owner's terms (576; GOALS.md)**: lose no good design or gene. final-pick.py step 5: the three
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each

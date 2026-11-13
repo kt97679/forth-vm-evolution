@@ -211,6 +211,7 @@ Each subject oldest first; a script or patch beside the document it made.
 ### The stopping rule, the end of the phase, the article
 
 - `drafts/article-method-548.md` - The article's method section, a draft (Iteration 548): the design space, the objectives, the search, the audited shortcuts, the true front, the checks, the stopping rule, the baseline - its figures recomputed at 600.
+- `article-check-659.md` - The article's figures checked (Iteration 659): the same numbers in both drafts, 195 of 197 distinctive figures in the records; part one's image sizes regenerate at a105e59, not at master.
 - `article-figures-658.md` - Section 17's figures after seed 87 recomputed (Iteration 658): seeds 88-91 and the final check from the chains' readings, the ten roles from handoff-relf-657.md - 22 of 22 as the chains' documents have them.
 - `article-figures-600.md` - The method section's figures recomputed (Iteration 600): the series from seed 77, the confirmation and random runs, the shortcuts' audits, the final set, across machines - from the ledger, the results files and the chains' readings.
 - `drafts/confirmation-pool-559.md` - The confirmation run's founders, no good design missed (Iteration 559, the owner): --carry's tolerance front drops chain-hidden designs - the strict front instead, every archived run, the pool pre-flighted.
