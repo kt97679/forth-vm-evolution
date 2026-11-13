@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 654.
+- master: Iteration 655.
 - **The search is over; the freeze next.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
@@ -96,10 +96,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **The rage check passed (654)** - results/rage-designs-654.md (results/drafts/rage-pack-654.py on the archive): the
   chain at c8c423671f (652's fix; the first run failed, 652), 17 minutes; on the Tegra the GCC three taken by their
   Makefiles, each `make forth-arm` the lab's bytes and running - least-memory 11,584 B, portable-small 13,440 B,
-  portable-arm 15,968 B. Left on rage: the pack names no compiler (GCC 16.2.1 through the final check), and 652's
-  --list left /tmp/export-arm-check-* (653 fixed it); the owner's, once:
-  `ssh rage.lan 'cc --version | head -1; rm -rf /tmp/export-arm-check-*'`. The cross GCC's package removes gcc-multilib
-  (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
+  portable-arm 15,968 B. Rage's compiler (the owner, 655): Gentoo 16.2.1_p20260926, the one all 81 rage sessions naming
+  theirs carry (2026-10-17 to the final check) - the bytes the Tegra measured; 652's stray /tmp directory removed. The
+  cross GCC's package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
 - **The article (604; open item 8) - last (the owner, 636): once everything else is done - the search's end, the
   freeze, the designs handed off to relf** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder

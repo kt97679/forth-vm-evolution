@@ -43,8 +43,13 @@ design without the JIT has its ARM build checked; the four JIT designs have none
   run's commit. fve-ragecheck/build.log and check.log stay there by design (rage-check.sh keeps the log on a pass).
 - The pack's rage-designs.log is empty by design: rage-designs.py folds stderr into rage-designs.md.
 
-The owner's, once - the compiler named for the relf handoff, the directory removed:
-`ssh rage.lan 'cc --version | head -1; rm -rf /tmp/export-arm-check-*'`
+Closed (Iteration 655): the owner ran `ssh rage.lan 'cc --version | head -1; rm -rf /tmp/export-arm-check-*'` - the
+directory removed, and the compiler `cc (Gentoo 16.2.1_p20260926 p1) 16.2.1 20260926`: the one string all 81 rage
+sessions that name their compiler carry, from 2026-10-17 (results/xcheck-seed56.md) to the final check's last
+(results/chain-followup91-final/s2/rage.lan-prebuiltarm.md, 2026-11-12 00:29 UTC), across kernels 7.2.11 to 7.3.3. So
+the bytes this check compared were built by the compiler every rage session on record names. The count:
+`grep -rHoE 'armv7l, [^;]+; cc [^;]+; Python [^;]+; measured [0-9-]+ [0-9:]+ UTC' results/` - 104 lines, 81 distinct
+times, one compiler.
 
 ## The prediction (results/predictions.md, 648)
 

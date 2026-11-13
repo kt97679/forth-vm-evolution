@@ -11248,3 +11248,11 @@ running - least-memory 11,584 B, portable-small 13,440 B, portable-arm 15,968 B:
 design without the JIT. Prediction (1) right - 1 of 1; the final check's (2), written under the rage check's heading at
 649, moved to its own. NEXT-RUN none - the freeze next. Left on rage, the owner's: the compiler's version (the pack names
 none) and 652's /tmp/export-arm-check-* (653 fixed). Files: results/rage-designs-654.md, results/drafts/rage-pack-654.py.
+
+## Iteration 655 - 2026-11-13 - Claude
+
+Rage's compiler named - the owner ran 654's `ssh rage.lan 'cc --version | head -1; rm -rf /tmp/export-arm-check-*'`:
+`cc (Gentoo 16.2.1_p20260926 p1) 16.2.1 20260926`, the one string all 81 rage sessions that name their compiler carry (104
+lines in results/, 2026-10-17 to the final check's last, kernels 7.2.11-7.3.3) - the rage check's bytes built by the
+compiler the Tegra measured with; 652's stray /tmp directory removed. results/rage-designs-654.md closed; card. Files:
+none added under results/.
