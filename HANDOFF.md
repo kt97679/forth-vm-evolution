@@ -41,8 +41,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 657.
-- **The search is over; the freeze done - its batch applied (656), the relf handoff final (657); the article next, the last.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
+- master: Iteration 658.
+- **The search is over; the freeze done - its batch applied (656), the relf handoff final (657), the article's portable figures (658); the article next, the last.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
   the portable runs (seeds 87, 88, 91) and the last JIT runs (89, 90), each with a follow-up chain on the three machines
@@ -61,7 +61,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 - **The freeze - done (657)** (618's list: results/drafts/portable-plan-602.md, "Then the freeze"; GOALS.md step 3): the
   batch applied on master and the build-out run (656, below); the retire report as 639 left it
   (results/drafts/retire-report-639.md; what stays and why: results/drafts/freeze-retire-641.md); the handoff final (657,
-  above; 650's suggestion). Its last item goes with the article: the portable figures recomputed from the runs' records.
+  above; 650's suggestion). Its last item, the article's portable figures recomputed from the runs' records: done (658).
 - **The final check processed (648) - no extreme gained; the smallest to d180351903 (649)** -
   results/followup-roles-seed91-final.md: the 435 (641's list) on the laptop 5, dream 7 a width, the Tegra 2 of 3 (the third
   would end past the deadline); none died. No role changed by speed: five holders kept; small and fast on ARMv7 by 629's
@@ -103,8 +103,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   fixed-length precedents - Rose's ART-FORTH, Rochester 1986, uxForth, Enforth - only their variable-length forms not
   found, and the question now asks about those). Two ASCII diagrams (607, results/drafts/ascii-figures-607.py, no
   pictures - the owner): each run's hypervolume, the pooled front as speed against size. The fast end's 5-7% out of both (606, the owner:
-  process, not result - it cancels in every comparison). Waiting: section 17's smallest row (both drafts: 64a7345393's 13,891) to d180351903's at the figures
-  pass (649); his review; section 17, the portable run and its follow-up, written in both drafts (612); a Russian reader's pass
+  process, not result - it cancels in every comparison). Section 17 finished in both drafts (658: seeds 88-91, the final check, the ten roles'
+  table; results/article-figures-658.md, 22 of 22 figures as the chains' documents have them). Waiting: his review; a Russian reader's pass
   (AUDIENCE.md: a translation-shaped text is a named failure on Habr); prompts 04 and 05 before publishing; the KDPV image.
   The method draft (results/drafts/article-method-548.md): one [check] left, the offset; the follow-up chain's tool
   ready (lab/evolve/portable-followup.py).

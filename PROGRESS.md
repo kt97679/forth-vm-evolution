@@ -11278,3 +11278,16 @@ records and designs/README.md (10 of 10); the genes by the frozen code (611's fo
 genes 611 left to evolve.py described); a "measured" column, the ARMv7 band, the files, the build-out command, the
 history. The six earlier handoffs point to it; followup-roles.py's default label 657's; card. Files:
 results/handoff-relf-657.md, results/drafts/relf-handoff-657.py.
+
+## Iteration 658 - 2026-11-13 - Claude
+
+The article's figures pass (the freeze's last item; the owner: yes): results/drafts/article-figures-658.py recomputes
+section 17's figures after seed 87 from the chains' readings (followup-roles.py on chains 88-91 and the final check,
+smallarm-pool-629.py, gain-bridge-640.py) - 22 of 22 as the chains' documents have them; section 17 finished in both
+drafts (seeds 88-91, the final check, the ten roles' table from handoff-relf-657.md), section 15's table pointing to it.
+The final check's record said 30 designs smaller than the smallest holder, 29 with a trade; its readings list 34 and 33
+(d180351903 the one without either way) - corrected in place; the article gives no count. Validate's frozen comparison
+(599) shown to fail (prompts/15): a bit in an engine's .comment, a byte appended to an image, a bit in a build image - each
+caught on its own stage, the rest IDENTICAL. Two shell tests left their scripts in /tmp (10 a run): removed at their end
+now (0). A copied built tree wrote back into this one - the lesson in HANDOFF-REFERENCE.md. Files:
+results/article-figures-658.md, results/drafts/article-figures-658.py.

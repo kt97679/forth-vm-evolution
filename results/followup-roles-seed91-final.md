@@ -24,8 +24,8 @@ results/drafts/finalcheck-648.py.
   a627b954c6, the holder before 631: -3.21% +/- 0.07% in this chain (-3.28%, -3.14%); but every session of every chain
   that measured both, 10: +1.21% +/- 0.84% (the 8 before this chain +2.34% +/- 0.51%) - not by the rule. See "The Tegra
   between chains".
-- Smallest: 64a7345393 (13,891 B). 30 smaller designs, 29 with a trade - the 13,691 B five (01712a2639 among them, -1.44%):
-  x86-32 +18-19%; the 13,715 B five (-1.27%): x86-32 +15-17%; the rest ARMv7 +3-12% or x86-32 +3-9%. **The one without:
+- Smallest: 64a7345393 (13,891 B). 34 smaller designs, 33 with a trade (Iteration 658: the readings' count - 648 wrote 30 and 29) - the 13,691 B five (01712a2639 among them, -1.44%):
+  x86-32 +18-19%; the 13,715 B six (-1.27%): x86-32 +15-17%; the rest ARMv7 +3-12% or x86-32 +3-9%. **The one without:
   d180351903** (seed 91's rest; 13,883 B, -8 B: engine +48, image -56; memory the same): x86-64 -0.59% +/- 0.29% - the
   machines split, the laptop +3.40% +/- 0.09% (5 of 5 sessions), dream -4.43% +/- 0.57%, as the knee's did (636); x86-32
   -3.85% +/- 0.25% (the laptop -5.09%, dream -2.59%, both every session); ARMv7 -3.30% +/- 0.68% (2 sessions, one chain).

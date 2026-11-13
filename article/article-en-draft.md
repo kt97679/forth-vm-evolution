@@ -387,6 +387,9 @@ speed:
 | smallest | 1.994 | 1.934 | 1.982 | **13,939** | 116 KB | no |
 | s6, where the ladder ended | 1 | 1 | 1 | 22,265 | | no |
 
+Later runs changed four of these rows and added two roles; the final
+table closes section 17.
+
 The JIT is x86 only; on the Tegra a JIT design runs without it, which is
 why the fastest designs on x86 are slower there than the best without
 it. No design
@@ -451,8 +454,68 @@ and 1% faster than the one before it, for 4 KB more memory. Least
 memory did not move.
 
 So a search for portable designs alone does beat what came before, but
-by a few percent, not by a step. Whether a second such run finds more
-is the next test.
+by a few percent, not by a step.
+
+A second such run, seed 88, went another 21 hours. Inside the run it
+found a design 2.9% faster at 32 bits than anything before; measured
+again side by side with the best earlier designs, the same design was
+2.1% slower. Nothing else among its best thirty passed a threshold, and
+by the rule fixed in advance the portable search stopped.
+
+It did not stay stopped, and not because of a portable run. While each
+later run went, the other two machines took a quick measurement of the
+designs the run before had bred but nobody had yet measured side by
+side. The next run, seed 89, had the JIT back, and among the designs it
+bred was 3eb59b271d: without the JIT, and 2.8% faster on ARMv7 than the
+design holding that role - something neither portable run had managed.
+The quick pass over seed 88's rest turned up ae99617f06, which took
+small and fast on ARMv7, though only after six Tegra sessions pooled:
+2.3% faster with a standard error of 0.42%, just past the 2% bar. Seed
+90, the other JIT run, gained nothing, but the quick pass over seed 89's
+rest found 11a56ff9e4. It took the place of section 15's fastest design
+without the JIT on x86 (20,901 bytes), kept by then as the small one
+fast on x86: 5.45% smaller, 3.6% faster at 32 bits and 1.5% slower at
+64 - inside the threshold.
+
+A role changing hands counts as a gain, so a third portable run
+followed, seed 91. Against the short list it was compared with, it
+gained twice. Against everything measured before - for speed, bridged
+through the designs both measurements shared - its fastest at 4-byte
+cells was 0.7% ahead, where 2% was needed, and its smallest 0.13%
+smaller, where 1% was. The portable search stopped for good.
+
+The last measurement before the designs were frozen put 435 of them
+side by side on all three machines for 26 hours: the 72 on the final
+front that nobody had measured across machines, the rest of seed 91,
+the role holders and the best of the earlier re-measurements. No
+extreme gained - the run's fastest came out 0.7-2.8% behind the best
+found before, the fast end optimistic once more. Every design smaller
+than the smallest holder but one paid for it in speed; the smallest of
+them, 1.4% smaller, by 18-19% at 32 bits. The one that did not,
+d180351903, is 8 bytes smaller at 8-byte cells and 48 at 4, with no
+speed traded, and it became the smallest.
+
+So: three portable runs, the first better than what came before by a
+few percent, the second only through a design outside its best thirty,
+the third not at all - and the fastest design on ARMv7 came from a run
+with the JIT in it. These are the designs the search ended with:
+
+| what it wins | x86-64 | x86-32 | ARMv7 | bytes | memory | JIT |
+|---|---|---|---|---|---|---|
+| fastest on x86-64 | **0.185** | 0.207 | 0.540 | 38,898 | 244 KB | yes |
+| fastest on x86-32 | 0.189 | **0.193** | 0.476 | 41,990 | 224 KB | yes |
+| best mean of the three | 0.193 | 0.201 | 0.464 | 38,102 | 236 KB | yes |
+| smallest with the JIT | 0.225 | 0.235 | 0.577 | 29,306 | 208 KB | yes |
+| fastest without the JIT, on x86 and on average | 0.343 | 0.339 | 0.372 | 26,242 | 148 KB | no |
+| fastest on ARMv7 | 0.378 | 0.443 | **0.320** | 22,522 | 132 KB | no |
+| fast on x86 and small | 0.363 | 0.377 | 0.477 | 19,761 | 140 KB | no |
+| small and fast on ARMv7 | 0.450 | 0.444 | 0.351 | 18,599 | 124 KB | no |
+| least memory | 0.916 | 0.884 | 0.521 | 17,830 | **104 KB** | no |
+| smallest | 1.926 | 1.784 | 1.717 | **13,883** | 116 KB | no |
+| s6, where the ladder ended | 1 | 1 | 1 | 22,265 | | no |
+
+On ARMv7 the designs with the JIT run without it: the JIT is written
+for x86 only. Bytes are the engine and the image at 8-byte cells.
 
 ## What still bothers me
 

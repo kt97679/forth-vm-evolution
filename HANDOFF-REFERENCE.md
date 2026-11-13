@@ -240,3 +240,7 @@ judges.
   expressed - the rage check took a JIT design for a plain GCC one and failed; 647's end-to-end test ran on x86-64. A
   design's class now comes from its exported Makefile, checked against express() on x86-64, and
   results/drafts/rage-select-as-tegra-652.py runs the choice with os.uname() and the PATH as the Tegra's.
+- A copy of a built tree is not a scratch tree (658): build/work/ holds absolute links into the clone (forth/*.4,
+  tests/core/*.fth), so validate run in a `cp -a` copy wrote through them - 17 forth/*.4 files here rewritten, the same
+  bytes, newer times - and the stale-build guard (evolve.py setup()) failed four checks in the next run-tests. A scratch
+  tree is a clone and a build (`SCRATCH=`); after such a slip, build again and rerun the checks.
