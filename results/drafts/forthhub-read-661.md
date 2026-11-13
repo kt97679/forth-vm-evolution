@@ -21,7 +21,7 @@ For the owner - changes a ForthHub reader would want, not made:
    implementer takes home, and the article now gives only roles and numbers.
 2. (Done, Iteration 662: section 18.) A closing paragraph on what would carry into another Forth, from the measured steps: the size came from the byte
    code and the byte headers, the speed from specialisation and the JIT.
-3. Section 12's plumbing - the NEXT-RUN line, "experiment review-checks.py spread" - is the workflow, not the result;
+3. (Done, 664: plain words instead of the run file's line; section 14's raw line too.) Section 12's plumbing - the NEXT-RUN line, "experiment review-checks.py spread" - is the workflow, not the result;
    the one command is enough.
 4. (Done, 663: one standard error of the ratio over the five builds - tools/collect-results.sh.) Section 5's "error 0.021" does not say what kind (the spread of the five builds?).
 5. (Done, 663: CV8 is compressed-pointer, variable-length, 8-bit units - forth/cv8.4; CPT16 compressed-pointer

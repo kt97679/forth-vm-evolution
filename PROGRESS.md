@@ -11341,3 +11341,10 @@ is part two's Tegra (the owner): "the Tegra" throughout, named once in section 4
 `CALL,` from forth/cv8.4 and the CV8 dispatch from engine/vm-lab.c, the variant s6 builds, without the profiling hooks.
 Getting each winner (the owner: absolutely clear): a `make` column in the final table and, under it, the clone, build and
 run commands and the other builds' names. tools/article-check.py --self-test exit 0, 24 sections the same.
+
+## Iteration 664 - 2026-11-13 - Claude
+
+Section 12's plumbing out (the owner: yes, after the clarification): what a run does in plain words - the tests and the
+byte-identical rebuild, the evolution for a set number of hours, the front measured again, both widths, from the
+hand-made designs, each run named by its seed - instead of the run file's line and its tokens; section 14's raw line
+for the random run is "seed 85" in the sentence. Both drafts; tools/article-check.py --self-test exit 0.

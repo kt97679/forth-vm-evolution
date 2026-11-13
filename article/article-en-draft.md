@@ -311,20 +311,12 @@ less on them, and each has an audit:
   there; one in ten runs in full anyway. Of 6,934 audited, none reached
   the front.
 
-A run is one command on the laptop, an AMD Ryzen 7 PRO 8840HS:
-
-    sh lab/evolve/next-run.sh
-
-It reads its line from lab/evolve/NEXT-RUN - one of the runs below,
-each named by its random seed:
-
-    seed 77 12h widths noevolved then experiment review-checks.py spread ...
-
-and runs a chain: the tests and the byte-identical rebuild, the
-evolution, the front measured again, and one archive to send back.
-`widths` selects at both cell widths; `noevolved` carries nothing in
-from earlier runs, so each run starts from the hand-made designs, and
-the runs are replicates rather than one long run.
+A run is one command on the laptop, `sh lab/evolve/next-run.sh`: the
+tests and the byte-identical rebuild, the evolution for a set number of
+hours, then the front measured again. Each run selects at both cell
+widths and starts from the hand-made designs, carrying nothing in from
+earlier runs, so the runs are replicates rather than one long run; each
+is named by its random seed.
 
 ## 13. When to stop
 
@@ -361,9 +353,7 @@ designs carried in.
 
 A random search answers that. One more run, ten hours, in which every
 child was a fresh random genome, measured exactly as the search's
-children were - nothing learned, nothing bred:
-
-    seed 85 10h widths noevolved random
+children were - nothing learned, nothing bred: seed 85.
 
 Its 35,760 random designs left a front of 30, against 180-370 in the
 search's runs. Its hypervolume was 0.55 of the search's median; its
