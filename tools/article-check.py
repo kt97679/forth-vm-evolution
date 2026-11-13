@@ -4,7 +4,7 @@ check of prompts/04). Two checks, on both drafts as they stand:
 
 1. The same numbers in English and Russian (article/article-en-draft.md, article/article-ru-draft.md), section by section
    - the headings pair in order, and the counts must match. Every number outside the code blocks: thousands written 26,242
-   or 26 242, a range 3-7 or 3–7 as two numbers, a sign dropped, a possessive's 's dropped, the number of 4-byte or
+   or 26 242 (and followed by a comma, 26,242, - Iteration 662), a range 3-7 or 3–7 as two numbers, a sign dropped, a possessive's 's dropped, the number of 4-byte or
    4-байтной kept, a ratio's x dropped (0.31x). Numbers written as words are not seen. A section whose
    numbers differ is named with the difference, each side's numbers the other lacks.
 2. Every distinctive figure of the English draft - three significant digits or more, outside the code blocks, years
@@ -37,7 +37,7 @@ def sections(text, sep):
             out.append((head, nums))
             head, nums = line.strip(), []
             continue
-        line = re.sub(r'(?<![\d.,])(\d{1,3})((?:%s\d{3})+)(?![\d.,])' % re.escape(sep),
+        line = re.sub(r'(?<![\d.,])(\d{1,3})((?:%s\d{3})+)(?!\d|[.,]\d)' % re.escape(sep),
                       lambda m: m.group(1) + m.group(2).replace(sep, ''), line)
         for tok in line.split():
             tok = re.sub(r"(?<=\d)[x×]$", '', re.sub(r"['’]s$", '', tok.strip(STRIP)).strip(STRIP))

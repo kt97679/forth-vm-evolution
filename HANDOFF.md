@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 661.
+- master: Iteration 662.
 - **The search is over; the freeze done - its batch applied (656), the relf handoff final (657), the article's portable figures (658); the article next, the last.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
@@ -108,8 +108,8 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   after every edit of the drafts (659): the same numbers in both, section by section; 195 of the English 197 distinctive
   figures in the records, the other two from the build at a105e59 - where part one's sizes regenerate, not at master (the
   run-only images grew 6-12% since; results/article-check-659.md): both drafts cite a105e59 for part one (660). Read as a ForthHub member would (661): the
-  diagrams aligned, every abbreviation explained before use; eight suggestions for him, not made, in
-  results/drafts/forthhub-read-661.md. Waiting: his review; a Russian reader's pass
+  diagrams aligned, every abbreviation explained before use; eight suggestions for him in
+  results/drafts/forthhub-read-661.md, 1 and 2 done (662: what the ten are made of; section 18, what carries over). Waiting: his review; a Russian reader's pass
   (AUDIENCE.md: a translation-shaped text is a named failure on Habr); prompts 04 and 05 before publishing; the KDPV image.
   The method draft (results/drafts/article-method-548.md): no [check] left (659); the follow-up chain's tool
   ready (lab/evolve/portable-followup.py).

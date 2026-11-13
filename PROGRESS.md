@@ -11321,3 +11321,13 @@ JIT, ANS Forth, COLE and NSGA-II expanded at first use; the front defined before
 correlation, portable and the machines said at first use; the corpus 616 cases at the ladder's commit, 661 now; section
 15's 21 designs the set kept then. tools/article-check.py --self-test exit 0. Eight suggestions for the owner, not
 made: results/drafts/forthhub-read-661.md. Files: results/drafts/forthhub-read-661.md.
+
+## Iteration 662 - 2026-11-13 - Claude
+
+The reader's first two suggestions (the owner: proceed). Under the final table, what the ten are made of - their genes
+as expressed (results/handoff-relf-657.md's lists; a record's raw genome is not what is built: portable-arm's lists 23
+fused pairs, its engine has 6): all CV8 with folding, the encoding free and no winner leaving it; byte headers fixed for
+every CV8 design (409); the top of the stack in a register in the four JIT designs and the knee; specialised opcodes of
+every kind, four kinds, or none; one fused pair or none in nine; seven built by clang, five with -Os. Section 18, what
+carries over, from the article's own figures. Both drafts. tools/article-check.py reads a thousands number before a
+comma (26,242,) as one number now - it had split it; --self-test exit 0, all 24 sections the same.

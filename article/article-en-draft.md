@@ -537,6 +537,33 @@ to a role:
 On ARMv7 the designs with the JIT run without it: the JIT is written
 for x86 only. Bytes are the engine and the image at 8-byte cells.
 
+What they are made of, from their genomes (designs/ holds each one's):
+all ten are CV8 and fold a primitive into the `EXIT` after it - the
+search could still pick cells, SOD16 or CPT16, and no winner did. Byte
+headers are in all ten too, but those I fixed for every CV8 design; the
+search did not choose them. The rest divides them. The four with the
+JIT and the small fast one on x86 keep the top of the stack in a
+register; the other five keep the whole stack in memory. The fast
+designs without the JIT have every kind of specialised opcode, the JIT
+designs four of the five kinds, the three smallest none at all. Fused
+pairs hardly figure: nine of the ten carry one or none, the fastest on
+ARMv7 six. And seven of the ten are built by clang, five with -Os.
+
+## 18. What carries over
+
+For anyone building a small Forth, this is what the measurements say,
+in order of what each step bought. Size comes from the encoding: the
+byte code took the image to 0.469 of the cells', the byte headers to
+0.313 (sections 6 and 8), and every one of the ten winners is that byte
+code. Speed without a JIT comes from specialisation: on x86 it bought
+three to four times what the move to the byte code did (section 7), and
+the fastest designs without the JIT have every kind of it. The JIT buys
+nearly twice the speed on x86 - 0.185 against 0.343 at 64 bits - for
+38,898 bytes against 26,242, and nothing on a machine it does not
+support: on ARMv7 that design is at 0.540 and the best portable one at
+0.320. The top of the stack in a register, the usual first step, is in
+all four JIT designs and in one of the six without.
+
 ## What still bothers me
 
 **Whether any of this is new.** Technique by technique, nothing in the

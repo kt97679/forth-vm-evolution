@@ -16,10 +16,10 @@ an average ForthHub member's side. Done in both drafts (article/article-en-draft
 
 For the owner - changes a ForthHub reader would want, not made:
 
-1. What the winners are made of: under the final table, a few lines on each kind of design - its encoding, the top of
+1. (Done, Iteration 662: the paragraph under the final table.) What the winners are made of: under the final table, a few lines on each kind of design - its encoding, the top of
    the stack in a register, the fused pairs, the JIT (designs/README.md has every design's genes). That is what a Forth
    implementer takes home, and the article now gives only roles and numbers.
-2. A closing paragraph on what would carry into another Forth, from the measured steps: the size came from the byte
+2. (Done, Iteration 662: section 18.) A closing paragraph on what would carry into another Forth, from the measured steps: the size came from the byte
    code and the byte headers, the speed from specialisation and the JIT.
 3. Section 12's plumbing - the NEXT-RUN line, "experiment review-checks.py spread" - is the workflow, not the result;
    the one command is enough.
