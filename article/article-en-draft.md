@@ -21,6 +21,10 @@ instead.
 
 Everything here regenerates from [the repository](https://github.com/kt97679/forth-vm-evolution):
 every engine and image, every measurement, and every table below.
+Part one's numbers come from the tree as the ladder left it, commit
+a105e59 (`git checkout a105e59 && bash tools/build-stages.sh`); the
+kernel took fixes and the search's changes after that, and at master
+the same images are 6-12% larger.
 
 ```
 : COUNT   DUP 1 + SWAP C@ ;        4-byte cells, from the real images

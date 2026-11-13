@@ -11302,3 +11302,11 @@ it and every run-only image grew 6-12% (s6 at 8-byte cells 7,609 then, 8,385 now
 sentence or part one measured again. Both drafts' last paragraph: ten designs, the table at the end of section 17. The
 method draft's last [check] closed: the article names no cause for the fast end. Files: tools/article-check.py,
 results/article-check-659.md.
+
+## Iteration 660 - 2026-11-13 - Claude
+
+Part one cited at its commit (the owner: (a), the commit rather than a tag - the bundles carry master only): one sentence
+after "Everything here regenerates" in both drafts - part one's numbers from a105e59, the command, the images 6-12% larger
+at master. Every run-only image built at both commits in fresh clones: all 18 (s0-s6, pack4 and pack8, both widths) +6.2%
+to +12.1% (results/article-check-659.md). tools/article-check.py keeps its own reports out of its records; --self-test
+exit 0, 197 of 197 figures found - 13,380 and 8,108 through 659's entry, the build at a105e59.

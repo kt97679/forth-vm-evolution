@@ -9,7 +9,7 @@ check of prompts/04). Two checks, on both drafts as they stand:
    numbers differ is named with the difference, each side's numbers the other lacks.
 2. Every distinctive figure of the English draft - three significant digits or more, outside the code blocks, years
    aside - looked up as written (the same digits, thousands marks aside) in the records: results/ (the chains' raw
-   sessions aside), PROGRESS.md, README.md, FINDINGS-*.md, designs/README.md. Those not found are listed, each a figure
+   sessions and this check's own reports aside), PROGRESS.md, README.md, FINDINGS-*.md, designs/README.md. Those not found are listed, each a figure
    to trace by hand: rounded, derived, or read off a build. Found is not traced: the same digits can be another quantity
    (the introduction's 24,320 is also a design's bytes in results/evolve-amd-ryzen-7-pro-8840hs-seed58.md).
 
@@ -98,7 +98,7 @@ records = set()
 for top, dirs, files in os.walk('results'):
     dirs[:] = [d for d in dirs if not d.startswith('chain-')]
     for f in files:
-        if f.endswith(('.md', '.txt', '.json', '.csv', '.tsv')):
+        if f.endswith(('.md', '.txt', '.json', '.csv', '.tsv')) and not f.startswith('article-check-'):
             records.update(NUM.findall(re.sub(r'(?<=\d),(?=\d{3}(?!\d))', '', open(os.path.join(top, f), errors='replace').read())))
 for f in ['PROGRESS.md', 'README.md', 'designs/README.md'] + sorted(g for g in os.listdir('.') if g.startswith('FINDINGS-')):
     records.update(NUM.findall(re.sub(r'(?<=\d),(?=\d{3}(?!\d))', '', open(f).read())))

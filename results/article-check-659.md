@@ -24,3 +24,6 @@ Iteration 248) and every run-only image grew:
 
 s6 against s0 at 8-byte cells: 0.313 then, 0.308 now. The article says everything here regenerates from the
 repository; for part one that holds at a105e59 - the owner's call: a tag and a sentence, or part one measured again.
+
+Iteration 660: every run-only image built at both commits in fresh clones - all 18 (s0-s6, pack4 and pack8, both widths)
++6.2% to +12.1% at master; both drafts cite a105e59 for part one (the owner: the commit, not a tag).
