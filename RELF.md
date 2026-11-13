@@ -35,6 +35,10 @@ Under the order above (Iteration 365): where these are generic Forth questions -
 PICK, fused pairs - this lab answers them in its generic search, on its own workloads; relf's shell
 profile says only where relf would look first, in phase 2.
 
+**Answered as far as the search can (Iteration 665)**: results/relf-questions-665.md - (+LOOP) kept as an
+instruction by nine of the ten winners and operand forms by seven; a test fused with its branch and fused pairs rarely
+chosen; XF@/XV@, DEFER and PICK never in the search.
+
 ## How a result reaches relf - the adoption criteria
 
 - **Measured on relf's workloads**, with relf's tool: vendor/relf/tree/tools/bench-vm.py (paired,

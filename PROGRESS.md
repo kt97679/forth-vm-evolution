@@ -11348,3 +11348,14 @@ Section 12's plumbing out (the owner: yes, after the clarification): what a run 
 byte-identical rebuild, the evolution for a set number of hours, the front measured again, both widths, from the
 hand-made designs, each run named by its seed - instead of the run file's line and its tokens; section 14's raw line
 for the random run is "seed 85" in the sentence. Both drafts; tools/article-check.py --self-test exit 0.
+
+## Iteration 665 - 2026-11-13 - Claude
+
+For the handoff back to relf (the owner: yes). results/relf-questions-665.md: relf's questions (its Iteration 716,
+the CV8 ledger) against the ten winners' genes as the evolver expresses them - (+LOOP) an opcode in nine, operand forms
+in seven, a test fused with its branch in two, fused pairs one or none in seven; XF@/XV@, DEFER and PICK never in the
+search. results/relf-patches/tests-tmp-cleanup.patch: 658's /tmp fix for relf's own run-case and run-return, the same
+files there, checked to apply to the vendored tree. `make test` from a fresh clone: all ten designs build and run.
+A correction by the same expression: 662's "nine of the ten carry one fused pair or none" was wrong - seven do, the
+others two, three and six; both drafts now say so. Files: results/relf-questions-665.md,
+results/relf-patches/tests-tmp-cleanup.patch.

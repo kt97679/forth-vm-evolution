@@ -41,7 +41,9 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 664.
+- master: Iteration 665.
+- For relf (665): its questions answered as far as the search can - results/relf-questions-665.md; a patch for its
+  shell tests' /tmp leak - results/relf-patches/tests-tmp-cleanup.patch.
 - **The search is over; the freeze done - its batch applied (656), the relf handoff final (657), the article's portable figures (658); the article next, the last.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then

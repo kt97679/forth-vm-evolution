@@ -591,8 +591,8 @@ JIT and the small fast one on x86 keep the top of the stack in a
 register; the other five keep the whole stack in memory. The fast
 designs without the JIT have every kind of specialised opcode, the JIT
 designs four of the five kinds, the three smallest none at all. Fused
-pairs hardly figure: nine of the ten carry one or none, the fastest on
-ARMv7 six. And seven of the ten are built by clang, five with -Os.
+pairs are few: seven of the ten carry one or none, the others two,
+three and six, the six in the fastest on ARMv7. And seven of the ten are built by clang, five with -Os.
 
 ## 18. What carries over
 

@@ -53,3 +53,7 @@ hundreds of its iterations. Two more need no test: relf dispatches through a 256
 (d256) and guards its stacks with pages already (GUARD 1). What this lab can give relf is at the
 level of its instructions, measured on its terms - the three patches above.
 
+**For relf now, not parked (Iteration 665)**: `tests-tmp-cleanup.patch` - relf's tests/shell/run-case and run-return
+remove their temporary script before later cases write it again, so each run leaves one per shell in /tmp; the patch
+moves the cleanup to the end. Checked to apply to vendor/relf/tree; the lab's copies of the two files, the same before,
+pass with it and leave nothing (run-tests, Iteration 658). Test hygiene only - no engine, image or kernel byte.
