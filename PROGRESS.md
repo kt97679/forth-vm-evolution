@@ -11310,3 +11310,14 @@ after "Everything here regenerates" in both drafts - part one's numbers from a10
 at master. Every run-only image built at both commits in fresh clones: all 18 (s0-s6, pack4 and pack8, both widths) +6.2%
 to +12.1% (results/article-check-659.md). tools/article-check.py keeps its own reports out of its records; --self-test
 exit 0, 197 of 197 figures found - 13,380 and 8,108 through 659's entry, the build at a105e59.
+
+## Iteration 661 - 2026-11-13 - Claude
+
+The drafts read as a ForthHub member would (the owner: the diagrams aligned, abbreviations explained before use, the
+reader's view). Both drafts: the introduction's figure aligned (its cell labels drifted a column a cell; the CV8 row's
+labels and the three totals were out of line), the Russian bar chart's label column widened; the vocabulary and a
+sentence naming the figure's rows moved before it; PACK4, PACK8, folding and specialisation named where introduced;
+JIT, ANS Forth, COLE and NSGA-II expanded at first use; the front defined before Pareto rank; seed, session, rank
+correlation, portable and the machines said at first use; the corpus 616 cases at the ladder's commit, 661 now; section
+15's 21 designs the set kept then. tools/article-check.py --self-test exit 0. Eight suggestions for the owner, not
+made: results/drafts/forthhub-read-661.md. Files: results/drafts/forthhub-read-661.md.

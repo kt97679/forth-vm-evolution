@@ -26,28 +26,32 @@ a105e59 (`git checkout a105e59 && bash tools/build-stages.sh`); the
 kernel took fixes and the search's changes after that, and at master
 the same images are 6-12% larger.
 
+Some vocabulary. **Threading** is how a compiled word records what it
+calls: a list of references, walked at run time, rather than machine
+code. The **engine** is the C program that fetches operations and runs
+them; the **image** is the compiled Forth system it runs - the
+dictionary, every word body, the whole language. Every system here
+builds, boots and passes the same test corpus, the CORE word set of ANS
+Forth, the 1994 American National Standard for Forth: 616 cases when
+the ladder ended, 661 now.
+
+One short word, compiled three ways - as RelF's cells, as 16-bit tokens
+(section 4) and as CV8, the byte code of section 6:
+
 ```
 : COUNT   DUP 1 + SWAP C@ ;        4-byte cells, from the real images
 
 cell     25  0  0  0 |  9  0  0  0 |  1  0  0  0 | 93  0  0  0 | ...
-         '--- DUP ---'  '--- LIT ---'  '---- 1 ----'  '---- + ----'
+         '-- DUP --'   '-- LIT --'   '--- 1 ---'   '--- + ---'
          7 cells x 4 bytes ....................................  28 bytes
 
 token     6  0 |  2  0 |  1  0 | 23  0 |  7  0 | 10  0 |  1  0
           DUP     LIT      1       +      SWAP     C@     EXIT
          7 tokens x 2 bytes ...................................  14 bytes
 
-CV8       6 | 120   1 |  7 | 79
-          DUP    +1     SWAP  C@;EXIT ...........................  5 bytes
+CV8       6  | 120   1 |  7   |   79
+         DUP     +1      SWAP   C@;EXIT ........................  5 bytes
 ```
-
-Some vocabulary. **Threading** is how a compiled word records what it
-calls: a list of references, walked at run time, rather than machine
-code. The **engine** is the C program that fetches operations and runs
-them; the **image** is the compiled Forth system it runs - the
-dictionary, every word body, the whole language. Every system here
-builds, boots and passes the same 616-case corpus, the CORE word set of
-the ANS Forth standard.
 
 ---
 
@@ -70,9 +74,13 @@ giving back the speed RelF existed for.
 ## 2. Attempt one: pack operations into a cell, four bits each
 
 SOD32 fits six operations into one cell, so the first thing I tried was
-packing: a tag byte, then four-bit opcodes - six in a 4-byte cell,
+packing, PACK4: a tag byte, then four-bit opcodes - six in a 4-byte cell,
 fourteen in an 8-byte one. Four bits name sixteen primitives, so the
 other operations stay plain cells.
+
+Each attempt gets two numbers against the cell engine: the size of its
+image, and the time to compile the kernel's Forth source - 1.13 is 13%
+slower.
 
     PACK4 image           21,296 bytes at 8-byte cells, 0.876x
     PACK4 kernel compile  1.13 at 8-byte cells, 1.14-1.18 at 4-byte
@@ -83,7 +91,7 @@ then need a tag of their own.
 
 ## 3. Attempt two: a byte each
 
-So the opcode became a byte, and every primitive fits:
+So the opcode became a byte, and every primitive fits - PACK8:
 
     PACK8 image           20,848 bytes at 8-byte cells, 0.857x
     PACK8 kernel compile  1.09 at 8-byte cells, 1.08-1.18 at 4-byte
@@ -99,8 +107,8 @@ If a cell is too wide, use a narrower unit: one 16-bit token per
 operation, values below 256 primitives, 256+n "the body of the n'th
 word", looked up in a table the engine builds at load. I called it
 SOD16. The image halved, 24,320 to 12,864 bytes - and on kernel
-compilation it was the worst system in the set, 1.378 on the laptop and
-1.364 on the ARM board.
+compilation it was the worst system in the set, 1.378 on the laptop, an AMD
+Ryzen 7 PRO 8840HS, and 1.364 on the ARM board, a 4-core ARMv7.
 
 The table is enough to *run* a program and not enough to *compile* one.
 A dictionary search hands the compiler an address, and the instruction
@@ -132,9 +140,11 @@ as CV8.
 
 ## 7. Attempt six: give the common cases their own opcodes
 
-Five bytes for six operations is two tricks: `1 +` as one opcode with
-its operand, and `C@ EXIT` as one. Common literals, variable fetches
-and short branches got their own opcodes. On x86 that improved kernel
+Five bytes for six operations is two tricks. **Folding**: a primitive
+followed by `EXIT` becomes one opcode, so `C@ EXIT` is one byte; I
+added it to CPT16 first, the "CPT16 + folding" row below.
+**Specialisation**: `1 +` is one opcode with its operand, and common
+literals, variable fetches and short branches got opcodes of their own. On x86 that improved kernel
 compilation three to four times as much as the whole move from cells to
 CV8 before it; on ARM about as much. I never tried the two in the other
 order.
@@ -160,7 +170,7 @@ SOD16                 ################                12,864  0.529
 CPT16                 ################                12,864  0.529
 CPT16 + folding       ################                12,696  0.522
 CV8                   ##############                  11,416  0.469
-CV8 + spec            ##############                  11,088  0.456
+CV8 + specialised     ##############                  11,088  0.456
 CV8 + byte headers    #########                        7,609  0.313
 ```
 
@@ -200,14 +210,14 @@ Every design is a genome of 84 genes, and a genome is all it takes to
 build one: lab/evolve/evolve.py turns it into a C engine and a Forth
 image. The genes are the kind of decision part one took by hand: the
 encoding family (cell, SOD16, CPT16 or CV8), fused pairs, specialised
-opcodes, the top of the stack in a register, a small JIT that turns hot
-words into machine code, the dictionary's layout, the compiler and its
+opcodes, the top of the stack in a register, a small JIT (a just-in-time
+compiler) that turns hot words into machine code, the dictionary's layout, the compiler and its
 flags. None of these techniques is mine. Byte-coded threading is old Forth
 practice; superinstructions and stack caching are M. Anton Ertl and
 David Gregg's, and so is a JIT that copies native code compiled from C
 fragments, in a Forth, since 2004 - it is in Gforth; searching compiler
-settings with a multi-objective genetic algorithm is COLE's (Hoste and
-Eeckhout, 2008). What the search adds is all of them in one genome.
+settings with a multi-objective genetic algorithm is COLE's (Compiler
+Optimization Level Exploration; Hoste and Eeckhout, 2008). What the search adds is all of them in one genome.
 
 The hand-made stages are points in the same space, and that is
 checked rather than assumed:
@@ -233,17 +243,21 @@ Four objectives, all minimised:
 A design that computes anything wrong dies: every workload's output is
 compared with the expected one, at both widths. Two more workloads,
 sieve and parse, are never used for selection; they are measured
-afterwards, to see whether the speed carries over (Spearman 0.94-0.98
-between sieve and the selection speed, run by run).
+afterwards, to see whether the speed carries over (Spearman's rank
+correlation between sieve and the selection speed is 0.94-0.98 run by
+run, where 1 is the same order).
 
 ## 12. The search
 
-NSGA-II, a standard multi-objective genetic algorithm: a population of
-32; parents by tournament - the lower Pareto rank wins, then the larger
-crowding distance; children by crossover, by genes borrowed from a third
-design and by mutation. A design already measured is never measured
-again. The result of a run is not one design but a front: every design
-no other beats on all four objectives at once.
+NSGA-II (the Non-dominated Sorting Genetic Algorithm II; Deb and
+others, 2002), a standard multi-objective genetic algorithm. The result
+of a run is not one design but a front: every design no other beats on
+all four objectives at once. A population of 32; parents by tournament:
+the lower Pareto rank wins (the front is rank 1, what only it beats is
+rank 2, and so on), then the larger crowding distance (the one further
+from its neighbours); children by crossover, by genes borrowed from a
+third design and by mutation. A design already measured is never
+measured again.
 
 Most children are worse than what the run already has, and each one
 costs a build and seven workloads at two widths. Two shortcuts spend
@@ -263,7 +277,8 @@ A run is one command on the laptop, an AMD Ryzen 7 PRO 8840HS:
 
     sh lab/evolve/next-run.sh
 
-It reads its line from lab/evolve/NEXT-RUN - one of the runs below:
+It reads its line from lab/evolve/NEXT-RUN - one of the runs below,
+each named by its random seed:
 
     seed 77 12h widths noevolved then experiment review-checks.py spread ...
 
@@ -376,8 +391,8 @@ above it everywhere.
 The pooled fronts held 444 designs. The candidates were re-measured -
 alone and under load, at both widths - on the laptop, then the forty
 best of them again on two other machines: the i7 at both widths and an
-ARMv7 board, a Tegra. 31 sessions on the laptop, 42 on the i7, 6 on the
-Tegra. Speeds below are CPU time against s6, so 0.185 is 5.4 times s6's
+ARMv7 board, an NVIDIA Tegra. 31 sessions on the laptop, 42 on the i7,
+6 on the Tegra; a session measures every candidate once. Speeds below are CPU time against s6, so 0.185 is 5.4 times s6's
 speed:
 
 | what it wins | x86-64 | x86-32 | ARMv7 | bytes | memory | JIT |
@@ -396,13 +411,12 @@ table closes section 17.
 
 The JIT is x86 only; on the Tegra a JIT design runs without it, which is
 why the fastest designs on x86 are slower there than the best without
-it. No design
-comes within 25% of the best on all three machines at once, so there is
-no single answer: the final set is 21 designs, chosen so that each
+it. No design comes within 25% of the best on all three machines at once, so there is
+no single answer: the set kept then was 21 designs, chosen so that each
 criterion's winner on each machine is in it.
 
 The fast end is a band, not a design. The machines agree with
-themselves - 0.96-0.99 between their own sessions - and not with each
+themselves - a rank correlation of 0.96-0.99 between their own sessions - and not with each
 other: on the forty, the i7's order matches the laptop's at 0.92 at 32
 bits and 0.47 at 64, and the Tegra's at 0.08. The laptop's fastest is
 6-7% behind the i7's own best.
@@ -423,7 +437,8 @@ same engine and image bytes after the removal as before.
 
 The designs without the JIT in that table were found on the way: in
 those runs the JIT took the fast end. Would a search for portable
-designs alone do better? Before it ran, I fixed what better would mean:
+designs alone - those without the JIT, which run on any host - do
+better? Before it ran, I fixed what better would mean:
 its front against the 282 portable designs found before, by the
 stopping rule's own effect sizes - 1% of hypervolume, or an extreme by
 its threshold: 2% of speed at either width, 1% of size, 4 KB of memory.
@@ -502,7 +517,8 @@ speed traded, and it became the smallest.
 So: three portable runs, the first better than what came before by a
 few percent, the second only through a design outside its best thirty,
 the third not at all - and the fastest design on ARMv7 came from a run
-with the JIT in it. These are the designs the search ended with:
+with the JIT in it. The search ended with these ten, one design
+to a role:
 
 | what it wins | x86-64 | x86-32 | ARMv7 | bytes | memory | JIT |
 |---|---|---|---|---|---|---|
@@ -540,8 +556,7 @@ Forth that does either, please tell me in the comments.
 **Selection ran on one machine.** The Tegra disagrees with the laptop
 almost completely - as Huang, Marr and Ugawa found for interpreter
 handler orders evolved for one machine - and one gene shows what that
-costs: multi-state stack
-caching made its designs 18% faster on ARMv7, and the search never kept
+costs: multi-state stack caching made its designs 18% faster on ARMv7, and the search never kept
 it, because on the laptop those designs were slower and twice the size.
 How much else of that kind there is, I cannot tell from here.
 
