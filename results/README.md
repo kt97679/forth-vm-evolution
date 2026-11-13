@@ -276,6 +276,8 @@ Each subject oldest first; a script or patch beside the document it made.
 - `handoff-relf-649.md` - the relf handoff after the final check (649): the smallest to d180351903, the package iter649, the ARMv7 column read as a band.
 - `relf-designs-636.md` - The relf handoff's ten records after seed 90's follow-up (Iteration 636), the input of pack-designs.py and export-designs.py.
 - `relf-designs-649.md` - the ten by role after 649 (the smallest d180351903): pack-designs.py's and export-designs.py's input.
+- `rage-designs-654.md` - The rage check (Iteration 654): designs/' forth-arm for the GCC three built on the Tegra - PASS, the lab's bytes and running; their ARMv7 engine sizes.
+- `drafts/rage-pack-654.py` - The rage check's chain archive checked without unpacking (Iteration 654): the laptop's tree against its commit, the Tegra's choice against the Makefiles, the three results.
 - `candidates-dream32-612.md` - The dream 32-bit experiment (Iteration 612): 9f8811f7f4 and 690981ca5b with one gene reverted at a time, and the control 782f3ad7ff.
 - `chain-seed88/README.md` - Seed 88's chain's readings (Iteration 614): the dream 32-bit experiment's 20 in every session - the laptop 1, dream 30 a width, rage 12.
 - `dream32-experiment-seed88.md` - The dream 32-bit experiment read (Iteration 614): the compiler - clang restores both bases, no other single gene does.

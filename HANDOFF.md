@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 653.
+- master: Iteration 654.
 - **The search is over; the freeze next.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
@@ -59,7 +59,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   lab/evolve/export-designs.py then export-arm.py write them and check the lab's bytes - rerun when a role changes. Phase 2
   (RELF.md): relf takes mechanisms and measures them with relf-ab.sh.
 - **The freeze - what remains** (618's list: results/drafts/portable-plan-602.md, "Then the freeze"; GOALS.md step 3): the
-  rage check processed (forth-arm, below); the batch applied on master and the build-out run (the freeze's batch, below);
+  batch applied on master and the build-out run (the freeze's batch, below);
   the retire report as 639 left it (results/drafts/retire-report-639.md; what stays and why:
   results/drafts/freeze-retire-641.md); the handoff final - one relf document for 611 and its four updates (650's
   suggestion) and this card; then, with the article, its portable figures recomputed from the runs' records.
@@ -72,7 +72,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   sessions): taken (the owner, 649: smaller at both widths, 13,883 / 13,627 B against 13,891 / 13,675, 9 of 9 right at both) -
   results/handoff-relf-649.md, results/relf-designs-649.md, the package forth-vm-evolution-designs-iter649.tar.gz, designs/smallest
   made again (forth-arm the lab's bytes, running under qemu-arm; make test 10 of 10); 01712a2639 kept (640). The Tegra's readings swing 4-5% a pair between chains (its kernel 7.3.1 -> 7.3.3 on
-  2026-11-10; results/drafts/finalcheck-648.py). Next: the rage check (smallest is a clang design - unaffected), then the freeze.
+  2026-11-10; results/drafts/finalcheck-648.py). Next: the freeze - the rage check passed (654); NEXT-RUN none.
 - **The freeze's batch, queued (642-643)** - results/queued-freeze/ORDER.md, batch-check PASS on both: rtloop-after-seed91
   (the partial run-time loop compiler, forth/cv8-fuse-loop.4 and its tables; rtloopall at 1) and rtimmlean-after-seed91
   (forth/cv8-imm.4, rtimm=2 alone in a plain design; such a genome's rtimm read as 0) - 186 lines out, 31 in; the two
@@ -89,26 +89,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   fastest-x86-64=c7c35f9c97,fastest-x86-32=ee34931cd7,best-all-round=06b188f45b,small-jit=c6f1c1331b,portable-fastest=782f3ad7ff,
   portable-arm=3eb59b271d,portable-knee=11a56ff9e4,portable-small=ae99617f06,least-memory=fb0d57c8a2,smallest=d180351903`
   (no spaces in the list), then /tmp/fz/pkg/SHA256SUMS against that file. At the freeze: on master after `git apply`, with the final roles' records (results/relf-designs-649.md) and NAME=ID list (a role changed: its designs/ directory and the package made again, the handoff's records).
-- **forth-arm (646; the owner: the engines without the C library everywhere)**: the lab built every engine without libc
-  on all three machines (rt-linux-x86_64.c 75, rt-linux-i386.c 331, rt-linux-armv7.c 570), but designs/ shipped ARM only
-  as forth-libc. Now each of the six designs without the JIT has `make forth-arm` (srcarm/, the lab's ARM command; top
-  `make arm`), written by lab/evolve/export-arm.py after export-designs.py. Checked: the three clang ones (portable-fastest,
-  portable-knee, smallest) the lab's bytes - those the Tegra ran, cross-built - and running under qemu-arm; the three GCC
-  ones (portable-arm, portable-small, least-memory) with a cross GCC 13: the rule gives the lab's simulated bytes and runs -
-  **their real bytes (the Tegra's GCC 16): the next run (647)** - NEXT-RUN `experiment rage-designs.py`, no remote line:
-  lab/evolve/rage-designs.py runs tools/rage-check.sh with RAGECHECK_CMD='sh tools/rage-designs-check.sh' from the laptop
-  (end to end with ssh/scp stand-ins here: PASS); its pack's rage-designs.md says PASS or FAILED. The final check's chain
-  ended (648): the rage check runs from 648's bundle (or the newest). The cross GCC's
-  package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
-  **Its first run failed (652)**: the chain at 2e9343d91f, 16 minutes - `export-arm: 06b188f45b - the ARM image is not
-  image32.img`. export-arm.py chose designs by the host's express(), and on the Tegra none shows the JIT (jit_on() wants
-  x86_64) or clang (the compiler gene needs it on the PATH): the ten all looked GCC designs without the JIT, best-all-round
-  first; next, rage-designs-check.sh's records default (636's) lacked 649's smallest. Fixed: each design's class from its
-  exported Makefile (checked against express() on x86-64), --list printed first, the records from designs/, the Makefile
-  edit idempotent; tested as the Tegra sees it (results/drafts/rage-select-as-tegra-652.py: the GCC three), x86-64 and
-  --gcc with all ten (the same as designs/), end to end with stand-ins PASS. **The rage check is the next run again**
-  (NEXT-RUN unchanged), from 652's bundle; a rerun clears the Tegra's leftover fve-ragecheck/repo itself. 653: the native path read through for
-  other host-dependence - none; --list no longer leaves its check directory in /tmp.
+- **forth-arm (646; the owner: the engines without the C library everywhere)**: each of the six designs without the
+  JIT has `make forth-arm` (srcarm/, the lab's ARM command; top `make arm`), written by lab/evolve/export-arm.py after
+  export-designs.py - the clang three (portable-fastest, portable-knee, smallest) cross-built, the lab's bytes, running
+  under qemu-arm (646, 649); the GCC three (portable-arm, portable-small, least-memory) by the ARM host's own GCC.
+  **The rage check passed (654)** - results/rage-designs-654.md (results/drafts/rage-pack-654.py on the archive): the
+  chain at c8c423671f (652's fix; the first run failed, 652), 17 minutes; on the Tegra the GCC three taken by their
+  Makefiles, each `make forth-arm` the lab's bytes and running - least-memory 11,584 B, portable-small 13,440 B,
+  portable-arm 15,968 B. Left on rage: the pack names no compiler (GCC 16.2.1 through the final check), and 652's
+  --list left /tmp/export-arm-check-* (653 fixed it); the owner's, once:
+  `ssh rage.lan 'cc --version | head -1; rm -rf /tmp/export-arm-check-*'`. The cross GCC's package removes gcc-multilib
+  (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
 - **The article (604; open item 8) - last (the owner, 636): once everything else is done - the search's end, the
   freeze, the designs handed off to relf** - one article, the ladder by hand then the genetic algorithm (the owner: English
   for ForthHub, Russian for Habr): article/article-en-draft.md (19 KB) and article/article-ru-draft.md, beside the ladder
@@ -128,12 +119,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   classes' geometric mean; the 25% veto removes nothing, only names the generic pick; the three best means and each
   class's fastest ADDED to the set; a design missing a class ranked on the rest, kept. Consolidation (578, the owner): a
   gene or code path is retired only when no design on the pooled true front uses it - not the final set.
-- **Predictions due** (results/predictions.md): the rage check's - 1 (648; its first run failed on a tool fault, 652). The final check's scored (648-649): 2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
+- **Predictions due** (results/predictions.md): none. Scored: the rage check's (654) 1 of 1; the final check's (648-649)
+  2 of 4 (wrong: the Tegra 2 of 3; a role changed - the smallest, 649).
 - **History**: HANDOFF-HISTORY.md - the card's states at 597, 598, 647 and 650 (seeds 70-91, chains A-D, the final pick, the
-  portable runs and their follow-ups, the final check's plan); remote hosts cleaned after every chain (628:
-  `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
-- **Files a new chat needs**: the newest bundle; the rage check's archive when it returns. appbench.zip
-  stays on the laptop.
+  portable runs and their follow-ups, the final check's plan) and its forth-arm bullet at 653 (the rage check's first
+  run); remote hosts cleaned after every chain (628: `sh lab/evolve/remote-checks.sh clean runs/chain-...`).
+- **Files a new chat needs**: the newest bundle. appbench.zip stays on the laptop.
 
 ## Processing a returned seed
 

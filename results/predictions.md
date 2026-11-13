@@ -1448,11 +1448,13 @@ cells, at the fast end's 1.05-1.10 of in-run 0.300-0.313 against 0.3086; 38100f0
 Scored (Iteration 648, results/followup-roles-seed91-final.md): (1) wrong - the Tegra 2 of 3 sessions (about 9.3 hours
 each). (2) pending - the rule's one trade-free candidate, d180351903 for the smallest: wrong if the owner takes it, else
 right. (3) right - 38100f0280 +2.69%, 95077030b0 +1.84% behind the best found before. (4) right - none died.
+(2) resolved (649): wrong - a role changed, the owner gave d180351903 the smallest. The final check's: 2 of 4.
 
 ## The rage check (lab/evolve/rage-designs.py) - predicted (Iteration 648)
 
 The three GCC designs' forth-arm (portable-arm, portable-small, least-memory) built by the Tegra's own GCC 16 against the
 bytes its lab lines ran. (1) rage-designs.md says PASS, all three byte for byte - 75/25 (646: the cross GCC 13 reproduced
 the lab's simulated bytes by the same rule; 647: end to end with stand-ins PASS).
-(2) resolved (649): wrong - a role changed, the owner gave d180351903 the smallest. The final check's: 2 of 4.
 Not scored (652): the run at 2e9343d91f failed on a tool fault before any GCC design was checked - (1) stands for the rerun.
+Scored (Iteration 654, results/rage-designs-654.md): (1) right - the rerun at c8c423671f PASS, all three the lab's
+bytes and running. The rage check's: 1 of 1.

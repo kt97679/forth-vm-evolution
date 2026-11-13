@@ -1032,3 +1032,26 @@ counts - so dormant entries are a neutral reservoir a mutation can promote, not 
    jitmul 43, jitfuse 10, jitexec 1, jitos 19, jitrp 22; jitdoes the one freeze candidate.
 7b. (Done, 599: results/applied-after-seed86/ORDER.md; planned at 583 - results/drafts/retire-plan-583.md.) Consolidation's retire candidates read before seed 84 returned (results/drafts/retire-candidates-573.md): the old
    values' code builds the stages s2-s5; msc kept by the Tegra's check (598).
+
+## The card's forth-arm bullet at Iteration 653 (replaced at 654 by the rage check's processing)
+
+- **forth-arm (646; the owner: the engines without the C library everywhere)**: the lab built every engine without libc
+  on all three machines (rt-linux-x86_64.c 75, rt-linux-i386.c 331, rt-linux-armv7.c 570), but designs/ shipped ARM only
+  as forth-libc. Now each of the six designs without the JIT has `make forth-arm` (srcarm/, the lab's ARM command; top
+  `make arm`), written by lab/evolve/export-arm.py after export-designs.py. Checked: the three clang ones (portable-fastest,
+  portable-knee, smallest) the lab's bytes - those the Tegra ran, cross-built - and running under qemu-arm; the three GCC
+  ones (portable-arm, portable-small, least-memory) with a cross GCC 13: the rule gives the lab's simulated bytes and runs -
+  **their real bytes (the Tegra's GCC 16): the next run (647)** - NEXT-RUN `experiment rage-designs.py`, no remote line:
+  lab/evolve/rage-designs.py runs tools/rage-check.sh with RAGECHECK_CMD='sh tools/rage-designs-check.sh' from the laptop
+  (end to end with ssh/scp stand-ins here: PASS); its pack's rage-designs.md says PASS or FAILED. The final check's chain
+  ended (648): the rage check runs from 648's bundle (or the newest). The cross GCC's
+  package removes gcc-multilib (the 32-bit x86 builds): export-arm.py --gcc last, gcc-multilib back after.
+  **Its first run failed (652)**: the chain at 2e9343d91f, 16 minutes - `export-arm: 06b188f45b - the ARM image is not
+  image32.img`. export-arm.py chose designs by the host's express(), and on the Tegra none shows the JIT (jit_on() wants
+  x86_64) or clang (the compiler gene needs it on the PATH): the ten all looked GCC designs without the JIT, best-all-round
+  first; next, rage-designs-check.sh's records default (636's) lacked 649's smallest. Fixed: each design's class from its
+  exported Makefile (checked against express() on x86-64), --list printed first, the records from designs/, the Makefile
+  edit idempotent; tested as the Tegra sees it (results/drafts/rage-select-as-tegra-652.py: the GCC three), x86-64 and
+  --gcc with all ten (the same as designs/), end to end with stand-ins PASS. **The rage check is the next run again**
+  (NEXT-RUN unchanged), from 652's bundle; a rerun clears the Tegra's leftover fve-ragecheck/repo itself. 653: the native path read through for
+  other host-dependence - none; --list no longer leaves its check directory in /tmp.

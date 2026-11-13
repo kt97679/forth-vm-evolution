@@ -11238,3 +11238,13 @@ While the rage check reran: export-arm.py's native path read through for anythin
 build and its compile-command search ran on the Tegra in 652's failed run; the rest is make, the host's cc, the repo's
 elf_tight.py and the engine run without qemu). One fault of 652's own: --list exited after making the check's temporary
 directory, one left in /tmp a run - now it exits first (tested: 3 taken, none left). Files: none under results/.
+
+## Iteration 654 - 2026-11-13 - Claude
+
+The rage check processed - PASS (results/rage-designs-654.md, from results/drafts/rage-pack-654.py on the archive): the
+chain at c8c423671f (652's), 17 minutes; the laptop run-tests PASS, validate 7 of 7, its tree 652's (3,882 of 3,882
+tracked files). On the Tegra 652's fix took the GCC three by their Makefiles; each `make forth-arm` the lab's bytes and
+running - least-memory 11,584 B, portable-small 13,440 B, portable-arm 15,968 B: with the clang three (646, 649) every
+design without the JIT. Prediction (1) right - 1 of 1; the final check's (2), written under the rage check's heading at
+649, moved to its own. NEXT-RUN none - the freeze next. Left on rage, the owner's: the compiler's version (the pack names
+none) and 652's /tmp/export-arm-check-* (653 fixed). Files: results/rage-designs-654.md, results/drafts/rage-pack-654.py.

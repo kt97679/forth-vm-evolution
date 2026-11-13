@@ -301,4 +301,7 @@
 # free) - designs/' forth-arm on the Tegra: lab/evolve/rage-designs.py runs tools/rage-check.sh with
 # RAGECHECK_CMD='sh tools/rage-designs-check.sh' (the three GCC designs' bytes, GCC 16; Iteration 646). No remote
 # line (REMOTES). Its archive's pack holds rage-designs.md, PASS or FAILED.
-experiment rage-designs.py
+# (ran from 652's bundle at c8c423671f - its archive the rage check, PASS:) experiment rage-designs.py
+# Iteration 654 (the rage check processed - PASS, results/rage-designs-654.md): none - the freeze is the sandbox's; a
+# pull of this bundle must not run the rage check again.
+none
