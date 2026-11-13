@@ -11331,3 +11331,13 @@ every CV8 design (409); the top of the stack in a register in the four JIT desig
 every kind, four kinds, or none; one fused pair or none in nine; seven built by clang, five with -Os. Section 18, what
 carries over, from the article's own figures. Both drafts. tools/article-check.py reads a thousands number before a
 comma (26,242,) as one number now - it had split it; --self-test exit 0, all 24 sections the same.
+
+## Iteration 663 - 2026-11-13 - Claude
+
+The owner's answers to the reader's suggestions, in both drafts. Section 5's 0.021 is one standard error of the ratio
+over the five builds (tools/collect-results.sh says so). The names from the notes: CV8, compressed-pointer,
+variable-length, 8-bit units (forth/cv8.4); CPT16, compressed-pointer threading (engine/vm-lab.c). Part one's ARM board
+is part two's Tegra (the owner): "the Tegra" throughout, named once in section 4. Section 6 shows code, both at a105e59:
+`CALL,` from forth/cv8.4 and the CV8 dispatch from engine/vm-lab.c, the variant s6 builds, without the profiling hooks.
+Getting each winner (the owner: absolutely clear): a `make` column in the final table and, under it, the clone, build and
+run commands and the other builds' names. tools/article-check.py --self-test exit 0, 24 sections the same.

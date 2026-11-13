@@ -108,7 +108,7 @@ operation, values below 256 primitives, 256+n "the body of the n'th
 word", looked up in a table the engine builds at load. I called it
 SOD16. The image halved, 24,320 to 12,864 bytes - and on kernel
 compilation it was the worst system in the set, 1.378 on the laptop, an AMD
-Ryzen 7 PRO 8840HS, and 1.364 on the ARM board, a 4-core ARMv7.
+Ryzen 7 PRO 8840HS, and 1.364 on the Tegra, an NVIDIA board with four ARMv7 cores.
 
 The table is enough to *run* a program and not enough to *compile* one.
 A dictionary search hands the compiler an address, and the instruction
@@ -118,20 +118,58 @@ inverted copy and binary-searched it on every call it compiled.
 
 ## 5. Attempt four: delete the table
 
-CPT16 keeps the 16-bit unit and computes the call target instead of
+CPT16, compressed-pointer threading, keeps the 16-bit unit and computes the call target instead of
 looking it up: `base + (value << shift)`, so compiling a call is one
 line, subtract, shift, add 256. The images are identical to SOD16's, to
 the byte, and kernel compilation came level with the cell engine -
-1.024 against 1.000 at 4-byte cells, error 0.021 - about 34% ahead of
+1.024 against 1.000 at 4-byte cells, with a standard error of 0.021 over five builds - about 34% ahead of
 SOD16. That 34% is a sum: the lookup in the dispatch loop and the
 compiler's reverse search went in the same step.
 
 ## 6. Attempt five: narrow the unit itself
 
 What decides the size is how many bytes an operation takes, not how
-cleverly a target is computed. CV8 is the same idea in a byte stream:
-one byte for a primitive, values under 0x80; a byte of 0x80 or more
-starts a call, two or three bytes long.
+cleverly a target is computed. CV8 - compressed-pointer, variable-length,
+8-bit units - is the same idea in a byte stream: one byte for a
+primitive, values under 0x80; a byte of 0x80 or more starts a call, two
+or three bytes long. The compiler's side is one word of the kernel's
+source, `CALL,` in forth/cv8.4:
+
+```
+: CALL, ( a-addr --- )
+\ Append a call to the body at a-addr: a scaled offset from the image
+\ base, near (2 bytes) if it fits in 14 bits, far (3 bytes) otherwise.
+  0 LAST-OP !
+  START @ - CV8-SHIFT RSHIFT
+  DUP 16384 < IF
+    DUP 8 RSHIFT 128 OR C, 255 AND C,
+  ELSE
+    DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C,
+  THEN ;
+```
+
+The engine's side is its dispatch in engine/vm-lab.c. Both are as they
+were at a105e59; the engine is shown without its profiling hooks, and in only the
+variant s6 builds:
+
+```c
+#define NEXT() do { \
+        t = BYTE(ip); \
+        if (t < 0x80) { ip += 1; goto *dispatch[t]; } \
+        goto do_call; \
+    } while (0)
+
+do_call:
+    if (t & 0x40) {                       /* 11xxxxxx: 22-bit target */
+        t = ((t & 0x3F) << 16) | ((UNS64)BYTE(ip + 1) << 8) | BYTE(ip + 2);
+        ip += 3;
+    } else {                              /* 10xxxxxx: 14-bit target */
+        t = ((t & 0x3F) << 8) | BYTE(ip + 1);
+        ip += 2;
+    }
+    RPUSH(ip); ip = cbase + (t << SCALE);
+    NEXT();
+```
 
     CV8, image             11,416 bytes at 8-byte cells, 0.469x of cell threading
 
@@ -146,7 +184,7 @@ added it to CPT16 first, the "CPT16 + folding" row below.
 **Specialisation**: `1 +` is one opcode with its operand, and common
 literals, variable fetches and short branches got opcodes of their own. On x86 that improved kernel
 compilation three to four times as much as the whole move from cells to
-CV8 before it; on ARM about as much. I never tried the two in the other
+CV8 before it; on the Tegra about as much. I never tried the two in the other
 order.
 
 ## 8. Attempt seven: the last place cell width was still being paid
@@ -178,7 +216,7 @@ The ladder ended on CV8 with byte headers - in the repository, the stage
 called s6: 0.31x the image and 0.73 the time on kernel compilation at
 8-byte cells, still position-independent, at the price of 20% on text
 interpretation. These numbers come from five builds of each engine on
-the laptop and three on the board, because a rebuild alone moved a
+the laptop and three on the Tegra, because a rebuild alone moved a
 result by five or ten percent: where the compiler places code is worth
 that much, and repeating a run cannot see it.
 
@@ -390,8 +428,8 @@ above it everywhere.
 
 The pooled fronts held 444 designs. The candidates were re-measured -
 alone and under load, at both widths - on the laptop, then the forty
-best of them again on two other machines: the i7 at both widths and an
-ARMv7 board, an NVIDIA Tegra. 31 sessions on the laptop, 42 on the i7,
+best of them again on two other machines: the i7 at both widths and the
+Tegra. 31 sessions on the laptop, 42 on the i7,
 6 on the Tegra; a session measures every candidate once. Speeds below are CPU time against s6, so 0.185 is 5.4 times s6's
 speed:
 
@@ -520,22 +558,39 @@ the third not at all - and the fastest design on ARMv7 came from a run
 with the JIT in it. The search ended with these ten, one design
 to a role:
 
-| what it wins | x86-64 | x86-32 | ARMv7 | bytes | memory | JIT |
-|---|---|---|---|---|---|---|
-| fastest on x86-64 | **0.185** | 0.207 | 0.540 | 38,898 | 244 KB | yes |
-| fastest on x86-32 | 0.189 | **0.193** | 0.476 | 41,990 | 224 KB | yes |
-| best mean of the three | 0.193 | 0.201 | 0.464 | 38,102 | 236 KB | yes |
-| smallest with the JIT | 0.225 | 0.235 | 0.577 | 29,306 | 208 KB | yes |
-| fastest without the JIT, on x86 and on average | 0.343 | 0.339 | 0.372 | 26,242 | 148 KB | no |
-| fastest on ARMv7 | 0.378 | 0.443 | **0.320** | 22,522 | 132 KB | no |
-| fast on x86 and small | 0.363 | 0.377 | 0.477 | 19,761 | 140 KB | no |
-| small and fast on ARMv7 | 0.450 | 0.444 | 0.351 | 18,599 | 124 KB | no |
-| least memory | 0.916 | 0.884 | 0.521 | 17,830 | **104 KB** | no |
-| smallest | 1.926 | 1.784 | 1.717 | **13,883** | 116 KB | no |
-| s6, where the ladder ended | 1 | 1 | 1 | 22,265 | | no |
+| what it wins | `make` | x86-64 | x86-32 | ARMv7 | bytes | memory | JIT |
+|---|---|---|---|---|---|---|---|
+| fastest on x86-64 | `fastest-x86-64` | **0.185** | 0.207 | 0.540 | 38,898 | 244 KB | yes |
+| fastest on x86-32 | `fastest-x86-32` | 0.189 | **0.193** | 0.476 | 41,990 | 224 KB | yes |
+| best mean of the three | `best-all-round` | 0.193 | 0.201 | 0.464 | 38,102 | 236 KB | yes |
+| smallest with the JIT | `small-jit` | 0.225 | 0.235 | 0.577 | 29,306 | 208 KB | yes |
+| fastest without the JIT, on x86 and on average | `portable-fastest` | 0.343 | 0.339 | 0.372 | 26,242 | 148 KB | no |
+| fastest on ARMv7 | `portable-arm` | 0.378 | 0.443 | **0.320** | 22,522 | 132 KB | no |
+| fast on x86 and small | `portable-knee` | 0.363 | 0.377 | 0.477 | 19,761 | 140 KB | no |
+| small and fast on ARMv7 | `portable-small` | 0.450 | 0.444 | 0.351 | 18,599 | 124 KB | no |
+| least memory | `least-memory` | 0.916 | 0.884 | 0.521 | 17,830 | **104 KB** | no |
+| smallest | `smallest` | 1.926 | 1.784 | 1.717 | **13,883** | 116 KB | no |
+| s6, where the ladder ended |  | 1 | 1 | 1 | 22,265 | | no |
 
 On ARMv7 the designs with the JIT run without it: the JIT is written
 for x86 only. Bytes are the engine and the image at 8-byte cells.
+
+Each design is a directory under designs/ in the repository - its C
+source, its image and a Makefile - and the `make` column is its name
+there. To get one and run it on x86-64 Linux (gcc or clang needed):
+
+```
+git clone https://github.com/kt97679/forth-vm-evolution
+cd forth-vm-evolution
+make portable-knee        # one design; plain `make` builds all ten
+designs/portable-knee/forth designs/portable-knee/image.img
+```
+
+Then type Forth - names in upper case, `BYE` to leave. `make test`
+builds all ten and runs a definition in each. The six without the JIT
+also build for ARMv7 (`make forth-arm` in a design's directory) and,
+with the C library, for any host with a C compiler (`make forth-libc`);
+designs/README.md lists every build.
 
 What they are made of, from their genomes (designs/ holds each one's):
 all ten are CV8 and fold a primitive into the `EXIT` after it - the
