@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 672.
+- master: Iteration 673.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -61,6 +61,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   checks), then phase 6. export-designs.py remakes designs/NAME/ from nothing - rerun export-genes.py after it. The
   article waits for the
   measurements (its figures change); the designs/ images, the relf handoff and the roles are redone at phase 6.
+- For relf (673): its report (its Iteration 942) fixed in the engine - on the jitexec designs a THROW from a nested
+  interpreter unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; designs/test.sh has
+  the cases; results/jit-throw-unwind-673.md. relf takes the three designs' new src/vm.c and src32/vm.c (the
+  other seven designs' engines are the recorded bytes).
 - For relf (665): its questions answered as far as the search can - results/relf-questions-665.md; a patch for its
   shell tests' /tmp leak - results/relf-patches/tests-tmp-cleanup.patch.
 - **The search is over; the freeze done - its batch applied (656), the relf handoff final (657), the article's portable figures (658); reopened by the owner for self-hosting (666), then the article.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,

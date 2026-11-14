@@ -1425,11 +1425,48 @@ static void virtual_machine(void);
    callee-saved register, which the longjmp out of the nested interpreter gives back */
 static void **jit_jb;
 static cell *jit_lsp; static cell jit_ltos;
-static spn_st SPN_CC jit_leave(cell *sp, cell tos) { jit_lsp = sp; jit_ltos = tos; __builtin_longjmp(jit_jb, 1); }
+#if JITMUL
+/*  Iteration 672 (relf's report, its Iteration 942): the nested interpreters, innermost first - each one's
+ *  sentinel slot, where its share of the return stack begins; the jit_call return point of the interpreter that
+ *  called into it (jit_tb then) and the jit_jb before it; its own jit_jb. A THROW whose CATCH is an outer
+ *  interpreter's - RP! past the innermost one's sentinel - had its continuation run on in the innermost
+ *  interpreter, over the native frames between, and the outer interpreter's sentinel later left through the
+ *  innermost jit_jb, into native code after its call of THROW (ABORT called through the helper: T5's `5 .` after
+ *  an EXECUTE never ran; an uncaught one ran QUIT nested, its frames never freed). Now the RP! unwinds: the
+ *  interpreter that owns the new rp resumes at the operation after it, as after (ABORT")'s jit_resume0, the
+ *  native frames and interpreters between dropped; and a sentinel leaves to its own interpreter.  */
+struct jit_lvl { UNS64 rp; void **tb, **jb, **self; struct jit_lvl *up; };
+static struct jit_lvl *jit_lv;          /* the innermost nested interpreter, 0 in the outermost */
+static void jit_unwind(UNS64 rp, UNS64 dsp, UNS64 ip) {
+    struct jit_lvl *o = jit_lv;
+    while (o->up && rp > o->up->rp) o = o->up;      /* the outermost one rp is past: its caller owns rp */
+    jit_lv = o->up; jit_jb = o->jb;
+#if JITRP && defined(__x86_64__)
+    spn_rpr = (ucell)rp;
+#else
+    jit_rp = (ucell)rp;
+#endif
+    jit_tsp = (cell *)(uintptr_t)(dsp + CELL_BYTES); jit_ttos = (cell)CELL(dsp); jit_rip = ip;
+    __builtin_longjmp(o->tb, 1);
+}
+#define JIT_PAST(rp_) (jit_lv && (UNS64)(rp_) > jit_lv->rp)
+#endif
+static spn_st SPN_CC jit_leave(cell *sp, cell tos) {
+    jit_lsp = sp; jit_ltos = tos;
+#if JITMUL
+    {   /* 672: the interpreter whose sentinel this was: the innermost one, unless rp moved past its sentinel */
+        struct jit_lvl *o = jit_lv; UNS64 rp_ = JIT_RP_GET();
+        while (o && o->up && rp_ > o->up->rp) o = o->up;
+        if (o) { jit_lv = o; __builtin_longjmp(o->self, 1); }
+    }
+#endif
+    __builtin_longjmp(jit_jb, 1);
+}
 static spn_st jit_interp(cell *sp, cell tos, cell body) {
     void *jb[5]; void **prev = jit_jb;
 #if JITMUL
     void **prevtb = jit_tb;             /* 476: a throw's return point is the outer jit_call's again after */
+    struct jit_lvl me_;
 #endif
     g_dsp = (UNS64)(uintptr_t)sp - CELL_BYTES; CELL(g_dsp) = (UNS64)tos;
 #if JITRP && defined(__x86_64__)
@@ -1438,11 +1475,14 @@ static spn_st jit_interp(cell *sp, cell tos, cell body) {
     g_rp = JIT_RP_GET() - CELL_BYTES; CELL(g_rp) = (UNS64)(uintptr_t)jit_sentinel;   /* 494: the register under jitrp */
 #endif
     g_ip = (UNS64)body;
+#if JITMUL
+    me_.rp = g_rp; me_.tb = prevtb; me_.jb = prev; me_.self = jb; me_.up = jit_lv; jit_lv = &me_;
+#endif
     jit_jb = jb;
     if (!__builtin_setjmp(jb)) virtual_machine();
     jit_jb = prev;
 #if JITMUL
-    jit_tb = prevtb;
+    jit_tb = prevtb; jit_lv = me_.up;
 #endif
     return SPN_ST(jit_lsp, jit_ltos);
 }
@@ -2259,7 +2299,11 @@ L_bye:     /* bye     */ t_flush(); PROFDUMP; exit(0);
 L_spfetch: /* sp@     */ PUSH(dsp + CELL_BYTES); NEXT();
 L_spstore: /* sp!     */ dsp = DS0; NEXT();
 L_rpfetch: /* rp@     */ PUSH(rp); NEXT();
-L_rpstore: /* rp!     */ rp = DS0; dsp += CELL_BYTES; NEXT();
+L_rpstore: /* rp!     */ rp = DS0; dsp += CELL_BYTES;
+#if JITEXEC && JITMUL
+    if (JIT_PAST(rp)) jit_unwind(rp, dsp, ip);  /* 672: a CATCH in an outer interpreter - its frames */
+#endif
+    NEXT();
 
 L_openfile: { /* c-addr u fam --- fid ior */
     int fd;

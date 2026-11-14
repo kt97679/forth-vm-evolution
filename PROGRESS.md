@@ -11445,3 +11445,22 @@ lines must be A's. Self-built against translator: best-all-round 8,090/8,354 and
 the JIT's header to (PARSE) placed among the primitives (--op-inline) in fastest-x86-32 and small-jit, so a
 run-time compiled (PARSE) is the JIT's opcode (fastest-x86-32: a segmentation fault) - the self-built images do
 not. Notes: results/drafts/selfhost-plan-666.md, "Phase 3 done (672)". Next: phase 5.
+
+## Iteration 673 - 2026-11-14 - Claude
+
+relf's report (its Iteration 942: on the JIT designs a THROW reached from native code does not unwind the native
+frames) checked and fixed in the engine. Reproduced on fastest-x86-64, fastest-x86-32 and best-all-round at both
+widths (`: T2 ABORT ; : T3 ['] T2 CATCH . ; : T5 ['] T3 EXECUTE 5 . ;` prints `-1`, not `-1 5`; small-jit, without
+jitexec, is right), on the self-built images in both of relf's variants, and as a leak: 30,000 uncaught ABORTs kill
+all three. relf's analysis confirmed with a JITLOG build: THROW, cold, runs in a second nested interpreter; its RP!
+lands in the first's CATCH frame; the continuation runs on there and the first's sentinel leaves through the
+innermost jit_jb, into ABORT's native code. The fix (engine/vm-lab.c, under JITEXEC and JITMUL): each nested
+interpreter records its sentinel slot and the jit_call it was called from; an RP! past the innermost sentinel
+unwinds to the interpreter that owns the new rp, which resumes after the RP! (as after (ABORT")'s jit_resume0); a
+sentinel leaves to its own interpreter. designs/test.sh gains relf's two cases, the CATCH continuation through an
+outer EXECUTE, two interpreters between CATCH and THROW, and the uncaught leak - 20 of 20 ok, the three failing
+before. export-designs.py: all 20 engines the lab's bytes, only vm.c changing; the seven other designs' engines byte
+for byte the recorded ones; run-tests PASS, validate 7 of 7, pack-designs 9 of 9 on the four JIT designs at both
+widths, the 21 self-hosting checks pass; speed the same. relf's side observations (THROW at 4115 against the cold
+list's 4120; variables padded before DOVAR) confirmed: the translator's padding, absent from the self-built images -
+no cold-list change. Notes: results/jit-throw-unwind-673.md.
