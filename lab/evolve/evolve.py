@@ -1976,7 +1976,7 @@ def stale_build():
     srcs = [os.path.join(ROOT, 'engine', 'vm-lab.c'), os.path.join(ROOT, 'tools', 'gen-tos.py'),
             os.path.join(ROOT, 'tools', 'build-stages.sh')]
     srcs += [os.path.join(ROOT, 'forth', f) for f in os.listdir(os.path.join(ROOT, 'forth'))
-             if f.endswith('.4') or f.endswith('-seed.img')]
+             if (f.endswith('.4') and f != 'cross-cv8.4') or f.endswith('-seed.img')]   # 670: no build reads cross-cv8.4
     return sorted(os.path.relpath(f, ROOT) for f in srcs if os.path.exists(f) and os.path.getmtime(f) > when + 1)
 
 def setup():

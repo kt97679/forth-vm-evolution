@@ -22,9 +22,7 @@ else
     [ -x "$ENG" ] || make -s -C "designs/$N" forth > /dev/null 2>&1 || { echo "selfhost-check: can't make designs/$N/forth"; exit 1; }
 fi
 rm -rf "$D"; mkdir -p "$D"
-OVL=$(sed -n 's/^: G-OVERLAYS ( --- c-addr u ) S" \([^"]*\)".*/\1/p' "$GENES")
-[ -n "$OVL" ] || { echo "selfhost-check: no overlays in $GENES"; exit 1; }
-for f in extend.4 kernel.4 cross-cv8.4 $OVL; do cp "forth/$f" "$D/"; done
+cp forth/*.4 "$D/"      # the cross compiler reads kernel.4 and the overlays the genes name
 cp "$GENES" "$D/genes.4"
 cross() {   # cross IMAGE OUT - run the cross compiler on IMAGE, its image moved to OUT
     rm -f "$D/cv8-self.img"

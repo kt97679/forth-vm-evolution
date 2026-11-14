@@ -48,28 +48,52 @@ def genes(name, args, eflags, out):
     o10 = json.load(open(opt(args, '--ops10-file'))) if '--ops10-file' in args else []
     espec, ehot, etag2 = eflags.get('SPEC', 0), eflags.get('HOTCALLS', 0), eflags.get('TAG2', 0)
     feat = 1 | (2 if eflags.get('VARSLOT', 1) else 0) | (4 if espec else 0) | 8 | 16 | (32 if ehot else 0) | (64 if etag2 else 0)
+    def lst(nm, toks, what):
+        # A list: G-LIST: NAME, then its text a line at a time - REFILL reads 256 characters a line at most.
+        out, cur = ['G-LIST: %s  \\ %s' % (nm, what)], ''
+        for t in toks:
+            if cur and len(cur) + len(t) + 1 > 100: out.append('S" %s" G+' % cur); cur = ''
+            cur += t + ' '
+        if cur: out.append('S" %s" G+' % cur)
+        return out
     L = ['\\ %s - %s\'s genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the' % (os.path.relpath(out), name),
          '\\ options the evolver hands the translator (tools/layout.py) and the engine\'s flags. Include it before',
          '\\ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED',
-         ': G-OVERLAYS ( --- c-addr u ) S" %s " ;          \\ after kernel.4, in this order' % ' '.join(ov),
-         ': G-FOLDS ( --- c-addr u ) S" %s " ;     \\ the fold set: FOLD-BASE + place' % ' '.join(folds),
-         '%d CONSTANT G-SPEC          \\ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc' % bits,
-         ': G-SUPERS ( --- c-addr u ) S" %s " ;    \\ fused pairs: first second opcode' % ' '.join('%s %s %d' % (a, b, n) for a, b, n in sup),
-         ': G-OPS10 ( --- c-addr u ) S" %s " ;     \\ format-10 operations: name opcode' % ' '.join('%s %d' % (a, n) for a, n in o10),
-         '%d CONSTANT G-HOTCALLS      \\ one-byte calls, at most' % (int(opt(args, '--hotcalls', 0)) if ehot else 0),
+         '\\ A list is a word giving its text ( --- c-addr u ), names and numbers each followed by one space.',
+         'VARIABLE G-AT',
+         ': G-LIST: ( "name" --- ) CREATE HERE G-AT ! 0 , DOES> DUP CELL+ SWAP @ ;',
+         ': G+ ( c-addr u --- ) DUP G-AT @ +! HERE SWAP DUP ALLOT CMOVE ;']
+    L += lst('G-OVERLAYS', ov, 'after kernel.4, in this order')
+    L += lst('G-FOLDS', folds, 'the fold set: FOLD-BASE + place')
+    L += ['%d CONSTANT G-SPEC          \\ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc' % bits]
+    L += lst('G-SUPERS', ['%s %s %d' % (a, b, n) for a, b, n in sup], 'fused pairs: first second opcode')
+    L += lst('G-OPS10', ['%s %d' % (a, n) for a, n in o10], 'format-10 operations: name opcode')
+    L += [
+          '%d CONSTANT G-HOTCALLS      \\ one-byte calls, at most' % (int(opt(args, '--hotcalls', 0)) if ehot else 0),
          '%d CONSTANT G-OP-BODIES     \\ the format-10 words\' bodies their opcode' % (-1 if '--op-bodies' in args else 0),
          '%d CONSTANT G-OP-INLINE     \\ ...placed among the primitives' % (-1 if '--op-inline' in args else 0),
          '%d CONSTANT G-BSS           \\ TIB, POCKET, INCLUDE-BUFFER past the image\'s end' % (-1 if '--bss' in args else 0),
          '%d CONSTANT G-THIN-HEADER   \\ one empty thread head in the file' % (-1 if '--thin-header' in args else 0),
          '%d CONSTANT G-THREADS       \\ the dictionary\'s hash threads' % int(opt(args, '--threads', 32)),
-         ': G-REBIND ( --- c-addr u ) S" %s " ;    \\ the kernel\'s uses rebound to the overlays\' words' % ' '.join((opt(args, '--rebind') or '').split(',')).strip(),
-         ': G-HEADERLESS ( --- c-addr u ) S" %s " ;' % ' '.join((opt(args, '--headerless') or '').split(',')).strip(),
-         '%d CONSTANT G-ENGINE-SPEC   \\ the engine\'s flags: SPEC (the locals block in the header)' % (1 if espec else 0),
+         '%d CONSTANT G-RTFUSE        \\ the run-time fuser\'s tables filled (cv8-fuse.4\'s SUPER-TABLE, IMM-OPS)' % (-1 if '--rtfuse' in args else 0),
+          ]
+    # --escape: the rarely used primitives behind ESC (0x7D) and a selector, the others closing up
+    # (tools/sod16.py's ESC_PRIMS_ALL and cv8_op; the engine's -DESCAPE=1)
+    esc = re.search(r'ESC_PRIMS_ALL = set\(\"\"\"(.*?)\"\"\"', open('tools/sod16.py').read(), re.S).group(1).split()
+    L += ['%d CONSTANT G-ESCAPE         \\ escaped primitives: two bytes, ESC and a selector' % (-1 if '--escape' in args else 0)]
+    L += lst('G-ESC-PRIMS', esc if '--escape' in args else [], 'the escaped primitives')
+    L += ['%d CONSTANT G-VARSLOT        \\ slot operands 2 or 3 bytes, high byte first; else 2, low first' % (-1 if eflags.get('VARSLOT', 1) else 0)]
+    L += lst('G-REBIND', [t for t in (opt(args, '--rebind') or '').split(',') if t], "the kernel's uses rebound to the overlays' words")
+    L += lst('G-HEADERLESS', [t for t in (opt(args, '--headerless') or '').split(',') if t], 'no headers')
+    L += ['%d CONSTANT G-ENGINE-SPEC   \\ the engine\'s flags: SPEC (the locals block in the header)' % (1 if espec else 0),
          '%d CONSTANT G-FEATURES      \\ the image\'s feature bits (engine/vm-lab.c\'s IMAGE_MAGIC)' % feat,
          '%d CONSTANT G-MAGIC5' % (76 if espec else 0)]
-    for k in ('--escape', '--escape2', '--rtfuse', '--tag2', '--hot-inline', '--jit'):
-        if k in args: L.append('\\ not yet: %s' % k)
-    open(out, 'w').write('\n'.join(L).replace(' S"  " ;', ' S" " ;') + '\n')
+    # What forth/cross-cv8.4 has no rule for yet: it refuses a design that names one.
+    ny = [k for k in ('--escape2', '--tag2', '--hot-inline', '--jit', '--opcall-file', '--guard-abort') if k in args]
+    ny += [n for n in ('=I?BRANCH', '=I?BRANCH8', 'DUP?NBRANCH', 'DUP?NBRANCH8') if n in dict(o10)]
+    L += lst('G-NOT-YET', ny, "the translator's options the cross compiler does not do yet")
+    assert max(len(l) for l in L) < 250, 'a genes line too long for REFILL'
+    open(out, 'w').write('\n'.join(L) + '\n')
     print(out, '-', len(ov), 'overlays,', len(folds), 'folds, spec', bits, ',', len(o10), 'ops10,', len(sup), 'pairs')
 
 ROLES = sorted(d for d in os.listdir('designs') if os.path.exists(os.path.join('designs', d, 'record.json')))

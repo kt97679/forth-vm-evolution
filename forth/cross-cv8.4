@@ -282,11 +282,12 @@ VARIABLE CSP   \ Stack pointer checking between : and ;
   DUP 2097152 < 0= ABORT" cross: call beyond reach"
   DUP 16 RSHIFT 192 OR C,-T DUP 8 RSHIFT 255 AND C,-T 255 AND C,-T ;
 
-: SLOTSIZE-T ( t-addr --- n ) 32768 < IF 2 ELSE 3 THEN ;
+: SLOTSIZE-T ( t-addr --- n ) G-VARSLOT IF 32768 < IF 2 ELSE 3 THEN ELSE DROP 2 THEN ;
 : SLOT,-T ( t-addr --- )
 \ A slot operand: the byte offset from the base (scale 0), high byte
 \ first - 15 bits in 2 bytes, 23 in 3 with the top bit set (vm-lab.c's
-\ SLOT()).
+\ SLOT()); an engine without VARSLOT reads two bytes, low first.
+  G-VARSLOT 0= IF DUP 65536 < 0= ABORT" cross: slot beyond reach" DUP 255 AND C,-T 8 RSHIFT C,-T EXIT THEN
   DUP 32768 < IF DUP 8 RSHIFT C,-T 255 AND C,-T EXIT THEN
   DUP 8388608 < 0= ABORT" cross: slot beyond reach"
   DUP 16 RSHIFT 128 OR C,-T DUP 8 RSHIFT 255 AND C,-T 255 AND C,-T ;
@@ -301,8 +302,8 @@ VARIABLE CSP   \ Stack pointer checking between : and ;
 CREATE FOLDMAP 128 ALLOT  FOLDMAP 128 0 FILL   \ opcode -> folded opcode, or 0
 : SPEC? ( bit --- f ) G-SPEC AND 0= 0= ;
 
-: SPECIAL-SET ( --- c-addr u ) S" + = @ ! " ;
-CREATE SPECIAL-OPS 4 CELLS ALLOT  SPECIAL-OPS 4 CELLS -1 FILL
+: SPECIAL-SET ( --- c-addr u ) S" + = @ ! DUP SWAP < " ;      \ the primitives the patterns name
+CREATE SPECIAL-OPS 8 CELLS ALLOT  SPECIAL-OPS 8 CELLS -1 FILL
 : SPECIAL ( i --- op ) CELLS SPECIAL-OPS + @ ;
 
 : TINY-SET ( --- c-addr u )
@@ -489,7 +490,14 @@ VARIABLE FWD-LIST 0 FWD-LIST !
 : FWD-SHADOW ( body --- shadow | 0 ) FWD-NAME T-SHADOW 0= IF 0 THEN ;
 : FWD-XT ( body --- t-xt -1 | 0 ) FWD-SHADOW ?DUP IF @ -1 ELSE 0 THEN ;
 : FWD-REF ( body --- body ) DUP FWD-SHADOW ?DUP IF REF! THEN ;
-: F+ ( fwd-body --- ) FWD-REF O-F SWAP 0 0 OP+ ;
+: F+ ( fwd-body --- )
+\ A call to a FORWARD; once the word exists, what its name compiles - a
+\ format-10 word's opcode ((DO) where the design has it), a primitive's.
+  DUP FWD-SHADOW ?DUP IF
+    DUP CELL+ @ DUP K-PRIM = SWAP K-COLON = OR OVER 2 CELLS + @ AND IF
+      DUP 2 CELLS + @ SWAP P+ DROP EXIT THEN
+    REF!
+  THEN O-F SWAP 0 0 OP+ ;
 : FWD-SITE-SIZE ( body --- n )
   DUP FWD-SHADOW ?DUP IF SWAP DROP SITE-SIZE EXIT THEN 4 CELLS + @ CHAIN-SIZE ;
 : FWD-SITE, ( body --- )
@@ -550,7 +558,7 @@ VARIABLE FWD-LIST 0 FWD-LIST !
   #OPS @ 1 > 0= IF EXIT THEN
   #OPS @ 1- 0 ?DO
     I 1+ EXIT-OP? I 1+ TGT? 0= AND IF
-      I OP-K O-P = IF I OP-A CHARS FOLDMAP + C@ ?DUP IF O-P SWAP 0 0 I OP! I 1+ KILL THEN THEN
+      I OP-K O-P = I OP-A 128 < AND IF I OP-A CHARS FOLDMAP + C@ ?DUP IF O-P SWAP 0 0 I OP! I 1+ KILL THEN THEN
       I OP-K O-IMM = IF I OP-A 1 AND 0= IF O-IMM I OP-A 1+ I OP-B 0 I OP! I 1+ KILL THEN THEN
       I OP-K O-LIT = IF I OP-A DUP 0< 0= SWAP 65536 < AND 2 FOLDMAP + C@ 0= 0= AND IF
         O-LITX I OP-A 0 0 I OP! I 1+ KILL THEN THEN
@@ -587,6 +595,12 @@ CREATE PAIRS 64 3 * CELLS ALLOT  VARIABLE #PAIRS 0 #PAIRS !  VARIABLE PAIRS-OPEN
     THEN
   LOOP ;
 
+\ What the cross compiler does not do yet refuses the design (the genes'
+\ G-NOT-YET: the translator's options it has no rule for).
+: NOT-YET? ( --- )
+  G-NOT-YET DUP IF S" cross: not yet: " TYPE TYPE CR -1 ABORT" cross: the design needs what this compiler does not do yet" THEN 2DROP ;
+NOT-YET?
+
 : TEST-PASS ( --- )
 \ A test, then a ?BRANCH nothing lands on: the fused branch, where the
 \ design has it - the test's shadow carries the opcodes.
@@ -600,6 +614,37 @@ CREATE PAIRS 64 3 * CELLS ALLOT  VARIABLE #PAIRS 0 #PAIRS !  VARIABLE PAIRS-OPEN
     THEN
   LOOP ;
 
+\ tools/sod16.py's keepbranch: SWAP or DUP before an ADDI, as SWAP+I and
+\ DUP+I; DUP n < as DUP<I (n in -128..127) - where nothing lands on what
+\ is taken in. (DUP before a fused 0= ?BRANCH and EQI n ?BRANCH, the
+\ translator's other two, are in no design here: G-NOT-YET has them.)
+S" SWAP+I" OPS10-OF CONSTANT X-SADDI
+S" DUP+I" OPS10-OF CONSTANT X-DADDI
+S" DUP<I" OPS10-OF CONSTANT X-DLTI
+: ADDI-AT? ( i --- f ) DUP OP-K O-IMM = SWAP OP-A 120 = AND ;
+: DLTI-AT? ( i --- f )
+\ DUP at i - n < after it, nothing landing on them.
+  DUP 2 + #OPS @ < 0= IF DROP 0 EXIT THEN
+  DUP 1+ OP-K O-LIT = 0= IF DROP 0 EXIT THEN
+  DUP 1+ OP-A DUP -128 < 0= SWAP 128 < AND 0= IF DROP 0 EXIT THEN
+  DUP 2 + TGT? IF DROP 0 EXIT THEN
+  DUP 2 + OP-K O-P = SWAP 2 + OP-A 6 SPECIAL = AND ;
+: KEEP-PASS ( --- )
+  X-SADDI X-DADDI OR X-DLTI OR 0= IF EXIT THEN
+  #OPS @ 1 > 0= IF EXIT THEN
+  #OPS @ 1- 0 ?DO
+    I OP-K O-P = I 1+ TGT? 0= AND IF
+      I OP-A 5 SPECIAL = I 1+ ADDI-AT? AND X-SADDI AND IF
+        O-IMM X-SADDI I 1+ OP-B 0 I OP! I 1+ KILL
+      ELSE I OP-A 4 SPECIAL = IF
+        I 1+ ADDI-AT? X-DADDI AND IF
+          O-IMM X-DADDI I 1+ OP-B 0 I OP! I 1+ KILL
+        ELSE I DLTI-AT? X-DLTI AND IF
+          O-IMM X-DLTI I 1+ OP-A 0 I OP! I 1+ KILL I 2 + KILL
+        THEN THEN
+      THEN THEN
+    THEN
+  LOOP ;
 
 \ ---- layout and encoding --------------------------------------------
 : LIT-SIZE ( n --- size )
@@ -643,7 +688,8 @@ CREATE PAIRS 64 3 * CELLS ALLOT  VARIABLE #PAIRS 0 #PAIRS !  VARIABLE PAIRS-OPEN
 : S-STR ( addr i --- n ) OP-B 1+ OVER + ALIGNED-T SWAP - ;
 
 : E-DEAD ( i --- ) DROP ;
-: E-P ( i --- ) OP-A C,-T ;
+: E-P ( i --- ) OP-A DUP 256 < IF C,-T ELSE 125 C,-T 256 - C,-T THEN ;   \ an escaped primitive: ESC, its selector
+: S-P ( addr i --- n ) SWAP DROP OP-A 256 < IF 1 ELSE 2 THEN ;
 : E-C ( i --- ) OP-C SITE, ;
 : E-F ( i --- ) OP-A FWD-SITE, ;
 : E-RB ( i --- ) OP-A RB-SITE, ;
@@ -677,7 +723,7 @@ CREATE SIZERS 16 CELLS ALLOT
 CREATE ENCODERS 16 CELLS ALLOT
 : KIND! ( sizer encoder kind --- ) CELLS DUP >R ENCODERS + ! R> SIZERS + ! ;
 ' S-0 ' E-DEAD O-DEAD KIND!
-' S-1 ' E-P O-P KIND!
+' S-P ' E-P O-P KIND!
 ' S-C ' E-C O-C KIND!
 ' S-F ' E-F O-F KIND!
 ' S-LIT ' E-LIT O-LIT KIND!
@@ -739,7 +785,7 @@ VARIABLE CHANGED
 \ a dead word.
   1 0 P+
   DEAD-NOW @ IF 0 #OPS ! EXIT THEN
-  SPECIALISE COMPACT FOLD-PASS COMPACT PAIR-PASS COMPACT TEST-PASS COMPACT
+  SPECIALISE COMPACT FOLD-PASS COMPACT PAIR-PASS COMPACT TEST-PASS COMPACT KEEP-PASS COMPACT
   COUNTING @ IF COUNT-SITES THEN
   THERE RELAX ENCODE 0 #OPS ! ;
 
@@ -754,7 +800,11 @@ VARIABLE IN-KERNEL 0 IN-KERNEL !   \ on while kernel.4 is compiled: rebinding is
 \ the same name, which defers to the one before it. Inside a definition
 \ a target word is compiled, IMMEDIATE or not (cross.4's rule: only
 \ TRANSIENT's words run).
+\ The overlays are written for a running Forth, where an IMMEDIATE word
+\ runs: met in one of their definitions it needs a twin in TRANSIENT.
   STATE-T @ IF
+    IN-KERNEL @ 0= IF DUP 5 CELLS + @ IF ." cross: " DUP SH-NAME TYPE CR
+      -1 ABORT" cross: an overlay's IMMEDIATE word with no twin" THEN THEN
     DUP >REDIR @ ?DUP IF LAST-SHADOW @ >REDIR @ OVER = IF DROP ELSE SWAP DROP THEN THEN
     DUP 8 CELLS + @ ?DUP IF SWAP DROP O-RB SWAP 0 0 OP+ EXIT THEN
     DUP CELL+ @
@@ -822,6 +872,11 @@ VARIABLE SH-KIND
 : I-' ( "name" --- t-xt ) BL WORD COUNT T-SHADOW 0= ABORT" cross: ' of no target word" DUP REF! @ ;
 : I->OP C@-T ;      \ a CV8 primitive's body starts with its opcode
 : I-HERE THERE ;
+: I-FOLD-DEFAULTS ( --- )
+\ cv8-fuse.4's copy of FOLD-OPS into FOLD-TABLE, done in the image.
+  S" FOLD-OPS" T-SHADOW 0= ABORT" cross: no FOLD-OPS" @ >BODY-T
+  S" #FOLD-OPS" T-SHADOW 0= ABORT" cross: no #FOLD-OPS" 2 CELLS + @
+  0 ?DO DUP I + C@-T C,-T LOOP DROP ;
 : I-CV8-SHIFT-DEFAULT TARGET-CELL-BYTES @ 8 = IF 3 ELSE 2 THEN ;
 : I-CREATE ( "name" --- ) DATA-HEADER DOES> REF-T ;
 
@@ -998,15 +1053,25 @@ CREATE BSSR 8 CELLS ALLOT  VARIABLE #BSS 0 #BSS !    \ [LIT32's operand][bytes]
 \ The kinds of : definition.
 VARIABLE COLON-OP   VARIABLE SWAP-K   VARIABLE OPB-K   VARIABLE REDIR-K
 : COLON-VALUE ( c-addr u --- n )
-\ The opcode a kernel word's calls become, or 0: a format-10 operation's
-\ (tools/sod16.py's ops10_rewrite - first, as opcode_L reads it), a tiny
-\ word's (specialisation tiny).
+\ The opcode a word's calls become, or 0: a format-10 operation's
+\ (tools/sod16.py's ops10_rewrite - first, as opcode_L reads it; each is
+\ defined once, in kernel.4 or an overlay), a kernel tiny word's
+\ (specialisation tiny).
+  2DUP OPS10-OF ?DUP IF
+    >R T-SHADOW IF 2 CELLS + @ R@ = ABORT" cross: a format-10 word defined twice" THEN R> EXIT THEN
   IN-KERNEL @ 0= IF 2DROP 0 EXIT THEN
-  2DUP OPS10-OF ?DUP IF >R 2DROP R> EXIT THEN
   8 SPEC? 0= IF 2DROP 0 EXIT THEN
   TINY-SET LIST-INDEX DUP 0< IF DROP 0 ELSE TINY-BASE + THEN ;
 
 VARIABLE NEXT-OP 0 NEXT-OP !     \ The next primitive's opcode.
+VARIABLE NEXT-ESC 0 NEXT-ESC !   \ ...and the next escaped one's selector (--escape)
+: ESCAPED? ( c-addr u --- f ) G-ESCAPE IF G-ESC-PRIMS LIST-INDEX 0< 0= ELSE 2DROP 0 THEN ;
+: OPCODE-T ( c-addr u --- op )
+\ The next primitive's opcode, by kernel.4's order: an escaped one's
+\ selector + 256 (two bytes, ESC and the selector), the others closing up
+\ (tools/sod16.py's cv8_op).
+  ESCAPED? IF NEXT-ESC @ 256 + 1 NEXT-ESC +! ELSE NEXT-OP @ 1 NEXT-OP +! THEN ;
+VARIABLE PRIM-OP-NOW
 
 : REDIRECTED ( shadow --- shadow' )
 \ An X8 the kernel's X branches to is reached as X, but from a later X8
@@ -1019,19 +1084,22 @@ ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
 \ The next opcode: a body of the opcode and EXIT, the macro bit (32) set
 \ as the cell cross compiler set it; COMPILE, asks PRIMITIVE? by address.
 \ A fold-set primitive's folded opcode is FOLD-BASE + its place.
-  >IN @ >R BL WORD COUNT 2DUP G-FOLDS LIST-INDEX >R SPECIAL-SET LIST-INDEX R> R> >IN !
-  DUP 0< 0= IF FOLD-BASE + NEXT-OP @ CHARS FOLDMAP + C! ELSE DROP THEN
-  DUP 0< 0= IF CELLS SPECIAL-OPS + NEXT-OP @ SWAP ! ELSE DROP THEN
+  >IN @ >R BL WORD COUNT 2DUP OPCODE-T PRIM-OP-NOW !
+  2DUP G-FOLDS LIST-INDEX >R SPECIAL-SET LIST-INDEX R> R> >IN !
+  DUP 0< 0= IF FOLD-BASE + PRIM-OP-NOW @ CHARS FOLDMAP + C! ELSE DROP THEN
+  DUP 0< 0= IF CELLS SPECIAL-OPS + PRIM-OP-NOW @ SWAP ! ELSE DROP THEN
   "HEADER >R
   TLINK @ ?DUP IF DUP C@-T 32 OR SWAP C!-T THEN
-  K-PRIM NEXT-OP @ R> SHADOW,
-  DEAD-NOW @ 0= IF NEXT-OP @ C,-T 1 C,-T THEN
-  1 NEXT-OP +!
+  K-PRIM PRIM-OP-NOW @ R> SHADOW,
+  DEAD-NOW @ 0= IF
+    PRIM-OP-NOW @ DUP 256 < IF C,-T ELSE 125 C,-T 256 - C,-T THEN 1 C,-T
+  THEN
   DOES> REF-T ;
 
 : PRIMITIVE-SLOT ( --- )
-\ An opcode kept without a name (kernel.4, Iteration 147).
-  BL WORD DROP 1 NEXT-OP +! ;
+\ An opcode kept without a name (kernel.4, Iteration 147) - or, escaped,
+\ a selector.
+  BL WORD COUNT OPCODE-T DROP ;
 
 : : ( --- )
 \ A kernel word an overlay's X8 replaces: a branch to it, its own body
@@ -1041,7 +1109,7 @@ ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
   2DUP INLINED? IF 2DROP BL WORD DROP SKIP-DEF EXIT THEN
   2DUP COLON-VALUE COLON-OP !
   IN-KERNEL @ IF 2DUP SWAP-SET LIST-INDEX ELSE -1 THEN SWAP-K !
-  IN-KERNEL @ IF 2DUP OPBODY-OP ELSE 0 THEN OPB-K !
+  2DUP OPBODY-OP OPB-K !
   X8-OF DUP REDIR-K ! 0= 0= HEADERLESS !
   SWAP-K @ 0< OPB-K @ 0= AND IF HIDE-NEXT THEN
   "HEADER >R K-COLON COLON-OP @ R> SHADOW,  0 HEADERLESS !
@@ -1094,7 +1162,12 @@ FORWARD (ABORT")
 FORWARD (POSTPONE)
 
 : DO ( --- j ) [ TRANSIENT ] (DO) [ FORTH ] #OPS @ DUP MARK ;
-: LOOP ( j --- ) >R O-LOOPC [ TRANSIENT ] ['] (LOOP) [ FORTH ] >BODY FWD-REF R> 0 OP+ ;
+: LOOP ( j --- )
+\ (LOOP) and the cell after it - or (LOOP)'s format-10 opcode with a
+\ branch's offset, where the design has it (ops10_rewrite's LOOPKIND).
+  [ TRANSIENT ] ['] (LOOP) [ FORTH ] >BODY DUP FWD-SHADOW ?DUP IF
+    DUP CELL+ @ K-COLON = OVER 2 CELLS + @ AND IF 2 CELLS + @ SWAP DROP 0 BR+ EXIT THEN DROP
+  THEN FWD-REF >R O-LOOPC R> ROT 0 OP+ ;
 : ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE STR+ ;
 : ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STR+ ;
 : POSTPONE ( "name" --- )
@@ -1185,6 +1258,59 @@ VARIABLE DPL
 \ translator writes them (tools/layout.py, the compiler's own tables):
 \ cv8.4's FOLD-OPS, the design's folds in fold-opcode order, padded with
 \ 255.
+: TXT ( c-addr u --- t-xt ) T-SHADOW 0= ABORT" cross: no such target word" @ ;
+
+\ cv8-fuse.4's FOLD-TABLE always (the count, then the folds' opcodes);
+\ with --rtfuse its SUPER-TABLE (the fused tests the compiler can make -
+\ I + as I+ first - then the pairs, by opcode, to 24 entries; else none),
+\ cv8-fuse-imm.4's IMM-OPS, and cv8-fuse-loopall.4's LOOPTAB (the eight
+\ loop opcodes, I's offset, J's and UNLOOP's distance past it).
+: TB! ( c t-addr --- t-addr+1 ) SWAP OVER C!-T 1+ ;
+: FOLD-TABLE! ( --- )
+  S" FOLD-TABLE" T-SHADOW 0= IF EXIT THEN @ >BODY-T
+  G-FOLDS LIST-COUNT SWAP TB!
+  G-FOLDS LIST-COUNT 0 ?DO I G-FOLDS LIST-TOKEN NAME-OP SWAP TB! LOOP DROP ;
+: PRIM-OP ( c-addr u --- op | -1 )
+\ A primitive's opcode (tools/sod16.py's cv8_op), or -1.
+  T-SHADOW IF DUP CELL+ @ K-PRIM = IF 2 CELLS + @ ELSE DROP -1 THEN ELSE -1 THEN ;
+: RT-TESTS ( --- c-addr u ) S" 0= < = U< - <> > 0< DUP OVER " ;
+VARIABLE ST-AT  VARIABLE ST-N
+: ST3 ( a b c --- ) ST-AT @ 2 + C!-T ST-AT @ 1+ C!-T ST-AT @ C!-T 3 ST-AT +! 1 ST-N +! ;
+: SUPER-TABLE! ( --- )
+  S" SUPER-TABLE" T-SHADOW 0= IF EXIT THEN @ >BODY-T DUP 1+ ST-AT ! 0 ST-N !
+  G-RTFUSE IF
+    S" I+" OPS10-OF ?DUP IF S" I" OPS10-OF ?DUP IF S" +" PRIM-OP ROT ST3 ELSE DROP THEN THEN
+    RT-TESTS LIST-COUNT 0 ?DO
+      I RT-TESTS LIST-TOKEN 2DUP TEST-OPS DROP ?DUP IF
+        >R PRIM-OP DUP 0< IF DROP R> DROP ELSE S" ?BRANCH" PRIM-OP R> ST3 THEN
+      ELSE 2DROP THEN
+    LOOP
+    PAIRS-INIT #PAIRS @ 0 ?DO
+      ST-N @ 24 < IF I 3 * CELLS PAIRS + DUP @ OVER CELL+ @ ROT 2 CELLS + @ ST3 THEN
+    LOOP
+  THEN
+  ST-N @ SWAP C!-T ;
+: IMM-OPS! ( --- )
+  S" IMM-OPS" T-SHADOW 0= IF EXIT THEN @ >BODY-T
+  G-RTFUSE 2 SPEC? AND IF 120 ELSE 0 THEN SWAP TB!
+  G-RTFUSE IF S" SWAP+I" OPS10-OF ELSE 0 THEN SWAP TB!
+  S" +" PRIM-OP SWAP TB!  S" SWAP" PRIM-OP SWAP TB!
+  G-RTFUSE IF S" DUP+I" OPS10-OF ELSE 0 THEN SWAP TB!
+  G-RTFUSE IF S" DUP<I" OPS10-OF ELSE 0 THEN SWAP TB!
+  S" DUP" PRIM-OP SWAP TB!  S" <" PRIM-OP SWAP TB! DROP ;
+VARIABLE LT-AT
+: NEAR-I? ( n --- f ) DUP 0 > SWAP 256 < AND ;
+: LOOPTAB! ( --- )
+  S" LOOPTAB" T-SHADOW 0= IF EXIT THEN @ >BODY-T LT-AT !
+  8 0 DO
+    I S" (DO) (LOOP) (+LOOP) (?DO) (LEAVE) I J UNLOOP " LIST-TOKEN OPS10-OF
+    DUP 0= ABORT" cross: LOOPTAB needs all eight loop opcodes"
+    LT-AT @ I + C!-T
+  LOOP
+  S" I" TXT DUP 65536 < 0= ABORT" cross: LOOPTAB: I beyond 64 KB"
+  DUP 255 AND LT-AT @ 8 + C!-T  DUP 8 RSHIFT LT-AT @ 9 + C!-T
+  S" J" TXT OVER - DUP NEAR-I? 0= ABORT" cross: LOOPTAB: J not near I" LT-AT @ 10 + C!-T
+  S" UNLOOP" TXT SWAP - DUP NEAR-I? 0= ABORT" cross: LOOPTAB: UNLOOP not near I" LT-AT @ 11 + C!-T ;
 : FOLD-OPS! ( --- )
   S" FOLD-OPS" T-SHADOW 0= IF EXIT THEN @ >BODY-T
   23 0 DO 255 OVER I + C!-T LOOP
@@ -1227,7 +1353,6 @@ VARIABLE FID-OUT
   FID-OUT @ CLOSE-FILE ABORT" cross: can't close" ;
 
 : DP-END ( --- t-addr ) G-BSS IF BSS-PLACE ELSE THERE THEN ;
-: TXT ( c-addr u --- t-xt ) T-SHADOW 0= ABORT" cross: no such target word" @ ;
 
 \ PART 10: THE PASSES - THE KERNEL, THE OVERLAYS, THE IMAGE.
 
@@ -1239,7 +1364,7 @@ VARIABLE FID-OUT
   IMAGE IMAGE_SIZE 0 FILL  0 DP-T !  0 TLINK !
   TTHREADS #TTHREADS CELLS 0 FILL
   TARGET-WID DUP @ 1+ 1 ?DO 0 OVER I CELLS + ! LOOP DROP
-  0 STATE-T !  0 NEXT-OP !  FOLDMAP 128 0 FILL  SPECIAL-OPS 4 CELLS -1 FILL
+  0 STATE-T !  0 NEXT-OP !  0 NEXT-ESC !  FOLDMAP 128 0 FILL  SPECIAL-OPS 8 CELLS -1 FILL
   0 #STUBS !  RB-RESET  FWD-RESET  -1 PAIRS-OPEN !  0 #PAIRS !
   0 #INLS !  0 #BSS !  0 ALLOT-HOOK !  0 #SHADOWS !  0 LAST-SHADOW !
   REFD #ORD-MAX 0 FILL  FREE# #ORD-MAX CELLS 0 FILL  ALL# #ORD-MAX CELLS 0 FILL
@@ -1256,7 +1381,7 @@ VARIABLE FID-OUT
 \ 256 MB of their own (engine/vm-lab.c's MEMMAX; kernel.4's DICT-MAX, which the
 \ translator wrote too - tools/layout.py, Iteration 184).
   268435456 S" DICT-MAX" TXT >BODY-T !-T
-  FOLD-OPS! ;
+  FOLD-OPS! FOLD-TABLE! SUPER-TABLE! IMM-OPS! LOOPTAB! ;
 
 \ After a pass: the dead words (to leave out of the next), the one-byte
 \ calls' targets (for the next) - each the same as the pass before found,

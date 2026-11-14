@@ -11400,3 +11400,17 @@ passes: the dead shadowed words found, then left out and the call sites counted,
 self-built smallest: 8,739 bytes (the translator's 8,971), A = B on its own engine, the gate passed, the planted fault
 caught; speed the same (fib 58/57 ms, parse 124/119). s6 still self-hosts: 9,069 bytes. tools/selfhost-check.sh takes
 a design's name. Notes: results/drafts/selfhost-plan-666.md, "Phase 2 progress (669)". Next: least-memory.
+
+## Iteration 670 - 2026-11-14 - Claude
+
+Phase 2 done: the six portable designs self-hosting at 8-byte cells. Beyond 669's rules: format-10 words defined in
+an overlay ((FIND), (>NUMBER), THREAD-FIND, (PARSE), (NUMBER?)) and the loop words as format-10 operations; the
+run-time fuser's tables (FOLD-TABLE, SUPER-TABLE, IMM-OPS, LOOPTAB) as layout.py writes them; keepbranch's SWAP+I,
+DUP+I, DUP<I; --escape (primitives behind ESC and a selector, the rest closing up) and --no-varslot; the genes as
+short lines (REFILL's 256 characters) and a G-NOT-YET list the compiler refuses; an overlay's IMMEDIATE word with no
+TRANSIENT twin refused. Self-built against the translator's, bytes: smallest 8,739/8,971, least-memory 9,422/9,638,
+portable-small 8,975/9,183, portable-knee 8,841/9,049, portable-arm 8,970/9,202, portable-fastest 9,554/9,706 - each
+A = B on its own engine and through the gate; speed the same on this VM. s6 still 9,069. run-tests PASS. The
+stale-build guard (evolve.py) leaves forth/cross-cv8.4 out: no build reads it, and an edit to it stopped run-tests.
+Notes: results/drafts/selfhost-plan-666.md, "Phase 2 done (670)". Next: phase 3 (the JIT designs) or phase 4 (4-byte
+cells) - the owner's call.

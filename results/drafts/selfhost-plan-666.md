@@ -198,3 +198,49 @@ calls), A = B, the gate passed.
 (DO) (LOOP) (+LOOP) (?DO) (LEAVE) I J, I+, --rtfuse's tables: FOLD-TABLE, SUPER-TABLE, IMM-OPS, LOOPTAB), then
 portable-small (DUP+I, DUP<I, OVER?BRANCH, U<?BRANCH), portable-knee and portable-arm (SWAP+I, --escape), and
 portable-fastest (=?BRANCH8, <>?BRANCH, DUP?BRANCH, (NUMBER?)).
+
+## Phase 2 done (670) - the six portable designs self-hosting
+
+What the other five needed, each a rule of the translator done while compiling:
+
+- **The genes as short lines**: REFILL reads 256 characters a line, least-memory's format-10 list is 265. A list is now
+  `G-LIST: NAME` and its text a line at a time (`S" ..." G+`); the check copies all of forth/*.4. A genes file names
+  what the compiler has no rule for in G-NOT-YET (--escape2, --tag2, --hot-inline, --jit, --opcall-file,
+  --guard-abort, =I?BRANCH, DUP?NBRANCH), and the compiler refuses it.
+- **Format-10 words defined in an overlay** - (FIND) and (>NUMBER) in cv8b-klookup.4, THREAD-FIND in cv8b-kfast.4,
+  (PARSE) in cv8b-kinput.4, (NUMBER?) in cv8b-knumber.4: each format-10 word has one definition, wherever it is, and
+  its calls are its opcode (a second definition is refused); op-bodies and op-inline take them too. (DO) and the loop
+  words as format-10 operations: a FORWARD that has an opcode compiles it; (LOOP) and its cell a branch with (LOOP)'s
+  opcode (ops10_rewrite's LOOPKIND).
+- **The run-time fuser's tables** (--rtfuse), as layout.py writes them: cv8-fuse.4's FOLD-TABLE (always) and
+  SUPER-TABLE (I + as I+ first, the fused tests the compiler can make, the pairs), cv8-fuse-imm.4's IMM-OPS,
+  cv8-fuse-loopall.4's LOOPTAB (the eight loop opcodes, I's offset, J's and UNLOOP's distances). cv8-fuse.4's
+  FOLD-DEFAULTS runs at load time: a host action copies FOLD-OPS in the image. Checked against the translator's
+  least-memory: the same table bytes (LOOPTAB's I offset aside - the layout differs; J and UNLOOP at the same
+  distances).
+- **keepbranch**: SWAP or DUP before an ADDI as SWAP+I and DUP+I, DUP n < as DUP<I.
+- **--escape** (knee, arm, fastest): the rarely used primitives (tools/sod16.py's ESC_PRIMS_ALL, exported as
+  G-ESC-PRIMS) are ESC (0x7D) and a selector in kernel.4's order, the others' opcodes closing up; an escaped primitive
+  never folds. **--no-varslot**: slot operands two bytes, low first.
+- **An overlay's IMMEDIATE word** met in one of its definitions is refused unless TRANSIENT has a twin: the overlays
+  are written for a running Forth, where it would run. kernel.4 keeps cross.4's rule (every target word compiles).
+
+| design | the translator's image | self-built | dead words out | one-byte calls |
+|---|---|---|---|---|
+| smallest | 8,971 | 8,739 | 17 | 32 |
+| least-memory | 9,638 | 9,422 | 28 | 32 |
+| portable-small | 9,183 | 8,975 | 24 | - |
+| portable-knee | 9,049 | 8,841 | 26 | - |
+| portable-arm | 9,202 | 8,970 | 26 | - |
+| portable-fastest | 9,706 | 9,554 | 26 | - |
+| s6 (the ladder) | 9,265 | 9,069 | - | - |
+
+Bytes of the image file, header included, 8-byte cells. Each: A = B on the design's own engine and the evolver's gate
+passed (`sh tools/selfhost-check.sh NAME`; --self-test on smallest and least-memory: the planted fault caught). Best
+of five on this VM, translator's image against self-built, ms - least-memory fib 41/42, parse 47/45; portable-small
+32/32, 25/25; portable-knee 27/26, 21/20; portable-arm 25/25, 22/22; portable-fastest 24/22, 21/19; loop, bubble,
+ackermann and sieve within a millisecond (build/selfhost/speed.sh; the laptop, the i7 and the Tegra at phase 6).
+
+**Next**: phase 3, the four JIT designs (tag 2's ranked codes, hot-inline, the JIT's options, --escape2,
+--no-varslot) - the largest step; or phase 4 first for the six (4-byte cells: TARGET-CELL-BYTES, the designs'
+forth32 and image32.img), the smaller one.
