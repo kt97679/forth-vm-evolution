@@ -151,3 +151,50 @@ The image: 9,077 bytes, 188 fewer than the translator's 9,265; A = B; the gate p
 translator's s6 against the self-built: fib 36 and 36 ms, loop 15 and 15, bubble 8 and 8, ackermann 6 and 6 - code
 these workloads compile at run time, through the same run-time compiler; the kernel's own code is measured at phase 6.
 
+
+## Phase 2 progress (669) - smallest self-hosting
+
+**The genes.** lab/evolve/export-genes.py runs evolve.py's own build() for a design with every command recorded and
+writes what the evolver handed the translator - tools/layout.py's options and the overlays of the dump it read - as
+Forth words: designs/NAME/genes.4 (and stages/s6-genes.4 for s6). G-OVERLAYS, G-FOLDS, G-SPEC, G-SUPERS, G-OPS10,
+G-HOTCALLS, G-OP-BODIES, G-OP-INLINE, G-BSS, G-THIN-HEADER, G-THREADS, G-REBIND, G-HEADERLESS, the engine's flags
+(G-ENGINE-SPEC, G-FEATURES, G-MAGIC5) from its Makefile. Options not handled yet are written as comments ("\ not yet:
+--escape", --rtfuse, ...); the four JIT designs' dumps are tag 2 and are skipped (phase 3). export-designs.py remakes
+each designs/NAME/ from nothing and would take genes.4 with it: rerun export-genes.py after it (phase 5 joins them).
+
+**forth/cross-cv8.4, genes-driven.** Run as `S" extend.4" INCLUDED S" genes.4" INCLUDED S" cross-cv8.4" INCLUDED`.
+A definition is a list of operations until its ; and then the design's rewrites run over it in the translator's
+order (tools/sod16.py's read_ops: specialise, the format-10 calls as opcodes, fold, pairs, test-branches, short
+branches); dead operations are squeezed out after each rewrite, as the translator's lists have none (without that,
+`1+` stayed ADDI 1 EXIT); short branches by relaxation (laid out, misfits long, again). Besides s6's: the design's
+fold set (FOLD-BASE + place, and cv8.4's FOLD-OPS rewritten to it), pairs (resolved as their words appear),
+format-10 operations (a kernel word's calls become its opcode, before a tiny word's, as opcode_L reads them),
+fused test-branches and BRANCH8/?BRANCH8; --op-bodies ([op][EXIT]) and --op-inline (made at (PRIMITIVES-END) in
+kernel.4's order, the kernel's own definition skipped - the words defined once, by a pre-scan of the sources);
+--bss (TIB, POCKET, INCLUDE-BUFFER words pushing START + an offset past the image, the ALLOT after each counted
+there); --threads (FORTH-WORDLIST allots the design's heads); --thin-header; --rebind (the kernel's primitives of
+those names: their uses calls to the newest definition, resolved at the end); --headerless. The swap set is now
+read from the overlays (every `: X8`); a call to an X8 goes to X, the latest code of the name, except from a later
+X8 of its own name, which defers to the one before (drop-x8's rule). A definition no longer finds itself until its
+; - file-sysc3.4's OPEN-FILE calls the one before it; inside a target definition every target word compiles,
+immediate or not (cross.4's rule: kernel.4's `[']` calls LITERAL, its `;` calls `[`).
+
+**Three passes** in one run, the state reset between them, a word known from pass to pass by its ordinal: pass 1
+finds the dead words - defined again under their name, never called, POSTPONEd or taken by `'` (the translator's
+dead shadowed words) - and whether the image ends below 16 KB (then a call laid down before its target exists is two
+bytes, not three); pass 2 leaves the dead words out and counts the call sites; pass 3 gives the most-called targets
+one-byte calls (--hotcalls: three free sites at least, ranked by free sites, all sites, then definition order) and is
+the image. Passes 2 and 3 check that they found what the pass before found.
+
+**smallest**: 8,739 bytes, 232 fewer than the translator's 8,971 - 17 dead words out (the translator's 16, the 17th
+the first SEARCH-WORDLIST8, which drop-x8 took there), 32 one-byte calls; the same 300 named words. A = B on its own
+engine (designs/smallest/forth, FSYS=3: the image's own file words read the sources and write the image); the gate
+passed; `sh tools/selfhost-check.sh --self-test smallest`: the planted fault caught. Best of five on this VM,
+translator's against self-built: fib 58 and 57 ms, loop 21 and 20, bubble 8 and 8, ackermann 3 and 4, parse 124 and
+119, sieve 17 and 17. **s6** with stages/s6-genes.4: 9,069 bytes (8 fewer than phase 1's: the two-byte pending
+calls), A = B, the gate passed.
+
+**Next in phase 2**, each needing more of the translator: least-memory (format-10 loop words as branch kinds -
+(DO) (LOOP) (+LOOP) (?DO) (LEAVE) I J, I+, --rtfuse's tables: FOLD-TABLE, SUPER-TABLE, IMM-OPS, LOOPTAB), then
+portable-small (DUP+I, DUP<I, OVER?BRANCH, U<?BRANCH), portable-knee and portable-arm (SWAP+I, --escape), and
+portable-fastest (=?BRANCH8, <>?BRANCH, DUP?BRANCH, (NUMBER?)).

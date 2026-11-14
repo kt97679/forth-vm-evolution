@@ -1,0 +1,20 @@
+\ designs/least-memory/genes.4 - least-memory's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
+\ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
+: G-OVERLAYS ( --- c-addr u ) S" cv8.4 cv8b.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8-fuse.4 cv8-fuse-loopall.4 cv8-fuse-iplus.4 file-sysc.4 file-sysc2.4 file-sysc3.4 " ;          \ after kernel.4, in this order
+: G-FOLDS ( --- c-addr u ) S" + = ! @ LSHIFT RSHIFT C@ C! AND OR XOR LIT < U< OVER DROP DUP SWAP ROT >R R> R@ NEGATE " ;     \ the fold set: FOLD-BASE + place
+0 CONSTANT G-SPEC          \ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc
+: G-SUPERS ( --- c-addr u ) S" " ;    \ fused pairs: first second opcode
+: G-OPS10 ( --- c-addr u ) S" I+ 126 (FIND) 127 (>NUMBER) 96 THREAD-FIND 97 SCAN 98 SKIP 99 FILL 100 (PARSE) 101 HASH 102 PLACE 103 (DO) 104 (LOOP) 105 (+LOOP) 106 (?DO) 107 (LEAVE) 108 I 109 J 110 <?BRANCH 111 UNLOOP 112 " ;     \ format-10 operations: name opcode
+32 CONSTANT G-HOTCALLS      \ one-byte calls, at most
+-1 CONSTANT G-OP-BODIES     \ the format-10 words' bodies their opcode
+0 CONSTANT G-OP-INLINE     \ ...placed among the primitives
+-1 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
+-1 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
+32 CONSTANT G-THREADS       \ the dictionary's hash threads
+: G-REBIND ( --- c-addr u ) S" OPEN-FILE CLOSE-FILE WRITE-FILE ALLOCATE FREE WRITE READ READ-LINE BYE " ;    \ the kernel's uses rebound to the overlays' words
+: G-HEADERLESS ( --- c-addr u ) S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SAVED FS-P FS-EDIT? FS-SEEKS? FS-BACK FS-UPTO-EDIT FS-ANY FS-LF FS-CR FS-SK FS-BIT FS-FORGET " ;
+0 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
+59 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
+0 CONSTANT G-MAGIC5
+\ not yet: --rtfuse

@@ -1,0 +1,21 @@
+\ designs/portable-fastest/genes.4 - portable-fastest's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
+\ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
+: G-OVERLAYS ( --- c-addr u ) S" cv8.4 cv8b.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8b-knumber.4 cv8-fuse.4 cv8-fuse-imm.4 cv8-fuse-loopall.4 cv8-fuse-iplus.4 file-sysc.4 file-sysc2.4 " ;          \ after kernel.4, in this order
+: G-FOLDS ( --- c-addr u ) S" + = @ LSHIFT RSHIFT C@ C! AND OR XOR LIT < U< OVER DROP DUP ROT >R R> R@ NEGATE ! " ;     \ the fold set: FOLD-BASE + place
+31 CONSTANT G-SPEC          \ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc
+: G-SUPERS ( --- c-addr u ) S" + C@ 66 " ;    \ fused pairs: first second opcode
+: G-OPS10 ( --- c-addr u ) S" SWAP+I 126 I+ 127 (NUMBER?) 95 (FIND) 36 (>NUMBER) 37 SCAN 38 SKIP 39 FILL 40 (PARSE) 41 HASH 42 PLACE 43 UNLOOP 44 (DO) 45 (?DO) 46 J 47 (+LOOP) 48 (LEAVE) 49 I 50 (LOOP) 51 BRANCH8 52 =?BRANCH8 53 <>?BRANCH 54 DUP?BRANCH 55 OVER?BRANCH 56 DUP+I 57 CMOVE 58 2@ 59 2! 60 > 61 0= 62 ?BRANCH8 63 +! 64 THREAD-FIND 65 " ;     \ format-10 operations: name opcode
+0 CONSTANT G-HOTCALLS      \ one-byte calls, at most
+-1 CONSTANT G-OP-BODIES     \ the format-10 words' bodies their opcode
+-1 CONSTANT G-OP-INLINE     \ ...placed among the primitives
+-1 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
+-1 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
+128 CONSTANT G-THREADS       \ the dictionary's hash threads
+: G-REBIND ( --- c-addr u ) S" OPEN-FILE CLOSE-FILE WRITE-FILE ALLOCATE FREE " ;    \ the kernel's uses rebound to the overlays' words
+: G-HEADERLESS ( --- c-addr u ) S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SAVED " ;
+1 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
+31 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
+76 CONSTANT G-MAGIC5
+\ not yet: --escape
+\ not yet: --rtfuse

@@ -1,24 +1,38 @@
 #!/bin/sh
-# tools/selfhost-check.sh [--self-test] - the CV8 cross compiler's fixed point (Iteration 667;
-# results/drafts/selfhost-plan-666.md, phase 1). s6-cv8b's translator-built image runs forth/cross-cv8.4 and writes
-# image A; A, booted, runs it and writes B. A must equal B byte for byte, and A must pass the evolver's own gate
-# (lab/evolve/evolve.py's alive(): the corpus against the cell engine, the kernel workload against the seed, the far
-# tests, an ALLOT past the dictionary refused). --self-test first plants a fault - a bit of PARSE's body in A flipped - and
-# fails unless the check catches it. From the repository's top, as the build user, in a
-# built tree (tools/build-stages.sh). Works in build/selfhost/; exit 1 on any failure.
+# tools/selfhost-check.sh [--self-test] [NAME] - a design's fixed point under the CV8 cross compiler (Iterations 667,
+# 669; results/drafts/selfhost-plan-666.md). NAME is s6 (the ladder's s6-cv8b, the default) or a design in designs/.
+# The design's translator-built image, on the design's engine, runs forth/cross-cv8.4 with the design's genes
+# (stages/s6-genes.4, designs/NAME/genes.4 - lab/evolve/export-genes.py) and writes image A; A, booted on the same
+# engine, runs it and writes B. A must equal B byte for byte, and A must pass the evolver's own gate (lab/evolve/
+# evolve.py's alive(): the corpus against the cell engine, the kernel workload against the seed, the far tests, an
+# ALLOT past the dictionary refused). --self-test first plants a fault - a bit of PARSE's body in A flipped - and fails
+# unless the check catches it. From the repository's top, as the build user, in a built tree (tools/build-stages.sh);
+# a design's engine is made if it is missing. Works in build/selfhost/check-NAME/; exit 1 on any failure.
 set -e
 cd "$(dirname "$0")/.."
-T=$(pwd) ENG=$(pwd)/build/s6-cv8b-64 IMG=$(pwd)/build/s6-cv8b-s64.img D=$(pwd)/build/selfhost/check
-[ -x "$ENG" ] && [ -f "$IMG" ] || { echo "selfhost-check: build first (tools/build-stages.sh)"; exit 1; }
+TEST=; [ "$1" = --self-test ] && { TEST=1; shift; }
+N=${1:-s6}
+T=$(pwd) D=$(pwd)/build/selfhost/check-$N
+if [ "$N" = s6 ]; then
+    ENG=$T/build/s6-cv8b-64 IMG=$T/build/s6-cv8b-s64.img GENES=$T/stages/s6-genes.4
+    [ -x "$ENG" ] && [ -f "$IMG" ] || { echo "selfhost-check: build first (tools/build-stages.sh)"; exit 1; }
+else
+    [ -f "designs/$N/genes.4" ] || { echo "selfhost-check: no designs/$N/genes.4 (lab/evolve/export-genes.py $N)"; exit 1; }
+    ENG=$T/designs/$N/forth IMG=$T/designs/$N/image.img GENES=$T/designs/$N/genes.4
+    [ -x "$ENG" ] || make -s -C "designs/$N" forth > /dev/null 2>&1 || { echo "selfhost-check: can't make designs/$N/forth"; exit 1; }
+fi
 rm -rf "$D"; mkdir -p "$D"
-for f in extend.4 kernel.4 cv8.4 cv8b.4 cross-cv8.4; do cp "forth/$f" "$D/"; done
+OVL=$(sed -n 's/^: G-OVERLAYS ( --- c-addr u ) S" \([^"]*\)".*/\1/p' "$GENES")
+[ -n "$OVL" ] || { echo "selfhost-check: no overlays in $GENES"; exit 1; }
+for f in extend.4 kernel.4 cross-cv8.4 $OVL; do cp "forth/$f" "$D/"; done
+cp "$GENES" "$D/genes.4"
 cross() {   # cross IMAGE OUT - run the cross compiler on IMAGE, its image moved to OUT
     rm -f "$D/cv8-self.img"
-    ( cd "$D" && printf 'S" extend.4" INCLUDED\nS" cross-cv8.4" INCLUDED\n' | timeout 300 "$ENG" "$1" > "$2.log" 2>&1 ) || true
+    ( cd "$D" && printf 'S" extend.4" INCLUDED\nS" genes.4" INCLUDED\nS" cross-cv8.4" INCLUDED\n' | timeout 300 "$ENG" "$1" > "$2.log" 2>&1 ) || true
     [ -s "$D/cv8-self.img" ] && mv "$D/cv8-self.img" "$2"
 }
-cross "$IMG" "$D/A.img" || { echo "selfhost-check: FAIL - the translator-built s6 wrote no image ($D/A.img.log)"; exit 1; }
-if [ "$1" = --self-test ]; then
+cross "$IMG" "$D/A.img" || { echo "selfhost-check: FAIL - the translator-built $N wrote no image ($D/A.img.log)"; exit 1; }
+if [ -n "$TEST" ]; then
     # A planted fault: the first byte of PARSE's body in A flipped - a word the cross compiler cannot run
     # without. Either the build dies or B differs; the check must say so.
     cp "$D/A.img" "$D/A-good.img"
@@ -47,4 +61,5 @@ try: E.alive(eng, img, pw, far=True)
 except RuntimeError as e: print('selfhost-check: FAIL - the gate:', e); sys.exit(1)
 finally: shutil.rmtree(pw, ignore_errors=True)
 EOF
-echo "selfhost-check: PASS - s6-cv8b self-hosting: A = B, $(stat -c %s "$D/A.img") bytes; the gate passed (the translator's s6: $(stat -c %s "$IMG"))"
+P=$(grep "pass 3" "$D/B.img.log" | sed 's/^cross-cv8: pass 3 - [0-9]* bytes, //')
+echo "selfhost-check: PASS - $N self-hosting: A = B, $(stat -c %s "$D/A.img") bytes ($P); the gate passed (the translator's: $(stat -c %s "$IMG"))"

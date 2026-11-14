@@ -11388,3 +11388,15 @@ and the folds, as the translator's specialise() and fold_exit() made them, fused
 the X8 names dropped as --drop-x8 dropped them. The self-built s6: 9,077 bytes (the translator's 9,265), A = B, the
 gate passed (tools/selfhost-check.sh --self-test: the planted fault caught). Best of five, fib 36 ms, loop 15, bubble 8,
 ackermann 6 on both images. Next: phase 2, smallest first.
+
+## Iteration 669 - 2026-11-14 - Claude
+
+Phase 2 begun (the owner: yes, smallest first): smallest self-hosting. lab/evolve/export-genes.py writes each design's
+genes as Forth (designs/NAME/genes.4, stages/s6-genes.4) from what the evolver hands the translator; forth/cross-cv8.4
+reads them and does the translator's rewrites as it compiles - each definition a list of operations, rewritten in
+read_ops' order, laid out with short branches by relaxation; the fold set, pairs, format-10 operations, test-branches,
+op-bodies and op-inline, bss, threads, the thin header, rebinding and headerless words - and builds the image in three
+passes: the dead shadowed words found, then left out and the call sites counted, then the one-byte calls. The
+self-built smallest: 8,739 bytes (the translator's 8,971), A = B on its own engine, the gate passed, the planted fault
+caught; speed the same (fib 58/57 ms, parse 124/119). s6 still self-hosts: 9,069 bytes. tools/selfhost-check.sh takes
+a design's name. Notes: results/drafts/selfhost-plan-666.md, "Phase 2 progress (669)". Next: least-memory.

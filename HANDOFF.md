@@ -41,14 +41,18 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 668.
+- master: Iteration 669.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
   s6-cv8b with its specialisations (small, imm, var, tiny, the folds; loc needs locals, s6 has none) and the X8
   names dropped - the translator-built s6 writes image A, A rebuilds itself byte for byte (9,077 bytes; the
-  translator's 9,265), A passes the evolver's gate: `sh tools/selfhost-check.sh --self-test`. Next: phase 2,
-  smallest first. The article waits for the
+  translator's 9,265), A passes the evolver's gate. Phase 2 begun (669): each design's genes as Forth
+  (lab/evolve/export-genes.py: designs/NAME/genes.4, stages/s6-genes.4), the translator's rewrites done while
+  compiling, three passes (dead words, call counts, one-byte calls); **smallest self-hosts** - 8,739 bytes (the
+  translator's 8,971), A = B, the gate passed: `sh tools/selfhost-check.sh --self-test smallest` (s6: no name).
+  Next: least-memory (the loop words as format-10 branches, --rtfuse's tables), then the other four portable
+  designs; export-designs.py remakes designs/NAME/ from nothing - rerun export-genes.py after it. The article waits for the
   measurements (its figures change); the designs/ images, the relf handoff and the roles are redone at phase 6.
 - For relf (665): its questions answered as far as the search can - results/relf-questions-665.md; a patch for its
   shell tests' /tmp leak - results/relf-patches/tests-tmp-cleanup.patch.
