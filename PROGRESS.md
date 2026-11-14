@@ -11483,3 +11483,4 @@ designs run 1.30-1.88 times CV8's dispatches, about CV8's cost per dispatch; cal
 what relf's run-time compiler folds away (constants, VAR@, DOES> @, inlining). The JIT designs 0.35 of relf64's time
 on the six smaller programs, slower on brainless: the JIT leaves 86-90 % of its dispatches (jitapps.py: DODOES has no
 stencil, VALUE's DOES> code refused). Notes: results/generic-apps-674.md, with the step-2 candidates.
+tools/setup-sandbox.sh installs gforth for the baseline (detached, never waited for: nothing else needs it).

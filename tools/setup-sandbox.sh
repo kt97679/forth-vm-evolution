@@ -51,6 +51,16 @@ if [ "${CROSS:-0}" = 1 ] && [ -n "$PKG" ]; then    # Iteration 568: ARMv7 builds
     # gcc-arm-linux-gnueabihf: Ubuntu removes gcc-multilib for it, and the 32-bit x86 builds with it
     apt_bg arm-cross lld qemu-user libc6-dev-armhf-cross libgcc-13-dev-armhf-cross || PKG=
 fi
+# Iteration 674: gforth, genapps.py's outside baseline (its gforth-fast) - nothing else needs it, so started detached
+# and never waited for (genapps.py leaves the baseline out while it is missing); after the waited installs: no lock clash
+if [ -n "$PKG" ] && ! dpkg -s gforth > /dev/null 2>&1; then
+    p=$(cat /tmp/setup-apt-gforth.pid 2> /dev/null)
+    if [ -n "$p" ] && kill -0 "$p" 2> /dev/null; then echo "setup-sandbox: gforth installing already (pid $p)"
+    else
+        setsid nohup sh -c "echo \$\$ > /tmp/setup-apt-gforth.pid; { apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gforth; } >> /tmp/setup-apt.log 2>&1" > /dev/null 2>&1 &
+        echo "setup-sandbox: gforth installing, detached (genapps.py's baseline only; /tmp/setup-apt.log)"
+    fi
+fi
 if [ -d "$D/.git" ]; then                 # 567: left as it is, and said how it stands against the bundle
     H=$(asme git -C "$D" rev-parse HEAD); M=$(git bundle list-heads "$B" 2>/dev/null | awk '$2 == "refs/heads/master" {print $1}')
     if [ "$H" = "$M" ]; then echo "setup-sandbox: $D there, at the bundle's master - left as it is"
