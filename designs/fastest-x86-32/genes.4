@@ -1,0 +1,66 @@
+\ designs/fastest-x86-32/genes.4 - fastest-x86-32's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
+\ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
+\ A list is a word giving its text ( --- c-addr u ), names and numbers each followed by one space.
+VARIABLE G-AT
+: G-LIST: ( "name" --- ) CREATE HERE G-AT ! 0 , DOES> DUP CELL+ SWAP @ ;
+: G+ ( c-addr u --- ) DUP G-AT @ +! HERE SWAP DUP ALLOT CMOVE ;
+: G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;
+8 CONSTANT G-CELL          \ the target's cell, bytes
+G-LIST: G-OVERLAYS  \ after kernel.4, in this order
+S" cv8t.4 cv8bt.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8b-knumber.4 cv8-fuse-loopall.4 " G+
+S" cv8t-jit.4 file-sysc.4 file-sysc2.4 " G+
+G-LIST: G-FOLDS  \ the fold set: FOLD-BASE + place
+S" + C! LIT DROP " G+
+15 CONSTANT G-SPEC          \ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc
+G-LIST: G-SUPERS  \ fused pairs: first second opcode
+S" @ AND 32 " G+
+G-LIST: G-OPS10  \ format-10 operations: name opcode
+S" (NUMBER?) 126 (FIND) 127 (>NUMBER) 77 SCAN 78 SKIP 79 FILL 80 (PARSE) 81 HASH 82 PLACE 83 (DO) 84 " G+
+S" (LOOP) 85 (+LOOP) 86 (?DO) 87 (LEAVE) 88 I 89 J 90 UNLOOP 91 ?BRANCH8 92 2@ 93 BRANCH8 94 " G+
+S" <>?BRANCH 95 CMOVE 27 THREAD-FIND 28 2! 29 > 30 0= 31 " G+
+0 CONSTANT G-HOTCALLS      \ one-byte calls, at most
+-1 CONSTANT G-OP-BODIES     \ the format-10 words' bodies their opcode
+-1 CONSTANT G-OP-INLINE     \ ...placed among the primitives
+-1 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
+-1 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
+64 CONSTANT G-THREADS       \ the dictionary's hash threads
+0 CONSTANT G-RTFUSE        \ the run-time fuser's tables filled (cv8-fuse.4's SUPER-TABLE, IMM-OPS)
+-1 CONSTANT G-ESCAPE         \ escaped primitives: two bytes, ESC and a selector
+G-LIST: G-ESC-PRIMS  \ the escaped primitives
+S" BYE OPEN-FILE CLOSE-FILE READ-LINE WRITE-LINE READ-FILE WRITE-FILE (SYSTEM) REPOSITION-FILE " G+
+S" FILE-POSITION DELETE-FILE FILE-SIZE SYSCALL (EXECVE) (WAITPID) (PIPE) (DUP2) (GETENV) (SETENV) " G+
+S" (SYS-EXIT) (CHDIR) (GETCWD) (SYS-ARGC) (SYS-ARG) (GETPID) (UNSETENV) ALLOCATE FREE RESIZE " G+
+S" (GETPWHOME) (GETFSIZE) (SETFSIZE) UM* UM/MOD D+ WRITE READ SP@ SP! RP@ RP! " G+
+0 CONSTANT G-VARSLOT        \ slot operands 2 or 3 bytes, high byte first; else 2, low first
+G-LIST: G-REBIND  \ the kernel's uses rebound to the overlays' words
+S" OPEN-FILE CLOSE-FILE WRITE-FILE ALLOCATE FREE " G+
+G-LIST: G-HEADERLESS  \ no headers
+S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SAVED " G+
+1 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
+93 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
+76 CONSTANT G-MAGIC5
+-1 CONSTANT G-TAG2          \ the two-bit tag: codes by the engine's map, calls 2-4 bytes, links 1-4
+-1 CONSTANT G-T2WIDE        \ ...no 3-byte call: 0x80-0xBF one-byte codes
+G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
+S" 0 0 1 1 2 2 3 3 4 4 71 5 68 6 124 7 69 8 70 9 94 10 92 11 65533 12 84 13 85 14 86 15 87 16 88 17 " G+
+S" 89 18 90 19 91 20 6 21 23 22 7 23 16 24 18 25 17 26 99 27 11 28 22 29 5 30 19 31 9 32 118 33 106 34 " G+
+S" 120 35 12 36 10 37 76 38 96 39 14 40 83 41 72 42 81 43 134 44 128 45 20 46 122 47 98 48 127 49 " G+
+S" 121 50 26 51 116 52 8 53 100 54 13 55 119 56 74 57 115 58 31 59 105 60 97 61 110 62 24 128 30 129 " G+
+S" 109 130 73 131 111 132 113 133 77 134 123 135 82 136 140 137 28 138 130 139 15 140 129 141 114 142 " G+
+S" 108 143 21 144 25 145 131 146 27 147 136 148 80 149 137 150 132 151 138 152 133 153 135 154 139 155 " G+
+S" 143 156 149 157 78 158 95 159 126 160 29 161 79 162 93 163 32 164 75 165 101 166 102 167 103 168 " G+
+S" 104 169 107 170 112 171 117 172 141 173 142 174 144 175 145 176 146 177 147 178 148 179 150 180 " G+
+S" 151 181 152 182 153 183 154 184 155 185 156 186 157 187 158 188 159 189 160 190 161 191 " G+
+G-LIST: G-T2-ESC  \ ...logical operation, escape selector
+S" 162 0 163 1 164 2 165 3 166 4 167 5 168 6 " G+
+-1 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
+1 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
+S" PARSE-WORD SOURCE 1 WORD PARSE-WORD 1 WORD HERE 1 WORD BL 1 INTERPRET WORD 1 INTERPRET FIND 1 " G+
+S" ?STACK DEPTH 1 ?STACK U> 1 C, HERE 1 REFILL SOURCE-ID 1 REFILL SOURCE-ID 2 REFILL SOURCE-ID 3 " G+
+S" INTERPRET NUMBER? 1 OP, C, 1 \ SOURCE 1 W, C, 1 W, C, 2 INTERPRET LITERAL 1 CALL, C, 2 CALL, C, 1 " G+
+S" ALIGN HERE 1 LIT, OP, 1 LIT, C, 1 HEADER WORD 1 HEADER FIND 1 HEADER HERE 2 HEADER HERE 4 " G+
+S" HEADER HERE 5 HEADER HERE 7 HEADER HERE 8 LINK, C, 2 HEADER HERE 3 HEADER HERE 6 ALIGN C, 1 " G+
+S" LINK, C, 1 # MU/MOD 1 # HOLD 1 ; HERE 1 : !CSP 1 : ] 1 " G+
+G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet

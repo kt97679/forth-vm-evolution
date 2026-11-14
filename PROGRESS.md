@@ -11428,3 +11428,20 @@ last X8, so every self-built image is smaller than the translator's at both widt
 portable-knee 8,753/9,049 and 8,125/8,177, portable-arm 8,898/9,202 and 8,286/8,350, portable-fastest 9,482/9,706
 and 8,458/8,474; s6 8,983/9,265. Speed the same (32-bit outliers re-timed: noise). Notes: results/drafts/
 selfhost-plan-666.md, "Phase 4 done (671)". Next: phase 3, the JIT designs.
+
+## Iteration 672 - 2026-11-14 - Claude
+
+Phase 3 done (the owner: yes to phase 3): the four JIT designs self-host, so all ten do, at both widths. The cross
+compiler does tag 2 in full (the engine's ranked codes, 2/4-byte calls, the run-time compiler's opcode constants and
+tables, --escape2), hot-inline (each site the genes name gets the callee's body as compiled, before its own sites; a
+callee made after its caller from the pass before, a word it calls not made yet through a chain on the pass before's
+shadow) and the JIT's header on the outer words (--jitimg 1). A JIT engine knows its image's layout - every code
+word's body (jit_wends) and a few words' offsets (JIT_W_), in src/vm-jit-ops.h: fastest-x86-64's A died in the
+corpus on the translator's table (+! taken for two bytes), the other three passed by luck. The cross compiler now
+writes those lines for its image (cv8-self-jit.h) and selfhost-check.sh builds the design's engine with them; B's
+lines must be A's. Self-built against translator: best-all-round 8,090/8,354 and 7,514/7,718 bytes, small-jit
+8,470/8,718 and 7,874/8,098, fastest-x86-64 9,566/9,774 and 8,598/8,762, fastest-x86-32 8,562/8,802 and
+7,850/8,050; speed within noise; the thirteen earlier checks byte for byte as at 671. Found: the translator gives
+the JIT's header to (PARSE) placed among the primitives (--op-inline) in fastest-x86-32 and small-jit, so a
+run-time compiled (PARSE) is the JIT's opcode (fastest-x86-32: a segmentation fault) - the self-built images do
+not. Notes: results/drafts/selfhost-plan-666.md, "Phase 3 done (672)". Next: phase 5.

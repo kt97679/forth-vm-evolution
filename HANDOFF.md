@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 671.
+- master: Iteration 672.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -49,12 +49,17 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   names dropped - the translator-built s6 writes image A, A rebuilds itself byte for byte (9,077 bytes; the
   translator's 9,265), A passes the evolver's gate. Phase 2 begun (669): each design's genes as Forth
   (lab/evolve/export-genes.py: designs/NAME/genes.4, stages/s6-genes.4), the translator's rewrites done while
-  compiling, three passes (dead words, call counts, one-byte calls). **The six portable designs self-host at both
-  widths** (phase 2, 670; phase 4, 671): every image smaller than the translator's (8-byte 224-296 bytes, 4-byte
-  16-80), A = B on its own engine, the gate passed, the 64-bit build making the same 32-bit image, speed the same:
-  `sh tools/selfhost-check.sh [--self-test] [--32] NAME` (s6: no name; the table in the plan). Next: phase 3 (the
-  four JIT designs: tag 2, hot-inline, the JIT's options). export-designs.py remakes designs/NAME/ from nothing -
-  rerun export-genes.py after it. The article waits for the
+  compiling, three passes (dead words, call counts, one-byte calls). **All ten designs self-host at both widths**
+  (the six portable: phase 2, 670, and phase 4, 671; the four JIT designs: phase 3, 672): every image smaller than
+  the translator's (8-byte 208-304 bytes, 4-byte 16-224), A = B on its own engine, the gate passed, the 64-bit build
+  making the same 32-bit image, speed the same: `sh tools/selfhost-check.sh [--self-test] [--32] NAME` (s6: no name;
+  the tables in the plan). A JIT engine knows its image's layout (src/vm-jit-ops.h's jit_wends and JIT_W_ lines):
+  the cross compiler writes them for its image (cv8-self-jit.h) and the check builds the engine with them - phase 5
+  ships them with the images. Found at 672: the translator's fastest-x86-32 and small-jit compile a run-time call of
+  (PARSE) as the JIT's opcode (layout.py's _jitimg_pick gives the JIT's header to an --op-inline word) - the
+  self-built images do not. Next: phase 5 (designs/ ships the self-built images, `make selfhost`, run-tests runs the
+  checks), then phase 6. export-designs.py remakes designs/NAME/ from nothing - rerun export-genes.py after it. The
+  article waits for the
   measurements (its figures change); the designs/ images, the relf handoff and the roles are redone at phase 6.
 - For relf (665): its questions answered as far as the search can - results/relf-questions-665.md; a patch for its
   shell tests' /tmp leak - results/relf-patches/tests-tmp-cleanup.patch.

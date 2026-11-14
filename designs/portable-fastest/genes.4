@@ -5,6 +5,7 @@
 VARIABLE G-AT
 : G-LIST: ( "name" --- ) CREATE HERE G-AT ! 0 , DOES> DUP CELL+ SWAP @ ;
 : G+ ( c-addr u --- ) DUP G-AT @ +! HERE SWAP DUP ALLOT CMOVE ;
+: G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;
 8 CONSTANT G-CELL          \ the target's cell, bytes
 G-LIST: G-OVERLAYS  \ after kernel.4, in this order
 S" cv8.4 cv8b.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8b-knumber.4 cv8-fuse.4 cv8-fuse-imm.4 " G+
@@ -40,4 +41,11 @@ S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SA
 1 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
 31 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
 76 CONSTANT G-MAGIC5
+0 CONSTANT G-TAG2          \ the two-bit tag: codes by the engine's map, calls 2-4 bytes, links 1-4
+0 CONSTANT G-T2WIDE        \ ...no 3-byte call: 0x80-0xBF one-byte codes
+G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
+G-LIST: G-T2-ESC  \ ...logical operation, escape selector
+0 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
+0 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
 G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet

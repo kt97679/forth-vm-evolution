@@ -1,0 +1,54 @@
+\ designs/small-jit/genes32.4 - small-jit's genes for forth/cross-cv8.4, written by lab/evolve/export-genes.py from the
+\ options the evolver hands the translator (tools/layout.py) and the engine's flags. Include it before
+\ cross-cv8.4: S" extend.4" INCLUDED  S" genes.4" INCLUDED  S" cross-cv8.4" INCLUDED
+\ A list is a word giving its text ( --- c-addr u ), names and numbers each followed by one space.
+VARIABLE G-AT
+: G-LIST: ( "name" --- ) CREATE HERE G-AT ! 0 , DOES> DUP CELL+ SWAP @ ;
+: G+ ( c-addr u --- ) DUP G-AT @ +! HERE SWAP DUP ALLOT CMOVE ;
+: G-C ( c --- ) HERE C! 1 ALLOT 1 G-AT @ +! ;
+4 CONSTANT G-CELL          \ the target's cell, bytes
+G-LIST: G-OVERLAYS  \ after kernel.4, in this order
+S" cv8t.4 cv8bt.4 cv8b-kfast.4 cv8b-kinput.4 cv8b-klookup.4 cv8-fuse-loopall.4 cv8t-jit.4 file-sysc.4 " G+
+S" file-sysc2.4 " G+
+G-LIST: G-FOLDS  \ the fold set: FOLD-BASE + place
+S" + R> C! LIT DROP " G+
+27 CONSTANT G-SPEC          \ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc
+G-LIST: G-SUPERS  \ fused pairs: first second opcode
+G-LIST: G-OPS10  \ format-10 operations: name opcode
+S" (FIND) 126 (>NUMBER) 127 THREAD-FIND 78 SCAN 79 SKIP 80 FILL 81 (PARSE) 82 HASH 83 PLACE 84 (DO) 85 " G+
+S" (LOOP) 86 (+LOOP) 87 (?DO) 88 (LEAVE) 89 I 90 J 91 UNLOOP 92 0= 93 2@ 94 " G+
+0 CONSTANT G-HOTCALLS      \ one-byte calls, at most
+-1 CONSTANT G-OP-BODIES     \ the format-10 words' bodies their opcode
+-1 CONSTANT G-OP-INLINE     \ ...placed among the primitives
+-1 CONSTANT G-BSS           \ TIB, POCKET, INCLUDE-BUFFER past the image's end
+-1 CONSTANT G-THIN-HEADER   \ one empty thread head in the file
+32 CONSTANT G-THREADS       \ the dictionary's hash threads
+0 CONSTANT G-RTFUSE        \ the run-time fuser's tables filled (cv8-fuse.4's SUPER-TABLE, IMM-OPS)
+0 CONSTANT G-ESCAPE         \ escaped primitives: two bytes, ESC and a selector
+G-LIST: G-ESC-PRIMS  \ the escaped primitives
+0 CONSTANT G-VARSLOT        \ slot operands 2 or 3 bytes, high byte first; else 2, low first
+G-LIST: G-REBIND  \ the kernel's uses rebound to the overlays' words
+S" OPEN-FILE CLOSE-FILE WRITE-FILE ALLOCATE FREE " G+
+G-LIST: G-HEADERLESS  \ no headers
+S" FS-BLK FS0 FS1 FS2 FS3 FS4 FS-DROP FS-WRITE FS-NL FS-MMAP FS-OFL FS-END FS-SAVED " G+
+1 CONSTANT G-ENGINE-SPEC   \ the engine's flags: SPEC (the locals block in the header)
+93 CONSTANT G-FEATURES      \ the image's feature bits (engine/vm-lab.c's IMAGE_MAGIC)
+76 CONSTANT G-MAGIC5
+-1 CONSTANT G-TAG2          \ the two-bit tag: codes by the engine's map, calls 2-4 bytes, links 1-4
+0 CONSTANT G-T2WIDE        \ ...no 3-byte call: 0x80-0xBF one-byte codes
+G-LIST: G-T2-ONE  \ the engine's map: logical operation, one-byte code
+S" 0 0 1 1 2 2 3 3 4 4 71 5 68 6 124 7 69 8 70 9 65533 10 85 11 86 12 87 13 88 14 89 15 90 16 91 17 " G+
+S" 92 18 11 19 6 20 13 21 17 22 7 23 18 24 96 25 5 26 23 27 9 28 120 29 10 30 72 31 106 32 97 33 93 34 " G+
+S" 98 35 14 36 111 37 110 38 19 39 122 40 8 41 113 42 12 43 115 44 108 45 77 46 26 47 118 48 21 49 " G+
+S" 116 50 15 51 114 52 20 53 25 54 22 55 33 56 24 57 109 58 16 59 84 60 121 61 119 62 " G+
+G-LIST: G-T2-ESC  \ ...logical operation, escape selector
+S" 75 0 74 1 73 2 83 3 29 4 28 5 35 6 36 7 82 8 27 9 126 10 30 11 31 12 32 13 34 14 48 15 127 16 39 17 " G+
+S" 78 18 79 19 81 20 80 21 94 22 99 23 100 24 105 25 123 26 37 27 38 28 42 29 40 30 41 31 43 32 44 33 " G+
+S" 45 34 46 35 47 36 49 37 50 38 51 39 52 40 53 41 54 42 55 43 56 44 57 45 58 46 59 47 60 48 61 49 " G+
+S" 62 50 63 51 64 52 65 53 66 54 67 55 76 56 101 57 102 58 103 59 104 60 107 61 112 62 117 63 " G+
+-1 CONSTANT G-JIT           \ the lazy JIT (engine/jit.c): its opcode a tag-2 code
+1 CONSTANT G-JITIMG        \ 1: the outer interpreter's words given the JIT header
+G-LIST: G-HOT-INLINE  \ calls inlined: caller callee k (the k-th call), as the translator chose them
+S" PARSE-WORD SOURCE 1 WORD PARSE-WORD 1 WORD HERE 1 WORD BL 1 INTERPRET WORD 1 INTERPRET FIND 1 " G+
+S" ?STACK DEPTH 1 ?STACK U> 1 C, HERE 1 REFILL SOURCE-ID 1 " G+
+G-LIST: G-NOT-YET  \ the translator's options the cross compiler does not do yet

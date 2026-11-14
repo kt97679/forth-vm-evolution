@@ -282,3 +282,56 @@ fault caught.
 
 **Next**: phase 3, the four JIT designs (tag 2's ranked codes, hot-inline, the JIT's options, --escape2); then phase 5
 (designs/ ships the self-built images, `make selfhost`, run-tests runs the checks) and phase 6 (re-measured).
+
+## Phase 3 done (672) - the four JIT designs self-hosting
+
+**Tag 2 in full.** The two-bit tag (FORMAT-TAG2.md) is the cross compiler's second format: each operation a logical
+number, its bytes the design's code from the engine's own map (G-T2-ONE, G-T2-ESC: vm-tag2-one.h, vm-tag2-esc.h -
+one byte, or 0x3F and a selector), calls of 2 and 4 bytes (3 too without t2wide) from the image base, links low
+bytes first with their length in the last byte's top bits, a data word's code field five bytes, the run-time
+compiler's opcode constants (cv8t.4's EXIT-OP ... JIT-OP) the design's codes, the tables (FOLD-OPS, SUPER-TABLE,
+IMM-OPS, LOOPTAB) mapped; --escape2's nine more escaped primitives.
+
+**The JIT knows the image's layout.** A JIT engine (src/jit.c, the gene jitx) translating an image word reached
+without the JIT's header takes the word's end from a table of every code word's body (jit_wends, Iteration 489), and
+(S"), (."), TYPE, (ABORT") and twelve cold words by their offsets (JIT_W_, 485-488) - in src/vm-jit-ops.h, written
+by layout.py for the translator's image. A self-built image lays its words out differently, so on the design's
+engine fastest-x86-64's A died in the corpus: +!'s body began where a 2-byte word's did in the translator's image,
+and the JIT took +! for two bytes. The other three passed the gate with the wrong tables - by luck. Now the cross
+compiler writes those lines for its own image (cv8-self-jit.h, PART 9), and the check builds the design's engine
+with them (build/selfhost/check-NAME/eng/): A and B run there, B's lines must be A's, and with --32 the 64-bit
+build's too. Phase 5 ships them: designs/NAME/src/vm-jit-ops.h with the self-built image's lines.
+
+**Hot-inline.** At the sites the genes name (G-HOT-INLINE: caller, callee and k - the k-th call, by final names),
+the callee's body as compiled - before any rewrite, and before its own sites (sod16.py's raw_read) - takes the
+call's place, and the rewrites see it there. A callee's body is kept as it ends, its words by ordinal. A callee made
+after its caller (INTERPRET's WORD, FIND, NUMBER? and LITERAL are the overlays' X8s) is inlined from the pass
+before's - in the first pass the call stays, and the callee stays referenced, so the dead words do not move - and a
+word in it the pass has not made yet (LIT, in LITERAL8's body, from INTERPRET in kernel.4) is called through a
+chain on its shadow of the pass before, made calls when the pass ends. export-genes.py now matches the translator's
+printed sites against the profile (a name with '>' in it, ?STACK>U>#1, had read wrong).
+
+**The JIT's header on the outer words** (--jitimg 1, in fastest-x86-64, fastest-x86-32 and small-jit): the same
+words as the translator's, with the same body lengths - except (PARSE) in fastest-x86-32 and small-jit. There the
+translator gives the header to an op-body word placed among the primitives (--op-inline), and COMPILE,8, which
+copies a primitive's first byte, then compiles (PARSE) as the JIT's opcode: `: T (PARSE) ;` on those two
+translator's images compiles [JIT][EXIT], and `: U S" abc def" 32 T ; U` dies (fastest-x86-32: a segmentation
+fault) - a latent bug in the translator (layout.py's _jitimg_pick), never met by the gate. The cross compiler leaves
+a word below (PRIMITIVES-END) without the header; its T is (PARSE)'s opcode and EXIT, and U answers 4 3.
+
+| design | translator, 8-byte | self-built | translator, 4-byte | self-built |
+|---|---|---|---|---|
+| best-all-round | 8,354 | 8,090 | 7,718 | 7,514 |
+| small-jit | 8,718 | 8,470 | 8,098 | 7,874 |
+| fastest-x86-64 | 9,774 | 9,566 | 8,762 | 8,598 |
+| fastest-x86-32 | 8,802 | 8,562 | 8,050 | 7,850 |
+
+Bytes of the image file; each A = B on the design's engine built with A's layout, the gate passed, the 64-bit build
+making the same 32-bit image and layout; --self-test fastest-x86-64: the planted fault caught. The thirteen checks of
+phases 1, 2 and 4 rerun: every image byte for byte as at 671. Speed (build/selfhost/speed-672.txt: the translator's
+image on the shipped engine against the self-built one on its rebuilt engine, best of seven alternating): within
+noise; the widest gaps re-timed - best-all-round parse 16.7/17.1 ms (best of 21), the 4-byte parse of best-all-round,
+fastest-x86-64 and small-jit 610/594, 647/629 and 602/574 ms (best of 11) - the self-built no slower.
+
+**All ten designs self-host, at both widths.** Next: phase 5 - designs/ ships the self-built images (and the JIT
+designs' layout lines), `make selfhost` in each design, run-tests runs the checks; then phase 6, the re-measurement.
