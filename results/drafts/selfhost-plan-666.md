@@ -115,3 +115,25 @@ cases), the kernel workload, the far tests - and is the one designs/ ships. The 
   settings (`0 CV8-SHIFT-V !`) - which the CV8 cross compiler gives twins at cross-compile time, as relf's kernel.4
   and cross.4 are written.
 
+## Phase 1 progress (667)
+
+forth/cross-cv8.4 - forth/cross.4's parts 1-2 (vocabularies, target space), then CV8: byte headers as cv8b.4's HEADER8,
+calls in two or three bytes at scale 0, literals in cv8.4's narrowest forms, branches with 16-bit offsets from the
+operand, a definition's last primitive folded into its EXIT (FOLDMAP from the fold set's names), data words
+[DOVAR][3][aligned field]. What it took that the plan did not say:
+- **The swap at compile time**: kernel.4's own definition of each of the 27 names is a BRANCH to its X8 - resolved at the
+  end, its body skipped (SKIP-DEF) - a branch and not a call, because (;CODE) takes its caller's return address. A name
+  kernel.4 does not define (AGAIN) keeps only its X8, as in the translator's s6.
+- **The overlays' load-time code**: every target word has a shadow whose action outside a definition is the host word
+  I-name if there is one (I-! stores into the image, I-' is T', I->OP reads a primitive's opcode, I-CREATE makes a data
+  word), else a data word's address or a constant's value; anything else stops the build by name.
+- **What the translator wrote that the kernel needs**: DICT-MAX, 256 MB (tools/layout.py's CVARS, Iteration 184) -
+  without it an ALLOT past the dictionary crashed instead of being refused; the gate's full.fth found it.
+- **The file**: the magic CV80, cell width, 'L', version 1, features 31 (engine/vm-lab.c's IMAGE_MAGIC); 32 thread heads;
+  no DOES> tails; the five-cell locals block, zero; THROW's body; the image. The prologue: calls to COLD and WARM (3
+  bytes each, forward), three cells of -1 at 16-39, the first word at 40.
+- **Forward calls** are three bytes, chained through themselves; once the word exists a call is made at once.
+
+The image: 9,792 bytes against the translator's 9,265 - no specialisation yet, the X8 headers kept, 3-byte calls before a
+runtime word is defined. tools/selfhost-check.sh: the fixed point and the evolver's gate, with a planted-fault self-test.
+

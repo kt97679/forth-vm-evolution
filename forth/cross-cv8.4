@@ -1,0 +1,612 @@
+\ cross-cv8.4 - the CV8 cross compiler: kernel.4 and the CV8 compiler
+\ (cv8.4, cv8b.4) compiled straight into a CV8 image, by a CV8 system -
+\ the design rebuilds its own image (results/drafts/selfhost-plan-666.md,
+\ phase 1). Until now every CV8 image was translated from a cell image by
+\ tools/layout.py after RelF's cell engine ran it; relf's own cross.4 left
+\ that path the same way in relf's Iteration 243.
+\
+\ The image is s6-cv8b's kind: byte-granular headers and call targets
+\ (forth/cv8b.4), a primitive folded into the EXIT after it (forth/cv8.4).
+\ Run on a CV8 system, as the kernel workload runs cross.4:
+\     S" extend.4" INCLUDED  S" cross-cv8.4" INCLUDED
+\ and it writes cv8-self.img. Parts 1 and 2 are forth/cross.4's.
+\ Based on SOD32 by L.C. Benschop and on RelF's cross.4.
+\ Copyright 2001 - 2005, Kirill Timofeev, kt97679@gmail.com
+\ The program is released under the GNU General Public License version 2.
+\ There is NO WARRANTY.
+
+\ Target cell width in bytes: 8, or 4 for a 32-bit target (one line, as
+\ in forth/cross.4).
+VARIABLE TARGET-CELL-BYTES
+8 TARGET-CELL-BYTES !
+
+\ PART 1: THE VOCABULARIES.
+
+VOCABULARY TARGET
+\ This vocabulary will hold shadow definitions for all words that are in
+\ the target dictionary. When a shadow definition is executed, it
+\ performs the compile action in the target dictionary.
+
+VOCABULARY TRANSIENT
+\ This vocabulary will hold definitions that must be executed by the
+\ host system ( the system on which the cross compiler runs) and that
+\ compile to the target system.
+
+\ Expl: The word IF occurs in all three vocabularies. The word IF in the
+\       FORTH vocabulary is run by the host system and is used when
+\       compiling host definitions. A different version is in the
+\       TRANSIENT vocabulary. This one runs on the host system and
+\       is used when compiling target definitions. The version in the
+\       TARGET vocabulary is the version that will run on the target
+\       system.
+
+
+\ PART 2: THE TARGET DICTIONARY SPACE.
+
+\ Next we need to define the target space and the words to access it.
+
+40000 CONSTANT IMAGE_SIZE
+
+CREATE IMAGE IMAGE_SIZE CHARS ALLOT \ This space contains the target image.
+       IMAGE IMAGE_SIZE 0 FILL      \ Initialize it to zero.
+
+\ Fetch and store characters in the target space.
+: C@-T ( t-addr --- c) CHARS IMAGE + C@ ;
+: C!-T ( c t-addr ---) CHARS IMAGE + C! ;
+
+\ Fetch and store cells in the target space, TARGET-CELL-BYTES wide.
+\ As of phase 5 (see GOALS.md), images are native host endianness, not a
+\ portable on-disk format. These build/take apart a little-endian value
+\ byte by byte via C@-T/C!-T (not plain @/! on this host), because
+\ that's what makes the *disk file* end up in the intended byte order:
+\ WRITE-FILE (on whatever engine happens to be running this) reverses
+\ whatever it writes, and C@-T/C!-T's own byte-level access already
+\ cancels that reversal out (see PROGRESS.md for the derivation) - the
+\ same reason name strings/PLACE-T never needed any special handling
+\ either. Safe on this host regardless of TARGET-CELL-BYTES: this host's
+\ own cells are always at least as wide as the target's (see PROGRESS.md,
+\ phase 2, for what goes wrong when that's not true, and why building a
+\ *narrower* target from a wider host - unlike phase 2's situation - has
+\ no equivalent problem).
+\ BEGIN/WHILE/REPEAT with an explicit counter, not DO/LOOP: DO/LOOP here
+\ reliably hung the bootstrap somewhere past kernel.4 loading (found by
+\ bisection, not fully root-caused - see PROGRESS.md). These are called
+\ often enough, from enough different contexts, that avoiding DO/LOOP's
+\ own return-stack usage entirely was the safer fix.
+: @-T  ( t-addr --- x)
+  0 0
+  BEGIN
+    DUP TARGET-CELL-BYTES @ <
+  WHILE
+    >R OVER R@ CHARS + C@-T R@ 3 LSHIFT LSHIFT OR R> 1+
+  REPEAT
+  DROP SWAP DROP
+  \ Sign-extend when the target cell is narrower than this host's own
+  \ (this host's cells are always at least as wide as the target's, see
+  \ the note on C@-T/C!-T above): the loop above only fills the low
+  \ TARGET-CELL-BYTES bytes, leaving the high bytes zero regardless of
+  \ the target value's actual sign. Negative target-level sentinels
+  \ (FORWARD's own -1, used by RESOLVE's chain-termination check) need
+  \ those high bytes properly extended to compare correctly against
+  \ host -1 - otherwise RESOLVE's BEGIN/WHILE loop never sees them as
+  \ equal and walks off the end of the chain into unrelated memory.
+  \ Iteration 328: narrower than this host's own, as said - it read "8 <", a 64-bit host
+  \ taken for granted: on a 32-bit host building the 4-byte kernel it extended anyway, and
+  \ -1 32 LSHIFT on a 4-byte cell is a full-width shift (x86 masks it to 0, -1 is left):
+  \ every negative link became -1, and POSTPONE's thread walk crashed. [ 1 CELLS ] LITERAL
+  \ compiles the very literal 8 did on a 64-bit host.
+  TARGET-CELL-BYTES @ [ 1 CELLS ] LITERAL < IF
+    DUP 1 TARGET-CELL-BYTES @ 3 LSHIFT 1 - LSHIFT AND IF
+      -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT OR
+    THEN
+  THEN ;
+: !-T  ( x t-addr ---)
+  0
+  BEGIN
+    DUP TARGET-CELL-BYTES @ <
+  WHILE
+    >R OVER R@ 3 LSHIFT RSHIFT OVER R@ CHARS + C!-T R> 1+
+  REPEAT
+  DROP 2DROP ;
+
+\ A dictionary is constructed in the target space. Here are the primitives
+\ to maintain the dictionary pointer and to reserve space.
+
+VARIABLE DP-T                       \ Dictionary pointer for target dictionary.
+0 DP-T !                            \ Initialize it to zero, SOD starts at 0.
+: THERE ( --- t-addr) DP-T @ ;      \ Equivalent of HERE in target space.
+: ALLOT-T ( n --- ) DP-T +! ;       \ Reserve n bytes in the dictionary.
+: CHARS-T ( n1 --- n2 ) ;
+: CELLS-T ( n1 --- n2 ) TARGET-CELL-BYTES @ * ;  \ n1 target cells in bytes.
+: ALIGN-T                           \ Target only accesses cells at aligned
+                                    \ addresses.
+  BEGIN THERE TARGET-CELL-BYTES @ 1- AND WHILE 1 ALLOT-T REPEAT ;
+: ALIGNED-T ( n1 --- n2 )
+  TARGET-CELL-BYTES @ 1- + TARGET-CELL-BYTES @ NEGATE AND ;
+: C,-T  ( c --- )  THERE C!-T 1 CHARS ALLOT-T ;
+: ,-T   ( x --- )  THERE !-T  1 CELLS-T ALLOT-T ;
+
+: PLACE-T ( c-addr len t-addr --- ) \ Move counted string to target space.
+  OVER OVER C!-T 1+ CHARS IMAGE + SWAP CHARS CMOVE ;
+
+
+\ PART 3: HEADERS - byte-granular, as forth/cv8b.4's HEADER8 lays them:
+\     [link: 1-4 bytes, tag byte last][count][name][body]
+\ The link is the distance back from this word's count byte to the
+\ previous one in its thread, 0 at a thread's end. The engine never
+\ reads a link; the target's SEARCH-WORDLIST does.
+
+VARIABLE TLINK 0 TLINK !   \ The count byte of the last header.
+
+\ The target's word list is HASHED (kernel.4's FORTH-WORDLIST), so the
+\ dictionary is threaded exactly as the target will search it: these
+\ are the host-side thread heads, and kernel.4's HASH.
+32 CONSTANT #TTHREADS
+CREATE TTHREADS #TTHREADS CELLS ALLOT
+TTHREADS #TTHREADS CELLS 0 FILL
+
+: THASH ( c-addr u --- n )
+\ Exactly what kernel.4's HASH produces for the same name and count.
+  #TTHREADS >R
+  OVER C@ 1 LSHIFT OVER 1 > IF ROT 1+ C@ 2 LSHIFT XOR ELSE ROT DROP
+   THEN XOR
+  R> 1- AND ;
+
+: PUBLISH-WORDLIST ( t-addr --- )
+\ The thread heads into the target's word list: cell 0 the thread
+\ count, cells 1..n the heads.
+  DUP #TTHREADS SWAP !-T
+  #TTHREADS 0 DO
+    I CELLS TTHREADS + @
+    OVER I 1+ CELLS-T + !-T
+  LOOP
+  DROP ;
+
+VARIABLE THIS-THREAD
+VARIABLE HEAD-T
+VARIABLE HLEN-T
+
+: LINK-LEN-T ( d --- n )
+  DUP 128 U< IF DROP 1 EXIT THEN
+  DUP 16384 U< IF DROP 2 EXIT THEN
+  2097152 U< IF 3 ELSE 4 THEN ;
+
+: LINK,-T ( d n --- )
+\ A link of exactly n bytes, its tag byte last (cv8b.4's LINK,).
+  DUP 1 = IF DROP C,-T EXIT THEN
+  DUP 2 = IF DROP DUP 255 AND C,-T 8 RSHIFT 128 OR C,-T EXIT THEN
+  DUP 3 = IF DROP DUP 255 AND C,-T DUP 8 RSHIFT 255 AND C,-T
+    16 RSHIFT 192 OR C,-T EXIT THEN
+  DROP DUP 255 AND C,-T DUP 8 RSHIFT 255 AND C,-T DUP 16 RSHIFT 255 AND C,-T
+  24 RSHIFT 224 OR C,-T ;
+
+: NAME,-T ( c-addr u --- )
+\ The header for a name, linked as HEADER8 links one at run time: the
+\ link sized for the farthest its count byte can land, THERE + 3.
+  DUP 31 > ABORT" cross: name too long"
+  2DUP THASH THIS-THREAD !
+  THIS-THREAD @ CELLS TTHREADS + @ HEAD-T !
+  HEAD-T @ IF THERE 3 + HEAD-T @ - LINK-LEN-T ELSE 1 THEN HLEN-T !
+  HEAD-T @ IF THERE HLEN-T @ + HEAD-T @ - ELSE 0 THEN HLEN-T @ LINK,-T
+  THERE TLINK !
+  THERE THIS-THREAD @ CELLS TTHREADS + !
+  DUP C,-T THERE CHARS IMAGE + SWAP DUP ALLOT-T CMOVE ;
+
+\ Word lists of names, one space after each, searched by place.
+VARIABLE LA  VARIABLE LU  VARIABLE LI
+: LIST-STEP ( --- len ) 0 BEGIN DUP LA @ + C@ 32 = 0= WHILE 1+ REPEAT ;
+: LIST-NEXT ( len --- ) 1+ DUP LA +! NEGATE LU +! 1 LI +! ;
+: LIST-INDEX ( c-addr u list-a list-u --- i | -1 )
+  LU ! LA ! 0 LI !
+  BEGIN LU @ WHILE
+    LIST-STEP >R 2DUP LA @ R@ COMPARE 0= IF 2DROP R> DROP LI @ EXIT THEN
+    R> LIST-NEXT
+  REPEAT 2DROP -1 ;
+: LIST-TOKEN ( k list-a list-u --- c-addr u )
+  LU ! LA ! 0 LI !
+  BEGIN DUP LI @ = 0= WHILE LIST-STEP LIST-NEXT REPEAT DROP LA @ LIST-STEP ;
+
+\ Every target word has a shadow in TARGET: [t-xt][kind][value][t-nfa]
+\ [host action]. Executed, the shadow does what the word's name means
+\ where the cross compiler meets it: inside a definition the opcode, the
+\ literal or the call; outside one the host action - the host word
+\ I-name, if there is one (I-! stores into the image) - or a data word's
+\ parameter address, or a constant's value.
+0 CONSTANT K-COLON
+1 CONSTANT K-PRIM
+2 CONSTANT K-DATA
+3 CONSTANT K-CONST
+
+' TARGET >BODY @ CONSTANT TARGET-WID
+
+CREATE IBUF 40 ALLOT
+: INTERP-XT ( c-addr u --- xt | 0 )
+\ The host word I-name, or 0.
+  DUP 2 + IBUF C! 73 IBUF 1+ C! 45 IBUF 2 + C!
+  IBUF 3 + SWAP CMOVE
+  IBUF COUNT FORTH-WORDLIST SEARCH-WORDLIST IF ELSE 0 THEN ;
+
+: T-SHADOW ( c-addr u --- shadow-body -1 | 0 )
+  TARGET-WID SEARCH-WORDLIST IF >BODY -1 ELSE 0 THEN ;
+
+: T' ( "name" --- t-xt )
+\ The execution token of a target word, by name.
+  BL WORD COUNT T-SHADOW 0= ABORT" cross: no such target word" @ ;
+
+: >BODY-T ( t-xt --- t-addr )
+\ A data word's parameter field: [DOVAR][three bytes, room for DOES>'s
+\ far call] and aligned - cv8b.4's >BODY8, CV8-DOES-RESERVE 3.
+  4 + ALIGNED-T ;
+
+: .TNAME ( t-nfa --- ) DUP C@-T 31 AND SWAP 1+ CHARS IMAGE + SWAP TYPE ;
+
+\ PART 4: CODE GENERATION - CV8, as forth/cv8.4 and cv8b.4 emit it.
+
+VARIABLE STATE-T 0 STATE-T ! \ State variable for cross compiler.
+: T] 1 STATE-T ! ;
+: T[ 0 STATE-T ! ;
+
+VARIABLE CSP   \ Stack pointer checking between : and ;
+: !CSP DEPTH CSP ! ;
+: ?CSP DEPTH CSP @ - ABORT" Incomplete control structure" ;
+
+VARIABLE LAST-OP-T 0 LAST-OP-T !
+\ The target address of the primitive opcode just emitted, or 0 when the
+\ last thing emitted cannot be folded into an EXIT after it. 0 is the
+\ prologue, where no definition starts.
+
+: W,-T ( n --- ) DUP 255 AND C,-T 8 RSHIFT 255 AND C,-T ;
+: 32,-T ( n --- ) DUP W,-T 16 RSHIFT W,-T ;
+: W!-T ( n t-addr --- ) 2DUP C!-T 1+ SWAP 8 RSHIFT 255 AND SWAP C!-T ;
+
+: CALLSIZE-T ( t-addr --- n ) 16384 < IF 2 ELSE 3 THEN ;
+
+: CALL,-T ( t-addr --- )
+\ A call: the byte offset from the image base (call scale 0), two bytes
+\ below 16 KB, three below 2 MB (cv8.4's CALL,).
+  0 LAST-OP-T !
+  DUP 16384 < IF DUP 8 RSHIFT 128 OR C,-T 255 AND C,-T EXIT THEN
+  DUP 2097152 < 0= ABORT" cross: call beyond reach"
+  DUP 16 RSHIFT 192 OR C,-T DUP 8 RSHIFT 255 AND C,-T 255 AND C,-T ;
+
+: PRIM,-T ( op --- ) THERE LAST-OP-T ! C,-T ;
+
+: LITERAL-T ( n --- )
+\ The narrowest literal that holds n (cv8.4's LIT,): LIT8, LIT16, LIT32
+\ (sign-extended), LIT64.
+  0 LAST-OP-T !
+  DUP 256 U< IF 71 C,-T C,-T EXIT THEN
+  DUP 65536 U< IF 2 C,-T W,-T EXIT THEN
+  TARGET-CELL-BYTES @ 4 = IF 68 C,-T 32,-T EXIT THEN
+  DUP 2147483648 + 4294967296 U< IF 68 C,-T 32,-T EXIT THEN
+  124 C,-T DUP 32,-T 32 RSHIFT 32,-T ;
+
+\ The fold: a definition's last primitive and its EXIT become one opcode,
+\ FOLD-BASE + the primitive's place in the fold set. The set and its
+\ order are cv8.4's FOLD-OPS; the engine's table is generated from the
+\ same list (tools/build-stages.sh's HOT).
+73 CONSTANT FOLD-BASE
+: FOLD-SET ( --- c-addr u )
+  S" + = ! @ LSHIFT RSHIFT C@ C! AND OR XOR LIT < U< OVER DROP DUP SWAP ROT >R R> R@ NEGATE " ;
+CREATE FOLDMAP 128 ALLOT  FOLDMAP 128 0 FILL   \ opcode -> folded opcode, or 0
+
+: REF-T ( shadow-body --- )
+\ What a target word's name does where the cross compiler meets it.
+  STATE-T @ IF
+    DUP CELL+ @
+    DUP K-PRIM = IF DROP 2 CELLS + @ PRIM,-T EXIT THEN
+    K-CONST = IF 2 CELLS + @ LITERAL-T EXIT THEN
+    @ CALL,-T EXIT
+  THEN
+  DUP 4 CELLS + @ ?DUP IF SWAP DROP EXECUTE EXIT THEN
+  DUP CELL+ @
+  DUP K-DATA = IF DROP @ >BODY-T EXIT THEN
+  K-CONST = IF 2 CELLS + @ EXIT THEN
+  ." cross: no host action for " 3 CELLS + @ .TNAME CR
+  -1 ABORT" cross: a target word met outside a definition" ;
+
+: "HEADER ( --- host-action )
+\ The shadow and the target header for the next name in the input.
+  >IN @ CREATE >IN !
+  BL WORD COUNT 2DUP INTERP-XT >R NAME,-T R> ;
+
+: SHADOW, ( kind value host-action --- )
+\ The shadow's fields, right after "HEADER: the body starts at THERE.
+  >R >R THERE , , R> , TLINK @ , R> , ;
+
+: DATA-HEADER ( --- )
+\ A data word: [DOVAR][3 bytes][aligned parameter field] (cv8.4's CREATE8,
+\ CV8-DOES-RESERVE 3).
+  "HEADER >R K-DATA 0 R> SHADOW,
+  69 C,-T 0 C,-T 0 C,-T 0 C,-T ALIGN-T 0 LAST-OP-T ! ;
+
+\ The host actions: what a target word does when the cross compiler meets
+\ it outside a definition - the overlays build tables and set variables
+\ while they load.
+: I-! !-T ;
+: I-C! C!-T ;
+: I-@ @-T ;
+: I-C@ C@-T ;
+: I-, ,-T ;
+: I-C, C,-T ;
+: I-ALLOT ALLOT-T ;
+: I-ALIGN ALIGN-T ;
+: I-CELLS CELLS-T ;
+: I-CHARS ;
+: I-' T' ;
+: I->OP C@-T ;      \ a CV8 primitive's body starts with its opcode
+: I-CV8-SHIFT-DEFAULT TARGET-CELL-BYTES @ 8 = IF 3 ELSE 2 THEN ;
+: I-CREATE ( "name" --- ) DATA-HEADER DOES> REF-T ;
+
+\ PART 5: FORWARD REFERENCES - a call to a word not defined yet. Three
+\ bytes are kept for the far form, chained through the bytes themselves
+\ (16777215 ends a chain), and made the call when the word is resolved;
+\ once the word exists, a call is made at once.
+
+VARIABLE FWD-LIST 0 FWD-LIST !
+: FWD-NAME ( body --- c-addr u ) 2 CELLS + COUNT ;
+: FWD-XT ( body --- t-xt -1 | 0 ) FWD-NAME T-SHADOW IF @ -1 ELSE 0 THEN ;
+: FWD-SIZE ( body --- n ) FWD-XT IF CALLSIZE-T ELSE 3 THEN ;
+: FWD-CALL ( body --- )
+  DUP FWD-XT IF SWAP DROP CALL,-T EXIT THEN
+  0 LAST-OP-T !
+  CELL+ DUP @ THERE ROT !
+  DUP 255 AND C,-T DUP 8 RSHIFT 255 AND C,-T 16 RSHIFT 255 AND C,-T ;
+
+: FORWARD ( "name" --- )
+  >IN @ CREATE >IN !
+  HERE FWD-LIST @ , FWD-LIST !  16777215 ,
+  BL WORD COUNT DUP C, HERE SWAP DUP ALLOT CMOVE ALIGN
+  DOES> FWD-CALL ;
+
+: RESOLVE-ONE ( body --- )
+  DUP CELL+ @ 16777215 = IF DROP EXIT THEN
+  DUP FWD-XT 0= IF ." cross: unresolved " FWD-NAME TYPE CR
+    -1 ABORT" cross: a forward reference never defined" THEN
+  SWAP CELL+ @                                    ( t-xt head )
+  BEGIN DUP 16777215 = 0= WHILE
+    >R  R@ C@-T  R@ 1+ C@-T 8 LSHIFT OR  R@ 2 + C@-T 16 LSHIFT OR
+    OVER 2097152 < 0= ABORT" cross: call beyond reach"
+    OVER 16 RSHIFT 192 OR R@ C!-T  OVER 8 RSHIFT 255 AND R@ 1+ C!-T
+    OVER 255 AND R> 2 + C!-T
+  REPEAT 2DROP ;
+
+: RESOLVE-FORWARDS ( --- ) FWD-LIST @ BEGIN ?DUP WHILE DUP RESOLVE-ONE @ REPEAT ;
+
+: ALIGN-CALL-T ( n --- )
+\ NOOPs (opcode 0, executed) until a call of n bytes ends on a cell
+\ boundary - the inline cell after (LOOP) and (POSTPONE) stays aligned.
+  BEGIN THERE OVER + TARGET-CELL-BYTES @ 1- AND WHILE 0 C,-T REPEAT DROP ;
+: ALIGNED-FWD ( body --- ) DUP FWD-SIZE ALIGN-CALL-T FWD-CALL ;
+
+\ PART 6: THE CV8 COMPILER IN KERNEL.4'S PLACE. kernel.4's words that
+\ append code are replaced by the CV8 overlays' X8 words - the swap the
+\ translator made after the fact (tools/layout.py --cv8-compiler). Here
+\ kernel.4's own definition of each is a branch to its X8, resolved at
+\ the end, and its body is skipped. A branch, not a call: (;CODE) takes
+\ its caller's return address.
+
+: SWAP-SET ( --- c-addr u )
+  S" LITERAL COMPILE, ; BEGIN UNTIL AGAIN IF THEN ELSE WHILE REPEAT CREATE VARIABLE CONSTANT RECURSE DO LOOP +LOOP ?DO LEAVE (;CODE) DOES> NEXT-NFA NAME> >BODY HEADER SEARCH-WORDLIST " ;
+: NEXT-WORDS ( --- c-addr u ) S" [CHAR] CHAR ' ['] POSTPONE [COMPILE] " ;
+
+CREATE STUBS 64 2 * CELLS ALLOT
+VARIABLE #STUBS 0 #STUBS !
+
+: STUB-T ( k --- )
+  3 C,-T THERE 0 W,-T                ( k operand )
+  #STUBS @ 2 * CELLS STUBS + DUP >R ! R> CELL+ !
+  1 #STUBS +! ;
+
+: SKIP-DEF ( --- )
+\ Past kernel.4's own body of a replaced word, to its ; - comments, a
+\ string and a quoted next word skipped whole.
+  BEGIN
+    BL WORD DUP C@ 0= IF DROP REFILL 0= ABORT" cross: a replaced definition never ends"
+    ELSE COUNT
+      2DUP S" ;" COMPARE 0= IF 2DROP EXIT THEN
+      2DUP S" \" COMPARE 0= IF SOURCE SWAP DROP >IN ! THEN
+      2DUP S" (" COMPARE 0= IF 41 PARSE 2DROP THEN
+      2DUP S" .(" COMPARE 0= IF 41 PARSE 2DROP THEN
+      DUP 1 > IF 2DUP + 1- C@ 34 = IF 34 PARSE 2DROP THEN THEN
+      2DUP NEXT-WORDS LIST-INDEX 0< 0= IF BL WORD DROP THEN
+      2DROP
+    THEN
+  0 UNTIL ;
+
+CREATE XBUF 40 ALLOT
+: RESOLVE-STUBS ( --- )
+  #STUBS @ 0 ?DO
+    I 2 * CELLS STUBS + DUP CELL+ @ SWAP @    ( k operand )
+    SWAP SWAP-SET LIST-TOKEN                  ( operand c-addr u )
+    DUP 1+ XBUF C! XBUF 1+ SWAP DUP >R CMOVE 56 XBUF 1+ R> + C!
+    XBUF COUNT T-SHADOW 0= IF XBUF COUNT TYPE CR -1 ABORT" cross: no X8 for a replaced word" THEN
+    @ OVER - DUP 32767 > ABORT" cross: X8 out of a branch's reach"
+    SWAP W!-T
+  LOOP ;
+
+\ PART 7: DEFINING AND COMPILING WORDS - the TRANSIENT vocabulary, what
+\ kernel.4 and the overlays mean when they say : ; CONSTANT IF ...
+
+: >MARK-T ( --- t-addr ) 0 LAST-OP-T ! THERE 0 W,-T ;
+: >RESOLVE-T ( t-addr --- )
+  0 LAST-OP-T ! THERE OVER - DUP 32767 > ABORT" cross: branch too long" SWAP W!-T ;
+: <RESOLVE-T ( t-addr --- )
+  0 LAST-OP-T ! THERE - DUP -32768 < ABORT" cross: branch too long" W,-T ;
+: STRING,-T ( c-addr u --- )
+  DUP C,-T THERE CHARS IMAGE + SWAP DUP ALLOT-T CMOVE ALIGN-T 0 LAST-OP-T ! ;
+
+VARIABLE NEXT-OP 0 NEXT-OP !     \ The next primitive's opcode.
+
+ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
+
+: PRIMITIVE ( --- )
+\ The next opcode: a body of the opcode and EXIT, the macro bit (32) set
+\ as the cell cross compiler set it; COMPILE, asks PRIMITIVE? by address.
+  >IN @ BL WORD COUNT FOLD-SET LIST-INDEX SWAP >IN !
+  DUP 0< 0= IF FOLD-BASE + NEXT-OP @ CHARS FOLDMAP + C! ELSE DROP THEN
+  "HEADER >R
+  TLINK @ DUP C@-T 32 OR SWAP C!-T
+  K-PRIM NEXT-OP @ R> SHADOW,
+  NEXT-OP @ C,-T 1 C,-T
+  1 NEXT-OP +!
+  DOES> REF-T ;
+
+: PRIMITIVE-SLOT ( --- )
+\ An opcode kept without a name (kernel.4, Iteration 147).
+  BL WORD DROP 1 NEXT-OP +! ;
+
+: : ( --- )
+  >IN @ BL WORD COUNT SWAP-SET LIST-INDEX SWAP >IN !
+  "HEADER >R K-COLON 0 R> SHADOW,
+  0 LAST-OP-T !
+  DUP 0< IF DROP !CSP T] ELSE STUB-T SKIP-DEF THEN
+  DOES> REF-T ;
+
+: ; ( --- )
+  LAST-OP-T @ ?DUP IF
+    DUP C@-T CHARS FOLDMAP + C@ ?DUP IF SWAP C!-T ELSE DROP 1 C,-T THEN
+  ELSE 1 C,-T THEN
+  0 LAST-OP-T ! T[ ?CSP ;
+
+: IMMEDIATE ( --- ) TLINK @ DUP C@-T 64 OR SWAP C!-T ;
+
+: VARIABLE ( --- ) DATA-HEADER 0 ,-T DOES> REF-T ;
+
+: CONSTANT ( x --- )
+  "HEADER >R K-CONST OVER R> SHADOW, LITERAL-T 1 C,-T 0 LAST-OP-T !
+  DOES> REF-T ;
+
+: BEGIN ( --- t-addr ) THERE ;
+: UNTIL ( t-addr --- ) 4 C,-T <RESOLVE-T ;
+: AGAIN ( t-addr --- ) 3 C,-T <RESOLVE-T ;
+: IF ( --- t-addr ) 4 C,-T >MARK-T ;
+: THEN ( t-addr --- ) >RESOLVE-T ;
+: ELSE ( t-addr1 --- t-addr2 ) 3 C,-T >MARK-T SWAP >RESOLVE-T ;
+: WHILE ( t-addr1 --- t-addr2 t-addr1 ) 4 C,-T >MARK-T SWAP ;
+: REPEAT ( t-addr1 t-addr2 --- ) 3 C,-T <RESOLVE-T >RESOLVE-T ;
+
+FORWARD (DO)
+FORWARD (LOOP)
+FORWARD (.")
+FORWARD (ABORT")
+FORWARD (POSTPONE)
+
+: DO ( --- t-addr ) [ TRANSIENT ] (DO) [ FORTH ] THERE ;
+: LOOP ( t-addr --- )
+  [ TRANSIENT ] ['] (LOOP) [ FORTH ] >BODY ALIGNED-FWD THERE - ,-T 0 LAST-OP-T ! ;
+: ." [ TRANSIENT ] (.") [ FORTH ] 34 PARSE STRING,-T ;
+: ABORT" [ TRANSIENT ] (ABORT") [ FORTH ] 34 PARSE STRING,-T ;
+: POSTPONE ( "name" --- )
+  BL WORD COUNT T-SHADOW 0= ABORT" cross: POSTPONE of no target word"
+  DUP 3 CELLS + @ C@-T 64 AND IF @ CALL,-T EXIT THEN
+  @ [ TRANSIENT ] ['] (POSTPONE) [ FORTH ] >BODY ALIGNED-FWD THERE - ,-T 0 LAST-OP-T ! ;
+: ['] T' LITERAL-T ;
+
+: \ POSTPONE \ ; IMMEDIATE
+: ( POSTPONE ( ; IMMEDIATE
+: CHARS-T CHARS-T ;
+: CELLS-T CELLS-T ;
+: ALLOT-T ALLOT-T ;
+: CELLBYTES-TOK TARGET-CELL-BYTES @ LITERAL-T ;
+: CELLSHIFT-TOK TARGET-CELL-BYTES @ 4 = IF 2 ELSE 3 THEN LITERAL-T ;
+: SIGNSHIFT-TOK TARGET-CELL-BYTES @ 8 * 1- LITERAL-T ;
+
+\ PART 0's boot vectors: calls to COLD and WARM, then three cells, the
+\ first word at 5 cells as the translator laid it.
+FORWARD COLD
+FORWARD WARM
+FORWARD THROW
+: DIV-EX ( --- ) 2 CELLS-T THERE - ALLOT-T -1 ,-T ;
+: BREAK-EX ( --- ) -1 ,-T ;
+: TIMER-EX ( --- ) -1 ,-T ;
+
+FORTH DEFINITIONS
+
+\ PART 8: THE CROSS COMPILER ITSELF.
+
+VARIABLE DPL
+: NUMBER? ( c-addr ---- d f)
+  -1 DPL !
+  BASE @ >R
+  COUNT
+  OVER C@ 45 = DUP >R IF 1 - SWAP 1 + SWAP THEN \ Get any - sign
+  OVER C@ 36 = IF 16 BASE ! 1 - SWAP 1 + SWAP THEN   \ $ sign for hex.
+  OVER C@ 35 = IF 10 BASE ! 1 - SWAP 1 + SWAP THEN   \ # sign for decimal
+  DUP  0 > 0= IF  R> DROP R> BASE ! 0 EXIT THEN   \ Length 0 or less?
+  >R >R 0 0 R> R>
+  BEGIN
+   >NUMBER
+   DUP IF OVER C@ 46 = IF 1 - DUP DPL ! SWAP 1 + SWAP ELSE \ handle point.
+         R> DROP R> BASE ! 0 EXIT THEN   \ Error if anything but point
+       THEN
+  DUP 0= UNTIL DROP DROP R> IF DNEGATE THEN
+  R> BASE ! -1
+;
+
+: XWORD ( c-addr --- )
+\ One word: a target or TRANSIENT word executes, a number is a literal
+\ inside a definition and stays on the host stack outside one.
+  FIND IF EXECUTE EXIT THEN
+  DUP >R NUMBER? 0= IF R> COUNT TYPE ."  ?" CR -1 ABORT" cross: undefined word" THEN
+  R> DROP DROP STATE-T @ IF LITERAL-T THEN ;
+
+: CROSS-COMPILE ( --- )
+\ Cross-compile the rest of the input: to END-CROSS, or to the end of
+\ the file being cross-included.
+  ONLY TARGET DEFINITIONS ALSO TRANSIENT
+  BEGIN
+    BL WORD DUP C@ 0= IF
+      DROP REFILL 0= IF ONLY FORTH ALSO DEFINITIONS EXIT THEN
+    ELSE
+      DUP COUNT S" END-CROSS" COMPARE 0= IF DROP ONLY FORTH ALSO DEFINITIONS EXIT THEN
+      XWORD
+    THEN
+  0 UNTIL ;
+
+: XINCLUDED ( c-addr u --- )
+\ Cross-compile a whole file - kernel.4's INCLUDED with CROSS-COMPILE in
+\ INTERPRET's place.
+  R/O OPEN-FILE ABORT" cross: can't open a file" DUP >R
+  INCLUDE-POINTER @ >R SID @ >R SRC @ >R #SRC @ >R >IN @ >R
+  #SRC @ INCLUDE-POINTER +! INCLUDE-POINTER @ SRC !
+  SID ! 0 #SRC ! 0 >IN !
+  CROSS-COMPILE
+  R> >IN ! R> #SRC ! R> SRC ! R> SID ! R> INCLUDE-POINTER !
+  R> CLOSE-FILE DROP ;
+
+\ PART 9: THE IMAGE FILE (engine/vm-lab.c, load_image): the magic, the
+\ thread heads, no DOES> tails, an empty locals block, THROW's body,
+\ then the image.
+CREATE MAGIC-CV8 67 C, 86 C, 56 C, 48 C, 8 C, 76 C, 1 C, 31 C,
+CREATE CBUF 8 ALLOT
+: CELL-OUT ( x fid --- ) >R CBUF ! CBUF TARGET-CELL-BYTES @ R> WRITE-FILE ABORT" cross: can't write" ;
+VARIABLE FID-OUT
+: SAVE-IMAGE-CV8 ( "name" --- )
+\ (The file id in a variable: R@ inside DO ... LOOP is the loop's.)
+  TARGET-CELL-BYTES @ MAGIC-CV8 4 + C!
+  BL WORD COUNT W/O BIN CREATE-FILE ABORT" cross: can't create the image" FID-OUT !
+  MAGIC-CV8 8 FID-OUT @ WRITE-FILE ABORT" cross: can't write"
+  #TTHREADS FID-OUT @ CELL-OUT
+  #TTHREADS 0 DO I CELLS TTHREADS + @ FID-OUT @ CELL-OUT LOOP
+  0 FID-OUT @ CELL-OUT
+  5 0 DO 0 FID-OUT @ CELL-OUT LOOP
+  S" THROW" T-SHADOW 0= ABORT" cross: no THROW" @ FID-OUT @ CELL-OUT
+  IMAGE THERE FID-OUT @ WRITE-FILE ABORT" cross: can't write"
+  FID-OUT @ CLOSE-FILE ABORT" cross: can't close" ;
+
+\ PART 10: THE KERNEL, THE CV8 COMPILER, THE IMAGE.
+
+S" kernel.4" INCLUDED S" cross-cv8: kernel.4 to " TYPE THERE . CR
+S" cv8.4" XINCLUDED S" cross-cv8: cv8.4 to " TYPE THERE . CR
+S" cv8b.4" XINCLUDED S" cross-cv8: cv8b.4 to " TYPE THERE . CR
+RESOLVE-STUBS
+RESOLVE-FORWARDS
+T' FORTH-WORDLIST >BODY-T PUBLISH-WORDLIST
+THERE T' DP >BODY-T !-T
+\ The dictionary's room from START: the CV8 engines keep the stacks apart, in
+\ 256 MB of their own (engine/vm-lab.c's MEMMAX; kernel.4's DICT-MAX, which the
+\ translator wrote too - tools/layout.py, Iteration 184).
+268435456 T' DICT-MAX >BODY-T !-T
+SAVE-IMAGE-CV8 cv8-self.img
+BYE

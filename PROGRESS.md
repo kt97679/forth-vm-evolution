@@ -11369,3 +11369,14 @@ evolver's build() with its commands recorded (all 20 equal to designs/), and the
 782 of layout.py's 1,060 statements and 712 of the 939 in sod16.py's library part. The plan: results/drafts/
 selfhost-plan-666.md - six phases from s6-cv8b to the measurements; the card's next item. Files:
 results/drafts/selfhost-plan-666.md.
+
+## Iteration 667 - 2026-11-14 - Claude
+
+Phase 1 under way (the owner: yes). forth/cross-cv8.4, the CV8 cross compiler: run by the translator-built s6-cv8b
+(`S" extend.4" INCLUDED S" cross-cv8.4" INCLUDED`), it compiles kernel.4 with cv8.4 and cv8b.4 straight into a CV8
+image A; A, booted, compiles the same and writes B; A = B byte for byte (9,792 bytes; the translator's s6 9,265), and A
+passes the evolver's gate - the corpus, the kernel workload, the far tests, full.fth. The swap at compile time (kernel.4's
+27 code-emitting words a branch to their X8), the overlays' load-time code through host actions, DICT-MAX written as
+the translator wrote it (the gate's full.fth caught its absence). tools/selfhost-check.sh checks the fixed point and the
+gate; its self-test plants a fault in A's PARSE and is caught. Next: s6's specialisations. Files: forth/cross-cv8.4,
+tools/selfhost-check.sh.
