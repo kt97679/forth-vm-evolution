@@ -41,10 +41,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 665.
+- master: Iteration 666.
+- **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
+  design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
+  phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1, s6-cv8b, next. The article waits for the
+  measurements (its figures change); the designs/ images, the relf handoff and the roles are redone at phase 6.
 - For relf (665): its questions answered as far as the search can - results/relf-questions-665.md; a patch for its
   shell tests' /tmp leak - results/relf-patches/tests-tmp-cleanup.patch.
-- **The search is over; the freeze done - its batch applied (656), the relf handoff final (657), the article's portable figures (658); the article next, the last.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
+- **The search is over; the freeze done - its batch applied (656), the relf handoff final (657), the article's portable figures (658); reopened by the owner for self-hosting (666), then the article.** The improvement phase ended by the stopping rule (seed 83, 572); the final set,
   21 (598: results/final-set-chainsBCD-seed86.md, results/final-pick-chainCD-seed86.md); consolidation's retirements done
   (599: results/applied-after-seed86/ORDER.md); the method section's figures (600: results/article-figures-600.md). Then
   the portable runs (seeds 87, 88, 91) and the last JIT runs (89, 90), each with a follow-up chain on the three machines

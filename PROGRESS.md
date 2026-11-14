@@ -11359,3 +11359,13 @@ files there, checked to apply to the vendored tree. `make test` from a fresh clo
 A correction by the same expression: 662's "nine of the ten carry one fused pair or none" was wrong - seven do, the
 others two, three and six; both drafts now say so. Files: results/relf-questions-665.md,
 results/relf-patches/tests-tmp-cleanup.patch.
+
+## Iteration 666 - 2026-11-13 - Claude
+
+The owner: make the ten designs self-hosting. Asked how (the AskUserQuestion record: an exact port of the translator
+keeping today's images, or relf's way with new images), the owner chose relf's way - a CV8 cross compiler in Forth run
+by each design, new images measured again - for all ten. Measured first: every winner's image rebuilt by the
+evolver's build() with its commands recorded (all 20 equal to designs/), and the translator traced on those calls -
+782 of layout.py's 1,060 statements and 712 of the 939 in sod16.py's library part. The plan: results/drafts/
+selfhost-plan-666.md - six phases from s6-cv8b to the measurements; the card's next item. Files:
+results/drafts/selfhost-plan-666.md.

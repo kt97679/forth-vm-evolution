@@ -258,6 +258,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `portable-front-seed90.md` - The portable designs found before seed 91 (Iteration 633): 528 on the true front of the JIT-free pool, seeds 89-90's among them - portable.py's pool for seed 91's verdict.
 - `drafts/portable-plan-602.md` - The portable run, planned (Iteration 602): why (the final pick re-measured 5 of the 279 portable front designs), the chain, the rule fixed before it, what follows.
 - `drafts/jit-run-plan-620.md` - The last JIT run before the freeze, planned (Iteration 620): 21 hours carrying every front, judged against every earlier front by what it bred, its follow-up, the tools to prepare.
+- `drafts/selfhost-plan-666.md` - The ten designs self-hosting, relf's way (Iteration 666, the owner): today's image path, each design's overlays and translator options, the target, the pieces, six phases, the checks.
 - `drafts/forthhub-read-661.md` - The drafts read as a ForthHub member would (Iteration 661): what was fixed - the figures aligned, abbreviations explained before use - and eight suggestions for the owner, not made.
 - `drafts/originality-605.md` - Are the winning designs original (Iteration 605): each mechanism of the nine and where it was described - every technique known; two details and the combinations not found; the readers asked.
 - `drafts/resume-610.md` - The resume that forked (Iteration 610): seed 87's restart replayed second readings early and forked at generation 3; the fix, its test and the two attempts compared.
