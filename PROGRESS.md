@@ -11414,3 +11414,17 @@ A = B on its own engine and through the gate; speed the same on this VM. s6 stil
 stale-build guard (evolve.py) leaves forth/cross-cv8.4 out: no build reads it, and an edit to it stopped run-tests.
 Notes: results/drafts/selfhost-plan-666.md, "Phase 2 done (670)". Next: phase 3 (the JIT designs) or phase 4 (4-byte
 cells) - the owner's call.
+
+## Iteration 671 - 2026-11-14 - Claude
+
+Phase 4 done (the owner: phase 4 next): the six portable designs self-host at 4-byte cells too. The cell width is a
+gene (G-CELL); export-genes.py writes designs/NAME/genes32.4 from the 4-byte build; literals are the target's value
+on any host (T-NORM); `tools/selfhost-check.sh --32 NAME` runs forth32 on image32.img, gates against the evolver's
+4-byte references, and checks that the 64-bit build makes the same 32-bit image (it does, for all six). Four of the
+six first came out 16-68 bytes larger than the translator's 32-bit images: the swap's 3-byte branches to the X8s.
+kernel.4's swapped words now wait - calls and POSTPONEd cells chained - and take their place, header and all, at the
+last X8, so every self-built image is smaller than the translator's at both widths: smallest 8,675/8,971 and
+8,087/8,167 bytes, least-memory 9,358/9,638 and 8,746/8,782, portable-small 8,887/9,183 and 8,375/8,451,
+portable-knee 8,753/9,049 and 8,125/8,177, portable-arm 8,898/9,202 and 8,286/8,350, portable-fastest 9,482/9,706
+and 8,458/8,474; s6 8,983/9,265. Speed the same (32-bit outliers re-timed: noise). Notes: results/drafts/
+selfhost-plan-666.md, "Phase 4 done (671)". Next: phase 3, the JIT designs.

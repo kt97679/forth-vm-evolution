@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 670.
+- master: Iteration 671.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
@@ -49,11 +49,12 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   names dropped - the translator-built s6 writes image A, A rebuilds itself byte for byte (9,077 bytes; the
   translator's 9,265), A passes the evolver's gate. Phase 2 begun (669): each design's genes as Forth
   (lab/evolve/export-genes.py: designs/NAME/genes.4, stages/s6-genes.4), the translator's rewrites done while
-  compiling, three passes (dead words, call counts, one-byte calls). **Phase 2 done (670): the six portable designs
-  self-host at 8-byte cells** - each image 152-232 bytes smaller than the translator's, A = B on its own engine, the
-  gate passed, speed the same: `sh tools/selfhost-check.sh [--self-test] NAME` (s6: no name; the table in the plan).
-  Next: phase 3 (the four JIT designs: tag 2, hot-inline, the JIT's options) or phase 4 (4-byte cells for the six) -
-  the owner's call. export-designs.py remakes designs/NAME/ from nothing - rerun export-genes.py after it. The article waits for the
+  compiling, three passes (dead words, call counts, one-byte calls). **The six portable designs self-host at both
+  widths** (phase 2, 670; phase 4, 671): every image smaller than the translator's (8-byte 224-296 bytes, 4-byte
+  16-80), A = B on its own engine, the gate passed, the 64-bit build making the same 32-bit image, speed the same:
+  `sh tools/selfhost-check.sh [--self-test] [--32] NAME` (s6: no name; the table in the plan). Next: phase 3 (the
+  four JIT designs: tag 2, hot-inline, the JIT's options). export-designs.py remakes designs/NAME/ from nothing -
+  rerun export-genes.py after it. The article waits for the
   measurements (its figures change); the designs/ images, the relf handoff and the roles are redone at phase 6.
 - For relf (665): its questions answered as far as the search can - results/relf-questions-665.md; a patch for its
   shell tests' /tmp leak - results/relf-patches/tests-tmp-cleanup.patch.

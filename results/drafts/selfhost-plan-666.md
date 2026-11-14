@@ -244,3 +244,41 @@ ackermann and sieve within a millisecond (build/selfhost/speed.sh; the laptop, t
 **Next**: phase 3, the four JIT designs (tag 2's ranked codes, hot-inline, the JIT's options, --escape2,
 --no-varslot) - the largest step; or phase 4 first for the six (4-byte cells: TARGET-CELL-BYTES, the designs'
 forth32 and image32.img), the smaller one.
+
+## Phase 4 done (671) - the six at 4-byte cells too
+
+**The width is a gene**: G-CELL (8 or 4) sets the cross compiler's TARGET-CELL-BYTES. lab/evolve/export-genes.py
+writes designs/NAME/genes32.4 from the 4-byte build (evolve.py's build() at_width(WIDTH4), as export-designs.py makes
+image32.img; the same options and tables as the 8-byte build, the k32 dump). A literal is the target's value
+whichever host compiles it (T-NORM: on a wider host, the low bytes sign-extended, as @-T reads a cell).
+`sh tools/selfhost-check.sh [--self-test] --32 NAME` runs the design's forth32 on image32.img with genes32.4; the
+gate is eval32's, against the evolver's 4-byte references (setup_widths, at_width(WIDTH4)); and the design's 64-bit
+build must make the same 32-bit image - it does, for all six: the host's width does not reach the image.
+
+**No more branches to the X8s.** At 4-byte cells the translator's images have less padding (its data words' bodies
+are aligned before DOVAR, four bytes at 8-byte cells), and four of the six came out 16-68 bytes larger: the cost was
+the swap's 3-byte branches (27 of them in least-memory). Now kernel.4's X waits - no header and no code, its calls
+chained like a FORWARD's and its POSTPONEd cells chained through themselves (only (;CODE), in DOES> and DOES>8) - and
+at the last X8 of its name (the pre-scan counts them) X's header is laid down, the X8's code is X's, and what waited
+on X is made. X's header sits a little later in the dictionary than kernel.4's place for it; X is defined once.
+A `'` or `[']` of a word still waiting is refused (the sources have none).
+
+| design | translator, 8-byte | self-built | translator, 4-byte | self-built |
+|---|---|---|---|---|
+| smallest | 8,971 | 8,675 | 8,167 | 8,087 |
+| least-memory | 9,638 | 9,358 | 8,782 | 8,746 |
+| portable-small | 9,183 | 8,887 | 8,451 | 8,375 |
+| portable-knee | 9,049 | 8,753 | 8,177 | 8,125 |
+| portable-arm | 9,202 | 8,898 | 8,350 | 8,286 |
+| portable-fastest | 9,706 | 9,482 | 8,474 | 8,458 |
+| s6 (the ladder) | 9,265 | 8,983 | - | - |
+
+Bytes of the image file. Each: A = B on the design's own engine (forth, forth32), the gate passed; at 4-byte cells
+the 64-bit build makes the same image.
+Speed at 4-byte cells on this VM (forth32, translator's image against self-built, best of five): within noise - the
+four widest gaps, timed again best of fifteen with the images alternating, were smallest loop 24/23 ms, least-memory
+fib 46/42, portable-fastest fib 24/25, portable-knee parse 624/578. --self-test --32 portable-fastest: the planted
+fault caught.
+
+**Next**: phase 3, the four JIT designs (tag 2's ranked codes, hot-inline, the JIT's options, --escape2); then phase 5
+(designs/ ships the self-built images, `make selfhost`, run-tests runs the checks) and phase 6 (re-measured).

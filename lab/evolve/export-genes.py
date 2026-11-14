@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """lab/evolve/export-genes.py [NAME ...] - each design's genes as Forth, for forth/cross-cv8.4 (Iteration 669;
-results/drafts/selfhost-plan-666.md, phase 2): designs/NAME/genes.4, and stages/s6-genes.4 for the ladder's s6-cv8b.
+results/drafts/selfhost-plan-666.md, phases 2 and 4): designs/NAME/genes.4 and genes32.4 (8- and 4-byte cells), and
+stages/s6-genes.4 for the ladder's s6-cv8b.
 The values are the ones the evolver hands the translator: evolve.py's own build() runs for the design with every
 command recorded, and the translator's options (tools/layout.py) and the overlays of the dump it reads are written
 out as words the cross compiler includes; the engine's flags come from the design's Makefile. As the build user, in a
 built tree, from the repository's top. With no NAME, every design in designs/ and s6."""
-import json, os, re, shutil, sys
+import contextlib, json, os, re, shutil, sys
 NAMES = sys.argv[1:]
 sys.argv = ['x']; sys.path.insert(0, 'lab/evolve'); import evolve as E
 LOG = []; _sh = E.sh
 def sh(cmd, *a, **k):
     LOG.append([str(c) for c in cmd]); return _sh(cmd, *a, **k)
 E.sh = sh
-E.setup()
+E.TWO_WIDTHS[0] = True; E.setup_widths(); E.TWO_WIDTHS[0] = False     # the 4-byte references too (WIDTH4)
 
 OVERLAY_ORDER = ['cv8.4', 'cv8b.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4']
 def overlays(dump):
@@ -38,7 +39,7 @@ def flags(makefile):
     d = dict(re.findall(r'-D([A-Z0-9_]+)=?(\d*)', open(makefile).read()))
     return {k: int(v) if v else 1 for k, v in d.items()}
 
-def genes(name, args, eflags, out):
+def genes(name, args, eflags, out, cell=8):
     dump = args[0]
     ov = overlays(dump)
     spec = set((opt(args, '--spec') or '').split(',')) - {''}
@@ -63,6 +64,7 @@ def genes(name, args, eflags, out):
          'VARIABLE G-AT',
          ': G-LIST: ( "name" --- ) CREATE HERE G-AT ! 0 , DOES> DUP CELL+ SWAP @ ;',
          ': G+ ( c-addr u --- ) DUP G-AT @ +! HERE SWAP DUP ALLOT CMOVE ;']
+    L += ['%d CONSTANT G-CELL          \\ the target\'s cell, bytes' % cell]
     L += lst('G-OVERLAYS', ov, 'after kernel.4, in this order')
     L += lst('G-FOLDS', folds, 'the fold set: FOLD-BASE + place')
     L += ['%d CONSTANT G-SPEC          \\ the specialisations: 1 small, 2 imm, 4 var, 8 tiny, 16 loc' % bits]
@@ -104,10 +106,14 @@ for name in NAMES or (['s6'] + ROLES):
                 '--spec', 'loc,var,tiny,small,imm', '--cv8-compiler', '--drop-x8', '--drop-dumptool']
         genes('s6-cv8b', args, {'SPEC': 1, 'VARSLOT': 1}, 'stages/s6-genes.4'); continue
     g = json.load(open(os.path.join('designs', name, 'record.json')))['genome']
-    b = os.path.join(E.EV, 'genes-%s' % name); shutil.rmtree(b, ignore_errors=True)
-    del LOG[:]
-    E.build(E.canon(g), b)
-    c = [c for c in LOG if any(x.endswith('tools/layout.py') for x in c)][-1]
-    args = c[[k for k, x in enumerate(c) if x.endswith('tools/layout.py')][0] + 1:]
-    try: genes(name, args, flags(os.path.join('designs', name, 'Makefile')), os.path.join('designs', name, 'genes.4'))
-    except AssertionError as e: print(name, '- skipped:', e)
+    for cell in (8, 4):
+        # As export-designs.py builds image.img and image32.img: the 4-byte build at_width(WIDTH4).
+        b = os.path.join(E.EV, 'genes-%s-%d' % (name, cell)); shutil.rmtree(b, ignore_errors=True)
+        del LOG[:]
+        with (E.at_width(E.WIDTH4) if cell == 4 else contextlib.nullcontext()): E.build(E.canon(g), b)
+        c = [c for c in LOG if any(x.endswith('tools/layout.py') for x in c)][-1]
+        args = c[[k for k, x in enumerate(c) if x.endswith('tools/layout.py')][0] + 1:]
+        assert args[1] == str(cell), args[:2]
+        out = os.path.join('designs', name, 'genes.4' if cell == 8 else 'genes32.4')
+        try: genes(name, args, flags(os.path.join('designs', name, 'Makefile')), out, cell)
+        except AssertionError as e: print(name, cell, '- skipped:', e)

@@ -20,10 +20,10 @@
 \ The program is released under the GNU General Public License version 2.
 \ There is NO WARRANTY.
 
-\ Target cell width in bytes: 8, or 4 for a 32-bit target (one line, as
-\ in forth/cross.4).
+\ Target cell width in bytes: the genes' G-CELL - 8, or 4 for a 32-bit
+\ target (forth/cross.4's one line).
 VARIABLE TARGET-CELL-BYTES
-8 TARGET-CELL-BYTES !
+G-CELL TARGET-CELL-BYTES !
 
 \ PART 1: THE VOCABULARIES.
 
@@ -390,7 +390,15 @@ CREATE TGTS2 #OPS-MAX 1+ ALLOT
   TGTS2 TGTS #OPS-MAX 1+ CMOVE ;
 
 : P+ ( op shadow --- ) >R O-P SWAP 0 R> OP+ ;
-: LIT+ ( n --- ) O-LIT SWAP 0 0 OP+ ;
+: T-NORM ( n --- n' )
+\ A target cell's value as this host holds it - on a host wider than the
+\ target, its low bytes sign-extended, as @-T reads a cell: -1 and
+\ $FFFFFFFF are one literal for a 32-bit target, whichever host builds it.
+  TARGET-CELL-BYTES @ [ 1 CELLS ] LITERAL < IF
+    -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT INVERT AND
+    DUP 1 TARGET-CELL-BYTES @ 3 LSHIFT 1 - LSHIFT AND IF -1 TARGET-CELL-BYTES @ 3 LSHIFT LSHIFT OR THEN
+  THEN ;
+: LIT+ ( n --- ) T-NORM O-LIT SWAP 0 0 OP+ ;
 : BR+ ( target long short --- ) >R >R O-BR SWAP R> R> OP+ ;
 : STR+ ( c-addr u --- )
   DUP SPOOL# @ + 8192 > ABORT" cross: a definition's strings too long"
@@ -420,14 +428,13 @@ VARIABLE #SHADOWS 0 #SHADOWS !     \ the shadows made so far: the next one's ord
 \ A shadow's ordinal, its one-byte call, its name (PART 4's shadows).
 : ORD ( shadow --- k ) 11 CELLS + @ ;
 : HOT-OF ( shadow --- code | 0 ) 10 CELLS + @ ;
-: SH-NAME ( shadow --- c-addr u ) 12 CELLS + COUNT ;
+: SH-NAME ( shadow --- c-addr u ) 15 CELLS + COUNT ;
+: PENDING? ( shadow --- f ) 13 CELLS + @ ;
 : REF! ( shadow --- )
   DUP ORD DEAD + C@ IF ." cross: " SH-NAME TYPE CR -1 ABORT" cross: a dead word referenced" THEN
   ORD REFD + 1 SWAP C! ;
 : HOT-CODE ( k --- code | 0 )
   #HOTS @ 0 ?DO DUP I CELLS HOTS + @ = IF DROP 224 I + UNLOOP EXIT THEN LOOP DROP 0 ;
-: SITE-SIZE ( shadow --- n ) DUP HOT-OF IF DROP 1 ELSE @ CALLSIZE-T THEN ;
-: SITE, ( shadow --- ) DUP HOT-OF ?DUP IF C,-T DROP ELSE @ CALL-BYTES-T THEN ;
 
 \ ---- calls laid down before their target exists - a rebound name's, a
 \ FORWARD's - are chained through their own bytes and made calls at the
@@ -457,6 +464,13 @@ VARIABLE NEAR 0 NEAR !
     THEN
   REPEAT 2DROP ;
 : CHAIN-SIZE ( hot --- n ) IF 1 ELSE NEAR @ IF 2 ELSE 3 THEN THEN ;
+\ A call to a word: one byte where it is hot, chained while it waits for
+\ its place (PART 6), else as near as its address allows.
+: SITE-SIZE ( shadow --- n )
+  DUP HOT-OF IF DROP 1 EXIT THEN DUP PENDING? IF DROP 0 CHAIN-SIZE EXIT THEN @ CALLSIZE-T ;
+: SITE, ( shadow --- )
+  DUP HOT-OF ?DUP IF C,-T DROP EXIT THEN
+  DUP PENDING? IF 12 CELLS + CHAIN,-T EXIT THEN @ CALL-BYTES-T ;
 
 \ ---- rebound names: the kernel's uses of words an overlay defines again
 \ (the translator's --rebind) are calls to the last definition, resolved
@@ -709,7 +723,8 @@ S" DUP<I" OPS10-OF CONSTANT X-DLTI
 \ or (POSTPONE)'s xt, from the cell itself.
   >R R@ OP-A FWD-SITE-SIZE THERE SWAP PADDED 0 ?DO 0 C,-T LOOP
   R@ OP-A FWD-SITE,
-  R@ OP-K O-LOOPC = IF R@ OP-B ADDR ELSE R@ OP-B THEN THERE - ,-T R> DROP ;
+  R@ OP-K O-LOOPC = IF R@ OP-B ADDR THERE - ,-T R> DROP EXIT THEN
+  R@ OP-C DUP PENDING? IF 14 CELLS + DUP @ SWAP THERE SWAP ! ,-T ELSE @ THERE - ,-T THEN R> DROP ;
 : E-STR ( i --- )
   DUP OP-B DUP C,-T SWAP OP-A THERE CHARS IMAGE + ROT DUP ALLOT-T CMOVE ALIGN-T ;
 
@@ -840,12 +855,13 @@ VARIABLE SH-KIND
 : SHADOW, ( kind value host-action --- )
 \ The shadow's fields, right after "HEADER: [t-xt][kind][value][t-nfa]
 \ [host action][immediate][test-branch long][short][rebind record]
-\ [redirect: X's shadow for an X8 it replaces][hot call][ordinal][name].
+\ [redirect: X's shadow for an X8 it replaces][hot call][ordinal][calls
+\ pending][pending: X until its place][POSTPONEd cells pending][name].
 \ A rebind record for the kernel's primitives of the rebound names.
   >R >R DUP SH-KIND ! HERE LAST-SHADOW ! THERE , , R> , TLINK @ , R> , 0 ,
   LAST-NAME COUNT TEST-OPS SWAP , ,
   IN-KERNEL @ SH-KIND @ K-PRIM = AND IF LAST-NAME COUNT RB-OF ELSE 0 THEN ,
-  0 , #SHADOWS @ HOT-CODE , #SHADOWS @ ,
+  0 , #SHADOWS @ HOT-CODE , #SHADOWS @ ,  CHAIN-END , 0 , 0 ,
   LAST-NAME COUNT DUP C, HERE SWAP DUP ALLOT CMOVE ALIGN
   LAST-SHADOW @ #SHADOWS @ CELLS ORD-SH + !
   1 #SHADOWS +! ;
@@ -869,7 +885,9 @@ VARIABLE SH-KIND
 : I-ALIGN ALIGN-T ;
 : I-CELLS CELLS-T ;
 : I-CHARS ;
-: I-' ( "name" --- t-xt ) BL WORD COUNT T-SHADOW 0= ABORT" cross: ' of no target word" DUP REF! @ ;
+: I-' ( "name" --- t-xt )
+  BL WORD COUNT T-SHADOW 0= ABORT" cross: ' of no target word"
+  DUP PENDING? ABORT" cross: ' of a word not placed yet" DUP REF! @ ;
 : I->OP C@-T ;      \ a CV8 primitive's body starts with its opcode
 : I-HERE THERE ;
 : I-FOLD-DEFAULTS ( --- )
@@ -882,17 +900,27 @@ VARIABLE SH-KIND
 
 \ PART 6: THE CV8 COMPILER IN KERNEL.4'S PLACE. Each kernel.4 word whose
 \ X8 an overlay defines - its compiler words, cv8b.4's header words,
-\ kfast's search - is a branch to the last X8, resolved at the end, its
-\ own body skipped: the translator's swap (tools/layout.py --cv8-compiler)
-\ made while compiling. A branch, not a call: (;CODE) takes its caller's
-\ return address. The overlays are read for their X8 names first.
+\ kfast's search - has the last X8's code: the translator's swap (tools/
+\ layout.py --cv8-compiler) made while compiling. kernel.4's X waits, its
+\ body skipped - no header and no code; a call to it is chained, and so
+\ is a cell POSTPONE lays down for it - and at the last X8 its header is
+\ laid down, the X8's code following it is its code, and what waited on
+\ it is made. (A header a little later in the dictionary than kernel.4's
+\ place for it: X is defined once, so nothing finds another.) The
+\ sources are read first for their X8 names and how many of each.
 
 CREATE SWAPS 1024 ALLOT  VARIABLE #SWAPS 0 #SWAPS !
+CREATE X8-TOTAL 128 ALLOT  X8-TOTAL 128 0 FILL   \ each X's X8 definitions in the sources
+CREATE X8-SEEN 128 ALLOT                          \ ...and so far, this pass
 : SWAP-SET ( --- c-addr u ) SWAPS #SWAPS @ ;
 : SWAP-ADD ( c-addr u --- )
-  2DUP SWAP-SET LIST-INDEX 0< 0= IF 2DROP EXIT THEN
-  DUP 1+ #SWAPS @ + 1024 > ABORT" cross: too many X8 words"
-  >R SWAPS #SWAPS @ + R@ CMOVE R> #SWAPS +! 32 SWAPS #SWAPS @ + C! 1 #SWAPS +! ;
+  2DUP SWAP-SET LIST-INDEX DUP 0< 0= IF >R 2DROP R> ELSE DROP
+    DUP 1+ #SWAPS @ + 1024 > ABORT" cross: too many X8 words"
+    >R SWAPS #SWAPS @ + R@ CMOVE R> #SWAPS +! 32 SWAPS #SWAPS @ + C! 1 #SWAPS +!
+    SWAP-SET LIST-COUNT 1-
+  THEN
+  DUP 128 < 0= ABORT" cross: too many X8 words"
+  X8-TOTAL + DUP C@ 1+ SWAP C! ;
 CREATE LINEBUF 260 ALLOT  VARIABLE SCAN-FID
 : FIRST-TOKEN ( c-addr u --- c-addr len )
   0 BEGIN 2DUP > IF 2 PICK OVER + C@ 32 > ELSE 0 THEN WHILE 1+ REPEAT SWAP DROP ;
@@ -933,12 +961,20 @@ CREATE OPB-COUNTS 64 ALLOT  OPB-COUNTS 64 0 FILL
 
 : NEXT-WORDS ( --- c-addr u ) S" [CHAR] CHAR ' ['] POSTPONE [COMPILE] " ;
 
-CREATE STUBS 64 2 * CELLS ALLOT
-VARIABLE #STUBS 0 #STUBS !
-: STUB-T ( k --- )
-  3 C,-T THERE 0 W,-T                ( k operand )
-  #STUBS @ 2 * CELLS STUBS + DUP >R ! R> CELL+ !
-  1 #STUBS +! ;
+: PLACE-X ( x-shadow --- )
+\ X's header here, its code what follows; the calls and cells waiting on
+\ it made, its IMMEDIATE (kernel.4's) on the header.
+  >R R@ SH-NAME NAME,-T
+  R@ 5 CELLS + @ IF TLINK @ DUP C@-T 64 OR SWAP C!-T THEN
+  THERE R@ !  TLINK @ R@ 3 CELLS + !  0 R@ 13 CELLS + !
+  R@ @ R@ 12 CELLS + @ PATCH-CHAIN
+  R@ 14 CELLS + @ BEGIN ?DUP WHILE DUP @-T SWAP R@ @ OVER - SWAP !-T REPEAT
+  R> DROP ;
+: LAST-X8? ( x-shadow --- f )
+\ The X8 being defined is the last of its name: X takes its place here.
+  SH-NAME SWAP-SET LIST-INDEX DUP 0< ABORT" cross: an X8's X not in the swap set"     ( k )
+  DUP X8-SEEN + DUP C@ 1+ SWAP C!
+  DUP X8-SEEN + C@ SWAP X8-TOTAL + C@ = ;
 
 : SKIP-DEF ( --- )
 \ Past kernel.4's own body of a replaced word, to its ; - comments, a
@@ -956,15 +992,9 @@ VARIABLE #STUBS 0 #STUBS !
     THEN
   0 UNTIL ;
 
-CREATE XBUF 40 ALLOT
-: RESOLVE-STUBS ( --- )
-  #STUBS @ 0 ?DO
-    I 2 * CELLS STUBS + DUP CELL+ @ SWAP @    ( k operand )
-    SWAP SWAP-SET LIST-TOKEN                  ( operand c-addr u )
-    DUP 1+ XBUF C! XBUF 1+ SWAP DUP >R CMOVE 56 XBUF 1+ R> + C!
-    XBUF COUNT T-SHADOW 0= IF XBUF COUNT TYPE CR -1 ABORT" cross: no X8 for a replaced word" THEN
-    @ OVER - DUP 32767 > ABORT" cross: X8 out of a branch's reach"
-    SWAP W!-T
+: CHECK-PLACED ( --- )
+  #SHADOWS @ 0 ?DO
+    I CELLS ORD-SH + @ DUP PENDING? IF ." cross: " SH-NAME TYPE CR -1 ABORT" cross: a replaced word never placed" THEN DROP
   LOOP ;
 
 : X8-OF ( c-addr u --- shadow | 0 )
@@ -1102,8 +1132,9 @@ ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
   BL WORD COUNT OPCODE-T DROP ;
 
 : : ( --- )
-\ A kernel word an overlay's X8 replaces: a branch to it, its own body
-\ skipped. An op-body word: [op][EXIT], its body skipped - or nothing
+\ A kernel word an overlay's X8 replaces: it waits for the last X8, its
+\ own body skipped (PART 6). An X8 of it: no header of its own - the last
+\ one X's. An op-body word: [op][EXIT], its body skipped - or nothing
 \ here at all, made among the primitives. Any other: its operations, to ;.
   >IN @ >R BL WORD COUNT R> >IN !                      ( c-addr u )
   2DUP INLINED? IF 2DROP BL WORD DROP SKIP-DEF EXIT THEN
@@ -1111,10 +1142,16 @@ ONLY FORTH ALSO TRANSIENT DEFINITIONS FORTH
   IN-KERNEL @ IF 2DUP SWAP-SET LIST-INDEX ELSE -1 THEN SWAP-K !
   2DUP OPBODY-OP OPB-K !
   X8-OF DUP REDIR-K ! 0= 0= HEADERLESS !
+  SWAP-K @ 0< 0= IF -1 HEADERLESS ! THEN
   SWAP-K @ 0< OPB-K @ 0= AND IF HIDE-NEXT THEN
-  "HEADER >R K-COLON COLON-OP @ R> SHADOW,  0 HEADERLESS !
+  "HEADER >R
+  REDIR-K @ ?DUP IF
+    DUP PENDING? 0= ABORT" cross: an X8 after its X took its place"
+    DUP LAST-X8? IF PLACE-X ELSE DROP THEN
+  THEN
+  K-COLON COLON-OP @ R> SHADOW,  0 HEADERLESS !
   REDIR-K @ LAST-SHADOW @ >REDIR !
-  SWAP-K @ 0< 0= IF DEAD-NOW @ 0= IF SWAP-K @ STUB-T THEN SKIP-DEF ELSE
+  SWAP-K @ 0< 0= IF -1 LAST-SHADOW @ 13 CELLS + ! SKIP-DEF ELSE
     OPB-K @ IF DEAD-NOW @ 0= IF OPB-K @ C,-T 1 C,-T THEN SKIP-DEF ELSE
       UNREVEAL CODE-START !CSP T]
     THEN
@@ -1174,8 +1211,9 @@ FORWARD (POSTPONE)
   BL WORD COUNT T-SHADOW 0= ABORT" cross: POSTPONE of no target word"
   REDIRECTED DUP REF!
   DUP 5 CELLS + @ IF >R O-C R@ @ 0 R> OP+ EXIT THEN
-  @ >R O-PPC [ TRANSIENT ] ['] (POSTPONE) [ FORTH ] >BODY FWD-REF R> 0 OP+ ;
-: ['] BL WORD COUNT T-SHADOW 0= ABORT" cross: ['] of no target word" REDIRECTED DUP REF! @ LIT+ ;
+  >R O-PPC [ TRANSIENT ] ['] (POSTPONE) [ FORTH ] >BODY FWD-REF R@ @ R> OP+ ;
+: ['] BL WORD COUNT T-SHADOW 0= ABORT" cross: ['] of no target word" REDIRECTED
+  DUP PENDING? ABORT" cross: ['] of a word not placed yet" DUP REF! @ LIT+ ;
 
 : \ POSTPONE \ ; IMMEDIATE
 : ( POSTPONE ( ; IMMEDIATE
@@ -1365,7 +1403,7 @@ VARIABLE FID-OUT
   TTHREADS #TTHREADS CELLS 0 FILL
   TARGET-WID DUP @ 1+ 1 ?DO 0 OVER I CELLS + ! LOOP DROP
   0 STATE-T !  0 NEXT-OP !  0 NEXT-ESC !  FOLDMAP 128 0 FILL  SPECIAL-OPS 8 CELLS -1 FILL
-  0 #STUBS !  RB-RESET  FWD-RESET  -1 PAIRS-OPEN !  0 #PAIRS !
+  X8-SEEN 128 0 FILL  RB-RESET  FWD-RESET  -1 PAIRS-OPEN !  0 #PAIRS !
   0 #INLS !  0 #BSS !  0 ALLOT-HOOK !  0 #SHADOWS !  0 LAST-SHADOW !
   REFD #ORD-MAX 0 FILL  FREE# #ORD-MAX CELLS 0 FILL  ALL# #ORD-MAX CELLS 0 FILL
   0 #OPS !  0 HEADERLESS !  0 IN-KERNEL !  0 DEAD-NOW ! ;
@@ -1374,7 +1412,7 @@ VARIABLE FID-OUT
   RESET
   -1 IN-KERNEL ! S" kernel.4" INCLUDED 0 IN-KERNEL !
   XINCLUDE-OVERLAYS
-  RESOLVE-STUBS RESOLVE-FORWARDS RESOLVE-REBINDS
+  CHECK-PLACED RESOLVE-FORWARDS RESOLVE-REBINDS
   S" FORTH-WORDLIST" TXT >BODY-T PUBLISH-WORDLIST
   DP-END S" DP" TXT >BODY-T !-T
 \ The dictionary's room from START: the CV8 engines keep the stacks apart, in
