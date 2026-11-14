@@ -19,6 +19,8 @@
 #   b8     a one-byte branch offset, from the operand
 #   b16    a two-byte branch offset, from the operand
 #   slot   a variable's slot: two bytes, or three if the first has bit 7
+#   2slot  two slots, each from its own position (2VAR@, 940)
+#   i8b16  a signed byte, then a two-byte branch offset (EQI?BRANCH, 940)
 #   sel    ESC's selector     data    the body is data, not code
 #
 # kind     number  name        handler         operand
@@ -52,6 +54,25 @@ synth     0x1A    LIT32       L_lit32         i32
 synth     0x1B    DOVAR       L_dovar         data
 synth     0x1C    DODOES      L_dodoes        data
 synth     0x1D    LIT8        L_lit8          u8
+# The superinstructions (Iteration 940): two operations in one dispatch, the
+# pairs relf's own counts put first (tools/knee-model.py; relf had nine at
+# 532-535, given up at 536). VAR@ and the operation after it - the VAR@'s
+# byte rewritten, its slot staying - in the order of cross.4's VARX-OPS-T;
+# two VAR@s in a row, the second slot after the first; a comparison and the
+# ?BRANCH after it - IF's and WHILE's - in the order of BRX-OPS-T, EQI's
+# immediate staying before the branch offset. --check holds both lists.
+super     0x2C    VAR@+       L_vfplus        slot
+super     0x2D    VAR@<       L_vflt          slot
+super     0x2E    VAR@C@      L_vfcfetch      slot
+super     0x2F    VAR@1+      L_vfonep        slot
+super     0x30    VAR@0=      L_vfzeq         slot
+super     0x31    VAR@SWAP    L_vfswap        slot
+super     0x32    2VAR@       L_2vf           2slot
+super     0x33    0=?BRANCH   L_zeqbr         b16
+super     0x34    AND?BRANCH  L_andbr         b16
+super     0x35    <?BRANCH    L_ltbr          b16
+super     0x36    U<?BRANCH   L_ultbr         b16
+super     0x37    EQI?BRANCH  L_eqibr         i8b16
 branch8   0x3F    BRANCH8     L_branch8       b8
 branch8   0x40    ?BRANCH8    L_0branch8      b8
 tiny      0x41    +!          L_plusstore     -
@@ -61,6 +82,35 @@ tiny      0x44    (LOOP)      L_loop          -
 tiny      0x45    (?DO)       L_qdo           -
 tiny      0x46    EXECUTE     L_execute       -
 tiny      0x47    @XT         L_atxt          -
+# The folded returns (Iteration 939; relf had them until 538 gave them up for
+# 64 opcodes, and forth-vm-evolution's designs keep them): an operation
+# and the EXIT after it as one opcode. The set is relf's own counts' (the
+# shell's and rill3's workloads, tools/knee-model.py), in the order of the
+# base opcodes; cross.4's FOLD-OPS-T lists the bases, and --check holds them
+# together.
+fold      0x48    DROP;EXIT   LX_drop         -
+fold      0x49    C@;EXIT     LX_cfetch       -
+fold      0x4A    @;EXIT      LX_fetch        -
+fold      0x4B    C!;EXIT     LX_cstore       -
+fold      0x4C    !;EXIT      LX_store        -
+fold      0x4D    AND;EXIT    LX_and          -
+fold      0x4E    OR;EXIT     LX_or           -
+fold      0x4F    XOR;EXIT    LX_xor          -
+fold      0x50    R>;EXIT     LX_fromr        -
+fold      0x51    >R;EXIT     LX_tor          -
+fold      0x52    =;EXIT      LX_eq           -
+fold      0x53    U<;EXIT     LX_ult          -
+fold      0x54    +;EXIT      LX_plus         -
+fold      0x55    +!;EXIT     LX_plusstore    -
+fold      0x56    push0;EXIT  LX_lit0         -
+fold      0x57    push1;EXIT  LX_lit1         -
+fold      0x58    push-1;EXIT LX_litm1        -
+fold      0x59    VAR!;EXIT   LX_vs           slot
+fold      0x5A    0=;EXIT     LX_zeq          -
+fold      0x5B    -;EXIT      LX_sub          -
+fold      0x5C    2DROP;EXIT  LX_2drop        -
+fold      0x5D    1+;EXIT     LX_onep         -
+fold      0x5E    1-;EXIT     LX_onem         -
 spec      0x61    push0       L_lit0          -
 spec      0x62    push1       L_lit1          -
 spec      0x63    push-1      L_litm1         -
@@ -164,3 +214,5 @@ escaped   0x4A    DICT-LIMIT  L_dictlimit     -
 escaped   0x4B    CHMOD       L_chmod         -
 escaped   0x4C    TRAP-XT!    L_trapxt        -
 escaped   0x4D    CTABLE-FIND L_ctablefind    -
+escaped   0x4E    (+LOOP)     L_xploop        -
+escaped   0x4F    PICK        L_pick          -

@@ -358,14 +358,15 @@ noise).
 |---|---|---:|
 | direct reads of a tree's fields (628's @ from an address) | XF@, XV@ colon words of 7 | 4.9 % (710 priced) |
 | DEFER's call inline (a jump in the stub) | DEFER, a colon word | 2.5 % |
-| +LOOP inline code (630) | (+LOOP), a colon word of 29 | 1.7 % |
-| PICK inline | PICK, a colon word of 6 | 1.5 % |
-| compares fused with IF/WHILE/UNTIL, OVER with an op, DUP 0= IF, more ops taking a literal (628, 629, 661-669, 705-707) | one dispatch each: fused pairs given up at 536 (QUESTIONS.md A15) | about 8 % of dispatches were pairs when they went |
+| +LOOP inline code (630) | **done 934**: (+LOOP) an escaped primitive (forth-vm-evolution: an instruction in 9 of its 10 designs) - the realistic script 1.95 % fewer dispatches | was 1.7 % |
+| PICK inline | **done 936**: PICK an escaped primitive (relf's own question - the lab never searched it), and a one-instruction native template | was 1.5 %: -1.51 % dispatches |
+| compares fused with IF/WHILE/UNTIL, OVER with an op, DUP 0= IF, more ops taking a literal (628, 629, 661-669, 705-707) | **done in part 940**: 0= AND < U< EQI fused with IF's and WHILE's ?BRANCH, and VAR@ with + < C@ 1+ 0= SWAP and with another VAR@ - twelve superinstructions, A39; UNTIL's, OVER's and DUP's pairs not yet | the realistic script 12.36 % fewer dispatches; rill3's workloads 7.66 % |
 | the kernel's own code folded and inlined by its cross compiler (627, 705-707) | cross.4 has PEEP-IMM and PEEP-VAR, not 681's constants or 683's inlining | not priced |
 | a CREATE'd word's address pushed inline (627) | a call when not followed by @ or ! | not among the most called: small |
 | DO loops in registers (630) | (LOOP) keeps its counter at [r15] | small: the dispatch dominates |
 | loop starts aligned (714) | bytecode is data; the asm engine's handlers are not aligned | not measured |
-| `LIT n -` - native folds it | not folded: ADD-IMM8 with -n would do it, no new opcode | small |
+| `LIT n -` - native folds it | **done 935**: PEEP-IMM makes it ADDI -n, no new opcode; cross.4's PEEP-IMM-T only from 939 (`-` is an OPCODE word, and 935 looked for it among the PRIMITIVEs) | 0.12 % fewer dispatches |
+| a return folded into the operation before it (forth-vm-evolution: every winning design) | **done 939**: 23 folded returns, the set relf's counts choose (A39 lifted A15's 64 opcodes) | the shell's workloads 3.67 % fewer dispatches, rill3's 5.47 % |
 | a separate data region (672, 674) | data among the bytecode | memory, not speed |
 
 The first five rows are instructions or fused instructions: the engines'

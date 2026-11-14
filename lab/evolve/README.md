@@ -85,6 +85,10 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `fsys-count.py` - fsys-count.py ID [ID ...] --db FILE [--db FILE] [--levels 4,5] [--works kernel,corpus]
 - `gate.py` - gate.py RESULTS COMPARE - step 8 of processing a returned seed (Iteration 256)
 - `gene-interactions.py` - gene-interactions.py - how one gene's effect depends on another, read from a
+- `genapps.py` - generic applications (Iteration 674): seven programs on s6, the ten designs, relf's CV8 (relf64, relfasm64, relf32) and gforth-fast - the code each lays (HERE less its own data), its benchmark's CPU time, load and start; preludes in genapps/ (results/generic-apps-674.md)
+- `genapps-report.py` - genapps.py's results as Markdown tables: code, time, the whole system, and the lab's scores' rank correlation with them (Iteration 674)
+- `genapps-dispatch.py` - genapps.py's programs counted in dispatches on the interpreted designs (PROFILE=1) and on CV8 (relf's counting patch), with the calls', DOVAR's and DODOES's shares (Iteration 674)
+- `genapps-constructs.py` - each construct's code bytes per system (calls near and far, literals, data words, strings, control, definitions), and --census: brainless's definitions by kind (Iteration 674)
 - `genecost.py` - what each gene costs in bytes, switched one at a time on given designs (Iteration 519): the check that would have caught jitexec's 585 KB table (results/drafts/genecost-519.md)
 - `hv.py` - the fixed-reference hypervolume of a run's true front (Iteration 539): four objectives in the box hv-bounds.json fixed before seed 74, exact by slicing, pure Python; `--self-test` against Monte Carlo. GOALS.md's stopping rule and confirmation run use it
 - `hotsites.py` - hotsites.py ID [--db FILE ...] [--write FILE] - the image's hottest call

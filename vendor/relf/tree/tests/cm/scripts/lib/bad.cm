@@ -1,0 +1,5 @@
+# a runtime error in a sourced file says that file's line
+var pick {|i|
+    var l [a b]
+    put $l[$i]
+}

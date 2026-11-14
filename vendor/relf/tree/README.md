@@ -6,7 +6,7 @@ self-hosting (docs/GOALS.md). What it is today:
 
 - **Two engines** that run the same byte-coded Forth image: `cv8.c`, a
   small virtual machine in portable C (38 KB stripped on x86-64), and
-  `relfasm64`, 15,856 bytes of x86-64 on raw system calls, no libc -
+  `relfasm64`, 17,912 bytes of x86-64 on raw system calls, no libc -
   **assembled by relf itself**, from `engine/relfasm64.4`, with an
   assembler written in Forth (`forth/asm64.4`). It reproduces itself.
 - **A Forth system that compiles itself**: `cross.4`, running on
@@ -16,9 +16,13 @@ self-hosting (docs/GOALS.md). What it is today:
   `edit.4` - with job control, a line editor with history, and `$'...'`
   and `set -o pipefail` from POSIX.1-2024. On yash's and busybox's test
   suites it passes more cases than dash does (docs/DASH.md). The whole
-  shell is one static file of 143,324 bytes on the assembly engine, and
+  shell is one static file of 144,250 bytes on the assembly engine, and
   `forth` drops from it into the live system it is written in: every
   word, compiler included, is there to extend it.
+- **A shell language of its own, rill3** (the command model; docs/TUTORIAL.md, then docs/REFERENCE.md) - `bin/cm script.cm`,
+  or its prompt: commands whose arguments and pipes carry values (texts,
+  numbers, lists, maps, blocks) as well as bytes, words read as Forth reads
+  them. docs/REFERENCE.md is the language; `sh tests/cm/run` its suite.
 
 The Forth passes the CORE tests (John Hayes' core.fr, as adapted in
 tests/tester.fr) on both engines and both cell widths; beyond CORE it
@@ -107,6 +111,7 @@ expansion are byte-based, as in the C locale.
     bench/      speed against C, Go, Python, Ruby, gforth, pforth
     examples/   the shell extended from inside, with `forth`: builtins,
                 a prompt hook, network servers; fib.4
+    cm/         the command model: its front end (cmc.4), runtime and prompt (docs/REFERENCE.md)
     docs/       every document but this one
     prompts/    reusable prompts for this kind of work (INDEX.md)
 
@@ -119,6 +124,9 @@ this README are in `docs/`.
 |---|---|
 | `GOALS.md` | the direction: what is open, what was decided and why, what was tried and rejected, the conventions |
 | `PROGRESS.md` | the log's entry point: how it is kept, its Index, and its volumes - `docs/progress/`, a hundred iterations each, oldest first; read an entry through the Index |
+| `asks/` | prompts for other models, one per question (prompts/28), and what came back, checked |
+| `REFERENCE.md` | the command model's language, for writing scripts: words, values, control, captures, pipes, every builtin - each example run by its suite |
+| `COMMAND-MODEL.md` | how that language came to be (850-): the idea, its rules, what each iteration changed and why |
 | `QUESTIONS.md` | every question waiting on the user, with options and a recommendation; answered ones kept |
 | `CHECKING.md` | what to run after pulling, what each suite is for, and what its failures mean |
 | `CV8.md` | the engine and its image format: the reference, and the reasons |

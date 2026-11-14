@@ -1,0 +1,4 @@
+# functional helpers over lists: each takes a block - sourced by ws-shop.cm (a library, not a test)
+var map-l {|l f| for x @l { put @($f $x)[0] } }
+var filter-l {|l f| for x @l { if $f $x { put $x } } }
+var reduce-l {|l f acc| for x @l { set acc @($f $acc $x)[0] }; put $acc }

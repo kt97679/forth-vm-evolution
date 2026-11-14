@@ -1,0 +1,22 @@
+# the program Rill and Rill 2 each ran for comparison (838; both retired, 871), in the command model (865): the same output
+var x 7
+var y $(( $x * 2 + 1 ))
+echo $y
+var name ada
+echo "hello $name, twice $(( $x * 2 ))"
+var l [3 1 2]
+echo $l[0] $(count $l) $l[-1]
+var p [name: ada  born: 1815]
+echo $p[born]; has $p born && echo has born          # has a status since 896
+for i @(range 3) { if $(( $i != 1 )) { echo "i $i" } }
+var sq {|n| put $(( $n * $n )) }
+echo $(sq 9)
+var dir /tmp
+ls $dir > /dev/null
+var n $(printf 'a\nb\n' | wc -l)
+echo "lines $n"
+false || if $(( $status != 0 )) { echo failed }
+echo $(( -7 / 2 )) $(( -7 % 2 )) $(( 7 / 2 ))
+var c 0
+set c $(( $c + 1 ))
+echo $c

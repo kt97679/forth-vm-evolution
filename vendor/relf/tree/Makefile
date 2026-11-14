@@ -55,10 +55,10 @@ KERNEL_SOURCES = forth/kernel.4 forth/cross.4 forth/cross-core.4 forth/extend.4
 
 .PHONY: all help engines shell-images shells images check-images \
         test verify verify-update diff matrix posix mrsh shell interactive \
-        busybox yash absg portability lint dead-words sizes profile bench bundle \
+        busybox yash absg portability lint dead-words sizes profile bench bundle cm-image \
         clean distclean
 
-all: engines shell-images shells
+all: engines shell-images shells cm-image
 
 help:
 	@echo 'Targets:'
@@ -82,6 +82,7 @@ help:
 	@echo '  portability    the scaffolding: shebangs, locale pins, the bundle'
 	@echo '  lint           comment lint over the Forth sources; host-sh lint over tests'
 	@echo '  dead-words     unreachable definitions'
+	@echo '  memcheck       memory each shell feature keeps: none, at N and 10 N rounds (778)'
 	@echo '  sizes          this shell against every other one installed'
 	@echo '  profile        dispatch counts per word, on a realistic script'
 	@echo '  bench          speed against the reference shells'
@@ -155,6 +156,17 @@ endif
 # On a 64-bit host both are built; on a 32-bit one there is only the
 # native 4-byte pair, and the 8-byte image cannot be run at all.
 shell-images: $(NATIVE_SHELL_IMG) $(OTHER_SHELL_IMG)
+
+# rill3's image (933): built by `make` as the shell images are - bin/cm had built it only on first
+# use, so a fresh tree's verify found it missing (its size line, the TAB check). 64-bit hosts only.
+CM_SOURCES = $(wildcard cm/*.4) rill/rt.4 shell/edit.4 shell/shell.4 tools/build-cm-image.sh
+ifneq ($(HOSTBITS),32)
+cm-image: kernel64-cm.img
+kernel64-cm.img: relf64 forth/kernel64.img $(CM_SOURCES)
+	@sh tools/build-cm-image.sh ./relf64 forth/kernel64.img $@
+else
+cm-image:
+endif
 
 ifneq ($(HOSTBITS),32)
 kernel64-shell.img: relf64 forth/kernel64.img $(SHELL_SOURCES) tools/build-shell-image.sh
@@ -363,6 +375,9 @@ interactive: all
 
 verify: all
 	@sh tests/verify
+
+memcheck: all
+	@$(PYTHON) tools/relfsh-memcheck.py --check
 
 verify-update: all
 	@sh tests/verify --update

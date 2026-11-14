@@ -222,6 +222,11 @@ emit diff:failed "$(sed -n 's/.*differential case(s), \([0-9]*\) failed.*/\1/p' 
 # script's own output, which the caller keeps.
 grep '^FAIL: ' /tmp/verify-run.log | sed 's/^/  diff: /' | head -20
 emit shell:assertions "$(bash tests/shell/run-all 2>/dev/null | awk '{s+=$1} END {print s+0}')"
+# UTF-8 through the 32-bit C engine too, where a signed char would show
+# first (Iteration 723); the 64-bit shells run run-utf8 in their suites
+if [ -x ./relfsh32 ]; then
+    emit i386:utf8:failed "$(THIS_SH=$PWD/relfsh32 timeout 120 sh tests/shell/run-utf8 2>&1 | tail -1 | awk '{print $3}')"
+fi
 # The forth builtin's errors, at random (Iteration 595): each case makes
 # errors the Forth system detects - stack under- and overflow, THROW,
 # division by zero, bad addresses, includes that fail or nest - and then
@@ -585,6 +590,42 @@ else
 fi
 
 # ---------------------------------------------------------------
+# 3d. The command model (871): its suite, tests/cm/run, on an image it
+#     builds itself - the language's, Rill's and Rill 2's retired with
+#     their suite and oracle (819-870). relf64 only: `skipped` where it
+#     is not built (a 32-bit host).
+# ---------------------------------------------------------------
+echo "== the command model =="
+if [ -x ./relf64 ]; then
+    R=$(sh tests/cm/run < /dev/null 2>&1 | tail -1)
+    emit cm:passed "$(echo "$R" | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\1/p')"
+    emit cm:failed "$(echo "$R" | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\2/p')"
+else
+    for k in cm:passed cm:failed; do emit "$k" skipped; done
+fi
+# the same suite on the assembly engine (923): the language must not care which engine runs it
+if [ -x ./relfasm64 ]; then
+    R=$(CM_ENGINE=./relfasm64 sh tests/cm/run < /dev/null 2>&1 | tail -1)
+    emit cm-asm:passed "$(echo "$R" | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\1/p')"
+    emit cm-asm:failed "$(echo "$R" | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\2/p')"
+else
+    for k in cm-asm:passed cm-asm:failed; do emit "$k" skipped; done
+fi
+# and with busybox's tools in place of GNU's (925): the scripts must not lean on one set of programs
+if command -v busybox >/dev/null 2>&1 && [ -x ./relf64 ]; then
+    bb=$(mktemp -d)
+    for t in date seq awk sed sort grep wc tr cat head tail cut printf test ls mkdir rm cp mv touch sleep echo sh env uniq basename dirname find xargs tee expr true false kill rmdir cmp diff od; do
+        ln -s "$(command -v busybox)" "$bb/$t"
+    done
+    R=$(PATH="$bb:$PATH" sh tests/cm/run < /dev/null 2>&1 | tail -1)
+    emit cm-busybox:passed "$(echo "$R" | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\1/p')"
+    emit cm-busybox:failed "$(echo "$R" | sed -n 's/^\([0-9]*\) passed, \([0-9]*\) failed.*/\2/p')"
+    rm -rf "$bb"
+else
+    for k in cm-busybox:passed cm-busybox:failed; do emit "$k" skipped; done
+fi
+
+# ---------------------------------------------------------------
 # 4. Sizes. Cheap, and the number the engine work is chasing.
 # ---------------------------------------------------------------
 echo "== sizes =="
@@ -603,6 +644,9 @@ emit size:image-x86_64       "$([ -f kernel64-shell.img ] && wc -c < kernel64-sh
 # i386 half is skipped wherever there is no 32-bit toolchain, and that
 # is a normal state, not a broken one (Iteration 394).
 emit size:image-i386         "$([ -f kernel32-shell.img ] && wc -c < kernel32-shell.img | tr -d ' ' || echo missing)"
+# rill3's image (927): its size budget - every byte it grows or shrinks is a line of this file's diff, priced
+# in the commit that moves it (SIMILAR-PROJECTS.md item 8)
+emit size:image-rill3        "$([ -f kernel64-cm.img ] && wc -c < kernel64-cm.img | tr -d ' ' || echo missing)"
 
 # ---------------------------------------------------------------
 # The scaffolding (Iteration 391)

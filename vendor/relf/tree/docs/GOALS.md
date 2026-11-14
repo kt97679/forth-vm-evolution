@@ -206,6 +206,66 @@ the account of what each gained and cost.
    the kernel's own words; a CREATE'd word's address as a literal; `LIT n
    -` as ADD-IMM8 with -n; the asm engine's handlers aligned (714's
    analogue); a separate data region for CV8 (memory, not speed).
+   From forth-vm-evolution's c4-family note (728): Ertl and Paysan
+   (EuroForth 2025) measured VFX Forth - register allocation within basic
+   blocks and aggressive inlining - about twice as fast as Gforth's code
+   copying, which runs at SwiftForth's speed: outside evidence for
+   NATIVE.md 17's option B. Cheap to try: a count of what the native
+   code leaves redundant - register-to-register moves, a store reloaded
+   at once, a jump to the next instruction - before any peephole pass
+   (above ~10 % would pay); `-fno-tree-vectorize` for cv8.c (Ertl: it
+   removed GCC's register shuffling at Gforth's dispatch), an A/B on the
+   C engine; Gforth's application benchmarks (benchgc, brainless,
+   cd16sim, lexex, fcp, siev, bubble, matrix, fib) as Forth workloads
+   beside bench.4.
+
+13. **Deep nesting and recursion stop early** (721, measured, not begun).
+   tests/shell/run-nesting goes 8 deep (256 iterations) and 60 wide; no
+   test goes deeper. Probed: `for` loops nested N deep, one iteration
+   each - relf runs 452-453 levels (asm, C, native alike), then stops
+   cleanly with "relf: return stack overflow or data stack underflow"
+   (exit 70; parsing alone, -n, gets through 1,000); dash ran 20,000;
+   bash 1,000, and at 5,000 its parser gave a syntax error. A recursive
+   function: relf stops at 32 levels ("shell: function recursion too
+   deep" - MAX-POS-PARAM-DEPTH's guard, which Iteration 90 made fire
+   before the return stack overflowed); dash allows 1,000 (its own
+   limit), bash 5,000 and segfaults by 20,000. The function limit is the
+   one a real script meets - a recursive walk or a recursive algorithm
+   past 32 levels. Raising it needs the positional-parameter frames
+   deeper and the return stack larger (about a dozen Forth calls a
+   level, cv8.c's comment); loop nesting is the return stack alone.
+
+14. **The editor splits a character from its combining marks** - done
+   in 725: ED-PREV and ED-NEXT step a base and the zero-width code
+   points after it as one, as readline does, and the zero-width table is
+   generated whole from the Unicode database (it missed 1,993 code
+   points - Devanagari's vowel signs among them). Nine scripts' cases
+   match bash's readline; four are in the interactive suite.
+
+15. **The command model** - working name rill3 (918) - the work now (the language: docs/COMMAND-MODEL.md - its
+   rules and "One way"; the design's study: SYNTAX-STUDY.md, SYNTAX-GENES.md). Chosen at
+   867 by the owner's criteria - the smallest binary and image, good speed, short
+   scripts, a consistent and friendly syntax, exactly one way to do each thing - over
+   A.4; Rill (729-833) and Rill 2 (834-862), the attempts before it, retired at 871,
+   their sources, tools, tests and docs out (git keeps them; docs/progress has how
+   they went). The image: tools/build-cm-image.sh, kernel64-cm.img - the kernel, the
+   Forth libraries, Rill's runtime (rill/rt.4, kept: the command model is built on
+   it), relfsh's line editor, cm/*.4; `bin/cm script.cm`, or the prompt with none.
+   The language for script writers: docs/REFERENCE.md (900), every example run by the suite.
+   Since 888, by the owner's choices: source (890); no size with a most but memory (891);
+   $( ) text and @( ) values (896); words read by their first character, operators words
+   of their own (899); del, wait $job, backslash continuation, case, trap, slice, upper
+   and lower, TAB completion, an index after any value (904-914). Open (docs/progress/
+   0900-0999.md, the last handoff): more whole scripts - each round has found something;
+   docs/SIMILAR-PROJECTS.md (921): projects like kbool, and eleven action items from them;
+   by the owner's word not now: $( ) of a def's number (`var x @(f)` the fast form), the
+   front end smaller (cm/cmc.4, about 20 KB of an 85 KB image), recursion's depth, heredocs.
+   Checks: `sh tests/cm/run` - the runtime's tests, the scripts (whole ones among
+   them), the prompt's sessions - and again with RILL_GC_STRESS=1; in make verify as cm:passed.
+
+16. **forth-vm-evolution's copy of prompts/** lacks this library's 15-22
+   and its added items (prompts/SYNC.md lists them, and how to merge):
+   to carry there when that project next syncs.
 
 ## The second end state, reached (Iteration 548)
 
@@ -380,6 +440,12 @@ work begins.
   until used, the world as an interface a test can replace, failure that
   stops, and a grammar context-free at the token level. A design; its
   "about half the source" is a guess to be measured by building it.
+  **Scope settled at 726**: a shell and a scripting language, designed
+  together - expressive, not cryptic, and never longer than the script it
+  replaces; every feature weighed in RILL-LEDGER.md, the default no.
+  **One language, at 729**: Rill supersedes Fern (forth-vm-evolution's
+  design for a scripting language on Forth), taking its compiler and
+  runtime; SHELL-LANGUAGE.md Part 5 is how Rill compiles into Forth.
 - **Item 10 - no two-pass compiler**: the complexity is not worth the
   gain. The task is to find what else still stores a full cell where a
   compact offset would do. **Audited at 509** (`tools/image-budget.py`):

@@ -41,7 +41,16 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 673.
+- master: Iteration 674.
+- **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
+  objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
+  on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
+  lab/evolve/genapps.py, genapps-report.py, genapps-dispatch.py, genapps-constructs.py. The gap: application code
+  +7-10 % on the portable designs, +18-28 % on the JIT designs (a 5-byte JIT header per definition, 4-byte calls
+  past 16 KB); 1.3-1.9 times CV8's dispatches (calls, DOVAR, constants - what relf's run-time compiler folds); the
+  JIT leaves 86-90 % of brainless to the interpreter (DODOES has no stencil). The size score does not see
+  application code (Spearman -0.21). Next, if the owner agrees: step 2 - count application code in the size score,
+  relf's run-time compiler mechanisms as genes; step 3 - relf's shell and rill3 as held-out checks.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
   phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts

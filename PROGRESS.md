@@ -11464,3 +11464,22 @@ for byte the recorded ones; run-tests PASS, validate 7 of 7, pack-designs 9 of 9
 widths, the 21 self-hosting checks pass; speed the same. relf's side observations (THROW at 4115 against the cold
 list's 4120; variables padded before DOVAR) confirmed: the translator's padding, absent from the self-built images -
 no cold-list change. Notes: results/jit-throw-unwind-673.md.
+
+## Iteration 674 - 2026-11-14 - Claude
+
+Step 1 after relf's report (its Iteration 944; the owner keeps relf's shell out of the objectives): application code
+measured generically. vendor/relf updated to e6e7d46 (relf's Iteration 944; tools/update-relf.sh); build-stages and
+run-tests PASS on it. New tools: lab/evolve/genapps.py runs seven programs (sim16, gc16, scan, evo; wordfreq, minif and
+brainless held out) on s6, the ten designs, relf64, relfasm64, relf32 and gforth-fast 0.7.3 - the code each lays (HERE
+less its own data), its benchmark's CPU time, load and start; genapps-report.py tabulates; genapps-dispatch.py counts
+dispatches on the interpreted designs and on CV8 (relf's counting patch); genapps-constructs.py prices each construct
+in bytes and counts brainless's definitions; lab/evolve/genapps/relf-prelude.fth is what brainless needs on relf.
+Found: application code +7-10 % over CV8 on the portable designs, +13 % s6 and smallest, +18 % small-jit, +27-28 %
+the tag-2 wide JIT designs - the JIT's 5-byte header per definition (605 in brainless) and 4-byte calls past 16 KB,
+and everywhere cell-aligned strings, constants called, data-word fetches as call and @, VALUE's kind cell. The
+kernel image's bytes do not rank application code (Spearman -0.21, -0.33 at 4-byte cells); the speed score does rank
+these programs (0.99, 0.96). Time against relf64: portable-fastest 1.13, the knee 1.29, smallest 3.25 - the
+designs run 1.30-1.88 times CV8's dispatches, about CV8's cost per dispatch; calls 14-26 % of them, DOVAR to 18 %,
+what relf's run-time compiler folds away (constants, VAR@, DOES> @, inlining). The JIT designs 0.35 of relf64's time
+on the six smaller programs, slower on brainless: the JIT leaves 86-90 % of its dispatches (jitapps.py: DODOES has no
+stencil, VALUE's DOES> code refused). Notes: results/generic-apps-674.md, with the step-2 candidates.
