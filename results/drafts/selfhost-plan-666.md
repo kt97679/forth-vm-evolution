@@ -137,3 +137,17 @@ operand, a definition's last primitive folded into its EXIT (FOLDMAP from the fo
 The image: 9,792 bytes against the translator's 9,265 - no specialisation yet, the X8 headers kept, 3-byte calls before a
 runtime word is defined. tools/selfhost-check.sh: the fixed point and the evolver's gate, with a planted-fault self-test.
 
+## Phase 1 done (668)
+
+s6's specialisations in the cross compiler's code generator, as patterns completed while compiling (tools/sod16.py's
+specialise() and fold_exit(), engine/vm-lab.c's opcodes 0x60-0x7B): small (0, 1, -1 one byte), imm (LIT n + and
+LIT n =, n in -128..127, to ADDI and EQI), var (a data word's call then @ or ! to VF or VS and a slot operand), tiny
+(calls to fifteen words to their opcodes), and the folds - a fold-set primitive, ADDI, EQI or a literal below 64 KB
+with the EXIT after it, at ; and at an EXIT inside a definition. A pattern is fused only where nothing branches into
+it: a resolved branch and BEGIN end it. The X8 words whose X branches to them are made without headers (the
+translator's --drop-x8); AGAIN8 keeps its name. loc is for locals, which s6's kernel has none of.
+
+The image: 9,077 bytes, 188 fewer than the translator's 9,265; A = B; the gate passed. Best of five on this VM, the
+translator's s6 against the self-built: fib 36 and 36 ms, loop 15 and 15, bubble 8 and 8, ackermann 6 and 6 - code
+these workloads compile at run time, through the same run-time compiler; the kernel's own code is measured at phase 6.
+

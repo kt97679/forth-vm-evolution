@@ -11380,3 +11380,11 @@ passes the evolver's gate - the corpus, the kernel workload, the far tests, full
 the translator wrote it (the gate's full.fth caught its absence). tools/selfhost-check.sh checks the fixed point and the
 gate; its self-test plants a fault in A's PARSE and is caught. Next: s6's specialisations. Files: forth/cross-cv8.4,
 tools/selfhost-check.sh.
+
+## Iteration 668 - 2026-11-14 - Claude
+
+Phase 1 done (the owner: yes). s6-cv8b's specialisations in forth/cross-cv8.4's code generator - small, imm, var, tiny
+and the folds, as the translator's specialise() and fold_exit() made them, fused only where nothing branches in - and
+the X8 names dropped as --drop-x8 dropped them. The self-built s6: 9,077 bytes (the translator's 9,265), A = B, the
+gate passed (tools/selfhost-check.sh --self-test: the planted fault caught). Best of five, fib 36 ms, loop 15, bubble 8,
+ackermann 6 on both images. Next: phase 2, smallest first.

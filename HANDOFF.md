@@ -41,13 +41,14 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 667.
+- master: Iteration 668.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
   design, writing its own image from source; new images, measured again; all ten, both widths. The plan, its six
-  phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 under way (667): forth/cross-cv8.4 self-hosts
-  s6-cv8b - the translator-built s6 writes image A, A rebuilds itself byte for byte (9,792 bytes; the translator's
-  9,265), A passes the evolver's gate: `sh tools/selfhost-check.sh --self-test`. Next: s6's specialisations (loc,
-  var, tiny, small, imm - the translator's; the run-time compiler has none), the X8 headers dropped; then phase 2. The article waits for the
+  phases and the checks: results/drafts/selfhost-plan-666.md. Phase 1 done (667-668): forth/cross-cv8.4 self-hosts
+  s6-cv8b with its specialisations (small, imm, var, tiny, the folds; loc needs locals, s6 has none) and the X8
+  names dropped - the translator-built s6 writes image A, A rebuilds itself byte for byte (9,077 bytes; the
+  translator's 9,265), A passes the evolver's gate: `sh tools/selfhost-check.sh --self-test`. Next: phase 2,
+  smallest first. The article waits for the
   measurements (its figures change); the designs/ images, the relf handoff and the roles are redone at phase 6.
 - For relf (665): its questions answered as far as the search can - results/relf-questions-665.md; a patch for its
   shell tests' /tmp leak - results/relf-patches/tests-tmp-cleanup.patch.
