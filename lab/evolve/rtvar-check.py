@@ -17,7 +17,7 @@ spec = importlib.util.spec_from_file_location('evolve', os.path.join(HERE_, 'evo
 E.setup()
 g0 = E.canon(json.load(open(os.path.join(ROOT, 'designs', D, 'record.json')))['genome']); g0['rtvar'] = 0; g0['varslot'] = 1; g0 = E.canon(g0)   # 688: rtvar needs varslot
 g1 = dict(g0); g1['rtvar'] = 1; g1 = E.canon(g1)
-if not E.rtvar_on(g1): sys.exit('rtvar-check: %s cannot express rtvar (needs the fusers, spec var, the byte header)' % D)
+if not E.rtvar_on(g1): sys.exit('rtvar-check: %s cannot express rtvar (it needs the run-time fusers, spec var, varslot; no JIT under the tag)' % D)
 PROG = b'''VARIABLE V  VARIABLE W  CREATE C 0 ,
 : DMP ( a n -- ) 0 DO DUP I + C@ . LOOP DROP ;
 : T1 V @ ;  : T2 5 V ! ;  : T3 C @ ;  : T4 ( f -- n ) IF V ELSE W THEN @ ;  : T5 V BEGIN @ ;
@@ -44,10 +44,12 @@ for tag, g in (('0', g0), ('1', g1)):
 want = [['7'], ['5'], ['3'], ['5', '9'], ['165', '45']]   # T1; T2 then V @; T3; T4 true (V, 5 since T2), false; T6, V after
 for tag in '01':
     if out[tag]['vals'] != want: fails.append('values with rtvar %s: %s, not %s' % (tag, out[tag]['vals'], want))
-vf, vs = 0x63, 0x64
-if vf not in out['1']['t1'][:3]: fails.append("rtvar 1: T1's code does not begin with vf: %s" % out['1']['t1'][:6])
-if vs not in out['1']['t2'][:5]: fails.append("rtvar 1: T2's code holds no vs: %s" % out['1']['t2'][:8])
-if vf in out['0']['t1'][:3]: fails.append("rtvar 0: T1 fused: %s" % out['0']['t1'][:6])
+vf, vs = 0x63, 0x64     # the byte header's codes; under the two-bit tag the design's own (689): there, that it changed
+if out['1']['t1'] == out['0']['t1'] or out['1']['t2'] == out['0']['t2']: fails.append("rtvar 1: T1 or T2 compiled as with 0 - no fusion")
+if not g1.get('tag2'):
+    if vf not in out['1']['t1'][:3]: fails.append("rtvar 1: T1's code does not begin with vf: %s" % out['1']['t1'][:6])
+    if vs not in out['1']['t2'][:5]: fails.append("rtvar 1: T2's code holds no vs: %s" % out['1']['t2'][:8])
+    if vf in out['0']['t1'][:3]: fails.append("rtvar 0: T1 fused: %s" % out['0']['t1'][:6])
 print('rtvar-check: the five applications\' code %d -> %d bytes; the apps workload %.4f -> %.4f s (%.3f)' % (
     sum(out['0']['app']), sum(out['1']['app']), out['0']['apps'], out['1']['apps'], out['1']['apps'] / out['0']['apps']))
 for f in fails: print('rtvar-check: ' + f)

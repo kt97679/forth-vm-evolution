@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 688.
+- master: Iteration 689.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -88,8 +88,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   lab/evolve/rtvar-check.py on the knee: alive both ways, the fusion fires (T1 = vf slot EXIT), the values the same;
   the five apps' code 8,365 -> 8,278 B. **688: it pays, with varslot** - each program alone 0.733 (scan) to 0.980
   (gc16), shellmix 0.750; the apps workload 0.902 with varslot, 1.038 without (16-bit slots reach 64 KB; scan starts
-  at 388 KB in it) - so rtvar needs varslot. results/rtvar-688.md. Next: batch-check.sh on it; the tag-2 overlay
-  (the JIT designs); the other step-3 genes.
+  at 388 KB in it) - so rtvar needs varslot. results/rtvar-688.md. 689: the tag too (one overlay, VAR-OPS in its
+  one-byte codes, vf/vs pinned) - but on fastest-x86-64 the JIT refused run-time words holding vf (the apps workload
+  1.999, interpreted): rtvar needs no JIT under the tag until that is found. **Next: the JIT's refusal** (a JITLOG
+  build), then the other step-3 genes. (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

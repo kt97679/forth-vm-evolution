@@ -37,5 +37,17 @@ miss the same way with 16-bit slots: the gene needs varslot (688), as relf's 3-b
 Bytes: the five apps' code 8,365 -> 8,342 (the knee, varslot on) - a slot beyond 32 KB is 3 bytes, as relf found:
 dispatches, not bytes.
 
-Next: the two-bit tag's overlay (the JIT designs: vf and vs pinned to one-byte codes, jitvar for the JIT's own
-code), then the other step-3 genes; the compile layer's cost weighed on the kernel and corpus workloads by the search.
+## The two-bit tag (Iteration 689)
+
+The same overlay serves both families (cv8t.4's OP, is C, as cv8.4's; DOVAR-OP is rewritten to the design's code):
+the -var dumps for both, VAR-OPS remapped to the tag's one-byte codes (all four or none), vf and vs pinned to one
+byte. On fastest-x86-64 (the tag, the JIT, jitvar) the values were right and the five apps' code 9,988 -> 9,886 B -
+**but the apps workload ran 1.999**: the JIT refused the run-time words holding vf (T1's JIT header 0 where without
+rtvar it held its native offset 0x2C0), so they ran interpreted. The JIT's op table has vf and vs (vm-jit-ops.h's [99]
+and [100], jitvar) and translates the kernel's own; why it refuses a run-time word's is not found yet - next, with a
+JITLOG build of that engine. Until then rtvar needs no JIT under the tag (evolve.py's rtvar_can): the byte header's
+designs and the tag's interpreted ones.
+
+Next: the JIT's refusal; then the other step-3 genes (constants as literals by relf's test, inlining at 3/6, the JIT
+header, DOES> @ as VAR@, the DODOES stencil); the compile layer's cost weighed on the kernel and corpus workloads by
+the search.

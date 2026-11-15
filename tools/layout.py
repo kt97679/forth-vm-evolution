@@ -507,6 +507,8 @@ if TAG2_ON:
     # codes, as the loop tables do - so its keeping forms are pinned where the
     # design has them (Iteration 176: escaped, fib's DUP -1 + and DUP 2 < went
     # unfused, and an escaped form costs the two dispatches it saves)
+    if any(x['n'] == 'VAR-OPS' for x in order):    # 689: rtvar's vf and vs (forth/cv8-fuse-var.4) in one byte under the tag
+        _pin += [x for x in (G['X_VF'], G['X_VS']) if x not in _pin]
     if any(x['n'] == 'IMM-OPS' for x in order):
         _pin += [G['X_OPS10'][n] for n in ('DUP+I', 'DUP<I') if n in G['X_OPS10'] and G['X_OPS10'][n] not in _pin]
     # Iteration 412: rtiplus's I+ - the run-time fuser's (I, +) -> I+ entry in SUPER-TABLE, which on the tag holds
@@ -1408,8 +1410,8 @@ def emit(path):
             # Iteration 687: vf and vs for code compiled at run time (forth/cv8-fuse-var.4, the gene rtvar) - where this
             # design has them (spec var), on the byte header; @ and ! to compare against; VARSLOT; SCALE 0, the
             # translator's own slots being unscaled offsets (v8pfa). Zeros: the fusion off.
-            rt = 'var' in G['SPEC'] and not TAG2_ON and bool(G['VARSLOT'])   # 688: 16-bit slots reach 64 KB - too near
-            data = bytes([G['X_VF'] if rt else 0, G['X_VS'] if rt else 0, op('@')[0], op('!')[0], 1 if G['VARSLOT'] else 0, 0, 0, 0])
+            rt = 'var' in G['SPEC'] and bool(G['VARSLOT'])   # 688: 16-bit slots reach 64 KB - too near; 689: the tag too
+            data = bytes([G['X_VF'], G['X_VS'], op('@')[0], op('!')[0]] if rt else [0, 0, 0, 0]) + bytes([1 if G['VARSLOT'] else 0, 0, 0, 0])
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time
             # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has
@@ -1442,7 +1444,7 @@ def emit(path):
             data = bytes([len(tests) + len(pairs)] + [x for e in tests for x in e]
                          + [x for (a, b), f in pairs for x in (op(a)[0], op(b)[0], f)])
             assert len(data) <= 73, "superinstruction table overflows"
-        if TAG2_ON and w['n'] in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB'):
+        if TAG2_ON and w['n'] in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB', 'VAR-OPS'):
             # tag 2: the tables in this design's one-byte codes. An escaped
             # operation cannot sit in a byte: its entry goes (0 means none, as
             # the overlays read it). Folds at run time go entirely - their
@@ -1457,6 +1459,8 @@ def emit(path):
             elif w['n'] == 'LOOPTAB':
                 assert all(x in T2MAP['one'] for x in data[:8]), 'tag 2: LOOPTAB opcodes not pinned'
                 data = bytes([T2MAP['one'][x] for x in data[:8]]) + data[8:]
+            elif w['n'] == 'VAR-OPS':     # 689: the four codes in one-byte codes - all, or none (the fusion off)
+                _m = [_c(x) for x in data[:4]]; data = bytes(_m if all(_m) else [0, 0, 0, 0]) + data[4:]
             else: data = bytes(_c(x) for x in data)
         img[at:at + len(data)] = data
 

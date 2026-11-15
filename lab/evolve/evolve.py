@@ -157,7 +157,7 @@ def gene(name, values=None, show=None, family='cv8', late=True, needs=None, conv
 # dormant sysc stay in express() as code. Genes listed above keep their place.
 gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  # nothing to fuse at run time otherwise; older than LATE
 gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
-gene('rtvar', values=range(2), needs=lambda g, e: overlay(g) and 'var' in g['spec'] and g.get('varslot') and not g.get('tag2'))   # Iteration 687: a data word's @ and ! as vf, vs at run time (forth/cv8-fuse-var.4); the byte header first; 688: varslot's 23-bit slots
+gene('rtvar', values=range(2), needs=lambda g, e: rtvar_can(g))   # Iteration 687: a data word's @ and ! as vf, vs at run time (forth/cv8-fuse-var.4); the byte header first; 688: varslot's 23-bit slots
 gene('rtloop', values=range(2), needs=lambda g, e: rtloopall_on(g))            # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired; 641: with all eight only - the partial compiler retired)
 gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
 gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
@@ -405,7 +405,12 @@ def rtvar_on(g):
     varslot - without it a slot is 16 bits from the image, 64 KB: in the apps workload only sim16 and gc16 lie
     within it (scan starts at 388 KB, behind gc16's heap), the fusion missed the rest and cost 1.038; with varslot's
     23 bits (8 MB) the workload ran 0.902."""
-    return bool(g.get('rtvar')) and overlay(g) and 'var' in g['spec'] and bool(g.get('varslot')) and not g.get('tag2')   # 688: varslot
+    return bool(g.get('rtvar')) and rtvar_can(g)
+def rtvar_can(g):
+    """rtvar's conditions: the run-time fusers, spec var, varslot (688); under the two-bit tag, no JIT (689): with
+    jitvar the JIT translates the kernel's vf and vs, but refused a run-time word holding one - fastest-x86-64's
+    apps workload ran 1.999 with rtvar, interpreted (results/rtvar-688.md); until that is found."""
+    return bool(overlay(g) and 'var' in g['spec'] and g.get('varslot') and (not g.get('tag2') or not jit_on(g)))
 def rtiplus_on(g):
     """Iteration 60: I then + as I+ in code compiled at run time
     (forth/cv8-fuse-iplus.4) - a design with rtloopall, whose LOOPTAB knows I."""
@@ -2037,7 +2042,7 @@ def setup():
                         for k in ('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber')   # 501: -nocase retired
                         for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loopall')   # 641: -loop retired; 643: -lit (Iteration 422)
                         for t in (('', '-iplus') if l == '-loopall' else ('',))
-                        for v in (('', '-var') if f and b == KW() + '-b' else ('',))   # Iteration 687: rtvar, the byte header
+                        for v in (('', '-var') if f else ('',))   # Iteration 687: rtvar (689: both families)
                         for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
                         for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
                         for j in (('', '-jit') if b == KW() + '-bt' else ('',))

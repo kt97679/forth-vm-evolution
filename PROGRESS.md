@@ -11595,3 +11595,10 @@ rtvar measured and fixed: each program's benchmark alone on the knee 0.733 (scan
 0.958 (evo), 0.980 (gc16), the same outputs. The apps workload ran 1.038 without varslot - its programs load at 10 to
 451 KB from the image and 16-bit slots reach 64 KB - and 0.902 with varslot's 23 bits: rtvar now needs varslot
 (evolve.py, layout.py). rtvar-check.py PASS with varslot on. results/rtvar-688.md.
+
+## Iteration 689 - 2026-11-15 - Claude
+
+rtvar under the two-bit tag: the same overlay, the tag's -var dumps, VAR-OPS in its one-byte codes, vf and vs pinned.
+On fastest-x86-64 the values right and the apps' code -102 B, but the JIT refused the run-time words holding vf and the
+apps workload ran 1.999 interpreted - so rtvar needs no JIT under the tag until the refusal is found (next, by JITLOG).
+rtvar-check.py's fusion test for both families. results/rtvar-688.md.
