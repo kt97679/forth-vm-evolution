@@ -11555,3 +11555,11 @@ jit_mem + 0xFFFFF; an -O0 build runs it. The findings and the next step: results
 rounding a string's end: the decoder jumped past (LOOP), the native code slid off its end) and genes (676's tag-2 map:
 ALIGNED's opcode fell from rank 69 to 88) against today's cross compiler. tools/selfhost-lab.sh exports from the lab
 and checks there: all ten PASS at 8-byte cells, three at 4. results/unaligned-strings-681.md.
+
+## Iteration 684 - 2026-11-14 - Claude
+
+Step 2: relf's mechanisms priced on the four, the held-out three beside - lab/evolve/mech-census.py (the source),
+mech-price.py (bytes from 674's per-construct costs), mech-dispatch.py (the knee's profiler, each word placed). A data
+word's @/! as one op pays most (188-359 B, 3.5-24.9 % of dispatches); constants 34 B; inlining up to 9.4 %; the JIT
+header 745 B; address literals and the DODOES stencil only on brainless; DOES> @ nowhere (GOALS.md's register). 680's
+VALUE: 3.9 % of brainless's dispatches. results/mech-prices-684.md.

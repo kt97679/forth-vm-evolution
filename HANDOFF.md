@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 683.
+- master: Iteration 684.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -68,7 +68,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   681's self-hosting failures resolved (683): not the lab - selfhost-check ran designs/'s shipped engine source
   (676's jit.c, rounding a string's end) and genes (676's tag-2 map; ALIGNED's rank moved) against today's cross
   compiler. **tools/selfhost-lab.sh NAME ...** checks the lab's state: each design exported from the lab, its genes
-  from the export, designs/ untouched - all ten PASS at 8-byte cells (three checked at 4). **Next: step 2.**
+  from the export, designs/ untouched - all ten PASS at 8-byte cells (three checked at 4).
+  **Step 2 done (684)**: results/mech-prices-684.md (lab/evolve/mech-census.py, mech-price.py, mech-dispatch.py). On
+  the four: a data word's @/! as one op 188-359 B and 3.5-24.9 % of dispatches (the knee) - the most; constants as
+  literals where not longer 34 B, 0-2.5 %; small-word inlining 0.1-9.4 % for bytes; the JIT header 745 B. Invisible to
+  the four: address literals (brainless 1,220 B), the DODOES stencil, `n -`/`=`; DOES> @ pays nowhere (GOALS.md's
+  register). 680's VALUE: 3.9 % of brainless's dispatches. **Next: step 3** - the genes 2, 1, 4 and the JIT header as
+  a batch; **the owner's choice** for 8 (and the DODOES stencil): drop, or a fifth program with brainless's mix.
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
