@@ -54,9 +54,14 @@ engine as measured (`make tight`). Memory: peak resident.
   designs without the JIT; `make libc` from the top builds them all.
 - `make forth32` - 4-byte cells (`./forth32 image32.img`); needs 32-bit support (gcc-multilib); `make 32` from the top.
 - `make tight` - the file exactly as measured: the same loaded bytes, without section headers or symbols (python3).
+- `make selfhost` (`make selfhost32`) - the image rebuilt from its source by its own engine: `image.img` runs the CV8
+  cross compiler (`forth/cross-cv8.4`) on the kernel and overlays in `forth/` with the design's genes (`genes.4`,
+  `genes32.4`), and the image it writes must be `image.img` byte for byte (`selfhost.sh`); `make selfhost` from the
+  top checks all ten at both widths.
 
 Warnings about an optimize attribute and an RWX segment are expected. Each engine here is byte for byte the one the
-project measured once tightened, checked when these directories were generated.
+project measured once tightened, checked when these directories were generated - but for the four JIT designs' layout
+lines (`src/vm-jit-ops.h`'s `JIT_NWENDS`, `jit_wends`, `JIT_W_`), which describe the self-built image they ship.
 
 ## Where they come from
 
@@ -69,3 +74,9 @@ design built by the project's own build, the compiler asked for the files it rea
 
 in a built and validated tree (README.md, "Build and test"). `record.json` in each directory is the design's genome
 and the project's record of it.
+
+The images are self-built (Iteration 675; results/drafts/selfhost-plan-666.md): the project's converter
+(`tools/layout.py`) made the first image of each design, that image cross-compiled its successor from source, and
+the successor rebuilt itself byte for byte - 16-304 bytes smaller than the converter's; the converter's are the
+ones the search measured. `tools/selfhost-ship.sh designs` makes them, after `export-designs.py` and
+`lab/evolve/export-arm.py`.

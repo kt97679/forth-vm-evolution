@@ -1,0 +1,328 @@
+\ cv8.4 - make the Forth compiler emit CV8 instead of cells.
+\
+\ CV8: Compressed-pointer, Variable-length, 8-bit units.
+\
+\ Phase 3. Until now every CV8 image has been TRANSLATED from a cell
+\ image by tools/layout.py, so a CV8 system could run but could not
+\ compile a new definition.
+\ This file replaces the code-emitting words with CV8 emitters.
+\
+\ HOW IT IS USED. Every word here has a distinct name (`;8`, `IF8`, ...)
+\ because redefining `;` in the CELL image would break the cell
+\ compiler on the very next definition. Load this, dump, and translate
+\ with --cv8-compiler, which swaps each `X8` body into `X`. The overlay's own bodies are compiled by the cell
+\ compiler and translated like any other word; what changes is that the
+\ RESULTING image's compiler emits bytes. The cell image keeps its own
+\ compiler untouched, so relf/relf32 are unaffected.
+\
+\ WHAT IS NOT TOUCHED. `,` and `C,` still append data - VARIABLE, ALLOT
+\ and the dictionary header all rely on them. Only the words that
+\ append CODE are redefined.
+\
+\ See CV8-REFERENCE.md for the encoding this emits.
+
+\ ---- opcode numbers (CV8-REFERENCE.md 3.2) --------------------------
+\ The primitive band is kernel.4's PRIMITIVE order, so these are fixed
+\ small integers rather than the cell image's code-field addresses.
+  1 CONSTANT EXIT-OP
+  2 CONSTANT LIT16-OP
+  3 CONSTANT BRANCH-OP
+  4 CONSTANT 0BRANCH-OP
+ 68 CONSTANT LIT32-OP
+ 69 CONSTANT DOVAR-OP
+ 70 CONSTANT DODOES-OP
+ 71 CONSTANT LIT8-OP
+124 CONSTANT LIT64-OP           \ 0x7C
+
+\ ---- raw emission ---------------------------------------------------
+: OP, ( n --- )
+\ Append one opcode byte.
+  C, ;
+
+: W, ( n --- )
+\ Append a 16-bit little-endian operand.
+  DUP 255 AND C, 8 RSHIFT 255 AND C, ;
+
+: 32, ( n --- )
+\ Append a 32-bit little-endian operand.
+  DUP W, 16 RSHIFT W, ;
+
+VARIABLE CV8-SHIFT-V ( --- a-addr )
+\ The call/slot scale. 3 on a 64-bit cell, 2 on a 32-bit cell - or 0 in
+\ the byte-granular-header layout, where cv8b.4 sets it. A VARIABLE and
+\ not a constant so a second overlay can change it after this one is
+\ loaded; everything below reads it through CV8-SHIFT.
+: CV8-SHIFT-DEFAULT ( --- n ) 1 CELLS 8 = IF 3 ELSE 2 THEN ;
+CV8-SHIFT-DEFAULT CV8-SHIFT-V !
+VARIABLE CV8-VARCALL-V ( --- a-addr )
+\ True when calls may take the 3-byte far form: the engine's VARCALL. The
+\ converter writes it per design, as CV8-SHIFT-V (Iteration 159): without
+\ VARCALL every call is two bytes, and one out of their reach is refused.
+-1 CV8-VARCALL-V !
+: CV8-SHIFT ( --- n ) CV8-SHIFT-V @ ;
+
+VARIABLE CV8-DOES-FAR? ( --- a-addr )
+VARIABLE CV8-DOES-RESERVE ( --- a-addr )
+\ How DOES> writes its call, and how much room CREATE leaves for it.
+\ Two bytes by default; cv8b.4 sets three, because at a call scale of 0
+\ the near form cannot reach past 16 KB.
+0 CV8-DOES-FAR? ! 2 CV8-DOES-RESERVE !
+
+VARIABLE LAST-OP ( --- a-addr )
+\ Address of the primitive opcode just emitted, or 0 if the last thing
+\ emitted cannot be folded.
+
+\ ---- literals -------------------------------------------------------
+: LIT, ( n --- )
+\ Append a literal in the narrowest form that holds it. U< does the
+\ range tests, so a negative value falls through to the wide forms.
+  0 LAST-OP !
+  DUP 256 U<   IF LIT8-OP  OP, C, EXIT THEN
+  DUP 65536 U< IF LIT16-OP OP, W, EXIT THEN
+  1 CELLS 4 = IF LIT32-OP OP, 32, EXIT THEN
+  \ 64-bit cell: does it fit a SIGNED 32-bit field? n + 2^31 < 2^32.
+  DUP 2147483648 + 4294967296 U< IF LIT32-OP OP, 32, EXIT THEN
+  \ Wider than 32 bits needs a full cell. Before LIT64 existed such a
+  \ value was silently truncated (CV8-REFERENCE.md 10).
+  LIT64-OP OP, DUP 32, 32 RSHIFT 32, ;
+
+: LITERAL8 ( n --- )
+\ Add a literal to the current definition.
+  LIT, ; IMMEDIATE
+
+\ ---- folding prim;EXIT at runtime ------------------------------------
+\ The translator folds a primitive followed by EXIT into one opcode
+\ (CV8-REFERENCE.md 6.4), worth ~20%. Without this, code compiled at
+\ RUN time misses that; with it, newly compiled code matches translated
+\ code. Two things make it safe:
+\   * the fold applies only to the LAST op of a definition, at `;`, so
+\     nothing can branch past it into the EXIT;
+\   * LAST-OP is cleared by anything that is not a plain primitive emit,
+\     including every branch resolution - a THEN that resolves to HERE
+\     would otherwise be left pointing at an EXIT that is no longer
+\     there.
+
+: >OP ( xt --- n )
+\ The CV8 opcode of a PRIMITIVE, computed in the CELL image where this
+\ file is compiled: a cell-image primitive token is 1 + n * CELL, and n
+\ is exactly the CV8 opcode (both are the position in kernel.4).
+  @ 1- 1 CELLS / ;
+
+CREATE FOLD-OPS ( --- a-addr )
+\ The foldable primitives as OPCODE BYTES, in the SAME ORDER as the
+\ translator's --fold-set and the engine's generated table. Bytes, not
+\ xts: an xt is an absolute address of the cell session and would not
+\ survive translation - the first version of this stored xts and read
+\ back garbage.
+  ' + >OP C,  ' = >OP C,  ' ! >OP C,  ' @ >OP C,
+  ' LSHIFT >OP C,  ' RSHIFT >OP C,  ' C@ >OP C,  ' C! >OP C,
+  ' AND >OP C,  ' OR >OP C,  ' XOR >OP C,  ' LIT >OP C,
+  ' < >OP C,  ' U< >OP C,  ' OVER >OP C,  ' DROP >OP C,
+  ' DUP >OP C,  ' SWAP >OP C,  ' ROT >OP C,  ' >R >OP C,
+  ' R> >OP C,  ' R@ >OP C,  ' NEGATE >OP C,
+ALIGN
+23 CONSTANT #FOLD-OPS
+73 CONSTANT FOLD-BASE
+
+: FOLD-OP ( op --- op2 -1 | op 0 )
+\ The folded opcode for primitive opcode op, if it has one.
+  #FOLD-OPS 0 DO
+    DUP FOLD-OPS I + C@ = IF
+      DROP I FOLD-BASE + -1 UNLOOP EXIT
+    THEN
+  LOOP 0 ;
+
+\ ---- calls ----------------------------------------------------------
+: (FAR) ( a-addr --- )
+\ Iteration 416: a call past reach - the target's address, compiled as a
+\ literal before this word, goes to the return stack and EXIT goes there:
+\ the target runs and returns to the caller, as a call would.
+  >R ;
+
+: CALL, ( a-addr --- )
+\ Append a call to the body at a-addr: a scaled offset from the image
+\ base, near (2 bytes) if it fits in 14 bits, far (3 bytes) in 21 - the
+\ far form's first byte is 0xC0-0xDF where one-byte hot calls hold
+\ 0xE0-0xFF, so past them a call is not truncated into some other target
+\ (Iteration 158). Past them, Iteration 416: the address, then (FAR).
+  0 LAST-OP !
+  DUP START @ - CV8-SHIFT RSHIFT                            ( a-addr v )
+  DUP 16384 < IF SWAP DROP DUP 8 RSHIFT 128 OR C, 255 AND C, EXIT THEN
+  DUP 2097152 U< CV8-VARCALL-V @ AND IF
+    SWAP DROP DUP 16 RSHIFT 192 OR C, DUP 8 RSHIFT 255 AND C, 255 AND C, EXIT
+  THEN
+  DROP LIT, POSTPONE (FAR) ;
+
+: COMPILE,8 ( xt --- )
+\ Add the execution semantics of xt to the current definition: a
+\ primitive becomes its opcode byte, anything else a call.
+  DUP PRIMITIVE? IF
+    \ A primitive's CV8 body is one opcode byte - C@, not @: the cell
+    \ compiler read a whole cell here because a token WAS a cell.
+    \ An escaped primitive's body is [ESC][selector]; inline both bytes
+    \ and do not offer it for folding.
+    DUP C@ 125 = IF
+      DUP C@ OP, 1+ C@ OP, 0 LAST-OP !
+    ELSE
+      C@ HERE LAST-OP ! OP,
+    THEN
+  ELSE
+    CALL,
+  THEN ;
+
+: ;8 ( --- )
+\ Finish the current definition.
+  ?COMP LAST-OP @ DUP IF
+    DUP C@ FOLD-OP IF SWAP C! ELSE 2DROP EXIT-OP OP, THEN
+  ELSE DROP EXIT-OP OP, THEN
+  0 LAST-OP ! 0 STATE ! ?CSP REVEAL ; IMMEDIATE
+
+\ ---- control flow ---------------------------------------------------
+\ A branch operand is a signed 16-bit BYTE offset measured from the
+\ operand itself (CV8-REFERENCE.md 3.3) - not from past it, and not in
+\ cells. >MARK leaves the operand's address for >RESOLVE to patch.
+
+: >MARK ( --- a-addr )
+\ Emit a placeholder branch operand and leave its address.
+  0 LAST-OP ! HERE 0 W, ;
+
+: !W ( n a-addr --- )
+\ Store a 16-bit little-endian value.
+  2DUP C! 1+ SWAP 8 RSHIFT 255 AND SWAP C! ;
+
+: >RESOLVE ( a-addr --- )
+\ Patch the operand at a-addr so its branch lands on HERE. Clears
+\ LAST-OP: something now branches HERE, so the op before it must not
+\ be folded away.
+  0 LAST-OP ! DUP HERE SWAP - SWAP !W ;
+
+: <RESOLVE ( a-addr --- )
+\ Emit a branch operand jumping back to a-addr.
+  0 LAST-OP ! HERE - W, ;
+
+: BEGIN8 ( --- a-addr )
+  ?COMP HERE ; IMMEDIATE
+
+: UNTIL8 ( a-addr --- )
+  ?COMP 0BRANCH-OP OP, <RESOLVE ; IMMEDIATE
+
+: AGAIN8 ( a-addr --- )
+  BRANCH-OP OP, <RESOLVE ; IMMEDIATE
+
+: IF8 ( --- a-addr )
+  ?COMP 0BRANCH-OP OP, >MARK ; IMMEDIATE
+
+: THEN8 ( a-addr --- )
+  ?COMP >RESOLVE ; IMMEDIATE
+
+: ELSE8 ( a-addr1 --- a-addr2 )
+  ?COMP BRANCH-OP OP, >MARK SWAP >RESOLVE ; IMMEDIATE
+
+: WHILE8 ( a-addr1 --- a-addr2 a-addr1 )
+  ?COMP POSTPONE IF8 SWAP ; IMMEDIATE
+
+: REPEAT8 ( a-addr1 a-addr2 --- )
+  \ ( a-addr1 a-addr2 --- ) with the BEGIN address on top, as WHILE8
+  \ left it: <RESOLVE takes that one, >RESOLVE patches WHILE's mark.
+  ?COMP BRANCH-OP OP, <RESOLVE >RESOLVE ; IMMEDIATE
+
+\ ---- defining words -------------------------------------------------
+: CREATE8 ( "ccc" --- )
+\ A data body is [DOVAR][pad to a cell][parameter field], so the
+\ parameter field stays cell-aligned and the pad is never executed.
+  \ Two bytes reserved after DOVAR so that DOES> can overwrite the front
+  \ with [DODOES][2-byte call] without moving the parameter field. The
+  \ engine computes the PFA as align(body+3) on both paths.
+  HEADER REVEAL DOVAR-OP OP, CV8-DOES-RESERVE @ ALLOT ALIGN ;
+
+: VARIABLE8 ( "ccc" --- )
+  CREATE8 0 , ;
+
+: CONSTANT8 ( x "ccc" --- )
+  HEADER REVEAL LIT, EXIT-OP OP, ;
+
+: RECURSE8 ( --- )
+  ?COMP LAST @ NAME> CALL, ; IMMEDIATE
+
+\ ---- DO ... LOOP ----------------------------------------------------
+\ (LOOP) and (+LOOP) read an inline CELL operand, and it must stay
+\ cell-aligned - the one place CV8 keeps cell granularity
+\ (CV8-REFERENCE.md 3.3). The translator pads BEFORE the call so the
+\ operand lands aligned just after it; the runtime compiler does the
+\ same. The pad is NOOPs, which do execute, once per loop.
+: OPERAND-ALIGN ( --- )
+\ Emit NOOPs until a 2-byte call would leave HERE cell-aligned.
+  BEGIN HERE 2 + 1 CELLS 1- AND WHILE 0 C, REPEAT ;
+
+: DO8 ( --- a-addr )
+\ (DO) has no inline operand, so this matches the cell version.
+  ?COMP POSTPONE (DO) 'LEAVE @ HERE 0 'LEAVE ! ; IMMEDIATE
+
+: LOOP8 ( a-addr --- )
+  ?COMP OPERAND-ALIGN POSTPONE (LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+
+: +LOOP8 ( a-addr --- )
+  ?COMP OPERAND-ALIGN POSTPONE (+LOOP) HERE - , RESOLVE-LEAVE 'LEAVE ! ; IMMEDIATE
+
+\ ---- ?DO and LEAVE ---------------------------------------------------
+\ (?DO) and (LEAVE) also carry an inline CELL operand, so they need the
+\ same alignment as (LOOP).
+: ?DO8 ( --- a-addr )
+  ?COMP OPERAND-ALIGN POSTPONE (?DO) 'LEAVE @ HERE 'LEAVE ! 0 , HERE ; IMMEDIATE
+
+: LEAVE8 ( --- )
+  ?COMP OPERAND-ALIGN POSTPONE (LEAVE) HERE 'LEAVE @ , 'LEAVE ! ; IMMEDIATE
+
+\ ---- DOES> -----------------------------------------------------------
+\ A DOES> word's body is [DODOES][2-byte call to the tail][pad][PFA],
+\ where the cell version wrote a single relative-call cell. CREATE8 has
+\ already laid down [DOVAR][pad], so there is room to overwrite.
+
+: !CALL ( a-addr target --- )
+\ Store a call to target at a-addr, in the form CV8-DOES-FAR? selects.
+\
+\ The two-byte near form has a 14-bit field of SCALED units: 131 KB of
+\ reach at a scale of 3, but only 16 KB at a scale of 0. Cross-compiling
+\ the kernel grows the dictionary well past 16 KB, so at scale 0 a DOES>
+\ word up there had its target silently truncated and jumped into the
+\ data stack. The far form is three bytes, which is why CREATE has to
+\ reserve a matching amount - see CV8-DOES-RESERVE.
+  \ Iteration 416: the far form counts CELLS - a DOES> tail is ALIGNED - so its 22 bits reach 32 MB at
+  \ 8-byte cells, 16 at 4, where call-scale units reached 4 MB at scale 0.
+  START @ -  CV8-DOES-FAR? @ IF CV8-SHIFT-DEFAULT ELSE CV8-SHIFT THEN RSHIFT        ( a-addr v )
+  CV8-DOES-FAR? @ IF
+    2DUP 255 AND SWAP 2 + C!
+    2DUP 8 RSHIFT 255 AND SWAP 1+ C!
+    16 RSHIFT 192 OR SWAP C!
+  ELSE
+    2DUP 255 AND SWAP 1+ C!
+    8 RSHIFT 128 OR SWAP C!
+  THEN ;
+
+: (;CODE)8 ( --- )
+\ Runtime for DOES>: point the last created word at the code following
+\ the call to this word, and end the defining word (the R> discards its
+\ return address, exactly as the cell version does).
+  \ ALIGNED because DOES>8 pads to the next call-target boundary: the
+  \ return address points at the pad, the tail starts after it.
+  R> ALIGNED LAST @ NAME>
+  DODOES-OP OVER C!
+  1+ SWAP !CALL ;
+
+: DOES>8 ( --- )
+  \ The tail must be an ALIGNED call target: a call is a SCALED offset,
+  \ so an unaligned tail address loses its low bits and jumps to the
+  \ wrong place. The pad is dead code - (;CODE) never returns here.
+  ?COMP POSTPONE (;CODE) ALIGN
+  \ HERE is the tail every child will call, in the form CV8-DOES-FAR?
+  \ selects - out of its reach, the defining word is refused here, before a
+  \ child exists to be left half made (Iteration 158).
+  HERE START @ - CV8-DOES-FAR? @ IF CV8-SHIFT-DEFAULT RSHIFT 4194304 ELSE CV8-SHIFT RSHIFT 16384 THEN U< 0=   \ 416: cells
+  IF -1 ABORT" DOES> out of reach" THEN
+  POSTPONE R> ; IMMEDIATE
+
+\ ---- debugging aid --------------------------------------------------
+: BYTES. ( a-addr n --- )
+\ Print n bytes from a-addr. Compiled by the CELL compiler and
+\ translated, so it works even when the runtime compiler is broken.
+  0 DO DUP I + C@ . LOOP DROP CR ;

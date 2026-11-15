@@ -1,0 +1,25 @@
+\ cv8t-jit.4 - the lazy JIT's header (JIT.md, Iteration 80). Loaded last,
+\ only for designs with the jit gene (lab/evolve). Every colon word
+\ compiled at run time begins [JIT][four bytes]: the body's length with
+\ the top bit set, until its first call, when the engine translates it
+\ (engine/jit.c) - then the native code's offset, or 0 if it stays
+\ bytecode. The converter gives : the body of :8 and ; the body of the
+\ latest ;8 (tools/layout.py, the compiler overlay).
+
+0 CONSTANT JIT-OP              \ tag 2: layout.py writes this design's code
+VARIABLE JIT-AT                \ the header's length field, while compiling
+
+: :8 ( "ccc" --- )
+\ As kernel.4's :, then the header.
+  !CSP HEADER ]
+  JIT-OP OP,  HERE JIT-AT !  0 C, 0 C, 0 C, 0 C,  0 LAST-OP ! ;
+
+: ;8 ( --- )
+\ As the ;8 before this one, then the body's length into the header,
+\ little end first.
+  POSTPONE ;8
+  JIT-AT @ ?DUP IF
+    HERE OVER 4 + -  1 31 LSHIFT OR  SWAP
+    4 0 DO  2DUP C!  SWAP 8 RSHIFT SWAP  1+  LOOP  2DROP
+    0 JIT-AT !
+  THEN ; IMMEDIATE

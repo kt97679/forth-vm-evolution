@@ -140,14 +140,15 @@ def genes(name, args, eflags, out, cell=8, src=None, tout=''):
     open(out, 'w').write('\n'.join(L) + '\n')
     print(out, '-', len(ov), 'overlays,', len(folds), 'folds, spec', bits, ',', len(o10), 'ops10,', len(sup), 'pairs')
 
-ROLES = sorted(d for d in os.listdir('designs') if os.path.exists(os.path.join('designs', d, 'record.json')))
+DS = os.environ.get('DESIGNS', 'designs')   # 675: another designs directory (tools/selfhost-ship.sh)
+ROLES = sorted(d for d in os.listdir(DS) if os.path.exists(os.path.join(DS, d, 'record.json')))
 for name in NAMES or (['s6'] + ROLES):
     if name == 's6':
         hot = re.search(r"^HOT='([^']*)'", open('tools/build-stages.sh').read(), re.M).group(1)
         args = ['k64-b.txt', '8', '--v8', '--cpt', '0', '--bytehdr', '--dataprims', '--fold', '--fold-set', hot,
                 '--spec', 'loc,var,tiny,small,imm', '--cv8-compiler', '--drop-x8', '--drop-dumptool']
         genes('s6-cv8b', args, {'SPEC': 1, 'VARSLOT': 1}, 'stages/s6-genes.4'); continue
-    g = json.load(open(os.path.join('designs', name, 'record.json')))['genome']
+    g = json.load(open(os.path.join(DS, name, 'record.json')))['genome']
     for cell in (8, 4):
         # As export-designs.py builds image.img and image32.img: the 4-byte build at_width(WIDTH4).
         b = os.path.join(E.EV, 'genes-%s-%d' % (name, cell)); shutil.rmtree(b, ignore_errors=True)
@@ -157,7 +158,7 @@ for name in NAMES or (['s6'] + ROLES):
         c = LOG[k]
         args = c[[k for k, x in enumerate(c) if x.endswith('tools/layout.py')][0] + 1:]
         assert args[1] == str(cell), args[:2]
-        out = os.path.join('designs', name, 'genes.4' if cell == 8 else 'genes32.4')
-        src = os.path.join('designs', name, 'src' if cell == 8 else 'src32')
-        try: genes(name, args, flags(os.path.join('designs', name, 'Makefile')), out, cell, src, OUT[k])
+        out = os.path.join(DS, name, 'genes.4' if cell == 8 else 'genes32.4')
+        src = os.path.join(DS, name, 'src' if cell == 8 else 'src32')
+        try: genes(name, args, flags(os.path.join(DS, name, 'Makefile')), out, cell, src, OUT[k])
         except AssertionError as e: print(name, cell, '- skipped:', e)

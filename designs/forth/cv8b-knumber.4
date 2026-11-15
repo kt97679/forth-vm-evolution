@@ -1,0 +1,36 @@
+\ cv8b-knumber.4 - NUMBER? in one dispatch (Iteration 295), for the
+\ byte-header system with klookup; loaded after cv8b-klookup.4 for designs
+\ with the gene knumber. X8 words: the kernel's word gets the body.
+\
+\ On seed 49's fastest designs NUMBER?'s own Forth, around (>NUMBER) - an
+\ opcode since Iteration 57 - was 10-13% of the corpus's dispatches
+\ (lab/evolve/word-cost.py). (NUMBER?) is NUMBER? with BASE @ and DPL
+\ given, for the opcode; its Forth body is the kernel's NUMBER?, step for
+\ step, reading BASE and DPL itself - but for its two failure paths, which
+\ leave 0 0 0, where the kernel's left c-addr u 0 or ud c-addr u 0:
+\ NUMBER?'s one caller, INTERPRET, aborts or throws on the 0, and a
+\ throw's CATCH restores the stack's depth, so no caller sees which.
+
+: (NUMBER?) ( c-addr base dpl --- d f )
+  2DROP
+  DUP C@ 3 = IF DUP 1+ C@ 39 = OVER 3 + C@ 39 = AND IF -1 DPL ! 2 + C@ 0 -1 EXIT THEN THEN
+  -1 DPL !
+  BASE @ >R
+  COUNT
+  OVER C@ 45 = DUP >R IF    -1 + SWAP 1 + SWAP THEN
+  OVER C@ 36 = IF 16 BASE ! -1 + SWAP 1 + SWAP THEN
+  OVER C@ 35 = IF 10 BASE ! -1 + SWAP 1 + SWAP THEN
+  OVER C@ 37 = IF  2 BASE ! -1 + SWAP 1 + SWAP THEN
+  R@ 0= IF OVER C@ 45 = IF R> DROP -1 >R -1 + SWAP 1 + SWAP THEN THEN
+  DUP  0 > 0= IF  2DROP R> DROP R> BASE ! 0 0 0 EXIT THEN
+  >R >R 0 0 R> R>
+  BEGIN
+   >NUMBER
+   DUP IF OVER C@ 46 = IF -1 + DUP DPL ! SWAP 1 + SWAP ELSE
+         2DROP 2DROP R> DROP R> BASE ! 0 0 0 EXIT THEN
+       THEN
+  DUP 0= UNTIL 2DROP R> IF DNEGATE THEN
+  R> BASE ! -1 ;
+
+: NUMBER?8 ( c-addr --- d f )
+  BASE @ DPL (NUMBER?) ;

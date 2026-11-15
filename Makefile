@@ -1,6 +1,7 @@
 # forth-vm-evolution: the search's winning Forth designs, built from source - designs/README.md.
 # `make` builds every one (x86-64 Linux); `make NAME` one; `make libc` the portable ones with the C library, for any
-# other host; `make 32` the 4-byte-cell engines (gcc-multilib); `make test` builds and runs each.
+# other host; `make 32` the 4-byte-cell engines (gcc-multilib); `make test` builds and runs each; `make selfhost` each
+# image rebuilt from its source (designs/forth/, its genes) by its own engine, byte for byte, at both widths.
 
 DESIGNS = fastest-x86-64 fastest-x86-32 best-all-round small-jit portable-fastest portable-arm portable-knee portable-small least-memory smallest
 PORTABLE = portable-fastest portable-arm portable-knee portable-small least-memory smallest
@@ -22,7 +23,10 @@ arm:
 test: all
 	sh designs/test.sh $(DESIGNS)
 
+selfhost:
+	for d in $(DESIGNS); do $(MAKE) -s -C designs/$$d selfhost selfhost32 || exit 1; done
+
 clean:
 	for d in $(DESIGNS); do $(MAKE) -C designs/$$d clean; done
 
-.PHONY: all libc arm 32 test clean $(DESIGNS)
+.PHONY: all libc arm 32 test selfhost clean $(DESIGNS)

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 675.
+- master: Iteration 676.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -66,10 +66,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the cross compiler writes them for its image (cv8-self-jit.h) and the check builds the engine with them - phase 5
   ships them with the images. Found at 672: the translator's fastest-x86-32 and small-jit compile a run-time call of
   (PARSE) as the JIT's opcode (layout.py's _jitimg_pick gives the JIT's header to an --op-inline word) - the
-  self-built images do not. Next: phase 5 (designs/ ships the self-built images, `make selfhost`, run-tests runs the
-  checks), then phase 6. export-designs.py remakes designs/NAME/ from nothing - rerun export-genes.py after it. The
-  article waits for the
-  measurements (its figures change); the designs/ images, the relf handoff and the roles are redone at phase 6.
+  self-built images do not. **Phase 5 done (676)**: designs/ ships the self-built images (both widths, the JIT
+  designs' layout lines) and their source, designs/forth/; `make selfhost` in a design rebuilds its image by its own
+  engine, byte for byte (at the top: all ten), run by run-tests with two planted faults; tools/selfhost-ship.sh makes
+  them, last in the build-out (after export-designs.py and export-arm.py). Next: phase 6 - measured again (the
+  laptop, the i7, the Tegra; the GCC three on ARM), the roles, the relf handoff and package (still the translator's
+  images), the article; before it, the owner's answer on step 2 above (it would reopen the search and change the
+  designs again).
 - For relf (673): its report (its Iteration 942) fixed in the engine - on the jitexec designs a THROW from a nested
   interpreter unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; designs/test.sh has
   the cases; results/jit-throw-unwind-673.md. relf takes the three designs' new src/vm.c and src32/vm.c (the

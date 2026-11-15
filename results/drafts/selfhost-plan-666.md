@@ -335,3 +335,31 @@ fastest-x86-64 and small-jit 610/594, 647/629 and 602/574 ms (best of 11) - the 
 
 **All ten designs self-host, at both widths.** Next: phase 5 - designs/ ships the self-built images (and the JIT
 designs' layout lines), `make selfhost` in each design, run-tests runs the checks; then phase 6, the re-measurement.
+
+## Phase 5 done (676) - designs/ ships the self-built images
+
+- `tools/selfhost-ship.sh [DIR [NAME...]]`: the genes as Forth (export-genes.py, `DESIGNS=DIR`), then
+  selfhost-check.sh with `SHIP=1` at both widths - A = B and the gate, then A becomes image.img (image32.img) and, on
+  the four JIT designs, A's layout lines go into src/vm-jit-ops.h (src32/) - then the design's own `make selfhost
+  selfhost32`. It writes DIR/forth/ (20 files: kernel.4, extend.4, cross-cv8.4 and the overlays the genes name),
+  selfhost.sh and each Makefile's two rules. Idempotent: small-jit's second run changed nothing. All ten shipped; the
+  images are the ones in the phase 2-4 tables (8-byte 208-304 bytes under the translator's, 4-byte 16-224).
+- `designs/selfhost.sh` (`make selfhost`, `make selfhost32`; `make selfhost` at the top for all ten): one
+  cross-compile by the design's own engine from designs/forth/ and its genes; the image must come out byte for byte,
+  and so must each JIT layout line the engine has, matched by name. small-jit (no jitexec) has no JIT_W_ lines: the
+  first version demanded every line written, and it failed small-jit.
+- run-tests runs it for all ten at both widths, two designs at a time, with two planted faults in a copy of smallest
+  (one image byte flipped; G-HOTCALLS 32 -> 31 in its genes), both caught. A fresh clone's `make selfhost`: 20 of 20.
+  `make test` 20 ok (relf's THROW cases too), run-tests PASS, validate 7 of 7.
+- ARM: the clang three's `make forth-arm` (portable-fastest, portable-knee, smallest; CROSS=1) run their new
+  image32.img under qemu-arm and rebuild it from source byte for byte. The GCC three's ARM builds need the Tegra
+  (phase 6).
+- designs/.gitignore's `forth` became `*/forth`: it hid designs/forth/. freeze-build-645.sh runs selfhost-ship.sh
+  last on the export (export-arm.py checks that image32.img is the translator's), then `SOURCES=1` for designs/forth/
+  after the copy, then `make selfhost`.
+- Still the translator's images: the evolver's records (as planned), the relf handoff and its package
+  (forth-vm-evolution-designs-iter649.tar.gz, pack-designs.py), results/drafts/designs-sha256-649.txt - phase 6.
+  The four JIT engines differ from the lab's only in the layout lines (designs/README.md).
+
+**Next**: phase 6 - measured again (sizes here; speed on the laptop, the i7 and the Tegra; the GCC three on ARM), the
+roles re-derived, designs/README.md, the relf handoff and package, the article.

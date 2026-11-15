@@ -1,0 +1,49 @@
+\ cv8b-kinput.4 - the input side made faster (Iteration 54), for the
+\ byte-header system with kfast; loaded after cv8b-kfast.4 for designs
+\ with the gene kinput. X8 words: the kernel's word gets the body.
+\
+\ On seed 12's fastest design, REFILL, SCAN, PARSE, SKIP and WORD were
+\ 27-36% of the kernel, parse and corpus workloads' dispatches. Most of
+\ REFILL's share was its tab loop - ten dispatches a character of every
+\ line read - factored out here as TABS>BL, a format-10 opcode with SCAN,
+\ SKIP and FILL. Since Iterations 145 and 148 no tab is made a space: SKIP
+\ and SCAN take any control character for a space delimiter, and TABS>BL
+\ is gone (lab/evolve).
+
+
+: REFILL8 ( --- f)
+\ The kernel's REFILL.
+  SOURCE-ID -1 = IF
+   0 \ Not refillable for EVALUATE
+  ELSE
+   SOURCE-ID IF
+    SRC @ 256 SOURCE-ID READ-LINE ABORT" Error reading file"
+    SWAP #SRC ! 0 >IN !
+    \ No tab is made a space (Iterations 145, 148): SKIP and SCAN take control
+    \ characters for a space delimiter.
+   ELSE
+    QUERY #TIB @ #SRC ! 0 >IN ! -1 \ Always successful from terminal.
+   THEN
+  THEN ;
+
+\ After the tab loop (Iteration 54, attributed again): PARSE's own stack work
+\ 9-14% of kernel, parse and corpus; ?STACK's check, run after every word
+\ interpreted, calling (ABORT") each time only to skip its message.
+
+: (PARSE) ( addr u c --- a1 len adv )
+\ Skip the leading c's, then up to the next c: the string between, and
+\ how far >IN moves - to that c and past it, if there was one. PARSE-WORD's
+\ work - WORD's; PARSE skips nothing since Iteration 125 - as the kernel does it with SKIP and SCAN.
+  ROT DUP >R ROT ROT DUP >R SKIP OVER SWAP R> SCAN
+  IF 1 ELSE 0 THEN OVER R> - + >R OVER - R> ;
+
+: PARSE-WORD8 ( c --- addr len )
+\ The kernel's PARSE-WORD (PARSE until Iteration 125): the rest of the
+\ source from >IN, (PARSE), >IN moved.
+  >R SOURCE SWAP >IN @ + SWAP >IN @ - R> (PARSE) >IN +! ;
+
+: ?STACK8 ( --- )
+\ The kernel's ?STACK - DEPTH below 0 or above 10000 - as one unsigned
+\ compare (DEPTH's logical shift makes an underflow huge), and (ABORT")
+\ called only when there is something to say.
+  DEPTH 10000 U> IF -1 ABORT" Stack error" THEN ;

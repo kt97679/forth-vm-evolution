@@ -576,6 +576,34 @@ for w in 64 32; do
     done
 done
 
+# Iteration 675 (phase 5, results/drafts/selfhost-plan-666.md): each design's shipped image rebuilt from its source
+# (designs/forth/, its genes) by its own engine, byte for byte, at both widths - `make selfhost selfhost32`, two
+# designs at a time. And the check can fail (prompts/15): in a copy of smallest, one byte of image.img flipped, then
+# one gene changed (G-HOTCALLS 32 -> 31: one call fewer made a one-byte call) - each must FAIL.
+echo
+echo "the designs rebuilt from source (make selfhost; designs/selfhost.sh):"
+SH=$(mktemp -d)
+for d in "$ROOT"/designs/*/; do [ -f "$d/record.json" ] && basename "$d"; done |
+    xargs -P 2 -I{} sh -c 'make -s -C "$1/designs/$2" selfhost selfhost32 > "$3/$2.log" 2>&1; echo $? > "$3/$2.rc"' x "$ROOT" {} "$SH"
+for f in "$SH"/*.rc; do
+    n=$(basename "$f" .rc)
+    if [ "$(cat "$f")" = 0 ] && [ "$(grep -c ' ok - rebuilt' "$SH/$n.log")" = 2 ]; then
+        printf '  %-17s ok     %s\n' "$n" "$(grep ' ok - rebuilt' "$SH/$n.log" | sed 's/.* bytes//; s/^; its JIT layout.*/both widths, the JIT layouts too/' | head -1 | sed 's/^$/both widths/')"
+    else printf '  %-17s FAIL   %s\n' "$n" "$(grep FAIL "$SH/$n.log" | head -1 | cut -c1-100)"; rc=1; fi
+done
+nd=$(ls "$SH"/*.rc 2> /dev/null | wc -l); [ "$nd" -eq 10 ] || { printf '  %-17s FAIL   %s of 10 designs checked\n' designs "$nd"; rc=1; }
+P=$SH/plant; mkdir -p "$P"; cp -r "$ROOT/designs/smallest" "$ROOT/designs/forth" "$ROOT/designs/selfhost.sh" "$P/"
+cp "$P/smallest/image.img" "$P/good.img"
+python3 -c "import sys; b = bytearray(open(sys.argv[1], 'rb').read()); b[-1] ^= 1; open(sys.argv[1], 'wb').write(b)" "$P/smallest/image.img"
+o1=$(make -s -C "$P/smallest" selfhost 2>&1) && c1=missed || c1=caught
+cp "$P/good.img" "$P/smallest/image.img"; sed -i 's/^32 CONSTANT G-HOTCALLS /31 CONSTANT G-HOTCALLS /' "$P/smallest/genes.4"
+grep -q '^31 CONSTANT G-HOTCALLS ' "$P/smallest/genes.4" || c2=unplanted
+[ -z "${c2:-}" ] && { o2=$(make -s -C "$P/smallest" selfhost 2>&1) && c2=missed || c2=caught; }
+if [ "$c1" = caught ] && [ "$c2" = caught ] && printf '%s\n%s\n' "$o1" "$o2" | grep -q 'FAIL - rebuilt from source, it differs'; then
+    printf '  %-17s ok     %s\n' planted "both caught: a flipped image byte, a changed gene"
+else printf '  %-17s FAIL   %s\n' planted "the image byte $c1, the gene $c2 - the check cannot fail"; rc=1; fi
+rm -rf "$SH"
+
 # The runs directory's tidying (Iteration 541): the copies sent to the remotes go from finished chains only, chain
 # tarballs past the newest two go - and no seed pack, the runs' records, ever goes. A made-up runs directory; the
 # tool as it was failed 8 of the 12 checks, among them two that would have lost seed packs.

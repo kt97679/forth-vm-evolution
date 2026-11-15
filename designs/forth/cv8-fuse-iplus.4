@@ -1,0 +1,19 @@
+\ cv8-fuse-iplus.4 - I then + compiled as one opcode, I+ (Iteration 60),
+\ for designs with the gene rtiplus (with rtloopall); loaded after every
+\ other run-time overlay.
+\
+\ The loop workload's inner body is DUP I + XOR (LOOP): I + a fifth of
+\ its dispatches, and I + is the commonest loop idiom there is. The
+\ run-time fuser already fuses any pair SUPER-TABLE lists when LAST-OP
+\ points at the first - and the converter lists (I, +) -> I+ for a design
+\ with I+ - but cv8-fuse-loopall.4 compiles I and clears LAST-OP. This
+\ link points LAST-OP back at I's byte; the fuser does the rest, and a
+\ branch target in between clears LAST-OP as for any pair. One offset
+\ compare a compiled word: rtlit (Iteration 59) showed what more costs.
+
+: COMPILE,8 ( xt --- )
+\ The COMPILE,8 before this one; after I, LAST-OP at its byte. (Caching
+\ I's xt in a variable cut the compile cost from ~1% to ~0.6% of kernel
+\ and corpus for 37 bytes more - not worth it on a size-speed front.)
+  DUP START @ - LOOPTAB 8 + W@ - IF COMPILE,8 EXIT THEN
+  COMPILE,8 HERE 1- LAST-OP ! ;

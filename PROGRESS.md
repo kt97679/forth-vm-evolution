@@ -11491,3 +11491,12 @@ Setup found no bundle: uploads now arrive with a prefix (5d9479d6-forth-vm-evolu
 tools/setup-sandbox.sh, lab/evolve/process-run.sh and process-followup.sh looked only for names starting
 forth-vm-evolution-. Their globs take any prefix now (process-run.sh the newest, by ls -t, as the other two). The
 no-argument setup finds the bundle; build, run-tests PASS, validate 7 of 7 IDENTICAL at 674.
+
+## Iteration 676 - 2026-11-14 - Claude
+
+Self-hosting phase 5 done: designs/ ships each design's self-built images at both widths (the JIT designs' layout
+lines too) and their source (designs/forth/). `make selfhost` in each design: its own engine rebuilds the image from
+source byte for byte (designs/selfhost.sh); run-tests runs it for all ten with two planted faults caught; a fresh
+clone 20 of 20; the clang three rebuild theirs on ARM under qemu-arm. tools/selfhost-ship.sh ships them, last in the
+build-out (results/drafts/freeze-build-645.sh). make test 20 ok, run-tests PASS, validate 7 of 7. Notes:
+results/drafts/selfhost-plan-666.md, "Phase 5 done (676)".

@@ -13,25 +13,29 @@
 # rebuilt with A's (build/selfhost/check-NAME/eng/); B's (and the 64-bit build's) must be A's. --self-test first plants
 # a fault - a bit of PARSE's body in A flipped - and fails unless the check catches it. From the repository's top, as
 # the build user, in a built tree (tools/build-stages.sh); a design's engines are made if missing. Works in
-# build/selfhost/check-NAME/ (check-NAME-32/); exit 1 on any failure.
+# build/selfhost/check-NAME/ (check-NAME-32/); exit 1 on any failure. Iteration 675 (phase 5): DESIGNS=DIR another
+# designs directory (an export); SHIP=1, the check passed, ships A - image.img (image32.img) and, for a JIT design,
+# A's layout into src/vm-jit-ops.h (src32/) - tools/selfhost-ship.sh's step; the design's engine always made (make
+# decides), as a shipped layout leaves the built one stale. A shipped image is its own starting image: A = B = it.
 set -e
 cd "$(dirname "$0")/.."
 TEST=; [ "$1" = --self-test ] && { TEST=1; shift; }
 W=8; [ "$1" = --32 ] && { W=4; shift; }
 N=${1:-s6}
 T=$(pwd) D=$(pwd)/build/selfhost/check-$N
+DS=$(cd "${DESIGNS:-designs}" && pwd) || exit 1
 if [ "$N" = s6 ]; then
     [ $W = 8 ] || { echo "selfhost-check: s6 is 8-byte cells only"; exit 1; }
     ENG=$T/build/s6-cv8b-64 IMG=$T/build/s6-cv8b-s64.img GENES=$T/stages/s6-genes.4
     [ -x "$ENG" ] && [ -f "$IMG" ] || { echo "selfhost-check: build first (tools/build-stages.sh)"; exit 1; }
 else
     G=genes.4; [ $W = 4 ] && { G=genes32.4; D=$D-32; }
-    [ -f "designs/$N/$G" ] || { echo "selfhost-check: no designs/$N/$G (lab/evolve/export-genes.py $N)"; exit 1; }
-    ENG=$T/designs/$N/forth IMG=$T/designs/$N/image.img GENES=$T/designs/$N/$G
-    [ -x "$ENG" ] || make -s -C "designs/$N" forth > /dev/null 2>&1 || { echo "selfhost-check: can't make designs/$N/forth"; exit 1; }
+    [ -f "$DS/$N/$G" ] || { echo "selfhost-check: no $DS/$N/$G (lab/evolve/export-genes.py $N)"; exit 1; }
+    ENG=$DS/$N/forth IMG=$DS/$N/image.img GENES=$DS/$N/$G
+    make -s -C "$DS/$N" forth > /dev/null 2>&1 || { echo "selfhost-check: can't make $DS/$N/forth"; exit 1; }
     if [ $W = 4 ]; then
-        ENG64=$ENG IMG64=$IMG ENG=$T/designs/$N/forth32 IMG=$T/designs/$N/image32.img
-        [ -x "$ENG" ] || make -s -C "designs/$N" forth32 > /dev/null 2>&1 || { echo "selfhost-check: can't make designs/$N/forth32"; exit 1; }
+        ENG64=$ENG IMG64=$IMG ENG=$DS/$N/forth32 IMG=$DS/$N/image32.img
+        make -s -C "$DS/$N" forth32 > /dev/null 2>&1 || { echo "selfhost-check: can't make $DS/$N/forth32"; exit 1; }
     fi
 fi
 rm -rf "$D"; mkdir -p "$D"
@@ -45,11 +49,11 @@ cross() {   # cross IMAGE OUT [ENGINE] - run the cross compiler on IMAGE, its im
 }
 cross "$IMG" "$D/A.img" || { echo "selfhost-check: FAIL - the translator-built $N wrote no image ($D/A.img.log)"; exit 1; }
 ENGA=$ENG J=
-if [ "$N" != s6 ] && grep -q "jit_wends" "designs/$N/src/vm-jit-ops.h" 2>/dev/null; then
+if [ "$N" != s6 ] && grep -q "jit_wends" "$DS/$N/src/vm-jit-ops.h" 2>/dev/null; then
     # A JIT design: its engine for A, with A's layout in vm-jit-ops.h (the lines the design has)
     S=src; E=forth; [ $W = 4 ] && { S=src32; E=forth32; }
     [ -s "$D/A.img.jit.h" ] || { echo "selfhost-check: FAIL - no JIT layout with A ($D/A.img.log)"; exit 1; }
-    mkdir -p "$D/eng"; cp -r "designs/$N/Makefile" "designs/$N/src" "designs/$N/src32" "$D/eng/"
+    mkdir -p "$D/eng"; cp -r "$DS/$N/Makefile" "$DS/$N/src" "$DS/$N/src32" "$D/eng/"
     python3 - "$D/eng/$S/vm-jit-ops.h" "$D/A.img.jit.h" <<'PYEOF' || exit 1
 import sys
 key = lambda l: l.split(' = ')[0] if l.startswith('static const unsigned int jit_wends') else ' '.join(l.split()[:2])
@@ -101,5 +105,9 @@ with (E.at_width(E.WIDTH4) if w == 4 else contextlib.nullcontext()):
     finally: shutil.rmtree(pw, ignore_errors=True)
 EOF
 P=$(grep "pass 3" "$D/B.img.log" | sed 's/^cross-cv8: pass 3 - [0-9]* bytes, //')
+S0=$(stat -c %s "$IMG"); [ -n "${SHIP:-}" ] && [ "$N" != s6 ] && {
+    I0=image.img; [ $W = 4 ] && I0=image32.img; cp "$D/A.img" "$DS/$N/$I0"
+    if [ -n "$J" ]; then cp "$D/eng/$S/vm-jit-ops.h" "$DS/$N/$S/vm-jit-ops.h"; fi
+    J="$J; shipped as $DS/$N/$I0${J:+ and $S/vm-jit-ops.h}"; }
 [ $W = 4 ] && N="$N (4-byte cells)"
-echo "selfhost-check: PASS - $N self-hosting: A = B, $(stat -c %s "$D/A.img") bytes ($P)$X$J; the gate passed (the translator's: $(stat -c %s "$IMG"))"
+echo "selfhost-check: PASS - $N self-hosting: A = B, $(stat -c %s "$D/A.img") bytes ($P)$X$J; the gate passed (the starting image: $S0)"
