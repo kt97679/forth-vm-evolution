@@ -221,6 +221,7 @@ Each subject oldest first; a script or patch beside the document it made.
 - `rtvar-688.md` - The gene rtvar (a data word's @ and ! fused at run time): correct; scan 0.733, shellmix 0.750 alone; the apps workload 0.902 with varslot, which it needs.
 - `rtconst-691.md` - The gene rtconst (a constant compiled as its value at run time): the apps workload 0.975 on the knee, 0.770 on fastest-x86-64.
 - `jit-shellmix-692.md` - Why the JIT designs run shellmix interpreted (DOES> children, the parsing words' cascade); jitdoes about even, cold-calling the parsing words rejected.
+- `rehearsal-693.md` - Step 4's rehearsal for rtvar and rtconst: the front alive with them, the search's speed 0.999-0.960 at about 350 bytes; s1-sod16 past sod16's DOES> reach with shellmix.
 - `jit-throw-unwind-673.md` - relf's report (its Iteration 942) fixed: on the jitexec designs a THROW from a nested interpreter now unwinds the C stack to its CATCH's interpreter (RP!), a sentinel leaves to its own; tests in designs/test.sh.
 - `relf-questions-665.md` - What relf asked this lab (its Iteration 716), answered as far as the generic search can, from the ten winners' expressed genes: (+LOOP) and operand forms yes; XF@/XV@, DEFER and PICK not in the search.
 - `article-check-659.md` - The article's figures checked (Iteration 659): the same numbers in both drafts, 195 of 197 distinctive figures in the records; part one's image sizes regenerate at a105e59, not at master.

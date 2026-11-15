@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 692.
+- master: Iteration 693.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -99,8 +99,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **692: the JIT designs on shellmix** - nearly all its words refused (JITLOG): DOES> children without jitdoes, and
   the parsing words PARSE WORD FIND >NUMBER (no stencils) cascading up through >NUM; jitdoes about even (0.950,
   1.046); cold-calling the four slower (1.15, 1.11: GOALS.md's register). Native parsing operations would help - a
-  JIT project of its own. results/jit-shellmix-692.md. **Next: the other step-3 genes** (inlining at 3/6, the JIT
-  header, DOES> @ - its tail decoded in three call forms).
+  JIT project of its own. results/jit-shellmix-692.md.
+  **693: step 4's rehearsal for rtvar and rtconst** (a scratch clone): the front 10 of 10 alive with them; the search's
+  speed 0.999 at the size end to 0.960 (portable-fastest), at about 350 bytes (overlay code, and rtconst's wide
+  literals); a short run clean but for s1-sod16, which shellmix takes past sod16's 128 KB DOES> reach (a founder, not
+  a candidate). results/rehearsal-693.md. **The laptop could run now** with rtvar and rtconst (the owner's hours), or
+  after more genes. **Next: the other step-3 genes** (inlining at 3/6, the JIT header, DOES> @ - its tail decoded in
+  three call forms).
   (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.

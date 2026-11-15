@@ -11626,3 +11626,11 @@ PARSE, WORD, FIND and >NUMBER (no stencils), refused callees taking their caller
 1.046 on shellmix); the four as cold words, called through the helper, slower (1.152, 1.114) - rejected, GOALS.md's
 register. genapps.py --sizes now writes its own work directory (run-tests' quick check had wiped work-8's benchmark
 drivers). results/jit-shellmix-692.md.
+
+## Iteration 693 - 2026-11-15 - Claude
+
+Step 4's rehearsal for rtvar and rtconst, in a scratch clone: the ten roles evaluated with the genes on, all alive at
+both widths; the search's speed with them 0.999 (least-memory) to 0.960 (portable-fastest), the compile layer costing
+the gate's workloads nothing, at about 350 bytes (the overlays, and rtconst's literals wider than a call). A short run
+(8 x 2) clean but for the hand-made s1-sod16, which shellmix takes past sod16's 128 KB DOES> reach - a founder, enc
+not being mutated. Mutation turns rtvar on in 0.4 % of the front's mutations, rtconst 1.3 %. results/rehearsal-693.md.
