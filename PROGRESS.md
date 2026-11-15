@@ -11563,3 +11563,13 @@ mech-price.py (bytes from 674's per-construct costs), mech-dispatch.py (the knee
 word's @/! as one op pays most (188-359 B, 3.5-24.9 % of dispatches); constants 34 B; inlining up to 9.4 %; the JIT
 header 745 B; address literals and the DODOES stencil only on brainless; DOES> @ nowhere (GOALS.md's register). 680's
 VALUE: 3.9 % of brainless's dispatches. results/mech-prices-684.md.
+
+## Iteration 685 - 2026-11-15 - Claude
+
+relf's answers to 684 (its Iteration 953) processed: no TO/VALUE/['] in relf's code (mechanism 8: to drop); DOES>
+hooks and buffers hot; its VAR@ 3.2 bytes - it saves dispatches, not bytes (684's estimate corrected); its constant
+test, inlining rule (3 instructions, 6 bytes) and the run-time peepholes 684 missed. Its shellmix.fth added held out
+(lab/evolve/apps; genapps.py, mech-census.py): the same line on all fourteen systems; the JIT designs at 1.11-1.49 of
+relf64's time on it (0.35 on the six smaller programs); on the knee VAR@/VAR! 22.3 % of its dispatches, DOES> @ 3.0 %.
+The owner decides on shellmix as a fifth selection program. results/relf-reply-685.md; the reply as
+results/drafts/relf-reply-953.md.

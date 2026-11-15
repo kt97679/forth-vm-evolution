@@ -52,6 +52,10 @@ Small-word inlining (4) is not in the table: it trades bytes for dispatches (a 2
 | 8 | address literals in 5 bytes (8-byte cells) | 4 B (one `[']`) | 1,220-1,245 B (brainless's TO) | **invisible to the selection**: the owner's choice (the plan's first risk) - drop it, or a fifth program with brainless's mix |
 | 3 | a `DOES> @` word's fetch as one VAR@ | 0 - no DOES> word | 0 - no `DOES> @` word in any of the seven | **does not pay on this code**: GOALS.md's register |
 
+**Corrected at 685** (relf's answers, results/relf-reply-685.md): mechanism 2's bytes are about 0, not 188-359 - relf's own
+VAR@ averages 3.2 bytes (a 2- or 3-byte self-relative slot operand), what a call and @ cost; it saves dispatches. And
+mechanism 8: relf's code has no TO, VALUE or ['] - to drop. shellmix.fth (relf's mix) prices 3 and the DODOES stencil.
+
 680's VALUE change, the count owed: 3.9 % of brainless's dispatches (500 VALUE fetches, each one CELL+ fewer); 0 on
 the other six. Caveats: the variables' fused share is their references' static share (per variable); inlining counts
 the call and the EXIT only; one interpreted design (the JIT designs' native code dispatches nothing); bytes from

@@ -27,12 +27,13 @@ def prof(name):
     for l in open(f):
         p = l.split()
         if p and p[0] == 'I': out[int(p[1])] = out.get(int(p[1]), 0) + int(p[2])
+        elif p and p[0].isdigit() and int(p[1]) == 70: out['dodoes'] = out.get('dodoes', 0) + int(p[2])   # 685: DODOES
     return out
 R = {}
 for app in APPS:
     full, load = prof('lab-%s-full.fs' % app), prof('lab-%s-load.fs' % app)
     run = {k: v - load.get(k, 0) for k, v in full.items() if v - load.get(k, 0) > 0}
-    tot = sum(run.values()); names = C[app]['names']
+    dod = run.pop('dodoes', 0); tot = sum(run.values()); names = C[app]['names']
     pre = open(os.path.join(W, 'lab-%s-load.fs' % app)).read().replace('BYE\n', '')
     drv = os.path.join(W, 'mech-%s-where.fs' % app)
     open(drv, 'w').write(pre + 'CREATE WBUF-684 64 ALLOT  : WHERE-684 ( c-addr u --- )  DUP WBUF-684 C! WBUF-684 1+ SWAP CMOVE WBUF-684 FIND IF START @ - ELSE DROP -1 THEN . ;\n'
@@ -41,7 +42,7 @@ for app in APPS:
     offs = [int(x) for x in re.findall(r'777001 (-?\d+) +777002', o)]
     if len(offs) != len(names): sys.exit('mech-dispatch: %s - %d of %d words placed' % (app, len(offs), len(names)))
     starts = sorted(set(x for x in offs if x >= 0)); print('mech-dispatch: %s - %d of %d words placed' % (app, len(starts), len(names)), flush=True)
-    s = dict.fromkeys(('1 constants', '2 data word @ !', '4 small4 inlined', '4 small8 inlined', 'VALUE kind cell (680)'), 0)
+    s = dict.fromkeys(('1 constants', '2 data word @ !', '4 small4 inlined', '4 small8 inlined', 'VALUE kind cell (680)', '3 DOES> @ as VAR@'), 0)
     for (n, (kind, refs, pairs)), x in zip(names.items(), offs):
         e = run.get(x, 0) if x >= 0 else 0
         if not e: continue
@@ -51,6 +52,7 @@ for app in APPS:
         elif kind == 'small4': s['4 small4 inlined'] += 2 * e; s['4 small8 inlined'] += 2 * e
         elif kind == 'small8': s['4 small8 inlined'] += 2 * e
         elif kind == 'value': s['VALUE kind cell (680)'] += e       # 680's CELL+ a fetch, gone
-    R[app] = dict(dispatches=tot, saved={k: v / tot for k, v in s.items()})
-    print('mech-dispatch: %-10s %s dispatches; saved %s' % (app, format(tot, ','), ', '.join('%s %.1f %%' % (k, 100 * v / tot) for k, v in s.items())), flush=True)
+        elif kind == 'does@': s['3 DOES> @ as VAR@'] += 2 * e      # 685: the call and DODOES at least
+    R[app] = dict(dispatches=tot, dodoes=dod / tot, saved={k: v / tot for k, v in s.items()})
+    print('mech-dispatch: %-10s %s dispatches (DODOES %.2f %%); saved %s' % (app, format(tot, ','), 100 * dod / tot, ', '.join('%s %.1f %%' % (k, 100 * v / tot) for k, v in s.items())), flush=True)
 json.dump(R, open(os.path.join(ROOT, 'build', 'genapps', 'mech-dispatch-%s.json' % D), 'w'), indent=1)

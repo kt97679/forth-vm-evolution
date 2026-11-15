@@ -16,6 +16,7 @@ cols = [c.strip() for c in tab[0].strip('|').split('|')][1:]
 cost = {r.strip('|').split('|')[0].strip(): dict(zip(cols, (float(x) for x in r.strip('|').split('|')[1:]))) for r in tab[2:]}
 SYS = ['s6', 'smallest', 'portable-knee', 'small-jit', 'fastest-x86-64']
 FOUR, HELD = ('sim16', 'gc16', 'scan', 'evo'), ('wordfreq', 'minif', 'brainless')
+SM = ('shellmix',) if 'shellmix' in C else ()      # 685: relf 953's, relfsh's mix
 def n(progs, k): return sum(C[p][k] for p in progs)
 def saved(s, progs):
     c = lambda k: cost[k][s]
@@ -24,15 +25,15 @@ def saved(s, progs):
       '1 constants as literals, where not longer': sum(n(progs, b) * max(0.0, c('a constant') - lit[b]) for b in lit),
       '2 a data word\'s @ and ! as one op': n(progs, 'var@') * (c('a variable @') - cost['a variable @']['relf64'])
                                             + n(progs, 'var!') * (c('a variable !') - cost['a variable !']['relf64']),
-      '3 DOES> @ as VAR@': 0.0,
+      '3 DOES> @ as VAR@ (bytes about even: a call for a slot op)': 0.0,
       '5 n + - = as one op': n(progs, 'imm') * (c('5 +') - cost['5 +']['relf64']),
       "8 address literals in 5 bytes ([']; TO)": n(progs, 'tick') * (c("['] DUP") - cost["['] DUP"]['relfasm64'])
                                                  + n(progs, 'to') * (c('TO a VALUE') - cost['TO a VALUE']['relfasm64']),
       '9 no JIT header (5 bytes a definition)': n(progs, 'defs') * 5.0 if s in ('small-jit', 'fastest-x86-64', 'best-all-round', 'fastest-x86-32') else 0.0}
 rows = {}
 for s in SYS:
-    for progs, tag in ((FOUR, 'four'), (HELD, 'held')):
+    for progs, tag in ((FOUR, 'four'), (HELD, 'held')) + (((SM, 'sm'),) if SM else ()):
         for k, v in saved(s, progs).items(): rows.setdefault(k, {})[(s, tag)] = v
-print('| mechanism | ' + ' | '.join('%s: four / held-out' % s for s in SYS) + ' |\n|---|' + '---:|' * len(SYS))
-for k, v in rows.items(): print('| %s | %s |' % (k, ' | '.join('%d / %d' % (round(v[(s, 'four')]), round(v[(s, 'held')])) for s in SYS)))
+print('| mechanism | ' + ' | '.join('%s: four / held-out%s' % (s, ' / shellmix' if SM else '') for s in SYS) + ' |\n|---|' + '---:|' * len(SYS))
+for k, v in rows.items(): print('| %s | %s |' % (k, ' | '.join('%d / %d' % (round(v[(s, 'four')]), round(v[(s, 'held')])) + (' / %d' % round(v[(s, 'sm')]) if SM else '') for s in SYS)))
 print('| the instances, the four / held-out | ' + '; '.join('%s %d/%d' % (k, n(FOUR, k), n(HELD, k)) for k in ('const', 'var@', 'var!', 'imm', 'tick', 'to', 'defs', 'small4', 'does')) + ' |')

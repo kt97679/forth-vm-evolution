@@ -40,7 +40,8 @@ APPS = {'sim16': ('sim16.fth', '25 BENCH', r'SIM16 SIEVE \d+ FIB \d+ STEPS \d+')
         'evo': ('evo.fth', '1200 BENCH', r'EVO BEST \d+ AT \d+ CHECK \d+'),
         'wordfreq': ('wordfreq.fth', '60 BENCH', r'WORDFREQ WORDS \d+ DISTINCT \d+ TOP \d+ CHECK \d+'),
         'minif': ('minif.fth', '2500 BENCH', r'MINIF CHECK \d+ ERRS \d+ DEFS \d+'),
-        'brainless': ('benchmark.fs', 'BENCHMARK', r'\d+ nodes .* \d+ evals')}   # 110023 and 163278 at 8-byte cells
+        'brainless': ('benchmark.fs', 'BENCHMARK', r'\d+ nodes .* \d+ evals'),   # 110023 and 163278 at 8-byte cells
+        'shellmix': ('shellmix.fth', '10000 SHELLMIX', r'10000 50005000 \d+ 80000')}   # 685: relf 953's, relfsh's mix (held out)
 ap = argparse.ArgumentParser(usage=__doc__.split('\n')[0])
 ap.add_argument('--rounds', type=int, default=5); ap.add_argument('--cells', type=int, default=8, choices=(8, 4))
 ap.add_argument('--sizes', action='store_true');   # 677: the sizes alone (appsize-check.py)
@@ -65,7 +66,7 @@ for f in os.listdir(bl):
     data = open(os.path.join(bl, f), 'rb').read(); shutil.copy(os.path.join(bl, f), os.path.join(W, 'gf'))
     if re.search(r'\.(fs|f|fth)$', f, re.I): data = hexfix(fold(data.decode('latin-1'))).encode('latin-1')
     open(os.path.join(W, f), 'wb').write(data)
-for f in ('sim16.fth', 'gc16.fth', 'scan.fth', 'evo.fth', 'wordfreq.fth', 'minif.fth'): shutil.copy(os.path.join(W, f), os.path.join(W, 'gf'))
+for f in [v[0] for k, v in APPS.items() if k != 'brainless']: shutil.copy(os.path.join(W, f), os.path.join(W, 'gf'))   # 685: the table's
 for f in ('extend.4', 'coreext.4'): shutil.copy(os.path.join(ROOT, 'forth', f), W)
 shutil.copy(os.path.join(HERE_, 'appbench', 'prelude.fth'), os.path.join(W, 'lab-prelude.fth'))
 RT = os.path.join(ROOT, 'vendor', 'relf', 'tree'); RC = open(os.path.join(ROOT, 'vendor', 'relf', 'UPSTREAM')).read()

@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 684.
+- master: Iteration 685.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -73,8 +73,13 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   the four: a data word's @/! as one op 188-359 B and 3.5-24.9 % of dispatches (the knee) - the most; constants as
   literals where not longer 34 B, 0-2.5 %; small-word inlining 0.1-9.4 % for bytes; the JIT header 745 B. Invisible to
   the four: address literals (brainless 1,220 B), the DODOES stencil, `n -`/`=`; DOES> @ pays nowhere (GOALS.md's
-  register). 680's VALUE: 3.9 % of brainless's dispatches. **Next: step 3** - the genes 2, 1, 4 and the JIT header as
-  a batch; **the owner's choice** for 8 (and the DODOES stencil): drop, or a fifth program with brainless's mix.
+  register). 680's VALUE: 3.9 % of brainless's dispatches.
+  **relf's answers (685)**: results/relf-reply-685.md (the reply: results/drafts/relf-reply-953.md). relf's code has
+  no TO/VALUE/['] (mechanism 8: drop), but DOES> hooks and buffers; VAR@ saves dispatches, not bytes (3.2 B); its
+  constant test, inlining rule (3 instructions, 6 bytes) and the peepholes 684 missed. Its shellmix.fth is in
+  lab/evolve/apps (held out): the JIT designs 1.11-1.49 of relf64's time on it; the knee 22.3 % of dispatches from
+  VAR@/VAR!, 3.0 % from DOES> @. relf will measure the new roles - tell it when they exist and how to fetch them.
+  **The owner decides**: shellmix as the fifth selection program; mechanism 8 dropped. **Then step 3.**
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each

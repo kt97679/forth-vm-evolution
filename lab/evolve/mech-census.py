@@ -20,7 +20,8 @@ import json, os, re, sys
 HERE_ = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(os.path.dirname(HERE_))
 A = os.path.join(HERE_, 'apps')
 PROGS = [('sim16', 'sim16.fth'), ('gc16', 'gc16.fth'), ('scan', 'scan.fth'), ('evo', 'evo.fth'),
-         ('wordfreq', 'wordfreq.fth'), ('minif', 'minif.fth'), ('brainless', 'brainless/benchmark.fs')]
+         ('wordfreq', 'wordfreq.fth'), ('minif', 'minif.fth'), ('brainless', 'brainless/benchmark.fs'),
+         ('shellmix', 'shellmix.fth')]   # 685: relf 953's - relfsh's mix
 CONTROL = set('IF ELSE THEN BEGIN WHILE REPEAT UNTIL AGAIN DO ?DO LOOP +LOOP EXIT RECURSE >R R> R@ I J LEAVE UNLOOP '
               'DOES> ." S" C" ABORT" [\'] \' POSTPONE TO IS CASE OF ENDOF ENDCASE [CHAR] CHAR LITERAL ['.split())
 STRWORDS = {'."': '"', 'S"': '"', 'C"': '"', 'ABORT"': '"', '.(': ')'}

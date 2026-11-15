@@ -54,6 +54,8 @@ A mechanism that does not pay goes to GOALS.md's register with its numbers.
    results/pure-savings-680.md; 6 built (681): results/unaligned-strings-681.md.
 2. **The prices** of 1-5, 8, 9 on the four (and the held-out three) - a results file, a row each. **Done (684)**:
    results/mech-prices-684.md - 2, 1, 4 and 9's header pay on the four; 8 and 9's DODOES only on brainless; 3 nowhere.
+   relf's answers (685, results/relf-reply-685.md): 8 is not relf's use (drop); 3 and the DODOES stencil pay on relf's
+   shellmix.fth - a fifth selection program, the owner's choice; step 3 builds to relf's forms and rules.
 3. **The genes** that pay, as a batch (results/pending/, ORDER.md, tools/batch-check.sh). The gene rules
    (results/seed63-rules.md): rule 11 - a gene leaves FROZEN only when a selection workload can see its benefit; the
    four apps' code is now one.
