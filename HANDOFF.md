@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 693.
+- master: Iteration 694.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -103,9 +103,15 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   **693: step 4's rehearsal for rtvar and rtconst** (a scratch clone): the front 10 of 10 alive with them; the search's
   speed 0.999 at the size end to 0.960 (portable-fastest), at about 350 bytes (overlay code, and rtconst's wide
   literals); a short run clean but for s1-sod16, which shellmix takes past sod16's 128 KB DOES> reach (a founder, not
-  a candidate). results/rehearsal-693.md. **The laptop could run now** with rtvar and rtconst (the owner's hours), or
-  after more genes. **Next: the other step-3 genes** (inlining at 3/6, the JIT header, DOES> @ - its tail decoded in
-  three call forms).
+  a candidate). results/rehearsal-693.md. The owner (694): **more genes before the run**.
+  **694: the gene rtinline** (forth/cv8-fuse-inline.4: a body of at most 3 instructions in 6 bytes copied for its
+  call, layout.py's INL-OPS a whitelist of position-blind operations): the programs alone 5-15 % faster on four roles
+  (gc16 0.825 on fastest-x86-64), the apps workload about even; lab/evolve/rtinline-check.py PASS on four. **The dumps
+  are made when first asked for** (evolve.py's dump_file, build/dumps-HASH): setup 63 s -> 1.6 s, the run-time genes no
+  longer doubling it; boot_files() the one list (export-genes.py's copy had missed -var and -const).
+  results/rtinline-694.md. **Next:** DOES> @ as VAR@ (its tail decoded in three call forms), then a rehearsal of the
+  three genes together, then the laptop. Self-hosting (cross-cv8.4) fills neither VAR-OPS nor INL-OPS yet (zeros:
+  the fusions off in self-built images - phase 6's).
   (batch-check.sh tests results/pending's patches only - not direct commits.)
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.

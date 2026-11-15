@@ -89,6 +89,7 @@ is the evolver's development history, phase by phase, then iteration by iteratio
 - `appsize.py` - an application's code bytes (HERE's advance less its own ALLOT , C,): the drivers and parse, one definition for genapps.py and evolve.py's rec['app'] (Iteration 678)
 - `appsize-check.py` - evolve.py's rec['app'] against genapps.py: the same binaries at both widths, the translator's ten against 674's table, planted changes, the resume guard; `--quick` in run-tests (Iteration 678)
 - `rtconst-check.py` - the gene rtconst on a design, 0 against 1: alive, every literal width's value, the call folded, the apps workload and each program's benchmark (Iteration 691)
+- `rtinline-check.py` - the gene rtinline on a design, 0 against 1: alive, the values of words it copies and must not, the copy itself, the apps workload and each program's benchmark (Iteration 694)
 - `rtvar-check.py` - the gene rtvar on a design, 0 against 1: alive, the fusion firing, no fusion across a label, the apps' code and the apps workload's time (Iteration 687)
 - `mech-census.py` - the constructs relf's run-time compiler mechanisms act on, counted in genapps.py's seven programs' source, per program and per name (Iteration 684)
 - `mech-price.py` - those mechanisms priced in code bytes per system, from the census and 674's per-construct costs (Iteration 684)

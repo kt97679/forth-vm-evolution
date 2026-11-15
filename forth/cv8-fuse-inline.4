@@ -1,0 +1,54 @@
+\ cv8-fuse-inline.4 - a short colon definition copied in place of its call, in code compiled at RUN time (Iteration
+\ 694: the gene rtinline; step 3 of results/drafts/search-reopen-plan-677.md, mechanism 2 - relf's inlining, at its
+\ 3 instructions and 6 bytes). Loaded after cv8-fuse-var.4 and before cv8-fuse-const.4 (a constant stays its literal,
+\ for rtimm), for either family, and only for designs with the gene.
+\
+\ A call to a word whose body, to its EXIT, is at most three instructions in six bytes, every one of them an operation
+\ that does not depend on where it sits, becomes a copy of those bytes: one dispatch less for the call and one for the
+\ EXIT. Copied as they are, so a call, a branch, a loop operation, the return stack's and the locals' operations are
+\ never in it - INL-OPS's whitelist (tools/layout.py writes it, in this design's codes). A body whose last operation
+\ has the EXIT folded into it is copied with that operation's plain code. Under the two-bit tag with the JIT a word
+\ begins with the JIT's header, stepped over.
+
+CREATE INL-OPS ( --- c-addr )   HERE 120 ALLOT 120 0 FILL
+\ [0-63] two bits for each one-byte code: 0 not copied, else its length with its operand (1-3); [64] the JIT's code,
+\ [65] the length of its header (0: no header); [66] a count, then that many pairs: a code with the EXIT folded in,
+\ the same operation's code without it. All zeros: nothing copied.
+ALIGN
+
+VARIABLE INL-A ( --- a-addr )   \ the body's first byte
+VARIABLE INL-U ( --- a-addr )   \ its length to the EXIT
+VARIABLE INL-L ( --- a-addr )   \ where in it the last instruction begins
+VARIABLE INL-F ( --- a-addr )   \ 0, or 256 + the plain code of a last instruction that folded the EXIT in (a code can be 0)
+
+: INL-LEN ( c --- n )   DUP 2 RSHIFT INL-OPS + C@ SWAP 3 AND 2* RSHIFT 3 AND ;
+
+: INL-UNFOLD ( c --- c2 -1 | 0 )
+  INL-OPS 66 + C@ 0 ?DO
+    DUP INL-OPS 67 + I 2* + C@ = IF DROP INL-OPS 68 + I 2* + C@ -1 UNLOOP EXIT THEN
+  LOOP DROP 0 ;
+
+: INL-BODY ( xt --- flag )
+\ True if xt's body can be copied: INL-A, INL-U, INL-L and INL-F describe it.
+  DUP C@ INL-OPS 64 + C@ = INL-OPS 65 + C@ AND ?DUP IF + THEN
+  INL-A ! 0 INL-U ! 0 INL-F !
+  4 0 DO
+    INL-A @ INL-U @ + C@
+    DUP EXIT-OP = IF DROP -1 UNLOOP EXIT THEN
+    I 3 = IF DROP 0 UNLOOP EXIT THEN
+    INL-U @ INL-L !
+    DUP INL-UNFOLD IF SWAP DROP DUP 256 OR INL-F ! THEN
+    INL-LEN ?DUP 0= IF 0 UNLOOP EXIT THEN
+    INL-U +!  INL-U @ 6 > IF 0 UNLOOP EXIT THEN
+    INL-F @ IF -1 UNLOOP EXIT THEN
+  LOOP 0 ;
+
+: INL, ( --- )
+\ Lay the body INL-BODY found.
+  HERE INL-U @ 0 ?DO INL-A @ I + C@ C, LOOP                ( start )
+  INL-F @ IF INL-F @ 255 AND OVER INL-L @ + C! THEN
+  INL-L @ +  INL-U @ IF DUP C@ INL-LEN 1 = IF LAST-OP ! EXIT THEN THEN  DROP 0 LAST-OP ! ;
+
+: COMPILE,8 ( xt --- )
+\ The COMPILE,8 before this one, with a call to a short body laid as the body.
+  DUP PRIMITIVE? 0= IF DUP INL-BODY IF DROP INL, EXIT THEN THEN COMPILE,8 ;

@@ -18,23 +18,11 @@ E.TWO_WIDTHS[0] = True; E.setup_widths(); E.TWO_WIDTHS[0] = False     # the 4-by
 
 OVERLAY_ORDER = ['cv8.4', 'cv8b.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4']
 def overlays(dump):
-    """The files the dump's boot loaded, in evolve.py setup()'s order - a tag-2 dump (k64-bt-...) the cv8t ones."""
+    """The files the dump's boot loaded, in evolve.py's order (Iteration 694: its boot_files() - this list had missed
+    687's -var and 691's -const)."""
     n = os.path.basename(dump)
     assert n.startswith('k64-b') or n.startswith('k32-b'), n
-    t2 = n[5:].startswith('t')
-    fs = (['cv8t.4', 'cv8bt.4'] if t2 else ['cv8.4', 'cv8b.4'])
-    fs += [f for f, k in (('cv8b-kfast.4', '-kfast'), ('cv8b-kinput.4', '-kinput'),
-                          ('cv8b-klookup.4', '-klookup'), ('cv8b-knumber.4', '-knumber')) if k in n]
-    fs += [('cv8t-fuse.4' if t2 else 'cv8-fuse.4')] if '-fuse' in n else []
-    fs += [('cv8t-fuse-imm.4' if t2 else 'cv8-fuse-imm.4')] if '-imm' in n else []
-    fs += ['cv8-fuse-loopall.4'] if '-loopall' in n else []
-    fs += ['cv8-fuse-iplus.4'] if '-iplus' in n else []
-    fs += ['cv8t-empty.4'] if (t2 and '-empty' in n) else []
-    fs += ['cv8t-jit.4'] if (t2 and '-jit' in n) else []
-    fs += ['file-sysc.4'] if '-fsys' in n else []
-    fs += ['file-sysc2.4'] if ('-fsys2' in n or '-fsys3' in n) else []
-    fs += ['file-sysc3.4'] if '-fsys3' in n else []
-    return fs
+    return E.boot_files(n)
 
 def opt(args, k, default=None):
     return args[args.index(k) + 1] if k in args else default

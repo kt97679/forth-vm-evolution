@@ -1387,7 +1387,7 @@ def emit(path):
     if V8 and TAG2_ON: CVARS['LOOP-ALIGN'] = -1 if G.get('JIT_ON') else 0   # Iteration 181: no loop pad without the JIT
     if V8 and not TAG2_ON: CVARS['CV8-VARCALL-V'] = -1   # 592: varcall retired at 1
     for w in order:
-        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB', 'VAR-OPS') + tuple(CVARS): continue
+        if not V8 or w['n'] not in ('FOLD-OPS', 'FOLD-TABLE', 'SUPER-TABLE', 'IMM-OPS', 'LOOPTAB', 'VAR-OPS', 'INL-OPS') + tuple(CVARS): continue
         at, op = new_off[w['s']]['body'] + cfd(w['s']), G['cv8_op']   # [DOVAR][pad], then the data
         if w['n'] in CVARS:
             data = (CVARS[w['n']] & ((1 << (8 * CELL)) - 1)).to_bytes(CELL, 'little')
@@ -1412,6 +1412,35 @@ def emit(path):
             # translator's own slots being unscaled offsets (v8pfa). Zeros: the fusion off.
             rt = 'var' in G['SPEC'] and bool(G['VARSLOT'])   # 688: 16-bit slots reach 64 KB - too near; 689: the tag too
             data = bytes([G['X_VF'], G['X_VS'], op('@')[0], op('!')[0]] if rt else [0, 0, 0, 0]) + bytes([1 if G['VARSLOT'] else 0, 0, 0, 0])
+        elif w['n'] == 'INL-OPS':
+            # Iteration 694: what code compiled at run time may copy for a call (forth/cv8-fuse-inline.4, the gene
+            # rtinline) - in this design's one-byte codes, either family (not remapped below): two bits a code, its
+            # length with its operand; the JIT's code and header; the codes with the EXIT folded in, and their plain
+            # forms. A whitelist: an operation that cannot tell where it sits - no call, branch, loop operation, the
+            # return stack's or the locals', no EXECUTE (a callee sees one frame less).
+            _pure = {'NOOP', 'DROP', 'DUP', 'SWAP', 'ROT', 'OVER', 'C@', '@', 'C!', '!', 'AND', 'OR', 'XOR', '=', 'U<', '<',
+                     '+', 'NEGATE', 'LSHIFT', 'RSHIFT', 'UM*', 'UM/MOD', 'D+', 'SP@', '0=', '-', '<>', '0<', '>', '2DUP',
+                     '2DROP', 'CHAR+', '1+', 'CELL+', 'CELLS', '1-', 'INVERT', 'COUNT', 'ALIGNED', 'lit0', 'lit1', 'litm1',
+                     '+!', '?DUP', '2@', '2!', 'FILL', 'CMOVE'}
+            _opnd = {'LIT8': 2, 'LIT': 3, 'ADDI': 2, 'EQI': 2, 'SWAP+I': 2, 'DUP+I': 2, 'DUP<I': 2}
+            _names = G['t2_names']()
+            _byte = (lambda x: T2MAP['one'].get(x)) if TAG2_ON else (lambda x: x if x < 128 else None)
+            def _ilen(nm):
+                if nm in _pure: return 1
+                if nm in _opnd: return _opnd[nm]
+                if ' ' in nm and all(p in _pure for p in nm.split(' ', 1)): return 1   # a pair of them
+                return 0
+            _bits = [0] * 256; _code = {}
+            for x_, nm in _names.items():
+                b_ = _byte(x_)
+                if b_ is None: continue
+                _code[nm] = b_; _bits[b_] = _ilen(nm)
+            _fold = {nm: nm[:-5] for nm in _names.values() if nm.endswith(';EXIT')}; _fold.update({'LIT8X': 'LIT8', 'ADDIX': 'ADDI', 'EQIX': 'EQI'})
+            _pairs = [(_code[f_], _code[p_]) for f_, p_ in sorted(_fold.items()) if f_ in _code and p_ in _code and _ilen(p_)][:26]
+            _jit = _byte(0xFFFD) if (TAG2_ON and G.get('JIT_ON')) else None
+            data = (bytes(sum(_bits[4 * i + k] << (2 * k) for k in range(4)) for i in range(64))
+                    + bytes([_jit or 0, 5 if _jit is not None else 0, len(_pairs)]) + bytes(x for e in _pairs for x in e))
+            assert len(data) <= 120, 'INL-OPS overflows'
         elif w['n'] == 'IMM-OPS':
             # Iteration 37: ADDI and SWAP+I for code compiled at run time
             # (forth/cv8-fuse.4, IMM+) - with --rtfuse, where this design has

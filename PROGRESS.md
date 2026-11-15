@@ -11634,3 +11634,13 @@ both widths; the search's speed with them 0.999 (least-memory) to 0.960 (portabl
 the gate's workloads nothing, at about 350 bytes (the overlays, and rtconst's literals wider than a call). A short run
 (8 x 2) clean but for the hand-made s1-sod16, which shellmix takes past sod16's 128 KB DOES> reach - a founder, enc
 not being mutated. Mutation turns rtvar on in 0.4 % of the front's mutations, rtconst 1.3 %. results/rehearsal-693.md.
+
+## Iteration 694 - 2026-11-15 - Claude
+
+The owner: more genes before the run. Step 3's third gene, rtinline: forth/cv8-fuse-inline.4 copies a body of at most
+three instructions in six bytes (relf's limits) for its call, in code compiled at run time; tools/layout.py writes
+INL-OPS, a whitelist of operations that cannot tell where they sit, in the design's one-byte codes, with the folded
+codes' plain forms. lab/evolve/rtinline-check.py PASS on portable-knee, least-memory, portable-fastest and
+fastest-x86-64: the programs alone 5-15 % faster (gc16 0.825 on the JIT design), the apps workload about even. And
+evolve.py's dumps are made when first asked for (dump_file, build/dumps-HASH): setup 63 s to 1.6 s; boot_files() the
+one list, export-genes.py's copy having missed -var and -const. results/rtinline-694.md.

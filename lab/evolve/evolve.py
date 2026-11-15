@@ -61,7 +61,7 @@ OPERATORS
   selection  NSGA-II: rank by Pareto front, then by crowding, so designs
              that are different survive beside designs that are better
 """
-import bisect, collections, hashlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
+import bisect, collections, glob, hashlib, json, math, os, random, re, shutil, statistics, subprocess, sys, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 O = os.path.join(ROOT, 'build'); W = os.path.join(O, 'work')
@@ -97,7 +97,7 @@ CC0 = dict(opt='O2', nogcse=0, nocrossjump=0, nocet=0, align1=0, noreorder=0, pe
 # Iteration 136: sysc likewise (results/syscall-pricing.md) - with NAME>BUF, after seed 39. Iteration 137: jitinl too.
 # Iteration 129: jitloop is built and tested but DORMANT - in LATE, not yet in EXPRESSED, so no
 # mutation turns it on: seeds 38 and 39 run the same genes (the owner); EXPRESSED takes it after 39.
-LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'rtvar', 'rtconst', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler')
+LATE = ('threads', 'fsys', 'regpin', 'dskew', 'peel', 'ipaclone', 'tracer', 'hotcalls', 'rtimm', 'rtvar', 'rtconst', 'rtinline', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall', 'jitloop', 'sysc', 'jitinl', 'jitos', 'jittail', 'jitk', 'lto', 'gotodup', 'compiler')
 HOTINLN = (0, 10, 20, 40)      # Iteration 92: inlined at the hottest call sites (lab/evolve/hotsites-v1.json)
 FBUFV = (4096, 1024, 512)      # Iteration 115: a file's read-ahead buffer (results/deep-dive-2.md: memory)
 HOTSITES = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hotsites-v1.json')
@@ -123,7 +123,7 @@ FAMILIES = ['cell', 'sod16', 'cpt16', 'cv8']
 # Which genes each family expresses; the rest are carried, not built.
 EXPRESSED = {'cell': [], 'sod16': ['skippad'], 'cpt16': ['scale', 'skippad', 'fold', 'folds'],
              'cv8': ['tos', 'scale', 'bytehdr', 'spec', 'sharedcall', 'doesfar', 'varcall',
-                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'rtvar', 'rtconst', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
+                     'varslot', 'd256', 'guard', 'folds', 'supers', 'rtfuse', 'ops10', 'escape', 'tail', 'msc', 'hotcalls', 'rtimm', 'rtvar', 'rtconst', 'rtinline', 'lean', 'rtloop', 'rtloopall', 'bss', 'kfast', 'tfind', 'kinput', 'klookup', 'thinhdr', 'rtiplus', 'swapi', 'tag2', 't2hot', 'jit', 'hotinl', 'opbody', 't2wide', 'rtempty', 'jitx', 'alignfn', 'noinls', 'fbuf', 'kstack', 'abortif', 'opcall']}
 # ---- the gene table (Iteration 276, prompts/17-variants-as-data) -----------
 # A gene is one row: gene(name, values, show, family, late, needs, convert).
 #   values  - what it can be, off first (a late gene's off is 0); none: 0/1;
@@ -159,6 +159,7 @@ gene('rtfuse', late=False, needs=lambda g, e: e.get('supers') or rt_tests(g))  #
 gene('rtimm', values=range(3), needs=lambda g, e: overlay(g) and 'imm' in g['spec'])   # Iteration 37: n + at run time needs both
 gene('rtvar', values=range(2), needs=lambda g, e: rtvar_can(g))   # Iteration 687: a data word's @ and ! as vf, vs at run time (forth/cv8-fuse-var.4); the byte header first; 688: varslot's 23-bit slots
 gene('rtconst', values=range(2), needs=lambda g, e: overlay(g))   # Iteration 691: a constant as its value at run time (forth/cv8-fuse-const.4), relf's rule
+gene('rtinline', values=range(2), needs=lambda g, e: overlay(g))  # Iteration 694: a short body copied for its call at run time (forth/cv8-fuse-inline.4), relf's 3 and 6
 gene('rtloop', values=range(2), needs=lambda g, e: rtloopall_on(g))            # Iteration 41: a loop opcode to use (595: 2, its words headerless, retired; 641: with all eight only - the partial compiler retired)
 gene('rtloopall', needs=lambda g, e: rtloopall_on(g))                          # Iteration 43: all eight of them
 gene('kfast', needs=lambda g, e: kfast_on(g))                                  # Iteration 49: byte headers
@@ -306,6 +307,45 @@ def source_names(path):
             k += 1
         _DEFS[path] = out
     return _DEFS[path]
+def boot_files(name):
+    """The files a dump's boot loads, from its name (k64-b-fuse-imm-var.txt), in their order (694: setup()'s loop's;
+    export-genes.py's too)."""
+    t2 = name[3:].startswith('-bt')                        # k64-bt-...: the family from the name, not the width
+    files = ['cv8t.4', 'cv8bt.4'] if t2 else ['cv8.4', 'cv8b.4']
+    return (files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
+                   + ([('cv8t-fuse.4' if t2 else 'cv8-fuse.4')] if '-fuse' in name else [])
+                   + ([('cv8t-fuse-imm.4' if t2 else 'cv8-fuse-imm.4')] if '-imm' in name else [])
+                   + (['cv8-fuse-loopall.4'] if '-loopall' in name else [])
+                   + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
+                   + (['cv8-fuse-var.4'] if '-var' in name else [])         # Iteration 687: the last of the fusers
+                   + (['cv8-fuse-inline.4'] if '-inl' in name else [])      # Iteration 694: after rtvar's, before rtconst's
+                   + (['cv8-fuse-const.4'] if '-const' in name else [])     # Iteration 691: after rtvar's
+                   + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
+                   + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
+                   + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
+                   + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3')) else [])   # Iteration 205: the rest of the file words (fsys 2)
+                   + (['file-sysc3.4'] if any(k in name for k in ('-fsys3',)) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
+    )
+DUMPS = {}
+def dump_file(name):
+    """The dump called name (Iteration 694): the base from tools/build-stages.sh; any other made by the cell engine
+    the first time it is asked for, in build/dumps-HASH - HASH of what makes it (the overlays in build/work, the cell
+    engine, its kernel image), so a change to any makes new ones and none is deleted under a reader; written under a
+    name of its own and renamed, so workers that make one at once each see it whole."""
+    if name == KW() + '-b.txt': return os.path.join(O, name)
+    if cellw() not in DUMPS:
+        h = hashlib.sha1()
+        for f in sorted(glob.glob(os.path.join(W, '*.4'))) + [S0(), os.path.join(W, KIMG())]:
+            h.update(os.path.basename(f).encode()); h.update(open(f, 'rb').read())
+        DUMPS[cellw()] = os.path.join(O, 'dumps-' + h.hexdigest()[:12]); os.makedirs(DUMPS[cellw()], exist_ok=True)
+    p = os.path.join(DUMPS[cellw()], name)
+    if not os.path.exists(p):
+        boot = ''.join('S" %s" INCLUDED\n' % f for f in boot_files(name) + ['dict-dump-addr.4']) + 'BYE\n'
+        out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
+        dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
+        t = '%s.%d' % (p, os.getpid()); open(t, 'wb').write(out.replace(b'\r', b'')); os.replace(t, p)
+    else: os.utime(DUMPS[cellw()])                       # in use: not pruned
+    return p
 def dump_guard(name, boot, out):
     text = out.replace(b'\r', b'').decode('latin-1')
     m = re.search(r'^S \d+ \d+', text, re.M)
@@ -401,6 +441,9 @@ def swapi_on(g):
     format-10 names - in the pool since, and on none of seed 13's front: fib's
     SWAP -2 + took two dispatches. A design with the 'imm' specialisation."""
     return g['enc'] == 'cv8' and 'imm' in g['spec'] and bool(g.get('swapi'))
+def rtinline_on(g):
+    """Iteration 694: the gene rtinline expressed - the run-time fusers present."""
+    return bool(g.get('rtinline')) and overlay(g)
 def rtconst_on(g):
     """Iteration 691: the gene rtconst expressed - the run-time fusers present."""
     return bool(g.get('rtconst')) and overlay(g)
@@ -1110,9 +1153,10 @@ def _build(g, d):
     fuse += '-loopall' if rtloopall_on(g) else ''                                                     # rtloop: 41; rtloopall: 43; 641: -loop retired
     fuse += '-iplus' if rtiplus_on(g) else ''                                                          # rtiplus: 60
     fuse += '-var' if rtvar_on(g) else ''                                                              # rtvar: 687
+    fuse += '-inl' if rtinline_on(g) else ''                                                           # rtinline: 694
     fuse += '-const' if rtconst_on(g) else ''                                                          # rtconst: 691
     fuse += '-empty' if t2 and g.get('rtempty') else ''                                                # rtempty: 101
-    dump = os.path.join(O, (KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
+    dump = dump_file((KW() + ('-bt%s.txt' if t2 else '-b%s.txt')) % (('-kfast' if kfast_on(g) else '') + ('-kinput' if kinput_on(g) else '') + ('-klookup' if klookup_on(g) else '') + ('-knumber' if knumber_on(g) else '') + fuse + ('-jit' if jit_on(g) else '') + ({1: '-fsys', 2: '-fsys2', 3: '-fsys3'}.get(fsys_level(g), ''))))
     # Iteration 199: a short branch the tag-2 encoding finds out of range is
     # written to long-branches.json and the conversion fails; converted again
     # with it kept long - the set only grows, so it ends.
@@ -2036,39 +2080,16 @@ def setup():
     # (forth/cv8-fuse.4), dumped the way tools/build-stages.sh dumps cv8.4.
     import shutil
     W = os.path.join(O, 'work')
-    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
+    for f4 in ('cv8-fuse.4', 'cv8-fuse-imm.4', 'cv8-fuse-var.4', 'cv8-fuse-inline.4', 'cv8-fuse-const.4', 'cv8-fuse-loopall.4', 'cv8b-kfast.4', 'cv8b-kinput.4', 'cv8b-klookup.4', 'cv8b-knumber.4', 'cv8-fuse-iplus.4',
                'cv8t.4', 'cv8bt.4', 'cv8t-fuse.4', 'cv8t-fuse-imm.4', 'cv8t-jit.4', 'cv8t-empty.4', 'file-sysc.4', 'file-sysc2.4', 'file-sysc3.4'):    # Iteration 67: the two-bit tag's     # rtimm (37), rtloop (41), rtloopall (43), kfast (49)
         src4, dst4 = os.path.join(ROOT, 'forth', f4), os.path.join(W, f4)
         if not (os.path.exists(dst4) and os.path.samefile(src4, dst4)): shutil.copy(src4, dst4)   # a fresh build links it
     base = subprocess.run([S0(), KIMG()], input=b'S" dict-dump-addr.4" INCLUDED\nBYE\n', cwd=W, capture_output=True).stdout
     BASE_NAMES.clear(); BASE_NAMES.update(n.strip().upper() for n in re.findall(r'^N -?\d+ -?\d+ (.*)$', base.replace(b'\r', b'').decode('latin-1'), re.M))   # Iteration 212
-    for name, files in [(b + k + f + l + t + v + c + e + q + j + y + '.txt', fs) for b, fs in ((KW() + '-b', ['cv8.4', 'cv8b.4']),   # 594: -self (no cv8b.4) gone with bytehdr 0
-                                                                    (KW() + '-bt', ['cv8t.4', 'cv8bt.4']))   # tag 2: Iteration 67
-                        for k in ('', '-kfast', '-kfast-kinput', '-kfast-kinput-klookup', '-kfast-kinput-klookup-knumber')   # 501: -nocase retired
-                        for f in ('', '-fuse', '-fuse-imm') for l in ('', '-loopall')   # 641: -loop retired; 643: -lit (Iteration 422)
-                        for t in (('', '-iplus') if l == '-loopall' else ('',))
-                        for v in (('', '-var') if f else ('',))   # Iteration 687: rtvar (689: both families)
-                        for c in (('', '-const') if f else ('',))   # Iteration 691: rtconst
-                        for e in (('', '-empty') if b == KW() + '-bt' else ('',))     # Iteration 101
-                        for q in ('',)    # Iteration 456: kstack's dumps gone (kstack frozen off since 450)
-                        for j in (('', '-jit') if b == KW() + '-bt' else ('',))
-                        for y in ('', '-fsys', '-fsys2', '-fsys3') if k or f or l or t or v or c or e or q or j or y or b == KW() + '-bt']:   # -fsys: Iteration 202; -fsys2: 205   # -jit: Iteration 80   # the plain two: build-stages'
-        boot = ''.join('S" %s" INCLUDED\n' % f for f in files + (['cv8b-kfast.4'] if '-kfast' in name else []) + (['cv8b-kinput.4'] if '-kinput' in name else []) + (['cv8b-klookup.4'] if '-klookup' in name else []) + (['cv8b-knumber.4'] if '-knumber' in name else [])
-                       + ([('cv8t-fuse.4' if name.startswith(KW() + '-bt') else 'cv8-fuse.4')] if '-fuse' in name else [])
-                       + ([('cv8t-fuse-imm.4' if name.startswith(KW() + '-bt') else 'cv8-fuse-imm.4')] if '-imm' in name else [])
-                       + (['cv8-fuse-loopall.4'] if '-loopall' in name else [])
-                       + (['cv8-fuse-iplus.4'] if '-iplus' in name else [])
-                       + (['cv8-fuse-var.4'] if '-var' in name else [])         # Iteration 687: the last of the fusers
-                       + (['cv8-fuse-const.4'] if '-const' in name else [])     # Iteration 691: after rtvar's
-                       + (['cv8t-empty.4'] if '-empty' in name else [])     # Iteration 101: after the fusers, before the JIT
-                       + (['cv8t-jit.4'] if '-jit' in name else [])          # Iteration 80: last - its ;8 wraps the others'
-                       + (['file-sysc.4'] if '-fsys' in name else [])        # Iteration 202: after every kernel word - none refers to it
-                       + (['file-sysc2.4'] if any(k in name for k in ('-fsys2', '-fsys3')) else [])   # Iteration 205: the rest of the file words (fsys 2)
-                       + (['file-sysc3.4'] if any(k in name for k in ('-fsys3',)) else [])   # Iteration 206: WRITE, READ, READ-LINE, BYE (fsys 3)
-                       + ['dict-dump-addr.4']) + 'BYE\n'
-        out = subprocess.run([S0(), KIMG()], input=boot.encode(), cwd=W, capture_output=True).stdout
-        dump_guard(name, boot, out)                          # Iteration 212: every file loaded, whole
-        open(os.path.join(O, name), 'wb').write(out.replace(b'\r', b''))
+    # Iteration 694: no dumps made here - dump_file() makes each the first time a design asks for it (2,699 of them,
+    # 63 s at every start, and every run-time gene doubled the fused ones); old dump directories pruned
+    for d in glob.glob(os.path.join(O, 'dumps-*')):
+        if time.time() - os.path.getmtime(d) > 12 * 3600: shutil.rmtree(d, ignore_errors=True)
     os.makedirs(EV, exist_ok=True)
     # Iteration 677: the four applications and their size drivers (appsize.py), as genapps.py lays them out - every
     # design's private work directory links them
