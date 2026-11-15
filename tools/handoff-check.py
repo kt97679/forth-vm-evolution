@@ -12,7 +12,8 @@ This check fails, naming what would be lost, when:
 
   1. the working tree has changes that are not committed;
   2. HEAD's subject does not start "Iteration N:" (make-bundle names by it);
-  3. HANDOFF.md is behind the state: its "master: Iteration N" line names an
+  3. HANDOFF.md is behind the state: its "master: Iteration N" line is not HEAD's
+     iteration (677), or names an
      iteration before the last commit that changed what a new chat starts
      from - NEXT-RUN, results/pending, results/applied-after-*, a seed's
      results file, HANDOFF-PROMPT.md;
@@ -96,6 +97,8 @@ if head_n is None: fail(2, "HEAD's subject does not start 'Iteration N:': %s" % 
 hf = os.path.join(ROOT, 'HANDOFF.md')
 hm = re.search(r'^- master: Iteration (\d+)\.', open(hf).read(), re.M) if os.path.exists(hf) else None
 if not hm: fail(3, 'HANDOFF.md missing, or without its "- master: Iteration N." line')
+elif head_n is not None and int(hm.group(1)) != head_n:   # 677: a failed edit left the card at 676 under a commit titled 677
+    fail(3, 'HANDOFF.md says "master: Iteration %s", HEAD is Iteration %d - bring the card up to date' % (hm.group(1), head_n))
 else:
     _, log = git('log', '--name-only', '--format=@@%s', '--', 'lab/evolve/NEXT-RUN', 'results', 'HANDOFF-PROMPT.md')
     state_n = None

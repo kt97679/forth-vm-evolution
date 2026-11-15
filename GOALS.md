@@ -48,7 +48,11 @@ How each is measured:
   kernel's** (the owner, Iteration 138): the kernel holds core words only, the
   base everything else extends; what an extension needs (the shell's OS words,
   its buffers) is the extension's, outside the measure - a kernel word only an
-  extension uses belongs in that extension (results/word-audit.md).
+  extension uses belongs in that extension (results/word-audit.md). **Reopened for application code (the
+  owner, Iteration 677)**: the size is the engine, the kernel image and the code the selection's four
+  applications lay (sim16, gc16, scan, evo), bytes equal - one total; an extension's code stays out, wordfreq,
+  minif and brainless are held out (results/drafts/search-reopen-plan-677.md; in force once evolve.py measures
+  it, the plan's step 0).
 - **speed**: median CPU time against the hand-made s6, the geometric mean over
   the selection workloads - kernel, fib, corpus, loop, bubble (300 cells),
   ackermann (A(3,5)); parse and sieve held out (Iterations 100, 127-128). The
@@ -246,7 +250,7 @@ these (results/drafts/chat-to-iter265/trees/SORTED.md, read in Iteration 277; th
 | Native code calling byte code (SPN's st_interp, GENES.md candidate 5) | priced again, not built (Iteration 220): since jitx the words it would free hold 9.3% of the kernel workload's dispatches, 4.1% of the corpus's, ~0 elsewhere, and they would cross back to byte code every 3-4 operations | `results/price-jit-interp.md` |
 | Stack state in the JIT's translator (cells in registers across stencils) | priced, deferred (Iterations 218-219): -27% instructions with free renames, but the fixed-register form (+1.4 KB at K=2) saves few, and on the VM neither is reliably faster at eight code placements - only the loop index in registers is (-40%, the loop workload alone); the laptop's `jitstack-inner-sweep.sh` decides | `results/price-jit-stack.md` |
 | fsys 5 copying lines out a cell at a time (FS-MOVE) | priced, not built (Iteration 214): where CMOVE has no opcode, kernel -28% and corpus -17% of fsys 5's dispatches; where it has one, +2.2% to +11.7% and +0.8% to +6.5% - evolution can give CMOVE its opcode instead | `results/drafts/fsys/single-syscall.md` |
-| Variables and constants compiled as literals in code compiled at run time (`rtlit`) | built and measured, rejected (Iteration 59): correct, and the held-out sieve 0.811 of its dispatches - but kernel 0.984 and corpus 1.016, because a COMPILE,8 link that checks every compiled word costs a compiling workload more than it saves; 132 bytes more; selected geomean 1.000 | PROGRESS.md, Iteration 59 |
+| Variables and constants compiled as literals in code compiled at run time (`rtlit`) | built and measured, rejected (Iteration 59): correct, and the held-out sieve 0.811 of its dispatches - but kernel 0.984 and corpus 1.016, because a COMPILE,8 link that checks every compiled word costs a compiling workload more than it saves; 132 bytes more; selected geomean 1.000. **To be priced again (677)**: the code it shrinks now counts in the size | PROGRESS.md, Iteration 59; results/drafts/search-reopen-plan-677.md |
 | The loop opcodes in code compiled at run time | priced, not built (Iteration 28): 0.1% of kernel's dispatches, 0.8-1% of corpus's, none on fib or parse; 68-70% of the held-out loop's, which building it for would spoil | `results/price-runtime-loops.md` |
 | A reach check for far calls in cv8.4 | measured, not built (Iteration 28): the workloads run code up to 68 KB, the far form reaches 2 MB (one-byte calls) to 4 MB; a check costs every image bytes | `results/price-runtime-loops.md` |
 | Indirect threading as a gene | priced, not built (Iteration 29): in the dispatch lab its dispatch lands in token and direct threading's band; its code is a cell a reference, beside s0-cell's 25 KB - dominated | `lab/dispatch/README.md` |

@@ -11500,3 +11500,13 @@ source byte for byte (designs/selfhost.sh); run-tests runs it for all ten with t
 clone 20 of 20; the clang three rebuild theirs on ARM under qemu-arm. tools/selfhost-ship.sh ships them, last in the
 build-out (results/drafts/freeze-build-645.sh). make test 20 ok, run-tests PASS, validate 7 of 7. Notes:
 results/drafts/selfhost-plan-666.md, "Phase 5 done (676)".
+
+## Iteration 677 - 2026-11-14 - Claude
+
+The owner reopens the search (step 2 after relf's report): the size becomes engine + kernel image + the code the
+selection's four apps lay (6.9-8.4 KB a design, a 1,420-byte spread across the ten), one total; wordfreq, minif and
+brainless held out. The plan - the measure, the pure savings, nine mechanisms to price (rtlit, rejected at 59, among
+them), the batch, the rehearsal, the laptop - and its risks: results/drafts/search-reopen-plan-677.md. GOALS.md's
+size and register updated; self-hosting phase 6 after the search. tools/handoff-check.py's check 3 now wants the
+card's "master: Iteration N" to be HEAD's: a failed edit had left it at 676 under 677's commit and the check passed
+it (a planted copy now fails).
