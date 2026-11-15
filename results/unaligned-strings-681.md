@@ -62,3 +62,27 @@ EXECUTE's helper and its inline cache (engine/jit.c, the JITEXEC block) - agains
 
 designs/ is unchanged: its images, engines and the cross compiler's copy (designs/forth/) stay the roles as shipped
 at 676, consistent with each other (run-tests' make selfhost); the new roles come from the reopened search.
+
+### Resolved (Iteration 683) - not a fault of the lab: the check ran designs/'s shipped files
+
+tools/selfhost-check.sh runs a design from designs/ - its shipped engine, its engine's source rebuilt with A's layout,
+its genes.4 - against today's cross compiler and kernel sources. Two of 681's changes reach those shipped files:
+
+- engine/jit.c's string skip: designs/'s jitexec engines (best-all-round, fastest-x86-64, fastest-x86-32) are 676's
+  source, rounding the string's end to a cell; A's strings are unpadded, so the decoder jumped past (LOOP) and EXIT -
+  X1's translation ended after the EXECUTE helper's return (the translator's build: its (LOOP) stencil and ret, 52
+  bytes more; the buffers otherwise the same but four address bytes), the native code ran on into the zeroed buffer
+  and slid to its last byte (jit_mem + 0xFFFFF). small-jit has no jitexec, the portable designs no JIT.
+- the tag-2 map: the translator ranks the one-byte codes by use, and with the string words no longer calling ALIGNED,
+  fastest-x86-64's opcode 119 fell from rank 69 to 88 (src/vm-tag2-one.h, 20 codes moved one place); its genes.4 kept
+  676's map (export-genes.py reads it from designs/NAME/src), so A was coded by the old map and decoded by the new -
+  a return stack overflow at boot, once the engine was the lab's.
+
+With each design exported from the lab (lab/evolve/export-designs.py) and its genes from that export (DESIGNS=
+export-genes.py), all three self-host: best-all-round A = B 8,034 bytes (4-byte cells 7,486), fastest-x86-32 8,506,
+fastest-x86-64 9,518 (4-byte 8,566). The step is tools/selfhost-lab.sh NAME ... (designs/ untouched). designs/ stays
+the shipped roles: its images, engines and genes consistent with each other (make selfhost); the lab's state is checked
+with selfhost-lab.sh; phase 6 ships new roles from it. `sh tools/selfhost-lab.sh` on all ten: PASS at 8-byte cells
+(smallest 8,603, least-memory 9,278, portable-small 8,839, portable-knee 8,681, portable-arm 8,810, portable-fastest
+9,386, small-jit 8,406 - the lab's map 8 bytes off designs/'s 8,398 - best-all-round 8,034, fastest-x86-32 8,506,
+fastest-x86-64 9,518); at 4-byte cells best-all-round and fastest-x86-64 (smallest through designs/); s6 PASS.

@@ -11548,3 +11548,10 @@ designs' self-built images die on `."` in a loop - open. lab/evolve/design-sizes
 runs (0 of 20 on 676's image and on the translator's build); the same bytes but for call encodings, A's JIT_W_ offsets
 right; JITLOG and gdb put it in jitre's sentinel path - the native (.")'s EXECUTE of TYPE, refused native, lands on
 jit_mem + 0xFFFFF; an -O0 build runs it. The findings and the next step: results/unaligned-strings-681.md.
+
+## Iteration 683 - 2026-11-14 - Claude
+
+681's self-hosting failures resolved - not the lab: selfhost-check ran designs/'s shipped engine source (676's jit.c,
+rounding a string's end: the decoder jumped past (LOOP), the native code slid off its end) and genes (676's tag-2 map:
+ALIGNED's opcode fell from rank 69 to 88) against today's cross compiler. tools/selfhost-lab.sh exports from the lab
+and checks there: all ten PASS at 8-byte cells, three at 4. results/unaligned-strings-681.md.

@@ -77,6 +77,8 @@ cases), the kernel workload, the far tests - and is the one designs/ ships. The 
 5. **Shipping**: designs/ holds the self-built images; `make selfhost` in a design's directory checks the fixed
    point; tools/run-tests.sh runs it for all ten. The evolver keeps layout.py: its records describe the search as it
    was measured.
+6. (683) Before shipping, the lab's state self-hosts by `sh tools/selfhost-lab.sh NAME ...` - designs/'s engines,
+   maps and genes are the shipped roles' and go stale with any engine or converter change (681's strings).
 6. **Measured again**: sizes here; speed on the laptop, the i7 and the Tegra as the final check was run; the roles
    re-derived (one could change hands - the owner's call); designs/README.md, the relf handoff and the article's
    tables and text redone, with the self-hosting the article now lacks.

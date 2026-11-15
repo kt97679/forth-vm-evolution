@@ -41,7 +41,7 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
 
 ## The state now
 
-- master: Iteration 682.
+- master: Iteration 683.
 - **Generic application code (the owner, 674: step 1 after relf's report; relf's shell stays out of the
   objectives)** - results/generic-apps-674.md. Seven programs (the selection's four apps, wordfreq, minif, brainless)
   on the ten designs, s6, relf's CV8 (relf64, relfasm64, relf32 at vendor/relf e6e7d46) and gforth-fast:
@@ -65,11 +65,10 @@ sends back one chain archive per run (`forth-vm-evolution-chain-<commit>-fury-<t
   op_bytes, cross-cv8.4, jit.c, the spn decoders; the cell and cpt16 families, kernel.4 and the frozen stages
   untouched; every design and s6 smaller, total -152 to -266 B at 8-byte cells, -51 to -93 at 4
   (lab/evolve/design-sizes.py; results/unaligned-strings-681.md). designs/ unchanged (the shipped roles).
-  **Open (681): self-hosting fails on the three jitexec designs** - their self-built image dies on `."` in a loop
-  on its own engine (`: X7 3 0 DO ."  y" LOOP ; X7`); the search's translator-built images and 676's shipped
-  ones do not; lead and repro in the results file - before phase 6; 8 of 11 self-host. Narrowed (682):
-  deterministic on A; the native (.")'s EXECUTE of TYPE, refused native, leaves through jitre's sentinel and lands
-  on jit_mem + 0xFFFFF; -O0 runs it - next: the sentinel path's return in A.
+  681's self-hosting failures resolved (683): not the lab - selfhost-check ran designs/'s shipped engine source
+  (676's jit.c, rounding a string's end) and genes (676's tag-2 map; ALIGNED's rank moved) against today's cross
+  compiler. **tools/selfhost-lab.sh NAME ...** checks the lab's state: each design exported from the lab, its genes
+  from the export, designs/ untouched - all ten PASS at 8-byte cells (three checked at 4). **Next: step 2.**
   **Next: step 2** - the prices of relf's mechanisms 1-5, 8, 9 on the four (and the held-out three); brainless's
   dispatches before and after VALUE (genapps-dispatch.py) still to count. Self-hosting phase 6 waits.
 - **Next: the ten designs self-hosting, relf's way (the owner, 666)** - a CV8 cross compiler in Forth, run by each
